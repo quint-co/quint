@@ -82,9 +82,9 @@ pred TypeOK = {
 }
 
 action Init = {
-      maxBal  := Acceptor defFun { _ => -1 }
-    & maxVBal := Acceptor defFun { _ => -1 }
-    & maxVal  := Acceptor defFun { _ => None }
+      maxBal  := Acceptor fun { _ => -1 }
+    & maxVBal := Acceptor fun { _ => -1 }
+    & maxVal  := Acceptor fun { _ => None }
     & msgs    := {. .}
 }
 
@@ -216,7 +216,7 @@ temporal Spec = Init and always(stutter(Next, vars))
 (* the array `votes' describing the votes cast by the acceptors is defined *)
 (* as follows.                                                             *)
 (***************************************************************************/
-val votes = Acceptor defFun { a =>
+val votes = Acceptor fun { a =>
            msgs.filter(mm => mm.type = "2b" and mm.acc = a)
                .map(m => (m.bal, m.val))
 }
