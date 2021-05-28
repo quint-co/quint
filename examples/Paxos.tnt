@@ -14,9 +14,9 @@ const Acceptor: Set(Str)
 const Quorum: Set(Set(Str))
 
 assume({
-        & Quorum forall { Q => Q subseteq Acceptor }
+        & Quorum forall { Q -> Q subseteq Acceptor }
         & (Quorum X Quorum) forall {
-            (Q1, Q2) => Q1 intersect Q2 <> {. .}
+            (Q1, Q2) -> Q1 intersect Q2 <> {. .}
           }
 })
       
@@ -82,9 +82,9 @@ pred TypeOK = {
 }
 
 action Init = {
-      maxBal  := Acceptor fun { _ => -1 }
-    & maxVBal := Acceptor fun { _ => -1 }
-    & maxVal  := Acceptor fun { _ => None }
+      maxBal  := Acceptor fun { _ -> -1 }
+    & maxVBal := Acceptor fun { _ -> -1 }
+    & maxVal  := Acceptor fun { _ -> None }
     & msgs    := {. .}
 }
 
@@ -113,10 +113,10 @@ action Phase1a(b) = {
 (* maxVBal[a] and maxVal[a].                                               *)
 (***************************************************************************/
 action Phase1b(a) = {
-    & msgs exists { m => {
+    & msgs exists { m -> {
       & m.type = "1a"
       & m.bal > maxBal[a]
-      & maxBal := maxBal except a { _ => m.bal }
+      & maxBal := maxBal except a { _ -> m.bal }
       & Send([type -> "1b", acc -> a, bal -> m.bal, 
               mbal -> maxVBal[a], mval -> maxVal[a]])
       }}
@@ -144,22 +144,22 @@ action Phase1b(a) = {
 (* greater than b (thereby promising not to vote in ballot b).             *)
 (***************************************************************************/
 action Phase2a(b, v) = {
-  & not msgs.exists(m => m.type = "2a" and m.bal = b)
-  & Quorum exists { Q =>
-        let Q1b = msgs.filter(m => {
+  & not msgs.exists(m -> m.type = "2a" and m.bal = b)
+  & Quorum exists { Q ->
+        let Q1b = msgs.filter(m -> {
                             & m.type = "1b"
                             & m.acc in Q
                             & m.bal = b
                             })
         in
-        let Q1bv = Q1b.filter(m => m.mbal >= 0)
+        let Q1bv = Q1b.filter(m -> m.mbal >= 0)
         in {
-            & Q.forall(a => Q1B.exists(m => m.acc = a))
+            & Q.forall(a -> Q1B.exists(m -> m.acc = a))
             & {
                 | Q1bv = {. .}
-                | Q1bv exists { m => {
+                | Q1bv exists { m -> {
                     & m.mval = v
-                    & Q1bv forall { mm => m.mbal >= mm.mbal }
+                    & Q1bv forall { mm -> m.mbal >= mm.mbal }
                   }}
               }
         }
@@ -177,12 +177,12 @@ action Phase2a(b, v) = {
 (* phase 2b message announcing its vote.  It also sets maxBal[a] to the    *)
 (* message's.  ballot number                                               *)
 (***************************************************************************/
-action Phase2b(a) = msgs.exists( m => {
+action Phase2b(a) = msgs.exists( m -> {
                               & m.type = "2a"
                               & m.bal >= maxBal[a]
-                              & maxBal  := maxBal except a { _ => m.bal }
-                              & maxVBal := maxVBal except a { _ => m.bal }
-                              & maxVal  := maxVal except a { _ => m.val }
+                              & maxBal  := maxBal  except a { _ -> m.bal }
+                              & maxVBal := maxVBal except a { _ -> m.bal }
+                              & maxVal  := maxVal  except a { _ -> m.val }
                               & Send([type -> "2b", acc -> a,
                                       bal -> m.bal, val -> m.val])
 })
@@ -197,11 +197,11 @@ action Phase2b(a) = msgs.exists( m => {
 (* Below are defined the next-state action and the complete spec.          *)
 (***************************************************************************/
 action Next = {
-        | Ballot.exists( b => {
+        | Ballot.exists( b -> {
                             | Phase1a(b)
-                            | Value exists { v => Phase2a(b, v) }
+                            | Value exists { v -> Phase2a(b, v) }
                        })
-        | Acceptor.exists(a => Phase1b(a) or Phase2b(a))
+        | Acceptor.exists(a -> Phase1b(a) or Phase2b(a))
 }
 
 temporal Spec = Init and always(stutter(Next, vars))
@@ -216,9 +216,9 @@ temporal Spec = Init and always(stutter(Next, vars))
 (* the array `votes' describing the votes cast by the acceptors is defined *)
 (* as follows.                                                             *)
 (***************************************************************************/
-val votes = Acceptor fun { a =>
-           msgs.filter(mm => mm.type = "2b" and mm.acc = a)
-               .map(m => (m.bal, m.val))
+val votes = Acceptor fun { a ->
+           msgs.filter(mm -> mm.type = "2b" and mm.acc = a)
+               .map(m -> (m.bal, m.val))
 }
 /***************************************************************************)
 (* We now instantiate module Voting, substituting the constants Value,     *)
@@ -240,18 +240,18 @@ V == INSTANCE Voting
 (***************************************************************************/
 pred Inv = {
        & TypeOK
-       & Acceptor forall { a => if (maxVBal[a] = -1)
+       & Acceptor forall { a -> if (maxVBal[a] = -1)
                                 maxVal[a] = None
                                 else (maxVBal[a], maxVal[a]) in votes[a] }
-       & msgs forall { m =>
+       & msgs forall { m ->
              & (m.type = "1b") implies maxBal[m.acc] >= m.bal
                                        and ((m.mbal >= 0) implies
                                              (m.mbal, m.mval) in votes[m.acc])
              & (m.type = "2a") implies {
-                                   & Quorum exists { Q => 
+                                   & Quorum exists { Q -> 
                                          V!ShowsSafeAt(Q, m.bal, m.val)
                                      }
-                                   & msgs.forall( mm =>
+                                   & msgs.forall( mm ->
                                        (mm.type = "2a" and mm.bal = m.bal)
                                            implies mm.val = m.val)
                }

@@ -127,17 +127,17 @@ module scope. Operators may be recursive.
 
 ```
 // a constant operator
-let Nodes: Set(Int) = 1 to 10
+val Nodes: Set(Int) = 1 to 10
 
 // a two-argument operator that returns its first argument
-let fst(x, y): (a, b) => a = x
+def fst(x, y): (a, b) => a = x
 
 // the maximum operator
-let max(x, y) =
+def max(x, y) =
     if (x > y) x else y
 
 // a recursive operator
-let rec fact(n) = {
+def rec fact(n) = {
     if (n <= 1) n else n * fact(n - 1)
 }
 
@@ -154,7 +154,7 @@ private let lte(x, y) = {
 *Grammar:*
 
 ```
-[private] let [rec]
+[private] [val | def | def rec | pred | action | temporal]
     <identifier>[(<identifier>, ..., <identifier>)] [':' <type>] = <expr>
 ```
 
@@ -227,7 +227,7 @@ a_n` as follows:
 An anonymous operator of one argument is defined as:
 
 ```
-{ x => e }
+{ x -> e }
 ```
 
 Compare this to the TLA+2 syntax:
@@ -239,7 +239,7 @@ LAMBDA x: e
 An anonymous operator of `n` arguments is defined as:
 
 ```
-{ (x_1, ..., x_n) => e }
+{ (x_1, ..., x_n) -> e }
 ```
 
 Compare this to the TLA+2 syntax:
@@ -251,8 +251,8 @@ LAMBDA x_1, ..., x_n: e
 As is common, we can skip parameter names, if we don't need them:
 
 ```
-{ _ => e }
-{ (_, ..., _) => e }
+{ _ -> e }
+{ (_, ..., _) -> e }
 ```
 
 ## Boolean operators
@@ -320,23 +320,23 @@ S.minus(T)
 S subseteq T
 S.subseteq(T)
 // set comprehension (map): { e: x \in S }
-S map { x => e }
-S.map( x => e )
+S map { x -> e }
+S.map( x -> e )
 // set comprehension (filter): { x \in S: P }
-S filter { x => P }
-S.filter( x => P )
+S filter { x -> P }
+S.filter( x -> P )
 // set folding: you can write such a recursive operator in TLA+
-S fold init { (v, x) => e }
-S.fold(init, { (v, x) => e })
+S fold init { (v, x) -> e }
+S.fold(init, { (v, x) -> e })
 // \E x \in S: P
-S exists { x => P }
-S.exists( x => P )
+S exists { x -> P }
+S.exists( x -> P )
 // \A x \in S: P
-S forall { x => P }
-S.forall( x => P )
+S forall { x -> P }
+S.forall( x -> P )
 // CHOOSE x \in S: P
-S some { x => P }
-S.some( x => P )
+S some { x -> P }
+S.some( x -> P )
 // SUBSET S
 S power
 S.power
@@ -369,22 +369,22 @@ f[e]
 f domain
 f.domain
 // function constructor: [ x \in S |-> e ]
-S fun { x => e }
-S.fun( x => e )
+S fun { x -> e }
+S.fun( x -> e )
 // Define a recursive function. This is equivalent to the following TLA+ code
 // LET f[x \in S] == e IN f
-S recFun { x => e }
-S.recFun( x => e )
+S recFun { x -> e }
+S.recFun( x -> e )
 // a set of functions: [ S -> T ]
 S -> T
 // [f EXCEPT ![e1] = e2]
-f except e1 { _ => e2 }
-f.except(e1, { _ => e2 })
+f except e1 { _ -> e2 }
+f.except(e1, { _ -> e2 })
 // [f EXCEPT ![e1] = e2, ![e3] = e4]
-(f except e1 { _ => e2 }) except e3 { _ => e4 }
+(f except e1 { _ -> e2 }) except e3 { _ -> e4 }
 // [f EXCEPT ![e1] = @ + y]
-f except e1 { old => old + y }
-f.except(e1, { old => old + y })
+f except e1 { old -> old + y }
+f.except(e1, { old -> old + y })
 ```
 
 ## Records
@@ -462,15 +462,15 @@ s.slice(j, k)
 // SelectSeq(s, Test)
 s select Test
 // in particular, we can use anonymous operators
-s select { e => P }
+s select { e -> P }
 // Left fold. There is no standard operator for that in TLA+,
 // but you can define it with a recursive operator.
-s foldl init { (i, v) => e }
-s.foldl(init, { (i, v) => e })
+s foldl init { (i, v) -> e }
+s.foldl(init, { (i, v) -> e })
 // Right fold. There is no standard operator for that in TLA+,
 // but you can define it with a recursive operator.
-s foldr init { (i, v) => e }
-s.foldr(init, { (i, v) => e })
+s foldr init { (i, v) -> e }
+s.foldr(init, { (i, v) -> e })
 ```
 
 ## Integers
@@ -494,10 +494,11 @@ m <= n
 m < n
 m >= n
 m > n
-// as m..n in TLA+
-m to n
 Int
 Nat
+// as m..n in TLA+
+m to n
+m.to(n)
 ```
 
 ## Flow operators
