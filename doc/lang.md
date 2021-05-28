@@ -1,5 +1,11 @@
 # Summary of TNT
 
+*TNT is not TLA+*
+
+*TNT is TLA+ for baby programmers and their babies*
+
+*You can type TNT even of your CAPS LOCK is broken*
+
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
 
@@ -363,8 +369,8 @@ f[e]
 f domain
 f.domain
 // function constructor: [ x \in S |-> e ]
-S defFun { x => e }
-S.defFun( x => e )
+S fun { x => e }
+S.fun( x => e )
 // Define a recursive function. This is equivalent to the following TLA+ code
 // LET f[x \in S] == e IN f
 S recFun { x => e }

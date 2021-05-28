@@ -20,9 +20,9 @@ assume({
           }
 })
       
-let Ballot = Nat
+val Ballot = Nat
 
-let None = -1
+val None = -1
   /*************************************************************************
    * An unspecified value that is not a ballot number.                     *
    *************************************************************************/
@@ -32,7 +32,7 @@ let None = -1
  * Message of all possible messages.  The messages are explained below     *
  * with the actions that send them.                                        *
  ***************************************************************************/
-let Message =
+val Message =
         [type: {. "1a" .}, bal: Ballot]
            .union([type: {. "1b" .}, acc: Acceptor, bal: Ballot, 
                    mbal: Ballot union {. -1 .}, mval: Value union {. None. }])
@@ -65,7 +65,7 @@ var msgs: Set([type: Str, acc: Set(Str), bal: Int, mbal: Set(Int) mval: Set(Int)
 (* retransmitted if lost) to guarantee progress.                           *)
 (***************************************************************************/
 
-let vars = (maxBal, maxVBal, maxVal, msgs)
+val vars = (maxBal, maxVBal, maxVal, msgs)
   /************************************************************************* 
    * It is convenient to define some identifier to be the tuple of all     * 
    * variables.  I like to use the identifier `vars'.                      * 
@@ -74,14 +74,14 @@ let vars = (maxBal, maxVBal, maxVal, msgs)
 /***************************************************************************)
 (* The type invariant and initial predicate.                               *)
 (***************************************************************************/
-let TypeOK = {
+pred TypeOK = {
       maxBal in (Acceptor -> Ballot union {. -1 .})
     & maxVBal in (Acceptor -> Ballot union {. -1 .})
     & maxVal in (Acceptor -> Value union {. None .})
     & msgs subseteq Message
 }
 
-let Init = {
+action Init = {
       maxBal  := Acceptor defFun { _ => -1 }
     & maxVBal := Acceptor defFun { _ => -1 }
     & maxVal  := Acceptor defFun { _ => None }
@@ -92,7 +92,7 @@ let Init = {
 (* The actions.  We begin with the subaction (an action that will be used  *)
 (* to define the actions that make up the next-state action.               *)
 (***************************************************************************/
-let Send(m) = msgs := msgs union {. m .}
+action Send(m) = msgs := msgs union {. m .}
 
 
 /***************************************************************************)
@@ -101,7 +101,7 @@ let Send(m) = msgs := msgs union {. m .}
 (* Phase2a(b).  The Phase1a(b) action sends a phase 1a message (a message  *)
 (* m with m.type = "1a") that begins ballot b.                             *)
 (***************************************************************************/
-let Phase1a(b) = {
+action Phase1a(b) = {
     & Send([type -> "1a", bal -> b])
     & unchanged((maxBal, maxVBal, maxVal))
 }
@@ -112,7 +112,7 @@ let Phase1a(b) = {
 (* b and sends a phase 1b message to the leader containing the values of   *)
 (* maxVBal[a] and maxVal[a].                                               *)
 (***************************************************************************/
-let Phase1b(a) = {
+action Phase1b(a) = {
     & msgs exists { m => {
       & m.type = "1a"
       & m.bal > maxBal[a]
@@ -143,7 +143,7 @@ let Phase1b(a) = {
 (* can vote for v in ballot b, unless it has already set maxBal[a]         *)
 (* greater than b (thereby promising not to vote in ballot b).             *)
 (***************************************************************************/
-let Phase2a(b, v) = {
+action Phase2a(b, v) = {
   & not msgs.exists(m => m.type = "2a" and m.bal = b)
   & Quorum exists { Q =>
         let Q1b = msgs.filter(m => {
@@ -177,7 +177,7 @@ let Phase2a(b, v) = {
 (* phase 2b message announcing its vote.  It also sets maxBal[a] to the    *)
 (* message's.  ballot number                                               *)
 (***************************************************************************/
-let Phase2b(a) = msgs.exists( m => {
+action Phase2b(a) = msgs.exists( m => {
                               & m.type = "2a"
                               & m.bal >= maxBal[a]
                               & maxBal  := maxBal except a { _ => m.bal }
@@ -196,7 +196,7 @@ let Phase2b(a) = msgs.exists( m => {
 /***************************************************************************)
 (* Below are defined the next-state action and the complete spec.          *)
 (***************************************************************************/
-let Next = {
+action Next = {
         | Ballot.exists( b => {
                             | Phase1a(b)
                             | Value exists { v => Phase2a(b, v) }
@@ -204,7 +204,7 @@ let Next = {
         | Acceptor.exists(a => Phase1b(a) or Phase2b(a))
 }
 
-let Spec = Init and always(stutter(Next, vars))
+temporal Spec = Init and always(stutter(Next, vars))
 //----------------------------------------------------------------------------
 /***************************************************************************)
 (* We now define the refinement mapping under which this algorithm         *)
@@ -216,7 +216,7 @@ let Spec = Init and always(stutter(Next, vars))
 (* the array `votes' describing the votes cast by the acceptors is defined *)
 (* as follows.                                                             *)
 (***************************************************************************/
-let votes = Acceptor defFun { a =>
+val votes = Acceptor defFun { a =>
            msgs.filter(mm => mm.type = "2b" and mm.acc = a)
                .map(m => (m.bal, m.val))
 }
@@ -238,7 +238,7 @@ V == INSTANCE Voting
 (* Here is a first attempt at an inductive invariant used to prove this    *)
 (* theorem.                                                                *)
 (***************************************************************************/
-let Inv = {
+pred Inv = {
        & TypeOK
        & Acceptor forall { a => if (maxVBal[a] = -1)
                                 maxVal[a] = None
