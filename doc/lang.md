@@ -413,10 +413,14 @@ t._4
 t._50
 // S_1 \X S_2 \X ... \X S_n
 // if you need a dimension larger than 5, use Set.map
-S_1 prod S_2
-S_1 prod2 S_2 S_3
-S_1 prod3 S_2 S_3 S_4
-S_1 prod4 S_2 S_3 S_4 S_5
+S_1 X S_2
+S_1.X(S_2)
+S_1 XX S_2 S_3
+S_1.XX(S_2, S_3)
+S_1 XXX S_2 S_3 S_4
+S_1.XXX(S_2, S_3, S_4)
+S_1 XXXX S_2 S_3 S_4 S_5
+S_1.XXXX(S_2, S_3, S_4, S_5)
 ```
 
 What about `DOMAIN t` on tuples? We don't think it makes sense to have it.
