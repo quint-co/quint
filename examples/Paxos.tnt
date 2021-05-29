@@ -7,11 +7,11 @@ module Paxos {
  * The constant parameters and the set Ballots are the same as in Voting.  *
  ***************************************************************************/
 
-const Value: set(int)
+const Value: Set(Int)
 
-const Acceptor: set(str)
+const Acceptor: Set(Str)
 
-const Quorum: set(set(str))
+const Quorum: Set(Set(Str))
 
 assume({
         & Quorum forall { Q -> Q subseteq Acceptor }
@@ -36,8 +36,8 @@ val Message =
         [type: set("1a"), bal: Ballot]
            .union([type: set("1b"), acc: Acceptor, bal: Ballot, 
                    mbal: Ballot union set(-1), mval: Value union set(None)])
-           .union([type: set("2a"), bal: Ballot, val: Value])
-           .union([type: set("2b"), acc: Acceptor, bal: Ballot, val: Value])
+           .union([type: set("2a"), bal: Ballot, value: Value])
+           .union([type: set("2b"), acc: Acceptor, bal: Ballot, value: Value])
 //-----------------------------------------------------------------------------
 
 var maxBal: Int
@@ -45,8 +45,8 @@ var maxVBal: Str -> Int // <<maxVBal[a], maxVal[a]>> is the vote with the larges
 var maxVal: Str -> Int  // ballot number cast by a; it equals <<-1, None>> if
                         // a has not cast any vote.
 
-type Msgs =
-    set([type: str, acc: set(str), bal: int, mbal: set(int), mval: set(int)])
+typedef Msgs =
+    set([type: Str, acc: Set(Str), bal: Int, mbal: Set(Int), mval: Set(Int)])
 
 var msgs: Msgs // The set of all messages that have been sent.
 
@@ -184,9 +184,9 @@ action Phase2b(a) = msgs.exists( m -> {
                               & m.bal >= maxBal[a]
                               & maxBal  := maxBal  except a { _ -> m.bal }
                               & maxVBal := maxVBal except a { _ -> m.bal }
-                              & maxVal  := maxVal  except a { _ -> m.val }
+                              & maxVal  := maxVal  except a { _ -> m.value }
                               & Send([type -> "2b", acc -> a,
-                                      bal -> m.bal, val -> m.val])
+                                      bal -> m.bal, val -> m.value])
 })
 
 /***************************************************************************)
@@ -220,7 +220,7 @@ temporal Spec = Init and always(stutter(Next, vars))
 (***************************************************************************/
 val votes = Acceptor fun { a ->
            msgs.filter(mm -> mm.type = "2b" and mm.acc = a)
-               .map(m -> (m.bal, m.val))
+               .map(m -> (m.bal, m.value))
 }
 /***************************************************************************)
 (* We now instantiate module Voting, substituting the constants Value,     *)
@@ -250,11 +250,11 @@ pred Inv = {
                                              (m.mbal, m.mval) in votes[m.acc])
              & (m.type = "2a") implies {
                                    & Quorum exists { Q -> 
-                                         V!ShowsSafeAt(Q, m.bal, m.val)
+                                         V!ShowsSafeAt(Q, m.bal, m.value)
                                      }
                                    & msgs.forall(mm ->
                                        (mm.type = "2a" and mm.bal = m.bal)
-                                           implies mm.val = m.val)
+                                           implies mm.value = m.value)
                }
          }
        & V.Inv
