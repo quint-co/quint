@@ -141,10 +141,10 @@ def rec fact(n) = {
 }
 
 // a higher-order operator that accepts another operator as its first argument
-let F(G, x): (a => b, a) => b = G(x)
+def F(G, x): (a => b, a) => b = G(x)
 
 // an operator that is invisible outside the module
-private let lte(x, y) = {
+private def lte(x, y) = {
     x <= y
 }
 ```
@@ -385,8 +385,8 @@ S.forall( x -> P )
 S some { x -> P }
 S.some( x -> P )
 // SUBSET S
-S power
-S.power
+S powerset
+S.powerset
 // UNION S
 S flatten
 S.flatten
@@ -464,6 +464,15 @@ t._3
 t._4
 ...
 t._50
+// \A x_1 \in S_1, x_2 \in S_2, ..., x_n \in S_n: P
+(S_1, S_2, ..., S_n) forall { (x_1, x_2, ..., x_n) -> P }
+// \E x_1 \in S_1, x_2 \in S_2, ..., x_n \in S_n: P
+(S_1, S_2, ..., S_n) exists { (x_1, x_2, ..., x_n) -> P }
+// { e: x_1 \in S_1, x_2 \in S_2, ..., x_n \in S_n }
+(S_1, S_2, ..., S_n) map { (x_1, x_2, ..., x_n) -> e }
+// { x_1 \in S_1, x_2 \in S_2, ..., x_n \in S_n: P }
+(S_1, S_2, ..., S_n) filter { (x_1, x_2, ..., x_n) -> P }
+// Cartesian product. If you can, use the above forms.
 // S_1 \X S_2 \X ... \X S_n
 // if you need a dimension larger than 5, use Set.map
 S_1 X S_2
@@ -579,8 +588,6 @@ case {
 }
 ```
 
-The first occurence of `|` is optional. Choose according to your taste.
-
 Compare it to TLA+:
 
 ```tla
@@ -602,8 +609,6 @@ case {
   | _   -> e
 }
 ```
-
-The first occurence of `|` is optional. Choose according to your taste.
 
 Compare it to TLA+:
 
@@ -671,7 +676,6 @@ in
 
 This is equivalent to `p_1.or(p_2).or( ... or(p_n)...)`. The indentation is not
 important.  However, you can produce nice indentation by hand, if you like.
-The first occurence of `|` is optional. Choose according to your taste.
 
 ### Multiline conjunctions
 
@@ -686,7 +690,6 @@ The first occurence of `|` is optional. Choose according to your taste.
 
 This is equivalent to `p_1.and(p_2.and( ... and(p_n)...)`. The indentation is not
 important.  However, you can produce nice indentation by hand, if you like.
-The first occurence of `&` is optional. Choose according to your taste.
 
 ## Action operators
 

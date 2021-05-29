@@ -14,7 +14,7 @@ const Quorum: Set(Set(Str))     // The set of "quorums", where a quorum" is a
 (***************************************************************************/
 assume({
     & Quorum forall { Q -> Q subseteq Acceptor }
-    & Quorum X Quorum { (Q1, Q2) -> Q1 intersect Q2 <> set() }
+    & (Quorum X Quorum) forall { (Q1, Q2) -> Q1.intersect(Q2) <> set() }
 })
 
 // theorems are not supported by TNT, use TLA+ syntax
@@ -49,7 +49,7 @@ var maxBal: Str -> Int
 (***************************************************************************/
 pred TypeOK = {
     & votes in (Acceptor -> (Ballot X Value).powerset)
-    & maxBal \in (Acceptor -> Ballot union set(-1))
+    & maxBal in (Acceptor -> Ballot union set(-1))
 }
 //-----------------------------------------------------------------------------
 /***************************************************************************)
@@ -94,7 +94,7 @@ pred NoneOtherChoosableAt(b, v) =
   (* for any w # v.                                                        *)
   (*************************************************************************/
 
-pred SafeAt(b, v) = 0.to(b-1).forall { c -> NoneOtherChoosableAt(c, v) }
+pred SafeAt(b, v) = 0.to(b - 1).forall { c -> NoneOtherChoosableAt(c, v) }
   /*************************************************************************)
   (* If this is true, then no value other than v has been or can ever be   *)
   (* chosen in any ballot numbered less than b.                            *)
@@ -109,17 +109,17 @@ THEOREM ChoosableThm ==
  */             
 //-----------------------------------------------------------------------------
 pred VotesSafe =
-    Acceptor.XX(Ballot, Value) forall { (a, b, v) ->
+    (Acceptor, Ballot, Value) forall { (a, b, v) ->
                  VotedFor(a, b, v) implies SafeAt(b, v)
     }
 
 pred OneVote =
-    Acceptor.XXX(Ballot, Value, Value) forall { (a, b, v, w) ->
+    (Acceptor, Ballot, Value, Value) forall { (a, b, v, w) ->
               VotedFor(a, b, v) and VotedFor(a, b, w) implies (v = w)
     }
 
 pred OneValuePerBallot =
-    Acceptor.XXXX(Acceptor, Ballot, Value, Value) forall { (a1, a2, b, v1, v2) ->
+    (Acceptor, Acceptor, Ballot, Value, Value) forall { (a1, a2, b, v1, v2) ->
        VotedFor(a1, b, v1) and VotedFor(a2, b, v2) implies (v1 = v2)
     }
 //-----------------------------------------------------------------------------
@@ -138,7 +138,7 @@ pred ShowsSafeAt(Q, b, v) = {
   & Q forall { a -> maxBal[a] >= b }
   & -1.to(b - 1).exists(c -> {
         & (c <> -1) implies Q.exists(a -> VotedFor(a, c, v))
-        & (c+1).to(b-1) forall { d -> Q forall { a -> DidNotVoteAt(a, d) } }
+        & (c + 1).to(b - 1) forall { d -> Q forall { a -> DidNotVoteAt(a, d) } }
       }
     )
 }
@@ -181,7 +181,7 @@ action IncreaseMaxBal(a, b) = {
 (* VotesSafe.                                                              *)
 (***************************************************************************/
 action VoteFor(a, b, v) = {
-    & maxBal[a] \leq b
+    & maxBal[a] <= b
     & votes[a] forall { vt -> vt[1] <> b }
     & Acceptor.minus(set(a)) forall { c ->
          votes[c] forall { vt -> (vt[1] = b) implies (vt[2] = v) }
@@ -196,7 +196,7 @@ action VoteFor(a, b, v) = {
 (* The next-state action and the invariant.                                *)
 (***************************************************************************/
 action Next =
-    Acceptor.X(Ballot) exists { (a, b) -> {
+    (Acceptor X Ballot) exists { (a, b) -> {
             & IncreaseMaxBal(a, b)
             & Value exists { v -> VoteFor(a, b, v) }
         }
