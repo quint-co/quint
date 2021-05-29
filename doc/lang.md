@@ -14,7 +14,6 @@ TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
 Identifiers are exactly like in TLA+:
 
 ```
-// A TLA+ identifier, must be different from the above keywords.
 identifier ::=
     <string matching regex [a-zA-Z_]([a-zA-Z0-9_])*>
 ```
@@ -154,7 +153,7 @@ private let lte(x, y) = {
 *Grammar:*
 
 ```
-[private] [val | def | def rec | pred | action | temporal]
+[private] (val | def | def rec | pred | action | temporal)
     <identifier>[(<identifier>, ..., <identifier>)] [':' <type>] = <expr>
 ```
 
@@ -165,7 +164,47 @@ However, you can introduce a recursive function with the set operator `recFun`.
 
 ### Module instances
 
-TODO. Either we keep it as in TLA+, or do something more ergonomical.
+In the initial version, we keep instances as in TLA+. In the future, we may
+change this operator.
+
+
+A named instance is defined as:
+
+```scala
+instance <identifier> = <identifier>
+  [with <identifier> "<-" <identifier> ("," <identifier> "<-" <identifier>)*]
+```
+
+*Example:*
+
+```scala
+// an instance of Voting that has the name "V"
+instance V = Voting with Values <- set(0, 1)
+
+// the names in V are accessed via "."
+val MyValues = V.Values
+```
+
+An anonymous instance is defined as:
+
+```scala
+[private] instance _ = <identifier>
+  [with <identifier> "<-" <identifier> ("," <identifier> "<-" <identifier>)*]
+```
+
+*Example:*
+
+```scala
+// an instance of Voting whose definitions are added in the module namespace
+instance _ = Voting with Values <- set(0, 1)
+```
+
+An anonymous instance may be private, which corresponds to `LOCAL INSTANCE` in
+TLA+.
+
+We do not allow for instances with parameters. They are rarely used. They are
+mainly needed for proofs of refinement. In this case, you would be better of
+with TLA+ and TLAPS.
 
 ### Theorems
 
@@ -204,7 +243,7 @@ String literals are written as follows:
 "hello, world!"
 ```
 
-## Basic operators
+## Basics
 
 Every expression can be wrapped with `{` and `}`. For instance:
 
@@ -213,7 +252,10 @@ Every expression can be wrapped with `{` and `}`. For instance:
 ```
 
 The braces `{` and `}` **do not introduce a set**. For the set notation,
-see `{.` and `.}`.
+see `set(...)`.
+
+Similar to `{` and `}`, you can always wrap an expression with `(` and `)`,
+e.g., `(1 + 3)`.  It is up to you.
 
 A user-defined operator `foo(p_1, ..., p_n)` is applied to arguments `a_1, ...,
 a_n` as follows:
@@ -284,15 +326,20 @@ e1 != e2
 
 ## Sets
 
+### Set constructor
+
 One way to construct a set is by enumerating its elements:
 
 ```scala
-{. e_1, ..., e_n .}
+set(e_1, ..., e_n)
 ```
 
-This is similar to `{ e_1, ..., e_n }` in TLA+. However, we prefer not to
-sacrifice `{...}` for this only operator. That is why a set is surrounded with
-`{.` and  `.}` in TNT. In practice, this operator is not used often.
+This is exactly as `{ e_1, ..., e_n }` in TLA+. However, we prefer not to
+sacrifice `{...}` for this only operator. That is why a set is constructed with
+`set(...)` in TNT. In practice, this operator does not appear too often, so our
+notation would not distract you too much.
+
+### Other set operators
 
 The other operators are introduced and explained in code directly:
 
@@ -436,8 +483,12 @@ the new field.
 
 ## Sequences
 
+In contrast to TLA+, there is no special module for sequences. They are built
+in the kernel of TNT. A parser can compute, whether operators on sequences are
+used in the spec.
+
 ```scala
-// sequence constructor: <<e_1, ..., e_n>>
+// sequence constructor: <<e_1, ..., e_n>> (which is also a tuple in TLA+)
 [ e_1, ..., e_n ]
 // append at the sequence tail: Append(s, e)
 s append e
@@ -475,8 +526,9 @@ s.foldr(init, { (i, v) -> e })
 
 ## Integers
 
-In contrast to TLA+, there is no special module for Integers. They are built in
-the kernel of TNT. Also, there is no module `Naturals`.
+In contrast to TLA+, there is no special module for integers. They are built in
+the kernel of TNT. The module `Naturals` does not exist either. A parser can
+compute, whether integer operators are used in the spec.
 
 Moreover, there is no module `Reals`. If you really need `Reals`, most likely,
 you should switch directly to TLA+.
@@ -489,11 +541,10 @@ m * n
 m / n
 m % n
 m^n
-m to n
-m <= n
 m < n
-m >= n
 m > n
+m <= n
+m >= n
 Int
 Nat
 // as m..n in TLA+
@@ -567,27 +618,41 @@ CASE
 
 ### Nested operators
 
-There is not much to say here. They are almost identical to the top-level operators,
-except that they are always private.
+There is not much to say here. They are almost identical to the top-level
+operators, except that they are always private.
 
-*Example:*
+*Examples:*
 
 ```scala
-// a nested operator
-let plus(a, b) = { a + b } in
-plus(3, 4)
+def double(x) =
+    // a nested operator
+    def plus(a, b) = a + b
+    in
+    plus(x, x)
 
-// a nested recursive operator
-let rec nat_plus(a, b) =
-    if (b <= 0) a else 1 + nat_plus(a, b - 1)
-in
-nat_plus(3, 4)
+def plus_inductive(x, y) =
+    // a nested recursive operator. You don't have to add numbers like this though.
+    def rec nat_plus(a, b) =
+        if (b <= 0) a else 1 + nat_plus(a, b - 1)
+    in
+    nat_plus(x, y)
+
+def pow4(x) =
+    // a nested
+    val x2 = x * x
+    in
+    x2 * x2
+
+temporal my_prop =
+    temporal A = eventually(x > 3) in
+    temporal B = always(eventually(y = 0)) in
+    A implies B
 ```
 
 *Grammar:*
 
 ```
-let [rec]
+(val | def | def rec | pred | action | temporal)
   <identifier>[(<identifier>, ..., <identifier>)] [':' <type>] = <expr>
 in
 <expr>
@@ -635,7 +700,7 @@ exactly once in every step.
 x := e
 ```
 
-This operator is similar to `x' = e` under specific conditions.
+This operator is equivalent to `x' = e` of TLA+ under specific conditions.
 
 ### Unchanged
 
@@ -664,12 +729,39 @@ nostutter(A, x)
 
 As in case of `unchanged`, you can pass a tuple of names.
 
+### Primes
+
+Explicit use of primes in actions is discouraged in TNT. You should use `:=`,
+wherever possible. However, we have added primes to the language for
+completeness. Otherwise, we would not be able to translate TLA+ to TNT and
+back. The operator prime is written as follows:
+
+```scala
+  next(e)
+```
+
+It is equivalent to `e'` of TLA+. More precisely, if `f` is the translation of
+a TNT expression `e` to TLA+, then `f'` is the translation of `e'` to TLA+.
+
+### Enabled
+
+Explicit use of `enabled` in actions is discouraged in TNT. However, we have added
+this operator to the language for completeness. Otherwise, we would not be able to
+translate TLA+ to TNT. This operator is written as follows:
+
+```scala
+  enabled(A)
+```
+
+It is equivalent to `ENABLED A` of TLA+. More precisely, if `B` is the
+translation of a TNT expression `A` to TLA+, then `ENABLED B` is the
+translation of `enabled(A)` to TLA+.
+
 ### Other action operators
 
-  - Primes: There are no primes, so you cannot write `e'`
-  - Enabled: As there are no primes, there is no `ENABLED A`.
-  - Composition: There is no composition `A \cdot B`.
-    We can add it later, if you have a use-case for it.
+There is no equivalent of the composition operators `A \cdot B`. It is no
+supported by TLC, so the chance that you will needed is very low. We can add
+it later, if you have a use-case for it.
 
 ## Temporal operators
 
@@ -714,7 +806,7 @@ We omit `A \leadsto B`, as it can be written as:
 always(A implies eventually(B))
 ```
 
-TLA+ contains an interesting operator `guarantees`, that is written as `F -+-> G`.
+TLA+ contains an interesting operator "guarantees", that is written as `F -+-> G`.
 For completeness, we introduce its syntactic version in TNT:
 
 ```

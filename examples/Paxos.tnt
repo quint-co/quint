@@ -7,16 +7,16 @@ module Paxos {
  * The constant parameters and the set Ballots are the same as in Voting.  *
  ***************************************************************************/
 
-const Value: Set(Int)
+const Value: set(int)
 
-const Acceptor: Set(Str)
+const Acceptor: set(str)
 
-const Quorum: Set(Set(Str))
+const Quorum: set(set(str))
 
 assume({
         & Quorum forall { Q -> Q subseteq Acceptor }
         & (Quorum X Quorum) forall {
-            (Q1, Q2) -> Q1 intersect Q2 <> {. .}
+            (Q1, Q2) -> Q1 intersect Q2 <> set()
           }
 })
       
@@ -33,19 +33,22 @@ val None = -1
  * with the actions that send them.                                        *
  ***************************************************************************/
 val Message =
-        [type: {. "1a" .}, bal: Ballot]
-           .union([type: {. "1b" .}, acc: Acceptor, bal: Ballot, 
-                   mbal: Ballot union {. -1 .}, mval: Value union {. None. }])
-           .union([type: {. "2a" .}, bal: Ballot, val: Value])
-           .union([type: {. "2b" .}, acc: Acceptor, bal: Ballot, val: Value])
+        [type: set("1a"), bal: Ballot]
+           .union([type: set("1b"), acc: Acceptor, bal: Ballot, 
+                   mbal: Ballot union set(-1), mval: Value union set(None)])
+           .union([type: set("2a"), bal: Ballot, val: Value])
+           .union([type: set("2b"), acc: Acceptor, bal: Ballot, val: Value])
 //-----------------------------------------------------------------------------
 
 var maxBal: Int
 var maxVBal: Str -> Int // <<maxVBal[a], maxVal[a]>> is the vote with the largest
 var maxVal: Str -> Int  // ballot number cast by a; it equals <<-1, None>> if
                         // a has not cast any vote.
-var msgs: Set([type: Str, acc: Set(Str), bal: Int, mbal: Set(Int) mval: Set(Int)])
-                        // The set of all messages that have been sent.
+
+type Msgs =
+    set([type: str, acc: set(str), bal: int, mbal: set(int), mval: set(int)])
+
+var msgs: Msgs // The set of all messages that have been sent.
 
 /***************************************************************************)
 (* NOTE:                                                                   *)
@@ -75,25 +78,24 @@ val vars = (maxBal, maxVBal, maxVal, msgs)
 (* The type invariant and initial predicate.                               *)
 (***************************************************************************/
 pred TypeOK = {
-      maxBal in (Acceptor -> Ballot union {. -1 .})
-    & maxVBal in (Acceptor -> Ballot union {. -1 .})
-    & maxVal in (Acceptor -> Value union {. None .})
+    & maxBal in (Acceptor -> Ballot union set(-1))
+    & maxVBal in (Acceptor -> Ballot union set(-1))
+    & maxVal in (Acceptor -> Value union set(None))
     & msgs subseteq Message
 }
 
 action Init = {
-      maxBal  := Acceptor fun { _ -> -1 }
+    & maxBal  := Acceptor fun { _ -> -1 }
     & maxVBal := Acceptor fun { _ -> -1 }
     & maxVal  := Acceptor fun { _ -> None }
-    & msgs    := {. .}
+    & msgs    := set()
 }
 
 /***************************************************************************)
 (* The actions.  We begin with the subaction (an action that will be used  *)
 (* to define the actions that make up the next-state action.               *)
 (***************************************************************************/
-action Send(m) = msgs := msgs union {. m .}
-
+action Send(m) = msgs := msgs union set(m)
 
 /***************************************************************************)
 (* In an implementation, there will be a leader process that orchestrates  *)
@@ -146,21 +148,21 @@ action Phase1b(a) = {
 action Phase2a(b, v) = {
   & not msgs.exists(m -> m.type = "2a" and m.bal = b)
   & Quorum exists { Q ->
-        let Q1b = msgs.filter(m -> {
+        val Q1b = msgs.filter(m -> {
                             & m.type = "1b"
                             & m.acc in Q
                             & m.bal = b
                             })
         in
-        let Q1bv = Q1b.filter(m -> m.mbal >= 0)
+        val Q1bv = Q1b.filter(m -> m.mbal >= 0)
         in {
             & Q.forall(a -> Q1B.exists(m -> m.acc = a))
             & {
-                | Q1bv = {. .}
-                | Q1bv exists { m -> {
+                | Q1bv = set(1, 2, 3)
+                | Q1bv.exists(m -> {
                     & m.mval = v
                     & Q1bv forall { mm -> m.mbal >= mm.mbal }
-                  }}
+                  })
               }
         }
     }
@@ -228,8 +230,7 @@ val votes = Acceptor fun { a ->
 (* variables of module Voting.                                             *)
 (***************************************************************************/
 
-// there is no syntax for instance in TNT yet, so we keep it as is for now
-V == INSTANCE Voting 
+instance V = Voting 
 
 // Like theorems? Then you should definitely go straight for TLA+
 // THEOREM Spec => V!Spec
@@ -251,12 +252,12 @@ pred Inv = {
                                    & Quorum exists { Q -> 
                                          V!ShowsSafeAt(Q, m.bal, m.val)
                                      }
-                                   & msgs.forall( mm ->
+                                   & msgs.forall(mm ->
                                        (mm.type = "2a" and mm.bal = m.bal)
                                            implies mm.val = m.val)
                }
          }
-       & V!Inv
+       & V.Inv
 }
 
 end
