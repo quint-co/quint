@@ -12,10 +12,10 @@ const Quorum: Set(Set(Str))     // The set of "quorums", where a quorum" is a
 /***************************************************************************)
 (* Here are the assumptions we make about quorums.                         *)
 (***************************************************************************/
-assume({
+assume QuorumAssumption = {
     & Quorum forall { Q -> Q subseteq Acceptor }
     & (Quorum X Quorum) forall { (Q1, Q2) -> Q1.intersect(Q2) <> set() }
-})
+}
 
 // theorems are not supported by TNT, use TLA+ syntax
 //THEOREM QuorumNonEmpty == \A Q \in Quorum : Q # {}
@@ -109,17 +109,17 @@ THEOREM ChoosableThm ==
  */             
 //-----------------------------------------------------------------------------
 pred VotesSafe =
-    (Acceptor, Ballot, Value) forall { (a, b, v) ->
+    (Acceptor, Ballot, Value).prod forall { (a, b, v) ->
                  VotedFor(a, b, v) implies SafeAt(b, v)
     }
 
 pred OneVote =
-    (Acceptor, Ballot, Value, Value) forall { (a, b, v, w) ->
+    (Acceptor, Ballot, Value, Value).prod forall { (a, b, v, w) ->
               VotedFor(a, b, v) and VotedFor(a, b, w) implies (v = w)
     }
 
 pred OneValuePerBallot =
-    (Acceptor, Acceptor, Ballot, Value, Value) forall { (a1, a2, b, v1, v2) ->
+    (Acceptor, Acceptor, Ballot, Value, Value).prod forall { (a1, a2, b, v1, v2) ->
        VotedFor(a1, b, v1) and VotedFor(a2, b, v2) implies (v1 = v2)
     }
 //-----------------------------------------------------------------------------

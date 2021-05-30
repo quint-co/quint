@@ -13,12 +13,12 @@ const Acceptor: Set(Str)
 
 const Quorum: Set(Set(Str))
 
-assume({
+assume _ = {
         & Quorum forall { Q -> Q subseteq Acceptor }
         & (Quorum X Quorum) forall {
             (Q1, Q2) -> Q1 intersect Q2 <> set()
           }
-})
+}
       
 val Ballot = Nat
 
@@ -241,21 +241,22 @@ instance V = Voting
 (***************************************************************************/
 pred Inv = {
        & TypeOK
-       & Acceptor forall { a -> if (maxVBal[a] = -1)
-                                maxVal[a] = None
-                                else (maxVBal[a], maxVal[a]) in votes[a] }
+       & Acceptor forall { a ->
+           if (maxVBal[a] = -1)
+           maxVal[a] = None
+           else (maxVBal[a], maxVal[a]) in votes[a]
+         }
        & msgs forall { m ->
-             & (m.type = "1b") implies (maxBal[m.acc] >= m.bal
-                                        and ((m.mbal >= 0) implies
-                                             (m.mbal, m.mval) in votes[m.acc]))
-             & (m.type = "2a") implies {
-                                   & Quorum exists { Q -> 
-                                         V!ShowsSafeAt(Q, m.bal, m.value)
-                                     }
-                                   & msgs forall { mm ->
-                                       (mm.type = "2a" and mm.bal = m.bal)
-                                           implies mm.value = m.value
-                                     }
+         & (m.type = "1b") implies (maxBal[m.acc] >= m.bal
+                                    and ((m.mbal >= 0)
+                                          implies
+                                          (m.mbal, m.mval) in votes[m.acc]))
+         & (m.type = "2a") implies {
+               & Quorum exists { Q -> V!ShowsSafeAt(Q, m.bal, m.value) }
+               & msgs forall { mm ->
+                   (mm.type = "2a" and mm.bal = m.bal)
+                       implies mm.value = m.value
+                 }
                }
          }
        & V.Inv

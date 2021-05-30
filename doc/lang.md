@@ -90,15 +90,33 @@ Introduce a single constant parameter (rigid variable in TLA+)
 
 ### Assumptions
 
-Given a constant predicate `P`, the assumption `P` over the constants can be
-written as follows:
+Given a constant predicate `P` and a name, we can write an assumption `P` over the
+constants that is associated with this name. For example:
+
+*Example*:
 
 ```
-assume(P)
+assume AtLeast4 = N >= 4
 ```
 
-TODO: Assumptions stand out in TLA+. Perhaps, we should introduce them
-somewhere else.
+This is exactly the same as the following assumption in TLA+:
+
+```tla
+ASSUME AtLeast4 == N >= 4
+```
+
+*Grammar:*
+
+```
+assume <identifier> = <expr>
+```
+
+Similar to TLA+, you can have an anonymous assumption, by simply using `_` for
+the name:
+
+```tla
+assume _ = Proc.card > 0
+```
 
 ### Variable definition
 
@@ -464,25 +482,11 @@ t._3
 t._4
 ...
 t._50
-// \A x_1 \in S_1, x_2 \in S_2, ..., x_n \in S_n: P
-(S_1, S_2, ..., S_n) forall { (x_1, x_2, ..., x_n) -> P }
-// \E x_1 \in S_1, x_2 \in S_2, ..., x_n \in S_n: P
-(S_1, S_2, ..., S_n) exists { (x_1, x_2, ..., x_n) -> P }
-// { e: x_1 \in S_1, x_2 \in S_2, ..., x_n \in S_n }
-(S_1, S_2, ..., S_n) map { (x_1, x_2, ..., x_n) -> e }
-// { x_1 \in S_1, x_2 \in S_2, ..., x_n \in S_n: P }
-(S_1, S_2, ..., S_n) filter { (x_1, x_2, ..., x_n) -> P }
-// Cartesian product. If you can, use the above forms.
-// S_1 \X S_2 \X ... \X S_n
-// if you need a dimension larger than 5, use Set.map
+// Cartesian products
+// S_1 \X S_2
 S_1 X S_2
-S_1.X(S_2)
-S_1 XX S_2 S_3
-S_1.XX(S_2, S_3)
-S_1 XXX S_2 S_3 S_4
-S_1.XXX(S_2, S_3, S_4)
-S_1 XXXX S_2 S_3 S_4 S_5
-S_1.XXXX(S_2, S_3, S_4, S_5)
+// S_1 \X S_2 \X ... \X S_n
+(S_1, S_2, ..., S_n).prod
 ```
 
 What about `DOMAIN t` on tuples? We don't think it makes sense to have it.
@@ -503,7 +507,8 @@ used in the spec.
 s append e
 s.append(e)
 // concatenate sequences: s \circ t
-s ++ t
+s concat t
+s.concat(t)
 // sequence head: Head(s)
 s head
 s.head
@@ -513,9 +518,12 @@ s.tail
 // sequence length: Len(s)
 s length
 s.length
-// sequence element at nth position (starting with 0): equivalent to s[i - 1] in TLA+
+// sequence element at nth position (starting with 1): equivalent to s[i] in TLA+
 s nth i
 s.nth(i)
+// the set of sequence indices (starting with 1): DOMAIN s
+s indices
+s.indices
 // SubSeq(s, j, k)
 s slice j k
 s.slice(j, k)
@@ -549,7 +557,7 @@ m * n
 // integer division, as \div in TLA+
 m / n
 m % n
-m^n
+m ^ n
 m < n
 m > n
 m <= n
@@ -632,25 +640,26 @@ operators, except that they are always private.
 def double(x) =
     // a nested operator
     def plus(a, b) = a + b
-    in
+
     plus(x, x)
 
 def plus_inductive(x, y) =
     // a nested recursive operator. You don't have to add numbers like this though.
     def rec nat_plus(a, b) =
         if (b <= 0) a else 1 + nat_plus(a, b - 1)
-    in
+
     nat_plus(x, y)
 
 def pow4(x) =
     // a nested
     val x2 = x * x
-    in
+
     x2 * x2
 
 temporal my_prop =
-    temporal A = eventually(x > 3) in
-    temporal B = always(eventually(y = 0)) in
+    temporal A = eventually(x > 3)
+    temporal B = always(eventually(y = 0))
+
     A implies B
 ```
 
@@ -659,7 +668,7 @@ temporal my_prop =
 ```
 (val | def | def rec | pred | action | temporal)
   <identifier>[(<identifier>, ..., <identifier>)] [':' <type>] = <expr>
-in
+
 <expr>
 ```
 
