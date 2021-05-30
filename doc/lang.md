@@ -2,10 +2,6 @@
 
 *TNT is not TLA+*
 
-*TNT is TLA+ for baby programmers and their babies*
-
-*You can type TNT even of your CAPS LOCK is broken*
-
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
 
@@ -221,7 +217,7 @@ An anonymous instance may be private, which corresponds to `LOCAL INSTANCE` in
 TLA+.
 
 We do not allow for instances with parameters. They are rarely used. They are
-mainly needed for proofs of refinement. In this case, you would be better of
+mainly needed for proofs of refinement. In this case, you would be better off
 with TLA+ and TLAPS.
 
 ### Theorems
@@ -818,14 +814,14 @@ We omit `A \leadsto B`, as it can be written as:
 always(A implies eventually(B))
 ```
 
-TLA+ contains an interesting operator "guarantees", that is written as `F -+-> G`.
+TLA+ contains an interesting operator "guarantees", that is written as `A -+-> B`.
 For completeness, we introduce its syntactic version in TNT:
 
 ```
-guarantees(F, G)
+guarantees(A, B)
 ```
 
 The operators `\EE` and `\AA` are almost never used, so there are no
-equivalents in TNT. If you have reached this level, you should really use TLA+
-directly.
+equivalents in TNT. If you have reached this level, you should (automatically)
+translate your TNT spec into TLA+ and use your tools, e.g., TLAPS.
 
