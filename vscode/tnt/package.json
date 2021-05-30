@@ -1,0 +1,25 @@
+{
+    "name": "tnt",
+    "displayName": "TNT is not TLA+",
+    "description": "Extension for TNT",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.56.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "tnt",
+            "aliases": ["TNT", "tnt"],
+            "extensions": [".tnt",".TNT"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "tnt",
+            "scopeName": "source.tnt",
+            "path": "./syntaxes/tnt.tmLanguage.json"
+        }]
+    }
+}
