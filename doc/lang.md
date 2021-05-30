@@ -701,14 +701,16 @@ important.  However, you can produce nice indentation by hand, if you like.
 ### Single static assignment
 
 This operator is carefully avoided in TLA+. TNT allows you to assign a value to
-the state variable `x` in a next state. Every state variable must be assigned
-exactly once in every step.
+the state variable `x` in a next state.
 
 ```scala
 x := e
 ```
 
 This operator is equivalent to `x' = e` of TLA+ under specific conditions.
+
+*Every state variable `x` must be assigned exactly once in every step:
+Either via `x := e`, or via `unchanged(x)` (see below).*
 
 ### Unchanged
 
@@ -739,10 +741,10 @@ As in case of `unchanged`, you can pass a tuple of names.
 
 ### Primes
 
-Explicit use of primes in actions is discouraged in TNT. You should use `:=`,
-wherever possible. However, we have added primes to the language for
-completeness. Otherwise, we would not be able to translate TLA+ to TNT and
-back. The operator prime is written as follows:
+Explicit use of primes in actions is discouraged in TNT. You should use `:=`
+and `unchanged`, wherever possible. However, we have added primes to the
+language for completeness. Otherwise, we would not be able to translate TLA+ to
+TNT and back. The operator prime is written as follows:
 
 ```scala
   next(e)
