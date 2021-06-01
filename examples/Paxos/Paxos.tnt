@@ -125,9 +125,9 @@ action Phase1a(b) = {
 (* maxVBal[a] and maxVal[a].                                               *)
 (***************************************************************************/
 action Phase1b(a) = {
-    & msgs.filter(m -> m.type = "1a") exists { m -> {
+    & msgs.filter(m -> m.type = "1a") guess { m -> {
       & m.bal > maxBal[a]
-      & maxBal := maxBal except a { _ -> m.bal }
+      & maxBal := maxBal.except(a, m.bal)
       & Send([type -> "1b", acc -> a, bal -> m.bal, 
               mbal -> maxVBal[a], mval -> maxVal[a]])
       }}
@@ -192,9 +192,9 @@ action Phase2a(b, v) = {
 action Phase2b(a) = msgs.filter(m -> m.type = "2a")
                         .exists( m -> {
                               & m.bal >= maxBal[a]
-                              & maxBal  := maxBal  except a { _ -> m.bal }
-                              & maxVBal := maxVBal except a { _ -> m.bal }
-                              & maxVal  := maxVal  except a { _ -> m.value }
+                              & maxBal  := maxBal.except(a, m.bal)
+                              & maxVBal := maxVBal.except(a, m.bal)
+                              & maxVal  := maxVal.except(a, m.value)
                               & Send([type -> "2b", acc -> a,
                                       bal -> m.bal, value -> m.value])
 })
@@ -209,12 +209,12 @@ action Phase2b(a) = msgs.filter(m -> m.type = "2a")
 (* Below are defined the next-state action and the complete spec.          *)
 (***************************************************************************/
 action Next = {
-        | Ballot.exists( b -> {
+        | Ballot.guess( b -> {
                             | Phase1a(b)
-                            | Value exists { v -> Phase2a(b, v) }
+                            | Value guess { v -> Phase2a(b, v) }
                        })
 
-        | Acceptor.exists(a -> Phase1b(a) or Phase2b(a))
+        | Acceptor.guess(a -> { | Phase1b(a) | Phase2b(a) })
 }
 
 temporal Spec = Init and always(stutter(Next, vars))

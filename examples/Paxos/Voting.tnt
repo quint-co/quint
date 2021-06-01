@@ -168,7 +168,7 @@ action Init = {
 (***************************************************************************/
 action IncreaseMaxBal(a, b) = {
   & b > maxBal[a]
-  & maxBal := maxBal except a { _ -> b }
+  & maxBal := maxBal.except(a, b)
   & unchanged(votes)
 }
 
@@ -187,8 +187,8 @@ action VoteFor(a, b, v) = {
          votes[c] forall { vt -> (vt[1] = b) implies (vt[2] = v) }
       }   
     & Quorum exists { Q -> ShowsSafeAt(Q, b, v) }
-    & votes := votes except a { old -> old union `{ (b, v) } }
-    & maxBal := maxBal except a { _ -> b }
+    & votes := votes exceptAt a, { old -> old union `{ (b, v) } }
+    & maxBal := maxBal exceptAt a, { _ -> b }
 }
 
 
@@ -196,9 +196,9 @@ action VoteFor(a, b, v) = {
 (* The next-state action and the invariant.                                *)
 (***************************************************************************/
 action Next =
-    (Acceptor X Ballot) exists { (a, b) -> {
+    (Acceptor X Ballot) guess { (a, b) -> {
             & IncreaseMaxBal(a, b)
-            & Value exists { v -> VoteFor(a, b, v) }
+            & Value guess { v -> VoteFor(a, b, v) }
         }
     }
 
