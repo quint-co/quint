@@ -54,7 +54,7 @@
 				},
 				{
 					"name": "keyword.operator.tnt",
-					"match": "\\b(forall|exists|map|filter|fun|funsTo|seqs|head|tail|length|cardinality|intersect|union|minus|with|except)\\b"
+					"match": "\\b(guess|choose|forall|exists|map|filter|fun|funsTo|seqs|head|tail|length|cardinality|intersect|union|minus|with|except|exceptAt)\\b"
 				},
 				{
 					"name": "keyword.operator.tnt",
