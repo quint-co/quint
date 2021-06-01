@@ -3,7 +3,8 @@
 This directory contains a parser for TNT (no types yet!).  For the moment, it
 is only a syntax parser, no semantic actions or a type checker are implemented.
 Also, the parser does not parse other files that are imported via `extends` or
-`instance` (TBD).
+`instance` (TBD). However, this is a complete prototype for trying and
+experimenting with the language syntax.
 
 ## How to build
 
