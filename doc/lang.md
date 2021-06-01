@@ -39,7 +39,11 @@ This needs an explanation, but these are basically apalache types.
 
 ### Untyped signatures
 
-TODO
+It should be always possible to omit the type of a constant or a state variable
+`x` by writing the type annotation `x : _`. In this case, neither the parser,
+nor the type checker should complain about the type of `x`. The transpiler will
+translate the expressions over `x` to TLA+ as is, possibly producing ill-typed
+expressions.
 
 ### Type System 1
 
@@ -54,6 +58,9 @@ A module definition is introduced like follows:
 ```
 module Foo extends Bar
     // place your definitions here
+    module Baz
+        // definitions in a nested module
+    end
 end
 ```
 
@@ -255,6 +262,7 @@ String literals are written as follows:
 
 ```
 "hello, world!"
+'hello, world!'
 ```
 
 ## Basics
@@ -311,31 +319,119 @@ As is common, we can skip parameter names, if we don't need them:
 { (_, ..., _) -> e }
 ```
 
-## Boolean operators
+## Boolean operators and equality
 
-These are the standard Boolean operators:
+These are the standard Boolean operators (higher priority first):
 
 ```scala
+// equality: e1 = e2 in TLA+
+e1 = e2
+e1 == e2
+// inequality (same priority as '='): e1 /= e2, e1 # e2 in TLA+
+e1 <> e2
+e1 != e2
+// logical not: ~p in TLA+
+not p
 // logical and: p /\ q in TLA+
 p and q
 p.and(q)
 // logical or: p \/ q in TLA+
 p or q
 p.or(q)
-// logical not: ~p in TLA+
-not p
-// implication: p => q in TLA+
-p implies q
-p.implies(q)
 // logical equivalence: p <=> q in TLA+
 p iff q
 p.iff(q)
-// equality: e1 = e2 in TLA+
-e1 = e2
-e1 == e2
-// inequality: e1 /= e2, e1 # e2 in TLA+
-e1 <> e2
-e1 != e2
+// implication: p => q in TLA+
+p implies q
+p.implies(q)
+```
+
+### Multiline disjunctions
+
+```scala
+{ 
+  | p_1
+  | p_2
+  ...
+  | p_n
+}
+```
+
+This is equivalent to `p_1.or(p_2).or( ... or(p_n)...)`. The indentation is not
+important.  However, you can produce nice indentation by hand, if you like.
+
+### Multiline conjunctions
+
+```scala
+{
+  & p_1
+  & p_2
+  ...
+  & p_n
+}
+```
+
+This is equivalent to `p_1.and(p_2.and( ... and(p_n)...)`. The indentation is not
+important.  However, you can produce nice indentation by hand, if you like.
+
+## Flow operators
+
+### Branching
+
+```scala
+  if (p) e1 else e2
+```
+
+Compare it to TLA+:
+
+```tla
+  IF p THEN e1 ELSE e2
+```
+
+### Cases
+
+Case enumeration without the default case:
+
+```scala
+case {
+  | p_1 -> e_1
+  | p_2 -> e_2
+  ...
+  | p_n -> e_n
+}
+```
+
+Compare it to TLA+:
+
+```tla
+CASE
+     p_1 -> e_1
+  [] p_2 -> e_2
+  ...
+  [] p_n -> e_n
+```
+
+Case enumeration with the default case:
+
+```scala
+case {
+  | p_1 -> e_1
+  | p_2 -> e_2
+  ...
+  | p_n -> e_n
+  | _   -> e
+}
+```
+
+Compare it to TLA+:
+
+```tla
+CASE
+     p_1 -> e_1
+  [] p_2 -> e_2
+  ...
+  [] p_n -> e_n
+  OTHER -> e
 ```
 
 ## Sets
@@ -345,12 +441,12 @@ e1 != e2
 One way to construct a set is by enumerating its elements:
 
 ```scala
-set(e_1, ..., e_n)
+`{ e_1, ..., e_n }
 ```
 
 This is exactly as `{ e_1, ..., e_n }` in TLA+. However, we prefer not to
 sacrifice `{...}` for this only operator. That is why a set is constructed with
-`set(...)` in TNT. In practice, this operator does not appear too often, so our
+`` `{...}`` in TNT. In practice, this operator does not appear too often, so our
 notation would not distract you too much.
 
 ### Other set operators
@@ -361,13 +457,11 @@ The other operators are introduced and explained in code directly:
 // set membership: e \in S
 e in S
 e.in(S)
-S has e
-S.has(e)
+S contains e
+S.contains(e)
 // set non-membership: e \notin S
 e notin S
 e.notin(S)
-S hasno e
-S.hasno(e)
 // union: S \union T
 S union T
 S.union(T)
@@ -387,7 +481,7 @@ S.map( x -> e )
 S filter { x -> P }
 S.filter( x -> P )
 // set folding: you can write such a recursive operator in TLA+
-S fold init { (v, x) -> e }
+S fold init, { (v, x) -> e }
 S.fold(init, { (v, x) -> e })
 // \E x \in S: P
 S exists { x -> P }
@@ -405,8 +499,8 @@ S.powerset
 S flatten
 S.flatten
 // Seq(S) of the module Sequences
-S allSeq
-S.allSeq
+S seqs
+S.seqs
 ```
 
 These operators are defined in the module `FiniteSets` in TLA+. TNT has these
@@ -417,8 +511,8 @@ two operators in the kernel:
 S isFinite
 S.isFinite
 // Cardinality(S)
-S card
-S.card
+S cardinality
+S.cardinality
 ```
 
 ## Functions
@@ -431,20 +525,21 @@ f domain
 f.domain
 // function constructor: [ x \in S |-> e ]
 S fun { x -> e }
-S.fun( x -> e )
+S.fun(x -> e)
 // Define a recursive function. This is equivalent to the following TLA+ code
 // LET f[x \in S] == e IN f
 S recFun { x -> e }
-S.recFun( x -> e )
+S.recFun(x -> e)
 // a set of functions: [ S -> T ]
-S -> T
+S funsTo T
+S.funsTo(T)
 // [f EXCEPT ![e1] = e2]
-f except e1 { _ -> e2 }
+f except e1, { _ -> e2 }
 f.except(e1, { _ -> e2 })
 // [f EXCEPT ![e1] = e2, ![e3] = e4]
-(f except e1 { _ -> e2 }) except e3 { _ -> e4 }
+(f except e1, { _ -> e2 }) except e3, { _ -> e4 }
 // [f EXCEPT ![e1] = @ + y]
-f except e1 { old -> old + y }
+f except e1, { old -> old + y }
 f.except(e1, { old -> old + y })
 ```
 
@@ -452,8 +547,9 @@ f.except(e1, { old -> old + y })
 
 ```scala
 // record constructor: [ f_1 |-> e_1, ..., f_n |-> e_n ]
+// Warning: n >= 1
 [ f_1 -> e_1, ..., f_n -> e_n ]
-// set of records
+// set of records: [ f_1: S_1, ..., f_n: S_n ]
 [ f_1: S_1, ..., f_n: S_n ]
 // access a record field: r.h
 r.h
@@ -462,14 +558,18 @@ r h
 r.keys
 r keys
 // record update: [r EXCEPT !.f = e]
-r with f e
+r with f, e
 r.with(f, e)
 ```
 
 ## Tuples
 
+In contrast to TLA+, TNT tuples have length at least of 2.
+If you need sequences, use sequences.
+
 ```scala
-// tuple constructor: << e_1, ..., e_n >>
+// Tuple constructor: << e_1, ..., e_n >>
+// Warning: n >= 2
 (e_1, ..., e_n)
 // t[1], t[2], t[3], t[4], ... , t[50]
 t._1
@@ -565,67 +665,7 @@ m to n
 m.to(n)
 ```
 
-## Flow operators
-
-### Branching
-
-```scala
-  if (p) e1 else e2
-```
-
-Compare it to TLA+:
-
-```tla
-  IF p THEN e1 ELSE e2
-```
-
-### Cases
-
-Case enumeration without the default case:
-
-```scala
-case {
-  | p_1 -> e_1
-  | p_2 -> e_2
-  ...
-  | p_n -> e_n
-}
-```
-
-Compare it to TLA+:
-
-```tla
-CASE
-     p_1 -> e_1
-  [] p_2 -> e_2
-  ...
-  [] p_n -> e_n
-```
-
-Case enumeration with the default case:
-
-```scala
-case {
-  | p_1 -> e_1
-  | p_2 -> e_2
-  ...
-  | p_n -> e_n
-  | _   -> e
-}
-```
-
-Compare it to TLA+:
-
-```tla
-CASE
-     p_1 -> e_1
-  [] p_2 -> e_2
-  ...
-  [] p_n -> e_n
-  OTHER -> e
-```
-
-### Nested operators
+## Nested operators
 
 There is not much to say here. They are almost identical to the top-level
 operators, except that they are always private.
@@ -636,26 +676,27 @@ operators, except that they are always private.
 def double(x) =
     // a nested operator
     def plus(a, b) = a + b
-
+    in
     plus(x, x)
 
 def plus_inductive(x, y) =
     // a nested recursive operator. You don't have to add numbers like this though.
     def rec nat_plus(a, b) =
         if (b <= 0) a else 1 + nat_plus(a, b - 1)
-
+    in
     nat_plus(x, y)
 
 def pow4(x) =
     // a nested
     val x2 = x * x
-
+    in
     x2 * x2
 
 temporal my_prop =
     temporal A = eventually(x > 3)
+    in
     temporal B = always(eventually(y = 0))
-
+    in
     A implies B
 ```
 
@@ -664,37 +705,9 @@ temporal my_prop =
 ```
 (val | def | def rec | pred | action | temporal)
   <identifier>[(<identifier>, ..., <identifier>)] [':' <type>] = <expr>
-
+in
 <expr>
 ```
-
-### Multiline disjunctions
-
-```scala
-{ 
-  | p_1
-  | p_2
-  ...
-  | p_n
-}
-```
-
-This is equivalent to `p_1.or(p_2).or( ... or(p_n)...)`. The indentation is not
-important.  However, you can produce nice indentation by hand, if you like.
-
-### Multiline conjunctions
-
-```scala
-{
-  & p_1
-  & p_2
-  ...
-  & p_n
-}
-```
-
-This is equivalent to `p_1.and(p_2.and( ... and(p_n)...)`. The indentation is not
-important.  However, you can produce nice indentation by hand, if you like.
 
 ## Action operators
 

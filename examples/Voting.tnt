@@ -14,7 +14,7 @@ const Quorum: Set(Set(Str))     // The set of "quorums", where a quorum" is a
 (***************************************************************************/
 assume QuorumAssumption = {
     & Quorum forall { Q -> Q subseteq Acceptor }
-    & (Quorum X Quorum) forall { (Q1, Q2) -> Q1.intersect(Q2) <> set() }
+    & (Quorum X Quorum) forall { (Q1, Q2) -> Q1.intersect(Q2) <> `{} }
 }
 
 // theorems are not supported by TNT, use TLA+ syntax
@@ -48,8 +48,8 @@ var maxBal: Str -> Int
 (* The type-correctness invariant.                                         *)
 (***************************************************************************/
 pred TypeOK = {
-    & votes in (Acceptor -> (Ballot X Value).powerset)
-    & maxBal in (Acceptor -> Ballot union set(-1))
+    & votes in (Acceptor funsTo (Ballot X Value).powerset)
+    & maxBal in (Acceptor funsTo (Ballot union `{-1}))
 }
 //-----------------------------------------------------------------------------
 /***************************************************************************)
@@ -155,7 +155,7 @@ THEOREM ShowsSafety ==
 (* straightforward.                                                        *)
 (***************************************************************************/
 action Init = {
-  & votes = Acceptor fun { _ -> set() }
+  & votes = Acceptor fun { _ -> `{} }
   & maxBal = Acceptor fun { _ -> -1 }
 }  
 
@@ -183,11 +183,11 @@ action IncreaseMaxBal(a, b) = {
 action VoteFor(a, b, v) = {
     & maxBal[a] <= b
     & votes[a] forall { vt -> vt[1] <> b }
-    & Acceptor.minus(set(a)) forall { c ->
+    & Acceptor.minus(`{a}) forall { c ->
          votes[c] forall { vt -> (vt[1] = b) implies (vt[2] = v) }
       }   
     & Quorum exists { Q -> ShowsSafeAt(Q, b, v) }
-    & votes := votes except a { old -> old union set( (b, v) ) }
+    & votes := votes except a { old -> old union `{ (b, v) } }
     & maxBal := maxBal except a { _ -> b }
 }
 

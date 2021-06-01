@@ -16,7 +16,7 @@ const Quorum: Set(Set(Str))
 assume _ = {
         & Quorum forall { Q -> Q subseteq Acceptor }
         & (Quorum X Quorum) forall {
-            (Q1, Q2) -> Q1 intersect Q2 <> set()
+            (Q1, Q2) -> Q1 intersect Q2 <> `{}
           }
 }
       
@@ -33,11 +33,11 @@ val None = -1
  * with the actions that send them.                                        *
  ***************************************************************************/
 val Message =
-        [type: set("1a"), bal: Ballot]
-           .union([type: set("1b"), acc: Acceptor, bal: Ballot, 
-                   mbal: Ballot union set(-1), mval: Value union set(None)])
-           .union([type: set("2a"), bal: Ballot, value: Value])
-           .union([type: set("2b"), acc: Acceptor, bal: Ballot, value: Value])
+        [type: `{"1a"}, bal: Ballot]
+           .union([type: `{"1b"}, acc: Acceptor, bal: Ballot, 
+                   mbal: Ballot union `{-1}, mval: Value union `{None}])
+           .union([type: `{"2a"}, bal: Ballot, value: Value])
+           .union([type: `{"2b"}, acc: Acceptor, bal: Ballot, value: Value])
 //-----------------------------------------------------------------------------
 
 var maxBal: Int
@@ -84,9 +84,9 @@ val vars = (maxBal, maxVBal, maxVal, msgs)
 (* The type invariant and initial predicate.                               *)
 (***************************************************************************/
 pred TypeOK = {
-    & maxBal  in (Acceptor -> Ballot union set(-1))
-    & maxVBal in (Acceptor -> Ballot union set(-1))
-    & maxVal  in (Acceptor -> Value union set(None))
+    & maxBal  in (Acceptor funsTo (Ballot union `{-1}))
+    & maxVBal in (Acceptor funsTo (Ballot union `{-1}))
+    & maxVal  in (Acceptor funsTo (Value union `{None}))
     & msgs subseteq Message
 }
 
@@ -94,7 +94,7 @@ action Init = {
     & maxBal  := Acceptor fun { _ -> -1 }
     & maxVBal := Acceptor fun { _ -> -1 }
     & maxVal  := Acceptor fun { _ -> None }
-    & msgs    := set()
+    & msgs    := `{}
 }
 
 /***************************************************************************)
@@ -102,7 +102,7 @@ action Init = {
 (* to define the actions that make up the next-state action.               *)
 (***************************************************************************/
 action Send(m) = {
-  msgs := msgs union set(m)
+  msgs := msgs union `{m}
 }
 
 /***************************************************************************)
@@ -160,11 +160,13 @@ action Phase2a(b, v) = {
                             & m.acc in Q
                             & m.bal = b
                             })
+        in
         val Q1bv = Q1b.filter(m -> m.mbal >= 0)
+        in
         {
             & Q.forall(a -> Q1B.exists(m -> m.acc = a))
             & {
-                | Q1bv = set()
+                | Q1bv = `{}
                 | Q1bv.exists(m -> {
                     & m.mval = v
                     & Q1bv forall { mm -> m.mbal >= mm.mbal }
@@ -172,7 +174,7 @@ action Phase2a(b, v) = {
               }
         }
     }
-  & Send([type -> "2a", bal -> b, val -> v])
+  & Send([type -> "2a", bal -> b, value -> v])
   & unchanged((maxBal, maxVBal, maxVal))
 }
   
@@ -192,7 +194,7 @@ action Phase2b(a) = msgs.filter(m -> m.type = "2a")
                               & maxVBal := maxVBal except a { _ -> m.bal }
                               & maxVal  := maxVal  except a { _ -> m.value }
                               & Send([type -> "2b", acc -> a,
-                                      bal -> m.bal, val -> m.value])
+                                      bal -> m.bal, value -> m.value])
 })
 
 /***************************************************************************)
@@ -258,12 +260,13 @@ pred Inv = {
               and ((m.mbal >= 0) implies (m.mbal, m.mval) in votes[m.acc]))
          }
        & val M2a = msgs filter { m -> m.type = "2a" }
-         M2a forall { m ->
+         in
+         M2a.forall( m -> {
             & Quorum exists { Q -> V!ShowsSafeAt(Q, m.bal, m.value) }
-            & M2a { mm ->
+            & M2a forall { mm ->
                 (mm.bal = m.bal) implies (mm.value = m.value)
               }
-         }
+         })
        & V.Inv
 }
 
