@@ -42,7 +42,7 @@
 				},
 				{
 					"name": "storage.type.tnt",
-					"match": "\\b(const|private|var|val|def|rec|pred|action|temporal|in|instance)\\b"
+					"match": "\\b(const|private|var|val|def|rec|pred|action|temporal|instance)\\b"
 				}
 			]
 		},
@@ -50,11 +50,15 @@
 			"patterns": [
 				{
 				"name": "keyword.operator.tnt",
-				"match": "\\b(set|not|or|and|implies|iff|always|eventually|wfair|sfair|guarantees|next|unchanged|enabled|stutter|nostutter)\\b"
+				"match": "\\b(not|or|and|implies|iff|always|eventually|wfair|sfair|guarantees|next|unchanged|enabled|stutter|nostutter)\\b"
 				},
 				{
 					"name": "keyword.operator.tnt",
-					"match": "(->|<-|>|<|:=|=|!=|\\.|\\*|\\+|-|/|%|\\^|\\&|\\|)"
+					"match": "\\b(forall|exists|map|filter|fun|funsTo|seqs|head|tail|length|cardinality|intersect|union|minus|with|except)\\b"
+				},
+				{
+					"name": "keyword.operator.tnt",
+					"match": "(->|<-|>|<|:=|=|!=|\\.|\\*|\\+|-|/|%|\\^|\\&|\\||subseteq|in)"
 				}
 			]
 		},
