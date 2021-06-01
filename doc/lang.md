@@ -321,7 +321,7 @@ As is common, we can skip parameter names, if we don't need them:
 
 ## Boolean operators and equality
 
-These are the standard Boolean operators (higher priority first):
+The following are the standard Boolean operators (higher priority first).
 
 ```scala
 // equality: e1 = e2 in TLA+
@@ -346,6 +346,8 @@ p implies q
 p.implies(q)
 ```
 
+*The use of the operator `x := e` in the above operators is strongly discouraged.*
+
 ### Multiline disjunctions
 
 ```scala
@@ -359,6 +361,8 @@ p.implies(q)
 
 This is equivalent to `p_1.or(p_2).or( ... or(p_n)...)`. The indentation is not
 important.  However, you can produce nice indentation by hand, if you like.
+
+*We encourage you to use the operator `x := e` in a multiline disjunction.*
 
 ### Multiline conjunctions
 
@@ -374,6 +378,8 @@ important.  However, you can produce nice indentation by hand, if you like.
 This is equivalent to `p_1.and(p_2.and( ... and(p_n)...)`. The indentation is not
 important.  However, you can produce nice indentation by hand, if you like.
 
+*We encourage you to use the operator `x := e` in a multiline conjunction.*
+
 ## Flow operators
 
 ### Branching
@@ -387,6 +393,8 @@ Compare it to TLA+:
 ```tla
   IF p THEN e1 ELSE e2
 ```
+
+*The use of the operator `x := e` in if-else is strongly discouraged.*
 
 ### Cases
 
@@ -434,6 +442,8 @@ CASE
   OTHER -> e
 ```
 
+*The use of the operator `x := e` in case is strongly discouraged.*
+
 ## Sets
 
 ### Set constructor
@@ -449,11 +459,39 @@ sacrifice `{...}` for this only operator. That is why a set is constructed with
 `` `{...}`` in TNT. In practice, this operator does not appear too often, so our
 notation would not distract you too much.
 
-### Other set operators
+### Existential quantifier and non-deterministic choice
 
-The other operators are introduced and explained in code directly:
+We introduce two operators that are semantically equivalent to `\E x \in S: P`
+of TLA+:
 
 ```scala
+S exists { x -> P }
+S.exists( x -> P )
+S guess  { x -> P }
+S.guess( x -> P )
+```
+
+*The intended difference between `exists` and `guess` is that evaluation of
+`exists` can be thought of as being deterministic, whereas `guess` can be
+thought of as being evaluated non-deterministically. TNT encourages the users
+to scope the side effects in `guess`, e.g., as `x := e` and `next(x)`, whereas
+reasoning about the next state should not happen in `exists`.*
+
+Hence, the difference between `guess` and `choose` is purely syntactic, not
+semantic.
+
+### Other set operators
+
+The other operators are introduced and explained in code directly. *The use
+of `x := e` in the following operators is strongly discouraged.*
+
+```scala
+// \A x \in S: P
+S forall { x -> P }
+S.forall( x -> P )
+// CHOOSE x \in S: P
+S choose { x -> P }
+S.choose( x -> P )
 // set membership: e \in S
 e in S
 e.in(S)
@@ -483,15 +521,6 @@ S.filter( x -> P )
 // set folding: you can write such a recursive operator in TLA+
 S fold init, { (v, x) -> e }
 S.fold(init, { (v, x) -> e })
-// \E x \in S: P
-S exists { x -> P }
-S.exists( x -> P )
-// \A x \in S: P
-S forall { x -> P }
-S.forall( x -> P )
-// CHOOSE x \in S: P
-S some { x -> P }
-S.some( x -> P )
 // SUBSET S
 S powerset
 S.powerset
@@ -534,14 +563,16 @@ S.recFun(x -> e)
 S funsTo T
 S.funsTo(T)
 // [f EXCEPT ![e1] = e2]
-f except e1, { _ -> e2 }
-f.except(e1, { _ -> e2 })
+f except e1, e2
+f.except(e1, e2)
 // [f EXCEPT ![e1] = e2, ![e3] = e4]
-(f except e1, { _ -> e2 }) except e3, { _ -> e4 }
+(f except e1, e2) except e3, e4
 // [f EXCEPT ![e1] = @ + y]
-f except e1, { old -> old + y }
-f.except(e1, { old -> old + y })
+f exceptAt e1, { old -> old + y }
+f.exceptAt(e1, { old -> old + y })
 ```
+
+*The use of the operator `x := e` in the above operators is strongly discouraged.*
 
 ## Records
 
@@ -561,6 +592,8 @@ r keys
 r with f, e
 r.with(f, e)
 ```
+
+*The use of the operator `x := e` in the above operators is strongly discouraged.*
 
 ## Tuples
 
@@ -584,6 +617,8 @@ S_1 X S_2
 // S_1 \X S_2 \X ... \X S_n
 (S_1, S_2, ..., S_n).prod
 ```
+
+*The use of the operator `x := e` in the above operators is strongly discouraged.*
 
 What about `DOMAIN t` on tuples? We don't think it makes sense to have it.
 
@@ -637,6 +672,8 @@ s foldr init { (i, v) -> e }
 s.foldr(init, { (i, v) -> e })
 ```
 
+*The use of the operator `x := e` in the above operators is strongly discouraged.*
+
 ## Integers
 
 In contrast to TLA+, there is no special module for integers. They are built in
@@ -664,6 +701,8 @@ Nat
 m to n
 m.to(n)
 ```
+
+*The use of the operator `x := e` in the above operators is strongly discouraged.*
 
 ## Nested operators
 
