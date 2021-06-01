@@ -1,4 +1,4 @@
-module Paxos {
+module Paxos
 /***************************************************************************
  * This is a specification of the Paxos algorithm without explicit leaders *
  * or learners.  It refines the spec in Voting                             *
@@ -7,16 +7,16 @@ module Paxos {
  * The constant parameters and the set Ballots are the same as in Voting.  *
  ***************************************************************************/
 
-const Value: Set(Int)
+const Value: _ //Set(Int)
 
-const Acceptor: Set(Str)
+const Acceptor: _ //Set(Str)
 
-const Quorum: Set(Set(Str))
+const Quorum: _ //Set(Set(Str))
 
 assume _ = {
         & Quorum forall { Q -> Q subseteq Acceptor }
         & (Quorum X Quorum) forall {
-            (Q1, Q2) -> Q1 intersect Q2 <> `{}
+            (Q1, Q2) -> Q1 intersect Q2 != `{}
           }
 }
       
@@ -34,27 +34,29 @@ val None = -1
  ***************************************************************************/
 val Message =
         [type: `{"1a"}, bal: Ballot]
-           .union([type: `{"1b"}, acc: Acceptor, bal: Ballot, 
-                   mbal: Ballot union `{-1}, mval: Value union `{None}])
-           .union([type: `{"2a"}, bal: Ballot, value: Value])
-           .union([type: `{"2b"}, acc: Acceptor, bal: Ballot, value: Value])
+           union [type: `{"1b"}, acc: Acceptor, bal: Ballot, 
+                   mbal: Ballot union `{-1}, mval: Value union `{None}]
+           union [type: `{"2a"}, bal: Ballot, value: Value]
+           union [type: `{"2b"}, acc: Acceptor, bal: Ballot, value: Value]
 //-----------------------------------------------------------------------------
 
-var maxBal: Int
-var maxVBal: Str -> Int // <<maxVBal[a], maxVal[a]>> is the vote with the largest
-var maxVal: Str -> Int  // ballot number cast by a; it equals <<-1, None>> if
+var maxBal:   _ // Int
+var maxVBal:  _ // Str -> Int // <<maxVBal[a], maxVal[a]>> is the vote with the largest
+var maxVal:   _ // Str -> Int  // ballot number cast by a; it equals <<-1, None>> if
                         // a has not cast any vote.
 
 // A union type for records (not supported by Apalache yet, see #789).
 // It is just a type, and it is less precise than the set Message.
+/*
 typedef Msgs = {
     | [ type -> "1a", bal: Int]
     | [ type -> "1b", acceptor: Str, bal: Int, mbal: Int, mval: Int]
     | [ type -> "2a", bal: Int, value: Int]
     | [ type -> "2b", acc: Str, bal: Int, value: Int]
 }
+*/
 
-var msgs: Msgs // The set of all messages that have been sent.
+var msgs: _ // Msgs // The set of all messages that have been sent.
 
 /***************************************************************************)
 (* NOTE:                                                                   *)
@@ -262,7 +264,7 @@ pred Inv = {
        & val M2a = msgs filter { m -> m.type = "2a" }
          in
          M2a.forall( m -> {
-            & Quorum exists { Q -> V!ShowsSafeAt(Q, m.bal, m.value) }
+            & Quorum exists { Q -> V.ShowsSafeAt(Q, m.bal, m.value) }
             & M2a forall { mm ->
                 (mm.bal = m.bal) implies (mm.value = m.value)
               }
