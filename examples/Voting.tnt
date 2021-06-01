@@ -4,9 +4,9 @@ module Voting
 (* cooperatively choose a value.                                           *)
 (***************************************************************************/
 //-----------------------------------------------------------------------------
-const Value: Set(Int)       // The set of choosable values.
-const Acceptor: Set(Str)    // A set of processes that will choose a value.
-const Quorum: Set(Set(Str))     // The set of "quorums", where a quorum" is a 
+const Value: _ //Set(Int)       // The set of choosable values.
+const Acceptor: _ //Set(Str)    // A set of processes that will choose a value.
+const Quorum: _ //Set(Set(Str))     // The set of "quorums", where a quorum" is a 
                                 // "large enough" set of acceptors
 
 /***************************************************************************)
@@ -38,9 +38,9 @@ val Ballot = Nat
 /***************************************************************************)
 (* The algorithm's variables.                                              *)
 (***************************************************************************/
-var votes: Str -> Set((Int, Int))
+var votes: _ //Str -> Set((Int, Int))
     // votes[a] is the set of votes cast by acceptor a
-var maxBal: Str -> Int
+var maxBal: _ //Str -> Int
     // maxBal[a] is a ballot number.  Acceptor a will cast
     // further votes only in ballots numbered \geq maxBal[a]
 
@@ -68,7 +68,7 @@ pred ChosenAt(b, v) = Quorum exists { Q ->
   (* True iff a quorum of acceptors have all voted for v in ballot b.      *)
   (*************************************************************************/
 
-def chosen = Value filter { v -> Ballot exists { b -> ChosenAt(b, v) } }
+pred chosen = Value filter { v -> Ballot exists { b -> ChosenAt(b, v) } }
   /*************************************************************************)
   (* The set of values that have been chosen.                              *)
   (*************************************************************************/
@@ -94,7 +94,7 @@ pred NoneOtherChoosableAt(b, v) =
   (* for any w # v.                                                        *)
   (*************************************************************************/
 
-pred SafeAt(b, v) = 0.to(b - 1).forall { c -> NoneOtherChoosableAt(c, v) }
+pred SafeAt(b, v) = 0.to(b - 1) forall { c -> NoneOtherChoosableAt(c, v) }
   /*************************************************************************)
   (* If this is true, then no value other than v has been or can ever be   *)
   (* chosen in any ballot numbered less than b.                            *)
@@ -149,15 +149,15 @@ THEOREM ShowsSafety ==
              \A Q \in Quorum, b \in Ballot, v \in Value :
                ShowsSafeAt(Q, b, v) => SafeAt(b, v)
 */ 
------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 /***************************************************************************)
 (* We now write the specification.  The initial condition is               *)
 (* straightforward.                                                        *)
 (***************************************************************************/
 action Init = {
-  & votes = Acceptor fun { _ -> `{} }
-  & maxBal = Acceptor fun { _ -> -1 }
-}  
+  & votes := Acceptor fun { _ -> `{} }
+  & maxBal := Acceptor fun { _ -> -1 }
+}
 
 
 /***************************************************************************)
