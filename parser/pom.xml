@@ -13,8 +13,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>1.7</maven.compiler.source>
-    <maven.compiler.target>1.7</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
 
   <dependencies>
@@ -57,6 +57,10 @@
           <version>3.0.2</version>
         </plugin>
         <plugin>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>3.3.0</version>
+        </plugin>
+        <plugin>
           <artifactId>maven-install-plugin</artifactId>
           <version>2.5.2</version>
         </plugin>
@@ -97,21 +101,26 @@
       </plugin>
       <!-- plugin to create a self-contained portable package
            This allows us to execute our application like this:
-           java -cp target/array-init-1.0-jar-with-dependencies.jar org.abcd.examples.ArrayInit.ArrayInit
+           java -cp target/tnt-parser-0.0.1-complete.jar org.abcd.examples.ArrayInit.ArrayInit
          -->
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
-          <descriptorRefs>
-            <descriptorRef>jar-with-dependencies</descriptorRef>
-          </descriptorRefs>
+          <descriptors>
+            <descriptor>src/assembly/complete.xml</descriptor>
+          </descriptors>
+          <archive>
+            <manifest>
+              <mainClass>systems.informal.tnt.parser.App</mainClass>
+            </manifest>
+          </archive>
         </configuration>
         <executions>
           <execution>
-            <id>simple-command</id>
-            <phase>package</phase>
+            <id>make-assembly</id> <!-- this is used for inheritance merges -->
+            <phase>package</phase> <!-- bind to the packaging phase -->
             <goals>
-              <goal>attached</goal>
+              <goal>single</goal>
             </goals>
           </execution>
         </executions>

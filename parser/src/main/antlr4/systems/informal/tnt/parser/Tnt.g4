@@ -53,9 +53,9 @@ expr:           // apply a built-in operator via the dot notation
                 // built-in infix/postfix operators, a la Scala
         |       expr ID (arg_list)?                                 # infixCall
                 // standard relations
-        |       expr op=('>' | '<' | '>=' | '<' |
-                         '<>' | '!=' | '=' | '==' |
-                         ':=' | IN | NOTIN | SUBSETEQ) expr         # relations
+        |       expr op=('>' | '<' | '>=' | '<=' |
+                         '<>' | '!=' | '==' | ':=' | '=' |
+                         IN | NOTIN | SUBSETEQ) expr         # relations
                 // Boolean operators
         |       NOT expr                                            # not
         |       expr AND expr                                       # and
