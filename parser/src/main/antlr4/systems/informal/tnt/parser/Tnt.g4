@@ -3,12 +3,12 @@
 // @author: Igor Konnov
 grammar Tnt;
 
-module : 'module' ID 'end' ;
+module : 'module' ID ('extends' ID (',' ID))? unit* 'end';
 
 // a module unit
 unit :          'const' ID ':' '_'                              # const
         |       'var' ID ':' '_'                                # var
-        |       'assume' ID '=' expr                            # assume
+        |       'assume' (ID | '_') '=' expr                            # assume
         |       ('private')? valDef                             # val
         |       ('private')? operDef                            # oper
         |       ('private')? 'pred' ID params? '=' expr         # pred
@@ -24,7 +24,7 @@ valDef  :       'val' ID '=' expr
 operDef :       'def' ('rec')? ID params '=' expr
         ;
 
-instanceDef :   'instance' ID '=' ID ('with' ID '<-' expr (',' ID '<-' expr)*)?
+instanceDef :   'instance' (ID | '_') '=' ID ('with' ID '<-' expr (',' ID '<-' expr)*)?
         ;
 
 params  :       '(' (ID (',' ID)*)? ')'
@@ -54,7 +54,7 @@ expr:           // apply a built-in operator via the dot notation
         |       expr ID (arg_list)?                                 # infixCall
                 // standard relations
         |       expr op=('>' | '<' | '>=' | '<' |
-                         '<>' | '!' | '=' | '==' |
+                         '<>' | '!=' | '=' | '==' |
                          ':=' | IN | NOTIN | SUBSETEQ) expr         # relations
                 // Boolean operators
         |       NOT expr                                            # not
@@ -84,7 +84,7 @@ lambda:         pattern '->' expr
 
 // a pattern like (x, (y, z)) in lambdas
 pattern:        '(' pattern (',' pattern)* ')'
-        |       ID
+        |       (ID | '_')
         ;
 
 arg_list:  expr (',' expr)*
