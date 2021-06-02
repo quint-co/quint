@@ -8,7 +8,7 @@ module : 'module' ID ('extends' ID (',' ID))? unit* 'end';
 // a module unit
 unit :          'const' ID ':' '_'                              # const
         |       'var' ID ':' '_'                                # var
-        |       'assume' (ID | '_') '=' expr                            # assume
+        |       'assume' (ID | '_') '=' expr                    # assume
         |       ('private')? valDef                             # val
         |       ('private')? operDef                            # oper
         |       ('private')? 'pred' ID params? '=' expr         # pred
@@ -49,7 +49,7 @@ expr:           // apply a built-in operator via the dot notation
         |       expr op=('*' | '/' | '%') expr                      # multDiv
         |       expr op=('+' | '-') expr                            # plusMinus
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
-        |       'case' '{' ('|' expr '->' expr)* '}'                # blockCase
+        |       'case' '{' '|'? expr ('|' expr '->' expr)* '}'      # blockCase
                 // built-in infix/postfix operators, a la Scala
         |       expr ID (arg_list)?                                 # infixCall
                 // standard relations
@@ -63,11 +63,11 @@ expr:           // apply a built-in operator via the dot notation
         |       expr IFF expr                                       # iff
         |       expr IMPLIES expr                                   # implies
                 // similar to indented /\ and indented \/
-        |       '{' '&' expr ('&' expr)* '}'                        # blockAnd
-        |       '{' '|' expr ('|' expr)* '}'                        # blockOr
+        |       '{' ('&')? expr '&' expr ('&' expr)* '}'            # blockAnd
+        |       '{' ('|')? expr '|' expr ('|' expr)* '}'            # blockOr
         |       ( ID | INT | BOOL | STRING | BUILTIN_CONST)         # literal
         |       '(' expr ',' expr (',' expr)* ')'                   # tuple
-        |       '`{' (expr (',' expr)*)? '}'                        # set
+        |       '\'{' (expr (',' expr)*)? '}'                       # set
         |       '[' ID '->' expr (',' ID '->' expr)* ']'            # record
         |       '[' ID ':' expr (',' ID ':' expr)* ']'              # recordSet
         |       '[' (expr (',' expr)*)? ']'                         # sequence
@@ -99,24 +99,23 @@ name_after_dot  :    (ID | IN | NOTIN | AND | OR | IFF | IMPLIES)
 
 // literals
 // Strings cannot be escaped, as they are pseudo-identifiers.
-// We also give the user flexibility in using either quotes or double quotes.
-STRING  : ('"' .*? '"' | '\'' .*? '\'');
-BOOL    : ('false' | 'true') ;
-INT     : [0-9]+ ;
+STRING          : '"' .*? '"' ;
+BOOL            : ('false' | 'true') ;
+INT             : [0-9]+ ;
 BUILTIN_CONST   : ('Int' | 'Nat' | 'Bool') ;
 
 // a few keywords
-NOT         :   'not' ;
-AND         :   'and' ;
-OR          :   'or'  ;
-IFF         :   'iff' ;
-IMPLIES     :   'implies' ;
-SUBSETEQ    :   'subseteq' ;
-IN          :   'in' ;
-NOTIN       :   'notin' ;
+NOT             :   'not' ;
+AND             :   'and' ;
+OR              :   'or'  ;
+IFF             :   'iff' ;
+IMPLIES         :   'implies' ;
+SUBSETEQ        :   'subseteq' ;
+IN              :   'in' ;
+NOTIN           :   'notin' ;
 
 // a TLA+ identifier
-ID  : [a-zA-Z_][a-zA-Z0-9_]* ;
+ID              : [a-zA-Z_][a-zA-Z0-9_]* ;
 
 // comments and whitespaces
 LINE_COMMENT    :   '//' .*? '\n'   -> skip ;

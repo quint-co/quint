@@ -16,7 +16,7 @@ const Quorum: _ //Set(Set(Str))
 assume _ = {
         & Quorum forall { Q -> Q subseteq Acceptor }
         & (Quorum X Quorum) forall {
-            (Q1, Q2) -> Q1 intersect Q2 != `{}
+            (Q1, Q2) -> Q1 intersect Q2 != '{}
           }
 }
       
@@ -33,11 +33,11 @@ val None = -1
  * with the actions that send them.                                        *
  ***************************************************************************/
 val Message =
-        [type: `{"1a"}, bal: Ballot]
-           union [type: `{"1b"}, acc: Acceptor, bal: Ballot, 
-                   mbal: Ballot union `{-1}, mval: Value union `{None}]
-           union [type: `{"2a"}, bal: Ballot, value: Value]
-           union [type: `{"2b"}, acc: Acceptor, bal: Ballot, value: Value]
+        [type: '{"1a"}, bal: Ballot]
+           union [type: '{"1b"}, acc: Acceptor, bal: Ballot, 
+                   mbal: Ballot union '{-1}, mval: Value union '{None}]
+           union [type: '{"2a"}, bal: Ballot, value: Value]
+           union [type: '{"2b"}, acc: Acceptor, bal: Ballot, value: Value]
 //-----------------------------------------------------------------------------
 
 var maxBal:   _ // Int
@@ -86,9 +86,9 @@ val vars = (maxBal, maxVBal, maxVal, msgs)
 (* The type invariant and initial predicate.                               *)
 (***************************************************************************/
 pred TypeOK = {
-    & maxBal  in (Acceptor funsTo (Ballot union `{-1}))
-    & maxVBal in (Acceptor funsTo (Ballot union `{-1}))
-    & maxVal  in (Acceptor funsTo (Value union `{None}))
+    & maxBal  in (Acceptor funsTo (Ballot union '{-1}))
+    & maxVBal in (Acceptor funsTo (Ballot union '{-1}))
+    & maxVal  in (Acceptor funsTo (Value union '{None}))
     & msgs subseteq Message
 }
 
@@ -96,7 +96,7 @@ action Init = {
     & maxBal  := Acceptor fun { _ -> -1 }
     & maxVBal := Acceptor fun { _ -> -1 }
     & maxVal  := Acceptor fun { _ -> None }
-    & msgs    := `{}
+    & msgs    := '{}
 }
 
 /***************************************************************************)
@@ -104,7 +104,7 @@ action Init = {
 (* to define the actions that make up the next-state action.               *)
 (***************************************************************************/
 action Send(m) = {
-  msgs := msgs union `{m}
+  msgs := msgs union '{m}
 }
 
 /***************************************************************************)
@@ -168,7 +168,7 @@ action Phase2a(b, v) = {
         {
             & Q.forall(a -> Q1B.exists(m -> m.acc = a))
             & {
-                | Q1bv = `{}
+                | Q1bv = '{}
                 | Q1bv.exists(m -> {
                     & m.mval = v
                     & Q1bv forall { mm -> m.mbal >= mm.mbal }
@@ -214,7 +214,7 @@ action Next = {
                             | Value guess { v -> Phase2a(b, v) }
                        })
 
-        | Acceptor.guess(a -> { | Phase1b(a) | Phase2b(a) })
+        | Acceptor.guess(a -> { Phase1b(a) | Phase2b(a) })
 }
 
 temporal Spec = Init and always(stutter(Next, vars))

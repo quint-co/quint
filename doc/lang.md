@@ -5,22 +5,32 @@
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
 
-## Identifiers
+## Identifiers and strings
 
-Identifiers are exactly like in TLA+:
+Identifiers are defined exactly as in TLA+:
 
 ```
 identifier ::=
     <string matching regex [a-zA-Z_]([a-zA-Z0-9_])*>
 ```
 
+String literals are written as follows:
+
+```
+"hello, world!"
+```
+
+You cannot do much with strings. They can be compared for equality and
+inequality, and they can be stored in sets, functions, sequences, tuples, and
+records. In this sense, strings are just more liberal identifiers.
+
 ## Comments
 
 Single-line comments:
 
 ```scala
-// this is a comment
-some code // this is also a comment
+// this is a one-line comment
+some code // this is also a one-line comment
 ```
 
 Multi-line comments:
@@ -28,8 +38,10 @@ Multi-line comments:
 ```scala
 /*
  This is a multi-line comment.
- Please forgive me, for I am writing comments like in:
- C, C++, Java, Scala, Rust, JavaScript, CSS, what else?
+ We are writing comments like in:
+ C, C++, Go, Java, Scala, Rust, JavaScript, CSS, etc.
+
+ This is the principle of the least surprise.
  */
 ```
 
@@ -118,7 +130,7 @@ Similar to TLA+, you can have an anonymous assumption, by simply using `_` for
 the name:
 
 ```tla
-assume _ = Proc.card > 0
+assume _ = Proc.cardinality > 0
 ```
 
 ### Variable definition
@@ -258,13 +270,6 @@ Integers literals are written as follows:
 The set of all integers is written as `Int` and the set of all naturals is
 written as `Nat`.
 
-String literals are written as follows:
-
-```
-"hello, world!"
-'hello, world!'
-```
-
 ## Basics
 
 Every expression can be wrapped with `{` and `}`. For instance:
@@ -274,7 +279,7 @@ Every expression can be wrapped with `{` and `}`. For instance:
 ```
 
 The braces `{` and `}` **do not introduce a set**. For the set notation,
-see `set(...)`.
+see `set(...)` and `'{...}`.
 
 Similar to `{` and `}`, you can always wrap an expression with `(` and `)`,
 e.g., `(1 + 3)`.  It is up to you.
@@ -361,6 +366,7 @@ p.implies(q)
 
 This is equivalent to `p_1.or(p_2).or( ... or(p_n)...)`. The indentation is not
 important.  However, you can produce nice indentation by hand, if you like.
+The first occurence of `|` right after `{` is optional, it's up to you.
 
 *We encourage you to use the operator `x := e` in a multiline disjunction.*
 
@@ -377,6 +383,7 @@ important.  However, you can produce nice indentation by hand, if you like.
 
 This is equivalent to `p_1.and(p_2.and( ... and(p_n)...)`. The indentation is not
 important.  However, you can produce nice indentation by hand, if you like.
+The first occurence of `&` right after `{` is optional, it's up to you.
 
 *We encourage you to use the operator `x := e` in a multiline conjunction.*
 
@@ -408,6 +415,8 @@ case {
   | p_n -> e_n
 }
 ```
+
+The first occurence of `|` right after `{` is optional, it's up to you.
 
 Compare it to TLA+:
 
@@ -451,13 +460,16 @@ CASE
 One way to construct a set is by enumerating its elements:
 
 ```scala
-`{ e_1, ..., e_n }
+// you can use either the special notation
+'{ e_1, ..., e_n }
+// or you can use the python-style constructor
+set(e_1, ..., e_n)
 ```
 
 This is exactly as `{ e_1, ..., e_n }` in TLA+. However, we prefer not to
 sacrifice `{...}` for this only operator. That is why a set is constructed with
-`` `{...}`` in TNT. In practice, this operator does not appear too often, so our
-notation would not distract you too much.
+`'{...}` or `set(...)` in TNT. In practice, this operator does not appear too
+often, so our notation would not distract you too much.
 
 ### Existential quantifier and non-deterministic choice
 

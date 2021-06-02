@@ -8,7 +8,7 @@ module EWD840
 (***************************************************************************/
 
 const N: _
-assume NAssumption = N in (Nat minus `{0})
+assume NAssumption = N in (Nat minus '{0})
 
 var active: _
 var color: _
@@ -16,7 +16,7 @@ var tpos: _
 var tcolor: _
 
 val Node = 0 to N - 1
-val Color = `{ "white", "black" }
+val Color = '{ "white", "black" }
 
 pred TypeOK = {
   & active in (Node funsTo Bool)        // status of nodes (active or passive)
@@ -74,7 +74,7 @@ action PassToken(i) = {
 (***************************************************************************/
 action System = {
   | InitiateProbe
-  | (Node minus `{0}) guess { i -> PassToken(i) }
+  | (Node minus '{0}) guess { i -> PassToken(i) }
 }
 
 /***************************************************************************)
@@ -105,12 +105,12 @@ action Deactivate(i) = {
 (* actions performed by the underlying algorithm                           *)
 (***************************************************************************/
 action Environment =
-  Node guess { i -> { | SendMsg(i) | Deactivate(i) } }
+  Node guess { i -> { SendMsg(i) | Deactivate(i) } }
 
 /***************************************************************************)
 (* next-state relation: disjunction of above actions                       *)
 (***************************************************************************/
-action Next = { | System | Environment }
+action Next = { System | Environment }
 
 val vars = (active, color, tpos, tcolor)
 
