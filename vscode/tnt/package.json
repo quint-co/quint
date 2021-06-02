@@ -1,14 +1,22 @@
 {
     "name": "tnt",
     "displayName": "TNT is not TLA+",
-    "description": "Extension for TNT",
+    "description": "TNT language support",
     "version": "0.0.1",
+    "publisher": "igorkonnov0764",
     "engines": {
         "vscode": "^1.56.0"
     },
     "categories": [
         "Programming Languages"
     ],
+    "bugs": {
+        "url": "https://github.com/informalsystems/tnt"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/informalsystems/tnt.git"
+    },
     "contributes": {
         "languages": [{
             "id": "tnt",
