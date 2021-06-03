@@ -6,7 +6,7 @@
 
   <groupId>systems.informal.tnt</groupId>
   <artifactId>tnt-parser</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.2-SNAPSHOT</version>
 
   <name>tnt-parser</name>
   <url>https://github.com/informalsystems/tnt/</url>
