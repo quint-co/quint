@@ -68,8 +68,8 @@ expr:           // apply a built-in operator via the dot notation
         |       ( ID | INT | BOOL | STRING | BUILTIN_CONST)         # literal
         |       '(' expr ',' expr (',' expr)* ')'                   # tuple
         |       '\'{' (expr (',' expr)*)? '}'                       # set
-        |       '[' ID '->' expr (',' ID '->' expr)* ']'            # record
-        |       '[' ID ':' expr (',' ID ':' expr)* ']'              # recordSet
+        |       '{' ID ':' expr (',' ID ':' expr)* '}'              # record
+        |       '[' ID 'in' expr (',' ID 'in' expr)* ']'            # recordSet
         |       '[' (expr (',' expr)*)? ']'                         # sequence
         |       (valDef IN expr | operDef IN expr)                  # letIn
         |       '(' expr ')'                                        # paren

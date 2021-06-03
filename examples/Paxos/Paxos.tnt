@@ -33,11 +33,11 @@ val None = -1
  * with the actions that send them.                                        *
  ***************************************************************************/
 val Message =
-        [type: '{"1a"}, bal: Ballot]
-           union [type: '{"1b"}, acc: Acceptor, bal: Ballot, 
-                   mbal: Ballot union '{-1}, mval: Value union '{None}]
-           union [type: '{"2a"}, bal: Ballot, value: Value]
-           union [type: '{"2b"}, acc: Acceptor, bal: Ballot, value: Value]
+        [type in '{"1a"}, bal in Ballot]
+           union [type in '{"1b"}, acc in Acceptor, bal in Ballot, 
+                   mbal in Ballot union '{-1}, mval in Value union '{None}]
+           union [type in '{"2a"}, bal in Ballot, value in Value]
+           union [type in '{"2b"}, acc in Acceptor, bal in Ballot, value in Value]
 //-----------------------------------------------------------------------------
 
 var maxBal:   _ // Int
@@ -86,16 +86,16 @@ val vars = (maxBal, maxVBal, maxVal, msgs)
 (* The type invariant and initial predicate.                               *)
 (***************************************************************************/
 pred TypeOK = {
-    & maxBal  in (Acceptor funsTo (Ballot union '{-1}))
-    & maxVBal in (Acceptor funsTo (Ballot union '{-1}))
-    & maxVal  in (Acceptor funsTo (Value union '{None}))
+    & maxBal  in (Acceptor mkFunSet (Ballot union '{-1}))
+    & maxVBal in (Acceptor mkFunSet (Ballot union '{-1}))
+    & maxVal  in (Acceptor mkFunSet (Value union '{None}))
     & msgs subseteq Message
 }
 
 action Init = {
-    & maxBal  := Acceptor fun { _ -> -1 }
-    & maxVBal := Acceptor fun { _ -> -1 }
-    & maxVal  := Acceptor fun { _ -> None }
+    & maxBal  := Acceptor mkFun { _ -> -1 }
+    & maxVBal := Acceptor mkFun { _ -> -1 }
+    & maxVal  := Acceptor mkFun { _ -> None }
     & msgs    := '{}
 }
 
@@ -114,7 +114,7 @@ action Send(m) = {
 (* m with m.type = "1a") that begins ballot b.                             *)
 (***************************************************************************/
 action Phase1a(b) = {
-    & Send([type -> "1a", bal -> b])
+    & Send({type: "1a", bal: b})
     & unchanged((maxBal, maxVBal, maxVal))
 }
                  
@@ -128,8 +128,8 @@ action Phase1b(a) = {
     & msgs.filter(m -> m.type = "1a") guess { m -> {
       & m.bal > maxBal[a]
       & maxBal := maxBal.except(a, m.bal)
-      & Send([type -> "1b", acc -> a, bal -> m.bal, 
-              mbal -> maxVBal[a], mval -> maxVal[a]])
+      & Send({type: "1b", acc: a, bal: m.bal, 
+              mbal: maxVBal[a], mval: maxVal[a]})
       }}
     & unchanged((maxVBal, maxVal))
 }
@@ -176,7 +176,7 @@ action Phase2a(b, v) = {
               }
         }
     }
-  & Send([type -> "2a", bal -> b, value -> v])
+  & Send({type: "2a", bal: b, value: v})
   & unchanged((maxBal, maxVBal, maxVal))
 }
   
@@ -195,8 +195,8 @@ action Phase2b(a) = msgs.filter(m -> m.type = "2a")
                               & maxBal  := maxBal.except(a, m.bal)
                               & maxVBal := maxVBal.except(a, m.bal)
                               & maxVal  := maxVal.except(a, m.value)
-                              & Send([type -> "2b", acc -> a,
-                                      bal -> m.bal, value -> m.value])
+                              & Send({type: "2b", acc: a,
+                                      bal: m.bal, value: m.value})
 })
 
 /***************************************************************************)

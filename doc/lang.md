@@ -565,15 +565,15 @@ f[e]
 f domain
 f.domain
 // function constructor: [ x \in S |-> e ]
-S fun { x -> e }
-S.fun(x -> e)
+S mkFun { x -> e }
+S.mkFun(x -> e)
 // Define a recursive function. This is equivalent to the following TLA+ code
 // LET f[x \in S] == e IN f
-S recFun { x -> e }
-S.recFun(x -> e)
+S mkRecFun { x -> e }
+S.mkRecFun(x -> e)
 // a set of functions: [ S -> T ]
-S funsTo T
-S.funsTo(T)
+S mkFunSet T
+S.mkFunSet(T)
 // [f EXCEPT ![e1] = e2]
 f except e1, e2
 f.except(e1, e2)
@@ -591,9 +591,9 @@ f.exceptAt(e1, { old -> old + y })
 ```scala
 // record constructor: [ f_1 |-> e_1, ..., f_n |-> e_n ]
 // Warning: n >= 1
-[ f_1 -> e_1, ..., f_n -> e_n ]
+{ f_1: e_1, ..., f_n: e_n }
 // set of records: [ f_1: S_1, ..., f_n: S_n ]
-[ f_1: S_1, ..., f_n: S_n ]
+[ f_1 in S_1, ..., f_n in S_n ]
 // access a record field: r.h
 r.h
 r h
@@ -604,6 +604,13 @@ r keys
 r with f, e
 r.with(f, e)
 ```
+
+Note that we are using the syntax `{ name_1: value_1, ..., name_n: value_n }`
+for records, similar to Python and JavaScript, whereas we are using the syntax
+`[ name_1 in set_1, ..., name_k in set_k ]` for sets of records. We make these two
+kinds of expressions visually different, so the users do not confuse one
+with another by mistake. Moreover, as sets of records are used less often than
+records, typing a set of records requires a bit more effort.
 
 *The use of the operator `x := e` in the above operators is strongly discouraged.*
 
@@ -725,30 +732,30 @@ operators, except that they are always private.
 
 ```scala
 def double(x) =
-    // a nested operator
-    def plus(a, b) = a + b
-    in
-    plus(x, x)
+  // a nested operator
+  def plus(a, b) = a + b
+  in
+  plus(x, x)
 
 def plus_inductive(x, y) =
-    // a nested recursive operator. You don't have to add numbers like this though.
-    def rec nat_plus(a, b) =
-        if (b <= 0) a else 1 + nat_plus(a, b - 1)
-    in
-    nat_plus(x, y)
+  // a nested recursive operator. You don't have to add numbers like this though.
+  def rec nat_plus(a, b) =
+    if (b <= 0) a else 1 + nat_plus(a, b - 1)
+  in
+  nat_plus(x, y)
 
 def pow4(x) =
-    // a nested
-    val x2 = x * x
-    in
-    x2 * x2
+  // a nested
+  val x2 = x * x
+  in
+  x2 * x2
 
 temporal my_prop =
-    temporal A = eventually(x > 3)
-    in
-    temporal B = always(eventually(y = 0))
-    in
-    A implies B
+  temporal A = eventually(x > 3)
+  in
+  temporal B = always(eventually(y = 0))
+  in
+  A implies B
 ```
 
 *Grammar:*
@@ -811,7 +818,7 @@ language for completeness. Otherwise, we would not be able to translate TLA+ to
 TNT and back. The operator prime is written as follows:
 
 ```scala
-  next(e)
+next(e)
 ```
 
 It is equivalent to `e'` of TLA+. More precisely, if `f` is the translation of
@@ -824,7 +831,7 @@ this operator to the language for completeness. Otherwise, we would not be able 
 translate TLA+ to TNT. This operator is written as follows:
 
 ```scala
-  enabled(A)
+enabled(A)
 ```
 
 It is equivalent to `ENABLED A` of TLA+. More precisely, if `B` is the

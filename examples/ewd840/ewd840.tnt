@@ -19,8 +19,8 @@ val Node = 0 to N - 1
 val Color = '{ "white", "black" }
 
 pred TypeOK = {
-  & active in (Node funsTo Bool)        // status of nodes (active or passive)
-  & color in (Node funsTo Color)        // color of nodes
+  & active in (Node mkFunSet Bool)      // status of nodes (active or passive)
+  & color in (Node mkFunSet Color)      // color of nodes
   & tpos in Node                        // token position
   & tcolor in Color                     // token color
 }
@@ -30,8 +30,8 @@ pred TypeOK = {
 (* "type-correct" values.                                                  *)
 (***************************************************************************/
 action Init = {
-  & (Node funsTo Bool) guess  { a -> active := f }
-  & (Node funsTo Color) guess { c -> color := f }
+  & (Node mkFunSet Bool) guess  { a -> active := f }
+  & (Node mkFunSet Color) guess { c -> color := f }
   & Node guess { n -> tpos := n }
   & tcolor := "black"
 }
