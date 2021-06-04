@@ -1,0 +1,36 @@
+{
+    "name": "tnt-parser",
+    "displayName": "Parser for TNT: not TLA+",
+    "description": "Parser and IR for TNT: not TLA+",
+    "version": "0.0.1",
+    "publisher": "igorkonnov0764",
+    "author": "Igor Konnov",
+    "engines": {
+        "vscode": "^1.56.0"
+    },
+    "keywords": [
+        "specification", "verification", "protocol", "tla"
+    ],
+    "bugs": {
+        "url": "https://github.com/informalsystems/tnt"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/informalsystems/tnt.git"
+    },
+    "language": "Apache 2.0",
+    "main": "./out/parser",
+    "scripts": {
+        "build": "tsc -p ./src",
+        "start": "npm run build -- -w"
+    },
+    "devDependencies": {
+        "@types/mocha": "^8.2.2",
+        "@types/node": "^12.12.0",
+        "@typescript-eslint/eslint-plugin": "^4.23.0",
+        "@typescript-eslint/parser": "^4.23.0",
+        "eslint": "^7.26.0",
+        "mocha": "^8.3.2",
+        "typescript": "^4.2.3"
+    }
+}
