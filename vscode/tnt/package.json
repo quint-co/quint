@@ -2,7 +2,7 @@
     "name": "tnt",
     "displayName": "TNT is not TLA+",
     "description": "TNT language support",
-    "version": "0.0.2",
+    "version": "0.0.4",
     "publisher": "igorkonnov0764",
     "engines": {
         "vscode": "^1.56.0"
@@ -17,17 +17,69 @@
         "type": "git",
         "url": "https://github.com/informalsystems/tnt.git"
     },
+    "activationEvents": [
+        "onLanguage:tnt"
+    ],
+    "main": "./client/out/extension",
     "contributes": {
-        "languages": [{
-            "id": "tnt",
-            "aliases": ["TNT", "tnt"],
-            "extensions": [".tnt",".TNT"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "tnt",
-            "scopeName": "source.tnt",
-            "path": "./syntaxes/tnt.tmLanguage.json"
-        }]
+        "languages": [
+            {
+                "id": "tnt",
+                "aliases": [
+                    "TNT",
+                    "tnt"
+                ],
+                "extensions": [
+                    ".tnt",
+                    ".TNT"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "tnt",
+                "scopeName": "source.tnt",
+                "path": "./syntaxes/tnt.tmLanguage.json"
+            }
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "TNT configuration",
+            "properties": {
+                "languageServerExample.maxNumberOfProblems": {
+                    "scope": "resource",
+                    "type": "number",
+                    "default": 10,
+                    "description": "The maximum number of problems produced by the server."
+                },
+                "languageServerExample.trace.server": {
+                    "scope": "window",
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "messages",
+                        "verbose"
+                    ],
+                    "default": "off",
+                    "description": "Traces the communication between VS Code and the language server."
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -b",
+        "watch": "tsc -b -w",
+        "postinstall": "cd client && npm install && cd ../server && npm install && cd .."
+    },
+    "devDependencies": {
+        "@types/mocha": "^8.2.2",
+        "@types/node": "^12.12.0",
+        "@typescript-eslint/eslint-plugin": "^4.23.0",
+        "@typescript-eslint/parser": "^4.23.0",
+        "eslint": "^7.26.0",
+        "mocha": "^8.3.2",
+        "typescript": "^4.2.3"
     }
 }

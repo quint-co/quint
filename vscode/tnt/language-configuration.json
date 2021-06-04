@@ -24,5 +24,19 @@
         ["[", "]"],
         ["(", ")"],
         ["\"", "\""]
+    ],
+    "onEnterRules": [
+        {
+        "beforeText": "^\\s*?(def|val|pred|action|temporal|assume).*?=\\s*$",
+        "action": { "indent": "indent" }
+        },
+        {
+            "beforeText": "^\\s*?module.*?\\s*$",
+            "action": { "indent": "indent" }
+        },
+        {
+            "beforeText": "^\\s*?end.*?\\s*$",
+            "action": { "indent": "outdent" }
+        }
     ]
 }
