@@ -6,21 +6,7 @@ Also, the parser does not parse other files that are imported via `extends` or
 `instance` (TBD). However, this is a complete prototype for trying and
 experimenting with the language syntax.
 
-## How to build
-
-```sh
-mvn package
-```
-
-If the maven build is successful, you should be able to find the following file:
-
-```sh
-./target/tnt-parser-0.0.1-SNAPSHOT-complete.jar
-```
-
-## How to run
-
-```sh
-java -jar ./target/tnt-parser-0.0.1-SNAPSHOT-complete.jar <filename>.tnt
-```
-
+For the moment, we have put the parser package in `server/src/parser`, to avoid
+back and forth with publishing npm packages. However, we keep the parser interfaces
+as isolated as possible, so it should be easy to extract the parser into an independent
+package later.

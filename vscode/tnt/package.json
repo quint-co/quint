@@ -71,7 +71,7 @@
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -b",
         "watch": "tsc -b -w",
-        "postinstall": "cd client && npm install && cd ../server && npm install && cd .."
+        "postinstall": "cd ../client && npm install && cd ../server && npm install && cd .."
     },
     "devDependencies": {
         "@types/mocha": "^8.2.2",
