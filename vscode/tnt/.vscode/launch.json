@@ -20,7 +20,6 @@
 			"name": "Attach to Server",
 			"port": 6009,
 			"restart": true,
-			"trace": true,
 			"outFiles": ["${workspaceRoot}/server/out/**/*.js"]
 		},
 		{
