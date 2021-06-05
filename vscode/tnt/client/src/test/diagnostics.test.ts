@@ -8,15 +8,17 @@ import * as assert from 'assert';
 import { getDocUri, activate } from './helper';
 
 suite('Should get diagnostics', () => {
-	const docUri = getDocUri('parseError1.tnt');
-
 	test('Parse error # 1 in module', async () => {
-		await testDiagnostics(docUri, [
+		await testDiagnostics(getDocUri('parseError1.tnt'), [
 			{ message: "extraneous input 'error' expecting {'module', 'extends', 'end', 'const', 'var', 'assume', 'private', 'pred', 'action', 'temporal', 'val', 'def', 'instance'}",
 			  range: toRange(2, 2, 2, 3),
 			  severity: vscode.DiagnosticSeverity.Error,
 			  source: 'parser' },
 		]);
+	});
+
+	test('Parse no error # 2 in module', async () => {
+		await testDiagnostics(getDocUri('parseNoError2.tnt'), []);
 	});
 });
 
