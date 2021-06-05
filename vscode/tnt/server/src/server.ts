@@ -22,7 +22,7 @@ import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
 
-import { parseTnt } from 'tnt-parser';
+import { parseModule, ErrorMessage } from './parser/tntParserFrontend';
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -142,41 +142,23 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	const settings = await getDocumentSettings(textDocument.uri);
 
 	// The validator creates diagnostics for all uppercase words length 2 and more
-	const text = textDocument.getText();
-	const pattern = /\b[A-Z]{2,}\b/g;
-	let m: RegExpExecArray | null;
-
-	let problems = 0;
 	const diagnostics: Diagnostic[] = [];
-		problems++;
-		const diagnostic: Diagnostic = {
-			severity: DiagnosticSeverity.Warning,
-			range: {
-				start: textDocument.positionAt(0),
-				end: textDocument.positionAt(100)
-			},
-			message: `${text.substring(0, 100)} is all uppercase.`,
-			source: 'ex'
-		};
-		if (hasDiagnosticRelatedInformationCapability) {
-			diagnostic.relatedInformation = [
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range)
-					},
-					message: 'Spelling matters'
+	const text = textDocument.getText();
+	const result = parseModule(text);
+	if (result.kind === "error") {
+		for (let msg of result.messages) {
+			const diag: Diagnostic = {
+				severity: DiagnosticSeverity.Error,
+				range: {
+					start: { line: msg.lineNo, character: msg.charNo },
+					end: { line: msg.lineNo, character: msg.charNo + 1 },
 				},
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range)
-					},
-					message: 'Particularly for names'
-				}
-			];
+				message: msg.explanation,
+				source: "parser"
+			};
+			diagnostics.push(diag)
 		}
-		diagnostics.push(diagnostic);
+	}
 
 	// Send the computed diagnostics to VSCode.
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
