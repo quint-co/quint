@@ -1,0 +1,136 @@
+module ReadersWriters
+/***************************************************************************)
+(* This solution to the readers-writers problem, cf.                       *)
+(* https://en.wikipedia.org/wiki/Readers–writers_problem,                  *)
+(* uses a queue in order to fairly serve all requests.                     *)
+(***************************************************************************/
+const NumActors: int
+
+var readers: set(int)   // set of processes currently reading
+var writers: set(int)   // set of processes currently writing
+var waiting: seq((str, int))  // queue of processes waiting to access the resource
+
+val vars = (readers, writers, waiting)
+
+val Actors = 1 to NumActors
+
+def ToSet(s) = s domain map { i -> s[i] }
+
+def read(s)  = s[1] = "read"
+def write(s) = s[1] = "write"
+
+val WaitingToRead  = ToSet(waiting select read) map { p -> p._2 }
+
+val WaitingToWrite = ToSet(waiting select write) map { p -> p._2 }
+
+//---------------------------------------------------------------------------
+
+/***********)
+(* Actions *)
+(***********/
+
+action TryRead(actor) = {
+    & actor notin WaitingToRead
+    & waiting := waiting append ("read", actor)
+    & unchanged((readers, writers))
+}
+
+action TryWrite(actor) = {
+    & actor notin WaitingToWrite
+    & waiting := waiting append ("write", actor)
+    & unchanged((readers, writers))
+}
+
+action Read(actor) = {
+    & readers := readers \union set(actor)
+    & waiting := waiting.tail
+    & unchanged(writers)
+}
+
+action Write(actor) = {
+    & readers = set()
+    & writers := writers union set(actor)
+    & waiting := waiting.tail
+    & unchanged(readers)
+}
+
+action ReadOrWrite = {
+    & writers = set()
+    & waiting != []
+    & val pair = waiting.head in
+      val actor = pair._2 in  
+      case {
+          | (pair._1 = "read") -> Read(actor)
+          | (pair._1 = "write") -> Write(actor)
+      }
+}
+
+action StopActivity(actor) =
+    if (actor in readers) {
+        & readers := readers minus '{actor}
+        & unchanged((writers, waiting))
+    } else {
+        & writers := writers minus '{actor}
+        & unchanged((readers, waiting))
+    }
+
+action Stop =
+    (readers union writers) guess { actor -> StopActivity(actor) }
+
+//---------------------------------------------------------------------------
+
+/*****************)
+(* Specification *)
+(*****************/
+
+action Init = {
+    & readers := '{}
+    & writers := '{}
+    & waiting := []
+}
+
+action Next = {
+    | Actors guess { actor -> TryRead(actor) }
+    | Actors guess { actor -> TryWrite(actor) }
+    | ReadOrWrite
+    | Stop
+}
+
+temporal Fairness = {
+    & Actors forall { actor -> wfair(TryRead(actor), vars) }
+    & Actors forall { actor -> wfair(TryWrite(actor, vars)) }
+    & wfair(ReadOrWrite, vars)
+    & wfair(Stop, vars)
+}
+
+temporal Spec = Init and always(stutter(Next, vars) and Fairness)
+
+//---------------------------------------------------------------------------
+
+/**************)
+(* Invariants *)
+(**************/
+
+pred TypeOK = {
+    & readers subseteq Actors
+    & writers subseteq Actors
+    & waiting in (set("read", "write") X Actors).allSeqs
+}
+
+pred Safety = {
+    & not (readers != set() and writers != set())
+    & Cardinality(writers) <= 1
+}
+
+/**************)
+(* Properties *)
+(**************/
+
+temporal Liveness = {
+    & Actors forall { actor -> always(eventually(actor in readers)) }
+    & Actors forall { actor -> always(eventually(actor in writers)) }
+    & Actors forall { actor -> always(eventually(actor notin readers)) }
+    & Actors forall { actor -> always(eventually(actor notin writers)) }
+}
+
+end
