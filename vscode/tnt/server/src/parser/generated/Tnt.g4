@@ -61,7 +61,7 @@ expr:           // apply a built-in operator via the dot notation
                 // Call a user-defined operator or a built-in operator
                 // of at least one argument.
                 // This includes: set, next, unchanged, always, eventually, enabled
-        |       ident '(' arg_list ')'                              # operApp
+        |       ident '(' arg_list? ')'                              # operApp
                 // function application
         |       expr '[' expr ']'                                   # funApp
                 // unary minus
@@ -72,13 +72,13 @@ expr:           // apply a built-in operator via the dot notation
         |       expr op=('*' | '/' | '%') expr                      # multDiv
         |       expr op=('+' | '-') expr                            # plusMinus
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
-        |       'case' '{' '|'? expr ('|' expr '->' expr)* '}'      # blockCase
+        |       'case' '{' '|'? expr '->' expr ('|' expr '->' expr)* '}' # blockCase
                 // built-in infix/postfix operators, a la Scala
         |       expr ident (arg_list)?                              # infixCall
                 // standard relations
         |       expr op=('>' | '<' | '>=' | '<=' |
                          '<>' | '!=' | '==' | ':=' | '=' |
-                         IN | NOTIN | SUBSETEQ) expr         # relations
+                         IN | NOTIN | SUBSETEQ) expr                # relations
                 // Boolean operators
         |       NOT expr                                            # not
         |       expr AND expr                                       # and
@@ -110,7 +110,7 @@ pattern:        '(' pattern (',' pattern)* ')'
         |       (ident | '_')
         ;
 
-arg_list:  expr (',' expr)*
+arg_list:       expr (',' expr)*
         ;
 
 // Some infix operators may be called via lhs.oper(rhs),
