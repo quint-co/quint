@@ -10,10 +10,12 @@ module EWD840
 const N: _
 assume NAssumption = N in (Nat minus '{0})
 
-var active: _
-var color: _
-var tpos: _
-var tcolor: _
+typedef NODE = int
+
+var active: NODE -> bool
+var color: NODE -> str
+var tpos: NODE
+var tcolor: str
 
 val Node = 0 to N - 1
 val Color = '{ "white", "black" }

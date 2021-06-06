@@ -7,11 +7,11 @@ module Paxos
  * The constant parameters and the set Ballots are the same as in Voting.  *
  ***************************************************************************/
 
-const Value: _ //Set(Int)
+const Value: set(int)
 
-const Acceptor: _ //Set(Str)
+const Acceptor: set(str)
 
-const Quorum: _ //Set(Set(Str))
+const Quorum: set(set(str))
 
 assume _ = {
         & Quorum forall { Q -> Q subseteq Acceptor }
@@ -40,23 +40,20 @@ val Message =
            union [type in '{"2b"}, acc in Acceptor, bal in Ballot, value in Value]
 //-----------------------------------------------------------------------------
 
-var maxBal:   _ // Int
-var maxVBal:  _ // Str -> Int // <<maxVBal[a], maxVal[a]>> is the vote with the largest
-var maxVal:   _ // Str -> Int  // ballot number cast by a; it equals <<-1, None>> if
-                        // a has not cast any vote.
+var maxBal:   int
+var maxVBal:  int // <<maxVBal[a], maxVal[a]>> is the vote with the largest
+var maxVal:   str -> int  // ballot number cast by a; it equals <<-1, None>> if
+                          // a has not cast any vote.
 
 // A union type for records (not supported by Apalache yet, see #789).
 // It is just a type, and it is less precise than the set Message.
-/*
-typedef Msgs = {
-    | [ type -> "1a", bal: Int]
-    | [ type -> "1b", acceptor: Str, bal: Int, mbal: Int, mval: Int]
-    | [ type -> "2a", bal: Int, value: Int]
-    | [ type -> "2b", acc: Str, bal: Int, value: Int]
-}
-*/
+typedef MSGS =
+    | { type: "1a", bal: int }
+    | { type: "1b", acceptor: str, bal: int, mbal: int, mval: int }
+    | { type: "2a", bal: int, value: int }
+    | { type: "2b", acc: str, bal: int, value: int }
 
-var msgs: _ // Msgs // The set of all messages that have been sent.
+var msgs: MSGS // The set of all messages that have been sent.
 
 /***************************************************************************)
 (* NOTE:                                                                   *)
@@ -81,7 +78,7 @@ val vars = (maxBal, maxVBal, maxVal, msgs)
    * It is convenient to define some identifier to be the tuple of all     * 
    * variables.  I like to use the identifier `vars'.                      * 
    *************************************************************************/
-  
+
 /***************************************************************************)
 (* The type invariant and initial predicate.                               *)
 (***************************************************************************/

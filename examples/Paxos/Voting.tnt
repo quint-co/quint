@@ -4,9 +4,9 @@ module Voting
 (* cooperatively choose a value.                                           *)
 (***************************************************************************/
 //-----------------------------------------------------------------------------
-const Value: _ //Set(Int)       // The set of choosable values.
-const Acceptor: _ //Set(Str)    // A set of processes that will choose a value.
-const Quorum: _ //Set(Set(Str))     // The set of "quorums", where a quorum" is a 
+const Value: set(int)       // The set of choosable values.
+const Acceptor: set(str)    // A set of processes that will choose a value.
+const Quorum: set(set(str))     // The set of "quorums", where a quorum" is a 
                                 // "large enough" set of acceptors
 
 /***************************************************************************)
@@ -34,13 +34,12 @@ val Ballot = Nat
 (* quorum of acceptors have voted for it in the same ballot.               *)
 (***************************************************************************/
 
-
 /***************************************************************************)
 (* The algorithm's variables.                                              *)
 (***************************************************************************/
-var votes: _ //Str -> Set((Int, Int))
+var votes: str -> set((int, int))
     // votes[a] is the set of votes cast by acceptor a
-var maxBal: _ //Str -> Int
+var maxBal: str -> int
     // maxBal[a] is a ballot number.  Acceptor a will cast
     // further votes only in ballots numbered \geq maxBal[a]
 
@@ -60,7 +59,7 @@ pred VotedFor(a, b, v) = (b, v) in votes[a]
   /*************************************************************************)
   (* True iff acceptor a has voted for v in ballot b.                      *)
   (*************************************************************************/
-  
+
 pred ChosenAt(b, v) = Quorum exists { Q -> 
                         Q forall { a -> VotedFor(a, b, v) }
                      }
