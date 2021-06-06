@@ -1,8 +1,8 @@
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) Informal Systems. All rights reserved.
- * Licensed under the Apache 2.0 License.
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2021. All rights reserved.
+ * Licensed under the Apache 2.0.
  * See License.txt in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
+ * --------------------------------------------------------------------------------- */
 import {
 	createConnection,
 	TextDocuments,
@@ -151,7 +151,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 				severity: DiagnosticSeverity.Error,
 				range: {
 					start: { line: msg.lineNo, character: msg.charNo },
-					end: { line: msg.lineNo, character: msg.charNo + 1 },
+					end: { line: msg.lineNo, character: msg.charNo + msg.length },
 				},
 				message: msg.explanation,
 				source: "parser"

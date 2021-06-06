@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems. All rights reserved.
+ * Copyright (c) Informal Systems 2021. All rights reserved.
  * Licensed under the Apache 2.0.
  * See License.txt in the project root for license information.
  * --------------------------------------------------------------------------------- */
@@ -17,6 +17,7 @@ export interface ErrorMessage {
     explanation: string;
     lineNo: number;
     charNo: number;
+    length: number;
 }
 
 export interface ParseErrors {
@@ -34,11 +35,15 @@ export function parseModule(text: string): ParseResult {
     let tokenStream = new CommonTokenStream(lexer);
     let parser = new TntParser(tokenStream);
     let errorMessages = new Array<ErrorMessage>();
+    parser.removeErrorListeners(); // remove ConsoleErrorListener
     parser.addErrorListener({
         syntaxError: ((recognizer, offendingSymbol, line, charPositionInLine, msg, e) => {
-                errorMessages.push({explanation: msg, lineNo: line, charNo: charPositionInLine})
+                let len = (offendingSymbol)
+                    ? (1 + offendingSymbol.stopIndex - offendingSymbol.startIndex)
+                    : 1;
+                errorMessages.push({explanation: msg, lineNo: line - 1, charNo: charPositionInLine, length: len})
             })
-    })
+    });
     let tree = parser.module();
     if (errorMessages.length > 0) {
         return { kind: "error", messages: errorMessages }

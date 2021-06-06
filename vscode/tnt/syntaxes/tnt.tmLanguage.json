@@ -42,7 +42,7 @@
 				},
 				{
 					"name": "storage.type.tnt",
-					"match": "\\b(const|private|var|val|def|rec|pred|action|temporal|instance)\\b"
+					"match": "\\b(const|private|var|val|def|rec|pred|action|temporal|instance|set|seq|int|str|bool)\\b"
 				}
 			]
 		},
