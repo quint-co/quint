@@ -42,7 +42,7 @@ action TryWrite(actor) = {
 }
 
 action Read(actor) = {
-    & readers := readers \union set(actor)
+    & readers := readers union set(actor)
     & waiting := waiting.tail
     & unchanged(writers)
 }
@@ -55,8 +55,8 @@ action Write(actor) = {
 }
 
 action ReadOrWrite = {
-    & writers = set()
     & waiting != []
+    & writers = set()
     & val pair = waiting.head in
       val actor = pair._2 in  
       case {
@@ -67,10 +67,10 @@ action ReadOrWrite = {
 
 action StopActivity(actor) =
     if (actor in readers) {
-        & readers := readers minus '{actor}
+        & readers := readers minus set(actor)
         & unchanged((writers, waiting))
     } else {
-        & writers := writers minus '{actor}
+        & writers := writers minus set(actor)
         & unchanged((readers, waiting))
     }
 
@@ -98,7 +98,7 @@ action Next = {
 
 temporal Fairness = {
     & Actors forall { actor -> wfair(TryRead(actor), vars) }
-    & Actors forall { actor -> wfair(TryWrite(actor, vars)) }
+    & Actors forall { actor -> wfair(TryWrite(actor), vars) }
     & wfair(ReadOrWrite, vars)
     & wfair(Stop, vars)
 }
@@ -114,7 +114,7 @@ temporal Spec = Init and always(stutter(Next, vars) and Fairness)
 pred TypeOK = {
     & readers subseteq Actors
     & writers subseteq Actors
-    & waiting in (set("read", "write") X Actors).allSeqs
+    & waiting in (set("read", "write") X Actors).seqs
 }
 
 pred Safety = {
