@@ -61,7 +61,7 @@ expr:           // apply a built-in operator via the dot notation
                 // Call a user-defined operator or a built-in operator
                 // of at least one argument.
                 // This includes: set, next, unchanged, always, eventually, enabled
-        |       ident '(' arg_list? ')'                              # operApp
+        |       ident '(' arg_list? ')'                             # operApp
                 // function application
         |       expr '[' expr ']'                                   # funApp
                 // unary minus
@@ -79,8 +79,7 @@ expr:           // apply a built-in operator via the dot notation
         |       expr op=('>' | '<' | '>=' | '<=' |
                          '<>' | '!=' | '==' | ':=' | '=' |
                          IN | NOTIN | SUBSETEQ) expr                # relations
-                // Boolean operators
-        |       NOT expr                                            # not
+                // Boolean operators. Importantly, not(e) is just a normal call
         |       expr AND expr                                       # and
         |       expr OR expr                                        # or
         |       expr IFF expr                                       # iff
@@ -115,7 +114,10 @@ arg_list:       expr (',' expr)*
 
 // Some infix operators may be called via lhs.oper(rhs),
 // without causing any ambiguity.
-name_after_dot  :    (ID | ONE_LETTER | ALL_CAPS_ID | IN | NOTIN | AND | OR | IFF | IMPLIES)
+name_after_dot  :    (ID | ONE_LETTER | ALL_CAPS_ID | IN | NOTIN |
+            AND | OR | IFF | IMPLIES
+            '>' | '<' | '>=' | '<=' | '<>' | '!=' | '==' | ':=' | '=' |
+            '+' | '-' | '*' | '/' | '%' | '^')
         ;
 
 ident   : (ID | ONE_LETTER | ALL_CAPS_ID | 'set' | 'seq')
@@ -131,7 +133,6 @@ INT             : [0-9]+ ;
 BUILTIN_CONST   : ('Int' | 'Nat' | 'Bool') ;
 
 // a few keywords
-NOT             :   'not' ;
 AND             :   'and' ;
 OR              :   'or'  ;
 IFF             :   'iff' ;

@@ -122,6 +122,8 @@ pred Safety = {
     & Cardinality(writers) <= 1
 }
 
+111 3434 xxx
+
 /**************)
 (* Properties *)
 (**************/

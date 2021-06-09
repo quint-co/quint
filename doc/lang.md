@@ -57,9 +57,43 @@ nor the type checker should complain about the type of `x`. The transpiler will
 translate the expressions over `x` to TLA+ as is, possibly producing ill-typed
 expressions.
 
-### Type System 1
+### Type System 1.2
 
-TODO
+This is the same type system as in Apalache, except we have added disjoint
+unions:
+
+A type is one of the following:
+
+ - Basic type: `bool`, `int`, `str`.
+
+ - Uninterpreted type or type name: `IDENITIFIER_IN_CAPS`.
+
+ - Type variable (parameter): `a`, ..., `z`.
+
+ - Set: `set(T)` for a type `T`.
+
+ - Sequence: `seq(T)` for a type `T`.
+
+ - Tuple: `(T_1, T_2, ..., T_n)` for `n >= 2` types `T_1`, ..., `T_n`.
+
+ - Record: `{name_1: T_1, name_2: T_2, ..., name_n: T_n}`
+    for `n >= 1` types `T_1`, ..., `T_n`.
+
+ - Function: `T1 -> T2` for types `T1` and `T2`.
+
+ - Operator: `(T_1, ..., T_n) => R` for `n >= 0` argument types `T_1, ..., T_n`
+   and result type `R`.
+
+ - Disjoint-union:
+    ```
+       | { tag_name: string_1, <ident>: T_1_1, ..., <ident>: T_1_n_1}
+       ...
+       | { tag_name: string_k, <ident>: T_k_1, ..., <ident>: T_k_n_k}
+    ```
+    for `n >= 1` types `T_1_1`, ..., `T_k_n_k`.
+
+ - Type in parentheses: `(T)` for a type `T`.
+
 
 ## Module-level constructs
 
@@ -243,6 +277,8 @@ with TLA+ and TLAPS.
 
 There are no theorems. You can write them in TLA+ and prove them with TLAPS.
 
+# TNT expression syntax
+
 ## Literals
 
 Boolean literals are written as follows:
@@ -270,7 +306,7 @@ Integers literals are written as follows:
 The set of all integers is written as `Int` and the set of all naturals is
 written as `Nat`.
 
-## Basics
+## Braces and lambdas
 
 Every expression can be wrapped with `{` and `}`. For instance:
 
@@ -324,6 +360,69 @@ As is common, we can skip parameter names, if we don't need them:
 { (_, ..., _) -> e }
 ```
 
+## Three forms of operator applications
+
+TNT is flexible with respect to operator applications. It mimics several call
+styles that can be met in various languages. Given an operator called `f` and
+expressions `e_1`, ..., `e_n`, the operator `f` can be applied to the
+expressions `e_1`, ..., `e_n` as follows:
+
+ - *TNT normal form*: `f(e_1, ..., e_n)`.
+ - *Python-like dot form*: `e_1.f(e_2, ..., e_n)`
+ - *Scala-like infix form*: `e_1 f e_2, ..., e_n`
+
+Which form to choose? It's up to you. We prefer to combine all three, whatever
+feels more natural in your circumstances. In the future, TNT will provide
+automatic translation that will let you to freely switch between all three forms.
+
+For example, some people like to write Boolean expressions like this:
+
+```
+p or q and r
+```
+
+In the above case, you have to take care of operator priorities (see below).
+When you use the dot form, you cannot get priorities wrong (calls via dot are
+always left-associative if you wonder):
+
+```
+p.or(q).and(r)
+```
+
+Several operator have conventional names that stem from mathematics and thus
+are not written as identifiers.  For instance, you can conveniently write `1 +
+3` in the infix form.  But you cannot write `+(1, 3)` or `1.+(3)`, as that
+would make the parser unnecessary complex. You can use the mnemonic `plus`
+instead of `+` and thus write `plus(1, 3)` or `1.plus(3)`. A small number of
+operators are exceptional in this sense. We list the alternative names when
+introducing operators.  We don't expect humans to write expressions like the
+ones above. This notation is more convenient for programs, so TNT tooling may
+use this computer-readable representation. 
+
+Like in every programming language, even in TLA+, several operators are special
+in the sense that they have non-standard priorities. The good news is that
+we keep the number of such operators to the bare minimum, in contrast to TLA+.
+If you are using the infix form, it good to know the operator priorities.
+Here is the table of operator priorities, the ones in the top have the higher
+priority:
+
+| Operators                    | Comments                                   |
+| ---------------------------- | ------------------------------------------ |
+| `.`                          | Call via dot has the highest priority      |
+| `F(e_1, ..., e_n)`           | The normal form of operator application    |
+| `f[e_1, ..., e_n]`           | Function application                       |
+| `-i`                         | Unary minus                                |
+| `i^j`                        | Integer power (right associative)          |
+| `i * j`, `i / j`, `i % j`    | Integer multiplication, division, modulo   |
+| `i + j`, `i - j`             | Integer addition and subtraction           |
+| `e_1 F e_2, ..., e_n`        | General infix operator application         |
+| `i > j`, `i < j`, `i >= j`, `i <= j`, `i <> j`, `i != j`, `i == j`, `i = j`, `i := j`, `S in T`, `S notin T`, `S subseteq T`  | Integer comparisons and set relations |
+| `p and q`                    | Boolean 'and' (conjunction)                |
+| `p or q`                     | Boolean 'or' (disjunction)                 |
+| `p iff q`                    | Boolean equivalence (if and only if)       |
+| `p implies q`                | Boolean implication: `not(p) or q`         |
+| all forms with `(..)`, `{..}`, and `[..]` |                               |
+
 ## Boolean operators and equality
 
 The following are the standard Boolean operators (higher priority first).
@@ -332,11 +431,16 @@ The following are the standard Boolean operators (higher priority first).
 // equality: e1 = e2 in TLA+
 e1 = e2
 e1 == e2
+e1.eq(e2)
+eq(e1, e2)
 // inequality (same priority as '='): e1 /= e2, e1 # e2 in TLA+
 e1 <> e2
 e1 != e2
+e1.neq(e2)
+neq(e1, e2)
 // logical not: ~p in TLA+
-not p
+not(p)
+p.not
 // logical and: p /\ q in TLA+
 p and q
 p.and(q)
@@ -350,6 +454,10 @@ p.iff(q)
 p implies q
 p.implies(q)
 ```
+
+Note that the operator `not(p)` needs parentheses around its argument.
+Actually, `not` is treated as a general operator. We keep the number of special
+syntax forms to minimum.
 
 *The use of the operator `x := e` in the above operators is strongly discouraged.*
 
@@ -479,8 +587,10 @@ of TLA+:
 ```scala
 S exists { x -> P }
 S.exists( x -> P )
+exists(S, { x -> P } )
 S guess  { x -> P }
 S.guess( x -> P )
+guess(S, { x -> P })
 ```
 
 *The intended difference between `exists` and `guess` is that evaluation of
@@ -501,47 +611,62 @@ of `x := e` in the following operators is strongly discouraged.*
 // \A x \in S: P
 S forall { x -> P }
 S.forall( x -> P )
+forall(S, { x -> P })
 // CHOOSE x \in S: P
 S choose { x -> P }
 S.choose( x -> P )
+choose(S, { x -> P })
 // set membership: e \in S
 e in S
 e.in(S)
+in(e, S)
 S contains e
 S.contains(e)
+contains(S, e)
 // set non-membership: e \notin S
 e notin S
 e.notin(S)
+notin(e, S)
 // union: S \union T
 S union T
 S.union(T)
+union(S, T)
 // intersection: S \intersect T
 S intersect T
 S.intersect(T)
+intersect(S, T)
 // difference: S \ T
-S minus T
-S.minus(T)
+S difference T
+S.difference(T)
+difference(S, T)
 // S is a subset of T (proper or not): S \subseteq T
 S subseteq T
 S.subseteq(T)
+subseteq(S, T)
 // set comprehension (map): { e: x \in S }
 S map { x -> e }
 S.map( x -> e )
+map(S, { x -> e })
 // set comprehension (filter): { x \in S: P }
 S filter { x -> P }
 S.filter( x -> P )
+filter(S, { x -> P })
 // set folding: you can write such a recursive operator in TLA+
 S fold init, { (v, x) -> e }
 S.fold(init, { (v, x) -> e })
+fold(S, init, { (v, x) -> e })
 // SUBSET S
 S powerset
 S.powerset
+powerset(S)
 // UNION S
 S flatten
 S.flatten
+flatten(S)
 // Seq(S) of the module Sequences
 S seqs
 S.seqs
+seqs(S)
 ```
 
 These operators are defined in the module `FiniteSets` in TLA+. TNT has these
@@ -551,9 +676,11 @@ two operators in the kernel:
 // IsFiniteSet(S)
 S isFinite
 S.isFinite
+isFinite(S)
 // Cardinality(S)
 S cardinality
 S.cardinality
+cardinality(S)
 ```
 
 ## Functions
@@ -564,24 +691,30 @@ f[e]
 // function domain: DOMAIN f
 f domain
 f.domain
+domain(f)
 // function constructor: [ x \in S |-> e ]
 S mkFun { x -> e }
 S.mkFun(x -> e)
+mkFun(S, { x -> e })
 // Define a recursive function. This is equivalent to the following TLA+ code
 // LET f[x \in S] == e IN f
 S mkRecFun { x -> e }
 S.mkRecFun(x -> e)
+mkRecFun(S, { x -> e })
 // a set of functions: [ S -> T ]
 S mkFunSet T
 S.mkFunSet(T)
+mkFunSet(S, T)
 // [f EXCEPT ![e1] = e2]
 f except e1, e2
 f.except(e1, e2)
+except(f, e1, e2)
 // [f EXCEPT ![e1] = e2, ![e3] = e4]
 (f except e1, e2) except e3, e4
 // [f EXCEPT ![e1] = @ + y]
 f exceptAt e1, { old -> old + y }
 f.exceptAt(e1, { old -> old + y })
+exceptAt(f, e1, { old -> old + y })
 ```
 
 *The use of the operator `x := e` in the above operators is strongly discouraged.*
@@ -600,9 +733,11 @@ r h
 // the set of record keys: DOMAIN r
 r.keys
 r keys
+keys(r)
 // record update: [r EXCEPT !.f = e]
 r with f, e
 r.with(f, e)
+with(r, f, e)
 ```
 
 Note that we are using the syntax `{ name_1: value_1, ..., name_n: value_n }`
@@ -632,9 +767,11 @@ t._4
 t._50
 // Cartesian products
 // S_1 \X S_2
-S_1 X S_2
+S_1 cross S_2
+S_1.cross(S_2)
+cross(S_1, S_2)
 // S_1 \X S_2 \X ... \X S_n
-(S_1, S_2, ..., S_n).prod
+(S_1, S_2, ..., S_n).ncross
 ```
 
 *The use of the operator `x := e` in the above operators is strongly discouraged.*
@@ -656,39 +793,50 @@ used in the spec.
 // append at the sequence tail: Append(s, e)
 s append e
 s.append(e)
+append(s, e)
 // concatenate sequences: s \circ t
 s concat t
 s.concat(t)
+concat(s, t)
 // sequence head: Head(s)
 s head
 s.head
+head(s)
 // sequence tail: Tail(s)
 s tail
 s.tail
+tail(s)
 // sequence length: Len(s)
 s length
 s.length
+length(s)
 // sequence element at nth position (starting with 1): equivalent to s[i] in TLA+
 s nth i
 s.nth(i)
+nth(s, i)
 // the set of sequence indices (starting with 1): DOMAIN s
 s indices
 s.indices
+indices(s)
 // SubSeq(s, j, k)
 s slice j k
 s.slice(j, k)
+slice(s, j, k)
 // SelectSeq(s, Test)
 s select Test
+select(s, Test)
 // in particular, we can use anonymous operators
 s select { e -> P }
 // Left fold. There is no standard operator for that in TLA+,
 // but you can define it with a recursive operator.
 s foldl init { (i, v) -> e }
 s.foldl(init, { (i, v) -> e })
+foldl(s, init, { (i, v) -> e })
 // Right fold. There is no standard operator for that in TLA+,
 // but you can define it with a recursive operator.
 s foldr init { (i, v) -> e }
 s.foldr(init, { (i, v) -> e })
+foldr(s, init, { (i, v) -> e })
 ```
 
 *The use of the operator `x := e` in the above operators is strongly discouraged.*
@@ -704,21 +852,42 @@ you should switch directly to TLA+.
 
 ```scala
 m + n
+m.add(n)
+add(m, n)
 m - n
+m.sub(n)
+sub(m, n)
 m * n
+m.mul(n)
+mul(m, n)
 // integer division, as \div in TLA+
 m / n
+m.div(n)
+div(m, n)
 m % n
+m.mod(n)
+mod(m, n)
 m ^ n
+m.pow(n)
+pow(m, n)
 m < n
+m.lt(n)
+lt(m, n)
 m > n
+m.gt(n)
+gt(m, n)
 m <= n
+m.lte(n)
+lte(m, n)
 m >= n
+m.gte(n)
+gte(m, n)
 Int
 Nat
 // as m..n in TLA+
 m to n
 m.to(n)
+to(m, n)
 ```
 
 *The use of the operator `x := e` in the above operators is strongly discouraged.*
@@ -776,6 +945,8 @@ the state variable `x` in a next state.
 
 ```scala
 x := e
+assign(x, e)
+x.assign(e)
 ```
 
 This operator is equivalent to `x' = e` of TLA+ under specific conditions.
@@ -789,6 +960,7 @@ For a state variable `x`, the following expression is like `UNCHANGED x`:
 
 ```scala
 unchanged(x)
+x.unchanged
 ```
 
 In a more general case, you can write `unchanged(t)` for a tuple `t` that
@@ -800,12 +972,14 @@ The following operator is similar to `[A]_x`:
 
 ```scala
 stutter(A, x)
+A.stutter(x)
 ```
 
 The following operator is similar to `<A>_x`:
 
 ```scala
 nostutter(A, x)
+A.nostutter(x)
 ```
 
 As in case of `unchanged`, you can pass a tuple of names.
@@ -819,6 +993,7 @@ TNT and back. The operator prime is written as follows:
 
 ```scala
 next(e)
+e.next
 ```
 
 It is equivalent to `e'` of TLA+. More precisely, if `f` is the translation of
@@ -832,6 +1007,7 @@ translate TLA+ to TNT. This operator is written as follows:
 
 ```scala
 enabled(A)
+A.enabled
 ```
 
 It is equivalent to `ENABLED A` of TLA+. More precisely, if `B` is the
@@ -852,6 +1028,7 @@ This is equivalent to `[]A` of TLA+:
 
 ```scala
 always(A)
+A.always
 ```
 
 ### Eventually
@@ -860,6 +1037,7 @@ This is equivalent to `<>A` of TLA+:
 
 ```scala
 eventually(A)
+A.eventually
 ```
 
 ### Fairness
@@ -868,12 +1046,14 @@ This is equivalent to `WF_e(A)` of TLA+:
 
 ```scala
 wfair(A, e)
+A.wfair(e)
 ```
 
 This is equivalent to `SF_e(A)` of TLA+:
 
 ```scala
 sfair(A, e)
+A.sfair(e)
 ```
 
 The second argument `e` is either a name, or a tuple of names, as in
@@ -892,6 +1072,7 @@ For completeness, we introduce its syntactic version in TNT:
 
 ```
 guarantees(A, B)
+A.guarantees(B)
 ```
 
 The operators `\EE` and `\AA` are almost never used, so there are no
