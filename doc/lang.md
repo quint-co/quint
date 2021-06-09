@@ -233,7 +233,7 @@ def rec fact(n) = {
 def F(G, x): (a => b, a) => b = G(x)
 
 // an operator that is invisible outside the module
-private def lte(x, y) = {
+private def my_lte(x, y) = {
     x <= y
 }
 ```
@@ -414,7 +414,7 @@ p.or(q.and(r))
 Several operators have conventional names that stem from mathematics and thus
 are not written as identifiers.  For instance, you can conveniently write `1 +
 3` in the infix form.  But you cannot write `+(1, 3)` or `1.+(3)`, as that
-would make the parser unnecessary complex. You can use the mnemonic `plus`
+would make the parser unnecessary complex. You can use the mnemonic name `add`
 instead of `+` and thus write `add(1, 3)` or `1.add(3)`. A small number of
 operators are exceptional in this sense. We list the alternative names when
 introducing operators.  We don't expect humans to write expressions like the
@@ -424,7 +424,7 @@ use this computer-readable representation.
 Like in every programming language, several operators are special
 in the sense that they have non-standard priorities. The good news is that
 we keep the number of such operators to the bare minimum, in contrast to TLA+.
-If you are using the infix form, it good to know the operator priorities.
+If you are using the infix form, it is good to know the operator priorities.
 Here is the table of operator priorities, the ones in the top have the higher
 priority:
 
@@ -775,7 +775,7 @@ records, typing a set of records requires a bit more effort.
 
 ## Tuples
 
-In contrast to TLA+, TNT tuples have length at least of 2.
+In contrast to TLA+, TNT tuples have length of at least 2.
 If you need sequences, use sequences.
 
 ```scala
@@ -796,6 +796,7 @@ S_1.cross(S_2)
 cross(S_1, S_2)
 // S_1 \X S_2 \X ... \X S_n
 (S_1, S_2, ..., S_n).ncross
+ncross(S_1, S_2, ..., S_n)
 ```
 
 *The use of the operator `x := e` in the above operators is strongly discouraged.*
@@ -1116,4 +1117,27 @@ A.guarantees(B)
 The operators `\EE` and `\AA` are almost never used, so there are no
 equivalents in TNT. If you have reached this level, you should (automatically)
 translate your TNT spec into TLA+ and use your tools, e.g., TLAPS.
+
+## Unbounded quantifiers
+
+TLA+ has three operators that bind a variable without providing a set:
+
+```tla
+\E x: P
+\A x: P
+CHOOSE x: P
+```
+
+These operators are supported neither by TLC, nor by Apalache. So the chance
+that you will use them is very low. However, for the sake of completeness we
+introduce their counterparts in TNT:
+
+```
+exists_const(x -> P)
+forall_const(x -> P)
+choose_const(x -> P)
+```
+
+We add the suffix "const" to the operator names to stress the fact that these
+operators quantify over the constants of the first-order universe.
 
