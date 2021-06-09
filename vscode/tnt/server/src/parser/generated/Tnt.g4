@@ -115,9 +115,7 @@ arg_list:       expr (',' expr)*
 // Some infix operators may be called via lhs.oper(rhs),
 // without causing any ambiguity.
 name_after_dot  :    (ID | ONE_LETTER | ALL_CAPS_ID | IN | NOTIN |
-            AND | OR | IFF | IMPLIES
-            '>' | '<' | '>=' | '<=' | '<>' | '!=' | '==' | ':=' | '=' |
-            '+' | '-' | '*' | '/' | '%' | '^')
+                      AND | OR | IFF | IMPLIES)
         ;
 
 ident   : (ID | ONE_LETTER | ALL_CAPS_ID | 'set' | 'seq')

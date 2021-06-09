@@ -47,7 +47,10 @@ Multi-line comments:
 
 ## Types
 
-This needs an explanation, but these are basically apalache types.
+Types are optional. If you want just to run TLC, it might be enough to leave
+the types unspecified. If you want to use Apalache or other advanced tools,
+you will need types.
+
 
 ### Untyped signatures
 
@@ -56,6 +59,25 @@ It should be always possible to omit the type of a constant or a state variable
 nor the type checker should complain about the type of `x`. The transpiler will
 translate the expressions over `x` to TLA+ as is, possibly producing ill-typed
 expressions.
+
+Similar to TLA+, when you define a higher-order operator, you have to specify the
+signature. For example:
+
+```
+def pick3(pick2, x, y z): (((_, _) => _), _, _, _) => _ = {
+    pick2(pick2(x, y), z)
+}
+```
+
+That looks a bit confusing, right? If you really want to ignore types at all,
+that's what you do. Alternatively, you could write a parametric type in Type
+System 1.2 (below). For comparison, we give an example right here:
+
+```
+def pick3(pick2, x, y z): (((a, a) => b), a, a, a) => b = {
+    pick2(pick2(x, y), z)
+}
+```
 
 ### Type System 1.2
 
@@ -389,17 +411,17 @@ always left-associative if you wonder):
 p.or(q).and(r)
 ```
 
-Several operator have conventional names that stem from mathematics and thus
+Several operators have conventional names that stem from mathematics and thus
 are not written as identifiers.  For instance, you can conveniently write `1 +
 3` in the infix form.  But you cannot write `+(1, 3)` or `1.+(3)`, as that
 would make the parser unnecessary complex. You can use the mnemonic `plus`
-instead of `+` and thus write `plus(1, 3)` or `1.plus(3)`. A small number of
+instead of `+` and thus write `add(1, 3)` or `1.add(3)`. A small number of
 operators are exceptional in this sense. We list the alternative names when
 introducing operators.  We don't expect humans to write expressions like the
 ones above. This notation is more convenient for programs, so TNT tooling may
 use this computer-readable representation. 
 
-Like in every programming language, even in TLA+, several operators are special
+Like in every programming language, several operators are special
 in the sense that they have non-standard priorities. The good news is that
 we keep the number of such operators to the bare minimum, in contrast to TLA+.
 If you are using the infix form, it good to know the operator priorities.
@@ -408,7 +430,7 @@ priority:
 
 | Operators                    | Comments                                   |
 | ---------------------------- | ------------------------------------------ |
-| `.`                          | Call via dot has the highest priority      |
+| `e_1.F(e_2, ..., e_n)`       | Call via dot has the highest priority      |
 | `F(e_1, ..., e_n)`           | The normal form of operator application    |
 | `f[e_1, ..., e_n]`           | Function application                       |
 | `-i`                         | Unary minus                                |
@@ -416,12 +438,12 @@ priority:
 | `i * j`, `i / j`, `i % j`    | Integer multiplication, division, modulo   |
 | `i + j`, `i - j`             | Integer addition and subtraction           |
 | `e_1 F e_2, ..., e_n`        | General infix operator application         |
-| `i > j`, `i < j`, `i >= j`, `i <= j`, `i <> j`, `i != j`, `i == j`, `i = j`, `i := j`, `S in T`, `S notin T`, `S subseteq T`  | Integer comparisons and set relations |
+| `i > j`, `i < j`, `i >= j`, `i <= j`, `i <> j`, `i != j`, `i == j`, `i = j`, `i := j`, `S in T`, `S notin T`, `S subseteq T`  | Integer comparisons, equality, assignment, and set relations |
 | `p and q`                    | Boolean 'and' (conjunction)                |
 | `p or q`                     | Boolean 'or' (disjunction)                 |
 | `p iff q`                    | Boolean equivalence (if and only if)       |
 | `p implies q`                | Boolean implication: `not(p) or q`         |
-| all forms with `(..)`, `{..}`, and `[..]` |                               |
+| all forms with `(..)`, `{..}`, and `[..]` |  the lowest priority          |
 
 ## Boolean operators and equality
 
@@ -688,6 +710,8 @@ cardinality(S)
 ```scala
 // function application: f[e]
 f[e]
+f.of(e)
+of(f, e)
 // function domain: DOMAIN f
 f domain
 f.domain
@@ -851,40 +875,54 @@ Moreover, there is no module `Reals`. If you really need `Reals`, most likely,
 you should switch directly to TLA+.
 
 ```scala
+// like m + n in TLA+
 m + n
 m.add(n)
 add(m, n)
+// like m - n in TLA+
 m - n
 m.sub(n)
 sub(m, n)
+// like -m in TLA+
+-m
+uminus(m)
+m.uminus
+// like m * n in TLA+
 m * n
 m.mul(n)
 mul(m, n)
-// integer division, as \div in TLA+
+// integer division, lik m \div n in TLA+
 m / n
 m.div(n)
 div(m, n)
+// like m % n in TLA+
 m % n
 m.mod(n)
 mod(m, n)
-m ^ n
+// like m^n in TLA+
+m^n
 m.pow(n)
 pow(m, n)
+// like m < n in TLA+
 m < n
 m.lt(n)
 lt(m, n)
+// like m > n in TLA+
 m > n
 m.gt(n)
 gt(m, n)
+// like m <= n in TLA+
 m <= n
 m.lte(n)
 lte(m, n)
+// like m >= n in TLA+
 m >= n
 m.gte(n)
 gte(m, n)
+// like Int and Nat in TLA+
 Int
 Nat
-// as m..n in TLA+
+// like m..n in TLA+
 m to n
 m.to(n)
 to(m, n)
