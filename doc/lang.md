@@ -88,7 +88,7 @@ A type is one of the following:
 
  - Basic type: `bool`, `int`, `str`.
 
- - Uninterpreted type or type name: `IDENITIFIER_IN_CAPS`.
+ - Uninterpreted type or type name: `IDENTIFIER_IN_CAPS`.
 
  - Type variable (parameter): `a`, ..., `z`.
 
@@ -98,7 +98,7 @@ A type is one of the following:
 
  - Tuple: `(T_1, T_2, ..., T_n)` for `n >= 2` types `T_1`, ..., `T_n`.
 
- - Record: `{name_1: T_1, name_2: T_2, ..., name_n: T_n}`
+ - Record: `{ name_1: T_1, name_2: T_2, ..., name_n: T_n }`
     for `n >= 1` types `T_1`, ..., `T_n`.
 
  - Function: `T1 -> T2` for types `T1` and `T2`.
@@ -115,6 +115,18 @@ A type is one of the following:
     for `n >= 1` types `T_1_1`, ..., `T_k_n_k`.
 
  - Type in parentheses: `(T)` for a type `T`.
+
+
+It is often convenient to declare a type alias. You can use `typedef` to define
+an alias inside a module definition. For instance:
+
+```
+typedef STR_OPTION =
+    | { type: "none" }
+    | { type: "some", value: string }
+```
+
+Type aliases are written in CAPITAL LETTERS.
 
 
 ## Module-level constructs
@@ -294,6 +306,14 @@ TLA+.
 We do not allow for instances with parameters. They are rarely used. They are
 mainly needed for proofs of refinement. In this case, you would be better off
 with TLA+ and TLAPS.
+
+### Type aliases
+
+As discussed above, you can define a type alias, by following the grammar rule:
+
+```
+typedef <IDENTIFIER_IN_CAPS> = <type>
+```
 
 ### Theorems
 
