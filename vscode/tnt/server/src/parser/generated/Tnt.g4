@@ -20,6 +20,9 @@ unit :          'const' ident ':' ('_' | type)                  # const
         |       module                                          # moduleNested
         |       instanceDef                                     # instance
         |       'typedef' ALL_CAPS_ID '=' type                  # typeDef
+        |       nonUnitStart {
+         this.notifyErrorListeners("TNT001: expected a const, var, def, typedef, etc.");
+                }                                               # errorCase
         ;
 
 valDef  :       'val' ident (':' ('_' | type))? '=' expr
@@ -119,7 +122,16 @@ name_after_dot  :    (ID | ONE_LETTER | ALL_CAPS_ID | IN | NOTIN |
         ;
 
 ident   : (ID | ONE_LETTER | ALL_CAPS_ID | 'set' | 'seq')
-        ;        
+        ;
+
+// a token that does not start a unit, for better error messages
+nonUnitStart  : (ident | AND | OR | IFF | IMPLIES | STRING | BOOL |
+                 INT | BUILTIN_CONST | SUBSETEQ | IN | NOTIN |
+                '(' | '{' | '[' | '&' | '|' | 'if' | 'case' |
+                '>' | '<' | '>=' | '<=' | '<>' | '!=' | '==' | ':=' | '=' |
+                '*' | '/' | '%' | '+' | '-' | '^'
+                )
+        ;
 
 // TOKENS
 
