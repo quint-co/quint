@@ -4,6 +4,8 @@
  * See License.txt in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
+import { TntTypeTag } from './tntTypes';
+
 /*
  * Intermediate representation of TNT. It almost mirrors the IR of Apalache,
  * which assumes that module instances are flattened.
@@ -18,19 +20,26 @@ export interface WithId {
 }
 
 /**
+ * TNT expressions and declarations carry a type tag.
+ */
+export interface WithTypeTag {
+	typeTag: TntTypeTag
+}
+
+/**
  * Discriminated union of TNT expressions.
  */
 export type TntEx =
 	// A name of: a variable, constant, parameter, user-defined operator.
-	| { kind: "name", name: string } & WithId
+	| { kind: "name", name: string } & WithId & WithTypeTag
 	// An integer literal.
-	| { kind: "number", value: bigint } & WithId
+	| { kind: "number", value: bigint } & WithId & WithTypeTag
 	// A string literal
-	| { kind: "string", value: string } & WithId
+	| { kind: "string", value: string } & WithId & WithTypeTag
 	// An operator application.
-	| { kind: "oper", opcode: string, args: TntEx[] } & WithId
+	| { kind: "oper", opcode: string, args: TntEx[] } & WithId & WithTypeTag
 	// A let-in binding (defined via 'def ... in', 'def rec ... in', or 'val ... in').
-	| { kind: "let", opdef: TntOpDef, body: TntEx } & WithId
+	| { kind: "let", opdef: TntOpDef, body: TntEx } & WithId & WithTypeTag
 
 /**
  * Operator qualifier that refines the operator shape: val, def, def rec, pred, action, or temporal.
@@ -46,10 +55,8 @@ export enum OpQualifier {
 
 /**
  * A user-defined operator that is defined via one of the qualifiers: val, def, def rec, pred, action, or temporal.
- * 
- * TODO: add support for higher-order operators. This can be nicely done via types.
  */
-export interface TntOpDef extends WithId {
+export interface TntOpDef extends WithId, WithTypeTag {
 	kind: "def",
 	name: string,
 	params: string[],
