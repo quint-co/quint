@@ -408,7 +408,7 @@ When you use the dot form, you cannot get priorities wrong (calls via dot are
 always left-associative if you wonder):
 
 ```
-p.or(q).and(r)
+p.or(q.and(r))
 ```
 
 Several operators have conventional names that stem from mathematics and thus
