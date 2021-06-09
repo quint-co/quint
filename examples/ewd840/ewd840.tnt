@@ -64,7 +64,7 @@ action InitiateProbe = {
 (***************************************************************************/
 action PassToken(i) = {
   & tpos = i
-  & not active[i] or color[i] = "black" or tcolor = "black"
+  & not(active[i]) or color[i] = "black" or tcolor = "black"
   & tpos := i - 1
   & tcolor := if (color[i] = "black") "black" else tcolor
   & active := active
@@ -133,7 +133,7 @@ temporal NeverChangeColor = always(stutter(unchanged(color), vars))
 (***************************************************************************/
 pred terminationDetected = {
   & tpos = 0 and tcolor = "white"
-  & color[0] = "white" and not active[0]
+  & color[0] = "white" and not(active[0])
 }  
 
 pred TerminationDetection =
@@ -143,7 +143,7 @@ pred TerminationDetection =
 (* Liveness property: termination is eventually detected.                  *)
 (***************************************************************************/
 temporal Liveness =
-  always(Node.forall(i -> not active[i]) implies eventually(terminationDetected))
+  always(Node.forall(i -> not(active[i])) implies eventually(terminationDetected))
 
 /***************************************************************************)
 (* The following property asserts that when every process always           *)
@@ -151,7 +151,7 @@ temporal Liveness =
 (* It does not hold since processes can wake up each other.                *)
 (***************************************************************************/
 temporal FalseLiveness =
-  always(Node.forall(i -> always(eventually(not active[i])))
+  always(Node.forall(i -> always(eventually(not(active[i]))))
          implies eventually(terminationDetected))
 
 /***************************************************************************)
@@ -165,14 +165,14 @@ temporal FalseLiveness =
 temporal SpecWFNext = Init and always(stutter(Next, vars) and wfair(Next, vars))
 
 temporal AllNodesTerminateIfNoMessages =
-  eventually(always(stutter(Node.forall(i -> not SendMsg(i)), vars)))
-    implies eventually(Node.forall(i -> not active[i]))
+  eventually(always(stutter(Node.forall(i -> not(SendMsg(i)), vars))))
+    implies eventually(Node.forall(i -> not(active[i])))
 
 /***************************************************************************)
 (* Dijkstra's inductive invariant                                          *)
 (***************************************************************************/
 pred Inv = {
-  | Node.forall(i -> tpos < i implies not active[i])
+  | Node.forall(i -> tpos < i implies not(active[i]))
   | (0 to tpos).exists(j -> color[j] = "black")
   | tcolor = "black"
 }

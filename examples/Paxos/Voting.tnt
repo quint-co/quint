@@ -72,7 +72,7 @@ pred chosen = Value filter { v -> Ballot exists { b -> ChosenAt(b, v) } }
   (* The set of values that have been chosen.                              *)
   (*************************************************************************/
   
-pred DidNotVoteAt(a, b) = Value forall { v -> not VotedFor(a, b, v) }
+pred DidNotVoteAt(a, b) = Value forall { v -> not(VotedFor(a, b, v)) }
 
 pred CannotVoteAt(a, b) = {
   & maxBal[a] > b

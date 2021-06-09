@@ -152,7 +152,7 @@ action Phase1b(a) = {
 (* greater than b (thereby promising not to vote in ballot b).             *)
 (***************************************************************************/
 action Phase2a(b, v) = {
-  & not msgs.filter(m -> m.type = "2a").exists(m -> m.bal = b)
+  & not(msgs.filter(m -> m.type = "2a").exists(m -> m.bal = b))
   & Quorum exists { Q ->
         val Q1b = msgs.filter(m -> {
                             & m.type = "1b"
