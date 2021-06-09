@@ -69,9 +69,9 @@ export interface TntOpDef extends WithId, WithTypeTag {
  */
 export type TntDef =
 	| TntOpDef
-	| { kind: "const", name: string } & WithId
-	| { kind: "var", name: string } & WithId
-	| { kind: "assume", name: string, assumption: TntEx } & WithId
+	| { kind: "const", name: string } & WithId & WithTypeTag
+	| { kind: "var", name: string } & WithId & WithTypeTag
+	| { kind: "assume", name: string, assumption: TntEx } & WithId & WithTypeTag
 	| { kind: "instance", name: string, moduleName: string, overrides: [string, TntEx][] } & WithId
 	| { kind: "module", module: TntModule } & WithId
 

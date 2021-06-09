@@ -17,7 +17,7 @@
 		"vscode-languageserver-textdocument": "^1.0.1"
 	},
 	"scripts": {
-		"test": "mocha -r ts-node/register test/**/test*.ts",
+		"test": "mocha -r ts-node/register test/**/*.test.ts",
 		"antlr4ts": "antlr4ts -visitor ./src/parser/generated/Tnt.g4"
 	},
 	"devDependencies": {
