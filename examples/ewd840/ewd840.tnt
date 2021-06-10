@@ -116,7 +116,7 @@ action Next = { System | Environment }
 
 val vars = (active, color, tpos, tcolor)
 
-temporal Spec = Init and always(stutter(Next, vars) and wfair(System, vars))
+temporal Spec = Init and always(Next.stutter(vars) and System.weakFair(vars))
 
 //-----------------------------------------------------------------------------
 
@@ -125,7 +125,7 @@ temporal Spec = Init and always(stutter(Next, vars) and wfair(System, vars))
 (***************************************************************************/
 pred TokenAlwaysBlack = tcolor = "black"
 
-temporal NeverChangeColor = always(stutter(unchanged(color), vars))
+temporal NeverChangeColor = always(unchanged(color).stutter(vars))
 
 /***************************************************************************)
 (* Main safety property: if there is a white token at node 0 then every    *)
@@ -162,11 +162,13 @@ temporal FalseLiveness =
 (* condition WF_vars(Next) is used instead of only WF_vars(System) that    *)
 (* requires fairness of the actions controlled by termination detection.   *)
 (***************************************************************************/
-temporal SpecWFNext = Init and always(stutter(Next, vars) and wfair(Next, vars))
+temporal SpecWFNext = Init and always(Next.stutter(vars) and Next.weakfair(vars))
 
-temporal AllNodesTerminateIfNoMessages =
-  eventually(always(stutter(Node.forall(i -> not(SendMsg(i)), vars))))
-    implies eventually(Node.forall(i -> not(active[i])))
+temporal AllNodesTerminateIfNoMessages = {
+  eventually(always(
+      Node.forall(i -> not(SendMsg(i))).stutter(vars)
+  )) implies eventually(Node.forall(i -> not(active[i])))
+}
 
 /***************************************************************************)
 (* Dijkstra's inductive invariant                                          *)
@@ -183,7 +185,7 @@ pred Inv = {
 (* (ordinary) invariant of a specification obtained by replacing the       *)
 (* initial condition by that conjunction.                                  *)
 (***************************************************************************/
-temporal CheckInductiveSpec = TypeOK and Inv and always(stutter(Next, vars))
+temporal CheckInductiveSpec = TypeOK and Inv and always(Next.stutter(vars))
 
 /***************************************************************************)
 (* The algorithm implements the high-level specification of termination    *)

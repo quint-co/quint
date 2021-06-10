@@ -159,9 +159,7 @@ action Phase2a(b, v) = {
                             & m.acc in Q
                             & m.bal = b
                             })
-        in
         val Q1bv = Q1b.filter(m -> m.mbal >= 0)
-        in
         {
             & Q.forall(a -> Q1B.exists(m -> m.acc = a))
             & {

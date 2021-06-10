@@ -3,39 +3,39 @@
 // @author: Igor Konnov
 grammar Tnt;
 
-module : 'module' ident ('extends' ident (',' ident))? unit* 'end';
+module : 'module' IDENTIFIER ('extends' IDENTIFIER (',' IDENTIFIER))? unit* 'end';
 
 // a module unit
-unit :          'const' ident ':' ('_' | type)                  # const
-        |       'var' ident ':' ('_' | type)                    # var
-        |       'assume' (ident | '_') '=' expr                 # assume
+unit :          'const' IDENTIFIER ':' ('_' | type)             # const
+        |       'var' IDENTIFIER ':' ('_' | type)               # var
+        |       'assume' (IDENTIFIER | '_') '=' expr            # assume
         |       ('private')? valDef (':' ('_' | type))?         # val
         |       ('private')? operDef (':' ('_' | type))?        # oper
-        |       ('private')? 'pred' ident params?
+        |       ('private')? 'pred' IDENTIFIER params?
                            (':' ('_' | type))? '=' expr         # pred
-        |       ('private')? 'action' ident params?
+        |       ('private')? 'action' IDENTIFIER params?
                            (':' ('_' | type))? '=' expr         # action
-        |       ('private')? 'temporal' ident params?
+        |       ('private')? 'temporal' IDENTIFIER params?
                            (':' ('_' | type))? '=' expr         # temporal
         |       module                                          # moduleNested
         |       instanceDef                                     # instance
-        |       'typedef' ALL_CAPS_ID '=' type                  # typeDef
-        |       nonUnitStart {
+        |       'typedef' IDENTIFIER '=' type                   # typeDef
+        |       (IDENTIFIER | operator | literal) {
          this.notifyErrorListeners("TNT001: expected a const, var, def, typedef, etc.");
                 }                                               # errorCase
         ;
 
-valDef  :       'val' ident (':' ('_' | type))? '=' expr
+valDef  :       'val' IDENTIFIER (':' ('_' | type))? '=' expr
         ;
 
-operDef :       'def' ('rec')? ident params (':' ('_' | type))? '=' expr
+operDef :       'def' ('rec')? IDENTIFIER params (':' ('_' | type))? '=' expr
         ;
 
-instanceDef :   'instance' (ident | '_') '=' ident
-                        ('with' ident '<-' expr (',' ident '<-' expr)*)?
+instanceDef :   'instance' (IDENTIFIER | '_') '=' IDENTIFIER
+                    ('with' IDENTIFIER '<-' expr (',' IDENTIFIER '<-' expr)*)?
         ;
 
-params  :       '(' (ident (',' ident)*)? ')'
+params  :       '(' (IDENTIFIER (',' IDENTIFIER)*)? ')'
         ;
 
 // Types. This is Type System 1 of Apalache, except that records are disjoint unions.
@@ -44,17 +44,17 @@ type :          type '->' type                                  # typeFun
         |       'set' '(' type ')'                              # typeSet
         |       'seq' '(' type ')'                              # typeSeq
         |       '(' type ',' type (',' type)* ')'               # typeTuple
-        |       '{' ident ':' type (',' ident ':' type)* '}'    # typeRec
+        |       '{' IDENTIFIER ':' type
+                         (',' IDENTIFIER ':' type)* '}'         # typeRec
         |       typeUnionRecOne+                                # typeUnionRec
         |       'int'                                           # typeInt
         |       'str'                                           # typeStr
         |       'bool'                                          # typeBool
-        |       ALL_CAPS_ID                                     # typeConst
-        |       ONE_LETTER                                      # typeVar
+        |       IDENTIFIER                                      # typeConstOrVar
         |       '(' type ')'                                    # typeParen
         ;
 
-typeUnionRecOne :  '|' '{' ident ':' STRING (',' ident ':' type)* '}'
+typeUnionRecOne : '|' '{' IDENTIFIER ':' STRING (',' IDENTIFIER ':' type)* '}'                
         ;
 
 // A TNT expression. The order matters, it defines the priority.
@@ -63,8 +63,8 @@ expr:           // apply a built-in operator via the dot notation
                 expr '.' name_after_dot ('(' (lambda | arg_list) ')')?  # dotCall
                 // Call a user-defined operator or a built-in operator
                 // of at least one argument.
-                // This includes: set, next, unchanged, always, eventually, enabled
-        |       ident '(' arg_list? ')'                             # operApp
+                // This includes: next, unchanged, always, eventually, enabled
+        |       IDENTIFIER '(' arg_list? ')'                        # operApp
                 // function application
         |       expr '[' expr ']'                                   # funApp
                 // unary minus
@@ -77,7 +77,7 @@ expr:           // apply a built-in operator via the dot notation
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
         |       'case' '{' '|'? expr '->' expr ('|' expr '->' expr)* '}' # blockCase
                 // built-in infix/postfix operators, a la Scala
-        |       expr ident (arg_list)?                              # infixCall
+        |       expr IDENTIFIER (arg_list)?                         # infixCall
                 // standard relations
         |       expr op=('>' | '<' | '>=' | '<=' |
                          '<>' | '!=' | '==' | ':=' | '=' |
@@ -90,13 +90,17 @@ expr:           // apply a built-in operator via the dot notation
                 // similar to indented /\ and indented \/
         |       '{' ('&')? expr '&' expr ('&' expr)* '}'            # blockAnd
         |       '{' ('|')? expr '|' expr ('|' expr)* '}'            # blockOr
-        |       ( ident | INT | BOOL | STRING | BUILTIN_CONST)      # literalOrId
+        |       ( IDENTIFIER | INT | BOOL | STRING | BUILTIN_CONST) # literalOrId
         |       '(' expr ',' expr (',' expr)* ')'                   # tuple
-        |       '\'{' (expr (',' expr)*)? '}'                       # set
-        |       '{' ident ':' expr (',' ident ':' expr)* '}'        # record
-        |       '[' ident 'in' expr (',' ident 'in' expr)* ']'      # recordSet
-        |       '[' (expr (',' expr)*)? ']'                         # sequence
-        |       (valDef IN expr | operDef IN expr)                  # letIn
+        |       ('\'{' (expr (',' expr)*)? '}' |
+                        'set' '(' (expr (',' expr)*)? ')')          # set
+        |       '{' IDENTIFIER ':' expr
+                        (',' IDENTIFIER ':' expr)* '}'              # record
+        |       '[' IDENTIFIER 'in' expr
+                        (',' IDENTIFIER 'in' expr)* ']'             # recordSet
+        |       ('[' (expr (',' expr)*)? ']' |
+                        'seq' '(' (expr (',' expr)*)? ')')          # sequence
+        |       (valDef expr | operDef expr)                        # letIn
         |       '(' expr ')'                                        # paren
         |       '{' (lambda | expr) '}'                             # lambdaOrBraces
         ;
@@ -109,7 +113,7 @@ lambda:         pattern '->' expr
 
 // a pattern like (x, (y, z)) in lambdas
 pattern:        '(' pattern (',' pattern)* ')'
-        |       (ident | '_')
+        |       (IDENTIFIER | '_')
         ;
 
 arg_list:       expr (',' expr)*
@@ -117,20 +121,18 @@ arg_list:       expr (',' expr)*
 
 // Some infix operators may be called via lhs.oper(rhs),
 // without causing any ambiguity.
-name_after_dot  :    (ID | ONE_LETTER | ALL_CAPS_ID | IN | NOTIN |
-                      AND | OR | IFF | IMPLIES)
+name_after_dot  :    (IDENTIFIER | IN | NOTIN | AND | OR | IFF | IMPLIES)
         ;
 
-ident   : (ID | ONE_LETTER | ALL_CAPS_ID | 'set' | 'seq')
+// special operators
+operator: (AND | OR | IFF | IMPLIES | SUBSETEQ | IN | NOTIN |
+           '(' | '{' | '[' | '&' | '|' | 'if' | 'case' |
+           '>' | '<' | '>=' | '<=' | '<>' | '!=' | '==' | ':=' | '=' |
+           '*' | '/' | '%' | '+' | '-' | '^')
         ;
 
-// a token that does not start a unit, for better error messages
-nonUnitStart  : (ident | AND | OR | IFF | IMPLIES | STRING | BOOL |
-                 INT | BUILTIN_CONST | SUBSETEQ | IN | NOTIN |
-                '(' | '{' | '[' | '&' | '|' | 'if' | 'case' |
-                '>' | '<' | '>=' | '<=' | '<>' | '!=' | '==' | ':=' | '=' |
-                '*' | '/' | '%' | '+' | '-' | '^'
-                )
+// literals
+literal: (STRING | BOOL | INT | BUILTIN_CONST)
         ;
 
 // TOKENS
@@ -151,12 +153,8 @@ SUBSETEQ        :   'subseteq' ;
 IN              :   'in' ;
 NOTIN           :   'notin' ;
 
-// this token is used for type variables
-ONE_LETTER      : [a-z] ;
-// this token is used for constant types
-ALL_CAPS_ID     : [A-Z_][A-Z0-9_]* ;
 // other TLA+ identifiers
-ID              : [a-zA-Z_][a-zA-Z0-9_]* ;
+IDENTIFIER      : [a-zA-Z_][a-zA-Z0-9_]* ;
 
 // comments and whitespaces
 LINE_COMMENT    :   '//' .*? '\n'   -> skip ;

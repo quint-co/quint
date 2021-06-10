@@ -1,4 +1,4 @@
-)module ReadersWriters
+module ReadersWriters
 /***************************************************************************)
 (* This solution to the readers-writers problem, cf.                       *)
 (* https://en.wikipedia.org/wiki/Readers–writers_problem,                  *)
@@ -57,8 +57,8 @@ action Write(actor) = {
 action ReadOrWrite = {
     & waiting != []
     & writers = set()
-    & val pair = waiting.head in
-      val actor = pair._2 in  
+    & val pair = waiting.head
+      val actor = pair._2
       case {
           | (pair._1 = "read") -> Read(actor)
           | (pair._1 = "write") -> Write(actor)
@@ -97,10 +97,10 @@ action Next = {
 }
 
 temporal Fairness = {
-    & Actors forall { actor -> wfair(TryRead(actor), vars) }
-    & Actors forall { actor -> wfair(TryWrite(actor), vars) }
-    & wfair(ReadOrWrite, vars)
-    & wfair(Stop, vars)
+    & Actors forall { actor -> TryRead(actor).weakFair(vars) }
+    & Actors forall { actor -> TryWrite(actor).weakFair(vars) }
+    & ReadOrWrite.wfair(vars)
+    & Stop.wfair(vars)
 }
 
 temporal Spec = Init and always(stutter(Next, vars) and Fairness)
@@ -121,8 +121,6 @@ pred Safety = {
     & not(readers != set() and writers != set())
     & Cardinality(writers) <= 1
 }
-
-111 3434 xxx
 
 /**************)
 (* Properties *)

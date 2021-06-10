@@ -81,18 +81,18 @@ val AllProcs = Corr union Faulty
 val Rounds = 0 to MaxRound
 // a special value to denote a nil round, outside of Rounds
 val NilRound = -1
-val RoundsOrNil = Rounds union set(NilRound)
+val RoundsOrNil = set(NilRound) union Rounds
 // the set of all values
 val Values = ValidValues union InvalidValues
 // a special value for a nil round, outside of Values
 val NilValue = "None"
-val ValuesOrNil = Values union set(NilValue)
+val ValuesOrNil = set(NilValue) union Values
 
 // a value hash is modeled as identity
 def Id(v) = v
 
 // The validity predicate
-def IsValid(v) = v in ValidValues
+pred IsValid(v) = ValidValues.contains(v)
 
 // the two thresholds that are used in the algorithm
 val THRESHOLD1 = T + 1      // at least one process is not faulty
@@ -132,9 +132,10 @@ var evidence: set(message_t)
 // we use this variable to see which action was taken
 var fired_action: str
 
-// a handy definition used in UNCHANGED
-val vars = (round, step, decision, lockedValue, lockedRound,
-            validValue, validRound, evidence, msgsPropose, msgsPrevote, msgsPrecommit)
+// a handy definition used in unchanged
+val vars = (round, step, decision, lockedValue,
+            lockedRound, validValue, validRound,
+            evidence, msgsPropose, msgsPrevote, msgsPrecommit)
 
 //********************* PROTOCOL INITIALIZATION ******************************
 def FaultyProposals(r) =
@@ -157,8 +158,8 @@ def FaultyPrecommits(r) =
 val AllFaultyPrecommits =
     [type in set("precommit"), src in Faulty, round in Rounds, id in Values]
    
-def BenignRoundsInMessages(msgfun) =
-    // the message function never contains a message for a wrong round
+// the message function never contains a message for a wrong round
+pred BenignRoundsInMessages(msgfun) =
     Round forall { r ->
       msgfun[r] forall { m ->
         r = m.round
@@ -538,10 +539,12 @@ pred AmnesiaImpliesEquivocation =
   This property is violated. You can check it to see that all correct processes
   may reach MaxRound without making a decision. 
  */
-pred NeverUndecidedInMaxRound =
+pred NeverUndecidedInMaxRound = {
     val AllInMax = Corr.forall(p -> round[p] = MaxRound)
     val AllDecided = Corr.forall(p -> decision[p] != NilValue)
+
     AllInMax implies AllDecided
+}
 
 
 end

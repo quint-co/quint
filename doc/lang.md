@@ -417,6 +417,9 @@ Which form to choose? It's up to you. We prefer to combine all three, whatever
 feels more natural in your circumstances. In the future, TNT will provide
 automatic translation that will let you to freely switch between all three forms.
 
+*The TNT normal form is especially convenient for programs, so they should
+ communicate in this form. People may communicate in any form.*
+
 For example, some people like to write Boolean expressions like this:
 
 ```
@@ -438,8 +441,8 @@ would make the parser unnecessary complex. You can use the mnemonic name `add`
 instead of `+` and thus write `add(1, 3)` or `1.add(3)`. A small number of
 operators are exceptional in this sense. We list the alternative names when
 introducing operators.  We don't expect humans to write expressions like the
-ones above. This notation is more convenient for programs, so TNT tooling may
-use this computer-readable representation. 
+ones above. This notation is more convenient for programs, so TNT tooling should
+use the TNT normal form. 
 
 Like in every programming language, several operators are special
 in the sense that they have non-standard priorities. The good news is that
@@ -962,27 +965,26 @@ operators, except that they are always private.
 def double(x) =
   // a nested operator
   def plus(a, b) = a + b
-  in
+
   plus(x, x)
 
 def plus_inductive(x, y) =
   // a nested recursive operator. You don't have to add numbers like this though.
   def rec nat_plus(a, b) =
     if (b <= 0) a else 1 + nat_plus(a, b - 1)
-  in
+
   nat_plus(x, y)
 
 def pow4(x) =
   // a nested
   val x2 = x * x
-  in
+
   x2 * x2
 
 temporal my_prop =
   temporal A = eventually(x > 3)
-  in
   temporal B = always(eventually(y = 0))
-  in
+
   A implies B
 ```
 
@@ -991,7 +993,6 @@ temporal my_prop =
 ```
 (val | def | def rec | pred | action | temporal)
   <identifier>[(<identifier>, ..., <identifier>)] [':' <type>] = <expr>
-in
 <expr>
 ```
 
@@ -1104,15 +1105,15 @@ A.eventually
 This is equivalent to `WF_e(A)` of TLA+:
 
 ```scala
-wfair(A, e)
-A.wfair(e)
+weakFair(A, e)
+A.weakFair(e)
 ```
 
 This is equivalent to `SF_e(A)` of TLA+:
 
 ```scala
-sfair(A, e)
-A.sfair(e)
+strongFair(A, e)
+A.strongFair(e)
 ```
 
 The second argument `e` is either a name, or a tuple of names, as in

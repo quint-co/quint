@@ -50,7 +50,7 @@
 			"patterns": [
 				{
 				"name": "keyword.operator.tnt",
-				"match": "\\b(not|or|and|implies|iff|always|eventually|wfair|sfair|guarantees|next|unchanged|enabled|stutter|nostutter)\\b"
+				"match": "\\b(not|or|and|implies|iff|always|eventually|weakFair|strongFair|guarantees|next|unchanged|enabled|stutter|nostutter)\\b"
 				},
 				{
 					"name": "keyword.operator.tnt",
