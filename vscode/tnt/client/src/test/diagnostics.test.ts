@@ -10,7 +10,7 @@ import { getDocUri, activate } from './helper';
 suite('Should get diagnostics', () => {
 	test('Parse error # 1 in module', async () => {
 		await testDiagnostics(getDocUri('parseError1.tnt'), [
-			{ message: "extraneous input 'error' expecting {'module', 'extends', 'end', 'const', 'var', 'assume', 'private', 'pred', 'action', 'temporal', 'val', 'def', 'instance'}",
+			{ message: "TNT001: expected a const, var, def, typedef, etc.",
 			  range: toRange(2, 2, 2, 3),
 			  severity: vscode.DiagnosticSeverity.Error,
 			  source: 'parser' },
