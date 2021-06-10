@@ -269,7 +269,7 @@ action UponProposalInProposeAndPrevote(p) =
 
     {
       & step[p] = "propose"
-      & 0 <= vr /\ vr < round[p] // line 28, the while part
+      & 0 <= vr and vr < round[p] // line 28, the while part
       & msg in msgsPropose[round[p]] // line 28
       & PV.cardinality >= THRESHOLD2 // line 28
       & evidence := PV.union(set(msg)).union(evidence)
