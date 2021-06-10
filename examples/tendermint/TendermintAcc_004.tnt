@@ -1,0 +1,547 @@
+module TendermintAcc_004
+/*
+ A TNT specification of a simplified Tendermint consensus, tuned for
+ fork accountability. The simplifications are as follows:
+
+ - the protocol runs for one height, that is, it is one-shot consensus
+
+ - this specification focuses on safety, so timeouts are modelled
+   with non-determinism
+
+ - the proposer function is non-determinstic, no fairness is assumed
+
+ - the messages by the faulty processes are injected right in the initial states
+
+ - every process has the voting power of 1
+
+ - hashes are modelled as identity
+
+ Having the above assumptions in mind, the specification follows the pseudo-code
+ of the Tendermint paper: https://arxiv.org/abs/1807.04938
+
+ Byzantine processes can demonstrate arbitrary behavior, including
+ no communication. We show that if agreement is violated, then the Byzantine
+ processes demonstrate one of the two behaviours:
+
+   - Equivocation: a Byzantine process may send two different values
+     in the same round.
+
+   - Amnesia: a Byzantine process may lock a value without unlocking
+     the previous value that it has locked in the past.
+
+ * Version 4. Remove defective processes, fix bugs, collect global evidence.
+ * Version 3. Modular and parameterized definitions.
+ * Version 2. Bugfixes in the spec and an inductive invariant.
+ * Version 1. A preliminary specification.
+
+ Zarko Milosevic, Igor Konnov, Informal Systems, 2019-2020.
+ */
+
+//********************* PROTOCOL PARAMETERS **********************************
+
+// a process name is just a string in our specification
+typedef proc_t = str
+// a value is also a string
+typedef value_t = str
+// a round is an integer
+typedef round_t = int
+
+// the set of correct processes 
+const Corr: set(proc_t)
+
+// the set of Byzantine processes, may be empty
+const Faulty: set(proc_t)
+
+// the total number of processes: correct, defective, and Byzantine
+const N: int
+
+// an upper bound on the number of Byzantine processes
+const T: int
+
+// the set of valid values, proposed both by correct and faulty
+const ValidValues: set(value_t)
+
+// the set of invalid values, never proposed by the correct ones
+const InvalidValues: set(value_t)
+
+// the maximal round number
+const MaxRound: round_t
+
+// the proposer function from 0..NRounds to 1..N
+const Proposer: round_t -> int
+
+assume Corr_and_faulty_make_N = {
+    N = cardinality(Corr union Faulty)
+}
+
+//*************************** DEFINITIONS ***********************************
+// the set of all processes
+val AllProcs = Corr union Faulty
+// the set of potential rounds
+val Rounds = 0 to MaxRound
+// a special value to denote a nil round, outside of Rounds
+val NilRound = -1
+val RoundsOrNil = Rounds union set(NilRound)
+// the set of all values
+val Values = ValidValues union InvalidValues
+// a special value for a nil round, outside of Values
+val NilValue = "None"
+val ValuesOrNil = Values union set(NilValue)
+
+// a value hash is modeled as identity
+def Id(v) = v
+
+// The validity predicate
+def IsValid(v) = v in ValidValues
+
+// the two thresholds that are used in the algorithm
+val THRESHOLD1 = T + 1      // at least one process is not faulty
+val THRESHOLD2 = 2 * T + 1  // a quorum when having N > 3 * T
+
+//********************* PROTOCOL STATE ******************************
+// a process round number: Corr -> Rounds
+var round: proc_t -> round_t
+// a process step: Corr -> { "PROPOSE", "PREVOTE", "PRECOMMIT", "DECIDED" }
+var step: proc_t -> str
+// process decision: Corr -> ValuesOrNil
+var decision: proc_t -> value_t
+// a locked value: Corr -> ValuesOrNil
+var lockedValue: proc_t -> value_t
+// a locked round: Corr -> RoundsOrNil
+var lockedRound: proc_t -> round_t
+// a valid value: Corr -> ValuesOrNil
+var validValue: proc_t -> value_t
+// a valid round: Corr -> RoundsOrNil
+var validRound: proc_t -> round_t
+
+// book-keeping variables
+typedef message_t =
+    | { type: "proposal", src: proc_t, round: round_t, proposal: value_t, validRound: round_t }
+    | { type: "prevote", src: proc_t, round: round_t, id: value_t }
+    | { type: "precommit", src: proc_t, round: round_t, id: value_t }
+
+// PROPOSE messages broadcast in the system
+var msgsPropose: round_t -> message_t
+// PREVOTE messages broadcast in the system
+var msgsPrevote: round_t -> message_t
+// PRECOMMIT messages broadcast in the system
+var msgsPrecommit: round_t -> message_t
+// the messages that were used by the correct processes to make transitions
+var evidence: set(message_t)
+
+// we use this variable to see which action was taken
+var fired_action: str
+
+// a handy definition used in UNCHANGED
+val vars = (round, step, decision, lockedValue, lockedRound,
+            validValue, validRound, evidence, msgsPropose, msgsPrevote, msgsPrecommit)
+
+//********************* PROTOCOL INITIALIZATION ******************************
+def FaultyProposals(r) =
+    [type in set("proposal"), src in Faulty,
+     round in set(r), proposal in Values, validRound in RoundsOrNil]
+
+val AllFaultyProposals =
+    [type in set("proposal"), src in Faulty,
+     round in Rounds, proposal in Values, validRound in RoundsOrNil]
+
+def FaultyPrevotes(r) =
+    [type in set("prevote"), src in Faulty, round in set(r), id in Values]
+
+val AllFaultyPrevotes =
+    [type in set("prevote"), src in Faulty, round in Rounds, id in Values]
+
+def FaultyPrecommits(r) =
+    [type in set("precommit"), src in Faulty, round in set(r), id in Values]
+
+val AllFaultyPrecommits =
+    [type in set("precommit"), src in Faulty, round in Rounds, id in Values]
+   
+def BenignRoundsInMessages(msgfun) =
+    // the message function never contains a message for a wrong round
+    Round forall { r ->
+      msgfun[r] forall { m ->
+        r = m.round
+      }
+    }
+
+// The initial states of the protocol. Some faults can be in the system already.
+action Init = {
+  & round := Corr mkFun { _ -> 0 }
+  & step  := Corr mkFun { _ -> "propose" }
+  & decision := Corr mkFun { _ -> NilValue }
+  & lockedValue := Corr mkFun { _ -> NilValue }
+  & lockedRound := Corr mkFun { _ -> NilRound }
+  & validValue := Corr mkFun { _ -> NilValue }
+  & validRound := Corr mkFun { _ -> NilRound }
+  & msgsPropose := Rounds mkFun { _ -> AllFaultyProposals.powerset }
+  & msgsPrevote := Rounds mkFun { _ -> AllFaultyPrevotes.powerset }
+  & msgsPrecommit := Rounds mkFun { _ -> AllFaultyPrecommits.powerset }
+  & BenignRoundsInMessages(msgsPropose)
+  & BenignRoundsInMessages(msgsPrevote)
+  & BenignRoundsInMessages(msgsPrecommit)
+  & evidence := set()
+  & fired_action := "Init"
+}
+
+//************************ MESSAGE PASSING *******************************
+action BroadcastProposal(pSrc, pRound, pProposal, pValidRound) = {
+  val newMsg = { type: "proposal", src: pSrc, round: pRound,
+                 proposal: pProposal, validRound: pValidRound }
+
+  msgsPropose := msgsPropose.exceptAt(pRound, { old -> old union set(newMsg) })
+}
+
+action BroadcastPrevote(pSrc, pRound, pId) = {
+  val newMsg = { type: "prevote", src: pSrc, round: pRound, id: pId }
+
+  msgsPrevote := msgsPrevote.exceptAt(pRound, { old -> old union set(newMsg) })
+}
+
+action BroadcastPrecommit(pSrc, pRound, pId) = {
+  val newMsg = { type: "precommit", src: pSrc, round: pRound, id: pId }
+
+  msgsPrecommit := msgsPrecommit.exceptAt(pRound, { old -> old union set(newMsg) })
+}
+
+//********************* PROTOCOL TRANSITIONS ******************************
+// lines 12-13
+action StartRound(p, r) = {
+   & step[p] != "decided" // a decided process does not participate in consensus
+   & round := round.except(p, r)
+   & step := step.except(p, "propose")
+}
+
+// lines 14-19, a proposal may be sent later
+action InsertProposal(p) = {
+  val r = round[p]
+  
+  {
+    & p = Proposer[r]
+    & step[p] = "PROPOSE"
+    // if the proposer is sending a proposal, then there are no other proposals
+    // by the correct processes for the same round
+    & msgsPropose[r] forall { m -> m.src != p }
+    & ValidValues guess { v ->
+        val proposal = if (validValue[p] != NilValue) validValue[p] else v
+
+        BroadcastProposal(p, round[p], proposal, validRound[p])
+      }
+    & unchanged((evidence, round, decision, lockedValue, lockedRound,
+                 validValue, step, validRound, msgsPrevote, msgsPrecommit))
+    & fired_action := "InsertProposal"
+  }
+}
+
+// lines 22-27
+action UponProposalInPropose(p) =
+  Values guess { v ->
+    val msg = { type: "proposal", src: Proposer[round[p]],
+                round: round[p], proposal: v, validRound: NilRound }
+    val mid = // line 23
+         if (IsValid(v) and (lockedRound[p] = NilRound or lockedValue[p] = v))
+         Id(v)
+         else NilValue            
+
+    {
+      & step[p] = "propose"             // line 22
+      & msg in msgsPropose[round[p]]    // line 22
+      & evidence := set(msg) union evidence
+      & BroadcastPrevote(p, round[p], mid) // lines 24-26
+      & step := step.except(p, "prevote")
+      & unchanged((round, decision, lockedValue, lockedRound,
+                  validValue, validRound, msgsPropose, msgsPrecommit))
+      & fired_action := "UponProposalInPropose"
+    }
+  }
+
+// lines 28-33        
+action UponProposalInProposeAndPrevote(p) =
+  Values.cross(Rounds) guess { (v, vr) ->
+    val msg = { type: "proposal", src: Proposer[round[p]],
+                round: round[p], proposal: v, validRound: vr }
+    val PV = msgsPrevote[vr] filter { m -> m.id = Id(v) }
+    val mid = // line 29
+         if (IsValid(v) and (lockedRound[p] <= vr or lockedValue[p] = v))
+         Id(v)
+         else NilValue
+
+    {
+      & step[p] = "propose"
+      & 0 <= vr /\ vr < round[p] // line 28, the while part
+      & msg in msgsPropose[round[p]] // line 28
+      & PV.cardinality >= THRESHOLD2 // line 28
+      & evidence := PV.union(set(msg)).union(evidence)
+      & BroadcastPrevote(p, round[p], mid) // lines 24-26
+      & step := step.except(p, "prevote")
+      & unchanged((round, decision, lockedValue, lockedRound,
+                   validValue, validRound, msgsPropose, msgsPrecommit))
+      & fired_action := "UponProposalInProposeAndPrevote"
+    }
+  }
+
+// lines 34-35 + lines 61-64 (onTimeoutPrevote)
+action UponQuorumOfPrevotesAny(p) =
+  msgsPrevote[round[p]].powerset guess { MyEvidence -> 
+    // find the unique voters in the evidence
+    val Voters = MyEvidence map { m -> m.src }
+
+    // compare the number of the unique voters against the threshold
+    {
+      & step[p] = "prevote" // line 34 and 61
+      & Voters.cardinality >= THRESHOLD2 // line 34
+      & evidence := MyEvidence union evidence
+      & BroadcastPrecommit(p, round[p], NilValue)
+      & step := step.except(p, "precommit")
+      & unchanged((round, decision, lockedValue, lockedRound,
+                   validValue, validRound, msgsPropose, msgsPrevote))
+      & fired_action := "UponQuorumOfPrevotesAny"
+    }
+  }
+
+// lines 36-46
+action UponProposalInPrevoteOrCommitAndPrevote(p) =
+  ValidValues.cross(RoundsOrNil) guess { (v, vr) ->
+    val msg = { type: "proposal", src: Proposer[round[p]],
+                round: round[p], proposal: v, validRound: vr }
+    val PV = msgsPrevote[round[p]].filter(m -> m.id = Id(v))
+
+    {
+      & step[p] in set("prevote", "precommit") // line 36
+      & msg in msgsPropose[round[p]] // line 36
+      & PV.cardinality >= THRESHOLD2 // line 36
+      & evidence := PV.union(set(msg)).union(evidence)
+      & if (step[p] = "prevote") {
+          // lines 38-41:
+          & lockedValue := lockedValue.except(p, v)
+          & lockedRound := lockedRound.except(p, round[p])
+          & BroadcastPrecommit(p, round[p], Id(v))
+          & step := step.except(p, "precommit")
+        } else {
+          unchanged((lockedValue, lockedRound, msgsPrecommit, step))
+        }
+        // lines 42-43
+      & validValue := validValue.except(p, v)
+      & validRound := validRound.except(p, round[p])
+      & unchanged((round, decision, msgsPropose, msgsPrevote))
+      & fired_action := "UponProposalInPrevoteOrCommitAndPrevote"
+    }
+  }
+
+// lines 47-48 + 65-67 (onTimeoutPrecommit)
+action UponQuorumOfPrecommitsAny(p) =
+  msgsPrecommit[round[p]].powerset guess { MyEvidence ->
+      // find the unique committers in the evidence
+      val Committers =  MyEvidence map { m -> m.src }
+      // compare the number of the unique committers against the threshold
+      {
+        & Committers.cardinality >= THRESHOLD2  // line 47
+        & evidence := MyEvidence union evidence
+        & round[p] + 1 in Rounds
+        & StartRound(p, round[p] + 1)   
+        & unchanged((decision, lockedValue, lockedRound, validValue,
+                     validRound, msgsPropose, msgsPrevote, msgsPrecommit))
+        & fired_action := "UponQuorumOfPrecommitsAny"
+      }
+  }
+
+// lines 49-54        
+action UponProposalInPrecommitNoDecision(p) =
+  // line 50
+  (ValidValues, Rounds, RoundsOrNil).ncross guess { (v, r, vr) ->
+     val msg = { type: "proposal", src: Proposer[r],
+                 round: r, proposal: v, validRound: vr }
+     val PV = msgsPrecommit[r].filter(m -> m.id = Id(v))
+     {
+       & decision[p] = NilValue // line 49
+       & msg in msgsPropose[r]          // line 49
+       & PV.cardinality >= THRESHOLD2   // line 49
+       & evidence := PV.union(set(msg)).union(evidence)
+       & decision := decision.except(p, v) // update the decision, line 51
+       // The original algorithm does not have 'DECIDED', but it increments the height.
+       // We introduced 'DECIDED' here to prevent the process from changing its decision.
+       & step := step.except(p, "decided")
+       & unchanged((round, lockedValue, lockedRound, validValue,
+                    validRound, msgsPropose, msgsPrevote, msgsPrecommit))
+       & fired_action := "UponProposalInPrecommitNoDecision"
+     }   
+  }
+
+// the actions below are not essential for safety, but added for completeness
+
+// lines 20-21 + 57-60
+action OnTimeoutPropose(p) = {
+  & step[p] = "PROPOSE"
+  & p != Proposer[round[p]]
+  & BroadcastPrevote(p, round[p], NilValue)
+  & step := step.except(p, "prevote")
+  & unchanged((round, lockedValue, lockedRound, validValue,
+               validRound, decision, evidence, msgsPropose, msgsPrecommit))
+  & fired_action := "OnTimeoutPropose"
+}
+
+// lines 44-46
+action OnQuorumOfNilPrevotes(p) =
+  val PV = msgsPrevote[round[p]].filter(m -> m.id = Id(NilValue))
+  {
+    & step[p] = "PREVOTE"
+    & Cardinality(PV) >= THRESHOLD2 // line 36
+    & evidence := PV union evidence
+    & BroadcastPrecommit(p, round[p], Id(NilValue))
+    & step := step.except(p, "precommit")
+    & unchanged((round, lockedValue, lockedRound, validValue,
+                 validRound, decision, msgsPropose, msgsPrevote))
+    & fired_action := "OnQuorumOfNilPrevotes"
+  }
+
+// lines 55-56
+action OnRoundCatchup(p) =
+  Rounds.filter(rr -> rr > round[p]) guess { r ->
+    val RoundMsgs = msgsPropose[r].union(msgsPrevote[r]).union(msgsPrecommit[r])
+    RoundMsgs.powerset guess { MyEvidence ->
+      val Faster = MyEvidence.map(m -> m.src)
+      {
+        & Faster.cardinality >= THRESHOLD1
+        & evidence := MyEvidence union evidence
+        & StartRound(p, r)
+        & uchanged((decision, lockedValue, lockedRound, validValue,
+                    validRound, msgsPropose, msgsPrevote, msgsPrecommit))
+        & fired_action := "OnRoundCatchup"
+      }
+    }
+  }
+
+/*
+ * A system transition. In this specificatiom, the system may eventually deadlock,
+ * e.g., when all processes decide. This is expected behavior, as we focus on safety.
+ */
+action Next =
+  Corr guess { p -> {
+      | InsertProposal(p)
+      | UponProposalInPropose(p)
+      | UponProposalInProposeAndPrevote(p)
+      | UponQuorumOfPrevotesAny(p)
+      | UponProposalInPrevoteOrCommitAndPrevote(p)
+      | UponQuorumOfPrecommitsAny(p)
+      | UponProposalInPrecommitNoDecision(p)
+      // the actions below are not essential for safety, but added for completeness
+      | OnTimeoutPropose(p)
+      | OnQuorumOfNilPrevotes(p)
+      | OnRoundCatchup(p)
+    }
+  }
+
+//**************************** FORK SCENARIOS  ***************************
+
+// equivocation by a process p
+pred EquivocationBy(p) =
+  evidence.cross(evidence) exists { (m1, m2) -> {
+      & m1 != m2
+      & m1.src = p
+      & m2.src = p
+      & m1.round = m2.round
+      & m1.type = m2.type
+    }
+  }
+
+// amnesic behavior by a process p
+pred AmnesiaBy(p) =
+    Rounds.cross(Rounds) exists { (r1, r2) -> {
+        & r1 < r2
+        & ValidValues.cross(ValidValues) exists { (v1, v2) -> {
+            & v1 != v2
+            & evidence.contains({ type: "precommit", src: p,
+                                  round: r1, id: Id(v1) })
+            & evidence.contains({ type: "prevote", src: p,
+                                  round: r2, id: Id(v2) })
+            & Rounds.filter(rnd -> r1 <= rnd and rnd < r2) forall { r ->
+                val prevotes = evidence filter { m ->
+                  m.type = "prevote" and m.round = r and m.id = Id(v2)
+                }
+
+                prevotes.cardinality < THRESHOLD2
+              }
+          }
+        }
+      }
+    }
+
+//******************************** PROPERTIES  ***************************************
+
+// the safety property -- agreement
+pred Agreement =
+  Corr.cross(Corr).forall((p, q) -> {
+    | decision[p] = NilValue
+    | decision[q] = NilValue
+    | decision[p] = decision[q]
+  })
+
+// the protocol validity
+pred Validity =
+  Corr forall { p ->
+    decision[p] in (ValidValues union set(NilValue))
+  }
+
+/*
+  The protocol safety. Two cases are possible:
+     1. There is no fork, that is, Agreement holds true.
+     2. A subset of faulty processes demonstrates equivocation or amnesia.
+ */
+pred Accountability = {
+    | Agreement
+    | Faulty.powerset.exists(Detectable -> {
+        & Detectable.cardinality >= THRESHOLD1
+        & Detectable.forall(p -> EquivocationBy(p) or AmnesiaBy(p))
+      })
+}
+
+//****************** FALSE INVARIANTS TO PRODUCE EXAMPLES ***********************
+ 
+// This property is violated. You can check it to see how amnesic behavior
+// appears in the evidence variable.
+pred NoAmnesia =
+    Faulty.forall(p -> not(AmnesiaBy(p)))
+
+// This property is violated. You can check it to see an example of equivocation.
+pred NoEquivocation =
+    Faulty.forall(p -> not(EquivocationBy(p)))
+
+// This property is violated. You can check it to see an example of agreement.
+// It is not exactly ~Agreement, as we do not want to see the states where
+// decision[p] = NilValue
+pred NoAgreement =
+  Corr.cross(Corr) forall { (p, q) ->
+        (p != q and decision[p] != NilValue and decision[q] != NilValue)
+          implies (decision[p] != decision[q])
+  }
+// Either agreement holds, or the faulty processes indeed demonstrate amnesia.
+// This property is violated. A counterexample should demonstrate equivocation.
+pred AgreementOrAmnesia =
+    Agreement or Faulty.forall(p -> AmnesiaBy(p))
+
+// We expect this property to be violated. It shows us a protocol run,
+// where one faulty process demonstrates amnesia without equivocation.
+// However, the absence of amnesia
+// is a tough constraint for Apalache. It has not reported a counterexample
+// for n=4,f=2, length <= 5.
+pred ShowMeAmnesiaWithoutEquivocation =
+    (not(Agreement) and Faulty.exists(p -> not(EquivocationBy(p))))
+        implies Faulty.forall(p -> not(AmnesiaBy(p)))
+
+// This property is violated on n=4,f=2, length=4 in less than 10 min.
+// Two faulty processes may demonstrate amnesia without equivocation.
+pred AmnesiaImpliesEquivocation =
+    (Faulty.exists(p -> AmnesiaBy(p)))
+      implies (Faulty.exists(q -> EquivocationBy(q)))
+
+/*
+  This property is violated. You can check it to see that all correct processes
+  may reach MaxRound without making a decision. 
+ */
+pred NeverUndecidedInMaxRound =
+    val AllInMax = Corr.forall(p -> round[p] = MaxRound)
+    val AllDecided = Corr.forall(p -> decision[p] != NilValue)
+    AllInMax implies AllDecided
+
+
+end
