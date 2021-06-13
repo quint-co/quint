@@ -21,9 +21,8 @@ describe('parse modules', () => {
 		const result = parsePhase1(readTest("_0002emptyWithError"));
 		const msg: ErrorMessage = {
 			explanation: "TNT001: expected a const, var, def, typedef, etc.",
-			 lineNo: 4,
-			 charNo: 0,
-			 length: 3
+			start: { line: 5, col: 0 },
+			end: { line: 5, col: 2 }
 		};
 		const expected: ParseResult = { kind: "error", messages: [ msg ] };
 		assert.deepEqual(result, expected, "expected error");
@@ -107,9 +106,8 @@ describe('parse modules', () => {
 		const result = parsePhase1(readTest("_0005constRecordsError"));
 		const msg: ErrorMessage = {
 			explanation: "TNT011: Records in disjoint union have different tag fields: type and kind",
-			 lineNo: 5,
-			 charNo: 2,
-			 length: 1
+			 start: { line: 5, col: 2 },
+			 end:   { line: 6, col: 49 },
 		};
 		const expected: ParseResult = { kind: "error", messages: [ msg ] };
 		assert.deepEqual(result, expected, "expected error");

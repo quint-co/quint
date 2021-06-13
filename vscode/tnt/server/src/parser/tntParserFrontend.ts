@@ -18,9 +18,8 @@ import { assert } from 'console';
 
 export interface ErrorMessage {
     explanation: string;
-    lineNo: number;
-    charNo: number;
-    length: number;
+    start: { line: number; col: number; }
+    end:   { line: number; col: number; }
 }
 
 export type ParseResult =
@@ -46,7 +45,9 @@ export function parsePhase1(text: string): ParseResult {
                 let len = (offendingSymbol)
                     ? (1 + offendingSymbol.stopIndex - offendingSymbol.startIndex)
                     : 1;
-                errorMessages.push({explanation: msg, lineNo: line - 1, charNo: charPositionInLine, length: len})
+                const start = { line: line - 1, col: charPositionInLine }
+                const end = { line: line - 1, col: charPositionInLine + len }
+                errorMessages.push({ explanation: msg, start, end })
             })
     });
     // run the parser
@@ -65,8 +66,11 @@ export function parsePhase1(text: string): ParseResult {
             return { kind: "ok", module: listener.rootModule }
         } else {
             // this case should not be possible, but we handle it just in case
-            const msg = { lineNo: 1, charNo: 1, length: 1,
-                          explanation: "undefined root module" }
+            const start = { line: tree.start.line, col: tree.start.charPositionInLine }
+            const end = tree.stop
+              ? { line: tree.stop.line, col: tree.stop.charPositionInLine }
+              : start
+            const msg = { start: start, end: end, explanation: "undefined root module" }
             return { kind: "error", messages: [msg] }
         }
     }
@@ -205,12 +209,11 @@ class ToIrListener implements TntListener {
                     } else {
                         const msg =
                         `TNT011: Records in disjoint union have different tag fields: ${tag} and ${one.tag}`
-                        this.errors.push({
-                            explanation: msg,
-                            lineNo: ctx.start.line,
-                            charNo: ctx.start.charPositionInLine,
-                            length: 1 + ctx.start.stopIndex - ctx.start.startIndex
-                        })
+                        const start = { line: ctx.start.line, col: ctx.start.charPositionInLine }
+                        const end = ctx.stop
+                            ? { line: ctx.stop.line, col: ctx.stop.charPositionInLine }
+                            : start
+                        this.errors.push({ explanation: msg, start: start, end: end })
                     }
                 } else {
                     assert(false)

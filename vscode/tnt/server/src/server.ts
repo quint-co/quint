@@ -145,13 +145,13 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	const diagnostics: Diagnostic[] = [];
 	const text = textDocument.getText();
 	const result = parsePhase1(text);
-	if (result.kind === "error") {
+	if (result.kind == "error") {
 		for (let msg of result.messages) {
 			const diag: Diagnostic = {
 				severity: DiagnosticSeverity.Error,
 				range: {
-					start: { line: msg.lineNo, character: msg.charNo },
-					end: { line: msg.lineNo, character: msg.charNo + msg.length },
+					start: { line: msg.start.line, character: msg.start.col },
+					end:   { line: msg.end.line, character: msg.end.col },
 				},
 				message: msg.explanation,
 				source: "parser"
