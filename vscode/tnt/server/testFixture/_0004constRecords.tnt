@@ -1,0 +1,11 @@
+// a module that contains constants
+module withConsts
+	// just a normal record, without any variation in the fields
+	const MyRecord: { i: int, b: bool, s: str }
+	// a disjoint union is a common pattern in TLA+
+	const MyUnion:
+		| { type: "circle", radius: int }
+		| { type: "rectangle", width: int, height: int }
+		| { type: "dog", name: str }
+
+end

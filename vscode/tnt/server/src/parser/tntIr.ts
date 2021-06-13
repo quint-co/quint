@@ -80,5 +80,6 @@ export type TntDef =
  */	
 export interface TntModule extends WithId {
 	name: string,
+	extends: string[],
 	defs: TntDef[]
 }

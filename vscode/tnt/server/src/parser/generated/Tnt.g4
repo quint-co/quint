@@ -79,9 +79,8 @@ expr:           // apply a built-in operator via the dot notation
                 // built-in infix/postfix operators, a la Scala
         |       expr IDENTIFIER (arg_list)?                         # infixCall
                 // standard relations
-        |       expr op=('>' | '<' | '>=' | '<=' |
-                         '<>' | '!=' | '==' | ':=' | '=' |
-                         IN | NOTIN | SUBSETEQ) expr                # relations
+        |       expr op=('>' | '<' | '>=' | '<=' | '!=' | '==' |
+                         '=' | ':=' | IN | NOTIN | SUBSETEQ) expr   # relations
                 // Boolean operators. Importantly, not(e) is just a normal call
         |       expr AND expr                                       # and
         |       expr OR expr                                        # or

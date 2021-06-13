@@ -22,7 +22,7 @@ import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
 
-import { parseModule, ErrorMessage } from './parser/tntParserFrontend';
+import { parsePhase1, ErrorMessage } from './parser/tntParserFrontend';
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -144,7 +144,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	// The validator creates diagnostics for all uppercase words length 2 and more
 	const diagnostics: Diagnostic[] = [];
 	const text = textDocument.getText();
-	const result = parseModule(text);
+	const result = parsePhase1(text);
 	if (result.kind === "error") {
 		for (let msg of result.messages) {
 			const diag: Diagnostic = {
