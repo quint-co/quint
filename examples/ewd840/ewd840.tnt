@@ -8,7 +8,7 @@ module EWD840
 (***************************************************************************/
 
 const N: _
-assume NAssumption = N in (Nat minus '{0})
+assume NAssumption = N in (Nat difference set(0))
 
 typedef NODE = int
 
@@ -76,7 +76,7 @@ action PassToken(i) = {
 (***************************************************************************/
 action System = {
   | InitiateProbe
-  | (Node minus '{0}) guess { i -> PassToken(i) }
+  | (Node difference set(0)) guess { i -> PassToken(i) }
 }
 
 /***************************************************************************)
@@ -86,7 +86,7 @@ action System = {
 (***************************************************************************/
 action SendMsg(i) = {
   & active[i]
-  & (Node minus {i}) guess { j -> {
+  & (Node difference set(i)) guess { j -> {
         & active  := active.except(j, TRUE)
         & color   := color exceptAt i, { old -> if (j > i) "black" else old }
       }

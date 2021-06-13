@@ -15,8 +15,8 @@ const Quorum: set(set(str))
 
 assume _ = {
         & Quorum forall { Q -> Q subseteq Acceptor }
-        & (Quorum X Quorum) forall {
-            (Q1, Q2) -> Q1 intersect Q2 != '{}
+        & (Quorum cross Quorum) forall {
+            (Q1, Q2) -> Q1 intersect Q2 != set()
           }
 }
       
@@ -33,11 +33,11 @@ val None = -1
  * with the actions that send them.                                        *
  ***************************************************************************/
 val Message =
-        [type in '{"1a"}, bal in Ballot]
-           union [type in '{"1b"}, acc in Acceptor, bal in Ballot, 
-                   mbal in Ballot union '{-1}, mval in Value union '{None}]
-           union [type in '{"2a"}, bal in Ballot, value in Value]
-           union [type in '{"2b"}, acc in Acceptor, bal in Ballot, value in Value]
+        [type in set("1a"), bal in Ballot]
+           union [type in set("1b"), acc in Acceptor, bal in Ballot, 
+                   mbal in Ballot union set(-1), mval in Value union set(None)]
+           union [type in set("2a"), bal in Ballot, value in Value]
+           union [type in set("2b"), acc in Acceptor, bal in Ballot, value in Value]
 //-----------------------------------------------------------------------------
 
 var maxBal:   int
@@ -83,9 +83,9 @@ val vars = (maxBal, maxVBal, maxVal, msgs)
 (* The type invariant and initial predicate.                               *)
 (***************************************************************************/
 pred TypeOK = {
-    & maxBal  in (Acceptor mkFunSet (Ballot union '{-1}))
-    & maxVBal in (Acceptor mkFunSet (Ballot union '{-1}))
-    & maxVal  in (Acceptor mkFunSet (Value union '{None}))
+    & maxBal  in (Acceptor mkFunSet (Ballot union set(-1)))
+    & maxVBal in (Acceptor mkFunSet (Ballot union set(-1)))
+    & maxVal  in (Acceptor mkFunSet (Value union set(None)))
     & msgs subseteq Message
 }
 
@@ -101,7 +101,7 @@ action Init = {
 (* to define the actions that make up the next-state action.               *)
 (***************************************************************************/
 action Send(m) = {
-  msgs := msgs union '{m}
+  msgs := msgs union set(m)
 }
 
 /***************************************************************************)
@@ -163,7 +163,7 @@ action Phase2a(b, v) = {
         {
             & Q.forall(a -> Q1B.exists(m -> m.acc = a))
             & {
-                | Q1bv = '{}
+                | Q1bv = set()
                 | Q1bv.exists(m -> {
                     & m.mval = v
                     & Q1bv forall { mm -> m.mbal >= mm.mbal }

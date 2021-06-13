@@ -67,10 +67,10 @@ action ReadOrWrite = {
 
 action StopActivity(actor) =
     if (actor in readers) {
-        & readers := readers minus set(actor)
+        & readers := readers difference set(actor)
         & unchanged((writers, waiting))
     } else {
-        & writers := writers minus set(actor)
+        & writers := writers difference set(actor)
         & unchanged((readers, waiting))
     }
 
@@ -84,8 +84,8 @@ action Stop =
 (*****************/
 
 action Init = {
-    & readers := '{}
-    & writers := '{}
+    & readers := set()
+    & writers := set()
     & waiting := []
 }
 
@@ -114,7 +114,7 @@ temporal Spec = Init and always(stutter(Next, vars) and Fairness)
 pred TypeOK = {
     & readers subseteq Actors
     & writers subseteq Actors
-    & waiting in (set("read", "write") X Actors).seqs
+    & waiting in set("read", "write").cross.Actors.seqs
 }
 
 pred Safety = {

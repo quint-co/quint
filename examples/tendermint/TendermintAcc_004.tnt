@@ -219,7 +219,7 @@ action InsertProposal(p) = {
   
   {
     & p = Proposer[r]
-    & step[p] = "PROPOSE"
+    & step[p] = "propose"
     // if the proposer is sending a proposal, then there are no other proposals
     // by the correct processes for the same round
     & msgsPropose[r] forall { m -> m.src != p }
@@ -372,7 +372,7 @@ action UponProposalInPrecommitNoDecision(p) =
 
 // lines 20-21 + 57-60
 action OnTimeoutPropose(p) = {
-  & step[p] = "PROPOSE"
+  & step[p] = "propose"
   & p != Proposer[round[p]]
   & BroadcastPrevote(p, round[p], NilValue)
   & step := step.except(p, "prevote")
@@ -385,7 +385,7 @@ action OnTimeoutPropose(p) = {
 action OnQuorumOfNilPrevotes(p) =
   val PV = msgsPrevote[round[p]].filter(m -> m.id = Id(NilValue))
   {
-    & step[p] = "PREVOTE"
+    & step[p] = "prevote"
     & Cardinality(PV) >= THRESHOLD2 // line 36
     & evidence := PV union evidence
     & BroadcastPrecommit(p, round[p], Id(NilValue))
@@ -545,6 +545,5 @@ pred NeverUndecidedInMaxRound = {
 
     AllInMax implies AllDecided
 }
-
 
 end
