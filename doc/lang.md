@@ -461,7 +461,7 @@ priority:
 | `i * j`, `i / j`, `i % j`    | Integer multiplication, division, modulo   |
 | `i + j`, `i - j`             | Integer addition and subtraction           |
 | `e_1 F e_2, ..., e_n`        | General infix operator application         |
-| `i > j`, `i < j`, `i >= j`, `i <= j`, `i <> j`, `i != j`, `i == j`, `i = j`, `i := j`, `S in T`, `S notin T`, `S subseteq T`  | Integer comparisons, equality, assignment, and set relations |
+| `i > j`, `i < j`, `i >= j`, `i <= j`, `i != j`, `i == j`, `i = j`, `i := j`, `S in T`, `S notin T`, `S subseteq T`  | Integer comparisons, equality, assignment, and set relations |
 | `p and q`                    | Boolean 'and' (conjunction)                |
 | `p or q`                     | Boolean 'or' (disjunction)                 |
 | `p iff q`                    | Boolean equivalence (if and only if)       |
@@ -479,7 +479,6 @@ e1 == e2
 e1.eq(e2)
 eq(e1, e2)
 // inequality (same priority as '='): e1 /= e2, e1 # e2 in TLA+
-e1 <> e2
 e1 != e2
 e1.neq(e2)
 neq(e1, e2)
