@@ -54,7 +54,11 @@
 				},
 				{
 					"name": "keyword.operator.tnt",
-					"match": "\\b(guess|choose|forall|exists|map|filter|mkFun|mkRecFun|mkFunSet|seqs|head|tail|length|cardinality|intersect|union|minus|with|except|exceptAt)\\b"
+					"match": "\\b(guess|choose|forall|exists|map|filter|mkFun|mkRecFun|mkFunSet|seqs|head|tail|length)\\b"
+				},
+				{
+					"name": "keyword.operator.tnt",
+					"match": "\\b(cardinality|intersect|union|difference|with|except|exceptAt|cross|ncross)\\b"
 				},
 				{
 					"name": "keyword.operator.tnt",
