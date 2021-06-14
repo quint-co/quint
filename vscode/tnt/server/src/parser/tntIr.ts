@@ -38,7 +38,7 @@ export type TntEx =
 	| { kind: "string", value: string } & WithId & WithTypeTag
 	// An operator application.
 	| { kind: "oper", opcode: string, args: TntEx[] } & WithId & WithTypeTag
-	// A let-in binding (defined via 'def ... in', 'def rec ... in', or 'val ... in').
+	// A let-in binding (defined via 'def', 'def rec', or 'val').
 	| { kind: "let", opdef: TntOpDef, body: TntEx } & WithId & WithTypeTag
 
 /**

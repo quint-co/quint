@@ -7,13 +7,13 @@
 import { CharStreams, CommonTokenStream } from 'antlr4ts';
 
 import { TntLexer } from './generated/TntLexer';
-import { ConstContext, ModuleContext, TntParser, TypeBoolContext, TypeConstOrVarContext, TypeContext, TypeFunContext, TypeIntContext, TypeOperContext, TypeParenContext, TypeRecContext, TypeSetContext, TypeStrContext, TypeTupleContext, TypeUnionRecContext, TypeUnionRecOneContext } from './generated/TntParser';
+import * as p from './generated/TntParser';
 import { TntListener } from './generated/TntListener';
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
 import './tntIr';
 import { TntDef, TntModule } from './tntIr';
-import { TntType, TntTypeTag } from './tntTypes';
+import { TntType, TntTypeTag, TntUntyped } from './tntTypes';
 import { assert } from 'console';
 
 export interface ErrorMessage {
@@ -29,13 +29,14 @@ export type ParseResult =
 /**
  * Phase 1 of the TNT parser. Read a string in the TNT syntax and produce the IR.
  * Note that the IR may be ill-typed and some names may be unresolved.
+ * The main goal of this pass is to translate a sequence of characters into IR.
  */
 export function parsePhase1(text: string): ParseResult {
     // Create the lexer and parser
     let inputStream = CharStreams.fromString(text);
     let lexer = new TntLexer(inputStream);
     let tokenStream = new CommonTokenStream(lexer);
-    let parser = new TntParser(tokenStream);
+    let parser = new p.TntParser(tokenStream);
     let errorMessages = new Array<ErrorMessage>();
     // remove ConsoleErrorListener that outputs to console
     parser.removeErrorListeners();
@@ -95,54 +96,61 @@ class ToIrListener implements TntListener {
     private definitionStack: TntDef[] = []
     // the stack of types
     private typeStack: TntType[] = []
+    // the stack of untyped signatures
+    private untypedStack: TntUntyped[] = []
     // an internal counter to assign unique numbers
     private lastId: bigint = 1n
 
-    exitModule(ctx: ModuleContext) {
+    exitModule(ctx: p.ModuleContext) {
         const module: TntModule = {
             id: this.nextId(),
-            name: ctx.IDENTIFIER()[0].toString(),
-            extends: ctx.IDENTIFIER().slice(1).map( (node) => node.toString() ),
+            name: ctx.IDENTIFIER()[0].text,
+            extends: ctx.IDENTIFIER().slice(1).map( (node) => node.text ),
             defs: this.definitionStack
         }
         this.definitionStack = []   // reset the definitions
         this.rootModule = module
     }
 
-    exitConst(ctx: ConstContext) {
-        const tp = this.typeStack.pop()
-        if (tp != undefined) {
+    exitConst(ctx: p.ConstContext) {
+        let typeTag: TntTypeTag = { kind: "untyped", paramArities: [] }
+
+        if (ctx.type()) {
             // the user has specified a type
-            const constDef: TntDef = {
-                kind: "const", name: ctx.IDENTIFIER().toString(),
-                typeTag: tp, id: this.nextId()
+            const tp = this.typeStack.pop()
+            if (tp) {
+                typeTag = tp
             }
-            this.definitionStack.push(constDef)
         } else {
-            // no type provided, that is, we only have '_'
-            const constDef: TntDef = {
-                kind: "const", name: ctx.IDENTIFIER().toString(),
-                typeTag: { kind: "untyped", paramArities: [] }, id: this.nextId()
+            // the user has specified an untyped signature
+            const untyped = this.untypedStack.pop()
+            if (untyped) {
+                typeTag = untyped
             }
-            this.definitionStack.push(constDef)
         }
-    }
+
+        const constDef: TntDef = {
+            kind: "const", name: ctx.IDENTIFIER().text,
+            typeTag: typeTag, id: this.nextId()
+        }
+        this.definitionStack.push(constDef)
+}
 
     // translating type via typeStack
-    exitTypeInt(ctx: TypeIntContext) {
+    exitTypeInt(ctx: p.TypeIntContext) {
         this.typeStack.push({ kind: "int" })
     }
 
-    exitTypeBool(ctx: TypeBoolContext) {
+    exitTypeBool(ctx: p.TypeBoolContext) {
         this.typeStack.push({ kind: "bool" })
     }
 
-    exitTypeStr(ctx: TypeStrContext) {
+    exitTypeStr(ctx: p.TypeStrContext) {
         this.typeStack.push({ kind: "str" })
     }
 
-    exitTypeConstOrVar(ctx: TypeConstOrVarContext) {
-        const name = ctx.IDENTIFIER.toString()
+    exitTypeConstOrVar(ctx: p.TypeConstOrVarContext) {
+        const name = ctx.IDENTIFIER().text
         if (name.length == 1 && name.match("[a-z]") ) {
             // a type variable from: a, b, ... z
             this.typeStack.push({ kind: "var", name: name })
@@ -152,21 +160,21 @@ class ToIrListener implements TntListener {
         }
     }
 
-    exitTypeSet(ctx: TypeSetContext) {
+    exitTypeSet(ctx: p.TypeSetContext) {
         const last = this.typeStack.pop()
         if (last != undefined) {
             this.typeStack.push({ kind: "set", elem: last })
         } // the other cases are excluded by the parser
     }
 
-    exitTypeSeq(ctx: TypeSetContext) {
+    exitTypeSeq(ctx: p.TypeSetContext) {
         const top = this.typeStack.pop()
         if (top != undefined) {
             this.typeStack.push({ kind: "seq", elem: top })
         } // the other cases are excluded by the parser
     }
 
-    exitTypeFun(ctx: TypeFunContext) {
+    exitTypeFun(ctx: p.TypeFunContext) {
         const res = this.typeStack.pop()
         const arg = this.typeStack.pop()
         if (arg != undefined && res != undefined) {
@@ -174,16 +182,16 @@ class ToIrListener implements TntListener {
         }
     }
 
-    exitTypeTuple(ctx: TypeTupleContext) {
+    exitTypeTuple(ctx: p.TypeTupleContext) {
         // the type stack contains the types of the elements
         const elemTypes: TntType[] = this.popTypes(ctx.type().length)
         this.typeStack.push({ kind: "tuple", elems: elemTypes })
     }
 
-    exitTypeRec(ctx: TypeRecContext) {
+    exitTypeRec(ctx: p.TypeRecContext) {
         // The type stack contains the types of the fields.
         // We have to match them with the field names.
-        const names = ctx.IDENTIFIER().map((n) => n.toString())
+        const names = ctx.IDENTIFIER().map((n) => n.text)
         const elemTypes: TntType[] = this.popTypes(ctx.type().length)
         // since TS does not have zip, a loop is the easiest solution
         let pairs = []
@@ -193,7 +201,7 @@ class ToIrListener implements TntListener {
         this.typeStack.push({ kind: "record", fields: pairs })
     }
 
-    exitTypeUnionRec(ctx: TypeUnionRecContext) {
+    exitTypeUnionRec(ctx: p.TypeUnionRecContext) {
         // combine a disjoint union out of singletons
         const size = ctx.typeUnionRecOne().length
         assert(size > 0)
@@ -225,11 +233,11 @@ class ToIrListener implements TntListener {
         }
     }
 
-    exitTypeUnionRecOne(ctx: TypeUnionRecOneContext) {
+    exitTypeUnionRecOne(ctx: p.TypeUnionRecOneContext) {
         // One option of a disjoint union.
         // The type stack contains the types of the fields.
         // We have to match them with the field names.
-        const names = ctx.IDENTIFIER().map((n) => n.toString())
+        const names = ctx.IDENTIFIER().map((n) => n.text)
         // the first name is the tag name (according to the grammar)
         const tagName = names[0]
         const tagVal = ctx.STRING().toString().slice(1, -1)
@@ -249,7 +257,7 @@ class ToIrListener implements TntListener {
         this.typeStack.push(singleton)
     }
 
-    exitTypeOper(ctx: TypeOperContext) {
+    exitTypeOper(ctx: p.TypeOperContext) {
         const resType = this.typeStack.pop()
         const nargs = ctx.type().length - 1
         const argTypes: TntType[] = this.popTypes(nargs)
@@ -258,11 +266,44 @@ class ToIrListener implements TntListener {
         }
     }
 
+    // translate untyped signatures
+    exitUntyped0(ctx: p.Untyped0Context) {
+        // just an '_'
+        this.untypedStack.push({ kind: "untyped", paramArities: [] })
+    }
+
+    exitUntyped1(ctx: p.Untyped1Context) {
+        // an untyped signature like (_, _) => _
+        // count the number of underscores; the last one going to the result
+        const nunderscores = ctx.children?.filter((value) => value.text == "_").length
+        if (nunderscores) {
+            let allZeroes = new Array(nunderscores - 1).fill(0)
+            this.untypedStack.push({ kind: "untyped", paramArities: allZeroes })
+        } else {
+            assert(false)
+        }
+    }
+
+    exitUntyped2Sig(ctx: p.Untyped2SigContext) {
+        // A higher-order untyped signature like (_, (_, _) => _) => _.
+        // Since the signatures of the arguments are either values or level 0 signatures,
+        // we only have to count the number of their arguments.
+        const arities = this.popUntyped(ctx.untyped01().length).map((u) => u.paramArities.length)
+        this.untypedStack.push({ kind: "untyped", paramArities: arities })
+    }
+
     // pop n elements out of typeStack
     private popTypes(n: number): TntType[] {
         const types: TntType[] = this.typeStack.slice(-n)
         this.typeStack = this.typeStack.slice(0, -n)
         return types
+    }
+
+    // pop n elements out of untypedStack
+    private popUntyped(n: number): TntUntyped[] {
+        const untyped: TntUntyped[] = this.untypedStack.slice(-n)
+        this.untypedStack = this.untypedStack.slice(0, -n)
+        return untyped
     }
 
     // produce the next number in a sequence

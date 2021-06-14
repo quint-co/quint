@@ -6,17 +6,17 @@ grammar Tnt;
 module : 'module' IDENTIFIER ('extends' IDENTIFIER (',' IDENTIFIER))? unit* 'end';
 
 // a module unit
-unit :          'const' IDENTIFIER ':' ('_' | type)             # const
+unit :          'const' IDENTIFIER ':' (untyped01 | type)       # const
         |       'var' IDENTIFIER ':' ('_' | type)               # var
         |       'assume' (IDENTIFIER | '_') '=' expr            # assume
-        |       ('private')? valDef (':' ('_' | type))?         # val
-        |       ('private')? operDef (':' ('_' | type))?        # oper
+        |       ('private')? valDef (':' (untyped012 | type))?  # val
+        |       ('private')? operDef (':' (untyped012 | type))? # oper
         |       ('private')? 'pred' IDENTIFIER params?
-                           (':' ('_' | type))? '=' expr         # pred
+                           (':' (untyped012 | type))? '=' expr  # pred
         |       ('private')? 'action' IDENTIFIER params?
-                           (':' ('_' | type))? '=' expr         # action
+                           (':' (untyped012 | type))? '=' expr  # action
         |       ('private')? 'temporal' IDENTIFIER params?
-                           (':' ('_' | type))? '=' expr         # temporal
+                           (':' (untyped012 | type))? '=' expr  # temporal
         |       module                                          # moduleNested
         |       instanceDef                                     # instance
         |       'typedef' IDENTIFIER '=' type                   # typeDef
@@ -38,7 +38,8 @@ instanceDef :   'instance' (IDENTIFIER | '_') '=' IDENTIFIER
 params  :       '(' (IDENTIFIER (',' IDENTIFIER)*)? ')'
         ;
 
-// Types. This is Type System 1 of Apalache, except that records are disjoint unions.
+// Types. This is Type System 1 of Apalache,
+// except that different records cannot be unified, but there are disjoint unions
 type :          type '->' type                                  # typeFun
         |       '(' (type (',' type)*)? ')' '=>' type           # typeOper
         |       'set' '(' type ')'                              # typeSet
@@ -55,6 +56,17 @@ type :          type '->' type                                  # typeFun
         ;
 
 typeUnionRecOne : '|' '{' IDENTIFIER ':' STRING (',' IDENTIFIER ':' type)* '}'                
+        ;
+
+// Untyped signature of order 0..2. For example, _, _ => _, or (_, (_, _) => _, _) => _.
+untyped012 :    '(' (untyped01 (',' untyped01)*)? ')' '=>' '_'  # untyped2Sig
+        |       untyped01                                       # untyped2Lower
+        |       '(' untyped012 ')'                              # untyped2Paren
+        ;
+
+// Order 0/1 untyped signature.
+untyped01 :     '(' ('_' (',' '_')*)? ')' '=>' '_'              # untyped1
+        |       '_'                                             # untyped0
         ;
 
 // A TNT expression. The order matters, it defines the priority.

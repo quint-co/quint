@@ -19,7 +19,7 @@
  * higher order operators as parameters, a flat array of integers is sufficient.
  */
  export type TntUntyped =
-	| { kind: "untyped", paramArities: bigint[] }
+	| { kind: "untyped", paramArities: number[] }
 
  /**
   * A type in Type System 1.2.

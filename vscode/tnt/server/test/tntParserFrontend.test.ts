@@ -21,8 +21,8 @@ describe('parse modules', () => {
 		const result = parsePhase1(readTest("_0002emptyWithError"));
 		const msg: ErrorMessage = {
 			explanation: "TNT001: expected a const, var, def, typedef, etc.",
-			start: { line: 5, col: 0 },
-			end: { line: 5, col: 2 }
+			start: { line: 4, col: 0 },
+			end:   { line: 4, col: 3 }
 		};
 		const expected: ParseResult = { kind: "error", messages: [ msg ] };
 		assert.deepEqual(result, expected, "expected error");
@@ -32,30 +32,33 @@ describe('parse modules', () => {
 	  const result = parsePhase1(readTest("_0003consts"));
 	  // const N: int
 	  const constN: TntDef = { id: 1n, kind: "const", name: "N", typeTag: { kind: "untyped", paramArities: [] } }
+	  // const UntypedOper: (_, _) => _
+	  const untypedOper: TntDef = { id: 2n, kind: "const", name: "UntypedOper",
+	  								typeTag: { kind: "untyped", paramArities: [0, 0] } }
 	  // const MySet: set(int)
-	  const constMySet: TntDef = { id: 2n, kind: "const", name: "MySet",
+	  const constMySet: TntDef = { id: 3n, kind: "const", name: "MySet",
 	  	typeTag: { kind: "set", elem: { kind: "int" } } }
 	  // const MySeq: seq(int)
-	  const constMySeq: TntDef = { id: 3n, kind: "const", name: "MySeq",
+	  const constMySeq: TntDef = { id: 4n, kind: "const", name: "MySeq",
 	  	typeTag: { kind: "seq", elem: { kind: "bool" } } }
 	  // const MyFun: int -> str
-	  const constMyFun: TntDef = { id: 4n, kind: "const", name: "MyFun",
+	  const constMyFun: TntDef = { id: 5n, kind: "const", name: "MyFun",
 	  	typeTag: { kind: "fun", arg: { kind: "int" }, res: { kind: "str" } } }
 	  // const MyFun: (int -> str) -> bool
-	  const constMyFunFun: TntDef = { id: 5n, kind: "const", name: "MyFunFun",
+	  const constMyFunFun: TntDef = { id: 6n, kind: "const", name: "MyFunFun",
 	  	typeTag: { kind: "fun",
 		  		   arg: { kind: "fun", arg: { kind: "int" }, res: { kind: "str" } },
 				   res: { kind: "bool" }
 				}}
 	  // const MyOper: (int, str) => bool
-	  const constMyOper: TntDef = { id: 6n, kind: "const", name: "MyOper",
+	  const constMyOper: TntDef = { id: 7n, kind: "const", name: "MyOper",
 	  	typeTag: { kind: "oper", args: [{ kind: "int" }, {kind: "str"}], res: { kind: "bool" } } }
 	  // const MyTuple: (int, bool, str)
-	  const constMyTuple: TntDef = { id: 7n, kind: "const", name: "MyTuple",
+	  const constMyTuple: TntDef = { id: 8n, kind: "const", name: "MyTuple",
 	  	typeTag: { kind: "tuple", elems: [ { kind: "int" }, {kind: "bool"}, { kind: "str" } ] } }
 	  // the module that contains all these constants
-	  const module = { id: 8n, name: "withConsts", extends: [],
-	  	defs: [ constN, constMySet, constMySeq, constMyFun,
+	  const module = { id: 9n, name: "withConsts", extends: [],
+	  	defs: [ constN, untypedOper, constMySet, constMySeq, constMyFun,
 				constMyFunFun, constMyOper, constMyTuple ] }
 
 	  assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
