@@ -1,13 +1,15 @@
 import * as p from './generated/TntParser';
 import { TntListener } from './generated/TntListener';
-import { TntDef, TntModule } from './tntIr';
+import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef } from './tntIr';
 import { TntType, TntTypeTag, TntUntyped } from './tntTypes';
 import { assert } from 'console';
 import { ErrorMessage } from './tntParserFrontend';
 
 /**
  * An ANTLR4 listener that constructs TntIr objects out of the abstract
- * syntax tree.
+ * syntax tree. This listener does the minimal work to translate the AST
+ * into IR. All semantic checks and type checking must be done at later
+ * phases, as the IR may be constructed by other means.
  *
  * @author Igor Konnov
  */
@@ -15,19 +17,21 @@ export class ToIrListener implements TntListener {
     /**
      * The module that is constructed in the end
      */
-    rootModule?: TntModule = undefined;
+    rootModule?: TntModule = undefined
     /**
      * If errors occur in the listener, this array contains explanations.
      */
-    errors: ErrorMessage[] = [];
+    errors: ErrorMessage[] = []
     // the stack of definitions
-    private definitionStack: TntDef[] = [];
+    private definitionStack: TntDef[] = []
     // the stack of types
-    private typeStack: TntType[] = [];
+    private typeStack: TntType[] = []
     // the stack of untyped signatures
-    private untypedStack: TntUntyped[] = [];
+    private untypedStack: TntUntyped[] = []
+    // the stack of expressions
+    private exprStack: TntEx[] = []
     // an internal counter to assign unique numbers
-    private lastId: bigint = 1n;
+    private lastId: bigint = 1n
 
     // translate: module...end
     exitModule(ctx: p.ModuleContext) {
@@ -62,6 +66,129 @@ export class ToIrListener implements TntListener {
         };
         this.definitionStack.push(varDef);
     }
+
+    /****************** translate operator definititons **********************/
+
+    // translate a top-level or inner: val foo: type = ...
+    exitValDef(ctx: p.ValDefContext) {
+        const name = ctx.IDENTIFIER().text
+        let typeTag: TntTypeTag | undefined = this.typeStack.pop()
+        if (typeTag == undefined) {
+            // the value may be tagged with '_'
+            typeTag = this.untypedStack.pop()
+        }
+        const body = this.exprStack.pop()
+        if (body) {
+            let def: TntOpDef = {
+                id: this.nextId(), kind: "def", name: name, params: [],
+                qualifier: OpQualifier.Val, isPrivate: true, body: body
+            }
+            if (typeTag) {
+                def.typeTag = typeTag
+            }
+            this.definitionStack.push(def)
+        } else {
+            assert(false, "undefined body in exitValDef")
+        }
+    }
+
+    // translate a top-level val
+    exitVal(ctx: p.ValContext) {
+        const valDef = this.definitionStack[this.definitionStack.length - 1]
+        if (valDef && valDef.kind == "def") {
+            valDef.isPrivate = !(ctx.PRIVATE() == undefined)
+        } else {
+            assert(false, "undefined valDef in exitVal")
+        }
+    }
+
+    /********************* translate expressions **************************/
+    exitLiteralOrId(ctx: p.LiteralOrIdContext) {
+        const ident = ctx.IDENTIFIER()
+        if (ident) {            // we have met an identifier
+            this.exprStack.push({ id: this.nextId(),
+                kind: "name", name: ident.text })
+        }
+        const intNode = ctx.INT()
+        if (intNode) {          // we have met an integer literal
+            this.exprStack.push({ id: this.nextId(), kind: "int",
+                typeTag: { kind: "int" }, value: BigInt(intNode.text) })
+        }
+        const boolNode = ctx.BOOL()
+        if (boolNode) {         // we have met a Boolean literal
+            this.exprStack.push({ id: this.nextId(), kind: "bool",
+                typeTag: { kind: "bool" }, value: (boolNode.text == "true") })
+        }
+        const strNode = ctx.STRING()
+        if (strNode) {          // we have met a string
+            this.exprStack.push({ id: this.nextId(), kind: "str",
+                typeTag: { kind: "str" }, value: strNode.text })
+        }
+    }
+
+    // '+' or '-'
+    exitPlusMinus(ctx: p.PlusMinusContext) {
+        const opcode = (ctx.ADD() != undefined) ? "add" : "sub"
+        const args = this.popExprs(2)
+        this.exprStack.push({ id: this.nextId(),
+            kind: "oper", opcode: opcode, args: args })
+    }
+
+    // '*', '/', or '%'
+    exitMultDiv(ctx: p.MultDivContext) {
+        const op = ctx._op
+        if (op) {
+            let opcode = ""
+            switch (op.type) {
+                case p.TntParser.MUL: opcode = "mul"; break;
+                case p.TntParser.DIV: opcode = "div"; break;
+                case p.TntParser.MOD: opcode = "mod"; break;
+            }
+            const args = this.popExprs(2)
+            this.exprStack.push({ id: this.nextId(),
+                kind: "oper", opcode: opcode, args: args })
+        }
+    }
+
+    exitPow(ctx: p.PowContext) {
+        const args = this.popExprs(2)
+        this.exprStack.push({ id: this.nextId(),
+            kind: "oper", opcode: "pow", args: args })
+    }
+
+    exitUminus(ctx: p.UminusContext) {
+        const arg = this.exprStack.pop()
+        if (arg) {
+            this.exprStack.push({ id: this.nextId(),
+                kind: "oper", opcode: "uminus", args: [ arg ] })
+        }
+    }
+
+    // GT | LT | GE | LE | NE | EQEQ | EQ | ASGN | IN | NOTIN | SUBSETEQ
+    exitRelations(ctx: p.RelationsContext) {
+        const op = ctx._op
+        if (op) {
+            let opcode = ""
+            switch (op.type) {
+                case p.TntParser.GT: opcode = "gt"; break;
+                case p.TntParser.GE: opcode = "gte"; break;
+                case p.TntParser.LT: opcode = "lt"; break;
+                case p.TntParser.LE: opcode = "lte"; break;
+                case p.TntParser.EQ: opcode = "eq"; break;
+                case p.TntParser.EQEQ: opcode = "eq"; break;
+                case p.TntParser.ASGN: opcode = "assign"; break;
+                case p.TntParser.NE: opcode = "neq"; break;
+                case p.TntParser.IN: opcode = "in"; break;
+                case p.TntParser.NOTIN: opcode = "notin"; break;
+                case p.TntParser.SUBSETEQ: opcode = "subseteq"; break;
+            }
+            const args = this.popExprs(2)
+            this.exprStack.push({ id: this.nextId(),
+                kind: "oper", opcode: opcode, args: args })
+        }
+    }
+
+    /********************* translate types ********************************/
 
     // translating type via typeStack
     exitTypeInt(ctx: p.TypeIntContext) {
@@ -131,7 +258,7 @@ export class ToIrListener implements TntListener {
     exitTypeUnionRec(ctx: p.TypeUnionRecContext) {
         // combine a disjoint union out of singletons
         const size = ctx.typeUnionRecOne().length;
-        assert(size > 0);
+        assert(size > 0, "exitTypeUnionRec: size == 0");
         const singletonUnions: TntType[] = this.popTypes(size);
         if (singletonUnions[0].kind == "union") {
             const tag = singletonUnions[0].tag;
@@ -150,12 +277,12 @@ export class ToIrListener implements TntListener {
                         this.errors.push({ explanation: msg, start: start, end: end });
                     }
                 } else {
-                    assert(false);
+                    assert(false, "no union in exitTypeUnionRec");
                 }
             }
             this.typeStack.push({ kind: "union", tag: tag, records: records });
         } else {
-            assert(false);
+            assert(false, "no union in exitTypeUnionRec");
         }
     }
 
@@ -206,7 +333,7 @@ export class ToIrListener implements TntListener {
             let allZeroes = new Array(nunderscores - 1).fill(0);
             this.untypedStack.push({ kind: "untyped", paramArities: allZeroes });
         } else {
-            assert(false);
+            assert(false, "no underscores in exitUntyped1");
         }
     }
 
@@ -220,6 +347,7 @@ export class ToIrListener implements TntListener {
 
     // pop n elements out of typeStack
     private popTypes(n: number): TntType[] {
+        assert(this.typeStack.length >= n, "too few elements in typeStack")
         const types: TntType[] = this.typeStack.slice(-n);
         this.typeStack = this.typeStack.slice(0, -n);
         return types;
@@ -227,9 +355,18 @@ export class ToIrListener implements TntListener {
 
     // pop n elements out of untypedStack
     private popUntyped(n: number): TntUntyped[] {
+        assert(this.untypedStack.length >= n, "too few elements in untypedStack")
         const untyped: TntUntyped[] = this.untypedStack.slice(-n);
         this.untypedStack = this.untypedStack.slice(0, -n);
         return untyped;
+    }
+
+    // pop n expressions out of exprStack
+    private popExprs(n: number): TntEx[] {
+        assert(this.exprStack.length >= n, "too few elements in exprStack")
+        const es: TntEx[] = this.exprStack.slice(-n);
+        this.exprStack = this.exprStack.slice(0, -n);
+        return es;
     }
 
     // pop a type or an untyped signature, depending on the flag
@@ -240,7 +377,7 @@ export class ToIrListener implements TntListener {
             if (tp) {
                 return tp;
             } else {
-                assert(false);
+                assert(false, "no type in popTypeTag");
             }
         } else {
             // the user has specified an untyped signature
@@ -248,7 +385,7 @@ export class ToIrListener implements TntListener {
             if (untyped) {
                 return untyped;
             } else {
-                assert(false);
+                assert(false, "no untyped in popTypeTag");
             }
         }
 

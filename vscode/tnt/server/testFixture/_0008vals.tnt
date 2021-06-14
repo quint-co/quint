@@ -1,0 +1,14 @@
+// A module that contains value definitions.
+// Since 'val' gives us the simplest way of defining expressions,
+// we also do extensive testing of expression syntax in this test.
+module withVals
+	val add_1_to_2: _ = 1 + 2
+
+	val VeryTrue = {
+		2 + 2 = 4
+	}
+
+	private val secret = -123
+
+	val withType: set(int) = set(1, 2)
+end

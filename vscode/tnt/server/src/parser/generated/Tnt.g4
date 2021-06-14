@@ -6,19 +6,20 @@
 // @author: Igor Konnov
 grammar Tnt;
 
-module : 'module' IDENTIFIER ('extends' IDENTIFIER (',' IDENTIFIER))? unit* 'end';
+module : 'module' IDENTIFIER
+             ('extends' IDENTIFIER (',' IDENTIFIER))? unit* 'end';
 
 // a module unit
 unit :          'const' IDENTIFIER ':' (untyped01 | type)       # const
         |       'var' IDENTIFIER ':'   (untyped0 | type)        # var
         |       'assume' (IDENTIFIER | '_') '=' expr            # assume
-        |       ('private')? valDef (':' (untyped012 | type))?  # val
-        |       ('private')? operDef (':' (untyped012 | type))? # oper
-        |       ('private')? 'pred' IDENTIFIER params?
+        |       PRIVATE? valDef                                 # val
+        |       PRIVATE? operDef                                # oper
+        |       PRIVATE? 'pred' IDENTIFIER params?
                            (':' (untyped012 | type))? '=' expr  # pred
-        |       ('private')? 'action' IDENTIFIER params?
+        |       PRIVATE? 'action' IDENTIFIER params?
                            (':' (untyped012 | type))? '=' expr  # action
-        |       ('private')? 'temporal' IDENTIFIER params?
+        |       PRIVATE? 'temporal' IDENTIFIER params?
                            (':' (untyped012 | type))? '=' expr  # temporal
         |       module                                          # moduleNested
         |       instanceDef                                     # instance
@@ -28,10 +29,11 @@ unit :          'const' IDENTIFIER ':' (untyped01 | type)       # const
                 }                                               # errorCase
         ;
 
-valDef  :       'val' IDENTIFIER (':' ('_' | type))? '=' expr
+valDef  :       'val' IDENTIFIER (':' (untyped0 | type))? '=' expr
         ;
 
-operDef :       'def' ('rec')? IDENTIFIER params (':' ('_' | type))? '=' expr
+operDef :       'def' ('rec')? IDENTIFIER params
+                         (':' (untyped012 | type))? '=' expr
         ;
 
 instanceDef :   'instance' (IDENTIFIER | '_') '=' IDENTIFIER
@@ -93,19 +95,20 @@ expr:           // apply a built-in operator via the dot notation
                 // function application
         |       expr '[' expr ']'                                   # funApp
                 // unary minus
-        |       '-' expr                                            # uminus
+        |       SUB expr                                            # uminus
                 // power over integers
         |       <assoc=right> expr op='^' expr                      # pow
                 // integer arithmetic
-        |       expr op=('*' | '/' | '%') expr                      # multDiv
-        |       expr op=('+' | '-') expr                            # plusMinus
+        |       expr op=(MUL | DIV | MOD) expr                      # multDiv
+        |       expr op=(ADD | SUB) expr                            # plusMinus
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
-        |       'case' '{' '|'? expr '->' expr ('|' expr '->' expr)* '}' # blockCase
+        |       'case' '{' '|'? expr '->' expr
+                    ('|' expr '->' expr)* '}'                       # blockCase
                 // built-in infix/postfix operators, a la Scala
         |       expr IDENTIFIER (arg_list)?                         # infixCall
                 // standard relations
-        |       expr op=('>' | '<' | '>=' | '<=' | '!=' | '==' |
-                         '=' | ':=' | IN | NOTIN | SUBSETEQ) expr   # relations
+        |       expr op=(GT | LT | GE | LE | NE | EQEQ |
+                         EQ | ASGN | IN | NOTIN | SUBSETEQ) expr    # relations
                 // Boolean operators. Importantly, not(e) is just a normal call
         |       expr AND expr                                       # and
         |       expr OR expr                                        # or
@@ -114,7 +117,7 @@ expr:           // apply a built-in operator via the dot notation
                 // similar to indented /\ and indented \/
         |       '{' ('&')? expr '&' expr ('&' expr)* '}'            # blockAnd
         |       '{' ('|')? expr '|' expr ('|' expr)* '}'            # blockOr
-        |       ( IDENTIFIER | INT | BOOL | STRING | BUILTIN_CONST) # literalOrId
+        |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
         |       '(' expr ',' expr (',' expr)* ')'                   # tuple
         |       ('\'{' (expr (',' expr)*)? '}' |
                         'set' '(' (expr (',' expr)*)? ')')          # set
@@ -151,12 +154,12 @@ name_after_dot  :    (IDENTIFIER | IN | NOTIN | AND | OR | IFF | IMPLIES)
 // special operators
 operator: (AND | OR | IFF | IMPLIES | SUBSETEQ | IN | NOTIN |
            '(' | '{' | '[' | '&' | '|' | 'if' | 'case' |
-           '>' | '<' | '>=' | '<=' | '!=' | '==' | ':=' | '=' |
-           '*' | '/' | '%' | '+' | '-' | '^')
+           GT  | LT  | GE  | LE | NE | EQEQ | EQ | ASGN |
+           MUL | DIV | MOD | ADD | SUB | '^')
         ;
 
 // literals
-literal: (STRING | BOOL | INT | BUILTIN_CONST)
+literal: (STRING | BOOL | INT)
         ;
 
 // TOKENS
@@ -166,7 +169,6 @@ literal: (STRING | BOOL | INT | BUILTIN_CONST)
 STRING          : '"' .*? '"' ;
 BOOL            : ('false' | 'true') ;
 INT             : [0-9]+ ;
-BUILTIN_CONST   : ('Int' | 'Nat' | 'Bool') ;
 
 // a few keywords
 AND             :   'and' ;
@@ -176,6 +178,20 @@ IMPLIES         :   'implies' ;
 SUBSETEQ        :   'subseteq' ;
 IN              :   'in' ;
 NOTIN           :   'notin' ;
+PRIVATE         :   'private' ;
+ADD             :   '+' ;
+SUB             :   '-' ;
+MUL             :   '*' ;
+DIV             :   '/' ;
+MOD             :   '%' ;
+GT              :   '>' ;
+LT              :   '<' ;
+GE              :   '>=' ;
+LE              :   '<=' ;
+NE              :   '!=' ;
+EQEQ            :   '==' ;
+EQ              :   '='  ;
+ASGN            :   ':=' ;
 
 // other TLA+ identifiers
 IDENTIFIER      : [a-zA-Z_][a-zA-Z0-9_]* ;

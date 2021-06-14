@@ -3,7 +3,7 @@ import { assert } from 'chai';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { ErrorMessage, parsePhase1, ParseResult } from "../src/parser/tntParserFrontend";
-import { TntDef } from "../src/parser/tntIr";
+import { TntDef, OpQualifier } from "../src/parser/tntIr";
 
 function readTest(name: string): string {
 	const p = resolve(__dirname, '../testFixture', name + ".tnt")
@@ -129,17 +129,302 @@ describe('parse modules', () => {
 		defs: [ x, y ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
-	  }); 
+	}); 
 
 	it('parse error on untyped operator signature for a variable', () => {
 		const result = parsePhase1(readTest("_0007varsErrors"));
 		if (result.kind == "error") {
 			assert.isTrue(result.messages.length > 0)
 			assert.deepEqual(result.messages[0].explanation,
-				"TNT002: expected '_', found operator signature.")
+				"TNT002: expected '_', found an operator signature.")
 		} else {
 			assert.fail("Expected to see an error")
 		}
 	}); 
 
+	it('parse add', () => {
+		const result = parsePhase1(readTest("_0100expr_add"));
+		// val add_1_to_2: _ = 1 + 2
+		const add_1_to_2: TntDef = {
+			id: 4n, kind: "def", name: "add_1_to_2",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "add", args: [
+				 	{ id: 1n, kind: "int", value: 1n, typeTag: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ add_1_to_2 ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse sub', () => {
+		const result = parsePhase1(readTest("_0101expr_sub"));
+		// val sub_1_to_2: _ = 1 - 2
+		const sub_1_to_2: TntDef = {
+			id: 4n, kind: "def", name: "sub_1_to_2",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "sub", args: [
+				 	{ id: 1n, kind: "int", value: 1n, typeTag: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ sub_1_to_2 ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse mul', () => {
+		const result = parsePhase1(readTest("_0102expr_mul"));
+		// val mul_2_to_3: _ = 2 * 3
+		const mul_2_to_3: TntDef = {
+			id: 4n, kind: "def", name: "mul_2_to_3",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "mul", args: [
+				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ mul_2_to_3 ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse div', () => {
+		const result = parsePhase1(readTest("_0103expr_div"));
+		// val div_2_to_3: _ = 2 / 3
+		const div_2_to_3: TntDef = {
+			id: 4n, kind: "def", name: "div_2_to_3",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "div", args: [
+				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ div_2_to_3 ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse mod', () => {
+		const result = parsePhase1(readTest("_0104expr_mod"));
+		// val mod_2_to_3: _ = 2 % 3
+		const mod_2_to_3: TntDef = {
+			id: 4n, kind: "def", name: "mod_2_to_3",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "mod", args: [
+				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ mod_2_to_3 ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse pow', () => {
+		const result = parsePhase1(readTest("_0105expr_pow"));
+		// val pow_2_to_3: _ = 2^3
+		const pow_2_to_3: TntDef = {
+			id: 4n, kind: "def", name: "pow_2_to_3",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "pow", args: [
+				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ pow_2_to_3 ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse uminus', () => {
+		const result = parsePhase1(readTest("_0106expr_uminus"));
+		// val uminus: _ = -100
+		const uminus: TntDef = {
+			id: 3n, kind: "def", name: "uminus",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 2n, kind: "oper", opcode: "uminus", args: [{
+				id: 1n, kind: "int", value: 100n, typeTag: { kind: "int" } }]
+			}
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 4n, name: "withVals",
+						 extends: [], defs: [ uminus ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse gt', () => {
+		const result = parsePhase1(readTest("_0107expr_gt"));
+		// val gt_2_to_3: _ = 2 > 3
+		const gt_2_to_3: TntDef = {
+			id: 4n, kind: "def", name: "gt_2_to_3",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "gt", args: [
+				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ gt_2_to_3 ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse ge', () => {
+		const result = parsePhase1(readTest("_0108expr_ge"));
+		// val ge_2_to_3: _ = 2 >= 3
+		const ge_2_to_3: TntDef = {
+			id: 4n, kind: "def", name: "ge_2_to_3",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "gte", args: [
+				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ ge_2_to_3 ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse lt', () => {
+		const result = parsePhase1(readTest("_0109expr_lt"));
+		// val lt_2_to_3: _ = 2 < 3
+		const lt_2_to_3: TntDef = {
+			id: 4n, kind: "def", name: "lt_2_to_3",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "lt", args: [
+				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ lt_2_to_3 ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse le', () => {
+		const result = parsePhase1(readTest("_0110expr_le"));
+		// val le_2_to_3: _ = 2 <= 3
+		const le_2_to_3: TntDef = {
+			id: 4n, kind: "def", name: "le_2_to_3",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "lte", args: [
+				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ le_2_to_3 ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse eq', () => {
+		const result = parsePhase1(readTest("_0111expr_eq"));
+		// val eq_2_to_3: _ = 2 = 3
+		const eq_2_to_3: TntDef = {
+			id: 4n, kind: "def", name: "eq_2_to_3",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "eq", args: [
+				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ eq_2_to_3 ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse eqeq', () => {
+		const result = parsePhase1(readTest("_0112expr_eqeq"));
+		// val eqeq_2_to_3: _ = 2 == 3
+		const eqeq_2_to_3: TntDef = {
+			id: 4n, kind: "def", name: "eqeq_2_to_3",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "eq", args: [
+				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ eqeq_2_to_3 ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse ne', () => {
+		const result = parsePhase1(readTest("_0113expr_ne"));
+		// val ne_2_to_3: _ = 2 != 3
+		const ne_2_to_3: TntDef = {
+			id: 4n, kind: "def", name: "ne_2_to_3",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "neq", args: [
+				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ ne_2_to_3 ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse asgn', () => {
+		const result = parsePhase1(readTest("_0114expr_asgn"));
+		// var x: int
+		const x: TntDef = { id: 1n, kind: "var", name: "x", typeTag: { kind: "int" } }
+		// val asgn: _ = x := 3
+		const asgn: TntDef = {
+			id: 5n, kind: "def", name: "asgn",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 4n, kind: "oper", opcode: "assign", args: [
+				 	{ id: 2n, kind: "name", name: "x" },
+				 	{ id: 3n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 6n, name: "withVals",
+						 extends: [], defs: [ x, asgn ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
 });

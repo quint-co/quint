@@ -20,10 +20,12 @@ export interface WithId {
 }
 
 /**
- * TNT expressions and declarations carry a type tag.
+ * TNT expressions and declarations carry an optional type tag.
+ * Note that if a type tag is missing, it does not mean that an expression (or declaration)
+ * is untyped. It means that the type has not been computed yet.
  */
 export interface WithTypeTag {
-	typeTag: TntTypeTag
+	typeTag?: TntTypeTag
 }
 
 /**
@@ -32,10 +34,12 @@ export interface WithTypeTag {
 export type TntEx =
 	// A name of: a variable, constant, parameter, user-defined operator.
 	| { kind: "name", name: string } & WithId & WithTypeTag
+	// A Boolean literal.
+	| { kind: "bool", value: boolean } & WithId & WithTypeTag
 	// An integer literal.
-	| { kind: "number", value: bigint } & WithId & WithTypeTag
+	| { kind: "int", value: bigint } & WithId & WithTypeTag
 	// A string literal
-	| { kind: "string", value: string } & WithId & WithTypeTag
+	| { kind: "str", value: string } & WithId & WithTypeTag
 	// An operator application.
 	| { kind: "oper", opcode: string, args: TntEx[] } & WithId & WithTypeTag
 	// A let-in binding (defined via 'def', 'def rec', or 'val').
@@ -54,14 +58,16 @@ export enum OpQualifier {
 }
 
 /**
- * A user-defined operator that is defined via one of the qualifiers: val, def, def rec, pred, action, or temporal.
+ * A user-defined operator that is defined via one of the qualifiers:
+ * val, def, def rec, pred, action, or temporal.
  */
 export interface TntOpDef extends WithId, WithTypeTag {
 	kind: "def",
 	name: string,
 	params: string[],
 	qualifier: OpQualifier,
-	isPrivate: boolean
+	isPrivate: boolean,
+	body: TntEx
 }
 
 /**
@@ -71,8 +77,9 @@ export type TntDef =
 	| TntOpDef
 	| { kind: "const", name: string } & WithId & WithTypeTag
 	| { kind: "var", name: string } & WithId & WithTypeTag
-	| { kind: "assume", name: string, assumption: TntEx } & WithId & WithTypeTag
-	| { kind: "instance", name: string, moduleName: string, overrides: [string, TntEx][] } & WithId
+	| { kind: "assume", name: string, assumption: TntEx } & WithId
+	| { kind: "instance", name: string,
+		moduleName: string, overrides: [string, TntEx][] } & WithId
 	| { kind: "module", module: TntModule } & WithId
 
 /**

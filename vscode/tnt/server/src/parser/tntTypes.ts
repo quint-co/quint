@@ -15,8 +15,10 @@
  * Every name may be assigned a "no type" tag. If the name is not an operator,
  * then its `paramArities` is empty. If the name is an operator, then
  * its `paramArities` contains the number of arguments of each parameter,
- * which can be operators too. As TLA+ does not let higher order operators to have other
- * higher order operators as parameters, a flat array of integers is sufficient.
+ * which can be operators too. TLA+ lets us pass an operator as an argument
+ * to another operator. Such an operator is called higher order.
+ * But TLA+ does not let us pass a higher-order operator as an argument to
+ * another operator. Hence, a flat array of integers is sufficient.
  */
  export type TntUntyped =
 	| { kind: "untyped", paramArities: number[] }
