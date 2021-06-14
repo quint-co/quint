@@ -1,0 +1,7 @@
+// A module that contains variables.
+// We don't do extensive testing of types,
+// as we have done it for constants already.
+module withVars
+	var x: int
+	var y: _
+end

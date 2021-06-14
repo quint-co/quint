@@ -1,4 +1,7 @@
-// A grammar of TNT: not TLA+
+// A grammar of TNT: not TLA+.
+// Our goals are:
+//  1. Keep the grammar simple,
+//  2. Make it expressive enough to capture all of TLA+.
 //
 // @author: Igor Konnov
 grammar Tnt;
@@ -7,7 +10,7 @@ module : 'module' IDENTIFIER ('extends' IDENTIFIER (',' IDENTIFIER))? unit* 'end
 
 // a module unit
 unit :          'const' IDENTIFIER ':' (untyped01 | type)       # const
-        |       'var' IDENTIFIER ':' ('_' | type)               # var
+        |       'var' IDENTIFIER ':'   (untyped0 | type)        # var
         |       'assume' (IDENTIFIER | '_') '=' expr            # assume
         |       ('private')? valDef (':' (untyped012 | type))?  # val
         |       ('private')? operDef (':' (untyped012 | type))? # oper
@@ -66,7 +69,17 @@ untyped012 :    '(' (untyped01 (',' untyped01)*)? ')' '=>' '_'  # untyped2Sig
 
 // Order 0/1 untyped signature.
 untyped01 :     '(' ('_' (',' '_')*)? ')' '=>' '_'              # untyped1
-        |       '_'                                             # untyped0
+        |       untyped0                                        # untyped1Lower
+        ;
+
+// Order 0 untyped signature: just '_'
+untyped0 :      '_'
+        |       '(' '_' {
+                this.notifyErrorListeners("TNT002: expected '_', found an operator signature.");
+                }
+        |       '(' {
+                this.notifyErrorListeners("TNT003: expected '_', found '('.");
+                }
         ;
 
 // A TNT expression. The order matters, it defines the priority.
@@ -138,7 +151,7 @@ name_after_dot  :    (IDENTIFIER | IN | NOTIN | AND | OR | IFF | IMPLIES)
 // special operators
 operator: (AND | OR | IFF | IMPLIES | SUBSETEQ | IN | NOTIN |
            '(' | '{' | '[' | '&' | '|' | 'if' | 'case' |
-           '>' | '<' | '>=' | '<=' | '<>' | '!=' | '==' | ':=' | '=' |
+           '>' | '<' | '>=' | '<=' | '!=' | '==' | ':=' | '=' |
            '*' | '/' | '%' | '+' | '-' | '^')
         ;
 

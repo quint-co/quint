@@ -101,6 +101,7 @@ class ToIrListener implements TntListener {
     // an internal counter to assign unique numbers
     private lastId: bigint = 1n
 
+    // translate: module...end
     exitModule(ctx: p.ModuleContext) {
         const module: TntModule = {
             id: this.nextId(),
@@ -112,29 +113,27 @@ class ToIrListener implements TntListener {
         this.rootModule = module
     }
 
+    // translate: const x: type, const x: _
     exitConst(ctx: p.ConstContext) {
-        let typeTag: TntTypeTag = { kind: "untyped", paramArities: [] }
-
-        if (ctx.type()) {
-            // the user has specified a type
-            const tp = this.typeStack.pop()
-            if (tp) {
-                typeTag = tp
-            }
-        } else {
-            // the user has specified an untyped signature
-            const untyped = this.untypedStack.pop()
-            if (untyped) {
-                typeTag = untyped
-            }
-        }
+        let typeTag = this.popTypeTag(ctx.type() != undefined)
 
         const constDef: TntDef = {
             kind: "const", name: ctx.IDENTIFIER().text,
             typeTag: typeTag, id: this.nextId()
         }
         this.definitionStack.push(constDef)
-}
+    }
+
+    // translate: var x: type, var: x: _
+    exitVar(ctx: p.VarContext) {
+        let typeTag = this.popTypeTag(ctx.type() != undefined)
+
+        const varDef: TntDef = {
+            kind: "var", name: ctx.IDENTIFIER().text,
+            typeTag: typeTag, id: this.nextId()
+        }
+        this.definitionStack.push(varDef)
+    }
 
     // translating type via typeStack
     exitTypeInt(ctx: p.TypeIntContext) {
@@ -304,6 +303,30 @@ class ToIrListener implements TntListener {
         const untyped: TntUntyped[] = this.untypedStack.slice(-n)
         this.untypedStack = this.untypedStack.slice(0, -n)
         return untyped
+    }
+
+    // pop a type or an untyped signature, depending on the flag
+    private popTypeTag(isTyped: boolean): TntTypeTag {
+        if (isTyped) {
+            // the user has specified a type
+            const tp = this.typeStack.pop()
+            if (tp) {
+                return tp
+            } else {
+                assert(false)
+            }
+        } else {
+            // the user has specified an untyped signature
+            const untyped = this.untypedStack.pop()
+            if (untyped) {
+                return untyped
+            } else {
+                assert(false)
+            }
+        }
+        
+        // this code is unreachable but tsc is not smart enough to see that
+        return { kind: "untyped", paramArities: [] }
     }
 
     // produce the next number in a sequence
