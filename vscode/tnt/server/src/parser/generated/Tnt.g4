@@ -103,7 +103,7 @@ expr:           // apply a built-in operator via the dot notation
         |       expr op=(ADD | SUB) expr                            # plusMinus
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
         |       'case' '{' '|'? expr '->' expr
-                    ('|' expr '->' expr)* '}'                       # blockCase
+                    ('|' expr '->' expr)* ('|' '_' '->' expr)? '}'  # caseBlock
                 // built-in infix/postfix operators, a la Scala
         |       expr IDENTIFIER (arg_list)?                         # infixCall
                 // standard relations
@@ -115,8 +115,8 @@ expr:           // apply a built-in operator via the dot notation
         |       expr IFF expr                                       # iff
         |       expr IMPLIES expr                                   # implies
                 // similar to indented /\ and indented \/
-        |       '{' ('&')? expr '&' expr ('&' expr)* '}'            # blockAnd
-        |       '{' ('|')? expr '|' expr ('|' expr)* '}'            # blockOr
+        |       '{' ('&')? expr '&' expr ('&' expr)* '}'            # andBlock
+        |       '{' ('|')? expr '|' expr ('|' expr)* '}'            # orBlock
         |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
         |       '(' expr ',' expr (',' expr)* ')'                   # tuple
         |       ('\'{' (expr (',' expr)*)? '}' |

@@ -427,4 +427,188 @@ describe('parse modules', () => {
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
+
+	it('parse and', () => {
+		const result = parsePhase1(readTest("_0115expr_and"));
+		// val test_and: _ = false and true
+		const test_and: TntDef = {
+			id: 4n, kind: "def", name: "test_and",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "and", args: [
+				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
+				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ test_and ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse or', () => {
+		const result = parsePhase1(readTest("_0116expr_or"));
+		// val test_or: _ = false or true
+		const test_or: TntDef = {
+			id: 4n, kind: "def", name: "test_or",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "or", args: [
+				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
+				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ test_or ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse implies', () => {
+		const result = parsePhase1(readTest("_0117expr_implies"));
+		// val test_implies: _ = false implies true
+		const test_implies: TntDef = {
+			id: 4n, kind: "def", name: "test_implies",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "implies", args: [
+				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
+				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ test_implies ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse iff', () => {
+		const result = parsePhase1(readTest("_0118expr_iff"));
+		// val test_iff: _ = false iff true
+		const test_iff: TntDef = {
+			id: 4n, kind: "def", name: "test_iff",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "iff", args: [
+				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
+				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ test_iff ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse block_and', () => {
+		const result = parsePhase1(readTest("_0119expr_block_and"));
+		// val block_and: _ = { false & true & false }
+		const test_block_and: TntDef = {
+			id: 5n, kind: "def", name: "test_block_and",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 4n, kind: "oper", opcode: "andBlock", args: [
+				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
+				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
+				 	{ id: 3n, kind: "bool", value: false, typeTag: { kind: "bool" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 6n, name: "withVals",
+						 extends: [], defs: [ test_block_and ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse block_or', () => {
+		const result = parsePhase1(readTest("_0120expr_block_or"));
+		// val block_or: _ = { false | true | false }
+		const test_block_or: TntDef = {
+			id: 5n, kind: "def", name: "test_block_or",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 4n, kind: "oper", opcode: "orBlock", args: [
+				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
+				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
+				 	{ id: 3n, kind: "bool", value: false, typeTag: { kind: "bool" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 6n, name: "withVals",
+						 extends: [], defs: [ test_block_or ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse ite', () => {
+		const result = parsePhase1(readTest("_0121expr_ite"));
+		// val test_ite: _ = if (true) 1 else 0
+		const test_ite: TntDef = {
+			id: 5n, kind: "def", name: "test_ite",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 4n, kind: "oper", opcode: "ite", args: [
+				 	{ id: 1n, kind: "bool", value: true, typeTag: { kind: "bool" } },
+				 	{ id: 2n, kind: "int", value: 1n, typeTag: { kind: "int" } },
+				 	{ id: 3n, kind: "int", value: 0n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 6n, name: "withVals",
+						 extends: [], defs: [ test_ite ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse case', () => {
+		const result = parsePhase1(readTest("_0122expr_case"));
+		// val case: _ = { p1 -> e1 | p2 -> e2 | p3 -> e3 }
+		const test_case: TntDef = {
+			id: 8n, kind: "def", name: "test_case",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 7n, kind: "oper", opcode: "caseBlock", args: [
+					{ id: 1n, kind: "name", name: "p1" },
+					{ id: 2n, kind: "name", name: "e1" },
+					{ id: 3n, kind: "name", name: "p2" },
+					{ id: 4n, kind: "name", name: "e2" },
+					{ id: 5n, kind: "name", name: "p3" },
+					{ id: 6n, kind: "name", name: "e3" },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 9n, name: "withVals",
+						 extends: [], defs: [ test_case ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse case with default', () => {
+		const result = parsePhase1(readTest("_0123expr_case_default"));
+		// val case: _ = { p1 -> e1 | p2 -> e2 | p3 -> e3 | _ -> e4 }
+		const test_case_default: TntDef = {
+			id: 9n, kind: "def", name: "test_case",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 8n, kind: "oper", opcode: "caseBlock", args: [
+					{ id: 1n, kind: "name", name: "p1" },
+					{ id: 2n, kind: "name", name: "e1" },
+					{ id: 3n, kind: "name", name: "p2" },
+					{ id: 4n, kind: "name", name: "e2" },
+					{ id: 5n, kind: "name", name: "p3" },
+					{ id: 6n, kind: "name", name: "e3" },
+					{ id: 7n, kind: "name", name: "e4" },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 10n, name: "withVals",
+						 extends: [], defs: [ test_case_default ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
 });

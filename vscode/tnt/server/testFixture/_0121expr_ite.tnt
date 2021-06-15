@@ -1,0 +1,6 @@
+// A module that contains value definitions.
+// Since 'val' gives us the simplest way of defining expressions,
+// we also do extensive testing of expression syntax in this test.
+module withVals
+	val test_ite = if (true) 1 else 0
+end

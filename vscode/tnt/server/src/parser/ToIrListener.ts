@@ -188,6 +188,63 @@ export class ToIrListener implements TntListener {
         }
     }
 
+    // p and q
+    exitAnd(ctx: p.AndContext) {
+        const args = this.popExprs(2)
+        this.exprStack.push({ id: this.nextId(),
+            kind: "oper", opcode: "and", args: args })
+    }
+
+    // p or q
+    exitOr(ctx: p.OrContext) {
+        const args = this.popExprs(2)
+        this.exprStack.push({ id: this.nextId(),
+            kind: "oper", opcode: "or", args: args })
+    }
+
+    // p implies q
+    exitImplies(ctx: p.ImpliesContext) {
+        const args = this.popExprs(2)
+        this.exprStack.push({ id: this.nextId(),
+            kind: "oper", opcode: "implies", args: args })
+    }
+
+    // p iff q
+    exitIff(ctx: p.IffContext) {
+        const args = this.popExprs(2)
+        this.exprStack.push({ id: this.nextId(),
+            kind: "oper", opcode: "iff", args: args })
+    }
+
+    // { p & q & r }
+    exitAndBlock(ctx: p.AndBlockContext) {
+        const args = this.popExprs(ctx.expr().length)
+        this.exprStack.push({ id: this.nextId(),
+            kind: "oper", opcode: "andBlock", args: args })
+    }
+
+    // { p | q | r }
+    exitOrBlock(ctx: p.OrBlockContext) {
+        const args = this.popExprs(ctx.expr().length)
+        this.exprStack.push({ id: this.nextId(),
+            kind: "oper", opcode: "orBlock", args: args })
+    }
+
+    // if (p) e1 else e2
+    exitIfElse(ctx: p.IfElseContext) {
+        const args = this.popExprs(3)
+        this.exprStack.push({ id: this.nextId(),
+            kind: "oper", opcode: "ite", args: args })
+    }
+
+    // case { p1 -> e1 | p2 -> e2 | p3 -> e3 }, or
+    // case { p1 -> e1 | p2 -> e2 | p3 -> e3 | _ -> e4 }
+    exitCaseBlock(ctx: p.CaseBlockContext) {
+        const args = this.popExprs(ctx.expr().length)
+        this.exprStack.push({ id: this.nextId(),
+            kind: "oper", opcode: "caseBlock", args: args })
+    }
+
     /********************* translate types ********************************/
 
     // translating type via typeStack
