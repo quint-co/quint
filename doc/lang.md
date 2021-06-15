@@ -522,6 +522,9 @@ The first occurence of `|` right after `{` is optional, it's up to you.
 
 *We encourage you to use the operator `x := e` in a multiline disjunction.*
 
+This operator has the normal form too! It is written as `orBlock(p_1, ...,
+p_n)`. Most likely, you will never use it, but the tools can.
+
 ### Multiline conjunctions
 
 ```scala
@@ -539,6 +542,9 @@ The first occurence of `&` right after `{` is optional, it's up to you.
 
 *We encourage you to use the operator `x := e` in a multiline conjunction.*
 
+This operator has the normal form too! It is written as `andBlock(p_1, ...,
+p_n)`. Most likely, you will never use it, but the tools can.
+
 ## Flow operators
 
 ### Branching
@@ -554,6 +560,8 @@ Compare it to TLA+:
 ```
 
 *The use of the operator `x := e` in if-else is strongly discouraged.*
+
+The normal form of this operator is `ite(p, e1, e2)`.
 
 ### Cases
 
@@ -580,6 +588,15 @@ CASE
   [] p_n -> e_n
 ```
 
+The normal form of the case operator without the default option is:
+
+```
+caseBlock(p_1, e_1, ..., p_n, e_n)
+```
+
+Note that this operator simply has `2*n` arguments. We do not group the guards
+and effect expressions into pairs. The normal form is meant for the tools.
+
 Case enumeration with the default case:
 
 ```scala
@@ -604,6 +621,16 @@ CASE
 ```
 
 *The use of the operator `x := e` in case is strongly discouraged.*
+
+The normal form of the case operators with the default option is:
+
+```
+caseBlock(p_1, e_1, ..., p_n, e_n, e)
+```
+
+Note that this operator simply has `2*n + 1` arguments. We do not group the
+guards and effect expressions into pairs. The normal form is meant for the
+tools.
 
 ## Sets
 
