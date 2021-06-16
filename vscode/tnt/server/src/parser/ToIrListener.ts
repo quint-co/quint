@@ -247,19 +247,22 @@ export class ToIrListener implements TntListener {
 
     /********************* translate types ********************************/
 
-    // translating type via typeStack
+    // the integer type, that is, int
     exitTypeInt(ctx: p.TypeIntContext) {
         this.typeStack.push({ kind: "int" });
     }
 
+    // the Boolean type, that is, bool
     exitTypeBool(ctx: p.TypeBoolContext) {
         this.typeStack.push({ kind: "bool" });
     }
 
     exitTypeStr(ctx: p.TypeStrContext) {
+        // the string type, that is, str
         this.typeStack.push({ kind: "str" });
     }
 
+    // a type variable, a type constant, or a reference to a type alias
     exitTypeConstOrVar(ctx: p.TypeConstOrVarContext) {
         const name = ctx.IDENTIFIER().text;
         if (name.length == 1 && name.match("[a-z]")) {
@@ -271,6 +274,7 @@ export class ToIrListener implements TntListener {
         }
     }
 
+    // a set type, e.g., set(int)
     exitTypeSet(ctx: p.TypeSetContext) {
         const last = this.typeStack.pop();
         if (last != undefined) {
@@ -278,6 +282,7 @@ export class ToIrListener implements TntListener {
         } // the other cases are excluded by the parser
     }
 
+    // a sequence type, e.g., seq(int)
     exitTypeSeq(ctx: p.TypeSetContext) {
         const top = this.typeStack.pop();
         if (top != undefined) {
@@ -285,6 +290,7 @@ export class ToIrListener implements TntListener {
         } // the other cases are excluded by the parser
     }
 
+    // A function type, e.g., str => int
     exitTypeFun(ctx: p.TypeFunContext) {
         const res = this.typeStack.pop();
         const arg = this.typeStack.pop();
@@ -293,15 +299,18 @@ export class ToIrListener implements TntListener {
         }
     }
 
+    // A tuple type, e.g., (int, bool)
+    // the type stack contains the types of the elements
     exitTypeTuple(ctx: p.TypeTupleContext) {
-        // the type stack contains the types of the elements
         const elemTypes: TntType[] = this.popTypes(ctx.type().length);
         this.typeStack.push({ kind: "tuple", elems: elemTypes });
     }
 
+    // A record type that is not a disjoint union, e.g.,
+    // { name: str, year: int }
+    // The type stack contains the types of the fields.
+    // We have to match them with the field names.
     exitTypeRec(ctx: p.TypeRecContext) {
-        // The type stack contains the types of the fields.
-        // We have to match them with the field names.
         const names = ctx.IDENTIFIER().map((n) => n.text);
         const elemTypes: TntType[] = this.popTypes(ctx.type().length);
         // since TS does not have zip, a loop is the easiest solution
@@ -312,8 +321,10 @@ export class ToIrListener implements TntListener {
         this.typeStack.push({ kind: "record", fields: pairs });
     }
 
+    // A disjoint union type, e.g.,
+    //   | { type: "ack", from: address }
+    //   | { type: "syn", to: address }
     exitTypeUnionRec(ctx: p.TypeUnionRecContext) {
-        // combine a disjoint union out of singletons
         const size = ctx.typeUnionRecOne().length;
         assert(size > 0, "exitTypeUnionRec: size == 0");
         const singletonUnions: TntType[] = this.popTypes(size);
@@ -334,19 +345,20 @@ export class ToIrListener implements TntListener {
                         this.errors.push({ explanation: msg, start: start, end: end });
                     }
                 } else {
-                    assert(false, "no union in exitTypeUnionRec");
+                    assert(false, "exitTypeUnionRec: no union in exitTypeUnionRec");
                 }
             }
             this.typeStack.push({ kind: "union", tag: tag, records: records });
         } else {
-            assert(false, "no union in exitTypeUnionRec");
+            assert(false, "exitTypeUnionRec: no union in exitTypeUnionRec");
         }
     }
 
+    // One option of a disjoint union, e.g.,
+    //   | { type: "ack", from: address }
+    // The type stack contains the types of the fields.
+    // We have to match them with the field names.
     exitTypeUnionRecOne(ctx: p.TypeUnionRecOneContext) {
-        // One option of a disjoint union.
-        // The type stack contains the types of the fields.
-        // We have to match them with the field names.
         const names = ctx.IDENTIFIER().map((n) => n.text);
         // the first name is the tag name (according to the grammar)
         const tagName = names[0];
@@ -367,6 +379,7 @@ export class ToIrListener implements TntListener {
         this.typeStack.push(singleton);
     }
 
+    // an operator type, e.g., (int, str) => bool
     exitTypeOper(ctx: p.TypeOperContext) {
         const resType = this.typeStack.pop();
         const nargs = ctx.type().length - 1;
@@ -376,35 +389,34 @@ export class ToIrListener implements TntListener {
         }
     }
 
-    // translate untyped signatures
+    // untyped signature of level 0, that is, '_'
     exitUntyped0(ctx: p.Untyped0Context) {
-        // just an '_'
         this.untypedStack.push({ kind: "untyped", paramArities: [] });
     }
 
+    // An untyped signature of level 1, e.g., (_, _) => _.
+    // Count the number of underscores; the last one going to the result.
     exitUntyped1(ctx: p.Untyped1Context) {
-        // an untyped signature like (_, _) => _
-        // count the number of underscores; the last one going to the result
         const nunderscores = ctx.children?.filter((value) => value.text == "_").length;
         if (nunderscores) {
             let allZeroes = new Array(nunderscores - 1).fill(0);
             this.untypedStack.push({ kind: "untyped", paramArities: allZeroes });
         } else {
-            assert(false, "no underscores in exitUntyped1");
+            assert(false, "exitUntyped1: no underscores in exitUntyped1");
         }
     }
 
+    // A higher-order untyped signature like (_, (_, _) => _) => _.
+    // Since the signatures of the arguments are either values or level 0 signatures,
+    // we only have to count the number of their arguments.
     exitUntyped2Sig(ctx: p.Untyped2SigContext) {
-        // A higher-order untyped signature like (_, (_, _) => _) => _.
-        // Since the signatures of the arguments are either values or level 0 signatures,
-        // we only have to count the number of their arguments.
         const arities = this.popUntyped(ctx.untyped01().length).map((u) => u.paramArities.length);
         this.untypedStack.push({ kind: "untyped", paramArities: arities });
     }
 
     // pop n elements out of typeStack
     private popTypes(n: number): TntType[] {
-        assert(this.typeStack.length >= n, "too few elements in typeStack")
+        assert(this.typeStack.length >= n, "popTypes: too few elements in typeStack")
         const types: TntType[] = this.typeStack.slice(-n);
         this.typeStack = this.typeStack.slice(0, -n);
         return types;
@@ -412,7 +424,7 @@ export class ToIrListener implements TntListener {
 
     // pop n elements out of untypedStack
     private popUntyped(n: number): TntUntyped[] {
-        assert(this.untypedStack.length >= n, "too few elements in untypedStack")
+        assert(this.untypedStack.length >= n, "popUntyped: too few elements in untypedStack")
         const untyped: TntUntyped[] = this.untypedStack.slice(-n);
         this.untypedStack = this.untypedStack.slice(0, -n);
         return untyped;
@@ -420,7 +432,7 @@ export class ToIrListener implements TntListener {
 
     // pop n expressions out of exprStack
     private popExprs(n: number): TntEx[] {
-        assert(this.exprStack.length >= n, "too few elements in exprStack")
+        assert(this.exprStack.length >= n, "popExprs: too few elements in exprStack")
         const es: TntEx[] = this.exprStack.slice(-n);
         this.exprStack = this.exprStack.slice(0, -n);
         return es;
@@ -434,7 +446,7 @@ export class ToIrListener implements TntListener {
             if (tp) {
                 return tp;
             } else {
-                assert(false, "no type in popTypeTag");
+                assert(false, "popTypeTag: no type in typeStack");
             }
         } else {
             // the user has specified an untyped signature
@@ -442,7 +454,7 @@ export class ToIrListener implements TntListener {
             if (untyped) {
                 return untyped;
             } else {
-                assert(false, "no untyped in popTypeTag");
+                assert(false, "popTypeTag: no untyped signature in untypedStack");
             }
         }
 

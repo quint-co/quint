@@ -8,11 +8,12 @@ import { TntTypeTag } from './tntTypes';
 
 /*
  * Intermediate representation of TNT. It almost mirrors the IR of Apalache,
- * which assumes that module instances are flattened.
+ * which assumes that module instances are flattened. TNT extends the Apalache IR
+ * by supporting hierarchical modules and instances.
  */
 
 /**
- * TNT expressions and declarations may be assigned an identifier, which can be used
+ * TNT expressions and declarations carry a unique identifier, which can be used
  * to recover expression metadata such as source information, annotations, etc.
  */
 export interface WithId {
@@ -42,7 +43,7 @@ export type TntEx =
 	| { kind: "str", value: string } & WithId & WithTypeTag
 	// An operator application.
 	| { kind: "oper", opcode: string, args: TntEx[] } & WithId & WithTypeTag
-	// A let-in binding (defined via 'def', 'def rec', or 'val').
+	// A let-in binding (defined via 'def', 'def rec', 'val', etc.).
 	| { kind: "let", opdef: TntOpDef, body: TntEx } & WithId & WithTypeTag
 
 /**
