@@ -651,4 +651,24 @@ describe('parse modules', () => {
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
+
+	it('parse infix operator application', () => {
+		const result = parsePhase1(readTest("_0126expr_oper_infix_app"));
+		// val oper_app = "a" MyOper 42, true
+		const operApp: TntDef = {
+			id: 5n, kind: "def", name: "oper_app",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 4n, kind: "oper", opcode: "MyOper", args: [
+				 	{ id: 1n, kind: "str", value: "a", typeTag: { kind: "str" } },
+				 	{ id: 2n, kind: "int", value: 42n, typeTag: { kind: "int" } },
+				 	{ id: 3n, kind: "bool", value: true, typeTag: { kind: "bool" } }
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 6n, name: "withVals",
+						 extends: [], defs: [ operApp ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
 });

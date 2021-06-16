@@ -139,15 +139,31 @@ export class ToIrListener implements TntListener {
             kind: "oper", opcode: "of", args: args })
     }
 
-    // oper application in the normal form, e.g., MyOper("foo", 42)
+    // operator application in the normal form, e.g., MyOper("foo", 42)
     exitOperApp(ctx: p.OperAppContext) {
         const name = ctx.IDENTIFIER().text
         const wrappedArgs = this.exprStack.pop()
         if (wrappedArgs && wrappedArgs.kind == "oper") {
             this.exprStack.push({ id: wrappedArgs.id,
-                kind: "oper", opcode: name, args: wrappedArgs.args })
+                kind: "oper", opcode: name, args: wrappedArgs.args
+            })
         } else {
             assert(false, "exitOperApp: expected wrapped arguments")
+        }
+    }
+
+    // infix operator application, e.g., S union T
+    exitInfixCall(ctx: p.InfixCallContext) {
+        const name = ctx.IDENTIFIER().text
+        const wrappedArgs = this.exprStack.pop()
+        const firstArg = this.exprStack.pop()
+        if (firstArg && wrappedArgs && wrappedArgs.kind == "oper") {
+            this.exprStack.push({ id: wrappedArgs.id,
+                kind: "oper", opcode: name,
+                args: [firstArg].concat(wrappedArgs.args)
+            })
+        } else {
+            assert(false, "exitInfixCall: expected leading arg and wrapped arguments")
         }
     }
 
