@@ -118,15 +118,16 @@ expr:           // apply a built-in operator via the dot notation
         |       '{' ('&')? expr '&' expr ('&' expr)* '}'            # andBlock
         |       '{' ('|')? expr '|' expr ('|' expr)* '}'            # orBlock
         |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
+        //      a tuple constructor, the form tuple(...) is just an operator call
         |       '(' expr ',' expr (',' expr)* ')'                   # tuple
-        |       ('\'{' (expr (',' expr)*)? '}' |
-                        'set' '(' (expr (',' expr)*)? ')')          # set
+        //      a set constructor, the form set(...) is just an operator call
+        |       '\'{' (expr (',' expr)*)? '}'                       # set
         |       '{' IDENTIFIER ':' expr
                         (',' IDENTIFIER ':' expr)* '}'              # record
         |       '[' IDENTIFIER 'in' expr
                         (',' IDENTIFIER 'in' expr)* ']'             # recordSet
-        |       ('[' (expr (',' expr)*)? ']' |
-                        'seq' '(' (expr (',' expr)*)? ')')          # sequence
+        //      a sequence constructor, the form seq(...) is just an operator call
+        |       '[' (expr (',' expr)*)? ']'                         # sequence
         |       (valDef expr | operDef expr)                        # letIn
         |       '(' expr ')'                                        # paren
         |       '{' (lambda | expr) '}'                             # lambdaOrBraces
