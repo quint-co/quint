@@ -4,6 +4,7 @@ import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef } from './tntIr';
 import { TntType, TntTypeTag, TntUntyped } from './tntTypes';
 import { assert } from 'console';
 import { ErrorMessage } from './tntParserFrontend';
+import { TextDecoder } from 'util';
 
 /**
  * An ANTLR4 listener that constructs TntIr objects out of the abstract
@@ -103,6 +104,8 @@ export class ToIrListener implements TntListener {
     }
 
     /********************* translate expressions **************************/
+
+    // an identifier or a literal, e.g., foo, 42, "hello", false
     exitLiteralOrId(ctx: p.LiteralOrIdContext) {
         const ident = ctx.IDENTIFIER()
         if (ident) {            // we have met an identifier
@@ -112,18 +115,49 @@ export class ToIrListener implements TntListener {
         const intNode = ctx.INT()
         if (intNode) {          // we have met an integer literal
             this.exprStack.push({ id: this.nextId(), kind: "int",
-                typeTag: { kind: "int" }, value: BigInt(intNode.text) })
+                typeTag: { kind: "int" }, value: BigInt(intNode.text)
+            })
         }
         const boolNode = ctx.BOOL()
         if (boolNode) {         // we have met a Boolean literal
             this.exprStack.push({ id: this.nextId(), kind: "bool",
-                typeTag: { kind: "bool" }, value: (boolNode.text == "true") })
+                typeTag: { kind: "bool" }, value: (boolNode.text == "true")
+            })
         }
         const strNode = ctx.STRING()
-        if (strNode) {          // we have met a string
+        if (strNode) {          // we have met a string, remove the quotes!
             this.exprStack.push({ id: this.nextId(), kind: "str",
-                typeTag: { kind: "str" }, value: strNode.text })
+                typeTag: { kind: "str" }, value: strNode.text.slice(1, -1)
+            })
         }
+    }
+
+    // function application, e.g., f[10]
+    exitFunApp(ctx: p.FunAppContext) {
+        const args = this.popExprs(2)
+        this.exprStack.push({ id: this.nextId(),
+            kind: "oper", opcode: "of", args: args })
+    }
+
+    // oper application in the normal form, e.g., MyOper("foo", 42)
+    exitOperApp(ctx: p.OperAppContext) {
+        const name = ctx.IDENTIFIER().text
+        const wrappedArgs = this.exprStack.pop()
+        if (wrappedArgs && wrappedArgs.kind == "oper") {
+            this.exprStack.push({ id: wrappedArgs.id,
+                kind: "oper", opcode: name, args: wrappedArgs.args })
+        } else {
+            assert(false, "exitOperApp: expected wrapped arguments")
+        }
+    }
+
+    // a list of arguments
+    exitArg_list(ctx: p.Arg_listContext) {
+        const args = this.popExprs(ctx.expr().length)
+        // wrap the arguments with a temporary operator,
+        // to be unwrapped later
+        this.exprStack.push({ id: this.nextId(),
+            kind: "oper", opcode: "wrappedArgs", args: args })
     }
 
     // '+' or '-'
@@ -150,12 +184,14 @@ export class ToIrListener implements TntListener {
         }
     }
 
+    // integer power, e.g., x^y
     exitPow(ctx: p.PowContext) {
         const args = this.popExprs(2)
         this.exprStack.push({ id: this.nextId(),
             kind: "oper", opcode: "pow", args: args })
     }
 
+    // unary minus, e.g., -x
     exitUminus(ctx: p.UminusContext) {
         const arg = this.exprStack.pop()
         if (arg) {

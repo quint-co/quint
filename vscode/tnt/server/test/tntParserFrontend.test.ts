@@ -611,4 +611,44 @@ describe('parse modules', () => {
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
 
+	it('parse function application', () => {
+		const result = parsePhase1(readTest("_0124expr_funapp"));
+		// var f: str -> int
+		const f: TntDef = { id: 1n, kind: "var", name: "f",
+			typeTag: { kind: "fun", arg: { kind: "str" }, res: { kind: "int" } } }
+		// val funapp = f["a"]
+		const funapp: TntDef = {
+			id: 5n, kind: "def", name: "funapp",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 4n, kind: "oper", opcode: "of", args: [
+				 	{ id: 2n, kind: "name", name: "f" },
+				 	{ id: 3n, kind: "str", value: "a", typeTag: { kind: "str" } }
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 6n, name: "withVals",
+						 extends: [], defs: [ f, funapp ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse operator application', () => {
+		const result = parsePhase1(readTest("_0125expr_oper_app"));
+		// val oper_app = MyOper("a", 42)
+		const operApp: TntDef = {
+			id: 4n, kind: "def", name: "oper_app",
+			params: [], isPrivate: false, qualifier: OpQualifier.Val,
+			body: { id: 3n, kind: "oper", opcode: "MyOper", args: [
+				 	{ id: 1n, kind: "str", value: "a", typeTag: { kind: "str" } },
+				 	{ id: 2n, kind: "int", value: 42n, typeTag: { kind: "int" } }
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 5n, name: "withVals",
+						 extends: [], defs: [ operApp ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
 });
