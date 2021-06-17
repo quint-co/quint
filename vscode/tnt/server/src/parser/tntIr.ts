@@ -42,10 +42,12 @@ export type TntEx =
 	| { kind: "int", value: bigint } & WithId & WithTypeTag
 	// A string literal
 	| { kind: "str", value: string } & WithId & WithTypeTag
-	// Operator application
+	// Operator application: apply an operator by its name, supplying the arguments in `args`.
 	| { kind: "opapp", opcode: string, args: TntEx[] } & WithId & WithTypeTag
+	// Operator abstraction: an anonymous operator (lambda) over parameters `params`.
+	| { kind: "opabs", params: string[], expr: TntEx[] } & WithId & WithTypeTag
 	// A let-in binding (defined via 'def', 'def rec', 'val', etc.).
-	| { kind: "let", opdef: TntOpDef, body: TntEx } & WithId & WithTypeTag
+	| { kind: "let", opdef: TntOpDef, expr: TntEx } & WithId & WithTypeTag
 
 /**
  * Operator qualifier that refines the operator shape: val, def, def rec, pred, action, or temporal.
@@ -62,14 +64,16 @@ export enum OpQualifier {
 /**
  * A user-defined operator that is defined via one of the qualifiers:
  * val, def, def rec, pred, action, or temporal.
+ * Note that TntOpDef does not have any formal parameters.
+ * If an operator definition has formal parameters, then `expr`
+ * should be a lambda expression over those parameters.
  */
 export interface TntOpDef extends WithId, WithTypeTag {
 	kind: "def",
 	name: string,
-	params: string[],
 	qualifier: OpQualifier,
 	isPrivate: boolean,
-	body: TntEx
+	expr: TntEx
 }
 
 /**

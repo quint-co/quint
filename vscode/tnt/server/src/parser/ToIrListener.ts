@@ -78,18 +78,18 @@ export class ToIrListener implements TntListener {
             // the value may be tagged with '_'
             typeTag = this.untypedStack.pop()
         }
-        const body = this.exprStack.pop()
-        if (body) {
+        const expr = this.exprStack.pop()
+        if (expr) {
             let def: TntOpDef = {
-                id: this.nextId(), kind: "def", name: name, params: [],
-                qualifier: OpQualifier.Val, isPrivate: true, body: body
+                id: this.nextId(), kind: "def", name: name,
+                qualifier: OpQualifier.Val, isPrivate: true, expr: expr
             }
             if (typeTag) {
                 def.typeTag = typeTag
             }
             this.definitionStack.push(def)
         } else {
-            assert(false, "undefined body in exitValDef")
+            assert(false, "undefined expr in exitValDef")
         }
     }
 
