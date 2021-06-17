@@ -24,6 +24,7 @@ export interface WithId {
  * TNT expressions and declarations carry an optional type tag.
  * Note that if a type tag is missing, it does not mean that an expression (or declaration)
  * is untyped. It means that the type has not been computed yet.
+ * If an expression carries the tag TntUntyped, then its type should be ignored.
  */
 export interface WithTypeTag {
 	typeTag?: TntTypeTag
@@ -41,8 +42,8 @@ export type TntEx =
 	| { kind: "int", value: bigint } & WithId & WithTypeTag
 	// A string literal
 	| { kind: "str", value: string } & WithId & WithTypeTag
-	// An operator application.
-	| { kind: "oper", opcode: string, args: TntEx[] } & WithId & WithTypeTag
+	// Operator application
+	| { kind: "opapp", opcode: string, args: TntEx[] } & WithId & WithTypeTag
 	// A let-in binding (defined via 'def', 'def rec', 'val', etc.).
 	| { kind: "let", opdef: TntOpDef, body: TntEx } & WithId & WithTypeTag
 

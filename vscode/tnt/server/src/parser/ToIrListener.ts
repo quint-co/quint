@@ -136,16 +136,16 @@ export class ToIrListener implements TntListener {
     exitFunApp(ctx: p.FunAppContext) {
         const args = this.popExprs(2)
         this.exprStack.push({ id: this.nextId(),
-            kind: "oper", opcode: "of", args: args })
+            kind: "opapp", opcode: "of", args: args })
     }
 
     // operator application in the normal form, e.g., MyOper("foo", 42)
     exitOperApp(ctx: p.OperAppContext) {
         const name = ctx.IDENTIFIER().text
         const wrappedArgs = this.exprStack.pop()
-        if (wrappedArgs && wrappedArgs.kind == "oper") {
+        if (wrappedArgs && wrappedArgs.kind == "opapp") {
             this.exprStack.push({ id: wrappedArgs.id,
-                kind: "oper", opcode: name, args: wrappedArgs.args
+                kind: "opapp", opcode: name, args: wrappedArgs.args
             })
         } else {
             assert(false, "exitOperApp: expected wrapped arguments")
@@ -157,9 +157,9 @@ export class ToIrListener implements TntListener {
         const name = ctx.IDENTIFIER().text
         const wrappedArgs = this.exprStack.pop()
         const firstArg = this.exprStack.pop()
-        if (firstArg && wrappedArgs && wrappedArgs.kind == "oper") {
+        if (firstArg && wrappedArgs && wrappedArgs.kind == "opapp") {
             this.exprStack.push({ id: wrappedArgs.id,
-                kind: "oper", opcode: name,
+                kind: "opapp", opcode: name,
                 args: [firstArg].concat(wrappedArgs.args)
             })
         } else {
@@ -173,7 +173,7 @@ export class ToIrListener implements TntListener {
         // wrap the arguments with a temporary operator,
         // to be unwrapped later
         this.exprStack.push({ id: this.nextId(),
-            kind: "oper", opcode: "wrappedArgs", args: args })
+            kind: "opapp", opcode: "wrappedArgs", args: args })
     }
 
     // '+' or '-'
@@ -181,7 +181,7 @@ export class ToIrListener implements TntListener {
         const opcode = (ctx.ADD() != undefined) ? "add" : "sub"
         const args = this.popExprs(2)
         this.exprStack.push({ id: this.nextId(),
-            kind: "oper", opcode: opcode, args: args })
+            kind: "opapp", opcode: opcode, args: args })
     }
 
     // '*', '/', or '%'
@@ -196,7 +196,7 @@ export class ToIrListener implements TntListener {
             }
             const args = this.popExprs(2)
             this.exprStack.push({ id: this.nextId(),
-                kind: "oper", opcode: opcode, args: args })
+                kind: "opapp", opcode: opcode, args: args })
         }
     }
 
@@ -204,7 +204,7 @@ export class ToIrListener implements TntListener {
     exitPow(ctx: p.PowContext) {
         const args = this.popExprs(2)
         this.exprStack.push({ id: this.nextId(),
-            kind: "oper", opcode: "pow", args: args })
+            kind: "opapp", opcode: "pow", args: args })
     }
 
     // unary minus, e.g., -x
@@ -212,7 +212,7 @@ export class ToIrListener implements TntListener {
         const arg = this.exprStack.pop()
         if (arg) {
             this.exprStack.push({ id: this.nextId(),
-                kind: "oper", opcode: "uminus", args: [ arg ] })
+                kind: "opapp", opcode: "uminus", args: [ arg ] })
         }
     }
 
@@ -236,7 +236,7 @@ export class ToIrListener implements TntListener {
             }
             const args = this.popExprs(2)
             this.exprStack.push({ id: this.nextId(),
-                kind: "oper", opcode: opcode, args: args })
+                kind: "opapp", opcode: opcode, args: args })
         }
     }
 
@@ -244,49 +244,49 @@ export class ToIrListener implements TntListener {
     exitAnd(ctx: p.AndContext) {
         const args = this.popExprs(2)
         this.exprStack.push({ id: this.nextId(),
-            kind: "oper", opcode: "and", args: args })
+            kind: "opapp", opcode: "and", args: args })
     }
 
     // p or q
     exitOr(ctx: p.OrContext) {
         const args = this.popExprs(2)
         this.exprStack.push({ id: this.nextId(),
-            kind: "oper", opcode: "or", args: args })
+            kind: "opapp", opcode: "or", args: args })
     }
 
     // p implies q
     exitImplies(ctx: p.ImpliesContext) {
         const args = this.popExprs(2)
         this.exprStack.push({ id: this.nextId(),
-            kind: "oper", opcode: "implies", args: args })
+            kind: "opapp", opcode: "implies", args: args })
     }
 
     // p iff q
     exitIff(ctx: p.IffContext) {
         const args = this.popExprs(2)
         this.exprStack.push({ id: this.nextId(),
-            kind: "oper", opcode: "iff", args: args })
+            kind: "opapp", opcode: "iff", args: args })
     }
 
     // { p & q & r }
     exitAndBlock(ctx: p.AndBlockContext) {
         const args = this.popExprs(ctx.expr().length)
         this.exprStack.push({ id: this.nextId(),
-            kind: "oper", opcode: "andBlock", args: args })
+            kind: "opapp", opcode: "andBlock", args: args })
     }
 
     // { p | q | r }
     exitOrBlock(ctx: p.OrBlockContext) {
         const args = this.popExprs(ctx.expr().length)
         this.exprStack.push({ id: this.nextId(),
-            kind: "oper", opcode: "orBlock", args: args })
+            kind: "opapp", opcode: "orBlock", args: args })
     }
 
     // if (p) e1 else e2
     exitIfElse(ctx: p.IfElseContext) {
         const args = this.popExprs(3)
         this.exprStack.push({ id: this.nextId(),
-            kind: "oper", opcode: "ite", args: args })
+            kind: "opapp", opcode: "ite", args: args })
     }
 
     // case { p1 -> e1 | p2 -> e2 | p3 -> e3 }, or
@@ -294,7 +294,7 @@ export class ToIrListener implements TntListener {
     exitCaseBlock(ctx: p.CaseBlockContext) {
         const args = this.popExprs(ctx.expr().length)
         this.exprStack.push({ id: this.nextId(),
-            kind: "oper", opcode: "caseBlock", args: args })
+            kind: "opapp", opcode: "caseBlock", args: args })
     }
 
     /********************* translate types ********************************/
@@ -437,7 +437,7 @@ export class ToIrListener implements TntListener {
         const nargs = ctx.type().length - 1;
         const argTypes: TntType[] = this.popTypes(nargs);
         if (resType != undefined && argTypes.length == nargs) {
-            this.typeStack.push({ kind: "oper", args: argTypes, res: resType });
+            this.typeStack.push({ kind: "opapp", args: argTypes, res: resType });
         }
     }
 

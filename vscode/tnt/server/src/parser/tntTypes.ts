@@ -35,7 +35,7 @@
 	| { kind: "set", elem: TntType }
 	| { kind: "seq", elem: TntType }
 	| { kind: "fun", arg: TntType, res: TntType }
-	| { kind: "oper", args: TntType[], res: TntType }
+	| { kind: "opapp", args: TntType[], res: TntType }
 	| { kind: "tuple", elems: TntType[] }
 	| { kind: "record",
 	    fields: { fieldName: string, fieldType: TntType }[]
