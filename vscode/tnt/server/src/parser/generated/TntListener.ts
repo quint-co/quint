@@ -3,6 +3,8 @@
 
 import { ParseTreeListener } from "antlr4ts/tree/ParseTreeListener";
 
+import { PatternListContext } from "./TntParser";
+import { PatternAtomContext } from "./TntParser";
 import { TypeFunContext } from "./TntParser";
 import { TypeOperContext } from "./TntParser";
 import { TypeSetContext } from "./TntParser";
@@ -83,6 +85,32 @@ import { LiteralContext } from "./TntParser";
  * `TntParser`.
  */
 export interface TntListener extends ParseTreeListener {
+	/**
+	 * Enter a parse tree produced by the `patternList`
+	 * labeled alternative in `TntParser.pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterPatternList?: (ctx: PatternListContext) => void;
+	/**
+	 * Exit a parse tree produced by the `patternList`
+	 * labeled alternative in `TntParser.pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitPatternList?: (ctx: PatternListContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `patternAtom`
+	 * labeled alternative in `TntParser.pattern`.
+	 * @param ctx the parse tree
+	 */
+	enterPatternAtom?: (ctx: PatternAtomContext) => void;
+	/**
+	 * Exit a parse tree produced by the `patternAtom`
+	 * labeled alternative in `TntParser.pattern`.
+	 * @param ctx the parse tree
+	 */
+	exitPatternAtom?: (ctx: PatternAtomContext) => void;
+
 	/**
 	 * Enter a parse tree produced by the `typeFun`
 	 * labeled alternative in `TntParser.type`.

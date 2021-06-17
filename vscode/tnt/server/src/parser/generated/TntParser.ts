@@ -2319,6 +2319,7 @@ export class TntParser extends Parser {
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case TntParser.T__19:
+				_localctx = new PatternListContext(_localctx);
 				this.enterOuterAlt(_localctx, 1);
 				{
 				this.state = 560;
@@ -2347,6 +2348,7 @@ export class TntParser extends Parser {
 				break;
 			case TntParser.T__8:
 			case TntParser.IDENTIFIER:
+				_localctx = new PatternAtomContext(_localctx);
 				this.enterOuterAlt(_localctx, 2);
 				{
 				this.state = 571;
@@ -5169,6 +5171,16 @@ export class LambdaContext extends ParserRuleContext {
 
 
 export class PatternContext extends ParserRuleContext {
+	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+		super(parent, invokingState);
+	}
+	// @Override
+	public get ruleIndex(): number { return TntParser.RULE_pattern; }
+	public copyFrom(ctx: PatternContext): void {
+		super.copyFrom(ctx);
+	}
+}
+export class PatternListContext extends PatternContext {
 	public pattern(): PatternContext[];
 	public pattern(i: number): PatternContext;
 	public pattern(i?: number): PatternContext | PatternContext[] {
@@ -5178,28 +5190,53 @@ export class PatternContext extends ParserRuleContext {
 			return this.getRuleContext(i, PatternContext);
 		}
 	}
-	public IDENTIFIER(): TerminalNode | undefined { return this.tryGetToken(TntParser.IDENTIFIER, 0); }
-	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-		super(parent, invokingState);
+	constructor(ctx: PatternContext) {
+		super(ctx.parent, ctx.invokingState);
+		this.copyFrom(ctx);
 	}
 	// @Override
-	public get ruleIndex(): number { return TntParser.RULE_pattern; }
-	// @Override
 	public enterRule(listener: TntListener): void {
-		if (listener.enterPattern) {
-			listener.enterPattern(this);
+		if (listener.enterPatternList) {
+			listener.enterPatternList(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: TntListener): void {
-		if (listener.exitPattern) {
-			listener.exitPattern(this);
+		if (listener.exitPatternList) {
+			listener.exitPatternList(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: TntVisitor<Result>): Result {
-		if (visitor.visitPattern) {
-			return visitor.visitPattern(this);
+		if (visitor.visitPatternList) {
+			return visitor.visitPatternList(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+export class PatternAtomContext extends PatternContext {
+	public IDENTIFIER(): TerminalNode { return this.getToken(TntParser.IDENTIFIER, 0); }
+	constructor(ctx: PatternContext) {
+		super(ctx.parent, ctx.invokingState);
+		this.copyFrom(ctx);
+	}
+	// @Override
+	public enterRule(listener: TntListener): void {
+		if (listener.enterPatternAtom) {
+			listener.enterPatternAtom(this);
+		}
+	}
+	// @Override
+	public exitRule(listener: TntListener): void {
+		if (listener.exitPatternAtom) {
+			listener.exitPatternAtom(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: TntVisitor<Result>): Result {
+		if (visitor.visitPatternAtom) {
+			return visitor.visitPatternAtom(this);
 		} else {
 			return visitor.visitChildren(this);
 		}

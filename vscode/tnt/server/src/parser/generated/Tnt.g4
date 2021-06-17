@@ -140,8 +140,8 @@ lambda:         pattern '->' expr
         ;
 
 // a pattern like (x, (y, z)) in lambdas
-pattern:        '(' pattern (',' pattern)* ')'
-        |       (IDENTIFIER | '_')
+pattern:        '(' pattern (',' pattern)* ')'                  # patternList
+        |       (IDENTIFIER | '_')                              # patternAtom
         ;
 
 arg_list:       expr (',' expr)*

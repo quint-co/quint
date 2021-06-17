@@ -671,4 +671,31 @@ describe('parse modules', () => {
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
+
+	it('parse infix operator application with lambda', () => {
+		const result = parsePhase1(readTest("_0127expr_oper_infix_app_lambda"));
+		// val oper_app = S filter { x -> x > 10 }
+		const operApp: TntDef = {
+			id: 7n, kind: "def", name: "oper_app",
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 6n, kind: "opapp", opcode: "filter", args: [
+				 	{ id: 1n, kind: "name", name: "S" },
+				 	{ id: 5n, kind: "opabs",
+					  pattern: { kind: "name", name: "x" },
+					  expr: {
+						  id: 4n, kind: "opapp", opcode: "gt",
+						  args: [
+							  { id: 2n, kind: "name", name: "x" },
+							  { id: 3n, kind: "int", value: 10n, typeTag: { kind: "int" }}
+						  ]		
+					  }
+				  },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 8n, name: "withVals", extends: [], defs: [ operApp ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
 });

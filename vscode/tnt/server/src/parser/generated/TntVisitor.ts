@@ -3,6 +3,8 @@
 
 import { ParseTreeVisitor } from "antlr4ts/tree/ParseTreeVisitor";
 
+import { PatternListContext } from "./TntParser";
+import { PatternAtomContext } from "./TntParser";
 import { TypeFunContext } from "./TntParser";
 import { TypeOperContext } from "./TntParser";
 import { TypeSetContext } from "./TntParser";
@@ -86,6 +88,22 @@ import { LiteralContext } from "./TntParser";
  * operations with no return type.
  */
 export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
+	/**
+	 * Visit a parse tree produced by the `patternList`
+	 * labeled alternative in `TntParser.pattern`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitPatternList?: (ctx: PatternListContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `patternAtom`
+	 * labeled alternative in `TntParser.pattern`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitPatternAtom?: (ctx: PatternAtomContext) => Result;
+
 	/**
 	 * Visit a parse tree produced by the `typeFun`
 	 * labeled alternative in `TntParser.type`.

@@ -1,6 +1,6 @@
 import * as p from './generated/TntParser';
 import { TntListener } from './generated/TntListener';
-import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef, OpScope } from './tntIr';
+import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef, OpScope, TntPattern } from './tntIr';
 import { TntType, TntTypeTag, TntUntyped } from './tntTypes';
 import { assert } from 'console';
 import { ErrorMessage } from './tntParserFrontend';
@@ -31,6 +31,8 @@ export class ToIrListener implements TntListener {
     private untypedStack: TntUntyped[] = []
     // the stack of expressions
     private exprStack: TntEx[] = []
+    // the stack of parameter patterns
+    private patternStack: TntPattern[] = []
     // an internal counter to assign unique numbers
     private lastId: bigint = 1n
 
@@ -174,6 +176,40 @@ export class ToIrListener implements TntListener {
         // to be unwrapped later
         this.exprStack.push({ id: this.nextId(),
             kind: "opapp", opcode: "wrappedArgs", args: args })
+    }
+
+    // a lambda operator
+    exitLambda(ctx: p.LambdaContext) {
+        const pattern = this.patternStack.pop()
+        const expr = this.exprStack.pop()
+        if (pattern) {
+            if (expr) {
+                this.exprStack.push({
+                    id: this.nextId(), kind: "opabs", pattern: pattern, expr: expr
+                })
+            } else {
+                assert(false, "exitLambda: expected an expression")
+            }
+        } else {
+            assert(false, "exitLambda: expected a pattern")
+        }
+    }
+
+    // a single pattern in a lambda expression: an identifier or '_'
+    exitPatternAtom(ctx: p.PatternAtomContext) {
+        const ident = ctx.IDENTIFIER()
+        if (ident) {
+            this.patternStack.push({ kind: "name", name: ident.text })
+        } else {
+            this.patternStack.push({ kind: "_" })
+        }
+    }
+
+    // a list of patterns in a lambda expression
+    exitPatternList(ctx: p.PatternListContext) {
+        const patterns = this.popPatterns(ctx.pattern().length)
+        // push the patterns as wrapped arguments
+        this.patternStack.push({ kind: "list", args: patterns })
     }
 
     // '+' or '-'
@@ -487,6 +523,14 @@ export class ToIrListener implements TntListener {
         assert(this.exprStack.length >= n, "popExprs: too few elements in exprStack")
         const es: TntEx[] = this.exprStack.slice(-n);
         this.exprStack = this.exprStack.slice(0, -n);
+        return es;
+    }
+
+    // pop n patterns out of patternStack
+    private popPatterns(n: number): TntPattern[] {
+        assert(this.patternStack.length >= n, "popPatterns: too few elements in patternStack")
+        const es: TntPattern[] = this.patternStack.slice(-n);
+        this.patternStack = this.patternStack.slice(0, -n);
         return es;
     }
 
