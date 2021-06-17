@@ -1,6 +1,6 @@
 import * as p from './generated/TntParser';
 import { TntListener } from './generated/TntListener';
-import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef } from './tntIr';
+import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef, OpScope } from './tntIr';
 import { TntType, TntTypeTag, TntUntyped } from './tntTypes';
 import { assert } from 'console';
 import { ErrorMessage } from './tntParserFrontend';
@@ -82,7 +82,7 @@ export class ToIrListener implements TntListener {
         if (expr) {
             let def: TntOpDef = {
                 id: this.nextId(), kind: "def", name: name,
-                qualifier: OpQualifier.Val, isPrivate: true, expr: expr
+                qualifier: OpQualifier.Val, scope: OpScope.Local, expr: expr
             }
             if (typeTag) {
                 def.typeTag = typeTag
@@ -97,7 +97,7 @@ export class ToIrListener implements TntListener {
     exitVal(ctx: p.ValContext) {
         const valDef = this.definitionStack[this.definitionStack.length - 1]
         if (valDef && valDef.kind == "def") {
-            valDef.isPrivate = !(ctx.PRIVATE() == undefined)
+            valDef.scope = (ctx.PRIVATE()) ? OpScope.Private : OpScope.Public
         } else {
             assert(false, "undefined valDef in exitVal")
         }

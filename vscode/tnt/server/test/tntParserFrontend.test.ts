@@ -3,7 +3,7 @@ import { assert } from 'chai';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { ErrorMessage, parsePhase1, ParseResult } from "../src/parser/tntParserFrontend";
-import { TntDef, OpQualifier } from "../src/parser/tntIr";
+import { TntDef, OpQualifier, OpScope } from "../src/parser/tntIr";
 
 function readTest(name: string): string {
 	const p = resolve(__dirname, '../testFixture', name + ".tnt")
@@ -147,8 +147,8 @@ describe('parse modules', () => {
 		// val add_1_to_2: _ = 1 + 2
 		const add_1_to_2: TntDef = {
 			id: 4n, kind: "def", name: "add_1_to_2",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "add", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "add", args: [
 				 	{ id: 1n, kind: "int", value: 1n, typeTag: { kind: "int" } },
 				 	{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
 				] }
@@ -166,8 +166,8 @@ describe('parse modules', () => {
 		// val sub_1_to_2: _ = 1 - 2
 		const sub_1_to_2: TntDef = {
 			id: 4n, kind: "def", name: "sub_1_to_2",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "sub", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "sub", args: [
 				 	{ id: 1n, kind: "int", value: 1n, typeTag: { kind: "int" } },
 				 	{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
 				] }
@@ -185,8 +185,8 @@ describe('parse modules', () => {
 		// val mul_2_to_3: _ = 2 * 3
 		const mul_2_to_3: TntDef = {
 			id: 4n, kind: "def", name: "mul_2_to_3",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "mul", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "mul", args: [
 				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
 				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
 				] }
@@ -204,8 +204,8 @@ describe('parse modules', () => {
 		// val div_2_to_3: _ = 2 / 3
 		const div_2_to_3: TntDef = {
 			id: 4n, kind: "def", name: "div_2_to_3",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "div", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "div", args: [
 				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
 				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
 				] }
@@ -223,8 +223,8 @@ describe('parse modules', () => {
 		// val mod_2_to_3: _ = 2 % 3
 		const mod_2_to_3: TntDef = {
 			id: 4n, kind: "def", name: "mod_2_to_3",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "mod", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "mod", args: [
 				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
 				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
 				] }
@@ -242,8 +242,8 @@ describe('parse modules', () => {
 		// val pow_2_to_3: _ = 2^3
 		const pow_2_to_3: TntDef = {
 			id: 4n, kind: "def", name: "pow_2_to_3",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "pow", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "pow", args: [
 				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
 				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
 				] }
@@ -261,8 +261,8 @@ describe('parse modules', () => {
 		// val uminus: _ = -100
 		const uminus: TntDef = {
 			id: 3n, kind: "def", name: "uminus",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 2n, kind: "opapp", opcode: "uminus", args: [{
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 2n, kind: "opapp", opcode: "uminus", args: [{
 				id: 1n, kind: "int", value: 100n, typeTag: { kind: "int" } }]
 			}
 		 }
@@ -279,8 +279,8 @@ describe('parse modules', () => {
 		// val gt_2_to_3: _ = 2 > 3
 		const gt_2_to_3: TntDef = {
 			id: 4n, kind: "def", name: "gt_2_to_3",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "gt", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "gt", args: [
 				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
 				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
 				] }
@@ -298,8 +298,8 @@ describe('parse modules', () => {
 		// val ge_2_to_3: _ = 2 >= 3
 		const ge_2_to_3: TntDef = {
 			id: 4n, kind: "def", name: "ge_2_to_3",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "gte", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "gte", args: [
 				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
 				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
 				] }
@@ -317,8 +317,8 @@ describe('parse modules', () => {
 		// val lt_2_to_3: _ = 2 < 3
 		const lt_2_to_3: TntDef = {
 			id: 4n, kind: "def", name: "lt_2_to_3",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "lt", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "lt", args: [
 				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
 				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
 				] }
@@ -336,8 +336,8 @@ describe('parse modules', () => {
 		// val le_2_to_3: _ = 2 <= 3
 		const le_2_to_3: TntDef = {
 			id: 4n, kind: "def", name: "le_2_to_3",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "lte", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "lte", args: [
 				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
 				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
 				] }
@@ -355,8 +355,8 @@ describe('parse modules', () => {
 		// val eq_2_to_3: _ = 2 = 3
 		const eq_2_to_3: TntDef = {
 			id: 4n, kind: "def", name: "eq_2_to_3",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "eq", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "eq", args: [
 				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
 				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
 				] }
@@ -374,8 +374,8 @@ describe('parse modules', () => {
 		// val eqeq_2_to_3: _ = 2 == 3
 		const eqeq_2_to_3: TntDef = {
 			id: 4n, kind: "def", name: "eqeq_2_to_3",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "eq", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "eq", args: [
 				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
 				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
 				] }
@@ -393,8 +393,8 @@ describe('parse modules', () => {
 		// val ne_2_to_3: _ = 2 != 3
 		const ne_2_to_3: TntDef = {
 			id: 4n, kind: "def", name: "ne_2_to_3",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "neq", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "neq", args: [
 				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
 				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
 				] }
@@ -414,8 +414,8 @@ describe('parse modules', () => {
 		// val asgn: _ = x := 3
 		const asgn: TntDef = {
 			id: 5n, kind: "def", name: "asgn",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 4n, kind: "opapp", opcode: "assign", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 4n, kind: "opapp", opcode: "assign", args: [
 				 	{ id: 2n, kind: "name", name: "x" },
 				 	{ id: 3n, kind: "int", value: 3n, typeTag: { kind: "int" } },
 				] }
@@ -433,8 +433,8 @@ describe('parse modules', () => {
 		// val test_and: _ = false and true
 		const test_and: TntDef = {
 			id: 4n, kind: "def", name: "test_and",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "and", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "and", args: [
 				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
 				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
 				] }
@@ -452,8 +452,8 @@ describe('parse modules', () => {
 		// val test_or: _ = false or true
 		const test_or: TntDef = {
 			id: 4n, kind: "def", name: "test_or",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "or", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "or", args: [
 				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
 				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
 				] }
@@ -471,8 +471,8 @@ describe('parse modules', () => {
 		// val test_implies: _ = false implies true
 		const test_implies: TntDef = {
 			id: 4n, kind: "def", name: "test_implies",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "implies", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "implies", args: [
 				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
 				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
 				] }
@@ -490,8 +490,8 @@ describe('parse modules', () => {
 		// val test_iff: _ = false iff true
 		const test_iff: TntDef = {
 			id: 4n, kind: "def", name: "test_iff",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "iff", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "iff", args: [
 				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
 				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
 				] }
@@ -509,8 +509,8 @@ describe('parse modules', () => {
 		// val block_and: _ = { false & true & false }
 		const test_block_and: TntDef = {
 			id: 5n, kind: "def", name: "test_block_and",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 4n, kind: "opapp", opcode: "andBlock", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 4n, kind: "opapp", opcode: "andBlock", args: [
 				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
 				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
 				 	{ id: 3n, kind: "bool", value: false, typeTag: { kind: "bool" } },
@@ -529,8 +529,8 @@ describe('parse modules', () => {
 		// val block_or: _ = { false | true | false }
 		const test_block_or: TntDef = {
 			id: 5n, kind: "def", name: "test_block_or",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 4n, kind: "opapp", opcode: "orBlock", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 4n, kind: "opapp", opcode: "orBlock", args: [
 				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
 				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
 				 	{ id: 3n, kind: "bool", value: false, typeTag: { kind: "bool" } },
@@ -549,8 +549,8 @@ describe('parse modules', () => {
 		// val test_ite: _ = if (true) 1 else 0
 		const test_ite: TntDef = {
 			id: 5n, kind: "def", name: "test_ite",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 4n, kind: "opapp", opcode: "ite", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 4n, kind: "opapp", opcode: "ite", args: [
 				 	{ id: 1n, kind: "bool", value: true, typeTag: { kind: "bool" } },
 				 	{ id: 2n, kind: "int", value: 1n, typeTag: { kind: "int" } },
 				 	{ id: 3n, kind: "int", value: 0n, typeTag: { kind: "int" } },
@@ -569,8 +569,8 @@ describe('parse modules', () => {
 		// val case: _ = { p1 -> e1 | p2 -> e2 | p3 -> e3 }
 		const test_case: TntDef = {
 			id: 8n, kind: "def", name: "test_case",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 7n, kind: "opapp", opcode: "caseBlock", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 7n, kind: "opapp", opcode: "caseBlock", args: [
 					{ id: 1n, kind: "name", name: "p1" },
 					{ id: 2n, kind: "name", name: "e1" },
 					{ id: 3n, kind: "name", name: "p2" },
@@ -592,8 +592,8 @@ describe('parse modules', () => {
 		// val case: _ = { p1 -> e1 | p2 -> e2 | p3 -> e3 | _ -> e4 }
 		const test_case_default: TntDef = {
 			id: 9n, kind: "def", name: "test_case",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 8n, kind: "opapp", opcode: "caseBlock", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 8n, kind: "opapp", opcode: "caseBlock", args: [
 					{ id: 1n, kind: "name", name: "p1" },
 					{ id: 2n, kind: "name", name: "e1" },
 					{ id: 3n, kind: "name", name: "p2" },
@@ -619,8 +619,8 @@ describe('parse modules', () => {
 		// val funapp = f["a"]
 		const funapp: TntDef = {
 			id: 5n, kind: "def", name: "funapp",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 4n, kind: "opapp", opcode: "of", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 4n, kind: "opapp", opcode: "of", args: [
 				 	{ id: 2n, kind: "name", name: "f" },
 				 	{ id: 3n, kind: "str", value: "a", typeTag: { kind: "str" } }
 				] }
@@ -638,8 +638,8 @@ describe('parse modules', () => {
 		// val oper_app = MyOper("a", 42)
 		const operApp: TntDef = {
 			id: 4n, kind: "def", name: "oper_app",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 3n, kind: "opapp", opcode: "MyOper", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 3n, kind: "opapp", opcode: "MyOper", args: [
 				 	{ id: 1n, kind: "str", value: "a", typeTag: { kind: "str" } },
 				 	{ id: 2n, kind: "int", value: 42n, typeTag: { kind: "int" } }
 				] }
@@ -657,8 +657,8 @@ describe('parse modules', () => {
 		// val oper_app = "a" MyOper 42, true
 		const operApp: TntDef = {
 			id: 5n, kind: "def", name: "oper_app",
-			params: [], isPrivate: false, qualifier: OpQualifier.Val,
-			body: { id: 4n, kind: "opapp", opcode: "MyOper", args: [
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 4n, kind: "opapp", opcode: "MyOper", args: [
 				 	{ id: 1n, kind: "str", value: "a", typeTag: { kind: "str" } },
 				 	{ id: 2n, kind: "int", value: 42n, typeTag: { kind: "int" } },
 				 	{ id: 3n, kind: "bool", value: true, typeTag: { kind: "bool" } }

@@ -50,7 +50,35 @@ export type TntEx =
 	| { kind: "let", opdef: TntOpDef, expr: TntEx } & WithId & WithTypeTag
 
 /**
- * Operator qualifier that refines the operator shape: val, def, def rec, pred, action, or temporal.
+ * Operator qualifier that refines the operator shape:
+ * 
+ *  - val: an expression over constants and state variables,
+ * 
+ *  - def: a parameterized expression over constants, state variables,
+ *    and definition parameters. When the defined expression produces a Boolean
+ *    value, you should use `pred` instead. However, this is only a convention,
+ *    not a requirement.
+ * 
+ *  - def rec: like `def` but the expression is recursive, that is,
+ * 	  its name can be used in the definition.
+ * 
+ *  - pred: a (possibly parameterized) expression over constants,
+ * 	  state variables, and definition parameters. This expression must
+ *    produce a Boolean value.
+ * 
+ *  - action: a (possibly parameterized) expression over constants,
+ *    state variables, and definition parameters. This expression must contain
+ *    at least one assignment or an action operator.
+ * 
+ *  - tempora: a (possible) parameterized expression over constants,
+ *    state variables, and definition parameters. This expression must contain
+ *    at least one temporal operator.
+ * 
+ * A qualifier is purely a language feature that we introduced for convenience.
+ * Given an operator definition, we can compute its qualifier automatically.
+ * However, it is often hard for the specification reader to figure out the
+ * TLA+ level of an expression. So we optimize specifications for the reader
+ * by requiring an explicit qualifier.
  */
 export enum OpQualifier {
 	Val,
@@ -59,6 +87,19 @@ export enum OpQualifier {
 	Pred,
 	Action,
 	Temporal
+}
+
+/**
+ * Operator scope:
+ *
+ *  - Public is a global definition that is visible via `extends` and `instance`.
+ *  - Private is a global definition that is not visible via `extends` and `instance`.
+ *  - Local is a local operator definition, invisible outside the containing definition.
+ */
+export enum OpScope {
+	Public,
+	Private,
+	Local
 }
 
 /**
@@ -72,7 +113,7 @@ export interface TntOpDef extends WithId, WithTypeTag {
 	kind: "def",
 	name: string,
 	qualifier: OpQualifier,
-	isPrivate: boolean,
+	scope: OpScope,
 	expr: TntEx
 }
 
