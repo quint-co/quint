@@ -744,4 +744,86 @@ describe('parse modules', () => {
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
+
+	it('parse tuple', () => {
+		const result = parsePhase1(readTest("_0130expr_tuple"));
+		// val test_tuple = (1, 2, 3)
+		const test_tuple: TntDef = {
+			id: 5n, kind: "def", name: "test_tuple",
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 4n, kind: "opapp", opcode: "tuple", args: [
+				 	{ id: 1n, kind: "int", value: 1n, typeTag: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				 	{ id: 3n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 6n, name: "withVals",
+						 extends: [], defs: [ test_tuple ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse seq', () => {
+		const result = parsePhase1(readTest("_0131expr_seq"));
+		// val test_seq = [1, 2, 3]
+		const test_seq: TntDef = {
+			id: 5n, kind: "def", name: "test_seq",
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 4n, kind: "opapp", opcode: "seq", args: [
+				 	{ id: 1n, kind: "int", value: 1n, typeTag: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				 	{ id: 3n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 6n, name: "withVals",
+						 extends: [], defs: [ test_seq ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	});
+
+	it('parse record', () => {
+		const result = parsePhase1(readTest("_0132expr_record"));
+		// val test_record = { name: "igor", year: 1981 }
+		const test_record: TntDef = {
+			id: 6n, kind: "def", name: "test_record",
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 5n, kind: "opapp", opcode: "record", args: [
+				 	{ id: 3n, kind: "str", value: "name", typeTag: { kind: "str" } },
+				 	{ id: 1n, kind: "str", value: "igor", typeTag: { kind: "str" } },
+				 	{ id: 4n, kind: "str", value: "year", typeTag: { kind: "str" } },
+				 	{ id: 2n, kind: "int", value: 1981n, typeTag: { kind: "int" } },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 7n, name: "withVals",
+						 extends: [], defs: [ test_record ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
+
+	it('parse record set', () => {
+		const result = parsePhase1(readTest("_0133expr_record_set"));
+		// val test_record_set = [ name in Str, year in Int ]
+		const test_record_set: TntDef = {
+			id: 6n, kind: "def", name: "test_record_set",
+			qualifier: OpQualifier.Val, scope: OpScope.Public,
+			expr: { id: 5n, kind: "opapp", opcode: "recordSet", args: [
+				 	{ id: 3n, kind: "str", value: "name", typeTag: { kind: "str" } },
+				 	{ id: 1n, kind: "name", name: "Str" },
+				 	{ id: 4n, kind: "str", value: "year", typeTag: { kind: "str" } },
+				 	{ id: 2n, kind: "name", name: "Int" },
+				] }
+		 }
+  
+		// the module that contains all these constants
+		const module = { id: 7n, name: "withVals",
+						 extends: [], defs: [ test_record_set ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	}); 
 });

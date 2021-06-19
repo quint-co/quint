@@ -255,6 +255,49 @@ export class ToIrListener implements TntListener {
         this.patternStack.push({ kind: "list", args: patterns })
     }
 
+    // tuple constructor, e.g., (1, 2, 3)
+    exitTuple(ctx: p.TupleContext) {
+        const args = this.popExprs(ctx.expr().length)
+        this.exprStack.push({ id: this.nextId(),
+                              kind: "opapp", opcode: "tuple", args: args })
+    }
+
+    // sequence constructor, e.g., [1, 2, 3]
+    exitSequence(ctx: p.SequenceContext) {
+        const args = this.popExprs(ctx.expr().length)
+        this.exprStack.push({ id: this.nextId(),
+                              kind: "opapp", opcode: "seq", args: args })
+    }
+
+    // record constructor, e.g., { name: "igor", year: 2021 }
+    exitRecord(ctx: p.RecordContext) {
+        const names = ctx.IDENTIFIER().map((n) => n.text);
+        const elems: TntEx[] = this.popExprs(ctx.expr().length);
+        // since TS does not have zip, a loop is the easiest solution
+        let namesAndValues: TntEx[] = [];
+        for (var i = 0; i < names.length; i++) {
+            namesAndValues.push({ id: this.nextId(), kind: "str",
+                                  value: names[i], typeTag: { kind: "str" } })
+            namesAndValues.push(elems[i])
+        }
+        this.exprStack.push({ id: this.nextId(), kind: "opapp", opcode: "record", args: namesAndValues });
+    }
+
+    // record set constructor, e.g., [ name in Str, year in Int ]
+    exitRecordSet(ctx: p.RecordSetContext) {
+        const names = ctx.IDENTIFIER().map((n) => n.text);
+        const elems: TntEx[] = this.popExprs(ctx.expr().length);
+        // since TS does not have zip, a loop is the easiest solution
+        let namesAndValues: TntEx[] = [];
+        for (var i = 0; i < names.length; i++) {
+            namesAndValues.push({ id: this.nextId(), kind: "str",
+                                  value: names[i], typeTag: { kind: "str" } })
+            namesAndValues.push(elems[i])
+        }
+        this.exprStack.push({ id: this.nextId(), kind: "opapp",
+                              opcode: "recordSet", args: namesAndValues });
+    }
+
     // '+' or '-'
     exitPlusMinus(ctx: p.PlusMinusContext) {
         const opcode = (ctx.ADD() != undefined) ? "add" : "sub"
