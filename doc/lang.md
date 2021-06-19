@@ -81,7 +81,7 @@ def pick3(pick2, x, y z): (((a, a) => b), a, a, a) => b = {
 
 ### Type System 1.2
 
-This is the same type system as in Apalache, except we have added disjoint
+This is the same type system as in Apalache, except we have added discriminated
 unions:
 
 A type is one of the following:
@@ -106,7 +106,7 @@ A type is one of the following:
  - Operator: `(T_1, ..., T_n) => R` for `n >= 0` argument types `T_1, ..., T_n`
    and result type `R`.
 
- - Disjoint-union:
+ - Discriminated union:
     ```
        | { tag_name: string_1, <ident>: T_1_1, ..., <ident>: T_1_n_1}
        ...
