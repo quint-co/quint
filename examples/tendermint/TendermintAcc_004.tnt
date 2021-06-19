@@ -80,7 +80,7 @@ val AllProcs = Corr.union(Faulty)
 // the set of potential rounds
 val Rounds = 0 to MaxRound
 // a special value to denote a nil round, outside of Rounds
-val NilRound = -(1)
+val NilRound = -1
 val RoundsOrNil = '{NilRound}.union(Rounds)
 // the set of all values
 val Values = ValidValues union InvalidValues

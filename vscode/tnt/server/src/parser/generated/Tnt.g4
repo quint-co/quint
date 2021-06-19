@@ -121,13 +121,15 @@ expr:           // apply a built-in operator via the dot notation
         //      a tuple constructor, the form tuple(...) is just an operator call
         |       '(' expr ',' expr (',' expr)* ')'                   # tuple
         //      a set constructor, the form set(...) is just an operator call
-        |       '\'{' (expr (',' expr)*)? '}'                       # set
+        |       ('\'{' (expr (',' expr)*)? '}' |
+                        'set' '(' (expr (',' expr)*)? ')')          # set
         |       '{' IDENTIFIER ':' expr
                         (',' IDENTIFIER ':' expr)* '}'              # record
         |       '[' IDENTIFIER 'in' expr
                         (',' IDENTIFIER 'in' expr)* ']'             # recordSet
         //      a sequence constructor, the form seq(...) is just an operator call
-        |       '[' (expr (',' expr)*)? ']'                         # sequence
+        |       ('[' (expr (',' expr)*)? ']' |
+                        'seq' '(' (expr (',' expr)*)? ')')          # sequence
         |       (valDef expr | operDef expr)                        # letIn
         |       '(' expr ')'                                        # paren
         |       '{' (lambda | expr) '}'                             # lambdaOrBraces
