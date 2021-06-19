@@ -269,6 +269,13 @@ export class ToIrListener implements TntListener {
                               kind: "opapp", opcode: "seq", args: args })
     }
 
+    // set constructor, e.g., '{ 1, 2, 3 }
+    exitSet(ctx: p.SetContext) {
+        const args = this.popExprs(ctx.expr().length)
+        this.exprStack.push({ id: this.nextId(),
+                              kind: "opapp", opcode: "set", args: args })
+    }
+
     // record constructor, e.g., { name: "igor", year: 2021 }
     exitRecord(ctx: p.RecordContext) {
         const names = ctx.IDENTIFIER().map((n) => n.text);
@@ -559,7 +566,7 @@ export class ToIrListener implements TntListener {
         const nargs = ctx.type().length - 1;
         const argTypes: TntType[] = this.popTypes(nargs);
         if (resType != undefined && argTypes.length == nargs) {
-            this.typeStack.push({ kind: "opapp", args: argTypes, res: resType });
+            this.typeStack.push({ kind: "oper", args: argTypes, res: resType });
         }
     }
 
