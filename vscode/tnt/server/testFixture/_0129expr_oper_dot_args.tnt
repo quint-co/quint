@@ -1,0 +1,8 @@
+// A module that contains value definitions.
+// Since 'val' gives us the simplest way of defining expressions,
+// we also do extensive testing of expression syntax in this test.
+module withVals
+	// Pass non-lambda arguments.
+	// Here we are using the dot notation.
+	val oper_app = f.except(3, 4)
+end

@@ -149,7 +149,7 @@ arg_list:       expr (',' expr)*
 
 // Some infix operators may be called via lhs.oper(rhs),
 // without causing any ambiguity.
-name_after_dot  :    (IDENTIFIER | IN | NOTIN | AND | OR | IFF | IMPLIES)
+name_after_dot  :    (IDENTIFIER | op=(IN | NOTIN | AND | OR | IFF | IMPLIES))
         ;
 
 // special operators

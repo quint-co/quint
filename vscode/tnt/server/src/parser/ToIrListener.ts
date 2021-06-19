@@ -4,11 +4,10 @@ import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef, OpScope, TntPattern } 
 import { TntType, TntTypeTag, TntUntyped } from './tntTypes';
 import { assert } from 'console';
 import { ErrorMessage } from './tntParserFrontend';
-import { TextDecoder } from 'util';
 
 /**
  * An ANTLR4 listener that constructs TntIr objects out of the abstract
- * syntax tree. This listener does the minimal work to translate the AST
+ * syntax tree. This listener does the minimal work of translating the AST
  * into IR. All semantic checks and type checking must be done at later
  * phases, as the IR may be constructed by other means.
  *
@@ -146,7 +145,7 @@ export class ToIrListener implements TntListener {
         const name = ctx.IDENTIFIER().text
         const wrappedArgs = this.exprStack.pop()
         if (wrappedArgs && wrappedArgs.kind == "opapp") {
-            this.exprStack.push({ id: wrappedArgs.id,
+            this.exprStack.push({ id: this.nextId(),
                 kind: "opapp", opcode: name, args: wrappedArgs.args
             })
         } else {
@@ -159,8 +158,8 @@ export class ToIrListener implements TntListener {
         const name = ctx.IDENTIFIER().text
         const wrappedArgs = this.exprStack.pop()
         const firstArg = this.exprStack.pop()
-        if (firstArg && wrappedArgs && wrappedArgs.kind == "opapp") {
-            this.exprStack.push({ id: wrappedArgs.id,
+        if (firstArg && wrappedArgs && wrappedArgs.kind == "opapp" && wrappedArgs.opcode == "wrappedArgs") {
+            this.exprStack.push({ id: this.nextId(),
                 kind: "opapp", opcode: name,
                 args: [firstArg].concat(wrappedArgs.args)
             })
@@ -169,12 +168,56 @@ export class ToIrListener implements TntListener {
         }
     }
 
+    // operator application via dot, e.g., S.union(T)
+    exitDotCall(ctx: p.DotCallContext) {
+        // pop: the first argument, operator name, either lambda or the rest of arguments (packed)
+        const wrappedArgsOrLambda = this.exprStack.pop()
+        const name = this.exprStack.pop()
+        const firstArg = this.exprStack.pop()
+        if (firstArg && wrappedArgsOrLambda && name && name.kind == "name") {
+            let args
+            if (wrappedArgsOrLambda.kind == "opapp" && wrappedArgsOrLambda.opcode == "wrappedArgs") {
+                args = [firstArg].concat(wrappedArgsOrLambda.args)
+            } else {
+                args = [firstArg, wrappedArgsOrLambda]
+            }
+            this.exprStack.push({ id: this.nextId(),
+                                  kind: "opapp", opcode: name.name, args: args })
+        } else {
+            assert(false, "exitDotCall: expected leading arg, name, and wrapped arguments")
+        }
+    }
+
+    // an identifier or some operators that are allowed after '.'
+    exitName_after_dot(ctx: p.Name_after_dotContext) {
+        const ident = ctx.IDENTIFIER()
+        if (ident) {
+            this.exprStack.push({ id: 0n, kind: "name", name: ident.text })
+        } else {
+            const op = ctx._op
+            if (op) {
+                let name = "undefined"
+                switch (op.type) {
+                    case p.TntParser.AND:       name = "and"; break;
+                    case p.TntParser.OR:        name = "or"; break;
+                    case p.TntParser.IMPLIES:   name = "implies"; break;
+                    case p.TntParser.IFF:       name = "iff"; break;
+                    case p.TntParser.IN:        name = "in"; break;
+                    case p.TntParser.NOTIN:     name = "notin"; break;
+                }
+                this.exprStack.push({ id: 0n, kind: "name", name: name })
+            } else {
+                assert(false, "exitName_after_dot: expected an operator")
+            }    
+        }
+    }
+
     // a list of arguments
     exitArg_list(ctx: p.Arg_listContext) {
         const args = this.popExprs(ctx.expr().length)
         // wrap the arguments with a temporary operator,
         // to be unwrapped later
-        this.exprStack.push({ id: this.nextId(),
+        this.exprStack.push({ id: 0n,
             kind: "opapp", opcode: "wrappedArgs", args: args })
     }
 
