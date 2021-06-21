@@ -3,8 +3,6 @@
 
 import { ParseTreeVisitor } from "antlr4ts/tree/ParseTreeVisitor";
 
-import { PatternListContext } from "./TntParser";
-import { PatternAtomContext } from "./TntParser";
 import { TypeFunContext } from "./TntParser";
 import { TypeOperContext } from "./TntParser";
 import { TypeSetContext } from "./TntParser";
@@ -25,13 +23,13 @@ import { VarContext } from "./TntParser";
 import { AssumeContext } from "./TntParser";
 import { ValContext } from "./TntParser";
 import { OperContext } from "./TntParser";
-import { PredContext } from "./TntParser";
-import { ActionContext } from "./TntParser";
-import { TemporalContext } from "./TntParser";
+import { PatContext } from "./TntParser";
 import { ModuleNestedContext } from "./TntParser";
 import { InstanceContext } from "./TntParser";
 import { TypeDefContext } from "./TntParser";
 import { ErrorCaseContext } from "./TntParser";
+import { LambdaOneContext } from "./TntParser";
+import { LambdaManyContext } from "./TntParser";
 import { DotCallContext } from "./TntParser";
 import { OperAppContext } from "./TntParser";
 import { FunAppContext } from "./TntParser";
@@ -73,7 +71,7 @@ import { Untyped01Context } from "./TntParser";
 import { Untyped0Context } from "./TntParser";
 import { ExprContext } from "./TntParser";
 import { LambdaContext } from "./TntParser";
-import { PatternContext } from "./TntParser";
+import { IdentOrHoleContext } from "./TntParser";
 import { Arg_listContext } from "./TntParser";
 import { Name_after_dotContext } from "./TntParser";
 import { OperatorContext } from "./TntParser";
@@ -88,22 +86,6 @@ import { LiteralContext } from "./TntParser";
  * operations with no return type.
  */
 export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
-	/**
-	 * Visit a parse tree produced by the `patternList`
-	 * labeled alternative in `TntParser.pattern`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitPatternList?: (ctx: PatternListContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `patternAtom`
-	 * labeled alternative in `TntParser.pattern`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitPatternAtom?: (ctx: PatternAtomContext) => Result;
-
 	/**
 	 * Visit a parse tree produced by the `typeFun`
 	 * labeled alternative in `TntParser.type`.
@@ -265,28 +247,12 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitOper?: (ctx: OperContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `pred`
+	 * Visit a parse tree produced by the `pat`
 	 * labeled alternative in `TntParser.unit`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitPred?: (ctx: PredContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `action`
-	 * labeled alternative in `TntParser.unit`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitAction?: (ctx: ActionContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `temporal`
-	 * labeled alternative in `TntParser.unit`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitTemporal?: (ctx: TemporalContext) => Result;
+	visitPat?: (ctx: PatContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `moduleNested`
@@ -319,6 +285,22 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitErrorCase?: (ctx: ErrorCaseContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `lambdaOne`
+	 * labeled alternative in `TntParser.lambda`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitLambdaOne?: (ctx: LambdaOneContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `lambdaMany`
+	 * labeled alternative in `TntParser.lambda`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitLambdaMany?: (ctx: LambdaManyContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `dotCall`
@@ -636,11 +618,11 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitLambda?: (ctx: LambdaContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `TntParser.pattern`.
+	 * Visit a parse tree produced by `TntParser.identOrHole`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitPattern?: (ctx: PatternContext) => Result;
+	visitIdentOrHole?: (ctx: IdentOrHoleContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `TntParser.arg_list`.

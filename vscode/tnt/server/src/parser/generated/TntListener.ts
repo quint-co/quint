@@ -3,8 +3,6 @@
 
 import { ParseTreeListener } from "antlr4ts/tree/ParseTreeListener";
 
-import { PatternListContext } from "./TntParser";
-import { PatternAtomContext } from "./TntParser";
 import { TypeFunContext } from "./TntParser";
 import { TypeOperContext } from "./TntParser";
 import { TypeSetContext } from "./TntParser";
@@ -25,13 +23,13 @@ import { VarContext } from "./TntParser";
 import { AssumeContext } from "./TntParser";
 import { ValContext } from "./TntParser";
 import { OperContext } from "./TntParser";
-import { PredContext } from "./TntParser";
-import { ActionContext } from "./TntParser";
-import { TemporalContext } from "./TntParser";
+import { PatContext } from "./TntParser";
 import { ModuleNestedContext } from "./TntParser";
 import { InstanceContext } from "./TntParser";
 import { TypeDefContext } from "./TntParser";
 import { ErrorCaseContext } from "./TntParser";
+import { LambdaOneContext } from "./TntParser";
+import { LambdaManyContext } from "./TntParser";
 import { DotCallContext } from "./TntParser";
 import { OperAppContext } from "./TntParser";
 import { FunAppContext } from "./TntParser";
@@ -73,7 +71,7 @@ import { Untyped01Context } from "./TntParser";
 import { Untyped0Context } from "./TntParser";
 import { ExprContext } from "./TntParser";
 import { LambdaContext } from "./TntParser";
-import { PatternContext } from "./TntParser";
+import { IdentOrHoleContext } from "./TntParser";
 import { Arg_listContext } from "./TntParser";
 import { Name_after_dotContext } from "./TntParser";
 import { OperatorContext } from "./TntParser";
@@ -85,32 +83,6 @@ import { LiteralContext } from "./TntParser";
  * `TntParser`.
  */
 export interface TntListener extends ParseTreeListener {
-	/**
-	 * Enter a parse tree produced by the `patternList`
-	 * labeled alternative in `TntParser.pattern`.
-	 * @param ctx the parse tree
-	 */
-	enterPatternList?: (ctx: PatternListContext) => void;
-	/**
-	 * Exit a parse tree produced by the `patternList`
-	 * labeled alternative in `TntParser.pattern`.
-	 * @param ctx the parse tree
-	 */
-	exitPatternList?: (ctx: PatternListContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `patternAtom`
-	 * labeled alternative in `TntParser.pattern`.
-	 * @param ctx the parse tree
-	 */
-	enterPatternAtom?: (ctx: PatternAtomContext) => void;
-	/**
-	 * Exit a parse tree produced by the `patternAtom`
-	 * labeled alternative in `TntParser.pattern`.
-	 * @param ctx the parse tree
-	 */
-	exitPatternAtom?: (ctx: PatternAtomContext) => void;
-
 	/**
 	 * Enter a parse tree produced by the `typeFun`
 	 * labeled alternative in `TntParser.type`.
@@ -372,43 +344,17 @@ export interface TntListener extends ParseTreeListener {
 	exitOper?: (ctx: OperContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `pred`
+	 * Enter a parse tree produced by the `pat`
 	 * labeled alternative in `TntParser.unit`.
 	 * @param ctx the parse tree
 	 */
-	enterPred?: (ctx: PredContext) => void;
+	enterPat?: (ctx: PatContext) => void;
 	/**
-	 * Exit a parse tree produced by the `pred`
+	 * Exit a parse tree produced by the `pat`
 	 * labeled alternative in `TntParser.unit`.
 	 * @param ctx the parse tree
 	 */
-	exitPred?: (ctx: PredContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `action`
-	 * labeled alternative in `TntParser.unit`.
-	 * @param ctx the parse tree
-	 */
-	enterAction?: (ctx: ActionContext) => void;
-	/**
-	 * Exit a parse tree produced by the `action`
-	 * labeled alternative in `TntParser.unit`.
-	 * @param ctx the parse tree
-	 */
-	exitAction?: (ctx: ActionContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `temporal`
-	 * labeled alternative in `TntParser.unit`.
-	 * @param ctx the parse tree
-	 */
-	enterTemporal?: (ctx: TemporalContext) => void;
-	/**
-	 * Exit a parse tree produced by the `temporal`
-	 * labeled alternative in `TntParser.unit`.
-	 * @param ctx the parse tree
-	 */
-	exitTemporal?: (ctx: TemporalContext) => void;
+	exitPat?: (ctx: PatContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `moduleNested`
@@ -461,6 +407,32 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitErrorCase?: (ctx: ErrorCaseContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `lambdaOne`
+	 * labeled alternative in `TntParser.lambda`.
+	 * @param ctx the parse tree
+	 */
+	enterLambdaOne?: (ctx: LambdaOneContext) => void;
+	/**
+	 * Exit a parse tree produced by the `lambdaOne`
+	 * labeled alternative in `TntParser.lambda`.
+	 * @param ctx the parse tree
+	 */
+	exitLambdaOne?: (ctx: LambdaOneContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `lambdaMany`
+	 * labeled alternative in `TntParser.lambda`.
+	 * @param ctx the parse tree
+	 */
+	enterLambdaMany?: (ctx: LambdaManyContext) => void;
+	/**
+	 * Exit a parse tree produced by the `lambdaMany`
+	 * labeled alternative in `TntParser.lambda`.
+	 * @param ctx the parse tree
+	 */
+	exitLambdaMany?: (ctx: LambdaManyContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `dotCall`
@@ -970,15 +942,15 @@ export interface TntListener extends ParseTreeListener {
 	exitLambda?: (ctx: LambdaContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `TntParser.pattern`.
+	 * Enter a parse tree produced by `TntParser.identOrHole`.
 	 * @param ctx the parse tree
 	 */
-	enterPattern?: (ctx: PatternContext) => void;
+	enterIdentOrHole?: (ctx: IdentOrHoleContext) => void;
 	/**
-	 * Exit a parse tree produced by `TntParser.pattern`.
+	 * Exit a parse tree produced by `TntParser.identOrHole`.
 	 * @param ctx the parse tree
 	 */
-	exitPattern?: (ctx: PatternContext) => void;
+	exitIdentOrHole?: (ctx: IdentOrHoleContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `TntParser.arg_list`.

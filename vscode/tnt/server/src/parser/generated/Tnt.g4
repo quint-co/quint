@@ -15,12 +15,9 @@ unit :          'const' IDENTIFIER ':' (untyped01 | type)       # const
         |       'assume' (IDENTIFIER | '_') '=' expr            # assume
         |       PRIVATE? valDef                                 # val
         |       PRIVATE? operDef                                # oper
-        |       PRIVATE? 'pred' IDENTIFIER params?
-                           (':' (untyped012 | type))? '=' expr  # pred
-        |       PRIVATE? 'action' IDENTIFIER params?
-                           (':' (untyped012 | type))? '=' expr  # action
-        |       PRIVATE? 'temporal' IDENTIFIER params?
-                           (':' (untyped012 | type))? '=' expr  # temporal
+        |       PRIVATE? ('pred' | 'action' | 'temporal')       
+                           IDENTIFIER params?
+                           (':' (untyped012 | type))? '=' expr  # pat
         |       module                                          # moduleNested
         |       instanceDef                                     # instance
         |       'typedef' IDENTIFIER '=' type                   # typeDef
@@ -32,7 +29,7 @@ unit :          'const' IDENTIFIER ':' (untyped01 | type)       # const
 valDef  :       'val' IDENTIFIER (':' (untyped0 | type))? '=' expr
         ;
 
-operDef :       'def' ('rec')? IDENTIFIER params
+operDef :       'def' REC? IDENTIFIER params
                          (':' (untyped012 | type))? '=' expr
         ;
 
@@ -138,13 +135,13 @@ expr:           // apply a built-in operator via the dot notation
 // This rule parses two different syntactic options:
 //   1. A single-argument lambda: x -> e.
 //   2. A multi-argument lambda: (x, y, z) -> e.
-lambda:         pattern '->' expr
+lambda:         identOrHole '->' expr                               # lambdaOne
+        |       '(' identOrHole (',' identOrHole)* ')'  '->' expr   # lambdaMany
         ;
 
-// a pattern like (x, (y, z)) in lambdas
-pattern:        '(' pattern (',' pattern)* ')'                  # patternList
-        |       (IDENTIFIER | '_')                              # patternAtom
-        ;
+// an identifier or a hole '_'
+identOrHole :   IDENTIFIER | '_'
+        ;        
 
 arg_list:       expr (',' expr)*
         ;
@@ -195,6 +192,7 @@ NE              :   '!=' ;
 EQEQ            :   '==' ;
 EQ              :   '='  ;
 ASGN            :   ':=' ;
+REC             :   'rec' ;
 
 // other TLA+ identifiers
 IDENTIFIER      : [a-zA-Z_][a-zA-Z0-9_]* ;

@@ -44,24 +44,10 @@ export type TntEx =
 	| { kind: "str", value: string } & WithId & WithTypeTag
 	// Operator application: apply an operator by its name, supplying the arguments in `args`.
 	| { kind: "opapp", opcode: string, args: TntEx[] } & WithId & WithTypeTag
-	// Operator abstraction: an anonymous operator (lambda) over a pattern `pattern`.
-	| { kind: "opabs", pattern: TntPattern, expr: TntEx } & WithId & WithTypeTag
+	// Operator abstraction: an anonymous operator (lambda) over a list of parameters.
+	| { kind: "opabs", params: string[], expr: TntEx } & WithId & WithTypeTag
 	// A let-in binding (defined via 'def', 'def rec', 'val', etc.).
 	| { kind: "let", opdef: TntOpDef, expr: TntEx } & WithId & WithTypeTag
-
-/**
- * A pattern that is used in a definition of a lambda operator:
- * 
- *  - a hole '_', that is a value, to be ignored
- * 
- *  - a single name
- * 
- *  - a list of names
- */
-export type TntPattern =
-	| { kind: "_" }
-	| { kind: "name", name: string }
-	| { kind: "list", args: TntPattern[] }
 
 /**
  * Operator qualifier that refines the operator shape:
@@ -84,7 +70,7 @@ export type TntPattern =
  *    state variables, and definition parameters. This expression must contain
  *    at least one assignment or an action operator.
  * 
- *  - temporal: a (possible) parameterized expression over constants,
+ *  - temporal: a (possibly parameterized) expression over constants,
  *    state variables, and definition parameters. This expression must contain
  *    at least one temporal operator.
  * 

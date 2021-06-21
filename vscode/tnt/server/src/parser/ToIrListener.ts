@@ -1,9 +1,10 @@
 import * as p from './generated/TntParser';
 import { TntListener } from './generated/TntListener';
-import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef, OpScope, TntPattern } from './tntIr';
+import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef, OpScope } from './tntIr';
 import { TntType, TntTypeTag, TntUntyped } from './tntTypes';
 import { assert } from 'console';
 import { ErrorMessage } from './tntParserFrontend';
+import { open } from 'fs';
 
 /**
  * An ANTLR4 listener that constructs TntIr objects out of the abstract
@@ -30,8 +31,8 @@ export class ToIrListener implements TntListener {
     private untypedStack: TntUntyped[] = []
     // the stack of expressions
     private exprStack: TntEx[] = []
-    // the stack of parameter patterns
-    private patternStack: TntPattern[] = []
+    // the stack of parameter lists
+    private paramStack: string[][] = []
     // an internal counter to assign unique numbers
     private lastId: bigint = 1n
 
@@ -74,9 +75,13 @@ export class ToIrListener implements TntListener {
     // translate a top-level or inner: val foo: type = ...
     exitValDef(ctx: p.ValDefContext) {
         const name = ctx.IDENTIFIER().text
-        let typeTag: TntTypeTag | undefined = this.typeStack.pop()
-        if (typeTag == undefined) {
-            // the value may be tagged with '_'
+        let typeTag: TntTypeTag | undefined = undefined
+        if (ctx.type()) {
+            // the operator is tagged with a type
+            typeTag = this.typeStack.pop()
+        }
+        if (ctx.untyped0()) {
+            // the operator is tagged with an untyped signature
             typeTag = this.untypedStack.pop()
         }
         const expr = this.exprStack.pop()
@@ -102,6 +107,54 @@ export class ToIrListener implements TntListener {
         } else {
             assert(false, "undefined valDef in exitVal")
         }
+    }
+
+    // translate a top-level or inner: def foo: type = ...
+    exitOperDef(ctx: p.OperDefContext) {
+        const name = ctx.IDENTIFIER().text
+        let typeTag: TntTypeTag | undefined = undefined
+        if (ctx.type()) {
+            // the operator is tagged with a type
+            typeTag = this.typeStack.pop()
+        }
+        if (ctx.untyped012()) {
+            // the operator is tagged with an untyped signature
+            typeTag = this.untypedStack.pop()
+        }
+        const expr = this.exprStack.pop()
+        const params = this.paramStack.pop()
+        if (expr && params) {
+            // wrap the body with a lambda that carries the parameters
+            const lambda: TntEx = {
+                id: this.nextId(), kind: "opabs", params: params, expr: expr
+            }
+            const qualif = (ctx.REC()) ? OpQualifier.DefRec : OpQualifier.Def
+            let def: TntOpDef = {
+                id: this.nextId(), kind: "def", name: name,
+                qualifier: qualif, scope: OpScope.Local, expr: lambda
+            }
+            if (typeTag) {
+                def.typeTag = typeTag
+            }
+            this.definitionStack.push(def)
+        } else {
+            assert(false, "undefined expr or params in exitOperDef")
+        }
+    }
+
+    // translate a top-level def
+    exitOper(ctx: p.OperContext) {
+        const def = this.definitionStack[this.definitionStack.length - 1]
+        if (def && def.kind == "def") {
+            def.scope = (ctx.PRIVATE()) ? OpScope.Private : OpScope.Public
+        } else {
+            assert(false, "undefined operDef in exitOper")
+        }
+    }
+
+    exitParams(ctx: p.ParamsContext) {
+        const params = ctx.IDENTIFIER().map(n => n.text)
+        this.paramStack.push(params)
     }
 
     /********************* translate expressions **************************/
@@ -221,38 +274,42 @@ export class ToIrListener implements TntListener {
             kind: "opapp", opcode: "wrappedArgs", args: args })
     }
 
-    // a lambda operator
-    exitLambda(ctx: p.LambdaContext) {
-        const pattern = this.patternStack.pop()
+    // a lambda operator over multiple parameters
+    exitLambdaMany(ctx: p.LambdaManyContext) {
         const expr = this.exprStack.pop()
-        if (pattern) {
-            if (expr) {
-                this.exprStack.push({
-                    id: this.nextId(), kind: "opabs", pattern: pattern, expr: expr
-                })
-            } else {
-                assert(false, "exitLambda: expected an expression")
-            }
+        const params = this.popParams(ctx.identOrHole().length)
+        if (expr) {
+            // every parameter in params is a singleton list, make one list
+            const singletons = params.map(ps => ps[0])
+            this.exprStack.push({
+                id: this.nextId(), kind: "opabs", params: singletons, expr: expr
+            })
         } else {
-            assert(false, "exitLambda: expected a pattern")
+            assert(false, "exitLambdaMany: expected an expression")
         }
     }
 
-    // a single pattern in a lambda expression: an identifier or '_'
-    exitPatternAtom(ctx: p.PatternAtomContext) {
+    // a lambda operator over one parameter
+    exitLambdaOne(ctx: p.LambdaOneContext) {
+        const expr = this.exprStack.pop()
+        const param = this.paramStack.pop()
+        if (expr && param) {
+            this.exprStack.push({
+                id: this.nextId(), kind: "opabs", params: param, expr: expr
+            })
+        } else {
+            assert(false, "exitLambdaOne: expected a parameter and an expression")
+        }
+    }
+
+    // a single parameter in a lambda expression: an identifier or '_'
+    exitIdentOrHole(ctx: p.IdentOrHoleContext) {
         const ident = ctx.IDENTIFIER()
         if (ident) {
-            this.patternStack.push({ kind: "name", name: ident.text })
+            this.paramStack.push([ident.text])
         } else {
-            this.patternStack.push({ kind: "_" })
+            this.paramStack.push(["_"])
         }
-    }
-
-    // a list of patterns in a lambda expression
-    exitPatternList(ctx: p.PatternListContext) {
-        const patterns = this.popPatterns(ctx.pattern().length)
-        // push the patterns as wrapped arguments
-        this.patternStack.push({ kind: "list", args: patterns })
     }
 
     // tuple constructor, e.g., (1, 2, 3)
@@ -620,10 +677,10 @@ export class ToIrListener implements TntListener {
     }
 
     // pop n patterns out of patternStack
-    private popPatterns(n: number): TntPattern[] {
-        assert(this.patternStack.length >= n, "popPatterns: too few elements in patternStack")
-        const es: TntPattern[] = this.patternStack.slice(-n);
-        this.patternStack = this.patternStack.slice(0, -n);
+    private popParams(n: number): string[][] {
+        assert(this.paramStack.length >= n, "popParams: too few elements in patternStack")
+        const es: string[][] = this.paramStack.slice(-n);
+        this.paramStack = this.paramStack.slice(0, -n);
         return es;
     }
 

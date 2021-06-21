@@ -4,6 +4,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { ErrorMessage, parsePhase1, ParseResult } from "../src/parser/tntParserFrontend";
 import { TntDef, TntOpDef, OpQualifier, OpScope } from "../src/parser/tntIr";
+import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from 'constants';
 
 function readTest(name: string): string {
 	const p = resolve(__dirname, '../testFixture', name + ".tnt")
@@ -228,6 +229,110 @@ describe('parse modules', () => {
 		// the module that contains all these constants
 		const module = { id: 5n, name: "withVals", extends: [],
 						 defs: [ details ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	});
+
+	it('parse untagged def', () => {
+		const result = parsePhase1(readTest("_0012defs_untagged"));
+	    // def F(x, y) = x + y
+		const defF: TntOpDef = {
+			id: 5n, kind: "def", name: "F",
+			qualifier: OpQualifier.Def, scope: OpScope.Public,
+			expr: { id: 4n, kind: "opabs",
+					params: ["x", "y"],
+					expr: { id: 3n, kind: "opapp", opcode: "add",
+						args: [
+							{ id: 1n, kind: "name", name: "x" },
+							{ id: 2n, kind: "name", name: "y" },
+						]
+		  			}
+				}
+		}
+  
+		// the module that contains all these constants
+		const module = { id: 6n, name: "withDefs", extends: [],
+		defs: [ defF ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	});
+
+	it('parse untyped def', () => {
+		const result = parsePhase1(readTest("_0013defs_untyped"));
+	    // def G(x, y): _ = x + y
+		const defG: TntOpDef = {
+			id: 5n, kind: "def", name: "G",
+			qualifier: OpQualifier.Def, scope: OpScope.Public,
+			typeTag: { kind: "untyped", paramArities: [ 0, 0 ] },
+			expr: { id: 4n, kind: "opabs",
+					params: ["x", "y"],
+					expr: { id: 3n, kind: "opapp", opcode: "add",
+						args: [
+							{ id: 1n, kind: "name", name: "x" },
+							{ id: 2n, kind: "name", name: "y" },
+						]
+		  			}
+				}
+		}
+  
+		// the module that contains all these constants
+		const module = { id: 6n, name: "withDefs", extends: [],
+		defs: [ defG ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	});
+
+	it('parse typed def', () => {
+		const result = parsePhase1(readTest("_0014defs_typed"));
+	    // def H(x, y): (int, int) => int = x + y
+		const defH: TntOpDef = {
+			id: 5n, kind: "def", name: "H",
+			qualifier: OpQualifier.Def, scope: OpScope.Public,
+			typeTag: { kind: "oper",
+					   args: [ { kind: "int" }, { kind: "int" } ],
+					   res: { kind: "int" } },
+			expr: { id: 4n, kind: "opabs",
+					params: ["x", "y"],
+					expr: { id: 3n, kind: "opapp", opcode: "add",
+						args: [
+							{ id: 1n, kind: "name", name: "x" },
+							{ id: 2n, kind: "name", name: "y" },
+						]
+		  			}
+				}
+		}
+  
+		// the module that contains all these constants
+		const module = { id: 6n, name: "withDefs", extends: [],
+		defs: [ defH ] }
+
+		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
+	});
+
+	it('parse typed def rec', () => {
+		const result = parsePhase1(readTest("_0015defs_rec"));
+	    // def rec R(n): (int) => int = { R(n - 1) }
+		const defR: TntOpDef = {
+			id: 6n, kind: "def", name: "R",
+			qualifier: OpQualifier.DefRec, scope: OpScope.Public,
+			typeTag: { kind: "oper",
+					   args: [ { kind: "int" } ], res: { kind: "int" } },
+			expr: { id: 5n, kind: "opabs",
+					params: ["n"],
+					expr: { id: 4n, kind: "opapp", opcode: "R",
+						args: [
+							{ id: 3n, kind: "opapp", opcode: "sub", args: [
+								{ id: 1n, kind: "name", name: "n" },
+								{ id: 2n, kind: "int", value: 1n, typeTag: { kind: "int" } }]
+							}
+						]
+		  			}
+				}
+		}
+  
+		// the module that contains all these constants
+		const module = { id: 7n, name: "withDefs", extends: [],
+		defs: [ defR ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	});
@@ -771,7 +876,7 @@ describe('parse modules', () => {
 			expr: { id: 6n, kind: "opapp", opcode: "filter", args: [
 				 	{ id: 1n, kind: "name", name: "S" },
 				 	{ id: 5n, kind: "opabs",
-					  pattern: { kind: "name", name: "x" },
+					  params: ["x"],
 					  expr: {
 						  id: 4n, kind: "opapp", opcode: "gt",
 						  args: [
@@ -798,7 +903,7 @@ describe('parse modules', () => {
 			expr: { id: 6n, kind: "opapp", opcode: "filter", args: [
 				 	{ id: 1n, kind: "name", name: "S" },
 				 	{ id: 5n, kind: "opabs",
-					  pattern: { kind: "name", name: "x" },
+					  params: ["x"],
 					  expr: {
 						  id: 4n, kind: "opapp", opcode: "gt",
 						  args: [

@@ -1,9 +1,5 @@
 // A module that contains operator definitions.
 module withDefs
-	def F(x, y): _ = x + y
-
-	def G(x, y): _ = x + y
-
 	def H(x, y): (int, int) => int = {
 		x + y
 	}
