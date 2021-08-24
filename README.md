@@ -25,10 +25,12 @@ The design principles of TNT:
     - It uses a small set of syntactic rules.
     - Most of the operators are mnemonic.
     - Rarely used operators (e.g. temporal operators) are mnemonic.
+    - Constants, variables, and operators may be annotated with types,
+      to get quick feedback from the type checker.
     - Well-known operators are written like in the most programming languages.
       Several examples:
         * `=` and `==` instead of just `=`,
-        * `<>` and `!=` instead of `/=` and `#`,
+        * `!=` instead of `/=` and `#`,
         * `&` and `and` instead of `/\`,
         * `|` and `or` instead of `\/`,
         * `not` instead of `~`,
@@ -49,4 +51,10 @@ The design principles of TNT:
     - There will be a transpiler to TLA+, so you can always jump back to TLA+.
     - If the user omits types, the transpiler will still produce TLA+ code.
 
+ - TNT minimizes pain points of TLA+:
+    - There is a clean separation between expressions of different levels:
+        state, action, and temporal.
+    - Updates to state variables are labelled as assignments.
+    - Recursive operators and functions are removed in favor of
+      well-known concepts such as `filter`, `map`, and `fold`.
 
