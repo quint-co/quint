@@ -83,16 +83,16 @@ val vars = (maxBal, maxVBal, maxVal, msgs)
 (* The type invariant and initial predicate.                               *)
 (***************************************************************************/
 pred TypeOK = {
-    & maxBal  in (Acceptor mkFunSet (Ballot union set(-1)))
-    & maxVBal in (Acceptor mkFunSet (Ballot union set(-1)))
-    & maxVal  in (Acceptor mkFunSet (Value union set(None)))
+    & maxBal  in (Acceptor setOfMaps (Ballot union set(-1)))
+    & maxVBal in (Acceptor setOfMaps (Ballot union set(-1)))
+    & maxVal  in (Acceptor setOfMaps (Value union set(None)))
     & msgs subseteq Message
 }
 
 action Init = {
-    & maxBal  := Acceptor mkFun { _ -> -1 }
-    & maxVBal := Acceptor mkFun { _ -> -1 }
-    & maxVal  := Acceptor mkFun { _ -> None }
+    & maxBal  := Acceptor mapOf { _ -> -1 }
+    & maxVBal := Acceptor mapOf { _ -> -1 }
+    & maxVal  := Acceptor mapOf { _ -> None }
     & msgs    := '{}
 }
 
@@ -124,7 +124,7 @@ action Phase1a(b) = {
 action Phase1b(a) = {
     & msgs.filter(m -> m.type = "1a") guess { m -> {
       & m.bal > maxBal[a]
-      & maxBal := maxBal.except(a, m.bal)
+      & maxBal := maxBal.update(a, m.bal)
       & Send({type: "1b", acc: a, bal: m.bal, 
               mbal: maxVBal[a], mval: maxVal[a]})
       }}
@@ -187,9 +187,9 @@ action Phase2a(b, v) = {
 action Phase2b(a) = msgs.filter(m -> m.type = "2a")
                         .exists( m -> {
                               & m.bal >= maxBal[a]
-                              & maxBal  := maxBal.except(a, m.bal)
-                              & maxVBal := maxVBal.except(a, m.bal)
-                              & maxVal  := maxVal.except(a, m.value)
+                              & maxBal  := maxBal.update(a, m.bal)
+                              & maxVBal := maxVBal.update(a, m.bal)
+                              & maxVal  := maxVal.update(a, m.value)
                               & Send({type: "2b", acc: a,
                                       bal: m.bal, value: m.value})
 })
@@ -224,7 +224,7 @@ temporal Spec = Init and always(stutter(Next, vars))
 (* the array `votes' describing the votes cast by the acceptors is defined *)
 (* as follows.                                                             *)
 (***************************************************************************/
-val votes = Acceptor fun { a ->
+val votes = Acceptor mapOf { a ->
            msgs.filter(mm -> mm.type = "2b" and mm.acc = a)
                .map(m -> (m.bal, m.value))
 }
@@ -257,7 +257,6 @@ pred Inv = {
               and ((m.mbal >= 0) implies (m.mbal, m.mval) in votes[m.acc]))
          }
        & val M2a = msgs filter { m -> m.type = "2a" }
-         in
          M2a.forall( m -> {
             & Quorum exists { Q -> V.ShowsSafeAt(Q, m.bal, m.value) }
             & M2a forall { mm ->

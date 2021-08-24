@@ -17,12 +17,12 @@ var color: NODE -> str
 var tpos: NODE
 var tcolor: str
 
-val Node = 0 to N - 1
+val Node = 0 to (N - 1)
 val Color = '{ "white", "black" }
 
 pred TypeOK = {
-  & active in (Node mkFunSet Bool)      // status of nodes (active or passive)
-  & color in (Node mkFunSet Color)      // color of nodes
+  & active in setOfMaps(Node, Bool)     // status of nodes (active or passive)
+  & color in setOfMaps(Node, Color)     // color of nodes
   & tpos in Node                        // token position
   & tcolor in Color                     // token color
 }
@@ -32,8 +32,8 @@ pred TypeOK = {
 (* "type-correct" values.                                                  *)
 (***************************************************************************/
 action Init = {
-  & (Node mkFunSet Bool) guess  { a -> active := f }
-  & (Node mkFunSet Color) guess { c -> color := f }
+  & setOfMaps(Node, Bool) guess  { a -> active := f }
+  & setOfMaps(Node, Color) guess { c -> color := f }
   & Node guess { n -> tpos := n }
   & tcolor := "black"
 }
@@ -68,7 +68,7 @@ action PassToken(i) = {
   & tpos := i - 1
   & tcolor := if (color[i] = "black") "black" else tcolor
   & active := active
-  & color := color.except(i, "white")
+  & color := color.update(i, "white")
 }
 
 /***************************************************************************)
@@ -87,8 +87,8 @@ action System = {
 action SendMsg(i) = {
   & active[i]
   & (Node difference set(i)) guess { j -> {
-        & active  := active.except(j, TRUE)
-        & color   := color exceptAt i, { old -> if (j > i) "black" else old }
+        & active  := active.update(j, TRUE)
+        & color   := color updateAs i, { old -> if (j > i) "black" else old }
       }
     }
   & unchanged((tpos, tcolor))
@@ -99,7 +99,7 @@ action SendMsg(i) = {
 (***************************************************************************/
 action Deactivate(i) = {
   & active[i]
-  & active := active.except(i, false)
+  & active := active.update(i, false)
   & unchanged((color, tpos, tcolor))
 }
 

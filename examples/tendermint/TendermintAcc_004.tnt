@@ -81,7 +81,7 @@ val AllProcs = Corr.union(Faulty)
 val Rounds = 0 to MaxRound
 // a special value to denote a nil round, outside of Rounds
 val NilRound = -1
-val RoundsOrNil = '{NilRound}.union(Rounds)
+val RoundsOrNil = set(NilRound) union Rounds
 // the set of all values
 val Values = ValidValues union InvalidValues
 // a special value for a nil round, outside of Values
@@ -116,7 +116,8 @@ var validRound: proc_t -> round_t
 
 // book-keeping variables
 typedef message_t =
-    | { type: "proposal", src: proc_t, round: round_t, proposal: value_t, validRound: round_t }
+    | { type: "proposal", src: proc_t,
+        round: round_t, proposal: value_t, validRound: round_t }
     | { type: "prevote", src: proc_t, round: round_t, id: value_t }
     | { type: "precommit", src: proc_t, round: round_t, id: value_t }
 
@@ -168,16 +169,16 @@ pred BenignRoundsInMessages(msgfun) =
 
 // The initial states of the protocol. Some faults can be in the system already.
 action Init = {
-  & round := Corr mkFun { _ -> 0 }
-  & step  := Corr mkFun { _ -> "propose" }
-  & decision := Corr mkFun { _ -> NilValue }
-  & lockedValue := Corr mkFun { _ -> NilValue }
-  & lockedRound := Corr mkFun { _ -> NilRound }
-  & validValue := Corr mkFun { _ -> NilValue }
-  & validRound := Corr mkFun { _ -> NilRound }
-  & msgsPropose := Rounds mkFun { _ -> AllFaultyProposals.powerset }
-  & msgsPrevote := Rounds mkFun { _ -> AllFaultyPrevotes.powerset }
-  & msgsPrecommit := Rounds mkFun { _ -> AllFaultyPrecommits.powerset }
+  & round := Corr mapOf { _ -> 0 }
+  & step  := Corr mapOf { _ -> "propose" }
+  & decision := Corr mapOf { _ -> NilValue }
+  & lockedValue := Corr mapOf { _ -> NilValue }
+  & lockedRound := Corr mapOf { _ -> NilRound }
+  & validValue := Corr mapOf { _ -> NilValue }
+  & validRound := Corr mapOf { _ -> NilRound }
+  & msgsPropose := Rounds mapOf { _ -> AllFaultyProposals.powerset }
+  & msgsPrevote := Rounds mapOf { _ -> AllFaultyPrevotes.powerset }
+  & msgsPrecommit := Rounds mapOf { _ -> AllFaultyPrecommits.powerset }
   & BenignRoundsInMessages(msgsPropose)
   & BenignRoundsInMessages(msgsPrevote)
   & BenignRoundsInMessages(msgsPrecommit)
@@ -190,27 +191,27 @@ action BroadcastProposal(pSrc, pRound, pProposal, pValidRound) = {
   val newMsg = { type: "proposal", src: pSrc, round: pRound,
                  proposal: pProposal, validRound: pValidRound }
 
-  msgsPropose := msgsPropose.exceptAt(pRound, { old -> old union set(newMsg) })
+  msgsPropose := msgsPropose.updateAs(pRound, { old -> old union set(newMsg) })
 }
 
 action BroadcastPrevote(pSrc, pRound, pId) = {
   val newMsg = { type: "prevote", src: pSrc, round: pRound, id: pId }
 
-  msgsPrevote := msgsPrevote.exceptAt(pRound, { old -> old union set(newMsg) })
+  msgsPrevote := msgsPrevote.updateAs(pRound, { old -> old union set(newMsg) })
 }
 
 action BroadcastPrecommit(pSrc, pRound, pId) = {
   val newMsg = { type: "precommit", src: pSrc, round: pRound, id: pId }
 
-  msgsPrecommit := msgsPrecommit.exceptAt(pRound, { old -> old union set(newMsg) })
+  msgsPrecommit := msgsPrecommit.updateAs(pRound, { old -> old union set(newMsg) })
 }
 
 //********************* PROTOCOL TRANSITIONS ******************************
 // lines 12-13
 action StartRound(p, r) = {
    & step[p] != "decided" // a decided process does not participate in consensus
-   & round := round.except(p, r)
-   & step := step.except(p, "propose")
+   & round := round.update(p, r)
+   & step := step.update(p, "propose")
 }
 
 // lines 14-19, a proposal may be sent later
@@ -249,7 +250,7 @@ action UponProposalInPropose(p) =
       & msg in msgsPropose[round[p]]    // line 22
       & evidence := set(msg) union evidence
       & BroadcastPrevote(p, round[p], mid) // lines 24-26
-      & step := step.except(p, "prevote")
+      & step := step.update(p, "prevote")
       & unchanged((round, decision, lockedValue, lockedRound,
                   validValue, validRound, msgsPropose, msgsPrecommit))
       & fired_action := "UponProposalInPropose"
@@ -271,10 +272,10 @@ action UponProposalInProposeAndPrevote(p) =
       & step[p] = "propose"
       & 0 <= vr and vr < round[p] // line 28, the while part
       & msg in msgsPropose[round[p]] // line 28
-      & PV.cardinality >= THRESHOLD2 // line 28
+      & cardinality(PV) >= THRESHOLD2 // line 28
       & evidence := PV.union(set(msg)).union(evidence)
       & BroadcastPrevote(p, round[p], mid) // lines 24-26
-      & step := step.except(p, "prevote")
+      & step := step.update(p, "prevote")
       & unchanged((round, decision, lockedValue, lockedRound,
                    validValue, validRound, msgsPropose, msgsPrecommit))
       & fired_action := "UponProposalInProposeAndPrevote"
@@ -290,10 +291,10 @@ action UponQuorumOfPrevotesAny(p) =
     // compare the number of the unique voters against the threshold
     {
       & step[p] = "prevote" // line 34 and 61
-      & Voters.cardinality >= THRESHOLD2 // line 34
+      & cardinality(Voters) >= THRESHOLD2 // line 34
       & evidence := MyEvidence union evidence
       & BroadcastPrecommit(p, round[p], NilValue)
-      & step := step.except(p, "precommit")
+      & step := step.update(p, "precommit")
       & unchanged((round, decision, lockedValue, lockedRound,
                    validValue, validRound, msgsPropose, msgsPrevote))
       & fired_action := "UponQuorumOfPrevotesAny"
@@ -306,24 +307,23 @@ action UponProposalInPrevoteOrCommitAndPrevote(p) =
     val msg = { type: "proposal", src: Proposer[round[p]],
                 round: round[p], proposal: v, validRound: vr }
     val PV = msgsPrevote[round[p]].filter(m -> m.id = Id(v))
-
     {
       & step[p] in set("prevote", "precommit") // line 36
       & msg in msgsPropose[round[p]] // line 36
-      & PV.cardinality >= THRESHOLD2 // line 36
+      & cardinality(PV) >= THRESHOLD2 // line 36
       & evidence := PV.union(set(msg)).union(evidence)
       & if (step[p] = "prevote") {
           // lines 38-41:
-          & lockedValue := lockedValue.except(p, v)
-          & lockedRound := lockedRound.except(p, round[p])
+          & lockedValue := lockedValue.update(p, v)
+          & lockedRound := lockedRound.update(p, round[p])
           & BroadcastPrecommit(p, round[p], Id(v))
-          & step := step.except(p, "precommit")
+          & step := step.update(p, "precommit")
         } else {
           unchanged((lockedValue, lockedRound, msgsPrecommit, step))
         }
         // lines 42-43
-      & validValue := validValue.except(p, v)
-      & validRound := validRound.except(p, round[p])
+      & validValue := validValue.update(p, v)
+      & validRound := validRound.update(p, round[p])
       & unchanged((round, decision, msgsPropose, msgsPrevote))
       & fired_action := "UponProposalInPrevoteOrCommitAndPrevote"
     }
@@ -336,7 +336,7 @@ action UponQuorumOfPrecommitsAny(p) =
       val Committers =  MyEvidence map { m -> m.src }
       // compare the number of the unique committers against the threshold
       {
-        & Committers.cardinality >= THRESHOLD2  // line 47
+        & cardinality(Committers) >= THRESHOLD2  // line 47
         & evidence := MyEvidence union evidence
         & round[p] + 1 in Rounds
         & StartRound(p, round[p] + 1)   
@@ -356,12 +356,12 @@ action UponProposalInPrecommitNoDecision(p) =
      {
        & decision[p] = NilValue // line 49
        & msg in msgsPropose[r]          // line 49
-       & PV.cardinality >= THRESHOLD2   // line 49
+       & cardinality(PV) >= THRESHOLD2   // line 49
        & evidence := PV.union(set(msg)).union(evidence)
-       & decision := decision.except(p, v) // update the decision, line 51
+       & decision := decision.update(p, v) // update the decision, line 51
        // The original algorithm does not have 'DECIDED', but it increments the height.
        // We introduced 'DECIDED' here to prevent the process from changing its decision.
-       & step := step.except(p, "decided")
+       & step := step.update(p, "decided")
        & unchanged((round, lockedValue, lockedRound, validValue,
                     validRound, msgsPropose, msgsPrevote, msgsPrecommit))
        & fired_action := "UponProposalInPrecommitNoDecision"
@@ -375,7 +375,7 @@ action OnTimeoutPropose(p) = {
   & step[p] = "propose"
   & p != Proposer[round[p]]
   & BroadcastPrevote(p, round[p], NilValue)
-  & step := step.except(p, "prevote")
+  & step := step.update(p, "prevote")
   & unchanged((round, lockedValue, lockedRound, validValue,
                validRound, decision, evidence, msgsPropose, msgsPrecommit))
   & fired_action := "OnTimeoutPropose"
@@ -389,7 +389,7 @@ action OnQuorumOfNilPrevotes(p) =
     & Cardinality(PV) >= THRESHOLD2 // line 36
     & evidence := PV union evidence
     & BroadcastPrecommit(p, round[p], Id(NilValue))
-    & step := step.except(p, "precommit")
+    & step := step.update(p, "precommit")
     & unchanged((round, lockedValue, lockedRound, validValue,
                  validRound, decision, msgsPropose, msgsPrevote))
     & fired_action := "OnQuorumOfNilPrevotes"
@@ -402,7 +402,7 @@ action OnRoundCatchup(p) =
     RoundMsgs.powerset guess { MyEvidence ->
       val Faster = MyEvidence.map(m -> m.src)
       {
-        & Faster.cardinality >= THRESHOLD1
+        & cardinality(Faster) >= THRESHOLD1
         & evidence := MyEvidence union evidence
         & StartRound(p, r)
         & uchanged((decision, lockedValue, lockedRound, validValue,
@@ -460,7 +460,7 @@ pred AmnesiaBy(p) =
                   m.type = "prevote" and m.round = r and m.id = Id(v2)
                 }
 
-                prevotes.cardinality < THRESHOLD2
+                cardinality(prevotes) < THRESHOLD2
               }
           }
         }
@@ -491,7 +491,7 @@ pred Validity =
 pred Accountability = {
     | Agreement
     | Faulty.powerset.exists(Detectable -> {
-        & Detectable.cardinality >= THRESHOLD1
+        & cardinality(Detectable) >= THRESHOLD1
         & Detectable.forall(p -> EquivocationBy(p) or AmnesiaBy(p))
       })
 }

@@ -159,8 +159,8 @@ end
 Introduce a single constant parameter (rigid variable in TLA+)
 
 ```
-  const N: Int
-  const Proc: Set(Str)
+  const N: int
+  const Proc: Set(str)
   // constant X is untyped
   const X: _
 ```
@@ -206,9 +206,9 @@ assume _ = Proc.cardinality > 0
 Introduce a single variable (flexible variable in TLA+)
 
 ```
-  var name: Str
-  var timer: Int
-  var is_armed: Bool
+  var name: str
+  var timer: int
+  var is_armed: bool
   // variable foo is untyped
   var foo: _
 ```
@@ -223,11 +223,12 @@ Introduce a single variable (flexible variable in TLA+)
 
 Introduce a user-defined operator. The order of definitions is not important.
 The operator names should not clash with the names of other definitions in the
-module scope. Operators may be recursive.
+module scope. Importantly, there are **no recursive operators** (though you can
+fold over a sequence or a set, see below).
 
 ```
 // a constant operator
-val Nodes: Set(Int) = 1 to 10
+val Nodes: Set(int) = 1 to 10
 
 // a two-argument operator that returns its first argument
 def fst(x, y): (a, b) => a = x
@@ -235,11 +236,6 @@ def fst(x, y): (a, b) => a = x
 // the maximum operator
 def max(x, y) =
     if (x > y) x else y
-
-// a recursive operator
-def rec fact(n) = {
-    if (n <= 1) n else n * fact(n - 1)
-}
 
 // a higher-order operator that accepts another operator as its first argument
 def F(G, x): (a => b, a) => b = G(x)
@@ -254,14 +250,14 @@ private def my_lte(x, y) = {
 *Grammar:*
 
 ```
-[private] (val | def | def rec | pred | action | temporal)
+[private] (val | def | pred | action | temporal)
     <identifier>[(<identifier>, ..., <identifier>)] [':' <type>] = <expr>
 ```
 
-### Recursive functions
+### Recursive functions and operators
 
-There is no special syntax for top-level definitions of recursive functions.
-However, you can introduce a recursive function with the set operator `recFun`.
+We've decided against having recursive operators and functions in the language.
+The practical use cases can be expressed with `map`, `filter`, and `fold`.
 
 ### Module instances
 
@@ -438,7 +434,7 @@ Several operators have conventional names that stem from mathematics and thus
 are not written as identifiers.  For instance, you can conveniently write `1 +
 3` in the infix form.  But you cannot write `+(1, 3)` or `1.+(3)`, as that
 would make the parser unnecessary complex. You can use the mnemonic name `add`
-instead of `+` and thus write `add(1, 3)` or `1.add(3)`. A small number of
+instead of `+` and thus write `iadd(1, 3)` or `1.iadd(3)`. A small number of
 operators are exceptional in this sense. We list the alternative names when
 introducing operators.  We don't expect humans to write expressions like the
 ones above. This notation is more convenient for programs, so TNT tooling should
@@ -670,7 +666,7 @@ thought of as being evaluated non-deterministically. TNT encourages the users
 to scope the side effects in `guess`, e.g., as `x := e` and `next(x)`, whereas
 reasoning about the next state should not happen in `exists`.*
 
-Hence, the difference between `guess` and `choose` is purely syntactic, not
+Hence, the difference between `guess` and `exists` is purely syntactic, not
 semantic.
 
 ### Other set operators
@@ -683,10 +679,6 @@ of `x := e` in the following operators is strongly discouraged.*
 S forall { x -> P }
 S.forall( x -> P )
 forall(S, { x -> P })
-// CHOOSE x \in S: P
-S choose { x -> P }
-S.choose( x -> P )
-choose(S, { x -> P })
 // set membership: e \in S
 e in S
 e.in(S)
@@ -738,6 +730,13 @@ flatten(S)
 S seqs
 S.seqs
 seqs(S)
+// CHOOSE x \in S: TRUE
+// The operator name is deliberately made long, so it would not be the user's default choice.
+S choose_some
+S.choose_some
+// There is no special syntax for CHOOSE x \in S: P
+// Instead, you can filter a set and then pick an element of it.
+S.filter(x -> P).choose_some
 ```
 
 These operators are defined in the module `FiniteSets` in TLA+. TNT has these
@@ -754,40 +753,39 @@ S.cardinality
 cardinality(S)
 ```
 
-## Functions
+## Functions aka Maps
 
 ```scala
 // function application: f[e]
 f[e]
-f.of(e)
-of(f, e)
+f.get(e)
+get(f, e)
 // function domain: DOMAIN f
-f domain
-f.domain
-domain(f)
+f keys
+f.keys
+keys(f)
 // function constructor: [ x \in S |-> e ]
-S mkFun { x -> e }
-S.mkFun(x -> e)
-mkFun(S, { x -> e })
-// Define a recursive function. This is equivalent to the following TLA+ code
-// LET f[x \in S] == e IN f
-S mkRecFun { x -> e }
-S.mkRecFun(x -> e)
-mkRecFun(S, { x -> e })
+S mapOf { x -> e }
+S.mapOf(x -> e)
+mapOf(S, { x -> e })
 // a set of functions: [ S -> T ]
-S mkFunSet T
-S.mkFunSet(T)
-mkFunSet(S, T)
+S setOfMaps T
+S.setOfMaps(T)
+setOfMaps(S, T)
 // [f EXCEPT ![e1] = e2]
-f except e1, e2
-f.except(e1, e2)
-except(f, e1, e2)
+f update e1, e2
+f.update(e1, e2)
+update(f, e1, e2)
 // [f EXCEPT ![e1] = e2, ![e3] = e4]
-(f except e1, e2) except e3, e4
+(f update e1, e2) update e3, e4
 // [f EXCEPT ![e1] = @ + y]
-f exceptAt e1, { old -> old + y }
-f.exceptAt(e1, { old -> old + y })
-exceptAt(f, e1, { old -> old + y })
+f updateAs e1, { old -> old + y }
+f.updateAs(e1, { old -> old + y })
+updateAs(f, e1, { old -> old + y })
+// an equivalent of (k :> v) @@ f when using the module TLC
+f put e1, e2
+f.put(e1, e2)
+put(e1, e2)
 ```
 
 *The use of the operator `x := e` in the above operators is strongly discouraged.*
@@ -803,10 +801,10 @@ exceptAt(f, e1, { old -> old + y })
 // access a record field: r.h
 r.h
 r h
-// the set of record keys: DOMAIN r
-r.keys
-r keys
-keys(r)
+// the set of record fields: DOMAIN r
+r.fields
+r fields
+fields(r)
 // record update: [r EXCEPT !.f = e]
 r with f, e
 r.with(f, e)
@@ -855,7 +853,7 @@ What about `DOMAIN t` on tuples? We don't think it makes sense to have it.
 What about `[ t EXCEPT ![i] = e ]`? Just define a new tuple that contains
 the new field.
 
-## Sequences
+## Sequences aka Lists
 
 In contrast to TLA+, there is no special module for sequences. They are built
 in the kernel of TNT. A parser can compute, whether operators on sequences are
@@ -927,48 +925,48 @@ you should switch directly to TLA+.
 ```scala
 // like m + n in TLA+
 m + n
-m.add(n)
-add(m, n)
+m.iadd(n)
+iadd(m, n)
 // like m - n in TLA+
 m - n
-m.sub(n)
-sub(m, n)
+m.isub(n)
+isub(m, n)
 // like -m in TLA+
 -m
-uminus(m)
+iuminus(m)
 m.uminus
 // like m * n in TLA+
 m * n
-m.mul(n)
-mul(m, n)
+m.imul(n)
+imul(m, n)
 // integer division, lik m \div n in TLA+
 m / n
-m.div(n)
-div(m, n)
+m.idiv(n)
+idiv(m, n)
 // like m % n in TLA+
 m % n
-m.mod(n)
-mod(m, n)
+m.imod(n)
+imod(m, n)
 // like m^n in TLA+
 m^n
-m.pow(n)
-pow(m, n)
+m.ipow(n)
+ipow(m, n)
 // like m < n in TLA+
 m < n
-m.lt(n)
-lt(m, n)
+m.ilt(n)
+ilt(m, n)
 // like m > n in TLA+
 m > n
-m.gt(n)
-gt(m, n)
+m.igt(n)
+igt(m, n)
 // like m <= n in TLA+
 m <= n
-m.lte(n)
-lte(m, n)
+m.ilte(n)
+ilte(m, n)
 // like m >= n in TLA+
 m >= n
-m.gte(n)
-gte(m, n)
+m.igte(n)
+igte(m, n)
 // like Int and Nat in TLA+
 Int
 Nat
@@ -994,21 +992,16 @@ def double(x) =
 
   plus(x, x)
 
-def plus_inductive(x, y) =
-  // a nested recursive operator. You don't have to add numbers like this though.
-  def rec nat_plus(a, b) =
-    if (b <= 0) a else 1 + nat_plus(a, b - 1)
-
-  nat_plus(x, y)
-
 def pow4(x) =
-  // a nested
+  // a nested constant
   val x2 = x * x
 
   x2 * x2
 
 temporal my_prop =
+  // a nested temporal formula
   temporal A = eventually(x > 3)
+  // a nested temporal formula
   temporal B = always(eventually(y = 0))
 
   A implies B
@@ -1017,7 +1010,7 @@ temporal my_prop =
 *Grammar:*
 
 ```
-(val | def | def rec | pred | action | temporal)
+(val | def | pred | action | temporal)
   <identifier>[(<identifier>, ..., <identifier>)] [':' <type>] = <expr>
 <expr>
 ```
@@ -1050,7 +1043,7 @@ x.unchanged
 ```
 
 In a more general case, you can write `unchanged(t)` for a tuple `t` that
-contains names of state variables; tuples can be nested.
+contains names of state variables; tuples may be nested.
 
 ### Stutter and nostutter
 
@@ -1075,7 +1068,7 @@ As in case of `unchanged`, you can pass a tuple of names.
 Explicit use of primes in actions is discouraged in TNT. You should use `:=`
 and `unchanged`, wherever possible. However, we have added primes to the
 language for completeness. Otherwise, we would not be able to translate TLA+ to
-TNT and back. The operator prime is written as follows:
+TNT and back. The operator `next` is written as follows:
 
 ```scala
 next(e)

@@ -14,7 +14,7 @@ val vars = (readers, writers, waiting)
 
 val Actors = 1 to NumActors
 
-def ToSet(s) = s domain map { i -> s[i] }
+def ToSet(s) = s.keys.map(i -> s[i])
 
 def read(s)  = s[1] = "read"
 def write(s) = s[1] = "write"
@@ -99,8 +99,8 @@ action Next = {
 temporal Fairness = {
     & Actors forall { actor -> TryRead(actor).weakFair(vars) }
     & Actors forall { actor -> TryWrite(actor).weakFair(vars) }
-    & ReadOrWrite.wfair(vars)
-    & Stop.wfair(vars)
+    & ReadOrWrite.weakFair(vars)
+    & Stop.weakFair(vars)
 }
 
 temporal Spec = Init and always(stutter(Next, vars) and Fairness)
@@ -119,7 +119,7 @@ pred TypeOK = {
 
 pred Safety = {
     & not(readers != set() and writers != set())
-    & Cardinality(writers) <= 1
+    & cardinality(writers) <= 1
 }
 
 /**************)

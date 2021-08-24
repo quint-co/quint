@@ -40,8 +40,7 @@ instanceDef :   'instance' (IDENTIFIER | '_') '=' IDENTIFIER
 params  :       '(' (IDENTIFIER (',' IDENTIFIER)*)? ')'
         ;
 
-// Types. This is Type System 1 of Apalache,
-// except that different records cannot be unified, but there are disjoint unions
+// Types in Type System 1.2 of Apalache, which supports discriminated unions
 type :          type '->' type                                  # typeFun
         |       '(' (type (',' type)*)? ')' '=>' type           # typeOper
         |       'set' '(' type ')'                              # typeSet
