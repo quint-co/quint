@@ -47,37 +47,15 @@ Multi-line comments:
 
 ## Types
 
-Types are optional. If you want just to run TLC, it might be enough to leave
-the types unspecified. If you want to use Apalache or other advanced tools,
-you will need types.
+TNT is a typed language. All variables and constants must be assigned a type.
+An operator may be annotated with types. However, if the type checker is able
+to infer the type of an operator, then the operator type may be omitted.
 
-
-### Untyped signatures
-
-It should be always possible to omit the type of a constant or a state variable
-`x` by writing the type annotation `x : _`. In this case, neither the parser,
-nor the type checker should complain about the type of `x`. The transpiler will
-translate the expressions over `x` to TLA+ as is, possibly producing ill-typed
-expressions.
-
-Similar to TLA+, when you define a higher-order operator, you have to specify the
-signature. For example:
-
-```
-def pick3(pick2, x, y z): (((_, _) => _), _, _, _) => _ = {
-    pick2(pick2(x, y), z)
-}
-```
-
-That looks a bit confusing, right? If you really want to ignore types at all,
-that's what you do. Alternatively, you could write a parametric type in Type
-System 1.2 (below). For comparison, we give an example right here:
-
-```
-def pick3(pick2, x, y z): (((a, a) => b), a, a, a) => b = {
-    pick2(pick2(x, y), z)
-}
-```
+**Discussion.** In the earlier version of TNT, we allowed the user to omit
+types altogether. In retrospect, we find this to be a bad idea. Hence, we
+require that every language object is either type-annotated (variables and
+constants), or can be assigned a type via type checking (operators and
+expressions).
 
 ### Type System 1.2
 
@@ -161,8 +139,6 @@ Introduce a single constant parameter (rigid variable in TLA+)
 ```
   const N: int
   const Proc: Set(str)
-  // constant X is untyped
-  const X: _
 ```
 
 *Grammar:*
@@ -209,8 +185,6 @@ Introduce a single variable (flexible variable in TLA+)
   var name: str
   var timer: int
   var is_armed: bool
-  // variable foo is untyped
-  var foo: _
 ```
 
 *Grammar:*
@@ -457,7 +431,7 @@ priority:
 | `i * j`, `i / j`, `i % j`    | Integer multiplication, division, modulo   |
 | `i + j`, `i - j`             | Integer addition and subtraction           |
 | `e_1 F e_2, ..., e_n`        | General infix operator application         |
-| `i > j`, `i < j`, `i >= j`, `i <= j`, `i != j`, `i == j`, `i = j`, `i := j`, `S in T`, `S notin T`, `S subseteq T`  | Integer comparisons, equality, assignment, and set relations |
+| `i > j`, `i < j`, `i >= j`, `i <= j`, `i != j`, `i == j`, `i = j`, `i <- j`, `S in T`, `S notin T`, `S subseteq T`  | Integer comparisons, equality, assignment, and set relations |
 | `p and q`                    | Boolean 'and' (conjunction)                |
 | `p or q`                     | Boolean 'or' (disjunction)                 |
 | `p iff q`                    | Boolean equivalence (if and only if)       |
@@ -470,7 +444,6 @@ The following are the standard Boolean operators (higher priority first).
 
 ```scala
 // equality: e1 = e2 in TLA+
-e1 = e2
 e1 == e2
 e1.eq(e2)
 eq(e1, e2)
@@ -499,7 +472,7 @@ Note that the operator `not(p)` needs parentheses around its argument.
 Actually, `not` is treated as a general operator. We keep the number of special
 syntax forms to minimum.
 
-*The use of the operator `x := e` in the above operators is strongly discouraged.*
+*The use of the operator `x <- e` in the above operators is strongly discouraged.*
 
 ### Multiline disjunctions
 
@@ -516,7 +489,7 @@ This is equivalent to `p_1.or(p_2).or( ... or(p_n)...)`. The indentation is not
 important.  However, you can produce nice indentation by hand, if you like.
 The first occurence of `|` right after `{` is optional, it's up to you.
 
-*We encourage you to use the operator `x := e` in a multiline disjunction.*
+*We encourage you to use the operator `x <- e` in a multiline disjunction.*
 
 This operator has the normal form too! It is written as `orBlock(p_1, ...,
 p_n)`. Most likely, you will never use it, but the tools can.
@@ -536,7 +509,7 @@ This is equivalent to `p_1.and(p_2.and( ... and(p_n)...)`. The indentation is no
 important.  However, you can produce nice indentation by hand, if you like.
 The first occurence of `&` right after `{` is optional, it's up to you.
 
-*We encourage you to use the operator `x := e` in a multiline conjunction.*
+*We encourage you to use the operator `x <- e` in a multiline conjunction.*
 
 This operator has the normal form too! It is written as `andBlock(p_1, ...,
 p_n)`. Most likely, you will never use it, but the tools can.
@@ -555,7 +528,7 @@ Compare it to TLA+:
   IF p THEN e1 ELSE e2
 ```
 
-*The use of the operator `x := e` in if-else is strongly discouraged.*
+*The use of the operator `x <- e` in if-else is strongly discouraged.*
 
 The normal form of this operator is `ite(p, e1, e2)`.
 
@@ -616,7 +589,7 @@ CASE
   OTHER -> e
 ```
 
-*The use of the operator `x := e` in case is strongly discouraged.*
+*The use of the operator `x <- e` in case is strongly discouraged.*
 
 The normal form of the case operators with the default option is:
 
@@ -663,7 +636,7 @@ guess(S, { x -> P })
 *The intended difference between `exists` and `guess` is that evaluation of
 `exists` can be thought of as being deterministic, whereas `guess` can be
 thought of as being evaluated non-deterministically. TNT encourages the users
-to scope the side effects in `guess`, e.g., as `x := e` and `next(x)`, whereas
+to scope the side effects in `guess`, e.g., as `x <- e` and `next(x)`, whereas
 reasoning about the next state should not happen in `exists`.*
 
 Hence, the difference between `guess` and `exists` is purely syntactic, not
@@ -672,7 +645,7 @@ semantic.
 ### Other set operators
 
 The other operators are introduced and explained in code directly. *The use
-of `x := e` in the following operators is strongly discouraged.*
+of `x <- e` in the following operators is strongly discouraged.*
 
 ```scala
 // \A x \in S: P
@@ -788,7 +761,7 @@ f.put(e1, e2)
 put(e1, e2)
 ```
 
-*The use of the operator `x := e` in the above operators is strongly discouraged.*
+*The use of the operator `x <- e` in the above operators is strongly discouraged.*
 
 ## Records
 
@@ -818,7 +791,7 @@ kinds of expressions visually different, so the users do not confuse one
 with another by mistake. Moreover, as sets of records are used less often than
 records, typing a set of records requires a bit more effort.
 
-*The use of the operator `x := e` in the above operators is strongly discouraged.*
+*The use of the operator `x <- e` in the above operators is strongly discouraged.*
 
 ## Tuples
 
@@ -846,7 +819,7 @@ cross(S_1, S_2)
 ncross(S_1, S_2, ..., S_n)
 ```
 
-*The use of the operator `x := e` in the above operators is strongly discouraged.*
+*The use of the operator `x <- e` in the above operators is strongly discouraged.*
 
 What about `DOMAIN t` on tuples? We don't think it makes sense to have it.
 
@@ -911,7 +884,7 @@ s.foldr(init, { (i, v) -> e })
 foldr(s, init, { (i, v) -> e })
 ```
 
-*The use of the operator `x := e` in the above operators is strongly discouraged.*
+*The use of the operator `x <- e` in the above operators is strongly discouraged.*
 
 ## Integers
 
@@ -976,7 +949,7 @@ m.to(n)
 to(m, n)
 ```
 
-*The use of the operator `x := e` in the above operators is strongly discouraged.*
+*The use of the operator `x <- e` in the above operators is strongly discouraged.*
 
 ## Nested operators
 
@@ -1017,21 +990,43 @@ temporal my_prop =
 
 ## Action operators
 
-### Single static assignment
+### Single static (delayed) assignment
 
 This operator is carefully avoided in TLA+. TNT allows you to assign a value to
-the state variable `x` in a next state.
+the state variable `x` in a next state:
 
 ```scala
-x := e
+x <- e
 assign(x, e)
 x.assign(e)
 ```
 
-This operator is equivalent to `x' = e` of TLA+ under specific conditions.
+The operator `x <- e` is equivalent to `x' = e` of TLA+ under specific
+conditions. In contrast to the assignments in programming languages, TNT
+assignment is delayed by one step. It only becomes effective in a successor
+state of the state that is being evaluated. The arrow notation `<-` is meant to
+warn the user that the value `e` is "sent" to `x`, and it will only arrive at
+`x` in a next state. Hence, in the following expression, expression `x + 1` may
+evaluate to a value that is different from 5:
+
+```
+{ x <- 4 & x + 1 > 0 }
+```
+
 
 *Every state variable `x` must be assigned exactly once in every step:
-Either via `x := e`, or via `unchanged(x)` (see below).*
+Either via `x <- e`, or via `unchanged(x)` (see below).*
+
+**Discussion.** TLA+ does not have a notion of assignment. Instead, one simply
+writes an equality `x' = e`. In general, one can write an arbitrary predicate
+over `x'`. We find it hard to reason about such pure equalities, which may
+occur in multiple places. Hence, we introduce assignments. However, our
+assignments are slightly different from assignments in imperative (stack-based)
+languages. For this reason, we avoid the standard tokens such as `=` and `:=`
+that usually denote an instantaneous update. (Though such updates are not
+always instantaneous in modern architectures). Otherwise, it is too tempting to
+use `x` in the hope of accessing `e`. Instead, we use notation `x <- e`,
+similar to sending over a channel in Golang.
 
 ### Unchanged
 
@@ -1065,7 +1060,7 @@ As in case of `unchanged`, you can pass a tuple of names.
 
 ### Primes
 
-Explicit use of primes in actions is discouraged in TNT. You should use `:=`
+Explicit use of primes in actions is discouraged in TNT. You should use `<-`
 and `unchanged`, wherever possible. However, we have added primes to the
 language for completeness. Otherwise, we would not be able to translate TLA+ to
 TNT and back. The operator `next` is written as follows:
