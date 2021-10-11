@@ -578,7 +578,7 @@ We split `IF-THEN-ELSE` into two forms, each applicable in particular modes.
 Note that we forbid `IF-THEN-ELSE` in the temporal mode. Instead, the users
 should use logical connectives.
 
-#### 1. Conditional
+#### 1. Ternary
 
 ```scala
   p ? e1 : e2
@@ -609,6 +609,15 @@ This operator is translated to TLA+ as:
 The normal form of this operator is `ite(p, e1, e2)`.
 
 *Mode:* Action.
+
+**Discussion:** Igor: I personally dislike the ternary operator, especially
+after writing in OCaml and Scala. There is a huge Wikipedia page on the
+[ternary operator](https://en.wikipedia.org/wiki/%3F:).  However, we were stuck
+so many times in Apalache with action-level conditions vs. expression-level
+conditions, which are both expressed with `IF-THEN-ELSE` in TLA+. Hence, it
+looks like a good idea to distinguish between the two cases. There is also a long
+discussion about [removing the ternary operator in
+Rust](https://github.com/rust-lang/rust/issues/1698).
 
 ### Cases
 
@@ -678,6 +687,11 @@ guards and effect expressions into pairs. The normal form is meant for the
 tools.
 
 *Mode:* Stateless, State. Other modes are not allowed.
+
+**Discussion:** TLA+ allows for expressions `x' = e` inside `CASE`.  We have
+found the use of this feature to be extremely rare and confusing.  It can be
+easily rewritten with disjunctions and conjunctions, which should be preferred
+outside of the Action mode.
 
 ## Sets
 
@@ -757,9 +771,9 @@ S intersect T
 S.intersect(T)
 intersect(S, T)
 // difference: S \ T
-S difference T
-S.difference(T)
-difference(S, T)
+S exclude T
+S.exclude(T)
+exclude(S, T)
 // S is a subset of T (proper or not): S \subseteq T
 S subseteq T
 S.subseteq(T)
