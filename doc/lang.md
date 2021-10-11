@@ -383,7 +383,7 @@ Every expression can be wrapped with `{` and `}`. For instance:
 ```
 
 The braces `{` and `}` **do not introduce a set**. For the set notation,
-see `set(...)` and `'{...}`.
+see `set(...)`.
 
 Similar to `{` and `}`, you can always wrap an expression with `(` and `)`,
 e.g., `(1 + 3)`.  It is up to you.
@@ -597,7 +597,7 @@ The normal form of this operator is `cond(p, e1, e2)`.
 #### 2. Branching
 
 ```scala
-  if (p) e1 else e2
+  if (p) { e1 } else { e2 }
 ```
 
 This operator is translated to TLA+ as:
