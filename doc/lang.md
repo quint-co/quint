@@ -2,6 +2,8 @@
 
 *TNT is not TLA+*
 
+**Revision: 10.10.2021** 
+
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
 
@@ -106,6 +108,43 @@ typedef STR_OPTION =
 
 Type aliases are written in CAPITAL LETTERS.
 
+## Modes
+
+*TLA+ does not make a clear distinction between constant expressions, state
+expressions, actions, and temporal formulas. They are all written as logic
+formulas. Such a distinction appears only in the discussion of TLA+ semantics,
+when Leslie Lamport introduces levels of TLA+ formulas. We have found that the
+lack of such a clear separation causes lots of confusion. To this end, we
+introduce "modes", which are similar in spirit to TLA+ levels, but more
+refined.*
+
+We define the following modes:
+
+ 1. Stateless mode.
+ 1. State mode.
+ 1. Action mode.
+ 1. Property mode.
+ 1. Temporal mode.
+
+Every TNT expression and definition is assigned a mode. In the following, we
+will specify which modes are supported by certain operators and definitions.
+The following table defines the subsumption rules on modes (the partial order
+`<m`).  As a general rule, if an operator or a definition accepts an argument
+of mode `M`, then it can also accept an argument of a less general mode `K <m
+M`.
+
+| More general mode | Less general modes         |
+| ----------------- | -------------------------- |
+| Stateless          | n/a                        |
+| State             | Stateless                   |
+| Action            | Stateless, State            |
+| Property         | Stateless, State            |
+| Temporal          | Stateless, State, Property |
+
+As can be seen from the table, several modes cannot be compared via the order
+`<m`: action mode cannot be compared to predicate mode and temporal mode. This
+is intentional: We do not want to mix actions with predicates and temporal
+properties.
 
 ## Module-level constructs
 
@@ -147,6 +186,8 @@ Introduce a single constant parameter (rigid variable in TLA+)
   const <identifier> : <type>
 ```
 
+*Mode:* Stateless
+
 ### Assumptions
 
 Given a constant predicate `P` and a name, we can write an assumption `P` over the
@@ -177,6 +218,8 @@ the name:
 assume _ = Proc.cardinality > 0
 ```
 
+*Mode:* Stateless
+
 ### Variable definition
 
 Introduce a single variable (flexible variable in TLA+)
@@ -192,6 +235,8 @@ Introduce a single variable (flexible variable in TLA+)
 ```
   var <identifier> : <type>
 ```
+
+*Mode:* State
 
 ### Operator definition
 
@@ -224,9 +269,20 @@ private def my_lte(x, y) = {
 *Grammar:*
 
 ```
-[private] (val | def | pred | action | temporal)
+[private] (val | def | action | pred | temporal)
     <identifier>[(<identifier>, ..., <identifier>)] [':' <type>] = <expr>
 ```
+
+*Mode:* The mode depends on the qualifier and the mode of the expression in the
+right-hand side. The following table defines this precisely.
+
+| Qualifier         | Mode of `expr`                       | Mode of definition |
+| ----------------- | ------------------------------------ | ------------------ |
+| `val` or `def`    | Stateless                             | Stateless           |
+| `val` or `def`    | State                                | State              |
+| `action`          | Action                               | Action             |
+| `pred`            | Stateless, State, Property           | Property          |
+| `temporal`        | Stateless, State, Property, Temporal | Temporal           |
 
 ### Recursive functions and operators
 
@@ -472,7 +528,7 @@ Note that the operator `not(p)` needs parentheses around its argument.
 Actually, `not` is treated as a general operator. We keep the number of special
 syntax forms to minimum.
 
-*The use of the operator `x <- e` in the above operators is strongly discouraged.*
+*Mode:* Stateless, State, Property, Temporal. 
 
 ### Multiline disjunctions
 
@@ -487,12 +543,12 @@ syntax forms to minimum.
 
 This is equivalent to `p_1.or(p_2).or( ... or(p_n)...)`. The indentation is not
 important.  However, you can produce nice indentation by hand, if you like.
-The first occurence of `|` right after `{` is optional, it's up to you.
-
-*We encourage you to use the operator `x <- e` in a multiline disjunction.*
+The first occurrence of `|` right after `{` is optional, it's up to you.
 
 This operator has the normal form too! It is written as `orBlock(p_1, ...,
 p_n)`. Most likely, you will never use it, but the tools can.
+
+*Mode:* Any.
 
 ### Multiline conjunctions
 
@@ -507,30 +563,52 @@ p_n)`. Most likely, you will never use it, but the tools can.
 
 This is equivalent to `p_1.and(p_2.and( ... and(p_n)...)`. The indentation is not
 important.  However, you can produce nice indentation by hand, if you like.
-The first occurence of `&` right after `{` is optional, it's up to you.
-
-*We encourage you to use the operator `x <- e` in a multiline conjunction.*
+The first occurrence of `&` right after `{` is optional, it's up to you.
 
 This operator has the normal form too! It is written as `andBlock(p_1, ...,
 p_n)`. Most likely, you will never use it, but the tools can.
 
+*Mode:* Any.
+
 ## Flow operators
 
-### Branching
+### IF-THEN-ELSE
+
+We split `IF-THEN-ELSE` into two forms, each applicable in particular modes.
+Note that we forbid `IF-THEN-ELSE` in the temporal mode. Instead, the users
+should use logical connectives.
+
+#### 1. Conditional
 
 ```scala
-  if (p) e1 else e2
+  p ? e1 : e2
 ```
 
-Compare it to TLA+:
+This operator is translated to TLA+ as:
 
 ```tla
   IF p THEN e1 ELSE e2
 ```
 
-*The use of the operator `x <- e` in if-else is strongly discouraged.*
+The normal form of this operator is `cond(p, e1, e2)`.
+
+*Mode:* Stateless, State, Property. Other modes are not allowed.
+
+#### 2. Branching
+
+```scala
+  if (p) e1 else e2
+```
+
+This operator is translated to TLA+ as:
+
+```tla
+  IF p THEN e1 ELSE e2
+```
 
 The normal form of this operator is `ite(p, e1, e2)`.
+
+*Mode:* Action.
 
 ### Cases
 
@@ -545,7 +623,7 @@ case {
 }
 ```
 
-The first occurence of `|` right after `{` is optional, it's up to you.
+The first occurrence of `|` right after `{` is optional, it's up to you.
 
 Compare it to TLA+:
 
@@ -589,8 +667,6 @@ CASE
   OTHER -> e
 ```
 
-*The use of the operator `x <- e` in case is strongly discouraged.*
-
 The normal form of the case operators with the default option is:
 
 ```
@@ -601,6 +677,8 @@ Note that this operator simply has `2*n + 1` arguments. We do not group the
 guards and effect expressions into pairs. The normal form is meant for the
 tools.
 
+*Mode:* Stateless, State. Other modes are not allowed.
+
 ## Sets
 
 ### Set constructor
@@ -608,16 +686,19 @@ tools.
 One way to construct a set is by enumerating its elements:
 
 ```scala
-// you can use either the special notation
-'{ e_1, ..., e_n }
 // or you can use the python-style constructor
 set(e_1, ..., e_n)
 ```
 
 This is exactly as `{ e_1, ..., e_n }` in TLA+. However, we prefer not to
 sacrifice `{...}` for this only operator. That is why a set is constructed with
-`'{...}` or `set(...)` in TNT. In practice, this operator does not appear too
-often, so our notation would not distract you too much.
+`set(...)` in TNT. In practice, this operator does not appear too often, so our
+notation would not distract you too much.
+
+*Mode:* Stateless, State. Other modes are not allowed.
+
+**Discussion.** The earlier versions contained an alternative syntax `'{ e_1,
+..., e_n }`. After receiving the feedback, we have left just one constructor.
 
 ### Existential quantifier and non-deterministic choice
 
@@ -637,15 +718,19 @@ guess(S, { x -> P })
 `exists` can be thought of as being deterministic, whereas `guess` can be
 thought of as being evaluated non-deterministically. TNT encourages the users
 to scope the side effects in `guess`, e.g., as `x <- e` and `next(x)`, whereas
-reasoning about the next state should not happen in `exists`.*
+reasoning about the next state should not happen in `exists`. This is why
+we define the modes as below.*
 
-Hence, the difference between `guess` and `exists` is purely syntactic, not
-semantic.
+*Mode:* The modes of `exists` and `guess` are defined in the following table:
+
+| Operator          | Mode of `P`                            | Output mode |
+| ----------------- | -------------------------------------- | ----------- |
+| `exists`          | Stateless, State, Property, Temporal   | Mode of `P` |
+| `guess`           | Action                                 | Action      |
 
 ### Other set operators
 
-The other operators are introduced and explained in code directly. *The use
-of `x <- e` in the following operators is strongly discouraged.*
+The other operators are introduced and explained in code directly.
 
 ```scala
 // \A x \in S: P
@@ -726,6 +811,8 @@ S.cardinality
 cardinality(S)
 ```
 
+*Mode:* Stateless, State. Other modes are not allowed.
+
 ## Functions aka Maps
 
 ```scala
@@ -761,7 +848,7 @@ f.put(e1, e2)
 put(e1, e2)
 ```
 
-*The use of the operator `x <- e` in the above operators is strongly discouraged.*
+*Mode:* Stateless, State. Other modes are not allowed.
 
 ## Records
 
@@ -791,7 +878,7 @@ kinds of expressions visually different, so the users do not confuse one
 with another by mistake. Moreover, as sets of records are used less often than
 records, typing a set of records requires a bit more effort.
 
-*The use of the operator `x <- e` in the above operators is strongly discouraged.*
+*Mode:* Stateless, State. Other modes are not allowed.
 
 ## Tuples
 
@@ -825,6 +912,8 @@ What about `DOMAIN t` on tuples? We don't think it makes sense to have it.
 
 What about `[ t EXCEPT ![i] = e ]`? Just define a new tuple that contains
 the new field.
+
+*Mode:* Stateless, State. Other modes are not allowed.
 
 ## Sequences aka Lists
 
@@ -884,7 +973,7 @@ s.foldr(init, { (i, v) -> e })
 foldr(s, init, { (i, v) -> e })
 ```
 
-*The use of the operator `x <- e` in the above operators is strongly discouraged.*
+*Mode:* Stateless, State. Other modes are not allowed.
 
 ## Integers
 
@@ -949,7 +1038,7 @@ m.to(n)
 to(m, n)
 ```
 
-*The use of the operator `x <- e` in the above operators is strongly discouraged.*
+*Mode:* Stateless, State. Other modes are not allowed.
 
 ## Nested operators
 
@@ -988,9 +1077,13 @@ temporal my_prop =
 <expr>
 ```
 
-## Action operators
+*Mode:* The modes are defined as in the case of the top-level operators.  As
+expected, the mode of an inner operator should not be more general then the
+mode of the outer operator.
 
-### Single static (delayed) assignment
+## Operators on actions
+
+### Delayed assignment
 
 This operator is carefully avoided in TLA+. TNT allows you to assign a value to
 the state variable `x` in a next state:
@@ -1028,9 +1121,12 @@ always instantaneous in modern architectures). Otherwise, it is too tempting to
 use `x` in the hope of accessing `e`. Instead, we use notation `x <- e`,
 similar to sending over a channel in Golang.
 
-### Unchanged
+*Mode.* Action. Other modes are not allowed.
 
-For a state variable `x`, the following expression is like `UNCHANGED x`:
+### Unchanged (removed)
+
+For a state variable `x`, the following expression is like `UNCHANGED x` of
+TLA+:
 
 ```scala
 unchanged(x)
@@ -1040,79 +1136,78 @@ x.unchanged
 In a more general case, you can write `unchanged(t)` for a tuple `t` that
 contains names of state variables; tuples may be nested.
 
-### Stutter and nostutter
+**Discussion.** After introducing modes, we have realized that it became
+easy to identify assignments in actions. This allows us to remove `UNCHANGED`,
+which causes much confusion among beginners.
 
-The following operator is similar to `[A]_x`:
+### Stutter
+
+The following operator is similar to `[A]_x` of TLA+:
 
 ```scala
 stutter(A, x)
 A.stutter(x)
 ```
 
-The following operator is similar to `<A>_x`:
+The arguments to `stutter` are as follows:
+
+ - `A` is an expression in the Action mode,
+ - `x` is a variable or a tuple of variables.
+
+*Mode:* Temporal. This operator converts an action (in the Action mode) to a
+temporal property.
+
+### Nostutter
+
+The following operator is similar to `<A>_x` of TLA+:
 
 ```scala
 nostutter(A, x)
 A.nostutter(x)
 ```
 
-As in case of `unchanged`, you can pass a tuple of names.
+The arguments to `nostutter` are as follows:
 
-### Primes
+ - `A` is an expression in the Action mode,
+ - `x` is a variable or a tuple of variables.
 
-Explicit use of primes in actions is discouraged in TNT. You should use `<-`
-and `unchanged`, wherever possible. However, we have added primes to the
-language for completeness. Otherwise, we would not be able to translate TLA+ to
-TNT and back. The operator `next` is written as follows:
+*Mode:* Temporal. This operator converts an action (in the Action mode) to a
+temporal property.
+
+### Next
+
+Similar to the operator "prime" of TLA+, we introduce the operator `next`:
 
 ```scala
 next(e)
 e.next
 ```
 
-It is equivalent to `e'` of TLA+. More precisely, if `f` is the translation of
-a TNT expression `e` to TLA+, then `f'` is the translation of `e'` to TLA+.
+Expression `next(e)` is equivalent to `e'` of TLA+. More precisely, if `f` is
+the translation of a TNT expression `e` to TLA+, then `f'` is the translation
+of `e'` to TLA+. In contrast to TLA+, we restrict `next` to the modes: Property
+and Temporal. Hence, we cannot use `next` in actions.
+
+*Mode:* Property, Temporal.
 
 ### Enabled
 
-Explicit use of `enabled` in actions is discouraged in TNT. However, we have added
-this operator to the language for completeness. Otherwise, we would not be able to
-translate TLA+ to TNT. This operator is written as follows:
+This operator is written as follows:
 
 ```scala
 enabled(A)
 A.enabled
 ```
 
-It is equivalent to `ENABLED A` of TLA+. More precisely, if `B` is the
-translation of a TNT expression `A` to TLA+, then `ENABLED B` is the
-translation of `enabled(A)` to TLA+.
+Similar to the operator `ENABLED` of TLA+, the operator `enabled` is a very special
+operator. It accepts an expression~`A` in the Action mode, and `enabled(A)` is
+an expression in the Temporal mode.
 
-### Other action operators
+Expression `enabled(A)` is equivalent to `ENABLED A` of TLA+. More precisely,
+if `B` is the translation of a TNT expression `A` to TLA+, then `ENABLED B` is
+the translation of `enabled(A)` to TLA+.
 
-There is no equivalent of the composition operators `A \cdot B`. It is no
-supported by TLC, so the chance that you will needed is very low. We can add
-it later, if you have a use-case for it.
-
-## Temporal operators
-
-### Always
-
-This is equivalent to `[]A` of TLA+:
-
-```scala
-always(A)
-A.always
-```
-
-### Eventually
-
-This is equivalent to `<>A` of TLA+:
-
-```scala
-eventually(A)
-A.eventually
-```
+*Mode:* Temporal. The argument `A` must be in the Action mode.
 
 ### Fairness
 
@@ -1133,20 +1228,52 @@ A.strongFair(e)
 The second argument `e` is either a name, or a tuple of names, as in
 `unchanged`.
 
-### Other temporal operators
+*Mode:* Temporal. The argument `A` must be in the Action mode.
 
-We omit `A \leadsto B`, as it can be written as:
+### Other action operators of TLA+
+
+There is no equivalent of the composition operators `A \cdot B`. It is no
+supported by TLC, so the chance that you will needed is very low. We can add
+it later, if you have a use-case for it.
+
+## Temporal operators
+
+### Always
+
+This is equivalent to `[] P` of TLA+:
 
 ```scala
-always(A implies eventually(B))
+always(P)
+P.always
 ```
 
-TLA+ contains an interesting operator "guarantees", that is written as `A -+-> B`.
+*Mode:* Temporal.
+
+### Eventually
+
+This is equivalent to `<> P` of TLA+:
+
+```scala
+eventually(P)
+P.eventually
+```
+
+*Mode:* Temporal.
+
+### Other temporal operators
+
+We omit `P \leadsto Q`, as it can be written as:
+
+```scala
+always(P implies eventually(Q))
+```
+
+TLA+ contains an interesting operator "guarantees", that is written as `P -+-> Q`.
 For completeness, we introduce its syntactic version in TNT:
 
 ```
-guarantees(A, B)
-A.guarantees(B)
+guarantees(P, Q)
+P.guarantees(Q)
 ```
 
 The operators `\EE` and `\AA` are almost never used, so there are no
@@ -1175,4 +1302,6 @@ choose_const(x -> P)
 
 We add the suffix "const" to the operator names to stress the fact that these
 operators quantify over the constants of the first-order universe.
+
+*Mode:* Stateless, State, Property, Temporal. No Action mode.
 

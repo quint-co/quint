@@ -2,10 +2,6 @@
 
 Also: *TNT is TLA+ for baby programmers and their babies*
 
-Also: *You can type TNT even if your CAPS LOCK is broken*
-
-Also: *You can write it TNT, TnT, TzT, Tz⟘, or TИT. We don't care.* 
-
 This is a surface syntax that uses the same background logic as TLA+ but does
 not try to mimic general mathematics. Instead it mimics functional languages,
 e.g., Scala and OCaml.
@@ -16,12 +12,16 @@ this simple translation to TLA+.
 
 The design principles of TNT:
 
- - TNT should be easy to read:
+ - *TNT should not annoy us*:
+   If a language concept has "standard" syntax in the mainstream languages,
+   we adopt the mainstream syntax.
+
+ - *TNT should be easy to read*:
     - In contrast to TLA+, it keeps the set of ASCII control characters to minimum.
     - It eliminates ambiguity in several operators (of tuples, records, sequences).
     - It allows the user to specify types, if needed.
 
- - TNT should be easy to write:
+ - *TNT should be easy to write*:
     - It uses a small set of syntactic rules.
     - Most of the operators are mnemonic.
     - Rarely used operators (e.g. temporal operators) are mnemonic.
@@ -29,7 +29,7 @@ The design principles of TNT:
       to get quick feedback from the type checker.
     - Well-known operators are written like in the most programming languages.
       Several examples:
-        * `=` and `==` instead of just `=`,
+        * `==` instead of just `=`,
         * `!=` instead of `/=` and `#`,
         * `&` and `and` instead of `/\`,
         * `|` and `or` instead of `\/`,
@@ -38,23 +38,22 @@ The design principles of TNT:
         * `/` instead of `\div`,
         * `.` instead of `!` when accessing a name in an instance.
 
- - TNT should be easy to parse: 
+ - *TNT should be easy to parse*: 
     - It uses a small set of syntactic rules.
     - It borrows the best practices from the programming languages.
     - It eliminates ambiguity in several operators (of tuples, records, sequences).
 
- - TNT should be easy to pretty print: 
-    - Indendation is encouraged but not required.
+ - *TNT should be easy to pretty print*: 
+    - Indentation is encouraged but not required.
 
- - TNT should be compatible with TLA+:
+ - *TNT should be compatible with TLA+*:
     - We keep one-to-one correspondence with the most of TLA+ operators.
     - There will be a transpiler to TLA+, so you can always jump back to TLA+.
-    - If the user omits types, the transpiler will still produce TLA+ code.
 
- - TNT minimizes pain points of TLA+:
-    - There is a clean separation between expressions of different levels:
-        state, action, and temporal.
-    - Updates to state variables are labelled as assignments.
+ - *TNT minimizes pain points of TLA+*:
+    - There is a clean separation between expressions of different modes:
+        stateless, state, action, property, and temporal.
+    - Updates to state variables are labelled as assignments: `x <- e`.
     - Recursive operators and functions are removed in favor of
       well-known concepts such as `filter`, `map`, and `fold`.
 
