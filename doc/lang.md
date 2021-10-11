@@ -2,7 +2,7 @@
 
 *TNT is not TLA+*
 
-**Revision: 10.10.2021** 
+**Revision: 11.10.2021** 
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
