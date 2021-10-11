@@ -1,4 +1,4 @@
-module Voting
+module Voting {
 /***************************************************************************)
 (* This is a high-level algorithm in which a set of processes              *)
 (* cooperatively choose a value.                                           *)
@@ -231,5 +231,5 @@ THEOREM Spec => C!Spec
     BY <2>2, Invariance
  */
 
-end
+}
 

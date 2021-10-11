@@ -1,4 +1,4 @@
-module Paxos
+module Paxos {
 /***************************************************************************
  * This is a specification of the Paxos algorithm without explicit leaders *
  * or learners.  It refines the spec in Voting                             *
@@ -263,4 +263,4 @@ pred Inv = {
        & V.Inv
 }
 
-end
+}

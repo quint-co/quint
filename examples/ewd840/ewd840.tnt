@@ -1,4 +1,4 @@
-module EWD840
+module EWD840 {
 
 /***************************************************************************)
 (* TLA+ specification of an algorithm for distributed termination          *)
@@ -199,4 +199,4 @@ instance TD = SyncTerminationDetection
 
 //THEOREM Spec => TD!Spec
 
-end
+}

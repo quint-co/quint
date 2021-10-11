@@ -153,12 +153,12 @@ properties.
 A module definition is introduced like follows:
 
 ```
-module Foo extends Bar
+module Foo extends Bar {
     // place your definitions here
-    module Baz
+    module Baz {
         // definitions in a nested module
-    end
-end
+    }
+}
 ```
 
 A single file may contain multiple modules, which may be nested.
@@ -166,9 +166,9 @@ A single file may contain multiple modules, which may be nested.
 *Grammar:*
 
 ```
-module <identifier> [extends <identifier> (',' <identifier>)*]
+module <identifier> [extends <identifier> (',' <identifier>)*] {
   <definitions>
-end
+}
 ```
 
 ### Constant declaration

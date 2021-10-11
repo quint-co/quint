@@ -1,4 +1,4 @@
-module ReadersWriters
+module ReadersWriters {
 /***************************************************************************)
 (* This solution to the readers-writers problem, cf.                       *)
 (* https://en.wikipedia.org/wiki/Readers–writers_problem,                  *)
@@ -127,4 +127,4 @@ temporal Liveness = {
     & Actors forall { actor -> always(eventually(actor notin writers)) }
 }
 
-end
+}

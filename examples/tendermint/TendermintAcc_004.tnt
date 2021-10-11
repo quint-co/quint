@@ -1,4 +1,4 @@
-module TendermintAcc_004
+module TendermintAcc_004 {
 /*
  A TNT specification of a simplified Tendermint consensus, tuned for
  fork accountability. The simplifications are as follows:
@@ -522,4 +522,4 @@ pred NeverUndecidedInMaxRound = {
     AllInMax implies AllDecided
 }
 
-end
+}
