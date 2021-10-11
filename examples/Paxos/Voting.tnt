@@ -114,13 +114,13 @@ pred VotesSafe =
 
 pred OneVote =
     (Acceptor, Ballot, Value, Value).ncross forall { (a, b, v, w) ->
-              VotedFor(a, b, v) and VotedFor(a, b, w) implies (v = w)
+              VotedFor(a, b, v) and VotedFor(a, b, w) implies (v == w)
     }
 
 pred OneValuePerBallot =
     (Acceptor, Acceptor, Ballot, Value, Value).ncross
        forall { (a1, a2, b, v1, v2) ->
-         VotedFor(a1, b, v1) and VotedFor(a2, b, v2) implies (v1 = v2)
+         VotedFor(a1, b, v1) and VotedFor(a2, b, v2) implies (v1 == v2)
        }
 //-----------------------------------------------------------------------------
 //THEOREM OneValuePerBallot => OneVote
@@ -155,8 +155,8 @@ THEOREM ShowsSafety ==
 (* straightforward.                                                        *)
 (***************************************************************************/
 action Init = {
-  & votes := Acceptor mapOf { _ -> set() }
-  & maxBal := Acceptor mapOf { _ -> -1 }
+  & votes  <- Acceptor mapOf { _ -> set() }
+  & maxBal <- Acceptor mapOf { _ -> -1 }
 }
 
 
@@ -168,8 +168,7 @@ action Init = {
 (***************************************************************************/
 action IncreaseMaxBal(a, b) = {
   & b > maxBal[a]
-  & maxBal := maxBal.update(a, b)
-  & unchanged(votes)
+  & maxBal <- maxBal.update(a, b)
 }
 
 /***************************************************************************)
@@ -184,11 +183,11 @@ action VoteFor(a, b, v) = {
     & maxBal[a] <= b
     & votes[a] forall { vt -> vt[1] != b }
     & Acceptor.difference(set(a)) forall { c ->
-         votes[c] forall { vt -> (vt[1] = b) implies (vt[2] = v) }
+         votes[c] forall { vt -> (vt[1] == b) implies (vt[2] == v) }
       }   
     & Quorum exists { Q -> ShowsSafeAt(Q, b, v) }
-    & votes := votes updateAs a, { old -> old union set((b, v)) }
-    & maxBal := maxBal updateAs a, { _ -> b }
+    & votes  <- votes updateAs a, { old -> old union set((b, v)) }
+    & maxBal <- maxBal updateAs a, { _ -> b }
 }
 
 

@@ -7,8 +7,8 @@ module EWD840
 (* computations (with W.H.J.Feijen and A.J.M. van Gasteren).               *)
 (***************************************************************************/
 
-const N: _
-assume NAssumption = N in (Nat difference set(0))
+const N: int
+assume NAssumption = N in (Nat exclude set(0))
 
 typedef NODE = int
 
@@ -18,7 +18,7 @@ var tpos: NODE
 var tcolor: str
 
 val Node = 0 to (N - 1)
-val Color = '{ "white", "black" }
+val Color = set("white", "black")
 
 pred TypeOK = {
   & active in setOfMaps(Node, Bool)     // status of nodes (active or passive)
@@ -32,10 +32,16 @@ pred TypeOK = {
 (* "type-correct" values.                                                  *)
 (***************************************************************************/
 action Init = {
-  & setOfMaps(Node, Bool) guess  { a -> active := f }
-  & setOfMaps(Node, Color) guess { c -> color := f }
-  & Node guess { n -> tpos := n }
-  & tcolor := "black"
+  & setOfMaps(Node, Bool) guess  { a ->
+      active <- f
+    }
+  & setOfMaps(Node, Color) guess { c ->
+      color <- f
+    }
+  & Node guess { n ->
+      tpos <- n
+    }
+  & tcolor <- "black"
 }
 
 /***************************************************************************)
@@ -44,12 +50,11 @@ action Init = {
 (* paints itself white.                                                    *)
 (***************************************************************************/
 action InitiateProbe = {
-  & tpos = 0
-  & tcolor = "black" or color[0] = "black"
-  & tpos := N - 1
-  & tcolor := "white"
-  & active := active
-  & color := color.except(0, "white")
+  & tpos == 0
+  & tcolor == "black" or color[0] == "black"
+  & tpos <- N - 1
+  & tcolor <- "white"
+  & color <- color.update(0, "white")
 }
 
 /***************************************************************************)
@@ -63,12 +68,11 @@ action InitiateProbe = {
 (* black, otherwise its color is unchanged. Node i will be made white.     *)
 (***************************************************************************/
 action PassToken(i) = {
-  & tpos = i
-  & not(active[i]) or color[i] = "black" or tcolor = "black"
-  & tpos := i - 1
-  & tcolor := if (color[i] = "black") "black" else tcolor
-  & active := active
-  & color := color.update(i, "white")
+  & tpos == i
+  & not(active[i]) or color[i] == "black" or tcolor == "black"
+  & tpos <- i - 1
+  & tcolor <- (color[i] == "black") ? "black" : tcolor
+  & color <- color.update(i, "white")
 }
 
 /***************************************************************************)
@@ -76,7 +80,7 @@ action PassToken(i) = {
 (***************************************************************************/
 action System = {
   | InitiateProbe
-  | (Node difference set(0)) guess { i -> PassToken(i) }
+  | (Node exclude set(0)) guess { i -> PassToken(i) }
 }
 
 /***************************************************************************)
@@ -86,12 +90,11 @@ action System = {
 (***************************************************************************/
 action SendMsg(i) = {
   & active[i]
-  & (Node difference set(i)) guess { j -> {
-        & active  := active.update(j, TRUE)
-        & color   := color updateAs i, { old -> if (j > i) "black" else old }
+  & (Node exclude set(i)) guess { j -> {
+        & active  <- active.update(j, TRUE)
+        & color   <- color updateAs i, { old -> (j > i) ? "black" : old }
       }
     }
-  & unchanged((tpos, tcolor))
 }
 
 /***************************************************************************)
@@ -99,8 +102,7 @@ action SendMsg(i) = {
 (***************************************************************************/
 action Deactivate(i) = {
   & active[i]
-  & active := active.update(i, false)
-  & unchanged((color, tpos, tcolor))
+  & active <- active.update(i, false)
 }
 
 /***************************************************************************)
@@ -123,17 +125,17 @@ temporal Spec = Init and always(Next.stutter(vars) and System.weakFair(vars))
 /***************************************************************************)
 (* Non-properties, useful for validating the specification with TLC.       *)
 (***************************************************************************/
-pred TokenAlwaysBlack = tcolor = "black"
+pred TokenAlwaysBlack = tcolor == "black"
 
-temporal NeverChangeColor = always(unchanged(color).stutter(vars))
+temporal NeverChangeColor = always((color <- color).stutter(vars))
 
 /***************************************************************************)
 (* Main safety property: if there is a white token at node 0 then every    *)
 (* node is inactive.                                                       *)
 (***************************************************************************/
 pred terminationDetected = {
-  & tpos = 0 and tcolor = "white"
-  & color[0] = "white" and not(active[0])
+  & tpos == 0 and tcolor == "white"
+  & color[0] == "white" and not(active[0])
 }  
 
 pred TerminationDetection =
@@ -175,8 +177,8 @@ temporal AllNodesTerminateIfNoMessages = {
 (***************************************************************************/
 pred Inv = {
   | Node.forall(i -> tpos < i implies not(active[i]))
-  | (0 to tpos).exists(j -> color[j] = "black")
-  | tcolor = "black"
+  | (0 to tpos).exists(j -> color[j] == "black")
+  | tcolor == "black"
 }
 
 /***************************************************************************)

@@ -16,8 +16,8 @@ val Actors = 1 to NumActors
 
 def ToSet(s) = s.keys.map(i -> s[i])
 
-def read(s)  = s[1] = "read"
-def write(s) = s[1] = "write"
+def read(s)  = s[1] == "read"
+def write(s) = s[1] == "write"
 
 val WaitingToRead  = ToSet(waiting select read) map { p -> p._2 }
 
@@ -31,27 +31,23 @@ val WaitingToWrite = ToSet(waiting select write) map { p -> p._2 }
 
 action TryRead(actor) = {
     & actor notin WaitingToRead
-    & waiting := waiting append ("read", actor)
-    & unchanged((readers, writers))
+    & waiting <- waiting append ("read", actor)
 }
 
 action TryWrite(actor) = {
     & actor notin WaitingToWrite
-    & waiting := waiting append ("write", actor)
-    & unchanged((readers, writers))
+    & waiting <- waiting append ("write", actor)
 }
 
 action Read(actor) = {
-    & readers := readers union set(actor)
-    & waiting := waiting.tail
-    & unchanged(writers)
+    & readers <- readers union set(actor)
+    & waiting <- waiting.tail
 }
 
 action Write(actor) = {
     & readers = set()
-    & writers := writers union set(actor)
-    & waiting := waiting.tail
-    & unchanged(readers)
+    & writers <- writers union set(actor)
+    & waiting <- waiting.tail
 }
 
 action ReadOrWrite = {
@@ -60,18 +56,16 @@ action ReadOrWrite = {
     & val pair = waiting.head
       val actor = pair._2
       case {
-          | (pair._1 = "read") -> Read(actor)
-          | (pair._1 = "write") -> Write(actor)
+          | (pair._1 == "read") -> Read(actor)
+          | (pair._1 == "write") -> Write(actor)
       }
 }
 
 action StopActivity(actor) =
     if (actor in readers) {
-        & readers := readers difference set(actor)
-        & unchanged((writers, waiting))
+        readers <- readers exclude set(actor)
     } else {
-        & writers := writers difference set(actor)
-        & unchanged((readers, waiting))
+        writers <- writers exclude set(actor)
     }
 
 action Stop =
@@ -84,9 +78,9 @@ action Stop =
 (*****************/
 
 action Init = {
-    & readers := set()
-    & writers := set()
-    & waiting := []
+    & readers <- set()
+    & writers <- set()
+    & waiting <- []
 }
 
 action Next = {
