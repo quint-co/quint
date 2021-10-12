@@ -436,7 +436,7 @@ expressions `e_1`, ..., `e_n`, the operator `f` can be applied to the
 expressions `e_1`, ..., `e_n` as follows:
 
  - *TNT normal form*: `f(e_1, ..., e_n)`.
- - *Python-like dot form*: `e_1.f(e_2, ..., e_n)`
+ - [UFCS][]: `e_1.f(e_2, ..., e_n)`
  - *Scala-like infix form*: `e_1 f e_2, ..., e_n`
 
 Which form to choose? It's up to you. We prefer to combine all three, whatever
@@ -621,38 +621,6 @@ Rust](https://github.com/rust-lang/rust/issues/1698).
 
 ### Cases
 
-Case enumeration without the default case:
-
-```scala
-case {
-  | p_1 -> e_1
-  | p_2 -> e_2
-  ...
-  | p_n -> e_n
-}
-```
-
-The first occurrence of `|` right after `{` is optional, it's up to you.
-
-Compare it to TLA+:
-
-```tla
-CASE
-     p_1 -> e_1
-  [] p_2 -> e_2
-  ...
-  [] p_n -> e_n
-```
-
-The normal form of the case operator without the default option is:
-
-```
-caseBlock(p_1, e_1, ..., p_n, e_n)
-```
-
-Note that this operator simply has `2*n` arguments. We do not group the guards
-and effect expressions into pairs. The normal form is meant for the tools.
-
 Case enumeration with the default case:
 
 ```scala
@@ -673,13 +641,13 @@ CASE
   [] p_2 -> e_2
   ...
   [] p_n -> e_n
-  OTHER -> e
+  OTHER -> e_def
 ```
 
-The normal form of the case operators with the default option is:
+The normal form of the case operator with the default option is:
 
 ```
-caseBlock(p_1, e_1, ..., p_n, e_n, e)
+caseBlock(p_1, e_1, ..., p_n, e_n, e_def)
 ```
 
 Note that this operator simply has `2*n + 1` arguments. We do not group the
@@ -692,6 +660,12 @@ tools.
 found the use of this feature to be extremely rare and confusing.  It can be
 easily rewritten with disjunctions and conjunctions, which should be preferred
 outside of the Action mode.
+
+TLA+ allows for `CASE` without the default option. This construct is
+error-prone, as it easily leads to incomplete case enumeration. In contrast to
+many programming languages, it does not suffice to perform a syntax test or a
+type test, in order to see, whether all cases are covered. For this reason,
+we do not support case expressions without the default arm.
 
 ## Sets
 
@@ -1319,3 +1293,4 @@ operators quantify over the constants of the first-order universe.
 
 *Mode:* Stateless, State, Property, Temporal. No Action mode.
 
+[UFCS]: https://en.wikipedia.org/wiki/Uniform_Function_Call_Syntax
