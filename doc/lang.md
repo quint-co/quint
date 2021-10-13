@@ -2,7 +2,7 @@
 
 *TNT is not TLA+*
 
-**Revision: 11.10.2021** 
+**Revision: 13.10.2021** 
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -50,12 +50,12 @@ Multi-line comments:
 ## Types
 
 TNT is a typed language. All variables and constants must be assigned a type.
-An operator may be annotated with types. However, if the type checker is able
-to infer the type of an operator, then the operator type may be omitted.
+Other definitions may be annotated with types. If the type checker is able to
+infer the type of a definition, then its type may be omitted.
 
-**Discussion.** In the earlier version of TNT, we allowed the user to omit
+**Discussion.** In the earlier versions of TNT, we allowed the user to omit
 types altogether. In retrospect, we find this to be a bad idea. Hence, we
-require that every language object is either type-annotated (variables and
+require that every definition is either type-annotated (variables and
 constants), or can be assigned a type via type checking (operators and
 expressions).
 
@@ -153,25 +153,38 @@ properties.
 A module definition is introduced like follows:
 
 ```
-module Foo extends Bar {
-    // place your definitions here
+module Foo {
+  // module definitions
+
+  module Bar {
+    // definitions of the nested module
+
     module Baz {
-        // definitions in a nested module
+      // Yet another level of nesting.
+      // More definitions.
     }
+  }
 }
 ```
-
-A single file may contain multiple modules, which may be nested.
 
 *Grammar:*
 
-```
-module <identifier> [extends <identifier> (',' <identifier>)*] {
+```bnf
+"module" <identifier> "{"
   <definitions>
-}
+"}"
 ```
 
-### Constant declaration
+A single file *should* contain one top-level module, though there is no limit
+on the number of nested modules and their depth of nesting. To ease module
+lookup, the name of the top-level module *should* match the file name. For
+example, a file `Orange.tla` should contain `module Orange { ... }`. This is
+not a strict requirement. You have to follow it only, if you are using multiple
+files.
+
+There is another way to define a module, see [Instances](#instances).
+
+### Constant declarations
 
 Introduce a single constant parameter (rigid variable in TLA+)
 
@@ -182,8 +195,8 @@ Introduce a single constant parameter (rigid variable in TLA+)
 
 *Grammar:*
 
-```
-  const <identifier> : <type>
+```bnf
+  "const" <identifier> ":" <type>
 ```
 
 *Mode:* Stateless
@@ -191,7 +204,7 @@ Introduce a single constant parameter (rigid variable in TLA+)
 ### Assumptions
 
 Given a constant predicate `P` and a name, we can write an assumption `P` over the
-constants that is associated with this name. For example:
+constants that is associated with this name.
 
 *Example*:
 
@@ -207,8 +220,8 @@ ASSUME AtLeast4 == N >= 4
 
 *Grammar:*
 
-```
-assume <identifier> = <expr>
+```bnf
+"assume" <identifier> "=" <expr>
 ```
 
 Similar to TLA+, you can have an anonymous assumption, by simply using `_` for
@@ -220,7 +233,7 @@ assume _ = Proc.cardinality > 0
 
 *Mode:* Stateless
 
-### Variable definition
+### Variable definitions
 
 Introduce a single variable (flexible variable in TLA+)
 
@@ -232,13 +245,13 @@ Introduce a single variable (flexible variable in TLA+)
 
 *Grammar:*
 
-```
-  var <identifier> : <type>
+```bnf
+  "var" <identifier> ":" <type>
 ```
 
 *Mode:* State
 
-### Operator definition
+### Operator definitions
 
 Introduce a user-defined operator. The order of definitions is not important.
 The operator names should not clash with the names of other definitions in the
@@ -254,23 +267,18 @@ def fst(x, y): (a, b) => a = x
 
 // the maximum operator
 def max(x, y) =
-    if (x > y) x else y
+    (x > y) ? x : y
 
 // a higher-order operator that accepts another operator as its first argument
 def F(G, x): (a => b, a) => b = G(x)
-
-// an operator that is invisible outside the module
-private def my_lte(x, y) = {
-    x <= y
-}
 ```
 
 
 *Grammar:*
 
-```
-[private] (val | def | action | pred | temporal)
-    <identifier>[(<identifier>, ..., <identifier>)] [':' <type>] = <expr>
+```bnf
+("val" | "def" | "action" | "pred" | "temporal")
+    <identifier>["(" <identifier> ("," ..."," <identifier>)* ")"] [":" <type>] "=" <expr>
 ```
 
 *Mode:* The mode depends on the qualifier and the mode of the expression in the
@@ -284,70 +292,251 @@ right-hand side. The following table defines this precisely.
 | `pred`            | Stateless, State, Property           | Property          |
 | `temporal`        | Stateless, State, Property, Temporal | Temporal           |
 
-### Recursive functions and operators
+### No recursive functions and operators
 
 We've decided against having recursive operators and functions in the language.
 The practical use cases can be expressed with `map`, `filter`, and `fold`.
 
 ### Module instances
 
-In the initial version, we keep instances as in TLA+. In the future, we may
-change this operator.
-
-
-A named instance is defined as:
-
-```scala
-instance <identifier> = <identifier>
-  [with <identifier> "<-" <identifier> ("," <identifier> "<-" <identifier>)*]
-```
+Similar to `INSTANCE` in TLA+, we can define module instances.
 
 *Example:*
 
 ```scala
 // an instance of Voting that has the name "V"
-instance V = Voting with Values <- set(0, 1)
+module V = Voting(Value = set(0, 1))
 
-// the names in V are accessed via "."
-val MyValues = V.Values
+// the names of V are accessed via "."
+val MyValues = V.Value
 ```
 
-An anonymous instance is defined as:
-
-```scala
-[private] instance _ = <identifier>
-  [with <identifier> "<-" <identifier> ("," <identifier> "<-" <identifier>)*]
+*Grammar*:
+```bnf
+"module" <identifier> "="
+  <identifier> "("
+    [<identifier> "=" <identifier> ("," <identifier> "=" <identifier>)*] ["," "*"]
+  ")"
 ```
 
-*Example:*
+This is an advanced topic. For details, see [Instances](#instances).
 
-```scala
-// an instance of Voting whose definitions are added in the module namespace
-instance _ = Voting with Values <- set(0, 1)
-```
+*We do not allow for parameterized instances. They are only needed for reasoning
+about variable hiding and refinement proofs. In this case, you would be better
+off with TLA+ and TLAPS.*
 
-An anonymous instance may be private, which corresponds to `LOCAL INSTANCE` in
-TLA+.
-
-We do not allow for instances with parameters. They are rarely used. They are
-mainly needed for proofs of refinement. In this case, you would be better off
-with TLA+ and TLAPS.
 
 ### Type aliases
 
 As discussed above, you can define a type alias, by following the grammar rule:
 
+```bnf
+"type" <IDENTIFIER_IN_CAPS> "=" <type>
 ```
-typedef <IDENTIFIER_IN_CAPS> = <type>
-```
+
+**Discussion:** We could introduce type aliases at any level. Hence, we can
+move them to the expression syntax.
 
 ### Theorems
 
 There are no theorems. You can write them in TLA+ and prove them with TLAPS.
 
-# TNT expression syntax
 
-## Literals
+### Imports
+
+See [Namespaces and imports](#namespaces).
+
+<a name="namespaces"/>
+
+## Namespaces and imports
+
+The topic of modules, namespaces, and instances is extremely obfuscated in
+TLA+, for no obvious reason. In TNT, we follow a simple approach that would not
+surprise anyone, who knows modern programming languages.
+
+We are using TNT expressions in the examples in this section. It is probably a
+good idea to skip this section on the first read and read about [TNT expression
+syntax](#expressions) first.
+
+### Stateless and stateful modules
+
+We distinguish between stateless and stateful modules. A stateful module has at
+least one constant declaration or at least one variable declaration.  All other
+modules are stateless. This is an important distinction.  Definitions of
+stateless modules may be accessed via the dot-notation and imported, whereas
+stateful modules must be instantiated before they can be accessed.
+
+### Namespaces
+
+Every module has a namespace associated with it. Consider the example:
+
+```scala
+module Foo {
+  const N: int
+  var x: int
+
+  action Init = x <- 0
+  action Next = x <- x + N
+}
+```
+
+In our example, module `Foo` has four names in its namespace: `N`, `x`,
+`Init`, and `Next`.
+
+A nested module defines its own namespace, which extends the namespace of the
+outer module:
+
+```scala
+module Outer {
+  var x: int
+
+  def x_plus(z: int) = x + z
+
+  module Inner {
+    val x2 = x + x
+  }
+
+  pred inv = (Inner.x2 - x == x)
+}
+```
+
+In the above example, the module `Outer` has the following names in its name
+space: `x`, `x_plus`, `inv`, and `Inner`, whereas the module `Inner` contains
+the names `x2` and the names defined in its parent modules: `x`, `x_plus`, and
+`inv`. The module `Inner` is *stateless*, so the module `Outer` may access the
+definitions of `Inner` via the dot-notation, e.g., `Inner.x2`.
+
+*No collisions.* There must be no name collisions between child modules and parent
+modules.  Shadowing of a name is not allowed. For example:
+
+```scala
+module OS {
+  var clock: int
+
+  module Process {
+    var clock: int
+    //  ^^^^^ error: 'clock' is already defined in 'OS'
+  }
+}
+```
+
+One solution to the above problem is to define both modules `OS` and `Process`
+at the same level, either in separate files, or inside another module.
+
+*No order.* In contrast to TLA+, namespaces are not ordered. It is perfectly
+fine to write out-of-order definitions, like in many programming languages:
+
+```scala
+module out_of_order {
+  def positive(x) = max(x, 0)
+
+  def max(x, y) = x > y ? x : y
+}
+```
+
+As a specification author, you and your peers have to decide on your style,
+whereas your text editor should help you in finding definitions.
+TNT is not Fashion Police.
+
+### Imports
+
+As it may be tedious to access definitions via the dot-notation, TNT supports
+name imports:
+
+```scala
+module Imports {
+  module Math {
+    def sqr(x) = x * x
+    def pow(x, y) = x^y
+  }
+
+  // import 'pow' from Math
+  import Math.pow
+
+  def cube(x) = pow(x, 3)
+}
+```
+
+In the above example, the name `pow` is imported in the scope of the module
+`Imports`. As a result, definitions in `Imports` may refer to `pow`, which is
+just a short-hand for `Math.pow`. As you would expect, imports are not allowed
+to introduce name collisions.
+
+To avoid writing too many import statements, you can use `*`. For example:
+
+```scala
+module ImportAll {
+  module Math {
+    def sqr(x) = x * x
+    def pow(x, y) = x^y
+  }
+
+  // import all names from Math
+  import Math.*
+
+  // access 'pow' and 'sqr' of Math
+  def poly(x) = pow(x, 3) + sqr(x) + x
+}
+```
+
+*No export.* It is important to know that `import` does not introduce any
+definitions in the module that uses `import`. Hence, the following example
+produces a lookup error:
+
+```scala
+module NoExport {
+  module MiddleMan {
+    module English {
+      val greeting = "hello"
+    }
+
+    import English.*
+  }
+
+  def greet(name) = [ MiddleMan.greeting, name ]
+  //                  ^^^^^^^^^^^^^^^^^^ error: 'MiddleMan.greeting' not found in 'NoExport'
+}
+```
+
+Hence, `import English.*` is working similar to `LOCAL INSTANCE English` of
+TLA+.
+
+*No hiding.* TLA allows the user to add `LOCAL` in front of an operator
+definition or an instance. Here is a TLA+ example:
+
+```tla
+------ MODULE Local ------
+VARIABLE y
+LOCAL F(x) == { x, y }
+G(x) == { F(x) }
+==========================
+```
+
+In the above example, the definition `F` is auxiliary to `G`. In TNT, we do not
+hide definitions. If you want to indicate to the users of your module, if there
+are any, you may hide those definitions in a nested module that start with the
+underscore:
+
+```scala
+module Local {
+  var y: int
+  def G(x) = set(_local.F(x))
+
+  module _local {
+    def F(x) = set(x, y)
+  }
+}
+```
+
+By convention, a module should not access a submodule of another module, if the
+name of the submodule starts with an underscore. This is only a convention. If
+you do that, a TNT parser may issue a warning, but it will not crash.
+
+
+<a name="expressions"/>
+## TNT expression syntax
+
+### Literals
 
 Boolean literals are written as follows:
 
@@ -374,7 +563,7 @@ Integers literals are written as follows:
 The set of all integers is written as `Int` and the set of all naturals is
 written as `Nat`.
 
-## Braces and lambdas
+### Braces and lambdas
 
 Every expression can be wrapped with `{` and `}`. For instance:
 
@@ -428,7 +617,7 @@ As is common, we can skip parameter names, if we don't need them:
 { (_, ..., _) -> e }
 ```
 
-## Three forms of operator applications
+### Three forms of operator applications
 
 TNT is flexible with respect to operator applications. It mimics several call
 styles that can be met in various languages. Given an operator called `f` and
@@ -494,7 +683,7 @@ priority:
 | `p implies q`                | Boolean implication: `not(p) or q`         |
 | all forms with `(..)`, `{..}`, and `[..]` |  the lowest priority          |
 
-## Boolean operators and equality
+### Boolean operators and equality
 
 The following are the standard Boolean operators (higher priority first).
 
@@ -570,15 +759,15 @@ p_n)`. Most likely, you will never use it, but the tools can.
 
 *Mode:* Any.
 
-## Flow operators
+### Flow operators
 
-### IF-THEN-ELSE
+#### IF-THEN-ELSE
 
 We split `IF-THEN-ELSE` into two forms, each applicable in particular modes.
 Note that we forbid `IF-THEN-ELSE` in the temporal mode. Instead, the users
 should use logical connectives.
 
-#### 1. Ternary
+##### 1. Ternary
 
 ```scala
   p ? e1 : e2
@@ -594,7 +783,7 @@ The normal form of this operator is `cond(p, e1, e2)`.
 
 *Mode:* Stateless, State, Property. Other modes are not allowed.
 
-#### 2. Branching
+##### 2. Branching
 
 ```scala
   if (p) { e1 } else { e2 }
@@ -619,7 +808,7 @@ looks like a good idea to distinguish between the two cases. There is also a lon
 discussion about [removing the ternary operator in
 Rust](https://github.com/rust-lang/rust/issues/1698).
 
-### Cases
+#### Cases
 
 Case enumeration with the default case:
 
@@ -667,9 +856,9 @@ many programming languages, it does not suffice to perform a syntax test or a
 type test, in order to see, whether all cases are covered. For this reason,
 we do not support case expressions without the default arm.
 
-## Sets
+### Sets
 
-### Set constructor
+#### Set constructor
 
 One way to construct a set is by enumerating its elements:
 
@@ -688,7 +877,7 @@ notation would not distract you too much.
 **Discussion.** The earlier versions contained an alternative syntax `'{ e_1,
 ..., e_n }`. After receiving the feedback, we have left just one constructor.
 
-### Existential quantifier and non-deterministic choice
+#### Existential quantifier and non-deterministic choice
 
 We introduce two operators that are semantically equivalent to `\E x \in S: P`
 of TLA+:
@@ -716,7 +905,7 @@ we define the modes as below.*
 | `exists`          | Stateless, State, Property, Temporal   | Mode of `P` |
 | `guess`           | Action                                 | Action      |
 
-### Other set operators
+#### Other set operators
 
 The other operators are introduced and explained in code directly.
 
@@ -801,7 +990,7 @@ cardinality(S)
 
 *Mode:* Stateless, State. Other modes are not allowed.
 
-## Functions aka Maps
+### Maps (aka Functions)
 
 ```scala
 // function application: f[e]
@@ -838,7 +1027,7 @@ put(e1, e2)
 
 *Mode:* Stateless, State. Other modes are not allowed.
 
-## Records
+### Records
 
 ```scala
 // record constructor: [ f_1 |-> e_1, ..., f_n |-> e_n ]
@@ -868,7 +1057,7 @@ records, typing a set of records requires a bit more effort.
 
 *Mode:* Stateless, State. Other modes are not allowed.
 
-## Tuples
+### Tuples
 
 In contrast to TLA+, TNT tuples have length of at least 2.
 If you need sequences, use sequences.
@@ -903,7 +1092,7 @@ the new field.
 
 *Mode:* Stateless, State. Other modes are not allowed.
 
-## Sequences aka Lists
+### Lists (aka Sequences)
 
 In contrast to TLA+, there is no special module for sequences. They are built
 in the kernel of TNT. A parser can compute, whether operators on sequences are
@@ -963,7 +1152,7 @@ foldr(s, init, { (i, v) -> e })
 
 *Mode:* Stateless, State. Other modes are not allowed.
 
-## Integers
+### Integers
 
 In contrast to TLA+, there is no special module for integers. They are built in
 the kernel of TNT. The module `Naturals` does not exist either. A parser can
@@ -1028,7 +1217,7 @@ to(m, n)
 
 *Mode:* Stateless, State. Other modes are not allowed.
 
-## Nested operators
+### Nested operators
 
 There is not much to say here. They are almost identical to the top-level
 operators, except that they are always private.
@@ -1069,9 +1258,9 @@ temporal my_prop =
 expected, the mode of an inner operator should not be more general then the
 mode of the outer operator.
 
-## Operators on actions
+### Operators on actions
 
-### Delayed assignment
+#### Delayed assignment
 
 This operator is carefully avoided in TLA+. TNT allows you to assign a value to
 the state variable `x` in a next state:
@@ -1111,7 +1300,7 @@ similar to sending over a channel in Golang.
 
 *Mode.* Action. Other modes are not allowed.
 
-### Unchanged (removed)
+#### Unchanged (removed)
 
 For a state variable `x`, the following expression is like `UNCHANGED x` of
 TLA+:
@@ -1128,7 +1317,7 @@ contains names of state variables; tuples may be nested.
 easy to identify assignments in actions. This allows us to remove `UNCHANGED`,
 which causes much confusion among beginners.
 
-### Stutter
+#### Stutter
 
 The following operator is similar to `[A]_x` of TLA+:
 
@@ -1145,7 +1334,7 @@ The arguments to `stutter` are as follows:
 *Mode:* Temporal. This operator converts an action (in the Action mode) to a
 temporal property.
 
-### Nostutter
+#### Nostutter
 
 The following operator is similar to `<A>_x` of TLA+:
 
@@ -1162,7 +1351,7 @@ The arguments to `nostutter` are as follows:
 *Mode:* Temporal. This operator converts an action (in the Action mode) to a
 temporal property.
 
-### Next
+#### Next
 
 Similar to the operator "prime" of TLA+, we introduce the operator `next`:
 
@@ -1178,7 +1367,7 @@ and Temporal. Hence, we cannot use `next` in actions.
 
 *Mode:* Property, Temporal.
 
-### Enabled
+#### Enabled
 
 This operator is written as follows:
 
@@ -1218,15 +1407,15 @@ The second argument `e` is either a name, or a tuple of names, as in
 
 *Mode:* Temporal. The argument `A` must be in the Action mode.
 
-### Other action operators of TLA+
+#### Other action operators of TLA+
 
 There is no equivalent of the composition operators `A \cdot B`. It is no
 supported by TLC, so the chance that you will needed is very low. We can add
 it later, if you have a use-case for it.
 
-## Temporal operators
+### Temporal operators
 
-### Always
+#### Always
 
 This is equivalent to `[] P` of TLA+:
 
@@ -1237,7 +1426,7 @@ P.always
 
 *Mode:* Temporal.
 
-### Eventually
+#### Eventually
 
 This is equivalent to `<> P` of TLA+:
 
@@ -1248,7 +1437,7 @@ P.eventually
 
 *Mode:* Temporal.
 
-### Other temporal operators
+#### Other temporal operators
 
 We omit `P \leadsto Q`, as it can be written as:
 
@@ -1268,7 +1457,7 @@ The operators `\EE` and `\AA` are almost never used, so there are no
 equivalents in TNT. If you have reached this level, you should (automatically)
 translate your TNT spec into TLA+ and use your tools, e.g., TLAPS.
 
-## Unbounded quantifiers
+### Unbounded quantifiers
 
 TLA+ has three operators that bind a variable without providing a set:
 
@@ -1293,4 +1482,233 @@ operators quantify over the constants of the first-order universe.
 
 *Mode:* Stateless, State, Property, Temporal. No Action mode.
 
+<a name="instances"/>
+## Instances
+
+Given a stateful module `M`, we can turn `M` into another module `I`
+by rewriting constants and variables of `M`. In this case, module `I` is called
+an instance of `M`.
+
+### Common case 1
+
+The most common example is shown below:
+
+```scala
+// in Voting.tnt  
+  module Voting {
+    const Value: set(int)
+    const Acceptor: set(str)
+    const Quorum: set(set(str))
+    // no const, no var below
+    // ...
+    pred chosen = Value filter { v -> Ballot exists { b -> ChosenAt(b, v) } }
+    // ...
+  }
+
+// in MC.tnt
+  module MC {
+    val Acceptor = set("p1", "p2", "p3")
+    val Quorum = MC_Acceptor.powerset.filter(Q -> Q.cardinality > 1)
+
+    // an instance of Voting that has the name "V"
+    module V = Voting(Value = set(0, 1), Acceptor = Acceptor, Quorum = Quorum)
+    // ...
+  }
+```
+
+In the above example, module `V` is produced from the module `Voting` by replacing
+every occurrence of `Value`, `Acceptor`, and `Quorum` with `set(0, 1)`, `Acceptor`,
+and `Quorum`, respectively.
+
+We can shorten identity substitutions `Acceptor = Acceptor` and `Quorum =
+Quorum` by writing:
+
+```scala
+    module V = Voting(Value = set(0, 1), *)
+```
+
+### Common case 2
+
+Another common example is to rename variables:
+
+```scala
+module root {
+  module XY {
+    var x: int
+    var y: int
+
+    action Init = {
+      & x <- 0
+      & y <- 0
+    }
+
+    action Next = {
+      & x <- x + 1
+      & y <- y + 2
+    }
+  }
+
+  var a: int
+  var b: int
+
+  module AB = XY(x = a, y = b)
+}
+```
+
+In this case, our substitution is a bijection: No two variables are mapped on
+the same variable. Hence, the module `AB` will look like follows:
+
+```scala
+  module AB = {
+    action Init = {
+      & a <- 0
+      & b <- 0
+    }
+
+    action Next = {
+      & a <- a + 1
+      & b <- b + 2
+    }
+  }
+```
+
+### The general case
+
+We may instantiate a module by substituting *state variables* with expressions
+over other variables. Consider the following example:
+
+```scala
+module root {
+  module Counters {
+    var x: int
+    var y: int
+
+    action Init = {
+      & x <- 1
+      & y <- 0
+    }
+
+    action Next = {
+      & x <- x + 1
+      & y <- x
+    }
+  }
+
+  module MyCounters {
+    var x: int
+
+    module C = Counters(x = x, y = x - 1)
+  }
+}
+```
+
+In the above example, we produce the stateless module `C` from the stateful
+module `Counters` by replacing `x` with `x` and `y` with `x - 1`. How is that
+even possible in the presence of updates? Here is how `module C` would look
+like after instantiation:
+
+```scala
+module C = {
+  temporal Init = {
+    & next(x) = 1
+    & next(x - 1) = 0
+  }
+
+  temporal Next = {
+    & next(x) = x + 1
+    & next(y - 1) = x
+  }
+}
+```
+
+The trick here is that since an expression like `y - 1 <- x` does not have
+meaningful semantics, we upgrade all actions to temporal formulas and use
+`next(e1) = e2` instead of `e1 <- e2`. At this point, we are in the realm of
+expressions that look very much like TLA+ formulas, just using a slightly
+different syntax. Most likely, we just want to get `C` transpiled into TLA+ and
+write some proofs in TLAPS.
+
+### No anonymous instances
+
+TLA+ allows one to instantiate a module and inject its definitions directly in
+the namespace of another module, e.g.:
+
+```tla
+------ MODULE Bar -------
+VARIABLE x
+A(y) == x + y
+=========================
+
+------- MODULE Foo ------
+VARIABLE z
+INSTANCE Bar WITH x <- z
+=========================
+```
+
+TNT does not provide syntax sugar for doing that. If you want to achieve
+something similar in TNT, then you can use `import` as follows:
+
+```scala
+// Bar.tnt
+module Bar {
+  var x: int
+  def A(y) = x + y
+}
+
+// Foo.tnt
+module Foo {
+  var z: int
+
+  module _FooBar = Bar(x = z)
+  import _FooBar.*
+}
+```
+
+Our solution is not exactly equivalent to the TLA+ specification: We had to
+explicitly introduce the name `_FooBar` for the module. By convention, other
+modules should not access names that start with underscore (`_`). Should this
+happen, a TNT parser may issue a warning.
+
+### Discussion
+
+There are two ways to load definitions in TLA+: by writing
+`EXTENDS` and by writing `INSTANCE` (anonymous or named). See [Specifying
+Systems][] (Ch. 11.1). Apparently, `EXTENDS` and anonymous instances are needed
+to define fancy operators, e.g.:
+
+```tla
+---- MODULE Foo ----
+x (+) y == { x, y }
+====================
+
+---- MODULE Bar ----
+INSTANCE Foo
+
+G == 1 (+) 2
+====================
+```
+
+We could use a named instance:
+
+```tla
+---- MODULE Baz ----
+F == INSTANCE Foo
+
+G == F!(+)(1, 2)
+====================
+```
+
+Obviously, the expression in `Baz!G` is not as visually appealing as the
+expression in `Bar!G`. Another issue is that anonymous instance do not allow
+for duplication of definitions, even if those definitions are equivalent. For
+this reason, one has to use `LOCAL INSTANCE` or `EXTENDS`.
+
+There is probably some history behind `EXTENDS`, anonymous `INSTANCE`, and
+`LOCAL INSTANCE` in TLA+. A yet another use of `EXTENDS` in TLA+ is to define
+the module `Integers` that extends the operators of the module `Naturals`.  TNT
+does not have this issue, as integers are simply built-in in the language.  We
+do not have the bearing of history in TNT and thus we can simplify namespaces
+and instances.
+
 [UFCS]: https://en.wikipedia.org/wiki/Uniform_Function_Call_Syntax
+[Specifying Systems]: https://lamport.azurewebsites.net/tla/book.html
