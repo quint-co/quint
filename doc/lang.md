@@ -1618,12 +1618,12 @@ module C = {
 
   temporal Next = {
     & next(x) = x + 1
-    & next(y - 1) = x
+    & next(x - 1) = x
   }
 }
 ```
 
-The trick here is that since an expression like `y - 1 <- x` does not have
+The trick here is that since an expression like `x - 1 <- x` does not have
 meaningful semantics, we upgrade all actions to temporal formulas and use
 `next(e1) = e2` instead of `e1 <- e2`. At this point, we are in the realm of
 expressions that look very much like TLA+ formulas, just using a slightly
