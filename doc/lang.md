@@ -190,7 +190,7 @@ Introduce a single constant parameter (rigid variable in TLA+)
 
 ```
   const N: int
-  const Proc: Set(str)
+  const Proc: set(str)
 ```
 
 *Grammar:*
@@ -260,7 +260,7 @@ fold over a sequence or a set, see below).
 
 ```
 // a constant operator
-val Nodes: Set(int) = 1 to 10
+val Nodes: set(int) = 1 to 10
 
 // a two-argument operator that returns its first argument
 def fst(x, y): (a, b) => a = x
@@ -281,8 +281,8 @@ def F(G, x): (a => b, a) => b = G(x)
     <identifier>["(" <identifier> ("," ..."," <identifier>)* ")"] [":" <type>] "=" <expr>
 ```
 
-*Mode:* The mode depends on the qualifier and the mode of the expression in the
-right-hand side. The following table defines this precisely.
+*Mode:* The mode depends on the mode of the expression in the right-hand side.
+The following table defines this precisely.
 
 | Qualifier         | Mode of `expr`                       | Mode of definition |
 | ----------------- | ------------------------------------ | ------------------ |
@@ -375,7 +375,7 @@ module Foo {
   const N: int
   var x: int
 
-  action Init = x <- 0
+  pred Init = x == 0
   action Next = x <- x + N
 }
 ```
@@ -1250,8 +1250,8 @@ temporal my_prop =
 *Grammar:*
 
 ```
-(val | def | pred | action | temporal)
-  <identifier>[(<identifier>, ..., <identifier>)] [':' <type>] = <expr>
+("val" | "def" | "pred" | "action" | "temporal")
+  <identifier>[ "(" <identifier> ("," ..."," <identifier>)* ")" ] [ ":" <type>] "=" <expr>
 <expr>
 ```
 
@@ -1539,9 +1539,9 @@ module root {
     var x: int
     var y: int
 
-    action Init = {
-      & x <- 0
-      & y <- 0
+    pred Init = {
+      & x == 0
+      & y == 0
     }
 
     action Next = {
@@ -1562,9 +1562,9 @@ the same variable. Hence, the module `AB` will look like follows:
 
 ```scala
   module AB = {
-    action Init = {
-      & a <- 0
-      & b <- 0
+    pred Init = {
+      & a == 0
+      & b == 0
     }
 
     action Next = {
@@ -1585,9 +1585,9 @@ module root {
     var x: int
     var y: int
 
-    action Init = {
-      & x <- 1
-      & y <- 0
+    pred Init = {
+      & x == 1
+      & y == 0
     }
 
     action Next = {
@@ -1611,9 +1611,9 @@ like after instantiation:
 
 ```scala
 module C = {
-  temporal Init = {
-    & next(x) = 1
-    & next(x - 1) = 0
+  pred Init = {
+    & x == 1
+    & x - 1 == 0
   }
 
   temporal Next = {
