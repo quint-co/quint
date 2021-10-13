@@ -1617,8 +1617,8 @@ module C = {
   }
 
   temporal Next = {
-    & next(x) = x + 1
-    & next(x - 1) = x
+    & next(x) == x + 1
+    & next(x - 1) == x
   }
 }
 ```
