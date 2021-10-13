@@ -514,8 +514,8 @@ G(x) == { F(x) }
 
 In the above example, the definition `F` is auxiliary to `G`. In TNT, we do not
 hide definitions. If you want to indicate to the users of your module, if there
-are any, you may hide those definitions in a nested module that start with the
-underscore:
+are any, that they should access some private definitions, you may hide those
+definitions in a nested module that start with the underscore:
 
 ```scala
 module Local {
