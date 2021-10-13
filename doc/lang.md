@@ -514,7 +514,7 @@ G(x) == { F(x) }
 
 In the above example, the definition `F` is auxiliary to `G`. In TNT, we do not
 hide definitions. If you want to indicate to the users of your module, if there
-are any, that they should access some private definitions, you may hide those
+are any, that they should not access some private definitions, you may hide those
 definitions in a nested module that start with the underscore:
 
 ```scala
@@ -1285,8 +1285,7 @@ evaluate to a value that is different from 5:
 ```
 
 
-*Every state variable `x` must be assigned exactly once in every step:
-Either via `x <- e`, or via `unchanged(x)` (see below).*
+*Every state variable `x` must be assigned via `x <- e` at most once in every step.*
 
 **Discussion.** TLA+ does not have a notion of assignment. Instead, one simply
 writes an equality `x' = e`. In general, one can write an arbitrary predicate
