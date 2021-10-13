@@ -534,6 +534,7 @@ you do that, a TNT parser may issue a warning, but it will not crash.
 
 
 <a name="expressions"/>
+
 ## TNT expression syntax
 
 ### Literals
@@ -1483,6 +1484,7 @@ operators quantify over the constants of the first-order universe.
 *Mode:* Stateless, State, Property, Temporal. No Action mode.
 
 <a name="instances"/>
+
 ## Instances
 
 Given a stateful module `M`, we can turn `M` into another module `I`
