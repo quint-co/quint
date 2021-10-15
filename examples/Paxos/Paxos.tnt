@@ -46,10 +46,10 @@ var maxVal:   str -> int  // ballot number cast by a; it equals <<-1, None>> if
 // A union type for records (not supported by Apalache yet, see #789).
 // It is just a type, and it is less precise than the set Message.
 type MSGS =
-    | M1a(bal: int)
-    | M1b(acceptor: str, bal: int, mbal: int, mval: int)
-    | M2a(bal: int, value: int)
-    | M2b(acc: str, bal: int, value: int)
+    | { type: "1a", bal: int }
+    | { type: "1b", acceptor: str, bal: int, mbal: int, mval: int }
+    | { type: "2a", bal: int, value: int }
+    | { type: "2b", acc: str, bal: int, value: int }
 
 var msgs: MSGS // The set of all messages that have been sent.
 
@@ -109,7 +109,7 @@ action Send(m) = {
 (* m with m.type = "1a") that begins ballot b.                             *)
 (***************************************************************************/
 action Phase1a(b) = {
-    Send(M1a(bal = b))
+    Send({ type: "1a", bal: b })
 }
                  
 /***************************************************************************)
@@ -119,11 +119,12 @@ action Phase1a(b) = {
 (* maxVBal[a] and maxVal[a].                                               *)
 (***************************************************************************/
 action Phase1b(a) = {
-    msgs.filter(m -> type(m) == M1a).guess{ m -> {
+    msgs.filter(m -> m.type == "1a")
+        .guess{ m -> {
       & m.bal > maxBal[a]
       & maxBal <- maxBal.update(a, m.bal)
-      & Send(M1b(acc = a, bal = m.bal, 
-                 mbal = maxVBal[a], mval = maxVal[a]))
+      & Send({ type: "1b", acc: a, bal: m.bal, 
+               mbal: maxVBal[a], mval: maxVal[a] })
     } }
 }
 
@@ -148,9 +149,11 @@ action Phase1b(a) = {
 (* greater than b (thereby promising not to vote in ballot b).             *)
 (***************************************************************************/
 action Phase2a(b, v) = {
-  & not(msgs.filter(m -> type(m) == M2a).exists(m -> m.bal == b))
+  & not(msgs.filter(m -> m.type == "2a")
+            .exists(m -> m.bal == b))
   & Quorum exists (Q ->
-        val Q1b = msgs.filter(m -> type(m) == M1b).(m -> (
+        val Q1b = msgs.filter(m -> m.type == "1b")
+                      .filter(m -> (
                             & m.acc in Q
                             & m.bal == b
                             ))
@@ -166,7 +169,7 @@ action Phase2a(b, v) = {
               )
         }
     )
-  & Send(M2a(bal = b, value = v))
+  & Send({ type: "2a", bal: b, value: v })
 }
   
 /***************************************************************************)
@@ -178,14 +181,14 @@ action Phase2a(b, v) = {
 (* phase 2b message announcing its vote.  It also sets maxBal[a] to the    *)
 (* message's.  ballot number                                               *)
 (***************************************************************************/
-action Phase2b(a) = msgs.filter(m -> type(m) == M2a)
+action Phase2b(a) = msgs.filter(m -> m.type == "2a")
                         .guess{ m -> {
                               & m.bal >= maxBal[a]
                               & maxBal  <- maxBal.update(a, m.bal)
                               & maxVBal <- maxVBal.update(a, m.bal)
                               & maxVal  <- maxVal.update(a, m.value)
-                              & Send(M2b(acc = a,
-                                         bal = m.bal, value = m.value))
+                              & Send({ type: "2b", acc: a,
+                                       bal: m.bal, value: m.value })
 }}
 
 /***************************************************************************)
@@ -219,7 +222,7 @@ temporal Spec = Init and always(stutter(Next, vars))
 (* as follows.                                                             *)
 (***************************************************************************/
 val votes = Acceptor mapOf ( a ->
-           msgs.filter(mm -> type(mm) == M2b)
+           msgs.filter(mm -> mm.type == "2b")
                .filter(mm -> mm.acc == a)
                .map(m -> (m.bal, m.value))
 )
@@ -247,11 +250,12 @@ pred Inv = (
            maxVal[a] == None
            else (maxVBal[a], maxVal[a]) in votes[a]
          )
-       & msgs.filter(m -> m.type == "1b") forall ( m ->
-          (maxBal[m.acc] >= m.bal
-              and ((m.mbal >= 0) implies (m.mbal, m.mval) in votes[m.acc]))
-         )
-       & val M2as = msgs filter ( m -> type(m) == M2a )
+       & msgs.filter(m -> m.type == "1b")
+             .forall(m ->
+                (maxBal[m.acc] >= m.bal
+                    and ((m.mbal >= 0) implies (m.mbal, m.mval) in votes[m.acc]))
+              )
+       & val M2as = msgs filter ( m -> m.type == "2a" )
          M2as.forall( m -> (
             & Quorum exists( Q -> V.ShowsSafeAt(Q, m.bal, m.value) )
             & M2as forall ( mm ->

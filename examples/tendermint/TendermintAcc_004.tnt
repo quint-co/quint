@@ -45,8 +45,6 @@ type proc_t = str
 type value_t = str
 // a round is an integer
 type round_t = int
-// a control state
-type state_t = Propose | Prevote | Precommit | Decided
 
 // the set of correct processes 
 const Corr: set(proc_t)
@@ -102,7 +100,7 @@ val THRESHOLD2 = 2 * T + 1  // a quorum when having N > 3 * T
 //********************* PROTOCOL STATE ******************************
 // a process round number: Corr -> Rounds
 var round: proc_t -> round_t
-// a process step: Corr -> { Propose, Prevote, Precommit, Decided }
+// a process step: Corr -> { "PROPOSE", "PREVOTE", "PRECOMMIT", "DECIDED" }
 var step: proc_t -> state_t
 // process decision: Corr -> ValuesOrNil
 var decision: proc_t -> value_t
@@ -117,10 +115,10 @@ var validRound: proc_t -> round_t
 
 // book-keeping variables
 type message_t =
-    | Proposal(src: proc_t,
-               round: round_t, proposal: value_t, validRound: round_t)
-    | Prevote(src: proc_t, round: round_t, id: value_t)
-    | Precommit(src: proc_t, round: round_t, id: value_t)
+    | { type: "PROPOSE", src: proc_t,
+        round: round_t, proposal: value_t, validRound: round_t }
+    | { type: "PREVOTE", src: proc_t, round: round_t, id: value_t }
+    | { type: "PRECOMMIT", src: proc_t, round: round_t, id: value_t }
 
 // PROPOSE messages broadcast in the system
 var msgsPropose: round_t -> message_t
@@ -141,24 +139,24 @@ val vars = (round, step, decision, lockedValue,
 
 //********************* PROTOCOL INITIALIZATION ******************************
 def FaultyProposals(r) =
-    [type in set(Propose), src in Faulty,
+    [type in set("PROPOSE"), src in Faulty,
      round in set(r), proposal in Values, validRound in RoundsOrNil]
 
 val AllFaultyProposals =
-    [type in set(Propose), src in Faulty,
+    [type in set("PROPOSE"), src in Faulty,
      round in Rounds, proposal in Values, validRound in RoundsOrNil]
 
 def FaultyPrevotes(r) =
-    [type in set(Prevote), src in Faulty, round in set(r), id in Values]
+    [type in set("PREVOTE"), src in Faulty, round in set(r), id in Values]
 
 val AllFaultyPrevotes =
-    [type in set(Prevote), src in Faulty, round in Rounds, id in Values]
+    [type in set("PREVOTE"), src in Faulty, round in Rounds, id in Values]
 
 def FaultyPrecommits(r) =
-    [type in set(Precommit), src in Faulty, round in set(r), id in Values]
+    [type in set("PRECOMMIT"), src in Faulty, round in set(r), id in Values]
 
 val AllFaultyPrecommits =
-    [type in set(Precommit), src in Faulty, round in Rounds, id in Values]
+    [type in set("PRECOMMIT"), src in Faulty, round in Rounds, id in Values]
    
 // the message function never contains a message for a wrong round
 pred BenignRoundsInMessages(msgfun) =
@@ -189,18 +187,18 @@ action Init = {
 
 //************************ MESSAGE PASSING *******************************
 action BroadcastProposal(pSrc, pRound, pProposal, pValidRound) = {
-  val newMsg = Proposal(src = pSrc, round = pRound,
-                        proposal = pProposal, validRound = pValidRound)
+  val newMsg = { type: "PROPOSE", src: pSrc, round: pRound,
+                 proposal: pProposal: validRound: pValidRound }
   msgsPropose <- msgsPropose.updateAs pRound, (old -> old union set(newMsg))
 }
 
 action BroadcastPrevote(pSrc, pRound, pId) = {
-  val newMsg = Prevote(src = pSrc, round = pRound, id = pId)
+  val newMsg = { type: "PREVOTE", src: pSrc, round: pRound, id: pId }
   msgsPrevote <- msgsPrevote.updateAs pRound, (old -> old union set(newMsg))
 }
 
 action BroadcastPrecommit(pSrc, pRound, pId) = {
-  val newMsg = Precommit(src = pSrc, round = pRound, id = pId)
+  val newMsg = { type: "PRECOMMIT", src: pSrc, round: pRound, id: pId }
   msgsPrecommit <- msgsPrecommit.updateAs pRound, (old -> old union set(newMsg))
 }
 
@@ -232,8 +230,8 @@ action InsertProposal(p) = {
 // lines 22-27
 action UponProposalInPropose(p) =
   Values guess { v ->
-    val msg = Proposal(src = Proposer[round[p]],
-                       round = round[p], proposal = v, validRound = NilRound)
+    val msg = { type: "PROPOSE", src: Proposer[round[p]],
+                round: round[p], proposal: v, validRound: NilRound }
     val mid = // line 23
          if (IsValid(v) and (lockedRound[p] == NilRound or lockedValue[p] == v))
          Id(v) 
@@ -251,8 +249,8 @@ action UponProposalInPropose(p) =
 // lines 28-33        
 action UponProposalInProposeAndPrevote(p) =
   Values.cross(Rounds) guess { (v, vr) ->
-    val msg = Proposal(src = Proposer[round[p]],
-                       round = round[p], proposal = v, validRound = vr)
+    val msg = { type: "PROPOSE", src: Proposer[round[p]],
+                round: round[p], proposal: v, validRound: vr }
     val PV = msgsPrevote[vr] filter ( m -> m.id == Id(v) )
     val mid = // line 29
          if (IsValid(v) and (lockedRound[p] <= vr or lockedValue[p] = v))
@@ -274,7 +272,7 @@ action UponProposalInProposeAndPrevote(p) =
 action UponQuorumOfPrevotesAny(p) =
   powerset(msgsPrevote[round[p]]) guess { MyEvidence -> 
     // find the unique voters in the evidence
-    val Voters = MyEvidence map ( m -> m.src )
+    val Voters = MyEvidence.map(m -> m.src)
 
     // compare the number of the unique voters against the threshold
     {
@@ -290,8 +288,8 @@ action UponQuorumOfPrevotesAny(p) =
 // lines 36-46
 action UponProposalInPrevoteOrCommitAndPrevote(p) =
   ValidValues.cross(RoundsOrNil) guess { (v, vr) ->
-    val msg = Proposal(src = Proposer[round[p]],
-                       round = round[p], proposal = v, validRound = vr)
+    val msg = { type: "PROPOSE", src: Proposer[round[p]],
+                round: round[p], proposal: v, validRound: vr }
     val PV = msgsPrevote[round[p]].filter(m -> m.id = Id(v))
     {
       & step[p] in set("prevote", "precommit") // line 36
@@ -333,8 +331,8 @@ action UponQuorumOfPrecommitsAny(p) =
 action UponProposalInPrecommitNoDecision(p) =
   // line 50
   (ValidValues, Rounds, RoundsOrNil).ncross guess { (v, r, vr) ->
-     val msg = Proposal(src = Proposer[r],
-                        round = r, proposal = v, validRound = vr)
+     val msg = { type: "PROPOSE", src: Proposer[r],
+                 round: r, proposal: v, validRound: vr }
      val PV = msgsPrecommit[r].filter(m -> m.id == Id(v))
      {
        & decision[p] == NilValue // line 49
@@ -376,7 +374,7 @@ action OnQuorumOfNilPrevotes(p) =
 action OnRoundCatchup(p) =
   Rounds.filter(rr -> rr > round[p]) guess { r ->
     val RoundMsgs = msgsPropose[r].union(msgsPrevote[r]).union(msgsPrecommit[r])
-    RoundMsgs.powerset guess { MyEvidence ->
+    powerset(RoundMsgs) guess { MyEvidence ->
       val Faster = MyEvidence.map(m -> m.src)
       {
         & cardinality(Faster) >= THRESHOLD1
@@ -426,21 +424,17 @@ pred AmnesiaBy(p) =
         & r1 < r2
         & ValidValues.cross(ValidValues) exists ( (v1, v2) -> (
             & v1 != v2
-            & evidence.contains(Precommit(src = p,
-                                          round = r1, id = Id(v1)))
-            & evidence.contains(Prevote(src = p,
-                                        round = r2, id = Id(v2)))
-            & Rounds.filter(rnd -> r1 <= rnd and rnd < r2) forall ( r ->
-                val prevotes = evidence filter ( m ->
-                  m.type == "prevote" and m.round == r and m.id == Id(v2)
-                )
+            & evidence.contains({ type: "PRECOMMIT", src: p,
+                                  round: r1, id: Id(v1) })
+            & evidence.contains({ type: "PREVOTE", src: p,
+                                  round: r2, id: Id(v2)})
+            & Rounds.filter(rnd -> r1 <= rnd and rnd < r2).forall(r ->
+                val prevotes = evidence.filter(m -> m.type == "PREVOTE")
+                                       .filter(m.round == r and m.id == Id(v2))
 
                 cardinality(prevotes) < THRESHOLD2
               )
-          )
-        )
-      )
-    )
+     ))))
 
 //******************************** PROPERTIES  ***************************************
 
