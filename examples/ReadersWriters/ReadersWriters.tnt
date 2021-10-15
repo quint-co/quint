@@ -19,9 +19,9 @@ def ToSet(s) = s.keys.map(i -> s[i])
 def read(s)  = s[1] == "read"
 def write(s) = s[1] == "write"
 
-val WaitingToRead  = ToSet(waiting select read) map { p -> p._2 }
+val WaitingToRead  = ToSet(waiting select read) map ( p -> p._2 )
 
-val WaitingToWrite = ToSet(waiting select write) map { p -> p._2 }
+val WaitingToWrite = ToSet(waiting select write) map ( p -> p._2 )
 
 //---------------------------------------------------------------------------
 
@@ -55,9 +55,10 @@ action ReadOrWrite = {
     & writers = set()
     & val pair = waiting.head
       val actor = pair._2
-      case {
-          | (pair._1 == "read") -> Read(actor)
-          | (pair._1 == "write") -> Write(actor)
+      if (pair._1 == "read") {
+        Read(actor)
+      } else { // pair._1 == "write"
+        Write(actor)
       }
 }
 
@@ -90,12 +91,12 @@ action Next = {
     | Stop
 }
 
-temporal Fairness = {
-    & Actors forall { actor -> TryRead(actor).weakFair(vars) }
-    & Actors forall { actor -> TryWrite(actor).weakFair(vars) }
+temporal Fairness = (
+    & Actors forall ( actor -> TryRead(actor).weakFair(vars) )
+    & Actors forall ( actor -> TryWrite(actor).weakFair(vars) )
     & ReadOrWrite.weakFair(vars)
     & Stop.weakFair(vars)
-}
+)
 
 temporal Spec = Init and always(stutter(Next, vars) and Fairness)
 
@@ -105,26 +106,26 @@ temporal Spec = Init and always(stutter(Next, vars) and Fairness)
 (* Invariants *)
 (**************/
 
-pred TypeOK = {
+pred TypeOK = (
     & readers subseteq Actors
     & writers subseteq Actors
     & waiting in set("read", "write").cross.Actors.seqs
-}
+)
 
-pred Safety = {
+pred Safety = (
     & not(readers != set() and writers != set())
     & cardinality(writers) <= 1
-}
+)
 
 /**************)
 (* Properties *)
 (**************/
 
-temporal Liveness = {
-    & Actors forall { actor -> always(eventually(actor in readers)) }
-    & Actors forall { actor -> always(eventually(actor in writers)) }
-    & Actors forall { actor -> always(eventually(actor notin readers)) }
-    & Actors forall { actor -> always(eventually(actor notin writers)) }
-}
+temporal Liveness = (
+    & Actors forall (actor -> always(eventually(actor in readers)))
+    & Actors forall (actor -> always(eventually(actor in writers)))
+    & Actors forall (actor -> always(eventually(actor notin readers)))
+    & Actors forall (actor -> always(eventually(actor notin writers)))
+)
 
 }

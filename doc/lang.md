@@ -814,13 +814,13 @@ Rust](https://github.com/rust-lang/rust/issues/1698).
 Case enumeration with the default case:
 
 ```scala
-case {
+case (
   | p_1 -> e_1
   | p_2 -> e_2
   ...
   | p_n -> e_n
   | _   -> e
-}
+)
 ```
 
 Compare it to TLA+:
