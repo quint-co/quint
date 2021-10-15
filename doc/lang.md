@@ -88,20 +88,20 @@ A type is one of the following:
 
  - Discriminated union:
     ```
-       | { tag_name: string_1, <ident>: T_1_1, ..., <ident>: T_1_n_1}
+       | { type: string_1, <ident>: T_1_1, ..., <ident>: T_1_n_1}
        ...
-       | { tag_name: string_k, <ident>: T_k_1, ..., <ident>: T_k_n_k}
+       | { type: string_k, <ident>: T_k_1, ..., <ident>: T_k_n_k}
     ```
     for `n >= 1` types `T_1_1`, ..., `T_k_n_k`.
 
  - Type in parentheses: `(T)` for a type `T`.
 
 
-It is often convenient to declare a type alias. You can use `typedef` to define
+It is often convenient to declare a type alias. You can use `type` to define
 an alias inside a module definition. For instance:
 
 ```
-typedef STR_OPTION =
+type STR_OPTION =
     | { type: "none" }
     | { type: "some", value: string }
 ```
@@ -564,34 +564,19 @@ Integers literals are written as follows:
 The set of all integers is written as `Int` and the set of all naturals is
 written as `Nat`.
 
-### Braces and lambdas
+### Braces
 
-Every expression can be wrapped with `{` and `}`. For instance:
+You can wrap an expression `e` with braces as `{ e }`. The expression `{ e }`
+is always in the Action mode. Recall that applying an expression of the Action
+mode in another mode is not allowed. If you wrap an expression `e` of a mode
+that is less general than the Action mode, the parser *should* issue a warning.
 
-```
-  { 1 }
-```
+### Lambdas
 
-The braces `{` and `}` **do not introduce a set**. For the set notation,
-see `set(...)`.
+Depending on the mode, an anonymous operator of one argument is defined as:
 
-Similar to `{` and `}`, you can always wrap an expression with `(` and `)`,
-e.g., `(1 + 3)`.  It is up to you.
-
-A user-defined operator `foo(p_1, ..., p_n)` is applied to arguments `a_1, ...,
-a_n` as follows:
-
-```
-  foo(a_1, ..., a_n)
-```
-
-(It is no different from TLA+.)
-
-An anonymous operator of one argument is defined as:
-
-```
-{ x -> e }
-```
+- In the Action mode: `{ x -> e }`
+- In a mode different from the Action mode: `( x -> e )`
 
 Compare this to the TLA+2 syntax:
 
@@ -599,11 +584,10 @@ Compare this to the TLA+2 syntax:
 LAMBDA x: e
 ```
 
-An anonymous operator of `n` arguments is defined as:
+Similarly, an anonymous operator of `n` arguments is defined as:
 
-```
-{ (x_1, ..., x_n) -> e }
-```
+- In the Action mode: `{ (x_1, ..., x_n) -> e }`
+- In a mode different from the Action mode: `( (x_1, ..., x_n) -> e )`
 
 Compare this to the TLA+2 syntax:
 
@@ -615,7 +599,9 @@ As is common, we can skip parameter names, if we don't need them:
 
 ```
 { _ -> e }
+( _ -> e )
 { (_, ..., _) -> e }
+( (_, ..., _) -> e )
 ```
 
 ### Three forms of operator applications
@@ -722,6 +708,8 @@ syntax forms to minimum.
 
 ### Multiline disjunctions
 
+In the Action mode:
+
 ```scala
 { 
   | p_1
@@ -731,9 +719,20 @@ syntax forms to minimum.
 }
 ```
 
+In a mode different from Action:
+
+```scala
+( 
+  | p_1
+  | p_2
+  ...
+  | p_n
+)
+```
+
 This is equivalent to `p_1.or(p_2).or( ... or(p_n)...)`. The indentation is not
 important.  However, you can produce nice indentation by hand, if you like.
-The first occurrence of `|` right after `{` is optional, it's up to you.
+The first occurrence of `|` right after `{` or `(` is optional, it's up to you.
 
 This operator has the normal form too! It is written as `orBlock(p_1, ...,
 p_n)`. Most likely, you will never use it, but the tools can.
@@ -742,12 +741,25 @@ p_n)`. Most likely, you will never use it, but the tools can.
 
 ### Multiline conjunctions
 
+In the Action mode:
+
 ```scala
 {
   & p_1
   & p_2
   ...
   & p_n
+}
+```
+
+In a mode different from Action:
+
+```scala
+{
+  | p_1
+  | p_2
+  ...
+  | p_n
 }
 ```
 
@@ -762,32 +774,10 @@ p_n)`. Most likely, you will never use it, but the tools can.
 
 ### Flow operators
 
-#### IF-THEN-ELSE
-
-We split `IF-THEN-ELSE` into two forms, each applicable in particular modes.
-Note that we forbid `IF-THEN-ELSE` in the temporal mode. Instead, the users
-should use logical connectives.
-
-##### 1. Ternary
+#### Condition
 
 ```scala
-  p ? e1 : e2
-```
-
-This operator is translated to TLA+ as:
-
-```tla
-  IF p THEN e1 ELSE e2
-```
-
-The normal form of this operator is `cond(p, e1, e2)`.
-
-*Mode:* Stateless, State, Property. Other modes are not allowed.
-
-##### 2. Branching
-
-```scala
-  if (p) { e1 } else { e2 }
+  if (p) e1 else e2
 ```
 
 This operator is translated to TLA+ as:
@@ -798,16 +788,10 @@ This operator is translated to TLA+ as:
 
 The normal form of this operator is `ite(p, e1, e2)`.
 
-*Mode:* Action.
+Note that we forbid `IF-THEN-ELSE` in the temporal mode. Instead, the users
+should use logical connectives.
 
-**Discussion:** Igor: I personally dislike the ternary operator, especially
-after writing in OCaml and Scala. There is a huge Wikipedia page on the
-[ternary operator](https://en.wikipedia.org/wiki/%3F:).  However, we were stuck
-so many times in Apalache with action-level conditions vs. expression-level
-conditions, which are both expressed with `IF-THEN-ELSE` in TLA+. Hence, it
-looks like a good idea to distinguish between the two cases. There is also a long
-discussion about [removing the ternary operator in
-Rust](https://github.com/rust-lang/rust/issues/1698).
+*Mode:* Stateless, State, Property, Action.
 
 #### Cases
 
@@ -877,6 +861,8 @@ notation would not distract you too much.
 
 **Discussion.** The earlier versions contained an alternative syntax `'{ e_1,
 ..., e_n }`. After receiving the feedback, we have left just one constructor.
+
+<a name="existsAndGuess"/>
 
 #### Existential quantifier and non-deterministic choice
 
@@ -1261,6 +1247,10 @@ mode of the outer operator.
 
 ### Operators on actions
 
+In comparison to TLA+, TNT has a tiny set of action operators. The other action
+operators of TLA+ were moved to the temporal operators, because they are
+required only in temporal reasoning.
+
 #### Delayed assignment
 
 This operator is carefully avoided in TLA+. TNT allows you to assign a value to
@@ -1300,6 +1290,58 @@ similar to sending over a channel in Golang.
 
 *Mode.* Action. Other modes are not allowed.
 
+#### Guess
+
+See the discussion in: [Existential quantifier and non-deterministic
+choice](#existsAndGuess).
+
+#### Other action operators of TLA+
+
+There is no equivalent of the composition operators `A \cdot B`. It is no
+supported by TLC, so the chance that you will needed is very low. We can add
+it later, if you have a use-case for it.
+
+### Temporal operators
+
+#### Always
+
+This is equivalent to `[] P` of TLA+:
+
+```scala
+always(P)
+P.always
+```
+
+*Mode:* Temporal.
+
+#### Eventually
+
+This is equivalent to `<> P` of TLA+:
+
+```scala
+eventually(P)
+P.eventually
+```
+
+*Mode:* Temporal.
+
+#### Next
+
+Similar to the operator "prime" (written as `'`) of TLA+, we introduce the
+operator `next`:
+
+```scala
+next(e)
+e.next
+```
+
+Expression `next(e)` is equivalent to `e'` of TLA+. More precisely, if `f` is
+the translation of a TNT expression `e` to TLA+, then `f'` is the translation
+of `e'` to TLA+. In contrast to TLA+, we restrict `next` to the Temporal mode.
+Hence, we cannot use `next` in actions. In actions, we should only use `<-`.
+
+*Mode:* Temporal.
+
 #### Unchanged (removed)
 
 For a state variable `x`, the following expression is like `UNCHANGED x` of
@@ -1310,12 +1352,13 @@ unchanged(x)
 x.unchanged
 ```
 
-In a more general case, you can write `unchanged(t)` for a tuple `t` that
-contains names of state variables; tuples may be nested.
+In a more general case, you can write `unchanged(e)` for an expression `e`.
+However, you can also write `next(e) = e`, so there is no real reason for
+keeping this operator.
 
-**Discussion.** After introducing modes, we have realized that it became
-easy to identify assignments in actions. This allows us to remove `UNCHANGED`,
-which causes much confusion among beginners.
+**Discussion.** After introducing modes, we have realized that it became easy
+to identify assignments in actions. We introduced `Unchanged` only in the
+Temporal mode, which is needed for refinements.
 
 #### Stutter
 
@@ -1350,22 +1393,6 @@ The arguments to `nostutter` are as follows:
 
 *Mode:* Temporal. This operator converts an action (in the Action mode) to a
 temporal property.
-
-#### Next
-
-Similar to the operator "prime" of TLA+, we introduce the operator `next`:
-
-```scala
-next(e)
-e.next
-```
-
-Expression `next(e)` is equivalent to `e'` of TLA+. More precisely, if `f` is
-the translation of a TNT expression `e` to TLA+, then `f'` is the translation
-of `e'` to TLA+. In contrast to TLA+, we restrict `next` to the modes: Property
-and Temporal. Hence, we cannot use `next` in actions.
-
-*Mode:* Property, Temporal.
 
 #### Enabled
 
@@ -1406,36 +1433,6 @@ The second argument `e` is either a name, or a tuple of names, as in
 `unchanged`.
 
 *Mode:* Temporal. The argument `A` must be in the Action mode.
-
-#### Other action operators of TLA+
-
-There is no equivalent of the composition operators `A \cdot B`. It is no
-supported by TLC, so the chance that you will needed is very low. We can add
-it later, if you have a use-case for it.
-
-### Temporal operators
-
-#### Always
-
-This is equivalent to `[] P` of TLA+:
-
-```scala
-always(P)
-P.always
-```
-
-*Mode:* Temporal.
-
-#### Eventually
-
-This is equivalent to `<> P` of TLA+:
-
-```scala
-eventually(P)
-P.eventually
-```
-
-*Mode:* Temporal.
 
 #### Other temporal operators
 
