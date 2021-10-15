@@ -755,12 +755,12 @@ In the Action mode:
 In a mode different from Action:
 
 ```scala
-{
+(
   | p_1
   | p_2
   ...
   | p_n
-}
+)
 ```
 
 This is equivalent to `p_1.and(p_2.and( ... and(p_n)...)`. The indentation is not
