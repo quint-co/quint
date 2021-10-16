@@ -123,7 +123,6 @@ We define the following modes:
  1. Stateless mode.
  1. State mode.
  1. Action mode.
- 1. Property mode.
  1. Temporal mode.
 
 Every TNT expression and definition is assigned a mode. In the following, we
@@ -135,11 +134,10 @@ M`.
 
 | More general mode | Less general modes         |
 | ----------------- | -------------------------- |
-| Stateless          | n/a                        |
-| State             | Stateless                   |
-| Action            | Stateless, State            |
-| Property         | Stateless, State            |
-| Temporal          | Stateless, State, Property |
+| Stateless         | n/a                        |
+| State             | Stateless                  |
+| Action            | Stateless, State           |
+| Temporal          | Stateless, State           |
 
 As can be seen from the table, several modes cannot be compared via the order
 `<m`: action mode cannot be compared to predicate mode and temporal mode. This
@@ -262,35 +260,42 @@ fold over a sequence or a set, see below).
 // a constant operator
 val Nodes: set(int) = 1 to 10
 
+// a constant operator may access state variables too
+val total: int = x + y
+
 // a two-argument operator that returns its first argument
-def fst(x, y): (a, b) => a = x
+def fst(x, y): ((a, b) => a) = x
 
 // the maximum operator
-def max(x, y) =
-    (x > y) ? x : y
+def max(x, y): (int, int) => int =
+    if (x > y) x else y
+
+// A predicate over `x`. We could use `def` instead of `pred`.
+// However, we prefer writing `pred` for definitions that return a Boolean
+pred is_positive(x): int => bool =
+    x > 0
 
 // a higher-order operator that accepts another operator as its first argument
-def F(G, x): (a => b, a) => b = G(x)
+def F(G, x): ((a => b, a) => b) = G(x)
 ```
 
 
 *Grammar:*
 
 ```bnf
-("val" | "def" | "action" | "pred" | "temporal")
+("val" | "def" | "pred" | "action" | "temporal")
     <identifier>["(" <identifier> ("," ..."," <identifier>)* ")"] [":" <type>] "=" <expr>
 ```
 
 *Mode:* The mode depends on the mode of the expression in the right-hand side.
 The following table defines this precisely.
 
-| Qualifier         | Mode of `expr`                       | Mode of definition |
-| ----------------- | ------------------------------------ | ------------------ |
-| `val` or `def`    | Stateless                             | Stateless           |
-| `val` or `def`    | State                                | State              |
-| `action`          | Action                               | Action             |
-| `pred`            | Stateless, State, Property           | Property          |
-| `temporal`        | Stateless, State, Property, Temporal | Temporal           |
+| Qualifier            | Mode of `expr`                       | Mode of definition |
+| -------------------- | ------------------------------------ | ------------------ |
+| `val`, `def`, `pred` | Stateless                            | Stateless          |
+| `val`, `def`, `pred` | State                                | State              |
+| `action`             | Action                               | Action             |
+| `temporal`           | Stateless, State, Temporal           | Temporal           |
 
 ### No recursive functions and operators
 
@@ -704,7 +709,7 @@ Note that the operator `not(p)` needs parentheses around its argument.
 Actually, `not` is treated as a general operator. We keep the number of special
 syntax forms to minimum.
 
-*Mode:* Stateless, State, Property, Temporal. 
+*Mode:* Stateless, State, Temporal. 
 
 ### Multiline disjunctions
 
@@ -791,7 +796,7 @@ The normal form of this operator is `ite(p, e1, e2)`.
 Note that we forbid `IF-THEN-ELSE` in the temporal mode. Instead, the users
 should use logical connectives.
 
-*Mode:* Stateless, State, Property, Action.
+*Mode:* Stateless, State, Action.
 
 #### Cases
 
@@ -889,7 +894,7 @@ we define the modes as below.*
 
 | Operator          | Mode of `P`                            | Output mode |
 | ----------------- | -------------------------------------- | ----------- |
-| `exists`          | Stateless, State, Property, Temporal   | Mode of `P` |
+| `exists`          | Stateless, State, Temporal             | Mode of `P` |
 | `guess`           | Action                                 | Action      |
 
 #### Other set operators
@@ -1236,7 +1241,7 @@ temporal my_prop =
 *Grammar:*
 
 ```
-("val" | "def" | "pred" | "action" | "temporal")
+("val" | "def" | "action" | "temporal")
   <identifier>[ "(" <identifier> ("," ..."," <identifier>)* ")" ] [ ":" <type>] "=" <expr>
 <expr>
 ```
@@ -1477,7 +1482,7 @@ choose_const(x -> P)
 We add the suffix "const" to the operator names to stress the fact that these
 operators quantify over the constants of the first-order universe.
 
-*Mode:* Stateless, State, Property, Temporal. No Action mode.
+*Mode:* Stateless, State, Temporal. No Action mode.
 
 <a name="instances"/>
 
