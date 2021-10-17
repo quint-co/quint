@@ -793,12 +793,17 @@ This operator is translated to TLA+ as:
 
 The normal form of this operator is `ite(p, e1, e2)`.
 
-Note that we forbid `IF-THEN-ELSE` in the temporal mode. Instead, the users
-should use logical connectives.
+*Mode:* Stateless, State, Action, Temporal.
 
-*Mode:* Stateless, State, Action.
+#### Cases (removed)
 
-#### Cases
+*After discussing this language feature, we have decided to remove `case`.  The
+action-mode semantics of `CASE` in TLA+ is redundant in the presence of
+disjunctions. The expression-mode semantics of `CASE` in TLA+ does what the
+users do not expect: If two branches are evaluated to `TRUE` in the same state,
+then one of them is deterministically chosen with `CHOOSE` (there is no
+predefined way of telling which one is chosen). For all these reasons, we do
+not introduce `CASE` in TNT. Use series of `if-else if-else` expressions.*
 
 Case enumeration with the default case:
 
@@ -838,7 +843,7 @@ tools.
 **Discussion:** TLA+ allows for expressions `x' = e` inside `CASE`.  We have
 found the use of this feature to be extremely rare and confusing.  It can be
 easily rewritten with disjunctions and conjunctions, which should be preferred
-outside of the Action mode.
+to `case` in the Action mode.
 
 TLA+ allows for `CASE` without the default option. This construct is
 error-prone, as it easily leads to incomplete case enumeration. In contrast to
