@@ -167,7 +167,7 @@ pred BenignRoundsInMessages(msgfun) =
     )
 
 // The initial states of the protocol. Some faults can be in the system already.
-action Init = {
+pred Init = {
   & round           <- Corr mapOf { _ -> 0 }
   & step            <- Corr mapOf { _ -> Propose }
   & decision        <- Corr mapOf { _ -> NilValue }

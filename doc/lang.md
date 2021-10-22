@@ -1126,6 +1126,10 @@ nth(s, i)
 s indices
 s.indices
 indices(s)
+// [ seq EXCEPT ![i] = e ]
+s replaceAt i, e
+s.replaceAt(i, e)
+replaceAt(s, i, e)
 // SubSeq(s, j, k)
 s slice j k
 s.slice(j, k)
