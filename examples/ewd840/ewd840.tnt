@@ -31,18 +31,12 @@ pred TypeOK = (
 (* Initially the token is black. The other variables may take any          *)
 (* "type-correct" values.                                                  *)
 (***************************************************************************/
-action Init = {
-  & setOfMaps(Node, Bool) guess  { a ->
-      active <- f
-    }
-  & setOfMaps(Node, Color) guess { c ->
-      color <- f
-    }
-  & Node guess { n ->
-      tpos <- n
-    }
-  & tcolor <- "black"
-}
+pred Init = (
+  & setOfMaps(Node, Bool).exists(a -> active == a)
+  & setOfMaps(Node, Color).exists(c -> color == c)
+  & Node.exists(n -> tpos == n)
+  & tcolor == "black"
+)
 
 /***************************************************************************)
 (* Node 0 may initiate a probe when it has the token and when either it is *)

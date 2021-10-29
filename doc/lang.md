@@ -2,7 +2,7 @@
 
 *TNT is not TLA+*
 
-**Revision: 13.10.2021** 
+**Revision: 29.10.2021** 
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -88,9 +88,9 @@ A type is one of the following:
 
  - Discriminated union:
     ```
-       | { type: string_1, <ident>: T_1_1, ..., <ident>: T_1_n_1}
+       | { tag: string_1, <ident>: T_1_1, ..., <ident>: T_1_n_1}
        ...
-       | { type: string_k, <ident>: T_k_1, ..., <ident>: T_k_n_k}
+       | { tag: string_k, <ident>: T_k_1, ..., <ident>: T_k_n_k}
     ```
     for `n >= 1` types `T_1_1`, ..., `T_k_n_k`.
 
@@ -102,8 +102,8 @@ an alias inside a module definition. For instance:
 
 ```
 type STR_OPTION =
-    | { type: "none" }
-    | { type: "some", value: string }
+    | { tag: "none" }
+    | { tag: "some", value: string }
 ```
 
 Type aliases are written in CAPITAL LETTERS.
@@ -395,7 +395,7 @@ outer module:
 module Outer {
   var x: int
 
-  def x_plus(z: int) = x + z
+  def x_plus(z) = x + z
 
   module Inner {
     val x2 = x + x
