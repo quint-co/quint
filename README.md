@@ -1,7 +1,5 @@
 # TNT: is not TLA+
 
-Also: *TNT is TLA+ for baby programmers and their babies*
-
 This is a surface syntax that uses the same background logic as TLA+ but does
 not try to mimic general mathematics. Instead it mimics functional languages,
 e.g., Scala and OCaml.
@@ -17,6 +15,7 @@ editor (currently, only vim is supported).
 The design principles of TNT:
 
  - *TNT should not annoy us*:
+
    If a language concept has "standard" syntax in the mainstream languages,
    we adopt the mainstream syntax.
 
@@ -60,6 +59,8 @@ The design principles of TNT:
     - Updates to state variables are labelled as assignments: `x <- e`.
     - Recursive operators and functions are removed in favor of
       well-known concepts such as `filter`, `map`, and `fold`.
+    - Module imports and instances in TNT look similar to state-of-the-art
+      programming languages.
 
  - *TNT is CLI-first*:
     - The users should be able to parse and transpile TNT in the command-line.
