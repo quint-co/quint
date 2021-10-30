@@ -115,10 +115,10 @@ var validRound: proc_t -> round_t
 
 // book-keeping variables
 type message_t =
-    | { type: "PROPOSE", src: proc_t,
+    | { tag: "PROPOSE", src: proc_t,
         round: round_t, proposal: value_t, validRound: round_t }
-    | { type: "PREVOTE", src: proc_t, round: round_t, id: value_t }
-    | { type: "PRECOMMIT", src: proc_t, round: round_t, id: value_t }
+    | { tag: "PREVOTE", src: proc_t, round: round_t, id: value_t }
+    | { tag: "PRECOMMIT", src: proc_t, round: round_t, id: value_t }
 
 // PROPOSE messages broadcast in the system
 var msgsPropose: round_t -> message_t
@@ -139,24 +139,40 @@ val vars = (round, step, decision, lockedValue,
 
 //********************* PROTOCOL INITIALIZATION ******************************
 def FaultyProposals(r) =
-    [type in set("PROPOSE"), src in Faulty,
-     round in set(r), proposal in Values, validRound in RoundsOrNil]
+    ((p, v, vr) ->
+      { tag: "PROPOSE", src: p, round: r, proposal: v, validRound: vr }
+    )
+    .applyTo(Faulty, Values, RoundsOrNil)
 
 val AllFaultyProposals =
-    [type in set("PROPOSE"), src in Faulty,
-     round in Rounds, proposal in Values, validRound in RoundsOrNil]
+    ((p, r, v, vr) ->
+      { tag: "PROPOSE", src: p, round: r, proposal: v, validRound: vr }
+    )
+    .applyTo(Faulty, Rounds, Values, RoundsOrNil)
 
 def FaultyPrevotes(r) =
-    [type in set("PREVOTE"), src in Faulty, round in set(r), id in Values]
+    ((p, v) ->
+      { tag: "PREVOTE", src: p, round: r, id: v }
+    )
+    .applyTo(Faulty, Values)
 
 val AllFaultyPrevotes =
-    [type in set("PREVOTE"), src in Faulty, round in Rounds, id in Values]
+    ((p, r, v) ->
+      { tag: "PREVOTE", src: p, round: r, id: v }
+    )
+    .applyTo(Faulty, Rounds, Values, RoundsOrNil)
 
 def FaultyPrecommits(r) =
-    [type in set("PRECOMMIT"), src in Faulty, round in set(r), id in Values]
+    ((p, v) ->
+      { tag: "PRECOMMIT", src: p, round: r, id: v }
+    )
+    .applyTo(Faulty, Values)
 
 val AllFaultyPrecommits =
-    [type in set("PRECOMMIT"), src in Faulty, round in Rounds, id in Values]
+    ((p, r, v) ->
+      { tag: "PRECOMMIT", src: p, round: r, id: v }
+    )
+    .applyTo(Faulty, Rounds, Values)
    
 // the message function never contains a message for a wrong round
 pred BenignRoundsInMessages(msgfun) =
@@ -167,7 +183,7 @@ pred BenignRoundsInMessages(msgfun) =
     )
 
 // The initial states of the protocol. Some faults can be in the system already.
-pred Init = {
+pred Init = (
   & round           <- Corr mapOf { _ -> 0 }
   & step            <- Corr mapOf { _ -> Propose }
   & decision        <- Corr mapOf { _ -> NilValue }
@@ -183,22 +199,22 @@ pred Init = {
   & BenignRoundsInMessages(msgsPrecommit)
   & evidence        <- set()
   & fired_action    <- "Init"
-}
+)
 
 //************************ MESSAGE PASSING *******************************
 action BroadcastProposal(pSrc, pRound, pProposal, pValidRound) = {
-  val newMsg = { type: "PROPOSE", src: pSrc, round: pRound,
+  val newMsg = { tag: "PROPOSE", src: pSrc, round: pRound,
                  proposal: pProposal: validRound: pValidRound }
   msgsPropose <- msgsPropose.updateAs pRound, (old -> old union set(newMsg))
 }
 
 action BroadcastPrevote(pSrc, pRound, pId) = {
-  val newMsg = { type: "PREVOTE", src: pSrc, round: pRound, id: pId }
+  val newMsg = { tag: "PREVOTE", src: pSrc, round: pRound, id: pId }
   msgsPrevote <- msgsPrevote.updateAs pRound, (old -> old union set(newMsg))
 }
 
 action BroadcastPrecommit(pSrc, pRound, pId) = {
-  val newMsg = { type: "PRECOMMIT", src: pSrc, round: pRound, id: pId }
+  val newMsg = { tag: "PRECOMMIT", src: pSrc, round: pRound, id: pId }
   msgsPrecommit <- msgsPrecommit.updateAs pRound, (old -> old union set(newMsg))
 }
 
@@ -230,7 +246,7 @@ action InsertProposal(p) = {
 // lines 22-27
 action UponProposalInPropose(p) =
   Values guess { v ->
-    val msg = { type: "PROPOSE", src: Proposer[round[p]],
+    val msg = { tag: "PROPOSE", src: Proposer[round[p]],
                 round: round[p], proposal: v, validRound: NilRound }
     val mid = // line 23
          if (IsValid(v) and (lockedRound[p] == NilRound or lockedValue[p] == v))
@@ -248,8 +264,8 @@ action UponProposalInPropose(p) =
 
 // lines 28-33        
 action UponProposalInProposeAndPrevote(p) =
-  Values.cross(Rounds) guess { (v, vr) ->
-    val msg = { type: "PROPOSE", src: Proposer[round[p]],
+  ncross(Values, Rounds) guess { v, vr ->
+    val msg = { tag: "PROPOSE", src: Proposer[round[p]],
                 round: round[p], proposal: v, validRound: vr }
     val PV = msgsPrevote[vr] filter ( m -> m.id == Id(v) )
     val mid = // line 29
@@ -288,7 +304,7 @@ action UponQuorumOfPrevotesAny(p) =
 // lines 36-46
 action UponProposalInPrevoteOrCommitAndPrevote(p) =
   ValidValues.cross(RoundsOrNil) guess { (v, vr) ->
-    val msg = { type: "PROPOSE", src: Proposer[round[p]],
+    val msg = { tag: "PROPOSE", src: Proposer[round[p]],
                 round: round[p], proposal: v, validRound: vr }
     val PV = msgsPrevote[round[p]].filter(m -> m.id = Id(v))
     {
@@ -330,8 +346,8 @@ action UponQuorumOfPrecommitsAny(p) =
 // lines 49-54        
 action UponProposalInPrecommitNoDecision(p) =
   // line 50
-  (ValidValues, Rounds, RoundsOrNil).ncross guess { (v, r, vr) ->
-     val msg = { type: "PROPOSE", src: Proposer[r],
+  ncross(ValidValues, Rounds, RoundsOrNil) guess { v, r, vr ->
+     val msg = { tag: "PROPOSE", src: Proposer[r],
                  round: r, proposal: v, validRound: vr }
      val PV = msgsPrecommit[r].filter(m -> m.id == Id(v))
      {
@@ -374,6 +390,7 @@ action OnQuorumOfNilPrevotes(p) =
 action OnRoundCatchup(p) =
   Rounds.filter(rr -> rr > round[p]) guess { r ->
     val RoundMsgs = msgsPropose[r].union(msgsPrevote[r]).union(msgsPrecommit[r])
+
     powerset(RoundMsgs) guess { MyEvidence ->
       val Faster = MyEvidence.map(m -> m.src)
       {
@@ -409,7 +426,7 @@ action Next =
 
 // equivocation by a process p
 pred EquivocationBy(p) =
-  evidence.cross(evidence) exists ( (m1, m2) -> (
+  evidence.cross(evidence) exists (m1, m2 -> (
       & m1 != m2
       & m1.src == p
       & m2.src == p
@@ -420,9 +437,9 @@ pred EquivocationBy(p) =
 
 // amnesic behavior by a process p
 pred AmnesiaBy(p) =
-    Rounds.cross(Rounds) exists ( (r1, r2) -> (
+    ncross(Rounds, Rounds).exists(r1, r2 -> (
         & r1 < r2
-        & ValidValues.cross(ValidValues) exists ( (v1, v2) -> (
+        & ncross(ValidValues, ValidValues).exists(v1, v2 -> (
             & v1 != v2
             & evidence.contains({ type: "PRECOMMIT", src: p,
                                   round: r1, id: Id(v1) })
@@ -440,7 +457,7 @@ pred AmnesiaBy(p) =
 
 // the safety property -- agreement
 pred Agreement =
-  Corr.cross(Corr).forall((p, q) -> (
+  ncross(Corr, Corr).forall(p, q -> (
     | decision[p] == NilValue
     | decision[q] == NilValue
     | decision[p] == decision[q]
@@ -480,7 +497,7 @@ pred NoEquivocation =
 // It is not exactly ~Agreement, as we do not want to see the states where
 // decision[p] = NilValue
 pred NoAgreement =
-  Corr.cross(Corr) forall ( (p, q) ->
+  ncross(Corr, Corr) forall ( p, q ->
         (p != q and decision[p] != NilValue and decision[q] != NilValue)
           implies (decision[p] != decision[q])
   )

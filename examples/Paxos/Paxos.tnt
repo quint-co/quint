@@ -15,7 +15,7 @@ const Quorum: set(set(str))
 
 assume _ = (
     & Quorum.forall(Q -> Q subseteq Acceptor)
-    & (Quorum cross Quorum).forall((Q1, Q2) -> Q1 intersect Q2 != set())
+    & ncross(Quorum, Quorum).forall(Q1, Q2 -> Q1 intersect Q2 != set())
 )
       
 val Ballot = Nat
@@ -31,11 +31,18 @@ val None = -1
  * with the actions that send them.                                        *
  ***************************************************************************/
 val Message =
-        [tag: "1a", bal in Ballot]
-           union [tag: "1b", acc in Acceptor, bal in Ballot, 
-                   mbal in Ballot union set(-1), mval in Value union set(None)]
-           union [tag: "2a", bal in Ballot, value in Value]
-           union [tag: "2b", acc in Acceptor, bal in Ballot, value in Value]
+    val M1a = (b -> { tag: "1a", bal: b })
+                .applyTo(Ballot)
+    val M1b =
+        (a, b, mb, mv -> { tag: "1b", acc: acc, bal: b, mbal: mb, mval: mv })
+          .applyTo(Acceptor, Ballot, Ballot union set(-1), Value union set(None))
+    val M2a = (b, v -> { tag: "2a", bal: b, value: v })
+                .applyTo(Ballot, Value)
+    val M2b =
+        (a, b, v -> { tag: "2b", acc: a, bal: b, value: v })
+            .applyTo(Acceptor, Ballot, Value)
+
+    M1 union M1b union M2a union M2b
 //-----------------------------------------------------------------------------
 
 var maxBal:   int
@@ -120,7 +127,7 @@ action Phase1a(b) = {
 (***************************************************************************/
 action Phase1b(a) = {
     msgs.filter(m -> m.tag == "1a")
-        .guess{ m -> {
+        .guess { m -> {
       & m.bal > maxBal[a]
       & maxBal <- maxBal.update(a, m.bal)
       & Send({ tag: "1b", acc: a, bal: m.bal, 

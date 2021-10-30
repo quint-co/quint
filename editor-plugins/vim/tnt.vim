@@ -53,10 +53,10 @@ syn keyword tntStd not and or iff implies
 syn keyword tntStd exists guess forall in notin union
 syn match   tntStd "contains"   " use match, as 'contains' is a vim option
 syn match   tntStd "fold"       " use match, as 'fold' is a vim option
-syn keyword tntStd intersect exclude subseteq map filter
+syn keyword tntStd intersect exclude subseteq map applyTo filter
 syn keyword tntStd powerset flatten seqs choose_some
 syn keyword tntStd isFinite cardinality get put keys mapOf setOfMaps
-syn keyword tntStd update updateAs fields with cross append concat
+syn keyword tntStd update updateAs fields with cross ncross append concat
 syn keyword tntStd head tail length nth indices replaceAt slice
 syn keyword tntStd select foldl foldr to
 syn keyword tntStd always eventually next stutter nostutter

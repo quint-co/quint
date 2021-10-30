@@ -2,7 +2,7 @@
 
 *TNT is not TLA+*
 
-**Revision: 29.10.2021** 
+**Revision: 30.10.2021** 
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -591,8 +591,8 @@ LAMBDA x: e
 
 Similarly, an anonymous operator of `n` arguments is defined as:
 
-- In the Action mode: `{ (x_1, ..., x_n) -> e }`
-- In a mode different from the Action mode: `( (x_1, ..., x_n) -> e )`
+- In the Action mode: `{ x_1, ..., x_n -> e }`
+- In a mode different from the Action mode: `(x_1, ..., x_n -> e)`
 
 Compare this to the TLA+2 syntax:
 
@@ -604,9 +604,9 @@ As is common, we can skip parameter names, if we don't need them:
 
 ```
 { _ -> e }
-( _ -> e )
-{ (_, ..., _) -> e }
-( (_, ..., _) -> e )
+(_ -> e)
+{ _, ..., _ -> e }
+(_, ..., _ -> e)
 ```
 
 ### Three forms of operator applications
@@ -634,7 +634,7 @@ p or q and r
 ```
 
 In the above case, you have to take care of operator priorities (see below).
-When you use the dot form, you cannot get priorities wrong (calls via dot are
+When you use the UFCS form, you cannot get priorities wrong (calls via dot are
 always left-associative if you wonder):
 
 ```
@@ -644,7 +644,7 @@ p.or(q.and(r))
 Several operators have conventional names that stem from mathematics and thus
 are not written as identifiers.  For instance, you can conveniently write `1 +
 3` in the infix form.  But you cannot write `+(1, 3)` or `1.+(3)`, as that
-would make the parser unnecessary complex. You can use the mnemonic name `add`
+would make the parser unnecessary complex. You can use the mnemonic name `iadd`
 instead of `+` and thus write `iadd(1, 3)` or `1.iadd(3)`. A small number of
 operators are exceptional in this sense. We list the alternative names when
 introducing operators.  We don't expect humans to write expressions like the
@@ -908,9 +908,9 @@ The other operators are introduced and explained in code directly.
 
 ```scala
 // \A x \in S: P
-S forall { x -> P }
-S.forall( x -> P )
-forall(S, { x -> P })
+S forall (x -> P)
+S.forall(x -> P)
+forall(S, (x -> P))
 // set membership: e \in S
 e in S
 e.in(S)
@@ -939,17 +939,20 @@ S subseteq T
 S.subseteq(T)
 subseteq(S, T)
 // set comprehension (map): { e: x \in S }
-S map { x -> e }
-S.map( x -> e )
-map(S, { x -> e })
+S map (x -> e)
+S.map(x -> e)
+map(S, (x -> e))
+// set comprehension (map) in inverse form: { e: x \in X, y \in Y, z \in Z }
+(x, y, z -> e).applyTo(X, Y, Z)
+applyTo((x, y, z -> e), X, Y, Z)
 // set comprehension (filter): { x \in S: P }
-S filter { x -> P }
-S.filter( x -> P )
-filter(S, { x -> P })
+S filter (x -> P)
+S.filter(x -> P)
+filter(S, (x -> P))
 // set folding: you can write such a recursive operator in TLA+
-S fold init, { (v, x) -> e }
-S.fold(init, { (v, x) -> e })
-fold(S, init, { (v, x) -> e })
+S fold init, (v, x -> e)
+S.fold(init, (v, x -> e))
+fold(S, init, (v, x -> e))
 // SUBSET S
 S powerset
 S.powerset
@@ -970,6 +973,16 @@ S.choose_some
 // Instead, you can filter a set and then pick an element of it.
 S.filter(x -> P).choose_some
 ```
+
+Note that we have two semantically equivalent operators: `map` and `applyTo`.
+The only reason for having both of them is convenience. The order of arguments
+in the `applyTo` form is similar to the order of arguments in TLA+ set
+comprehensions and in Python list comprehensions.  The expression `applyTo(F,
+S_1, ..., S_n)` is equivalent to `ncross(S_1, ..., S_n).map(F)`. The `applyTo`
+form allows us to map a Cartesian product to a value without writing the
+product explicitly. It is mainly used a replacement for TLA+ record sets,
+e.g., the TLA+ expression `[a: {1, 2}, b: BOOLEAN]` can be written as
+`(a, b -> {a: a, b: b}).applyTo(set(1, 2), BOOLEAN)`.
 
 These operators are defined in the module `FiniteSets` in TLA+. TNT has these
 two operators in the kernel:
@@ -1030,8 +1043,9 @@ put(e1, e2)
 // record constructor: [ f_1 |-> e_1, ..., f_n |-> e_n ]
 // Warning: n >= 1
 { f_1: e_1, ..., f_n: e_n }
-// set of records: [ f_1: S_1, ..., f_n: S_n ]
-[ f_1 in S_1, ..., f_n in S_n ]
+// Set of records: [ f_1: S_1, ..., f_n: S_n ].
+// No operator for it. Use a set comprehension:
+(a_1, ..., a_n -> { f_1: a_1, ..., f_n: a_n }).applyTo(S_1, ..., S_n)
 // access a record field: r.h
 r.h
 r h
@@ -1071,10 +1085,6 @@ t._4
 ...
 t._50
 // Cartesian products
-// S_1 \X S_2
-S_1 cross S_2
-S_1.cross(S_2)
-cross(S_1, S_2)
 // S_1 \X S_2 \X ... \X S_n
 (S_1, S_2, ..., S_n).ncross
 ncross(S_1, S_2, ..., S_n)

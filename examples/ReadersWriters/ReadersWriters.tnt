@@ -78,11 +78,11 @@ action Stop =
 (* Specification *)
 (*****************/
 
-action Init = {
-    & readers <- set()
-    & writers <- set()
-    & waiting <- []
-}
+pred Init = (
+    & readers == set()
+    & writers == set()
+    & waiting == []
+)
 
 action Next = {
     | Actors guess { actor -> TryRead(actor) }
@@ -109,7 +109,7 @@ temporal Spec = Init and always(stutter(Next, vars) and Fairness)
 pred TypeOK = (
     & readers subseteq Actors
     & writers subseteq Actors
-    & waiting in set("read", "write").cross.Actors.seqs
+    & waiting in seqs(set("read", "write").cross.Actors)
 )
 
 pred Safety = (

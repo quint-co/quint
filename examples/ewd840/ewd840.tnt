@@ -10,7 +10,7 @@ module EWD840 {
 const N: int
 assume NAssumption = N in (Nat exclude set(0))
 
-typedef NODE = int
+type NODE = int
 
 var active: NODE -> bool
 var color: NODE -> str
@@ -65,7 +65,7 @@ action PassToken(i) = {
   & tpos == i
   & not(active[i]) or color[i] == "black" or tcolor == "black"
   & tpos <- i - 1
-  & tcolor <- if (color[i] == "black") then "black" else tcolor
+  & tcolor <- if (color[i] == "black") "black" else tcolor
   & color <- color.update(i, "white")
 }
 
