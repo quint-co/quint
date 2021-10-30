@@ -10,6 +10,10 @@ Check the [preliminary syntax](./doc/lang.md). For each construct, we give
 an equivalent TLA+ expression and thus define the language semantics by
 this simple translation to TLA+.
 
+We have written [examples](./examples) of several TLA+ specifications in TNT.
+To simplify reading, use [syntax highlighting](./editor-plugins) for your
+editor (currently, only vim is supported).
+
 The design principles of TNT:
 
  - *TNT should not annoy us*:
@@ -52,8 +56,12 @@ The design principles of TNT:
 
  - *TNT minimizes pain points of TLA+*:
     - There is a clean separation between expressions of different modes:
-        stateless, state, action, property, and temporal.
+        stateless, state, action, and temporal.
     - Updates to state variables are labelled as assignments: `x <- e`.
     - Recursive operators and functions are removed in favor of
       well-known concepts such as `filter`, `map`, and `fold`.
+
+ - *TNT is CLI-first*:
+    - The users should be able to parse and transpile TNT in the command-line.
+    - IDE support (such as a VSCode plugin) is a beatiful opt-in, not a requirement.
 
