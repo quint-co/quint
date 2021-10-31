@@ -12,8 +12,20 @@ publishing all packages privately at the moment, package management with
 
  1. Install [yalc][] for local package management:
 
-  ```
+  ```sh
   npm install yalc -g
+  ```
+
+ 1. Compile and test the parser:
+
+  ```sh
+  npm run compile && npm run test
+  ```
+
+ 1. Publish the package locally with yalc:
+
+  ```sh
+  yalc publish
   ```
 
 ## State of the parser

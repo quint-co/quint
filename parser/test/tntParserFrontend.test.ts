@@ -2,9 +2,8 @@ import 'mocha';
 import { assert } from 'chai';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { ErrorMessage, parsePhase1, ParseResult } from "../src/parser/tntParserFrontend";
-import { TntDef, TntOpDef, OpQualifier, OpScope } from "../src/parser/tntIr";
-import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from 'constants';
+import { ErrorMessage, parsePhase1, ParseResult } from "../src/tntParserFrontend";
+import { TntDef, TntOpDef, OpQualifier, OpScope } from "../src/tntIr";
 
 function readTest(name: string): string {
 	const p = resolve(__dirname, '../testFixture', name + ".tnt")
