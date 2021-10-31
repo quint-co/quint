@@ -1,0 +1,35 @@
+{
+	"name": "tnt-parser",
+	"description": "Parser for the TNT language",
+	"version": "0.0.6",
+	"author": "Informal Systems",
+	"license": "Apache 2.0",
+	"engines": {
+		"node": "*"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/informalsystems/tnt"
+	},
+	"dependencies": {
+		"antlr4ts": "^0.5.0-alpha.4"
+	},
+	"scripts": {
+        "compile": "tsc",
+		"test": "mocha -r ts-node/register test/**/*.test.ts",
+		"antlr4ts": "antlr4ts -visitor ./src/generated/Tnt.g4"
+	},
+	"devDependencies": {
+		"@types/chai": "^4.2.18",
+		"@types/mocha": "^8.2.2",
+		"@types/node": "^12.12.0",
+		"@typescript-eslint/eslint-plugin": "^4.23.0",
+		"@typescript-eslint/parser": "^4.23.0",
+		"antlr4ts-cli": "^0.5.0-alpha.4",
+		"chai": "^4.3.4",
+		"eslint": "^7.26.0",
+		"mocha": "^8.4.0",
+		"ts-node": "^10.0.0",
+		"typescript": "^4.2.3"
+	}
+}
