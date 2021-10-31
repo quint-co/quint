@@ -13,7 +13,7 @@ function readTest(name: string): string {
 describe('parse modules', () => {
 	it('parse empty module', () => {
 	  const result = parsePhase1(readTest("_0001emptyModule"));
-	  const module = { id: 1n, name: "empty", extends: [], defs: [] }
+	  const module = { id: 1n, name: "empty", defs: [] }
 	  assert.deepEqual(result, {kind: 'ok', module: module}, "expected ok")
 	}); 
 
@@ -31,34 +31,31 @@ describe('parse modules', () => {
 	it('parse constants', () => {
 	  const result = parsePhase1(readTest("_0003consts"));
 	  // const N: int
-	  const constN: TntDef = { id: 1n, kind: "const", name: "N", typeTag: { kind: "untyped", paramArities: [] } }
-	  // const UntypedOper: (_, _) => _
-	  const untypedOper: TntDef = { id: 2n, kind: "const", name: "UntypedOper",
-	  								typeTag: { kind: "untyped", paramArities: [0, 0] } }
+	  const constN: TntDef = { id: 1n, kind: "const", name: "N", type: { kind: "int" } }
 	  // const MySet: set(int)
-	  const constMySet: TntDef = { id: 3n, kind: "const", name: "MySet",
-	  	typeTag: { kind: "set", elem: { kind: "int" } } }
+	  const constMySet: TntDef = { id: 2n, kind: "const", name: "MySet",
+	  	type: { kind: "set", elem: { kind: "int" } } }
 	  // const MySeq: seq(int)
-	  const constMySeq: TntDef = { id: 4n, kind: "const", name: "MySeq",
-	  	typeTag: { kind: "seq", elem: { kind: "bool" } } }
+	  const constMySeq: TntDef = { id: 3n, kind: "const", name: "MySeq",
+	  	type: { kind: "seq", elem: { kind: "bool" } } }
 	  // const MyFun: int -> str
-	  const constMyFun: TntDef = { id: 5n, kind: "const", name: "MyFun",
-	  	typeTag: { kind: "fun", arg: { kind: "int" }, res: { kind: "str" } } }
+	  const constMyFun: TntDef = { id: 4n, kind: "const", name: "MyFun",
+	  	type: { kind: "fun", arg: { kind: "int" }, res: { kind: "str" } } }
 	  // const MyFun: (int -> str) -> bool
-	  const constMyFunFun: TntDef = { id: 6n, kind: "const", name: "MyFunFun",
-	  	typeTag: { kind: "fun",
+	  const constMyFunFun: TntDef = { id: 5n, kind: "const", name: "MyFunFun",
+	  	type: { kind: "fun",
 		  		   arg: { kind: "fun", arg: { kind: "int" }, res: { kind: "str" } },
 				   res: { kind: "bool" }
 				}}
 	  // const MyOper: (int, str) => bool
-	  const constMyOper: TntDef = { id: 7n, kind: "const", name: "MyOper",
-	  	typeTag: { kind: "oper", args: [{ kind: "int" }, {kind: "str"}], res: { kind: "bool" } } }
+	  const constMyOper: TntDef = { id: 6n, kind: "const", name: "MyOper",
+	  	type: { kind: "oper", args: [{ kind: "int" }, {kind: "str"}], res: { kind: "bool" } } }
 	  // const MyTuple: (int, bool, str)
-	  const constMyTuple: TntDef = { id: 8n, kind: "const", name: "MyTuple",
-	  	typeTag: { kind: "tuple", elems: [ { kind: "int" }, {kind: "bool"}, { kind: "str" } ] } }
+	  const constMyTuple: TntDef = { id: 7n, kind: "const", name: "MyTuple",
+	  	type: { kind: "tuple", elems: [ { kind: "int" }, {kind: "bool"}, { kind: "str" } ] } }
 	  // the module that contains all these constants
-	  const module = { id: 9n, name: "withConsts", extends: [],
-	  	defs: [ constN, untypedOper, constMySet, constMySeq, constMyFun,
+	  const module = { id: 8n, name: "withConsts",
+	  	defs: [ constN, constMySet, constMySeq, constMyFun,
 				constMyFunFun, constMyOper, constMyTuple ] }
 
 	  assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
@@ -68,7 +65,7 @@ describe('parse modules', () => {
 	  const result = parsePhase1(readTest("_0004constRecords"));
 	  // const MyRecord: { "i": int, "b": bool, "s": str }
 	  const constMyRecord: TntDef = { id: 1n, kind: "const", name: "MyRecord",
-	  	typeTag: { kind: "record",
+	  	type: { kind: "record",
 		  		   fields: [ { fieldName: "i", fieldType: { kind: "int" } },
 					         { fieldName: "b", fieldType: { kind: "bool"} },
 							 { fieldName: "s", fieldType: { kind: "str" } } ] } }
@@ -76,7 +73,7 @@ describe('parse modules', () => {
 	  // disjoint unions are the most complex type in our type system
 	  const constMyUnion: TntDef =
 	  	{ id: 2n, kind: "const", name: "MyUnion",
-		  typeTag: {
+		  type: {
 			kind: "union", tag: "type",
 			records: [
 				{
@@ -99,7 +96,7 @@ describe('parse modules', () => {
 		}
 
 	  // the module that contains all these constants
-	  const module = { id: 3n, name: "withConsts", extends: [],
+	  const module = { id: 3n, name: "withConsts",
 	  	defs: [ constMyRecord, constMyUnion ] }
 
 	  assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
@@ -119,14 +116,13 @@ describe('parse modules', () => {
 	it('parse vars', () => {
 		const result = parsePhase1(readTest("_0006vars"));
 		// var x: int
-		const x: TntDef = { id: 1n, kind: "var", name: "x", typeTag: { kind: "int" } }
+		const x: TntDef = { id: 1n, kind: "var", name: "x", type: { kind: "int" } }
 		// var y: bool
 		const y: TntDef = { id: 2n, kind: "var", name: "y",
-							typeTag: { kind: "bool" } }
+							type: { kind: "bool" } }
   
 		// the module that contains all these constants
-		const module = { id: 3n, name: "withVars", extends: [],
-		defs: [ x, y ] }
+		const module = { id: 3n, name: "withVars", defs: [ x, y ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -149,17 +145,15 @@ describe('parse modules', () => {
 		const add_1_to_2: TntOpDef = {
 			id: 4n, kind: "def", name: "add_1_to_2",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
-			typeTag: { kind: "untyped", paramArities: [] },
 			expr: { id: 3n, kind: "opapp", opcode: "add",
 					args: [
-						{ id: 1n, kind: "int", value: 1n, typeTag: { kind: "int" } },
-						{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+						{ id: 1n, kind: "int", value: 1n, type: { kind: "int" } },
+						{ id: 2n, kind: "int", value: 2n, type: { kind: "int" } },
 					] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals", extends: [],
-		defs: [ add_1_to_2 ] }
+		const module = { id: 5n, name: "withVals", defs: [ add_1_to_2 ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -174,18 +168,17 @@ describe('parse modules', () => {
 					args: [
 						{ id: 3n, kind: "opapp", opcode: "add",
   						  args: [
-								{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-								{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+								{ id: 1n, kind: "int", value: 2n, type: { kind: "int" } },
+								{ id: 2n, kind: "int", value: 2n, type: { kind: "int" } },
 						  ]
 						},
-						{ id: 4n, kind: "int", value: 4n, typeTag: { kind: "int" } }
+						{ id: 4n, kind: "int", value: 4n, type: { kind: "int" } }
 					]
 				 }
 		}
   
 		// the module that contains all these constants
-		const module = { id: 7n, name: "withVals", extends: [],
-		defs: [ VeryTrue ] }
+		const module = { id: 7n, name: "withVals", defs: [ VeryTrue ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	});
@@ -198,13 +191,12 @@ describe('parse modules', () => {
 			qualifier: OpQualifier.Val, scope: OpScope.Private,
 			expr: {
 				id: 2n, kind: "opapp", opcode: "uminus",
-				args: [ { id: 1n, kind: "int", value: 123n, typeTag: { kind: "int" } } ]
+				args: [ { id: 1n, kind: "int", value: 123n, type: { kind: "int" } } ]
 			}
 		}
   
 		// the module that contains all these constants
-		const module = { id: 4n, name: "withVals", extends: [],
-						 defs: [ details ] }
+		const module = { id: 4n, name: "withVals", defs: [ details ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	});
@@ -215,19 +207,18 @@ describe('parse modules', () => {
 		const details: TntOpDef = {
 			id: 4n, kind: "def", name: "withType",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
-			typeTag: { kind: "set", elem: { kind: "int" } },
+			type: { kind: "set", elem: { kind: "int" } },
 			expr: {
 				id: 3n, kind: "opapp", opcode: "set",
 				args: [
-					{ id: 1n, kind: "int", value: 1n, typeTag: { kind: "int" } },
-					{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+					{ id: 1n, kind: "int", value: 1n, type: { kind: "int" } },
+					{ id: 2n, kind: "int", value: 2n, type: { kind: "int" } },
 				]
 			}
 		}
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals", extends: [],
-						 defs: [ details ] }
+		const module = { id: 5n, name: "withVals", defs: [ details ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	});
@@ -250,19 +241,17 @@ describe('parse modules', () => {
 		}
   
 		// the module that contains all these constants
-		const module = { id: 6n, name: "withDefs", extends: [],
-		defs: [ defF ] }
+		const module = { id: 6n, name: "withDefs", defs: [ defF ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	});
 
 	it('parse untyped def', () => {
 		const result = parsePhase1(readTest("_0013defs_untyped"));
-	    // def G(x, y): _ = x + y
+	    // def G(x, y) = x + y
 		const defG: TntOpDef = {
 			id: 5n, kind: "def", name: "G",
 			qualifier: OpQualifier.Def, scope: OpScope.Public,
-			typeTag: { kind: "untyped", paramArities: [ 0, 0 ] },
 			expr: { id: 4n, kind: "opabs",
 					params: ["x", "y"],
 					expr: { id: 3n, kind: "opapp", opcode: "add",
@@ -275,8 +264,7 @@ describe('parse modules', () => {
 		}
   
 		// the module that contains all these constants
-		const module = { id: 6n, name: "withDefs", extends: [],
-		defs: [ defG ] }
+		const module = { id: 6n, name: "withDefs", defs: [ defG ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	});
@@ -287,7 +275,7 @@ describe('parse modules', () => {
 		const defH: TntOpDef = {
 			id: 5n, kind: "def", name: "H",
 			qualifier: OpQualifier.Def, scope: OpScope.Public,
-			typeTag: { kind: "oper",
+			type: { kind: "oper",
 					   args: [ { kind: "int" }, { kind: "int" } ],
 					   res: { kind: "int" } },
 			expr: { id: 4n, kind: "opabs",
@@ -302,8 +290,7 @@ describe('parse modules', () => {
 		}
   
 		// the module that contains all these constants
-		const module = { id: 6n, name: "withDefs", extends: [],
-		defs: [ defH ] }
+		const module = { id: 6n, name: "withDefs", defs: [ defH ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	});
@@ -314,7 +301,7 @@ describe('parse modules', () => {
 		const defR: TntOpDef = {
 			id: 6n, kind: "def", name: "R",
 			qualifier: OpQualifier.DefRec, scope: OpScope.Public,
-			typeTag: { kind: "oper",
+			type: { kind: "oper",
 					   args: [ { kind: "int" } ], res: { kind: "int" } },
 			expr: { id: 5n, kind: "opabs",
 					params: ["n"],
@@ -322,7 +309,7 @@ describe('parse modules', () => {
 						args: [
 							{ id: 3n, kind: "opapp", opcode: "sub", args: [
 								{ id: 1n, kind: "name", name: "n" },
-								{ id: 2n, kind: "int", value: 1n, typeTag: { kind: "int" } }]
+								{ id: 2n, kind: "int", value: 1n, type: { kind: "int" } }]
 							}
 						]
 		  			}
@@ -330,8 +317,7 @@ describe('parse modules', () => {
 		}
   
 		// the module that contains all these constants
-		const module = { id: 7n, name: "withDefs", extends: [],
-		defs: [ defR ] }
+		const module = { id: 7n, name: "withDefs", defs: [ defR ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	});
@@ -343,14 +329,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "add_1_to_2",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "add", args: [
-				 	{ id: 1n, kind: "int", value: 1n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 1n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 2n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ add_1_to_2 ] }
+		const module = { id: 5n, name: "withVals", defs: [ add_1_to_2 ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -362,14 +347,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "sub_1_to_2",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "sub", args: [
-				 	{ id: 1n, kind: "int", value: 1n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 1n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 2n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ sub_1_to_2 ] }
+		const module = { id: 5n, name: "withVals", defs: [ sub_1_to_2 ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -381,14 +365,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "mul_2_to_3",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "mul", args: [
-				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ mul_2_to_3 ] }
+		const module = { id: 5n, name: "withVals", defs: [ mul_2_to_3 ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -400,14 +383,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "div_2_to_3",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "div", args: [
-				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ div_2_to_3 ] }
+		const module = { id: 5n, name: "withVals", defs: [ div_2_to_3 ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -419,14 +401,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "mod_2_to_3",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "mod", args: [
-				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ mod_2_to_3 ] }
+		const module = { id: 5n, name: "withVals", defs: [ mod_2_to_3 ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -438,14 +419,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "pow_2_to_3",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "pow", args: [
-				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ pow_2_to_3 ] }
+		const module = { id: 5n, name: "withVals", defs: [ pow_2_to_3 ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -457,13 +437,12 @@ describe('parse modules', () => {
 			id: 3n, kind: "def", name: "uminus",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 2n, kind: "opapp", opcode: "uminus", args: [{
-				id: 1n, kind: "int", value: 100n, typeTag: { kind: "int" } }]
+				id: 1n, kind: "int", value: 100n, type: { kind: "int" } }]
 			}
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 4n, name: "withVals",
-						 extends: [], defs: [ uminus ] }
+		const module = { id: 4n, name: "withVals", defs: [ uminus ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -475,14 +454,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "gt_2_to_3",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "gt", args: [
-				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ gt_2_to_3 ] }
+		const module = { id: 5n, name: "withVals", defs: [ gt_2_to_3 ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -494,14 +472,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "ge_2_to_3",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "gte", args: [
-				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ ge_2_to_3 ] }
+		const module = { id: 5n, name: "withVals", defs: [ ge_2_to_3 ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -513,14 +490,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "lt_2_to_3",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "lt", args: [
-				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ lt_2_to_3 ] }
+		const module = { id: 5n, name: "withVals", defs: [ lt_2_to_3 ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -532,14 +508,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "le_2_to_3",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "lte", args: [
-				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ le_2_to_3 ] }
+		const module = { id: 5n, name: "withVals", defs: [ le_2_to_3 ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -551,14 +526,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "eq_2_to_3",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "eq", args: [
-				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ eq_2_to_3 ] }
+		const module = { id: 5n, name: "withVals", defs: [ eq_2_to_3 ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -570,14 +544,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "eqeq_2_to_3",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "eq", args: [
-				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ eqeq_2_to_3 ] }
+		const module = { id: 5n, name: "withVals", defs: [ eqeq_2_to_3 ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -589,14 +562,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "ne_2_to_3",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "neq", args: [
-				 	{ id: 1n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ ne_2_to_3 ] }
+		const module = { id: 5n, name: "withVals", defs: [ ne_2_to_3 ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -604,20 +576,19 @@ describe('parse modules', () => {
 	it('parse asgn', () => {
 		const result = parsePhase1(readTest("_0114expr_asgn"));
 		// var x: int
-		const x: TntDef = { id: 1n, kind: "var", name: "x", typeTag: { kind: "int" } }
+		const x: TntDef = { id: 1n, kind: "var", name: "x", type: { kind: "int" } }
 		// val asgn: _ = x := 3
 		const asgn: TntDef = {
 			id: 5n, kind: "def", name: "asgn",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 4n, kind: "opapp", opcode: "assign", args: [
 				 	{ id: 2n, kind: "name", name: "x" },
-				 	{ id: 3n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 3n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 6n, name: "withVals",
-						 extends: [], defs: [ x, asgn ] }
+		const module = { id: 6n, name: "withVals", defs: [ x, asgn ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -629,14 +600,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "test_and",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "and", args: [
-				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
-				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
+				 	{ id: 1n, kind: "bool", value: false, type: { kind: "bool" } },
+				 	{ id: 2n, kind: "bool", value: true, type: { kind: "bool" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ test_and ] }
+		const module = { id: 5n, name: "withVals", defs: [ test_and ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -648,14 +618,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "test_or",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "or", args: [
-				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
-				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
+				 	{ id: 1n, kind: "bool", value: false, type: { kind: "bool" } },
+				 	{ id: 2n, kind: "bool", value: true, type: { kind: "bool" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ test_or ] }
+		const module = { id: 5n, name: "withVals", defs: [ test_or ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -667,14 +636,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "test_implies",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "implies", args: [
-				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
-				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
+				 	{ id: 1n, kind: "bool", value: false, type: { kind: "bool" } },
+				 	{ id: 2n, kind: "bool", value: true, type: { kind: "bool" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ test_implies ] }
+		const module = { id: 5n, name: "withVals", defs: [ test_implies ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -686,14 +654,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "test_iff",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "iff", args: [
-				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
-				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
+				 	{ id: 1n, kind: "bool", value: false, type: { kind: "bool" } },
+				 	{ id: 2n, kind: "bool", value: true, type: { kind: "bool" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ test_iff ] }
+		const module = { id: 5n, name: "withVals", defs: [ test_iff ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -705,15 +672,14 @@ describe('parse modules', () => {
 			id: 5n, kind: "def", name: "test_block_and",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 4n, kind: "opapp", opcode: "andBlock", args: [
-				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
-				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
-				 	{ id: 3n, kind: "bool", value: false, typeTag: { kind: "bool" } },
+				 	{ id: 1n, kind: "bool", value: false, type: { kind: "bool" } },
+				 	{ id: 2n, kind: "bool", value: true, type: { kind: "bool" } },
+				 	{ id: 3n, kind: "bool", value: false, type: { kind: "bool" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 6n, name: "withVals",
-						 extends: [], defs: [ test_block_and ] }
+		const module = { id: 6n, name: "withVals", defs: [ test_block_and ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -725,15 +691,14 @@ describe('parse modules', () => {
 			id: 5n, kind: "def", name: "test_block_or",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 4n, kind: "opapp", opcode: "orBlock", args: [
-				 	{ id: 1n, kind: "bool", value: false, typeTag: { kind: "bool" } },
-				 	{ id: 2n, kind: "bool", value: true, typeTag: { kind: "bool" } },
-				 	{ id: 3n, kind: "bool", value: false, typeTag: { kind: "bool" } },
+				 	{ id: 1n, kind: "bool", value: false, type: { kind: "bool" } },
+				 	{ id: 2n, kind: "bool", value: true, type: { kind: "bool" } },
+				 	{ id: 3n, kind: "bool", value: false, type: { kind: "bool" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 6n, name: "withVals",
-						 extends: [], defs: [ test_block_or ] }
+		const module = { id: 6n, name: "withVals", defs: [ test_block_or ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -745,15 +710,14 @@ describe('parse modules', () => {
 			id: 5n, kind: "def", name: "test_ite",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 4n, kind: "opapp", opcode: "ite", args: [
-				 	{ id: 1n, kind: "bool", value: true, typeTag: { kind: "bool" } },
-				 	{ id: 2n, kind: "int", value: 1n, typeTag: { kind: "int" } },
-				 	{ id: 3n, kind: "int", value: 0n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "bool", value: true, type: { kind: "bool" } },
+				 	{ id: 2n, kind: "int", value: 1n, type: { kind: "int" } },
+				 	{ id: 3n, kind: "int", value: 0n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 6n, name: "withVals",
-						 extends: [], defs: [ test_ite ] }
+		const module = { id: 6n, name: "withVals", defs: [ test_ite ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -775,8 +739,7 @@ describe('parse modules', () => {
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 9n, name: "withVals",
-						 extends: [], defs: [ test_case ] }
+		const module = { id: 9n, name: "withVals", defs: [ test_case ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -799,8 +762,7 @@ describe('parse modules', () => {
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 10n, name: "withVals",
-						 extends: [], defs: [ test_case_default ] }
+		const module = { id: 10n, name: "withVals", defs: [ test_case_default ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -809,20 +771,19 @@ describe('parse modules', () => {
 		const result = parsePhase1(readTest("_0124expr_funapp"));
 		// var f: str -> int
 		const f: TntDef = { id: 1n, kind: "var", name: "f",
-			typeTag: { kind: "fun", arg: { kind: "str" }, res: { kind: "int" } } }
+			type: { kind: "fun", arg: { kind: "str" }, res: { kind: "int" } } }
 		// val funapp = f["a"]
 		const funapp: TntDef = {
 			id: 5n, kind: "def", name: "funapp",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 4n, kind: "opapp", opcode: "of", args: [
 				 	{ id: 2n, kind: "name", name: "f" },
-				 	{ id: 3n, kind: "str", value: "a", typeTag: { kind: "str" } }
+				 	{ id: 3n, kind: "str", value: "a", type: { kind: "str" } }
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 6n, name: "withVals",
-						 extends: [], defs: [ f, funapp ] }
+		const module = { id: 6n, name: "withVals", defs: [ f, funapp ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -834,14 +795,13 @@ describe('parse modules', () => {
 			id: 4n, kind: "def", name: "oper_app",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 3n, kind: "opapp", opcode: "MyOper", args: [
-				 	{ id: 1n, kind: "str", value: "a", typeTag: { kind: "str" } },
-				 	{ id: 2n, kind: "int", value: 42n, typeTag: { kind: "int" } }
+				 	{ id: 1n, kind: "str", value: "a", type: { kind: "str" } },
+				 	{ id: 2n, kind: "int", value: 42n, type: { kind: "int" } }
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 5n, name: "withVals",
-						 extends: [], defs: [ operApp ] }
+		const module = { id: 5n, name: "withVals", defs: [ operApp ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -853,15 +813,14 @@ describe('parse modules', () => {
 			id: 5n, kind: "def", name: "oper_app",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 4n, kind: "opapp", opcode: "MyOper", args: [
-				 	{ id: 1n, kind: "str", value: "a", typeTag: { kind: "str" } },
-				 	{ id: 2n, kind: "int", value: 42n, typeTag: { kind: "int" } },
-				 	{ id: 3n, kind: "bool", value: true, typeTag: { kind: "bool" } }
+				 	{ id: 1n, kind: "str", value: "a", type: { kind: "str" } },
+				 	{ id: 2n, kind: "int", value: 42n, type: { kind: "int" } },
+				 	{ id: 3n, kind: "bool", value: true, type: { kind: "bool" } }
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 6n, name: "withVals",
-						 extends: [], defs: [ operApp ] }
+		const module = { id: 6n, name: "withVals", defs: [ operApp ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -880,7 +839,7 @@ describe('parse modules', () => {
 						  id: 4n, kind: "opapp", opcode: "gt",
 						  args: [
 							  { id: 2n, kind: "name", name: "x" },
-							  { id: 3n, kind: "int", value: 10n, typeTag: { kind: "int" }}
+							  { id: 3n, kind: "int", value: 10n, type: { kind: "int" }}
 						  ]		
 					  }
 				  },
@@ -888,7 +847,7 @@ describe('parse modules', () => {
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 8n, name: "withVals", extends: [], defs: [ operApp ] }
+		const module = { id: 8n, name: "withVals", defs: [ operApp ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -907,7 +866,7 @@ describe('parse modules', () => {
 						  id: 4n, kind: "opapp", opcode: "gt",
 						  args: [
 							  { id: 2n, kind: "name", name: "x" },
-							  { id: 3n, kind: "int", value: 10n, typeTag: { kind: "int" }}
+							  { id: 3n, kind: "int", value: 10n, type: { kind: "int" }}
 						  ]		
 					  }
 				  },
@@ -915,7 +874,7 @@ describe('parse modules', () => {
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 8n, name: "withVals", extends: [], defs: [ operApp ] }
+		const module = { id: 8n, name: "withVals", defs: [ operApp ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -928,13 +887,13 @@ describe('parse modules', () => {
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 4n, kind: "opapp", opcode: "except", args: [
 				 	{ id: 1n, kind: "name", name: "f" },
-					{ id: 2n, kind: "int", value: 3n, typeTag: { kind: "int" } },
-					{ id: 3n, kind: "int", value: 4n, typeTag: { kind: "int" } }
+					{ id: 2n, kind: "int", value: 3n, type: { kind: "int" } },
+					{ id: 3n, kind: "int", value: 4n, type: { kind: "int" } }
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 6n, name: "withVals", extends: [], defs: [ operApp ] }
+		const module = { id: 6n, name: "withVals", defs: [ operApp ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -946,15 +905,14 @@ describe('parse modules', () => {
 			id: 5n, kind: "def", name: "test_tuple",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 4n, kind: "opapp", opcode: "tuple", args: [
-				 	{ id: 1n, kind: "int", value: 1n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 3n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 1n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 3n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 6n, name: "withVals",
-						 extends: [], defs: [ test_tuple ] }
+		const module = { id: 6n, name: "withVals", defs: [ test_tuple ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -966,15 +924,14 @@ describe('parse modules', () => {
 			id: 5n, kind: "def", name: "test_seq",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 4n, kind: "opapp", opcode: "seq", args: [
-				 	{ id: 1n, kind: "int", value: 1n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 3n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 1n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 3n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 6n, name: "withVals",
-						 extends: [], defs: [ test_seq ] }
+		const module = { id: 6n, name: "withVals", defs: [ test_seq ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	});
@@ -986,16 +943,15 @@ describe('parse modules', () => {
 			id: 6n, kind: "def", name: "test_record",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 5n, kind: "opapp", opcode: "record", args: [
-				 	{ id: 3n, kind: "str", value: "name", typeTag: { kind: "str" } },
-				 	{ id: 1n, kind: "str", value: "igor", typeTag: { kind: "str" } },
-				 	{ id: 4n, kind: "str", value: "year", typeTag: { kind: "str" } },
-				 	{ id: 2n, kind: "int", value: 1981n, typeTag: { kind: "int" } },
+				 	{ id: 3n, kind: "str", value: "name", type: { kind: "str" } },
+				 	{ id: 1n, kind: "str", value: "igor", type: { kind: "str" } },
+				 	{ id: 4n, kind: "str", value: "year", type: { kind: "str" } },
+				 	{ id: 2n, kind: "int", value: 1981n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 7n, name: "withVals",
-						 extends: [], defs: [ test_record ] }
+		const module = { id: 7n, name: "withVals", defs: [ test_record ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -1007,16 +963,15 @@ describe('parse modules', () => {
 			id: 6n, kind: "def", name: "test_record_set",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 5n, kind: "opapp", opcode: "recordSet", args: [
-				 	{ id: 3n, kind: "str", value: "name", typeTag: { kind: "str" } },
+				 	{ id: 3n, kind: "str", value: "name", type: { kind: "str" } },
 				 	{ id: 1n, kind: "name", name: "Str" },
-				 	{ id: 4n, kind: "str", value: "year", typeTag: { kind: "str" } },
+				 	{ id: 4n, kind: "str", value: "year", type: { kind: "str" } },
 				 	{ id: 2n, kind: "name", name: "Int" },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 7n, name: "withVals",
-						 extends: [], defs: [ test_record_set ] }
+		const module = { id: 7n, name: "withVals", defs: [ test_record_set ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -1028,15 +983,14 @@ describe('parse modules', () => {
 			id: 5n, kind: "def", name: "test_set",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 4n, kind: "opapp", opcode: "set", args: [
-				 	{ id: 1n, kind: "int", value: 1n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 3n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 1n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 3n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 6n, name: "withVals",
-						 extends: [], defs: [ test_set ] }
+		const module = { id: 6n, name: "withVals", defs: [ test_set ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	});
@@ -1048,15 +1002,14 @@ describe('parse modules', () => {
 			id: 5n, kind: "def", name: "test_set",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 4n, kind: "opapp", opcode: "set", args: [
-				 	{ id: 1n, kind: "int", value: 1n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 3n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 1n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 3n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 6n, name: "withVals",
-						 extends: [], defs: [ test_set ] }
+		const module = { id: 6n, name: "withVals", defs: [ test_set ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	});
@@ -1068,15 +1021,14 @@ describe('parse modules', () => {
 			id: 5n, kind: "def", name: "test_seq",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 4n, kind: "opapp", opcode: "seq", args: [
-				 	{ id: 1n, kind: "int", value: 1n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 3n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 1n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 3n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 6n, name: "withVals",
-						 extends: [], defs: [ test_seq ] }
+		const module = { id: 6n, name: "withVals", defs: [ test_seq ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	});
@@ -1088,15 +1040,14 @@ describe('parse modules', () => {
 			id: 5n, kind: "def", name: "test_tuple",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 4n, kind: "opapp", opcode: "tuple", args: [
-				 	{ id: 1n, kind: "int", value: 1n, typeTag: { kind: "int" } },
-				 	{ id: 2n, kind: "int", value: 2n, typeTag: { kind: "int" } },
-				 	{ id: 3n, kind: "int", value: 3n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "int", value: 1n, type: { kind: "int" } },
+				 	{ id: 2n, kind: "int", value: 2n, type: { kind: "int" } },
+				 	{ id: 3n, kind: "int", value: 3n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 6n, name: "withVals",
-						 extends: [], defs: [ test_tuple ] }
+		const module = { id: 6n, name: "withVals", defs: [ test_tuple ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -1108,16 +1059,15 @@ describe('parse modules', () => {
 			id: 6n, kind: "def", name: "test_record",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 5n, kind: "opapp", opcode: "record", args: [
-				 	{ id: 1n, kind: "str", value: "name", typeTag: { kind: "str" } },
-				 	{ id: 2n, kind: "str", value: "igor", typeTag: { kind: "str" } },
-				 	{ id: 3n, kind: "str", value: "year", typeTag: { kind: "str" } },
-				 	{ id: 4n, kind: "int", value: 1981n, typeTag: { kind: "int" } },
+				 	{ id: 1n, kind: "str", value: "name", type: { kind: "str" } },
+				 	{ id: 2n, kind: "str", value: "igor", type: { kind: "str" } },
+				 	{ id: 3n, kind: "str", value: "year", type: { kind: "str" } },
+				 	{ id: 4n, kind: "int", value: 1981n, type: { kind: "int" } },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 7n, name: "withVals",
-						 extends: [], defs: [ test_record ] }
+		const module = { id: 7n, name: "withVals", defs: [ test_record ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
@@ -1129,16 +1079,15 @@ describe('parse modules', () => {
 			id: 6n, kind: "def", name: "test_record_set",
 			qualifier: OpQualifier.Val, scope: OpScope.Public,
 			expr: { id: 5n, kind: "opapp", opcode: "recordSet", args: [
-				 	{ id: 1n, kind: "str", value: "name", typeTag: { kind: "str" } },
+				 	{ id: 1n, kind: "str", value: "name", type: { kind: "str" } },
 				 	{ id: 2n, kind: "name", name: "Str" },
-				 	{ id: 3n, kind: "str", value: "year", typeTag: { kind: "str" } },
+				 	{ id: 3n, kind: "str", value: "year", type: { kind: "str" } },
 				 	{ id: 4n, kind: "name", name: "Int" },
 				] }
 		 }
   
 		// the module that contains all these constants
-		const module = { id: 7n, name: "withVals",
-						 extends: [], defs: [ test_record_set ] }
+		const module = { id: 7n, name: "withVals", defs: [ test_record_set ] }
 
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 

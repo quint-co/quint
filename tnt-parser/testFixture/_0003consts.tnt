@@ -1,7 +1,6 @@
 // a module that contains constants
 module withConsts {
-	const N: _
-	const UntypedOper: (_, _) => _
+	const N: int
 	const MySet: set(int)
 	const MySeq: seq(bool)
 	const MyFun: int -> str

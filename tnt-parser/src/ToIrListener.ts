@@ -1,7 +1,7 @@
 import * as p from './generated/TntParser';
 import { TntListener } from './generated/TntListener';
 import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef, OpScope } from './tntIr';
-import { TntType, TntTypeTag, TntUntyped } from './tntTypes';
+import { TntType } from './tntTypes';
 import { assert } from 'console';
 import { ErrorMessage } from './tntParserFrontend';
 import { open } from 'fs';
@@ -27,8 +27,6 @@ export class ToIrListener implements TntListener {
     private definitionStack: TntDef[] = []
     // the stack of types
     private typeStack: TntType[] = []
-    // the stack of untyped signatures
-    private untypedStack: TntUntyped[] = []
     // the stack of expressions
     private exprStack: TntEx[] = []
     // the stack of parameter lists
@@ -41,31 +39,30 @@ export class ToIrListener implements TntListener {
         const module: TntModule = {
             id: this.nextId(),
             name: ctx.IDENTIFIER().text,
-            extends: [],
             defs: this.definitionStack
         };
         this.definitionStack = []; // reset the definitions
         this.rootModule = module;
     }
 
-    // translate: const x: type, const x: _
+    // translate: const x: type
     exitConst(ctx: p.ConstContext) {
-        let typeTag = this.popTypeTag(ctx.type() != undefined);
+        let typeTag = this.popType();
 
         const constDef: TntDef = {
             kind: "const", name: ctx.IDENTIFIER().text,
-            typeTag: typeTag, id: this.nextId()
+            type: typeTag, id: this.nextId()
         };
         this.definitionStack.push(constDef);
     }
 
-    // translate: var x: type, var: x: _
+    // translate: var x: type
     exitVar(ctx: p.VarContext) {
-        let typeTag = this.popTypeTag(ctx.type() != undefined);
+        let typeTag = this.popType();
 
         const varDef: TntDef = {
             kind: "var", name: ctx.IDENTIFIER().text,
-            typeTag: typeTag, id: this.nextId()
+            type: typeTag, id: this.nextId()
         };
         this.definitionStack.push(varDef);
     }
@@ -75,14 +72,10 @@ export class ToIrListener implements TntListener {
     // translate a top-level or inner: val foo: type = ...
     exitValDef(ctx: p.ValDefContext) {
         const name = ctx.IDENTIFIER().text
-        let typeTag: TntTypeTag | undefined = undefined
+        let typeTag: TntType | undefined = undefined
         if (ctx.type()) {
             // the operator is tagged with a type
             typeTag = this.typeStack.pop()
-        }
-        if (ctx.untyped0()) {
-            // the operator is tagged with an untyped signature
-            typeTag = this.untypedStack.pop()
         }
         const expr = this.exprStack.pop()
         if (expr) {
@@ -91,7 +84,7 @@ export class ToIrListener implements TntListener {
                 qualifier: OpQualifier.Val, scope: OpScope.Local, expr: expr
             }
             if (typeTag) {
-                def.typeTag = typeTag
+                def.type = typeTag
             }
             this.definitionStack.push(def)
         } else {
@@ -112,14 +105,10 @@ export class ToIrListener implements TntListener {
     // translate a top-level or inner: def foo: type = ...
     exitOperDef(ctx: p.OperDefContext) {
         const name = ctx.IDENTIFIER().text
-        let typeTag: TntTypeTag | undefined = undefined
+        let typeTag: TntType | undefined = undefined
         if (ctx.type()) {
             // the operator is tagged with a type
             typeTag = this.typeStack.pop()
-        }
-        if (ctx.untyped012()) {
-            // the operator is tagged with an untyped signature
-            typeTag = this.untypedStack.pop()
         }
         const expr = this.exprStack.pop()
         const params = this.paramStack.pop()
@@ -134,7 +123,7 @@ export class ToIrListener implements TntListener {
                 qualifier: qualif, scope: OpScope.Local, expr: lambda
             }
             if (typeTag) {
-                def.typeTag = typeTag
+                def.type = typeTag
             }
             this.definitionStack.push(def)
         } else {
@@ -169,19 +158,19 @@ export class ToIrListener implements TntListener {
         const intNode = ctx.INT()
         if (intNode) {          // we have met an integer literal
             this.exprStack.push({ id: this.nextId(), kind: "int",
-                typeTag: { kind: "int" }, value: BigInt(intNode.text)
+                type: { kind: "int" }, value: BigInt(intNode.text)
             })
         }
         const boolNode = ctx.BOOL()
         if (boolNode) {         // we have met a Boolean literal
             this.exprStack.push({ id: this.nextId(), kind: "bool",
-                typeTag: { kind: "bool" }, value: (boolNode.text == "true")
+                type: { kind: "bool" }, value: (boolNode.text == "true")
             })
         }
         const strNode = ctx.STRING()
         if (strNode) {          // we have met a string, remove the quotes!
             this.exprStack.push({ id: this.nextId(), kind: "str",
-                typeTag: { kind: "str" }, value: strNode.text.slice(1, -1)
+                type: { kind: "str" }, value: strNode.text.slice(1, -1)
             })
         }
     }
@@ -341,7 +330,7 @@ export class ToIrListener implements TntListener {
         let namesAndValues: TntEx[] = [];
         for (var i = 0; i < names.length; i++) {
             namesAndValues.push({ id: this.nextId(), kind: "str",
-                                  value: names[i], typeTag: { kind: "str" } })
+                                  value: names[i], type: { kind: "str" } })
             namesAndValues.push(elems[i])
         }
         this.exprStack.push({ id: this.nextId(), kind: "opapp", opcode: "record", args: namesAndValues });
@@ -355,7 +344,7 @@ export class ToIrListener implements TntListener {
         let namesAndValues: TntEx[] = [];
         for (var i = 0; i < names.length; i++) {
             namesAndValues.push({ id: this.nextId(), kind: "str",
-                                  value: names[i], typeTag: { kind: "str" } })
+                                  value: names[i], type: { kind: "str" } })
             namesAndValues.push(elems[i])
         }
         this.exprStack.push({ id: this.nextId(), kind: "opapp",
@@ -609,7 +598,7 @@ export class ToIrListener implements TntListener {
             pairs.push({ fieldName: names[i], fieldType: elemTypes[i - 1] });
         }
         // construct a singleton disjoint union, which should be assembled above
-        const singleton: TntTypeTag = {
+        const singleton: TntType = {
             kind: "union", tag: tagName,
             records: [{ tagValue: tagVal, fields: pairs }]
         };
@@ -627,45 +616,12 @@ export class ToIrListener implements TntListener {
         }
     }
 
-    // untyped signature of level 0, that is, '_'
-    exitUntyped0(ctx: p.Untyped0Context) {
-        this.untypedStack.push({ kind: "untyped", paramArities: [] });
-    }
-
-    // An untyped signature of level 1, e.g., (_, _) => _.
-    // Count the number of underscores; the last one going to the result.
-    exitUntyped1(ctx: p.Untyped1Context) {
-        const nunderscores = ctx.children?.filter((value) => value.text == "_").length;
-        if (nunderscores) {
-            let allZeroes = new Array(nunderscores - 1).fill(0);
-            this.untypedStack.push({ kind: "untyped", paramArities: allZeroes });
-        } else {
-            assert(false, "exitUntyped1: no underscores in exitUntyped1");
-        }
-    }
-
-    // A higher-order untyped signature like (_, (_, _) => _) => _.
-    // Since the signatures of the arguments are either values or level 0 signatures,
-    // we only have to count the number of their arguments.
-    exitUntyped2Sig(ctx: p.Untyped2SigContext) {
-        const arities = this.popUntyped(ctx.untyped01().length).map((u) => u.paramArities.length);
-        this.untypedStack.push({ kind: "untyped", paramArities: arities });
-    }
-
     // pop n elements out of typeStack
     private popTypes(n: number): TntType[] {
         assert(this.typeStack.length >= n, "popTypes: too few elements in typeStack")
         const types: TntType[] = this.typeStack.slice(-n);
         this.typeStack = this.typeStack.slice(0, -n);
         return types;
-    }
-
-    // pop n elements out of untypedStack
-    private popUntyped(n: number): TntUntyped[] {
-        assert(this.untypedStack.length >= n, "popUntyped: too few elements in untypedStack")
-        const untyped: TntUntyped[] = this.untypedStack.slice(-n);
-        this.untypedStack = this.untypedStack.slice(0, -n);
-        return untyped;
     }
 
     // pop n expressions out of exprStack
@@ -684,28 +640,17 @@ export class ToIrListener implements TntListener {
         return es;
     }
 
-    // pop a type or an untyped signature, depending on the flag
-    private popTypeTag(isTyped: boolean): TntTypeTag {
-        if (isTyped) {
-            // the user has specified a type
-            const tp = this.typeStack.pop();
-            if (tp) {
-                return tp;
-            } else {
-                assert(false, "popTypeTag: no type in typeStack");
-            }
+    // pop a type
+    private popType(): TntType {
+        // the user has specified a type
+        const tp = this.typeStack.pop();
+        if (tp) {
+            return tp;
         } else {
-            // the user has specified an untyped signature
-            const untyped = this.untypedStack.pop();
-            if (untyped) {
-                return untyped;
-            } else {
-                assert(false, "popTypeTag: no untyped signature in untypedStack");
-            }
+            assert(false, "popType: no type in typeStack");
+            // this line should not be reachable
+            return { kind: "bool" };
         }
-
-        // this code is unreachable but tsc is not smart enough to see that
-        return { kind: "untyped", paramArities: [] };
     }
 
     // produce the next number in a sequence

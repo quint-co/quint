@@ -2,5 +2,5 @@
 // Since 'val' gives us the simplest way of defining expressions,
 // we also do extensive testing of expression syntax in this test.
 module withVals {
-	val add_1_to_2: _ = 1 + 2
+	val add_1_to_2 = 1 + 2
 }

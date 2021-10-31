@@ -4,7 +4,7 @@
  * See License.txt in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
-import { TntTypeTag } from './tntTypes';
+import { TntType } from './tntTypes';
 
 /*
  * Intermediate representation of TNT. It almost mirrors the IR of Apalache,
@@ -24,10 +24,9 @@ export interface WithId {
  * TNT expressions and declarations carry an optional type tag.
  * Note that if a type tag is missing, it does not mean that an expression (or declaration)
  * is untyped. It means that the type has not been computed yet.
- * If an expression carries the tag TntUntyped, then its type should be ignored.
  */
-export interface WithTypeTag {
-	typeTag?: TntTypeTag
+export interface WithType {
+	type?: TntType
 }
 
 /**
@@ -35,19 +34,19 @@ export interface WithTypeTag {
  */
 export type TntEx =
 	// A name of: a variable, constant, parameter, user-defined operator.
-	| { kind: "name", name: string } & WithId & WithTypeTag
+	| { kind: "name", name: string } & WithId & WithType
 	// A Boolean literal.
-	| { kind: "bool", value: boolean } & WithId & WithTypeTag
+	| { kind: "bool", value: boolean } & WithId & WithType
 	// An integer literal.
-	| { kind: "int", value: bigint } & WithId & WithTypeTag
+	| { kind: "int", value: bigint } & WithId & WithType
 	// A string literal
-	| { kind: "str", value: string } & WithId & WithTypeTag
+	| { kind: "str", value: string } & WithId & WithType
 	// Operator application: apply an operator by its name, supplying the arguments in `args`.
-	| { kind: "opapp", opcode: string, args: TntEx[] } & WithId & WithTypeTag
+	| { kind: "opapp", opcode: string, args: TntEx[] } & WithId & WithType
 	// Operator abstraction: an anonymous operator (lambda) over a list of parameters.
-	| { kind: "opabs", params: string[], expr: TntEx } & WithId & WithTypeTag
+	| { kind: "opabs", params: string[], expr: TntEx } & WithId & WithType
 	// A let-in binding (defined via 'def', 'def rec', 'val', etc.).
-	| { kind: "let", opdef: TntOpDef, expr: TntEx } & WithId & WithTypeTag
+	| { kind: "let", opdef: TntOpDef, expr: TntEx } & WithId & WithType
 
 /**
  * Operator qualifier that refines the operator shape:
@@ -109,7 +108,7 @@ export enum OpScope {
  * If an operator definition has formal parameters, then `expr`
  * should be a lambda expression over those parameters.
  */
-export interface TntOpDef extends WithId, WithTypeTag {
+export interface TntOpDef extends WithId, WithType {
 	kind: "def",
 	name: string,
 	qualifier: OpQualifier,
@@ -122,8 +121,8 @@ export interface TntOpDef extends WithId, WithTypeTag {
  */
 export type TntDef =
 	| TntOpDef
-	| { kind: "const", name: string } & WithId & WithTypeTag
-	| { kind: "var", name: string } & WithId & WithTypeTag
+	| { kind: "const", name: string } & WithId & WithType
+	| { kind: "var", name: string } & WithId & WithType
 	| { kind: "assume", name: string, assumption: TntEx } & WithId
 	| { kind: "instance", name: string,
 		moduleName: string, overrides: [string, TntEx][] } & WithId
@@ -134,6 +133,5 @@ export type TntDef =
  */	
 export interface TntModule extends WithId {
 	name: string,
-	extends: string[],
 	defs: TntDef[]
 }

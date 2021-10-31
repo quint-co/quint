@@ -9,14 +9,14 @@ grammar Tnt;
 module : 'module' IDENTIFIER '{' unit* '}';
 
 // a module unit
-unit :          'const' IDENTIFIER ':' (untyped01 | type)       # const
-        |       'var' IDENTIFIER ':'   (untyped0 | type)        # var
+unit :          'const' IDENTIFIER ':' type                     # const
+        |       'var' IDENTIFIER ':'   type                     # var
         |       'assume' (IDENTIFIER | '_') '=' expr            # assume
         |       PRIVATE? valDef                                 # val
         |       PRIVATE? operDef                                # oper
         |       PRIVATE? ('pred' | 'action' | 'temporal')       
                            IDENTIFIER params?
-                           (':' (untyped012 | type))? '=' expr  # pat
+                           (':' type)? '=' expr                 # pat
         |       module                                          # moduleNested
         |       instanceDef                                     # instance
         |       'typedef' IDENTIFIER '=' type                   # typeDef
@@ -25,11 +25,11 @@ unit :          'const' IDENTIFIER ':' (untyped01 | type)       # const
                 }                                               # errorCase
         ;
 
-valDef  :       'val' IDENTIFIER (':' (untyped0 | type))? '=' expr
+valDef  :       'val' IDENTIFIER (':' type)? '=' expr
         ;
 
 operDef :       'def' REC? IDENTIFIER params
-                         (':' (untyped012 | type))? '=' expr
+                         (':' type)? '=' expr
         ;
 
 instanceDef :   'instance' (IDENTIFIER | '_') '=' IDENTIFIER
@@ -56,27 +56,6 @@ type :          type '->' type                                  # typeFun
         ;
 
 typeUnionRecOne : '|' '{' IDENTIFIER ':' STRING (',' IDENTIFIER ':' type)* '}'                
-        ;
-
-// Untyped signature of order 0..2. For example, _, _ => _, or (_, (_, _) => _, _) => _.
-untyped012 :    '(' (untyped01 (',' untyped01)*)? ')' '=>' '_'  # untyped2Sig
-        |       untyped01                                       # untyped2Lower
-        |       '(' untyped012 ')'                              # untyped2Paren
-        ;
-
-// Order 0/1 untyped signature.
-untyped01 :     '(' ('_' (',' '_')*)? ')' '=>' '_'              # untyped1
-        |       untyped0                                        # untyped1Lower
-        ;
-
-// Order 0 untyped signature: just '_'
-untyped0 :      '_'
-        |       '(' '_' {
-                this.notifyErrorListeners("TNT002: expected '_', found an operator signature.");
-                }
-        |       '(' {
-                this.notifyErrorListeners("TNT003: expected '_', found '('.");
-                }
         ;
 
 // A TNT expression. The order matters, it defines the priority.

@@ -15,9 +15,6 @@ import { TypeStrContext } from "./TntParser";
 import { TypeBoolContext } from "./TntParser";
 import { TypeConstOrVarContext } from "./TntParser";
 import { TypeParenContext } from "./TntParser";
-import { Untyped2SigContext } from "./TntParser";
-import { Untyped2LowerContext } from "./TntParser";
-import { Untyped2ParenContext } from "./TntParser";
 import { ConstContext } from "./TntParser";
 import { VarContext } from "./TntParser";
 import { AssumeContext } from "./TntParser";
@@ -56,8 +53,6 @@ import { SequenceContext } from "./TntParser";
 import { LetInContext } from "./TntParser";
 import { ParenContext } from "./TntParser";
 import { LambdaOrBracesContext } from "./TntParser";
-import { Untyped1Context } from "./TntParser";
-import { Untyped1LowerContext } from "./TntParser";
 import { ModuleContext } from "./TntParser";
 import { UnitContext } from "./TntParser";
 import { ValDefContext } from "./TntParser";
@@ -66,9 +61,6 @@ import { InstanceDefContext } from "./TntParser";
 import { ParamsContext } from "./TntParser";
 import { TypeContext } from "./TntParser";
 import { TypeUnionRecOneContext } from "./TntParser";
-import { Untyped012Context } from "./TntParser";
-import { Untyped01Context } from "./TntParser";
-import { Untyped0Context } from "./TntParser";
 import { ExprContext } from "./TntParser";
 import { LambdaContext } from "./TntParser";
 import { IdentOrHoleContext } from "./TntParser";
@@ -181,30 +173,6 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitTypeParen?: (ctx: TypeParenContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `untyped2Sig`
-	 * labeled alternative in `TntParser.untyped012`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitUntyped2Sig?: (ctx: Untyped2SigContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `untyped2Lower`
-	 * labeled alternative in `TntParser.untyped012`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitUntyped2Lower?: (ctx: Untyped2LowerContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `untyped2Paren`
-	 * labeled alternative in `TntParser.untyped012`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitUntyped2Paren?: (ctx: Untyped2ParenContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `const`
@@ -511,22 +479,6 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitLambdaOrBraces?: (ctx: LambdaOrBracesContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `untyped1`
-	 * labeled alternative in `TntParser.untyped01`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitUntyped1?: (ctx: Untyped1Context) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `untyped1Lower`
-	 * labeled alternative in `TntParser.untyped01`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitUntyped1Lower?: (ctx: Untyped1LowerContext) => Result;
-
-	/**
 	 * Visit a parse tree produced by `TntParser.module`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -581,27 +533,6 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitTypeUnionRecOne?: (ctx: TypeUnionRecOneContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `TntParser.untyped012`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitUntyped012?: (ctx: Untyped012Context) => Result;
-
-	/**
-	 * Visit a parse tree produced by `TntParser.untyped01`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitUntyped01?: (ctx: Untyped01Context) => Result;
-
-	/**
-	 * Visit a parse tree produced by `TntParser.untyped0`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitUntyped0?: (ctx: Untyped0Context) => Result;
 
 	/**
 	 * Visit a parse tree produced by `TntParser.expr`.

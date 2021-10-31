@@ -1,4 +1,4 @@
 // A module that contains operator definitions.
 module withDefs {
-	def G(x, y): (_, _) => _ = x + y
+	def G(x, y) = x + y
 }

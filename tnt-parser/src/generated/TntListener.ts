@@ -15,9 +15,6 @@ import { TypeStrContext } from "./TntParser";
 import { TypeBoolContext } from "./TntParser";
 import { TypeConstOrVarContext } from "./TntParser";
 import { TypeParenContext } from "./TntParser";
-import { Untyped2SigContext } from "./TntParser";
-import { Untyped2LowerContext } from "./TntParser";
-import { Untyped2ParenContext } from "./TntParser";
 import { ConstContext } from "./TntParser";
 import { VarContext } from "./TntParser";
 import { AssumeContext } from "./TntParser";
@@ -56,8 +53,6 @@ import { SequenceContext } from "./TntParser";
 import { LetInContext } from "./TntParser";
 import { ParenContext } from "./TntParser";
 import { LambdaOrBracesContext } from "./TntParser";
-import { Untyped1Context } from "./TntParser";
-import { Untyped1LowerContext } from "./TntParser";
 import { ModuleContext } from "./TntParser";
 import { UnitContext } from "./TntParser";
 import { ValDefContext } from "./TntParser";
@@ -66,9 +61,6 @@ import { InstanceDefContext } from "./TntParser";
 import { ParamsContext } from "./TntParser";
 import { TypeContext } from "./TntParser";
 import { TypeUnionRecOneContext } from "./TntParser";
-import { Untyped012Context } from "./TntParser";
-import { Untyped01Context } from "./TntParser";
-import { Untyped0Context } from "./TntParser";
 import { ExprContext } from "./TntParser";
 import { LambdaContext } from "./TntParser";
 import { IdentOrHoleContext } from "./TntParser";
@@ -238,45 +230,6 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitTypeParen?: (ctx: TypeParenContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `untyped2Sig`
-	 * labeled alternative in `TntParser.untyped012`.
-	 * @param ctx the parse tree
-	 */
-	enterUntyped2Sig?: (ctx: Untyped2SigContext) => void;
-	/**
-	 * Exit a parse tree produced by the `untyped2Sig`
-	 * labeled alternative in `TntParser.untyped012`.
-	 * @param ctx the parse tree
-	 */
-	exitUntyped2Sig?: (ctx: Untyped2SigContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `untyped2Lower`
-	 * labeled alternative in `TntParser.untyped012`.
-	 * @param ctx the parse tree
-	 */
-	enterUntyped2Lower?: (ctx: Untyped2LowerContext) => void;
-	/**
-	 * Exit a parse tree produced by the `untyped2Lower`
-	 * labeled alternative in `TntParser.untyped012`.
-	 * @param ctx the parse tree
-	 */
-	exitUntyped2Lower?: (ctx: Untyped2LowerContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `untyped2Paren`
-	 * labeled alternative in `TntParser.untyped012`.
-	 * @param ctx the parse tree
-	 */
-	enterUntyped2Paren?: (ctx: Untyped2ParenContext) => void;
-	/**
-	 * Exit a parse tree produced by the `untyped2Paren`
-	 * labeled alternative in `TntParser.untyped012`.
-	 * @param ctx the parse tree
-	 */
-	exitUntyped2Paren?: (ctx: Untyped2ParenContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `const`
@@ -773,32 +726,6 @@ export interface TntListener extends ParseTreeListener {
 	exitLambdaOrBraces?: (ctx: LambdaOrBracesContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `untyped1`
-	 * labeled alternative in `TntParser.untyped01`.
-	 * @param ctx the parse tree
-	 */
-	enterUntyped1?: (ctx: Untyped1Context) => void;
-	/**
-	 * Exit a parse tree produced by the `untyped1`
-	 * labeled alternative in `TntParser.untyped01`.
-	 * @param ctx the parse tree
-	 */
-	exitUntyped1?: (ctx: Untyped1Context) => void;
-
-	/**
-	 * Enter a parse tree produced by the `untyped1Lower`
-	 * labeled alternative in `TntParser.untyped01`.
-	 * @param ctx the parse tree
-	 */
-	enterUntyped1Lower?: (ctx: Untyped1LowerContext) => void;
-	/**
-	 * Exit a parse tree produced by the `untyped1Lower`
-	 * labeled alternative in `TntParser.untyped01`.
-	 * @param ctx the parse tree
-	 */
-	exitUntyped1Lower?: (ctx: Untyped1LowerContext) => void;
-
-	/**
 	 * Enter a parse tree produced by `TntParser.module`.
 	 * @param ctx the parse tree
 	 */
@@ -885,39 +812,6 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitTypeUnionRecOne?: (ctx: TypeUnionRecOneContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `TntParser.untyped012`.
-	 * @param ctx the parse tree
-	 */
-	enterUntyped012?: (ctx: Untyped012Context) => void;
-	/**
-	 * Exit a parse tree produced by `TntParser.untyped012`.
-	 * @param ctx the parse tree
-	 */
-	exitUntyped012?: (ctx: Untyped012Context) => void;
-
-	/**
-	 * Enter a parse tree produced by `TntParser.untyped01`.
-	 * @param ctx the parse tree
-	 */
-	enterUntyped01?: (ctx: Untyped01Context) => void;
-	/**
-	 * Exit a parse tree produced by `TntParser.untyped01`.
-	 * @param ctx the parse tree
-	 */
-	exitUntyped01?: (ctx: Untyped01Context) => void;
-
-	/**
-	 * Enter a parse tree produced by `TntParser.untyped0`.
-	 * @param ctx the parse tree
-	 */
-	enterUntyped0?: (ctx: Untyped0Context) => void;
-	/**
-	 * Exit a parse tree produced by `TntParser.untyped0`.
-	 * @param ctx the parse tree
-	 */
-	exitUntyped0?: (ctx: Untyped0Context) => void;
 
 	/**
 	 * Enter a parse tree produced by `TntParser.expr`.
