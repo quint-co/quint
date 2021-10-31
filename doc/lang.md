@@ -139,10 +139,8 @@ M`.
 | Action            | Stateless, State           |
 | Temporal          | Stateless, State           |
 
-As can be seen from the table, several modes cannot be compared via the order
-`<m`: action mode cannot be compared to predicate mode and temporal mode. This
-is intentional: We do not want to mix actions with predicates and temporal
-properties.
+As can be seen from the table, action mode and temporal mode are incomparable.
+This is intentional: We do not want to mix actions with temporal formulas.
 
 ## Module-level constructs
 
