@@ -6,8 +6,7 @@
 // @author: Igor Konnov
 grammar Tnt;
 
-module : 'module' IDENTIFIER
-             ('extends' IDENTIFIER (',' IDENTIFIER))? unit* 'end';
+module : 'module' IDENTIFIER '{' unit* '}';
 
 // a module unit
 unit :          'const' IDENTIFIER ':' (untyped01 | type)       # const

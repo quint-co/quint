@@ -23,7 +23,7 @@
 	"scripts": {
 		"compile": "tsc",
 		"test": "mocha -r ts-node/register test/**/*.test.ts",
-		"antlr4ts": "antlr4ts -visitor ./src/generated/Tnt.g4"
+		"antlr": "antlr4ts -visitor ./src/generated/Tnt.g4"
 	},
 	"devDependencies": {
 		"@types/chai": "^4.2.18",

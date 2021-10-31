@@ -1,6 +1,6 @@
 // A module that contains operator definitions.
-module withDefs
+module withDefs {
 	def H(x, y): (int, int) => int = {
 		x + y
 	}
-end
+}

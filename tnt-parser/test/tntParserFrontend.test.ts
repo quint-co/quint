@@ -22,7 +22,7 @@ describe('parse modules', () => {
 		const msg: ErrorMessage = {
 			explanation: "TNT001: expected a const, var, def, typedef, etc.",
 			start: { line: 4, col: 0 },
-			end:   { line: 4, col: 3 }
+			end:   { line: 4, col: 1 }
 		};
 		const expected: ParseResult = { kind: "error", messages: [ msg ] };
 		assert.deepEqual(result, expected, "expected error");
@@ -120,9 +120,9 @@ describe('parse modules', () => {
 		const result = parsePhase1(readTest("_0006vars"));
 		// var x: int
 		const x: TntDef = { id: 1n, kind: "var", name: "x", typeTag: { kind: "int" } }
-		// var y: _
+		// var y: bool
 		const y: TntDef = { id: 2n, kind: "var", name: "y",
-							typeTag: { kind: "untyped", paramArities: [] } }
+							typeTag: { kind: "bool" } }
   
 		// the module that contains all these constants
 		const module = { id: 3n, name: "withVars", extends: [],
@@ -131,12 +131,12 @@ describe('parse modules', () => {
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
 
-	it('parse error on untyped operator signature for a variable', () => {
+	it('parse error on typed operator signature for a variable', () => {
 		const result = parsePhase1(readTest("_0007varsErrors"));
 		if (result.kind == "error") {
 			assert.isTrue(result.messages.length > 0)
 			assert.deepEqual(result.messages[0].explanation,
-				"TNT002: expected '_', found an operator signature.")
+				"TNT002: expected a non-operator type.")
 		} else {
 			assert.fail("Expected to see an error")
 		}

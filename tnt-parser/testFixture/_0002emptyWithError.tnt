@@ -1,5 +1,5 @@
 // just an empty module
-module empty
+module empty {
 	// the parser should flag this
 	error
-end
+}

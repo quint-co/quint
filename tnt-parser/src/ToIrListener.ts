@@ -36,12 +36,12 @@ export class ToIrListener implements TntListener {
     // an internal counter to assign unique numbers
     private lastId: bigint = 1n
 
-    // translate: module...end
+    // translate: module <name> { ... }
     exitModule(ctx: p.ModuleContext) {
         const module: TntModule = {
             id: this.nextId(),
-            name: ctx.IDENTIFIER()[0].text,
-            extends: ctx.IDENTIFIER().slice(1).map((node) => node.text),
+            name: ctx.IDENTIFIER().text,
+            extends: [],
             defs: this.definitionStack
         };
         this.definitionStack = []; // reset the definitions

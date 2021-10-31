@@ -1,7 +1,7 @@
 // A module that contains variables.
 // We don't do extensive testing of types,
 // as we have done it for constants already.
-module withVarsError
+module withVarsError {
 	// a state variable cannot carry an operator
-	var z: (_, _) => _
-end
+	var z: (int, int) => int
+}

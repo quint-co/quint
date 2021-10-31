@@ -1,6 +1,6 @@
 // A module that contains value definitions.
 // Since 'val' gives us the simplest way of defining expressions,
 // we also do extensive testing of expression syntax in this test.
-module withVals
+module withVals {
 	val test_tuple = tuple(1, 2, 3)
-end
+}

@@ -1,5 +1,5 @@
 // a module that contains constants
-module withConsts
+module withConsts {
 	const N: _
 	const UntypedOper: (_, _) => _
 	const MySet: set(int)
@@ -8,4 +8,4 @@ module withConsts
 	const MyFunFun: (int -> str) -> bool
 	const MyOper: (int, str) => bool
 	const MyTuple: (int, bool, str)
-end
+}

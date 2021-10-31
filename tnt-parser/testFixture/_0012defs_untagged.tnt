@@ -1,4 +1,4 @@
 // A module that contains operator definitions.
-module withDefs
+module withDefs {
 	def F(x, y) = x + y
-end
+}

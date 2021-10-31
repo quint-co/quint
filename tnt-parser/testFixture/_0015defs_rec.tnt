@@ -1,7 +1,7 @@
 // A module that contains operator definitions.
-module withDefs
+module withDefs {
 	def rec R(n): (int) => int = {
 		// this definition is not useful, but syntactically correct
 		R(n - 1)
 	}
-end
+}
