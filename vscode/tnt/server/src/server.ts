@@ -22,7 +22,7 @@ import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
 
-import { parsePhase1, ErrorMessage } from './parser/tntParserFrontend';
+import { parsePhase1, ErrorMessage } from 'tnt-parser';
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.

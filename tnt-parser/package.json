@@ -1,9 +1,15 @@
 {
 	"name": "tnt-parser",
 	"description": "Parser for the TNT language",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"author": "Informal Systems",
 	"license": "Apache 2.0",
+	"main": "dist/index.js",
+	"typings": "dist/index",
+	"files": [
+		"README.md",
+		"dist/**/*"
+	],
 	"engines": {
 		"node": "*"
 	},
@@ -15,7 +21,7 @@
 		"antlr4ts": "^0.5.0-alpha.4"
 	},
 	"scripts": {
-        "compile": "tsc",
+		"compile": "tsc",
 		"test": "mocha -r ts-node/register test/**/*.test.ts",
 		"antlr4ts": "antlr4ts -visitor ./src/generated/Tnt.g4"
 	},

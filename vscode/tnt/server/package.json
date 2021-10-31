@@ -12,13 +12,13 @@
 		"url": "https://github.com/informalsystems/tnt"
 	},
 	"dependencies": {
-		"antlr4ts": "^0.5.0-alpha.4",
+		"tnt-parser": "file:.yalc/tnt-parser",
 		"vscode-languageserver": "^7.0.0",
 		"vscode-languageserver-textdocument": "^1.0.1"
 	},
 	"scripts": {
-		"test": "mocha -r ts-node/register test/**/*.test.ts",
-		"antlr4ts": "antlr4ts -visitor ./src/parser/generated/Tnt.g4"
+		"compile": "tsc -b",
+		"test": "mocha -r ts-node/register test/**/*.test.ts"
 	},
 	"devDependencies": {
 		"@types/chai": "^4.2.18",
@@ -26,7 +26,6 @@
 		"@types/node": "^12.12.0",
 		"@typescript-eslint/eslint-plugin": "^4.23.0",
 		"@typescript-eslint/parser": "^4.23.0",
-		"antlr4ts-cli": "^0.5.0-alpha.4",
 		"chai": "^4.3.4",
 		"eslint": "^7.26.0",
 		"mocha": "^8.4.0",
