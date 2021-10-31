@@ -15,7 +15,7 @@ const Quorum: set(set(str))
 
 assume _ = (
     & Quorum.forall(Q -> Q subseteq Acceptor)
-    & ncross(Quorum, Quorum).forall(Q1, Q2 -> Q1 intersect Q2 != set())
+    & tuples(Quorum, Quorum).forall(Q1, Q2 -> Q1 intersect Q2 != set())
 )
       
 val Ballot = Nat
@@ -31,16 +31,20 @@ val None = -1
  * with the actions that send them.                                        *
  ***************************************************************************/
 val Message =
-    val M1a = (b -> { tag: "1a", bal: b })
-                .applyTo(Ballot)
+    val M1a =
+      Ballot.map(b -> { tag: "1a", bal: b })
+
     val M1b =
-        (a, b, mb, mv -> { tag: "1b", acc: acc, bal: b, mbal: mb, mval: mv })
-          .applyTo(Acceptor, Ballot, Ballot union set(-1), Value union set(None))
-    val M2a = (b, v -> { tag: "2a", bal: b, value: v })
-                .applyTo(Ballot, Value)
+      tuples(Acceptor, Ballot, Ballot union set(-1), Value union set(None))
+        .map(a, b, mb, mv -> { tag: "1b", acc: acc, bal: b, mbal: mb, mval: mv })
+
+    val M2a =
+      tuples(Ballot, Value)
+        .map(b, v -> { tag: "2a", bal: b, value: v })
+
     val M2b =
-        (a, b, v -> { tag: "2b", acc: a, bal: b, value: v })
-            .applyTo(Acceptor, Ballot, Value)
+      tuples(Acceptor, Ballot, Value)
+        .map(a, b, v -> { tag: "2b", acc: a, bal: b, value: v })
 
     M1 union M1b union M2a union M2b
 //-----------------------------------------------------------------------------

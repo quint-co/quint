@@ -139,40 +139,35 @@ val vars = (round, step, decision, lockedValue,
 
 //********************* PROTOCOL INITIALIZATION ******************************
 def FaultyProposals(r) =
-    ((p, v, vr) ->
-      { tag: "PROPOSE", src: p, round: r, proposal: v, validRound: vr }
-    )
-    .applyTo(Faulty, Values, RoundsOrNil)
+    tuples(Faulty, Values, RoundsOrNil)
+      .map(p, v, vr ->
+        { tag: "PROPOSE", src: p, round: r, proposal: v, validRound: vr })
 
 val AllFaultyProposals =
-    ((p, r, v, vr) ->
-      { tag: "PROPOSE", src: p, round: r, proposal: v, validRound: vr }
-    )
-    .applyTo(Faulty, Rounds, Values, RoundsOrNil)
+    tuples(Faulty, Rounds, Values, RoundsOrNil)
+      .map(p, r, v, vr ->
+        { tag: "PROPOSE", src: p, round: r, proposal: v, validRound: vr })
 
 def FaultyPrevotes(r) =
-    ((p, v) ->
-      { tag: "PREVOTE", src: p, round: r, id: v }
-    )
-    .applyTo(Faulty, Values)
+    tuples(Faulty, Values)
+      .map(p, v ->
+        { tag: "PREVOTE", src: p, round: r, id: v })
 
 val AllFaultyPrevotes =
-    ((p, r, v) ->
-      { tag: "PREVOTE", src: p, round: r, id: v }
-    )
-    .applyTo(Faulty, Rounds, Values, RoundsOrNil)
+    tuples(Faulty, Rounds, Values, RoundsOrNil)
+      .map(p, r, v ->
+        { tag: "PREVOTE", src: p, round: r, id: v })
 
 def FaultyPrecommits(r) =
-    ((p, v) ->
-      { tag: "PRECOMMIT", src: p, round: r, id: v }
-    )
-    .applyTo(Faulty, Values)
+    tuples(Faulty, Values)
+      .map(p, v ->
+        { tag: "PRECOMMIT", src: p, round: r, id: v })
 
 val AllFaultyPrecommits =
-    ((p, r, v) ->
-      { tag: "PRECOMMIT", src: p, round: r, id: v }
-    )
-    .applyTo(Faulty, Rounds, Values)
+    tuples(Faulty, Rounds, Values)
+      .map(p, r, v ->
+        { tag: "PRECOMMIT", src: p, round: r, id: v })
+
    
 // the message function never contains a message for a wrong round
 pred BenignRoundsInMessages(msgfun) =
@@ -264,7 +259,7 @@ action UponProposalInPropose(p) =
 
 // lines 28-33        
 action UponProposalInProposeAndPrevote(p) =
-  ncross(Values, Rounds) guess { v, vr ->
+  tuples(Values, Rounds) guess { v, vr ->
     val msg = { tag: "PROPOSE", src: Proposer[round[p]],
                 round: round[p], proposal: v, validRound: vr }
     val PV = msgsPrevote[vr] filter ( m -> m.id == Id(v) )
@@ -346,7 +341,7 @@ action UponQuorumOfPrecommitsAny(p) =
 // lines 49-54        
 action UponProposalInPrecommitNoDecision(p) =
   // line 50
-  ncross(ValidValues, Rounds, RoundsOrNil) guess { v, r, vr ->
+  tuples(ValidValues, Rounds, RoundsOrNil) guess { v, r, vr ->
      val msg = { tag: "PROPOSE", src: Proposer[r],
                  round: r, proposal: v, validRound: vr }
      val PV = msgsPrecommit[r].filter(m -> m.id == Id(v))
@@ -437,9 +432,9 @@ pred EquivocationBy(p) =
 
 // amnesic behavior by a process p
 pred AmnesiaBy(p) =
-    ncross(Rounds, Rounds).exists(r1, r2 -> (
+    tuples(Rounds, Rounds).exists(r1, r2 -> (
         & r1 < r2
-        & ncross(ValidValues, ValidValues).exists(v1, v2 -> (
+        & tuples(ValidValues, ValidValues).exists(v1, v2 -> (
             & v1 != v2
             & evidence.contains({ type: "PRECOMMIT", src: p,
                                   round: r1, id: Id(v1) })
@@ -457,7 +452,7 @@ pred AmnesiaBy(p) =
 
 // the safety property -- agreement
 pred Agreement =
-  ncross(Corr, Corr).forall(p, q -> (
+  tuples(Corr, Corr).forall(p, q -> (
     | decision[p] == NilValue
     | decision[q] == NilValue
     | decision[p] == decision[q]
@@ -497,7 +492,7 @@ pred NoEquivocation =
 // It is not exactly ~Agreement, as we do not want to see the states where
 // decision[p] = NilValue
 pred NoAgreement =
-  ncross(Corr, Corr) forall ( p, q ->
+  tuples(Corr, Corr) forall ( p, q ->
         (p != q and decision[p] != NilValue and decision[q] != NilValue)
           implies (decision[p] != decision[q])
   )

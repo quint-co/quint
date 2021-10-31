@@ -2,7 +2,7 @@
 
 *TNT is not TLA+*
 
-**Revision: 30.10.2021** 
+**Revision: 31.10.2021** 
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -942,9 +942,6 @@ subseteq(S, T)
 S map (x -> e)
 S.map(x -> e)
 map(S, (x -> e))
-// set comprehension (map) in inverse form: { e: x \in X, y \in Y, z \in Z }
-(x, y, z -> e).applyTo(X, Y, Z)
-applyTo((x, y, z -> e), X, Y, Z)
 // set comprehension (filter): { x \in S: P }
 S filter (x -> P)
 S.filter(x -> P)
@@ -974,16 +971,6 @@ S.choose_some
 S.filter(x -> P).choose_some
 ```
 
-Note that we have two semantically equivalent operators: `map` and `applyTo`.
-The only reason for having both of them is convenience. The order of arguments
-in the `applyTo` form is similar to the order of arguments in TLA+ set
-comprehensions and in Python list comprehensions.  The expression `applyTo(F,
-S_1, ..., S_n)` is equivalent to `ncross(S_1, ..., S_n).map(F)`. The `applyTo`
-form allows us to map a Cartesian product to a value without writing the
-product explicitly. It is mainly used a replacement for TLA+ record sets,
-e.g., the TLA+ expression `[a: {1, 2}, b: BOOLEAN]` can be written as
-`(a, b -> {a: a, b: b}).applyTo(set(1, 2), BOOLEAN)`.
-
 These operators are defined in the module `FiniteSets` in TLA+. TNT has these
 two operators in the kernel:
 
@@ -1012,9 +999,9 @@ f keys
 f.keys
 keys(f)
 // function constructor: [ x \in S |-> e ]
-S mapOf { x -> e }
+S mapOf (x -> e)
 S.mapOf(x -> e)
-mapOf(S, { x -> e })
+mapOf(S, (x -> e))
 // a set of functions: [ S -> T ]
 S setOfMaps T
 S.setOfMaps(T)
@@ -1026,9 +1013,9 @@ update(f, e1, e2)
 // [f EXCEPT ![e1] = e2, ![e3] = e4]
 (f update e1, e2) update e3, e4
 // [f EXCEPT ![e1] = @ + y]
-f updateAs e1, { old -> old + y }
-f.updateAs(e1, { old -> old + y })
-updateAs(f, e1, { old -> old + y })
+f updateAs e1, (old -> old + y)
+f.updateAs(e1, (old -> old + y))
+updateAs(f, e1, (old -> old + y))
 // an equivalent of (k :> v) @@ f when using the module TLC
 f put e1, e2
 f.put(e1, e2)
@@ -1045,7 +1032,7 @@ put(e1, e2)
 { f_1: e_1, ..., f_n: e_n }
 // Set of records: [ f_1: S_1, ..., f_n: S_n ].
 // No operator for it. Use a set comprehension:
-(a_1, ..., a_n -> { f_1: a_1, ..., f_n: a_n }).applyTo(S_1, ..., S_n)
+tuples(S_1, ..., S_n).map(a_1, ..., a_n -> { f_1: a_1, ..., f_n: a_n })
 // access a record field: r.h
 r.h
 r h
@@ -1060,11 +1047,10 @@ with(r, f, e)
 ```
 
 Note that we are using the syntax `{ name_1: value_1, ..., name_n: value_n }`
-for records, similar to Python and JavaScript, whereas we are using the syntax
-`[ name_1 in set_1, ..., name_k in set_k ]` for sets of records. We make these two
-kinds of expressions visually different, so the users do not confuse one
-with another by mistake. Moreover, as sets of records are used less often than
-records, typing a set of records requires a bit more effort.
+for records, similar to Python and JavaScript. We have removed the syntax for
+sets of records: (1) It often confuses beginners, (2) It can be expressed with
+`map` and a record constructor. Moreover, sets of records do not combine well
+with discriminated unions.
 
 *Mode:* Stateless, State. Other modes are not allowed.
 
@@ -1086,11 +1072,8 @@ t._4
 t._50
 // Cartesian products
 // S_1 \X S_2 \X ... \X S_n
-(S_1, S_2, ..., S_n).ncross
-ncross(S_1, S_2, ..., S_n)
+tuples(S_1, S_2, ..., S_n)
 ```
-
-*The use of the operator `x <- e` in the above operators is strongly discouraged.*
 
 What about `DOMAIN t` on tuples? We don't think it makes sense to have it.
 
@@ -1148,17 +1131,17 @@ slice(s, j, k)
 s select Test
 select(s, Test)
 // in particular, we can use anonymous operators
-s select { e -> P }
+s select (e -> P)
 // Left fold. There is no standard operator for that in TLA+,
 // but you can define it with a recursive operator.
-s foldl init { (i, v) -> e }
-s.foldl(init, { (i, v) -> e })
-foldl(s, init, { (i, v) -> e })
+s foldl init, (i, v -> e)
+s.foldl(init, (i, v -> e))
+foldl(s, init, (i, v -> e))
 // Right fold. There is no standard operator for that in TLA+,
 // but you can define it with a recursive operator.
-s foldr init { (i, v) -> e }
-s.foldr(init, { (i, v) -> e })
-foldr(s, init, { (i, v) -> e })
+s foldr init, (i, v -> e)
+s.foldr(init, (i, v -> e))
+foldr(s, init, (i, v -> e))
 ```
 
 *Mode:* Stateless, State. Other modes are not allowed.
@@ -1295,7 +1278,10 @@ warn the user that the value `e` is "sent" to `x`, and it will only arrive at
 evaluate to a value that is different from 5:
 
 ```
-{ x <- 4 & x + 1 > 0 }
+{
+  & x <- 4
+  & x + 1 > 0
+}
 ```
 
 

@@ -56,7 +56,7 @@ syn match   tntStd "fold"       " use match, as 'fold' is a vim option
 syn keyword tntStd intersect exclude subseteq map applyTo filter
 syn keyword tntStd powerset flatten seqs choose_some
 syn keyword tntStd isFinite cardinality get put keys mapOf setOfMaps
-syn keyword tntStd update updateAs fields with cross ncross append concat
+syn keyword tntStd update updateAs fields with tuples append concat
 syn keyword tntStd head tail length nth indices replaceAt slice
 syn keyword tntStd select foldl foldr to
 syn keyword tntStd always eventually next stutter nostutter
