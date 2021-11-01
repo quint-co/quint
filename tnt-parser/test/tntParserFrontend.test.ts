@@ -127,17 +127,6 @@ describe('parse modules', () => {
 		assert.deepEqual(result, { kind: 'ok', module: module }, "expected ok")
 	}); 
 
-	it('parse error on typed operator signature for a variable', () => {
-		const result = parsePhase1(readTest("_0007varsErrors"));
-		if (result.kind == "error") {
-			assert.isTrue(result.messages.length > 0)
-			assert.deepEqual(result.messages[0].explanation,
-				"TNT002: expected a non-operator type.")
-		} else {
-			assert.fail("Expected to see an error")
-		}
-	}); 
-
 	it('parse untyped val', () => {
 		const result = parsePhase1(readTest("_0008vals_untyped"));
 		// val add_1_to_2: _ = 1 + 2
