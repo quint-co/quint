@@ -135,39 +135,39 @@ The list of tasks is as follows:
 
  1. Loading a unit, e.g., from a file:
 
-    ```js
+   ```js
   { "task": "load", "name": "<module name>" }
-    ```
+   ```
 
  1. Parsing a loaded unit:
 
-    ```js
+   ```js
   { "task": "parse", "name": "<module name>" }
-    ```
+   ```
 
  1. Resolving names in a parsed unit:
 
-    ```js
+   ```js
   { "task": "resolve", "name": "<module name>" }
-    ```
+   ```
 
  1. Inferring types in a module:
 
-    ```js
+   ```js
   { "task": "typecheck" }
-    ```
+   ```
 
  1. Flattening all modules and instances into a single root module:
 
-    ```js
+   ```js
   { "task": "flatten" }
-    ```
+   ```
 
  1. Translating to Apalache IR (in the JSON format):
 
-    ```js
+   ```js
   { "task": "toApalache" }
-    ```
+   ```
 
 In the above text, we did not specify the functions that are handling the
 tasks. We provide a default implementation for task handlers, which can be
