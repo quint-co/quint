@@ -211,7 +211,7 @@ export class ToIrListener implements TntListener {
 
   // operator application in the normal form, e.g., MyOper("foo", 42)
   exitOperApp (ctx: p.OperAppContext) {
-    const name = ctx.IDENTIFIER().text
+    const name = ctx.normalCallName().text
     const wrappedArgs = this.exprStack.pop()
     if (wrappedArgs && wrappedArgs.kind === 'opapp') {
       this.exprStack.push({
@@ -268,6 +268,32 @@ export class ToIrListener implements TntListener {
     }
   }
 
+  // an identifier or some operators that are allowed as a name in f(...)
+  exitNormalCallName (ctx: p.NormalCallNameContext) {
+    const ident = ctx.IDENTIFIER()
+    if (ident) {
+      this.exprStack.push({ id: 0n, kind: 'name', name: ident.text })
+    } else {
+      const op = ctx._op
+      if (op) {
+        let name = 'undefined'
+        switch (op.type) {
+          case p.TntParser.AND: name = 'and'; break
+          case p.TntParser.OR: name = 'or'; break
+          case p.TntParser.IMPLIES: name = 'implies'; break
+          case p.TntParser.IFF: name = 'iff'; break
+          case p.TntParser.IN: name = 'in'; break
+          case p.TntParser.NOTIN: name = 'notin'; break
+          case p.TntParser.SUBSETEQ: name = 'subseteq'; break
+          case p.TntParser.SET: name = 'set'; break
+        }
+        this.exprStack.push({ id: 0n, kind: 'name', name: name })
+      } else {
+        assert(false, 'exitName_after_dot: expected an operator')
+      }
+    }
+  }
+
   // an identifier or some operators that are allowed after '.'
   exitName_after_dot (ctx: p.Name_after_dotContext) {
     const ident = ctx.IDENTIFIER()
@@ -284,6 +310,7 @@ export class ToIrListener implements TntListener {
           case p.TntParser.IFF: name = 'iff'; break
           case p.TntParser.IN: name = 'in'; break
           case p.TntParser.NOTIN: name = 'notin'; break
+          case p.TntParser.SUBSETEQ: name = 'subseteq'; break
         }
         this.exprStack.push({ id: 0n, kind: 'name', name: name })
       } else {

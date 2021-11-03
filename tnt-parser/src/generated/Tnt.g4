@@ -65,7 +65,7 @@ expr:           // apply a built-in operator via the dot notation
                 // Call a user-defined operator or a built-in operator
                 // of at least one argument.
                 // This includes: next, unchanged, always, eventually, enabled
-        |       IDENTIFIER '(' arg_list? ')'                        # operApp
+        |       normalCallName '(' arg_list? ')'                  # operApp
                 // function application
         |       expr '[' expr ']'                                   # funApp
                 // unary minus
@@ -120,9 +120,15 @@ identOrHole :   IDENTIFIER | '_'
 arg_list:       expr (',' expr)*
         ;
 
+// operators in the normal call may use some reserved names
+normalCallName :   (IDENTIFIER | op=(IN | NOTIN | AND | OR | IFF | IMPLIES
+                     | SET | SUBSETEQ))
+        ;
+
 // Some infix operators may be called via lhs.oper(rhs),
 // without causing any ambiguity.
-name_after_dot  :    (IDENTIFIER | op=(IN | NOTIN | AND | OR | IFF | IMPLIES))
+name_after_dot  :  (IDENTIFIER
+                    | op=(IN | NOTIN | AND | OR | IFF | IMPLIES | SUBSETEQ))
         ;
 
 // special operators
@@ -152,6 +158,7 @@ IMPLIES         :   'implies' ;
 SUBSETEQ        :   'subseteq' ;
 IN              :   'in' ;
 NOTIN           :   'notin' ;
+SET             :   'set' ;
 PRIVATE         :   'private' ;
 ADD             :   '+' ;
 SUB             :   '-' ;

@@ -1372,33 +1372,6 @@ describe('parse modules', () => {
     assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
   })
 
-  it('parse set with {...}', () => {
-    const result = parsePhase1(readTest('_0134expr_set'))
-    // val test_set = '{ 1, 2, 3 }
-    const testSet: TntDef = {
-      id: 5n,
-      kind: 'def',
-      name: 'test_set',
-      qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
-      expr: {
-        id: 4n,
-        kind: 'opapp',
-        opcode: 'set',
-        args: [
-          { id: 1n, kind: 'int', value: 1n, type: { kind: 'int' } },
-          { id: 2n, kind: 'int', value: 2n, type: { kind: 'int' } },
-          { id: 3n, kind: 'int', value: 3n, type: { kind: 'int' } }
-        ]
-      }
-    }
-
-    // the module that contains all these constants
-    const module = { id: 6n, name: 'withVals', defs: [testSet] }
-
-    assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
-  })
-
   it('parse set as operator', () => {
     const result = parsePhase1(readTest('_0135expr_set_as_oper'))
     // val test_set = set(1, 2, 3)
