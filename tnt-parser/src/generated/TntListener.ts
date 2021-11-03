@@ -1,74 +1,8 @@
 // Generated from ./src/generated/Tnt.g4 by ANTLR 4.9.0-SNAPSHOT
 
+import { ParseTreeListener } from 'antlr4ts/tree/ParseTreeListener'
 
-import { ParseTreeListener } from "antlr4ts/tree/ParseTreeListener";
-
-import { TypeFunContext } from "./TntParser";
-import { TypeOperContext } from "./TntParser";
-import { TypeSetContext } from "./TntParser";
-import { TypeSeqContext } from "./TntParser";
-import { TypeTupleContext } from "./TntParser";
-import { TypeRecContext } from "./TntParser";
-import { TypeUnionRecContext } from "./TntParser";
-import { TypeIntContext } from "./TntParser";
-import { TypeStrContext } from "./TntParser";
-import { TypeBoolContext } from "./TntParser";
-import { TypeConstOrVarContext } from "./TntParser";
-import { TypeParenContext } from "./TntParser";
-import { ConstContext } from "./TntParser";
-import { VarContext } from "./TntParser";
-import { AssumeContext } from "./TntParser";
-import { ValContext } from "./TntParser";
-import { OperContext } from "./TntParser";
-import { PatContext } from "./TntParser";
-import { ModuleNestedContext } from "./TntParser";
-import { InstanceContext } from "./TntParser";
-import { TypeDefContext } from "./TntParser";
-import { ErrorCaseContext } from "./TntParser";
-import { LambdaOneContext } from "./TntParser";
-import { LambdaManyContext } from "./TntParser";
-import { DotCallContext } from "./TntParser";
-import { OperAppContext } from "./TntParser";
-import { FunAppContext } from "./TntParser";
-import { UminusContext } from "./TntParser";
-import { PowContext } from "./TntParser";
-import { MultDivContext } from "./TntParser";
-import { PlusMinusContext } from "./TntParser";
-import { IfElseContext } from "./TntParser";
-import { CaseBlockContext } from "./TntParser";
-import { InfixCallContext } from "./TntParser";
-import { RelationsContext } from "./TntParser";
-import { AndContext } from "./TntParser";
-import { OrContext } from "./TntParser";
-import { IffContext } from "./TntParser";
-import { ImpliesContext } from "./TntParser";
-import { AndBlockContext } from "./TntParser";
-import { OrBlockContext } from "./TntParser";
-import { LiteralOrIdContext } from "./TntParser";
-import { TupleContext } from "./TntParser";
-import { SetContext } from "./TntParser";
-import { RecordContext } from "./TntParser";
-import { RecordSetContext } from "./TntParser";
-import { SequenceContext } from "./TntParser";
-import { LetInContext } from "./TntParser";
-import { ParenContext } from "./TntParser";
-import { LambdaOrBracesContext } from "./TntParser";
-import { ModuleContext } from "./TntParser";
-import { UnitContext } from "./TntParser";
-import { ValDefContext } from "./TntParser";
-import { OperDefContext } from "./TntParser";
-import { InstanceDefContext } from "./TntParser";
-import { ParamsContext } from "./TntParser";
-import { TypeContext } from "./TntParser";
-import { TypeUnionRecOneContext } from "./TntParser";
-import { ExprContext } from "./TntParser";
-import { LambdaContext } from "./TntParser";
-import { IdentOrHoleContext } from "./TntParser";
-import { Arg_listContext } from "./TntParser";
-import { Name_after_dotContext } from "./TntParser";
-import { OperatorContext } from "./TntParser";
-import { LiteralContext } from "./TntParser";
-
+import { TypeFunContext, TypeOperContext, TypeSetContext, TypeSeqContext, TypeTupleContext, TypeRecContext, TypeUnionRecContext, TypeIntContext, TypeStrContext, TypeBoolContext, TypeConstOrVarContext, TypeParenContext, ConstContext, VarContext, AssumeContext, ValContext, OperContext, PatContext, ModuleNestedContext, InstanceContext, TypeDefContext, ErrorCaseContext, LambdaOneContext, LambdaManyContext, DotCallContext, OperAppContext, FunAppContext, UminusContext, PowContext, MultDivContext, PlusMinusContext, IfElseContext, CaseBlockContext, InfixCallContext, RelationsContext, AndContext, OrContext, IffContext, ImpliesContext, AndBlockContext, OrBlockContext, LiteralOrIdContext, TupleContext, RecordContext, RecordSetContext, SequenceContext, LetInContext, ParenContext, LambdaOrBracesContext, ModuleContext, UnitContext, ValDefContext, OperDefContext, InstanceDefContext, ParamsContext, TypeContext, TypeUnionRecOneContext, ExprContext, LambdaContext, IdentOrHoleContext, Arg_listContext, Name_after_dotContext, OperatorContext, LiteralContext } from './TntParser'
 
 /**
  * This interface defines a complete listener for a parse tree produced by
@@ -635,19 +569,6 @@ export interface TntListener extends ParseTreeListener {
 	exitTuple?: (ctx: TupleContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `set`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 */
-	enterSet?: (ctx: SetContext) => void;
-	/**
-	 * Exit a parse tree produced by the `set`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 */
-	exitSet?: (ctx: SetContext) => void;
-
-	/**
 	 * Enter a parse tree produced by the `record`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
@@ -890,4 +811,3 @@ export interface TntListener extends ParseTreeListener {
 	 */
 	exitLiteral?: (ctx: LiteralContext) => void;
 }
-

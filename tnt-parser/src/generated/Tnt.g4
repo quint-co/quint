@@ -94,9 +94,6 @@ expr:           // apply a built-in operator via the dot notation
         |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
         //      a tuple constructor, the form tuple(...) is just an operator call
         |       '(' expr ',' expr (',' expr)* ')'                   # tuple
-        //      a set constructor, the form set(...) is just an operator call
-        |       ('\'{' (expr (',' expr)*)? '}' |
-                        'set' '(' (expr (',' expr)*)? ')')          # set
         |       '{' IDENTIFIER ':' expr
                         (',' IDENTIFIER ':' expr)* '}'              # record
         |       '[' IDENTIFIER 'in' expr
