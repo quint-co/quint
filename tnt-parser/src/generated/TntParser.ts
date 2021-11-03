@@ -104,16 +104,16 @@ export class TntParser extends Parser {
 	public static readonly RULE_expr = 8;
 	public static readonly RULE_lambda = 9;
 	public static readonly RULE_identOrHole = 10;
-	public static readonly RULE_arg_list = 11;
+	public static readonly RULE_argList = 11;
 	public static readonly RULE_normalCallName = 12;
-	public static readonly RULE_name_after_dot = 13;
+	public static readonly RULE_nameAfterDot = 13;
 	public static readonly RULE_operator = 14;
 	public static readonly RULE_literal = 15;
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
 		"module", "unit", "valDef", "operDef", "instanceDef", "params", "type", 
-		"typeUnionRecOne", "expr", "lambda", "identOrHole", "arg_list", "normalCallName", 
-		"name_after_dot", "operator", "literal",
+		"typeUnionRecOne", "expr", "lambda", "identOrHole", "argList", "normalCallName", 
+		"nameAfterDot", "operator", "literal",
 	];
 
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
@@ -1103,7 +1103,7 @@ export class TntParser extends Parser {
 				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__12) | (1 << TntParser.T__13) | (1 << TntParser.T__18) | (1 << TntParser.T__22) | (1 << TntParser.T__28))) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & ((1 << (TntParser.T__31 - 32)) | (1 << (TntParser.T__33 - 32)) | (1 << (TntParser.STRING - 32)) | (1 << (TntParser.BOOL - 32)) | (1 << (TntParser.INT - 32)) | (1 << (TntParser.AND - 32)) | (1 << (TntParser.OR - 32)) | (1 << (TntParser.IFF - 32)) | (1 << (TntParser.IMPLIES - 32)) | (1 << (TntParser.SUBSETEQ - 32)) | (1 << (TntParser.IN - 32)) | (1 << (TntParser.NOTIN - 32)) | (1 << (TntParser.SET - 32)) | (1 << (TntParser.SUB - 32)) | (1 << (TntParser.IDENTIFIER - 32)))) !== 0)) {
 					{
 					this.state = 240;
-					this.arg_list();
+					this.argList();
 					}
 				}
 
@@ -1767,7 +1767,7 @@ export class TntParser extends Parser {
 						this.state = 430;
 						this.match(TntParser.T__27);
 						this.state = 431;
-						this.name_after_dot();
+						this.nameAfterDot();
 						this.state = 439;
 						this._errHandler.sync(this);
 						switch ( this.interpreter.adaptivePredict(this._input, 43, this._ctx) ) {
@@ -1788,7 +1788,7 @@ export class TntParser extends Parser {
 							case 2:
 								{
 								this.state = 434;
-								this.arg_list();
+								this.argList();
 								}
 								break;
 							}
@@ -1833,7 +1833,7 @@ export class TntParser extends Parser {
 						case 1:
 							{
 							this.state = 448;
-							this.arg_list();
+							this.argList();
 							}
 							break;
 						}
@@ -1971,9 +1971,9 @@ export class TntParser extends Parser {
 		return _localctx;
 	}
 	// @RuleVersion(0)
-	public arg_list(): Arg_listContext {
-		let _localctx: Arg_listContext = new Arg_listContext(this._ctx, this.state);
-		this.enterRule(_localctx, 22, TntParser.RULE_arg_list);
+	public argList(): ArgListContext {
+		let _localctx: ArgListContext = new ArgListContext(this._ctx, this.state);
+		this.enterRule(_localctx, 22, TntParser.RULE_argList);
 		try {
 			let _alt: number;
 			this.enterOuterAlt(_localctx, 1);
@@ -2075,9 +2075,9 @@ export class TntParser extends Parser {
 		return _localctx;
 	}
 	// @RuleVersion(0)
-	public name_after_dot(): Name_after_dotContext {
-		let _localctx: Name_after_dotContext = new Name_after_dotContext(this._ctx, this.state);
-		this.enterRule(_localctx, 26, TntParser.RULE_name_after_dot);
+	public nameAfterDot(): NameAfterDotContext {
+		let _localctx: NameAfterDotContext = new NameAfterDotContext(this._ctx, this.state);
+		this.enterRule(_localctx, 26, TntParser.RULE_nameAfterDot);
 		let _la: number;
 		try {
 			this.enterOuterAlt(_localctx, 1);
@@ -3501,14 +3501,14 @@ export class DotCallContext extends ExprContext {
 	public expr(): ExprContext {
 		return this.getRuleContext(0, ExprContext);
 	}
-	public name_after_dot(): Name_after_dotContext {
-		return this.getRuleContext(0, Name_after_dotContext);
+	public nameAfterDot(): NameAfterDotContext {
+		return this.getRuleContext(0, NameAfterDotContext);
 	}
 	public lambda(): LambdaContext | undefined {
 		return this.tryGetRuleContext(0, LambdaContext);
 	}
-	public arg_list(): Arg_listContext | undefined {
-		return this.tryGetRuleContext(0, Arg_listContext);
+	public argList(): ArgListContext | undefined {
+		return this.tryGetRuleContext(0, ArgListContext);
 	}
 	constructor(ctx: ExprContext) {
 		super(ctx.parent, ctx.invokingState);
@@ -3539,8 +3539,8 @@ export class OperAppContext extends ExprContext {
 	public normalCallName(): NormalCallNameContext {
 		return this.getRuleContext(0, NormalCallNameContext);
 	}
-	public arg_list(): Arg_listContext | undefined {
-		return this.tryGetRuleContext(0, Arg_listContext);
+	public argList(): ArgListContext | undefined {
+		return this.tryGetRuleContext(0, ArgListContext);
 	}
 	constructor(ctx: ExprContext) {
 		super(ctx.parent, ctx.invokingState);
@@ -3820,8 +3820,8 @@ export class InfixCallContext extends ExprContext {
 		return this.getRuleContext(0, ExprContext);
 	}
 	public IDENTIFIER(): TerminalNode { return this.getToken(TntParser.IDENTIFIER, 0); }
-	public arg_list(): Arg_listContext | undefined {
-		return this.tryGetRuleContext(0, Arg_listContext);
+	public argList(): ArgListContext | undefined {
+		return this.tryGetRuleContext(0, ArgListContext);
 	}
 	constructor(ctx: ExprContext) {
 		super(ctx.parent, ctx.invokingState);
@@ -4516,7 +4516,7 @@ export class IdentOrHoleContext extends ParserRuleContext {
 }
 
 
-export class Arg_listContext extends ParserRuleContext {
+export class ArgListContext extends ParserRuleContext {
 	public expr(): ExprContext[];
 	public expr(i: number): ExprContext;
 	public expr(i?: number): ExprContext | ExprContext[] {
@@ -4530,23 +4530,23 @@ export class Arg_listContext extends ParserRuleContext {
 		super(parent, invokingState);
 	}
 	// @Override
-	public get ruleIndex(): number { return TntParser.RULE_arg_list; }
+	public get ruleIndex(): number { return TntParser.RULE_argList; }
 	// @Override
 	public enterRule(listener: TntListener): void {
-		if (listener.enterArg_list) {
-			listener.enterArg_list(this);
+		if (listener.enterArgList) {
+			listener.enterArgList(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: TntListener): void {
-		if (listener.exitArg_list) {
-			listener.exitArg_list(this);
+		if (listener.exitArgList) {
+			listener.exitArgList(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: TntVisitor<Result>): Result {
-		if (visitor.visitArg_list) {
-			return visitor.visitArg_list(this);
+		if (visitor.visitArgList) {
+			return visitor.visitArgList(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
@@ -4593,7 +4593,7 @@ export class NormalCallNameContext extends ParserRuleContext {
 }
 
 
-export class Name_after_dotContext extends ParserRuleContext {
+export class NameAfterDotContext extends ParserRuleContext {
 	public _op!: Token;
 	public IDENTIFIER(): TerminalNode | undefined { return this.tryGetToken(TntParser.IDENTIFIER, 0); }
 	public IN(): TerminalNode | undefined { return this.tryGetToken(TntParser.IN, 0); }
@@ -4607,23 +4607,23 @@ export class Name_after_dotContext extends ParserRuleContext {
 		super(parent, invokingState);
 	}
 	// @Override
-	public get ruleIndex(): number { return TntParser.RULE_name_after_dot; }
+	public get ruleIndex(): number { return TntParser.RULE_nameAfterDot; }
 	// @Override
 	public enterRule(listener: TntListener): void {
-		if (listener.enterName_after_dot) {
-			listener.enterName_after_dot(this);
+		if (listener.enterNameAfterDot) {
+			listener.enterNameAfterDot(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: TntListener): void {
-		if (listener.exitName_after_dot) {
-			listener.exitName_after_dot(this);
+		if (listener.exitNameAfterDot) {
+			listener.exitNameAfterDot(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: TntVisitor<Result>): Result {
-		if (visitor.visitName_after_dot) {
-			return visitor.visitName_after_dot(this);
+		if (visitor.visitNameAfterDot) {
+			return visitor.visitNameAfterDot(this);
 		} else {
 			return visitor.visitChildren(this);
 		}

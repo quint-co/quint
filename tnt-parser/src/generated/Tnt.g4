@@ -61,11 +61,11 @@ typeUnionRecOne : '|' '{' IDENTIFIER ':' STRING (',' IDENTIFIER ':' type)* '}'
 // A TNT expression. The order matters, it defines the priority.
 // Wherever possible, we keep the same order of operators as in TLA+.
 expr:           // apply a built-in operator via the dot notation
-                expr '.' name_after_dot ('(' (lambda | arg_list) ')')?  # dotCall
+                expr '.' nameAfterDot ('(' (lambda | argList) ')')?  # dotCall
                 // Call a user-defined operator or a built-in operator
                 // of at least one argument.
                 // This includes: next, unchanged, always, eventually, enabled
-        |       normalCallName '(' arg_list? ')'                  # operApp
+        |       normalCallName '(' argList? ')'                  # operApp
                 // function application
         |       expr '[' expr ']'                                   # funApp
                 // unary minus
@@ -79,7 +79,7 @@ expr:           // apply a built-in operator via the dot notation
         |       'case' '{' '|'? expr '->' expr
                     ('|' expr '->' expr)* ('|' '_' '->' expr)? '}'  # caseBlock
                 // built-in infix/postfix operators, a la Scala
-        |       expr IDENTIFIER (arg_list)?                         # infixCall
+        |       expr IDENTIFIER (argList)?                         # infixCall
                 // standard relations
         |       expr op=(GT | LT | GE | LE | NE | EQEQ |
                          EQ | ASGN | IN | NOTIN | SUBSETEQ) expr    # relations
@@ -117,7 +117,7 @@ lambda:         identOrHole '->' expr                               # lambdaOne
 identOrHole :   IDENTIFIER | '_'
         ;        
 
-arg_list:       expr (',' expr)*
+argList:       expr (',' expr)*
         ;
 
 // operators in the normal call may use some reserved names
@@ -127,7 +127,7 @@ normalCallName :   (IDENTIFIER | op=(IN | NOTIN | AND | OR | IFF | IMPLIES
 
 // Some infix operators may be called via lhs.oper(rhs),
 // without causing any ambiguity.
-name_after_dot  :  (IDENTIFIER
+nameAfterDot  :  (IDENTIFIER
                     | op=(IN | NOTIN | AND | OR | IFF | IMPLIES | SUBSETEQ))
         ;
 

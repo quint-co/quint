@@ -295,7 +295,7 @@ export class ToIrListener implements TntListener {
   }
 
   // an identifier or some operators that are allowed after '.'
-  exitName_after_dot (ctx: p.Name_after_dotContext) {
+  exitNameAfterDot (ctx: p.NameAfterDotContext) {
     const ident = ctx.IDENTIFIER()
     if (ident) {
       this.exprStack.push({ id: 0n, kind: 'name', name: ident.text })
@@ -320,7 +320,7 @@ export class ToIrListener implements TntListener {
   }
 
   // a list of arguments
-  exitArg_list (ctx: p.Arg_listContext) {
+  exitArgList (ctx: p.ArgListContext) {
     const args = this.popExprs(ctx.expr().length)
     // wrap the arguments with a temporary operator,
     // to be unwrapped later

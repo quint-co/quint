@@ -146,9 +146,9 @@ typeUnionRecOne
 expr
 lambda
 identOrHole
-arg_list
+argList
 normalCallName
-name_after_dot
+nameAfterDot
 operator
 literal
 

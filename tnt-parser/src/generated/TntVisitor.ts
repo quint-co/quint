@@ -63,9 +63,9 @@ import { TypeUnionRecOneContext } from "./TntParser";
 import { ExprContext } from "./TntParser";
 import { LambdaContext } from "./TntParser";
 import { IdentOrHoleContext } from "./TntParser";
-import { Arg_listContext } from "./TntParser";
+import { ArgListContext } from "./TntParser";
 import { NormalCallNameContext } from "./TntParser";
-import { Name_after_dotContext } from "./TntParser";
+import { NameAfterDotContext } from "./TntParser";
 import { OperatorContext } from "./TntParser";
 import { LiteralContext } from "./TntParser";
 
@@ -548,11 +548,11 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitIdentOrHole?: (ctx: IdentOrHoleContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `TntParser.arg_list`.
+	 * Visit a parse tree produced by `TntParser.argList`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitArg_list?: (ctx: Arg_listContext) => Result;
+	visitArgList?: (ctx: ArgListContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `TntParser.normalCallName`.
@@ -562,11 +562,11 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitNormalCallName?: (ctx: NormalCallNameContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `TntParser.name_after_dot`.
+	 * Visit a parse tree produced by `TntParser.nameAfterDot`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitName_after_dot?: (ctx: Name_after_dotContext) => Result;
+	visitNameAfterDot?: (ctx: NameAfterDotContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `TntParser.operator`.

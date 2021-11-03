@@ -63,9 +63,9 @@ import { TypeUnionRecOneContext } from "./TntParser";
 import { ExprContext } from "./TntParser";
 import { LambdaContext } from "./TntParser";
 import { IdentOrHoleContext } from "./TntParser";
-import { Arg_listContext } from "./TntParser";
+import { ArgListContext } from "./TntParser";
 import { NormalCallNameContext } from "./TntParser";
-import { Name_after_dotContext } from "./TntParser";
+import { NameAfterDotContext } from "./TntParser";
 import { OperatorContext } from "./TntParser";
 import { LiteralContext } from "./TntParser";
 
@@ -834,15 +834,15 @@ export interface TntListener extends ParseTreeListener {
 	exitIdentOrHole?: (ctx: IdentOrHoleContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `TntParser.arg_list`.
+	 * Enter a parse tree produced by `TntParser.argList`.
 	 * @param ctx the parse tree
 	 */
-	enterArg_list?: (ctx: Arg_listContext) => void;
+	enterArgList?: (ctx: ArgListContext) => void;
 	/**
-	 * Exit a parse tree produced by `TntParser.arg_list`.
+	 * Exit a parse tree produced by `TntParser.argList`.
 	 * @param ctx the parse tree
 	 */
-	exitArg_list?: (ctx: Arg_listContext) => void;
+	exitArgList?: (ctx: ArgListContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `TntParser.normalCallName`.
@@ -856,15 +856,15 @@ export interface TntListener extends ParseTreeListener {
 	exitNormalCallName?: (ctx: NormalCallNameContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `TntParser.name_after_dot`.
+	 * Enter a parse tree produced by `TntParser.nameAfterDot`.
 	 * @param ctx the parse tree
 	 */
-	enterName_after_dot?: (ctx: Name_after_dotContext) => void;
+	enterNameAfterDot?: (ctx: NameAfterDotContext) => void;
 	/**
-	 * Exit a parse tree produced by `TntParser.name_after_dot`.
+	 * Exit a parse tree produced by `TntParser.nameAfterDot`.
 	 * @param ctx the parse tree
 	 */
-	exitName_after_dot?: (ctx: Name_after_dotContext) => void;
+	exitNameAfterDot?: (ctx: NameAfterDotContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `TntParser.operator`.
