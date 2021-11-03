@@ -140,8 +140,8 @@ error. In case of success, the task scheduler adds another task to the list:
 
 We define a minimal set of tasks that are required for transpiling a TNT
 specification into a TLA+ specification. As discussed in [Task
-List](#TaskList), it should be possible for the contributors to extend the task
-scheduler, in order to inject their own tasks.
+List](#TaskList), it should be possible for the contributors to write their own
+task scheduler, in order to inject their own tasks.
 
 The list of tasks is as follows:
 
