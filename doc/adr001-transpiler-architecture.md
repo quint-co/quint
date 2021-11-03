@@ -11,6 +11,18 @@ contributors should be able to plug-in their code/passes to our pipeline.
 Hence, we have to be very careful when definining our assumptions about the
 input and output of every pass.
 
+The use cases of this architecture are as follows:
+
+ 1. A transpiler from TNT to Apalache IR (TLA+).
+
+ 1. A VSCode plugin that enables fast feedback about syntax, types, etc.
+
+ 1. An LSP server that could be used with other text editors (vim, emacs).
+
+ 1. Custom linters and translators by external contributors. For instance, to
+ translate TNT to a programming language, in order to write a simulator.
+
+
 <a name="TranspilerContext"></a>
 
 ## 1. Transpiler context
@@ -271,33 +283,33 @@ the units in `context.units`, then `context.units[task.name]` equals to:
 
 **Errors:** Several error results are possible:
 
-  1. If the module refers to a name that has been neither defined, nor imported,
-  e.g., an operator name, then the result equals to `{ "result":
-  "error", "messages": [ error ] }`. The field error is of the form (see
-  [Errors][]):
+ 1. If the module refers to a name that has been neither defined, nor imported,
+    e.g., an operator name, then the result equals to `{ "result":
+    "error", "messages": [ error ] }`. The field error is of the form (see
+    [Errors][]):
 
-     ```js
-      {
+    ```js
+    {
         "explanation": "TNT405: name ...  not found",
         ...
-      }
-     ```
+    }
+    ```
 
-  1. If the module imports another module that is not present in `context.units`,
-  then the result equals to:
+ 1. If the module imports another module that is not present in
+    `context.units`, then the result equals to:
 
-     ```js
-      {
-        "result": "lookup",
-        "messages": [{
-          "explanation": "TNT404: Module <name> not found",
-          ...
-        }]
-      }
-     ```
+    ```js
+    {
+      "result": "lookup",
+      "messages": [{
+        "explanation": "TNT404: Module <name> not found",
+        ...
+      }]
+    }
+    ```
 
-      In this case, the task scheduler is expected to schedule a "load" task
-      for the unresolved module and keep the failed "resolve" task in the list.
+    In this case, the task scheduler is expected to schedule a "load" task
+    for the unresolved module and keep the failed "resolve" task in the list.
 
 
 ### 3.4. Typecheck
