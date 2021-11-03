@@ -4,8 +4,8 @@ module withConsts {
 	const MyRecord: { i: int, b: bool, s: str }
 	// a disjoint union is a common pattern in TLA+
 	const MyUnion:
-		| { type: "circle", radius: int }
-		| { type: "rectangle", width: int, height: int }
-		| { type: "dog", name: str }
+		| { tag: "circle", radius: int }
+		| { tag: "rectangle", width: int, height: int }
+		| { tag: "dog", name: str }
 
 }

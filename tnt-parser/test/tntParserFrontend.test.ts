@@ -125,7 +125,7 @@ describe('parse modules', () => {
         name: 'MyUnion',
         type: {
           kind: 'union',
-          tag: 'type',
+          tag: 'tag',
           records: [
             {
               tagValue: 'circle',
@@ -159,7 +159,7 @@ describe('parse modules', () => {
   it('error message in malformed disjoint union', () => {
     const result = parsePhase1(readTest('_0005constRecordsError'))
     const msg: ErrorMessage = {
-      explanation: 'TNT011: Records in disjoint union have different tag fields: type and kind',
+      explanation: 'TNT011: Records in disjoint union have different tag fields: tag and kind',
       start: { line: 5, col: 2 },
       end: { line: 6, col: 49 }
     }

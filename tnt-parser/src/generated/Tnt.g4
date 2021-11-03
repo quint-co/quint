@@ -19,7 +19,7 @@ unit :          'const' IDENTIFIER ':' type                     # const
                            (':' type)? '=' expr                 # pat
         |       module                                          # moduleNested
         |       instanceDef                                     # instance
-        |       'typedef' IDENTIFIER '=' type                   # typeDef
+        |       'type' IDENTIFIER '=' type                      # typeDef
         |       (IDENTIFIER | operator | literal) {
          this.notifyErrorListeners("TNT001: expected a const, var, def, typedef, etc.");
                 }                                               # errorCase

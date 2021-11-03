@@ -118,7 +118,7 @@ export class TntParser extends Parser {
 
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
 		undefined, "'module'", "'{'", "'}'", "'const'", "':'", "'var'", "'assume'", 
-		"'_'", "'pred'", "'action'", "'temporal'", "'typedef'", "'val'", "'def'", 
+		"'_'", "'pred'", "'action'", "'temporal'", "'type'", "'val'", "'def'", 
 		"'instance'", "'with'", "'<-'", "','", "'('", "')'", "'->'", "'=>'", "'seq'", 
 		"'int'", "'str'", "'bool'", "'|'", "'.'", "'['", "']'", "'^'", "'if'", 
 		"'else'", "'case'", "'&'", undefined, undefined, undefined, "'and'", "'or'", 
