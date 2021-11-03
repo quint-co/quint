@@ -4,15 +4,24 @@ This is a surface syntax that uses the same background logic as TLA+ but does
 not try to mimic general mathematics. Instead it mimics functional languages,
 e.g., Scala and OCaml.
 
+## Syntax
+
 Check the [preliminary syntax](./doc/lang.md). For each construct, we give
 an equivalent TLA+ expression and thus define the language semantics by
 this simple translation to TLA+.
+
+## Examples
 
 We have written [examples](./examples) of several TLA+ specifications in TNT.
 To simplify reading, use [syntax highlighting](./editor-plugins) for your
 editor (currently, only vim is supported).
 
-The design principles of TNT:
+## Developer docs
+
+ - [ADR001: Transpiler architecture](./doc/adr001-transpiler-architecture.md)
+ - [ADR002: Error codes](./doc/adr002-errors.md)
+
+## Design principles
 
  - *TNT should not annoy us*:
 
