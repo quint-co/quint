@@ -99,18 +99,18 @@ return one of the two results:
 
  1. An error, e.g.:
 
-  ```js
+   ```js
   {
     "result": "error",
     "messages": [ { "explanation": "TNT404: Module MyModule not found", ...} ]
   }
-  ```
+   ```
 
  1. A success, e.g.:
 
-  ```js
+   ```js
   { "result": "OK" } 
-  ```
+   ```
 
 When an error is returned, the task scheduler stops processing and returns the
 error. In case of success, the task scheduler adds another task to the list:
