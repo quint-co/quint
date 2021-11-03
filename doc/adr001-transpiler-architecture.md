@@ -135,39 +135,39 @@ The list of tasks is as follows:
 
  1. Loading a unit, e.g., from a file:
 
-   ```js
-  { "task": "load", "name": "<module name>" }
-   ```
+    ```js
+    { "task": "load", "name": "<module name>" }
+    ```
 
  1. Parsing a loaded unit:
 
-   ```js
-  { "task": "parse", "name": "<module name>" }
-   ```
+    ```js
+    { "task": "parse", "name": "<module name>" }
+    ```
 
  1. Resolving names in a parsed unit:
 
-   ```js
-  { "task": "resolve", "name": "<module name>" }
-   ```
+    ```js
+    { "task": "resolve", "name": "<module name>" }
+    ```
 
  1. Inferring types in a module:
 
-   ```js
-  { "task": "typecheck" }
-   ```
+    ```js
+    { "task": "typecheck" }
+    ```
 
  1. Flattening all modules and instances into a single root module:
 
-   ```js
-  { "task": "flatten" }
-   ```
+    ```js
+    { "task": "flatten" }
+    ```
 
  1. Translating to Apalache IR (in the JSON format):
 
-   ```js
-  { "task": "toApalache" }
-   ```
+    ```js
+    { "task": "toApalache" }
+    ```
 
 In the above text, we did not specify the functions that are handling the
 tasks. We provide a default implementation for task handlers, which can be
@@ -276,17 +276,17 @@ the units in `context.units`, then `context.units[task.name]` equals to:
   "error", "messages": [ error ] }`. The field error is of the form (see
   [Errors][]):
 
-      ```js
+     ```js
       {
         "explanation": "TNT405: name ...  not found",
         ...
       }
-      ```
+     ```
 
   1. If the module imports another module that is not present in `context.units`,
   then the result equals to:
 
-      ```js
+     ```js
       {
         "result": "lookup",
         "messages": [{
@@ -294,7 +294,7 @@ the units in `context.units`, then `context.units[task.name]` equals to:
           ...
         }]
       }
-      ```
+     ```
 
       In this case, the task scheduler is expected to schedule a "load" task
       for the unresolved module and keep the failed "resolve" task in the list.
