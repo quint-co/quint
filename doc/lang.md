@@ -1033,7 +1033,6 @@ put(e1, e2)
 tuples(S_1, ..., S_n).map(a_1, ..., a_n -> { f_1: a_1, ..., f_n: a_n })
 // access a record field: r.h
 r.h
-r h
 // the set of record fields: DOMAIN r
 r.fields
 r fields
