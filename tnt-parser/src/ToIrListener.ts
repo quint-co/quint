@@ -119,12 +119,11 @@ export class ToIrListener implements TntListener {
       const lambda: TntEx = {
         id: this.nextId(), kind: 'opabs', params: params, expr: expr
       }
-      const qualif = (ctx.REC()) ? OpQualifier.DefRec : OpQualifier.Def
       const def: TntOpDef = {
         id: this.nextId(),
         kind: 'def',
         name: name,
-        qualifier: qualif,
+        qualifier: OpQualifier.Def,
         expr: lambda
       }
       if (typeTag) {

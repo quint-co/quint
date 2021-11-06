@@ -59,9 +59,6 @@ export type TntEx =
  *    value, you should use `pred` instead. However, this is only a convention,
  *    not a requirement.
  *
- *  - def rec: like `def` but the expression is recursive, that is,
- *     its name can be used in the definition.
- *
  *  - pred: a (possibly parameterized) expression over constants,
  *     state variables, and definition parameters. This expression must
  *    produce a Boolean value.
@@ -83,7 +80,6 @@ export type TntEx =
 export enum OpQualifier {
   Val,
   Def,
-  DefRec,
   Pred,
   Action,
   Temporal

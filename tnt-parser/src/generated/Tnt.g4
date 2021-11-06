@@ -28,8 +28,7 @@ unit :          'const' IDENTIFIER ':' type                     # const
 valDef  :       'val' IDENTIFIER (':' type)? '=' expr
         ;
 
-operDef :       'def' REC? IDENTIFIER params
-                         (':' type)? '=' expr
+operDef :       'def' IDENTIFIER params (':' type)? '=' expr
         ;
 
 instanceDef :   'instance' (IDENTIFIER | '_') '=' IDENTIFIER

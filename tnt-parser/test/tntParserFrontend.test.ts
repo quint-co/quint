@@ -365,47 +365,6 @@ describe('parse modules', () => {
     assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
   })
 
-  it('parse typed def rec', () => {
-    const result = parsePhase1(readTest('_0015defs_rec'))
-    // def rec R(n): (int) => int = { R(n - 1) }
-    const defR: TntOpDef = {
-      id: 6n,
-      kind: 'def',
-      name: 'R',
-      qualifier: OpQualifier.DefRec,
-      type: {
-        kind: 'oper',
-        args: [{ kind: 'int' }],
-        res: { kind: 'int' }
-      },
-      expr: {
-        id: 5n,
-        kind: 'opabs',
-        params: ['n'],
-        expr: {
-          id: 4n,
-          kind: 'opapp',
-          opcode: 'R',
-          args: [
-            {
-              id: 3n,
-              kind: 'opapp',
-              opcode: 'sub',
-              args: [
-                { id: 1n, kind: 'name', name: 'n' },
-                { id: 2n, kind: 'int', value: 1n, type: { kind: 'int' } }]
-            }
-          ]
-        }
-      }
-    }
-
-    // the module that contains all these constants
-    const module = { id: 7n, name: 'withDefs', defs: [defR] }
-
-    assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
-  })
-
   it('parse add', () => {
     const result = parsePhase1(readTest('_0100expr_add'))
     // val add_1_to_2: _ = 1 + 2
