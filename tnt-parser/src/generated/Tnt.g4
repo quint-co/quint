@@ -13,7 +13,7 @@ unit :          'const' IDENTIFIER ':' type                     # const
         |       'var' IDENTIFIER ':'   type                     # var
         |       'assume' (IDENTIFIER | '_') '=' expr            # assume
         |       valDef                                          # val
-        |       operDef                                                  # oper
+        |       operDef                                         # oper
         |       ('pred' | 'action' | 'temporal')       
                            IDENTIFIER params?
                            (':' type)? '=' expr                 # pat
@@ -31,11 +31,16 @@ valDef  :       'val' IDENTIFIER (':' type)? '=' expr
 operDef :       'def' IDENTIFIER params (':' type)? '=' expr
         ;
 
-instanceDef :   'instance' (IDENTIFIER | '_') '=' IDENTIFIER
-                    ('with' IDENTIFIER '<-' expr (',' IDENTIFIER '<-' expr)*)?
+params  :       '(' (IDENTIFIER (',' IDENTIFIER)*)? ')'
         ;
 
-params  :       '(' (IDENTIFIER (',' IDENTIFIER)*)? ')'
+// an instance may have a special parameter '*',
+// which means that the missing parameters are identity, e.g., x = x, y = y
+instanceParams  :   '*'
+                |   IDENTIFIER '=' expr (',' IDENTIFIER '=' expr)* (',' '*')?
+
+instanceDef :   'module' IDENTIFIER '=' IDENTIFIER
+                '(' instanceParams ')'
         ;
 
 // Types in Type System 1.2 of Apalache, which supports discriminated unions
