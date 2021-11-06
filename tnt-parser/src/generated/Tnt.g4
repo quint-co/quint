@@ -21,7 +21,7 @@ unit :          'const' IDENTIFIER ':' type                     # const
         |       instanceDef                                     # instance
         |       'type' IDENTIFIER '=' type                      # typeDef
         |       (IDENTIFIER | operator | literal) {
-         this.notifyErrorListeners("TNT001: expected a const, var, def, typedef, etc.");
+         this.notifyErrorListeners("TNT001: expected 'const', 'var', 'def', 'type', etc.");
                 }                                               # errorCase
         ;
 
@@ -38,6 +38,7 @@ params  :       '(' (IDENTIFIER (',' IDENTIFIER)*)? ')'
 // which means that the missing parameters are identity, e.g., x = x, y = y
 instanceParams  :   '*'
                 |   IDENTIFIER '=' expr (',' IDENTIFIER '=' expr)* (',' '*')?
+                ;
 
 instanceDef :   'module' IDENTIFIER '=' IDENTIFIER
                 '(' instanceParams ')'

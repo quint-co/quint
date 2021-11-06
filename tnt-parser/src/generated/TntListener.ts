@@ -55,8 +55,9 @@ import { ModuleContext } from "./TntParser";
 import { UnitContext } from "./TntParser";
 import { ValDefContext } from "./TntParser";
 import { OperDefContext } from "./TntParser";
-import { InstanceDefContext } from "./TntParser";
 import { ParamsContext } from "./TntParser";
+import { InstanceParamsContext } from "./TntParser";
+import { InstanceDefContext } from "./TntParser";
 import { TypeContext } from "./TntParser";
 import { TypeUnionRecOneContext } from "./TntParser";
 import { ExprContext } from "./TntParser";
@@ -743,17 +744,6 @@ export interface TntListener extends ParseTreeListener {
 	exitOperDef?: (ctx: OperDefContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `TntParser.instanceDef`.
-	 * @param ctx the parse tree
-	 */
-	enterInstanceDef?: (ctx: InstanceDefContext) => void;
-	/**
-	 * Exit a parse tree produced by `TntParser.instanceDef`.
-	 * @param ctx the parse tree
-	 */
-	exitInstanceDef?: (ctx: InstanceDefContext) => void;
-
-	/**
 	 * Enter a parse tree produced by `TntParser.params`.
 	 * @param ctx the parse tree
 	 */
@@ -763,6 +753,28 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitParams?: (ctx: ParamsContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `TntParser.instanceParams`.
+	 * @param ctx the parse tree
+	 */
+	enterInstanceParams?: (ctx: InstanceParamsContext) => void;
+	/**
+	 * Exit a parse tree produced by `TntParser.instanceParams`.
+	 * @param ctx the parse tree
+	 */
+	exitInstanceParams?: (ctx: InstanceParamsContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `TntParser.instanceDef`.
+	 * @param ctx the parse tree
+	 */
+	enterInstanceDef?: (ctx: InstanceDefContext) => void;
+	/**
+	 * Exit a parse tree produced by `TntParser.instanceDef`.
+	 * @param ctx the parse tree
+	 */
+	exitInstanceDef?: (ctx: InstanceDefContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `TntParser.type`.

@@ -55,8 +55,9 @@ import { ModuleContext } from "./TntParser";
 import { UnitContext } from "./TntParser";
 import { ValDefContext } from "./TntParser";
 import { OperDefContext } from "./TntParser";
-import { InstanceDefContext } from "./TntParser";
 import { ParamsContext } from "./TntParser";
+import { InstanceParamsContext } from "./TntParser";
+import { InstanceDefContext } from "./TntParser";
 import { TypeContext } from "./TntParser";
 import { TypeUnionRecOneContext } from "./TntParser";
 import { ExprContext } from "./TntParser";
@@ -490,18 +491,25 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitOperDef?: (ctx: OperDefContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `TntParser.instanceDef`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitInstanceDef?: (ctx: InstanceDefContext) => Result;
-
-	/**
 	 * Visit a parse tree produced by `TntParser.params`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	visitParams?: (ctx: ParamsContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `TntParser.instanceParams`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitInstanceParams?: (ctx: InstanceParamsContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `TntParser.instanceDef`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitInstanceDef?: (ctx: InstanceDefContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `TntParser.type`.

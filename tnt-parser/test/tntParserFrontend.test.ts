@@ -21,7 +21,7 @@ describe('parse modules', () => {
   it('error message on error in module unit', () => {
     const result = parsePhase1(readTest('_0002emptyWithError'))
     const msg: ErrorMessage = {
-      explanation: 'TNT001: expected a const, var, def, typedef, etc.',
+      explanation: "TNT001: expected 'const', 'var', 'def', 'type', etc.",
       start: { line: 4, col: 0 },
       end: { line: 4, col: 1 }
     }
