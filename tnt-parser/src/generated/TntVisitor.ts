@@ -35,7 +35,6 @@ import { PowContext } from "./TntParser";
 import { MultDivContext } from "./TntParser";
 import { PlusMinusContext } from "./TntParser";
 import { IfElseContext } from "./TntParser";
-import { CaseBlockContext } from "./TntParser";
 import { InfixCallContext } from "./TntParser";
 import { RelationsContext } from "./TntParser";
 import { AndContext } from "./TntParser";
@@ -333,14 +332,6 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitIfElse?: (ctx: IfElseContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `caseBlock`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitCaseBlock?: (ctx: CaseBlockContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `infixCall`

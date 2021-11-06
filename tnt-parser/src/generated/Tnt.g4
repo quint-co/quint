@@ -76,8 +76,6 @@ expr:           // apply a built-in operator via the dot notation
         |       expr op=(MUL | DIV | MOD) expr                      # multDiv
         |       expr op=(ADD | SUB) expr                            # plusMinus
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
-        |       'case' '{' '|'? expr '->' expr
-                    ('|' expr '->' expr)* ('|' '_' '->' expr)? '}'  # caseBlock
                 // built-in infix/postfix operators, a la Scala
         |       expr IDENTIFIER (argList)?                         # infixCall
                 // standard relations

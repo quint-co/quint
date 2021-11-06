@@ -1010,67 +1010,6 @@ describe('parse modules', () => {
     assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
   })
 
-  it('parse case', () => {
-    const result = parsePhase1(readTest('_0122expr_case'))
-    // val case: _ = { p1 -> e1 | p2 -> e2 | p3 -> e3 }
-    const testCase: TntDef = {
-      id: 8n,
-      kind: 'def',
-      name: 'test_case',
-      qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
-      expr: {
-        id: 7n,
-        kind: 'opapp',
-        opcode: 'caseBlock',
-        args: [
-          { id: 1n, kind: 'name', name: 'p1' },
-          { id: 2n, kind: 'name', name: 'e1' },
-          { id: 3n, kind: 'name', name: 'p2' },
-          { id: 4n, kind: 'name', name: 'e2' },
-          { id: 5n, kind: 'name', name: 'p3' },
-          { id: 6n, kind: 'name', name: 'e3' }
-        ]
-      }
-    }
-
-    // the module that contains all these constants
-    const module = { id: 9n, name: 'withVals', defs: [testCase] }
-
-    assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
-  })
-
-  it('parse case with default', () => {
-    const result = parsePhase1(readTest('_0123expr_case_default'))
-    // val case: _ = { p1 -> e1 | p2 -> e2 | p3 -> e3 | _ -> e4 }
-    const testCaseDefault: TntDef = {
-      id: 9n,
-      kind: 'def',
-      name: 'test_case',
-      qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
-      expr: {
-        id: 8n,
-        kind: 'opapp',
-        opcode: 'caseBlock',
-        args: [
-          { id: 1n, kind: 'name', name: 'p1' },
-          { id: 2n, kind: 'name', name: 'e1' },
-          { id: 3n, kind: 'name', name: 'p2' },
-          { id: 4n, kind: 'name', name: 'e2' },
-          { id: 5n, kind: 'name', name: 'p3' },
-          { id: 6n, kind: 'name', name: 'e3' },
-          { id: 7n, kind: 'name', name: 'e4' }
-        ]
-      }
-    }
-
-    // the module that contains all these constants
-    const module = { id: 10n, name: 'withVals', defs: [testCaseDefault] }
-
-    assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
-  })
-
   it('parse function application', () => {
     const result = parsePhase1(readTest('_0124expr_funapp'))
     // var f: str -> int

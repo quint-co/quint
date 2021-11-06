@@ -594,18 +594,6 @@ export class ToIrListener implements TntListener {
     })
   }
 
-  // case { p1 -> e1 | p2 -> e2 | p3 -> e3 }, or
-  // case { p1 -> e1 | p2 -> e2 | p3 -> e3 | _ -> e4 }
-  exitCaseBlock (ctx: p.CaseBlockContext) {
-    const args = this.popExprs(ctx.expr().length)
-    this.exprStack.push({
-      id: this.nextId(),
-      kind: 'opapp',
-      opcode: 'caseBlock',
-      args: args
-    })
-  }
-
   /** ******************* translate types ********************************/
 
   // the integer type, that is, int
