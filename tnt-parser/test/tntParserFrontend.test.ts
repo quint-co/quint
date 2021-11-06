@@ -4,7 +4,7 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import { ErrorMessage, parsePhase1, ParseResult }
   from '../src/tntParserFrontend'
-import { TntDef, TntOpDef, OpQualifier, OpScope } from '../src/tntIr'
+import { TntDef, TntOpDef, OpQualifier } from '../src/tntIr'
 
 function readTest (name: string): string {
   const p = resolve(__dirname, '../testFixture', name + '.tnt')
@@ -194,7 +194,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'add_1_to_2',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -220,7 +219,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'VeryTrue',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 5n,
         kind: 'opapp',
@@ -246,29 +244,6 @@ describe('parse modules', () => {
     assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
   })
 
-  it('parse private val', () => {
-    const result = parsePhase1(readTest('_0010vals_private'))
-    // private val details = -123
-    const details: TntOpDef = {
-      id: 3n,
-      kind: 'def',
-      name: 'details',
-      qualifier: OpQualifier.Val,
-      scope: OpScope.Private,
-      expr: {
-        id: 2n,
-        kind: 'opapp',
-        opcode: 'uminus',
-        args: [{ id: 1n, kind: 'int', value: 123n, type: { kind: 'int' } }]
-      }
-    }
-
-    // the module that contains all these constants
-    const module = { id: 4n, name: 'withVals', defs: [details] }
-
-    assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
-  })
-
   it('parse typed val', () => {
     const result = parsePhase1(readTest('_0011vals_typed'))
     // withType: set(int) = set(1, 2)
@@ -277,7 +252,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'withType',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       type: { kind: 'set', elem: { kind: 'int' } },
       expr: {
         id: 3n,
@@ -304,7 +278,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'F',
       qualifier: OpQualifier.Def,
-      scope: OpScope.Public,
       expr: {
         id: 4n,
         kind: 'opabs',
@@ -335,7 +308,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'G',
       qualifier: OpQualifier.Def,
-      scope: OpScope.Public,
       expr: {
         id: 4n,
         kind: 'opabs',
@@ -366,7 +338,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'H',
       qualifier: OpQualifier.Def,
-      scope: OpScope.Public,
       type: {
         kind: 'oper',
         args: [{ kind: 'int' }, { kind: 'int' }],
@@ -402,7 +373,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'R',
       qualifier: OpQualifier.DefRec,
-      scope: OpScope.Public,
       type: {
         kind: 'oper',
         args: [{ kind: 'int' }],
@@ -444,7 +414,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'add_1_to_2',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -470,7 +439,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'sub_1_to_2',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -496,7 +464,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'mul_2_to_3',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -522,7 +489,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'div_2_to_3',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -548,7 +514,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'mod_2_to_3',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -574,7 +539,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'pow_2_to_3',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -600,7 +564,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'uminus',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 2n,
         kind: 'opapp',
@@ -623,7 +586,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'gt_2_to_3',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -649,7 +611,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'ge_2_to_3',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -675,7 +636,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'lt_2_to_3',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -701,7 +661,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'le_2_to_3',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -727,7 +686,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'eq_2_to_3',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -753,7 +711,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'eqeq_2_to_3',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -779,7 +736,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'ne_2_to_3',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -807,7 +763,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'asgn',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -833,7 +788,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'test_and',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -859,7 +813,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'test_or',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -885,7 +838,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'test_implies',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -911,7 +863,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'test_iff',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -937,7 +888,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'test_block_and',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -964,7 +914,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'test_block_or',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -991,7 +940,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'test_ite',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -1025,7 +973,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'funapp',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -1051,7 +998,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'oper_app',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -1077,7 +1023,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'oper_app',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -1104,7 +1049,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'oper_app',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 6n,
         kind: 'opapp',
@@ -1143,7 +1087,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'oper_app',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 6n,
         kind: 'opapp',
@@ -1182,7 +1125,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'oper_app',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -1209,7 +1151,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'test_tuple',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -1236,7 +1177,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'test_seq',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -1263,7 +1203,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'test_record',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 5n,
         kind: 'opapp',
@@ -1291,7 +1230,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'test_record_set',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 5n,
         kind: 'opapp',
@@ -1319,7 +1257,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'test_set',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -1346,7 +1283,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'test_seq',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -1373,7 +1309,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'test_tuple',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -1400,7 +1335,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'test_record',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 5n,
         kind: 'opapp',
@@ -1428,7 +1362,6 @@ describe('parse modules', () => {
       kind: 'def',
       name: 'test_record_set',
       qualifier: OpQualifier.Val,
-      scope: OpScope.Public,
       expr: {
         id: 5n,
         kind: 'opapp',

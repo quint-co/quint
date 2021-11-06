@@ -90,19 +90,6 @@ export enum OpQualifier {
 }
 
 /**
- * Operator scope:
- *
- *  - Public is a global definition that is visible via `extends` and `instance`.
- *  - Private is a global definition that is not visible via `extends` and `instance`.
- *  - Local is a local operator definition, invisible outside the containing definition.
- */
-export enum OpScope {
-  Public,
-  Private,
-  Local
-}
-
-/**
  * A user-defined operator that is defined via one of the qualifiers:
  * val, def, def rec, pred, action, or temporal.
  * Note that TntOpDef does not have any formal parameters.
@@ -113,7 +100,6 @@ export interface TntOpDef extends WithId, WithType {
   kind: 'def',
   name: string,
   qualifier: OpQualifier,
-  scope: OpScope,
   expr: TntEx
 }
 

@@ -12,9 +12,9 @@ module : 'module' IDENTIFIER '{' unit* '}';
 unit :          'const' IDENTIFIER ':' type                     # const
         |       'var' IDENTIFIER ':'   type                     # var
         |       'assume' (IDENTIFIER | '_') '=' expr            # assume
-        |       PRIVATE? valDef                                 # val
-        |       PRIVATE? operDef                                # oper
-        |       PRIVATE? ('pred' | 'action' | 'temporal')       
+        |       valDef                                          # val
+        |       operDef                                                  # oper
+        |       ('pred' | 'action' | 'temporal')       
                            IDENTIFIER params?
                            (':' type)? '=' expr                 # pat
         |       module                                          # moduleNested
@@ -157,7 +157,6 @@ SUBSETEQ        :   'subseteq' ;
 IN              :   'in' ;
 NOTIN           :   'notin' ;
 SET             :   'set' ;
-PRIVATE         :   'private' ;
 ADD             :   '+' ;
 SUB             :   '-' ;
 MUL             :   '*' ;

@@ -1,6 +1,6 @@
 import * as p from './generated/TntParser'
 import { TntListener } from './generated/TntListener'
-import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef, OpScope } from './tntIr'
+import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef } from './tntIr'
 import { TntType } from './tntTypes'
 import { assert } from 'console'
 import { ErrorMessage } from './tntParserFrontend'
@@ -87,7 +87,6 @@ export class ToIrListener implements TntListener {
         kind: 'def',
         name: name,
         qualifier: OpQualifier.Val,
-        scope: OpScope.Local,
         expr: expr
       }
       if (typeTag) {
@@ -100,13 +99,9 @@ export class ToIrListener implements TntListener {
   }
 
   // translate a top-level val
-  exitVal (ctx: p.ValContext) {
+  exitVal () {
     const valDef = this.definitionStack[this.definitionStack.length - 1]
-    if (valDef && valDef.kind === 'def') {
-      valDef.scope = (ctx.PRIVATE()) ? OpScope.Private : OpScope.Public
-    } else {
-      assert(false, 'undefined valDef in exitVal')
-    }
+    assert(valDef, 'undefined valDef in exitVal')
   }
 
   // translate a top-level or inner: def foo: type = ...
@@ -130,7 +125,6 @@ export class ToIrListener implements TntListener {
         kind: 'def',
         name: name,
         qualifier: qualif,
-        scope: OpScope.Local,
         expr: lambda
       }
       if (typeTag) {
@@ -143,13 +137,9 @@ export class ToIrListener implements TntListener {
   }
 
   // translate a top-level def
-  exitOper (ctx: p.OperContext) {
+  exitOper () {
     const def = this.definitionStack[this.definitionStack.length - 1]
-    if (def && def.kind === 'def') {
-      def.scope = (ctx.PRIVATE()) ? OpScope.Private : OpScope.Public
-    } else {
-      assert(false, 'undefined operDef in exitOper')
-    }
+    assert(def, 'undefined operDef in exitOper')
   }
 
   exitParams (ctx: p.ParamsContext) {
