@@ -72,39 +72,7 @@ export class ToIrListener implements TntListener {
 
   /** **************** translate operator definititons **********************/
 
-  // translate a top-level or inner: val foo: type = ...
-  exitValDef (ctx: p.ValDefContext) {
-    const name = ctx.IDENTIFIER().text
-    let typeTag: TntType | undefined
-    if (ctx.type()) {
-      // the operator is tagged with a type
-      typeTag = this.typeStack.pop()
-    }
-    const expr = this.exprStack.pop()
-    if (expr) {
-      const def: TntOpDef = {
-        id: this.nextId(),
-        kind: 'def',
-        name: name,
-        qualifier: OpQualifier.Val,
-        expr: expr
-      }
-      if (typeTag) {
-        def.type = typeTag
-      }
-      this.definitionStack.push(def)
-    } else {
-      assert(false, 'undefined expr in exitValDef')
-    }
-  }
-
-  // translate a top-level val
-  exitVal () {
-    const valDef = this.definitionStack[this.definitionStack.length - 1]
-    assert(valDef, 'undefined valDef in exitVal')
-  }
-
-  // translate a top-level or inner: def foo: type = ...
+  // translate a top-level or nested operator definition
   exitOperDef (ctx: p.OperDefContext) {
     const name = ctx.IDENTIFIER().text
     let typeTag: TntType | undefined
@@ -112,19 +80,42 @@ export class ToIrListener implements TntListener {
       // the operator is tagged with a type
       typeTag = this.typeStack.pop()
     }
+    // get the parameters and the definition body
     const expr = this.exprStack.pop()
-    const params = this.paramStack.pop()
+    const params = (ctx.params()) ? this.paramStack.pop() : []
+
+    // extract the qualifier
+    let qualifier: OpQualifier = 'def'
+    const qualifierToken = ctx._qualifier
+    if (qualifierToken && qualifierToken !== undefined) {
+      const qtext = qualifierToken.text
+      // case distinction to make the type checker happy
+      if (qtext === 'val' || qtext === 'def' || qtext === 'pred' ||
+          qtext === 'action' || qtext === 'temporal') {
+        qualifier = qtext
+      } else {
+        qualifier = 'def'
+      }
+    }
+
     if (expr && params) {
-      // wrap the body with a lambda that carries the parameters
-      const lambda: TntEx = {
-        id: this.nextId(), kind: 'opabs', params: params, expr: expr
+      // if the definition has parameters, introduce a lambda
+      let body = expr
+      if (params.length > 0) {
+        body = {
+          id: this.nextId(),
+          kind: 'lambda',
+          params: params,
+          qualifier: qualifier,
+          expr: expr
+        }
       }
       const def: TntOpDef = {
         id: this.nextId(),
         kind: 'def',
         name: name,
-        qualifier: OpQualifier.Def,
-        expr: lambda
+        qualifier: qualifier,
+        expr: body
       }
       if (typeTag) {
         def.type = typeTag
@@ -310,7 +301,8 @@ export class ToIrListener implements TntListener {
 
   // a list of arguments
   exitArgList (ctx: p.ArgListContext) {
-    const args = this.popExprs(ctx.expr().length)
+    const nargs = ctx.lambdaOrExpr().length
+    const args = this.popExprs(nargs)
     // wrap the arguments with a temporary operator,
     // to be unwrapped later
     this.exprStack.push({
@@ -322,30 +314,25 @@ export class ToIrListener implements TntListener {
   }
 
   // a lambda operator over multiple parameters
-  exitLambdaMany (ctx: p.LambdaManyContext) {
+  exitLambda (ctx: p.LambdaContext) {
     const expr = this.exprStack.pop()
     const params = this.popParams(ctx.identOrHole().length)
+    let qualifier: OpQualifier = 'def'
+    if (ctx.children && ctx.children[0]) {
+      qualifier = (ctx.children[0].text === '{') ? 'action' : 'def'
+    }
     if (expr) {
       // every parameter in params is a singleton list, make one list
       const singletons = params.map(ps => ps[0])
       this.exprStack.push({
-        id: this.nextId(), kind: 'opabs', params: singletons, expr: expr
+        id: this.nextId(),
+        kind: 'lambda',
+        params: singletons,
+        qualifier: qualifier,
+        expr: expr
       })
     } else {
-      assert(false, 'exitLambdaMany: expected an expression')
-    }
-  }
-
-  // a lambda operator over one parameter
-  exitLambdaOne () {
-    const expr = this.exprStack.pop()
-    const param = this.paramStack.pop()
-    if (expr && param) {
-      this.exprStack.push({
-        id: this.nextId(), kind: 'opabs', params: param, expr: expr
-      })
-    } else {
-      assert(false, 'exitLambdaOne: expected a parameter and an expression')
+      assert(false, 'exitLambda: expected an expression')
     }
   }
 

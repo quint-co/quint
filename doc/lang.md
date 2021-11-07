@@ -579,7 +579,8 @@ that is less general than the Action mode, the parser *should* issue a warning.
 Depending on the mode, an anonymous operator of one argument is defined as:
 
 - In the Action mode: `{ x -> e }`
-- In a mode different from the Action mode: `( x -> e )`
+- In a mode different from the Action mode: `(x -> e)`
+- To avoid too many parentheses, `(x -> e)` may be written as: `x -> e`
 
 Compare this to the TLA+2 syntax:
 
@@ -590,7 +591,8 @@ LAMBDA x: e
 Similarly, an anonymous operator of `n` arguments is defined as:
 
 - In the Action mode: `{ x_1, ..., x_n -> e }`
-- In a mode different from the Action mode: `(x_1, ..., x_n -> e)`
+- In a mode different from the Action mode:
+    `(x_1, ..., x_n -> e)` or `x_1, ..., x_n -> e`
 
 Compare this to the TLA+2 syntax:
 
@@ -603,9 +605,14 @@ As is common, we can skip parameter names, if we don't need them:
 ```
 { _ -> e }
 (_ -> e)
+_ -> e
 { _, ..., _ -> e }
 (_, ..., _ -> e)
+_, ..., _ -> e
 ```
+
+Note that lambdas can be only passed as arguments to other operators.  They
+cannot be freely assigned to values or returned as a result of an operator.
 
 ### Three forms of operator applications
 
@@ -1240,7 +1247,7 @@ temporal my_prop =
 *Grammar:*
 
 ```
-("val" | "def" | "action" | "temporal")
+("val" | "def" | "pred" | "action" | "temporal")
   <identifier>[ "(" <identifier> ("," ..."," <identifier>)* ")" ] [ ":" <type>] "=" <expr>
 <expr>
 ```

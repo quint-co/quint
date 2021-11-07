@@ -18,15 +18,11 @@ import { TypeParenContext } from "./TntParser";
 import { ConstContext } from "./TntParser";
 import { VarContext } from "./TntParser";
 import { AssumeContext } from "./TntParser";
-import { ValContext } from "./TntParser";
 import { OperContext } from "./TntParser";
-import { PatContext } from "./TntParser";
 import { ModuleNestedContext } from "./TntParser";
 import { InstanceContext } from "./TntParser";
-import { TypeDefContext } from "./TntParser";
+import { TypedefContext } from "./TntParser";
 import { ErrorCaseContext } from "./TntParser";
-import { LambdaOneContext } from "./TntParser";
-import { LambdaManyContext } from "./TntParser";
 import { DotCallContext } from "./TntParser";
 import { OperAppContext } from "./TntParser";
 import { FunAppContext } from "./TntParser";
@@ -50,19 +46,19 @@ import { RecordSetContext } from "./TntParser";
 import { SequenceContext } from "./TntParser";
 import { LetInContext } from "./TntParser";
 import { ParenContext } from "./TntParser";
-import { LambdaOrBracesContext } from "./TntParser";
+import { BracesContext } from "./TntParser";
 import { ModuleContext } from "./TntParser";
 import { UnitContext } from "./TntParser";
-import { ValDefContext } from "./TntParser";
 import { OperDefContext } from "./TntParser";
 import { ParamsContext } from "./TntParser";
 import { InstanceParamsContext } from "./TntParser";
-import { InstanceDefContext } from "./TntParser";
+import { InstanceModContext } from "./TntParser";
 import { TypeContext } from "./TntParser";
 import { TypeUnionRecOneContext } from "./TntParser";
 import { ExprContext } from "./TntParser";
 import { LambdaContext } from "./TntParser";
 import { IdentOrHoleContext } from "./TntParser";
+import { LambdaOrExprContext } from "./TntParser";
 import { ArgListContext } from "./TntParser";
 import { NormalCallNameContext } from "./TntParser";
 import { NameAfterDotContext } from "./TntParser";
@@ -199,28 +195,12 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitAssume?: (ctx: AssumeContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `val`
-	 * labeled alternative in `TntParser.unit`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitVal?: (ctx: ValContext) => Result;
-
-	/**
 	 * Visit a parse tree produced by the `oper`
 	 * labeled alternative in `TntParser.unit`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	visitOper?: (ctx: OperContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `pat`
-	 * labeled alternative in `TntParser.unit`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitPat?: (ctx: PatContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `moduleNested`
@@ -239,12 +219,12 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitInstance?: (ctx: InstanceContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `typeDef`
+	 * Visit a parse tree produced by the `typedef`
 	 * labeled alternative in `TntParser.unit`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitTypeDef?: (ctx: TypeDefContext) => Result;
+	visitTypedef?: (ctx: TypedefContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `errorCase`
@@ -253,22 +233,6 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitErrorCase?: (ctx: ErrorCaseContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `lambdaOne`
-	 * labeled alternative in `TntParser.lambda`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitLambdaOne?: (ctx: LambdaOneContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `lambdaMany`
-	 * labeled alternative in `TntParser.lambda`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitLambdaMany?: (ctx: LambdaManyContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `dotCall`
@@ -455,12 +419,12 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitParen?: (ctx: ParenContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `lambdaOrBraces`
+	 * Visit a parse tree produced by the `braces`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitLambdaOrBraces?: (ctx: LambdaOrBracesContext) => Result;
+	visitBraces?: (ctx: BracesContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `TntParser.module`.
@@ -475,13 +439,6 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitUnit?: (ctx: UnitContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `TntParser.valDef`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitValDef?: (ctx: ValDefContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `TntParser.operDef`.
@@ -505,11 +462,11 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitInstanceParams?: (ctx: InstanceParamsContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `TntParser.instanceDef`.
+	 * Visit a parse tree produced by `TntParser.instanceMod`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitInstanceDef?: (ctx: InstanceDefContext) => Result;
+	visitInstanceMod?: (ctx: InstanceModContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `TntParser.type`.
@@ -545,6 +502,13 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitIdentOrHole?: (ctx: IdentOrHoleContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `TntParser.lambdaOrExpr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitLambdaOrExpr?: (ctx: LambdaOrExprContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `TntParser.argList`.

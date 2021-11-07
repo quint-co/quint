@@ -4,5 +4,9 @@
 module withVals {
 	// Pass a lambda operator as a second argument of filter.
 	// Here we are using the infix notation.
-	val oper_app = S filter { x -> x > 10 }
+	val oper_app = S filter (x -> x > 10)
+    // We can omit parentheses, though this form is harder to read.
+	val oper_app2 = S filter x -> x > 10
+    // Some operators accept action lambdas
+	action oper_app3 = S guess { x -> x > 10 }
 }

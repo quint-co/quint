@@ -2,14 +2,39 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
+import JSONbig = require('json-bigint')
 import { ErrorMessage, parsePhase1, ParseResult }
   from '../src/tntParserFrontend'
-import { TntDef, TntOpDef, OpQualifier } from '../src/tntIr'
+import { TntDef, TntOpDef } from '../src/tntIr'
 
+// read a TNT file from the test data directory
+// TODO: rename to readTnt
 function readTest (name: string): string {
   const p = resolve(__dirname, '../testFixture', name + '.tnt')
   return readFileSync(p).toString('utf8')
 }
+
+// read the expected JSON outcome from the test data directory
+function readJson (name: string): any {
+  const p = resolve(__dirname, '../testFixture', name + '.json')
+  return JSONbig.parse(readFileSync(p).toString('utf8'))
+}
+
+// read the TNT file and the expected JSON, parse and compare the results
+function parseAsExpected (artifact: string, description: string): void {
+  it(description, () => {
+    // read the input from the data directory and parse it
+    const result = parsePhase1(readTest(artifact))
+    // run it through stringify-parse to obtain the same json (due to bigints)
+    const reparsedResult = JSONbig.parse(JSONbig.stringify(result))
+    // read the expected result as JSON
+    const expected = readJson(artifact)
+    // compare the JSON trees
+    assert.deepEqual(reparsedResult, { kind: 'ok', module: expected }, 'expected ok')
+  })
+}
+
+// plenty of tests
 
 describe('parse modules', () => {
   it('parse empty module', () => {
@@ -193,7 +218,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'add_1_to_2',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -218,7 +243,7 @@ describe('parse modules', () => {
       id: 6n,
       kind: 'def',
       name: 'VeryTrue',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 5n,
         kind: 'opapp',
@@ -251,7 +276,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'withType',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       type: { kind: 'set', elem: { kind: 'int' } },
       expr: {
         id: 3n,
@@ -277,11 +302,12 @@ describe('parse modules', () => {
       id: 5n,
       kind: 'def',
       name: 'F',
-      qualifier: OpQualifier.Def,
+      qualifier: 'def',
       expr: {
         id: 4n,
-        kind: 'opabs',
+        kind: 'lambda',
         params: ['x', 'y'],
+        qualifier: 'def',
         expr: {
           id: 3n,
           kind: 'opapp',
@@ -307,11 +333,12 @@ describe('parse modules', () => {
       id: 5n,
       kind: 'def',
       name: 'G',
-      qualifier: OpQualifier.Def,
+      qualifier: 'def',
       expr: {
         id: 4n,
-        kind: 'opabs',
+        kind: 'lambda',
         params: ['x', 'y'],
+        qualifier: 'def',
         expr: {
           id: 3n,
           kind: 'opapp',
@@ -337,7 +364,7 @@ describe('parse modules', () => {
       id: 5n,
       kind: 'def',
       name: 'H',
-      qualifier: OpQualifier.Def,
+      qualifier: 'def',
       type: {
         kind: 'oper',
         args: [{ kind: 'int' }, { kind: 'int' }],
@@ -345,8 +372,9 @@ describe('parse modules', () => {
       },
       expr: {
         id: 4n,
-        kind: 'opabs',
+        kind: 'lambda',
         params: ['x', 'y'],
+        qualifier: 'def',
         expr: {
           id: 3n,
           kind: 'opapp',
@@ -372,7 +400,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'add_1_to_2',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -397,7 +425,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'sub_1_to_2',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -422,7 +450,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'mul_2_to_3',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -447,7 +475,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'div_2_to_3',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -472,7 +500,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'mod_2_to_3',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -497,7 +525,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'pow_2_to_3',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -522,7 +550,7 @@ describe('parse modules', () => {
       id: 3n,
       kind: 'def',
       name: 'uminus',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 2n,
         kind: 'opapp',
@@ -544,7 +572,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'gt_2_to_3',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -569,7 +597,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'ge_2_to_3',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -594,7 +622,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'lt_2_to_3',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -619,7 +647,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'le_2_to_3',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -644,7 +672,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'eq_2_to_3',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -669,7 +697,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'eqeq_2_to_3',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -694,7 +722,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'ne_2_to_3',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -721,7 +749,7 @@ describe('parse modules', () => {
       id: 5n,
       kind: 'def',
       name: 'asgn',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -746,7 +774,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'test_and',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -771,7 +799,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'test_or',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -796,7 +824,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'test_implies',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -821,7 +849,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'test_iff',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -846,7 +874,7 @@ describe('parse modules', () => {
       id: 5n,
       kind: 'def',
       name: 'test_block_and',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -872,7 +900,7 @@ describe('parse modules', () => {
       id: 5n,
       kind: 'def',
       name: 'test_block_or',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -898,7 +926,7 @@ describe('parse modules', () => {
       id: 5n,
       kind: 'def',
       name: 'test_ite',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -931,7 +959,7 @@ describe('parse modules', () => {
       id: 5n,
       kind: 'def',
       name: 'funapp',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -956,7 +984,7 @@ describe('parse modules', () => {
       id: 4n,
       kind: 'def',
       name: 'oper_app',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 3n,
         kind: 'opapp',
@@ -974,69 +1002,15 @@ describe('parse modules', () => {
     assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
   })
 
-  it('parse infix operator application', () => {
-    const result = parsePhase1(readTest('_0126expr_oper_infix_app'))
-    // val oper_app = 'a' MyOper 42, true
-    const operApp: TntDef = {
-      id: 5n,
-      kind: 'def',
-      name: 'oper_app',
-      qualifier: OpQualifier.Val,
-      expr: {
-        id: 4n,
-        kind: 'opapp',
-        opcode: 'MyOper',
-        args: [
-          { id: 1n, kind: 'str', value: 'a', type: { kind: 'str' } },
-          { id: 2n, kind: 'int', value: 42n, type: { kind: 'int' } },
-          { id: 3n, kind: 'bool', value: true, type: { kind: 'bool' } }
-        ]
-      }
-    }
+  parseAsExpected(
+    '_0126expr_oper_infix_app',
+    'parse infix operator application'
+  )
 
-    // the module that contains all these constants
-    const module = { id: 6n, name: 'withVals', defs: [operApp] }
-
-    assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
-  })
-
-  it('parse infix operator application with lambda', () => {
-    const result = parsePhase1(readTest('_0127expr_oper_infix_app_lambda'))
-    // val oper_app = S filter { x -> x > 10 }
-    const operApp: TntDef = {
-      id: 7n,
-      kind: 'def',
-      name: 'oper_app',
-      qualifier: OpQualifier.Val,
-      expr: {
-        id: 6n,
-        kind: 'opapp',
-        opcode: 'filter',
-        args: [
-          { id: 1n, kind: 'name', name: 'S' },
-          {
-            id: 5n,
-            kind: 'opabs',
-            params: ['x'],
-            expr: {
-              id: 4n,
-              kind: 'opapp',
-              opcode: 'gt',
-              args: [
-                { id: 2n, kind: 'name', name: 'x' },
-                { id: 3n, kind: 'int', value: 10n, type: { kind: 'int' } }
-              ]
-            }
-          }
-        ]
-      }
-    }
-
-    // the module that contains all these constants
-    const module = { id: 8n, name: 'withVals', defs: [operApp] }
-
-    assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
-  })
+  parseAsExpected(
+    '_0127expr_oper_infix_app_lambda',
+    'parse infix operator application with lambda'
+  )
 
   it('parse dot operator application with lambda', () => {
     const result = parsePhase1(readTest('_0128expr_oper_dot_lambda'))
@@ -1045,7 +1019,7 @@ describe('parse modules', () => {
       id: 7n,
       kind: 'def',
       name: 'oper_app',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 6n,
         kind: 'opapp',
@@ -1054,8 +1028,9 @@ describe('parse modules', () => {
           { id: 1n, kind: 'name', name: 'S' },
           {
             id: 5n,
-            kind: 'opabs',
+            kind: 'lambda',
             params: ['x'],
+            qualifier: 'def',
             expr: {
               id: 4n,
               kind: 'opapp',
@@ -1083,7 +1058,7 @@ describe('parse modules', () => {
       id: 5n,
       kind: 'def',
       name: 'oper_app',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -1109,7 +1084,7 @@ describe('parse modules', () => {
       id: 5n,
       kind: 'def',
       name: 'test_tuple',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -1135,7 +1110,7 @@ describe('parse modules', () => {
       id: 5n,
       kind: 'def',
       name: 'test_seq',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -1161,7 +1136,7 @@ describe('parse modules', () => {
       id: 6n,
       kind: 'def',
       name: 'test_record',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 5n,
         kind: 'opapp',
@@ -1188,7 +1163,7 @@ describe('parse modules', () => {
       id: 6n,
       kind: 'def',
       name: 'test_record_set',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 5n,
         kind: 'opapp',
@@ -1215,7 +1190,7 @@ describe('parse modules', () => {
       id: 5n,
       kind: 'def',
       name: 'test_set',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -1241,7 +1216,7 @@ describe('parse modules', () => {
       id: 5n,
       kind: 'def',
       name: 'test_seq',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -1267,7 +1242,7 @@ describe('parse modules', () => {
       id: 5n,
       kind: 'def',
       name: 'test_tuple',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 4n,
         kind: 'opapp',
@@ -1293,7 +1268,7 @@ describe('parse modules', () => {
       id: 6n,
       kind: 'def',
       name: 'test_record',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 5n,
         kind: 'opapp',
@@ -1320,7 +1295,7 @@ describe('parse modules', () => {
       id: 6n,
       kind: 'def',
       name: 'test_record_set',
-      qualifier: OpQualifier.Val,
+      qualifier: 'val',
       expr: {
         id: 5n,
         kind: 'opapp',

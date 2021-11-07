@@ -1,9 +1,12 @@
-// A grammar of TNT: not TLA+.
-// Our goals are:
-//  1. Keep the grammar simple,
-//  2. Make it expressive enough to capture all of TLA+.
-//
-// @author: Igor Konnov
+/**
+ * A grammar of TNT: TNT is not TLA+.
+ *
+ * Our goals are:
+ *  1. Keep the grammar simple,
+ *  2. Make it expressive enough to capture all of TLA+.
+ *
+ * @author: Igor Konnov, 2021
+ */
 grammar Tnt;
 
 module : 'module' IDENTIFIER '{' unit* '}';
@@ -12,23 +15,18 @@ module : 'module' IDENTIFIER '{' unit* '}';
 unit :          'const' IDENTIFIER ':' type                     # const
         |       'var' IDENTIFIER ':'   type                     # var
         |       'assume' (IDENTIFIER | '_') '=' expr            # assume
-        |       valDef                                          # val
         |       operDef                                         # oper
-        |       ('pred' | 'action' | 'temporal')       
-                           IDENTIFIER params?
-                           (':' type)? '=' expr                 # pat
         |       module                                          # moduleNested
-        |       instanceDef                                     # instance
-        |       'type' IDENTIFIER '=' type                      # typeDef
+        |       instanceMod                                     # instance
+        |       'type' IDENTIFIER '=' type                      # typedef
         |       (IDENTIFIER | operator | literal) {
          this.notifyErrorListeners("TNT001: expected 'const', 'var', 'def', 'type', etc.");
                 }                                               # errorCase
         ;
 
-valDef  :       'val' IDENTIFIER (':' type)? '=' expr
-        ;
-
-operDef :       'def' IDENTIFIER params (':' type)? '=' expr
+// an operator definition
+operDef : qualifier=('val' | 'def' | 'pred' | 'action' | 'temporal')       
+          IDENTIFIER params? (':' type)? '=' expr          
         ;
 
 params  :       '(' (IDENTIFIER (',' IDENTIFIER)*)? ')'
@@ -40,7 +38,7 @@ instanceParams  :   '*'
                 |   IDENTIFIER '=' expr (',' IDENTIFIER '=' expr)* (',' '*')?
                 ;
 
-instanceDef :   'module' IDENTIFIER '=' IDENTIFIER
+instanceMod :   'module' IDENTIFIER '=' IDENTIFIER
                 '(' instanceParams ')'
         ;
 
@@ -66,11 +64,11 @@ typeUnionRecOne : '|' '{' IDENTIFIER ':' STRING (',' IDENTIFIER ':' type)* '}'
 // A TNT expression. The order matters, it defines the priority.
 // Wherever possible, we keep the same order of operators as in TLA+.
 expr:           // apply a built-in operator via the dot notation
-                expr '.' nameAfterDot ('(' (lambda | argList) ')')?  # dotCall
+                expr '.' nameAfterDot ('(' argList ')')?            # dotCall
                 // Call a user-defined operator or a built-in operator
                 // of at least one argument.
                 // This includes: next, unchanged, always, eventually, enabled
-        |       normalCallName '(' argList? ')'                  # operApp
+        |       normalCallName '(' argList? ')'                     # operApp
                 // function application
         |       expr '[' expr ']'                                   # funApp
                 // unary minus
@@ -82,16 +80,16 @@ expr:           // apply a built-in operator via the dot notation
         |       expr op=(ADD | SUB) expr                            # plusMinus
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
                 // built-in infix/postfix operators, a la Scala
-        |       expr IDENTIFIER (argList)?                         # infixCall
+        |       expr IDENTIFIER (argList)?                          # infixCall
                 // standard relations
         |       expr op=(GT | LT | GE | LE | NE | EQEQ |
                          EQ | ASGN | IN | NOTIN | SUBSETEQ) expr    # relations
-                // Boolean operators. Importantly, not(e) is just a normal call
+                // Boolean operators. Note that not(e) is just a normal call
         |       expr AND expr                                       # and
         |       expr OR expr                                        # or
         |       expr IFF expr                                       # iff
         |       expr IMPLIES expr                                   # implies
-                // similar to indented /\ and indented \/
+                // similar to indented /\ and indented \/ of TLA+
         |       '{' ('&')? expr '&' expr ('&' expr)* '}'            # andBlock
         |       '{' ('|')? expr '|' expr ('|' expr)* '}'            # orBlock
         |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
@@ -104,23 +102,33 @@ expr:           // apply a built-in operator via the dot notation
         //      a sequence constructor, the form seq(...) is just an operator call
         |       ('[' (expr (',' expr)*)? ']' |
                         'seq' '(' (expr (',' expr)*)? ')')          # sequence
-        |       (valDef expr | operDef expr)                        # letIn
+        |       operDef expr                                        # letIn
         |       '(' expr ')'                                        # paren
-        |       '{' (lambda | expr) '}'                             # lambdaOrBraces
+        |       '{' expr '}'                                        # braces
         ;
 
-// This rule parses two different syntactic options:
-//   1. A single-argument lambda: x -> e.
-//   2. A multi-argument lambda: (x, y, z) -> e.
-lambda:         identOrHole '->' expr                               # lambdaOne
-        |       '(' identOrHole (',' identOrHole)* ')'  '->' expr   # lambdaMany
+// This rule parses anonymous functions, e.g.:
+// 1. Non-action lambdas:
+//   x, y, z -> e
+//   (x, y, z -> e)
+//
+// 2. Action lambdas:
+//   { x, y, z -> e }
+lambda:         identOrHole (',' identOrHole)*  '->' expr
+        |       '(' identOrHole (',' identOrHole)*  '->' expr ')'
+        |       '{' identOrHole (',' identOrHole)*  '->' expr '}'
         ;
 
 // an identifier or a hole '_'
 identOrHole :   IDENTIFIER | '_'
-        ;        
+        ;
 
-argList:       expr (',' expr)*
+// A lambda or an expression with lambda having a priority
+lambdaOrExpr :  lambda
+        |       expr
+        ;
+
+argList:       (lambdaOrExpr) (',' (lambdaOrExpr))*
         ;
 
 // operators in the normal call may use some reserved names
