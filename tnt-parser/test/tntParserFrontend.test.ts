@@ -200,12 +200,22 @@ describe('parse modules', () => {
 
   parseAsExpected(
     '_0119expr_block_and',
-    'parse block_and'
+    'parse expr_and'
   )
 
   parseAsExpected(
     '_0120expr_block_or',
-    'parse block_or'
+    'parse expr_or'
+  )
+
+  parseAsExpected(
+    '_0140expr_action_and',
+    'parse action_and'
+  )
+
+  parseAsExpected(
+    '_0141expr_action_or',
+    'parse action_or'
   )
 
   parseAsExpected(

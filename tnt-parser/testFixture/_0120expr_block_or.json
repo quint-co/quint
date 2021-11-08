@@ -10,7 +10,7 @@
       "expr": {
         "id": 4,
         "kind": "opapp",
-        "opcode": "orBlock",
+        "opcode": "orExpr",
         "args": [
           { "id": 1, "kind": "bool", "value": false, "type": { "kind": "bool" } },
           { "id": 2, "kind": "bool", "value": true, "type": { "kind": "bool" } },

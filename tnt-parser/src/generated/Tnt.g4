@@ -90,8 +90,10 @@ expr:           // apply a built-in operator via the dot notation
         |       expr IFF expr                                       # iff
         |       expr IMPLIES expr                                   # implies
                 // similar to indented /\ and indented \/ of TLA+
-        |       '{' ('&')? expr '&' expr ('&' expr)* '}'            # andBlock
-        |       '{' ('|')? expr '|' expr ('|' expr)* '}'            # orBlock
+        |       '(' ('&')? expr '&' expr ('&' expr)* ')'            # andExpr
+        |       '(' ('|')? expr '|' expr ('|' expr)* ')'            # orExpr
+        |       '{' ('&')? expr '&' expr ('&' expr)* '}'            # andAction
+        |       '{' ('|')? expr '|' expr ('|' expr)* '}'            # orAction
         |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
         //      a tuple constructor, the form tuple(...) is just an operator call
         |       '(' expr ',' expr (',' expr)* ')'                   # tuple

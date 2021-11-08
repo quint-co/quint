@@ -37,8 +37,10 @@ import { AndContext } from "./TntParser";
 import { OrContext } from "./TntParser";
 import { IffContext } from "./TntParser";
 import { ImpliesContext } from "./TntParser";
-import { AndBlockContext } from "./TntParser";
-import { OrBlockContext } from "./TntParser";
+import { AndExprContext } from "./TntParser";
+import { OrExprContext } from "./TntParser";
+import { AndActionContext } from "./TntParser";
+import { OrActionContext } from "./TntParser";
 import { LiteralOrIdContext } from "./TntParser";
 import { TupleContext } from "./TntParser";
 import { RecordContext } from "./TntParser";
@@ -346,20 +348,36 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitImplies?: (ctx: ImpliesContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `andBlock`
+	 * Visit a parse tree produced by the `andExpr`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitAndBlock?: (ctx: AndBlockContext) => Result;
+	visitAndExpr?: (ctx: AndExprContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `orBlock`
+	 * Visit a parse tree produced by the `orExpr`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitOrBlock?: (ctx: OrBlockContext) => Result;
+	visitOrExpr?: (ctx: OrExprContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `andAction`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitAndAction?: (ctx: AndActionContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `orAction`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitOrAction?: (ctx: OrActionContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `literalOrId`

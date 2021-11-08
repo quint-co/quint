@@ -514,24 +514,46 @@ export class ToIrListener implements TntListener {
     })
   }
 
-  // { p & q & r }
-  exitAndBlock (ctx: p.AndBlockContext) {
+  // ( p & q & r )
+  exitAndExpr (ctx: p.AndExprContext) {
     const args = this.popExprs(ctx.expr().length)
     this.exprStack.push({
       id: this.nextId(),
       kind: 'opapp',
-      opcode: 'andBlock',
+      opcode: 'andExpr',
+      args: args
+    })
+  }
+
+  // ( p | q | r )
+  exitOrExpr (ctx: p.OrExprContext) {
+    const args = this.popExprs(ctx.expr().length)
+    this.exprStack.push({
+      id: this.nextId(),
+      kind: 'opapp',
+      opcode: 'orExpr',
+      args: args
+    })
+  }
+
+  // { p & q & r }
+  exitAndAction (ctx: p.AndActionContext) {
+    const args = this.popExprs(ctx.expr().length)
+    this.exprStack.push({
+      id: this.nextId(),
+      kind: 'opapp',
+      opcode: 'andAction',
       args: args
     })
   }
 
   // { p | q | r }
-  exitOrBlock (ctx: p.OrBlockContext) {
+  exitOrAction (ctx: p.OrActionContext) {
     const args = this.popExprs(ctx.expr().length)
     this.exprStack.push({
       id: this.nextId(),
       kind: 'opapp',
-      opcode: 'orBlock',
+      opcode: 'orAction',
       args: args
     })
   }

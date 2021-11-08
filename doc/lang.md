@@ -673,7 +673,7 @@ priority:
 | `i * j`, `i / j`, `i % j`    | Integer multiplication, division, modulo   |
 | `i + j`, `i - j`             | Integer addition and subtraction           |
 | `e_1 F e_2, ..., e_n`        | General infix operator application         |
-| `i > j`, `i < j`, `i >= j`, `i <= j`, `i != j`, `i == j`, `i = j`, `i <- j`, `S in T`, `S notin T`, `S subseteq T`  | Integer comparisons, equality, assignment, and set relations |
+| `i > j`, `i < j`, `i >= j`, `i <= j`, `i != j`, `i == j`, `i <- j`, `S in T`, `S notin T`, `S subseteq T`  | Integer comparisons, equality, assignment, and set relations |
 | `p and q`                    | Boolean 'and' (conjunction)                |
 | `p or q`                     | Boolean 'or' (disjunction)                 |
 | `p iff q`                    | Boolean equivalence (if and only if)       |
@@ -699,15 +699,19 @@ p.not
 // logical and: p /\ q in TLA+
 p and q
 p.and(q)
+and(p, q)
 // logical or: p \/ q in TLA+
 p or q
 p.or(q)
+or(p, q)
 // logical equivalence: p <=> q in TLA+
 p iff q
 p.iff(q)
+iff(p, q)
 // implication: p => q in TLA+
 p implies q
 p.implies(q)
+implies(p, q)
 ```
 
 Note that the operator `not(p)` needs parentheses around its argument.
@@ -740,12 +744,15 @@ In a mode different from Action:
 )
 ```
 
+Note that we require that `n > 1`.
+
 This is equivalent to `p_1.or(p_2).or( ... or(p_n)...)`. The indentation is not
 important.  However, you can produce nice indentation by hand, if you like.
 The first occurrence of `|` right after `{` or `(` is optional, it's up to you.
 
-This operator has the normal form too! It is written as `orBlock(p_1, ...,
-p_n)`. Most likely, you will never use it, but the tools can.
+These operators have the normal form too! They are written as `orExpr(p_1, ...,
+p_n)` and `orAction(p_1, ..., p_n)` for non-action modes and action mode,
+respectively. Most likely, you will never use them, but the tools can.
 
 *Mode:* Any.
 
@@ -773,12 +780,15 @@ In a mode different from Action:
 )
 ```
 
+Note that we require that `n > 1`.
+
 This is equivalent to `p_1.and(p_2.and( ... and(p_n)...)`. The indentation is not
 important.  However, you can produce nice indentation by hand, if you like.
 The first occurrence of `&` right after `{` is optional, it's up to you.
 
-This operator has the normal form too! It is written as `andBlock(p_1, ...,
-p_n)`. Most likely, you will never use it, but the tools can.
+These operators have the normal form too! They are written as `andExpr(p_1, ...,
+p_n)` in non-action mode and `andAction(p_1, ..., p_n)` in action mode,
+respectively. Most likely, you will never use them, but the tools can.
 
 *Mode:* Any.
 

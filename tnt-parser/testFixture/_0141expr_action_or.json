@@ -5,12 +5,12 @@
     {
       "id": 5,
       "kind": "def",
-      "name": "test_block_and",
-      "qualifier": "val",
+      "name": "test_action_or",
+      "qualifier": "action",
       "expr": {
         "id": 4,
         "kind": "opapp",
-        "opcode": "andExpr",
+        "opcode": "orAction",
         "args": [
           { "id": 1, "kind": "bool", "value": false, "type": { "kind": "bool" } },
           { "id": 2, "kind": "bool", "value": true, "type": { "kind": "bool" } },

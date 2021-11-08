@@ -2,9 +2,9 @@
 // Since 'val' gives us the simplest way of defining expressions,
 // we also do extensive testing of expression syntax in this test.
 module withVals {
-	val test_block_or = {
+	val test_block_or = (
 		| false
 		| true
 		| false
-	}
+	)
 }

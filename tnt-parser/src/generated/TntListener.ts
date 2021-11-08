@@ -37,8 +37,10 @@ import { AndContext } from "./TntParser";
 import { OrContext } from "./TntParser";
 import { IffContext } from "./TntParser";
 import { ImpliesContext } from "./TntParser";
-import { AndBlockContext } from "./TntParser";
-import { OrBlockContext } from "./TntParser";
+import { AndExprContext } from "./TntParser";
+import { OrExprContext } from "./TntParser";
+import { AndActionContext } from "./TntParser";
+import { OrActionContext } from "./TntParser";
 import { LiteralOrIdContext } from "./TntParser";
 import { TupleContext } from "./TntParser";
 import { RecordContext } from "./TntParser";
@@ -513,30 +515,56 @@ export interface TntListener extends ParseTreeListener {
 	exitImplies?: (ctx: ImpliesContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `andBlock`
+	 * Enter a parse tree produced by the `andExpr`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 */
-	enterAndBlock?: (ctx: AndBlockContext) => void;
+	enterAndExpr?: (ctx: AndExprContext) => void;
 	/**
-	 * Exit a parse tree produced by the `andBlock`
+	 * Exit a parse tree produced by the `andExpr`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 */
-	exitAndBlock?: (ctx: AndBlockContext) => void;
+	exitAndExpr?: (ctx: AndExprContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `orBlock`
+	 * Enter a parse tree produced by the `orExpr`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 */
-	enterOrBlock?: (ctx: OrBlockContext) => void;
+	enterOrExpr?: (ctx: OrExprContext) => void;
 	/**
-	 * Exit a parse tree produced by the `orBlock`
+	 * Exit a parse tree produced by the `orExpr`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 */
-	exitOrBlock?: (ctx: OrBlockContext) => void;
+	exitOrExpr?: (ctx: OrExprContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `andAction`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	enterAndAction?: (ctx: AndActionContext) => void;
+	/**
+	 * Exit a parse tree produced by the `andAction`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	exitAndAction?: (ctx: AndActionContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `orAction`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	enterOrAction?: (ctx: OrActionContext) => void;
+	/**
+	 * Exit a parse tree produced by the `orAction`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	exitOrAction?: (ctx: OrActionContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `literalOrId`
