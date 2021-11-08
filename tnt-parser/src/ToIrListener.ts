@@ -388,7 +388,7 @@ export class ToIrListener implements TntListener {
 
   // '+' or '-'
   exitPlusMinus (ctx: p.PlusMinusContext) {
-    const opcode = (ctx.ADD() !== undefined) ? 'add' : 'sub'
+    const opcode = (ctx.ADD() !== undefined) ? 'iadd' : 'isub'
     const args = this.popExprs(2)
     this.exprStack.push({
       id: this.nextId(),
@@ -404,9 +404,9 @@ export class ToIrListener implements TntListener {
     if (op) {
       let opcode = ''
       switch (op.type) {
-        case p.TntParser.MUL: opcode = 'mul'; break
-        case p.TntParser.DIV: opcode = 'div'; break
-        case p.TntParser.MOD: opcode = 'mod'; break
+        case p.TntParser.MUL: opcode = 'imul'; break
+        case p.TntParser.DIV: opcode = 'idiv'; break
+        case p.TntParser.MOD: opcode = 'imod'; break
       }
       const args = this.popExprs(2)
       this.exprStack.push({
@@ -424,7 +424,7 @@ export class ToIrListener implements TntListener {
     this.exprStack.push({
       id: this.nextId(),
       kind: 'opapp',
-      opcode: 'pow',
+      opcode: 'ipow',
       args: args
     })
   }
@@ -436,7 +436,7 @@ export class ToIrListener implements TntListener {
       this.exprStack.push({
         id: this.nextId(),
         kind: 'opapp',
-        opcode: 'uminus',
+        opcode: 'iuminus',
         args: [arg]
       })
     }
@@ -448,11 +448,10 @@ export class ToIrListener implements TntListener {
     if (op) {
       let opcode = ''
       switch (op.type) {
-        case p.TntParser.GT: opcode = 'gt'; break
-        case p.TntParser.GE: opcode = 'gte'; break
-        case p.TntParser.LT: opcode = 'lt'; break
-        case p.TntParser.LE: opcode = 'lte'; break
-        case p.TntParser.EQ: opcode = 'eq'; break
+        case p.TntParser.GT: opcode = 'igt'; break
+        case p.TntParser.GE: opcode = 'igte'; break
+        case p.TntParser.LT: opcode = 'ilt'; break
+        case p.TntParser.LE: opcode = 'ilte'; break
         case p.TntParser.EQEQ: opcode = 'eq'; break
         case p.TntParser.ASGN: opcode = 'assign'; break
         case p.TntParser.NE: opcode = 'neq'; break

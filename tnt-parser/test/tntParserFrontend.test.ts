@@ -110,67 +110,62 @@ describe('parse modules', () => {
 
   parseAsExpected(
     '_0100expr_add',
-    'parse add'
+    'parse iadd'
   )
 
   parseAsExpected(
     '_0101expr_sub',
-    'parse sub'
+    'parse isub'
   )
 
   parseAsExpected(
     '_0102expr_mul',
-    'parse mul'
+    'parse imul'
   )
 
   parseAsExpected(
     '_0103expr_div',
-    'parse div'
+    'parse idiv'
   )
 
   parseAsExpected(
     '_0104expr_mod',
-    'parse mod'
+    'parse imod'
   )
 
   parseAsExpected(
     '_0105expr_pow',
-    'parse pow'
+    'parse ipow'
   )
 
   parseAsExpected(
     '_0106expr_uminus',
-    'parse uminus'
+    'parse iuminus'
   )
 
   parseAsExpected(
     '_0107expr_gt',
-    'parse gt'
+    'parse igt'
   )
 
   parseAsExpected(
     '_0108expr_ge',
-    'parse ge'
+    'parse ige'
   )
 
   parseAsExpected(
     '_0109expr_lt',
-    'parse lt'
+    'parse ilt'
   )
 
   parseAsExpected(
     '_0110expr_le',
-    'parse le'
-  )
-
-  parseAsExpected(
-    '_0111expr_eq',
-    'parse eq'
+    'parse ile'
   )
 
   parseAsExpected(
     '_0112expr_eqeq',
-    'parse eqeq'
+    'parse eq'
   )
 
   parseAsExpected(

@@ -10,7 +10,7 @@
       "expr": {
         "id": 2,
         "kind": "opapp",
-        "opcode": "uminus",
+        "opcode": "iuminus",
         "args": [{ "id": 1, "kind": "int", "value": 100, "type": { "kind": "int" } }]
       }
     }

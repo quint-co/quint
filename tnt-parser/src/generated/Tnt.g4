@@ -83,7 +83,7 @@ expr:           // apply a built-in operator via the dot notation
         |       expr IDENTIFIER (argList)?                          # infixCall
                 // standard relations
         |       expr op=(GT | LT | GE | LE | NE | EQEQ |
-                         EQ | ASGN | IN | NOTIN | SUBSETEQ) expr    # relations
+                         ASGN | IN | NOTIN | SUBSETEQ) expr         # relations
                 // Boolean operators. Note that not(e) is just a normal call
         |       expr AND expr                                       # and
         |       expr OR expr                                        # or
@@ -179,9 +179,7 @@ GE              :   '>=' ;
 LE              :   '<=' ;
 NE              :   '!=' ;
 EQEQ            :   '==' ;
-EQ              :   '='  ;
-ASGN            :   ':=' ;
-REC             :   'rec' ;
+ASGN            :   '<-' ;
 
 // other TLA+ identifiers
 IDENTIFIER      : [a-zA-Z_][a-zA-Z0-9_]* ;

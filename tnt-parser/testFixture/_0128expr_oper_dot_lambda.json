@@ -21,7 +21,7 @@
             "expr": {
               "id": 4,
               "kind": "opapp",
-              "opcode": "gt",
+              "opcode": "igt",
               "args": [
                 { "id": 2, "kind": "name", "name": "x" },
                 { "id": 3, "kind": "int", "value": 10, "type": { "kind": "int" } }
@@ -50,7 +50,7 @@
             "expr": {
               "id": 11,
               "kind": "opapp",
-              "opcode": "gt",
+              "opcode": "igt",
               "args": [
                 { "id": 9, "kind": "name", "name": "x" },
                 { "id": 10, "kind": "int", "value": 10, "type": { "kind": "int" } }
@@ -79,7 +79,7 @@
             "expr": {
               "id": 18,
               "kind": "opapp",
-              "opcode": "gt",
+              "opcode": "igt",
               "args": [
                 { "id": 16, "kind": "name", "name": "x" },
                 { "id": 17, "kind": "int", "value": 10, "type": { "kind": "int" } }

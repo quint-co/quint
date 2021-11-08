@@ -20,7 +20,7 @@
         "expr": {
           "id": 3,
           "kind": "opapp",
-          "opcode": "add",
+          "opcode": "iadd",
           "args": [
             { "id": 1, "kind": "name", "name": "x" },
             { "id": 2, "kind": "name", "name": "y" }

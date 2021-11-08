@@ -3,6 +3,6 @@
 // we also do extensive testing of expression syntax in this test.
 module withVals {
 	val VeryTrue = {
-		2 + 2 = 4
+		2 + 2 == 4
 	}
 }
