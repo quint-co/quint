@@ -5,7 +5,7 @@
  *  1. Keep the grammar simple,
  *  2. Make it expressive enough to capture all of TLA+.
  *
- * @author: Igor Konnov, 2021
+ * @author: Igor Konnov, Shon Feder, Jure Kukovec, Informal Systems, 2021
  */
 grammar Tnt;
 
@@ -143,7 +143,7 @@ nameAfterDot  :  (IDENTIFIER
 
 // special operators
 operator: (AND | OR | IFF | IMPLIES | SUBSETEQ | IN | NOTIN |
-           '(' | '{' | '[' | '&' | '|' | 'if' | 'case' |
+           '(' | '{' | '[' | '&' | '|' | 'if' |
            GT  | LT  | GE  | LE | NE | EQ | ASGN |
            MUL | DIV | MOD | ADD | SUB | '^')
         ;
