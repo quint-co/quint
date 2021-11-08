@@ -10,7 +10,7 @@
       "expr": {
         "id": 5,
         "kind": "opapp",
-        "opcode": "record",
+        "opcode": "rec",
         "args": [
           { "id": 1, "kind": "str", "value": "name", "type": { "kind": "str" } },
           { "id": 2, "kind": "str", "value": "igor", "type": { "kind": "str" } },

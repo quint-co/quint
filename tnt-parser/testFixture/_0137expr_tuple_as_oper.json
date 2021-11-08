@@ -10,7 +10,7 @@
       "expr": {
         "id": 4,
         "kind": "opapp",
-        "opcode": "tuple",
+        "opcode": "tup",
         "args": [
           { "id": 1, "kind": "int", "value": 1, "type": { "kind": "int" } },
           { "id": 2, "kind": "int", "value": 2, "type": { "kind": "int" } },

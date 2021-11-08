@@ -1067,6 +1067,7 @@ If you need sequences, use sequences.
 // Tuple constructor: << e_1, ..., e_n >>
 // Warning: n >= 2
 (e_1, ..., e_n)
+tup(e_1, ..., e_n)
 // t[1], t[2], t[3], t[4], ... , t[50]
 t._1
 t._2
@@ -1095,6 +1096,7 @@ used in the spec.
 ```scala
 // sequence constructor: <<e_1, ..., e_n>> (which is also a tuple in TLA+)
 [ e_1, ..., e_n ]
+seq(e_1, ..., e_n)
 // append at the sequence tail: Append(s, e)
 s append e
 s.append(e)
