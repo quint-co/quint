@@ -453,7 +453,7 @@ export class ToIrListener implements TntListener {
         case p.TntParser.GE: opcode = 'igte'; break
         case p.TntParser.LT: opcode = 'ilt'; break
         case p.TntParser.LE: opcode = 'ilte'; break
-        case p.TntParser.EQEQ: opcode = 'eq'; break
+        case p.TntParser.EQ: opcode = 'eq'; break
         case p.TntParser.ASGN: opcode = 'assign'; break
         case p.TntParser.NE: opcode = 'neq'; break
         case p.TntParser.IN: opcode = 'in'; break

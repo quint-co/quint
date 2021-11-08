@@ -82,7 +82,7 @@ expr:           // apply a built-in operator via the dot notation
                 // built-in infix/postfix operators, a la Scala
         |       expr IDENTIFIER (argList)?                          # infixCall
                 // standard relations
-        |       expr op=(GT | LT | GE | LE | NE | EQEQ |
+        |       expr op=(GT | LT | GE | LE | NE | EQ |
                          ASGN | IN | NOTIN | SUBSETEQ) expr         # relations
                 // Boolean operators. Note that not(e) is just a normal call
         |       expr AND expr                                       # and
@@ -142,7 +142,7 @@ nameAfterDot  :  (IDENTIFIER
 // special operators
 operator: (AND | OR | IFF | IMPLIES | SUBSETEQ | IN | NOTIN |
            '(' | '{' | '[' | '&' | '|' | 'if' | 'case' |
-           GT  | LT  | GE  | LE | NE | EQEQ | EQ | ASGN |
+           GT  | LT  | GE  | LE | NE | EQ | ASGN |
            MUL | DIV | MOD | ADD | SUB | '^')
         ;
 
@@ -178,7 +178,7 @@ LT              :   '<' ;
 GE              :   '>=' ;
 LE              :   '<=' ;
 NE              :   '!=' ;
-EQEQ            :   '==' ;
+EQ              :   '==' ;
 ASGN            :   '<-' ;
 
 // other TLA+ identifiers

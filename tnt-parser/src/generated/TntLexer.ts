@@ -70,7 +70,7 @@ export class TntLexer extends Lexer {
 	public static readonly GE = 52;
 	public static readonly LE = 53;
 	public static readonly NE = 54;
-	public static readonly EQEQ = 55;
+	public static readonly EQ = 55;
 	public static readonly ASGN = 56;
 	public static readonly IDENTIFIER = 57;
 	public static readonly LINE_COMMENT = 58;
@@ -94,7 +94,7 @@ export class TntLexer extends Lexer {
 		"T__25", "T__26", "T__27", "T__28", "T__29", "T__30", "T__31", "STRING", 
 		"BOOL", "INT", "AND", "OR", "IFF", "IMPLIES", "SUBSETEQ", "IN", "NOTIN", 
 		"SET", "SEQ", "ADD", "SUB", "MUL", "DIV", "MOD", "GT", "LT", "GE", "LE", 
-		"NE", "EQEQ", "ASGN", "IDENTIFIER", "LINE_COMMENT", "COMMENT", "WS",
+		"NE", "EQ", "ASGN", "IDENTIFIER", "LINE_COMMENT", "COMMENT", "WS",
 	];
 
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
@@ -114,7 +114,7 @@ export class TntLexer extends Lexer {
 		undefined, undefined, undefined, undefined, undefined, "STRING", "BOOL", 
 		"INT", "AND", "OR", "IFF", "IMPLIES", "SUBSETEQ", "IN", "NOTIN", "SET", 
 		"SEQ", "ADD", "SUB", "MUL", "DIV", "MOD", "GT", "LT", "GE", "LE", "NE", 
-		"EQEQ", "ASGN", "IDENTIFIER", "LINE_COMMENT", "COMMENT", "WS",
+		"EQ", "ASGN", "IDENTIFIER", "LINE_COMMENT", "COMMENT", "WS",
 	];
 	public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(TntLexer._LITERAL_NAMES, TntLexer._SYMBOLIC_NAMES, []);
 
