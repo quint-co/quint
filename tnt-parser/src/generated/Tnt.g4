@@ -58,7 +58,7 @@ type :          type '->' type                                  # typeFun
         |       '(' type ')'                                    # typeParen
         ;
 
-typeUnionRecOne : '|' '{' IDENTIFIER ':' STRING (',' IDENTIFIER ':' type)* '}'                
+typeUnionRecOne : '|' '{' IDENTIFIER ':' STRING (',' IDENTIFIER ':' type)* '}'
         ;
 
 // A TNT expression. The order matters, it defines the priority.

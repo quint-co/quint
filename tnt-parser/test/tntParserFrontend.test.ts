@@ -919,31 +919,10 @@ describe('parse modules', () => {
     assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
   })
 
-  it('parse ite', () => {
-    const result = parsePhase1(readTest('_0121expr_ite'))
-    // val test_ite: _ = if (true) 1 else 0
-    const testIte: TntDef = {
-      id: 5n,
-      kind: 'def',
-      name: 'test_ite',
-      qualifier: 'val',
-      expr: {
-        id: 4n,
-        kind: 'opapp',
-        opcode: 'ite',
-        args: [
-          { id: 1n, kind: 'bool', value: true, type: { kind: 'bool' } },
-          { id: 2n, kind: 'int', value: 1n, type: { kind: 'int' } },
-          { id: 3n, kind: 'int', value: 0n, type: { kind: 'int' } }
-        ]
-      }
-    }
-
-    // the module that contains all these constants
-    const module = { id: 6n, name: 'withVals', defs: [testIte] }
-
-    assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
-  })
+  parseAsExpected(
+    '_0121expr_ite',
+    'parse ite'
+  )
 
   it('parse function application', () => {
     const result = parsePhase1(readTest('_0124expr_funapp'))
