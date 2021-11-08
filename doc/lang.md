@@ -873,7 +873,7 @@ we do not support case expressions without the default arm.
 One way to construct a set is by enumerating its elements:
 
 ```scala
-// or you can use the python-style constructor
+// the python-style constructor
 set(e_1, ..., e_n)
 ```
 
@@ -1227,10 +1227,12 @@ to(m, n)
 
 *Mode:* Stateless, State. Other modes are not allowed.
 
-### Nested operators
+### Nested operator definitions
 
 There is not much to say here. They are almost identical to the top-level
-operators, except that they are always private.
+operators, except that they are visible only to the containing top-level
+operator. Nested operator definitions may contain nested operator definitions
+too.
 
 *Examples:*
 
@@ -1324,7 +1326,7 @@ choice](#existsAndGuess).
 #### Other action operators of TLA+
 
 There is no equivalent of the composition operators `A \cdot B`. It is no
-supported by TLC, so the chance that you will needed is very low. We can add
+supported by TLC, so the chance that you will need it is very low. We can add
 it later, if you have a use-case for it.
 
 ### Temporal operators
@@ -1430,7 +1432,7 @@ A.enabled
 ```
 
 Similar to the operator `ENABLED` of TLA+, the operator `enabled` is a very special
-operator. It accepts an expression~`A` in the Action mode, and `enabled(A)` is
+operator. It accepts an expression `A` in the action mode, whereas `enabled(A)` is
 an expression in the Temporal mode.
 
 Expression `enabled(A)` is equivalent to `ENABLED A` of TLA+. More precisely,
@@ -1525,7 +1527,7 @@ The most common example is shown below:
     const Quorum: set(set(str))
     // no const, no var below
     // ...
-    pred chosen = Value filter { v -> Ballot exists { b -> ChosenAt(b, v) } }
+    pred chosen = Value filter (v -> Ballot exists (b -> ChosenAt(b, v)))
     // ...
   }
 
@@ -1561,10 +1563,10 @@ module root {
     var x: int
     var y: int
 
-    pred Init = {
+    pred Init = (
       & x == 0
       & y == 0
-    }
+    )
 
     action Next = {
       & x <- x + 1
@@ -1584,10 +1586,10 @@ the same variable. Hence, the module `AB` will look like follows:
 
 ```scala
   module AB = {
-    pred Init = {
+    pred Init = (
       & a == 0
       & b == 0
-    }
+    )
 
     action Next = {
       & a <- a + 1
@@ -1633,10 +1635,10 @@ like after instantiation:
 
 ```scala
 module C = {
-  pred Init = {
+  pred Init = (
     & x == 1
     & x - 1 == 0
-  }
+  )
 
   temporal Next = {
     & next(x) == x + 1
