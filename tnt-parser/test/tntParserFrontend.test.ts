@@ -1012,44 +1012,10 @@ describe('parse modules', () => {
     'parse infix operator application with lambda'
   )
 
-  it('parse dot operator application with lambda', () => {
-    const result = parsePhase1(readTest('_0128expr_oper_dot_lambda'))
-    // val oper_app = S.filter(x -> x > 10)
-    const operApp: TntDef = {
-      id: 7n,
-      kind: 'def',
-      name: 'oper_app',
-      qualifier: 'val',
-      expr: {
-        id: 6n,
-        kind: 'opapp',
-        opcode: 'filter',
-        args: [
-          { id: 1n, kind: 'name', name: 'S' },
-          {
-            id: 5n,
-            kind: 'lambda',
-            params: ['x'],
-            qualifier: 'def',
-            expr: {
-              id: 4n,
-              kind: 'opapp',
-              opcode: 'gt',
-              args: [
-                { id: 2n, kind: 'name', name: 'x' },
-                { id: 3n, kind: 'int', value: 10n, type: { kind: 'int' } }
-              ]
-            }
-          }
-        ]
-      }
-    }
-
-    // the module that contains all these constants
-    const module = { id: 8n, name: 'withVals', defs: [operApp] }
-
-    assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
-  })
+  parseAsExpected(
+    '_0128expr_oper_dot_lambda',
+    'parse dot operator application with lambda'
+  )
 
   it('parse dot operator application with non-lambda', () => {
     const result = parsePhase1(readTest('_0129expr_oper_dot_args'))
