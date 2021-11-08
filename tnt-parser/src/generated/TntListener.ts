@@ -42,7 +42,6 @@ import { OrBlockContext } from "./TntParser";
 import { LiteralOrIdContext } from "./TntParser";
 import { TupleContext } from "./TntParser";
 import { RecordContext } from "./TntParser";
-import { RecordSetContext } from "./TntParser";
 import { SequenceContext } from "./TntParser";
 import { LetInContext } from "./TntParser";
 import { ParenContext } from "./TntParser";
@@ -577,19 +576,6 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitRecord?: (ctx: RecordContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `recordSet`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 */
-	enterRecordSet?: (ctx: RecordSetContext) => void;
-	/**
-	 * Exit a parse tree produced by the `recordSet`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 */
-	exitRecordSet?: (ctx: RecordSetContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `sequence`

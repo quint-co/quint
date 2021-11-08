@@ -97,8 +97,6 @@ expr:           // apply a built-in operator via the dot notation
         |       '(' expr ',' expr (',' expr)* ')'                   # tuple
         |       '{' IDENTIFIER ':' expr
                         (',' IDENTIFIER ':' expr)* '}'              # record
-        |       '[' IDENTIFIER 'in' expr
-                        (',' IDENTIFIER 'in' expr)* ']'             # recordSet
         //      a sequence constructor, the form seq(...) is just an operator call
         |       ('[' (expr (',' expr)*)? ']' |
                         'seq' '(' (expr (',' expr)*)? ')')          # sequence

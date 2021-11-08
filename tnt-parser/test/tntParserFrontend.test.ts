@@ -264,11 +264,6 @@ describe('parse modules', () => {
   )
 
   parseAsExpected(
-    '_0133expr_record_set',
-    'parse record set'
-  )
-
-  parseAsExpected(
     '_0135expr_set_as_oper',
     'parse set as operator'
   )
@@ -286,10 +281,5 @@ describe('parse modules', () => {
   parseAsExpected(
     '_0138expr_record_as_oper',
     'parse record as operator'
-  )
-
-  parseAsExpected(
-    '_0139expr_record_set_as_oper',
-    'parse record set as operator'
   )
 })

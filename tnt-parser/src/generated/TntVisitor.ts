@@ -42,7 +42,6 @@ import { OrBlockContext } from "./TntParser";
 import { LiteralOrIdContext } from "./TntParser";
 import { TupleContext } from "./TntParser";
 import { RecordContext } from "./TntParser";
-import { RecordSetContext } from "./TntParser";
 import { SequenceContext } from "./TntParser";
 import { LetInContext } from "./TntParser";
 import { ParenContext } from "./TntParser";
@@ -385,14 +384,6 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitRecord?: (ctx: RecordContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `recordSet`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitRecordSet?: (ctx: RecordSetContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `sequence`

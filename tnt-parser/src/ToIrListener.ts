@@ -386,29 +386,6 @@ export class ToIrListener implements TntListener {
     this.exprStack.push({ id: this.nextId(), kind: 'opapp', opcode: 'record', args: namesAndValues })
   }
 
-  // record set constructor, e.g., [ name in Str, year in Int ]
-  exitRecordSet (ctx: p.RecordSetContext) {
-    const names = ctx.IDENTIFIER().map((n) => n.text)
-    const elems: TntEx[] = this.popExprs(ctx.expr().length)
-    // since TS does not have zip, a loop is the easiest solution
-    const namesAndValues: TntEx[] = []
-    for (let i = 0; i < names.length; i++) {
-      namesAndValues.push({
-        id: this.nextId(),
-        kind: 'str',
-        value: names[i],
-        type: { kind: 'str' }
-      })
-      namesAndValues.push(elems[i])
-    }
-    this.exprStack.push({
-      id: this.nextId(),
-      kind: 'opapp',
-      opcode: 'recordSet',
-      args: namesAndValues
-    })
-  }
-
   // '+' or '-'
   exitPlusMinus (ctx: p.PlusMinusContext) {
     const opcode = (ctx.ADD() !== undefined) ? 'add' : 'sub'
