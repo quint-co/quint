@@ -5,7 +5,6 @@ import { resolve } from 'path'
 import JSONbig = require('json-bigint')
 import { ErrorMessage, parsePhase1, ParseResult }
   from '../src/tntParserFrontend'
-import { TntDef, TntOpDef } from '../src/tntIr'
 
 // read a TNT file from the test data directory
 function readTnt (name: string): string {
