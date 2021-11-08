@@ -1,0 +1,59 @@
+{
+  "id": 8,
+  "name": "withConsts",
+  "defs": [
+    {
+      "id": 1,
+      "kind": "const",
+      "name": "N",
+      "type": { "kind": "int" }
+    },
+    {
+      "id": 2,
+      "kind": "const",
+      "name": "MySet",
+      "type": { "kind": "set", "elem": { "kind": "int" } }
+    },
+    {
+      "id": 3,
+      "kind": "const",
+      "name": "MySeq",
+      "type": { "kind": "seq", "elem": { "kind": "bool" } }
+    },
+    {
+      "id": 4,
+      "kind": "const",
+      "name": "MyFun",
+      "type": { "kind": "fun", "arg": { "kind": "int" }, "res": { "kind": "str" } }
+    },
+    {
+      "id": 5,
+      "kind": "const",
+      "name": "MyFunFun",
+      "type": {
+        "kind": "fun",
+        "arg": { "kind": "fun", "arg": { "kind": "int" }, "res": { "kind": "str" } },
+        "res": { "kind": "bool" }
+      }
+    },
+    {
+      "id": 6,
+      "kind": "const",
+      "name": "MyOper",
+      "type": {
+        "kind": "oper",
+        "args": [{ "kind": "int" }, { "kind": "str" }],
+        "res": { "kind": "bool" }
+      }
+    },
+    {
+      "id": 7,
+      "kind": "const",
+      "name": "MyTuple",
+      "type": {
+        "kind": "tuple",
+        "elems": [{ "kind": "int" }, { "kind": "bool" }, { "kind": "str" }]
+      }
+    }
+  ]
+}

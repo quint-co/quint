@@ -1,0 +1,22 @@
+{
+  "id": 6,
+  "name": "withVals",
+  "defs": [
+    {
+      "id": 5,
+      "kind": "def",
+      "name": "oper_app",
+      "qualifier": "val",
+      "expr": {
+        "id": 4,
+        "kind": "opapp",
+        "opcode": "except",
+        "args": [
+          { "id": 1, "kind": "name", "name": "f" },
+          { "id": 2, "kind": "int", "value": 3, "type": { "kind": "int" } },
+          { "id": 3, "kind": "int", "value": 4, "type": { "kind": "int" } }
+        ]
+      }
+    }
+  ]
+}

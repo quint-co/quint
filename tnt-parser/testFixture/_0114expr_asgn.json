@@ -1,0 +1,22 @@
+{
+  "id": 6,
+  "name": "withVals",
+  "defs": [
+    { "id": 1, "kind": "var", "name": "x", "type": { "kind": "int" } },
+    {
+      "id": 5,
+      "kind": "def",
+      "name": "asgn",
+      "qualifier": "val",
+      "expr": {
+        "id": 4,
+        "kind": "opapp",
+        "opcode": "assign",
+        "args": [
+          { "id": 2, "kind": "name", "name": "x" },
+          { "id": 3, "kind": "int", "value": 3, "type": { "kind": "int" } }
+        ]
+      }
+    }
+  ]
+}

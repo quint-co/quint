@@ -1,0 +1,18 @@
+{
+  "id": 3,
+  "name": "withVars",
+  "defs": [
+    {
+      "id": 1,
+      "kind": "var",
+      "name": "x",
+      "type": { "kind": "int" }
+    },
+    {
+      "id": 2,
+      "kind": "var",
+      "name": "y",
+      "type": { "kind": "bool" }
+    }
+  ]
+}

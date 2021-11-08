@@ -1,0 +1,22 @@
+{
+  "id": 6,
+  "name": "withVals",
+  "defs": [
+    {
+      "id": 5,
+      "kind": "def",
+      "name": "test_block_or",
+      "qualifier": "val",
+      "expr": {
+        "id": 4,
+        "kind": "opapp",
+        "opcode": "orBlock",
+        "args": [
+          { "id": 1, "kind": "bool", "value": false, "type": { "kind": "bool" } },
+          { "id": 2, "kind": "bool", "value": true, "type": { "kind": "bool" } },
+          { "id": 3, "kind": "bool", "value": false, "type": { "kind": "bool" } }
+        ]
+      }
+    }
+  ]
+}

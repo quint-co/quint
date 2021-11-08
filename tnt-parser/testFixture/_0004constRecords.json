@@ -1,0 +1,43 @@
+{
+  "id": 3,
+  "name": "withConsts",
+  "defs": [
+    {
+      "id": 1,
+      "kind": "const",
+      "name": "MyRecord",
+      "type": {
+        "kind": "record",
+        "fields": [{ "fieldName": "i", "fieldType": { "kind": "int" } },
+          { "fieldName": "b", "fieldType": { "kind": "bool" } },
+          { "fieldName": "s", "fieldType": { "kind": "str" } }]
+      }
+    },
+    {
+      "id": 2,
+      "kind": "const",
+      "name": "MyUnion",
+      "type": {
+        "kind": "union",
+        "tag": "tag",
+        "records": [
+          {
+            "tagValue": "circle",
+            "fields": [{ "fieldName": "radius", "fieldType": { "kind": "int" } }]
+          },
+          {
+            "tagValue": "rectangle",
+            "fields": [
+              { "fieldName": "width", "fieldType": { "kind": "int" } },
+              { "fieldName": "height", "fieldType": { "kind": "int" } }
+            ]
+          },
+          {
+            "tagValue": "dog",
+            "fields": [{ "fieldName": "name", "fieldType": { "kind": "str" } }]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "id": 6,
+  "name": "withVals",
+  "defs": [
+    {
+      "id": 5,
+      "kind": "def",
+      "name": "test_set",
+      "qualifier": "val",
+      "expr": {
+        "id": 4,
+        "kind": "opapp",
+        "opcode": "set",
+        "args": [
+          { "id": 1, "kind": "int", "value": 1, "type": { "kind": "int" } },
+          { "id": 2, "kind": "int", "value": 2, "type": { "kind": "int" } },
+          { "id": 3, "kind": "int", "value": 3, "type": { "kind": "int" } }
+        ]
+      }
+    }
+  ]
+}

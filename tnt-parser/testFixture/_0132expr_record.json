@@ -1,0 +1,23 @@
+{
+  "id": 7,
+  "name": "withVals",
+  "defs": [
+    {
+      "id": 6,
+      "kind": "def",
+      "name": "test_record",
+      "qualifier": "val",
+      "expr": {
+        "id": 5,
+        "kind": "opapp",
+        "opcode": "record",
+        "args": [
+          { "id": 3, "kind": "str", "value": "name", "type": { "kind": "str" } },
+          { "id": 1, "kind": "str", "value": "igor", "type": { "kind": "str" } },
+          { "id": 4, "kind": "str", "value": "year", "type": { "kind": "str" } },
+          { "id": 2, "kind": "int", "value": 1981, "type": { "kind": "int" } }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": 5,
+  "name": "withVals",
+  "defs": [
+    {
+      "id": 4,
+      "kind": "def",
+      "name": "test_and",
+      "qualifier": "val",
+      "expr": {
+        "id": 3,
+        "kind": "opapp",
+        "opcode": "and",
+        "args": [
+          { "id": 1, "kind": "bool", "value": false, "type": { "kind": "bool" } },
+          { "id": 2, "kind": "bool", "value": true, "type": { "kind": "bool" } }
+        ]
+      }
+    }
+  ]
+}

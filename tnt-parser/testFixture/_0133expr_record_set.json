@@ -1,0 +1,23 @@
+{
+  "id": 7,
+  "name": "withVals",
+  "defs": [
+    {
+      "id": 6,
+      "kind": "def",
+      "name": "test_record_set",
+      "qualifier": "val",
+      "expr": {
+        "id": 5,
+        "kind": "opapp",
+        "opcode": "recordSet",
+        "args": [
+          { "id": 3, "kind": "str", "value": "name", "type": { "kind": "str" } },
+          { "id": 1, "kind": "name", "name": "Str" },
+          { "id": 4, "kind": "str", "value": "year", "type": { "kind": "str" } },
+          { "id": 2, "kind": "name", "name": "Int" }
+        ]
+      }
+    }
+  ]
+}

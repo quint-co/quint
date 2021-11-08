@@ -1,0 +1,27 @@
+{
+  "id": 6,
+  "name": "withVals",
+  "defs": [
+    {
+      "id": 1,
+      "kind": "var",
+      "name": "f",
+      "type": { "kind": "fun", "arg": { "kind": "str" }, "res": { "kind": "int" } }
+    },
+    {
+      "id": 5,
+      "kind": "def",
+      "name": "funapp",
+      "qualifier": "val",
+      "expr": {
+        "id": 4,
+        "kind": "opapp",
+        "opcode": "of",
+        "args": [
+          { "id": 2, "kind": "name", "name": "f" },
+          { "id": 3, "kind": "str", "value": "a", "type": { "kind": "str" } }
+        ]
+      }
+    }
+  ]
+}
