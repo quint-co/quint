@@ -266,6 +266,7 @@ export class ToIrListener implements TntListener {
           case p.TntParser.NOTIN: name = 'notin'; break
           case p.TntParser.SUBSETEQ: name = 'subseteq'; break
           case p.TntParser.SET: name = 'set'; break
+          case p.TntParser.SEQ: name = 'seq'; break
         }
         this.exprStack.push({ id: 0n, kind: 'name', name: name })
       } else {

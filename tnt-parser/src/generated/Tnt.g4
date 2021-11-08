@@ -98,8 +98,7 @@ expr:           // apply a built-in operator via the dot notation
         |       '{' IDENTIFIER ':' expr
                         (',' IDENTIFIER ':' expr)* '}'              # record
         //      a sequence constructor, the form seq(...) is just an operator call
-        |       ('[' (expr (',' expr)*)? ']' |
-                        'seq' '(' (expr (',' expr)*)? ')')          # sequence
+        |       ('[' (expr (',' expr)*)? ']')                       # sequence
         |       operDef expr                                        # letIn
         |       '(' expr ')'                                        # paren
         |       '{' expr '}'                                        # braces
@@ -131,7 +130,7 @@ argList:       (lambdaOrExpr) (',' (lambdaOrExpr))*
 
 // operators in the normal call may use some reserved names
 normalCallName :   (IDENTIFIER | op=(IN | NOTIN | AND | OR | IFF | IMPLIES
-                     | SET | SUBSETEQ))
+                     | SET | SEQ | SUBSETEQ))
         ;
 
 // Some infix operators may be called via lhs.oper(rhs),
@@ -168,6 +167,7 @@ SUBSETEQ        :   'subseteq' ;
 IN              :   'in' ;
 NOTIN           :   'notin' ;
 SET             :   'set' ;
+SEQ             :   'seq' ;
 ADD             :   '+' ;
 SUB             :   '-' ;
 MUL             :   '*' ;
