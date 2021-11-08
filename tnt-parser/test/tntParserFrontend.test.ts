@@ -8,8 +8,7 @@ import { ErrorMessage, parsePhase1, ParseResult }
 import { TntDef, TntOpDef } from '../src/tntIr'
 
 // read a TNT file from the test data directory
-// TODO: rename to readTnt
-function readTest (name: string): string {
+function readTnt (name: string): string {
   const p = resolve(__dirname, '../testFixture', name + '.tnt')
   return readFileSync(p).toString('utf8')
 }
@@ -24,7 +23,7 @@ function readJson (name: string): any {
 function parseAsExpected (artifact: string, description: string): void {
   it(description, () => {
     // read the input from the data directory and parse it
-    const result = parsePhase1(readTest(artifact))
+    const result = parsePhase1(readTnt(artifact))
     // run it through stringify-parse to obtain the same json (due to bigints)
     const reparsedResult = JSONbig.parse(JSONbig.stringify(result))
     // read the expected result as JSON
@@ -38,13 +37,13 @@ function parseAsExpected (artifact: string, description: string): void {
 
 describe('parse modules', () => {
   it('parse empty module', () => {
-    const result = parsePhase1(readTest('_0001emptyModule'))
+    const result = parsePhase1(readTnt('_0001emptyModule'))
     const module = { id: 1n, name: 'empty', defs: [] }
     assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
   })
 
   it('error message on error in module unit', () => {
-    const result = parsePhase1(readTest('_0002emptyWithError'))
+    const result = parsePhase1(readTnt('_0002emptyWithError'))
     const msg: ErrorMessage = {
       explanation: "TNT001: expected 'const', 'var', 'def', 'type', etc.",
       start: { line: 4, col: 0 },
@@ -55,7 +54,7 @@ describe('parse modules', () => {
   })
 
   it('parse constants', () => {
-    const result = parsePhase1(readTest('_0003consts'))
+    const result = parsePhase1(readTnt('_0003consts'))
     // const N: int
     const constN: TntDef = {
       id: 1n,
@@ -128,7 +127,7 @@ describe('parse modules', () => {
   })
 
   it('parse record types in constants', () => {
-    const result = parsePhase1(readTest('_0004constRecords'))
+    const result = parsePhase1(readTnt('_0004constRecords'))
     // const MyRecord: { 'i': int, 'b': bool, 's': str }
     const constMyRecord: TntDef = {
       id: 1n,
@@ -182,7 +181,7 @@ describe('parse modules', () => {
   })
 
   it('error message in malformed disjoint union', () => {
-    const result = parsePhase1(readTest('_0005constRecordsError'))
+    const result = parsePhase1(readTnt('_0005constRecordsError'))
     const msg: ErrorMessage = {
       explanation: 'TNT011: Records in disjoint union have different tag fields: tag and kind',
       start: { line: 5, col: 2 },
@@ -193,7 +192,7 @@ describe('parse modules', () => {
   })
 
   it('parse vars', () => {
-    const result = parsePhase1(readTest('_0006vars'))
+    const result = parsePhase1(readTnt('_0006vars'))
     // var x: int
     const x: TntDef = { id: 1n, kind: 'var', name: 'x', type: { kind: 'int' } }
     // var y: bool
@@ -211,7 +210,7 @@ describe('parse modules', () => {
   })
 
   it('parse untyped val', () => {
-    const result = parsePhase1(readTest('_0008vals_untyped'))
+    const result = parsePhase1(readTnt('_0008vals_untyped'))
     // val add_1_to_2: _ = 1 + 2
 
     const add1To2: TntOpDef = {
@@ -237,7 +236,7 @@ describe('parse modules', () => {
   })
 
   it('parse untagged val', () => {
-    const result = parsePhase1(readTest('_0009vals_untagged'))
+    const result = parsePhase1(readTnt('_0009vals_untagged'))
     // val VeryTrue = { 2 + 2 = 4 }
     const VeryTrue: TntOpDef = {
       id: 6n,
@@ -270,7 +269,7 @@ describe('parse modules', () => {
   })
 
   it('parse typed val', () => {
-    const result = parsePhase1(readTest('_0011vals_typed'))
+    const result = parsePhase1(readTnt('_0011vals_typed'))
     // withType: set(int) = set(1, 2)
     const details: TntOpDef = {
       id: 4n,
@@ -296,7 +295,7 @@ describe('parse modules', () => {
   })
 
   it('parse untagged def', () => {
-    const result = parsePhase1(readTest('_0012defs_untagged'))
+    const result = parsePhase1(readTnt('_0012defs_untagged'))
     // def F(x, y) = x + y
     const defF: TntOpDef = {
       id: 5n,
@@ -327,7 +326,7 @@ describe('parse modules', () => {
   })
 
   it('parse untyped def', () => {
-    const result = parsePhase1(readTest('_0013defs_untyped'))
+    const result = parsePhase1(readTnt('_0013defs_untyped'))
     // def G(x, y) = x + y
     const defG: TntOpDef = {
       id: 5n,
@@ -358,7 +357,7 @@ describe('parse modules', () => {
   })
 
   it('parse typed def', () => {
-    const result = parsePhase1(readTest('_0014defs_typed'))
+    const result = parsePhase1(readTnt('_0014defs_typed'))
     // def H(x, y): (int, int) => int = x + y
     const defH: TntOpDef = {
       id: 5n,
@@ -394,7 +393,7 @@ describe('parse modules', () => {
   })
 
   it('parse add', () => {
-    const result = parsePhase1(readTest('_0100expr_add'))
+    const result = parsePhase1(readTnt('_0100expr_add'))
     // val add_1_to_2: _ = 1 + 2
     const add1To2: TntDef = {
       id: 4n,
@@ -419,7 +418,7 @@ describe('parse modules', () => {
   })
 
   it('parse sub', () => {
-    const result = parsePhase1(readTest('_0101expr_sub'))
+    const result = parsePhase1(readTnt('_0101expr_sub'))
     // val sub_1_to_2: _ = 1 - 2
     const sub1To2: TntDef = {
       id: 4n,
@@ -444,7 +443,7 @@ describe('parse modules', () => {
   })
 
   it('parse mul', () => {
-    const result = parsePhase1(readTest('_0102expr_mul'))
+    const result = parsePhase1(readTnt('_0102expr_mul'))
     // val mul_2_to_3: _ = 2 * 3
     const mul2To3: TntDef = {
       id: 4n,
@@ -469,7 +468,7 @@ describe('parse modules', () => {
   })
 
   it('parse div', () => {
-    const result = parsePhase1(readTest('_0103expr_div'))
+    const result = parsePhase1(readTnt('_0103expr_div'))
     // val div_2_to_3: _ = 2 / 3
     const div2To3: TntDef = {
       id: 4n,
@@ -494,7 +493,7 @@ describe('parse modules', () => {
   })
 
   it('parse mod', () => {
-    const result = parsePhase1(readTest('_0104expr_mod'))
+    const result = parsePhase1(readTnt('_0104expr_mod'))
     // val mod_2_to_3: _ = 2 % 3
     const mod2To3: TntDef = {
       id: 4n,
@@ -519,7 +518,7 @@ describe('parse modules', () => {
   })
 
   it('parse pow', () => {
-    const result = parsePhase1(readTest('_0105expr_pow'))
+    const result = parsePhase1(readTnt('_0105expr_pow'))
     // val pow_2_to_3: _ = 2^3
     const pow2To3: TntDef = {
       id: 4n,
@@ -544,7 +543,7 @@ describe('parse modules', () => {
   })
 
   it('parse uminus', () => {
-    const result = parsePhase1(readTest('_0106expr_uminus'))
+    const result = parsePhase1(readTnt('_0106expr_uminus'))
     // val uminus: _ = -100
     const uminus: TntDef = {
       id: 3n,
@@ -566,7 +565,7 @@ describe('parse modules', () => {
   })
 
   it('parse gt', () => {
-    const result = parsePhase1(readTest('_0107expr_gt'))
+    const result = parsePhase1(readTnt('_0107expr_gt'))
     // val gt_2_to_3: _ = 2 > 3
     const gt2To3: TntDef = {
       id: 4n,
@@ -591,7 +590,7 @@ describe('parse modules', () => {
   })
 
   it('parse ge', () => {
-    const result = parsePhase1(readTest('_0108expr_ge'))
+    const result = parsePhase1(readTnt('_0108expr_ge'))
     // val ge_2_to_3: _ = 2 >= 3
     const ge2To3: TntDef = {
       id: 4n,
@@ -616,7 +615,7 @@ describe('parse modules', () => {
   })
 
   it('parse lt', () => {
-    const result = parsePhase1(readTest('_0109expr_lt'))
+    const result = parsePhase1(readTnt('_0109expr_lt'))
     // val lt_2_to_3: _ = 2 < 3
     const lt2To3: TntDef = {
       id: 4n,
@@ -641,7 +640,7 @@ describe('parse modules', () => {
   })
 
   it('parse le', () => {
-    const result = parsePhase1(readTest('_0110expr_le'))
+    const result = parsePhase1(readTnt('_0110expr_le'))
     // val le_2_to_3: _ = 2 <= 3
     const le2To3: TntDef = {
       id: 4n,
@@ -666,7 +665,7 @@ describe('parse modules', () => {
   })
 
   it('parse eq', () => {
-    const result = parsePhase1(readTest('_0111expr_eq'))
+    const result = parsePhase1(readTnt('_0111expr_eq'))
     // val eq_2_to_3: _ = 2 = 3
     const eq2To3: TntDef = {
       id: 4n,
@@ -691,7 +690,7 @@ describe('parse modules', () => {
   })
 
   it('parse eqeq', () => {
-    const result = parsePhase1(readTest('_0112expr_eqeq'))
+    const result = parsePhase1(readTnt('_0112expr_eqeq'))
     // val eqeq_2_to_3: _ = 2 == 3
     const eqeq2To3: TntDef = {
       id: 4n,
@@ -716,7 +715,7 @@ describe('parse modules', () => {
   })
 
   it('parse ne', () => {
-    const result = parsePhase1(readTest('_0113expr_ne'))
+    const result = parsePhase1(readTnt('_0113expr_ne'))
     // val ne_2_to_3: _ = 2 != 3
     const ne2To3: TntDef = {
       id: 4n,
@@ -741,7 +740,7 @@ describe('parse modules', () => {
   })
 
   it('parse asgn', () => {
-    const result = parsePhase1(readTest('_0114expr_asgn'))
+    const result = parsePhase1(readTnt('_0114expr_asgn'))
     // var x: int
     const x: TntDef = { id: 1n, kind: 'var', name: 'x', type: { kind: 'int' } }
     // val asgn: _ = x := 3
@@ -768,7 +767,7 @@ describe('parse modules', () => {
   })
 
   it('parse and', () => {
-    const result = parsePhase1(readTest('_0115expr_and'))
+    const result = parsePhase1(readTnt('_0115expr_and'))
     // val test_and: _ = false and true
     const testAnd: TntDef = {
       id: 4n,
@@ -793,7 +792,7 @@ describe('parse modules', () => {
   })
 
   it('parse or', () => {
-    const result = parsePhase1(readTest('_0116expr_or'))
+    const result = parsePhase1(readTnt('_0116expr_or'))
     // val test_or: _ = false or true
     const testOr: TntDef = {
       id: 4n,
@@ -818,7 +817,7 @@ describe('parse modules', () => {
   })
 
   it('parse implies', () => {
-    const result = parsePhase1(readTest('_0117expr_implies'))
+    const result = parsePhase1(readTnt('_0117expr_implies'))
     // val test_implies: _ = false implies true
     const testImplies: TntDef = {
       id: 4n,
@@ -843,7 +842,7 @@ describe('parse modules', () => {
   })
 
   it('parse iff', () => {
-    const result = parsePhase1(readTest('_0118expr_iff'))
+    const result = parsePhase1(readTnt('_0118expr_iff'))
     // val test_iff: _ = false iff true
     const testIff: TntDef = {
       id: 4n,
@@ -868,7 +867,7 @@ describe('parse modules', () => {
   })
 
   it('parse block_and', () => {
-    const result = parsePhase1(readTest('_0119expr_block_and'))
+    const result = parsePhase1(readTnt('_0119expr_block_and'))
     // val block_and: _ = { false & true & false }
     const testBlockAnd: TntDef = {
       id: 5n,
@@ -894,7 +893,7 @@ describe('parse modules', () => {
   })
 
   it('parse block_or', () => {
-    const result = parsePhase1(readTest('_0120expr_block_or'))
+    const result = parsePhase1(readTnt('_0120expr_block_or'))
     // val block_or: _ = { false | true | false }
     const testBlockOr: TntDef = {
       id: 5n,
@@ -925,7 +924,7 @@ describe('parse modules', () => {
   )
 
   it('parse function application', () => {
-    const result = parsePhase1(readTest('_0124expr_funapp'))
+    const result = parsePhase1(readTnt('_0124expr_funapp'))
     // var f: str -> int
     const f: TntDef = {
       id: 1n,
@@ -957,7 +956,7 @@ describe('parse modules', () => {
   })
 
   it('parse operator application', () => {
-    const result = parsePhase1(readTest('_0125expr_oper_app'))
+    const result = parsePhase1(readTnt('_0125expr_oper_app'))
     // val oper_app = MyOper('a', 42)
     const operApp: TntDef = {
       id: 4n,
@@ -997,7 +996,7 @@ describe('parse modules', () => {
   )
 
   it('parse dot operator application with non-lambda', () => {
-    const result = parsePhase1(readTest('_0129expr_oper_dot_args'))
+    const result = parsePhase1(readTnt('_0129expr_oper_dot_args'))
     // val oper_app = f.except(3, 4)
     const operApp: TntDef = {
       id: 5n,
@@ -1023,7 +1022,7 @@ describe('parse modules', () => {
   })
 
   it('parse tuple', () => {
-    const result = parsePhase1(readTest('_0130expr_tuple'))
+    const result = parsePhase1(readTnt('_0130expr_tuple'))
     // val test_tuple = (1, 2, 3)
     const testTuple: TntDef = {
       id: 5n,
@@ -1049,7 +1048,7 @@ describe('parse modules', () => {
   })
 
   it('parse seq', () => {
-    const result = parsePhase1(readTest('_0131expr_seq'))
+    const result = parsePhase1(readTnt('_0131expr_seq'))
     // val test_seq = [1, 2, 3]
     const testSeq: TntDef = {
       id: 5n,
@@ -1075,7 +1074,7 @@ describe('parse modules', () => {
   })
 
   it('parse record', () => {
-    const result = parsePhase1(readTest('_0132expr_record'))
+    const result = parsePhase1(readTnt('_0132expr_record'))
     // val test_record = { name: 'igor', year: 1981 }
     const testRecord: TntDef = {
       id: 6n,
@@ -1102,7 +1101,7 @@ describe('parse modules', () => {
   })
 
   it('parse record set', () => {
-    const result = parsePhase1(readTest('_0133expr_record_set'))
+    const result = parsePhase1(readTnt('_0133expr_record_set'))
     // val test_record_set = [ name in Str, year in Int ]
     const testRecordSet: TntDef = {
       id: 6n,
@@ -1129,7 +1128,7 @@ describe('parse modules', () => {
   })
 
   it('parse set as operator', () => {
-    const result = parsePhase1(readTest('_0135expr_set_as_oper'))
+    const result = parsePhase1(readTnt('_0135expr_set_as_oper'))
     // val test_set = set(1, 2, 3)
     const testSet: TntDef = {
       id: 5n,
@@ -1155,7 +1154,7 @@ describe('parse modules', () => {
   })
 
   it('parse seq as operator', () => {
-    const result = parsePhase1(readTest('_0136expr_seq_as_oper'))
+    const result = parsePhase1(readTnt('_0136expr_seq_as_oper'))
     // val test_seq = seq(1, 2, 3)
     const testSeq: TntDef = {
       id: 5n,
@@ -1181,7 +1180,7 @@ describe('parse modules', () => {
   })
 
   it('parse tuple as operator', () => {
-    const result = parsePhase1(readTest('_0137expr_tuple_as_oper'))
+    const result = parsePhase1(readTnt('_0137expr_tuple_as_oper'))
     // val test_tuple = tuple(1, 2, 3)
     const testTuple: TntDef = {
       id: 5n,
@@ -1207,7 +1206,7 @@ describe('parse modules', () => {
   })
 
   it('parse record as operator', () => {
-    const result = parsePhase1(readTest('_0138expr_record_as_oper'))
+    const result = parsePhase1(readTnt('_0138expr_record_as_oper'))
     // val test_record = record('name', 'igor', 'year', 1981)
     const testRecord: TntDef = {
       id: 6n,
@@ -1234,7 +1233,7 @@ describe('parse modules', () => {
   })
 
   it('parse record set as operator', () => {
-    const result = parsePhase1(readTest('_0139expr_record_set_as_oper'))
+    const result = parsePhase1(readTnt('_0139expr_record_set_as_oper'))
     // val test_record_set = recordSet('name', Str, 'year', Int)
     const testRecordSet: TntDef = {
       id: 6n,
