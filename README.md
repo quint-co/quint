@@ -51,7 +51,7 @@ editor (currently, only vim is supported).
         * `.` instead of `!` when accessing a name in an instance.
 
  - *TNT should be easy to parse*: 
-    - It uses a small set of syntactic rules.
+    - It uses a small set of syntactic rules (its ANTLR4 grammar is 120 SLOC).
     - It borrows the best practices from the programming languages.
     - It eliminates ambiguity in several operators (of tuples, records, sequences).
 
@@ -73,5 +73,6 @@ editor (currently, only vim is supported).
 
  - *TNT is CLI-first*:
     - The users should be able to parse and transpile TNT in the command-line.
+    - The intermediate transpiler outputs are avaiable in JSON.
     - IDE support (such as a VSCode plugin) is a beatiful opt-in, not a requirement.
 
