@@ -70,10 +70,9 @@ typeUnionRecOne : '|' '{' IDENTIFIER ':' STRING (',' IDENTIFIER ':' type)* '}'
 // A TNT expression. The order matters, it defines the priority.
 // Wherever possible, we keep the same order of operators as in TLA+.
 expr:           // apply a built-in operator via the dot notation
-                expr '.' nameAfterDot ('(' argList ')')?            # dotCall
-                // Call a user-defined operator or a built-in operator
-                // of at least one argument.
-                // This includes: next, unchanged, always, eventually, enabled
+                expr '.' nameAfterDot '(' argList? ')'              # dotCall
+                // Call a user-defined operator or a built-in operator.
+                // The operator has at least one argument (otherwise, it's a 'val').
         |       normalCallName '(' argList? ')'                     # operApp
                 // function application
         |       expr '[' expr ']'                                   # funApp
@@ -101,7 +100,7 @@ expr:           // apply a built-in operator via the dot notation
         |       '{' ('&')? expr '&' expr ('&' expr)* '}'            # andAction
         |       '{' ('|')? expr '|' expr ('|' expr)* '}'            # orAction
         |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
-        //      a tuple constructor, the form tuple(...) is just an operator call
+        //      a tuple constructor, the form tup(...) is just an operator call
         |       '(' expr ',' expr (',' expr)* ')'                   # tuple
         |       '{' IDENTIFIER ':' expr
                         (',' IDENTIFIER ':' expr)* '}'              # record
@@ -133,18 +132,18 @@ lambdaOrExpr :  lambda
         |       expr
         ;
 
-argList:       (lambdaOrExpr) (',' (lambdaOrExpr))*
+argList:       lambdaOrExpr (',' lambdaOrExpr)*
         ;
 
 // operators in the normal call may use some reserved names
-normalCallName :   (IDENTIFIER | op=(IN | NOTIN | AND | OR | IFF | IMPLIES
-                     | SET | SEQ | SUBSETEQ))
+normalCallName :   IDENTIFIER
+        |       op=(IN | NOTIN | AND | OR | IFF | IMPLIES | SET | SEQ | SUBSETEQ)
         ;
 
 // Some infix operators may be called via lhs.oper(rhs),
 // without causing any ambiguity.
-nameAfterDot  :  (IDENTIFIER
-                    | op=(IN | NOTIN | AND | OR | IFF | IMPLIES | SUBSETEQ))
+nameAfterDot :  IDENTIFIER
+        |       op=(IN | NOTIN | AND | OR | IFF | IMPLIES | SUBSETEQ)
         ;
 
 // special operators

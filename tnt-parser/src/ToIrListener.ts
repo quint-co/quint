@@ -94,7 +94,8 @@ export class ToIrListener implements TntListener {
           qtext === 'action' || qtext === 'temporal') {
         qualifier = qtext
       } else {
-        qualifier = 'def'
+        // istanbul ignore next
+        assert(false, 'Unexpected qualifier: ' + qtext)
       }
     }
 
@@ -193,18 +194,24 @@ export class ToIrListener implements TntListener {
   // operator application in the normal form, e.g., MyOper("foo", 42)
   exitOperApp (ctx: p.OperAppContext) {
     const name = ctx.normalCallName().text
-    const wrappedArgs = this.exprStack.pop()
-    if (wrappedArgs && wrappedArgs.kind === 'opapp') {
-      this.exprStack.push({
-        id: this.nextId(),
-        kind: 'opapp',
-        opcode: name,
-        args: wrappedArgs.args
-      })
-    } else {
-      // istanbul ignore next
-      assert(false, 'exitOperApp: expected wrapped arguments')
-    }
+    let args: TntEx[] = []
+    if (ctx.argList()) {
+      // this operator has at least one argument
+      const wrappedArgs = this.exprStack.pop()
+      if (wrappedArgs && wrappedArgs.kind === 'opapp') {
+        args = wrappedArgs.args
+      } else {
+        // istanbul ignore next
+        assert(false, 'exitOperApp: expected wrapped arguments')
+      }
+    } // else no arguments, e.g., set(), seq()
+
+    this.exprStack.push({
+      id: this.nextId(),
+      kind: 'opapp',
+      opcode: name,
+      args: args
+    })
   }
 
   // infix operator application, e.g., S union T
@@ -227,82 +234,29 @@ export class ToIrListener implements TntListener {
   }
 
   // operator application via dot, e.g., S.union(T)
-  exitDotCall () {
-    // pop: the first argument, operator name, either lambda or the rest of arguments (packed)
-    const wrappedArgsOrLambda = this.exprStack.pop()
-    const name = this.exprStack.pop()
-    const firstArg = this.exprStack.pop()
-    if (firstArg && wrappedArgsOrLambda && name && name.kind === 'name') {
-      let args
-      if (wrappedArgsOrLambda.kind === 'opapp' &&
-          wrappedArgsOrLambda.opcode === 'wrappedArgs') {
-        args = [firstArg].concat(wrappedArgsOrLambda.args)
+  exitDotCall (ctx: p.DotCallContext) {
+    // pop: the first argument, operator name, the rest of arguments (wrapped)
+    const wrappedArgs = this.exprStack.pop()
+    const name = ctx.nameAfterDot().text
+    const callee = this.exprStack.pop()
+    if (callee && wrappedArgs) {
+      if (wrappedArgs.kind === 'opapp' &&
+          wrappedArgs.opcode === 'wrappedArgs') {
+        const args = [callee].concat(wrappedArgs.args)
+        // apply the operator to args
+        this.exprStack.push({
+          id: this.nextId(),
+          kind: 'opapp',
+          opcode: name,
+          args: args
+        })
       } else {
-        args = [firstArg, wrappedArgsOrLambda]
+        // istanbul ignore next
+        assert(false, 'exitDotCall: expected wrappedArgs, found: ' + wrappedArgs.kind)
       }
-      this.exprStack.push({
-        id: this.nextId(),
-        kind: 'opapp',
-        opcode: name.name,
-        args: args
-      })
     } else {
       // istanbul ignore next
       assert(false, 'exitDotCall: expected leading arg, name, and wrapped arguments')
-    }
-  }
-
-  // an identifier or some operators that are allowed as a name in f(...)
-  exitNormalCallName (ctx: p.NormalCallNameContext) {
-    const ident = ctx.IDENTIFIER()
-    if (ident) {
-      this.exprStack.push({ id: 0n, kind: 'name', name: ident.text })
-    } else {
-      const op = ctx._op
-      if (op) {
-        let name = 'undefined'
-        switch (op.type) {
-          case p.TntParser.AND: name = 'and'; break
-          case p.TntParser.OR: name = 'or'; break
-          case p.TntParser.IMPLIES: name = 'implies'; break
-          case p.TntParser.IFF: name = 'iff'; break
-          case p.TntParser.IN: name = 'in'; break
-          case p.TntParser.NOTIN: name = 'notin'; break
-          case p.TntParser.SUBSETEQ: name = 'subseteq'; break
-          case p.TntParser.SET: name = 'set'; break
-          case p.TntParser.SEQ: name = 'seq'; break
-        }
-        this.exprStack.push({ id: 0n, kind: 'name', name: name })
-      } else {
-        // istanbul ignore next
-        assert(false, 'exitName_after_dot: expected an operator')
-      }
-    }
-  }
-
-  // an identifier or some operators that are allowed after '.'
-  exitNameAfterDot (ctx: p.NameAfterDotContext) {
-    const ident = ctx.IDENTIFIER()
-    if (ident) {
-      this.exprStack.push({ id: 0n, kind: 'name', name: ident.text })
-    } else {
-      const op = ctx._op
-      if (op) {
-        let name = 'undefined'
-        switch (op.type) {
-          case p.TntParser.AND: name = 'and'; break
-          case p.TntParser.OR: name = 'or'; break
-          case p.TntParser.IMPLIES: name = 'implies'; break
-          case p.TntParser.IFF: name = 'iff'; break
-          case p.TntParser.IN: name = 'in'; break
-          case p.TntParser.NOTIN: name = 'notin'; break
-          case p.TntParser.SUBSETEQ: name = 'subseteq'; break
-        }
-        this.exprStack.push({ id: 0n, kind: 'name', name: name })
-      } else {
-        // istanbul ignore next
-        assert(false, 'exitName_after_dot: expected an operator')
-      }
     }
   }
 

@@ -1619,20 +1619,20 @@ export class TntParser extends Parser {
 						this.match(TntParser.T__24);
 						this.state = 382;
 						this.nameAfterDot();
-						this.state = 387;
+						this.state = 383;
+						this.match(TntParser.T__15);
+						this.state = 385;
 						this._errHandler.sync(this);
-						switch ( this.interpreter.adaptivePredict(this._input, 32, this._ctx) ) {
-						case 1:
+						_la = this._input.LA(1);
+						if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__7) | (1 << TntParser.T__10) | (1 << TntParser.T__11) | (1 << TntParser.T__12) | (1 << TntParser.T__13) | (1 << TntParser.T__14) | (1 << TntParser.T__15) | (1 << TntParser.T__25) | (1 << TntParser.T__28))) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & ((1 << (TntParser.STRING - 32)) | (1 << (TntParser.BOOL - 32)) | (1 << (TntParser.INT - 32)) | (1 << (TntParser.AND - 32)) | (1 << (TntParser.OR - 32)) | (1 << (TntParser.IFF - 32)) | (1 << (TntParser.IMPLIES - 32)) | (1 << (TntParser.SUBSETEQ - 32)) | (1 << (TntParser.IN - 32)) | (1 << (TntParser.NOTIN - 32)) | (1 << (TntParser.SET - 32)) | (1 << (TntParser.SEQ - 32)) | (1 << (TntParser.SUB - 32)) | (1 << (TntParser.IDENTIFIER - 32)))) !== 0)) {
 							{
-							this.state = 383;
-							this.match(TntParser.T__15);
 							this.state = 384;
 							this.argList();
-							this.state = 385;
-							this.match(TntParser.T__17);
 							}
-							break;
 						}
+
+						this.state = 387;
+						this.match(TntParser.T__17);
 						}
 						break;
 
@@ -2224,7 +2224,7 @@ export class TntParser extends Parser {
 		"\x03\n\x03\n\x03\n\x03\n\x03\n\x05\n\u0165\n\n\x03\n\x03\n\x03\n\x03\n" +
 		"\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03" +
 		"\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03" +
-		"\n\x03\n\x03\n\x03\n\x05\n\u0186\n\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03" +
+		"\n\x03\n\x05\n\u0184\n\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03" +
 		"\n\x03\n\x03\n\x05\n\u0190\n\n\x07\n\u0192\n\n\f\n\x0E\n\u0195\v\n\x03" +
 		"\v\x03\v\x03\v\x07\v\u019A\n\v\f\v\x0E\v\u019D\v\v\x03\v\x03\v\x03\v\x03" +
 		"\v\x03\v\x03\v\x03\v\x07\v\u01A6\n\v\f\v\x0E\v\u01A9\v\v\x03\v\x03\v\x03" +
@@ -2377,9 +2377,9 @@ export class TntParser extends Parser {
 		"\u0192\x05\x12\n\x11\u0178\u0179\f\x0F\x02\x02\u0179\u017A\x07\'\x02\x02" +
 		"\u017A\u0192\x05\x12\n\x10\u017B\u017C\f\x0E\x02\x02\u017C\u017D\x07(" +
 		"\x02\x02\u017D\u0192\x05\x12\n\x0F\u017E\u017F\f\x1B\x02\x02\u017F\u0180" +
-		"\x07\x1B\x02\x02\u0180\u0185\x05\x1E\x10\x02\u0181\u0182\x07\x12\x02\x02" +
-		"\u0182\u0183\x05\x1A\x0E\x02\u0183\u0184\x07\x14\x02\x02\u0184\u0186\x03" +
-		"\x02\x02\x02\u0185\u0181\x03\x02\x02\x02\u0185\u0186\x03\x02\x02\x02\u0186" +
+		"\x07\x1B\x02\x02\u0180\u0181\x05\x1E\x10\x02\u0181\u0183\x07\x12\x02\x02" +
+		"\u0182\u0184\x05\x1A\x0E\x02\u0183\u0182\x03\x02\x02\x02\u0183\u0184\x03" +
+		"\x02\x02\x02\u0184\u0185\x03\x02\x02\x02\u0185\u0186\x07\x14\x02\x02\u0186" +
 		"\u0192\x03\x02\x02\x02\u0187\u0188\f\x19\x02\x02\u0188\u0189\x07\x1C\x02" +
 		"\x02\u0189\u018A\x05\x12\n\x02\u018A\u018B\x07\x1D\x02\x02\u018B\u0192" +
 		"\x03\x02\x02\x02\u018C\u018D\f\x13\x02\x02\u018D\u018F\x07:\x02\x02\u018E" +
@@ -2420,7 +2420,7 @@ export class TntParser extends Parser {
 		"\x02\u01D2\x1F\x03\x02\x02\x02\u01D3\u01D4\t\f\x02\x02\u01D4!\x03\x02" +
 		"\x02\x02\u01D5\u01D6\t\r\x02\x02\u01D6#\x03\x02\x02\x02.*ELQU`cqvx\x89" +
 		"\x8C\xA3\xB2\xBA\xC4\xCB\xD9\xE2\xF2\xFB\u0102\u010B\u0112\u011B\u0122" +
-		"\u012B\u0139\u0148\u0153\u0156\u0164\u0185\u018F\u0191\u0193\u019B\u01A7" +
+		"\u012B\u0139\u0148\u0153\u0156\u0164\u0183\u018F\u0191\u0193\u019B\u01A7" +
 		"\u01B4\u01BB\u01C1\u01C8\u01CD\u01D1";
 	public static __ATN: ATN;
 	public static get _ATN(): ATN {

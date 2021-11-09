@@ -1,5 +1,5 @@
 {
-  "id": 5,
+  "id": 9,
   "name": "withVals",
   "defs": [
     {
@@ -14,6 +14,21 @@
         "args": [
           { "id": 1, "kind": "str", "value": "a", "type": { "kind": "str" } },
           { "id": 2, "kind": "int", "value": 42, "type": { "kind": "int" } }
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "kind": "def",
+      "name": "oper_in",
+      "qualifier": "val",
+      "expr": {
+        "id": 7,
+        "kind": "opapp",
+        "opcode": "in",
+        "args": [
+          { "id": 5, "kind": "int", "value": 1, "type": { "kind": "int" } },
+          { "id": 6, "kind": "opapp", "opcode": "set", "args": [] }
         ]
       }
     }
