@@ -27,6 +27,7 @@ use to report their errors. By having the error codes, we should be able to
 write an error explanation tool.
 
  - TNT001: expected 'const', 'var', 'def', 'type', etc.
+ - TNT002: missing ': type' after 'var' or 'const'
  - TNT404: module <name> not found
  - TNT405: name <name> not found
  - TNT406: instantiation error

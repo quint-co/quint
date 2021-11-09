@@ -16,16 +16,34 @@ publishing all packages privately at the moment, package management with
   npm install yalc -g
   ```
 
- 1. Compile and test the parser:
+ 1. Compile the parser:
 
   ```sh
-  npm run compile && npm run test
+  npm run compile
   ```
 
  1. Publish the package locally with yalc:
 
   ```sh
   yalc publish
+  ```
+
+## How to develop  
+
+Extend the code in [src](./src), write tests in [test](./test), add test data
+to [testFixture](./testFixture). To run the tests and check code coverage, run
+the following commands:
+
+ 1. Compile and test the parser:
+
+  ```sh
+  npm run compile && npm run test
+  ```
+
+ 1. Check code coverage with tests:
+
+  ```sh
+  npm run coverage
   ```
 
 ## State of the parser

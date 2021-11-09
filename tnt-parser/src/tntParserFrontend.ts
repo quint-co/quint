@@ -64,13 +64,8 @@ export function parsePhase1 (text: string): ParseResult {
     } else if (listener.rootModule !== undefined) {
       return { kind: 'ok', module: listener.rootModule }
     } else {
-      // this case should not be possible, but we handle it just in case
-      const start = { line: tree.start.line, col: tree.start.charPositionInLine }
-      const end = tree.stop
-        ? { line: tree.stop.line, col: tree.stop.charPositionInLine }
-        : start
-      const msg = { start: start, end: end, explanation: 'undefined root module' }
-      return { kind: 'error', messages: [msg] }
+      // istanbul ignore next
+      throw new Error('this should be impossible: root module is undefined')
     }
   }
 }

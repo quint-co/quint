@@ -23,6 +23,7 @@ import { ModuleNestedContext } from "./TntParser";
 import { InstanceContext } from "./TntParser";
 import { TypedefContext } from "./TntParser";
 import { ErrorCaseContext } from "./TntParser";
+import { ErrorNoTypeContext } from "./TntParser";
 import { DotCallContext } from "./TntParser";
 import { OperAppContext } from "./TntParser";
 import { FunAppContext } from "./TntParser";
@@ -234,6 +235,14 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitErrorCase?: (ctx: ErrorCaseContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `errorNoType`
+	 * labeled alternative in `TntParser.unit`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitErrorNoType?: (ctx: ErrorNoTypeContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `dotCall`

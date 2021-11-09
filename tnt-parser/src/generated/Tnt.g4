@@ -12,16 +12,22 @@ grammar Tnt;
 module : 'module' IDENTIFIER '{' unit* '}';
 
 // a module unit
-unit :          'const' IDENTIFIER ':' type                     # const
-        |       'var' IDENTIFIER ':'   type                     # var
-        |       'assume' (IDENTIFIER | '_') '=' expr            # assume
-        |       operDef                                         # oper
-        |       module                                          # moduleNested
-        |       instanceMod                                     # instance
-        |       'type' IDENTIFIER '=' type                      # typedef
-        |       (IDENTIFIER | operator | literal) {
+unit :    'const' IDENTIFIER ':' type                     # const
+        | 'var' IDENTIFIER ':'   type                     # var
+        | 'assume' (IDENTIFIER | '_') '=' expr            # assume
+        | operDef                                         # oper
+        | module                                          # moduleNested
+        | instanceMod                                     # instance
+        | 'type' IDENTIFIER '=' type                      # typedef
+        | (IDENTIFIER | operator | literal) {
          this.notifyErrorListeners("TNT001: expected 'const', 'var', 'def', 'type', etc.");
-                }                                               # errorCase
+          }                                               # errorCase
+        | ('var' | 'const') IDENTIFIER
+              ('const' | 'var' | 'assume' | 'val' | 'def'
+               | 'pred' | 'action' | 'temporal' | 'module' | 'type') {
+            this.notifyErrorListeners("TNT002: missing ': type' after 'var' or 'const'");
+               
+          }                                               # errorNoType
         ;
 
 // an operator definition

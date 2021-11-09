@@ -122,6 +122,7 @@ export class ToIrListener implements TntListener {
       }
       this.definitionStack.push(def)
     } else {
+      // istanbul ignore next
       assert(false, 'undefined expr or params in exitOperDef')
     }
   }
@@ -201,6 +202,7 @@ export class ToIrListener implements TntListener {
         args: wrappedArgs.args
       })
     } else {
+      // istanbul ignore next
       assert(false, 'exitOperApp: expected wrapped arguments')
     }
   }
@@ -219,6 +221,7 @@ export class ToIrListener implements TntListener {
         args: [firstArg].concat(wrappedArgs.args)
       })
     } else {
+      // istanbul ignore next
       assert(false, 'exitInfixCall: expected leading arg and wrapped arguments')
     }
   }
@@ -244,6 +247,7 @@ export class ToIrListener implements TntListener {
         args: args
       })
     } else {
+      // istanbul ignore next
       assert(false, 'exitDotCall: expected leading arg, name, and wrapped arguments')
     }
   }
@@ -270,6 +274,7 @@ export class ToIrListener implements TntListener {
         }
         this.exprStack.push({ id: 0n, kind: 'name', name: name })
       } else {
+        // istanbul ignore next
         assert(false, 'exitName_after_dot: expected an operator')
       }
     }
@@ -295,6 +300,7 @@ export class ToIrListener implements TntListener {
         }
         this.exprStack.push({ id: 0n, kind: 'name', name: name })
       } else {
+        // istanbul ignore next
         assert(false, 'exitName_after_dot: expected an operator')
       }
     }
@@ -333,6 +339,7 @@ export class ToIrListener implements TntListener {
         expr: expr
       })
     } else {
+      // istanbul ignore next
       assert(false, 'exitLambda: expected an expression')
     }
   }
@@ -384,7 +391,12 @@ export class ToIrListener implements TntListener {
       })
       namesAndValues.push(elems[i])
     }
-    this.exprStack.push({ id: this.nextId(), kind: 'opapp', opcode: 'record', args: namesAndValues })
+    this.exprStack.push({
+      id: this.nextId(),
+      kind: 'opapp',
+      opcode: 'record',
+      args: namesAndValues
+    })
   }
 
   // '+' or '-'
@@ -669,11 +681,13 @@ export class ToIrListener implements TntListener {
             this.errors.push({ explanation: msg, start: start, end: end })
           }
         } else {
+          // istanbul ignore next
           assert(false, 'exitTypeUnionRec: no union in exitTypeUnionRec')
         }
       }
       this.typeStack.push({ kind: 'union', tag: tag, records: records })
     } else {
+      // istanbul ignore next
       assert(false, 'exitTypeUnionRec: no union in exitTypeUnionRec')
     }
   }
@@ -742,13 +756,7 @@ export class ToIrListener implements TntListener {
   private popType (): TntType {
     // the user has specified a type
     const tp = this.typeStack.pop()
-    if (tp) {
-      return tp
-    } else {
-      assert(false, 'popType: no type in typeStack')
-      // this line should not be reachable
-      return { kind: 'bool' }
-    }
+    return tp!
   }
 
   // produce the next number in a sequence
