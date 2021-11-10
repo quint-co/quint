@@ -1,0 +1,21 @@
+{
+  "id": 5,
+  "name": "withVals",
+  "defs": [
+    {
+      "id": 4,
+      "kind": "def",
+      "name": "subseteq_empty",
+      "qualifier": "val",
+      "expr": {
+        "id": 3,
+        "kind": "opapp",
+        "opcode": "subseteq",
+        "args": [
+          { "id": 1, "kind": "opapp", "opcode": "set", "args": [] },
+          { "id": 2, "kind": "opapp", "opcode": "set", "args": [] }
+        ]
+      }
+    }
+  ]
+}

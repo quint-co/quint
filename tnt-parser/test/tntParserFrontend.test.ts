@@ -174,6 +174,21 @@ describe('parse modules', () => {
   )
 
   parseAsExpected(
+    '_0142expr_infix_in',
+    'parse infix in'
+  )
+
+  parseAsExpected(
+    '_0143expr_infix_notin',
+    'parse infix notin'
+  )
+
+  parseAsExpected(
+    '_0144expr_infix_subseteq',
+    'parse infix subseteq'
+  )
+
+  parseAsExpected(
     '_0114expr_asgn',
     'parse asgn'
   )

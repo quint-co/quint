@@ -410,7 +410,7 @@ export class ToIrListener implements TntListener {
     }
   }
 
-  // GT | LT | GE | LE | NE | EQEQ | EQ | ASGN | IN | NOTIN | SUBSETEQ
+  // GT | LT | GE | LE | NE | EQ | ASGN | IN | NOTIN | SUBSETEQ
   exitRelations (ctx: p.RelationsContext) {
     const op = ctx._op
     if (op) {
