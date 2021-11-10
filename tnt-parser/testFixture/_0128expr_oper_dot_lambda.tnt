@@ -9,4 +9,6 @@ module withVals {
 	val oper_app2 = S.filter((x -> x > 10))
     // Wrap lambda in '{...}'
 	action oper_app3 = S.guess({x -> x > 10})
+    // use holes
+	val oper_app = S.filter(_, _ -> true)
 }

@@ -8,6 +8,4 @@ module withVals {
 	val oper_app = MyOper("a", 42)
     // the following operators need a special parsing case
 	val oper_in = in(1, set())
-
-	//val oper_notin = notin(1, set())
 }

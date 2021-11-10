@@ -1898,10 +1898,8 @@ export class TntParser extends Parser {
 			let _alt: number;
 			this.enterOuterAlt(_localctx, 1);
 			{
-			{
 			this.state = 449;
 			this.lambdaOrExpr();
-			}
 			this.state = 454;
 			this._errHandler.sync(this);
 			_alt = this.interpreter.adaptivePredict(this._input, 41, this._ctx);
@@ -1911,10 +1909,8 @@ export class TntParser extends Parser {
 					{
 					this.state = 450;
 					this.match(TntParser.T__16);
-					{
 					this.state = 451;
 					this.lambdaOrExpr();
-					}
 					}
 					}
 				}
@@ -1944,12 +1940,11 @@ export class TntParser extends Parser {
 		this.enterRule(_localctx, 26, TntParser.RULE_normalCallName);
 		let _la: number;
 		try {
-			this.enterOuterAlt(_localctx, 1);
-			{
 			this.state = 459;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case TntParser.IDENTIFIER:
+				this.enterOuterAlt(_localctx, 1);
 				{
 				this.state = 457;
 				this.match(TntParser.IDENTIFIER);
@@ -1964,6 +1959,7 @@ export class TntParser extends Parser {
 			case TntParser.NOTIN:
 			case TntParser.SET:
 			case TntParser.SEQ:
+				this.enterOuterAlt(_localctx, 2);
 				{
 				this.state = 458;
 				_localctx._op = this._input.LT(1);
@@ -1982,7 +1978,6 @@ export class TntParser extends Parser {
 				break;
 			default:
 				throw new NoViableAltException(this);
-			}
 			}
 		}
 		catch (re) {
@@ -2005,12 +2000,11 @@ export class TntParser extends Parser {
 		this.enterRule(_localctx, 28, TntParser.RULE_nameAfterDot);
 		let _la: number;
 		try {
-			this.enterOuterAlt(_localctx, 1);
-			{
 			this.state = 463;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case TntParser.IDENTIFIER:
+				this.enterOuterAlt(_localctx, 1);
 				{
 				this.state = 461;
 				this.match(TntParser.IDENTIFIER);
@@ -2023,6 +2017,7 @@ export class TntParser extends Parser {
 			case TntParser.SUBSETEQ:
 			case TntParser.IN:
 			case TntParser.NOTIN:
+				this.enterOuterAlt(_localctx, 2);
 				{
 				this.state = 462;
 				_localctx._op = this._input.LT(1);
@@ -2041,7 +2036,6 @@ export class TntParser extends Parser {
 				break;
 			default:
 				throw new NoViableAltException(this);
-			}
 			}
 		}
 		catch (re) {

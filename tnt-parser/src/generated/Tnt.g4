@@ -124,7 +124,7 @@ lambda:         identOrHole (',' identOrHole)*  '->' expr
         ;
 
 // an identifier or a hole '_'
-identOrHole :   IDENTIFIER | '_'
+identOrHole :   '_' | IDENTIFIER
         ;
 
 // A lambda or an expression with lambda having a priority
@@ -189,7 +189,7 @@ EQ              :   '==' ;
 ASGN            :   '<-' ;
 
 // other TLA+ identifiers
-IDENTIFIER      : [a-zA-Z_][a-zA-Z0-9_]* ;
+IDENTIFIER      : ([a-zA-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;
 
 // comments and whitespaces
 LINE_COMMENT    :   '//' .*? '\n'   -> skip ;

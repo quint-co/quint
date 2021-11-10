@@ -300,11 +300,12 @@ export class ToIrListener implements TntListener {
 
   // a single parameter in a lambda expression: an identifier or '_'
   exitIdentOrHole (ctx: p.IdentOrHoleContext) {
-    const ident = ctx.IDENTIFIER()
-    if (ident) {
-      this.paramStack.push([ident.text])
-    } else {
+    if (ctx.text === '_') {
+      // a hole '_'
       this.paramStack.push(['_'])
+    } else {
+      // a variable name
+      this.paramStack.push([ctx.IDENTIFIER()!.text])
     }
   }
 

@@ -1,5 +1,5 @@
 {
-  "id": 22,
+  "id": 27,
   "name": "withVals",
   "defs": [
     {
@@ -88,6 +88,41 @@
           }
         ]
       }
+    },
+    {
+      "expr": {
+        "args": [
+          {
+            "id": 22,
+            "kind": "name",
+            "name": "S"
+          },
+          {
+            "expr": {
+              "id": 23,
+              "kind": "bool",
+              "type": {
+                "kind": "bool"
+              },
+              "value": true
+            },
+            "id": 24,
+            "kind": "lambda",
+            "params": [
+              "_",
+              "_"
+              ],
+            "qualifier": "def"
+          }
+        ],
+        "id": 25,
+        "kind": "opapp",
+        "opcode": "filter"
+      },
+      "id": 26,
+      "kind": "def",
+      "name": "oper_app",
+      "qualifier": "val"
     }
   ]
 }
