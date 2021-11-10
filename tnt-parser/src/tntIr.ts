@@ -107,7 +107,7 @@ export type TntDef =
   | { kind: 'assume', name: string, assumption: TntEx } & WithId
   | { kind: 'import', name: string, path: string } & WithId
   | { kind: 'instance', name: string,
-    moduleName: string, overrides: [string, TntEx][] } & WithId
+      moduleName: string, overrides: [string, TntEx][] } & WithId
   // eslint-disable-next-line no-use-before-define
   | { kind: 'module', module: TntModule } & WithId
 
