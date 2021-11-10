@@ -22,6 +22,7 @@ import { OperContext } from "./TntParser";
 import { ModuleNestedContext } from "./TntParser";
 import { InstanceContext } from "./TntParser";
 import { TypedefContext } from "./TntParser";
+import { ImportDefContext } from "./TntParser";
 import { ErrorCaseContext } from "./TntParser";
 import { ErrorNoTypeContext } from "./TntParser";
 import { DotCallContext } from "./TntParser";
@@ -60,6 +61,8 @@ import { TypeUnionRecOneContext } from "./TntParser";
 import { ExprContext } from "./TntParser";
 import { LambdaContext } from "./TntParser";
 import { IdentOrHoleContext } from "./TntParser";
+import { IdentOrStarContext } from "./TntParser";
+import { PathContext } from "./TntParser";
 import { LambdaOrExprContext } from "./TntParser";
 import { ArgListContext } from "./TntParser";
 import { NormalCallNameContext } from "./TntParser";
@@ -319,6 +322,19 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitTypedef?: (ctx: TypedefContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `importDef`
+	 * labeled alternative in `TntParser.unit`.
+	 * @param ctx the parse tree
+	 */
+	enterImportDef?: (ctx: ImportDefContext) => void;
+	/**
+	 * Exit a parse tree produced by the `importDef`
+	 * labeled alternative in `TntParser.unit`.
+	 * @param ctx the parse tree
+	 */
+	exitImportDef?: (ctx: ImportDefContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `errorCase`
@@ -791,6 +807,28 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitIdentOrHole?: (ctx: IdentOrHoleContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `TntParser.identOrStar`.
+	 * @param ctx the parse tree
+	 */
+	enterIdentOrStar?: (ctx: IdentOrStarContext) => void;
+	/**
+	 * Exit a parse tree produced by `TntParser.identOrStar`.
+	 * @param ctx the parse tree
+	 */
+	exitIdentOrStar?: (ctx: IdentOrStarContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `TntParser.path`.
+	 * @param ctx the parse tree
+	 */
+	enterPath?: (ctx: PathContext) => void;
+	/**
+	 * Exit a parse tree produced by `TntParser.path`.
+	 * @param ctx the parse tree
+	 */
+	exitPath?: (ctx: PathContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `TntParser.lambdaOrExpr`.

@@ -22,6 +22,7 @@ import { OperContext } from "./TntParser";
 import { ModuleNestedContext } from "./TntParser";
 import { InstanceContext } from "./TntParser";
 import { TypedefContext } from "./TntParser";
+import { ImportDefContext } from "./TntParser";
 import { ErrorCaseContext } from "./TntParser";
 import { ErrorNoTypeContext } from "./TntParser";
 import { DotCallContext } from "./TntParser";
@@ -60,6 +61,8 @@ import { TypeUnionRecOneContext } from "./TntParser";
 import { ExprContext } from "./TntParser";
 import { LambdaContext } from "./TntParser";
 import { IdentOrHoleContext } from "./TntParser";
+import { IdentOrStarContext } from "./TntParser";
+import { PathContext } from "./TntParser";
 import { LambdaOrExprContext } from "./TntParser";
 import { ArgListContext } from "./TntParser";
 import { NormalCallNameContext } from "./TntParser";
@@ -227,6 +230,14 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitTypedef?: (ctx: TypedefContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `importDef`
+	 * labeled alternative in `TntParser.unit`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitImportDef?: (ctx: ImportDefContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `errorCase`
@@ -520,6 +531,20 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitIdentOrHole?: (ctx: IdentOrHoleContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `TntParser.identOrStar`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitIdentOrStar?: (ctx: IdentOrStarContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `TntParser.path`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitPath?: (ctx: PathContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `TntParser.lambdaOrExpr`.

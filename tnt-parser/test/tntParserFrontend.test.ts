@@ -312,4 +312,9 @@ describe('parse modules', () => {
     '_0151assume',
     'parse assumptions'
   )
+
+  parseAsExpected(
+    '_0152import',
+    'parse imports'
+  )
 })

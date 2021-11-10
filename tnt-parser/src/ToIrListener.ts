@@ -170,6 +170,23 @@ export class ToIrListener implements TntListener {
     this.definitionStack.push(assume)
   }
 
+  exitImportDef () {
+    const ident = this.paramStack.pop()![0]
+    const path = this.paramStack.pop()![0]
+    const importDef: TntDef = {
+      id: this.nextId(),
+      kind: 'import',
+      name: ident,
+      path: path
+    }
+    this.definitionStack.push(importDef)
+  }
+
+  exitPath (ctx: p.PathContext) {
+    const path = ctx.IDENTIFIER().reduce((s, id) => s + id.text, '')
+    this.paramStack.push([path])
+  }
+
   /** ******************* translate expressions **************************/
 
   // an identifier or a literal, e.g., foo, 42, "hello", false
@@ -334,6 +351,17 @@ export class ToIrListener implements TntListener {
     if (ctx.text === '_') {
       // a hole '_'
       this.paramStack.push(['_'])
+    } else {
+      // a variable name
+      this.paramStack.push([ctx.IDENTIFIER()!.text])
+    }
+  }
+
+  // an identifier or star '*' in import
+  exitIdentOrStar (ctx: p.IdentOrStarContext) {
+    if (ctx.text === '*') {
+      // a hole '_'
+      this.paramStack.push(['*'])
     } else {
       // a variable name
       this.paramStack.push([ctx.IDENTIFIER()!.text])

@@ -19,6 +19,7 @@ unit :    'const' IDENTIFIER ':' type                     # const
         | module                                          # moduleNested
         | instanceMod                                     # instance
         | 'type' IDENTIFIER '=' type                      # typedef
+        | 'import' path '.' identOrStar                   # importDef
         | (IDENTIFIER | operator | literal) {
          this.notifyErrorListeners("TNT001: expected 'const', 'var', 'def', 'type', etc.");
           }                                               # errorCase
@@ -125,6 +126,14 @@ lambda:         identOrHole (',' identOrHole)*  '->' expr
 
 // an identifier or a hole '_'
 identOrHole :   '_' | IDENTIFIER
+        ;
+
+// an identifier or a star '*'
+identOrStar :   '*' | IDENTIFIER
+        ;
+
+// a path used in imports
+path    : IDENTIFIER ('.' IDENTIFIER)*
         ;
 
 // A lambda or an expression with lambda having a priority

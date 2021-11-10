@@ -1,0 +1,35 @@
+{
+  "id": 7,
+  "name": "imports",
+  "defs": [
+    {
+      "id": 4,
+      "kind": "module",
+      "module": {
+        "id": 3,
+        "name": "M",
+        "defs": [
+          {
+            "id": 2,
+            "kind": "def",
+            "qualifier": "val",
+            "name": "foo",
+            "expr": { "id": 1, "kind": "int", "value": 4, "type": { "kind": "int" } }
+          }
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "kind": "import",
+      "name": "foo",
+      "path": "M"
+    },
+    {
+      "id": 6,
+      "kind": "import",
+      "name": "*",
+      "path": "M"
+    }
+  ]
+}
