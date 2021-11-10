@@ -307,4 +307,9 @@ describe('parse modules', () => {
     '_0150module_nested',
     'parse nested modules'
   )
+
+  parseAsExpected(
+    '_0151assume',
+    'parse assumptions'
+  )
 })

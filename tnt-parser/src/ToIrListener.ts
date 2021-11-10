@@ -157,6 +157,19 @@ export class ToIrListener implements TntListener {
     this.paramStack.push(params)
   }
 
+  exitAssume () {
+    const expr = this.exprStack.pop()!
+    const params = this.paramStack.pop()!
+    assert(params.length === 1)
+    const assume: TntDef = {
+      id: this.nextId(),
+      kind: 'assume',
+      name: params[0],
+      assumption: expr
+    }
+    this.definitionStack.push(assume)
+  }
+
   /** ******************* translate expressions **************************/
 
   // an identifier or a literal, e.g., foo, 42, "hello", false

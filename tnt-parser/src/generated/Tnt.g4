@@ -14,7 +14,7 @@ module : 'module' IDENTIFIER '{' unit* '}';
 // a module unit
 unit :    'const' IDENTIFIER ':' type                     # const
         | 'var'   IDENTIFIER ':' type                     # var
-        | 'assume' (IDENTIFIER | '_') '=' expr            # assume
+        | 'assume' identOrHole '=' expr                   # assume
         | operDef                                         # oper
         | module                                          # moduleNested
         | instanceMod                                     # instance
