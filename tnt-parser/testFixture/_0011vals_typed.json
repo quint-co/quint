@@ -1,5 +1,5 @@
 {
-  "id": 5,
+  "id": 7,
   "name": "withVals",
   "defs": [
     {
@@ -16,6 +16,19 @@
           { "id": 1, "kind": "int", "value": 1, "type": { "kind": "int" } },
           { "id": 2, "kind": "int", "value": 2, "type": { "kind": "int" } }
         ]
+      }
+    },
+    {
+      "id": 6,
+      "kind": "def",
+      "name": "withUninterpretedType",
+      "qualifier": "val",
+      "type": { "kind": "set", "elem": { "kind": "const", "name": "PROC" } },
+      "expr": {
+        "id": 5,
+        "kind": "opapp",
+        "opcode": "set",
+        "args": [ ]
       }
     }
   ]

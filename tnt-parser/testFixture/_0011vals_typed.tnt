@@ -3,4 +3,6 @@
 // we also do extensive testing of expression syntax in this test.
 module withVals {
 	val withType: set(int) = set(1, 2)
+    // PROC is an uninterpreted type
+	val withUninterpretedType: set(PROC) = set()
 }

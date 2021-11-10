@@ -3,4 +3,8 @@ module withDefs {
 	def H(x, y): (int, int) => int = {
 		x + y
 	}
+    // P has a parametric type
+	def P(x): (a) => a = {
+		x
+	}
 }
