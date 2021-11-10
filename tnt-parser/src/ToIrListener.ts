@@ -630,9 +630,11 @@ export class ToIrListener implements TntListener {
           } else {
             const msg = `TNT011: Records in disjoint union have different tag fields: ${tag} and ${one.tag}`
             const start = { line: ctx.start.line, col: ctx.start.charPositionInLine }
-            const end = ctx.stop
-              ? { line: ctx.stop.line, col: ctx.stop.charPositionInLine }
-              : start
+            // istanbul ignore next
+            const end =
+              ctx.stop
+                ? { line: ctx.stop.line, col: ctx.stop.charPositionInLine }
+                : start
             this.errors.push({ explanation: msg, start: start, end: end })
           }
         } else {
