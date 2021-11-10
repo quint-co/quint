@@ -1,0 +1,11 @@
+module level1 {
+  var x: int
+
+  module level2 {
+    var y: int
+
+    module level3 {
+      var z: int
+    }
+  }
+}

@@ -302,4 +302,9 @@ describe('parse modules', () => {
     '_0138expr_record_as_oper',
     'parse record as operator'
   )
+
+  parseAsExpected(
+    '_0150module_nested',
+    'parse nested modules'
+  )
 })

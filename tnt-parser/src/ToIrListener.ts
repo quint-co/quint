@@ -15,13 +15,15 @@ import { ErrorMessage } from './tntParserFrontend'
  */
 export class ToIrListener implements TntListener {
   /**
-   * The module that is constructed in the end
+   * The module that is constructed as a result of parsing
    */
   rootModule?: TntModule = undefined
   /**
    * If errors occur in the listener, this array contains explanations.
    */
   errors: ErrorMessage[] = []
+  // the stack of definitions per module
+  private moduleDefStack: TntDef[][] = []
   // the stack of definitions
   private definitionStack: TntDef[] = []
   // the stack of types
@@ -33,14 +35,30 @@ export class ToIrListener implements TntListener {
   // an internal counter to assign unique numbers
   private lastId: bigint = 1n
 
+  enterModule () {
+    // save the definitions of the previous module
+    this.moduleDefStack.push(this.definitionStack)
+    this.definitionStack = []
+  }
+
   // translate: module <name> { ... }
   exitModule (ctx: p.ModuleContext) {
+    assert(this.typeStack.length === 0, 'type stack must be empty')
+    assert(this.exprStack.length === 0, 'expression stack must be empty')
+    assert(this.paramStack.length === 0, 'parameter stack must be empty')
     const module: TntModule = {
       id: this.nextId(),
       name: ctx.IDENTIFIER().text,
       defs: this.definitionStack
     }
-    this.definitionStack = [] // reset the definitions
+    // add the module to the definition stack
+    this.definitionStack = this.moduleDefStack.pop()!
+    this.definitionStack.push({
+      id: this.nextId(),
+      kind: 'module',
+      module: module
+    })
+    // advance the root module to this one
     this.rootModule = module
   }
 

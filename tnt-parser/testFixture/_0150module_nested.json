@@ -1,0 +1,44 @@
+{
+  "id": 8,
+  "name": "level1",
+  "defs": [
+    {
+      "id": 1,
+      "kind": "var",
+      "name": "x",
+      "type": { "kind": "int" }
+    },
+    {
+      "id": 7,
+      "kind": "module",
+      "module": {
+        "id": 6,
+        "name": "level2",
+        "defs": [
+          {
+            "id": 2,
+            "kind": "var",
+            "name": "y",
+            "type": { "kind": "int" }
+          },
+          {
+            "id": 5,
+            "kind": "module",
+            "module": {
+              "id": 4,
+              "name": "level3",
+              "defs": [
+                {
+                  "id": 3,
+                  "kind": "var",
+                  "name": "z",
+                  "type": { "kind": "int" }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
