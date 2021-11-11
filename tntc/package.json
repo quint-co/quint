@@ -1,7 +1,7 @@
 {
-  "name": "tnt-parser",
-  "description": "Parser for the TNT language",
-  "version": "0.0.7",
+  "name": "tntc",
+  "description": "Transpiler for the TNT language",
+  "version": "0.1.0",
   "author": "Informal Systems",
   "license": "Apache 2.0",
   "main": "dist/index.js",

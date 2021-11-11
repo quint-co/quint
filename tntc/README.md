@@ -1,4 +1,4 @@
-# TNT Parser
+# tntc: TNT Transpiler
 
 This directory contains a parser for TNT written in TypeScript. The parser
 is designed to work in two modes: CLI mode and LSP mode (VSCode). As we are
@@ -16,7 +16,7 @@ publishing all packages privately at the moment, package management with
     npm install yalc -g
     ```
 
- 1. Compile the parser:
+ 1. Compile tntc:
 
     ```sh
     npm run compile
@@ -46,7 +46,7 @@ the following commands:
     npm run coverage
     ```
 
-## State of the parser
+## State of the transpiler
 
 For the moment, it is only a syntax parser, no semantic actions or a type
 checker are implemented. Imports are not resolved yet.
