@@ -9,7 +9,7 @@
       "qualifier": "val",
       "expr": {
         "id": 3,
-        "kind": "opapp",
+        "kind": "app",
         "opcode": "MyOper",
         "args": [
           { "id": 1, "kind": "str", "value": "a", "type": { "kind": "str" } },
@@ -24,11 +24,11 @@
       "qualifier": "val",
       "expr": {
         "id": 7,
-        "kind": "opapp",
+        "kind": "app",
         "opcode": "in",
         "args": [
           { "id": 5, "kind": "int", "value": 1, "type": { "kind": "int" } },
-          { "id": 6, "kind": "opapp", "opcode": "set", "args": [] }
+          { "id": 6, "kind": "app", "opcode": "set", "args": [] }
         ]
       }
     }

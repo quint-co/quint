@@ -1,5 +1,9 @@
 # ADR002: Structure of error messages and warnings
 
+| Revision | Date       | Author           |
+| :------- | :--------- | :--------------- |
+| 2        | 10.11.2021 | Igor Konnov      |
+
 All error messages in the transpiler and the VScode plugin have the following structure:
 
 ```js

@@ -9,7 +9,7 @@
       "qualifier": "val",
       "expr": {
         "id": 6,
-        "kind": "opapp",
+        "kind": "app",
         "opcode": "filter",
         "args": [
           {
@@ -22,7 +22,7 @@
             "qualifier": "def",
             "expr": {
               "id": 4,
-              "kind": "opapp",
+              "kind": "app",
               "opcode": "igt",
               "args": [
                 { "id": 2, "kind": "name", "name": "x" },
@@ -40,7 +40,7 @@
       "qualifier": "val",
       "expr": {
         "id": 13,
-        "kind": "opapp",
+        "kind": "app",
         "opcode": "filter",
         "args": [
           {
@@ -53,7 +53,7 @@
             "qualifier": "def",
             "expr": {
               "id": 11,
-              "kind": "opapp",
+              "kind": "app",
               "opcode": "igt",
               "args": [
                 { "id": 9, "kind": "name", "name": "x" },
@@ -71,7 +71,7 @@
       "qualifier": "action",
       "expr": {
         "id": 20,
-        "kind": "opapp",
+        "kind": "app",
         "opcode": "guess",
         "args": [
           {
@@ -84,7 +84,7 @@
             "qualifier": "action",
             "expr": {
               "id": 18,
-              "kind": "opapp",
+              "kind": "app",
               "opcode": "igt",
               "args": [
                 { "id": 16, "kind": "name", "name": "x" },

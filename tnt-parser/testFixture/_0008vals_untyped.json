@@ -9,7 +9,7 @@
       "qualifier": "val",
       "expr": {
         "id": 3,
-        "kind": "opapp",
+        "kind": "app",
         "opcode": "iadd",
         "args": [
           { "id": 1, "kind": "int", "value": 1, "type": { "kind": "int" } },

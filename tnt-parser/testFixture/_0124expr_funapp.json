@@ -15,7 +15,7 @@
       "qualifier": "val",
       "expr": {
         "id": 4,
-        "kind": "opapp",
+        "kind": "app",
         "opcode": "of",
         "args": [
           { "id": 2, "kind": "name", "name": "f" },

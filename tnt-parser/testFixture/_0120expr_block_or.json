@@ -9,7 +9,7 @@
       "qualifier": "val",
       "expr": {
         "id": 4,
-        "kind": "opapp",
+        "kind": "app",
         "opcode": "orExpr",
         "args": [
           { "id": 1, "kind": "bool", "value": false, "type": { "kind": "bool" } },

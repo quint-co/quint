@@ -10,7 +10,7 @@
       "type": { "kind": "set", "elem": { "kind": "int" } },
       "expr": {
         "id": 3,
-        "kind": "opapp",
+        "kind": "app",
         "opcode": "set",
         "args": [
           { "id": 1, "kind": "int", "value": 1, "type": { "kind": "int" } },
@@ -26,7 +26,7 @@
       "type": { "kind": "set", "elem": { "kind": "const", "name": "PROC" } },
       "expr": {
         "id": 5,
-        "kind": "opapp",
+        "kind": "app",
         "opcode": "set",
         "args": [ ]
       }

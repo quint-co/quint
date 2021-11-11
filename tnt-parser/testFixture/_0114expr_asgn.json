@@ -10,7 +10,7 @@
       "qualifier": "action",
       "expr": {
         "id": 4,
-        "kind": "opapp",
+        "kind": "app",
         "opcode": "assign",
         "args": [
           { "id": 2, "kind": "name", "name": "x" },

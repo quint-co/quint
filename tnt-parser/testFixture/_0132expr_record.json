@@ -9,7 +9,7 @@
       "qualifier": "val",
       "expr": {
         "id": 5,
-        "kind": "opapp",
+        "kind": "app",
         "opcode": "record",
         "args": [
           { "id": 3, "kind": "str", "value": "name", "type": { "kind": "str" } },

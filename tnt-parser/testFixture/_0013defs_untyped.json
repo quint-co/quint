@@ -22,7 +22,7 @@
         "qualifier": "def",
         "expr": {
           "id": 4,
-          "kind": "opapp",
+          "kind": "app",
           "opcode": "iadd",
           "args": [
             { "id": 2, "kind": "name", "name": "x" },
@@ -43,7 +43,7 @@
         "qualifier": "pred",
         "expr": {
           "id": 9,
-          "kind": "opapp",
+          "kind": "app",
           "opcode": "igt",
           "args": [
             { "id": 7, "kind": "name", "name": "x" },
@@ -64,7 +64,7 @@
         "qualifier": "action",
         "expr": {
           "id": 14,
-          "kind": "opapp",
+          "kind": "app",
           "opcode": "assign",
           "args": [
             { "id": 12, "kind": "name", "name": "n" },
@@ -85,7 +85,7 @@
         "qualifier": "temporal",
         "expr": {
           "id": 18,
-          "kind": "opapp",
+          "kind": "app",
           "opcode": "not",
           "args": [
             { "id": 17, "kind": "name", "name": "x" }

@@ -14,7 +14,7 @@
       "name": "positive",
       "assumption": {
         "id": 4,
-        "kind": "opapp",
+        "kind": "app",
         "opcode": "igt",
         "args": [
           { "id": 2, "kind": "name", "name": "N" },
@@ -40,7 +40,7 @@
           }
         ],
         "id": 8,
-        "kind": "opapp",
+        "kind": "app",
         "opcode": "neq"
       },
       "id": 9,

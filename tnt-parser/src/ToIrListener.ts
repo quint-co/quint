@@ -281,7 +281,7 @@ export class ToIrListener implements TntListener {
     const args = this.popExprs(2)
     this.exprStack.push({
       id: this.nextId(),
-      kind: 'opapp',
+      kind: 'app',
       opcode: 'of',
       args: args
     })
@@ -294,7 +294,7 @@ export class ToIrListener implements TntListener {
     if (ctx.argList()) {
       // this operator has at least one argument
       const wrappedArgs = this.exprStack.pop()
-      if (wrappedArgs && wrappedArgs.kind === 'opapp') {
+      if (wrappedArgs && wrappedArgs.kind === 'app') {
         args = wrappedArgs.args
       } else {
         // istanbul ignore next
@@ -304,7 +304,7 @@ export class ToIrListener implements TntListener {
 
     this.exprStack.push({
       id: this.nextId(),
-      kind: 'opapp',
+      kind: 'app',
       opcode: name,
       args: args
     })
@@ -315,11 +315,11 @@ export class ToIrListener implements TntListener {
     const name = ctx.IDENTIFIER().text
     const wrappedArgs = this.exprStack.pop()
     const firstArg = this.exprStack.pop()
-    if (firstArg && wrappedArgs && wrappedArgs.kind === 'opapp' &&
+    if (firstArg && wrappedArgs && wrappedArgs.kind === 'app' &&
         wrappedArgs.opcode === 'wrappedArgs') {
       this.exprStack.push({
         id: this.nextId(),
-        kind: 'opapp',
+        kind: 'app',
         opcode: name,
         args: [firstArg].concat(wrappedArgs.args)
       })
@@ -336,13 +336,13 @@ export class ToIrListener implements TntListener {
     const name = ctx.nameAfterDot().text
     const callee = this.exprStack.pop()
     if (callee && wrappedArgs) {
-      if (wrappedArgs.kind === 'opapp' &&
+      if (wrappedArgs.kind === 'app' &&
           wrappedArgs.opcode === 'wrappedArgs') {
         const args = [callee].concat(wrappedArgs.args)
         // apply the operator to args
         this.exprStack.push({
           id: this.nextId(),
-          kind: 'opapp',
+          kind: 'app',
           opcode: name,
           args: args
         })
@@ -364,7 +364,7 @@ export class ToIrListener implements TntListener {
     // to be unwrapped later
     this.exprStack.push({
       id: 0n,
-      kind: 'opapp',
+      kind: 'app',
       opcode: 'wrappedArgs',
       args: args
     })
@@ -421,7 +421,7 @@ export class ToIrListener implements TntListener {
     const args = this.popExprs(ctx.expr().length)
     this.exprStack.push({
       id: this.nextId(),
-      kind: 'opapp',
+      kind: 'app',
       opcode: 'tuple',
       args: args
     })
@@ -432,7 +432,7 @@ export class ToIrListener implements TntListener {
     const args = this.popExprs(ctx.expr().length)
     this.exprStack.push({
       id: this.nextId(),
-      kind: 'opapp',
+      kind: 'app',
       opcode: 'seq',
       args: args
     })
@@ -455,7 +455,7 @@ export class ToIrListener implements TntListener {
     }
     this.exprStack.push({
       id: this.nextId(),
-      kind: 'opapp',
+      kind: 'app',
       opcode: 'record',
       args: namesAndValues
     })
@@ -467,7 +467,7 @@ export class ToIrListener implements TntListener {
     const args = this.popExprs(2)
     this.exprStack.push({
       id: this.nextId(),
-      kind: 'opapp',
+      kind: 'app',
       opcode: opcode,
       args: args
     })
@@ -486,7 +486,7 @@ export class ToIrListener implements TntListener {
       const args = this.popExprs(2)
       this.exprStack.push({
         id: this.nextId(),
-        kind: 'opapp',
+        kind: 'app',
         opcode: opcode,
         args: args
       })
@@ -498,7 +498,7 @@ export class ToIrListener implements TntListener {
     const args = this.popExprs(2)
     this.exprStack.push({
       id: this.nextId(),
-      kind: 'opapp',
+      kind: 'app',
       opcode: 'ipow',
       args: args
     })
@@ -510,7 +510,7 @@ export class ToIrListener implements TntListener {
     if (arg) {
       this.exprStack.push({
         id: this.nextId(),
-        kind: 'opapp',
+        kind: 'app',
         opcode: 'iuminus',
         args: [arg]
       })
@@ -537,7 +537,7 @@ export class ToIrListener implements TntListener {
       const args = this.popExprs(2)
       this.exprStack.push({
         id: this.nextId(),
-        kind: 'opapp',
+        kind: 'app',
         opcode: opcode,
         args: args
       })
@@ -549,7 +549,7 @@ export class ToIrListener implements TntListener {
     const args = this.popExprs(2)
     this.exprStack.push({
       id: this.nextId(),
-      kind: 'opapp',
+      kind: 'app',
       opcode: 'and',
       args: args
     })
@@ -560,7 +560,7 @@ export class ToIrListener implements TntListener {
     const args = this.popExprs(2)
     this.exprStack.push({
       id: this.nextId(),
-      kind: 'opapp',
+      kind: 'app',
       opcode: 'or',
       args: args
     })
@@ -571,7 +571,7 @@ export class ToIrListener implements TntListener {
     const args = this.popExprs(2)
     this.exprStack.push({
       id: this.nextId(),
-      kind: 'opapp',
+      kind: 'app',
       opcode: 'implies',
       args: args
     })
@@ -582,7 +582,7 @@ export class ToIrListener implements TntListener {
     const args = this.popExprs(2)
     this.exprStack.push({
       id: this.nextId(),
-      kind: 'opapp',
+      kind: 'app',
       opcode: 'iff',
       args: args
     })
@@ -593,7 +593,7 @@ export class ToIrListener implements TntListener {
     const args = this.popExprs(ctx.expr().length)
     this.exprStack.push({
       id: this.nextId(),
-      kind: 'opapp',
+      kind: 'app',
       opcode: 'andExpr',
       args: args
     })
@@ -604,7 +604,7 @@ export class ToIrListener implements TntListener {
     const args = this.popExprs(ctx.expr().length)
     this.exprStack.push({
       id: this.nextId(),
-      kind: 'opapp',
+      kind: 'app',
       opcode: 'orExpr',
       args: args
     })
@@ -615,7 +615,7 @@ export class ToIrListener implements TntListener {
     const args = this.popExprs(ctx.expr().length)
     this.exprStack.push({
       id: this.nextId(),
-      kind: 'opapp',
+      kind: 'app',
       opcode: 'andAction',
       args: args
     })
@@ -626,7 +626,7 @@ export class ToIrListener implements TntListener {
     const args = this.popExprs(ctx.expr().length)
     this.exprStack.push({
       id: this.nextId(),
-      kind: 'opapp',
+      kind: 'app',
       opcode: 'orAction',
       args: args
     })
@@ -637,7 +637,7 @@ export class ToIrListener implements TntListener {
     const args = this.popExprs(3)
     this.exprStack.push({
       id: this.nextId(),
-      kind: 'opapp',
+      kind: 'app',
       opcode: 'ite',
       args: args
     })

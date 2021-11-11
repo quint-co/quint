@@ -9,12 +9,12 @@
       "qualifier": "val",
       "expr": {
         "id": 5,
-        "kind": "opapp",
+        "kind": "app",
         "opcode": "eq",
         "args": [
           {
             "id": 3,
-            "kind": "opapp",
+            "kind": "app",
             "opcode": "iadd",
             "args": [
               { "id": 1, "kind": "int", "value": 2, "type": { "kind": "int" } },

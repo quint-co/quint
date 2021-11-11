@@ -71,7 +71,7 @@ export type TntEx =
   // A string literal
   | { kind: 'str', value: string } & WithId & WithType
   // Operator application by its name, supplying the arguments in `args`
-  | { kind: 'opapp', opcode: string, args: TntEx[] } & WithId & WithType
+  | { kind: 'app', opcode: string, args: TntEx[] } & WithId & WithType
   // Operator abstraction: an anonymous operator (lambda) over a list of parameters.
   | {
       kind: 'lambda',

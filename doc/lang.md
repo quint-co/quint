@@ -2,7 +2,7 @@
 
 *TNT is not TLA+*
 
-**Revision: 31.10.2021** 
+**Revision: 11.11.2021** 
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -1045,6 +1045,7 @@ put(e1, e2)
 // record constructor: [ f_1 |-> e_1, ..., f_n |-> e_n ]
 // Warning: n >= 1
 { f_1: e_1, ..., f_n: e_n }
+rec(f_1, e_1, ..., f_n, e_n)
 // Set of records: [ f_1: S_1, ..., f_n: S_n ].
 // No operator for it. Use a set comprehension:
 tuples(S_1, ..., S_n).map(a_1, ..., a_n -> { f_1: a_1, ..., f_n: a_n })
