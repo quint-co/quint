@@ -1,4 +1,4 @@
-# TNT: is not TLA+
+# TNT is not TLA+
 
 This is a surface syntax that uses the same background logic as TLA+ but does
 not try to mimic general mathematics. Instead it mimics functional languages,
@@ -25,6 +25,11 @@ editor (currently, only vim is supported).
 
  - [ADR001: Transpiler architecture](./doc/adr001-transpiler-architecture.md)
  - [ADR002: Error codes](./doc/adr002-errors.md)
+
+## Source code
+
+ - [tntc](./tntc) is the package for the `tntc` transpiler (work-in-progress)
+ - [vscode](./vscode) vscode plugin (outdated)
 
 ## Design principles
 
