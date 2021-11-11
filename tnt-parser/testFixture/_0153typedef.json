@@ -1,0 +1,21 @@
+{
+  "id": 3,
+  "name": "typedef",
+  "defs": [
+    {
+      "id": 1,
+      "kind": "typedef",
+      "name": "INT_SET",
+      "type": {
+        "kind": "set",
+        "elem": { "kind": "int" }
+      }
+    },
+    {
+      "id": 2,
+      "kind": "var",
+      "name": "S",
+      "type": { "kind": "const", "name": "INT_SET" }
+    }
+  ]
+}

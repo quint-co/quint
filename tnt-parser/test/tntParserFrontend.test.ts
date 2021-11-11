@@ -317,4 +317,9 @@ describe('parse modules', () => {
     '_0152import',
     'parse imports'
   )
+
+  parseAsExpected(
+    '_0153typedef',
+    'parse typedef'
+  )
 })

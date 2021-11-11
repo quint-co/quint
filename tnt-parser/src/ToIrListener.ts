@@ -182,6 +182,23 @@ export class ToIrListener implements TntListener {
     this.definitionStack.push(importDef)
   }
 
+  exitTypedef (ctx: p.TypedefContext) {
+    const name = ctx.IDENTIFIER()!.text
+    const associatedType = this.typeStack.pop()
+    if (associatedType) {
+      const def: TntDef = {
+        id: this.nextId(),
+        kind: 'typedef',
+        name: name,
+        type: associatedType
+      }
+      this.definitionStack.push(def)
+    } else {
+      // istanbul ignore next
+      assert(false, 'exitTypedef: type stack is empty')
+    }
+  }
+
   exitPath (ctx: p.PathContext) {
     const path = ctx.IDENTIFIER().reduce((s, id) => s + id.text, '')
     this.paramStack.push([path])
