@@ -16,6 +16,11 @@ We have written [examples](./examples) of several TLA+ specifications in TNT.
 To simplify reading, use [syntax highlighting](./editor-plugins) for your
 editor (currently, only vim is supported).
 
+## User manuals
+
+ - TNT transpiler:
+   - [tntc manpage](./doc/tntc.md)
+
 ## Developer docs
 
  - [ADR001: Transpiler architecture](./doc/adr001-transpiler-architecture.md)

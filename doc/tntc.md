@@ -1,4 +1,4 @@
-# tntc: TNT transpiler
+# tntc: Transpiler for TNT
 
 | Revision | Date       | Author           |
 | -------: | :--------: | :--------------- |
