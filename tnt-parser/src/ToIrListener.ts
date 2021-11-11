@@ -152,11 +152,13 @@ export class ToIrListener implements TntListener {
     assert(def, 'undefined operDef in exitOper')
   }
 
+  // operator parameters
   exitParams (ctx: p.ParamsContext) {
     const params = ctx.IDENTIFIER().map(n => n.text)
     this.paramStack.push(params)
   }
 
+  // assume name = expr
   exitAssume () {
     const expr = this.exprStack.pop()!
     const params = this.paramStack.pop()!
@@ -170,6 +172,7 @@ export class ToIrListener implements TntListener {
     this.definitionStack.push(assume)
   }
 
+  // import Foo.x or import Foo.*
   exitImportDef () {
     const ident = this.paramStack.pop()![0]
     const path = this.paramStack.pop()![0]
@@ -182,6 +185,13 @@ export class ToIrListener implements TntListener {
     this.definitionStack.push(importDef)
   }
 
+  // a path that used in imports
+  exitPath (ctx: p.PathContext) {
+    const path = ctx.IDENTIFIER().reduce((s, id) => s + id.text, '')
+    this.paramStack.push([path])
+  }
+
+  // type ALIAS = set(int)
   exitTypedef (ctx: p.TypedefContext) {
     const name = ctx.IDENTIFIER()!.text
     const associatedType = this.typeStack.pop()
@@ -199,9 +209,30 @@ export class ToIrListener implements TntListener {
     }
   }
 
-  exitPath (ctx: p.PathContext) {
-    const path = ctx.IDENTIFIER().reduce((s, id) => s + id.text, '')
-    this.paramStack.push([path])
+  // module Foo = Proto(x = a, y = b)
+  exitInstanceMod (ctx: p.InstanceModContext) {
+    const identifiers = ctx.IDENTIFIER()!
+    const instanceName = identifiers[0].text
+    const protoName = identifiers[1].text
+    const nexprs = ctx.expr().length
+    const overrides: [string, TntEx][] = []
+    if (nexprs > 0) {
+      const exprs = this.popExprs(nexprs)
+      for (let i = 0; i < nexprs; i++) {
+        const name = identifiers[2 + i].text
+        overrides.push([name, exprs[i]])
+      }
+    }
+    const identityOverride = ctx.MUL() !== undefined
+    const instance: TntDef = {
+      id: this.nextId(),
+      kind: 'instance',
+      name: instanceName,
+      protoName: protoName,
+      overrides: overrides,
+      identityOverride: identityOverride
+    }
+    this.definitionStack.push(instance)
   }
 
   /** ******************* translate expressions **************************/
@@ -209,7 +240,7 @@ export class ToIrListener implements TntListener {
   // an identifier or a literal, e.g., foo, 42, "hello", false
   exitLiteralOrId (ctx: p.LiteralOrIdContext) {
     const ident = ctx.IDENTIFIER()
-    if (ident) { // we have met an identifier
+    if (ident) { // identifier
       this.exprStack.push({
         id: this.nextId(),
         kind: 'name',
@@ -217,7 +248,7 @@ export class ToIrListener implements TntListener {
       })
     }
     const intNode = ctx.INT()
-    if (intNode) { // we have met an integer literal
+    if (intNode) { // integer literal
       this.exprStack.push({
         id: this.nextId(),
         kind: 'int',
@@ -226,7 +257,7 @@ export class ToIrListener implements TntListener {
       })
     }
     const boolNode = ctx.BOOL()
-    if (boolNode) { // we have met a Boolean literal
+    if (boolNode) { // Boolean literal
       this.exprStack.push({
         id: this.nextId(),
         kind: 'bool',
@@ -235,7 +266,7 @@ export class ToIrListener implements TntListener {
       })
     }
     const strNode = ctx.STRING()
-    if (strNode) { // we have met a string, remove the quotes!
+    if (strNode) { // string, remove the quotes!
       this.exprStack.push({
         id: this.nextId(),
         kind: 'str',

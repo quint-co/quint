@@ -54,7 +54,6 @@ import { ModuleContext } from "./TntParser";
 import { UnitContext } from "./TntParser";
 import { OperDefContext } from "./TntParser";
 import { ParamsContext } from "./TntParser";
-import { InstanceParamsContext } from "./TntParser";
 import { InstanceModContext } from "./TntParser";
 import { TypeContext } from "./TntParser";
 import { TypeUnionRecOneContext } from "./TntParser";
@@ -730,17 +729,6 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitParams?: (ctx: ParamsContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `TntParser.instanceParams`.
-	 * @param ctx the parse tree
-	 */
-	enterInstanceParams?: (ctx: InstanceParamsContext) => void;
-	/**
-	 * Exit a parse tree produced by `TntParser.instanceParams`.
-	 * @param ctx the parse tree
-	 */
-	exitInstanceParams?: (ctx: InstanceParamsContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `TntParser.instanceMod`.

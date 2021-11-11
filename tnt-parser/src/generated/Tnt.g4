@@ -41,12 +41,11 @@ params  :       '(' (IDENTIFIER (',' IDENTIFIER)*)? ')'
 
 // an instance may have a special parameter '*',
 // which means that the missing parameters are identity, e.g., x = x, y = y
-instanceParams  :   '*'
-                |   IDENTIFIER '=' expr (',' IDENTIFIER '=' expr)* (',' '*')?
-                ;
-
 instanceMod :   'module' IDENTIFIER '=' IDENTIFIER
-                '(' instanceParams ')'
+                '('
+                  (MUL |
+                  IDENTIFIER '=' expr (',' IDENTIFIER '=' expr)* (',' MUL)?)
+                ')'
         ;
 
 // Types in Type System 1.2 of Apalache, which supports discriminated unions

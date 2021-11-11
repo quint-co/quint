@@ -322,4 +322,9 @@ describe('parse modules', () => {
     '_0153typedef',
     'parse typedef'
   )
+
+  parseAsExpected(
+    '_0154instance',
+    'parse instance'
+  )
 })

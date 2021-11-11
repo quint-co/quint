@@ -91,9 +91,13 @@ export type TntEx =
  * should be a lambda expression over those parameters.
  */
 export interface TntOpDef extends WithId, WithType {
+  /** definition kind ('def' -- operator definition) */
   kind: 'def',
+  /** definition name */
   name: string,
+  /** definition qualifier: 'val', 'def', 'pred', 'action', 'temporal' */
   qualifier: OpQualifier,
+  /** expression to be associated with the definition */
   expr: TntEx
 }
 
@@ -102,15 +106,61 @@ export interface TntOpDef extends WithId, WithType {
  */
 export type TntDef =
   | TntOpDef
-  | { kind: 'const', name: string } & WithId & WithType
-  | { kind: 'var', name: string } & WithId & WithType
-  | { kind: 'assume', name: string, assumption: TntEx } & WithId
-  | { kind: 'typedef', name: string, type: TntType } & WithId
-  | { kind: 'import', name: string, path: string } & WithId
-  | { kind: 'instance', name: string,
-      moduleName: string, overrides: [string, TntEx][] } & WithId
-  // eslint-disable-next-line no-use-before-define
-  | { kind: 'module', module: TntModule } & WithId
+  | {
+      /** definition kind ('const') */
+      kind: 'const',
+      /** name of the constant */
+      name: string
+    } & WithId & WithType
+  | {
+      /** definition kind ('var') */
+      kind: 'var',
+      /** name of the variable */
+      name: string
+    } & WithId & WithType
+  | {
+      /** definition kind ('assume') */
+      kind: 'assume',
+      /** name of the assumption, may be '_' */
+      name: string,
+      /** an expression to associate with the name */
+      assumption: TntEx
+    } & WithId
+  | {
+      /** definition kind ('typedef') */
+      kind: 'typedef',
+      /** name of a type alias */
+      name: string,
+      /** type to associate with the alias */
+      type: TntType
+    } & WithId
+  | {
+      /** definition kind ('import') */
+      kind: 'import',
+      /** name to import, or '*' to denote all */
+      name: string,
+      /** path to the module, e.g., Foo.Bar */
+      path: string
+    } & WithId
+  | {
+      /** definition kind ('instance') */
+      kind: 'instance',
+      /** instance name */
+      name: string,
+      /** the name of the module to instantiate */
+      protoName: string,
+      /** how to override constants and variables */
+      overrides: [string, TntEx][],
+      /** whether to use identity substitution on missing names */
+      identityOverride: boolean
+    } & WithId
+  | {
+      /** definition kind ('module') */
+      kind: 'module',
+      /** nested module */
+      // eslint-disable-next-line no-use-before-define
+      module: TntModule
+    } & WithId
 
 /**
  * Module definition.
