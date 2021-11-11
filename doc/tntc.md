@@ -102,18 +102,43 @@ are records that assign values to specification variables.
 {
   "id": 1,
   "kind": "app",
-  "opcode": "rec",
+  "opcode": "seq",
   "args": [
-    { "id": 9, "kind": "str", "value": "N" },
-    { "id": 10, "kind": "int", "value": 10 },
-    { "id": 11, "kind": "str", "value": "Proc" },
+    {
+      "id": 2,
+      "kind": "app",
+      "opcode": "rec",
+      "args": [
+        { "id": 3, "kind": "str", "value": "N" },
+        { "id": 4, "kind": "int", "value": 10 },
+        { "id": 5, "kind": "str", "value": "Proc" },
+        {
+          "id": 6,
+          "kind": "app",
+          "opcode": "set",
+          "args": [
+            { "id": 7, "kind": "str", "value": "P1" },
+            { "id": 8, "kind": "str", "value": "P2" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "kind": "app",
+      "opcode": "rec",
+      "args": [
+        { "id": 10, "kind": "str", "value": "x" },
+        { "id": 11, "kind": "int", "value": 1 },
+      ]
+    },  
     {
       "id": 12,
       "kind": "app",
-      "opcode": "set",
+      "opcode": "rec",
       "args": [
-        { "id": 13, "kind": "str", "value": "P1" },
-        { "id": 14, "kind": "str", "value": "P2" }
+        { "id": 13, "kind": "str", "value": "x" },
+        { "id": 14, "kind": "int", "value": 3 },
       ]
     }
   ]
