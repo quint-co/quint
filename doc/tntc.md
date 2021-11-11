@@ -104,16 +104,19 @@ are records that assign values to specification variables.
   "kind": "app",
   "opcode": "rec",
   "args": [
-      { "id": 9, "kind": "str", "value": "N" },
-      { "id": 10, "kind": "int", "value": 10 },
-      { "id": 11, "kind": "str", "value": "Proc" },
-      { "id": 12, "kind": "app", "opcode": "set",
-        args: [
-          { "id": 13, "kind": "str", "value": "P1" },
-          { "id": 14, "kind": "str", "value": "P2" }
-        ]
-      }
-  }
+    { "id": 9, "kind": "str", "value": "N" },
+    { "id": 10, "kind": "int", "value": 10 },
+    { "id": 11, "kind": "str", "value": "Proc" },
+    {
+      "id": 12,
+      "kind": "app",
+      "opcode": "set",
+      "args": [
+        { "id": 13, "kind": "str", "value": "P1" },
+        { "id": 14, "kind": "str", "value": "P2" }
+      ]
+    }
+  ]
 }
 ```
 
