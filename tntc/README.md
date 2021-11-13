@@ -10,12 +10,6 @@ publishing all packages privately at the moment, package management with
  1. Make sure that you have installed [npm][]. This is usually done with your
  OS-specific package manager.
 
- 1. Install [yalc][] for local package management:
-
-    ```sh
-    npm install yalc -g
-    ```
-
  1. Compile tntc:
 
     ```sh
@@ -34,7 +28,15 @@ publishing all packages privately at the moment, package management with
     tntc
     ```
 
- 1. To compile the vscode plugin, publish the package locally with yalc:
+ Additionally, if you want to compile the vscode plugin:   
+
+ 1. Install [yalc][] for local package management:
+
+    ```sh
+    npm install yalc -g
+    ```
+
+ 1. Publish the package locally with yalc:
 
     ```sh
     yalc publish
