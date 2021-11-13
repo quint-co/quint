@@ -22,8 +22,17 @@ All error messages in the transpiler and the VScode plugin have the following st
 }
 ```
 
+The meaning of the fields is as follows:
+
+ - `explanation` is an explanation of an error.
+ - `source` is a text representation of an input, e.g., filename.
+ - `start` is the starting position of the text that caused the error.
+ - `end` is the position of the first character after the text that caused
+    the error.
+
 Note that `nnn` is the error code, which should be from the list of error code
-(see below).
+(see below). Following the conventions of LSP, the values of lines and columns
+(`line` and `col`) start with 0, instead of 1.
 
 ## List of error codes
 
