@@ -15,8 +15,8 @@ module option {
   var outcome: int
 
   pred Init = (
-    & votes = []
-    & outcome = None
+    & votes == []
+    & outcome == None
   )
 
   action Vote(v) = {

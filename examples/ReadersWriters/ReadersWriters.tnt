@@ -14,7 +14,7 @@ val vars = (readers, writers, waiting)
 
 val Actors = 1 to NumActors
 
-def ToSet(s) = s.keys.map(i -> s[i])
+def ToSet(s) = s.keys().map(i -> s[i])
 
 def read(s)  = s[1] == "read"
 def write(s) = s[1] == "write"
