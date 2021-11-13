@@ -4,8 +4,11 @@
   "version": "0.1.0",
   "author": "Informal Systems",
   "license": "Apache 2.0",
-  "main": "dist/index.js",
-  "typings": "dist/index",
+  "main": "dist/src/index.js",
+  "typings": "dist/src/index",
+  "bin": {
+    "tntc": "dist/src/cli.js"
+  },
   "eslintConfig": {
     "env": {
       "browser": false,

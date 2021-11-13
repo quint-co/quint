@@ -22,7 +22,19 @@ publishing all packages privately at the moment, package management with
     npm run compile
     ```
 
- 1. Publish the package locally with yalc:
+ 1. To run CLI, install the package locally:
+
+    ```sh
+    npm link
+    ```
+
+ 1. You can run CLI by typing:
+
+    ```sh
+    tntc
+    ```
+
+ 1. To compile the vscode plugin, publish the package locally with yalc:
 
     ```sh
     yalc publish
