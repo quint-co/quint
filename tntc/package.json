@@ -54,9 +54,9 @@
     "url": "https://github.com/informalsystems/tnt"
   },
   "dependencies": {
-    "@types/json-bigint": "^1.0.1",
     "antlr4ts": "^0.5.0-alpha.4",
-    "json-bigint": "^1.0.0"
+    "json-bigint": "^1.0.0",
+    "yargs": "^17.2.1"
   },
   "scripts": {
     "compile": "tsc",
@@ -65,9 +65,11 @@
     "antlr": "antlr4ts -visitor ./src/generated/Tnt.g4"
   },
   "devDependencies": {
+    "@types/json-bigint": "^1.0.1",
     "@types/chai": "^4.2.18",
     "@types/mocha": "^8.2.2",
     "@types/node": "^12.12.0",
+    "@types/yargs": "^17.0.5",
     "@typescript-eslint/eslint-plugin": "^5.3.0",
     "@typescript-eslint/parser": "^5.3.0",
     "antlr4ts-cli": "^0.5.0-alpha.4",
