@@ -2,13 +2,14 @@
 
 | Revision | Date       | Author           |
 | :------- | :--------- | :--------------- |
-| 2        | 10.11.2021 | Igor Konnov      |
+| 3        | 13.11.2021 | Igor Konnov      |
 
 All error messages in the transpiler and the VScode plugin have the following structure:
 
 ```js
 {
   "explanation": "TNTnnn: text of the error message",
+  "source": "/path/to/file.tnt",
   "start": {
     "line": number,
     "col": number
