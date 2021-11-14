@@ -20,7 +20,8 @@ unit :    'const' IDENTIFIER ':' type                     # const
         | instanceMod                                     # instance
         | 'type' IDENTIFIER '=' type                      # typedef
         | 'import' path '.' identOrStar                   # importDef
-        | (IDENTIFIER | operator | literal) {
+        | (IDENTIFIER | operator | literal
+           '(' | '{' | '[' | 'if' | '&' | '|') {
          this.notifyErrorListeners("TNT001: expected 'const', 'var', 'def', 'type', etc.");
           }                                               # errorCase
         | ('var' | 'const') IDENTIFIER
@@ -111,11 +112,11 @@ expr:           // apply a built-in operator via the dot notation
         |       '{' expr '}'                                        # braces
         // errors
         | (operator | ':' | '}' | ']' | ')' | '.' | '='
-            | '&' | '|' | 'set' | 'seq' | ',' | '->') {
+              | 'set' | 'seq' | ',' | '->') {
             this.notifyErrorListeners("TNT003: expected an expression");
           }                                                         # errorNoExpr
         | expr ('if' | ':' | '}' | ']' | ')'
-                | '&' | '|' | 'set' | 'seq' | '->') {
+                | 'set' | 'seq' | '->' | '=') {
             this.notifyErrorListeners("TNT004: unexpected symbol after expression");
           }                                                         # errorSymbol
         ;
@@ -165,7 +166,6 @@ nameAfterDot :  IDENTIFIER
 
 // special operators
 operator: (AND | OR | IFF | IMPLIES | SUBSETEQ | IN | NOTIN |
-           '(' | '{' | '[' | '&' | '|' | 'if' |
            GT  | LT  | GE  | LE | NE | EQ | ASGN |
            MUL | DIV | MOD | PLUS | MINUS | '^')
         ;
