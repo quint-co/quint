@@ -48,4 +48,5 @@ const parseCmd = {
 
 yargs(process.argv.slice(2))
   .command(parseCmd)
+  .strict()
   .parse()
