@@ -6,8 +6,6 @@
 | :------- | :--------- | :----------------------------------------- |
 | 20        | 14.11.2021 | Igor Konnov, Shon Feder, Jure Kukovec     |
 
-**Revision: 14.11.2021**
-
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
 
