@@ -77,12 +77,12 @@ expr:           // apply a built-in operator via the dot notation
                 // function application
         |       expr '[' expr ']'                                   # funApp
                 // unary minus
-        |       SUB expr                                            # uminus
+        |       MINUS expr                                          # uminus
                 // power over integers
         |       <assoc=right> expr op='^' expr                      # pow
                 // integer arithmetic
         |       expr op=(MUL | DIV | MOD) expr                      # multDiv
-        |       expr op=(ADD | SUB) expr                            # plusMinus
+        |       expr op=(PLUS | MINUS) expr                         # plusMinus
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
                 // built-in infix/postfix operators, a la Scala
         |       expr IDENTIFIER (argList)?                          # infixCall
@@ -109,6 +109,15 @@ expr:           // apply a built-in operator via the dot notation
         |       operDef expr                                        # letIn
         |       '(' expr ')'                                        # paren
         |       '{' expr '}'                                        # braces
+        // errors
+        | (operator | ':' | '}' | ']' | ')' | '.' | '='
+            | '&' | '|' | 'set' | 'seq' | ',' | '->') {
+            this.notifyErrorListeners("TNT003: expected an expression");
+          }                                                         # errorNoExpr
+        | expr ('if' | ':' | '}' | ']' | ')'
+                | '&' | '|' | 'set' | 'seq' | '->') {
+            this.notifyErrorListeners("TNT004: unexpected symbol after expression");
+          }                                                         # errorSymbol
         ;
 
 // This rule parses anonymous functions, e.g.:
@@ -158,7 +167,7 @@ nameAfterDot :  IDENTIFIER
 operator: (AND | OR | IFF | IMPLIES | SUBSETEQ | IN | NOTIN |
            '(' | '{' | '[' | '&' | '|' | 'if' |
            GT  | LT  | GE  | LE | NE | EQ | ASGN |
-           MUL | DIV | MOD | ADD | SUB | '^')
+           MUL | DIV | MOD | PLUS | MINUS | '^')
         ;
 
 // literals
@@ -183,8 +192,8 @@ IN              :   'in' ;
 NOTIN           :   'notin' ;
 SET             :   'set' ;
 SEQ             :   'seq' ;
-ADD             :   '+' ;
-SUB             :   '-' ;
+PLUS            :   '+' ;
+MINUS           :   '-' ;
 MUL             :   '*' ;
 DIV             :   '/' ;
 MOD             :   '%' ;

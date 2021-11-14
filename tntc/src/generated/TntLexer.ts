@@ -60,8 +60,8 @@ export class TntLexer extends Lexer {
 	public static readonly NOTIN = 42;
 	public static readonly SET = 43;
 	public static readonly SEQ = 44;
-	public static readonly ADD = 45;
-	public static readonly SUB = 46;
+	public static readonly PLUS = 45;
+	public static readonly MINUS = 46;
 	public static readonly MUL = 47;
 	public static readonly DIV = 48;
 	public static readonly MOD = 49;
@@ -93,8 +93,8 @@ export class TntLexer extends Lexer {
 		"T__17", "T__18", "T__19", "T__20", "T__21", "T__22", "T__23", "T__24", 
 		"T__25", "T__26", "T__27", "T__28", "T__29", "T__30", "T__31", "STRING", 
 		"BOOL", "INT", "AND", "OR", "IFF", "IMPLIES", "SUBSETEQ", "IN", "NOTIN", 
-		"SET", "SEQ", "ADD", "SUB", "MUL", "DIV", "MOD", "GT", "LT", "GE", "LE", 
-		"NE", "EQ", "ASGN", "IDENTIFIER", "LINE_COMMENT", "COMMENT", "WS",
+		"SET", "SEQ", "PLUS", "MINUS", "MUL", "DIV", "MOD", "GT", "LT", "GE", 
+		"LE", "NE", "EQ", "ASGN", "IDENTIFIER", "LINE_COMMENT", "COMMENT", "WS",
 	];
 
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
@@ -113,7 +113,7 @@ export class TntLexer extends Lexer {
 		undefined, undefined, undefined, undefined, undefined, undefined, undefined, 
 		undefined, undefined, undefined, undefined, undefined, "STRING", "BOOL", 
 		"INT", "AND", "OR", "IFF", "IMPLIES", "SUBSETEQ", "IN", "NOTIN", "SET", 
-		"SEQ", "ADD", "SUB", "MUL", "DIV", "MOD", "GT", "LT", "GE", "LE", "NE", 
+		"SEQ", "PLUS", "MINUS", "MUL", "DIV", "MOD", "GT", "LT", "GE", "LE", "NE", 
 		"EQ", "ASGN", "IDENTIFIER", "LINE_COMMENT", "COMMENT", "WS",
 	];
 	public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(TntLexer._LITERAL_NAMES, TntLexer._SYMBOLIC_NAMES, []);

@@ -27,7 +27,8 @@ function parseAndCompare (artifact: string, wrap: (json: any) => any): void {
   // read the expected result as JSON
   const expected = readJson(artifact)
   // compare the JSON trees
-  assert.deepEqual(reparsedResult, wrap(expected))
+  assert.deepEqual(reparsedResult, wrap(expected),
+    "expected JSON trees to be equal")
 }
 
 // identity function that can be used as a default wrapper
@@ -321,11 +322,15 @@ describe('parse ok', () => {
 })
 
 describe('parse errors', () => {
-  it('error message on error in module unit', () => {
+  it('error in module unit', () => {
     parseAndCompare('_1002emptyWithError', nowrap)
   })
 
-  it('error message in malformed disjoint union', () => {
+  it('error on malformed disjoint union', () => {
     parseAndCompare('_1005constRecordsError', nowrap)
+  })
+
+  it('error on unexpected symbol after expression', () => {
+    parseAndCompare('_1006unexpectedExpr', nowrap)
   })
 })

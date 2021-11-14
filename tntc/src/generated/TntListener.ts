@@ -50,6 +50,8 @@ import { SequenceContext } from "./TntParser";
 import { LetInContext } from "./TntParser";
 import { ParenContext } from "./TntParser";
 import { BracesContext } from "./TntParser";
+import { ErrorNoExprContext } from "./TntParser";
+import { ErrorSymbolContext } from "./TntParser";
 import { ModuleContext } from "./TntParser";
 import { UnitContext } from "./TntParser";
 import { OperDefContext } from "./TntParser";
@@ -685,6 +687,32 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitBraces?: (ctx: BracesContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `errorNoExpr`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	enterErrorNoExpr?: (ctx: ErrorNoExprContext) => void;
+	/**
+	 * Exit a parse tree produced by the `errorNoExpr`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	exitErrorNoExpr?: (ctx: ErrorNoExprContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `errorSymbol`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	enterErrorSymbol?: (ctx: ErrorSymbolContext) => void;
+	/**
+	 * Exit a parse tree produced by the `errorSymbol`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	exitErrorSymbol?: (ctx: ErrorSymbolContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `TntParser.module`.

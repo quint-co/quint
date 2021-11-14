@@ -42,6 +42,8 @@ write an error explanation tool.
 
  - TNT001: expected 'const', 'var', 'def', 'type', etc.
  - TNT002: missing ': type' after 'var' or 'const'
+ - TNT003: expected an expression
+ - TNT004: unexpected symbol after expression
  - TNT404: module <name> not found
  - TNT405: name <name> not found
  - TNT406: instantiation error

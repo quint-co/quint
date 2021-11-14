@@ -463,7 +463,7 @@ export class ToIrListener implements TntListener {
 
   // '+' or '-'
   exitPlusMinus (ctx: p.PlusMinusContext) {
-    const opcode = (ctx.ADD() !== undefined) ? 'iadd' : 'isub'
+    const opcode = (ctx.PLUS() !== undefined) ? 'iadd' : 'isub'
     const args = this.popExprs(2)
     this.exprStack.push({
       id: this.nextId(),

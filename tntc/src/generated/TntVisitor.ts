@@ -50,6 +50,8 @@ import { SequenceContext } from "./TntParser";
 import { LetInContext } from "./TntParser";
 import { ParenContext } from "./TntParser";
 import { BracesContext } from "./TntParser";
+import { ErrorNoExprContext } from "./TntParser";
+import { ErrorSymbolContext } from "./TntParser";
 import { ModuleContext } from "./TntParser";
 import { UnitContext } from "./TntParser";
 import { OperDefContext } from "./TntParser";
@@ -453,6 +455,22 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitBraces?: (ctx: BracesContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `errorNoExpr`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitErrorNoExpr?: (ctx: ErrorNoExprContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `errorSymbol`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitErrorSymbol?: (ctx: ErrorSymbolContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `TntParser.module`.
