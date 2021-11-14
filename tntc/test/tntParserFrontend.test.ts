@@ -19,37 +19,39 @@ function readJson (name: string): any {
 }
 
 // read the TNT file and the expected JSON, parse and compare the results
+function parseAndCompare (artifact: string, wrap: (json: any) => any): void {
+  // read the input from the data directory and parse it
+  const result = parsePhase1(readTnt(artifact))
+  // run it through stringify-parse to obtain the same json (due to bigints)
+  const reparsedResult = JSONbig.parse(JSONbig.stringify(result))
+  // read the expected result as JSON
+  const expected = readJson(artifact)
+  // compare the JSON trees
+  assert.deepEqual(reparsedResult, wrap(expected))
+}
+
+// identity function that can be used as a default wrapper
+function nowrap (arg: any): any {
+  return arg
+}
+
+// test via parseAndCompare, expect no error
 function parseAsExpected (artifact: string, description: string): void {
   it(description, () => {
-    // read the input from the data directory and parse it
-    const result = parsePhase1(readTnt(artifact))
-    // run it through stringify-parse to obtain the same json (due to bigints)
-    const reparsedResult = JSONbig.parse(JSONbig.stringify(result))
-    // read the expected result as JSON
-    const expected = readJson(artifact)
-    // compare the JSON trees
-    assert.deepEqual(reparsedResult, { kind: 'ok', module: expected }, 'expected ok')
+    parseAndCompare(artifact,
+      function (module: any) {
+        return { kind: 'ok', module: module }
+      })
   })
 }
 
 // plenty of tests
 
-describe('parse modules', () => {
+describe('parse ok', () => {
   it('parse empty module', () => {
     const result = parsePhase1(readTnt('_0001emptyModule'))
     const module = { id: 1n, name: 'empty', defs: [] }
     assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
-  })
-
-  it('error message on error in module unit', () => {
-    const result = parsePhase1(readTnt('_0002emptyWithError'))
-    const msg: ErrorMessage = {
-      explanation: "TNT001: expected 'const', 'var', 'def', 'type', etc.",
-      start: { line: 4, col: 0 },
-      end: { line: 4, col: 1 }
-    }
-    const expected: ParseResult = { kind: 'error', messages: [msg] }
-    assert.deepEqual(result, expected, 'expected error')
   })
 
   parseAsExpected(
@@ -61,17 +63,6 @@ describe('parse modules', () => {
     '_0004constRecords',
     'parse record types in constants'
   )
-
-  it('error message in malformed disjoint union', () => {
-    const result = parsePhase1(readTnt('_0005constRecordsError'))
-    const msg: ErrorMessage = {
-      explanation: 'TNT011: Records in disjoint union have different tag fields: tag and kind',
-      start: { line: 5, col: 2 },
-      end: { line: 6, col: 49 }
-    }
-    const expected: ParseResult = { kind: 'error', messages: [msg] }
-    assert.deepEqual(result, expected, 'expected error')
-  })
 
   parseAsExpected(
     '_0006vars',
@@ -327,4 +318,14 @@ describe('parse modules', () => {
     '_0154instance',
     'parse instance'
   )
+})
+
+describe('parse errors', () => {
+  it('error message on error in module unit', () => {
+    parseAndCompare('_0002emptyWithError', nowrap)
+  })
+
+  it('error message in malformed disjoint union', () => {
+    parseAndCompare('_0005constRecordsError', nowrap)
+  })
 })

@@ -1,0 +1,10 @@
+{
+  "kind": "error",
+  "messages": [
+    {
+      "explanation": "TNT001: expected 'const', 'var', 'def', 'type', etc.",
+      "start": { "line": 4, "col": 0 },
+      "end": { "line": 4, "col": 1 }
+    }
+  ]
+}
