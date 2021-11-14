@@ -30,17 +30,15 @@ export type ParseResult =
  * The main goal of this pass is to translate a sequence of characters into IR.
  */
 export function parsePhase1 (text: string): ParseResult {
-  // Create the lexer and parser
-  const inputStream = CharStreams.fromString(text)
-  const lexer = new TntLexer(inputStream)
-  const tokenStream = new CommonTokenStream(lexer)
-  const parser = new p.TntParser(tokenStream)
   const errorMessages: ErrorMessage[] = []
-  // remove ConsoleErrorListener that outputs to console
-  parser.removeErrorListeners()
-  // add our listener that collects errors
-  parser.addErrorListener({
-    syntaxError: (recognizer, offendingSymbol, line, charPositionInLine, msg) => {
+  // error listener to report lexical and syntax errors
+  const errorListener: any = {
+    syntaxError: (recognizer: any,
+      offendingSymbol: any,
+      line: number,
+      charPositionInLine: number,
+      msg: string) => {
+      //
       const len = (offendingSymbol)
         ? (1 + offendingSymbol.stopIndex - offendingSymbol.startIndex)
         : 1
@@ -48,7 +46,20 @@ export function parsePhase1 (text: string): ParseResult {
       const end = { line: line - 1, col: charPositionInLine + len }
       errorMessages.push({ explanation: msg, start, end })
     }
-  })
+  }
+  // Create the lexer and parser
+  const inputStream = CharStreams.fromString(text)
+  const lexer = new TntLexer(inputStream)
+  // remove the console listener and add our listener
+  lexer.removeErrorListeners()
+  lexer.addErrorListener(errorListener)
+
+  const tokenStream = new CommonTokenStream(lexer)
+  const parser = new p.TntParser(tokenStream)
+
+  // remove the console listener and add our listener
+  parser.removeErrorListeners()
+  parser.addErrorListener(errorListener)
   // run the parser
   const tree = parser.module()
   if (errorMessages.length > 0) {

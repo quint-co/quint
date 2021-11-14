@@ -28,7 +28,7 @@ function parseAndCompare (artifact: string, wrap: (json: any) => any): void {
   const expected = readJson(artifact)
   // compare the JSON trees
   assert.deepEqual(reparsedResult, wrap(expected),
-    "expected JSON trees to be equal")
+    'expected JSON trees to be equal')
 }
 
 // identity function that can be used as a default wrapper
@@ -332,5 +332,9 @@ describe('parse errors', () => {
 
   it('error on unexpected symbol after expression', () => {
     parseAndCompare('_1006unexpectedExpr', nowrap)
+  })
+
+  it('error on unrecognized token', () => {
+    parseAndCompare('_1007unexpectedToken', nowrap)
   })
 })

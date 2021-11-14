@@ -1,0 +1,16 @@
+{
+  "kind": "error",
+  "messages": [
+    {
+      "end": {
+        "col": 21,
+        "line": 2
+      },
+      "explanation": "token recognition error at: '#'",
+      "start": {
+        "col": 20,
+        "line": 2
+      }
+    }
+  ]
+}
