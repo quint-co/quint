@@ -333,35 +333,34 @@ export class ToIrListener implements TntListener {
   // operator application via dot, e.g., S.union(T)
   exitDotCall (ctx: p.DotCallContext) {
     // pop: the first argument, operator name, the rest of arguments (wrapped)
-    const hasParen = ctx.LPAREN()
-    const wrappedArgs = hasParen ? this.exprStack.pop() : undefined
+    const wrappedArgs = ctx.argList() ? this.exprStack.pop() : undefined
     const name = ctx.nameAfterDot().text
     const callee = this.exprStack.pop()
     if (callee === undefined) {
       assert(false, 'exitDotCall: callee not found')
     }
+    const hasParen = ctx.LPAREN()
     if (hasParen) {
       // the UFCS form e_1.f(e_2, ..., e_n)
-      if (wrappedArgs === undefined) {
-        // istanbul ignore next
-        assert(false, 'exitDotCall: arguments after dot not found')
-      } else {
+      let args: TntEx[] = []
+      if (wrappedArgs) {
+        // n >= 2: there is at least one argument in parentheses
         if (wrappedArgs.kind === 'app' &&
             wrappedArgs.opcode === 'wrappedArgs') {
-          const args = [callee!].concat(wrappedArgs.args)
-          // apply the operator to args
-          this.exprStack.push({
-            id: this.nextId(),
-            kind: 'app',
-            opcode: name,
-            args: args
-          })
+          args = [callee!].concat(wrappedArgs.args)
         } else {
           // istanbul ignore next
           assert(false,
             'exitDotCall: expected wrappedArgs, found: ' + wrappedArgs.kind)
         }
-      }
+      } // else: no arguments, as in e.g., s.head()
+      // apply the operator to the arguments
+      this.exprStack.push({
+        id: this.nextId(),
+        kind: 'app',
+        opcode: name,
+        args: args!
+      })
     } else {
       // accessing a tuple element, a record field, or name in a module
       const m = name.match(/^_([1-9][0-9]?)$/)

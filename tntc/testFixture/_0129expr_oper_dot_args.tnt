@@ -5,4 +5,7 @@ module withVals {
 	// Pass non-lambda arguments.
 	// Here we are using the dot notation.
 	val oper_app = f.except(3, 4)
+
+  // call the operator of one argument
+	val one = f.head()
 }

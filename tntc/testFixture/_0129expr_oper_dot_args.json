@@ -1,5 +1,5 @@
 {
-  "id": 6,
+  "id": 9,
   "name": "withVals",
   "defs": [
     {
@@ -17,6 +17,18 @@
           { "id": 3, "kind": "int", "value": 4, "type": { "kind": "int" } }
         ]
       }
-    }
+    },
+    {
+      "id": 8,
+      "kind": "def",
+      "name": "one",
+      "qualifier": "val",
+      "expr": {
+        "args": [],
+        "id": 7,
+        "kind": "app",
+        "opcode": "head"
+      }
+    }    
   ]
 }
