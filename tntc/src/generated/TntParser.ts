@@ -58,32 +58,32 @@ export class TntParser extends Parser {
 	public static readonly T__27 = 28;
 	public static readonly T__28 = 29;
 	public static readonly T__29 = 30;
-	public static readonly T__30 = 31;
-	public static readonly T__31 = 32;
-	public static readonly STRING = 33;
-	public static readonly BOOL = 34;
-	public static readonly INT = 35;
-	public static readonly AND = 36;
-	public static readonly OR = 37;
-	public static readonly IFF = 38;
-	public static readonly IMPLIES = 39;
-	public static readonly SUBSETEQ = 40;
-	public static readonly IN = 41;
-	public static readonly NOTIN = 42;
-	public static readonly SET = 43;
-	public static readonly SEQ = 44;
-	public static readonly PLUS = 45;
-	public static readonly MINUS = 46;
-	public static readonly MUL = 47;
-	public static readonly DIV = 48;
-	public static readonly MOD = 49;
-	public static readonly GT = 50;
-	public static readonly LT = 51;
-	public static readonly GE = 52;
-	public static readonly LE = 53;
-	public static readonly NE = 54;
-	public static readonly EQ = 55;
-	public static readonly ASGN = 56;
+	public static readonly STRING = 31;
+	public static readonly BOOL = 32;
+	public static readonly INT = 33;
+	public static readonly AND = 34;
+	public static readonly OR = 35;
+	public static readonly IFF = 36;
+	public static readonly IMPLIES = 37;
+	public static readonly SUBSETEQ = 38;
+	public static readonly IN = 39;
+	public static readonly NOTIN = 40;
+	public static readonly SET = 41;
+	public static readonly SEQ = 42;
+	public static readonly PLUS = 43;
+	public static readonly MINUS = 44;
+	public static readonly MUL = 45;
+	public static readonly DIV = 46;
+	public static readonly MOD = 47;
+	public static readonly GT = 48;
+	public static readonly LT = 49;
+	public static readonly GE = 50;
+	public static readonly LE = 51;
+	public static readonly NE = 52;
+	public static readonly EQ = 53;
+	public static readonly ASGN = 54;
+	public static readonly LPAREN = 55;
+	public static readonly RPAREN = 56;
 	public static readonly IDENTIFIER = 57;
 	public static readonly LINE_COMMENT = 58;
 	public static readonly COMMENT = 59;
@@ -115,22 +115,22 @@ export class TntParser extends Parser {
 
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
 		undefined, "'module'", "'{'", "'}'", "'const'", "':'", "'var'", "'assume'", 
-		"'='", "'type'", "'import'", "'.'", "'('", "'['", "'if'", "'&'", "'|'", 
-		"'val'", "'def'", "'pred'", "'action'", "'temporal'", "','", "')'", "'->'", 
-		"'=>'", "'int'", "'str'", "'bool'", "']'", "'^'", "'else'", "'_'", undefined, 
-		undefined, undefined, "'and'", "'or'", "'iff'", "'implies'", "'subseteq'", 
-		"'in'", "'notin'", "'set'", "'seq'", "'+'", "'-'", "'*'", "'/'", "'%'", 
-		"'>'", "'<'", "'>='", "'<='", "'!='", "'=='", "'<-'",
+		"'='", "'type'", "'import'", "'.'", "'['", "'if'", "'&'", "'|'", "'val'", 
+		"'def'", "'pred'", "'action'", "'temporal'", "','", "'->'", "'=>'", "'int'", 
+		"'str'", "'bool'", "']'", "'^'", "'else'", "'_'", undefined, undefined, 
+		undefined, "'and'", "'or'", "'iff'", "'implies'", "'subseteq'", "'in'", 
+		"'notin'", "'set'", "'seq'", "'+'", "'-'", "'*'", "'/'", "'%'", "'>'", 
+		"'<'", "'>='", "'<='", "'!='", "'=='", "'<-'", "'('", "')'",
 	];
 	private static readonly _SYMBOLIC_NAMES: Array<string | undefined> = [
 		undefined, undefined, undefined, undefined, undefined, undefined, undefined, 
 		undefined, undefined, undefined, undefined, undefined, undefined, undefined, 
 		undefined, undefined, undefined, undefined, undefined, undefined, undefined, 
 		undefined, undefined, undefined, undefined, undefined, undefined, undefined, 
-		undefined, undefined, undefined, undefined, undefined, "STRING", "BOOL", 
-		"INT", "AND", "OR", "IFF", "IMPLIES", "SUBSETEQ", "IN", "NOTIN", "SET", 
-		"SEQ", "PLUS", "MINUS", "MUL", "DIV", "MOD", "GT", "LT", "GE", "LE", "NE", 
-		"EQ", "ASGN", "IDENTIFIER", "LINE_COMMENT", "COMMENT", "WS",
+		undefined, undefined, undefined, "STRING", "BOOL", "INT", "AND", "OR", 
+		"IFF", "IMPLIES", "SUBSETEQ", "IN", "NOTIN", "SET", "SEQ", "PLUS", "MINUS", 
+		"MUL", "DIV", "MOD", "GT", "LT", "GE", "LE", "NE", "EQ", "ASGN", "LPAREN", 
+		"RPAREN", "IDENTIFIER", "LINE_COMMENT", "COMMENT", "WS",
 	];
 	public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(TntParser._LITERAL_NAMES, TntParser._SYMBOLIC_NAMES, []);
 
@@ -175,7 +175,7 @@ export class TntParser extends Parser {
 			this.state = 42;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
-			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__0) | (1 << TntParser.T__1) | (1 << TntParser.T__3) | (1 << TntParser.T__5) | (1 << TntParser.T__6) | (1 << TntParser.T__8) | (1 << TntParser.T__9) | (1 << TntParser.T__12) | (1 << TntParser.T__13) | (1 << TntParser.T__14) | (1 << TntParser.T__15) | (1 << TntParser.T__16) | (1 << TntParser.T__17) | (1 << TntParser.T__18) | (1 << TntParser.T__19) | (1 << TntParser.T__20) | (1 << TntParser.T__29))) !== 0) || ((((_la - 33)) & ~0x1F) === 0 && ((1 << (_la - 33)) & ((1 << (TntParser.STRING - 33)) | (1 << (TntParser.BOOL - 33)) | (1 << (TntParser.INT - 33)) | (1 << (TntParser.AND - 33)) | (1 << (TntParser.OR - 33)) | (1 << (TntParser.IFF - 33)) | (1 << (TntParser.IMPLIES - 33)) | (1 << (TntParser.SUBSETEQ - 33)) | (1 << (TntParser.IN - 33)) | (1 << (TntParser.NOTIN - 33)) | (1 << (TntParser.PLUS - 33)) | (1 << (TntParser.MINUS - 33)) | (1 << (TntParser.MUL - 33)) | (1 << (TntParser.DIV - 33)) | (1 << (TntParser.MOD - 33)) | (1 << (TntParser.GT - 33)) | (1 << (TntParser.LT - 33)) | (1 << (TntParser.GE - 33)) | (1 << (TntParser.LE - 33)) | (1 << (TntParser.NE - 33)) | (1 << (TntParser.EQ - 33)) | (1 << (TntParser.ASGN - 33)) | (1 << (TntParser.IDENTIFIER - 33)))) !== 0)) {
+			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__0) | (1 << TntParser.T__1) | (1 << TntParser.T__3) | (1 << TntParser.T__5) | (1 << TntParser.T__6) | (1 << TntParser.T__8) | (1 << TntParser.T__9) | (1 << TntParser.T__11) | (1 << TntParser.T__12) | (1 << TntParser.T__13) | (1 << TntParser.T__14) | (1 << TntParser.T__15) | (1 << TntParser.T__16) | (1 << TntParser.T__17) | (1 << TntParser.T__18) | (1 << TntParser.T__19) | (1 << TntParser.T__27) | (1 << TntParser.STRING))) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & ((1 << (TntParser.BOOL - 32)) | (1 << (TntParser.INT - 32)) | (1 << (TntParser.AND - 32)) | (1 << (TntParser.OR - 32)) | (1 << (TntParser.IFF - 32)) | (1 << (TntParser.IMPLIES - 32)) | (1 << (TntParser.SUBSETEQ - 32)) | (1 << (TntParser.IN - 32)) | (1 << (TntParser.NOTIN - 32)) | (1 << (TntParser.PLUS - 32)) | (1 << (TntParser.MINUS - 32)) | (1 << (TntParser.MUL - 32)) | (1 << (TntParser.DIV - 32)) | (1 << (TntParser.MOD - 32)) | (1 << (TntParser.GT - 32)) | (1 << (TntParser.LT - 32)) | (1 << (TntParser.GE - 32)) | (1 << (TntParser.LE - 32)) | (1 << (TntParser.NE - 32)) | (1 << (TntParser.EQ - 32)) | (1 << (TntParser.ASGN - 32)) | (1 << (TntParser.IDENTIFIER - 32)))) !== 0)) {
 				{
 				{
 				this.state = 39;
@@ -328,7 +328,7 @@ export class TntParser extends Parser {
 					this.match(TntParser.IDENTIFIER);
 					}
 					break;
-				case TntParser.T__29:
+				case TntParser.T__27:
 				case TntParser.AND:
 				case TntParser.OR:
 				case TntParser.IFF:
@@ -360,7 +360,7 @@ export class TntParser extends Parser {
 					this.state = 74;
 					this.literal();
 					this.state = 75;
-					this.match(TntParser.T__11);
+					this.match(TntParser.LPAREN);
 					}
 					break;
 				case TntParser.T__1:
@@ -369,28 +369,28 @@ export class TntParser extends Parser {
 					this.match(TntParser.T__1);
 					}
 					break;
-				case TntParser.T__12:
+				case TntParser.T__11:
 					{
 					this.state = 78;
+					this.match(TntParser.T__11);
+					}
+					break;
+				case TntParser.T__12:
+					{
+					this.state = 79;
 					this.match(TntParser.T__12);
 					}
 					break;
 				case TntParser.T__13:
 					{
-					this.state = 79;
+					this.state = 80;
 					this.match(TntParser.T__13);
 					}
 					break;
 				case TntParser.T__14:
 					{
-					this.state = 80;
-					this.match(TntParser.T__14);
-					}
-					break;
-				case TntParser.T__15:
-					{
 					this.state = 81;
-					this.match(TntParser.T__15);
+					this.match(TntParser.T__14);
 					}
 					break;
 				default:
@@ -422,7 +422,7 @@ export class TntParser extends Parser {
 				this.match(TntParser.IDENTIFIER);
 				this.state = 87;
 				_la = this._input.LA(1);
-				if (!((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__0) | (1 << TntParser.T__3) | (1 << TntParser.T__5) | (1 << TntParser.T__6) | (1 << TntParser.T__8) | (1 << TntParser.T__16) | (1 << TntParser.T__17) | (1 << TntParser.T__18) | (1 << TntParser.T__19) | (1 << TntParser.T__20))) !== 0))) {
+				if (!((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__0) | (1 << TntParser.T__3) | (1 << TntParser.T__5) | (1 << TntParser.T__6) | (1 << TntParser.T__8) | (1 << TntParser.T__15) | (1 << TntParser.T__16) | (1 << TntParser.T__17) | (1 << TntParser.T__18) | (1 << TntParser.T__19))) !== 0))) {
 				this._errHandler.recoverInline(this);
 				} else {
 					if (this._input.LA(1) === Token.EOF) {
@@ -465,7 +465,7 @@ export class TntParser extends Parser {
 			this.state = 91;
 			_localctx._qualifier = this._input.LT(1);
 			_la = this._input.LA(1);
-			if (!((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__16) | (1 << TntParser.T__17) | (1 << TntParser.T__18) | (1 << TntParser.T__19) | (1 << TntParser.T__20))) !== 0))) {
+			if (!((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__15) | (1 << TntParser.T__16) | (1 << TntParser.T__17) | (1 << TntParser.T__18) | (1 << TntParser.T__19))) !== 0))) {
 				_localctx._qualifier = this._errHandler.recoverInline(this);
 			} else {
 				if (this._input.LA(1) === Token.EOF) {
@@ -480,7 +480,7 @@ export class TntParser extends Parser {
 			this.state = 94;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
-			if (_la === TntParser.T__11) {
+			if (_la === TntParser.LPAREN) {
 				{
 				this.state = 93;
 				this.params();
@@ -528,7 +528,7 @@ export class TntParser extends Parser {
 			this.enterOuterAlt(_localctx, 1);
 			{
 			this.state = 103;
-			this.match(TntParser.T__11);
+			this.match(TntParser.LPAREN);
 			this.state = 112;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
@@ -539,11 +539,11 @@ export class TntParser extends Parser {
 				this.state = 109;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				while (_la === TntParser.T__21) {
+				while (_la === TntParser.T__20) {
 					{
 					{
 					this.state = 105;
-					this.match(TntParser.T__21);
+					this.match(TntParser.T__20);
 					this.state = 106;
 					this.match(TntParser.IDENTIFIER);
 					}
@@ -556,7 +556,7 @@ export class TntParser extends Parser {
 			}
 
 			this.state = 114;
-			this.match(TntParser.T__22);
+			this.match(TntParser.RPAREN);
 			}
 		}
 		catch (re) {
@@ -591,7 +591,7 @@ export class TntParser extends Parser {
 			this.state = 119;
 			this.match(TntParser.IDENTIFIER);
 			this.state = 120;
-			this.match(TntParser.T__11);
+			this.match(TntParser.LPAREN);
 			this.state = 138;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
@@ -617,7 +617,7 @@ export class TntParser extends Parser {
 						{
 						{
 						this.state = 125;
-						this.match(TntParser.T__21);
+						this.match(TntParser.T__20);
 						this.state = 126;
 						this.match(TntParser.IDENTIFIER);
 						this.state = 127;
@@ -634,10 +634,10 @@ export class TntParser extends Parser {
 				this.state = 136;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if (_la === TntParser.T__21) {
+				if (_la === TntParser.T__20) {
 					{
 					this.state = 134;
-					this.match(TntParser.T__21);
+					this.match(TntParser.T__20);
 					this.state = 135;
 					this.match(TntParser.MUL);
 					}
@@ -649,7 +649,7 @@ export class TntParser extends Parser {
 				throw new NoViableAltException(this);
 			}
 			this.state = 140;
-			this.match(TntParser.T__22);
+			this.match(TntParser.RPAREN);
 			}
 		}
 		catch (re) {
@@ -696,22 +696,22 @@ export class TntParser extends Parser {
 				_prevctx = _localctx;
 
 				this.state = 143;
-				this.match(TntParser.T__11);
+				this.match(TntParser.LPAREN);
 				this.state = 152;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__11) | (1 << TntParser.T__15) | (1 << TntParser.T__25) | (1 << TntParser.T__26) | (1 << TntParser.T__27))) !== 0) || ((((_la - 43)) & ~0x1F) === 0 && ((1 << (_la - 43)) & ((1 << (TntParser.SET - 43)) | (1 << (TntParser.SEQ - 43)) | (1 << (TntParser.IDENTIFIER - 43)))) !== 0)) {
+				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__14) | (1 << TntParser.T__23) | (1 << TntParser.T__24) | (1 << TntParser.T__25))) !== 0) || ((((_la - 41)) & ~0x1F) === 0 && ((1 << (_la - 41)) & ((1 << (TntParser.SET - 41)) | (1 << (TntParser.SEQ - 41)) | (1 << (TntParser.LPAREN - 41)) | (1 << (TntParser.IDENTIFIER - 41)))) !== 0)) {
 					{
 					this.state = 144;
 					this.type(0);
 					this.state = 149;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
-					while (_la === TntParser.T__21) {
+					while (_la === TntParser.T__20) {
 						{
 						{
 						this.state = 145;
-						this.match(TntParser.T__21);
+						this.match(TntParser.T__20);
 						this.state = 146;
 						this.type(0);
 						}
@@ -724,9 +724,9 @@ export class TntParser extends Parser {
 				}
 
 				this.state = 154;
-				this.match(TntParser.T__22);
+				this.match(TntParser.RPAREN);
 				this.state = 155;
-				this.match(TntParser.T__24);
+				this.match(TntParser.T__22);
 				this.state = 156;
 				this.type(11);
 				}
@@ -740,11 +740,11 @@ export class TntParser extends Parser {
 				this.state = 157;
 				this.match(TntParser.SET);
 				this.state = 158;
-				this.match(TntParser.T__11);
+				this.match(TntParser.LPAREN);
 				this.state = 159;
 				this.type(0);
 				this.state = 160;
-				this.match(TntParser.T__22);
+				this.match(TntParser.RPAREN);
 				}
 				break;
 
@@ -756,11 +756,11 @@ export class TntParser extends Parser {
 				this.state = 162;
 				this.match(TntParser.SEQ);
 				this.state = 163;
-				this.match(TntParser.T__11);
+				this.match(TntParser.LPAREN);
 				this.state = 164;
 				this.type(0);
 				this.state = 165;
-				this.match(TntParser.T__22);
+				this.match(TntParser.RPAREN);
 				}
 				break;
 
@@ -770,21 +770,21 @@ export class TntParser extends Parser {
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 167;
-				this.match(TntParser.T__11);
+				this.match(TntParser.LPAREN);
 				this.state = 168;
 				this.type(0);
 				this.state = 169;
-				this.match(TntParser.T__21);
+				this.match(TntParser.T__20);
 				this.state = 170;
 				this.type(0);
 				this.state = 175;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				while (_la === TntParser.T__21) {
+				while (_la === TntParser.T__20) {
 					{
 					{
 					this.state = 171;
-					this.match(TntParser.T__21);
+					this.match(TntParser.T__20);
 					this.state = 172;
 					this.type(0);
 					}
@@ -794,7 +794,7 @@ export class TntParser extends Parser {
 					_la = this._input.LA(1);
 				}
 				this.state = 178;
-				this.match(TntParser.T__22);
+				this.match(TntParser.RPAREN);
 				}
 				break;
 
@@ -814,11 +814,11 @@ export class TntParser extends Parser {
 				this.state = 190;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				while (_la === TntParser.T__21) {
+				while (_la === TntParser.T__20) {
 					{
 					{
 					this.state = 184;
-					this.match(TntParser.T__21);
+					this.match(TntParser.T__20);
 					this.state = 185;
 					this.match(TntParser.IDENTIFIER);
 					this.state = 186;
@@ -870,7 +870,7 @@ export class TntParser extends Parser {
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 200;
-				this.match(TntParser.T__25);
+				this.match(TntParser.T__23);
 				}
 				break;
 
@@ -880,7 +880,7 @@ export class TntParser extends Parser {
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 201;
-				this.match(TntParser.T__26);
+				this.match(TntParser.T__24);
 				}
 				break;
 
@@ -890,7 +890,7 @@ export class TntParser extends Parser {
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 202;
-				this.match(TntParser.T__27);
+				this.match(TntParser.T__25);
 				}
 				break;
 
@@ -910,11 +910,11 @@ export class TntParser extends Parser {
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 204;
-				this.match(TntParser.T__11);
+				this.match(TntParser.LPAREN);
 				this.state = 205;
 				this.type(0);
 				this.state = 206;
-				this.match(TntParser.T__22);
+				this.match(TntParser.RPAREN);
 				}
 				break;
 			}
@@ -937,7 +937,7 @@ export class TntParser extends Parser {
 						throw this.createFailedPredicateException("this.precpred(this._ctx, 12)");
 					}
 					this.state = 211;
-					this.match(TntParser.T__23);
+					this.match(TntParser.T__21);
 					this.state = 212;
 					this.type(13);
 					}
@@ -972,7 +972,7 @@ export class TntParser extends Parser {
 			this.enterOuterAlt(_localctx, 1);
 			{
 			this.state = 218;
-			this.match(TntParser.T__15);
+			this.match(TntParser.T__14);
 			this.state = 219;
 			this.match(TntParser.T__1);
 			this.state = 220;
@@ -984,11 +984,11 @@ export class TntParser extends Parser {
 			this.state = 229;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
-			while (_la === TntParser.T__21) {
+			while (_la === TntParser.T__20) {
 				{
 				{
 				this.state = 223;
-				this.match(TntParser.T__21);
+				this.match(TntParser.T__20);
 				this.state = 224;
 				this.match(TntParser.IDENTIFIER);
 				this.state = 225;
@@ -1039,7 +1039,7 @@ export class TntParser extends Parser {
 			let _alt: number;
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 382;
+			this.state = 381;
 			this._errHandler.sync(this);
 			switch ( this.interpreter.adaptivePredict(this._input, 32, this._ctx) ) {
 			case 1:
@@ -1051,7 +1051,7 @@ export class TntParser extends Parser {
 				this.state = 235;
 				this.normalCallName();
 				this.state = 236;
-				this.match(TntParser.T__11);
+				this.match(TntParser.LPAREN);
 				this.state = 238;
 				this._errHandler.sync(this);
 				switch ( this.interpreter.adaptivePredict(this._input, 18, this._ctx) ) {
@@ -1063,7 +1063,7 @@ export class TntParser extends Parser {
 					break;
 				}
 				this.state = 240;
-				this.match(TntParser.T__22);
+				this.match(TntParser.RPAREN);
 				}
 				break;
 
@@ -1085,17 +1085,17 @@ export class TntParser extends Parser {
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 244;
-				this.match(TntParser.T__13);
+				this.match(TntParser.T__12);
 				this.state = 245;
-				this.match(TntParser.T__11);
+				this.match(TntParser.LPAREN);
 				this.state = 246;
 				this.expr(0);
 				this.state = 247;
-				this.match(TntParser.T__22);
+				this.match(TntParser.RPAREN);
 				this.state = 248;
 				this.expr(0);
 				this.state = 249;
-				this.match(TntParser.T__30);
+				this.match(TntParser.T__28);
 				this.state = 250;
 				this.expr(20);
 				}
@@ -1107,31 +1107,31 @@ export class TntParser extends Parser {
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 252;
-				this.match(TntParser.T__11);
+				this.match(TntParser.LPAREN);
 				this.state = 254;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if (_la === TntParser.T__14) {
+				if (_la === TntParser.T__13) {
 					{
 					this.state = 253;
-					this.match(TntParser.T__14);
+					this.match(TntParser.T__13);
 					}
 				}
 
 				this.state = 256;
 				this.expr(0);
 				this.state = 257;
-				this.match(TntParser.T__14);
+				this.match(TntParser.T__13);
 				this.state = 258;
 				this.expr(0);
 				this.state = 263;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				while (_la === TntParser.T__14) {
+				while (_la === TntParser.T__13) {
 					{
 					{
 					this.state = 259;
-					this.match(TntParser.T__14);
+					this.match(TntParser.T__13);
 					this.state = 260;
 					this.expr(0);
 					}
@@ -1141,7 +1141,7 @@ export class TntParser extends Parser {
 					_la = this._input.LA(1);
 				}
 				this.state = 266;
-				this.match(TntParser.T__22);
+				this.match(TntParser.RPAREN);
 				}
 				break;
 
@@ -1151,31 +1151,31 @@ export class TntParser extends Parser {
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 268;
-				this.match(TntParser.T__11);
+				this.match(TntParser.LPAREN);
 				this.state = 270;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if (_la === TntParser.T__15) {
+				if (_la === TntParser.T__14) {
 					{
 					this.state = 269;
-					this.match(TntParser.T__15);
+					this.match(TntParser.T__14);
 					}
 				}
 
 				this.state = 272;
 				this.expr(0);
 				this.state = 273;
-				this.match(TntParser.T__15);
+				this.match(TntParser.T__14);
 				this.state = 274;
 				this.expr(0);
 				this.state = 279;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				while (_la === TntParser.T__15) {
+				while (_la === TntParser.T__14) {
 					{
 					{
 					this.state = 275;
-					this.match(TntParser.T__15);
+					this.match(TntParser.T__14);
 					this.state = 276;
 					this.expr(0);
 					}
@@ -1185,7 +1185,7 @@ export class TntParser extends Parser {
 					_la = this._input.LA(1);
 				}
 				this.state = 282;
-				this.match(TntParser.T__22);
+				this.match(TntParser.RPAREN);
 				}
 				break;
 
@@ -1199,27 +1199,27 @@ export class TntParser extends Parser {
 				this.state = 286;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if (_la === TntParser.T__14) {
+				if (_la === TntParser.T__13) {
 					{
 					this.state = 285;
-					this.match(TntParser.T__14);
+					this.match(TntParser.T__13);
 					}
 				}
 
 				this.state = 288;
 				this.expr(0);
 				this.state = 289;
-				this.match(TntParser.T__14);
+				this.match(TntParser.T__13);
 				this.state = 290;
 				this.expr(0);
 				this.state = 295;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				while (_la === TntParser.T__14) {
+				while (_la === TntParser.T__13) {
 					{
 					{
 					this.state = 291;
-					this.match(TntParser.T__14);
+					this.match(TntParser.T__13);
 					this.state = 292;
 					this.expr(0);
 					}
@@ -1243,27 +1243,27 @@ export class TntParser extends Parser {
 				this.state = 302;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if (_la === TntParser.T__15) {
+				if (_la === TntParser.T__14) {
 					{
 					this.state = 301;
-					this.match(TntParser.T__15);
+					this.match(TntParser.T__14);
 					}
 				}
 
 				this.state = 304;
 				this.expr(0);
 				this.state = 305;
-				this.match(TntParser.T__15);
+				this.match(TntParser.T__14);
 				this.state = 306;
 				this.expr(0);
 				this.state = 311;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				while (_la === TntParser.T__15) {
+				while (_la === TntParser.T__14) {
 					{
 					{
 					this.state = 307;
-					this.match(TntParser.T__15);
+					this.match(TntParser.T__14);
 					this.state = 308;
 					this.expr(0);
 					}
@@ -1284,7 +1284,7 @@ export class TntParser extends Parser {
 				_prevctx = _localctx;
 				this.state = 316;
 				_la = this._input.LA(1);
-				if (!(((((_la - 33)) & ~0x1F) === 0 && ((1 << (_la - 33)) & ((1 << (TntParser.STRING - 33)) | (1 << (TntParser.BOOL - 33)) | (1 << (TntParser.INT - 33)) | (1 << (TntParser.IDENTIFIER - 33)))) !== 0))) {
+				if (!(((((_la - 31)) & ~0x1F) === 0 && ((1 << (_la - 31)) & ((1 << (TntParser.STRING - 31)) | (1 << (TntParser.BOOL - 31)) | (1 << (TntParser.INT - 31)) | (1 << (TntParser.IDENTIFIER - 31)))) !== 0))) {
 				this._errHandler.recoverInline(this);
 				} else {
 					if (this._input.LA(1) === Token.EOF) {
@@ -1303,21 +1303,21 @@ export class TntParser extends Parser {
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 317;
-				this.match(TntParser.T__11);
+				this.match(TntParser.LPAREN);
 				this.state = 318;
 				this.expr(0);
 				this.state = 319;
-				this.match(TntParser.T__21);
+				this.match(TntParser.T__20);
 				this.state = 320;
 				this.expr(0);
 				this.state = 325;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				while (_la === TntParser.T__21) {
+				while (_la === TntParser.T__20) {
 					{
 					{
 					this.state = 321;
-					this.match(TntParser.T__21);
+					this.match(TntParser.T__20);
 					this.state = 322;
 					this.expr(0);
 					}
@@ -1327,7 +1327,7 @@ export class TntParser extends Parser {
 					_la = this._input.LA(1);
 				}
 				this.state = 328;
-				this.match(TntParser.T__22);
+				this.match(TntParser.RPAREN);
 				}
 				break;
 
@@ -1347,11 +1347,11 @@ export class TntParser extends Parser {
 				this.state = 340;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				while (_la === TntParser.T__21) {
+				while (_la === TntParser.T__20) {
 					{
 					{
 					this.state = 334;
-					this.match(TntParser.T__21);
+					this.match(TntParser.T__20);
 					this.state = 335;
 					this.match(TntParser.IDENTIFIER);
 					this.state = 336;
@@ -1376,7 +1376,7 @@ export class TntParser extends Parser {
 				_prevctx = _localctx;
 				{
 				this.state = 345;
-				this.match(TntParser.T__12);
+				this.match(TntParser.T__11);
 				this.state = 354;
 				this._errHandler.sync(this);
 				switch ( this.interpreter.adaptivePredict(this._input, 30, this._ctx) ) {
@@ -1387,11 +1387,11 @@ export class TntParser extends Parser {
 					this.state = 351;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
-					while (_la === TntParser.T__21) {
+					while (_la === TntParser.T__20) {
 						{
 						{
 						this.state = 347;
-						this.match(TntParser.T__21);
+						this.match(TntParser.T__20);
 						this.state = 348;
 						this.expr(0);
 						}
@@ -1404,7 +1404,7 @@ export class TntParser extends Parser {
 					break;
 				}
 				this.state = 356;
-				this.match(TntParser.T__28);
+				this.match(TntParser.T__26);
 				}
 				}
 				break;
@@ -1427,11 +1427,11 @@ export class TntParser extends Parser {
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 360;
-				this.match(TntParser.T__11);
+				this.match(TntParser.LPAREN);
 				this.state = 361;
 				this.expr(0);
 				this.state = 362;
-				this.match(TntParser.T__22);
+				this.match(TntParser.RPAREN);
 				}
 				break;
 
@@ -1454,10 +1454,10 @@ export class TntParser extends Parser {
 				_localctx = new ErrorNoExprContext(_localctx);
 				this._ctx = _localctx;
 				_prevctx = _localctx;
-				this.state = 379;
+				this.state = 378;
 				this._errHandler.sync(this);
 				switch (this._input.LA(1)) {
-				case TntParser.T__29:
+				case TntParser.T__27:
 				case TntParser.AND:
 				case TntParser.OR:
 				case TntParser.IFF:
@@ -1494,52 +1494,46 @@ export class TntParser extends Parser {
 					this.match(TntParser.T__2);
 					}
 					break;
-				case TntParser.T__28:
+				case TntParser.T__26:
 					{
 					this.state = 371;
-					this.match(TntParser.T__28);
+					this.match(TntParser.T__26);
 					}
 					break;
-				case TntParser.T__22:
+				case TntParser.RPAREN:
 					{
 					this.state = 372;
-					this.match(TntParser.T__22);
-					}
-					break;
-				case TntParser.T__10:
-					{
-					this.state = 373;
-					this.match(TntParser.T__10);
+					this.match(TntParser.RPAREN);
 					}
 					break;
 				case TntParser.T__7:
 					{
-					this.state = 374;
+					this.state = 373;
 					this.match(TntParser.T__7);
 					}
 					break;
 				case TntParser.SET:
 					{
-					this.state = 375;
+					this.state = 374;
 					this.match(TntParser.SET);
 					}
 					break;
 				case TntParser.SEQ:
 					{
-					this.state = 376;
+					this.state = 375;
 					this.match(TntParser.SEQ);
+					}
+					break;
+				case TntParser.T__20:
+					{
+					this.state = 376;
+					this.match(TntParser.T__20);
 					}
 					break;
 				case TntParser.T__21:
 					{
 					this.state = 377;
 					this.match(TntParser.T__21);
-					}
-					break;
-				case TntParser.T__23:
-					{
-					this.state = 378;
-					this.match(TntParser.T__23);
 					}
 					break;
 				default:
@@ -1554,7 +1548,7 @@ export class TntParser extends Parser {
 			this._ctx._stop = this._input.tryLT(-1);
 			this.state = 432;
 			this._errHandler.sync(this);
-			_alt = this.interpreter.adaptivePredict(this._input, 36, this._ctx);
+			_alt = this.interpreter.adaptivePredict(this._input, 37, this._ctx);
 			while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
 				if (_alt === 1) {
 					if (this._parseListeners != null) {
@@ -1564,18 +1558,18 @@ export class TntParser extends Parser {
 					{
 					this.state = 430;
 					this._errHandler.sync(this);
-					switch ( this.interpreter.adaptivePredict(this._input, 35, this._ctx) ) {
+					switch ( this.interpreter.adaptivePredict(this._input, 36, this._ctx) ) {
 					case 1:
 						{
 						_localctx = new PowContext(new ExprContext(_parentctx, _parentState));
 						this.pushNewRecursionContext(_localctx, _startState, TntParser.RULE_expr);
-						this.state = 384;
+						this.state = 383;
 						if (!(this.precpred(this._ctx, 23))) {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 23)");
 						}
+						this.state = 384;
+						(_localctx as PowContext)._op = this.match(TntParser.T__27);
 						this.state = 385;
-						(_localctx as PowContext)._op = this.match(TntParser.T__29);
-						this.state = 386;
 						this.expr(23);
 						}
 						break;
@@ -1584,14 +1578,14 @@ export class TntParser extends Parser {
 						{
 						_localctx = new MultDivContext(new ExprContext(_parentctx, _parentState));
 						this.pushNewRecursionContext(_localctx, _startState, TntParser.RULE_expr);
-						this.state = 387;
+						this.state = 386;
 						if (!(this.precpred(this._ctx, 22))) {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 22)");
 						}
-						this.state = 388;
+						this.state = 387;
 						(_localctx as MultDivContext)._op = this._input.LT(1);
 						_la = this._input.LA(1);
-						if (!(((((_la - 47)) & ~0x1F) === 0 && ((1 << (_la - 47)) & ((1 << (TntParser.MUL - 47)) | (1 << (TntParser.DIV - 47)) | (1 << (TntParser.MOD - 47)))) !== 0))) {
+						if (!(((((_la - 45)) & ~0x1F) === 0 && ((1 << (_la - 45)) & ((1 << (TntParser.MUL - 45)) | (1 << (TntParser.DIV - 45)) | (1 << (TntParser.MOD - 45)))) !== 0))) {
 							(_localctx as MultDivContext)._op = this._errHandler.recoverInline(this);
 						} else {
 							if (this._input.LA(1) === Token.EOF) {
@@ -1601,7 +1595,7 @@ export class TntParser extends Parser {
 							this._errHandler.reportMatch(this);
 							this.consume();
 						}
-						this.state = 389;
+						this.state = 388;
 						this.expr(23);
 						}
 						break;
@@ -1610,11 +1604,11 @@ export class TntParser extends Parser {
 						{
 						_localctx = new PlusMinusContext(new ExprContext(_parentctx, _parentState));
 						this.pushNewRecursionContext(_localctx, _startState, TntParser.RULE_expr);
-						this.state = 390;
+						this.state = 389;
 						if (!(this.precpred(this._ctx, 21))) {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 21)");
 						}
-						this.state = 391;
+						this.state = 390;
 						(_localctx as PlusMinusContext)._op = this._input.LT(1);
 						_la = this._input.LA(1);
 						if (!(_la === TntParser.PLUS || _la === TntParser.MINUS)) {
@@ -1627,7 +1621,7 @@ export class TntParser extends Parser {
 							this._errHandler.reportMatch(this);
 							this.consume();
 						}
-						this.state = 392;
+						this.state = 391;
 						this.expr(22);
 						}
 						break;
@@ -1636,14 +1630,14 @@ export class TntParser extends Parser {
 						{
 						_localctx = new RelationsContext(new ExprContext(_parentctx, _parentState));
 						this.pushNewRecursionContext(_localctx, _startState, TntParser.RULE_expr);
-						this.state = 393;
+						this.state = 392;
 						if (!(this.precpred(this._ctx, 18))) {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 18)");
 						}
-						this.state = 394;
+						this.state = 393;
 						(_localctx as RelationsContext)._op = this._input.LT(1);
 						_la = this._input.LA(1);
-						if (!(((((_la - 40)) & ~0x1F) === 0 && ((1 << (_la - 40)) & ((1 << (TntParser.SUBSETEQ - 40)) | (1 << (TntParser.IN - 40)) | (1 << (TntParser.NOTIN - 40)) | (1 << (TntParser.GT - 40)) | (1 << (TntParser.LT - 40)) | (1 << (TntParser.GE - 40)) | (1 << (TntParser.LE - 40)) | (1 << (TntParser.NE - 40)) | (1 << (TntParser.EQ - 40)) | (1 << (TntParser.ASGN - 40)))) !== 0))) {
+						if (!(((((_la - 38)) & ~0x1F) === 0 && ((1 << (_la - 38)) & ((1 << (TntParser.SUBSETEQ - 38)) | (1 << (TntParser.IN - 38)) | (1 << (TntParser.NOTIN - 38)) | (1 << (TntParser.GT - 38)) | (1 << (TntParser.LT - 38)) | (1 << (TntParser.GE - 38)) | (1 << (TntParser.LE - 38)) | (1 << (TntParser.NE - 38)) | (1 << (TntParser.EQ - 38)) | (1 << (TntParser.ASGN - 38)))) !== 0))) {
 							(_localctx as RelationsContext)._op = this._errHandler.recoverInline(this);
 						} else {
 							if (this._input.LA(1) === Token.EOF) {
@@ -1653,7 +1647,7 @@ export class TntParser extends Parser {
 							this._errHandler.reportMatch(this);
 							this.consume();
 						}
-						this.state = 395;
+						this.state = 394;
 						this.expr(19);
 						}
 						break;
@@ -1662,13 +1656,13 @@ export class TntParser extends Parser {
 						{
 						_localctx = new AndContext(new ExprContext(_parentctx, _parentState));
 						this.pushNewRecursionContext(_localctx, _startState, TntParser.RULE_expr);
-						this.state = 396;
+						this.state = 395;
 						if (!(this.precpred(this._ctx, 17))) {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 17)");
 						}
-						this.state = 397;
+						this.state = 396;
 						this.match(TntParser.AND);
-						this.state = 398;
+						this.state = 397;
 						this.expr(18);
 						}
 						break;
@@ -1677,13 +1671,13 @@ export class TntParser extends Parser {
 						{
 						_localctx = new OrContext(new ExprContext(_parentctx, _parentState));
 						this.pushNewRecursionContext(_localctx, _startState, TntParser.RULE_expr);
-						this.state = 399;
+						this.state = 398;
 						if (!(this.precpred(this._ctx, 16))) {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 16)");
 						}
-						this.state = 400;
+						this.state = 399;
 						this.match(TntParser.OR);
-						this.state = 401;
+						this.state = 400;
 						this.expr(17);
 						}
 						break;
@@ -1692,13 +1686,13 @@ export class TntParser extends Parser {
 						{
 						_localctx = new IffContext(new ExprContext(_parentctx, _parentState));
 						this.pushNewRecursionContext(_localctx, _startState, TntParser.RULE_expr);
-						this.state = 402;
+						this.state = 401;
 						if (!(this.precpred(this._ctx, 15))) {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 15)");
 						}
-						this.state = 403;
+						this.state = 402;
 						this.match(TntParser.IFF);
-						this.state = 404;
+						this.state = 403;
 						this.expr(16);
 						}
 						break;
@@ -1707,13 +1701,13 @@ export class TntParser extends Parser {
 						{
 						_localctx = new ImpliesContext(new ExprContext(_parentctx, _parentState));
 						this.pushNewRecursionContext(_localctx, _startState, TntParser.RULE_expr);
-						this.state = 405;
+						this.state = 404;
 						if (!(this.precpred(this._ctx, 14))) {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 14)");
 						}
-						this.state = 406;
+						this.state = 405;
 						this.match(TntParser.IMPLIES);
-						this.state = 407;
+						this.state = 406;
 						this.expr(15);
 						}
 						break;
@@ -1722,28 +1716,36 @@ export class TntParser extends Parser {
 						{
 						_localctx = new DotCallContext(new ExprContext(_parentctx, _parentState));
 						this.pushNewRecursionContext(_localctx, _startState, TntParser.RULE_expr);
-						this.state = 408;
+						this.state = 407;
 						if (!(this.precpred(this._ctx, 27))) {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 27)");
 						}
-						this.state = 409;
+						this.state = 408;
 						this.match(TntParser.T__10);
-						this.state = 410;
+						this.state = 409;
 						this.nameAfterDot();
-						this.state = 411;
-						this.match(TntParser.T__11);
-						this.state = 413;
+						this.state = 415;
 						this._errHandler.sync(this);
-						switch ( this.interpreter.adaptivePredict(this._input, 33, this._ctx) ) {
+						switch ( this.interpreter.adaptivePredict(this._input, 34, this._ctx) ) {
 						case 1:
 							{
+							this.state = 410;
+							this.match(TntParser.LPAREN);
 							this.state = 412;
-							this.argList();
+							this._errHandler.sync(this);
+							switch ( this.interpreter.adaptivePredict(this._input, 33, this._ctx) ) {
+							case 1:
+								{
+								this.state = 411;
+								this.argList();
+								}
+								break;
+							}
+							this.state = 414;
+							this.match(TntParser.RPAREN);
 							}
 							break;
 						}
-						this.state = 415;
-						this.match(TntParser.T__22);
 						}
 						break;
 
@@ -1756,11 +1758,11 @@ export class TntParser extends Parser {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 25)");
 						}
 						this.state = 418;
-						this.match(TntParser.T__12);
+						this.match(TntParser.T__11);
 						this.state = 419;
 						this.expr(0);
 						this.state = 420;
-						this.match(TntParser.T__28);
+						this.match(TntParser.T__26);
 						}
 						break;
 
@@ -1776,7 +1778,7 @@ export class TntParser extends Parser {
 						this.match(TntParser.IDENTIFIER);
 						this.state = 425;
 						this._errHandler.sync(this);
-						switch ( this.interpreter.adaptivePredict(this._input, 34, this._ctx) ) {
+						switch ( this.interpreter.adaptivePredict(this._input, 35, this._ctx) ) {
 						case 1:
 							{
 							this.state = 424;
@@ -1797,7 +1799,7 @@ export class TntParser extends Parser {
 						}
 						this.state = 428;
 						_la = this._input.LA(1);
-						if (!((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__2) | (1 << TntParser.T__4) | (1 << TntParser.T__7) | (1 << TntParser.T__13) | (1 << TntParser.T__22) | (1 << TntParser.T__23) | (1 << TntParser.T__28))) !== 0) || _la === TntParser.SET || _la === TntParser.SEQ)) {
+						if (!((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__2) | (1 << TntParser.T__4) | (1 << TntParser.T__7) | (1 << TntParser.T__12) | (1 << TntParser.T__21) | (1 << TntParser.T__26))) !== 0) || ((((_la - 41)) & ~0x1F) === 0 && ((1 << (_la - 41)) & ((1 << (TntParser.SET - 41)) | (1 << (TntParser.SEQ - 41)) | (1 << (TntParser.RPAREN - 41)))) !== 0))) {
 						this._errHandler.recoverInline(this);
 						} else {
 							if (this._input.LA(1) === Token.EOF) {
@@ -1817,7 +1819,7 @@ export class TntParser extends Parser {
 				}
 				this.state = 434;
 				this._errHandler.sync(this);
-				_alt = this.interpreter.adaptivePredict(this._input, 36, this._ctx);
+				_alt = this.interpreter.adaptivePredict(this._input, 37, this._ctx);
 			}
 			}
 		}
@@ -1844,7 +1846,7 @@ export class TntParser extends Parser {
 			this.state = 472;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
-			case TntParser.T__31:
+			case TntParser.T__29:
 			case TntParser.IDENTIFIER:
 				this.enterOuterAlt(_localctx, 1);
 				{
@@ -1853,11 +1855,11 @@ export class TntParser extends Parser {
 				this.state = 440;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				while (_la === TntParser.T__21) {
+				while (_la === TntParser.T__20) {
 					{
 					{
 					this.state = 436;
-					this.match(TntParser.T__21);
+					this.match(TntParser.T__20);
 					this.state = 437;
 					this.identOrHole();
 					}
@@ -1867,26 +1869,26 @@ export class TntParser extends Parser {
 					_la = this._input.LA(1);
 				}
 				this.state = 443;
-				this.match(TntParser.T__23);
+				this.match(TntParser.T__21);
 				this.state = 444;
 				this.expr(0);
 				}
 				break;
-			case TntParser.T__11:
+			case TntParser.LPAREN:
 				this.enterOuterAlt(_localctx, 2);
 				{
 				this.state = 446;
-				this.match(TntParser.T__11);
+				this.match(TntParser.LPAREN);
 				this.state = 447;
 				this.identOrHole();
 				this.state = 452;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				while (_la === TntParser.T__21) {
+				while (_la === TntParser.T__20) {
 					{
 					{
 					this.state = 448;
-					this.match(TntParser.T__21);
+					this.match(TntParser.T__20);
 					this.state = 449;
 					this.identOrHole();
 					}
@@ -1896,11 +1898,11 @@ export class TntParser extends Parser {
 					_la = this._input.LA(1);
 				}
 				this.state = 455;
-				this.match(TntParser.T__23);
+				this.match(TntParser.T__21);
 				this.state = 456;
 				this.expr(0);
 				this.state = 457;
-				this.match(TntParser.T__22);
+				this.match(TntParser.RPAREN);
 				}
 				break;
 			case TntParser.T__1:
@@ -1913,11 +1915,11 @@ export class TntParser extends Parser {
 				this.state = 465;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				while (_la === TntParser.T__21) {
+				while (_la === TntParser.T__20) {
 					{
 					{
 					this.state = 461;
-					this.match(TntParser.T__21);
+					this.match(TntParser.T__20);
 					this.state = 462;
 					this.identOrHole();
 					}
@@ -1927,7 +1929,7 @@ export class TntParser extends Parser {
 					_la = this._input.LA(1);
 				}
 				this.state = 468;
-				this.match(TntParser.T__23);
+				this.match(TntParser.T__21);
 				this.state = 469;
 				this.expr(0);
 				this.state = 470;
@@ -1962,7 +1964,7 @@ export class TntParser extends Parser {
 			{
 			this.state = 474;
 			_la = this._input.LA(1);
-			if (!(_la === TntParser.T__31 || _la === TntParser.IDENTIFIER)) {
+			if (!(_la === TntParser.T__29 || _la === TntParser.IDENTIFIER)) {
 			this._errHandler.recoverInline(this);
 			} else {
 				if (this._input.LA(1) === Token.EOF) {
@@ -2036,7 +2038,7 @@ export class TntParser extends Parser {
 			this.match(TntParser.IDENTIFIER);
 			this.state = 483;
 			this._errHandler.sync(this);
-			_alt = this.interpreter.adaptivePredict(this._input, 41, this._ctx);
+			_alt = this.interpreter.adaptivePredict(this._input, 42, this._ctx);
 			while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
 				if (_alt === 1) {
 					{
@@ -2050,7 +2052,7 @@ export class TntParser extends Parser {
 				}
 				this.state = 485;
 				this._errHandler.sync(this);
-				_alt = this.interpreter.adaptivePredict(this._input, 41, this._ctx);
+				_alt = this.interpreter.adaptivePredict(this._input, 42, this._ctx);
 			}
 			}
 		}
@@ -2075,7 +2077,7 @@ export class TntParser extends Parser {
 		try {
 			this.state = 488;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 42, this._ctx) ) {
+			switch ( this.interpreter.adaptivePredict(this._input, 43, this._ctx) ) {
 			case 1:
 				this.enterOuterAlt(_localctx, 1);
 				{
@@ -2119,13 +2121,13 @@ export class TntParser extends Parser {
 			this.lambdaOrExpr();
 			this.state = 495;
 			this._errHandler.sync(this);
-			_alt = this.interpreter.adaptivePredict(this._input, 43, this._ctx);
+			_alt = this.interpreter.adaptivePredict(this._input, 44, this._ctx);
 			while (_alt !== 2 && _alt !== ATN.INVALID_ALT_NUMBER) {
 				if (_alt === 1) {
 					{
 					{
 					this.state = 491;
-					this.match(TntParser.T__21);
+					this.match(TntParser.T__20);
 					this.state = 492;
 					this.lambdaOrExpr();
 					}
@@ -2133,7 +2135,7 @@ export class TntParser extends Parser {
 				}
 				this.state = 497;
 				this._errHandler.sync(this);
-				_alt = this.interpreter.adaptivePredict(this._input, 43, this._ctx);
+				_alt = this.interpreter.adaptivePredict(this._input, 44, this._ctx);
 			}
 			}
 		}
@@ -2181,7 +2183,7 @@ export class TntParser extends Parser {
 				this.state = 499;
 				_localctx._op = this._input.LT(1);
 				_la = this._input.LA(1);
-				if (!(((((_la - 36)) & ~0x1F) === 0 && ((1 << (_la - 36)) & ((1 << (TntParser.AND - 36)) | (1 << (TntParser.OR - 36)) | (1 << (TntParser.IFF - 36)) | (1 << (TntParser.IMPLIES - 36)) | (1 << (TntParser.SUBSETEQ - 36)) | (1 << (TntParser.IN - 36)) | (1 << (TntParser.NOTIN - 36)) | (1 << (TntParser.SET - 36)) | (1 << (TntParser.SEQ - 36)))) !== 0))) {
+				if (!(((((_la - 34)) & ~0x1F) === 0 && ((1 << (_la - 34)) & ((1 << (TntParser.AND - 34)) | (1 << (TntParser.OR - 34)) | (1 << (TntParser.IFF - 34)) | (1 << (TntParser.IMPLIES - 34)) | (1 << (TntParser.SUBSETEQ - 34)) | (1 << (TntParser.IN - 34)) | (1 << (TntParser.NOTIN - 34)) | (1 << (TntParser.SET - 34)) | (1 << (TntParser.SEQ - 34)))) !== 0))) {
 					_localctx._op = this._errHandler.recoverInline(this);
 				} else {
 					if (this._input.LA(1) === Token.EOF) {
@@ -2239,7 +2241,7 @@ export class TntParser extends Parser {
 				this.state = 503;
 				_localctx._op = this._input.LT(1);
 				_la = this._input.LA(1);
-				if (!(((((_la - 36)) & ~0x1F) === 0 && ((1 << (_la - 36)) & ((1 << (TntParser.AND - 36)) | (1 << (TntParser.OR - 36)) | (1 << (TntParser.IFF - 36)) | (1 << (TntParser.IMPLIES - 36)) | (1 << (TntParser.SUBSETEQ - 36)) | (1 << (TntParser.IN - 36)) | (1 << (TntParser.NOTIN - 36)))) !== 0))) {
+				if (!(((((_la - 34)) & ~0x1F) === 0 && ((1 << (_la - 34)) & ((1 << (TntParser.AND - 34)) | (1 << (TntParser.OR - 34)) | (1 << (TntParser.IFF - 34)) | (1 << (TntParser.IMPLIES - 34)) | (1 << (TntParser.SUBSETEQ - 34)) | (1 << (TntParser.IN - 34)) | (1 << (TntParser.NOTIN - 34)))) !== 0))) {
 					_localctx._op = this._errHandler.recoverInline(this);
 				} else {
 					if (this._input.LA(1) === Token.EOF) {
@@ -2279,7 +2281,7 @@ export class TntParser extends Parser {
 			{
 			this.state = 506;
 			_la = this._input.LA(1);
-			if (!(((((_la - 30)) & ~0x1F) === 0 && ((1 << (_la - 30)) & ((1 << (TntParser.T__29 - 30)) | (1 << (TntParser.AND - 30)) | (1 << (TntParser.OR - 30)) | (1 << (TntParser.IFF - 30)) | (1 << (TntParser.IMPLIES - 30)) | (1 << (TntParser.SUBSETEQ - 30)) | (1 << (TntParser.IN - 30)) | (1 << (TntParser.NOTIN - 30)) | (1 << (TntParser.PLUS - 30)) | (1 << (TntParser.MINUS - 30)) | (1 << (TntParser.MUL - 30)) | (1 << (TntParser.DIV - 30)) | (1 << (TntParser.MOD - 30)) | (1 << (TntParser.GT - 30)) | (1 << (TntParser.LT - 30)) | (1 << (TntParser.GE - 30)) | (1 << (TntParser.LE - 30)) | (1 << (TntParser.NE - 30)) | (1 << (TntParser.EQ - 30)) | (1 << (TntParser.ASGN - 30)))) !== 0))) {
+			if (!(((((_la - 28)) & ~0x1F) === 0 && ((1 << (_la - 28)) & ((1 << (TntParser.T__27 - 28)) | (1 << (TntParser.AND - 28)) | (1 << (TntParser.OR - 28)) | (1 << (TntParser.IFF - 28)) | (1 << (TntParser.IMPLIES - 28)) | (1 << (TntParser.SUBSETEQ - 28)) | (1 << (TntParser.IN - 28)) | (1 << (TntParser.NOTIN - 28)) | (1 << (TntParser.PLUS - 28)) | (1 << (TntParser.MINUS - 28)) | (1 << (TntParser.MUL - 28)) | (1 << (TntParser.DIV - 28)) | (1 << (TntParser.MOD - 28)) | (1 << (TntParser.GT - 28)) | (1 << (TntParser.LT - 28)) | (1 << (TntParser.GE - 28)) | (1 << (TntParser.LE - 28)) | (1 << (TntParser.NE - 28)) | (1 << (TntParser.EQ - 28)) | (1 << (TntParser.ASGN - 28)))) !== 0))) {
 			this._errHandler.recoverInline(this);
 			} else {
 				if (this._input.LA(1) === Token.EOF) {
@@ -2315,7 +2317,7 @@ export class TntParser extends Parser {
 			{
 			this.state = 508;
 			_la = this._input.LA(1);
-			if (!(((((_la - 33)) & ~0x1F) === 0 && ((1 << (_la - 33)) & ((1 << (TntParser.STRING - 33)) | (1 << (TntParser.BOOL - 33)) | (1 << (TntParser.INT - 33)))) !== 0))) {
+			if (!(((((_la - 31)) & ~0x1F) === 0 && ((1 << (_la - 31)) & ((1 << (TntParser.STRING - 31)) | (1 << (TntParser.BOOL - 31)) | (1 << (TntParser.INT - 31)))) !== 0))) {
 			this._errHandler.recoverInline(this);
 			} else {
 				if (this._input.LA(1) === Token.EOF) {
@@ -2440,12 +2442,12 @@ export class TntParser extends Parser {
 		"\v\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x07\t\u0160\n\t\f\t\x0E\t\u0163" +
 		"\v\t\x05\t\u0165\n\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03" +
 		"\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03" +
-		"\t\x03\t\x03\t\x05\t\u017E\n\t\x03\t\x05\t\u0181\n\t\x03\t\x03\t\x03\t" +
+		"\t\x03\t\x05\t\u017D\n\t\x03\t\x05\t\u0180\n\t\x03\t\x03\t\x03\t\x03\t" +
 		"\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03" +
 		"\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03" +
-		"\t\x03\t\x03\t\x05\t\u01A0\n\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03\t\x03" +
-		"\t\x03\t\x03\t\x03\t\x05\t\u01AC\n\t\x03\t\x03\t\x03\t\x07\t\u01B1\n\t" +
-		"\f\t\x0E\t\u01B4\v\t\x03\n\x03\n\x03\n\x07\n\u01B9\n\n\f\n\x0E\n\u01BC" +
+		"\t\x03\t\x05\t\u019F\n\t\x03\t\x05\t\u01A2\n\t\x03\t\x03\t\x03\t\x03\t" +
+		"\x03\t\x03\t\x03\t\x03\t\x05\t\u01AC\n\t\x03\t\x03\t\x03\t\x07\t\u01B1" +
+		"\n\t\f\t\x0E\t\u01B4\v\t\x03\n\x03\n\x03\n\x07\n\u01B9\n\n\f\n\x0E\n\u01BC" +
 		"\v\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x07\n\u01C5\n\n\f\n\x0E" +
 		"\n\u01C8\v\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x03\n\x07\n\u01D2" +
 		"\n\n\f\n\x0E\n\u01D5\v\n\x03\n\x03\n\x03\n\x03\n\x05\n\u01DB\n\n\x03\v" +
@@ -2456,27 +2458,27 @@ export class TntParser extends Parser {
 		"\x03\x13\x02\x02\x04\f\x10\x14\x02\x02\x04\x02\x06\x02\b\x02\n\x02\f\x02" +
 		"\x0E\x02\x10\x02\x12\x02\x14\x02\x16\x02\x18\x02\x1A\x02\x1C\x02\x1E\x02" +
 		" \x02\"\x02$\x02\x02\x10\x04\x02\x06\x06\b\b\x07\x02\x03\x03\x06\x06\b" +
-		"\t\v\v\x13\x17\x03\x02\x13\x17\x04\x02#%;;\x03\x0213\x03\x02/0\x04\x02" +
-		"*,4:\t\x02\x05\x05\x07\x07\n\n\x10\x10\x19\x1A\x1F\x1F-.\x04\x02\"\";" +
-		";\x04\x0211;;\x03\x02&.\x03\x02&,\x05\x02  &,/:\x03\x02#%\x02\u0254\x02" +
-		"&\x03\x02\x02\x02\x04[\x03\x02\x02\x02\x06]\x03\x02\x02\x02\bi\x03\x02" +
-		"\x02\x02\nv\x03\x02\x02\x02\f\xD2\x03\x02\x02\x02\x0E\xDC\x03\x02\x02" +
-		"\x02\x10\u0180\x03\x02\x02\x02\x12\u01DA\x03\x02\x02\x02\x14\u01DC\x03" +
-		"\x02\x02\x02\x16\u01DE\x03\x02\x02\x02\x18\u01E0\x03\x02\x02\x02\x1A\u01EA" +
-		"\x03\x02\x02\x02\x1C\u01EC\x03\x02\x02\x02\x1E\u01F6\x03\x02\x02\x02 " +
-		"\u01FA\x03\x02\x02\x02\"\u01FC\x03\x02\x02\x02$\u01FE\x03\x02\x02\x02" +
-		"&\'\x07\x03\x02\x02\'(\x07;\x02\x02(,\x07\x04\x02\x02)+\x05\x04\x03\x02" +
-		"*)\x03\x02\x02\x02+.\x03\x02\x02\x02,*\x03\x02\x02\x02,-\x03\x02\x02\x02" +
-		"-/\x03\x02\x02\x02.,\x03\x02\x02\x02/0\x07\x05\x02\x020\x03\x03\x02\x02" +
-		"\x0212\x07\x06\x02\x0223\x07;\x02\x0234\x07\x07\x02\x024\\\x05\f\x07\x02" +
-		"56\x07\b\x02\x0267\x07;\x02\x0278\x07\x07\x02\x028\\\x05\f\x07\x029:\x07" +
-		"\t\x02\x02:;\x05\x14\v\x02;<\x07\n\x02\x02<=\x05\x10\t\x02=\\\x03\x02" +
-		"\x02\x02>\\\x05\x06\x04\x02?\\\x05\x02\x02\x02@\\\x05\n\x06\x02AB\x07" +
-		"\v\x02\x02BC\x07;\x02\x02CD\x07\n\x02\x02D\\\x05\f\x07\x02EF\x07\f\x02" +
-		"\x02FG\x05\x18\r\x02GH\x07\r\x02\x02HI\x05\x16\f\x02I\\\x03\x02\x02\x02" +
-		"JU\x07;\x02\x02KU\x05\"\x12\x02LM\x05$\x13\x02MN\x07\x0E\x02\x02NU\x03" +
-		"\x02\x02\x02OU\x07\x04\x02\x02PU\x07\x0F\x02\x02QU\x07\x10\x02\x02RU\x07" +
-		"\x11\x02\x02SU\x07\x12\x02\x02TJ\x03\x02\x02\x02TK\x03\x02\x02\x02TL\x03" +
+		"\t\v\v\x12\x16\x03\x02\x12\x16\x04\x02!#;;\x03\x02/1\x03\x02-.\x04\x02" +
+		"(*28\n\x02\x05\x05\x07\x07\n\n\x0F\x0F\x18\x18\x1D\x1D+,::\x04\x02  ;" +
+		";\x04\x02//;;\x03\x02$,\x03\x02$*\x05\x02\x1E\x1E$*-8\x03\x02!#\x02\u0254" +
+		"\x02&\x03\x02\x02\x02\x04[\x03\x02\x02\x02\x06]\x03\x02\x02\x02\bi\x03" +
+		"\x02\x02\x02\nv\x03\x02\x02\x02\f\xD2\x03\x02\x02\x02\x0E\xDC\x03\x02" +
+		"\x02\x02\x10\u017F\x03\x02\x02\x02\x12\u01DA\x03\x02\x02\x02\x14\u01DC" +
+		"\x03\x02\x02\x02\x16\u01DE\x03\x02\x02\x02\x18\u01E0\x03\x02\x02\x02\x1A" +
+		"\u01EA\x03\x02\x02\x02\x1C\u01EC\x03\x02\x02\x02\x1E\u01F6\x03\x02\x02" +
+		"\x02 \u01FA\x03\x02\x02\x02\"\u01FC\x03\x02\x02\x02$\u01FE\x03\x02\x02" +
+		"\x02&\'\x07\x03\x02\x02\'(\x07;\x02\x02(,\x07\x04\x02\x02)+\x05\x04\x03" +
+		"\x02*)\x03\x02\x02\x02+.\x03\x02\x02\x02,*\x03\x02\x02\x02,-\x03\x02\x02" +
+		"\x02-/\x03\x02\x02\x02.,\x03\x02\x02\x02/0\x07\x05\x02\x020\x03\x03\x02" +
+		"\x02\x0212\x07\x06\x02\x0223\x07;\x02\x0234\x07\x07\x02\x024\\\x05\f\x07" +
+		"\x0256\x07\b\x02\x0267\x07;\x02\x0278\x07\x07\x02\x028\\\x05\f\x07\x02" +
+		"9:\x07\t\x02\x02:;\x05\x14\v\x02;<\x07\n\x02\x02<=\x05\x10\t\x02=\\\x03" +
+		"\x02\x02\x02>\\\x05\x06\x04\x02?\\\x05\x02\x02\x02@\\\x05\n\x06\x02AB" +
+		"\x07\v\x02\x02BC\x07;\x02\x02CD\x07\n\x02\x02D\\\x05\f\x07\x02EF\x07\f" +
+		"\x02\x02FG\x05\x18\r\x02GH\x07\r\x02\x02HI\x05\x16\f\x02I\\\x03\x02\x02" +
+		"\x02JU\x07;\x02\x02KU\x05\"\x12\x02LM\x05$\x13\x02MN\x079\x02\x02NU\x03" +
+		"\x02\x02\x02OU\x07\x04\x02\x02PU\x07\x0E\x02\x02QU\x07\x0F\x02\x02RU\x07" +
+		"\x10\x02\x02SU\x07\x11\x02\x02TJ\x03\x02\x02\x02TK\x03\x02\x02\x02TL\x03" +
 		"\x02\x02\x02TO\x03\x02\x02\x02TP\x03\x02\x02\x02TQ\x03\x02\x02\x02TR\x03" +
 		"\x02\x02\x02TS\x03\x02\x02\x02UV\x03\x02\x02\x02V\\\b\x03\x01\x02WX\t" +
 		"\x02\x02\x02XY\x07;\x02\x02YZ\t\x03\x02\x02Z\\\b\x03\x01\x02[1\x03\x02" +
@@ -2486,186 +2488,185 @@ export class TntParser extends Parser {
 		";\x02\x02_a\x05\b\x05\x02`_\x03\x02\x02\x02`a\x03\x02\x02\x02ad\x03\x02" +
 		"\x02\x02bc\x07\x07\x02\x02ce\x05\f\x07\x02db\x03\x02\x02\x02de\x03\x02" +
 		"\x02\x02ef\x03\x02\x02\x02fg\x07\n\x02\x02gh\x05\x10\t\x02h\x07\x03\x02" +
-		"\x02\x02ir\x07\x0E\x02\x02jo\x07;\x02\x02kl\x07\x18\x02\x02ln\x07;\x02" +
-		"\x02mk\x03\x02\x02\x02nq\x03\x02\x02\x02om\x03\x02\x02\x02op\x03\x02\x02" +
-		"\x02ps\x03\x02\x02\x02qo\x03\x02\x02\x02rj\x03\x02\x02\x02rs\x03\x02\x02" +
-		"\x02st\x03\x02\x02\x02tu\x07\x19\x02\x02u\t\x03\x02\x02\x02vw\x07\x03" +
-		"\x02\x02wx\x07;\x02\x02xy\x07\n\x02\x02yz\x07;\x02\x02z\x8C\x07\x0E\x02" +
-		"\x02{\x8D\x071\x02\x02|}\x07;\x02\x02}~\x07\n\x02\x02~\x85\x05\x10\t\x02" +
-		"\x7F\x80\x07\x18\x02\x02\x80\x81\x07;\x02\x02\x81\x82\x07\n\x02\x02\x82" +
-		"\x84\x05\x10\t\x02\x83\x7F\x03\x02\x02\x02\x84\x87\x03\x02\x02\x02\x85" +
-		"\x83\x03\x02\x02\x02\x85\x86\x03\x02\x02\x02\x86\x8A\x03\x02\x02\x02\x87" +
-		"\x85\x03\x02\x02\x02\x88\x89\x07\x18\x02\x02\x89\x8B\x071\x02\x02\x8A" +
-		"\x88\x03\x02\x02\x02\x8A\x8B\x03\x02\x02\x02\x8B\x8D\x03\x02\x02\x02\x8C" +
-		"{\x03\x02\x02\x02\x8C|\x03\x02\x02\x02\x8D\x8E\x03\x02\x02\x02\x8E\x8F" +
-		"\x07\x19\x02\x02\x8F\v\x03\x02\x02\x02\x90\x91\b\x07\x01\x02\x91\x9A\x07" +
-		"\x0E\x02\x02\x92\x97\x05\f\x07\x02\x93\x94\x07\x18\x02\x02\x94\x96\x05" +
-		"\f\x07\x02\x95\x93\x03\x02\x02\x02\x96\x99\x03\x02\x02\x02\x97\x95\x03" +
-		"\x02\x02\x02\x97\x98\x03\x02\x02\x02\x98\x9B\x03\x02\x02\x02\x99\x97\x03" +
-		"\x02\x02\x02\x9A\x92\x03\x02\x02\x02\x9A\x9B\x03\x02\x02\x02\x9B\x9C\x03" +
-		"\x02\x02\x02\x9C\x9D\x07\x19\x02\x02\x9D\x9E\x07\x1B\x02\x02\x9E\xD3\x05" +
-		"\f\x07\r\x9F\xA0\x07-\x02\x02\xA0\xA1\x07\x0E\x02\x02\xA1\xA2\x05\f\x07" +
-		"\x02\xA2\xA3\x07\x19\x02\x02\xA3\xD3\x03\x02\x02\x02\xA4\xA5\x07.\x02" +
-		"\x02\xA5\xA6\x07\x0E\x02\x02\xA6\xA7\x05\f\x07\x02\xA7\xA8\x07\x19\x02" +
-		"\x02\xA8\xD3\x03\x02\x02\x02\xA9\xAA\x07\x0E\x02\x02\xAA\xAB\x05\f\x07" +
-		"\x02\xAB\xAC\x07\x18\x02\x02\xAC\xB1\x05\f\x07\x02\xAD\xAE\x07\x18\x02" +
-		"\x02\xAE\xB0\x05\f\x07\x02\xAF\xAD\x03\x02\x02\x02\xB0\xB3\x03\x02\x02" +
-		"\x02\xB1\xAF\x03\x02\x02\x02\xB1\xB2\x03\x02\x02\x02\xB2\xB4\x03\x02\x02" +
-		"\x02\xB3\xB1\x03\x02\x02\x02\xB4\xB5\x07\x19\x02\x02\xB5\xD3\x03\x02\x02" +
-		"\x02\xB6\xB7\x07\x04\x02\x02\xB7\xB8\x07;\x02\x02\xB8\xB9\x07\x07\x02" +
-		"\x02\xB9\xC0\x05\f\x07\x02\xBA\xBB\x07\x18\x02\x02\xBB\xBC\x07;\x02\x02" +
-		"\xBC\xBD\x07\x07\x02\x02\xBD\xBF\x05\f\x07\x02\xBE\xBA\x03\x02\x02\x02" +
-		"\xBF\xC2\x03\x02\x02\x02\xC0\xBE\x03\x02\x02\x02\xC0\xC1\x03\x02\x02\x02" +
-		"\xC1\xC3\x03\x02\x02\x02\xC2\xC0\x03\x02\x02\x02\xC3\xC4\x07\x05\x02\x02" +
-		"\xC4\xD3\x03\x02\x02\x02\xC5\xC7\x05\x0E\b\x02\xC6\xC5\x03\x02\x02\x02" +
-		"\xC7\xC8\x03\x02\x02\x02\xC8\xC6\x03\x02\x02\x02\xC8\xC9\x03\x02\x02\x02" +
-		"\xC9\xD3\x03\x02\x02\x02\xCA\xD3\x07\x1C\x02\x02\xCB\xD3\x07\x1D\x02\x02" +
-		"\xCC\xD3\x07\x1E\x02\x02\xCD\xD3\x07;\x02\x02\xCE\xCF\x07\x0E\x02\x02" +
-		"\xCF\xD0\x05\f\x07\x02\xD0\xD1\x07\x19\x02\x02\xD1\xD3\x03\x02\x02\x02" +
-		"\xD2\x90\x03\x02\x02\x02\xD2\x9F\x03\x02\x02\x02\xD2\xA4\x03\x02\x02\x02" +
-		"\xD2\xA9\x03\x02\x02\x02\xD2\xB6\x03\x02\x02\x02\xD2\xC6\x03\x02\x02\x02" +
-		"\xD2\xCA\x03\x02\x02\x02\xD2\xCB\x03\x02\x02\x02\xD2\xCC\x03\x02\x02\x02" +
-		"\xD2\xCD\x03\x02\x02\x02\xD2\xCE\x03\x02\x02\x02\xD3\xD9\x03\x02\x02\x02" +
-		"\xD4\xD5\f\x0E\x02\x02\xD5\xD6\x07\x1A\x02\x02\xD6\xD8\x05\f\x07\x0F\xD7" +
-		"\xD4\x03\x02\x02\x02\xD8\xDB\x03\x02\x02\x02\xD9\xD7\x03\x02\x02\x02\xD9" +
-		"\xDA\x03\x02\x02\x02\xDA\r\x03\x02\x02\x02\xDB\xD9\x03\x02\x02\x02\xDC" +
-		"\xDD\x07\x12\x02\x02\xDD\xDE\x07\x04\x02\x02\xDE\xDF\x07;\x02\x02\xDF" +
-		"\xE0\x07\x07\x02\x02\xE0\xE7\x07#\x02\x02\xE1\xE2\x07\x18\x02\x02\xE2" +
-		"\xE3\x07;\x02\x02\xE3\xE4\x07\x07\x02\x02\xE4\xE6\x05\f\x07\x02\xE5\xE1" +
-		"\x03\x02\x02\x02\xE6\xE9\x03\x02\x02\x02\xE7\xE5\x03\x02\x02\x02\xE7\xE8" +
-		"\x03\x02\x02\x02\xE8\xEA\x03\x02\x02\x02\xE9\xE7\x03\x02\x02\x02\xEA\xEB" +
-		"\x07\x05\x02\x02\xEB\x0F\x03\x02\x02\x02\xEC\xED\b\t\x01\x02\xED\xEE\x05" +
-		"\x1E\x10\x02\xEE\xF0\x07\x0E\x02\x02\xEF\xF1\x05\x1C\x0F\x02\xF0\xEF\x03" +
-		"\x02\x02\x02\xF0\xF1\x03\x02\x02\x02\xF1\xF2\x03\x02\x02\x02\xF2\xF3\x07" +
-		"\x19\x02\x02\xF3\u0181\x03\x02\x02\x02\xF4\xF5\x070\x02\x02\xF5\u0181" +
-		"\x05\x10\t\x1A\xF6\xF7\x07\x10\x02\x02\xF7\xF8\x07\x0E\x02\x02\xF8\xF9" +
-		"\x05\x10\t\x02\xF9\xFA\x07\x19\x02\x02\xFA\xFB\x05\x10\t\x02\xFB\xFC\x07" +
-		"!\x02\x02\xFC\xFD\x05\x10\t\x16\xFD\u0181\x03\x02\x02\x02\xFE\u0100\x07" +
-		"\x0E\x02\x02\xFF\u0101\x07\x11\x02\x02\u0100\xFF\x03\x02\x02\x02\u0100" +
-		"\u0101\x03\x02\x02\x02\u0101\u0102\x03\x02\x02\x02\u0102\u0103\x05\x10" +
-		"\t\x02\u0103\u0104\x07\x11\x02\x02\u0104\u0109\x05\x10\t\x02\u0105\u0106" +
-		"\x07\x11\x02\x02\u0106\u0108\x05\x10\t\x02\u0107\u0105\x03\x02\x02\x02" +
-		"\u0108\u010B\x03\x02\x02\x02\u0109\u0107\x03\x02\x02\x02\u0109\u010A\x03" +
-		"\x02\x02\x02\u010A\u010C\x03\x02\x02\x02\u010B\u0109\x03\x02\x02\x02\u010C" +
-		"\u010D\x07\x19\x02\x02\u010D\u0181\x03\x02\x02\x02\u010E\u0110\x07\x0E" +
-		"\x02\x02\u010F\u0111\x07\x12\x02\x02\u0110\u010F\x03\x02\x02\x02\u0110" +
-		"\u0111\x03\x02\x02\x02\u0111\u0112\x03\x02\x02\x02\u0112\u0113\x05\x10" +
-		"\t\x02\u0113\u0114\x07\x12\x02\x02\u0114\u0119\x05\x10\t\x02\u0115\u0116" +
-		"\x07\x12\x02\x02\u0116\u0118\x05\x10\t\x02\u0117\u0115\x03\x02\x02\x02" +
-		"\u0118\u011B\x03\x02\x02\x02\u0119\u0117\x03\x02\x02\x02\u0119\u011A\x03" +
-		"\x02\x02\x02\u011A\u011C\x03\x02\x02\x02\u011B\u0119\x03\x02\x02\x02\u011C" +
-		"\u011D\x07\x19\x02\x02\u011D\u0181\x03\x02\x02\x02\u011E\u0120\x07\x04" +
-		"\x02\x02\u011F\u0121\x07\x11\x02\x02\u0120\u011F\x03\x02\x02\x02\u0120" +
-		"\u0121\x03\x02\x02\x02\u0121\u0122\x03\x02\x02\x02\u0122\u0123\x05\x10" +
-		"\t\x02\u0123\u0124\x07\x11\x02\x02\u0124\u0129\x05\x10\t\x02\u0125\u0126" +
-		"\x07\x11\x02\x02\u0126\u0128\x05\x10\t\x02\u0127\u0125\x03\x02\x02\x02" +
-		"\u0128\u012B\x03\x02\x02\x02\u0129\u0127\x03\x02\x02\x02\u0129\u012A\x03" +
-		"\x02\x02\x02\u012A\u012C\x03\x02\x02\x02\u012B\u0129\x03\x02\x02\x02\u012C" +
-		"\u012D\x07\x05\x02\x02\u012D\u0181\x03\x02\x02\x02\u012E\u0130\x07\x04" +
-		"\x02\x02\u012F\u0131\x07\x12\x02\x02\u0130\u012F\x03\x02\x02\x02\u0130" +
-		"\u0131\x03\x02\x02\x02\u0131\u0132\x03\x02\x02\x02\u0132\u0133\x05\x10" +
-		"\t\x02\u0133\u0134\x07\x12\x02\x02\u0134\u0139\x05\x10\t\x02\u0135\u0136" +
-		"\x07\x12\x02\x02\u0136\u0138\x05\x10\t\x02\u0137\u0135\x03\x02\x02\x02" +
-		"\u0138\u013B\x03\x02\x02\x02\u0139\u0137\x03\x02\x02\x02\u0139\u013A\x03" +
-		"\x02\x02\x02\u013A\u013C\x03\x02\x02\x02\u013B\u0139\x03\x02\x02\x02\u013C" +
-		"\u013D\x07\x05\x02\x02\u013D\u0181\x03\x02\x02\x02\u013E\u0181\t\x05\x02" +
-		"\x02\u013F\u0140\x07\x0E\x02\x02\u0140\u0141\x05\x10\t\x02\u0141\u0142" +
-		"\x07\x18\x02\x02\u0142\u0147\x05\x10\t\x02\u0143\u0144\x07\x18\x02\x02" +
-		"\u0144\u0146\x05\x10\t\x02\u0145\u0143\x03\x02\x02\x02\u0146\u0149\x03" +
-		"\x02\x02\x02\u0147\u0145\x03\x02\x02\x02\u0147\u0148\x03\x02\x02\x02\u0148" +
-		"\u014A\x03\x02\x02\x02\u0149\u0147\x03\x02\x02\x02\u014A\u014B\x07\x19" +
-		"\x02\x02\u014B\u0181\x03\x02\x02\x02\u014C\u014D\x07\x04\x02\x02\u014D" +
-		"\u014E\x07;\x02\x02\u014E\u014F\x07\x07\x02\x02\u014F\u0156\x05\x10\t" +
-		"\x02\u0150\u0151\x07\x18\x02\x02\u0151\u0152\x07;\x02\x02\u0152\u0153" +
-		"\x07\x07\x02\x02\u0153\u0155\x05\x10\t\x02\u0154\u0150\x03\x02\x02\x02" +
-		"\u0155\u0158\x03\x02\x02\x02\u0156\u0154\x03\x02\x02\x02\u0156\u0157\x03" +
-		"\x02\x02\x02\u0157\u0159\x03\x02\x02\x02\u0158\u0156\x03\x02\x02\x02\u0159" +
-		"\u015A\x07\x05\x02\x02\u015A\u0181\x03\x02\x02\x02\u015B\u0164\x07\x0F" +
-		"\x02\x02\u015C\u0161\x05\x10\t\x02\u015D\u015E\x07\x18\x02\x02\u015E\u0160" +
-		"\x05\x10\t\x02\u015F\u015D\x03\x02\x02\x02\u0160\u0163\x03\x02\x02\x02" +
-		"\u0161\u015F\x03\x02\x02\x02\u0161\u0162\x03\x02\x02\x02\u0162\u0165\x03" +
-		"\x02\x02\x02\u0163\u0161\x03\x02\x02\x02\u0164\u015C\x03\x02\x02\x02\u0164" +
-		"\u0165\x03\x02\x02\x02\u0165\u0166\x03\x02\x02\x02\u0166\u0181\x07\x1F" +
-		"\x02\x02\u0167\u0168\x05\x06\x04\x02\u0168\u0169\x05\x10\t\x07\u0169\u0181" +
-		"\x03\x02\x02\x02\u016A\u016B\x07\x0E\x02\x02\u016B\u016C\x05\x10\t\x02" +
-		"\u016C\u016D\x07\x19\x02\x02\u016D\u0181\x03\x02\x02\x02\u016E\u016F\x07" +
-		"\x04\x02\x02\u016F\u0170\x05\x10\t\x02\u0170\u0171\x07\x05\x02\x02\u0171" +
-		"\u0181\x03\x02\x02\x02\u0172\u017E\x05\"\x12\x02\u0173\u017E\x07\x07\x02" +
-		"\x02\u0174\u017E\x07\x05\x02\x02\u0175\u017E\x07\x1F\x02\x02\u0176\u017E" +
-		"\x07\x19\x02\x02\u0177\u017E\x07\r\x02\x02\u0178\u017E\x07\n\x02\x02\u0179" +
-		"\u017E\x07-\x02\x02\u017A\u017E\x07.\x02\x02\u017B\u017E\x07\x18\x02\x02" +
-		"\u017C\u017E\x07\x1A\x02\x02\u017D\u0172\x03\x02\x02\x02\u017D\u0173\x03" +
-		"\x02\x02\x02\u017D\u0174\x03\x02\x02\x02\u017D\u0175\x03\x02\x02\x02\u017D" +
-		"\u0176\x03\x02\x02\x02\u017D\u0177\x03\x02\x02\x02\u017D\u0178\x03\x02" +
-		"\x02\x02\u017D\u0179\x03\x02\x02\x02\u017D\u017A\x03\x02\x02\x02\u017D" +
-		"\u017B\x03\x02\x02\x02\u017D\u017C\x03\x02\x02\x02\u017E\u017F\x03\x02" +
-		"\x02\x02\u017F\u0181\b\t\x01\x02\u0180\xEC\x03\x02\x02\x02\u0180\xF4\x03" +
-		"\x02\x02\x02\u0180\xF6\x03\x02\x02\x02\u0180\xFE\x03\x02\x02\x02\u0180" +
-		"\u010E\x03\x02\x02\x02\u0180\u011E\x03\x02\x02\x02\u0180\u012E\x03\x02" +
-		"\x02\x02\u0180\u013E\x03\x02\x02\x02\u0180\u013F\x03\x02\x02\x02\u0180" +
-		"\u014C\x03\x02\x02\x02\u0180\u015B\x03\x02\x02\x02\u0180\u0167\x03\x02" +
-		"\x02\x02\u0180\u016A\x03\x02\x02\x02\u0180\u016E\x03\x02\x02\x02\u0180" +
-		"\u017D\x03\x02\x02\x02\u0181\u01B2\x03\x02\x02\x02\u0182\u0183\f\x19\x02" +
-		"\x02\u0183\u0184\x07 \x02\x02\u0184\u01B1\x05\x10\t\x19\u0185\u0186\f" +
-		"\x18\x02\x02\u0186\u0187\t\x06\x02\x02\u0187\u01B1\x05\x10\t\x19\u0188" +
-		"\u0189\f\x17\x02\x02\u0189\u018A\t\x07\x02\x02\u018A\u01B1\x05\x10\t\x18" +
-		"\u018B\u018C\f\x14\x02\x02\u018C\u018D\t\b\x02\x02\u018D\u01B1\x05\x10" +
-		"\t\x15\u018E\u018F\f\x13\x02\x02\u018F\u0190\x07&\x02\x02\u0190\u01B1" +
-		"\x05\x10\t\x14\u0191\u0192\f\x12\x02\x02\u0192\u0193\x07\'\x02\x02\u0193" +
-		"\u01B1\x05\x10\t\x13\u0194\u0195\f\x11\x02\x02\u0195\u0196\x07(\x02\x02" +
-		"\u0196\u01B1\x05\x10\t\x12\u0197\u0198\f\x10\x02\x02\u0198\u0199\x07)" +
-		"\x02\x02\u0199\u01B1\x05\x10\t\x11\u019A\u019B\f\x1D\x02\x02\u019B\u019C" +
-		"\x07\r\x02\x02\u019C\u019D\x05 \x11\x02\u019D\u019F\x07\x0E\x02\x02\u019E" +
-		"\u01A0\x05\x1C\x0F\x02\u019F\u019E\x03\x02\x02\x02\u019F\u01A0\x03\x02" +
-		"\x02\x02\u01A0\u01A1\x03\x02\x02\x02\u01A1\u01A2\x07\x19\x02\x02\u01A2" +
-		"\u01B1\x03\x02\x02\x02\u01A3\u01A4\f\x1B\x02\x02\u01A4\u01A5\x07\x0F\x02" +
-		"\x02\u01A5\u01A6\x05\x10\t\x02\u01A6\u01A7\x07\x1F\x02\x02\u01A7\u01B1" +
-		"\x03\x02\x02\x02\u01A8\u01A9\f\x15\x02\x02\u01A9\u01AB\x07;\x02\x02\u01AA" +
-		"\u01AC\x05\x1C\x0F\x02\u01AB\u01AA\x03\x02\x02\x02\u01AB\u01AC\x03\x02" +
-		"\x02\x02\u01AC\u01B1\x03\x02\x02\x02\u01AD\u01AE\f\x03\x02\x02\u01AE\u01AF" +
-		"\t\t\x02\x02\u01AF\u01B1\b\t\x01\x02\u01B0\u0182\x03\x02\x02\x02\u01B0" +
-		"\u0185\x03\x02\x02\x02\u01B0\u0188\x03\x02\x02\x02\u01B0\u018B\x03\x02" +
-		"\x02\x02\u01B0\u018E\x03\x02\x02\x02\u01B0\u0191\x03\x02\x02\x02\u01B0" +
-		"\u0194\x03\x02\x02\x02\u01B0\u0197\x03\x02\x02\x02\u01B0\u019A\x03\x02" +
-		"\x02\x02\u01B0\u01A3\x03\x02\x02\x02\u01B0\u01A8\x03\x02\x02\x02\u01B0" +
-		"\u01AD\x03\x02\x02\x02\u01B1\u01B4\x03\x02\x02\x02\u01B2\u01B0\x03\x02" +
-		"\x02\x02\u01B2\u01B3\x03\x02\x02\x02\u01B3\x11\x03\x02\x02\x02\u01B4\u01B2" +
-		"\x03\x02\x02\x02\u01B5\u01BA\x05\x14\v\x02\u01B6\u01B7\x07\x18\x02\x02" +
-		"\u01B7\u01B9\x05\x14\v\x02\u01B8\u01B6\x03\x02\x02\x02\u01B9\u01BC\x03" +
-		"\x02\x02\x02\u01BA\u01B8\x03\x02\x02\x02\u01BA\u01BB\x03\x02\x02\x02\u01BB" +
-		"\u01BD\x03\x02\x02\x02\u01BC\u01BA\x03\x02\x02\x02\u01BD\u01BE\x07\x1A" +
-		"\x02\x02\u01BE\u01BF\x05\x10\t\x02\u01BF\u01DB\x03\x02\x02\x02\u01C0\u01C1" +
-		"\x07\x0E\x02\x02\u01C1\u01C6\x05\x14\v\x02\u01C2\u01C3\x07\x18\x02\x02" +
-		"\u01C3\u01C5\x05\x14\v\x02\u01C4\u01C2\x03\x02\x02\x02\u01C5\u01C8\x03" +
-		"\x02\x02\x02\u01C6\u01C4\x03\x02\x02\x02\u01C6\u01C7\x03\x02\x02\x02\u01C7" +
-		"\u01C9\x03\x02\x02\x02\u01C8\u01C6\x03\x02\x02\x02\u01C9\u01CA\x07\x1A" +
-		"\x02\x02\u01CA\u01CB\x05\x10\t\x02\u01CB\u01CC\x07\x19\x02\x02\u01CC\u01DB" +
-		"\x03\x02\x02\x02\u01CD\u01CE\x07\x04\x02\x02\u01CE\u01D3\x05\x14\v\x02" +
-		"\u01CF\u01D0\x07\x18\x02\x02\u01D0\u01D2\x05\x14\v\x02\u01D1\u01CF\x03" +
-		"\x02\x02\x02\u01D2\u01D5\x03\x02\x02\x02\u01D3\u01D1\x03\x02\x02\x02\u01D3" +
-		"\u01D4\x03\x02\x02\x02\u01D4\u01D6\x03\x02\x02\x02\u01D5\u01D3\x03\x02" +
-		"\x02\x02\u01D6\u01D7\x07\x1A\x02\x02\u01D7\u01D8\x05\x10\t\x02\u01D8\u01D9" +
-		"\x07\x05\x02\x02\u01D9\u01DB\x03\x02\x02\x02\u01DA\u01B5\x03\x02\x02\x02" +
-		"\u01DA\u01C0\x03\x02\x02\x02\u01DA\u01CD\x03\x02\x02\x02\u01DB\x13\x03" +
-		"\x02\x02\x02\u01DC\u01DD\t\n\x02\x02\u01DD\x15\x03\x02\x02\x02\u01DE\u01DF" +
-		"\t\v\x02\x02\u01DF\x17\x03\x02\x02\x02\u01E0\u01E5\x07;\x02\x02\u01E1" +
-		"\u01E2\x07\r\x02\x02\u01E2\u01E4\x07;\x02\x02\u01E3\u01E1\x03\x02\x02" +
-		"\x02\u01E4\u01E7\x03\x02\x02\x02\u01E5\u01E3\x03\x02\x02\x02\u01E5\u01E6" +
-		"\x03\x02\x02\x02\u01E6\x19\x03\x02\x02\x02\u01E7\u01E5\x03\x02\x02\x02" +
-		"\u01E8\u01EB\x05\x12\n\x02\u01E9\u01EB\x05\x10\t\x02\u01EA\u01E8\x03\x02" +
-		"\x02\x02\u01EA\u01E9\x03\x02\x02\x02\u01EB\x1B\x03\x02\x02\x02\u01EC\u01F1" +
-		"\x05\x1A\x0E\x02\u01ED\u01EE\x07\x18\x02\x02\u01EE\u01F0\x05\x1A\x0E\x02" +
-		"\u01EF\u01ED\x03\x02\x02\x02\u01F0\u01F3\x03\x02\x02\x02\u01F1\u01EF\x03" +
-		"\x02\x02\x02\u01F1\u01F2\x03\x02\x02\x02\u01F2\x1D\x03\x02\x02\x02\u01F3" +
-		"\u01F1\x03\x02\x02\x02\u01F4\u01F7\x07;\x02\x02\u01F5\u01F7\t\f\x02\x02" +
-		"\u01F6\u01F4\x03\x02\x02\x02\u01F6\u01F5\x03\x02\x02\x02\u01F7\x1F\x03" +
-		"\x02\x02\x02\u01F8\u01FB\x07;\x02\x02\u01F9\u01FB\t\r\x02\x02\u01FA\u01F8" +
-		"\x03\x02\x02\x02\u01FA\u01F9\x03\x02\x02\x02\u01FB!\x03\x02\x02\x02\u01FC" +
-		"\u01FD\t\x0E\x02\x02\u01FD#\x03\x02\x02\x02\u01FE\u01FF\t\x0F\x02\x02" +
-		"\u01FF%\x03\x02\x02\x020,T[`dor\x85\x8A\x8C\x97\x9A\xB1\xC0\xC8\xD2\xD9" +
-		"\xE7\xF0\u0100\u0109\u0110\u0119\u0120\u0129\u0130\u0139\u0147\u0156\u0161" +
-		"\u0164\u017D\u0180\u019F\u01AB\u01B0\u01B2\u01BA\u01C6\u01D3\u01DA\u01E5" +
-		"\u01EA\u01F1\u01F6\u01FA";
+		"\x02\x02ir\x079\x02\x02jo\x07;\x02\x02kl\x07\x17\x02\x02ln\x07;\x02\x02" +
+		"mk\x03\x02\x02\x02nq\x03\x02\x02\x02om\x03\x02\x02\x02op\x03\x02\x02\x02" +
+		"ps\x03\x02\x02\x02qo\x03\x02\x02\x02rj\x03\x02\x02\x02rs\x03\x02\x02\x02" +
+		"st\x03\x02\x02\x02tu\x07:\x02\x02u\t\x03\x02\x02\x02vw\x07\x03\x02\x02" +
+		"wx\x07;\x02\x02xy\x07\n\x02\x02yz\x07;\x02\x02z\x8C\x079\x02\x02{\x8D" +
+		"\x07/\x02\x02|}\x07;\x02\x02}~\x07\n\x02\x02~\x85\x05\x10\t\x02\x7F\x80" +
+		"\x07\x17\x02\x02\x80\x81\x07;\x02\x02\x81\x82\x07\n\x02\x02\x82\x84\x05" +
+		"\x10\t\x02\x83\x7F\x03\x02\x02\x02\x84\x87\x03\x02\x02\x02\x85\x83\x03" +
+		"\x02\x02\x02\x85\x86\x03\x02\x02\x02\x86\x8A\x03\x02\x02\x02\x87\x85\x03" +
+		"\x02\x02\x02\x88\x89\x07\x17\x02\x02\x89\x8B\x07/\x02\x02\x8A\x88\x03" +
+		"\x02\x02\x02\x8A\x8B\x03\x02\x02\x02\x8B\x8D\x03\x02\x02\x02\x8C{\x03" +
+		"\x02\x02\x02\x8C|\x03\x02\x02\x02\x8D\x8E\x03\x02\x02\x02\x8E\x8F\x07" +
+		":\x02\x02\x8F\v\x03\x02\x02\x02\x90\x91\b\x07\x01\x02\x91\x9A\x079\x02" +
+		"\x02\x92\x97\x05\f\x07\x02\x93\x94\x07\x17\x02\x02\x94\x96\x05\f\x07\x02" +
+		"\x95\x93\x03\x02\x02\x02\x96\x99\x03\x02\x02\x02\x97\x95\x03\x02\x02\x02" +
+		"\x97\x98\x03\x02\x02\x02\x98\x9B\x03\x02\x02\x02\x99\x97\x03\x02\x02\x02" +
+		"\x9A\x92\x03\x02\x02\x02\x9A\x9B\x03\x02\x02\x02\x9B\x9C\x03\x02\x02\x02" +
+		"\x9C\x9D\x07:\x02\x02\x9D\x9E\x07\x19\x02\x02\x9E\xD3\x05\f\x07\r\x9F" +
+		"\xA0\x07+\x02\x02\xA0\xA1\x079\x02\x02\xA1\xA2\x05\f\x07\x02\xA2\xA3\x07" +
+		":\x02\x02\xA3\xD3\x03\x02\x02\x02\xA4\xA5\x07,\x02\x02\xA5\xA6\x079\x02" +
+		"\x02\xA6\xA7\x05\f\x07\x02\xA7\xA8\x07:\x02\x02\xA8\xD3\x03\x02\x02\x02" +
+		"\xA9\xAA\x079\x02\x02\xAA\xAB\x05\f\x07\x02\xAB\xAC\x07\x17\x02\x02\xAC" +
+		"\xB1\x05\f\x07\x02\xAD\xAE\x07\x17\x02\x02\xAE\xB0\x05\f\x07\x02\xAF\xAD" +
+		"\x03\x02\x02\x02\xB0\xB3\x03\x02\x02\x02\xB1\xAF\x03\x02\x02\x02\xB1\xB2" +
+		"\x03\x02\x02\x02\xB2\xB4\x03\x02\x02\x02\xB3\xB1\x03\x02\x02\x02\xB4\xB5" +
+		"\x07:\x02\x02\xB5\xD3\x03\x02\x02\x02\xB6\xB7\x07\x04\x02\x02\xB7\xB8" +
+		"\x07;\x02\x02\xB8\xB9\x07\x07\x02\x02\xB9\xC0\x05\f\x07\x02\xBA\xBB\x07" +
+		"\x17\x02\x02\xBB\xBC\x07;\x02\x02\xBC\xBD\x07\x07\x02\x02\xBD\xBF\x05" +
+		"\f\x07\x02\xBE\xBA\x03\x02\x02\x02\xBF\xC2\x03\x02\x02\x02\xC0\xBE\x03" +
+		"\x02\x02\x02\xC0\xC1\x03\x02\x02\x02\xC1\xC3\x03\x02\x02\x02\xC2\xC0\x03" +
+		"\x02\x02\x02\xC3\xC4\x07\x05\x02\x02\xC4\xD3\x03\x02\x02\x02\xC5\xC7\x05" +
+		"\x0E\b\x02\xC6\xC5\x03\x02\x02\x02\xC7\xC8\x03\x02\x02\x02\xC8\xC6\x03" +
+		"\x02\x02\x02\xC8\xC9\x03\x02\x02\x02\xC9\xD3\x03\x02\x02\x02\xCA\xD3\x07" +
+		"\x1A\x02\x02\xCB\xD3\x07\x1B\x02\x02\xCC\xD3\x07\x1C\x02\x02\xCD\xD3\x07" +
+		";\x02\x02\xCE\xCF\x079\x02\x02\xCF\xD0\x05\f\x07\x02\xD0\xD1\x07:\x02" +
+		"\x02\xD1\xD3\x03\x02\x02\x02\xD2\x90\x03\x02\x02\x02\xD2\x9F\x03\x02\x02" +
+		"\x02\xD2\xA4\x03\x02\x02\x02\xD2\xA9\x03\x02\x02\x02\xD2\xB6\x03\x02\x02" +
+		"\x02\xD2\xC6\x03\x02\x02\x02\xD2\xCA\x03\x02\x02\x02\xD2\xCB\x03\x02\x02" +
+		"\x02\xD2\xCC\x03\x02\x02\x02\xD2\xCD\x03\x02\x02\x02\xD2\xCE\x03\x02\x02" +
+		"\x02\xD3\xD9\x03\x02\x02\x02\xD4\xD5\f\x0E\x02\x02\xD5\xD6\x07\x18\x02" +
+		"\x02\xD6\xD8\x05\f\x07\x0F\xD7\xD4\x03\x02\x02\x02\xD8\xDB\x03\x02\x02" +
+		"\x02\xD9\xD7\x03\x02\x02\x02\xD9\xDA\x03\x02\x02\x02\xDA\r\x03\x02\x02" +
+		"\x02\xDB\xD9\x03\x02\x02\x02\xDC\xDD\x07\x11\x02\x02\xDD\xDE\x07\x04\x02" +
+		"\x02\xDE\xDF\x07;\x02\x02\xDF\xE0\x07\x07\x02\x02\xE0\xE7\x07!\x02\x02" +
+		"\xE1\xE2\x07\x17\x02\x02\xE2\xE3\x07;\x02\x02\xE3\xE4\x07\x07\x02\x02" +
+		"\xE4\xE6\x05\f\x07\x02\xE5\xE1\x03\x02\x02\x02\xE6\xE9\x03\x02\x02\x02" +
+		"\xE7\xE5\x03\x02\x02\x02\xE7\xE8\x03\x02\x02\x02\xE8\xEA\x03\x02\x02\x02" +
+		"\xE9\xE7\x03\x02\x02\x02\xEA\xEB\x07\x05\x02\x02\xEB\x0F\x03\x02\x02\x02" +
+		"\xEC\xED\b\t\x01\x02\xED\xEE\x05\x1E\x10\x02\xEE\xF0\x079\x02\x02\xEF" +
+		"\xF1\x05\x1C\x0F\x02\xF0\xEF\x03\x02\x02\x02\xF0\xF1\x03\x02\x02\x02\xF1" +
+		"\xF2\x03\x02\x02\x02\xF2\xF3\x07:\x02\x02\xF3\u0180\x03\x02\x02\x02\xF4" +
+		"\xF5\x07.\x02\x02\xF5\u0180\x05\x10\t\x1A\xF6\xF7\x07\x0F\x02\x02\xF7" +
+		"\xF8\x079\x02\x02\xF8\xF9\x05\x10\t\x02\xF9\xFA\x07:\x02\x02\xFA\xFB\x05" +
+		"\x10\t\x02\xFB\xFC\x07\x1F\x02\x02\xFC\xFD\x05\x10\t\x16\xFD\u0180\x03" +
+		"\x02\x02\x02\xFE\u0100\x079\x02\x02\xFF\u0101\x07\x10\x02\x02\u0100\xFF" +
+		"\x03\x02\x02\x02\u0100\u0101\x03\x02\x02\x02\u0101\u0102\x03\x02\x02\x02" +
+		"\u0102\u0103\x05\x10\t\x02\u0103\u0104\x07\x10\x02\x02\u0104\u0109\x05" +
+		"\x10\t\x02\u0105\u0106\x07\x10\x02\x02\u0106\u0108\x05\x10\t\x02\u0107" +
+		"\u0105\x03\x02\x02\x02\u0108\u010B\x03\x02\x02\x02\u0109\u0107\x03\x02" +
+		"\x02\x02\u0109\u010A\x03\x02\x02\x02\u010A\u010C\x03\x02\x02\x02\u010B" +
+		"\u0109\x03\x02\x02\x02\u010C\u010D\x07:\x02\x02\u010D\u0180\x03\x02\x02" +
+		"\x02\u010E\u0110\x079\x02\x02\u010F\u0111\x07\x11\x02\x02\u0110\u010F" +
+		"\x03\x02\x02\x02\u0110\u0111\x03\x02\x02\x02\u0111\u0112\x03\x02\x02\x02" +
+		"\u0112\u0113\x05\x10\t\x02\u0113\u0114\x07\x11\x02\x02\u0114\u0119\x05" +
+		"\x10\t\x02\u0115\u0116\x07\x11\x02\x02\u0116\u0118\x05\x10\t\x02\u0117" +
+		"\u0115\x03\x02\x02\x02\u0118\u011B\x03\x02\x02\x02\u0119\u0117\x03\x02" +
+		"\x02\x02\u0119\u011A\x03\x02\x02\x02\u011A\u011C\x03\x02\x02\x02\u011B" +
+		"\u0119\x03\x02\x02\x02\u011C\u011D\x07:\x02\x02\u011D\u0180\x03\x02\x02" +
+		"\x02\u011E\u0120\x07\x04\x02\x02\u011F\u0121\x07\x10\x02\x02\u0120\u011F" +
+		"\x03\x02\x02\x02\u0120\u0121\x03\x02\x02\x02\u0121\u0122\x03\x02\x02\x02" +
+		"\u0122\u0123\x05\x10\t\x02\u0123\u0124\x07\x10\x02\x02\u0124\u0129\x05" +
+		"\x10\t\x02\u0125\u0126\x07\x10\x02\x02\u0126\u0128\x05\x10\t\x02\u0127" +
+		"\u0125\x03\x02\x02\x02\u0128\u012B\x03\x02\x02\x02\u0129\u0127\x03\x02" +
+		"\x02\x02\u0129\u012A\x03\x02\x02\x02\u012A\u012C\x03\x02\x02\x02\u012B" +
+		"\u0129\x03\x02\x02\x02\u012C\u012D\x07\x05\x02\x02\u012D\u0180\x03\x02" +
+		"\x02\x02\u012E\u0130\x07\x04\x02\x02\u012F\u0131\x07\x11\x02\x02\u0130" +
+		"\u012F\x03\x02\x02\x02\u0130\u0131\x03\x02\x02\x02\u0131\u0132\x03\x02" +
+		"\x02\x02\u0132\u0133\x05\x10\t\x02\u0133\u0134\x07\x11\x02\x02\u0134\u0139" +
+		"\x05\x10\t\x02\u0135\u0136\x07\x11\x02\x02\u0136\u0138\x05\x10\t\x02\u0137" +
+		"\u0135\x03\x02\x02\x02\u0138\u013B\x03\x02\x02\x02\u0139\u0137\x03\x02" +
+		"\x02\x02\u0139\u013A\x03\x02\x02\x02\u013A\u013C\x03\x02\x02\x02\u013B" +
+		"\u0139\x03\x02\x02\x02\u013C\u013D\x07\x05\x02\x02\u013D\u0180\x03\x02" +
+		"\x02\x02\u013E\u0180\t\x05\x02\x02\u013F\u0140\x079\x02\x02\u0140\u0141" +
+		"\x05\x10\t\x02\u0141\u0142\x07\x17\x02\x02\u0142\u0147\x05\x10\t\x02\u0143" +
+		"\u0144\x07\x17\x02\x02\u0144\u0146\x05\x10\t\x02\u0145\u0143\x03\x02\x02" +
+		"\x02\u0146\u0149\x03\x02\x02\x02\u0147\u0145\x03\x02\x02\x02\u0147\u0148" +
+		"\x03\x02\x02\x02\u0148\u014A\x03\x02\x02\x02\u0149\u0147\x03\x02\x02\x02" +
+		"\u014A\u014B\x07:\x02\x02\u014B\u0180\x03\x02\x02\x02\u014C\u014D\x07" +
+		"\x04\x02\x02\u014D\u014E\x07;\x02\x02\u014E\u014F\x07\x07\x02\x02\u014F" +
+		"\u0156\x05\x10\t\x02\u0150\u0151\x07\x17\x02\x02\u0151\u0152\x07;\x02" +
+		"\x02\u0152\u0153\x07\x07\x02\x02\u0153\u0155\x05\x10\t\x02\u0154\u0150" +
+		"\x03\x02\x02\x02\u0155\u0158\x03\x02\x02\x02\u0156\u0154\x03\x02\x02\x02" +
+		"\u0156\u0157\x03\x02\x02\x02\u0157\u0159\x03\x02\x02\x02\u0158\u0156\x03" +
+		"\x02\x02\x02\u0159\u015A\x07\x05\x02\x02\u015A\u0180\x03\x02\x02\x02\u015B" +
+		"\u0164\x07\x0E\x02\x02\u015C\u0161\x05\x10\t\x02\u015D\u015E\x07\x17\x02" +
+		"\x02\u015E\u0160\x05\x10\t\x02\u015F\u015D\x03\x02\x02\x02\u0160\u0163" +
+		"\x03\x02\x02\x02\u0161\u015F\x03\x02\x02\x02\u0161\u0162\x03\x02\x02\x02" +
+		"\u0162\u0165\x03\x02\x02\x02\u0163\u0161\x03\x02\x02\x02\u0164\u015C\x03" +
+		"\x02\x02\x02\u0164\u0165\x03\x02\x02\x02\u0165\u0166\x03\x02\x02\x02\u0166" +
+		"\u0180\x07\x1D\x02\x02\u0167\u0168\x05\x06\x04\x02\u0168\u0169\x05\x10" +
+		"\t\x07\u0169\u0180\x03\x02\x02\x02\u016A\u016B\x079\x02\x02\u016B\u016C" +
+		"\x05\x10\t\x02\u016C\u016D\x07:\x02\x02\u016D\u0180\x03\x02\x02\x02\u016E" +
+		"\u016F\x07\x04\x02\x02\u016F\u0170\x05\x10\t\x02\u0170\u0171\x07\x05\x02" +
+		"\x02\u0171\u0180\x03\x02\x02\x02\u0172\u017D\x05\"\x12\x02\u0173\u017D" +
+		"\x07\x07\x02\x02\u0174\u017D\x07\x05\x02\x02\u0175\u017D\x07\x1D\x02\x02" +
+		"\u0176\u017D\x07:\x02\x02\u0177\u017D\x07\n\x02\x02\u0178\u017D\x07+\x02" +
+		"\x02\u0179\u017D\x07,\x02\x02\u017A\u017D\x07\x17\x02\x02\u017B\u017D" +
+		"\x07\x18\x02\x02\u017C\u0172\x03\x02\x02\x02\u017C\u0173\x03\x02\x02\x02" +
+		"\u017C\u0174\x03\x02\x02\x02\u017C\u0175\x03\x02\x02\x02\u017C\u0176\x03" +
+		"\x02\x02\x02\u017C\u0177\x03\x02\x02\x02\u017C\u0178\x03\x02\x02\x02\u017C" +
+		"\u0179\x03\x02\x02\x02\u017C\u017A\x03\x02\x02\x02\u017C\u017B\x03\x02" +
+		"\x02\x02\u017D\u017E\x03\x02\x02\x02\u017E\u0180\b\t\x01\x02\u017F\xEC" +
+		"\x03\x02\x02\x02\u017F\xF4\x03\x02\x02\x02\u017F\xF6\x03\x02\x02\x02\u017F" +
+		"\xFE\x03\x02\x02\x02\u017F\u010E\x03\x02\x02\x02\u017F\u011E\x03\x02\x02" +
+		"\x02\u017F\u012E\x03\x02\x02\x02\u017F\u013E\x03\x02\x02\x02\u017F\u013F" +
+		"\x03\x02\x02\x02\u017F\u014C\x03\x02\x02\x02\u017F\u015B\x03\x02\x02\x02" +
+		"\u017F\u0167\x03\x02\x02\x02\u017F\u016A\x03\x02\x02\x02\u017F\u016E\x03" +
+		"\x02\x02\x02\u017F\u017C\x03\x02\x02\x02\u0180\u01B2\x03\x02\x02\x02\u0181" +
+		"\u0182\f\x19\x02\x02\u0182\u0183\x07\x1E\x02\x02\u0183\u01B1\x05\x10\t" +
+		"\x19\u0184\u0185\f\x18\x02\x02\u0185\u0186\t\x06\x02\x02\u0186\u01B1\x05" +
+		"\x10\t\x19\u0187\u0188\f\x17\x02\x02\u0188\u0189\t\x07\x02\x02\u0189\u01B1" +
+		"\x05\x10\t\x18\u018A\u018B\f\x14\x02\x02\u018B\u018C\t\b\x02\x02\u018C" +
+		"\u01B1\x05\x10\t\x15\u018D\u018E\f\x13\x02\x02\u018E\u018F\x07$\x02\x02" +
+		"\u018F\u01B1\x05\x10\t\x14\u0190\u0191\f\x12\x02\x02\u0191\u0192\x07%" +
+		"\x02\x02\u0192\u01B1\x05\x10\t\x13\u0193\u0194\f\x11\x02\x02\u0194\u0195" +
+		"\x07&\x02\x02\u0195\u01B1\x05\x10\t\x12\u0196\u0197\f\x10\x02\x02\u0197" +
+		"\u0198\x07\'\x02\x02\u0198\u01B1\x05\x10\t\x11\u0199\u019A\f\x1D\x02\x02" +
+		"\u019A\u019B\x07\r\x02\x02\u019B\u01A1\x05 \x11\x02\u019C\u019E\x079\x02" +
+		"\x02\u019D\u019F\x05\x1C\x0F\x02\u019E\u019D\x03\x02\x02\x02\u019E\u019F" +
+		"\x03\x02\x02\x02\u019F\u01A0\x03\x02\x02\x02\u01A0\u01A2\x07:\x02\x02" +
+		"\u01A1\u019C\x03\x02\x02\x02\u01A1\u01A2\x03\x02\x02\x02\u01A2\u01B1\x03" +
+		"\x02\x02\x02\u01A3\u01A4\f\x1B\x02\x02\u01A4\u01A5\x07\x0E\x02\x02\u01A5" +
+		"\u01A6\x05\x10\t\x02\u01A6\u01A7\x07\x1D\x02\x02\u01A7\u01B1\x03\x02\x02" +
+		"\x02\u01A8\u01A9\f\x15\x02\x02\u01A9\u01AB\x07;\x02\x02\u01AA\u01AC\x05" +
+		"\x1C\x0F\x02\u01AB\u01AA\x03\x02\x02\x02\u01AB\u01AC\x03\x02\x02\x02\u01AC" +
+		"\u01B1\x03\x02\x02\x02\u01AD\u01AE\f\x03\x02\x02\u01AE\u01AF\t\t\x02\x02" +
+		"\u01AF\u01B1\b\t\x01\x02\u01B0\u0181\x03\x02\x02\x02\u01B0\u0184\x03\x02" +
+		"\x02\x02\u01B0\u0187\x03\x02\x02\x02\u01B0\u018A\x03\x02\x02\x02\u01B0" +
+		"\u018D\x03\x02\x02\x02\u01B0\u0190\x03\x02\x02\x02\u01B0\u0193\x03\x02" +
+		"\x02\x02\u01B0\u0196\x03\x02\x02\x02\u01B0\u0199\x03\x02\x02\x02\u01B0" +
+		"\u01A3\x03\x02\x02\x02\u01B0\u01A8\x03\x02\x02\x02\u01B0\u01AD\x03\x02" +
+		"\x02\x02\u01B1\u01B4\x03\x02\x02\x02\u01B2\u01B0\x03\x02\x02\x02\u01B2" +
+		"\u01B3\x03\x02\x02\x02\u01B3\x11\x03\x02\x02\x02\u01B4\u01B2\x03\x02\x02" +
+		"\x02\u01B5\u01BA\x05\x14\v\x02\u01B6\u01B7\x07\x17\x02\x02\u01B7\u01B9" +
+		"\x05\x14\v\x02\u01B8\u01B6\x03\x02\x02\x02\u01B9\u01BC\x03\x02\x02\x02" +
+		"\u01BA\u01B8\x03\x02\x02\x02\u01BA\u01BB\x03\x02\x02\x02\u01BB\u01BD\x03" +
+		"\x02\x02\x02\u01BC\u01BA\x03\x02\x02\x02\u01BD\u01BE\x07\x18\x02\x02\u01BE" +
+		"\u01BF\x05\x10\t\x02\u01BF\u01DB\x03\x02\x02\x02\u01C0\u01C1\x079\x02" +
+		"\x02\u01C1\u01C6\x05\x14\v\x02\u01C2\u01C3\x07\x17\x02\x02\u01C3\u01C5" +
+		"\x05\x14\v\x02\u01C4\u01C2\x03\x02\x02\x02\u01C5\u01C8\x03\x02\x02\x02" +
+		"\u01C6\u01C4\x03\x02\x02\x02\u01C6\u01C7\x03\x02\x02\x02\u01C7\u01C9\x03" +
+		"\x02\x02\x02\u01C8\u01C6\x03\x02\x02\x02\u01C9\u01CA\x07\x18\x02\x02\u01CA" +
+		"\u01CB\x05\x10\t\x02\u01CB\u01CC\x07:\x02\x02\u01CC\u01DB\x03\x02\x02" +
+		"\x02\u01CD\u01CE\x07\x04\x02\x02\u01CE\u01D3\x05\x14\v\x02\u01CF\u01D0" +
+		"\x07\x17\x02\x02\u01D0\u01D2\x05\x14\v\x02\u01D1\u01CF\x03\x02\x02\x02" +
+		"\u01D2\u01D5\x03\x02\x02\x02\u01D3\u01D1\x03\x02\x02\x02\u01D3\u01D4\x03" +
+		"\x02\x02\x02\u01D4\u01D6\x03\x02\x02\x02\u01D5\u01D3\x03\x02\x02\x02\u01D6" +
+		"\u01D7\x07\x18\x02\x02\u01D7\u01D8\x05\x10\t\x02\u01D8\u01D9\x07\x05\x02" +
+		"\x02\u01D9\u01DB\x03\x02\x02\x02\u01DA\u01B5\x03\x02\x02\x02\u01DA\u01C0" +
+		"\x03\x02\x02\x02\u01DA\u01CD\x03\x02\x02\x02\u01DB\x13\x03\x02\x02\x02" +
+		"\u01DC\u01DD\t\n\x02\x02\u01DD\x15\x03\x02\x02\x02\u01DE\u01DF\t\v\x02" +
+		"\x02\u01DF\x17\x03\x02\x02\x02\u01E0\u01E5\x07;\x02\x02\u01E1\u01E2\x07" +
+		"\r\x02\x02\u01E2\u01E4\x07;\x02\x02\u01E3\u01E1\x03\x02\x02\x02\u01E4" +
+		"\u01E7\x03\x02\x02\x02\u01E5\u01E3\x03\x02\x02\x02\u01E5\u01E6\x03\x02" +
+		"\x02\x02\u01E6\x19\x03\x02\x02\x02\u01E7\u01E5\x03\x02\x02\x02\u01E8\u01EB" +
+		"\x05\x12\n\x02\u01E9\u01EB\x05\x10\t\x02\u01EA\u01E8\x03\x02\x02\x02\u01EA" +
+		"\u01E9\x03\x02\x02\x02\u01EB\x1B\x03\x02\x02\x02\u01EC\u01F1\x05\x1A\x0E" +
+		"\x02\u01ED\u01EE\x07\x17\x02\x02\u01EE\u01F0\x05\x1A\x0E\x02\u01EF\u01ED" +
+		"\x03\x02\x02\x02\u01F0\u01F3\x03\x02\x02\x02\u01F1\u01EF\x03\x02\x02\x02" +
+		"\u01F1\u01F2\x03\x02\x02\x02\u01F2\x1D\x03\x02\x02\x02\u01F3\u01F1\x03" +
+		"\x02\x02\x02\u01F4\u01F7\x07;\x02\x02\u01F5\u01F7\t\f\x02\x02\u01F6\u01F4" +
+		"\x03\x02\x02\x02\u01F6\u01F5\x03\x02\x02\x02\u01F7\x1F\x03\x02\x02\x02" +
+		"\u01F8\u01FB\x07;\x02\x02\u01F9\u01FB\t\r\x02\x02\u01FA\u01F8\x03\x02" +
+		"\x02\x02\u01FA\u01F9\x03\x02\x02\x02\u01FB!\x03\x02\x02\x02\u01FC\u01FD" +
+		"\t\x0E\x02\x02\u01FD#\x03\x02\x02\x02\u01FE\u01FF\t\x0F\x02\x02\u01FF" +
+		"%\x03\x02\x02\x021,T[`dor\x85\x8A\x8C\x97\x9A\xB1\xC0\xC8\xD2\xD9\xE7" +
+		"\xF0\u0100\u0109\u0110\u0119\u0120\u0129\u0130\u0139\u0147\u0156\u0161" +
+		"\u0164\u017C\u017F\u019E\u01A1\u01AB\u01B0\u01B2\u01BA\u01C6\u01D3\u01DA" +
+		"\u01E5\u01EA\u01F1\u01F6\u01FA";
 	public static __ATN: ATN;
 	public static get _ATN(): ATN {
 		if (!TntParser.__ATN) {
@@ -2975,6 +2976,7 @@ export class ErrorCaseContext extends UnitContext {
 	public literal(): LiteralContext | undefined {
 		return this.tryGetRuleContext(0, LiteralContext);
 	}
+	public LPAREN(): TerminalNode | undefined { return this.tryGetToken(TntParser.LPAREN, 0); }
 	constructor(ctx: UnitContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
@@ -3070,6 +3072,8 @@ export class OperDefContext extends ParserRuleContext {
 
 
 export class ParamsContext extends ParserRuleContext {
+	public LPAREN(): TerminalNode { return this.getToken(TntParser.LPAREN, 0); }
+	public RPAREN(): TerminalNode { return this.getToken(TntParser.RPAREN, 0); }
 	public IDENTIFIER(): TerminalNode[];
 	public IDENTIFIER(i: number): TerminalNode;
 	public IDENTIFIER(i?: number): TerminalNode | TerminalNode[] {
@@ -3117,6 +3121,8 @@ export class InstanceModContext extends ParserRuleContext {
 			return this.getToken(TntParser.IDENTIFIER, i);
 		}
 	}
+	public LPAREN(): TerminalNode { return this.getToken(TntParser.LPAREN, 0); }
+	public RPAREN(): TerminalNode { return this.getToken(TntParser.RPAREN, 0); }
 	public MUL(): TerminalNode | undefined { return this.tryGetToken(TntParser.MUL, 0); }
 	public expr(): ExprContext[];
 	public expr(i: number): ExprContext;
@@ -3201,6 +3207,8 @@ export class TypeFunContext extends TypeContext {
 	}
 }
 export class TypeOperContext extends TypeContext {
+	public LPAREN(): TerminalNode { return this.getToken(TntParser.LPAREN, 0); }
+	public RPAREN(): TerminalNode { return this.getToken(TntParser.RPAREN, 0); }
 	public type(): TypeContext[];
 	public type(i: number): TypeContext;
 	public type(i?: number): TypeContext | TypeContext[] {
@@ -3237,9 +3245,11 @@ export class TypeOperContext extends TypeContext {
 }
 export class TypeSetContext extends TypeContext {
 	public SET(): TerminalNode { return this.getToken(TntParser.SET, 0); }
+	public LPAREN(): TerminalNode { return this.getToken(TntParser.LPAREN, 0); }
 	public type(): TypeContext {
 		return this.getRuleContext(0, TypeContext);
 	}
+	public RPAREN(): TerminalNode { return this.getToken(TntParser.RPAREN, 0); }
 	constructor(ctx: TypeContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
@@ -3267,9 +3277,11 @@ export class TypeSetContext extends TypeContext {
 }
 export class TypeSeqContext extends TypeContext {
 	public SEQ(): TerminalNode { return this.getToken(TntParser.SEQ, 0); }
+	public LPAREN(): TerminalNode { return this.getToken(TntParser.LPAREN, 0); }
 	public type(): TypeContext {
 		return this.getRuleContext(0, TypeContext);
 	}
+	public RPAREN(): TerminalNode { return this.getToken(TntParser.RPAREN, 0); }
 	constructor(ctx: TypeContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
@@ -3296,6 +3308,7 @@ export class TypeSeqContext extends TypeContext {
 	}
 }
 export class TypeTupleContext extends TypeContext {
+	public LPAREN(): TerminalNode { return this.getToken(TntParser.LPAREN, 0); }
 	public type(): TypeContext[];
 	public type(i: number): TypeContext;
 	public type(i?: number): TypeContext | TypeContext[] {
@@ -3305,6 +3318,7 @@ export class TypeTupleContext extends TypeContext {
 			return this.getRuleContext(i, TypeContext);
 		}
 	}
+	public RPAREN(): TerminalNode { return this.getToken(TntParser.RPAREN, 0); }
 	constructor(ctx: TypeContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
@@ -3515,9 +3529,11 @@ export class TypeConstOrVarContext extends TypeContext {
 	}
 }
 export class TypeParenContext extends TypeContext {
+	public LPAREN(): TerminalNode { return this.getToken(TntParser.LPAREN, 0); }
 	public type(): TypeContext {
 		return this.getRuleContext(0, TypeContext);
 	}
+	public RPAREN(): TerminalNode { return this.getToken(TntParser.RPAREN, 0); }
 	constructor(ctx: TypeContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
@@ -3610,6 +3626,8 @@ export class DotCallContext extends ExprContext {
 	public nameAfterDot(): NameAfterDotContext {
 		return this.getRuleContext(0, NameAfterDotContext);
 	}
+	public LPAREN(): TerminalNode | undefined { return this.tryGetToken(TntParser.LPAREN, 0); }
+	public RPAREN(): TerminalNode | undefined { return this.tryGetToken(TntParser.RPAREN, 0); }
 	public argList(): ArgListContext | undefined {
 		return this.tryGetRuleContext(0, ArgListContext);
 	}
@@ -3642,6 +3660,8 @@ export class OperAppContext extends ExprContext {
 	public normalCallName(): NormalCallNameContext {
 		return this.getRuleContext(0, NormalCallNameContext);
 	}
+	public LPAREN(): TerminalNode { return this.getToken(TntParser.LPAREN, 0); }
+	public RPAREN(): TerminalNode { return this.getToken(TntParser.RPAREN, 0); }
 	public argList(): ArgListContext | undefined {
 		return this.tryGetRuleContext(0, ArgListContext);
 	}
@@ -3849,6 +3869,7 @@ export class PlusMinusContext extends ExprContext {
 	}
 }
 export class IfElseContext extends ExprContext {
+	public LPAREN(): TerminalNode { return this.getToken(TntParser.LPAREN, 0); }
 	public expr(): ExprContext[];
 	public expr(i: number): ExprContext;
 	public expr(i?: number): ExprContext | ExprContext[] {
@@ -3858,6 +3879,7 @@ export class IfElseContext extends ExprContext {
 			return this.getRuleContext(i, ExprContext);
 		}
 	}
+	public RPAREN(): TerminalNode { return this.getToken(TntParser.RPAREN, 0); }
 	constructor(ctx: ExprContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
@@ -4107,6 +4129,7 @@ export class ImpliesContext extends ExprContext {
 	}
 }
 export class AndExprContext extends ExprContext {
+	public LPAREN(): TerminalNode { return this.getToken(TntParser.LPAREN, 0); }
 	public expr(): ExprContext[];
 	public expr(i: number): ExprContext;
 	public expr(i?: number): ExprContext | ExprContext[] {
@@ -4116,6 +4139,7 @@ export class AndExprContext extends ExprContext {
 			return this.getRuleContext(i, ExprContext);
 		}
 	}
+	public RPAREN(): TerminalNode { return this.getToken(TntParser.RPAREN, 0); }
 	constructor(ctx: ExprContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
@@ -4142,6 +4166,7 @@ export class AndExprContext extends ExprContext {
 	}
 }
 export class OrExprContext extends ExprContext {
+	public LPAREN(): TerminalNode { return this.getToken(TntParser.LPAREN, 0); }
 	public expr(): ExprContext[];
 	public expr(i: number): ExprContext;
 	public expr(i?: number): ExprContext | ExprContext[] {
@@ -4151,6 +4176,7 @@ export class OrExprContext extends ExprContext {
 			return this.getRuleContext(i, ExprContext);
 		}
 	}
+	public RPAREN(): TerminalNode { return this.getToken(TntParser.RPAREN, 0); }
 	constructor(ctx: ExprContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
@@ -4277,6 +4303,7 @@ export class LiteralOrIdContext extends ExprContext {
 	}
 }
 export class TupleContext extends ExprContext {
+	public LPAREN(): TerminalNode { return this.getToken(TntParser.LPAREN, 0); }
 	public expr(): ExprContext[];
 	public expr(i: number): ExprContext;
 	public expr(i?: number): ExprContext | ExprContext[] {
@@ -4286,6 +4313,7 @@ export class TupleContext extends ExprContext {
 			return this.getRuleContext(i, ExprContext);
 		}
 	}
+	public RPAREN(): TerminalNode { return this.getToken(TntParser.RPAREN, 0); }
 	constructor(ctx: ExprContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
@@ -4423,9 +4451,11 @@ export class LetInContext extends ExprContext {
 	}
 }
 export class ParenContext extends ExprContext {
+	public LPAREN(): TerminalNode { return this.getToken(TntParser.LPAREN, 0); }
 	public expr(): ExprContext {
 		return this.getRuleContext(0, ExprContext);
 	}
+	public RPAREN(): TerminalNode { return this.getToken(TntParser.RPAREN, 0); }
 	constructor(ctx: ExprContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
@@ -4484,6 +4514,7 @@ export class ErrorNoExprContext extends ExprContext {
 	public operator(): OperatorContext | undefined {
 		return this.tryGetRuleContext(0, OperatorContext);
 	}
+	public RPAREN(): TerminalNode | undefined { return this.tryGetToken(TntParser.RPAREN, 0); }
 	public SET(): TerminalNode | undefined { return this.tryGetToken(TntParser.SET, 0); }
 	public SEQ(): TerminalNode | undefined { return this.tryGetToken(TntParser.SEQ, 0); }
 	constructor(ctx: ExprContext) {
@@ -4515,6 +4546,7 @@ export class ErrorSymbolContext extends ExprContext {
 	public expr(): ExprContext {
 		return this.getRuleContext(0, ExprContext);
 	}
+	public RPAREN(): TerminalNode | undefined { return this.tryGetToken(TntParser.RPAREN, 0); }
 	public SET(): TerminalNode | undefined { return this.tryGetToken(TntParser.SET, 0); }
 	public SEQ(): TerminalNode | undefined { return this.tryGetToken(TntParser.SEQ, 0); }
 	constructor(ctx: ExprContext) {
@@ -4557,6 +4589,8 @@ export class LambdaContext extends ParserRuleContext {
 	public expr(): ExprContext {
 		return this.getRuleContext(0, ExprContext);
 	}
+	public LPAREN(): TerminalNode | undefined { return this.tryGetToken(TntParser.LPAREN, 0); }
+	public RPAREN(): TerminalNode | undefined { return this.tryGetToken(TntParser.RPAREN, 0); }
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
 	}

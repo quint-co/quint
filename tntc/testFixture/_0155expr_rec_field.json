@@ -1,0 +1,74 @@
+{
+  "defs": [
+    {
+      "expr": {
+        "args": [
+          {
+            "id": 3,
+            "kind": "str",
+            "type": {
+              "kind": "str"
+            },
+            "value": "a"
+          },
+          {
+            "id": 1,
+            "kind": "int",
+            "type": {
+              "kind": "int"
+            },
+            "value": 1
+          },
+          {
+            "id": 4,
+            "kind": "str",
+            "type": {
+              "kind": "str"
+            },
+            "value": "b"
+          },
+          {
+            "id": 2,
+            "kind": "str",
+            "type": {
+              "kind": "str"
+            },
+            "value": "foo"
+          }
+        ],
+        "id": 5,
+        "kind": "app",
+        "opcode": "record"
+      },
+      "id": 6,
+      "kind": "def",
+      "name": "rec",
+      "qualifier": "val"
+    },
+    {
+      "expr": {
+        "args": [
+          {
+            "id": 7,
+            "kind": "name",
+            "name": "rec"
+          },
+          {
+            "id": 8,
+            "kind": "str",
+            "value": "a"
+          }
+        ],
+        "id": 9,
+        "kind": "app",
+        "opcode": "field"
+      },
+      "id": 10,
+      "kind": "def",
+      "name": "rec_field",
+      "qualifier": "val"
+    }
+  ],
+  "id": 11,
+  "name": "withVals"
+}

@@ -261,6 +261,16 @@ describe('parse ok', () => {
   )
 
   parseAsExpected(
+    '_0155expr_rec_field',
+    'parse field access'
+  )
+
+  parseAsExpected(
+    '_0156expr_tuple_item',
+    'parse tuple access'
+  )
+
+  parseAsExpected(
     '_0130expr_tuple',
     'parse tuple'
   )

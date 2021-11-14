@@ -44,6 +44,7 @@ write an error explanation tool.
  - TNT002: missing ': type' after 'var' or 'const'
  - TNT003: expected an expression
  - TNT004: unexpected symbol after expression
+ - TNT005: keywords are not allowed as record fields in record.field
  - TNT404: module <name> not found
  - TNT405: name <name> not found
  - TNT406: instantiation error

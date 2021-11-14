@@ -1,4 +1,5 @@
 import * as p from './generated/TntParser'
+import { ParserRuleContext } from 'antlr4ts/ParserRuleContext'
 import { TntListener } from './generated/TntListener'
 import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef } from './tntIr'
 import { TntType } from './tntTypes'
@@ -332,27 +333,73 @@ export class ToIrListener implements TntListener {
   // operator application via dot, e.g., S.union(T)
   exitDotCall (ctx: p.DotCallContext) {
     // pop: the first argument, operator name, the rest of arguments (wrapped)
-    const wrappedArgs = this.exprStack.pop()
+    const hasParen = ctx.LPAREN()
+    const wrappedArgs = hasParen ? this.exprStack.pop() : undefined
     const name = ctx.nameAfterDot().text
     const callee = this.exprStack.pop()
-    if (callee && wrappedArgs) {
-      if (wrappedArgs.kind === 'app' &&
-          wrappedArgs.opcode === 'wrappedArgs') {
-        const args = [callee].concat(wrappedArgs.args)
-        // apply the operator to args
+    if (callee === undefined) {
+      assert(false, 'exitDotCall: callee not found')
+    }
+    if (hasParen) {
+      // the UFCS form e_1.f(e_2, ..., e_n)
+      if (wrappedArgs === undefined) {
+        // istanbul ignore next
+        assert(false, 'exitDotCall: arguments after dot not found')
+      } else {
+        if (wrappedArgs.kind === 'app' &&
+            wrappedArgs.opcode === 'wrappedArgs') {
+          const args = [callee!].concat(wrappedArgs.args)
+          // apply the operator to args
+          this.exprStack.push({
+            id: this.nextId(),
+            kind: 'app',
+            opcode: name,
+            args: args
+          })
+        } else {
+          // istanbul ignore next
+          assert(false,
+            'exitDotCall: expected wrappedArgs, found: ' + wrappedArgs.kind)
+        }
+      }
+    } else {
+      // accessing a tuple element, a record field, or name in a module
+      const m = name.match(/^_([1-9][0-9]?)$/)
+      if (m) {
+        // accessing a tuple element via _1, _2, _3, etc.
+        const idx: TntEx = {
+          id: this.nextId(),
+          kind: 'int',
+          value: BigInt(m[1])
+        }
         this.exprStack.push({
           id: this.nextId(),
           kind: 'app',
-          opcode: name,
-          args: args
+          opcode: 'item',
+          args: [callee!, idx]
         })
       } else {
-        // istanbul ignore next
-        assert(false, 'exitDotCall: expected wrappedArgs, found: ' + wrappedArgs.kind)
+        // accessing a record field or a name in a module
+        if (name === 'in' || name === 'notin' ||
+            name === 'and' || name === 'or' ||
+            name === 'iff' || name === 'implies' || name === 'subseteq') {
+          const msg =
+            'TNT006: no keywords allowed as record fields in record.field'
+          this.pushError(ctx, msg)
+        }
+
+        const field: TntEx = {
+          id: this.nextId(),
+          kind: 'str',
+          value: name
+        }
+        this.exprStack.push({
+          id: this.nextId(),
+          kind: 'app',
+          opcode: 'field',
+          args: [callee!, field]
+        })
       }
-    } else {
-      // istanbul ignore next
-      assert(false, 'exitDotCall: expected leading arg, name, and wrapped arguments')
     }
   }
 
@@ -735,14 +782,10 @@ export class ToIrListener implements TntListener {
           if (one.tag === tag) {
             records = records.concat(one.records)
           } else {
-            const msg = `TNT011: Records in disjoint union have different tag fields: ${tag} and ${one.tag}`
-            const start = { line: ctx.start.line, col: ctx.start.charPositionInLine }
-            // istanbul ignore next
-            const end =
-              ctx.stop
-                ? { line: ctx.stop.line, col: ctx.stop.charPositionInLine }
-                : start
-            this.errors.push({ explanation: msg, start: start, end: end })
+            const tags = `${tag} and ${one.tag}`
+            const msg =
+              'TNT011: Records in disjoint union have different tag fields: '
+            this.pushError(ctx, msg + tags)
           }
         } else {
           // istanbul ignore next
@@ -790,6 +833,17 @@ export class ToIrListener implements TntListener {
     if (resType !== undefined && argTypes.length === nargs) {
       this.typeStack.push({ kind: 'oper', args: argTypes, res: resType })
     }
+  }
+
+  // push an error from the context
+  private pushError (ctx: ParserRuleContext, message: string) {
+    const start = { line: ctx.start.line, col: ctx.start.charPositionInLine }
+    // istanbul ignore next
+    const end =
+      ctx.stop
+        ? { line: ctx.stop.line, col: ctx.stop.charPositionInLine }
+        : start
+    this.errors.push({ explanation: message, start: start, end: end })
   }
 
   // pop n elements out of typeStack

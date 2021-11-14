@@ -1,0 +1,7 @@
+// A module that contains value definitions.
+module withVals {
+	// access a record via dot
+	val rec_field =
+    val rec = { a: 1, b: "foo" }
+    rec.a
+}
