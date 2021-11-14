@@ -2,7 +2,11 @@
 
 *TNT is not TLA+*
 
-**Revision: 11.11.2021** 
+| Revision | Date       | Author                                     |
+| :------- | :--------- | :----------------------------------------- |
+| 20        | 14.11.2021 | Igor Konnov, Shon Feder, Jure Kukovec     |
+
+**Revision: 14.11.2021**
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -621,13 +625,20 @@ styles that can be met in various languages. Given an operator called `f` and
 expressions `e_1`, ..., `e_n`, the operator `f` can be applied to the
 expressions `e_1`, ..., `e_n` as follows:
 
- - *TNT normal form*: `f(e_1, ..., e_n)`.
- - [UFCS][]: `e_1.f(e_2, ..., e_n)`
- - *Scala-like infix form*: `e_1 f e_2, ..., e_n`
+ 1. *TNT normal form*: `f(e_1, ..., e_n)`.
+ 1. [UFCS][]: `e_1.f(e_2, ..., e_n)`
+ 1. *Scala-like infix form*: `e_1 f e_2, ..., e_n`
+
+The forms 1-2 always require parentheses, even if the number of arguments in
+parentheses is zero. That is, `f()` and `e_1.g()` is the right way to apply
+operators `f` and `g` in the normal form and UFCS, respectively. The form
+without parentheses is reserved for field access of tuples and records
+as well as namespace access.
 
 Which form to choose? It's up to you. We prefer to combine all three, whatever
 feels more natural in your circumstances. In the future, TNT will provide
-automatic translation that will let you to freely switch between all three forms.
+automatic translation that will let you to freely switch between all three
+forms.
 
 *The TNT normal form is especially convenient for programs, so they should
  communicate in this form. People may communicate in any form.*
@@ -695,7 +706,7 @@ e1.neq(e2)
 neq(e1, e2)
 // logical not: ~p in TLA+
 not(p)
-p.not
+p.not()
 // logical and: p /\ q in TLA+
 p and q
 p.and(q)
@@ -967,20 +978,20 @@ S.fold(init, (v, x -> e))
 fold(S, init, (v, x -> e))
 // SUBSET S
 S powerset
-S.powerset
+S.powerset()
 powerset(S)
 // UNION S
 S flatten
-S.flatten
+S.flatten()
 flatten(S)
 // Seq(S) of the module Sequences
 S seqs
-S.seqs
+S.seqs()
 seqs(S)
 // CHOOSE x \in S: TRUE
 // The operator name is deliberately made long, so it would not be the user's default choice.
 S choose_some
-S.choose_some
+S.choose_some()
 // There is no special syntax for CHOOSE x \in S: P
 // Instead, you can filter a set and then pick an element of it.
 S.filter(x -> P).choose_some
@@ -992,11 +1003,11 @@ two operators in the kernel:
 ```scala
 // IsFiniteSet(S)
 S isFinite
-S.isFinite
+S.isFinite()
 isFinite(S)
 // Cardinality(S)
 S cardinality
-S.cardinality
+S.cardinality()
 cardinality(S)
 ```
 
@@ -1011,7 +1022,7 @@ f.get(e)
 get(f, e)
 // function domain: DOMAIN f
 f keys
-f.keys
+f.keys()
 keys(f)
 // function constructor: [ x \in S |-> e ]
 S mapOf (x -> e)
@@ -1032,9 +1043,9 @@ f updateAs e1, (old -> old + y)
 f.updateAs(e1, (old -> old + y))
 updateAs(f, e1, (old -> old + y))
 // an equivalent of (k :> v) @@ f when using the module TLC
-f put e1, e2
-f.put(e1, e2)
-put(e1, e2)
+f put k, v
+f.put(k, v)
+put(k, v)
 ```
 
 *Mode:* Stateless, State. Other modes are not allowed.
@@ -1049,12 +1060,13 @@ rec(f_1, e_1, ..., f_n, e_n)
 // Set of records: [ f_1: S_1, ..., f_n: S_n ].
 // No operator for it. Use a set comprehension:
 tuples(S_1, ..., S_n).map(a_1, ..., a_n -> { f_1: a_1, ..., f_n: a_n })
-// access a record field: r.h
-r.h
-// the set of record fields: DOMAIN r
-r.fields
-r fields
-fields(r)
+// access a record field: r.fld
+r.fld           // both r and fld are identifiers
+field(r, "fld") // r is an identifier, "fld" is a string literal
+// the set of field names: DOMAIN r
+r fieldNames
+r.fieldNames()
+fieldNames(r)
 // record update: [r EXCEPT !.f = e]
 r with f, e
 r.with(f, e)
@@ -1086,6 +1098,7 @@ t._3
 t._4
 ...
 t._50
+item(t, idx)  // t is an identifier, idx is an integer literal
 // Cartesian products
 // S_1 \X S_2 \X ... \X S_n
 tuples(S_1, S_2, ..., S_n)
@@ -1094,7 +1107,8 @@ tuples(S_1, S_2, ..., S_n)
 What about `DOMAIN t` on tuples? We don't think it makes sense to have it.
 
 What about `[ t EXCEPT ![i] = e ]`? Just define a new tuple that contains
-the new field.
+the new field. It is not likely that you will have tuples that have a lot
+of items.
 
 *Mode:* Stateless, State. Other modes are not allowed.
 
@@ -1118,15 +1132,15 @@ s.concat(t)
 concat(s, t)
 // sequence head: Head(s)
 s head
-s.head
+s.head()
 head(s)
 // sequence tail: Tail(s)
 s tail
-s.tail
+s.tail()
 tail(s)
 // sequence length: Len(s)
 s length
-s.length
+s.length()
 length(s)
 // sequence element at nth position (starting with 1): equivalent to s[i] in TLA+
 s nth i
@@ -1134,7 +1148,7 @@ s.nth(i)
 nth(s, i)
 // the set of sequence indices (starting with 1): DOMAIN s
 s indices
-s.indices
+s.indices()
 indices(s)
 // [ seq EXCEPT ![i] = e ]
 s replaceAt i, e
@@ -1184,7 +1198,7 @@ isub(m, n)
 // like -m in TLA+
 -m
 iuminus(m)
-m.uminus
+m.uminus()
 // like m * n in TLA+
 m * n
 m.imul(n)
