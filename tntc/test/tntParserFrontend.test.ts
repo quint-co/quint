@@ -322,10 +322,10 @@ describe('parse ok', () => {
 
 describe('parse errors', () => {
   it('error message on error in module unit', () => {
-    parseAndCompare('_0002emptyWithError', nowrap)
+    parseAndCompare('_1002emptyWithError', nowrap)
   })
 
   it('error message in malformed disjoint union', () => {
-    parseAndCompare('_0005constRecordsError', nowrap)
+    parseAndCompare('_1005constRecordsError', nowrap)
   })
 })
