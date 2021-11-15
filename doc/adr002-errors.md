@@ -45,6 +45,7 @@ write an error explanation tool.
  - TNT003: expected an expression
  - TNT004: unexpected symbol after expression
  - TNT005: keywords are not allowed as record fields in record.field
+ - TNT006: unexpected '=', did you mean '=='?
  - TNT404: module <name> not found
  - TNT405: name <name> not found
  - TNT406: instantiation error

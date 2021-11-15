@@ -14,7 +14,7 @@ const Quorum: set(set(str))     // The set of "quorums", where a quorum" is a
 (***************************************************************************/
 assume QuorumAssumption = (
     & Quorum forall ( Q -> Q subseteq Acceptor )
-    & (Quorum cross Quorum) forall ( (Q1, Q2) -> Q1.intersect(Q2) != set() )
+    & (Quorum cross Quorum) forall ( Q1, Q2 -> Q1.intersect(Q2) != set() )
 )
 
 // theorems are not supported by TNT, use TLA+ syntax
@@ -108,18 +108,18 @@ THEOREM ChoosableThm ==
  */             
 //-----------------------------------------------------------------------------
 pred VotesSafe =
-    (Acceptor, Ballot, Value).ncross forall ( (a, b, v) ->
+    tuples(Acceptor, Ballot, Value) forall ( a, b, v ->
                  VotedFor(a, b, v) implies SafeAt(b, v)
     )
 
 pred OneVote =
-    (Acceptor, Ballot, Value, Value).ncross forall ( (a, b, v, w) ->
+    tuples(Acceptor, Ballot, Value, Value) forall ( a, b, v, w ->
               VotedFor(a, b, v) and VotedFor(a, b, w) implies (v == w)
     )
 
 pred OneValuePerBallot =
-    (Acceptor, Acceptor, Ballot, Value, Value).ncross
-       forall ( (a1, a2, b, v1, v2) ->
+    tuples(Acceptor, Acceptor, Ballot, Value, Value)
+       forall ( a1, a2, b, v1, v2 ->
          VotedFor(a1, b, v1) and VotedFor(a2, b, v2) implies (v1 == v2)
        )
 //-----------------------------------------------------------------------------

@@ -179,16 +179,16 @@ pred BenignRoundsInMessages(msgfun) =
 
 // The initial states of the protocol. Some faults can be in the system already.
 pred Init = (
-  & round           <- Corr mapOf { _ -> 0 }
-  & step            <- Corr mapOf { _ -> Propose }
-  & decision        <- Corr mapOf { _ -> NilValue }
-  & lockedValue     <- Corr mapOf { _ -> NilValue }
-  & lockedRound     <- Corr mapOf { _ -> NilRound }
-  & validValue      <- Corr mapOf { _ -> NilValue }
-  & validRound      <- Corr mapOf { _ -> NilRound }
-  & msgsPropose     <- Rounds mapOf { _ -> powerset(AllFaultyProposals) }
-  & msgsPrevote     <- Rounds mapOf { _ -> powerset(AllFaultyPrevotes) }
-  & msgsPrecommit   <- Rounds mapOf { _ -> powerset(AllFaultyPrecommits) }
+  & round           <- Corr mapOf ( _ -> 0 )
+  & step            <- Corr mapOf ( _ -> Propose )
+  & decision        <- Corr mapOf ( _ -> NilValue )
+  & lockedValue     <- Corr mapOf ( _ -> NilValue )
+  & lockedRound     <- Corr mapOf ( _ -> NilRound )
+  & validValue      <- Corr mapOf ( _ -> NilValue )
+  & validRound      <- Corr mapOf ( _ -> NilRound )
+  & msgsPropose     <- Rounds mapOf ( _ -> powerset(AllFaultyProposals) )
+  & msgsPrevote     <- Rounds mapOf ( _ -> powerset(AllFaultyPrevotes) )
+  & msgsPrecommit   <- Rounds mapOf ( _ -> powerset(AllFaultyPrecommits) )
   & BenignRoundsInMessages(msgsPropose)
   & BenignRoundsInMessages(msgsPrevote)
   & BenignRoundsInMessages(msgsPrecommit)
@@ -199,18 +199,18 @@ pred Init = (
 //************************ MESSAGE PASSING *******************************
 action BroadcastProposal(pSrc, pRound, pProposal, pValidRound) = {
   val newMsg = { tag: "PROPOSE", src: pSrc, round: pRound,
-                 proposal: pProposal: validRound: pValidRound }
-  msgsPropose <- msgsPropose.updateAs pRound, (old -> old union set(newMsg))
+                 proposal: pProposal, validRound: pValidRound }
+  msgsPropose <- msgsPropose updateAs pRound, (old -> old union set(newMsg))
 }
 
 action BroadcastPrevote(pSrc, pRound, pId) = {
   val newMsg = { tag: "PREVOTE", src: pSrc, round: pRound, id: pId }
-  msgsPrevote <- msgsPrevote.updateAs pRound, (old -> old union set(newMsg))
+  msgsPrevote <- msgsPrevote updateAs pRound, (old -> old union set(newMsg))
 }
 
 action BroadcastPrecommit(pSrc, pRound, pId) = {
   val newMsg = { tag: "PRECOMMIT", src: pSrc, round: pRound, id: pId }
-  msgsPrecommit <- msgsPrecommit.updateAs pRound, (old -> old union set(newMsg))
+  msgsPrecommit <- msgsPrecommit updateAs pRound, (old -> old union set(newMsg))
 }
 
 //********************* PROTOCOL TRANSITIONS ******************************
@@ -264,7 +264,7 @@ action UponProposalInProposeAndPrevote(p) =
                 round: round[p], proposal: v, validRound: vr }
     val PV = msgsPrevote[vr] filter ( m -> m.id == Id(v) )
     val mid = // line 29
-         if (IsValid(v) and (lockedRound[p] <= vr or lockedValue[p] = v))
+         if (IsValid(v) and (lockedRound[p] <= vr or lockedValue[p] == v))
          Id(v)
          else NilValue
     {
@@ -298,10 +298,10 @@ action UponQuorumOfPrevotesAny(p) =
 
 // lines 36-46
 action UponProposalInPrevoteOrCommitAndPrevote(p) =
-  ValidValues.cross(RoundsOrNil) guess { (v, vr) ->
+  ValidValues.cross(RoundsOrNil) guess { v, vr ->
     val msg = { tag: "PROPOSE", src: Proposer[round[p]],
                 round: round[p], proposal: v, validRound: vr }
-    val PV = msgsPrevote[round[p]].filter(m -> m.id = Id(v))
+    val PV = msgsPrevote[round[p]].filter(m -> m.id == Id(v))
     {
       & step[p] in set("prevote", "precommit") // line 36
       & msg in msgsPropose[round[p]] // line 36
@@ -426,7 +426,7 @@ pred EquivocationBy(p) =
       & m1.src == p
       & m2.src == p
       & m1.round == m2.round
-      & m1.type == m2.type
+      & m1.tag == m2.tag
     )
   )
 
@@ -436,12 +436,12 @@ pred AmnesiaBy(p) =
         & r1 < r2
         & tuples(ValidValues, ValidValues).exists(v1, v2 -> (
             & v1 != v2
-            & evidence.contains({ type: "PRECOMMIT", src: p,
+            & evidence.contains({ tag: "PRECOMMIT", src: p,
                                   round: r1, id: Id(v1) })
-            & evidence.contains({ type: "PREVOTE", src: p,
+            & evidence.contains({ tag: "PREVOTE", src: p,
                                   round: r2, id: Id(v2)})
             & Rounds.filter(rnd -> r1 <= rnd and rnd < r2).forall(r ->
-                val prevotes = evidence.filter(m -> m.type == "PREVOTE")
+                val prevotes = evidence.filter(m -> m.tag == "PREVOTE")
                                        .filter(m.round == r and m.id == Id(v2))
 
                 cardinality(prevotes) < THRESHOLD2
