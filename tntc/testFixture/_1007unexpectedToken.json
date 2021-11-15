@@ -11,6 +11,17 @@
         "col": 20,
         "line": 2
       }
+    },
+    {
+      "end": {
+        "col": 26,
+        "line": 2
+      },
+      "explanation": "extraneous input 'name' expecting {'module', '}', 'const', 'var', 'assume', 'type', 'import', 'val', 'def', 'pred', 'action', 'temporal'}",
+      "start": {
+        "col": 22,
+        "line": 2
+      }
     }
   ]
 }

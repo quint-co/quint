@@ -356,4 +356,8 @@ describe('parse errors', () => {
   it('error on unexpected "="', () => {
     parseAndCompare('_1008unexpectedEq', nowrap)
   })
+
+  it('error on infix without arguments', () => {
+    parseAndCompare('_1009infixFewArgs', nowrap)
+  })
 })

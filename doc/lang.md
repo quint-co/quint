@@ -625,13 +625,15 @@ expressions `e_1`, ..., `e_n` as follows:
 
  1. *TNT normal form*: `f(e_1, ..., e_n)`.
  1. [UFCS][]: `e_1.f(e_2, ..., e_n)`
- 1. *Scala-like infix form*: `e_1 f e_2, ..., e_n`
+ 1. *Infix form*: `e_1 f e_2, ..., e_n`
 
 The forms 1-2 always require parentheses, even if the number of arguments in
 parentheses is zero. That is, `f()` and `e_1.g()` is the right way to apply
 operators `f` and `g` in the normal form and UFCS, respectively. The form
 without parentheses is reserved for field access of tuples and records
 as well as namespace access.
+
+The form 3 requires at least two arguments, that is, `n >= 2`.
 
 Which form to choose? It's up to you. We prefer to combine all three, whatever
 feels more natural in your circumstances. In the future, TNT will provide
