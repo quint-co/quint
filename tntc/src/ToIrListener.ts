@@ -113,8 +113,9 @@ export class ToIrListener implements TntListener {
           qtext === 'action' || qtext === 'temporal') {
         qualifier = qtext
       } else {
+        const ls = this.locStr(ctx)
         // istanbul ignore next
-        assert(false, 'Unexpected qualifier: ' + qtext)
+        assert(false, `exitOperDef: ${ls}: Unexpected qualifier: ${qtext}`)
       }
     }
 
@@ -142,15 +143,18 @@ export class ToIrListener implements TntListener {
       }
       this.definitionStack.push(def)
     } else {
+      const ls = this.locStr(ctx)
       // istanbul ignore next
-      assert(false, 'undefined expr or params in exitOperDef')
+      assert(false,
+             `exitOperDef: ${ls}: undefined expr or params in exitOperDef`)
     }
   }
 
   // translate a top-level def
-  exitOper () {
+  exitOper (ctx: p.OperContext) {
     const def = this.definitionStack[this.definitionStack.length - 1]
-    assert(def, 'undefined operDef in exitOper')
+    const ls = this.locStr(ctx)
+    assert(def, `exitOper: ${ls}: undefined operDef in exitOper`)
   }
 
   // operator parameters
@@ -205,8 +209,9 @@ export class ToIrListener implements TntListener {
       }
       this.definitionStack.push(def)
     } else {
+      const ls = this.locStr(ctx)
       // istanbul ignore next
-      assert(false, 'exitTypedef: type stack is empty')
+      assert(false, `exitTypedef: ${ls}: type stack is empty`)
     }
   }
 
@@ -298,8 +303,9 @@ export class ToIrListener implements TntListener {
       if (wrappedArgs && wrappedArgs.kind === 'app') {
         args = wrappedArgs.args
       } else {
+        const ls = this.locStr(ctx)
         // istanbul ignore next
-        assert(false, 'exitOperApp: expected wrapped arguments')
+        assert(false, `exitOperApp: ${ls}: expected wrapped arguments`)
       }
     } // else no arguments, e.g., set(), seq()
 
@@ -325,8 +331,10 @@ export class ToIrListener implements TntListener {
         args: [firstArg].concat(wrappedArgs.args)
       })
     } else {
+      const ls = this.locStr(ctx)
       // istanbul ignore next
-      assert(false, 'exitInfixCall: expected leading arg and wrapped arguments')
+      assert(false,
+             `exitInfixCall: ${ls} expected leading arg and wrapped arguments`)
     }
   }
 
@@ -337,7 +345,8 @@ export class ToIrListener implements TntListener {
     const name = ctx.nameAfterDot().text
     const callee = this.exprStack.pop()
     if (callee === undefined) {
-      assert(false, 'exitDotCall: callee not found')
+      const ls = this.locStr(ctx)
+      assert(false, `exitDotCall: ${ls} callee not found`)
     }
     const hasParen = ctx.LPAREN()
     if (hasParen) {
@@ -349,9 +358,10 @@ export class ToIrListener implements TntListener {
             wrappedArgs.opcode === 'wrappedArgs') {
           args = [callee!].concat(wrappedArgs.args)
         } else {
+          const ls = this.locStr(ctx)
           // istanbul ignore next
           assert(false,
-            'exitDotCall: expected wrappedArgs, found: ' + wrappedArgs.kind)
+            `exitDotCall: ${ls} expected wrappedArgs, found: ${wrappedArgs.kind}`)
         }
       } // else: no arguments, as in e.g., s.head()
       // apply the operator to the arguments
@@ -435,8 +445,9 @@ export class ToIrListener implements TntListener {
         expr: expr
       })
     } else {
+      const ls = this.locStr(ctx)
       // istanbul ignore next
-      assert(false, 'exitLambda: expected an expression')
+      assert(false, `exitLambda: ${ls}: expected an expression`)
     }
   }
 
@@ -770,7 +781,8 @@ export class ToIrListener implements TntListener {
   //   | { type: "syn", to: address }
   exitTypeUnionRec (ctx: p.TypeUnionRecContext) {
     const size = ctx.typeUnionRecOne().length
-    assert(size > 0, 'exitTypeUnionRec: size == 0')
+    const ls = this.locStr(ctx)
+    assert(size > 0, `exitTypeUnionRec: ${ls}: size == 0`)
     const singletonUnions: TntType[] = this.popTypes(size)
     if (singletonUnions[0].kind === 'union') {
       const tag = singletonUnions[0].tag
@@ -793,8 +805,9 @@ export class ToIrListener implements TntListener {
       }
       this.typeStack.push({ kind: 'union', tag: tag, records: records })
     } else {
+      const ls = this.locStr(ctx)
       // istanbul ignore next
-      assert(false, 'exitTypeUnionRec: no union in exitTypeUnionRec')
+      assert(false, `exitTypeUnionRec: ${ls} no union in exitTypeUnionRec`)
     }
   }
 
