@@ -131,12 +131,12 @@ action Phase1a(b) = {
 (***************************************************************************/
 action Phase1b(a) = {
     msgs.filter(m -> m.tag == "1a")
-        .guess { m -> {
+        .guess({ m -> {
       & m.bal > maxBal[a]
       & maxBal <- maxBal.update(a, m.bal)
       & Send({ tag: "1b", acc: a, bal: m.bal, 
                mbal: maxVBal[a], mval: maxVal[a] })
-    } }
+    }})
 }
 
 /***************************************************************************)
@@ -193,14 +193,14 @@ action Phase2a(b, v) = {
 (* message's.  ballot number                                               *)
 (***************************************************************************/
 action Phase2b(a) = msgs.filter(m -> m.tag == "2a")
-                        .guess{ m -> {
+                        .guess({ m -> {
                               & m.bal >= maxBal[a]
                               & maxBal  <- maxBal.update(a, m.bal)
                               & maxVBal <- maxVBal.update(a, m.bal)
                               & maxVal  <- maxVal.update(a, m.value)
                               & Send({ tag: "2b", acc: a,
                                        bal: m.bal, value: m.value })
-}}
+}})
 
 /***************************************************************************)
 (* In an implementation, there will be learner processes that learn from   *)
@@ -212,12 +212,12 @@ action Phase2b(a) = msgs.filter(m -> m.tag == "2a")
 (* Below are defined the next-state action and the complete spec.          *)
 (***************************************************************************/
 action Next = {
-        | Ballot.guess{ b -> {
+        | Ballot.guess({ b -> {
                             | Phase1a(b)
                             | Value guess { v -> Phase2a(b, v) }
-                       } }
+                       }})
 
-        | Acceptor.guess{ a -> { Phase1b(a) | Phase2b(a) } }
+        | Acceptor.guess({ a -> { Phase1b(a) | Phase2b(a) } })
 }
 
 temporal Spec = Init and always(stutter(Next, vars))

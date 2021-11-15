@@ -195,7 +195,7 @@ action VoteFor(a, b, v) = {
 (* The next-state action and the invariant.                                *)
 (***************************************************************************/
 action Next =
-    (Acceptor cross Ballot) guess { (a, b) -> {
+    (Acceptor cross Ballot) guess { a, b -> {
             & IncreaseMaxBal(a, b)
             & Value guess { v -> VoteFor(a, b, v) }
         }
@@ -216,7 +216,7 @@ pred Inv = TypeOK and VotesSafe and OneValuePerBallot
 (* for each defined identifier id of module Value, this statement defines  *)
 (* C!id to equal the value of id under these substitutions.                *)
 (***************************************************************************/
-instance C = Consensus
+module C = Consensus(*)
 
 /*
 THEOREM Spec => C!Spec 

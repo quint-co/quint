@@ -5,8 +5,8 @@ module InstanceEx {
     var y: bool
     var z: str
 
-    F(z) = x + 1
-    G(y) = not(y)
+    def F(z) = x + 1
+    def G(y) = not(y)
   }
 
   // a state variable of InstanceEx
