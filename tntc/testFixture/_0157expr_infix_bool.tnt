@@ -1,0 +1,9 @@
+// A module that contains value definitions.
+// Since 'val' gives us the simplest way of defining expressions,
+// we also do extensive testing of expression syntax in this test.
+module boolean_exprs {
+  def F(x) = x
+	val G(x) = F(x) and not(x)
+	val test_and(x) = F(x) and not(x)
+	val test_or(x) = F(x) or not(x)
+}

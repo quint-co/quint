@@ -20,16 +20,6 @@ unit :    'const' IDENTIFIER ':' type                     # const
         | instanceMod                                     # instance
         | 'type' IDENTIFIER '=' type                      # typedef
         | 'import' path '.' identOrStar                   # importDef
-        | (IDENTIFIER | operator | literal
-           '(' | '{' | '[' | 'if' | '&' | '|') {
-         this.notifyErrorListeners("TNT001: expected 'const', 'var', 'def', 'type', etc.");
-          }                                               # errorCase
-        | ('var' | 'const') IDENTIFIER
-              ('const' | 'var' | 'assume' | 'val' | 'def'
-               | 'pred' | 'action' | 'temporal' | 'module' | 'type') {
-            this.notifyErrorListeners("TNT002: missing ': type' after 'var' or 'const'");
-               
-          }                                               # errorNoType
         ;
 
 // an operator definition
@@ -85,16 +75,19 @@ expr:           // apply a built-in operator via the dot notation
         |       expr op=(MUL | DIV | MOD) expr                      # multDiv
         |       expr op=(PLUS | MINUS) expr                         # plusMinus
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
-                // built-in infix/postfix operators, a la Scala
-        |       expr IDENTIFIER (argList)?                          # infixCall
                 // standard relations
         |       expr op=(GT | LT | GE | LE | NE | EQ |
                          ASGN | IN | NOTIN | SUBSETEQ) expr         # relations
+        |       expr '=' expr {
+                  this.notifyErrorListeners("TNT006: unexpected '=', did you mean '=='?")
+                }                                                   # errorEq
                 // Boolean operators. Note that not(e) is just a normal call
         |       expr AND expr                                       # and
         |       expr OR expr                                        # or
         |       expr IFF expr                                       # iff
         |       expr IMPLIES expr                                   # implies
+                // built-in infix/postfix operators, a la Scala
+        |       expr IDENTIFIER (argList)?                          # infixCall
                 // similar to indented /\ and indented \/ of TLA+
         |       '(' ('&')? expr '&' expr ('&' expr)* ')'            # andExpr
         |       '(' ('|')? expr '|' expr ('|' expr)* ')'            # orExpr
@@ -110,15 +103,6 @@ expr:           // apply a built-in operator via the dot notation
         |       operDef expr                                        # letIn
         |       '(' expr ')'                                        # paren
         |       '{' expr '}'                                        # braces
-        // errors
-        | (operator | ':' | '}' | ']' | ')' | '='
-              | 'set' | 'seq' | ',' | '->') {
-            this.notifyErrorListeners("TNT003: expected an expression");
-          }                                                         # errorNoExpr
-        | expr ('if' | ':' | '}' | ']' | ')'
-                | 'set' | 'seq' | '->' | '=') {
-            this.notifyErrorListeners("TNT004: unexpected symbol after expression");
-          }                                                         # errorSymbol
         ;
 
 // This rule parses anonymous functions, e.g.:

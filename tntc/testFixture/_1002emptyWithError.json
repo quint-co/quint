@@ -2,9 +2,9 @@
   "kind": "error",
   "messages": [
     {
-      "explanation": "TNT001: expected 'const', 'var', 'def', 'type', etc.",
-      "start": { "line": 4, "col": 0 },
-      "end": { "line": 4, "col": 1 }
+      "explanation": "extraneous input 'error' expecting {'module', '}', 'const', 'var', 'assume', 'type', 'import', 'val', 'def', 'pred', 'action', 'temporal'}",
+      "start": { "line": 3, "col": 1 },
+      "end": { "line": 3, "col": 6 }
     }
   ]
 }

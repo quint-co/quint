@@ -23,8 +23,6 @@ import { ModuleNestedContext } from "./TntParser";
 import { InstanceContext } from "./TntParser";
 import { TypedefContext } from "./TntParser";
 import { ImportDefContext } from "./TntParser";
-import { ErrorCaseContext } from "./TntParser";
-import { ErrorNoTypeContext } from "./TntParser";
 import { DotCallContext } from "./TntParser";
 import { OperAppContext } from "./TntParser";
 import { FunAppContext } from "./TntParser";
@@ -33,12 +31,13 @@ import { PowContext } from "./TntParser";
 import { MultDivContext } from "./TntParser";
 import { PlusMinusContext } from "./TntParser";
 import { IfElseContext } from "./TntParser";
-import { InfixCallContext } from "./TntParser";
 import { RelationsContext } from "./TntParser";
+import { ErrorEqContext } from "./TntParser";
 import { AndContext } from "./TntParser";
 import { OrContext } from "./TntParser";
 import { IffContext } from "./TntParser";
 import { ImpliesContext } from "./TntParser";
+import { InfixCallContext } from "./TntParser";
 import { AndExprContext } from "./TntParser";
 import { OrExprContext } from "./TntParser";
 import { AndActionContext } from "./TntParser";
@@ -50,8 +49,6 @@ import { SequenceContext } from "./TntParser";
 import { LetInContext } from "./TntParser";
 import { ParenContext } from "./TntParser";
 import { BracesContext } from "./TntParser";
-import { ErrorNoExprContext } from "./TntParser";
-import { ErrorSymbolContext } from "./TntParser";
 import { ModuleContext } from "./TntParser";
 import { UnitContext } from "./TntParser";
 import { OperDefContext } from "./TntParser";
@@ -338,32 +335,6 @@ export interface TntListener extends ParseTreeListener {
 	exitImportDef?: (ctx: ImportDefContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `errorCase`
-	 * labeled alternative in `TntParser.unit`.
-	 * @param ctx the parse tree
-	 */
-	enterErrorCase?: (ctx: ErrorCaseContext) => void;
-	/**
-	 * Exit a parse tree produced by the `errorCase`
-	 * labeled alternative in `TntParser.unit`.
-	 * @param ctx the parse tree
-	 */
-	exitErrorCase?: (ctx: ErrorCaseContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `errorNoType`
-	 * labeled alternative in `TntParser.unit`.
-	 * @param ctx the parse tree
-	 */
-	enterErrorNoType?: (ctx: ErrorNoTypeContext) => void;
-	/**
-	 * Exit a parse tree produced by the `errorNoType`
-	 * labeled alternative in `TntParser.unit`.
-	 * @param ctx the parse tree
-	 */
-	exitErrorNoType?: (ctx: ErrorNoTypeContext) => void;
-
-	/**
 	 * Enter a parse tree produced by the `dotCall`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
@@ -468,19 +439,6 @@ export interface TntListener extends ParseTreeListener {
 	exitIfElse?: (ctx: IfElseContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `infixCall`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 */
-	enterInfixCall?: (ctx: InfixCallContext) => void;
-	/**
-	 * Exit a parse tree produced by the `infixCall`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 */
-	exitInfixCall?: (ctx: InfixCallContext) => void;
-
-	/**
 	 * Enter a parse tree produced by the `relations`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
@@ -492,6 +450,19 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitRelations?: (ctx: RelationsContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `errorEq`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	enterErrorEq?: (ctx: ErrorEqContext) => void;
+	/**
+	 * Exit a parse tree produced by the `errorEq`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	exitErrorEq?: (ctx: ErrorEqContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `and`
@@ -544,6 +515,19 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitImplies?: (ctx: ImpliesContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `infixCall`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	enterInfixCall?: (ctx: InfixCallContext) => void;
+	/**
+	 * Exit a parse tree produced by the `infixCall`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	exitInfixCall?: (ctx: InfixCallContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `andExpr`
@@ -687,32 +671,6 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitBraces?: (ctx: BracesContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `errorNoExpr`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 */
-	enterErrorNoExpr?: (ctx: ErrorNoExprContext) => void;
-	/**
-	 * Exit a parse tree produced by the `errorNoExpr`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 */
-	exitErrorNoExpr?: (ctx: ErrorNoExprContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `errorSymbol`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 */
-	enterErrorSymbol?: (ctx: ErrorSymbolContext) => void;
-	/**
-	 * Exit a parse tree produced by the `errorSymbol`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 */
-	exitErrorSymbol?: (ctx: ErrorSymbolContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `TntParser.module`.

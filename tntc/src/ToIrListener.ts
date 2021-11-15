@@ -834,6 +834,15 @@ export class ToIrListener implements TntListener {
     }
   }
 
+  /**
+    * Produce a human-readable location string.
+    */
+  private locStr (ctx: ParserRuleContext) {
+    const line = ctx.start.line + 1
+    const col = ctx.start.charPositionInLine + 1
+    return `${line}:${col}`
+  }
+
   // push an error from the context
   private pushError (ctx: ParserRuleContext, message: string) {
     const start = { line: ctx.start.line, col: ctx.start.charPositionInLine }

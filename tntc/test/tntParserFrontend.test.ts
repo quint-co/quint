@@ -176,6 +176,11 @@ describe('parse ok', () => {
   )
 
   parseAsExpected(
+    '_0157expr_infix_bool',
+    'parse infix Booleans'
+  )
+
+  parseAsExpected(
     '_0144expr_infix_subseteq',
     'parse infix subseteq'
   )
@@ -346,5 +351,9 @@ describe('parse errors', () => {
 
   it('error on unrecognized token', () => {
     parseAndCompare('_1007unexpectedToken', nowrap)
+  })
+
+  it('error on unexpected "="', () => {
+    parseAndCompare('_1008unexpectedEq', nowrap)
   })
 })

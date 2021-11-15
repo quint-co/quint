@@ -1,0 +1,160 @@
+  {
+    "defs": [
+      {
+        "expr": {
+          "expr": {
+            "id": 1,
+            "kind": "name",
+            "name": "x"
+          },
+          "id": 2,
+          "kind": "lambda",
+          "params": [
+            "x"
+          ],
+          "qualifier": "def"
+        },
+        "id": 3,
+        "kind": "def",
+        "name": "F",
+        "qualifier": "def"
+      },
+      {
+        "expr": {
+          "expr": {
+            "args": [
+              {
+                "args": [
+                  {
+                    "id": 4,
+                    "kind": "name",
+                    "name": "x"
+                  }
+                ],
+                "id": 5,
+                "kind": "app",
+                "opcode": "F"
+              },
+              {
+                "args": [
+                  {
+                    "id": 6,
+                    "kind": "name",
+                    "name": "x"
+                  }
+                ],
+                "id": 7,
+                "kind": "app",
+                "opcode": "not"
+              }
+            ],
+            "id": 8,
+            "kind": "app",
+            "opcode": "and"
+          },
+          "id": 9,
+          "kind": "lambda",
+          "params": [
+            "x"
+          ],
+          "qualifier": "val"
+        },
+        "id": 10,
+        "kind": "def",
+        "name": "G",
+        "qualifier": "val"
+      },
+      {
+        "expr": {
+          "expr": {
+            "args": [
+              {
+                "args": [
+                  {
+                    "id": 11,
+                    "kind": "name",
+                    "name": "x"
+                  }
+                ],
+                "id": 12,
+                "kind": "app",
+                "opcode": "F"
+              },
+              {
+                "args": [
+                  {
+                    "id": 13,
+                    "kind": "name",
+                    "name": "x"
+                  }
+                ],
+                "id": 14,
+                "kind": "app",
+                "opcode": "not"
+              }
+            ],
+            "id": 15,
+            "kind": "app",
+            "opcode": "and"
+          },
+          "id": 16,
+          "kind": "lambda",
+          "params": [
+            "x"
+          ],
+          "qualifier": "val"
+        },
+        "id": 17,
+        "kind": "def",
+        "name": "test_and",
+        "qualifier": "val"
+      },
+      {
+        "expr": {
+          "expr": {
+            "args": [
+              {
+                "args": [
+                  {
+                    "id": 18,
+                    "kind": "name",
+                    "name": "x"
+                  }
+                ],
+                "id": 19,
+                "kind": "app",
+                "opcode": "F"
+              },
+              {
+                "args": [
+                  {
+                    "id": 20,
+                    "kind": "name",
+                    "name": "x"
+                  }
+                ],
+                "id": 21,
+                "kind": "app",
+                "opcode": "not"
+              }
+            ],
+            "id": 22,
+            "kind": "app",
+            "opcode": "or"
+          },
+          "id": 23,
+          "kind": "lambda",
+          "params": [
+            "x"
+          ],
+          "qualifier": "val"
+        },
+        "id": 24,
+        "kind": "def",
+        "name": "test_or",
+        "qualifier": "val"
+      }
+    ],
+    "id": 25,
+    "name": "boolean_exprs"
+  }

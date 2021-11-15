@@ -3,12 +3,12 @@
   "messages": [
     {
       "end": {
-        "col": 25,
+        "col": 21,
         "line": 2
       },
-      "explanation": "TNT004: unexpected symbol after expression",
+      "explanation": "extraneous input '->' expecting {'module', '}', 'const', 'var', 'assume', 'type', 'import', 'val', 'def', 'pred', 'action', 'temporal'}",
       "start": {
-        "col": 21,
+        "col": 19,
         "line": 2
       }
     }
