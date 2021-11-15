@@ -3,7 +3,7 @@ import { ParserRuleContext } from 'antlr4ts/ParserRuleContext'
 import { TntListener } from './generated/TntListener'
 import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef } from './tntIr'
 import { TntType } from './tntTypes'
-import { assert } from 'console'
+import { strict as assert } from 'assert'
 import { ErrorMessage } from './tntParserFrontend'
 
 /**
@@ -878,9 +878,15 @@ export class ToIrListener implements TntListener {
   // pop n expressions out of exprStack
   private popExprs (n: number): TntEx[] {
     assert(this.exprStack.length >= n, 'popExprs: too few elements in exprStack')
-    const es: TntEx[] = this.exprStack.slice(-n)
-    this.exprStack = this.exprStack.slice(0, -n)
-    return es
+    if (n === 0) {
+      // pop nothing and return the empty array
+      return []
+    } else {
+      // remove n elements from exprStack and return those elements
+      const es: TntEx[] = this.exprStack.slice(-n)
+      this.exprStack = this.exprStack.slice(0, -n)
+      return es
+    }
   }
 
   // pop n patterns out of patternStack

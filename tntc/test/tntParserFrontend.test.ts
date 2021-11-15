@@ -301,6 +301,11 @@ describe('parse ok', () => {
   )
 
   parseAsExpected(
+    '_0158expr_seq_empty',
+    'compare with empty sequence'
+  )
+
+  parseAsExpected(
     '_0137expr_tuple_as_oper',
     'parse tuple as operator'
   )

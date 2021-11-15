@@ -99,7 +99,7 @@ expr:           // apply a built-in operator via the dot notation
         |       '{' IDENTIFIER ':' expr
                         (',' IDENTIFIER ':' expr)* '}'              # record
         //      a sequence constructor, the form seq(...) is just an operator call
-        |       ('[' (expr (',' expr)*)? ']')                       # sequence
+        |       '[' (expr (',' expr)*)? ']'                         # sequence
         |       operDef expr                                        # letIn
         |       '(' expr ')'                                        # paren
         |       '{' expr '}'                                        # braces
