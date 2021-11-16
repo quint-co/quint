@@ -21,6 +21,10 @@ The main commands of `tntc` are as follows:
 
 In the following, we give details about the above commands.
 
+## Installation
+
+See [README](../tntc/README.md).
+
 ## Command parse
 
 ```sh
