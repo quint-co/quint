@@ -569,12 +569,18 @@ Integers literals are written as follows:
 The set of all integers is written as `Int` and the set of all naturals is
 written as `Nat`.
 
-### Braces
+<a name="braceAndParen"/>
 
-You can wrap an expression `e` with braces as `{ e }`. The expression `{ e }`
+### Braces and parentheses
+
+You can wrap an expression `e` in braces: `{ e }`. The expression `{ e }`
 is always in the Action mode. Recall that applying an expression of the Action
 mode in another mode is not allowed. If you wrap an expression `e` of a mode
 that is less general than the Action mode, the parser *should* issue a warning.
+
+Alternatively, you can wrap an expression `e` in parentheses: `(e)`.
+In this case, `e` is not allowed to be in the Action-mode. If `e` is in the
+Action mode, the parser *must* issue an error.
 
 ### Lambdas
 
