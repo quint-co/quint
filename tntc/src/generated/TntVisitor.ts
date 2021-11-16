@@ -38,6 +38,7 @@ import { OrContext } from "./TntParser";
 import { IffContext } from "./TntParser";
 import { ImpliesContext } from "./TntParser";
 import { InfixCallContext } from "./TntParser";
+import { MatchContext } from "./TntParser";
 import { AndExprContext } from "./TntParser";
 import { OrExprContext } from "./TntParser";
 import { AndActionContext } from "./TntParser";
@@ -356,6 +357,14 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitInfixCall?: (ctx: InfixCallContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `match`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitMatch?: (ctx: MatchContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `andExpr`

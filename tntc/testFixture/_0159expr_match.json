@@ -1,0 +1,167 @@
+{
+  "id": 18,
+  "name": "testMatch",
+  "defs": [
+    {
+      "id": 1,
+      "kind": "typedef",
+      "name": "ENTRY_TYPE",
+      "type": {
+        "kind": "union",
+        "tag": "tag",
+        "records": [
+          {
+            "tagValue": "Cat",
+            "fields": [
+              {
+                "fieldName": "name",
+                "fieldType": {
+                  "kind": "str"
+                }
+              },
+              {
+                "fieldName": "year",
+                "fieldType": {
+                  "kind": "int"
+                }
+              }
+            ]
+          },
+          {
+            "tagValue": "Date",
+            "fields": [
+              {
+                "fieldName": "day",
+                "fieldType": {
+                  "kind": "int"
+                }
+              },
+              {
+                "fieldName": "month",
+                "fieldType": {
+                  "kind": "int"
+                }
+              },
+              {
+                "fieldName": "year",
+                "fieldType": {
+                  "kind": "int"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 17,
+      "kind": "def",
+      "name": "isValid",
+      "qualifier": "pred",
+      "expr": {
+        "id": 16,
+        "kind": "lambda",
+        "params": [
+          "entry"
+        ],
+        "qualifier": "pred",
+        "expr": {
+          "id": 15,
+          "kind": "app",
+          "opcode": "match",
+          "args": [
+            {
+              "id": 2,
+              "kind": "name",
+              "name": "entry"
+            },
+            {
+              "id": 11,
+              "kind": "str",
+              "value": "Cat",
+              "type": {
+                "kind": "str"
+              }
+            },
+            {
+              "id": 12,
+              "kind": "lambda",
+              "params": [
+                "cat"
+              ],
+              "qualifier": "def",
+              "expr": {
+                "id": 5,
+                "kind": "app",
+                "opcode": "neq",
+                "args": [
+                  {
+                    "id": 3,
+                    "kind": "name",
+                    "name": "name"
+                  },
+                  {
+                    "id": 4,
+                    "kind": "str",
+                    "type": {
+                      "kind": "str"
+                    },
+                    "value": ""
+                  }
+                ]
+              }
+            },
+            {
+              "id": 13,
+              "kind": "str",
+              "value": "Date",
+              "type": {
+                "kind": "str"
+              }
+            },
+            {
+              "id": 14,
+              "kind": "lambda",
+              "params": [
+                "date"
+              ],
+              "qualifier": "def",
+              "expr": {
+                "id": 10,
+                "kind": "app",
+                "opcode": "igt",
+                "args": [
+                  {
+                    "id": 8,
+                    "kind": "app",
+                    "opcode": "field",
+                    "args": [
+                      {
+                        "id": 6,
+                        "kind": "name",
+                        "name": "date"
+                      },
+                      {
+                        "id": 7,
+                        "kind": "str",
+                        "value": "year"
+                      }
+                    ]
+                  },
+                  {
+                    "id": 9,
+                    "kind": "int",
+                    "type": {
+                      "kind": "int"
+                    },
+                    "value": 0
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -88,6 +88,8 @@ expr:           // apply a built-in operator via the dot notation
         |       expr IMPLIES expr                                   # implies
                 // built-in infix/postfix operators, a la Scala
         |       expr IDENTIFIER (argList)                           # infixCall
+        |       expr MATCH
+                    ('|' STRING ':' identOrHole '->' expr)+         # match
                 // similar to indented /\ and indented \/ of TLA+
         |       '(' ('&')? expr '&' expr ('&' expr)* ')'            # andExpr
         |       '(' ('|')? expr '|' expr ('|' expr)* ')'            # orExpr
@@ -134,7 +136,7 @@ lambdaOrExpr :  lambda
         |       expr
         ;
 
-argList:       lambdaOrExpr (',' lambdaOrExpr)*
+argList :      lambdaOrExpr (',' lambdaOrExpr)*
         ;
 
 // operators in the normal call may use some reserved names
@@ -176,6 +178,7 @@ IN              :   'in' ;
 NOTIN           :   'notin' ;
 SET             :   'set' ;
 SEQ             :   'seq' ;
+MATCH           :   'match' ;
 PLUS            :   '+' ;
 MINUS           :   '-' ;
 MUL             :   '*' ;

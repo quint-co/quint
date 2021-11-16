@@ -339,6 +339,11 @@ describe('parse ok', () => {
     '_0154instance',
     'parse instance'
   )
+
+  parseAsExpected(
+    '_0159expr_match',
+    'parse match'
+  )
 })
 
 describe('parse errors', () => {

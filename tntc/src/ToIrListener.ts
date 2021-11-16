@@ -700,6 +700,47 @@ export class ToIrListener implements TntListener {
     })
   }
 
+  // entry match
+  //   | "Cat": cat -> cat.name != ""
+  //   | "Dog": dog -> dog.year > 0
+  exitMatch (ctx: p.MatchContext) {
+    const options = ctx.STRING().map((opt) => opt.text.slice(1, -1))
+    const noptions = options.length
+    // expressions in the right-hand sides, e.g., dog.year > 0
+    const rhsExprs = this.popExprs(noptions)
+    // parameters in the right-hand side
+    const params = this.popParams(noptions)
+    // matched expressionm e.g., entry
+    const exprToMatch = this.popExprs(1)![0]
+    const matchArgs: TntEx[] = [exprToMatch]
+    // push the tag value and the corresponding lambda in matchArgs
+    for (let i = 0; i < noptions; i++) {
+      const tag: TntEx = {
+        id: this.nextId(),
+        kind: 'str',
+        value: options[i],
+        type: { kind: 'str' }
+      }
+      const lam: TntEx = {
+        id: this.nextId(),
+        kind: 'lambda',
+        params: params[i],
+        qualifier: 'def',
+        expr: rhsExprs[i]
+      }
+      matchArgs.push(tag)
+      matchArgs.push(lam)
+    }
+    // construct the match expression and push it in exprStack
+    const matchExpr: TntEx = {
+      id: this.nextId(),
+      kind: 'app',
+      opcode: 'match',
+      args: matchArgs
+    }
+    this.exprStack.push(matchExpr)
+  }
+
   /** ******************* translate types ********************************/
 
   // the integer type, that is, int
