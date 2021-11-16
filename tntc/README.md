@@ -42,6 +42,10 @@ publishing all packages privately at the moment, package management with
     yalc publish
     ```
 
+## How to run
+
+Check the [tntc manual](../doc/tntc.md).
+
 ## How to develop  
 
 Extend the code in [src](./src), write tests in [test](./test), add test data
