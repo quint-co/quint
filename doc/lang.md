@@ -368,10 +368,10 @@ syntax](#expressions) first.
 ### Stateless and stateful modules
 
 We distinguish between stateless and stateful modules. A stateful module has at
-least one constant declaration or at least one variable declaration.  All other
-modules are stateless. This is an important distinction.  Definitions of
-stateless modules may be accessed via the dot-notation and imported, whereas
-stateful modules must be instantiated before they can be accessed.
+least one constant or variable declaration.  All other modules are stateless.
+This is an important distinction.  Definitions of stateless modules may be
+accessed via the dot-notation and imported, whereas stateful modules must be
+instantiated before they can be accessed.
 
 ### Namespaces
 
@@ -1188,6 +1188,23 @@ ensured by the type checker.
 
 We do not introduce parentheses in the syntax of `match`. If you feel uncomfortable
 about it, wrap the whole match-expression with `(...)`.
+
+*Grammar*:
+
+```bnf
+  expr "match" ("|" string ":" (identifier | "_") "->" expr)+
+```
+
+*Normal form*: Consider the match operator:
+
+```scala
+  ex match
+    | tag_1: x_1 -> ex_1
+    ...
+    | tag_n: x_n -> ex_n
+```
+
+Its normal form is `union_match(ex, tag_1, (x_1 -> ex_1), ..., (x_n -> ex_n))`.
 
 *Mode:* Stateless, State. Other modes are not allowed.
 
