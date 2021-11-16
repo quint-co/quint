@@ -17,16 +17,19 @@ import yargs from 'yargs/yargs'
 /**
  * Parse a TNT specification.
  */
-function parse (argv: any) {
+function parse (argv: any): number {
   const path = resolve(cwd(), argv.input)
   const text = readFileSync(path).toString('utf8')
   const result = parsePhase1(text)
-  if (result.kind === 'error') {
+  if (result.kind !== 'error') {
+    return 0
+  } else {
     result.messages.forEach((m) => {
       // TODO: use m.source instead of argv.input
       const loc = `${argv.input}:${m.start.line + 1}:${m.start.col + 1}`
       console.error(`${loc} - error ${m.explanation}`)
     })
+    return 1
   }
 }
 
@@ -34,16 +37,18 @@ function parse (argv: any) {
 const parseCmd = {
   command: 'parse <input>',
   desc: 'parse a TNT specification',
-  builder: (yargs: any) => yargs
-    .option('out', {
-      desc: 'output file',
-      type: 'string'
-    })
-    .option('source-map', {
-      desc: 'name of the source map',
-      type: 'string'
-    }),
-  handler: parse
+  builder: (yargs: any) =>
+    yargs
+      .option('out', {
+        desc: 'output file',
+        type: 'string'
+      })
+      .option('source-map', {
+        desc: 'name of the source map',
+        type: 'string'
+      }),
+  handler: (argv: any) =>
+    process.exit(parse(argv))
 }
 
 yargs(process.argv.slice(2))
