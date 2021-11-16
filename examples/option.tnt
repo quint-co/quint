@@ -33,9 +33,9 @@ module option {
       // deconstruct a discriminate union.
       w match
         // this pattern binds some_w to the "some" version of w, if w.tag == "some"
-        | "some": (some_w ->  sum + some_w.value)
+        | "some": some_w ->  sum + some_w.value
         // this pattern
-        | "none": (_ ->       sum)
+        | "none": _ ->       sum
 
       /* // this is how you would do that in typescript
       if (w.tag == "some") {
