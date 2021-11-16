@@ -10,7 +10,7 @@ publishing all packages privately at the moment, package management with
  1. Make sure that you have installed [npm][]. This is usually done with your
  OS-specific package manager.
 
- 1. Compile tntc:
+ 1. Compile `tntc`:
 
     ```sh
     npm run compile
@@ -28,7 +28,7 @@ publishing all packages privately at the moment, package management with
     tntc
     ```
 
- Additionally, if you want to compile the vscode plugin:   
+Additionally, if you want to compile the vscode plugin:   
 
  1. Install [yalc][] for local package management:
 
@@ -48,9 +48,15 @@ Check the [tntc manual](../doc/tntc.md).
 
 ## How to develop  
 
-Extend the code in [src](./src), write tests in [test](./test), add test data
-to [testFixture](./testFixture). To run the tests and check code coverage, run
-the following commands:
+### Code
+
+Extend the code in [src](./src).
+
+### Unit tests
+
+Write unit tests in [test](./test), add test data to
+[testFixture](./testFixture). To run the tests and check code coverage, run the
+following commands:
 
  1. Compile and test the parser:
 
@@ -64,10 +70,17 @@ the following commands:
     npm run coverage
     ```
 
-## State of the transpiler
+### Integration tests    
 
-For the moment, it is only a syntax parser, no semantic actions or a type
-checker are implemented. Imports are not resolved yet.
+ 1. Install [txm](https://www.npmjs.com/package/txm).
+
+ 1. Update tests in [cli-tests.md](./cli-tests.md).
+
+ 1. Run integration tests:
+
+    ```sh
+    npm run integration
+    ```
 
 [npm]: https://en.wikipedia.org/wiki/Npm_(software)
 [yalc]: https://www.npmjs.com/package/yalc
