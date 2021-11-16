@@ -9,7 +9,7 @@
  * @author Igor Konnov, Informal Systems, 2021
  */
 
-import { readFileSync, writeFileSync } from 'fs'
+import { readFile, writeFileSync } from 'fs'
 import { resolve } from 'path'
 import { cwd } from 'process'
 import JSONbig = require('json-bigint')
@@ -23,35 +23,48 @@ import yargs from 'yargs/yargs'
  *
  * @param argv parameters as provided by yargs
  */
-function parse (argv: any): number {
-  const path = resolve(cwd(), argv.input)
-  const text = readFileSync(path).toString('utf8')
-  const result = parsePhase1(text)
-  if (result.kind !== 'error') {
-    if (argv.out) {
-      // write the parsed IR to the output file
-      writeToJson(argv.out, {
-        status: 'parsed',
-        warnings: [],
-        module: result.module
-      })
-    }
-    // TODO: write source map (issue #20)
-    return 0
-  } else {
-    if (argv.out) {
-      // write the errors to the output file
-      writeToJson(argv.out, result)
+function parse (argv: any) {
+  // a callback to parse the text that we get from readFile
+  const parseText = (text: string) => {
+    const result = parsePhase1(text)
+    if (result.kind !== 'error') {
+      if (argv.out) {
+        // write the parsed IR to the output file
+        writeToJson(argv.out, {
+          status: 'parsed',
+          warnings: [],
+          module: result.module
+        })
+      }
+      // TODO: write source map (issue #20)
+      process.exit(0)
     } else {
-      // write the errors to stderr
-      result.messages.forEach((m) => {
-        // TODO: use m.source instead of argv.input (issue #21)
-        const loc = `${argv.input}:${m.start.line + 1}:${m.start.col + 1}`
-        console.error(`${loc} - error ${m.explanation}`)
-      })
+      if (argv.out) {
+        // write the errors to the output file
+        writeToJson(argv.out, result)
+      } else {
+        // write the errors to stderr
+        result.messages.forEach((m) => {
+          // TODO: use m.source instead of argv.input (issue #21)
+          const loc = `${argv.input}:${m.start.line + 1}:${m.start.col + 1}`
+          console.error(`${loc} - error ${m.explanation}`)
+        })
+      }
+      process.exit(1)
     }
-    return 1
   }
+  // read either the standard input or an input file
+  const input = argv.input ? resolve(cwd(), argv.input) : 0 /* stderr */
+  const reader = async () => {
+    await readFile(input, 'utf8', (err, data) => {
+      if (err) {
+        console.error(err)
+        process.exit(99)
+      }
+      parseText(data)
+    })
+  }
+  reader()
 }
 
 /**
@@ -67,8 +80,8 @@ function writeToJson (filename: string, json: any) {
 
 // construct parsing commands with yargs
 const parseCmd = {
-  command: 'parse <input>',
-  desc: 'parse a TNT specification',
+  command: 'parse [input]',
+  desc: 'parse a TNT specification (if no input given, use stdin)',
   builder: (yargs: any) =>
     yargs
       .option('out', {
@@ -79,8 +92,7 @@ const parseCmd = {
         desc: 'name of the source map',
         type: 'string'
       }),
-  handler: (argv: any) =>
-    process.exit(parse(argv))
+  handler: parse
 }
 
 // parse the command-line arguments and execute the handlers
