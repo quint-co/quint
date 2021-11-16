@@ -2,10 +2,10 @@
 
 | Revision | Date       | Author           |
 | -------: | :--------: | :--------------- |
-| 2        | 12.11.2021 | Igor Konnov      |
+| 3        | 16.11.2021 | Igor Konnov      |
 
 **WARNING**: *This is a preliminary manual in the style of [Working
-Backwards]. Nothing of it has been implemented yet.*
+Backwards]. Some commands are not implemented yet.*
 
 `tntc` is a command line interface to the TNT transpiler. It is the primary
 access point for testing and integration with other tools.
@@ -26,6 +26,8 @@ In the following, we give details about the above commands.
 ```sh
 tntc parse [--out=<out>.json] [--source-map=<src>.map] <spec>.tnt
 ```
+
+*Warning: The parser is working, but name resolution is not implemented.*
 
 This command reads a TNT specification from the file `<spec>.tnt`, parses the
 specification and resolves the imports relative to the directory of
@@ -64,7 +66,11 @@ the following is written:
 **Option `--source-map`**. If the flag `--source-map` is supplied, the source
 information is written to `<src>.map` in the format of [Source map][].
 
+*The option `--source-map` is not implemented yet.*
+
 ## Command exec
+
+*This command is not implemented yet.*
 
 ```sh
 tntc exec [--seed=<seed>] [--length=<len>] \
@@ -149,6 +155,8 @@ are records that assign values to specification variables.
 
 ## Command typecheck
 
+*This command is not implemented yet.*
+
 ```sh
 tntc typecheck [--out=<out>.json] <spec>.tnt
 ```
@@ -186,6 +194,8 @@ the following is written:
    The errors and warnings are written in the format of [ADR002][].
 
 ## Command lint
+
+*This command is not implemented yet.*
 
 ```sh
 tntc lint [--config=config.json] [--out=<out>.json] <spec>.tnt
@@ -225,6 +235,8 @@ the following is written:
 
 ## Command indent
 
+*This command is not implemented yet.*
+
 ```sh
 tntc indent [--config=config.json] [--out=<out>.tnt] <spec>.tnt
 ```
@@ -241,6 +253,8 @@ JSON format. This configuration files specifies the indentation rules. The
 exact format is to be specified in the future.
 
 ## Command to-apalache
+
+*This command is not implemented yet.*
 
 ```sh
 tntc to-apalache [--out=<out>.json] <spec>.tnt
