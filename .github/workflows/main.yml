@@ -23,8 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
-      with:
-        node-version: '17'  
+        with:
+          node-version: '17'  
       - run: cd ./tntc && npm install
       - run: cd ./tntc && npm compile
       - run: cd ./tntc && npm test
@@ -38,8 +38,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
-      with:
-        node-version: '17'  
+        with:
+          node-version: '17'  
       - run: npm install -g txm
       - run: cd ./tntc && npm install
       - run: cd ./tntc && npm compile
