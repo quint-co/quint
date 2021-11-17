@@ -1,6 +1,6 @@
 # TNT is not TLA+
 
-![build badge](https://github.com/informalsystems/tnt/actions/workflows/main/badge.svg)
+![build badge](https://github.com/informalsystems/tnt/actions/workflows/main.yml/badge.svg)
 
 This is a surface syntax that uses the same background logic as TLA+ but does
 not try to mimic general mathematics. Instead it mimics functional languages,
