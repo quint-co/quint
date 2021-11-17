@@ -1,0 +1,47 @@
+# This build configuration is adapted from Apalache
+
+on:
+  # Every pull request
+  pull_request:
+  #  Pushes into the trunk
+  #  This is important to ensure the trunk is not broken and
+  #  to populate the cache for future PRs.
+  #  See https://github.community/t/actions-cache-cache-not-being-hit-despite-of-being-present/17956/3
+  push:
+    branches:
+      - main
+    
+name: build
+
+jobs:
+  tntc-unit-tests:
+    runs-in: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latex]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+      with:
+        node-version: '17'  
+      - run: cd ./tntc && npm install
+      - run: cd ./tntc && npm compile
+      - run: cd ./tntc && npm test
+
+  tntc-integration-tests:
+    runs-in: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latex]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+      with:
+        node-version: '17'  
+      - run: npm install -g txm
+      - run: cd ./tntc && npm install
+      - run: cd ./tntc && npm compile
+      - run: cd ./tntc && txm cli-tests.md
+
