@@ -54,9 +54,8 @@ function parse (argv: any) {
     }
   }
   // read either the standard input or an input file
-  const input = argv.input ? resolve(cwd(), argv.input) : 0 /* stderr */
   const reader = async () => {
-    await readFile(input, 'utf8', (err, data) => {
+    await readFile(argv.input, 'utf8', (err, data) => {
       if (err) {
         console.error(err)
         process.exit(99)
@@ -80,8 +79,8 @@ function writeToJson (filename: string, json: any) {
 
 // construct parsing commands with yargs
 const parseCmd = {
-  command: 'parse [input]',
-  desc: 'parse a TNT specification (if no input given, use stdin)',
+  command: 'parse <input>',
+  desc: 'parse a TNT specification',
   builder: (yargs: any) =>
     yargs
       .option('out', {
