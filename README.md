@@ -1,5 +1,7 @@
 # TNT is not TLA+
 
+![build badge](https://github.com/informalsystems/tnt/actions/workflows/main/badge.svg)
+
 This is a surface syntax that uses the same background logic as TLA+ but does
 not try to mimic general mathematics. Instead it mimics functional languages,
 e.g., Scala and OCaml.
@@ -20,6 +22,7 @@ editor (currently, only vim is supported).
 
  - TNT transpiler:
    - [tntc manpage](./doc/tntc.md)
+   - [Installation](./src/README.md)
 
 ## Developer docs
 
