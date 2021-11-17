@@ -26,7 +26,7 @@ jobs:
         with:
           node-version: '17'  
       - run: cd ./tntc && npm install
-      - run: cd ./tntc && npm compile
+      - run: cd ./tntc && npm run compile
       - run: cd ./tntc && npm test
 
   tntc-integration-tests:
@@ -42,6 +42,6 @@ jobs:
           node-version: '17'  
       - run: npm install -g txm
       - run: cd ./tntc && npm install
-      - run: cd ./tntc && npm compile
+      - run: cd ./tntc && npm run compile
       - run: cd ./tntc && txm cli-tests.md
 
