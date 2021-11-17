@@ -15,7 +15,7 @@ name: build
 
 jobs:
   tntc-unit-tests:
-    runs-in: ${{ matrix.operating-system }}
+    runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
@@ -30,7 +30,7 @@ jobs:
       - run: cd ./tntc && npm test
 
   tntc-integration-tests:
-    runs-in: ${{ matrix.operating-system }}
+    runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
