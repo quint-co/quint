@@ -1,0 +1,12 @@
+# Automatically update dependencies
+# See https://docs.github.com/en/github/administering-a-repository/about-github-dependabot-version-updates
+
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    # Look for the `pom.xml` file in the `root` directory
+    directory: "/"
+    # Check maven central for updates every day (weekdays)
+    schedule:
+      interval: "daily"
