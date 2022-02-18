@@ -22,7 +22,7 @@ editor (currently, only vim is supported).
 
  - TNT transpiler:
    - [tntc manpage](./doc/tntc.md)
-   - [Installation](./src/README.md)
+   - [Installation](./tntc/README.md)
 
 ## Developer docs
 
