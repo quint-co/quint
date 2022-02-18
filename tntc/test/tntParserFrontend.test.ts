@@ -2,9 +2,8 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
-import JSONbig = require('json-bigint')
-import { ErrorMessage, parsePhase1, ParseResult }
-  from '../src/tntParserFrontend'
+import JSONbig from 'json-bigint'
+import { parsePhase1 } from '../src/tntParserFrontend'
 
 // read a TNT file from the test data directory
 function readTnt (name: string): string {
