@@ -1,2 +1,5 @@
 out
 *.swp
+coverage
+.nyc_output
+dist

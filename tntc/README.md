@@ -9,6 +9,12 @@ publishing all packages privately at the moment, package management with
 
  1. Make sure that you have installed [npm][]. This is usually done with your
  OS-specific package manager.
+ 
+ 1. Install dependencies:
+ 
+   ```sh
+   npm install
+   ```
 
  1. Compile `tntc`:
 
@@ -46,7 +52,7 @@ Additionally, if you want to compile the vscode plugin:
 
 Check the [tntc manual](../doc/tntc.md).
 
-## How to develop  
+## How to develop
 
 ### Code
 
@@ -70,9 +76,7 @@ following commands:
     npm run coverage
     ```
 
-### Integration tests    
-
- 1. Install [txm](https://www.npmjs.com/package/txm).
+### Integration tests
 
  1. Update tests in [cli-tests.md](./cli-tests.md).
 
