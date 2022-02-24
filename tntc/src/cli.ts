@@ -35,7 +35,7 @@ function parse (argv: any) {
         writeToJson(argv.out, {
           status: 'parsed',
           warnings: [],
-          module: result.module
+          module: result.module,
         })
       }
       // TODO: write source map (issue #20)
@@ -87,13 +87,13 @@ const parseCmd = {
     yargs
       .option('out', {
         desc: 'output file',
-        type: 'string'
+        type: 'string',
       })
       .option('source-map', {
         desc: 'name of the source map',
-        type: 'string'
+        type: 'string',
       }),
-  handler: parse
+  handler: parse,
 }
 
 // parse the command-line arguments and execute the handlers
