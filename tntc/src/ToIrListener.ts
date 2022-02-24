@@ -89,6 +89,15 @@ export class ToIrListener implements TntListener {
     this.definitionStack.push(varDef)
   }
 
+  exitLetIn (ctx: p.LetInContext) {
+    const def = this.definitionStack.pop()
+    const expr = this.exprStack.pop()
+    if (def && expr) {
+      const letExpr: TntEx = { id: this.nextId(), kind: 'let', opdef: def as TntOpDef, expr: expr }
+      this.exprStack.push(letExpr)
+    }
+  }
+
   /** **************** translate operator definititons **********************/
 
   // translate a top-level or nested operator definition
