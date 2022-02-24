@@ -1,9 +1,9 @@
 import { TntModule, TntDef, TntEx } from './tntIr'
 
 export interface NameDefinition {
-  kind: string;
-  identifier: string;
-  // scope
+  kind: string
+  identifier: string
+  scope?: bigint
 }
 
 export class DefinitionCollector {
@@ -21,13 +21,21 @@ export class DefinitionCollector {
     return defs.reduce((nameDefs: NameDefinition[], def) => {
       switch (def.kind) {
         case 'const':
-        case 'def':
-          // TODO: differentiate letins from module operators
         case 'var':
           nameDefs.push({
             kind: def.kind,
             identifier: def.name,
           })
+          break
+        case 'def':
+          // TODO: differentiate letins from module operators
+          nameDefs.push({
+            kind: def.kind,
+            identifier: def.name,
+          })
+          if (def.expr) {
+            nameDefs.push(...this.collectFromExpr(def.expr))
+          }
           break
         default:
           // typedefs and assumes
@@ -37,10 +45,14 @@ export class DefinitionCollector {
   }
 
   private collectFromExpr (expr: TntEx): NameDefinition[] {
-    // TODO: Recursively find lambdas
-    // switch (expr.kind) {
-    //     case: ''
-    // }
-    return []
+    switch (expr.kind) {
+      case 'lambda':
+        return expr.params.map(p => { return { kind: 'def', identifier: p, scope: expr.id } as NameDefinition }).concat(this.collectFromExpr(expr.expr))
+      case 'app':
+        return expr.args.flatMap(arg => { return this.collectFromExpr(arg) })
+      // TODO: let
+      default:
+        return []
+    }
   }
 }
