@@ -13,7 +13,7 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
 import { TntModule } from './tntIr'
 import { ToIrListener } from './ToIrListener'
-import { DefinitionCollector } from './DefinitionCollector'
+import { collectDefinitions } from './definitionsCollector'
 
 export interface ErrorMessage {
     explanation: string;
@@ -87,7 +87,7 @@ export function parsePhase2 (tntModule: TntModule): ParseResult {
   const util = require('util')
 
   console.log(util.inspect(tntModule.defs, { showHidden: false, depth: null, colors: true }))
-  console.log(util.inspect(new DefinitionCollector(tntModule).collect(), { showHidden: false, depth: null, colors: true }))
+  console.log(util.inspect(collectDefinitions(tntModule), { showHidden: false, depth: null, colors: true }))
 
   return { kind: 'ok', module: tntModule }
 }
