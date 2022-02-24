@@ -45,7 +45,7 @@ export function parsePhase1 (text: string): ParseResult {
       const start = { line: line - 1, col: charPositionInLine }
       const end = { line: line - 1, col: charPositionInLine + len }
       errorMessages.push({ explanation: msg, start, end })
-    }
+    },
   }
   // Create the lexer and parser
   const inputStream = CharStreams.fromString(text)
