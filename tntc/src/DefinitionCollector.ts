@@ -28,7 +28,6 @@ export class DefinitionCollector {
           })
           break
         case 'def':
-          // TODO: differentiate letins from module operators
           nameDefs.push({
             kind: def.kind,
             identifier: def.name,
@@ -50,7 +49,10 @@ export class DefinitionCollector {
         return expr.params.map(p => { return { kind: 'def', identifier: p, scope: expr.id } as NameDefinition }).concat(this.collectFromExpr(expr.expr))
       case 'app':
         return expr.args.flatMap(arg => { return this.collectFromExpr(arg) })
-      // TODO: let
+      case 'let':
+        return [{ kind: expr.opdef.qualifier, identifier: expr.opdef.name, scope: expr.id } as NameDefinition]
+          .concat(this.collectFromExpr(expr.opdef.expr))
+          .concat(this.collectFromExpr(expr.expr))
       default:
         return []
     }
