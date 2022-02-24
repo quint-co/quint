@@ -50,14 +50,14 @@ export class ToIrListener implements TntListener {
     const module: TntModule = {
       id: this.nextId(),
       name: ctx.IDENTIFIER().text,
-      defs: this.definitionStack
+      defs: this.definitionStack,
     }
     // add the module to the definition stack
     this.definitionStack = this.moduleDefStack.pop()!
     this.definitionStack.push({
       id: this.nextId(),
       kind: 'module',
-      module: module
+      module: module,
     })
     // advance the root module to this one
     this.rootModule = module
@@ -71,7 +71,7 @@ export class ToIrListener implements TntListener {
       kind: 'const',
       name: ctx.IDENTIFIER().text,
       type: typeTag,
-      id: this.nextId()
+      id: this.nextId(),
     }
     this.definitionStack.push(constDef)
   }
@@ -84,7 +84,7 @@ export class ToIrListener implements TntListener {
       kind: 'var',
       name: ctx.IDENTIFIER().text,
       type: typeTag,
-      id: this.nextId()
+      id: this.nextId(),
     }
     this.definitionStack.push(varDef)
   }
@@ -128,7 +128,7 @@ export class ToIrListener implements TntListener {
           kind: 'lambda',
           params: params,
           qualifier: qualifier,
-          expr: expr
+          expr: expr,
         }
       }
       const def: TntOpDef = {
@@ -136,7 +136,7 @@ export class ToIrListener implements TntListener {
         kind: 'def',
         name: name,
         qualifier: qualifier,
-        expr: body
+        expr: body,
       }
       if (typeTag) {
         def.type = typeTag
@@ -172,7 +172,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'assume',
       name: params[0],
-      assumption: expr
+      assumption: expr,
     }
     this.definitionStack.push(assume)
   }
@@ -185,7 +185,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'import',
       name: ident,
-      path: path
+      path: path,
     }
     this.definitionStack.push(importDef)
   }
@@ -205,7 +205,7 @@ export class ToIrListener implements TntListener {
         id: this.nextId(),
         kind: 'typedef',
         name: name,
-        type: associatedType
+        type: associatedType,
       }
       this.definitionStack.push(def)
     } else {
@@ -236,7 +236,7 @@ export class ToIrListener implements TntListener {
       name: instanceName,
       protoName: protoName,
       overrides: overrides,
-      identityOverride: identityOverride
+      identityOverride: identityOverride,
     }
     this.definitionStack.push(instance)
   }
@@ -250,7 +250,7 @@ export class ToIrListener implements TntListener {
       this.exprStack.push({
         id: this.nextId(),
         kind: 'name',
-        name: ident.text
+        name: ident.text,
       })
     }
     const intNode = ctx.INT()
@@ -259,7 +259,7 @@ export class ToIrListener implements TntListener {
         id: this.nextId(),
         kind: 'int',
         type: { kind: 'int' },
-        value: BigInt(intNode.text)
+        value: BigInt(intNode.text),
       })
     }
     const boolNode = ctx.BOOL()
@@ -268,7 +268,7 @@ export class ToIrListener implements TntListener {
         id: this.nextId(),
         kind: 'bool',
         type: { kind: 'bool' },
-        value: (boolNode.text === 'true')
+        value: (boolNode.text === 'true'),
       })
     }
     const strNode = ctx.STRING()
@@ -277,7 +277,7 @@ export class ToIrListener implements TntListener {
         id: this.nextId(),
         kind: 'str',
         type: { kind: 'str' },
-        value: strNode.text.slice(1, -1)
+        value: strNode.text.slice(1, -1),
       })
     }
   }
@@ -289,7 +289,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: 'of',
-      args: args
+      args: args,
     })
   }
 
@@ -313,7 +313,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: name,
-      args: args
+      args: args,
     })
   }
 
@@ -328,7 +328,7 @@ export class ToIrListener implements TntListener {
         id: this.nextId(),
         kind: 'app',
         opcode: name,
-        args: [firstArg].concat(wrappedArgs.args)
+        args: [firstArg].concat(wrappedArgs.args),
       })
     } else {
       const ls = this.locStr(ctx)
@@ -369,7 +369,7 @@ export class ToIrListener implements TntListener {
         id: this.nextId(),
         kind: 'app',
         opcode: name,
-        args: args!
+        args: args!,
       })
     } else {
       // accessing a tuple element, a record field, or name in a module
@@ -379,13 +379,13 @@ export class ToIrListener implements TntListener {
         const idx: TntEx = {
           id: this.nextId(),
           kind: 'int',
-          value: BigInt(m[1])
+          value: BigInt(m[1]),
         }
         this.exprStack.push({
           id: this.nextId(),
           kind: 'app',
           opcode: 'item',
-          args: [callee!, idx]
+          args: [callee!, idx],
         })
       } else {
         // accessing a record field or a name in a module
@@ -400,13 +400,13 @@ export class ToIrListener implements TntListener {
         const field: TntEx = {
           id: this.nextId(),
           kind: 'str',
-          value: name
+          value: name,
         }
         this.exprStack.push({
           id: this.nextId(),
           kind: 'app',
           opcode: 'field',
-          args: [callee!, field]
+          args: [callee!, field],
         })
       }
     }
@@ -422,7 +422,7 @@ export class ToIrListener implements TntListener {
       id: 0n,
       kind: 'app',
       opcode: 'wrappedArgs',
-      args: args
+      args: args,
     })
   }
 
@@ -442,7 +442,7 @@ export class ToIrListener implements TntListener {
         kind: 'lambda',
         params: singletons,
         qualifier: qualifier,
-        expr: expr
+        expr: expr,
       })
     } else {
       const ls = this.locStr(ctx)
@@ -480,7 +480,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: 'tuple',
-      args: args
+      args: args,
     })
   }
 
@@ -491,7 +491,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: 'seq',
-      args: args
+      args: args,
     })
   }
 
@@ -506,7 +506,7 @@ export class ToIrListener implements TntListener {
         id: this.nextId(),
         kind: 'str',
         value: names[i],
-        type: { kind: 'str' }
+        type: { kind: 'str' },
       })
       namesAndValues.push(elems[i])
     }
@@ -514,7 +514,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: 'record',
-      args: namesAndValues
+      args: namesAndValues,
     })
   }
 
@@ -526,7 +526,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: opcode,
-      args: args
+      args: args,
     })
   }
 
@@ -545,7 +545,7 @@ export class ToIrListener implements TntListener {
         id: this.nextId(),
         kind: 'app',
         opcode: opcode,
-        args: args
+        args: args,
       })
     }
   }
@@ -557,7 +557,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: 'ipow',
-      args: args
+      args: args,
     })
   }
 
@@ -569,7 +569,7 @@ export class ToIrListener implements TntListener {
         id: this.nextId(),
         kind: 'app',
         opcode: 'iuminus',
-        args: [arg]
+        args: [arg],
       })
     }
   }
@@ -596,7 +596,7 @@ export class ToIrListener implements TntListener {
         id: this.nextId(),
         kind: 'app',
         opcode: opcode,
-        args: args
+        args: args,
       })
     }
   }
@@ -608,7 +608,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: 'and',
-      args: args
+      args: args,
     })
   }
 
@@ -619,7 +619,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: 'or',
-      args: args
+      args: args,
     })
   }
 
@@ -630,7 +630,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: 'implies',
-      args: args
+      args: args,
     })
   }
 
@@ -641,7 +641,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: 'iff',
-      args: args
+      args: args,
     })
   }
 
@@ -652,7 +652,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: 'andExpr',
-      args: args
+      args: args,
     })
   }
 
@@ -663,7 +663,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: 'orExpr',
-      args: args
+      args: args,
     })
   }
 
@@ -674,7 +674,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: 'andAction',
-      args: args
+      args: args,
     })
   }
 
@@ -685,7 +685,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: 'orAction',
-      args: args
+      args: args,
     })
   }
 
@@ -696,7 +696,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: 'ite',
-      args: args
+      args: args,
     })
   }
 
@@ -719,14 +719,14 @@ export class ToIrListener implements TntListener {
         id: this.nextId(),
         kind: 'str',
         value: options[i],
-        type: { kind: 'str' }
+        type: { kind: 'str' },
       }
       const lam: TntEx = {
         id: this.nextId(),
         kind: 'lambda',
         params: params[i],
         qualifier: 'def',
-        expr: rhsExprs[i]
+        expr: rhsExprs[i],
       }
       matchArgs.push(tag)
       matchArgs.push(lam)
@@ -736,7 +736,7 @@ export class ToIrListener implements TntListener {
       id: this.nextId(),
       kind: 'app',
       opcode: 'match',
-      args: matchArgs
+      args: matchArgs,
     }
     this.exprStack.push(matchExpr)
   }
@@ -872,7 +872,7 @@ export class ToIrListener implements TntListener {
     const singleton: TntType = {
       kind: 'union',
       tag: tagName,
-      records: [{ tagValue: tagVal, fields: pairs }]
+      records: [{ tagValue: tagVal, fields: pairs }],
     }
 
     this.typeStack.push(singleton)
