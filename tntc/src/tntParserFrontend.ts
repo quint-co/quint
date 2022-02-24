@@ -13,6 +13,7 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
 import { TntModule } from './tntIr'
 import { ToIrListener } from './ToIrListener'
+import { DefinitionCollector } from './DefinitionCollector'
 
 export interface ErrorMessage {
     explanation: string;
@@ -45,8 +46,9 @@ export function parsePhase1 (text: string): ParseResult {
       const start = { line: line - 1, col: charPositionInLine }
       const end = { line: line - 1, col: charPositionInLine + len }
       errorMessages.push({ explanation: msg, start, end })
-    }
+    },
   }
+
   // Create the lexer and parser
   const inputStream = CharStreams.fromString(text)
   const lexer = new TntLexer(inputStream)
@@ -79,4 +81,13 @@ export function parsePhase1 (text: string): ParseResult {
       throw new Error('this should be impossible: root module is undefined')
     }
   }
+}
+
+export function parsePhase2 (tntModule: TntModule): ParseResult {
+  const util = require('util')
+
+  console.log(util.inspect(tntModule.defs, { showHidden: false, depth: null, colors: true }))
+  console.log(util.inspect(new DefinitionCollector(tntModule).collect(), { showHidden: false, depth: null, colors: true }))
+
+  return { kind: 'ok', module: tntModule }
 }
