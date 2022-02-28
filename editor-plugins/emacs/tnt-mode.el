@@ -40,7 +40,7 @@
   ;; Comment Syntax
   '("//" ("/*" . "*/"))
   ;; Keywords
-  (append tnt-keywords)
+  tnt-keywords
   ;; Operators and Other Syntax
   (append tnt-declarations-font-locks tnt-types-font-locks tnt-constants-font-locks)
   ;; Files
