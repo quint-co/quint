@@ -3,7 +3,7 @@ import { assert } from 'chai'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import JSONbig from 'json-bigint'
-import { parsePhase1 } from '../src/tntParserFrontend'
+import { parsePhase1, parsePhase2 } from '../src/tntParserFrontend'
 
 // read a TNT file from the test data directory
 function readTnt (name: string): string {
@@ -21,6 +21,10 @@ function readJson (name: string): any {
 function parseAndCompare (artifact: string, wrap: (json: any) => any): void {
   // read the input from the data directory and parse it
   const result = parsePhase1(readTnt(artifact))
+  if (result.kind === 'ok') {
+    // While name resolution is not complete, just check that no errors are thrown
+    parsePhase2(result.module)
+  }
   // run it through stringify-parse to obtain the same json (due to bigints)
   const reparsedResult = JSONbig.parse(JSONbig.stringify(result))
   // read the expected result as JSON

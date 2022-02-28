@@ -7,33 +7,29 @@ export interface NameDefinition {
 }
 
 export function collectDefinitions (tntModule: TntModule): NameDefinition[] {
-  if (tntModule.defs) {
-    return tntModule.defs.reduce((nameDefs: NameDefinition[], def) => {
-      switch (def.kind) {
-        case 'const':
-        case 'var':
-          nameDefs.push({
-            kind: def.kind,
-            identifier: def.name,
-          })
-          break
-        case 'def':
-          nameDefs.push({
-            kind: def.kind,
-            identifier: def.name,
-          })
-          if (def.expr) {
-            nameDefs.push(...collectFromExpr(def.expr))
-          }
-          break
-        default:
-          // typedefs and assumes
-      }
-      return nameDefs
-    }, [])
-  } else {
-    throw new Error('No definitions found for the module')
-  }
+  return tntModule.defs.reduce((nameDefs: NameDefinition[], def) => {
+    switch (def.kind) {
+      case 'const':
+      case 'var':
+        nameDefs.push({
+          kind: def.kind,
+          identifier: def.name,
+        })
+        break
+      case 'def':
+        nameDefs.push({
+          kind: def.kind,
+          identifier: def.name,
+        })
+        if (def.expr) {
+          nameDefs.push(...collectFromExpr(def.expr))
+        }
+        break
+      default:
+      // typedefs and assumes, ignore for now
+    }
+    return nameDefs
+  }, [])
 }
 
 function collectFromExpr (expr: TntEx): NameDefinition[] {

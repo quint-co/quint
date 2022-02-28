@@ -16,14 +16,14 @@ import { ToIrListener } from './ToIrListener'
 import { collectDefinitions } from './definitionsCollector'
 
 export interface ErrorMessage {
-    explanation: string;
-    start: { line: number; col: number; }
-    end: { line: number; col: number; }
+  explanation: string;
+  start: { line: number; col: number; }
+  end: { line: number; col: number; }
 }
 
 export type ParseResult =
-    | { kind: 'ok', module: TntModule }
-    | { kind: 'error', messages: ErrorMessage[] }
+  | { kind: 'ok', module: TntModule }
+  | { kind: 'error', messages: ErrorMessage[] }
 
 /**
  * Phase 1 of the TNT parser. Read a string in the TNT syntax and produce the IR.
@@ -84,10 +84,9 @@ export function parsePhase1 (text: string): ParseResult {
 }
 
 export function parsePhase2 (tntModule: TntModule): ParseResult {
-  const util = require('util')
-
-  console.log(util.inspect(tntModule.defs, { showHidden: false, depth: null, colors: true }))
-  console.log(util.inspect(collectDefinitions(tntModule), { showHidden: false, depth: null, colors: true }))
+  // Phase 2 is name resolution
+  // For now, just collect definitions. We will later use this information to resolve names.
+  collectDefinitions(tntModule)
 
   return { kind: 'ok', module: tntModule }
 }
