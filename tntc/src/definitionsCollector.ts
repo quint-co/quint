@@ -44,8 +44,8 @@ function collectFromExpr (expr: TntEx): NameDefinition[] {
       return expr.args.flatMap(arg => { return collectFromExpr(arg) })
     case 'let':
       return [{ kind: expr.opdef.qualifier, identifier: expr.opdef.name, scope: expr.id } as NameDefinition]
-          .concat(collectFromExpr(expr.opdef.expr))
-          .concat(collectFromExpr(expr.expr))
+        .concat(collectFromExpr(expr.opdef.expr))
+        .concat(collectFromExpr(expr.expr))
     default:
       return []
   }
