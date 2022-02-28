@@ -29,7 +29,7 @@ module option {
   }
 
   val SumVotes =
-    def sum_one(sum, w): (int, int_option) => int =
+    def sum_one(sum, w): (int, vote_option) => int =
       // deconstruct a discriminate union.
       w match
         // this pattern binds some_w to the "some" version of w, if w.tag == "some"
