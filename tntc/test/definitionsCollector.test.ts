@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { NameDefinition, collectDefinitions } from '../src/definitionsCollector'
+import { NameDefinition, collectDefinitions, defaultDefinitions } from '../src/definitionsCollector'
 import { TntModule } from '../src/tntIr'
 
 describe('collectDefinitions', () => {
@@ -16,7 +16,7 @@ describe('collectDefinitions', () => {
       ],
     }
 
-    const expectedDefinitions: NameDefinition[] = [
+    const expectedDefinitions: NameDefinition[] = defaultDefinitions.concat([
       {
         identifier: 'TEST_CONSTANT',
         kind: 'const',
@@ -33,7 +33,7 @@ describe('collectDefinitions', () => {
         identifier: 'TestModule',
         kind: 'namespace',
       },
-    ]
+    ])
 
     const result = collectDefinitions(tntModule)
     assert.deepEqual(result, expectedDefinitions)
@@ -75,7 +75,7 @@ describe('collectDefinitions', () => {
       ],
     }
 
-    const expectedDefinitions: NameDefinition[] = [
+    const expectedDefinitions: NameDefinition[] = defaultDefinitions.concat([
       {
         identifier: 'test_definition',
         kind: 'def',
@@ -90,7 +90,7 @@ describe('collectDefinitions', () => {
         kind: 'def',
         scope: BigInt(4),
       },
-    ]
+    ])
 
     const result = collectDefinitions(tntModule)
     assert.deepEqual(result, expectedDefinitions)
