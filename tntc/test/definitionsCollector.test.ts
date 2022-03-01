@@ -11,6 +11,8 @@ describe('collectDefinitions', () => {
       defs: [
         { kind: 'const', name: 'TEST_CONSTANT', id: BigInt(1), type: { kind: 'int' } },
         { kind: 'var', name: 'test_var', id: BigInt(2), type: { kind: 'str' } },
+        { kind: 'instance', name: 'test_instance', id: BigInt(3), overrides: [], identityOverride: true, protoName: 'OtherModule' },
+        { kind: 'module', id: BigInt(4), module: { name: 'TestModule', id: BigInt(5), defs: [] } },
       ],
     }
 
@@ -22,6 +24,14 @@ describe('collectDefinitions', () => {
       {
         identifier: 'test_var',
         kind: 'var',
+      },
+      {
+        identifier: 'test_instance',
+        kind: 'namespace',
+      },
+      {
+        identifier: 'TestModule',
+        kind: 'namespace',
       },
     ]
 

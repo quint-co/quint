@@ -25,6 +25,18 @@ export function collectDefinitions (tntModule: TntModule): NameDefinition[] {
           nameDefs.push(...collectFromExpr(def.expr))
         }
         break
+      case 'instance':
+        nameDefs.push({
+          kind: 'namespace',
+          identifier: def.name,
+        })
+        break
+      case 'module':
+        nameDefs.push({
+          kind: 'namespace',
+          identifier: def.module.name,
+        })
+        break
       default:
       // typedefs and assumes, ignore for now
     }
