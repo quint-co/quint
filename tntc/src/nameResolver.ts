@@ -13,27 +13,20 @@ export type NameResolutionResult =
 
 export function resolveNames (tntModule: TntModule, definitions: NameDefinition[]): NameResolutionResult {
   const results: NameResolutionResult[] = tntModule.defs.map(def => {
-    switch (def.kind) {
-      // TODO: include definition name in result for error reporting
-      case 'def': return checkNamesInExpr(definitions, def.expr)
-      default: return { kind: 'ok' }
-    }
+    // TODO: include definition name in result for error reporting
+    return def.kind === 'def' ? checkNamesInExpr(definitions, def.expr) : { kind: 'ok' }
   })
 
-  if (results.every(result => result.kind === 'ok')) {
-    return { kind: 'ok' }
-  } else {
+  if (results.some(result => result.kind === 'error')) {
     // Aggregate errors
     const errors = results.reduce((errors: NameError[], result: NameResolutionResult) => {
-      if (result.kind === 'error') {
-        return errors.concat(result.errors)
-      } else {
-        return errors
-      }
+      return result.kind === 'error' ? errors.concat(result.errors) : errors
     }, [])
 
     return { kind: 'error', errors: errors }
   }
+
+  return { kind: 'ok' }
 }
 
 function checkNamesInExpr (nameDefinitions: NameDefinition[], expr: TntEx): NameResolutionResult {
@@ -44,28 +37,26 @@ function checkNamesInExpr (nameDefinitions: NameDefinition[], expr: TntEx): Name
       } else {
         return { kind: 'error', errors: [{ name: expr.name, expression: expr, trace: [] }] }
       }
+
     case 'app': {
-      const unresolvedExpressions = expr.args.flatMap(arg => {
+      const errors = expr.args.flatMap(arg => {
         const result = checkNamesInExpr(nameDefinitions, arg)
+
         if (result.kind === 'error') {
-          return result.errors.map(error => {
-            return {
-              name: error.name,
-              expression: error.expression,
-              trace: error.trace.length === 0 ? error.trace.concat([arg, expr]) : error.trace.concat([expr]),
-            }
-          })
-        } else {
-          return []
+          return result.errors.map(error => ({
+            name: error.name,
+            expression: error.expression,
+            trace: error.trace.length === 0 ? error.trace.concat([arg, expr]) : error.trace.concat([expr]),
+          }))
         }
+
+        return []
       })
 
-      if (unresolvedExpressions.length === 0) {
-        return { kind: 'ok' }
-      } else {
-        return { kind: 'error', errors: unresolvedExpressions }
-      }
+      return errors.length === 0 ? { kind: 'ok' } : { kind: 'error', errors: errors }
     }
-    default: return { kind: 'ok' }
+
+    default:
+      return { kind: 'ok' }
   }
 }
