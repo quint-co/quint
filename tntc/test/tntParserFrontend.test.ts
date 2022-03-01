@@ -23,7 +23,7 @@ function parseAndCompare (artifact: string, wrap: (json: any) => any): void {
   const result = parsePhase1(readTnt(artifact))
   if (result.kind === 'ok') {
     // While name resolution is not complete, just check that no errors are thrown
-    parsePhase2(result.module)
+    assert.deepEqual(parsePhase2(result.module), { kind: 'ok' })
   }
   // run it through stringify-parse to obtain the same json (due to bigints)
   const reparsedResult = JSONbig.parse(JSONbig.stringify(result))
