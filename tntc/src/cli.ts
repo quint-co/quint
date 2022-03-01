@@ -26,27 +26,36 @@ import yargs from 'yargs/yargs'
 function parse (argv: any) {
   // a callback to parse the text that we get from readFile
   const parseText = (text: string) => {
-    const result = parsePhase1(text)
-    if (result.kind !== 'error') {
-      parsePhase2(result.module)
-      // TODO: check result from phase 2
-      if (argv.out) {
-        // write the parsed IR to the output file
-        writeToJson(argv.out, {
-          status: 'parsed',
-          warnings: [],
-          module: result.module,
-        })
+    const parseResult = parsePhase1(text)
+    if (parseResult.kind !== 'error') {
+      const result = parsePhase2(parseResult.module)
+      if (result.kind !== 'error') {
+        // TODO: check result from phase 2
+        if (argv.out) {
+          // write the parsed IR to the output file
+          writeToJson(argv.out, {
+            status: 'parsed',
+            warnings: [],
+            module: parseResult.module,
+          })
+        }
+        // TODO: write source map (issue #20)
+        process.exit(0)
+      } else {
+        if (result.kind === 'error') {
+          result.errors.forEach(error => {
+            console.error(`Couldn't resolve name ${error.name}`)
+            error.trace.forEach(a => console.error('in', a))
+          })
+        }
       }
-      // TODO: write source map (issue #20)
-      process.exit(0)
     } else {
       if (argv.out) {
         // write the errors to the output file
-        writeToJson(argv.out, result)
+        writeToJson(argv.out, parseResult)
       } else {
         // write the errors to stderr
-        result.messages.forEach((m) => {
+        parseResult.messages.forEach((m) => {
           // TODO: use m.source instead of argv.input (issue #21)
           const loc = `${argv.input}:${m.start.line + 1}:${m.start.col + 1}`
           console.error(`${loc} - error ${m.explanation}`)
