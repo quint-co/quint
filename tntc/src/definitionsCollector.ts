@@ -6,7 +6,7 @@ export interface NameDefinition {
   scope?: bigint
 }
 
-const defaultDefinitions: NameDefinition[] = [
+export const defaultDefinitions: NameDefinition[] = [
   { kind: 'def', identifier: 'not' },
   { kind: 'def', identifier: 'and' },
   { kind: 'def', identifier: 'or' },
