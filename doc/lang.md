@@ -792,10 +792,10 @@ In a mode different from Action:
 
 ```scala
 (
-  | p_1
-  | p_2
+  & p_1
+  & p_2
   ...
-  | p_n
+  & p_n
 )
 ```
 
