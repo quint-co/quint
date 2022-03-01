@@ -13,16 +13,17 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
 import { TntModule } from './tntIr'
 import { ToIrListener } from './ToIrListener'
+import { collectDefinitions } from './definitionsCollector'
 
 export interface ErrorMessage {
-    explanation: string;
-    start: { line: number; col: number; }
-    end: { line: number; col: number; }
+  explanation: string;
+  start: { line: number; col: number; }
+  end: { line: number; col: number; }
 }
 
 export type ParseResult =
-    | { kind: 'ok', module: TntModule }
-    | { kind: 'error', messages: ErrorMessage[] }
+  | { kind: 'ok', module: TntModule }
+  | { kind: 'error', messages: ErrorMessage[] }
 
 /**
  * Phase 1 of the TNT parser. Read a string in the TNT syntax and produce the IR.
@@ -47,6 +48,7 @@ export function parsePhase1 (text: string): ParseResult {
       errorMessages.push({ explanation: msg, start, end })
     },
   }
+
   // Create the lexer and parser
   const inputStream = CharStreams.fromString(text)
   const lexer = new TntLexer(inputStream)
@@ -79,4 +81,12 @@ export function parsePhase1 (text: string): ParseResult {
       throw new Error('this should be impossible: root module is undefined')
     }
   }
+}
+
+export function parsePhase2 (tntModule: TntModule): ParseResult {
+  // Phase 2 is name resolution
+  // For now, just collect definitions. We will later use this information to resolve names.
+  collectDefinitions(tntModule)
+
+  return { kind: 'ok', module: tntModule }
 }

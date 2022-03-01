@@ -14,7 +14,7 @@ import { resolve } from 'path'
 import { cwd } from 'process'
 import JSONbig = require('json-bigint')
 
-import { parsePhase1 } from './tntParserFrontend'
+import { parsePhase1, parsePhase2 } from './tntParserFrontend'
 
 import yargs from 'yargs/yargs'
 
@@ -28,6 +28,8 @@ function parse (argv: any) {
   const parseText = (text: string) => {
     const result = parsePhase1(text)
     if (result.kind !== 'error') {
+      parsePhase2(result.module)
+      // TODO: check result from phase 2
       if (argv.out) {
         // write the parsed IR to the output file
         writeToJson(argv.out, {

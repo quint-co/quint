@@ -170,7 +170,7 @@ action Phase2a(b, v) = {
                             ))
         val Q1bv = Q1b.filter(m -> m.mbal >= 0)
         {
-            & Q.forall(a -> Q1B.exists(m -> m.acc == a))
+            & Q.forall(a -> Q1b.exists(m -> m.acc == a))
             & (
                 | Q1bv == set()
                 | Q1bv.exists(m -> (
