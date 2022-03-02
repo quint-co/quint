@@ -23,9 +23,9 @@ function parseAndCompare (artifact: string, wrap: (json: any) => any, namesOk: B
   const phase1Result = parsePhase1(readTnt(artifact))
   // read the expected result as JSON
   const expected = readJson(artifact)
-  var outputToCompare
+  let outputToCompare
 
-  if (phase1Result.kind == 'error') {
+  if (phase1Result.kind === 'error') {
     // An error occurred at phase 1, check if it is the expected result
     outputToCompare = phase1Result
   } else if (!namesOk) {
@@ -51,7 +51,7 @@ function nowrap (arg: any): any {
 function parseAsExpected (artifact: string, description: string): void {
   it(description, () => {
     parseAndCompare(artifact,
-      function(module: any) {
+      function (module: any) {
         return { kind: 'ok', module: module }
       }, true)
   })
