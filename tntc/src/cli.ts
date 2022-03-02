@@ -43,10 +43,15 @@ function parse (argv: any) {
         process.exit(0)
       } else {
         if (result.kind === 'error') {
-          result.errors.forEach(error => {
-            console.error(`Couldn't resolve name ${error.name}`)
-            error.trace.forEach(a => console.error('in', a))
-          })
+          if (argv.out) {
+            // write the errors to the output file
+            writeToJson(argv.out, result)
+          } else {
+            result.errors.forEach(error => {
+              console.error(`Couldn't resolve name ${error.name}`)
+              error.trace.forEach(a => console.error('in', a))
+            })
+          }
         }
       }
     } else {

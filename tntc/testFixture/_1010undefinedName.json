@@ -1,0 +1,14 @@
+{
+  "kind": "error",
+  "errors": [
+    {
+      "name": "S",
+      "expression": {
+        "id": 1,
+        "kind": "name",
+        "name": "S"
+      },
+      "trace": []
+    }
+  ]
+}
