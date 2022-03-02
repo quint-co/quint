@@ -5,6 +5,6 @@ module testMatch {
 
     pred isValid(entry) =
       entry match
-         | "Cat": cat -> name != ""
+         | "Cat": cat -> cat.name != ""
          | "Date": date -> date.year > 0
 }
