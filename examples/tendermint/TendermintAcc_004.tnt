@@ -171,7 +171,7 @@ val AllFaultyPrecommits =
    
 // the message function never contains a message for a wrong round
 pred BenignRoundsInMessages(msgfun) =
-    Round forall ( r ->
+    Rounds forall ( r ->
       msgfun[r] forall ( m ->
         r == m.round
       )
@@ -180,7 +180,7 @@ pred BenignRoundsInMessages(msgfun) =
 // The initial states of the protocol. Some faults can be in the system already.
 pred Init = (
   & round           <- Corr mapOf ( _ -> 0 )
-  & step            <- Corr mapOf ( _ -> Propose )
+  & step            <- Corr mapOf ( _ -> Proposer )
   & decision        <- Corr mapOf ( _ -> NilValue )
   & lockedValue     <- Corr mapOf ( _ -> NilValue )
   & lockedRound     <- Corr mapOf ( _ -> NilRound )

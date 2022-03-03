@@ -14,8 +14,8 @@ import { resolve } from 'path'
 import { cwd } from 'process'
 import JSONbig = require('json-bigint')
 
-import { parsePhase1, parsePhase2, ParseResult } from './tntParserFrontend'
-import { NameResolutionResult } from './nameResolver'
+import { parsePhase1, parsePhase2, ErrorMessage } from './tntParserFrontend'
+import { NameError } from './nameResolver'
 
 import yargs from 'yargs/yargs'
 
@@ -64,7 +64,7 @@ function parse (argv: any) {
   reader()
 }
 
-function reportPhase1Error (argv: any, result: ParseResult) {
+function reportPhase1Error (argv: any, result: { kind: 'error', messages: ErrorMessage[] }) {
   if (argv.out) {
     // write the errors to the output file
     writeToJson(argv.out, result)
@@ -78,7 +78,7 @@ function reportPhase1Error (argv: any, result: ParseResult) {
   }
 }
 
-function reportPhase2Error (argv: any, result: NameResolutionResult) {
+function reportPhase2Error (argv: any, result: { kind: 'error', errors: NameError[] }) {
   if (argv.out) {
     // write the errors to the output file
     writeToJson(argv.out, result)

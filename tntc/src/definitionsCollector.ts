@@ -70,6 +70,8 @@ export const defaultDefinitions: NameDefinition[] = [
   { kind: 'def', identifier: 'Bool' },
   { kind: 'def', identifier: 'Int' },
   { kind: 'def', identifier: 'Nat' },
+  { kind: 'def', identifier: 'TRUE' },
+  { kind: 'def', identifier: 'FALSE' },
 ]
 
 export function collectDefinitions (tntModule: TntModule): NameDefinition[] {
