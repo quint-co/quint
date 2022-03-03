@@ -84,6 +84,10 @@ export function parsePhase1 (text: string): ParseResult {
   }
 }
 
+/**
+ * Phase 2 of the TNT parser. Read the IR and check that all names are defined.
+ * Note that the IR may be ill-typed.
+ */
 export function parsePhase2 (tntModule: TntModule): NameResolutionResult {
   // Phase 2 is name resolution
   const definitions = collectDefinitions(tntModule)
