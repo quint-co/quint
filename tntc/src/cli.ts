@@ -36,6 +36,7 @@ function parse (argv: any) {
     const phase2Result = parsePhase2(phase1Result.module)
     if (phase2Result.kind === 'error') {
       reportPhase2Error(argv, phase2Result)
+      process.exit(1)
     }
 
     if (argv.out) {
