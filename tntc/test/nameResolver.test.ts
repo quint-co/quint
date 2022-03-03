@@ -103,7 +103,7 @@ describe('nameResolver', () => {
     const result = resolveNames(tntModule, definitions)
     const expectedResult: NameResolutionResult = {
       kind: 'error',
-      errors: [{ name: 'x', expression: nameExpr, trace: [nameExpr, appExpr] }],
+      errors: [{ name: 'x', definitionName: 'A', expression: nameExpr, trace: [nameExpr, appExpr] }],
     }
     assert.deepEqual(result, expectedResult)
   })

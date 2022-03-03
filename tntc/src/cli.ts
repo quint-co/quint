@@ -47,8 +47,9 @@ function parse (argv: any) {
             // write the errors to the output file
             writeToJson(argv.out, result)
           } else {
+            // TODO: add locs for these errors (issue #41)
             result.errors.forEach(error => {
-              console.error(`Couldn't resolve name ${error.name}`)
+              console.error(`Couldn't resolve name ${error.name} in definition for ${error.definitionName}`)
               error.trace.forEach(a => console.error('in', a))
             })
           }

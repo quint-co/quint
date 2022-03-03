@@ -3,6 +3,7 @@
   "errors": [
     {
       "name": "S",
+      "definitionName": "f",
       "expression": {
         "id": 1,
         "kind": "name",

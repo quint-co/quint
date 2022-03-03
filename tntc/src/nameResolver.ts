@@ -3,6 +3,7 @@ import { NameDefinition } from './definitionsCollector'
 
 export interface NameError {
   name: string;
+  definitionName: string;
   expression: TntEx;
   trace: TntEx[];
 }
@@ -13,23 +14,18 @@ export type NameResolutionResult =
 
 export function resolveNames (tntModule: TntModule, definitions: NameDefinition[]): NameResolutionResult {
   const results: NameResolutionResult[] = tntModule.defs.map(def => {
-    // TODO: include definition name in result for error reporting
-    return def.kind === 'def' ? checkNamesInExpr(definitions, def.expr, [def.expr.id]) : { kind: 'ok' }
+    return def.kind === 'def' ? checkNamesInExpr(definitions, def.name, def.expr, [def.expr.id]) : { kind: 'ok' }
   })
 
-  if (results.some(result => result.kind === 'error')) {
-    // Aggregate errors
-    const errors = results.reduce((errors: NameError[], result: NameResolutionResult) => {
-      return result.kind === 'error' ? errors.concat(result.errors) : errors
-    }, [])
+  // Aggregate errors
+  const errors = results.reduce((errors: NameError[], result: NameResolutionResult) => {
+    return result.kind === 'error' ? errors.concat(result.errors) : errors
+  }, [])
 
-    return { kind: 'error', errors: errors }
-  }
-
-  return { kind: 'ok' }
+  return errors.length > 0 ? { kind: 'error', errors: errors } : { kind: 'ok' }
 }
 
-function checkNamesInExpr (nameDefinitions: NameDefinition[], expr: TntEx, scopes: BigInt[]): NameResolutionResult {
+function checkNamesInExpr (nameDefinitions: NameDefinition[], defName: string, expr: TntEx, scopes: BigInt[]): NameResolutionResult {
   switch (expr.kind) {
     case 'name': {
       const nameDefinitionsForScope = filterScope(nameDefinitions, scopes)
@@ -37,17 +33,18 @@ function checkNamesInExpr (nameDefinitions: NameDefinition[], expr: TntEx, scope
       if (nameDefinitionsForScope.some(name => name.identifier === expr.name)) {
         return { kind: 'ok' }
       } else {
-        return { kind: 'error', errors: [{ name: expr.name, expression: expr, trace: [] }] }
+        return { kind: 'error', errors: [{ name: expr.name, definitionName: defName, expression: expr, trace: [] }] }
       }
     }
 
     case 'app': {
       const errors = expr.args.flatMap(arg => {
-        const result = checkNamesInExpr(nameDefinitions, arg, scopes.concat(arg.id))
+        const result = checkNamesInExpr(nameDefinitions, defName, arg, scopes.concat(arg.id))
 
         if (result.kind === 'error') {
           return result.errors.map(error => ({
             name: error.name,
+            definitionName: defName,
             expression: error.expression,
             trace: error.trace.length === 0 ? error.trace.concat([arg, expr]) : error.trace.concat([expr]),
           }))
@@ -59,7 +56,7 @@ function checkNamesInExpr (nameDefinitions: NameDefinition[], expr: TntEx, scope
       return errors.length === 0 ? { kind: 'ok' } : { kind: 'error', errors: errors }
     }
 
-    case 'lambda': return checkNamesInExpr(nameDefinitions, expr.expr, scopes.concat(expr.expr.id))
+    case 'lambda': return checkNamesInExpr(nameDefinitions, defName, expr.expr, scopes.concat(expr.expr.id))
 
     default:
       return { kind: 'ok' }
