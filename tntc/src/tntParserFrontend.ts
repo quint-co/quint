@@ -12,14 +12,18 @@ import { TntListener } from './generated/TntListener'
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
 import { TntModule } from './tntIr'
-import { ToIrListener, Loc } from './ToIrListener'
+import { ToIrListener } from './ToIrListener'
 import { collectDefinitions } from './definitionsCollector'
 import { resolveNames, NameResolutionResult } from './nameResolver'
 
+export interface Loc {
+  start: { line: number; col: number; index: number; }
+  end?: { line: number; col: number; index: number; }
+}
+
 export interface ErrorMessage {
   explanation: string;
-  start: { line: number; col: number; }
-  end: { line: number; col: number; }
+  loc: Loc;
 }
 
 export type ParseResult =
@@ -41,12 +45,13 @@ export function parsePhase1 (text: string): ParseResult {
       charPositionInLine: number,
       msg: string) => {
       //
-      const len = (offendingSymbol)
+      const len = offendingSymbol
         ? (1 + offendingSymbol.stopIndex - offendingSymbol.startIndex)
-        : 1
-      const start = { line: line - 1, col: charPositionInLine }
-      const end = { line: line - 1, col: charPositionInLine + len }
-      errorMessages.push({ explanation: msg, start, end })
+        : 0
+      const index = offendingSymbol ? offendingSymbol.startIndex : 0
+      const start = { line: line - 1, col: charPositionInLine, index: index }
+      const end = { line: line - 1, col: charPositionInLine + len, index: index + len }
+      errorMessages.push({ explanation: msg, loc: { start: start, end: end } })
     },
   }
 
@@ -88,9 +93,24 @@ export function parsePhase1 (text: string): ParseResult {
  * Phase 2 of the TNT parser. Read the IR and check that all names are defined.
  * Note that the IR may be ill-typed.
  */
-export function parsePhase2 (tntModule: TntModule): NameResolutionResult {
-  // Phase 2 is name resolution
+export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>): ParseResult {
   const definitions = collectDefinitions(tntModule)
 
-  return resolveNames(tntModule, definitions)
+  const result = resolveNames(tntModule, definitions)
+
+  const errorMessages: ErrorMessage[] = []
+
+  if (result.kind === 'error') {
+    result.errors.forEach(error => {
+      const expression = error.expression
+      const msg = `Couldn't resolve name ${error.name} in definition for ${error.definitionName}`
+      const loc = sourceMap.get(expression.id)
+      if (!loc) {
+        throw new Error(`no loc found for ${expression.id}`)
+      }
+      errorMessages.push({ explanation: msg, loc: loc })
+    })
+  }
+
+  return errorMessages ? { kind: 'error', messages: errorMessages } : { kind: 'ok', module: tntModule, sourceMap: sourceMap }
 }

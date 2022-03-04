@@ -3,8 +3,7 @@ import { assert } from 'chai'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import JSONbig from 'json-bigint'
-import { parsePhase1, parsePhase2 } from '../src/tntParserFrontend'
-import { Loc } from '../src/ToIrListener'
+import { parsePhase1, parsePhase2, Loc } from '../src/tntParserFrontend'
 
 // read a TNT file from the test data directory
 function readTnt (name: string): string {
@@ -31,7 +30,7 @@ function parseAndCompare (artifact: string, wrap: (json: any) => any, namesOk: B
     outputToCompare = phase1Result
   } else if (!namesOk) {
     // An error occurred at phase 2, check if it is the expected result
-    outputToCompare = parsePhase2(phase1Result.module)
+    outputToCompare = parsePhase2(phase1Result.module, phase1Result.sourceMap)
   } else {
     // Both phases succeeded, check that the module is correclty outputed
     outputToCompare = phase1Result.module

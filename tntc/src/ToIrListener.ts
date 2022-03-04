@@ -4,14 +4,7 @@ import { TntListener } from './generated/TntListener'
 import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef } from './tntIr'
 import { TntType } from './tntTypes'
 import { strict as assert } from 'assert'
-import { ErrorMessage } from './tntParserFrontend'
-
-export interface Loc {
-  startLine: number;
-  startColumn: number;
-  stopLine?: number;
-  stopColumn?: number;
-}
+import { ErrorMessage, Loc } from './tntParserFrontend'
 
 /**
  * An ANTLR4 listener that constructs TntIr objects out of the abstract
@@ -1015,28 +1008,25 @@ export class ToIrListener implements TntListener {
   private loc (ctx: ParserRuleContext): Loc {
     if (ctx.stop) {
       return {
-        startLine: ctx.start.line,
-        startColumn: ctx.start.charPositionInLine,
-        stopLine: ctx.stop.line,
-        stopColumn: ctx.stop.charPositionInLine,
+        start: { line: ctx.start.line - 1, col: ctx.start.charPositionInLine, index: ctx.start.startIndex },
+        end: { line: ctx.stop.line - 1, col: ctx.stop.charPositionInLine, index: ctx.stop.stopIndex },
       }
     } else {
       return {
-        startLine: ctx.start.line,
-        startColumn: ctx.start.charPositionInLine,
+        start: { line: ctx.start.line - 1, col: ctx.start.charPositionInLine, index: ctx.start.startIndex },
       }
     }
   }
 
   // push an error from the context
   private pushError (ctx: ParserRuleContext, message: string) {
-    const start = { line: ctx.start.line, col: ctx.start.charPositionInLine }
+    const start = { line: ctx.start.line - 1, col: ctx.start.charPositionInLine, index: ctx.start.startIndex }
     // istanbul ignore next
     const end =
       ctx.stop
-        ? { line: ctx.stop.line, col: ctx.stop.charPositionInLine }
+        ? { line: ctx.stop.line - 1, col: ctx.stop.charPositionInLine, index: ctx.stop.stopIndex }
         : start
-    this.errors.push({ explanation: message, start: start, end: end })
+    this.errors.push({ explanation: message, loc: { start: start, end: end } })
   }
 
   // pop n elements out of typeStack

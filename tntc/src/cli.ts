@@ -12,12 +12,10 @@
 import { readFile, writeFileSync } from 'fs'
 import { resolve } from 'path'
 import { cwd } from 'process'
-import JSONbig = require('json-bigint')
+import JSONbig from 'json-bigint'
+import lineColumn from 'line-column'
 
-// TODO: move this interface definition to another file
-import { Loc } from './ToIrListener'
 import { parsePhase1, parsePhase2, ErrorMessage } from './tntParserFrontend'
-import { NameError } from './nameResolver'
 
 import yargs from 'yargs/yargs'
 
@@ -29,15 +27,17 @@ import yargs from 'yargs/yargs'
 function parse (argv: any) {
   // a callback to parse the text that we get from readFile
   const parseText = (text: string) => {
+    var finder = lineColumn(text);
+
     const phase1Result = parsePhase1(text)
     if (phase1Result.kind === 'error') {
-      reportPhase1Error(argv, phase1Result)
+      reportError(argv, text, finder, phase1Result)
       process.exit(1)
     }
 
-    const phase2Result = parsePhase2(phase1Result.module)
+    const phase2Result = parsePhase2(phase1Result.module, phase1Result.sourceMap)
     if (phase2Result.kind === 'error') {
-      reportPhase2Error(argv, phase2Result, phase1Result.sourceMap)
+      reportError(argv, text, finder, phase2Result)
       process.exit(1)
     }
 
@@ -66,7 +66,7 @@ function parse (argv: any) {
   reader()
 }
 
-function reportPhase1Error (argv: any, result: { kind: 'error', messages: ErrorMessage[] }) {
+function reportError (argv: any, text: string, finder: any, result: { kind: 'error', messages: ErrorMessage[] }) {
   if (argv.out) {
     // write the errors to the output file
     writeToJson(argv.out, result)
@@ -74,21 +74,29 @@ function reportPhase1Error (argv: any, result: { kind: 'error', messages: ErrorM
     // write the errors to stderr
     result.messages.forEach((m) => {
       // TODO: use m.source instead of argv.input (issue #21)
-      const loc = `${argv.input}:${m.start.line + 1}:${m.start.col + 1}`
-      console.error(`${loc} - error ${m.explanation}`)
-    })
-  }
-}
+      const loc = `${argv.input}:${m.loc.start.line + 1}:${m.loc.start.col + 1}`
+      console.error(`${loc} - error: ${m.explanation}`)
 
-function reportPhase2Error (argv: any, result: { kind: 'error', errors: NameError[] }, sourceMap: Map<BigInt, Loc>) {
-  if (argv.out) {
-    // write the errors to the output file
-    writeToJson(argv.out, result)
-  } else {
-    // TODO: add locs for these errors (issue #41)
-    result.errors.forEach(error => {
-      console.error(`Couldn't resolve name ${error.name} in definition for ${error.definitionName}`)
-      error.trace.forEach(a => console.error('in', sourceMap.get(a.id)))
+      const endLine = m.loc.end ? m.loc.end.line : m.loc.start.line
+      for (let i = m.loc.start.line; i <= endLine; i++) {
+        const lineIndex = finder.toIndex(i + 1, 1)
+        const line = text.slice(lineIndex).split('\n')[0]
+        const lineLoc = `${i + 1}: `
+        console.log(`${lineLoc}${line}`)
+
+        const startCol = i === m.loc.start.line ? m.loc.start.col : 0
+        const endCol = m.loc.end ? (i === endLine ? (m.loc.end.index != 0 ? m.loc.end.index - lineIndex : m.loc.end.col) : line.length) : m.loc.start.col
+
+        // padding
+        for (let j = 0; j < lineLoc.length; j++) {
+          process.stdout.write(' ')
+        }
+        for (let j = 0; j < line.length; j++) {
+          const str = j >= startCol && j <= endCol ? '^' : ' '
+          process.stdout.write(str)
+        }
+        process.stdout.write('\n')
+      }
     })
   }
 }
