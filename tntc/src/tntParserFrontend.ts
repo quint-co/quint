@@ -12,7 +12,7 @@ import { TntListener } from './generated/TntListener'
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
 import { TntModule } from './tntIr'
-import { ToIrListener } from './ToIrListener'
+import { ToIrListener, Loc } from './ToIrListener'
 import { collectDefinitions } from './definitionsCollector'
 import { resolveNames, NameResolutionResult } from './nameResolver'
 
@@ -23,7 +23,7 @@ export interface ErrorMessage {
 }
 
 export type ParseResult =
-  | { kind: 'ok', module: TntModule }
+  | { kind: 'ok', module: TntModule, sourceMap: Map<BigInt, Loc> }
   | { kind: 'error', messages: ErrorMessage[] }
 
 /**
@@ -76,7 +76,7 @@ export function parsePhase1 (text: string): ParseResult {
     if (listener.errors.length > 0) {
       return { kind: 'error', messages: listener.errors }
     } else if (listener.rootModule !== undefined) {
-      return { kind: 'ok', module: listener.rootModule }
+      return { kind: 'ok', module: listener.rootModule, sourceMap: listener.sourceMap }
     } else {
       // istanbul ignore next
       throw new Error('this should be impossible: root module is undefined')

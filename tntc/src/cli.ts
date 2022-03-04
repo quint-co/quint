@@ -14,6 +14,8 @@ import { resolve } from 'path'
 import { cwd } from 'process'
 import JSONbig = require('json-bigint')
 
+// TODO: move this interface definition to another file
+import { Loc } from './ToIrListener'
 import { parsePhase1, parsePhase2, ErrorMessage } from './tntParserFrontend'
 import { NameError } from './nameResolver'
 
@@ -35,7 +37,7 @@ function parse (argv: any) {
 
     const phase2Result = parsePhase2(phase1Result.module)
     if (phase2Result.kind === 'error') {
-      reportPhase2Error(argv, phase2Result)
+      reportPhase2Error(argv, phase2Result, phase1Result.sourceMap)
       process.exit(1)
     }
 
@@ -78,7 +80,7 @@ function reportPhase1Error (argv: any, result: { kind: 'error', messages: ErrorM
   }
 }
 
-function reportPhase2Error (argv: any, result: { kind: 'error', errors: NameError[] }) {
+function reportPhase2Error (argv: any, result: { kind: 'error', errors: NameError[] }, sourceMap: Map<BigInt, Loc>) {
   if (argv.out) {
     // write the errors to the output file
     writeToJson(argv.out, result)
@@ -86,7 +88,7 @@ function reportPhase2Error (argv: any, result: { kind: 'error', errors: NameErro
     // TODO: add locs for these errors (issue #41)
     result.errors.forEach(error => {
       console.error(`Couldn't resolve name ${error.name} in definition for ${error.definitionName}`)
-      error.trace.forEach(a => console.error('in', a))
+      error.trace.forEach(a => console.error('in', sourceMap.get(a.id)))
     })
   }
 }

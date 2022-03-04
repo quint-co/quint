@@ -4,6 +4,7 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import JSONbig from 'json-bigint'
 import { parsePhase1, parsePhase2 } from '../src/tntParserFrontend'
+import { Loc } from '../src/ToIrListener'
 
 // read a TNT file from the test data directory
 function readTnt (name: string): string {
@@ -51,8 +52,8 @@ function nowrap (arg: any): any {
 function parseAsExpected (artifact: string, description: string): void {
   it(description, () => {
     parseAndCompare(artifact,
-      function (module: any) {
-        return { kind: 'ok', module: module }
+      function(module: any) {
+        return { kind: 'ok', module: module, sourceMap: new Map<BigInt, Loc>() }
       }, true)
   })
 }
@@ -63,7 +64,7 @@ describe('parse ok', () => {
   it('parse empty module', () => {
     const result = parsePhase1(readTnt('_0001emptyModule'))
     const module = { id: 1n, name: 'empty', defs: [] }
-    assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
+    assert.deepEqual(result, { kind: 'ok', module: module, sourceMap: new Map<BigInt, Loc>() }, 'expected ok')
   })
 
   parseAsExpected(
