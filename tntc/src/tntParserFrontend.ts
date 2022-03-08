@@ -112,5 +112,5 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
     })
   }
 
-  return errorMessages ? { kind: 'error', messages: errorMessages } : { kind: 'ok', module: tntModule, sourceMap: sourceMap }
+  return errorMessages.length > 0 ? { kind: 'error', messages: errorMessages } : { kind: 'ok', module: tntModule, sourceMap: sourceMap }
 }

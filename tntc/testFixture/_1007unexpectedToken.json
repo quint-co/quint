@@ -2,25 +2,33 @@
   "kind": "error",
   "messages": [
     {
-      "end": {
-        "col": 21,
-        "line": 2
-      },
       "explanation": "token recognition error at: '#'",
-      "start": {
-        "col": 20,
-        "line": 2
+      "loc": {
+        "start": {
+          "line": 2,
+          "col": 20,
+          "index": 0
+        },
+        "end": {
+          "line": 2,
+          "col": 20,
+          "index": 0
+        }
       }
     },
     {
-      "end": {
-        "col": 26,
-        "line": 2
-      },
       "explanation": "extraneous input 'name' expecting {'module', '}', 'const', 'var', 'assume', 'type', 'import', 'val', 'def', 'pred', 'action', 'temporal'}",
-      "start": {
-        "col": 22,
-        "line": 2
+      "loc": {
+        "start": {
+          "line": 2,
+          "col": 22,
+          "index": 77
+        },
+        "end": {
+          "line": 2,
+          "col": 26,
+          "index": 81
+        }
       }
     }
   ]

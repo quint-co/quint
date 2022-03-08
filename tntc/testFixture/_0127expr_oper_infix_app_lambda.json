@@ -1,19 +1,15 @@
 {
-  "id": 25,
   "name": "withVals",
   "defs": [
     {
-      "id": 3,
       "kind": "def",
       "name": "S",
       "qualifier": "val",
       "expr": {
-        "id": 2,
         "kind": "app",
         "opcode": "set",
         "args": [
           {
-            "id": 1,
             "kind": "int",
             "type": {
               "kind": "int"
@@ -24,39 +20,32 @@
       }
     },
     {
-      "id": 10,
       "kind": "def",
       "name": "oper_app",
       "qualifier": "val",
       "expr": {
-        "id": 9,
         "kind": "app",
         "opcode": "filter",
         "args": [
           {
-            "id": 4,
             "kind": "name",
             "name": "S"
           },
           {
-            "id": 8,
             "kind": "lambda",
             "params": [
               "x"
             ],
             "qualifier": "def",
             "expr": {
-              "id": 7,
               "kind": "app",
               "opcode": "igt",
               "args": [
                 {
-                  "id": 5,
                   "kind": "name",
                   "name": "x"
                 },
                 {
-                  "id": 6,
                   "kind": "int",
                   "type": {
                     "kind": "int"
@@ -70,39 +59,32 @@
       }
     },
     {
-      "id": 17,
       "kind": "def",
       "name": "oper_app2",
       "qualifier": "val",
       "expr": {
-        "id": 16,
         "kind": "app",
         "opcode": "filter",
         "args": [
           {
-            "id": 11,
             "kind": "name",
             "name": "S"
           },
           {
-            "id": 15,
             "kind": "lambda",
             "params": [
               "x"
             ],
             "qualifier": "def",
             "expr": {
-              "id": 14,
               "kind": "app",
               "opcode": "igt",
               "args": [
                 {
-                  "id": 12,
                   "kind": "name",
                   "name": "x"
                 },
                 {
-                  "id": 13,
                   "kind": "int",
                   "type": {
                     "kind": "int"
@@ -116,39 +98,32 @@
       }
     },
     {
-      "id": 24,
       "kind": "def",
       "name": "oper_app3",
       "qualifier": "action",
       "expr": {
-        "id": 23,
         "kind": "app",
         "opcode": "guess",
         "args": [
           {
-            "id": 18,
             "kind": "name",
             "name": "S"
           },
           {
-            "id": 22,
             "kind": "lambda",
             "params": [
               "x"
             ],
             "qualifier": "action",
             "expr": {
-              "id": 21,
               "kind": "app",
               "opcode": "igt",
               "args": [
                 {
-                  "id": 19,
                   "kind": "name",
                   "name": "x"
                 },
                 {
-                  "id": 20,
                   "kind": "int",
                   "type": {
                     "kind": "int"

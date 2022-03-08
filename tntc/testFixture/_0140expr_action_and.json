@@ -1,20 +1,17 @@
 {
-  "id": 6,
   "name": "withVals",
   "defs": [
     {
-      "id": 5,
       "kind": "def",
       "name": "test_action_and",
       "qualifier": "action",
       "expr": {
-        "id": 4,
         "kind": "app",
         "opcode": "andAction",
         "args": [
-          { "id": 1, "kind": "bool", "value": false, "type": { "kind": "bool" } },
-          { "id": 2, "kind": "bool", "value": true, "type": { "kind": "bool" } },
-          { "id": 3, "kind": "bool", "value": false, "type": { "kind": "bool" } }
+          { "kind": "bool", "value": false, "type": { "kind": "bool" } },
+          { "kind": "bool", "value": true, "type": { "kind": "bool" } },
+          { "kind": "bool", "value": false, "type": { "kind": "bool" } }
         ]
       }
     }

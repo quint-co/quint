@@ -1,19 +1,15 @@
 {
-  "id": 22,
   "name": "withVals",
   "defs": [
     {
-      "id": 6,
       "kind": "def",
       "name": "S",
       "qualifier": "val",
       "expr": {
-        "id": 5,
         "kind": "app",
         "opcode": "set",
         "args": [
           {
-            "id": 1,
             "kind": "int",
             "type": {
               "kind": "int"
@@ -21,7 +17,6 @@
             "value": 1
           },
           {
-            "id": 2,
             "kind": "int",
             "type": {
               "kind": "int"
@@ -29,7 +24,6 @@
             "value": 2
           },
           {
-            "id": 3,
             "kind": "int",
             "type": {
               "kind": "int"
@@ -37,7 +31,6 @@
             "value": 3
           },
           {
-            "id": 4,
             "kind": "int",
             "type": {
               "kind": "int"
@@ -48,39 +41,32 @@
       }
     },
     {
-      "id": 13,
       "kind": "def",
       "name": "f",
       "qualifier": "val",
       "expr": {
-        "id": 12,
         "kind": "app",
         "opcode": "mapOf",
         "args": [
           {
-            "id": 7,
             "kind": "name",
             "name": "S"
           },
           {
-            "id": 11,
             "kind": "lambda",
             "params": [
               "x"
             ],
             "qualifier": "def",
             "expr": {
-              "id": 10,
               "kind": "app",
               "opcode": "iadd",
               "args": [
                 {
-                  "id": 8,
                   "kind": "name",
                   "name": "x"
                 },
                 {
-                  "id": 9,
                   "kind": "int",
                   "type": {
                     "kind": "int"
@@ -94,22 +80,18 @@
       }
     },
     {
-      "id": 18,
       "kind": "def",
       "name": "oper_app",
       "qualifier": "val",
       "expr": {
-        "id": 17,
         "kind": "app",
         "opcode": "except",
         "args": [
           {
-            "id": 14,
             "kind": "name",
             "name": "f"
           },
           {
-            "id": 15,
             "kind": "int",
             "type": {
               "kind": "int"
@@ -117,7 +99,6 @@
             "value": 3
           },
           {
-            "id": 16,
             "kind": "int",
             "type": {
               "kind": "int"
@@ -128,12 +109,10 @@
       }
     },
     {
-      "id": 21,
       "kind": "def",
       "name": "one",
       "qualifier": "val",
       "expr": {
-        "id": 20,
         "kind": "app",
         "opcode": "head",
         "args": []

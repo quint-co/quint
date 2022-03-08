@@ -1,19 +1,16 @@
 {
-  "id": 5,
   "name": "withVals",
   "defs": [
     {
-      "id": 4,
       "kind": "def",
       "name": "in_2_empty",
       "qualifier": "val",
       "expr": {
-        "id": 3,
         "kind": "app",
         "opcode": "in",
         "args": [
-          { "id": 1, "kind": "int", "value": 2, "type": { "kind": "int" } },
-          { "id": 2, "kind": "app", "opcode": "set", "args": [] }
+          { "kind": "int", "value": 2, "type": { "kind": "int" } },
+          { "kind": "app", "opcode": "set", "args": [] }
         ]
       }
     }

@@ -1,27 +1,21 @@
 {
-  "id": 12,
   "name": "withVals",
   "defs": [
     {
-      "id": 11,
       "kind": "def",
       "name": "rec_field",
       "qualifier": "val",
       "expr": {
-        "id": 10,
         "kind": "let",
         "opdef": {
-          "id": 6,
           "kind": "def",
           "name": "rec",
           "qualifier": "val",
           "expr": {
-            "id": 5,
             "kind": "app",
             "opcode": "record",
             "args": [
               {
-                "id": 3,
                 "kind": "str",
                 "value": "a",
                 "type": {
@@ -29,7 +23,6 @@
                 }
               },
               {
-                "id": 1,
                 "kind": "int",
                 "type": {
                   "kind": "int"
@@ -37,7 +30,6 @@
                 "value": 1
               },
               {
-                "id": 4,
                 "kind": "str",
                 "value": "b",
                 "type": {
@@ -45,7 +37,6 @@
                 }
               },
               {
-                "id": 2,
                 "kind": "str",
                 "type": {
                   "kind": "str"
@@ -56,17 +47,14 @@
           }
         },
         "expr": {
-          "id": 9,
           "kind": "app",
           "opcode": "field",
           "args": [
             {
-              "id": 7,
               "kind": "name",
               "name": "rec"
             },
             {
-              "id": 8,
               "kind": "str",
               "value": "a"
             }

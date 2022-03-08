@@ -1,24 +1,20 @@
 {
-  "id": 10,
   "name": "assumes",
   "defs": [
     {
-      "id": 1,
       "kind": "const",
       "name": "N",
       "type": { "kind": "int" }
     },
     {
-      "id": 5,
       "kind": "assume",
       "name": "positive",
       "assumption": {
-        "id": 4,
         "kind": "app",
         "opcode": "igt",
         "args": [
-          { "id": 2, "kind": "name", "name": "N" },
-          { "id": 3, "kind": "int", "value": 0, "type": { "kind": "int" } }
+          { "kind": "name", "name": "N" },
+          { "kind": "int", "value": 0, "type": { "kind": "int" } }
         ]
       }
     },
@@ -26,12 +22,10 @@
       "assumption": {
         "args": [
           {
-            "id": 6,
             "kind": "name",
             "name": "N"
           },
           {
-            "id": 7,
             "kind": "int",
             "type": {
               "kind": "int"
@@ -39,11 +33,9 @@
             "value": 0
           }
         ],
-        "id": 8,
         "kind": "app",
         "opcode": "neq"
       },
-      "id": 9,
       "kind": "assume",
       "name": "_"
     }

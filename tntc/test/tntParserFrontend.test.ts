@@ -36,6 +36,8 @@ function parseAndCompare (artifact: string, wrap: (json: any) => any, namesOk: B
     outputToCompare = phase1Result.module
   }
 
+  outputToCompare = removeIds(outputToCompare)
+
   // run it through stringify-parse to obtain the same json (due to bigints)
   const reparsedResult = JSONbig.parse(JSONbig.stringify(outputToCompare))
   // compare the JSON trees
@@ -57,13 +59,34 @@ function parseAsExpected (artifact: string, description: string): void {
   })
 }
 
+function removeIds (obj: any) {
+  if (typeof obj !== 'object' || obj === null) {
+    return obj
+  }
+
+  Object.keys(obj).forEach(key => {
+    if (Array.isArray(obj[key])) {
+      return obj[key].map((value: Object) => {
+        return removeIds(value)
+      })
+    } else {
+      return removeIds(obj[key])
+    }
+  })
+  delete obj.id
+  return obj
+}
+
 // plenty of tests
 
 describe('parse ok', () => {
   it('parse empty module', () => {
     const result = parsePhase1(readTnt('_0001emptyModule'))
     const module = { id: 1n, name: 'empty', defs: [] }
-    assert.deepEqual(result, { kind: 'ok', module: module, sourceMap: new Map<BigInt, Loc>() }, 'expected ok')
+    assert.deepEqual(result.kind, 'ok')
+    if (result.kind === 'ok') {
+      assert.deepEqual(result.module, module)
+    }
   })
 
   parseAsExpected(

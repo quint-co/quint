@@ -1,27 +1,23 @@
 {
-  "id": 7,
   "name": "withVals",
   "defs": [
     {
-      "id": 6,
       "kind": "def",
       "name": "VeryTrue",
       "qualifier": "val",
       "expr": {
-        "id": 5,
         "kind": "app",
         "opcode": "eq",
         "args": [
           {
-            "id": 3,
             "kind": "app",
             "opcode": "iadd",
             "args": [
-              { "id": 1, "kind": "int", "value": 2, "type": { "kind": "int" } },
-              { "id": 2, "kind": "int", "value": 2, "type": { "kind": "int" } }
+              { "kind": "int", "value": 2, "type": { "kind": "int" } },
+              { "kind": "int", "value": 2, "type": { "kind": "int" } }
             ]
           },
-          { "id": 4, "kind": "int", "value": 4, "type": { "kind": "int" } }
+          { "kind": "int", "value": 4, "type": { "kind": "int" } }
         ]
       }
     }

@@ -1,11 +1,20 @@
-{ 
+{
   "kind": "error",
   "messages": [
     {
-      "explanation":
-        "TNT011: Records in disjoint union have different tag fields: tag and kind",
-      "start": { "line": 5, "col": 2 },
-      "end": { "line": 6, "col": 49 }
+      "explanation": "TNT011: Records in disjoint union have different tag fields: tag and kind",
+      "loc": {
+        "start": {
+          "line": 4,
+          "col": 4,
+          "index": 127
+        },
+        "end": {
+          "line": 5,
+          "col": 51,
+          "index": 211
+        }
+      }
     }
   ]
 }

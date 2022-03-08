@@ -27,7 +27,7 @@ import yargs from 'yargs/yargs'
 function parse (argv: any) {
   // a callback to parse the text that we get from readFile
   const parseText = (text: string) => {
-    var finder = lineColumn(text);
+    const finder = lineColumn(text)
 
     const phase1Result = parsePhase1(text)
     if (phase1Result.kind === 'error') {
@@ -46,7 +46,7 @@ function parse (argv: any) {
       writeToJson(argv.out, {
         status: 'parsed',
         warnings: [],
-        module: phase1Result.module,
+        module: removeIds(phase1Result.module),
       })
     }
     // TODO: write source map (issue #20)

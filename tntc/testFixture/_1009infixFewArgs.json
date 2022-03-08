@@ -2,14 +2,18 @@
   "kind": "error",
   "messages": [
     {
-      "end": {
-        "col": 28,
-        "line": 2
-      },
       "explanation": "extraneous input 'cardinality' expecting {'module', '}', 'const', 'var', 'assume', 'type', 'import', 'val', 'def', 'pred', 'action', 'temporal'}",
-      "start": {
-        "col": 17,
-        "line": 2
+      "loc": {
+        "start": {
+          "line": 2,
+          "col": 17,
+          "index": 88
+        },
+        "end": {
+          "line": 2,
+          "col": 28,
+          "index": 99
+        }
       }
     }
   ]

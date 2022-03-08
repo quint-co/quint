@@ -1,17 +1,14 @@
 {
-  "id": 4,
   "name": "withVals",
   "defs": [
     {
-      "id": 3,
       "kind": "def",
       "name": "uminus",
       "qualifier": "val",
       "expr": {
-        "id": 2,
         "kind": "app",
         "opcode": "iuminus",
-        "args": [{ "id": 1, "kind": "int", "value": 100, "type": { "kind": "int" } }]
+        "args": [{ "kind": "int", "value": 100, "type": { "kind": "int" } }]
       }
     }
   ]

@@ -1,15 +1,20 @@
 {
   "kind": "error",
-  "errors": [
+  "messages": [
     {
-      "name": "S",
-      "definitionName": "f",
-      "expression": {
-        "id": 1,
-        "kind": "name",
-        "name": "S"
-      },
-      "trace": []
+      "explanation": "Couldn't resolve name S in definition for f",
+      "loc": {
+        "start": {
+          "line": 2,
+          "col": 10,
+          "index": 96
+        },
+        "end": {
+          "line": 2,
+          "col": 10,
+          "index": 96
+        }
+      }
     }
   ]
 }
