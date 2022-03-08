@@ -7,7 +7,7 @@
 /**
  * Name resolution for TNT. From a lookup table of scoped and unscoped names,
  * navigate a module in the internal representation and check that each name
- * has either a unscoped definition or a scoped definition with a scope containing
+ * has either an unscoped definition or a scoped definition with a scope containing
  * the name expression.
  *
  * @module
@@ -45,7 +45,7 @@ export type NameResolutionResult =
  * @param tntModule the TNT module to be checked
  * @param definitions a list of names defined for that module, including their scope when not global
  *
- * @returns a succesful result in case all names are resolved, or an aggregation of errors otherwise
+ * @returns a successful result in case all names are resolved, or an aggregation of errors otherwise
  */
 export function resolveNames (tntModule: TntModule, definitions: NameDefinition[]): NameResolutionResult {
   const results: NameResolutionResult[] = tntModule.defs.map(def => {
@@ -68,6 +68,9 @@ function checkNamesInExpr (
 ): NameResolutionResult {
   switch (expr.kind) {
     case 'name': {
+      // This is a name expression, the name must be defined
+      // either globally or under a scope that contains the expression
+      // The list of scopes containing the expression is accumulated in param scopes
       const nameDefinitionsForScope = filterScope(nameDefinitions, scopes)
 
       if (nameDefinitionsForScope.some(name => name.identifier === expr.name)) {
@@ -78,6 +81,7 @@ function checkNamesInExpr (
     }
 
     case 'app': {
+      // Application, we need to resolve names for each of the arguments
       const errors = expr.args.flatMap(arg => {
         const result = checkNamesInExpr(nameDefinitions, defName, arg, scopes.concat(arg.id))
 
@@ -96,14 +100,20 @@ function checkNamesInExpr (
       return errors.length === 0 ? { kind: 'ok' } : { kind: 'error', errors: errors }
     }
 
-    case 'lambda': return checkNamesInExpr(nameDefinitions, defName, expr.expr, scopes.concat(expr.expr.id))
+    case 'lambda':
+      // Lambda expression, check names in the body expression
+      return checkNamesInExpr(nameDefinitions, defName, expr.expr, scopes.concat(expr.expr.id))
 
-    default: return { kind: 'ok' }
+    default:
+      // Other expressions don't have any names to resolve
+      return { kind: 'ok' }
   }
 }
 
 function filterScope (nameDefinitions: NameDefinition[], scopes: BigInt[]): NameDefinition[] {
   return nameDefinitions.filter(definition => {
+    // A definition should be considered in a scope if it's either unscoped or its scope is included
+    // in some scope containing the name expression's scope
     return !definition.scope || scopes.includes(definition.scope)
   })
 }
