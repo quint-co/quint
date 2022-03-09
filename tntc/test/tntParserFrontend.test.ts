@@ -18,20 +18,28 @@ function readJson (name: string): any {
 }
 
 // read the TNT file and the expected JSON, parse and compare the results
-function parseAndCompare (artifact: string, wrap: (json: any) => any): void {
+function parseAndCompare (artifact: string, wrap: (json: any) => any, checkNameError: Boolean): void {
   // read the input from the data directory and parse it
-  const result = parsePhase1(readTnt(artifact))
-  if (result.kind === 'ok') {
-    // While name resolution is not complete, just check that no errors are thrown
-    parsePhase2(result.module)
-  }
-  // run it through stringify-parse to obtain the same json (due to bigints)
-  const reparsedResult = JSONbig.parse(JSONbig.stringify(result))
+  const phase1Result = parsePhase1(readTnt(artifact))
   // read the expected result as JSON
   const expected = readJson(artifact)
+  let outputToCompare
+
+  if (phase1Result.kind === 'error') {
+    // An error occurred at phase 1, check if it is the expected result
+    outputToCompare = phase1Result
+  } else if (checkNameError) {
+    // An error occurred at phase 2, check if it is the expected result
+    outputToCompare = parsePhase2(phase1Result.module)
+  } else {
+    // Both phases succeeded, check that the module is correclty outputed
+    outputToCompare = phase1Result.module
+  }
+
+  // run it through stringify-parse to obtain the same json (due to bigints)
+  const reparsedResult = JSONbig.parse(JSONbig.stringify(outputToCompare))
   // compare the JSON trees
-  assert.deepEqual(reparsedResult, wrap(expected),
-    'expected JSON trees to be equal')
+  assert.deepEqual(reparsedResult, expected, 'expected JSON trees to be equal')
 }
 
 // identity function that can be used as a default wrapper
@@ -43,9 +51,9 @@ function nowrap (arg: any): any {
 function parseAsExpected (artifact: string, description: string): void {
   it(description, () => {
     parseAndCompare(artifact,
-      function (module: any) {
+      function(module: any) {
         return { kind: 'ok', module: module }
-      })
+      }, false)
   })
 }
 
@@ -351,26 +359,34 @@ describe('parse ok', () => {
 
 describe('parse errors', () => {
   it('error in module unit', () => {
-    parseAndCompare('_1002emptyWithError', nowrap)
+    parseAndCompare('_1002emptyWithError', nowrap, false)
   })
 
   it('error on malformed disjoint union', () => {
-    parseAndCompare('_1005constRecordsError', nowrap)
+    parseAndCompare('_1005constRecordsError', nowrap, false)
   })
 
   it('error on unexpected symbol after expression', () => {
-    parseAndCompare('_1006unexpectedExpr', nowrap)
+    parseAndCompare('_1006unexpectedExpr', nowrap, false)
   })
 
   it('error on unrecognized token', () => {
-    parseAndCompare('_1007unexpectedToken', nowrap)
+    parseAndCompare('_1007unexpectedToken', nowrap, false)
   })
 
   it('error on unexpected "="', () => {
-    parseAndCompare('_1008unexpectedEq', nowrap)
+    parseAndCompare('_1008unexpectedEq', nowrap, false)
   })
 
   it('error on infix without arguments', () => {
-    parseAndCompare('_1009infixFewArgs', nowrap)
+    parseAndCompare('_1009infixFewArgs', nowrap, false)
+  })
+
+  it('error on unresolved name', () => {
+    parseAndCompare('_1010undefinedName', nowrap, true)
+  })
+
+  it('error on unresolved scoped name', () => {
+    parseAndCompare('_1011nameOutOfScope', nowrap, true)
   })
 })

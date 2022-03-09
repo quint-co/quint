@@ -2,6 +2,7 @@
 // Since 'val' gives us the simplest way of defining expressions,
 // we also do extensive testing of expression syntax in this test.
 module withVals {
+    val S = set(1)
 	// Pass a lambda operator as a second argument of filter.
 	// Here we are using the infix notation.
 	val oper_app = S filter (x -> x > 10)

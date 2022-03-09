@@ -14,6 +14,7 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 import { TntModule } from './tntIr'
 import { ToIrListener } from './ToIrListener'
 import { collectDefinitions } from './definitionsCollector'
+import { resolveNames, NameResolutionResult } from './nameResolver'
 
 export interface ErrorMessage {
   explanation: string;
@@ -83,10 +84,13 @@ export function parsePhase1 (text: string): ParseResult {
   }
 }
 
-export function parsePhase2 (tntModule: TntModule): ParseResult {
+/**
+ * Phase 2 of the TNT parser. Read the IR and check that all names are defined.
+ * Note that the IR may be ill-typed.
+ */
+export function parsePhase2 (tntModule: TntModule): NameResolutionResult {
   // Phase 2 is name resolution
-  // For now, just collect definitions. We will later use this information to resolve names.
-  collectDefinitions(tntModule)
+  const definitions = collectDefinitions(tntModule)
 
-  return { kind: 'ok', module: tntModule }
+  return resolveNames(tntModule, definitions)
 }

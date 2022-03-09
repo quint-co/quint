@@ -14,7 +14,8 @@ import { resolve } from 'path'
 import { cwd } from 'process'
 import JSONbig = require('json-bigint')
 
-import { parsePhase1, parsePhase2 } from './tntParserFrontend'
+import { parsePhase1, parsePhase2, ErrorMessage } from './tntParserFrontend'
+import { NameError } from './nameResolver'
 
 import yargs from 'yargs/yargs'
 
@@ -26,35 +27,30 @@ import yargs from 'yargs/yargs'
 function parse (argv: any) {
   // a callback to parse the text that we get from readFile
   const parseText = (text: string) => {
-    const result = parsePhase1(text)
-    if (result.kind !== 'error') {
-      parsePhase2(result.module)
-      // TODO: check result from phase 2
-      if (argv.out) {
-        // write the parsed IR to the output file
-        writeToJson(argv.out, {
-          status: 'parsed',
-          warnings: [],
-          module: result.module,
-        })
-      }
-      // TODO: write source map (issue #20)
-      process.exit(0)
-    } else {
-      if (argv.out) {
-        // write the errors to the output file
-        writeToJson(argv.out, result)
-      } else {
-        // write the errors to stderr
-        result.messages.forEach((m) => {
-          // TODO: use m.source instead of argv.input (issue #21)
-          const loc = `${argv.input}:${m.start.line + 1}:${m.start.col + 1}`
-          console.error(`${loc} - error ${m.explanation}`)
-        })
-      }
+    const phase1Result = parsePhase1(text)
+    if (phase1Result.kind === 'error') {
+      reportPhase1Error(argv, phase1Result)
       process.exit(1)
     }
+
+    const phase2Result = parsePhase2(phase1Result.module)
+    if (phase2Result.kind === 'error') {
+      reportPhase2Error(argv, phase2Result)
+      process.exit(1)
+    }
+
+    if (argv.out) {
+      // write the parsed IR to the output file
+      writeToJson(argv.out, {
+        status: 'parsed',
+        warnings: [],
+        module: phase1Result.module,
+      })
+    }
+    // TODO: write source map (issue #20)
+    process.exit(0)
   }
+
   // read either the standard input or an input file
   const reader = async () => {
     await readFile(argv.input, 'utf8', (err, data) => {
@@ -66,6 +62,33 @@ function parse (argv: any) {
     })
   }
   reader()
+}
+
+function reportPhase1Error (argv: any, result: { kind: 'error', messages: ErrorMessage[] }) {
+  if (argv.out) {
+    // write the errors to the output file
+    writeToJson(argv.out, result)
+  } else {
+    // write the errors to stderr
+    result.messages.forEach((m) => {
+      // TODO: use m.source instead of argv.input (issue #21)
+      const loc = `${argv.input}:${m.start.line + 1}:${m.start.col + 1}`
+      console.error(`${loc} - error ${m.explanation}`)
+    })
+  }
+}
+
+function reportPhase2Error (argv: any, result: { kind: 'error', errors: NameError[] }) {
+  if (argv.out) {
+    // write the errors to the output file
+    writeToJson(argv.out, result)
+  } else {
+    // TODO: add locs for these errors (issue #41)
+    result.errors.forEach(error => {
+      console.error(`Couldn't resolve name ${error.name} in definition for ${error.definitionName}`)
+      error.trace.forEach(a => console.error('in', a))
+    })
+  }
 }
 
 /**
