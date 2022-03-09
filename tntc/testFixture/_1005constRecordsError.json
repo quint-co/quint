@@ -4,6 +4,7 @@
     {
       "explanation": "TNT011: Records in disjoint union have different tag fields: tag and kind",
       "loc": {
+        "source": "mocked_path/testFixture/_1005constRecordsError.tnt",
         "start": {
           "line": 4,
           "col": 4,

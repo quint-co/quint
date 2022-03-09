@@ -14,9 +14,10 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 import { TntModule } from './tntIr'
 import { ToIrListener } from './ToIrListener'
 import { collectDefinitions } from './definitionsCollector'
-import { resolveNames, NameResolutionResult } from './nameResolver'
+import { resolveNames } from './nameResolver'
 
 export interface Loc {
+  source: string;
   start: { line: number; col: number; index: number; }
   end?: { line: number; col: number; index: number; }
 }
@@ -35,7 +36,7 @@ export type ParseResult =
  * Note that the IR may be ill-typed and some names may be unresolved.
  * The main goal of this pass is to translate a sequence of characters into IR.
  */
-export function parsePhase1 (text: string): ParseResult {
+export function parsePhase1 (text: string, sourceLocation: string): ParseResult {
   const errorMessages: ErrorMessage[] = []
   // error listener to report lexical and syntax errors
   const errorListener: any = {
@@ -51,7 +52,7 @@ export function parsePhase1 (text: string): ParseResult {
       const index = offendingSymbol ? offendingSymbol.startIndex : 0
       const start = { line: line - 1, col: charPositionInLine, index: index }
       const end = { line: line - 1, col: charPositionInLine + len, index: index + len }
-      errorMessages.push({ explanation: msg, loc: { start: start, end: end } })
+      errorMessages.push({ explanation: msg, loc: { source: sourceLocation, start: start, end: end } })
     },
   }
 
@@ -75,7 +76,7 @@ export function parsePhase1 (text: string): ParseResult {
     return { kind: 'error', messages: errorMessages }
   } else {
     // walk through the AST and construct the IR
-    const listener = new ToIrListener()
+    const listener = new ToIrListener(sourceLocation)
     ParseTreeWalker.DEFAULT.walk(listener as TntListener, tree)
 
     if (listener.errors.length > 0) {

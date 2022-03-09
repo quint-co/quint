@@ -15,6 +15,10 @@ import { ErrorMessage, Loc } from './tntParserFrontend'
  * @author Igor Konnov
  */
 export class ToIrListener implements TntListener {
+  constructor (sourceLocation: string) {
+    this.sourceLocation = sourceLocation
+  }
+
   /**
    * The module that is constructed as a result of parsing
    */
@@ -26,6 +30,9 @@ export class ToIrListener implements TntListener {
    * If errors occur in the listener, this array contains explanations.
    */
   errors: ErrorMessage[] = []
+
+  private sourceLocation: string = ''
+
   // the stack of definitions per module
   private moduleDefStack: TntDef[][] = []
   // the stack of definitions
@@ -997,8 +1004,8 @@ export class ToIrListener implements TntListener {
   }
 
   /**
-    * Produce a human-readable location string.
-    */
+   * Produce a human-readable location string.
+   */
   private locStr (ctx: ParserRuleContext) {
     const line = ctx.start.line
     const col = ctx.start.charPositionInLine
@@ -1008,11 +1015,13 @@ export class ToIrListener implements TntListener {
   private loc (ctx: ParserRuleContext): Loc {
     if (ctx.stop) {
       return {
+        source: this.sourceLocation,
         start: { line: ctx.start.line - 1, col: ctx.start.charPositionInLine, index: ctx.start.startIndex },
         end: { line: ctx.stop.line - 1, col: ctx.stop.charPositionInLine, index: ctx.stop.stopIndex },
       }
     } else {
       return {
+        source: this.sourceLocation,
         start: { line: ctx.start.line - 1, col: ctx.start.charPositionInLine, index: ctx.start.startIndex },
       }
     }
@@ -1026,7 +1035,7 @@ export class ToIrListener implements TntListener {
       ctx.stop
         ? { line: ctx.stop.line - 1, col: ctx.stop.charPositionInLine, index: ctx.stop.stopIndex }
         : start
-    this.errors.push({ explanation: message, loc: { start: start, end: end } })
+    this.errors.push({ explanation: message, loc: { source: this.sourceLocation, start: start, end: end } })
   }
 
   // pop n elements out of typeStack

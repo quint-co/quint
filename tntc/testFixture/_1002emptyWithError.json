@@ -4,6 +4,7 @@
     {
       "explanation": "extraneous input 'error' expecting {'module', '}', 'const', 'var', 'assume', 'type', 'import', 'val', 'def', 'pred', 'action', 'temporal'}",
       "loc": {
+        "source": "mocked_path/testFixture/_1002emptyWithError.tnt",
         "start": {
           "line": 3,
           "col": 2,

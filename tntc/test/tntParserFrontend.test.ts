@@ -20,7 +20,7 @@ function readJson (name: string): any {
 // read the TNT file and the expected JSON, parse and compare the results
 function parseAndCompare (artifact: string, wrap: (json: any) => any, namesOk: Boolean): void {
   // read the input from the data directory and parse it
-  const phase1Result = parsePhase1(readTnt(artifact))
+  const phase1Result = parsePhase1(readTnt(artifact), `mocked_path/testFixture/${artifact}.tnt`)
   // read the expected result as JSON
   const expected = readJson(artifact)
   let outputToCompare
@@ -53,7 +53,7 @@ function nowrap (arg: any): any {
 function parseAsExpected (artifact: string, description: string): void {
   it(description, () => {
     parseAndCompare(artifact,
-      function(module: any) {
+      function (module: any) {
         return { kind: 'ok', module: module, sourceMap: new Map<BigInt, Loc>() }
       }, true)
   })
@@ -81,7 +81,7 @@ function removeIds (obj: any) {
 
 describe('parse ok', () => {
   it('parse empty module', () => {
-    const result = parsePhase1(readTnt('_0001emptyModule'))
+    const result = parsePhase1(readTnt('_0001emptyModule'), 'mocked_path/testFixture/_0001emptyModule.tnt')
     const module = { id: 1n, name: 'empty', defs: [] }
     assert.deepEqual(result.kind, 'ok')
     if (result.kind === 'ok') {

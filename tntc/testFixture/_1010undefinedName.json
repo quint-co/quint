@@ -4,6 +4,7 @@
     {
       "explanation": "Couldn't resolve name S in definition for f",
       "loc": {
+        "source": "mocked_path/testFixture/_1010undefinedName.tnt",
         "start": {
           "line": 2,
           "col": 10,

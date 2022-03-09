@@ -4,6 +4,7 @@
     {
       "explanation": "TNT006: unexpected '=', did you mean '=='?",
       "loc": {
+        "source": "mocked_path/testFixture/_1008unexpectedEq.tnt",
         "start": {
           "line": 3,
           "col": 0,
