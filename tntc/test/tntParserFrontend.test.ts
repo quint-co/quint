@@ -18,7 +18,7 @@ function readJson (name: string): any {
 }
 
 // read the TNT file and the expected JSON, parse and compare the results
-function parseAndCompare (artifact: string, wrap: (json: any) => any, namesOk: Boolean): void {
+function parseAndCompare (artifact: string, wrap: (json: any) => any, checkNameError: Boolean): void {
   // read the input from the data directory and parse it
   const phase1Result = parsePhase1(readTnt(artifact))
   // read the expected result as JSON
@@ -28,7 +28,7 @@ function parseAndCompare (artifact: string, wrap: (json: any) => any, namesOk: B
   if (phase1Result.kind === 'error') {
     // An error occurred at phase 1, check if it is the expected result
     outputToCompare = phase1Result
-  } else if (!namesOk) {
+  } else if (checkNameError) {
     // An error occurred at phase 2, check if it is the expected result
     outputToCompare = parsePhase2(phase1Result.module)
   } else {
@@ -51,9 +51,9 @@ function nowrap (arg: any): any {
 function parseAsExpected (artifact: string, description: string): void {
   it(description, () => {
     parseAndCompare(artifact,
-      function (module: any) {
+      function(module: any) {
         return { kind: 'ok', module: module }
-      }, true)
+      }, false)
   })
 }
 
@@ -359,34 +359,34 @@ describe('parse ok', () => {
 
 describe('parse errors', () => {
   it('error in module unit', () => {
-    parseAndCompare('_1002emptyWithError', nowrap, true)
+    parseAndCompare('_1002emptyWithError', nowrap, false)
   })
 
   it('error on malformed disjoint union', () => {
-    parseAndCompare('_1005constRecordsError', nowrap, true)
+    parseAndCompare('_1005constRecordsError', nowrap, false)
   })
 
   it('error on unexpected symbol after expression', () => {
-    parseAndCompare('_1006unexpectedExpr', nowrap, true)
+    parseAndCompare('_1006unexpectedExpr', nowrap, false)
   })
 
   it('error on unrecognized token', () => {
-    parseAndCompare('_1007unexpectedToken', nowrap, true)
+    parseAndCompare('_1007unexpectedToken', nowrap, false)
   })
 
   it('error on unexpected "="', () => {
-    parseAndCompare('_1008unexpectedEq', nowrap, true)
+    parseAndCompare('_1008unexpectedEq', nowrap, false)
   })
 
   it('error on infix without arguments', () => {
-    parseAndCompare('_1009infixFewArgs', nowrap, true)
+    parseAndCompare('_1009infixFewArgs', nowrap, false)
   })
 
   it('error on unresolved name', () => {
-    parseAndCompare('_1010undefinedName', nowrap, false)
+    parseAndCompare('_1010undefinedName', nowrap, true)
   })
 
   it('error on unresolved scoped name', () => {
-    parseAndCompare('_1011nameOutOfScope', nowrap, false)
+    parseAndCompare('_1011nameOutOfScope', nowrap, true)
   })
 })
