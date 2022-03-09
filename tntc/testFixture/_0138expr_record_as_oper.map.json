@@ -1,0 +1,93 @@
+{
+  "1": {
+    "source": "mocked_path/testFixture/_0138expr_record_as_oper.tnt",
+    "start": {
+      "line": 4,
+      "col": 23,
+      "index": 219
+    },
+    "end": {
+      "line": 4,
+      "col": 23,
+      "index": 224
+    }
+  },
+  "2": {
+    "source": "mocked_path/testFixture/_0138expr_record_as_oper.tnt",
+    "start": {
+      "line": 4,
+      "col": 31,
+      "index": 227
+    },
+    "end": {
+      "line": 4,
+      "col": 31,
+      "index": 232
+    }
+  },
+  "3": {
+    "source": "mocked_path/testFixture/_0138expr_record_as_oper.tnt",
+    "start": {
+      "line": 4,
+      "col": 39,
+      "index": 235
+    },
+    "end": {
+      "line": 4,
+      "col": 39,
+      "index": 240
+    }
+  },
+  "4": {
+    "source": "mocked_path/testFixture/_0138expr_record_as_oper.tnt",
+    "start": {
+      "line": 4,
+      "col": 47,
+      "index": 243
+    },
+    "end": {
+      "line": 4,
+      "col": 47,
+      "index": 246
+    }
+  },
+  "5": {
+    "source": "mocked_path/testFixture/_0138expr_record_as_oper.tnt",
+    "start": {
+      "line": 4,
+      "col": 19,
+      "index": 215
+    },
+    "end": {
+      "line": 4,
+      "col": 51,
+      "index": 247
+    }
+  },
+  "6": {
+    "source": "mocked_path/testFixture/_0138expr_record_as_oper.tnt",
+    "start": {
+      "line": 4,
+      "col": 1,
+      "index": 197
+    },
+    "end": {
+      "line": 4,
+      "col": 51,
+      "index": 247
+    }
+  },
+  "8": {
+    "source": "mocked_path/testFixture/_0138expr_record_as_oper.tnt",
+    "start": {
+      "line": 3,
+      "col": 0,
+      "index": 178
+    },
+    "end": {
+      "line": 5,
+      "col": 0,
+      "index": 249
+    }
+  }
+}

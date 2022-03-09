@@ -1,0 +1,67 @@
+{
+  "1": {
+    "source": "mocked_path/testFixture/_0142expr_infix_in.tnt",
+    "start": {
+      "line": 4,
+      "col": 18,
+      "index": 214
+    },
+    "end": {
+      "line": 4,
+      "col": 18,
+      "index": 214
+    }
+  },
+  "2": {
+    "source": "mocked_path/testFixture/_0142expr_infix_in.tnt",
+    "start": {
+      "line": 4,
+      "col": 23,
+      "index": 219
+    },
+    "end": {
+      "line": 4,
+      "col": 27,
+      "index": 223
+    }
+  },
+  "3": {
+    "source": "mocked_path/testFixture/_0142expr_infix_in.tnt",
+    "start": {
+      "line": 4,
+      "col": 18,
+      "index": 214
+    },
+    "end": {
+      "line": 4,
+      "col": 27,
+      "index": 223
+    }
+  },
+  "4": {
+    "source": "mocked_path/testFixture/_0142expr_infix_in.tnt",
+    "start": {
+      "line": 4,
+      "col": 1,
+      "index": 197
+    },
+    "end": {
+      "line": 4,
+      "col": 27,
+      "index": 223
+    }
+  },
+  "6": {
+    "source": "mocked_path/testFixture/_0142expr_infix_in.tnt",
+    "start": {
+      "line": 3,
+      "col": 0,
+      "index": 178
+    },
+    "end": {
+      "line": 5,
+      "col": 0,
+      "index": 225
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "2": {
+    "source": "mocked_path/testFixture/_0001emptyModule.tnt",
+    "start": {
+      "line": 1,
+      "col": 0,
+      "index": 24
+    },
+    "end": {
+      "line": 3,
+      "col": 0,
+      "index": 58
+    }
+  }
+}

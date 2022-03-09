@@ -102,6 +102,7 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
   const errorMessages: ErrorMessage[] = []
 
   if (result.kind === 'error') {
+    // Build error message with resolution explanation and the location obtained from sourceMap
     result.errors.forEach(error => {
       const expression = error.expression
       const msg = `Couldn't resolve name ${error.name} in definition for ${error.definitionName}`
@@ -113,5 +114,7 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
     })
   }
 
-  return errorMessages.length > 0 ? { kind: 'error', messages: errorMessages } : { kind: 'ok', module: tntModule, sourceMap: sourceMap }
+  return errorMessages.length > 0
+    ? { kind: 'error', messages: errorMessages }
+    : { kind: 'ok', module: tntModule, sourceMap: sourceMap }
 }

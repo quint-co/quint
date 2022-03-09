@@ -1,0 +1,67 @@
+{
+  "1": {
+    "source": "mocked_path/testFixture/_0118expr_iff.tnt",
+    "start": {
+      "line": 4,
+      "col": 16,
+      "index": 212
+    },
+    "end": {
+      "line": 4,
+      "col": 16,
+      "index": 216
+    }
+  },
+  "2": {
+    "source": "mocked_path/testFixture/_0118expr_iff.tnt",
+    "start": {
+      "line": 4,
+      "col": 26,
+      "index": 222
+    },
+    "end": {
+      "line": 4,
+      "col": 26,
+      "index": 225
+    }
+  },
+  "3": {
+    "source": "mocked_path/testFixture/_0118expr_iff.tnt",
+    "start": {
+      "line": 4,
+      "col": 16,
+      "index": 212
+    },
+    "end": {
+      "line": 4,
+      "col": 26,
+      "index": 225
+    }
+  },
+  "4": {
+    "source": "mocked_path/testFixture/_0118expr_iff.tnt",
+    "start": {
+      "line": 4,
+      "col": 1,
+      "index": 197
+    },
+    "end": {
+      "line": 4,
+      "col": 26,
+      "index": 225
+    }
+  },
+  "6": {
+    "source": "mocked_path/testFixture/_0118expr_iff.tnt",
+    "start": {
+      "line": 3,
+      "col": 0,
+      "index": 178
+    },
+    "end": {
+      "line": 5,
+      "col": 0,
+      "index": 227
+    }
+  }
+}

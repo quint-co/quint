@@ -1,0 +1,327 @@
+{
+  "1": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 4,
+      "col": 16,
+      "index": 212
+    },
+    "end": {
+      "line": 4,
+      "col": 16,
+      "index": 212
+    }
+  },
+  "2": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 4,
+      "col": 12,
+      "index": 208
+    },
+    "end": {
+      "line": 4,
+      "col": 17,
+      "index": 213
+    }
+  },
+  "3": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 4,
+      "col": 4,
+      "index": 200
+    },
+    "end": {
+      "line": 4,
+      "col": 17,
+      "index": 213
+    }
+  },
+  "4": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 7,
+      "col": 16,
+      "index": 332
+    },
+    "end": {
+      "line": 7,
+      "col": 16,
+      "index": 332
+    }
+  },
+  "5": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 7,
+      "col": 31,
+      "index": 347
+    },
+    "end": {
+      "line": 7,
+      "col": 31,
+      "index": 347
+    }
+  },
+  "6": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 7,
+      "col": 35,
+      "index": 351
+    },
+    "end": {
+      "line": 7,
+      "col": 35,
+      "index": 352
+    }
+  },
+  "7": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 7,
+      "col": 31,
+      "index": 347
+    },
+    "end": {
+      "line": 7,
+      "col": 35,
+      "index": 352
+    }
+  },
+  "8": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 7,
+      "col": 25,
+      "index": 341
+    },
+    "end": {
+      "line": 7,
+      "col": 37,
+      "index": 353
+    }
+  },
+  "9": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 7,
+      "col": 16,
+      "index": 332
+    },
+    "end": {
+      "line": 7,
+      "col": 37,
+      "index": 353
+    }
+  },
+  "10": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 7,
+      "col": 1,
+      "index": 317
+    },
+    "end": {
+      "line": 7,
+      "col": 37,
+      "index": 353
+    }
+  },
+  "11": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 9,
+      "col": 17,
+      "index": 440
+    },
+    "end": {
+      "line": 9,
+      "col": 17,
+      "index": 440
+    }
+  },
+  "12": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 9,
+      "col": 31,
+      "index": 454
+    },
+    "end": {
+      "line": 9,
+      "col": 31,
+      "index": 454
+    }
+  },
+  "13": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 9,
+      "col": 35,
+      "index": 458
+    },
+    "end": {
+      "line": 9,
+      "col": 35,
+      "index": 459
+    }
+  },
+  "14": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 9,
+      "col": 31,
+      "index": 454
+    },
+    "end": {
+      "line": 9,
+      "col": 35,
+      "index": 459
+    }
+  },
+  "15": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 9,
+      "col": 26,
+      "index": 449
+    },
+    "end": {
+      "line": 9,
+      "col": 35,
+      "index": 459
+    }
+  },
+  "16": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 9,
+      "col": 17,
+      "index": 440
+    },
+    "end": {
+      "line": 9,
+      "col": 35,
+      "index": 459
+    }
+  },
+  "17": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 9,
+      "col": 1,
+      "index": 424
+    },
+    "end": {
+      "line": 9,
+      "col": 35,
+      "index": 459
+    }
+  },
+  "18": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 11,
+      "col": 20,
+      "index": 525
+    },
+    "end": {
+      "line": 11,
+      "col": 20,
+      "index": 525
+    }
+  },
+  "19": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 11,
+      "col": 35,
+      "index": 540
+    },
+    "end": {
+      "line": 11,
+      "col": 35,
+      "index": 540
+    }
+  },
+  "20": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 11,
+      "col": 39,
+      "index": 544
+    },
+    "end": {
+      "line": 11,
+      "col": 39,
+      "index": 545
+    }
+  },
+  "21": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 11,
+      "col": 35,
+      "index": 540
+    },
+    "end": {
+      "line": 11,
+      "col": 39,
+      "index": 545
+    }
+  },
+  "22": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 11,
+      "col": 28,
+      "index": 533
+    },
+    "end": {
+      "line": 11,
+      "col": 42,
+      "index": 547
+    }
+  },
+  "23": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 11,
+      "col": 20,
+      "index": 525
+    },
+    "end": {
+      "line": 11,
+      "col": 42,
+      "index": 547
+    }
+  },
+  "24": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 11,
+      "col": 1,
+      "index": 506
+    },
+    "end": {
+      "line": 11,
+      "col": 42,
+      "index": 547
+    }
+  },
+  "26": {
+    "source": "mocked_path/testFixture/_0127expr_oper_infix_app_lambda.tnt",
+    "start": {
+      "line": 3,
+      "col": 0,
+      "index": 178
+    },
+    "end": {
+      "line": 12,
+      "col": 0,
+      "index": 549
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "1": {
+    "source": "mocked_path/testFixture/_0004constRecords.tnt",
+    "start": {
+      "line": 3,
+      "col": 1,
+      "index": 119
+    },
+    "end": {
+      "line": 3,
+      "col": 43,
+      "index": 161
+    }
+  },
+  "2": {
+    "source": "mocked_path/testFixture/_0004constRecords.tnt",
+    "start": {
+      "line": 5,
+      "col": 1,
+      "index": 213
+    },
+    "end": {
+      "line": 8,
+      "col": 28,
+      "index": 341
+    }
+  },
+  "4": {
+    "source": "mocked_path/testFixture/_0004constRecords.tnt",
+    "start": {
+      "line": 1,
+      "col": 0,
+      "index": 36
+    },
+    "end": {
+      "line": 10,
+      "col": 0,
+      "index": 344
+    }
+  }
+}

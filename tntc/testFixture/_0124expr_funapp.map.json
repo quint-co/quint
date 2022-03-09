@@ -1,0 +1,80 @@
+{
+  "1": {
+    "source": "mocked_path/testFixture/_0124expr_funapp.tnt",
+    "start": {
+      "line": 4,
+      "col": 4,
+      "index": 200
+    },
+    "end": {
+      "line": 4,
+      "col": 18,
+      "index": 216
+    }
+  },
+  "2": {
+    "source": "mocked_path/testFixture/_0124expr_funapp.tnt",
+    "start": {
+      "line": 5,
+      "col": 14,
+      "index": 232
+    },
+    "end": {
+      "line": 5,
+      "col": 14,
+      "index": 232
+    }
+  },
+  "3": {
+    "source": "mocked_path/testFixture/_0124expr_funapp.tnt",
+    "start": {
+      "line": 5,
+      "col": 16,
+      "index": 234
+    },
+    "end": {
+      "line": 5,
+      "col": 16,
+      "index": 236
+    }
+  },
+  "4": {
+    "source": "mocked_path/testFixture/_0124expr_funapp.tnt",
+    "start": {
+      "line": 5,
+      "col": 14,
+      "index": 232
+    },
+    "end": {
+      "line": 5,
+      "col": 19,
+      "index": 237
+    }
+  },
+  "5": {
+    "source": "mocked_path/testFixture/_0124expr_funapp.tnt",
+    "start": {
+      "line": 5,
+      "col": 1,
+      "index": 219
+    },
+    "end": {
+      "line": 5,
+      "col": 19,
+      "index": 237
+    }
+  },
+  "7": {
+    "source": "mocked_path/testFixture/_0124expr_funapp.tnt",
+    "start": {
+      "line": 3,
+      "col": 0,
+      "index": 178
+    },
+    "end": {
+      "line": 6,
+      "col": 0,
+      "index": 239
+    }
+  }
+}

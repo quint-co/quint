@@ -1,0 +1,132 @@
+{
+  "1": {
+    "source": "mocked_path/testFixture/_0156expr_tuple_item.tnt",
+    "start": {
+      "line": 4,
+      "col": 18,
+      "index": 132
+    },
+    "end": {
+      "line": 4,
+      "col": 18,
+      "index": 134
+    }
+  },
+  "2": {
+    "source": "mocked_path/testFixture/_0156expr_tuple_item.tnt",
+    "start": {
+      "line": 4,
+      "col": 23,
+      "index": 137
+    },
+    "end": {
+      "line": 4,
+      "col": 23,
+      "index": 137
+    }
+  },
+  "3": {
+    "source": "mocked_path/testFixture/_0156expr_tuple_item.tnt",
+    "start": {
+      "line": 4,
+      "col": 14,
+      "index": 128
+    },
+    "end": {
+      "line": 4,
+      "col": 24,
+      "index": 138
+    }
+  },
+  "4": {
+    "source": "mocked_path/testFixture/_0156expr_tuple_item.tnt",
+    "start": {
+      "line": 4,
+      "col": 4,
+      "index": 118
+    },
+    "end": {
+      "line": 4,
+      "col": 24,
+      "index": 138
+    }
+  },
+  "5": {
+    "source": "mocked_path/testFixture/_0156expr_tuple_item.tnt",
+    "start": {
+      "line": 5,
+      "col": 4,
+      "index": 144
+    },
+    "end": {
+      "line": 5,
+      "col": 4,
+      "index": 146
+    }
+  },
+  "6": {
+    "source": "mocked_path/testFixture/_0156expr_tuple_item.tnt",
+    "start": {
+      "line": 5,
+      "col": 4,
+      "index": 144
+    },
+    "end": {
+      "line": 5,
+      "col": 8,
+      "index": 149
+    }
+  },
+  "7": {
+    "source": "mocked_path/testFixture/_0156expr_tuple_item.tnt",
+    "start": {
+      "line": 5,
+      "col": 4,
+      "index": 144
+    },
+    "end": {
+      "line": 5,
+      "col": 8,
+      "index": 149
+    }
+  },
+  "8": {
+    "source": "mocked_path/testFixture/_0156expr_tuple_item.tnt",
+    "start": {
+      "line": 4,
+      "col": 4,
+      "index": 118
+    },
+    "end": {
+      "line": 5,
+      "col": 8,
+      "index": 149
+    }
+  },
+  "9": {
+    "source": "mocked_path/testFixture/_0156expr_tuple_item.tnt",
+    "start": {
+      "line": 3,
+      "col": 1,
+      "index": 99
+    },
+    "end": {
+      "line": 5,
+      "col": 8,
+      "index": 149
+    }
+  },
+  "11": {
+    "source": "mocked_path/testFixture/_0156expr_tuple_item.tnt",
+    "start": {
+      "line": 1,
+      "col": 0,
+      "index": 45
+    },
+    "end": {
+      "line": 6,
+      "col": 0,
+      "index": 151
+    }
+  }
+}

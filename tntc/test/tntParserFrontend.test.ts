@@ -28,12 +28,19 @@ function parseAndCompare (artifact: string, wrap: (json: any) => any, checkNameE
   if (phase1Result.kind === 'error') {
     // An error occurred at phase 1, check if it is the expected result
     outputToCompare = phase1Result
-  } else if (checkNameError) {
-    // An error occurred at phase 2, check if it is the expected result
-    outputToCompare = parsePhase2(phase1Result.module, phase1Result.sourceMap)
   } else {
-    // Both phases succeeded, check that the module is correclty outputed
-    outputToCompare = phase1Result.module
+    // Phase 1 succeded, check that the source map is correct
+    const expectedSourceMap = readJson(`${artifact}.map`)
+    const sourceMapResult = JSONbig.parse(JSONbig.stringify(Object.fromEntries(phase1Result.sourceMap)))
+    assert.deepEqual(sourceMapResult, expectedSourceMap, 'expected source maps to be equal')
+
+    if (checkNameError) {
+      // An error occurred at phase 2, check if it is the expected result
+      outputToCompare = parsePhase2(phase1Result.module, phase1Result.sourceMap)
+    } else {
+      // Both phases succeeded, check that the module is correclty outputed
+      outputToCompare = phase1Result.module
+    }
   }
 
   outputToCompare = removeIds(outputToCompare)
@@ -41,7 +48,7 @@ function parseAndCompare (artifact: string, wrap: (json: any) => any, checkNameE
   // run it through stringify-parse to obtain the same json (due to bigints)
   const reparsedResult = JSONbig.parse(JSONbig.stringify(outputToCompare))
   // compare the JSON trees
-  assert.deepEqual(reparsedResult, expected, 'expected JSON trees to be equal')
+  assert.deepEqual(reparsedResult, expected, 'expected JSON results to be equal')
 }
 
 // identity function that can be used as a default wrapper
@@ -59,7 +66,13 @@ function parseAsExpected (artifact: string, description: string): void {
   })
 }
 
+// Removes expression/definition ids to avoid comparing them
 function removeIds (obj: any) {
+  // This navigates an untyped version of the IR
+  // removing the ids recursively
+  // It's not pretty, but the typed version would require
+  // us to match all different cases and would be quite
+  // verbose and hard to maintain
   if (typeof obj !== 'object' || obj === null) {
     return obj
   }

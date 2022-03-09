@@ -1,0 +1,67 @@
+{
+  "1": {
+    "source": "mocked_path/testFixture/_0012defs_untagged.tnt",
+    "start": {
+      "line": 2,
+      "col": 15,
+      "index": 81
+    },
+    "end": {
+      "line": 2,
+      "col": 15,
+      "index": 81
+    }
+  },
+  "2": {
+    "source": "mocked_path/testFixture/_0012defs_untagged.tnt",
+    "start": {
+      "line": 2,
+      "col": 19,
+      "index": 85
+    },
+    "end": {
+      "line": 2,
+      "col": 19,
+      "index": 85
+    }
+  },
+  "3": {
+    "source": "mocked_path/testFixture/_0012defs_untagged.tnt",
+    "start": {
+      "line": 2,
+      "col": 15,
+      "index": 81
+    },
+    "end": {
+      "line": 2,
+      "col": 19,
+      "index": 85
+    }
+  },
+  "4": {
+    "source": "mocked_path/testFixture/_0012defs_untagged.tnt",
+    "start": {
+      "line": 2,
+      "col": 1,
+      "index": 67
+    },
+    "end": {
+      "line": 2,
+      "col": 19,
+      "index": 85
+    }
+  },
+  "6": {
+    "source": "mocked_path/testFixture/_0012defs_untagged.tnt",
+    "start": {
+      "line": 1,
+      "col": 0,
+      "index": 48
+    },
+    "end": {
+      "line": 3,
+      "col": 0,
+      "index": 87
+    }
+  }
+}

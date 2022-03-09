@@ -1,0 +1,67 @@
+{
+  "1": {
+    "source": "mocked_path/testFixture/_0144expr_infix_subseteq.tnt",
+    "start": {
+      "line": 4,
+      "col": 22,
+      "index": 218
+    },
+    "end": {
+      "line": 4,
+      "col": 26,
+      "index": 222
+    }
+  },
+  "2": {
+    "source": "mocked_path/testFixture/_0144expr_infix_subseteq.tnt",
+    "start": {
+      "line": 4,
+      "col": 37,
+      "index": 233
+    },
+    "end": {
+      "line": 4,
+      "col": 41,
+      "index": 237
+    }
+  },
+  "3": {
+    "source": "mocked_path/testFixture/_0144expr_infix_subseteq.tnt",
+    "start": {
+      "line": 4,
+      "col": 22,
+      "index": 218
+    },
+    "end": {
+      "line": 4,
+      "col": 41,
+      "index": 237
+    }
+  },
+  "4": {
+    "source": "mocked_path/testFixture/_0144expr_infix_subseteq.tnt",
+    "start": {
+      "line": 4,
+      "col": 1,
+      "index": 197
+    },
+    "end": {
+      "line": 4,
+      "col": 41,
+      "index": 237
+    }
+  },
+  "6": {
+    "source": "mocked_path/testFixture/_0144expr_infix_subseteq.tnt",
+    "start": {
+      "line": 3,
+      "col": 0,
+      "index": 178
+    },
+    "end": {
+      "line": 5,
+      "col": 0,
+      "index": 239
+    }
+  }
+}

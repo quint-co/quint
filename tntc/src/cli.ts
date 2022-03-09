@@ -35,6 +35,11 @@ function parse (argv: any) {
       process.exit(1)
     }
 
+    if (argv.sourceMap) {
+      // Write source map to the specified file
+      writeToJson(argv.sourceMap, Object.fromEntries(phase1Result.sourceMap))
+    }
+
     const phase2Result = parsePhase2(phase1Result.module, phase1Result.sourceMap)
     if (phase2Result.kind === 'error') {
       reportError(argv, text, phase2Result)
@@ -48,11 +53,6 @@ function parse (argv: any) {
         warnings: [],
         module: phase1Result.module,
       })
-    }
-
-    if (argv.sourceMap) {
-      // Write source map to the specified file
-      writeToJson(argv.sourceMap, Object.fromEntries(phase1Result.sourceMap))
     }
     process.exit(0)
   }
