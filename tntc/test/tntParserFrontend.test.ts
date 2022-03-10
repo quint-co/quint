@@ -4,12 +4,13 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import JSONbig from 'json-bigint'
 import { parsePhase1, parsePhase2, Loc } from '../src/tntParserFrontend'
+import { lf } from 'eol'
 
 // read a TNT file from the test data directory
 function readTnt (name: string): string {
   const p = resolve(__dirname, '../testFixture', name + '.tnt')
   const content = readFileSync(p).toString('utf8')
-  return content.split('/\r\n|\n|\r/g').join('\n')
+  return lf(content)
 }
 
 // read the expected JSON outcome from the test data directory
