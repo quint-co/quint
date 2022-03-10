@@ -8,7 +8,8 @@ import { parsePhase1, parsePhase2, Loc } from '../src/tntParserFrontend'
 // read a TNT file from the test data directory
 function readTnt (name: string): string {
   const p = resolve(__dirname, '../testFixture', name + '.tnt')
-  return readFileSync(p).toString('utf8')
+  const content = readFileSync(p).toString('utf8')
+  return content.split('/\r\n|\n|\r/g').join('\n')
 }
 
 // read the expected JSON outcome from the test data directory
