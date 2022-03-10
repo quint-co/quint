@@ -12,6 +12,7 @@
 import { readFile, writeFileSync } from 'fs'
 import { resolve } from 'path'
 import { cwd } from 'process'
+import { lf } from 'eol'
 import JSONbig from 'json-bigint'
 import lineColumn from 'line-column'
 
@@ -64,7 +65,7 @@ function parse (argv: any) {
         console.error(err)
         process.exit(99)
       }
-      parseText(data)
+      parseText(lf(data))
     })
   }
   reader()
