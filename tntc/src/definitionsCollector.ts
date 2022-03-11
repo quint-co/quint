@@ -1,9 +1,20 @@
 import { TntModule, TntEx } from './tntIr'
+import { TntType } from './tntTypes'
 
 export interface NameDefinition {
   kind: string
   identifier: string
   scope?: bigint
+}
+
+export interface TypeDefinition {
+  identifier: string
+  type: TntType
+}
+
+export interface DefinitionTable {
+  nameDefinitions: NameDefinition[]
+  typeDefinitions: TypeDefinition[]
 }
 
 export const defaultDefinitions: NameDefinition[] = [
@@ -74,43 +85,52 @@ export const defaultDefinitions: NameDefinition[] = [
   { kind: 'def', identifier: 'FALSE' },
 ]
 
-export function collectDefinitions (tntModule: TntModule): NameDefinition[] {
-  return defaultDefinitions.concat(
-    tntModule.defs.reduce((nameDefs: NameDefinition[], def) => {
-      switch (def.kind) {
-        case 'const':
-        case 'var':
-          nameDefs.push({
-            kind: def.kind,
-            identifier: def.name,
-          })
-          break
-        case 'def':
-          nameDefs.push({
-            kind: def.kind,
-            identifier: def.name,
-          })
-          if (def.expr) {
-            nameDefs.push(...collectFromExpr(def.expr))
-          }
-          break
-        case 'instance':
-          nameDefs.push({
-            kind: 'namespace',
-            identifier: def.name,
-          })
-          break
-        case 'module':
-          nameDefs.push({
-            kind: 'namespace',
-            identifier: def.module.name,
-          })
-          break
-        default:
-        // typedefs and assumes, ignore for now
-      }
-      return nameDefs
-    }, []))
+export const defaultTypes: TypeDefinition[] = [
+  // { identifier: 'int', type: { kind: 'int' } },
+]
+
+export function collectDefinitions (tntModule: TntModule): DefinitionTable {
+  return tntModule.defs.reduce((table: DefinitionTable, def) => {
+    switch (def.kind) {
+      case 'const':
+      case 'var':
+        table.nameDefinitions.push({
+          kind: def.kind,
+          identifier: def.name,
+        })
+        break
+      case 'def':
+        table.nameDefinitions.push({
+          kind: def.kind,
+          identifier: def.name,
+        })
+        if (def.expr) {
+          table.nameDefinitions.push(...collectFromExpr(def.expr))
+        }
+        break
+      case 'instance':
+        table.nameDefinitions.push({
+          kind: 'namespace',
+          identifier: def.name,
+        })
+        break
+      case 'module':
+        table.nameDefinitions.push({
+          kind: 'namespace',
+          identifier: def.module.name,
+        })
+        break
+      case 'typedef':
+        table.typeDefinitions.push({
+          identifier: def.name,
+          type: def.type,
+        })
+        break
+      default:
+      // typedefs and assumes, ignore for now
+    }
+    return table
+  }, { nameDefinitions: defaultDefinitions, typeDefinitions: defaultTypes })
 }
 
 function collectFromExpr (expr: TntEx): NameDefinition[] {

@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { NameDefinition, defaultDefinitions } from '../src/definitionsCollector'
+import { NameDefinition, defaultDefinitions, DefinitionTable } from '../src/definitionsCollector'
 import { resolveNames, NameResolutionResult } from '../src/nameResolver'
 import { TntModule, TntEx } from '../src/tntIr'
 
@@ -65,8 +65,9 @@ describe('nameResolver', () => {
         kind: 'def',
       },
     ])
+    const table: DefinitionTable = { nameDefinitions: definitions, typeDefinitions: [] }
 
-    const result = resolveNames(tntModule, definitions)
+    const result = resolveNames(tntModule, table)
     assert.deepEqual(result, { kind: 'ok' })
   })
 
@@ -82,8 +83,9 @@ describe('nameResolver', () => {
         scope: BigInt(10),
       },
     ])
+    const table: DefinitionTable = { nameDefinitions: definitions, typeDefinitions: [] }
 
-    const result = resolveNames(tntModule, definitions)
+    const result = resolveNames(tntModule, table)
     assert.deepEqual(result, { kind: 'ok' })
   })
 
@@ -99,8 +101,9 @@ describe('nameResolver', () => {
         scope: BigInt(20),
       },
     ])
+    const table: DefinitionTable = { nameDefinitions: definitions, typeDefinitions: [] }
 
-    const result = resolveNames(tntModule, definitions)
+    const result = resolveNames(tntModule, table)
     const expectedResult: NameResolutionResult = {
       kind: 'error',
       errors: [{ name: 'x', definitionName: 'A', expression: nameExpr, trace: [nameExpr, appExpr] }],

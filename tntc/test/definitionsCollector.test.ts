@@ -36,7 +36,7 @@ describe('collectDefinitions', () => {
     ])
 
     const result = collectDefinitions(tntModule)
-    assert.deepEqual(result, expectedDefinitions)
+    assert.deepEqual(result, { nameDefinitions: expectedDefinitions, typeDefinitions: [] })
   })
 
   it('finds scoped definitions', () => {
@@ -93,6 +93,6 @@ describe('collectDefinitions', () => {
     ])
 
     const result = collectDefinitions(tntModule)
-    assert.deepEqual(result, expectedDefinitions)
+    assert.deepEqual(result, { nameDefinitions: expectedDefinitions, typeDefinitions: [] })
   })
 })

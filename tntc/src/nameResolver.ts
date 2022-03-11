@@ -13,8 +13,9 @@
  * @module
  */
 
-import { TntModule, TntEx } from './tntIr'
-import { NameDefinition } from './definitionsCollector'
+import { TntModule, TntEx, TntDef } from './tntIr'
+import { TntType } from './tntTypes'
+import { DefinitionTable, NameDefinition, TypeDefinition } from './definitionsCollector'
 
 /**
  * A single name resolution error
@@ -47,9 +48,11 @@ export type NameResolutionResult =
  *
  * @returns a successful result in case all names are resolved, or an aggregation of errors otherwise
  */
-export function resolveNames (tntModule: TntModule, definitions: NameDefinition[]): NameResolutionResult {
+export function resolveNames (tntModule: TntModule, table: DefinitionTable): NameResolutionResult {
   const results: NameResolutionResult[] = tntModule.defs.map(def => {
-    return def.kind === 'def' ? checkNamesInExpr(definitions, def.name, def.expr, [def.expr.id]) : { kind: 'ok' }
+    // TODO: merge type and name results
+    console.log(checkDefTypes(table.typeDefinitions, def))
+    return def.kind === 'def' ? checkNamesInExpr(table.nameDefinitions, def.name, def.expr, [def.expr.id]) : { kind: 'ok' }
   })
 
   // Aggregate errors
@@ -58,6 +61,41 @@ export function resolveNames (tntModule: TntModule, definitions: NameDefinition[
   }, [])
 
   return errors.length > 0 ? { kind: 'error', errors: errors } : { kind: 'ok' }
+}
+
+function checkType (typeDefinitions: TypeDefinition[], type: TntType): Boolean {
+  switch (type.kind) {
+    case 'const':
+    case 'var':
+      return typeDefinitions.some(def => def.identifier === type.name)
+    case 'set':
+    case 'seq':
+      return checkType(typeDefinitions, type.elem)
+    case 'fun':
+      return checkType(typeDefinitions, type.arg) && checkType(typeDefinitions, type.res)
+    case 'oper':
+      return type.args.every(arg => checkType(typeDefinitions, arg)) && checkType(typeDefinitions, type.res)
+    case 'tuple':
+      return type.elems.every(elem => checkType(typeDefinitions, elem))
+    case 'record':
+      return type.fields.every(field => checkType(typeDefinitions, field.fieldType))
+    case 'union':
+      return type.records.every(record => {
+        return record.fields.every(field => checkType(typeDefinitions, field.fieldType))
+      })
+  }
+  return true
+}
+
+function checkDefTypes (typeDefinitions: TypeDefinition[], def: TntDef): Boolean {
+  switch (def.kind) {
+    case 'const':
+    case 'var':
+    case 'typedef':
+      return def.type ? checkType(typeDefinitions, def.type) : true
+    default:
+      return true
+  }
 }
 
 function checkNamesInExpr (
