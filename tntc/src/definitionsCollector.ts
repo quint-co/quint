@@ -85,10 +85,6 @@ export const defaultDefinitions: NameDefinition[] = [
   { kind: 'def', identifier: 'FALSE' },
 ]
 
-export const defaultTypes: TypeDefinition[] = [
-  // { identifier: 'int', type: { kind: 'int' } },
-]
-
 export function collectDefinitions (tntModule: TntModule): DefinitionTable {
   return tntModule.defs.reduce((table: DefinitionTable, def) => {
     switch (def.kind) {
@@ -127,10 +123,10 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
         })
         break
       default:
-      // typedefs and assumes, ignore for now
+      // imports and assumes, ignore for now
     }
     return table
-  }, { nameDefinitions: defaultDefinitions, typeDefinitions: defaultTypes })
+  }, { nameDefinitions: defaultDefinitions, typeDefinitions: [] })
 }
 
 function collectFromExpr (expr: TntEx): NameDefinition[] {

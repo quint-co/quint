@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { NameDefinition, collectDefinitions, defaultDefinitions } from '../src/definitionsCollector'
+import { NameDefinition, collectDefinitions, defaultDefinitions, TypeDefinition } from '../src/definitionsCollector'
 import { TntModule } from '../src/tntIr'
 
 describe('collectDefinitions', () => {
@@ -9,14 +9,15 @@ describe('collectDefinitions', () => {
       name: 'Test module',
       id: BigInt(0),
       defs: [
-        { kind: 'const', name: 'TEST_CONSTANT', id: BigInt(1), type: { kind: 'int' } },
-        { kind: 'var', name: 'test_var', id: BigInt(2), type: { kind: 'str' } },
+        { kind: 'const', name: 'TEST_CONSTANT', id: BigInt(1), type: { kind: 'var', name: 'TYPE_A' } },
+        { kind: 'var', name: 'test_var', id: BigInt(2), type: { kind: 'int' } },
         { kind: 'instance', name: 'test_instance', id: BigInt(3), overrides: [], identityOverride: true, protoName: 'OtherModule' },
         { kind: 'module', id: BigInt(4), module: { name: 'TestModule', id: BigInt(5), defs: [] } },
+        { kind: 'typedef', id: BigInt(6), name: 'TYPE_A', type: { kind: 'int' } },
       ],
     }
 
-    const expectedDefinitions: NameDefinition[] = defaultDefinitions.concat([
+    const expectedNameDefinitions: NameDefinition[] = defaultDefinitions.concat([
       {
         identifier: 'TEST_CONSTANT',
         kind: 'const',
@@ -35,8 +36,15 @@ describe('collectDefinitions', () => {
       },
     ])
 
+    const expectedTypeDefinitions: TypeDefinition[] = [
+      {
+        identifier: 'TYPE_A',
+        type: { kind: 'int' },
+      },
+    ]
+
     const result = collectDefinitions(tntModule)
-    assert.deepEqual(result, { nameDefinitions: expectedDefinitions, typeDefinitions: [] })
+    assert.deepEqual(result, { nameDefinitions: expectedNameDefinitions, typeDefinitions: expectedTypeDefinitions })
   })
 
   it('finds scoped definitions', () => {
