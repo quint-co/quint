@@ -64,6 +64,7 @@ function checkDefTypes (typeDefinitions: TypeDefinition[], def: TntDef): NameRes
     case 'const':
     case 'var':
     case 'typedef':
+    case 'def':
       return def.type ? checkType(typeDefinitions, def.name, def.id, def.type) : { kind: 'ok' }
     default:
       return { kind: 'ok' }

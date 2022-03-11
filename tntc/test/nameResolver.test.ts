@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { NameDefinition, defaultDefinitions, DefinitionTable } from '../src/definitionsCollector'
+import { NameDefinition, defaultDefinitions, DefinitionTable, TypeDefinition } from '../src/definitionsCollector'
 import { resolveNames, NameResolutionResult } from '../src/nameResolver'
 import { TntModule, TntEx } from '../src/tntIr'
 
@@ -50,12 +50,12 @@ describe('nameResolver', () => {
     id: BigInt(0),
     defs: [
       { kind: 'def', name: 'A', qualifier: 'def', expr: lambdaExpr, id: BigInt(1), type: { kind: 'int' } },
-      { kind: 'def', name: 'B', qualifier: 'def', expr: valueExpr, id: BigInt(2), type: { kind: 'int' } },
+      { kind: 'def', name: 'B', qualifier: 'def', expr: valueExpr, id: BigInt(2), type: { kind: 'const', name: 'MY_TYPE' } },
     ],
   }
 
   it('finds top level definitions', () => {
-    const definitions: NameDefinition[] = defaultDefinitions.concat([
+    const nameDefinitions: NameDefinition[] = defaultDefinitions.concat([
       {
         identifier: 'TEST_CONSTANT',
         kind: 'const',
@@ -65,14 +65,17 @@ describe('nameResolver', () => {
         kind: 'def',
       },
     ])
-    const table: DefinitionTable = { nameDefinitions: definitions, typeDefinitions: [] }
+    const typeDefinitions: TypeDefinition[] = [
+      { identifier: 'MY_TYPE', type: { kind: 'int' } },
+    ]
+    const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
 
     const result = resolveNames(tntModule, table)
     assert.deepEqual(result, { kind: 'ok' })
   })
 
   it('finds scoped definitions', () => {
-    const definitions: NameDefinition[] = defaultDefinitions.concat([
+    const nameDefinitions: NameDefinition[] = defaultDefinitions.concat([
       {
         identifier: 'TEST_CONSTANT',
         kind: 'const',
@@ -83,14 +86,17 @@ describe('nameResolver', () => {
         scope: BigInt(10),
       },
     ])
-    const table: DefinitionTable = { nameDefinitions: definitions, typeDefinitions: [] }
+    const typeDefinitions: TypeDefinition[] = [
+      { identifier: 'MY_TYPE', type: { kind: 'int' } },
+    ]
+    const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
 
     const result = resolveNames(tntModule, table)
     assert.deepEqual(result, { kind: 'ok' })
   })
 
   it('does not find scoped definitions outside of scope', () => {
-    const definitions: NameDefinition[] = defaultDefinitions.concat([
+    const nameDefinitions: NameDefinition[] = defaultDefinitions.concat([
       {
         identifier: 'TEST_CONSTANT',
         kind: 'const',
@@ -101,12 +107,37 @@ describe('nameResolver', () => {
         scope: BigInt(20),
       },
     ])
-    const table: DefinitionTable = { nameDefinitions: definitions, typeDefinitions: [] }
+    const typeDefinitions: TypeDefinition[] = [
+      { identifier: 'MY_TYPE', type: { kind: 'int' } },
+    ]
+    const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
 
     const result = resolveNames(tntModule, table)
     const expectedResult: NameResolutionResult = {
       kind: 'error',
       errors: [{ kind: 'operator', name: 'x', definitionName: 'A', reference: nameExpr.id }],
+    }
+    assert.deepEqual(result, expectedResult)
+  })
+
+  it('does not find undefined type aliases', () => {
+    const nameDefinitions: NameDefinition[] = defaultDefinitions.concat([
+      {
+        identifier: 'TEST_CONSTANT',
+        kind: 'const',
+      },
+      {
+        identifier: 'x',
+        kind: 'def',
+      },
+    ])
+    const typeDefinitions: TypeDefinition[] = []
+    const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
+
+    const result = resolveNames(tntModule, table)
+    const expectedResult: NameResolutionResult = {
+      kind: 'error',
+      errors: [{ kind: 'type', name: 'MY_TYPE', definitionName: 'B', reference: BigInt(2) }],
     }
     assert.deepEqual(result, expectedResult)
   })
