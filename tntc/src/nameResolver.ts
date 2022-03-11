@@ -26,7 +26,7 @@ export interface NameError {
   name: string;
   /* The module-level definition containing the error */
   definitionName: string;
-  /* The name expression where the error occurs */
+  /* The identifier of the IR node where the error occurs */
   reference: BigInt;
 }
 
