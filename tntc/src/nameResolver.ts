@@ -21,14 +21,13 @@ import { DefinitionTable, NameDefinition, TypeDefinition } from './definitionsCo
  * A single name resolution error
  */
 export interface NameError {
+  kind: string
   /* The name that couldn't be resolved */
   name: string;
   /* The module-level definition containing the error */
   definitionName: string;
   /* The name expression where the error occurs */
-  expression: TntEx;
-  /* A stacktrace of expressions from the error to the module-level definition */
-  trace: TntEx[];
+  reference: BigInt;
 }
 
 /**
@@ -49,53 +48,67 @@ export type NameResolutionResult =
  * @returns a successful result in case all names are resolved, or an aggregation of errors otherwise
  */
 export function resolveNames (tntModule: TntModule, table: DefinitionTable): NameResolutionResult {
-  const results: NameResolutionResult[] = tntModule.defs.map(def => {
-    // TODO: merge type and name results
-    console.log(checkDefTypes(table.typeDefinitions, def))
-    return def.kind === 'def' ? checkNamesInExpr(table.nameDefinitions, def.name, def.expr, [def.expr.id]) : { kind: 'ok' }
-  })
-
-  // Aggregate errors
-  const errors = results.reduce((errors: NameError[], result: NameResolutionResult) => {
-    return result.kind === 'error' ? errors.concat(result.errors) : errors
+  const results: NameResolutionResult[] = tntModule.defs.reduce((res: NameResolutionResult[], def) => {
+    res.push(checkDefTypes(table.typeDefinitions, def))
+    if (def.kind === 'def') {
+      res.push(checkNamesInExpr(table.nameDefinitions, def.name, def.expr, [def.expr.id]))
+    }
+    return res
   }, [])
 
-  return errors.length > 0 ? { kind: 'error', errors: errors } : { kind: 'ok' }
+  return mergeNameResults(results)
 }
 
-function checkType (typeDefinitions: TypeDefinition[], type: TntType): Boolean {
-  switch (type.kind) {
-    case 'const':
-    case 'var':
-      return typeDefinitions.some(def => def.identifier === type.name)
-    case 'set':
-    case 'seq':
-      return checkType(typeDefinitions, type.elem)
-    case 'fun':
-      return checkType(typeDefinitions, type.arg) && checkType(typeDefinitions, type.res)
-    case 'oper':
-      return type.args.every(arg => checkType(typeDefinitions, arg)) && checkType(typeDefinitions, type.res)
-    case 'tuple':
-      return type.elems.every(elem => checkType(typeDefinitions, elem))
-    case 'record':
-      return type.fields.every(field => checkType(typeDefinitions, field.fieldType))
-    case 'union':
-      return type.records.every(record => {
-        return record.fields.every(field => checkType(typeDefinitions, field.fieldType))
-      })
-  }
-  return true
-}
-
-function checkDefTypes (typeDefinitions: TypeDefinition[], def: TntDef): Boolean {
+function checkDefTypes (typeDefinitions: TypeDefinition[], def: TntDef): NameResolutionResult {
   switch (def.kind) {
     case 'const':
     case 'var':
     case 'typedef':
-      return def.type ? checkType(typeDefinitions, def.type) : true
+      return def.type ? checkType(typeDefinitions, def.name, def.id, def.type) : { kind: 'ok' }
     default:
-      return true
+      return { kind: 'ok' }
   }
+}
+
+function checkType (typeDefinitions: TypeDefinition[], definitionName: string, id: BigInt, type: TntType): NameResolutionResult {
+  switch (type.kind) {
+    case 'const':
+    case 'var':
+      if (typeDefinitions.some(def => def.identifier === type.name)) {
+        return { kind: 'ok' }
+      } else {
+        return { kind: 'error', errors: [{ kind: 'type', name: type.name, definitionName: definitionName, reference: id }] }
+      }
+    case 'set':
+    case 'seq':
+      return checkType(typeDefinitions, definitionName, id, type.elem)
+    case 'fun':
+      return mergeNameResults([
+        checkType(typeDefinitions, definitionName, id, type.arg),
+        checkType(typeDefinitions, definitionName, id, type.res),
+      ])
+    case 'oper': {
+      const argsResults = type.args.map(arg => checkType(typeDefinitions, definitionName, id, arg))
+      argsResults.push(checkType(typeDefinitions, definitionName, id, type.res))
+      return mergeNameResults(argsResults)
+    }
+    case 'tuple': {
+      const results = type.elems.map(elem => checkType(typeDefinitions, definitionName, id, elem))
+      return mergeNameResults(results)
+    }
+    case 'record': {
+      const results = type.fields.map(field => checkType(typeDefinitions, definitionName, id, field.fieldType))
+      return mergeNameResults(results)
+    }
+    case 'union': {
+      const results = type.records.map(record => {
+        const fieldResults = record.fields.map(field => checkType(typeDefinitions, definitionName, id, field.fieldType))
+        return mergeNameResults(fieldResults)
+      })
+      return mergeNameResults(results)
+    }
+  }
+  return { kind: 'ok' }
 }
 
 function checkNamesInExpr (
@@ -103,7 +116,7 @@ function checkNamesInExpr (
   defName: string,
   expr: TntEx,
   scopes: BigInt[]
-): NameResolutionResult {
+): { kind: 'ok' } | { kind: 'error', errors: NameError[] } {
   switch (expr.kind) {
     case 'name': {
       // This is a name expression, the name must be defined
@@ -114,7 +127,7 @@ function checkNamesInExpr (
       if (nameDefinitionsForScope.some(name => name.identifier === expr.name)) {
         return { kind: 'ok' }
       } else {
-        return { kind: 'error', errors: [{ name: expr.name, definitionName: defName, expression: expr, trace: [] }] }
+        return { kind: 'error', errors: [{ kind: 'operator', name: expr.name, definitionName: defName, reference: expr.id }] }
       }
     }
 
@@ -125,10 +138,10 @@ function checkNamesInExpr (
 
         if (result.kind === 'error') {
           return result.errors.map(error => ({
+            kind: 'operator',
             name: error.name,
             definitionName: defName,
-            expression: error.expression,
-            trace: error.trace.length === 0 ? error.trace.concat([arg, expr]) : error.trace.concat([expr]),
+            reference: error.reference,
           }))
         }
 
@@ -146,6 +159,15 @@ function checkNamesInExpr (
       // Other expressions don't have any names to resolve
       return { kind: 'ok' }
   }
+}
+
+function mergeNameResults (results: NameResolutionResult[]): NameResolutionResult {
+  // Aggregate errors
+  const errors = results.reduce((errors: NameError[], result: NameResolutionResult) => {
+    return result.kind === 'error' ? errors.concat(result.errors) : errors
+  }, [])
+
+  return errors.length > 0 ? { kind: 'error', errors: errors } : { kind: 'ok' }
 }
 
 function filterScope (nameDefinitions: NameDefinition[], scopes: BigInt[]): NameDefinition[] {
