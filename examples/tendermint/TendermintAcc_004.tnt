@@ -43,6 +43,8 @@ module TendermintAcc_004 {
 type proc_t = str
 // a value is also a string
 type value_t = str
+// a state is also a string
+type state_t = str
 // a round is an integer
 type round_t = int
 
