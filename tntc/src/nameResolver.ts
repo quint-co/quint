@@ -13,7 +13,7 @@
  * @module
  */
 
-import { TntModule, TntEx, TntDef } from './tntIr'
+import { TntModule, TntEx } from './tntIr'
 import { TntType } from './tntTypes'
 import { DefinitionTable, NameDefinition, TypeDefinition } from './definitionsCollector'
 
@@ -21,6 +21,7 @@ import { DefinitionTable, NameDefinition, TypeDefinition } from './definitionsCo
  * A single name resolution error
  */
 export interface NameError {
+  /* Either 'type' or 'operator' */
   kind: string
   /* The name that couldn't be resolved */
   name: string;
@@ -43,15 +44,28 @@ export type NameResolutionResult =
  * Explore the IR checking all name expressions for undefined names
  *
  * @param tntModule the TNT module to be checked
- * @param definitions a list of names defined for that module, including their scope when not global
+ * @param table lists of names and type aliases defined for that module, including their scope when not global
  *
  * @returns a successful result in case all names are resolved, or an aggregation of errors otherwise
  */
 export function resolveNames (tntModule: TntModule, table: DefinitionTable): NameResolutionResult {
   const results: NameResolutionResult[] = tntModule.defs.reduce((res: NameResolutionResult[], def) => {
-    res.push(checkDefTypes(table.typeDefinitions, def))
+    switch (def.kind) {
+      // Possibly typed definitions
+      case 'const':
+      case 'var':
+      case 'typedef':
+      case 'def':
+        if (def.type) {
+          res.push(checkType(table.typeDefinitions, def.name, def.id, def.type))
+        }
+        break
+      // Untyped definitions
+      default:
+    }
+
     if (def.kind === 'def') {
-      res.push(checkNamesInExpr(table.nameDefinitions, def.name, def.expr, [def.expr.id]))
+      res.push(checkNamesInExpr(table, def.name, def.expr, [def.expr.id]))
     }
     return res
   }, [])
@@ -59,84 +73,64 @@ export function resolveNames (tntModule: TntModule, table: DefinitionTable): Nam
   return mergeNameResults(results)
 }
 
-function checkDefTypes (typeDefinitions: TypeDefinition[], def: TntDef): NameResolutionResult {
-  switch (def.kind) {
-    case 'const':
-    case 'var':
-    case 'typedef':
-    case 'def':
-      return mergeNameResults(
-        [
-          def.type ? checkType(typeDefinitions, def.name, def.id, def.type) : { kind: 'ok' },
-          def.kind === 'def' ? checkExprTypes(typeDefinitions, def.name, def.expr) : { kind: 'ok' },
-        ]
-      )
-    default:
-      return { kind: 'ok' }
-  }
-}
-
-function checkExprTypes (typeDefinitions: TypeDefinition[], definitionName: string, expr: TntEx): NameResolutionResult {
-  let results: NameResolutionResult[] = []
-  if (expr.type) {
-    results.push(checkType(typeDefinitions, definitionName, expr.id, expr.type))
-  }
-
-  switch (expr.kind) {
-    case 'lambda':
-      results.push(checkExprTypes(typeDefinitions, definitionName, expr.expr))
-      break
-    case 'app':
-      results = expr.args.flatMap(arg => { return checkExprTypes(typeDefinitions, definitionName, arg) })
-      break
-    case 'let':
-      if (expr.opdef.type) {
-        results.push(checkType(typeDefinitions, definitionName, expr.opdef.id, expr.opdef.type))
-      }
-      results.push(checkExprTypes(typeDefinitions, definitionName, expr.opdef.expr))
-      results.push(checkExprTypes(typeDefinitions, definitionName, expr.expr))
-      break
-    default:
-    // no child expressions to check
-  }
-
-  return mergeNameResults(results)
-}
-
-function checkType (typeDefinitions: TypeDefinition[], definitionName: string, id: BigInt, type: TntType): NameResolutionResult {
+function checkType (
+  typeDefinitions: TypeDefinition[],
+  definitionName: string,
+  id: BigInt,
+  type: TntType
+): NameResolutionResult {
   let results: NameResolutionResult[] = []
 
   switch (type.kind) {
     case 'const':
     case 'var':
+      // Type is a name, check that it is defined
       if (typeDefinitions.some(def => def.identifier === type.name)) {
         return { kind: 'ok' }
       } else {
-        return { kind: 'error', errors: [{ kind: 'type', name: type.name, definitionName: definitionName, reference: id }] }
+        return {
+          kind: 'error',
+          errors: [
+            { kind: 'type', name: type.name, definitionName: definitionName, reference: id },
+          ],
+        }
       }
+
     case 'set':
     case 'seq':
+      // Generic constructors, check parameter
       return checkType(typeDefinitions, definitionName, id, type.elem)
+
     case 'fun':
+      // Functions, check both argument and result
       results = [
         checkType(typeDefinitions, definitionName, id, type.arg),
         checkType(typeDefinitions, definitionName, id, type.res),
       ]
       break
+
     case 'oper':
+      // Operators, check all arguments and result
       results = type.args.map(arg => checkType(typeDefinitions, definitionName, id, arg))
       results.push(checkType(typeDefinitions, definitionName, id, type.res))
       break
+
     case 'tuple':
+      // Tuples, check all elements
       results = type.elems.map(elem => checkType(typeDefinitions, definitionName, id, elem))
       break
+
     case 'record':
+      // Records, check all fields
       results = type.fields.map(field => checkType(typeDefinitions, definitionName, id, field.fieldType))
       break
+
     case 'union':
-      results = type.records.map(record => {
-        const fieldResults = record.fields.map(field => checkType(typeDefinitions, definitionName, id, field.fieldType))
-        return mergeNameResults(fieldResults)
+      // Variants, check all fields for all records
+      results = type.records.flatMap(record => {
+        return record.fields.map(
+          field => checkType(typeDefinitions, definitionName, id, field.fieldType)
+        )
       })
       break
   }
@@ -144,42 +138,64 @@ function checkType (typeDefinitions: TypeDefinition[], definitionName: string, i
   return mergeNameResults(results)
 }
 
+/* Recursively navigate expressions, resolving both operator names and type aliases */
 function checkNamesInExpr (
-  nameDefinitions: NameDefinition[],
+  table: DefinitionTable,
   defName: string,
   expr: TntEx,
   scopes: BigInt[]
 ): NameResolutionResult {
+  const results: NameResolutionResult[] = []
+  // Any expression can have a type. If that's the case, check it.
+  if (expr.type) {
+    results.push(checkType(table.typeDefinitions, defName, expr.id, expr.type))
+  }
+
   switch (expr.kind) {
     case 'name': {
       // This is a name expression, the name must be defined
       // either globally or under a scope that contains the expression
       // The list of scopes containing the expression is accumulated in param scopes
-      const nameDefinitionsForScope = filterScope(nameDefinitions, scopes)
+      const nameDefinitionsForScope = filterScope(table.nameDefinitions, scopes)
 
-      if (nameDefinitionsForScope.some(name => name.identifier === expr.name)) {
-        return { kind: 'ok' }
-      } else {
-        return { kind: 'error', errors: [{ kind: 'operator', name: expr.name, definitionName: defName, reference: expr.id }] }
+      if (!nameDefinitionsForScope.some(name => name.identifier === expr.name)) {
+        results.push({
+          kind: 'error',
+          errors: [{ kind: 'operator', name: expr.name, definitionName: defName, reference: expr.id }],
+        })
       }
+      break
     }
 
-    case 'app': {
+    case 'app':
       // Application, we need to resolve names for each of the arguments
-      const results = expr.args.flatMap(arg => {
-        return checkNamesInExpr(nameDefinitions, defName, arg, scopes.concat(arg.id))
-      })
-      return mergeNameResults(results)
-    }
+      results.push(...expr.args.flatMap(arg => {
+        return checkNamesInExpr(table, defName, arg, scopes.concat(arg.id))
+      }))
+      break
 
     case 'lambda':
       // Lambda expression, check names in the body expression
-      return checkNamesInExpr(nameDefinitions, defName, expr.expr, scopes.concat(expr.expr.id))
+      results.push(checkNamesInExpr(table, defName, expr.expr, scopes.concat(expr.expr.id)))
+      break
+
+    case 'let':
+      // Let epressions, check names in body of the operator definition and in the body of the result expression
+      results.push(
+        checkNamesInExpr(table, defName, expr.opdef.expr, scopes.concat(expr.opdef.expr.id)),
+        checkNamesInExpr(table, defName, expr.expr, scopes.concat(expr.expr.id))
+      )
+      // Also, the operator definition can be typed, check for type aliases
+      if (expr.opdef.type) {
+        results.push(checkType(table.typeDefinitions, defName, expr.opdef.id, expr.opdef.type))
+      }
+      break
 
     default:
-      // Other expressions don't have any names to resolve
-      return { kind: 'ok' }
+    // Other expressions don't have any names to resolve
   }
+
+  return mergeNameResults(results)
 }
 
 function mergeNameResults (results: NameResolutionResult[]): NameResolutionResult {
