@@ -78,6 +78,10 @@ function checkDefTypes (typeDefinitions: TypeDefinition[], def: TntDef): NameRes
 
 function checkExprTypes (typeDefinitions: TypeDefinition[], definitionName: string, expr: TntEx): NameResolutionResult {
   let results: NameResolutionResult[] = []
+  if (expr.type) {
+    results.push(checkType(typeDefinitions, definitionName, expr.id, expr.type))
+  }
+
   switch (expr.kind) {
     case 'lambda':
       results.push(checkExprTypes(typeDefinitions, definitionName, expr.expr))
@@ -86,9 +90,6 @@ function checkExprTypes (typeDefinitions: TypeDefinition[], definitionName: stri
       results = expr.args.flatMap(arg => { return checkExprTypes(typeDefinitions, definitionName, arg) })
       break
     case 'let':
-      if (expr.type) {
-        results.push(checkType(typeDefinitions, definitionName, expr.id, expr.type))
-      }
       if (expr.opdef.type) {
         results.push(checkType(typeDefinitions, definitionName, expr.opdef.id, expr.opdef.type))
       }
@@ -96,11 +97,15 @@ function checkExprTypes (typeDefinitions: TypeDefinition[], definitionName: stri
       results.push(checkExprTypes(typeDefinitions, definitionName, expr.expr))
       break
     default:
+    // no child expressions to check
   }
+
   return mergeNameResults(results)
 }
 
 function checkType (typeDefinitions: TypeDefinition[], definitionName: string, id: BigInt, type: TntType): NameResolutionResult {
+  let results: NameResolutionResult[] = []
+
   switch (type.kind) {
     case 'const':
     case 'var':
@@ -113,32 +118,30 @@ function checkType (typeDefinitions: TypeDefinition[], definitionName: string, i
     case 'seq':
       return checkType(typeDefinitions, definitionName, id, type.elem)
     case 'fun':
-      return mergeNameResults([
+      results = [
         checkType(typeDefinitions, definitionName, id, type.arg),
         checkType(typeDefinitions, definitionName, id, type.res),
-      ])
-    case 'oper': {
-      const argsResults = type.args.map(arg => checkType(typeDefinitions, definitionName, id, arg))
-      argsResults.push(checkType(typeDefinitions, definitionName, id, type.res))
-      return mergeNameResults(argsResults)
-    }
-    case 'tuple': {
-      const results = type.elems.map(elem => checkType(typeDefinitions, definitionName, id, elem))
-      return mergeNameResults(results)
-    }
-    case 'record': {
-      const results = type.fields.map(field => checkType(typeDefinitions, definitionName, id, field.fieldType))
-      return mergeNameResults(results)
-    }
-    case 'union': {
-      const results = type.records.map(record => {
+      ]
+      break
+    case 'oper':
+      results = type.args.map(arg => checkType(typeDefinitions, definitionName, id, arg))
+      results.push(checkType(typeDefinitions, definitionName, id, type.res))
+      break
+    case 'tuple':
+      results = type.elems.map(elem => checkType(typeDefinitions, definitionName, id, elem))
+      break
+    case 'record':
+      results = type.fields.map(field => checkType(typeDefinitions, definitionName, id, field.fieldType))
+      break
+    case 'union':
+      results = type.records.map(record => {
         const fieldResults = record.fields.map(field => checkType(typeDefinitions, definitionName, id, field.fieldType))
         return mergeNameResults(fieldResults)
       })
-      return mergeNameResults(results)
-    }
+      break
   }
-  return { kind: 'ok' }
+
+  return mergeNameResults(results)
 }
 
 function checkNamesInExpr (
@@ -146,7 +149,7 @@ function checkNamesInExpr (
   defName: string,
   expr: TntEx,
   scopes: BigInt[]
-): { kind: 'ok' } | { kind: 'error', errors: NameError[] } {
+): NameResolutionResult {
   switch (expr.kind) {
     case 'name': {
       // This is a name expression, the name must be defined
@@ -163,22 +166,10 @@ function checkNamesInExpr (
 
     case 'app': {
       // Application, we need to resolve names for each of the arguments
-      const errors = expr.args.flatMap(arg => {
-        const result = checkNamesInExpr(nameDefinitions, defName, arg, scopes.concat(arg.id))
-
-        if (result.kind === 'error') {
-          return result.errors.map(error => ({
-            kind: 'operator',
-            name: error.name,
-            definitionName: defName,
-            reference: error.reference,
-          }))
-        }
-
-        return []
+      const results = expr.args.flatMap(arg => {
+        return checkNamesInExpr(nameDefinitions, defName, arg, scopes.concat(arg.id))
       })
-
-      return errors.length === 0 ? { kind: 'ok' } : { kind: 'error', errors: errors }
+      return mergeNameResults(results)
     }
 
     case 'lambda':
