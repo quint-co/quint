@@ -65,10 +65,39 @@ function checkDefTypes (typeDefinitions: TypeDefinition[], def: TntDef): NameRes
     case 'var':
     case 'typedef':
     case 'def':
-      return def.type ? checkType(typeDefinitions, def.name, def.id, def.type) : { kind: 'ok' }
+      return mergeNameResults(
+        [
+          def.type ? checkType(typeDefinitions, def.name, def.id, def.type) : { kind: 'ok' },
+          def.kind === 'def' ? checkExprTypes(typeDefinitions, def.name, def.expr) : { kind: 'ok' },
+        ]
+      )
     default:
       return { kind: 'ok' }
   }
+}
+
+function checkExprTypes (typeDefinitions: TypeDefinition[], definitionName: string, expr: TntEx): NameResolutionResult {
+  let results: NameResolutionResult[] = []
+  switch (expr.kind) {
+    case 'lambda':
+      results.push(checkExprTypes(typeDefinitions, definitionName, expr.expr))
+      break
+    case 'app':
+      results = expr.args.flatMap(arg => { return checkExprTypes(typeDefinitions, definitionName, arg) })
+      break
+    case 'let':
+      if (expr.type) {
+        results.push(checkType(typeDefinitions, definitionName, expr.id, expr.type))
+      }
+      if (expr.opdef.type) {
+        results.push(checkType(typeDefinitions, definitionName, expr.opdef.id, expr.opdef.type))
+      }
+      results.push(checkExprTypes(typeDefinitions, definitionName, expr.opdef.expr))
+      results.push(checkExprTypes(typeDefinitions, definitionName, expr.expr))
+      break
+    default:
+  }
+  return mergeNameResults(results)
 }
 
 function checkType (typeDefinitions: TypeDefinition[], definitionName: string, id: BigInt, type: TntType): NameResolutionResult {

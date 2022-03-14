@@ -150,6 +150,7 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
           kind: 'namespace',
           identifier: def.name,
         })
+        table.nameDefinitions.push(...def.overrides.flatMap(e => collectFromExpr(e[1])))
         break
       case 'module':
         table.nameDefinitions.push({
@@ -163,8 +164,17 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
           type: def.type,
         })
         break
-      default:
-      // imports and assumes, ignore for now
+      case 'assume':
+        table.nameDefinitions.push({
+          kind: 'assumption',
+          identifier: def.name,
+        })
+        if (def.assumption) {
+          table.nameDefinitions.push(...collectFromExpr(def.assumption))
+        }
+        break
+      case 'import':
+      // nothing to collect
     }
     return table
   }, { nameDefinitions: defaultDefinitions, typeDefinitions: [] })

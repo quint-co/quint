@@ -1,0 +1,21 @@
+{
+  "kind": "error",
+  "messages": [
+    {
+      "explanation": "Couldn't resolve type alias UNKNOWN_TYPE in definition for d",
+      "loc": {
+        "source": "mocked_path/testFixture/_1013unknownTypeLetIn.tnt",
+        "start": {
+          "line": 2,
+          "col": 4,
+          "index": 42
+        },
+        "end": {
+          "line": 2,
+          "col": 26,
+          "index": 65
+        }
+      }
+    }
+  ]
+}
