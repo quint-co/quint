@@ -36,7 +36,7 @@ val Message =
 
     val M1b =
       tuples(Acceptor, Ballot, Ballot union set(-1), Value union set(None))
-        .map(a, b, mb, mv -> { tag: "1b", acc: acc, bal: b, mbal: mb, mval: mv })
+        .map(a, b, mb, mv -> { tag: "1b", acc: a, bal: b, mbal: mb, mval: mv })
 
     val M2a =
       tuples(Ballot, Value)

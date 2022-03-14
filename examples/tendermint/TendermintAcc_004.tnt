@@ -444,7 +444,7 @@ pred AmnesiaBy(p) =
                                   round: r2, id: Id(v2)})
             & Rounds.filter(rnd -> r1 <= rnd and rnd < r2).forall(r ->
                 val prevotes = evidence.filter(m -> m.tag == "PREVOTE")
-                                       .filter(m.round == r and m.id == Id(v2))
+                                       .filter(m -> m.round == r and m.id == Id(v2))
 
                 cardinality(prevotes) < THRESHOLD2
               )
