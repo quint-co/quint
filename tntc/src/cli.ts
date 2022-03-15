@@ -71,14 +71,14 @@ function parse (argv: any) {
   reader()
 }
 
-function reportError (argv: any, text: string, result: { kind: 'error', messages: ErrorMessage[] }) {
+function reportError (argv: any, sourceCode: string, result: { kind: 'error', messages: ErrorMessage[] }) {
   if (argv.out) {
     // write the errors to the output file
     writeToJson(argv.out, result)
   } else {
-    const finder = lineColumn(text)
+    const finder = lineColumn(sourceCode)
     // write the errors to stderr
-    result.messages.forEach((m) => console.error(formatError(text, finder, m)))
+    result.messages.forEach((m) => console.error(formatError(sourceCode, finder, m)))
   }
 }
 
