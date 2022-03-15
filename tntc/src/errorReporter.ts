@@ -55,7 +55,6 @@ function formatLine (lineIndex: number, startCol: number, endCol: number, line: 
   // Write ^ characters for columns that should be highlited in this line
   output += ' '.repeat(startCol)
   output += '^'.repeat(1 + endCol - startCol)
-  output += ' '.repeat(line.length - 1 - endCol)
   output += '\n'
   return output
 }

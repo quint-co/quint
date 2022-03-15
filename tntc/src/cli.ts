@@ -16,7 +16,7 @@ import { lf } from 'eol'
 import JSONbig from 'json-bigint'
 import lineColumn from 'line-column'
 
-import { parsePhase1, parsePhase2, ErrorMessage } from './tntParserFrontend'
+import { parsePhase1, parsePhase2, ErrorMessage, compactSourceMap } from './tntParserFrontend'
 import { formatError } from './errorReporter'
 
 import yargs from 'yargs/yargs'
@@ -38,7 +38,7 @@ function parse (argv: any) {
 
     if (argv.sourceMap) {
       // Write source map to the specified file
-      writeToJson(argv.sourceMap, Object.fromEntries(phase1Result.sourceMap))
+      writeToJson(argv.sourceMap, compactSourceMap(phase1Result.sourceMap))
     }
 
     const phase2Result = parsePhase2(phase1Result.module, phase1Result.sourceMap)
