@@ -10,6 +10,8 @@
  * has either an unscoped definition or a scoped definition with a scope containing
  * the name expression.
  *
+ * @author Gabriela Mafra
+ *
  * @module
  */
 
