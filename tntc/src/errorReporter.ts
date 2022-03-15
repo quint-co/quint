@@ -38,7 +38,7 @@ export function formatError (text: string, finder: any, message: ErrorMessage): 
     const line = text.slice(lineStartIndex).split('\n')[0]
 
     const startCol = i === loc.start.line ? loc.start.col : 0
-    const endCol = i === endLine ? findEndCol(loc, lineStartIndex) : line.length
+    const endCol = i === endLine ? findEndCol(loc, lineStartIndex) : line.length - 1
 
     output += formatLine(i, startCol, endCol, line)
   }
@@ -50,15 +50,12 @@ function formatLine (lineIndex: number, startCol: number, endCol: number, line: 
   const lineNumberIndicator = `${lineIndex + 1}: `
   output += `${lineNumberIndicator}${line}\n`
   // Add margin according to how much space the indicator takes
-  for (let j = 0; j < lineNumberIndicator.length; j++) {
-    output += ' '
-  }
+  output += ' '.repeat(lineNumberIndicator.length)
 
   // Write ^ characters for columns that should be highlited in this line
-  for (let j = 0; j < line.length; j++) {
-    const char = j >= startCol && j <= endCol ? '^' : ' '
-    output += char
-  }
+  output += ' '.repeat(startCol)
+  output += '^'.repeat(1 + endCol - startCol)
+  output += ' '.repeat(line.length - 1 - endCol)
   output += '\n'
   return output
 }
