@@ -1,19 +1,16 @@
 {
-  "id": 5,
   "name": "withVals",
   "defs": [
     {
-      "id": 4,
       "kind": "def",
       "name": "subseteq_empty",
       "qualifier": "val",
       "expr": {
-        "id": 3,
         "kind": "app",
         "opcode": "subseteq",
         "args": [
-          { "id": 1, "kind": "app", "opcode": "set", "args": [] },
-          { "id": 2, "kind": "app", "opcode": "set", "args": [] }
+          { "kind": "app", "opcode": "set", "args": [] },
+          { "kind": "app", "opcode": "set", "args": [] }
         ]
       }
     }

@@ -1,27 +1,21 @@
 {
-  "id": 10,
   "name": "withVals",
   "defs": [
     {
-      "id": 9,
       "kind": "def",
       "name": "tup_elem",
       "qualifier": "val",
       "expr": {
-        "id": 8,
         "kind": "let",
         "opdef": {
-          "id": 4,
           "kind": "def",
           "name": "tup",
           "qualifier": "val",
           "expr": {
-            "id": 3,
             "kind": "app",
             "opcode": "tup",
             "args": [
               {
-                "id": 1,
                 "kind": "str",
                 "type": {
                   "kind": "str"
@@ -29,7 +23,6 @@
                 "value": "a"
               },
               {
-                "id": 2,
                 "kind": "int",
                 "type": {
                   "kind": "int"
@@ -40,17 +33,14 @@
           }
         },
         "expr": {
-          "id": 7,
           "kind": "app",
           "opcode": "item",
           "args": [
             {
-              "id": 5,
               "kind": "name",
               "name": "tup"
             },
             {
-              "id": 6,
               "kind": "int",
               "value": 2
             }

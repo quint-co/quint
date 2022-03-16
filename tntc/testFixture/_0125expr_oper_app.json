@@ -1,34 +1,29 @@
 {
-  "id": 9,
   "name": "withVals",
   "defs": [
     {
-      "id": 4,
       "kind": "def",
       "name": "oper_app",
       "qualifier": "val",
       "expr": {
-        "id": 3,
         "kind": "app",
         "opcode": "MyOper",
         "args": [
-          { "id": 1, "kind": "str", "value": "a", "type": { "kind": "str" } },
-          { "id": 2, "kind": "int", "value": 42, "type": { "kind": "int" } }
+          { "kind": "str", "value": "a", "type": { "kind": "str" } },
+          { "kind": "int", "value": 42, "type": { "kind": "int" } }
         ]
       }
     },
     {
-      "id": 8,
       "kind": "def",
       "name": "oper_in",
       "qualifier": "val",
       "expr": {
-        "id": 7,
         "kind": "app",
         "opcode": "in",
         "args": [
-          { "id": 5, "kind": "int", "value": 1, "type": { "kind": "int" } },
-          { "id": 6, "kind": "app", "opcode": "set", "args": [] }
+          { "kind": "int", "value": 1, "type": { "kind": "int" } },
+          { "kind": "app", "opcode": "set", "args": [] }
         ]
       }
     }

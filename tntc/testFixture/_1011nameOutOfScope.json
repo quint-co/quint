@@ -1,41 +1,21 @@
 {
   "kind": "error",
-  "errors": [
+  "messages": [
     {
-      "name": "x",
-      "definitionName": "A",
-      "expression": {
-        "id": 6,
-        "kind": "name",
-        "name": "x"
-      },
-      "trace": [
-        {
-          "id": 6,
-          "kind": "name",
-          "name": "x"
+      "explanation": "Couldn't resolve name x in definition for A",
+      "loc": {
+        "source": "mocked_path/testFixture/_1011nameOutOfScope.tnt",
+        "start": {
+          "line": 4,
+          "col": 10,
+          "index": 188
         },
-        {
-          "id": 8,
-          "kind": "app",
-          "opcode": "iadd",
-          "args": [
-            {
-              "id": 6,
-              "kind": "name",
-              "name": "x"
-            },
-            {
-              "id": 7,
-              "kind": "int",
-              "type": {
-                "kind": "int"
-              },
-              "value": 1
-            }
-          ]
+        "end": {
+          "line": 4,
+          "col": 10,
+          "index": 188
         }
-      ]
+      }
     }
   ]
 }

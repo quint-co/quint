@@ -1,20 +1,17 @@
 {
-  "id": 6,
   "name": "withVals",
   "defs": [
     {
-      "id": 5,
       "kind": "def",
       "name": "test_seq",
       "qualifier": "val",
       "expr": {
-        "id": 4,
         "kind": "app",
         "opcode": "seq",
         "args": [
-          { "id": 1, "kind": "int", "value": 1, "type": { "kind": "int" } },
-          { "id": 2, "kind": "int", "value": 2, "type": { "kind": "int" } },
-          { "id": 3, "kind": "int", "value": 3, "type": { "kind": "int" } }
+          { "kind": "int", "value": 1, "type": { "kind": "int" } },
+          { "kind": "int", "value": 2, "type": { "kind": "int" } },
+          { "kind": "int", "value": 3, "type": { "kind": "int" } }
         ]
       }
     }

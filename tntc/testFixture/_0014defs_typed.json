@@ -1,9 +1,7 @@
 {
-  "id": 9,
   "name": "withDefs",
   "defs": [
     {
-      "id": 5,
       "kind": "def",
       "name": "H",
       "qualifier": "def",
@@ -13,23 +11,20 @@
         "res": { "kind": "int" }
       },
       "expr": {
-        "id": 4,
         "kind": "lambda",
         "params": ["x", "y"],
         "qualifier": "def",
         "expr": {
-          "id": 3,
           "kind": "app",
           "opcode": "iadd",
           "args": [
-            { "id": 1, "kind": "name", "name": "x" },
-            { "id": 2, "kind": "name", "name": "y" }
+            { "kind": "name", "name": "x" },
+            { "kind": "name", "name": "y" }
           ]
         }
       }
     },
     {
-      "id": 8,
       "kind": "def",
       "name": "P",
       "qualifier": "def",
@@ -39,12 +34,10 @@
         "res": { "kind": "var", "name": "a" }
       },
       "expr": {
-        "id": 7,
         "kind": "lambda",
         "params": ["x"],
         "qualifier": "def",
         "expr": {
-          "id": 6,
           "kind": "name",
           "name": "x"
         }

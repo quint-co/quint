@@ -1,19 +1,16 @@
 {
-  "id": 5,
   "name": "withVals",
   "defs": [
     {
-      "id": 4,
       "kind": "def",
       "name": "test_or",
       "qualifier": "val",
       "expr": {
-        "id": 3,
         "kind": "app",
         "opcode": "or",
         "args": [
-          { "id": 1, "kind": "bool", "value": false, "type": { "kind": "bool" } },
-          { "id": 2, "kind": "bool", "value": true, "type": { "kind": "bool" } }
+          { "kind": "bool", "value": false, "type": { "kind": "bool" } },
+          { "kind": "bool", "value": true, "type": { "kind": "bool" } }
         ]
       }
     }

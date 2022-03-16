@@ -1,9 +1,7 @@
 {
-  "id": 3,
   "name": "withConsts",
   "defs": [
     {
-      "id": 1,
       "kind": "const",
       "name": "MyRecord",
       "type": {
@@ -14,7 +12,6 @@
       }
     },
     {
-      "id": 2,
       "kind": "const",
       "name": "MyUnion",
       "type": {

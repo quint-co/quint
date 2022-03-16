@@ -3,12 +3,14 @@ import { assert } from 'chai'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import JSONbig from 'json-bigint'
-import { parsePhase1, parsePhase2 } from '../src/tntParserFrontend'
+import { parsePhase1, parsePhase2, Loc, compactSourceMap } from '../src/tntParserFrontend'
+import { lf } from 'eol'
 
 // read a TNT file from the test data directory
 function readTnt (name: string): string {
   const p = resolve(__dirname, '../testFixture', name + '.tnt')
-  return readFileSync(p).toString('utf8')
+  const content = readFileSync(p).toString('utf8')
+  return lf(content)
 }
 
 // read the expected JSON outcome from the test data directory
@@ -20,7 +22,7 @@ function readJson (name: string): any {
 // read the TNT file and the expected JSON, parse and compare the results
 function parseAndCompare (artifact: string, wrap: (json: any) => any, checkNameError: Boolean): void {
   // read the input from the data directory and parse it
-  const phase1Result = parsePhase1(readTnt(artifact))
+  const phase1Result = parsePhase1(readTnt(artifact), `mocked_path/testFixture/${artifact}.tnt`)
   // read the expected result as JSON
   const expected = readJson(artifact)
   let outputToCompare
@@ -28,18 +30,27 @@ function parseAndCompare (artifact: string, wrap: (json: any) => any, checkNameE
   if (phase1Result.kind === 'error') {
     // An error occurred at phase 1, check if it is the expected result
     outputToCompare = phase1Result
-  } else if (checkNameError) {
-    // An error occurred at phase 2, check if it is the expected result
-    outputToCompare = parsePhase2(phase1Result.module)
   } else {
-    // Both phases succeeded, check that the module is correclty outputed
-    outputToCompare = phase1Result.module
+    // Phase 1 succeded, check that the source map is correct
+    const expectedSourceMap = readJson(`${artifact}.map`)
+    const sourceMapResult = JSONbig.parse(JSONbig.stringify(compactSourceMap(phase1Result.sourceMap)))
+    assert.deepEqual(sourceMapResult, expectedSourceMap, 'expected source maps to be equal')
+
+    if (checkNameError) {
+      // An error occurred at phase 2, check if it is the expected result
+      outputToCompare = parsePhase2(phase1Result.module, phase1Result.sourceMap)
+    } else {
+      // Both phases succeeded, check that the module is correclty outputed
+      outputToCompare = phase1Result.module
+    }
   }
+
+  outputToCompare = removeIds(outputToCompare)
 
   // run it through stringify-parse to obtain the same json (due to bigints)
   const reparsedResult = JSONbig.parse(JSONbig.stringify(outputToCompare))
   // compare the JSON trees
-  assert.deepEqual(reparsedResult, expected, 'expected JSON trees to be equal')
+  assert.deepEqual(reparsedResult, expected, 'expected JSON results to be equal')
 }
 
 // identity function that can be used as a default wrapper
@@ -51,19 +62,46 @@ function nowrap (arg: any): any {
 function parseAsExpected (artifact: string, description: string): void {
   it(description, () => {
     parseAndCompare(artifact,
-      function(module: any) {
-        return { kind: 'ok', module: module }
+      function (module: any) {
+        return { kind: 'ok', module: module, sourceMap: new Map<BigInt, Loc>() }
       }, false)
   })
+}
+
+// Removes expression/definition ids to avoid comparing them
+function removeIds (obj: any) {
+  // This navigates an untyped version of the IR
+  // removing the ids recursively
+  // It's not pretty, but the typed version would require
+  // us to match all different cases and would be quite
+  // verbose and hard to maintain
+  if (typeof obj !== 'object' || obj === null) {
+    return obj
+  }
+
+  Object.keys(obj).forEach(key => {
+    if (Array.isArray(obj[key])) {
+      return obj[key].map((value: Object) => {
+        return removeIds(value)
+      })
+    } else {
+      return removeIds(obj[key])
+    }
+  })
+  delete obj.id
+  return obj
 }
 
 // plenty of tests
 
 describe('parse ok', () => {
   it('parse empty module', () => {
-    const result = parsePhase1(readTnt('_0001emptyModule'))
+    const result = parsePhase1(readTnt('_0001emptyModule'), 'mocked_path/testFixture/_0001emptyModule.tnt')
     const module = { id: 1n, name: 'empty', defs: [] }
-    assert.deepEqual(result, { kind: 'ok', module: module }, 'expected ok')
+    assert.deepEqual(result.kind, 'ok')
+    if (result.kind === 'ok') {
+      assert.deepEqual(result.module, module)
+    }
   })
 
   parseAsExpected(

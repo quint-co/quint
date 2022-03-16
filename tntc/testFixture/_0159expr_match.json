@@ -1,9 +1,7 @@
 {
-  "id": 20,
   "name": "testMatch",
   "defs": [
     {
-      "id": 1,
       "kind": "typedef",
       "name": "ENTRY_TYPE",
       "type": {
@@ -54,29 +52,24 @@
       }
     },
     {
-      "id": 19,
       "kind": "def",
       "name": "isValid",
       "qualifier": "pred",
       "expr": {
-        "id": 18,
         "kind": "lambda",
         "params": [
           "entry"
         ],
         "qualifier": "pred",
         "expr": {
-          "id": 17,
           "kind": "app",
           "opcode": "match",
           "args": [
             {
-              "id": 2,
               "kind": "name",
               "name": "entry"
             },
             {
-              "id": 13,
               "kind": "str",
               "value": "Cat",
               "type": {
@@ -84,36 +77,30 @@
               }
             },
             {
-              "id": 14,
               "kind": "lambda",
               "params": [
                 "cat"
               ],
               "qualifier": "def",
               "expr": {
-                "id": 7,
                 "kind": "app",
                 "opcode": "neq",
                 "args": [
                   {
-                    "id": 5,
                     "kind": "app",
                     "opcode": "field",
                     "args": [
                       {
-                        "id": 3,
                         "kind": "name",
                         "name": "cat"
                       },
                       {
-                        "id": 4,
                         "kind": "str",
                         "value": "name"
                       }
                     ]
                   },
                   {
-                    "id": 6,
                     "kind": "str",
                     "type": {
                       "kind": "str"
@@ -124,7 +111,6 @@
               }
             },
             {
-              "id": 15,
               "kind": "str",
               "value": "Date",
               "type": {
@@ -132,36 +118,30 @@
               }
             },
             {
-              "id": 16,
               "kind": "lambda",
               "params": [
                 "date"
               ],
               "qualifier": "def",
               "expr": {
-                "id": 12,
                 "kind": "app",
                 "opcode": "igt",
                 "args": [
                   {
-                    "id": 10,
                     "kind": "app",
                     "opcode": "field",
                     "args": [
                       {
-                        "id": 8,
                         "kind": "name",
                         "name": "date"
                       },
                       {
-                        "id": 9,
                         "kind": "str",
                         "value": "year"
                       }
                     ]
                   },
                   {
-                    "id": 11,
                     "kind": "int",
                     "type": {
                       "kind": "int"

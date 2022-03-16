@@ -1,20 +1,17 @@
 {
-  "id": 6,
   "name": "withVals",
   "defs": [
-    { "id": 1, "kind": "var", "name": "x", "type": { "kind": "int" } },
+    { "kind": "var", "name": "x", "type": { "kind": "int" } },
     {
-      "id": 5,
       "kind": "def",
       "name": "asgn",
       "qualifier": "action",
       "expr": {
-        "id": 4,
         "kind": "app",
         "opcode": "assign",
         "args": [
-          { "id": 2, "kind": "name", "name": "x" },
-          { "id": 3, "kind": "int", "value": 3, "type": { "kind": "int" } }
+          { "kind": "name", "name": "x" },
+          { "kind": "int", "value": 3, "type": { "kind": "int" } }
         ]
       }
     }
