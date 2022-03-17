@@ -1,11 +1,55 @@
-import { TntModule, TntEx } from './tntIr'
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
 
+/**
+ * Find and collect definitions from a TNT module, along with a default list for built-in
+ * definitions. Collect both operator and type alias definitions. For scoped operators,
+ * collect scope information.
+ *
+ * @module
+ */
+
+import { TntModule, TntEx } from './tntIr'
+import { TntType } from './tntTypes'
+
+/**
+ * A named operator defined. Can be scoped or module-wide (unscoped).
+ */
 export interface NameDefinition {
+  /* Same as TntDef kinds */
   kind: string
+  /* The name given to the defined operator */
   identifier: string
+  /* Optional scope, an id pointing to the TntIr node that introduces the name */
   scope?: bigint
 }
 
+/**
+ * A type alias definition
+ */
+export interface TypeDefinition {
+  /* The alias given to the type */
+  identifier: string
+  /* The type that is aliased */
+  type: TntType
+}
+
+/**
+ * A lookup table aggregating operator and type alias definitions
+ */
+export interface DefinitionTable {
+  /* Names for operators defined */
+  nameDefinitions: NameDefinition[]
+  /* Type aliases defined */
+  typeDefinitions: TypeDefinition[]
+}
+
+/**
+ * Built-in name definitions that are always included in definitions collection
+*/
 export const defaultDefinitions: NameDefinition[] = [
   { kind: 'def', identifier: 'not' },
   { kind: 'def', identifier: 'and' },
@@ -74,43 +118,66 @@ export const defaultDefinitions: NameDefinition[] = [
   { kind: 'def', identifier: 'FALSE' },
 ]
 
-export function collectDefinitions (tntModule: TntModule): NameDefinition[] {
-  return defaultDefinitions.concat(
-    tntModule.defs.reduce((nameDefs: NameDefinition[], def) => {
-      switch (def.kind) {
-        case 'const':
-        case 'var':
-          nameDefs.push({
-            kind: def.kind,
-            identifier: def.name,
-          })
-          break
-        case 'def':
-          nameDefs.push({
-            kind: def.kind,
-            identifier: def.name,
-          })
-          if (def.expr) {
-            nameDefs.push(...collectFromExpr(def.expr))
-          }
-          break
-        case 'instance':
-          nameDefs.push({
-            kind: 'namespace',
-            identifier: def.name,
-          })
-          break
-        case 'module':
-          nameDefs.push({
-            kind: 'namespace',
-            identifier: def.module.name,
-          })
-          break
-        default:
-        // typedefs and assumes, ignore for now
-      }
-      return nameDefs
-    }, []))
+/**
+ * Recursively iterate over a module's definition collecting all names and type aliases
+ * into a definition table. Also includes all default definitions for built-in names.
+ *
+ * @param tntModule the TNT module to have definitions collected from
+ *
+ * @returns a lookup table with all defined values for the module
+ */
+export function collectDefinitions (tntModule: TntModule): DefinitionTable {
+  return tntModule.defs.reduce((table: DefinitionTable, def) => {
+    switch (def.kind) {
+      case 'const':
+      case 'var':
+        table.nameDefinitions.push({
+          kind: def.kind,
+          identifier: def.name,
+        })
+        break
+      case 'def':
+        table.nameDefinitions.push({
+          kind: def.kind,
+          identifier: def.name,
+        })
+        if (def.expr) {
+          table.nameDefinitions.push(...collectFromExpr(def.expr))
+        }
+        break
+      case 'instance':
+        table.nameDefinitions.push({
+          kind: 'namespace',
+          identifier: def.name,
+        })
+        table.nameDefinitions.push(...def.overrides.flatMap(e => collectFromExpr(e[1])))
+        break
+      case 'module':
+        table.nameDefinitions.push({
+          kind: 'namespace',
+          identifier: def.module.name,
+        })
+        break
+      case 'typedef':
+        table.typeDefinitions.push({
+          identifier: def.name,
+          type: def.type,
+        })
+        break
+      case 'assume':
+        table.nameDefinitions.push({
+          kind: 'assumption',
+          identifier: def.name,
+        })
+        if (def.assumption) {
+          table.nameDefinitions.push(...collectFromExpr(def.assumption))
+        }
+        break
+      case 'import':
+      // nothing to collect
+    }
+    return table
+  }, { nameDefinitions: defaultDefinitions, typeDefinitions: [] })
 }
 
 function collectFromExpr (expr: TntEx): NameDefinition[] {

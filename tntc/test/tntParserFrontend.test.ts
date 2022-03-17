@@ -427,4 +427,12 @@ describe('parse errors', () => {
   it('error on unresolved scoped name', () => {
     parseAndCompare('_1011nameOutOfScope', nowrap, true)
   })
+
+  it('error on unresolved type alias', () => {
+    parseAndCompare('_1012unknownType', nowrap, true)
+  })
+
+  it('error on unresolved type alias inside let', () => {
+    parseAndCompare('_1013unknownTypeLetIn', nowrap, true)
+  })
 })

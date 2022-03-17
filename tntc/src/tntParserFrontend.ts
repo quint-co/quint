@@ -104,11 +104,11 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
   if (result.kind === 'error') {
     // Build error message with resolution explanation and the location obtained from sourceMap
     result.errors.forEach(error => {
-      const expression = error.expression
-      const msg = `Couldn't resolve name ${error.name} in definition for ${error.definitionName}`
-      const loc = sourceMap.get(expression.id)
+      const id = error.reference
+      const msg = `Couldn't resolve ${error.kind === 'type' ? 'type alias' : 'name'} ${error.name} in definition for ${error.definitionName}`
+      const loc = sourceMap.get(id)
       if (!loc) {
-        throw new Error(`no loc found for ${expression.id}`)
+        throw new Error(`no loc found for ${id}`)
       }
       errorMessages.push({ explanation: msg, loc: loc })
     })

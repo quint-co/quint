@@ -43,6 +43,8 @@ module TendermintAcc_004 {
 type proc_t = str
 // a value is also a string
 type value_t = str
+// a state is also a string
+type state_t = str
 // a round is an integer
 type round_t = int
 
@@ -442,7 +444,7 @@ pred AmnesiaBy(p) =
                                   round: r2, id: Id(v2)})
             & Rounds.filter(rnd -> r1 <= rnd and rnd < r2).forall(r ->
                 val prevotes = evidence.filter(m -> m.tag == "PREVOTE")
-                                       .filter(m.round == r and m.id == Id(v2))
+                                       .filter(m -> m.round == r and m.id == Id(v2))
 
                 cardinality(prevotes) < THRESHOLD2
               )
