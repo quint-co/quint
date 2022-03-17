@@ -116,6 +116,13 @@ export const defaultDefinitions: NameDefinition[] = [
   { kind: 'def', identifier: 'Nat' },
   { kind: 'def', identifier: 'TRUE' },
   { kind: 'def', identifier: 'FALSE' },
+  { kind: 'def', identifier: 'set' },
+  { kind: 'def', identifier: 'seq' },
+  { kind: 'def', identifier: 'tuple' },
+  { kind: 'def', identifier: 'record' },
+  { kind: 'def', identifier: 'igt' },
+  { kind: 'def', identifier: 'ilt' },
+  { kind: 'def', identifier: 'iadd' },
 ]
 
 /**

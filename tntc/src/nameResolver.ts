@@ -169,12 +169,23 @@ function checkNamesInExpr (
       break
     }
 
-    case 'app':
-      // Application, we need to resolve names for each of the arguments
+    case 'app': {
+      // Check that the operator being applied is defined
+      const nameDefinitionsForScope = filterScope(table.nameDefinitions, scopes)
+
+      if (!nameDefinitionsForScope.some(name => name.identifier === expr.opcode)) {
+        results.push({
+          kind: 'error',
+          errors: [{ kind: 'operator', name: expr.opcode, definitionName: defName, reference: expr.id }],
+        })
+      }
+
+      // Resolve names for each of the arguments
       results.push(...expr.args.flatMap(arg => {
         return checkNamesInExpr(table, defName, arg, scopes.concat(arg.id))
       }))
       break
+    }
 
     case 'lambda':
       // Lambda expression, check names in the body expression
