@@ -46,7 +46,7 @@ val Message =
       tuples(Acceptor, Ballot, Value)
         .map(a, b, v -> { tag: "2b", acc: a, bal: b, value: v })
 
-    M1 union M1b union M2a union M2b
+    M1a union M1b union M2a union M2b
 //-----------------------------------------------------------------------------
 
 var maxBal:   int
