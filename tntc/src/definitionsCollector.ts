@@ -177,7 +177,7 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
       // nothing to collect
     }
     return table
-  }, { nameDefinitions: defaultDefinitions, typeDefinitions: [] })
+  }, { nameDefinitions: [...defaultDefinitions], typeDefinitions: [] })
 }
 
 function collectFromExpr (expr: TntEx): NameDefinition[] {
