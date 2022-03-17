@@ -1,106 +1,106 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { NameDefinition, collectDefinitions, defaultDefinitions, TypeDefinition } from '../src/definitionsCollector'
-import { TntModule } from '../src/tntIr'
+import { collectDefinitions, defaultDefinitions } from '../src/definitionsCollector'
+import { buildModuleWithDefs } from './builders/modules'
 
 describe('collectDefinitions', () => {
-  it('finds top level definitions', () => {
-    const tntModule: TntModule = {
-      name: 'Test module',
-      id: BigInt(0),
-      defs: [
-        { kind: 'const', name: 'TEST_CONSTANT', id: BigInt(1), type: { kind: 'var', name: 'TYPE_A' } },
-        { kind: 'var', name: 'test_var', id: BigInt(2), type: { kind: 'int' } },
-        { kind: 'instance', name: 'test_instance', id: BigInt(3), overrides: [], identityOverride: true, protoName: 'OtherModule' },
-        { kind: 'module', id: BigInt(4), module: { name: 'TestModule', id: BigInt(5), defs: [] } },
-        { kind: 'typedef', id: BigInt(6), name: 'TYPE_A', type: { kind: 'int' } },
-      ],
-    }
+  describe('collecting operator names', () => {
+    it('collects constant definitions', () => {
+      const tntModule = buildModuleWithDefs(['const TEST_CONSTANT: int'])
 
-    const expectedNameDefinitions: NameDefinition[] = defaultDefinitions.concat([
-      {
-        identifier: 'TEST_CONSTANT',
-        kind: 'const',
-      },
-      {
-        identifier: 'test_var',
-        kind: 'var',
-      },
-      {
-        identifier: 'test_instance',
-        kind: 'namespace',
-      },
-      {
-        identifier: 'TestModule',
-        kind: 'namespace',
-      },
-    ])
+      const result = collectDefinitions(tntModule)
 
-    const expectedTypeDefinitions: TypeDefinition[] = [
-      {
-        identifier: 'TYPE_A',
-        type: { kind: 'int' },
-      },
-    ]
+      assert.deepInclude(result.nameDefinitions, { kind: 'const', identifier: 'TEST_CONSTANT' })
+    })
 
-    const result = collectDefinitions(tntModule)
-    assert.deepEqual(result, { nameDefinitions: expectedNameDefinitions, typeDefinitions: expectedTypeDefinitions })
+    it('collects variable definitions', () => {
+      const tntModule = buildModuleWithDefs(['var test_variable: int'])
+
+      const result = collectDefinitions(tntModule)
+
+      assert.deepInclude(result.nameDefinitions, { kind: 'var', identifier: 'test_variable' })
+    })
+
+    it('collects operator definitions and its parameters including a scope', () => {
+      const tntModule = buildModuleWithDefs(['def test_operator(x) = x + 1'])
+
+      const result = collectDefinitions(tntModule)
+
+      assert.includeDeepMembers(result.nameDefinitions, [
+        { kind: 'def', identifier: 'test_operator' },
+        { kind: 'def', identifier: 'x', scope: BigInt(4) },
+      ])
+    })
+
+    it('collects names from application inside definition body', () => {
+      const tntModule = buildModuleWithDefs(['def test_operator = S.filter(x -> x > 0)'])
+
+      const result = collectDefinitions(tntModule)
+
+      assert.includeDeepMembers(result.nameDefinitions, [
+        { kind: 'def', identifier: 'test_operator' },
+        { kind: 'def', identifier: 'x', scope: BigInt(5) },
+      ])
+    })
+
+    it('collects names from let inside definition body', () => {
+      const tntModule = buildModuleWithDefs(['def test_operator = val x = 10 { x > 0 }'])
+
+      const result = collectDefinitions(tntModule)
+
+      assert.includeDeepMembers(result.nameDefinitions, [
+        { kind: 'def', identifier: 'test_operator' },
+        { kind: 'val', identifier: 'x', scope: BigInt(6) },
+      ])
+    })
+
+    it('collects instances and scoped variables inside parameters', () => {
+      const tntModule = buildModuleWithDefs(['module test_module = test_module(a = val x = 10 {x})'])
+
+      const result = collectDefinitions(tntModule)
+
+      assert.includeDeepMembers(result.nameDefinitions, [
+        { kind: 'namespace', identifier: 'test_module' },
+        { kind: 'val', identifier: 'x', scope: BigInt(4) },
+      ])
+    })
+
+    it('collects module definitions', () => {
+      // TODO: collect definitions inside modules (issue #33)
+      const tntModule = buildModuleWithDefs(['module test_module { def a = 1 }'])
+
+      const result = collectDefinitions(tntModule)
+
+      assert.deepInclude(result.nameDefinitions, { kind: 'namespace', identifier: 'test_module' })
+    })
+
+    it('collects assume definitions and scoped variables in body', () => {
+      const tntModule = buildModuleWithDefs(['assume test_assumption = N > val x = 2 { x }'])
+
+      const result = collectDefinitions(tntModule)
+
+      assert.includeDeepMembers(result.nameDefinitions, [
+        { kind: 'assumption', identifier: 'test_assumption' },
+        { kind: 'val', identifier: 'x', scope: BigInt(5) },
+      ])
+    })
+
+    it('does not collect anything from imports', () => {
+      const tntModule = buildModuleWithDefs(['import test_module.*'])
+
+      const result = collectDefinitions(tntModule)
+
+      assert.deepEqual(result.nameDefinitions, defaultDefinitions)
+    })
   })
 
-  it('finds scoped definitions', () => {
-    const tntModule: TntModule = {
-      name: 'Test module',
-      id: BigInt(0),
-      defs: [
-        {
-          id: BigInt(1),
-          kind: 'def',
-          name: 'test_definition',
-          qualifier: 'val',
-          expr: {
-            id: BigInt(2),
-            kind: 'let',
-            opdef: {
-              id: BigInt(3),
-              kind: 'def',
-              name: 'test_op',
-              qualifier: 'val',
-              expr: {
-                id: BigInt(4),
-                kind: 'lambda',
-                params: ['x'],
-                qualifier: 'def',
-                expr: { id: BigInt(5), kind: 'name', name: 'x' },
-              },
-            },
-            expr: {
-              id: BigInt(6),
-              kind: 'name',
-              name: 'test_op',
-            },
-          },
-        },
-      ],
-    }
+  describe('collecting type aliases', () => {
+    it('collects aliases from typedefs', () => {
+      const tntModule = buildModuleWithDefs(['type TEST_TYPE = int'])
 
-    const expectedDefinitions: NameDefinition[] = defaultDefinitions.concat([
-      {
-        identifier: 'test_definition',
-        kind: 'def',
-      },
-      {
-        identifier: 'test_op',
-        kind: 'val',
-        scope: BigInt(2),
-      },
-      {
-        identifier: 'x',
-        kind: 'def',
-        scope: BigInt(4),
-      },
-    ])
+      const result = collectDefinitions(tntModule)
 
-    const result = collectDefinitions(tntModule)
-    assert.deepEqual(result, { nameDefinitions: expectedDefinitions, typeDefinitions: [] })
+      assert.deepInclude(result.typeDefinitions, { type: { kind: 'int' }, identifier: 'TEST_TYPE' })
+    })
   })
 })
