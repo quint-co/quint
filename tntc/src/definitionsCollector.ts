@@ -174,9 +174,7 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
           kind: def.kind,
           identifier: def.name,
         })
-        if (def.expr) {
-          table.nameDefinitions.push(...collectFromExpr(def.expr))
-        }
+        table.nameDefinitions.push(...collectFromExpr(def.expr))
         break
       case 'instance': {
         table.nameDefinitions.push({
@@ -234,9 +232,7 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
           kind: 'assumption',
           identifier: def.name,
         })
-        if (def.assumption) {
-          table.nameDefinitions.push(...collectFromExpr(def.assumption))
-        }
+        table.nameDefinitions.push(...collectFromExpr(def.assumption))
         break
     }
     return table
@@ -253,7 +249,9 @@ export function mergeTables (a: DefinitionTable, b: DefinitionTable): Definition
 function collectFromExpr (expr: TntEx): NameDefinition[] {
   switch (expr.kind) {
     case 'lambda':
-      return expr.params.map(p => { return { kind: 'def', identifier: p, scope: expr.id } as NameDefinition }).concat(collectFromExpr(expr.expr))
+      return expr.params
+        .map(p => { return { kind: 'def', identifier: p, scope: expr.id } as NameDefinition })
+        .concat(collectFromExpr(expr.expr))
     case 'app':
       return expr.args.flatMap(arg => { return collectFromExpr(arg) })
     case 'let':
