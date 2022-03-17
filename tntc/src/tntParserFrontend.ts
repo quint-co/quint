@@ -118,3 +118,24 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
     ? { kind: 'error', messages: errorMessages }
     : { kind: 'ok', module: tntModule, sourceMap: sourceMap }
 }
+
+export function compactSourceMap (sourceMap: Map<BigInt, Loc>): { sourceIndex: any, map: any } {
+  // Collect all sources in order to index them
+  const sources: string[] = Array.from(sourceMap.values()).map(loc => loc.source)
+
+  // Initialized two structures to be outputed
+  const compactedSourceMap: Map<BigInt, any[]> = new Map<BigInt, number[]>()
+  const sourcesIndex: Map<number, string> = new Map<number, string>()
+
+  // Build a compacted version of the source map with array elements
+  sourceMap.forEach((value, key) => {
+    compactedSourceMap.set(key, [sources.indexOf(value.source), value.start, value.end ? value.end : {}])
+  })
+
+  // Build an index from ids to source
+  sources.forEach((source) => {
+    sourcesIndex.set(sources.indexOf(source), source)
+  })
+
+  return { sourceIndex: Object.fromEntries(sourcesIndex), map: Object.fromEntries(compactedSourceMap) }
+}
