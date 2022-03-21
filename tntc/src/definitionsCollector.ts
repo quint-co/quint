@@ -145,8 +145,6 @@ export const defaultDefinitions: NameDefinition[] = [
   { kind: 'def', identifier: 'cross' },
   { kind: 'def', identifier: 'cardinality' },
   { kind: 'def', identifier: 'difference' },
-  // FIXME: should be scoped by module
-  { kind: 'def', identifier: 'pow' },
   { kind: 'def', identifier: 'weakfair' },
 ]
 
@@ -175,19 +173,49 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
         })
         table.nameDefinitions.push(...collectFromExpr(def.expr))
         break
-      case 'instance':
+      case 'instance': {
         table.nameDefinitions.push({
           kind: 'namespace',
           identifier: def.name,
         })
         table.nameDefinitions.push(...def.overrides.flatMap(e => collectFromExpr(e[1])))
+        table.nameDefinitions.push({
+          kind: 'namespace',
+          identifier: def.protoName,
+        })
+        const namespacedDefinitions = table.nameDefinitions.reduce((ds: NameDefinition[], d) => {
+          const names = d.identifier.split('::')
+          if (names[0] && names[0] === def.protoName && names[1]) {
+            ds.push({ kind: d.kind, identifier: `${def.name}::${names[1]}` })
+          }
+          return ds
+        }, [])
+        table.nameDefinitions.push(...namespacedDefinitions)
         break
-      case 'module':
+      }
+      case 'module': {
         table.nameDefinitions.push({
           kind: 'namespace',
           identifier: def.module.name,
         })
+        const moduleDefinitions = collectDefinitions(def.module)
+        const namespacedDefinitions = moduleDefinitions.nameDefinitions.map(d => {
+          return { kind: d.kind, identifier: `${def.module.name}::${d.identifier}` }
+        })
+        table.nameDefinitions.push(...namespacedDefinitions)
         break
+      }
+      case 'import': {
+        const namespacedDefinitions = table.nameDefinitions.reduce((ds: NameDefinition[], d) => {
+          const names = d.identifier.split('::')
+          if (names[0] && names[0] === def.path && names[1] && (def.name === '*' || def.name === names[1])) {
+            ds.push({ kind: d.kind, identifier: names[1] })
+          }
+          return ds
+        }, [])
+        table.nameDefinitions.push(...namespacedDefinitions)
+        break
+      }
       case 'typedef':
         table.typeDefinitions.push({
           identifier: def.name,
@@ -201,8 +229,6 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
         })
         table.nameDefinitions.push(...collectFromExpr(def.assumption))
         break
-      case 'import':
-      // nothing to collect
     }
     return table
   }, { nameDefinitions: [...defaultDefinitions], typeDefinitions: [] })

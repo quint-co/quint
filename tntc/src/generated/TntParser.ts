@@ -86,9 +86,10 @@ export class TntParser extends Parser {
 	public static readonly LPAREN = 56;
 	public static readonly RPAREN = 57;
 	public static readonly IDENTIFIER = 58;
-	public static readonly LINE_COMMENT = 59;
-	public static readonly COMMENT = 60;
-	public static readonly WS = 61;
+	public static readonly SIMPLE_IDENTIFIER = 59;
+	public static readonly LINE_COMMENT = 60;
+	public static readonly COMMENT = 61;
+	public static readonly WS = 62;
 	public static readonly RULE_module = 0;
 	public static readonly RULE_unit = 1;
 	public static readonly RULE_operDef = 2;
@@ -131,7 +132,8 @@ export class TntParser extends Parser {
 		undefined, undefined, undefined, "STRING", "BOOL", "INT", "AND", "OR", 
 		"IFF", "IMPLIES", "SUBSETEQ", "IN", "NOTIN", "SET", "SEQ", "MATCH", "PLUS", 
 		"MINUS", "MUL", "DIV", "MOD", "GT", "LT", "GE", "LE", "NE", "EQ", "ASGN", 
-		"LPAREN", "RPAREN", "IDENTIFIER", "LINE_COMMENT", "COMMENT", "WS",
+		"LPAREN", "RPAREN", "IDENTIFIER", "SIMPLE_IDENTIFIER", "LINE_COMMENT", 
+		"COMMENT", "WS",
 	];
 	public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(TntParser._LITERAL_NAMES, TntParser._SYMBOLIC_NAMES, []);
 
@@ -2213,7 +2215,7 @@ export class TntParser extends Parser {
 	}
 
 	public static readonly _serializedATN: string =
-		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03?\u01F0\x04\x02" +
+		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03@\u01F0\x04\x02" +
 		"\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07" +
 		"\t\x07\x04\b\t\b\x04\t\t\t\x04\n\t\n\x04\v\t\v\x04\f\t\f\x04\r\t\r\x04" +
 		"\x0E\t\x0E\x04\x0F\t\x0F\x04\x10\t\x10\x04\x11\t\x11\x04\x12\t\x12\x04" +
