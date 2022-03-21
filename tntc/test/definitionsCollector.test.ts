@@ -17,7 +17,7 @@ describe('collectDefinitions', () => {
       ],
     }
 
-    const expectedNameDefinitions: NameDefinition[] = defaultDefinitions.concat([
+    const expectedNameDefinitions: NameDefinition[] = ([
       {
         identifier: 'TEST_CONSTANT',
         kind: 'const',
@@ -83,7 +83,7 @@ describe('collectDefinitions', () => {
       ],
     }
 
-    const expectedDefinitions: NameDefinition[] = defaultDefinitions.concat([
+    const expectedDefinitions: NameDefinition[] = ([
       {
         identifier: 'test_definition',
         kind: 'def',
