@@ -119,7 +119,9 @@ export const defaultDefinitions: DefinitionTable = {
     { kind: 'def', identifier: 'FALSE' },
     { kind: 'def', identifier: 'set' },
     { kind: 'def', identifier: 'seq' },
+    { kind: 'def', identifier: 'tup' },
     { kind: 'def', identifier: 'tuple' },
+    { kind: 'def', identifier: 'rec' },
     { kind: 'def', identifier: 'record' },
     { kind: 'def', identifier: 'igt' },
     { kind: 'def', identifier: 'ilt' },
@@ -131,6 +133,7 @@ export const defaultDefinitions: DefinitionTable = {
     { kind: 'def', identifier: 'imul' },
     { kind: 'def', identifier: 'idiv' },
     { kind: 'def', identifier: 'imod' },
+    { kind: 'def', identifier: 'ipow' },
     { kind: 'def', identifier: 'andAction' },
     { kind: 'def', identifier: 'orAction' },
     { kind: 'def', identifier: 'andExpr' },
@@ -146,9 +149,10 @@ export const defaultDefinitions: DefinitionTable = {
     { kind: 'def', identifier: 'cross' },
     { kind: 'def', identifier: 'cardinality' },
     { kind: 'def', identifier: 'difference' },
-    { kind: 'def', identifier: 'weakfair' },
   ],
-  typeDefinitions: [],
+  typeDefinitions: [
+    { identifier: 'PROC', type: { kind: 'const', name: 'PROC' } },
+  ],
 }
 
 /**
