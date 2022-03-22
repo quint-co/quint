@@ -24,7 +24,7 @@ module InstanceEx {
   // A1 == INSTANCE A WITH x <- 33, y <- MyY, z <- z
   module A1 = A(x = 33, y = MyY, z = z)
 
-  // now, we can access F and G via A1.F and F1.G
+  // now, we can access F and G via A1::F and A1::G
   val test_F = A1::F(10)
   val test_x = A::x
 
