@@ -1,8 +1,0 @@
-module imports {
-  module M {
-    val foo = 4
-  }
-
-  import M.foo
-  import M.*
-}
