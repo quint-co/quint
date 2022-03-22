@@ -10,6 +10,8 @@
  * has either an unscoped definition or a scoped definition with a scope containing
  * the name expression.
  *
+ * @author Gabriela Mafra
+ *
  * @module
  */
 
@@ -21,8 +23,8 @@ import { DefinitionTable, NameDefinition, TypeDefinition } from './definitionsCo
  * A single name resolution error
  */
 export interface NameError {
-  /* Either 'type' or 'operator' */
-  kind: string
+  /* Either a 'type' or 'operator' name error */
+  kind: 'type' | 'operator'
   /* The name that couldn't be resolved */
   name: string;
   /* The module-level definition containing the error */
@@ -57,7 +59,7 @@ export function resolveNames (tntModule: TntModule, table: DefinitionTable): Nam
       case 'typedef':
       case 'def':
         if (def.type) {
-          res.push(checkType(table.typeDefinitions, def.name, def.id, def.type))
+          res.push(resolveInType(table.typeDefinitions, def.name, def.id, def.type))
         }
         break
       // Untyped definitions
@@ -73,7 +75,7 @@ export function resolveNames (tntModule: TntModule, table: DefinitionTable): Nam
   return mergeNameResults(results)
 }
 
-function checkType (
+function resolveInType (
   typeDefinitions: TypeDefinition[],
   definitionName: string,
   id: BigInt,
@@ -99,37 +101,37 @@ function checkType (
     case 'set':
     case 'seq':
       // Generic constructors, check parameter
-      return checkType(typeDefinitions, definitionName, id, type.elem)
+      return resolveInType(typeDefinitions, definitionName, id, type.elem)
 
     case 'fun':
       // Functions, check both argument and result
       results = [
-        checkType(typeDefinitions, definitionName, id, type.arg),
-        checkType(typeDefinitions, definitionName, id, type.res),
+        resolveInType(typeDefinitions, definitionName, id, type.arg),
+        resolveInType(typeDefinitions, definitionName, id, type.res),
       ]
       break
 
     case 'oper':
       // Operators, check all arguments and result
-      results = type.args.map(arg => checkType(typeDefinitions, definitionName, id, arg))
-      results.push(checkType(typeDefinitions, definitionName, id, type.res))
+      results = type.args.map(arg => resolveInType(typeDefinitions, definitionName, id, arg))
+      results.push(resolveInType(typeDefinitions, definitionName, id, type.res))
       break
 
     case 'tuple':
       // Tuples, check all elements
-      results = type.elems.map(elem => checkType(typeDefinitions, definitionName, id, elem))
+      results = type.elems.map(elem => resolveInType(typeDefinitions, definitionName, id, elem))
       break
 
     case 'record':
       // Records, check all fields
-      results = type.fields.map(field => checkType(typeDefinitions, definitionName, id, field.fieldType))
+      results = type.fields.map(field => resolveInType(typeDefinitions, definitionName, id, field.fieldType))
       break
 
     case 'union':
       // Variants, check all fields for all records
       results = type.records.flatMap(record => {
         return record.fields.map(
-          field => checkType(typeDefinitions, definitionName, id, field.fieldType)
+          field => resolveInType(typeDefinitions, definitionName, id, field.fieldType)
         )
       })
       break
@@ -148,7 +150,7 @@ function checkNamesInExpr (
   const results: NameResolutionResult[] = []
   // Any expression can have a type. If that's the case, check it.
   if (expr.type) {
-    results.push(checkType(table.typeDefinitions, defName, expr.id, expr.type))
+    results.push(resolveInType(table.typeDefinitions, defName, expr.id, expr.type))
   }
 
   switch (expr.kind) {
@@ -198,7 +200,7 @@ function checkNamesInExpr (
       )
       // Also, the operator definition can be typed, check for type aliases
       if (expr.opdef.type) {
-        results.push(checkType(table.typeDefinitions, defName, expr.opdef.id, expr.opdef.type))
+        results.push(resolveInType(table.typeDefinitions, defName, expr.opdef.id, expr.opdef.type))
       }
       break
 

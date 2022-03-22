@@ -3,7 +3,7 @@ import { assert } from 'chai'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import JSONbig from 'json-bigint'
-import { parsePhase1, parsePhase2, Loc } from '../src/tntParserFrontend'
+import { parsePhase1, parsePhase2, Loc, compactSourceMap } from '../src/tntParserFrontend'
 import { lf } from 'eol'
 
 // read a TNT file from the test data directory
@@ -33,7 +33,7 @@ function parseAndCompare (artifact: string, wrap: (json: any) => any, checkNameE
   } else {
     // Phase 1 succeded, check that the source map is correct
     const expectedSourceMap = readJson(`${artifact}.map`)
-    const sourceMapResult = JSONbig.parse(JSONbig.stringify(Object.fromEntries(phase1Result.sourceMap)))
+    const sourceMapResult = JSONbig.parse(JSONbig.stringify(compactSourceMap(phase1Result.sourceMap)))
     assert.deepEqual(sourceMapResult, expectedSourceMap, 'expected source maps to be equal')
 
     if (checkNameError) {

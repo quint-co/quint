@@ -6,7 +6,7 @@ import { resolveNames, NameResolutionResult } from '../src/nameResolver'
 import { buildModuleWithExpressions, buildModuleWithDefs } from './builders/modules'
 
 describe('nameResolver', () => {
-  const nameDefinitions: NameDefinition[] = defaultDefinitions.concat([
+  const nameDefinitions: NameDefinition[] = defaultDefinitions.nameDefinitions.concat([
     { kind: 'const', identifier: 'TEST_CONSTANT' },
     { kind: 'def', identifier: 'unscoped_def' },
     { kind: 'def', identifier: 'scoped_def', scope: BigInt(2) },
