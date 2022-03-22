@@ -170,7 +170,7 @@ function checkNamesInExpr (
     }
 
     case 'app': {
-      // Check that the operator being applied is defined
+      // Application, check that the operator being applied is defined
       const nameDefinitionsForScope = filterScope(table.nameDefinitions, scopes)
 
       if (!nameDefinitionsForScope.some(name => name.identifier === expr.opcode)) {
