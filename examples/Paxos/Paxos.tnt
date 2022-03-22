@@ -245,6 +245,9 @@ val votes = Acceptor mapOf ( a ->
 (* variables of module Voting.                                             *)
 (***************************************************************************/
 
+// Temp fix for integration tests: mock voting definitions while files are not imported
+module Voting { def ShowsSafeAt = 1 }
+
 module V = Voting(*)
 
 // Like theorems? Then you should definitely go straight for TLA+
