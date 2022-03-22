@@ -189,7 +189,7 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
         const namespacedDefinitions = table.nameDefinitions.reduce((ds: NameDefinition[], d) => {
           const names = d.identifier.split('::')
           // Collect this name scoped to the instance iff the import matches the module's namespace
-          if (names[0] && names[0] === def.protoName && names[1]) {
+          if (names[0] === def.protoName && names[1]) {
             ds.push({ kind: d.kind, identifier: `${def.name}::${names[1]}` })
           }
           return ds
@@ -215,7 +215,7 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
         const namespacedDefinitions = table.nameDefinitions.reduce((ds: NameDefinition[], d) => {
           const names = d.identifier.split('::')
           // Collect this name as unscoped iff the import matches its namespace and name
-          if (names[0] && names[0] === def.path && names[1] && (def.name === '*' || def.name === names[1])) {
+          if (names[0] === def.path && names[1] && (def.name === '*' || def.name === names[1])) {
             ds.push({ kind: d.kind, identifier: names[1] })
           }
           return ds
