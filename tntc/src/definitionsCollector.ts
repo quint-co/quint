@@ -23,6 +23,8 @@ export interface NameDefinition {
   kind: string
   /* The name given to the defined operator */
   identifier: string
+  /* Expression or definition id from where the name was collected */
+  reference?: BigInt
   /* Optional scope, an id pointing to the TntIr node that introduces the name */
   scope?: bigint
 }
@@ -35,6 +37,8 @@ export interface TypeDefinition {
   identifier: string
   /* The type that is aliased */
   type: TntType
+  /* Expression or definition id from where the type was collected */
+  reference?: BigInt
 }
 
 /**
@@ -170,12 +174,14 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
         table.nameDefinitions.push({
           kind: def.kind,
           identifier: def.name,
+          reference: def.id,
         })
         break
       case 'def':
         table.nameDefinitions.push({
           kind: def.kind,
           identifier: def.name,
+          reference: def.id,
         })
         table.nameDefinitions.push(...collectFromExpr(def.expr))
         break
@@ -183,6 +189,7 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
         table.nameDefinitions.push({
           kind: 'namespace',
           identifier: def.name,
+          reference: def.id,
         })
         table.nameDefinitions.push(...def.overrides.flatMap(e => collectFromExpr(e[1])))
 
@@ -191,7 +198,7 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
           const names = d.identifier.split('::')
           // Collect this name scoped to the instance iff the import matches the module's namespace
           if (names[0] === def.protoName && names[1]) {
-            ds.push({ kind: d.kind, identifier: `${def.name}::${names[1]}` })
+            ds.push({ kind: d.kind, identifier: `${def.name}::${names[1]}`, reference: def.id })
           }
           return ds
         }, [])
@@ -202,11 +209,12 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
         table.nameDefinitions.push({
           kind: 'namespace',
           identifier: def.module.name,
+          reference: def.id,
         })
         const moduleDefinitions = collectDefinitions(def.module)
         // Collect all definitions namespaced to module
         const namespacedDefinitions = moduleDefinitions.nameDefinitions.map(d => {
-          return { kind: d.kind, identifier: `${def.module.name}::${d.identifier}` }
+          return { kind: d.kind, identifier: `${def.module.name}::${d.identifier}`, reference: def.id }
         })
         table.nameDefinitions.push(...namespacedDefinitions)
         break
@@ -217,7 +225,7 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
           const names = d.identifier.split('::')
           // Collect this name as unscoped iff the import matches its namespace and name
           if (names[0] === def.path && names[1] && (def.name === '*' || def.name === names[1])) {
-            ds.push({ kind: d.kind, identifier: names[1] })
+            ds.push({ kind: d.kind, identifier: names[1], reference: def.id })
           }
           return ds
         }, [])
@@ -228,12 +236,14 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
         table.typeDefinitions.push({
           identifier: def.name,
           type: def.type,
+          reference: def.id,
         })
         break
       case 'assume':
         table.nameDefinitions.push({
           kind: 'assumption',
           identifier: def.name,
+          reference: def.id,
         })
         table.nameDefinitions.push(...collectFromExpr(def.assumption))
         break
@@ -253,12 +263,12 @@ function collectFromExpr (expr: TntEx): NameDefinition[] {
   switch (expr.kind) {
     case 'lambda':
       return expr.params
-        .map(p => { return { kind: 'def', identifier: p, scope: expr.id } as NameDefinition })
+        .map(p => { return { kind: 'def', identifier: p, reference: expr.id, scope: expr.id } as NameDefinition })
         .concat(collectFromExpr(expr.expr))
     case 'app':
       return expr.args.flatMap(arg => { return collectFromExpr(arg) })
     case 'let':
-      return [{ kind: expr.opdef.qualifier, identifier: expr.opdef.name, scope: expr.id } as NameDefinition]
+      return [{ kind: expr.opdef.qualifier, identifier: expr.opdef.name, reference: expr.opdef.id, scope: expr.id } as NameDefinition]
         .concat(collectFromExpr(expr.opdef.expr))
         .concat(collectFromExpr(expr.expr))
     default:
