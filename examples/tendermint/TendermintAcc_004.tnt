@@ -376,7 +376,7 @@ action OnQuorumOfNilPrevotes(p) =
   val PV = msgsPrevote[round[p]].filter(m -> m.id == Id(NilValue))
   {
     & step[p] == "prevote"
-    & Cardinality(PV) >= THRESHOLD2 // line 36
+    & cardinality(PV) >= THRESHOLD2 // line 36
     & evidence     <- PV union evidence
     & BroadcastPrecommit(p, round[p], Id(NilValue))
     & step         <- step.update(p, "precommit")

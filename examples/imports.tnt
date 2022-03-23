@@ -9,7 +9,7 @@ module root {
 
   // We can access definitions of a stateless module
   // via path notation.
-  def cube(x) = Math.pow(x, 3)
+  def cube(x) = Math::pow(x, 3)
 
   module A {
     // we cannot access sqr here, as we have not imported it yet

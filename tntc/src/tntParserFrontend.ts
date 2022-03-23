@@ -13,7 +13,7 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
 import { TntModule } from './tntIr'
 import { ToIrListener } from './ToIrListener'
-import { collectDefinitions } from './definitionsCollector'
+import { defaultDefinitions, collectDefinitions, mergeTables } from './definitionsCollector'
 import { resolveNames } from './nameResolver'
 
 export interface Loc {
@@ -95,7 +95,7 @@ export function parsePhase1 (text: string, sourceLocation: string): ParseResult 
  * Note that the IR may be ill-typed.
  */
 export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>): ParseResult {
-  const definitions = collectDefinitions(tntModule)
+  const definitions = mergeTables(defaultDefinitions, collectDefinitions(tntModule))
 
   const result = resolveNames(tntModule, definitions)
 

@@ -46,7 +46,7 @@ val Message =
       tuples(Acceptor, Ballot, Value)
         .map(a, b, v -> { tag: "2b", acc: a, bal: b, value: v })
 
-    M1 union M1b union M2a union M2b
+    M1a union M1b union M2a union M2b
 //-----------------------------------------------------------------------------
 
 var maxBal:   int
@@ -245,6 +245,9 @@ val votes = Acceptor mapOf ( a ->
 (* variables of module Voting.                                             *)
 (***************************************************************************/
 
+// Temp fix for integration tests: mock voting definitions while files are not imported
+module Voting { def ShowsSafeAt = 1 }
+
 module V = Voting(*)
 
 // Like theorems? Then you should definitely go straight for TLA+
@@ -268,7 +271,7 @@ pred Inv = (
               )
        & val M2as = msgs filter ( m -> m.tag == "2a" )
          M2as.forall( m -> (
-            & Quorum exists( Q -> V.ShowsSafeAt(Q, m.bal, m.value) )
+            & Quorum exists( Q -> V::ShowsSafeAt(Q, m.bal, m.value) )
             & M2as forall ( mm ->
                 (mm.bal == m.bal) implies (mm.value == m.value)
               )

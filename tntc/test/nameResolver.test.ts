@@ -55,7 +55,7 @@ describe('nameResolver', () => {
   }
 
   it('finds top level definitions', () => {
-    const nameDefinitions: NameDefinition[] = defaultDefinitions.concat([
+    const nameDefinitions: NameDefinition[] = defaultDefinitions.nameDefinitions.concat([
       {
         identifier: 'TEST_CONSTANT',
         kind: 'const',
@@ -75,7 +75,7 @@ describe('nameResolver', () => {
   })
 
   it('finds scoped definitions', () => {
-    const nameDefinitions: NameDefinition[] = defaultDefinitions.concat([
+    const nameDefinitions: NameDefinition[] = defaultDefinitions.nameDefinitions.concat([
       {
         identifier: 'TEST_CONSTANT',
         kind: 'const',
@@ -96,7 +96,7 @@ describe('nameResolver', () => {
   })
 
   it('does not find scoped definitions outside of scope', () => {
-    const nameDefinitions: NameDefinition[] = defaultDefinitions.concat([
+    const nameDefinitions: NameDefinition[] = defaultDefinitions.nameDefinitions.concat([
       {
         identifier: 'TEST_CONSTANT',
         kind: 'const',
@@ -121,7 +121,7 @@ describe('nameResolver', () => {
   })
 
   it('does not find undefined type aliases', () => {
-    const nameDefinitions: NameDefinition[] = defaultDefinitions.concat([
+    const nameDefinitions: NameDefinition[] = defaultDefinitions.nameDefinitions.concat([
       {
         identifier: 'TEST_CONSTANT',
         kind: 'const',
