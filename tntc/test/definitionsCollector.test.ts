@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { collectDefinitions, defaultDefinitions } from '../src/definitionsCollector'
+import { collectDefinitions } from '../src/definitionsCollector'
 import { buildModuleWithDefs } from './builders/modules'
 
 describe('collectDefinitions', () => {
