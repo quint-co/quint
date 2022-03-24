@@ -25,24 +25,23 @@ import { ErrorMessage, Loc } from './tntParserFrontend'
  * @returns a formatted string with error information
  * */
 export function formatError (text: string, finder: any, message: ErrorMessage): string {
-  let output = ''
-  const loc = message.loc
+  return message.locs.reduce((output, loc) => {
+    const locString = `${loc.source}:${loc.start.line + 1}:${loc.start.col + 1}`
+    output += `${locString} - error: ${message.explanation}\n`
 
-  const locString = `${loc.source}:${loc.start.line + 1}:${loc.start.col + 1}`
-  output += `${locString} - error: ${message.explanation}\n`
+    const endLine = loc.end ? loc.end.line : loc.start.line
+    for (let i = loc.start.line; i <= endLine; i++) {
+      // finder's indexes start at 1
+      const lineStartIndex = finder.toIndex(i + 1, 1)
+      const line = text.slice(lineStartIndex).split('\n')[0]
 
-  const endLine = loc.end ? loc.end.line : loc.start.line
-  for (let i = loc.start.line; i <= endLine; i++) {
-    // finder's indexes start at 1
-    const lineStartIndex = finder.toIndex(i + 1, 1)
-    const line = text.slice(lineStartIndex).split('\n')[0]
+      const startCol = i === loc.start.line ? loc.start.col : 0
+      const endCol = i === endLine ? findEndCol(loc, lineStartIndex) : line.length - 1
 
-    const startCol = i === loc.start.line ? loc.start.col : 0
-    const endCol = i === endLine ? findEndCol(loc, lineStartIndex) : line.length - 1
-
-    output += formatLine(i, startCol, endCol, line)
-  }
-  return output
+      output += formatLine(i, startCol, endCol, line)
+    }
+    return output
+  }, '')
 }
 
 function formatLine (lineIndex: number, startCol: number, endCol: number, line: string): string {
