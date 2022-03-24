@@ -147,7 +147,6 @@ export const defaultDefinitions: DefinitionTable = {
     { kind: 'def', identifier: 'neq' },
     { kind: 'def', identifier: 'ite' },
     { kind: 'def', identifier: 'cross' },
-    { kind: 'def', identifier: 'cardinality' },
     { kind: 'def', identifier: 'difference' },
   ],
   typeDefinitions: [
