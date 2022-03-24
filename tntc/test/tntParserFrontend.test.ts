@@ -68,7 +68,7 @@ describe('parse ok', () => {
 
   it('parse SuperSpec', () => {
     parseAndCompare('SuperSpec',
-      function(module: any) {
+      function (module: any) {
         return { kind: 'ok', module: module, sourceMap: new Map<BigInt, Loc>() }
       }, false)
   })
