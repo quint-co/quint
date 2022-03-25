@@ -15,6 +15,8 @@ import { TntModule } from './tntIr'
 import { ToIrListener } from './ToIrListener'
 import { defaultDefinitions, collectDefinitions, mergeTables } from './definitionsCollector'
 import { resolveNames } from './nameResolver'
+import { treeFromModule } from './scoping'
+import { scanConflicts } from './definitionsScanner'
 
 export interface Loc {
   source: string;
@@ -95,11 +97,40 @@ export function parsePhase1 (text: string, sourceLocation: string): ParseResult 
  * Note that the IR may be ill-typed.
  */
 export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>): ParseResult {
+  const scopeTree = treeFromModule(tntModule)
   const definitions = mergeTables(defaultDefinitions, collectDefinitions(tntModule))
 
-  const result = resolveNames(tntModule, definitions)
-
   const errorMessages: ErrorMessage[] = []
+
+  const conflictResult = scanConflicts(definitions, scopeTree)
+
+  if (conflictResult.kind === 'error') {
+    conflictResult.conflicts.forEach(conflict => {
+      if (!conflict.references.includes(BigInt(0))) {
+        const msg = `Conflicting definitions found for name ${conflict.identifier}`
+        const locs = conflict.references.map(id => {
+          const loc = sourceMap.get(id)
+          if (!loc) {
+            throw new Error(`no loc found for ${id}`)
+          }
+          return loc
+        })
+        errorMessages.push({ explanation: msg, locs: locs })
+      } else {
+        const msg = `Built-in name ${conflict.identifier} is redefined`
+        const locs = conflict.references.filter(id => id !== BigInt(0)).map(id => {
+          const loc = sourceMap.get(id)
+          if (!loc) {
+            throw new Error(`no loc found for ${id}`)
+          }
+          return loc
+        })
+        errorMessages.push({ explanation: msg, locs: locs })
+      }
+    })
+  }
+
+  const result = resolveNames(tntModule, definitions)
 
   if (result.kind === 'error') {
     // Build error message with resolution explanation and the location obtained from sourceMap

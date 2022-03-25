@@ -1,7 +1,8 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { NameDefinition, DefinitionTable, TypeDefinition } from '../src/definitionsCollector'
-import { scanConflicts, ScopeTree } from '../src/definitionsScanner'
+import { scanConflicts } from '../src/definitionsScanner'
+import { ScopeTree } from '../src/scoping'
 
 describe('scanConflicts', () => {
   it('finds top-level name conflicts', () => {
