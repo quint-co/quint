@@ -167,7 +167,7 @@ export const defaultDefinitions: DefinitionTable = {
  * @returns a lookup table with all defined values for the module
  */
 export function collectDefinitions (tntModule: TntModule): DefinitionTable {
-  return tntModule.defs.reduce((table: DefinitionTable, def) => {
+  const table = tntModule.defs.reduce((table: DefinitionTable, def) => {
     switch (def.kind) {
       case 'const':
       case 'var':
@@ -258,6 +258,9 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
     }
     return table
   }, { nameDefinitions: [], typeDefinitions: [] })
+
+  table.nameDefinitions = table.nameDefinitions.filter(d => d.identifier !== '_')
+  return table
 }
 
 export function mergeTables (a: DefinitionTable, b: DefinitionTable): DefinitionTable {
