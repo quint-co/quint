@@ -24,7 +24,7 @@ import { DefinitionTable, NameDefinition, TypeDefinition } from './definitionsCo
  */
 export interface NameError {
   /* Either a 'type' or 'operator' name error */
-  kind: 'type' | 'operator'
+  kind: 'type' | 'operator';
   /* The name that couldn't be resolved */
   name: string;
   /* The module-level definition containing the error */
