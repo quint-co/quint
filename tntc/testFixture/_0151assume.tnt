@@ -1,9 +1,0 @@
-module assumes {
-  const N: int
-
-  // a named assumption
-  assume positive = N > 0
-
-  // an anonymous assumption
-  assume _ = N != 0
-}

@@ -1,3 +1,0 @@
-module eqEmptySeq {
-  def isEmpty(s) = s == []
-}

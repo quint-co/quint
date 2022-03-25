@@ -1,7 +1,0 @@
-// A module that contains value definitions.
-module withVals {
-	// access a tuple element via ._2
-	val tup_elem =
-    val tup = tup("a", 3)
-    tup._2
-}

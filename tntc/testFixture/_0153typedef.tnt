@@ -1,5 +1,0 @@
-module typedef {
-  type INT_SET = set(int)
-
-  var S: INT_SET
-}

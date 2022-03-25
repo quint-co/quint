@@ -158,7 +158,7 @@ temporal FalseLiveness =
 (* condition WF_vars(Next) is used instead of only WF_vars(System) that    *)
 (* requires fairness of the actions controlled by termination detection.   *)
 (***************************************************************************/
-temporal SpecWFNext = Init and always(Next.stutter(vars) and Next.weakfair(vars))
+temporal SpecWFNext = Init and always(Next.stutter(vars) and Next.weakFair(vars))
 
 temporal AllNodesTerminateIfNoMessages = (
   eventually(always(

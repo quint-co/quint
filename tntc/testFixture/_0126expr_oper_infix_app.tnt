@@ -1,9 +1,0 @@
-// A module that contains value definitions.
-// Since 'val' gives us the simplest way of defining expressions,
-// we also do extensive testing of expression syntax in this test.
-module withVals {
-	// Apply a user-defined operator by its name.
-	// This declaration should pass phase 1,
-	// but it will not pass phase 2, which does name resolution.
-	val oper_app = "a" MyOper 42, true
-}

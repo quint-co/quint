@@ -119,7 +119,9 @@ export const defaultDefinitions: DefinitionTable = {
     { kind: 'def', identifier: 'FALSE' },
     { kind: 'def', identifier: 'set' },
     { kind: 'def', identifier: 'seq' },
+    { kind: 'def', identifier: 'tup' },
     { kind: 'def', identifier: 'tuple' },
+    { kind: 'def', identifier: 'rec' },
     { kind: 'def', identifier: 'record' },
     { kind: 'def', identifier: 'igt' },
     { kind: 'def', identifier: 'ilt' },
@@ -131,6 +133,7 @@ export const defaultDefinitions: DefinitionTable = {
     { kind: 'def', identifier: 'imul' },
     { kind: 'def', identifier: 'idiv' },
     { kind: 'def', identifier: 'imod' },
+    { kind: 'def', identifier: 'ipow' },
     { kind: 'def', identifier: 'andAction' },
     { kind: 'def', identifier: 'orAction' },
     { kind: 'def', identifier: 'andExpr' },
@@ -146,9 +149,10 @@ export const defaultDefinitions: DefinitionTable = {
     { kind: 'def', identifier: 'cross' },
     { kind: 'def', identifier: 'cardinality' },
     { kind: 'def', identifier: 'difference' },
-    { kind: 'def', identifier: 'weakfair' },
   ],
-  typeDefinitions: [],
+  typeDefinitions: [
+    { identifier: 'PROC', type: { kind: 'const', name: 'PROC' } },
+  ],
 }
 
 /**
@@ -174,9 +178,7 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
           kind: def.kind,
           identifier: def.name,
         })
-        if (def.expr) {
-          table.nameDefinitions.push(...collectFromExpr(def.expr))
-        }
+        table.nameDefinitions.push(...collectFromExpr(def.expr))
         break
       case 'instance': {
         table.nameDefinitions.push({
@@ -234,9 +236,7 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
           kind: 'assumption',
           identifier: def.name,
         })
-        if (def.assumption) {
-          table.nameDefinitions.push(...collectFromExpr(def.assumption))
-        }
+        table.nameDefinitions.push(...collectFromExpr(def.assumption))
         break
     }
     return table
@@ -253,7 +253,9 @@ export function mergeTables (a: DefinitionTable, b: DefinitionTable): Definition
 function collectFromExpr (expr: TntEx): NameDefinition[] {
   switch (expr.kind) {
     case 'lambda':
-      return expr.params.map(p => { return { kind: 'def', identifier: p, scope: expr.id } as NameDefinition }).concat(collectFromExpr(expr.expr))
+      return expr.params
+        .map(p => { return { kind: 'def', identifier: p, scope: expr.id } as NameDefinition })
+        .concat(collectFromExpr(expr.expr))
     case 'app':
       return expr.args.flatMap(arg => { return collectFromExpr(arg) })
     case 'let':

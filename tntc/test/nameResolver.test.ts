@@ -2,143 +2,227 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { NameDefinition, defaultDefinitions, DefinitionTable, TypeDefinition } from '../src/definitionsCollector'
 import { resolveNames, NameResolutionResult } from '../src/nameResolver'
-import { TntModule, TntEx } from '../src/tntIr'
+
+import { buildModuleWithExpressions, buildModuleWithDefs } from './builders/modules'
 
 describe('nameResolver', () => {
-  // The test definition is:
-  //   def A = x -> set(x)
-  // Every part of the definition is defined separately
-  // in order to check the error trace
+  const nameDefinitions: NameDefinition[] = defaultDefinitions.nameDefinitions.concat([
+    { kind: 'const', identifier: 'TEST_CONSTANT' },
+    { kind: 'def', identifier: 'unscoped_def' },
+    { kind: 'def', identifier: 'scoped_def', scope: BigInt(2) },
+  ])
+  const typeDefinitions: TypeDefinition[] = [
+    { identifier: 'MY_TYPE', type: { kind: 'int' } },
+  ]
 
-  // x
-  const nameExpr: TntEx = {
-    kind: 'name',
-    name: 'x',
-    id: BigInt(12),
-    type: { kind: 'int' },
-  }
+  const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
 
-  // set(x)
-  const appExpr: TntEx = {
-    kind: 'app',
-    opcode: 'set',
-    args: [nameExpr],
-    id: BigInt(11),
-    type: { kind: 'int' },
-  }
+  describe('operator definitions', () => {
+    it('finds top level definitions', () => {
+      const tntModule = buildModuleWithExpressions(['TEST_CONSTANT.filter(a -> unscoped_def > 0)'])
 
-  // x -> set(x)
-  const lambdaExpr: TntEx = {
-    kind: 'lambda',
-    params: ['x'],
-    qualifier: 'def',
-    expr: appExpr,
-    id: BigInt(10),
-    type: { kind: 'int' },
-  }
+      const result = resolveNames(tntModule, table)
+      assert.deepEqual(result, { kind: 'ok' })
+    })
 
-  // Dummy expression to generate different scope
-  const valueExpr: TntEx = {
-    kind: 'bool',
-    value: true,
-    id: BigInt(20),
-    type: { kind: 'bool' },
-  }
+    it('finds scoped definitions', () => {
+      const tntModule = buildModuleWithExpressions(['TEST_CONSTANT.filter(a -> scoped_def > 0)'])
 
-  const tntModule: TntModule = {
-    name: 'Test module',
-    id: BigInt(0),
-    defs: [
-      { kind: 'def', name: 'A', qualifier: 'def', expr: lambdaExpr, id: BigInt(1), type: { kind: 'int' } },
-      { kind: 'def', name: 'B', qualifier: 'def', expr: valueExpr, id: BigInt(2), type: { kind: 'const', name: 'MY_TYPE' } },
-    ],
-  }
+      const result = resolveNames(tntModule, table)
+      assert.deepEqual(result, { kind: 'ok' })
+    })
 
-  it('finds top level definitions', () => {
-    const nameDefinitions: NameDefinition[] = defaultDefinitions.nameDefinitions.concat([
-      {
-        identifier: 'TEST_CONSTANT',
-        kind: 'const',
-      },
-      {
-        identifier: 'x',
-        kind: 'def',
-      },
-    ])
-    const typeDefinitions: TypeDefinition[] = [
-      { identifier: 'MY_TYPE', type: { kind: 'int' } },
-    ]
-    const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
+    it('does not find scoped definitions outside of scope', () => {
+      const tntModule = buildModuleWithExpressions(['TEST_CONSTANT', 'scoped_def'])
 
-    const result = resolveNames(tntModule, table)
-    assert.deepEqual(result, { kind: 'ok' })
+      const result = resolveNames(tntModule, table)
+      const expectedResult: NameResolutionResult = {
+        kind: 'error',
+        errors: [{ kind: 'operator', name: 'scoped_def', definitionName: 'd1', reference: BigInt(3) }],
+      }
+      assert.deepEqual(result, expectedResult)
+    })
+
+    it('find unresolved names inside aplication', () => {
+      const tntModule = buildModuleWithExpressions(['head(x)', 'x(TRUE)'])
+
+      const result = resolveNames(tntModule, table)
+      const expectedResult: NameResolutionResult = {
+        kind: 'error',
+        errors: [
+          { kind: 'operator', name: 'x', definitionName: 'd0', reference: BigInt(1) },
+          { kind: 'operator', name: 'x', definitionName: 'd1', reference: BigInt(5) },
+        ],
+      }
+      assert.deepEqual(result, expectedResult)
+    })
+
+    it('find unresolved names inside lambdas', () => {
+      const tntModule = buildModuleWithExpressions(['Nat.filter(a -> x > 1)'])
+
+      const result = resolveNames(tntModule, table)
+      const expectedResult: NameResolutionResult = {
+        kind: 'error',
+        errors: [
+          { kind: 'operator', name: 'x', definitionName: 'd0', reference: BigInt(2) },
+        ],
+      }
+      assert.deepEqual(result, expectedResult)
+    })
+
+    it('find unresolved names inside lambdas', () => {
+      const tntModule = buildModuleWithExpressions(['Nat.filter(a -> x > 1)'])
+
+      const result = resolveNames(tntModule, table)
+      const expectedResult: NameResolutionResult = {
+        kind: 'error',
+        errors: [
+          { kind: 'operator', name: 'x', definitionName: 'd0', reference: BigInt(2) },
+        ],
+      }
+      assert.deepEqual(result, expectedResult)
+    })
+
+    it('find unresolved names inside lets', () => {
+      const tntModule = buildModuleWithExpressions(['val a = x { TRUE }', 'val a = TRUE { x }'])
+
+      const result = resolveNames(tntModule, table)
+      const expectedResult: NameResolutionResult = {
+        kind: 'error',
+        errors: [
+          { kind: 'operator', name: 'x', definitionName: 'd0', reference: BigInt(1) },
+          { kind: 'operator', name: 'x', definitionName: 'd1', reference: BigInt(8) },
+        ],
+      }
+      assert.deepEqual(result, expectedResult)
+    })
   })
 
-  it('finds scoped definitions', () => {
-    const nameDefinitions: NameDefinition[] = defaultDefinitions.nameDefinitions.concat([
-      {
-        identifier: 'TEST_CONSTANT',
-        kind: 'const',
-      },
-      {
-        identifier: 'x',
-        kind: 'def',
-        scope: BigInt(10),
-      },
-    ])
-    const typeDefinitions: TypeDefinition[] = [
-      { identifier: 'MY_TYPE', type: { kind: 'int' } },
-    ]
-    const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
+  describe('type aliases', () => {
+    it('resolves defined aliases', () => {
+      const tntModule = buildModuleWithDefs([
+        'const a: MY_TYPE',
+        'var b: MY_TYPE',
+      ])
+      const result = resolveNames(tntModule, table)
+      const expectedResult: NameResolutionResult = { kind: 'ok' }
+      assert.deepEqual(result, expectedResult)
+    })
 
-    const result = resolveNames(tntModule, table)
-    assert.deepEqual(result, { kind: 'ok' })
-  })
+    it('finds unresolved aliases under typed definitions', () => {
+      const tntModule = buildModuleWithDefs([
+        'const a: UNKNOWN_TYPE_0',
+        'var b: UNKNOWN_TYPE_1',
+        'type c = UNKNOWN_TYPE_2',
+        'assume d = 1',
+      ])
+      const result = resolveNames(tntModule, table)
+      const expectedResult: NameResolutionResult = {
+        kind: 'error',
+        errors: [
+          { kind: 'type', name: 'UNKNOWN_TYPE_0', definitionName: 'a', reference: BigInt(1) },
+          { kind: 'type', name: 'UNKNOWN_TYPE_1', definitionName: 'b', reference: BigInt(2) },
+          { kind: 'type', name: 'UNKNOWN_TYPE_2', definitionName: 'c', reference: BigInt(3) },
+        ],
+      }
+      assert.deepEqual(result, expectedResult)
+    })
 
-  it('does not find scoped definitions outside of scope', () => {
-    const nameDefinitions: NameDefinition[] = defaultDefinitions.nameDefinitions.concat([
-      {
-        identifier: 'TEST_CONSTANT',
-        kind: 'const',
-      },
-      {
-        identifier: 'x',
-        kind: 'def',
-        scope: BigInt(20),
-      },
-    ])
-    const typeDefinitions: TypeDefinition[] = [
-      { identifier: 'MY_TYPE', type: { kind: 'int' } },
-    ]
-    const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
+    it('finds unresolved aliases under chained lets', () => {
+      const tntModule = buildModuleWithExpressions(['val x = 1 { val y: set(UNKNOWN_TYPE) = 1 { set(0) } }'])
+      const result = resolveNames(tntModule, table)
+      const expectedResult: NameResolutionResult = {
+        kind: 'error',
+        errors: [{ kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'd0', reference: BigInt(4) }],
+      }
+      assert.deepEqual(result, expectedResult)
+    })
 
-    const result = resolveNames(tntModule, table)
-    const expectedResult: NameResolutionResult = {
-      kind: 'error',
-      errors: [{ kind: 'operator', name: 'x', definitionName: 'A', reference: nameExpr.id }],
-    }
-    assert.deepEqual(result, expectedResult)
-  })
+    it('finds unresolved aliases under set()', () => {
+      const tntModule = buildModuleWithExpressions(['val x: set(UNKNOWN_TYPE) = 1 { 0 }'])
+      const result = resolveNames(tntModule, table)
+      const expectedResult: NameResolutionResult = {
+        kind: 'error',
+        errors: [{ kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'd0', reference: BigInt(2) }],
+      }
+      assert.deepEqual(result, expectedResult)
+    })
 
-  it('does not find undefined type aliases', () => {
-    const nameDefinitions: NameDefinition[] = defaultDefinitions.nameDefinitions.concat([
-      {
-        identifier: 'TEST_CONSTANT',
-        kind: 'const',
-      },
-      {
-        identifier: 'x',
-        kind: 'def',
-      },
-    ])
-    const typeDefinitions: TypeDefinition[] = []
-    const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
+    it('finds unresolved aliases under seq()', () => {
+      const tntModule = buildModuleWithExpressions(['val x: seq(UNKNOWN_TYPE) = 1 { 0 }'])
+      const result = resolveNames(tntModule, table)
+      const expectedResult: NameResolutionResult = {
+        kind: 'error',
+        errors: [{ kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'd0', reference: BigInt(2) }],
+      }
+      assert.deepEqual(result, expectedResult)
+    })
 
-    const result = resolveNames(tntModule, table)
-    const expectedResult: NameResolutionResult = {
-      kind: 'error',
-      errors: [{ kind: 'type', name: 'MY_TYPE', definitionName: 'B', reference: BigInt(2) }],
-    }
-    assert.deepEqual(result, expectedResult)
+    it('finds unresolved aliases under functions', () => {
+      const tntModule = buildModuleWithExpressions(['val x: UNKNOWN_TYPE -> OTHER_UNKNOWN_TYPE = 1 { 0 }'])
+      const result = resolveNames(tntModule, table)
+      const expectedResult: NameResolutionResult = {
+        kind: 'error',
+        errors: [
+          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'd0', reference: BigInt(2) },
+          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'd0', reference: BigInt(2) },
+        ],
+      }
+      assert.deepEqual(result, expectedResult)
+    })
+
+    it('finds unresolved aliases under operators', () => {
+      const tntModule = buildModuleWithExpressions(['val f(x): (UNKNOWN_TYPE) => OTHER_UNKNOWN_TYPE = { unscoped_def } { 0 }'])
+      const result = resolveNames(tntModule, table)
+      const expectedResult: NameResolutionResult = {
+        kind: 'error',
+        errors: [
+          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'd0', reference: BigInt(2) },
+          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'd0', reference: BigInt(2) },
+        ],
+      }
+      assert.deepEqual(result, expectedResult)
+    })
+
+    it('finds unresolved aliases under tuples', () => {
+      const tntModule = buildModuleWithExpressions(['val x: (UNKNOWN_TYPE, OTHER_UNKNOWN_TYPE) = (1, 2) { 0 }'])
+      const result = resolveNames(tntModule, table)
+      const expectedResult: NameResolutionResult = {
+        kind: 'error',
+        errors: [
+          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'd0', reference: BigInt(4) },
+          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'd0', reference: BigInt(4) },
+        ],
+      }
+      assert.deepEqual(result, expectedResult)
+    })
+
+    it('finds unresolved aliases under records', () => {
+      const tntModule = buildModuleWithExpressions(['val x: { a: UNKNOWN_TYPE, b: OTHER_UNKNOWN_TYPE } = { a: 1, b: 2 } { 0 }'])
+      const result = resolveNames(tntModule, table)
+      const expectedResult: NameResolutionResult = {
+        kind: 'error',
+        errors: [
+          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'd0', reference: BigInt(6) },
+          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'd0', reference: BigInt(6) },
+        ],
+      }
+      assert.deepEqual(result, expectedResult)
+    })
+
+    it('finds unresolved aliases under union', () => {
+      const tntModule = buildModuleWithExpressions([
+        'val x: | { tag: "a", a: UNKNOWN_TYPE } | { tag: "b", b: OTHER_UNKNOWN_TYPE } = { tag: "a", a: 1 } { 0 }',
+      ])
+      const result = resolveNames(tntModule, table)
+      const expectedResult: NameResolutionResult = {
+        kind: 'error',
+        errors: [
+          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'd0', reference: BigInt(6) },
+          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'd0', reference: BigInt(6) },
+        ],
+      }
+      assert.deepEqual(result, expectedResult)
+    })
   })
 })
