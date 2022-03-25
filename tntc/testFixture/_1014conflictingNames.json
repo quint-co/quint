@@ -1,0 +1,85 @@
+{
+  "kind": "error",
+  "messages": [
+    {
+      "explanation": "Built-in name cardinality is redefined",
+      "locs": [
+        {
+          "end": {
+            "col": 23,
+            "index": 137,
+            "line": 6
+          },
+          "source": "mocked_path/testFixture/_1014conflictingNames.tnt",
+          "start": {
+            "col": 2,
+            "index": 116,
+            "line": 6
+          }
+        }
+      ]
+    },
+    {
+      "explanation": "Conflicting definitions found for name a",
+      "locs": [
+        {
+          "end": {
+            "col": 10,
+            "index": 57,
+            "line": 2
+          },
+          "source": "mocked_path/testFixture/_1014conflictingNames.tnt",
+          "start": {
+            "col": 2,
+            "index": 47,
+            "line": 2
+          }
+        },
+        {
+          "end": {
+            "col": 13,
+            "index": 72,
+            "line": 3
+          },
+          "source": "mocked_path/testFixture/_1014conflictingNames.tnt",
+          "start": {
+            "col": 2,
+            "index": 61,
+            "line": 3
+          }
+        }
+      ]
+    },
+    {
+      "explanation": "Conflicting definitions found for name T",
+      "locs": [
+        {
+          "end": {
+            "col": 11,
+            "index": 178,
+            "line": 9
+          },
+          "source": "mocked_path/testFixture/_1014conflictingNames.tnt",
+          "start": {
+            "col": 2,
+            "index": 167,
+            "line": 9
+          }
+        },
+        {
+          "end": {
+            "col": 11,
+            "index": 193,
+            "line": 10
+          },
+          "source": "mocked_path/testFixture/_1014conflictingNames.tnt",
+          "start": {
+            "col": 2,
+            "index": 182,
+            "line": 10
+          }
+        }
+      ]
+    }
+  ]
+}

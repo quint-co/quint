@@ -68,7 +68,7 @@ describe('parse ok', () => {
 
   it('parse SuperSpec', () => {
     parseAndCompare('SuperSpec',
-      function (module: any) {
+      function(module: any) {
         return { kind: 'ok', module: module, sourceMap: new Map<BigInt, Loc>() }
       }, false)
   })
@@ -113,5 +113,9 @@ describe('parse errors', () => {
 
   it('error on unresolved type alias inside let', () => {
     parseAndCompare('_1013unknownTypeLetIn', nowrap, true)
+  })
+
+  it('error on conflicting names', () => {
+    parseAndCompare('_1014conflictingNames', nowrap, true)
   })
 })
