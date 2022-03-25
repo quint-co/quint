@@ -196,6 +196,10 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
         // Alias definitions from the instanced module to the new name
         const namespacedDefinitions = table.nameDefinitions.reduce((ds: NameDefinition[], d) => {
           const names = d.identifier.split('::')
+          if (d.scope) {
+            // Don't collect scoped names
+            return ds
+          }
           // Collect this name scoped to the instance iff the import matches the module's namespace
           if (names[0] === def.protoName && names[1]) {
             ds.push({ kind: d.kind, identifier: `${def.name}::${names[1]}`, reference: def.id })
@@ -213,7 +217,7 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
         })
         const moduleDefinitions = collectDefinitions(def.module)
         // Collect all definitions namespaced to module
-        const namespacedDefinitions = moduleDefinitions.nameDefinitions.map(d => {
+        const namespacedDefinitions = moduleDefinitions.nameDefinitions.filter(d => !d.scope).map(d => {
           return { kind: d.kind, identifier: `${def.module.name}::${d.identifier}`, reference: def.id }
         })
         table.nameDefinitions.push(...namespacedDefinitions)
@@ -222,6 +226,10 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
       case 'import': {
         // FIXME: check if definitions are found, when we actually import them from other files
         const namespacedDefinitions = table.nameDefinitions.reduce((ds: NameDefinition[], d) => {
+          if (d.scope) {
+            // Don't import scoped names
+            return ds
+          }
           const names = d.identifier.split('::')
           // Collect this name as unscoped iff the import matches its namespace and name
           if (names[0] === def.path && names[1] && (def.name === '*' || def.name === names[1])) {
