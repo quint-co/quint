@@ -3,35 +3,39 @@
   "messages": [
     {
       "explanation": "token recognition error at: '#'",
-      "loc": {
-        "source": "mocked_path/testFixture/_1007unexpectedToken.tnt",
-        "start": {
-          "line": 2,
-          "col": 20,
-          "index": 0
-        },
-        "end": {
-          "line": 2,
-          "col": 20,
-          "index": 0
+      "locs": [
+        {
+          "source": "mocked_path/testFixture/_1007unexpectedToken.tnt",
+          "start": {
+            "line": 2,
+            "col": 20,
+            "index": 0
+          },
+          "end": {
+            "line": 2,
+            "col": 20,
+            "index": 0
+          }
         }
-      }
+      ]
     },
     {
       "explanation": "extraneous input 'name' expecting {'module', '}', 'const', 'var', 'assume', 'type', 'import', 'val', 'def', 'pred', 'action', 'temporal'}",
-      "loc": {
-        "source": "mocked_path/testFixture/_1007unexpectedToken.tnt",
-        "start": {
-          "line": 2,
-          "col": 22,
-          "index": 77
-        },
-        "end": {
-          "line": 2,
-          "col": 26,
-          "index": 81
+      "locs": [
+        {
+          "source": "mocked_path/testFixture/_1007unexpectedToken.tnt",
+          "start": {
+            "line": 2,
+            "col": 22,
+            "index": 77
+          },
+          "end": {
+            "line": 2,
+            "col": 26,
+            "index": 81
+          }
         }
-      }
+      ]
     }
   ]
 }

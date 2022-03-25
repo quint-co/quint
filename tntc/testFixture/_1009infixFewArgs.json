@@ -3,19 +3,21 @@
   "messages": [
     {
       "explanation": "extraneous input 'cardinality' expecting {'module', '}', 'const', 'var', 'assume', 'type', 'import', 'val', 'def', 'pred', 'action', 'temporal'}",
-      "loc": {
-        "source": "mocked_path/testFixture/_1009infixFewArgs.tnt",
-        "start": {
-          "line": 2,
-          "col": 17,
-          "index": 88
-        },
-        "end": {
-          "line": 2,
-          "col": 28,
-          "index": 99
+      "locs": [
+        {
+          "source": "mocked_path/testFixture/_1009infixFewArgs.tnt",
+          "start": {
+            "line": 2,
+            "col": 17,
+            "index": 88
+          },
+          "end": {
+            "line": 2,
+            "col": 28,
+            "index": 99
+          }
         }
-      }
+      ]
     }
   ]
 }
