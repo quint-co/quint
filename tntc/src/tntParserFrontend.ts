@@ -106,27 +106,23 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
 
   if (conflictResult.kind === 'error') {
     conflictResult.conflicts.forEach(conflict => {
+      let msg, ids
       if (!conflict.references.includes(BigInt(0))) {
-        const msg = `Conflicting definitions found for name ${conflict.identifier}`
-        const locs = conflict.references.map(id => {
-          const loc = sourceMap.get(id)
-          if (!loc) {
-            throw new Error(`no loc found for ${id}`)
-          }
-          return loc
-        })
-        errorMessages.push({ explanation: msg, locs: locs })
+        msg = `Conflicting definitions found for name ${conflict.identifier}`
+        ids = conflict.references
       } else {
-        const msg = `Built-in name ${conflict.identifier} is redefined`
-        const locs = conflict.references.filter(id => id !== BigInt(0)).map(id => {
-          const loc = sourceMap.get(id)
-          if (!loc) {
-            throw new Error(`no loc found for ${id}`)
-          }
-          return loc
-        })
-        errorMessages.push({ explanation: msg, locs: locs })
+        msg = `Built-in name ${conflict.identifier} is redefined`
+        ids = conflict.references.filter(id => id !== BigInt(0))
       }
+      const locs = ids.map(id => {
+        const loc = sourceMap.get(id)
+        if (!loc) {
+          throw new Error(`no loc found for ${id}`)
+        }
+        return loc
+      })
+      errorMessages.push({ explanation: msg, locs: locs })
+
     })
   }
 
