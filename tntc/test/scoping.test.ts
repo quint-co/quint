@@ -7,8 +7,8 @@ describe('scopesForId', () => {
   const tree = {
     value: BigInt(1),
     children: [
-      { value: BigInt(2) },
-      { value: BigInt(3), children: [{ value: BigInt(4) }] },
+      { value: BigInt(2), children: [] },
+      { value: BigInt(3), children: [{ value: BigInt(4), children: [] }] },
     ],
   }
 
@@ -38,33 +38,33 @@ describe('treeFromModule', () => {
     assert.deepEqual(treeFromModule(tntModule), {
       value: BigInt(26),
       children: [
-        { value: BigInt(1) },
-        { value: BigInt(2) },
-        { value: BigInt(3) },
-        { value: BigInt(7) },
-        { value: BigInt(8) },
+        { value: BigInt(1), children: [] },
+        { value: BigInt(2), children: [] },
+        { value: BigInt(3), children: [] },
+        { value: BigInt(7), children: [] },
+        { value: BigInt(8), children: [] },
         {
           value: BigInt(11),
           children: [
-            { value: BigInt(10), children: [{ value: BigInt(9) }] },
+            { value: BigInt(10), children: [{ value: BigInt(9), children: [] }] },
           ],
         },
-        { value: BigInt(13), children: [{ value: BigInt(12) }] },
+        { value: BigInt(13), children: [{ value: BigInt(12), children: [] }] },
         {
           value: BigInt(20),
           children: [
             {
               value: BigInt(19),
               children: [
-                { value: BigInt(14) },
+                { value: BigInt(14), children: [] },
                 {
                   value: BigInt(18),
                   children: [
                     {
                       value: BigInt(17),
                       children: [
-                        { value: BigInt(15) },
-                        { value: BigInt(16) },
+                        { value: BigInt(15), children: [] },
+                        { value: BigInt(16), children: [] },
                       ],
                     },
                   ],
@@ -82,10 +82,10 @@ describe('treeFromModule', () => {
                 {
                   value: BigInt(22),
                   children: [
-                    { value: BigInt(21) },
+                    { value: BigInt(21), children: [] },
                   ],
                 },
-                { value: BigInt(23) },
+                { value: BigInt(23), children: [] },
               ],
             },
           ],
