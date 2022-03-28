@@ -167,7 +167,7 @@ export const defaultDefinitions: DefinitionTable = {
  * @returns a lookup table with all defined values for the module
  */
 export function collectDefinitions (tntModule: TntModule): DefinitionTable {
-  const table = tntModule.defs.reduce((table: DefinitionTable, def) => {
+  const defsTable = tntModule.defs.reduce((table: DefinitionTable, def) => {
     switch (def.kind) {
       case 'const':
       case 'var':
@@ -197,10 +197,11 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
         const namespacedDefinitions = table.nameDefinitions
           .filter(d => !d.scope) // Don't copy scoped definitions
           .reduce((ds: NameDefinition[], d) => {
+            // FIXME: This identifier string manipulation should be replaced by a better representation, see #58
             const names = d.identifier.split('::')
             // Collect this name scoped to the instance iff the import matches the module's namespace
             if (names[0] === def.protoName && names[1]) {
-              ds.push({ kind: d.kind, identifier: `${def.name}::${names[1]}`, reference: def.id })
+              ds.push({ kind: d.kind, identifier: `${def.name}::${names.slice(1).join('::')}`, reference: def.id })
             }
             return ds
           }, [])
@@ -228,10 +229,11 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
         const namespacedDefinitions = table.nameDefinitions
           .filter(d => !d.scope) // Don't copy scoped definitions
           .reduce((ds: NameDefinition[], d) => {
+            // FIXME: This identifier string manipulation should be replaced by a better representation, see #58
             const names = d.identifier.split('::')
             // Collect this name as unscoped iff the import matches its namespace and name
             if (names[0] === def.path && names[1] && (def.name === '*' || def.name === names[1])) {
-              ds.push({ kind: d.kind, identifier: names[1], reference: def.id })
+              ds.push({ kind: d.kind, identifier: names.slice(1).join('::'), reference: def.id })
             }
             return ds
           }, [])
@@ -257,8 +259,8 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
     return table
   }, { nameDefinitions: [], typeDefinitions: [] })
 
-  table.nameDefinitions = table.nameDefinitions.filter(d => d.identifier !== '_')
-  return table
+  defsTable.nameDefinitions = defsTable.nameDefinitions.filter(d => d.identifier !== '_')
+  return defsTable
 }
 
 export function mergeTables (a: DefinitionTable, b: DefinitionTable): DefinitionTable {

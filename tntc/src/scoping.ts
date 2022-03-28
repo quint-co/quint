@@ -32,7 +32,7 @@ export interface ScopeTree {
  * @param treeNode the tree to search from
  * @param id the id to be searched
  *
- * @returns a list of ids, including the given id, for scopes this id belongs to
+ * @returns a list of ids, including the given id, for scopes this id belongs to, ordered from the node itself to the module root
  */
 export function scopesForId (treeNode: ScopeTree, id: BigInt): BigInt[] {
   if (treeNode.value === id) {

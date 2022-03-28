@@ -1,5 +1,5 @@
 {
-  "id": 378,
+  "id": 385,
   "name": "withConsts",
   "defs": [
     {
@@ -2532,29 +2532,75 @@
       }
     },
     {
+      "id": 336,
+      "kind": "instance",
+      "name": "level2instance",
+      "protoName": "level2",
+      "overrides": [
+        [
+          "y",
+          {
+            "id": 335,
+            "kind": "name",
+            "name": "y"
+          }
+        ]
+      ],
+      "identityOverride": false
+    },
+    {
+      "id": 337,
+      "kind": "import",
+      "name": "level3",
+      "path": "level2"
+    },
+    {
+      "id": 341,
+      "kind": "def",
+      "name": "namespace_test",
+      "qualifier": "val",
+      "expr": {
+        "id": 340,
+        "kind": "app",
+        "opcode": "iadd",
+        "args": [
+          {
+            "id": 338,
+            "kind": "name",
+            "name": "level3::z"
+          },
+          {
+            "id": 339,
+            "kind": "name",
+            "name": "level2instance::level3::z"
+          }
+        ]
+      }
+    },
+    {
       "kind": "const",
       "name": "N",
       "type": {
         "kind": "int"
       },
-      "id": 335
+      "id": 342
     },
     {
-      "id": 339,
+      "id": 346,
       "kind": "assume",
       "name": "positive",
       "assumption": {
-        "id": 338,
+        "id": 345,
         "kind": "app",
         "opcode": "igt",
         "args": [
           {
-            "id": 336,
+            "id": 343,
             "kind": "name",
             "name": "N"
           },
           {
-            "id": 337,
+            "id": 344,
             "kind": "int",
             "type": {
               "kind": "int"
@@ -2565,21 +2611,21 @@
       }
     },
     {
-      "id": 343,
+      "id": 350,
       "kind": "assume",
       "name": "_",
       "assumption": {
-        "id": 342,
+        "id": 349,
         "kind": "app",
         "opcode": "neq",
         "args": [
           {
-            "id": 340,
+            "id": 347,
             "kind": "name",
             "name": "N"
           },
           {
-            "id": 341,
+            "id": 348,
             "kind": "int",
             "type": {
               "kind": "int"
@@ -2590,19 +2636,19 @@
       }
     },
     {
-      "id": 347,
+      "id": 354,
       "kind": "module",
       "module": {
-        "id": 346,
+        "id": 353,
         "name": "M",
         "defs": [
           {
-            "id": 345,
+            "id": 352,
             "kind": "def",
             "name": "foo",
             "qualifier": "val",
             "expr": {
-              "id": 344,
+              "id": 351,
               "kind": "int",
               "type": {
                 "kind": "int"
@@ -2614,19 +2660,19 @@
       }
     },
     {
-      "id": 348,
+      "id": 355,
       "kind": "import",
       "name": "foo",
       "path": "M"
     },
     {
-      "id": 349,
+      "id": 356,
       "kind": "import",
       "name": "*",
       "path": "M"
     },
     {
-      "id": 350,
+      "id": 357,
       "kind": "typedef",
       "name": "INT_SET",
       "type": {
@@ -2643,13 +2689,13 @@
         "kind": "const",
         "name": "INT_SET"
       },
-      "id": 351
+      "id": 358
     },
     {
-      "id": 355,
+      "id": 362,
       "kind": "module",
       "module": {
-        "id": 354,
+        "id": 361,
         "name": "Proto",
         "defs": [
           {
@@ -2658,7 +2704,7 @@
             "type": {
               "kind": "int"
             },
-            "id": 352
+            "id": 359
           },
           {
             "kind": "var",
@@ -2666,13 +2712,13 @@
             "type": {
               "kind": "int"
             },
-            "id": 353
+            "id": 360
           }
         ]
       }
     },
     {
-      "id": 358,
+      "id": 365,
       "kind": "instance",
       "name": "Inst1",
       "protoName": "Proto",
@@ -2680,7 +2726,7 @@
         [
           "N",
           {
-            "id": 356,
+            "id": 363,
             "kind": "name",
             "name": "N"
           }
@@ -2688,7 +2734,7 @@
         [
           "x",
           {
-            "id": 357,
+            "id": 364,
             "kind": "name",
             "name": "x"
           }
@@ -2697,7 +2743,7 @@
       "identityOverride": false
     },
     {
-      "id": 359,
+      "id": 366,
       "kind": "instance",
       "name": "Inst2",
       "protoName": "Proto",
@@ -2705,7 +2751,7 @@
       "identityOverride": true
     },
     {
-      "id": 360,
+      "id": 367,
       "kind": "typedef",
       "name": "ENTRY_TYPE",
       "type": {
@@ -2756,29 +2802,29 @@
       }
     },
     {
-      "id": 377,
+      "id": 384,
       "kind": "def",
       "name": "isValid",
       "qualifier": "pred",
       "expr": {
-        "id": 377,
+        "id": 384,
         "kind": "lambda",
         "params": [
           "entry"
         ],
         "qualifier": "pred",
         "expr": {
-          "id": 376,
+          "id": 383,
           "kind": "app",
           "opcode": "match",
           "args": [
             {
-              "id": 361,
+              "id": 368,
               "kind": "name",
               "name": "entry"
             },
             {
-              "id": 372,
+              "id": 379,
               "kind": "str",
               "value": "Cat",
               "type": {
@@ -2786,36 +2832,36 @@
               }
             },
             {
-              "id": 373,
+              "id": 380,
               "kind": "lambda",
               "params": [
                 "cat"
               ],
               "qualifier": "def",
               "expr": {
-                "id": 366,
+                "id": 373,
                 "kind": "app",
                 "opcode": "neq",
                 "args": [
                   {
-                    "id": 364,
+                    "id": 371,
                     "kind": "app",
                     "opcode": "field",
                     "args": [
                       {
-                        "id": 362,
+                        "id": 369,
                         "kind": "name",
                         "name": "cat"
                       },
                       {
-                        "id": 363,
+                        "id": 370,
                         "kind": "str",
                         "value": "name"
                       }
                     ]
                   },
                   {
-                    "id": 365,
+                    "id": 372,
                     "kind": "str",
                     "type": {
                       "kind": "str"
@@ -2826,7 +2872,7 @@
               }
             },
             {
-              "id": 374,
+              "id": 381,
               "kind": "str",
               "value": "Date",
               "type": {
@@ -2834,36 +2880,36 @@
               }
             },
             {
-              "id": 375,
+              "id": 382,
               "kind": "lambda",
               "params": [
                 "date"
               ],
               "qualifier": "def",
               "expr": {
-                "id": 371,
+                "id": 378,
                 "kind": "app",
                 "opcode": "igt",
                 "args": [
                   {
-                    "id": 369,
+                    "id": 376,
                     "kind": "app",
                     "opcode": "field",
                     "args": [
                       {
-                        "id": 367,
+                        "id": 374,
                         "kind": "name",
                         "name": "date"
                       },
                       {
-                        "id": 368,
+                        "id": 375,
                         "kind": "str",
                         "value": "year"
                       }
                     ]
                   },
                   {
-                    "id": 370,
+                    "id": 377,
                     "kind": "int",
                     "type": {
                       "kind": "int"
