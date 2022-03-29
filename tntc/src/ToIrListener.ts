@@ -239,19 +239,18 @@ export class ToIrListener implements TntListener {
 
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
-    if (associatedType) {
-      const def: TntDef = {
-        id: id,
-        kind: 'typedef',
-        name: name,
-        type: associatedType,
-      }
-      this.definitionStack.push(def)
-    } else {
-      const ls = this.locStr(ctx)
-      // istanbul ignore next
-      assert(false, `exitTypedef: ${ls}: type stack is empty`)
+
+    const def: TntDef = {
+      id: id,
+      kind: 'typedef',
+      name: name,
     }
+
+    if (associatedType) {
+      def.type = associatedType
+    }
+
+    this.definitionStack.push(def)
   }
 
   // module Foo = Proto(x = a, y = b)

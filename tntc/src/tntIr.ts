@@ -74,11 +74,11 @@ export type TntEx =
   | { kind: 'app', opcode: string, args: TntEx[] } & WithId & WithType
   // Operator abstraction: an anonymous operator (lambda) over a list of parameters.
   | {
-      kind: 'lambda',
-      params: string[],
-      qualifier: OpQualifier,
-      expr: TntEx
-    } & WithId & WithType
+    kind: 'lambda',
+    params: string[],
+    qualifier: OpQualifier,
+    expr: TntEx
+  } & WithId & WithType
   // A let-in binding (defined via 'def', 'val', etc.).
   // eslint-disable-next-line no-use-before-define
   | { kind: 'let', opdef: TntOpDef, expr: TntEx } & WithId & WithType
@@ -107,60 +107,60 @@ export interface TntOpDef extends WithId, WithType {
 export type TntDef =
   | TntOpDef
   | {
-      /** definition kind ('const') */
-      kind: 'const',
-      /** name of the constant */
-      name: string
-    } & WithId & WithType
+    /** definition kind ('const') */
+    kind: 'const',
+    /** name of the constant */
+    name: string
+  } & WithId & WithType
   | {
-      /** definition kind ('var') */
-      kind: 'var',
-      /** name of the variable */
-      name: string
-    } & WithId & WithType
+    /** definition kind ('var') */
+    kind: 'var',
+    /** name of the variable */
+    name: string
+  } & WithId & WithType
   | {
-      /** definition kind ('assume') */
-      kind: 'assume',
-      /** name of the assumption, may be '_' */
-      name: string,
-      /** an expression to associate with the name */
-      assumption: TntEx
-    } & WithId
+    /** definition kind ('assume') */
+    kind: 'assume',
+    /** name of the assumption, may be '_' */
+    name: string,
+    /** an expression to associate with the name */
+    assumption: TntEx
+  } & WithId
   | {
-      /** definition kind ('typedef') */
-      kind: 'typedef',
-      /** name of a type alias */
-      name: string,
-      /** type to associate with the alias */
-      type: TntType
-    } & WithId
+    /** definition kind ('typedef') */
+    kind: 'typedef',
+    /** name of a type alias */
+    name: string,
+    /** type to associate with the alias (none for uninterpreted type) */
+    type?: TntType
+  } & WithId
   | {
-      /** definition kind ('import') */
-      kind: 'import',
-      /** name to import, or '*' to denote all */
-      name: string,
-      /** path to the module, e.g., Foo.Bar */
-      path: string
-    } & WithId
+    /** definition kind ('import') */
+    kind: 'import',
+    /** name to import, or '*' to denote all */
+    name: string,
+    /** path to the module, e.g., Foo.Bar */
+    path: string
+  } & WithId
   | {
-      /** definition kind ('instance') */
-      kind: 'instance',
-      /** instance name */
-      name: string,
-      /** the name of the module to instantiate */
-      protoName: string,
-      /** how to override constants and variables */
-      overrides: [string, TntEx][],
-      /** whether to use identity substitution on missing names */
-      identityOverride: boolean
-    } & WithId
+    /** definition kind ('instance') */
+    kind: 'instance',
+    /** instance name */
+    name: string,
+    /** the name of the module to instantiate */
+    protoName: string,
+    /** how to override constants and variables */
+    overrides: [string, TntEx][],
+    /** whether to use identity substitution on missing names */
+    identityOverride: boolean
+  } & WithId
   | {
-      /** definition kind ('module') */
-      kind: 'module',
-      /** nested module */
-      // eslint-disable-next-line no-use-before-define
-      module: TntModule
-    } & WithId
+    /** definition kind ('module') */
+    kind: 'module',
+    /** nested module */
+    // eslint-disable-next-line no-use-before-define
+    module: TntModule
+  } & WithId
 
 /**
  * Module definition.
