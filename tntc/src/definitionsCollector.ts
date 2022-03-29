@@ -167,7 +167,7 @@ export const defaultDefinitions: DefinitionTable = {
  * @returns a lookup table with all defined values for the module
  */
 export function collectDefinitions (tntModule: TntModule): DefinitionTable {
-  const table = tntModule.defs.reduce((table: DefinitionTable, def) => {
+  const defsTable = tntModule.defs.reduce((table: DefinitionTable, def) => {
     switch (def.kind) {
       case 'const':
       case 'var':
@@ -194,18 +194,17 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
         table.nameDefinitions.push(...def.overrides.flatMap(e => collectFromExpr(e[1])))
 
         // Alias definitions from the instanced module to the new name
-        const namespacedDefinitions = table.nameDefinitions.reduce((ds: NameDefinition[], d) => {
-          const names = d.identifier.split('::')
-          if (d.scope) {
-            // Don't collect scoped names
+        const namespacedDefinitions = table.nameDefinitions
+          .filter(d => !d.scope) // Don't copy scoped definitions
+          .reduce((ds: NameDefinition[], d) => {
+            // FIXME: This identifier string manipulation should be replaced by a better representation, see #58
+            const names = d.identifier.split('::')
+            // Collect this name scoped to the instance iff the import matches the module's namespace
+            if (names[0] === def.protoName && names[1]) {
+              ds.push({ kind: d.kind, identifier: `${def.name}::${names.slice(1).join('::')}`, reference: def.id })
+            }
             return ds
-          }
-          // Collect this name scoped to the instance iff the import matches the module's namespace
-          if (names[0] === def.protoName && names[1]) {
-            ds.push({ kind: d.kind, identifier: `${def.name}::${names[1]}`, reference: def.id })
-          }
-          return ds
-        }, [])
+          }, [])
         table.nameDefinitions.push(...namespacedDefinitions)
         break
       }
@@ -217,26 +216,27 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
         })
         const moduleDefinitions = collectDefinitions(def.module)
         // Collect all definitions namespaced to module
-        const namespacedDefinitions = moduleDefinitions.nameDefinitions.filter(d => !d.scope).map(d => {
-          return { kind: d.kind, identifier: `${def.module.name}::${d.identifier}`, reference: def.id }
-        })
+        const namespacedDefinitions = moduleDefinitions.nameDefinitions
+          .filter(d => !d.scope) // Don't copy scoped definitions
+          .map(d => {
+            return { kind: d.kind, identifier: `${def.module.name}::${d.identifier}`, reference: def.id }
+          })
         table.nameDefinitions.push(...namespacedDefinitions)
         break
       }
       case 'import': {
         // FIXME: check if definitions are found, when we actually import them from other files
-        const namespacedDefinitions = table.nameDefinitions.reduce((ds: NameDefinition[], d) => {
-          if (d.scope) {
-            // Don't import scoped names
+        const namespacedDefinitions = table.nameDefinitions
+          .filter(d => !d.scope) // Don't copy scoped definitions
+          .reduce((ds: NameDefinition[], d) => {
+            // FIXME: This identifier string manipulation should be replaced by a better representation, see #58
+            const names = d.identifier.split('::')
+            // Collect this name as unscoped iff the import matches its namespace and name
+            if (names[0] === def.path && names[1] && (def.name === '*' || def.name === names[1])) {
+              ds.push({ kind: d.kind, identifier: names.slice(1).join('::'), reference: def.id })
+            }
             return ds
-          }
-          const names = d.identifier.split('::')
-          // Collect this name as unscoped iff the import matches its namespace and name
-          if (names[0] === def.path && names[1] && (def.name === '*' || def.name === names[1])) {
-            ds.push({ kind: d.kind, identifier: names[1], reference: def.id })
-          }
-          return ds
-        }, [])
+          }, [])
         table.nameDefinitions.push(...namespacedDefinitions)
         break
       }
@@ -259,8 +259,8 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
     return table
   }, { nameDefinitions: [], typeDefinitions: [] })
 
-  table.nameDefinitions = table.nameDefinitions.filter(d => d.identifier !== '_')
-  return table
+  defsTable.nameDefinitions = defsTable.nameDefinitions.filter(d => d.identifier !== '_')
+  return defsTable
 }
 
 export function mergeTables (a: DefinitionTable, b: DefinitionTable): DefinitionTable {

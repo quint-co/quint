@@ -21,8 +21,8 @@ import { TntModule, TntDef, TntEx } from './tntIr'
 export interface ScopeTree {
   /* Tree node, an IR id */
   value: BigInt;
-  /* Tree children of the node, if any */
-  children?: ScopeTree[];
+  /* Tree children of the node */
+  children: ScopeTree[];
 }
 
 /**
@@ -32,7 +32,7 @@ export interface ScopeTree {
  * @param treeNode the tree to search from
  * @param id the id to be searched
  *
- * @returns a list of ids, including the given id, for scopes this id belongs to
+ * @returns a list of ids, including the given id, for scopes this id belongs to, ordered from the node itself to the module root
  */
 export function scopesForId (treeNode: ScopeTree, id: BigInt): BigInt[] {
   if (treeNode.value === id) {
@@ -86,7 +86,7 @@ function treeFromDef (def: TntDef): ScopeTree {
       break
   }
 
-  return children.length > 0 ? { value: def.id, children: children } : { value: def.id }
+  return { value: def.id, children: children }
 }
 
 function treeFromExpr (expr: TntEx): ScopeTree {
@@ -109,5 +109,5 @@ function treeFromExpr (expr: TntEx): ScopeTree {
       break
   }
 
-  return children.length > 0 ? { value: expr.id, children: children } : { value: expr.id }
+  return { value: expr.id, children: children }
 }

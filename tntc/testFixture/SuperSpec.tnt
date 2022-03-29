@@ -178,6 +178,9 @@ module withConsts {
       var z: int
     }
   }
+  module level2instance = level2(y = y)
+  import level2.level3
+  val namespace_test = level3::z + level2instance::level3::z
 
   // a named assumption
   assume positive = N > 0

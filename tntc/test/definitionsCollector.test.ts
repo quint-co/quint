@@ -56,28 +56,31 @@ describe('collectDefinitions', () => {
 
     it('collects instances and scoped variables inside parameters', () => {
       const tntModule = buildModuleWithDefs([
-        'module test_module { def a = 2 }',
+        'module test_module { def a = 2 module nested_module { def b = 3 } }',
         'module test_module_instance = test_module(a = val x = 10 {x})',
       ])
 
       const result = collectDefinitions(tntModule)
 
       assert.includeDeepMembers(result.nameDefinitions, [
-        { kind: 'namespace', identifier: 'test_module_instance', reference: BigInt(9) },
-        { kind: 'def', identifier: 'test_module_instance::a', reference: BigInt(9) },
-        { kind: 'val', identifier: 'x', reference: BigInt(6), scope: BigInt(8) },
+        { kind: 'namespace', identifier: 'test_module', reference: BigInt(8) },
+        { kind: 'namespace', identifier: 'test_module_instance', reference: BigInt(13) },
+        { kind: 'def', identifier: 'test_module_instance::a', reference: BigInt(13) },
+        { kind: 'namespace', identifier: 'test_module_instance::nested_module', reference: BigInt(13) },
+        { kind: 'def', identifier: 'test_module_instance::nested_module::b', reference: BigInt(13) },
+        { kind: 'val', identifier: 'x', reference: BigInt(10), scope: BigInt(12) },
       ])
     })
 
     it('collects module definitions', () => {
-      // TODO: collect definitions inside modules (issue #33)
-      const tntModule = buildModuleWithDefs(['module test_module { def a = 1 }'])
+      const tntModule = buildModuleWithDefs(['module test_module { module nested_module { def a = 1 } }'])
 
       const result = collectDefinitions(tntModule)
 
       assert.includeDeepMembers(result.nameDefinitions, [
-        { kind: 'namespace', identifier: 'test_module', reference: BigInt(4) },
-        { kind: 'def', identifier: 'test_module::a', reference: BigInt(4) },
+        { kind: 'namespace', identifier: 'test_module', reference: BigInt(6) },
+        { kind: 'namespace', identifier: 'test_module::nested_module', reference: BigInt(6) },
+        { kind: 'def', identifier: 'test_module::nested_module::a', reference: BigInt(6) },
       ])
     })
 
@@ -94,13 +97,22 @@ describe('collectDefinitions', () => {
 
     it('collects imported module\'s definitions as unscoped definitions', () => {
       const tntModule = buildModuleWithDefs([
-        'module test_module { def a = 1 }',
+        'module test_module { def a = 1 module nested_module { def b = 1 } }',
         'import test_module.*',
       ])
 
       const result = collectDefinitions(tntModule)
 
-      assert.deepInclude(result.nameDefinitions, { kind: 'def', identifier: 'a', reference: BigInt(5) })
+      assert.includeDeepMembers(result.nameDefinitions, [
+        { kind: 'namespace', identifier: 'test_module', reference: BigInt(8) },
+        { kind: 'def', identifier: 'test_module::a', reference: BigInt(8) },
+        { kind: 'namespace', identifier: 'test_module::nested_module', reference: BigInt(8) },
+        { kind: 'def', identifier: 'test_module::nested_module::b', reference: BigInt(8) },
+        { kind: 'def', identifier: 'a', reference: BigInt(9) },
+        // After import
+        { kind: 'namespace', identifier: 'nested_module', reference: BigInt(9) },
+        { kind: 'def', identifier: 'nested_module::b', reference: BigInt(9) },
+      ])
     })
 
     it('collects imported module\'s named definition as unscoped definition', () => {
