@@ -3,19 +3,21 @@
   "messages": [
     {
       "explanation": "TNT006: unexpected '=', did you mean '=='?",
-      "loc": {
-        "source": "mocked_path/testFixture/_1008unexpectedEq.tnt",
-        "start": {
-          "line": 3,
-          "col": 0,
-          "index": 107
-        },
-        "end": {
-          "line": 3,
-          "col": 1,
-          "index": 108
+      "locs": [
+        {
+          "source": "mocked_path/testFixture/_1008unexpectedEq.tnt",
+          "start": {
+            "line": 3,
+            "col": 0,
+            "index": 107
+          },
+          "end": {
+            "line": 3,
+            "col": 1,
+            "index": 108
+          }
         }
-      }
+      ]
     }
   ]
 }

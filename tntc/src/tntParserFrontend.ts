@@ -24,7 +24,7 @@ export interface Loc {
 
 export interface ErrorMessage {
   explanation: string;
-  loc: Loc;
+  locs: Loc[];
 }
 
 export type ParseResult =
@@ -52,7 +52,7 @@ export function parsePhase1 (text: string, sourceLocation: string): ParseResult 
       const index = offendingSymbol ? offendingSymbol.startIndex : 0
       const start = { line: line - 1, col: charPositionInLine, index: index }
       const end = { line: line - 1, col: charPositionInLine + len, index: index + len }
-      errorMessages.push({ explanation: msg, loc: { source: sourceLocation, start: start, end: end } })
+      errorMessages.push({ explanation: msg, locs: [{ source: sourceLocation, start: start, end: end }] })
     },
   }
 
@@ -110,7 +110,7 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
       if (!loc) {
         throw new Error(`no loc found for ${id}`)
       }
-      errorMessages.push({ explanation: msg, loc: loc })
+      errorMessages.push({ explanation: msg, locs: [loc] })
     })
   }
 

@@ -14,11 +14,11 @@ describe('errorReporter', () => {
   it('highlights the middle line', () => {
     const message: ErrorMessage = {
       explanation: 'error explanation',
-      loc: {
+      locs: [{
         source: 'file',
         start: { line: 1, col: 4, index: 17 },
         end: { line: 1, col: 7, index: 21 },
-      },
+      }],
     }
 
     const expectedError = `file:2:5 - error: error explanation
@@ -32,11 +32,11 @@ describe('errorReporter', () => {
   it('highlights the first 2 lines', () => {
     const message: ErrorMessage = {
       explanation: 'error explanation',
-      loc: {
+      locs: [{
         source: 'file',
         start: { line: 0, col: 4, index: 4 },
         end: { line: 1, col: 7, index: 21 },
-      },
+      }],
     }
 
     const expectedError = `file:1:5 - error: error explanation
@@ -52,10 +52,10 @@ describe('errorReporter', () => {
   it('highlights a single char when loc has no end', () => {
     const message: ErrorMessage = {
       explanation: 'error explanation',
-      loc: {
+      locs: [{
         source: 'file',
         start: { line: 1, col: 4, index: 17 },
-      },
+      }],
     }
 
     const expectedError = `file:2:5 - error: error explanation
@@ -69,11 +69,11 @@ describe('errorReporter', () => {
   it('uses column information when index is 0', () => {
     const message: ErrorMessage = {
       explanation: 'error explanation',
-      loc: {
+      locs: [{
         source: 'file',
         start: { line: 1, col: 4, index: 0 },
         end: { line: 1, col: 7, index: 0 },
-      },
+      }],
     }
 
     const expectedError = `file:2:5 - error: error explanation

@@ -1035,7 +1035,7 @@ export class ToIrListener implements TntListener {
       ctx.stop
         ? { line: ctx.stop.line - 1, col: ctx.stop.charPositionInLine, index: ctx.stop.stopIndex }
         : start
-    this.errors.push({ explanation: message, loc: { source: this.sourceLocation, start: start, end: end } })
+    this.errors.push({ explanation: message, locs: [{ source: this.sourceLocation, start: start, end: end }] })
   }
 
   // pop n elements out of typeStack

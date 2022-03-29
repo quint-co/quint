@@ -3,19 +3,21 @@
   "messages": [
     {
       "explanation": "extraneous input '->' expecting {'module', '}', 'const', 'var', 'assume', 'type', 'import', 'val', 'def', 'pred', 'action', 'temporal'}",
-      "loc": {
-        "source": "mocked_path/testFixture/_1006unexpectedExpr.tnt",
-        "start": {
-          "line": 2,
-          "col": 19,
-          "index": 82
-        },
-        "end": {
-          "line": 2,
-          "col": 21,
-          "index": 84
+      "locs": [
+        {
+          "source": "mocked_path/testFixture/_1006unexpectedExpr.tnt",
+          "start": {
+            "line": 2,
+            "col": 19,
+            "index": 82
+          },
+          "end": {
+            "line": 2,
+            "col": 21,
+            "index": 84
+          }
         }
-      }
+      ]
     }
   ]
 }
