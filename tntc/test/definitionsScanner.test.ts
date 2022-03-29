@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { NameDefinition, DefinitionTable, TypeDefinition } from '../src/definitionsCollector'
-import { scanConflicts } from '../src/definitionsScanner'
+import { ConflictSource, scanConflicts } from '../src/definitionsScanner'
 import { ScopeTree } from '../src/scoping'
 
 describe('scanConflicts', () => {
@@ -22,9 +22,14 @@ describe('scanConflicts', () => {
 
     const result = scanConflicts(table, tree)
 
+    const expectedSources: ConflictSource[] = [
+      { kind: 'user', reference: BigInt(1) },
+      { kind: 'user', reference: BigInt(2) },
+    ]
+
     assert.deepEqual(result, {
       kind: 'error',
-      conflicts: [{ kind: 'operator', identifier: 'conflicting_name', references: [BigInt(1), BigInt(2)] }],
+      conflicts: [{ kind: 'operator', identifier: 'conflicting_name', sources: expectedSources }],
     })
   })
 
@@ -44,9 +49,14 @@ describe('scanConflicts', () => {
 
     const result = scanConflicts(table, tree)
 
+    const expectedSources: ConflictSource[] = [
+      { kind: 'user', reference: BigInt(1) },
+      { kind: 'user', reference: BigInt(2) },
+    ]
+
     assert.deepEqual(result, {
       kind: 'error',
-      conflicts: [{ kind: 'type', identifier: 'MY_TYPE', references: [BigInt(1), BigInt(2)] }],
+      conflicts: [{ kind: 'type', identifier: 'MY_TYPE', sources: expectedSources }],
     })
   })
 
@@ -66,9 +76,49 @@ describe('scanConflicts', () => {
 
     const result = scanConflicts(table, tree)
 
+    const expectedSources: ConflictSource[] = [
+      { kind: 'user', reference: BigInt(1) },
+      { kind: 'user', reference: BigInt(2) },
+    ]
+
     assert.deepEqual(result, {
       kind: 'error',
-      conflicts: [{ kind: 'operator', identifier: 'conflicting_name', references: [BigInt(1), BigInt(2)] }],
+      conflicts: [{ kind: 'operator', identifier: 'conflicting_name', sources: expectedSources }],
+    })
+  })
+
+  it('finds conflicts with built-in definitions', () => {
+    const nameDefinitions: NameDefinition[] = [
+      { kind: 'def', identifier: 'conflicting_name' },
+      { kind: 'val', identifier: 'conflicting_name', reference: BigInt(2) },
+    ]
+
+    const typeDefinitions: TypeDefinition[] = [
+      { identifier: 'MY_TYPE', type: { kind: 'int' } },
+      { identifier: 'MY_TYPE', type: { kind: 'int' }, reference: BigInt(1) },
+    ]
+
+    const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
+
+    const tree: ScopeTree = { value: BigInt(1), children: [{ value: BigInt(2), children: [] }] }
+
+    const result = scanConflicts(table, tree)
+
+    const expectedSources: ConflictSource[] = [
+      { kind: 'builtin' },
+      { kind: 'user', reference: BigInt(2) },
+    ]
+    const expectedTypeSources: ConflictSource[] = [
+      { kind: 'builtin' },
+      { kind: 'user', reference: BigInt(1) },
+    ]
+
+    assert.deepEqual(result, {
+      kind: 'error',
+      conflicts: [
+        { kind: 'operator', identifier: 'conflicting_name', sources: expectedSources },
+        { kind: 'type', identifier: 'MY_TYPE', sources: expectedTypeSources },
+      ],
     })
   })
 

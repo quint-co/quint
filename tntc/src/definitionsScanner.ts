@@ -16,6 +16,15 @@ import { DefinitionTable, NameDefinition, TypeDefinition } from './definitionsCo
 import { ScopeTree, scopesForId } from './scoping'
 
 /**
+ * The source of a conflict occurrences
+ */
+export type ConflictSource =
+  /* A user definition, referencing its IR node id */
+  | { kind: 'user', reference: BigInt }
+  /* A built-in definition, no reference */
+  | { kind: 'builtin' }
+
+/**
  * Error report for a found name conflict
  */
 export interface Conflict {
@@ -23,8 +32,8 @@ export interface Conflict {
   kind: 'operator' | 'type';
   /* The name that has a conflict */
   identifier: string;
-  /* IR ids for the occurrences of the conflicting name */
-  references: BigInt[];
+  /* Sources of the occurrences of the conflicting name */
+  sources: ConflictSource[];
 }
 
 /**
@@ -47,27 +56,29 @@ export type DefinitionsConflictResult =
  */
 export function scanConflicts (table: DefinitionTable, tree: ScopeTree): DefinitionsConflictResult {
   const conflicts: Conflict[] = []
-  const nameConflicts = table.nameDefinitions.reduce((conflicts: Map<string, BigInt[]>, def: NameDefinition) => {
+  const nameConflicts = table.nameDefinitions.reduce((conflicts: Map<string, ConflictSource[]>, def: NameDefinition) => {
     const defsWithName = table.nameDefinitions.filter(d => d.identifier === def.identifier && canConflict(tree, d, def))
     if (defsWithName.length > 1) {
-      conflicts.set(def.identifier, defsWithName.map(d => d.reference ?? BigInt(0)))
+      const sources: ConflictSource[] = defsWithName.map(d => d.reference ? { kind: 'user', reference: d.reference } : { kind: 'builtin' })
+      conflicts.set(def.identifier, sources)
     }
     return conflicts
-  }, new Map<string, BigInt[]>())
+  }, new Map<string, ConflictSource[]>())
 
-  const typeConflicts = table.typeDefinitions.reduce((conflicts: Map<string, BigInt[]>, def: TypeDefinition) => {
+  const typeConflicts = table.typeDefinitions.reduce((conflicts: Map<string, ConflictSource[]>, def: TypeDefinition) => {
     // Types don't have scopes at the moment
     // With type quantification, they should have scopes and this code can be refactor
     // into a more generalized form
     const defsWithName = table.typeDefinitions.filter(d => d.identifier === def.identifier)
     if (defsWithName.length > 1) {
-      conflicts.set(def.identifier, defsWithName.map(d => d.reference ?? BigInt(0)))
+      const sources: ConflictSource[] = defsWithName.map(d => d.reference ? { kind: 'user', reference: d.reference } : { kind: 'builtin' })
+      conflicts.set(def.identifier, sources)
     }
     return conflicts
-  }, new Map<string, BigInt[]>())
+  }, new Map<string, ConflictSource[]>())
 
-  nameConflicts.forEach((value, key) => (conflicts.push({ kind: 'operator', identifier: key, references: value })))
-  typeConflicts.forEach((value, key) => (conflicts.push({ kind: 'type', identifier: key, references: value })))
+  nameConflicts.forEach((value, key) => (conflicts.push({ kind: 'operator', identifier: key, sources: value })))
+  typeConflicts.forEach((value, key) => (conflicts.push({ kind: 'type', identifier: key, sources: value })))
 
   if (conflicts.length > 0) {
     return { kind: 'error', conflicts: conflicts }

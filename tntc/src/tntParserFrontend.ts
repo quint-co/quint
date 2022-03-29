@@ -106,15 +106,16 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
 
   if (conflictResult.kind === 'error') {
     conflictResult.conflicts.forEach(conflict => {
-      let msg, ids
-      if (!conflict.references.includes(BigInt(0))) {
-        msg = `Conflicting definitions found for name ${conflict.identifier}`
-        ids = conflict.references
-      } else {
+      let msg, sources
+      if (conflict.sources.some(source => source.kind === 'builtin')) {
         msg = `Built-in name ${conflict.identifier} is redefined`
-        ids = conflict.references.filter(id => id !== BigInt(0))
+        sources = conflict.sources.filter(source => source.kind === 'user')
+      } else {
+        msg = `Conflicting definitions found for name ${conflict.identifier}`
+        sources = conflict.sources
       }
-      const locs = ids.map(id => {
+      const locs = sources.map(source => {
+        const id = source.kind === 'user' ? source.reference : BigInt(0) // Impossible case, but TS requires the ckeck
         const loc = sourceMap.get(id)
         if (!loc) {
           throw new Error(`no loc found for ${id}`)
@@ -122,7 +123,6 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
         return loc
       })
       errorMessages.push({ explanation: msg, locs: locs })
-
     })
   }
 
