@@ -2,9 +2,9 @@
 
 *TNT is not TLA+*
 
-| Revision | Date       | Author                                     |
-| :------- | :--------- | :----------------------------------------- |
-| 21       | 16.11.2021 | Igor Konnov, Shon Feder, Jure Kukovec      |
+| Revision | Date       | Author                                                |
+| :------- | :--------- | :-----------------------------------------            |
+| 22       | 29.03.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Mafra |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -108,6 +108,12 @@ an alias inside a module definition. For instance:
 type STR_OPTION =
     | { tag: "none" }
     | { tag: "some", value: str }
+```
+
+A type alias can also introduce an uninterpreted type by defining a type without any equality:
+
+```
+type MY_TYPE
 ```
 
 Type aliases are written in CAPITAL LETTERS.
