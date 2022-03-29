@@ -18,7 +18,7 @@ describe('scanConflicts', () => {
 
     const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
 
-    const tree: ScopeTree = { value: BigInt(0), children: [{ value: BigInt(1) }, { value: BigInt(2) }] }
+    const tree: ScopeTree = { value: BigInt(0), children: [{ value: BigInt(1), children: [] }, { value: BigInt(2), children: [] }] }
 
     const result = scanConflicts(table, tree)
 
@@ -40,7 +40,7 @@ describe('scanConflicts', () => {
 
     const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
 
-    const tree: ScopeTree = { value: BigInt(0), children: [{ value: BigInt(1) }, { value: BigInt(2) }] }
+    const tree: ScopeTree = { value: BigInt(0), children: [{ value: BigInt(1), children: [] }, { value: BigInt(2), children: [] }] }
 
     const result = scanConflicts(table, tree)
 
@@ -62,7 +62,7 @@ describe('scanConflicts', () => {
 
     const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
 
-    const tree: ScopeTree = { value: BigInt(1), children: [{ value: BigInt(2) }] }
+    const tree: ScopeTree = { value: BigInt(1), children: [{ value: BigInt(2), children: [] }] }
 
     const result = scanConflicts(table, tree)
 
@@ -86,7 +86,7 @@ describe('scanConflicts', () => {
 
     const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
 
-    const tree: ScopeTree = { value: BigInt(0), children: [{ value: BigInt(1) }, { value: BigInt(2) }] }
+    const tree: ScopeTree = { value: BigInt(0), children: [{ value: BigInt(1), children: [] }, { value: BigInt(2), children: [] }] }
 
     const result = scanConflicts(table, tree)
 
