@@ -35,8 +35,8 @@ export interface NameDefinition {
 export interface TypeDefinition {
   /* The alias given to the type */
   identifier: string
-  /* The type that is aliased */
-  type: TntType
+  /* The type that is aliased (none for uninterpreted type) */
+  type?: TntType
   /* Expression or definition id from where the type was collected */
   reference?: BigInt
 }
@@ -153,9 +153,7 @@ export const defaultDefinitions: DefinitionTable = {
     { kind: 'def', identifier: 'cross' },
     { kind: 'def', identifier: 'difference' },
   ],
-  typeDefinitions: [
-    { identifier: 'PROC', type: { kind: 'const', name: 'PROC' } },
-  ],
+  typeDefinitions: [],
 }
 
 /**

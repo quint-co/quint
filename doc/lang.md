@@ -2,9 +2,9 @@
 
 *TNT is not TLA+*
 
-| Revision | Date       | Author                                     |
-| :------- | :--------- | :----------------------------------------- |
-| 21       | 16.11.2021 | Igor Konnov, Shon Feder, Jure Kukovec      |
+| Revision | Date       | Author                                                |
+| :------- | :--------- | :-----------------------------------------            |
+| 22       | 29.03.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Mafra |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -110,7 +110,12 @@ type STR_OPTION =
     | { tag: "some", value: str }
 ```
 
-Type aliases are written in CAPITAL LETTERS.
+A type identifier can also introduce an uninterpreted type by defining a type without any constructors for values of that type:
+
+```
+type MY_TYPE
+```
+
 
 ## Modes
 

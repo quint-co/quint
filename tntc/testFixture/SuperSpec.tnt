@@ -46,6 +46,7 @@ module withConsts {
   // Typed vals
   val withType: set(int) = set(1, 2)
   // PROC is an uninterpreted type
+  type PROC
   val withUninterpretedType: set(PROC) = set()
 
   // Operator definitions
@@ -201,6 +202,8 @@ module withConsts {
 
   // Typedefs
   type INT_SET = set(int)
+
+  type UNINTERPRETED_TYPE
 
   var S1: INT_SET
 

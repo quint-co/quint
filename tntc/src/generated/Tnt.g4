@@ -18,6 +18,7 @@ unit :    'const' IDENTIFIER ':' type                     # const
         | operDef                                         # oper
         | module                                          # moduleNested
         | instanceMod                                     # instance
+        | 'type' IDENTIFIER                               # typedef
         | 'type' IDENTIFIER '=' type                      # typedef
         | 'import' path '.' identOrStar                   # importDef
         ;
