@@ -235,7 +235,7 @@ export class ToIrListener implements TntListener {
   // type ALIAS = set(int)
   exitTypedef (ctx: p.TypedefContext) {
     const name = ctx.IDENTIFIER()!.text
-    const associatedType = this.typeStack.pop()
+    const typeToAlias = this.typeStack.pop()
 
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
@@ -246,8 +246,8 @@ export class ToIrListener implements TntListener {
       name: name,
     }
 
-    if (associatedType) {
-      def.type = associatedType
+    if (typeToAlias) {
+      def.type = typeToAlias
     }
 
     this.definitionStack.push(def)
