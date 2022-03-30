@@ -110,13 +110,12 @@ type STR_OPTION =
     | { tag: "some", value: str }
 ```
 
-A type alias can also introduce an uninterpreted type by defining a type without any equality:
+A type identifier can also introduce an uninterpreted type by defining a type without any constructors for values of that type:
 
 ```
 type MY_TYPE
 ```
 
-Type aliases are written in CAPITAL LETTERS.
 
 ## Modes
 
