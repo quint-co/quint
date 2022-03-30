@@ -114,4 +114,8 @@ describe('parse errors', () => {
   it('error on unresolved type alias inside let', () => {
     parseAndCompare('_1013unknownTypeLetIn', nowrap, true)
   })
+
+  it('error on conflicting names', () => {
+    parseAndCompare('_1014conflictingNames', nowrap, true)
+  })
 })

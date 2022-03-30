@@ -6,7 +6,7 @@ module withConsts {
   const MySeq: seq(bool)
   const MyFun: int -> str
   const MyFunFun: (int -> str) -> bool
-  const MyOper: (int, str) => bool
+  const MyOperator: (int, str) => bool
   const MyTuple: (int, bool, str)
 
   // just a normal record, without any variation in the fields
@@ -20,8 +20,8 @@ module withConsts {
   // Vars
   // We don't do extensive testing of types,
   // as we have done it for constants already.
-  var x: int
-  var y: bool
+  var i: int
+  var j: bool
 
   // Vals
   // Since 'val' gives us the simplest way of defining expressions,
@@ -50,10 +50,10 @@ module withConsts {
 
   // Operator definitions
   var n: int
-  def G(x, y) = x + y
+  def add(x, y) = x + y
   pred P(x, y) = x > y
   action A(x) = n <- x
-  temporal F(x) = not(x)
+  temporal B(x) = not(x)
 
   // Typed operators
   def H(x, y): (int, int) => int = {
@@ -64,8 +64,8 @@ module withConsts {
   //     x
   // }
 
-  var x: int
-  action asgn = x <- 3
+  var k: int
+  action asgn = k <- 3
 
 
   // Logical operators
@@ -74,8 +74,8 @@ module withConsts {
   val test_implies = false implies true
   def F(x) = x
   val G(x) = F(x) and not(x)
-  val test_and(x) = F(x) and not(x)
-  val test_or(x) = F(x) or not(x)
+  val test_and_arg(x) = F(x) and not(x)
+  val test_or_arg(x) = F(x) or not(x)
 
   val test_block_and = (
       & false
@@ -104,45 +104,43 @@ module withConsts {
   val test_ite = if (true) 1 else 0
 
   // Function application
-  var f: str -> int
-  val funapp = f["a"]
+  var f1: str -> int
+  val funapp = f1["a"]
 
   // Apply a user-defined operator by its name.
   def MyOper(a, b) = 1
-  val oper_app = MyOper("a", 42)
-  val oper_app = "a" MyOper 42, true
+  val oper_app_normal = MyOper("a", 42)
+  val oper_app_infix = "a" MyOper 42, true
   // the following operators need a special parsing case
   val oper_in = in(1, set())
 
   // Infix application with lambdas
-  val S = set(1)
+  val S = set(1, 2, 3, 4)
   // Pass a lambda operator as a second argument of filter.
   // Here we are using the infix notation.
-  val oper_app = S filter (x -> x > 10)
+  val oper_app_infix1 = S filter (x -> x > 10)
   // We can omit parentheses, though this form is harder to read.
-  val oper_app2 = S filter x -> x > 10
+  val oper_app_infix2 = S filter x -> x > 10
   // Some operators accept action lambdas
-  action oper_app3 = S guess { x -> x > 10 }
+  action oper_app_infix3 = S guess { x -> x > 10 }
   // use holes
-  val oper_app = S filter (_, _ -> true)
+  val oper_app_infix4 = S filter (_, _ -> true)
 
   // Dot notation application with lambdas
-  val S = set(1)
   // Pass a lambda operator as a second argument of filter.
   // Here we are using the dot notation.
-  val oper_app = S.filter(x -> x > 10)
+  val oper_app_dot1 = S.filter(x -> x > 10)
   // Wrap lambda in '(...)'
-  val oper_app2 = S.filter((x -> x > 10))
+  val oper_app_dot2 = S.filter((x -> x > 10))
   // Wrap lambda in '{...}'
-  action oper_app3 = S.guess({x -> x > 10})
+  action oper_app_dot3 = S.guess({x -> x > 10})
   // use holes
-  val oper_app = S.filter(_, _ -> true)
+  val oper_app_dot4 = S.filter(_, _ -> true)
 
-  val S = set(1, 2, 3, 4)
   val f = S.mapOf(x -> x + 1)
   // Pass non-lambda arguments.
   // Here we are using the dot notation.
-  val oper_app = f.exclude(3, 4)
+  val oper_app_dot_non_lambda = f.exclude(3, 4)
 
   // call the operator of one argument
   val one = f.head()
@@ -158,12 +156,12 @@ module withConsts {
 
   // access a record via dot
   val rec_field =
-    val rec = { a: 1, b: "foo" }
-    rec.a
+    val my_rec = { a: 1, b: "foo" }
+    my_rec.a
 
   val tup_elem =
-    val tup = tup("a", 3)
-    tup._2
+    val my_tup = tup("a", 3)
+    my_tup._2
 
   def isEmpty(s) = s == []
 
@@ -184,25 +182,27 @@ module withConsts {
   import level2.level3
   val namespace_test = level3::z + level2instance::level3::z
 
-  // Assumes
-  const N: int
   // a named assumption
   assume positive = N > 0
   // an anonymous assumption
   assume _ = N != 0
 
   // Imports
-  module M {
+  module M1 {
     val foo = 4
   }
 
-  import M.foo
-  import M.*
+  module M2 {
+    val bar = 4
+  }
+
+  import M1.foo
+  import M2.*
 
   // Typedefs
   type INT_SET = set(int)
 
-  var S: INT_SET
+  var S1: INT_SET
 
   // Instances
   module Proto {

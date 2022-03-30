@@ -9,9 +9,7 @@ module InstanceEx {
     def G(y) = not(y)
   }
 
-  // a state variable of InstanceEx
-  var z: str
-  // another state variable of InstanceEx
+  // A state variable of InstanceEx
   var w: set(int)
 
   // a value

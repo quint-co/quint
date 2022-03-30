@@ -39,10 +39,6 @@ export function scopesForId (treeNode: ScopeTree, id: BigInt): BigInt[] {
     return [treeNode.value]
   }
 
-  if (!treeNode.children) {
-    return []
-  }
-
   return treeNode.children.flatMap(child => {
     const childScopes = scopesForId(child, id)
     // if it's under some of the node's children scope, then it is under the node's scope
