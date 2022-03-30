@@ -1,12 +1,12 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { NameDefinition, defaultDefinitions, DefinitionTable, TypeDefinition } from '../src/definitionsCollector'
+import { ValueDefinition, defaultDefinitions, DefinitionTable, TypeDefinition } from '../src/definitionsCollector'
 import { resolveNames, NameResolutionResult } from '../src/nameResolver'
 
 import { buildModuleWithExpressions, buildModuleWithDefs } from './builders/modules'
 
 describe('nameResolver', () => {
-  const nameDefinitions: NameDefinition[] = defaultDefinitions.nameDefinitions.concat([
+  const valueDefinitions: ValueDefinition[] = defaultDefinitions.valueDefinitions.concat([
     { kind: 'const', identifier: 'TEST_CONSTANT' },
     { kind: 'def', identifier: 'unscoped_def' },
     { kind: 'def', identifier: 'scoped_def', scope: BigInt(2) },
@@ -15,7 +15,7 @@ describe('nameResolver', () => {
     { identifier: 'MY_TYPE', type: { kind: 'int' } },
   ]
 
-  const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
+  const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
 
   describe('operator definitions', () => {
     it('finds top level definitions', () => {
@@ -38,7 +38,7 @@ describe('nameResolver', () => {
       const result = resolveNames(tntModule, table)
       const expectedResult: NameResolutionResult = {
         kind: 'error',
-        errors: [{ kind: 'operator', name: 'scoped_def', definitionName: 'd1', reference: BigInt(3) }],
+        errors: [{ kind: 'value', name: 'scoped_def', definitionName: 'd1', reference: BigInt(3) }],
       }
       assert.deepEqual(result, expectedResult)
     })
@@ -50,8 +50,8 @@ describe('nameResolver', () => {
       const expectedResult: NameResolutionResult = {
         kind: 'error',
         errors: [
-          { kind: 'operator', name: 'x', definitionName: 'd0', reference: BigInt(1) },
-          { kind: 'operator', name: 'x', definitionName: 'd1', reference: BigInt(5) },
+          { kind: 'value', name: 'x', definitionName: 'd0', reference: BigInt(1) },
+          { kind: 'value', name: 'x', definitionName: 'd1', reference: BigInt(5) },
         ],
       }
       assert.deepEqual(result, expectedResult)
@@ -64,7 +64,7 @@ describe('nameResolver', () => {
       const expectedResult: NameResolutionResult = {
         kind: 'error',
         errors: [
-          { kind: 'operator', name: 'x', definitionName: 'd0', reference: BigInt(2) },
+          { kind: 'value', name: 'x', definitionName: 'd0', reference: BigInt(2) },
         ],
       }
       assert.deepEqual(result, expectedResult)
@@ -77,7 +77,7 @@ describe('nameResolver', () => {
       const expectedResult: NameResolutionResult = {
         kind: 'error',
         errors: [
-          { kind: 'operator', name: 'x', definitionName: 'd0', reference: BigInt(2) },
+          { kind: 'value', name: 'x', definitionName: 'd0', reference: BigInt(2) },
         ],
       }
       assert.deepEqual(result, expectedResult)
@@ -90,8 +90,8 @@ describe('nameResolver', () => {
       const expectedResult: NameResolutionResult = {
         kind: 'error',
         errors: [
-          { kind: 'operator', name: 'x', definitionName: 'd0', reference: BigInt(1) },
-          { kind: 'operator', name: 'x', definitionName: 'd1', reference: BigInt(8) },
+          { kind: 'value', name: 'x', definitionName: 'd0', reference: BigInt(1) },
+          { kind: 'value', name: 'x', definitionName: 'd1', reference: BigInt(8) },
         ],
       }
       assert.deepEqual(result, expectedResult)

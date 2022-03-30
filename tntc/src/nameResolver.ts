@@ -17,14 +17,14 @@
 
 import { TntModule, TntEx } from './tntIr'
 import { TntType } from './tntTypes'
-import { DefinitionTable, NameDefinition, TypeDefinition } from './definitionsCollector'
+import { DefinitionTable, ValueDefinition, TypeDefinition } from './definitionsCollector'
 
 /**
  * A single name resolution error
  */
 export interface NameError {
-  /* Either a 'type' or 'operator' name error */
-  kind: 'type' | 'operator';
+  /* Either a 'type' or 'value' name error */
+  kind: 'type' | 'value';
   /* The name that couldn't be resolved */
   name: string;
   /* The module-level definition containing the error */
@@ -158,12 +158,12 @@ function checkNamesInExpr (
       // This is a name expression, the name must be defined
       // either globally or under a scope that contains the expression
       // The list of scopes containing the expression is accumulated in param scopes
-      const nameDefinitionsForScope = filterScope(table.nameDefinitions, scopes)
+      const valueDefinitionsForScope = filterScope(table.valueDefinitions, scopes)
 
-      if (!nameDefinitionsForScope.some(name => name.identifier === expr.name)) {
+      if (!valueDefinitionsForScope.some(name => name.identifier === expr.name)) {
         results.push({
           kind: 'error',
-          errors: [{ kind: 'operator', name: expr.name, definitionName: defName, reference: expr.id }],
+          errors: [{ kind: 'value', name: expr.name, definitionName: defName, reference: expr.id }],
         })
       }
       break
@@ -171,12 +171,12 @@ function checkNamesInExpr (
 
     case 'app': {
       // Application, check that the operator being applied is defined
-      const nameDefinitionsForScope = filterScope(table.nameDefinitions, scopes)
+      const valueDefinitionsForScope = filterScope(table.valueDefinitions, scopes)
 
-      if (!nameDefinitionsForScope.some(name => name.identifier === expr.opcode)) {
+      if (!valueDefinitionsForScope.some(name => name.identifier === expr.opcode)) {
         results.push({
           kind: 'error',
-          errors: [{ kind: 'operator', name: expr.opcode, definitionName: defName, reference: expr.id }],
+          errors: [{ kind: 'value', name: expr.opcode, definitionName: defName, reference: expr.id }],
         })
       }
 
@@ -220,8 +220,8 @@ function mergeNameResults (results: NameResolutionResult[]): NameResolutionResul
   return errors.length > 0 ? { kind: 'error', errors: errors } : { kind: 'ok' }
 }
 
-function filterScope (nameDefinitions: NameDefinition[], scopes: BigInt[]): NameDefinition[] {
-  return nameDefinitions.filter(definition => {
+function filterScope (valueDefinitions: ValueDefinition[], scopes: BigInt[]): ValueDefinition[] {
+  return valueDefinitions.filter(definition => {
     // A definition should be considered in a scope if it's either unscoped or its scope is included
     // in some scope containing the name expression's scope
     return !definition.scope || scopes.includes(definition.scope)

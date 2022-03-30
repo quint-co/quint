@@ -10,7 +10,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule)
 
-      assert.deepInclude(result.nameDefinitions, { kind: 'const', identifier: 'TEST_CONSTANT', reference: BigInt(1) })
+      assert.deepInclude(result.valueDefinitions, { kind: 'const', identifier: 'TEST_CONSTANT', reference: BigInt(1) })
     })
 
     it('collects variable definitions', () => {
@@ -18,7 +18,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule)
 
-      assert.deepInclude(result.nameDefinitions, { kind: 'var', identifier: 'test_variable', reference: BigInt(1) })
+      assert.deepInclude(result.valueDefinitions, { kind: 'var', identifier: 'test_variable', reference: BigInt(1) })
     })
 
     it('collects operator definitions and its parameters including a scope', () => {
@@ -26,7 +26,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule)
 
-      assert.includeDeepMembers(result.nameDefinitions, [
+      assert.includeDeepMembers(result.valueDefinitions, [
         { kind: 'def', identifier: 'test_operator', reference: BigInt(4) },
         { kind: 'def', identifier: 'x', reference: BigInt(4), scope: BigInt(4) },
       ])
@@ -37,7 +37,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule)
 
-      assert.includeDeepMembers(result.nameDefinitions, [
+      assert.includeDeepMembers(result.valueDefinitions, [
         { kind: 'def', identifier: 'test_operator', reference: BigInt(7) },
         { kind: 'def', identifier: 'x', reference: BigInt(5), scope: BigInt(5) },
       ])
@@ -48,7 +48,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule)
 
-      assert.includeDeepMembers(result.nameDefinitions, [
+      assert.includeDeepMembers(result.valueDefinitions, [
         { kind: 'def', identifier: 'test_operator', reference: BigInt(7) },
         { kind: 'val', identifier: 'x', reference: BigInt(2), scope: BigInt(6) },
       ])
@@ -62,7 +62,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule)
 
-      assert.includeDeepMembers(result.nameDefinitions, [
+      assert.includeDeepMembers(result.valueDefinitions, [
         { kind: 'namespace', identifier: 'test_module', reference: BigInt(8) },
         { kind: 'namespace', identifier: 'test_module_instance', reference: BigInt(13) },
         { kind: 'def', identifier: 'test_module_instance::a', reference: BigInt(13) },
@@ -77,7 +77,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule)
 
-      assert.includeDeepMembers(result.nameDefinitions, [
+      assert.includeDeepMembers(result.valueDefinitions, [
         { kind: 'namespace', identifier: 'test_module', reference: BigInt(6) },
         { kind: 'namespace', identifier: 'test_module::nested_module', reference: BigInt(6) },
         { kind: 'def', identifier: 'test_module::nested_module::a', reference: BigInt(6) },
@@ -89,7 +89,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule)
 
-      assert.includeDeepMembers(result.nameDefinitions, [
+      assert.includeDeepMembers(result.valueDefinitions, [
         { kind: 'assumption', identifier: 'test_assumption', reference: BigInt(7) },
         { kind: 'val', identifier: 'x', reference: BigInt(3), scope: BigInt(5) },
       ])
@@ -103,7 +103,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule)
 
-      assert.includeDeepMembers(result.nameDefinitions, [
+      assert.includeDeepMembers(result.valueDefinitions, [
         { kind: 'namespace', identifier: 'test_module', reference: BigInt(8) },
         { kind: 'def', identifier: 'test_module::a', reference: BigInt(8) },
         { kind: 'namespace', identifier: 'test_module::nested_module', reference: BigInt(8) },
@@ -123,7 +123,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule)
 
-      assert.deepInclude(result.nameDefinitions, { kind: 'def', identifier: 'a', reference: BigInt(5) })
+      assert.deepInclude(result.valueDefinitions, { kind: 'def', identifier: 'a', reference: BigInt(5) })
     })
   })
 
