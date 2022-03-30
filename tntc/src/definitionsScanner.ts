@@ -56,29 +56,40 @@ export type DefinitionsConflictResult =
  */
 export function scanConflicts (table: DefinitionTable, tree: ScopeTree): DefinitionsConflictResult {
   const conflicts: Conflict[] = []
-  const nameConflicts = table.nameDefinitions.reduce((conflicts: Map<string, ConflictSource[]>, def: NameDefinition) => {
-    const defsWithName = table.nameDefinitions.filter(d => d.identifier === def.identifier && canConflict(tree, d, def))
-    if (defsWithName.length > 1) {
-      const sources: ConflictSource[] = defsWithName.map(d => d.reference ? { kind: 'user', reference: d.reference } : { kind: 'builtin' })
-      conflicts.set(def.identifier, sources)
+  table.nameDefinitions.reduce((reportedConflicts: Set<string>, def: NameDefinition) => {
+    if (reportedConflicts.has(def.identifier)) {
+      // Already reported, skip it
+      return reportedConflicts
     }
-    return conflicts
-  }, new Map<string, ConflictSource[]>())
 
-  const typeConflicts = table.typeDefinitions.reduce((conflicts: Map<string, ConflictSource[]>, def: TypeDefinition) => {
+    const conflictingDefinitions = table.nameDefinitions.filter(d => d.identifier === def.identifier && canConflict(tree, d, def))
+    if (conflictingDefinitions.length > 1) {
+      reportedConflicts.add(def.identifier)
+
+      const sources: ConflictSource[] = conflictingDefinitions.map(d => d.reference ? { kind: 'user', reference: d.reference } : { kind: 'builtin' })
+      conflicts.push({ kind: 'operator', identifier: def.identifier, sources: sources })
+    }
+    return reportedConflicts
+  }, new Set<string>())
+
+  table.typeDefinitions.reduce((reportedConflicts: Set<string>, def: TypeDefinition) => {
     // Types don't have scopes at the moment
     // With type quantification, they should have scopes and this code can be refactor
     // into a more generalized form
-    const defsWithName = table.typeDefinitions.filter(d => d.identifier === def.identifier)
-    if (defsWithName.length > 1) {
-      const sources: ConflictSource[] = defsWithName.map(d => d.reference ? { kind: 'user', reference: d.reference } : { kind: 'builtin' })
-      conflicts.set(def.identifier, sources)
+    if (reportedConflicts.has(def.identifier)) {
+      // Already reported, skip it
+      return reportedConflicts
     }
-    return conflicts
-  }, new Map<string, ConflictSource[]>())
 
-  nameConflicts.forEach((value, key) => (conflicts.push({ kind: 'operator', identifier: key, sources: value })))
-  typeConflicts.forEach((value, key) => (conflicts.push({ kind: 'type', identifier: key, sources: value })))
+    const conflictingDefinitions = table.typeDefinitions.filter(d => d.identifier === def.identifier)
+    if (conflictingDefinitions.length > 1) {
+      reportedConflicts.add(def.identifier)
+
+      const sources: ConflictSource[] = conflictingDefinitions.map(d => d.reference ? { kind: 'user', reference: d.reference } : { kind: 'builtin' })
+      conflicts.push({ kind: 'type', identifier: def.identifier, sources: sources })
+    }
+    return reportedConflicts
+  }, new Set<string>())
 
   if (conflicts.length > 0) {
     return { kind: 'error', conflicts: conflicts }

@@ -7,9 +7,9 @@ import { ScopeTree } from '../src/scoping'
 describe('scanConflicts', () => {
   it('finds top-level name conflicts', () => {
     const nameDefinitions: NameDefinition[] = [
-      { kind: 'const', identifier: 'TEST_CONSTANT', reference: BigInt(0) },
-      { kind: 'def', identifier: 'conflicting_name', reference: BigInt(1) },
-      { kind: 'val', identifier: 'conflicting_name', reference: BigInt(2), scope: BigInt(2) },
+      { kind: 'const', identifier: 'TEST_CONSTANT', reference: BigInt(1) },
+      { kind: 'def', identifier: 'conflicting_name', reference: BigInt(2) },
+      { kind: 'val', identifier: 'conflicting_name', reference: BigInt(3), scope: BigInt(3) },
     ]
 
     const typeDefinitions: TypeDefinition[] = [
@@ -18,13 +18,20 @@ describe('scanConflicts', () => {
 
     const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
 
-    const tree: ScopeTree = { value: BigInt(0), children: [{ value: BigInt(1), children: [] }, { value: BigInt(2), children: [] }] }
+    const tree: ScopeTree = {
+      value: BigInt(0),
+      children: [
+        { value: BigInt(1), children: [] },
+        { value: BigInt(2), children: [] },
+        { value: BigInt(3), children: [] },
+      ],
+    }
 
     const result = scanConflicts(table, tree)
 
     const expectedSources: ConflictSource[] = [
-      { kind: 'user', reference: BigInt(1) },
       { kind: 'user', reference: BigInt(2) },
+      { kind: 'user', reference: BigInt(3) },
     ]
 
     assert.deepEqual(result, {
@@ -35,23 +42,30 @@ describe('scanConflicts', () => {
 
   it('finds type alias conflicts', () => {
     const nameDefinitions: NameDefinition[] = [
-      { kind: 'const', identifier: 'TEST_CONSTANT', reference: BigInt(0) },
+      { kind: 'const', identifier: 'TEST_CONSTANT', reference: BigInt(1) },
     ]
 
     const typeDefinitions: TypeDefinition[] = [
-      { identifier: 'MY_TYPE', type: { kind: 'int' }, reference: BigInt(1) },
-      { identifier: 'MY_TYPE', type: { kind: 'str' }, reference: BigInt(2) },
+      { identifier: 'MY_TYPE', type: { kind: 'int' }, reference: BigInt(2) },
+      { identifier: 'MY_TYPE', type: { kind: 'str' }, reference: BigInt(3) },
     ]
 
     const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
 
-    const tree: ScopeTree = { value: BigInt(0), children: [{ value: BigInt(1), children: [] }, { value: BigInt(2), children: [] }] }
+    const tree: ScopeTree = {
+      value: BigInt(0),
+      children: [
+        { value: BigInt(1), children: [] },
+        { value: BigInt(2), children: [] },
+        { value: BigInt(3), children: [] },
+      ],
+    }
 
     const result = scanConflicts(table, tree)
 
     const expectedSources: ConflictSource[] = [
-      { kind: 'user', reference: BigInt(1) },
       { kind: 'user', reference: BigInt(2) },
+      { kind: 'user', reference: BigInt(3) },
     ]
 
     assert.deepEqual(result, {
@@ -100,7 +114,13 @@ describe('scanConflicts', () => {
 
     const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
 
-    const tree: ScopeTree = { value: BigInt(1), children: [{ value: BigInt(2), children: [] }] }
+    const tree: ScopeTree = {
+      value: BigInt(0),
+      children: [
+        { value: BigInt(1), children: [] },
+        { value: BigInt(2), children: [] },
+      ],
+    }
 
     const result = scanConflicts(table, tree)
 
@@ -124,19 +144,26 @@ describe('scanConflicts', () => {
 
   it('finds no conflicts when there are none', () => {
     const nameDefinitions: NameDefinition[] = [
-      { kind: 'const', identifier: 'TEST_CONSTANT', reference: BigInt(0) },
-      { kind: 'def', identifier: 'conflicting_name', reference: BigInt(1), scope: BigInt(1) },
-      { kind: 'val', identifier: 'conflicting_name', reference: BigInt(2), scope: BigInt(2) },
+      { kind: 'const', identifier: 'TEST_CONSTANT', reference: BigInt(1) },
+      { kind: 'def', identifier: 'conflicting_name', reference: BigInt(2), scope: BigInt(2) },
+      { kind: 'val', identifier: 'conflicting_name', reference: BigInt(3), scope: BigInt(3) },
     ]
 
     const typeDefinitions: TypeDefinition[] = [
-      { identifier: 'MY_TYPE', type: { kind: 'int' }, reference: BigInt(1) },
-      { identifier: 'OTHER_TYPE', type: { kind: 'int' }, reference: BigInt(1) },
+      { identifier: 'MY_TYPE', type: { kind: 'int' }, reference: BigInt(4) },
+      { identifier: 'OTHER_TYPE', type: { kind: 'int' }, reference: BigInt(5) },
     ]
 
     const table: DefinitionTable = { nameDefinitions: nameDefinitions, typeDefinitions: typeDefinitions }
 
-    const tree: ScopeTree = { value: BigInt(0), children: [{ value: BigInt(1), children: [] }, { value: BigInt(2), children: [] }] }
+    const tree: ScopeTree = {
+      value: BigInt(0),
+      children: [
+        { value: BigInt(1), children: [] },
+        { value: BigInt(2), children: [] },
+        { value: BigInt(3), children: [] },
+      ],
+    }
 
     const result = scanConflicts(table, tree)
 
