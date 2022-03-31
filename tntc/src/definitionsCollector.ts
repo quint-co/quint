@@ -18,7 +18,7 @@ import { TntType } from './tntTypes'
 /**
  * A named operator defined. Can be scoped or module-wide (unscoped).
  */
-export interface NameDefinition {
+export interface ValueDefinition {
   /* Same as TntDef kinds */
   kind: string
   /* The name given to the defined operator */
@@ -46,7 +46,7 @@ export interface TypeDefinition {
  */
 export interface DefinitionTable {
   /* Names for operators defined */
-  nameDefinitions: NameDefinition[]
+  valueDefinitions: ValueDefinition[]
   /* Type aliases defined */
   typeDefinitions: TypeDefinition[]
 }
@@ -55,7 +55,7 @@ export interface DefinitionTable {
  * Built-in name definitions that are always included in definitions collection
 */
 export const defaultDefinitions: DefinitionTable = {
-  nameDefinitions: [
+  valueDefinitions: [
     { kind: 'def', identifier: 'not' },
     { kind: 'def', identifier: 'and' },
     { kind: 'def', identifier: 'or' },
@@ -169,32 +169,32 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
     switch (def.kind) {
       case 'const':
       case 'var':
-        table.nameDefinitions.push({
+        table.valueDefinitions.push({
           kind: def.kind,
           identifier: def.name,
           reference: def.id,
         })
         break
       case 'def':
-        table.nameDefinitions.push({
+        table.valueDefinitions.push({
           kind: def.kind,
           identifier: def.name,
           reference: def.id,
         })
-        table.nameDefinitions.push(...collectFromExpr(def.expr))
+        table.valueDefinitions.push(...collectFromExpr(def.expr))
         break
       case 'instance': {
-        table.nameDefinitions.push({
+        table.valueDefinitions.push({
           kind: 'namespace',
           identifier: def.name,
           reference: def.id,
         })
-        table.nameDefinitions.push(...def.overrides.flatMap(e => collectFromExpr(e[1])))
+        table.valueDefinitions.push(...def.overrides.flatMap(e => collectFromExpr(e[1])))
 
         // Alias definitions from the instanced module to the new name
-        const namespacedDefinitions = table.nameDefinitions
+        const namespacedDefinitions = table.valueDefinitions
           .filter(d => !d.scope) // Don't copy scoped definitions
-          .reduce((ds: NameDefinition[], d) => {
+          .reduce((ds: ValueDefinition[], d) => {
             // FIXME: This identifier string manipulation should be replaced by a better representation, see #58
             const names = d.identifier.split('::')
             // Collect this name scoped to the instance iff the import matches the module's namespace
@@ -203,30 +203,30 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
             }
             return ds
           }, [])
-        table.nameDefinitions.push(...namespacedDefinitions)
+        table.valueDefinitions.push(...namespacedDefinitions)
         break
       }
       case 'module': {
-        table.nameDefinitions.push({
+        table.valueDefinitions.push({
           kind: 'namespace',
           identifier: def.module.name,
           reference: def.id,
         })
         const moduleDefinitions = collectDefinitions(def.module)
         // Collect all definitions namespaced to module
-        const namespacedDefinitions = moduleDefinitions.nameDefinitions
+        const namespacedDefinitions = moduleDefinitions.valueDefinitions
           .filter(d => !d.scope) // Don't copy scoped definitions
           .map(d => {
             return { kind: d.kind, identifier: `${def.module.name}::${d.identifier}`, reference: def.id }
           })
-        table.nameDefinitions.push(...namespacedDefinitions)
+        table.valueDefinitions.push(...namespacedDefinitions)
         break
       }
       case 'import': {
         // FIXME: check if definitions are found, when we actually import them from other files
-        const namespacedDefinitions = table.nameDefinitions
+        const namespacedDefinitions = table.valueDefinitions
           .filter(d => !d.scope) // Don't copy scoped definitions
-          .reduce((ds: NameDefinition[], d) => {
+          .reduce((ds: ValueDefinition[], d) => {
             // FIXME: This identifier string manipulation should be replaced by a better representation, see #58
             const names = d.identifier.split('::')
             // Collect this name as unscoped iff the import matches its namespace and name
@@ -235,7 +235,7 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
             }
             return ds
           }, [])
-        table.nameDefinitions.push(...namespacedDefinitions)
+        table.valueDefinitions.push(...namespacedDefinitions)
         break
       }
       case 'typedef':
@@ -246,38 +246,38 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTable {
         })
         break
       case 'assume':
-        table.nameDefinitions.push({
+        table.valueDefinitions.push({
           kind: 'assumption',
           identifier: def.name,
           reference: def.id,
         })
-        table.nameDefinitions.push(...collectFromExpr(def.assumption))
+        table.valueDefinitions.push(...collectFromExpr(def.assumption))
         break
     }
     return table
-  }, { nameDefinitions: [], typeDefinitions: [] })
+  }, { valueDefinitions: [], typeDefinitions: [] })
 
-  defsTable.nameDefinitions = defsTable.nameDefinitions.filter(d => d.identifier !== '_')
+  defsTable.valueDefinitions = defsTable.valueDefinitions.filter(d => d.identifier !== '_')
   return defsTable
 }
 
 export function mergeTables (a: DefinitionTable, b: DefinitionTable): DefinitionTable {
   return {
-    nameDefinitions: a.nameDefinitions.concat(b.nameDefinitions),
+    valueDefinitions: a.valueDefinitions.concat(b.valueDefinitions),
     typeDefinitions: a.typeDefinitions.concat(b.typeDefinitions),
   }
 }
 
-function collectFromExpr (expr: TntEx): NameDefinition[] {
+function collectFromExpr (expr: TntEx): ValueDefinition[] {
   switch (expr.kind) {
     case 'lambda':
       return expr.params
-        .map(p => { return { kind: 'def', identifier: p, reference: expr.id, scope: expr.id } as NameDefinition })
+        .map(p => { return { kind: 'def', identifier: p, reference: expr.id, scope: expr.id } as ValueDefinition })
         .concat(collectFromExpr(expr.expr))
     case 'app':
       return expr.args.flatMap(arg => { return collectFromExpr(arg) })
     case 'let':
-      return [{ kind: expr.opdef.qualifier, identifier: expr.opdef.name, reference: expr.opdef.id, scope: expr.id } as NameDefinition]
+      return [{ kind: expr.opdef.qualifier, identifier: expr.opdef.name, reference: expr.opdef.id, scope: expr.id } as ValueDefinition]
         .concat(collectFromExpr(expr.opdef.expr))
         .concat(collectFromExpr(expr.expr))
     default:
