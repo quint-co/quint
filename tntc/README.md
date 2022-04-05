@@ -78,6 +78,12 @@ following commands:
 
 ### Integration tests
 
+ 1. Install [txm][] to run Markdown-based integration tests:
+
+    ```sh
+    npm install -g txm
+    ```
+
  1. Update tests in [cli-tests.md](./cli-tests.md).
 
  1. Run integration tests:
@@ -88,3 +94,4 @@ following commands:
 
 [npm]: https://en.wikipedia.org/wiki/Npm_(software)
 [yalc]: https://www.npmjs.com/package/yalc
+[txm]: https://www.npmjs.com/package/txm

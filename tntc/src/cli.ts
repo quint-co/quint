@@ -113,5 +113,6 @@ const parseCmd = {
 // parse the command-line arguments and execute the handlers
 yargs(process.argv.slice(2))
   .command(parseCmd)
+  .demandCommand(1)
   .strict()
   .parse()
