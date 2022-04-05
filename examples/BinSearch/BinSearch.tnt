@@ -30,7 +30,7 @@ module BinSearch {
     var nSteps: int
 
     // Addition over fix-width integers.
-    def IAdd(i, j) =
+    def add(i, j) =
         // add two integers with unbounded arithmetic
         val res = i + j
         if (MIN_INT <= res and res <= MAX_INT)
@@ -56,13 +56,13 @@ module BinSearch {
         & not(isTerminated)
         & low <= high       // lines 6-14
         & nSteps <- nSteps + 1
-        & val mid = IAdd(low, IAdd(high, -low) / 2)
+        & val mid = low.add(high.add(-low) / 2)
           val midVal = INPUT_SEQ[mid + 1]
           { | { & midVal <- INPUT_KEY // lines 9-10
-                & low <- IAdd(mid, 1)
+                & low <- mid.add(1)
               }
             | { & midVal > INPUT_KEY // lines 11-12
-                & high <- IAdd(mid, - 1)
+                & high <- mid.add(-1)
               }
             | { & midVal == INPUT_KEY // lines 13-14
                 & returnValue <- mid
