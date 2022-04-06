@@ -132,7 +132,6 @@ describe('collectDefinitions', () => {
       const tntModule = buildModuleWithDefs(['type TEST_TYPE = int'])
 
       const result = collectDefinitions(tntModule)
-      console.log(result.typeDefinitions)
 
       assert.deepInclude(result.typeDefinitions, { type: { id: BigInt(1), kind: 'int' }, identifier: 'TEST_TYPE', reference: BigInt(2) })
     })
