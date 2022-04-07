@@ -133,5 +133,12 @@ module BinSearch {
     // By showing that the interval [low, high] is contracting,
     // we can implicitly show termination too.
     pred Progress =
-        not(isTerminated.next implies (low.next > low or high.next < high))
+        not(isTerminated.next) implies (low.next > low or high.next < high)
+
+    // Make sure that INPUT_SEQ is accessed within its bounds
+    pred InBounds =
+      val mid = low.iadd(high.iadd(-low) / 2)
+      // collect the conditions of IF-THEN-ELSE
+      not(isTerminated) implies
+        ((low <= high) implies INPUT_SEQ.domain.contains(mid + 1))
 }
