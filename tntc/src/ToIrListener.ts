@@ -302,7 +302,7 @@ export class ToIrListener implements TntListener {
       this.exprStack.push({
         id: id,
         kind: 'int',
-        type: { kind: 'int' },
+        type: { id: id, kind: 'int' },
         value: BigInt(intNode.text),
       })
     }
@@ -311,7 +311,7 @@ export class ToIrListener implements TntListener {
       this.exprStack.push({
         id: id,
         kind: 'bool',
-        type: { kind: 'bool' },
+        type: { id: id, kind: 'bool' },
         value: (boolNode.text === 'true'),
       })
     }
@@ -320,7 +320,7 @@ export class ToIrListener implements TntListener {
       this.exprStack.push({
         id: id,
         kind: 'str',
-        type: { kind: 'str' },
+        type: { id: id, kind: 'str' },
         value: strNode.text.slice(1, -1),
       })
     }
@@ -581,7 +581,7 @@ export class ToIrListener implements TntListener {
         id: id,
         kind: 'str',
         value: names[i],
-        type: { kind: 'str' },
+        type: { id: id, kind: 'str' },
       })
       namesAndValues.push(elems[i])
     }
@@ -829,7 +829,7 @@ export class ToIrListener implements TntListener {
         id: tagId,
         kind: 'str',
         value: options[i],
-        type: { kind: 'str' },
+        type: { id: tagId, kind: 'str' },
       }
       const lamId = this.nextId()
       this.sourceMap.set(lamId, this.loc(ctx))
@@ -858,54 +858,68 @@ export class ToIrListener implements TntListener {
   /** ******************* translate types ********************************/
 
   // the integer type, that is, int
-  exitTypeInt () {
-    this.typeStack.push({ kind: 'int' })
+  exitTypeInt (ctx: p.TypeIntContext) {
+    const id = this.nextId()
+    this.sourceMap.set(id, this.loc(ctx))
+    this.typeStack.push({ id: id, kind: 'int' })
   }
 
   // the Boolean type, that is, bool
-  exitTypeBool () {
-    this.typeStack.push({ kind: 'bool' })
+  exitTypeBool (ctx: p.TypeBoolContext) {
+    const id = this.nextId()
+    this.sourceMap.set(id, this.loc(ctx))
+    this.typeStack.push({ id: id, kind: 'bool' })
   }
 
-  exitTypeStr () {
-    // the string type, that is, str
-    this.typeStack.push({ kind: 'str' })
+  // the string type, that is, str
+  exitTypeStr (ctx: p.TypeStrContext) {
+    const id = this.nextId()
+    this.sourceMap.set(id, this.loc(ctx))
+    this.typeStack.push({ id: id, kind: 'str' })
   }
 
   // a type variable, a type constant, or a reference to a type alias
   exitTypeConstOrVar (ctx: p.TypeConstOrVarContext) {
     const name = ctx.IDENTIFIER().text
+    const id = this.nextId()
+    this.sourceMap.set(id, this.loc(ctx))
     if (name.length === 1 && name.match('[a-z]')) {
       // a type variable from: a, b, ... z
-      this.typeStack.push({ kind: 'var', name: name })
+      this.typeStack.push({ id: id, kind: 'var', name: name })
     } else {
       // a type constant, e.g., declared via typedef
-      this.typeStack.push({ kind: 'const', name: name })
+      this.typeStack.push({ id: id, kind: 'const', name: name })
     }
   }
 
   // a set type, e.g., set(int)
-  exitTypeSet () {
+  exitTypeSet (ctx: p.TypeSetContext) {
     const last = this.typeStack.pop()
     if (last !== undefined) {
-      this.typeStack.push({ kind: 'set', elem: last })
+      const id = this.nextId()
+      this.sourceMap.set(id, this.loc(ctx))
+      this.typeStack.push({ id: id, kind: 'set', elem: last })
     } // the other cases are excluded by the parser
   }
 
   // a sequence type, e.g., seq(int)
-  exitTypeSeq () {
+  exitTypeSeq (ctx: p.TypeSeqContext) {
     const top = this.typeStack.pop()
     if (top !== undefined) {
-      this.typeStack.push({ kind: 'seq', elem: top })
+      const id = this.nextId()
+      this.sourceMap.set(id, this.loc(ctx))
+      this.typeStack.push({ id: id, kind: 'seq', elem: top })
     } // the other cases are excluded by the parser
   }
 
   // A function type, e.g., str => int
-  exitTypeFun () {
+  exitTypeFun (ctx: p.TypeFunContext) {
     const res = this.typeStack.pop()
     const arg = this.typeStack.pop()
     if (arg !== undefined && res !== undefined) {
-      this.typeStack.push({ kind: 'fun', arg: arg, res: res })
+      const id = this.nextId()
+      this.sourceMap.set(id, this.loc(ctx))
+      this.typeStack.push({ id: id, kind: 'fun', arg: arg, res: res })
     }
   }
 
@@ -913,7 +927,9 @@ export class ToIrListener implements TntListener {
   // the type stack contains the types of the elements
   exitTypeTuple (ctx: p.TypeTupleContext) {
     const elemTypes: TntType[] = this.popTypes(ctx.type().length)
-    this.typeStack.push({ kind: 'tuple', elems: elemTypes })
+    const id = this.nextId()
+    this.sourceMap.set(id, this.loc(ctx))
+    this.typeStack.push({ id: id, kind: 'tuple', elems: elemTypes })
   }
 
   // A record type that is not a disjoint union, e.g.,
@@ -928,7 +944,9 @@ export class ToIrListener implements TntListener {
     for (let i = 0; i < names.length; i++) {
       pairs.push({ fieldName: names[i], fieldType: elemTypes[i] })
     }
-    this.typeStack.push({ kind: 'record', fields: pairs })
+    const id = this.nextId()
+    this.sourceMap.set(id, this.loc(ctx))
+    this.typeStack.push({ id: id, kind: 'record', fields: pairs })
   }
 
   // A disjoint union type, e.g.,
@@ -958,7 +976,9 @@ export class ToIrListener implements TntListener {
           assert(false, 'exitTypeUnionRec: no union in exitTypeUnionRec')
         }
       }
-      this.typeStack.push({ kind: 'union', tag: tag, records: records })
+      const id = this.nextId()
+      this.sourceMap.set(id, this.loc(ctx))
+      this.typeStack.push({ id: id, kind: 'union', tag: tag, records: records })
     } else {
       const ls = this.locStr(ctx)
       // istanbul ignore next
@@ -982,8 +1002,11 @@ export class ToIrListener implements TntListener {
     for (let i = 1; i < names.length; i++) {
       pairs.push({ fieldName: names[i], fieldType: elemTypes[i - 1] })
     }
+    const id = this.nextId()
+    this.sourceMap.set(id, this.loc(ctx))
     // construct a singleton disjoint union, which should be assembled above
     const singleton: TntType = {
+      id: id,
       kind: 'union',
       tag: tagName,
       records: [{ tagValue: tagVal, fields: pairs }],
@@ -998,7 +1021,9 @@ export class ToIrListener implements TntListener {
     const nargs = ctx.type().length - 1
     const argTypes: TntType[] = this.popTypes(nargs)
     if (resType !== undefined && argTypes.length === nargs) {
-      this.typeStack.push({ kind: 'oper', args: argTypes, res: resType })
+      const id = this.nextId()
+      this.sourceMap.set(id, this.loc(ctx))
+      this.typeStack.push({ id: id, kind: 'oper', args: argTypes, res: resType })
     }
   }
 

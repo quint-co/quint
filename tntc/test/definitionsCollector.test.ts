@@ -10,7 +10,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule)
 
-      assert.deepInclude(result.valueDefinitions, { kind: 'const', identifier: 'TEST_CONSTANT', reference: BigInt(1) })
+      assert.deepInclude(result.valueDefinitions, { kind: 'const', identifier: 'TEST_CONSTANT', reference: BigInt(2) })
     })
 
     it('collects variable definitions', () => {
@@ -18,7 +18,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule)
 
-      assert.deepInclude(result.valueDefinitions, { kind: 'var', identifier: 'test_variable', reference: BigInt(1) })
+      assert.deepInclude(result.valueDefinitions, { kind: 'var', identifier: 'test_variable', reference: BigInt(2) })
     })
 
     it('collects operator definitions and its parameters including a scope', () => {
@@ -133,7 +133,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule)
 
-      assert.deepInclude(result.typeDefinitions, { type: { kind: 'int' }, identifier: 'TEST_TYPE', reference: BigInt(1) })
+      assert.deepInclude(result.typeDefinitions, { type: { id: BigInt(1), kind: 'int' }, identifier: 'TEST_TYPE', reference: BigInt(2) })
     })
   })
 })

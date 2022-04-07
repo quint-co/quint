@@ -3,8 +3,11 @@ import { assert } from 'chai'
 import { ValueDefinition, DefinitionTable, TypeDefinition } from '../src/definitionsCollector'
 import { ConflictSource, scanConflicts } from '../src/definitionsScanner'
 import { ScopeTree } from '../src/scoping'
+import { TntType } from '../src/tntTypes'
 
 describe('scanConflicts', () => {
+  const myType: TntType = { id: BigInt(100), kind: 'int' }
+
   it('finds top-level name conflicts', () => {
     const valueDefinitions: ValueDefinition[] = [
       { kind: 'const', identifier: 'TEST_CONSTANT', reference: BigInt(1) },
@@ -13,7 +16,7 @@ describe('scanConflicts', () => {
     ]
 
     const typeDefinitions: TypeDefinition[] = [
-      { identifier: 'MY_TYPE', type: { kind: 'int' }, reference: BigInt(1) },
+      { identifier: 'MY_TYPE', type: myType, reference: BigInt(1) },
     ]
 
     const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
@@ -46,8 +49,8 @@ describe('scanConflicts', () => {
     ]
 
     const typeDefinitions: TypeDefinition[] = [
-      { identifier: 'MY_TYPE', type: { kind: 'int' }, reference: BigInt(2) },
-      { identifier: 'MY_TYPE', type: { kind: 'str' }, reference: BigInt(3) },
+      { identifier: 'MY_TYPE', type: myType, reference: BigInt(2) },
+      { identifier: 'MY_TYPE', type: { id: BigInt(4), kind: 'str' }, reference: BigInt(3) },
     ]
 
     const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
@@ -81,7 +84,7 @@ describe('scanConflicts', () => {
     ]
 
     const typeDefinitions: TypeDefinition[] = [
-      { identifier: 'MY_TYPE', type: { kind: 'int' }, reference: BigInt(1) },
+      { identifier: 'MY_TYPE', type: myType, reference: BigInt(1) },
     ]
 
     const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
@@ -108,8 +111,8 @@ describe('scanConflicts', () => {
     ]
 
     const typeDefinitions: TypeDefinition[] = [
-      { identifier: 'MY_TYPE', type: { kind: 'int' } },
-      { identifier: 'MY_TYPE', type: { kind: 'int' }, reference: BigInt(1) },
+      { identifier: 'MY_TYPE', type: myType },
+      { identifier: 'MY_TYPE', type: myType, reference: BigInt(1) },
     ]
 
     const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
@@ -150,8 +153,8 @@ describe('scanConflicts', () => {
     ]
 
     const typeDefinitions: TypeDefinition[] = [
-      { identifier: 'MY_TYPE', type: { kind: 'int' }, reference: BigInt(4) },
-      { identifier: 'OTHER_TYPE', type: { kind: 'int' }, reference: BigInt(5) },
+      { identifier: 'MY_TYPE', type: myType, reference: BigInt(4) },
+      { identifier: 'OTHER_TYPE', type: myType, reference: BigInt(5) },
     ]
 
     const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
