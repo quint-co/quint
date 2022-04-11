@@ -1038,10 +1038,15 @@ export class ToIrListener implements TntListener {
 
   private loc (ctx: ParserRuleContext): Loc {
     if (ctx.stop) {
+      // Try to use index. If not available, use column instead.
+      // This is what works best with the information provided by the parser
+      const endCol = ctx.stop.stopIndex !== 0
+        ? ctx.start.charPositionInLine + (ctx.stop.stopIndex - ctx.start.startIndex) + 1
+        : ctx.stop.charPositionInLine
       return {
         source: this.sourceLocation,
         start: { line: ctx.start.line - 1, col: ctx.start.charPositionInLine, index: ctx.start.startIndex },
-        end: { line: ctx.stop.line - 1, col: ctx.stop.charPositionInLine, index: ctx.stop.stopIndex },
+        end: { line: ctx.stop.line - 1, col: endCol, index: ctx.stop.stopIndex },
       }
     } else {
       return {
