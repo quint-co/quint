@@ -49,7 +49,7 @@ export function parsePhase1 (text: string, sourceLocation: string): ParseResult 
       msg: string) => {
       //
       const len = offendingSymbol
-        ? (1 + offendingSymbol.stopIndex - offendingSymbol.startIndex)
+        ? offendingSymbol.stopIndex - offendingSymbol.startIndex
         : 0
       const index = offendingSymbol ? offendingSymbol.startIndex : 0
       const start = { line: line - 1, col: charPositionInLine, index: index }

@@ -1041,7 +1041,7 @@ export class ToIrListener implements TntListener {
       // Try to use index. If not available, use column instead.
       // This is what works best with the information provided by the parser
       const endCol = ctx.stop.stopIndex !== 0
-        ? ctx.start.charPositionInLine + (ctx.stop.stopIndex - ctx.start.startIndex) + 1
+        ? ctx.start.charPositionInLine + (ctx.stop.stopIndex - ctx.start.startIndex)
         : ctx.stop.charPositionInLine
       return {
         source: this.sourceLocation,

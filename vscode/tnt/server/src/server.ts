@@ -143,7 +143,10 @@ function fetchDiags (msg: ErrorMessage): Diagnostic[] {
             severity: DiagnosticSeverity.Error,
             range: {
                 start: { line: loc.start.line, character: loc.start.col },
-                end: { line: loc.end ? loc.end.line : loc.start.line, character: loc.end ? loc.end.col : loc.start.col },
+                end: {
+                    line: loc.end ? loc.end.line : loc.start.line,
+                    character: loc.end ? loc.end.col + 1 : loc.start.col
+                },
             },
             message: msg.explanation,
             source: "parser"
@@ -158,7 +161,7 @@ async function validateTextDocument (textDocument: TextDocument): Promise<void> 
     // The validator creates diagnostics for all uppercase words length 2 and more
     const diagnostics: Diagnostic[] = [];
     const text = textDocument.getText();
-    const result = parsePhase1(text, "my_path");
+    const result = parsePhase1(text, textDocument.uri);
 
     if (result.kind == "error") {
         for (let msg of result.messages) {
