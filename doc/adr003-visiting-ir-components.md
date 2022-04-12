@@ -6,10 +6,11 @@
 
 ## Summary
 
-We are introducing an interface using the [visitor pattern][] to allow easy
-access of arbitrary IR components without the need to manipulate the entire IR.
-This should avoid significant occurrences of boilerplating throughout `tntc`
-source code and possibly external libraries built on top of it.
+We are introducing an interface using the [visitor pattern][] (from [Design
+Patterns][] GoF book) to allow easy access of arbitrary IR components without
+the need to manipulate the entire IR. This should avoid significant occurrences
+of boilerplating throughout `tntc` source code and possibly external libraries
+built on top of it.
 
 ## Context
 
@@ -159,6 +160,7 @@ Here are the planned steps to get this to `main` in small chunks of changes:
 1. Refactor `definitionsCollector` to use a visitor
 1. Refactor `scoping` to use a visitor.
 
+[Design Patterns]: https://www.worldcat.org/title/design-patterns-elements-of-reusable-object-oriented-software/oclc/31171684
 [visitor pattern]: https://refactoring.guru/design-patterns/visitor
 [antlr4ts]: https://github.com/tunnelvisionlabs/antlr4ts
 [KSP]: https://kotlinlang.org/docs/ksp-overview.html
