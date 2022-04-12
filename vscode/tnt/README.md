@@ -11,7 +11,7 @@ npm i yalc -g
 ```
 
 1. In your `tntc` directory, run `npm run compile` to generate `dist/` and then `yalc publish` to make it available as a local package.
-1. In this directory (`vscode/tnt`), run `yalc add tntc` and then `npm install`
+1. In the `vscode/tnt/server`, run `yalc add tntc` and then, under `vscode/tnt`, run `npm install`
 1. Run `npm run compile`
 1. To use it on your VSCode, copy or link this folder to your VSCode extensions folder:
 
