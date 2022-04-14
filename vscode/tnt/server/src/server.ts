@@ -22,7 +22,7 @@ import {
     TextDocument
 } from 'vscode-languageserver-textdocument';
 
-import { parsePhase1, parsePhase2, ErrorMessage } from 'tntc';
+import { parsePhase1, parsePhase2, Loc } from 'tntc';
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -137,21 +137,19 @@ documents.onDidChangeContent(change => {
     validateTextDocument(change.document);
 });
 
-function fetchDiags (msg: ErrorMessage): Diagnostic[] {
-    return msg.locs.map(loc => {
-        return {
-            severity: DiagnosticSeverity.Error,
-            range: {
-                start: { line: loc.start.line, character: loc.start.col },
-                end: {
-                    line: loc.end ? loc.end.line : loc.start.line,
-                    character: loc.end ? loc.end.col + 1 : loc.start.col
-                },
+function assembleDiagnostic (explanation: string, loc: Loc): Diagnostic {
+    return {
+        severity: DiagnosticSeverity.Error,
+        range: {
+            start: { line: loc.start.line, character: loc.start.col },
+            end: {
+                line: loc.end ? loc.end.line : loc.start.line,
+                character: loc.end ? loc.end.col + 1 : loc.start.col
             },
-            message: msg.explanation,
-            source: "parser"
-        };
-    })
+        },
+        message: explanation,
+        source: "parser"
+    };
 }
 
 async function validateTextDocument (textDocument: TextDocument): Promise<void> {
@@ -165,20 +163,17 @@ async function validateTextDocument (textDocument: TextDocument): Promise<void> 
 
     if (result.kind == "error") {
         for (let msg of result.messages) {
-            const diags = fetchDiags(msg)
+            const diags = msg.locs.map(loc => assembleDiagnostic(msg.explanation, loc))
             diagnostics.push(...diags)
         }
-    }
-
-    if (result.kind === 'ok') {
+    } else {
         const result2 = parsePhase2(result.module, result.sourceMap);
         if (result2.kind == "error") {
             for (let msg of result2.messages) {
-                const diags = fetchDiags(msg)
+                const diags = msg.locs.map(loc => assembleDiagnostic(msg.explanation, loc))
                 diagnostics.push(...diags)
             }
         }
-
     }
 
     // Send the computed diagnostics to VSCode.
