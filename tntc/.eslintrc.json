@@ -21,6 +21,7 @@
         "imports": "never",
         "exports": "never",
         "functions": "never"
-    }]
+     }],
+     "no-use-before-define": "off"
    }
 }
