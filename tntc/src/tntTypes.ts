@@ -16,31 +16,85 @@
  * to recover expression metadata such as source information, annotations, etc.
  */
 export interface WithId {
-  id: bigint;
+  id: bigint
+}
+
+export interface TntBoolType extends WithId {
+  kind: 'bool'
+}
+
+export interface TntIntType extends WithId {
+  kind: 'int'
+}
+
+export interface TntStrType extends WithId {
+  kind: 'str'
+}
+
+export interface TntConstType extends WithId {
+  kind: 'const',
+  name: string,
+}
+
+export interface TntVarType extends WithId {
+  kind: 'var',
+  name: string,
+}
+
+export interface TntSetType extends WithId {
+  kind: 'set',
+  elem: TntType,
+}
+
+export interface TntSeqType extends WithId {
+  kind: 'seq',
+  elem: TntType,
+}
+
+export interface TntFunType extends WithId {
+  kind: 'fun',
+  arg: TntType,
+  res: TntType,
+}
+
+export interface TntOperType extends WithId {
+  kind: 'oper',
+  args: TntType[],
+  res: TntType,
+}
+
+export interface TntTupleType extends WithId {
+  kind: 'tuple',
+  elems: TntType[],
+}
+
+export interface TntRecordType extends WithId {
+  kind: 'record',
+  fields: { fieldName: string, fieldType: TntType }[]
+}
+
+export interface TntUnionType extends WithId {
+  kind: 'union',
+  tag: string,
+  records: {
+    tagValue: string,
+    fields: { fieldName: string, fieldType: TntType }[]
+  }[]
 }
 
 /**
  * A type in Type System 1.2.
  */
 export type TntType =
-  | { kind: 'bool' } & WithId
-  | { kind: 'int' } & WithId
-  | { kind: 'str' } & WithId
-  | { kind: 'const', name: string } & WithId
-  | { kind: 'var', name: string } & WithId
-  | { kind: 'set', elem: TntType } & WithId
-  | { kind: 'seq', elem: TntType } & WithId
-  | { kind: 'fun', arg: TntType, res: TntType } & WithId
-  | { kind: 'oper', args: TntType[], res: TntType } & WithId
-  | { kind: 'tuple', elems: TntType[] } & WithId
-  | {
-    kind: 'record',
-    fields: { fieldName: string, fieldType: TntType }[]
-  } & WithId
-  | {
-    kind: 'union', tag: string,
-    records: {
-      tagValue: string,
-      fields: { fieldName: string, fieldType: TntType }[]
-    }[]
-  } & WithId
+  | TntBoolType
+  | TntIntType
+  | TntStrType
+  | TntConstType
+  | TntVarType
+  | TntSetType
+  | TntSeqType
+  | TntFunType
+  | TntOperType
+  | TntTupleType
+  | TntRecordType
+  | TntUnionType
