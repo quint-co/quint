@@ -41,7 +41,7 @@ function parseAndCompare (artifact: string, wrap: (json: any) => any, checkNameE
       outputToCompare = parsePhase2(phase1Result.module, phase1Result.sourceMap)
     } else {
       // Both phases succeeded, check that the module is correclty outputed
-      outputToCompare = phase1Result.module
+      outputToCompare = { status: 'parsed', warnings: [], module: phase1Result.module }
     }
   }
 

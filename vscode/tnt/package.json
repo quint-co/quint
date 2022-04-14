@@ -2,7 +2,7 @@
     "name": "tnt",
     "displayName": "TNT is not TLA+",
     "description": "TNT language support",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "publisher": "igorkonnov0764",
     "engines": {
         "vscode": "^1.43.0"
