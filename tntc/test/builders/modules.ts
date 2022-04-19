@@ -1,6 +1,7 @@
 import { parsePhase1 } from '../../src/tntParserFrontend'
-import { TntModule } from '../../src/tntIr'
+import { TntModule, TntEx, TntDef } from '../../src/tntIr'
 import JSONbig from 'json-bigint'
+import { TntType } from '../../src/tntTypes'
 
 export function buildModuleWithExpressions (expressions: string[]): TntModule {
   const defs = expressions.map((expr, index) => `def d${index} = ${expr}`)
@@ -17,4 +18,28 @@ export function buildModuleWithDefs (defs: string[]): TntModule {
   }
 
   throw new Error(`Couldn't parse mocked expression. Result - ${JSONbig.stringify(result)}`)
+}
+
+export function buildDef (def: string): TntDef {
+  const tntModule = buildModuleWithDefs([def])
+  return tntModule.defs[0]
+}
+
+export function buildExpression (expression: string): TntEx {
+  const def = buildDef(`def d = ${expression}`)
+  switch (def.kind) {
+    case 'def':
+      return def.expr
+    default:
+      throw new Error(`Error trying to build expression  - ${JSONbig.stringify(def)}`)
+  }
+}
+
+export function buildType (type: string): TntType {
+  const def = buildDef(`var a: ${type}`)
+  if (def.kind == 'var' && def.type) {
+    return def.type
+  } else {
+    throw new Error(`Error trying to build expression  - ${JSONbig.stringify(def)}`)
+  }
 }

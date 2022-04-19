@@ -15,7 +15,7 @@ export function expressionToString (expr: TntEx): string {
     case 'lambda':
       return `${expr.params.join(', ')} -> ${expressionToString(expr.expr)}`
     case 'let':
-      return `${definitionToString(expr.opdef)} { ${expressionToString(expr.expr)} }}`
+      return `${definitionToString(expr.opdef)} { ${expressionToString(expr.expr)} }`
   }
 }
 
@@ -24,22 +24,14 @@ export function definitionToString (def: TntDef): string {
     case 'def':
       return `${def.qualifier} ${def.name} = ${expressionToString(def.expr)}`
     case 'var':
-      if (def.type) {
-        return `var ${def.name}: ${typeToString(def.type)}`
-      } else {
-        return `var ${def.name}`
-      }
+      return `var ${def.name}: ${typeToString(def.type)}`
     case 'const':
-      if (def.type) {
-        return `const ${def.name}: ${typeToString(def.type)}`
-      } else {
-        return `const ${def.name}`
-      }
+      return `const ${def.name}: ${typeToString(def.type)}`
     case 'assume':
       return `assume ${def.name} = ${expressionToString(def.assumption)}`
     case 'typedef':
       if (def.type) {
-        return `type ${def.name}: ${typeToString(def.type)}`
+        return `type ${def.name} = ${typeToString(def.type)}`
       } else {
         return `type ${def.name}`
       }
@@ -50,12 +42,13 @@ export function definitionToString (def: TntDef): string {
       return `module ${def.name} = ${def.protoName}(${overrides})`
     }
     case 'module':
-      return `module ${def.module.name} {\n  ${def.module.defs.map(definitionToString).join('\n  ')}\n}`
+      return moduleToString(def.module)
   }
 }
 
 export function moduleToString (tntModule: TntModule): string {
-  return tntModule.defs.map(definitionToString).join('\n')
+  const defs = tntModule.defs.map(definitionToString).join('\n  ')
+  return `module ${tntModule.name} {\n  ${defs}\n}`
 }
 
 export function typeToString (type: TntType): string {
@@ -71,7 +64,7 @@ export function typeToString (type: TntType): string {
     case 'seq':
       return `${type.kind}(${typeToString(type.elem)})`
     case 'fun':
-      return `${typeToString(type.arg)} -> ${typeToString(type.res)}}`
+      return `${typeToString(type.arg)} -> ${typeToString(type.res)}`
     case 'oper': {
       const args = type.args.map(typeToString).join(', ')
       return `(${args}) => ${typeToString(type.res)}`
