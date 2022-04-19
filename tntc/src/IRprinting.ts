@@ -1,5 +1,5 @@
-import { TntModule, TntDef, TntEx } from "./tntIr";
-import { TntType } from "./tntTypes";
+import { TntModule, TntDef, TntEx } from './tntIr'
+import { TntType } from './tntTypes'
 
 export function expressionToString (expr: TntEx): string {
   switch (expr.kind) {
@@ -20,13 +20,14 @@ export function expressionToString (expr: TntEx): string {
 }
 
 export function definitionToString (def: TntDef): string {
+  const typeAnnotation = def.type ? `: ${typeToString(def.type)}` : ''
   switch (def.kind) {
     case 'def':
-      return `${def.qualifier} ${def.name} = ${expressionToString(def.expr)}`
+      return `${def.qualifier} ${def.name}${typeAnnotation} = ${expressionToString(def.expr)}`
     case 'var':
-      return `var ${def.name}: ${typeToString(def.type)}`
+      return `var ${def.name}${typeAnnotation}`
     case 'const':
-      return `const ${def.name}: ${typeToString(def.type)}`
+      return `const ${def.name}${typeAnnotation}`
     case 'assume':
       return `assume ${def.name} = ${expressionToString(def.assumption)}`
     case 'typedef':

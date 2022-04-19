@@ -25,6 +25,12 @@ describe('definitionToString', () => {
     assert.deepEqual(definitionToString(def), expectedDef)
   })
 
+  it('pretty prints typed op definitions', () => {
+    const def = buildDef('val f: set(int) = S.filter(x -> x + 1)')
+    const expectedDef = 'val f: set(int) = filter(S, x -> iadd(x, 1))'
+    assert.deepEqual(definitionToString(def), expectedDef)
+  })
+
   it('pretty prints var definitions', () => {
     const def = buildDef('var x: int')
     const expectedDef = 'var x: int'
