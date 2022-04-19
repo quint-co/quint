@@ -64,8 +64,7 @@ export function typeToString (type: TntType): string {
     case 'set':
     case 'seq':
       return `${type.kind}(${typeToString(type.elem)})`
-    case 'fun':
-      return `${typeToString(type.arg)} -> ${typeToString(type.res)}`
+      return `(${typeToString(type.arg)} -> ${typeToString(type.res)})`
     case 'oper': {
       const args = type.args.map(typeToString).join(', ')
       return `(${args}) => ${typeToString(type.res)}`
