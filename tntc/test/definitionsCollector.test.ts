@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { collectDefinitions } from '../src/definitionsCollector'
-import { buildModuleWithDefs } from './builders/modules'
+import { buildModuleWithDefs } from './builders/ir'
 
 describe('collectDefinitions', () => {
   describe('collecting operator names', () => {

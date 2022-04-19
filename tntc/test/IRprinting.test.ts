@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { buildDef, buildExpression, buildModuleWithDefs, buildType } from './builders/modules'
+import { buildDef, buildExpression, buildModuleWithDefs, buildType } from './builders/ir'
 import { definitionToString, expressionToString, moduleToString, typeToString } from '../src/IRprinting'
 
 describe('moduleToString', () => {
