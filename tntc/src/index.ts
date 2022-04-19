@@ -1,4 +1,4 @@
-// Index file for the tnt-parser.
+// Index file for the tntc compiler.
 //
 // Igor Konnov, Informal Systems, 2021
 

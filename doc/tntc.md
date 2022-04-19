@@ -276,5 +276,5 @@ an output file in the [Apalache JSON] format.
 [ADR002]: ./adr002-errors.md
 [Working Backwards]: https://www.allthingsdistributed.com/2006/11/working_backwards.html
 [Source map]: https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
-[TNT IR]: https://github.com/informalsystems/tnt/blob/main/tnt-parser/src/tntIr.ts
+[TNT IR]: https://github.com/informalsystems/tnt/blob/main/tntc/src/tntIr.ts
 [Apalache JSON]: https://apalache.informal.systems/docs/adr/005adr-json.html

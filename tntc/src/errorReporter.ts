@@ -14,7 +14,7 @@
  * @module
  */
 
-import { ErrorMessage, Loc } from './tntParserFrontend'
+import { ErrorMessage } from './tntParserFrontend'
 
 /** Generate a string with formatted error reporting for a given error message
  *
@@ -30,15 +30,16 @@ export function formatError (text: string, finder: any, message: ErrorMessage): 
     output += `${locString} - error: ${message.explanation}\n`
 
     const endLine = loc.end ? loc.end.line : loc.start.line
+    const endCol = loc.end ? loc.end.col : loc.start.col
     for (let i = loc.start.line; i <= endLine; i++) {
       // finder's indexes start at 1
       const lineStartIndex = finder.toIndex(i + 1, 1)
       const line = text.slice(lineStartIndex).split('\n')[0]
 
-      const startCol = i === loc.start.line ? loc.start.col : 0
-      const endCol = i === endLine ? findEndCol(loc, lineStartIndex) : line.length - 1
+      const lineStartCol = i === loc.start.line ? loc.start.col : 0
+      const lineEndCol = i === endLine ? endCol : line.length - 1
 
-      output += formatLine(i, startCol, endCol, line)
+      output += formatLine(i, lineStartCol, lineEndCol, line)
     }
     return output
   }, '')
@@ -56,17 +57,4 @@ function formatLine (lineIndex: number, startCol: number, endCol: number, line: 
   output += '^'.repeat(1 + endCol - startCol)
   output += '\n'
   return output
-}
-
-function findEndCol (loc: Loc, lineStartIndex: number): number {
-  let endCol
-  if (!loc.end) {
-    // highlight single character
-    endCol = loc.start.col
-  } else {
-    // Try to use index. If not available, use column instead.
-    // This is what works best with the information provided by the parser
-    endCol = loc.end.index !== 0 ? loc.end.index - lineStartIndex : loc.end.col
-  }
-  return endCol
 }
