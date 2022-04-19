@@ -21,10 +21,6 @@ export interface WithType {
   type?: TntType
 }
 
-export interface WithMandatoryType {
-  type: TntType
-}
-
 /**
  * Operator qualifier, which refines a mode:
  *
@@ -135,14 +131,14 @@ export interface TntOpDef extends WithId, WithType {
   expr: TntEx
 }
 
-export interface TntConst extends WithId, WithMandatoryType {
+export interface TntConst extends WithId, WithType {
   /** definition kind ('const') */
   kind: 'const',
   /** name of the constant */
   name: string,
 }
 
-export interface TntVar extends WithId, WithMandatoryType {
+export interface TntVar extends WithId, WithType {
   /** definition kind ('var') */
   kind: 'var',
   /** name of the variable */
