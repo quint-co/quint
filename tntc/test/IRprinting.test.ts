@@ -12,7 +12,7 @@ describe('moduleToString', () => {
   it('pretty prints the module', () => {
     const expectedModule = `module wrapper {
   var S: set(int)
-  val f = filter(S, x -> iadd(x, 1))
+  val f = filter(S, (x -> iadd(x, 1)))
 }`
     assert.deepEqual(moduleToString(tntModule), expectedModule)
   })
@@ -21,13 +21,13 @@ describe('moduleToString', () => {
 describe('definitionToString', () => {
   it('pretty prints op definitions', () => {
     const def = buildDef('val f = S.filter(x -> x + 1)')
-    const expectedDef = 'val f = filter(S, x -> iadd(x, 1))'
+    const expectedDef = 'val f = filter(S, (x -> iadd(x, 1)))'
     assert.deepEqual(definitionToString(def), expectedDef)
   })
 
   it('pretty prints typed op definitions', () => {
     const def = buildDef('val f: set(int) = S.filter(x -> x + 1)')
-    const expectedDef = 'val f: set(int) = filter(S, x -> iadd(x, 1))'
+    const expectedDef = 'val f: set(int) = filter(S, (x -> iadd(x, 1)))'
     assert.deepEqual(definitionToString(def), expectedDef)
   })
 
@@ -115,7 +115,13 @@ describe('expressionToString', () => {
 
   it('pretty prints lambda expressions', () => {
     const expr = buildExpression('S.map(x -> f(x))')
-    const expectedExpr = 'map(S, x -> f(x))'
+    const expectedExpr = 'map(S, (x -> f(x)))'
+    assert.deepEqual(expressionToString(expr), expectedExpr)
+  })
+
+  it('multi argument lambdas retain correct semantics', () => {
+    const expr = buildExpression('foo((f, b -> f(b)), 1, 2)')
+    const expectedExpr = 'foo((f, b -> f(b)), 1, 2)'
     assert.deepEqual(expressionToString(expr), expectedExpr)
   })
 
@@ -146,8 +152,8 @@ describe('typeToString', () => {
   })
 
   it('pretty prints function types', () => {
-    const type = buildType('int -> str')
-    const expectedType = 'int -> str'
+    const type = buildType('int -> (bool -> bool) -> str')
+    const expectedType = '(int -> ((bool -> bool) -> str))'
     assert.deepEqual(typeToString(type), expectedType)
   })
 
@@ -164,8 +170,8 @@ describe('typeToString', () => {
   })
 
   it('pretty prints record types', () => {
-    const type = buildType('{ name: str, flag: bool }')
-    const expectedType = '{name: str, flag: bool}'
+    const type = buildType('{ name: str, fun: int -> bool, rec: { flag: bool } }')
+    const expectedType = '{ name: str, fun: (int -> bool), rec: { flag: bool } }'
     assert.deepEqual(typeToString(type), expectedType)
   })
 
