@@ -13,7 +13,7 @@ export function expressionToString (expr: TntEx): string {
     case 'app':
       return `${expr.opcode}(${expr.args.map(expressionToString).join(', ')})`
     case 'lambda':
-      return `${expr.params.join(', ')} -> ${expressionToString(expr.expr)}`
+      return `(${expr.params.join(', ')} -> ${expressionToString(expr.expr)})`
     case 'let':
       return `${definitionToString(expr.opdef)} { ${expressionToString(expr.expr)} }`
   }
@@ -65,7 +65,7 @@ export function typeToString (type: TntType): string {
     case 'seq':
       return `${type.kind}(${typeToString(type.elem)})`
     case 'fun':
-      return `${typeToString(type.arg)} -> ${typeToString(type.res)}`
+      return `(${typeToString(type.arg)} -> ${typeToString(type.res)})`
     case 'oper': {
       const args = type.args.map(typeToString).join(', ')
       return `(${args}) => ${typeToString(type.res)}`
@@ -74,7 +74,7 @@ export function typeToString (type: TntType): string {
       return `(${type.elems.map(typeToString).join(', ')})`
     case 'record': {
       const fields = type.fields.map(f => `${f.fieldName}: ${typeToString(f.fieldType)}`).join(', ')
-      return `{${fields}}`
+      return `{ ${fields} }`
     }
     case 'union': {
       const records = type.records.map(rec => {
