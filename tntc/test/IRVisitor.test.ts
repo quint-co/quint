@@ -33,9 +33,9 @@ describe('walkModule', () => {
       'N',
       '1',
       '"rainbow"',
-      'filter(S, x -> iadd(x, 1))',
+      'filter(S, (x -> iadd(x, 1)))',
       'S',
-      'x -> iadd(x, 1)',
+      '(x -> iadd(x, 1))',
       'iadd(x, 1)',
       'x',
       '1',
@@ -67,7 +67,7 @@ describe('walkModule', () => {
       'module A {\n  var x: int\n}',
       'var x: int', // From inside module A
       'module A1 = A(x = "rainbow")',
-      'val f = filter(S, x -> iadd(x, 1))',
+      'val f = filter(S, (x -> iadd(x, 1)))',
       'def l = val x = false { x }',
       'val x = false', // From the let definition
     ]
@@ -109,7 +109,7 @@ describe('walkModule', () => {
       }
 
       const expectedDefinitions = [
-        'val f = filter(S, x -> iadd(x, 1))',
+        'val f = filter(S, (x -> iadd(x, 1)))',
         'def l = val x = false { x }',
         'val x = false', // From the let definition
       ]
@@ -335,7 +335,7 @@ describe('walkModule', () => {
 
       const expectedExpressions = [
         'igt(N, 1)',
-        'filter(S, x -> iadd(x, 1))',
+        'filter(S, (x -> iadd(x, 1)))',
         'iadd(x, 1)',
       ]
 
@@ -354,7 +354,7 @@ describe('walkModule', () => {
       }
 
       const expectedExpressions = [
-        'x -> iadd(x, 1)',
+        '(x -> iadd(x, 1))',
       ]
 
       const visitor = new TestVisitor()
@@ -387,11 +387,11 @@ describe('walkModule', () => {
       'const b: int',
       'val c: str = "rainbow"',
       'var d: MY_CONST_TYPE',
-      'var e: my_type',
+      'var e: a -> set(a)',
       'var f: set(int)',
       'var g: seq(set(str))',
       'var h: (int -> str) -> seq(bool)',
-      'def i: (int, my_type) => bool = false',
+      'def i: (int, a) => bool = false',
       'var j: (int, seq(bool), MY_CONST_TYPE)',
       'var k: { name: str, age: int }',
       'var l: | { tag: "a", a: int } | { tag: "b", b: bool }',
@@ -409,7 +409,7 @@ describe('walkModule', () => {
       const expectedTypes = [
         'bool', // var a: bool
         'bool', // var h: (int -> str) -> seq(bool)
-        'bool', // def i: (int, my_type) => bool
+        'bool', // def i: (int, a) => bool
         'bool', // var j: (int, seq(bool), MY_CONST_TYPE)
         'bool', // var l: | { tag: "a", a: int } | { tag: "b", b: bool }
       ]
@@ -432,7 +432,7 @@ describe('walkModule', () => {
         'int', // const b: int
         'int', // var f: set(int)
         'int', // var h: (int -> str) -> seq(bool)
-        'int', // def i: (int, my_type) => bool = false
+        'int', // def i: (int, a) => bool = false
         'int', // var j: (int, seq(bool), MY_CONST_TYPE)
         'int', // var k: { name: str, age: int }
         'int', // var l: | { tag: "a", a: int } | { tag: "b", b: bool }
@@ -493,8 +493,9 @@ describe('walkModule', () => {
       }
 
       const expectedTypes = [
-        'my_type', // var e: my_type
-        'my_type', // def i: (int, my_type) => bool = false
+        'a', // var e: a -> set(a)
+        'a', // var e: a -> set(a)
+        'a', // def i: (int, a) => bool = false
       ]
 
       const visitor = new TestVisitor()
@@ -512,10 +513,9 @@ describe('walkModule', () => {
       }
 
       const expectedTypes = [
+        'set(a)', // var e: a -> set(a)
         'set(int)', // var f: set(int)
         'set(str)', // var g: seq(set(str))
-        'set(bool)', // var h: (int -> str) -> seq(bool)
-        'set(bool)', // var j: (int, seq(bool), MY_CONST_TYPE)
       ]
 
       const visitor = new TestVisitor()
@@ -533,9 +533,9 @@ describe('walkModule', () => {
       }
 
       const expectedTypes = [
-        'seq', // var g: seq(set(str))
-        'seq', // var h: (int -> str) -> seq(bool)
-        'seq', // var j: (int, seq(bool), MY_CONST_TYPE)
+        'seq(set(str))', // var g: seq(set(str))
+        'seq(bool)', // var h: (int -> str) -> seq(bool)
+        'seq(bool)', // var j: (int, seq(bool), MY_CONST_TYPE)
       ]
 
       const visitor = new TestVisitor()
@@ -553,8 +553,9 @@ describe('walkModule', () => {
       }
 
       const expectedTypes = [
-        '(int -> str) -> seq(bool)', // var h: (int -> str) -> seq(bool)
-        'int -> str', // var h: (int -> str) -> seq(bool)
+        '(a -> set(a))', // var e: a -> set(a)
+        '((int -> str) -> seq(bool))', // var h: (int -> str) -> seq(bool)
+        '(int -> str)', // var h: (int -> str) -> seq(bool)
       ]
 
       const visitor = new TestVisitor()
@@ -572,7 +573,7 @@ describe('walkModule', () => {
       }
 
       const expectedTypes = [
-        '(int, my_type) => bool', // def i: (int, my_type) => bool = false
+        '(int, a) => bool', // def i: (int, a) => bool = false
       ]
 
       const visitor = new TestVisitor()
@@ -626,7 +627,7 @@ describe('walkModule', () => {
       }
 
       const expectedTypes = [
-        '| { tag: "a", a: int } | { tag: "b", b: bool }', // var l: | { tag: "a", a: int } | { tag: "b", b: bool }
+        '| { tag: "a", a: int }\n| { tag: "b", b: bool }', // var l: | { tag: "a", a: int } | { tag: "b", b: bool }
       ]
 
       const visitor = new TestVisitor()

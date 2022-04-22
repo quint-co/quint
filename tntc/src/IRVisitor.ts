@@ -49,39 +49,30 @@ function walkDefinition (visitor: IRVisitor, def: TntDef) {
   if (visitor.visitDef) {
     visitor.visitDef(def)
   }
+  if (def.type) {
+    walkType(visitor, def.type)
+  }
 
   switch (def.kind) {
     case 'const':
       if (visitor.visitConst) {
         visitor.visitConst(def)
       }
-      if (def.type) {
-        walkType(visitor, def.type)
-      }
       break
     case 'var':
       if (visitor.visitVar) {
         visitor.visitVar(def)
-      }
-      if (def.type) {
-        walkType(visitor, def.type)
       }
       break
     case 'def':
       if (visitor.visitOpDef) {
         visitor.visitOpDef(def)
       }
-      if (def.type) {
-        walkType(visitor, def.type)
-      }
       walkExpression(visitor, def.expr)
       break
     case 'typedef':
       if (visitor.visitTypeDef) {
         visitor.visitTypeDef(def)
-      }
-      if (def.type) {
-        walkType(visitor, def.type)
       }
       break
     case 'instance':
