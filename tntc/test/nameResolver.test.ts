@@ -3,7 +3,7 @@ import { assert } from 'chai'
 import { ValueDefinition, defaultDefinitions, DefinitionTable, TypeDefinition } from '../src/definitionsCollector'
 import { resolveNames, NameResolutionResult } from '../src/nameResolver'
 
-import { buildModuleWithExpressions, buildModuleWithDefs } from './builders/modules'
+import { buildModuleWithExpressions, buildModuleWithDefs } from './builders/ir'
 
 describe('nameResolver', () => {
   const valueDefinitions: ValueDefinition[] = defaultDefinitions.valueDefinitions.concat([
