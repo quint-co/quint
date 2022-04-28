@@ -87,7 +87,7 @@ class NameResolverVisitor implements IRVisitor {
     return t
   }
 
-  visitDef (def: TntDef): void {
+  enterDef (def: TntDef): void {
     // Keep the last visited definition name
     // so it can be showed in the reported error
     if (def.kind === 'module') {
@@ -97,15 +97,15 @@ class NameResolverVisitor implements IRVisitor {
     }
   }
 
-  visitModuleDef (def: TntModuleDef): void {
+  enterModuleDef (def: TntModuleDef): void {
     this.moduleStack.push(def.module.name)
   }
 
-  exitModuleDef (def: TntModuleDef): void {
+  exitModuleDef (_: TntModuleDef): void {
     this.moduleStack.pop()
   }
 
-  visitName (nameExpr: TntName): void {
+  enterName (nameExpr: TntName): void {
     // This is a name expression, the name must be defined
     // either globally or under a scope that contains the expression
     // The list of scopes containing the expression is accumulated in param scopes
@@ -119,7 +119,7 @@ class NameResolverVisitor implements IRVisitor {
     }
   }
 
-  visitApp (appExpr: TntApp): void {
+  enterApp (appExpr: TntApp): void {
     // Application, check that the operator being applied is defined
     const valueDefinitionsForScope = filterScope(this.table().valueDefinitions, scopesForId(this.scopeTree, appExpr.id))
 
@@ -131,7 +131,7 @@ class NameResolverVisitor implements IRVisitor {
     }
   }
 
-  visitVarType (type: TntVarType): void {
+  enterVarType (type: TntVarType): void {
     // Type is a name, check that it is defined
     if (!this.table().typeDefinitions.some(def => def.identifier === type.name)) {
       this.results.push({
@@ -143,7 +143,7 @@ class NameResolverVisitor implements IRVisitor {
     }
   }
 
-  visitConstType (type: TntConstType): void {
+  enterConstType (type: TntConstType): void {
     // Type is a name, check that it is defined
     if (!this.table().typeDefinitions.some(def => def.identifier === type.name)) {
       this.results.push({
