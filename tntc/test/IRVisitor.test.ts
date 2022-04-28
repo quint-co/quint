@@ -21,14 +21,19 @@ describe('walkModule', () => {
 
   it('finds expressions', () => {
     class TestVisitor implements IRVisitor {
-      visited: TntEx[] = []
+      entered: TntEx[] = []
+      exited: TntEx[] = []
 
-      visitExpr (expr: TntEx): void {
-        this.visited.push(expr)
+      enterExpr (expr: TntEx): void {
+        this.entered.push(expr)
+      }
+
+      exitExpr (expr: TntEx): void {
+        this.exited.push(expr)
       }
     }
 
-    const expectedExpressions = [
+    const enteredExpressions = [
       'igt(N, 1)',
       'N',
       '1',
@@ -44,21 +49,43 @@ describe('walkModule', () => {
       'x',
     ]
 
+    const exitedExpressions = [
+      'N',
+      '1',
+      'igt(N, 1)',
+      '"rainbow"',
+      'S',
+      'x',
+      '1',
+      'iadd(x, 1)',
+      '(x -> iadd(x, 1))',
+      'filter(S, (x -> iadd(x, 1)))',
+      'false',
+      'x',
+      'val x = false { x }',
+    ]
+
     const visitor = new TestVisitor()
     walkModule(visitor, tntModule)
-    assert.deepEqual(visitor.visited.map(expressionToString), expectedExpressions)
+    assert.deepEqual(visitor.entered.map(expressionToString), enteredExpressions)
+    assert.deepEqual(visitor.exited.map(expressionToString), exitedExpressions)
   })
 
   it('finds definitions', () => {
     class TestVisitor implements IRVisitor {
-      visited: TntDef[] = []
+      entered: TntDef[] = []
+      exited: TntDef[] = []
 
-      visitDef (def: TntDef): void {
-        this.visited.push(def)
+      enterDef (def: TntDef): void {
+        this.entered.push(def)
+      }
+
+      exitDef (def: TntDef): void {
+        this.exited.push(def)
       }
     }
 
-    const expectedDefinitions = [
+    const enteredDefinitions = [
       'var a: int',
       'const B: int',
       'type MY_TYPE = int',
@@ -72,312 +99,441 @@ describe('walkModule', () => {
       'val x = false', // From the let definition
     ]
 
+    const exitedDefinitions = [
+      'var a: int',
+      'const B: int',
+      'type MY_TYPE = int',
+      'assume _ = igt(N, 1)',
+      'import M.*',
+      'var x: int', // From inside module A
+      'module A {\n  var x: int\n}',
+      'module A1 = A(x = "rainbow")',
+      'val f = filter(S, (x -> iadd(x, 1)))',
+      'val x = false', // From the let definition
+      'def l = val x = false { x }',
+    ]
+
     const visitor = new TestVisitor()
     walkModule(visitor, tntModule)
-    assert.deepEqual(visitor.visited.map(definitionToString), expectedDefinitions)
+    assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
+    assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
   })
 
   it('finds types', () => {
     class TestVisitor implements IRVisitor {
-      visited: TntType[] = []
+      entered: TntType[] = []
+      exited: TntType[] = []
 
-      visitType (type: TntType): void {
-        this.visited.push(type)
+      enterType (type: TntType): void {
+        this.entered.push(type)
+      }
+
+      exitType (type: TntType): void {
+        this.exited.push(type)
       }
     }
 
-    const expectedTypes = [
+    const enteredTypes = [
       'int', // var a: int
       'int', // const B: int
       'int', // type MY_TYPE = int
       'int', // module A {\n  var x: int\n}
     ]
 
+    const exitedTypes = enteredTypes
+
     const visitor = new TestVisitor()
     walkModule(visitor, tntModule)
-    assert.deepEqual(visitor.visited.map(typeToString), expectedTypes)
+    // assert.deepEqual(visitor.entered.map(typeToString), enteredTypes)
+    assert.deepEqual(visitor.exited.map(typeToString), exitedTypes)
   })
 
   describe('visiting specific definitions', () => {
     it('finds operator definitions', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntDef[] = []
+        entered: TntDef[] = []
+        exited: TntDef[] = []
 
-        visitOpDef (def: TntDef): void {
-          this.visited.push(def)
+        enterOpDef (def: TntDef): void {
+          this.entered.push(def)
+        }
+
+        exitOpDef (def: TntDef): void {
+          this.exited.push(def)
         }
       }
 
-      const expectedDefinitions = [
+      const enteredDefinitions = [
         'val f = filter(S, (x -> iadd(x, 1)))',
         'def l = val x = false { x }',
         'val x = false', // From the let definition
       ]
 
+      const exitedDefinitions = [
+        'val f = filter(S, (x -> iadd(x, 1)))',
+        'val x = false', // From the let definition
+        'def l = val x = false { x }',
+      ]
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(definitionToString), expectedDefinitions)
+      assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
     })
 
     it('finds constant definitions', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntDef[] = []
+        entered: TntDef[] = []
+        exited: TntDef[] = []
 
-        visitConst (def: TntDef): void {
-          this.visited.push(def)
+        enterConst (def: TntDef): void {
+          this.entered.push(def)
+        }
+
+        exitConst (def: TntDef): void {
+          this.exited.push(def)
         }
       }
 
-      const expectedDefinitions = [
+      const enteredDefinitions = [
         'const B: int',
       ]
 
+      const exitedDefinitions = enteredDefinitions
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(definitionToString), expectedDefinitions)
+      assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
     })
 
     it('finds variable definitions', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntDef[] = []
+        entered: TntDef[] = []
+        exited: TntDef[] = []
 
-        visitVar (def: TntDef): void {
-          this.visited.push(def)
+        enterVar (def: TntDef): void {
+          this.entered.push(def)
+        }
+
+        exitVar (def: TntDef): void {
+          this.exited.push(def)
         }
       }
 
-      const expectedDefinitions = [
+      const enteredDefinitions = [
         'var a: int',
         'var x: int',
       ]
 
+      const exitedDefinitions = enteredDefinitions
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(definitionToString), expectedDefinitions)
+      assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
     })
 
     it('finds assume definitions', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntDef[] = []
+        entered: TntDef[] = []
+        exited: TntDef[] = []
 
-        visitAssume (def: TntDef): void {
-          this.visited.push(def)
+        enterAssume (def: TntDef): void {
+          this.entered.push(def)
+        }
+
+        exitAssume (def: TntDef): void {
+          this.exited.push(def)
         }
       }
 
-      const expectedDefinitions = [
+      const enteredDefinitions = [
         'assume _ = igt(N, 1)',
       ]
 
+      const exitedDefinitions = enteredDefinitions
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(definitionToString), expectedDefinitions)
+      assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
     })
 
     it('finds typedef definitions', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntDef[] = []
+        entered: TntDef[] = []
+        exited: TntDef[] = []
 
-        visitTypeDef (def: TntDef): void {
-          this.visited.push(def)
+        enterTypeDef (def: TntDef): void {
+          this.entered.push(def)
+        }
+
+        exitTypeDef (def: TntDef): void {
+          this.exited.push(def)
         }
       }
 
-      const expectedDefinitions = [
+      const enteredDefinitions = [
         'type MY_TYPE = int',
       ]
 
+      const exitedDefinitions = enteredDefinitions
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(definitionToString), expectedDefinitions)
+      assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
     })
 
     it('finds import definitions', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntDef[] = []
+        entered: TntDef[] = []
+        exited: TntDef[] = []
 
-        visitImport (def: TntDef): void {
-          this.visited.push(def)
+        enterImport (def: TntDef): void {
+          this.entered.push(def)
+        }
+
+        exitImport (def: TntDef): void {
+          this.exited.push(def)
         }
       }
 
-      const expectedDefinitions = [
+      const enteredDefinitions = [
         'import M.*',
       ]
 
+      const exitedDefinitions = enteredDefinitions
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(definitionToString), expectedDefinitions)
+      assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
     })
 
     it('finds instance definitions', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntDef[] = []
+        entered: TntDef[] = []
+        exited: TntDef[] = []
 
-        visitInstance (def: TntDef): void {
-          this.visited.push(def)
+        enterInstance (def: TntDef): void {
+          this.entered.push(def)
+        }
+
+        exitInstance (def: TntDef): void {
+          this.exited.push(def)
         }
       }
 
-      const expectedDefinitions = [
+      const enteredDefinitions = [
         'module A1 = A(x = "rainbow")',
       ]
 
+      const exitedDefinitions = enteredDefinitions
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(definitionToString), expectedDefinitions)
+      assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
     })
 
     it('finds module definitions', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntDef[] = []
+        entered: TntDef[] = []
+        exited: TntDef[] = []
 
-        visitModuleDef (def: TntDef): void {
-          this.visited.push(def)
+        enterModuleDef (def: TntDef): void {
+          this.entered.push(def)
+        }
+
+        exitModuleDef (def: TntDef): void {
+          this.exited.push(def)
         }
       }
 
-      const expectedDefinitions = [
+      const enteredDefinitions = [
+        `module wrapper {
+  var a: int
+  const B: int
+  type MY_TYPE = int
+  assume _ = igt(N, 1)
+  import M.*
+  module A {
+  var x: int
+}
+  module A1 = A(x = "rainbow")
+  val f = filter(S, (x -> iadd(x, 1)))
+  def l = val x = false { x }
+}`,
         'module A {\n  var x: int\n}',
+      ]
+
+      const exitedDefinitions = [
+        'module A {\n  var x: int\n}',
+        `module wrapper {
+  var a: int
+  const B: int
+  type MY_TYPE = int
+  assume _ = igt(N, 1)
+  import M.*
+  module A {
+  var x: int
+}
+  module A1 = A(x = "rainbow")
+  val f = filter(S, (x -> iadd(x, 1)))
+  def l = val x = false { x }
+}`,
       ]
 
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(definitionToString), expectedDefinitions)
+      assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
     })
   })
 
   describe('visiting specific expressions', () => {
     it('finds name expressions', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntEx[] = []
+        entered: TntEx[] = []
+        exited: TntEx[] = []
 
-        visitName (expr: TntEx): void {
-          this.visited.push(expr)
+        enterName (expr: TntEx): void {
+          this.entered.push(expr)
+        }
+
+        exitName (expr: TntEx): void {
+          this.exited.push(expr)
         }
       }
 
-      const expectedExpressions = [
+      const enteredExpressions = [
         'N',
         'S',
         'x',
         'x',
       ]
 
+      const exitedExpressions = enteredExpressions
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(expressionToString), expectedExpressions)
+      assert.deepEqual(visitor.entered.map(expressionToString), enteredExpressions)
+      assert.deepEqual(visitor.exited.map(expressionToString), exitedExpressions)
     })
 
-    it('finds bool expressions', () => {
+    it('finds literal expressions', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntEx[] = []
+        entered: TntEx[] = []
+        exited: TntEx[] = []
 
-        visitBool (expr: TntEx): void {
-          this.visited.push(expr)
+        enterLiteral (expr: TntEx): void {
+          this.entered.push(expr)
+        }
+
+        exitLiteral (expr: TntEx): void {
+          this.exited.push(expr)
         }
       }
 
-      const expectedExpressions = [
+      const enteredExpressions = [
+        '1',
+        '"rainbow"',
+        '1',
         'false',
       ]
 
-      const visitor = new TestVisitor()
-      walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(expressionToString), expectedExpressions)
-    })
-
-    it('finds integer expressions', () => {
-      class TestVisitor implements IRVisitor {
-        visited: TntEx[] = []
-
-        visitInt (expr: TntEx): void {
-          this.visited.push(expr)
-        }
-      }
-
-      const expectedExpressions = [
-        '1',
-        '1',
-      ]
+      const exitedExpressions = enteredExpressions
 
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(expressionToString), expectedExpressions)
-    })
-
-    it('finds string expressions', () => {
-      class TestVisitor implements IRVisitor {
-        visited: TntEx[] = []
-
-        visitStr (expr: TntEx): void {
-          this.visited.push(expr)
-        }
-      }
-
-      const expectedExpressions = [
-        '"rainbow"',
-      ]
-
-      const visitor = new TestVisitor()
-      walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(expressionToString), expectedExpressions)
+      assert.deepEqual(visitor.entered.map(expressionToString), enteredExpressions)
+      assert.deepEqual(visitor.exited.map(expressionToString), exitedExpressions)
     })
 
     it('finds application expressions', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntEx[] = []
+        entered: TntEx[] = []
+        exited: TntEx[] = []
 
-        visitApp (expr: TntEx): void {
-          this.visited.push(expr)
+        enterApp (expr: TntEx): void {
+          this.entered.push(expr)
+        }
+
+        exitApp (expr: TntEx): void {
+          this.exited.push(expr)
         }
       }
 
-      const expectedExpressions = [
+      const enteredExpressions = [
         'igt(N, 1)',
         'filter(S, (x -> iadd(x, 1)))',
         'iadd(x, 1)',
       ]
 
+      const exitedExpressions = [
+        'igt(N, 1)',
+        'iadd(x, 1)',
+        'filter(S, (x -> iadd(x, 1)))',
+      ]
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(expressionToString), expectedExpressions)
+      assert.deepEqual(visitor.entered.map(expressionToString), enteredExpressions)
+      assert.deepEqual(visitor.exited.map(expressionToString), exitedExpressions)
     })
 
     it('finds lambda expressions', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntEx[] = []
+        entered: TntEx[] = []
+        exited: TntEx[] = []
 
-        visitLambda (expr: TntEx): void {
-          this.visited.push(expr)
+        enterLambda (expr: TntEx): void {
+          this.entered.push(expr)
+        }
+
+        exitLambda (expr: TntEx): void {
+          this.exited.push(expr)
         }
       }
 
-      const expectedExpressions = [
+      const enteredExpressions = [
         '(x -> iadd(x, 1))',
       ]
 
+      const exitedExpressions = enteredExpressions
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(expressionToString), expectedExpressions)
+      assert.deepEqual(visitor.entered.map(expressionToString), enteredExpressions)
+      assert.deepEqual(visitor.exited.map(expressionToString), exitedExpressions)
     })
 
     it('finds let expressions', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntEx[] = []
+        entered: TntEx[] = []
+        exited: TntEx[] = []
 
-        visitLet (expr: TntEx): void {
-          this.visited.push(expr)
+        enterLet (expr: TntEx): void {
+          this.entered.push(expr)
+        }
+
+        exitLet (expr: TntEx): void {
+          this.exited.push(expr)
         }
       }
 
-      const expectedExpressions = [
+      const enteredExpressions = [
         'val x = false { x }',
       ]
 
+      const exitedExpressions = enteredExpressions
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(expressionToString), expectedExpressions)
+      assert.deepEqual(visitor.entered.map(expressionToString), enteredExpressions)
+      assert.deepEqual(visitor.exited.map(expressionToString), exitedExpressions)
     })
   })
 
@@ -397,242 +553,292 @@ describe('walkModule', () => {
       'var l: | { tag: "a", a: int } | { tag: "b", b: bool }',
     ])
 
-    it('finds bool types', () => {
+    it('finds literal types', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntType[] = []
+        entered: TntType[] = []
+        exited: TntType[] = []
 
-        visitBoolType (type: TntType): void {
-          this.visited.push(type)
+        enterLiteralType (type: TntType): void {
+          this.entered.push(type)
+        }
+
+        exitLiteralType (type: TntType): void {
+          this.exited.push(type)
         }
       }
 
-      const expectedTypes = [
+      const enteredTypes = [
         'bool', // var a: bool
+        'int', // const b: int
+        'str', // val c: str = "rainbow"
+        'int', // var f: set(int)
+        'str', // var g: seq(set(str))
+        'int', // var h: (int -> str) -> seq(bool)
+        'str', // var h: (int -> str) -> seq(bool)
         'bool', // var h: (int -> str) -> seq(bool)
+        'int', // def i: (int, a) => bool = false
         'bool', // def i: (int, a) => bool
+        'int', // var j: (int, seq(bool), MY_CONST_TYPE)
         'bool', // var j: (int, seq(bool), MY_CONST_TYPE)
+        'str', // var k: { name: str, age: int }
+        'int', // var k: { name: str, age: int }
+        'int', // var l: | { tag: "a", a: int } | { tag: "b", b: bool }
         'bool', // var l: | { tag: "a", a: int } | { tag: "b", b: bool }
       ]
 
-      const visitor = new TestVisitor()
-      walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(typeToString), expectedTypes)
-    })
-
-    it('finds int types', () => {
-      class TestVisitor implements IRVisitor {
-        visited: TntType[] = []
-
-        visitIntType (type: TntType): void {
-          this.visited.push(type)
-        }
-      }
-
-      const expectedTypes = [
-        'int', // const b: int
-        'int', // var f: set(int)
-        'int', // var h: (int -> str) -> seq(bool)
-        'int', // def i: (int, a) => bool = false
-        'int', // var j: (int, seq(bool), MY_CONST_TYPE)
-        'int', // var k: { name: str, age: int }
-        'int', // var l: | { tag: "a", a: int } | { tag: "b", b: bool }
-      ]
+      const exitedTypes = enteredTypes
 
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(typeToString), expectedTypes)
-    })
-
-    it('finds string types', () => {
-      class TestVisitor implements IRVisitor {
-        visited: TntType[] = []
-
-        visitStrType (type: TntType): void {
-          this.visited.push(type)
-        }
-      }
-
-      const expectedTypes = [
-        'str', // val c: str = "rainbow"
-        'str', // var g: seq(set(str))
-        'str', // var h: (int -> str) -> seq(bool)
-        'str', // var k: { name: str, age: int }
-      ]
-
-      const visitor = new TestVisitor()
-      walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(typeToString), expectedTypes)
+      assert.deepEqual(visitor.entered.map(typeToString), enteredTypes)
+      assert.deepEqual(visitor.exited.map(typeToString), exitedTypes)
     })
 
     it('finds const types', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntType[] = []
+        entered: TntType[] = []
+        exited: TntType[] = []
 
-        visitConstType (type: TntType): void {
-          this.visited.push(type)
+        enterConstType (type: TntType): void {
+          this.entered.push(type)
+        }
+
+        exitConstType (type: TntType): void {
+          this.exited.push(type)
         }
       }
 
-      const expectedTypes = [
+      const enteredTypes = [
         'MY_CONST_TYPE', // var d: MY_CONST_TYPE
         'MY_CONST_TYPE', // var j: (int, seq(bool), MY_CONST_TYPE)
       ]
 
+      const exitedTypes = enteredTypes
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(typeToString), expectedTypes)
+      assert.deepEqual(visitor.entered.map(typeToString), enteredTypes)
+      assert.deepEqual(visitor.exited.map(typeToString), exitedTypes)
     })
 
     it('finds var types', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntType[] = []
+        entered: TntType[] = []
+        exited: TntType[] = []
 
-        visitVarType (type: TntType): void {
-          this.visited.push(type)
+        enterVarType (type: TntType): void {
+          this.entered.push(type)
+        }
+
+        exitVarType (type: TntType): void {
+          this.exited.push(type)
         }
       }
 
-      const expectedTypes = [
+      const enteredTypes = [
         'a', // var e: a -> set(a)
         'a', // var e: a -> set(a)
         'a', // def i: (int, a) => bool = false
       ]
 
+      const exitedTypes = enteredTypes
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(typeToString), expectedTypes)
+      assert.deepEqual(visitor.entered.map(typeToString), enteredTypes)
+      assert.deepEqual(visitor.exited.map(typeToString), exitedTypes)
     })
 
     it('finds set types', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntType[] = []
+        entered: TntType[] = []
+        exited: TntType[] = []
 
-        visitSetType (type: TntType): void {
-          this.visited.push(type)
+        enterSetType (type: TntType): void {
+          this.entered.push(type)
+        }
+
+        exitSetType (type: TntType): void {
+          this.exited.push(type)
         }
       }
 
-      const expectedTypes = [
+      const enteredTypes = [
         'set(a)', // var e: a -> set(a)
         'set(int)', // var f: set(int)
         'set(str)', // var g: seq(set(str))
       ]
 
+      const exitedTypes = enteredTypes
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(typeToString), expectedTypes)
+      assert.deepEqual(visitor.entered.map(typeToString), enteredTypes)
+      assert.deepEqual(visitor.exited.map(typeToString), exitedTypes)
     })
 
     it('finds sequence types', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntType[] = []
+        entered: TntType[] = []
+        exited: TntType[] = []
 
-        visitSeqType (type: TntType): void {
-          this.visited.push(type)
+        enterSeqType (type: TntType): void {
+          this.entered.push(type)
+        }
+
+        exitSeqType (type: TntType): void {
+          this.exited.push(type)
         }
       }
 
-      const expectedTypes = [
+      const enteredTypes = [
         'seq(set(str))', // var g: seq(set(str))
         'seq(bool)', // var h: (int -> str) -> seq(bool)
         'seq(bool)', // var j: (int, seq(bool), MY_CONST_TYPE)
       ]
 
+      const exitedTypes = enteredTypes
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(typeToString), expectedTypes)
+      assert.deepEqual(visitor.entered.map(typeToString), enteredTypes)
+      assert.deepEqual(visitor.exited.map(typeToString), exitedTypes)
     })
 
     it('finds function types', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntType[] = []
+        entered: TntType[] = []
+        exited: TntType[] = []
 
-        visitFunType (type: TntType): void {
-          this.visited.push(type)
+        enterFunType (type: TntType): void {
+          this.entered.push(type)
+        }
+
+        exitFunType (type: TntType): void {
+          this.exited.push(type)
         }
       }
 
-      const expectedTypes = [
+      const enteredTypes = [
         '(a -> set(a))', // var e: a -> set(a)
         '((int -> str) -> seq(bool))', // var h: (int -> str) -> seq(bool)
         '(int -> str)', // var h: (int -> str) -> seq(bool)
       ]
 
+      const exitedTypes = [
+        '(a -> set(a))', // var e: a -> set(a)
+        '(int -> str)', // var h: (int -> str) -> seq(bool)
+        '((int -> str) -> seq(bool))', // var h: (int -> str) -> seq(bool)
+      ]
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(typeToString), expectedTypes)
+      assert.deepEqual(visitor.entered.map(typeToString), enteredTypes)
+      assert.deepEqual(visitor.exited.map(typeToString), exitedTypes)
     })
 
     it('finds operator types', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntType[] = []
+        entered: TntType[] = []
+        exited: TntType[] = []
 
-        visitOperType (type: TntType): void {
-          this.visited.push(type)
+        enterOperType (type: TntType): void {
+          this.entered.push(type)
+        }
+
+        exitOperType (type: TntType): void {
+          this.exited.push(type)
         }
       }
 
-      const expectedTypes = [
+      const enteredTypes = [
         '(int, a) => bool', // def i: (int, a) => bool = false
       ]
 
+      const exitedTypes = enteredTypes
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(typeToString), expectedTypes)
+      assert.deepEqual(visitor.entered.map(typeToString), enteredTypes)
+      assert.deepEqual(visitor.exited.map(typeToString), exitedTypes)
     })
 
     it('finds tuple types', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntType[] = []
+        entered: TntType[] = []
+        exited: TntType[] = []
 
-        visitTupleType (type: TntType): void {
-          this.visited.push(type)
+        enterTupleType (type: TntType): void {
+          this.entered.push(type)
+        }
+
+        exitTupleType (type: TntType): void {
+          this.exited.push(type)
         }
       }
 
-      const expectedTypes = [
+      const enteredTypes = [
         '(int, seq(bool), MY_CONST_TYPE)', // var j: (int, seq(bool), MY_CONST_TYPE)
       ]
 
+      const exitedTypes = enteredTypes
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(typeToString), expectedTypes)
+      assert.deepEqual(visitor.entered.map(typeToString), enteredTypes)
+      assert.deepEqual(visitor.exited.map(typeToString), exitedTypes)
     })
 
     it('finds record types', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntType[] = []
+        entered: TntType[] = []
+        exited: TntType[] = []
 
-        visitRecordType (type: TntType): void {
-          this.visited.push(type)
+        enterRecordType (type: TntType): void {
+          this.entered.push(type)
+        }
+
+        exitRecordType (type: TntType): void {
+          this.exited.push(type)
         }
       }
 
-      const expectedTypes = [
+      const enteredTypes = [
         '{ name: str, age: int }', // var k: { name: str, age: int }
       ]
 
+      const exitedTypes = enteredTypes
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(typeToString), expectedTypes)
+      assert.deepEqual(visitor.entered.map(typeToString), enteredTypes)
+      assert.deepEqual(visitor.exited.map(typeToString), exitedTypes)
     })
 
     it('finds union types', () => {
       class TestVisitor implements IRVisitor {
-        visited: TntType[] = []
+        entered: TntType[] = []
+        exited: TntType[] = []
 
-        visitUnionType (type: TntType): void {
-          this.visited.push(type)
+        enterUnionType (type: TntType): void {
+          this.entered.push(type)
+        }
+
+        exitUnionType (type: TntType): void {
+          this.exited.push(type)
         }
       }
 
-      const expectedTypes = [
+      const enteredTypes = [
         '| { tag: "a", a: int }\n| { tag: "b", b: bool }', // var l: | { tag: "a", a: int } | { tag: "b", b: bool }
       ]
 
+      const exitedTypes = enteredTypes
+
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.visited.map(typeToString), expectedTypes)
+      assert.deepEqual(visitor.entered.map(typeToString), enteredTypes)
+      assert.deepEqual(visitor.exited.map(typeToString), exitedTypes)
     })
   })
 })

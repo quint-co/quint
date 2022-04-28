@@ -22,42 +22,64 @@ import * as t from './tntTypes'
  */
 export interface IRVisitor {
   /** General components */
-  visitExpr?: (expr: ir.TntEx) => void
-  visitDef?: (def: ir.TntDef) => void
-  visitType?: (type: t.TntType) => void
+  enterExpr?: (expr: ir.TntEx) => void
+  exitExpr?: (expr: ir.TntEx) => void
+  enterDef?: (def: ir.TntDef) => void
+  exitDef?: (def: ir.TntDef) => void
+  enterType?: (type: t.TntType) => void
+  exitType?: (type: t.TntType) => void
 
   /** Definitions */
-  visitOpDef?: (def: ir.TntOpDef) => void
-  visitConst?: (def: ir.TntConst) => void
-  visitVar?: (def: ir.TntVar) => void
-  visitAssume?: (def: ir.TntAssume) => void
-  visitTypeDef?: (def: ir.TntTypeDef) => void
-  visitImport?: (def: ir.TntImport) => void
-  visitInstance?: (def: ir.TntInstance) => void
-  visitModuleDef?: (def: ir.TntModuleDef) => void
+  enterOpDef?: (def: ir.TntOpDef) => void
+  exitOpDef?: (def: ir.TntOpDef) => void
+  enterConst?: (def: ir.TntConst) => void
+  exitConst?: (def: ir.TntConst) => void
+  enterVar?: (def: ir.TntVar) => void
+  exitVar?: (def: ir.TntVar) => void
+  enterAssume?: (def: ir.TntAssume) => void
+  exitAssume?: (def: ir.TntAssume) => void
+  enterTypeDef?: (def: ir.TntTypeDef) => void
+  exitTypeDef?: (def: ir.TntTypeDef) => void
+  enterImport?: (def: ir.TntImport) => void
+  exitImport?: (def: ir.TntImport) => void
+  enterInstance?: (def: ir.TntInstance) => void
+  exitInstance?: (def: ir.TntInstance) => void
+  enterModuleDef?: (def: ir.TntModuleDef) => void
+  exitModuleDef?: (def: ir.TntModuleDef) => void
 
   /** Expressions */
-  visitName?: (expr: ir.TntName) => void
-  visitBool?: (expr: ir.TntBool) => void
-  visitInt?: (expr: ir.TntInt) => void
-  visitStr?: (expr: ir.TntStr) => void
-  visitApp?: (expr: ir.TntApp) => void
-  visitLambda?: (expr: ir.TntLambda) => void
-  visitLet?: (expr: ir.TntLet) => void
+  enterName?: (expr: ir.TntName) => void
+  exitName?: (expr: ir.TntName) => void
+  enterLiteral?: (expr: ir.TntBool | ir.TntInt | ir.TntStr) => void
+  exitLiteral?: (expr: ir.TntBool | ir.TntInt | ir.TntStr) => void
+  enterApp?: (expr: ir.TntApp) => void
+  exitApp?: (expr: ir.TntApp) => void
+  enterLambda?: (expr: ir.TntLambda) => void
+  exitLambda?: (expr: ir.TntLambda) => void
+  enterLet?: (expr: ir.TntLet) => void
+  exitLet?: (expr: ir.TntLet) => void
 
   /** Types */
-  visitBoolType?: (type: t.TntBoolType) => void
-  visitIntType?: (type: t.TntIntType) => void
-  visitStrType?: (type: t.TntStrType) => void
-  visitConstType?: (type: t.TntConstType) => void
-  visitVarType?: (type: t.TntVarType) => void
-  visitSetType?: (type: t.TntSetType) => void
-  visitSeqType?: (type: t.TntSeqType) => void
-  visitFunType?: (type: t.TntFunType) => void
-  visitOperType?: (type: t.TntOperType) => void
-  visitTupleType?: (type: t.TntTupleType) => void
-  visitRecordType?: (type: t.TntRecordType) => void
-  visitUnionType?: (type: t.TntUnionType) => void
+  enterLiteralType?: (type: t.TntBoolType | t.TntIntType | t.TntStrType) => void
+  exitLiteralType?: (type: t.TntBoolType | t.TntIntType | t.TntStrType) => void
+  enterConstType?: (type: t.TntConstType) => void
+  exitConstType?: (type: t.TntConstType) => void
+  enterVarType?: (type: t.TntVarType) => void
+  exitVarType?: (type: t.TntVarType) => void
+  enterSetType?: (type: t.TntSetType) => void
+  exitSetType?: (type: t.TntSetType) => void
+  enterSeqType?: (type: t.TntSeqType) => void
+  exitSeqType?: (type: t.TntSeqType) => void
+  enterFunType?: (type: t.TntFunType) => void
+  exitFunType?: (type: t.TntFunType) => void
+  enterOperType?: (type: t.TntOperType) => void
+  exitOperType?: (type: t.TntOperType) => void
+  enterTupleType?: (type: t.TntTupleType) => void
+  exitTupleType?: (type: t.TntTupleType) => void
+  enterRecordType?: (type: t.TntRecordType) => void
+  exitRecordType?: (type: t.TntRecordType) => void
+  enterUnionType?: (type: t.TntUnionType) => void
+  exitUnionType?: (type: t.TntUnionType) => void
 }
 
 /**
@@ -70,12 +92,21 @@ export interface IRVisitor {
  * @returns nothing, any collected information has to be a state inside the IRVisitor instance.
  */
 export function walkModule (visitor: IRVisitor, tntModule: ir.TntModule): void {
+  const moduleDef: ir.TntModuleDef = {
+    kind: 'module', id: BigInt(0), module: tntModule,
+  }
+  if (visitor.enterModuleDef) {
+    visitor.enterModuleDef(moduleDef)
+  }
   tntModule.defs.forEach(def => walkDefinition(visitor, def))
+  if (visitor.exitModuleDef) {
+    visitor.exitModuleDef(moduleDef)
+  }
 }
 
-function walkDefinition (visitor: IRVisitor, def: ir.TntDef) {
-  if (visitor.visitDef) {
-    visitor.visitDef(def)
+function walkDefinition (visitor: IRVisitor, def: ir.TntDef): void {
+  if (visitor.enterDef) {
+    visitor.enterDef(def)
   }
   if (def.type) {
     walkType(visitor, def.type)
@@ -83,189 +114,267 @@ function walkDefinition (visitor: IRVisitor, def: ir.TntDef) {
 
   switch (def.kind) {
     case 'const':
-      if (visitor.visitConst) {
-        visitor.visitConst(def)
+      if (visitor.enterConst) {
+        visitor.enterConst(def)
+      }
+      if (visitor.exitConst) {
+        visitor.exitConst(def)
       }
       break
     case 'var':
-      if (visitor.visitVar) {
-        visitor.visitVar(def)
+      if (visitor.enterVar) {
+        visitor.enterVar(def)
+      }
+      if (visitor.exitVar) {
+        visitor.exitVar(def)
       }
       break
     case 'def':
-      if (visitor.visitOpDef) {
-        visitor.visitOpDef(def)
+      if (visitor.enterOpDef) {
+        visitor.enterOpDef(def)
       }
       walkExpression(visitor, def.expr)
+
+      if (visitor.exitOpDef) {
+        visitor.exitOpDef(def)
+      }
       break
     case 'typedef':
-      if (visitor.visitTypeDef) {
-        visitor.visitTypeDef(def)
+      if (visitor.enterTypeDef) {
+        visitor.enterTypeDef(def)
+      }
+      if (visitor.exitTypeDef) {
+        visitor.exitTypeDef(def)
       }
       break
     case 'instance':
-      if (visitor.visitInstance) {
-        visitor.visitInstance(def)
+      if (visitor.enterInstance) {
+        visitor.enterInstance(def)
       }
       def.overrides.forEach(e => walkExpression(visitor, e[1]))
+      if (visitor.exitInstance) {
+        visitor.exitInstance(def)
+      }
       break
     case 'module':
-      if (visitor.visitModuleDef) {
-        visitor.visitModuleDef(def)
+      if (visitor.enterModuleDef) {
+        visitor.enterModuleDef(def)
       }
-      walkModule(visitor, def.module)
+      def.module.defs.forEach(def => walkDefinition(visitor, def))
+
+      if (visitor.exitModuleDef) {
+        visitor.exitModuleDef(def)
+      }
       break
     case 'import':
-      if (visitor.visitImport) {
-        visitor.visitImport(def)
+      if (visitor.enterImport) {
+        visitor.enterImport(def)
+      }
+      if (visitor.exitImport) {
+        visitor.exitImport(def)
       }
       break
     case 'assume':
-      if (visitor.visitAssume) {
-        visitor.visitAssume(def)
+      if (visitor.enterAssume) {
+        visitor.enterAssume(def)
       }
       walkExpression(visitor, def.assumption)
+
+      if (visitor.exitAssume) {
+        visitor.exitAssume(def)
+      }
       break
+  }
+  if (visitor.exitDef) {
+    visitor.exitDef(def)
   }
 }
 
-function walkExpression (visitor: IRVisitor, expr: ir.TntEx) {
-  if (visitor.visitExpr) {
-    visitor.visitExpr(expr)
+function walkExpression (visitor: IRVisitor, expr: ir.TntEx): void {
+  if (visitor.enterExpr) {
+    visitor.enterExpr(expr)
   }
 
   switch (expr.kind) {
     case 'name':
-      if (visitor.visitName) {
-        visitor.visitName(expr)
+      if (visitor.enterName) {
+        visitor.enterName(expr)
+      }
+      if (visitor.exitName) {
+        visitor.exitName(expr)
       }
       break
     case 'bool':
-      if (visitor.visitBool) {
-        visitor.visitBool(expr)
-      }
-      break
     case 'int':
-      if (visitor.visitInt) {
-        visitor.visitInt(expr)
-      }
-      break
     case 'str':
-      if (visitor.visitStr) {
-        visitor.visitStr(expr)
+      if (visitor.enterLiteral) {
+        visitor.enterLiteral(expr)
+      }
+      if (visitor.exitLiteral) {
+        visitor.exitLiteral(expr)
       }
       break
     case 'app': {
-      if (visitor.visitApp) {
-        visitor.visitApp(expr)
+      if (visitor.enterApp) {
+        visitor.enterApp(expr)
       }
-
       expr.args.forEach(arg => walkExpression(visitor, arg))
+
+      if (visitor.exitApp) {
+        visitor.exitApp(expr)
+      }
       break
     }
     case 'lambda':
-      if (visitor.visitLambda) {
-        visitor.visitLambda(expr)
+      if (visitor.enterLambda) {
+        visitor.enterLambda(expr)
       }
 
       walkExpression(visitor, expr.expr)
+
+      if (visitor.exitLambda) {
+        visitor.exitLambda(expr)
+      }
       break
     case 'let':
-      if (visitor.visitLet) {
-        visitor.visitLet(expr)
+      if (visitor.enterLet) {
+        visitor.enterLet(expr)
       }
 
       walkDefinition(visitor, expr.opdef)
       walkExpression(visitor, expr.expr)
+
+      if (visitor.exitLet) {
+        visitor.exitLet(expr)
+      }
       break
+  }
+
+  if (visitor.exitExpr) {
+    visitor.exitExpr(expr)
   }
 }
 
-function walkType (visitor: IRVisitor, type: t.TntType) {
-  if (visitor.visitType) {
-    visitor.visitType(type)
+function walkType (visitor: IRVisitor, type: t.TntType): void {
+  if (visitor.enterType) {
+    visitor.enterType(type)
   }
 
   switch (type.kind) {
     case 'bool':
-      if (visitor.visitBoolType) {
-        visitor.visitBoolType(type)
-      }
-      break
     case 'int':
-      if (visitor.visitIntType) {
-        visitor.visitIntType(type)
-      }
-      break
     case 'str':
-      if (visitor.visitStrType) {
-        visitor.visitStrType(type)
+      if (visitor.enterLiteralType) {
+        visitor.enterLiteralType(type)
+      }
+      if (visitor.exitLiteralType) {
+        visitor.exitLiteralType(type)
       }
       break
     case 'const':
-      if (visitor.visitConstType) {
-        visitor.visitConstType(type)
+      if (visitor.enterConstType) {
+        visitor.enterConstType(type)
+      }
+      if (visitor.exitConstType) {
+        visitor.exitConstType(type)
       }
       break
     case 'var':
-      if (visitor.visitVarType) {
-        visitor.visitVarType(type)
+      if (visitor.enterVarType) {
+        visitor.enterVarType(type)
+      }
+      if (visitor.exitVarType) {
+        visitor.exitVarType(type)
       }
       break
     case 'set':
-      if (visitor.visitSetType) {
-        visitor.visitSetType(type)
+      if (visitor.enterSetType) {
+        visitor.enterSetType(type)
       }
+
       walkType(visitor, type.elem)
+
+      if (visitor.exitSetType) {
+        visitor.exitSetType(type)
+      }
       break
     case 'seq':
-      if (visitor.visitSeqType) {
-        visitor.visitSeqType(type)
+      if (visitor.enterSeqType) {
+        visitor.enterSeqType(type)
       }
+
       walkType(visitor, type.elem)
+
+      if (visitor.exitSeqType) {
+        visitor.exitSeqType(type)
+      }
       break
     case 'fun':
-      if (visitor.visitFunType) {
-        visitor.visitFunType(type)
+      if (visitor.enterFunType) {
+        visitor.enterFunType(type)
       }
       // Functions, walk both argument and result
       walkType(visitor, type.arg)
       walkType(visitor, type.res)
+
+      if (visitor.exitFunType) {
+        visitor.exitFunType(type)
+      }
       break
 
     case 'oper':
-      if (visitor.visitOperType) {
-        visitor.visitOperType(type)
+      if (visitor.enterOperType) {
+        visitor.enterOperType(type)
       }
       // Operators, walk all arguments and result
       type.args.forEach(arg => walkType(visitor, arg))
       walkType(visitor, type.res)
+
+      if (visitor.exitOperType) {
+        visitor.exitOperType(type)
+      }
       break
 
     case 'tuple':
-      if (visitor.visitTupleType) {
-        visitor.visitTupleType(type)
+      if (visitor.enterTupleType) {
+        visitor.enterTupleType(type)
       }
       // Tuples, walk all elements
       type.elems.forEach(elem => walkType(visitor, elem))
+
+      if (visitor.exitTupleType) {
+        visitor.exitTupleType(type)
+      }
       break
 
     case 'record':
-      if (visitor.visitRecordType) {
-        visitor.visitRecordType(type)
+      if (visitor.enterRecordType) {
+        visitor.enterRecordType(type)
       }
       // Records, walk all fields
       type.fields.forEach(field => walkType(visitor, field.fieldType))
+
+      if (visitor.exitRecordType) {
+        visitor.exitRecordType(type)
+      }
       break
 
     case 'union':
-      if (visitor.visitUnionType) {
-        visitor.visitUnionType(type)
+      if (visitor.enterUnionType) {
+        visitor.enterUnionType(type)
       }
       // Variants, walk all fields for all records
       type.records.forEach(record => {
         record.fields.forEach(field => walkType(visitor, field.fieldType))
       })
+
+      if (visitor.exitUnionType) {
+        visitor.exitUnionType(type)
+      }
       break
+  }
+
+  if (visitor.exitType) {
+    visitor.exitType(type)
   }
 }
