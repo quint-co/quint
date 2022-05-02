@@ -1,24 +1,39 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Pretty printing for IR components.
+ *
+ * @author Gabriela Mafra
+ *
+ * @module
+ */
+
 import { TntModule, TntDef, TntEx } from './tntIr'
 import { TntType } from './tntTypes'
 
-export function expressionToString (expr: TntEx): string {
-  switch (expr.kind) {
-    case 'name':
-      return expr.name
-    case 'bool':
-    case 'int':
-      return expr.value.toString()
-    case 'str':
-      return `"${expr.value}"`
-    case 'app':
-      return `${expr.opcode}(${expr.args.map(expressionToString).join(', ')})`
-    case 'lambda':
-      return `(${expr.params.join(', ')} -> ${expressionToString(expr.expr)})`
-    case 'let':
-      return `${definitionToString(expr.opdef)} { ${expressionToString(expr.expr)} }`
-  }
+/**
+ * Pretty prints a module
+ *
+ * @param tntModule the TNT module to be formatted
+ *
+ * @returns a string with the pretty printed definition
+ */
+export function moduleToString (tntModule: TntModule): string {
+  const defs = tntModule.defs.map(definitionToString).join('\n  ')
+  return `module ${tntModule.name} {\n  ${defs}\n}`
 }
 
+/**
+ * Pretty prints a definition
+ *
+ * @param def the TNT expression to be formatted
+ *
+ * @returns a string with the pretty printed definition
+ */
 export function definitionToString (def: TntDef): string {
   const typeAnnotation = def.type ? `: ${typeToString(def.type)}` : ''
   switch (def.kind) {
@@ -47,11 +62,38 @@ export function definitionToString (def: TntDef): string {
   }
 }
 
-export function moduleToString (tntModule: TntModule): string {
-  const defs = tntModule.defs.map(definitionToString).join('\n  ')
-  return `module ${tntModule.name} {\n  ${defs}\n}`
+/**
+ * Pretty prints an expression
+ *
+ * @param expr the TNT expression to be formatted
+ *
+ * @returns a string with the pretty printed expression
+ */
+export function expressionToString (expr: TntEx): string {
+  switch (expr.kind) {
+    case 'name':
+      return expr.name
+    case 'bool':
+    case 'int':
+      return expr.value.toString()
+    case 'str':
+      return `"${expr.value}"`
+    case 'app':
+      return `${expr.opcode}(${expr.args.map(expressionToString).join(', ')})`
+    case 'lambda':
+      return `(${expr.params.join(', ')} -> ${expressionToString(expr.expr)})`
+    case 'let':
+      return `${definitionToString(expr.opdef)} { ${expressionToString(expr.expr)} }`
+  }
 }
 
+/**
+ * Pretty prints a type
+ *
+ * @param type the TNT type to be formatted
+ *
+ * @returns a string with the pretty printed type
+ */
 export function typeToString (type: TntType): string {
   switch (type.kind) {
     case 'bool':
