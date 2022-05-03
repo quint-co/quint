@@ -50,7 +50,7 @@ export type NameResolutionResult =
  * Explore the IR checking all name expressions for undefined names
  *
  * @param tntModule the TNT module to be checked
- * @param table lists of names and type aliases defined for that module, including their scope when not global
+ * @param table lists of names and type aliases collected for all modules
  *
  * @returns a successful result in case all names are resolved, or an aggregation of errors otherwise
  */
