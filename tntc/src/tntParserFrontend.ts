@@ -113,10 +113,17 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
       if (!loc) {
         throw new Error(`no loc found for ${error.reference}`)
       }
-      errorMessages.push({
-        explanation: `Module ${error.moduleName} couldn't be imported`,
-        locs: [loc],
-      })
+      if (error.defName) {
+        errorMessages.push({
+          explanation: `Definition ${error.defName} from module ${error.moduleName} couldn't be imported`,
+          locs: [loc],
+        })
+      } else {
+        errorMessages.push({
+          explanation: `Module ${error.moduleName} couldn't be imported`,
+          locs: [loc],
+        })
+      }
     })
   }
 
