@@ -35,6 +35,8 @@ module root {
     val test_test_sqr = test_sqr
 
     module BB {
+      // Following definitions are commented out in favor of discussion (#87)
+
       // we can access test_test_sqr, as it belongs to the parent module
       // val test_test_test_sqr = test_test_sqr
       // we can access test_sqr too, as it is imported in the parent module
@@ -60,7 +62,7 @@ module root {
     module CC {
       var m: int
 
-      // FIXME: decide whether this should be possible
+      // Following definitions are commented out in favor of discussion (#87)
       // we can access the state variable of the parent module
       // val nn = n * n
     }
