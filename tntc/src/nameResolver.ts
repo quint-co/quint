@@ -15,10 +15,10 @@
  * @module
  */
 
-import { TntModule, TntName, TntApp, TntDef } from './tntIr'
+import { TntModule, TntName, TntApp, TntDef, TntModuleDef } from './tntIr'
 import { TntConstType, TntVarType } from './tntTypes'
 import { ScopeTree, scopesForId } from './scoping'
-import { DefinitionTable, ValueDefinition } from './definitionsCollector'
+import { DefinitionTable, DefinitionTableByModule, ValueDefinition } from './definitionsCollector'
 import { IRVisitor, walkModule } from './IRVisitor'
 
 /**
@@ -31,6 +31,8 @@ export interface NameError {
   name: string;
   /* The module-level definition containing the error */
   definitionName: string;
+  /* The module name of the module containing the error */
+  moduleName: string;
   /* The identifier of the IR node where the error occurs */
   reference: BigInt;
 }
@@ -52,7 +54,7 @@ export type NameResolutionResult =
  *
  * @returns a successful result in case all names are resolved, or an aggregation of errors otherwise
  */
-export function resolveNames (tntModule: TntModule, table: DefinitionTable, scopeTree: ScopeTree): NameResolutionResult {
+export function resolveNames (tntModule: TntModule, table: DefinitionTableByModule, scopeTree: ScopeTree): NameResolutionResult {
   const visitor = new NameResolverVisitor(table, scopeTree)
   walkModule(visitor, tntModule)
   const results: NameResolutionResult[] = visitor.results
@@ -60,18 +62,34 @@ export function resolveNames (tntModule: TntModule, table: DefinitionTable, scop
 }
 
 class NameResolverVisitor implements IRVisitor {
-  constructor (table: DefinitionTable, scopeTree: ScopeTree) {
-    this.table = table
+  constructor (tables: DefinitionTableByModule, scopeTree: ScopeTree) {
+    this.tables = tables
     this.scopeTree = scopeTree
   }
 
   results: NameResolutionResult[] = []
 
-  private table: DefinitionTable = { valueDefinitions: [], typeDefinitions: [] }
   private scopeTree: ScopeTree
+  private tables: DefinitionTableByModule
   private defName: string = ''
+  private moduleStack: string[] = []
+
+  private currentModule (): string {
+    return this.moduleStack[this.moduleStack.length - 1]
+  }
+
+  private table (): DefinitionTable {
+    const moduleName = this.currentModule()
+    const t = this.tables.get(moduleName)
+    if (!t) {
+      throw new Error(`Can't find table for module ${moduleName}`)
+    }
+    return t
+  }
 
   visitDef (def: TntDef): void {
+    // Keep the last visited definition name
+    // so it can be showed in the reported error
     if (def.kind === 'module') {
       this.defName = def.module.name
     } else {
@@ -79,39 +97,47 @@ class NameResolverVisitor implements IRVisitor {
     }
   }
 
+  visitModuleDef (def: TntModuleDef): void {
+    this.moduleStack.push(def.module.name)
+  }
+
+  exitModuleDef (def: TntModuleDef): void {
+    this.moduleStack.pop()
+  }
+
   visitName (nameExpr: TntName): void {
     // This is a name expression, the name must be defined
     // either globally or under a scope that contains the expression
     // The list of scopes containing the expression is accumulated in param scopes
-    const valueDefinitionsForScope = filterScope(this.table.valueDefinitions, scopesForId(this.scopeTree, nameExpr.id))
+    const valueDefinitionsForScope = filterScope(this.table().valueDefinitions, scopesForId(this.scopeTree, nameExpr.id))
 
     if (!valueDefinitionsForScope.some(name => name.identifier === nameExpr.name)) {
       this.results.push({
         kind: 'error',
-        errors: [{ kind: 'value', name: nameExpr.name, definitionName: this.defName, reference: nameExpr.id }],
+        errors: [{ kind: 'value', name: nameExpr.name, definitionName: this.defName, moduleName: this.currentModule(), reference: nameExpr.id }],
       })
     }
   }
 
   visitApp (appExpr: TntApp): void {
     // Application, check that the operator being applied is defined
-    const valueDefinitionsForScope = filterScope(this.table.valueDefinitions, scopesForId(this.scopeTree, appExpr.id))
+    const valueDefinitionsForScope = filterScope(this.table().valueDefinitions, scopesForId(this.scopeTree, appExpr.id))
 
     if (!valueDefinitionsForScope.some(name => name.identifier === appExpr.opcode)) {
       this.results.push({
         kind: 'error',
-        errors: [{ kind: 'value', name: appExpr.opcode, definitionName: this.defName, reference: appExpr.id }],
+        errors: [{ kind: 'value', name: appExpr.opcode, definitionName: this.defName, moduleName: this.currentModule(), reference: appExpr.id }],
       })
     }
   }
 
   visitVarType (type: TntVarType): void {
     // Type is a name, check that it is defined
-    if (!this.table.typeDefinitions.some(def => def.identifier === type.name)) {
+    if (!this.table().typeDefinitions.some(def => def.identifier === type.name)) {
       this.results.push({
         kind: 'error',
         errors: [
-          { kind: 'type', name: type.name, definitionName: this.defName, reference: type.id },
+          { kind: 'type', name: type.name, definitionName: this.defName, moduleName: this.currentModule(), reference: type.id },
         ],
       })
     }
@@ -119,11 +145,11 @@ class NameResolverVisitor implements IRVisitor {
 
   visitConstType (type: TntConstType): void {
     // Type is a name, check that it is defined
-    if (!this.table.typeDefinitions.some(def => def.identifier === type.name)) {
+    if (!this.table().typeDefinitions.some(def => def.identifier === type.name)) {
       this.results.push({
         kind: 'error',
         errors: [
-          { kind: 'type', name: type.name, definitionName: this.defName, reference: type.id },
+          { kind: 'type', name: type.name, definitionName: this.defName, moduleName: this.currentModule(), reference: type.id },
         ],
       })
     }
