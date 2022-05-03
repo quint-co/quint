@@ -14,6 +14,7 @@ describe('nameResolver', () => {
   ])
   const typeDefinitions: TypeDefinition[] = [
     { identifier: 'MY_TYPE', type: { id: BigInt(100), kind: 'int' } },
+    { identifier: 'a', type: { id: BigInt(101), kind: 'int' } },
   ]
 
   const moduleName = 'wrapper'
@@ -107,13 +108,26 @@ describe('nameResolver', () => {
       }
       assert.deepEqual(result, expectedResult)
     })
+
+    it('find unresolved names inside modules', () => {
+      const tntModule = buildModuleWithDefs(['module test_module { def a = x }'])
+
+      const result = resolveNames(tntModule, tables, dummyScopeTree)
+      const expectedResult: NameResolutionResult = {
+        kind: 'error',
+        errors: [
+          { kind: 'value', name: 'x', definitionName: 'a', moduleName: 'test_module', reference: BigInt(1) },
+        ],
+      }
+      assert.deepEqual(result, expectedResult)
+    })
   })
 
   describe('type aliases', () => {
     it('resolves defined aliases', () => {
       const tntModule = buildModuleWithDefs([
         'const a: MY_TYPE',
-        'var b: MY_TYPE',
+        'var b: a -> set(a)',
       ])
       const result = resolveNames(tntModule, tables, dummyScopeTree)
       const expectedResult: NameResolutionResult = { kind: 'ok' }
@@ -124,7 +138,7 @@ describe('nameResolver', () => {
       const tntModule = buildModuleWithDefs([
         'const a: UNKNOWN_TYPE_0',
         'var b: UNKNOWN_TYPE_1',
-        'type c = UNKNOWN_TYPE_2',
+        'type c = set(t)',
         'assume d = 1',
       ])
       const result = resolveNames(tntModule, tables, dummyScopeTree)
@@ -133,7 +147,7 @@ describe('nameResolver', () => {
         errors: [
           { kind: 'type', name: 'UNKNOWN_TYPE_0', definitionName: 'a', moduleName: moduleName, reference: BigInt(1) },
           { kind: 'type', name: 'UNKNOWN_TYPE_1', definitionName: 'b', moduleName: moduleName, reference: BigInt(3) },
-          { kind: 'type', name: 'UNKNOWN_TYPE_2', definitionName: 'c', moduleName: moduleName, reference: BigInt(5) },
+          { kind: 'type', name: 't', definitionName: 'c', moduleName: moduleName, reference: BigInt(5) },
         ],
       }
       assert.deepEqual(result, expectedResult)

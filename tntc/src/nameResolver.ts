@@ -18,7 +18,7 @@
 import { TntModule, TntName, TntApp, TntDef, TntModuleDef } from './tntIr'
 import { TntConstType, TntVarType } from './tntTypes'
 import { ScopeTree, scopesForId } from './scoping'
-import { DefinitionTable, DefinitionTableByModule, ValueDefinition } from './definitionsCollector'
+import { DefinitionTable, DefinitionTableByModule, ValueDefinition, emptyTable } from './definitionsCollector'
 import { IRVisitor, walkModule } from './IRVisitor'
 
 /**
@@ -57,35 +57,25 @@ export type NameResolutionResult =
 export function resolveNames (tntModule: TntModule, table: DefinitionTableByModule, scopeTree: ScopeTree): NameResolutionResult {
   const visitor = new NameResolverVisitor(table, scopeTree)
   walkModule(visitor, tntModule)
-  const results: NameResolutionResult[] = visitor.results
-  return mergeNameResults(results)
+  const errors: NameError[] = visitor.errors
+  return errors.length > 0 ? { kind: 'error', errors: errors } : { kind: 'ok' }
 }
 
 class NameResolverVisitor implements IRVisitor {
-  constructor (tables: DefinitionTableByModule, scopeTree: ScopeTree) {
+  constructor(tables: DefinitionTableByModule, scopeTree: ScopeTree) {
     this.tables = tables
     this.scopeTree = scopeTree
   }
 
-  results: NameResolutionResult[] = []
+  errors: NameError[] = []
 
   private scopeTree: ScopeTree
   private tables: DefinitionTableByModule
   private defName: string = ''
+
+  private currentModule: string = ''
+  private currentTable: DefinitionTable = emptyTable()
   private moduleStack: string[] = []
-
-  private currentModule (): string {
-    return this.moduleStack[this.moduleStack.length - 1]
-  }
-
-  private table (): DefinitionTable {
-    const moduleName = this.currentModule()
-    const t = this.tables.get(moduleName)
-    if (!t) {
-      throw new Error(`Can't find table for module ${moduleName}`)
-    }
-    return t
-  }
 
   enterDef (def: TntDef): void {
     // Keep the last visited definition name
@@ -99,70 +89,84 @@ class NameResolverVisitor implements IRVisitor {
 
   enterModuleDef (def: TntModuleDef): void {
     this.moduleStack.push(def.module.name)
+
+    this.updateCurrent()
   }
 
   exitModuleDef (_: TntModuleDef): void {
     this.moduleStack.pop()
+
+    this.updateCurrent()
   }
 
   enterName (nameExpr: TntName): void {
     // This is a name expression, the name must be defined
     // either globally or under a scope that contains the expression
     // The list of scopes containing the expression is accumulated in param scopes
-    const valueDefinitionsForScope = filterScope(this.table().valueDefinitions, scopesForId(this.scopeTree, nameExpr.id))
+    const valueDefinitionsForScope = filterScope(this.currentTable.valueDefinitions, scopesForId(this.scopeTree, nameExpr.id))
 
     if (!valueDefinitionsForScope.some(name => name.identifier === nameExpr.name)) {
-      this.results.push({
-        kind: 'error',
-        errors: [{ kind: 'value', name: nameExpr.name, definitionName: this.defName, moduleName: this.currentModule(), reference: nameExpr.id }],
+      this.errors.push({
+        kind: 'value',
+        name: nameExpr.name,
+        definitionName: this.defName,
+        moduleName: this.currentModule,
+        reference: nameExpr.id,
       })
     }
   }
 
   enterApp (appExpr: TntApp): void {
     // Application, check that the operator being applied is defined
-    const valueDefinitionsForScope = filterScope(this.table().valueDefinitions, scopesForId(this.scopeTree, appExpr.id))
+    const valueDefinitionsForScope = filterScope(this.currentTable.valueDefinitions, scopesForId(this.scopeTree, appExpr.id))
 
     if (!valueDefinitionsForScope.some(name => name.identifier === appExpr.opcode)) {
-      this.results.push({
-        kind: 'error',
-        errors: [{ kind: 'value', name: appExpr.opcode, definitionName: this.defName, moduleName: this.currentModule(), reference: appExpr.id }],
+      this.errors.push({
+        kind: 'value',
+        name: appExpr.opcode,
+        definitionName: this.defName,
+        moduleName: this.currentModule,
+        reference: appExpr.id,
       })
     }
   }
 
   enterVarType (type: TntVarType): void {
     // Type is a name, check that it is defined
-    if (!this.table().typeDefinitions.some(def => def.identifier === type.name)) {
-      this.results.push({
-        kind: 'error',
-        errors: [
-          { kind: 'type', name: type.name, definitionName: this.defName, moduleName: this.currentModule(), reference: type.id },
-        ],
+    if (!this.currentTable.typeDefinitions.some(def => def.identifier === type.name)) {
+      this.errors.push({
+        kind: 'type',
+        name: type.name,
+        definitionName: this.defName,
+        moduleName: this.currentModule,
+        reference: type.id,
       })
     }
   }
 
   enterConstType (type: TntConstType): void {
     // Type is a name, check that it is defined
-    if (!this.table().typeDefinitions.some(def => def.identifier === type.name)) {
-      this.results.push({
-        kind: 'error',
-        errors: [
-          { kind: 'type', name: type.name, definitionName: this.defName, moduleName: this.currentModule(), reference: type.id },
-        ],
+    if (!this.currentTable.typeDefinitions.some(def => def.identifier === type.name)) {
+      this.errors.push({
+        kind: 'type',
+        name: type.name,
+        definitionName: this.defName,
+        moduleName: this.currentModule,
+        reference: type.id,
       })
     }
   }
-}
 
-function mergeNameResults (results: NameResolutionResult[]): NameResolutionResult {
-  // Aggregate errors
-  const errors = results.reduce((errors: NameError[], result: NameResolutionResult) => {
-    return result.kind === 'error' ? errors.concat(result.errors) : errors
-  }, [])
+  private updateCurrent (): void {
+    this.currentModule = this.moduleStack[this.moduleStack.length - 1]
 
-  return errors.length > 0 ? { kind: 'error', errors: errors } : { kind: 'ok' }
+    let moduleTable = this.tables.get(this.currentModule)
+    if (!moduleTable) {
+      moduleTable = emptyTable()
+      this.tables.set(this.currentModule, moduleTable)
+    }
+    this.currentTable = moduleTable
+  }
 }
 
 function filterScope (valueDefinitions: ValueDefinition[], scopes: BigInt[]): ValueDefinition[] {
