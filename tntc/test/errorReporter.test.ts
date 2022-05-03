@@ -83,4 +83,16 @@ describe('errorReporter', () => {
     const error = formatError(text, finder, message).trim()
     assert.equal(error, expectedError)
   })
+
+  it('outputs just explanation when there are no locs', () => {
+    const message: ErrorMessage = {
+      explanation: 'error explanation',
+      locs: [],
+    }
+
+    const expectedError = 'error: error explanation'
+
+    const error = formatError(text, finder, message).trim()
+    assert.equal(error, expectedError)
+  })
 })

@@ -25,6 +25,10 @@ import { ErrorMessage } from './tntParserFrontend'
  * @returns a formatted string with error information
  * */
 export function formatError (text: string, finder: any, message: ErrorMessage): string {
+  if (message.locs.length === 0) {
+    return `error: ${message.explanation}`
+  }
+
   return message.locs.reduce((output, loc) => {
     const locString = `${loc.source}:${loc.start.line + 1}:${loc.start.col + 1}`
     output += `${locString} - error: ${message.explanation}\n`
