@@ -1,10 +1,11 @@
-import { DefinitionTableByModule, DefinitionTable, ValueDefinition, emptyTable } from './definitionsCollector'
+import { DefinitionTableByModule, DefinitionTable, emptyTable } from './definitionsCollector'
 import { TntImport, TntInstance, TntModule, TntModuleDef } from './tntIr'
 import { IRVisitor, walkModule } from './IRVisitor'
 
 export interface ImportError {
   moduleName: string
   reference: bigint
+  defName?: string
 }
 
 export type ImportResolutionResult =
@@ -70,29 +71,33 @@ class ImportResolverVisitor implements IRVisitor {
       this.errors.push({ moduleName: def.path, reference: def.id })
       return
     }
-    const namespacedDefinitions = moduleTable.valueDefinitions
-      .reduce((ds: ValueDefinition[], d) => {
-        // FIXME: This identifier string manipulation should be replaced by a better representation, see #58
-        // Collect this name as unscoped iff the import matches its namespace and name
-        if (def.name === '*' || def.name === d.identifier) {
-          if (!d.scope) {
-            ds.push({ kind: d.kind, identifier: d.identifier, reference: d.reference })
-          }
-        }
-        return ds
-      }, [])
-    this.currentTable.valueDefinitions.push(...namespacedDefinitions)
+    // Import only unscoped and non-default (referenced) names
+    const importableDefinitions = moduleTable.valueDefinitions.filter(d => !d.scope && d.reference)
+
+    if (def.name === '*') {
+      this.currentTable.valueDefinitions.push(...importableDefinitions)
+    } else {
+      const definition = importableDefinitions.find(d => d.identifier === def.name)
+
+      if (definition) {
+        this.currentTable.valueDefinitions.push(definition)
+      } else {
+        this.errors.push({ moduleName: def.path, defName: def.name, reference: def.id })
+      }
+    }
   }
 
   private updateCurrent (): void {
-    this.currentModule = this.moduleStack[this.moduleStack.length - 1]
+    if (this.moduleStack.length > 0) {
+      this.currentModule = this.moduleStack[this.moduleStack.length - 1]
 
-    let moduleTable = this.tables.get(this.currentModule)
-    if (!moduleTable) {
-      moduleTable = emptyTable()
-      this.tables.set(this.currentModule, moduleTable)
+      let moduleTable = this.tables.get(this.currentModule)
+      if (!moduleTable) {
+        moduleTable = emptyTable()
+        this.tables.set(this.currentModule, moduleTable)
+      }
+      this.currentTable = moduleTable
     }
-    this.currentTable = moduleTable
   }
 }
 

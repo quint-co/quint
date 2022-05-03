@@ -8,9 +8,9 @@ describe('resolveImports', () => {
   const moduleName = 'wrapper'
   const table: DefinitionTable = {
     valueDefinitions: [
-      { kind: 'def', identifier: 'a' },
-      { kind: 'def', identifier: 'b' },
-      { kind: 'def', identifier: 'c', scope: BigInt(10) },
+      { kind: 'def', identifier: 'a', reference: BigInt(1) },
+      { kind: 'def', identifier: 'b', reference: BigInt(2) },
+      { kind: 'def', identifier: 'c', reference: BigInt(3), scope: BigInt(10) },
     ],
     typeDefinitions: [],
   }
