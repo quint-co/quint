@@ -13,7 +13,7 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
 import { TntModule } from './tntIr'
 import { ToIrListener } from './ToIrListener'
-import { defaultDefinitions, collectDefinitions, mergeTables } from './definitionsCollector'
+import { collectDefinitions } from './definitionsCollector'
 import { resolveNames } from './nameResolver'
 import { treeFromModule } from './scoping'
 import { scanConflicts } from './definitionsScanner'
@@ -98,33 +98,35 @@ export function parsePhase1 (text: string, sourceLocation: string): ParseResult 
  */
 export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>): ParseResult {
   const scopeTree = treeFromModule(tntModule)
-  const definitions = mergeTables(defaultDefinitions, collectDefinitions(tntModule))
+  const definitions = collectDefinitions(tntModule)
 
   const errorMessages: ErrorMessage[] = []
 
-  const conflictResult = scanConflicts(definitions, scopeTree)
+  definitions.forEach((moduleDefinitions, moduleName) => {
+    const conflictResult = scanConflicts(moduleDefinitions, scopeTree)
 
-  if (conflictResult.kind === 'error') {
-    conflictResult.conflicts.forEach(conflict => {
-      let msg, sources
-      if (conflict.sources.some(source => source.kind === 'builtin')) {
-        msg = `Built-in name ${conflict.identifier} is redefined`
-        sources = conflict.sources.filter(source => source.kind === 'user')
-      } else {
-        msg = `Conflicting definitions found for name ${conflict.identifier}`
-        sources = conflict.sources
-      }
-      const locs = sources.map(source => {
-        const id = source.kind === 'user' ? source.reference : BigInt(0) // Impossible case, but TS requires the ckeck
-        const loc = sourceMap.get(id)
-        if (!loc) {
-          throw new Error(`no loc found for ${id}`)
+    if (conflictResult.kind === 'error') {
+      conflictResult.conflicts.forEach(conflict => {
+        let msg, sources
+        if (conflict.sources.some(source => source.kind === 'builtin')) {
+          msg = `Built-in name ${conflict.identifier} is redefined`
+          sources = conflict.sources.filter(source => source.kind === 'user')
+        } else {
+          msg = `Conflicting definitions found for name ${conflict.identifier}`
+          sources = conflict.sources
         }
-        return loc
+        const locs = sources.map(source => {
+          const id = source.kind === 'user' ? source.reference : BigInt(0) // Impossible case, but TS requires the ckeck
+          const loc = sourceMap.get(id)
+          if (!loc) {
+            throw new Error(`no loc found for ${id}`)
+          }
+          return loc
+        })
+        errorMessages.push({ explanation: msg, locs: locs })
       })
-      errorMessages.push({ explanation: msg, locs: locs })
-    })
-  }
+    }
+  })
 
   const result = resolveNames(tntModule, definitions)
 
