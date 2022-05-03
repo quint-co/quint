@@ -146,7 +146,8 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
     }
   })
 
-  const result = resolveNames(tntModule, definitions)
+  // Temp: use just the root's module table at name resolution for now
+  const result = resolveNames(tntModule, definitions.get(tntModule.name)!)
 
   if (result.kind === 'error') {
     // Build error message with resolution explanation and the location obtained from sourceMap
