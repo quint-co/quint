@@ -41,7 +41,18 @@ describe('treeFromModule', () => {
         { value: BigInt(2), children: [] },
         { value: BigInt(4), children: [] },
         { value: BigInt(6), children: [] },
-        { value: BigInt(10), children: [] },
+        {
+          value: BigInt(10),
+          children: [
+            {
+              value: BigInt(9),
+              children: [
+                { value: BigInt(7), children: [] },
+                { value: BigInt(8), children: [] },
+              ],
+            },
+          ],
+        },
         { value: BigInt(11), children: [] },
         {
           value: BigInt(15),
