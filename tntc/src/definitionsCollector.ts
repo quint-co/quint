@@ -181,7 +181,6 @@ export function defaultDefinitions (): DefinitionTable {
  */
 export function collectDefinitions (tntModule: TntModule): DefinitionTableByModule {
   let fullTable = new Map<string, DefinitionTable>()
-  fullTable.set(tntModule.name, emptyTable())
   fullTable = tntModule.defs.reduce((t, d) => collectFromDef(t, tntModule.name, d), fullTable)
 
   fullTable.forEach(table => {
@@ -191,18 +190,13 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTableByModu
   return fullTable
 }
 
-export function copyTable (t: DefinitionTable): DefinitionTable {
-  return {
-    valueDefinitions: t.valueDefinitions,
-    typeDefinitions: t.typeDefinitions,
-  }
-}
-
 function collectFromDef (tables: DefinitionTableByModule, moduleName: string, def: TntDef): DefinitionTableByModule {
-  const table = tables.get(moduleName)
+  let table = tables.get(moduleName)
   if (!table) {
-    throw new Error(`Can't find table for module ${moduleName}`)
+    table = emptyTable()
+    tables.set(moduleName, table)
   }
+
   switch (def.kind) {
     case 'const':
     case 'var':
@@ -227,22 +221,6 @@ function collectFromDef (tables: DefinitionTableByModule, moduleName: string, de
         reference: def.id,
       })
       table.valueDefinitions.push(...def.overrides.flatMap(e => collectFromExpr(e[1])))
-
-      const moduleTable = tables.get(def.protoName)
-      if (!moduleTable) {
-        throw new Error(`Can't find table for module ${def.protoName}`)
-      }
-      tables.set(def.name, copyTable(moduleTable))
-
-      // Alias definitions from the instanced module to the new name
-      const namespacedDefinitions = moduleTable.valueDefinitions
-        .filter(d => !d.scope)
-        .map(d => {
-          // FIXME: This identifier string manipulation should be replaced by a better representation, see #58
-          // Collect this name scoped to the instance iff the import matches the module's namespace
-          return { kind: d.kind, identifier: `${def.name}::${d.identifier}`, reference: d.reference }
-        })
-      table.valueDefinitions.push(...namespacedDefinitions)
       break
     }
     case 'module': {
@@ -252,13 +230,10 @@ function collectFromDef (tables: DefinitionTableByModule, moduleName: string, de
         reference: def.id,
       })
 
-      tables.set(def.module.name, emptyTable())
+      const moduleTable = emptyTable()
+      tables.set(def.module.name, moduleTable)
       def.module.defs.forEach(d => collectFromDef(tables, def.module.name, d))
 
-      const moduleTable = tables.get(def.module.name)
-      if (!moduleTable) {
-        throw new Error(`Can't find table for module ${def.module.name}`)
-      }
       // Collect all definitions namespaced to module
       const namespacedDefinitions = moduleTable.valueDefinitions
         .filter(d => !d.scope)
@@ -268,26 +243,7 @@ function collectFromDef (tables: DefinitionTableByModule, moduleName: string, de
       table.valueDefinitions.push(...namespacedDefinitions)
       break
     }
-    case 'import': {
-      // FIXME: check if definitions are found, when we actually import them from other files
-      const moduleTable = tables.get(def.path)
-      if (!moduleTable) {
-        throw new Error(`Can't find table for module ${def.path}`)
-      }
-      const namespacedDefinitions = moduleTable.valueDefinitions
-        .reduce((ds: ValueDefinition[], d) => {
-          // FIXME: This identifier string manipulation should be replaced by a better representation, see #58
-          // Collect this name as unscoped iff the import matches its namespace and name
-          if (def.name === '*' || def.name === d.identifier) {
-            if (!d.scope) {
-              ds.push({ kind: d.kind, identifier: d.identifier, reference: d.reference })
-            }
-          }
-          return ds
-        }, [])
-      table.valueDefinitions.push(...namespacedDefinitions)
-      break
-    }
+    case 'import': break
     case 'typedef':
       table.typeDefinitions.push({
         identifier: def.name,

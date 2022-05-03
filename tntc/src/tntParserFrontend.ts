@@ -15,6 +15,7 @@ import { TntModule } from './tntIr'
 import { ToIrListener } from './ToIrListener'
 import { collectDefinitions } from './definitionsCollector'
 import { resolveNames } from './nameResolver'
+import { resolveImports } from './importResolver'
 import { treeFromModule } from './scoping'
 import { scanConflicts } from './definitionsScanner'
 
@@ -98,9 +99,26 @@ export function parsePhase1 (text: string, sourceLocation: string): ParseResult 
  */
 export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>): ParseResult {
   const scopeTree = treeFromModule(tntModule)
-  const definitions = collectDefinitions(tntModule)
-
+  const moduleDefinitions = collectDefinitions(tntModule)
+  const importResolvingResult = resolveImports(tntModule, moduleDefinitions)
+  let definitions
   const errorMessages: ErrorMessage[] = []
+
+  if (importResolvingResult.kind === 'ok') {
+    definitions = importResolvingResult.definitions
+  } else {
+    definitions = moduleDefinitions
+    importResolvingResult.errors.forEach(error => {
+      const loc = sourceMap.get(error.reference)
+      if (!loc) {
+        throw new Error(`no loc found for ${error.reference}`)
+      }
+      errorMessages.push({
+        explanation: `Module ${error.moduleName} couldn't be imported`,
+        locs: [loc],
+      })
+    })
+  }
 
   definitions.forEach((moduleDefinitions, moduleName) => {
     const conflictResult = scanConflicts(moduleDefinitions, scopeTree)

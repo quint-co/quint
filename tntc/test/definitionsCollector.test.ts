@@ -53,15 +53,21 @@ describe('collectDefinitions', () => {
         'module test_module_instance = test_module(a = val x = 10 {x})',
       ])
 
-      const result = collectDefinitions(tntModule).get(moduleName)
+      const result = collectDefinitions(tntModule)
 
-      assert.includeDeepMembers(result!.valueDefinitions.map(d => d.identifier), [
+      assert.includeDeepMembers(result.get(moduleName)!.valueDefinitions.map(d => d.identifier), [
         'test_module',
+        'test_module::a',
+        'test_module::nested_module',
+        'test_module::nested_module::b',
         'test_module_instance',
-        'test_module_instance::a',
-        'test_module_instance::nested_module',
-        'test_module_instance::nested_module::b',
         'x',
+      ])
+
+      assert.includeDeepMembers(result.get('test_module')!.valueDefinitions.map(d => d.identifier), [
+        'a',
+        'nested_module',
+        'nested_module::b',
       ])
     })
 
@@ -91,29 +97,24 @@ describe('collectDefinitions', () => {
         'import test_module.*',
       ])
 
-      const result = collectDefinitions(tntModule).get(moduleName)
+      const result = collectDefinitions(tntModule)
 
-      assert.includeDeepMembers(result!.valueDefinitions.map(d => d.identifier), [
+      assert.includeDeepMembers(result.get(moduleName)!.valueDefinitions.map(d => d.identifier), [
         'test_module',
         'test_module::a',
         'test_module::nested_module',
         'test_module::nested_module::b',
+      ])
+
+      assert.includeDeepMembers(result.get('test_module')!.valueDefinitions.map(d => d.identifier), [
         'a',
-        // After import
         'nested_module',
         'nested_module::b',
       ])
-    })
 
-    it('collects imported module\'s named definition as unscoped definition', () => {
-      const tntModule = buildModuleWithDefs([
-        'module test_module { def a = 1 }',
-        'import test_module.a',
+      assert.includeDeepMembers(result.get('nested_module')!.valueDefinitions.map(d => d.identifier), [
+        'b',
       ])
-
-      const result = collectDefinitions(tntModule).get(moduleName)
-
-      assert.deepInclude(result!.valueDefinitions.map(d => d.identifier), 'a')
     })
   })
 
