@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author           |
 | :------- | :--------- | :--------------- |
-| 1        | 07.04.2022 | Gabriela Mafra   |
+| 1        | 07.04.2022 | Gabriela Moreira   |
 
 ## Summary
 
