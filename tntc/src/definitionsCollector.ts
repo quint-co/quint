@@ -9,12 +9,13 @@
  * definitions. Collect both operator and type alias definitions. For scoped operators,
  * collect scope information.
  *
- * @author Gabriela Mafra
+ * @author Gabriela Moreira
  *
  * @module
  */
 
-import { TntModule, TntDef, TntEx } from './tntIr'
+import { IRVisitor, walkModule } from './IRVisitor'
+import { TntModule, TntVar, TntModuleDef, TntConst, TntOpDef, TntTypeDef, TntAssume, TntLambda, TntLet } from './tntIr'
 import { TntType } from './tntTypes'
 
 /**
@@ -180,8 +181,9 @@ export function defaultDefinitions (): DefinitionTable {
  * @returns a lookup table with all defined values for the module
  */
 export function collectDefinitions (tntModule: TntModule): DefinitionTableByModule {
-  let fullTable = new Map<string, DefinitionTable>()
-  fullTable = tntModule.defs.reduce((t, d) => collectFromDef(t, tntModule.name, d), fullTable)
+  const visitor = new DefinitionsCollectorVisitor()
+  walkModule(visitor, tntModule)
+  const fullTable = visitor.tables
 
   fullTable.forEach(table => {
     table.valueDefinitions = table.valueDefinitions.filter(d => d.identifier !== '_')
@@ -190,92 +192,108 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTableByModu
   return fullTable
 }
 
-function collectFromDef (tables: DefinitionTableByModule, moduleName: string, def: TntDef): DefinitionTableByModule {
-  let table = tables.get(moduleName)
-  if (!table) {
-    table = emptyTable()
-    tables.set(moduleName, table)
+class DefinitionsCollectorVisitor implements IRVisitor {
+  tables: DefinitionTableByModule = new Map<string, DefinitionTable>()
+
+  private currentModule: string = ''
+  private currentTable: DefinitionTable = emptyTable()
+  private moduleStack: string[] = []
+  private scopeStack: bigint[] = []
+
+  enterModuleDef (def: TntModuleDef): void {
+    this.moduleStack.push(def.module.name)
+
+    this.updateCurrent()
   }
 
-  switch (def.kind) {
-    case 'const':
-    case 'var':
-      table.valueDefinitions.push({
+  exitModuleDef (def: TntModuleDef): void {
+    // Collect all definitions namespaced to module
+    const namespacedDefinitions = this.currentTable.valueDefinitions
+      .filter(d => !d.scope)
+      .map(d => {
+        return { kind: d.kind, identifier: `${def.module.name}::${d.identifier}`, reference: d.reference }
+      })
+
+    this.moduleStack.pop()
+    this.updateCurrent()
+
+    if (this.moduleStack.length > 0) {
+      this.currentTable.valueDefinitions.push(...namespacedDefinitions)
+    }
+  }
+
+  enterVar (def: TntVar): void {
+    this.currentTable.valueDefinitions.push({
+      kind: def.kind,
+      identifier: def.name,
+      reference: def.id,
+    })
+  }
+
+  enterConst (def: TntConst): void {
+    this.currentTable.valueDefinitions.push({
+      kind: def.kind,
+      identifier: def.name,
+      reference: def.id,
+    })
+  }
+
+  enterOpDef (def: TntOpDef): void {
+    if (this.scopeStack.length > 0) {
+      this.currentTable.valueDefinitions.push({
+        kind: def.kind,
+        identifier: def.name,
+        reference: def.id,
+        scope: this.scopeStack[this.scopeStack.length - 1],
+      })
+    } else {
+      this.currentTable.valueDefinitions.push({
         kind: def.kind,
         identifier: def.name,
         reference: def.id,
       })
-      break
-    case 'def':
-      table.valueDefinitions.push({
-        kind: def.kind,
-        identifier: def.name,
-        reference: def.id,
-      })
-      table.valueDefinitions.push(...collectFromExpr(def.expr))
-      break
-    case 'instance': {
-      table.valueDefinitions.push({
-        kind: 'namespace',
-        identifier: def.name,
-        reference: def.id,
-      })
-      table.valueDefinitions.push(...def.overrides.flatMap(e => collectFromExpr(e[1])))
-      break
     }
-    case 'module': {
-      table.valueDefinitions.push({
-        kind: 'namespace',
-        identifier: def.module.name,
-        reference: def.id,
-      })
-
-      const moduleTable = emptyTable()
-      tables.set(def.module.name, moduleTable)
-      def.module.defs.forEach(d => collectFromDef(tables, def.module.name, d))
-
-      // Collect all definitions namespaced to module
-      const namespacedDefinitions = moduleTable.valueDefinitions
-        .filter(d => !d.scope)
-        .map(d => {
-          return { kind: d.kind, identifier: `${def.module.name}::${d.identifier}`, reference: d.reference }
-        })
-      table.valueDefinitions.push(...namespacedDefinitions)
-      break
-    }
-    case 'import': break
-    case 'typedef':
-      table.typeDefinitions.push({
-        identifier: def.name,
-        type: def.type,
-        reference: def.id,
-      })
-      break
-    case 'assume':
-      table.valueDefinitions.push({
-        kind: 'assumption',
-        identifier: def.name,
-        reference: def.id,
-      })
-      table.valueDefinitions.push(...collectFromExpr(def.assumption))
-      break
   }
-  return tables
-}
 
-function collectFromExpr (expr: TntEx): ValueDefinition[] {
-  switch (expr.kind) {
-    case 'lambda':
-      return expr.params
-        .map(p => { return { kind: 'def', identifier: p, reference: expr.id, scope: expr.id } as ValueDefinition })
-        .concat(collectFromExpr(expr.expr))
-    case 'app':
-      return expr.args.flatMap(arg => { return collectFromExpr(arg) })
-    case 'let':
-      return [{ kind: expr.opdef.qualifier, identifier: expr.opdef.name, reference: expr.opdef.id, scope: expr.id } as ValueDefinition]
-        .concat(collectFromExpr(expr.opdef.expr))
-        .concat(collectFromExpr(expr.expr))
-    default:
-      return []
+  enterTypeDef (def: TntTypeDef): void {
+    this.currentTable.typeDefinitions.push({
+      identifier: def.name,
+      type: def.type,
+      reference: def.id,
+    })
+  }
+
+  enterAssume (def: TntAssume): void {
+    this.currentTable.valueDefinitions.push({
+      kind: 'assumption',
+      identifier: def.name,
+      reference: def.id,
+    })
+  }
+
+  enterLambda (expr: TntLambda): void {
+    const definitions: ValueDefinition[] = expr.params.map(p => {
+      return { kind: 'def', identifier: p, reference: expr.id, scope: expr.id }
+    })
+    this.currentTable.valueDefinitions.push(...definitions)
+  }
+
+  enterLet (def: TntLet): void {
+    this.scopeStack.push(def.id)
+  }
+
+  exitLet (_: TntLet): void {
+    this.scopeStack.pop()
+  }
+
+  private updateCurrent (): void {
+    this.currentModule = this.moduleStack[this.moduleStack.length - 1]
+
+    let moduleTable = this.tables.get(this.currentModule)
+    if (!moduleTable) {
+      moduleTable = emptyTable()
+      this.tables.set(this.currentModule, moduleTable)
+    }
+    this.currentTable = moduleTable
   }
 }
