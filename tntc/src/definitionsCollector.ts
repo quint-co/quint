@@ -223,35 +223,19 @@ class DefinitionsCollectorVisitor implements IRVisitor {
   }
 
   enterVar (def: TntVar): void {
-    this.currentTable.valueDefinitions.push({
-      kind: def.kind,
-      identifier: def.name,
-      reference: def.id,
-    })
+    this.collectValueDefinition(def.kind, def.name, def.id)
   }
 
   enterConst (def: TntConst): void {
-    this.currentTable.valueDefinitions.push({
-      kind: def.kind,
-      identifier: def.name,
-      reference: def.id,
-    })
+    this.collectValueDefinition(def.kind, def.name, def.id)
   }
 
   enterOpDef (def: TntOpDef): void {
     if (this.scopeStack.length > 0) {
-      this.currentTable.valueDefinitions.push({
-        kind: def.kind,
-        identifier: def.name,
-        reference: def.id,
-        scope: this.scopeStack[this.scopeStack.length - 1],
-      })
+      const scope = this.scopeStack[this.scopeStack.length - 1]
+      this.collectValueDefinition(def.kind, def.name, def.id, scope)
     } else {
-      this.currentTable.valueDefinitions.push({
-        kind: def.kind,
-        identifier: def.name,
-        reference: def.id,
-      })
+      this.collectValueDefinition(def.kind, def.name, def.id)
     }
   }
 
@@ -264,18 +248,13 @@ class DefinitionsCollectorVisitor implements IRVisitor {
   }
 
   enterAssume (def: TntAssume): void {
-    this.currentTable.valueDefinitions.push({
-      kind: 'assumption',
-      identifier: def.name,
-      reference: def.id,
-    })
+    this.collectValueDefinition('assumption', def.name, def.id)
   }
 
   enterLambda (expr: TntLambda): void {
-    const definitions: ValueDefinition[] = expr.params.map(p => {
-      return { kind: 'def', identifier: p, reference: expr.id, scope: expr.id }
+    expr.params.forEach(p => {
+      this.collectValueDefinition('def', p, expr.id, expr.id)
     })
-    this.currentTable.valueDefinitions.push(...definitions)
   }
 
   enterLet (def: TntLet): void {
@@ -284,6 +263,15 @@ class DefinitionsCollectorVisitor implements IRVisitor {
 
   exitLet (_: TntLet): void {
     this.scopeStack.pop()
+  }
+
+  private collectValueDefinition (kind: string, identifier: string, reference: bigint, scope?: bigint): void {
+    this.currentTable.valueDefinitions.push({
+      kind: kind,
+      identifier: identifier,
+      reference: reference,
+      scope: scope,
+    })
   }
 
   private updateCurrent (): void {
