@@ -31,7 +31,7 @@ export interface NameError {
   name: string;
   /* The module-level definition containing the error */
   definitionName: string;
-  /* The module name of the module containing the error */
+  /* The name of the module containing the error */
   moduleName: string;
   /* The identifier of the IR node where the error occurs */
   reference: BigInt;
@@ -79,7 +79,7 @@ class NameResolverVisitor implements IRVisitor {
 
   enterDef (def: TntDef): void {
     // Keep the last visited definition name
-    // so it can be showed in the reported error
+    // so it can be showen in the reported error
     if (def.kind === 'module') {
       this.defName = def.module.name
     } else {
