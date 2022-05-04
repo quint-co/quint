@@ -8,7 +8,7 @@
  * Scope manipulation for TNT. Build and use scope trees to obtain
  * which scopes an IR node is under.
  *
- * @author Gabriela Mafra
+ * @author Gabriela Moreira
  *
  * @module
  */

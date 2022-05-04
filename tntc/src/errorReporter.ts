@@ -9,7 +9,7 @@
  * message containing localization errors, fetch offending lines and highlights
  * offending sections with ^^^ strings.
  *
- * @author Gabriela Mafra
+ * @author Gabriela Moreira
  *
  * @module
  */

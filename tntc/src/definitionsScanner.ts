@@ -7,7 +7,7 @@
 /**
  * Verification for conflicts in a definition lookup table. Also ensures no shadowing.
  *
- * @author Gabriela Mafra
+ * @author Gabriela Moreira
  *
  * @module
  */
