@@ -62,7 +62,7 @@ export function resolveNames (tntModule: TntModule, table: DefinitionTableByModu
 }
 
 class NameResolverVisitor implements IRVisitor {
-  constructor(tables: DefinitionTableByModule, scopeTree: ScopeTree) {
+  constructor (tables: DefinitionTableByModule, scopeTree: ScopeTree) {
     this.tables = tables
     this.scopeTree = scopeTree
   }
@@ -71,7 +71,7 @@ class NameResolverVisitor implements IRVisitor {
 
   private scopeTree: ScopeTree
   private tables: DefinitionTableByModule
-  private defName: string = ''
+  private lastDefName: string = ''
 
   private currentModule: string = ''
   private currentTable: DefinitionTable = emptyTable()
@@ -81,9 +81,9 @@ class NameResolverVisitor implements IRVisitor {
     // Keep the last visited definition name
     // so it can be showen in the reported error
     if (def.kind === 'module') {
-      this.defName = def.module.name
+      this.lastDefName = def.module.name
     } else {
-      this.defName = def.name
+      this.lastDefName = def.name
     }
   }
 
@@ -106,13 +106,7 @@ class NameResolverVisitor implements IRVisitor {
     const valueDefinitionsForScope = filterScope(this.currentTable.valueDefinitions, scopesForId(this.scopeTree, nameExpr.id))
 
     if (!valueDefinitionsForScope.some(name => name.identifier === nameExpr.name)) {
-      this.errors.push({
-        kind: 'value',
-        name: nameExpr.name,
-        definitionName: this.defName,
-        moduleName: this.currentModule,
-        reference: nameExpr.id,
-      })
+      this.recordError('value', nameExpr.name, nameExpr.id)
     }
   }
 
@@ -121,39 +115,21 @@ class NameResolverVisitor implements IRVisitor {
     const valueDefinitionsForScope = filterScope(this.currentTable.valueDefinitions, scopesForId(this.scopeTree, appExpr.id))
 
     if (!valueDefinitionsForScope.some(name => name.identifier === appExpr.opcode)) {
-      this.errors.push({
-        kind: 'value',
-        name: appExpr.opcode,
-        definitionName: this.defName,
-        moduleName: this.currentModule,
-        reference: appExpr.id,
-      })
+      this.recordError('value', appExpr.opcode, appExpr.id)
     }
   }
 
   enterVarType (type: TntVarType): void {
     // Type is a name, check that it is defined
     if (!this.currentTable.typeDefinitions.some(def => def.identifier === type.name)) {
-      this.errors.push({
-        kind: 'type',
-        name: type.name,
-        definitionName: this.defName,
-        moduleName: this.currentModule,
-        reference: type.id,
-      })
+      this.recordError('type', type.name, type.id)
     }
   }
 
   enterConstType (type: TntConstType): void {
     // Type is a name, check that it is defined
     if (!this.currentTable.typeDefinitions.some(def => def.identifier === type.name)) {
-      this.errors.push({
-        kind: 'type',
-        name: type.name,
-        definitionName: this.defName,
-        moduleName: this.currentModule,
-        reference: type.id,
-      })
+      this.recordError('type', type.name, type.id)
     }
   }
 
@@ -166,6 +142,16 @@ class NameResolverVisitor implements IRVisitor {
       this.tables.set(this.currentModule, moduleTable)
     }
     this.currentTable = moduleTable
+  }
+
+  private recordError (kind: 'type' | 'value', name: string, id: bigint) {
+    this.errors.push({
+      kind: kind,
+      name: name,
+      definitionName: this.lastDefName,
+      moduleName: this.currentModule,
+      reference: id,
+    })
   }
 }
 
