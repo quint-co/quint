@@ -195,7 +195,7 @@ export function collectDefinitions (tntModule: TntModule): DefinitionTableByModu
 class DefinitionsCollectorVisitor implements IRVisitor {
   tables: DefinitionTableByModule = new Map<string, DefinitionTable>()
 
-  private currentModule: string = ''
+  private currentModuleName: string = ''
   private currentTable: DefinitionTable = emptyTable()
   private moduleStack: string[] = []
   private scopeStack: bigint[] = []
@@ -203,7 +203,7 @@ class DefinitionsCollectorVisitor implements IRVisitor {
   enterModuleDef (def: TntModuleDef): void {
     this.moduleStack.push(def.module.name)
 
-    this.updateCurrent()
+    this.updateCurrentModule()
   }
 
   exitModuleDef (def: TntModuleDef): void {
@@ -215,7 +215,7 @@ class DefinitionsCollectorVisitor implements IRVisitor {
       })
 
     this.moduleStack.pop()
-    this.updateCurrent()
+    this.updateCurrentModule()
 
     if (this.moduleStack.length > 0) {
       this.currentTable.valueDefinitions.push(...namespacedDefinitions)
@@ -274,14 +274,16 @@ class DefinitionsCollectorVisitor implements IRVisitor {
     })
   }
 
-  private updateCurrent (): void {
-    this.currentModule = this.moduleStack[this.moduleStack.length - 1]
+  private updateCurrentModule (): void {
+    if (this.moduleStack.length > 0) {
+      this.currentModuleName = this.moduleStack[this.moduleStack.length - 1]
 
-    let moduleTable = this.tables.get(this.currentModule)
-    if (!moduleTable) {
-      moduleTable = emptyTable()
-      this.tables.set(this.currentModule, moduleTable)
+      let moduleTable = this.tables.get(this.currentModuleName)
+      if (!moduleTable) {
+        moduleTable = emptyTable()
+        this.tables.set(this.currentModuleName, moduleTable)
+      }
+      this.currentTable = moduleTable
     }
-    this.currentTable = moduleTable
   }
 }
