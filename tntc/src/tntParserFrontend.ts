@@ -141,7 +141,7 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
           sources = conflict.sources
         }
         const locs = sources.map(source => {
-          const id = source.kind === 'user' ? source.reference : BigInt(0) // Impossible case, but TS requires the ckeck
+          const id = source.kind === 'user' ? source.reference : BigInt(0) // Impossible case, but TS requires the check
           const loc = sourceMap.get(id)
           if (!loc) {
             throw new Error(`no loc found for ${id}`)
