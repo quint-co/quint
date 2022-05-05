@@ -189,7 +189,7 @@ temporal CheckInductiveSpec = TypeOK and Inv and always(Next.stutter(vars))
 (* Note that the parameters of the module SyncTerminationDetection are     *)
 (* instantiated by the symbols of the same name in the present module.     *)
 (***************************************************************************/
-module TD = SyncTerminationDetection(*)
+// module TD = SyncTerminationDetection(*)
 
 //THEOREM Spec => TD!Spec
 

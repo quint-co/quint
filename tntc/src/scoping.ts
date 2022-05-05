@@ -67,9 +67,11 @@ function treeFromDef (def: TntDef): ScopeTree {
     case 'const':
     case 'var':
     case 'typedef':
-    case 'assume':
     case 'import':
       children = []
+      break
+    case 'assume':
+      children = [treeFromExpr(def.assumption)]
       break
     case 'instance':
       children = def.overrides.map(e => treeFromExpr(e[1]))

@@ -35,10 +35,12 @@ module root {
     val test_test_sqr = test_sqr
 
     module BB {
+      // Following definitions are commented out in favor of discussion (#87)
+
       // we can access test_test_sqr, as it belongs to the parent module
-      val test_test_test_sqr = test_test_sqr
+      // val test_test_test_sqr = test_test_sqr
       // we can access test_sqr too, as it is imported in the parent module
-      val inner_test_sqr = test_sqr
+      // val inner_test_sqr = test_sqr
     }
 
     // All modules are always accessible via imports or via the path notation.
@@ -50,7 +52,7 @@ module root {
       val foo = 11
     }
 
-    val test_foo = _Internals.foo
+    val test_foo = _Internals::foo
   }
 
   // module C is stateful, it cannot be imported
@@ -58,8 +60,11 @@ module root {
     var n: int
 
     module CC {
+      var m: int
+
+      // Following definitions are commented out in favor of discussion (#87)
       // we can access the state variable of the parent module
-      val nn = n * n
+      // val nn = n * n
     }
   }
 
