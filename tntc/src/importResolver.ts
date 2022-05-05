@@ -7,7 +7,7 @@
 /**
  * Visits imports and instances copying definitions from modules being imported or instantiated
  *
- * @author Gabriela Mafra
+ * @author Gabriela Moreira
  *
  * @module
  */
