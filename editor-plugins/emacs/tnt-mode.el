@@ -1,6 +1,6 @@
 ;;; tnt-mode.el --- Major mode for editing TNT
 
-;; Author: Gabriela Mafra (gabriela@informal.systems)
+;; Author: Gabriela Moreira (gabriela@informal.systems)
 ;; URL: https://github.com/informalsystems/tnt
 ;; Version: 1.0.0
 ;; Created: 25 Feb 2022

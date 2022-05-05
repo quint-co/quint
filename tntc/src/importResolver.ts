@@ -7,7 +7,7 @@
 /**
  * Visits imports and instances copying definitions from modules being imported or instantiated
  *
- * @author Gabriela Mafra
+ * @author Gabriela Moreira
  *
  * @module
  */
@@ -20,9 +20,9 @@ import { IRVisitor, walkModule } from './IRVisitor'
  * A single import error
  */
 export interface ImportError {
-  /* The name of the module supposed to be imported/instantiated */
+  /* The name of the module to be imported or instantiated */
   moduleName: string
-  /* The reference of the import/instance definition */
+  /* The reference of the import or instance definition */
   reference: bigint
   /* If importing a specific definition, the name of that definition */
   defName?: string
@@ -63,20 +63,20 @@ class ImportResolverVisitor implements IRVisitor {
   tables: DefinitionTableByModule
   errors: ImportError[] = []
 
-  private currentModule: string = ''
+  private currentModuleName: string = ''
   private currentTable: DefinitionTable = emptyTable()
   private moduleStack: string[] = []
 
   enterModuleDef (def: TntModuleDef): void {
     this.moduleStack.push(def.module.name)
 
-    this.updateCurrent()
+    this.updateCurrentModule()
   }
 
   exitModuleDef (_: TntModuleDef): void {
     this.moduleStack.pop()
 
-    this.updateCurrent()
+    this.updateCurrentModule()
   }
 
   enterInstance (def: TntInstance): void {
@@ -121,14 +121,14 @@ class ImportResolverVisitor implements IRVisitor {
     }
   }
 
-  private updateCurrent (): void {
+  private updateCurrentModule (): void {
     if (this.moduleStack.length > 0) {
-      this.currentModule = this.moduleStack[this.moduleStack.length - 1]
+      this.currentModuleName = this.moduleStack[this.moduleStack.length - 1]
 
-      let moduleTable = this.tables.get(this.currentModule)
+      let moduleTable = this.tables.get(this.currentModuleName)
       if (!moduleTable) {
         moduleTable = emptyTable()
-        this.tables.set(this.currentModule, moduleTable)
+        this.tables.set(this.currentModuleName, moduleTable)
       }
       this.currentTable = moduleTable
     }

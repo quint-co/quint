@@ -10,7 +10,7 @@
  * has either an unscoped definition or a scoped definition with a scope containing
  * the name expression.
  *
- * @author Gabriela Mafra
+ * @author Gabriela Moreira
  *
  * @module
  */
@@ -73,7 +73,7 @@ class NameResolverVisitor implements IRVisitor {
   private tables: DefinitionTableByModule
   private lastDefName: string = ''
 
-  private currentModule: string = ''
+  private currentModuleName: string = ''
   private currentTable: DefinitionTable = emptyTable()
   private moduleStack: string[] = []
 
@@ -90,13 +90,13 @@ class NameResolverVisitor implements IRVisitor {
   enterModuleDef (def: TntModuleDef): void {
     this.moduleStack.push(def.module.name)
 
-    this.updateCurrent()
+    this.updateCurrentModule()
   }
 
   exitModuleDef (_: TntModuleDef): void {
     this.moduleStack.pop()
 
-    this.updateCurrent()
+    this.updateCurrentModule()
   }
 
   enterName (nameExpr: TntName): void {
@@ -133,15 +133,17 @@ class NameResolverVisitor implements IRVisitor {
     }
   }
 
-  private updateCurrent (): void {
-    this.currentModule = this.moduleStack[this.moduleStack.length - 1]
+  private updateCurrentModule (): void {
+    if (this.moduleStack.length > 0) {
+      this.currentModuleName = this.moduleStack[this.moduleStack.length - 1]
 
-    let moduleTable = this.tables.get(this.currentModule)
-    if (!moduleTable) {
-      moduleTable = emptyTable()
-      this.tables.set(this.currentModule, moduleTable)
+      let moduleTable = this.tables.get(this.currentModuleName)
+      if (!moduleTable) {
+        moduleTable = emptyTable()
+        this.tables.set(this.currentModuleName, moduleTable)
+      }
+      this.currentTable = moduleTable
     }
-    this.currentTable = moduleTable
   }
 
   private recordError (kind: 'type' | 'value', name: string, id: bigint) {
@@ -149,7 +151,7 @@ class NameResolverVisitor implements IRVisitor {
       kind: kind,
       name: name,
       definitionName: this.lastDefName,
-      moduleName: this.currentModule,
+      moduleName: this.currentModuleName,
       reference: id,
     })
   }
