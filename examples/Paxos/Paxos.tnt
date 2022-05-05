@@ -246,7 +246,10 @@ val votes = Acceptor mapOf ( a ->
 (***************************************************************************/
 
 // Temp fix for integration tests: mock voting definitions while files are not imported
-module Voting { def ShowsSafeAt = 1 }
+module Voting {
+  def ShowsSafeAt = 1
+  pred Inv = true
+}
 
 module V = Voting(*)
 
@@ -276,7 +279,7 @@ pred Inv = (
                 (mm.bal == m.bal) implies (mm.value == m.value)
               )
          ) )
-       & V.Inv
+       & V::Inv
 )
 
 }

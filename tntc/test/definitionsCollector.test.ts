@@ -56,17 +56,13 @@ describe('collectDefinitions', () => {
       const result = collectDefinitions(tntModule)
 
       assert.includeDeepMembers(result.get(moduleName)!.valueDefinitions.map(d => d.identifier), [
-        'test_module',
         'test_module::a',
-        'test_module::nested_module',
         'test_module::nested_module::b',
-        'test_module_instance',
         'x',
       ])
 
       assert.includeDeepMembers(result.get('test_module')!.valueDefinitions.map(d => d.identifier), [
         'a',
-        'nested_module',
         'nested_module::b',
       ])
     })
@@ -77,8 +73,6 @@ describe('collectDefinitions', () => {
       const result = collectDefinitions(tntModule).get(moduleName)
 
       assert.includeDeepMembers(result!.valueDefinitions.map(d => d.identifier), [
-        'test_module',
-        'test_module::nested_module',
         'test_module::nested_module::a',
       ])
     })
@@ -100,15 +94,12 @@ describe('collectDefinitions', () => {
       const result = collectDefinitions(tntModule)
 
       assert.includeDeepMembers(result.get(moduleName)!.valueDefinitions.map(d => d.identifier), [
-        'test_module',
         'test_module::a',
-        'test_module::nested_module',
         'test_module::nested_module::b',
       ])
 
       assert.includeDeepMembers(result.get('test_module')!.valueDefinitions.map(d => d.identifier), [
         'a',
-        'nested_module',
         'nested_module::b',
       ])
 
