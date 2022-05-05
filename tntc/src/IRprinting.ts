@@ -7,7 +7,7 @@
 /**
  * Pretty printing for IR components.
  *
- * @author Gabriela Mafra
+ * @author Gabriela Moreira
  *
  * @module
  */

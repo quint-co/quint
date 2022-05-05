@@ -9,7 +9,7 @@
  * definitions. Collect both operator and type alias definitions. For scoped operators,
  * collect scope information.
  *
- * @author Gabriela Mafra
+ * @author Gabriela Moreira
  *
  * @module
  */
