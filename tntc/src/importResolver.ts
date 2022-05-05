@@ -63,20 +63,20 @@ class ImportResolverVisitor implements IRVisitor {
   tables: DefinitionTableByModule
   errors: ImportError[] = []
 
-  private currentModule: string = ''
+  private currentModuleName: string = ''
   private currentTable: DefinitionTable = emptyTable()
   private moduleStack: string[] = []
 
   enterModuleDef (def: TntModuleDef): void {
     this.moduleStack.push(def.module.name)
 
-    this.updateCurrent()
+    this.updateCurrentModule()
   }
 
   exitModuleDef (_: TntModuleDef): void {
     this.moduleStack.pop()
 
-    this.updateCurrent()
+    this.updateCurrentModule()
   }
 
   enterInstance (def: TntInstance): void {
@@ -121,14 +121,14 @@ class ImportResolverVisitor implements IRVisitor {
     }
   }
 
-  private updateCurrent (): void {
+  private updateCurrentModule (): void {
     if (this.moduleStack.length > 0) {
-      this.currentModule = this.moduleStack[this.moduleStack.length - 1]
+      this.currentModuleName = this.moduleStack[this.moduleStack.length - 1]
 
-      let moduleTable = this.tables.get(this.currentModule)
+      let moduleTable = this.tables.get(this.currentModuleName)
       if (!moduleTable) {
         moduleTable = emptyTable()
-        this.tables.set(this.currentModule, moduleTable)
+        this.tables.set(this.currentModuleName, moduleTable)
       }
       this.currentTable = moduleTable
     }

@@ -1,1 +1,1 @@
-{"kind":"error","messages":[{"explanation":"Couldn't resolve type alias UNKNOWN_TYPE in definition for d","locs":[{"source":"mocked_path/testFixture/_1013unknownTypeLetIn.tnt","start":{"line":2,"col":11,"index":49},"end":{"line":2,"col":22,"index":60}}]}]}
+{"kind":"error","messages":[{"explanation":"Couldn't resolve type alias UNKNOWN_TYPE in definition for x, in module unknownTypeLetIn","locs":[{"source":"mocked_path/testFixture/_1013unknownTypeLetIn.tnt","start":{"line":2,"col":11,"index":49},"end":{"line":2,"col":22,"index":60}}]}]}

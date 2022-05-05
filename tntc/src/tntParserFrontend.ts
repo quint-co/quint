@@ -134,10 +134,10 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
       conflictResult.conflicts.forEach(conflict => {
         let msg, sources
         if (conflict.sources.some(source => source.kind === 'builtin')) {
-          msg = `Built-in name ${conflict.identifier} is redefined`
+          msg = `Built-in name ${conflict.identifier} is redefined in module ${moduleName}`
           sources = conflict.sources.filter(source => source.kind === 'user')
         } else {
-          msg = `Conflicting definitions found for name ${conflict.identifier}`
+          msg = `Conflicting definitions found for name ${conflict.identifier} in module ${moduleName}`
           sources = conflict.sources
         }
         const locs = sources.map(source => {
@@ -154,13 +154,13 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
   })
 
   // Temp: use just the root's module table at name resolution for now
-  const result = resolveNames(tntModule, definitions.get(tntModule.name)!)
+  const result = resolveNames(tntModule, definitions, scopeTree)
 
   if (result.kind === 'error') {
     // Build error message with resolution explanation and the location obtained from sourceMap
     result.errors.forEach(error => {
       const id = error.reference
-      const msg = `Couldn't resolve ${error.kind === 'type' ? 'type alias' : 'name'} ${error.name} in definition for ${error.definitionName}`
+      const msg = `Couldn't resolve ${error.kind === 'type' ? 'type alias' : 'name'} ${error.name} in definition for ${error.definitionName}, in module ${error.moduleName}`
       const loc = sourceMap.get(id)
       if (!loc) {
         throw new Error(`no loc found for ${id}`)

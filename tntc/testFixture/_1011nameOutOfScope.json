@@ -1,1 +1,1 @@
-{"kind":"error","messages":[{"explanation":"Couldn't resolve name x in definition for A","locs":[{"source":"mocked_path/testFixture/_1011nameOutOfScope.tnt","start":{"line":4,"col":10,"index":188},"end":{"line":4,"col":10,"index":188}}]}]}
+{"kind":"error","messages":[{"explanation":"Couldn't resolve name x in definition for A, in module nameOutOfScope","locs":[{"source":"mocked_path/testFixture/_1011nameOutOfScope.tnt","start":{"line":4,"col":10,"index":188},"end":{"line":4,"col":10,"index":188}}]}]}
