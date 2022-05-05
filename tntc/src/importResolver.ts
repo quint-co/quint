@@ -7,7 +7,7 @@
 /**
  * Visits imports and instances copying definitions from modules being imported or instantiated
  *
- * @author Gabriela Mafra
+ * @author Gabriela Moreira
  *
  * @module
  */
@@ -20,9 +20,9 @@ import { IRVisitor, walkModule } from './IRVisitor'
  * A single import error
  */
 export interface ImportError {
-  /* The name of the module supposed to be imported/instantiated */
+  /* The name of the module to be imported or instantiated */
   moduleName: string
-  /* The reference of the import/instance definition */
+  /* The reference of the import or instance definition */
   reference: bigint
   /* If importing a specific definition, the name of that definition */
   defName?: string

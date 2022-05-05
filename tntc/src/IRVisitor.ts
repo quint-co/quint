@@ -8,7 +8,7 @@
  * Visitor pattern implementation for TNT IR components. Use this to navigate the IR instead
  * of implementing a recursion over it yourself.
  *
- * @author Gabriela Mafra
+ * @author Gabriela Moreira
  *
  * @module
  */

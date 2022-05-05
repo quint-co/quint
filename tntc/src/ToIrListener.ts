@@ -12,7 +12,7 @@ import { ErrorMessage, Loc } from './tntParserFrontend'
  * into IR. All semantic checks and type checking must be done at later
  * phases, as the IR may be constructed by other means.
  *
- * @author Igor Konnov, Gabriela Mafra
+ * @author Igor Konnov, Gabriela Moreira
  */
 export class ToIrListener implements TntListener {
   constructor (sourceLocation: string) {

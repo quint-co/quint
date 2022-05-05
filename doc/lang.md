@@ -2,9 +2,9 @@
 
 *TNT is not TLA+*
 
-| Revision | Date       | Author                                                |
-| :------- | :--------- | :-----------------------------------------            |
-| 22       | 29.03.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Mafra |
+| Revision | Date       | Author                                                  |
+| :------- | :--------- | :-----------------------------------------              |
+| 22       | 29.03.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
