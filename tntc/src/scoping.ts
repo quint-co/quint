@@ -13,7 +13,8 @@
  * @module
  */
 
-import { TntModule, TntDef, TntEx } from './tntIr'
+import { IRVisitor, walkModule } from './IRVisitor'
+import { TntModule, TntDef, TntEx, TntModuleDef } from './tntIr'
 
 /**
  * A tree structure where nodes are IR ids
@@ -58,54 +59,47 @@ export function scopesForId (treeNode: ScopeTree, id: BigInt): BigInt[] {
  * @returns a scope tree for this module's ids scope relation
  */
 export function treeFromModule (tntModule: TntModule): ScopeTree {
-  return { value: tntModule.id, children: tntModule.defs.map(treeFromDef) }
+  const visitor = new ScopingVisitor()
+  walkModule(visitor, tntModule)
+  return visitor.currentNode!
 }
 
-function treeFromDef (def: TntDef): ScopeTree {
-  let children: ScopeTree[]
-  switch (def.kind) {
-    case 'const':
-    case 'var':
-    case 'typedef':
-    case 'import':
-      children = []
-      break
-    case 'assume':
-      children = [treeFromExpr(def.assumption)]
-      break
-    case 'instance':
-      children = def.overrides.map(e => treeFromExpr(e[1]))
-      break
-    case 'module':
-      children = [treeFromModule(def.module)]
-      break
-    case 'def':
-      children = [treeFromExpr(def.expr)]
-      break
+class ScopingVisitor implements IRVisitor {
+  nodeStack: ScopeTree[] = []
+  currentNode?: ScopeTree
+
+  enterDef (def: TntDef): void {
+    this.enterNode(def.id)
   }
 
-  return { value: def.id, children: children }
-}
-
-function treeFromExpr (expr: TntEx): ScopeTree {
-  let children: ScopeTree[]
-  switch (expr.kind) {
-    case 'name':
-    case 'bool':
-    case 'int':
-    case 'str':
-      children = []
-      break
-    case 'app':
-      children = expr.args.map(treeFromExpr)
-      break
-    case 'lambda':
-      children = [treeFromExpr(expr.expr)]
-      break
-    case 'let':
-      children = [treeFromDef(expr.opdef), treeFromExpr(expr.expr)]
-      break
+  exitDef (_: TntDef): void {
+    this.exitNode()
   }
 
-  return { value: expr.id, children: children }
+  enterExpr (expr: TntEx): void {
+    this.enterNode(expr.id)
+  }
+
+  exitExpr (_: TntEx): void {
+    this.exitNode()
+  }
+
+  enterModuleDef (def: TntModuleDef): void {
+    this.enterNode(def.module.id)
+  }
+
+  exitModuleDef (_: TntModuleDef): void {
+    this.exitNode()
+  }
+
+  private enterNode (id: BigInt): void {
+    this.nodeStack.push({ value: id, children: [] })
+  }
+
+  private exitNode (): void {
+    this.currentNode = this.nodeStack.pop()!
+    if (this.nodeStack.length > 0) {
+      this.nodeStack[this.nodeStack.length - 1].children.push(this.currentNode)
+    }
+  }
 }
