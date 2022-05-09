@@ -64,6 +64,11 @@ export function treeFromModule (tntModule: TntModule): ScopeTree {
   return visitor.currentNode!
 }
 
+/**
+ * Descend the AST creating empty nodes (with no children) for each component,
+ * and when ascending, add each node to it's parent's children list. A node
+ * stack is kept in order to find a node's parent.
+ * */
 class ScopingVisitor implements IRVisitor {
   nodeStack: ScopeTree[] = []
   currentNode?: ScopeTree
