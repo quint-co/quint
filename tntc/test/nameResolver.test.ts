@@ -56,7 +56,7 @@ describe('nameResolver', () => {
     })
 
     it('find unresolved names inside aplication', () => {
-      const tntModule = buildModuleWithExpressions(['head(x)', 'x(TRUE)'])
+      const tntModule = buildModuleWithExpressions(['head(x)', 'x(true)'])
 
       const result = resolveNames(tntModule, tables, dummyScopeTree)
       const expectedResult: NameResolutionResult = {
@@ -96,7 +96,7 @@ describe('nameResolver', () => {
     })
 
     it('find unresolved names inside lets', () => {
-      const tntModule = buildModuleWithExpressions(['val a = x { TRUE }', 'val b = TRUE { x }'])
+      const tntModule = buildModuleWithExpressions(['val a = x { true }', 'val b = true { x }'])
 
       const result = resolveNames(tntModule, tables, dummyScopeTree)
       const expectedResult: NameResolutionResult = {
