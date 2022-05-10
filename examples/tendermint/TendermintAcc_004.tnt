@@ -142,55 +142,55 @@ val vars = (round, step, decision, lockedValue,
 //********************* PROTOCOL INITIALIZATION ******************************
 def FaultyProposals(r) =
     tuples(Faulty, Values, RoundsOrNil)
-      .map(p, v, vr ->
+      .map(p, v, vr =>
         { tag: "PROPOSE", src: p, round: r, proposal: v, validRound: vr })
 
 val AllFaultyProposals =
     tuples(Faulty, Rounds, Values, RoundsOrNil)
-      .map(p, r, v, vr ->
+      .map(p, r, v, vr =>
         { tag: "PROPOSE", src: p, round: r, proposal: v, validRound: vr })
 
 def FaultyPrevotes(r) =
     tuples(Faulty, Values)
-      .map(p, v ->
+      .map(p, v =>
         { tag: "PREVOTE", src: p, round: r, id: v })
 
 val AllFaultyPrevotes =
     tuples(Faulty, Rounds, Values, RoundsOrNil)
-      .map(p, r, v ->
+      .map(p, r, v =>
         { tag: "PREVOTE", src: p, round: r, id: v })
 
 def FaultyPrecommits(r) =
     tuples(Faulty, Values)
-      .map(p, v ->
+      .map(p, v =>
         { tag: "PRECOMMIT", src: p, round: r, id: v })
 
 val AllFaultyPrecommits =
     tuples(Faulty, Rounds, Values)
-      .map(p, r, v ->
+      .map(p, r, v =>
         { tag: "PRECOMMIT", src: p, round: r, id: v })
 
    
 // the message function never contains a message for a wrong round
 pred BenignRoundsInMessages(msgfun) =
-    Rounds forall ( r ->
-      msgfun[r] forall ( m ->
+    Rounds forall ( r =>
+      msgfun[r] forall ( m =>
         r == m.round
       )
     )
 
 // The initial states of the protocol. Some faults can be in the system already.
 pred Init = (
-  & round           <- Corr mapOf ( _ -> 0 )
-  & step            <- Corr mapOf ( _ -> Proposer )
-  & decision        <- Corr mapOf ( _ -> NilValue )
-  & lockedValue     <- Corr mapOf ( _ -> NilValue )
-  & lockedRound     <- Corr mapOf ( _ -> NilRound )
-  & validValue      <- Corr mapOf ( _ -> NilValue )
-  & validRound      <- Corr mapOf ( _ -> NilRound )
-  & msgsPropose     <- Rounds mapOf ( _ -> powerset(AllFaultyProposals) )
-  & msgsPrevote     <- Rounds mapOf ( _ -> powerset(AllFaultyPrevotes) )
-  & msgsPrecommit   <- Rounds mapOf ( _ -> powerset(AllFaultyPrecommits) )
+  & round           <- Corr mapOf ( _ => 0 )
+  & step            <- Corr mapOf ( _ => Proposer )
+  & decision        <- Corr mapOf ( _ => NilValue )
+  & lockedValue     <- Corr mapOf ( _ => NilValue )
+  & lockedRound     <- Corr mapOf ( _ => NilRound )
+  & validValue      <- Corr mapOf ( _ => NilValue )
+  & validRound      <- Corr mapOf ( _ => NilRound )
+  & msgsPropose     <- Rounds mapOf ( _ => powerset(AllFaultyProposals) )
+  & msgsPrevote     <- Rounds mapOf ( _ => powerset(AllFaultyPrevotes) )
+  & msgsPrecommit   <- Rounds mapOf ( _ => powerset(AllFaultyPrecommits) )
   & BenignRoundsInMessages(msgsPropose)
   & BenignRoundsInMessages(msgsPrevote)
   & BenignRoundsInMessages(msgsPrecommit)
@@ -202,17 +202,17 @@ pred Init = (
 action BroadcastProposal(pSrc, pRound, pProposal, pValidRound) = {
   val newMsg = { tag: "PROPOSE", src: pSrc, round: pRound,
                  proposal: pProposal, validRound: pValidRound }
-  msgsPropose <- msgsPropose updateAs pRound, (old -> old union set(newMsg))
+  msgsPropose <- msgsPropose updateAs pRound, (old => old union set(newMsg))
 }
 
 action BroadcastPrevote(pSrc, pRound, pId) = {
   val newMsg = { tag: "PREVOTE", src: pSrc, round: pRound, id: pId }
-  msgsPrevote <- msgsPrevote updateAs pRound, (old -> old union set(newMsg))
+  msgsPrevote <- msgsPrevote updateAs pRound, (old => old union set(newMsg))
 }
 
 action BroadcastPrecommit(pSrc, pRound, pId) = {
   val newMsg = { tag: "PRECOMMIT", src: pSrc, round: pRound, id: pId }
-  msgsPrecommit <- msgsPrecommit updateAs pRound, (old -> old union set(newMsg))
+  msgsPrecommit <- msgsPrecommit updateAs pRound, (old => old union set(newMsg))
 }
 
 //********************* PROTOCOL TRANSITIONS ******************************
@@ -231,8 +231,8 @@ action InsertProposal(p) = {
     & step[p] == "propose"
     // if the proposer is sending a proposal, then there are no other proposals
     // by the correct processes for the same round
-    & msgsPropose[r] forall (m -> m.src != p)
-    & ValidValues guess { v ->
+    & msgsPropose[r] forall (m => m.src != p)
+    & ValidValues guess { v =>
         val proposal = if (validValue[p] != NilValue) validValue[p] else v
         BroadcastProposal(p, round[p], proposal, validRound[p])
       }
@@ -242,7 +242,7 @@ action InsertProposal(p) = {
 
 // lines 22-27
 action UponProposalInPropose(p) =
-  Values guess { v ->
+  Values guess { v =>
     val msg = { tag: "PROPOSE", src: Proposer[round[p]],
                 round: round[p], proposal: v, validRound: NilRound }
     val mid = // line 23
@@ -261,10 +261,10 @@ action UponProposalInPropose(p) =
 
 // lines 28-33        
 action UponProposalInProposeAndPrevote(p) =
-  tuples(Values, Rounds) guess { v, vr ->
+  tuples(Values, Rounds) guess { v, vr =>
     val msg = { tag: "PROPOSE", src: Proposer[round[p]],
                 round: round[p], proposal: v, validRound: vr }
-    val PV = msgsPrevote[vr] filter ( m -> m.id == Id(v) )
+    val PV = msgsPrevote[vr] filter ( m => m.id == Id(v) )
     val mid = // line 29
          if (IsValid(v) and (lockedRound[p] <= vr or lockedValue[p] == v))
          Id(v)
@@ -283,9 +283,9 @@ action UponProposalInProposeAndPrevote(p) =
 
 // lines 34-35 + lines 61-64 (onTimeoutPrevote)
 action UponQuorumOfPrevotesAny(p) =
-  powerset(msgsPrevote[round[p]]) guess { MyEvidence -> 
+  powerset(msgsPrevote[round[p]]) guess { MyEvidence =>
     // find the unique voters in the evidence
-    val Voters = MyEvidence.map(m -> m.src)
+    val Voters = MyEvidence.map(m => m.src)
 
     // compare the number of the unique voters against the threshold
     {
@@ -300,10 +300,10 @@ action UponQuorumOfPrevotesAny(p) =
 
 // lines 36-46
 action UponProposalInPrevoteOrCommitAndPrevote(p) =
-  ValidValues.cross(RoundsOrNil) guess { v, vr ->
+  ValidValues.cross(RoundsOrNil) guess { v, vr =>
     val msg = { tag: "PROPOSE", src: Proposer[round[p]],
                 round: round[p], proposal: v, validRound: vr }
-    val PV = msgsPrevote[round[p]].filter(m -> m.id == Id(v))
+    val PV = msgsPrevote[round[p]].filter(m => m.id == Id(v))
     {
       & step[p] in set("prevote", "precommit") // line 36
       & msg in msgsPropose[round[p]] // line 36
@@ -327,9 +327,9 @@ action UponProposalInPrevoteOrCommitAndPrevote(p) =
 
 // lines 47-48 + 65-67 (onTimeoutPrecommit)
 action UponQuorumOfPrecommitsAny(p) =
-  powerset(msgsPrecommit[round[p]]) guess { MyEvidence ->
+  powerset(msgsPrecommit[round[p]]) guess { MyEvidence =>
       // find the unique committers in the evidence
-      val Committers =  MyEvidence map ( m -> m.src )
+      val Committers =  MyEvidence map ( m => m.src )
       // compare the number of the unique committers against the threshold
       {
         & cardinality(Committers) >= THRESHOLD2  // line 47
@@ -343,10 +343,10 @@ action UponQuorumOfPrecommitsAny(p) =
 // lines 49-54        
 action UponProposalInPrecommitNoDecision(p) =
   // line 50
-  tuples(ValidValues, Rounds, RoundsOrNil) guess { v, r, vr ->
+  tuples(ValidValues, Rounds, RoundsOrNil) guess { v, r, vr =>
      val msg = { tag: "PROPOSE", src: Proposer[r],
                  round: r, proposal: v, validRound: vr }
-     val PV = msgsPrecommit[r].filter(m -> m.id == Id(v))
+     val PV = msgsPrecommit[r].filter(m => m.id == Id(v))
      {
        & decision[p] == NilValue // line 49
        & msg in msgsPropose[r]          // line 49
@@ -373,7 +373,7 @@ action OnTimeoutPropose(p) = {
 
 // lines 44-46
 action OnQuorumOfNilPrevotes(p) =
-  val PV = msgsPrevote[round[p]].filter(m -> m.id == Id(NilValue))
+  val PV = msgsPrevote[round[p]].filter(m => m.id == Id(NilValue))
   {
     & step[p] == "prevote"
     & cardinality(PV) >= THRESHOLD2 // line 36
@@ -385,11 +385,11 @@ action OnQuorumOfNilPrevotes(p) =
 
 // lines 55-56
 action OnRoundCatchup(p) =
-  Rounds.filter(rr -> rr > round[p]) guess { r ->
+  Rounds.filter(rr => rr > round[p]) guess { r =>
     val RoundMsgs = msgsPropose[r].union(msgsPrevote[r]).union(msgsPrecommit[r])
 
-    powerset(RoundMsgs) guess { MyEvidence ->
-      val Faster = MyEvidence.map(m -> m.src)
+    powerset(RoundMsgs) guess { MyEvidence =>
+      val Faster = MyEvidence.map(m => m.src)
       {
         & cardinality(Faster) >= THRESHOLD1
         & evidence      <- MyEvidence union evidence
@@ -404,7 +404,7 @@ action OnRoundCatchup(p) =
  * e.g., when all processes decide. This is expected behavior, as we focus on safety.
  */
 action Next =
-  Corr guess { p -> {
+  Corr guess { p => {
       | InsertProposal(p)
       | UponProposalInPropose(p)
       | UponProposalInProposeAndPrevote(p)
@@ -423,7 +423,7 @@ action Next =
 
 // equivocation by a process p
 pred EquivocationBy(p) =
-  evidence.cross(evidence) exists (m1, m2 -> (
+  evidence.cross(evidence) exists (m1, m2 => (
       & m1 != m2
       & m1.src == p
       & m2.src == p
@@ -434,17 +434,17 @@ pred EquivocationBy(p) =
 
 // amnesic behavior by a process p
 pred AmnesiaBy(p) =
-    tuples(Rounds, Rounds).exists(r1, r2 -> (
+    tuples(Rounds, Rounds).exists(r1, r2 => (
         & r1 < r2
-        & tuples(ValidValues, ValidValues).exists(v1, v2 -> (
+        & tuples(ValidValues, ValidValues).exists(v1, v2 => (
             & v1 != v2
             & evidence.contains({ tag: "PRECOMMIT", src: p,
                                   round: r1, id: Id(v1) })
             & evidence.contains({ tag: "PREVOTE", src: p,
                                   round: r2, id: Id(v2)})
-            & Rounds.filter(rnd -> r1 <= rnd and rnd < r2).forall(r ->
-                val prevotes = evidence.filter(m -> m.tag == "PREVOTE")
-                                       .filter(m -> m.round == r and m.id == Id(v2))
+            & Rounds.filter(rnd => r1 <= rnd and rnd < r2).forall(r =>
+                val prevotes = evidence.filter(m => m.tag == "PREVOTE")
+                                       .filter(m => m.round == r and m.id == Id(v2))
 
                 cardinality(prevotes) < THRESHOLD2
               )
@@ -454,7 +454,7 @@ pred AmnesiaBy(p) =
 
 // the safety property -- agreement
 pred Agreement =
-  tuples(Corr, Corr).forall(p, q -> (
+  tuples(Corr, Corr).forall(p, q => (
     | decision[p] == NilValue
     | decision[q] == NilValue
     | decision[p] == decision[q]
@@ -462,7 +462,7 @@ pred Agreement =
 
 // the protocol validity
 pred Validity =
-  Corr forall ( p ->
+  Corr forall ( p =>
     decision[p] in (ValidValues union set(NilValue))
   )
 
@@ -473,9 +473,9 @@ pred Validity =
  */
 pred Accountability = (
     | Agreement
-    | powerset(Faulty).exists(Detectable -> (
+    | powerset(Faulty).exists(Detectable => (
         & cardinality(Detectable) >= THRESHOLD1
-        & Detectable.forall(p -> EquivocationBy(p) or AmnesiaBy(p))
+        & Detectable.forall(p => EquivocationBy(p) or AmnesiaBy(p))
       ))
 )
 
@@ -484,24 +484,24 @@ pred Accountability = (
 // This property is violated. You can check it to see how amnesic behavior
 // appears in the evidence variable.
 pred NoAmnesia =
-    Faulty.forall(p -> not(AmnesiaBy(p)))
+    Faulty.forall(p => not(AmnesiaBy(p)))
 
 // This property is violated. You can check it to see an example of equivocation.
 pred NoEquivocation =
-    Faulty.forall(p -> not(EquivocationBy(p)))
+    Faulty.forall(p => not(EquivocationBy(p)))
 
 // This property is violated. You can check it to see an example of agreement.
 // It is not exactly ~Agreement, as we do not want to see the states where
 // decision[p] = NilValue
 pred NoAgreement =
-  tuples(Corr, Corr) forall ( p, q ->
+  tuples(Corr, Corr) forall ( p, q =>
         (p != q and decision[p] != NilValue and decision[q] != NilValue)
           implies (decision[p] != decision[q])
   )
 // Either agreement holds, or the faulty processes indeed demonstrate amnesia.
 // This property is violated. A counterexample should demonstrate equivocation.
 pred AgreementOrAmnesia =
-    Agreement or Faulty.forall(p -> AmnesiaBy(p))
+    Agreement or Faulty.forall(p => AmnesiaBy(p))
 
 // We expect this property to be violated. It shows us a protocol run,
 // where one faulty process demonstrates amnesia without equivocation.
@@ -509,22 +509,22 @@ pred AgreementOrAmnesia =
 // is a tough constraint for Apalache. It has not reported a counterexample
 // for n=4,f=2, length <= 5.
 pred ShowMeAmnesiaWithoutEquivocation =
-    (not(Agreement) and Faulty.exists(p -> not(EquivocationBy(p))))
-        implies Faulty.forall(p -> not(AmnesiaBy(p)))
+    (not(Agreement) and Faulty.exists(p => not(EquivocationBy(p))))
+        implies Faulty.forall(p => not(AmnesiaBy(p)))
 
 // This property is violated on n=4,f=2, length=4 in less than 10 min.
 // Two faulty processes may demonstrate amnesia without equivocation.
 pred AmnesiaImpliesEquivocation =
-    (Faulty.exists(p -> AmnesiaBy(p)))
-      implies (Faulty.exists(q -> EquivocationBy(q)))
+    (Faulty.exists(p => AmnesiaBy(p)))
+      implies (Faulty.exists(q => EquivocationBy(q)))
 
 /*
   This property is violated. You can check it to see that all correct processes
   may reach MaxRound without making a decision. 
  */
 pred NeverUndecidedInMaxRound = (
-    val AllInMax   = Corr.forall(p -> round[p] == MaxRound)
-    val AllDecided = Corr.forall(p -> decision[p] != NilValue)
+    val AllInMax   = Corr.forall(p => round[p] == MaxRound)
+    val AllDecided = Corr.forall(p => decision[p] != NilValue)
 
     AllInMax implies AllDecided
 )

@@ -96,7 +96,7 @@ module BinSearch {
     // is to use two quantifiers,
     // but that would produce O(Len(INPUT_SEQ)^2) constraints.
     // Here, we write it a bit smarter.
-    INPUT_SEQ.domain.forall( i ->
+    INPUT_SEQ.domain.forall( i =>
         INPUT_SEQ.domain.contains(i + 1)
           implies (INPUT_SEQ[i] <= INPUT_SEQ[i + 1])
     )
@@ -111,7 +111,7 @@ module BinSearch {
     //  and only if the key is found."
     pred ReturnValueIsCorrect =
         val MatchingIndices =
-            INPUT_SEQ.domain.filter(i -> INPUT_SEQ[i] == INPUT_KEY)
+            INPUT_SEQ.domain.filter(i => INPUT_SEQ[i] == INPUT_KEY)
         if (MatchingIndices != set())
             // Indices start with 1, whereas returnValue starts with 0
             MatchingIndices.contains(returnValue + 1)

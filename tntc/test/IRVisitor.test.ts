@@ -15,7 +15,7 @@ describe('walkModule', () => {
     'import M.*',
     'module A { var x: int }',
     'module A1 = A(x = "rainbow")',
-    'val f = S.filter(x -> x + 1)',
+    'val f = S.filter(x => x + 1)',
     'def l = val x = false { x }',
   ])
 
@@ -38,9 +38,9 @@ describe('walkModule', () => {
       'N',
       '1',
       '"rainbow"',
-      'filter(S, (x -> iadd(x, 1)))',
+      'filter(S, (x => iadd(x, 1)))',
       'S',
-      '(x -> iadd(x, 1))',
+      '(x => iadd(x, 1))',
       'iadd(x, 1)',
       'x',
       '1',
@@ -58,8 +58,8 @@ describe('walkModule', () => {
       'x',
       '1',
       'iadd(x, 1)',
-      '(x -> iadd(x, 1))',
-      'filter(S, (x -> iadd(x, 1)))',
+      '(x => iadd(x, 1))',
+      'filter(S, (x => iadd(x, 1)))',
       'false',
       'x',
       'val x = false { x }',
@@ -94,7 +94,7 @@ describe('walkModule', () => {
       'module A {\n  var x: int\n}',
       'var x: int', // From inside module A
       'module A1 = A(x = "rainbow")',
-      'val f = filter(S, (x -> iadd(x, 1)))',
+      'val f = filter(S, (x => iadd(x, 1)))',
       'def l = val x = false { x }',
       'val x = false', // From the let definition
     ]
@@ -108,7 +108,7 @@ describe('walkModule', () => {
       'var x: int', // From inside module A
       'module A {\n  var x: int\n}',
       'module A1 = A(x = "rainbow")',
-      'val f = filter(S, (x -> iadd(x, 1)))',
+      'val f = filter(S, (x => iadd(x, 1)))',
       'val x = false', // From the let definition
       'def l = val x = false { x }',
     ]
@@ -164,13 +164,13 @@ describe('walkModule', () => {
       }
 
       const enteredDefinitions = [
-        'val f = filter(S, (x -> iadd(x, 1)))',
+        'val f = filter(S, (x => iadd(x, 1)))',
         'def l = val x = false { x }',
         'val x = false', // From the let definition
       ]
 
       const exitedDefinitions = [
-        'val f = filter(S, (x -> iadd(x, 1)))',
+        'val f = filter(S, (x => iadd(x, 1)))',
         'val x = false', // From the let definition
         'def l = val x = false { x }',
       ]
@@ -363,7 +363,7 @@ describe('walkModule', () => {
   var x: int
 }
   module A1 = A(x = "rainbow")
-  val f = filter(S, (x -> iadd(x, 1)))
+  val f = filter(S, (x => iadd(x, 1)))
   def l = val x = false { x }
 }`,
         'module A {\n  var x: int\n}',
@@ -381,7 +381,7 @@ describe('walkModule', () => {
   var x: int
 }
   module A1 = A(x = "rainbow")
-  val f = filter(S, (x -> iadd(x, 1)))
+  val f = filter(S, (x => iadd(x, 1)))
   def l = val x = false { x }
 }`,
       ]
@@ -468,14 +468,14 @@ describe('walkModule', () => {
 
       const enteredExpressions = [
         'igt(N, 1)',
-        'filter(S, (x -> iadd(x, 1)))',
+        'filter(S, (x => iadd(x, 1)))',
         'iadd(x, 1)',
       ]
 
       const exitedExpressions = [
         'igt(N, 1)',
         'iadd(x, 1)',
-        'filter(S, (x -> iadd(x, 1)))',
+        'filter(S, (x => iadd(x, 1)))',
       ]
 
       const visitor = new TestVisitor()
@@ -499,7 +499,7 @@ describe('walkModule', () => {
       }
 
       const enteredExpressions = [
-        '(x -> iadd(x, 1))',
+        '(x => iadd(x, 1))',
       ]
 
       const exitedExpressions = enteredExpressions

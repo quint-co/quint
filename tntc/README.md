@@ -95,3 +95,13 @@ following commands:
 [npm]: https://en.wikipedia.org/wiki/Npm_(software)
 [yalc]: https://www.npmjs.com/package/yalc
 [txm]: https://www.npmjs.com/package/txm
+
+### Parser
+
+We use the `antlr4ts` parser generator to compile the BNF like notation specified
+in [./src/generated/Tnt.g4](./src/generated/Tnt.g4) into a typescript lexer and
+parser. To regenerate the parser and lexer, run
+
+``` sh
+npm run antlr
+```

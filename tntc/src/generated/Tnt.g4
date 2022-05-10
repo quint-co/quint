@@ -90,7 +90,7 @@ expr:           // apply a built-in operator via the dot notation
                 // built-in infix/postfix operators, a la Scala
         |       expr IDENTIFIER (argList)                           # infixCall
         |       expr MATCH
-                    ('|' STRING ':' identOrHole '->' expr)+         # match
+                    ('|' STRING ':' identOrHole '=>' expr)+         # match
                 // similar to indented /\ and indented \/ of TLA+
         |       '(' ('&')? expr '&' expr ('&' expr)* ')'            # andExpr
         |       '(' ('|')? expr '|' expr ('|' expr)* ')'            # orExpr
@@ -110,14 +110,14 @@ expr:           // apply a built-in operator via the dot notation
 
 // This rule parses anonymous functions, e.g.:
 // 1. Non-action lambdas:
-//   x, y, z -> e
-//   (x, y, z -> e)
+//   x, y, z => e
+//   (x, y, z => e)
 //
 // 2. Action lambdas:
-//   { x, y, z -> e }
-lambda:         identOrHole (',' identOrHole)*  '->' expr
-        |       '(' identOrHole (',' identOrHole)*  '->' expr ')'
-        |       '{' identOrHole (',' identOrHole)*  '->' expr '}'
+//   { x, y, z => e }
+lambda:         identOrHole (',' identOrHole)*  '=>' expr
+        |       '(' identOrHole (',' identOrHole)*  '=>' expr ')'
+        |       '{' identOrHole (',' identOrHole)*  '=>' expr '}'
         ;
 
 // an identifier or a hole '_'

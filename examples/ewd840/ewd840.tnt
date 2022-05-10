@@ -32,9 +32,9 @@ pred TypeOK = (
 (* "type-correct" values.                                                  *)
 (***************************************************************************/
 pred Init = (
-  & setOfMaps(Node, Bool).exists(a -> active == a)
-  & setOfMaps(Node, Color).exists(c -> color == c)
-  & Node.exists(n -> tpos == n)
+  & setOfMaps(Node, Bool).exists(a => active == a)
+  & setOfMaps(Node, Color).exists(c => color == c)
+  & Node.exists(n => tpos == n)
   & tcolor == "black"
 )
 
@@ -74,7 +74,7 @@ action PassToken(i) = {
 (***************************************************************************/
 action System = {
   | InitiateProbe
-  | (Node exclude set(0)) guess { i -> PassToken(i) }
+  | (Node exclude set(0)) guess { i => PassToken(i) }
 }
 
 /***************************************************************************)
@@ -84,9 +84,9 @@ action System = {
 (***************************************************************************/
 action SendMsg(i) = {
   & active[i]
-  & (Node exclude set(i)) guess { j -> {
+  & (Node exclude set(i)) guess { j => {
         & active  <- active.update(j, true)
-        & color   <- color updateAs i, ( old -> if (j > i) "black" else old )
+        & color   <- color updateAs i, ( old => if (j > i) "black" else old )
       }
     }
 }
@@ -103,7 +103,7 @@ action Deactivate(i) = {
 (* actions performed by the underlying algorithm                           *)
 (***************************************************************************/
 action Environment =
-  Node guess { i -> { SendMsg(i) | Deactivate(i) } }
+  Node guess { i => { SendMsg(i) | Deactivate(i) } }
 
 /***************************************************************************)
 (* next-state relation: disjunction of above actions                       *)
@@ -133,13 +133,13 @@ pred terminationDetected = (
 )
 
 pred TerminationDetection =
-  terminationDetected implies Node.forall(i -> not(active[i]))
+  terminationDetected implies Node.forall(i => not(active[i]))
 
 /***************************************************************************)
 (* Liveness property: termination is eventually detected.                  *)
 (***************************************************************************/
 temporal Liveness =
-  always(Node.forall(i -> not(active[i])) implies eventually(terminationDetected))
+  always(Node.forall(i => not(active[i])) implies eventually(terminationDetected))
 
 /***************************************************************************)
 (* The following property asserts that when every process always           *)
@@ -147,7 +147,7 @@ temporal Liveness =
 (* It does not hold since processes can wake up each other.                *)
 (***************************************************************************/
 temporal FalseLiveness =
-  always(Node.forall(i -> always(eventually(not(active[i]))))
+  always(Node.forall(i => always(eventually(not(active[i]))))
          implies eventually(terminationDetected))
 
 /***************************************************************************)
@@ -162,16 +162,16 @@ temporal SpecWFNext = Init and always(Next.stutter(vars) and Next.weakFair(vars)
 
 temporal AllNodesTerminateIfNoMessages = (
   eventually(always(
-      Node.forall(i -> not(SendMsg(i))).stutter(vars)
-  )) implies eventually(Node.forall(i -> not(active[i])))
+      Node.forall(i => not(SendMsg(i))).stutter(vars)
+  )) implies eventually(Node.forall(i => not(active[i])))
 )
 
 /***************************************************************************)
 (* Dijkstra's inductive invariant                                          *)
 (***************************************************************************/
 pred Inv = (
-  | Node.forall(i -> tpos < i implies not(active[i]))
-  | (0 to tpos).exists(j -> color[j] == "black")
+  | Node.forall(i => tpos < i implies not(active[i]))
+  | (0 to tpos).exists(j => color[j] == "black")
   | tcolor == "black"
 )
 
