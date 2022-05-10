@@ -30,7 +30,7 @@ describe('treeFromModule', () => {
     'import M.*',
     'module A { var x: int }',
     'module A1 = A(x = 33)',
-    'val f = S.filter(x -> x + 1)',
+    'val f = S.filter(x => x + 1)',
     'def l = val x = 2 { x }',
   ])
 

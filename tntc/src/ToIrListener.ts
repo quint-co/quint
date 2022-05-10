@@ -809,8 +809,8 @@ export class ToIrListener implements TntListener {
   }
 
   // entry match
-  //   | "Cat": cat -> cat.name != ""
-  //   | "Dog": dog -> dog.year > 0
+  //   | "Cat": cat => cat.name != ""
+  //   | "Dog": dog => dog.year > 0
   exitMatch (ctx: p.MatchContext) {
     const options = ctx.STRING().map((opt) => opt.text.slice(1, -1))
     const noptions = options.length

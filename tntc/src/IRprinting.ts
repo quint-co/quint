@@ -81,7 +81,7 @@ export function expressionToString (expr: TntEx): string {
     case 'app':
       return `${expr.opcode}(${expr.args.map(expressionToString).join(', ')})`
     case 'lambda':
-      return `(${expr.params.join(', ')} -> ${expressionToString(expr.expr)})`
+      return `(${expr.params.join(', ')} => ${expressionToString(expr.expr)})`
     case 'let':
       return `${definitionToString(expr.opdef)} { ${expressionToString(expr.expr)} }`
   }

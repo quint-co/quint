@@ -32,7 +32,7 @@ describe('collectDefinitions', () => {
     })
 
     it('collects names from application inside definition body', () => {
-      const tntModule = buildModuleWithDefs(['def test_operator = S.filter(x -> x > 0)'])
+      const tntModule = buildModuleWithDefs(['def test_operator = S.filter(x => x > 0)'])
 
       const result = collectDefinitions(tntModule).get(moduleName)
 
