@@ -589,7 +589,15 @@ Alternatively, you can wrap an expression `e` in parentheses: `(e)`.
 In this case, `e` is not allowed to be in the Action-mode. If `e` is in the
 Action mode, the parser *must* issue an error.
 
-### Lambdas
+### Lambdas (aka Anonymous Operators)
+
+As noted when we introduced [types](#types) and [operator
+definitions](#operator-definitions), the type of operators is specified using
+the syntax `(a1, ..., an) => b`, for an operator that takes arguments of types
+`a1` to `an` to an expression of type `b`. _Anonymous operators expressions_,
+known in TLA+ as "lambdas", can be constructed with the corresponding syntax.
+`(x1, ..., xn) => e` is an anonymous operator which, when applied to expressions
+`x1` to `xn`, reduces to the expression `e`.
 
 Depending on the mode, an anonymous operator of one argument is defined as:
 
