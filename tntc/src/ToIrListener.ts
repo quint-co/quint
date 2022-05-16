@@ -328,9 +328,6 @@ export class ToIrListener implements TntListener {
 
   // Push the application of operator `name` to `args` onto the internal
   // stack of expressions
-  //
-  // By default, it fetches the `this.nextId`, but that can be overriden by
-  // supplying the optiona `id` argument
   private pushApplication (ctx: any, name: string, args: TntEx[]) {
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
