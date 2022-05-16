@@ -326,19 +326,6 @@ export class ToIrListener implements TntListener {
     }
   }
 
-  // Push the application of operator `name` to `args` onto the internal
-  // stack of expressions
-  private pushApplication (ctx: any, name: string, args: TntEx[]) {
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: name,
-      args: args,
-    })
-  }
-
   // function application, e.g., f[10]
   exitFunApp (ctx: any) {
     this.pushApplication(ctx, 'of', this.popExprs(2))
@@ -891,6 +878,19 @@ export class ToIrListener implements TntListener {
         start: { line: ctx.start.line - 1, col: ctx.start.charPositionInLine, index: ctx.start.startIndex },
       }
     }
+  }
+
+  // Push the application of operator `name` to `args` onto the internal
+  // stack of expressions
+  private pushApplication (ctx: any, name: string, args: TntEx[]) {
+    const id = this.nextId()
+    this.sourceMap.set(id, this.loc(ctx))
+    this.exprStack.push({
+      id: id,
+      kind: 'app',
+      opcode: name,
+      args: args,
+    })
   }
 
   // push an error from the context
