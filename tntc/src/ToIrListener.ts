@@ -328,16 +328,7 @@ export class ToIrListener implements TntListener {
 
   // function application, e.g., f[10]
   exitFunApp (ctx: any) {
-    const args = this.popExprs(2)
-
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: 'of',
-      args: args,
-    })
+    this.pushApplication(ctx, 'of', this.popExprs(2))
   }
 
   // operator application in the normal form, e.g., MyOper("foo", 42)
@@ -356,14 +347,7 @@ export class ToIrListener implements TntListener {
       }
     } // else no arguments, e.g., set(), seq()
 
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: name,
-      args: args,
-    })
+    this.pushApplication(ctx, name, args)
   }
 
   // infix operator application, e.g., S union T
@@ -373,14 +357,7 @@ export class ToIrListener implements TntListener {
     const firstArg = this.exprStack.pop()
     if (firstArg && wrappedArgs && wrappedArgs.kind === 'app' &&
       wrappedArgs.opcode === 'wrappedArgs') {
-      const id = this.nextId()
-      this.sourceMap.set(id, this.loc(ctx))
-      this.exprStack.push({
-        id: id,
-        kind: 'app',
-        opcode: name,
-        args: [firstArg].concat(wrappedArgs.args),
-      })
+      this.pushApplication(ctx, name, [firstArg].concat(wrappedArgs.args))
     } else {
       const ls = this.locStr(ctx)
       // istanbul ignore next
@@ -416,15 +393,7 @@ export class ToIrListener implements TntListener {
         }
       } // else: no arguments, as in e.g., s.head()
       // apply the operator to the arguments
-
-      const id = this.nextId()
-      this.sourceMap.set(id, this.loc(ctx))
-      this.exprStack.push({
-        id: id,
-        kind: 'app',
-        opcode: name,
-        args: args!,
-      })
+      this.pushApplication(ctx, name, args)
     } else {
       // accessing a tuple element, a record field, or name in a module
       const m = name.match(/^_([1-9][0-9]?)$/)
@@ -439,14 +408,7 @@ export class ToIrListener implements TntListener {
           value: BigInt(m[1]),
         }
 
-        const appId = this.nextId()
-        this.sourceMap.set(appId, this.loc(ctx))
-        this.exprStack.push({
-          id: appId,
-          kind: 'app',
-          opcode: 'item',
-          args: [callee!, idx],
-        })
+        this.pushApplication(ctx, 'item', [callee!, idx])
       } else {
         // accessing a record field or a name in a module
         if (name === 'in' || name === 'notin' ||
@@ -464,14 +426,7 @@ export class ToIrListener implements TntListener {
           kind: 'str',
           value: name,
         }
-        const appId = this.nextId()
-        this.sourceMap.set(appId, this.loc(ctx))
-        this.exprStack.push({
-          id: appId,
-          kind: 'app',
-          opcode: 'field',
-          args: [callee!, field],
-        })
+        this.pushApplication(ctx, 'field', [callee!, field])
       }
     }
   }
@@ -544,28 +499,13 @@ export class ToIrListener implements TntListener {
   exitTuple (ctx: p.TupleContext) {
     const args = this.popExprs(ctx.expr().length)
 
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: 'tuple',
-      args: args,
-    })
+    this.pushApplication(ctx, 'tuple', args)
   }
 
   // sequence constructor, e.g., [1, 2, 3]
   exitSequence (ctx: p.SequenceContext) {
     const args = this.popExprs(ctx.expr().length)
-
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: 'seq',
-      args: args,
-    })
+    this.pushApplication(ctx, 'seq', args)
   }
 
   // record constructor, e.g., { name: "igor", year: 2021 }
@@ -585,29 +525,14 @@ export class ToIrListener implements TntListener {
       })
       namesAndValues.push(elems[i])
     }
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: 'record',
-      args: namesAndValues,
-    })
+    this.pushApplication(ctx, 'record', namesAndValues)
   }
 
   // '+' or '-'
   exitPlusMinus (ctx: p.PlusMinusContext) {
     const opcode = (ctx.PLUS() !== undefined) ? 'iadd' : 'isub'
     const args = this.popExprs(2)
-
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: opcode,
-      args: args,
-    })
+    this.pushApplication(ctx, opcode, args)
   }
 
   // '*', '/', or '%'
@@ -621,44 +546,21 @@ export class ToIrListener implements TntListener {
         case p.TntParser.MOD: opcode = 'imod'; break
       }
       const args = this.popExprs(2)
-
-      const id = this.nextId()
-      this.sourceMap.set(id, this.loc(ctx))
-      this.exprStack.push({
-        id: id,
-        kind: 'app',
-        opcode: opcode,
-        args: args,
-      })
+      this.pushApplication(ctx, opcode, args)
     }
   }
 
   // integer power, e.g., x^y
   exitPow (ctx: any) {
     const args = this.popExprs(2)
-
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: 'ipow',
-      args: args,
-    })
+    this.pushApplication(ctx, 'ipow', args)
   }
 
   // unary minus, e.g., -x
   exitUminus (ctx: any) {
     const arg = this.exprStack.pop()
     if (arg) {
-      const id = this.nextId()
-      this.sourceMap.set(id, this.loc(ctx))
-      this.exprStack.push({
-        id: id,
-        kind: 'app',
-        opcode: 'iuminus',
-        args: [arg],
-      })
+      this.pushApplication(ctx, 'iuminus', [arg])
     }
   }
 
@@ -680,132 +582,62 @@ export class ToIrListener implements TntListener {
         case p.TntParser.SUBSETEQ: opcode = 'subseteq'; break
       }
       const args = this.popExprs(2)
-      const id = this.nextId()
-      this.sourceMap.set(id, this.loc(ctx))
-      this.exprStack.push({
-        id: id,
-        kind: 'app',
-        opcode: opcode,
-        args: args,
-      })
+      this.pushApplication(ctx, opcode, args)
     }
   }
 
   // p and q
   exitAnd (ctx: any) {
     const args = this.popExprs(2)
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: 'and',
-      args: args,
-    })
+    this.pushApplication(ctx, 'and', args)
   }
 
   // p or q
   exitOr (ctx: any) {
     const args = this.popExprs(2)
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: 'or',
-      args: args,
-    })
+    this.pushApplication(ctx, 'or', args)
   }
 
   // p implies q
   exitImplies (ctx: any) {
     const args = this.popExprs(2)
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: 'implies',
-      args: args,
-    })
+    this.pushApplication(ctx, 'implies', args)
   }
 
   // p iff q
   exitIff (ctx: any) {
     const args = this.popExprs(2)
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: 'iff',
-      args: args,
-    })
+    this.pushApplication(ctx, 'iff', args)
   }
 
   // ( p & q & r )
   exitAndExpr (ctx: p.AndExprContext) {
     const args = this.popExprs(ctx.expr().length)
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: 'andExpr',
-      args: args,
-    })
+    this.pushApplication(ctx, 'andExpr', args)
   }
 
   // ( p | q | r )
   exitOrExpr (ctx: p.OrExprContext) {
     const args = this.popExprs(ctx.expr().length)
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: 'orExpr',
-      args: args,
-    })
+    this.pushApplication(ctx, 'orExpr', args)
   }
 
   // { p & q & r }
   exitAndAction (ctx: p.AndActionContext) {
     const args = this.popExprs(ctx.expr().length)
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: 'andAction',
-      args: args,
-    })
+    this.pushApplication(ctx, 'andAction', args)
   }
 
   // { p | q | r }
   exitOrAction (ctx: p.OrActionContext) {
     const args = this.popExprs(ctx.expr().length)
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: 'orAction',
-      args: args,
-    })
+    this.pushApplication(ctx, 'orAction', args)
   }
 
   // if (p) e1 else e2
   exitIfElse (ctx: any) {
     const args = this.popExprs(3)
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.exprStack.push({
-      id: id,
-      kind: 'app',
-      opcode: 'ite',
-      args: args,
-    })
+    this.pushApplication(ctx, 'ite', args)
   }
 
   // entry match
@@ -844,15 +676,7 @@ export class ToIrListener implements TntListener {
       matchArgs.push(lam)
     }
     // construct the match expression and push it in exprStack
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    const matchExpr: TntEx = {
-      id: id,
-      kind: 'app',
-      opcode: 'match',
-      args: matchArgs,
-    }
-    this.exprStack.push(matchExpr)
+    this.pushApplication(ctx, 'match', matchArgs)
   }
 
   /** ******************* translate types ********************************/
@@ -1054,6 +878,19 @@ export class ToIrListener implements TntListener {
         start: { line: ctx.start.line - 1, col: ctx.start.charPositionInLine, index: ctx.start.startIndex },
       }
     }
+  }
+
+  // Push the application of operator `name` to `args` onto the internal
+  // stack of expressions
+  private pushApplication (ctx: any, name: string, args: TntEx[]) {
+    const id = this.nextId()
+    this.sourceMap.set(id, this.loc(ctx))
+    this.exprStack.push({
+      id: id,
+      kind: 'app',
+      opcode: name,
+      args: args,
+    })
   }
 
   // push an error from the context
