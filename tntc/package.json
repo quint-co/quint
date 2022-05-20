@@ -63,7 +63,7 @@
   },
   "scripts": {
     "compile": "tsc",
-    "test": "mocha -r ts-node/register test/**/*.test.ts",
+    "test": "mocha -r ts-node/register test/*.test.ts test/**/*.test.ts",
     "coverage": "nyc npm run test",
     "integration": "txm cli-tests.md",
     "antlr": "antlr4ts -visitor ./src/generated/Tnt.g4",
