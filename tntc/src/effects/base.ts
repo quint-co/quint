@@ -12,13 +12,14 @@ type Substitution =
   | { kind: 'variable', name: string, value: Variables }
   | { kind: 'effect', name: string, value: Effect }
 
-interface Error { message: string }
+// interface Error { message: string }
+interface ErrorTree { message?: string, location: string, children: ErrorTree[] }
 
 type UnificationResult =
   | { kind: 'ok', substitutions: Substitution[] }
-  | { kind: 'error', errors: Error[] }
+  | { kind: 'error', error: ErrorTree }
 
-interface UnificationPartialResult { substitutions: Substitution[], errors: Error[] }
+interface UnificationPartialResult { substitutions: Substitution[], errors: ErrorTree[] }
 
 function compose (s1: Substitution[], s2: Substitution[]): Substitution[] {
   return s1.concat(s2)
@@ -27,13 +28,21 @@ function compose (s1: Substitution[], s2: Substitution[]): Substitution[] {
 export function unify (ea: Effect, eb: Effect): UnificationResult {
   const e1 = simplify(ea)
   const e2 = simplify(eb)
+  const location = `Trying to unify ${printEffect(e1)} and ${printEffect(e2)}`
 
   if (e1.kind === 'arrow' && e2.kind === 'arrow') {
     // Both arrow
     if (e1.effects.length !== e2.effects.length) {
       const expected = e1.effects.length - 1
       const got = e2.effects.length - 1
-      return { kind: 'error', errors: [{ message: `Expected ${expected} arguments, got ${got}` }] }
+      return {
+        kind: 'error',
+        error: {
+          location: location,
+          message: `Expected ${expected} arguments, got ${got}`,
+          children: [],
+        },
+      }
     }
 
     const partialResult = e1.effects.reduce((r: UnificationPartialResult, e, i) => {
@@ -48,13 +57,15 @@ export function unify (ea: Effect, eb: Effect): UnificationResult {
       } else {
         return {
           substitutions: r.substitutions,
-          errors: r.errors.concat(result.errors),
+          errors: r.errors.concat(result.error),
         }
       }
     }, { substitutions: [], errors: [] })
 
     if (partialResult.errors.length > 0) {
-      return { kind: 'error', errors: partialResult.errors }
+      return {
+        kind: 'error', error: { location: location, children: partialResult.errors },
+      }
     } else {
       return { kind: 'ok', substitutions: partialResult.substitutions }
     }
@@ -74,7 +85,7 @@ export function unify (ea: Effect, eb: Effect): UnificationResult {
       }
       return { kind: 'ok', substitutions: compose(result.substitutions, updateResult.substitutions) }
     } else {
-      throw new Error(`Unexpected format on ${inspect(e1s)} and/or ${inspect(e2s)}`)
+      throw new Error(`Unexpected format on ${printEffect(e1s)} and/or ${printEffect(e2s)}`)
     }
   } else if (e1.kind === 'var') {
     const substitutions: Substitution[] = [{ kind: 'effect', name: e1.name, value: e2 }]
@@ -83,25 +94,50 @@ export function unify (ea: Effect, eb: Effect): UnificationResult {
     const substitutions: Substitution[] = [{ kind: 'effect', name: e2.name, value: e1 }]
     return { kind: 'ok', substitutions: substitutions }
   } else {
-    return { kind: 'error', errors: [{ message: "Can't unify different types of effects" }] }
+    return {
+      kind: 'error',
+      error: {
+        location: location,
+        message: "Can't unify different types of effects",
+        children: [],
+      },
+    }
   }
 }
 
 function unifyVariables (v1: Variables, v2: Variables): UnificationResult {
+  const location = `Trying to unify variables ${printVariables(v1)} and ${printVariables(v2)}`
+
   if (v1.kind === 'state' && v2.kind === 'state') {
     // Both state
     if (sameVars(v1.vars, v2.vars)) {
       return { kind: 'ok', substitutions: [] }
     } else {
-      return { kind: 'error', errors: [{ message: `Expected effect on variable(s) ${v1.vars} instead of ${v2.vars}` }] }
+      return {
+        kind: 'error',
+        error: {
+          location: location,
+          message: `Expected effect to act over variable(s) ${v1.vars} instead of ${v2.vars}`,
+          children: [],
+        },
+      }
     }
   } else if (v1.kind === 'union' && v2.kind === 'union') {
     // Both union
     if (v1.variables.length !== v2.variables.length) {
+      // TODO: see about ordering
       const expected = v1.variables.length - 1
       const got = v2.variables.length - 1
-      return { kind: 'error', errors: [{ message: `Expected ${expected} arguments, got ${got}` }] }
+      return {
+        kind: 'error',
+        error: {
+          location: location,
+          message: `Expected ${expected} variables, got ${got}`,
+          children: [],
+        },
+      }
     }
+
     const partialResult = v1.variables.reduce((r: UnificationPartialResult, v, i) => {
       const v1s = applySubstitutionToVariables(r.substitutions, v)
       const v2s = applySubstitutionToVariables(r.substitutions, v2.variables[i])
@@ -114,17 +150,18 @@ function unifyVariables (v1: Variables, v2: Variables): UnificationResult {
       } else {
         return {
           substitutions: r.substitutions,
-          errors: r.errors.concat(result.errors),
+          errors: r.errors.concat(result.error),
         }
       }
     }, { substitutions: [], errors: [] })
 
     if (partialResult.errors.length > 0) {
-      return { kind: 'error', errors: partialResult.errors }
+      return {
+        kind: 'error', error: { location: location, children: partialResult.errors },
+      }
     } else {
       return { kind: 'ok', substitutions: partialResult.substitutions }
     }
-
   } else if (v1.kind === 'quantification') {
     const substitutions: Substitution[] = [{ kind: 'variable', name: v1.name, value: v2 }]
     return { kind: 'ok', substitutions: substitutions }
@@ -132,7 +169,10 @@ function unifyVariables (v1: Variables, v2: Variables): UnificationResult {
     const substitutions: Substitution[] = [{ kind: 'variable', name: v2.name, value: v1 }]
     return { kind: 'ok', substitutions: substitutions }
   } else {
-    return { kind: 'error', errors: [{ message: "Can't unify different types of variables" }] }
+    return {
+      kind: 'error',
+      error: { location: location, message: "Can't unify different types of variables", children: [] },
+    }
   }
 }
 
@@ -180,7 +220,7 @@ function simplifyVariables (variables: Variables, checkRepeated: Boolean): Varia
         case 'state':
           vars.push(...v.vars)
           break
-        case 'union':
+        case 'union': {
           const vs = simplifyVariables(v, checkRepeated)
           switch (vs.kind) {
             case 'quantification':
@@ -194,6 +234,7 @@ function simplifyVariables (variables: Variables, checkRepeated: Boolean): Varia
               break
           }
           break
+        }
       }
     })
     const repeated = vars.filter(v => vars.filter(v2 => v === v2).length > 1)
@@ -250,6 +291,31 @@ function applySubstitutionToVariables (subs: Substitution[], variables: Variable
   return variables
 }
 
-function inspect (a: any): string {
-  return JSON.stringify(a)
+function printEffect (e: Effect): string {
+  switch (e.kind) {
+    case 'var': return e.name
+    case 'effect': {
+      const output = []
+      if (e.read.kind !== 'state' || e.read.vars.length > 0) {
+        output.push(`Read[${printVariables(e.read)}]`)
+      }
+      if (e.update.kind !== 'state' || e.update.vars.length > 0) {
+        output.push(`Update[${printVariables(e.update)}]`)
+      }
+      if (output.length > 0) {
+        return output.join(' & ')
+      } else {
+        return 'Pure'
+      }
+    }
+    case 'arrow': return e.effects.map(printEffect).join(' -> ')
+  }
+}
+
+function printVariables (v: Variables): string {
+  switch (v.kind) {
+    case 'state': return v.vars.map(v => `'${v}'`).join(', ')
+    case 'quantification': return v.name
+    case 'union': return v.variables.map(printVariables).join(', ')
+  }
 }
