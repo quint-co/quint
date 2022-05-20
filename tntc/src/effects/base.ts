@@ -75,7 +75,7 @@ export function unify (ea: Effect, eb: Effect): UnificationResult {
     // Both actual effect
     const result = unifyVariables(e1.read, e2.read)
     if (result.kind === 'error') {
-      return result
+      return { kind: 'error', error: { location: location, children: [result.error] } }
     }
     const e1s = applySubstitution(result.substitutions, e1)
     const e2s = applySubstitution(result.substitutions, e2)
@@ -83,7 +83,7 @@ export function unify (ea: Effect, eb: Effect): UnificationResult {
       // I think this is always true
       const updateResult = unifyVariables(e1s.update, e2s.update)
       if (updateResult.kind === 'error') {
-        return updateResult
+        return { kind: 'error', error: { location: location, children: [updateResult.error] } }
       }
       return { kind: 'ok', substitutions: compose(result.substitutions, updateResult.substitutions) }
     } else {
@@ -127,9 +127,8 @@ function unifyVariables (v1: Variables, v2: Variables): UnificationResult {
   } else if (v1.kind === 'union' && v2.kind === 'union') {
     // Both union
     if (v1.variables.length !== v2.variables.length) {
-      // TODO: see about ordering
-      const expected = v1.variables.length - 1
-      const got = v2.variables.length - 1
+      const expected = v1.variables.length
+      const got = v2.variables.length
       return {
         kind: 'error',
         error: {
@@ -140,6 +139,7 @@ function unifyVariables (v1: Variables, v2: Variables): UnificationResult {
       }
     }
 
+    // TODO: see about ordering
     const partialResult = v1.variables.reduce((r: UnificationPartialResult, v, i) => {
       const v1s = applySubstitutionToVariables(r.substitutions, v)
       const v2s = applySubstitutionToVariables(r.substitutions, v2.variables[i])

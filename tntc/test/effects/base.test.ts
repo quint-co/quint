@@ -59,9 +59,12 @@ describe('unify', () => {
         assert.deepEqual(result.error, {
           location: "Trying to unify Read[v] -> Update[v] and Read['x'] -> Update['y']",
           children: [{
-            location: "Trying to unify variables 'x' and 'y'",
-            message: 'Expected effect to act over variable(s) x instead of y',
-            children: [],
+            location: "Trying to unify Update['x'] and Update['y']",
+            children: [{
+              location: "Trying to unify variables 'x' and 'y'",
+              message: 'Expected effect to act over variable(s) x instead of y',
+              children: [],
+            }],
           }],
         })
       }
@@ -99,6 +102,51 @@ describe('unify', () => {
           message: "Can't unify different types of effects",
           children: [],
         })
+      }
+    })
+  })
+
+  describe('nested arrow effects', () => {
+    const e1: Effect = {
+      kind: 'arrow',
+      effects: [
+        {
+          kind: 'arrow',
+          effects: [
+            { kind: 'effect', read: { kind: 'state', vars: [] }, update: { kind: 'state', vars: [] } },
+            { kind: 'var', name: 'E' },
+          ],
+        },
+        { kind: 'var', name: 'E' },
+      ],
+    }
+
+    it('unifies effects with parameters', () => {
+      const e2: Effect = {
+        kind: 'arrow',
+        effects: [
+          {
+            kind: 'arrow',
+            effects: [
+              { kind: 'effect', read: { kind: 'state', vars: [] }, update: { kind: 'state', vars: [] } },
+              { kind: 'effect', read: { kind: 'state', vars: ['x'] }, update: { kind: 'state', vars: [] } },
+            ],
+          },
+          { kind: 'effect', read: { kind: 'state', vars: ['x'] }, update: { kind: 'state', vars: [] } },
+        ],
+      }
+
+      const result = unify(e1, e2)
+
+      assert.deepEqual(result.kind, 'ok')
+      if (result.kind === 'ok') {
+        assert.sameDeepMembers(result.substitutions, [
+          {
+            kind: 'effect',
+            name: 'E',
+            value: { kind: 'effect', read: { kind: 'state', vars: ['x'] }, update: { kind: 'state', vars: [] } },
+          },
+        ])
       }
     })
   })
@@ -151,8 +199,37 @@ describe('unify', () => {
         assert.deepEqual(result.error, {
           location: "Trying to unify Read[r1] & Update[u] -> Read[r2] & Update[u] -> Read[r1, r2] & Update[u] and Read['x'] & Update['x'] -> Read['y'] & Update['y'] -> E",
           children: [{
-            location: "Trying to unify variables 'x' and 'y'",
-            message: 'Expected effect to act over variable(s) x instead of y',
+            location: "Trying to unify Read[r2] & Update['x'] and Read['y'] & Update['y']",
+            children: [{
+              location: "Trying to unify variables 'x' and 'y'",
+              message: 'Expected effect to act over variable(s) x instead of y',
+              children: [],
+            }],
+          }],
+        })
+      }
+    })
+
+    it('returns error with different number of union variables', () => {
+      const e1: Effect = {
+        kind: 'effect',
+        read: { kind: 'union', variables: [{ kind: 'quantification', name: 'r' }] },
+        update: { kind: 'state', vars: [] },
+      }
+      const e2: Effect = {
+        kind: 'effect',
+        read: { kind: 'union', variables: [{ kind: 'state', vars: ['x', 'y'] }, { kind: 'quantification', name: 'r' }] },
+        update: { kind: 'state', vars: [] },
+      }
+
+      const result = unify(e1, e2)
+      assert.deepEqual(result.kind, 'error')
+      if (result.kind === 'error') {
+        assert.deepEqual(result.error, {
+          location: "Trying to unify Read[r] and Read[r, 'x', 'y']",
+          children: [{
+            location: "Trying to unify variables r and r, 'x', 'y'",
+            message: 'Expected 1 variables, got 2',
             children: [],
           }],
         })
