@@ -19,24 +19,23 @@ describe('unify', () => {
 
       const result = unify(e1, e2)
 
-      assert.deepEqual(result.kind, 'error')
-      if (result.kind === 'error') {
-        assert.deepEqual(result.error, {
-          location: "Trying to unify Update['x', 'x'] and Update['x', 'x']",
-          children: [
-            {
-              location: "Trying to simplify effect Update['x', 'x']",
-              message: 'Multiple updates of variable(s): x',
-              children: [],
-            },
-            {
-              location: "Trying to simplify effect Update['x', 'x']",
-              message: 'Multiple updates of variable(s): x',
-              children: [],
-            },
-          ],
-        })
-      }
+      assert.isTrue(result.isLeft())
+      const { value } = result
+      assert.deepEqual(value, {
+        location: "Trying to unify Update['x', 'x'] and Update['x', 'x']",
+        children: [
+          {
+            location: "Trying to simplify effect Update['x', 'x']",
+            message: 'Multiple updates of variable(s): x',
+            children: [],
+          },
+          {
+            location: "Trying to simplify effect Update['x', 'x']",
+            message: 'Multiple updates of variable(s): x',
+            children: [],
+          },
+        ],
+      })
     })
 
     it('unifies variables with different orders', () => {
@@ -54,9 +53,10 @@ describe('unify', () => {
 
       const result = unify(e1, e2)
 
-      assert.deepEqual(result.kind, 'ok')
-      if (result.kind === 'ok') {
-        assert.sameDeepMembers(result.substitutions, [])
+      assert.isTrue(result.isRight())
+      if (result.isRight()) {
+        const { value } = result
+        assert.sameDeepMembers(value, [])
       }
     })
 
@@ -87,9 +87,10 @@ describe('unify', () => {
       }
 
       const result = unify(e1, e2)
-      assert.deepEqual(result.kind, 'ok')
-      if (result.kind === 'ok') {
-        assert.sameDeepMembers(result.substitutions, [])
+      assert.isTrue(result.isRight())
+      if (result.isRight()) {
+        const { value } = result
+        assert.sameDeepMembers(value, [])
       }
     })
   })
@@ -117,9 +118,10 @@ describe('unify', () => {
 
       const result = unify(e1, e2)
 
-      assert.deepEqual(result.kind, 'ok')
-      if (result.kind === 'ok') {
-        assert.sameDeepMembers(result.substitutions, [
+      assert.isTrue(result.isRight())
+      if (result.isRight()) {
+        const { value } = result
+        assert.sameDeepMembers(value, [
           { kind: 'variable', name: 'v', value: { kind: 'state', vars: ['x'] } },
           {
             kind: 'effect',
@@ -145,9 +147,10 @@ describe('unify', () => {
 
       const result = unify(e1, e2)
 
-      assert.deepEqual(result.kind, 'error')
-      if (result.kind === 'error') {
-        assert.deepEqual(result.error, {
+      assert.isTrue(result.isLeft())
+      if (result.isLeft()) {
+        const { value } = result
+        assert.deepEqual(value, {
           location: "Trying to unify Read[v] -> Update[v] and Read['x'] -> Update['y']",
           children: [{
             location: "Trying to unify Update['x'] and Update['y']",
@@ -171,9 +174,10 @@ describe('unify', () => {
 
       const result = unify(e1, e2)
 
-      assert.deepEqual(result.kind, 'error')
-      if (result.kind === 'error') {
-        assert.deepEqual(result.error, {
+      assert.isTrue(result.isLeft())
+      if (result.isLeft()) {
+        const { value } = result
+        assert.deepEqual(value, {
           location: "Trying to unify Read[v] -> Update[v] and Update['y']",
           message: 'Expected 1 arguments, got 0',
           children: [],
@@ -186,9 +190,10 @@ describe('unify', () => {
 
       const result = unify(e1, e2)
 
-      assert.deepEqual(result.kind, 'error')
-      if (result.kind === 'error') {
-        assert.deepEqual(result.error, {
+      assert.isTrue(result.isLeft())
+      if (result.isLeft()) {
+        const { value } = result
+        assert.deepEqual(value, {
           location: "Trying to unify Read[v] -> Update[v] and Update['y']",
           message: "Can't unify different types of effects",
           children: [],
@@ -229,9 +234,10 @@ describe('unify', () => {
 
       const result = unify(e1, e2)
 
-      assert.deepEqual(result.kind, 'ok')
-      if (result.kind === 'ok') {
-        assert.sameDeepMembers(result.substitutions, [
+      assert.isTrue(result.isRight())
+      if (result.isRight()) {
+        const { value } = result
+        assert.sameDeepMembers(value, [
           {
             kind: 'effect',
             name: 'E',
@@ -265,15 +271,16 @@ describe('unify', () => {
       const result = unify(e1, e2)
       const reversedResult = unify(e2, e1)
 
-      assert.deepEqual(result, reversedResult, 'Result should be the same regardless of the effect order in parameters')
-      assert.deepEqual(result.kind, 'ok')
-      if (result.kind === 'ok') {
-        assert.sameDeepMembers(result.substitutions, [
+      assert.isTrue(result.isRight())
+      if (result.isRight()) {
+        const { value } = result
+        assert.sameDeepMembers(value, [
           { kind: 'variable', name: 'r1', value: { kind: 'state', vars: ['x'] } },
           { kind: 'variable', name: 'r2', value: { kind: 'state', vars: ['y', 'z'] } },
           { kind: 'variable', name: 'u', value: { kind: 'state', vars: ['x'] } },
         ])
       }
+      assert.deepEqual(result, reversedResult, 'Result should be the same regardless of the effect order in parameters')
     })
 
     it('returns error with incompatible effect', () => {
@@ -287,9 +294,10 @@ describe('unify', () => {
       }
 
       const result = unify(e1, e2)
-      assert.deepEqual(result.kind, 'error')
-      if (result.kind === 'error') {
-        assert.deepEqual(result.error, {
+      assert.isTrue(result.isLeft())
+      if (result.isLeft()) {
+        const { value } = result
+        assert.deepEqual(value, {
           location: "Trying to unify Read[r1] & Update[u] -> Read[r2] & Update[u] -> Read[r1, r2] & Update[u] and Read['x'] & Update['x'] -> Read['y'] & Update['y'] -> E",
           children: [{
             location: "Trying to unify Read[r2] & Update['x'] and Read['y'] & Update['y']",
@@ -314,9 +322,10 @@ describe('unify', () => {
       }
 
       const result = unify(e1, e2)
-      assert.deepEqual(result.kind, 'ok')
-      if (result.kind === 'ok') {
-        assert.sameDeepMembers(result.substitutions, [
+      assert.isTrue(result.isRight())
+      if (result.isRight()) {
+        const { value } = result
+        assert.sameDeepMembers(value, [
           { kind: 'variable', name: 'u', value: { kind: 'state', vars: ['x'] } },
         ])
       }
@@ -333,9 +342,10 @@ describe('unify', () => {
       }
 
       const result = unify(e1, e2)
-      assert.deepEqual(result.kind, 'error')
-      if (result.kind === 'error') {
-        assert.deepEqual(result.error, {
+      assert.isTrue(result.isLeft())
+      if (result.isLeft()) {
+        const { value } = result
+        assert.deepEqual(value, {
           location: "Trying to unify Read[r1] & Update[u] -> Read[r2] & Update[u] -> Read[r1, r2] & Update[u] and Read['y'] & Update['x'] -> Read[r2] & Update['x'] -> Read[r2, 'z'] & Update[u]",
           children: [{
             location: "Trying to unify Read[r2, 'y'] & Update['x'] and Read[r2, 'z'] & Update['x']",
@@ -365,9 +375,10 @@ describe('unify', () => {
       }
 
       const result = unify(e1, e2)
-      assert.deepEqual(result.kind, 'error')
-      if (result.kind === 'error') {
-        assert.deepEqual(result.error, {
+      assert.isTrue(result.isLeft())
+      if (result.isLeft()) {
+        const { value } = result
+        assert.deepEqual(value, {
           location: "Trying to unify Read[r1, r2, r3] and Read['x', 'y', r]",
           children: [{
             location: "Trying to unify variables r1, r2, r3 and r, 'x', 'y'",
