@@ -1,4 +1,5 @@
 import { printEffect, printVariables } from './printing'
+import { Either, merge, right, left, mergeInMany } from '@sweet-monads/either'
 
 export type Variables =
   | { kind: 'state', vars: string[] }
@@ -14,7 +15,6 @@ type Substitution =
   | { kind: 'variable', name: string, value: Variables }
   | { kind: 'effect', name: string, value: Effect }
 
-// interface Error { message: string }
 interface ErrorTree { message?: string, location: string, children: ErrorTree[] }
 
 type UnificationResult =
@@ -28,9 +28,16 @@ function compose (s1: Substitution[], s2: Substitution[]): Substitution[] {
 }
 
 export function unify (ea: Effect, eb: Effect): UnificationResult {
-  const e1 = simplify(ea)
-  const e2 = simplify(eb)
-  const location = `Trying to unify ${printEffect(e1)} and ${printEffect(e2)}`
+  const location = `Trying to unify ${printEffect(ea)} and ${printEffect(eb)}`
+  const simplificationResult = mergeInMany([ea, eb].map(simplify))
+  if (simplificationResult.isLeft()) {
+    const { value } = simplificationResult
+    return { kind: 'error', error: { location: location, children: value } }
+  }
+
+  const { value } = simplificationResult
+  const e1 = value[0]
+  const e2 = value[1]
 
   if (e1.kind === 'arrow' && e2.kind === 'arrow') {
     // Both arrow
@@ -50,7 +57,17 @@ export function unify (ea: Effect, eb: Effect): UnificationResult {
     const partialResult = e1.effects.reduce((r: UnificationPartialResult, e, i) => {
       const e1s = applySubstitution(r.substitutions, e)
       const e2s = applySubstitution(r.substitutions, e2.effects[i])
-      const result = unify(e1s, e2s)
+      const subsResult = mergeInMany([e1s, e2s])
+      if (subsResult.isLeft()) {
+        const { value } = subsResult
+        return {
+          substitutions: r.substitutions,
+          errors: r.errors.concat(value),
+        }
+      }
+
+      const { value } = subsResult
+      const result = unify(value[0], value[1])
       if (result.kind === 'ok') {
         return {
           substitutions: r.substitutions.concat(result.substitutions),
@@ -77,8 +94,18 @@ export function unify (ea: Effect, eb: Effect): UnificationResult {
     if (result.kind === 'error') {
       return { kind: 'error', error: { location: location, children: [result.error] } }
     }
-    const e1s = applySubstitution(result.substitutions, e1)
-    const e2s = applySubstitution(result.substitutions, e2)
+    const e1r = applySubstitution(result.substitutions, e1)
+    const e2r = applySubstitution(result.substitutions, e2)
+    const subsResult = mergeInMany([e1r, e2r])
+    if (subsResult.isLeft()) {
+      const { value } = subsResult
+      return { kind: 'error', error: { location: location, children: value } }
+    }
+
+    const { value } = subsResult
+    const e1s = value[0]
+    const e2s = value[1]
+
     if (e1s.kind === 'effect' && e2s.kind === 'effect') {
       // I think this is always true
       const updateResult = unifyVariables(e1s.update, e2s.update)
@@ -107,7 +134,9 @@ export function unify (ea: Effect, eb: Effect): UnificationResult {
   }
 }
 
-function unifyVariables (v1: Variables, v2: Variables): UnificationResult {
+function unifyVariables (va: Variables, vb: Variables): UnificationResult {
+  const v1 = simplifyVariables(va, false)
+  const v2 = simplifyVariables(vb, false)
   const location = `Trying to unify variables ${printVariables(v1)} and ${printVariables(v2)}`
 
   if (v1.kind === 'state' && v2.kind === 'state') {
@@ -126,7 +155,11 @@ function unifyVariables (v1: Variables, v2: Variables): UnificationResult {
     }
   } else if (v1.kind === 'union' && v2.kind === 'union') {
     // Both union
-    if (v1.variables.length !== v2.variables.length) {
+
+    const v1filtered = v1.variables.filter(v => !v2.variables.includes(v))
+    const v2filtered = v2.variables.filter(v => !v1.variables.includes(v))
+
+    if (v1filtered.length !== v2filtered.length) {
       const expected = v1.variables.length
       const got = v2.variables.length
       return {
@@ -139,10 +172,9 @@ function unifyVariables (v1: Variables, v2: Variables): UnificationResult {
       }
     }
 
-    // TODO: see about ordering
-    const partialResult = v1.variables.reduce((r: UnificationPartialResult, v, i) => {
-      const v1s = applySubstitutionToVariables(r.substitutions, v)
-      const v2s = applySubstitutionToVariables(r.substitutions, v2.variables[i])
+    const partialResult = v1filtered.reduce((r: UnificationPartialResult, variables, i) => {
+      const v1s = applySubstitutionToVariables(r.substitutions, variables)
+      const v2s = applySubstitutionToVariables(r.substitutions, v2filtered[i])
       const result = unifyVariables(v1s, v2s)
       if (result.kind === 'ok') {
         return {
@@ -164,6 +196,8 @@ function unifyVariables (v1: Variables, v2: Variables): UnificationResult {
     } else {
       return { kind: 'ok', substitutions: partialResult.substitutions }
     }
+  } else if (v1.kind === 'quantification' && v2.kind === 'quantification' && v1.name === v2.name) {
+    return { kind: 'ok', substitutions: [] }
   } else if (v1.kind === 'quantification') {
     const substitutions: Substitution[] = [{ kind: 'variable', name: v1.name, value: v2 }]
     return { kind: 'ok', substitutions: substitutions }
@@ -186,93 +220,134 @@ function sameVars (v1: string[], v2: string[]): Boolean {
 }
 
 function sortStrings (array: string[]): string[] {
-  return array.sort((n1, n2) => {
-    if (n1 > n2) {
-      return 1
+  return array.sort((n1, n2) => n1 > n2 ? 1 : -1)
+}
+
+function sortVariables (array: Variables[]): Variables[] {
+  return array.sort((v1, v2) => {
+    if (v1.kind !== 'quantification' || v2.kind !== 'quantification') {
+      return 0
     }
 
-    if (n1 < n2) {
-      return -1
-    }
-
-    return 0
+    return v1.name > v2.name ? 1 : -1
   })
 }
 
-function simplify (e: Effect): Effect {
+function simplify (e: Effect): Either<ErrorTree, Effect> {
   if (e.kind !== 'effect') {
-    return e
+    return right(e)
   }
 
   const read = simplifyVariables(e.read, false)
   const update = simplifyVariables(e.update, true)
 
-  return { kind: 'effect', read: read, update: update }
+  const updateVars = findVars(e.update)
+  const repeated = updateVars.filter(v => updateVars.filter(v2 => v === v2).length > 1)
+  if (repeated.length > 0) {
+    return left({
+      location: `Trying to simplify effect ${printEffect(e)}`,
+      message: `Multiple updates of variable(s): ${Array.from(new Set(repeated))}`,
+      children: [],
+    })
+  } else {
+    return right({ kind: 'effect', read: read, update: update })
+  }
+}
+
+function findVars (variables: Variables): string[] {
+  switch (variables.kind) {
+    case 'quantification':
+      return []
+    case 'state':
+      return variables.vars
+    case 'union':
+      return variables.variables.flatMap(findVars)
+  }
 }
 
 function simplifyVariables (variables: Variables, checkRepeated: Boolean): Variables {
-  if (variables.kind === 'union') {
-    const unionVariables: Variables[] = []
-    const vars: string[] = []
-    variables.variables.forEach(v => {
-      switch (v.kind) {
-        case 'quantification':
-          unionVariables.push(v)
-          break
-        case 'state':
-          vars.push(...v.vars)
-          break
-        case 'union': {
-          const vs = simplifyVariables(v, checkRepeated)
-          switch (vs.kind) {
-            case 'quantification':
-              unionVariables.push(vs)
-              break
-            case 'state':
-              vars.push(...vs.vars)
-              break
-            case 'union':
-              unionVariables.push(...vs.variables)
-              break
-          }
-          break
+  const unionVariables: Variables[] = []
+  const vars: string[] = []
+  switch (variables.kind) {
+    case 'quantification':
+      unionVariables.push(variables)
+      break
+    case 'state':
+      vars.push(...variables.vars)
+      break
+    case 'union': {
+      const flattenVariables = variables.variables.map(v => simplifyVariables(v, checkRepeated))
+      flattenVariables.forEach(v => {
+        switch (v.kind) {
+          case 'quantification':
+            unionVariables.push(v)
+            break
+          case 'state':
+            vars.push(...v.vars)
+            break
+          case 'union':
+            unionVariables.push(...v.variables)
+            break
         }
-      }
-    })
-    const repeated = vars.filter(v => vars.filter(v2 => v === v2).length > 1)
-    if (checkRepeated && repeated.length > 0) {
-      throw new Error(`Multiple updates of variables: ${repeated}`)
-    }
-    if (unionVariables.length > 0) {
-      const variables = vars.length > 0 ? unionVariables.concat({ kind: 'state', vars: vars }) : unionVariables
-      return { kind: 'union', variables: variables }
-    } else {
-      return { kind: 'state', vars: vars }
+      })
+      break
     }
   }
-  return variables
+
+  const sortedUnionVariables = sortVariables(unionVariables)
+  if (unionVariables.length > 0) {
+    const variables = vars.length > 0 ? sortedUnionVariables.concat({ kind: 'state', vars: vars }) : unionVariables
+    return variables.length > 1 ? { kind: 'union', variables: variables } : variables[0]
+  } else {
+    return { kind: 'state', vars: vars }
+  }
 }
 
-function applySubstitution (subs: Substitution[], e: Effect): Effect {
-  if (e.kind === 'var') {
-    const sub = subs.find(s => s.name === e.name)
-    if (sub && sub.kind === 'effect') {
-      return sub.value
-    } else {
-      return e
-    }
-  } else if (e.kind === 'arrow') {
-    return {
-      kind: e.kind, effects: e.effects.map(ef => applySubstitution(subs, ef)),
-    }
-  } else if (e.kind === 'effect') {
-    const read = applySubstitutionToVariables(subs, e.read)
-    const update = applySubstitutionToVariables(subs, e.update)
+// function mapResults<T> (array: T[], f: ((t: T) => SimplificationResult)): SimplificationResult {
+//   const effects: Effect[] = []
+//   const errors: ErrorTree[] = []
+//   array.forEach(x => {
+//     const r = f(x)
+//     if (r.kind === 'ok') {
+//       effects.push(r.effect)
+//     } else {
+//       errors.push(r.error)
+//     }
+//   })
 
-    return { kind: 'effect', read: read, update: update }
+//   if (errors.length > 0) {
+//     return:
+//   }
+// }
+
+function applySubstitution (subs: Substitution[], e: Effect): Either<ErrorTree, Effect> {
+  let result: Either<ErrorTree, Effect> = right(e)
+  switch (e.kind) {
+    case 'var': {
+      const sub = subs.find(s => s.name === e.name)
+      if (sub && sub.kind === 'effect') {
+        result = right(sub.value)
+      }
+      break
+    }
+    case 'arrow':
+      result = merge(e.effects.map(ef => applySubstitution(subs, ef))).map(es => {
+        return {
+          kind: e.kind,
+          effects: es,
+        }
+      })
+      break
+    case 'effect': {
+      const read = applySubstitutionToVariables(subs, e.read)
+      const update = applySubstitutionToVariables(subs, e.update)
+
+      result = right({ kind: 'effect', read: read, update: update })
+      break
+    }
   }
 
-  return e
+  return result.map(simplify).join()
 }
 
 function applySubstitutionToVariables (subs: Substitution[], variables: Variables): Variables {
