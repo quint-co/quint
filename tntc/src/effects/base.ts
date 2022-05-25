@@ -15,70 +15,61 @@ type Substitution =
   | { kind: 'variable', name: string, value: Variables }
   | { kind: 'effect', name: string, value: Effect }
 
+type Error = ErrorTree | ErrorTree[]
 interface ErrorTree { message?: string, location: string, children: ErrorTree[] }
 
 export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitution[]> {
   const location = `Trying to unify ${printEffect(ea)} and ${printEffect(eb)}`
+
   const simplificationResult = mergeInMany([ea, eb].map(simplify))
-  if (simplificationResult.isLeft()) {
-    const { value } = simplificationResult
-    return left({ location: location, children: value })
-  }
+  return simplificationResult.chain(([e1, e2]): Either<Error, Substitution[]> => {
+    if (e1.kind === 'arrow' && e2.kind === 'arrow') {
+      // Both arrow
+      if (e1.effects.length !== e2.effects.length) {
+        const expected = e1.effects.length - 1
+        const got = e2.effects.length - 1
+        return left({
+          location: location,
+          message: `Expected ${expected} arguments, got ${got}`,
+          children: [],
+        })
+      }
 
-  const { value } = simplificationResult
-  const e1 = value[0]
-  const e2 = value[1]
+      return e1.effects.reduce((result: Either<Error, Substitution[]>, e, i) => {
+        const effectsWithSubstitutions = result.chain(subs => mergeInMany([
+          applySubstitution(subs, e),
+          applySubstitution(subs, e2.effects[i]),
+        ]))
+        const newSubstitutions = effectsWithSubstitutions.chain(es => unify(...es))
+        return newSubstitutions.chain(newSubs => result.map(currentSubs => currentSubs.concat(newSubs)))
 
-  if (e1.kind === 'arrow' && e2.kind === 'arrow') {
-    // Both arrow
-    if (e1.effects.length !== e2.effects.length) {
-      const expected = e1.effects.length - 1
-      const got = e2.effects.length - 1
+      }, right([]))
+    } else if (e1.kind === 'effect' && e2.kind === 'effect') {
+      // Both actual effect
+      const readUnificationResult = unifyVariables(e1.read, e2.read)
+      const updateUnificationResult = readUnificationResult.chain(subs => {
+        const effectsWithReadSubstitution = mergeInMany([
+          applySubstitution(subs, e1),
+          applySubstitution(subs, e2),
+        ]).map(effects => effects.map(ensureEffect))
+
+        return effectsWithReadSubstitution.chain(([e1s, e2s]) => unifyVariables(e1s.update, e2s.update))
+      })
+
+      const result = merge([readUnificationResult, updateUnificationResult]).map(s => s.flat())
+      return result.mapLeft(error => buildErrorTree(location, error))
+    } else if (e1.kind === 'var') {
+      return right([{ kind: 'effect', name: e1.name, value: e2 }])
+    } else if (e2.kind === 'var') {
+      return right([{ kind: 'effect', name: e2.name, value: e1 }])
+    } else {
       return left({
         location: location,
-        message: `Expected ${expected} arguments, got ${got}`,
+        message: "Can't unify different types of effects",
         children: [],
       })
     }
-
-    return e1.effects.reduce((r: Either<ErrorTree, Substitution[]>, e, i) => {
-      return r.chain((subs): Either<ErrorTree, [Effect, Effect]> => {
-        const e1s = applySubstitution(subs, e)
-        const e2s = applySubstitution(subs, e2.effects[i])
-        return mergeInMany([e1s, e2s])
-          .mapLeft(errors => ({ location: location, children: errors }))
-      }).chain(([e1r, e2r]) => {
-        return unify(e1r, e2r)
-          .mapLeft(errors => ({ location: location, children: [errors] }))
-      }).chain(subs => r.map(s => s.concat(subs)))
-    }, right([]))
-  } else if (e1.kind === 'effect' && e2.kind === 'effect') {
-    // Both actual effect
-    return unifyVariables(e1.read, e2.read)
-      .chain(subs => {
-        const e1r = applySubstitution(subs, e1)
-        const e2r = applySubstitution(subs, e2)
-        return mergeInMany([e1r, e2r])
-          .chain(([e1s, e2s]) => {
-            if (e1s.kind !== 'effect' || e2s.kind !== 'effect') {
-              throw new Error(`Unexpected format on ${printEffect(e1s)} and/or ${printEffect(e2s)}`)
-            }
-            return unifyVariables(e1s.update, e2s.update)
-          })
-          .map(updateSubs => subs.concat(updateSubs))
-      })
-      .mapLeft(errors => ({ location: location, children: Array.isArray(errors) ? errors : [errors] }))
-  } else if (e1.kind === 'var') {
-    return right([{ kind: 'effect', name: e1.name, value: e2 }])
-  } else if (e2.kind === 'var') {
-    return right([{ kind: 'effect', name: e2.name, value: e1 }])
-  } else {
-    return left({
-      location: location,
-      message: "Can't unify different types of effects",
-      children: [],
-    })
-  }
+  }).mapLeft(error => buildErrorTree(location, error))
 }
 
 function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substitution[]> {
@@ -112,15 +103,15 @@ function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substi
       })
     }
 
-    return v1filtered.reduce((r: Either<ErrorTree, Substitution[]>, variables, i) => {
-      return r
-        .chain(subs => {
-          const v1s = applySubstitutionToVariables(subs, variables)
-          const v2s = applySubstitutionToVariables(subs, v2filtered[i])
-          return unifyVariables(v1s, v2s)
-        })
-        .chain(subs => r.map(s => s.concat(subs)))
-        .mapLeft(errors => ({ location: location, children: Array.isArray(errors) ? errors : [errors] }))
+    return v1filtered.reduce((result: Either<ErrorTree, Substitution[]>, variables, i) => {
+      const newSubs = result.chain(subs => {
+        const v1s = applySubstitutionToVariables(subs, variables)
+        const v2s = applySubstitutionToVariables(subs, v2filtered[i])
+        return unifyVariables(v1s, v2s)
+      })
+
+      const newResult = newSubs.chain(subs => result.map(currentSubs => currentSubs.concat(subs)))
+      return newResult.mapLeft(error => buildErrorTree(location, error))
     }, right([]))
   } else if (v1.kind === 'quantification' && v2.kind === 'quantification' && v1.name === v2.name) {
     return right([])
@@ -133,26 +124,6 @@ function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substi
   }
 }
 
-function sameVars (v1: string[], v2: string[]): Boolean {
-  const v1s = sortStrings(v1)
-  const v2s = sortStrings(v2)
-
-  return v1s.length === v2s.length && v1s.every((value, index) => value === v2s[index])
-}
-
-function sortStrings (array: string[]): string[] {
-  return array.sort((n1, n2) => n1 > n2 ? 1 : -1)
-}
-
-function sortVariables (array: Variables[]): Variables[] {
-  return array.sort((v1, v2) => {
-    if (v1.kind !== 'quantification' || v2.kind !== 'quantification') {
-      return 0
-    }
-
-    return v1.name > v2.name ? 1 : -1
-  })
-}
 
 function simplify (e: Effect): Either<ErrorTree, Effect> {
   if (e.kind !== 'effect') {
@@ -235,12 +206,9 @@ function applySubstitution (subs: Substitution[], e: Effect): Either<ErrorTree, 
       break
     }
     case 'arrow':
-      result = merge(e.effects.map(ef => applySubstitution(subs, ef))).map(es => {
-        return {
-          kind: e.kind,
-          effects: es,
-        }
-      })
+      result = mergeInMany(e.effects.map(ef => applySubstitution(subs, ef))).map(es => {
+        return { kind: e.kind, effects: es }
+      }).mapLeft(error => buildErrorTree(`Applying substitution to arrow effect ${printEffect(e)}`, error))
       break
     case 'effect': {
       const read = applySubstitutionToVariables(subs, e.read)
@@ -257,8 +225,7 @@ function applySubstitution (subs: Substitution[], e: Effect): Either<ErrorTree, 
 function applySubstitutionToVariables (subs: Substitution[], variables: Variables): Variables {
   switch (variables.kind) {
     case 'quantification': {
-      // what is wrong with TS type system here??
-      const sub = subs.find(s => s.name === (variables.kind === 'quantification' ? variables.name : ''))
+      const sub = subs.find(s => s.name === variables.name)
       if (sub && sub.kind === 'variable') {
         return sub.value
       }
@@ -270,4 +237,43 @@ function applySubstitutionToVariables (subs: Substitution[], variables: Variable
     }
   }
   return variables
+}
+
+function buildErrorTree (location: string, errors: Error): ErrorTree {
+  if (!Array.isArray(errors) && location === errors.location) {
+    // Avoid redundant locations
+    return errors
+  }
+
+  return { location: location, children: Array.isArray(errors) ? errors : [errors] }
+}
+
+// Ensure the typesystem that an effect has the 'effect' kind
+function ensureEffect (e: Effect): { kind: 'effect', read: Variables, update: Variables } {
+  if (e.kind !== 'effect') {
+    throw new Error(`Unexpected format on ${printEffect(e)} - should have kind 'effect'`)
+  }
+
+  return e
+}
+
+function sameVars (v1: string[], v2: string[]): Boolean {
+  const v1s = sortStrings(v1)
+  const v2s = sortStrings(v2)
+
+  return v1s.length === v2s.length && v1s.every((value, index) => value === v2s[index])
+}
+
+function sortStrings (array: string[]): string[] {
+  return array.sort((n1, n2) => n1 > n2 ? 1 : -1)
+}
+
+function sortVariables (array: Variables[]): Variables[] {
+  return array.sort((v1, v2) => {
+    if (v1.kind !== 'quantification' || v2.kind !== 'quantification') {
+      return 0
+    }
+
+    return v1.name > v2.name ? 1 : -1
+  })
 }
