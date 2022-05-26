@@ -105,9 +105,6 @@ describe('unify', () => {
     }
 
     it('unifies effects with parameters', () => {
-      // Read[v] -> Update[v]
-      // Read['x'] -> E
-      // v ~> ['x'], E ~> Update['x']
       const e2: Effect = {
         kind: 'arrow',
         effects: [
@@ -135,8 +132,6 @@ describe('unify', () => {
     })
 
     it('returns error when cannot unify variables', () => {
-      // Read[v] -> Update[v]
-      // Read['x'] -> Update['y']
       const e2: Effect = {
         kind: 'arrow',
         effects: [
@@ -151,7 +146,7 @@ describe('unify', () => {
       if (result.isLeft()) {
         const { value } = result
         assert.deepEqual(value, {
-          location: "Trying to unify Read[v] -> Update[v] and Read['x'] -> Update['y']",
+          location: "Trying to unify (Read[v]) => Update[v] and (Read['x']) => Update['y']",
           children: [{
             location: "Trying to unify Update['x'] and Update['y']",
             children: [{
@@ -178,7 +173,7 @@ describe('unify', () => {
       if (result.isLeft()) {
         const { value } = result
         assert.deepEqual(value, {
-          location: "Trying to unify Read[v] -> Update[v] and Update['y']",
+          location: "Trying to unify (Read[v]) => Update[v] and () => Update['y']",
           message: 'Expected 1 arguments, got 0',
           children: [],
         })
@@ -194,7 +189,7 @@ describe('unify', () => {
       if (result.isLeft()) {
         const { value } = result
         assert.deepEqual(value, {
-          location: "Trying to unify Read[v] -> Update[v] and Update['y']",
+          location: "Trying to unify (Read[v]) => Update[v] and Update['y']",
           message: "Can't unify different types of effects",
           children: [],
         })
@@ -298,7 +293,7 @@ describe('unify', () => {
       if (result.isLeft()) {
         const { value } = result
         assert.deepEqual(value, {
-          location: "Trying to unify Read[r1] & Update[u] -> Read[r2] & Update[u] -> Read[r1, r2] & Update[u] and Read['x'] & Update['x'] -> Read['y'] & Update['y'] -> E",
+          location: "Trying to unify (Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1, r2] & Update[u] and (Read['x'] & Update['x'], Read['y'] & Update['y']) => E",
           children: [{
             location: "Trying to unify Read[r2] & Update['x'] and Read['y'] & Update['y']",
             children: [{
@@ -346,7 +341,7 @@ describe('unify', () => {
       if (result.isLeft()) {
         const { value } = result
         assert.deepEqual(value, {
-          location: "Trying to unify Read[r1] & Update[u] -> Read[r2] & Update[u] -> Read[r1, r2] & Update[u] and Read['y'] & Update['x'] -> Read[r2] & Update['x'] -> Read[r2, 'z'] & Update[u]",
+          location: "Trying to unify (Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1, r2] & Update[u] and (Read['y'] & Update['x'], Read[r2] & Update['x']) => Read[r2, 'z'] & Update[u]",
           children: [{
             location: "Trying to unify Read[r2, 'y'] & Update['x'] and Read[r2, 'z'] & Update['x']",
             children: [{

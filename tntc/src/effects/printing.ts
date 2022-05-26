@@ -38,7 +38,11 @@ export function effectToString (e: Effect): string {
         return 'Pure'
       }
     }
-    case 'arrow': return e.effects.map(effectToString).join(' -> ')
+    case 'arrow': {
+      const effects = e.effects.map(effectToString)
+      const result = effects.pop()
+      return `(${effects.join(', ')}) => ${result}`
+    }
   }
 }
 
