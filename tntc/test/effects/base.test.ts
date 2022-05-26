@@ -14,7 +14,7 @@ describe('unify', () => {
       const e2: Effect = {
         kind: 'effect',
         read: { kind: 'state', vars: [] },
-        update: { kind: 'state', vars: ['x', 'x'] },
+        update: { kind: 'union', variables: [{ kind: 'state', vars: ['x'] }, { kind: 'state', vars: ['x'] }] },
       }
 
       const result = unify(e1, e2)

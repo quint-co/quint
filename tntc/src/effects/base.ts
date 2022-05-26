@@ -151,7 +151,7 @@ function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substi
     return right([{ kind: 'variable', name: v1.name, value: v2 }])
   } else if (v2.kind === 'quantification') {
     return right([{ kind: 'variable', name: v2.name, value: v1 }])
-  } else if (v1.kind === 'union' && v2.kind === 'union') {
+  } else { // At least one of the variables is a union
     // Unifying sets is complicated and we should never have to do this in TNT's
     // use case for this effect system
 
@@ -160,8 +160,6 @@ function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substi
       message: 'Unification for unions of variables is not implemented',
       children: [],
     })
-  } else {
-    return left({ location: location, message: "Can't unify different types of variables", children: [] })
   }
 }
 
