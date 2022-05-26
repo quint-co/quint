@@ -145,41 +145,21 @@ function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substi
         children: [],
       })
     }
-  } else if (v1.kind === 'union' && v2.kind === 'union') {
-    // Both union
-    // This is not a fancy algorithm to unify sets. Instead, it just cleans
-    // up variables that are present in both sets and then tries to unify the rest
-    // by trying to unify each element of the set. This seems to be enough for
-    // the use case, and we can revisit this strategy if shown otherwise.
-    const v1filtered = v1.variables.filter(v => !v2.variables.includes(v))
-    const v2filtered = v2.variables.filter(v => !v1.variables.includes(v))
-
-    if (v1filtered.length !== v2filtered.length) {
-      const expected = v1.variables.length
-      const got = v2.variables.length
-      return left({
-        location: location,
-        message: `Expected ${expected} variables, got ${got}`,
-        children: [],
-      })
-    }
-
-    return v1filtered.reduce((result: Either<ErrorTree, Substitution[]>, variables, i) => {
-      const newSubs = result.chain(subs => {
-        const v1s = applySubstitutionToVariables(subs, variables)
-        const v2s = applySubstitutionToVariables(subs, v2filtered[i])
-        return unifyVariables(v1s, v2s)
-      })
-
-      const newResult = newSubs.chain(subs => result.map(currentSubs => currentSubs.concat(subs)))
-      return newResult.mapLeft(error => buildErrorTree(location, error))
-    }, right([]))
   } else if (v1.kind === 'quantification' && v2.kind === 'quantification' && v1.name === v2.name) {
     return right([])
   } else if (v1.kind === 'quantification') {
     return right([{ kind: 'variable', name: v1.name, value: v2 }])
   } else if (v2.kind === 'quantification') {
     return right([{ kind: 'variable', name: v2.name, value: v1 }])
+  } else if (v1.kind === 'union' && v2.kind === 'union') {
+    // Unifying sets is complicated and we should never have to do this in TNT's
+    // use case for this effect system
+
+    return left({
+      location: location,
+      message: 'Unification for unions of variables is not implemented',
+      children: [],
+    })
   } else {
     return left({ location: location, message: "Can't unify different types of variables", children: [] })
   }
