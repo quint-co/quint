@@ -21,15 +21,15 @@ objectives:
 ## Context
 
 Towards being more explicit about different components of a specification, each
-TNT definition has a mode. Because there's also the possibility of high order
+TNT definition has a mode. Because there's also the possibility of higher order
 operators, we thought it would be wise to define modes in terms of effects in a
 system that is independent of the type system and much simpler. With a read &
 update effect system, we can also check whether a composition of actions in
-`next` is enough to define all variables and is not re-defining any variable.
+`next` is enough to define updates to all variables and ensure that is not re-defining any variable.
 
 ## Options
 
-We considered a joint effect + type system versus a standalone effect system. As
+We considered a unified system that accounted for effects in the types versus a type-and-effect system, where the types and effects are analyzed separately. As
 far as the initial exploration went, there's no evidence of a need to correlate
 both systems, so we chose a standalone effect system for the isolation
 simplicity.
@@ -64,19 +64,19 @@ Substitutions S, Si ::= {v ↦ E} | {v ↦ c} | S ∪ S
 
 ### Normal form
 
-The actual representation of an effect takes only two forms:
+A normalized effect takes only one of two forms:
 
 ```
 Effects E ::= Read[vars] & Update[vars] | (E0, ..., EN) => E 
 ```
 
 Other forms are actually sugaring for these two. Effects like `Update['x'] &
-Update['y']` are in invalid format and should be simplified before applying any
+Update['y']` are in an invalid format and should be simplified before applying any
 other transformation. See equivalence rules below.
 
-Motivation for this form is to help writing effect signatures for operators
+The motivation for this form is to help writing effect signatures for operators
 that care only about the read or the update part of some effect. For example,
-the `or` operator takes two expressions with the identical updates, but doesn't
+the `or` operator representing disjunction in TNT takes two expressions with the identical updates, but doesn't
 have any restrictions on the read part. Ensuring this normal form allows us to
 write its signature as `(Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1
 ∪ r2] & Update[u]`.
@@ -86,7 +86,7 @@ write its signature as `(Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1
 These are some equivalence rules to be used alongside unification, but that
 don't require any substitution. These are applied in a simplification process
 with the goal of reaching the normal form. Equivalence between `E1` and `E2` is
-expressed by `E1 ≡ E2`, and the equivalence symbol `≡` have the lowest
+expressed by `E1 ≡ E2`, and the equivalence symbol `≡` has the lowest
 precedence on this system.
 
 ```
@@ -114,7 +114,7 @@ and variables inside Read and Update statements.
 ### Inference rules
 
 Inferring names: variables have effect `Read[v]` (unless they are used in
-operator assign, where their resulting effect will be inferred correctly as
+as targets of assignment, where their resulting effect will be inferred correctly as
 `Update[v]`), constants have no effect (Pure), operators resolve to the effect
 of their respective bodies.
 
@@ -129,12 +129,12 @@ of their respective bodies.
       
 { kind: ('def' | 'val' | 'pred'), identifier: op, body: e } ∈ Γ   e: E
 ---------------------------------------------------------------------- (NAME-OP)
-      Γ ⊢ v: E
+      Γ ⊢ op: E
 
 ```
 
 Inferring operator application: find its signature and try to unify with the
-parameters. Assume `freshVar` always returns unused names, and unify
+parameters. Assume `freshVar` always returns unused names, and `unify`
 returns a substitution unifying the two given effects. `S(E)` applies said
 substitution to an effect `E`.
 
@@ -172,7 +172,7 @@ assign: (Read[v], E) => Update[v] & E
 ```
 
 ### Example
-Table testing a simple expression with conflicting effects (x is update twice):
+Table testing a simple expression with conflicting effects (x is updated twice):
 
 ```
 def A ≡ {
@@ -191,14 +191,14 @@ x <- x + 1: Update['x'] & Read['x'] -- by (APP), see below
   S ≡ unify(
          (Read['x'], Read['x']) => E0
          (Read[v]  , E        ) => Update[v] & E
-  ) ≡ {v ↦ 'x', E ↦ Read['x'] & Pure, E0 ↦ Update['x'] & Read['x']}
-  S(E0) ≡ Update['x'] & Read['x']
+  ) ≡ {v ↦ 'x', E ↦ Read['x'], E0 ↦ Update['x'] & Read['x']}
+  S(E0) ≡ Read['x'] & Update['x']
 ```
 
 Second expression in the `and` application is analogous:
 
 ```
-x <- x + 2: Update['x'] & Read['x'] -- by (APP)
+x <- x + 2: Read['x'] & Update['x']-- by (APP)
 ```
 
 Applying (APP) to the `and` operator, a unification error is found:
