@@ -6,6 +6,13 @@
 
 ## Summary
 
+Reasoning about state changes in a system is difficult. It is even tricky to try
+to automate analysis of the aggregate state updates and reads that are specified
+by a set of operators. We would like to have an elegant way of ensuring
+specifications are valid before we hand them to the model checker, and a way of
+providing users with clear feedback on when they are making invalid updates (or
+failing to make required updates).
+
 This is the proposal of a simple read & update effect system for TNT, with two
 objectives:
 1. Check that TNT modes are respected regarding their effects,
@@ -39,17 +46,17 @@ still under discussion.
 
 ```
 pure P(a: int): int ~> <Pure, int>
-stateless S(a: int): int ≡ x + a ~> <Read[x], int>
-action<x> A(a: int) ≡ x' ≡ x + a ~> <Read[x] & Update[x], bool>
-action<x, y> A2(a: int) ≡ x' ≡ x + a ~> <Read[x, y] & Update[x, y], bool>
-action<x> A3(a:int) ≡ x' ≡ S(a) ~> <Read[x] & Update[x], bool>
+stateless S(a: int): int = x + a ~> <Read[x], int>
+action<x> A(a: int) = x <- + a ~> <Read[x] & Update[x], bool>
+action<x, y> A2(a: int) = x <- x + a ~> <Read[x, y] & Update[x, y], bool>
+action<x> A3(a:int) = x <- S(a) ~> <Read[x] & Update[x], bool>
 ```
 
 ### Notation
 
 ```
 Identifiers v, c, op
-Effects E, Ei ::= Read[vars] | Update[vars] | Pure | E & E |E -> E
+Effects E, Ei ::= Read[vars] | Update[vars] | Pure | E & E | (E0, ..., EN) => E
 Expressions e, ei ::= any TNT expression
 Contexts Γ ::= { kind: 'var', identifier: v } | { kind: 'def', identifier: op, effect: E } | Γ ∪ Γ
 Substitutions S, Si ::= {v ↦ E} | {v ↦ c} | S ∪ S
@@ -60,7 +67,7 @@ Substitutions S, Si ::= {v ↦ E} | {v ↦ c} | S ∪ S
 The actual representation of an effect takes only two forms:
 
 ```
-Effects E ::= Read[vars] & Update[vars] | E -> E 
+Effects E ::= Read[vars] & Update[vars] | (E0, ..., EN) => E 
 ```
 
 Other forms are actually sugaring for these two. Effects like `Update['x'] &
@@ -71,7 +78,7 @@ Motivation for this form is to help writing effect signatures for operators
 that care only about the read or the update part of some effect. For example,
 the `or` operator takes two expressions with the identical updates, but doesn't
 have any restrictions on the read part. Ensuring this normal form allows us to
-write its signature as `Read[r1] & Update[u] -> Read[r2] & Update[u] -> Read[r1
+write its signature as `(Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1
 ∪ r2] & Update[u]`.
 
 ### Equivalence rules
@@ -79,7 +86,7 @@ write its signature as `Read[r1] & Update[u] -> Read[r2] & Update[u] -> Read[r1
 These are some equivalence rules to be used alongside unification, but that
 don't require any substitution. These are applied in a simplification process
 with the goal of reaching the normal form. Equivalence between `E1` and `E2` is
-expressed by `E1 ≡ E2`, and the equivalence symbol `≡` have the highest
+expressed by `E1 ≡ E2`, and the equivalence symbol `≡` have the lowest
 precedence on this system.
 
 ```
@@ -127,16 +134,15 @@ of their respective bodies.
 ```
 
 Inferring operator application: find its signature and try to unify with the
-parameters. Assuming currification of parameters here, shouldn't change much for
-a list of parameters. Assume `freshVar` always returns unused names, and unify
+parameters. Assume `freshVar` always returns unused names, and unify
 returns a substitution unifying the two given effects. `S(E)` applies said
 substitution to an effect `E`.
 
 ```
-{ identifier: op, effect: E } ∈ Γ    Γ ⊢ e1:Epar
-Eres <- freshVar   S ≡ unify(E, Epar -> Eres)
+{ identifier: op, effect: E } ∈ Γ    Γ ⊢ p0:E0 ... Γ ⊢ pn:EN
+Eres <- freshVar   S ≡ unify(E, (E0, ...,  EN) => Eres)
 ------------------------------------------------------ (APP)
-          Γ ⊢ op(e1): S(Eres)
+          Γ ⊢ op(p0, ..., pn): S(Eres)
 ```
 
 Operator definitions (top-level or inside let-in's): infer signature and add it to context
@@ -150,18 +156,19 @@ Lambdas: We can assume lambda parameters are always pure for now.
 ```
        Γ ⊢ e: E
 ---------------------- (LAMBDA)
-Γ ⊢ x => e: Pure -> E
+Γ ⊢ x => e: (Pure) => E
 ```
 
 Literals are always `Pure`.
 
 ### Examples of built-in operator signatures
 ```
-exists: Pure -> E -> E
-and: E1 -> E2 -> E1 & E2
-+(iadd): E1 -> E2 -> E1 & E2
-or: Read[r1] & Update[u] -> Read[r2] & Update[u] -> Read[r1 ∪ r2] & Update[u]
-assign: Read[v] -> E -> Update[v] & E
+exists: (Pure, (Pure) => Read[v]) => Read[v]
+guess: (Pure, (Pure) => E) => E
+and: (E1, E2) => E1 & E2
++(iadd): (E1, E2) => E1 & E2
+or: (Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1 ∪ r2] & Update[u]
+assign: (Read[v], E) => Update[v] & E
 ```
 
 ### Example
@@ -182,8 +189,8 @@ x: Read['x'] -- by (NAME)
 x + 1: Read['x'] -- by (APP)
 x <- x + 1: Update['x'] & Read['x'] -- by (APP), see below
   S ≡ unify(
-         Read['x'] -> Read['x'] -> E0
-         Read[v]   -> E         -> Update[v] & E
+         (Read['x'], Read['x']) => E0
+         (Read[v]  , E        ) => Update[v] & E
   ) ≡ {v ↦ 'x', E ↦ Read['x'] & Pure, E0 ↦ Update['x'] & Read['x']}
   S(E0) ≡ Update['x'] & Read['x']
 ```
@@ -198,8 +205,8 @@ Applying (APP) to the `and` operator, a unification error is found:
 
 ```
 unify(
-  Update['x'] & Read['x'] -> Update['x'] & Read['x'] -> E0
-  E1                      -> E2                      -> E1 & E2
+  (Update['x'] & Read['x'], Update['x'] & Read['x']) => E0
+  (E1                     , E2                     ) => E1 & E2
 ) => Error simplifying Update['x'] & Update['x']
 
 {
