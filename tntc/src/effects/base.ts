@@ -1,4 +1,4 @@
-import { printEffect, printVariables } from './printing'
+import { effectToString, variablesToString } from './printing'
 import { Either, merge, right, left, mergeInMany } from '@sweet-monads/either'
 
 export type Variables =
@@ -19,7 +19,7 @@ type Error = ErrorTree | ErrorTree[]
 interface ErrorTree { message?: string, location: string, children: ErrorTree[] }
 
 export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitution[]> {
-  const location = `Trying to unify ${printEffect(ea)} and ${printEffect(eb)}`
+  const location = `Trying to unify ${effectToString(ea)} and ${effectToString(eb)}`
 
   const simplificationResult = mergeInMany([ea, eb].map(simplify))
   return simplificationResult.chain(([e1, e2]): Either<Error, Substitution[]> => {
@@ -42,7 +42,6 @@ export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitution[]
         ]))
         const newSubstitutions = effectsWithSubstitutions.chain(es => unify(...es))
         return newSubstitutions.chain(newSubs => result.map(currentSubs => currentSubs.concat(newSubs)))
-
       }, right([]))
     } else if (e1.kind === 'effect' && e2.kind === 'effect') {
       // Both actual effect
@@ -75,7 +74,7 @@ export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitution[]
 function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substitution[]> {
   const v1 = simplifyVariables(va, false)
   const v2 = simplifyVariables(vb, false)
-  const location = `Trying to unify variables ${printVariables(v1)} and ${printVariables(v2)}`
+  const location = `Trying to unify variables ${variablesToString(v1)} and ${variablesToString(v2)}`
 
   if (v1.kind === 'state' && v2.kind === 'state') {
     // Both state
@@ -124,7 +123,6 @@ function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substi
   }
 }
 
-
 function simplify (e: Effect): Either<ErrorTree, Effect> {
   if (e.kind !== 'effect') {
     return right(e)
@@ -137,7 +135,7 @@ function simplify (e: Effect): Either<ErrorTree, Effect> {
   const repeated = updateVars.filter(v => updateVars.filter(v2 => v === v2).length > 1)
   if (repeated.length > 0) {
     return left({
-      location: `Trying to simplify effect ${printEffect(e)}`,
+      location: `Trying to simplify effect ${effectToString(e)}`,
       message: `Multiple updates of variable(s): ${Array.from(new Set(repeated))}`,
       children: [],
     })
@@ -208,7 +206,7 @@ function applySubstitution (subs: Substitution[], e: Effect): Either<ErrorTree, 
     case 'arrow':
       result = mergeInMany(e.effects.map(ef => applySubstitution(subs, ef))).map(es => {
         return { kind: e.kind, effects: es }
-      }).mapLeft(error => buildErrorTree(`Applying substitution to arrow effect ${printEffect(e)}`, error))
+      }).mapLeft(error => buildErrorTree(`Applying substitution to arrow effect ${effectToString(e)}`, error))
       break
     case 'effect': {
       const read = applySubstitutionToVariables(subs, e.read)
@@ -251,7 +249,7 @@ function buildErrorTree (location: string, errors: Error): ErrorTree {
 // Ensure the typesystem that an effect has the 'effect' kind
 function ensureEffect (e: Effect): { kind: 'effect', read: Variables, update: Variables } {
   if (e.kind !== 'effect') {
-    throw new Error(`Unexpected format on ${printEffect(e)} - should have kind 'effect'`)
+    throw new Error(`Unexpected format on ${effectToString(e)} - should have kind 'effect'`)
   }
 
   return e
