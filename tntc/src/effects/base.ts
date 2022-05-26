@@ -1,23 +1,81 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Essentials for handling Effects: unification, simplification and substitutions
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { effectToString, variablesToString } from './printing'
 import { Either, merge, right, left, mergeInMany } from '@sweet-monads/either'
 
-export type Variables =
-  | { kind: 'state', vars: string[] }
-  | { kind: 'quantification', name: string }
-  | { kind: 'union', variables: Variables[] }
-
+/*
+ * The effect of a TNT expression, regarding which state variables are read
+ * and/or updated
+ */
 export type Effect =
+  /* Effect variables are quantifications over effects */
   | { kind: 'var', name: string }
+  /* Concrete atomic efects specifying variables that the expression reads and updates */
   | { kind: 'effect', read: Variables, update: Variables }
+  /* Arrow effects for expressions with effects depending on parameters */
   | { kind: 'arrow', effects: Effect[] }
 
+/*
+ * The variables an effect acts upon. Either a list of state variables, a
+ * quantification over them or a combination of other variables.
+ * Uses the plural form since it is always an array.
+ */
+export type Variables =
+  /* A list of state variables */
+  | { kind: 'state', vars: string[] }
+  /* A quantification variable, referring to an array of state variables, to be substituted */
+  | { kind: 'quantification', name: string }
+  /* A combination of variables to be computed as a union when concrete */
+  | { kind: 'union', variables: Variables[] }
+
+/*
+ * A tree of errors tracking the trace from the full given effect(s) to the part
+ * where the error occurred
+ */
+export interface ErrorTree {
+  /* The error message, when the node is where the error occurred */
+  message?: string,
+  /* A description of the node's operation */
+  location: string,
+  /* The node's children */
+  children: ErrorTree[]
+}
+
+/*
+ * A simple disjunction over error representations to make it easier to chain
+ * different operations and handle errors all at once (see buildErrorTree())
+ * */
+type Error = ErrorTree | ErrorTree[]
+
+/*
+ * Substitutions can be applied to both effects and variables, replacing
+ * quantified values with concrete ones
+ */
 type Substitution =
   | { kind: 'variable', name: string, value: Variables }
   | { kind: 'effect', name: string, value: Effect }
 
-type Error = ErrorTree | ErrorTree[]
-interface ErrorTree { message?: string, location: string, children: ErrorTree[] }
-
+/**
+ * Unifies two effects by matching effect types and unifying their variables.
+ *
+ * @param ea an effect to be unified
+ * @param eb the effect to be unified with
+ *
+ * @returns an array of substitutions that unifies both effects, when possible.
+ *          Otherwise, an error tree with an error message and its trace.
+ */
 export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitution[]> {
   const location = `Trying to unify ${effectToString(ea)} and ${effectToString(eb)}`
 
@@ -89,6 +147,10 @@ function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substi
     }
   } else if (v1.kind === 'union' && v2.kind === 'union') {
     // Both union
+    // This is not a fancy algorithm to unify sets. Instead, it just cleans
+    // up variables that are present in both sets and then tries to unify the rest
+    // by trying to unify each element of the set. This seems to be enough for
+    // the use case, and we can revisit this strategy if shown otherwise.
     const v1filtered = v1.variables.filter(v => !v2.variables.includes(v))
     const v2filtered = v2.variables.filter(v => !v1.variables.includes(v))
 
@@ -246,7 +308,7 @@ function buildErrorTree (location: string, errors: Error): ErrorTree {
   return { location: location, children: Array.isArray(errors) ? errors : [errors] }
 }
 
-// Ensure the typesystem that an effect has the 'effect' kind
+// Ensure the types ystem that an effect has the 'effect' kind
 function ensureEffect (e: Effect): { kind: 'effect', read: Variables, update: Variables } {
   if (e.kind !== 'effect') {
     throw new Error(`Unexpected format on ${effectToString(e)} - should have kind 'effect'`)

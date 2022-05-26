@@ -1,5 +1,26 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Pretty printing for Effects.
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { Effect, Variables } from './base'
 
+/**
+ * Pretty prints an effect
+ *
+ * @param e the effect to be formatted
+ *
+ * @returns a string with the pretty printed effect
+ */
 export function effectToString (e: Effect): string {
   switch (e.kind) {
     case 'var': return e.name
@@ -21,6 +42,13 @@ export function effectToString (e: Effect): string {
   }
 }
 
+/**
+ * Pretty prints effect variables
+ *
+ * @param v the Variables instance to be formatted
+ *
+ * @returns a string with the pretty printed variables
+ */
 export function variablesToString (v: Variables): string {
   switch (v.kind) {
     case 'state': return v.vars.map(v => `'${v}'`).join(', ')
