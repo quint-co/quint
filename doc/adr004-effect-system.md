@@ -33,7 +33,7 @@ Here's a rough draft of the effect system, to be updated with further
 exploration including a draft implementation.
 
 TNT expressions and definitions can be assigned both a type and an effect, which
-can be independent of each other. Here are some example of inferred returned
+can be independent of each other. Here are some examples of inferred returned
 types and effects for some definitions, considering some new syntax that is
 still under discussion.
 
