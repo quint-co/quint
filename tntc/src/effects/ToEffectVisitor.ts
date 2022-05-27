@@ -17,29 +17,23 @@ export class ToEffectVisitor implements EffectListener {
   }
 
   exitReadOnly () {
-    const variables = this.variablesStack.pop()
-    if (variables !== undefined) {
-      const effect: Effect = { kind: 'concrete', read: variables, update: emptyVariables }
-      this.pushEffect(effect)
-    }
+    const variables = this.variablesStack.pop()!
+    const effect: Effect = { kind: 'concrete', read: variables, update: emptyVariables }
+    this.pushEffect(effect)
   }
 
   exitUpdateOnly () {
-    const variables = this.variablesStack.pop()
-    if (variables !== undefined) {
-      const effect: Effect = { kind: 'concrete', read: emptyVariables, update: variables }
-      this.pushEffect(effect)
-    }
+    const variables = this.variablesStack.pop()!
+    const effect: Effect = { kind: 'concrete', read: emptyVariables, update: variables }
+    this.pushEffect(effect)
   }
 
   exitReadAndUpdate () {
-    const update = this.variablesStack.pop()
-    const read = this.variablesStack.pop()
+    const update = this.variablesStack.pop()!
+    const read = this.variablesStack.pop()!
 
-    if (update !== undefined && read !== undefined) {
-      const effect: Effect = { kind: 'concrete', read: read, update: update }
-      this.pushEffect(effect)
-    }
+    const effect: Effect = { kind: 'concrete', read: read, update: update }
+    this.pushEffect(effect)
   }
 
   exitPure () {

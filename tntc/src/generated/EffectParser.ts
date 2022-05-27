@@ -39,8 +39,7 @@ export class EffectParser extends Parser {
 	public static readonly T__8 = 9;
 	public static readonly T__9 = 10;
 	public static readonly T__10 = 11;
-	public static readonly T__11 = 12;
-	public static readonly IDENTIFIER = 13;
+	public static readonly IDENTIFIER = 12;
 	public static readonly RULE_effect = 0;
 	public static readonly RULE_concreteEffect = 1;
 	public static readonly RULE_vars = 2;
@@ -52,11 +51,11 @@ export class EffectParser extends Parser {
 
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
 		undefined, "'('", "', '", "')'", "' => '", "'Read'", "'['", "']'", "'Update'", 
-		"'] & Update'", "'Pure'", "','", "'''",
+		"'] & Update'", "'Pure'", "'''",
 	];
 	private static readonly _SYMBOLIC_NAMES: Array<string | undefined> = [
 		undefined, undefined, undefined, undefined, undefined, undefined, undefined, 
-		undefined, undefined, undefined, undefined, undefined, undefined, "IDENTIFIER",
+		undefined, undefined, undefined, undefined, undefined, "IDENTIFIER",
 	];
 	public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(EffectParser._LITERAL_NAMES, EffectParser._SYMBOLIC_NAMES, []);
 
@@ -268,18 +267,18 @@ export class EffectParser extends Parser {
 				this.state = 55;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if (_la === EffectParser.T__11) {
+				if (_la === EffectParser.T__10) {
 					{
 					this.state = 47;
 					this.stateVarRef();
 					this.state = 52;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
-					while (_la === EffectParser.T__10) {
+					while (_la === EffectParser.T__1) {
 						{
 						{
 						this.state = 48;
-						this.match(EffectParser.T__10);
+						this.match(EffectParser.T__1);
 						this.state = 49;
 						this.stateVarRef();
 						}
@@ -308,11 +307,11 @@ export class EffectParser extends Parser {
 					this.state = 62;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
-					while (_la === EffectParser.T__10) {
+					while (_la === EffectParser.T__1) {
 						{
 						{
 						this.state = 58;
-						this.match(EffectParser.T__10);
+						this.match(EffectParser.T__1);
 						this.state = 59;
 						this.match(EffectParser.IDENTIFIER);
 						}
@@ -350,11 +349,11 @@ export class EffectParser extends Parser {
 			this.enterOuterAlt(_localctx, 1);
 			{
 			this.state = 69;
-			this.match(EffectParser.T__11);
+			this.match(EffectParser.T__10);
 			this.state = 70;
 			this.match(EffectParser.IDENTIFIER);
 			this.state = 71;
-			this.match(EffectParser.T__11);
+			this.match(EffectParser.T__10);
 			}
 		}
 		catch (re) {
@@ -373,7 +372,7 @@ export class EffectParser extends Parser {
 	}
 
 	public static readonly _serializedATN: string =
-		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x0FL\x04\x02" +
+		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x0EL\x04\x02" +
 		"\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x03\x02\x03\x02\x03\x02" +
 		"\x03\x02\x03\x02\x07\x02\x10\n\x02\f\x02\x0E\x02\x13\v\x02\x05\x02\x15" +
 		"\n\x02\x03\x02\x03\x02\x03\x02\x03\x02\x05\x02\x1B\n\x02\x03\x03\x03\x03" +
@@ -389,7 +388,7 @@ export class EffectParser extends Parser {
 		"\x13\x03\x02\x02\x02\x11\x0F\x03\x02\x02\x02\x11\x12\x03\x02\x02\x02\x12" +
 		"\x15\x03\x02\x02\x02\x13\x11\x03\x02\x02\x02\x14\f\x03\x02\x02\x02\x14" +
 		"\x15\x03\x02\x02\x02\x15\x16\x03\x02\x02\x02\x16\x17\x07\x05\x02\x02\x17" +
-		"\x18\x07\x06\x02\x02\x18\x1B\x05\x02\x02\x02\x19\x1B\x07\x0F\x02\x02\x1A" +
+		"\x18\x07\x06\x02\x02\x18\x1B\x05\x02\x02\x02\x19\x1B\x07\x0E\x02\x02\x1A" +
 		"\n\x03\x02\x02\x02\x1A\v\x03\x02\x02\x02\x1A\x19\x03\x02\x02\x02\x1B\x03" +
 		"\x03\x02\x02\x02\x1C\x1D\x07\x07\x02\x02\x1D\x1E\x07\b\x02\x02\x1E\x1F" +
 		"\x05\x06\x04\x02\x1F \x07\t\x02\x02 0\x03\x02\x02\x02!\"\x07\n\x02\x02" +
@@ -397,14 +396,14 @@ export class EffectParser extends Parser {
 		"&\'\x07\x07\x02\x02\'(\x07\b\x02\x02()\x05\x06\x04\x02)*\x07\v\x02\x02" +
 		"*+\x07\b\x02\x02+,\x05\x06\x04\x02,-\x07\t\x02\x02-0\x03\x02\x02\x02." +
 		"0\x07\f\x02\x02/\x1C\x03\x02\x02\x02/!\x03\x02\x02\x02/&\x03\x02\x02\x02" +
-		"/.\x03\x02\x02\x020\x05\x03\x02\x02\x0216\x05\b\x05\x0223\x07\r\x02\x02" +
-		"35\x05\b\x05\x0242\x03\x02\x02\x0258\x03\x02\x02\x0264\x03\x02\x02\x02" +
-		"67\x03\x02\x02\x027:\x03\x02\x02\x0286\x03\x02\x02\x0291\x03\x02\x02\x02" +
-		"9:\x03\x02\x02\x02:F\x03\x02\x02\x02;@\x07\x0F\x02\x02<=\x07\r\x02\x02" +
-		"=?\x07\x0F\x02\x02><\x03\x02\x02\x02?B\x03\x02\x02\x02@>\x03\x02\x02\x02" +
-		"@A\x03\x02\x02\x02AD\x03\x02\x02\x02B@\x03\x02\x02\x02C;\x03\x02\x02\x02" +
-		"CD\x03\x02\x02\x02DF\x03\x02\x02\x02E9\x03\x02\x02\x02EC\x03\x02\x02\x02" +
-		"F\x07\x03\x02\x02\x02GH\x07\x0E\x02\x02HI\x07\x0F\x02\x02IJ\x07\x0E\x02" +
+		"/.\x03\x02\x02\x020\x05\x03\x02\x02\x0216\x05\b\x05\x0223\x07\x04\x02" +
+		"\x0235\x05\b\x05\x0242\x03\x02\x02\x0258\x03\x02\x02\x0264\x03\x02\x02" +
+		"\x0267\x03\x02\x02\x027:\x03\x02\x02\x0286\x03\x02\x02\x0291\x03\x02\x02" +
+		"\x029:\x03\x02\x02\x02:F\x03\x02\x02\x02;@\x07\x0E\x02\x02<=\x07\x04\x02" +
+		"\x02=?\x07\x0E\x02\x02><\x03\x02\x02\x02?B\x03\x02\x02\x02@>\x03\x02\x02" +
+		"\x02@A\x03\x02\x02\x02AD\x03\x02\x02\x02B@\x03\x02\x02\x02C;\x03\x02\x02" +
+		"\x02CD\x03\x02\x02\x02DF\x03\x02\x02\x02E9\x03\x02\x02\x02EC\x03\x02\x02" +
+		"\x02F\x07\x03\x02\x02\x02GH\x07\r\x02\x02HI\x07\x0E\x02\x02IJ\x07\r\x02" +
 		"\x02J\t\x03\x02\x02\x02\v\x11\x14\x1A/69@CE";
 	public static __ATN: ATN;
 	public static get _ATN(): ATN {

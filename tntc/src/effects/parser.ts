@@ -12,7 +12,7 @@ export function parseEffect (effectString: string): Either<any, Effect> {
   const errorMessages: any[] = []
   // error listener to report lexical and syntax errors
   const errorListener: any = {
-    syntaxError: (recognizer: any,
+    syntaxError: (_: any,
       offendingSymbol: any,
       line: number,
       charPositionInLine: number,

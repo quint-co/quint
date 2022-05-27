@@ -16,8 +16,8 @@ concreteEffect:   'Read' '[' vars ']'                         # readOnly
                 | 'Pure'                                      # pure
                 ;
 
-vars :   (stateVarRef (',' stateVarRef)*)?    # concreteVars
-       | (IDENTIFIER (',' IDENTIFIER)*)?    # quantification
+vars :   (stateVarRef (', ' stateVarRef)*)?    # concreteVars
+       | (IDENTIFIER (', ' IDENTIFIER)*)?    # quantification
        ;
 
 stateVarRef : '\'' IDENTIFIER '\'' ;
