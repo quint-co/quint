@@ -104,6 +104,8 @@ Pure ≡ Read[] ≡ Update[] ≡ Read[] & Update[]
 E & Pure ≡ E
 E1 & E2 ≡ E2 & E1
 E1 & (E2 & E3) ≡ (E1 & E2) & E3
+
+One might be inclined to treat `Read[vars] & Update[vars]` and `Update[vars]` as equivalent, reasoning that one must be able to read a variable in order to update it. However, in TLA we can update a variable without reading it's current value: `x <- x + 1` is different from `x <- 2`. We anticipate there may be utility in differentiating these cases, such as being able to partition transitions that only read a variable on the current state from transitions that only update a variable (that is, its value on the next state).
 ```
 
 ### Unification
@@ -149,7 +151,7 @@ Operator definitions (top-level or inside let-in's): infer signature and add it 
 ```
                        Γ ⊢ e: E
 ------------------------------------------------------------- (OPDEF)
-Γ ∪ { identifier: op, effect: E } ⊢ def op(params) ≡ e: Pure
+Γ ∪ { identifier: op, effect: E } ⊢ (def op(params) ≡ e): Pure
 ```
 
 Lambdas: We can assume lambda parameters are always pure for now.
