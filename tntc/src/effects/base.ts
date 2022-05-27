@@ -67,6 +67,8 @@ type Substitution =
   | { kind: 'variable', name: string, value: Variables }
   | { kind: 'concrete', name: string, value: Effect }
 
+export const emptyVariables: Variables = { kind: 'concrete', vars: [] }
+
 /**
  * Unifies two effects by matching effect types and unifying their variables.
  *
