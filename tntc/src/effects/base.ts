@@ -30,7 +30,7 @@ export type Effect =
 /*
  * The variables an effect acts upon. Either a list of state variables, a
  * quantification over them or a combination of other variables.
- * Uses the plural form since it is always an array.
+ * Uses the plural form since all forms represent a plurality of variables.
  */
 export type Variables =
   /* A list of state variables */
@@ -45,9 +45,9 @@ export type Variables =
  * where the error occurred
  */
 export interface ErrorTree {
-  /* The error message, when the node is where the error occurred */
+  /* The error message, used for the terminal node where the error occurred */
   message?: string,
-  /* A description of the node's operation */
+  /* A description of the context within which the current node is encountered */
   location: string,
   /* The node's children */
   children: ErrorTree[]
