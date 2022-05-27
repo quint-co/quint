@@ -142,7 +142,7 @@ substitution to an effect `E`.
 
 ```
 { identifier: op, effect: E } ∈ Γ    Γ ⊢ p0:E0 ... Γ ⊢ pn:EN
-Eres <- freshVar   S ≡ unify(E, (E0, ...,  EN) => Eres)
+Eres <- freshVar   S = unify(E, (E0, ...,  EN) => Eres)
 ------------------------------------------------------ (APP)
           Γ ⊢ op(p0, ..., pn): S(Eres)
 ```
@@ -151,7 +151,7 @@ Operator definitions (top-level or inside let-in's): infer signature and add it 
 ```
                        Γ ⊢ e: E
 ------------------------------------------------------------- (OPDEF)
-Γ ∪ { identifier: op, effect: E } ⊢ (def op(params) ≡ e): Pure
+Γ ∪ { identifier: op, effect: E } ⊢ (def op(params) = e): Pure
 ```
 
 Lambdas: We can assume lambda parameters are always pure for now.
@@ -177,7 +177,7 @@ assign: (Read[v], E) => Update[v] & E
 Table testing a simple expression with conflicting effects (x is updated twice):
 
 ```
-def A ≡ {
+def A = {
   & x <- x + 1
   & x <- x + 2
 } => should raise error
@@ -190,11 +190,11 @@ x: Read['x'] -- by (NAME)
 1: Pure
 x + 1: Read['x'] -- by (APP)
 x <- x + 1: Update['x'] & Read['x'] -- by (APP), see below
-  S ≡ unify(
+  S = unify(
          (Read['x'], Read['x']) => E0
          (Read[v]  , E        ) => Update[v] & E
-  ) ≡ {v ↦ 'x', E ↦ Read['x'], E0 ↦ Update['x'] & Read['x']}
-  S(E0) ≡ Read['x'] & Update['x']
+  ) = {v ↦ 'x', E ↦ Read['x'], E0 ↦ Update['x'] & Read['x']}
+  S(E0) = Read['x'] & Update['x']
 ```
 
 Second expression in the `and` application is analogous:
