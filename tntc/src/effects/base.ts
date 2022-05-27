@@ -23,7 +23,7 @@ export type Effect =
   /* Effect variables are quantifications over effects */
   | { kind: 'var', name: string }
   /* Concrete atomic efects specifying variables that the expression reads and updates */
-  | { kind: 'effect', read: Variables, update: Variables }
+  | { kind: 'concrete', read: Variables, update: Variables }
   /* Arrow effects for expressions with effects depending on parameters */
   | { kind: 'arrow', effects: Effect[] }
 
@@ -34,7 +34,7 @@ export type Effect =
  */
 export type Variables =
   /* A list of state variables */
-  | { kind: 'state', vars: string[] }
+  | { kind: 'concrete', vars: string[] }
   /* A quantification variable, referring to an array of state variables, to be substituted */
   | { kind: 'quantification', name: string }
   /* A combination of variables to be computed as a union when concrete */
@@ -65,7 +65,7 @@ type Error = ErrorTree | ErrorTree[]
  */
 type Substitution =
   | { kind: 'variable', name: string, value: Variables }
-  | { kind: 'effect', name: string, value: Effect }
+  | { kind: 'concrete', name: string, value: Effect }
 
 /**
  * Unifies two effects by matching effect types and unifying their variables.
@@ -101,7 +101,7 @@ export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitution[]
         const newSubstitutions = effectsWithSubstitutions.chain(es => unify(...es))
         return newSubstitutions.chain(newSubs => result.map(currentSubs => currentSubs.concat(newSubs)))
       }, right([]))
-    } else if (e1.kind === 'effect' && e2.kind === 'effect') {
+    } else if (e1.kind === 'concrete' && e2.kind === 'concrete') {
       // Both actual effect
       const readUnificationResult = unifyVariables(e1.read, e2.read)
       const updateUnificationResult = readUnificationResult.chain(subs => {
@@ -116,9 +116,9 @@ export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitution[]
       const result = merge([readUnificationResult, updateUnificationResult]).map(s => s.flat())
       return result.mapLeft(error => buildErrorTree(location, error))
     } else if (e1.kind === 'var') {
-      return right([{ kind: 'effect', name: e1.name, value: e2 }])
+      return right([{ kind: 'concrete', name: e1.name, value: e2 }])
     } else if (e2.kind === 'var') {
-      return right([{ kind: 'effect', name: e2.name, value: e1 }])
+      return right([{ kind: 'concrete', name: e2.name, value: e1 }])
     } else {
       return left({
         location: location,
@@ -134,7 +134,7 @@ function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substi
   const v2 = simplifyVariables(vb, false)
   const location = `Trying to unify variables ${variablesToString(v1)} and ${variablesToString(v2)}`
 
-  if (v1.kind === 'state' && v2.kind === 'state') {
+  if (v1.kind === 'concrete' && v2.kind === 'concrete') {
     // Both state
     if (sameVars(v1.vars, v2.vars)) {
       return right([])
@@ -164,7 +164,7 @@ function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substi
 }
 
 function simplify (e: Effect): Either<ErrorTree, Effect> {
-  if (e.kind !== 'effect') {
+  if (e.kind !== 'concrete') {
     return right(e)
   }
 
@@ -180,7 +180,7 @@ function simplify (e: Effect): Either<ErrorTree, Effect> {
       children: [],
     })
   } else {
-    return right({ kind: 'effect', read: read, update: update })
+    return right({ kind: 'concrete', read: read, update: update })
   }
 }
 
@@ -188,7 +188,7 @@ function findVars (variables: Variables): string[] {
   switch (variables.kind) {
     case 'quantification':
       return []
-    case 'state':
+    case 'concrete':
       return variables.vars
     case 'union':
       return variables.variables.flatMap(findVars)
@@ -202,7 +202,7 @@ function simplifyVariables (variables: Variables, checkRepeated: Boolean): Varia
     case 'quantification':
       unionVariables.push(variables)
       break
-    case 'state':
+    case 'concrete':
       vars.push(...variables.vars)
       break
     case 'union': {
@@ -212,7 +212,7 @@ function simplifyVariables (variables: Variables, checkRepeated: Boolean): Varia
           case 'quantification':
             unionVariables.push(v)
             break
-          case 'state':
+          case 'concrete':
             vars.push(...v.vars)
             break
           case 'union':
@@ -226,10 +226,10 @@ function simplifyVariables (variables: Variables, checkRepeated: Boolean): Varia
 
   const sortedUnionVariables = sortVariables(unionVariables)
   if (unionVariables.length > 0) {
-    const variables = vars.length > 0 ? sortedUnionVariables.concat({ kind: 'state', vars: vars }) : unionVariables
+    const variables = vars.length > 0 ? sortedUnionVariables.concat({ kind: 'concrete', vars: vars }) : unionVariables
     return variables.length > 1 ? { kind: 'union', variables: variables } : variables[0]
   } else {
-    return { kind: 'state', vars: vars }
+    return { kind: 'concrete', vars: vars }
   }
 }
 
@@ -238,7 +238,7 @@ function applySubstitution (subs: Substitution[], e: Effect): Either<ErrorTree, 
   switch (e.kind) {
     case 'var': {
       const sub = subs.find(s => s.name === e.name)
-      if (sub && sub.kind === 'effect') {
+      if (sub && sub.kind === 'concrete') {
         result = right(sub.value)
       }
       break
@@ -248,11 +248,11 @@ function applySubstitution (subs: Substitution[], e: Effect): Either<ErrorTree, 
         return { kind: e.kind, effects: es }
       }).mapLeft(error => buildErrorTree(`Applying substitution to arrow effect ${effectToString(e)}`, error))
       break
-    case 'effect': {
+    case 'concrete': {
       const read = applySubstitutionToVariables(subs, e.read)
       const update = applySubstitutionToVariables(subs, e.update)
 
-      result = right({ kind: 'effect', read: read, update: update })
+      result = right({ kind: 'concrete', read: read, update: update })
       break
     }
   }
@@ -286,10 +286,10 @@ function buildErrorTree (location: string, errors: Error): ErrorTree {
   return { location: location, children: Array.isArray(errors) ? errors : [errors] }
 }
 
-// Ensure the types ystem that an effect has the 'effect' kind
-function ensureEffect (e: Effect): { kind: 'effect', read: Variables, update: Variables } {
-  if (e.kind !== 'effect') {
-    throw new Error(`Unexpected format on ${effectToString(e)} - should have kind 'effect'`)
+// Ensure the types ystem that an effect has the 'concrete' kind
+function ensureEffect (e: Effect): { kind: 'concrete', read: Variables, update: Variables } {
+  if (e.kind !== 'concrete') {
+    throw new Error(`Unexpected format on ${effectToString(e)} - should have kind 'concrete'`)
   }
 
   return e

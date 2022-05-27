@@ -24,12 +24,12 @@ import { Effect, Variables } from './base'
 export function effectToString (e: Effect): string {
   switch (e.kind) {
     case 'var': return e.name
-    case 'effect': {
+    case 'concrete': {
       const output = []
-      if (e.read.kind !== 'state' || e.read.vars.length > 0) {
+      if (e.read.kind !== 'concrete' || e.read.vars.length > 0) {
         output.push(`Read[${variablesToString(e.read)}]`)
       }
-      if (e.update.kind !== 'state' || e.update.vars.length > 0) {
+      if (e.update.kind !== 'concrete' || e.update.vars.length > 0) {
         output.push(`Update[${variablesToString(e.update)}]`)
       }
       if (output.length > 0) {
@@ -55,7 +55,7 @@ export function effectToString (e: Effect): string {
  */
 export function variablesToString (v: Variables): string {
   switch (v.kind) {
-    case 'state': return v.vars.map(v => `'${v}'`).join(', ')
+    case 'concrete': return v.vars.map(v => `'${v}'`).join(', ')
     case 'quantification': return v.name
     case 'union': return v.variables.map(variablesToString).join(', ')
   }
