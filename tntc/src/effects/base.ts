@@ -286,7 +286,7 @@ function buildErrorTree (location: string, errors: Error): ErrorTree {
   return { location: location, children: Array.isArray(errors) ? errors : [errors] }
 }
 
-// Ensure the types ystem that an effect has the 'concrete' kind
+// Ensure the type system that an effect has the 'concrete' kind
 function ensureEffect (e: Effect): { kind: 'concrete', read: Variables, update: Variables } {
   if (e.kind !== 'concrete') {
     throw new Error(`Unexpected format on ${effectToString(e)} - should have kind 'concrete'`)
