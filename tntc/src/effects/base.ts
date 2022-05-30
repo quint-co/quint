@@ -83,8 +83,8 @@ type Substitution =
 export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitution[]> {
   const location = `Trying to unify ${effectToString(ea)} and ${effectToString(eb)}`
 
-  const simplificationResult = mergeInMany([ea, eb].map(simplify))
-  return simplificationResult.chain(([e1, e2]): Either<Error, Substitution[]> => {
+  const simplificationResults = mergeInMany([ea, eb].map(simplify))
+  return simplificationResults.chain(([e1, e2]): Either<Error, Substitution[]> => {
     if (e1.kind === 'arrow' && e2.kind === 'arrow') {
       return unifyArrows(location, e1, e2)
     } else if (e1.kind === 'concrete' && e2.kind === 'concrete') {
