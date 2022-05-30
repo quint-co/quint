@@ -23,7 +23,6 @@ import { Effect, Variables } from './base'
  */
 export function effectToString (e: Effect): string {
   switch (e.kind) {
-    case 'var': return e.name
     case 'concrete': {
       const output = []
       if (e.read.kind !== 'concrete' || e.read.vars.length > 0) {
@@ -38,10 +37,11 @@ export function effectToString (e: Effect): string {
         return 'Pure'
       }
     }
+    case 'quantified': return e.name
     case 'arrow': {
-      const effects = e.effects.map(effectToString)
-      const result = effects.pop()
-      return `(${effects.join(', ')}) => ${result}`
+      const params = e.params.map(effectToString)
+      const result = effectToString(e.result)
+      return `(${params.join(', ')}) => ${result}`
     }
   }
 }
@@ -56,7 +56,7 @@ export function effectToString (e: Effect): string {
 export function variablesToString (v: Variables): string {
   switch (v.kind) {
     case 'concrete': return v.vars.map(v => `'${v}'`).join(', ')
-    case 'quantification': return v.name
+    case 'quantified': return v.name
     case 'union': return v.variables.map(variablesToString).join(', ')
   }
 }
