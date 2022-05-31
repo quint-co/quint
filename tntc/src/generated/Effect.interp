@@ -30,7 +30,7 @@ IDENTIFIER
 
 rule names:
 effect
-concreteEffect
+concrete
 vars
 stateVarRef
 

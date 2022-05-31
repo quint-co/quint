@@ -13,7 +13,7 @@ describe('parseEffect', () => {
       assert.deepEqual(value, {
         kind: 'concrete',
         read: { kind: 'concrete', vars: ['x', 'y'] },
-        update: { kind: 'quantification', name: 'v' },
+        update: { kind: 'quantified', name: 'v' },
       })
     }
   })
@@ -26,18 +26,18 @@ describe('parseEffect', () => {
       const { value } = effect
       assert.deepEqual(value, {
         kind: 'arrow',
-        effects: [
+        params: [
           {
             kind: 'concrete',
-            read: { kind: 'quantification', name: 'v' },
+            read: { kind: 'quantified', name: 'v' },
             update: { kind: 'concrete', vars: [] },
           },
-          {
-            kind: 'concrete',
-            read: { kind: 'concrete', vars: [] },
-            update: { kind: 'quantification', name: 'v' },
-          },
         ],
+        result: {
+          kind: 'concrete',
+          read: { kind: 'concrete', vars: [] },
+          update: { kind: 'quantified', name: 'v' },
+        },
       })
     }
   })
@@ -50,27 +50,27 @@ describe('parseEffect', () => {
       const { value } = effect
       assert.deepEqual(value, {
         kind: 'arrow',
-        effects: [
+        params: [
           {
             kind: 'arrow',
-            effects: [
+            params: [
               { kind: 'concrete', read: emptyVariables, update: emptyVariables },
-              { kind: 'concrete', read: { kind: 'quantification', name: 'v' }, update: emptyVariables },
             ],
+            result: { kind: 'concrete', read: { kind: 'quantified', name: 'v' }, update: emptyVariables },
           },
           {
             kind: 'arrow',
-            effects: [
+            params: [
               { kind: 'concrete', read: emptyVariables, update: emptyVariables },
-              { kind: 'var', name: 'E' },
             ],
-          },
-          {
-            kind: 'concrete',
-            read: { kind: 'concrete', vars: [] },
-            update: { kind: 'quantification', name: 'v' },
+            result: { kind: 'quantified', name: 'E' },
           },
         ],
+        result: {
+          kind: 'concrete',
+          read: { kind: 'concrete', vars: [] },
+          update: { kind: 'quantified', name: 'v' },
+        },
       })
     }
   })
@@ -83,20 +83,19 @@ describe('parseEffect', () => {
       const { value } = effect
       assert.deepEqual(value, {
         kind: 'arrow',
-        effects: [
+        params: [
           {
             kind: 'concrete',
-            read: { kind: 'union', variables: [{ kind: 'quantification', name: 'v' }, { kind: 'quantification', name: 'w' }] },
+            read: { kind: 'union', variables: [{ kind: 'quantified', name: 'v' }, { kind: 'quantified', name: 'w' }] },
             update: { kind: 'concrete', vars: [] },
           },
-          {
-            kind: 'concrete',
-            read: { kind: 'concrete', vars: [] },
-            update: { kind: 'quantification', name: 'v' },
-          },
         ],
+        result: {
+          kind: 'concrete',
+          read: { kind: 'concrete', vars: [] },
+          update: { kind: 'quantified', name: 'v' },
+        },
       })
     }
   })
-
 })

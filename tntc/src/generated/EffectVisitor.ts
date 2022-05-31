@@ -3,17 +3,17 @@
 
 import { ParseTreeVisitor } from "antlr4ts/tree/ParseTreeVisitor";
 
-import { ConcreteContext } from "./EffectParser";
-import { ArrowEffectContext } from "./EffectParser";
-import { VarEffectContext } from "./EffectParser";
-import { ConcreteVarsContext } from "./EffectParser";
-import { QuantificationContext } from "./EffectParser";
 import { ReadOnlyContext } from "./EffectParser";
 import { UpdateOnlyContext } from "./EffectParser";
 import { ReadAndUpdateContext } from "./EffectParser";
 import { PureContext } from "./EffectParser";
-import { EffectContext } from "./EffectParser";
 import { ConcreteEffectContext } from "./EffectParser";
+import { ArrowEffectContext } from "./EffectParser";
+import { QuantifiedEffectContext } from "./EffectParser";
+import { ConcreteVariablesContext } from "./EffectParser";
+import { QuantifiedVariablesContext } from "./EffectParser";
+import { EffectContext } from "./EffectParser";
+import { ConcreteContext } from "./EffectParser";
 import { VarsContext } from "./EffectParser";
 import { StateVarRefContext } from "./EffectParser";
 
@@ -27,12 +27,44 @@ import { StateVarRefContext } from "./EffectParser";
  */
 export interface EffectVisitor<Result> extends ParseTreeVisitor<Result> {
 	/**
-	 * Visit a parse tree produced by the `concrete`
+	 * Visit a parse tree produced by the `readOnly`
+	 * labeled alternative in `EffectParser.concrete`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitReadOnly?: (ctx: ReadOnlyContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `updateOnly`
+	 * labeled alternative in `EffectParser.concrete`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitUpdateOnly?: (ctx: UpdateOnlyContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `readAndUpdate`
+	 * labeled alternative in `EffectParser.concrete`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitReadAndUpdate?: (ctx: ReadAndUpdateContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `pure`
+	 * labeled alternative in `EffectParser.concrete`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitPure?: (ctx: PureContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `concreteEffect`
 	 * labeled alternative in `EffectParser.effect`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitConcrete?: (ctx: ConcreteContext) => Result;
+	visitConcreteEffect?: (ctx: ConcreteEffectContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `arrowEffect`
@@ -43,60 +75,28 @@ export interface EffectVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitArrowEffect?: (ctx: ArrowEffectContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `varEffect`
+	 * Visit a parse tree produced by the `quantifiedEffect`
 	 * labeled alternative in `EffectParser.effect`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitVarEffect?: (ctx: VarEffectContext) => Result;
+	visitQuantifiedEffect?: (ctx: QuantifiedEffectContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `concreteVars`
+	 * Visit a parse tree produced by the `concreteVariables`
 	 * labeled alternative in `EffectParser.vars`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitConcreteVars?: (ctx: ConcreteVarsContext) => Result;
+	visitConcreteVariables?: (ctx: ConcreteVariablesContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `quantification`
+	 * Visit a parse tree produced by the `quantifiedVariables`
 	 * labeled alternative in `EffectParser.vars`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitQuantification?: (ctx: QuantificationContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `readOnly`
-	 * labeled alternative in `EffectParser.concreteEffect`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitReadOnly?: (ctx: ReadOnlyContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `updateOnly`
-	 * labeled alternative in `EffectParser.concreteEffect`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitUpdateOnly?: (ctx: UpdateOnlyContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `readAndUpdate`
-	 * labeled alternative in `EffectParser.concreteEffect`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitReadAndUpdate?: (ctx: ReadAndUpdateContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `pure`
-	 * labeled alternative in `EffectParser.concreteEffect`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitPure?: (ctx: PureContext) => Result;
+	visitQuantifiedVariables?: (ctx: QuantifiedVariablesContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `EffectParser.effect`.
@@ -106,11 +106,11 @@ export interface EffectVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitEffect?: (ctx: EffectContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `EffectParser.concreteEffect`.
+	 * Visit a parse tree produced by `EffectParser.concrete`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitConcreteEffect?: (ctx: ConcreteEffectContext) => Result;
+	visitConcrete?: (ctx: ConcreteContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `EffectParser.vars`.

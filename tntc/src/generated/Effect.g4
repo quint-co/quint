@@ -5,19 +5,19 @@
  */
 grammar Effect;
 
-effect:   concreteEffect                                     # concrete
+effect:   concrete                                           # concreteEffect
         | '(' (effect (', ' effect)*)? ')' ' => ' effect     # arrowEffect
-        | IDENTIFIER                                         # varEffect
+        | IDENTIFIER                                         # quantifiedEffect
         ;
 
-concreteEffect:   'Read' '[' vars ']'                         # readOnly
-                | 'Update' '[' vars ']'                       # updateOnly
-                | 'Read' '[' vars '] & Update' '[' vars ']'   # readAndUpdate
-                | 'Pure'                                      # pure
-                ;
+concrete:   'Read' '[' vars ']'                         # readOnly
+          | 'Update' '[' vars ']'                       # updateOnly
+          | 'Read' '[' vars '] & Update' '[' vars ']'   # readAndUpdate
+          | 'Pure'                                      # pure
+          ;
 
-vars :   (stateVarRef (', ' stateVarRef)*)?    # concreteVars
-       | (IDENTIFIER (', ' IDENTIFIER)*)?    # quantification
+vars :   (stateVarRef (', ' stateVarRef)*)?    # concreteVariables
+       | (IDENTIFIER (', ' IDENTIFIER)*)?    # quantifiedVariables
        ;
 
 stateVarRef : '\'' IDENTIFIER '\'' ;

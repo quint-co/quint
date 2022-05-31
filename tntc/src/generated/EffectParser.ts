@@ -41,12 +41,12 @@ export class EffectParser extends Parser {
 	public static readonly T__10 = 11;
 	public static readonly IDENTIFIER = 12;
 	public static readonly RULE_effect = 0;
-	public static readonly RULE_concreteEffect = 1;
+	public static readonly RULE_concrete = 1;
 	public static readonly RULE_vars = 2;
 	public static readonly RULE_stateVarRef = 3;
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
-		"effect", "concreteEffect", "vars", "stateVarRef",
+		"effect", "concrete", "vars", "stateVarRef",
 	];
 
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
@@ -95,11 +95,11 @@ export class EffectParser extends Parser {
 			case EffectParser.T__4:
 			case EffectParser.T__7:
 			case EffectParser.T__9:
-				_localctx = new ConcreteContext(_localctx);
+				_localctx = new ConcreteEffectContext(_localctx);
 				this.enterOuterAlt(_localctx, 1);
 				{
 				this.state = 8;
-				this.concreteEffect();
+				this.concrete();
 				}
 				break;
 			case EffectParser.T__0:
@@ -143,7 +143,7 @@ export class EffectParser extends Parser {
 				}
 				break;
 			case EffectParser.IDENTIFIER:
-				_localctx = new VarEffectContext(_localctx);
+				_localctx = new QuantifiedEffectContext(_localctx);
 				this.enterOuterAlt(_localctx, 3);
 				{
 				this.state = 23;
@@ -169,9 +169,9 @@ export class EffectParser extends Parser {
 		return _localctx;
 	}
 	// @RuleVersion(0)
-	public concreteEffect(): ConcreteEffectContext {
-		let _localctx: ConcreteEffectContext = new ConcreteEffectContext(this._ctx, this.state);
-		this.enterRule(_localctx, 2, EffectParser.RULE_concreteEffect);
+	public concrete(): ConcreteContext {
+		let _localctx: ConcreteContext = new ConcreteContext(this._ctx, this.state);
+		this.enterRule(_localctx, 2, EffectParser.RULE_concrete);
 		try {
 			this.state = 45;
 			this._errHandler.sync(this);
@@ -261,7 +261,7 @@ export class EffectParser extends Parser {
 			this._errHandler.sync(this);
 			switch ( this.interpreter.adaptivePredict(this._input, 8, this._ctx) ) {
 			case 1:
-				_localctx = new ConcreteVarsContext(_localctx);
+				_localctx = new ConcreteVariablesContext(_localctx);
 				this.enterOuterAlt(_localctx, 1);
 				{
 				this.state = 55;
@@ -294,7 +294,7 @@ export class EffectParser extends Parser {
 				break;
 
 			case 2:
-				_localctx = new QuantificationContext(_localctx);
+				_localctx = new QuantifiedVariablesContext(_localctx);
 				this.enterOuterAlt(_localctx, 2);
 				{
 				this.state = 65;
@@ -426,9 +426,9 @@ export class EffectContext extends ParserRuleContext {
 		super.copyFrom(ctx);
 	}
 }
-export class ConcreteContext extends EffectContext {
-	public concreteEffect(): ConcreteEffectContext {
-		return this.getRuleContext(0, ConcreteEffectContext);
+export class ConcreteEffectContext extends EffectContext {
+	public concrete(): ConcreteContext {
+		return this.getRuleContext(0, ConcreteContext);
 	}
 	constructor(ctx: EffectContext) {
 		super(ctx.parent, ctx.invokingState);
@@ -436,20 +436,20 @@ export class ConcreteContext extends EffectContext {
 	}
 	// @Override
 	public enterRule(listener: EffectListener): void {
-		if (listener.enterConcrete) {
-			listener.enterConcrete(this);
+		if (listener.enterConcreteEffect) {
+			listener.enterConcreteEffect(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: EffectListener): void {
-		if (listener.exitConcrete) {
-			listener.exitConcrete(this);
+		if (listener.exitConcreteEffect) {
+			listener.exitConcreteEffect(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: EffectVisitor<Result>): Result {
-		if (visitor.visitConcrete) {
-			return visitor.visitConcrete(this);
+		if (visitor.visitConcreteEffect) {
+			return visitor.visitConcreteEffect(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
@@ -490,7 +490,7 @@ export class ArrowEffectContext extends EffectContext {
 		}
 	}
 }
-export class VarEffectContext extends EffectContext {
+export class QuantifiedEffectContext extends EffectContext {
 	public IDENTIFIER(): TerminalNode { return this.getToken(EffectParser.IDENTIFIER, 0); }
 	constructor(ctx: EffectContext) {
 		super(ctx.parent, ctx.invokingState);
@@ -498,20 +498,20 @@ export class VarEffectContext extends EffectContext {
 	}
 	// @Override
 	public enterRule(listener: EffectListener): void {
-		if (listener.enterVarEffect) {
-			listener.enterVarEffect(this);
+		if (listener.enterQuantifiedEffect) {
+			listener.enterQuantifiedEffect(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: EffectListener): void {
-		if (listener.exitVarEffect) {
-			listener.exitVarEffect(this);
+		if (listener.exitQuantifiedEffect) {
+			listener.exitQuantifiedEffect(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: EffectVisitor<Result>): Result {
-		if (visitor.visitVarEffect) {
-			return visitor.visitVarEffect(this);
+		if (visitor.visitQuantifiedEffect) {
+			return visitor.visitQuantifiedEffect(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
@@ -519,21 +519,21 @@ export class VarEffectContext extends EffectContext {
 }
 
 
-export class ConcreteEffectContext extends ParserRuleContext {
+export class ConcreteContext extends ParserRuleContext {
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
 	}
 	// @Override
-	public get ruleIndex(): number { return EffectParser.RULE_concreteEffect; }
-	public copyFrom(ctx: ConcreteEffectContext): void {
+	public get ruleIndex(): number { return EffectParser.RULE_concrete; }
+	public copyFrom(ctx: ConcreteContext): void {
 		super.copyFrom(ctx);
 	}
 }
-export class ReadOnlyContext extends ConcreteEffectContext {
+export class ReadOnlyContext extends ConcreteContext {
 	public vars(): VarsContext {
 		return this.getRuleContext(0, VarsContext);
 	}
-	constructor(ctx: ConcreteEffectContext) {
+	constructor(ctx: ConcreteContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
 	}
@@ -558,11 +558,11 @@ export class ReadOnlyContext extends ConcreteEffectContext {
 		}
 	}
 }
-export class UpdateOnlyContext extends ConcreteEffectContext {
+export class UpdateOnlyContext extends ConcreteContext {
 	public vars(): VarsContext {
 		return this.getRuleContext(0, VarsContext);
 	}
-	constructor(ctx: ConcreteEffectContext) {
+	constructor(ctx: ConcreteContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
 	}
@@ -587,7 +587,7 @@ export class UpdateOnlyContext extends ConcreteEffectContext {
 		}
 	}
 }
-export class ReadAndUpdateContext extends ConcreteEffectContext {
+export class ReadAndUpdateContext extends ConcreteContext {
 	public vars(): VarsContext[];
 	public vars(i: number): VarsContext;
 	public vars(i?: number): VarsContext | VarsContext[] {
@@ -597,7 +597,7 @@ export class ReadAndUpdateContext extends ConcreteEffectContext {
 			return this.getRuleContext(i, VarsContext);
 		}
 	}
-	constructor(ctx: ConcreteEffectContext) {
+	constructor(ctx: ConcreteContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
 	}
@@ -622,8 +622,8 @@ export class ReadAndUpdateContext extends ConcreteEffectContext {
 		}
 	}
 }
-export class PureContext extends ConcreteEffectContext {
-	constructor(ctx: ConcreteEffectContext) {
+export class PureContext extends ConcreteContext {
+	constructor(ctx: ConcreteContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
 	}
@@ -660,7 +660,7 @@ export class VarsContext extends ParserRuleContext {
 		super.copyFrom(ctx);
 	}
 }
-export class ConcreteVarsContext extends VarsContext {
+export class ConcreteVariablesContext extends VarsContext {
 	public stateVarRef(): StateVarRefContext[];
 	public stateVarRef(i: number): StateVarRefContext;
 	public stateVarRef(i?: number): StateVarRefContext | StateVarRefContext[] {
@@ -676,26 +676,26 @@ export class ConcreteVarsContext extends VarsContext {
 	}
 	// @Override
 	public enterRule(listener: EffectListener): void {
-		if (listener.enterConcreteVars) {
-			listener.enterConcreteVars(this);
+		if (listener.enterConcreteVariables) {
+			listener.enterConcreteVariables(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: EffectListener): void {
-		if (listener.exitConcreteVars) {
-			listener.exitConcreteVars(this);
+		if (listener.exitConcreteVariables) {
+			listener.exitConcreteVariables(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: EffectVisitor<Result>): Result {
-		if (visitor.visitConcreteVars) {
-			return visitor.visitConcreteVars(this);
+		if (visitor.visitConcreteVariables) {
+			return visitor.visitConcreteVariables(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
 	}
 }
-export class QuantificationContext extends VarsContext {
+export class QuantifiedVariablesContext extends VarsContext {
 	public IDENTIFIER(): TerminalNode[];
 	public IDENTIFIER(i: number): TerminalNode;
 	public IDENTIFIER(i?: number): TerminalNode | TerminalNode[] {
@@ -711,20 +711,20 @@ export class QuantificationContext extends VarsContext {
 	}
 	// @Override
 	public enterRule(listener: EffectListener): void {
-		if (listener.enterQuantification) {
-			listener.enterQuantification(this);
+		if (listener.enterQuantifiedVariables) {
+			listener.enterQuantifiedVariables(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: EffectListener): void {
-		if (listener.exitQuantification) {
-			listener.exitQuantification(this);
+		if (listener.exitQuantifiedVariables) {
+			listener.exitQuantifiedVariables(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: EffectVisitor<Result>): Result {
-		if (visitor.visitQuantification) {
-			return visitor.visitQuantification(this);
+		if (visitor.visitQuantifiedVariables) {
+			return visitor.visitQuantifiedVariables(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
