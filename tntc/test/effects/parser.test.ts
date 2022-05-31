@@ -98,4 +98,23 @@ describe('parseEffect', () => {
       })
     }
   })
+
+  it('throws error when effect is invalid', () => {
+    const effect = parseEffect('Read[v] & Read[w]')
+
+    assert.isTrue(effect.isLeft())
+    if (effect.isLeft()) {
+      const { value } = effect
+      assert.sameDeepMembers(value, [
+        {
+          explanation: "token recognition error at: ' &'",
+          locs: [{ start: { line: 0, col: 7, index: 0 }, end: { line: 0, col: 7, index: 0 } }],
+        },
+        {
+          explanation: "token recognition error at: ' R'",
+          locs: [{ start: { line: 0, col: 9, index: 0 }, end: { line: 0, col: 9, index: 0 } }],
+        },
+      ])
+    }
+  })
 })

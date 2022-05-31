@@ -17,7 +17,6 @@ export function parseEffect (effectString: string): Either<any, Effect> {
       line: number,
       charPositionInLine: number,
       msg: string) => {
-      //
       const len = offendingSymbol
         ? offendingSymbol.stopIndex - offendingSymbol.startIndex
         : 0
@@ -51,13 +50,9 @@ export function parseEffect (effectString: string): Either<any, Effect> {
     const listener = new ToEffectVisitor()
     ParseTreeWalker.DEFAULT.walk(listener as EffectListener, tree)
 
-    // if (listener.errors.length > 0) {
-    //       return left(listener.errors)
-    //     } else
     if (listener.effect !== undefined) {
       return right(listener.effect)
     } else {
-      // istanbul ignore next
       throw new Error('this should be impossible: effect is undefined')
     }
   }
