@@ -1,3 +1,17 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Parsing for effects. To be used internally for the moment.
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { CharStreams, CommonTokenStream } from 'antlr4ts'
 import { EffectLexer } from '../generated/EffectLexer'
 import * as p from '../generated/EffectParser'
@@ -8,7 +22,15 @@ import { ToEffectVisitor } from './ToEffectVisitor'
 
 import { Either, right, left } from '@sweet-monads/either'
 
-export function parseEffect (effectString: string): Either<any, Effect> {
+/**
+ * Parses an effect string into an Effect
+ *
+ * @param effectString the string to be parsed
+ *
+ * @returns the parsed effect when the string is a valid effect.
+ *          Otherwise, a list of parsing errors.
+ */
+export function parseEffect (effectString: string): Either<any[], Effect> {
   const errorMessages: any[] = []
   // error listener to report lexical and syntax errors
   const errorListener: any = {
@@ -46,7 +68,7 @@ export function parseEffect (effectString: string): Either<any, Effect> {
     // report the errors
     return left(errorMessages)
   } else {
-    // walk through the AST and construct the IR
+    // walk through the AST and construct the Effect
     const listener = new ToEffectVisitor()
     ParseTreeWalker.DEFAULT.walk(listener as EffectListener, tree)
 
