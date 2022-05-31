@@ -1619,7 +1619,7 @@ export class TntParser extends Parser {
 								this.state = 407;
 								this.identOrHole();
 								this.state = 408;
-								this.match(TntParser.T__17);
+								this.match(TntParser.T__18);
 								this.state = 409;
 								this.expr(0);
 								}
@@ -1689,7 +1689,7 @@ export class TntParser extends Parser {
 					_la = this._input.LA(1);
 				}
 				this.state = 428;
-				this.match(TntParser.T__17);
+				this.match(TntParser.T__18);
 				this.state = 429;
 				this.expr(0);
 				}
@@ -1718,7 +1718,7 @@ export class TntParser extends Parser {
 					_la = this._input.LA(1);
 				}
 				this.state = 440;
-				this.match(TntParser.T__17);
+				this.match(TntParser.T__18);
 				this.state = 441;
 				this.expr(0);
 				this.state = 442;
@@ -1749,7 +1749,7 @@ export class TntParser extends Parser {
 					_la = this._input.LA(1);
 				}
 				this.state = 453;
-				this.match(TntParser.T__17);
+				this.match(TntParser.T__18);
 				this.state = 454;
 				this.expr(0);
 				this.state = 455;
@@ -2429,7 +2429,7 @@ export class TntParser extends Parser {
 		"\u0192\u0193\x07<\x02\x02\u0193\u01A2\x05\x1C\x0F\x02\u0194\u0195\f\x0E" +
 		"\x02\x02\u0195\u019D\x07-\x02\x02\u0196\u0197\x07\x19\x02\x02\u0197\u0198" +
 		"\x07!\x02\x02\u0198\u0199\x07\x07\x02\x02\u0199\u019A\x05\x14\v\x02\u019A" +
-		"\u019B\x07\x14\x02\x02\u019B\u019C\x05\x10\t\x02\u019C\u019E\x03\x02\x02" +
+		"\u019B\x07\x15\x02\x02\u019B\u019C\x05\x10\t\x02\u019C\u019E\x03\x02\x02" +
 		"\x02\u019D\u0196\x03\x02\x02\x02\u019E\u019F\x03\x02\x02\x02\u019F\u019D" +
 		"\x03\x02\x02\x02\u019F\u01A0\x03\x02\x02\x02\u01A0\u01A2\x03\x02\x02\x02" +
 		"\u01A1\u0165\x03\x02\x02\x02\u01A1\u0168\x03\x02\x02\x02\u01A1\u016B\x03" +
@@ -2442,18 +2442,18 @@ export class TntParser extends Parser {
 		"\x02\u01A6\u01AB\x05\x14\v\x02\u01A7\u01A8\x07\x13\x02\x02\u01A8\u01AA" +
 		"\x05\x14\v\x02\u01A9\u01A7\x03\x02\x02\x02\u01AA\u01AD\x03\x02\x02\x02" +
 		"\u01AB\u01A9\x03\x02\x02\x02\u01AB\u01AC\x03\x02\x02\x02\u01AC\u01AE\x03" +
-		"\x02\x02\x02\u01AD\u01AB\x03\x02\x02\x02\u01AE\u01AF\x07\x14\x02\x02\u01AF" +
+		"\x02\x02\x02\u01AD\u01AB\x03\x02\x02\x02\u01AE\u01AF\x07\x15\x02\x02\u01AF" +
 		"\u01B0\x05\x10\t\x02\u01B0\u01CC\x03\x02\x02\x02\u01B1\u01B2\x07:\x02" +
 		"\x02\u01B2\u01B7\x05\x14\v\x02\u01B3\u01B4\x07\x13\x02\x02\u01B4\u01B6" +
 		"\x05\x14\v\x02\u01B5\u01B3\x03\x02\x02\x02\u01B6\u01B9\x03\x02\x02\x02" +
 		"\u01B7\u01B5\x03\x02\x02\x02\u01B7\u01B8\x03\x02\x02\x02\u01B8\u01BA\x03" +
-		"\x02\x02\x02\u01B9\u01B7\x03\x02\x02\x02\u01BA\u01BB\x07\x14\x02\x02\u01BB" +
+		"\x02\x02\x02\u01B9\u01B7\x03\x02\x02\x02\u01BA\u01BB\x07\x15\x02\x02\u01BB" +
 		"\u01BC\x05\x10\t\x02\u01BC\u01BD\x07;\x02\x02\u01BD\u01CC\x03\x02\x02" +
 		"\x02\u01BE\u01BF\x07\x04\x02\x02\u01BF\u01C4\x05\x14\v\x02\u01C0\u01C1" +
 		"\x07\x13\x02\x02\u01C1\u01C3\x05\x14\v\x02\u01C2\u01C0\x03\x02\x02\x02" +
 		"\u01C3\u01C6\x03\x02\x02\x02\u01C4\u01C2\x03\x02\x02\x02\u01C4\u01C5\x03" +
 		"\x02\x02\x02\u01C5\u01C7\x03\x02\x02\x02\u01C6\u01C4\x03\x02\x02\x02\u01C7" +
-		"\u01C8\x07\x14\x02\x02\u01C8\u01C9\x05\x10\t\x02\u01C9\u01CA\x07\x05\x02" +
+		"\u01C8\x07\x15\x02\x02\u01C8\u01C9\x05\x10\t\x02\u01C9\u01CA\x07\x05\x02" +
 		"\x02\u01CA\u01CC\x03\x02\x02\x02\u01CB\u01A6\x03\x02\x02\x02\u01CB\u01B1" +
 		"\x03\x02\x02\x02\u01CB\u01BE\x03\x02\x02\x02\u01CC\x13\x03\x02\x02\x02" +
 		"\u01CD\u01CE\t\x07\x02\x02\u01CE\x15\x03\x02\x02\x02\u01CF\u01D0\t\b\x02" +

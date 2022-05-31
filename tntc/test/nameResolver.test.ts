@@ -24,14 +24,14 @@ describe('nameResolver', () => {
 
   describe('operator definitions', () => {
     it('finds top level definitions', () => {
-      const tntModule = buildModuleWithExpressions(['TEST_CONSTANT.filter(a -> unscoped_def > 0)'])
+      const tntModule = buildModuleWithExpressions(['TEST_CONSTANT.filter(a => unscoped_def > 0)'])
 
       const result = resolveNames(tntModule, tables, dummyScopeTree)
       assert.deepEqual(result, { kind: 'ok' })
     })
 
     it('finds scoped definitions', () => {
-      const tntModule = buildModuleWithExpressions(['TEST_CONSTANT.filter(a -> scoped_def > 0)'])
+      const tntModule = buildModuleWithExpressions(['TEST_CONSTANT.filter(a => scoped_def > 0)'])
       const dummyScopeTree: ScopeTree = {
         value: BigInt(0),
         children: [
@@ -70,7 +70,7 @@ describe('nameResolver', () => {
     })
 
     it('find unresolved names inside lambdas', () => {
-      const tntModule = buildModuleWithExpressions(['Nat.filter(a -> x > 1)'])
+      const tntModule = buildModuleWithExpressions(['Nat.filter(a => x > 1)'])
 
       const result = resolveNames(tntModule, tables, dummyScopeTree)
       const expectedResult: NameResolutionResult = {
@@ -83,7 +83,7 @@ describe('nameResolver', () => {
     })
 
     it('find unresolved names inside lambdas', () => {
-      const tntModule = buildModuleWithExpressions(['Nat.filter(a -> x > 1)'])
+      const tntModule = buildModuleWithExpressions(['Nat.filter(a => x > 1)'])
 
       const result = resolveNames(tntModule, tables, dummyScopeTree)
       const expectedResult: NameResolutionResult = {

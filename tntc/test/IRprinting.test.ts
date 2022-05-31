@@ -6,13 +6,13 @@ import { definitionToString, expressionToString, moduleToString, typeToString } 
 describe('moduleToString', () => {
   const tntModule = buildModuleWithDefs([
     'var S: set(int)',
-    'val f = S.filter(x -> x + 1)',
+    'val f = S.filter(x => x + 1)',
   ])
 
   it('pretty prints the module', () => {
     const expectedModule = `module wrapper {
   var S: set(int)
-  val f = filter(S, (x -> iadd(x, 1)))
+  val f = filter(S, (x => iadd(x, 1)))
 }`
     assert.deepEqual(moduleToString(tntModule), expectedModule)
   })
@@ -20,14 +20,14 @@ describe('moduleToString', () => {
 
 describe('definitionToString', () => {
   it('pretty prints op definitions', () => {
-    const def = buildDef('val f = S.filter(x -> x + 1)')
-    const expectedDef = 'val f = filter(S, (x -> iadd(x, 1)))'
+    const def = buildDef('val f = S.filter(x => x + 1)')
+    const expectedDef = 'val f = filter(S, (x => iadd(x, 1)))'
     assert.deepEqual(definitionToString(def), expectedDef)
   })
 
   it('pretty prints typed op definitions', () => {
-    const def = buildDef('val f: set(int) = S.filter(x -> x + 1)')
-    const expectedDef = 'val f: set(int) = filter(S, (x -> iadd(x, 1)))'
+    const def = buildDef('val f: set(int) = S.filter(x => x + 1)')
+    const expectedDef = 'val f: set(int) = filter(S, (x => iadd(x, 1)))'
     assert.deepEqual(definitionToString(def), expectedDef)
   })
 
@@ -114,14 +114,14 @@ describe('expressionToString', () => {
   })
 
   it('pretty prints lambda expressions', () => {
-    const expr = buildExpression('S.map(x -> f(x))')
-    const expectedExpr = 'map(S, (x -> f(x)))'
+    const expr = buildExpression('S.map(x => f(x))')
+    const expectedExpr = 'map(S, (x => f(x)))'
     assert.deepEqual(expressionToString(expr), expectedExpr)
   })
 
   it('multi argument lambdas retain correct semantics', () => {
-    const expr = buildExpression('foo((f, b -> f(b)), 1, 2)')
-    const expectedExpr = 'foo((f, b -> f(b)), 1, 2)'
+    const expr = buildExpression('foo((f, b => f(b)), 1, 2)')
+    const expectedExpr = 'foo((f, b => f(b)), 1, 2)'
     assert.deepEqual(expressionToString(expr), expectedExpr)
   })
 

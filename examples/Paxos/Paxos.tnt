@@ -14,8 +14,8 @@ const Acceptor: set(str)
 const Quorum: set(set(str))
 
 assume _ = (
-    & Quorum.forall(Q -> Q subseteq Acceptor)
-    & tuples(Quorum, Quorum).forall(Q1, Q2 -> Q1 intersect Q2 != set())
+    & Quorum.forall(Q => Q subseteq Acceptor)
+    & tuples(Quorum, Quorum).forall(Q1, Q2 => Q1 intersect Q2 != set())
 )
       
 val Ballot = Nat
@@ -32,19 +32,19 @@ val None = -1
  ***************************************************************************/
 val Message =
     val M1a =
-      Ballot.map(b -> { tag: "1a", bal: b })
+      Ballot.map(b => { tag: "1a", bal: b })
 
     val M1b =
       tuples(Acceptor, Ballot, Ballot union set(-1), Value union set(None))
-        .map(a, b, mb, mv -> { tag: "1b", acc: a, bal: b, mbal: mb, mval: mv })
+        .map(a, b, mb, mv => { tag: "1b", acc: a, bal: b, mbal: mb, mval: mv })
 
     val M2a =
       tuples(Ballot, Value)
-        .map(b, v -> { tag: "2a", bal: b, value: v })
+        .map(b, v => { tag: "2a", bal: b, value: v })
 
     val M2b =
       tuples(Acceptor, Ballot, Value)
-        .map(a, b, v -> { tag: "2b", acc: a, bal: b, value: v })
+        .map(a, b, v => { tag: "2b", acc: a, bal: b, value: v })
 
     M1a union M1b union M2a union M2b
 //-----------------------------------------------------------------------------
@@ -99,9 +99,9 @@ pred TypeOK = (
 )
 
 action Init = {
-    & maxBal  <- Acceptor.mapOf(_ -> -1)
-    & maxVBal <- Acceptor.mapOf(_ -> -1)
-    & maxVal  <- Acceptor.mapOf(_ -> None)
+    & maxBal  <- Acceptor.mapOf(_ => -1)
+    & maxVBal <- Acceptor.mapOf(_ => -1)
+    & maxVal  <- Acceptor.mapOf(_ => None)
     & msgs    <- set()
 }
 
@@ -130,8 +130,8 @@ action Phase1a(b) = {
 (* maxVBal[a] and maxVal[a].                                               *)
 (***************************************************************************/
 action Phase1b(a) = {
-    msgs.filter(m -> m.tag == "1a")
-        .guess({ m -> {
+    msgs.filter(m => m.tag == "1a")
+        .guess({ m => {
       & m.bal > maxBal[a]
       & maxBal <- maxBal.update(a, m.bal)
       & Send({ tag: "1b", acc: a, bal: m.bal, 
@@ -160,22 +160,22 @@ action Phase1b(a) = {
 (* greater than b (thereby promising not to vote in ballot b).             *)
 (***************************************************************************/
 action Phase2a(b, v) = {
-  & not(msgs.filter(m -> m.tag == "2a")
-            .exists(m -> m.bal == b))
-  & Quorum exists (Q ->
-        val Q1b = msgs.filter(m -> m.tag == "1b")
-                      .filter(m -> (
+  & not(msgs.filter(m => m.tag == "2a")
+            .exists(m => m.bal == b))
+  & Quorum exists (Q =>
+        val Q1b = msgs.filter(m => m.tag == "1b")
+                      .filter(m => (
                             & m.acc in Q
                             & m.bal == b
                             ))
-        val Q1bv = Q1b.filter(m -> m.mbal >= 0)
+        val Q1bv = Q1b.filter(m => m.mbal >= 0)
         {
-            & Q.forall(a -> Q1b.exists(m -> m.acc == a))
+            & Q.forall(a => Q1b.exists(m => m.acc == a))
             & (
                 | Q1bv == set()
-                | Q1bv.exists(m -> (
+                | Q1bv.exists(m => (
                     & m.mval == v
-                    & Q1bv forall ( mm -> m.mbal >= mm.mbal )
+                    & Q1bv forall ( mm => m.mbal >= mm.mbal )
                   ) )
               )
         }
@@ -192,8 +192,8 @@ action Phase2a(b, v) = {
 (* phase 2b message announcing its vote.  It also sets maxBal[a] to the    *)
 (* message's.  ballot number                                               *)
 (***************************************************************************/
-action Phase2b(a) = msgs.filter(m -> m.tag == "2a")
-                        .guess({ m -> {
+action Phase2b(a) = msgs.filter(m => m.tag == "2a")
+                        .guess({ m => {
                               & m.bal >= maxBal[a]
                               & maxBal  <- maxBal.update(a, m.bal)
                               & maxVBal <- maxVBal.update(a, m.bal)
@@ -212,12 +212,12 @@ action Phase2b(a) = msgs.filter(m -> m.tag == "2a")
 (* Below are defined the next-state action and the complete spec.          *)
 (***************************************************************************/
 action Next = {
-        | Ballot.guess({ b -> {
+        | Ballot.guess({ b => {
                             | Phase1a(b)
-                            | Value guess { v -> Phase2a(b, v) }
+                            | Value guess { v => Phase2a(b, v) }
                        }})
 
-        | Acceptor.guess({ a -> { Phase1b(a) | Phase2b(a) } })
+        | Acceptor.guess({ a => { Phase1b(a) | Phase2b(a) } })
 }
 
 temporal Spec = Init and always(stutter(Next, vars))
@@ -232,10 +232,10 @@ temporal Spec = Init and always(stutter(Next, vars))
 (* the array `votes' describing the votes cast by the acceptors is defined *)
 (* as follows.                                                             *)
 (***************************************************************************/
-val votes = Acceptor mapOf ( a ->
-           msgs.filter(mm -> mm.tag == "2b")
-               .filter(mm -> mm.acc == a)
-               .map(m -> (m.bal, m.value))
+val votes = Acceptor mapOf ( a =>
+           msgs.filter(mm => mm.tag == "2b")
+               .filter(mm => mm.acc == a)
+               .map(m => (m.bal, m.value))
 )
 /***************************************************************************)
 (* We now instantiate module Voting, substituting the constants Value,     *)
@@ -262,20 +262,20 @@ module V = Voting(*)
 (***************************************************************************/
 pred Inv = (
        & TypeOK
-       & Acceptor forall ( a ->
+       & Acceptor forall ( a =>
            if (maxVBal[a] == -1)
            maxVal[a] == None
            else (maxVBal[a], maxVal[a]) in votes[a]
          )
-       & msgs.filter(m -> m.tag == "1b")
-             .forall(m ->
+       & msgs.filter(m => m.tag == "1b")
+             .forall(m =>
                 (maxBal[m.acc] >= m.bal
                     and ((m.mbal >= 0) implies (m.mbal, m.mval) in votes[m.acc]))
               )
-       & val M2as = msgs filter ( m -> m.tag == "2a" )
-         M2as.forall( m -> (
-            & Quorum exists( Q -> V::ShowsSafeAt(Q, m.bal, m.value) )
-            & M2as forall ( mm ->
+       & val M2as = msgs filter ( m => m.tag == "2a" )
+         M2as.forall( m => (
+            & Quorum exists( Q => V::ShowsSafeAt(Q, m.bal, m.value) )
+            & M2as forall ( mm =>
                 (mm.bal == m.bal) implies (mm.value == m.value)
               )
          ) )

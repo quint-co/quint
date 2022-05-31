@@ -3,11 +3,12 @@
 *TNT is not TLA+*
 
 | Revision | Date       | Author                                                  |
-| :------- | :--------- | :-----------------------------------------              |
-| 22       | 29.03.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira |
+|:---------|:-----------|:--------------------------------------------------------|
+| 22       | 10.05.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
+
 
 ## Identifiers and strings
 
@@ -589,13 +590,21 @@ Alternatively, you can wrap an expression `e` in parentheses: `(e)`.
 In this case, `e` is not allowed to be in the Action-mode. If `e` is in the
 Action mode, the parser *must* issue an error.
 
-### Lambdas
+### Lambdas (aka Anonymous Operators)
+
+As noted when we introduced [types](#types) and [operator
+definitions](#operator-definitions), the type of operators is specified using
+the syntax `(a1, ..., an) => b`, for an operator that takes arguments of types
+`a1` to `an` to an expression of type `b`. _Anonymous operators expressions_,
+known in TLA+ as "lambdas", can be constructed with the corresponding syntax.
+`(x1, ..., xn) => e` is an anonymous operator which, when applied to expressions
+`x1` to `xn`, reduces to the expression `e`.
 
 Depending on the mode, an anonymous operator of one argument is defined as:
 
-- In the Action mode: `{ x -> e }`
-- In a mode different from the Action mode: `(x -> e)`
-- To avoid too many parentheses, `(x -> e)` may be written as: `x -> e`
+- In the Action mode: `{ x => e }`
+- In a mode different from the Action mode: `(x => e)`
+- To avoid too many parentheses, `(x => e)` may be written as: `x => e`
 
 Compare this to the TLA+2 syntax:
 
@@ -605,9 +614,9 @@ LAMBDA x: e
 
 Similarly, an anonymous operator of `n` arguments is defined as:
 
-- In the Action mode: `{ x_1, ..., x_n -> e }`
+- In the Action mode: `{ x_1, ..., x_n => e }`
 - In a mode different from the Action mode:
-    `(x_1, ..., x_n -> e)` or `x_1, ..., x_n -> e`
+    `(x_1, ..., x_n => e)` or `x_1, ..., x_n => e`
 
 Compare this to the TLA+2 syntax:
 
@@ -618,12 +627,12 @@ LAMBDA x_1, ..., x_n: e
 As is common, we can skip parameter names, if we don't need them:
 
 ```
-{ _ -> e }
-(_ -> e)
-_ -> e
-{ _, ..., _ -> e }
-(_, ..., _ -> e)
-_, ..., _ -> e
+{ _ => e }
+(_ => e)
+_ => e
+{ _, ..., _ => e }
+(_, ..., _ => e)
+_, ..., _ => e
 ```
 
 Note that lambdas can be only passed as arguments to other operators.  They
@@ -919,12 +928,12 @@ We introduce two operators that are semantically equivalent to `\E x \in S: P`
 of TLA+:
 
 ```scala
-S exists { x -> P }
-S.exists( x -> P )
-exists(S, { x -> P } )
-S guess  { x -> P }
-S.guess( x -> P )
-guess(S, { x -> P })
+S exists { x => P }
+S.exists( x => P )
+exists(S, { x => P } )
+S guess  { x => P }
+S.guess( x => P )
+guess(S, { x => P })
 ```
 
 *The intended difference between `exists` and `guess` is that evaluation of
@@ -947,9 +956,9 @@ The other operators are introduced and explained in code directly.
 
 ```scala
 // \A x \in S: P
-S forall (x -> P)
-S.forall(x -> P)
-forall(S, (x -> P))
+S forall (x => P)
+S.forall(x => P)
+forall(S, (x => P))
 // set membership: e \in S
 e in S
 e.in(S)
@@ -978,17 +987,17 @@ S subseteq T
 S.subseteq(T)
 subseteq(S, T)
 // set comprehension (map): { e: x \in S }
-S map (x -> e)
-S.map(x -> e)
-map(S, (x -> e))
+S map (x => e)
+S.map(x => e)
+map(S, (x => e))
 // set comprehension (filter): { x \in S: P }
-S filter (x -> P)
-S.filter(x -> P)
-filter(S, (x -> P))
+S filter (x => P)
+S.filter(x => P)
+filter(S, (x => P))
 // set folding: you can write such a recursive operator in TLA+
-S fold init, (v, x -> e)
-S.fold(init, (v, x -> e))
-fold(S, init, (v, x -> e))
+S fold init, (v, x => e)
+S.fold(init, (v, x => e))
+fold(S, init, (v, x => e))
 // SUBSET S
 S powerset
 S.powerset()
@@ -1007,7 +1016,7 @@ S choose_some
 S.choose_some()
 // There is no special syntax for CHOOSE x \in S: P
 // Instead, you can filter a set and then pick an element of it.
-S.filter(x -> P).choose_some
+S.filter(x => P).choose_some
 ```
 
 These operators are defined in the module `FiniteSets` in TLA+. TNT has these
@@ -1040,9 +1049,9 @@ f keys
 f.keys()
 keys(f)
 // function constructor: [ x \in S |-> e ]
-S mapOf (x -> e)
-S.mapOf(x -> e)
-mapOf(S, (x -> e))
+S mapOf (x => e)
+S.mapOf(x => e)
+mapOf(S, (x => e))
 // a set of functions: [ S -> T ]
 S setOfMaps T
 S.setOfMaps(T)
@@ -1054,9 +1063,9 @@ update(f, e1, e2)
 // [f EXCEPT ![e1] = e2, ![e3] = e4]
 (f update e1, e2) update e3, e4
 // [f EXCEPT ![e1] = @ + y]
-f updateAs e1, (old -> old + y)
-f.updateAs(e1, (old -> old + y))
-updateAs(f, e1, (old -> old + y))
+f updateAs e1, (old => old + y)
+f.updateAs(e1, (old => old + y))
+updateAs(f, e1, (old => old + y))
 // an equivalent of (k :> v) @@ f when using the module TLC
 f put k, v
 f.put(k, v)
@@ -1074,7 +1083,7 @@ put(k, v)
 rec(f_1, e_1, ..., f_n, e_n)
 // Set of records: [ f_1: S_1, ..., f_n: S_n ].
 // No operator for it. Use a set comprehension:
-tuples(S_1, ..., S_n).map(a_1, ..., a_n -> { f_1: a_1, ..., f_n: a_n })
+tuples(S_1, ..., S_n).map(a_1, ..., a_n => { f_1: a_1, ..., f_n: a_n })
 // access a record field: r.fld
 r.fld           // both r and fld are identifiers
 field(r, "fld") // r is an identifier, "fld" is a string literal
@@ -1149,7 +1158,7 @@ set elements by their tag. Using the above definition of `Entries`, we can
 filter it as follows:
 
 ```scala
-Entries.filter(e -> e.tag == "Cat")
+Entries.filter(e => e.tag == "Cat")
 ```
 
 As expected from the semantics of `filter`, the above set is equal to:
@@ -1176,9 +1185,9 @@ distinction over tags:
 ```scala
 pred isValid(entry): ENTRY_TYPE => bool =
   entry match
-     | "Cat": cat ->
+     | "Cat": cat =>
        name != "" and cat.year > 0
-     | "Date": date ->
+     | "Date": date =>
        date.day in (1 to 31) and date.month in (1 to 12) and date.year > 0
 ```
 
@@ -1197,19 +1206,19 @@ about it, wrap the whole match-expression with `(...)`.
 *Grammar*:
 
 ```bnf
-  expr "match" ("|" string ":" (identifier | "_") "->" expr)+
+  expr "match" ("|" string ":" (identifier | "_") "=>" expr)+
 ```
 
 *Normal form*: Consider the match operator:
 
 ```scala
   ex match
-    | tag_1: x_1 -> ex_1
+    | tag_1: x_1 => ex_1
     ...
-    | tag_n: x_n -> ex_n
+    | tag_n: x_n => ex_n
 ```
 
-Its normal form is `union_match(ex, tag_1, (x_1 -> ex_1), ..., (x_n -> ex_n))`.
+Its normal form is `union_match(ex, tag_1, (x_1 => ex_1), ..., (x_n => ex_n))`.
 
 *Mode:* Stateless, State. Other modes are not allowed.
 
@@ -1298,17 +1307,17 @@ slice(s, j, k)
 s select Test
 select(s, Test)
 // in particular, we can use anonymous operators
-s select (e -> P)
+s select (e => P)
 // Left fold. There is no standard operator for that in TLA+,
 // but you can define it with a recursive operator.
-s foldl init, (i, v -> e)
-s.foldl(init, (i, v -> e))
-foldl(s, init, (i, v -> e))
+s foldl init, (i, v => e)
+s.foldl(init, (i, v => e))
+foldl(s, init, (i, v => e))
 // Right fold. There is no standard operator for that in TLA+,
 // but you can define it with a recursive operator.
-s foldr init, (i, v -> e)
-s.foldr(init, (i, v -> e))
-foldr(s, init, (i, v -> e))
+s foldr init, (i, v => e)
+s.foldr(init, (i, v => e))
+foldr(s, init, (i, v => e))
 ```
 
 *Mode:* Stateless, State. Other modes are not allowed.
@@ -1648,9 +1657,9 @@ that you will use them is very low. However, for the sake of completeness we
 introduce their counterparts in TNT:
 
 ```
-exists_const(x -> P)
-forall_const(x -> P)
-choose_const(x -> P)
+exists_const(x => P)
+forall_const(x => P)
+choose_const(x => P)
 ```
 
 We add the suffix "const" to the operator names to stress the fact that these
@@ -1678,14 +1687,14 @@ The most common example is shown below:
     const Quorum: set(set(str))
     // no const, no var below
     // ...
-    pred chosen = Value filter (v -> Ballot exists (b -> ChosenAt(b, v)))
+    pred chosen = Value filter (v => Ballot exists (b => ChosenAt(b, v)))
     // ...
   }
 
 // in MC.tnt
   module MC {
     val Acceptor = set("p1", "p2", "p3")
-    val Quorum = MC_Acceptor.powerset.filter(Q -> Q.cardinality > 1)
+    val Quorum = MC_Acceptor.powerset.filter(Q => Q.cardinality > 1)
 
     // an instance of Voting that has the name "V"
     module V = Voting(Value = set(0, 1), Acceptor = Acceptor, Quorum = Quorum)
