@@ -83,7 +83,9 @@ type Substitution =
 export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitution[]> {
   const location = `Trying to unify ${effectToString(ea)} and ${effectToString(eb)}`
 
-  const simplificationResults = mergeInMany([ea, eb].map(simplify))
+  const simplificationResults = mergeInMany([ea, eb].map(e => {
+    return e.kind === 'concrete' ? simplifyConcreteEffect(e) : right(e)
+  }))
   return simplificationResults.chain(([e1, e2]): Either<Error, Substitution[]> => {
     if (e1.kind === 'arrow' && e2.kind === 'arrow') {
       return unifyArrows(location, e1, e2)
@@ -135,7 +137,7 @@ function unifyConcrete (location: string, e1: ConcreteEffect, e2: ConcreteEffect
     const effectsWithReadSubstitution = mergeInMany([
       applySubstitution(subs, e1),
       applySubstitution(subs, e2),
-    ]).map(effects => effects.map(ensureEffect))
+    ]).map(effects => effects.map(ensureConcreteEffect))
 
     return effectsWithReadSubstitution.chain(([e1s, e2s]) => unifyVariables(e1s.update, e2s.update))
   })
@@ -177,11 +179,7 @@ function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substi
   }
 }
 
-function simplify (e: Effect): Either<ErrorTree, Effect> {
-  if (e.kind !== 'concrete') {
-    return right(e)
-  }
-
+function simplifyConcreteEffect (e: ConcreteEffect): Either<ErrorTree, Effect> {
   const read = simplifyVariables(e.read, false)
   const update = simplifyVariables(e.update, true)
 
@@ -274,7 +272,7 @@ function applySubstitution (subs: Substitution[], e: Effect): Either<ErrorTree, 
     }
   }
 
-  return result.chain(simplify)
+  return result.chain(e => e.kind === 'concrete' ? simplifyConcreteEffect(e) : right(e))
 }
 
 function applySubstitutionToVariables (subs: Substitution[], variables: Variables): Variables {
@@ -304,7 +302,7 @@ function buildErrorTree (location: string, errors: Error): ErrorTree {
 }
 
 // Ensure the type system that an effect has the 'concrete' kind
-function ensureEffect (e: Effect): { kind: 'concrete', read: Variables, update: Variables } {
+function ensureConcreteEffect (e: Effect): ConcreteEffect {
   if (e.kind !== 'concrete') {
     throw new Error(`Unexpected format on ${effectToString(e)} - should have kind 'concrete'`)
   }
