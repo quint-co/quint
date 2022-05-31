@@ -61,15 +61,15 @@ describe('unify', () => {
     })
 
     it('flattens any nested unions', () => {
-      const e1: Effect = { kind: 'var', name: 'E' }
+      const e1: Effect = { kind: 'quantified', name: 'E' }
 
       const e2: Effect = {
         kind: 'concrete',
         read: {
           kind: 'union',
           variables: [
-            { kind: 'union', variables: [{ kind: 'quantification', name: 'r1' }, { kind: 'concrete', vars: ['x', 'y'] }] },
-            { kind: 'quantification', name: 'r2' },
+            { kind: 'union', variables: [{ kind: 'quantified', name: 'r1' }, { kind: 'concrete', vars: ['x', 'y'] }] },
+            { kind: 'quantified', name: 'r2' },
           ],
         },
         update: { kind: 'concrete', vars: [] },
@@ -81,16 +81,16 @@ describe('unify', () => {
         const { value } = result
         assert.sameDeepMembers(value, [
           {
-            kind: 'concrete',
+            kind: 'effect',
             name: 'E',
             value: {
               kind: 'concrete',
               read: {
                 kind: 'union',
                 variables: [
-                  { kind: 'quantification', name: 'r1' },
+                  { kind: 'quantified', name: 'r1' },
                   { kind: 'concrete', vars: ['x', 'y'] },
-                  { kind: 'quantification', name: 'r2' },
+                  { kind: 'quantified', name: 'r2' },
                 ],
               },
               update: { kind: 'concrete', vars: [] },
@@ -104,19 +104,19 @@ describe('unify', () => {
   describe('simple arrow effects', () => {
     const e1: Effect = {
       kind: 'arrow',
-      effects: [
-        { kind: 'concrete', read: { kind: 'quantification', name: 'v' }, update: { kind: 'concrete', vars: [] } },
-        { kind: 'concrete', read: { kind: 'concrete', vars: [] }, update: { kind: 'quantification', name: 'v' } },
+      params: [
+        { kind: 'concrete', read: { kind: 'quantified', name: 'v' }, update: { kind: 'concrete', vars: [] } },
       ],
+      result: { kind: 'concrete', read: { kind: 'concrete', vars: [] }, update: { kind: 'quantified', name: 'v' } },
     }
 
     it('unifies effects with parameters', () => {
       const e2: Effect = {
         kind: 'arrow',
-        effects: [
+        params: [
           { kind: 'concrete', read: { kind: 'concrete', vars: ['x'] }, update: { kind: 'concrete', vars: [] } },
-          { kind: 'var', name: 'E' },
         ],
+        result: { kind: 'quantified', name: 'E' },
       }
 
       const result = unify(e1, e2)
@@ -127,7 +127,7 @@ describe('unify', () => {
         assert.sameDeepMembers(value, [
           { kind: 'variable', name: 'v', value: { kind: 'concrete', vars: ['x'] } },
           {
-            kind: 'concrete',
+            kind: 'effect',
             name: 'E',
             value: {
               kind: 'concrete', read: { kind: 'concrete', vars: [] }, update: { kind: 'concrete', vars: ['x'] },
@@ -140,10 +140,10 @@ describe('unify', () => {
     it('returns error when cannot unify variables', () => {
       const e2: Effect = {
         kind: 'arrow',
-        effects: [
+        params: [
           { kind: 'concrete', read: { kind: 'concrete', vars: ['x'] }, update: { kind: 'concrete', vars: [] } },
-          { kind: 'concrete', read: { kind: 'concrete', vars: [] }, update: { kind: 'concrete', vars: ['y'] } },
         ],
+        result: { kind: 'concrete', read: { kind: 'concrete', vars: [] }, update: { kind: 'concrete', vars: ['y'] } },
       }
 
       const result = unify(e1, e2)
@@ -168,9 +168,8 @@ describe('unify', () => {
     it('returns error when there are not enough parameters', () => {
       const e2: Effect = {
         kind: 'arrow',
-        effects: [
-          { kind: 'concrete', read: { kind: 'concrete', vars: [] }, update: { kind: 'concrete', vars: ['y'] } },
-        ],
+        params: [],
+        result: { kind: 'concrete', read: { kind: 'concrete', vars: [] }, update: { kind: 'concrete', vars: ['y'] } },
       }
 
       const result = unify(e1, e2)
@@ -206,31 +205,31 @@ describe('unify', () => {
   describe('nested arrow effects', () => {
     const e1: Effect = {
       kind: 'arrow',
-      effects: [
+      params: [
         {
           kind: 'arrow',
-          effects: [
+          params: [
             { kind: 'concrete', read: { kind: 'concrete', vars: [] }, update: { kind: 'concrete', vars: [] } },
-            { kind: 'var', name: 'E' },
           ],
+          result: { kind: 'quantified', name: 'E' },
         },
-        { kind: 'var', name: 'E' },
       ],
+      result: { kind: 'quantified', name: 'E' },
     }
 
     it('unifies effects with parameters', () => {
       const e2: Effect = {
         kind: 'arrow',
-        effects: [
+        params: [
           {
             kind: 'arrow',
-            effects: [
+            params: [
               { kind: 'concrete', read: { kind: 'concrete', vars: [] }, update: { kind: 'concrete', vars: [] } },
-              { kind: 'concrete', read: { kind: 'concrete', vars: ['x'] }, update: { kind: 'concrete', vars: [] } },
             ],
+            result: { kind: 'concrete', read: { kind: 'concrete', vars: ['x'] }, update: { kind: 'concrete', vars: [] } },
           },
-          { kind: 'concrete', read: { kind: 'concrete', vars: ['x'] }, update: { kind: 'concrete', vars: [] } },
         ],
+        result: { kind: 'concrete', read: { kind: 'concrete', vars: ['x'] }, update: { kind: 'concrete', vars: [] } },
       }
 
       const result = unify(e1, e2)
@@ -240,7 +239,7 @@ describe('unify', () => {
         const { value } = result
         assert.sameDeepMembers(value, [
           {
-            kind: 'concrete',
+            kind: 'effect',
             name: 'E',
             value: { kind: 'concrete', read: { kind: 'concrete', vars: ['x'] }, update: { kind: 'concrete', vars: [] } },
           },
@@ -252,21 +251,21 @@ describe('unify', () => {
   describe('effects with multiple quantified variables', () => {
     const e1: Effect = {
       kind: 'arrow',
-      effects: [
-        { kind: 'concrete', read: { kind: 'quantification', name: 'r1' }, update: { kind: 'quantification', name: 'u' } },
-        { kind: 'concrete', read: { kind: 'quantification', name: 'r2' }, update: { kind: 'quantification', name: 'u' } },
-        { kind: 'concrete', read: { kind: 'union', variables: [{ kind: 'quantification', name: 'r1' }, { kind: 'quantification', name: 'r2' }] }, update: { kind: 'quantification', name: 'u' } },
+      params: [
+        { kind: 'concrete', read: { kind: 'quantified', name: 'r1' }, update: { kind: 'quantified', name: 'u' } },
+        { kind: 'concrete', read: { kind: 'quantified', name: 'r2' }, update: { kind: 'quantified', name: 'u' } },
       ],
+      result: { kind: 'concrete', read: { kind: 'union', variables: [{ kind: 'quantified', name: 'r1' }, { kind: 'quantified', name: 'r2' }] }, update: { kind: 'quantified', name: 'u' } },
     }
 
     it('unfies with concrete and unifiable effect', () => {
       const e2: Effect = {
         kind: 'arrow',
-        effects: [
+        params: [
           { kind: 'concrete', read: { kind: 'concrete', vars: ['x'] }, update: { kind: 'concrete', vars: ['x'] } },
           { kind: 'concrete', read: { kind: 'concrete', vars: ['y', 'z'] }, update: { kind: 'concrete', vars: ['x'] } },
-          { kind: 'concrete', read: { kind: 'concrete', vars: ['x', 'y', 'z'] }, update: { kind: 'concrete', vars: ['x'] } },
         ],
+        result: { kind: 'concrete', read: { kind: 'concrete', vars: ['x', 'y', 'z'] }, update: { kind: 'concrete', vars: ['x'] } },
       }
 
       const result = unify(e1, e2)
@@ -287,11 +286,11 @@ describe('unify', () => {
     it('returns error with incompatible effect', () => {
       const e2: Effect = {
         kind: 'arrow',
-        effects: [
+        params: [
           { kind: 'concrete', read: { kind: 'concrete', vars: ['x'] }, update: { kind: 'concrete', vars: ['x'] } },
           { kind: 'concrete', read: { kind: 'concrete', vars: ['y'] }, update: { kind: 'concrete', vars: ['y'] } },
-          { kind: 'var', name: 'E' },
         ],
+        result: { kind: 'quantified', name: 'E' },
       }
 
       const result = unify(e1, e2)
@@ -312,14 +311,14 @@ describe('unify', () => {
       }
     })
 
-    it('returns partial quantification when unifying with another quantified effect', () => {
+    it('returns partial quantified when unifying with another quantified effect', () => {
       const e2: Effect = {
         kind: 'arrow',
-        effects: [
-          { kind: 'concrete', read: { kind: 'concrete', vars: ['x'] }, update: { kind: 'quantification', name: 'v' } },
-          { kind: 'concrete', read: { kind: 'concrete', vars: ['y'] }, update: { kind: 'quantification', name: 'v' } },
-          { kind: 'concrete', read: { kind: 'concrete', vars: ['x', 'y'] }, update: { kind: 'quantification', name: 'v' } },
+        params: [
+          { kind: 'concrete', read: { kind: 'concrete', vars: ['x'] }, update: { kind: 'quantified', name: 'v' } },
+          { kind: 'concrete', read: { kind: 'concrete', vars: ['y'] }, update: { kind: 'quantified', name: 'v' } },
         ],
+        result: { kind: 'concrete', read: { kind: 'concrete', vars: ['x', 'y'] }, update: { kind: 'quantified', name: 'v' } },
       }
 
       const result = unify(e1, e2)
@@ -329,7 +328,7 @@ describe('unify', () => {
         assert.sameDeepMembers(value, [
           { kind: 'variable', name: 'r1', value: { kind: 'concrete', vars: ['x'] } },
           { kind: 'variable', name: 'r2', value: { kind: 'concrete', vars: ['y'] } },
-          { kind: 'variable', name: 'u', value: { kind: 'quantification', name: 'v' } },
+          { kind: 'variable', name: 'u', value: { kind: 'quantified', name: 'v' } },
         ])
       }
     })
@@ -337,11 +336,11 @@ describe('unify', () => {
     it('returns error with incompatible quantified effect', () => {
       const e2: Effect = {
         kind: 'arrow',
-        effects: [
+        params: [
           { kind: 'concrete', read: { kind: 'concrete', vars: ['y'] }, update: { kind: 'concrete', vars: ['x'] } },
           { kind: 'concrete', read: { kind: 'concrete', vars: ['z'] }, update: { kind: 'concrete', vars: ['x'] } },
-          { kind: 'concrete', read: { kind: 'concrete', vars: ['y'] }, update: { kind: 'quantification', name: 'u' } },
         ],
+        result: { kind: 'concrete', read: { kind: 'concrete', vars: ['y'] }, update: { kind: 'quantified', name: 'u' } },
       }
 
       const result = unify(e1, e2)
@@ -365,12 +364,12 @@ describe('unify', () => {
     it('returns error when unifying union with another union', () => {
       const e1: Effect = {
         kind: 'concrete',
-        read: { kind: 'union', variables: [{ kind: 'quantification', name: 'r1' }, { kind: 'quantification', name: 'r2' }] },
+        read: { kind: 'union', variables: [{ kind: 'quantified', name: 'r1' }, { kind: 'quantified', name: 'r2' }] },
         update: { kind: 'concrete', vars: [] },
       }
       const e2: Effect = {
         kind: 'concrete',
-        read: { kind: 'union', variables: [{ kind: 'concrete', vars: ['x', 'y'] }, { kind: 'quantification', name: 'r' }] },
+        read: { kind: 'union', variables: [{ kind: 'concrete', vars: ['x', 'y'] }, { kind: 'quantified', name: 'r' }] },
         update: { kind: 'concrete', vars: [] },
       }
 
