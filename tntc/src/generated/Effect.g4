@@ -10,11 +10,11 @@ effect:   concrete                                           # concreteEffect
         | IDENTIFIER                                         # quantifiedEffect
         ;
 
-read: 'Read' '[' vars ']';
-update: 'Update' '[' vars ']';
+read: 'Read' '[' vars ']' ;
+update: 'Update' '[' vars ']' ;
 
-concrete:   'Read' '[' vars ']'                         # readOnly
-          | 'Update' '[' vars ']'                       # updateOnly
+concrete:   read                                        # readOnly
+          | update                                      # updateOnly
           | (read '&' update | update '&' read)         # readAndUpdate
           | 'Pure'                                      # pure
           ;
@@ -26,4 +26,5 @@ vars :   (stateVarRef (', ' stateVarRef)*)?    # concreteVariables
 stateVarRef : '\'' IDENTIFIER '\'' ;
 
 IDENTIFIER : ([a-zA-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;
-WS              :   [ \t\r\n]+      -> skip ; // skip spaces, tabs, newlines
+
+WS: [ \t\r\n]+ -> skip ; // skip spaces, tabs, newlines
