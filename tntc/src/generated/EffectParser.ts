@@ -40,22 +40,25 @@ export class EffectParser extends Parser {
 	public static readonly T__9 = 10;
 	public static readonly T__10 = 11;
 	public static readonly IDENTIFIER = 12;
+	public static readonly WS = 13;
 	public static readonly RULE_effect = 0;
-	public static readonly RULE_concrete = 1;
-	public static readonly RULE_vars = 2;
-	public static readonly RULE_stateVarRef = 3;
+	public static readonly RULE_read = 1;
+	public static readonly RULE_update = 2;
+	public static readonly RULE_concrete = 3;
+	public static readonly RULE_vars = 4;
+	public static readonly RULE_stateVarRef = 5;
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
-		"effect", "concrete", "vars", "stateVarRef",
+		"effect", "read", "update", "concrete", "vars", "stateVarRef",
 	];
 
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
-		undefined, "'('", "', '", "')'", "' => '", "'Read'", "'['", "']'", "'Update'", 
-		"'] & Update'", "'Pure'", "'''",
+		undefined, "'('", "', '", "')'", "'=>'", "'Read'", "'['", "']'", "'Update'", 
+		"'&'", "'Pure'", "'''",
 	];
 	private static readonly _SYMBOLIC_NAMES: Array<string | undefined> = [
 		undefined, undefined, undefined, undefined, undefined, undefined, undefined, 
-		undefined, undefined, undefined, undefined, undefined, "IDENTIFIER",
+		undefined, undefined, undefined, undefined, undefined, "IDENTIFIER", "WS",
 	];
 	public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(EffectParser._LITERAL_NAMES, EffectParser._SYMBOLIC_NAMES, []);
 
@@ -89,7 +92,7 @@ export class EffectParser extends Parser {
 		this.enterRule(_localctx, 0, EffectParser.RULE_effect);
 		let _la: number;
 		try {
-			this.state = 24;
+			this.state = 28;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case EffectParser.T__4:
@@ -98,7 +101,7 @@ export class EffectParser extends Parser {
 				_localctx = new ConcreteEffectContext(_localctx);
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 8;
+				this.state = 12;
 				this.concrete();
 				}
 				break;
@@ -106,39 +109,39 @@ export class EffectParser extends Parser {
 				_localctx = new ArrowEffectContext(_localctx);
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 9;
+				this.state = 13;
 				this.match(EffectParser.T__0);
-				this.state = 18;
+				this.state = 22;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << EffectParser.T__0) | (1 << EffectParser.T__4) | (1 << EffectParser.T__7) | (1 << EffectParser.T__9) | (1 << EffectParser.IDENTIFIER))) !== 0)) {
 					{
-					this.state = 10;
+					this.state = 14;
 					this.effect();
-					this.state = 15;
+					this.state = 19;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
 					while (_la === EffectParser.T__1) {
 						{
 						{
-						this.state = 11;
+						this.state = 15;
 						this.match(EffectParser.T__1);
-						this.state = 12;
+						this.state = 16;
 						this.effect();
 						}
 						}
-						this.state = 17;
+						this.state = 21;
 						this._errHandler.sync(this);
 						_la = this._input.LA(1);
 					}
 					}
 				}
 
-				this.state = 20;
+				this.state = 24;
 				this.match(EffectParser.T__2);
-				this.state = 21;
+				this.state = 25;
 				this.match(EffectParser.T__3);
-				this.state = 22;
+				this.state = 26;
 				this.effect();
 				}
 				break;
@@ -146,7 +149,7 @@ export class EffectParser extends Parser {
 				_localctx = new QuantifiedEffectContext(_localctx);
 				this.enterOuterAlt(_localctx, 3);
 				{
-				this.state = 23;
+				this.state = 27;
 				this.match(EffectParser.IDENTIFIER);
 				}
 				break;
@@ -169,24 +172,86 @@ export class EffectParser extends Parser {
 		return _localctx;
 	}
 	// @RuleVersion(0)
+	public read(): ReadContext {
+		let _localctx: ReadContext = new ReadContext(this._ctx, this.state);
+		this.enterRule(_localctx, 2, EffectParser.RULE_read);
+		try {
+			this.enterOuterAlt(_localctx, 1);
+			{
+			this.state = 30;
+			this.match(EffectParser.T__4);
+			this.state = 31;
+			this.match(EffectParser.T__5);
+			this.state = 32;
+			this.vars();
+			this.state = 33;
+			this.match(EffectParser.T__6);
+			}
+		}
+		catch (re) {
+			if (re instanceof RecognitionException) {
+				_localctx.exception = re;
+				this._errHandler.reportError(this, re);
+				this._errHandler.recover(this, re);
+			} else {
+				throw re;
+			}
+		}
+		finally {
+			this.exitRule();
+		}
+		return _localctx;
+	}
+	// @RuleVersion(0)
+	public update(): UpdateContext {
+		let _localctx: UpdateContext = new UpdateContext(this._ctx, this.state);
+		this.enterRule(_localctx, 4, EffectParser.RULE_update);
+		try {
+			this.enterOuterAlt(_localctx, 1);
+			{
+			this.state = 35;
+			this.match(EffectParser.T__7);
+			this.state = 36;
+			this.match(EffectParser.T__5);
+			this.state = 37;
+			this.vars();
+			this.state = 38;
+			this.match(EffectParser.T__6);
+			}
+		}
+		catch (re) {
+			if (re instanceof RecognitionException) {
+				_localctx.exception = re;
+				this._errHandler.reportError(this, re);
+				this._errHandler.recover(this, re);
+			} else {
+				throw re;
+			}
+		}
+		finally {
+			this.exitRule();
+		}
+		return _localctx;
+	}
+	// @RuleVersion(0)
 	public concrete(): ConcreteContext {
 		let _localctx: ConcreteContext = new ConcreteContext(this._ctx, this.state);
-		this.enterRule(_localctx, 2, EffectParser.RULE_concrete);
+		this.enterRule(_localctx, 6, EffectParser.RULE_concrete);
 		try {
-			this.state = 45;
+			this.state = 61;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 3, this._ctx) ) {
+			switch ( this.interpreter.adaptivePredict(this._input, 4, this._ctx) ) {
 			case 1:
 				_localctx = new ReadOnlyContext(_localctx);
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 26;
+				this.state = 40;
 				this.match(EffectParser.T__4);
-				this.state = 27;
+				this.state = 41;
 				this.match(EffectParser.T__5);
-				this.state = 28;
+				this.state = 42;
 				this.vars();
-				this.state = 29;
+				this.state = 43;
 				this.match(EffectParser.T__6);
 				}
 				break;
@@ -195,13 +260,13 @@ export class EffectParser extends Parser {
 				_localctx = new UpdateOnlyContext(_localctx);
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 31;
+				this.state = 45;
 				this.match(EffectParser.T__7);
-				this.state = 32;
+				this.state = 46;
 				this.match(EffectParser.T__5);
-				this.state = 33;
+				this.state = 47;
 				this.vars();
-				this.state = 34;
+				this.state = 48;
 				this.match(EffectParser.T__6);
 				}
 				break;
@@ -210,20 +275,32 @@ export class EffectParser extends Parser {
 				_localctx = new ReadAndUpdateContext(_localctx);
 				this.enterOuterAlt(_localctx, 3);
 				{
-				this.state = 36;
-				this.match(EffectParser.T__4);
-				this.state = 37;
-				this.match(EffectParser.T__5);
-				this.state = 38;
-				this.vars();
-				this.state = 39;
-				this.match(EffectParser.T__8);
-				this.state = 40;
-				this.match(EffectParser.T__5);
-				this.state = 41;
-				this.vars();
-				this.state = 42;
-				this.match(EffectParser.T__6);
+				this.state = 58;
+				this._errHandler.sync(this);
+				switch (this._input.LA(1)) {
+				case EffectParser.T__4:
+					{
+					this.state = 50;
+					this.read();
+					this.state = 51;
+					this.match(EffectParser.T__8);
+					this.state = 52;
+					this.update();
+					}
+					break;
+				case EffectParser.T__7:
+					{
+					this.state = 54;
+					this.update();
+					this.state = 55;
+					this.match(EffectParser.T__8);
+					this.state = 56;
+					this.read();
+					}
+					break;
+				default:
+					throw new NoViableAltException(this);
+				}
 				}
 				break;
 
@@ -231,7 +308,7 @@ export class EffectParser extends Parser {
 				_localctx = new PureContext(_localctx);
 				this.enterOuterAlt(_localctx, 4);
 				{
-				this.state = 44;
+				this.state = 60;
 				this.match(EffectParser.T__9);
 				}
 				break;
@@ -254,36 +331,36 @@ export class EffectParser extends Parser {
 	// @RuleVersion(0)
 	public vars(): VarsContext {
 		let _localctx: VarsContext = new VarsContext(this._ctx, this.state);
-		this.enterRule(_localctx, 4, EffectParser.RULE_vars);
+		this.enterRule(_localctx, 8, EffectParser.RULE_vars);
 		let _la: number;
 		try {
-			this.state = 67;
+			this.state = 83;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 8, this._ctx) ) {
+			switch ( this.interpreter.adaptivePredict(this._input, 9, this._ctx) ) {
 			case 1:
 				_localctx = new ConcreteVariablesContext(_localctx);
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 55;
+				this.state = 71;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 				if (_la === EffectParser.T__10) {
 					{
-					this.state = 47;
+					this.state = 63;
 					this.stateVarRef();
-					this.state = 52;
+					this.state = 68;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
 					while (_la === EffectParser.T__1) {
 						{
 						{
-						this.state = 48;
+						this.state = 64;
 						this.match(EffectParser.T__1);
-						this.state = 49;
+						this.state = 65;
 						this.stateVarRef();
 						}
 						}
-						this.state = 54;
+						this.state = 70;
 						this._errHandler.sync(this);
 						_la = this._input.LA(1);
 					}
@@ -297,26 +374,26 @@ export class EffectParser extends Parser {
 				_localctx = new QuantifiedVariablesContext(_localctx);
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 65;
+				this.state = 81;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 				if (_la === EffectParser.IDENTIFIER) {
 					{
-					this.state = 57;
+					this.state = 73;
 					this.match(EffectParser.IDENTIFIER);
-					this.state = 62;
+					this.state = 78;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
 					while (_la === EffectParser.T__1) {
 						{
 						{
-						this.state = 58;
+						this.state = 74;
 						this.match(EffectParser.T__1);
-						this.state = 59;
+						this.state = 75;
 						this.match(EffectParser.IDENTIFIER);
 						}
 						}
-						this.state = 64;
+						this.state = 80;
 						this._errHandler.sync(this);
 						_la = this._input.LA(1);
 					}
@@ -344,15 +421,15 @@ export class EffectParser extends Parser {
 	// @RuleVersion(0)
 	public stateVarRef(): StateVarRefContext {
 		let _localctx: StateVarRefContext = new StateVarRefContext(this._ctx, this.state);
-		this.enterRule(_localctx, 6, EffectParser.RULE_stateVarRef);
+		this.enterRule(_localctx, 10, EffectParser.RULE_stateVarRef);
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 69;
+			this.state = 85;
 			this.match(EffectParser.T__10);
-			this.state = 70;
+			this.state = 86;
 			this.match(EffectParser.IDENTIFIER);
-			this.state = 71;
+			this.state = 87;
 			this.match(EffectParser.T__10);
 			}
 		}
@@ -372,39 +449,45 @@ export class EffectParser extends Parser {
 	}
 
 	public static readonly _serializedATN: string =
-		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x0EL\x04\x02" +
-		"\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x03\x02\x03\x02\x03\x02" +
-		"\x03\x02\x03\x02\x07\x02\x10\n\x02\f\x02\x0E\x02\x13\v\x02\x05\x02\x15" +
-		"\n\x02\x03\x02\x03\x02\x03\x02\x03\x02\x05\x02\x1B\n\x02\x03\x03\x03\x03" +
-		"\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03" +
-		"\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x05\x03" +
-		"0\n\x03\x03\x04\x03\x04\x03\x04\x07\x045\n\x04\f\x04\x0E\x048\v\x04\x05" +
-		"\x04:\n\x04\x03\x04\x03\x04\x03\x04\x07\x04?\n\x04\f\x04\x0E\x04B\v\x04" +
-		"\x05\x04D\n\x04\x05\x04F\n\x04\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05" +
-		"\x02\x02\x02\x06\x02\x02\x04\x02\x06\x02\b\x02\x02\x02\x02S\x02\x1A\x03" +
-		"\x02\x02\x02\x04/\x03\x02\x02\x02\x06E\x03\x02\x02\x02\bG\x03\x02\x02" +
-		"\x02\n\x1B\x05\x04\x03\x02\v\x14\x07\x03\x02\x02\f\x11\x05\x02\x02\x02" +
-		"\r\x0E\x07\x04\x02\x02\x0E\x10\x05\x02\x02\x02\x0F\r\x03\x02\x02\x02\x10" +
-		"\x13\x03\x02\x02\x02\x11\x0F\x03\x02\x02\x02\x11\x12\x03\x02\x02\x02\x12" +
-		"\x15\x03\x02\x02\x02\x13\x11\x03\x02\x02\x02\x14\f\x03\x02\x02\x02\x14" +
-		"\x15\x03\x02\x02\x02\x15\x16\x03\x02\x02\x02\x16\x17\x07\x05\x02\x02\x17" +
-		"\x18\x07\x06\x02\x02\x18\x1B\x05\x02\x02\x02\x19\x1B\x07\x0E\x02\x02\x1A" +
-		"\n\x03\x02\x02\x02\x1A\v\x03\x02\x02\x02\x1A\x19\x03\x02\x02\x02\x1B\x03" +
-		"\x03\x02\x02\x02\x1C\x1D\x07\x07\x02\x02\x1D\x1E\x07\b\x02\x02\x1E\x1F" +
-		"\x05\x06\x04\x02\x1F \x07\t\x02\x02 0\x03\x02\x02\x02!\"\x07\n\x02\x02" +
-		"\"#\x07\b\x02\x02#$\x05\x06\x04\x02$%\x07\t\x02\x02%0\x03\x02\x02\x02" +
-		"&\'\x07\x07\x02\x02\'(\x07\b\x02\x02()\x05\x06\x04\x02)*\x07\v\x02\x02" +
-		"*+\x07\b\x02\x02+,\x05\x06\x04\x02,-\x07\t\x02\x02-0\x03\x02\x02\x02." +
-		"0\x07\f\x02\x02/\x1C\x03\x02\x02\x02/!\x03\x02\x02\x02/&\x03\x02\x02\x02" +
-		"/.\x03\x02\x02\x020\x05\x03\x02\x02\x0216\x05\b\x05\x0223\x07\x04\x02" +
-		"\x0235\x05\b\x05\x0242\x03\x02\x02\x0258\x03\x02\x02\x0264\x03\x02\x02" +
-		"\x0267\x03\x02\x02\x027:\x03\x02\x02\x0286\x03\x02\x02\x0291\x03\x02\x02" +
-		"\x029:\x03\x02\x02\x02:F\x03\x02\x02\x02;@\x07\x0E\x02\x02<=\x07\x04\x02" +
-		"\x02=?\x07\x0E\x02\x02><\x03\x02\x02\x02?B\x03\x02\x02\x02@>\x03\x02\x02" +
-		"\x02@A\x03\x02\x02\x02AD\x03\x02\x02\x02B@\x03\x02\x02\x02C;\x03\x02\x02" +
-		"\x02CD\x03\x02\x02\x02DF\x03\x02\x02\x02E9\x03\x02\x02\x02EC\x03\x02\x02" +
-		"\x02F\x07\x03\x02\x02\x02GH\x07\r\x02\x02HI\x07\x0E\x02\x02IJ\x07\r\x02" +
-		"\x02J\t\x03\x02\x02\x02\v\x11\x14\x1A/69@CE";
+		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x0F\\\x04\x02" +
+		"\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07" +
+		"\t\x07\x03\x02\x03\x02\x03\x02\x03\x02\x03\x02\x07\x02\x14\n\x02\f\x02" +
+		"\x0E\x02\x17\v\x02\x05\x02\x19\n\x02\x03\x02\x03\x02\x03\x02\x03\x02\x05" +
+		"\x02\x1F\n\x02\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x04\x03\x04" +
+		"\x03\x04\x03\x04\x03\x04\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05" +
+		"\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05" +
+		"\x03\x05\x03\x05\x03\x05\x05\x05=\n\x05\x03\x05\x05\x05@\n\x05\x03\x06" +
+		"\x03\x06\x03\x06\x07\x06E\n\x06\f\x06\x0E\x06H\v\x06\x05\x06J\n\x06\x03" +
+		"\x06\x03\x06\x03\x06\x07\x06O\n\x06\f\x06\x0E\x06R\v\x06\x05\x06T\n\x06" +
+		"\x05\x06V\n\x06\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x02\x02\x02\b" +
+		"\x02\x02\x04\x02\x06\x02\b\x02\n\x02\f\x02\x02\x02\x02b\x02\x1E\x03\x02" +
+		"\x02\x02\x04 \x03\x02\x02\x02\x06%\x03\x02\x02\x02\b?\x03\x02\x02\x02" +
+		"\nU\x03\x02\x02\x02\fW\x03\x02\x02\x02\x0E\x1F\x05\b\x05\x02\x0F\x18\x07" +
+		"\x03\x02\x02\x10\x15\x05\x02\x02\x02\x11\x12\x07\x04\x02\x02\x12\x14\x05" +
+		"\x02\x02\x02\x13\x11\x03\x02\x02\x02\x14\x17\x03\x02\x02\x02\x15\x13\x03" +
+		"\x02\x02\x02\x15\x16\x03\x02\x02\x02\x16\x19\x03\x02\x02\x02\x17\x15\x03" +
+		"\x02\x02\x02\x18\x10\x03\x02\x02\x02\x18\x19\x03\x02\x02\x02\x19\x1A\x03" +
+		"\x02\x02\x02\x1A\x1B\x07\x05\x02\x02\x1B\x1C\x07\x06\x02\x02\x1C\x1F\x05" +
+		"\x02\x02\x02\x1D\x1F\x07\x0E\x02\x02\x1E\x0E\x03\x02\x02\x02\x1E\x0F\x03" +
+		"\x02\x02\x02\x1E\x1D\x03\x02\x02\x02\x1F\x03\x03\x02\x02\x02 !\x07\x07" +
+		"\x02\x02!\"\x07\b\x02\x02\"#\x05\n\x06\x02#$\x07\t\x02\x02$\x05\x03\x02" +
+		"\x02\x02%&\x07\n\x02\x02&\'\x07\b\x02\x02\'(\x05\n\x06\x02()\x07\t\x02" +
+		"\x02)\x07\x03\x02\x02\x02*+\x07\x07\x02\x02+,\x07\b\x02\x02,-\x05\n\x06" +
+		"\x02-.\x07\t\x02\x02.@\x03\x02\x02\x02/0\x07\n\x02\x0201\x07\b\x02\x02" +
+		"12\x05\n\x06\x0223\x07\t\x02\x023@\x03\x02\x02\x0245\x05\x04\x03\x025" +
+		"6\x07\v\x02\x0267\x05\x06\x04\x027=\x03\x02\x02\x0289\x05\x06\x04\x02" +
+		"9:\x07\v\x02\x02:;\x05\x04\x03\x02;=\x03\x02\x02\x02<4\x03\x02\x02\x02" +
+		"<8\x03\x02\x02\x02=@\x03\x02\x02\x02>@\x07\f\x02\x02?*\x03\x02\x02\x02" +
+		"?/\x03\x02\x02\x02?<\x03\x02\x02\x02?>\x03\x02\x02\x02@\t\x03\x02\x02" +
+		"\x02AF\x05\f\x07\x02BC\x07\x04\x02\x02CE\x05\f\x07\x02DB\x03\x02\x02\x02" +
+		"EH\x03\x02\x02\x02FD\x03\x02\x02\x02FG\x03\x02\x02\x02GJ\x03\x02\x02\x02" +
+		"HF\x03\x02\x02\x02IA\x03\x02\x02\x02IJ\x03\x02\x02\x02JV\x03\x02\x02\x02" +
+		"KP\x07\x0E\x02\x02LM\x07\x04\x02\x02MO\x07\x0E\x02\x02NL\x03\x02\x02\x02" +
+		"OR\x03\x02\x02\x02PN\x03\x02\x02\x02PQ\x03\x02\x02\x02QT\x03\x02\x02\x02" +
+		"RP\x03\x02\x02\x02SK\x03\x02\x02\x02ST\x03\x02\x02\x02TV\x03\x02\x02\x02" +
+		"UI\x03\x02\x02\x02US\x03\x02\x02\x02V\v\x03\x02\x02\x02WX\x07\r\x02\x02" +
+		"XY\x07\x0E\x02\x02YZ\x07\r\x02\x02Z\r\x03\x02\x02\x02\f\x15\x18\x1E<?" +
+		"FIPSU";
 	public static __ATN: ATN;
 	public static get _ATN(): ATN {
 		if (!EffectParser.__ATN) {
@@ -519,6 +602,70 @@ export class QuantifiedEffectContext extends EffectContext {
 }
 
 
+export class ReadContext extends ParserRuleContext {
+	public vars(): VarsContext {
+		return this.getRuleContext(0, VarsContext);
+	}
+	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+		super(parent, invokingState);
+	}
+	// @Override
+	public get ruleIndex(): number { return EffectParser.RULE_read; }
+	// @Override
+	public enterRule(listener: EffectListener): void {
+		if (listener.enterRead) {
+			listener.enterRead(this);
+		}
+	}
+	// @Override
+	public exitRule(listener: EffectListener): void {
+		if (listener.exitRead) {
+			listener.exitRead(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: EffectVisitor<Result>): Result {
+		if (visitor.visitRead) {
+			return visitor.visitRead(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+
+
+export class UpdateContext extends ParserRuleContext {
+	public vars(): VarsContext {
+		return this.getRuleContext(0, VarsContext);
+	}
+	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+		super(parent, invokingState);
+	}
+	// @Override
+	public get ruleIndex(): number { return EffectParser.RULE_update; }
+	// @Override
+	public enterRule(listener: EffectListener): void {
+		if (listener.enterUpdate) {
+			listener.enterUpdate(this);
+		}
+	}
+	// @Override
+	public exitRule(listener: EffectListener): void {
+		if (listener.exitUpdate) {
+			listener.exitUpdate(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: EffectVisitor<Result>): Result {
+		if (visitor.visitUpdate) {
+			return visitor.visitUpdate(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+
+
 export class ConcreteContext extends ParserRuleContext {
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
@@ -588,14 +735,11 @@ export class UpdateOnlyContext extends ConcreteContext {
 	}
 }
 export class ReadAndUpdateContext extends ConcreteContext {
-	public vars(): VarsContext[];
-	public vars(i: number): VarsContext;
-	public vars(i?: number): VarsContext | VarsContext[] {
-		if (i === undefined) {
-			return this.getRuleContexts(VarsContext);
-		} else {
-			return this.getRuleContext(i, VarsContext);
-		}
+	public read(): ReadContext | undefined {
+		return this.tryGetRuleContext(0, ReadContext);
+	}
+	public update(): UpdateContext | undefined {
+		return this.tryGetRuleContext(0, UpdateContext);
 	}
 	constructor(ctx: ConcreteContext) {
 		super(ctx.parent, ctx.invokingState);

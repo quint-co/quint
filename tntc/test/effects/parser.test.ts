@@ -107,12 +107,8 @@ describe('parseEffect', () => {
       const { value } = effect
       assert.sameDeepMembers(value, [
         {
-          explanation: "token recognition error at: ' &'",
-          locs: [{ start: { line: 0, col: 7, index: 0 }, end: { line: 0, col: 7, index: 0 } }],
-        },
-        {
-          explanation: "token recognition error at: ' R'",
-          locs: [{ start: { line: 0, col: 9, index: 0 }, end: { line: 0, col: 9, index: 0 } }],
+          explanation: "mismatched input 'Read' expecting {', ', ']'}",
+          locs: [{ start: { line: 0, col: 10, index: 10 }, end: { line: 0, col: 13, index: 13 } }],
         },
       ])
     }

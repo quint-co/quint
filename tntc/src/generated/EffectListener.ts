@@ -13,6 +13,8 @@ import { QuantifiedEffectContext } from "./EffectParser";
 import { ConcreteVariablesContext } from "./EffectParser";
 import { QuantifiedVariablesContext } from "./EffectParser";
 import { EffectContext } from "./EffectParser";
+import { ReadContext } from "./EffectParser";
+import { UpdateContext } from "./EffectParser";
 import { ConcreteContext } from "./EffectParser";
 import { VarsContext } from "./EffectParser";
 import { StateVarRefContext } from "./EffectParser";
@@ -150,6 +152,28 @@ export interface EffectListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitEffect?: (ctx: EffectContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `EffectParser.read`.
+	 * @param ctx the parse tree
+	 */
+	enterRead?: (ctx: ReadContext) => void;
+	/**
+	 * Exit a parse tree produced by `EffectParser.read`.
+	 * @param ctx the parse tree
+	 */
+	exitRead?: (ctx: ReadContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `EffectParser.update`.
+	 * @param ctx the parse tree
+	 */
+	enterUpdate?: (ctx: UpdateContext) => void;
+	/**
+	 * Exit a parse tree produced by `EffectParser.update`.
+	 * @param ctx the parse tree
+	 */
+	exitUpdate?: (ctx: UpdateContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `EffectParser.concrete`.

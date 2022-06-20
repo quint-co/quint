@@ -6,13 +6,16 @@
 grammar Effect;
 
 effect:   concrete                                           # concreteEffect
-        | '(' (effect (', ' effect)*)? ')' ' => ' effect     # arrowEffect
+        | '(' (effect (', ' effect)*)? ')' '=>' effect     # arrowEffect
         | IDENTIFIER                                         # quantifiedEffect
         ;
 
+read: 'Read' '[' vars ']';
+update: 'Update' '[' vars ']';
+
 concrete:   'Read' '[' vars ']'                         # readOnly
           | 'Update' '[' vars ']'                       # updateOnly
-          | 'Read' '[' vars '] & Update' '[' vars ']'   # readAndUpdate
+          | (read '&' update | update '&' read)         # readAndUpdate
           | 'Pure'                                      # pure
           ;
 
@@ -23,3 +26,4 @@ vars :   (stateVarRef (', ' stateVarRef)*)?    # concreteVariables
 stateVarRef : '\'' IDENTIFIER '\'' ;
 
 IDENTIFIER : ([a-zA-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;
+WS              :   [ \t\r\n]+      -> skip ; // skip spaces, tabs, newlines
