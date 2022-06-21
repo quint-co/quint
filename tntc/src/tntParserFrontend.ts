@@ -43,12 +43,13 @@ export function parsePhase1 (text: string, sourceLocation: string): ParseResult 
   const errorMessages: ErrorMessage[] = []
   // error listener to report lexical and syntax errors
   const errorListener: any = {
-    syntaxError: (recognizer: any,
+    syntaxError: (
+      _recognizer: any,
       offendingSymbol: any,
       line: number,
       charPositionInLine: number,
-      msg: string) => {
-      //
+      msg: string
+    ) => {
       const len = offendingSymbol
         ? offendingSymbol.stopIndex - offendingSymbol.startIndex
         : 0

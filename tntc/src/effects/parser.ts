@@ -34,11 +34,13 @@ export function parseEffect (effectString: string): Either<any[], Effect> {
   const errorMessages: any[] = []
   // error listener to report lexical and syntax errors
   const errorListener: any = {
-    syntaxError: (_: any,
+    syntaxError: (
+      _recognizer: any,
       offendingSymbol: any,
       line: number,
       charPositionInLine: number,
-      msg: string) => {
+      msg: string
+    ) => {
       const len = offendingSymbol
         ? offendingSymbol.stopIndex - offendingSymbol.startIndex
         : 0
