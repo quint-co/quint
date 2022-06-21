@@ -6,7 +6,7 @@
 grammar Effect;
 
 effect:   concrete                                           # concreteEffect
-        | '(' (effect (', ' effect)*)? ')' '=>' effect     # arrowEffect
+        | '(' (effect (', ' effect)*)? ')' '=>' effect       # arrowEffect
         | IDENTIFIER                                         # quantifiedEffect
         ;
 
@@ -19,9 +19,7 @@ concrete:   read                                        # readOnly
           | 'Pure'                                      # pure
           ;
 
-vars :   (stateVarRef (', ' stateVarRef)*)?    # concreteVariables
-       | (IDENTIFIER (', ' IDENTIFIER)*)?    # quantifiedVariables
-       ;
+vars : ((stateVarRef | IDENTIFIER) (', ' (stateVarRef | IDENTIFIER))*)? ;
 
 stateVarRef : '\'' IDENTIFIER '\'' ;
 

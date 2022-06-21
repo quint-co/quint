@@ -322,74 +322,66 @@ export class EffectParser extends Parser {
 		this.enterRule(_localctx, 8, EffectParser.RULE_vars);
 		let _la: number;
 		try {
-			this.state = 75;
+			this.enterOuterAlt(_localctx, 1);
+			{
+			this.state = 69;
 			this._errHandler.sync(this);
-			switch ( this.interpreter.adaptivePredict(this._input, 9, this._ctx) ) {
-			case 1:
-				_localctx = new ConcreteVariablesContext(_localctx);
-				this.enterOuterAlt(_localctx, 1);
+			_la = this._input.LA(1);
+			if (_la === EffectParser.T__10 || _la === EffectParser.IDENTIFIER) {
 				{
-				this.state = 63;
+				this.state = 57;
 				this._errHandler.sync(this);
-				_la = this._input.LA(1);
-				if (_la === EffectParser.T__10) {
+				switch (this._input.LA(1)) {
+				case EffectParser.T__10:
 					{
 					this.state = 55;
 					this.stateVarRef();
-					this.state = 60;
-					this._errHandler.sync(this);
-					_la = this._input.LA(1);
-					while (_la === EffectParser.T__1) {
-						{
-						{
-						this.state = 56;
-						this.match(EffectParser.T__1);
-						this.state = 57;
-						this.stateVarRef();
-						}
-						}
-						this.state = 62;
-						this._errHandler.sync(this);
-						_la = this._input.LA(1);
 					}
+					break;
+				case EffectParser.IDENTIFIER:
+					{
+					this.state = 56;
+					this.match(EffectParser.IDENTIFIER);
 					}
+					break;
+				default:
+					throw new NoViableAltException(this);
 				}
-
-				}
-				break;
-
-			case 2:
-				_localctx = new QuantifiedVariablesContext(_localctx);
-				this.enterOuterAlt(_localctx, 2);
-				{
-				this.state = 73;
+				this.state = 66;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if (_la === EffectParser.IDENTIFIER) {
+				while (_la === EffectParser.T__1) {
 					{
-					this.state = 65;
-					this.match(EffectParser.IDENTIFIER);
-					this.state = 70;
+					{
+					this.state = 59;
+					this.match(EffectParser.T__1);
+					this.state = 62;
 					this._errHandler.sync(this);
-					_la = this._input.LA(1);
-					while (_la === EffectParser.T__1) {
+					switch (this._input.LA(1)) {
+					case EffectParser.T__10:
 						{
+						this.state = 60;
+						this.stateVarRef();
+						}
+						break;
+					case EffectParser.IDENTIFIER:
 						{
-						this.state = 66;
-						this.match(EffectParser.T__1);
-						this.state = 67;
+						this.state = 61;
 						this.match(EffectParser.IDENTIFIER);
 						}
-						}
-						this.state = 72;
-						this._errHandler.sync(this);
-						_la = this._input.LA(1);
+						break;
+					default:
+						throw new NoViableAltException(this);
 					}
 					}
+					}
+					this.state = 68;
+					this._errHandler.sync(this);
+					_la = this._input.LA(1);
 				}
+				}
+			}
 
-				}
-				break;
 			}
 		}
 		catch (re) {
@@ -413,11 +405,11 @@ export class EffectParser extends Parser {
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 77;
+			this.state = 71;
 			this.match(EffectParser.T__10);
-			this.state = 78;
+			this.state = 72;
 			this.match(EffectParser.IDENTIFIER);
-			this.state = 79;
+			this.state = 73;
 			this.match(EffectParser.T__10);
 			}
 		}
@@ -437,42 +429,39 @@ export class EffectParser extends Parser {
 	}
 
 	public static readonly _serializedATN: string =
-		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x0FT\x04\x02" +
+		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03\x0FN\x04\x02" +
 		"\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07" +
 		"\t\x07\x03\x02\x03\x02\x03\x02\x03\x02\x03\x02\x07\x02\x14\n\x02\f\x02" +
 		"\x0E\x02\x17\v\x02\x05\x02\x19\n\x02\x03\x02\x03\x02\x03\x02\x03\x02\x05" +
 		"\x02\x1F\n\x02\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x04\x03\x04" +
 		"\x03\x04\x03\x04\x03\x04\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05" +
 		"\x03\x05\x03\x05\x03\x05\x03\x05\x05\x055\n\x05\x03\x05\x05\x058\n\x05" +
-		"\x03\x06\x03\x06\x03\x06\x07\x06=\n\x06\f\x06\x0E\x06@\v\x06\x05\x06B" +
-		"\n\x06\x03\x06\x03\x06\x03\x06\x07\x06G\n\x06\f\x06\x0E\x06J\v\x06\x05" +
-		"\x06L\n\x06\x05\x06N\n\x06\x03\x07\x03\x07\x03\x07\x03\x07\x03\x07\x02" +
-		"\x02\x02\b\x02\x02\x04\x02\x06\x02\b\x02\n\x02\f\x02\x02\x02\x02Z\x02" +
-		"\x1E\x03\x02\x02\x02\x04 \x03\x02\x02\x02\x06%\x03\x02\x02\x02\b7\x03" +
-		"\x02\x02\x02\nM\x03\x02\x02\x02\fO\x03\x02\x02\x02\x0E\x1F\x05\b\x05\x02" +
-		"\x0F\x18\x07\x03\x02\x02\x10\x15\x05\x02\x02\x02\x11\x12\x07\x04\x02\x02" +
-		"\x12\x14\x05\x02\x02\x02\x13\x11\x03\x02\x02\x02\x14\x17\x03\x02\x02\x02" +
-		"\x15\x13\x03\x02\x02\x02\x15\x16\x03\x02\x02\x02\x16\x19\x03\x02\x02\x02" +
-		"\x17\x15\x03\x02\x02\x02\x18\x10\x03\x02\x02\x02\x18\x19\x03\x02\x02\x02" +
-		"\x19\x1A\x03\x02\x02\x02\x1A\x1B\x07\x05\x02\x02\x1B\x1C\x07\x06\x02\x02" +
-		"\x1C\x1F\x05\x02\x02\x02\x1D\x1F\x07\x0E\x02\x02\x1E\x0E\x03\x02\x02\x02" +
-		"\x1E\x0F\x03\x02\x02\x02\x1E\x1D\x03\x02\x02\x02\x1F\x03\x03\x02\x02\x02" +
-		" !\x07\x07\x02\x02!\"\x07\b\x02\x02\"#\x05\n\x06\x02#$\x07\t\x02\x02$" +
-		"\x05\x03\x02\x02\x02%&\x07\n\x02\x02&\'\x07\b\x02\x02\'(\x05\n\x06\x02" +
-		"()\x07\t\x02\x02)\x07\x03\x02\x02\x02*8\x05\x04\x03\x02+8\x05\x06\x04" +
-		"\x02,-\x05\x04\x03\x02-.\x07\v\x02\x02./\x05\x06\x04\x02/5\x03\x02\x02" +
-		"\x0201\x05\x06\x04\x0212\x07\v\x02\x0223\x05\x04\x03\x0235\x03\x02\x02" +
-		"\x024,\x03\x02\x02\x0240\x03\x02\x02\x0258\x03\x02\x02\x0268\x07\f\x02" +
-		"\x027*\x03\x02\x02\x027+\x03\x02\x02\x0274\x03\x02\x02\x0276\x03\x02\x02" +
-		"\x028\t\x03\x02\x02\x029>\x05\f\x07\x02:;\x07\x04\x02\x02;=\x05\f\x07" +
-		"\x02<:\x03\x02\x02\x02=@\x03\x02\x02\x02><\x03\x02\x02\x02>?\x03\x02\x02" +
-		"\x02?B\x03\x02\x02\x02@>\x03\x02\x02\x02A9\x03\x02\x02\x02AB\x03\x02\x02" +
-		"\x02BN\x03\x02\x02\x02CH\x07\x0E\x02\x02DE\x07\x04\x02\x02EG\x07\x0E\x02" +
-		"\x02FD\x03\x02\x02\x02GJ\x03\x02\x02\x02HF\x03\x02\x02\x02HI\x03\x02\x02" +
-		"\x02IL\x03\x02\x02\x02JH\x03\x02\x02\x02KC\x03\x02\x02\x02KL\x03\x02\x02" +
-		"\x02LN\x03\x02\x02\x02MA\x03\x02\x02\x02MK\x03\x02\x02\x02N\v\x03\x02" +
-		"\x02\x02OP\x07\r\x02\x02PQ\x07\x0E\x02\x02QR\x07\r\x02\x02R\r\x03\x02" +
-		"\x02\x02\f\x15\x18\x1E47>AHKM";
+		"\x03\x06\x03\x06\x05\x06<\n\x06\x03\x06\x03\x06\x03\x06\x05\x06A\n\x06" +
+		"\x07\x06C\n\x06\f\x06\x0E\x06F\v\x06\x05\x06H\n\x06\x03\x07\x03\x07\x03" +
+		"\x07\x03\x07\x03\x07\x02\x02\x02\b\x02\x02\x04\x02\x06\x02\b\x02\n\x02" +
+		"\f\x02\x02\x02\x02S\x02\x1E\x03\x02\x02\x02\x04 \x03\x02\x02\x02\x06%" +
+		"\x03\x02\x02\x02\b7\x03\x02\x02\x02\nG\x03\x02\x02\x02\fI\x03\x02\x02" +
+		"\x02\x0E\x1F\x05\b\x05\x02\x0F\x18\x07\x03\x02\x02\x10\x15\x05\x02\x02" +
+		"\x02\x11\x12\x07\x04\x02\x02\x12\x14\x05\x02\x02\x02\x13\x11\x03\x02\x02" +
+		"\x02\x14\x17\x03\x02\x02\x02\x15\x13\x03\x02\x02\x02\x15\x16\x03\x02\x02" +
+		"\x02\x16\x19\x03\x02\x02\x02\x17\x15\x03\x02\x02\x02\x18\x10\x03\x02\x02" +
+		"\x02\x18\x19\x03\x02\x02\x02\x19\x1A\x03\x02\x02\x02\x1A\x1B\x07\x05\x02" +
+		"\x02\x1B\x1C\x07\x06\x02\x02\x1C\x1F\x05\x02\x02\x02\x1D\x1F\x07\x0E\x02" +
+		"\x02\x1E\x0E\x03\x02\x02\x02\x1E\x0F\x03\x02\x02\x02\x1E\x1D\x03\x02\x02" +
+		"\x02\x1F\x03\x03\x02\x02\x02 !\x07\x07\x02\x02!\"\x07\b\x02\x02\"#\x05" +
+		"\n\x06\x02#$\x07\t\x02\x02$\x05\x03\x02\x02\x02%&\x07\n\x02\x02&\'\x07" +
+		"\b\x02\x02\'(\x05\n\x06\x02()\x07\t\x02\x02)\x07\x03\x02\x02\x02*8\x05" +
+		"\x04\x03\x02+8\x05\x06\x04\x02,-\x05\x04\x03\x02-.\x07\v\x02\x02./\x05" +
+		"\x06\x04\x02/5\x03\x02\x02\x0201\x05\x06\x04\x0212\x07\v\x02\x0223\x05" +
+		"\x04\x03\x0235\x03\x02\x02\x024,\x03\x02\x02\x0240\x03\x02\x02\x0258\x03" +
+		"\x02\x02\x0268\x07\f\x02\x027*\x03\x02\x02\x027+\x03\x02\x02\x0274\x03" +
+		"\x02\x02\x0276\x03\x02\x02\x028\t\x03\x02\x02\x029<\x05\f\x07\x02:<\x07" +
+		"\x0E\x02\x02;9\x03\x02\x02\x02;:\x03\x02\x02\x02<D\x03\x02\x02\x02=@\x07" +
+		"\x04\x02\x02>A\x05\f\x07\x02?A\x07\x0E\x02\x02@>\x03\x02\x02\x02@?\x03" +
+		"\x02\x02\x02AC\x03\x02\x02\x02B=\x03\x02\x02\x02CF\x03\x02\x02\x02DB\x03" +
+		"\x02\x02\x02DE\x03\x02\x02\x02EH\x03\x02\x02\x02FD\x03\x02\x02\x02G;\x03" +
+		"\x02\x02\x02GH\x03\x02\x02\x02H\v\x03\x02\x02\x02IJ\x07\r\x02\x02JK\x07" +
+		"\x0E\x02\x02KL\x07\r\x02\x02L\r\x03\x02\x02\x02\v\x15\x18\x1E47;@DG";
 	public static __ATN: ATN;
 	public static get _ATN(): ATN {
 		if (!EffectParser.__ATN) {
@@ -780,16 +769,6 @@ export class PureContext extends ConcreteContext {
 
 
 export class VarsContext extends ParserRuleContext {
-	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
-		super(parent, invokingState);
-	}
-	// @Override
-	public get ruleIndex(): number { return EffectParser.RULE_vars; }
-	public copyFrom(ctx: VarsContext): void {
-		super.copyFrom(ctx);
-	}
-}
-export class ConcreteVariablesContext extends VarsContext {
 	public stateVarRef(): StateVarRefContext[];
 	public stateVarRef(i: number): StateVarRefContext;
 	public stateVarRef(i?: number): StateVarRefContext | StateVarRefContext[] {
@@ -799,32 +778,6 @@ export class ConcreteVariablesContext extends VarsContext {
 			return this.getRuleContext(i, StateVarRefContext);
 		}
 	}
-	constructor(ctx: VarsContext) {
-		super(ctx.parent, ctx.invokingState);
-		this.copyFrom(ctx);
-	}
-	// @Override
-	public enterRule(listener: EffectListener): void {
-		if (listener.enterConcreteVariables) {
-			listener.enterConcreteVariables(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: EffectListener): void {
-		if (listener.exitConcreteVariables) {
-			listener.exitConcreteVariables(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: EffectVisitor<Result>): Result {
-		if (visitor.visitConcreteVariables) {
-			return visitor.visitConcreteVariables(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-export class QuantifiedVariablesContext extends VarsContext {
 	public IDENTIFIER(): TerminalNode[];
 	public IDENTIFIER(i: number): TerminalNode;
 	public IDENTIFIER(i?: number): TerminalNode | TerminalNode[] {
@@ -834,26 +787,27 @@ export class QuantifiedVariablesContext extends VarsContext {
 			return this.getToken(EffectParser.IDENTIFIER, i);
 		}
 	}
-	constructor(ctx: VarsContext) {
-		super(ctx.parent, ctx.invokingState);
-		this.copyFrom(ctx);
+	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
+		super(parent, invokingState);
 	}
 	// @Override
+	public get ruleIndex(): number { return EffectParser.RULE_vars; }
+	// @Override
 	public enterRule(listener: EffectListener): void {
-		if (listener.enterQuantifiedVariables) {
-			listener.enterQuantifiedVariables(this);
+		if (listener.enterVars) {
+			listener.enterVars(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: EffectListener): void {
-		if (listener.exitQuantifiedVariables) {
-			listener.exitQuantifiedVariables(this);
+		if (listener.exitVars) {
+			listener.exitVars(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: EffectVisitor<Result>): Result {
-		if (visitor.visitQuantifiedVariables) {
-			return visitor.visitQuantifiedVariables(this);
+		if (visitor.visitVars) {
+			return visitor.visitVars(this);
 		} else {
 			return visitor.visitChildren(this);
 		}

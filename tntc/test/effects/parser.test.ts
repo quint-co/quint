@@ -99,6 +99,72 @@ describe('parseEffect', () => {
     }
   })
 
+  it('parses union effect with concrete vars', () => {
+    const effect = parseEffect("(Read[v, 'x']) => Update[v, 'y']")
+
+    assert.isTrue(effect.isRight())
+    if (effect.isRight()) {
+      const { value } = effect
+      assert.deepEqual(value, {
+        kind: 'arrow',
+        params: [
+          {
+            kind: 'concrete',
+            read: { kind: 'union', variables: [{ kind: 'quantified', name: 'v' }, { kind: 'concrete', vars: ['x'] }] },
+            update: { kind: 'concrete', vars: [] },
+          },
+        ],
+        result: {
+          kind: 'concrete',
+          read: { kind: 'concrete', vars: [] },
+          update: { kind: 'union', variables: [{ kind: 'quantified', name: 'v' }, { kind: 'concrete', vars: ['y'] }] },
+        },
+      })
+    }
+  })
+
+  it('parses arrow effect with empty args', () => {
+    const effect = parseEffect('() => Update[v]')
+
+    assert.isTrue(effect.isRight())
+    if (effect.isRight()) {
+      const { value } = effect
+      assert.deepEqual(value, {
+        kind: 'arrow',
+        params: [],
+        result: {
+          kind: 'concrete',
+          read: { kind: 'concrete', vars: [] },
+          update: { kind: 'quantified', name: 'v' },
+        },
+      })
+    }
+  })
+
+  it('parses concrete effects with empty vars', () => {
+    const effect = parseEffect('(Read[]) => Update[]')
+
+    assert.isTrue(effect.isRight())
+    if (effect.isRight()) {
+      const { value } = effect
+      assert.deepEqual(value, {
+        kind: 'arrow',
+        params: [
+          {
+            kind: 'concrete',
+            read: { kind: 'concrete', vars: [] },
+            update: { kind: 'concrete', vars: [] },
+          },
+        ],
+        result: {
+          kind: 'concrete',
+          read: { kind: 'concrete', vars: [] },
+          update: { kind: 'concrete', vars: [] },
+        },
+      })
+    }
+  })
+
   it('throws error when effect is invalid', () => {
     const effect = parseEffect('Read[v] & Read[w]')
 

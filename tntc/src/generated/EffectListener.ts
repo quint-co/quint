@@ -10,8 +10,6 @@ import { PureContext } from "./EffectParser";
 import { ConcreteEffectContext } from "./EffectParser";
 import { ArrowEffectContext } from "./EffectParser";
 import { QuantifiedEffectContext } from "./EffectParser";
-import { ConcreteVariablesContext } from "./EffectParser";
-import { QuantifiedVariablesContext } from "./EffectParser";
 import { EffectContext } from "./EffectParser";
 import { ReadContext } from "./EffectParser";
 import { UpdateContext } from "./EffectParser";
@@ -115,32 +113,6 @@ export interface EffectListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitQuantifiedEffect?: (ctx: QuantifiedEffectContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `concreteVariables`
-	 * labeled alternative in `EffectParser.vars`.
-	 * @param ctx the parse tree
-	 */
-	enterConcreteVariables?: (ctx: ConcreteVariablesContext) => void;
-	/**
-	 * Exit a parse tree produced by the `concreteVariables`
-	 * labeled alternative in `EffectParser.vars`.
-	 * @param ctx the parse tree
-	 */
-	exitConcreteVariables?: (ctx: ConcreteVariablesContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `quantifiedVariables`
-	 * labeled alternative in `EffectParser.vars`.
-	 * @param ctx the parse tree
-	 */
-	enterQuantifiedVariables?: (ctx: QuantifiedVariablesContext) => void;
-	/**
-	 * Exit a parse tree produced by the `quantifiedVariables`
-	 * labeled alternative in `EffectParser.vars`.
-	 * @param ctx the parse tree
-	 */
-	exitQuantifiedVariables?: (ctx: QuantifiedVariablesContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `EffectParser.effect`.

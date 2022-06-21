@@ -61,21 +61,22 @@ export class ToEffectVisitor implements EffectListener {
     this.pushEffect(effect)
   }
 
-  exitConcreteVariables () {
-    const variables: Variables = { kind: 'concrete', vars: this.stateVars }
-    this.stateVars = []
-    this.variablesStack.push(variables)
-  }
-
-  exitQuantifiedVariables (ctx: p.QuantifiedVariablesContext) {
+  exitVars (ctx: p.VarsContext) {
     const names: string[] = ctx.IDENTIFIER().map(i => i.text)
-    if (names.length === 1) {
-      const variables: Variables = { kind: 'quantified', name: names[0] }
-      this.variablesStack.push(variables)
+    const unionVariables: Variables[] = names.map(name => ({ kind: 'quantified', name: name }))
+    if (this.stateVars.length > 0) {
+      unionVariables.push({ kind: 'concrete', vars: this.stateVars })
+    }
+
+    if (unionVariables.length === 0) {
+      this.variablesStack.push({ kind: 'concrete', vars: [] })
+    } else if (unionVariables.length === 1) {
+      this.variablesStack.push(unionVariables[0])
     } else {
-      const unionVariables: Variables[] = names.map(name => ({ kind: 'quantified', name: name }))
       this.variablesStack.push({ kind: 'union', variables: unionVariables })
     }
+
+    this.stateVars = []
   }
 
   exitStateVarRef (ctx: p.StateVarRefContext) {

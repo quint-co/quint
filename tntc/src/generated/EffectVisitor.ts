@@ -10,8 +10,6 @@ import { PureContext } from "./EffectParser";
 import { ConcreteEffectContext } from "./EffectParser";
 import { ArrowEffectContext } from "./EffectParser";
 import { QuantifiedEffectContext } from "./EffectParser";
-import { ConcreteVariablesContext } from "./EffectParser";
-import { QuantifiedVariablesContext } from "./EffectParser";
 import { EffectContext } from "./EffectParser";
 import { ReadContext } from "./EffectParser";
 import { UpdateContext } from "./EffectParser";
@@ -83,22 +81,6 @@ export interface EffectVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitQuantifiedEffect?: (ctx: QuantifiedEffectContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `concreteVariables`
-	 * labeled alternative in `EffectParser.vars`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitConcreteVariables?: (ctx: ConcreteVariablesContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `quantifiedVariables`
-	 * labeled alternative in `EffectParser.vars`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitQuantifiedVariables?: (ctx: QuantifiedVariablesContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `EffectParser.effect`.
