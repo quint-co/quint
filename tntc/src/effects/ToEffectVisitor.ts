@@ -3,16 +3,19 @@ import { EffectListener } from '../generated/EffectListener'
 import * as p from '../generated/EffectParser'
 
 export class ToEffectVisitor implements EffectListener {
+  // The resulting effect
   effect?: Effect = undefined
 
-  private effectStack: Effect[][] = []
+  // Stack of lists of effects, each list will hold the effects of an arrow effect
+  private arrowEffectsStack: Effect[][] = []
   private variablesStack: Variables[] = []
   private stateVars: string[] = []
 
   private pushEffect (effect: Effect): void {
     this.effect = effect
-    if (this.effectStack.length > 0) {
-      this.effectStack[this.effectStack.length - 1].push(effect)
+    // If inside an arrow effect, push it this effect to the arrow's effects list
+    if (this.arrowEffectsStack.length > 0) {
+      this.arrowEffectsStack[this.arrowEffectsStack.length - 1].push(effect)
     }
   }
 
@@ -48,11 +51,11 @@ export class ToEffectVisitor implements EffectListener {
   }
 
   enterArrowEffect () {
-    this.effectStack.push([])
+    this.arrowEffectsStack.push([])
   }
 
   exitArrowEffect () {
-    const effects = this.effectStack.pop()!
+    const effects = this.arrowEffectsStack.pop()!
     const result = effects.pop()!
     const effect: Effect = { kind: 'arrow', params: effects, result: result }
     this.pushEffect(effect)
