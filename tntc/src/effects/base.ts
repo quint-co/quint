@@ -162,7 +162,7 @@ function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substi
     } else {
       return left({
         location: location,
-        message: `Expected effect to act over variable(s) ${v1.vars} instead of ${v2.vars}`,
+        message: `Expected variable(s) ${v1.vars} and ${v2.vars} to be the same`,
         children: [],
       })
     }
@@ -214,13 +214,13 @@ function findVars (variables: Variables): string[] {
 
 function simplifyVariables (variables: Variables, checkRepeated: Boolean): Variables {
   const unionVariables: Variables[] = []
-  const vars: string[] = []
+  const vars: Set<string> = new Set<string>()
   switch (variables.kind) {
     case 'quantified':
       unionVariables.push(variables)
       break
     case 'concrete':
-      vars.push(...variables.vars)
+      variables.vars.forEach(v => vars.add(v))
       break
     case 'union': {
       const flattenVariables = variables.variables.map(v => simplifyVariables(v, checkRepeated))
@@ -230,7 +230,7 @@ function simplifyVariables (variables: Variables, checkRepeated: Boolean): Varia
             unionVariables.push(v)
             break
           case 'concrete':
-            vars.push(...v.vars)
+            v.vars.forEach(va => vars.add(va))
             break
           case 'union':
             unionVariables.push(...v.variables)
@@ -243,14 +243,14 @@ function simplifyVariables (variables: Variables, checkRepeated: Boolean): Varia
 
   const sortedUnionVariables = sortVariables(unionVariables)
   if (unionVariables.length > 0) {
-    const variables = vars.length > 0 ? sortedUnionVariables.concat({ kind: 'concrete', vars: vars }) : unionVariables
+    const variables = vars.size > 0 ? sortedUnionVariables.concat({ kind: 'concrete', vars: Array.from(vars) }) : unionVariables
     return variables.length > 1 ? { kind: 'union', variables: variables } : variables[0]
   } else {
-    return { kind: 'concrete', vars: vars }
+    return { kind: 'concrete', vars: Array.from(vars) }
   }
 }
 
-function applySubstitution (subs: Substitution[], e: Effect): Either<ErrorTree, Effect> {
+export function applySubstitution (subs: Substitution[], e: Effect): Either<ErrorTree, Effect> {
   let result: Either<ErrorTree, Effect> = right(e)
   switch (e.kind) {
     case 'quantified': {

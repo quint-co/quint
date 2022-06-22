@@ -13,7 +13,7 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
 import { TntModule } from './tntIr'
 import { ToIrListener } from './ToIrListener'
-import { collectDefinitions } from './definitionsCollector'
+import { collectDefinitions, DefinitionTableByModule } from './definitionsCollector'
 import { resolveNames } from './nameResolver'
 import { resolveImports } from './importResolver'
 import { treeFromModule } from './scoping'
@@ -43,13 +43,12 @@ export function parsePhase1 (text: string, sourceLocation: string): ParseResult 
   const errorMessages: ErrorMessage[] = []
   // error listener to report lexical and syntax errors
   const errorListener: any = {
-    syntaxError: (
-      _recognizer: any,
+    syntaxError: (recognizer: any,
       offendingSymbol: any,
       line: number,
       charPositionInLine: number,
-      msg: string
-    ) => {
+      msg: string) => {
+      //
       const len = offendingSymbol
         ? offendingSymbol.stopIndex - offendingSymbol.startIndex
         : 0
@@ -98,7 +97,7 @@ export function parsePhase1 (text: string, sourceLocation: string): ParseResult 
  * Phase 2 of the TNT parser. Read the IR and check that all names are defined.
  * Note that the IR may be ill-typed.
  */
-export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>): ParseResult {
+export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>): { kind: 'ok', table: DefinitionTableByModule } | { kind: 'error', messages: ErrorMessage[] } {
   const scopeTree = treeFromModule(tntModule)
   const moduleDefinitions = collectDefinitions(tntModule)
   const importResolvingResult = resolveImports(tntModule, moduleDefinitions)
@@ -172,7 +171,7 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
 
   return errorMessages.length > 0
     ? { kind: 'error', messages: errorMessages }
-    : { kind: 'ok', module: tntModule, sourceMap: sourceMap }
+    : { kind: 'ok', table: definitions }
 }
 
 export function compactSourceMap (sourceMap: Map<BigInt, Loc>): { sourceIndex: any, map: any } {
