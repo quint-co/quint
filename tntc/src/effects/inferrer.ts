@@ -3,8 +3,7 @@ import { DefinitionTableByModule } from '../definitionsCollector'
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { TntApp, TntBool, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr } from '../tntIr'
-import { applySubstitution, Effect, emptyVariables, ErrorTree, unify } from './base'
-import { Signature } from './builtinSignatures'
+import { applySubstitution, Effect, emptyVariables, ErrorTree, unify, Signature } from './base'
 
 export function inferEffects (signatures: Map<string, Signature>, definitionsTable: DefinitionTableByModule, module: TntModule): Either<Map<BigInt, ErrorTree>, Map<BigInt, Effect>> {
   const table: Map<string, Map<string, string>> = new Map<string, Map<string, string>>()
@@ -56,7 +55,7 @@ class EffectInferrerVisitor implements IRVisitor {
     const kind = this.currentTable.get(expr.name)!
     switch (kind) {
       case 'param':
-        this.effects.set(expr.id, { kind: 'concrete', read: emptyVariables, update: emptyVariables })
+        this.effects.set(expr.id, { kind: 'concrete', read: { kind: 'quantified', name: `r_${expr.name}` }, update: emptyVariables })
         break
       case 'var': {
         const effect: Effect = {

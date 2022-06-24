@@ -57,6 +57,8 @@ export interface ErrorTree {
   children: ErrorTree[]
 }
 
+export type Signature = (arity: number) => Effect
+
 /*
  * A simple disjunction over error representations to make it easier to chain
  * different operations and handle errors all at once (see buildErrorTree())

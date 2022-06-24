@@ -21,9 +21,9 @@ import { formatError } from './errorReporter'
 
 import yargs from 'yargs/yargs'
 import { inferEffects } from './effects/inferrer'
+import { Signature } from './effects/base'
 import { DefinitionTableByModule } from './definitionsCollector'
 import { effectToString, errorTreeToString } from './effects/printing'
-import { getSignatures } from './effects/builtinSignatures'
 
 /**
  * Parse a TNT specification.
@@ -47,7 +47,7 @@ function typecheck (argv: any) {
     process.exit(1)
   }
 
-  const effects = inferEffects(getSignatures(), definitionsTable, parseResult.module)
+  const effects = inferEffects(new Map<string, Signature>(), definitionsTable, parseResult.module)
   effects.map(e => e.forEach((value, key) => console.log(`${key}: ${effectToString(value)}`)))
 
   const finder = lineColumn(sourceCode)
