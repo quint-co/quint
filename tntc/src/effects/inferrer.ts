@@ -132,7 +132,7 @@ class EffectInferrerVisitor implements IRVisitor {
       return
     }
     const e = this.effects.get(expr.expr.id)!
-    const params: Effect[] = expr.params.map(_ => ({ kind: 'concrete', read: emptyVariables, update: emptyVariables }))
+    const params: Effect[] = expr.params.map(p => ({ kind: 'concrete', read: { kind: 'quantified', name: `r_${p}` }, update: emptyVariables }))
     this.effects.set(expr.id, { kind: 'arrow', params: params, result: e })
   }
 
