@@ -251,7 +251,7 @@ class DefinitionsCollectorVisitor implements IRVisitor {
 
   enterLambda (expr: TntLambda): void {
     expr.params.forEach(p => {
-      this.collectValueDefinition('def', p, expr.id, expr.id)
+      this.collectValueDefinition('param', p, expr.id, expr.id)
     })
   }
 
