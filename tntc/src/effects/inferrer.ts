@@ -67,26 +67,20 @@ class EffectInferrerVisitor implements IRVisitor {
       default:
         this.fetchSignature(expr.name, 2)
           .map(s => this.effects.set(expr.id, s))
-          .mapLeft(m => this.errors.set(expr.id, { message: m, location: `Inferring effect for name ${expr.name} with 2 args`, children: [] }))
+          .mapLeft(m => this.errors.set(expr.id, { message: m, location: `Inferring effect for name ${expr.name}`, children: [] }))
     }
   }
 
   exitApp (expr: TntApp): void {
-    if (!this.signatures.get(expr.opcode)) {
-      this.errors.set(expr.id, {
-        message: `Signature not found for operator: ${expr.opcode} `,
-        location: `Trying to infer effect for operator application in ${expressionToString(expr)}`,
-        children: [],
-      })
+    if (this.errors.size > 0) {
+      // Don't try to infer application if there are errors with the args
       return
     }
 
-    if (this.errors.size > 0) {
-      return
-    }
+    const location = `Trying to infer effect for operator application in ${expressionToString(expr)}`
 
     this.fetchSignature(expr.opcode, expr.args.length)
-      .mapLeft(m => this.errors.set(expr.id, { message: m, location: `Inferring effect for application of ${expr.opcode} with ${expr.args.length} args`, children: [] }))
+      .mapLeft(m => this.errors.set(expr.id, { message: m, location: location, children: [] }))
       .map(signature => {
         const resultEffect: Effect = { kind: 'quantified', name: this.freshVar() }
         const substitution = unify(signature, {
@@ -101,7 +95,7 @@ class EffectInferrerVisitor implements IRVisitor {
 
         return resultEffectWithSubs.map(effect => {
           return this.effects.set(expr.id, effect)
-        }).mapLeft(error => this.errors.set(expr.id, error))
+        }).mapLeft(error => this.errors.set(expr.id, { location: location, children: [error] }))
       })
   }
 
@@ -118,7 +112,8 @@ class EffectInferrerVisitor implements IRVisitor {
   }
 
   exitLet (expr: TntLet): void {
-    if (!this.effects.get(expr.expr.id)) {
+    if (this.errors.size > 0) {
+      // Don't try to infer let if there are errors with the defined expression
       return
     }
     const e = this.effects.get(expr.expr.id)!
@@ -142,11 +137,11 @@ class EffectInferrerVisitor implements IRVisitor {
   }
 
   private fetchSignature (opcode: string, arity: number): Either<string, Effect> {
+    // Assumes a valid number of arguments
     if (!this.signatures.get(opcode)) {
-      return left(`Signature for ${opcode} not found`)
+      return left(`Signature not found for operator: ${opcode}`)
     }
     const signature = this.signatures.get(opcode)!
-    if (signature(arity) === undefined) { return left(`Signature for ${opcode} with arity ${arity} not found ${JSON.stringify(signature)} `) }
     return right(signature(arity))
   }
 
