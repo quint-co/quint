@@ -190,6 +190,46 @@ function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substi
   }
 }
 
+/**
+ * Applies substitutions to an effect, replacing all quantified names with their
+ * substitution values when they are defined.
+ *
+ * @param subs the substitutions to be applied
+ * @param e the effect to be transformed
+ *
+ * @returns the effect resulting from the substitutions application on the given
+ *          effect, when successful. Otherwise, an error tree with an error message and its trace.
+ */
+export function applySubstitution (subs: Substitution[], e: Effect): Either<ErrorTree, Effect> {
+  let result: Either<ErrorTree, Effect> = right(e)
+  switch (e.kind) {
+    case 'quantified': {
+      const sub = subs.find(s => s.name === e.name)
+      if (sub && sub.kind === 'effect') {
+        result = right(sub.value)
+      }
+      break
+    }
+    case 'arrow': {
+      const arrowParams = mergeInMany(e.params.map(ef => applySubstitution(subs, ef)))
+      result = arrowParams.chain(ps => {
+        const arrowResult = applySubstitution(subs, e.result)
+        return arrowResult.map(r => ({ kind: e.kind, params: ps, result: r }))
+      }).mapLeft(error => buildErrorTree(`Applying substitution to arrow effect ${effectToString(e)}`, error))
+      break
+    }
+    case 'concrete': {
+      const read = applySubstitutionToVariables(subs, e.read)
+      const update = applySubstitutionToVariables(subs, e.update)
+
+      result = right({ kind: 'concrete', read: read, update: update })
+      break
+    }
+  }
+
+  return result.chain(e => e.kind === 'concrete' ? simplifyConcreteEffect(e) : right(e))
+}
+
 function simplifyConcreteEffect (e: ConcreteEffect): Either<ErrorTree, Effect> {
   const read = simplifyVariables(e.read, false)
   const update = simplifyVariables(e.update, true)
@@ -253,36 +293,6 @@ function simplifyVariables (variables: Variables, checkRepeated: Boolean): Varia
   } else {
     return { kind: 'concrete', vars: Array.from(vars) }
   }
-}
-
-export function applySubstitution (subs: Substitution[], e: Effect): Either<ErrorTree, Effect> {
-  let result: Either<ErrorTree, Effect> = right(e)
-  switch (e.kind) {
-    case 'quantified': {
-      const sub = subs.find(s => s.name === e.name)
-      if (sub && sub.kind === 'effect') {
-        result = right(sub.value)
-      }
-      break
-    }
-    case 'arrow': {
-      const arrowParams = mergeInMany(e.params.map(ef => applySubstitution(subs, ef)))
-      result = arrowParams.chain(ps => {
-        const arrowResult = applySubstitution(subs, e.result)
-        return arrowResult.map(r => ({ kind: e.kind, params: ps, result: r }))
-      }).mapLeft(error => buildErrorTree(`Applying substitution to arrow effect ${effectToString(e)}`, error))
-      break
-    }
-    case 'concrete': {
-      const read = applySubstitutionToVariables(subs, e.read)
-      const update = applySubstitutionToVariables(subs, e.update)
-
-      result = right({ kind: 'concrete', read: read, update: update })
-      break
-    }
-  }
-
-  return result.chain(e => e.kind === 'concrete' ? simplifyConcreteEffect(e) : right(e))
 }
 
 function applySubstitutionToVariables (subs: Substitution[], variables: Variables): Variables {
