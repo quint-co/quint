@@ -1,7 +1,25 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * A visitor for the effects parser
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { Effect, Variables, emptyVariables } from './base'
 import { EffectListener } from '../generated/EffectListener'
 import * as p from '../generated/EffectParser'
 
+/**
+ * An ANTLR4 listener that constructs Effect objects out of the abstract
+ * syntax tree.
+ */
 export class ToEffectVisitor implements EffectListener {
   // The resulting effect
   effect?: Effect = undefined
