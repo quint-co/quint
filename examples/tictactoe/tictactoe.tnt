@@ -1,0 +1,126 @@
+module tictactoe {
+  var board: seq(seq(int)) // board[1..3][1..3] A 3x3 tic-tac-toe board
+  var nextTurn: str // who goes next
+
+  def Init = {
+    & nextTurn == "X" // X always goes first
+    // Every space in the board starts blank
+    & board == 1.to(3).mapOf(_ => 1.to(3).mapOf(_ => "_"))
+  }
+
+  pred BoardIs(coordinate, player) = 
+    board[coordinate._1][coordinate._2] == player
+
+  action Move(player, coordinate) = {
+    & BoardIs(coordinate, "_")
+    & board <- board.replaceAt(
+      coordinate._1, 
+      board[coordinate._1].replaceAt(coordinate._2, player)
+    )
+  }
+
+  action MoveToEmpty(player) = tuples(1.to(3), 1.to(3)).guess(coordinates =>
+    Move(player, coordinates)
+  )
+
+  val winningPatterns = set(
+    // Horizonal wins
+    set((1,1), (1,2), (1,3)),
+    set((2,1), (2,2), (2,3)),
+    set((3,1), (3,2), (3,3)),
+    // Vertical wins
+    set((1,1), (2,1), (3,1)),
+    set((1,2), (2,2), (3,2)),
+    set((1,3), (2,3), (3,3)),
+    // Diagonal wins
+    set((1,1), (2,2), (3,3)),
+    set((3,1), (2,2), (1,3))
+  )
+
+  pred Won(player) = winningPatterns.exists(pattern => 
+    pattern.forall(coordinate => BoardIs(coordinate, player))
+  )
+
+  action MoveO = {
+    & nextTurn == "O"
+    & not(Won("X"))
+    & MoveToEmpty("O")
+    & nextTurn <- "X"
+  }
+
+  val corners = set(
+    (1,1), 
+    (3,1), 
+    (1,3),
+    (3,3)
+  )
+
+  pred BoardEmpty = tuples(1.to(3), 1.to(3)).forall(position =>
+    BoardIs(position, "_")
+  )
+
+  action StartInCorner = corners.guess(corner => Move("X", corner))
+
+  pred canWinWithPattern(winningPattern) = {
+    & winningPattern.filter(p => BoardIs(p, "X")).cardinality == 2
+    & winningPattern.filter(p => BoardIs(p, "_")).cardinality == 1
+  }
+
+  pred canBlockWithPattern(winningPattern) = {
+    & winningPattern.filter(p => BoardIs(p, "O")).cardinality == 2
+    & winningPattern.filter(p => BoardIs(p, "_")).cardinality == 1
+  }
+
+  action Win = winningPatterns.guess(pattern => {
+    & canWinWithPattern(pattern)
+    & pattern.guess(p => Move("X", p)) 
+  })
+
+  action Block = winningPatterns.guess(pattern => {
+    & canBlockWithPattern(pattern)
+    & pattern.guess(p => Move("X", p)) 
+  })
+
+  action TakeCenter = Move("X", (2,2))
+
+  action SetupWin = winningPatterns.guess(pattern => {
+    & pattern.filter(p => BoardIs(p, "X")).cardinality == 1
+    & pattern.filter(p => BoardIs(p, "_")).cardinality == 2
+    & pattern.guess(p => Move("X", p)) 
+  })
+
+  action MoveX = {
+    & nextTurn == "X"
+    & not(Won("O"))
+    & if (BoardEmpty) StartInCorner else
+      if (enabled(Win)) Win else
+      if (enabled(Block)) Block else
+      if (enabled(TakeCenter)) TakeCenter else
+      if (enabled(SetupWin)) SetupWin else
+      MoveToEmpty("X")
+    & nextTurn <- "O"
+  }
+
+  // Every state, X will move if X's turn, O will move on O's turn
+  action Next = {
+    | MoveX
+    | MoveO
+  }
+
+  temporal XMustEventuallyWin = eventually(Won("X"))
+
+  // Invariants: The things we are checking for.
+  pred XHasNotWon = not(Won("X"))
+  pred OHasNotWon = not(Won("O"))
+  
+  pred BoardFilled = not(tuples(1.to(3), 1.to(3)).exists(coordinate =>
+    BoardIs(coordinate, "_")
+  ))
+
+  // It's not a stalemate if one player has won or the board is not filled
+  pred NotStalemate = {
+    | Won("X")
+    | Won("O")
+    | not(BoardFilled)
+  }
+}
