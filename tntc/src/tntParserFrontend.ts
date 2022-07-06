@@ -30,8 +30,12 @@ export interface ErrorMessage {
   locs: Loc[];
 }
 
-export type ParseResult =
+export type Phase1Result =
   | { kind: 'ok', module: TntModule, sourceMap: Map<BigInt, Loc> }
+  | { kind: 'error', messages: ErrorMessage[] }
+
+export type Phase2Result =
+  | { kind: 'ok', table: DefinitionTableByModule }
   | { kind: 'error', messages: ErrorMessage[] }
 
 /**
@@ -39,7 +43,7 @@ export type ParseResult =
  * Note that the IR may be ill-typed and some names may be unresolved.
  * The main goal of this pass is to translate a sequence of characters into IR.
  */
-export function parsePhase1 (text: string, sourceLocation: string): ParseResult {
+export function parsePhase1 (text: string, sourceLocation: string): Phase1Result {
   const errorMessages: ErrorMessage[] = []
   // error listener to report lexical and syntax errors
   const errorListener: any = {
@@ -48,7 +52,6 @@ export function parsePhase1 (text: string, sourceLocation: string): ParseResult 
       line: number,
       charPositionInLine: number,
       msg: string) => {
-      //
       const len = offendingSymbol
         ? offendingSymbol.stopIndex - offendingSymbol.startIndex
         : 0
@@ -97,7 +100,7 @@ export function parsePhase1 (text: string, sourceLocation: string): ParseResult 
  * Phase 2 of the TNT parser. Read the IR and check that all names are defined.
  * Note that the IR may be ill-typed.
  */
-export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>): { kind: 'ok', table: DefinitionTableByModule } | { kind: 'error', messages: ErrorMessage[] } {
+export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>): Phase2Result {
   const scopeTree = treeFromModule(tntModule)
   const moduleDefinitions = collectDefinitions(tntModule)
   const importResolvingResult = resolveImports(tntModule, moduleDefinitions)
