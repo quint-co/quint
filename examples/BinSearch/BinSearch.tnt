@@ -45,7 +45,7 @@ module BinSearch {
     // Initialization step (lines 2-3)
     pred Init = (
         & low == 0
-        & high == INPUT_SEQ.length() - 1
+        & high == length(INPUT_SEQ) - 1
         & isTerminated == false
         & returnValue == 0
         & nSteps == 0
@@ -66,7 +66,7 @@ module BinSearch {
               }
             | { & midVal == INPUT_KEY // lines 13-14
                 & returnValue <- mid
-                & isTerminated <- TRUE
+                & isTerminated <- true
               }
           }
     }
@@ -75,7 +75,7 @@ module BinSearch {
     action LoopExit = {
         & not(isTerminated)        // line 16
         & low > high
-        & isTerminated <- TRUE
+        & isTerminated <- true
         & returnValue <- -(low + 1)
     }
 
