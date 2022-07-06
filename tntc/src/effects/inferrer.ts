@@ -54,7 +54,7 @@ export function inferEffects (signatures: Map<string, Signature>, definitionsTab
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor(signatures: Map<string, Signature>, definitionsTable: Map<string, Map<string, string>>) {
+  constructor (signatures: Map<string, Signature>, definitionsTable: Map<string, Map<string, string>>) {
     this.signatures = signatures
     this.definitionsTable = definitionsTable
   }
@@ -86,16 +86,17 @@ class EffectInferrerVisitor implements IRVisitor {
     const kind = this.currentTable.get(expr.name)!
     switch (kind) {
       case 'param':
-        //  { kind: 'param', identifier: p } ∈ Γ
-        // ------------------------------------ (NAME-PARAM)
-        //          Γ ⊢ v: Read[r_p]
-
+        /*  { kind: 'param', identifier: p } ∈ Γ
+         * ------------------------------------ (NAME-PARAM)
+         *          Γ ⊢ v: Read[r_p]
+         */
         this.effects.set(expr.id, { kind: 'concrete', read: { kind: 'quantified', name: `r_${expr.name}` }, update: emptyVariables })
         break
       case 'const': {
-        // { kind: 'const', identifier: c } ∈ Γ
-        // ------------------------------------- (NAME-CONST)
-        //       Γ ⊢ c: Pure
+        /* { kind: 'const', identifier: c } ∈ Γ
+         * ------------------------------------- (NAME-CONST)
+         *       Γ ⊢ c: Pure
+         */
         const effect: Effect = {
           kind: 'concrete', read: emptyVariables, update: emptyVariables,
         }
@@ -103,10 +104,10 @@ class EffectInferrerVisitor implements IRVisitor {
         break
       }
       case 'var': {
-        //  { kind: 'var', identifier: v } ∈ Γ
-        // ------------------------------------ (NAME-VAR)
-        //          Γ ⊢ v: Read[v]
-
+        /*  { kind: 'var', identifier: v } ∈ Γ
+         * ------------------------------------ (NAME-VAR)
+         *          Γ ⊢ v: Read[v]
+         */
         const effect: Effect = {
           kind: 'concrete', read: { kind: 'concrete', vars: [expr.name] }, update: emptyVariables,
         }
@@ -114,19 +115,21 @@ class EffectInferrerVisitor implements IRVisitor {
         break
       }
       default:
-        // { kind: ('def' | 'val' | 'pred'), identifier: op, body: e } ∈ Γ   e: E
-        // ---------------------------------------------------------------------- (NAME-OP)
-        //       Γ ⊢ op: E
+        /* { identifier: op, effect: E } ∈ Γ
+         * -------------------------------------- (NAME-OP)
+         *           Γ ⊢ op: E
+         */
         this.fetchSignature(expr.name, 2)
           .map(s => this.effects.set(expr.id, s))
           .mapLeft(m => this.errors.set(expr.id, { message: m, location: `Inferring effect for name ${expr.name}`, children: [] }))
     }
   }
 
-  // { identifier: op, effect: E } ∈ Γ    Γ ⊢ p0:E0 ... Γ ⊢ pn:EN
-  // Eres <- freshVar   S = unify(E, (E0, ...,  EN) => Eres)
-  // ------------------------------------------------------ (APP)
-  //           Γ ⊢ op(p0, ..., pn): S(Eres)
+  /* { identifier: op, effect: E } ∈ Γ    Γ ⊢ p0:E0 ... Γ ⊢ pn:EN
+   * Eres <- freshVar   S = unify(E, (E0, ...,  EN) => Eres)
+   * ------------------------------------------------------ (APP)
+   *           Γ ⊢ op(p0, ..., pn): S(Eres)
+   */
   exitApp (expr: TntApp): void {
     if (this.errors.size > 0) {
       // Don't try to infer application if there are errors with the args
@@ -160,9 +163,10 @@ class EffectInferrerVisitor implements IRVisitor {
     this.effects.set(expr.id, { kind: 'concrete', read: emptyVariables, update: emptyVariables })
   }
 
-  //                        Γ ⊢ e: E
-  // ------------------------------------------------------------- (OPDEF)
-  // Γ ∪ { identifier: op, effect: E } ⊢ (def op(params) = e): Pure
+  /*                        Γ ⊢ e: E
+   * ------------------------------------------------------------- (OPDEF)
+   * Γ ∪ { identifier: op, effect: E } ⊢ (def op(params) = e): Pure
+   */
   exitOpDef (def: TntOpDef): void {
     if (!this.effects.get(def.expr.id)) {
       return
@@ -171,9 +175,10 @@ class EffectInferrerVisitor implements IRVisitor {
     this.signatures.set(def.name, (_) => e)
   }
 
-  //     Γ ⊢ e: E
-  // ----------------------- (LET)
-  // Γ ⊢ <opdef> { e }: E
+  /*     Γ ⊢ e: E
+   * ----------------------- (LET)
+   * Γ ⊢ <opdef> { e }: E
+   */
   exitLet (expr: TntLet): void {
     if (this.errors.size > 0) {
       // Don't try to infer let if there are errors with the defined expression
@@ -184,9 +189,10 @@ class EffectInferrerVisitor implements IRVisitor {
     this.effects.set(expr.id, e)
   }
 
-  //                  Γ ⊢ e: E
-  // ---------------------------------------------- (LAMBDA)
-  // Γ ⊢ (p0, ..., pn) => e: (Read[r_p0], ..., Read[r_pn]) => E
+  /*                  Γ ⊢ e: E
+   * ---------------------------------------------- (LAMBDA)
+   * Γ ⊢ (p0, ..., pn) => e: (Read[r_p0], ..., Read[r_pn]) => E
+   */
   exitLambda (expr: TntLambda): void {
     if (!this.effects.get(expr.expr.id)) {
       return

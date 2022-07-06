@@ -5,12 +5,13 @@ import { DefinitionTable, DefinitionTableByModule } from '../../src/definitionsC
 import { Effect, Signature } from '../../src/effects/base'
 import { buildModuleWithDefs } from '../builders/ir'
 import { parseEffectOrThrow } from '../../src/effects/parser'
-import { errorTreeToString } from '../../src/effects/printing'
+import { effectToString, errorTreeToString } from '../../src/effects/printing'
 
 describe('inferEffects', () => {
   const table: DefinitionTable = {
     valueDefinitions: [
       { kind: 'param', identifier: 'p' },
+      { kind: 'const', identifier: 'N' },
       { kind: 'var', identifier: 'x' },
     ],
     typeDefinitions: [],
@@ -37,13 +38,14 @@ describe('inferEffects', () => {
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
-    const expectedEffect = parseEffectOrThrow("(Read[r_p]) => Read[r_p] & Update['x']")
+    const expectedEffect = "(Read[r_p]) => Read[r_p] & Update['x']"
 
     effects
-      .map((es: Map<BigInt, Effect>) => assert.deepEqual(es.get(BigInt(4))!, expectedEffect))
-      .mapLeft(console.log)
-
-    assert.isTrue(effects.isRight())
+      .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(BigInt(4))!), expectedEffect))
+      .mapLeft(e => {
+        const errors = Array.from(e.values())
+        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
+      })
   })
 
   it('infers application of multiple arity opertors', () => {
@@ -56,13 +58,14 @@ describe('inferEffects', () => {
 
     effects
       .map((es: Map<BigInt, Effect>) => {
-        assert.deepEqual(es.get(BigInt(4))!, parseEffectOrThrow("(Read[r_p]) => Read[r_p, 'x']"))
-        assert.deepEqual(es.get(BigInt(9))!, parseEffectOrThrow('(Read[r_p]) => Read[r_p]'))
+        assert.deepEqual(effectToString(es.get(BigInt(4))!), "(Read[r_p]) => Read[r_p, 'x']")
+        assert.deepEqual(effectToString(es.get(BigInt(9))!), '(Read[r_p]) => Read[r_p]')
         return true
       })
-      .mapLeft(console.log)
-
-    assert.isTrue(effects.isRight())
+      .mapLeft(e => {
+        const errors = Array.from(e.values())
+        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
+      })
   })
 
   it('infers references to operators', () => {
@@ -72,13 +75,31 @@ describe('inferEffects', () => {
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
-    const expectedEffect = parseEffectOrThrow("(Read[r_p]) => Read[r_p, 'x']")
+    const expectedEffect = "(Read[r_p]) => Read[r_p, 'x']"
 
     effects
-      .map((es: Map<BigInt, Effect>) => assert.deepEqual(es.get(BigInt(5))!, expectedEffect))
-      .mapLeft(e => e.forEach(v => console.log(errorTreeToString(v))))
+      .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(BigInt(5))!), expectedEffect))
+      .mapLeft(e => {
+        const errors = Array.from(e.values())
+        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
+      })
+  })
 
-    assert.isTrue(effects.isRight())
+  it('infers references to user-defined operators', () => {
+    const tntModule = buildModuleWithDefs([
+      'def a(p) = def my_add = iadd { foldl(x, p, my_add) }',
+    ])
+
+    const effects = inferEffects(signatures, definitionsTable, tntModule)
+
+    const expectedEffect = "(Read[r_p]) => Read[r_p, 'x']"
+
+    effects
+      .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(BigInt(8))!), expectedEffect))
+      .mapLeft(e => {
+        const errors = Array.from(e.values())
+        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
+      })
   })
 
   it('infers effects for operators defined with let-in', () => {
@@ -88,13 +109,31 @@ describe('inferEffects', () => {
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
-    const expectedEffect = parseEffectOrThrow("Read['x']")
+    const expectedEffect = "Read['x']"
 
     effects
-      .map((es: Map<BigInt, Effect>) => assert.deepEqual(es.get(BigInt(4))!, expectedEffect))
-      .mapLeft(e => e.forEach(v => console.log(errorTreeToString(v))))
+      .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(BigInt(4))!), expectedEffect))
+      .mapLeft(e => {
+        const errors = Array.from(e.values())
+        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
+      })
+  })
 
-    assert.isTrue(effects.isRight())
+  it('infers pure effect for literals and constants', () => {
+    const tntModule = buildModuleWithDefs([
+      'def A = N + 1',
+    ])
+
+    const effects = inferEffects(signatures, definitionsTable, tntModule)
+
+    const expectedEffect = 'Pure'
+
+    effects
+      .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(BigInt(3))!), expectedEffect))
+      .mapLeft(e => {
+        const errors = Array.from(e.values())
+        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
+      })
   })
 
   it('returns error when operator signature is not defined', () => {
