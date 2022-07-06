@@ -70,7 +70,7 @@ export function variablesToString (v: Variables): string {
  */
 export function errorTreeToString (e: ErrorTree): string {
   const childrenErrors = e.children.map(errorTreeToString)
-  let out = childrenErrors.join(' and ')
+  let out = childrenErrors.join('and\n')
   out += e.message ? e.message + '\n' : ''
   out += e.location + '\n'
 
