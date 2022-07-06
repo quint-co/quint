@@ -55,7 +55,7 @@ describe('nameResolver', () => {
       assert.deepEqual(result, expectedResult)
     })
 
-    it('find unresolved names inside aplication', () => {
+    it('find unresolved names inside application', () => {
       const tntModule = buildModuleWithExpressions(['head(x)', 'x(true)'])
 
       const result = resolveNames(tntModule, tables, dummyScopeTree)

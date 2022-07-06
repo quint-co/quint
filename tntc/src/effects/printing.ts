@@ -61,9 +61,16 @@ export function variablesToString (v: Variables): string {
   }
 }
 
+/**
+ * Pretty prints an error tree
+ *
+ * @param e the ErrorTree to be formatted
+ *
+ * @returns a multiline string with the pretty printed error tree
+ */
 export function errorTreeToString (e: ErrorTree): string {
   const childrenErrors = e.children.map(errorTreeToString)
-  let out = childrenErrors.join(' and ')
+  let out = childrenErrors.join('and\n')
   out += e.message ? e.message + '\n' : ''
   out += e.location + '\n'
 

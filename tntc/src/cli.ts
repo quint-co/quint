@@ -16,11 +16,12 @@ import { lf } from 'eol'
 import JSONbig from 'json-bigint'
 import lineColumn from 'line-column'
 
-import { parsePhase1, parsePhase2, ErrorMessage, compactSourceMap, ParseResult } from './tntParserFrontend'
+import { parsePhase1, parsePhase2, ErrorMessage, compactSourceMap, Phase1Result } from './tntParserFrontend'
 import { formatError } from './errorReporter'
 
 import yargs from 'yargs/yargs'
 import { inferEffects } from './effects/inferrer'
+import { Signature } from './effects/base'
 import { DefinitionTableByModule } from './definitionsCollector'
 import { effectToString, errorTreeToString } from './effects/printing'
 
@@ -46,7 +47,7 @@ function typecheck (argv: any) {
     process.exit(1)
   }
 
-  const effects = inferEffects(parseResult.module, definitionsTable)
+  const effects = inferEffects(new Map<string, Signature>(), definitionsTable, parseResult.module)
   effects.map(e => e.forEach((value, key) => console.log(`${key}: ${effectToString(value)}`)))
 
   const finder = lineColumn(sourceCode)
@@ -63,13 +64,13 @@ function typecheck (argv: any) {
 }
 
 // read either the standard input or an input file
-function parseModule (argv: any): [ParseResult, DefinitionTableByModule, string] {
+function parseModule (argv: any): [Phase1Result, DefinitionTableByModule, string] {
   const data = readFileSync(argv.input, 'utf8')
   return parseText(argv, lf(data))
 }
 
 // a callback to parse the text that we get from readFile
-function parseText (argv: any, text: string): [ParseResult, DefinitionTableByModule, string] {
+function parseText (argv: any, text: string): [Phase1Result, DefinitionTableByModule, string] {
   const path = resolve(cwd(), argv.input)
   const phase1Result = parsePhase1(text, path)
   if (phase1Result.kind === 'error') {
