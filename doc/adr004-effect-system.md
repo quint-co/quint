@@ -119,7 +119,9 @@ and variables inside Read and Update statements.
 
 Inferring names: variables have effect `Read[v]` (unless they are used in as
 targets of assignment, where their resulting effect will be inferred correctly
-as `Update[v]`), constants have no effect (Pure), operators resolve to the
+as `Update[v]`), constants have no effect (Pure), values used as parameters can
+read variables (the read variables are introduces as a new quantification over
+variables with the parameter name prefixed by `r_`) operators resolve to the
 effect of their respective bodies.
 
 ```
@@ -131,10 +133,13 @@ effect of their respective bodies.
 ------------------------------------- (NAME-CONST)
       Γ ⊢ c: Pure
       
-{ kind: ('def' | 'val' | 'pred'), identifier: op, body: e } ∈ Γ   e: E
----------------------------------------------------------------------- (NAME-OP)
-      Γ ⊢ op: E
+ { kind: 'param', identifier: p } ∈ Γ
+------------------------------------ (NAME-PARAM)
+         Γ ⊢ v: Read[r_p]
 
+{ identifier: op, effect: E } ∈ Γ
+-------------------------------------- (NAME-OP)
+          Γ ⊢ op: E
 ```
 
 Inferring operator application: find its signature and try to unify with the
@@ -156,11 +161,18 @@ Operator definitions (top-level or inside let-in's): infer signature and add it 
 Γ ∪ { identifier: op, effect: E } ⊢ (def op(params) = e): Pure
 ```
 
-Lambdas: We can assume lambda parameters are always pure for now.
+Lambda parameters can only read variables but not update them.
 ```
-       Γ ⊢ e: E
----------------------- (LAMBDA)
-Γ ⊢ x => e: (Pure) => E
+                 Γ ⊢ e: E
+---------------------------------------------- (LAMBDA)
+Γ ⊢ (p0, ..., pn) => e: (Read[r_p0], ..., Read[r_pn]) => E
+```
+
+Let-in expressions assume the effect of the expression in its body.
+```
+    Γ ⊢ e: E
+----------------------- (LET)
+Γ ⊢ <opdef> { e }: E
 ```
 
 Literals are always `Pure`.
