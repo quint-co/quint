@@ -164,7 +164,7 @@ function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substi
     } else {
       return left({
         location: location,
-        message: `Expected variable(s) [${v1.vars}] and [${v2.vars}] to be the same`,
+        message: `Expected variables [${v1.vars}] and [${v2.vars}] to be the same`,
         children: [],
       })
     }
@@ -221,7 +221,7 @@ export function applySubstitution (subs: Substitution[], e: Effect): Either<Erro
       break
     }
     case 'concrete': {
-      // e is a Read[r] & Update[u] looking effect
+      // e is a an effect of the form Read[r] & Update[u]
       const read = applySubstitutionToVariables(subs, e.read)
       const update = applySubstitutionToVariables(subs, e.update)
 
