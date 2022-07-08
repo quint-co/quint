@@ -71,8 +71,8 @@ export function getSignatures (): Map<string, Signature> {
     { name: 'replaceAt', effect: '(Read[r1], Read[r2], Read[r3]) => Read[r1, r2, r3]' },
     { name: 'slice', effect: '(Read[r1], Read[r2], Read[r3]) => Read[r1, r2, r3]' },
     { name: 'select', effect: '(Read[r1], (Read[p]) => Read[r2]) => Read[r1, p, r2]' },
-    { name: 'foldl', effect: '(Read[r1], Read[r2], (Pure, Pure) => Read[r3]) => Read[r1, r2, r3]' },
-    { name: 'foldr', effect: '(Read[r1], Read[r2], (Pure, Pure) => Read[r3]) => Read[r1, r2, r3]' },
+    { name: 'foldl', effect: '(Read[r1], Read[r2], (Read[p1], Read[p2]) => Read[r3]) => Read[r1, r2, p1, p2 r3]' },
+    { name: 'foldr', effect: '(Read[r1], Read[r2], (Read[p1], Read[p2]) => Read[r3]) => Read[r1, r2, p1, p2 r3]' },
   ]
 
   const integerOperators = [
@@ -135,7 +135,7 @@ export function getSignatures (): Map<string, Signature> {
       name: 'match',
       effect: (arity: number) => {
         const rs = Array.from(Array((arity - 1) / 2).keys()).map(i => `r${i}`)
-        const args = rs.map(r => `Pure, (Pure) => Read[${r}]`)
+        const args = rs.map(r => `Pure, (Read[p]) => Read[p, ${r}]`)
         return parseEffectOrThrow(`(Read[r], ${args.join(', ')}) => Read[${rs.join(', ')}]`)
       },
     },
