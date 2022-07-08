@@ -391,7 +391,10 @@ export class ToIrListener implements TntListener {
           assert(false,
             `exitDotCall: ${ls} expected wrappedArgs, found: ${wrappedArgs.kind}`)
         }
-      } // else: no arguments, as in e.g., s.head()
+      } else {
+        // no arguments, as in e.g., s.head()
+        args = [callee!]
+      }
       // apply the operator to the arguments
       this.pushApplication(ctx, name, args)
     } else {
