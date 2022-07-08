@@ -1,14 +1,9 @@
-import { Effect } from './base'
+import { Signature } from './base'
 import { parseEffectOrThrow } from './parser'
-
-export type Signature = (arity: number) => Effect
 
 export function getSignatures (): Map<string, Signature> {
   return new Map<string, Signature>(fixedAritySignatures.concat(multipleAritySignatures))
 }
-
-const fixedAritySignatures = [literals, booleanOperators, setOperators, mapOperators, recordOperators, tupleOperators, listOperators, integerOperators, otherOperators]
-  .flatMap(sig => [sig.name, (_) => parseEffectOrThrow(sig.effect)]) as const
 
 const literals = ['Nat', 'Int', 'Bool'].map(name => ({ name: name, effect: 'Pure' }))
 const booleanOperators = [
@@ -107,7 +102,7 @@ const readManyEffect = (arity: number) => {
   const args = rs.map(r => `Read[${r}]`)
   return parseEffectOrThrow(`(${args.join(', ')}) => Read[${rs.join(', ')}]`)
 }
-const multipleAritySignatures = [
+const multipleAritySignatures: [string, Signature][] = [
   ['seq', readManyEffect],
   ['set', readManyEffect],
   ['record', readManyEffect],
@@ -136,3 +131,6 @@ const multipleAritySignatures = [
     return parseEffectOrThrow(`(${args.join(', ')}) => Read[${rs}] & Update[u]`)
   }],
 ]
+
+const fixedAritySignatures: [string, Signature][] = [literals, booleanOperators, setOperators, mapOperators, recordOperators, tupleOperators, listOperators, integerOperators, otherOperators]
+  .flat().map(sig => [sig.name, ((_: number) => parseEffectOrThrow(sig.effect)) as Signature])
