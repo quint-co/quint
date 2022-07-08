@@ -153,8 +153,8 @@ function unifyConcrete (location: string, e1: ConcreteEffect, e2: ConcreteEffect
 }
 
 function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substitution[]> {
-  const v1 = simplifyVariables(va, false)
-  const v2 = simplifyVariables(vb, false)
+  const v1 = flattenUnions(va)
+  const v2 = flattenUnions(vb)
   const location = `Trying to unify variables [${variablesToString(v1)}] and [${variablesToString(v2)}]`
 
   if (v1.kind === 'concrete' && v2.kind === 'concrete') {
@@ -204,6 +204,7 @@ export function applySubstitution (subs: Substitution[], e: Effect): Either<Erro
   let result: Either<ErrorTree, Effect> = right(e)
   switch (e.kind) {
     case 'quantified': {
+      // e is an effect variable
       const sub = subs.find(s => s.name === e.name)
       if (sub && sub.kind === 'effect') {
         result = right(sub.value)
@@ -211,6 +212,7 @@ export function applySubstitution (subs: Substitution[], e: Effect): Either<Erro
       break
     }
     case 'arrow': {
+      // e takes effects as parameters and returs an effect as result
       const arrowParams = mergeInMany(e.params.map(ef => applySubstitution(subs, ef)))
       result = arrowParams.chain(ps => {
         const arrowResult = applySubstitution(subs, e.result)
@@ -219,6 +221,7 @@ export function applySubstitution (subs: Substitution[], e: Effect): Either<Erro
       break
     }
     case 'concrete': {
+      // e is a Read[r] & Update[u] looking effect
       const read = applySubstitutionToVariables(subs, e.read)
       const update = applySubstitutionToVariables(subs, e.update)
 
@@ -231,8 +234,8 @@ export function applySubstitution (subs: Substitution[], e: Effect): Either<Erro
 }
 
 function simplifyConcreteEffect (e: ConcreteEffect): Either<ErrorTree, Effect> {
-  const read = simplifyVariables(e.read, false)
-  const update = simplifyVariables(e.update, true)
+  const read = uniqueVariables(flattenUnions(e.read))
+  const update = flattenUnions(e.update)
 
   const updateVars = findVars(e.update)
   const repeated = updateVars.filter(v => updateVars.filter(v2 => v === v2).length > 1)
@@ -258,40 +261,48 @@ function findVars (variables: Variables): string[] {
   }
 }
 
-function simplifyVariables (variables: Variables, checkRepeated: Boolean): Variables {
-  const unionVariables: Set<Variables> = new Set<Variables>()
-  const vars: Set<string> = new Set<string>()
+function flattenUnions (variables: Variables): Variables {
   switch (variables.kind) {
-    case 'quantified':
-      unionVariables.add(variables)
-      break
-    case 'concrete':
-      variables.vars.forEach(v => vars.add(v))
-      break
     case 'union': {
-      const flattenVariables = variables.variables.map(v => simplifyVariables(v, checkRepeated))
+      const unionVariables: Variables[] = []
+      const vars: string[] = []
+      const flattenVariables = variables.variables.map(v => flattenUnions(v))
       flattenVariables.forEach(v => {
         switch (v.kind) {
           case 'quantified':
-            unionVariables.add(v)
+            unionVariables.push(v)
             break
           case 'concrete':
-            v.vars.forEach(va => vars.add(va))
+            vars.push(...v.vars)
             break
           case 'union':
-            v.variables.forEach(va => unionVariables.add(va))
+            unionVariables.push(...v.variables)
             break
         }
       })
-      break
-    }
-  }
 
-  if (unionVariables.size > 0) {
-    const variables = vars.size > 0 ? Array.from(unionVariables).concat({ kind: 'concrete', vars: Array.from(vars) }) : Array.from(unionVariables)
-    return variables.length > 1 ? { kind: 'union', variables: variables } : variables[0]
-  } else {
-    return { kind: 'concrete', vars: Array.from(vars) }
+      if (unionVariables.length > 0) {
+        const variables = vars.length > 0 ? unionVariables.concat({ kind: 'concrete', vars: vars }) : unionVariables
+        return variables.length > 1 ? { kind: 'union', variables: variables } : variables[0]
+      } else {
+        return { kind: 'concrete', vars: vars }
+      }
+    }
+    default:
+      return variables
+  }
+}
+
+function uniqueVariables (variables: Variables): Variables {
+  switch (variables.kind) {
+    case 'quantified':
+      return variables
+    case 'concrete':
+      return { kind: 'concrete', vars: Array.from(new Set<string>(variables.vars)) }
+    case 'union': {
+      const nestedVariables = variables.variables.map(v => uniqueVariables(v))
+      return { kind: 'union', variables: Array.from(new Set<Variables>(nestedVariables)) }
+    }
   }
 }
 

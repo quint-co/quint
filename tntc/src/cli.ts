@@ -58,7 +58,7 @@ function typecheck (argv: any) {
       locs: [loc],
     }
 
-    console.log(formatError(sourceCode, finder, message))
+    console.error(formatError(sourceCode, finder, message))
   }))
   process.exit(0)
 }
