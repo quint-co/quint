@@ -156,8 +156,8 @@ describe('unify', () => {
           children: [{
             location: "Trying to unify Update['x'] and Update['y']",
             children: [{
-              location: "Trying to unify variables 'x' and 'y'",
-              message: 'Expected effect to act over variable(s) x instead of y',
+              location: "Trying to unify variables ['x'] and ['y']",
+              message: 'Expected variables [x] and [y] to be the same',
               children: [],
             }],
           }],
@@ -302,8 +302,8 @@ describe('unify', () => {
           children: [{
             location: "Trying to unify Read[r2] & Update['x'] and Read['y'] & Update['y']",
             children: [{
-              location: "Trying to unify variables 'x' and 'y'",
-              message: 'Expected effect to act over variable(s) x instead of y',
+              location: "Trying to unify variables ['x'] and ['y']",
+              message: 'Expected variables [x] and [y] to be the same',
               children: [],
             }],
           }],
@@ -352,8 +352,8 @@ describe('unify', () => {
           children: [{
             location: "Trying to unify Read['y', 'z'] & Update['x'] and Read['y'] & Update['x']",
             children: [{
-              location: "Trying to unify variables 'y', 'z' and 'y'",
-              message: 'Expected effect to act over variable(s) y,z instead of y',
+              location: "Trying to unify variables ['y', 'z'] and ['y']",
+              message: 'Expected variables [y,z] and [y] to be the same',
               children: [],
             }],
           }],
@@ -380,7 +380,7 @@ describe('unify', () => {
         assert.deepEqual(value, {
           location: "Trying to unify Read[r1, r2] and Read['x', 'y', r]",
           children: [{
-            location: "Trying to unify variables r1, r2 and r, 'x', 'y'",
+            location: "Trying to unify variables [r1, r2] and [r, 'x', 'y']",
             message: 'Unification for unions of variables is not implemented',
             children: [],
           }],

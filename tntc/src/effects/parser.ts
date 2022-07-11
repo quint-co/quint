@@ -34,13 +34,11 @@ export function parseEffect (effectString: string): Either<any[], Effect> {
   const errorMessages: any[] = []
   // error listener to report lexical and syntax errors
   const errorListener: any = {
-    syntaxError: (
-      _recognizer: any,
+    syntaxError: (_: any,
       offendingSymbol: any,
       line: number,
       charPositionInLine: number,
-      msg: string
-    ) => {
+      msg: string) => {
       const len = offendingSymbol
         ? offendingSymbol.stopIndex - offendingSymbol.startIndex
         : 0
@@ -79,5 +77,16 @@ export function parseEffect (effectString: string): Either<any[], Effect> {
     } else {
       throw new Error('this should be impossible: effect is undefined')
     }
+  }
+}
+
+export function parseEffectOrThrow (effect: string): Effect {
+  const result = parseEffect(effect)
+
+  if (result.isRight()) {
+    const { value } = result
+    return value
+  } else {
+    throw new Error(`Could not parse generated effect: ${effect} `)
   }
 }
