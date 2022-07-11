@@ -13,8 +13,8 @@ const Quorum: set(set(str))     // The set of "quorums", where a quorum" is a
 (* Here are the assumptions we make about quorums.                         *)
 (***************************************************************************/
 assume QuorumAssumption = (
-    & Quorum forall ( Q => Q subseteq Acceptor )
-    & tuples(Quorum, Quorum) forall ( t => t._1.intersect(t._2) != set() )
+    & Quorum.forall( Q => Q subseteq Acceptor )
+    & tuples(Quorum, Quorum).forall( t => t._1.intersect(t._2) != set() )
 )
 
 // theorems are not supported by TNT, use TLA+ syntax
@@ -47,8 +47,8 @@ var maxBal: str -> int
 (* The type-correctness invariant.                                         *)
 (***************************************************************************/
 pred TypeOK = (
-    & votes in (Acceptor setOfMaps powerset(tuples(Ballot, Value)))
-    & maxBal in (Acceptor setOfMaps (Ballot union set(-1)))
+    & votes in Acceptor.setOfMaps(powerset(tuples(Ballot, Value)))
+    & maxBal in Acceptor.setOfMaps(Ballot.union(set(-1)))
 )
 //-----------------------------------------------------------------------------
 /***************************************************************************)
@@ -60,19 +60,19 @@ pred VotedFor(a, b, v) = (b, v) in votes[a]
   (* True iff acceptor a has voted for v in ballot b.                      *)
   (*************************************************************************/
 
-pred ChosenAt(b, v) = Quorum exists ( Q =>
-                        Q forall ( a => VotedFor(a, b, v) )
+pred ChosenAt(b, v) = Quorum.exists( Q =>
+                        Q.forall( a => VotedFor(a, b, v) )
                       )
   /*************************************************************************)
   (* True iff a quorum of acceptors have all voted for v in ballot b.      *)
   (*************************************************************************/
 
-pred chosen = Value filter ( v => Ballot exists ( b => ChosenAt(b, v) ) )
+pred chosen = Value.filter( v => Ballot.exists( b => ChosenAt(b, v) ) )
   /*************************************************************************)
   (* The set of values that have been chosen.                              *)
   (*************************************************************************/
   
-pred DidNotVoteAt(a, b) = Value forall ( v => not(VotedFor(a, b, v)) )
+pred DidNotVoteAt(a, b) = Value.forall( v => not(VotedFor(a, b, v)) )
 
 pred CannotVoteAt(a, b) = (
   & maxBal[a] > b
@@ -85,15 +85,15 @@ pred CannotVoteAt(a, b) = (
   (*************************************************************************/
 
 pred NoneOtherChoosableAt(b, v) =
-  Quorum exists ( Q =>
-     Q forall ( a => VotedFor(a, b, v) or CannotVoteAt(a, b) )
+  Quorum.exists( Q =>
+     Q.forall( a => VotedFor(a, b, v) or CannotVoteAt(a, b) )
   )  
   /*************************************************************************)
   (* If this is true, then ChosenAt(b, w) is not and can never become true *)
   (* for any w # v.                                                        *)
   (*************************************************************************/
 
-pred SafeAt(b, v) = 0.to(b - 1) forall ( c => NoneOtherChoosableAt(c, v) )
+pred SafeAt(b, v) = 0.to(b - 1).forall( c => NoneOtherChoosableAt(c, v) )
   /*************************************************************************)
   (* If this is true, then no value other than v has been or can ever be   *)
   (* chosen in any ballot numbered less than b.                            *)
@@ -108,18 +108,18 @@ THEOREM ChoosableThm ==
  */             
 //-----------------------------------------------------------------------------
 pred VotesSafe =
-    tuples(Acceptor, Ballot, Value) forall (t =>
+    tuples(Acceptor, Ballot, Value).forall(t =>
                  VotedFor(t._1, t._2, t._3) implies SafeAt(t._2, t._3)
     )
 
 pred OneVote =
-    tuples(Acceptor, Ballot, Value, Value) forall (t =>
+    tuples(Acceptor, Ballot, Value, Value).forall(t =>
               VotedFor(t._1, t._2, t._3) and VotedFor(t._1, t._2, t._4) implies (t._3 == t._4)
     )
 
 pred OneValuePerBallot =
     tuples(Acceptor, Acceptor, Ballot, Value, Value)
-       forall (t =>
+       .forall(t =>
          VotedFor(t._1, t._3, t._4) and VotedFor(t._2, t._3, t._5) implies (t._4 == t._5)
        )
 //-----------------------------------------------------------------------------
@@ -135,10 +135,10 @@ THEOREM VotesSafeImpliesConsistency ==
  */             
 //-----------------------------------------------------------------------------
 pred ShowsSafeAt(Q, b, v) = (
-  & Q forall ( a => maxBal[a] >= b )
+  & Q.forall( a => maxBal[a] >= b )
   & -1.to(b - 1).exists(c => (
         & (c != -1) implies Q.exists(a => VotedFor(a, c, v))
-        & (c + 1).to(b - 1) forall ( d => Q forall ( a => DidNotVoteAt(a, d) ) )
+        & (c + 1).to(b - 1).forall( d => Q.forall( a => DidNotVoteAt(a, d) ) )
       )
     )
 )
@@ -182,12 +182,12 @@ action IncreaseMaxBal(a, b) = {
 (***************************************************************************/
 action VoteFor(a, b, v) = {
     & maxBal[a] <= b
-    & votes[a] forall ( vt => vt[1] != b )
-    & Acceptor.exclude(set(a)) forall ( c =>
-         votes[c] forall ( vt => (vt[1] == b) implies (vt[2] == v) )
+    & votes[a].forall( vt => vt[1] != b )
+    & Acceptor.exclude(set(a)).forall( c =>
+         votes[c].forall( vt => (vt[1] == b) implies (vt[2] == v) )
       )
-    & Quorum exists ( Q => ShowsSafeAt(Q, b, v) )
-    & votes  <- votes.updateAs(a, ( old => old union set((b, v)) ))
+    & Quorum.exists( Q => ShowsSafeAt(Q, b, v) )
+    & votes  <- votes.updateAs(a, ( old => old.union(set((b, v))) ))
     & maxBal <- maxBal.updateAs(a, ( _ => b ))
 }
 
@@ -196,11 +196,11 @@ action VoteFor(a, b, v) = {
 (* The next-state action and the invariant.                                *)
 (***************************************************************************/
 action Next =
-    tuples(Acceptor, Ballot) guess { t => {
+    tuples(Acceptor, Ballot).guess({ t => {
             | IncreaseMaxBal(t._1, t._2)
-            | Value guess { v => VoteFor(t._1, t._2, v) }
+            | Value.guess({ v => VoteFor(t._1, t._2, v) })
         }
-    }
+    })
 
 temporal Spec = Init and always(stutter(Next), (votes, maxBal))
 
