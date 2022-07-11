@@ -157,7 +157,7 @@ describe('unify', () => {
             location: "Trying to unify Update['x'] and Update['y']",
             children: [{
               location: "Trying to unify variables ['x'] and ['y']",
-              message: 'Expected variable(s) [x] and [y] to be the same',
+              message: 'Expected variables [x] and [y] to be the same',
               children: [],
             }],
           }],
@@ -303,7 +303,7 @@ describe('unify', () => {
             location: "Trying to unify Read[r2] & Update['x'] and Read['y'] & Update['y']",
             children: [{
               location: "Trying to unify variables ['x'] and ['y']",
-              message: 'Expected variable(s) [x] and [y] to be the same',
+              message: 'Expected variables [x] and [y] to be the same',
               children: [],
             }],
           }],
@@ -353,7 +353,7 @@ describe('unify', () => {
             location: "Trying to unify Read['y', 'z'] & Update['x'] and Read['y'] & Update['x']",
             children: [{
               location: "Trying to unify variables ['y', 'z'] and ['y']",
-              message: 'Expected variable(s) [y,z] and [y] to be the same',
+              message: 'Expected variables [y,z] and [y] to be the same',
               children: [],
             }],
           }],

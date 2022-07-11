@@ -33,6 +33,7 @@ import { applySubstitution, Effect, emptyVariables, ErrorTree, unify, Signature 
  *          the problematic expressions.
  */
 export function inferEffects (signatures: Map<string, Signature>, definitionsTable: DefinitionTableByModule, module: TntModule): Either<Map<BigInt, ErrorTree>, Map<BigInt, Effect>> {
+  // pre-populate the table that maps each definition id to its kind
   const table: Map<string, Map<string, string>> = new Map<string, Map<string, string>>()
   definitionsTable.forEach((value, key) => {
     const moduleTable: Map<string, string> = new Map<string, string>()
