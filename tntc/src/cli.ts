@@ -60,7 +60,8 @@ function typecheck (argv: any) {
 
     console.log(formatError(sourceCode, finder, message))
   }))
-  process.exit(0)
+
+  effects.isRight() ? process.exit(0) : process.exit(1)
 }
 
 // read either the standard input or an input file

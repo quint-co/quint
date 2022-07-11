@@ -127,3 +127,32 @@ tntc parse ../examples/option.tnt
 <!-- !test check option -->
     expect exit code 0
 
+### OK on parse BinSearch
+
+This command parses the BinSearch example.
+
+<!-- !test program
+tntc parse ../examples/BinSearch/BinSearch.tnt
+-->
+
+```sh
+tntc parse ../examples/BinSearch/BinSearch.tnt
+```
+
+<!-- !test check BinSearch -->
+    expect exit code 0
+
+### OK on typecheck BinSearch
+
+This command typechecks the BinSearch example.
+
+<!-- !test program
+tntc typecheck ../examples/BinSearch/BinSearch.tnt
+-->
+
+```sh
+tntc typecheck ../examples/BinSearch/BinSearch.tnt
+```
+
+<!-- !test check BinSearch - Types & Effects -->
+    expect exit code 0
