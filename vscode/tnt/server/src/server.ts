@@ -19,74 +19,68 @@ import {
   Hover,
   MarkupKind,
   HoverParams,
-  DocumentUri,
-} from 'vscode-languageserver/node';
+  DocumentUri
+} from 'vscode-languageserver/node'
 
 import {
   TextDocument
-} from 'vscode-languageserver-textdocument';
+} from 'vscode-languageserver-textdocument'
 
-import { parsePhase1, parsePhase2, Loc, DefinitionTableByModule, inferEffects, getSignatures, TntModule, effectToString, errorTreeToString } from 'tntc';
+import { parsePhase1, parsePhase2, Loc, DefinitionTableByModule, inferEffects, getSignatures, TntModule, effectToString, errorTreeToString } from 'tntc'
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
-const connection = createConnection(ProposedFeatures.all);
+const connection = createConnection(ProposedFeatures.all)
 
 // Create a simple text document manager.
-const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
+const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument)
 
-let hasConfigurationCapability = false;
-let hasWorkspaceFolderCapability = false;
-let hasDiagnosticRelatedInformationCapability = false;
+let hasConfigurationCapability = false
+let hasWorkspaceFolderCapability = false
 
 connection.onInitialize((params: InitializeParams) => {
-  const capabilities = params.capabilities;
+  const capabilities = params.capabilities
 
   // Does the client support the `workspace/configuration` request?
   // If not, we fall back using global settings.
   hasConfigurationCapability = !!(
     capabilities.workspace && !!capabilities.workspace.configuration
-  );
+  )
   hasWorkspaceFolderCapability = !!(
     capabilities.workspace && !!capabilities.workspace.workspaceFolders
-  );
-  hasDiagnosticRelatedInformationCapability = !!(
-    capabilities.textDocument &&
-    capabilities.textDocument.publishDiagnostics &&
-    capabilities.textDocument.publishDiagnostics.relatedInformation
-  );
+  )
 
   const result: InitializeResult = {
     capabilities: {
       textDocumentSync: TextDocumentSyncKind.Incremental,
       // Tell the client that this server supports code completion.
       completionProvider: {
-        resolveProvider: true
+        resolveProvider: true,
       },
-      hoverProvider: true
-    }
-  };
+      hoverProvider: true,
+    },
+  }
   if (hasWorkspaceFolderCapability) {
     result.capabilities.workspace = {
       workspaceFolders: {
-        supported: true
-      }
-    };
+        supported: true,
+      },
+    }
   }
-  return result;
-});
+  return result
+})
 
 connection.onInitialized(() => {
   if (hasConfigurationCapability) {
     // Register for all configuration changes.
-    connection.client.register(DidChangeConfigurationNotification.type, undefined);
+    connection.client.register(DidChangeConfigurationNotification.type, undefined)
   }
   if (hasWorkspaceFolderCapability) {
     connection.workspace.onDidChangeWorkspaceFolders(_event => {
-      connection.console.log('Workspace folder change event received.');
-    });
+      connection.console.log('Workspace folder change event received.')
+    })
   }
-});
+})
 
 // The example settings
 interface ExampleSettings {
@@ -95,52 +89,51 @@ interface ExampleSettings {
 // The global settings, used when the `workspace/configuration` request is not supported by the client.
 // Please note that this is not the case when using this server with the client provided in this example
 // but could happen with other clients.
-const defaultSettings: ExampleSettings = { maxNumberOfProblems: 1000 };
-let globalSettings: ExampleSettings = defaultSettings;
-
+const defaultSettings: ExampleSettings = { maxNumberOfProblems: 1000 }
+let globalSettings: ExampleSettings = defaultSettings
 
 // Cache the settings of all open documents
-const documentSettings: Map<string, Thenable<ExampleSettings>> = new Map();
+const documentSettings: Map<string, Promise<ExampleSettings>> = new Map()
 
 connection.onDidChangeConfiguration(change => {
   if (hasConfigurationCapability) {
     // Reset all cached document settings
-    documentSettings.clear();
+    documentSettings.clear()
   } else {
     globalSettings = <ExampleSettings>(
       (change.settings.languageServerExample || defaultSettings)
-    );
+    )
   }
 
   // Revalidate all open text documents
-  documents.all().forEach(d => validateTextDocument(d).then(([tntModule, sourceMap, table]) => checkEffects(d, tntModule, sourceMap, table)));
-});
+  documents.all().forEach(d => validateTextDocument(d).then(([tntModule, sourceMap, table]) => checkEffects(d, tntModule, sourceMap, table)))
+})
 
-function getDocumentSettings (resource: string): Thenable<ExampleSettings> {
+function getDocumentSettings (resource: string): Promise<ExampleSettings> {
   if (!hasConfigurationCapability) {
-    return Promise.resolve(globalSettings);
+    return Promise.resolve(globalSettings)
   }
-  let result = documentSettings.get(resource);
+  let result = documentSettings.get(resource)
   if (!result) {
     result = connection.workspace.getConfiguration({
       scopeUri: resource,
-      section: 'tntLspClient'
-    });
-    documentSettings.set(resource, result);
+      section: 'tntLspClient',
+    })
+    documentSettings.set(resource, result)
   }
-  return result;
+  return result
 }
 
 // Only keep settings for open documents
 documents.onDidClose(e => {
-  documentSettings.delete(e.document.uri);
-});
+  documentSettings.delete(e.document.uri)
+})
 
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent(change => {
-  validateTextDocument(change.document).then(([tntModule, sourceMap, table]) => checkEffects(change.document, tntModule, sourceMap, table));
-});
+  validateTextDocument(change.document).then(([tntModule, sourceMap, table]) => checkEffects(change.document, tntModule, sourceMap, table))
+})
 
 connection.onHover((params: HoverParams): Hover | undefined => {
   const position = params.position
@@ -170,8 +163,8 @@ connection.onHover((params: HoverParams): Hover | undefined => {
   return {
     contents: {
       kind: MarkupKind.PlainText,
-      value: sortedEffects[0]
-    }
+      value: sortedEffects[0],
+    },
   }
 })
 
@@ -182,32 +175,29 @@ function assembleDiagnostic (explanation: string, loc: Loc): Diagnostic {
       start: { line: loc.start.line, character: loc.start.col },
       end: {
         line: loc.end ? loc.end.line : loc.start.line,
-        character: loc.end ? loc.end.col + 1 : loc.start.col
+        character: loc.end ? loc.end.col + 1 : loc.start.col,
       },
     },
     message: explanation,
-    source: "parser"
-  };
+    source: 'parser',
+  }
 }
 
 async function validateTextDocument (textDocument: TextDocument): Promise<[TntModule, Map<BigInt, Loc>, DefinitionTableByModule]> {
-  // In this simple example we get the settings for every validate run.
-  const settings = await getDocumentSettings(textDocument.uri);
-
   // The validator creates diagnostics for all uppercase words length 2 and more
-  const diagnostics: Diagnostic[] = [];
-  const text = textDocument.getText();
-  const result = parsePhase1(text, textDocument.uri);
+  const diagnostics: Diagnostic[] = []
+  const text = textDocument.getText()
+  const result = parsePhase1(text, textDocument.uri)
 
-  if (result.kind == "error") {
-    for (let msg of result.messages) {
+  if (result.kind === 'error') {
+    for (const msg of result.messages) {
       const diags = msg.locs.map(loc => assembleDiagnostic(msg.explanation, loc))
       diagnostics.push(...diags)
     }
   } else {
-    const result2 = parsePhase2(result.module, result.sourceMap);
-    if (result2.kind == "error") {
-      for (let msg of result2.messages) {
+    const result2 = parsePhase2(result.module, result.sourceMap)
+    if (result2.kind === 'error') {
+      for (const msg of result2.messages) {
         const diags = msg.locs.map(loc => assembleDiagnostic(msg.explanation, loc))
         diagnostics.push(...diags)
       }
@@ -217,7 +207,7 @@ async function validateTextDocument (textDocument: TextDocument): Promise<[TntMo
   }
 
   // Send the computed diagnostics to VSCode.
-  connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+  connection.sendDiagnostics({ uri: textDocument.uri, diagnostics })
   return new Promise((resolve, reject) => reject(diagnostics))
 }
 
@@ -226,7 +216,7 @@ const documentsByUri: Map<DocumentUri, TextDocument> = new Map<DocumentUri, Text
 
 function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>, table: DefinitionTableByModule) {
   const result = inferEffects(getSignatures(), table, tntModule)
-  const diagnostics: Diagnostic[] = [];
+  const diagnostics: Diagnostic[] = []
   const effects: Map<Loc, string> = new Map<Loc, string>()
   result.mapLeft(e => {
     e.forEach((error, id) => {
@@ -238,14 +228,15 @@ function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceM
     inferredEffects.forEach((effect, id) => effects.set(sourceMap.get(id)!, effectToString(effect)))
     effectsByDocument.set(textDocument.uri, effects)
     documentsByUri.set(textDocument.uri, textDocument)
+    return true
   })
-  connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+  connection.sendDiagnostics({ uri: textDocument.uri, diagnostics })
 }
 
 connection.onDidChangeWatchedFiles(_change => {
   // Monitored files have change in VSCode
-  connection.console.log('We received a file change event');
-});
+  connection.console.log('We received a file change event')
+})
 
 // This handler provides the initial list of the completion items.
 connection.onCompletion(
@@ -257,35 +248,35 @@ connection.onCompletion(
       {
         label: 'TypeScript',
         kind: CompletionItemKind.Text,
-        data: 1
+        data: 1,
       },
       {
         label: 'JavaScript',
         kind: CompletionItemKind.Text,
-        data: 2
-      }
-    ];
+        data: 2,
+      },
+    ]
   }
-);
+)
 
 // This handler resolves additional information for the item selected in
 // the completion list.
 connection.onCompletionResolve(
   (item: CompletionItem): CompletionItem => {
     if (item.data === 1) {
-      item.detail = 'TypeScript details';
-      item.documentation = 'TypeScript documentation';
+      item.detail = 'TypeScript details'
+      item.documentation = 'TypeScript documentation'
     } else if (item.data === 2) {
-      item.detail = 'JavaScript details';
-      item.documentation = 'JavaScript documentation';
+      item.detail = 'JavaScript details'
+      item.documentation = 'JavaScript documentation'
     }
-    return item;
+    return item
   }
-);
+)
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events
-documents.listen(connection);
+documents.listen(connection)
 
 // Listen on the connection
-connection.listen();
+connection.listen()
