@@ -8,7 +8,7 @@ module EWD840 {
 (***************************************************************************/
 
 const N: int
-assume NAssumption = N in (Nat exclude set(0))
+assume NAssumption = N in (Nat.exclude(set(0)))
 
 type NODE = int
 
@@ -17,7 +17,7 @@ var color: NODE -> str
 var tpos: NODE
 var tcolor: str
 
-val Node = 0 to (N - 1)
+val Node = 0.to(N - 1)
 val Color = set("white", "black")
 
 pred TypeOK = (
@@ -74,7 +74,7 @@ action PassToken(i) = {
 (***************************************************************************/
 action System = {
   | InitiateProbe
-  | (Node exclude set(0)) guess { i => PassToken(i) }
+  | Node.exclude(set(0)).guess({ i => PassToken(i) })
 }
 
 /***************************************************************************)
@@ -84,11 +84,11 @@ action System = {
 (***************************************************************************/
 action SendMsg(i) = {
   & active[i]
-  & (Node exclude set(i)) guess { j => {
+  & Node.exclude(set(i)).guess({ j => {
         & active  <- active.update(j, true)
         & color   <- color.updateAs(i, ( old => if (j > i) "black" else old ))
       }
-    }
+    })
 }
 
 /***************************************************************************)
@@ -103,7 +103,7 @@ action Deactivate(i) = {
 (* actions performed by the underlying algorithm                           *)
 (***************************************************************************/
 action Environment =
-  Node guess { i => { SendMsg(i) | Deactivate(i) } }
+  Node.guess({ i => { SendMsg(i) | Deactivate(i) } })
 
 /***************************************************************************)
 (* next-state relation: disjunction of above actions                       *)
@@ -171,7 +171,7 @@ temporal AllNodesTerminateIfNoMessages = (
 (***************************************************************************/
 pred Inv = (
   | Node.forall(i => tpos < i implies not(active[i]))
-  | (0 to tpos).exists(j => color[j] == "black")
+  | 0.to(tpos).exists(j => color[j] == "black")
   | tcolor == "black"
 )
 
