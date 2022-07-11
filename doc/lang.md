@@ -37,7 +37,7 @@ TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
         - [Literals](#literals)
         - [Braces and parentheses](#braces-and-parentheses)
         - [Lambdas (aka Anonymous Operators)](#lambdas-aka-anonymous-operators)
-        - [Three forms of operator applications](#three-forms-of-operator-applications)
+        - [Two forms of operator application](#two-forms-of-operator-application)
         - [Boolean operators and equality](#boolean-operators-and-equality)
         - [Multiline disjunctions](#multiline-disjunctions)
         - [Multiline conjunctions](#multiline-conjunctions)
@@ -708,56 +708,35 @@ _, ..., _ => e
 Note that lambdas can be only passed as arguments to other operators.  They
 cannot be freely assigned to values or returned as a result of an operator.
 
-### Three forms of operator applications
+### Two forms of operator application
 
-TNT is flexible with respect to operator applications. It mimics several call
-styles that can be met in various languages. Given an operator called `f` and
-expressions `e_1`, ..., `e_n`, the operator `f` can be applied to the
+TNT is flexible with respect to operator applications. It supports two call
+styles that are familiar from popular languages. Given an operator called `f`
+and expressions `e_1`, ..., `e_n`, the operator `f` can be applied to the
 expressions `e_1`, ..., `e_n` as follows:
 
  1. *TNT normal form*: `f(e_1, ..., e_n)`.
  1. [UFCS][]: `e_1.f(e_2, ..., e_n)`
- 1. *Infix form*: `e_1 f e_2, ..., e_n`
 
-The forms 1-2 always require parentheses, even if the number of arguments in
-parentheses is zero. That is, `f()` and `e_1.g()` is the right way to apply
+These forms always require parentheses, even if the number of arguments in
+parentheses is zero. That is, `f()` and `e_1.g()` are the right ways to apply
 operators `f` and `g` in the normal form and UFCS, respectively. The form
-without parentheses is reserved for field access of tuples and records
-as well as namespace access.
-
-The form 3 requires at least two arguments, that is, `n >= 2`.
-
-Which form to choose? It's up to you. We prefer to combine all three, whatever
-feels more natural in your circumstances. In the future, TNT will provide
-automatic translation that will let you to freely switch between all three
-forms.
+without parentheses is reserved for field access of tuples and records as well
+as accessing namespaces.
 
 *The TNT normal form is especially convenient for programs, so they should
  communicate in this form. People may communicate in any form.*
 
-For example, some people like to write Boolean expressions like this:
-
-```
-p or q and r
-```
-
-In the above case, you have to take care of operator priorities (see below).
-When you use the UFCS form, you cannot get priorities wrong (calls via dot are
-always left-associative if you wonder):
-
-```
-p.or(q.and(r))
-```
-
-Several operators have conventional names that stem from mathematics and thus
-are not written as identifiers.  For instance, you can conveniently write `1 +
-3` in the infix form.  But you cannot write `+(1, 3)` or `1.+(3)`, as that
-would make the parser unnecessary complex. You can use the mnemonic name `iadd`
-instead of `+` and thus write `iadd(1, 3)` or `1.iadd(3)`. A small number of
-operators are exceptional in this sense. We list the alternative names when
-introducing operators.  We don't expect humans to write expressions like the
-ones above. This notation is more convenient for programs, so TNT tooling should
-use the TNT normal form. 
+A reserved class of built-in operators can only be called via infix form.  These
+operators conventional names that stem from mathematics and thus are not written
+as identifiers.  For instance, you must write `1 + 3` in the infix form; You
+cannot write `+(1, 3)` or `1.+(3)`. The normal form for these operators can be
+achieved by using the mnemonic names, such as `iadd` instead of the infix
+symbol.  E.g., you may write `iadd(1, 3)` or `1.iadd(3)` in place of `1 + 3`. A
+small number of operators are exceptional in this sense. We list the alternative
+names when introducing operators.  We don't expect humans to write expressions
+like the ones above.  This notation is more convenient for programs, so TNT
+tooling should use the TNT normal form. 
 
 Like in every programming language, several operators are special
 in the sense that they have non-standard priorities. The good news is that
@@ -766,22 +745,22 @@ If you are using the infix form, it is good to know the operator priorities.
 Here is the table of operator priorities, the ones in the top have the higher
 priority:
 
-| Operators                    | Comments                                   |
-| ---------------------------- | ------------------------------------------ |
-| `e_1.F(e_2, ..., e_n)`       | Call via dot has the highest priority      |
-| `F(e_1, ..., e_n)`           | The normal form of operator application    |
-| `f[e_1, ..., e_n]`           | Function application                       |
-| `-i`                         | Unary minus                                |
-| `i^j`                        | Integer power (right associative)          |
-| `i * j`, `i / j`, `i % j`    | Integer multiplication, division, modulo   |
-| `i + j`, `i - j`             | Integer addition and subtraction           |
-| `e_1 F e_2, ..., e_n`        | General infix operator application         |
-| `i > j`, `i < j`, `i >= j`, `i <= j`, `i != j`, `i == j`, `i <- j`, `S in T`, `S notin T`, `S subseteq T`  | Integer comparisons, equality, assignment, and set relations |
-| `p and q`                    | Boolean 'and' (conjunction)                |
-| `p or q`                     | Boolean 'or' (disjunction)                 |
-| `p iff q`                    | Boolean equivalence (if and only if)       |
-| `p implies q`                | Boolean implication: `not(p) or q`         |
-| all forms with `(..)`, `{..}`, and `[..]` |  the lowest priority          |
+| Operators                                                                                                 | Comments                                                     |
+|-----------------------------------------------------------------------------------------------------------|--------------------------------------------------------------|
+| `e_1.F(e_2, ..., e_n)`                                                                                    | Call via dot has the highest priority                        |
+| `F(e_1, ..., e_n)`                                                                                        | The normal form of operator application                      |
+| `f[e_1, ..., e_n]`                                                                                        | Function application                                         |
+| `-i`                                                                                                      | Unary minus                                                  |
+| `i^j`                                                                                                     | Integer power (right associative)                            |
+| `i * j`, `i / j`, `i % j`                                                                                 | Integer multiplication, division, modulo                     |
+| `i + j`, `i - j`                                                                                          | Integer addition and subtraction                             |
+| `e_1 F e_2, ..., e_n`                                                                                     | General infix operator application                           |
+| `i > j`, `i < j`, `i >= j`, `i <= j`, `i != j`, `i == j`, `i <- j`, `S in T`, `S notin T`, `S subseteq T` | Integer comparisons, equality, assignment, and set relations |
+| `p and q`                                                                                                 | Boolean 'and' (conjunction)                                  |
+| `p or q`                                                                                                  | Boolean 'or' (disjunction)                                   |
+| `p iff q`                                                                                                 | Boolean equivalence (if and only if)                         |
+| `p implies q`                                                                                             | Boolean implication: `not(p) or q`                           |
+| all forms with `(..)`, `{..}`, and `[..]`                                                                 | the lowest priority                                          |
 
 ### Boolean operators and equality
 
@@ -819,7 +798,7 @@ implies(p, q)
 
 Note that the operator `not(p)` needs parentheses around its argument.
 Actually, `not` is treated as a general operator. We keep the number of special
-syntax forms to minimum.
+syntax forms to a minimum.
 
 *Mode:* Stateless, State, Temporal. 
 
@@ -1110,34 +1089,28 @@ cardinality(S)
 ### Maps (aka Functions)
 
 ```scala
-// function application: f[e]
+// map application: f[e]
 f[e]
 f.get(e)
 get(f, e)
-// function domain: DOMAIN f
-f keys
+// map domain: DOMAIN f
 f.keys()
 keys(f)
-// function constructor: [ x \in S |-> e ]
-S mapOf (x => e)
+// map constructor: [ x \in S |-> e ]
 S.mapOf(x => e)
 mapOf(S, (x => e))
-// a set of functions: [ S -> T ]
-S setOfMaps T
+// a set of maps: [ S -> T ]
 S.setOfMaps(T)
 setOfMaps(S, T)
 // [f EXCEPT ![e1] = e2]
-f update e1, e2
 f.update(e1, e2)
 update(f, e1, e2)
 // [f EXCEPT ![e1] = e2, ![e3] = e4]
 (f update e1, e2) update e3, e4
 // [f EXCEPT ![e1] = @ + y]
-f updateAs e1, (old => old + y)
 f.updateAs(e1, (old => old + y))
 updateAs(f, e1, (old => old + y))
 // an equivalent of (k :> v) @@ f when using the module TLC
-f put k, v
 f.put(k, v)
 put(f, k, v)
 ```
@@ -1158,11 +1131,9 @@ tuples(S_1, ..., S_n).map(a_1, ..., a_n => { f_1: a_1, ..., f_n: a_n })
 r.fld           // both r and fld are identifiers
 field(r, "fld") // r is an identifier, "fld" is a string literal
 // the set of field names: DOMAIN r
-r fieldNames
 r.fieldNames()
 fieldNames(r)
 // record update: [r EXCEPT !.f = e]
-r with f, e
 r.with(f, e)
 with(r, f, e)
 ```
@@ -1338,54 +1309,42 @@ used in the spec.
 [ e_1, ..., e_n ]
 seq(e_1, ..., e_n)
 // append at the sequence tail: Append(s, e)
-s append e
 s.append(e)
 append(s, e)
 // concatenate sequences: s \circ t
-s concat t
 s.concat(t)
 concat(s, t)
 // sequence head: Head(s)
-s head
 s.head()
 head(s)
 // sequence tail: Tail(s)
-s tail
 s.tail()
 tail(s)
 // sequence length: Len(s)
-s length
 s.length()
 length(s)
 // sequence element at nth position (starting with 1): equivalent to s[i] in TLA+
-s nth i
 s.nth(i)
 nth(s, i)
 // the set of sequence indices (starting with 1): DOMAIN s
-s indices
 s.indices()
 indices(s)
 // [ seq EXCEPT ![i] = e ]
-s replaceAt i, e
 s.replaceAt(i, e)
 replaceAt(s, i, e)
 // SubSeq(s, j, k)
-s slice j k
 s.slice(j, k)
 slice(s, j, k)
 // SelectSeq(s, Test)
-s select Test
 select(s, Test)
 // in particular, we can use anonymous operators
-s select (e => P)
+s.select(e => P)
 // Left fold. There is no standard operator for that in TLA+,
 // but you can define it with a recursive operator.
-s foldl init, (i, v => e)
 s.foldl(init, (i, v => e))
 foldl(s, init, (i, v => e))
 // Right fold. There is no standard operator for that in TLA+,
 // but you can define it with a recursive operator.
-s foldr init, (i, v => e)
 s.foldr(init, (i, v => e))
 foldr(s, init, (i, v => e))
 ```
@@ -1450,7 +1409,6 @@ igte(m, n)
 Int
 Nat
 // like m..n in TLA+
-m to n
 m.to(n)
 to(m, n)
 ```
@@ -1757,7 +1715,7 @@ The most common example is shown below:
     const Quorum: set(set(str))
     // no const, no var below
     // ...
-    pred chosen = Value filter (v => Ballot exists (b => ChosenAt(b, v)))
+    pred chosen = Value.filter(v => Ballot exists (b => ChosenAt(b, v)))
     // ...
   }
 
