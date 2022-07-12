@@ -17,7 +17,6 @@ import {
 let client: LanguageClient
 
 export function activate (context: ExtensionContext) {
-  // context.subscriptions.push(languages.registerHoverProvider('tnt', new TntHoverProvider()))
   // The server is implemented in node
   const serverModule = context.asAbsolutePath(
     path.join('server', 'out', 'server.js')
