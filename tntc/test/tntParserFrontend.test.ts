@@ -3,7 +3,7 @@ import { assert } from 'chai'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import JSONbig from 'json-bigint'
-import { parsePhase1, parsePhase2, Loc, compactSourceMap } from '../src/tntParserFrontend'
+import { parsePhase1, parsePhase2, compactSourceMap } from '../src/tntParserFrontend'
 import { lf } from 'eol'
 
 // read a TNT file from the test data directory
@@ -20,7 +20,7 @@ function readJson (name: string): any {
 }
 
 // read the TNT file and the expected JSON, parse and compare the results
-function parseAndCompare (artifact: string, wrap: (json: any) => any, checkNameError: Boolean): void {
+function parseAndCompare (artifact: string): void {
   // read the input from the data directory and parse it
   const phase1Result = parsePhase1(readTnt(artifact), `mocked_path/testFixture/${artifact}.tnt`)
   // read the expected result as JSON
@@ -36,9 +36,11 @@ function parseAndCompare (artifact: string, wrap: (json: any) => any, checkNameE
     const sourceMapResult = JSONbig.parse(JSONbig.stringify(compactSourceMap(phase1Result.sourceMap)))
     assert.deepEqual(sourceMapResult, expectedSourceMap, 'expected source maps to be equal')
 
-    if (checkNameError) {
+    const phase2Result = parsePhase2(phase1Result.module, phase1Result.sourceMap)
+
+    if (phase2Result.kind === 'error') {
       // An error occurred at phase 2, check if it is the expected result
-      outputToCompare = parsePhase2(phase1Result.module, phase1Result.sourceMap)
+      outputToCompare = phase2Result
     } else {
       // Both phases succeeded, check that the module is correclty outputed
       outputToCompare = { status: 'parsed', warnings: [], module: phase1Result.module }
@@ -49,11 +51,6 @@ function parseAndCompare (artifact: string, wrap: (json: any) => any, checkNameE
   const reparsedResult = JSONbig.parse(JSONbig.stringify(outputToCompare))
   // compare the JSON trees
   assert.deepEqual(reparsedResult, expected, 'expected JSON results to be equal')
-}
-
-// identity function that can be used as a default wrapper
-function nowrap (arg: any): any {
-  return arg
 }
 
 describe('parse ok', () => {
@@ -67,55 +64,52 @@ describe('parse ok', () => {
   })
 
   it('parse SuperSpec', () => {
-    parseAndCompare('SuperSpec',
-      function (module: any) {
-        return { kind: 'ok', module: module, sourceMap: new Map<BigInt, Loc>() }
-      }, false)
+    parseAndCompare('SuperSpec')
   })
 })
 
 describe('parse errors', () => {
   it('error in module unit', () => {
-    parseAndCompare('_1002emptyWithError', nowrap, false)
+    parseAndCompare('_1002emptyWithError')
   })
 
   it('error on malformed disjoint union', () => {
-    parseAndCompare('_1005constRecordsError', nowrap, false)
+    parseAndCompare('_1005constRecordsError')
   })
 
   it('error on unexpected symbol after expression', () => {
-    parseAndCompare('_1006unexpectedExpr', nowrap, false)
+    parseAndCompare('_1006unexpectedExpr')
   })
 
   it('error on unrecognized token', () => {
-    parseAndCompare('_1007unexpectedToken', nowrap, false)
+    parseAndCompare('_1007unexpectedToken')
   })
 
   it('error on unexpected "="', () => {
-    parseAndCompare('_1008unexpectedEq', nowrap, false)
+    parseAndCompare('_1008unexpectedEq')
   })
 
   it('error on infix without arguments', () => {
-    parseAndCompare('_1009infixFewArgs', nowrap, false)
+    parseAndCompare('_1009infixFewArgs')
   })
 
   it('error on unresolved name', () => {
-    parseAndCompare('_1010undefinedName', nowrap, true)
+    parseAndCompare('_1010undefinedName')
   })
 
   it('error on unresolved scoped name', () => {
-    parseAndCompare('_1011nameOutOfScope', nowrap, true)
+    parseAndCompare('_1011nameOutOfScope')
   })
 
   it('error on unresolved type alias', () => {
-    parseAndCompare('_1012unknownType', nowrap, true)
+    parseAndCompare('_1012unknownType')
   })
 
   it('error on unresolved type alias inside let', () => {
-    parseAndCompare('_1013unknownTypeLetIn', nowrap, true)
+    parseAndCompare('_1013unknownTypeLetIn')
   })
 
   it('error on conflicting names', () => {
-    parseAndCompare('_1014conflictingNames', nowrap, true)
+    parseAndCompare('_1014conflictingNames')
   })
 })
