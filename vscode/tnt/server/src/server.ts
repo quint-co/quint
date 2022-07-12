@@ -107,7 +107,12 @@ connection.onDidChangeConfiguration(change => {
 
   // Revalidate all open text documents
   documents.all().forEach(d => {
-    validateTextDocument(d).then(([tntModule, sourceMap, table]) => checkEffects(d, tntModule, sourceMap, table))
+    validateTextDocument(d)
+      .then(([tntModule, sourceMap, table]) => checkEffects(d, tntModule, sourceMap, table))
+      .catch(diagnostics => {
+        // Send the computed diagnostics to VSCode.
+        connection.sendDiagnostics({ uri: d.uri, diagnostics })
+      })
   })
 })
 
@@ -136,6 +141,10 @@ documents.onDidClose(e => {
 documents.onDidChangeContent(change => {
   validateTextDocument(change.document)
     .then(([tntModule, sourceMap, table]) => checkEffects(change.document, tntModule, sourceMap, table))
+    .catch(diagnostics => {
+      // Send the computed diagnostics to VSCode.
+      connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
+    })
 })
 
 connection.onHover((params: HoverParams): Hover | undefined => {
@@ -219,8 +228,6 @@ async function validateTextDocument (textDocument: TextDocument): Promise<[TntMo
     }
   }
 
-  // Send the computed diagnostics to VSCode.
-  connection.sendDiagnostics({ uri: textDocument.uri, diagnostics })
   return new Promise((resolve, reject) => reject(diagnostics))
 }
 
