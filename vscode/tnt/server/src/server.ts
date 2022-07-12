@@ -106,7 +106,9 @@ connection.onDidChangeConfiguration(change => {
   }
 
   // Revalidate all open text documents
-  documents.all().forEach(d => validateTextDocument(d).then(([tntModule, sourceMap, table]) => checkEffects(d, tntModule, sourceMap, table)))
+  documents.all().forEach(d => {
+    validateTextDocument(d).then(([tntModule, sourceMap, table]) => checkEffects(d, tntModule, sourceMap, table))
+  })
 })
 
 function getDocumentSettings (resource: string): Promise<ExampleSettings> {
@@ -132,22 +134,33 @@ documents.onDidClose(e => {
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent(change => {
-  validateTextDocument(change.document).then(([tntModule, sourceMap, table]) => checkEffects(change.document, tntModule, sourceMap, table))
+  validateTextDocument(change.document)
+    .then(([tntModule, sourceMap, table]) => checkEffects(change.document, tntModule, sourceMap, table))
 })
 
 connection.onHover((params: HoverParams): Hover | undefined => {
   const position = params.position
   const effectsOnPosition: [string, string, Loc][] = []
   const effects = effectsByDocument.get(params.textDocument.uri)
+
   if (effects === undefined) {
     return
   }
+
   effects.forEach((effect, loc) => {
-    if (position.line >= loc.start.line && (!loc.end || position.line <= loc.end.line) && position.character >= loc.start.col && (!loc.end || position.character <= loc.end.col)) {
-      const text = documentsByUri.get(params.textDocument.uri)!.getText({ start: { line: loc.start.line, character: loc.start.col }, end: loc.end ? { line: loc.end.line, character: loc.end.col + 1 } : { line: loc.start.line, character: loc.start.col } })
+    if (position.line >= loc.start.line && (!loc.end || position.line <= loc.end.line) &&
+      position.character >= loc.start.col && (!loc.end || position.character <= loc.end.col)) {
+      // Position is part of effect's expression range
+      const text = documentsByUri.get(params.textDocument.uri)!.getText({
+        start: { line: loc.start.line, character: loc.start.col },
+        end: loc.end ? { line: loc.end.line, character: loc.end.col + 1 } : { line: loc.start.line, character: loc.start.col },
+      })
+
       effectsOnPosition.push([text, effect, loc])
     }
   })
+
+  // Sort effects by range size. We want to show the most specific effect for the position.
   const sortedEffects = effectsOnPosition.sort(([_t1, _e1, a], [_t2, _e2, b]) => {
     if (!a.end) {
       return -1
