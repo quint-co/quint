@@ -14,7 +14,7 @@ const Quorum: set(set(str))     // The set of "quorums", where a quorum" is a
 (***************************************************************************/
 assume QuorumAssumption = (
     & Quorum forall ( Q => Q subseteq Acceptor )
-    & (Quorum cross Quorum) forall ( Q1, Q2 => Q1.intersect(Q2) != set() )
+    & tuples(Quorum, Quorum) forall ( t => t._1.intersect(t._2) != set() )
 )
 
 // theorems are not supported by TNT, use TLA+ syntax
@@ -47,7 +47,7 @@ var maxBal: str -> int
 (* The type-correctness invariant.                                         *)
 (***************************************************************************/
 pred TypeOK = (
-    & votes in (Acceptor setOfMaps powerset(Ballot cross Value))
+    & votes in (Acceptor setOfMaps powerset(tuples(Ballot, Value)))
     & maxBal in (Acceptor setOfMaps (Ballot union set(-1)))
 )
 //-----------------------------------------------------------------------------
@@ -108,19 +108,19 @@ THEOREM ChoosableThm ==
  */             
 //-----------------------------------------------------------------------------
 pred VotesSafe =
-    tuples(Acceptor, Ballot, Value) forall ( a, b, v =>
-                 VotedFor(a, b, v) implies SafeAt(b, v)
+    tuples(Acceptor, Ballot, Value) forall (t =>
+                 VotedFor(t._1, t._2, t._3) implies SafeAt(t._2, t._3)
     )
 
 pred OneVote =
-    tuples(Acceptor, Ballot, Value, Value) forall ( a, b, v, w =>
-              VotedFor(a, b, v) and VotedFor(a, b, w) implies (v == w)
+    tuples(Acceptor, Ballot, Value, Value) forall (t =>
+              VotedFor(t._1, t._2, t._3) and VotedFor(t._1, t._2, t._4) implies (t._3 == t._4)
     )
 
 pred OneValuePerBallot =
     tuples(Acceptor, Acceptor, Ballot, Value, Value)
-       forall ( a1, a2, b, v1, v2 =>
-         VotedFor(a1, b, v1) and VotedFor(a2, b, v2) implies (v1 == v2)
+       forall (t =>
+         VotedFor(t._1, t._3, t._4) and VotedFor(t._2, t._3, t._5) implies (t._4 == t._5)
        )
 //-----------------------------------------------------------------------------
 //THEOREM OneValuePerBallot => OneVote
@@ -155,8 +155,8 @@ THEOREM ShowsSafety ==
 (* straightforward.                                                        *)
 (***************************************************************************/
 action Init = {
-  & votes  <- Acceptor mapOf { _ => set() }
-  & maxBal <- Acceptor mapOf { _ => -1 }
+  & votes  <- Acceptor.mapOf({ _ => set() })
+  & maxBal <- Acceptor.mapOf({ _ => -1 })
 }
 
 
@@ -169,6 +169,7 @@ action Init = {
 action IncreaseMaxBal(a, b) = {
   & b > maxBal[a]
   & maxBal <- maxBal.update(a, b)
+  & votes <- votes
 }
 
 /***************************************************************************)
@@ -182,12 +183,12 @@ action IncreaseMaxBal(a, b) = {
 action VoteFor(a, b, v) = {
     & maxBal[a] <= b
     & votes[a] forall ( vt => vt[1] != b )
-    & Acceptor.difference(set(a)) forall ( c =>
+    & Acceptor.exclude(set(a)) forall ( c =>
          votes[c] forall ( vt => (vt[1] == b) implies (vt[2] == v) )
       )
     & Quorum exists ( Q => ShowsSafeAt(Q, b, v) )
-    & votes  <- votes updateAs a, ( old => old union set((b, v)) )
-    & maxBal <- maxBal updateAs a, ( _ => b )
+    & votes  <- votes.updateAs(a, ( old => old union set((b, v)) ))
+    & maxBal <- maxBal.updateAs(a, ( _ => b ))
 }
 
 
@@ -195,9 +196,9 @@ action VoteFor(a, b, v) = {
 (* The next-state action and the invariant.                                *)
 (***************************************************************************/
 action Next =
-    (Acceptor cross Ballot) guess { a, b => {
-            & IncreaseMaxBal(a, b)
-            & Value guess { v => VoteFor(a, b, v) }
+    tuples(Acceptor, Ballot) guess { t => {
+            | IncreaseMaxBal(t._1, t._2)
+            | Value guess { v => VoteFor(t._1, t._2, v) }
         }
     }
 

@@ -328,7 +328,7 @@ export class ToIrListener implements TntListener {
 
   // function application, e.g., f[10]
   exitFunApp (ctx: any) {
-    this.pushApplication(ctx, 'of', this.popExprs(2))
+    this.pushApplication(ctx, 'get', this.popExprs(2))
   }
 
   // operator application in the normal form, e.g., MyOper("foo", 42)
@@ -391,7 +391,10 @@ export class ToIrListener implements TntListener {
           assert(false,
             `exitDotCall: ${ls} expected wrappedArgs, found: ${wrappedArgs.kind}`)
         }
-      } // else: no arguments, as in e.g., s.head()
+      } else {
+        // no arguments, as in e.g., s.head()
+        args = [callee!]
+      }
       // apply the operator to the arguments
       this.pushApplication(ctx, name, args)
     } else {
