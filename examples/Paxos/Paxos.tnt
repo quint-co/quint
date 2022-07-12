@@ -15,7 +15,7 @@ const Quorum: set(set(str))
 
 assume _ = (
     & Quorum.forall(Q => Q subseteq Acceptor)
-    & tuples(Quorum, Quorum).forall(Q1, Q2 => Q1 intersect Q2 != set())
+    & tuples(Quorum, Quorum).forall(t => (t._1 intersect t._2) != set())
 )
       
 val Ballot = Nat
@@ -35,18 +35,18 @@ val Message =
       Ballot.map(b => { tag: "1a", bal: b })
 
     val M1b =
-      tuples(Acceptor, Ballot, Ballot union set(-1), Value union set(None))
-        .map(a, b, mb, mv => { tag: "1b", acc: a, bal: b, mbal: mb, mval: mv })
+      tuples(Acceptor, Ballot, union(Ballot, set(-1)), union(Value, set(None)))
+        .map(t => { tag: "1b", acc: t._1, bal: t._2, mbal: t._3, mval: t._4 })
 
     val M2a =
       tuples(Ballot, Value)
-        .map(b, v => { tag: "2a", bal: b, value: v })
+        .map(t => { tag: "2a", bal: t._1, value: t._2 })
 
     val M2b =
       tuples(Acceptor, Ballot, Value)
-        .map(a, b, v => { tag: "2b", acc: a, bal: b, value: v })
+        .map(t => { tag: "2b", acc: t._1, bal: t._2, value: t._3 })
 
-    M1a union M1b union M2a union M2b
+    M1a.union(M1b).union(M2a).union(M2b)
 //-----------------------------------------------------------------------------
 
 var maxBal:   int
@@ -110,7 +110,7 @@ action Init = {
 (* to define the actions that make up the next-state action.               *)
 (***************************************************************************/
 action Send(m) = {
-  msgs <- msgs union set(m)
+  msgs <- msgs.union(set(m))
 }
 
 /***************************************************************************)
@@ -120,7 +120,9 @@ action Send(m) = {
 (* m with m.type = "1a") that begins ballot b.                             *)
 (***************************************************************************/
 action Phase1a(b) = {
-    Send({ tag: "1a", bal: b })
+    & Send({ tag: "1a", bal: b })
+    & maxVBal <- maxVBal
+    & maxVal <- maxVal
 }
                  
 /***************************************************************************)
@@ -136,6 +138,8 @@ action Phase1b(a) = {
       & maxBal <- maxBal.update(a, m.bal)
       & Send({ tag: "1b", acc: a, bal: m.bal, 
                mbal: maxVBal[a], mval: maxVal[a] })
+      & maxVBal <- maxVBal
+      & maxVal <- maxVal
     }})
 }
 
@@ -181,6 +185,8 @@ action Phase2a(b, v) = {
         }
      )
   & Send({ tag: "2a", bal: b, value: v })
+  & maxVBal <- maxVBal
+  & maxVal <- maxVal
 }
   
 /***************************************************************************)
@@ -212,10 +218,12 @@ action Phase2b(a) = msgs.filter(m => m.tag == "2a")
 (* Below are defined the next-state action and the complete spec.          *)
 (***************************************************************************/
 action Next = {
-        | Ballot.guess({ b => {
+        | { & Ballot.guess({ b => {
                             | Phase1a(b)
                             | Value guess { v => Phase2a(b, v) }
                        }})
+            & maxBal <- maxBal
+          }           
 
         | Acceptor.guess({ a => { Phase1b(a) | Phase2b(a) } })
 }

@@ -1139,7 +1139,7 @@ updateAs(f, e1, (old => old + y))
 // an equivalent of (k :> v) @@ f when using the module TLC
 f put k, v
 f.put(k, v)
-put(k, v)
+put(f, k, v)
 ```
 
 *Mode:* Stateless, State. Other modes are not allowed.

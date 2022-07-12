@@ -86,7 +86,7 @@ action SendMsg(i) = {
   & active[i]
   & (Node exclude set(i)) guess { j => {
         & active  <- active.update(j, true)
-        & color   <- color updateAs i, ( old => if (j > i) "black" else old )
+        & color   <- color.updateAs(i, ( old => if (j > i) "black" else old ))
       }
     }
 }
