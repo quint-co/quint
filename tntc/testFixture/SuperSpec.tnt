@@ -179,7 +179,8 @@ module withConsts {
       var z: int
     }
   }
-  module level2instance = level2(y = y)
+
+  module level2instance = level2(*)
   import level2.level3
   val namespace_test = level3::z + level2instance::level3::z
 
@@ -214,7 +215,9 @@ module withConsts {
   }
 
   // create an instance of Proto by associating constants and variables
-  module Inst1 = Proto(N = N, x = x)
+  // FIXME: How to resolve names for N and x in this scenario?
+  // module Inst1 = Proto(N = N, x = x)
+
   // create an instance of Proto by using '*'
   module Inst2 = Proto(*)
 
