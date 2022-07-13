@@ -87,8 +87,6 @@ expr:           // apply a built-in operator via the dot notation
         |       expr OR expr                                        # or
         |       expr IFF expr                                       # iff
         |       expr IMPLIES expr                                   # implies
-                // built-in infix/postfix operators, a la Scala
-        |       expr IDENTIFIER (argList)                           # infixCall
         |       expr MATCH
                     ('|' STRING ':' identOrHole '=>' expr)+         # match
                 // similar to indented /\ and indented \/ of TLA+

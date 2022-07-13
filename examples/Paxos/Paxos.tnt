@@ -15,7 +15,7 @@ const Quorum: set(set(str))
 
 assume _ = (
     & Quorum.forall(Q => Q subseteq Acceptor)
-    & tuples(Quorum, Quorum).forall(t => (t._1 intersect t._2) != set())
+    & tuples(Quorum, Quorum).forall(t => (t._1.intersect(t._2)) != set())
 )
       
 val Ballot = Nat
@@ -92,10 +92,10 @@ val vars = (maxBal, maxVBal, maxVal, msgs)
 (* The type invariant and initial predicate.                               *)
 (***************************************************************************/
 pred TypeOK = (
-    & maxBal  in (Acceptor setOfMaps (Ballot union set(-1)))
-    & maxVBal in (Acceptor setOfMaps (Ballot union set(-1)))
-    & maxVal  in (Acceptor setOfMaps (Value union set(None)))
-    & msgs subseteq Message
+    & maxBal  in Acceptor.setOfMaps(Ballot.union(set(-1)))
+    & maxVBal in Acceptor.setOfMaps(Ballot.union(set(-1)))
+    & maxVal  in Acceptor.setOfMaps(Value.union(set(None)))
+    & msgs.subseteq(Message)
 )
 
 action Init = {
@@ -166,7 +166,7 @@ action Phase1b(a) = {
 action Phase2a(b, v) = {
   & not(msgs.filter(m => m.tag == "2a")
             .exists(m => m.bal == b))
-  & Quorum exists (Q =>
+  & Quorum.exists(Q =>
         val Q1b = msgs.filter(m => m.tag == "1b")
                       .filter(m => (
                             & m.acc in Q
@@ -179,7 +179,7 @@ action Phase2a(b, v) = {
                 | Q1bv == set()
                 | Q1bv.exists(m => (
                     & m.mval == v
-                    & Q1bv forall ( mm => m.mbal >= mm.mbal )
+                    & Q1bv.forall( mm => m.mbal >= mm.mbal )
                   ) )
               )
         }
@@ -220,7 +220,7 @@ action Phase2b(a) = msgs.filter(m => m.tag == "2a")
 action Next = {
         | { & Ballot.guess({ b => {
                             | Phase1a(b)
-                            | Value guess { v => Phase2a(b, v) }
+                            | Value.guess({ v => Phase2a(b, v) })
                        }})
             & maxBal <- maxBal
           }           
@@ -240,7 +240,7 @@ temporal Spec = Init and always(stutter(Next, vars))
 (* the array `votes' describing the votes cast by the acceptors is defined *)
 (* as follows.                                                             *)
 (***************************************************************************/
-val votes = Acceptor mapOf ( a =>
+val votes = Acceptor.mapOf( a =>
            msgs.filter(mm => mm.tag == "2b")
                .filter(mm => mm.acc == a)
                .map(m => (m.bal, m.value))
@@ -270,7 +270,7 @@ module V = Voting(*)
 (***************************************************************************/
 pred Inv = (
        & TypeOK
-       & Acceptor forall ( a =>
+       & Acceptor.forall( a =>
            if (maxVBal[a] == -1)
            maxVal[a] == None
            else (maxVBal[a], maxVal[a]) in votes[a]
@@ -280,10 +280,10 @@ pred Inv = (
                 (maxBal[m.acc] >= m.bal
                     and ((m.mbal >= 0) implies (m.mbal, m.mval) in votes[m.acc]))
               )
-       & val M2as = msgs filter ( m => m.tag == "2a" )
+       & val M2as = msgs.filter( m => m.tag == "2a" )
          M2as.forall( m => (
-            & Quorum exists( Q => V::ShowsSafeAt(Q, m.bal, m.value) )
-            & M2as forall ( mm =>
+            & Quorum.exists( Q => V::ShowsSafeAt(Q, m.bal, m.value) )
+            & M2as.forall( mm =>
                 (mm.bal == m.bal) implies (mm.value == m.value)
               )
          ) )

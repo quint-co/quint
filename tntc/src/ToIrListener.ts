@@ -350,22 +350,6 @@ export class ToIrListener implements TntListener {
     this.pushApplication(ctx, name, args)
   }
 
-  // infix operator application, e.g., S union T
-  exitInfixCall (ctx: p.InfixCallContext) {
-    const name = ctx.IDENTIFIER().text
-    const wrappedArgs = this.exprStack.pop()
-    const firstArg = this.exprStack.pop()
-    if (firstArg && wrappedArgs && wrappedArgs.kind === 'app' &&
-      wrappedArgs.opcode === 'wrappedArgs') {
-      this.pushApplication(ctx, name, [firstArg].concat(wrappedArgs.args))
-    } else {
-      const ls = this.locStr(ctx)
-      // istanbul ignore next
-      assert(false,
-        `exitInfixCall: ${ls} expected leading arg and wrapped arguments`)
-    }
-  }
-
   // operator application via dot, e.g., S.union(T)
   exitDotCall (ctx: p.DotCallContext) {
     // pop: the first argument, operator name, the rest of arguments (wrapped)
