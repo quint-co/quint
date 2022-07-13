@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author           |
 | :------- | :--------- | :--------------- |
-| 1        | 18.05.2022 | Gabriela Moreira |
+| 2        | 12.07.2022 | Gabriela Moreira |
 
 ## Summary
 
@@ -38,21 +38,40 @@ simplicity.
 
 ## Solution
 
-Here's a rough draft of the effect system, to be updated with further
-exploration including a draft implementation.
-
 TNT expressions and definitions can be assigned both a type and an effect, which
-can be independent of each other. Here are some examples of inferred returned
-types and effects for some definitions, considering some new syntax that is
-still under discussion.
+can be independent of each other. Here are some examples of inferred effects for
+some definitions:
 
 ```
-pure P(a: int): int ~> <Pure, int>
-stateless S(a: int): int = x + a ~> <Read[x], int>
-action<x> A(a: int) = x <- + a ~> <Read[x] & Update[x], bool>
-action<x, y> A2(a: int) = x <- x + a ~> <Read[x, y] & Update[x, y], bool>
-action<x> A3(a:int) = x <- S(a) ~> <Read[x] & Update[x], bool>
+var x: int
+var y: int
+
+pure P(a) = a + 1 // (Pure) => Pure
+state S(a) = x + a // (Pure) => Read['x']
+
+action<x> A1(a) = x <- x + a // (Pure) => Read['x'] & Update['x']
+action<x> A2(a) = x <- S(a) // (Pure) => Read['x'] & Update['x']
+
+action<x, y> A3(a) = x <- x + a // (Pure) => Read['x', 'y'] & Update['x', 'y']
 ```
+
+
+In these examples, keywords `pure`, `state` and `action` are providing effect
+information to be checked agains the inferred effect. This information is not
+used for inference.
+
+### How restrictive should `pure` definitions be?
+
+This is an open question. We have two alternatives for the `pure` keyword:
+1. Only allow Pure parameters and Pure result
+2. Allow parameters with Read effects as long as the result effects doesn't Read
+   any other variables
+
+Option 1 may be too restrictive and barely used, since, for most operators, it's
+desirable that they can be applied to state variables (i.e. `+` in `x + 1` if
+`x` is a state variable).
+
+PS: alternative names for `pure` are `static` and `stateless`.
 
 ### Notation
 
@@ -60,7 +79,7 @@ action<x> A3(a:int) = x <- S(a) ~> <Read[x] & Update[x], bool>
 Identifiers v, c, op
 Effects E, Ei ::= Read[vars] | Update[vars] | Pure | E & E | (E0, ..., EN) => E
 Expressions e, ei ::= any TNT expression
-Contexts Γ ::= { kind: 'var', identifier: v } | { kind: 'def', identifier: op, effect: E } | Γ ∪ Γ
+Contexts Γ ::= { kind: 'var' | 'const' | 'param', identifier: v } | { kind: 'def', identifier: op, effect: E } | Γ ∪ Γ
 Substitutions S, Si ::= {v ↦ E} | {v ↦ c} | S ∪ S
 ```
 
@@ -78,7 +97,7 @@ any other transformation. See equivalence rules below.
 
 The motivation for this form is to help writing effect signatures for operators
 that care only about the read or the update part of some effect. For example,
-the `or` operator representing disjunction in TNT takes two expressions with the
+the `or` operator representing disjunction in TNT takes expressions with the
 identical updates, but doesn't have any restrictions on the read part. Ensuring
 this normal form allows us to write its signature as `(Read[r1] & Update[u],
 Read[r2] & Update[u]) => Read[r1 ∪ r2] & Update[u]`.
@@ -106,9 +125,15 @@ Pure ≡ Read[] ≡ Update[] ≡ Read[] & Update[]
 E & Pure ≡ E
 E1 & E2 ≡ E2 & E1
 E1 & (E2 & E3) ≡ (E1 & E2) & E3
-
-One might be inclined to treat `Read[vars] & Update[vars]` and `Update[vars]` as equivalent, reasoning that one must be able to read a variable in order to update it. However, in TLA we can update a variable without reading it's current value: `x <- x + 1` is different from `x <- 2`. We anticipate there may be utility in differentiating these cases, such as being able to partition transitions that only read a variable on the current state from transitions that only update a variable (that is, its value on the next state).
 ```
+
+One might be inclined to treat `Read[vars] & Update[vars]` and `Update[vars]` as
+equivalent, reasoning that one must be able to read a variable in order to
+update it. However, in TLA we can update a variable without reading it's current
+value: `x <- x + 1` is different from `x <- 2`. We anticipate there may be
+utility in differentiating these cases, such as being able to partition
+transitions that only read a variable on the current state from transitions that
+only update a variable (that is, its value on the next state).
 
 ### Unification
 
@@ -179,12 +204,16 @@ Literals are always `Pure`.
 
 ### Examples of built-in operator signatures
 ```
-exists: (Pure, (Pure) => Read[v]) => Read[v]
-guess: (Pure, (Pure) => E) => E
-and: (E1, E2) => E1 & E2
-+(iadd): (E1, E2) => E1 & E2
-or: (Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1 ∪ r2] & Update[u]
-assign: (Read[v], E) => Update[v] & E
+exists: (Read[r1], (Read[p]) => Read[r2]) => Read[r1, p, r2] 
+guess: (Read[r1], (Read[p]) => Read[r2] & Update[u]) => Read[r1, p, r2] & Update[u]
++(iadd): (Read[r1], Read[r2]) => Read[r1, r2]
+assign: (Read[r1], Read[r2] & Update[u2]) => Read[r2] & Update[r1, u2]
+```
+
+Some operators support different arity, and therefore are defined as functions that take the number of arguments as parameter and returns the signature for that arity. Some examples for arity 2:
+```
+andAction: (Read[r1] & Update[u1], Read[r2] & Update[u2]) => Read[r1, r2] & Update[u1, u2]
+orAction: (Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1, r2] & Update[u]
 ```
 
 ### Example
@@ -197,7 +226,7 @@ def A = {
 } => should raise error
 ```
 
-First expression in the `and` application:
+First expression in the `andAction` application:
 
 ```
 x: Read['x'] -- by (NAME)
@@ -211,13 +240,13 @@ x <- x + 1: Update['x'] & Read['x'] -- by (APP), see below
   S(E0) = Read['x'] & Update['x']
 ```
 
-Second expression in the `and` application is analogous:
+Second expression in the `andAction` application is analogous:
 
 ```
 x <- x + 2: Read['x'] & Update['x']-- by (APP)
 ```
 
-Applying (APP) to the `and` operator, a unification error is found:
+Applying (APP) to the `andAction` operator, a unification error is found:
 
 ```
 unify(
