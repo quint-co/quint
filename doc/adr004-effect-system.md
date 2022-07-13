@@ -39,7 +39,7 @@ simplicity.
 ## Solution
 
 TNT expressions and definitions can be assigned both a type and an effect, which
-can be independent of each other. Here are some examples of inferred effects for
+are independent of each other. Here are some examples of inferred effects for
 some definitions:
 
 ```
@@ -64,7 +64,7 @@ used for inference.
 
 This is an open question. We have two alternatives for the `pure` keyword:
 1. Only allow Pure parameters and Pure result
-2. Allow parameters with Read effects as long as the result effects doesn't Read
+2. Allow parameters with Read effects as long as the resulting effect doesn't Read
    any other variables
 
 Option 1 may be too restrictive and barely used, since, for most operators, it's
