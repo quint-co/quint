@@ -9,9 +9,9 @@ publishing all packages privately at the moment, package management with
 
  1. Make sure that you have installed [npm][]. This is usually done with your
  OS-specific package manager.
- 
+
  1. Install dependencies:
- 
+
    ```sh
    npm install
    ```
@@ -34,7 +34,7 @@ publishing all packages privately at the moment, package management with
     tntc
     ```
 
-Additionally, if you want to compile the vscode plugin:   
+Additionally, if you want to compile the vscode plugin:
 
  1. Install [yalc][] for local package management:
 
@@ -76,6 +76,25 @@ following commands:
     npm run coverage
     ```
 
+#### Updating the source map test fixtures
+
+  1. Compile and link the parser
+
+     ```sh
+     npm run compile && npm link
+     ```
+
+  1. Generate new source maps for reach map needing to be updated, e.g.,
+
+     ```sh
+     tntc parse testFixture/SuperSpec.tnt --out testFixture/SuperSpec.json --source-map testFixture/SuperSpec.map.json
+     ```
+
+  1. Go into the resulting `.map.json` and `.json` files and replace the
+     absolute path on your system with `mocked_path`. E.g., replace
+     `/home/me/.../testFixture/SuperSpec.map.json` with
+     `mocked_path/testFixture/SuperSpec.map.json`
+
 ### Integration tests
 
  1. Install [txm][] to run Markdown-based integration tests:
@@ -89,7 +108,7 @@ following commands:
  1. Run integration tests:
 
     ```sh
-    npm run integration
+    npm run compile && npm link && npm run integration
     ```
 
 [npm]: https://en.wikipedia.org/wiki/Npm_(software)
