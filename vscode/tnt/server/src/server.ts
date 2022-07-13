@@ -28,6 +28,12 @@ import {
 
 import { parsePhase1, parsePhase2, Loc, DefinitionTableByModule, inferEffects, getSignatures, TntModule, effectToString, errorTreeToString } from 'tntc'
 
+interface ParsingResult {
+  tntModule: TntModule
+  sourceMap: Map<BigInt, Loc>
+  definitionTable: DefinitionTableByModule
+}
+
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection = createConnection(ProposedFeatures.all)
@@ -108,7 +114,7 @@ connection.onDidChangeConfiguration(change => {
   // Revalidate all open text documents
   documents.all().forEach(d => {
     validateTextDocument(d)
-      .then(([tntModule, sourceMap, table]) => checkEffects(d, tntModule, sourceMap, table))
+      .then((result) => checkEffects(d, result.tntModule, result.sourceMap, result.definitionTable))
       .catch(diagnostics => {
         // Send the computed diagnostics to VSCode.
         connection.sendDiagnostics({ uri: d.uri, diagnostics })
@@ -140,7 +146,7 @@ documents.onDidClose(e => {
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent(change => {
   validateTextDocument(change.document)
-    .then(([tntModule, sourceMap, table]) => checkEffects(change.document, tntModule, sourceMap, table))
+    .then((result) => checkEffects(change.document, result.tntModule, result.sourceMap, result.definitionTable))
     .catch(diagnostics => {
       // Send the computed diagnostics to VSCode.
       connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
@@ -205,7 +211,7 @@ function assembleDiagnostic (explanation: string, loc: Loc): Diagnostic {
   }
 }
 
-async function validateTextDocument (textDocument: TextDocument): Promise<[TntModule, Map<BigInt, Loc>, DefinitionTableByModule]> {
+async function validateTextDocument (textDocument: TextDocument): Promise<ParsingResult> {
   // The validator creates diagnostics for all uppercase words length 2 and more
   const diagnostics: Diagnostic[] = []
   const text = textDocument.getText()
@@ -224,7 +230,11 @@ async function validateTextDocument (textDocument: TextDocument): Promise<[TntMo
         diagnostics.push(...diags)
       }
     } else {
-      return new Promise((resolve, reject) => resolve([result.module, result.sourceMap, result2.table]))
+      return new Promise((resolve, reject) => resolve({
+        tntModule: result.module,
+        sourceMap: result.sourceMap,
+        definitionTable: result2.table,
+      }))
     }
   }
 
