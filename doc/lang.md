@@ -727,15 +727,15 @@ as accessing namespaces.
 *The TNT normal form is especially convenient for programs, so they should
  communicate in this form. People may communicate in any form.*
 
-A reserved class of built-in operators can only be called via infix form.  These
-operators conventional names that stem from mathematics and thus are not written
-as identifiers.  For instance, you must write `1 + 3` in the infix form; You
+A reserved class of built-in operators can only be called via infix form. These
+operators have conventional names that stem from mathematics and thus are not written
+as identifiers. For instance, you must write `1 + 3` in the infix form; You
 cannot write `+(1, 3)` or `1.+(3)`. The normal form for these operators can be
 achieved by using the mnemonic names, such as `iadd` instead of the infix
-symbol.  E.g., you may write `iadd(1, 3)` or `1.iadd(3)` in place of `1 + 3`. A
+symbol. E.g., you may write `iadd(1, 3)` or `1.iadd(3)` in place of `1 + 3`. A
 small number of operators are exceptional in this sense. We list the alternative
-names when introducing operators.  We don't expect humans to write expressions
-like the ones above.  This notation is more convenient for programs, so TNT
+names when introducing operators. We don't expect humans to write expressions
+like the ones above. This notation is more convenient for programs, so TNT
 tooling should use the TNT normal form. 
 
 Like in every programming language, several operators are special
