@@ -66,7 +66,7 @@ editor (currently, only vim is supported).
  - *TNT should be easy to parse*: 
     - It uses a small set of syntactic rules (its ANTLR4 grammar is 120 SLOC).
     - It borrows the best practices from the programming languages.
-    - It should eliminates ambiguity in all operators and idioms.
+    - It should eliminate ambiguity in all operators and idioms.
 
  - *TNT should be easy to pretty print*: 
     - Indentation is encouraged but not required.
