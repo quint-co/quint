@@ -84,7 +84,7 @@ following commands:
      npm run compile && npm link
      ```
 
-  1. Generate new source maps for reach map needing to be updated, e.g.,
+  1. Generate new source maps for each map needing to be updated, e.g.,
 
      ```sh
      tntc parse testFixture/SuperSpec.tnt --out testFixture/SuperSpec.json --source-map testFixture/SuperSpec.map.json
