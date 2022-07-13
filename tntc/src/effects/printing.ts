@@ -12,7 +12,7 @@
  * @module
  */
 
-import { Effect, Variables } from './base'
+import { Effect, ErrorTree, Variables } from './base'
 
 /**
  * Pretty prints an effect
@@ -59,4 +59,20 @@ export function variablesToString (v: Variables): string {
     case 'quantified': return v.name
     case 'union': return v.variables.map(variablesToString).join(', ')
   }
+}
+
+/**
+ * Pretty prints an error tree
+ *
+ * @param e the ErrorTree to be formatted
+ *
+ * @returns a multiline string with the pretty printed error tree
+ */
+export function errorTreeToString (e: ErrorTree): string {
+  const childrenErrors = e.children.map(errorTreeToString)
+  let out = childrenErrors.join('and\n')
+  out += e.message ? e.message + '\n' : ''
+  out += e.location + '\n'
+
+  return out
 }

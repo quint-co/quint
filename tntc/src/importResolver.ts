@@ -113,10 +113,30 @@ class ImportResolverVisitor implements IRVisitor {
       // Tries to find specific definition, reporting an error if not found
       const definition = importableDefinitions.find(d => d.identifier === def.name)
 
-      if (definition) {
-        this.currentTable.valueDefinitions.push(definition)
-      } else {
+      if (!definition) {
         this.errors.push({ moduleName: def.path, defName: def.name, reference: def.id })
+        return
+      }
+
+      if (definition.kind === 'module') {
+        // Collect all definitions namespaced to module
+        const importedModuleTable = this.tables.get(definition.identifier)
+
+        if (!importedModuleTable) {
+          this.errors.push({ moduleName: def.path, defName: definition.identifier, reference: def.id })
+          return
+        }
+
+        const namespacedDefinitions = importedModuleTable!.valueDefinitions
+          .filter(d => !d.scope)
+          .map(d => {
+            return { kind: d.kind, identifier: `${definition.identifier}::${d.identifier}`, reference: d.reference }
+          })
+
+        this.currentTable.valueDefinitions.push(...namespacedDefinitions)
+      } else {
+        // normal value definition
+        this.currentTable.valueDefinitions.push(definition)
       }
     }
   }

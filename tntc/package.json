@@ -67,7 +67,7 @@
     "test": "mocha -r ts-node/register test/*.test.ts test/**/*.test.ts",
     "coverage": "nyc npm run test",
     "integration": "txm cli-tests.md",
-    "antlr": "antlr4ts -visitor ./src/generated/Tnt.g4",
+    "antlr": "antlr4ts -visitor ./src/generated/Tnt.g4 && antlr4ts -visitor ./src/generated/Effect.g4",
     "format": "eslint --fix '**/*.ts'"
   },
   "devDependencies": {
