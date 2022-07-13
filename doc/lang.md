@@ -754,7 +754,6 @@ priority:
 | `i^j`                                                                                                     | Integer power (right associative)                            |
 | `i * j`, `i / j`, `i % j`                                                                                 | Integer multiplication, division, modulo                     |
 | `i + j`, `i - j`                                                                                          | Integer addition and subtraction                             |
-| `e_1 F e_2, ..., e_n`                                                                                     | General infix operator application                           |
 | `i > j`, `i < j`, `i >= j`, `i <= j`, `i != j`, `i == j`, `i <- j`, `S in T`, `S notin T`, `S subseteq T` | Integer comparisons, equality, assignment, and set relations |
 | `p and q`                                                                                                 | Boolean 'and' (conjunction)                                  |
 | `p or q`                                                                                                  | Boolean 'or' (disjunction)                                   |
