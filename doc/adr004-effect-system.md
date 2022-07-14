@@ -186,7 +186,7 @@ Operator definitions (top-level or inside let-in's): infer signature and add it 
 Γ ∪ { identifier: op, effect: E } ⊢ (def op(params) = e): Pure
 ```
 
-Lambda parameters can only read variables but not update them.
+Lambda parameters can only read variables but not introduce updates to them.
 ```
                  Γ ⊢ e: E
 ---------------------------------------------- (LAMBDA)
