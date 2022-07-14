@@ -77,8 +77,8 @@ expr:           // apply a built-in operator via the dot notation
         |       expr op=(PLUS | MINUS) expr                         # plusMinus
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
                 // standard relations
-        |       expr op=(GT | LT | GE | LE | NE | EQ |
-                         ASGN | IN | NOTIN | SUBSETEQ) expr         # relations
+        |       expr op=(GT | LT | GE | LE | NE
+                        | EQ | ASGN | IN | NOTIN ) expr             # relations
         |       expr '=' expr {
                   this.notifyErrorListeners("TNT006: unexpected '=', did you mean '=='?")
                 }                                                   # errorEq
