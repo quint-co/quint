@@ -57,8 +57,10 @@ action<x, y> A3(a) = x <- x + a // (Pure) => Read['x', 'y'] & Update['x', 'y']
 
 
 In these examples, keywords `pure`, `state` and `action` are providing effect
-information to be checked agains the inferred effect. This information is not
-used for inference.
+information to be checked against the inferred effect. This information is not
+used for inference. Note that information between `<...>` is not part of the
+effect system, but actually syntax sugar for unchanged assignments (and
+assignments do have influence on effects).
 
 ### How restrictive should `pure` definitions be?
 
