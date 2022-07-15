@@ -13,7 +13,7 @@ const Quorum: set(set(str))     // The set of "quorums", where a quorum" is a
 (* Here are the assumptions we make about quorums.                         *)
 (***************************************************************************/
 assume QuorumAssumption = (
-    & Quorum.forall( Q => Q subseteq Acceptor )
+    & Quorum.forall( Q => Q.subseteq(Acceptor) )
     & tuples(Quorum, Quorum).forall( t => t._1.intersect(t._2) != set() )
 )
 

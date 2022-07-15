@@ -745,21 +745,21 @@ If you are using the infix form, it is good to know the operator priorities.
 Here is the table of operator priorities, the ones in the top have the higher
 priority:
 
-| Operators                                                                                                 | Comments                                                     |
-|-----------------------------------------------------------------------------------------------------------|--------------------------------------------------------------|
-| `e_1.F(e_2, ..., e_n)`                                                                                    | Call via dot has the highest priority                        |
-| `F(e_1, ..., e_n)`                                                                                        | The normal form of operator application                      |
-| `f[e_1, ..., e_n]`                                                                                        | Function application                                         |
-| `-i`                                                                                                      | Unary minus                                                  |
-| `i^j`                                                                                                     | Integer power (right associative)                            |
-| `i * j`, `i / j`, `i % j`                                                                                 | Integer multiplication, division, modulo                     |
-| `i + j`, `i - j`                                                                                          | Integer addition and subtraction                             |
-| `i > j`, `i < j`, `i >= j`, `i <= j`, `i != j`, `i == j`, `i <- j`, `S in T`, `S notin T`, `S subseteq T` | Integer comparisons, equality, assignment, and set relations |
-| `p and q`                                                                                                 | Boolean 'and' (conjunction)                                  |
-| `p or q`                                                                                                  | Boolean 'or' (disjunction)                                   |
-| `p iff q`                                                                                                 | Boolean equivalence (if and only if)                         |
-| `p implies q`                                                                                             | Boolean implication: `not(p) or q`                           |
-| all forms with `(..)`, `{..}`, and `[..]`                                                                 | the lowest priority                                          |
+| Operators                                                                                 | Comments                                                     |
+|-------------------------------------------------------------------------------------------|--------------------------------------------------------------|
+| `e_1.F(e_2, ..., e_n)`                                                                    | Call via dot has the highest priority                        |
+| `F(e_1, ..., e_n)`                                                                        | The normal form of operator application                      |
+| `f[e_1, ..., e_n]`                                                                        | Function application                                         |
+| `-i`                                                                                      | Unary minus                                                  |
+| `i^j`                                                                                     | Integer power (right associative)                            |
+| `i * j`, `i / j`, `i % j`                                                                 | Integer multiplication, division, modulo                     |
+| `i + j`, `i - j`                                                                          | Integer addition and subtraction                             |
+| `i > j`, `i < j`, `i >= j`, `i <= j`, `i != j`, `i == j`, `i <- j`, `S in T`, `S notin T` | Integer comparisons, equality, assignment, and set relations |
+| `p and q`                                                                                 | Boolean 'and' (conjunction)                                  |
+| `p or q`                                                                                  | Boolean 'or' (disjunction)                                   |
+| `p iff q`                                                                                 | Boolean equivalence (if and only if)                         |
+| `p implies q`                                                                             | Boolean implication: `not(p) or q`                           |
+| all forms with `(..)`, `{..}`, and `[..]`                                                 | the lowest priority                                          |
 
 ### Boolean operators and equality
 
@@ -976,10 +976,8 @@ We introduce two operators that are semantically equivalent to `\E x \in S: P`
 of TLA+:
 
 ```scala
-S exists { x => P }
 S.exists( x => P )
 exists(S, { x => P } )
-S guess  { x => P }
 S.guess( x => P )
 guess(S, { x => P })
 ```
@@ -1004,14 +1002,12 @@ The other operators are introduced and explained in code directly.
 
 ```scala
 // \A x \in S: P
-S forall (x => P)
 S.forall(x => P)
 forall(S, (x => P))
 // set membership: e \in S
 e in S
 e.in(S)
 in(e, S)
-S contains e
 S.contains(e)
 contains(S, e)
 // set non-membership: e \notin S
@@ -1019,48 +1015,37 @@ e notin S
 e.notin(S)
 notin(e, S)
 // union: S \union T
-S union T
 S.union(T)
 union(S, T)
 // intersection: S \intersect T
-S intersect T
 S.intersect(T)
 intersect(S, T)
 // difference: S \ T
-S exclude T
 S.exclude(T)
 exclude(S, T)
 // S is a subset of T (proper or not): S \subseteq T
-S subseteq T
 S.subseteq(T)
 subseteq(S, T)
 // set comprehension (map): { e: x \in S }
-S map (x => e)
 S.map(x => e)
 map(S, (x => e))
 // set comprehension (filter): { x \in S: P }
-S filter (x => P)
 S.filter(x => P)
 filter(S, (x => P))
 // set folding: you can write such a recursive operator in TLA+
-S fold init, (v, x => e)
 S.fold(init, (v, x => e))
 fold(S, init, (v, x => e))
 // SUBSET S
-S powerset
 S.powerset()
 powerset(S)
 // UNION S
-S flatten
 S.flatten()
 flatten(S)
 // Seq(S) of the module Sequences
-S seqs
 S.seqs()
 seqs(S)
 // CHOOSE x \in S: TRUE
 // The operator name is deliberately made long, so it would not be the user's default choice.
-S choose_some
 S.choose_some()
 // There is no special syntax for CHOOSE x \in S: P
 // Instead, you can filter a set and then pick an element of it.
@@ -1076,7 +1061,6 @@ S isFinite
 S.isFinite()
 isFinite(S)
 // Cardinality(S)
-S cardinality
 S.cardinality()
 cardinality(S)
 ```

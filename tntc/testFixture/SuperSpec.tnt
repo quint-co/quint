@@ -157,7 +157,7 @@ module withConsts {
   // Bultin infix operators
   val in_2_empty = 2 in set()
   val notin_2_empty = 2 notin set()
-  val subseteq_empty = set() subseteq set()
+  val subseteq_empty = set().subseteq(set())
 
   // Nested Modules
   module level2 {

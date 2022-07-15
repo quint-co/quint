@@ -14,7 +14,7 @@ const Acceptor: set(str)
 const Quorum: set(set(str))
 
 assume _ = (
-    & Quorum.forall(Q => Q subseteq Acceptor)
+    & Quorum.forall(Q => Q.subseteq(Acceptor))
     & tuples(Quorum, Quorum).forall(t => (t._1.intersect(t._2)) != set())
 )
       
