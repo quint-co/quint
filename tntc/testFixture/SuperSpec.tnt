@@ -111,21 +111,9 @@ module withConsts {
   // Apply a user-defined operator by its name.
   def MyOper(a, b) = 1
   val oper_app_normal = MyOper("a", 42)
-  val oper_app_infix = "a" MyOper 42, true
+  val oper_app_ufcs = "a".MyOper(42)
   // the following operators need a special parsing case
   val oper_in = in(1, set())
-
-  // Infix application with lambdas
-  val S = set(1, 2, 3, 4)
-  // Pass a lambda operator as a second argument of filter.
-  // Here we are using the infix notation.
-  val oper_app_infix1 = S filter (x => x > 10)
-  // We can omit parentheses, though this form is harder to read.
-  val oper_app_infix2 = S filter x => x > 10
-  // Some operators accept action lambdas
-  action oper_app_infix3 = S guess { x => x > 10 }
-  // use holes
-  val oper_app_infix4 = S filter (_, _ => true)
 
   // Dot notation application with lambdas
   // Pass a lambda operator as a second argument of filter.
@@ -166,10 +154,10 @@ module withConsts {
 
   def isEmpty(s) = s == []
 
-  // Infix operators
+  // Bultin infix operators
   val in_2_empty = 2 in set()
   val notin_2_empty = 2 notin set()
-  val subseteq_empty = set() subseteq set()
+  val subseteq_empty = set().subseteq(set())
 
   // Nested Modules
   module level2 {
