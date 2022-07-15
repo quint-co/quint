@@ -27,7 +27,7 @@ describe('inferEffects', () => {
   const signatures: Map<string, Signature> = new Map<string, Signature>([
     ['assign', () => parseEffectOrThrow('(Read[r1], Read[r2] & Update[u2]) => Read[r2] & Update[r1, u2]')],
     ['multipleArityOp', readManyEffect],
-    ['foldl', () => parseEffectOrThrow('(Read[r1], Read[r2], (Read[p1], Read[p2]) => Read[p1, p2]) => Read[r1, r2, p1, p2]')],
+    ['foldl', () => parseEffectOrThrow('(Read[r1], Read[r2], (Read[r1], Read[r2]) => Read[r3]) => Read[r1, r2, r3]')],
     ['iadd', () => parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1, r2]')],
   ])
 
@@ -75,7 +75,7 @@ describe('inferEffects', () => {
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
-    const expectedEffect = "(Read[r_p]) => Read[r_p, 'x']"
+    const expectedEffect = "(Read[e1]) => Read[e1, 'x']"
 
     effects
       .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(BigInt(5))!), expectedEffect))
@@ -92,7 +92,7 @@ describe('inferEffects', () => {
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
-    const expectedEffect = "(Read[r_p]) => Read[r_p, 'x']"
+    const expectedEffect = "(Read[e5]) => Read[e5, 'x']"
 
     effects
       .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(BigInt(8))!), expectedEffect))

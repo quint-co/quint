@@ -18,7 +18,8 @@ import { DefinitionTableByModule } from '../definitionsCollector'
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { TntApp, TntBool, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr } from '../tntIr'
-import { applySubstitution, Effect, emptyVariables, ErrorTree, unify, Signature } from './base'
+import { applySubstitution, applySubstitutionToVariables, Effect, emptyVariables, ErrorTree, unify, Signature, effectNames, Substitution, compose, Variables } from './base'
+import { effectToString, errorTreeToString } from './printing'
 
 /**
  * Infers an effect for every expression in a module based on predefined
@@ -70,6 +71,8 @@ class EffectInferrerVisitor implements IRVisitor {
   private currentModuleName: string = ''
   private currentTable: Map<string, string> = new Map<string, string>()
   private moduleStack: string[] = []
+
+  private substitutions: Substitution[] = []
 
   enterModuleDef (def: TntModuleDef): void {
     this.moduleStack.push(def.module.name)
@@ -151,9 +154,25 @@ class EffectInferrerVisitor implements IRVisitor {
           result: resultEffect,
         })
 
-        const resultEffectWithSubs = substitution.chain(s => applySubstitution(s, resultEffect))
+        const a: Effect = {
+          kind: 'arrow',
+          params: expr.args.map((a: TntEx) => {
+            return this.effects.get(a.id)!
+          }),
+          result: resultEffect,
+        }
+        console.log('unifying', effectToString(signature), 'and', effectToString(a))
+        const resultEffectWithSubs = substitution.chain(s => { console.log('result', s); compose(this.substitutions, s).map(ss => this.substitutions = ss); return applySubstitution(s, resultEffect) })
+
+        substitution.map(s => {
+          this.effects.forEach((effect, id) => {
+            applySubstitution(s, effect).map(e => this.effects.set(id, e))
+          })
+          return true
+        })
 
         return resultEffectWithSubs.map(effect => {
+          console.log('result effect', effectToString(effect))
           return this.effects.set(expr.id, effect)
         }).mapLeft(error => this.errors.set(expr.id, { location: location, children: [error] }))
       })
@@ -199,12 +218,18 @@ class EffectInferrerVisitor implements IRVisitor {
       return
     }
     const e = this.effects.get(expr.expr.id)!
-    const params: Effect[] = expr.params.map(p => ({ kind: 'concrete', read: { kind: 'quantified', name: `r_${p}` }, update: emptyVariables }))
+    // This has to be introduced to the context somehow in order to receive substitutions
+    const paramsVariables: Variables[] = expr.params
+      .map(p => (applySubstitutionToVariables(this.substitutions, { kind: 'quantified', name: `r_${p}` })))
+
+    const params = paramsVariables.map(v => {
+      return { kind: 'concrete', read: v, update: emptyVariables } as Effect
+    })
     this.effects.set(expr.id, { kind: 'arrow', params: params, result: e })
   }
 
   private freshVar (): string {
-    const v = `e${this.freshVarCounter} `
+    const v = `e${this.freshVarCounter}`
     this.freshVarCounter++
     return v
   }
@@ -214,9 +239,48 @@ class EffectInferrerVisitor implements IRVisitor {
     if (!this.signatures.get(opcode)) {
       return left(`Signature not found for operator: ${opcode}`)
     }
-    const signature = this.signatures.get(opcode)!
-    return right(signature(arity))
+    const signatureFunction = this.signatures.get(opcode)!
+    const signature = signatureFunction(arity)
+    return right(this.replaceEffectNamesWithFresh(signature))
   }
+
+  private replaceEffectNamesWithFresh (effect: Effect): Effect {
+    const names = effectNames(effect)
+    const subs: Substitution[] = names.map(name => {
+      return { kind: name.kind, name: name.name, value: { kind: 'quantified', name: this.freshVar() } }
+    })
+    console.log(subs)
+    const result = applySubstitution(subs, effect)
+    if (result.isLeft()) {
+      throw new Error(`Error applying fresh names substitution: ${errorTreeToString(result.value)}`)
+    } else {
+      return result.value
+    }
+  }
+
+  // Alternative: define functions to fetch all variables, create a substitution and apply it
+  // private replaceEffectNamesWithFresh (effect: Effect): Effect {
+  //   const newNames = new Map<string, string>()
+  //   switch (effect.kind) {
+  //     case 'concrete': return {
+  //       kind: 'concrete',
+  //       read: this.replaceVariableNamesWithFresh(newNames, effect.read),
+  //       update: this.replaceVariableNamesWithFresh(newNames, effect.update),
+  //     }
+  //     case 'quantified': {
+  //       let name = newNames.get(effect.name)
+  //       if (!name) {
+  //         name = this.freshVar()
+  //         newNames.set(effect.name, name)
+  //       }
+  //       return { kind: 'quantified', name: name }
+  //     }
+  //     case 'arrow': return {
+  //       kind: 'arrow',
+
+  //     }
+  //   }
+  // }
 
   private updateCurrentModule (): void {
     if (this.moduleStack.length > 0) {
