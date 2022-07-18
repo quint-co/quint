@@ -5,3 +5,4 @@
 export * from './tntTypes'
 export * from './tntIr'
 export * from './tntParserFrontend'
+export * from './runtime/runtime'
