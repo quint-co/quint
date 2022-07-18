@@ -38,6 +38,42 @@ editor (currently, only vim is supported).
  - [tntc](./tntc) is the package for the `tntc` transpiler (work-in-progress)
  - [vscode](./vscode) vscode plugin (outdated)
 
+## Roadmap
+
+In the spirit of [Lessons from Writing a Compiler][], we have a roadmap, where
+we are implementing various transpiler passes feature-by-feature, instead of
+completely implementing every pass.
+
+| Language feature | Parser | Name resolution | Effects | Type checker | Simulator | To-Apalache | Tutorials |
+| :--------------- | :----: | :-------------: | :-----: | :----------: | :-------: | :---------: | :-------: |
+| [Booleans][]     |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :white_check_mark: | :x: | :x: |
+| [Integers][]     |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :white_check_mark: | :x: | :x: |
+| [if-then-else][] |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :white_check_mark: | :x: | :x: |
+| [Operator definitions][] |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | `val` only | :x: | :x: |
+| [Modes][]        |:white_check_mark:| :white_check_mark: |:x:| :x: | :x: | :x: | :x: |
+| [Sets][]         |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :x: | :x: | :x: |
+| [Guess][]        |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :x: | :x: | :x: |
+| [Maps][]         |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :x: | :x: | :x: |
+| [Lists][]        |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :x: | :x: | :x: |
+| [Records][]      |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :x: | :x: | :x: |
+| [Discriminated unions][] |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :x: | :x: | :x: |
+| [Tuples][]       |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :x: | :x: | :x: |
+| [Imports][]      |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :question: | :x: | :x: |
+| [Module definitions][] |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :x: | :x: | :x: |
+| [Constant declarations][] |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :x: | :x: | :x: |
+| [Variable definitions][] |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :x: | :x: | :x: |
+| [Assumptions][]  |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :x: | :x: | :x: |
+| [Module instances][]  |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :x: | :x: | :x: |
+| [Lambdas][]  |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :x: | :x: | :x: |
+| [Multiline disjunctions][] |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :x: | :x: | :x: |
+| [Multiline conjunctions][] |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :x: | :x: | :x: |
+| [Delayed assignment][] |:white_check_mark:| :white_check_mark: |:white_check_mark:| :x: | :x: | :x: | :x: |
+| [Temporal operators][] |:white_check_mark:| :white_check_mark: |:x:| :x: | :x: | :x: | :x: |
+| [Fairness][]           |:white_check_mark:| :white_check_mark: |:x:| :x: | :x: | :x: | :x: |
+| [Unbounded quantifiers][] |:white_check_mark:| :white_check_mark: |:x:| :x: | :x: | :x: | :x: |
+| ~~Strings~~, see #118  |:white_check_mark:| :white_check_mark: |:x:| :x: | :x:   | :x:         | :x:       |
+| ~~uninterpreted types~~, see #118 |:white_check_mark:| :white_check_mark: |:x:| :x: | :x:   | :x:         | :x:       |
+
 ## Design principles
 
  - *TNT should not annoy us*:
@@ -93,3 +129,29 @@ editor (currently, only vim is supported).
     - The intermediate transpiler outputs are avaiable in JSON.
     - IDE support (such as a VSCode plugin) is a beatiful opt-in, not a requirement.
 
+[Lessons from Writing a Compiler]: https://borretti.me/article/lessons-writing-compiler
+[Imports]: ./doc/lang.md#imports-1
+[Module definitions]: ./doc/lang.md#module-definition
+[Constant declarations]: ./doc/lang.md#constant-declarations
+[Assumptions]: ./doc/lang.md#assumptions
+[Variable definitions]: ./doc/lang.md#variable-definitions
+[Operator definitions]: ./doc/lang.md#variable-definitions
+[Module instances]: ./doc/lang.md#module-instances
+[Lambdas]: ./doc/lang.md#lambdas-aka-anonymous-operators
+[Booleans]: ./doc/lang.md#boolean-operators-and-equality
+[Integers]: ./doc/lang.md#integers
+[Sets]: ./doc/lang.md#sets
+[Lists]: ./doc/lang.md#lists-aka-sequences
+[Multiline disjunctions]: ./doc/lang.md#multiline-disjunctions
+[Multiline conjunctions]: ./doc/lang.md#multiline-conjunctions
+[if-then-else]: ./doc/lang.md#condition
+[Guess]: ./doc/lang.md#existential-quantifier-and-non-deterministic-choice
+[Maps]: ./doc/lang.md#maps-aka-functions
+[Records]: ./doc/lang.md#records
+[Discriminated unions]: ./doc/lang.md#discriminated-unions
+[Tuples]: ./doc/lang.md#tuples
+[Delayed assignment]: ./doc/lang.md#delayed-assignment
+[Temporal operators]: ./doc/lang.md#temporal-operators
+[Fairness]: ./doc/lang.md#fairness
+[Unbounded quantifiers]: ./doc/lang.md#unbounded-quantifiers
+[Modes]: ./doc/lang.md#modes
