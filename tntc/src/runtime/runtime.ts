@@ -30,7 +30,7 @@ export interface Computable {
 /**
  * An implementation of Computable that always fails.
  */
-export const uncomputable = {
+export const fail = {
   eval: () => {
     return none<any>()
   },
