@@ -52,29 +52,12 @@ These steps are currently a bit complicated. Check the dedicated pages:
 
 In general, we are using the [Mocha][] test framework to write and run unit
 tests. We are using [Chai][] to write assertions, without going into BDD
-testing too much.
-
-The unit tests can be run as follows:
-
-```sh
-cd tntc
-npm run compile && npm run test
-```
-
-More details can be found in [tntc unit tests][].
+testing too much. For details, see [tntc unit tests][].
 
 #### Integration tests for tntc
 
-We are using the [txm][] framework to write integration tests.
-
-The integration tests can be run as follows:
-
-```sh
-cd tntc
-npm run compile && npm link && npm run integration
-```
-
-More details can be found in [tntc integration tests][].
+We are using the [txm][] framework to write integration tests. For details,
+check [tntc integration tests][].
 
 #### End-to-end tests for the VSCode plugin
 
