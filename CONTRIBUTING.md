@@ -2,7 +2,7 @@
 
 **This file is under construction...**
 
-This project is run by the team of [Apalache]() project.  Hence, we apply the
+This project is part of the [Apalache][] ecosystem.  Hence, we apply the
 same principles in TNT, see [Contributing to Apalache][].
 
 ## Coordinating work
@@ -51,7 +51,7 @@ These steps are currently a bit complicated. Check the dedicated pages:
 #### Unit tests for tntc
 
 In general, we are using the [Mocha][] test framework to write and run unit
-tests. We are using the [Chai][] to write assertions, without going into BDD
+tests. We are using [Chai][] to write assertions, without going into BDD
 testing too much.
 
 The unit tests can be run as follows:
