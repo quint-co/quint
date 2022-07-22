@@ -254,6 +254,20 @@ describe('compiling specs to runtime values', () => {
       )
     })
 
+    it('computes flatten', () => {
+      assertResultAsString(
+        'set(set(1, 2), set(2, 3), set(3, 4)).flatten()',
+        'set(1, 2, 3, 4)'
+      )
+    })
+
+    it('computes flatten on nested sets', () => {
+      assertResultAsString(
+        'set(set(set(1, 2), set(2, 3)), set(set(3, 4))).flatten()',
+        'set(set(1, 2), set(2, 3), set(3, 4))'
+      )
+    })
+
     it('computes exists', () => {
       assertResult('set(1, 2, 3).exists(x => true)', true)
       assertResult('set(1, 2, 3).exists(x => false)', false)
