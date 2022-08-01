@@ -75,7 +75,7 @@ describe('inferEffects', () => {
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
-    const expectedEffect = "(Read[e1]) => Read[e1, 'x']"
+    const expectedEffect = "(Read[v1]) => Read[v1, 'x']"
 
     effects
       .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(BigInt(5))!), expectedEffect))
@@ -92,7 +92,7 @@ describe('inferEffects', () => {
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
-    const expectedEffect = "(Read[e5]) => Read[e5, 'x']"
+    const expectedEffect = "(Read[v5]) => Read[v5, 'x']"
 
     effects
       .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(BigInt(8))!), expectedEffect))
@@ -187,11 +187,11 @@ describe('inferEffects', () => {
                 location: "Trying to unify variables [] and ['x']",
                 message: 'Expected variables [] and [x] to be the same',
               }],
-              location: "Trying to unify Read[r_p, 'x'] and Read[r_p] & Update['x']",
+              location: "Trying to unify Read[v10] and Read[v1] & Update['x']",
             }],
-            location: "Trying to unify (Read[p1], Read[p2]) => Read[p1, p2] and (Read['x'], Read[r_p] & Update[u2]) => Read[r_p] & Update[u2, 'x']",
+            location: "Trying to unify (Read['x'], Read[r_p]) => Read[v10] and (Read[v0], Read[v1] & Update[v2]) => Read[v1] & Update[v0, v2]",
           }],
-          location: "Trying to unify (Read[r1], Read[r2], (Read[p1], Read[p2]) => Read[p1, p2]) => Read[r1, r2, p1, p2] and (Read['x'], Read[r_p], (Read[r1], Read[r2] & Update[u2]) => Read[r2] & Update[r1, u2]) => e0 ",
+          location: "Trying to unify (Read[v6], Read[v7], (Read[v6], Read[v7]) => Read[v10]) => Read[v6, v7, v10] and (Read['x'], Read[r_p], (Read[v0], Read[v1] & Update[v2]) => Read[v1] & Update[v0, v2]) => e0",
         }],
         location: 'Trying to infer effect for operator application in foldl(x, p, assign)',
       })))

@@ -12,7 +12,7 @@
  * @module
  */
 
-import { effectToString, variablesToString } from './printing'
+import { effectToString, substitutionToString, variablesToString } from './printing'
 import { Either, merge, right, left, mergeInMany } from '@sweet-monads/either'
 
 /* Concrete atomic efects specifying variables that the expression reads and updates */
@@ -146,7 +146,7 @@ function unifyArrows (location: string, e1: ArrowEffect, e2: ArrowEffect) {
 export function compose (s1: Substitution[], s2: Substitution[]): Either<ErrorTree, Substitution[]> {
   return mergeInMany(s2.map(s => applySubstitutionsToSubstitution(s1, s)))
     .map((s: Substitution[]) => s1.concat(s))
-    .mapLeft(error => buildErrorTree(`Composing substitutions ${s1} and ${s2}`, error))
+    .mapLeft(error => buildErrorTree(`Composing substitutions [${s1.map(substitutionToString)}] and [${s2.map(substitutionToString)}]`, error))
 }
 
 function applySubstitutionsToSubstitution (subs: Substitution[], s: Substitution): Either<ErrorTree, Substitution> {
@@ -346,7 +346,7 @@ export function applySubstitutionToVariables (subs: Substitution[], variables: V
 }
 
 function bindEffect (name: string, effect: Effect): Either<string, Substitution> {
-  if (effectNames(effect).includes({ kind: 'effect', name: name })) {
+  if (effectNames(effect).some(n => n.kind === 'effect' && n.name === name)) {
     return left(`Can't bind ${name} to ${effectToString(effect)}: cyclical binding`)
   } else {
     return right({ kind: 'effect', name: name, value: effect })
@@ -354,7 +354,7 @@ function bindEffect (name: string, effect: Effect): Either<string, Substitution>
 }
 
 function bindVariables (name: string, variables: Variables): Either<string, Substitution> {
-  if (variablesNames(variables).includes({ kind: 'variable', name: name })) {
+  if (variablesNames(variables).some(n => n.kind === 'variable' && n.name === name)) {
     return left(`Can't bind ${name} to ${variablesToString(variables)}: cyclical binding`)
   } else {
     return right({ kind: 'variable', name: name, value: variables })

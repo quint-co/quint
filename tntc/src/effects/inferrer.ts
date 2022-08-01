@@ -66,7 +66,7 @@ class EffectInferrerVisitor implements IRVisitor {
 
   private signatures: Map<string, Signature>
   private definitionsTable: Map<string, Map<string, string>>
-  private freshVarCounter = 0
+  private freshVarCounters: Map<string, number> = new Map<string, number>()
 
   private currentModuleName: string = ''
   private currentTable: Map<string, string> = new Map<string, string>()
@@ -145,7 +145,7 @@ class EffectInferrerVisitor implements IRVisitor {
     this.fetchSignature(expr.opcode, expr.args.length)
       .mapLeft(m => this.errors.set(expr.id, { message: m, location: location, children: [] }))
       .map(signature => {
-        const resultEffect: Effect = { kind: 'quantified', name: this.freshVar() }
+        const resultEffect: Effect = { kind: 'quantified', name: this.freshVar('e') }
         const substitution = unify(signature, {
           kind: 'arrow',
           params: expr.args.map((a: TntEx) => {
@@ -228,10 +228,11 @@ class EffectInferrerVisitor implements IRVisitor {
     this.effects.set(expr.id, { kind: 'arrow', params: params, result: e })
   }
 
-  private freshVar (): string {
-    const v = `e${this.freshVarCounter}`
-    this.freshVarCounter++
-    return v
+  private freshVar (prefix: string): string {
+    const counter = this.freshVarCounters.get(prefix)! ?? 0
+    this.freshVarCounters.set(prefix, counter + 1)
+
+    return `${prefix}${counter}`
   }
 
   private fetchSignature (opcode: string, arity: number): Either<string, Effect> {
@@ -247,7 +248,7 @@ class EffectInferrerVisitor implements IRVisitor {
   private replaceEffectNamesWithFresh (effect: Effect): Effect {
     const names = effectNames(effect)
     const subs: Substitution[] = names.map(name => {
-      return { kind: name.kind, name: name.name, value: { kind: 'quantified', name: this.freshVar() } }
+      return { kind: name.kind, name: name.name, value: { kind: 'quantified', name: this.freshVar('v') } }
     })
     console.log(subs)
     const result = applySubstitution(subs, effect)
