@@ -67,16 +67,6 @@ describe('collectDefinitions', () => {
       ])
     })
 
-    it('collects module definitions', () => {
-      const tntModule = buildModuleWithDefs(['module test_module { module nested_module { def a = 1 } }'])
-
-      const result = collectDefinitions(tntModule).get(moduleName)
-
-      assert.includeDeepMembers(result!.valueDefinitions.map(d => d.identifier), [
-        'test_module::nested_module::a',
-      ])
-    })
-
     it('collects assume definitions and scoped variables in body', () => {
       const tntModule = buildModuleWithDefs(['assume test_assumption = N > val x = 2 { x }'])
 
@@ -85,10 +75,9 @@ describe('collectDefinitions', () => {
       assert.includeDeepMembers(result!.valueDefinitions.map(d => d.identifier), ['test_assumption', 'x'])
     })
 
-    it('collects imported module\'s definitions as unscoped definitions', () => {
+    it('collects nested module definitions', () => {
       const tntModule = buildModuleWithDefs([
         'module test_module { def a = 1 module nested_module { def b = 1 } }',
-        'import test_module.*',
       ])
 
       const result = collectDefinitions(tntModule)
@@ -96,10 +85,12 @@ describe('collectDefinitions', () => {
       assert.includeDeepMembers(result.get(moduleName)!.valueDefinitions.map(d => d.identifier), [
         'test_module::a',
         'test_module::nested_module::b',
+        'test_module::nested_module',
       ])
 
       assert.includeDeepMembers(result.get('test_module')!.valueDefinitions.map(d => d.identifier), [
         'a',
+        'nested_module',
         'nested_module::b',
       ])
 

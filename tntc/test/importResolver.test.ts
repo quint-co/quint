@@ -11,10 +11,23 @@ describe('resolveImports', () => {
       { kind: 'def', identifier: 'a', reference: BigInt(1) },
       { kind: 'def', identifier: 'b', reference: BigInt(2) },
       { kind: 'def', identifier: 'c', reference: BigInt(3), scope: BigInt(10) },
+      { kind: 'module', identifier: 'nested_module', reference: BigInt(4) },
+      { kind: 'module', identifier: 'unexisting_module', reference: BigInt(5) },
     ],
     typeDefinitions: [],
   }
-  const tables: DefinitionTableByModule = new Map<string, DefinitionTable>([['test_module', table]])
+
+  const nestedModuleTable: DefinitionTable = {
+    valueDefinitions: [
+      { kind: 'def', identifier: 'd', reference: BigInt(1) },
+      { kind: 'def', identifier: 'e', reference: BigInt(2), scope: BigInt(10) },
+    ],
+    typeDefinitions: [],
+  }
+
+  const tables: DefinitionTableByModule = new Map<string, DefinitionTable>([
+    ['test_module', table], ['nested_module', nestedModuleTable],
+  ])
 
   describe('existing modules', () => {
     it('imports named definitions', () => {
@@ -65,6 +78,23 @@ describe('resolveImports', () => {
         ])
       }
     })
+
+    it('imports nested module', () => {
+      const tntModule = buildModuleWithDefs([
+        'module test_module { module nested_module { def a = 1 def b = 2 } }',
+        'import test_module.nested_module',
+      ])
+
+      const result = resolveImports(tntModule, tables)
+      assert.deepEqual(result.kind, 'ok')
+      if (result.kind === 'ok') {
+        const defs = result.definitions.get(moduleName)
+
+        assert.includeDeepMembers(defs!.valueDefinitions.map(d => d.identifier), [
+          'nested_module::d',
+        ])
+      }
+    })
   })
 
   describe('unexisting modules', () => {
@@ -91,6 +121,19 @@ describe('resolveImports', () => {
       assert.deepEqual(result.kind, 'error')
       if (result.kind === 'error') {
         assert.deepEqual(result.errors.map(e => e.moduleName), ['unexisting_module'])
+      }
+    })
+
+    it('fails importing nested', () => {
+      const tntModule = buildModuleWithDefs([
+        'module test_module { def a = 1 def b = 2 }',
+        'import test_module.unexisting_module',
+      ])
+
+      const result = resolveImports(tntModule, tables)
+      assert.deepEqual(result.kind, 'error')
+      if (result.kind === 'error') {
+        assert.deepEqual(result.errors.map(e => e.defName), ['unexisting_module'])
       }
     })
   })

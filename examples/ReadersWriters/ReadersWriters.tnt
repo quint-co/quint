@@ -12,16 +12,16 @@ var waiting: seq((str, int))  // queue of processes waiting to access the resour
 
 val vars = (readers, writers, waiting)
 
-val Actors = 1 to NumActors
+val Actors = 1.to(NumActors)
 
 def ToSet(s) = s.keys().map(i => s[i])
 
 def read(s)  = s[1] == "read"
 def write(s) = s[1] == "write"
 
-val WaitingToRead  = ToSet(waiting select read) map ( p => p._2 )
+val WaitingToRead  = ToSet(waiting.select(read)).map( p => p._2 )
 
-val WaitingToWrite = ToSet(waiting select write) map ( p => p._2 )
+val WaitingToWrite = ToSet(waiting.select(write)).map( p => p._2 )
 
 //---------------------------------------------------------------------------
 
@@ -31,22 +31,22 @@ val WaitingToWrite = ToSet(waiting select write) map ( p => p._2 )
 
 action TryRead(actor) = {
     & actor notin WaitingToRead
-    & waiting <- waiting append ("read", actor)
+    & waiting <- waiting.append("read", actor)
 }
 
 action TryWrite(actor) = {
     & actor notin WaitingToWrite
-    & waiting <- waiting append ("write", actor)
+    & waiting <- waiting.append("write", actor)
 }
 
 action Read(actor) = {
-    & readers <- readers union set(actor)
+    & readers <- readers.union(set(actor))
     & waiting <- waiting.tail()
 }
 
 action Write(actor) = {
     & readers == set()
-    & writers <- writers union set(actor)
+    & writers <- writers.union(set(actor))
     & waiting <- waiting.tail()
 }
 
@@ -64,13 +64,13 @@ action ReadOrWrite = {
 
 action StopActivity(actor) =
     if (actor in readers) {
-        readers <- readers exclude set(actor)
+        readers <- readers.exclude(set(actor))
     } else {
-        writers <- writers exclude set(actor)
+        writers <- writers.exclude(set(actor))
     }
 
 action Stop =
-    (readers union writers) guess { actor => StopActivity(actor) }
+    readers.union(writers).guess({ actor => StopActivity(actor) })
 
 //---------------------------------------------------------------------------
 
@@ -85,15 +85,15 @@ pred Init = (
 )
 
 action Next = {
-    | Actors guess { actor => TryRead(actor) }
-    | Actors guess { actor => TryWrite(actor) }
+    | Actors.guess({ actor => TryRead(actor) })
+    | Actors.guess({ actor => TryWrite(actor) })
     | ReadOrWrite
     | Stop
 }
 
 temporal Fairness = (
-    & Actors forall ( actor => TryRead(actor).weakFair(vars) )
-    & Actors forall ( actor => TryWrite(actor).weakFair(vars) )
+    & Actors.forall( actor => TryRead(actor).weakFair(vars) )
+    & Actors.forall( actor => TryWrite(actor).weakFair(vars) )
     & ReadOrWrite.weakFair(vars)
     & Stop.weakFair(vars)
 )
@@ -107,8 +107,8 @@ temporal Spec = Init and always(stutter(Next, vars) and Fairness)
 (**************/
 
 pred TypeOK = (
-    & readers subseteq Actors
-    & writers subseteq Actors
+    & readers.subseteq(Actors)
+    & writers.subseteq(Actors)
     & waiting in seqs(set("read", "write").cross.Actors)
 )
 
@@ -122,10 +122,10 @@ pred Safety = (
 (**************/
 
 temporal Liveness = (
-    & Actors forall (actor => always(eventually(actor in readers)))
-    & Actors forall (actor => always(eventually(actor in writers)))
-    & Actors forall (actor => always(eventually(actor notin readers)))
-    & Actors forall (actor => always(eventually(actor notin writers)))
+    & Actors.forall(actor => always(eventually(actor in readers)))
+    & Actors.forall(actor => always(eventually(actor in writers)))
+    & Actors.forall(actor => always(eventually(actor notin readers)))
+    & Actors.forall(actor => always(eventually(actor notin writers)))
 )
 
 }
