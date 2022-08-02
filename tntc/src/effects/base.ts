@@ -5,7 +5,7 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * Essentials for handling Effects: unification, simplification and substitutions
+ * Essentials for handling Effects: types, interfaces and unification
  *
  * @author Gabriela Moreira
  *
@@ -14,7 +14,7 @@
 
 import { effectToString, variablesToString } from './printing'
 import { Either, merge, right, left, mergeInMany } from '@sweet-monads/either'
-import { applySubstitution, compose, Substitution } from './substitutions'
+import { applySubstitution, compose, Substitutions } from './substitutions'
 import { ErrorTree, Error, buildErrorTree, buildErrorLeaf } from '../errorTree'
 import { flattenUnions, sameVars, simplifyConcreteEffect } from './simplification'
 
@@ -47,9 +47,16 @@ export type Variables =
   /* A combination of variables to be computed as a union when concrete */
   | { kind: 'union', variables: Variables[] }
 
-
+/*
+ * An effect signature, which can vary according to the number of arguments.
+ * Signatures assume an additional level of quantification over all names and
+ * should be instantiated before being used
+ */
 export type Signature = (arity: number) => Effect
 
+/*
+ * A quantified name that can refer either to an effect or a variable
+ */
 interface Name {
   kind: 'effect' | 'variable'
   name: string
@@ -69,24 +76,22 @@ export const emptyVariables: Variables = { kind: 'concrete', vars: [] }
  * @returns an array of substitutions that unifies both effects, when possible.
  *          Otherwise, an error tree with an error message and its trace.
  */
-export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitution[]> {
+export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitutions> {
   const location = `Trying to unify ${effectToString(ea)} and ${effectToString(eb)}`
 
   const simplificationResults = mergeInMany([ea, eb].map(e => {
     return e.kind === 'concrete' ? simplifyConcreteEffect(e) : right(e)
   }))
-  return simplificationResults.chain(([e1, e2]): Either<Error, Substitution[]> => {
+  return simplificationResults.chain(([e1, e2]): Either<Error, Substitutions> => {
     if (e1.kind === 'arrow' && e2.kind === 'arrow') {
       return unifyArrows(location, e1, e2)
     } else if (e1.kind === 'concrete' && e2.kind === 'concrete') {
       return unifyConcrete(location, e1, e2)
     } else if (e1.kind === 'quantified') {
       return bindEffect(e1.name, e2)
-        .map(subs => [subs])
         .mapLeft(msg => buildErrorLeaf(location, msg))
     } else if (e2.kind === 'quantified') {
       return bindEffect(e2.name, e1)
-        .map(subs => [subs])
         .mapLeft(msg => buildErrorLeaf(location, msg))
     } else {
       return left({
@@ -98,6 +103,14 @@ export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitution[]
   }).mapLeft(error => buildErrorTree(location, error))
 }
 
+/**
+ * Finds all names that occur in an effect
+ *
+ * @param effect the Effect to have its names found
+ *
+ * @returns a list of names with all quantified names for effects and variables
+ * in the given effect
+ */
 export function effectNames (effect: Effect): Name[] {
   switch (effect.kind) {
     case 'concrete': return variablesNames(effect.read).concat(variablesNames(effect.update))
@@ -106,19 +119,19 @@ export function effectNames (effect: Effect): Name[] {
   }
 }
 
-function bindEffect (name: string, effect: Effect): Either<string, Substitution> {
+function bindEffect (name: string, effect: Effect): Either<string, Substitutions> {
   if (effectNames(effect).some(n => n.kind === 'effect' && n.name === name)) {
     return left(`Can't bind ${name} to ${effectToString(effect)}: cyclical binding`)
   } else {
-    return right({ kind: 'effect', name: name, value: effect })
+    return right([{ kind: 'effect', name: name, value: effect }])
   }
 }
 
-function bindVariables (name: string, variables: Variables): Either<string, Substitution> {
+function bindVariables (name: string, variables: Variables): Either<string, Substitutions> {
   if (variablesNames(variables).some(n => n.kind === 'variable' && n.name === name)) {
     return left(`Can't bind ${name} to ${variablesToString(variables)}: cyclical binding`)
   } else {
-    return right({ kind: 'variable', name: name, value: variables })
+    return right([{ kind: 'variable', name: name, value: variables }])
   }
 }
 
@@ -141,7 +154,7 @@ function unifyArrows (location: string, e1: ArrowEffect, e2: ArrowEffect) {
     })
   }
 
-  function applySubstitutionsAndUnify (subs: Substitution[], e1: Effect, e2: Effect): Either<Error, Substitution[]> {
+  function applySubstitutionsAndUnify (subs: Substitutions, e1: Effect, e2: Effect): Either<Error, Substitutions> {
     const effectsWithSubstitutions = mergeInMany([
       applySubstitution(subs, e1),
       applySubstitution(subs, e2),
@@ -150,14 +163,14 @@ function unifyArrows (location: string, e1: ArrowEffect, e2: ArrowEffect) {
     return newSubstitutions.chain(newSubs => compose(subs, newSubs))
   }
 
-  const paramsUnification = e1.params.reduce((result: Either<Error, Substitution[]>, e, i) => {
+  const paramsUnification = e1.params.reduce((result: Either<Error, Substitutions>, e, i) => {
     return result.chain(subs => applySubstitutionsAndUnify(subs, e, e2.params[i]))
   }, right([]))
 
   return paramsUnification.chain(subs => applySubstitutionsAndUnify(subs, e1.result, e2.result))
 }
 
-function unifyConcrete (location: string, e1: ConcreteEffect, e2: ConcreteEffect) {
+function unifyConcrete (_location: string, e1: ConcreteEffect, e2: ConcreteEffect) {
   const readUnificationResult = unifyVariables(e1.read, e2.read)
   const updateUnificationResult = readUnificationResult.chain(subs => {
     const effectsWithReadSubstitution = mergeInMany([
@@ -171,7 +184,7 @@ function unifyConcrete (location: string, e1: ConcreteEffect, e2: ConcreteEffect
   return merge([readUnificationResult, updateUnificationResult]).map(s => s.flat())
 }
 
-function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substitution[]> {
+function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substitutions> {
   const v1 = flattenUnions(va)
   const v2 = flattenUnions(vb)
   const location = `Trying to unify variables [${variablesToString(v1)}] and [${variablesToString(v2)}]`
@@ -191,11 +204,9 @@ function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substi
     return right([])
   } else if (v1.kind === 'quantified') {
     return bindVariables(v1.name, v2)
-      .map(subs => [subs])
       .mapLeft(msg => buildErrorLeaf(location, msg))
   } else if (v2.kind === 'quantified') {
     return bindVariables(v2.name, v1)
-      .map(subs => [subs])
       .mapLeft(msg => buildErrorLeaf(location, msg))
   } else {
     if (JSON.stringify(v1) === JSON.stringify(v2)) {

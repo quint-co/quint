@@ -1,8 +1,32 @@
-import { Either, left, right } from "@sweet-monads/either"
-import { ErrorTree } from "../errorTree"
-import { ConcreteEffect, Effect, Variables } from "./base"
-import { effectToString } from "./printing"
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
 
+/**
+ * Simplification for effects, including a check on multiple updates of the same variable
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
+import { Either, left, right } from '@sweet-monads/either'
+import { ErrorTree } from '../errorTree'
+import { ConcreteEffect, Effect, Variables } from './base'
+import { effectToString } from './printing'
+
+/*
+ * Simplifies a concrete effect Read[r] & Update[u] by:
+ *   1. Removing repeated variables in r
+ *   2. Flattening nested unions under r and u
+ *   3. Checking for any repeated state variables in u and reporting if found
+ *
+ * @param e the concrete effect to be simplified
+ *
+ * @returns the simplified effect if no multiple updates are found. Otherwise, the error.
+ */
 export function simplifyConcreteEffect (e: ConcreteEffect): Either<ErrorTree, Effect> {
   const read = uniqueVariables(flattenUnions(e.read))
   const update = flattenUnions(e.update)
@@ -20,6 +44,14 @@ export function simplifyConcreteEffect (e: ConcreteEffect): Either<ErrorTree, Ef
   }
 }
 
+/*
+ * Transforms variables of form [x, [y, z]] into [x, y, z]
+ *
+ * @param variables the variables to be transformed
+ *
+ * @returns the flattened form of union if a union.
+ *          Otherwise, the variables without change.
+ */
 export function flattenUnions (variables: Variables): Variables {
   switch (variables.kind) {
     case 'union': {

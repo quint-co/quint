@@ -1,21 +1,23 @@
 import { Either, right, mergeInMany } from '@sweet-monads/either'
-import { buildErrorTree, ErrorTree } from "../errorTree";
-import { Effect, Variables } from "./base";
-import { effectToString, substitutionToString } from './printing';
-import { simplifyConcreteEffect } from './simplification';
+import { buildErrorTree, ErrorTree } from '../errorTree'
+import { Effect, Variables } from './base'
+import { effectToString, substitutionsToString } from './printing'
+import { simplifyConcreteEffect } from './simplification'
 
 /*
  * Substitutions can be applied to both effects and variables, replacing
  * quantified values with concrete ones
  */
-export type Substitution =
+type Substitution =
   | { kind: 'variable', name: string, value: Variables }
   | { kind: 'effect', name: string, value: Effect }
 
-export function compose (s1: Substitution[], s2: Substitution[]): Either<ErrorTree, Substitution[]> {
-  return mergeInMany(s2.map(s => applySubstitutionsToSubstitution(s1, s)))
-    .map((s: Substitution[]) => s1.concat(s))
-    .mapLeft(error => buildErrorTree(`Composing substitutions [${s1.map(substitutionToString)}] and [${s2.map(substitutionToString)}]`, error))
+export type Substitutions = Substitution[]
+
+export function compose (s1: Substitutions, s2: Substitutions): Either<ErrorTree, Substitutions> {
+  return applySubstitutionsToSubstitutions(s1, s2)
+    .map((s: Substitutions) => s1.concat(s))
+    .mapLeft(error => buildErrorTree(`Composing substitutions ${substitutionsToString(s1)} and ${substitutionsToString(s2)}`, error))
 }
 
 /**
@@ -28,7 +30,7 @@ export function compose (s1: Substitution[], s2: Substitution[]): Either<ErrorTr
  * @returns the effect resulting from the substitutions application on the given
  *          effect, when successful. Otherwise, an error tree with an error message and its trace.
  */
-export function applySubstitution (subs: Substitution[], e: Effect): Either<ErrorTree, Effect> {
+export function applySubstitution (subs: Substitutions, e: Effect): Either<ErrorTree, Effect> {
   let result: Either<ErrorTree, Effect> = right(e)
   switch (e.kind) {
     case 'quantified': {
@@ -61,7 +63,7 @@ export function applySubstitution (subs: Substitution[], e: Effect): Either<Erro
   return result.chain(e => e.kind === 'concrete' ? simplifyConcreteEffect(e) : right(e))
 }
 
-export function applySubstitutionToVariables (subs: Substitution[], variables: Variables): Variables {
+export function applySubstitutionToVariables (subs: Substitutions, variables: Variables): Variables {
   switch (variables.kind) {
     case 'quantified': {
       const sub = subs.find(s => s.name === variables.name)
@@ -78,9 +80,11 @@ export function applySubstitutionToVariables (subs: Substitution[], variables: V
   return variables
 }
 
-function applySubstitutionsToSubstitution (subs: Substitution[], s: Substitution): Either<ErrorTree, Substitution> {
-  switch (s.kind) {
-    case 'effect': return applySubstitution(subs, s.value).map(v => ({ kind: s.kind, name: s.name, value: v }))
-    case 'variable': return right({ kind: s.kind, name: s.name, value: applySubstitutionToVariables(subs, s.value) })
-  }
+function applySubstitutionsToSubstitutions (s1: Substitutions, s2: Substitutions): Either<ErrorTree[], Substitutions> {
+  return mergeInMany(s2.map((s: Substitution): Either<ErrorTree, Substitution> => {
+    switch (s.kind) {
+      case 'effect': return applySubstitution(s1, s.value).map(v => ({ kind: s.kind, name: s.name, value: v }))
+      case 'variable': return right({ kind: s.kind, name: s.name, value: applySubstitutionToVariables(s1, s.value) })
+    }
+  }))
 }

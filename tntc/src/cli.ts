@@ -23,7 +23,8 @@ import yargs from 'yargs/yargs'
 import { inferEffects } from './effects/inferrer'
 import { getSignatures } from './effects/builtinSignatures'
 import { DefinitionTableByModule } from './definitionsCollector'
-import { effectToString, errorTreeToString } from './effects/printing'
+import { effectToString } from './effects/printing'
+import { errorTreeToString } from './errorTree'
 
 /**
  * Parse a TNT specification.

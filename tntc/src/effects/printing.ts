@@ -13,10 +13,10 @@
  */
 
 import { Effect, Variables } from './base'
-import { Substitution } from './substitutions'
+import { Substitutions } from './substitutions'
 
 /**
- * Pretty prints an effect
+ * Formats the string representation of  an effect
  *
  * @param e the effect to be formatted
  *
@@ -48,7 +48,7 @@ export function effectToString (e: Effect): string {
 }
 
 /**
- * Pretty prints effect variables
+ * Formats the string representation of effect variables
  *
  * @param v the Variables instance to be formatted
  *
@@ -63,15 +63,19 @@ export function variablesToString (v: Variables): string {
 }
 
 /**
- * Pretty prints substitutions
+ * Formats the string representation of substitutions
  *
  * @param s the Substitution to be formatted
  *
  * @returns a string with the pretty printed substitution
  */
-export function substitutionToString (s: Substitution): string {
-  switch (s.kind) {
-    case 'effect': return `${s.name} |-> ${effectToString(s.value)}`
-    case 'variable': return `${s.name} |-> ${variablesToString(s.value)}`
-  }
+export function substitutionsToString (subs: Substitutions): string {
+  const subsString = subs.map(s => {
+    switch (s.kind) {
+      case 'effect': return `${s.name} |-> ${effectToString(s.value)}`
+      case 'variable': return `${s.name} |-> ${variablesToString(s.value)}`
+    }
+  })
+
+  return `[${subsString}]`
 }

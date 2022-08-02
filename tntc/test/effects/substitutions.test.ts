@@ -1,12 +1,12 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { Substitution, compose } from '../../src/effects/substitutions'
+import { Substitutions, compose } from '../../src/effects/substitutions'
 import { parseEffectOrThrow } from '../../src/effects/parser'
 
 describe('compose', () => {
   it('applies the first substitutions to all values', () => {
-    const s1: Substitution[] = [{ kind: 'variable', name: 'v1', value: { kind: 'concrete', vars: ['x'] } }]
-    const s2: Substitution[] = [{ kind: 'effect', name: 'e1', value: parseEffectOrThrow('Read[v1] & Update[v1]') }]
+    const s1: Substitutions = [{ kind: 'variable', name: 'v1', value: { kind: 'concrete', vars: ['x'] } }]
+    const s2: Substitutions = [{ kind: 'effect', name: 'e1', value: parseEffectOrThrow('Read[v1] & Update[v1]') }]
 
     const result = compose(s1, s2)
 
@@ -18,8 +18,8 @@ describe('compose', () => {
   })
 
   it('returns error when an invalid effect is constructed', () => {
-    const s1: Substitution[] = [{ kind: 'variable', name: 'v1', value: { kind: 'concrete', vars: ['x'] } }]
-    const s2: Substitution[] = [{ kind: 'effect', name: 'e1', value: parseEffectOrThrow('Read[v1] & Update[v1, v1]') }]
+    const s1: Substitutions = [{ kind: 'variable', name: 'v1', value: { kind: 'concrete', vars: ['x'] } }]
+    const s2: Substitutions = [{ kind: 'effect', name: 'e1', value: parseEffectOrThrow('Read[v1] & Update[v1, v1]') }]
 
     const result = compose(s1, s2)
 

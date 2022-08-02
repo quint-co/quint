@@ -19,7 +19,7 @@ import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { TntApp, TntBool, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr } from '../tntIr'
 import { Effect, emptyVariables, unify, Signature, effectNames, Variables } from './base'
-import { applySubstitution, applySubstitutionToVariables, Substitution, compose } from './substitutions'
+import { applySubstitution, applySubstitutionToVariables, Substitutions, compose } from './substitutions'
 import { ErrorTree, errorTreeToString } from '../errorTree'
 
 /**
@@ -57,7 +57,7 @@ export function inferEffects (signatures: Map<string, Signature>, definitionsTab
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor(signatures: Map<string, Signature>, definitionsTable: Map<string, Map<string, string>>) {
+  constructor (signatures: Map<string, Signature>, definitionsTable: Map<string, Map<string, string>>) {
     this.signatures = signatures
     this.definitionsTable = definitionsTable
   }
@@ -73,7 +73,7 @@ class EffectInferrerVisitor implements IRVisitor {
   private currentTable: Map<string, string> = new Map<string, string>()
   private moduleStack: string[] = []
 
-  private substitutions: Substitution[] = []
+  private substitutions: Substitutions = []
 
   enterModuleDef (def: TntModuleDef): void {
     this.moduleStack.push(def.module.name)
@@ -240,7 +240,7 @@ class EffectInferrerVisitor implements IRVisitor {
 
   private replaceEffectNamesWithFresh (effect: Effect): Effect {
     const names = effectNames(effect)
-    const subs: Substitution[] = names.map(name => {
+    const subs: Substitutions = names.map(name => {
       return { kind: name.kind, name: name.name, value: { kind: 'quantified', name: this.freshVar('v') } }
     })
 
