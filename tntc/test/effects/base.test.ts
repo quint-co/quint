@@ -1,6 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { Effect, unify } from '../../src/effects/base'
+import { compose, Effect, Substitution, unify } from '../../src/effects/base'
+import { parseEffectOrThrow } from '../../src/effects/parser'
 
 describe('unify', () => {
   describe('simple effects', () => {
@@ -99,6 +100,15 @@ describe('unify', () => {
         ])
       }
     })
+  })
+
+  it('unifies unions when they are the exact same', () => {
+    const e = parseEffectOrThrow('Read[v1, v2]')
+
+    const result = unify(e, e)
+
+    result.map(r => assert.deepEqual(r, []))
+    assert.isTrue(result.isRight())
   })
 
   describe('simple arrow effects', () => {
@@ -246,6 +256,27 @@ describe('unify', () => {
         ])
       }
     })
+
+    it('returns error when an invalid effect is constructed', () => {
+      const e1 = parseEffectOrThrow('(Read[v1], Read[v2]) => (Read[v1, v2]) => Update[v1, v2]')
+      const e2 = parseEffectOrThrow("(Read['x'], Read['x']) => e0")
+
+      const result = unify(e1, e2)
+
+      result.mapLeft(r => assert.deepEqual(r, {
+        location: "Trying to unify (Read[v1], Read[v2]) => (Read[v1, v2]) => Update[v1, v2] and (Read['x'], Read['x']) => e0",
+        children: [{
+          location: 'Applying substitution to arrow effect (Read[v1, v2]) => Update[v1, v2]',
+          children: [{
+            location: "Trying to simplify effect Update['x', 'x']",
+            message: 'Multiple updates of variable(s): x',
+            children: [],
+          }],
+        }],
+      }))
+
+      assert.isTrue(result.isLeft())
+    })
   })
 
   describe('effects with multiple quantified variables', () => {
@@ -387,5 +418,112 @@ describe('unify', () => {
         })
       }
     })
+
+    it('returs error when effect names are cyclical', () => {
+      const e1 = parseEffectOrThrow('e1')
+      const e2 = parseEffectOrThrow('() => e1')
+
+      const result = unify(e1, e2)
+
+      result
+        .mapLeft(e => assert.deepEqual(e, {
+          location: 'Trying to unify e1 and () => e1',
+          message: "Can't bind e1 to () => e1: cyclical binding",
+          children: [],
+        }))
+
+      assert.isTrue(result.isLeft())
+    })
+
+    it('returs error when effect names are cyclical in other way', () => {
+      const e1 = parseEffectOrThrow('() => e1')
+      const e2 = parseEffectOrThrow('e1')
+
+      const result = unify(e1, e2)
+
+      result
+        .mapLeft(e => assert.deepEqual(e, {
+          location: 'Trying to unify () => e1 and e1',
+          message: "Can't bind e1 to () => e1: cyclical binding",
+          children: [],
+        }))
+
+      assert.isTrue(result.isLeft())
+    })
+
+    it('returs error when variable names are cyclical', () => {
+      const e1 = parseEffectOrThrow('Read[v1]')
+      const e2 = parseEffectOrThrow('Read[v1, v2]')
+
+      const result = unify(e1, e2)
+
+      result
+        .mapLeft(e => assert.deepEqual(e, {
+          location: 'Trying to unify Read[v1] and Read[v1, v2]',
+          children: [
+            {
+              location: 'Trying to unify variables [v1] and [v1, v2]',
+              message: "Can't bind v1 to v1, v2: cyclical binding",
+              children: [],
+            },
+          ],
+        }))
+
+      assert.isTrue(result.isLeft())
+    })
+
+    it('returs error when variable names are cyclical in other way', () => {
+      const e1 = parseEffectOrThrow('Read[v1, v2]')
+      const e2 = parseEffectOrThrow('Read[v1]')
+
+      const result = unify(e1, e2)
+
+      result
+        .mapLeft(e => assert.deepEqual(e, {
+          location: 'Trying to unify Read[v1, v2] and Read[v1]',
+          children: [
+            {
+              location: 'Trying to unify variables [v1, v2] and [v1]',
+              message: "Can't bind v1 to v1, v2: cyclical binding",
+              children: [],
+            },
+          ],
+        }))
+
+      assert.isTrue(result.isLeft())
+    })
+  })
+})
+
+describe('compose', () => {
+  it('applies the first substitutions to all values', () => {
+    const s1: Substitution[] = [{ kind: 'variable', name: 'v1', value: { kind: 'concrete', vars: ['x'] } }]
+    const s2: Substitution[] = [{ kind: 'effect', name: 'e1', value: parseEffectOrThrow('Read[v1] & Update[v1]') }]
+
+    const result = compose(s1, s2)
+
+    result.map(r => assert.sameDeepMembers(r, s1.concat([
+      { kind: 'effect', name: 'e1', value: parseEffectOrThrow("Read['x'] & Update['x']") },
+    ])))
+
+    assert.isTrue(result.isRight())
+  })
+
+  it('returns error when an invalid effect is constructed', () => {
+    const s1: Substitution[] = [{ kind: 'variable', name: 'v1', value: { kind: 'concrete', vars: ['x'] } }]
+    const s2: Substitution[] = [{ kind: 'effect', name: 'e1', value: parseEffectOrThrow('Read[v1] & Update[v1, v1]') }]
+
+    const result = compose(s1, s2)
+
+    result.mapLeft(e => assert.deepEqual(e, {
+      location: "Composing substitutions [v1 |-> 'x'] and [e1 |-> Read[v1] & Update[v1, v1]]",
+      children: [{
+        location: "Trying to simplify effect Read['x'] & Update['x', 'x']",
+        message: 'Multiple updates of variable(s): x',
+        children: [],
+      }],
+    }))
+
+    assert.isTrue(result.isLeft())
   })
 })

@@ -12,7 +12,7 @@
  * @module
  */
 
-import { Effect, ErrorTree, Variables } from './base'
+import { Effect, ErrorTree, Substitution, Variables } from './base'
 
 /**
  * Pretty prints an effect
@@ -58,6 +58,20 @@ export function variablesToString (v: Variables): string {
     case 'concrete': return v.vars.map(v => `'${v}'`).join(', ')
     case 'quantified': return v.name
     case 'union': return v.variables.map(variablesToString).join(', ')
+  }
+}
+
+/**
+ * Formats the string representation of substitutions
+ *
+ * @param s the Substitution to be formatted
+ *
+ * @returns a string with the pretty printed substitution
+ */
+export function substitutionToString (s: Substitution): string {
+  switch (s.kind) {
+    case 'effect': return `${s.name} |-> ${effectToString(s.value)}`
+    case 'variable': return `${s.name} |-> ${variablesToString(s.value)}`
   }
 }
 
