@@ -18,8 +18,9 @@ import { DefinitionTableByModule } from '../definitionsCollector'
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { TntApp, TntBool, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr } from '../tntIr'
-import { applySubstitution, applySubstitutionToVariables, Effect, emptyVariables, ErrorTree, unify, Signature, effectNames, Substitution, compose, Variables } from './base'
-import { errorTreeToString } from './printing'
+import { Effect, emptyVariables, unify, Signature, effectNames, Variables } from './base'
+import { applySubstitution, applySubstitutionToVariables, Substitution, compose } from './substitutions'
+import { ErrorTree, errorTreeToString } from '../errorTree'
 
 /**
  * Infers an effect for every expression in a module based on predefined
@@ -56,7 +57,7 @@ export function inferEffects (signatures: Map<string, Signature>, definitionsTab
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor (signatures: Map<string, Signature>, definitionsTable: Map<string, Map<string, string>>) {
+  constructor(signatures: Map<string, Signature>, definitionsTable: Map<string, Map<string, string>>) {
     this.signatures = signatures
     this.definitionsTable = definitionsTable
   }
