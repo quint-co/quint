@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author           |
 | -------: | :--------: | :--------------- |
-| 3        | 16.11.2021 | Igor Konnov      |
+| 4        | 18.07.2022 | Igor Konnov      |
 
 **WARNING**: *This is a preliminary manual in the style of [Working
 Backwards]. Some commands are not implemented yet.*
@@ -12,9 +12,10 @@ access point for testing and integration with other tools.
 
 The main commands of `tntc` are as follows:
 
+ - `repl` starts the REPL (Read-Eval-Print loop) for TNT
  - `parse` parses a TNT specification and resolves names
- - `exec` executes a TNT specification via random simulation
  - `typecheck` infers types in a TNT specification
+ - `exec` executes a TNT specification via random simulation
  - `lint` checks a TNT specification for known deficiencies
  - `indent` indents a TNT specification
  - `to-apalache` translates a TNT specification to Apalache IR
@@ -24,6 +25,15 @@ In the following, we give details about the above commands.
 ## Installation
 
 See [README](../tntc/README.md).
+
+## Command repl
+
+```sh
+tntc repl
+```
+
+Starts the [REPL][]: read-evaluate-print loop. REPL is especially useful for
+learning the language. See the [repl](./repl.md) for more details.
 
 ## Command parse
 
@@ -278,3 +288,4 @@ an output file in the [Apalache JSON] format.
 [Source map]: https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
 [TNT IR]: https://github.com/informalsystems/tnt/blob/main/tntc/src/tntIr.ts
 [Apalache JSON]: https://apalache.informal.systems/docs/adr/005adr-json.html
+[REPL]: https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop
