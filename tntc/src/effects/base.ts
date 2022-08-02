@@ -16,7 +16,8 @@ import { effectToString, variablesToString } from './printing'
 import { Either, merge, right, left, mergeInMany } from '@sweet-monads/either'
 import { applySubstitution, compose, Substitutions } from './substitutions'
 import { ErrorTree, Error, buildErrorTree, buildErrorLeaf } from '../errorTree'
-import { flattenUnions, sameVars, simplifyConcreteEffect } from './simplification'
+import { flattenUnions, simplifyConcreteEffect } from './simplification'
+import isEqual from 'lodash.isequal'
 
 /* Concrete atomic efects specifying variables that the expression reads and updates */
 export interface ConcreteEffect { kind: 'concrete', read: Variables, update: Variables }
@@ -191,7 +192,7 @@ function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substi
 
   if (v1.kind === 'concrete' && v2.kind === 'concrete') {
     // Both state
-    if (sameVars(v1.vars, v2.vars)) {
+    if (isEqual(new Set(v1.vars), new Set(v2.vars))) {
       return right([])
     } else {
       return left({

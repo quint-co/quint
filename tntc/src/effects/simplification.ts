@@ -84,17 +84,6 @@ export function flattenUnions (variables: Variables): Variables {
   }
 }
 
-export function sameVars (v1: string[], v2: string[]): Boolean {
-  const v1s = sortStrings(v1)
-  const v2s = sortStrings(v2)
-
-  return v1s.length === v2s.length && v1s.every((value, index) => value === v2s[index])
-}
-
-function sortStrings (array: string[]): string[] {
-  return array.sort((n1, n2) => n1 > n2 ? 1 : -1)
-}
-
 function findVars (variables: Variables): string[] {
   switch (variables.kind) {
     case 'quantified':
