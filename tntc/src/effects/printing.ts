@@ -62,7 +62,7 @@ export function variablesToString (v: Variables): string {
 }
 
 /**
- * Pretty prints substitutions
+ * Formats the string representation of substitutions
  *
  * @param s the Substitution to be formatted
  *
