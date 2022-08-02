@@ -377,8 +377,8 @@ export function effectNames (effect: Effect): Name[] {
 export function variablesNames (variables: Variables): Name[] {
   switch (variables.kind) {
     case 'concrete': return []
-    case 'quantified': return [{ kind: 'variable', name: variables.name }]
     case 'union': return variables.variables.flatMap(variablesNames)
+    case 'quantified': return [{ kind: 'variable', name: variables.name }]
   }
 }
 
