@@ -26,6 +26,8 @@ import { DefinitionTableByModule } from './definitionsCollector'
 import { effectToString } from './effects/printing'
 import { errorTreeToString } from './errorTree'
 
+import { tntRepl } from './repl'
+
 /**
  * Parse a TNT specification.
  *
@@ -63,6 +65,15 @@ function typecheck (argv: any) {
   }))
 
   effects.isRight() ? process.exit(0) : process.exit(1)
+}
+
+/**
+ * Run REPL.
+ *
+ * @param argv parameters as provided by yargs
+ */
+function runRepl (argv: any) {
+  tntRepl()
 }
 
 // read either the standard input or an input file
@@ -155,10 +166,20 @@ const typecheckCmd = {
   handler: typecheck,
 }
 
+// construct repl commands with yargs
+const replCmd = {
+  command: 'repl',
+  desc: 'run REPL',
+  builder: (yargs: any) =>
+    yargs,
+  handler: runRepl,
+}
+
 // parse the command-line arguments and execute the handlers
 yargs(process.argv.slice(2))
   .command(parseCmd)
   .command(typecheckCmd)
+  .command(replCmd)
   .demandCommand(1)
   .strict()
   .parse()
