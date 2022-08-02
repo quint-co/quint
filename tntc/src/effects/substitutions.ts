@@ -1,3 +1,17 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Substitutions for effects and its variables, including composition and application
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { Either, right, mergeInMany } from '@sweet-monads/either'
 import { buildErrorTree, ErrorTree } from '../errorTree'
 import { Effect, Variables } from './base'
@@ -8,12 +22,21 @@ import { simplifyConcreteEffect } from './simplification'
  * Substitutions can be applied to both effects and variables, replacing
  * quantified values with concrete ones
  */
+export type Substitutions = Substitution[]
+
 type Substitution =
   | { kind: 'variable', name: string, value: Variables }
   | { kind: 'effect', name: string, value: Effect }
 
-export type Substitutions = Substitution[]
-
+/*
+ * Compose two substitutions by applying the first one to the second one's values
+ *
+ * @param s1 substitutions to be applied and returned unchanged
+ * @param s2 substitutions to be updated and returned
+ *
+ * @returns a new substitutions list containing the composition of given substitutions, if succeeded.
+ *          Otherwise, an error tree with the substitution application failure
+ */
 export function compose (s1: Substitutions, s2: Substitutions): Either<ErrorTree, Substitutions> {
   return applySubstitutionsToSubstitutions(s1, s2)
     .map((s: Substitutions) => s1.concat(s))
@@ -27,7 +50,7 @@ export function compose (s1: Substitutions, s2: Substitutions): Either<ErrorTree
  * @param subs the substitutions to be applied
  * @param e the effect to be transformed
  *
- * @returns the effect resulting from the substitutions application on the given
+ * @returns the effect resulting from the substitutions' application on the given
  *          effect, when successful. Otherwise, an error tree with an error message and its trace.
  */
 export function applySubstitution (subs: Substitutions, e: Effect): Either<ErrorTree, Effect> {
@@ -63,6 +86,16 @@ export function applySubstitution (subs: Substitutions, e: Effect): Either<Error
   return result.chain(e => e.kind === 'concrete' ? simplifyConcreteEffect(e) : right(e))
 }
 
+/**
+ * Applies substitutions to variables, replacing all quantified names with their
+ * substitution values when they are defined.
+ *
+ * @param subs the substitutions to be applied
+ * @param variables the variables to be transformed
+ *
+ * @returns the varibales resulting from the substitutions' application on the given
+ *          variables, when successful. Otherwise, an error tree with an error message and its trace.
+ */
 export function applySubstitutionToVariables (subs: Substitutions, variables: Variables): Variables {
   switch (variables.kind) {
     case 'quantified': {
