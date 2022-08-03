@@ -5,7 +5,8 @@ import { DefinitionTable, DefinitionTableByModule } from '../../src/definitionsC
 import { Effect, Signature } from '../../src/effects/base'
 import { buildModuleWithDefs } from '../builders/ir'
 import { parseEffectOrThrow } from '../../src/effects/parser'
-import { effectToString, errorTreeToString } from '../../src/effects/printing'
+import { effectToString } from '../../src/effects/printing'
+import { errorTreeToString } from '../../src/errorTree'
 
 describe('inferEffects', () => {
   const table: DefinitionTable = {

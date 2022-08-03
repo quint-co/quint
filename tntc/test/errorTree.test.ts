@@ -1,8 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { errorTreeToString } from '../../src/effects/printing'
-
-// Other printing methods are heavily tested throughout the suite
+import { errorTreeToString } from '../src/errorTree'
 
 describe('errorTreeToString', () => {
   it('converts errorTree to multiline string', () => {
