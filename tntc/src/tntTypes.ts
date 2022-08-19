@@ -15,65 +15,65 @@
  * TNT expressions, declarations and types carry a unique identifier, which can be used
  * to recover expression metadata such as source information, annotations, etc.
  */
-export interface WithId {
-  id: bigint
+interface WithOptionalId {
+  id?: bigint
 }
 
-export interface TntBoolType extends WithId {
+export interface TntBoolType extends WithOptionalId {
   kind: 'bool'
 }
 
-export interface TntIntType extends WithId {
+export interface TntIntType extends WithOptionalId {
   kind: 'int'
 }
 
-export interface TntStrType extends WithId {
+export interface TntStrType extends WithOptionalId {
   kind: 'str'
 }
 
-export interface TntConstType extends WithId {
+export interface TntConstType extends WithOptionalId {
   kind: 'const',
   name: string,
 }
 
-export interface TntVarType extends WithId {
+export interface TntVarType extends WithOptionalId {
   kind: 'var',
   name: string,
 }
 
-export interface TntSetType extends WithId {
+export interface TntSetType extends WithOptionalId {
   kind: 'set',
   elem: TntType,
 }
 
-export interface TntSeqType extends WithId {
+export interface TntSeqType extends WithOptionalId {
   kind: 'seq',
   elem: TntType,
 }
 
-export interface TntFunType extends WithId {
+export interface TntFunType extends WithOptionalId {
   kind: 'fun',
   arg: TntType,
   res: TntType,
 }
 
-export interface TntOperType extends WithId {
+export interface TntOperType extends WithOptionalId {
   kind: 'oper',
   args: TntType[],
   res: TntType,
 }
 
-export interface TntTupleType extends WithId {
+export interface TntTupleType extends WithOptionalId {
   kind: 'tuple',
   elems: TntType[],
 }
 
-export interface TntRecordType extends WithId {
+export interface TntRecordType extends WithOptionalId {
   kind: 'record',
   fields: { fieldName: string, fieldType: TntType }[]
 }
 
-export interface TntUnionType extends WithId {
+export interface TntUnionType extends WithOptionalId {
   kind: 'union',
   tag: string,
   records: {

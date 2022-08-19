@@ -11,7 +11,15 @@
  * See License.txt in the project root for license information.
  */
 
-import { TntType, WithId } from './tntTypes'
+import { TntType } from './tntTypes'
+
+/**
+ * TNT expressions, declarations and types carry a unique identifier, which can be used
+ * to recover expression metadata such as source information, annotations, etc.
+ */
+export interface WithId {
+  id: bigint
+}
 
 /**
  * TNT expressions and declarations carry an optional type tag.
