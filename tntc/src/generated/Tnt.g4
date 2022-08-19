@@ -75,7 +75,6 @@ expr:           // apply a built-in operator via the dot notation
                 // integer arithmetic
         |       expr op=(MUL | DIV | MOD) expr                      # multDiv
         |       expr op=(PLUS | MINUS) expr                         # plusMinus
-        |       'if' '(' expr ')' expr 'else' expr                  # ifElse
                 // standard relations
         |       expr op=(GT | LT | GE | LE | NE
                         | EQ | ASGN | IN | NOTIN ) expr             # relations
@@ -101,6 +100,7 @@ expr:           // apply a built-in operator via the dot notation
                         (',' IDENTIFIER ':' expr)* '}'              # record
         //      a sequence constructor, the form seq(...) is just an operator call
         |       '[' (expr (',' expr)*)? ']'                         # sequence
+        |       'if' '(' expr ')' expr 'else' expr                  # ifElse
         |       operDef expr                                        # letIn
         |       '(' expr ')'                                        # paren
         |       '{' expr '}'                                        # braces
