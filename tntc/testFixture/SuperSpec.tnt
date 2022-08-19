@@ -2,6 +2,7 @@
 module withConsts {
   // Constants
   const N: int
+  const S: set(int)
   const MySet: set(int)
   const MySeq: seq(bool)
   const MyFun: int -> str
@@ -103,6 +104,7 @@ module withConsts {
   }
 
   val test_ite = if (true) 1 else 0
+  def test_ite2(x, y) = if (x < 10) y + 5 else y % 5
 
   // Function application
   var f1: str -> int
