@@ -16,7 +16,7 @@
  */
 
 import { TntModule, TntName, TntApp, TntDef, TntModuleDef } from './tntIr'
-import { TntConstType, TntVarType } from './tntTypes'
+import { TntConstType } from './tntTypes'
 import { ScopeTree, scopesForId } from './scoping'
 import { DefinitionTable, DefinitionTableByModule, ValueDefinition, emptyTable } from './definitionsCollector'
 import { IRVisitor, walkModule } from './IRVisitor'
@@ -116,13 +116,6 @@ class NameResolverVisitor implements IRVisitor {
 
     if (!valueDefinitionsForScope.some(name => name.identifier === appExpr.opcode)) {
       this.recordError('value', appExpr.opcode, appExpr.id)
-    }
-  }
-
-  enterVarType (type: TntVarType): void {
-    // Type is a name, check that it is defined
-    if (!this.currentTable.typeDefinitions.some(def => def.identifier === type.name)) {
-      this.recordError('type', type.name, type.id)
     }
   }
 

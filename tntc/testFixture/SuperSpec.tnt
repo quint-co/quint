@@ -61,10 +61,10 @@ module withConsts {
   def H(x, y): (int, int) => int = {
       x + y
   }
-  // P has a parametric type
-  // def P(x): (a) => a = {
-  //     x
-  // }
+  // Pol has a parametric type
+  def Pol(x): (a) => a = {
+      x
+  }
 
   var k: int
   action asgn = k <- 3
