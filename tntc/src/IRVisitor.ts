@@ -104,6 +104,139 @@ export function walkModule (visitor: IRVisitor, tntModule: ir.TntModule): void {
   }
 }
 
+/**
+ * Navigates a TNT type with a visitor, invoking the correspondent function for each
+ * inner type.
+ *
+ * @param visitor: the IRVisitor instance with the functions to be invoked
+ * @param type: the TNT type to be navigated
+ *
+ * @returns nothing, any collected information has to be a state inside the IRVisitor instance.
+ */
+export function walkType (visitor: IRVisitor, type: t.TntType): void {
+  if (visitor.enterType) {
+    visitor.enterType(type)
+  }
+
+  switch (type.kind) {
+    case 'bool':
+    case 'int':
+    case 'str':
+      if (visitor.enterLiteralType) {
+        visitor.enterLiteralType(type)
+      }
+      if (visitor.exitLiteralType) {
+        visitor.exitLiteralType(type)
+      }
+      break
+    case 'const':
+      if (visitor.enterConstType) {
+        visitor.enterConstType(type)
+      }
+      if (visitor.exitConstType) {
+        visitor.exitConstType(type)
+      }
+      break
+    case 'var':
+      if (visitor.enterVarType) {
+        visitor.enterVarType(type)
+      }
+      if (visitor.exitVarType) {
+        visitor.exitVarType(type)
+      }
+      break
+    case 'set':
+      if (visitor.enterSetType) {
+        visitor.enterSetType(type)
+      }
+
+      walkType(visitor, type.elem)
+
+      if (visitor.exitSetType) {
+        visitor.exitSetType(type)
+      }
+      break
+    case 'seq':
+      if (visitor.enterSeqType) {
+        visitor.enterSeqType(type)
+      }
+
+      walkType(visitor, type.elem)
+
+      if (visitor.exitSeqType) {
+        visitor.exitSeqType(type)
+      }
+      break
+    case 'fun':
+      if (visitor.enterFunType) {
+        visitor.enterFunType(type)
+      }
+      // Functions, walk both argument and result
+      walkType(visitor, type.arg)
+      walkType(visitor, type.res)
+
+      if (visitor.exitFunType) {
+        visitor.exitFunType(type)
+      }
+      break
+
+    case 'oper':
+      if (visitor.enterOperType) {
+        visitor.enterOperType(type)
+      }
+      // Operators, walk all arguments and result
+      type.args.forEach(arg => walkType(visitor, arg))
+      walkType(visitor, type.res)
+
+      if (visitor.exitOperType) {
+        visitor.exitOperType(type)
+      }
+      break
+
+    case 'tuple':
+      if (visitor.enterTupleType) {
+        visitor.enterTupleType(type)
+      }
+      // Tuples, walk all elements
+      type.elems.forEach(elem => walkType(visitor, elem))
+
+      if (visitor.exitTupleType) {
+        visitor.exitTupleType(type)
+      }
+      break
+
+    case 'record':
+      if (visitor.enterRecordType) {
+        visitor.enterRecordType(type)
+      }
+      // Records, walk all fields
+      type.fields.forEach(field => walkType(visitor, field.fieldType))
+
+      if (visitor.exitRecordType) {
+        visitor.exitRecordType(type)
+      }
+      break
+
+    case 'union':
+      if (visitor.enterUnionType) {
+        visitor.enterUnionType(type)
+      }
+      // Variants, walk all fields for all records
+      type.records.forEach(record => {
+        record.fields.forEach(field => walkType(visitor, field.fieldType))
+      })
+
+      if (visitor.exitUnionType) {
+        visitor.exitUnionType(type)
+      }
+      break
+  }
+
+  if (visitor.exitType) {
+    visitor.exitType(type)
+  }
+}
+
 function walkDefinition (visitor: IRVisitor, def: ir.TntDef): void {
   if (visitor.enterDef) {
     visitor.enterDef(def)
@@ -252,129 +385,5 @@ function walkExpression (visitor: IRVisitor, expr: ir.TntEx): void {
 
   if (visitor.exitExpr) {
     visitor.exitExpr(expr)
-  }
-}
-
-function walkType (visitor: IRVisitor, type: t.TntType): void {
-  if (visitor.enterType) {
-    visitor.enterType(type)
-  }
-
-  switch (type.kind) {
-    case 'bool':
-    case 'int':
-    case 'str':
-      if (visitor.enterLiteralType) {
-        visitor.enterLiteralType(type)
-      }
-      if (visitor.exitLiteralType) {
-        visitor.exitLiteralType(type)
-      }
-      break
-    case 'const':
-      if (visitor.enterConstType) {
-        visitor.enterConstType(type)
-      }
-      if (visitor.exitConstType) {
-        visitor.exitConstType(type)
-      }
-      break
-    case 'var':
-      if (visitor.enterVarType) {
-        visitor.enterVarType(type)
-      }
-      if (visitor.exitVarType) {
-        visitor.exitVarType(type)
-      }
-      break
-    case 'set':
-      if (visitor.enterSetType) {
-        visitor.enterSetType(type)
-      }
-
-      walkType(visitor, type.elem)
-
-      if (visitor.exitSetType) {
-        visitor.exitSetType(type)
-      }
-      break
-    case 'seq':
-      if (visitor.enterSeqType) {
-        visitor.enterSeqType(type)
-      }
-
-      walkType(visitor, type.elem)
-
-      if (visitor.exitSeqType) {
-        visitor.exitSeqType(type)
-      }
-      break
-    case 'fun':
-      if (visitor.enterFunType) {
-        visitor.enterFunType(type)
-      }
-      // Functions, walk both argument and result
-      walkType(visitor, type.arg)
-      walkType(visitor, type.res)
-
-      if (visitor.exitFunType) {
-        visitor.exitFunType(type)
-      }
-      break
-
-    case 'oper':
-      if (visitor.enterOperType) {
-        visitor.enterOperType(type)
-      }
-      // Operators, walk all arguments and result
-      type.args.forEach(arg => walkType(visitor, arg))
-      walkType(visitor, type.res)
-
-      if (visitor.exitOperType) {
-        visitor.exitOperType(type)
-      }
-      break
-
-    case 'tuple':
-      if (visitor.enterTupleType) {
-        visitor.enterTupleType(type)
-      }
-      // Tuples, walk all elements
-      type.elems.forEach(elem => walkType(visitor, elem))
-
-      if (visitor.exitTupleType) {
-        visitor.exitTupleType(type)
-      }
-      break
-
-    case 'record':
-      if (visitor.enterRecordType) {
-        visitor.enterRecordType(type)
-      }
-      // Records, walk all fields
-      type.fields.forEach(field => walkType(visitor, field.fieldType))
-
-      if (visitor.exitRecordType) {
-        visitor.exitRecordType(type)
-      }
-      break
-
-    case 'union':
-      if (visitor.enterUnionType) {
-        visitor.enterUnionType(type)
-      }
-      // Variants, walk all fields for all records
-      type.records.forEach(record => {
-        record.fields.forEach(field => walkType(visitor, field.fieldType))
-      })
-
-      if (visitor.exitUnionType) {
-        visitor.exitUnionType(type)
-      }
-      break
-  }
-
-  if (visitor.exitType) {
-    visitor.exitType(type)
   }
 }
