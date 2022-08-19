@@ -1,7 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { Maybe } from '@sweet-monads/maybe'
-import { Set } from 'immutable'
 import { EvalResult, toTntEx } from '../../src/runtime/runtime'
 import { expressionToString } from '../../src/IRprinting'
 import { compileExpr } from '../../src/runtime/compile'
