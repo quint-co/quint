@@ -45,16 +45,18 @@ export function solveConstraint (constraint: Constraint): Either<Map<bigint, Err
       return errors
     })
     case 'conjunction': {
+      // Chain solving of inner constraints, collecting all errors (even after the first failure)
       return constraint.constraints.reduce((result: Either<Map<bigint, ErrorTree>, Substitutions>, con) => {
-        return result
-          .chain(s => {
-            const newCons = applySubstitutionToConstraint(s, con)
-            return solveConstraint(newCons)
-              .map(newSubs => compose(newSubs, s))
-              .mapLeft(e => {
-                return new Map([...errors.entries(), ...e.entries()])
-              })
+        let newCons = con
+        result.map(s => {
+          newCons = applySubstitutionToConstraint(s, con)
+        })
+        return solveConstraint(newCons)
+          .mapLeft(e => {
+            e.forEach((error, id) => errors.set(id, error))
+            return errors
           })
+          .chain(newSubs => result.map(s => compose(newSubs, s)))
       }, right([]))
     }
     case 'empty': return right([])
