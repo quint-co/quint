@@ -18,8 +18,8 @@ be used for:
 TNT's type system should be simple, in consequence of the language design
 decisions that avoid ambiguity present in TLA+, eliminating the need for ad-hoc
 polymorphism. Using [Apalache's type
-system](https://apalache.informal.systems/docs/adr/002adr-types.html)
-and its [extension for precise
+system](https://apalache.informal.systems/docs/adr/002adr-types.html) and its
+[extension for precise
 records](https://apalache.informal.systems/docs/adr/014adr-precise-records.html)
 as basis, the proposed type system should be able to infer simple types, match
 annotations and handle row types from records and tuples variants.
@@ -62,9 +62,14 @@ TNT expressions, and a constraint solver that unifies and composes those
 constraints. It also uses type schemes to define polymorphic types, which allows
 a list of variables to be quantified in a type.
 
-Constraint generation is done with an IR visitor implementation, where the context (mapping names to their types) and the results (mapping each expression to its generated type and constraint, or to an error) are kept in the class state as attributes. Constraints are solved every time a new operator is defined so the type added to the context is the most precise one.
+Constraint generation is done with an IR visitor implementation, where the
+context (mapping names to their types) and the results (mapping each expression
+to its generated type and constraint, or to an error) are kept in the class
+state as attributes. Constraints are solved every time a new operator is defined
+so the type added to the context is the most precise one.
 
-For name references, we just fetch its type from the context, without the need of a constraint.
+For name references, we just fetch its type from the context, without the need
+of a constraint.
 
 ```
   n: t ∈ Γ
@@ -72,7 +77,12 @@ For name references, we just fetch its type from the context, without the need o
  Γ ⊢ n: (t, true)
 ```
 
-For operator application, we fetch its signature from the context and add a constraint matching it to a new constructed operator type that takes the inferred type for the application parameters as arguments and a fresh type variable as result. This is similar to constraint generation for function application in literature algorithms, but is adapted to consider many arguments instead of the common currying approach.
+For operator application, we fetch its signature from the context and add a
+constraint matching it to a new constructed operator type that takes the
+inferred type for the application parameters as arguments and a fresh type
+variable as result. This is similar to constraint generation for function
+application in literature algorithms, but is adapted to consider many arguments
+instead of the common currying approach.
 
 ```
   op: q ∈ Γ   Γ ⊢  p0, ..., pn: (t0, c0), ..., (tn, cn)   a is fresh
@@ -80,7 +90,9 @@ For operator application, we fetch its signature from the context and add a cons
    Γ ⊢ op(p0, ..., pn): (a, q ~ (t0, ..., tn) => a ∧ c0 ∧ ... ∧ cn)
 ```
 
-Lambdas are also straightforward, and also adapted to take multiple parameters. We generate a fresh variable for each parameter, add them to the context and then generate constraints for the expression.
+Lambdas are also straightforward, and also adapted to take multiple parameters.
+We generate a fresh variable for each parameter, add them to the context and
+then generate constraints for the expression.
 
 ```
    Γ ∪ {p0: t0, ..., pn: tn} ⊢ e: (te, c)    t0, ..., tn are fresh
@@ -88,7 +100,13 @@ Lambdas are also straightforward, and also adapted to take multiple parameters. 
            Γ ⊢ (p0, ..., pn) => e: ((t0, ..., tn) => te, c)
 ```
 
-At top-level operator definitions and let-in expressions, constraint generation is the same, so we define it with a single rule. First, the visitor generate constraints for the operator's body expression. Then, it solves that constraint (that conceptually carries all the context's constraints with it), which yields a substitution, apply that substitution to the context and generate constraints for the result expression (if let-in, as for top-level operators, just propagate the result to the next top-level operator).
+At top-level operator definitions and let-in expressions, constraint generation
+is the same, so we define it with a single rule. First, the visitor generate
+constraints for the operator's body expression. Then, it solves that constraint
+(that conceptually carries all the context's constraints with it), which yields
+a substitution, apply that substitution to the context and generate constraints
+for the result expression (if let-in, as for top-level operators, just propagate
+the result to the next top-level operator).
 
 ```
   Γ ⊢ e1: (t1, c1)    s = solve(c1)   s(Γ ∪ {n: t1}) ⊢ e2: (t2, c2)
@@ -96,14 +114,28 @@ At top-level operator definitions and let-in expressions, constraint generation 
               Γ ⊢ val n = e1 { e2 }: (t2, s(c1 ∧ c2))
 ```
 
-Whenever we fetch a type scheme from the constant, any quantified variables are replaced with fresh type variables. The class state is used to track free type variables in the context, and operator signatures always assume quantification of all names that are not free in the context. 
+Whenever we fetch a type scheme from the constant, any quantified variables are
+replaced with fresh type variables. The class state is used to track free type
+variables in the context, and operator signatures always assume quantification
+of all names that are not free in the context.
 
 ### Additional requirements
 
-1. Type annotations should be added as constraints, and the type system should be able to identify which annotations couldn't have its constraint satisfied. This can be done by adding an optional source id to the constraint interface.
-2. TNT has some multiple arity operators such as `actionAnd` and `match`. Signatures for these operators are parametrized over the number of arguments, but some of them have restrictions over how many arguments it can receive. For example, `match` require an odd number of arguments, while `record` requires an even one. The signature provider needs to check the requested arity against these restrictions before generating a signature. 
-3. Unification for type aliases requires collecting and resolving their values. We shouldn't only replace those aliases with their types beforehand, as that would prevent the type checker to report errors and types using the alias.
-4. As recursion is not allowed, we should detect recursion in operator and lambda definitions to report them as unsupported. This should be a simple occurs check of the operator's name in its body.
+1. Type annotations should be added as constraints, and the type system should
+   be able to identify which annotations couldn't have its constraint satisfied.
+   This can be done by adding an optional source id to the constraint interface.
+2. TNT has some multiple arity operators such as `actionAnd` and `match`.
+   Signatures for these operators are parametrized over the number of arguments,
+   but some of them have restrictions over how many arguments it can receive.
+   For example, `match` require an odd number of arguments, while `record`
+   requires an even one. The signature provider needs to check the requested
+   arity against these restrictions before generating a signature.
+3. Unification for type aliases requires collecting and resolving their values.
+   We shouldn't only replace those aliases with their types beforehand, as that
+   would prevent the type checker to report errors and types using the alias.
+4. As recursion is not allowed, we should detect recursion in operator and
+   lambda definitions to report them as unsupported. This should be a simple
+   occurs check of the operator's name in its body.
 
 ## Implementation Plan
 1. Write a type parser using the already defined grammar;
@@ -112,5 +144,7 @@ Whenever we fetch a type scheme from the constant, any quantified variables are 
 1. Write a constraint generator according to the rules specified in this ADR;
 1. Take care of the 4 additional requirements previously defined;
 1. Integrate type checking and type inference into the VSCode plugin;
-1. Look for generalization opportunities between the effect system and the type system. Candidate may include substitution-related functions and types, and variable binding (occurs check).
+1. Look for generalization opportunities between the effect system and the type
+   system. Candidate may include substitution-related functions and types, and
+   variable binding (occurs check).
 
