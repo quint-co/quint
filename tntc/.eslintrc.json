@@ -22,6 +22,7 @@
         "exports": "never",
         "functions": "never"
      }],
-     "no-use-before-define": "off"
+     "no-use-before-define": "off",
+     "array-callback-return": "off"
    }
 }

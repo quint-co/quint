@@ -14,6 +14,13 @@ import chalk from 'chalk'
 import { compileExpr } from './runtime/compile'
 import { ExecError } from './runtime/runtime'
 
+// tunable settings
+export const settings = {
+  prompt: '>>> ',
+  continuePrompt: '... ',
+}
+
+// the entry point to the REPL
 export function tntRepl () {
   const out = console.log
   out(chalk.gray('TNT REPL v0.0.1'))
@@ -22,36 +29,56 @@ export function tntRepl () {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: '>>> ',
+    prompt: settings.prompt,
   })
 
   rl.prompt()
 
-  const tryEval = (text: string) => {
-    const val = compileExpr(text, chalkHandler).exec()
-    if (val !== undefined) {
-      // Print on success, similar to node repl.
-      // In the future, we should introduce a color printer
-      // that analyzes the value structure.
-      switch (typeof val) {
-        case 'bigint':
-          out(chalk.yellow(`${val}`))
-          break
-        case 'boolean':
-          out(chalk.yellow(`${val}`))
-          break
-        case 'string':
-          out(chalk.green(`"${val}"`))
-          break
-        default:
-          out(`${val}`)
+  // we let the user type a multiline string, which is collected here:
+  let multilineText = ''
+  // when the number of open braces or parentheses is positive,
+  // we enter the multiline mode
+  let nOpenBraces = 0
+  let nOpenParen = 0
+
+  // Ctrl-C handler
+  rl.on('SIGINT', () => {
+    // if the user is stuck and presses Ctrl-C, reset the multiline mode
+    multilineText = ''
+    nOpenBraces = 0
+    nOpenParen = 0
+    rl.setPrompt(settings.prompt)
+    out(chalk.yellow('<cancelled>'))
+    rl.prompt()
+  })
+
+  // next line handler
+  function nextLine (line: string) {
+    const [nob, nop] = countBraces(line)
+    nOpenBraces += nob
+    nOpenParen += nop
+    if (multilineText === '') {
+      if (nOpenBraces > 0 || nOpenParen > 0) {
+        // enter a multiline mode
+        multilineText += '\n' + line
+        rl.setPrompt(settings.continuePrompt)
+      } else {
+        line.trim() === '' || tryEval(line)
+      }
+    } else {
+      if (line.trim() === '' && nOpenBraces <= 0 && nOpenParen <= 0) {
+        // end the multiline mode
+        tryEval(multilineText)
+        multilineText = ''
+        rl.setPrompt(settings.prompt)
+      } else {
+        // continue the multiline mode
+        multilineText += '\n' + line
       }
     }
   }
 
-  // we let the user type a multiline string, which is collected here:
-  let multilineText = ''
-
+  // the read-eval-print loop
   rl.on('line', (line) => {
     switch (line.trim()) {
       case '.help':
@@ -66,25 +93,7 @@ export function tntRepl () {
         process.exit(0)
 
       default:
-        if (multilineText === '') {
-          if (line.indexOf('val ') >= 0) {
-            // enter a multiline mode
-            multilineText += '\n' + line
-            rl.setPrompt('... ')
-          } else {
-            tryEval(line)
-          }
-        } else {
-          if (line.trim() === '') {
-            // end the multiline mode
-            tryEval(multilineText + '\n' + line)
-            multilineText = ''
-            rl.setPrompt('>>> ')
-          } else {
-            // continue the multiline mode
-            multilineText += '\n' + line
-          }
-        }
+        nextLine(line)
         break
     }
     rl.prompt()
@@ -95,7 +104,59 @@ export function tntRepl () {
 
 // private definitions
 
+function tryEval (text: string) {
+  const val = compileExpr(text, chalkHandler).exec()
+  if (val !== undefined) {
+    // Print on success, similar to node repl.
+    // In the future, we should introduce a color printer
+    // that analyzes the value structure.
+    switch (typeof val) {
+      case 'bigint':
+        console.log(chalk.yellow(`${val}`))
+        break
+      case 'boolean':
+        console.log(chalk.yellow(`${val}`))
+        break
+      case 'string':
+        console.log(chalk.green(`"${val}"`))
+        break
+      default:
+        console.log(`${val}`)
+    }
+  }
+}
+
 // output errors to the console in red
-const chalkHandler = (err: ExecError) => {
+function chalkHandler (err: ExecError) {
   console.error(chalk.red(`${err.sourceAndLoc}: ${err.msg}`))
+}
+
+// count the difference between the number of '{' and '}'
+// as well as the difference between the number of '(' and ')' in a string
+function countBraces (str: string): [number, number] {
+  let nOpenBraces = 0
+  let nOpenParen = 0
+  for (let i = 0; i < str.length; i++) {
+    switch (str[i]) {
+      case '{':
+        nOpenBraces++
+        break
+
+      case '}':
+        nOpenBraces--
+        break
+
+      case '(':
+        nOpenParen++
+        break
+
+      case ')':
+        nOpenParen--
+        break
+
+      default:
+    }
+  }
+
+  return [nOpenBraces, nOpenParen]
 }

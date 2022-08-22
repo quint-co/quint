@@ -12,10 +12,11 @@
  * @module
  */
 
-import { Effect, ErrorTree, Variables } from './base'
+import { Effect, Variables } from './base'
+import { Substitutions } from './substitutions'
 
 /**
- * Pretty prints an effect
+ * Formats the string representation of  an effect
  *
  * @param e the effect to be formatted
  *
@@ -47,7 +48,7 @@ export function effectToString (e: Effect): string {
 }
 
 /**
- * Pretty prints effect variables
+ * Formats the string representation of effect variables
  *
  * @param v the Variables instance to be formatted
  *
@@ -62,17 +63,19 @@ export function variablesToString (v: Variables): string {
 }
 
 /**
- * Pretty prints an error tree
+ * Formats the string representation of substitutions
  *
- * @param e the ErrorTree to be formatted
+ * @param s the Substitution to be formatted
  *
- * @returns a multiline string with the pretty printed error tree
+ * @returns a string with the pretty printed substitution
  */
-export function errorTreeToString (e: ErrorTree): string {
-  const childrenErrors = e.children.map(errorTreeToString)
-  let out = childrenErrors.join('and\n')
-  out += e.message ? e.message + '\n' : ''
-  out += e.location + '\n'
+export function substitutionsToString (subs: Substitutions): string {
+  const subsString = subs.map(s => {
+    switch (s.kind) {
+      case 'effect': return `${s.name} |-> ${effectToString(s.value)}`
+      case 'variable': return `${s.name} |-> ${variablesToString(s.value)}`
+    }
+  })
 
-  return out
+  return `[${subsString}]`
 }
