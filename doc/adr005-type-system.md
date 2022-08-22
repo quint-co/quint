@@ -142,7 +142,7 @@ of all names that are not free in the context.
 3. Unification involving type aliases requires collecting and resolving the type
    which is aliased beforehand, and adding the alias to our context. This is
    opposed to only replacing aliases with their types in a preprocessing step,
-   would make it impossible for the type checker to use the alias names when
+   which would make it impossible for the type checker to use the alias names when
    reporting errors, and lead to confusing error messages for the end user.
 4. As recursion is not allowed, we should detect recursion in operator,
    lambda, and let-in definitions to report them as unsupported. This should be a simple
