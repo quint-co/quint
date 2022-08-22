@@ -16,7 +16,7 @@
  */
 
 import { TntModule, TntName, TntApp, TntDef, TntModuleDef } from './tntIr'
-import { TntConstType, TntVarType } from './tntTypes'
+import { TntConstType } from './tntTypes'
 import { ScopeTree, scopesForId } from './scoping'
 import { DefinitionTable, DefinitionTableByModule, ValueDefinition, emptyTable } from './definitionsCollector'
 import { IRVisitor, walkModule } from './IRVisitor'
@@ -34,7 +34,7 @@ export interface NameError {
   /* The name of the module containing the error */
   moduleName: string;
   /* The identifier of the IR node where the error occurs */
-  reference: BigInt;
+  reference?: BigInt;
 }
 
 /**
@@ -119,13 +119,6 @@ class NameResolverVisitor implements IRVisitor {
     }
   }
 
-  enterVarType (type: TntVarType): void {
-    // Type is a name, check that it is defined
-    if (!this.currentTable.typeDefinitions.some(def => def.identifier === type.name)) {
-      this.recordError('type', type.name, type.id)
-    }
-  }
-
   enterConstType (type: TntConstType): void {
     // Type is a name, check that it is defined
     if (!this.currentTable.typeDefinitions.some(def => def.identifier === type.name)) {
@@ -146,7 +139,7 @@ class NameResolverVisitor implements IRVisitor {
     }
   }
 
-  private recordError (kind: 'type' | 'value', name: string, id: bigint) {
+  private recordError (kind: 'type' | 'value', name: string, id?: bigint) {
     this.errors.push({
       kind: kind,
       name: name,

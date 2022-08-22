@@ -14,7 +14,6 @@ describe('nameResolver', () => {
   ])
   const typeDefinitions: TypeDefinition[] = [
     { identifier: 'MY_TYPE', type: { id: BigInt(100), kind: 'int' } },
-    { identifier: 'a', type: { id: BigInt(101), kind: 'int' } },
   ]
 
   const moduleName = 'wrapper'
@@ -147,7 +146,6 @@ describe('nameResolver', () => {
         errors: [
           { kind: 'type', name: 'UNKNOWN_TYPE_0', definitionName: 'a', moduleName: moduleName, reference: BigInt(1) },
           { kind: 'type', name: 'UNKNOWN_TYPE_1', definitionName: 'b', moduleName: moduleName, reference: BigInt(3) },
-          { kind: 'type', name: 't', definitionName: 'c', moduleName: moduleName, reference: BigInt(5) },
         ],
       }
       assert.deepEqual(result, expectedResult)

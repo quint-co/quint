@@ -23,6 +23,10 @@ export class ToIrListener implements TntListener {
    * The module that is constructed as a result of parsing
    */
   rootModule?: TntModule = undefined
+  /**
+   * The stack of types that can be used as a result of type parsing
+   */
+  typeStack: TntType[] = []
 
   sourceMap: Map<BigInt, Loc> = new Map<BigInt, Loc>()
 
@@ -37,8 +41,6 @@ export class ToIrListener implements TntListener {
   private moduleDefStack: TntDef[][] = []
   // the stack of definitions
   private definitionStack: TntDef[] = []
-  // the stack of types
-  private typeStack: TntType[] = []
   // the stack of expressions
   private exprStack: TntEx[] = []
   // the stack of parameter lists
