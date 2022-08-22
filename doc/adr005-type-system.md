@@ -10,7 +10,7 @@ TNT is a statically typed language and, therefore, should offer fast feedback on
 the correctness of a specification's types. This ADR proposes a type system to
 be used for:
 1. Type checking any parsed TNT specification;
-2. Provide type information using the Language Server Protocol (LSP), enabling
+2. Providing type information using the Language Server Protocol (LSP), enabling
    useful tools such as auto-completion and type hints.
 
 ## Context
@@ -37,11 +37,11 @@ robust type system from the literature, or design a simpler instance more fit to
 TNT's stricter needs (with no recursion and no ad-hoc polymorphism). Some
 considered options from the literature were:
 1. [OutsideIn](https://www.microsoft.com/en-us/research/publication/complete-and-decidable-type-inference-for-gadts/):
-   simpler to implement when compared to other literature constraint-based
-   approaches, but was designed to handle GADTs which are not on TNTs roadmap at
+   simpler to implement when compared to other constraint-based
+   approaches in the literature, but was designed to handle GADTs which are not on TNTs roadmap at
    all, so has a lot of extra complexity involving implication constraints.
 2. [HM(X)](http://cristal.inria.fr/attapl/emlti-long.pdf): More basic type
-   system, with defined extensions for both ADTs and row types. Seemed a god fit
+   system, with defined extensions for both ADTs and row types. This seemed like a good fit
    at first, but constraint solving for this system showed to be surprisingly
    complex, requiring several implementation components. The proposed solving
    algorithm was shown by the authors to be the most efficient possible, but
@@ -51,7 +51,7 @@ considered options from the literature were:
 
 Considering the cons of these approaches regarding unnecessary complexity and
 the small scope of TNT's needs, the decision was to design our own type system
-basing on Apalache's and the literature algorithms. The drawback of this
+based on Apalache's and the literature algorithms. The drawback of this
 approach is that we don't get any proven properties that a state-of-the-art
 system would provide.
 
@@ -81,11 +81,11 @@ For operator application, we fetch its signature from the context and add a
 constraint matching it to a new constructed operator type that takes the
 inferred type for the application parameters as arguments and a fresh type
 variable as result. This is similar to constraint generation for function
-application in literature algorithms, but is adapted to consider many arguments
+application in algorithms from the literature, but is adapted to consider many arguments
 instead of the common currying approach.
 
 ```
-  op: q ∈ Γ   Γ ⊢  p0, ..., pn: (t0, c0), ..., (tn, cn)   a is fresh
+  op: q ∈ Γ   Γ ⊢  p0: (t0, c0), ..., pn: (tn, cn)    a is fresh
 ------------------------------------------------------------------------ (APP)
    Γ ⊢ op(p0, ..., pn): (a, q ~ (t0, ..., tn) => a ∧ c0 ∧ ... ∧ cn)
 ```
@@ -100,8 +100,7 @@ then generate constraints for the expression.
            Γ ⊢ (p0, ..., pn) => e: ((t0, ..., tn) => te, c)
 ```
 
-At top-level operator definitions and let-in expressions, constraint generation
-is the same, so we define it with a single rule. First, the visitor generate
+Constraint generation is the same for top-level operator definitions and let-in expressions, so we define it with a single rule. First, the visitor generates
 constraints for the operator's body expression. Then, it solves that constraint
 (that conceptually carries all the context's constraints with it), which yields
 a substitution, apply that substitution to the context and generate constraints
@@ -130,11 +129,9 @@ of all names that are not free in the context.
    For example, `match` require an odd number of arguments, while `record`
    requires an even one. The signature provider needs to check the requested
    arity against these restrictions before generating a signature.
-3. Unification for type aliases requires collecting and resolving their values.
-   We shouldn't only replace those aliases with their types beforehand, as that
-   would prevent the type checker to report errors and types using the alias.
-4. As recursion is not allowed, we should detect recursion in operator and
-   lambda definitions to report them as unsupported. This should be a simple
+3. Unification involving type aliases requires collecting and resolving the type which is aliased beforehand, and adding the alias to our context. This is opposed to only replacing aliases with their types in a preprocessing step, would make it impossible for the type checker to use the alias names when reporting errors, and lead to confusing error messages for the end user.
+4. As recursion is not allowed, we should detect recursion in operator,
+   lambda, and let-in definitions to report them as unsupported. This should be a simple
    occurs check of the operator's name in its body.
 
 ## Implementation Plan
