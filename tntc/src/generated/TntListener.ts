@@ -30,7 +30,6 @@ import { UminusContext } from "./TntParser";
 import { PowContext } from "./TntParser";
 import { MultDivContext } from "./TntParser";
 import { PlusMinusContext } from "./TntParser";
-import { IfElseContext } from "./TntParser";
 import { RelationsContext } from "./TntParser";
 import { ErrorEqContext } from "./TntParser";
 import { AndContext } from "./TntParser";
@@ -46,6 +45,7 @@ import { LiteralOrIdContext } from "./TntParser";
 import { TupleContext } from "./TntParser";
 import { RecordContext } from "./TntParser";
 import { SequenceContext } from "./TntParser";
+import { IfElseContext } from "./TntParser";
 import { LetInContext } from "./TntParser";
 import { ParenContext } from "./TntParser";
 import { BracesContext } from "./TntParser";
@@ -426,19 +426,6 @@ export interface TntListener extends ParseTreeListener {
 	exitPlusMinus?: (ctx: PlusMinusContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `ifElse`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 */
-	enterIfElse?: (ctx: IfElseContext) => void;
-	/**
-	 * Exit a parse tree produced by the `ifElse`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 */
-	exitIfElse?: (ctx: IfElseContext) => void;
-
-	/**
 	 * Enter a parse tree produced by the `relations`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
@@ -632,6 +619,19 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitSequence?: (ctx: SequenceContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `ifElse`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	enterIfElse?: (ctx: IfElseContext) => void;
+	/**
+	 * Exit a parse tree produced by the `ifElse`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	exitIfElse?: (ctx: IfElseContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `letIn`
