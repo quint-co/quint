@@ -69,16 +69,16 @@ export function applySubstitution (subs: Substitutions, t: TntType): TntType {
     case 'oper': {
       const arrowParams = t.args.map(ef => applySubstitution(subs, ef))
       const arrowResult = applySubstitution(subs, t.res)
-      result = { kind: t.kind, args: arrowParams, res: arrowResult }
+      result = { kind: t.kind, args: arrowParams, res: arrowResult, id: t.id }
       break
     }
     case 'seq':
     case 'set': {
-      result = { kind: t.kind, elem: applySubstitution(subs, t.elem) }
+      result = { kind: t.kind, elem: applySubstitution(subs, t.elem), id: t.id }
       break
     }
     case 'fun': {
-      result = { kind: t.kind, arg: applySubstitution(subs, t.arg), res: applySubstitution(subs, t.res) }
+      result = { kind: t.kind, arg: applySubstitution(subs, t.arg), res: applySubstitution(subs, t.res), id: t.id }
       break
     }
     case 'tuple': {

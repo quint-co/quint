@@ -16,7 +16,7 @@ import { Either, left, right } from '@sweet-monads/either'
 import { buildErrorLeaf, buildErrorTree, ErrorTree, Error } from '../errorTree'
 import { typeToString } from '../IRprinting'
 import { IRVisitor, walkType } from '../IRVisitor'
-import { TntOperType, TntType, TntVarType } from '../tntTypes'
+import { TntOperType, TntTupleType, TntType, TntVarType } from '../tntTypes'
 import { applySubstitution, applySubstitutionToConstraint, compose, Substitutions } from './substitutions'
 
 /*
@@ -94,6 +94,8 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
       const subs2 = unify(applySubstitution(subs, t1.res), applySubstitution(subs, t2.res))
       return subs2.map(s => compose(subs, s))
     })
+  } else if (t1.kind === 'tuple' && t2.kind === 'tuple') {
+    return unifyTuples(location, t1, t2).mapLeft(error => buildErrorTree(location, error))
   } else {
     return left(buildErrorLeaf(
       location,
@@ -143,6 +145,20 @@ function unifyArrows (location: string, t1: TntOperType, t2: TntOperType): Eithe
   }
 
   return chainUnifications([...t1.args, t1.res], [...t2.args, t2.res])
+}
+
+function unifyTuples (location: string, t1: TntTupleType, t2: TntTupleType): Either<Error, Substitutions> {
+  if (t1.elems.length !== t2.elems.length) {
+    const expected = t1.elems.length
+    const got = t2.elems.length
+    return left({
+      location: location,
+      message: `Expected ${expected} arguments, got ${got}`,
+      children: [],
+    })
+  }
+
+  return chainUnifications(t1.elems, t2.elems)
 }
 
 function applySubstitutionsAndUnify (subs: Substitutions, t1: TntType, t2: TntType): Either<Error, Substitutions> {
