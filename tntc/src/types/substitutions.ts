@@ -12,7 +12,6 @@
  * @module
  */
 
-import { typeToString } from '../IRprinting'
 import { TntType } from '../tntTypes'
 import { Constraint } from './constraintSolver'
 
@@ -37,13 +36,6 @@ interface Substitution {
 export function compose (s1: Substitutions, s2: Substitutions): Substitutions {
   const newS2 = applySubstitutionsToSubstitutions(s1, s2)
   return s1.concat(newS2)
-}
-export function substitutionsToString (subs: Substitutions): string {
-  const subsString = subs.map(s => {
-    return `${s.name} |-> ${typeToString(s.value)}`
-  })
-
-  return `[${subsString}]`
 }
 
 /**
@@ -82,11 +74,15 @@ export function applySubstitution (subs: Substitutions, t: TntType): TntType {
       break
     }
     case 'tuple': {
-      result = { kind: t.kind, elems: t.elems.map(e => applySubstitution(subs, e)) }
+      result = { kind: t.kind, elems: t.elems.map(e => applySubstitution(subs, e)), id: t.id }
       break
     }
     case 'record': {
-      result = { kind: t.kind, fields: t.fields.map(f => ({ fieldName: f.fieldName, fieldType: applySubstitution(subs, f.fieldType) })) }
+      result = {
+        kind: t.kind,
+        fields: t.fields.map(f => ({ fieldName: f.fieldName, fieldType: applySubstitution(subs, f.fieldType) })),
+        id: t.id,
+      }
       break
     }
     case 'union': {
@@ -99,6 +95,7 @@ export function applySubstitution (subs: Substitutions, t: TntType): TntType {
             fields: r.fields.map(f => ({ fieldName: f.fieldName, fieldType: applySubstitution(subs, f.fieldType) })),
           }
         }),
+        id: t.id,
       }
       break
     }
