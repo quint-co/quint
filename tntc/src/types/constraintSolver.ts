@@ -111,22 +111,22 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
  *
  * @returns a list with collected names
  */
-export function typeNames (t: TntType): string[] {
+export function typeNames (t: TntType): Set<string> {
   const collector = new TypeNamesCollector()
   walkType(collector, t)
   return collector.names
 }
 
 class TypeNamesCollector implements IRVisitor {
-  names: string[] = []
+  names: Set<string> = new Set()
 
   exitVarType (t: TntVarType) {
-    this.names.push(t.name)
+    this.names.add(t.name)
   }
 }
 
 function bindType (name: string, type: TntType): Either<string, Substitutions> {
-  if (typeNames(type).includes(name)) {
+  if (typeNames(type).has(name)) {
     return left(`Can't bind ${name} to ${typeToString(type)}: cyclical binding`)
   } else {
     return right([{ name: name, value: type }])

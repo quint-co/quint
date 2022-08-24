@@ -210,6 +210,6 @@ describe('typeNames', () => {
       parseTypeOrThrow('(set(a)) => seq(b) -> (c, int)')
     )
 
-    assert.sameDeepMembers(result, ['a', 'b', 'c'])
+    assert.sameDeepMembers(Array.from(result), ['a', 'b', 'c'])
   })
 })
