@@ -28,6 +28,21 @@ export type Constraint =
   | { kind: 'conjunction', constraints: Constraint[], sourceId: bigint }
   | { kind: 'empty' }
 
+/**
+ * Formats the string representation of a constraint
+ *
+ * @param c the Constraint to be formatted
+ *
+ * @returns a string with the formatted constraint
+ */
+export function constraintToString (c: Constraint): String {
+  switch (c.kind) {
+    case 'eq': return `${typeToString(c.types[0])} = ${typeToString(c.types[1])}`
+    case 'conjunction': return c.constraints.map(constraintToString).join(' /\\ ')
+    case 'empty': return 'true'
+  }
+}
+
 /*
  * Try to solve a constraint by unifying all pairs of types in equality
  * constraints inside it.
