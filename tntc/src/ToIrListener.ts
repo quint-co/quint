@@ -696,7 +696,7 @@ export class ToIrListener implements TntListener {
     const name = ctx.IDENTIFIER().text
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
-    if (name.length === 1 && name.match('[a-z]')) {
+    if (name[0].match('[a-z]')) {
       // a type variable from: a, b, ... z
       this.typeStack.push({ id: id, kind: 'var', name: name })
     } else {
