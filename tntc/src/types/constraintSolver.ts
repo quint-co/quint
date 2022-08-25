@@ -17,31 +17,8 @@ import { buildErrorLeaf, buildErrorTree, ErrorTree, Error } from '../errorTree'
 import { typeToString } from '../IRprinting'
 import { IRVisitor, walkType } from '../IRVisitor'
 import { TntOperType, TntTupleType, TntType, TntVarType } from '../tntTypes'
+import { Constraint } from './base'
 import { applySubstitution, applySubstitutionToConstraint, compose, Substitutions } from './substitutions'
-
-/*
- * A type constraint can be either an equality of two types, a conjunction of
- * constraints or an empty constraint
- */
-export type Constraint =
-  | { kind: 'eq', types: [TntType, TntType], sourceId: bigint }
-  | { kind: 'conjunction', constraints: Constraint[], sourceId: bigint }
-  | { kind: 'empty' }
-
-/**
- * Formats the string representation of a constraint
- *
- * @param c the Constraint to be formatted
- *
- * @returns a string with the formatted constraint
- */
-export function constraintToString (c: Constraint): String {
-  switch (c.kind) {
-    case 'eq': return `${typeToString(c.types[0])} = ${typeToString(c.types[1])}`
-    case 'conjunction': return c.constraints.map(constraintToString).join(' /\\ ')
-    case 'empty': return 'true'
-  }
-}
 
 /*
  * Try to solve a constraint by unifying all pairs of types in equality

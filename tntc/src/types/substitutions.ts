@@ -13,7 +13,7 @@
  */
 
 import { TntType } from '../tntTypes'
-import { Constraint } from './constraintSolver'
+import { Constraint } from './base'
 
 /*
  * Substitutions can be applied to TNT types, type variables with another type
