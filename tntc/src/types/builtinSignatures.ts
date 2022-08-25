@@ -54,7 +54,7 @@ const mapOperators = [
   { name: 'put', type: '(a -> b, a, b) => a -> b' },
 ]
 
-// FIXME: Make record and tuple signatures more strict once variants are implemented
+// FIXME: Make record and tuple signatures more strict once row types are implemented
 const recordOperators = [
   { name: 'field', type: '(a, str) => b' },
   { name: 'fieldNames', type: '(a) => set(str)' },
@@ -102,21 +102,21 @@ const otherOperators = [
   { name: 'enabled', type: 'bool => bool' },
 ]
 
-function sameArgsWithResult (argsType: string, resultType: string): Signature {
+function uniformArgsWithResult (argsType: string, resultType: string): Signature {
   return (arity: number) => {
     const args = Array.from(Array(arity).keys()).map(i => argsType)
     return parseAndQuantify(`(${args.join(', ')}) => ${resultType}`)
   }
 }
 
-// TODO: check arity conditions
+// TODO: check arity conditions, see issue https://github.com/informalsystems/tnt/issues/169
 const multipleAritySignatures: [string, Signature][] = [
-  ['seq', sameArgsWithResult('a', 'seq(a)')],
-  ['set', sameArgsWithResult('a', 'set(a)')],
-  ['andExpr', sameArgsWithResult('bool', 'bool')],
-  ['andAction', sameArgsWithResult('bool', 'bool')],
-  ['orExpr', sameArgsWithResult('bool', 'bool')],
-  ['orAction', sameArgsWithResult('bool', 'bool')],
+  ['seq', uniformArgsWithResult('a', 'seq(a)')],
+  ['set', uniformArgsWithResult('a', 'set(a)')],
+  ['andExpr', uniformArgsWithResult('bool', 'bool')],
+  ['andAction', uniformArgsWithResult('bool', 'bool')],
+  ['orExpr', uniformArgsWithResult('bool', 'bool')],
+  ['orAction', uniformArgsWithResult('bool', 'bool')],
   ['tup', (arity: number) => {
     const args = Array.from(Array(arity).keys()).map(i => `t${i}`).join(', ')
     return parseAndQuantify(`(${args}) => (${args})`)
@@ -139,8 +139,17 @@ const multipleAritySignatures: [string, Signature][] = [
   }],
 ]
 
-const fixedAritySignatures: [string, Signature][] = [literals, booleanOperators, setOperators, mapOperators, recordOperators, tupleOperators, listOperators, integerOperators, otherOperators]
-  .flat().map(sig => [sig.name, (_: number) => parseAndQuantify(sig.type)])
+const fixedAritySignatures: [string, Signature][] = [
+  literals,
+  booleanOperators,
+  setOperators,
+  mapOperators,
+  recordOperators,
+  tupleOperators,
+  listOperators,
+  integerOperators,
+  otherOperators,
+].flat().map(sig => [sig.name, (_: number) => parseAndQuantify(sig.type)])
 
 function parseAndQuantify (typeString: string): TypeScheme {
   const t = parseTypeOrThrow(typeString)
