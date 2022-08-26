@@ -25,9 +25,17 @@ export interface WithId {
  * TNT expressions and declarations carry an optional type tag.
  * If a type tag is missing, it means that the type has not been computed yet.
  */
-export interface WithType {
+interface WithOptionalType {
   type?: TntType
 }
+
+/**
+ * Some declarations require a type tag.
+ */
+interface WithType {
+  type: TntType
+}
+
 
 /**
  * Operator qualifier, which refines a mode:
@@ -59,35 +67,35 @@ export interface WithType {
  */
 export type OpQualifier = 'val' | 'def' | 'pred' | 'action' | 'temporal'
 
-export interface TntName extends WithId, WithType {
+export interface TntName extends WithId, WithOptionalType {
   /** Expressions kind ('name' -- name reference) */
   kind: 'name',
   /** A name of: a variable, constant, parameter, user-defined operator */
   name: string,
 }
 
-export interface TntBool extends WithId, WithType {
+export interface TntBool extends WithId, WithOptionalType {
   /** Expressions kind ('bool' -- a boolean literal) */
   kind: 'bool',
   /** The boolean literal value */
   value: boolean,
 }
 
-export interface TntInt extends WithId, WithType {
+export interface TntInt extends WithId, WithOptionalType {
   /** Expressions kind ('int' -- an integer literal) */
   kind: 'int',
   /** The integer literal value */
   value: bigint,
 }
 
-export interface TntStr extends WithId, WithType {
+export interface TntStr extends WithId, WithOptionalType {
   /** Expressions kind ('str' -- a string literal) */
   kind: 'str',
   /** The string literal value */
   value: string,
 }
 
-export interface TntApp extends WithId, WithType {
+export interface TntApp extends WithId, WithOptionalType {
   /** Expressions kind ('app' -- operator application) */
   kind: 'app',
   /** The name of the operator being applied */
@@ -96,7 +104,7 @@ export interface TntApp extends WithId, WithType {
   args: TntEx[],
 }
 
-export interface TntLambda extends WithId, WithType {
+export interface TntLambda extends WithId, WithOptionalType {
   /** Expressions kind ('lambda' -- operator abstraction) */
   kind: 'lambda',
   /** Identifiers for the formal parameters */
@@ -107,7 +115,7 @@ export interface TntLambda extends WithId, WithType {
   expr: TntEx,
 }
 
-export interface TntLet extends WithId, WithType {
+export interface TntLet extends WithId, WithOptionalType {
   /** Expressions kind ('let' -- a let-in binding defined via 'def', 'val', etc.) */
   kind: 'let',
   /** The operator being defined to be used in the body */
@@ -128,7 +136,7 @@ export type TntEx = TntName | TntBool | TntInt | TntStr | TntApp | TntLambda | T
  * If an operator definition has formal parameters, then `expr`
  * should be a lambda expression over those parameters.
  */
-export interface TntOpDef extends WithId, WithType {
+export interface TntOpDef extends WithId, WithOptionalType {
   /** definition kind ('def' -- operator definition) */
   kind: 'def',
   /** definition name */
@@ -153,7 +161,7 @@ export interface TntVar extends WithId, WithType {
   name: string
 }
 
-export interface TntAssume extends WithId, WithType {
+export interface TntAssume extends WithId, WithOptionalType {
   /** definition kind ('assume') */
   kind: 'assume',
   /** name of the assumption, may be '_' */
@@ -162,7 +170,7 @@ export interface TntAssume extends WithId, WithType {
   assumption: TntEx
 }
 
-export interface TntTypeDef extends WithId, WithType {
+export interface TntTypeDef extends WithId, WithOptionalType {
   /** definition kind ('typedef') */
   kind: 'typedef',
   /** name of a type alias */
@@ -171,7 +179,7 @@ export interface TntTypeDef extends WithId, WithType {
   type?: TntType
 }
 
-export interface TntImport extends WithId, WithType {
+export interface TntImport extends WithId, WithOptionalType {
   /** definition kind ('import') */
   kind: 'import',
   /** name to import, or '*' to denote all */
@@ -180,7 +188,7 @@ export interface TntImport extends WithId, WithType {
   path: string
 }
 
-export interface TntInstance extends WithId, WithType {
+export interface TntInstance extends WithId, WithOptionalType {
   /** definition kind ('instance') */
   kind: 'instance',
   /** instance name */
@@ -193,7 +201,7 @@ export interface TntInstance extends WithId, WithType {
   identityOverride: boolean
 }
 
-export interface TntModuleDef extends WithId, WithType {
+export interface TntModuleDef extends WithId, WithOptionalType {
   /** definition kind ('module') */
   kind: 'module',
   /** nested module */
