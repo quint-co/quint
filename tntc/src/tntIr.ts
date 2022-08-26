@@ -36,7 +36,6 @@ interface WithType {
   type: TntType
 }
 
-
 /**
  * Operator qualifier, which refines a mode:
  *
