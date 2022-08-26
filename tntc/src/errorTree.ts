@@ -30,7 +30,7 @@ export interface ErrorTree {
  * A simple disjunction over error representations to make it easier to chain
  * different operations and handle errors all at once (see buildErrorTree())
  * */
-export type Error = ErrorTree | ErrorTree[]
+export type Error = ErrorTree | ErrorTree[] | string
 
 /*
  * Builds a node in the error tree with one or more errors as children
@@ -41,7 +41,9 @@ export type Error = ErrorTree | ErrorTree[]
  * @returns an error tree with the given location and errors, avoiding duplication
  */
 export function buildErrorTree (location: string, errors: Error): ErrorTree {
-  if (!Array.isArray(errors) && location === errors.location) {
+  if (typeof errors === 'string') {
+    return buildErrorLeaf(location, errors)
+  } else if (!Array.isArray(errors) && location === errors.location) {
     // Avoid redundant locations
     return errors
   }
