@@ -24,9 +24,11 @@ import { inferEffects } from './effects/inferrer'
 import { getSignatures } from './effects/builtinSignatures'
 import { DefinitionTableByModule } from './definitionsCollector'
 import { effectToString } from './effects/printing'
+import { typeToString } from './IRprinting'
 import { errorTreeToString } from './errorTree'
 
 import { tntRepl } from './repl'
+import { inferTypes } from './types/inferrer'
 
 /**
  * Parse a TNT specification.
@@ -49,11 +51,27 @@ function typecheck (argv: any) {
   if (parseResult.kind === 'error') {
     process.exit(1)
   }
+  const finder = lineColumn(sourceCode)
+
+  const types = inferTypes(parseResult.module)
+  types.map(e => e.forEach((value, key) => console.log(`${key}: ${typeToString(value)}`)))
+
+  types.mapLeft(e => {
+    console.log(`${JSON.stringify(Array.from(e.values()))} Type errors found, sending diagnostics`)
+    e.forEach((value, key) => {
+      const loc = parseResult.sourceMap.get(key)!
+      const message: ErrorMessage = {
+        explanation: errorTreeToString(value),
+        locs: [loc],
+      }
+
+      console.error(formatError(sourceCode, finder, message))
+    })
+  })
 
   const effects = inferEffects(getSignatures(), definitionsTable, parseResult.module)
-  effects.map(e => e.forEach((value, key) => console.log(`${key}: ${effectToString(value)}`)))
+  // effects.map(e => e.forEach((value, key) => console.log(`${key}: ${effectToString(value)}`)))
 
-  const finder = lineColumn(sourceCode)
   effects.mapLeft(e => e.forEach((value, key) => {
     const loc = parseResult.sourceMap.get(key)!
     const message: ErrorMessage = {
