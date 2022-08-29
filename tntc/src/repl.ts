@@ -11,8 +11,9 @@
 import * as readline from 'readline'
 import chalk from 'chalk'
 
+import { TntEx } from './tntIr'
 import { compileExpr } from './runtime/compile'
-import { ExecError } from './runtime/runtime'
+import { ExecError, toTntEx } from './runtime/runtime'
 
 // tunable settings
 export const settings = {
@@ -104,25 +105,35 @@ export function tntRepl () {
 
 // private definitions
 
+// convert a TNT expression to a colored string, tuned for REPL
+function chalkTntEx (ex: TntEx): string {
+  switch (ex.kind) {
+    case 'bool':
+      return chalk.yellow(`${ex.value}`)
+
+    case 'int':
+      return chalk.yellow(`${ex.value}`)
+
+    case 'app':
+      if (ex.opcode !== 'set') {
+        // instead of throwing, show it in red
+        return chalk.red(`unsupported operator: ${ex.opcode}(...))`)
+      } else {
+        const as = ex.args.map(chalkTntEx).join(', ')
+        return chalk.green('set') + chalk.black(`(${as})`)
+      }
+
+    default:
+      return chalk.red(`unsupported operator: ${ex.kind}`)
+  }
+}
+
+// try to evaluate the expression in a string and print it, if successful
 function tryEval (text: string) {
   const val = compileExpr(text, chalkHandler).exec()
   if (val !== undefined) {
     // Print on success, similar to node repl.
-    // In the future, we should introduce a color printer
-    // that analyzes the value structure.
-    switch (typeof val) {
-      case 'bigint':
-        console.log(chalk.yellow(`${val}`))
-        break
-      case 'boolean':
-        console.log(chalk.yellow(`${val}`))
-        break
-      case 'string':
-        console.log(chalk.green(`"${val}"`))
-        break
-      default:
-        console.log(`${val}`)
-    }
+    console.log(chalkTntEx(toTntEx(val)))
   }
 }
 
