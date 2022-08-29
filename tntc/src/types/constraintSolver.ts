@@ -15,8 +15,7 @@
 import { Either, left, right } from '@sweet-monads/either'
 import { buildErrorLeaf, buildErrorTree, ErrorTree, Error } from '../errorTree'
 import { typeToString } from '../IRprinting'
-import { IRVisitor, walkType } from '../IRVisitor'
-import { TntOperType, TntTupleType, TntType, TntVarType } from '../tntTypes'
+import { TntType, typeNames } from '../tntTypes'
 import { Constraint } from './base'
 import { applySubstitution, applySubstitutionToConstraint, compose, Substitutions } from './substitutions'
 
@@ -39,6 +38,8 @@ export function solveConstraint (constraint: Constraint): Either<Map<bigint, Err
     case 'conjunction': {
       // Chain solving of inner constraints, collecting all errors (even after the first failure)
       return constraint.constraints.reduce((result: Either<Map<bigint, ErrorTree>, Substitutions>, con) => {
+        // If previous result is a failure, try to solve the original constraint
+        // to gather all errors instead of just propagating the first one
         let newCons = con
         result.map(s => {
           newCons = applySubstitutionToConstraint(s, con)
@@ -75,7 +76,9 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
   } else if (t2.kind === 'var') {
     return bindType(t2.name, t1).mapLeft(msg => buildErrorLeaf(location, msg))
   } else if (t1.kind === 'oper' && t2.kind === 'oper') {
-    return unifyArrows(location, t1, t2).mapLeft(error => buildErrorTree(location, error))
+    return checkSameLength(location, t1.args, t2.args)
+      .chain(([args1, args2]) => chainUnifications([...args1, t1.res], [...args2, t2.res]))
+      .mapLeft(error => buildErrorTree(location, error))
   } else if (t1.kind === 'set' && t2.kind === 'set') {
     return unify(t1.elem, t2.elem)
   } else if (t1.kind === 'seq' && t2.kind === 'seq') {
@@ -87,33 +90,14 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
       return subs2.map(s => compose(subs, s))
     })
   } else if (t1.kind === 'tuple' && t2.kind === 'tuple') {
-    return unifyTuples(location, t1, t2).mapLeft(error => buildErrorTree(location, error))
+    return checkSameLength(location, t1.elems, t2.elems)
+      .chain(([elems1, elems2]) => chainUnifications(elems1, elems2))
+      .mapLeft(error => buildErrorTree(location, error))
   } else {
     return left(buildErrorLeaf(
       location,
       `Couldn't unify ${t1.kind} and ${t2.kind}`
     ))
-  }
-}
-
-/*
- * Collects all type variable names from a given type
- *
- * @param t the type to have its names collected
- *
- * @returns a list with collected names
- */
-export function typeNames (t: TntType): Set<string> {
-  const collector = new TypeNamesCollector()
-  walkType(collector, t)
-  return collector.names
-}
-
-class TypeNamesCollector implements IRVisitor {
-  names: Set<string> = new Set()
-
-  exitVarType (t: TntVarType) {
-    this.names.add(t.name)
   }
 }
 
@@ -125,40 +109,26 @@ function bindType (name: string, type: TntType): Either<string, Substitutions> {
   }
 }
 
-function unifyArrows (location: string, t1: TntOperType, t2: TntOperType): Either<Error, Substitutions> {
-  if (t1.args.length !== t2.args.length) {
-    const expected = t1.args.length
-    const got = t2.args.length
-    return left({
-      location: location,
-      message: `Expected ${expected} arguments, got ${got}`,
-      children: [],
-    })
-  }
-
-  return chainUnifications([...t1.args, t1.res], [...t2.args, t2.res])
-}
-
-function unifyTuples (location: string, t1: TntTupleType, t2: TntTupleType): Either<Error, Substitutions> {
-  if (t1.elems.length !== t2.elems.length) {
-    const expected = t1.elems.length
-    const got = t2.elems.length
-    return left({
-      location: location,
-      message: `Expected ${expected} arguments, got ${got}`,
-      children: [],
-    })
-  }
-
-  return chainUnifications(t1.elems, t2.elems)
-}
-
 function applySubstitutionsAndUnify (subs: Substitutions, t1: TntType, t2: TntType): Either<Error, Substitutions> {
   const newSubstitutions = unify(
     applySubstitution(subs, t1),
     applySubstitution(subs, t2)
   )
   return newSubstitutions.map(newSubs => compose(subs, newSubs))
+}
+
+function checkSameLength (location: string, types1: TntType[], types2: TntType[]): Either<Error, [TntType[], TntType[]]> {
+  if (types1.length !== types2.length) {
+    const expected = types1.length
+    const got = types2.length
+    return left({
+      location: location,
+      message: `Expected ${expected} arguments, got ${got}`,
+      children: [],
+    })
+  }
+
+  return right([types1, types2])
 }
 
 function chainUnifications (types1: TntType[], types2: TntType[]): Either<Error, Substitutions> {

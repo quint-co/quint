@@ -18,7 +18,7 @@ describe('parseType', () => {
     }))
   })
 
-  it('parses operator of var types', () => {
+  it('parses operator with type vars', () => {
     const type = parseType('(a, b) => ((a) => b)')
 
     assert.isTrue(type.isRight())

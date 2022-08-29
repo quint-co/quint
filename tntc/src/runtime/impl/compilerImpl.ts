@@ -10,10 +10,14 @@
 
 import { strict as assert } from 'assert'
 import { Maybe, none, just, merge } from '@sweet-monads/maybe'
-import { Set, isSet, is as immutableIs } from 'immutable'
+import { Set } from 'immutable'
 
 import { IRVisitor } from '../../IRVisitor'
-import { Computable, EvalResult, fail } from '../runtime'
+import {
+  Computable, EvalResult, fail, makeInterval, isIterable
+} from '../runtime'
+
+import * as evalResultOps from './evalResultOps'
 
 import * as ir from '../../tntIr'
 
@@ -72,11 +76,11 @@ export class CompilerVisitor implements IRVisitor {
   exitApp (app: ir.TntApp) {
     switch (app.opcode) {
       case 'eq':
-        this.applyFun(2, (x: any, y: any) => just(this.eq(x, y)))
+        this.applyFun(2, (x: any, y: any) => just(evalResultOps.evalResultIs(x, y)))
         break
 
       case 'neq':
-        this.applyFun(2, (x: any, y: any) => just(!this.eq(x, y)))
+        this.applyFun(2, (x: any, y: any) => just(!evalResultOps.evalResultIs(x, y)))
         break
 
       // conditional
@@ -151,47 +155,38 @@ export class CompilerVisitor implements IRVisitor {
         break
 
       case 'set':
-        this.applyFun(app.args.length, (...values: any[]) => just(Set.of(...values)))
+        // Construct a set from an array of values.
+        // Importantly, expand the special data structures such as intervals.
+        this.applyFun(app.args.length, (...values: any[]) =>
+          just(Set.of(...values.map(evalResultOps.iterableToSet))))
         break
 
       case 'contains':
-        this.applyFun(2, (set: any, value: any) => just(set.includes(value)))
+        this.applyFun(2, (set, value) => just(evalResultOps.contains(set, value)))
         break
 
       case 'in':
-        this.applyFun(2, (value: any, set: any) => just(set.includes(value)))
+        this.applyFun(2, (value, set) => just(evalResultOps.contains(set, value)))
         break
 
       case 'subseteq':
-        this.applyFun(2,
-          function<A> (lhs: Set<A>, rhs: Set<A>): Maybe<boolean> {
-            return just(lhs.isSubset(rhs))
-          }
-        )
+        this.applyFun(2, (l, r) => just(evalResultOps.isSubset(l, r)))
         break
 
       case 'union':
-        this.applyFun(2,
-          function<A> (lhs: Set<A>, rhs: Set<A>): Maybe<Set<A>> {
-            return just(lhs.union(rhs))
-          }
-        )
+        this.applyFun(2, (l, r) => just(evalResultOps.toSet(l).union(evalResultOps.toSet(r))))
         break
 
       case 'intersect':
-        this.applyFun(2,
-          function<A> (lhs: Set<A>, rhs: Set<A>): Maybe<Set<A>> {
-            return just(lhs.intersect(rhs))
-          }
-        )
+        this.applyFun(2, (l, r) => just(evalResultOps.toSet(l).intersect(evalResultOps.toSet(r))))
         break
 
       case 'exclude':
-        this.applyFun(2,
-          function<A> (lhs: Set<A>, rhs: Set<A>): Maybe<Set<A>> {
-            return just(lhs.subtract(rhs))
-          }
-        )
+        this.applyFun(2, (l, r) => just(evalResultOps.toSet(l).subtract(evalResultOps.toSet(r))))
+        break
+
+      case 'to':
+        this.applyFun(2, (i: bigint, j: bigint) => just(makeInterval(i, j)))
         break
 
       case 'flatten':
@@ -265,7 +260,7 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   /**
-    * A generalized application of a one-argument lambda expression to a set,
+    * A generalized application of a one-argument lambda expression to an iterable,
     * as required by `exists`, `forall`, `map`, and `filter`.
     *
     * This method expects `compStack` to look like follows:
@@ -278,10 +273,10 @@ export class CompilerVisitor implements IRVisitor {
     *
     *  - `(top - 2)`: the set to iterate over, as `Computable`.
     *
-    * The method evaluates the lambda body for each element of the set and
+    * The method evaluates the lambda body for each element of the iterable and
     * either produces `none`, if evaluation failed for one of the elements,
     * or it applies `mapResultAndElems` to the pairs that consists of the lambda result
-    * and the original set element. The final result is stored on the stack.
+    * and the original element of the iterable. The final result is stored on the stack.
     */
   private mapLambdaThenReduce
   (mapResultAndElems: (array: Array<[EvalResult, EvalResult]>) => EvalResult): void {
@@ -299,9 +294,9 @@ export class CompilerVisitor implements IRVisitor {
       // evaluate the predicate using the register
       return lambdaBody.eval().map(result => [result, elem])
     }
-    this.applyFun(1, (set: Set<EvalResult>): Maybe<EvalResult> => {
-      if (isSet(set)) {
-        return flatMap(set, evaluateElem).map(rs => mapResultAndElems(rs))
+    this.applyFun(1, (set: Iterable<EvalResult>): Maybe<EvalResult> => {
+      if (isIterable(set)) {
+        return evalResultOps.flatMap(set, evaluateElem).map(rs => mapResultAndElems(rs))
       } else {
         throw new Error('Expected a set')
       }
@@ -338,18 +333,6 @@ export class CompilerVisitor implements IRVisitor {
     }
   }
 
-  // equality over evaluation results,
-  // as defined in TNT, not JavaScript
-  private eq (lhs: EvalResult, rhs: EvalResult): boolean {
-    if (typeof lhs === 'bigint' || typeof lhs === 'boolean') {
-      return lhs === rhs
-    } else if (isSet(lhs) && isSet(rhs)) {
-      return immutableIs(lhs, rhs)
-    } else {
-      return false
-    }
-  }
-
   // if-then-else requires special treatment,
   // as it should not evaluate both arms
   private translateIfThenElse () {
@@ -370,27 +353,6 @@ export class CompilerVisitor implements IRVisitor {
       throw new Error('Not enough arguments on the stack')
     }
   }
-}
-
-/**
- * Apply `f` to every element of `iterable` and either:
- *
- *  - return `none`, if one of the results in `none`, or
- *  - return `just` of the unpacked results.
- */
-function flatMap<T, R> (iterable: Iterable<T>, f: (arg: T) => Maybe<R>): Maybe<Array<R>> {
-  const results: R[] = []
-  for (const arg of iterable) {
-    const res = f(arg)
-    if (res.isNone()) {
-      return none<Array<R>>()
-    } else {
-      const { value } = res
-      results.push(value)
-    }
-  }
-
-  return just(results)
 }
 
 // a computable value with register

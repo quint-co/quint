@@ -1,5 +1,5 @@
 import { parseTypeOrThrow } from './parser'
-import { typeNames } from './constraintSolver'
+import { typeNames } from '../tntTypes'
 import { Signature, TypeScheme } from './base'
 
 export function getSignatures (): Map<string, Signature> {

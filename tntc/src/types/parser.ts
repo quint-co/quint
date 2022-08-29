@@ -23,7 +23,7 @@ import { TntType } from '../tntTypes'
 import { Either, right, left } from '@sweet-monads/either'
 
 /**
- * Parses an type string into an Type
+ * Parses a type represented as a string into an Type
  *
  * @param typeString the string to be parsed
  *
