@@ -12,7 +12,7 @@
  * @module
  */
 
-import { Either, left, right } from '@sweet-monads/either'
+import { chain, Either, left, right } from '@sweet-monads/either'
 import { buildErrorLeaf, buildErrorTree, ErrorTree, Error } from '../errorTree'
 import { typeToString } from '../IRprinting'
 import { IRVisitor, walkType } from '../IRVisitor'
@@ -98,7 +98,9 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
   } else if (t2.kind === 'var') {
     return bindType(t2.name, t1).mapLeft(msg => buildErrorLeaf(location, msg))
   } else if (t1.kind === 'oper' && t2.kind === 'oper') {
-    return unifyArrows(location, t1, t2).mapLeft(error => buildErrorTree(location, error))
+    return checkSameLength(location, t1.args, t2.args)
+      .chain(([args1, args2]) => chainUnifications([...args1, t1.res], [...args2, t2.res]))
+      .mapLeft(error => buildErrorTree(location, error))
   } else if (t1.kind === 'set' && t2.kind === 'set') {
     return unify(t1.elem, t2.elem)
   } else if (t1.kind === 'seq' && t2.kind === 'seq') {
@@ -110,7 +112,9 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
       return subs2.map(s => compose(subs, s))
     })
   } else if (t1.kind === 'tuple' && t2.kind === 'tuple') {
-    return unifyTuples(location, t1, t2).mapLeft(error => buildErrorTree(location, error))
+    return checkSameLength(location, t1.elems, t2.elems)
+      .chain(([elems1, elems2]) => chainUnifications(elems1, elems2))
+      .mapLeft(error => buildErrorTree(location, error))
   } else {
     return left(buildErrorLeaf(
       location,
@@ -156,7 +160,7 @@ function applySubstitutionsAndUnify (subs: Substitutions, t1: TntType, t2: TntTy
   return newSubstitutions.map(newSubs => compose(subs, newSubs))
 }
 
-function chainUnifications (types1: TntType[], types2: TntType[]): Either<Error, Substitutions> {
+function checkSameLength (location: string, types1: TntType[], types2: TntType[]): Either<Error, [TntType[], TntType[]]> {
   if (types1.length !== types2.length) {
     const expected = types1.length
     const got = types2.length
@@ -166,7 +170,11 @@ function chainUnifications (types1: TntType[], types2: TntType[]): Either<Error,
       children: [],
     })
   }
-  
+
+  return right([types1, types2])
+}
+
+function chainUnifications (types1: TntType[], types2: TntType[]): Either<Error, Substitutions> {
   return types1.reduce((result: Either<Error, Substitutions>, t, i) => {
     return result.chain(subs => applySubstitutionsAndUnify(subs, t, types2[i]))
   }, right([]))
