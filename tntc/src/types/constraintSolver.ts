@@ -12,11 +12,10 @@
  * @module
  */
 
-import { chain, Either, left, right } from '@sweet-monads/either'
+import { Either, left, right } from '@sweet-monads/either'
 import { buildErrorLeaf, buildErrorTree, ErrorTree, Error } from '../errorTree'
 import { typeToString } from '../IRprinting'
-import { IRVisitor, walkType } from '../IRVisitor'
-import { TntOperType, TntTupleType, TntType, TntVarType } from '../tntTypes'
+import { TntType, typeNames } from '../tntTypes'
 import { applySubstitution, applySubstitutionToConstraint, compose, Substitutions } from './substitutions'
 
 /*
@@ -120,27 +119,6 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
       location,
       `Couldn't unify ${t1.kind} and ${t2.kind}`
     ))
-  }
-}
-
-/*
- * Collects all type variable names from a given type
- *
- * @param t the type to have its names collected
- *
- * @returns a list with collected names
- */
-export function typeNames (t: TntType): Set<string> {
-  const collector = new TypeNamesCollector()
-  walkType(collector, t)
-  return collector.names
-}
-
-class TypeNamesCollector implements IRVisitor {
-  names: Set<string> = new Set()
-
-  exitVarType (t: TntVarType) {
-    this.names.add(t.name)
   }
 }
 

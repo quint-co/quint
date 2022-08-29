@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { solveConstraint, Constraint, unify, typeNames } from '../../src/types/constraintSolver'
+import { solveConstraint, Constraint, unify } from '../../src/types/constraintSolver'
 import { parseTypeOrThrow } from '../../src/types/parser'
 
 describe('solveConstraint', () => {
@@ -201,15 +201,5 @@ describe('unify', () => {
       location: 'Trying to unify (a, b, c) and (int, bool)',
       children: [],
     }))
-  })
-})
-
-describe('typeNames', () => {
-  it('find names in types', () => {
-    const result = typeNames(
-      parseTypeOrThrow('(set(a)) => seq(b) -> (c, int)')
-    )
-
-    assert.sameDeepMembers(Array.from(result), ['a', 'b', 'c'])
   })
 })
