@@ -4,6 +4,8 @@
  * See License.txt in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
+import { IRVisitor, walkType } from './IRVisitor'
+
 /**
  * TNT Types. Every expression or definition is either untyped, or decorated with
  * a type in Type System 1.2.
@@ -98,3 +100,24 @@ export type TntType =
   | TntTupleType
   | TntRecordType
   | TntUnionType
+
+/*
+ * Collects all type variable names from a given type
+ *
+ * @param t the type to have its names collected
+ *
+ * @returns a list with collected names
+ */
+export function typeNames (t: TntType): Set<string> {
+  const collector = new TypeNamesCollector()
+  walkType(collector, t)
+  return collector.names
+}
+
+class TypeNamesCollector implements IRVisitor {
+  names: Set<string> = new Set()
+
+  exitVarType (t: TntVarType) {
+    this.names.add(t.name)
+  }
+}
