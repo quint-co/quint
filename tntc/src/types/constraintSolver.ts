@@ -61,6 +61,8 @@ export function solveConstraint (constraint: Constraint): Either<Map<bigint, Err
     case 'conjunction': {
       // Chain solving of inner constraints, collecting all errors (even after the first failure)
       return constraint.constraints.reduce((result: Either<Map<bigint, ErrorTree>, Substitutions>, con) => {
+        // If previous result is a failure, try to solve the original constraint
+        // to gather all errors instead of just propagating the first one
         let newCons = con
         result.map(s => {
           newCons = applySubstitutionToConstraint(s, con)
