@@ -148,34 +148,6 @@ function bindType (name: string, type: TntType): Either<string, Substitutions> {
   }
 }
 
-function unifyArrows (location: string, t1: TntOperType, t2: TntOperType): Either<Error, Substitutions> {
-  if (t1.args.length !== t2.args.length) {
-    const expected = t1.args.length
-    const got = t2.args.length
-    return left({
-      location: location,
-      message: `Expected ${expected} arguments, got ${got}`,
-      children: [],
-    })
-  }
-
-  return chainUnifications([...t1.args, t1.res], [...t2.args, t2.res])
-}
-
-function unifyTuples (location: string, t1: TntTupleType, t2: TntTupleType): Either<Error, Substitutions> {
-  if (t1.elems.length !== t2.elems.length) {
-    const expected = t1.elems.length
-    const got = t2.elems.length
-    return left({
-      location: location,
-      message: `Expected ${expected} arguments, got ${got}`,
-      children: [],
-    })
-  }
-
-  return chainUnifications(t1.elems, t2.elems)
-}
-
 function applySubstitutionsAndUnify (subs: Substitutions, t1: TntType, t2: TntType): Either<Error, Substitutions> {
   const newSubstitutions = unify(
     applySubstitution(subs, t1),
@@ -185,6 +157,16 @@ function applySubstitutionsAndUnify (subs: Substitutions, t1: TntType, t2: TntTy
 }
 
 function chainUnifications (types1: TntType[], types2: TntType[]): Either<Error, Substitutions> {
+  if (types1.length !== types2.length) {
+    const expected = types1.length
+    const got = types2.length
+    return left({
+      location: location,
+      message: `Expected ${expected} arguments, got ${got}`,
+      children: [],
+    })
+  }
+  
   return types1.reduce((result: Either<Error, Substitutions>, t, i) => {
     return result.chain(subs => applySubstitutionsAndUnify(subs, t, types2[i]))
   }, right([]))
