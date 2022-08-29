@@ -1,7 +1,8 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { solveConstraint, Constraint, unify } from '../../src/types/constraintSolver'
+import { solveConstraint, unify } from '../../src/types/constraintSolver'
 import { parseTypeOrThrow } from '../../src/types/parser'
+import { Constraint } from '../../src/types/base'
 
 describe('solveConstraint', () => {
   it('solves simple equality', () => {

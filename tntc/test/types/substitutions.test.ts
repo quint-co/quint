@@ -2,7 +2,8 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { parseTypeOrThrow } from '../../src/types/parser'
 import { compose, Substitutions, applySubstitution, applySubstitutionToConstraint } from '../../src/types/substitutions'
-import { Constraint, constraintToString } from '../../src/types/constraintSolver'
+import { Constraint } from '../../src/types/base'
+import { constraintToString } from '../../src/types/printing'
 
 describe('compose', () => {
   it('composes two substitutions', () => {
