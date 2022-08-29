@@ -143,7 +143,15 @@ describe('unify', () => {
 
     assert.isTrue(result.isRight())
     result.map(subs => assert.sameDeepMembers(subs, [
-      { name: 'a', value: parseTypeOrThrow('(set(b)) => seq(b)') },
+      {
+        name: 'a',
+        value: {
+          kind: 'oper',
+          args: [{ kind: 'set', elem: { kind: 'int', id: 2n }, id: 2n }],
+          res: { kind: 'seq', elem: { kind: 'int', id: 2n }, id: 4n },
+          id: 5n,
+        },
+      },
       { name: 'b', value: { kind: 'int', id: 2n } },
       { name: 'c', value: { kind: 'bool', id: 3n } },
     ]))
