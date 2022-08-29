@@ -23,7 +23,6 @@ import yargs from 'yargs/yargs'
 import { inferEffects } from './effects/inferrer'
 import { getSignatures } from './effects/builtinSignatures'
 import { DefinitionTableByModule } from './definitionsCollector'
-import { effectToString } from './effects/printing'
 import { typeToString } from './IRprinting'
 import { errorTreeToString } from './errorTree'
 
