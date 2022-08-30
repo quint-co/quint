@@ -5,7 +5,7 @@ import { typeToString } from '../../src/IRprinting'
 import { inferTypes } from '../../src/types/inferrer'
 
 describe('inferTypes', () => {
-  it('infers types basic expressions', () => {
+  it('infers types for basic expressions', () => {
     const tntModule = buildModuleWithDefs([
       'def a = 1 + 2',
       'def b(x, y) = x + y',
@@ -14,6 +14,7 @@ describe('inferTypes', () => {
     ])
 
     const result = inferTypes(tntModule)
+    assert.isTrue(result.isRight())
     result.map(r => {
       const stringTypes = Array.from(r.entries()).map(([id, type]) => [id, typeToString(type)])
       assert.sameDeepMembers(stringTypes, [
@@ -37,6 +38,27 @@ describe('inferTypes', () => {
         [18n, '(int) => int'],
         [19n, 'set(int)'],
         [20n, '(set(int)) => set(int)'],
+      ])
+    })
+  })
+
+  it('fails when types are not unifiable', () => {
+    const tntModule = buildModuleWithDefs([
+      'def a = 1.map(x => x + 10)',
+    ])
+
+    const result = inferTypes(tntModule)
+    assert.isTrue(result.isLeft())
+    result.mapLeft(errors => {
+      assert.sameDeepMembers([...errors.entries()], [
+        [6n, {
+          location: 'Trying to unify (set(t2), (t2) => t3) => set(t3) and (int, (int) => int) => t4',
+          children: [{
+            location: 'Trying to unify set(t2) and int',
+            message: "Couldn't unify set and int",
+            children: [],
+          }],
+        }],
       ])
     })
   })
