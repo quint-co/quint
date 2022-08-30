@@ -35,5 +35,5 @@ export function substitutionsToString (subs: Substitutions): string {
     return `${s.name} |-> ${typeToString(s.value)}`
   })
 
-  return `[${subsString}]`
+  return `[ ${subsString.join(', ')} ]`
 }

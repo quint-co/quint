@@ -3,6 +3,7 @@ import { assert } from 'chai'
 import { solveConstraint, unify } from '../../src/types/constraintSolver'
 import { parseTypeOrThrow } from '../../src/types/parser'
 import { Constraint } from '../../src/types/base'
+import { substitutionsToString } from '../../src/types/printing'
 
 describe('solveConstraint', () => {
   it('solves simple equality', () => {
@@ -18,9 +19,9 @@ describe('solveConstraint', () => {
     const result = solveConstraint(constraint)
 
     assert.isTrue(result.isRight())
-    result.map(subs => assert.sameDeepMembers(subs, [
-      { name: 'a', value: parseTypeOrThrow('int') },
-    ]))
+    result.map(subs => assert.deepEqual(substitutionsToString(subs),
+      '[ a |-> int ]'
+    ))
   })
 
   it('solves conjunctions', () => {
@@ -51,10 +52,9 @@ describe('solveConstraint', () => {
     const result = solveConstraint(constraint)
 
     assert.isTrue(result.isRight())
-    result.map(subs => assert.sameDeepMembers(subs, [
-      { name: 'a', value: parseTypeOrThrow('int') },
-      { name: 'b', value: parseTypeOrThrow('int') },
-    ]))
+    result.map(subs => assert.deepEqual(substitutionsToString(subs),
+      '[ a |-> int, b |-> int ]'
+    ))
   })
 
   it('solves empty constraint', () => {
@@ -95,7 +95,6 @@ describe('solveConstraint', () => {
 
     assert.isTrue(result.isLeft())
     result.mapLeft(errors => {
-      assert.deepEqual(errors.size, 2)
       assert.sameDeepMembers([...errors.entries()], [
         [1n, {
           message: "Couldn't unify bool and int",
@@ -120,9 +119,9 @@ describe('unify', () => {
     )
 
     assert.isTrue(result.isRight())
-    result.map(subs => assert.sameDeepMembers(subs, [
-      { name: 'a', value: parseTypeOrThrow('(set(b)) => seq(b)') },
-    ]))
+    result.map(subs => assert.deepEqual(substitutionsToString(subs),
+      '[ a |-> (set(b)) => seq(b) ]'
+    ))
   })
 
   it('returns empty substitution for equal types', () => {
@@ -142,19 +141,9 @@ describe('unify', () => {
     )
 
     assert.isTrue(result.isRight())
-    result.map(subs => assert.sameDeepMembers(subs, [
-      {
-        name: 'a',
-        value: {
-          kind: 'oper',
-          args: [{ kind: 'set', elem: { kind: 'int', id: 2n }, id: 2n }],
-          res: { kind: 'seq', elem: { kind: 'int', id: 2n }, id: 4n },
-          id: 5n,
-        },
-      },
-      { name: 'b', value: { kind: 'int', id: 2n } },
-      { name: 'c', value: { kind: 'bool', id: 3n } },
-    ]))
+    result.map(subs => assert.deepEqual(substitutionsToString(subs),
+      '[ a |-> (set(int)) => seq(int), c |-> bool, b |-> int ]'
+    ))
   })
 
   it('unifies elements of tuples, set and seq types', () => {
@@ -164,10 +153,9 @@ describe('unify', () => {
     )
 
     assert.isTrue(result.isRight())
-    result.map(subs => assert.sameDeepMembers(subs, [
-      { name: 'a', value: { kind: 'int', id: 1n } },
-      { name: 'b', value: { kind: 'bool', id: 3n } },
-    ]))
+    result.map(subs => assert.deepEqual(substitutionsToString(subs),
+      '[ a |-> int, b |-> bool ]'
+    ))
   })
 
   it("returns error when variable occurs in the other type's body", () => {
