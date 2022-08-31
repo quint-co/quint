@@ -7,6 +7,7 @@ import { ReadOnlyContext } from "./EffectParser";
 import { UpdateOnlyContext } from "./EffectParser";
 import { ReadAndUpdateContext } from "./EffectParser";
 import { PureContext } from "./EffectParser";
+import { TemporalContext } from "./EffectParser";
 import { ConcreteEffectContext } from "./EffectParser";
 import { ArrowEffectContext } from "./EffectParser";
 import { QuantifiedEffectContext } from "./EffectParser";
@@ -74,6 +75,19 @@ export interface EffectListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitPure?: (ctx: PureContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `temporal`
+	 * labeled alternative in `EffectParser.concrete`.
+	 * @param ctx the parse tree
+	 */
+	enterTemporal?: (ctx: TemporalContext) => void;
+	/**
+	 * Exit a parse tree produced by the `temporal`
+	 * labeled alternative in `EffectParser.concrete`.
+	 * @param ctx the parse tree
+	 */
+	exitTemporal?: (ctx: TemporalContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `concreteEffect`

@@ -17,6 +17,7 @@ concrete:   read                                        # readOnly
           | update                                      # updateOnly
           | (read '&' update | update '&' read)         # readAndUpdate
           | 'Pure'                                      # pure
+          | 'Temporal'                                  # temporal
           ;
 
 vars : ((stateVarRef | IDENTIFIER) (', ' (stateVarRef | IDENTIFIER))*)? ;

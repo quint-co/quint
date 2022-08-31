@@ -44,6 +44,7 @@ export function effectToString (e: Effect): string {
       const result = effectToString(e.result)
       return `(${params.join(', ')}) => ${result}`
     }
+    case 'temporal': return 'Temporal'
   }
 }
 

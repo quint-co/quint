@@ -34,6 +34,7 @@ export type Effect =
   | { kind: 'quantified', name: string }
   | ConcreteEffect
   | ArrowEffect
+  | { kind: 'temporal' }
 
 /*
  * The variables an effect acts upon. Either a list of state variables, a
@@ -88,6 +89,8 @@ export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitutions>
       return unifyArrows(location, e1, e2)
     } else if (e1.kind === 'concrete' && e2.kind === 'concrete') {
       return unifyConcrete(location, e1, e2)
+    } else if (e1.kind === 'temporal' && e2.kind === 'temporal') {
+      return right([])
     } else if (e1.kind === 'quantified') {
       return bindEffect(e1.name, e2)
         .mapLeft(msg => buildErrorLeaf(location, msg))
@@ -117,6 +120,7 @@ export function effectNames (effect: Effect): Name[] {
     case 'concrete': return variablesNames(effect.read).concat(variablesNames(effect.update))
     case 'arrow': return effect.params.flatMap(effectNames).concat(effectNames(effect.result))
     case 'quantified': return [{ kind: 'effect', name: effect.name }]
+    case 'temporal': return []
   }
 }
 

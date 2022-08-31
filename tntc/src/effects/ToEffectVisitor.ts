@@ -62,6 +62,11 @@ export class ToEffectVisitor implements EffectListener {
     this.pushEffect(effect)
   }
 
+  exitTemporal () {
+    const effect: Effect = { kind: 'temporal' }
+    this.pushEffect(effect)
+  }
+
   exitQuantifiedEffect (ctx: p.QuantifiedEffectContext) {
     const name = ctx.IDENTIFIER().text
     const effect: Effect = { kind: 'quantified', name: name }

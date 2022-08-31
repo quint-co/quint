@@ -90,11 +90,22 @@ const integerOperators = [
   { name: 'to', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
 ]
 
+const temporalOperators = [
+  { name: 'always', effect: '(Read[r] & Update[u]) => Temporal' },
+  { name: 'eventually', effect: '(Read[r] & Update[u]) => Temporal' },
+  { name: 'next', effect: '(Read[r]) => Temporal' },
+  { name: 'stutter', effect: '(Read[r] & Update[u], Read[v]) => Temporal' },
+  { name: 'nostutter', effect: '(Read[r] & Update[u], Read[v]) => Temporal' },
+  // Enabled: Should we do this? https://github.com/informalsystems/tnt/discussions/109
+  // Or should the result be temporal?
+  { name: 'enabled', effect: '(Read[r1] & Update[u1]) => Read[r1]' },
+  { name: 'weakFair', effect: '(Read[r] & Update[u], Read[v]) => Temporal' },
+  { name: 'strongFair', effect: '(Read[r] & Update[u], Read[v]) => Temporal' },
+]
+
 const otherOperators = [
   { name: 'assign', effect: '(Read[r1], Read[r2] & Update[u2]) => Read[r2] & Update[r1, u2]' },
   { name: 'ite', effect: '(Read[r1], Read[r2] & Update[u], Read[r3] & Update[u]) => Read[r1, r2, r3] & Update[u]' },
-  // Should we do this? https://github.com/informalsystems/tnt/discussions/109
-  { name: 'enabled', effect: '(Read[r1] & Update[u1]) => Read[r1]' },
 ]
 
 const readManyEffect = (arity: number) => {
@@ -132,5 +143,15 @@ const multipleAritySignatures: [string, Signature][] = [
   }],
 ]
 
-const fixedAritySignatures: [string, Signature][] = [literals, booleanOperators, setOperators, mapOperators, recordOperators, tupleOperators, listOperators, integerOperators, otherOperators]
-  .flat().map(sig => [sig.name, ((_: number) => parseEffectOrThrow(sig.effect)) as Signature])
+const fixedAritySignatures: [string, Signature][] = [
+  literals,
+  booleanOperators,
+  setOperators,
+  mapOperators,
+  recordOperators,
+  tupleOperators,
+  listOperators,
+  integerOperators,
+  temporalOperators,
+  otherOperators,
+].flat().map(sig => [sig.name, ((_: number) => parseEffectOrThrow(sig.effect)) as Signature])

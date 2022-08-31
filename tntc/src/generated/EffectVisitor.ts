@@ -7,6 +7,7 @@ import { ReadOnlyContext } from "./EffectParser";
 import { UpdateOnlyContext } from "./EffectParser";
 import { ReadAndUpdateContext } from "./EffectParser";
 import { PureContext } from "./EffectParser";
+import { TemporalContext } from "./EffectParser";
 import { ConcreteEffectContext } from "./EffectParser";
 import { ArrowEffectContext } from "./EffectParser";
 import { QuantifiedEffectContext } from "./EffectParser";
@@ -57,6 +58,14 @@ export interface EffectVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitPure?: (ctx: PureContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `temporal`
+	 * labeled alternative in `EffectParser.concrete`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTemporal?: (ctx: TemporalContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `concreteEffect`
