@@ -16,28 +16,31 @@ import { IRVisitor } from '../IRVisitor'
 import { TntApp, TntBool, TntConst, TntEx, TntInt, TntLambda, TntLet, TntName, TntOpDef, TntStr, TntVar } from '../tntIr'
 import { TntType, typeNames } from '../tntTypes'
 import { expressionToString } from '../IRprinting'
-import { solveConstraint } from './constraintSolver'
 import { Either, right, left, mergeInMany } from '@sweet-monads/either'
 import { buildErrorTree, ErrorTree, Error } from '../errorTree'
 import { getSignatures } from './builtinSignatures'
 import { Constraint, Signature, TypeScheme } from './base'
 import { Substitutions, applySubstitution } from './substitutions'
-import { constraintToString } from './printing'
 
+type solvingFunctionType = (constraint: Constraint) => Either<Map<bigint, ErrorTree>, Substitutions>
+
+// A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
-  expressionResults: Map<bigint, TntType> = new Map<bigint, TntType>()
+  // Inject dependency to allow manipulation in unit tests
+  constructor(solvingFunction: solvingFunctionType) {
+    this.solvingFunction = solvingFunction
+  }
+
+  // Public values with results by expression ID
+  types: Map<bigint, TntType> = new Map<bigint, TntType>()
   errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
 
+  private solvingFunction: solvingFunctionType
   private constraints: Constraint[] = []
   private freshVarCounter: number = 0
   private context: Map<string, Signature> = getSignatures()
+  // Track location descriptions for error tree traces
   private location: string = ''
-
-  private setResult (exprId: bigint, result: Either<Error, TntType>) {
-    result
-      .mapLeft(err => this.errors.set(exprId, buildErrorTree(this.location, err)))
-      .map(r => this.expressionResults.set(exprId, r))
-  }
 
   enterExpr (e: TntEx) {
     this.location = `Generating constraints for ${expressionToString(e)}`
@@ -51,7 +54,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     this.context.set(e.name, (_) => ({ type: e.type, variables: new Set() }))
   }
 
-  //   n: t ∈ Γ
+  //     n: t ∈ Γ
   // ----------------- (NAME)
   //  Γ ⊢ n: (t, true)
   enterName (e: TntName) {
@@ -63,7 +66,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
   // Literals have always the same type and the empty constraint
   enterLiteral (e: TntBool | TntInt | TntStr) {
-    this.expressionResults.set(e.id, { kind: e.kind })
+    this.types.set(e.id, { kind: e.kind })
   }
 
   //   op: q ∈ Γ   Γ ⊢  p0, ..., pn: (t0, c0), ..., (tn, cn)   a is fresh
@@ -109,14 +112,14 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         const paramTypes = mergeInMany(e.params.map(p => this.fetchSignature(p, 2)))
         return paramTypes.map((ts): TntType => {
           return { kind: 'oper', args: ts, res: resultType }
-        }).mapLeft(e => e.join(','))
+        }).mapLeft(e => {
+          throw new Error(`This should be impossible: Lambda variables not found: ${e.join(', ')}`)
+        })
       })
 
     this.setResult(e.id, result)
 
-    e.params.forEach(p => {
-      this.context.delete(p)
-    })
+    e.params.forEach(p => this.context.delete(p))
   }
 
   //   Γ ⊢ e1: (t1, c1)  s = solve(c1)     s(Γ ∪ {n: t1}) ⊢ e2: (t2, c2)
@@ -126,8 +129,9 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     if (this.errors.size !== 0) {
       return
     }
-    // TODO: Consider annotations
-    // TODO: Occurs check on operator body to prevent recursion
+
+    // TODO: Consider annotations, see https://github.com/informalsystems/tnt/issues/168
+    // TODO: Occurs check on operator body to prevent recursion, see https://github.com/informalsystems/tnt/issues/171
 
     this.setResult(e.id, this.fetchResult(e.expr))
   }
@@ -138,31 +142,37 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     }
 
     this.fetchResult(e.expr)
+      .mapLeft(err => this.errors.set(e.id, err))
       .map(t => {
-        const result = t
-        this.setResult(e.id, right(result))
+        this.setResult(e.id, right(t))
 
         const constraint: Constraint = { kind: 'conjunction', constraints: this.constraints, sourceId: BigInt(0) }
-        const solvingResult = solveConstraint(constraint)
-        solvingResult
+        this.solvingFunction(constraint)
+          .mapLeft(errors => errors.forEach((err, id) => this.errors.set(id, err)))
           .map((subs) => {
-            // Apply substitution to environment and remove solved constraints
-            this.expressionResults = new Map<bigint, TntType>(
-              Array.from(this.expressionResults.entries()).map(([id, te]) => [
-                id,
-                applySubstitution(subs, te),
-              ]))
-            this.constraints = []
+            // Apply substitution to environment
+            this.types = new Map<bigint, TntType>(
+              [...this.types.entries()].map(([id, te]) => [id, applySubstitution(subs, te)])
+            )
+          })
+      })
 
-            // Add specified type for operator to the context
-            const operatorType = this.expressionResults.get(e.id)!
-            this.context.set(e.name, (_) => ({ type: operatorType, variables: typeNames(operatorType) }))
-          }).mapLeft(err => this.errors = new Map<bigint, ErrorTree>([...this.errors.entries(), ...err.entries()]))
-      }).mapLeft(err => this.errors.set(e.id, err))
+    // Remove solved constraints
+    this.constraints = []
+
+    // Add operator type to the context
+    const operatorType = this.types.get(e.id)!
+    this.context.set(e.name, (_) => ({ type: operatorType, variables: typeNames(operatorType) }))
+  }
+
+  private setResult (exprId: bigint, result: Either<Error, TntType>) {
+    result
+      .mapLeft(err => this.errors.set(exprId, buildErrorTree(this.location, err)))
+      .map(r => this.types.set(exprId, r))
   }
 
   private fetchResult (e: TntEx): Either<ErrorTree, TntType> {
-    const successfulResult = this.expressionResults.get(e.id)!
+    const successfulResult = this.types.get(e.id)!
     const failedResult = this.errors.get(e.id)!
     if (failedResult) {
       return left(failedResult)

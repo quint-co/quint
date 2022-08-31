@@ -11,12 +11,19 @@ import { Substitutions } from './substitutions'
  */
 export function constraintToString (c: Constraint): String {
   switch (c.kind) {
-    case 'eq': return `${typeToString(c.types[0])} = ${typeToString(c.types[1])}`
+    case 'eq': return `${typeToString(c.types[0])} ~ ${typeToString(c.types[1])}`
     case 'conjunction': return c.constraints.map(constraintToString).join(' /\\ ')
     case 'empty': return 'true'
   }
 }
 
+/**
+ * Formats the string representation of a type scheme
+ *
+ * @param t the type scheme to be formatted
+ *
+ * @returns a string with the formatted type scheme
+ */
 export function typeSchemeToString (t: TypeScheme): String {
   const vars = Array.from(t.variables)
   const varsString = vars.length > 0 ? `∀${vars.join(', ')}.` : ''
