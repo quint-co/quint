@@ -72,7 +72,7 @@ const listOperators = [
   { name: 'tail', type: '(seq(a)) => a' },
   { name: 'length', type: '(seq(a)) => int' },
   { name: 'nth', type: '(seq(a), int) => a' },
-  { name: 'indices', type: '(seq(a)) => seq(int)' },
+  { name: 'indices', type: '(seq(a)) => set(int)' },
   { name: 'replaceAt', type: '(seq(a), int, a) => seq(a)' },
   { name: 'slice', type: '(seq(a), int, int) => seq(a)' },
   { name: 'select', type: '(seq(a), (a) => bool) => seq(a)' },
