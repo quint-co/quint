@@ -19,14 +19,15 @@ import {
   Hover,
   MarkupKind,
   HoverParams,
-  DocumentUri
+  DocumentUri,
+  Position
 } from 'vscode-languageserver/node'
 
 import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { parsePhase1, parsePhase2, Loc, DefinitionTableByModule, inferEffects, getSignatures, TntModule, effectToString, errorTreeToString } from 'tntc'
+import { parsePhase1, parsePhase2, Loc, DefinitionTableByModule, inferEffects, getSignatures, TntModule, effectToString, errorTreeToString, typeToString, inferTypes } from 'tntc'
 
 interface ParsingResult {
   tntModule: TntModule
@@ -114,7 +115,10 @@ connection.onDidChangeConfiguration(change => {
   // Revalidate all open text documents
   documents.all().forEach(d => {
     validateTextDocument(d)
-      .then((result) => checkEffects(d, result.tntModule, result.sourceMap, result.definitionTable))
+      .then((result) => {
+        checkEffects(d, result.tntModule, result.sourceMap, result.definitionTable)
+        return checkTypes(d, result.tntModule, result.sourceMap, result.definitionTable)
+      })
       .catch(diagnostics => {
         // Send the computed diagnostics to VSCode.
         connection.sendDiagnostics({ uri: d.uri, diagnostics })
@@ -145,8 +149,12 @@ documents.onDidClose(e => {
 // The content of a text document has changed. This event is emitted
 // when the text document first opened or when its content has changed.
 documents.onDidChangeContent(change => {
+  console.log('File content changed, checking types and effects again')
   validateTextDocument(change.document)
-    .then((result) => checkEffects(change.document, result.tntModule, result.sourceMap, result.definitionTable))
+    .then((result) => {
+      checkEffects(change.document, result.tntModule, result.sourceMap, result.definitionTable)
+      return checkTypes(change.document, result.tntModule, result.sourceMap, result.definitionTable)
+    })
     .catch(diagnostics => {
       // Send the computed diagnostics to VSCode.
       connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
@@ -154,29 +162,52 @@ documents.onDidChangeContent(change => {
 })
 
 connection.onHover((params: HoverParams): Hover | undefined => {
-  const position = params.position
-  const effectsOnPosition: [string, string, Loc][] = []
   const effects = effectsByDocument.get(params.textDocument.uri)
+  const types = typesByDocument.get(params.textDocument.uri)
 
-  if (effects === undefined) {
+  if (effects === undefined || types === undefined) {
+    console.log('effects or types not found')
     return
   }
 
-  effects.forEach((effect, loc) => {
+  const document = documentsByUri.get(params.textDocument.uri)!
+  const type = findResult(types, params.position, document)
+  const effect = findResult(effects, params.position, document)
+
+  let hoverText = ''
+  if (type != undefined) {
+    hoverText += `type: ${type}\n`
+  }
+  if (effect != undefined) {
+    hoverText += `effect: ${effect}\n`
+  }
+
+  return {
+    contents: {
+      kind: MarkupKind.PlainText,
+      value: hoverText,
+    },
+  }
+})
+
+function findResult (results: Map<Loc, string>, position: Position, document: TextDocument): string {
+  const resultsOnPosition: [string, string, Loc][] = []
+
+  results.forEach((result, loc) => {
     if (position.line >= loc.start.line && (!loc.end || position.line <= loc.end.line) &&
       position.character >= loc.start.col && (!loc.end || position.character <= loc.end.col)) {
       // Position is part of effect's expression range
-      const text = documentsByUri.get(params.textDocument.uri)!.getText({
+      const text = document.getText({
         start: { line: loc.start.line, character: loc.start.col },
         end: loc.end ? { line: loc.end.line, character: loc.end.col + 1 } : { line: loc.start.line, character: loc.start.col },
       })
 
-      effectsOnPosition.push([text, effect, loc])
+      resultsOnPosition.push([text, result, loc])
     }
   })
 
   // Sort effects by range size. We want to show the most specific effect for the position.
-  const sortedEffects = effectsOnPosition.sort(([_t1, _e1, a], [_t2, _e2, b]) => {
+  const sortedResults = resultsOnPosition.sort(([_t1, _e1, a], [_t2, _e2, b]) => {
     if (!a.end) {
       return -1
     } else if (!b.end) {
@@ -186,15 +217,10 @@ connection.onHover((params: HoverParams): Hover | undefined => {
     } else {
       return -1
     }
-  }).map(([t, e, _]) => `${t}: ${e}`)
+  }).map(([e, r, _]) => r)
 
-  return {
-    contents: {
-      kind: MarkupKind.PlainText,
-      value: sortedEffects[0],
-    },
-  }
-})
+  return sortedResults[0]
+}
 
 function assembleDiagnostic (explanation: string, loc: Loc): Diagnostic {
   return {
@@ -242,6 +268,7 @@ async function validateTextDocument (textDocument: TextDocument): Promise<Parsin
 }
 
 const effectsByDocument: Map<DocumentUri, Map<Loc, string>> = new Map<DocumentUri, Map<Loc, string>>()
+const typesByDocument: Map<DocumentUri, Map<Loc, string>> = new Map<DocumentUri, Map<Loc, string>>()
 const documentsByUri: Map<DocumentUri, TextDocument> = new Map<DocumentUri, TextDocument>()
 
 function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>, table: DefinitionTableByModule) {
@@ -257,6 +284,27 @@ function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceM
   }).map(inferredEffects => {
     inferredEffects.forEach((effect, id) => effects.set(sourceMap.get(id)!, effectToString(effect)))
     effectsByDocument.set(textDocument.uri, effects)
+    documentsByUri.set(textDocument.uri, textDocument)
+    return true
+  })
+  connection.sendDiagnostics({ uri: textDocument.uri, diagnostics })
+}
+
+function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>, table: DefinitionTableByModule) {
+  const result = inferTypes(tntModule)
+  const diagnostics: Diagnostic[] = []
+  const types: Map<Loc, string> = new Map<Loc, string>()
+  result.mapLeft(e => {
+    console.log(`${e.size} Type errors found, sending diagnostics`)
+    e.forEach((error, id) => {
+      const loc = sourceMap.get(id)!
+      console.log(JSON.stringify(error))
+      const diag = assembleDiagnostic(errorTreeToString(error), loc)
+      diagnostics.push(diag)
+    })
+  }).map(inferredTypes => {
+    inferredTypes.forEach((type, id) => types.set(sourceMap.get(id)!, typeToString(type)))
+    typesByDocument.set(textDocument.uri, types)
     documentsByUri.set(textDocument.uri, textDocument)
     return true
   })
