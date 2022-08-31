@@ -28,6 +28,7 @@ import { errorTreeToString } from './errorTree'
 
 import { tntRepl } from './repl'
 import { inferTypes } from './types/inferrer'
+import { effectToString } from './effects/printing'
 
 /**
  * Parse a TNT specification.
@@ -69,7 +70,7 @@ function typecheck (argv: any) {
   })
 
   const effects = inferEffects(getSignatures(), definitionsTable, parseResult.module)
-  // effects.map(e => e.forEach((value, key) => console.log(`${key}: ${effectToString(value)}`)))
+  effects.map(e => e.forEach((value, key) => console.log(`${key}: ${effectToString(value)}`)))
 
   effects.mapLeft(e => e.forEach((value, key) => {
     const loc = parseResult.sourceMap.get(key)!
