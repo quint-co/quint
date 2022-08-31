@@ -114,7 +114,7 @@ function applySubstitutionsAndUnify (subs: Substitutions, t1: TntType, t2: TntTy
     applySubstitution(subs, t1),
     applySubstitution(subs, t2)
   )
-  return newSubstitutions.map(newSubs => compose(subs, newSubs))
+  return newSubstitutions.map(newSubs => compose(newSubs, subs))
 }
 
 function checkSameLength (location: string, types1: TntType[], types2: TntType[]): Either<Error, [TntType[], TntType[]]> {

@@ -23,6 +23,7 @@
         "functions": "never"
      }],
      "no-use-before-define": "off",
-     "array-callback-return": "off"
+     "array-callback-return": "off",
+     "no-return-assign": "off"
    }
 }
