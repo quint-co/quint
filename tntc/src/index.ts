@@ -4,10 +4,12 @@
 
 export * from './tntTypes'
 export * from './tntIr'
+export * from './IRprinting'
 export * from './tntParserFrontend'
 export * from './definitionsCollector'
 export * from './effects/base'
 export * from './effects/inferrer'
 export * from './effects/printing'
 export * from './effects/builtinSignatures'
-export * from './runtime/runtime'
+export { inferTypes } from './types/inferrer'
+export * from './errorTree'
