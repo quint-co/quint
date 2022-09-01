@@ -13,7 +13,7 @@ import chalk from 'chalk'
 
 import { TntEx } from './tntIr'
 import { compileExpr } from './runtime/compile'
-import { ExecError, toTntEx } from './runtime/runtime'
+import { ExecError } from './runtime/runtime'
 
 // tunable settings
 export const settings = {
@@ -133,7 +133,7 @@ function tryEval (text: string) {
   const val = compileExpr(text, chalkHandler).exec()
   if (val !== undefined) {
     // Print on success, similar to node repl.
-    console.log(chalkTntEx(toTntEx(val)))
+    console.log(chalkTntEx(val.toTntEx()))
   }
 }
 
