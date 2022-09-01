@@ -13,7 +13,7 @@ module InstanceEx {
   var w: set(int)
 
   // a value
-  val MyY = z + 2
+  val MyY = z
 
   // Produce a new module that is an instance of A,
   // in which x is replaced with 33, y is replaced with MyY,

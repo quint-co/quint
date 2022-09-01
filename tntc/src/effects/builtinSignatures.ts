@@ -123,7 +123,7 @@ const multipleAritySignatures: [string, Signature][] = [
   ['orExpr', readManyEffect],
   ['match', (arity: number) => {
     const rs = Array.from(Array((arity - 1) / 2).keys()).map(i => `r${i}`)
-    const args = rs.map(r => `Pure, (Read[p]) => Read[p, ${r}]`)
+    const args = rs.map(r => `Pure, (Pure) => Read[${r}]`)
     return parseEffectOrThrow(`(Read[r], ${args.join(', ')}) => Read[${rs.join(', ')}]`)
   }],
   ['andAction', (arity: number) => {
