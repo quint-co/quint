@@ -35,7 +35,7 @@ interface Substitution {
  */
 export function compose (s1: Substitutions, s2: Substitutions): Substitutions {
   const newS2 = applySubstitutionsToSubstitutions(s1, s2)
-  return s1.concat(newS2)
+  return newS2.concat(s1)
 }
 
 /**
