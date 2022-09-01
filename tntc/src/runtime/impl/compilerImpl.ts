@@ -13,13 +13,11 @@ import { Maybe, none, just, merge } from '@sweet-monads/maybe'
 import { Set } from 'immutable'
 
 import { IRVisitor } from '../../IRVisitor'
-import {
-  Computable, EvalResult, fail, makeInterval, isIterable
-} from '../runtime'
-
-import * as evalResultOps from './evalResultOps'
+import { Computable } from '../runtime'
 
 import * as ir from '../../tntIr'
+
+import { rv, RuntimeValue } from './runtimeValue'
 
 /**
  * Compiler visitor turns TNT definitions and expressions into Computable
@@ -59,11 +57,18 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   enterLiteral (expr: ir.TntBool | ir.TntInt | ir.TntStr) {
-    if (expr.kind === 'str') {
-      throw new Error(`Found ${expr}, strings are not supported`)
-    }
+    switch (expr.kind) {
+      case 'bool':
+        this.compStack.push(this.mkConstComputable(rv.mkBool(expr.value)))
+        break
 
-    this.compStack.push(this.mkLiteral(expr.value))
+      case 'int':
+        this.compStack.push(this.mkConstComputable(rv.mkInt(expr.value)))
+        break
+
+      case 'str':
+        throw new Error(`Found ${expr}, strings are not supported`)
+    }
   }
 
   enterName (name: ir.TntName) {
@@ -76,11 +81,11 @@ export class CompilerVisitor implements IRVisitor {
   exitApp (app: ir.TntApp) {
     switch (app.opcode) {
       case 'eq':
-        this.applyFun(2, (x: any, y: any) => just(evalResultOps.evalResultIs(x, y)))
+        this.applyFun(2, (x, y) => just(rv.mkBool(x.equals(y))))
         break
 
       case 'neq':
-        this.applyFun(2, (x: any, y: any) => just(!evalResultOps.evalResultIs(x, y)))
+        this.applyFun(2, (x, y) => just(rv.mkBool(!x.equals(y))))
         break
 
       // conditional
@@ -90,133 +95,138 @@ export class CompilerVisitor implements IRVisitor {
 
       // Booleans
       case 'not':
-        this.applyFun(1, (p: boolean) => just(!p))
+        this.applyFun(1, p => just(rv.mkBool(!p.toBool())))
         break
 
       case 'and':
-        this.applyFun(2, (p: boolean, q: boolean) => just(p && q))
+        this.applyFun(2, (p, q) => just(rv.mkBool(p.toBool() && q.toBool())))
         break
 
       case 'or':
-        this.applyFun(2, (p: boolean, q: boolean) => just(p || q))
+        this.applyFun(2, (p, q) => just(rv.mkBool(p.toBool() || q.toBool())))
         break
 
       case 'implies':
-        this.applyFun(2, (p: boolean, q: boolean) => just(!p || q))
+        this.applyFun(2, (p, q) => just(rv.mkBool(!p.toBool() || q.toBool())))
         break
 
       case 'iff':
-        this.applyFun(2, (p: boolean, q: boolean) => just(p === q))
+        this.applyFun(2, (p, q) => just(rv.mkBool(p.toBool() === q.toBool())))
         break
 
       // integers
       case 'iuminus':
-        this.applyFun(1, (n: bigint) => just(-n))
+        this.applyFun(1, n => just(rv.mkInt(-n.toInt())))
         break
 
       case 'iadd':
-        this.applyFun(2, (i: bigint, j: bigint) => just(i + j))
+        this.applyFun(2, (p, q) => just(rv.mkInt(p.toInt() + q.toInt())))
         break
 
       case 'isub':
-        this.applyFun(2, (i: bigint, j: bigint) => just(i - j))
+        this.applyFun(2, (p, q) => just(rv.mkInt(p.toInt() - q.toInt())))
         break
 
       case 'imul':
-        this.applyFun(2, (i: bigint, j: bigint) => just(i * j))
+        this.applyFun(2, (p, q) => just(rv.mkInt(p.toInt() * q.toInt())))
         break
 
       case 'idiv':
-        this.applyFun(2, (i: bigint, j: bigint) => just(i / j))
+        this.applyFun(2, (p, q) => just(rv.mkInt(p.toInt() / q.toInt())))
         break
 
       case 'imod':
-        this.applyFun(2, (i: bigint, j: bigint) => just(i % j))
+        this.applyFun(2, (p, q) => just(rv.mkInt(p.toInt() % q.toInt())))
         break
 
       case 'ipow':
-        this.applyFun(2, (i: bigint, j: bigint) => just(i ** j))
+        this.applyFun(2, (p, q) => just(rv.mkInt(p.toInt() ** q.toInt())))
         break
 
       case 'igt':
-        this.applyFun(2, (i: bigint, j: bigint) => just(i > j))
+        this.applyFun(2, (p, q) => just(rv.mkBool(p.toInt() > q.toInt())))
         break
 
       case 'ilt':
-        this.applyFun(2, (i: bigint, j: bigint) => just(i < j))
+        this.applyFun(2, (p, q) => just(rv.mkBool(p.toInt() < q.toInt())))
         break
 
       case 'igte':
-        this.applyFun(2, (i: bigint, j: bigint) => just(i >= j))
+        this.applyFun(2, (p, q) => just(rv.mkBool(p.toInt() >= q.toInt())))
         break
 
       case 'ilte':
-        this.applyFun(2, (i: bigint, j: bigint) => just(i <= j))
+        this.applyFun(2, (p, q) => just(rv.mkBool(p.toInt() <= q.toInt())))
         break
 
       case 'set':
         // Construct a set from an array of values.
-        // Importantly, expand the special data structures such as intervals.
-        this.applyFun(app.args.length, (...values: any[]) =>
-          just(Set.of(...values.map(evalResultOps.iterableToSet))))
+        this.applyFun(app.args.length,
+          (...values: RuntimeValue[]) => just(rv.mkSet(values)))
         break
 
       case 'contains':
-        this.applyFun(2, (set, value) => just(evalResultOps.contains(set, value)))
+        this.applyFun(2, (set, value) => just(rv.mkBool(set.contains(value))))
         break
 
       case 'in':
-        this.applyFun(2, (value, set) => just(evalResultOps.contains(set, value)))
+        this.applyFun(2, (value, set) => just(rv.mkBool(set.contains(value))))
         break
 
       case 'subseteq':
-        this.applyFun(2, (l, r) => just(evalResultOps.isSubset(l, r)))
+        this.applyFun(2, (l, r) => just(rv.mkBool(l.isSubset(r))))
         break
 
       case 'union':
-        this.applyFun(2, (l, r) => just(evalResultOps.toSet(l).union(evalResultOps.toSet(r))))
+        this.applyFun(2, (l, r) => just(rv.mkSet(l.toSet().union(r.toSet()))))
         break
 
       case 'intersect':
-        this.applyFun(2, (l, r) => just(evalResultOps.toSet(l).intersect(evalResultOps.toSet(r))))
+        this.applyFun(2, (l, r) => just(rv.mkSet(l.toSet().intersect(r.toSet()))))
         break
 
       case 'exclude':
-        this.applyFun(2, (l, r) => just(evalResultOps.toSet(l).subtract(evalResultOps.toSet(r))))
+        this.applyFun(2, (l, r) => just(rv.mkSet(l.toSet().subtract(r.toSet()))))
         break
 
       case 'to':
-        this.applyFun(2, (i: bigint, j: bigint) => just(makeInterval(i, j)))
+        this.applyFun(2, (i, j) => just(rv.mkInterval(i.toInt(), j.toInt())))
         break
 
       case 'flatten':
-        this.applyFun(1, (set: Set<Set<EvalResult>>) =>
-          just(set.flatten(1) as Set<EvalResult>))
+        this.applyFun(1, set => {
+          // unpack the sets from runtime values
+          const setOfSets = set.toSet().map(e => e.toSet())
+          // and flatten the set of sets via immutable-js
+          return just(rv.mkSet(setOfSets.flatten(1) as Set<RuntimeValue>))
+        })
         break
 
       case 'exists':
         this.mapLambdaThenReduce(
-          set => set.find(([result, _]) => result === true) !== undefined
+          set =>
+            rv.mkBool(set.find(([result, _]) => result.toBool()) !== undefined)
         )
         break
 
       case 'forall':
         this.mapLambdaThenReduce(
-          set => set.find(([result, _]) => result === false) === undefined
+          set =>
+            rv.mkBool(set.find(([result, _]) => !result.toBool()) === undefined)
         )
         break
 
       case 'map':
         this.mapLambdaThenReduce(
-          array => Set.of(...array.map(([result, _]) => result))
+          array => rv.mkSet(array.map(([result, _]) => result))
         )
         break
 
       case 'filter':
         this.mapLambdaThenReduce(
           arr =>
-            Set.of(...arr
-              .filter(([r, e]) => r === true)
+            rv.mkSet(arr
+              .filter(([r, e]) => r.toBool())
               .map(([r, e]) => e))
         )
         break
@@ -260,51 +270,55 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   /**
-    * A generalized application of a one-argument lambda expression to an iterable,
-    * as required by `exists`, `forall`, `map`, and `filter`.
+    * A generalized application of a one-argument lambda expression to a set-like
+    * runtime value, as required by `exists`, `forall`, `map`, and `filter`.
     *
     * This method expects `compStack` to look like follows:
     *
     *  - `(top)` the register object, of type `Computable & WithRegister`, is
     *    used to hold each value to which the lambda will be applied as we iterate
-    *    through the set elements .
+    *    through the elements .
     *
     *  - `(top - 1)`: the lambda body, as `Computable`.
     *
-    *  - `(top - 2)`: the set to iterate over, as `Computable`.
+    *  - `(top - 2)`: a set-like value to iterate over, as `Computable`.
     *
-    * The method evaluates the lambda body for each element of the iterable and
-    * either produces `none`, if evaluation failed for one of the elements,
-    * or it applies `mapResultAndElems` to the pairs that consists of the lambda result
-    * and the original element of the iterable. The final result is stored on the stack.
+    * The method evaluates the lambda body for each element of the iterable value
+    * and * either produces `none`, if evaluation failed for one of the elements,
+    * or it applies `mapResultAndElems` to the pairs that consists of the lambda
+    * result and the original element of the iterable value.
+    * The final result is stored on the stack.
     */
   private mapLambdaThenReduce
-  (mapResultAndElems: (array: Array<[EvalResult, EvalResult]>) => EvalResult): void {
+  (mapResultAndElems:
+      (array: Array<[RuntimeValue, RuntimeValue]>) => RuntimeValue): void {
     if (this.compStack.length <= 2) {
       throw new Error('Not enough parameters on compStack')
     }
-    // the lambda parameter, which is a register that we iteratively set to each element of the set as the lambda is applied
+    // the lambda parameter, which is a register that we iteratively
+    // set to each element of the set as the lambda is applied
     const param = this.compStack.pop() as Computable & WithRegister<any>
     // the body of the lambda
-    const lambdaBody = this.compStack.pop() ?? fail
-    // apply the lambda to a single element of the set
-    const evaluateElem = function (elem: EvalResult): Maybe<[EvalResult, EvalResult]> {
-      // store the set element in the register
-      param.register = just(elem)
-      // evaluate the predicate using the register
-      return lambdaBody.eval().map(result => [result, elem])
-    }
-    this.applyFun(1, (set: Iterable<EvalResult>): Maybe<EvalResult> => {
-      if (isIterable(set)) {
-        return evalResultOps.flatMap(set, evaluateElem).map(rs => mapResultAndElems(rs))
-      } else {
-        throw new Error('Expected a set')
+    const lambdaBody = this.compStack.pop()
+    if (lambdaBody !== undefined) {
+      // apply the lambda to a single element of the set
+      const evaluateElem = function (elem: RuntimeValue):
+          Maybe<[RuntimeValue, RuntimeValue]> {
+        // store the set element in the register
+        param.register = just(elem)
+        // evaluate the predicate using the register
+        // (cast the result to RuntimeValue, as we use runtime values)
+        const result = lambdaBody.eval().map(e => e as RuntimeValue)
+        return result.map(result => [result, elem])
       }
-    })
+      this.applyFun(1, (set: Iterable<RuntimeValue>): Maybe<RuntimeValue> => {
+        return flatMap(set, evaluateElem).map(rs => mapResultAndElems(rs))
+      })
+    } // else: impossible due to the test in the beginning
   }
 
-  // make a `Computable` that always returns a given literal
-  private mkLiteral (value: any) {
+  // make a `Computable` that always returns a given runtime value
+  private mkConstComputable (value: RuntimeValue) {
     return {
       eval: () => {
         return just<any>(value)
@@ -314,17 +328,19 @@ export class CompilerVisitor implements IRVisitor {
 
   // pop nargs computable values, pass them the 'fun' function, and
   // push the combined computable value on the stack
-  private applyFun (nargs: number, fun: (...args: any[]) => Maybe<EvalResult>) {
+  private applyFun
+  (nargs: number, fun: (...args: RuntimeValue[]) => Maybe<RuntimeValue>) {
     if (this.compStack.length >= nargs) {
       // pop nargs elements of the compStack
       const args = this.compStack.splice(-nargs, nargs)
       // produce the new computable value
       const comp = {
-        eval: (): Maybe<EvalResult> => {
+        eval: (): Maybe<RuntimeValue> => {
           // compute the values of the arguments at this point
           const values = args.map(a => a.eval())
           // if they are all defined, apply the function 'fun' to the arguments
-          return merge(values).map(vs => fun(...vs)).join()
+          return merge(values)
+            .map(vs => fun(...vs.map(v => v as RuntimeValue))).join()
         },
       }
       this.compStack.push(comp)
@@ -344,7 +360,9 @@ export class CompilerVisitor implements IRVisitor {
         eval: () => {
           // compute the values of the arguments at this point
           const v =
-            cond.eval().map(pred => pred ? thenArm.eval() : elseArm.eval())
+            cond.eval().map(pred => pred.equals(rv.mkBool(true))
+              ? thenArm.eval()
+              : elseArm.eval())
           return v.join()
         },
       }
@@ -359,4 +377,26 @@ export class CompilerVisitor implements IRVisitor {
 interface WithRegister<T> {
   // register is a placeholder where iterators can put their values
   register: Maybe<T>
+}
+
+/**
+ * Apply `f` to every element of `iterable` and either:
+ *
+ *  - return `none`, if one of the results in `none`, or
+ *  - return `just` of the unpacked results.
+ */
+function flatMap<T, R>
+(iterable: Iterable<T>, f: (arg: T) => Maybe<R>): Maybe<Array<R>> {
+  const results: R[] = []
+  for (const arg of iterable) {
+    const res = f(arg)
+    if (res.isNone()) {
+      return none<Array<R>>()
+    } else {
+      const { value } = res
+      results.push(value)
+    }
+  }
+
+  return just(results)
 }

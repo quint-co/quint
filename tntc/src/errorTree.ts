@@ -28,8 +28,12 @@ export interface ErrorTree {
 
 /*
  * A simple disjunction over error representations to make it easier to chain
- * different operations and handle errors all at once (see buildErrorTree())
- * */
+ * different operations and handle errors all at once (see buildErrorTree()).
+ *
+ * Strings can be errors since they can represent an error message that,
+ * combined with a location in buildErrorTree() and an empty array of children,
+ * can be transformed into an ErrorTree.
+ */
 export type Error = ErrorTree | ErrorTree[] | string
 
 /*
