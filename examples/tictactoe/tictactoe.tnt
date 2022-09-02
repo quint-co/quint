@@ -45,6 +45,7 @@ module tictactoe {
     & nextTurn == "O"
     & not(Won("X"))
     & MoveToEmpty("O")
+    & nextTurn <- "X"
   }
 
   val corners = set(

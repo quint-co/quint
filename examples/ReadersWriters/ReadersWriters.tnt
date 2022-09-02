@@ -56,17 +56,21 @@ module ReadersWriters {
       & val pair = waiting.head()
         val actor = pair._2
         if (pair._1 == "read") {
-          Read(actor)
+          & Read(actor)
+          & writers <- writers
         } else { // pair._1 == "write"
-          Write(actor)
+          & Write(actor)
+          & readers <- readers
         }
   }
   
   action StopActivity(actor) =
       if (actor in readers) {
-          readers <- readers.exclude(set(actor))
+          & readers <- readers.exclude(set(actor))
+          & writers <- writers
       } else {
-          writers <- writers.exclude(set(actor))
+          & writers <- writers.exclude(set(actor))
+          & readers <- readers
       }
   
   action Stop =
@@ -85,10 +89,10 @@ module ReadersWriters {
   )
   
   action Next = {
-      | Actors.guess({ actor => TryRead(actor) })
-      | Actors.guess({ actor => TryWrite(actor) })
+      | { Actors.guess({ actor => TryRead(actor) }) & readers <- readers & writers <- writers }
+      | { Actors.guess({ actor => TryWrite(actor) }) & readers <- readers & writers <- writers }
       | ReadOrWrite
-      | Stop
+      | { Stop & waiting <- waiting }
   }
   
   temporal Fairness = (

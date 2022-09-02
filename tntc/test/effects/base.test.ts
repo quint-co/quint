@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { Effect, unify } from '../../src/effects/base'
+import { Effect, emptyVariables, unify } from '../../src/effects/base'
 import { parseEffectOrThrow } from '../../src/effects/parser'
 
 describe('unify', () => {
@@ -51,7 +51,8 @@ describe('unify', () => {
             { kind: 'concrete', vars: ['x', 'y'] },
           ],
         },
-        update: { kind: 'concrete', vars: [] },
+        update: emptyVariables,
+        temporal: emptyVariables,
       }
 
       const result = unify(e1, e2)

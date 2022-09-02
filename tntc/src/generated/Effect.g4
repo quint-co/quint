@@ -12,12 +12,14 @@ effect:   concrete                                           # concreteEffect
 
 read: 'Read' '[' vars ']' ;
 update: 'Update' '[' vars ']' ;
+temporal: 'Temporal' '[' vars ']' ;
 
 concrete:   read                                        # readOnly
           | update                                      # updateOnly
+          | temporal                                    # temporalOnly
           | (read '&' update | update '&' read)         # readAndUpdate
+          | (read '&' temporal | update '&' temporal)   # readAndTemporal
           | 'Pure'                                      # pure
-          | 'Temporal'                                  # temporal
           ;
 
 vars : ((stateVarRef | IDENTIFIER) (', ' (stateVarRef | IDENTIFIER))*)? ;

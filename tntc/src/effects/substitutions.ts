@@ -77,8 +77,9 @@ export function applySubstitution (subs: Substitutions, e: Effect): Either<Error
       // e is a an effect of the form Read[r] & Update[u]
       const read = applySubstitutionToVariables(subs, e.read)
       const update = applySubstitutionToVariables(subs, e.update)
+      const temporal = applySubstitutionToVariables(subs, e.temporal)
 
-      result = right({ kind: 'concrete', read: read, update: update })
+      result = right({ kind: 'concrete', read: read, update: update, temporal: temporal })
       break
     }
   }

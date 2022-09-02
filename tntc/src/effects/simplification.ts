@@ -30,6 +30,7 @@ import { effectToString } from './printing'
 export function simplifyConcreteEffect (e: ConcreteEffect): Either<ErrorTree, Effect> {
   const read = uniqueVariables(flattenUnions(e.read))
   const update = flattenUnions(e.update)
+  const temporal = uniqueVariables(flattenUnions(e.temporal))
 
   const updateVars = findVars(e.update)
   const repeated = updateVars.filter(v => updateVars.filter(v2 => v === v2).length > 1)
@@ -40,7 +41,7 @@ export function simplifyConcreteEffect (e: ConcreteEffect): Either<ErrorTree, Ef
       children: [],
     })
   } else {
-    return right({ kind: 'concrete', read: read, update: update })
+    return right({ kind: 'concrete', read: read, update: update, temporal: temporal })
   }
 }
 

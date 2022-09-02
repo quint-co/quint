@@ -156,3 +156,33 @@ tntc typecheck ../examples/BinSearch/BinSearch.tnt
 
 <!-- !test check BinSearch - Types & Effects -->
     expect exit code 0
+    
+### OK on parse TicTacToe
+
+This command parses the TicTacToe example.
+
+<!-- !test program
+tntc parse ../examples/tictactoe/tictactoe.tnt
+-->
+
+```sh
+tntc parse ../examples/tictactoe/tictactoe.tnt
+```
+
+<!-- !test check TicTacToe -->
+    expect exit code 0
+ 
+### OK on typecheck TicTacToe
+
+This command typechecks the TicTacToe example.
+
+<!-- !test program
+tntc typecheck ../examples/tictactoe/tictactoe.tnt
+-->
+
+```sh
+tntc typecheck ../examples/tictactoe/tictactoe.tnt
+```
+
+<!-- !test check TicTacToe - Types & Effects -->
+    expect exit code 0

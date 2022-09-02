@@ -20,7 +20,7 @@ import { flattenUnions, simplifyConcreteEffect } from './simplification'
 import isEqual from 'lodash.isequal'
 
 /* Concrete atomic efects specifying variables that the expression reads and updates */
-export interface ConcreteEffect { kind: 'concrete', read: Variables, update: Variables }
+export interface ConcreteEffect { kind: 'concrete', read: Variables, update: Variables, temporal: Variables }
 
 /* Arrow effects for expressions with effects depending on parameters */
 interface ArrowEffect { kind: 'arrow', params: Effect[], result: Effect }
@@ -34,7 +34,6 @@ export type Effect =
   | { kind: 'quantified', name: string }
   | ConcreteEffect
   | ArrowEffect
-  | { kind: 'temporal' }
 
 /*
  * The variables an effect acts upon. Either a list of state variables, a
@@ -89,8 +88,6 @@ export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitutions>
       return unifyArrows(location, e1, e2)
     } else if (e1.kind === 'concrete' && e2.kind === 'concrete') {
       return unifyConcrete(location, e1, e2)
-    } else if (e1.kind === 'temporal' && e2.kind === 'temporal') {
-      return right([])
     } else if (e1.kind === 'quantified') {
       return bindEffect(e1.name, e2)
         .mapLeft(msg => buildErrorLeaf(location, msg))
@@ -120,7 +117,6 @@ export function effectNames (effect: Effect): Name[] {
     case 'concrete': return variablesNames(effect.read).concat(variablesNames(effect.update))
     case 'arrow': return effect.params.flatMap(effectNames).concat(effectNames(effect.result))
     case 'quantified': return [{ kind: 'effect', name: effect.name }]
-    case 'temporal': return []
   }
 }
 
@@ -175,18 +171,44 @@ function unifyArrows (location: string, e1: ArrowEffect, e2: ArrowEffect) {
   return paramsUnification.chain(subs => applySubstitutionsAndUnify(subs, e1.result, e2.result))
 }
 
-function unifyConcrete (_location: string, e1: ConcreteEffect, e2: ConcreteEffect) {
+function unifyConcrete (location: string, e1: ConcreteEffect, e2: ConcreteEffect): Either<Error, Substitutions> {
   const readUnificationResult = unifyVariables(e1.read, e2.read)
-  const updateUnificationResult = readUnificationResult.chain(subs => {
+  return readUnificationResult.chain(subs => {
     const effectsWithReadSubstitution = mergeInMany([
       applySubstitution(subs, e1),
       applySubstitution(subs, e2),
     ]).map(effects => effects.map(ensureConcreteEffect))
 
-    return effectsWithReadSubstitution.chain(([e1s, e2s]) => unifyVariables(e1s.update, e2s.update))
-  })
+    if ((isTemporal(e1) && isAction(e2)) || (isAction(e1) && isTemporal(e2))) {
+      return left(`Counld't unify temporal and action effects: ${effectToString(e1)} and ${effectToString(e2)}` as Error)
+    }
 
-  return merge([readUnificationResult, updateUnificationResult]).map(s => s.flat())
+    const otherUnificationResult = effectsWithReadSubstitution.chain(([e1s, e2s]) => {
+      if (isAction(e1s)) {
+        return unifyVariables(e1s.update, e2s.update)
+      } else {
+        return unifyVariables(e1s.temporal, e2s.temporal)
+      }
+    })
+
+    return otherUnificationResult.chain(r => compose(r, subs)).mapLeft(e => buildErrorTree(location, e))
+  })
+}
+
+function isTemporal (e: ConcreteEffect): boolean {
+  switch (e.temporal.kind) {
+    case 'concrete': return e.temporal.vars.length > 0
+    case 'quantified': return false
+    case 'union': return e.temporal.variables.length > 0
+  }
+}
+
+function isAction (e: ConcreteEffect): boolean {
+  switch (e.update.kind) {
+    case 'concrete': return e.update.vars.length > 0
+    case 'quantified': return false
+    case 'union': return e.update.variables.length > 0
+  }
 }
 
 function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substitutions> {

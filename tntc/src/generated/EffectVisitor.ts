@@ -5,15 +5,17 @@ import { ParseTreeVisitor } from "antlr4ts/tree/ParseTreeVisitor";
 
 import { ReadOnlyContext } from "./EffectParser";
 import { UpdateOnlyContext } from "./EffectParser";
+import { TemporalOnlyContext } from "./EffectParser";
 import { ReadAndUpdateContext } from "./EffectParser";
+import { ReadAndTemporalContext } from "./EffectParser";
 import { PureContext } from "./EffectParser";
-import { TemporalContext } from "./EffectParser";
 import { ConcreteEffectContext } from "./EffectParser";
 import { ArrowEffectContext } from "./EffectParser";
 import { QuantifiedEffectContext } from "./EffectParser";
 import { EffectContext } from "./EffectParser";
 import { ReadContext } from "./EffectParser";
 import { UpdateContext } from "./EffectParser";
+import { TemporalContext } from "./EffectParser";
 import { ConcreteContext } from "./EffectParser";
 import { VarsContext } from "./EffectParser";
 import { StateVarRefContext } from "./EffectParser";
@@ -44,6 +46,14 @@ export interface EffectVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitUpdateOnly?: (ctx: UpdateOnlyContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by the `temporalOnly`
+	 * labeled alternative in `EffectParser.concrete`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTemporalOnly?: (ctx: TemporalOnlyContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by the `readAndUpdate`
 	 * labeled alternative in `EffectParser.concrete`.
 	 * @param ctx the parse tree
@@ -52,20 +62,20 @@ export interface EffectVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitReadAndUpdate?: (ctx: ReadAndUpdateContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by the `readAndTemporal`
+	 * labeled alternative in `EffectParser.concrete`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitReadAndTemporal?: (ctx: ReadAndTemporalContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by the `pure`
 	 * labeled alternative in `EffectParser.concrete`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	visitPure?: (ctx: PureContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `temporal`
-	 * labeled alternative in `EffectParser.concrete`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitTemporal?: (ctx: TemporalContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `concreteEffect`
@@ -111,6 +121,13 @@ export interface EffectVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitUpdate?: (ctx: UpdateContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `EffectParser.temporal`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTemporal?: (ctx: TemporalContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `EffectParser.concrete`.

@@ -91,7 +91,7 @@ const integerOperators = [
 ]
 
 const temporalOperators = [
-  { name: 'always', effect: '(Read[r] & Update[u]) => Temporal' },
+  { name: 'always', effect: '(Read[r] & Temporal[t]) => Temporal' },
   { name: 'eventually', effect: '(Read[r] & Update[u]) => Temporal' },
   { name: 'next', effect: '(Read[r]) => Temporal' },
   { name: 'stutter', effect: '(Read[r] & Update[u], Read[v]) => Temporal' },

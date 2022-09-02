@@ -57,7 +57,7 @@ export function inferEffects (signatures: Map<string, Signature>, definitionsTab
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor (signatures: Map<string, Signature>, definitionsTable: Map<string, Map<string, string>>) {
+  constructor(signatures: Map<string, Signature>, definitionsTable: Map<string, Map<string, string>>) {
     this.signatures = signatures
     this.definitionsTable = definitionsTable
   }
@@ -95,7 +95,12 @@ class EffectInferrerVisitor implements IRVisitor {
          * ------------------------------------ (NAME-PARAM)
          *          Γ ⊢ v: Read[r_p]
          */
-        this.effects.set(expr.id, { kind: 'concrete', read: { kind: 'quantified', name: `r_${expr.name}` }, update: emptyVariables })
+        this.effects.set(expr.id, {
+          kind: 'concrete',
+          read: { kind: 'quantified', name: `r_${expr.name}` },
+          update: emptyVariables,
+          temporal: emptyVariables,
+        })
         break
       case 'const': {
         /* { kind: 'const', identifier: c } ∈ Γ
@@ -103,7 +108,7 @@ class EffectInferrerVisitor implements IRVisitor {
          *       Γ ⊢ c: Pure
          */
         const effect: Effect = {
-          kind: 'concrete', read: emptyVariables, update: emptyVariables,
+          kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables
         }
         this.effects.set(expr.id, effect)
         break
@@ -114,7 +119,7 @@ class EffectInferrerVisitor implements IRVisitor {
          *          Γ ⊢ v: Read[v]
          */
         const effect: Effect = {
-          kind: 'concrete', read: { kind: 'concrete', vars: [expr.name] }, update: emptyVariables,
+          kind: 'concrete', read: { kind: 'concrete', vars: [expr.name] }, update: emptyVariables, temporal: emptyVariables
         }
         this.effects.set(expr.id, effect)
         break
@@ -173,7 +178,7 @@ class EffectInferrerVisitor implements IRVisitor {
 
   // Literals are always Pure
   exitLiteral (expr: TntBool | TntInt | TntStr): void {
-    this.effects.set(expr.id, { kind: 'concrete', read: emptyVariables, update: emptyVariables })
+    this.effects.set(expr.id, { kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables })
   }
 
   /*                        Γ ⊢ e: E
