@@ -116,8 +116,7 @@ connection.onDidChangeConfiguration(change => {
   documents.all().forEach(d => {
     validateTextDocument(d)
       .then((result) => {
-        checkEffects(d, result.tntModule, result.sourceMap, result.definitionTable)
-        return checkTypes(d, result.tntModule, result.sourceMap, result.definitionTable)
+        return checkTypesAndEffects(d, result.tntModule, result.sourceMap, result.definitionTable)
       })
       .catch(diagnostics => {
         // Send the computed diagnostics to VSCode.
@@ -152,8 +151,7 @@ documents.onDidChangeContent(change => {
   console.log('File content changed, checking types and effects again')
   validateTextDocument(change.document)
     .then((result) => {
-      checkEffects(change.document, result.tntModule, result.sourceMap, result.definitionTable)
-      return checkTypes(change.document, result.tntModule, result.sourceMap, result.definitionTable)
+      return checkTypesAndEffects(change.document, result.tntModule, result.sourceMap, result.definitionTable)
     })
     .catch(diagnostics => {
       // Send the computed diagnostics to VSCode.
@@ -271,15 +269,32 @@ const effectsByDocument: Map<DocumentUri, Map<Loc, string>> = new Map<DocumentUr
 const typesByDocument: Map<DocumentUri, Map<Loc, string>> = new Map<DocumentUri, Map<Loc, string>>()
 const documentsByUri: Map<DocumentUri, TextDocument> = new Map<DocumentUri, TextDocument>()
 
-function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>, table: DefinitionTableByModule) {
+function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>, table: DefinitionTableByModule): Promise<boolean> {
+  const testDiags = checkTypes(textDocument, tntModule, sourceMap)
+  const effectDiags = checkEffects(textDocument, tntModule, sourceMap, table)
+
+  const diags = testDiags.concat(effectDiags)
+  if (diags.length > 0) {
+    return new Promise((_resolve, reject) => reject(diags))
+  } else {
+    return new Promise((resolve, _reject) => resolve(true))
+  }
+}
+
+function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>, table: DefinitionTableByModule): Diagnostic[] {
   const result = inferEffects(getSignatures(), table, tntModule)
   const diagnostics: Diagnostic[] = []
   const effects: Map<Loc, string> = new Map<Loc, string>()
   result.mapLeft(e => {
+    console.log(`${e.size} Effect errors found, sending diagnostics`)
     e.forEach((error, id) => {
-      const loc = sourceMap.get(id)!
-      const diag = assembleDiagnostic(errorTreeToString(error), loc)
-      diagnostics.push(diag)
+      const loc = sourceMap.get(id)
+      if (!loc) {
+        console.log('loc for ${id} not found in source map')
+      } else {
+        const diag = assembleDiagnostic(errorTreeToString(error), loc)
+        diagnostics.push(diag)
+      }
     })
   }).map(inferredEffects => {
     inferredEffects.forEach((effect, id) => effects.set(sourceMap.get(id)!, effectToString(effect)))
@@ -287,10 +302,12 @@ function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceM
     documentsByUri.set(textDocument.uri, textDocument)
     return true
   })
-  connection.sendDiagnostics({ uri: textDocument.uri, diagnostics })
+
+  console.log(diagnostics)
+  return diagnostics
 }
 
-function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>, table: DefinitionTableByModule) {
+function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>): Diagnostic[] {
   const result = inferTypes(tntModule)
   const diagnostics: Diagnostic[] = []
   const types: Map<Loc, string> = new Map<Loc, string>()
@@ -298,9 +315,12 @@ function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap
     console.log(`${e.size} Type errors found, sending diagnostics`)
     e.forEach((error, id) => {
       const loc = sourceMap.get(id)!
-      console.log(JSON.stringify(error))
-      const diag = assembleDiagnostic(errorTreeToString(error), loc)
-      diagnostics.push(diag)
+      if (!loc) {
+        console.log('loc for ${id} not found in source map')
+      } else {
+        const diag = assembleDiagnostic(errorTreeToString(error), loc)
+        diagnostics.push(diag)
+      }
     })
   }).map(inferredTypes => {
     inferredTypes.forEach((type, id) => types.set(sourceMap.get(id)!, typeToString(type)))
@@ -308,7 +328,9 @@ function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap
     documentsByUri.set(textDocument.uri, textDocument)
     return true
   })
-  connection.sendDiagnostics({ uri: textDocument.uri, diagnostics })
+
+  console.log(diagnostics)
+  return diagnostics
 }
 
 connection.onDidChangeWatchedFiles(_change => {
