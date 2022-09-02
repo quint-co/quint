@@ -13,7 +13,7 @@
  */
 
 import { effectToString, variablesToString } from './printing'
-import { Either, merge, right, left, mergeInMany } from '@sweet-monads/either'
+import { Either, right, left, mergeInMany } from '@sweet-monads/either'
 import { applySubstitution, compose, Substitutions } from './substitutions'
 import { ErrorTree, Error, buildErrorTree, buildErrorLeaf } from '../errorTree'
 import { flattenUnions, simplifyConcreteEffect } from './simplification'

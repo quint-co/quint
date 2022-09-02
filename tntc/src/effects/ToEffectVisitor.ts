@@ -71,7 +71,6 @@ export class ToEffectVisitor implements EffectListener {
     this.pushEffect(effect)
   }
 
-
   exitPure () {
     const effect: Effect = { kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables }
     this.pushEffect(effect)

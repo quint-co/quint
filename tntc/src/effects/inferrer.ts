@@ -57,7 +57,7 @@ export function inferEffects (signatures: Map<string, Signature>, definitionsTab
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor(signatures: Map<string, Signature>, definitionsTable: Map<string, Map<string, string>>) {
+  constructor (signatures: Map<string, Signature>, definitionsTable: Map<string, Map<string, string>>) {
     this.signatures = signatures
     this.definitionsTable = definitionsTable
   }
@@ -67,6 +67,7 @@ class EffectInferrerVisitor implements IRVisitor {
 
   private signatures: Map<string, Signature>
   private definitionsTable: Map<string, Map<string, string>>
+  private params: Map<string, string> = new Map<string, string>()
   private freshVarCounters: Map<string, number> = new Map<string, number>()
 
   private currentModuleName: string = ''
@@ -97,7 +98,7 @@ class EffectInferrerVisitor implements IRVisitor {
          */
         this.effects.set(expr.id, {
           kind: 'concrete',
-          read: { kind: 'quantified', name: `r_${expr.name}` },
+          read: { kind: 'quantified', name: this.params.get(expr.name)! },
           update: emptyVariables,
           temporal: emptyVariables,
         })
@@ -108,7 +109,7 @@ class EffectInferrerVisitor implements IRVisitor {
          *       Γ ⊢ c: Pure
          */
         const effect: Effect = {
-          kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables
+          kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables,
         }
         this.effects.set(expr.id, effect)
         break
@@ -119,7 +120,7 @@ class EffectInferrerVisitor implements IRVisitor {
          *          Γ ⊢ v: Read[v]
          */
         const effect: Effect = {
-          kind: 'concrete', read: { kind: 'concrete', vars: [expr.name] }, update: emptyVariables, temporal: emptyVariables
+          kind: 'concrete', read: { kind: 'concrete', vars: [expr.name] }, update: emptyVariables, temporal: emptyVariables,
         }
         this.effects.set(expr.id, effect)
         break
@@ -218,10 +219,14 @@ class EffectInferrerVisitor implements IRVisitor {
     const e = this.effects.get(expr.expr.id)!
 
     const paramsVariables: Variables[] = expr.params
-      .map(p => (applySubstitutionToVariables(this.substitutions, { kind: 'quantified', name: `r_${p}` })))
+      .map(p => {
+        const name = `r_${p}_${this.freshVar('')}`
+        this.params.set(p, name)
+        return applySubstitutionToVariables(this.substitutions, { kind: 'quantified', name: name })
+      })
 
-    const params = paramsVariables.map(v => {
-      return { kind: 'concrete', read: v, update: emptyVariables } as Effect
+    const params = paramsVariables.map((v): Effect => {
+      return { kind: 'concrete', read: v, update: emptyVariables, temporal: emptyVariables }
     })
     this.effects.set(expr.id, { kind: 'arrow', params: params, result: e })
   }
