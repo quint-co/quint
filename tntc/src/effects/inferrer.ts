@@ -212,6 +212,15 @@ class EffectInferrerVisitor implements IRVisitor {
    * ---------------------------------------------- (LAMBDA)
    * Γ ⊢ (p0, ..., pn) => e: (Read[r_p0], ..., Read[r_pn]) => E
    */
+
+  enterLambda (expr: TntLambda): void {
+    expr.params
+      .forEach(p => {
+        const name = `r_${p}_${this.freshVar('')}`
+        this.params.set(p, name)
+      })
+  }
+
   exitLambda (expr: TntLambda): void {
     if (!this.effects.get(expr.expr.id)) {
       return
@@ -220,8 +229,8 @@ class EffectInferrerVisitor implements IRVisitor {
 
     const paramsVariables: Variables[] = expr.params
       .map(p => {
-        const name = `r_${p}_${this.freshVar('')}`
-        this.params.set(p, name)
+        const name = this.params.get(p)!
+        this.params.delete(p)
         return applySubstitutionToVariables(this.substitutions, { kind: 'quantified', name: name })
       })
 
