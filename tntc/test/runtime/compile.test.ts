@@ -167,6 +167,20 @@ describe('compiling specs to runtime values', () => {
          y - x`
       assertResultAsString(input, '7')
     })
+
+    it('computes multi-arg definitions', () => {
+      const input =
+        `def mult(x, y) = (x * y)
+         mult(2, mult(3, 4))`
+      assertResultAsString(input, '24')
+    })
+
+    it('uses named def instead of lambda', () => {
+      const input =
+        `def positive(x) = x > 0
+         (-3).to(3).filter(positive)`
+      assertResultAsString(input, 'set(1, 2, 3)')
+    })
   })
 
   describe('compileExpr over sets', () => {
