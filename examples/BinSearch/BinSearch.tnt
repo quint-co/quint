@@ -43,7 +43,7 @@ module BinSearch {
               -(MAX_UINT - wrapped)
 
     // Initialization step (lines 2-3)
-    pred Init = (
+    val Init = (
         & low == 0
         & high == length(INPUT_SEQ) - 1
         & isTerminated == false
@@ -107,7 +107,7 @@ module BinSearch {
         | StutterOnTermination
     }
 
-    pred InputIsSorted =
+    static val InputIsSorted =
     // The most straightforward way to specify sortedness
     // is to use two quantifiers,
     // but that would produce O(Len(INPUT_SEQ)^2) constraints.
@@ -125,7 +125,7 @@ module BinSearch {
     //
     // "Note that this guarantees that the return value will be >= 0 if
     //  and only if the key is found."
-    pred ReturnValueIsCorrect =
+    val ReturnValueIsCorrect =
         val MatchingIndices =
             INPUT_SEQ.domain.filter(i => INPUT_SEQ.nth(i) == INPUT_KEY)
         if (MatchingIndices != set())
@@ -135,24 +135,24 @@ module BinSearch {
             returnValue < 0
 
     // What we expect from the search when it is finished (it does not hold).
-    pred Postcondition =
+    val Postcondition =
         isTerminated implies ReturnValueIsCorrect
 
     // What we expect from the search when it is finished.
-    pred PostconditionSorted =
+    val PostconditionSorted =
         isTerminated implies (not(InputIsSorted) or ReturnValueIsCorrect)
 
     // We know the exact number of steps to show termination.
-    pred Termination =
+    val Termination =
         (nSteps >= INT_WIDTH) implies isTerminated
 
     // By showing that the interval [low, high] is contracting,
     // we can implicitly show termination too.
-    pred Progress =
+    val Progress =
         not(isTerminated.next) implies (low.next > low or high.next < high)
 
     // Make sure that INPUT_SEQ is accessed within its bounds
-    pred InBounds =
+    val InBounds =
       val mid = low.iadd(high.iadd(-low) / 2)
       // collect the conditions of IF-THEN-ELSE
       { not(isTerminated) implies

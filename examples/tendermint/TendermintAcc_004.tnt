@@ -93,7 +93,7 @@ val ValuesOrNil = set(NilValue).union(Values)
 def Id(v) = v
 
 // The validity predicate
-pred IsValid(v) = ValidValues.contains(v)
+static def IsValid(v) = ValidValues.contains(v)
 
 // the two thresholds that are used in the algorithm
 val THRESHOLD1 = T + 1      // at least one process is not faulty
@@ -172,7 +172,7 @@ val AllFaultyPrecommits =
 
    
 // the message function never contains a message for a wrong round
-pred BenignRoundsInMessages(msgfun) =
+static def BenignRoundsInMessages(msgfun) =
     Rounds.forall( r =>
       msgfun[r].forall( m =>
         r == m.round
@@ -180,7 +180,7 @@ pred BenignRoundsInMessages(msgfun) =
     )
 
 // The initial states of the protocol. Some faults can be in the system already.
-pred Init = (
+val Init = (
   & round           <- Corr.mapOf( _ => 0 )
   & step            <- Corr.mapOf( _ => Proposer )
   & decision        <- Corr.mapOf( _ => NilValue )
@@ -422,7 +422,7 @@ action Next =
 //**************************** FORK SCENARIOS  ***************************
 
 // equivocation by a process p
-pred EquivocationBy(p) =
+def EquivocationBy(p) =
   evidence.cross(evidence).exists(m1, m2 => (
       & m1 != m2
       & m1.src == p
@@ -433,7 +433,7 @@ pred EquivocationBy(p) =
   )
 
 // amnesic behavior by a process p
-pred AmnesiaBy(p) =
+def AmnesiaBy(p) =
     tuples(Rounds, Rounds).exists(r1, r2 => (
         & r1 < r2
         & tuples(ValidValues, ValidValues).exists(v1, v2 => (
@@ -453,7 +453,7 @@ pred AmnesiaBy(p) =
 //******************************** PROPERTIES  ***************************************
 
 // the safety property -- agreement
-pred Agreement =
+val Agreement =
   tuples(Corr, Corr).forall(p, q => (
     | decision[p] == NilValue
     | decision[q] == NilValue
@@ -461,7 +461,7 @@ pred Agreement =
   ))
 
 // the protocol validity
-pred Validity =
+val Validity =
   Corr.forall( p =>
     decision[p] in (ValidValues.union(set(NilValue)))
   )
@@ -471,7 +471,7 @@ pred Validity =
      1. There is no fork, that is, Agreement holds true.
      2. A subset of faulty processes demonstrates equivocation or amnesia.
  */
-pred Accountability = (
+val Accountability = (
     | Agreement
     | powerset(Faulty).exists(Detectable => (
         & cardinality(Detectable) >= THRESHOLD1
@@ -483,24 +483,24 @@ pred Accountability = (
  
 // This property is violated. You can check it to see how amnesic behavior
 // appears in the evidence variable.
-pred NoAmnesia =
+val NoAmnesia =
     Faulty.forall(p => not(AmnesiaBy(p)))
 
 // This property is violated. You can check it to see an example of equivocation.
-pred NoEquivocation =
+val NoEquivocation =
     Faulty.forall(p => not(EquivocationBy(p)))
 
 // This property is violated. You can check it to see an example of agreement.
 // It is not exactly ~Agreement, as we do not want to see the states where
 // decision[p] = NilValue
-pred NoAgreement =
+val NoAgreement =
   tuples(Corr, Corr).forall( p, q =>
         (p != q and decision[p] != NilValue and decision[q] != NilValue)
           implies (decision[p] != decision[q])
   )
 // Either agreement holds, or the faulty processes indeed demonstrate amnesia.
 // This property is violated. A counterexample should demonstrate equivocation.
-pred AgreementOrAmnesia =
+val AgreementOrAmnesia =
     Agreement or Faulty.forall(p => AmnesiaBy(p))
 
 // We expect this property to be violated. It shows us a protocol run,
@@ -508,13 +508,13 @@ pred AgreementOrAmnesia =
 // However, the absence of amnesia
 // is a tough constraint for Apalache. It has not reported a counterexample
 // for n=4,f=2, length <= 5.
-pred ShowMeAmnesiaWithoutEquivocation =
+val ShowMeAmnesiaWithoutEquivocation =
     (not(Agreement) and Faulty.exists(p => not(EquivocationBy(p))))
         implies Faulty.forall(p => not(AmnesiaBy(p)))
 
 // This property is violated on n=4,f=2, length=4 in less than 10 min.
 // Two faulty processes may demonstrate amnesia without equivocation.
-pred AmnesiaImpliesEquivocation =
+val AmnesiaImpliesEquivocation =
     (Faulty.exists(p => AmnesiaBy(p)))
       implies (Faulty.exists(q => EquivocationBy(q)))
 
@@ -522,7 +522,7 @@ pred AmnesiaImpliesEquivocation =
   This property is violated. You can check it to see that all correct processes
   may reach MaxRound without making a decision. 
  */
-pred NeverUndecidedInMaxRound = (
+val NeverUndecidedInMaxRound = (
     val AllInMax   = Corr.forall(p => round[p] == MaxRound)
     val AllDecided = Corr.forall(p => decision[p] != NilValue)
 

@@ -136,12 +136,12 @@ export class ToIrListener implements TntListener {
 
     // extract the qualifier
     let qualifier: OpQualifier = 'def'
-    const qualifierToken = ctx._qualifier
-    if (qualifierToken && qualifierToken !== undefined) {
-      const qtext = qualifierToken.text
+    if (ctx.qualifier()) {
+      const qtext = ctx.qualifier().text
       // case distinction to make the type checker happy
-      if (qtext === 'val' || qtext === 'def' || qtext === 'pred' ||
-        qtext === 'action' || qtext === 'temporal') {
+      if (qtext === 'staticval' || qtext === 'staticdef' ||
+          qtext === 'val' || qtext === 'def' ||
+          qtext === 'action' || qtext === 'temporal') {
         qualifier = qtext
       } else {
         const ls = this.locStr(ctx)

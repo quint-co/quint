@@ -46,7 +46,7 @@ var maxBal: str -> int
 /***************************************************************************)
 (* The type-correctness invariant.                                         *)
 (***************************************************************************/
-pred TypeOK = (
+val TypeOK = (
     & votes in Acceptor.setOfMaps(powerset(tuples(Ballot, Value)))
     & maxBal in Acceptor.setOfMaps(Ballot.union(set(-1)))
 )
@@ -55,26 +55,26 @@ pred TypeOK = (
 (* We now make a series of definitions an assert some simple theorems      *)
 (* about those definitions that lead to the algorithm.                     *)
 (***************************************************************************/
-pred VotedFor(a, b, v) = (b, v) in votes[a]
+def VotedFor(a, b, v) = (b, v) in votes[a]
   /*************************************************************************)
   (* True iff acceptor a has voted for v in ballot b.                      *)
   (*************************************************************************/
 
-pred ChosenAt(b, v) = Quorum.exists( Q =>
+def ChosenAt(b, v) = Quorum.exists( Q =>
                         Q.forall( a => VotedFor(a, b, v) )
                       )
   /*************************************************************************)
   (* True iff a quorum of acceptors have all voted for v in ballot b.      *)
   (*************************************************************************/
 
-pred chosen = Value.filter( v => Ballot.exists( b => ChosenAt(b, v) ) )
+val chosen = Value.filter( v => Ballot.exists( b => ChosenAt(b, v) ) )
   /*************************************************************************)
   (* The set of values that have been chosen.                              *)
   (*************************************************************************/
   
-pred DidNotVoteAt(a, b) = Value.forall( v => not(VotedFor(a, b, v)) )
+def DidNotVoteAt(a, b) = Value.forall( v => not(VotedFor(a, b, v)) )
 
-pred CannotVoteAt(a, b) = (
+def CannotVoteAt(a, b) = (
   & maxBal[a] > b
   & DidNotVoteAt(a, b)
 )
@@ -84,7 +84,7 @@ pred CannotVoteAt(a, b) = (
   (* in ballot b.                                                          *)
   (*************************************************************************/
 
-pred NoneOtherChoosableAt(b, v) =
+def NoneOtherChoosableAt(b, v) =
   Quorum.exists( Q =>
      Q.forall( a => VotedFor(a, b, v) or CannotVoteAt(a, b) )
   )  
@@ -93,7 +93,7 @@ pred NoneOtherChoosableAt(b, v) =
   (* for any w # v.                                                        *)
   (*************************************************************************/
 
-pred SafeAt(b, v) = 0.to(b - 1).forall( c => NoneOtherChoosableAt(c, v) )
+def SafeAt(b, v) = 0.to(b - 1).forall( c => NoneOtherChoosableAt(c, v) )
   /*************************************************************************)
   (* If this is true, then no value other than v has been or can ever be   *)
   (* chosen in any ballot numbered less than b.                            *)
@@ -107,17 +107,17 @@ THEOREM ChoosableThm ==
              ChosenAt(b, v) => NoneOtherChoosableAt(b, v)
  */             
 //-----------------------------------------------------------------------------
-pred VotesSafe =
+val VotesSafe =
     tuples(Acceptor, Ballot, Value).forall(t =>
                  VotedFor(t._1, t._2, t._3) implies SafeAt(t._2, t._3)
     )
 
-pred OneVote =
+val OneVote =
     tuples(Acceptor, Ballot, Value, Value).forall(t =>
               VotedFor(t._1, t._2, t._3) and VotedFor(t._1, t._2, t._4) implies (t._3 == t._4)
     )
 
-pred OneValuePerBallot =
+val OneValuePerBallot =
     tuples(Acceptor, Acceptor, Ballot, Value, Value)
        .forall(t =>
          VotedFor(t._1, t._3, t._4) and VotedFor(t._2, t._3, t._5) implies (t._4 == t._5)
@@ -134,7 +134,7 @@ THEOREM VotesSafeImpliesConsistency ==
              \/ \E v \in Value : chosen = {v}
  */             
 //-----------------------------------------------------------------------------
-pred ShowsSafeAt(Q, b, v) = (
+def ShowsSafeAt(Q, b, v) = (
   & Q.forall( a => maxBal[a] >= b )
   & -1.to(b - 1).exists(c => (
         & (c != -1) implies Q.exists(a => VotedFor(a, c, v))
@@ -204,7 +204,7 @@ action Next =
 
 temporal Spec = Init and always(stutter(Next), (votes, maxBal))
 
-pred Inv = TypeOK and VotesSafe and OneValuePerBallot
+val Inv = TypeOK and VotesSafe and OneValuePerBallot
 
 //-----------------------------------------------------------------------------
 //THEOREM Invariance == Spec => []Inv

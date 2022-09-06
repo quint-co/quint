@@ -52,8 +52,9 @@ module withConsts {
 
   // Operator definitions
   var n: int
-  def add(x, y) = x + y
-  pred P(x, y) = x > y
+  static val magicNumber = 42
+  static def add(x, y) = x + y
+  def ofN(factor) = factor * n
   action A(x) = n <- x
   temporal B(x) = not(x)
 
@@ -216,7 +217,7 @@ module withConsts {
       | { tag: "Cat", name: str, year: int }
       | { tag: "Date", day: int, month: int, year: int }
 
-  pred isValid(entry) =
+  def isValid(entry) =
     entry match
        | "Cat": cat => cat.name != ""
        | "Date": date => date.year > 0

@@ -20,7 +20,7 @@
       ]
     },
     {
-      "explanation": "extraneous input 'name' expecting {'module', '}', 'const', 'var', 'assume', 'type', 'import', 'val', 'def', 'pred', 'action', 'temporal'}",
+      "explanation": "extraneous input 'name' expecting {'module', '}', 'const', 'var', 'assume', 'type', 'import', 'val', 'def', 'static', 'action', 'temporal'}",
       "locs": [
         {
           "source": "mocked_path/testFixture/_1007unexpectedToken.tnt",
