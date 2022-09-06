@@ -161,7 +161,7 @@ function unifyArrows (location: string, e1: ArrowEffect, e2: ArrowEffect) {
       applySubstitution(subs, e2),
     ])
     const newSubstitutions = effectsWithSubstitutions.chain(es => unify(...es))
-    return newSubstitutions.chain(newSubs => compose(subs, newSubs))
+    return newSubstitutions.chain(newSubs => compose(newSubs, subs))
   }
 
   const paramsUnification = e1.params.reduce((result: Either<Error, Substitutions>, e, i) => {
@@ -198,7 +198,7 @@ function unifyConcrete (location: string, e1: ConcreteEffect, e2: ConcreteEffect
 function isTemporal (e: ConcreteEffect): boolean {
   switch (e.temporal.kind) {
     case 'concrete': return e.temporal.vars.length > 0
-    case 'quantified': return false
+    case 'quantified': return true
     case 'union': return e.temporal.variables.length > 0
   }
 }
@@ -206,7 +206,7 @@ function isTemporal (e: ConcreteEffect): boolean {
 function isAction (e: ConcreteEffect): boolean {
   switch (e.update.kind) {
     case 'concrete': return e.update.vars.length > 0
-    case 'quantified': return false
+    case 'quantified': return true
     case 'union': return e.update.variables.length > 0
   }
 }

@@ -1,5 +1,7 @@
 import { Signature } from './base'
 import { parseEffectOrThrow } from './parser'
+import { effectToString } from './printing'
+import { simplify } from './simplification'
 
 export function getSignatures (): Map<string, Signature> {
   return new Map<string, Signature>(fixedAritySignatures.concat(multipleAritySignatures))
@@ -104,7 +106,7 @@ const temporalOperators = [
 ]
 
 const otherOperators = [
-  { name: 'assign', effect: '(Read[r1], Read[r2] & Update[u2]) => Read[r2] & Update[r1, u2]' },
+  { name: 'assign', effect: '(Read[r1], Read[r2]) => Read[r2] & Update[r1]' },
   { name: 'ite', effect: '(Read[r1], Read[r2] & Update[u], Read[r3] & Update[u]) => Read[r1, r2, r3] & Update[u]' },
 ]
 
@@ -155,4 +157,12 @@ const fixedAritySignatures: [string, Signature][] = [
   integerOperators,
   temporalOperators,
   otherOperators,
-].flat().map(sig => [sig.name, ((_: number) => parseEffectOrThrow(sig.effect)) as Signature])
+].flat().map(sig => [sig.name, ((_: number) => {
+  const e = parseEffectOrThrow(sig.effect)
+  const simplified = simplify(e)
+  if (simplified.isRight()) {
+    return simplified.value
+  } else {
+    throw new Error(`Couldn't simplify builtin effect: ${effectToString(e)}`)
+  }
+}) as Signature])
