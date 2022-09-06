@@ -12,8 +12,9 @@
  * @module
  */
 
-import { Either, left, right } from '@sweet-monads/either'
-import { ErrorTree } from '../errorTree'
+import { Either, left, mergeInMany, right } from '@sweet-monads/either'
+import isEqual from 'lodash.isequal'
+import { buildErrorTree, ErrorTree } from '../errorTree'
 import { ConcreteEffect, Effect, Variables } from './base'
 import { effectToString } from './printing'
 
@@ -42,6 +43,20 @@ export function simplifyConcreteEffect (e: ConcreteEffect): Either<ErrorTree, Ef
     })
   } else {
     return right({ kind: 'concrete', read: read, update: update, temporal: temporal })
+  }
+}
+
+export function simplify (e: Effect): Either<ErrorTree, Effect> {
+  switch (e.kind) {
+    case 'concrete': return simplifyConcreteEffect(e)
+    case 'quantified': return right(e)
+    case 'arrow': {
+      const params = mergeInMany(e.params.map(simplify))
+      const result = simplify(e.result)
+      return params.chain(ps => {
+        return result.map(r => ({ ...e, params: ps, result: r }))
+      }).mapLeft(err => buildErrorTree(`Trying to simplify effect ${effectToString(e)}`, err))
+    }
   }
 }
 
@@ -104,7 +119,13 @@ function uniqueVariables (variables: Variables): Variables {
       return { kind: 'concrete', vars: Array.from(new Set<string>(variables.vars)) }
     case 'union': {
       const nestedVariables = variables.variables.map(v => uniqueVariables(v))
-      return { kind: 'union', variables: Array.from(new Set<Variables>(nestedVariables)) }
+      const unique: Variables[] = []
+      nestedVariables.forEach(variable => {
+        if (!unique.some(v => isEqual(v, variable))) {
+          unique.push(variable)
+        }
+      })
+      return { kind: 'union', variables: unique }
     }
   }
 }
