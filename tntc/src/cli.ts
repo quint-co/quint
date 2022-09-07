@@ -91,7 +91,7 @@ function typecheck (argv: any) {
  * @param argv parameters as provided by yargs
  */
 function runRepl (argv: any) {
-  tntRepl()
+  tntRepl(process.stdin, process.stdout)
 }
 
 // read either the standard input or an input file

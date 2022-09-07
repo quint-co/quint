@@ -113,6 +113,9 @@ expr:           // apply a built-in operator via the dot notation
         |       '{' expr '}'                                        # braces
         ;
 
+// a probing rule for REPL
+unitOrExpr :    unit | expr ;
+
 // This rule parses anonymous functions, e.g.:
 // 1. Non-action lambdas:
 //   x, y, z => e

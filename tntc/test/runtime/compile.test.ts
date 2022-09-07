@@ -2,7 +2,7 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { Maybe } from '@sweet-monads/maybe'
 import { expressionToString } from '../../src/IRprinting'
-import { compileExpr } from '../../src/runtime/compile'
+import { compile } from '../../src/runtime/compile'
 
 function assertDefined<T> (m: Maybe<T>) {
   assert(m.isJust(), 'undefined value')
@@ -11,13 +11,20 @@ function assertDefined<T> (m: Maybe<T>) {
 // Compile an expression, evaluate it, convert to TlaEx, then to a string,
 // compare the result. This is the easiest path to test the results.
 function assertResultAsString (input: string, result: string) {
-  assertDefined(
-    compileExpr(input)
-      .eval()
-      .map(r => r.toTntEx())
-      .map(expressionToString)
-      .map(s => assert(s === result, `Expected ${result}, found ${s}`))
-  )
+  const moduleText = `module __runtime { val __expr = ${input} }`
+  const context = compile(moduleText)
+  const value = context.get('__expr')
+  if (value === undefined) {
+    assert(false, `Missing value for ${result}`)
+  } else {
+    assertDefined(
+      value
+        .eval()
+        .map(r => r.toTntEx())
+        .map(expressionToString)
+        .map(s => assert(s === result, `Expected ${result}, found ${s}`))
+    )
+  }
 }
 
 describe('compiling specs to runtime values', () => {

@@ -42,13 +42,10 @@ export class CompilerVisitor implements IRVisitor {
   private context: Map<string, Computable> = new Map<string, Computable>()
 
   /**
-   * Get a computable assigned to a name.
-   *
-   * @param name the definition name
-   * @return the Computable value assigned to the name, or undefined
+   * Get the compiled context.
    */
-  findByName (name: string): Computable | undefined {
-    return this.context.get(name)
+  getContext (): Map<string, Computable> {
+    return this.context
   }
 
   exitOpDef (opdef: ir.TntOpDef) {

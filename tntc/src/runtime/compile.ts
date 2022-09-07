@@ -9,7 +9,7 @@
  */
 
 import { parsePhase1, parsePhase2, ErrorMessage } from '../tntParserFrontend'
-import { Computable, fail, ExecError, ExecErrorHandler } from './runtime'
+import { Computable, ExecError, ExecErrorHandler } from './runtime'
 import { CompilerVisitor } from './impl/compilerImpl'
 import { walkModule } from '../IRVisitor'
 
@@ -21,33 +21,18 @@ const consoleHandler = (err: ExecError) => {
 }
 
 /**
- * A convenience interface over Computable which unwraps Maybe into any | undefined.
- * The users do not have to worry about us using Maybe and they can use the standard
- * TypeScript idioms instead.
- */
-export interface Executable extends Computable {
-  exec: () => (any | undefined)
-}
-
-/**
- * Parse a string that contains a TNT expression and compile it to an executable
- * object. This is a user-facing function. In case of an error, the error
+ * Parse a string that contains a TNT module and compile it to executable
+ * objects. This is a user-facing function. In case of an error, the error
  * messages are passed to an error handler and the function returns undefined.
  *
- * @param text that stores a TNT expression,
+ * @param moduleText text that stores a TNT module,
  *        which should be parseable without any context
  * @param errorHandler error handler, which defaults to console output
- * @returns a computable value that encodes the expression, which may evaluate to undefined,
- *          in case a parsing or evaluation error occurs
+ * @returns a mapping from names to computable values
  */
 export function
-compileExpr (text: String, errorHandler: ExecErrorHandler = consoleHandler): Executable {
-  // embed expression text into a module definition
-  const moduleText =
-`module __Runtime {
-   val __exprToCompile =
-${text}
-}`
+compile (moduleText: string, errorHandler: ExecErrorHandler = consoleHandler):
+    Map<String, Computable> {
   // parse the module text
   const parseRes = parsePhase1(moduleText, '<input>')
   let errors = []
@@ -60,9 +45,7 @@ ${text}
     } else {
       const visitor = new CompilerVisitor()
       walkModule(visitor, parseRes.module)
-      // add a helper function to the computable value to unwrap Maybe
-      const comp = visitor.findByName('__exprToCompile') ?? fail
-      return makeExecutable(comp)
+      return visitor.getContext()
     }
   }
 
@@ -84,18 +67,5 @@ ${text}
     })
   })
 
-  return makeExecutable(fail)
-}
-
-// module-private functions go here
-
-// make an Executable out of Computable
-function makeExecutable (comp: Computable): Executable {
-  return {
-    ...comp,
-    exec () : any | undefined {
-      const { value } = comp.eval()
-      return value
-    },
-  }
+  return new Map()
 }
