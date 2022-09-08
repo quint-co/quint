@@ -4,7 +4,7 @@
 
 | Revision | Date       | Author                                                  |
 |:---------|:-----------|:--------------------------------------------------------|
-| 22       | 10.05.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira |
+| 23       | 06.09.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -335,34 +335,53 @@ module scope. Importantly, there are **no recursive operators** (though you can
 fold over a sequence or a set, see below).
 
 ```
-// a constant operator
-val Nodes: set(int) = 1 to 10
+// a static constant value, which is not changing over time
+static val Nodes: set(int) = 1 to 10
 
-// a constant operator may access state variables too
-val total: int = x + y
-
-// a two-argument operator that returns its first argument
-def fst(x, y): ((a, b) => a) = x
+// a two-argument operator that returns its first argument, independent of state
+static def fst(x, y): ((a, b) => a) =
+    x
 
 // the maximum operator
-def max(x, y): (int, int) => int =
+static def max(x, y): (int, int) => int =
     if (x > y) x else y
 
-// A predicate over `x`. We could use `def` instead of `pred`.
-// However, we prefer writing `pred` for definitions that return a Boolean
-pred is_positive(x): int => bool =
+// A definition over `x` that returns a Boolean result.
+// In logic, such definition is usually called a predicate.
+static def is_positive(x): int => bool =
     x > 0
 
 // a higher-order operator that accepts another operator as its first argument
-def F(G, x): ((a => b, a) => b) = G(x)
+static def F(G, x): ((a => b, a) => b) = G(x)
+
+// introduce a variable to define stateful definitions
+var timer: int
+
+// a value that depends on the state (the variable timer) and may change over time
+val isTimerPositive =
+    timer >= 0
+
+// an operator definition that depends on the state and may change over time
+def hasExpired(timestamp: int) =
+    timer >= timestamp
+
+// an action that updates the value of the state variable timer
+action advance(unit: int) =
+    // a delayed assignment (see below in the manual)
+    timer <- timer + unit
+
+// a temporal formula that ensures that the timer variable never goes negative
+temporal neverNegative =
+    always(timer >= 0)
 ```
 
 
 *Grammar:*
 
 ```bnf
-("val" | "def" | "pred" | "action" | "temporal")
-    <identifier>["(" <identifier> ("," ..."," <identifier>)* ")"] [":" <type>] "=" <expr>
+("val" | "def" | "static" "val" | "static" "def" | "action" | "temporal")
+    <identifier>["(" <identifier> ("," ..."," <identifier>)* ")"] [":" <type>]
+      "=" <expr> [";"]
 ```
 
 *Mode:* The mode depends on the mode of the expression in the right-hand side.
@@ -370,8 +389,8 @@ The following table defines this precisely.
 
 | Qualifier            | Mode of `expr`                       | Mode of definition |
 | -------------------- | ------------------------------------ | ------------------ |
-| `val`, `def`, `pred` | Stateless                            | Stateless          |
-| `val`, `def`, `pred` | State                                | State              |
+| `static val`, `static def` | Stateless                      | Stateless          |
+| `val`, `def`         | State                                | State              |
 | `action`             | Action                               | Action             |
 | `temporal`           | Stateless, State, Temporal           | Temporal           |
 
@@ -458,8 +477,11 @@ module Foo {
   const N: int
   var x: int
 
-  pred Init = x == 0
-  action Next = x <- x + N
+  val Init =
+    x == 0
+
+  action Next =
+    x <- x + N
 }
 ```
 
@@ -479,7 +501,8 @@ module Outer {
     val x2 = x + x
   }
 
-  pred inv = (Inner.x2 - x == x)
+  val inv =
+    (Inner.x2 - x == x)
 }
 ```
 
@@ -1207,7 +1230,7 @@ given an entry from `Entries`, we can compute the predicate `isValid` by case
 distinction over tags:
 
 ```scala
-pred isValid(entry): ENTRY_TYPE => bool =
+static def isValid(entry): ENTRY_TYPE => bool =
   entry match
      | "Cat": cat =>
        name != "" and cat.year > 0
@@ -1420,6 +1443,10 @@ def pow4(x) =
 
   x2 * x2
 
+def triple(x) =
+  // if you want to write a definition and use it on the same line, use a semicolon
+  def add(n) = n + x; add(x, add(x, x))
+
 temporal my_prop =
   // a nested temporal formula
   temporal A = eventually(x > 3)
@@ -1432,10 +1459,16 @@ temporal my_prop =
 *Grammar:*
 
 ```
-("val" | "def" | "pred" | "action" | "temporal")
-  <identifier>[ "(" <identifier> ("," ..."," <identifier>)* ")" ] [ ":" <type>] "=" <expr>
+("val" | "def" | "static" "val" | "static" "def" | "action" | "temporal")
+  <identifier>[ "(" <identifier> ("," ..."," <identifier>)* ")" ] [ ":" <type>]
+    "=" <expr> [";"]
 <expr>
 ```
+
+It is nice to separate an operator definition from its application. Usually, we
+use a line break or two to do this. If you want to define an operator and use
+it on the same line, you can use a semicolon `;` as a separator. We do not
+recommend using both a semicolon and a line break at the same time.
 
 *Mode:* The modes are defined as in the case of the top-level operators.  As
 expected, the mode of an inner operator should not be more general then the
@@ -1698,7 +1731,7 @@ The most common example is shown below:
     const Quorum: set(set(str))
     // no const, no var below
     // ...
-    pred chosen = Value.filter(v => Ballot exists (b => ChosenAt(b, v)))
+    val chosen = Value.filter(v => Ballot exists (b => ChosenAt(b, v)))
     // ...
   }
 
@@ -1734,7 +1767,7 @@ module root {
     var x: int
     var y: int
 
-    pred Init = (
+    val Init = (
       & x == 0
       & y == 0
     )
@@ -1757,7 +1790,7 @@ the same variable. Hence, the module `AB` will look like follows:
 
 ```scala
   module AB = {
-    pred Init = (
+    val Init = (
       & a == 0
       & b == 0
     )
@@ -1780,7 +1813,7 @@ module root {
     var x: int
     var y: int
 
-    pred Init = {
+    val Init = {
       & x == 1
       & y == 0
     }
@@ -1806,7 +1839,7 @@ like after instantiation:
 
 ```scala
 module C = {
-  pred Init = (
+  val Init = (
     & x == 1
     & x - 1 == 0
   )
