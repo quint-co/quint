@@ -184,7 +184,7 @@ function unifyConcrete (location: string, e1: ConcreteEffect, e2: ConcreteEffect
     }
 
     const otherUnificationResult = effectsWithReadSubstitution.chain(([e1s, e2s]) => {
-      if (isAction(e1s)) {
+      if (isAction(e1s) || isAction(e2s)) {
         return unifyVariables(e1s.update, e2s.update)
       } else {
         return unifyVariables(e1s.temporal, e2s.temporal)

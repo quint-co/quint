@@ -262,13 +262,13 @@ class EffectInferrerVisitor implements IRVisitor {
     const counter = this.freshVarCounters.get(prefix)! ?? 0
     this.freshVarCounters.set(prefix, counter + 1)
 
-    return `${prefix}${counter} `
+    return `${prefix}${counter}`
   }
 
   private fetchSignature (opcode: string, arity: number): Either<string, Effect> {
     // Assumes a valid number of arguments
     if (!this.signatures.get(opcode)) {
-      return left(`Signature not found for operator: ${opcode} `)
+      return left(`Signature not found for operator: ${opcode}`)
     }
     const signatureFunction = this.signatures.get(opcode)!
     const signature = signatureFunction(arity)

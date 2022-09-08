@@ -22,7 +22,7 @@ describe('getSignatures', () => {
   })
 
   it('contains quantified signatures for the tuple constructor', () => {
-    const tupSignature = signatures.get('tup')!
+    const tupSignature = signatures.get('tuple')!
 
     const expectedSignature: TypeScheme = {
       type: parseTypeOrThrow('(t0, t1, t2) => (t0, t1, t2)'),
@@ -35,7 +35,7 @@ describe('getSignatures', () => {
   })
 
   it('contains quantified signatures for the record constructor', () => {
-    const recSignature = signatures.get('rec')!
+    const recSignature = signatures.get('record')!
 
     const expectedSignature: TypeScheme = {
       type: parseTypeOrThrow('(n0, t0, n1, t1) => { n0: t0, n1: t1 }'),

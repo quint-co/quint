@@ -199,7 +199,7 @@ describe('parseEffect', () => {
       const { value } = effect
       assert.sameDeepMembers(value, [
         {
-          explanation: "mismatched input 'Read' expecting {', ', ']'}",
+          explanation: "no viable alternative at input 'Read[v]&Read'",
           locs: [{ start: { line: 0, col: 10, index: 10 }, end: { line: 0, col: 13, index: 13 } }],
         },
       ])
