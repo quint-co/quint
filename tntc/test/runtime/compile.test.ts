@@ -3,6 +3,7 @@ import { assert } from 'chai'
 import { Maybe } from '@sweet-monads/maybe'
 import { expressionToString } from '../../src/IRprinting'
 import { compile } from '../../src/runtime/compile'
+import { dedent } from '../textUtils'
 
 function assertDefined<T> (m: Maybe<T>) {
   assert(m.isJust(), 'undefined value')
@@ -15,7 +16,7 @@ function assertResultAsString (input: string, result: string) {
   const context = compile(moduleText)
   const value = context.get('__expr')
   if (value === undefined) {
-    assert(false, `Missing value for ${result}`)
+    assert(false, `Missing value for ${input}`)
   } else {
     assertDefined(
       value
@@ -28,7 +29,7 @@ function assertResultAsString (input: string, result: string) {
 }
 
 describe('compiling specs to runtime values', () => {
-  describe('compileExpr over integers', () => {
+  describe('compile over integers', () => {
     it('computes positive integer literals', () => {
       assertResultAsString('15', '15')
     })
@@ -100,7 +101,7 @@ describe('compiling specs to runtime values', () => {
     })
   })
 
-  describe('compileExpr over Booleans', () => {
+  describe('compile over Booleans', () => {
     it('computes Boolean literals', () => {
       assertResultAsString('false', 'false')
       assertResultAsString('true', 'true')
@@ -154,7 +155,7 @@ describe('compiling specs to runtime values', () => {
     })
   })
 
-  describe('compileExpr over other operators', () => {
+  describe('compile over other operators', () => {
     it('computes Boolean if-then-else', () => {
       assertResultAsString('if (false) false else true', 'true')
       assertResultAsString('if (true) false else true', 'false')
@@ -166,7 +167,7 @@ describe('compiling specs to runtime values', () => {
     })
   })
 
-  describe('compileExpr over definitions', () => {
+  describe('compile over definitions', () => {
     it('computes value definitions', () => {
       const input =
         `val x = 3 + 4
@@ -190,7 +191,7 @@ describe('compiling specs to runtime values', () => {
     })
   })
 
-  describe('compileExpr over sets', () => {
+  describe('compile over sets', () => {
     it('computes an interval', () => {
       const input = '2.to(5)'
       assertResultAsString(input, 'set(2, 3, 4, 5)')
@@ -387,6 +388,25 @@ describe('compiling specs to runtime values', () => {
         'set(set(1, 2, 3, 4))')
       assertResultAsString('set(1.to(4), 2.to(3)).filter(S => S.contains(0))',
         'set()')
+    })
+
+    it('computes fold', () => {
+      // sum
+      assertResultAsString('set(1, 2, 3).fold(10, (v, x => v + x))', '16')
+      assertResultAsString('set().fold(10, (v, x => v + x))', '10')
+      // flatten
+      const input1 = dedent(
+        `set(1.to(3), 4.to(5), 6.to(7))
+        |  .fold(set(0), (a, s => a.union(s)))`
+      )
+      assertResultAsString(input1, 'set(0, 1, 2, 3, 4, 5, 6, 7)')
+      assertResultAsString('set().fold(set(), (a, s => a.union(s)))', 'set()')
+      // product by using a definition
+      const input2 = dedent(
+        `def prod(x, y) = x * y;
+        |2.to(4).fold(1, prod)`
+      )
+      assertResultAsString(input2, '24')
     })
   })
 })

@@ -66,7 +66,9 @@ export function tntRepl
     nOpenBraces = 0
     nOpenParen = 0
     rl.setPrompt(settings.prompt)
-    out(chalk.yellow('<cancelled>'))
+    out(chalk.yellow(' <cancelled>'))
+    // clear the line and show the prompt
+    rl.write(null, { ctrl: true, name: 'u' })
     rl.prompt()
   })
 

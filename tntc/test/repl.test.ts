@@ -5,6 +5,7 @@ import { Writable, PassThrough } from 'stream'
 import chalk from 'chalk'
 
 import { tntRepl, settings } from '../src/repl'
+import { dedent } from './textUtils'
 
 // A simple implementation of Writable to a string:
 // After: https://bensmithgall.com/blog/jest-mock-trick
@@ -65,10 +66,6 @@ ${output}
   const result = await withIO(input)
   assert(typeof result === 'string', 'expected result to be a string')
   expect(expected).to.equal(result)
-}
-
-function dedent (text: string) {
-  return text.replace(/(\n)\s+\|/g, '$1')
 }
 
 describe('repl ok', () => {
