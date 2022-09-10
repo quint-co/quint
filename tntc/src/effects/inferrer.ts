@@ -82,17 +82,6 @@ class EffectInferrerVisitor implements IRVisitor {
     this.updateCurrentModule()
   }
 
-  private fetchFromDefinitionsTable (name: string, scope: bigint): Either<string, ValueDefinition> {
-    const value = this.currentTable.valueDefinitions.find(def => {
-      return def.identifier === name && (!def.scope || scopesForId(this.currentScopeTree, scope).includes(def.scope))
-    })
-    if (value) {
-      return right(value)
-    } else {
-      return left(`Couldn't find definition for ${name} in definition table in scope`)
-    }
-  }
-
   exitName (expr: TntName): void {
     const location = `Inferring effect for name ${expr.name}`
 
@@ -263,6 +252,17 @@ class EffectInferrerVisitor implements IRVisitor {
     this.freshVarCounters.set(prefix, counter + 1)
 
     return `${prefix}${counter}`
+  }
+
+  private fetchFromDefinitionsTable (name: string, scope: bigint): Either<string, ValueDefinition> {
+    const value = this.currentTable.valueDefinitions.find(def => {
+      return def.identifier === name && (!def.scope || scopesForId(this.currentScopeTree, scope).includes(def.scope))
+    })
+    if (value) {
+      return right(value)
+    } else {
+      return left(`Couldn't find definition for ${name} in definition table in scope`)
+    }
   }
 
   private fetchSignature (opcode: string, arity: number): Either<string, Effect> {
