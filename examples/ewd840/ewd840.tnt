@@ -20,7 +20,7 @@ var tcolor: str
 val Node = 0.to(N - 1)
 val Color = set("white", "black")
 
-pred TypeOK = (
+val TypeOK = (
   & active in setOfMaps(Node, Bool)     // status of nodes (active or passive)
   & color in setOfMaps(Node, Color)     // color of nodes
   & tpos in Node                        // token position
@@ -31,7 +31,7 @@ pred TypeOK = (
 (* Initially the token is black. The other variables may take any          *)
 (* "type-correct" values.                                                  *)
 (***************************************************************************/
-pred Init = (
+val Init = (
   & setOfMaps(Node, Bool).exists(a => active == a)
   & setOfMaps(Node, Color).exists(c => color == c)
   & Node.exists(n => tpos == n)
@@ -119,7 +119,7 @@ temporal Spec = Init and always(Next.stutter(vars) and System.weakFair(vars))
 /***************************************************************************)
 (* Non-properties, useful for validating the specification with TLC.       *)
 (***************************************************************************/
-pred TokenAlwaysBlack = tcolor == "black"
+val TokenAlwaysBlack = tcolor == "black"
 
 temporal NeverChangeColor = always((color <- color).stutter(vars))
 
@@ -127,12 +127,12 @@ temporal NeverChangeColor = always((color <- color).stutter(vars))
 (* Main safety property: if there is a white token at node 0 then every    *)
 (* node is inactive.                                                       *)
 (***************************************************************************/
-pred terminationDetected = (
+val terminationDetected = (
   & tpos == 0 and tcolor == "white"
   & color[0] == "white" and not(active[0])
 )
 
-pred TerminationDetection =
+val TerminationDetection =
   terminationDetected implies Node.forall(i => not(active[i]))
 
 /***************************************************************************)
@@ -169,7 +169,7 @@ temporal AllNodesTerminateIfNoMessages = (
 /***************************************************************************)
 (* Dijkstra's inductive invariant                                          *)
 (***************************************************************************/
-pred Inv = (
+val Inv = (
   | Node.forall(i => tpos < i implies not(active[i]))
   | 0.to(tpos).exists(j => color[j] == "black")
   | tcolor == "black"

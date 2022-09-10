@@ -72,7 +72,7 @@ module ReadersWriters {
           & writers <- writers.exclude(set(actor))
           & readers <- readers
       }
-  
+
   action Stop =
       readers.union(writers).guess({ actor => StopActivity(actor) })
   
@@ -82,7 +82,7 @@ module ReadersWriters {
   (* Specification *)
   (*****************/
   
-  pred Init = (
+  val Init = (
       & readers == set()
       & writers == set()
       & waiting == []
@@ -110,13 +110,13 @@ module ReadersWriters {
   (* Invariants *)
   (**************/
   
-  pred TypeOK = (
+  val TypeOK = (
       & readers.subseteq(Actors)
       & writers.subseteq(Actors)
       & waiting in tuples(ToSet(seqs(set("read", "write")).Actors))
   )
   
-  pred Safety = (
+  val Safety = (
       & not(readers != set() and writers != set())
       & cardinality(writers) <= 1
   )

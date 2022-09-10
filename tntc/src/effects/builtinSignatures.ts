@@ -120,7 +120,7 @@ const multipleAritySignatures: [string, Signature][] = [
   ['seq', readManyEffect],
   ['set', readManyEffect],
   ['record', readManyEffect],
-  ['tuple', readManyEffect],
+  ['tup', readManyEffect],
   ['tuples', readManyEffect],
   ['andExpr', readManyEffect],
   ['orExpr', readManyEffect],

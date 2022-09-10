@@ -138,7 +138,6 @@ export function defaultDefinitions (): DefinitionTable {
       { kind: 'def', identifier: 'set' },
       { kind: 'def', identifier: 'seq' },
       { kind: 'def', identifier: 'tup' },
-      { kind: 'def', identifier: 'tuple' },
       { kind: 'def', identifier: 'rec' },
       { kind: 'def', identifier: 'record' },
       { kind: 'def', identifier: 'igt' },

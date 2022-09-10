@@ -8,7 +8,7 @@ module tictactoe {
     & board == 1.to(3).mapOf(_ => 1.to(3).mapOf(_2 => "_"))
   }
 
-  pred BoardIs(coordinate, player) = 
+  val BoardIs(coordinate, player) =
     board[coordinate._1][coordinate._2] == player
 
   action Move(player, coordinate) = {
@@ -37,7 +37,7 @@ module tictactoe {
     set((3,1), (2,2), (1,3))
   )
 
-  pred Won(player) = winningPatterns.exists(pattern => 
+  val Won(player) = winningPatterns.exists(pattern =>
     pattern.forall(coordinate => BoardIs(coordinate, player))
   )
 
@@ -55,18 +55,18 @@ module tictactoe {
     (3,3)
   )
 
-  pred BoardEmpty = tuples(1.to(3), 1.to(3)).forall(position =>
+  val BoardEmpty = tuples(1.to(3), 1.to(3)).forall(position =>
     BoardIs(position, "_")
   )
 
   action StartInCorner = corners.guess(corner => Move("X", corner))
 
-  pred canWinWithPattern(winningPattern) = {
+  val canWinWithPattern(winningPattern) = {
     & winningPattern.filter(p => BoardIs(p, "X")).cardinality == 2
     & winningPattern.filter(p => BoardIs(p, "_")).cardinality == 1
   }
 
-  pred canBlockWithPattern(winningPattern) = {
+  val canBlockWithPattern(winningPattern) = {
     & winningPattern.filter(p => BoardIs(p, "O")).cardinality == 2
     & winningPattern.filter(p => BoardIs(p, "_")).cardinality == 1
   }
@@ -110,15 +110,15 @@ module tictactoe {
   temporal XMustEventuallyWin = eventually(Won("X"))
 
   // Invariants: The things we are checking for.
-  pred XHasNotWon = not(Won("X"))
-  pred OHasNotWon = not(Won("O"))
+  val XHasNotWon = not(Won("X"))
+  val OHasNotWon = not(Won("O"))
   
-  pred BoardFilled = not(tuples(1.to(3), 1.to(3)).exists(coordinate =>
+  val BoardFilled = not(tuples(1.to(3), 1.to(3)).exists(coordinate =>
     BoardIs(coordinate, "_")
   ))
 
   // It's not a stalemate if one player has won or the board is not filled
-  pred NotStalemate = {
+  val NotStalemate = {
     | Won("X")
     | Won("O")
     | not(BoardFilled)

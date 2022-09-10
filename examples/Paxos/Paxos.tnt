@@ -91,7 +91,7 @@ val vars = (maxBal, maxVBal, maxVal, msgs)
 /***************************************************************************)
 (* The type invariant and initial predicate.                               *)
 (***************************************************************************/
-pred TypeOK = (
+val TypeOK = (
     & maxBal  in Acceptor.setOfMaps(Ballot.union(set(-1)))
     & maxVBal in Acceptor.setOfMaps(Ballot.union(set(-1)))
     & maxVal  in Acceptor.setOfMaps(Value.union(set(None)))
@@ -256,7 +256,7 @@ val votes = Acceptor.mapOf( a =>
 // Temp fix for integration tests: mock voting definitions while files are not imported
 module Voting {
   def ShowsSafeAt = 1
-  pred Inv = true
+  val Inv = true
 }
 
 module V = Voting(*)
@@ -268,7 +268,7 @@ module V = Voting(*)
 (* Here is a first attempt at an inductive invariant used to prove this    *)
 (* theorem.                                                                *)
 (***************************************************************************/
-pred Inv = (
+val Inv = (
        & TypeOK
        & Acceptor.forall( a =>
            if (maxVBal[a] == -1)

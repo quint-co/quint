@@ -64,7 +64,8 @@ interface WithType {
  * TLA+ level of an expression. So we optimize specifications for the reader
  * by requiring an explicit qualifier.
  */
-export type OpQualifier = 'val' | 'def' | 'pred' | 'action' | 'temporal'
+export type OpQualifier =
+  'staticval' | 'staticdef' | 'val' | 'def' | 'pred' | 'action' | 'temporal'
 
 export interface TntName extends WithId, WithOptionalType {
   /** Expressions kind ('name' -- name reference) */

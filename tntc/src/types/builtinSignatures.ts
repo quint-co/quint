@@ -126,7 +126,7 @@ const multipleAritySignatures: [string, Signature][] = [
   ['andAction', uniformArgsWithResult('bool', 'bool')],
   ['orExpr', uniformArgsWithResult('bool', 'bool')],
   ['orAction', uniformArgsWithResult('bool', 'bool')],
-  ['tuple', (arity: number) => {
+  ['tup', (arity: number) => {
     const args = Array.from(Array(arity).keys()).map(i => `t${i}`).join(', ')
     return parseAndQuantify(`(${args}) => (${args})`)
   }],

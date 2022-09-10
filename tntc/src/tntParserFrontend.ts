@@ -39,42 +39,42 @@ export type Phase2Result =
   | { kind: 'error', messages: ErrorMessage[] }
 
 /**
+ * The result of probing.
+ */
+export type ParseProbeResult =
+  | { kind: 'toplevel' }
+  | { kind: 'expr' }
+  | { kind: 'error', messages: ErrorMessage[] }
+
+/**
+ * Try parsing text as an expression or a top-level declaration.
+ *
+ * @param text input text
+ * @param sourceLocation a textual description of the source
+ * @returns the result of probing
+ */
+export function
+probeParse (text: string, sourceLocation: string): ParseProbeResult {
+  const errorMessages: ErrorMessage[] = []
+  const parser = setupParser(text, sourceLocation, errorMessages)
+  const tree = parser.unitOrExpr()
+  if (errorMessages.length > 0) {
+    return { kind: 'error', messages: errorMessages }
+  } else {
+    const listener = new ProbeListener()
+    ParseTreeWalker.DEFAULT.walk(listener as TntListener, tree)
+    return listener.result
+  }
+}
+
+/**
  * Phase 1 of the TNT parser. Read a string in the TNT syntax and produce the IR.
  * Note that the IR may be ill-typed and some names may be unresolved.
  * The main goal of this pass is to translate a sequence of characters into IR.
  */
 export function parsePhase1 (text: string, sourceLocation: string): Phase1Result {
   const errorMessages: ErrorMessage[] = []
-  // error listener to report lexical and syntax errors
-  const errorListener: any = {
-    syntaxError: (recognizer: any,
-      offendingSymbol: any,
-      line: number,
-      charPositionInLine: number,
-      msg: string) => {
-      const len = offendingSymbol
-        ? offendingSymbol.stopIndex - offendingSymbol.startIndex
-        : 0
-      const index = offendingSymbol ? offendingSymbol.startIndex : 0
-      const start = { line: line - 1, col: charPositionInLine, index: index }
-      const end = { line: line - 1, col: charPositionInLine + len, index: index + len }
-      errorMessages.push({ explanation: msg, locs: [{ source: sourceLocation, start: start, end: end }] })
-    },
-  }
-
-  // Create the lexer and parser
-  const inputStream = CharStreams.fromString(text)
-  const lexer = new TntLexer(inputStream)
-  // remove the console listener and add our listener
-  lexer.removeErrorListeners()
-  lexer.addErrorListener(errorListener)
-
-  const tokenStream = new CommonTokenStream(lexer)
-  const parser = new p.TntParser(tokenStream)
-
-  // remove the console listener and add our listener
-  parser.removeErrorListeners()
-  parser.addErrorListener(errorListener)
+  const parser = setupParser(text, sourceLocation, errorMessages)
   // run the parser
   const tree = parser.module()
   if (errorMessages.length > 0) {
@@ -100,7 +100,8 @@ export function parsePhase1 (text: string, sourceLocation: string): Phase1Result
  * Phase 2 of the TNT parser. Read the IR and check that all names are defined.
  * Note that the IR may be ill-typed.
  */
-export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>): Phase2Result {
+export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
+  Phase2Result {
   const scopeTree = treeFromModule(tntModule)
   const moduleDefinitions = collectDefinitions(tntModule)
   const importResolvingResult = resolveImports(tntModule, moduleDefinitions)
@@ -200,4 +201,60 @@ export function compactSourceMap (sourceMap: Map<BigInt, Loc>): { sourceIndex: a
   })
 
   return { sourceIndex: Object.fromEntries(sourcesIndex), map: Object.fromEntries(compactedSourceMap) }
+}
+
+// setup a TNT parser, so it can be used to parse from various non-terminals
+function setupParser (text: string,
+  sourceLocation: string, errorMessages: ErrorMessage[]): p.TntParser {
+  // error listener to report lexical and syntax errors
+  const errorListener: any = {
+    syntaxError: (recognizer: any,
+      offendingSymbol: any,
+      line: number,
+      charPositionInLine: number,
+      msg: string) => {
+      const len = offendingSymbol
+        ? offendingSymbol.stopIndex - offendingSymbol.startIndex
+        : 0
+      const index = offendingSymbol ? offendingSymbol.startIndex : 0
+      const start = { line: line - 1, col: charPositionInLine, index: index }
+      const end = { line: line - 1, col: charPositionInLine + len, index: index + len }
+      errorMessages.push({ explanation: msg, locs: [{ source: sourceLocation, start: start, end: end }] })
+    },
+  }
+
+  // Create the lexer and parser
+  const inputStream = CharStreams.fromString(text)
+  const lexer = new TntLexer(inputStream)
+  // remove the console listener and add our listener
+  lexer.removeErrorListeners()
+  lexer.addErrorListener(errorListener)
+
+  const tokenStream = new CommonTokenStream(lexer)
+  const parser = new p.TntParser(tokenStream)
+
+  // remove the console listener and add our listener
+  parser.removeErrorListeners()
+  parser.addErrorListener(errorListener)
+
+  return parser
+}
+
+// a simple listener to figure out what has been parsed
+class ProbeListener implements TntListener {
+  result: ParseProbeResult = {
+    kind: 'error',
+    messages: [{
+      explanation: 'unknown parse result',
+      locs: [],
+    }],
+  }
+
+  exitUnitOrExpr (ctx: p.UnitOrExprContext) {
+    if (ctx.unit()) {
+      this.result = { kind: 'toplevel' }
+    } else {
+      this.result = { kind: 'expr' }
+    }
+  }
 }
