@@ -51,6 +51,22 @@ tntc parse ../examples/ReadersWriters/ReadersWriters.tnt
 
 <!-- !test check ReadersWriters -->
     expect exit code 0
+    
+### OK on typecheck ReadersWriters
+
+This command typechecks the ReadersWriters example.
+
+<!-- !test program
+tntc typecheck ../examples/ReadersWriters/ReadersWriters.tnt
+-->
+
+```sh
+tntc typecheck ../examples/ReadersWriters/ReadersWriters.tnt
+```
+
+<!-- !test check ReadersWriters - Types & Effects -->
+    expect exit code 0
+    
 
 ### OK on parse ewd840
 
