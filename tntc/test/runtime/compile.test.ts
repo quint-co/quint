@@ -409,4 +409,44 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString(input2, '24')
     })
   })
+
+  describe('compile over tuples', () => {
+    it('tuple constructors', () => {
+      assertResultAsString('tup(1, 2, 3)', 'tup(1, 2, 3)')
+    })
+
+    it('tuple access', () => {
+      assertResultAsString('tup(4, 5, 6)._1', '4')
+      assertResultAsString('tup(4, 5, 6)._2', '5')
+      assertResultAsString('tup(4, 5, 6)._3', '6')
+    })
+
+    it('cross products', () => {
+      assertResultAsString('tuples(set(), set(), set())', 'set()')
+      assertResultAsString('tuples(set(), 2.to(3))', 'set()')
+      assertResultAsString('tuples(2.to(3), set(), 3.to(5))', 'set()')
+      assertResultAsString('tuples(1.to(2), 2.to(3))',
+        'set(tup(1, 2), tup(2, 2), tup(1, 3), tup(2, 3))')
+      assertResultAsString('tuples(1.to(1), 1.to(1), 1.to(1))',
+        'set(tup(1, 1, 1))')
+      assertResultAsString(
+        'tuples(1.to(3), 2.to(4)) == tuples(1.to(3), 2.to(5 - 1))',
+        'true'
+      )
+      assertResultAsString(
+        'tuples(1.to(3), 2.to(4)) == tuples(1.to(3), 2.to(5 + 1))',
+        'false'
+      )
+      assertResultAsString(
+        'tuples(1.to(3), 2.to(4)).subseteq(tuples(1.to(3), 2.to(5 + 1)))',
+        'true'
+      )
+      assertResultAsString(
+        'tuples(1.to(4), 2.to(4)).subseteq(tuples(1.to(3), 2.to(5)))',
+        'false'
+      )
+      assertResultAsString('set(tuples(1.to(2), 2.to(3)))',
+        'set(set(tup(1, 2), tup(1, 3), tup(2, 2), tup(2, 3)))')
+    })
+  })
 })

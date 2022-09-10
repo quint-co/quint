@@ -488,7 +488,7 @@ export class ToIrListener implements TntListener {
   exitTuple (ctx: p.TupleContext) {
     const args = this.popExprs(ctx.expr().length)
 
-    this.pushApplication(ctx, 'tuple', args)
+    this.pushApplication(ctx, 'tup', args)
   }
 
   // sequence constructor, e.g., [1, 2, 3]

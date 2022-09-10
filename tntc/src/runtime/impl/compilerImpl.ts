@@ -160,6 +160,32 @@ export class CompilerVisitor implements IRVisitor {
         this.applyFun(2, (p, q) => just(rv.mkBool(p.toInt() <= q.toInt())))
         break
 
+      case 'tup':
+        // Construct a tuple from an array of values
+        this.applyFun(app.args.length,
+          (...values: RuntimeValue[]) => just(rv.mkTuple(values)))
+        break
+
+      case 'item':
+        // Access a tuple
+        this.applyFun(2, (tup, idx) => {
+          const list = tup.toList()
+          const i = idx.toInt()
+          if (i > 0n && i <= list.size) {
+            const elem = list.get(Number(i - 1n))
+            return (elem) ? just(elem) : none()
+          } else {
+            return none()
+          }
+        })
+        break
+
+      case 'tuples':
+        // Construct a cross product
+        this.applyFun(app.args.length,
+          (...sets: RuntimeValue[]) => just(rv.mkCrossProd(sets)))
+        break
+
       case 'set':
         // Construct a set from an array of values.
         this.applyFun(app.args.length,

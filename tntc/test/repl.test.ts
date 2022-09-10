@@ -90,6 +90,7 @@ describe('repl ok', () => {
       |1.to(4).filter(x => x > 2)
       |set(1, 3).union(set(5, 6))
       |1.to(4).forall(x => x > 1)
+      |(5 - 1, 5, 6)
       |`
     )
     const output = dedent(
@@ -99,6 +100,7 @@ describe('repl ok', () => {
       |set(3, 4)
       |set(1, 3, 5, 6)
       |false
+      |(4, 5, 6)
       |`
     )
     await assertRepl(input, output)
