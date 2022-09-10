@@ -173,10 +173,10 @@ connection.onHover((params: HoverParams): Hover | undefined => {
   const effect = findResult(effects, params.position, document)
 
   let hoverText = ''
-  if (type != undefined) {
+  if (type !== undefined) {
     hoverText += `type: ${type}\n`
   }
-  if (effect != undefined) {
+  if (effect !== undefined) {
     hoverText += `effect: ${effect}\n`
   }
 
@@ -290,7 +290,7 @@ function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceM
     e.forEach((error, id) => {
       const loc = sourceMap.get(id)
       if (!loc) {
-        console.log('loc for ${id} not found in source map')
+        console.log(`loc for ${id} not found in source map`)
       } else {
         const diag = assembleDiagnostic(errorTreeToString(error), loc)
         diagnostics.push(diag)
@@ -303,7 +303,6 @@ function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceM
     return true
   })
 
-  console.log(diagnostics)
   return diagnostics
 }
 
@@ -316,7 +315,7 @@ function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap
     e.forEach((error, id) => {
       const loc = sourceMap.get(id)!
       if (!loc) {
-        console.log('loc for ${id} not found in source map')
+        console.log(`loc for ${id} not found in source map`)
       } else {
         const diag = assembleDiagnostic(errorTreeToString(error), loc)
         diagnostics.push(diag)
@@ -329,7 +328,6 @@ function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap
     return true
   })
 
-  console.log(diagnostics)
   return diagnostics
 }
 
