@@ -52,11 +52,13 @@ import { BracesContext } from "./TntParser";
 import { ModuleContext } from "./TntParser";
 import { UnitContext } from "./TntParser";
 import { OperDefContext } from "./TntParser";
+import { QualifierContext } from "./TntParser";
 import { ParamsContext } from "./TntParser";
 import { InstanceModContext } from "./TntParser";
 import { TypeContext } from "./TntParser";
 import { TypeUnionRecOneContext } from "./TntParser";
 import { ExprContext } from "./TntParser";
+import { UnitOrExprContext } from "./TntParser";
 import { LambdaContext } from "./TntParser";
 import { IdentOrHoleContext } from "./TntParser";
 import { IdentOrStarContext } from "./TntParser";
@@ -467,6 +469,13 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitOperDef?: (ctx: OperDefContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by `TntParser.qualifier`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitQualifier?: (ctx: QualifierContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by `TntParser.params`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -500,6 +509,13 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitExpr?: (ctx: ExprContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `TntParser.unitOrExpr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitUnitOrExpr?: (ctx: UnitOrExprContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `TntParser.lambda`.

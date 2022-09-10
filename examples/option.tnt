@@ -14,7 +14,7 @@ module option {
   var votes: seq(vote_option)
   var outcome: int
 
-  pred Init = (
+  val Init = (
     & votes == []
     & outcome == None
   )

@@ -24,9 +24,16 @@ unit :    'const' IDENTIFIER ':' type                     # const
         ;
 
 // an operator definition
-operDef : qualifier=('val' | 'def' | 'pred' | 'action' | 'temporal')       
-          IDENTIFIER params? (':' type)? '=' expr          
+operDef : qualifier IDENTIFIER params? (':' type)? '=' expr ';'?
         ;
+
+qualifier : 'val'
+          | 'def'
+          | 'static' 'val'
+          | 'static' 'def'
+          | 'action'
+          | 'temporal'
+          ;
 
 params  :       '(' (IDENTIFIER (',' IDENTIFIER)*)? ')'
         ;
@@ -105,6 +112,9 @@ expr:           // apply a built-in operator via the dot notation
         |       '(' expr ')'                                        # paren
         |       '{' expr '}'                                        # braces
         ;
+
+// a probing rule for REPL
+unitOrExpr :    unit | expr ;
 
 // This rule parses anonymous functions, e.g.:
 // 1. Non-action lambdas:

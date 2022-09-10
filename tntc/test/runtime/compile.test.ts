@@ -2,7 +2,8 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { Maybe } from '@sweet-monads/maybe'
 import { expressionToString } from '../../src/IRprinting'
-import { compileExpr } from '../../src/runtime/compile'
+import { compile } from '../../src/runtime/compile'
+import { dedent } from '../textUtils'
 
 function assertDefined<T> (m: Maybe<T>) {
   assert(m.isJust(), 'undefined value')
@@ -11,17 +12,24 @@ function assertDefined<T> (m: Maybe<T>) {
 // Compile an expression, evaluate it, convert to TlaEx, then to a string,
 // compare the result. This is the easiest path to test the results.
 function assertResultAsString (input: string, result: string) {
-  assertDefined(
-    compileExpr(input)
-      .eval()
-      .map(r => r.toTntEx())
-      .map(expressionToString)
-      .map(s => assert(s === result, `Expected ${result}, found ${s}`))
-  )
+  const moduleText = `module __runtime { val __expr = ${input} }`
+  const context = compile(moduleText)
+  const value = context.get('__expr')
+  if (value === undefined) {
+    assert(false, `Missing value for ${input}`)
+  } else {
+    assertDefined(
+      value
+        .eval()
+        .map(r => r.toTntEx())
+        .map(expressionToString)
+        .map(s => assert(s === result, `Expected ${result}, found ${s}`))
+    )
+  }
 }
 
 describe('compiling specs to runtime values', () => {
-  describe('compileExpr over integers', () => {
+  describe('compile over integers', () => {
     it('computes positive integer literals', () => {
       assertResultAsString('15', '15')
     })
@@ -93,7 +101,7 @@ describe('compiling specs to runtime values', () => {
     })
   })
 
-  describe('compileExpr over Booleans', () => {
+  describe('compile over Booleans', () => {
     it('computes Boolean literals', () => {
       assertResultAsString('false', 'false')
       assertResultAsString('true', 'true')
@@ -147,7 +155,7 @@ describe('compiling specs to runtime values', () => {
     })
   })
 
-  describe('compileExpr over other operators', () => {
+  describe('compile over other operators', () => {
     it('computes Boolean if-then-else', () => {
       assertResultAsString('if (false) false else true', 'true')
       assertResultAsString('if (true) false else true', 'false')
@@ -159,7 +167,7 @@ describe('compiling specs to runtime values', () => {
     })
   })
 
-  describe('compileExpr over definitions', () => {
+  describe('compile over definitions', () => {
     it('computes value definitions', () => {
       const input =
         `val x = 3 + 4
@@ -167,9 +175,23 @@ describe('compiling specs to runtime values', () => {
          y - x`
       assertResultAsString(input, '7')
     })
+
+    it('computes multi-arg definitions', () => {
+      const input =
+        `def mult(x, y) = (x * y)
+         mult(2, mult(3, 4))`
+      assertResultAsString(input, '24')
+    })
+
+    it('uses named def instead of lambda', () => {
+      const input =
+        `def positive(x) = x > 0
+         (-3).to(3).filter(positive)`
+      assertResultAsString(input, 'set(1, 2, 3)')
+    })
   })
 
-  describe('compileExpr over sets', () => {
+  describe('compile over sets', () => {
     it('computes an interval', () => {
       const input = '2.to(5)'
       assertResultAsString(input, 'set(2, 3, 4, 5)')
@@ -366,6 +388,65 @@ describe('compiling specs to runtime values', () => {
         'set(set(1, 2, 3, 4))')
       assertResultAsString('set(1.to(4), 2.to(3)).filter(S => S.contains(0))',
         'set()')
+    })
+
+    it('computes fold', () => {
+      // sum
+      assertResultAsString('set(1, 2, 3).fold(10, (v, x => v + x))', '16')
+      assertResultAsString('set().fold(10, (v, x => v + x))', '10')
+      // flatten
+      const input1 = dedent(
+        `set(1.to(3), 4.to(5), 6.to(7))
+        |  .fold(set(0), (a, s => a.union(s)))`
+      )
+      assertResultAsString(input1, 'set(0, 1, 2, 3, 4, 5, 6, 7)')
+      assertResultAsString('set().fold(set(), (a, s => a.union(s)))', 'set()')
+      // product by using a definition
+      const input2 = dedent(
+        `def prod(x, y) = x * y;
+        |2.to(4).fold(1, prod)`
+      )
+      assertResultAsString(input2, '24')
+    })
+  })
+
+  describe('compile over tuples', () => {
+    it('tuple constructors', () => {
+      assertResultAsString('tup(1, 2, 3)', 'tup(1, 2, 3)')
+    })
+
+    it('tuple access', () => {
+      assertResultAsString('tup(4, 5, 6)._1', '4')
+      assertResultAsString('tup(4, 5, 6)._2', '5')
+      assertResultAsString('tup(4, 5, 6)._3', '6')
+    })
+
+    it('cross products', () => {
+      assertResultAsString('tuples(set(), set(), set())', 'set()')
+      assertResultAsString('tuples(set(), 2.to(3))', 'set()')
+      assertResultAsString('tuples(2.to(3), set(), 3.to(5))', 'set()')
+      assertResultAsString('tuples(1.to(2), 2.to(3))',
+        'set(tup(1, 2), tup(2, 2), tup(1, 3), tup(2, 3))')
+      assertResultAsString('tuples(1.to(1), 1.to(1), 1.to(1))',
+        'set(tup(1, 1, 1))')
+      assertResultAsString(
+        'tuples(1.to(3), 2.to(4)) == tuples(1.to(3), 2.to(5 - 1))',
+        'true'
+      )
+      assertResultAsString(
+        'tuples(1.to(3), 2.to(4)) == tuples(1.to(3), 2.to(5 + 1))',
+        'false'
+      )
+      assertResultAsString(
+        'tuples(1.to(3), 2.to(4)).subseteq(tuples(1.to(3), 2.to(5 + 1)))',
+        'true'
+      )
+      assertResultAsString(
+        'tuples(1.to(4), 2.to(4)).subseteq(tuples(1.to(3), 2.to(5)))',
+        'false'
+      )
+      assertResultAsString('set(tuples(1.to(2), 2.to(3)))',
+        'set(set(tup(1, 2), tup(1, 3), tup(2, 2), tup(2, 3)))')
     })
   })
 })

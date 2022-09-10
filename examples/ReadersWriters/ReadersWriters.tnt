@@ -78,7 +78,7 @@ action Stop =
 (* Specification *)
 (*****************/
 
-pred Init = (
+val Init = (
     & readers == set()
     & writers == set()
     & waiting == []
@@ -106,13 +106,13 @@ temporal Spec = Init and always(stutter(Next, vars) and Fairness)
 (* Invariants *)
 (**************/
 
-pred TypeOK = (
+val TypeOK = (
     & readers.subseteq(Actors)
     & writers.subseteq(Actors)
     & waiting in seqs(set("read", "write").cross.Actors)
 )
 
-pred Safety = (
+val Safety = (
     & not(readers != set() and writers != set())
     & cardinality(writers) <= 1
 )

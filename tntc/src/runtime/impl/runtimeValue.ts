@@ -64,7 +64,7 @@
  * information.
  */
 
-import { Set, ValueObject, is as immutableIs } from 'immutable'
+import { Set, List, ValueObject, is as immutableIs } from 'immutable'
 
 import { expressionToString } from '../../IRprinting'
 
@@ -99,6 +99,16 @@ export const rv = {
   },
 
   /**
+   * Make a runtime value that represents a tuple.
+   *
+   * @param value an iterable collection of runtime values
+   * @return a new runtime value that carries the tuple
+   */
+  mkTuple: (elems: Iterable<RuntimeValue>): RuntimeValue => {
+    return new RuntimeValueTuple(List(elems))
+  },
+
+  /**
    * Make a runtime value that represents a set via an immutable set.
    *
    * @param elems an iterable collection of runtime values
@@ -129,6 +139,16 @@ export const rv = {
   mkInterval: (first: bigint, last: bigint): RuntimeValue => {
     return new RuntimeValueInterval(first, last)
   },
+
+  /**
+   * Make a runtime value that represents a cross product of sets.
+   *
+   * @param value an iterable collection of runtime values
+   * @return a new runtime value that carries the tuple
+   */
+  mkCrossProd: (sets: RuntimeValue[]): RuntimeValue => {
+    return new RuntimeValueCrossProd(sets)
+  },
 }
 
 /**
@@ -148,7 +168,7 @@ export interface RuntimeValue
    * Can the runtime value behave like a set? Effectively, this means that the
    * value returns a sequence of elements, when it is iterated over.
    */
-isSetLike: boolean
+  isSetLike: boolean
 
   /**
    * Transform this runtime value into the normal form, so it can be
@@ -169,6 +189,14 @@ isSetLike: boolean
    * (probably much larger than the original object)
    */
   toSet (): Set<RuntimeValue>
+
+  /**
+   * If the result is a tuple, transform it to an immutable list of values.
+   * Otherwise, return an empty list.
+   *
+   * @return an immutable list of results
+   */
+  toList (): List<RuntimeValue>
 
   /**
    * If the result contains a Boolean value, return it. Otherwise, return false.
@@ -225,6 +253,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
   }
 
   normalForm (): RuntimeValue {
+    // tuples override this method
     if (!this.isSetLike) {
       // Booleans and integers are in the normal form
       return this
@@ -240,6 +269,14 @@ abstract class RuntimeValueBase implements RuntimeValue {
       set = set.add(e.normalForm())
     }
     return set
+  }
+
+  toList (): List<RuntimeValue> {
+    if (this instanceof RuntimeValueTuple) {
+      return this.list
+    } else {
+      return List()
+    }
   }
 
   toBool (): boolean {
@@ -297,12 +334,30 @@ abstract class RuntimeValueBase implements RuntimeValue {
     if (this instanceof RuntimeValueInt && other instanceof RuntimeValueInt) {
       return this.value === other.value
     }
+    if (this instanceof RuntimeValueTuple &&
+        other instanceof RuntimeValueTuple) {
+      return this.list === other.list
+    }
     if (this instanceof RuntimeValueSet && other instanceof RuntimeValueSet) {
       return immutableIs(this.set, other.set)
     }
     if (this instanceof RuntimeValueInterval &&
         other instanceof RuntimeValueInterval) {
       return this.first === other.first && this.last === other.last
+    }
+    if (this instanceof RuntimeValueCrossProd &&
+        other instanceof RuntimeValueCrossProd) {
+      const size = this.sets.length
+      if (size !== other.sets.length) {
+        return false
+      } else {
+        for (let i = 0; i < size; i++) {
+          if (!this.sets[i].equals(other.sets[i])) {
+            return false
+          }
+        }
+        return true
+      }
     }
     if (this.isSetLike && other.isSetLike) {
       // for instance, an interval and an explicit set
@@ -373,6 +428,46 @@ class RuntimeValueInt extends RuntimeValueBase implements ValueObject {
       id: 0n,
       kind: 'int',
       value: this.value,
+    }
+  }
+}
+
+/**
+ * A set of runtime values represented via an immutable List.
+ * This is an internal class.
+ */
+class RuntimeValueTuple extends RuntimeValueBase implements RuntimeValue {
+  list: List<RuntimeValue>
+
+  constructor (values: List<RuntimeValue>) {
+    super(true)
+    this.list = values
+  }
+
+  normalForm (): RuntimeValue {
+    const normalizedValues: RuntimeValue[] = []
+    for (const e of this.list) {
+      normalizedValues.push(e.normalForm())
+    }
+    return new RuntimeValueTuple(List(normalizedValues))
+  }
+
+  hashCode (): number {
+    return this.list.hashCode()
+  }
+
+  toTntEx (): TntEx {
+    // simply enumerate the values
+    const elems: TntEx[] = []
+    for (const e of this.list) {
+      elems.push(e.toTntEx())
+    }
+    // return the expression tup(...elems)
+    return {
+      id: 0n,
+      kind: 'app',
+      opcode: 'tup',
+      args: elems,
     }
   }
 }
@@ -467,7 +562,15 @@ class RuntimeValueInterval extends RuntimeValueBase implements RuntimeValue {
   }
 
   [Symbol.iterator] () {
-    return new IntervalIterator(this.first, this.last)
+    const start = this.first
+    const end = this.last
+    function * gen (): Generator<RuntimeValue> {
+      for (let i = start; i <= end; i++) {
+        yield new RuntimeValueInt(i)
+      }
+    }
+
+    return gen()
   }
 
   hashCode (): number {
@@ -509,26 +612,124 @@ class RuntimeValueInterval extends RuntimeValueBase implements RuntimeValue {
 }
 
 /**
- * An iterator over integer runtime values from a range.
+ * A set of runtime values represented via a cross-product of sets.
  * This is an internal class.
  */
-class IntervalIterator implements Iterator<RuntimeValue> {
-  private current: bigint
-  private end: bigint
+class RuntimeValueCrossProd
+  extends RuntimeValueBase implements RuntimeValue {
+  // components of the cross-product, must be set-like
+  sets: RuntimeValue[]
 
-  constructor (first: bigint, last: bigint) {
-    this.current = first
-    this.end = last
+  constructor (sets: RuntimeValue[]) {
+    super(true)
+    this.sets = sets
   }
 
-  next (): IteratorResult<RuntimeValue> {
-    if (this.current <= this.end) {
-      return {
-        done: false,
-        value: new RuntimeValueInt(this.current++),
+  [Symbol.iterator] () {
+    // convert every set-like value to an array
+    const arrays: RuntimeValue[][] =
+      this.sets.map(set => Array.from(set))
+    const existsEmptySet = arrays.some(arr => arr.length === 0)
+
+    const nindices = arrays.length
+    function * gen () {
+      if (existsEmptySet) {
+        // yield nothing as an empty set produces the empty product
+        return
+      }
+      // Our iterator is an array of indices.
+      // An ith index must be in the range [0, arrays[i].length).
+      const indices: number[] = Array(nindices).fill(0)
+      indices[0] = -1
+      let done = false
+      while (!done) {
+        // try to increment one of the counters, starting with the first one
+        done = true
+        for (let i = 0; i < nindices; i++) {
+          // similar to how we do increment in binary,
+          // try to increase a position, wrapping to 0, if overfull
+          if (++indices[i] >= arrays[i].length) {
+            // wrap around and continue
+            indices[i] = 0
+          } else {
+            // increment worked, there is a next element
+            done = false
+            break
+          }
+        }
+
+        if (!done) {
+          // yield a tuple that is produced with the counters
+          const nextElem: RuntimeValue[] = []
+          for (let i = 0; i < nindices; i++) {
+            nextElem.push(arrays[i][indices[i]])
+          }
+          yield new RuntimeValueTuple(List(nextElem))
+        }
+      }
+    }
+
+    return gen()
+  }
+
+  hashCode (): number {
+    let hash = 0
+    for (const c of this.sets) {
+      hash += c.hashCode()
+    }
+    return hash
+  }
+
+  contains (elem: RuntimeValue): boolean {
+    if (elem instanceof RuntimeValueTuple) {
+      if (elem.list.size !== this.sets.length) {
+        return false
+      } else {
+        let i = 0
+        for (const e of elem.list) {
+          if (!this.sets[i].contains(e)) {
+            return false
+          }
+          i++
+        }
+        return true
       }
     } else {
-      return { done: true, value: undefined }
+      return false
+    }
+  }
+
+  isSubset (superset: RuntimeValue): boolean {
+    if (superset instanceof RuntimeValueCrossProd) {
+      const size = this.sets.length
+      if (superset.sets.length !== size) {
+        return false
+      } else {
+        for (let i = 0; i < size; i++) {
+          if (!this.sets[i].isSubset(superset.sets[i])) {
+            return false
+          }
+        }
+        return true
+      }
+    } else {
+      // fall back to the general implementation
+      return super.isSubset(superset)
+    }
+  }
+
+  toTntEx (): TntEx {
+    // simply enumerate the values
+    const elems: TntEx[] = []
+    for (const i of this) {
+      elems.push(i.toTntEx())
+    }
+    // return the expression set(...elems)
+    return {
+      id: 0n,
+      kind: 'app',
+      opcode: 'set',
+      args: elems,
     }
   }
 }
