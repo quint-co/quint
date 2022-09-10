@@ -16,7 +16,7 @@ import { effectToString, variablesToString } from './printing'
 import { Either, right, left, mergeInMany } from '@sweet-monads/either'
 import { applySubstitution, compose, Substitutions } from './substitutions'
 import { ErrorTree, Error, buildErrorTree, buildErrorLeaf } from '../errorTree'
-import { flattenUnions, simplifyConcreteEffect } from './simplification'
+import { flattenUnions, simplify } from './simplification'
 import isEqual from 'lodash.isequal'
 
 /* Concrete atomic efects specifying variables that the expression reads and updates */
@@ -80,9 +80,7 @@ export const emptyVariables: Variables = { kind: 'concrete', vars: [] }
 export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitutions> {
   const location = `Trying to unify ${effectToString(ea)} and ${effectToString(eb)}`
 
-  const simplificationResults = mergeInMany([ea, eb].map(e => {
-    return e.kind === 'concrete' ? simplifyConcreteEffect(e) : right(e)
-  }))
+  const simplificationResults = mergeInMany([ea, eb].map(simplify))
   return simplificationResults.chain(([e1, e2]): Either<Error, Substitutions> => {
     if (e1.kind === 'arrow' && e2.kind === 'arrow') {
       return unifyArrows(location, e1, e2)

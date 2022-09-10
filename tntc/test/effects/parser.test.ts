@@ -34,6 +34,21 @@ describe('parseEffect', () => {
     }
   })
 
+  it('parses temporal effect', () => {
+    const effect = parseEffect('Temporal[v]')
+
+    assert.isTrue(effect.isRight())
+    if (effect.isRight()) {
+      const { value } = effect
+      assert.deepEqual(value, {
+        kind: 'concrete',
+        read: emptyVariables,
+        update: emptyVariables,
+        temporal: { kind: 'quantified', name: 'v' },
+      })
+    }
+  })
+
   it('parses arrow effect', () => {
     const effect = parseEffect('(Read[v]) => Update[v]')
 
