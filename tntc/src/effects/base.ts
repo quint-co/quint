@@ -178,7 +178,7 @@ function unifyConcrete (location: string, e1: ConcreteEffect, e2: ConcreteEffect
     ]).map(effects => effects.map(ensureConcreteEffect))
 
     if ((isTemporal(e1) && isAction(e2)) || (isAction(e1) && isTemporal(e2))) {
-      return left(`Counld't unify temporal and action effects: ${effectToString(e1)} and ${effectToString(e2)}` as Error)
+      return left(`Couldn't unify temporal and action effects: ${effectToString(e1)} and ${effectToString(e2)}` as Error)
     }
 
     const otherUnificationResult = effectsWithReadSubstitution.chain(([e1s, e2s]) => {

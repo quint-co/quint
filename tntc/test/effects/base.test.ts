@@ -50,7 +50,7 @@ describe('unify', () => {
       assert.isTrue(result.isLeft())
       result.mapLeft(r => assert.deepEqual(r, {
         location: "Trying to unify Update['x'] and Temporal['y']",
-        message: "Counld't unify temporal and action effects: Update['x'] and Temporal['y']",
+        message: "Couldn't unify temporal and action effects: Update['x'] and Temporal['y']",
         children: [],
       }))
     })
