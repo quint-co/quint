@@ -32,6 +32,9 @@ export function effectToString (e: Effect): string {
       if (e.update.kind !== 'concrete' || e.update.vars.length > 0) {
         output.push(`Update[${variablesToString(e.update)}]`)
       }
+      if (e.temporal.kind !== 'concrete' || e.temporal.vars.length > 0) {
+        output.push(`Temporal[${variablesToString(e.temporal)}]`)
+      }
       if (output.length > 0) {
         return output.join(' & ')
       } else {

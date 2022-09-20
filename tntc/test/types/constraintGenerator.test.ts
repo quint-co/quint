@@ -62,7 +62,7 @@ describe('ConstraintGeneratorVisitor', () => {
     const visitor = new ConstraintGeneratorVisitor(solvingFunction)
     walkModule(visitor, tntModule)
 
-    assert.sameDeepMembers(Array.from(visitor.errors.values()), Array.from(errors.values()))
+    assert.sameDeepMembers(Array.from(visitor.errors.entries()), Array.from(errors.entries()))
   })
 
   it('collects internal errors', () => {

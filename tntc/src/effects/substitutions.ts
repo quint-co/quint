@@ -16,7 +16,7 @@ import { Either, right, mergeInMany } from '@sweet-monads/either'
 import { buildErrorTree, ErrorTree } from '../errorTree'
 import { Effect, Variables } from './base'
 import { effectToString, substitutionsToString } from './printing'
-import { simplifyConcreteEffect } from './simplification'
+import { simplify } from './simplification'
 
 /*
  * Substitutions can be applied to both effects and variables, replacing
@@ -74,16 +74,17 @@ export function applySubstitution (subs: Substitutions, e: Effect): Either<Error
       break
     }
     case 'concrete': {
-      // e is a an effect of the form Read[r] & Update[u]
+      // e is a an effect of the form Read[r] & Update[u] or Read[r] & Temporal[t]
       const read = applySubstitutionToVariables(subs, e.read)
       const update = applySubstitutionToVariables(subs, e.update)
+      const temporal = applySubstitutionToVariables(subs, e.temporal)
 
-      result = right({ kind: 'concrete', read: read, update: update })
+      result = right({ kind: 'concrete', read: read, update: update, temporal: temporal })
       break
     }
   }
 
-  return result.chain(e => e.kind === 'concrete' ? simplifyConcreteEffect(e) : right(e))
+  return result.chain(simplify)
 }
 
 /**

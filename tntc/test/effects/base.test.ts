@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { Effect, unify } from '../../src/effects/base'
+import { Effect, emptyVariables, unify } from '../../src/effects/base'
 import { parseEffectOrThrow } from '../../src/effects/parser'
 
 describe('unify', () => {
@@ -29,6 +29,49 @@ describe('unify', () => {
       }))
     })
 
+    it('unifies temporal effects', () => {
+      const e1 = parseEffectOrThrow('Temporal[t1]')
+      const e2 = parseEffectOrThrow("Temporal['x']")
+
+      const result = unify(e1, e2)
+
+      assert.isTrue(result.isRight())
+      result.map(r => assert.sameDeepMembers(r, [
+        { kind: 'variable', name: 't1', value: { kind: 'concrete', vars: ['x'] } },
+      ]))
+    })
+
+    it('returns error unifying temporal and update effects', () => {
+      const e1 = parseEffectOrThrow("Update['x']")
+      const e2 = parseEffectOrThrow("Temporal['y']")
+
+      const result = unify(e1, e2)
+
+      assert.isTrue(result.isLeft())
+      result.mapLeft(r => assert.deepEqual(r, {
+        location: "Trying to unify Update['x'] and Temporal['y']",
+        message: "Couldn't unify temporal and action effects: Update['x'] and Temporal['y']",
+        children: [],
+      }))
+    })
+
+    it('returns error unifying temporal and pure effects', () => {
+      const e1 = parseEffectOrThrow('Pure')
+      const e2 = parseEffectOrThrow("Temporal['y']")
+
+      const result = unify(e1, e2)
+
+      assert.isTrue(result.isLeft())
+      result.mapLeft(r => assert.deepEqual(r, {
+        location: "Trying to unify Pure and Temporal['y']",
+        children: [{
+          location: "Trying to unify variables [] and ['y']",
+          message: 'Expected variables [] and [y] to be the same',
+          children: [],
+        }],
+      }))
+    })
+
     it('unifies variables with different orders', () => {
       const e1 = parseEffectOrThrow("Read['x', 'y']")
       const e2 = parseEffectOrThrow("Read['y', 'x']")
@@ -51,7 +94,8 @@ describe('unify', () => {
             { kind: 'concrete', vars: ['x', 'y'] },
           ],
         },
-        update: { kind: 'concrete', vars: [] },
+        update: emptyVariables,
+        temporal: emptyVariables,
       }
 
       const result = unify(e1, e2)
@@ -65,15 +109,24 @@ describe('unify', () => {
         },
       ]))
     })
-  })
 
-  it('unifies unions when they are the exact same', () => {
-    const e = parseEffectOrThrow('Read[v1, v2]')
+    it('unifies unions when they are the exact same for temporal', () => {
+      const e = parseEffectOrThrow('Temporal[v1, v2]')
 
-    const result = unify(e, e)
+      const result = unify(e, e)
 
-    result.map(r => assert.deepEqual(r, []))
-    assert.isTrue(result.isRight())
+      result.map(r => assert.deepEqual(r, []))
+      assert.isTrue(result.isRight())
+    })
+
+    it('unifies unions when they are the exact same for updates', () => {
+      const e = parseEffectOrThrow('Update[v1, v2]')
+
+      const result = unify(e, e)
+
+      result.map(r => assert.deepEqual(r, []))
+      assert.isTrue(result.isRight())
+    })
   })
 
   describe('simple arrow effects', () => {
@@ -88,6 +141,36 @@ describe('unify', () => {
         { kind: 'variable', name: 'v', value: { kind: 'concrete', vars: ['x'] } },
         { kind: 'effect', name: 'E', value: parseEffectOrThrow("Update['x']") },
       ]))
+    })
+
+    it('returns error for each effect updating a variable more than once', () => {
+      const e1 = parseEffectOrThrow("(Update['x', 'x']) => Read['x']")
+      const e2 = parseEffectOrThrow("(Update['y', 'y']) => Read['y']")
+
+      const result = unify(e1, e2)
+
+      assert.isTrue(result.isLeft())
+      result.mapLeft(r => assert.deepEqual(r, {
+        location: "Trying to unify (Update['x', 'x']) => Read['x'] and (Update['y', 'y']) => Read['y']",
+        children: [
+          {
+            location: "Trying to simplify effect (Update['x', 'x']) => Read['x']",
+            children: [{
+              location: "Trying to simplify effect Update['x', 'x']",
+              message: 'Multiple updates of variable(s): x',
+              children: [],
+            }],
+          },
+          {
+            location: "Trying to simplify effect (Update['y', 'y']) => Read['y']",
+            children: [{
+              location: "Trying to simplify effect Update['y', 'y']",
+              message: 'Multiple updates of variable(s): y',
+              children: [],
+            }],
+          },
+        ],
+      }))
     })
 
     it('returns error when cannot unify variables', () => {

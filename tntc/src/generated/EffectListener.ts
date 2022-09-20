@@ -5,7 +5,9 @@ import { ParseTreeListener } from "antlr4ts/tree/ParseTreeListener";
 
 import { ReadOnlyContext } from "./EffectParser";
 import { UpdateOnlyContext } from "./EffectParser";
+import { TemporalOnlyContext } from "./EffectParser";
 import { ReadAndUpdateContext } from "./EffectParser";
+import { ReadAndTemporalContext } from "./EffectParser";
 import { PureContext } from "./EffectParser";
 import { ConcreteEffectContext } from "./EffectParser";
 import { ArrowEffectContext } from "./EffectParser";
@@ -13,6 +15,7 @@ import { QuantifiedEffectContext } from "./EffectParser";
 import { EffectContext } from "./EffectParser";
 import { ReadContext } from "./EffectParser";
 import { UpdateContext } from "./EffectParser";
+import { TemporalContext } from "./EffectParser";
 import { ConcreteContext } from "./EffectParser";
 import { VarsContext } from "./EffectParser";
 import { StateVarRefContext } from "./EffectParser";
@@ -50,6 +53,19 @@ export interface EffectListener extends ParseTreeListener {
 	exitUpdateOnly?: (ctx: UpdateOnlyContext) => void;
 
 	/**
+	 * Enter a parse tree produced by the `temporalOnly`
+	 * labeled alternative in `EffectParser.concrete`.
+	 * @param ctx the parse tree
+	 */
+	enterTemporalOnly?: (ctx: TemporalOnlyContext) => void;
+	/**
+	 * Exit a parse tree produced by the `temporalOnly`
+	 * labeled alternative in `EffectParser.concrete`.
+	 * @param ctx the parse tree
+	 */
+	exitTemporalOnly?: (ctx: TemporalOnlyContext) => void;
+
+	/**
 	 * Enter a parse tree produced by the `readAndUpdate`
 	 * labeled alternative in `EffectParser.concrete`.
 	 * @param ctx the parse tree
@@ -61,6 +77,19 @@ export interface EffectListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitReadAndUpdate?: (ctx: ReadAndUpdateContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `readAndTemporal`
+	 * labeled alternative in `EffectParser.concrete`.
+	 * @param ctx the parse tree
+	 */
+	enterReadAndTemporal?: (ctx: ReadAndTemporalContext) => void;
+	/**
+	 * Exit a parse tree produced by the `readAndTemporal`
+	 * labeled alternative in `EffectParser.concrete`.
+	 * @param ctx the parse tree
+	 */
+	exitReadAndTemporal?: (ctx: ReadAndTemporalContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `pure`
@@ -146,6 +175,18 @@ export interface EffectListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitUpdate?: (ctx: UpdateContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `EffectParser.temporal`.
+	 * @param ctx the parse tree
+	 */
+	enterTemporal?: (ctx: TemporalContext) => void;
+
+	/**
+	 * Exit a parse tree produced by `EffectParser.temporal`.
+	 * @param ctx the parse tree
+	 */
+	exitTemporal?: (ctx: TemporalContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `EffectParser.concrete`.

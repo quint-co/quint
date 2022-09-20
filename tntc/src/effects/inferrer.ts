@@ -14,13 +14,14 @@
  */
 
 import { Either, right, left } from '@sweet-monads/either'
-import { DefinitionTableByModule } from '../definitionsCollector'
+import { DefinitionTable, DefinitionTableByModule, emptyTable, ValueDefinition } from '../definitionsCollector'
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { TntApp, TntBool, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr } from '../tntIr'
 import { Effect, emptyVariables, unify, Signature, effectNames, Variables } from './base'
 import { applySubstitution, applySubstitutionToVariables, Substitutions, compose } from './substitutions'
 import { ErrorTree, errorTreeToString } from '../errorTree'
+import { scopesForId, ScopeTree, treeFromModule } from '../scoping'
 
 /**
  * Infers an effect for every expression in a module based on predefined
@@ -35,15 +36,7 @@ import { ErrorTree, errorTreeToString } from '../errorTree'
  *          the problematic expressions.
  */
 export function inferEffects (signatures: Map<string, Signature>, definitionsTable: DefinitionTableByModule, module: TntModule): Either<Map<BigInt, ErrorTree>, Map<BigInt, Effect>> {
-  // pre-populate the table that maps each definition id to its kind
-  const table: Map<string, Map<string, string>> = new Map<string, Map<string, string>>()
-  definitionsTable.forEach((value, key) => {
-    const moduleTable: Map<string, string> = new Map<string, string>()
-    value.valueDefinitions.forEach(d => moduleTable.set(d.identifier, d.kind))
-    table.set(key, moduleTable)
-  })
-
-  const visitor = new EffectInferrerVisitor(signatures, table)
+  const visitor = new EffectInferrerVisitor(signatures, definitionsTable)
   walkModule(visitor, module)
   if (visitor.errors.size > 0) {
     return left(visitor.errors)
@@ -57,7 +50,7 @@ export function inferEffects (signatures: Map<string, Signature>, definitionsTab
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor (signatures: Map<string, Signature>, definitionsTable: Map<string, Map<string, string>>) {
+  constructor (signatures: Map<string, Signature>, definitionsTable: DefinitionTableByModule) {
     this.signatures = signatures
     this.definitionsTable = definitionsTable
   }
@@ -66,17 +59,19 @@ class EffectInferrerVisitor implements IRVisitor {
   errors: Map<BigInt, ErrorTree> = new Map<BigInt, ErrorTree>()
 
   private signatures: Map<string, Signature>
-  private definitionsTable: Map<string, Map<string, string>>
+  private definitionsTable: DefinitionTableByModule
+  private params: Map<string, string> = new Map<string, string>()
   private freshVarCounters: Map<string, number> = new Map<string, number>()
 
-  private currentModuleName: string = ''
-  private currentTable: Map<string, string> = new Map<string, string>()
-  private moduleStack: string[] = []
+  private currentModule?: TntModule
+  private currentTable: DefinitionTable = emptyTable()
+  private currentScopeTree: ScopeTree = { value: 0n, children: [] }
+  private moduleStack: TntModule[] = []
 
   private substitutions: Substitutions = []
 
   enterModuleDef (def: TntModuleDef): void {
-    this.moduleStack.push(def.module.name)
+    this.moduleStack.push(def.module)
 
     this.updateCurrentModule()
   }
@@ -88,46 +83,59 @@ class EffectInferrerVisitor implements IRVisitor {
   }
 
   exitName (expr: TntName): void {
-    const kind = this.currentTable.get(expr.name)!
-    switch (kind) {
-      case 'param':
-        /*  { kind: 'param', identifier: p } ∈ Γ
-         * ------------------------------------ (NAME-PARAM)
-         *          Γ ⊢ v: Read[r_p]
-         */
-        this.effects.set(expr.id, { kind: 'concrete', read: { kind: 'quantified', name: `r_${expr.name}` }, update: emptyVariables })
-        break
-      case 'const': {
-        /* { kind: 'const', identifier: c } ∈ Γ
-         * ------------------------------------- (NAME-CONST)
-         *       Γ ⊢ c: Pure
-         */
-        const effect: Effect = {
-          kind: 'concrete', read: emptyVariables, update: emptyVariables,
+    const location = `Inferring effect for name ${expr.name}`
+
+    this.fetchFromDefinitionsTable(expr.name, expr.id).map(def => {
+      switch (def.kind) {
+        case 'param': {
+          /*  { kind: 'param', identifier: p } ∈ Γ
+           * ------------------------------------ (NAME-PARAM)
+           *          Γ ⊢ v: Read[r_p]
+           */
+          const paramVariableName = this.params.get(expr.name)!
+          if (!paramVariableName) {
+            throw new Error(`Couldn't find lambda parameter named ${expr.name}`)
+          }
+
+          this.effects.set(expr.id, {
+            kind: 'concrete',
+            read: { kind: 'quantified', name: paramVariableName },
+            update: emptyVariables,
+            temporal: emptyVariables,
+          })
+          break
         }
-        this.effects.set(expr.id, effect)
-        break
-      }
-      case 'var': {
-        /*  { kind: 'var', identifier: v } ∈ Γ
-         * ------------------------------------ (NAME-VAR)
-         *          Γ ⊢ v: Read[v]
-         */
-        const effect: Effect = {
-          kind: 'concrete', read: { kind: 'concrete', vars: [expr.name] }, update: emptyVariables,
+        case 'const': {
+          /* { kind: 'const', identifier: c } ∈ Γ
+           * ------------------------------------- (NAME-CONST)
+           *       Γ ⊢ c: Pure
+           */
+          const effect: Effect = {
+            kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables,
+          }
+          this.effects.set(expr.id, effect)
+          break
         }
-        this.effects.set(expr.id, effect)
-        break
+        case 'var': {
+          /*  { kind: 'var', identifier: v } ∈ Γ
+           * ------------------------------------ (NAME-VAR)
+           *          Γ ⊢ v: Read[v]
+           */
+          const effect: Effect = {
+            kind: 'concrete', read: { kind: 'concrete', vars: [expr.name] }, update: emptyVariables, temporal: emptyVariables,
+          }
+          this.effects.set(expr.id, effect)
+          break
+        }
+        default:
+          /* { identifier: op, effect: E } ∈ Γ
+           * -------------------------------------- (NAME-OP)
+           *           Γ ⊢ op: E
+           */
+          this.fetchSignature(expr.name, 2)
+            .map(s => this.effects.set(expr.id, s))
       }
-      default:
-        /* { identifier: op, effect: E } ∈ Γ
-         * -------------------------------------- (NAME-OP)
-         *           Γ ⊢ op: E
-         */
-        this.fetchSignature(expr.name, 2)
-          .map(s => this.effects.set(expr.id, s))
-          .mapLeft(m => this.errors.set(expr.id, { message: m, location: `Inferring effect for name ${expr.name}`, children: [] }))
-    }
+    }).mapLeft(m => this.errors.set(expr.id, { message: m, location: location, children: [] }))
   }
 
   /* { identifier: op, effect: E } ∈ Γ    Γ ⊢ p0:E0 ... Γ ⊢ pn:EN
@@ -155,7 +163,7 @@ class EffectInferrerVisitor implements IRVisitor {
           result: resultEffect,
         })
 
-        const resultEffectWithSubs = substitution.chain(s => compose(this.substitutions, s)).chain(s => {
+        const resultEffectWithSubs = substitution.chain(s => compose(s, this.substitutions)).chain(s => {
           this.substitutions = s
 
           this.effects.forEach((effect, id) => {
@@ -166,14 +174,14 @@ class EffectInferrerVisitor implements IRVisitor {
         })
 
         return resultEffectWithSubs
-          .map(effect => this.effects.set(expr.id, effect))
+          .map(e => this.effects.set(expr.id, e))
           .mapLeft(error => this.errors.set(expr.id, { location: location, children: [error] }))
       })
   }
 
   // Literals are always Pure
   exitLiteral (expr: TntBool | TntInt | TntStr): void {
-    this.effects.set(expr.id, { kind: 'concrete', read: emptyVariables, update: emptyVariables })
+    this.effects.set(expr.id, { kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables })
   }
 
   /*                        Γ ⊢ e: E
@@ -185,6 +193,9 @@ class EffectInferrerVisitor implements IRVisitor {
       return
     }
     const e = this.effects.get(def.expr.id)!
+
+    // Set the expression effect as the definition effect for it to be available at the result
+    this.effects.set(def.id, e)
     this.signatures.set(def.name, (_) => e)
   }
 
@@ -206,6 +217,15 @@ class EffectInferrerVisitor implements IRVisitor {
    * ---------------------------------------------- (LAMBDA)
    * Γ ⊢ (p0, ..., pn) => e: (Read[r_p0], ..., Read[r_pn]) => E
    */
+
+  enterLambda (expr: TntLambda): void {
+    expr.params
+      .forEach(p => {
+        const name = `r_${p}_${expr.id}`
+        this.params.set(p, name)
+      })
+  }
+
   exitLambda (expr: TntLambda): void {
     if (!this.effects.get(expr.expr.id)) {
       return
@@ -213,12 +233,18 @@ class EffectInferrerVisitor implements IRVisitor {
     const e = this.effects.get(expr.expr.id)!
 
     const paramsVariables: Variables[] = expr.params
-      .map(p => (applySubstitutionToVariables(this.substitutions, { kind: 'quantified', name: `r_${p}` })))
+      .map(p => {
+        const name = this.params.get(p)!
+        this.params.delete(p)
+        return applySubstitutionToVariables(this.substitutions, { kind: 'quantified', name: name })
+      })
 
-    const params = paramsVariables.map(v => {
-      return { kind: 'concrete', read: v, update: emptyVariables } as Effect
+    const params = paramsVariables.map((v): Effect => {
+      return { kind: 'concrete', read: v, update: emptyVariables, temporal: emptyVariables }
     })
-    this.effects.set(expr.id, { kind: 'arrow', params: params, result: e })
+
+    const effect: Effect = { kind: 'arrow', params: params, result: e }
+    this.effects.set(expr.id, effect)
   }
 
   private freshVar (prefix: string): string {
@@ -226,6 +252,17 @@ class EffectInferrerVisitor implements IRVisitor {
     this.freshVarCounters.set(prefix, counter + 1)
 
     return `${prefix}${counter}`
+  }
+
+  private fetchFromDefinitionsTable (name: string, scope: bigint): Either<string, ValueDefinition> {
+    const value = this.currentTable.valueDefinitions.find(def => {
+      return def.identifier === name && (!def.scope || scopesForId(this.currentScopeTree, scope).includes(def.scope))
+    })
+    if (value) {
+      return right(value)
+    } else {
+      return left(`Couldn't find definition for ${name} in definition table in scope`)
+    }
   }
 
   private fetchSignature (opcode: string, arity: number): Either<string, Effect> {
@@ -246,7 +283,7 @@ class EffectInferrerVisitor implements IRVisitor {
 
     const result = applySubstitution(subs, effect)
     if (result.isLeft()) {
-      throw new Error(`Error applying fresh names substitution: ${errorTreeToString(result.value)}`)
+      throw new Error(`Error applying fresh names substitution: ${errorTreeToString(result.value)} `)
     } else {
       return result.value
     }
@@ -254,10 +291,11 @@ class EffectInferrerVisitor implements IRVisitor {
 
   private updateCurrentModule (): void {
     if (this.moduleStack.length > 0) {
-      this.currentModuleName = this.moduleStack[this.moduleStack.length - 1]
+      this.currentModule = this.moduleStack[this.moduleStack.length - 1]
 
-      const moduleTable = this.definitionsTable.get(this.currentModuleName)!
+      const moduleTable = this.definitionsTable.get(this.currentModule!.name)!
       this.currentTable = moduleTable
+      this.currentScopeTree = treeFromModule(this.currentModule)
     }
   }
 }

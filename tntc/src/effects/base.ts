@@ -13,14 +13,14 @@
  */
 
 import { effectToString, variablesToString } from './printing'
-import { Either, merge, right, left, mergeInMany } from '@sweet-monads/either'
+import { Either, right, left, mergeInMany } from '@sweet-monads/either'
 import { applySubstitution, compose, Substitutions } from './substitutions'
 import { ErrorTree, Error, buildErrorTree, buildErrorLeaf } from '../errorTree'
-import { flattenUnions, simplifyConcreteEffect } from './simplification'
+import { flattenUnions, simplify } from './simplification'
 import isEqual from 'lodash.isequal'
 
 /* Concrete atomic efects specifying variables that the expression reads and updates */
-export interface ConcreteEffect { kind: 'concrete', read: Variables, update: Variables }
+export interface ConcreteEffect { kind: 'concrete', read: Variables, update: Variables, temporal: Variables }
 
 /* Arrow effects for expressions with effects depending on parameters */
 interface ArrowEffect { kind: 'arrow', params: Effect[], result: Effect }
@@ -80,9 +80,7 @@ export const emptyVariables: Variables = { kind: 'concrete', vars: [] }
 export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitutions> {
   const location = `Trying to unify ${effectToString(ea)} and ${effectToString(eb)}`
 
-  const simplificationResults = mergeInMany([ea, eb].map(e => {
-    return e.kind === 'concrete' ? simplifyConcreteEffect(e) : right(e)
-  }))
+  const simplificationResults = mergeInMany([ea, eb].map(simplify))
   return simplificationResults.chain(([e1, e2]): Either<Error, Substitutions> => {
     if (e1.kind === 'arrow' && e2.kind === 'arrow') {
       return unifyArrows(location, e1, e2)
@@ -161,7 +159,7 @@ function unifyArrows (location: string, e1: ArrowEffect, e2: ArrowEffect) {
       applySubstitution(subs, e2),
     ])
     const newSubstitutions = effectsWithSubstitutions.chain(es => unify(...es))
-    return newSubstitutions.chain(newSubs => compose(subs, newSubs))
+    return newSubstitutions.chain(newSubs => compose(newSubs, subs))
   }
 
   const paramsUnification = e1.params.reduce((result: Either<Error, Substitutions>, e, i) => {
@@ -171,18 +169,44 @@ function unifyArrows (location: string, e1: ArrowEffect, e2: ArrowEffect) {
   return paramsUnification.chain(subs => applySubstitutionsAndUnify(subs, e1.result, e2.result))
 }
 
-function unifyConcrete (_location: string, e1: ConcreteEffect, e2: ConcreteEffect) {
+function unifyConcrete (location: string, e1: ConcreteEffect, e2: ConcreteEffect): Either<Error, Substitutions> {
   const readUnificationResult = unifyVariables(e1.read, e2.read)
-  const updateUnificationResult = readUnificationResult.chain(subs => {
+  return readUnificationResult.chain(subs => {
     const effectsWithReadSubstitution = mergeInMany([
       applySubstitution(subs, e1),
       applySubstitution(subs, e2),
     ]).map(effects => effects.map(ensureConcreteEffect))
 
-    return effectsWithReadSubstitution.chain(([e1s, e2s]) => unifyVariables(e1s.update, e2s.update))
-  })
+    if ((isTemporal(e1) && isAction(e2)) || (isAction(e1) && isTemporal(e2))) {
+      return left(`Couldn't unify temporal and action effects: ${effectToString(e1)} and ${effectToString(e2)}` as Error)
+    }
 
-  return merge([readUnificationResult, updateUnificationResult]).map(s => s.flat())
+    const otherUnificationResult = effectsWithReadSubstitution.chain(([e1s, e2s]) => {
+      if (isAction(e1s) || isAction(e2s)) {
+        return unifyVariables(e1s.update, e2s.update)
+      } else {
+        return unifyVariables(e1s.temporal, e2s.temporal)
+      }
+    })
+
+    return otherUnificationResult.chain(r => compose(r, subs)).mapLeft(e => buildErrorTree(location, e))
+  })
+}
+
+function isTemporal (e: ConcreteEffect): boolean {
+  switch (e.temporal.kind) {
+    case 'concrete': return e.temporal.vars.length > 0
+    case 'quantified': return true
+    case 'union': return e.temporal.variables.length > 0
+  }
+}
+
+function isAction (e: ConcreteEffect): boolean {
+  switch (e.update.kind) {
+    case 'concrete': return e.update.vars.length > 0
+    case 'quantified': return true
+    case 'union': return e.update.variables.length > 0
+  }
 }
 
 function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substitutions> {

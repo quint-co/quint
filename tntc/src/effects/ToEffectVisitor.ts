@@ -39,13 +39,19 @@ export class ToEffectVisitor implements EffectListener {
 
   exitReadOnly () {
     const variables = this.variablesStack.pop()!
-    const effect: Effect = { kind: 'concrete', read: variables, update: emptyVariables }
+    const effect: Effect = { kind: 'concrete', read: variables, update: emptyVariables, temporal: emptyVariables }
     this.pushEffect(effect)
   }
 
   exitUpdateOnly () {
     const variables = this.variablesStack.pop()!
-    const effect: Effect = { kind: 'concrete', read: emptyVariables, update: variables }
+    const effect: Effect = { kind: 'concrete', read: emptyVariables, update: variables, temporal: emptyVariables }
+    this.pushEffect(effect)
+  }
+
+  exitTemporalOnly () {
+    const variables = this.variablesStack.pop()!
+    const effect: Effect = { kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: variables }
     this.pushEffect(effect)
   }
 
@@ -53,12 +59,20 @@ export class ToEffectVisitor implements EffectListener {
     const update = this.variablesStack.pop()!
     const read = this.variablesStack.pop()!
 
-    const effect: Effect = { kind: 'concrete', read: read, update: update }
+    const effect: Effect = { kind: 'concrete', read: read, update: update, temporal: emptyVariables }
+    this.pushEffect(effect)
+  }
+
+  exitReadAndTemporal () {
+    const temporal = this.variablesStack.pop()!
+    const read = this.variablesStack.pop()!
+
+    const effect: Effect = { kind: 'concrete', read: read, update: emptyVariables, temporal: temporal }
     this.pushEffect(effect)
   }
 
   exitPure () {
-    const effect: Effect = { kind: 'concrete', read: emptyVariables, update: emptyVariables }
+    const effect: Effect = { kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables }
     this.pushEffect(effect)
   }
 

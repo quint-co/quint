@@ -14,6 +14,12 @@ describe('inferEffects', () => {
       { kind: 'param', identifier: 'p' },
       { kind: 'const', identifier: 'N' },
       { kind: 'var', identifier: 'x' },
+      { kind: 'val', identifier: 'm' },
+      { kind: 'val', identifier: 't' },
+      { kind: 'def', identifier: 'assign' },
+      { kind: 'def', identifier: 'foldl' },
+      { kind: 'def', identifier: 'iadd' },
+      { kind: 'def', identifier: 'my_add' },
     ],
     typeDefinitions: [],
   }
@@ -26,7 +32,7 @@ describe('inferEffects', () => {
   }
 
   const signatures: Map<string, Signature> = new Map<string, Signature>([
-    ['assign', () => parseEffectOrThrow('(Read[r1], Read[r2] & Update[u2]) => Read[r2] & Update[r1, u2]')],
+    ['assign', () => parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r2] & Update[r1]')],
     ['multipleArityOp', readManyEffect],
     ['foldl', () => parseEffectOrThrow('(Read[r1], Read[r2], (Read[r1], Read[r2]) => Read[r3]) => Read[r1, r2, r3]')],
     ['iadd', () => parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1, r2]')],
@@ -39,7 +45,7 @@ describe('inferEffects', () => {
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
-    const expectedEffect = "(Read[r_p]) => Read[r_p] & Update['x']"
+    const expectedEffect = "(Read[r_p_4]) => Read[r_p_4] & Update['x']"
 
     effects
       .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(BigInt(4))!), expectedEffect))
@@ -59,8 +65,8 @@ describe('inferEffects', () => {
 
     effects
       .map((es: Map<BigInt, Effect>) => {
-        assert.deepEqual(effectToString(es.get(BigInt(4))!), "(Read[r_p]) => Read[r_p, 'x']")
-        assert.deepEqual(effectToString(es.get(BigInt(9))!), '(Read[r_p]) => Read[r_p]')
+        assert.deepEqual(effectToString(es.get(BigInt(4))!), "(Read[r_p_4]) => Read[r_p_4, 'x']")
+        assert.deepEqual(effectToString(es.get(BigInt(9))!), '(Read[r_p_9]) => Read[r_p_9]')
         return true
       })
       .mapLeft(e => {
@@ -164,7 +170,7 @@ describe('inferEffects', () => {
     effects
       .mapLeft(e => e.forEach(v => assert.deepEqual(v, {
         location: 'Inferring effect for name undefined',
-        message: 'Signature not found for operator: undefined',
+        message: "Couldn't find definition for undefined in definition table in scope",
         children: [],
       })))
 
@@ -188,11 +194,11 @@ describe('inferEffects', () => {
                 location: "Trying to unify variables [] and ['x']",
                 message: 'Expected variables [] and [x] to be the same',
               }],
-              location: "Trying to unify Read[v10] and Read[v1] & Update['x']",
+              location: "Trying to unify Read[v8] and Read[v1] & Update['x']",
             }],
-            location: "Trying to unify (Read['x'], Read[r_p]) => Read[v10] and (Read[v0], Read[v1] & Update[v2]) => Read[v1] & Update[v0, v2]",
+            location: "Trying to unify (Read['x'], Read[r_p_5]) => Read[v8] and (Read[v0], Read[v1]) => Read[v1] & Update[v0]",
           }],
-          location: "Trying to unify (Read[v6], Read[v7], (Read[v6], Read[v7]) => Read[v10]) => Read[v6, v7, v10] and (Read['x'], Read[r_p], (Read[v0], Read[v1] & Update[v2]) => Read[v1] & Update[v0, v2]) => e0",
+          location: "Trying to unify (Read[v4], Read[v5], (Read[v4], Read[v5]) => Read[v8]) => Read[v4, v5, v8] and (Read['x'], Read[r_p_5], (Read[v0], Read[v1]) => Read[v1] & Update[v0]) => e0",
         }],
         location: 'Trying to infer effect for operator application in foldl(x, p, assign)',
       })))
@@ -212,11 +218,6 @@ describe('inferEffects', () => {
         {
           location: 'Trying to infer effect for operator application in undefined(1)',
           message: 'Signature not found for operator: undefined',
-          children: [],
-        },
-        {
-          message: 'Signature not found for operator: t',
-          location: 'Inferring effect for name t',
           children: [],
         },
       ]))

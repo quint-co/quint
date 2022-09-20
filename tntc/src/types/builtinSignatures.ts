@@ -32,7 +32,7 @@ const setOperators = [
   { name: 'union', type: '(set(a), set(a)) => set(a)' },
   { name: 'intersect', type: '(set(a), set(a)) => set(a)' },
   { name: 'exclude', type: '(set(a), set(a)) => set(a)' },
-  { name: 'subseteq', type: '(set(a), set(a)) => set(a)' },
+  { name: 'subseteq', type: '(set(a), set(a)) => bool' },
   { name: 'filter', type: '(set(a), (a) => bool) => set(a)' },
   { name: 'map', type: '(set(a), (a) => b) => set(b)' },
   { name: 'fold', type: '(set(a), b, (b, a) => b) => b' },
@@ -69,7 +69,7 @@ const listOperators = [
   { name: 'append', type: '(seq(a), a) => seq(a)' },
   { name: 'concat', type: '(seq(a), seq(a)) => seq(a)' },
   { name: 'head', type: '(seq(a)) => a' },
-  { name: 'tail', type: '(seq(a)) => a' },
+  { name: 'tail', type: '(seq(a)) => seq(a)' },
   { name: 'length', type: '(seq(a)) => int' },
   { name: 'nth', type: '(seq(a), int) => a' },
   { name: 'indices', type: '(seq(a)) => set(int)' },
@@ -94,12 +94,21 @@ const integerOperators = [
   { name: 'to', type: '(int, int) => set(int)' },
   { name: 'iuminus', type: '(int) => int' },
 ]
+const temporalOperators = [
+  { name: 'always', type: '(bool) => bool' },
+  { name: 'eventually', type: '(bool) => bool' },
+  { name: 'next', type: '(a) => a' },
+  { name: 'stutter', type: '(bool, a) => bool' },
+  { name: 'nostutter', type: '(bool, a) => bool' },
+  { name: 'enabled', type: '(bool) => bool' },
+  { name: 'weakFair', type: '(bool, a) => bool' },
+  { name: 'strongFair', type: '(bool, a) => bool' },
+]
 
 const otherOperators = [
   { name: 'assign', type: '(a, a) => bool' },
   { name: 'ite', type: '(bool, a, a) => a' },
   // Should we do this? https://github.com/informalsystems/tnt/discussions/109
-  { name: 'enabled', type: 'bool => bool' },
 ]
 
 function uniformArgsWithResult (argsType: string, resultType: string): Signature {
@@ -121,7 +130,7 @@ const multipleAritySignatures: [string, Signature][] = [
     const args = Array.from(Array(arity).keys()).map(i => `t${i}`).join(', ')
     return parseAndQuantify(`(${args}) => (${args})`)
   }],
-  ['rec', (arity: number) => {
+  ['record', (arity: number) => {
     const indexes = Array.from(Array(arity / 2).keys())
     const args = indexes.map(i => `n${i}, t${i}`).join(', ')
     const result = indexes.map(i => `n${i}: t${i}`).join(', ')
@@ -148,6 +157,7 @@ const fixedAritySignatures: [string, Signature][] = [
   tupleOperators,
   listOperators,
   integerOperators,
+  temporalOperators,
   otherOperators,
 ].flat().map(sig => [sig.name, (_: number) => parseAndQuantify(sig.type)])
 
