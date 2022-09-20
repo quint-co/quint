@@ -55,6 +55,23 @@ describe('unify', () => {
       }))
     })
 
+    it('returns error unifying temporal and pure effects', () => {
+      const e1 = parseEffectOrThrow('Pure')
+      const e2 = parseEffectOrThrow("Temporal['y']")
+
+      const result = unify(e1, e2)
+
+      assert.isTrue(result.isLeft())
+      result.mapLeft(r => assert.deepEqual(r, {
+        location: "Trying to unify Pure and Temporal['y']",
+        children: [{
+          location: "Trying to unify variables [] and ['y']",
+          message: 'Expected variables [] and [y] to be the same',
+          children: [],
+        }],
+      }))
+    })
+
     it('unifies variables with different orders', () => {
       const e1 = parseEffectOrThrow("Read['x', 'y']")
       const e2 = parseEffectOrThrow("Read['y', 'x']")
