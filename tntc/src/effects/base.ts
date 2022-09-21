@@ -23,17 +23,19 @@ import isEqual from 'lodash.isequal'
 export interface ConcreteEffect { kind: 'concrete', read: Variables, update: Variables, temporal: Variables }
 
 /* Arrow effects for expressions with effects depending on parameters */
-interface ArrowEffect { kind: 'arrow', params: Effect[], result: Effect }
+export interface ArrowEffect { kind: 'arrow', params: Effect[], result: Effect }
+
+/* A quantification variable, referring to an effect */
+export interface QuantifiedEffect { kind: 'quantified', name: string }
 
 /*
  * The effect of a TNT expression, regarding which state variables are read
  * and/or updated
  */
 export type Effect =
-  /* A quantification variable, referring to an effect */
-  | { kind: 'quantified', name: string }
   | ConcreteEffect
   | ArrowEffect
+  | QuantifiedEffect
 
 /*
  * The variables an effect acts upon. Either a list of state variables, a
@@ -193,7 +195,7 @@ function unifyConcrete (location: string, e1: ConcreteEffect, e2: ConcreteEffect
   })
 }
 
-function isTemporal (e: ConcreteEffect): boolean {
+export function isTemporal (e: ConcreteEffect): boolean {
   switch (e.temporal.kind) {
     case 'concrete': return e.temporal.vars.length > 0
     case 'quantified': return true
@@ -201,11 +203,19 @@ function isTemporal (e: ConcreteEffect): boolean {
   }
 }
 
-function isAction (e: ConcreteEffect): boolean {
+export function isAction (e: ConcreteEffect): boolean {
   switch (e.update.kind) {
     case 'concrete': return e.update.vars.length > 0
     case 'quantified': return true
     case 'union': return e.update.variables.length > 0
+  }
+}
+
+export function isState (e: ConcreteEffect): boolean {
+  switch (e.read.kind) {
+    case 'concrete': return e.read.vars.length > 0
+    case 'quantified': return true
+    case 'union': return e.read.variables.length > 0
   }
 }
 
