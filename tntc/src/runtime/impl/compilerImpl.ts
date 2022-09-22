@@ -46,6 +46,8 @@ export class CompilerVisitor implements IRVisitor {
 
   // all variables declared during compilation
   private vars: Register[] = []
+  // the registers allocated for the next-state values of vars
+  private nextVars: Register[] = []
 
   /**
    * Get the compiled context.
@@ -71,10 +73,11 @@ export class CompilerVisitor implements IRVisitor {
     //  one for the variable, and
     //  one for its next-state version
     const prevRegister = mkRegister('var', vardef.name, none())
+    this.vars.push(prevRegister)
     this.context.set(kindName('var', vardef.name), prevRegister)
     const nextRegister = mkRegister('nextvar', vardef.name, none())
+    this.nextVars.push(nextRegister)
     this.context.set(kindName('nextvar', nextRegister.name), nextRegister)
-    this.vars.push(prevRegister)
   }
 
   enterLiteral (expr: ir.TntBool | ir.TntInt | ir.TntStr) {
@@ -182,6 +185,10 @@ export class CompilerVisitor implements IRVisitor {
 
       case 'or':
         this.applyFun(2, (p, q) => just(rv.mkBool(p.toBool() || q.toBool())))
+        break
+
+      case 'orAction':
+        this.translateOrAction(app)
         break
 
       case 'implies':
@@ -515,7 +522,9 @@ export class CompilerVisitor implements IRVisitor {
       'Not enough arguments on stack for andAction')
     const args = this.compStack.splice(-app.args.length)
 
-    function lazyCompute () {
+    const lazyCompute = () => {
+      // save the values of the next variables, as actions may update them
+      const savedValues = this.saveNextVars()
       let result: Maybe<EvalResult> = just(rv.mkBool(true))
       // Evaluate arguments iteratively.
       // Stop as soon as one of the arguments returns false.
@@ -527,6 +536,9 @@ export class CompilerVisitor implements IRVisitor {
         // as soon as one of the arguments evaluates to false,
         // break out of the loop
         if (boolResult === false) {
+          // restore the values of the next variables,
+          // as evaluation was not successful
+          this.loadNextVars(savedValues)
           break
         }
       }
@@ -541,6 +553,66 @@ export class CompilerVisitor implements IRVisitor {
     }
 
     this.compStack.push(computable)
+  }
+
+  // translate { A | ... | C }
+  private translateOrAction (app: ir.TntApp) {
+    assert(this.compStack.length >= app.args.length,
+      'Not enough arguments on stack for orAction')
+    const args = this.compStack.splice(-app.args.length)
+
+    // According to the semantics of action-level disjunctions,
+    // we have to find out which branches are enabled and pick one of them
+    // non-deterministically. Instead of modeling non-determinism,
+    // we use a random number generator. This may change in the future.
+    const lazyCompute = () => {
+      // save the values of the next variables, as actions may update them
+      const valuesBefore = this.saveNextVars()
+      // we store the potential successor values in this array
+      const successors = []
+      // Evaluate arguments iteratively.
+      for (const arg of args) {
+        this.loadNextVars(valuesBefore)
+        // either the argument is evaluated to false, or fails
+        const result = arg.eval().or(just(rv.mkBool(false)))
+        const boolResult = (result.unwrap() as RuntimeValue).toBool()
+        // if this arm evaluates to true, save it in the candidates
+        if (boolResult === true) {
+          successors.push(this.saveNextVars())
+        }
+      }
+
+      const ncandidates = successors.length
+      if (ncandidates === 0) {
+        // no successor: restore the state and return false
+        this.loadNextVars(valuesBefore)
+        return just(rv.mkBool(false))
+      } else {
+        // randomly pick a successor and return true
+        // https://stackoverflow.com/questions/4959975/generate-random-number-between-two-numbers-in-javascript
+        const choice = Math.floor(Math.random() * ncandidates)
+        this.loadNextVars(successors[choice])
+        return just(rv.mkBool(true))
+      }
+    }
+
+    const computable = {
+      eval: () => {
+        return lazyCompute()
+      },
+    }
+
+    this.compStack.push(computable)
+  }
+
+  // save the values of the next vars into an array
+  private saveNextVars (): Maybe<RuntimeValue>[] {
+    return this.nextVars.map(r => r.registerValue)
+  }
+
+  // load the values of the next variables from an array
+  private loadNextVars (values: Maybe<RuntimeValue>[]) {
+    this.nextVars.forEach((r, i) => r.registerValue = values[i])
   }
 }
 
