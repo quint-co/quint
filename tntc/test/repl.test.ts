@@ -160,4 +160,32 @@ describe('repl ok', () => {
     )
     await assertRepl(input, output)
   })
+
+  it('assignments', async () => {
+    const input = dedent(
+      `var x: int
+      |action Init = x <- 0
+      |action Next = x <- x + 1
+      |Init
+      |x
+      |Next
+      |x
+      |Next
+      |x
+      |`
+    )
+    const output = dedent(
+      `
+      |
+      |
+      |true
+      |0
+      |true
+      |1
+      |true
+      |2
+      |`
+    )
+    await assertRepl(input, output)
+  })
 })

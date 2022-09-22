@@ -2,6 +2,7 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { Maybe } from '@sweet-monads/maybe'
 import { expressionToString } from '../../src/IRprinting'
+import { kindName, ComputableKind } from '../../src/runtime/runtime'
 import { compile } from '../../src/runtime/compile'
 import { dedent } from '../textUtils'
 
@@ -13,8 +14,8 @@ function assertDefined<T> (m: Maybe<T>) {
 // compare the result. This is the easiest path to test the results.
 function assertResultAsString (input: string, result: string) {
   const moduleText = `module __runtime { val __expr = ${input} }`
-  const context = compile(moduleText)
-  const value = context.get('__expr')
+  const context = compile(moduleText).values
+  const value = context.get(kindName('callable', '__expr'))
   if (value === undefined) {
     assert(false, `Missing value for ${input}`)
   } else {
@@ -26,6 +27,14 @@ function assertResultAsString (input: string, result: string) {
         .map(s => assert(s === result, `Expected ${result}, found ${s}`))
     )
   }
+}
+
+// Compile a definition and check that the compiled value is defined.
+function assertDef (kind: ComputableKind, name: string, input: string) {
+  const moduleText = `module __runtime { ${input} }`
+  const context = compile(moduleText).values
+  assert(context.get(kindName(kind, name)),
+    `Expected a definition for ${name}, compiled from: ${input}`)
 }
 
 describe('compiling specs to runtime values', () => {
@@ -188,6 +197,13 @@ describe('compiling specs to runtime values', () => {
         `def positive(x) = x > 0
          (-3).to(3).filter(positive)`
       assertResultAsString(input, 'set(1, 2, 3)')
+    })
+  })
+
+  describe('compile variables', () => {
+    it('variable definitions', () => {
+      const input = 'var x: int'
+      assertDef('var', 'x', input)
     })
   })
 

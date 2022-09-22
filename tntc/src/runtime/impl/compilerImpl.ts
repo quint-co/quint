@@ -14,7 +14,10 @@ import { Maybe, none, just, merge } from '@sweet-monads/maybe'
 import { Set } from 'immutable'
 
 import { IRVisitor } from '../../IRVisitor'
-import { Computable, EvalResult, fail } from '../runtime'
+import {
+  Computable, EvalResult, Register, Callable,
+  kindName, fail, mkCallable, mkRegister
+} from '../runtime'
 
 import * as ir from '../../tntIr'
 
@@ -41,6 +44,9 @@ export class CompilerVisitor implements IRVisitor {
   //  - an instance of Callable
   private context: Map<string, Computable> = new Map<string, Computable>()
 
+  // all variables declared during compilation
+  private vars: Register[] = []
+
   /**
    * Get the compiled context.
    */
@@ -48,11 +54,27 @@ export class CompilerVisitor implements IRVisitor {
     return this.context
   }
 
+  // get the names of the compiled variables
+  getVars (): string[] {
+    return this.vars.map(r => r.name)
+  }
+
   exitOpDef (opdef: ir.TntOpDef) {
     // either a runtime value (if val), or a callable (if def, action, etc.)
     const value = this.compStack.pop()
     assert(value, `No expression for ${opdef.name} on compStack`)
-    this.context.set(opdef.name, value)
+    this.context.set(kindName('callable', opdef.name), value)
+  }
+
+  exitVar (vardef: ir.TntVar) {
+    // simply introduce two registers:
+    //  one for the variable, and
+    //  one for its next-state version
+    const prevRegister = mkRegister('var', vardef.name, none())
+    this.context.set(kindName('var', vardef.name), prevRegister)
+    const nextRegister = mkRegister('nextvar', vardef.name, none())
+    this.context.set(kindName('nextvar', nextRegister.name), nextRegister)
+    this.vars.push(prevRegister)
   }
 
   enterLiteral (expr: ir.TntBool | ir.TntInt | ir.TntStr) {
@@ -73,7 +95,10 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   enterName (name: ir.TntName) {
-    const comp = this.context.get(name.name)
+    // the name is either a variable name, an argument name, or a callable
+    const comp = this.context.get(kindName('var', name.name)) ??
+        this.context.get(kindName('arg', name.name)) ??
+        this.context.get(kindName('callable', name.name))
     // this may happen, see: https://github.com/informalsystems/tnt/issues/129
     assert(comp, `Name ${name.name} not found (out of order?)`)
     this.compStack.push(comp)
@@ -81,6 +106,54 @@ export class CompilerVisitor implements IRVisitor {
 
   exitApp (app: ir.TntApp) {
     switch (app.opcode) {
+      case 'next': {
+        const register = this.compStack.pop()
+        if (register) {
+          const name = (register as Register).name
+          const nextvar = this.context.get(kindName('nextvar', name))
+          this.compStack.push(nextvar ?? fail)
+        } else {
+          this.compStack.push(fail)
+        }
+        break
+      }
+
+      case 'assign': {
+        assert(this.compStack.length >= 2, 'Not enough arguments on stack')
+        const [register, rhs] = this.compStack.splice(-2)
+        const name = (register as Register).name
+        const nextvar =
+            this.context.get(kindName('nextvar', name)) as Register
+        if (nextvar) {
+          this.compStack.push(rhs)
+          this.applyFun(1, (value) => {
+            nextvar.registerValue = just(value)
+            return just(rv.mkBool(true))
+          })
+        } else {
+          this.compStack.push(fail)
+        }
+        break
+      }
+
+      case 'shift':
+        this.compStack.push({
+          eval: () => {
+            for (const v of this.vars) {
+              const key = kindName('nextvar', v.name)
+              const primed = this.context.get(key) as Register
+              if (primed) {
+                v.registerValue = primed.registerValue
+                primed.registerValue = none()
+              } else {
+                v.registerValue = none()
+              }
+            }
+            return just<any>(rv.mkBool(true))
+          },
+        })
+        break
+
       case 'eq':
         this.applyFun(2, (x, y) => just(rv.mkBool(x.equals(y))))
         break
@@ -101,6 +174,10 @@ export class CompilerVisitor implements IRVisitor {
 
       case 'and':
         this.applyFun(2, (p, q) => just(rv.mkBool(p.toBool() && q.toBool())))
+        break
+
+      case 'andAction':
+        this.translateAndAction(app)
         break
 
       case 'or':
@@ -264,7 +341,8 @@ export class CompilerVisitor implements IRVisitor {
 
       default: {
         // maybe it is a user-defined operator
-        const callable = this.context.get(app.opcode) as Callable
+        const key = kindName('callable', app.opcode)
+        const callable = this.context.get(key) as Callable
         if (callable === undefined) {
           // TODO: https://github.com/informalsystems/tnt/issues/191
           console.error(`Translation of ${app.opcode} is not implemented`)
@@ -285,7 +363,8 @@ export class CompilerVisitor implements IRVisitor {
 
   enterLambda (lam: ir.TntLambda) {
     // introduce a register for every parameter
-    lam.params.forEach(p => this.context.set(p, mkRegister(none())))
+    lam.params.forEach(p =>
+      this.context.set(kindName('arg', p), mkRegister('arg', p, none())))
     // After this point, the body of the lambda gets compiled.
     // The body of the lambda may refer to the parameter via names,
     // which are stored in the registers we've just created.
@@ -296,10 +375,11 @@ export class CompilerVisitor implements IRVisitor {
     // Transform it to Callable together with the registers.
     const registers: Register[] = []
     lam.params.forEach(p => {
-      const register = this.context.get(p) as Register
+      const key = kindName('arg', p)
+      const register = this.context.get(key) as Register
       assert(register && register.registerValue,
              `Expected a register ${p} on the stack`)
-      this.context.delete(p)
+      this.context.delete(key)
       registers.push(register)
     })
 
@@ -428,6 +508,40 @@ export class CompilerVisitor implements IRVisitor {
       throw new Error('Not enough arguments on the stack')
     }
   }
+
+  // translate { A & ... & C }
+  private translateAndAction (app: ir.TntApp) {
+    assert(this.compStack.length >= app.args.length,
+      'Not enough arguments on stack for andAction')
+    const args = this.compStack.splice(-app.args.length)
+
+    function lazyCompute () {
+      let result: Maybe<EvalResult> = just(rv.mkBool(true))
+      // Evaluate arguments iteratively.
+      // Stop as soon as one of the arguments returns false.
+      // This is a form of Boolean short-circuiting.
+      for (const arg of args) {
+        // either the argument is evaluated to false, or fails
+        result = arg.eval().or(just(rv.mkBool(false)))
+        const boolResult = (result.unwrap() as RuntimeValue).toBool()
+        // as soon as one of the arguments evaluates to false,
+        // break out of the loop
+        if (boolResult === false) {
+          break
+        }
+      }
+
+      return result
+    }
+
+    const computable = {
+      eval: () => {
+        return lazyCompute()
+      },
+    }
+
+    this.compStack.push(computable)
+  }
 }
 
 // make a `Computable` that always returns a given runtime value
@@ -435,40 +549,6 @@ function mkConstComputable (value: RuntimeValue) {
   return {
     eval: () => {
       return just<any>(value)
-    },
-  }
-}
-
-// a computable that evaluates to the value of a readable/writeable register
-interface Register extends Computable {
-  // register is a placeholder where iterators can put their values
-  registerValue: Maybe<any>
-}
-
-// create an object that implements Register
-function mkRegister (initValue: Maybe<any>): Register {
-  return {
-    registerValue: initValue,
-    // computing a register just evaluates to the contents that it stores
-    eval: function () {
-      return this.registerValue
-    },
-  }
-}
-
-// A callable value like an operator definition.
-// Its body us computable, but one has to first set the registers
-// that store the values of the callable's parameters.
-interface Callable extends Computable {
-  registers: Register[]
-}
-
-// create an object that implements Callable
-function mkCallable (registers: Register[], body: Computable): Callable {
-  return {
-    registers: registers,
-    eval: () => {
-      return body.eval()
     },
   }
 }
