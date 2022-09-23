@@ -61,7 +61,7 @@ describe('checkModes', () => {
           location: 'Checking modes for def a = (p => assign(x, p))',
           message: 'Expected action mode, found: def',
           children: [],
-        }]
+        }],
       ]))
   })
 
@@ -91,7 +91,7 @@ describe('checkModes', () => {
     assert.isTrue(modeCheckingResult.isRight())
     modeCheckingResult
       .map(suggestions => assert.sameDeepMembers([...suggestions.entries()], [
-        [4n, 'def']
+        [4n, 'def'],
       ]))
       .mapLeft(e => {
         const errors = Array.from(e.values())
@@ -113,7 +113,7 @@ describe('checkModes', () => {
           location: 'Checking modes for staticval v = iadd(x, 1)',
           message: 'Expected val mode, found: staticval',
           children: [],
-        }]
+        }],
       ]))
   })
 
@@ -127,7 +127,7 @@ describe('checkModes', () => {
     assert.isTrue(modeCheckingResult.isRight())
     modeCheckingResult
       .map(suggestions => assert.sameDeepMembers([...suggestions.entries()], [
-        [2n, 'staticval']
+        [2n, 'staticval'],
       ]))
       .mapLeft(e => {
         const errors = Array.from(e.values())
@@ -149,7 +149,7 @@ describe('checkModes', () => {
           location: 'Checking modes for staticdef f = (p => not(y))',
           message: 'Expected def mode, found: staticdef',
           children: [],
-        }]
+        }],
       ]))
   })
 
@@ -163,7 +163,7 @@ describe('checkModes', () => {
     assert.isTrue(modeCheckingResult.isRight())
     modeCheckingResult
       .map(suggestions => assert.sameDeepMembers([...suggestions.entries()], [
-        [2n, 'staticdef']
+        [2n, 'staticdef'],
       ]))
       .mapLeft(e => {
         const errors = Array.from(e.values())
@@ -185,7 +185,7 @@ describe('checkModes', () => {
           location: 'Checking modes for staticval v = always(igt(x, 5))',
           message: 'Expected temporal mode, found: staticval',
           children: [],
-        }]
+        }],
       ]))
   })
 })

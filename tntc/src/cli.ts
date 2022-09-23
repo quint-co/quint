@@ -83,9 +83,9 @@ function typecheck (argv: any) {
     console.error(formatError(sourceCode, finder, message))
   }))
 
-  effects.map(e => {
+  const finalResult = effects.chain(e => {
     const modes = checkModes(parseResult.module, e)
-    modes
+    return modes
       .map(e => e.forEach((value, key) => console.log(`${key}: ${value}`)))
       .mapLeft(e => e.forEach((value, key) => {
         const loc = parseResult.sourceMap.get(key)!
@@ -97,7 +97,7 @@ function typecheck (argv: any) {
       }))
   })
 
-  effects.isRight() ? process.exit(0) : process.exit(1)
+  finalResult.isRight() ? process.exit(0) : process.exit(1)
 }
 
 /**

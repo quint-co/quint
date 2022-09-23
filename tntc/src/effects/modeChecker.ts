@@ -6,7 +6,6 @@ import { IRVisitor, walkModule } from '../IRVisitor'
 import { OpQualifier, TntModule, TntOpDef } from '../tntIr'
 import { ArrowEffect, ConcreteEffect, Effect, isAction, isState, isTemporal, Variables } from './base'
 import { EffectVisitor, walkEffect } from './EffectVisitor'
-import { effectToString } from './printing'
 
 export function checkModes (tntModule: TntModule, effects: Map<BigInt, Effect>): Either<Map<BigInt, ErrorTree>, Map<BigInt, OpQualifier>> {
   const visitor = new ModeCheckerVisitor(effects)
@@ -24,7 +23,7 @@ class ModeCheckerVisitor implements IRVisitor {
   effects: Map<BigInt, Effect>
   modeFinderVisitor: ModeFinderVisitor = new ModeFinderVisitor()
 
-  constructor(effects: Map<BigInt, Effect>) {
+  constructor (effects: Map<BigInt, Effect>) {
     this.effects = effects
   }
 
