@@ -1,10 +1,12 @@
 import { Either, left, right } from '@sweet-monads/either'
+import isEqual from 'lodash.isequal'
 import { ErrorTree } from '../errorTree'
 import { definitionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { OpQualifier, TntModule, TntOpDef } from '../tntIr'
 import { ArrowEffect, ConcreteEffect, Effect, isAction, isState, isTemporal, Variables } from './base'
-import { EffectVisitor, walkEffect } from './effectVisitor'
+import { EffectVisitor, walkEffect } from './EffectVisitor'
+import { effectToString } from './printing'
 
 export function checkModes (tntModule: TntModule, effects: Map<BigInt, Effect>): Either<Map<BigInt, ErrorTree>, Map<BigInt, OpQualifier>> {
   const visitor = new ModeCheckerVisitor(effects)
@@ -22,7 +24,7 @@ class ModeCheckerVisitor implements IRVisitor {
   effects: Map<BigInt, Effect>
   modeFinderVisitor: ModeFinderVisitor = new ModeFinderVisitor()
 
-  constructor (effects: Map<BigInt, Effect>) {
+  constructor(effects: Map<BigInt, Effect>) {
     this.effects = effects
   }
 
@@ -73,27 +75,28 @@ class ModeFinderVisitor implements EffectVisitor {
   }
 
   exitArrow (effect: ArrowEffect) {
-    if (this.currentMode !== 'staticdef' && this.currentMode !== 'def') {
+    if (this.currentMode === 'action' || this.currentMode === 'temporal') {
       return
     }
 
-    const paramReads: Set<Variables> = new Set<Variables>()
+    const paramReads: Variables[] = []
     effect.params.forEach(p => {
       if (p.kind === 'concrete') {
         if (p.read.kind === 'union') {
-          p.read.variables.forEach(paramReads.add)
+          paramReads.push(...p.read.variables)
         } else {
-          paramReads.add(p.read)
+          paramReads.push(p.read)
         }
       }
     })
 
     this.currentMode = 'staticdef'
     // TODO: refactor nested conditions
-    if (effect.result.kind === 'concrete') {
-      if (effect.result.read.kind === 'union' && !effect.result.read.variables.every(v => paramReads.has(v))) {
+    const r = effect.result
+    if (r.kind === 'concrete') {
+      if (r.read.kind === 'union' && !r.read.variables.every(v => paramReads.some(p => isEqual(p, v)))) {
         this.currentMode = 'def'
-      } else if (!paramReads.has(effect.result.read)) {
+      } else if (!paramReads.some(p => isEqual(p, r.read))) {
         this.currentMode = 'def'
       }
     }
