@@ -262,4 +262,34 @@ describe('repl ok', () => {
     )
     await assertRepl(input, output)
   })
+
+  it('guess and non-determinism', async () => {
+    const input = dedent(
+      `
+      |var x: int
+      |
+      |x <- 0
+      |x == 0
+      |set(1, 2, 3).guess(y => x <- y)
+      |1 <= x and x <= 3
+      |2.to(5).guess(y => x <- y)
+      |2 <= x and x <= 5
+      |tuples(2.to(5), 3.to(4)).guess(t => x <- t._1 + t._2)
+      |5 <= x and x <= 9
+      |`
+    )
+    const output = dedent(
+      `
+      |true
+      |true
+      |true
+      |true
+      |true
+      |true
+      |true
+      |true
+      |`
+    )
+    await assertRepl(input, output)
+  })
 })

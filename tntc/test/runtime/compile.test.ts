@@ -213,9 +213,29 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString(input, 'set(2, 3, 4, 5)')
     })
 
+    it('interval cardinality', () => {
+      const input = '2.to(5).cardinality()'
+      assertResultAsString(input, '4')
+    })
+
+    it('interval isFinite', () => {
+      const input = '2.to(5).isFinite()'
+      assertResultAsString(input, 'true')
+    })
+
     it('computes a flat set', () => {
       const input = 'set(1, 3 - 1, 3)'
       assertResultAsString(input, 'set(1, 2, 3)')
+    })
+
+    it('flat set cardinality', () => {
+      const input = 'set(1, 4 - 1, 3).cardinality()'
+      assertResultAsString(input, '2')
+    })
+
+    it('flat set isFinite', () => {
+      const input = 'set(1, 4 - 1, 3).isFinite()'
+      assertResultAsString(input, 'true')
     })
 
     it('computes a flat set without duplicates', () => {
@@ -226,6 +246,11 @@ describe('compiling specs to runtime values', () => {
     it('computes a set of sets', () => {
       const input = 'set(set(1, 2), set(2, 3), set(1, 3))'
       assertResultAsString(input, 'set(set(1, 2), set(1, 3), set(2, 3))')
+    })
+
+    it('cardinality of a set of sets', () => {
+      const input = 'set(set(1, 2), set(2, 3), set(1, 3)).cardinality()'
+      assertResultAsString(input, '3')
     })
 
     it('computes a set of intervals', () => {
@@ -463,6 +488,11 @@ describe('compiling specs to runtime values', () => {
       )
       assertResultAsString('set(tuples(1.to(2), 2.to(3)))',
         'set(set(tup(1, 2), tup(1, 3), tup(2, 2), tup(2, 3)))')
+    })
+
+    it('cardinality of cross products', () => {
+      assertResultAsString('tuples(1.to(4), 2.to(4)).cardinality()', '12')
+      assertResultAsString('tuples(set(), 2.to(4)).cardinality()', '0')
     })
   })
 })

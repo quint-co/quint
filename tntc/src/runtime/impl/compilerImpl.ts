@@ -300,12 +300,25 @@ export class CompilerVisitor implements IRVisitor {
         this.applyFun(2, (l, r) => just(rv.mkSet(l.toSet().subtract(r.toSet()))))
         break
 
+      case 'cardinality':
+        this.applyFun(1, set => just(rv.mkInt(BigInt(set.cardinality()))))
+        break
+
+      case 'isFinite':
+        // at the moment, we support only finite sets, so just return true
+        this.applyFun(1, set => just(rv.mkBool(true)))
+        break
+
       case 'to':
         this.applyFun(2, (i, j) => just(rv.mkInterval(i.toInt(), j.toInt())))
         break
 
       case 'fold':
         this.applyFold()
+        break
+
+      case 'guess':
+        this.applyGuess()
         break
 
       case 'flatten':
@@ -603,6 +616,28 @@ export class CompilerVisitor implements IRVisitor {
     }
 
     this.compStack.push(computable)
+  }
+
+  // apply the operator guess
+  private applyGuess () {
+    if (this.compStack.length < 2) {
+      throw new Error('Not enough arguments on the stack')
+    }
+
+    const [setComp, fun] = this.compStack.splice(-2)
+    const comp = {
+      eval: (): Maybe<EvalResult> => {
+        // compute the values of the arguments at this point
+        return setComp.eval().map(set => {
+          const callable = fun as Callable
+          // randomly pick an element
+          const elem = (set as RuntimeValue).pick(Math.random())
+          callable.registers[0].registerValue = just(elem)
+          return callable.eval()
+        }).join()
+      },
+    }
+    this.compStack.push(comp)
   }
 
   // save the values of the next vars into an array
