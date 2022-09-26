@@ -114,15 +114,22 @@ class ModeFinderVisitor implements EffectVisitor {
       }
     })
 
-    this.currentMode = 'staticdef'
-    // TODO: refactor nested conditions
     const r = effect.result
-    if (r.kind === 'concrete') {
-      if (r.read.kind === 'union' && !r.read.variables.every(v => paramReads.some(p => isEqual(p, v)))) {
-        this.currentMode = 'def'
-      } else if (!paramReads.some(p => isEqual(p, r.read))) {
-        this.currentMode = 'def'
-      }
+    this.currentMode = 'staticdef'
+
+    if (r.kind !== 'concrete') {
+      // FIXME: which mode should operators that return operators have?
+      // Use "static def" for now
+      return
+    }
+
+    // If there is a variable read in the results that is not present on the
+    // parameters, then the operator is adding a read effect and this should be
+    // a "def" instead of "static def"
+    if (r.read.kind === 'union' && !r.read.variables.every(v => paramReads.some(p => isEqual(p, v)))) {
+      this.currentMode = 'def'
+    } else if (!paramReads.some(p => isEqual(p, r.read))) {
+      this.currentMode = 'def'
     }
   }
 }
