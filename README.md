@@ -68,6 +68,7 @@ completely implementing every pass.
 | [Multiline disjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
 | [Multiline conjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
 | [Delayed assignment][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
+| [Higher-order definitions][]      | :white_check_mark: | :white_check_mark: | ?                  | ?                  | :x:                | :x:         | :x:       |
 | [Temporal operators][]            | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:         | :x:       |
 | [Fairness][]                      | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:         | :x:       |
 | [Unbounded quantifiers][]         | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:         | :x:       |
