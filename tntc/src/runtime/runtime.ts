@@ -50,6 +50,69 @@ export interface Computable {
 }
 
 /**
+ * The kind of a computable.
+ */
+export type ComputableKind = 'var' | 'nextvar' | 'arg' | 'callable'
+
+/**
+ * Create a key that encodes its name and kind. This is only useful for
+ * storing registers in a map, as JS objects are hard to use as keys.
+ * In a good language, we would use (kind, name), but not in JS.
+ */
+export const kindName = (kind: ComputableKind, name: string): string => {
+  return `${kind}:${name}`
+}
+
+/**
+ * A computable that evaluates to the value of a readable/writeable register.
+ */
+export interface Register extends Computable {
+  // register name
+  name: string
+  // register kind
+  kind: ComputableKind
+  // register is a placeholder where iterators can put their values
+  registerValue: Maybe<any>
+}
+
+/**
+ * Create an object that implements Register.
+ */
+export function mkRegister
+(kind: ComputableKind, registerName: string, initValue: Maybe<any>): Register {
+  return {
+    name: registerName,
+    kind: kind,
+    registerValue: initValue,
+    // computing a register just evaluates to the contents that it stores
+    eval: function () {
+      return this.registerValue
+    },
+  }
+}
+
+/**
+ * A callable value like an operator definition.  Its body us computable, but
+ * one has to first set the registers that store the values of the callable's
+ * parameters.
+ */
+export interface Callable extends Computable {
+  registers: Register[]
+}
+
+/**
+ * Create an object that implements Callable.
+ */
+export function mkCallable (registers: Register[], body: Computable): Callable {
+  return {
+    registers: registers,
+    eval: () => {
+      return body.eval()
+    },
+  }
+}
+
+/**
  * An implementation of Computable that always fails.
  */
 export const fail = {

@@ -65,7 +65,7 @@ ${output}
 
   const result = await withIO(input)
   assert(typeof result === 'string', 'expected result to be a string')
-  expect(expected).to.equal(result)
+  expect(result).to.equal(expected)
 }
 
 describe('repl ok', () => {
@@ -156,6 +156,138 @@ describe('repl ok', () => {
       |2:5: Couldn't resolve name n in definition for __input, in module __REPL
       |<result undefined>
       |
+      |`
+    )
+    await assertRepl(input, output)
+  })
+
+  it('assignments', async () => {
+    const input = dedent(
+      `var x: int
+      |action Init = x <- 0
+      |action Next = x <- x + 1
+      |Init
+      |x
+      |Next
+      |x
+      |Next
+      |x
+      |`
+    )
+    const output = dedent(
+      `
+      |
+      |
+      |true
+      |0
+      |true
+      |1
+      |true
+      |2
+      |`
+    )
+    await assertRepl(input, output)
+  })
+
+  it('action-level disjunctions and conjunctions', async () => {
+    const input = dedent(
+      `
+      |var x: int
+      |action Init = x <- 0
+      |action Next = {
+      |  | { x == 0 & x <- 1 }
+      |  | { x == 1 & x <- 0 }
+      |}
+      |
+      |Init
+      |x
+      |Next
+      |x
+      |Next
+      |x
+      |Next
+      |x
+      |`
+    )
+    const output = dedent(
+      `
+      |
+      |
+      |true
+      |0
+      |true
+      |1
+      |true
+      |0
+      |true
+      |1
+      |`
+    )
+    await assertRepl(input, output)
+  })
+
+  it('action-level disjunctions and non-determinism', async () => {
+    const input = dedent(
+      `
+      |var x: int
+      |action Init = x <- 0
+      |action Next = {
+      |  | x <- x + 1
+      |  | x <- x - 1
+      |}
+      |
+      |Init
+      |-1 <= x and x <= 1
+      |Next
+      |-2 <= x and x <= 2
+      |Next
+      |-3 <= x and x <= 3
+      |Next
+      |-4 <= x and x <= 4
+      |`
+    )
+    const output = dedent(
+      `
+      |
+      |
+      |true
+      |true
+      |true
+      |true
+      |true
+      |true
+      |true
+      |true
+      |`
+    )
+    await assertRepl(input, output)
+  })
+
+  it('guess and non-determinism', async () => {
+    const input = dedent(
+      `
+      |var x: int
+      |
+      |x <- 0
+      |x == 0
+      |set(1, 2, 3).guess(y => x <- y)
+      |1 <= x and x <= 3
+      |2.to(5).guess(y => x <- y)
+      |2 <= x and x <= 5
+      |tuples(2.to(5), 3.to(4)).guess(t => x <- t._1 + t._2)
+      |5 <= x and x <= 9
+      |`
+    )
+    const output = dedent(
+      `
+      |true
+      |true
+      |true
+      |true
+      |true
+      |true
+      |true
+      |true
       |`
     )
     await assertRepl(input, output)

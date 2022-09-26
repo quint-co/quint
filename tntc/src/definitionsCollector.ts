@@ -123,6 +123,7 @@ export function defaultDefinitions (): DefinitionTable {
       { kind: 'def', identifier: 'always' },
       { kind: 'def', identifier: 'eventually' },
       { kind: 'def', identifier: 'next' },
+      { kind: 'def', identifier: 'shift' }, // For simulator usage only
       { kind: 'def', identifier: 'stutter' },
       { kind: 'def', identifier: 'nostutter' },
       { kind: 'def', identifier: 'enabled' },
