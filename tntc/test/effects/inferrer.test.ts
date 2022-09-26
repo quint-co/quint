@@ -45,7 +45,7 @@ describe('inferEffects', () => {
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
-    const expectedEffect = "(Read[r_p_4]) => Read[r_p_4] & Update['x']"
+    const expectedEffect = "(Read[v1]) => Read[v1] & Update['x']"
 
     effects
       .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(BigInt(4))!), expectedEffect))
@@ -65,8 +65,8 @@ describe('inferEffects', () => {
 
     effects
       .map((es: Map<BigInt, Effect>) => {
-        assert.deepEqual(effectToString(es.get(BigInt(4))!), "(Read[r_p_4]) => Read[r_p_4, 'x']")
-        assert.deepEqual(effectToString(es.get(BigInt(9))!), '(Read[r_p_9]) => Read[r_p_9]')
+        assert.deepEqual(effectToString(es.get(BigInt(4))!), "(Read[v0]) => Read[v0, 'x']")
+        assert.deepEqual(effectToString(es.get(BigInt(9))!), '(Read[v4]) => Read[v4]')
         return true
       })
       .mapLeft(e => {
@@ -196,9 +196,9 @@ describe('inferEffects', () => {
               }],
               location: "Trying to unify Read[v8] and Read[v1] & Update['x']",
             }],
-            location: "Trying to unify (Read['x'], Read[r_p_5]) => Read[v8] and (Read[v0], Read[v1]) => Read[v1] & Update[v0]",
+            location: "Trying to unify (Read['x'], Read[v5]) => Read[v8] and (Read[v0], Read[v1]) => Read[v1] & Update[v0]",
           }],
-          location: "Trying to unify (Read[v4], Read[v5], (Read[v4], Read[v5]) => Read[v8]) => Read[v4, v5, v8] and (Read['x'], Read[r_p_5], (Read[v0], Read[v1]) => Read[v1] & Update[v0]) => e0",
+          location: "Trying to unify (Read[v4], Read[v5], (Read[v4], Read[v5]) => Read[v8]) => Read[v4, v5, v8] and (Read['x'], e_p_5, (Read[v0], Read[v1]) => Read[v1] & Update[v0]) => e0",
         }],
         location: 'Trying to infer effect for operator application in foldl(x, p, assign)',
       })))
