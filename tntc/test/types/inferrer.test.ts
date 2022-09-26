@@ -42,6 +42,31 @@ describe('inferTypes', () => {
     })
   })
 
+  it('infers types for high-order operators', () => {
+    const tntModule = buildModuleWithDefs([
+      'def a(f, p) = f(p)',
+      'def b(f, p) = f(p) + f(not(p))',
+    ])
+
+    const result = inferTypes(tntModule)
+    assert.isTrue(result.isRight())
+    result.map(r => {
+      const stringTypes = Array.from(r.entries()).map(([id, type]) => [id, typeToString(type)])
+      assert.sameDeepMembers(stringTypes, [
+        [1n, 't1'],
+        [2n, 't2'],
+        [3n, '((t1) => t2, t1) => t2'],
+        [4n, 'bool'],
+        [5n, 'int'],
+        [6n, 'bool'],
+        [7n, 'bool'],
+        [8n, 'int'],
+        [9n, 'int'],
+        [10n, '((bool) => int, bool) => int'],
+      ])
+    })
+  })
+
   it('fails when types are not unifiable', () => {
     const tntModule = buildModuleWithDefs([
       'def a = 1.map(x => x + 10)',

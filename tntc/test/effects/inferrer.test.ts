@@ -36,6 +36,7 @@ describe('inferEffects', () => {
     ['multipleArityOp', readManyEffect],
     ['foldl', () => parseEffectOrThrow('(Read[r1], Read[r2], (Read[r1], Read[r2]) => Read[r3]) => Read[r1, r2, r3]')],
     ['iadd', () => parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1, r2]')],
+    ['not', () => parseEffectOrThrow('(Read[r1] & Temporal[t2]) => Read[r1] & Temporal[t1]')],
   ])
 
   it('infers simple operator effect', () => {
@@ -137,6 +138,41 @@ describe('inferEffects', () => {
 
     effects
       .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(BigInt(3))!), expectedEffect))
+      .mapLeft(e => {
+        const errors = Array.from(e.values())
+        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
+      })
+  })
+
+  it('infers polymorphic high order operators', () => {
+    const tntModule = buildModuleWithDefs([
+      'def a(f, p) = f(p)',
+    ])
+
+    const effects = inferEffects(signatures, definitionsTable, tntModule)
+
+    const expectedEffect = '((e_p_3) => e0, e_p_3) => e0'
+
+    effects
+      .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(BigInt(3))!), expectedEffect))
+      .mapLeft(e => {
+        const errors = Array.from(e.values())
+        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
+      })
+  })
+
+  it('infers monomorphic high order operators', () => {
+    const tntModule = buildModuleWithDefs([
+      'def a(f, p) = f(p) + f(not(p))',
+    ])
+
+    const effects = inferEffects(signatures, definitionsTable, tntModule)
+
+    // TODO: check this v4
+    const expectedEffect = '((Read[v1] & Temporal[t1]) => Read[v5], Read[v1] & Temporal[t2]) => Read[v4, v5]'
+
+    effects
+      .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(BigInt(7))!), expectedEffect))
       .mapLeft(e => {
         const errors = Array.from(e.values())
         assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)

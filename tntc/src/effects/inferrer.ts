@@ -22,7 +22,6 @@ import { Effect, emptyVariables, unify, Signature, effectNames } from './base'
 import { applySubstitution, Substitutions, compose } from './substitutions'
 import { ErrorTree, errorTreeToString } from '../errorTree'
 import { scopesForId, ScopeTree, treeFromModule } from '../scoping'
-import { substitutionsToString } from './printing'
 
 /**
  * Infers an effect for every expression in a module based on predefined
@@ -51,7 +50,7 @@ export function inferEffects (context: Map<string, Signature>, definitionsTable:
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor (context: Map<string, Signature>, definitionsTable: DefinitionTableByModule) {
+  constructor(context: Map<string, Signature>, definitionsTable: DefinitionTableByModule) {
     this.context = context
     this.definitionsTable = definitionsTable
   }
@@ -234,7 +233,6 @@ class EffectInferrerVisitor implements IRVisitor {
       .map(p => {
         const paramEffect = this.context.get(p)!(1)
         this.context.delete(p)
-        console.log(substitutionsToString(this.substitutions))
         return applySubstitution(this.substitutions, paramEffect)
       }))
 
