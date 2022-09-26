@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author           |
 | :------- | :--------- | :--------------- |
-| 2        | 12.07.2022 | Gabriela Moreira |
+| 3        | 26.09.2022 | Gabriela Moreira |
 
 ## Summary
 
@@ -188,11 +188,11 @@ Operator definitions (top-level or inside let-in's): infer signature and add it 
 Γ ∪ { identifier: op, effect: E } ⊢ (def op(params) = e): Pure
 ```
 
-Lambda parameters can only read variables but not introduce updates to them.
+Lambda parameters can have any shape since we allow high order operators.
 ```
                  Γ ⊢ e: E
 ---------------------------------------------- (LAMBDA)
-Γ ⊢ (p0, ..., pn) => e: (Read[r_p0], ..., Read[r_pn]) => E
+Γ ⊢ (p0, ..., pn) => e: (E0, ..., En) => E
 ```
 
 Let-in expressions assume the effect of the expression in its body.
