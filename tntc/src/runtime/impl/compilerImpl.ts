@@ -15,7 +15,7 @@ import { Set } from 'immutable'
 
 import { IRVisitor } from '../../IRVisitor'
 import {
-  Computable, EvalResult, Register, Callable,
+  Computable, EvalResult, Register, Callable, ComputableKind,
   kindName, fail, mkCallable, mkRegister
 } from '../runtime'
 
@@ -99,9 +99,7 @@ export class CompilerVisitor implements IRVisitor {
 
   enterName (name: ir.TntName) {
     // the name is either a variable name, an argument name, or a callable
-    const comp = this.context.get(kindName('var', name.name)) ??
-        this.context.get(kindName('arg', name.name)) ??
-        this.context.get(kindName('callable', name.name))
+    const comp = this.contextGet(name.name, ['var', 'arg', 'callable'])
     // this may happen, see: https://github.com/informalsystems/tnt/issues/129
     assert(comp, `Name ${name.name} not found (out of order?)`)
     this.compStack.push(comp)
@@ -113,7 +111,7 @@ export class CompilerVisitor implements IRVisitor {
         const register = this.compStack.pop()
         if (register) {
           const name = (register as Register).name
-          const nextvar = this.context.get(kindName('nextvar', name))
+          const nextvar = this.contextGet(name, ['nextvar'])
           this.compStack.push(nextvar ?? fail)
         } else {
           this.compStack.push(fail)
@@ -125,8 +123,7 @@ export class CompilerVisitor implements IRVisitor {
         assert(this.compStack.length >= 2, 'Not enough arguments on stack')
         const [register, rhs] = this.compStack.splice(-2)
         const name = (register as Register).name
-        const nextvar =
-            this.context.get(kindName('nextvar', name)) as Register
+        const nextvar = this.contextGet(name, ['nextvar']) as Register
         if (nextvar) {
           this.compStack.push(rhs)
           this.applyFun(1, (value) => {
@@ -143,8 +140,7 @@ export class CompilerVisitor implements IRVisitor {
         this.compStack.push({
           eval: () => {
             for (const v of this.vars) {
-              const key = kindName('nextvar', v.name)
-              const primed = this.context.get(key) as Register
+              const primed = this.contextGet(v.name, ['nextvar']) as Register
               if (primed) {
                 v.registerValue = primed.registerValue
                 primed.registerValue = none()
@@ -361,11 +357,12 @@ export class CompilerVisitor implements IRVisitor {
 
       default: {
         // maybe it is a user-defined operator
-        const key = kindName('callable', app.opcode)
-        const callable = this.context.get(key) as Callable
-        if (callable === undefined) {
+        const callable =
+          this.contextGet(app.opcode, ['callable', 'arg']) as Callable
+        if (callable === undefined || callable.registers === undefined) {
+          // The error should be reported via a callback:
           // TODO: https://github.com/informalsystems/tnt/issues/191
-          console.error(`Translation of ${app.opcode} is not implemented`)
+          console.error(`${app.opcode} is not supported`)
           this.compStack.push(fail)
         } else {
           this.applyFun(callable.registers.length,
@@ -396,7 +393,7 @@ export class CompilerVisitor implements IRVisitor {
     const registers: Register[] = []
     lam.params.forEach(p => {
       const key = kindName('arg', p)
-      const register = this.context.get(key) as Register
+      const register = this.contextGet(p, ['arg']) as Register
       assert(register && register.registerValue,
              `Expected a register ${p} on the stack`)
       this.context.delete(key)
@@ -648,6 +645,17 @@ export class CompilerVisitor implements IRVisitor {
   // load the values of the next variables from an array
   private loadNextVars (values: Maybe<RuntimeValue>[]) {
     this.nextVars.forEach((r, i) => r.registerValue = values[i])
+  }
+
+  private contextGet (name: string, kinds: ComputableKind[]) {
+    for (const k of kinds) {
+      const value = this.context.get(kindName(k, name))
+      if (value) {
+        return value
+      }
+    }
+
+    return undefined
   }
 }
 
