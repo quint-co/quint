@@ -1,3 +1,18 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Check that all definitions in a module have correctly annotated modes
+ * according to inferred effects
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { Either, left, right } from '@sweet-monads/either'
 import isEqual from 'lodash.isequal'
 import { ErrorTree } from '../errorTree'
@@ -7,6 +22,16 @@ import { OpQualifier, TntModule, TntOpDef } from '../tntIr'
 import { ArrowEffect, ConcreteEffect, Effect, isAction, isState, isTemporal, Variables } from './base'
 import { EffectVisitor, walkEffect } from './EffectVisitor'
 
+/**
+ * Matches annotated modes for each definition with its inferred effect. Returns
+ * errors for incorrect annotations and suggestions for annotations that could
+ * be more strict.
+ *
+ * @param tntModule: the module to be checked
+ * @param effects: the map from expression ids to their inferred effects
+ *
+ * @returns The mode errors, if any is found. Otherwise, a map with potential suggestions.
+ */
 export function checkModes (tntModule: TntModule, effects: Map<BigInt, Effect>): Either<Map<BigInt, ErrorTree>, Map<BigInt, OpQualifier>> {
   const visitor = new ModeCheckerVisitor(effects)
   walkModule(visitor, tntModule)

@@ -5,8 +5,8 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * Visitor pattern implementation for TNT IR components. Use this to navigate the IR instead
- * of implementing a recursion over it yourself.
+ * Visitor pattern implementation for Effect components. Use this to navigate an
+ * Effect instead of implementing a recursion over it yourself.
  *
  * @author Gabriela Moreira
  *
@@ -17,7 +17,7 @@ import { ArrowEffect, ConcreteEffect, Effect, QuantifiedEffect } from './base'
 
 /**
  * Interface to be implemented by visitor classes.
- * Optionally defines functions for each IR component.
+ * Optionally defines functions for each Effect component.
  */
 export interface EffectVisitor {
   /** General components */
@@ -30,13 +30,13 @@ export interface EffectVisitor {
 }
 
 /**
- * Navigates a TNT module with a visitor, invoking the correspondent function for each
- * found IR component.
+ * Navigates an Effect with a visitor, invoking the correspondent function for each
+ * found Effect.
  *
- * @param visitor: the IRVisitor instance with the functions to be invoked
- * @param tntModule: the TNT module to be navigated
+ * @param visitor: the EffectVisitor instance with the functions to be invoked
+ * @param effect: the effect to be navigated
  *
- * @returns nothing, any collected information has to be a state inside the IRVisitor instance.
+ * @returns nothing, any collected information has to be a state inside the EffectVisitor instance.
  */
 export function walkEffect (visitor: EffectVisitor, effect: Effect): void {
   switch (effect.kind) {
