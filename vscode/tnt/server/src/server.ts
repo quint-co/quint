@@ -31,7 +31,7 @@ import { parsePhase1, parsePhase2, Loc, DefinitionTableByModule, inferEffects, g
 
 interface ParsingResult {
   tntModule: TntModule
-  sourceMap: Map<BigInt, Loc>
+  sourceMap: Map<bigint, Loc>
   definitionTable: DefinitionTableByModule
 }
 
@@ -266,11 +266,11 @@ async function validateTextDocument (textDocument: TextDocument): Promise<Parsin
 }
 
 const effectsByDocument: Map<DocumentUri, Map<Loc, string>> = new Map<DocumentUri, Map<Loc, string>>()
-const originalEffectsByDocument: Map<DocumentUri, Map<BigInt, Effect>> = new Map<DocumentUri, Map<BigInt, Effect>>()
+const originalEffectsByDocument: Map<DocumentUri, Map<bigint, Effect>> = new Map<DocumentUri, Map<bigint, Effect>>()
 const typesByDocument: Map<DocumentUri, Map<Loc, string>> = new Map<DocumentUri, Map<Loc, string>>()
 const documentsByUri: Map<DocumentUri, TextDocument> = new Map<DocumentUri, TextDocument>()
 
-function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>, table: DefinitionTableByModule): Promise<boolean> {
+function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: DefinitionTableByModule): Promise<boolean> {
   const testDiags = checkTypes(textDocument, tntModule, sourceMap)
   const effectDiags = checkEffects(textDocument, tntModule, sourceMap, table)
   const modeDiags = checkDefinitionModes(textDocument, tntModule, sourceMap)
@@ -283,7 +283,7 @@ function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule,
   }
 }
 
-function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>, table: DefinitionTableByModule): Diagnostic[] {
+function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: DefinitionTableByModule): Diagnostic[] {
   const result = inferEffects(getSignatures(), table, tntModule)
   const diagnostics: Diagnostic[] = []
   const effects: Map<Loc, string> = new Map<Loc, string>()
@@ -309,7 +309,7 @@ function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceM
   return diagnostics
 }
 
-function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>): Diagnostic[] {
+function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>): Diagnostic[] {
   const result = inferTypes(tntModule)
   const diagnostics: Diagnostic[] = []
   const types: Map<Loc, string> = new Map<Loc, string>()
@@ -334,7 +334,7 @@ function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap
   return diagnostics
 }
 
-function checkDefinitionModes (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>): Diagnostic[] {
+function checkDefinitionModes (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>): Diagnostic[] {
   const result = checkModes(tntModule, originalEffectsByDocument.get(textDocument.uri)!)
   const diagnostics: Diagnostic[] = []
   result.mapLeft(e => {

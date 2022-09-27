@@ -20,7 +20,7 @@ import { ScopeTree, scopesForId } from './scoping'
  */
 export type ConflictSource =
   /* A user definition, referencing its IR node id */
-  | { kind: 'user', reference: BigInt }
+  | { kind: 'user', reference: bigint }
   /* A built-in definition, no reference */
   | { kind: 'builtin' }
 

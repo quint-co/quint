@@ -31,7 +31,7 @@ export interface ErrorMessage {
 }
 
 export type Phase1Result =
-  | { kind: 'ok', module: TntModule, sourceMap: Map<BigInt, Loc> }
+  | { kind: 'ok', module: TntModule, sourceMap: Map<bigint, Loc> }
   | { kind: 'error', messages: ErrorMessage[] }
 
 export type Phase2Result =
@@ -100,7 +100,7 @@ export function parsePhase1 (text: string, sourceLocation: string): Phase1Result
  * Phase 2 of the TNT parser. Read the IR and check that all names are defined.
  * Note that the IR may be ill-typed.
  */
-export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
+export function parsePhase2 (tntModule: TntModule, sourceMap: Map<bigint, Loc>):
   Phase2Result {
   const scopeTree = treeFromModule(tntModule)
   const moduleDefinitions = collectDefinitions(tntModule)
@@ -145,7 +145,7 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
           sources = conflict.sources
         }
         const locs = sources.map(source => {
-          const id = source.kind === 'user' ? source.reference : BigInt(0) // Impossible case, but TS requires the check
+          const id = source.kind === 'user' ? source.reference : 0n // Impossible case, but TS requires the check
           const loc = sourceMap.get(id)
           if (!loc) {
             throw new Error(`no loc found for ${id}`)
@@ -182,12 +182,12 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<BigInt, Loc>):
     : { kind: 'ok', table: definitions }
 }
 
-export function compactSourceMap (sourceMap: Map<BigInt, Loc>): { sourceIndex: any, map: any } {
+export function compactSourceMap (sourceMap: Map<bigint, Loc>): { sourceIndex: any, map: any } {
   // Collect all sources in order to index them
   const sources: string[] = Array.from(sourceMap.values()).map(loc => loc.source)
 
   // Initialized two structures to be outputed
-  const compactedSourceMap: Map<BigInt, any[]> = new Map<BigInt, number[]>()
+  const compactedSourceMap: Map<bigint, any[]> = new Map<bigint, number[]>()
   const sourcesIndex: Map<number, string> = new Map<number, string>()
 
   // Build a compacted version of the source map with array elements

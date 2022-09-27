@@ -28,7 +28,7 @@ export class ToIrListener implements TntListener {
    */
   typeStack: TntType[] = []
 
-  sourceMap: Map<BigInt, Loc> = new Map<BigInt, Loc>()
+  sourceMap: Map<bigint, Loc> = new Map<bigint, Loc>()
 
   /**
    * If errors occur in the listener, this array contains explanations.
@@ -140,8 +140,8 @@ export class ToIrListener implements TntListener {
       const qtext = ctx.qualifier().text
       // case distinction to make the type checker happy
       if (qtext === 'staticval' || qtext === 'staticdef' ||
-          qtext === 'val' || qtext === 'def' ||
-          qtext === 'action' || qtext === 'temporal') {
+        qtext === 'val' || qtext === 'def' ||
+        qtext === 'action' || qtext === 'temporal') {
         qualifier = qtext
       } else {
         const ls = this.locStr(ctx)
