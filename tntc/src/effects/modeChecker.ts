@@ -32,7 +32,7 @@ import { EffectVisitor, walkEffect } from './EffectVisitor'
  *
  * @returns The mode errors, if any is found. Otherwise, a map with potential suggestions.
  */
-export function checkModes (tntModule: TntModule, effects: Map<BigInt, Effect>): Either<Map<BigInt, ErrorTree>, Map<BigInt, OpQualifier>> {
+export function checkModes (tntModule: TntModule, effects: Map<bigint, Effect>): Either<Map<bigint, ErrorTree>, Map<bigint, OpQualifier>> {
   const visitor = new ModeCheckerVisitor(effects)
   walkModule(visitor, tntModule)
   if (visitor.errors.size > 0) {
