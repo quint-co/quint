@@ -12,11 +12,11 @@ import * as readline from 'readline'
 import { Readable, Writable } from 'stream'
 import chalk from 'chalk'
 
-import { none } from '@sweet-monads/maybe'
+import { Maybe, just, none } from '@sweet-monads/maybe'
 
 import { TntEx } from './tntIr'
-import { compile } from './runtime/compile'
-import { ExecError } from './runtime/runtime'
+import { compile, CompilationContext } from './runtime/compile'
+import { EvalResult, ExecError, Register, kindName } from './runtime/runtime'
 import { probeParse, ErrorMessage } from './tntParserFrontend'
 
 // tunable settings
@@ -26,6 +26,12 @@ export const settings = {
 }
 
 type writer = (text: string) => void
+
+// the internal state of the REPL
+interface ReplState {
+  history: string,
+  vars: Map<string, EvalResult>
+}
 
 // The default exit terminates the process.
 // Since it is inconvenient for testing, do not use it in tests :)
@@ -50,8 +56,11 @@ export function tntRepl
 
   rl.prompt()
 
-  // input history
-  let history = ''
+  // the state
+  let state: ReplState = {
+    history: '',
+    vars: new Map<string, EvalResult>(),
+  }
   // we let the user type a multiline string, which is collected here:
   let multilineText = ''
   // when the number of open braces or parentheses is positive,
@@ -83,12 +92,12 @@ export function tntRepl
         multilineText += '\n' + line
         rl.setPrompt(settings.continuePrompt)
       } else {
-        line.trim() === '' || (history = tryEval(out, history, line))
+        line.trim() === '' || (state = tryEval(out, state, line))
       }
     } else {
       if (line.trim() === '' && nOpenBraces <= 0 && nOpenParen <= 0) {
         // end the multiline mode
-        history = tryEval(out, history, multilineText)
+        state = tryEval(out, state, multilineText)
         multilineText = ''
         rl.setPrompt(settings.prompt)
       } else {
@@ -116,7 +125,7 @@ export function tntRepl
 
       case '.clear':
         out('') // be nice to external programs
-        history = ''
+        state.history = ''
         break
 
       default:
@@ -133,6 +142,38 @@ export function tntRepl
 }
 
 // private definitions
+
+function saveVars (state: ReplState, context: CompilationContext): void {
+  function isNextSet (name: string) {
+    const register = context.values.get(kindName('nextvar', name)) as Register
+    if (register) {
+      return register.registerValue.isJust()
+    } else {
+      return false
+    }
+  }
+  const isAction = [...context.vars].some(name => isNextSet(name))
+  if (isAction) {
+    state.vars.clear()
+    for (const v of context.vars) {
+      const computable = context.values.get(kindName('nextvar', v))
+      if (computable) {
+        computable.eval().map(result => {
+          state.vars.set(v, result)
+        })
+      }
+    }
+  }
+}
+
+function loadVars (state: ReplState, context: CompilationContext): void {
+  state.vars.forEach((value, name) => {
+    const register = context.values.get(kindName('var', name)) as Register
+    if (register) {
+      register.registerValue = just(value)
+    }
+  })
+}
 
 // convert a TNT expression to a colored string, tuned for REPL
 function chalkTntEx (ex: TntEx): string {
@@ -159,13 +200,13 @@ function chalkTntEx (ex: TntEx): string {
 }
 
 // try to evaluate the expression in a string and print it, if successful
-function tryEval (out: writer, history: string, newInput: string): string {
+function tryEval (out: writer, state: ReplState, newInput: string): ReplState {
   // output errors to the console in red
   function chalkHandler (err: ExecError) {
     out(chalk.red(`${err.sourceAndLoc}: ${err.msg}`))
   }
 
-  let newHistory = history
+  const newState = state
   const probeResult = probeParse(newInput, '<input>')
   if (probeResult.kind === 'error') {
     printErrorMessages(out, newInput, probeResult.messages)
@@ -174,18 +215,29 @@ function tryEval (out: writer, history: string, newInput: string): string {
   if (probeResult.kind === 'expr') {
     // embed expression text into a value definition inside a module
     const moduleText = `module __REPL {
-${history}
+${state.history}
   val __input =
 ${newInput}
 }`
     // compile the expression or definition and evaluate it
-    const computable = compile(moduleText, chalkHandler).get('__input')
-    const resultDefined =
-      (computable)
-        ? computable
+    const context = compile(moduleText, chalkHandler)
+    loadVars(state, context)
+    const computable = context.values.get(kindName('callable', '__input'))
+    let resultDefined: Maybe<void> = none()
+    if (computable) {
+      resultDefined =
+        computable
           .eval()
-          .map(value => out(chalkTntEx(value.toTntEx())))
-        : none()
+          .map(value => {
+            const ex = value.toTntEx()
+            out(chalkTntEx(ex))
+            if (ex.kind === 'bool' && ex.value) {
+              // if this was an action and it was successful, save the state
+              // as actions are always boolean, don't even try to save the state for non-boolean expressions
+              saveVars(newState, context)
+            }
+          })
+    }
     if (resultDefined.isNone()) {
       out(chalk.red('<result undefined>'))
       out('') // be nice to external programs
@@ -194,21 +246,21 @@ ${newInput}
   if (probeResult.kind === 'toplevel') {
     // embed expression text into a module at the top level
     const moduleText = `module __REPL {
-${history}
+${state.history}
 ${newInput}
 }`
     // compile the module and add it to history if everything worked
     const context = compile(moduleText, chalkHandler)
-    if (context.size === 0) {
+    if (context.values.size === 0) {
       out(chalk.red('<compilation failed>'))
       out('') // be nice to external programs
     } else {
       out('') // be nice to external programs
-      newHistory = history + '\n' + newInput // update the history
+      newState.history = state.history + '\n' + newInput // update the history
     }
   }
 
-  return newHistory
+  return newState
 }
 
 // print error messages with proper colors

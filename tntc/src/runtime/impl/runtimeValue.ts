@@ -53,9 +53,6 @@
  * The operator `contains` may seem to be too specialized for introducing the
  * whole new layer of abstraction. However, it is deeply rooted in the
  * semantics of TNT, which, similar to TLA+, heavily utilizes set operators.
- * In the future, we will extend runtime values with the method `guess`, which
- * would draw a random value from a set. There, the efficiency of special
- * representations will become obvious.
  *
  * Igor Konnov, 2022
  *
@@ -230,6 +227,28 @@ export interface RuntimeValue
     * or equal to the elements of `superset`
     */
   isSubset (superset: RuntimeValue): boolean
+
+  /**
+   * If this runtime value is set-like, pick one of its elements using the
+   * position argument as the input. Note that the position is not the index
+   * of the element under some stable ordering. Rather, it is a number in the range
+   * [0, 1). It can be used to pick elements from infinite sets such as Int and Nat.
+   *
+   * TODO: reconsider this API. Perhaps, just use a bigint, which encodes either
+   * the index up to the cardinality, or the position in an infinite set (Nat, Int).
+   */
+  pick (position: number): RuntimeValue | undefined
+
+  /**
+   * If this runtime value is set-like, return the number of its elements,
+   * unless its infinite. If the set is infinite, then Number.POSITIVE_INFINITY
+   * is returned.
+   *
+   * @return the number of set elements, if the set is finite,
+   * or Number.POSITIVE_INFINITY
+   */
+
+  cardinality (): number
 }
 
 /**
@@ -373,6 +392,14 @@ abstract class RuntimeValueBase implements RuntimeValue {
     return 0
   }
 
+  pick (position: number): RuntimeValue | undefined {
+    return undefined
+  }
+
+  cardinality () {
+    return 0
+  }
+
   toTntEx (): TntEx {
     // the default implementation, to make it compatible with RuntimeValue
     return {
@@ -511,6 +538,27 @@ class RuntimeValueSet extends RuntimeValueBase implements RuntimeValue {
     return this.set.includes(elem.normalForm())
   }
 
+  pick (position: number): RuntimeValue | undefined {
+    // compute the element index based on the position
+    let index = positionToIndex(position, this.set.size)
+    // Iterate over the set elements,
+    // since the set is not indexed, find the first element that goes over
+    // the index number. This is probably the most efficient way of doing it
+    // without creating intermediate objects in memory.
+    for (const e of this) {
+      if (index <= 0) {
+        return e
+      }
+      index -= 1
+    }
+
+    return undefined
+  }
+
+  cardinality () {
+    return this.set.size
+  }
+
   toTntEx (): TntEx {
     // Sets are tricky, as we have to normalize them when producing TntEx.
     // The most common normal form is the one that sorts sets according
@@ -593,6 +641,20 @@ class RuntimeValueInterval extends RuntimeValueBase implements RuntimeValue {
       // fall back to the general implementation
       return super.isSubset(superset)
     }
+  }
+
+  pick (position: number): RuntimeValue | undefined {
+    if (this.last < this.first) {
+      return undefined
+    } else {
+      const size = Number(this.last - this.first + 1n)
+      const index = positionToIndex(position, size)
+      return new RuntimeValueInt(this.first + BigInt(index))
+    }
+  }
+
+  cardinality () {
+    return Number(this.last - this.first) + 1
   }
 
   toTntEx (): TntEx {
@@ -718,6 +780,31 @@ class RuntimeValueCrossProd
     }
   }
 
+  cardinality () {
+    return this.sets.reduce((n, set) => set.cardinality() * n, 1)
+  }
+
+  pick (position: number): RuntimeValue | undefined {
+    let index = Math.floor(position * this.cardinality())
+    const elems: RuntimeValue[] = []
+    for (const set of this.sets) {
+      const card = set.cardinality()
+      const elem = set.pick((index % card) / card)
+      if (card <= 0) {
+        return undefined
+      } else {
+        index = index / card
+      }
+      if (elem) {
+        elems.push(elem)
+      } else {
+        return undefined
+      }
+    }
+
+    return new RuntimeValueTuple(List.of(...elems))
+  }
+
   toTntEx (): TntEx {
     // simply enumerate the values
     const elems: TntEx[] = []
@@ -732,4 +819,11 @@ class RuntimeValueCrossProd
       args: elems,
     }
   }
+}
+
+// convert a position in [0, 1) to the index in a collection of `size` elements
+function positionToIndex (position: number, size: number) {
+  return (position < 0.0 || position >= 1.0)
+    ? 0
+    : Math.floor(position * size)
 }

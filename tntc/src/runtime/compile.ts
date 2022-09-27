@@ -21,6 +21,14 @@ const consoleHandler = (err: ExecError) => {
 }
 
 /**
+ * A compilation context returned by 'compile'.
+ */
+export interface CompilationContext {
+  values: Map<string, Computable>,
+  vars: string[]
+}
+
+/**
  * Parse a string that contains a TNT module and compile it to executable
  * objects. This is a user-facing function. In case of an error, the error
  * messages are passed to an error handler and the function returns undefined.
@@ -32,7 +40,7 @@ const consoleHandler = (err: ExecError) => {
  */
 export function
 compile (moduleText: string, errorHandler: ExecErrorHandler = consoleHandler):
-    Map<String, Computable> {
+    CompilationContext {
   // parse the module text
   const parseRes = parsePhase1(moduleText, '<input>')
   let errors = []
@@ -45,7 +53,10 @@ compile (moduleText: string, errorHandler: ExecErrorHandler = consoleHandler):
     } else {
       const visitor = new CompilerVisitor()
       walkModule(visitor, parseRes.module)
-      return visitor.getContext()
+      return {
+        values: visitor.getContext(),
+        vars: visitor.getVars(),
+      }
     }
   }
 
@@ -67,5 +78,8 @@ compile (moduleText: string, errorHandler: ExecErrorHandler = consoleHandler):
     })
   })
 
-  return new Map()
+  return {
+    values: new Map(),
+    vars: [],
+  }
 }
