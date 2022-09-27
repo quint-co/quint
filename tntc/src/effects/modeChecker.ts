@@ -32,7 +32,7 @@ import { EffectVisitor, walkEffect } from './EffectVisitor'
  *
  * @returns The mode errors, if any is found. Otherwise, a map with potential suggestions.
  */
-export function checkModes (tntModule: TntModule, effects: Map<BigInt, Effect>): Either<Map<BigInt, ErrorTree>, Map<BigInt, OpQualifier>> {
+export function checkModes (tntModule: TntModule, effects: Map<bigint, Effect>): Either<Map<bigint, ErrorTree>, Map<bigint, OpQualifier>> {
   const visitor = new ModeCheckerVisitor(effects)
   walkModule(visitor, tntModule)
   if (visitor.errors.size > 0) {
@@ -43,12 +43,12 @@ export function checkModes (tntModule: TntModule, effects: Map<BigInt, Effect>):
 }
 
 class ModeCheckerVisitor implements IRVisitor {
-  public errors: Map<BigInt, ErrorTree> = new Map<BigInt, ErrorTree>()
-  public suggestions: Map<BigInt, OpQualifier> = new Map<BigInt, OpQualifier>()
-  effects: Map<BigInt, Effect>
+  public errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
+  public suggestions: Map<bigint, OpQualifier> = new Map<bigint, OpQualifier>()
+  effects: Map<bigint, Effect>
   modeFinderVisitor: ModeFinderVisitor = new ModeFinderVisitor()
 
-  constructor (effects: Map<BigInt, Effect>) {
+  constructor (effects: Map<bigint, Effect>) {
     this.effects = effects
   }
 
