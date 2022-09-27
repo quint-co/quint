@@ -27,7 +27,7 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { parsePhase1, parsePhase2, Loc, DefinitionTableByModule, inferEffects, getSignatures, TntModule, effectToString, errorTreeToString, typeToString, inferTypes } from 'tntc'
+import { parsePhase1, parsePhase2, Loc, DefinitionTableByModule, inferEffects, getSignatures, TntModule, effectToString, errorTreeToString, typeToString, inferTypes, checkModes, Effect } from 'tntc'
 
 interface ParsingResult {
   tntModule: TntModule
@@ -266,14 +266,16 @@ async function validateTextDocument (textDocument: TextDocument): Promise<Parsin
 }
 
 const effectsByDocument: Map<DocumentUri, Map<Loc, string>> = new Map<DocumentUri, Map<Loc, string>>()
+const originalEffectsByDocument: Map<DocumentUri, Map<BigInt, Effect>> = new Map<DocumentUri, Map<BigInt, Effect>>()
 const typesByDocument: Map<DocumentUri, Map<Loc, string>> = new Map<DocumentUri, Map<Loc, string>>()
 const documentsByUri: Map<DocumentUri, TextDocument> = new Map<DocumentUri, TextDocument>()
 
 function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>, table: DefinitionTableByModule): Promise<boolean> {
   const testDiags = checkTypes(textDocument, tntModule, sourceMap)
   const effectDiags = checkEffects(textDocument, tntModule, sourceMap, table)
+  const modeDiags = checkDefinitionModes(textDocument, tntModule, sourceMap)
 
-  const diags = testDiags.concat(effectDiags)
+  const diags = testDiags.concat(effectDiags).concat(modeDiags)
   if (diags.length > 0) {
     return new Promise((_resolve, reject) => reject(diags))
   } else {
@@ -299,6 +301,7 @@ function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceM
   }).map(inferredEffects => {
     inferredEffects.forEach((effect, id) => effects.set(sourceMap.get(id)!, effectToString(effect)))
     effectsByDocument.set(textDocument.uri, effects)
+    originalEffectsByDocument.set(textDocument.uri, inferredEffects)
     documentsByUri.set(textDocument.uri, textDocument)
     return true
   })
@@ -326,6 +329,25 @@ function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap
     typesByDocument.set(textDocument.uri, types)
     documentsByUri.set(textDocument.uri, textDocument)
     return true
+  })
+
+  return diagnostics
+}
+
+function checkDefinitionModes (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>): Diagnostic[] {
+  const result = checkModes(tntModule, originalEffectsByDocument.get(textDocument.uri)!)
+  const diagnostics: Diagnostic[] = []
+  result.mapLeft(e => {
+    console.log(`${e.size} Mode errors found, sending diagnostics`)
+    e.forEach((error, id) => {
+      const loc = sourceMap.get(id)
+      if (!loc) {
+        console.log(`loc for ${id} not found in source map`)
+      } else {
+        const diag = assembleDiagnostic(errorTreeToString(error), loc)
+        diagnostics.push(diag)
+      }
+    })
   })
 
   return diagnostics
