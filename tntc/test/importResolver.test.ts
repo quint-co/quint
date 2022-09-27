@@ -8,19 +8,19 @@ describe('resolveImports', () => {
   const moduleName = 'wrapper'
   const table: DefinitionTable = {
     valueDefinitions: [
-      { kind: 'def', identifier: 'a', reference: BigInt(1) },
-      { kind: 'def', identifier: 'b', reference: BigInt(2) },
-      { kind: 'def', identifier: 'c', reference: BigInt(3), scope: BigInt(10) },
-      { kind: 'module', identifier: 'nested_module', reference: BigInt(4) },
-      { kind: 'module', identifier: 'unexisting_module', reference: BigInt(5) },
+      { kind: 'def', identifier: 'a', reference: 1n },
+      { kind: 'def', identifier: 'b', reference: 2n },
+      { kind: 'def', identifier: 'c', reference: 3n, scope: 10n },
+      { kind: 'module', identifier: 'nested_module', reference: 4n },
+      { kind: 'module', identifier: 'unexisting_module', reference: 5n },
     ],
     typeDefinitions: [],
   }
 
   const nestedModuleTable: DefinitionTable = {
     valueDefinitions: [
-      { kind: 'def', identifier: 'd', reference: BigInt(1) },
-      { kind: 'def', identifier: 'e', reference: BigInt(2), scope: BigInt(10) },
+      { kind: 'def', identifier: 'd', reference: 1n },
+      { kind: 'def', identifier: 'e', reference: 2n, scope: 10n },
     ],
     typeDefinitions: [],
   }

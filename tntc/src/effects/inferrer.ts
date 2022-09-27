@@ -35,7 +35,7 @@ import { scopesForId, ScopeTree, treeFromModule } from '../scoping'
  *          Otherwise, a map from expression ids to the corresponding error for
  *          the problematic expressions.
  */
-export function inferEffects (context: Map<string, Signature>, definitionsTable: DefinitionTableByModule, module: TntModule): Either<Map<BigInt, ErrorTree>, Map<BigInt, Effect>> {
+export function inferEffects (context: Map<string, Signature>, definitionsTable: DefinitionTableByModule, module: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, Effect>> {
   const visitor = new EffectInferrerVisitor(context, definitionsTable)
   walkModule(visitor, module)
   if (visitor.errors.size > 0) {
@@ -55,8 +55,8 @@ class EffectInferrerVisitor implements IRVisitor {
     this.definitionsTable = definitionsTable
   }
 
-  effects: Map<BigInt, Effect> = new Map<BigInt, Effect>()
-  errors: Map<BigInt, ErrorTree> = new Map<BigInt, ErrorTree>()
+  effects: Map<bigint, Effect> = new Map<bigint, Effect>()
+  errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
 
   private context: Map<string, Signature>
   private definitionsTable: DefinitionTableByModule

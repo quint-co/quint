@@ -27,11 +27,11 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { parsePhase1, parsePhase2, Loc, DefinitionTableByModule, inferEffects, getSignatures, TntModule, effectToString, errorTreeToString, typeToString, inferTypes } from 'tntc'
+import { parsePhase1, parsePhase2, Loc, DefinitionTableByModule, inferEffects, getSignatures, TntModule, effectToString, errorTreeToString, typeToString, inferTypes, checkModes, Effect } from 'tntc'
 
 interface ParsingResult {
   tntModule: TntModule
-  sourceMap: Map<BigInt, Loc>
+  sourceMap: Map<bigint, Loc>
   definitionTable: DefinitionTableByModule
 }
 
@@ -266,14 +266,16 @@ async function validateTextDocument (textDocument: TextDocument): Promise<Parsin
 }
 
 const effectsByDocument: Map<DocumentUri, Map<Loc, string>> = new Map<DocumentUri, Map<Loc, string>>()
+const originalEffectsByDocument: Map<DocumentUri, Map<bigint, Effect>> = new Map<DocumentUri, Map<bigint, Effect>>()
 const typesByDocument: Map<DocumentUri, Map<Loc, string>> = new Map<DocumentUri, Map<Loc, string>>()
 const documentsByUri: Map<DocumentUri, TextDocument> = new Map<DocumentUri, TextDocument>()
 
-function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>, table: DefinitionTableByModule): Promise<boolean> {
+function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: DefinitionTableByModule): Promise<boolean> {
   const testDiags = checkTypes(textDocument, tntModule, sourceMap)
   const effectDiags = checkEffects(textDocument, tntModule, sourceMap, table)
+  const modeDiags = checkDefinitionModes(textDocument, tntModule, sourceMap)
 
-  const diags = testDiags.concat(effectDiags)
+  const diags = testDiags.concat(effectDiags).concat(modeDiags)
   if (diags.length > 0) {
     return new Promise((_resolve, reject) => reject(diags))
   } else {
@@ -281,7 +283,7 @@ function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule,
   }
 }
 
-function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>, table: DefinitionTableByModule): Diagnostic[] {
+function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: DefinitionTableByModule): Diagnostic[] {
   const result = inferEffects(getSignatures(), table, tntModule)
   const diagnostics: Diagnostic[] = []
   const effects: Map<Loc, string> = new Map<Loc, string>()
@@ -299,6 +301,7 @@ function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceM
   }).map(inferredEffects => {
     inferredEffects.forEach((effect, id) => effects.set(sourceMap.get(id)!, effectToString(effect)))
     effectsByDocument.set(textDocument.uri, effects)
+    originalEffectsByDocument.set(textDocument.uri, inferredEffects)
     documentsByUri.set(textDocument.uri, textDocument)
     return true
   })
@@ -306,7 +309,7 @@ function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceM
   return diagnostics
 }
 
-function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<BigInt, Loc>): Diagnostic[] {
+function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>): Diagnostic[] {
   const result = inferTypes(tntModule)
   const diagnostics: Diagnostic[] = []
   const types: Map<Loc, string> = new Map<Loc, string>()
@@ -326,6 +329,25 @@ function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap
     typesByDocument.set(textDocument.uri, types)
     documentsByUri.set(textDocument.uri, textDocument)
     return true
+  })
+
+  return diagnostics
+}
+
+function checkDefinitionModes (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>): Diagnostic[] {
+  const result = checkModes(tntModule, originalEffectsByDocument.get(textDocument.uri)!)
+  const diagnostics: Diagnostic[] = []
+  result.mapLeft(e => {
+    console.log(`${e.size} Mode errors found, sending diagnostics`)
+    e.forEach((error, id) => {
+      const loc = sourceMap.get(id)
+      if (!loc) {
+        console.log(`loc for ${id} not found in source map`)
+      } else {
+        const diag = assembleDiagnostic(errorTreeToString(error), loc)
+        diagnostics.push(diag)
+      }
+    })
   })
 
   return diagnostics

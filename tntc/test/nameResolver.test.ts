@@ -10,16 +10,16 @@ describe('nameResolver', () => {
   const valueDefinitions: ValueDefinition[] = defaultDefinitions().valueDefinitions.concat([
     { kind: 'const', identifier: 'TEST_CONSTANT' },
     { kind: 'def', identifier: 'unscoped_def' },
-    { kind: 'def', identifier: 'scoped_def', scope: BigInt(2) },
+    { kind: 'def', identifier: 'scoped_def', scope: 2n },
   ])
   const typeDefinitions: TypeDefinition[] = [
-    { identifier: 'MY_TYPE', type: { id: BigInt(100), kind: 'int' } },
+    { identifier: 'MY_TYPE', type: { id: 100n, kind: 'int' } },
   ]
 
   const moduleName = 'wrapper'
   const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
   const tables: DefinitionTableByModule = new Map<string, DefinitionTable>([[moduleName, table]])
-  const dummyScopeTree: ScopeTree = { value: BigInt(0), children: [] }
+  const dummyScopeTree: ScopeTree = { value: 0n, children: [] }
 
   describe('operator definitions', () => {
     it('finds top level definitions', () => {
@@ -32,10 +32,10 @@ describe('nameResolver', () => {
     it('finds scoped definitions', () => {
       const tntModule = buildModuleWithExpressions(['TEST_CONSTANT.filter(a => scoped_def > 0)'])
       const dummyScopeTree: ScopeTree = {
-        value: BigInt(0),
+        value: 0n,
         children: [
-          { value: BigInt(1), children: [] },
-          { value: BigInt(2), children: [] },
+          { value: 1n, children: [] },
+          { value: 2n, children: [] },
         ],
       }
 
@@ -49,7 +49,7 @@ describe('nameResolver', () => {
       const result = resolveNames(tntModule, tables, dummyScopeTree)
       const expectedResult: NameResolutionResult = {
         kind: 'error',
-        errors: [{ kind: 'value', name: 'scoped_def', definitionName: 'd1', moduleName: moduleName, reference: BigInt(3) }],
+        errors: [{ kind: 'value', name: 'scoped_def', definitionName: 'd1', moduleName: moduleName, reference: 3n }],
       }
       assert.deepEqual(result, expectedResult)
     })
@@ -61,8 +61,8 @@ describe('nameResolver', () => {
       const expectedResult: NameResolutionResult = {
         kind: 'error',
         errors: [
-          { kind: 'value', name: 'x', definitionName: 'd0', moduleName: moduleName, reference: BigInt(1) },
-          { kind: 'value', name: 'x', definitionName: 'd1', moduleName: moduleName, reference: BigInt(5) },
+          { kind: 'value', name: 'x', definitionName: 'd0', moduleName: moduleName, reference: 1n },
+          { kind: 'value', name: 'x', definitionName: 'd1', moduleName: moduleName, reference: 5n },
         ],
       }
       assert.deepEqual(result, expectedResult)
@@ -75,7 +75,7 @@ describe('nameResolver', () => {
       const expectedResult: NameResolutionResult = {
         kind: 'error',
         errors: [
-          { kind: 'value', name: 'x', definitionName: 'd0', moduleName: moduleName, reference: BigInt(2) },
+          { kind: 'value', name: 'x', definitionName: 'd0', moduleName: moduleName, reference: 2n },
         ],
       }
       assert.deepEqual(result, expectedResult)
@@ -88,7 +88,7 @@ describe('nameResolver', () => {
       const expectedResult: NameResolutionResult = {
         kind: 'error',
         errors: [
-          { kind: 'value', name: 'x', definitionName: 'd0', moduleName: moduleName, reference: BigInt(2) },
+          { kind: 'value', name: 'x', definitionName: 'd0', moduleName: moduleName, reference: 2n },
         ],
       }
       assert.deepEqual(result, expectedResult)
@@ -101,8 +101,8 @@ describe('nameResolver', () => {
       const expectedResult: NameResolutionResult = {
         kind: 'error',
         errors: [
-          { kind: 'value', name: 'x', definitionName: 'a', moduleName: moduleName, reference: BigInt(1) },
-          { kind: 'value', name: 'x', definitionName: 'b', moduleName: moduleName, reference: BigInt(8) },
+          { kind: 'value', name: 'x', definitionName: 'a', moduleName: moduleName, reference: 1n },
+          { kind: 'value', name: 'x', definitionName: 'b', moduleName: moduleName, reference: 8n },
         ],
       }
       assert.deepEqual(result, expectedResult)
@@ -115,7 +115,7 @@ describe('nameResolver', () => {
       const expectedResult: NameResolutionResult = {
         kind: 'error',
         errors: [
-          { kind: 'value', name: 'x', definitionName: 'a', moduleName: 'test_module', reference: BigInt(1) },
+          { kind: 'value', name: 'x', definitionName: 'a', moduleName: 'test_module', reference: 1n },
         ],
       }
       assert.deepEqual(result, expectedResult)
@@ -144,8 +144,8 @@ describe('nameResolver', () => {
       const expectedResult: NameResolutionResult = {
         kind: 'error',
         errors: [
-          { kind: 'type', name: 'UNKNOWN_TYPE_0', definitionName: 'a', moduleName: moduleName, reference: BigInt(1) },
-          { kind: 'type', name: 'UNKNOWN_TYPE_1', definitionName: 'b', moduleName: moduleName, reference: BigInt(3) },
+          { kind: 'type', name: 'UNKNOWN_TYPE_0', definitionName: 'a', moduleName: moduleName, reference: 1n },
+          { kind: 'type', name: 'UNKNOWN_TYPE_1', definitionName: 'b', moduleName: moduleName, reference: 3n },
         ],
       }
       assert.deepEqual(result, expectedResult)
@@ -156,7 +156,7 @@ describe('nameResolver', () => {
       const result = resolveNames(tntModule, tables, dummyScopeTree)
       const expectedResult: NameResolutionResult = {
         kind: 'error',
-        errors: [{ kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'y', moduleName: moduleName, reference: BigInt(3) }],
+        errors: [{ kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'y', moduleName: moduleName, reference: 3n }],
       }
       assert.deepEqual(result, expectedResult)
     })
@@ -166,7 +166,7 @@ describe('nameResolver', () => {
       const result = resolveNames(tntModule, tables, dummyScopeTree)
       const expectedResult: NameResolutionResult = {
         kind: 'error',
-        errors: [{ kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: BigInt(1) }],
+        errors: [{ kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: 1n }],
       }
       assert.deepEqual(result, expectedResult)
     })
@@ -176,7 +176,7 @@ describe('nameResolver', () => {
       const result = resolveNames(tntModule, tables, dummyScopeTree)
       const expectedResult: NameResolutionResult = {
         kind: 'error',
-        errors: [{ kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: BigInt(1) }],
+        errors: [{ kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: 1n }],
       }
       assert.deepEqual(result, expectedResult)
     })
@@ -187,8 +187,8 @@ describe('nameResolver', () => {
       const expectedResult: NameResolutionResult = {
         kind: 'error',
         errors: [
-          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: BigInt(1) },
-          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: BigInt(2) },
+          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: 1n },
+          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: 2n },
         ],
       }
       assert.deepEqual(result, expectedResult)
@@ -200,8 +200,8 @@ describe('nameResolver', () => {
       const expectedResult: NameResolutionResult = {
         kind: 'error',
         errors: [
-          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'f', moduleName: moduleName, reference: BigInt(1) },
-          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'f', moduleName: moduleName, reference: BigInt(2) },
+          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'f', moduleName: moduleName, reference: 1n },
+          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'f', moduleName: moduleName, reference: 2n },
         ],
       }
       assert.deepEqual(result, expectedResult)
@@ -213,8 +213,8 @@ describe('nameResolver', () => {
       const expectedResult: NameResolutionResult = {
         kind: 'error',
         errors: [
-          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: BigInt(1) },
-          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: BigInt(2) },
+          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: 1n },
+          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: 2n },
         ],
       }
       assert.deepEqual(result, expectedResult)
@@ -226,8 +226,8 @@ describe('nameResolver', () => {
       const expectedResult: NameResolutionResult = {
         kind: 'error',
         errors: [
-          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: BigInt(1) },
-          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: BigInt(2) },
+          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: 1n },
+          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: 2n },
         ],
       }
       assert.deepEqual(result, expectedResult)
@@ -241,8 +241,8 @@ describe('nameResolver', () => {
       const expectedResult: NameResolutionResult = {
         kind: 'error',
         errors: [
-          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: BigInt(1) },
-          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: BigInt(3) },
+          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: 1n },
+          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName: moduleName, reference: 3n },
         ],
       }
       assert.deepEqual(result, expectedResult)

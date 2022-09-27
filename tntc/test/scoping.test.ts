@@ -5,19 +5,19 @@ import { scopesForId, treeFromModule } from '../src/scoping'
 
 describe('scopesForId', () => {
   const tree = {
-    value: BigInt(1),
+    value: 1n,
     children: [
-      { value: BigInt(2), children: [] },
-      { value: BigInt(3), children: [{ value: BigInt(4), children: [] }] },
+      { value: 2n, children: [] },
+      { value: 3n, children: [{ value: 4n, children: [] }] },
     ],
   }
 
   it('finds scopes for 2', () => {
-    assert.deepEqual(scopesForId(tree, BigInt(2)), [BigInt(2), BigInt(1)])
+    assert.deepEqual(scopesForId(tree, 2n), [2n, 1n])
   })
 
   it('finds scopes for 4', () => {
-    assert.deepEqual(scopesForId(tree, BigInt(4)), [BigInt(4), BigInt(3), BigInt(1)])
+    assert.deepEqual(scopesForId(tree, 4n), [4n, 3n, 1n])
   })
 })
 
@@ -36,46 +36,46 @@ describe('treeFromModule', () => {
 
   it('builds a scope tree', () => {
     assert.deepEqual(treeFromModule(tntModule), {
-      value: BigInt(30),
+      value: 30n,
       children: [
-        { value: BigInt(2), children: [] },
-        { value: BigInt(4), children: [] },
-        { value: BigInt(6), children: [] },
+        { value: 2n, children: [] },
+        { value: 4n, children: [] },
+        { value: 6n, children: [] },
         {
-          value: BigInt(10),
+          value: 10n,
           children: [
             {
-              value: BigInt(9),
+              value: 9n,
               children: [
-                { value: BigInt(7), children: [] },
-                { value: BigInt(8), children: [] },
+                { value: 7n, children: [] },
+                { value: 8n, children: [] },
               ],
             },
           ],
         },
-        { value: BigInt(11), children: [] },
+        { value: 11n, children: [] },
         {
-          value: BigInt(15),
+          value: 15n,
           children: [
-            { value: BigInt(14), children: [{ value: BigInt(13), children: [] }] },
+            { value: 14n, children: [{ value: 13n, children: [] }] },
           ],
         },
-        { value: BigInt(17), children: [{ value: BigInt(16), children: [] }] },
+        { value: 17n, children: [{ value: 16n, children: [] }] },
         {
-          value: BigInt(24),
+          value: 24n,
           children: [
             {
-              value: BigInt(23),
+              value: 23n,
               children: [
-                { value: BigInt(18), children: [] },
+                { value: 18n, children: [] },
                 {
-                  value: BigInt(22),
+                  value: 22n,
                   children: [
                     {
-                      value: BigInt(21),
+                      value: 21n,
                       children: [
-                        { value: BigInt(19), children: [] },
-                        { value: BigInt(20), children: [] },
+                        { value: 19n, children: [] },
+                        { value: 20n, children: [] },
                       ],
                     },
                   ],
@@ -85,18 +85,18 @@ describe('treeFromModule', () => {
           ],
         },
         {
-          value: BigInt(29),
+          value: 29n,
           children: [
             {
-              value: BigInt(28),
+              value: 28n,
               children: [
                 {
-                  value: BigInt(26),
+                  value: 26n,
                   children: [
-                    { value: BigInt(25), children: [] },
+                    { value: 25n, children: [] },
                   ],
                 },
-                { value: BigInt(27), children: [] },
+                { value: 27n, children: [] },
               ],
             },
           ],

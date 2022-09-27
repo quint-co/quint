@@ -22,6 +22,7 @@ import { formatError } from './errorReporter'
 import yargs from 'yargs/yargs'
 import { inferEffects } from './effects/inferrer'
 import { getSignatures } from './effects/builtinSignatures'
+import { checkModes } from './effects/modeChecker'
 import { DefinitionTableByModule } from './definitionsCollector'
 import { typeToString } from './IRprinting'
 import { errorTreeToString } from './errorTree'
@@ -82,7 +83,21 @@ function typecheck (argv: any) {
     console.error(formatError(sourceCode, finder, message))
   }))
 
-  effects.isRight() ? process.exit(0) : process.exit(1)
+  const finalResult = effects.chain(e => {
+    const modes = checkModes(parseResult.module, e)
+    return modes
+      .map(e => e.forEach((value, key) => console.log(`${key}: ${value}`)))
+      .mapLeft(e => e.forEach((value, key) => {
+        const loc = parseResult.sourceMap.get(key)!
+        const message: ErrorMessage = {
+          explanation: errorTreeToString(value),
+          locs: [loc],
+        }
+        console.error(formatError(sourceCode, finder, message))
+      }))
+  })
+
+  finalResult.isRight() ? process.exit(0) : process.exit(1)
 }
 
 /**

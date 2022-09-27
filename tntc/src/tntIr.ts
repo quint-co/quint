@@ -141,7 +141,7 @@ export interface TntOpDef extends WithId, WithOptionalType {
   kind: 'def',
   /** definition name */
   name: string,
-  /** definition qualifier: 'val', 'def', 'pred', 'action', 'temporal' */
+  /** definition qualifier: 'val', 'def', 'action', 'temporal' */
   qualifier: OpQualifier,
   /** expression to be associated with the definition */
   expr: TntEx
