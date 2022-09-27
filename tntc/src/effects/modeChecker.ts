@@ -21,6 +21,7 @@ import { IRVisitor, walkModule } from '../IRVisitor'
 import { OpQualifier, TntModule, TntOpDef } from '../tntIr'
 import { ArrowEffect, ConcreteEffect, Effect, isAction, isState, isTemporal, Variables } from './base'
 import { EffectVisitor, walkEffect } from './EffectVisitor'
+import { effectToString } from './printing'
 
 /**
  * Matches annotated modes for each definition with its inferred effect. Returns
@@ -105,9 +106,7 @@ class ModeFinderVisitor implements EffectVisitor {
 
     const r = effect.result
     if (r.kind !== 'concrete') {
-      // The result is not a concrete effect to be analyzed. Keep the same
-      // current mode as it was found for the resulting effect
-      return
+      throw new Error(`Expected concrete effect, found: ${effectToString(r)}`)
     }
 
     const paramReads: Variables[] = []

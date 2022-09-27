@@ -188,22 +188,4 @@ describe('checkModes', () => {
         }],
       ]))
   })
-
-  it('finds suggestions for operator returning other operator', () => {
-    const tntModule = buildModuleWithDefs([
-      'action sum = iadd',
-    ])
-
-    const modeCheckingResult = checkModuleModes(tntModule)
-
-    assert.isTrue(modeCheckingResult.isRight())
-    modeCheckingResult
-      .map(suggestions => assert.sameDeepMembers([...suggestions.entries()], [
-        [2n, 'staticdef'],
-      ]))
-      .mapLeft(e => {
-        const errors = Array.from(e.values())
-        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
-      })
-  })
 })
