@@ -146,7 +146,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       .map(t => {
         this.addToResults(e.id, right(t))
 
-        const constraint: Constraint = { kind: 'conjunction', constraints: this.constraints, sourceId: BigInt(0) }
+        const constraint: Constraint = { kind: 'conjunction', constraints: this.constraints, sourceId: 0n }
         this.solvingFunction(constraint)
           .mapLeft(errors => errors.forEach((err, id) => this.errors.set(id, err)))
           .map((subs) => {

@@ -21,7 +21,7 @@ import { TntModule, TntDef, TntEx, TntModuleDef } from './tntIr'
  */
 export interface ScopeTree {
   /* Tree node, an IR id */
-  value: BigInt;
+  value: bigint;
   /* Tree children of the node */
   children: ScopeTree[];
 }
@@ -35,7 +35,7 @@ export interface ScopeTree {
  *
  * @returns a list of ids, including the given id, for scopes this id belongs to, ordered from the node itself to the module root
  */
-export function scopesForId (treeNode: ScopeTree, id: BigInt): BigInt[] {
+export function scopesForId (treeNode: ScopeTree, id: bigint): bigint[] {
   if (treeNode.value === id) {
     return [treeNode.value]
   }
@@ -97,7 +97,7 @@ class ScopingVisitor implements IRVisitor {
     this.exitNode()
   }
 
-  private enterNode (id: BigInt): void {
+  private enterNode (id: bigint): void {
     this.nodeStack.push({ value: id, children: [] })
   }
 

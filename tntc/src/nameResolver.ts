@@ -34,7 +34,7 @@ export interface NameError {
   /* The name of the module containing the error */
   moduleName: string;
   /* The identifier of the IR node where the error occurs */
-  reference?: BigInt;
+  reference?: bigint;
 }
 
 /**
@@ -150,7 +150,7 @@ class NameResolverVisitor implements IRVisitor {
   }
 }
 
-function filterScope (valueDefinitions: ValueDefinition[], scopes: BigInt[]): ValueDefinition[] {
+function filterScope (valueDefinitions: ValueDefinition[], scopes: bigint[]): ValueDefinition[] {
   return valueDefinitions.filter(definition => {
     // A definition should be considered in a scope if it's either unscoped or its scope is included
     // in some scope containing the name expression's scope

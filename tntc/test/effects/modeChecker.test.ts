@@ -35,7 +35,7 @@ describe('checkModes', () => {
     ['not', () => parseEffectOrThrow('(Read[r] & Temporal[t]) => Read[r] & Temporal[t]')],
   ])
 
-  function checkModuleModes (tntModule: TntModule): Either<Map<BigInt, ErrorTree>, Map<BigInt, OpQualifier>> {
+  function checkModuleModes (tntModule: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, OpQualifier>> {
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
     effects
@@ -56,7 +56,7 @@ describe('checkModes', () => {
 
     assert.isTrue(modeCheckingResult.isLeft())
     modeCheckingResult
-      .mapLeft((err: Map<BigInt, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
+      .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
         [4n, {
           location: 'Checking modes for def a = (p => assign(x, p))',
           message: 'Expected action mode, found: def',
@@ -108,7 +108,7 @@ describe('checkModes', () => {
 
     assert.isTrue(modeCheckingResult.isLeft())
     modeCheckingResult
-      .mapLeft((err: Map<BigInt, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
+      .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
         [4n, {
           location: 'Checking modes for staticval v = iadd(x, 1)',
           message: 'Expected val mode, found: staticval',
@@ -144,7 +144,7 @@ describe('checkModes', () => {
 
     assert.isTrue(modeCheckingResult.isLeft())
     modeCheckingResult
-      .mapLeft((err: Map<BigInt, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
+      .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
         [3n, {
           location: 'Checking modes for staticdef f = (p => not(y))',
           message: 'Expected def mode, found: staticdef',
@@ -180,7 +180,7 @@ describe('checkModes', () => {
 
     assert.isTrue(modeCheckingResult.isLeft())
     modeCheckingResult
-      .mapLeft((err: Map<BigInt, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
+      .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
         [5n, {
           location: 'Checking modes for staticval v = always(igt(x, 5))',
           message: 'Expected temporal mode, found: staticval',
