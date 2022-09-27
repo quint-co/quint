@@ -36,7 +36,7 @@ describe('inferEffects', () => {
     ['multipleArityOp', readManyEffect],
     ['foldl', () => parseEffectOrThrow('(Read[r1], Read[r2], (Read[r1], Read[r2]) => Read[r3]) => Read[r1, r2, r3]')],
     ['iadd', () => parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1, r2]')],
-    ['not', () => parseEffectOrThrow('(Read[r1] & Temporal[t2]) => Read[r1] & Temporal[t1]')],
+    ['not', () => parseEffectOrThrow('(Read[r1] & Temporal[t1]) => Read[r1] & Temporal[t1]')],
   ])
 
   it('infers simple operator effect', () => {
@@ -168,8 +168,7 @@ describe('inferEffects', () => {
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
-    // TODO: check this v4
-    const expectedEffect = '((Read[v1] & Temporal[t1]) => Read[v5], Read[v1] & Temporal[t2]) => Read[v4, v5]'
+    const expectedEffect = '((Read[v1] & Temporal[t1]) => Read[v4], Read[v1] & Temporal[t1]) => Read[v4]'
 
     effects
       .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(7n)!), expectedEffect))

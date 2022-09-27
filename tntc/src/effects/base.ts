@@ -219,7 +219,7 @@ export function isState (e: ConcreteEffect): boolean {
   }
 }
 
-function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substitutions> {
+export function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substitutions> {
   const v1 = flattenUnions(va)
   const v2 = flattenUnions(vb)
   const location = `Trying to unify variables [${variablesToString(v1)}] and [${variablesToString(v2)}]`

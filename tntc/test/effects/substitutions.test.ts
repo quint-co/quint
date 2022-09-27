@@ -17,6 +17,19 @@ describe('compose', () => {
     assert.isTrue(result.isRight())
   })
 
+  it('unifies values of substitutions with same name', () => {
+    const s1: Substitutions = [{ kind: 'variable', name: 'v1', value: { kind: 'concrete', vars: ['x'] } }]
+    const s2: Substitutions = [{ kind: 'variable', name: 'v1', value: { kind: 'quantified', name: 'q' } }]
+
+    const result = compose(s1, s2)
+
+    result.map(r => assert.sameDeepMembers(r, s1.concat([
+      { kind: 'variable', name: 'q', value: { kind: 'concrete', vars: ['x'] } },
+    ])))
+
+    assert.isTrue(result.isRight())
+  })
+
   it('returns error when an invalid effect is constructed', () => {
     const s1: Substitutions = [{ kind: 'variable', name: 'v1', value: { kind: 'concrete', vars: ['x'] } }]
     const s2: Substitutions = [{ kind: 'effect', name: 'e1', value: parseEffectOrThrow('Read[v1] & Update[v1, v1]') }]

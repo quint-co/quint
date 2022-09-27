@@ -50,7 +50,7 @@ export function inferEffects (context: Map<string, Signature>, definitionsTable:
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor(context: Map<string, Signature>, definitionsTable: DefinitionTableByModule) {
+  constructor (context: Map<string, Signature>, definitionsTable: DefinitionTableByModule) {
     this.context = context
     this.definitionsTable = definitionsTable
   }
@@ -149,13 +149,15 @@ class EffectInferrerVisitor implements IRVisitor {
       .mapLeft(m => this.errors.set(expr.id, { message: m, location: location, children: [] }))
       .map(signature => {
         const resultEffect: Effect = { kind: 'quantified', name: this.freshVar('e') }
-        const substitution = unify(signature, {
+        const effect: Effect = {
           kind: 'arrow',
           params: expr.args.map((a: TntEx) => {
             return this.effects.get(a.id)!
           }),
           result: resultEffect,
-        })
+        }
+
+        const substitution = unify(signature, effect)
 
         const resultEffectWithSubs = substitution.chain(s => compose(s, this.substitutions)).chain(s => {
           this.substitutions = s
@@ -276,7 +278,10 @@ class EffectInferrerVisitor implements IRVisitor {
       return { kind: name.kind, name: name.name, value: { kind: 'quantified', name: this.freshVar('v') } }
     })
 
-    compose(subs, this.substitutions).map(s => this.substitutions = s)
+    // FIXME: Add effect schemes to avoid this hack
+    // We need to keep track of substitutions applied to lambda-introduced names (e.*), which are unique
+    // But can't keep track of substitutions applied to builtin signatures because they will conflict
+    compose(subs.filter(s => s.name[0] === 'e'), this.substitutions).map(s => this.substitutions = s)
 
     const result = applySubstitution(subs, effect)
     if (result.isLeft()) {
