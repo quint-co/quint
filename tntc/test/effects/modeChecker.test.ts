@@ -6,8 +6,9 @@ import { Signature } from '../../src/effects/base'
 import { buildModuleWithDefs } from '../builders/ir'
 import { parseEffectOrThrow } from '../../src/effects/parser'
 import { ErrorTree, errorTreeToString } from '../../src/errorTree'
-import { checkModes, effectToString, OpQualifier, TntModule } from '../../src'
+import { OpQualifier, TntModule } from '../../src/tntIr'
 import { Either } from '@sweet-monads/either'
+import { checkModes } from '../../src/effects/modeChecker'
 
 describe('checkModes', () => {
   const table: DefinitionTable = {
@@ -38,7 +39,6 @@ describe('checkModes', () => {
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
     effects
-      .map(e => e.forEach((value, key) => console.log(`${key}: ${effectToString(value)}`)))
       .mapLeft(e => {
         const errors = Array.from(e.values())
         assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
@@ -187,5 +187,23 @@ describe('checkModes', () => {
           children: [],
         }],
       ]))
+  })
+
+  it('finds suggestions for operator returning other operator', () => {
+    const tntModule = buildModuleWithDefs([
+      'action sum = iadd',
+    ])
+
+    const modeCheckingResult = checkModuleModes(tntModule)
+
+    assert.isTrue(modeCheckingResult.isRight())
+    modeCheckingResult
+      .map(suggestions => assert.sameDeepMembers([...suggestions.entries()], [
+        [2n, 'staticdef'],
+      ]))
+      .mapLeft(e => {
+        const errors = Array.from(e.values())
+        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
+      })
   })
 })

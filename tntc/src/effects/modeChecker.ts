@@ -66,7 +66,7 @@ class ModeCheckerVisitor implements IRVisitor {
       return
     }
 
-    const generalMode = moreGeneralMode(mode, def.qualifier)
+    const generalMode = commonMode(mode, def.qualifier)
 
     if (generalMode === mode) {
       this.errors.set(def.id, {
@@ -95,11 +95,18 @@ class ModeFinderVisitor implements EffectVisitor {
       mode = 'staticval'
     }
 
-    this.currentMode = moreGeneralMode(this.currentMode, mode)
+    this.currentMode = commonMode(this.currentMode, mode)
   }
 
   exitArrow (effect: ArrowEffect) {
     if (this.currentMode === 'action' || this.currentMode === 'temporal') {
+      return
+    }
+
+    const r = effect.result
+    if (r.kind !== 'concrete') {
+      // The result is not a concrete effect to be analyzed. Keep the same
+      // current mode as it was found for the resulting effect
       return
     }
 
@@ -114,20 +121,15 @@ class ModeFinderVisitor implements EffectVisitor {
       }
     })
 
-    const r = effect.result
     this.currentMode = 'staticdef'
-
-    if (r.kind !== 'concrete') {
-      // FIXME: which mode should operators that return operators have?
-      // Use "static def" for now
-      return
-    }
 
     // If there is a variable read in the results that is not present on the
     // parameters, then the operator is adding a read effect and this should be
     // a "def" instead of "static def"
-    if (r.read.kind === 'union' && !r.read.variables.every(v => paramReads.some(p => isEqual(p, v)))) {
-      this.currentMode = 'def'
+    if (r.read.kind === 'union') {
+      if (!r.read.variables.every(v => paramReads.some(p => isEqual(p, v)))) {
+        this.currentMode = 'def'
+      }
     } else if (!paramReads.some(p => isEqual(p, r.read))) {
       this.currentMode = 'def'
     }
@@ -136,7 +138,7 @@ class ModeFinderVisitor implements EffectVisitor {
 
 const modeOrder = ['staticval', 'staticdef', 'val', 'def', 'action', 'temporal']
 
-function moreGeneralMode (m1: OpQualifier, m2: OpQualifier): OpQualifier {
+function commonMode (m1: OpQualifier, m2: OpQualifier): OpQualifier {
   const p1 = modeOrder.findIndex(elem => elem === m1)
   const p2 = modeOrder.findIndex(elem => elem === m2)
 
