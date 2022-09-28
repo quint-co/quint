@@ -61,7 +61,7 @@ completely implementing every pass.
 | [Imports][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :question:                     | :x:         | :x:       |
 | [Module definitions][]            | :white_check_mark: | :white_check_mark: | :x: [245][]        | :x: [245][]        | :white_check_mark:             | :x:         | :x:       |
 | [Module instances][]              | :white_check_mark: | :white_check_mark: | :x: [245][]        | :x: [245][]        | :x: [237][]                    | :x:         | :x:       |
-| [Multiple files][]                | :x: [8][]          | :x:                | :x:                | :x:                | :white_check_mark:             | :x:         | :x:       |
+| [Multiple files][]                | :x: [8][]          | :x:                | :x:                | :x:                | :x:             | :x:         | :x:       |
 | [Constant declarations][]         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [236][]                    | :x:         | :x:       |
 | [Variable definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
 | [Assumptions][]                   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x: [235][]                    | :x:         | :x:       |
