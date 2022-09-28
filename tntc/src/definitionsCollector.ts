@@ -157,6 +157,7 @@ export function defaultDefinitions (): DefinitionTable {
       { kind: 'def', identifier: 'andExpr' },
       { kind: 'def', identifier: 'orExpr' },
       { kind: 'def', identifier: 'field' },
+      { kind: 'def', identifier: 'fieldNames' },
       { kind: 'def', identifier: 'item' },
       { kind: 'def', identifier: 'match' },
       { kind: 'def', identifier: 'assign' },

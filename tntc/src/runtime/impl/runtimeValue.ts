@@ -61,7 +61,9 @@
  * information.
  */
 
-import { Set, List, ValueObject, is as immutableIs } from 'immutable'
+import {
+  Set, List, ValueObject, OrderedMap, hash, is as immutableIs
+} from 'immutable'
 
 import { expressionToString } from '../../IRprinting'
 
@@ -96,6 +98,16 @@ export const rv = {
   },
 
   /**
+   * Make a runtime value that represents a string.
+   *
+   * @param value a string
+   * @return a new runtime value that carries the string
+   */
+  mkStr: (value: string): RuntimeValue => {
+    return new RuntimeValueStr(value)
+  },
+
+  /**
    * Make a runtime value that represents a tuple.
    *
    * @param value an iterable collection of runtime values
@@ -103,6 +115,16 @@ export const rv = {
    */
   mkTuple: (elems: Iterable<RuntimeValue>): RuntimeValue => {
     return new RuntimeValueTuple(List(elems))
+  },
+
+  /**
+   * Make a runtime value that represents a tuple.
+   *
+   * @param value an iterable collection of runtime values
+   * @return a new runtime value that carries the tuple
+   */
+  mkRecord: (elems: Iterable<[string, RuntimeValue]>): RuntimeValue => {
+    return new RuntimeValueRecord(OrderedMap(elems))
   },
 
   /**
@@ -196,6 +218,14 @@ export interface RuntimeValue
   toList (): List<RuntimeValue>
 
   /**
+   * If the result is a record, transform it to a map of values.
+   * Otherwise, return an empty map.
+   *
+   * @return an immutable map of key-values
+   */
+  toOrderedMap (): OrderedMap<string, RuntimeValue>
+
+  /**
    * If the result contains a Boolean value, return it. Otherwise, return false.
    *
    * @return the stored Boolean value (if it's Boolean), or false.
@@ -208,6 +238,13 @@ export interface RuntimeValue
    * @return the stored integer value (if it's integer) or 0n.
    */
   toInt (): bigint
+
+  /**
+   * If the result contains a string value, return it.
+   *
+   * @return the stored string value.
+   */
+  toStr (): string
 
   /**
     * If the result is set-like, does it contain contain a value?
@@ -298,6 +335,14 @@ abstract class RuntimeValueBase implements RuntimeValue {
     }
   }
 
+  toOrderedMap (): OrderedMap<string, RuntimeValue> {
+    if (this instanceof RuntimeValueRecord) {
+      return this.map
+    } else {
+      return OrderedMap()
+    }
+  }
+
   toBool (): boolean {
     if (this instanceof RuntimeValueBool) {
       return (this as RuntimeValueBool).value
@@ -311,6 +356,14 @@ abstract class RuntimeValueBase implements RuntimeValue {
       return (this as RuntimeValueInt).value
     } else {
       return 0n
+    }
+  }
+
+  toStr (): string {
+    if (this instanceof RuntimeValueStr) {
+      return (this as RuntimeValueStr).value
+    } else {
+      return ''
     }
   }
 
@@ -353,9 +406,16 @@ abstract class RuntimeValueBase implements RuntimeValue {
     if (this instanceof RuntimeValueInt && other instanceof RuntimeValueInt) {
       return this.value === other.value
     }
+    if (this instanceof RuntimeValueStr && other instanceof RuntimeValueStr) {
+      return this.value === other.value
+    }
     if (this instanceof RuntimeValueTuple &&
         other instanceof RuntimeValueTuple) {
-      return this.list === other.list
+      return this.list.equals(other.list)
+    }
+    if (this instanceof RuntimeValueRecord &&
+        other instanceof RuntimeValueRecord) {
+      return this.map.equals(other.map)
     }
     if (this instanceof RuntimeValueSet && other instanceof RuntimeValueSet) {
       return immutableIs(this.set, other.set)
@@ -460,6 +520,30 @@ class RuntimeValueInt extends RuntimeValueBase implements ValueObject {
 }
 
 /**
+ * An immutable string runtime value. This is an internal class.
+ */
+class RuntimeValueStr extends RuntimeValueBase implements ValueObject {
+  value: string
+
+  constructor (value: string) {
+    super(false)
+    this.value = value
+  }
+
+  hashCode (): number {
+    return hash(this.value)
+  }
+
+  toTntEx (): TntEx {
+    return {
+      id: 0n,
+      kind: 'str',
+      value: this.value,
+    }
+  }
+}
+
+/**
  * A set of runtime values represented via an immutable List.
  * This is an internal class.
  */
@@ -494,6 +578,45 @@ class RuntimeValueTuple extends RuntimeValueBase implements RuntimeValue {
       id: 0n,
       kind: 'app',
       opcode: 'tup',
+      args: elems,
+    }
+  }
+}
+
+/**
+ * A set of runtime values represented via an immutable Map.
+ * This is an internal class.
+ */
+class RuntimeValueRecord extends RuntimeValueBase implements RuntimeValue {
+  map: OrderedMap<string, RuntimeValue>
+
+  constructor (values: OrderedMap<string, RuntimeValue>) {
+    super(true)
+    this.map = values
+  }
+
+  normalForm (): RuntimeValue {
+    const normalizedMap: OrderedMap<string, RuntimeValue> =
+        this.map.map((v, k) => v.normalForm())
+    return new RuntimeValueRecord(normalizedMap)
+  }
+
+  hashCode (): number {
+    return this.map.hashCode()
+  }
+
+  toTntEx (): TntEx {
+    // simply enumerate the values
+    const elems: TntEx[] = []
+    for (const [key, value] of this.map) {
+      elems.push({ id: 0n, kind: 'str', value: key })
+      elems.push(value.toTntEx())
+    }
+    // return the expression rec(...elems)
+    return {
+      id: 0n,
+      kind: 'app',
+      opcode: 'rec',
       args: elems,
     }
   }

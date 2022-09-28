@@ -1,31 +1,27 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { Maybe } from '@sweet-monads/maybe'
 import { expressionToString } from '../../src/IRprinting'
 import { kindName, ComputableKind } from '../../src/runtime/runtime'
 import { compile } from '../../src/runtime/compile'
 import { dedent } from '../textUtils'
 
-function assertDefined<T> (m: Maybe<T>) {
-  assert(m.isJust(), 'undefined value')
-}
-
 // Compile an expression, evaluate it, convert to TlaEx, then to a string,
 // compare the result. This is the easiest path to test the results.
-function assertResultAsString (input: string, result: string) {
+function assertResultAsString (input: string, expected: string | undefined) {
   const moduleText = `module __runtime { val __expr = ${input} }`
   const context = compile(moduleText).values
   const value = context.get(kindName('callable', '__expr'))
   if (value === undefined) {
     assert(false, `Missing value for ${input}`)
   } else {
-    assertDefined(
-      value
-        .eval()
-        .map(r => r.toTntEx())
-        .map(expressionToString)
-        .map(s => assert(s === result, `Expected ${result}, found ${s}`))
-    )
+    const result = value
+      .eval()
+      .map(r => r.toTntEx())
+      .map(expressionToString)
+      .map(s => assert(s === expected, `Expected ${expected}, found ${s}`))
+    if (result.isNone()) {
+      assert(expected === undefined, `Expected ${expected}, found undefined`)
+    }
   }
 }
 
@@ -462,6 +458,11 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('tup(4, 5, 6)._3', '6')
     })
 
+    it('tuple equality', () => {
+      assertResultAsString('(4, 5, 6) == (5 - 1, 5, 6)', 'true')
+      assertResultAsString('(4, 5, 6) == (5, 5, 6)', 'false')
+    })
+
     it('cross products', () => {
       assertResultAsString('tuples(set(), set(), set())', 'set()')
       assertResultAsString('tuples(set(), 2.to(3))', 'set()')
@@ -493,6 +494,34 @@ describe('compiling specs to runtime values', () => {
     it('cardinality of cross products', () => {
       assertResultAsString('tuples(1.to(4), 2.to(4)).cardinality()', '12')
       assertResultAsString('tuples(set(), 2.to(4)).cardinality()', '0')
+    })
+  })
+
+  describe('compile over records', () => {
+    it('record constructors', () => {
+      assertResultAsString('rec("a", 2, "b", true)', 'rec("a", 2, "b", true)')
+      assertResultAsString('{ a: 2, b: true }', 'rec("a", 2, "b", true)')
+    })
+
+    it('record equality', () => {
+      assertResultAsString('{ a: 2 + 3, b: true } == { a: 5, b: true }', 'true')
+      assertResultAsString('{ a: 2 + 3, b: true } == { a: 1, b: false }', 'false')
+    })
+
+    it('record field access', () => {
+      assertResultAsString('{ a: 2, b: true }.a', '2')
+      assertResultAsString('{ a: 2, b: true }.b', 'true')
+    })
+
+    it('record field names', () => {
+      assertResultAsString('{ a: 2, b: true }.fieldNames()', 'set("a", "b")')
+    })
+
+    it('record field update', () => {
+      assertResultAsString('{ a: 2, b: true }.with("a", 3)', 'rec("a", 3, "b", true)')
+      // The following query should not be possible, due to the type checker.
+      // Just in case, we check that the simulator returns 'undefined'.
+      assertResultAsString('{ a: 2, b: true }.with("c", 3)', undefined)
     })
   })
 })

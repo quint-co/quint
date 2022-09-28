@@ -50,29 +50,30 @@ completely implementing every pass.
 | [Integers][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
 | [if-then-else][]                  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
 | [Operator definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
-| [Modes][]                         | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:         | :x:       |
-| [Sets][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:/:x: | :x:     | :x:       |
+| [Modes][]                         | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x: [234][]        | :x:         | :x:       |
+| [Sets][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:/:x: [238][] | :x:     | :x:       |
 | [Guess][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
-| [Maps][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:         | :x:       |
-| [Lists][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:         | :x:       |
-| [Records][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:         | :x:       |
-| [Discriminated unions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:         | :x:       |
+| [Maps][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [232][]        | :x:         | :x:       |
+| [Lists][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [231][]        | :x:         | :x:       |
+| [Records][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: | :x:         | :x:       |
+| [Discriminated unions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x: [233][]        | :x:         | :x:       |
 | [Tuples][]                        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: | :x:         | :x:       |
 | [Imports][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :question:         | :x:         | :x:       |
-| [Module definitions][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:         | :x:       |
-| [Constant declarations][]         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:         | :x:       |
+| [Module definitions][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: | :x:         | :x:       |
+| [Module instances][]              | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x: [237][]        | :x:         | :x:       |
+| [Module imports][]                | :x: [8][]          | :x:                | :x:                | :x:                | :white_check_mark: | :x:         | :x:       |
+| [Constant declarations][]         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [236][]        | :x:         | :x:       |
 | [Variable definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
-| [Assumptions][]                   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:         | :x:       |
-| [Module instances][]              | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:         | :x:       |
+| [Assumptions][]                   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x: [235][]        | :x:         | :x:       |
 | [Lambdas][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
 | [Multiline disjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
 | [Multiline conjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
 | [Delayed assignment][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
-| [Higher-order definitions][]      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:         | :x:       |
-| [Temporal operators][]            | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:         | :x:       |
-| [Fairness][]                      | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:         | :x:       |
-| [Unbounded quantifiers][]         | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:         | :x:       |
-| ~~Strings~~, see #118             | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: | :x:                | :x:         | :x:       |
+| [Higher-order definitions][]      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [221][]        | :x:         | :x:       |
+| [Temporal operators][]            | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x: *non-goal*     | :x:         | :x:       |
+| [Fairness][]                      | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x: *non-goal*     | :x:         | :x:       |
+| [Unbounded quantifiers][]         | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x: *non-goal*     | :x:         | :x:       |
+| [String literals][], see #118     | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
 | ~~uninterpreted types~~, see #118 | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:         | :x:       |
 
 ## Design principles
@@ -156,3 +157,15 @@ completely implementing every pass.
 [Fairness]: ./doc/lang.md#fairness
 [Unbounded quantifiers]: ./doc/lang.md#unbounded-quantifiers
 [Modes]: ./doc/lang.md#modes
+[232]: https://github.com/informalsystems/tnt/issues/232
+[231]: https://github.com/informalsystems/tnt/issues/231
+[233]: https://github.com/informalsystems/tnt/issues/233
+[221]: https://github.com/informalsystems/tnt/issues/221
+[234]: https://github.com/informalsystems/tnt/issues/234
+[235]: https://github.com/informalsystems/tnt/issues/235
+[8]: https://github.com/informalsystems/tnt/issues/8
+[237]: https://github.com/informalsystems/tnt/issues/237
+[236]: https://github.com/informalsystems/tnt/issues/236
+[238]: https://github.com/informalsystems/tnt/issues/238
+[Higher-order definitions]: https://github.com/informalsystems/tnt/blob/main/doc/lang.md#operator-definitions
+[String literals]: https://github.com/informalsystems/tnt/blob/main/doc/lang.md#identifiers-and-strings
