@@ -281,7 +281,7 @@ class EffectInferrerVisitor implements IRVisitor {
     // FIXME: Add effect schemes to avoid this hack
     // We need to keep track of substitutions applied to lambda-introduced names (e.*), which are unique
     // But can't keep track of substitutions applied to builtin signatures because they will conflict
-    compose(subs.filter(s => s.name[0] === 'e'), this.substitutions).map(s => this.substitutions = s)
+    compose(subs.filter(s => s.name.startsWith('e_')), this.substitutions).map(s => this.substitutions = s)
 
     const result = applySubstitution(subs, effect)
     if (result.isLeft()) {

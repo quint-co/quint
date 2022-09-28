@@ -168,7 +168,7 @@ describe('inferEffects', () => {
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
-    const expectedEffect = '((Read[v1] & Temporal[t1]) => Read[v4], Read[v1] & Temporal[t1]) => Read[v4]'
+    const expectedEffect = '((Read[v1] & Temporal[v2]) => Read[v6], Read[v1] & Temporal[v2]) => Read[v6]'
 
     effects
       .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(7n)!), expectedEffect))

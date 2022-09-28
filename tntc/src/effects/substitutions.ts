@@ -120,10 +120,12 @@ function applySubstitutionsToSubstitutions (s1: Substitutions, s2: Substitutions
     if (sub) {
       if (sub.kind === 'effect' && s.kind === 'effect') {
         return unify(s.value, sub.value)
+          .mapLeft(err => buildErrorTree(`Unifying substitutions with same name: ${s.name}`, err))
       } else if (sub.kind === 'variable' && s.kind === 'variable') {
         return unifyVariables(s.value, sub.value)
+          .mapLeft(err => buildErrorTree(`Unifying substitutions with same name: ${s.name}`, err))
       } else {
-        throw new Error(`Substitutions with same name but incompatible kinds: ${substitutionsToString([sub, s])}`)
+        throw new Error(`Substitutions with same name (${s.name}) but incompatible kinds: ${substitutionsToString([sub, s])}`)
       }
     }
 

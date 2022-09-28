@@ -114,7 +114,10 @@ export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitutions>
  */
 export function effectNames (effect: Effect): Name[] {
   switch (effect.kind) {
-    case 'concrete': return variablesNames(effect.read).concat(variablesNames(effect.update))
+    case 'concrete':
+      return variablesNames(effect.read)
+        .concat(variablesNames(effect.update))
+        .concat(variablesNames(effect.temporal))
     case 'arrow': return effect.params.flatMap(effectNames).concat(effectNames(effect.result))
     case 'quantified': return [{ kind: 'effect', name: effect.name }]
   }

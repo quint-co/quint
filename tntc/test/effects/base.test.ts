@@ -394,14 +394,14 @@ describe('unify', () => {
     })
 
     it('returs error when variable names are cyclical in other way', () => {
-      const e1 = parseEffectOrThrow('Read[v1, v2]')
-      const e2 = parseEffectOrThrow('Read[v1]')
+      const e1 = parseEffectOrThrow('Temporal[v1, v2]')
+      const e2 = parseEffectOrThrow('Temporal[v1]')
 
       const result = unify(e1, e2)
 
       result
         .mapLeft(e => assert.deepEqual(e, {
-          location: 'Trying to unify Read[v1, v2] and Read[v1]',
+          location: 'Trying to unify Temporal[v1, v2] and Temporal[v1]',
           children: [
             {
               location: 'Trying to unify variables [v1, v2] and [v1]',
