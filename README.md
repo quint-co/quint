@@ -55,7 +55,7 @@ completely implementing every pass.
 | [Guess][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
 | [Maps][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:         | :x:       |
 | [Lists][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:         | :x:       |
-| [Records][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:         | :x:       |
+| [Records][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: | :x:         | :x:       |
 | [Discriminated unions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:         | :x:       |
 | [Tuples][]                        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: | :x:         | :x:       |
 | [Imports][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :question:         | :x:         | :x:       |
@@ -72,7 +72,7 @@ completely implementing every pass.
 | [Temporal operators][]            | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:         | :x:       |
 | [Fairness][]                      | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:         | :x:       |
 | [Unbounded quantifiers][]         | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:         | :x:       |
-| ~~Strings~~, see #118             | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: | :x:                | :x:         | :x:       |
+| [String literals][], see #118     | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
 | ~~uninterpreted types~~, see #118 | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:         | :x:       |
 
 ## Design principles
@@ -156,3 +156,4 @@ completely implementing every pass.
 [Fairness]: ./doc/lang.md#fairness
 [Unbounded quantifiers]: ./doc/lang.md#unbounded-quantifiers
 [Modes]: ./doc/lang.md#modes
+[String literals]: https://github.com/informalsystems/tnt/blob/main/doc/lang.md#identifiers-and-strings

@@ -11,7 +11,7 @@
 
 import { strict as assert } from 'assert'
 import { Maybe, none, just, merge } from '@sweet-monads/maybe'
-import { Set } from 'immutable'
+import { Set, OrderedMap } from 'immutable'
 
 import { IRVisitor } from '../../IRVisitor'
 import {
@@ -91,9 +91,7 @@ export class CompilerVisitor implements IRVisitor {
         break
 
       case 'str':
-        // TODO: https://github.com/informalsystems/tnt/issues/191
-        console.error(`Found ${expr}, strings are not supported`)
-        this.compStack.push(fail)
+        this.compStack.push(mkConstComputable(rv.mkStr(expr.value)))
     }
   }
 
@@ -264,6 +262,53 @@ export class CompilerVisitor implements IRVisitor {
         // Construct a cross product
         this.applyFun(app.args.length,
           (...sets: RuntimeValue[]) => just(rv.mkCrossProd(sets)))
+        break
+
+      case 'rec':
+        // Construct a record
+        this.applyFun(app.args.length,
+          (...values: RuntimeValue[]) => {
+            const keys = values
+              .filter((e, i) => i % 2 === 0)
+              .map(k => k.toStr())
+            const map: OrderedMap<string, RuntimeValue> =
+              keys.reduce((map, key, i) => {
+                const v = values[2 * i + 1]
+                return v ? map.set(key, v) : map
+              },
+              OrderedMap<string, RuntimeValue>())
+            return just(rv.mkRecord(map))
+          })
+        break
+
+      case 'field':
+        // Access a record via the field name
+        this.applyFun(2, (rec, fieldName) => {
+          const fieldValue = rec.toOrderedMap().get(fieldName.toStr())
+          return fieldValue ? just(fieldValue) : none()
+        })
+        break
+
+      case 'fieldNames':
+        this.applyFun(1, rec => {
+          const keysAsRuntimeValues =
+            rec.toOrderedMap().keySeq().map(key => rv.mkStr(key))
+          return just(rv.mkSet(keysAsRuntimeValues))
+        })
+        break
+
+      case 'with':
+        // update a record
+        this.applyFun(3, (rec, fieldName, fieldValue) => {
+          const oldMap = rec.toOrderedMap()
+          const key = fieldName.toStr()
+          if (oldMap.has(key)) {
+            const newMap = rec.toOrderedMap().set(fieldName.toStr(), fieldValue)
+            return just(rv.mkRecord(newMap))
+          } else {
+            return none()
+          }
+        })
         break
 
       case 'set':

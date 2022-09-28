@@ -184,8 +184,21 @@ function chalkTntEx (ex: TntEx): string {
     case 'int':
       return chalk.yellow(`${ex.value}`)
 
+    case 'str':
+      return chalk.green(`"${ex.value}"`)
+
     case 'app':
-      if (ex.opcode === 'set' || ex.opcode === 'tup') {
+      if (ex.opcode === 'rec') {
+        const kvs = []
+        for (let i = 0; i < ex.args.length / 2; i++) {
+          const key = ex.args[2 * i]
+          if (key && key.kind === 'str') {
+            const value = chalkTntEx(ex.args[2 * i + 1])
+            kvs.push(`${chalk.green(key.value)}: ${value}`)
+          }
+        }
+        return `{ ${kvs.join(', ')} }`
+      } else if (ex.opcode === 'set' || ex.opcode === 'tup') {
         const as = ex.args.map(chalkTntEx).join(', ')
         const prefix = (ex.opcode === 'tup') ? '' : chalk.green(ex.opcode)
         return prefix + chalk.black(`(${as})`)

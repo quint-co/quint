@@ -514,7 +514,7 @@ export class ToIrListener implements TntListener {
       })
       namesAndValues.push(elems[i])
     }
-    this.pushApplication(ctx, 'record', namesAndValues)
+    this.pushApplication(ctx, 'rec', namesAndValues)
   }
 
   // '+' or '-'
