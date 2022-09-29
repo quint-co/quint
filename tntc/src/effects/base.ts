@@ -114,7 +114,10 @@ export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitutions>
  */
 export function effectNames (effect: Effect): Name[] {
   switch (effect.kind) {
-    case 'concrete': return variablesNames(effect.read).concat(variablesNames(effect.update))
+    case 'concrete':
+      return variablesNames(effect.read)
+        .concat(variablesNames(effect.update))
+        .concat(variablesNames(effect.temporal))
     case 'arrow': return effect.params.flatMap(effectNames).concat(effectNames(effect.result))
     case 'quantified': return [{ kind: 'effect', name: effect.name }]
   }
@@ -219,7 +222,7 @@ export function isState (e: ConcreteEffect): boolean {
   }
 }
 
-function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substitutions> {
+export function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree, Substitutions> {
   const v1 = flattenUnions(va)
   const v2 = flattenUnions(vb)
   const location = `Trying to unify variables [${variablesToString(v1)}] and [${variablesToString(v2)}]`

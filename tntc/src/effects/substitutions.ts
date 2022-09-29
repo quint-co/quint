@@ -14,7 +14,7 @@
 
 import { Either, right, mergeInMany } from '@sweet-monads/either'
 import { buildErrorTree, ErrorTree } from '../errorTree'
-import { Effect, Variables } from './base'
+import { Effect, unify, Variables, unifyVariables } from './base'
 import { effectToString, substitutionsToString } from './printing'
 import { simplify } from './simplification'
 
@@ -115,10 +115,23 @@ export function applySubstitutionToVariables (subs: Substitutions, variables: Va
 }
 
 function applySubstitutionsToSubstitutions (s1: Substitutions, s2: Substitutions): Either<ErrorTree[], Substitutions> {
-  return mergeInMany(s2.map((s: Substitution): Either<ErrorTree, Substitution> => {
-    switch (s.kind) {
-      case 'effect': return applySubstitution(s1, s.value).map(v => ({ kind: s.kind, name: s.name, value: v }))
-      case 'variable': return right({ kind: s.kind, name: s.name, value: applySubstitutionToVariables(s1, s.value) })
+  return mergeInMany(s2.map((s: Substitution): Either<ErrorTree, Substitutions> => {
+    const sub = s1.find(sub => s.name === sub.name)
+    if (sub) {
+      if (sub.kind === 'effect' && s.kind === 'effect') {
+        return unify(s.value, sub.value)
+          .mapLeft(err => buildErrorTree(`Unifying substitutions with same name: ${s.name}`, err))
+      } else if (sub.kind === 'variable' && s.kind === 'variable') {
+        return unifyVariables(s.value, sub.value)
+          .mapLeft(err => buildErrorTree(`Unifying substitutions with same name: ${s.name}`, err))
+      } else {
+        throw new Error(`Substitutions with same name (${s.name}) but incompatible kinds: ${substitutionsToString([sub, s])}`)
+      }
     }
-  }))
+
+    switch (s.kind) {
+      case 'effect': return applySubstitution(s1, s.value).map(v => ([{ kind: s.kind, name: s.name, value: v }]))
+      case 'variable': return right([{ kind: s.kind, name: s.name, value: applySubstitutionToVariables(s1, s.value) }])
+    }
+  })).map(s => s.flat())
 }

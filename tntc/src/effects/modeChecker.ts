@@ -105,8 +105,14 @@ class ModeFinderVisitor implements EffectVisitor {
     }
 
     const r = effect.result
-    if (r.kind !== 'concrete') {
-      throw new Error(`Expected concrete effect, found: ${effectToString(r)}`)
+    if (r.kind === 'arrow') {
+      throw new Error(`Unexpected arrow found in operator result: ${effectToString(r)}`)
+    }
+
+    this.currentMode = 'staticdef'
+
+    if (r.kind === 'quantified') {
+      return
     }
 
     const paramReads: Variables[] = []
@@ -119,8 +125,6 @@ class ModeFinderVisitor implements EffectVisitor {
         }
       }
     })
-
-    this.currentMode = 'staticdef'
 
     // If there is a variable read in the results that is not present on the
     // parameters, then the operator is adding a read effect and this should be
