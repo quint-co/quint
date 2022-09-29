@@ -316,7 +316,7 @@ Introduce a single variable (flexible variable in TLA+)
 ```
   var name: str
   var timer: int
-  var is_armed: bool
+  var isArmed: bool
 ```
 
 *Grammar:*
@@ -348,7 +348,7 @@ static def max(x, y): (int, int) => int =
 
 // A definition over `x` that returns a Boolean result.
 // In logic, such definition is usually called a predicate.
-static def is_positive(x): int => bool =
+static def isPositive(x): int => bool =
     x > 0
 
 // a higher-order operator that accepts another operator as its first argument
@@ -495,7 +495,7 @@ outer module:
 module Outer {
   var x: int
 
-  def x_plus(z) = x + z
+  def xPlus(z) = x + z
 
   module Inner {
     val x2 = x + x
@@ -507,8 +507,8 @@ module Outer {
 ```
 
 In the above example, the module `Outer` has the following names in its name
-space: `x`, `x_plus`, `inv`, and `Inner`, whereas the module `Inner` contains
-the names `x2` and the names defined in its parent modules: `x`, `x_plus`, and
+space: `x`, `xPlus`, `inv`, and `Inner`, whereas the module `Inner` contains
+the names `x2` and the names defined in its parent modules: `x`, `xPlus`, and
 `inv`. The module `Inner` is *stateless*, so the module `Outer` may access the
 definitions of `Inner` via the dot-notation, e.g., `Inner.x2`.
 
@@ -533,7 +533,7 @@ at the same level, either in separate files, or inside another module.
 fine to write out-of-order definitions, like in many programming languages:
 
 ```scala
-module out_of_order {
+module outOfOrder {
   def positive(x) = max(x, 0)
 
   def max(x, y) = x > y ? x : y
@@ -1069,10 +1069,10 @@ S.allLists()
 allLists(S)
 // CHOOSE x \in S: TRUE
 // The operator name is deliberately made long, so it would not be the user's default choice.
-S.choose_some()
+S.chooseSome()
 // There is no special syntax for CHOOSE x \in S: P
 // Instead, you can filter a set and then pick an element of it.
-S.filter(x => P).choose_some
+S.filter(x => P).chooseSome
 ```
 
 These operators are defined in the module `FiniteSets` in TLA+. TNT has these
@@ -1265,7 +1265,7 @@ about it, wrap the whole match-expression with `(...)`.
     | tag_n: x_n => ex_n
 ```
 
-Its normal form is `union_match(ex, tag_1, (x_1 => ex_1), ..., (x_n => ex_n))`.
+Its normal form is `unionMatch(ex, tag_1, (x_1 => ex_1), ..., (x_n => ex_n))`.
 
 *Mode:* Stateless, State. Other modes are not allowed.
 
@@ -1715,9 +1715,9 @@ that you will use them is very low. However, for the sake of completeness we
 introduce their counterparts in TNT:
 
 ```
-exists_const(x => P)
-forall_const(x => P)
-choose_const(x => P)
+existsConst(x => P)
+forallConst(x => P)
+chooseConst(x => P)
 ```
 
 We add the suffix "const" to the operator names to stress the fact that these
