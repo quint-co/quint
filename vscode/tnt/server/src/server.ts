@@ -153,6 +153,8 @@ documents.onDidChangeContent(change => {
     .then((result) => {
       return checkTypesAndEffects(change.document, result.tntModule, result.sourceMap, result.definitionTable)
     })
+    // Clear possible old diagnostics
+    .then((_) => connection.sendDiagnostics({ uri: change.document.uri, diagnostics: [] }))
     .catch(diagnostics => {
       // Send the computed diagnostics to VSCode.
       connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
