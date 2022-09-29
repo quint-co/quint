@@ -44,37 +44,37 @@ In the spirit of [Lessons from Writing a Compiler][], we have a roadmap, where
 we are implementing various transpiler passes feature-by-feature, instead of
 completely implementing every pass.
 
-| Language feature                  | Parser             | Name resolution    | Effects            | Type checker       | Simulator          | To-Apalache | Tutorials |
-| :---------------                  | :----:             | :-------------:    | :-----:            | :----------:       | :-------:          | :---------: | :-------: |
-| [Booleans][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
-| [Integers][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
-| [if-then-else][]                  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
-| [Operator definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
-| [Modes][]                         | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x: [234][]        | :x:         | :x:       |
-| [Sets][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:/:x: [238][] | :x:     | :x:       |
-| [Guess][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
-| [Maps][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [232][]        | :x:         | :x:       |
-| [Lists][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [231][]        | :x:         | :x:       |
-| [Records][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: | :x:         | :x:       |
-| [Discriminated unions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x: [233][]        | :x:         | :x:       |
-| [Tuples][]                        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: | :x:         | :x:       |
-| [Imports][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :question:         | :x:         | :x:       |
-| [Module definitions][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: | :x:         | :x:       |
-| [Module instances][]              | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x: [237][]        | :x:         | :x:       |
-| [Module imports][]                | :x: [8][]          | :x:                | :x:                | :x:                | :white_check_mark: | :x:         | :x:       |
-| [Constant declarations][]         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [236][]        | :x:         | :x:       |
-| [Variable definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
-| [Assumptions][]                   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x: [235][]        | :x:         | :x:       |
-| [Lambdas][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
-| [Multiline disjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
-| [Multiline conjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
-| [Delayed assignment][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
-| [Higher-order definitions][]      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [221][]        | :x:         | :x:       |
-| [Temporal operators][]            | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x: *non-goal*     | :x:         | :x:       |
-| [Fairness][]                      | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x: *non-goal*     | :x:         | :x:       |
-| [Unbounded quantifiers][]         | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x: *non-goal*     | :x:         | :x:       |
-| [String literals][], see #118     | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: | :white_check_mark: | :x:         | :x:       |
-| ~~uninterpreted types~~, see #118 | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:         | :x:       |
+| Language feature                  | Parser             | Name resolution    | Effects            | Type checker       | Simulator                      | To-Apalache | Tutorials |
+| :---------------                  | :----:             | :-------------:    | :-----:            | :----------:       | :-------:                      | :---------: | :-------: |
+| [Booleans][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
+| [Integers][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
+| [if-then-else][]                  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
+| [Operator definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
+| [Modes][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [234][]                    | :x:         | :x:       |
+| [Sets][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:/:x: [238][] | :x:         | :x:       |
+| [Guess][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
+| [Maps][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [232][]                    | :x:         | :x:       |
+| [Lists][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [231][]                    | :x:         | :x:       |
+| [Records][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [242][]        | :white_check_mark:             | :x:         | :x:       |
+| [Discriminated unions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [244][]        | :x: [233][]                    | :x:         | :x:       |
+| [Tuples][]                        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [243][]        | :white_check_mark:             | :x:         | :x:       |
+| [Imports][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :question:                     | :x:         | :x:       |
+| [Module definitions][]            | :white_check_mark: | :white_check_mark: | :x: [245][]        | :x: [245][]        | :white_check_mark:             | :x:         | :x:       |
+| [Module instances][]              | :white_check_mark: | :white_check_mark: | :x: [245][]        | :x: [245][]        | :x: [237][]                    | :x:         | :x:       |
+| [Multiple files][]                | :x: [8][]          | :x:                | :x:                | :x:                | :x:             | :x:         | :x:       |
+| [Constant declarations][]         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [236][]                    | :x:         | :x:       |
+| [Variable definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
+| [Assumptions][]                   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x: [235][]                    | :x:         | :x:       |
+| [Lambdas][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
+| [Multiline disjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
+| [Multiline conjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
+| [Delayed assignment][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
+| [Higher-order definitions][]      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [221][]                    | :x:         | :x:       |
+| [Temporal operators][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: *non-goal*                 | :x:         | :x:       |
+| [Fairness][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: *non-goal*                 | :x:         | :x:       |
+| [Unbounded quantifiers][]         | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x: *non-goal*                 | :x:         | :x:       |
+| [String literals][], see #118     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
+| ~~uninterpreted types~~, see #118 | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                            | :x:         | :x:       |
 
 ## Design principles
 
