@@ -54,7 +54,7 @@ completely implementing every pass.
 | [Sets][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:/:x: [238][] | :x:         | :x:       |
 | [Guess][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
 | [Maps][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [232][]                    | :x:         | :x:       |
-| [Lists][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [231][]                    | :x:         | :x:       |
+| [Lists][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:/:x: [231][] | :x:         | :x:       |
 | [Records][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [242][]        | :white_check_mark:             | :x:         | :x:       |
 | [Discriminated unions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [244][]        | :x: [233][]                    | :x:         | :x:       |
 | [Tuples][]                        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [243][]        | :white_check_mark:             | :x:         | :x:       |

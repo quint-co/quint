@@ -11,7 +11,7 @@
 
 import { strict as assert } from 'assert'
 import { Maybe, none, just, merge } from '@sweet-monads/maybe'
-import { Set, OrderedMap } from 'immutable'
+import { Set, List, OrderedMap } from 'immutable'
 
 import { IRVisitor } from '../../IRVisitor'
 import {
@@ -245,23 +245,67 @@ export class CompilerVisitor implements IRVisitor {
         break
 
       case 'item':
-        // Access a tuple
-        this.applyFun(2, (tup, idx) => {
-          const list = tup.toList()
-          const i = idx.toInt()
-          if (i > 0n && i <= list.size) {
-            const elem = list.get(Number(i - 1n))
-            return (elem) ? just(elem) : none()
-          } else {
-            return none()
-          }
-        })
+        // Access a tuple: tuples are 1-indexed, that is, _1, _2, etc.
+        this.applyFun(2,
+          (tuple, idx) => getListElem(tuple.toList(), idx.toInt() - 1n))
         break
 
       case 'tuples':
         // Construct a cross product
         this.applyFun(app.args.length,
           (...sets: RuntimeValue[]) => just(rv.mkCrossProd(sets)))
+        break
+
+      case 'seq':
+        // Construct a list from an array of values
+        this.applyFun(app.args.length,
+          (...values: RuntimeValue[]) => just(rv.mkList(values)))
+        break
+
+      case 'nth':
+        // Access a list
+        this.applyFun(2, (list, idx) => getListElem(list.toList(), idx.toInt()))
+        break
+
+      case 'replaceAt':
+        this.applyFun(3,
+          (list, idx, value) => updateList(list.toList(), idx.toInt(), value))
+        break
+
+      case 'head':
+        this.applyFun(1, (list) => getListElem(list.toList(), 0n))
+        break
+
+      case 'tail':
+        this.applyFun(1, (list) => {
+          const l = list.toList()
+          return (l.size > 0) ? sliceList(l, 1n, BigInt(l.size - 1)) : none()
+        })
+        break
+
+      case 'slice':
+        this.applyFun(3, (list, start, end) => {
+          const [l, s, e] = [list.toList(), start.toInt(), end.toInt()]
+          return (s >= 0 && e < l.size) ? sliceList(l, s, e) : none()
+        })
+        break
+
+      case 'length':
+        this.applyFun(1, list => just(rv.mkInt(BigInt(list.toList().size))))
+        break
+
+      case 'append':
+        this.applyFun(2,
+          (list, elem) => just(rv.mkList(list.toList().push(elem))))
+        break
+
+      case 'concat':
+        this.applyFun(2,
+          (list1, list2) => just(rv.mkList(list1.toList().concat(list2.toList()))))
+        break
+
+      case 'indices':
+        this.applyFun(1, list => just(rv.mkInterval(0n, BigInt(list.toList().size - 1))))
         break
 
       case 'rec':
@@ -702,6 +746,30 @@ export class CompilerVisitor implements IRVisitor {
 
     return undefined
   }
+}
+
+// Access a list via an index
+function getListElem (list: List<RuntimeValue>, idx: bigint) {
+  if (idx >= 0n && idx < list.size) {
+    const elem = list.get(Number(idx))
+    return elem ? just(elem) : none()
+  } else {
+    return none()
+  }
+}
+
+// Update a list via an index
+function updateList (list: List<RuntimeValue>, idx: bigint, value: RuntimeValue) {
+  if (idx >= 0n && idx < list.size) {
+    return just(rv.mkList(list.set(Number(idx), value)))
+  } else {
+    return none()
+  }
+}
+
+// slice a list
+function sliceList (list: List<RuntimeValue>, start: bigint, end: bigint) {
+  return just(rv.mkList(list.slice(Number(start), Number(end) + 1)))
 }
 
 // make a `Computable` that always returns a given runtime value

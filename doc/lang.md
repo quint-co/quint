@@ -4,7 +4,7 @@
 
 | Revision | Date       | Author                                                  |
 |:---------|:-----------|:--------------------------------------------------------|
-| 23       | 06.09.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira |
+| 24       | 29.09.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -1310,38 +1310,52 @@ In contrast to TLA+, there is no special module for sequences. They are built
 in the kernel of TNT. A parser can compute, whether operators on sequences are
 used in the spec.
 
+**Remember**: lists in TNT are 0-indexed, in contrast to TLA+, where sequences
+are 1-indexed.
+
 ```scala
-// sequence constructor: <<e_1, ..., e_n>> (which is also a tuple in TLA+)
+// List constructor.
+// Equivalent to <<e_1, ..., e_n>> in TLA+.
 [ e_1, ..., e_n ]
 seq(e_1, ..., e_n)
-// append at the sequence tail: Append(s, e)
+// Append e to the end of s.
+// Equivalent to Append(s, e) in TLA+.
 s.append(e)
 append(s, e)
-// concatenate sequences: s \circ t
+// Concatenate s and t.
+// Equivalent to s \circ t in TLA+.
 s.concat(t)
 concat(s, t)
-// sequence head: Head(s)
+// List head.
+// Equivalent to Head(s) in TLA+.
 s.head()
 head(s)
-// sequence tail: Tail(s)
+// List tail.
+// Equivalent to Tail(s) in TLA+.
 s.tail()
 tail(s)
-// sequence length: Len(s)
+// The length of a list.
+// Equivalent to Len(s) in TLA.
 s.length()
 length(s)
-// sequence element at nth position (starting with 1): equivalent to s[i] in TLA+
+// Sequence element at nth position (starting with 0).
+// Equivalent to s[i + 1] in TLA+.
 s.nth(i)
 nth(s, i)
-// the set of sequence indices (starting with 1): DOMAIN s
+// The set of sequence indices (starting with 0).
+// Equivalent to { i \in DOMAIN s: i - 1 } in TLA+.
 s.indices()
 indices(s)
-// [ seq EXCEPT ![i] = e ]
+// Update the list at element i.
+// Equivalent to [ seq EXCEPT ![i + 1] = e ] in TLA+.
 s.replaceAt(i, e)
 replaceAt(s, i, e)
-// SubSeq(s, j, k)
+// Slice a list from j to k (both indices inclusive).
+// Equivalent to SubSeq(s, j + 1, k + 1) in TLA+.
 s.slice(j, k)
 slice(s, j, k)
-// SelectSeq(s, Test)
+// Filter a list.
+// Equivalent to SelectSeq(s, Test) in TLA+.
 select(s, Test)
 // in particular, we can use anonymous operators
 s.select(e => P)

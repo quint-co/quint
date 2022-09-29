@@ -114,7 +114,17 @@ export const rv = {
    * @return a new runtime value that carries the tuple
    */
   mkTuple: (elems: Iterable<RuntimeValue>): RuntimeValue => {
-    return new RuntimeValueTuple(List(elems))
+    return new RuntimeValueTupleOrList('tuple', List(elems))
+  },
+
+  /**
+   * Make a runtime value that represents a list.
+   *
+   * @param value an iterable collection of runtime values
+   * @return a new runtime value that carries the list
+   */
+  mkList: (elems: Iterable<RuntimeValue>): RuntimeValue => {
+    return new RuntimeValueTupleOrList('list', List(elems))
   },
 
   /**
@@ -210,8 +220,8 @@ export interface RuntimeValue
   toSet (): Set<RuntimeValue>
 
   /**
-   * If the result is a tuple, transform it to an immutable list of values.
-   * Otherwise, return an empty list.
+   * If the result is a tuple or a list, transform it to an immutable list of
+   * values.  Otherwise, return an empty list.
    *
    * @return an immutable list of results
    */
@@ -328,7 +338,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
   }
 
   toList (): List<RuntimeValue> {
-    if (this instanceof RuntimeValueTuple) {
+    if (this instanceof RuntimeValueTupleOrList) {
       return this.list
     } else {
       return List()
@@ -409,9 +419,9 @@ abstract class RuntimeValueBase implements RuntimeValue {
     if (this instanceof RuntimeValueStr && other instanceof RuntimeValueStr) {
       return this.value === other.value
     }
-    if (this instanceof RuntimeValueTuple &&
-        other instanceof RuntimeValueTuple) {
-      return this.list.equals(other.list)
+    if (this instanceof RuntimeValueTupleOrList &&
+        other instanceof RuntimeValueTupleOrList) {
+      return this.kind === other.kind && this.list.equals(other.list)
     }
     if (this instanceof RuntimeValueRecord &&
         other instanceof RuntimeValueRecord) {
@@ -543,15 +553,19 @@ class RuntimeValueStr extends RuntimeValueBase implements ValueObject {
   }
 }
 
+type TupleOrList = 'tuple' | 'list'
+
 /**
  * A set of runtime values represented via an immutable List.
  * This is an internal class.
  */
-class RuntimeValueTuple extends RuntimeValueBase implements RuntimeValue {
+class RuntimeValueTupleOrList extends RuntimeValueBase implements RuntimeValue {
+  kind: TupleOrList
   list: List<RuntimeValue>
 
-  constructor (values: List<RuntimeValue>) {
+  constructor (kind: TupleOrList, values: List<RuntimeValue>) {
     super(true)
+    this.kind = kind
     this.list = values
   }
 
@@ -560,7 +574,7 @@ class RuntimeValueTuple extends RuntimeValueBase implements RuntimeValue {
     for (const e of this.list) {
       normalizedValues.push(e.normalForm())
     }
-    return new RuntimeValueTuple(List(normalizedValues))
+    return new RuntimeValueTupleOrList(this.kind, List(normalizedValues))
   }
 
   hashCode (): number {
@@ -577,7 +591,7 @@ class RuntimeValueTuple extends RuntimeValueBase implements RuntimeValue {
     return {
       id: 0n,
       kind: 'app',
-      opcode: 'tup',
+      opcode: (this.kind === 'tuple') ? 'tup' : 'seq',
       args: elems,
     }
   }
@@ -849,7 +863,7 @@ class RuntimeValueCrossProd
           for (let i = 0; i < nindices; i++) {
             nextElem.push(arrays[i][indices[i]])
           }
-          yield new RuntimeValueTuple(List(nextElem))
+          yield new RuntimeValueTupleOrList('tuple', List(nextElem))
         }
       }
     }
@@ -866,7 +880,7 @@ class RuntimeValueCrossProd
   }
 
   contains (elem: RuntimeValue): boolean {
-    if (elem instanceof RuntimeValueTuple) {
+    if (elem instanceof RuntimeValueTupleOrList) {
       if (elem.list.size !== this.sets.length) {
         return false
       } else {
@@ -925,7 +939,7 @@ class RuntimeValueCrossProd
       }
     }
 
-    return new RuntimeValueTuple(List.of(...elems))
+    return new RuntimeValueTupleOrList('tuple', List.of(...elems))
   }
 
   toTntEx (): TntEx {

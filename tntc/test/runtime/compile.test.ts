@@ -497,6 +497,75 @@ describe('compiling specs to runtime values', () => {
     })
   })
 
+  describe('compile over lists', () => {
+    it('list constructors', () => {
+      assertResultAsString('[4, 2, 3]', 'seq(4, 2, 3)')
+      assertResultAsString('seq(4, 2, 3)', 'seq(4, 2, 3)')
+    })
+
+    it('list equality', () => {
+      assertResultAsString('[4, 5, 6] == [5 - 1, 5, 6]', 'true')
+      assertResultAsString('[4, 5, 6] == [5, 5, 6]', 'false')
+      // lists are not equal to tuples in the typed world
+      assertResultAsString('[4, 5, 6] == (4, 5, 6)', 'false')
+    })
+
+    it('list access', () => {
+      assertResultAsString('[4, 5, 6].nth(0)', '4')
+      assertResultAsString('[4, 5, 6].nth(2)', '6')
+      assertResultAsString('[4, 5, 6].nth(-1)', undefined)
+      assertResultAsString('[4, 5, 6].nth(3)', undefined)
+    })
+
+    it('list length', () => {
+      assertResultAsString('[4, 5, 6].length()', '3')
+      assertResultAsString('[].length()', '0')
+    })
+
+    it('list indices', () => {
+      assertResultAsString('[4, 5, 6].indices()', 'set(0, 1, 2)')
+      assertResultAsString('[].indices()', 'set()')
+    })
+
+    it('list append', () => {
+      assertResultAsString('[4, 2, 3].append(5)', 'seq(4, 2, 3, 5)')
+      assertResultAsString('[].append(3)', 'seq(3)')
+    })
+
+    it('list concat', () => {
+      assertResultAsString('[4, 2, 3].concat([5, 6])', 'seq(4, 2, 3, 5, 6)')
+      assertResultAsString('[].concat([3, 4])', 'seq(3, 4)')
+      assertResultAsString('[3, 4].concat([])', 'seq(3, 4)')
+      assertResultAsString('[].concat([])', 'seq()')
+    })
+
+    it('list head', () => {
+      assertResultAsString('[4, 5, 6].head()', '4')
+      assertResultAsString('[].head()', undefined)
+    })
+
+    it('list tail', () => {
+      assertResultAsString('[4, 5, 6].tail()', 'seq(5, 6)')
+      assertResultAsString('[4].tail()', 'seq()')
+      assertResultAsString('[].tail()', undefined)
+    })
+
+    it('list slice', () => {
+      assertResultAsString('[4, 5, 6, 7].slice(1, 2)', 'seq(5, 6)')
+      assertResultAsString('[4, 5, 6, 7].slice(0, 3)', 'seq(4, 5, 6, 7)')
+      assertResultAsString('[4, 5, 6, 7].slice(1, 7)', undefined)
+      assertResultAsString('[4, 5, 6, 7].slice(-1, 3)', undefined)
+      assertResultAsString('[].slice(0, 1)', undefined)
+    })
+
+    it('list replaceAt', () => {
+      assertResultAsString('[4, 5, 6].replaceAt(0, 10)', 'seq(10, 5, 6)')
+      assertResultAsString('[4, 5, 6].replaceAt(2, 10)', 'seq(4, 5, 10)')
+      assertResultAsString('[4, 5, 6].replaceAt(4, 10)', undefined)
+      assertResultAsString('[4, 5, 6].replaceAt(-1, 10)', undefined)
+    })
+  })
+
   describe('compile over records', () => {
     it('record constructors', () => {
       assertResultAsString('rec("a", 2, "b", true)', 'rec("a", 2, "b", true)')

@@ -188,23 +188,37 @@ function chalkTntEx (ex: TntEx): string {
       return chalk.green(`"${ex.value}"`)
 
     case 'app':
-      if (ex.opcode === 'rec') {
-        const kvs = []
-        for (let i = 0; i < ex.args.length / 2; i++) {
-          const key = ex.args[2 * i]
-          if (key && key.kind === 'str') {
-            const value = chalkTntEx(ex.args[2 * i + 1])
-            kvs.push(`${chalk.green(key.value)}: ${value}`)
-          }
+      switch (ex.opcode) {
+        case 'set': {
+          const as = ex.args.map(chalkTntEx).join(', ')
+          return chalk.green('set') + chalk.black(`(${as})`)
         }
-        return `{ ${kvs.join(', ')} }`
-      } else if (ex.opcode === 'set' || ex.opcode === 'tup') {
-        const as = ex.args.map(chalkTntEx).join(', ')
-        const prefix = (ex.opcode === 'tup') ? '' : chalk.green(ex.opcode)
-        return prefix + chalk.black(`(${as})`)
-      } else {
-        // instead of throwing, show it in red
-        return chalk.red(`unsupported operator: ${ex.opcode}(...)`)
+
+        case 'tup': {
+          const as = ex.args.map(chalkTntEx).join(', ')
+          return chalk.black(`(${as})`)
+        }
+
+        case 'seq': {
+          const as = ex.args.map(chalkTntEx).join(', ')
+          return chalk.black(`[${as}]`)
+        }
+
+        case 'rec': {
+          const kvs = []
+          for (let i = 0; i < ex.args.length / 2; i++) {
+            const key = ex.args[2 * i]
+            if (key && key.kind === 'str') {
+              const value = chalkTntEx(ex.args[2 * i + 1])
+              kvs.push(`${chalk.green(key.value)}: ${value}`)
+            }
+          }
+          return `{ ${kvs.join(', ')} }`
+        }
+
+        default:
+          // instead of throwing, show it in red
+          return chalk.red(`unsupported operator: ${ex.opcode}(...)`)
       }
 
     default:
