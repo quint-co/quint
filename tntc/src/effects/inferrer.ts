@@ -91,6 +91,8 @@ class EffectInferrerVisitor implements IRVisitor {
            * ------------------------------------ (NAME-PARAM)
            *          Γ ⊢ v: Read[r_p]
            */
+          // Context values are functions over arity, call it with arity 1 since
+          // arity doesn't matter for lambda-introduced names
           const paramEffect = this.context.get(expr.name)!(1)
           if (!paramEffect) {
             throw new Error(`Couldn't find lambda parameter named ${expr.name} in context`)
@@ -233,6 +235,8 @@ class EffectInferrerVisitor implements IRVisitor {
 
     const params = mergeInMany(expr.params
       .map(p => {
+        // Context values are functions over arity, call it with arity 1 since
+        // arity doesn't matter for lambda-introduced names
         const paramEffect = this.context.get(p)!(1)
         this.context.delete(p)
         return applySubstitution(this.substitutions, paramEffect)

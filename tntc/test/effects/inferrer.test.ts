@@ -65,7 +65,7 @@ describe('inferEffects', () => {
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
     effects
-      .map((es: Map<BigInt, Effect>) => {
+      .map((es: Map<bigint, Effect>) => {
         assert.deepEqual(effectToString(es.get(4n)!), "(Read[v0]) => Read[v0, 'x']")
         assert.deepEqual(effectToString(es.get(9n)!), '(Read[v4]) => Read[v4]')
         return true
@@ -154,7 +154,7 @@ describe('inferEffects', () => {
     const expectedEffect = '((e_p_3) => e0, e_p_3) => e0'
 
     effects
-      .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(3n)!), expectedEffect))
+      .map((es: Map<bigint, Effect>) => assert.deepEqual(effectToString(es.get(3n)!), expectedEffect))
       .mapLeft(e => {
         const errors = Array.from(e.values())
         assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
@@ -171,7 +171,7 @@ describe('inferEffects', () => {
     const expectedEffect = '((Read[v1] & Temporal[v2]) => Read[v6], Read[v1] & Temporal[v2]) => Read[v6]'
 
     effects
-      .map((es: Map<BigInt, Effect>) => assert.deepEqual(effectToString(es.get(7n)!), expectedEffect))
+      .map((es: Map<bigint, Effect>) => assert.deepEqual(effectToString(es.get(7n)!), expectedEffect))
       .mapLeft(e => {
         const errors = Array.from(e.values())
         assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
