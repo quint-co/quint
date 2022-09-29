@@ -80,7 +80,7 @@ describe('solveConstraint', () => {
       kind: 'eq',
       types: [
         parseTypeOrThrow('set(a)'),
-        parseTypeOrThrow('seq(a)'),
+        parseTypeOrThrow('list(a)'),
       ],
       sourceId: 2n,
     }
@@ -102,8 +102,8 @@ describe('solveConstraint', () => {
           children: [],
         }],
         [2n, {
-          message: "Couldn't unify set and seq",
-          location: 'Trying to unify set(a) and seq(a)',
+          message: "Couldn't unify set and list",
+          location: 'Trying to unify set(a) and list(a)',
           children: [],
         }],
       ])
@@ -115,19 +115,19 @@ describe('unify', () => {
   it('unifies variable with other type', () => {
     const result = unify(
       parseTypeOrThrow('a'),
-      parseTypeOrThrow('(set(b)) => seq(b)')
+      parseTypeOrThrow('(set(b)) => list(b)')
     )
 
     assert.isTrue(result.isRight())
     result.map(subs => assert.deepEqual(substitutionsToString(subs),
-      '[ a |-> (set(b)) => seq(b) ]'
+      '[ a |-> (set(b)) => list(b) ]'
     ))
   })
 
   it('returns empty substitution for equal types', () => {
     const result = unify(
-      parseTypeOrThrow('(set(b)) => seq(b)'),
-      parseTypeOrThrow('(set(b)) => seq(b)')
+      parseTypeOrThrow('(set(b)) => list(b)'),
+      parseTypeOrThrow('(set(b)) => list(b)')
     )
 
     assert.isTrue(result.isRight())
@@ -137,19 +137,19 @@ describe('unify', () => {
   it('unifies args and results of arrow and function types', () => {
     const result = unify(
       parseTypeOrThrow('(a) => int -> bool'),
-      parseTypeOrThrow('((set(b)) => seq(b)) => b -> c')
+      parseTypeOrThrow('((set(b)) => list(b)) => b -> c')
     )
 
     assert.isTrue(result.isRight())
     result.map(subs => assert.deepEqual(substitutionsToString(subs),
-      '[ a |-> (set(int)) => seq(int), c |-> bool, b |-> int ]'
+      '[ a |-> (set(int)) => list(int), c |-> bool, b |-> int ]'
     ))
   })
 
-  it('unifies elements of tuples, set and seq types', () => {
+  it('unifies elements of tuples, set and list types', () => {
     const result = unify(
-      parseTypeOrThrow('(set(a), seq(b))'),
-      parseTypeOrThrow('(set(int), seq(bool))')
+      parseTypeOrThrow('(set(a), list(b))'),
+      parseTypeOrThrow('(set(int), list(bool))')
     )
 
     assert.isTrue(result.isRight())

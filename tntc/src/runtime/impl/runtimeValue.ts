@@ -114,7 +114,7 @@ export const rv = {
    * @return a new runtime value that carries the tuple
    */
   mkTuple: (elems: Iterable<RuntimeValue>): RuntimeValue => {
-    return new RuntimeValueTupleOrList('tuple', List(elems))
+    return new RuntimeValueTupleOrList('tup', List(elems))
   },
 
   /**
@@ -553,7 +553,7 @@ class RuntimeValueStr extends RuntimeValueBase implements ValueObject {
   }
 }
 
-type TupleOrList = 'tuple' | 'list'
+type TupleOrList = 'tup' | 'list'
 
 /**
  * A set of runtime values represented via an immutable List.
@@ -591,7 +591,7 @@ class RuntimeValueTupleOrList extends RuntimeValueBase implements RuntimeValue {
     return {
       id: 0n,
       kind: 'app',
-      opcode: (this.kind === 'tuple') ? 'tup' : 'seq',
+      opcode: (this.kind === 'tup') ? 'tup' : 'list',
       args: elems,
     }
   }
@@ -863,7 +863,7 @@ class RuntimeValueCrossProd
           for (let i = 0; i < nindices; i++) {
             nextElem.push(arrays[i][indices[i]])
           }
-          yield new RuntimeValueTupleOrList('tuple', List(nextElem))
+          yield new RuntimeValueTupleOrList('tup', List(nextElem))
         }
       }
     }
@@ -939,7 +939,7 @@ class RuntimeValueCrossProd
       }
     }
 
-    return new RuntimeValueTupleOrList('tuple', List.of(...elems))
+    return new RuntimeValueTupleOrList('tup', List.of(...elems))
   }
 
   toTntEx (): TntEx {

@@ -8,15 +8,15 @@ import { typeSchemeToString } from '../../src/types/printing'
 describe('getSignatures', () => {
   const signatures = getSignatures()
 
-  it('contains quantified signatures for seq', () => {
-    const seqSignature = signatures.get('seq')!
+  it('contains quantified signatures for list', () => {
+    const listSignature = signatures.get('list')!
 
     const expectedSignature = {
-      type: parseTypeOrThrow('(a, a, a) => seq(a)'),
+      type: parseTypeOrThrow('(a, a, a) => list(a)'),
       variables: new Set(['a']),
     }
 
-    const result = seqSignature(3)
+    const result = listSignature(3)
 
     assert.deepEqual(result, expectedSignature, `expected ${typeSchemeToString(expectedSignature)}, got ${typeSchemeToString(result)}`)
   })
@@ -35,7 +35,7 @@ describe('getSignatures', () => {
   })
 
   it('contains quantified signatures for the record constructor', () => {
-    const recSignature = signatures.get('record')!
+    const recSignature = signatures.get('rec')!
 
     const expectedSignature: TypeScheme = {
       type: parseTypeOrThrow('(n0, t0, n1, t1) => { n0: t0, n1: t1 }'),

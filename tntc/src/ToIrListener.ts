@@ -347,7 +347,7 @@ export class ToIrListener implements TntListener {
         // istanbul ignore next
         assert(false, `exitOperApp: ${ls}: expected wrapped arguments`)
       }
-    } // else no arguments, e.g., set(), seq()
+    } // else no arguments, e.g., set(), list()
 
     this.pushApplication(ctx, name, args)
   }
@@ -491,10 +491,10 @@ export class ToIrListener implements TntListener {
     this.pushApplication(ctx, 'tup', args)
   }
 
-  // sequence constructor, e.g., [1, 2, 3]
-  exitSequence (ctx: p.SequenceContext) {
+  // list constructor, e.g., [1, 2, 3]
+  exitList (ctx: p.ListContext) {
     const args = this.popExprs(ctx.expr().length)
-    this.pushApplication(ctx, 'seq', args)
+    this.pushApplication(ctx, 'list', args)
   }
 
   // record constructor, e.g., { name: "igor", year: 2021 }
@@ -715,13 +715,13 @@ export class ToIrListener implements TntListener {
     } // the other cases are excluded by the parser
   }
 
-  // a sequence type, e.g., seq(int)
-  exitTypeSeq (ctx: p.TypeSeqContext) {
+  // a list type, e.g., list(int)
+  exitTypeList (ctx: p.TypeListContext) {
     const top = this.typeStack.pop()
     if (top !== undefined) {
       const id = this.nextId()
       this.sourceMap.set(id, this.loc(ctx))
-      this.typeStack.push({ id: id, kind: 'seq', elem: top })
+      this.typeStack.push({ id: id, kind: 'list', elem: top })
     } // the other cases are excluded by the parser
   }
 
@@ -742,7 +742,7 @@ export class ToIrListener implements TntListener {
     const elemTypes: TntType[] = this.popTypes(ctx.type().length)
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
-    this.typeStack.push({ id: id, kind: 'tuple', elems: elemTypes })
+    this.typeStack.push({ id: id, kind: 'tup', elems: elemTypes })
   }
 
   // A record type that is not a disjoint union, e.g.,
@@ -759,7 +759,7 @@ export class ToIrListener implements TntListener {
     }
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
-    this.typeStack.push({ id: id, kind: 'record', fields: pairs })
+    this.typeStack.push({ id: id, kind: 'rec', fields: pairs })
   }
 
   // A disjoint union type, e.g.,
@@ -930,7 +930,7 @@ export class ToIrListener implements TntListener {
     return tp!
   }
 
-  // produce the next number in a sequence
+  // produce the next number in a list
   private nextId (): bigint {
     const id = this.lastId
     this.lastId += 1n

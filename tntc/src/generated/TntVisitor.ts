@@ -6,7 +6,7 @@ import { ParseTreeVisitor } from "antlr4ts/tree/ParseTreeVisitor";
 import { TypeFunContext } from "./TntParser";
 import { TypeOperContext } from "./TntParser";
 import { TypeSetContext } from "./TntParser";
-import { TypeSeqContext } from "./TntParser";
+import { TypeListContext } from "./TntParser";
 import { TypeTupleContext } from "./TntParser";
 import { TypeRecContext } from "./TntParser";
 import { TypeUnionRecContext } from "./TntParser";
@@ -44,7 +44,7 @@ import { OrActionContext } from "./TntParser";
 import { LiteralOrIdContext } from "./TntParser";
 import { TupleContext } from "./TntParser";
 import { RecordContext } from "./TntParser";
-import { SequenceContext } from "./TntParser";
+import { ListContext } from "./TntParser";
 import { IfElseContext } from "./TntParser";
 import { LetInContext } from "./TntParser";
 import { ParenContext } from "./TntParser";
@@ -104,12 +104,12 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitTypeSet?: (ctx: TypeSetContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `typeSeq`
+	 * Visit a parse tree produced by the `typeList`
 	 * labeled alternative in `TntParser.type`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitTypeSeq?: (ctx: TypeSeqContext) => Result;
+	visitTypeList?: (ctx: TypeListContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `typeTuple`
@@ -408,12 +408,12 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitRecord?: (ctx: RecordContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `sequence`
+	 * Visit a parse tree produced by the `list`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitSequence?: (ctx: SequenceContext) => Result;
+	visitList?: (ctx: ListContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `ifElse`

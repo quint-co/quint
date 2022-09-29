@@ -181,7 +181,6 @@ export interface EffectListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	enterTemporal?: (ctx: TemporalContext) => void;
-
 	/**
 	 * Exit a parse tree produced by `EffectParser.temporal`.
 	 * @param ctx the parse tree

@@ -38,7 +38,7 @@ const setOperators = [
   { name: 'fold', type: '(set(a), b, (b, a) => b) => b' },
   { name: 'powerset', type: '(set(a)) => set(set(a))' },
   { name: 'flatten', type: '(set(set(a))) => set(a)' },
-  { name: 'seqs', type: '(set(a)) => seq(a)' },
+  { name: 'allLists', type: '(set(a)) => list(a)' },
   { name: 'choose_some', type: '(set(a)) => a' },
   { name: 'isFinite', type: '(set(a)) => bool' },
   { name: 'cardinality', type: '(set(a)) => int' },
@@ -66,18 +66,18 @@ const tupleOperators = [
 ]
 
 const listOperators = [
-  { name: 'append', type: '(seq(a), a) => seq(a)' },
-  { name: 'concat', type: '(seq(a), seq(a)) => seq(a)' },
-  { name: 'head', type: '(seq(a)) => a' },
-  { name: 'tail', type: '(seq(a)) => seq(a)' },
-  { name: 'length', type: '(seq(a)) => int' },
-  { name: 'nth', type: '(seq(a), int) => a' },
-  { name: 'indices', type: '(seq(a)) => set(int)' },
-  { name: 'replaceAt', type: '(seq(a), int, a) => seq(a)' },
-  { name: 'slice', type: '(seq(a), int, int) => seq(a)' },
-  { name: 'select', type: '(seq(a), (a) => bool) => seq(a)' },
-  { name: 'foldl', type: '(seq(a), b, (b, a) => b) => b' },
-  { name: 'foldr', type: '(seq(a), b, (a, b) => b) => b' },
+  { name: 'append', type: '(list(a), a) => list(a)' },
+  { name: 'concat', type: '(list(a), list(a)) => list(a)' },
+  { name: 'head', type: '(list(a)) => a' },
+  { name: 'tail', type: '(list(a)) => list(a)' },
+  { name: 'length', type: '(list(a)) => int' },
+  { name: 'nth', type: '(list(a), int) => a' },
+  { name: 'indices', type: '(list(a)) => set(int)' },
+  { name: 'replaceAt', type: '(list(a), int, a) => list(a)' },
+  { name: 'slice', type: '(list(a), int, int) => list(a)' },
+  { name: 'select', type: '(list(a), (a) => bool) => list(a)' },
+  { name: 'foldl', type: '(list(a), b, (b, a) => b) => b' },
+  { name: 'foldr', type: '(list(a), b, (a, b) => b) => b' },
 ]
 
 const integerOperators = [
@@ -120,7 +120,7 @@ function uniformArgsWithResult (argsType: string, resultType: string): Signature
 
 // TODO: check arity conditions, see issue https://github.com/informalsystems/tnt/issues/169
 const multipleAritySignatures: [string, Signature][] = [
-  ['seq', uniformArgsWithResult('a', 'seq(a)')],
+  ['list', uniformArgsWithResult('a', 'list(a)')],
   ['set', uniformArgsWithResult('a', 'set(a)')],
   ['andExpr', uniformArgsWithResult('bool', 'bool')],
   ['andAction', uniformArgsWithResult('bool', 'bool')],
@@ -130,7 +130,7 @@ const multipleAritySignatures: [string, Signature][] = [
     const args = Array.from(Array(arity).keys()).map(i => `t${i}`).join(', ')
     return parseAndQuantify(`(${args}) => (${args})`)
   }],
-  ['record', (arity: number) => {
+  ['rec', (arity: number) => {
     const indexes = Array.from(Array(arity / 2).keys())
     const args = indexes.map(i => `n${i}, t${i}`).join(', ')
     const result = indexes.map(i => `n${i}: t${i}`).join(', ')

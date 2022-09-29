@@ -4,7 +4,7 @@ module withConsts {
   const N: int
   const S: set(int)
   const MySet: set(int)
-  const MySeq: seq(bool)
+  const MySeq: list(bool)
   const MyFun: int -> str
   const MyFunFun: (int -> str) -> bool
   const MyOperator: (int, str) => bool
@@ -140,8 +140,8 @@ module withConsts {
   // Data structures
   val test_tuple = (1, 2, 3)
   val test_tuple2 = tup(1, 2, 3)
-  val test_seq = [1, 2, 3]
-  val test_seq2 = seq(1, 2, 3)
+  val test_list = [1, 2, 3]
+  val test_list2 = list(1, 2, 3)
   val test_record = { name: "igor", year: 1981 }
   val test_record2 = rec("name", "igor", "year", 1981)
   val test_set = set(1, 2, 3)

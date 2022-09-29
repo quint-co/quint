@@ -199,7 +199,7 @@ function chalkTntEx (ex: TntEx): string {
           return chalk.black(`(${as})`)
         }
 
-        case 'seq': {
+        case 'list': {
           const as = ex.args.map(chalkTntEx).join(', ')
           return chalk.black(`[${as}]`)
         }

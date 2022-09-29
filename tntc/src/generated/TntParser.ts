@@ -70,7 +70,7 @@ export class TntParser extends Parser {
 	public static readonly IN = 40;
 	public static readonly NOTIN = 41;
 	public static readonly SET = 42;
-	public static readonly SEQ = 43;
+	public static readonly LIST = 43;
 	public static readonly MATCH = 44;
 	public static readonly PLUS = 45;
 	public static readonly MINUS = 46;
@@ -125,8 +125,9 @@ export class TntParser extends Parser {
 		"'action'", "'temporal'", "','", "'->'", "'=>'", "'int'", "'str'", "'bool'", 
 		"'|'", "'['", "']'", "'^'", "'&'", "'if'", "'else'", "'_'", undefined, 
 		undefined, undefined, "'and'", "'or'", "'iff'", "'implies'", "'subseteq'", 
-		"'in'", "'notin'", "'set'", "'seq'", "'match'", "'+'", "'-'", "'*'", "'/'", 
-		"'%'", "'>'", "'<'", "'>='", "'<='", "'!='", "'=='", "'<-'", "'('", "')'",
+		"'in'", "'notin'", "'set'", "'list'", "'match'", "'+'", "'-'", "'*'", 
+		"'/'", "'%'", "'>'", "'<'", "'>='", "'<='", "'!='", "'=='", "'<-'", "'('", 
+		"')'",
 	];
 	private static readonly _SYMBOLIC_NAMES: Array<string | undefined> = [
 		undefined, undefined, undefined, undefined, undefined, undefined, undefined, 
@@ -134,7 +135,7 @@ export class TntParser extends Parser {
 		undefined, undefined, undefined, undefined, undefined, undefined, undefined, 
 		undefined, undefined, undefined, undefined, undefined, undefined, undefined, 
 		undefined, undefined, undefined, undefined, "STRING", "BOOL", "INT", "AND", 
-		"OR", "IFF", "IMPLIES", "SUBSETEQ", "IN", "NOTIN", "SET", "SEQ", "MATCH", 
+		"OR", "IFF", "IMPLIES", "SUBSETEQ", "IN", "NOTIN", "SET", "LIST", "MATCH", 
 		"PLUS", "MINUS", "MUL", "DIV", "MOD", "GT", "LT", "GE", "LE", "NE", "EQ", 
 		"ASGN", "LPAREN", "RPAREN", "IDENTIFIER", "SIMPLE_IDENTIFIER", "LINE_COMMENT", 
 		"COMMENT", "WS",
@@ -667,7 +668,7 @@ export class TntParser extends Parser {
 				this.state = 153;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__20) | (1 << TntParser.T__21) | (1 << TntParser.T__22) | (1 << TntParser.T__23))) !== 0) || ((((_la - 42)) & ~0x1F) === 0 && ((1 << (_la - 42)) & ((1 << (TntParser.SET - 42)) | (1 << (TntParser.SEQ - 42)) | (1 << (TntParser.LPAREN - 42)) | (1 << (TntParser.IDENTIFIER - 42)))) !== 0)) {
+				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__20) | (1 << TntParser.T__21) | (1 << TntParser.T__22) | (1 << TntParser.T__23))) !== 0) || ((((_la - 42)) & ~0x1F) === 0 && ((1 << (_la - 42)) & ((1 << (TntParser.SET - 42)) | (1 << (TntParser.LIST - 42)) | (1 << (TntParser.LPAREN - 42)) | (1 << (TntParser.IDENTIFIER - 42)))) !== 0)) {
 					{
 					this.state = 145;
 					this.type(0);
@@ -717,11 +718,11 @@ export class TntParser extends Parser {
 
 			case 3:
 				{
-				_localctx = new TypeSeqContext(_localctx);
+				_localctx = new TypeListContext(_localctx);
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 163;
-				this.match(TntParser.SEQ);
+				this.match(TntParser.LIST);
 				this.state = 164;
 				this.match(TntParser.LPAREN);
 				this.state = 165;
@@ -1022,7 +1023,7 @@ export class TntParser extends Parser {
 				this.state = 239;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__12) | (1 << TntParser.T__13) | (1 << TntParser.T__14) | (1 << TntParser.T__15) | (1 << TntParser.T__16) | (1 << TntParser.T__24) | (1 << TntParser.T__28) | (1 << TntParser.T__30))) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & ((1 << (TntParser.STRING - 32)) | (1 << (TntParser.BOOL - 32)) | (1 << (TntParser.INT - 32)) | (1 << (TntParser.AND - 32)) | (1 << (TntParser.OR - 32)) | (1 << (TntParser.IFF - 32)) | (1 << (TntParser.IMPLIES - 32)) | (1 << (TntParser.SUBSETEQ - 32)) | (1 << (TntParser.IN - 32)) | (1 << (TntParser.NOTIN - 32)) | (1 << (TntParser.SET - 32)) | (1 << (TntParser.SEQ - 32)) | (1 << (TntParser.MINUS - 32)) | (1 << (TntParser.LPAREN - 32)) | (1 << (TntParser.IDENTIFIER - 32)))) !== 0)) {
+				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__12) | (1 << TntParser.T__13) | (1 << TntParser.T__14) | (1 << TntParser.T__15) | (1 << TntParser.T__16) | (1 << TntParser.T__24) | (1 << TntParser.T__28) | (1 << TntParser.T__30))) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & ((1 << (TntParser.STRING - 32)) | (1 << (TntParser.BOOL - 32)) | (1 << (TntParser.INT - 32)) | (1 << (TntParser.AND - 32)) | (1 << (TntParser.OR - 32)) | (1 << (TntParser.IFF - 32)) | (1 << (TntParser.IMPLIES - 32)) | (1 << (TntParser.SUBSETEQ - 32)) | (1 << (TntParser.IN - 32)) | (1 << (TntParser.NOTIN - 32)) | (1 << (TntParser.SET - 32)) | (1 << (TntParser.LIST - 32)) | (1 << (TntParser.MINUS - 32)) | (1 << (TntParser.LPAREN - 32)) | (1 << (TntParser.IDENTIFIER - 32)))) !== 0)) {
 					{
 					this.state = 238;
 					this.argList();
@@ -1316,7 +1317,7 @@ export class TntParser extends Parser {
 
 			case 10:
 				{
-				_localctx = new SequenceContext(_localctx);
+				_localctx = new ListContext(_localctx);
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 338;
@@ -1324,7 +1325,7 @@ export class TntParser extends Parser {
 				this.state = 347;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__12) | (1 << TntParser.T__13) | (1 << TntParser.T__14) | (1 << TntParser.T__15) | (1 << TntParser.T__16) | (1 << TntParser.T__24) | (1 << TntParser.T__28))) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & ((1 << (TntParser.STRING - 32)) | (1 << (TntParser.BOOL - 32)) | (1 << (TntParser.INT - 32)) | (1 << (TntParser.AND - 32)) | (1 << (TntParser.OR - 32)) | (1 << (TntParser.IFF - 32)) | (1 << (TntParser.IMPLIES - 32)) | (1 << (TntParser.SUBSETEQ - 32)) | (1 << (TntParser.IN - 32)) | (1 << (TntParser.NOTIN - 32)) | (1 << (TntParser.SET - 32)) | (1 << (TntParser.SEQ - 32)) | (1 << (TntParser.MINUS - 32)) | (1 << (TntParser.LPAREN - 32)) | (1 << (TntParser.IDENTIFIER - 32)))) !== 0)) {
+				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__12) | (1 << TntParser.T__13) | (1 << TntParser.T__14) | (1 << TntParser.T__15) | (1 << TntParser.T__16) | (1 << TntParser.T__24) | (1 << TntParser.T__28))) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & ((1 << (TntParser.STRING - 32)) | (1 << (TntParser.BOOL - 32)) | (1 << (TntParser.INT - 32)) | (1 << (TntParser.AND - 32)) | (1 << (TntParser.OR - 32)) | (1 << (TntParser.IFF - 32)) | (1 << (TntParser.IMPLIES - 32)) | (1 << (TntParser.SUBSETEQ - 32)) | (1 << (TntParser.IN - 32)) | (1 << (TntParser.NOTIN - 32)) | (1 << (TntParser.SET - 32)) | (1 << (TntParser.LIST - 32)) | (1 << (TntParser.MINUS - 32)) | (1 << (TntParser.LPAREN - 32)) | (1 << (TntParser.IDENTIFIER - 32)))) !== 0)) {
 					{
 					this.state = 339;
 					this.expr(0);
@@ -1621,7 +1622,7 @@ export class TntParser extends Parser {
 							this.state = 405;
 							this._errHandler.sync(this);
 							_la = this._input.LA(1);
-							if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__12) | (1 << TntParser.T__13) | (1 << TntParser.T__14) | (1 << TntParser.T__15) | (1 << TntParser.T__16) | (1 << TntParser.T__24) | (1 << TntParser.T__28) | (1 << TntParser.T__30))) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & ((1 << (TntParser.STRING - 32)) | (1 << (TntParser.BOOL - 32)) | (1 << (TntParser.INT - 32)) | (1 << (TntParser.AND - 32)) | (1 << (TntParser.OR - 32)) | (1 << (TntParser.IFF - 32)) | (1 << (TntParser.IMPLIES - 32)) | (1 << (TntParser.SUBSETEQ - 32)) | (1 << (TntParser.IN - 32)) | (1 << (TntParser.NOTIN - 32)) | (1 << (TntParser.SET - 32)) | (1 << (TntParser.SEQ - 32)) | (1 << (TntParser.MINUS - 32)) | (1 << (TntParser.LPAREN - 32)) | (1 << (TntParser.IDENTIFIER - 32)))) !== 0)) {
+							if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__12) | (1 << TntParser.T__13) | (1 << TntParser.T__14) | (1 << TntParser.T__15) | (1 << TntParser.T__16) | (1 << TntParser.T__24) | (1 << TntParser.T__28) | (1 << TntParser.T__30))) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & ((1 << (TntParser.STRING - 32)) | (1 << (TntParser.BOOL - 32)) | (1 << (TntParser.INT - 32)) | (1 << (TntParser.AND - 32)) | (1 << (TntParser.OR - 32)) | (1 << (TntParser.IFF - 32)) | (1 << (TntParser.IMPLIES - 32)) | (1 << (TntParser.SUBSETEQ - 32)) | (1 << (TntParser.IN - 32)) | (1 << (TntParser.NOTIN - 32)) | (1 << (TntParser.SET - 32)) | (1 << (TntParser.LIST - 32)) | (1 << (TntParser.MINUS - 32)) | (1 << (TntParser.LPAREN - 32)) | (1 << (TntParser.IDENTIFIER - 32)))) !== 0)) {
 								{
 								this.state = 404;
 								this.argList();
@@ -2095,13 +2096,13 @@ export class TntParser extends Parser {
 			case TntParser.IN:
 			case TntParser.NOTIN:
 			case TntParser.SET:
-			case TntParser.SEQ:
+			case TntParser.LIST:
 				this.enterOuterAlt(_localctx, 2);
 				{
 				this.state = 501;
 				_localctx._op = this._input.LT(1);
 				_la = this._input.LA(1);
-				if (!(((((_la - 35)) & ~0x1F) === 0 && ((1 << (_la - 35)) & ((1 << (TntParser.AND - 35)) | (1 << (TntParser.OR - 35)) | (1 << (TntParser.IFF - 35)) | (1 << (TntParser.IMPLIES - 35)) | (1 << (TntParser.SUBSETEQ - 35)) | (1 << (TntParser.IN - 35)) | (1 << (TntParser.NOTIN - 35)) | (1 << (TntParser.SET - 35)) | (1 << (TntParser.SEQ - 35)))) !== 0))) {
+				if (!(((((_la - 35)) & ~0x1F) === 0 && ((1 << (_la - 35)) & ((1 << (TntParser.AND - 35)) | (1 << (TntParser.OR - 35)) | (1 << (TntParser.IFF - 35)) | (1 << (TntParser.IMPLIES - 35)) | (1 << (TntParser.SUBSETEQ - 35)) | (1 << (TntParser.IN - 35)) | (1 << (TntParser.NOTIN - 35)) | (1 << (TntParser.SET - 35)) | (1 << (TntParser.LIST - 35)))) !== 0))) {
 					_localctx._op = this._errHandler.recoverInline(this);
 				} else {
 					if (this._input.LA(1) === Token.EOF) {
@@ -3156,8 +3157,8 @@ export class TypeSetContext extends TypeContext {
 		}
 	}
 }
-export class TypeSeqContext extends TypeContext {
-	public SEQ(): TerminalNode { return this.getToken(TntParser.SEQ, 0); }
+export class TypeListContext extends TypeContext {
+	public LIST(): TerminalNode { return this.getToken(TntParser.LIST, 0); }
 	public LPAREN(): TerminalNode { return this.getToken(TntParser.LPAREN, 0); }
 	public type(): TypeContext {
 		return this.getRuleContext(0, TypeContext);
@@ -3169,20 +3170,20 @@ export class TypeSeqContext extends TypeContext {
 	}
 	// @Override
 	public enterRule(listener: TntListener): void {
-		if (listener.enterTypeSeq) {
-			listener.enterTypeSeq(this);
+		if (listener.enterTypeList) {
+			listener.enterTypeList(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: TntListener): void {
-		if (listener.exitTypeSeq) {
-			listener.exitTypeSeq(this);
+		if (listener.exitTypeList) {
+			listener.exitTypeList(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: TntVisitor<Result>): Result {
-		if (visitor.visitTypeSeq) {
-			return visitor.visitTypeSeq(this);
+		if (visitor.visitTypeList) {
+			return visitor.visitTypeList(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
@@ -4282,7 +4283,7 @@ export class RecordContext extends ExprContext {
 		}
 	}
 }
-export class SequenceContext extends ExprContext {
+export class ListContext extends ExprContext {
 	public expr(): ExprContext[];
 	public expr(i: number): ExprContext;
 	public expr(i?: number): ExprContext | ExprContext[] {
@@ -4298,20 +4299,20 @@ export class SequenceContext extends ExprContext {
 	}
 	// @Override
 	public enterRule(listener: TntListener): void {
-		if (listener.enterSequence) {
-			listener.enterSequence(this);
+		if (listener.enterList) {
+			listener.enterList(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: TntListener): void {
-		if (listener.exitSequence) {
-			listener.exitSequence(this);
+		if (listener.exitList) {
+			listener.exitList(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: TntVisitor<Result>): Result {
-		if (visitor.visitSequence) {
-			return visitor.visitSequence(this);
+		if (visitor.visitList) {
+			return visitor.visitList(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
@@ -4708,7 +4709,7 @@ export class NormalCallNameContext extends ParserRuleContext {
 	public IFF(): TerminalNode | undefined { return this.tryGetToken(TntParser.IFF, 0); }
 	public IMPLIES(): TerminalNode | undefined { return this.tryGetToken(TntParser.IMPLIES, 0); }
 	public SET(): TerminalNode | undefined { return this.tryGetToken(TntParser.SET, 0); }
-	public SEQ(): TerminalNode | undefined { return this.tryGetToken(TntParser.SEQ, 0); }
+	public LIST(): TerminalNode | undefined { return this.tryGetToken(TntParser.LIST, 0); }
 	public SUBSETEQ(): TerminalNode | undefined { return this.tryGetToken(TntParser.SUBSETEQ, 0); }
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);

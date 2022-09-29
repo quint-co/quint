@@ -81,7 +81,7 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
       .mapLeft(error => buildErrorTree(location, error))
   } else if (t1.kind === 'set' && t2.kind === 'set') {
     return unify(t1.elem, t2.elem)
-  } else if (t1.kind === 'seq' && t2.kind === 'seq') {
+  } else if (t1.kind === 'list' && t2.kind === 'list') {
     return unify(t1.elem, t2.elem)
   } else if (t1.kind === 'fun' && t2.kind === 'fun') {
     const result = unify(t1.arg, t2.arg)
@@ -89,7 +89,7 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
       const subs2 = unify(applySubstitution(subs, t1.res), applySubstitution(subs, t2.res))
       return subs2.map(s => compose(subs, s))
     })
-  } else if (t1.kind === 'tuple' && t2.kind === 'tuple') {
+  } else if (t1.kind === 'tup' && t2.kind === 'tup') {
     return checkSameLength(location, t1.elems, t2.elems)
       .chain(([elems1, elems2]) => chainUnifications(elems1, elems2))
       .mapLeft(error => buildErrorTree(location, error))

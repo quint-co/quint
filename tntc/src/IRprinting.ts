@@ -104,7 +104,7 @@ export function typeToString (type: TntType): string {
     case 'var':
       return type.name
     case 'set':
-    case 'seq':
+    case 'list':
       return `${type.kind}(${typeToString(type.elem)})`
     case 'fun':
       return `(${typeToString(type.arg)} -> ${typeToString(type.res)})`
@@ -112,9 +112,9 @@ export function typeToString (type: TntType): string {
       const args = type.args.map(typeToString).join(', ')
       return `(${args}) => ${typeToString(type.res)}`
     }
-    case 'tuple':
+    case 'tup':
       return `(${type.elems.map(typeToString).join(', ')})`
-    case 'record': {
+    case 'rec': {
       const fields = type.fields.map(f => `${f.fieldName}: ${typeToString(f.fieldType)}`).join(', ')
       return `{ ${fields} }`
     }

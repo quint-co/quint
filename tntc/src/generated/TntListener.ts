@@ -6,7 +6,7 @@ import { ParseTreeListener } from "antlr4ts/tree/ParseTreeListener";
 import { TypeFunContext } from "./TntParser";
 import { TypeOperContext } from "./TntParser";
 import { TypeSetContext } from "./TntParser";
-import { TypeSeqContext } from "./TntParser";
+import { TypeListContext } from "./TntParser";
 import { TypeTupleContext } from "./TntParser";
 import { TypeRecContext } from "./TntParser";
 import { TypeUnionRecContext } from "./TntParser";
@@ -44,7 +44,7 @@ import { OrActionContext } from "./TntParser";
 import { LiteralOrIdContext } from "./TntParser";
 import { TupleContext } from "./TntParser";
 import { RecordContext } from "./TntParser";
-import { SequenceContext } from "./TntParser";
+import { ListContext } from "./TntParser";
 import { IfElseContext } from "./TntParser";
 import { LetInContext } from "./TntParser";
 import { ParenContext } from "./TntParser";
@@ -116,17 +116,17 @@ export interface TntListener extends ParseTreeListener {
 	exitTypeSet?: (ctx: TypeSetContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `typeSeq`
+	 * Enter a parse tree produced by the `typeList`
 	 * labeled alternative in `TntParser.type`.
 	 * @param ctx the parse tree
 	 */
-	enterTypeSeq?: (ctx: TypeSeqContext) => void;
+	enterTypeList?: (ctx: TypeListContext) => void;
 	/**
-	 * Exit a parse tree produced by the `typeSeq`
+	 * Exit a parse tree produced by the `typeList`
 	 * labeled alternative in `TntParser.type`.
 	 * @param ctx the parse tree
 	 */
-	exitTypeSeq?: (ctx: TypeSeqContext) => void;
+	exitTypeList?: (ctx: TypeListContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `typeTuple`
@@ -610,17 +610,17 @@ export interface TntListener extends ParseTreeListener {
 	exitRecord?: (ctx: RecordContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `sequence`
+	 * Enter a parse tree produced by the `list`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 */
-	enterSequence?: (ctx: SequenceContext) => void;
+	enterList?: (ctx: ListContext) => void;
 	/**
-	 * Exit a parse tree produced by the `sequence`
+	 * Exit a parse tree produced by the `list`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 */
-	exitSequence?: (ctx: SequenceContext) => void;
+	exitList?: (ctx: ListContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `ifElse`

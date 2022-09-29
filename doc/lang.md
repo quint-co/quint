@@ -96,7 +96,7 @@ String literals are written as follows:
 ```
 
 You cannot do much with strings. They can be compared for equality and
-inequality, and they can be stored in sets, functions, sequences, tuples, and
+inequality, and they can be stored in sets, maps, lists, tuples, and
 records. In this sense, strings are just more liberal identifiers.
 
 ## Comments
@@ -149,7 +149,7 @@ A type is one of the following:
 
  - Set: `set(T)` for a type `T`.
 
- - Sequence: `seq(T)` for a type `T`.
+ - List: `list(T)` for a type `T`.
 
  - Tuple: `(T_1, T_2, ..., T_n)` for `n >= 2` types `T_1`, ..., `T_n`.
 
@@ -332,7 +332,7 @@ Introduce a single variable (flexible variable in TLA+)
 Introduce a user-defined operator. The order of definitions is not important.
 The operator names should not clash with the names of other definitions in the
 module scope. Importantly, there are **no recursive operators** (though you can
-fold over a sequence or a set, see below).
+fold over a list or a set, see below).
 
 ```
 // a static constant value, which is not changing over time
@@ -1065,8 +1065,8 @@ powerset(S)
 S.flatten()
 flatten(S)
 // Seq(S) of the module Sequences
-S.seqs()
-seqs(S)
+S.allLists()
+allLists(S)
 // CHOOSE x \in S: TRUE
 // The operator name is deliberately made long, so it would not be the user's default choice.
 S.choose_some()
@@ -1276,7 +1276,7 @@ cases of records. TNT makes this pattern explicit.
 ### Tuples
 
 In contrast to TLA+, TNT tuples have length of at least 2.
-If you need sequences, use sequences.
+If you need lists, use lists.
 
 ```scala
 // Tuple constructor: << e_1, ..., e_n >>
@@ -1306,8 +1306,8 @@ of items.
 
 ### Lists (aka Sequences)
 
-In contrast to TLA+, there is no special module for sequences. They are built
-in the kernel of TNT. A parser can compute, whether operators on sequences are
+In contrast to TLA+, there is no special module for lists. They are built
+in the kernel of TNT. A parser can compute, whether operators on lists are
 used in the spec.
 
 **Remember**: lists in TNT are 0-indexed, in contrast to TLA+, where sequences
@@ -1317,7 +1317,7 @@ are 1-indexed.
 // List constructor.
 // Equivalent to <<e_1, ..., e_n>> in TLA+.
 [ e_1, ..., e_n ]
-seq(e_1, ..., e_n)
+list(e_1, ..., e_n)
 // Append e to the end of s.
 // Equivalent to Append(s, e) in TLA+.
 s.append(e)
@@ -1342,12 +1342,12 @@ length(s)
 // Equivalent to s[i + 1] in TLA+.
 s.nth(i)
 nth(s, i)
-// The set of sequence indices (starting with 0).
+// The set of list indices (starting with 0).
 // Equivalent to { i \in DOMAIN s: i - 1 } in TLA+.
 s.indices()
 indices(s)
 // Update the list at element i.
-// Equivalent to [ seq EXCEPT ![i + 1] = e ] in TLA+.
+// Equivalent to [ s EXCEPT ![i + 1] = e ] in TLA+.
 s.replaceAt(i, e)
 replaceAt(s, i, e)
 // Slice a list from j to k (both indices inclusive).

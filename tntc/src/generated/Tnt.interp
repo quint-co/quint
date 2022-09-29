@@ -42,7 +42,7 @@ null
 'in'
 'notin'
 'set'
-'seq'
+'list'
 'match'
 '+'
 '-'
@@ -108,7 +108,7 @@ SUBSETEQ
 IN
 NOTIN
 SET
-SEQ
+LIST
 MATCH
 PLUS
 MINUS

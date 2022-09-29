@@ -499,8 +499,8 @@ describe('compiling specs to runtime values', () => {
 
   describe('compile over lists', () => {
     it('list constructors', () => {
-      assertResultAsString('[4, 2, 3]', 'seq(4, 2, 3)')
-      assertResultAsString('seq(4, 2, 3)', 'seq(4, 2, 3)')
+      assertResultAsString('[4, 2, 3]', 'list(4, 2, 3)')
+      assertResultAsString('list(4, 2, 3)', 'list(4, 2, 3)')
     })
 
     it('list equality', () => {
@@ -528,15 +528,15 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('list append', () => {
-      assertResultAsString('[4, 2, 3].append(5)', 'seq(4, 2, 3, 5)')
-      assertResultAsString('[].append(3)', 'seq(3)')
+      assertResultAsString('[4, 2, 3].append(5)', 'list(4, 2, 3, 5)')
+      assertResultAsString('[].append(3)', 'list(3)')
     })
 
     it('list concat', () => {
-      assertResultAsString('[4, 2, 3].concat([5, 6])', 'seq(4, 2, 3, 5, 6)')
-      assertResultAsString('[].concat([3, 4])', 'seq(3, 4)')
-      assertResultAsString('[3, 4].concat([])', 'seq(3, 4)')
-      assertResultAsString('[].concat([])', 'seq()')
+      assertResultAsString('[4, 2, 3].concat([5, 6])', 'list(4, 2, 3, 5, 6)')
+      assertResultAsString('[].concat([3, 4])', 'list(3, 4)')
+      assertResultAsString('[3, 4].concat([])', 'list(3, 4)')
+      assertResultAsString('[].concat([])', 'list()')
     })
 
     it('list head', () => {
@@ -545,22 +545,22 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('list tail', () => {
-      assertResultAsString('[4, 5, 6].tail()', 'seq(5, 6)')
-      assertResultAsString('[4].tail()', 'seq()')
+      assertResultAsString('[4, 5, 6].tail()', 'list(5, 6)')
+      assertResultAsString('[4].tail()', 'list()')
       assertResultAsString('[].tail()', undefined)
     })
 
     it('list slice', () => {
-      assertResultAsString('[4, 5, 6, 7].slice(1, 2)', 'seq(5, 6)')
-      assertResultAsString('[4, 5, 6, 7].slice(0, 3)', 'seq(4, 5, 6, 7)')
+      assertResultAsString('[4, 5, 6, 7].slice(1, 2)', 'list(5, 6)')
+      assertResultAsString('[4, 5, 6, 7].slice(0, 3)', 'list(4, 5, 6, 7)')
       assertResultAsString('[4, 5, 6, 7].slice(1, 7)', undefined)
       assertResultAsString('[4, 5, 6, 7].slice(-1, 3)', undefined)
       assertResultAsString('[].slice(0, 1)', undefined)
     })
 
     it('list replaceAt', () => {
-      assertResultAsString('[4, 5, 6].replaceAt(0, 10)', 'seq(10, 5, 6)')
-      assertResultAsString('[4, 5, 6].replaceAt(2, 10)', 'seq(4, 5, 10)')
+      assertResultAsString('[4, 5, 6].replaceAt(0, 10)', 'list(10, 5, 6)')
+      assertResultAsString('[4, 5, 6].replaceAt(2, 10)', 'list(4, 5, 10)')
       assertResultAsString('[4, 5, 6].replaceAt(4, 10)', undefined)
       assertResultAsString('[4, 5, 6].replaceAt(-1, 10)', undefined)
     })

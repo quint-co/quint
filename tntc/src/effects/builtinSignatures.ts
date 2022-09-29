@@ -34,7 +34,7 @@ const setOperators = [
   { name: 'fold', effect: '(Read[r1], Read[r2], (Read[r2], Read[r1]) => Read[r3, r4]) => Read[r1, r2, r3, r4]' },
   { name: 'powerset', effect: '(Read[r1]) => Read[r1]' },
   { name: 'flatten', effect: '(Read[r1]) => Read[r1]' },
-  { name: 'seqs', effect: '(Read[r1]) => Read[r1]' },
+  { name: 'allLists', effect: '(Read[r1]) => Read[r1]' },
   { name: 'choose_some', effect: '(Read[r1]) => Read[r1]' },
   { name: 'isFinite', effect: '(Read[r1]) => Read[r1]' },
   { name: 'cardinality', effect: '(Read[r1]) => Read[r1]' },
@@ -117,9 +117,9 @@ const readManyEffect = (arity: number) => {
   return parseEffectOrThrow(`(${args.join(', ')}) => Read[${rs.join(', ')}] & Temporal[${ts.join(', ')}]`)
 }
 const multipleAritySignatures: [string, Signature][] = [
-  ['seq', readManyEffect],
+  ['list', readManyEffect],
   ['set', readManyEffect],
-  ['record', readManyEffect],
+  ['rec', readManyEffect],
   ['tup', readManyEffect],
   ['tuples', readManyEffect],
   ['andExpr', readManyEffect],

@@ -545,10 +545,10 @@ describe('walkModule', () => {
       'var d: MY_CONST_TYPE',
       'var e: a -> set(a)',
       'var f: set(int)',
-      'var g: seq(set(str))',
-      'var h: (int -> str) -> seq(bool)',
+      'var g: list(set(str))',
+      'var h: (int -> str) -> list(bool)',
       'def i: (int, a) => bool = false',
-      'var j: (int, seq(bool), MY_CONST_TYPE)',
+      'var j: (int, list(bool), MY_CONST_TYPE)',
       'var k: { name: str, age: int }',
       'var l: | { tag: "a", a: int } | { tag: "b", b: bool }',
     ])
@@ -572,14 +572,14 @@ describe('walkModule', () => {
         'int', // const b: int
         'str', // val c: str = "rainbow"
         'int', // var f: set(int)
-        'str', // var g: seq(set(str))
-        'int', // var h: (int -> str) -> seq(bool)
-        'str', // var h: (int -> str) -> seq(bool)
-        'bool', // var h: (int -> str) -> seq(bool)
+        'str', // var g: list(set(str))
+        'int', // var h: (int -> str) -> list(bool)
+        'str', // var h: (int -> str) -> list(bool)
+        'bool', // var h: (int -> str) -> list(bool)
         'int', // def i: (int, a) => bool = false
         'bool', // def i: (int, a) => bool
-        'int', // var j: (int, seq(bool), MY_CONST_TYPE)
-        'bool', // var j: (int, seq(bool), MY_CONST_TYPE)
+        'int', // var j: (int, list(bool), MY_CONST_TYPE)
+        'bool', // var j: (int, list(bool), MY_CONST_TYPE)
         'str', // var k: { name: str, age: int }
         'int', // var k: { name: str, age: int }
         'int', // var l: | { tag: "a", a: int } | { tag: "b", b: bool }
@@ -610,7 +610,7 @@ describe('walkModule', () => {
 
       const enteredTypes = [
         'MY_CONST_TYPE', // var d: MY_CONST_TYPE
-        'MY_CONST_TYPE', // var j: (int, seq(bool), MY_CONST_TYPE)
+        'MY_CONST_TYPE', // var j: (int, list(bool), MY_CONST_TYPE)
       ]
 
       const exitedTypes = enteredTypes
@@ -666,7 +666,7 @@ describe('walkModule', () => {
       const enteredTypes = [
         'set(a)', // var e: a -> set(a)
         'set(int)', // var f: set(int)
-        'set(str)', // var g: seq(set(str))
+        'set(str)', // var g: list(set(str))
       ]
 
       const exitedTypes = enteredTypes
@@ -677,7 +677,7 @@ describe('walkModule', () => {
       assert.deepEqual(visitor.exited.map(typeToString), exitedTypes)
     })
 
-    it('finds sequence types', () => {
+    it('finds list types', () => {
       class TestVisitor implements IRVisitor {
         entered: TntType[] = []
         exited: TntType[] = []
@@ -692,9 +692,9 @@ describe('walkModule', () => {
       }
 
       const enteredTypes = [
-        'seq(set(str))', // var g: seq(set(str))
-        'seq(bool)', // var h: (int -> str) -> seq(bool)
-        'seq(bool)', // var j: (int, seq(bool), MY_CONST_TYPE)
+        'list(set(str))', // var g: list(set(str))
+        'list(bool)', // var h: (int -> str) -> list(bool)
+        'list(bool)', // var j: (int, list(bool), MY_CONST_TYPE)
       ]
 
       const exitedTypes = enteredTypes
@@ -721,14 +721,14 @@ describe('walkModule', () => {
 
       const enteredTypes = [
         '(a -> set(a))', // var e: a -> set(a)
-        '((int -> str) -> seq(bool))', // var h: (int -> str) -> seq(bool)
-        '(int -> str)', // var h: (int -> str) -> seq(bool)
+        '((int -> str) -> list(bool))', // var h: (int -> str) -> list(bool)
+        '(int -> str)', // var h: (int -> str) -> list(bool)
       ]
 
       const exitedTypes = [
         '(a -> set(a))', // var e: a -> set(a)
-        '(int -> str)', // var h: (int -> str) -> seq(bool)
-        '((int -> str) -> seq(bool))', // var h: (int -> str) -> seq(bool)
+        '(int -> str)', // var h: (int -> str) -> list(bool)
+        '((int -> str) -> list(bool))', // var h: (int -> str) -> list(bool)
       ]
 
       const visitor = new TestVisitor()
@@ -778,7 +778,7 @@ describe('walkModule', () => {
       }
 
       const enteredTypes = [
-        '(int, seq(bool), MY_CONST_TYPE)', // var j: (int, seq(bool), MY_CONST_TYPE)
+        '(int, list(bool), MY_CONST_TYPE)', // var j: (int, list(bool), MY_CONST_TYPE)
       ]
 
       const exitedTypes = enteredTypes

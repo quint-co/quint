@@ -64,7 +64,7 @@ export function applySubstitution (subs: Substitutions, t: TntType): TntType {
       result = { kind: t.kind, args: arrowParams, res: arrowResult, id: t.id }
       break
     }
-    case 'seq':
+    case 'list':
     case 'set': {
       result = { kind: t.kind, elem: applySubstitution(subs, t.elem), id: t.id }
       break
@@ -73,11 +73,11 @@ export function applySubstitution (subs: Substitutions, t: TntType): TntType {
       result = { kind: t.kind, arg: applySubstitution(subs, t.arg), res: applySubstitution(subs, t.res), id: t.id }
       break
     }
-    case 'tuple': {
+    case 'tup': {
       result = { kind: t.kind, elems: t.elems.map(e => applySubstitution(subs, e)), id: t.id }
       break
     }
-    case 'record': {
+    case 'rec': {
       result = {
         kind: t.kind,
         fields: t.fields.map(f => ({ fieldName: f.fieldName, fieldType: applySubstitution(subs, f.fieldType) })),

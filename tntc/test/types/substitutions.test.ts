@@ -13,14 +13,14 @@ describe('compose', () => {
     }]
     const s2: Substitutions = [{
       name: 'b',
-      value: parseTypeOrThrow('seq(a)'),
+      value: parseTypeOrThrow('list(a)'),
     }]
 
     const result = compose(s1, s2)
 
     assert.sameDeepMembers(result, [
       { name: 'a', value: parseTypeOrThrow('int') },
-      { name: 'b', value: parseTypeOrThrow('seq(int)') },
+      { name: 'b', value: parseTypeOrThrow('list(int)') },
     ])
   })
 })
@@ -52,18 +52,18 @@ describe('applySubstitution', () => {
     assert.deepEqual(result, parseTypeOrThrow('int -> bool'))
   })
 
-  it('substitutes variables in seqs, sets and tuples types', () => {
+  it('substitutes variables in lists, sets and tuples types', () => {
     const s: Substitutions = [
       { name: 'a', value: { kind: 'int', id: 1n } },
       { name: 'b', value: { kind: 'bool', id: 3n } },
       { name: 'c', value: { kind: 'str', id: 5n } },
     ]
 
-    const t = parseTypeOrThrow('(seq(a), set(b), c)')
+    const t = parseTypeOrThrow('(list(a), set(b), c)')
 
     const result = applySubstitution(s, t)
 
-    assert.deepEqual(result, parseTypeOrThrow('(seq(int), set(bool), str)'))
+    assert.deepEqual(result, parseTypeOrThrow('(list(int), set(bool), str)'))
   })
 
   it('substitutes variables in record type', () => {

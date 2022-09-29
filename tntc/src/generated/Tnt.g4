@@ -51,7 +51,7 @@ instanceMod :   'module' IDENTIFIER '=' IDENTIFIER
 type :          <assoc=right> type '->' type                    # typeFun
         |       '(' (type (',' type)*)? ')' '=>' type           # typeOper
         |       'set' '(' type ')'                              # typeSet
-        |       'seq' '(' type ')'                              # typeSeq
+        |       'list' '(' type ')'                             # typeList
         |       '(' type ',' type (',' type)* ')'               # typeTuple
         |       '{' IDENTIFIER ':' type
                          (',' IDENTIFIER ':' type)* '}'         # typeRec
@@ -105,8 +105,8 @@ expr:           // apply a built-in operator via the dot notation
         |       '(' expr ',' expr (',' expr)* ')'                   # tuple
         |       '{' IDENTIFIER ':' expr
                         (',' IDENTIFIER ':' expr)* '}'              # record
-        //      a sequence constructor, the form seq(...) is just an operator call
-        |       '[' (expr (',' expr)*)? ']'                         # sequence
+        //      a list constructor, the form list(...) is just an operator call
+        |       '[' (expr (',' expr)*)? ']'                         # list
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
         |       operDef expr                                        # letIn
         |       '(' expr ')'                                        # paren
@@ -150,7 +150,7 @@ argList :      lambdaOrExpr (',' lambdaOrExpr)*
 
 // operators in the normal call may use some reserved names
 normalCallName :   IDENTIFIER
-        |       op=(IN | NOTIN | AND | OR | IFF | IMPLIES | SET | SEQ | SUBSETEQ)
+        |       op=(IN | NOTIN | AND | OR | IFF | IMPLIES | SET | LIST | SUBSETEQ)
         ;
 
 // Some infix operators may be called via lhs.oper(rhs),
@@ -186,7 +186,7 @@ SUBSETEQ        :   'subseteq' ;
 IN              :   'in' ;
 NOTIN           :   'notin' ;
 SET             :   'set' ;
-SEQ             :   'seq' ;
+LIST            :   'list' ;
 MATCH           :   'match' ;
 PLUS            :   '+' ;
 MINUS           :   '-' ;

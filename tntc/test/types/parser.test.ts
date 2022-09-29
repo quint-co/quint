@@ -8,7 +8,7 @@ describe('parseType', () => {
 
     assert.isTrue(type.isRight())
     type.map(value => assert.deepEqual(value, {
-      kind: 'tuple',
+      kind: 'tup',
       elems: [
         { kind: 'bool', id: 1n },
         { kind: 'int', id: 2n },
@@ -57,15 +57,15 @@ describe('parseType', () => {
     }))
   })
 
-  it('parses records of sets and sequences', () => {
-    const type = parseType('{ mySet: set(a), mySeq: seq(a) }')
+  it('parses records of sets and lists', () => {
+    const type = parseType('{ mySet: set(a), mySeq: list(a) }')
 
     assert.isTrue(type.isRight())
     type.map(value => assert.deepEqual(value, {
-      kind: 'record',
+      kind: 'rec',
       fields: [
         { fieldName: 'mySet', fieldType: { kind: 'set', elem: { kind: 'var', name: 'a', id: 1n }, id: 2n } },
-        { fieldName: 'mySeq', fieldType: { kind: 'seq', elem: { kind: 'var', name: 'a', id: 3n }, id: 4n } },
+        { fieldName: 'mySeq', fieldType: { kind: 'list', elem: { kind: 'var', name: 'a', id: 3n }, id: 4n } },
       ],
       id: 5n,
     }))

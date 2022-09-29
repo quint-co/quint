@@ -256,7 +256,7 @@ export class CompilerVisitor implements IRVisitor {
           (...sets: RuntimeValue[]) => just(rv.mkCrossProd(sets)))
         break
 
-      case 'seq':
+      case 'list':
         // Construct a list from an array of values
         this.applyFun(app.args.length,
           (...values: RuntimeValue[]) => just(rv.mkList(values)))

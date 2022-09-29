@@ -8,7 +8,7 @@ module ReadersWriters {
   
   var readers: set(int)   // set of processes currently reading
   var writers: set(int)   // set of processes currently writing
-  var waiting: seq((str, int))  // queue of processes waiting to access the resource
+  var waiting: list((str, int))  // queue of processes waiting to access the resource
   
   val vars = (readers, writers, waiting)
   
@@ -113,7 +113,7 @@ module ReadersWriters {
   val TypeOK = (
       & readers.subseteq(Actors)
       & writers.subseteq(Actors)
-      & waiting in tuples(ToSet(seqs(set("read", "write")).Actors))
+      & waiting in tuples(ToSet(allLists(set("read", "write")).Actors))
   )
   
   val Safety = (

@@ -156,7 +156,7 @@ export function walkType (visitor: IRVisitor, type: t.TntType): void {
         visitor.exitSetType(type)
       }
       break
-    case 'seq':
+    case 'list':
       if (visitor.enterSeqType) {
         visitor.enterSeqType(type)
       }
@@ -193,7 +193,7 @@ export function walkType (visitor: IRVisitor, type: t.TntType): void {
       }
       break
 
-    case 'tuple':
+    case 'tup':
       if (visitor.enterTupleType) {
         visitor.enterTupleType(type)
       }
@@ -205,7 +205,7 @@ export function walkType (visitor: IRVisitor, type: t.TntType): void {
       }
       break
 
-    case 'record':
+    case 'rec':
       if (visitor.enterRecordType) {
         visitor.enterRecordType(type)
       }

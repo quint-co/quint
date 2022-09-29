@@ -171,8 +171,8 @@ describe('nameResolver', () => {
       assert.deepEqual(result, expectedResult)
     })
 
-    it('finds unresolved aliases under seq()', () => {
-      const tntModule = buildModuleWithExpressions(['val x: seq(UNKNOWN_TYPE) = 1 { 0 }'])
+    it('finds unresolved aliases under list()', () => {
+      const tntModule = buildModuleWithExpressions(['val x: list(UNKNOWN_TYPE) = 1 { 0 }'])
       const result = resolveNames(tntModule, tables, dummyScopeTree)
       const expectedResult: NameResolutionResult = {
         kind: 'error',

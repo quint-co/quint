@@ -49,7 +49,7 @@ export interface TntSetType extends WithOptionalId {
 }
 
 export interface TntSeqType extends WithOptionalId {
-  kind: 'seq',
+  kind: 'list',
   elem: TntType,
 }
 
@@ -66,12 +66,12 @@ export interface TntOperType extends WithOptionalId {
 }
 
 export interface TntTupleType extends WithOptionalId {
-  kind: 'tuple',
+  kind: 'tup',
   elems: TntType[],
 }
 
 export interface TntRecordType extends WithOptionalId {
-  kind: 'record',
+  kind: 'rec',
   fields: { fieldName: string, fieldType: TntType }[]
 }
 

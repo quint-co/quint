@@ -145,9 +145,9 @@ describe('typeToString', () => {
     assert.deepEqual(typeToString(type), expectedType)
   })
 
-  it('pretty prints sequence types', () => {
-    const type = buildType('seq(int)')
-    const expectedType = 'seq(int)'
+  it('pretty prints list types', () => {
+    const type = buildType('list(int)')
+    const expectedType = 'list(int)'
     assert.deepEqual(typeToString(type), expectedType)
   })
 
