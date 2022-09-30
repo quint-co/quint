@@ -217,26 +217,26 @@ action BroadcastPrecommit(pSrc, pRound, pId) = {
 
 //********************* PROTOCOL TRANSITIONS ******************************
 // lines 12-13
-action StartRound(p, r) = {
-   & step[p] != "decided" // a decided process does not participate in consensus
-   & round  <- round.update(p, r)
-   & step   <- step.update(p, "propose")
+action StartRound(p, r) = all {
+   step[p] != "decided", // a decided process does not participate in consensus
+   round  <- round.update(p, r),
+   step   <- step.update(p, "propose"),
 }
 
 // lines 14-19, a proposal may be sent later
 action InsertProposal(p) = {
   val r = round[p]
-  {
-    & p == Proposer[r]
-    & step[p] == "propose"
+  all {
+    p == Proposer[r],
+    step[p] == "propose",
     // if the proposer is sending a proposal, then there are no other proposals
     // by the correct processes for the same round
-    & msgsPropose[r].forall(m => m.src != p)
-    & ValidValues.guess({ v =>
+    msgsPropose[r].forall(m => m.src != p),
+    ValidValues.guess({ v =>
         val proposal = if (validValue[p] != NilValue) validValue[p] else v
         BroadcastProposal(p, round[p], proposal, validRound[p])
-      })
-    & fired_action <- "InsertProposal"
+    }),
+    fired_action <- "InsertProposal",
   }
 }
 
@@ -249,13 +249,13 @@ action UponProposalInPropose(p) =
          if (IsValid(v) and (lockedRound[p] == NilRound or lockedValue[p] == v))
          Id(v) 
          else NilValue
-    {
-      & step[p] == "propose"             // line 22
-      & msg in msgsPropose[round[p]]    // line 22
-      & evidence     <- set(msg).union(evidence)
-      & BroadcastPrevote(p, round[p], mid) // lines 24-26
-      & step         <- step.update(p, "prevote")
-      & fired_action <- "UponProposalInPropose"
+    all {
+      step[p] == "propose",                 // line 22
+      msg in msgsPropose[round[p]],         // line 22
+      evidence <- set(msg).union(evidence),
+      BroadcastPrevote(p, round[p], mid),   // lines 24-26
+      step <- step.update(p, "prevote"),
+      fired_action <- "UponProposalInPropose",
     }
   })
 
@@ -269,15 +269,15 @@ action UponProposalInProposeAndPrevote(p) =
          if (IsValid(v) and (lockedRound[p] <= vr or lockedValue[p] == v))
          Id(v)
          else NilValue
-    {
-      & step[p] == "propose"
-      & 0 <= vr and vr < round[p] // line 28, the while part
-      & msg in msgsPropose[round[p]] // line 28
-      & cardinality(PV) >= THRESHOLD2 // line 28
-      & evidence     <- PV.union(set(msg)).union(evidence)
-      & BroadcastPrevote(p, round[p], mid) // lines 24-26
-      & step         <- step.update(p, "prevote")
-      & fired_action <- "UponProposalInProposeAndPrevote"
+    all {
+      step[p] == "propose",
+      0 <= vr and vr < round[p], // line 28, the while part
+      msg in msgsPropose[round[p]], // line 28
+      cardinality(PV) >= THRESHOLD2, // line 28
+      evidence <- PV.union(set(msg)).union(evidence),
+      BroadcastPrevote(p, round[p], mid), // lines 24-26
+      step <- step.update(p, "prevote"),
+      fired_action <- "UponProposalInProposeAndPrevote",
     }
   })
 
@@ -288,13 +288,13 @@ action UponQuorumOfPrevotesAny(p) =
     val Voters = MyEvidence.map(m => m.src)
 
     // compare the number of the unique voters against the threshold
-    {
-      & step[p] == "prevote" // line 34 and 61
-      & cardinality(Voters) >= THRESHOLD2 // line 34
-      & evidence        <- MyEvidence.union(evidence)
-      & BroadcastPrecommit(p, round[p], NilValue)
-      & step            <- step.update(p, "precommit")
-      & fired_action    <- "UponQuorumOfPrevotesAny"
+    all {
+      step[p] == "prevote", // line 34 and 61
+      cardinality(Voters) >= THRESHOLD2, // line 34
+      evidence <- MyEvidence.union(evidence),
+      BroadcastPrecommit(p, round[p], NilValue),
+      step <- step.update(p, "precommit"),
+      fired_action <- "UponQuorumOfPrevotesAny",
     }
   })
 
@@ -304,24 +304,24 @@ action UponProposalInPrevoteOrCommitAndPrevote(p) =
     val msg = { tag: "PROPOSE", src: Proposer[round[p]],
                 round: round[p], proposal: v, validRound: vr }
     val PV = msgsPrevote[round[p]].filter(m => m.id == Id(v))
-    {
-      & step[p] in set("prevote", "precommit") // line 36
-      & msg in msgsPropose[round[p]] // line 36
-      & cardinality(PV) >= THRESHOLD2 // line 36
-      & evidence <- PV.union(set(msg)).union(evidence)
-      & if (step[p] == "prevote") {
+    all {
+      step[p] in set("prevote", "precommit"), // line 36
+      msg in msgsPropose[round[p]], // line 36
+      cardinality(PV) >= THRESHOLD2, // line 36
+      evidence <- PV.union(set(msg)).union(evidence),
+      if (step[p] == "prevote") all {
           // lines 38-41:
-          & lockedValue <- lockedValue.update(p, v)
-          & lockedRound <- lockedRound.update(p, round[p])
-          & BroadcastPrecommit(p, round[p], Id(v))
-          & step        <- step.update(p, "precommit")
-        } else {
-          true      // the above variables are unchanged
-        }
+          lockedValue <- lockedValue.update(p, v),
+          lockedRound <- lockedRound.update(p, round[p]),
+          BroadcastPrecommit(p, round[p], Id(v)),
+          step <- step.update(p, "precommit"),
+      } else {
+        true      // the above variables are unchanged
+      },
         // lines 42-43
-      & validValue      <- validValue.update(p, v)
-      & validRound      <- validRound.update(p, round[p])
-      & fired_action    <- "UponProposalInPrevoteOrCommitAndPrevote"
+      validValue <- validValue.update(p, v),
+      validRound <- validRound.update(p, round[p]),
+      fired_action <- "UponProposalInPrevoteOrCommitAndPrevote",
     }
   })
 
@@ -331,12 +331,12 @@ action UponQuorumOfPrecommitsAny(p) =
       // find the unique committers in the evidence
       val Committers =  MyEvidence.map( m => m.src )
       // compare the number of the unique committers against the threshold
-      {
-        & cardinality(Committers) >= THRESHOLD2  // line 47
-        & evidence      <- MyEvidence.union(evidence)
-        & round[p] + 1 in Rounds
-        & StartRound(p, round[p] + 1)   
-        & fired_action  <- "UponQuorumOfPrecommitsAny"
+      all {
+        cardinality(Committers) >= THRESHOLD2,  // line 47
+        evidence      <- MyEvidence.union(evidence),
+        round[p] + 1 in Rounds,
+        StartRound(p, round[p] + 1),
+        fired_action  <- "UponQuorumOfPrecommitsAny",
       }
   })
 
@@ -347,40 +347,40 @@ action UponProposalInPrecommitNoDecision(p) =
      val msg = { tag: "PROPOSE", src: Proposer[r],
                  round: r, proposal: v, validRound: vr }
      val PV = msgsPrecommit[r].filter(m => m.id == Id(v))
-     {
-       & decision[p] == NilValue // line 49
-       & msg in msgsPropose[r]          // line 49
-       & cardinality(PV) >= THRESHOLD2   // line 49
-       & evidence   <- PV.union(set(msg)).union(evidence)
-       & decision   <- decision.update(p, v) // update the decision, line 51
+     all {
+       decision[p] == NilValue,         // line 49
+       msg in msgsPropose[r],           // line 49
+       cardinality(PV) >= THRESHOLD2,   // line 49
+       evidence <- PV.union(set(msg)).union(evidence),
+       decision <- decision.update(p, v), // update the decision, line 51
        // The original algorithm does not have 'DECIDED', but it increments the height.
        // We introduced 'DECIDED' here to prevent the process from changing its decision.
-       & step       <- step.update(p, "decided")
-       & fired_action <- "UponProposalInPrecommitNoDecision"
+       step <- step.update(p, "decided"),
+       fired_action <- "UponProposalInPrecommitNoDecision",
      }   
   })
 
 // the actions below are not essential for safety, but added for completeness
 
 // lines 20-21 + 57-60
-action OnTimeoutPropose(p) = {
-  & step[p] == "propose"
-  & p != Proposer[round[p]]
-  & BroadcastPrevote(p, round[p], NilValue)
-  & step         <- step.update(p, "prevote")
-  & fired_action <- "OnTimeoutPropose"
+action OnTimeoutPropose(p) = all {
+  step[p] == "propose",
+  p != Proposer[round[p]],
+  BroadcastPrevote(p, round[p], NilValue),
+  step <- step.update(p, "prevote"),
+  fired_action <- "OnTimeoutPropose",
 }
 
 // lines 44-46
 action OnQuorumOfNilPrevotes(p) =
   val PV = msgsPrevote[round[p]].filter(m => m.id == Id(NilValue))
-  {
-    & step[p] == "prevote"
-    & cardinality(PV) >= THRESHOLD2 // line 36
-    & evidence     <- PV.union(evidence)
-    & BroadcastPrecommit(p, round[p], Id(NilValue))
-    & step         <- step.update(p, "precommit")
-    & fired_action <- "OnQuorumOfNilPrevotes"
+  all {
+    step[p] == "prevote",
+    cardinality(PV) >= THRESHOLD2, // line 36
+    evidence <- PV.union(evidence),
+    BroadcastPrecommit(p, round[p], Id(NilValue)),
+    step <- step.update(p, "precommit"),
+    fired_action <- "OnQuorumOfNilPrevotes",
   }
 
 // lines 55-56
@@ -390,11 +390,11 @@ action OnRoundCatchup(p) =
 
     powerset(RoundMsgs).guess({ MyEvidence =>
       val Faster = MyEvidence.map(m => m.src)
-      {
-        & cardinality(Faster) >= THRESHOLD1
-        & evidence      <- MyEvidence.union(evidence)
-        & StartRound(p, r)
-        & fired_action  <- "OnRoundCatchup"
+      all {
+        cardinality(Faster) >= THRESHOLD1,
+        evidence <- MyEvidence.union(evidence),
+        StartRound(p, r),
+        fired_action <- "OnRoundCatchup",
       }
     })
   })
@@ -404,18 +404,18 @@ action OnRoundCatchup(p) =
  * e.g., when all processes decide. This is expected behavior, as we focus on safety.
  */
 action Next =
-  Corr.guess({ p => {
-      | InsertProposal(p)
-      | UponProposalInPropose(p)
-      | UponProposalInProposeAndPrevote(p)
-      | UponQuorumOfPrevotesAny(p)
-      | UponProposalInPrevoteOrCommitAndPrevote(p)
-      | UponQuorumOfPrecommitsAny(p)
-      | UponProposalInPrecommitNoDecision(p)
+  Corr.guess({ p => any {
+      InsertProposal(p),
+      UponProposalInPropose(p),
+      UponProposalInProposeAndPrevote(p),
+      UponQuorumOfPrevotesAny(p),
+      UponProposalInPrevoteOrCommitAndPrevote(p),
+      UponQuorumOfPrecommitsAny(p),
+      UponProposalInPrecommitNoDecision(p),
       // the actions below are not essential for safety, but added for completeness
-      | OnTimeoutPropose(p)
-      | OnQuorumOfNilPrevotes(p)
-      | OnRoundCatchup(p)
+      OnTimeoutPropose(p),
+      OnQuorumOfNilPrevotes(p),
+      OnRoundCatchup(p),
     }
   })
 

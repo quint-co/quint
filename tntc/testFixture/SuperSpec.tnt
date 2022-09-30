@@ -86,10 +86,10 @@ module withConsts {
       & false
   )
 
-  action test_action_and = {
-      & false
-      & true
-      & false
+  action test_action_and = all {
+      false,
+      true,
+      false
   }
 
   val test_block_or = (
@@ -98,10 +98,10 @@ module withConsts {
       | false
   )
 
-  action test_action_or = {
-      | false
-      | true
-      | false
+  action test_action_or = any {
+      false,
+      true,
+      false
   }
 
   val test_ite = if (true) 1 else 0

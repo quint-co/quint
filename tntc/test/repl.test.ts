@@ -196,9 +196,15 @@ describe('repl ok', () => {
       `
       |var x: int
       |action Init = x <- 0
-      |action Next = {
-      |  | { x == 0 & x <- 1 }
-      |  | { x == 1 & x <- 0 }
+      |action Next = any {
+      |  all {
+      |    x == 0,
+      |    x <- 1,
+      |  },
+      |  all {
+      |    x == 1,
+      |    x <- 0,
+      |  },
       |}
       |
       |Init
@@ -233,9 +239,9 @@ describe('repl ok', () => {
       `
       |var x: int
       |action Init = x <- 0
-      |action Next = {
-      |  | x <- x + 1
-      |  | x <- x - 1
+      |action Next = any {
+      |  x <- x + 1,
+      |  x <- x - 1,
       |}
       |
       |Init

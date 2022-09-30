@@ -52,59 +52,63 @@ module BinSearch {
     )
 
     // loop iteration
-    action LoopIteration = {
-        & not(isTerminated)
-        & low <= high       // lines 6-14
-        & nSteps <- nSteps + 1
-        & val mid = low.add(high.add(-low) / 2)
-          val midVal = INPUT_SEQ.nth(mid + 1)
-          { | { & midVal < INPUT_KEY // lines 9-10
-                & high <- high
-                & low <- mid.add(1)
-                & returnValue <- returnValue
-                & isTerminated <- isTerminated
-              }
-            | { & midVal > INPUT_KEY // lines 11-12
-                & high <- mid.add(-1)
-                & low <- low
-                & returnValue <- returnValue
-                & isTerminated <- isTerminated
-              }
-            | { & midVal == INPUT_KEY // lines 13-14
-                & high <- high
-                & low <- low
-                & returnValue <- mid
-                & isTerminated <- true
-              }
-          }
+    action LoopIteration = all {
+        not(isTerminated),
+        low <= high,       // lines 6-14
+        nSteps <- nSteps + 1,
+        val mid = low.add(high.add(-low) / 2)
+        val midVal = INPUT_SEQ.nth(mid + 1)
+          any {
+            all {
+              midVal < INPUT_KEY, // lines 9-10
+              high <- high,
+              low <- mid.add(1),
+              returnValue <- returnValue,
+              isTerminated <- isTerminated,
+            },
+            all {
+              midVal > INPUT_KEY, // lines 11-12
+              high <- mid.add(-1),
+              low <- low,
+              returnValue <- returnValue,
+              isTerminated <- isTerminated,
+            },
+            all {
+              midVal == INPUT_KEY, // lines 13-14
+              high <- high,
+              low <- low,
+              returnValue <- mid,
+              isTerminated <- true,
+            },
+          },
     }
 
     // loop termination
-    action LoopExit = {
-        & not(isTerminated)        // line 16
-        & low > high
-        & isTerminated <- true
-        & returnValue <- -(low + 1)
-        & low <- low
-        & high <- high
-        & nSteps <- nSteps
+    action LoopExit = all {
+        not(isTerminated),        // line 16
+        low > high,
+        isTerminated <- true,
+        returnValue <- -(low + 1),
+        low <- low,
+        high <- high,
+        nSteps <- nSteps,
     }
 
     // instead of terminating the computation, we keep variables unchanged
-    action StutterOnTermination = {
-        & isTerminated
-        & low <- low
-        & high <- high
-        & returnValue <- returnValue
-        & isTerminated <- isTerminated
-        & nSteps <- nSteps
+    action StutterOnTermination = all {
+        isTerminated,
+        low <- low,
+        high <- high,
+        returnValue <- returnValue,
+        isTerminated <- isTerminated,
+        nSteps <- nSteps
     }
 
     // Computation step (lines 5-16)
-    action Next = {
-        | LoopIteration
-        | LoopExit
-        | StutterOnTermination
+    action Next = any {
+        LoopIteration,
+        LoopExit,
+        StutterOnTermination,
     }
 
     static val InputIsSorted =

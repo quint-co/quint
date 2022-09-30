@@ -29,48 +29,48 @@ module ReadersWriters {
   (* Actions *)
   (***********/
   
-  action TryRead(actor) = {
-      & actor notin WaitingToRead
-      & waiting <- waiting.append(("read", actor))
+  action TryRead(actor) = all {
+      actor notin WaitingToRead,
+      waiting <- waiting.append(("read", actor)),
   }
   
-  action TryWrite(actor) = {
-      & actor notin WaitingToWrite
-      & waiting <- waiting.append(("write", actor))
+  action TryWrite(actor) = all {
+      actor notin WaitingToWrite,
+      waiting <- waiting.append(("write", actor)),
   }
   
-  action Read(actor) = {
-      & readers <- readers.union(set(actor))
-      & waiting <- waiting.tail()
+  action Read(actor) = all {
+      readers <- readers.union(set(actor)),
+      waiting <- waiting.tail(),
   }
   
-  action Write(actor) = {
-      & readers == set()
-      & writers <- writers.union(set(actor))
-      & waiting <- waiting.tail()
+  action Write(actor) = all {
+      readers == set(),
+      writers <- writers.union(set(actor)),
+      waiting <- waiting.tail(),
   }
   
-  action ReadOrWrite = {
-      & waiting != []
-      & writers == set()
-      & val pair = waiting.head()
-        val actor = pair._2
-        if (pair._1 == "read") {
-          & Read(actor)
-          & writers <- writers
-        } else { // pair._1 == "write"
-          & Write(actor)
-          & readers <- readers
-        }
+  action ReadOrWrite = all {
+      waiting != [],
+      writers == set(),
+      val pair = waiting.head()
+      val actor = pair._2
+      if (pair._1 == "read") all {
+          Read(actor),
+          writers <- writers,
+      } else all { // pair._1 == "write"
+          Write(actor),
+          readers <- readers,
+      }  
   }
   
   action StopActivity(actor) =
-      if (actor in readers) {
-          & readers <- readers.exclude(set(actor))
-          & writers <- writers
-      } else {
-          & writers <- writers.exclude(set(actor))
-          & readers <- readers
+      if (actor in readers) all {
+          readers <- readers.exclude(set(actor)),
+          writers <- writers,
+      } else all {
+          writers <- writers.exclude(set(actor)),
+          readers <- readers,
       }
 
   action Stop =
@@ -88,11 +88,11 @@ module ReadersWriters {
       & waiting == []
   )
   
-  action Next = {
-      | { Actors.guess({ actor => TryRead(actor) }) & readers <- readers & writers <- writers }
-      | { Actors.guess({ actor => TryWrite(actor) }) & readers <- readers & writers <- writers }
-      | ReadOrWrite
-      | { Stop & waiting <- waiting }
+  action Next = any {
+      all { Actors.guess({ actor => TryRead(actor) }), readers <- readers, writers <- writers },
+      all { Actors.guess({ actor => TryWrite(actor) }), readers <- readers, writers <- writers },
+      ReadOrWrite,
+      all { Stop, waiting <- waiting },
   }
   
   temporal Fairness = (

@@ -154,9 +154,9 @@ THEOREM ShowsSafety ==
 (* We now write the specification.  The initial condition is               *)
 (* straightforward.                                                        *)
 (***************************************************************************/
-action Init = {
-  & votes  <- Acceptor.mapOf({ _ => set() })
-  & maxBal <- Acceptor.mapOf({ _ => -1 })
+action Init = all {
+  votes  <- Acceptor.mapOf({ _ => set() }),
+  maxBal <- Acceptor.mapOf({ _ => -1 }),
 }
 
 
@@ -166,10 +166,10 @@ action Init = {
 (* An acceptor a is allowed to increase maxBal[a] to a ballot number b at  *)
 (* any time.                                                               *)
 (***************************************************************************/
-action IncreaseMaxBal(a, b) = {
-  & b > maxBal[a]
-  & maxBal <- maxBal.update(a, b)
-  & votes <- votes
+action IncreaseMaxBal(a, b) = all {
+  b > maxBal[a],
+  maxBal <- maxBal.update(a, b),
+  votes <- votes,
 }
 
 /***************************************************************************)
@@ -180,15 +180,15 @@ action IncreaseMaxBal(a, b) = {
 (* OneValuePerBallot.  The fourth conjunct maintains the invariance of     *)
 (* VotesSafe.                                                              *)
 (***************************************************************************/
-action VoteFor(a, b, v) = {
-    & maxBal[a] <= b
-    & votes[a].forall( vt => vt[1] != b )
-    & Acceptor.exclude(set(a)).forall( c =>
+action VoteFor(a, b, v) = all {
+    maxBal[a] <= b,
+    votes[a].forall( vt => vt[1] != b ),
+    Acceptor.exclude(set(a)).forall( c =>
          votes[c].forall( vt => (vt[1] == b) implies (vt[2] == v) )
-      )
-    & Quorum.exists( Q => ShowsSafeAt(Q, b, v) )
-    & votes  <- votes.updateAs(a, ( old => old.union(set((b, v))) ))
-    & maxBal <- maxBal.updateAs(a, ( _ => b ))
+    ),
+    Quorum.exists( Q => ShowsSafeAt(Q, b, v) ),
+    votes  <- votes.updateAs(a, ( old => old.union(set((b, v))) )),
+    maxBal <- maxBal.updateAs(a, ( _ => b )),
 }
 
 
@@ -196,9 +196,9 @@ action VoteFor(a, b, v) = {
 (* The next-state action and the invariant.                                *)
 (***************************************************************************/
 action Next =
-    tuples(Acceptor, Ballot).guess({ t => {
-            | IncreaseMaxBal(t._1, t._2)
-            | Value.guess({ v => VoteFor(t._1, t._2, v) })
+    tuples(Acceptor, Ballot).guess({ t => any {
+            IncreaseMaxBal(t._1, t._2),
+            Value.guess({ v => VoteFor(t._1, t._2, v) }),
         }
     })
 

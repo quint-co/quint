@@ -23,9 +23,9 @@ module option {
     votes <- votes.append(Some(v))
   }
 
-  action Unvote(i) = {
-    & votes.nth(i) != None
-    & votes <- votes.replaceAt(i, None)
+  action Unvote(i) = all {
+    votes.nth(i) != None,
+    votes <- votes.replaceAt(i, None),
   }
 
   val SumVotes =
@@ -48,11 +48,11 @@ module option {
 
     votes.foldl(0, sum_one)
 
-  action Next = {
-    & {
-        | Int.guess(v => Vote(v))
-        | votes.domain.guess(i => Unvote(i))
-      }
-    & outcome <- SumVotes
+  action Next = all {
+    any {
+      Int.guess(v => Vote(v)),
+      votes.domain.guess(i => Unvote(i)),
+    },
+    outcome <- SumVotes
   }
 }

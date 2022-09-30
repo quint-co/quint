@@ -98,11 +98,11 @@ val TypeOK = (
     & msgs.subseteq(Message)
 )
 
-action Init = {
-    & maxBal  <- Acceptor.mapOf(_ => -1)
-    & maxVBal <- Acceptor.mapOf(_ => -1)
-    & maxVal  <- Acceptor.mapOf(_ => None)
-    & msgs    <- set()
+action Init = all {
+    maxBal  <- Acceptor.mapOf(_ => -1),
+    maxVBal <- Acceptor.mapOf(_ => -1),
+    maxVal  <- Acceptor.mapOf(_ => None),
+    msgs    <- set(),
 }
 
 /***************************************************************************)
@@ -119,10 +119,10 @@ action Send(m) = {
 (* Phase2a(b).  The Phase1a(b) action sends a phase 1a message (a message  *)
 (* m with m.type = "1a") that begins ballot b.                             *)
 (***************************************************************************/
-action Phase1a(b) = {
-    & Send({ tag: "1a", bal: b })
-    & maxVBal <- maxVBal
-    & maxVal <- maxVal
+action Phase1a(b) = all {
+    Send({ tag: "1a", bal: b }),
+    maxVBal <- maxVBal,
+    maxVal <- maxVal,
 }
                  
 /***************************************************************************)
@@ -133,14 +133,14 @@ action Phase1a(b) = {
 (***************************************************************************/
 action Phase1b(a) = {
     msgs.filter(m => m.tag == "1a")
-        .guess({ m => {
-      & m.bal > maxBal[a]
-      & maxBal <- maxBal.update(a, m.bal)
-      & Send({ tag: "1b", acc: a, bal: m.bal, 
-               mbal: maxVBal[a], mval: maxVal[a] })
-      & maxVBal <- maxVBal
-      & maxVal <- maxVal
-    }})
+        .guess(m => all {
+          m.bal > maxBal[a],
+          maxBal <- maxBal.update(a, m.bal),
+          Send({ tag: "1b", acc: a, bal: m.bal, 
+                   mbal: maxVBal[a], mval: maxVal[a] }),
+          maxVBal <- maxVBal,
+          maxVal <- maxVal,
+    })
 }
 
 /***************************************************************************)
@@ -163,17 +163,17 @@ action Phase1b(a) = {
 (* can vote for v in ballot b, unless it has already set maxBal[a]         *)
 (* greater than b (thereby promising not to vote in ballot b).             *)
 (***************************************************************************/
-action Phase2a(b, v) = {
-  & not(msgs.filter(m => m.tag == "2a")
-            .exists(m => m.bal == b))
-  & Quorum.exists(Q =>
+action Phase2a(b, v) = all {
+  not(msgs.filter(m => m.tag == "2a")
+          .exists(m => m.bal == b)),
+  Quorum.exists(Q =>
         val Q1b = msgs.filter(m => m.tag == "1b")
                       .filter(m => (
                             & m.acc in Q
                             & m.bal == b
                             ))
         val Q1bv = Q1b.filter(m => m.mbal >= 0)
-        {
+        (
             & Q.forall(a => Q1b.exists(m => m.acc == a))
             & (
                 | Q1bv == set()
@@ -182,11 +182,11 @@ action Phase2a(b, v) = {
                     & Q1bv.forall( mm => m.mbal >= mm.mbal )
                   ) )
               )
-        }
-     )
-  & Send({ tag: "2a", bal: b, value: v })
-  & maxVBal <- maxVBal
-  & maxVal <- maxVal
+        )
+     ),
+  Send({ tag: "2a", bal: b, value: v }),
+  maxVBal <- maxVBal,
+  maxVal <- maxVal,
 }
   
 /***************************************************************************)
@@ -199,14 +199,14 @@ action Phase2a(b, v) = {
 (* message's.  ballot number                                               *)
 (***************************************************************************/
 action Phase2b(a) = msgs.filter(m => m.tag == "2a")
-                        .guess({ m => {
-                              & m.bal >= maxBal[a]
-                              & maxBal  <- maxBal.update(a, m.bal)
-                              & maxVBal <- maxVBal.update(a, m.bal)
-                              & maxVal  <- maxVal.update(a, m.value)
-                              & Send({ tag: "2b", acc: a,
-                                       bal: m.bal, value: m.value })
-}})
+                        .guess(m => all {
+                              m.bal >= maxBal[a],
+                              maxBal  <- maxBal.update(a, m.bal),
+                              maxVBal <- maxVBal.update(a, m.bal),
+                              maxVal  <- maxVal.update(a, m.value),
+                              Send({ tag: "2b", acc: a,
+                                       bal: m.bal, value: m.value }),
+})
 
 /***************************************************************************)
 (* In an implementation, there will be learner processes that learn from   *)
@@ -217,15 +217,18 @@ action Phase2b(a) = msgs.filter(m => m.tag == "2a")
 /***************************************************************************)
 (* Below are defined the next-state action and the complete spec.          *)
 (***************************************************************************/
-action Next = {
-        | { & Ballot.guess({ b => {
-                            | Phase1a(b)
-                            | Value.guess({ v => Phase2a(b, v) })
-                       }})
-            & maxBal <- maxBal
-          }           
-
-        | Acceptor.guess({ a => { Phase1b(a) | Phase2b(a) } })
+action Next = any {
+        all {
+          Ballot.guess(b => any {
+                            Phase1a(b),
+                            Value.guess(v => Phase2a(b, v)),
+                       }),
+          maxBal <- maxBal,
+        },
+        Acceptor.guess(a => any {
+          Phase1b(a),
+          Phase2b(a),
+        }),
 }
 
 temporal Spec = Init and always(stutter(Next, vars))
