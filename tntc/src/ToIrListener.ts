@@ -612,13 +612,13 @@ export class ToIrListener implements TntListener {
   }
 
   // all { p, q, r }
-  exitAndAction (ctx: p.ActionAllContext) {
+  exitActionAll (ctx: p.ActionAllContext) {
     const args = this.popExprs(ctx.expr().length)
     this.pushApplication(ctx, 'actionAll', args)
   }
 
   // any { p, q, r }
-  exitOrAction (ctx: p.ActionAnyContext) {
+  exitActionAny (ctx: p.ActionAnyContext) {
     const args = this.popExprs(ctx.expr().length)
     this.pushApplication(ctx, 'actionAny', args)
   }
