@@ -829,11 +829,11 @@ syntax forms to a minimum.
 In the Action mode:
 
 ```scala
-{ 
-  | p_1
-  | p_2
+any { 
+  p_1,
+  p_2,
   ...
-  | p_n
+  p_n,
 }
 ```
 
@@ -858,6 +858,9 @@ These operators have the normal form too! They are written as `orExpr(p_1, ...,
 p_n)` and `orAction(p_1, ..., p_n)` for non-action modes and action mode,
 respectively. Most likely, you will never use them, but the tools can.
 
+**Warning:** We will probably remove multiline disjunctions in the expression
+mode, as they can be expressed via `or`.
+
 *Mode:* Any.
 
 ### Multiline conjunctions
@@ -865,13 +868,15 @@ respectively. Most likely, you will never use them, but the tools can.
 In the Action mode:
 
 ```scala
-{
-  & p_1
-  & p_2
+all {
+  p_1,
+  p_2,
   ...
-  & p_n
+  p_n,
 }
 ```
+
+(The trailing comma next to `p_n` is optional.)
 
 In a mode different from Action:
 
@@ -887,12 +892,15 @@ In a mode different from Action:
 Note that we require that `n > 1`.
 
 This is equivalent to `p_1.and(p_2.and( ... and(p_n)...)`. The indentation is not
-important.  However, you can produce nice indentation by hand, if you like.
+important. However, you can produce nice indentation by hand, if you like.
 The first occurrence of `&` right after `{` is optional, it's up to you.
 
 These operators have the normal form too! They are written as `andExpr(p_1, ...,
 p_n)` in non-action mode and `andAction(p_1, ..., p_n)` in action mode,
 respectively. Most likely, you will never use them, but the tools can.
+
+**Warning:** We will probably remove multiline conjunctions in the expression
+mode, as they can be expressed via `and`.
 
 *Mode:* Any.
 
@@ -1514,9 +1522,9 @@ warn the user that the value `e` is "sent" to `x`, and it will only arrive at
 evaluate to a value that is different from 5:
 
 ```
-{
-  & x <- 4
-  & x + 1 > 0
+all {
+  x <- 4,
+  x + 1 > 0
 }
 ```
 
@@ -1781,14 +1789,14 @@ module root {
     var x: int
     var y: int
 
-    val Init = (
-      & x == 0
-      & y == 0
-    )
+    initializer Init = all {
+      x <- 0,
+      y <- 0
+    }
 
-    action Next = {
-      & x <- x + 1
-      & y <- y + 2
+    action Next = all {
+      x <- x + 1,
+      y <- y + 2
     }
   }
 
@@ -1804,14 +1812,14 @@ the same variable. Hence, the module `AB` will look like follows:
 
 ```scala
   module AB = {
-    val Init = (
-      & a == 0
-      & b == 0
-    )
+    initializer Init = all {
+      a <- 0,
+      b <- 0
+    }
 
-    action Next = {
-      & a <- a + 1
-      & b <- b + 2
+    action Next = all {
+      a <- a + 1,
+      b <- b + 2
     }
   }
 ```
@@ -1827,14 +1835,14 @@ module root {
     var x: int
     var y: int
 
-    val Init = {
-      & x == 1
-      & y == 0
+    initializer Init = all {
+      x <- 1,
+      y <- 0
     }
 
-    action Next = {
-      & x <- x + 1
-      & y <- x
+    action Next = all {
+      x <- x + 1,
+      y <- x
     }
   }
 
@@ -1853,15 +1861,11 @@ like after instantiation:
 
 ```scala
 module C = {
-  val Init = (
-    & x == 1
-    & x - 1 == 0
-  )
+  temporal Init =
+    (x == 1) and (x - 1 == 0)
 
-  temporal Next = {
-    & next(x) == x + 1
-    & next(x - 1) == x
-  }
+  temporal Next =
+    (next(x) == x + 1) and (next(x - 1) == x)
 }
 ```
 
