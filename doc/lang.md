@@ -855,7 +855,7 @@ important.  However, you can produce nice indentation by hand, if you like.
 The first occurrence of `|` right after `{` or `(` is optional, it's up to you.
 
 These operators have the normal form too! They are written as `orExpr(p_1, ...,
-p_n)` and `orAction(p_1, ..., p_n)` for non-action modes and action mode,
+p_n)` and `actionAny(p_1, ..., p_n)` for non-action modes and action mode,
 respectively. Most likely, you will never use them, but the tools can.
 
 **Warning:** We will probably remove multiline disjunctions in the expression
@@ -896,7 +896,7 @@ important. However, you can produce nice indentation by hand, if you like.
 The first occurrence of `&` right after `{` is optional, it's up to you.
 
 These operators have the normal form too! They are written as `andExpr(p_1, ...,
-p_n)` in non-action mode and `andAction(p_1, ..., p_n)` in action mode,
+p_n)` in non-action mode and `actionAll(p_1, ..., p_n)` in action mode,
 respectively. Most likely, you will never use them, but the tools can.
 
 **Warning:** We will probably remove multiline conjunctions in the expression

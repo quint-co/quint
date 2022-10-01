@@ -39,8 +39,8 @@ import { ImpliesContext } from "./TntParser";
 import { MatchContext } from "./TntParser";
 import { AndExprContext } from "./TntParser";
 import { OrExprContext } from "./TntParser";
-import { AndActionContext } from "./TntParser";
-import { OrActionContext } from "./TntParser";
+import { ActionAllContext } from "./TntParser";
+import { ActionAnyContext } from "./TntParser";
 import { LiteralOrIdContext } from "./TntParser";
 import { TupleContext } from "./TntParser";
 import { RecordContext } from "./TntParser";
@@ -368,20 +368,20 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitOrExpr?: (ctx: OrExprContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `andAction`
+	 * Visit a parse tree produced by the `actionAll`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitAndAction?: (ctx: AndActionContext) => Result;
+	visitActionAll?: (ctx: ActionAllContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `orAction`
+	 * Visit a parse tree produced by the `actionAny`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitOrAction?: (ctx: OrActionContext) => Result;
+	visitActionAny?: (ctx: ActionAnyContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `literalOrId`

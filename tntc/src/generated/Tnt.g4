@@ -98,8 +98,8 @@ expr:           // apply a built-in operator via the dot notation
                 // similar to indented /\ and indented \/ of TLA+
         |       '(' ('&')? expr '&' expr ('&' expr)* ')'            # andExpr
         |       '(' ('|')? expr '|' expr ('|' expr)* ')'            # orExpr
-        |       'all' '{' expr (',' expr)* (',')? '}'               # andAction
-        |       'any' '{' expr (',' expr)* (',')? '}'               # orAction
+        |       'all' '{' expr (',' expr)* (',')? '}'               # actionAll
+        |       'any' '{' expr (',' expr)* (',')? '}'               # actionAny
         |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
         //      a tuple constructor, the form tup(...) is just an operator call
         |       '(' expr ',' expr (',' expr)* ')'                   # tuple

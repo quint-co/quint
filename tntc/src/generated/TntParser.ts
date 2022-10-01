@@ -1139,7 +1139,7 @@ export class TntParser extends Parser {
 
 			case 5:
 				{
-				_localctx = new AndActionContext(_localctx);
+				_localctx = new ActionAllContext(_localctx);
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 277;
@@ -1183,7 +1183,7 @@ export class TntParser extends Parser {
 
 			case 6:
 				{
-				_localctx = new OrActionContext(_localctx);
+				_localctx = new ActionAnyContext(_localctx);
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 292;
@@ -4103,7 +4103,7 @@ export class OrExprContext extends ExprContext {
 		}
 	}
 }
-export class AndActionContext extends ExprContext {
+export class ActionAllContext extends ExprContext {
 	public expr(): ExprContext[];
 	public expr(i: number): ExprContext;
 	public expr(i?: number): ExprContext | ExprContext[] {
@@ -4119,26 +4119,26 @@ export class AndActionContext extends ExprContext {
 	}
 	// @Override
 	public enterRule(listener: TntListener): void {
-		if (listener.enterAndAction) {
-			listener.enterAndAction(this);
+		if (listener.enterActionAll) {
+			listener.enterActionAll(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: TntListener): void {
-		if (listener.exitAndAction) {
-			listener.exitAndAction(this);
+		if (listener.exitActionAll) {
+			listener.exitActionAll(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: TntVisitor<Result>): Result {
-		if (visitor.visitAndAction) {
-			return visitor.visitAndAction(this);
+		if (visitor.visitActionAll) {
+			return visitor.visitActionAll(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
 	}
 }
-export class OrActionContext extends ExprContext {
+export class ActionAnyContext extends ExprContext {
 	public expr(): ExprContext[];
 	public expr(i: number): ExprContext;
 	public expr(i?: number): ExprContext | ExprContext[] {
@@ -4154,20 +4154,20 @@ export class OrActionContext extends ExprContext {
 	}
 	// @Override
 	public enterRule(listener: TntListener): void {
-		if (listener.enterOrAction) {
-			listener.enterOrAction(this);
+		if (listener.enterActionAny) {
+			listener.enterActionAny(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: TntListener): void {
-		if (listener.exitOrAction) {
-			listener.exitOrAction(this);
+		if (listener.exitActionAny) {
+			listener.exitActionAny(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: TntVisitor<Result>): Result {
-		if (visitor.visitOrAction) {
-			return visitor.visitOrAction(this);
+		if (visitor.visitActionAny) {
+			return visitor.visitActionAny(this);
 		} else {
 			return visitor.visitChildren(this);
 		}

@@ -39,8 +39,8 @@ import { ImpliesContext } from "./TntParser";
 import { MatchContext } from "./TntParser";
 import { AndExprContext } from "./TntParser";
 import { OrExprContext } from "./TntParser";
-import { AndActionContext } from "./TntParser";
-import { OrActionContext } from "./TntParser";
+import { ActionAllContext } from "./TntParser";
+import { ActionAnyContext } from "./TntParser";
 import { LiteralOrIdContext } from "./TntParser";
 import { TupleContext } from "./TntParser";
 import { RecordContext } from "./TntParser";
@@ -545,30 +545,30 @@ export interface TntListener extends ParseTreeListener {
 	exitOrExpr?: (ctx: OrExprContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `andAction`
+	 * Enter a parse tree produced by the `actionAll`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 */
-	enterAndAction?: (ctx: AndActionContext) => void;
+	enterActionAll?: (ctx: ActionAllContext) => void;
 	/**
-	 * Exit a parse tree produced by the `andAction`
+	 * Exit a parse tree produced by the `actionAll`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 */
-	exitAndAction?: (ctx: AndActionContext) => void;
+	exitActionAll?: (ctx: ActionAllContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `orAction`
+	 * Enter a parse tree produced by the `actionAny`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 */
-	enterOrAction?: (ctx: OrActionContext) => void;
+	enterActionAny?: (ctx: ActionAnyContext) => void;
 	/**
-	 * Exit a parse tree produced by the `orAction`
+	 * Exit a parse tree produced by the `actionAny`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 */
-	exitOrAction?: (ctx: OrActionContext) => void;
+	exitActionAny?: (ctx: ActionAnyContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `literalOrId`

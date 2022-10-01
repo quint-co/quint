@@ -173,7 +173,7 @@ export class CompilerVisitor implements IRVisitor {
         this.applyFun(2, (p, q) => just(rv.mkBool(p.toBool() && q.toBool())))
         break
 
-      case 'andAction':
+      case 'actionAll':
         this.translateAndAction(app)
         break
 
@@ -181,7 +181,7 @@ export class CompilerVisitor implements IRVisitor {
         this.applyFun(2, (p, q) => just(rv.mkBool(p.toBool() || q.toBool())))
         break
 
-      case 'orAction':
+      case 'actionAny':
         this.translateOrAction(app)
         break
 
@@ -618,7 +618,7 @@ export class CompilerVisitor implements IRVisitor {
   // translate { A & ... & C }
   private translateAndAction (app: ir.TntApp) {
     assert(this.compStack.length >= app.args.length,
-      'Not enough arguments on stack for andAction')
+      'Not enough arguments on stack for actionAll')
     const args = this.compStack.splice(-app.args.length)
 
     const lazyCompute = () => {
@@ -657,7 +657,7 @@ export class CompilerVisitor implements IRVisitor {
   // translate { A | ... | C }
   private translateOrAction (app: ir.TntApp) {
     assert(this.compStack.length >= app.args.length,
-      'Not enough arguments on stack for orAction')
+      'Not enough arguments on stack for actionAny')
     const args = this.compStack.splice(-app.args.length)
 
     // According to the semantics of action-level disjunctions,

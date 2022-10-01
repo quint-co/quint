@@ -129,7 +129,7 @@ const multipleAritySignatures: [string, Signature][] = [
     const args = rs.map(r => `Pure, (Pure) => Read[${r}]`)
     return parseEffectOrThrow(`(Read[r], ${args.join(', ')}) => Read[${rs.join(', ')}]`)
   }],
-  ['andAction', (arity: number) => {
+  ['actionAll', (arity: number) => {
     const indexes = Array.from(Array(arity).keys())
 
     const args = indexes.map(i => `Read[r${i}] & Update[u${i}]`)
@@ -137,7 +137,7 @@ const multipleAritySignatures: [string, Signature][] = [
     const us = indexes.map(i => `u${i}`).join(', ')
     return parseEffectOrThrow(`(${args.join(', ')}) => Read[${rs}] & Update[${us}]`)
   }],
-  ['orAction', (arity: number) => {
+  ['actionAny', (arity: number) => {
     const indexes = Array.from(Array(arity).keys())
 
     const args = indexes.map(i => `Read[r${i}] & Update[u]`)
