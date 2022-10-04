@@ -12,6 +12,9 @@
 			"include": "#keywords"
 		},
 		{
+			"include": "#storage"
+		},
+		{
 			"include": "#constants"
 		},
 		{
@@ -38,31 +41,55 @@
 			"patterns": [
 				{
 					"name": "keyword.control.tnt",
-					"match": "\\b(module|extends|end|typedef|assume|with|if|else|case)\\b"
+					"match": "\\b(module|extends|end|with|if|else|case)\\b"
+				}
+			]
+		},
+		"storage": {
+			"patterns": [
+				{
+					"name": "storage.modifier.tnt",
+					"match": "\\b(typedef|assume|const|var|val|def|static|action|temporal)\\b"
 				},
 				{
 					"name": "storage.type.tnt",
-					"match": "\\b(const|private|var|val|def|rec|pred|action|temporal|instance|set|seq|int|str|bool)\\b"
+					"match": "\\b(rec|set|list|int|str|bool)\\b"
 				}
 			]
 		},
 		"operators": {
 			"patterns": [
 				{
-				"name": "keyword.operator.tnt",
-				"match": "\\b(not|or|and|implies|iff|always|eventually|weakFair|strongFair|guarantees|next|unchanged|enabled|stutter|nostutter)\\b"
+					"name": "keyword.operator.tnt",
+					"match": "\\b(not|or|and|implies|iff|always|eventually|weakFair|strongFair|guarantees|next|unchanged|enabled|stutter|nostutter)\\b"
 				},
 				{
 					"name": "keyword.operator.tnt",
-					"match": "\\b(guess|choose|forall|exists|map|filter|mkFun|mkRecFun|mkFunSet|seqs|head|tail|length)\\b"
+					"match": "\\b(guess|choose|forall|exists|map|filter|allLists|to)\\b"
 				},
 				{
 					"name": "keyword.operator.tnt",
-					"match": "\\b(cardinality|intersect|union|difference|with|except|exceptAt|cross|ncross)\\b"
+					"match": "\\b(get|keys|mapOf|setOfMaps|update|updateAs|put)\\b"
 				},
 				{
 					"name": "keyword.operator.tnt",
-					"match": "(->|<-|>|<|:=|=|!=|\\.|\\*|\\+|-|/|%|\\^|\\&|\\||subseteq|in|notin)"
+					"match": "\\b(cardinality|isFinite|intersect|union|difference|powerset|chooseSome|fold)\\b"
+				},
+				{
+					"name": "keyword.operator.tnt",
+					"match": "\\b(tuples|field|fieldNames|with|item)\\b"
+				},
+				{
+					"name": "keyword.operator.tnt",
+					"match": "\\b(append|concat|head|tail|length|nth|indices|replaceAt|slice|select|foldl|foldr)\\b"
+				},
+				{
+					"name": "keyword.operator.tnt",
+					"match": "\\b(all|any)\\b"
+				},
+				{
+					"name": "keyword.operator.tnt",
+					"match": "(=>|<-|>|<|:=|=|!=|\\.|\\*|\\+|-|/|%|\\^|\\&|\\||subseteq|in|notin)"
 				}
 			]
 		},
