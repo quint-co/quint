@@ -56,12 +56,13 @@ syn match   tntStd "fold"       " use match, as 'fold' is a vim option
 syn keyword tntStd intersect exclude subseteq map applyTo filter
 syn keyword tntStd powerset flatten seqs choose_some
 syn keyword tntStd isFinite cardinality get put keys mapOf setOfMaps
-syn keyword tntStd update updateAs fields with tuples append concat
+syn keyword tntStd update updateAs fieldNames with tuples append concat
 syn keyword tntStd head tail length nth indices replaceAt slice
 syn keyword tntStd select foldl foldr to
 syn keyword tntStd always eventually next stutter nostutter
 syn keyword tntStd enabled weakFair strongFair guarantees
-syn keyword tntStd exists_const forall_const choose_const
+syn keyword tntStd existsConst forallConst chooseConst
+syn keyword tntStd any all
 
 " curly braces
 syn region tntBlock start="{" end="}" fold transparent contains=ALLBUT,tntCurlyError
