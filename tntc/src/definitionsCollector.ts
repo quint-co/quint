@@ -52,6 +52,7 @@ export interface DefinitionTable {
   valueDefinitions: ValueDefinition[]
   /* Type aliases defined */
   typeDefinitions: TypeDefinition[]
+  index: Map<string, bigint>
 }
 
 export type DefinitionTableByModule = Map<string, DefinitionTable>
@@ -66,6 +67,7 @@ export function emptyTable (): DefinitionTable {
   return {
     valueDefinitions: [],
     typeDefinitions: [],
+    index: new Map<string, bigint>(),
   }
 }
 
@@ -168,6 +170,7 @@ export function defaultDefinitions (): DefinitionTable {
       { kind: 'def', identifier: 'difference' },
     ],
     typeDefinitions: [],
+    index: new Map<string, bigint>(),
   }
 }
 /**

@@ -35,8 +35,8 @@ import { scopesForId, ScopeTree, treeFromModule } from '../scoping'
  *          Otherwise, a map from expression ids to the corresponding error for
  *          the problematic expressions.
  */
-export function inferEffects (context: Map<string, Signature>, definitionsTable: DefinitionTableByModule, module: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, Effect>> {
-  const visitor = new EffectInferrerVisitor(context, definitionsTable)
+export function inferEffects (builtinSignatures: Map<string, Signature>, definitionsTable: DefinitionTableByModule, module: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, Effect>> {
+  const visitor = new EffectInferrerVisitor(builtinSignatures, definitionsTable)
   walkModule(visitor, module)
   if (visitor.errors.size > 0) {
     return left(visitor.errors)
@@ -50,16 +50,17 @@ export function inferEffects (context: Map<string, Signature>, definitionsTable:
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor (context: Map<string, Signature>, definitionsTable: DefinitionTableByModule) {
-    this.context = context
+  constructor(builtinSignatures: Map<string, Signature>, definitionsTable: DefinitionTableByModule) {
+    this.builtinSignatures = builtinSignatures
     this.definitionsTable = definitionsTable
   }
 
   effects: Map<bigint, Effect> = new Map<bigint, Effect>()
   errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
 
-  private context: Map<string, Signature>
+  private builtinSignatures: Map<string, Signature>
   private definitionsTable: DefinitionTableByModule
+  private context: Map<bigint, Signature> = new Map<bigint, Signature>()
   private freshVarCounters: Map<string, number> = new Map<string, number>()
 
   private currentModule?: TntModule
@@ -93,7 +94,7 @@ class EffectInferrerVisitor implements IRVisitor {
            */
           // Context values are functions over arity, call it with arity 1 since
           // arity doesn't matter for lambda-introduced names
-          const paramEffect = this.context.get(expr.name)!(1)
+          const paramEffect = this.context.get(expr.id)!(1)
           if (!paramEffect) {
             throw new Error(`Couldn't find lambda parameter named ${expr.name} in context`)
           }
@@ -194,7 +195,7 @@ class EffectInferrerVisitor implements IRVisitor {
 
     // Set the expression effect as the definition effect for it to be available at the result
     this.effects.set(def.id, e)
-    this.context.set(def.name, (_) => e)
+    this.context.set(def.id, (_) => e)
   }
 
   /*     Γ ⊢ e: E
@@ -220,7 +221,8 @@ class EffectInferrerVisitor implements IRVisitor {
     expr.params
       .forEach(p => {
         const name = `e_${p}_${expr.id}`
-        this.context.set(p, (_) => ({
+        const id = this.currentTable.index.get(p)!
+        this.context.set(id, (_) => ({
           kind: 'quantified',
           name: name,
         }))
@@ -237,8 +239,9 @@ class EffectInferrerVisitor implements IRVisitor {
       .map(p => {
         // Context values are functions over arity, call it with arity 1 since
         // arity doesn't matter for lambda-introduced names
-        const paramEffect = this.context.get(p)!(1)
-        this.context.delete(p)
+        const id = this.currentTable.index.get(p)!
+        const paramEffect = this.context.get(id)!(1)
+        this.context.delete(id)
         return applySubstitution(this.substitutions, paramEffect)
       }))
 
@@ -268,10 +271,11 @@ class EffectInferrerVisitor implements IRVisitor {
 
   private fetchSignature (opcode: string, arity: number): Either<string, Effect> {
     // Assumes a valid number of arguments
-    if (!this.context.get(opcode)) {
+    const opcodeId = this.currentTable.index.get(opcode)!
+    if (!opcodeId && !this.builtinSignatures.get(opcode)) {
       return left(`Signature not found for operator: ${opcode}`)
     }
-    const signatureFunction = this.context.get(opcode)!
+    const signatureFunction = this.builtinSignatures.get(opcode) ?? this.context.get(opcodeId)!
     const signature = signatureFunction(arity)
     return right(this.replaceEffectNamesWithFresh(signature))
   }

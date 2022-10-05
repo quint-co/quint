@@ -50,13 +50,21 @@ export type ImportResolutionResult =
 export function resolveImports (tntModule: TntModule, definitions: DefinitionTableByModule): ImportResolutionResult {
   const visitor = new ImportResolverVisitor(definitions)
   walkModule(visitor, tntModule)
+
+  visitor.tables.forEach(table => {
+    table.valueDefinitions.forEach(def => {
+      if (def.reference) {
+        table.index.set(def.identifier, def.reference)
+      }
+    })
+  })
   return visitor.errors.length > 0
     ? { kind: 'error', errors: visitor.errors }
     : { kind: 'ok', definitions: visitor.tables }
 }
 
 class ImportResolverVisitor implements IRVisitor {
-  constructor (tables: DefinitionTableByModule) {
+  constructor(tables: DefinitionTableByModule) {
     this.tables = tables
   }
 
@@ -90,9 +98,9 @@ class ImportResolverVisitor implements IRVisitor {
     const namespacedDefinitions = moduleTable.valueDefinitions
       .filter(d => !d.scope)
       .map(d => {
-        // FIXME: This identifier string manipulation should be replaced by a better representation, see #58
         // Alias definitions from the instanced module to the new name
-        return { kind: d.kind, identifier: `${def.name}::${d.identifier}`, reference: d.reference }
+        const name = `${def.name}::${d.identifier}`
+        return { kind: d.kind, identifier: name, reference: d.reference }
       })
     this.currentTable.valueDefinitions.push(...namespacedDefinitions)
   }
@@ -159,5 +167,6 @@ function copyTable (t: DefinitionTable): DefinitionTable {
   return {
     valueDefinitions: t.valueDefinitions,
     typeDefinitions: t.typeDefinitions,
+    index: t.index,
   }
 }
