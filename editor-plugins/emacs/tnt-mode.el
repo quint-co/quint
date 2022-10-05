@@ -23,12 +23,12 @@
 (defconst tnt-types '("int" "str" "bool" "set" "seq"))
 (defconst tnt-keywords '("not" "and" "or" "iff" "implies" "exists" "guess" "forall" "in" "notin"
       "union" "contains" "fold" "intersect" "exclude" "subseteq" "map" "applyTo" "filter"
-      "powerset" "flatten" "seqs" "choose_some" "isFinite" "cardinality" "get" "put" "keys"
-      "mapOf" "setOfMaps" "update" "updateAs" "fields" "with" "tuples" "append" "concat" "head"
+      "powerset" "flatten" "seqs" "chooseSome" "isFinite" "cardinality" "get" "put" "keys"
+      "mapOf" "setOfMaps" "update" "updateAs" "fieldNames" "with" "tuples" "append" "concat" "head"
       "tail" "length" "nth" "indices" "replaceAt" "slice" "select" "foldl" "foldr" "to" "always"
       "eventually" "next" "stutter" "nostutter" "enabled" "weakFair" "strongFair" "guarantees"
-      "exists_const" "forall_const" "choose_const" "if" "else" "match"))
-(defconst tnt-declarations '("module" "import" "const" "var" "def" "val" "pred" "action" "temporal" "assume" "type"))
+      "existsConst" "forallConst" "chooseConst" "if" "else" "match" "all" "any"))
+(defconst tnt-declarations '("module" "import" "const" "var" "def" "val" "static" "action" "temporal" "assume" "type"))
 (defconst tnt-constants '("Bool" "Int" "Nat" "false" "true"))
 
 (defconst tnt-declarations-font-locks (mapcar (lambda (arg) (cons (format "\\<%s\\>" arg) font-lock-builtin-face)) tnt-declarations))
