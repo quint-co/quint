@@ -14,6 +14,11 @@ import { CompilerVisitor } from './impl/compilerImpl'
 import { walkModule } from '../IRVisitor'
 
 /**
+ * The name of the shadow variable that stores the last found trace.
+ */
+export const lastTraceName = '_lastTrace'
+
+/**
  * The default error handler, which simply prints the error on the console.
  */
 const consoleHandler = (err: ExecError) => {
@@ -25,7 +30,8 @@ const consoleHandler = (err: ExecError) => {
  */
 export interface CompilationContext {
   values: Map<string, Computable>,
-  vars: string[]
+  vars: string[],
+  shadowVars: string[]
 }
 
 /**
@@ -56,6 +62,7 @@ compile (moduleText: string, errorHandler: ExecErrorHandler = consoleHandler):
       return {
         values: visitor.getContext(),
         vars: visitor.getVars(),
+        shadowVars: visitor.getShadowVars(),
       }
     }
   }
@@ -81,5 +88,6 @@ compile (moduleText: string, errorHandler: ExecErrorHandler = consoleHandler):
   return {
     values: new Map(),
     vars: [],
+    shadowVars: [],
   }
 }

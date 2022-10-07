@@ -15,8 +15,10 @@ import chalk from 'chalk'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 
 import { TntEx } from './tntIr'
-import { compile, CompilationContext } from './runtime/compile'
-import { EvalResult, ExecError, Register, kindName } from './runtime/runtime'
+import { compile, CompilationContext, lastTraceName } from './runtime/compile'
+import {
+  EvalResult, ExecError, Register, kindName, ComputableKind
+} from './runtime/runtime'
 import { probeParse, ErrorMessage } from './tntParserFrontend'
 
 // tunable settings
@@ -29,8 +31,12 @@ type writer = (text: string) => void
 
 // the internal state of the REPL
 interface ReplState {
+  // input history
   history: string,
-  vars: Map<string, EvalResult>
+  // state variables
+  vars: Map<string, EvalResult>,
+  // variables internal to the simulator and REPL
+  shadowVars: Map<string, EvalResult>,
 }
 
 // The default exit terminates the process.
@@ -60,6 +66,7 @@ export function tntRepl
   let state: ReplState = {
     history: '',
     vars: new Map<string, EvalResult>(),
+    shadowVars: new Map<string, EvalResult>(),
   }
   // we let the user type a multiline string, which is collected here:
   let multilineText = ''
@@ -143,6 +150,19 @@ export function tntRepl
 
 // private definitions
 
+function evalAndSaveRegisters (kind: ComputableKind, names: string[],
+  context: CompilationContext, targetMap: Map<string, EvalResult>) {
+  targetMap.clear()
+  for (const v of names) {
+    const computable = context.values.get(kindName(kind, v))
+    if (computable) {
+      computable.eval().map(result => {
+        targetMap.set(v, result)
+      })
+    }
+  }
+}
+
 function saveVars (state: ReplState, context: CompilationContext): void {
   function isNextSet (name: string) {
     const register = context.values.get(kindName('nextvar', name)) as Register
@@ -154,25 +174,30 @@ function saveVars (state: ReplState, context: CompilationContext): void {
   }
   const isAction = [...context.vars].some(name => isNextSet(name))
   if (isAction) {
-    state.vars.clear()
-    for (const v of context.vars) {
-      const computable = context.values.get(kindName('nextvar', v))
-      if (computable) {
-        computable.eval().map(result => {
-          state.vars.set(v, result)
-        })
-      }
-    }
+    evalAndSaveRegisters('nextvar', context.vars, context, state.vars)
   }
 }
 
-function loadVars (state: ReplState, context: CompilationContext): void {
-  state.vars.forEach((value, name) => {
-    const register = context.values.get(kindName('var', name)) as Register
+function saveShadowVars (state: ReplState, context: CompilationContext): void {
+  evalAndSaveRegisters('shadow', context.shadowVars, context, state.shadowVars)
+}
+
+function loadRegisters (kind: ComputableKind,
+  vars: Map<string, EvalResult>, context: CompilationContext): void {
+  vars.forEach((value, name) => {
+    const register = context.values.get(kindName(kind, name)) as Register
     if (register) {
       register.registerValue = just(value)
     }
   })
+}
+
+function loadVars (state: ReplState, context: CompilationContext): void {
+  loadRegisters('var', state.vars, context)
+}
+
+function loadShadowVars (state: ReplState, context: CompilationContext): void {
+  loadRegisters('shadow', state.shadowVars, context)
 }
 
 // convert a TNT expression to a colored string, tuned for REPL
@@ -226,6 +251,15 @@ function chalkTntEx (ex: TntEx): string {
   }
 }
 
+// Declarations that are overloaded by the simulator.
+// In the future, we will declare them in a separate module.
+const simulatorBuiltins =
+`val ${lastTraceName} = [];
+def _test(__nruns, __nsteps, __init, __next, __inv) = false;
+def _testOnce(__nsteps, __init, __next, __inv) =
+  _test(1, __nsteps, __init, __next, __inv);
+`
+
 // try to evaluate the expression in a string and print it, if successful
 function tryEval (out: writer, state: ReplState, newInput: string): ReplState {
   // output errors to the console in red
@@ -242,6 +276,7 @@ function tryEval (out: writer, state: ReplState, newInput: string): ReplState {
   if (probeResult.kind === 'expr') {
     // embed expression text into a value definition inside a module
     const moduleText = `module __REPL {
+${simulatorBuiltins}
 ${state.history}
   val __input =
 ${newInput}
@@ -249,6 +284,7 @@ ${newInput}
     // compile the expression or definition and evaluate it
     const context = compile(moduleText, chalkHandler)
     loadVars(state, context)
+    loadShadowVars(state, context)
     const computable = context.values.get(kindName('callable', '__input'))
     let resultDefined: Maybe<void> = none()
     if (computable) {
@@ -263,6 +299,8 @@ ${newInput}
               // as actions are always boolean, don't even try to save the state for non-boolean expressions
               saveVars(newState, context)
             }
+            // save shadow vars in any case, e.g., the example trace
+            saveShadowVars(newState, context)
           })
     }
     if (resultDefined.isNone()) {
@@ -273,6 +311,7 @@ ${newInput}
   if (probeResult.kind === 'toplevel') {
     // embed expression text into a module at the top level
     const moduleText = `module __REPL {
+${simulatorBuiltins}
 ${state.history}
 ${newInput}
 }`

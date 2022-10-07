@@ -154,8 +154,8 @@ describe('repl ok', () => {
       `
       |16
       |
-      |2:1: Couldn't resolve name n in definition for __input, in module __REPL
-      |2:5: Couldn't resolve name n in definition for __input, in module __REPL
+      |7:1: Couldn't resolve name n in definition for __input, in module __REPL
+      |7:5: Couldn't resolve name n in definition for __input, in module __REPL
       |<result undefined>
       |
       |`
@@ -296,6 +296,37 @@ describe('repl ok', () => {
       |true
       |true
       |true
+      |`
+    )
+    await assertRepl(input, output)
+  })
+
+  it('run _test, _testOnce, and _lastTrace', async () => {
+    const input = dedent(
+      `
+      |var n: int
+      |action Init = n <- 0
+      |action Next = n <- n + 1
+      |val Inv = n < 10
+      |_testOnce(5, "Init", "Next", "Inv")
+      |_testOnce(10, "Init", "Next", "Inv")
+      |_test(5, 5, "Init", "Next", "Inv")
+      |_test(5, 10, "Init", "Next", "Inv")
+      |_lastTrace.length()
+      |_lastTrace.nth(_lastTrace.length() - 1)
+      |`
+    )
+    const output = dedent(
+      `
+      |
+      |
+      |
+      |true
+      |false
+      |true
+      |false
+      |11
+      |{ n: 10 }
       |`
     )
     await assertRepl(input, output)
