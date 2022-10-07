@@ -96,8 +96,8 @@ expr:           // apply a built-in operator via the dot notation
         |       expr MATCH
                     ('|' STRING ':' identOrHole '=>' expr)+         # match
                 // similar to indented /\ and indented \/ of TLA+
-        |       '(' ('&')? expr '&' expr ('&' expr)* ')'            # andExpr
-        |       '(' ('|')? expr '|' expr ('|' expr)* ')'            # orExpr
+        |       'and' '{' expr (',' expr)* (',')? '}'               # andExpr
+        |       'or' '{' expr (',' expr)* (',')? '}'                # orExpr
         |       'all' '{' expr (',' expr)* (',')? '}'               # actionAll
         |       'any' '{' expr (',' expr)* (',')? '}'               # actionAny
         |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId

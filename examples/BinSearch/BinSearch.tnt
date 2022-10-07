@@ -43,13 +43,13 @@ module BinSearch {
               -(MAX_UINT - wrapped)
 
     // Initialization step (lines 2-3)
-    val Init = (
-        & low == 0
-        & high == length(INPUT_SEQ) - 1
-        & isTerminated == false
-        & returnValue == 0
-        & nSteps == 0
-    )
+    action Init = all {
+        low <- 0,
+        high <- length(INPUT_SEQ) - 1,
+        isTerminated <- false,
+        returnValue <- 0,
+        nSteps <= 0,
+    }
 
     // loop iteration
     action LoopIteration = all {

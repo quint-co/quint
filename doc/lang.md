@@ -39,8 +39,8 @@ TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
         - [Lambdas (aka Anonymous Operators)](#lambdas-aka-anonymous-operators)
         - [Two forms of operator application](#two-forms-of-operator-application)
         - [Boolean operators and equality](#boolean-operators-and-equality)
-        - [Multiline disjunctions](#multiline-disjunctions)
-        - [Multiline conjunctions](#multiline-conjunctions)
+        - [Multiline disjunctions](#block-disjunctions)
+        - [Multiline conjunctions](#block-conjunctions)
         - [Flow operators](#flow-operators)
             - [Condition](#condition)
             - [Cases (removed)](#cases-removed)
@@ -800,14 +800,22 @@ neq(e1, e2)
 // logical not: ~p in TLA+
 not(p)
 p.not()
-// logical and: p /\ q in TLA+
+// Logical "and".
+// In TLA+: p /\ q
 p and q
 p.and(q)
 and(p, q)
-// logical or: p \/ q in TLA+
+// The logical "and" is n-ary:
+and(p1, p2, p3)
+and(p1, p2, p3, p4)
+// Logical "or".
+// In TLA+: p \/ q
 p or q
 p.or(q)
 or(p, q)
+// The logical "or" is n-ary
+or(p1, p2, p3)
+or(p1, p2, p3, p4)
 // logical equivalence: p <=> q in TLA+
 p iff q
 p.iff(q)
@@ -824,12 +832,35 @@ syntax forms to a minimum.
 
 *Mode:* Stateless, State, Temporal. 
 
-### Multiline disjunctions
+### Block disjunctions
 
-In the Action mode:
+The following expression can be written in the action mode:
 
 ```scala
 any { 
+  a_1,
+  a_2,
+  ...
+  a_n,
+}
+```
+
+*Mode:* Action.
+
+The trailing comma next to `a_n` is optional, and `n` must be positive.
+
+This operator is written as `actionAny(p_1, ..., p_n)` in its normal form.  It
+evaluates the actions `a_1`, ..., `a_n` in isolation (that is, ignoring the
+side effects introduced by assignments in the actions) and then
+non-deterministically executes one of the enabled actions. The operator returns
+`true`, if it has evaluated one of the actions to `true`. If no such action
+exists, it returns `false`.
+
+Since the syntax of the above operator is convenient, we have introduced a
+similar syntax form in the non-action modes:
+
+```scala
+or { 
   p_1,
   p_2,
   ...
@@ -837,35 +868,13 @@ any {
 }
 ```
 
-In a mode different from Action:
+This is simply the syntax sugar for `or(p_1, ..., p_n)`.
 
-```scala
-( 
-  | p_1
-  | p_2
-  ...
-  | p_n
-)
-```
+*Mode:* Non-action.
 
-Note that we require that `n > 1`.
+### Block conjunctions
 
-This is equivalent to `p_1.or(p_2).or( ... or(p_n)...)`. The indentation is not
-important.  However, you can produce nice indentation by hand, if you like.
-The first occurrence of `|` right after `{` or `(` is optional, it's up to you.
-
-These operators have the normal form too! They are written as `orExpr(p_1, ...,
-p_n)` and `actionAny(p_1, ..., p_n)` for non-action modes and action mode,
-respectively. Most likely, you will never use them, but the tools can.
-
-**Warning:** We will probably remove multiline disjunctions in the expression
-mode, as they can be expressed via `or`.
-
-*Mode:* Any.
-
-### Multiline conjunctions
-
-In the Action mode:
+The following expression can be written in the action mode:
 
 ```scala
 all {
@@ -876,33 +885,32 @@ all {
 }
 ```
 
-(The trailing comma next to `p_n` is optional.)
+*Mode:* Action.
 
-In a mode different from Action:
+The trailing comma next to `a_n` is optional, and `n` must be positive.
+
+This operator is written as `actionAll(p_1, ..., p_n)` in its normal form. It
+evaluates the actions `a_1`, ..., `a_n` one-by-one lazily. As soon as one of
+the actions `a_i` evaluates to `false`, it returns `false`. In this case, all
+side effects (lazy assignments) produced by `a_1, ..., a_{i+1}` are erased, and
+the operator returns `false`.  If all actions evaluate to `true`, all their
+side effects are applied, and the operator returns `true`.
+
+Since the syntax of the above operator is convenient, we have introduced a
+similar syntax form in the non-action modes:
 
 ```scala
-(
-  & p_1
-  & p_2
+and { 
+  p_1,
+  p_2,
   ...
-  & p_n
-)
+  p_n,
+}
 ```
 
-Note that we require that `n > 1`.
+This is simply the syntax sugar for `and(p_1, ..., p_n)`.
 
-This is equivalent to `p_1.and(p_2.and( ... and(p_n)...)`. The indentation is not
-important. However, you can produce nice indentation by hand, if you like.
-The first occurrence of `&` right after `{` is optional, it's up to you.
-
-These operators have the normal form too! They are written as `andExpr(p_1, ...,
-p_n)` in non-action mode and `actionAll(p_1, ..., p_n)` in action mode,
-respectively. Most likely, you will never use them, but the tools can.
-
-**Warning:** We will probably remove multiline conjunctions in the expression
-mode, as they can be expressed via `and`.
-
-*Mode:* Any.
+*Mode:* Non-action.
 
 ### Flow operators
 

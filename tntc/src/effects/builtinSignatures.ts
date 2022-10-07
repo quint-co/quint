@@ -12,8 +12,6 @@ const booleanOperators = [
   { name: 'eq', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
   { name: 'neq', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
   { name: 'not', effect: '(Read[r1] & Temporal[t1]) => Read[r1] & Temporal[t1]' },
-  { name: 'and', effect: '(Read[r1] & Temporal[t1], Read[r2] & Temporal[t2]) => Read[r1, r2] & Temporal[t1, t2]' },
-  { name: 'or', effect: '(Read[r1] & Temporal[t1], Read[r2] & Temporal[t2]) => Read[r1, r2] & Temporal[t1, t2]' },
   { name: 'iff', effect: '(Read[r1] & Temporal[t1], Read[r2] & Temporal[t2]) => Read[r1, r2] & Temporal[t1, t2]' },
   { name: 'implies', effect: '(Read[r1] & Temporal[t1], Read[r2] & Temporal[t2]) => Read[r1, r2] & Temporal[t1, t2]' },
 ]
@@ -122,8 +120,8 @@ const multipleAritySignatures: [string, Signature][] = [
   ['rec', readManyEffect],
   ['tup', readManyEffect],
   ['tuples', readManyEffect],
-  ['andExpr', readManyEffect],
-  ['orExpr', readManyEffect],
+  ['and', readManyEffect],
+  ['or', readManyEffect],
   ['match', (arity: number) => {
     const rs = Array.from(Array((arity - 1) / 2).keys()).map(i => `r${i}`)
     const args = rs.map(r => `Pure, (Pure) => Read[${r}]`)

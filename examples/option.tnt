@@ -14,10 +14,10 @@ module option {
   var votes: list(vote_option)
   var outcome: int
 
-  val Init = (
-    & votes == []
-    & outcome == 0
-  )
+  action Init = all {
+    votes <- [],
+    outcome <- 0
+  }
 
   action Vote(v) = {
     votes <- votes.append(Some(v))

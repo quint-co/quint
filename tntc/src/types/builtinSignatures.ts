@@ -15,8 +15,6 @@ const literals = [
 const booleanOperators = [
   { name: 'eq', type: '(a, a) => bool' },
   { name: 'neq', type: '(a, a) => bool' },
-  { name: 'and', type: '(bool, bool) => bool' },
-  { name: 'or', type: '(bool, bool) => bool' },
   { name: 'iff', type: '(bool, bool) => bool' },
   { name: 'implies', type: '(bool, bool) => bool' },
   { name: 'not', type: '(bool) => bool' },
@@ -122,9 +120,9 @@ function uniformArgsWithResult (argsType: string, resultType: string): Signature
 const multipleAritySignatures: [string, Signature][] = [
   ['list', uniformArgsWithResult('a', 'list(a)')],
   ['set', uniformArgsWithResult('a', 'set(a)')],
-  ['andExpr', uniformArgsWithResult('bool', 'bool')],
+  ['and', uniformArgsWithResult('bool', 'bool')],
   ['actionAll', uniformArgsWithResult('bool', 'bool')],
-  ['orExpr', uniformArgsWithResult('bool', 'bool')],
+  ['or', uniformArgsWithResult('bool', 'bool')],
   ['actionAny', uniformArgsWithResult('bool', 'bool')],
   ['tup', (arity: number) => {
     const args = Array.from(Array(arity).keys()).map(i => `t${i}`).join(', ')
