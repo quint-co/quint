@@ -593,4 +593,73 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('{ a: 2, b: true }.with("c", 3)', undefined)
     })
   })
+
+  describe('compile over maps', () => {
+    it('mapOf constructor', () => {
+      assertResultAsString('3.to(5).mapOf(i => 2 * i)',
+        'setToMap(set(tup(3, 6), tup(4, 8), tup(5, 10)))')
+      assertResultAsString('set(2.to(4)).mapOf(s => s.cardinality())',
+        'setToMap(set(tup(set(2, 3, 4), 3)))')
+    })
+
+    it('setToMap constructor', () => {
+      assertResultAsString('setToMap(set((3, 6), (4, 10 - 2), (5, 10)))',
+        'setToMap(set(tup(3, 6), tup(4, 8), tup(5, 10)))')
+    })
+
+    it('map get', () => {
+      assertResultAsString('3.to(5).mapOf(i => 2 * i).get(4)', '8')
+      assertResultAsString(
+        'set(2.to(4)).mapOf(s => s.cardinality()).get(set(2, 3, 4))',
+        '3'
+      )
+    })
+
+    it('map update', () => {
+      assertResultAsString(
+        '3.to(5).mapOf(i => 2 * i).update(4, 20)',
+        'setToMap(set(tup(3, 6), tup(4, 20), tup(5, 10)))'
+      )
+      assertResultAsString(
+        '3.to(5).mapOf(i => 2 * i).update(7, 20)',
+        undefined
+      )
+    })
+
+    it('map updateAs', () => {
+      assertResultAsString(
+        '3.to(5).mapOf(i => 2 * i).updateAs(4, (old => old + 1))',
+        'setToMap(set(tup(3, 6), tup(4, 9), tup(5, 10)))'
+      )
+      assertResultAsString(
+        '3.to(5).mapOf(i => 2 * i).updateAs(7, (old => old + 1))',
+        undefined
+      )
+    })
+
+    it('map put', () => {
+      assertResultAsString(
+        '3.to(5).mapOf(i => 2 * i).put(10, 11)',
+        'setToMap(set(tup(10, 11), tup(3, 6), tup(4, 8), tup(5, 10)))'
+      )
+    })
+
+    it('map keys', () => {
+      assertResultAsString(
+        'set(3, 5, 7).mapOf(i => 2 * i).keys()',
+        'set(3, 5, 7)'
+      )
+    })
+
+    it('map equality', () => {
+      assertResultAsString(
+        '3.to(5).mapOf(i => 2 * i) == 3.to(5).mapOf(i => 3 * i - i)',
+        'true'
+      )
+      assertResultAsString(
+        '3.to(5).mapOf(i => 2 * i) == 3.to(6).mapOf(i => 2 * i)',
+        'false'
+      )
+    })
+  })
 })

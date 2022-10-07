@@ -1111,28 +1111,40 @@ cardinality(S)
 ### Maps (aka Functions)
 
 ```scala
-// map application: f[e]
+// Map application.
+// In TLA+: f[e]
 f[e]
 f.get(e)
 get(f, e)
-// map domain: DOMAIN f
+// Map domain.
+// In TLA+: DOMAIN f
 f.keys()
 keys(f)
-// map constructor: [ x \in S |-> e ]
+// Map constructor.
+// In TLA+: [ x \in S |-> e ]
 S.mapOf(x => e)
 mapOf(S, (x => e))
-// a set of maps: [ S -> T ]
+// Convert a set of pairs to a map.
+// In TLA+: [ x \in { a: <<a, b>> \in S } |-> (CHOOSE p \in S: p[1] = x)[2]]
+set(tup(1, true), tup(2, false)).setToMap()
+setToMap(set(tup(1, true), tup(2, false)))
+// A set of maps.
+// In TLA+: [ S -> T ]
 S.setOfMaps(T)
 setOfMaps(S, T)
-// [f EXCEPT ![e1] = e2]
+// Update a map at given key.
+// In TLA+: [f EXCEPT ![e1] = e2]
 f.update(e1, e2)
 update(f, e1, e2)
-// [f EXCEPT ![e1] = e2, ![e3] = e4]
-(f update e1, e2) update e3, e4
-// [f EXCEPT ![e1] = @ + y]
+// Multi-point update can be done via multiple applications.
+// In TLA+: [f EXCEPT ![e1] = e2, ![e3] = e4]
+f.update(e1, e2).update(e3, e4)
+// Update by using the old value.
+// In TLA+: [f EXCEPT ![e1] = @ + y]
 f.updateAs(e1, (old => old + y))
 updateAs(f, e1, (old => old + y))
-// an equivalent of (k :> v) @@ f when using the module TLC
+//
+// In TLA+ (when using TLC): (k :> v) @@ f
 f.put(k, v)
 put(f, k, v)
 ```

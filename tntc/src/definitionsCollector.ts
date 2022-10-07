@@ -101,6 +101,7 @@ export function defaultDefinitions (): DefinitionTable {
       { kind: 'def', identifier: 'put' },
       { kind: 'def', identifier: 'keys' },
       { kind: 'def', identifier: 'mapOf' },
+      { kind: 'def', identifier: 'setToMap' },
       { kind: 'def', identifier: 'setOfMaps' },
       { kind: 'def', identifier: 'update' },
       { kind: 'def', identifier: 'updateAs' },

@@ -62,7 +62,7 @@
  */
 
 import {
-  Set, List, ValueObject, OrderedMap, hash, is as immutableIs
+  Set, List, ValueObject, OrderedMap, Map, hash, is as immutableIs
 } from 'immutable'
 
 import { expressionToString } from '../../IRprinting'
@@ -128,13 +128,37 @@ export const rv = {
   },
 
   /**
-   * Make a runtime value that represents a tuple.
+   * Make a runtime value that represents a record.
    *
-   * @param value an iterable collection of runtime values
-   * @return a new runtime value that carries the tuple
+   * @param value an iterable collection of pairs of strings and runtime values
+   * @return a new runtime value that carries the record
    */
   mkRecord: (elems: Iterable<[string, RuntimeValue]>): RuntimeValue => {
     return new RuntimeValueRecord(OrderedMap(elems))
+  },
+
+  /**
+   * Make a runtime value that represents a map.
+   *
+   * @param value an iterable collection of pairs of runtime values
+   * @return a new runtime value that carries the map
+   */
+  mkMap: (elems: Iterable<[RuntimeValue, RuntimeValue]>): RuntimeValue => {
+    // convert the keys to the normal form, as they are hashed
+    const arr: [RuntimeValue, RuntimeValue][] =
+      Array.from(elems).map(([k, v]) => [k.normalForm(), v])
+    return new RuntimeValueMap(Map(arr))
+  },
+
+  /**
+   * Make a runtime value that represents a map, using a Map.
+   *
+   * @param value an iterable collection of pairs of runtime values
+   * @return a new runtime value that carries the map
+   */
+  fromMap: (map: Map<RuntimeValue, RuntimeValue>): RuntimeValue => {
+    // convert the keys to the normal form, as they are hashed
+    return new RuntimeValueMap(map)
   },
 
   /**
@@ -226,6 +250,14 @@ export interface RuntimeValue
    * @return an immutable list of results
    */
   toList (): List<RuntimeValue>
+
+  /**
+   * If the result is a map, transform it to a map of values.
+   * Otherwise, return an empty map.
+   *
+   * @return an immutable map of key-values
+   */
+  toMap (): Map<RuntimeValue, RuntimeValue>
 
   /**
    * If the result is a record, transform it to a map of values.
@@ -353,6 +385,14 @@ abstract class RuntimeValueBase implements RuntimeValue {
     }
   }
 
+  toMap (): Map<RuntimeValue, RuntimeValue> {
+    if (this instanceof RuntimeValueMap) {
+      return this.map
+    } else {
+      return Map()
+    }
+  }
+
   toBool (): boolean {
     if (this instanceof RuntimeValueBool) {
       return (this as RuntimeValueBool).value
@@ -429,6 +469,9 @@ abstract class RuntimeValueBase implements RuntimeValue {
     }
     if (this instanceof RuntimeValueSet && other instanceof RuntimeValueSet) {
       return immutableIs(this.set, other.set)
+    }
+    if (this instanceof RuntimeValueMap && other instanceof RuntimeValueMap) {
+      return immutableIs(this.map, other.map)
     }
     if (this instanceof RuntimeValueInterval &&
         other instanceof RuntimeValueInterval) {
@@ -598,7 +641,7 @@ class RuntimeValueTupleOrList extends RuntimeValueBase implements RuntimeValue {
 }
 
 /**
- * A set of runtime values represented via an immutable Map.
+ * A set of runtime values represented via an immutable ordered Map.
  * This is an internal class.
  */
 class RuntimeValueRecord extends RuntimeValueBase implements RuntimeValue {
@@ -632,6 +675,44 @@ class RuntimeValueRecord extends RuntimeValueBase implements RuntimeValue {
       kind: 'app',
       opcode: 'rec',
       args: elems,
+    }
+  }
+}
+
+/**
+ * A set of runtime values represented via an immutable Map.
+ * This is an internal class.
+ */
+class RuntimeValueMap extends RuntimeValueBase implements RuntimeValue {
+  map: Map<RuntimeValue, RuntimeValue>
+
+  constructor (values: Map<RuntimeValue, RuntimeValue>) {
+    super(true)
+    this.map = values
+  }
+
+  normalForm (): RuntimeValue {
+    const normalizedMap: OrderedMap<RuntimeValue, RuntimeValue> =
+        this.map.mapEntries(([k, v]) => [k.normalForm(), v.normalForm()])
+    return new RuntimeValueMap(normalizedMap)
+  }
+
+  hashCode (): number {
+    return this.map.hashCode()
+  }
+
+  toTntEx (): TntEx {
+    // convert to a set of pairs and output it as a set
+    const pairs: RuntimeValueTupleOrList[] = this.map.toArray().map(([k, v]) =>
+      new RuntimeValueTupleOrList('tup', List([k, v]))
+    )
+    const set = new RuntimeValueSet(Set(pairs))
+    // return the expression setToMap(set(pairs))
+    return {
+      id: 0n,
+      kind: 'app',
+      opcode: 'setToMap',
+      args: [set.toTntEx()],
     }
   }
 }
