@@ -6,7 +6,8 @@ module InstanceEx {
     var z: str
 
     def F(a) = x + 1
-    def G(b) = not(b)
+    // FIXME: this should be a static def. See issue #264
+    temporal G(b) = not(b)
   }
 
   // A state variable of InstanceEx
@@ -31,7 +32,7 @@ module InstanceEx {
   // LOCAL INSTANCE A WITH x <- 33, y <- MyY, z <- z
   import A1.*
 
-  val test_G = G(20)
+  static val test_G = G(20)
 
   // If we want to omit identity bindings such as z = z, we write:
   module A2 = A(x = 15, y = MyY, *)

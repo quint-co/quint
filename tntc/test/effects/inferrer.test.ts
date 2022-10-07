@@ -9,6 +9,7 @@ import { effectToString } from '../../src/effects/printing'
 import { errorTreeToString } from '../../src/errorTree'
 
 describe('inferEffects', () => {
+  const index = new Map<string, bigint>()
   const table: DefinitionTable = {
     valueDefinitions: [
       { kind: 'param', identifier: 'p' },
@@ -22,6 +23,7 @@ describe('inferEffects', () => {
       { kind: 'def', identifier: 'my_add' },
     ],
     typeDefinitions: [],
+    index: index,
   }
   const definitionsTable: DefinitionTableByModule = new Map<string, DefinitionTable>([['wrapper', table]])
 

@@ -22,6 +22,7 @@ import { Effect, emptyVariables, unify, Signature, effectNames } from './base'
 import { applySubstitution, Substitutions, compose } from './substitutions'
 import { ErrorTree, errorTreeToString } from '../errorTree'
 import { scopesForId, ScopeTree, treeFromModule } from '../scoping'
+import { effectToString } from './printing'
 
 /**
  * Infers an effect for every expression in a module based on predefined
@@ -37,6 +38,7 @@ import { scopesForId, ScopeTree, treeFromModule } from '../scoping'
  */
 export function inferEffects (builtinSignatures: Map<string, Signature>, definitionsTable: DefinitionTableByModule, module: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, Effect>> {
   const visitor = new EffectInferrerVisitor(builtinSignatures, definitionsTable)
+  console.log('aaaaaaaaaaaaaaaaaa')
   walkModule(visitor, module)
   if (visitor.errors.size > 0) {
     return left(visitor.errors)
@@ -50,7 +52,7 @@ export function inferEffects (builtinSignatures: Map<string, Signature>, definit
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor(builtinSignatures: Map<string, Signature>, definitionsTable: DefinitionTableByModule) {
+  constructor (builtinSignatures: Map<string, Signature>, definitionsTable: DefinitionTableByModule) {
     this.builtinSignatures = builtinSignatures
     this.definitionsTable = definitionsTable
   }
@@ -94,10 +96,11 @@ class EffectInferrerVisitor implements IRVisitor {
            */
           // Context values are functions over arity, call it with arity 1 since
           // arity doesn't matter for lambda-introduced names
-          const paramEffect = this.context.get(expr.id)!(1)
-          if (!paramEffect) {
+          console.log('Getting signature for', def.reference, ':', this.context.get(expr.id))
+          if (!def.reference || !this.context.has(def.reference)) {
             throw new Error(`Couldn't find lambda parameter named ${expr.name} in context`)
           }
+          const paramEffect = this.context.get(def.reference)!(1)
 
           this.effects.set(expr.id, paramEffect)
           break
@@ -222,6 +225,7 @@ class EffectInferrerVisitor implements IRVisitor {
       .forEach(p => {
         const name = `e_${p}_${expr.id}`
         const id = this.currentTable.index.get(p)!
+        console.log('entering: Got', id, 'for', p)
         this.context.set(id, (_) => ({
           kind: 'quantified',
           name: name,
@@ -240,7 +244,9 @@ class EffectInferrerVisitor implements IRVisitor {
         // Context values are functions over arity, call it with arity 1 since
         // arity doesn't matter for lambda-introduced names
         const id = this.currentTable.index.get(p)!
+        console.log('exiting: Got', id, 'for', p)
         const paramEffect = this.context.get(id)!(1)
+        console.log(effectToString(paramEffect))
         this.context.delete(id)
         return applySubstitution(this.substitutions, paramEffect)
       }))
@@ -272,7 +278,8 @@ class EffectInferrerVisitor implements IRVisitor {
   private fetchSignature (opcode: string, arity: number): Either<string, Effect> {
     // Assumes a valid number of arguments
     const opcodeId = this.currentTable.index.get(opcode)!
-    if (!opcodeId && !this.builtinSignatures.get(opcode)) {
+    console.log('fetching signature: Got', opcodeId, 'for', opcode)
+    if (!(opcodeId && this.context.has(opcodeId)) && !this.builtinSignatures.has(opcode)) {
       return left(`Signature not found for operator: ${opcode}`)
     }
     const signatureFunction = this.builtinSignatures.get(opcode) ?? this.context.get(opcodeId)!

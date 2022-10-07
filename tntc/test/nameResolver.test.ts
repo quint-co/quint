@@ -15,9 +15,10 @@ describe('nameResolver', () => {
   const typeDefinitions: TypeDefinition[] = [
     { identifier: 'MY_TYPE', type: { id: 100n, kind: 'int' } },
   ]
+  const index = new Map<string, bigint>()
 
   const moduleName = 'wrapper'
-  const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
+  const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions, index: index }
   const tables: DefinitionTableByModule = new Map<string, DefinitionTable>([[moduleName, table]])
   const dummyScopeTree: ScopeTree = { value: 0n, children: [] }
 

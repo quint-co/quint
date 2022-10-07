@@ -6,6 +6,8 @@ import { resolveImports } from '../src/importResolver'
 
 describe('resolveImports', () => {
   const moduleName = 'wrapper'
+  const index = new Map<string, bigint>()
+
   const table: DefinitionTable = {
     valueDefinitions: [
       { kind: 'def', identifier: 'a', reference: 1n },
@@ -15,6 +17,7 @@ describe('resolveImports', () => {
       { kind: 'module', identifier: 'unexisting_module', reference: 5n },
     ],
     typeDefinitions: [],
+    index: index,
   }
 
   const nestedModuleTable: DefinitionTable = {
@@ -23,6 +26,7 @@ describe('resolveImports', () => {
       { kind: 'def', identifier: 'e', reference: 2n, scope: 10n },
     ],
     typeDefinitions: [],
+    index: index,
   }
 
   const tables: DefinitionTableByModule = new Map<string, DefinitionTable>([

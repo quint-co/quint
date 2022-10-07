@@ -11,6 +11,7 @@ import { Either } from '@sweet-monads/either'
 import { checkModes } from '../../src/effects/modeChecker'
 
 describe('checkModes', () => {
+  const index = new Map<string, bigint>()
   const table: DefinitionTable = {
     valueDefinitions: [
       { kind: 'param', identifier: 'p' },
@@ -24,6 +25,7 @@ describe('checkModes', () => {
       { kind: 'def', identifier: 'igt' },
     ],
     typeDefinitions: [],
+    index: index,
   }
   const definitionsTable: DefinitionTableByModule = new Map<string, DefinitionTable>([['wrapper', table]])
 

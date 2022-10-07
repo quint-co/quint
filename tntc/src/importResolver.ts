@@ -64,7 +64,7 @@ export function resolveImports (tntModule: TntModule, definitions: DefinitionTab
 }
 
 class ImportResolverVisitor implements IRVisitor {
-  constructor(tables: DefinitionTableByModule) {
+  constructor (tables: DefinitionTableByModule) {
     this.tables = tables
   }
 

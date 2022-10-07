@@ -8,6 +8,8 @@ import { TntType } from '../src/tntTypes'
 describe('scanConflicts', () => {
   const myType: TntType = { id: 100n, kind: 'int' }
 
+  const index = new Map<string, bigint>()
+
   it('finds top-level name conflicts', () => {
     const valueDefinitions: ValueDefinition[] = [
       { kind: 'const', identifier: 'TEST_CONSTANT', reference: 1n },
@@ -19,7 +21,7 @@ describe('scanConflicts', () => {
       { identifier: 'MY_TYPE', type: myType, reference: 1n },
     ]
 
-    const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
+    const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions, index: index }
 
     const tree: ScopeTree = {
       value: 0n,
@@ -53,7 +55,7 @@ describe('scanConflicts', () => {
       { identifier: 'MY_TYPE', type: { id: 4n, kind: 'str' }, reference: 3n },
     ]
 
-    const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
+    const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions, index: index }
 
     const tree: ScopeTree = {
       value: 0n,
@@ -87,7 +89,7 @@ describe('scanConflicts', () => {
       { identifier: 'MY_TYPE', type: myType, reference: 1n },
     ]
 
-    const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
+    const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions, index: index }
 
     const tree: ScopeTree = { value: 1n, children: [{ value: 2n, children: [] }] }
 
@@ -115,7 +117,7 @@ describe('scanConflicts', () => {
       { identifier: 'MY_TYPE', type: myType, reference: 1n },
     ]
 
-    const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
+    const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions, index: index }
 
     const tree: ScopeTree = {
       value: 0n,
@@ -157,7 +159,7 @@ describe('scanConflicts', () => {
       { identifier: 'OTHER_TYPE', type: myType, reference: 5n },
     ]
 
-    const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
+    const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions, index: index }
 
     const tree: ScopeTree = {
       value: 0n,
