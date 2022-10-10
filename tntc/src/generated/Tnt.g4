@@ -29,8 +29,8 @@ operDef : qualifier IDENTIFIER params? (':' type)? '=' expr ';'?
 
 qualifier : 'val'
           | 'def'
-          | 'static' 'val'
-          | 'static' 'def'
+          | 'pure' 'val'
+          | 'pure' 'def'
           | 'action'
           | 'temporal'
           ;

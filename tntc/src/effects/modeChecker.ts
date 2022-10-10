@@ -61,7 +61,7 @@ class ModeCheckerVisitor implements IRVisitor {
 
     walkEffect(this.modeFinderVisitor, effect)
     const mode = this.modeFinderVisitor.currentMode
-    this.modeFinderVisitor.currentMode = 'staticval'
+    this.modeFinderVisitor.currentMode = 'pureval'
 
     if (mode === def.qualifier) {
       return
@@ -82,7 +82,7 @@ class ModeCheckerVisitor implements IRVisitor {
 }
 
 class ModeFinderVisitor implements EffectVisitor {
-  public currentMode: OpQualifier = 'staticval'
+  public currentMode: OpQualifier = 'pureval'
 
   exitConcrete (effect: ConcreteEffect) {
     let mode: OpQualifier
@@ -93,7 +93,7 @@ class ModeFinderVisitor implements EffectVisitor {
     } else if (isState(effect)) {
       mode = 'val'
     } else {
-      mode = 'staticval'
+      mode = 'pureval'
     }
 
     this.currentMode = commonMode(this.currentMode, mode)
@@ -109,7 +109,7 @@ class ModeFinderVisitor implements EffectVisitor {
       throw new Error(`Unexpected arrow found in operator result: ${effectToString(r)}`)
     }
 
-    this.currentMode = 'staticdef'
+    this.currentMode = 'puredef'
 
     if (r.kind === 'quantified') {
       return
@@ -128,7 +128,7 @@ class ModeFinderVisitor implements EffectVisitor {
 
     // If there is a variable read in the results that is not present on the
     // parameters, then the operator is adding a read effect and this should be
-    // a "def" instead of "static def"
+    // a "def" instead of "pure def"
     if (r.read.kind === 'union') {
       if (!r.read.variables.every(v => paramReads.some(p => isEqual(p, v)))) {
         this.currentMode = 'def'
@@ -139,7 +139,7 @@ class ModeFinderVisitor implements EffectVisitor {
   }
 }
 
-const modeOrder = ['staticval', 'staticdef', 'val', 'def', 'action', 'temporal']
+const modeOrder = ['pureval', 'puredef', 'val', 'def', 'action', 'temporal']
 
 function commonMode (m1: OpQualifier, m2: OpQualifier): OpQualifier {
   const p1 = modeOrder.findIndex(elem => elem === m1)

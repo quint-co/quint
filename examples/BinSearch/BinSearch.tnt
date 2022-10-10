@@ -111,7 +111,7 @@ module BinSearch {
         StutterOnTermination,
     }
 
-    static val InputIsSorted =
+    pure val InputIsSorted =
     // The most straightforward way to specify sortedness
     // is to use two quantifiers,
     // but that would produce O(Len(INPUT_SEQ)^2) constraints.

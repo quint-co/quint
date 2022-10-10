@@ -14,7 +14,7 @@ null
 ';'
 'val'
 'def'
-'static'
+'pure'
 'action'
 'temporal'
 ','
