@@ -65,7 +65,7 @@ interface WithType {
  * by requiring an explicit qualifier.
  */
 export type OpQualifier =
-  'staticval' | 'staticdef' | 'val' | 'def' | 'pred' | 'action' | 'temporal'
+  'pureval' | 'puredef' | 'val' | 'def' | 'pred' | 'action' | 'temporal'
 
 export interface TntName extends WithId, WithOptionalType {
   /** Expressions kind ('name' -- name reference) */

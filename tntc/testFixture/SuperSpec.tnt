@@ -52,8 +52,8 @@ module withConsts {
 
   // Operator definitions
   var n: int
-  static val magicNumber = 42
-  static def add(x, y) = x + y
+  pure val magicNumber = 42
+  pure def add(x, y) = x + y
   def ofN(factor) = factor * n
   action A(x) = n <- x
   temporal B(x) = not(x)

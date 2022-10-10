@@ -99,9 +99,9 @@ describe('checkModes', () => {
       })
   })
 
-  it('finds mode errors between staticval and val', () => {
+  it('finds mode errors between pureval and val', () => {
     const tntModule = buildModuleWithDefs([
-      'static val v = x + 1',
+      'pure val v = x + 1',
     ])
 
     const modeCheckingResult = checkModuleModes(tntModule)
@@ -110,14 +110,14 @@ describe('checkModes', () => {
     modeCheckingResult
       .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
         [4n, {
-          location: 'Checking modes for staticval v = iadd(x, 1)',
-          message: 'Expected val mode, found: staticval',
+          location: 'Checking modes for pureval v = iadd(x, 1)',
+          message: 'Expected val mode, found: pureval',
           children: [],
         }],
       ]))
   })
 
-  it('finds suggestions for static val with val annotation', () => {
+  it('finds suggestions for pure val with val annotation', () => {
     const tntModule = buildModuleWithDefs([
       'val a = 1',
     ])
@@ -127,7 +127,7 @@ describe('checkModes', () => {
     assert.isTrue(modeCheckingResult.isRight())
     modeCheckingResult
       .map(suggestions => assert.sameDeepMembers([...suggestions.entries()], [
-        [2n, 'staticval'],
+        [2n, 'pureval'],
       ]))
       .mapLeft(e => {
         const errors = Array.from(e.values())
@@ -135,9 +135,9 @@ describe('checkModes', () => {
       })
   })
 
-  it('finds mode errors between staticdef and def', () => {
+  it('finds mode errors between puredef and def', () => {
     const tntModule = buildModuleWithDefs([
-      'static def f(p) = not(y)',
+      'pure def f(p) = not(y)',
     ])
 
     const modeCheckingResult = checkModuleModes(tntModule)
@@ -146,14 +146,14 @@ describe('checkModes', () => {
     modeCheckingResult
       .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
         [3n, {
-          location: 'Checking modes for staticdef f = (p => not(y))',
-          message: 'Expected def mode, found: staticdef',
+          location: 'Checking modes for puredef f = (p => not(y))',
+          message: 'Expected def mode, found: puredef',
           children: [],
         }],
       ]))
   })
 
-  it('finds suggestions for static def with def annotation', () => {
+  it('finds suggestions for pure def with def annotation', () => {
     const tntModule = buildModuleWithDefs([
       'def a(p) = p',
     ])
@@ -163,7 +163,7 @@ describe('checkModes', () => {
     assert.isTrue(modeCheckingResult.isRight())
     modeCheckingResult
       .map(suggestions => assert.sameDeepMembers([...suggestions.entries()], [
-        [2n, 'staticdef'],
+        [2n, 'puredef'],
       ]))
       .mapLeft(e => {
         const errors = Array.from(e.values())
@@ -173,7 +173,7 @@ describe('checkModes', () => {
 
   it('finds mode errors between val and temporal', () => {
     const tntModule = buildModuleWithDefs([
-      'static val v = always(x > 5)',
+      'pure val v = always(x > 5)',
     ])
 
     const modeCheckingResult = checkModuleModes(tntModule)
@@ -182,8 +182,8 @@ describe('checkModes', () => {
     modeCheckingResult
       .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
         [5n, {
-          location: 'Checking modes for staticval v = always(igt(x, 5))',
-          message: 'Expected temporal mode, found: staticval',
+          location: 'Checking modes for pureval v = always(igt(x, 5))',
+          message: 'Expected temporal mode, found: pureval',
           children: [],
         }],
       ]))

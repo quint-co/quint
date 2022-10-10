@@ -93,7 +93,7 @@ val ValuesOrNil = set(NilValue).union(Values)
 def Id(v) = v
 
 // The validity predicate
-static def IsValid(v) = ValidValues.contains(v)
+pure def IsValid(v) = ValidValues.contains(v)
 
 // the two thresholds that are used in the algorithm
 val THRESHOLD1 = T + 1      // at least one process is not faulty
@@ -172,7 +172,7 @@ val AllFaultyPrecommits =
 
    
 // the message function never contains a message for a wrong round
-static def BenignRoundsInMessages(msgfun) =
+pure def BenignRoundsInMessages(msgfun) =
     Rounds.forall( r =>
       msgfun[r].forall( m =>
         r == m.round

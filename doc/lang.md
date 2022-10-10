@@ -336,23 +336,23 @@ fold over a list or a set, see below).
 
 ```
 // a static constant value, which is not changing over time
-static val Nodes: set(int) = 1 to 10
+pure val Nodes: set(int) = 1 to 10
 
 // a two-argument operator that returns its first argument, independent of state
-static def fst(x, y): ((a, b) => a) =
+pure def fst(x, y): ((a, b) => a) =
     x
 
 // the maximum operator
-static def max(x, y): (int, int) => int =
+pure def max(x, y): (int, int) => int =
     if (x > y) x else y
 
 // A definition over `x` that returns a Boolean result.
 // In logic, such definition is usually called a predicate.
-static def isPositive(x): int => bool =
+pure def isPositive(x): int => bool =
     x > 0
 
 // a higher-order operator that accepts another operator as its first argument
-static def F(G, x): ((a => b, a) => b) = G(x)
+pure def F(G, x): ((a => b, a) => b) = G(x)
 
 // introduce a variable to define stateful definitions
 var timer: int
@@ -379,7 +379,7 @@ temporal neverNegative =
 *Grammar:*
 
 ```bnf
-("val" | "def" | "static" "val" | "static" "def" | "action" | "temporal")
+("val" | "def" | "pure" "val" | "pure" "def" | "action" | "temporal")
     <identifier>["(" <identifier> ("," ..."," <identifier>)* ")"] [":" <type>]
       "=" <expr> [";"]
 ```
@@ -387,12 +387,12 @@ temporal neverNegative =
 *Mode:* The mode depends on the mode of the expression in the right-hand side.
 The following table defines this precisely.
 
-| Qualifier            | Mode of `expr`                       | Mode of definition |
-| -------------------- | ------------------------------------ | ------------------ |
-| `static val`, `static def` | Stateless                      | Stateless          |
-| `val`, `def`         | State                                | State              |
-| `action`             | Action                               | Action             |
-| `temporal`           | Stateless, State, Temporal           | Temporal           |
+| Qualifier              | Mode of `expr`                       | Mode of definition |
+| --------------------   | ------------------------------------ | ------------------ |
+| `pure val`, `pure def` | Stateless                            | Stateless          |
+| `val`, `def`           | State                                | State              |
+| `action`               | Action                               | Action             |
+| `temporal`             | Stateless, State, Temporal           | Temporal           |
 
 ### No recursive functions and operators
 
@@ -1258,7 +1258,7 @@ given an entry from `Entries`, we can compute the predicate `isValid` by case
 distinction over tags:
 
 ```scala
-static def isValid(entry): ENTRY_TYPE => bool =
+pure def isValid(entry): ENTRY_TYPE => bool =
   entry match
      | "Cat": cat =>
        name != "" and cat.year > 0
@@ -1501,7 +1501,7 @@ temporal my_prop =
 *Grammar:*
 
 ```
-("val" | "def" | "static" "val" | "static" "def" | "action" | "temporal")
+("val" | "def" | "pure" "val" | "pure" "def" | "action" | "temporal")
   <identifier>[ "(" <identifier> ("," ..."," <identifier>)* ")" ] [ ":" <type>]
     "=" <expr> [";"]
 <expr>

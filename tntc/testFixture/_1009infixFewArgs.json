@@ -2,7 +2,7 @@
   "kind": "error",
   "messages": [
     {
-      "explanation": "extraneous input 'cardinality' expecting {'module', '}', 'const', 'var', 'assume', 'type', 'import', 'val', 'def', 'static', 'action', 'temporal'}",
+      "explanation": "extraneous input 'cardinality' expecting {'module', '}', 'const', 'var', 'assume', 'type', 'import', 'val', 'def', 'pure', 'action', 'temporal'}",
       "locs": [
         {
           "source": "mocked_path/testFixture/_1009infixFewArgs.tnt",
