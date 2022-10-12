@@ -54,7 +54,7 @@ export function tntRepl
   function out (text: string) {
     output.write(text + '\n')
   }
-  out(chalk.gray('TNT REPL v0.0.1'))
+  out(chalk.gray('TNT REPL v0.0.2'))
   out(chalk.gray('Type ".exit" to exit, or ".help" for more information'))
   // create a readline interface
   const rl = readline.createInterface({
@@ -276,6 +276,11 @@ function chalkTntEx (ex: TntEx): string {
         case 'set': {
           const as = ex.args.map(chalkTntEx).join(', ')
           return chalk.green('set') + chalk.black(`(${as})`)
+        }
+
+        case 'setToMap': {
+          const as = ex.args.map(chalkTntEx).join(', ')
+          return chalk.green('setToMap') + chalk.black(`(${as})`)
         }
 
         case 'tup': {

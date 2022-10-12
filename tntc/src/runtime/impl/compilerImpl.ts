@@ -412,7 +412,15 @@ export class CompilerVisitor implements IRVisitor {
         break
 
       case 'fold':
-        this.applyFold()
+        this.applyFold('fwd')
+        break
+
+      case 'foldl':
+        this.applyFold('fwd')
+        break
+
+      case 'foldr':
+        this.applyFold('rev')
         break
 
       case 'guess':
@@ -511,6 +519,15 @@ export class CompilerVisitor implements IRVisitor {
         this.mapLambdaThenReduce(
           arr =>
             rv.mkSet(arr
+              .filter(([r, e]) => r.toBool())
+              .map(([r, e]) => e))
+        )
+        break
+
+      case 'select':
+        this.mapLambdaThenReduce(
+          arr =>
+            rv.mkList(arr
               .filter(([r, e]) => r.toBool())
               .map(([r, e]) => e))
         )
@@ -625,15 +642,15 @@ export class CompilerVisitor implements IRVisitor {
       const result = callable.eval().map(e => e as RuntimeValue)
       return result.map(result => [result, elem])
     }
-    this.applyFun(1, (set: Iterable<RuntimeValue>): Maybe<RuntimeValue> => {
-      return flatMap(set, evaluateElem).map(rs => mapResultAndElems(rs))
+    this.applyFun(1, (iterable: Iterable<RuntimeValue>): Maybe<RuntimeValue> => {
+      return flatMap(iterable, evaluateElem).map(rs => mapResultAndElems(rs))
     })
   }
 
   /**
-   * Translate the fold operator.
+   * Translate one of the operators: fold, foldl, and foldr.
    */
-  private applyFold (): void {
+  private applyFold (order: 'fwd' | 'rev'): void {
     if (this.compStack.length < 3) {
       throw new Error('Not enough parameters on compStack')
     }
@@ -653,13 +670,13 @@ export class CompilerVisitor implements IRVisitor {
       callable.registers[0].registerValue = result
       return result
     }
-    // iterate over the set
-    this.applyFun(1, (set: Iterable<RuntimeValue>): Maybe<any> => {
+    // iterate over the iterable (a set or a list)
+    this.applyFun(1, (iterable: Iterable<RuntimeValue>): Maybe<any> => {
       return initialComp.eval().map(initialValue => {
         // save the initial value on the 0th register
         callable.registers[0].registerValue = just(initialValue)
-        // fold the set
-        return flatForEach(set, just(initialValue), evaluateElem)
+        // fold the iterable
+        return flatForEach(order, iterable, just(initialValue), evaluateElem)
       }).join()
     })
   }
@@ -1009,9 +1026,12 @@ function flatMap<T, R>
  *  - return `just` of the last result.
  */
 function flatForEach<T, R>
-(iterable: Iterable<T>, init: Maybe<R>, f: (arg: T) => Maybe<R>): Maybe<R> {
+(order: 'fwd' | 'rev',
+  iterable: Iterable<T>, init: Maybe<R>, f: (arg: T) => Maybe<R>): Maybe<R> {
   let result: Maybe<R> = init
-  for (const arg of iterable) {
+  // if the reverse order is required, reverse the array
+  const iter = (order === 'fwd') ? iterable : Array(...iterable).reverse()
+  for (const arg of iter) {
     result = f(arg)
     if (result.isNone()) {
       return result
