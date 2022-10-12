@@ -42,6 +42,7 @@ const mapOperators = [
   { name: 'get', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
   { name: 'keys', effect: '(Read[r1]) => Read[r1]' },
   { name: 'mapOf', effect: '(Read[r1], (Read[r1]) => Read[r2]) => Read[r1, r2]' },
+  { name: 'setToMap', effect: '(Read[r1]) => Read[r1]' },
   { name: 'setOfMaps', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
   { name: 'update', effect: '(Read[r1], Read[r2], Read[r3]) => Read[r1, r2, r3]' },
   { name: 'updateAs', effect: '(Read[r1], Read[r2], (Read[r1]) => Read[r3]) => Read[r1, r2, r3]' },
