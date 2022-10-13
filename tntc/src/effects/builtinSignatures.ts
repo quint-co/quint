@@ -29,7 +29,7 @@ const setOperators = [
   { name: 'subseteq', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
   { name: 'filter', effect: '(Read[r1], (Read[r1]) => Read[r2]) => Read[r1, r2]' },
   { name: 'map', effect: '(Read[r1], (Read[r1]) => Read[r2]) => Read[r1, r2]' },
-  { name: 'fold', effect: '(Read[r1], Read[r2], (Read[r2], Read[r1]) => Read[r3, r4]) => Read[r1, r2, r3, r4]' },
+  { name: 'fold', effect: '(Read[r1], Read[r2], (Read[r2], Read[r1]) => Read[r3]) => Read[r1, r2, r3]' },
   { name: 'powerset', effect: '(Read[r1]) => Read[r1]' },
   { name: 'flatten', effect: '(Read[r1]) => Read[r1]' },
   { name: 'allLists', effect: '(Read[r1]) => Read[r1]' },
