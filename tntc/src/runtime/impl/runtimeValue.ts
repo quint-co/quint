@@ -31,8 +31,7 @@
  *
  *  - RuntimeValuePowerset: TBD
  *
- *  - RuntimeValueMapSet: TBD
- *
+ *  - RuntimeValueMapSet: to compactly represent a set of functions.
  *
  * Importantly, it should be always possible to convert other set
  * representations to enumerative sets (backed with `RuntimeValueSet`): Many
@@ -201,6 +200,17 @@ export const rv = {
    */
   mkCrossProd: (sets: RuntimeValue[]): RuntimeValue => {
     return new RuntimeValueCrossProd(sets)
+  },
+
+  /**
+   * Make a runtime value that represents a set of maps.
+   *
+   * @param domainSet the set that stores the map domain
+   * @param rangeSet the set that stores the map range
+   * @return a new runtime value that carries the set of maps
+   */
+  mkMapSet: (domainSet: RuntimeValue, rangeSet: RuntimeValue): RuntimeValue => {
+    return new RuntimeValueMapSet(domainSet, rangeSet)
   },
 }
 
@@ -491,6 +501,11 @@ abstract class RuntimeValueBase implements RuntimeValue {
         return true
       }
     }
+    if (this instanceof RuntimeValueMapSet &&
+        other instanceof RuntimeValueMapSet) {
+      return this.domainSet.equals(other.domainSet) &&
+        this.rangeSet.equals(other.rangeSet)
+    }
     if (this.isSetLike && other.isSetLike) {
       // for instance, an interval and an explicit set
       return immutableIs(this.toSet(), other.toSet())
@@ -690,9 +705,9 @@ class RuntimeValueRecord extends RuntimeValueBase implements RuntimeValue {
 class RuntimeValueMap extends RuntimeValueBase implements RuntimeValue {
   map: Map<RuntimeValue, RuntimeValue>
 
-  constructor (values: Map<RuntimeValue, RuntimeValue>) {
+  constructor (keyValues: Map<RuntimeValue, RuntimeValue>) {
     super(true)
-    this.map = values
+    this.map = keyValues
   }
 
   normalForm (): RuntimeValue {
@@ -1025,6 +1040,122 @@ class RuntimeValueCrossProd
     }
 
     return new RuntimeValueTupleOrList('tup', List.of(...elems))
+  }
+
+  toTntEx (): TntEx {
+    // simply enumerate the values
+    const elems: TntEx[] = []
+    for (const i of this) {
+      elems.push(i.toTntEx())
+    }
+    // return the expression set(...elems)
+    return {
+      id: 0n,
+      kind: 'app',
+      opcode: 'set',
+      args: elems,
+    }
+  }
+}
+
+/**
+ * A set of runtime values represented via a set of maps.
+ * This is an internal class.
+ */
+class RuntimeValueMapSet
+  extends RuntimeValueBase implements RuntimeValue {
+  // components of the cross-product, must be set-like
+  domainSet: RuntimeValue
+  rangeSet: RuntimeValue
+
+  constructor (domainSet: RuntimeValue, rangeSet: RuntimeValue) {
+    super(true)
+    this.domainSet = domainSet
+    this.rangeSet = rangeSet
+  }
+
+  [Symbol.iterator] () {
+    // convert the domain and range to arrays
+    const domainArr = Array.from(this.domainSet)
+    const rangeArr = Array.from(this.rangeSet)
+
+    // The below code is an adaptation of RuntimeValueCrossProd.
+    // Can we generalize both?
+    const nindices = domainArr.length
+    const nvalues = rangeArr.length
+    function * gen () {
+      if (domainArr.length === 0 || rangeArr.length === 0) {
+        // yield nothing as an empty set produces the empty product
+        return
+      }
+      // generate `nmaps` maps by using number increments
+      const nmaps = nvalues ** nindices
+      for (let i = 0; i < nmaps; i++) {
+        const pairs: [RuntimeValue, RuntimeValue][] = []
+        // Convert the global index i to digits of a nvalues-based number.
+        // By interactively dividing the index by the base and
+        // taking its remainder.
+        let index = i
+        for (let k = 0; k < nindices; k++) {
+          pairs.push([domainArr[k], rangeArr[index % nvalues]])
+          index = Math.floor(index / nvalues)
+        }
+        yield rv.mkMap(pairs)
+      }
+    }
+
+    return gen()
+  }
+
+  hashCode (): number {
+    return this.domainSet.hashCode() + this.rangeSet.hashCode()
+  }
+
+  contains (elem: RuntimeValue): boolean {
+    if (elem instanceof RuntimeValueMap) {
+      return this.domainSet.equals(rv.mkSet(elem.map.keys())) &&
+        elem.map.find((v) =>
+          !this.rangeSet.contains(v.normalForm())) === undefined
+    } else {
+      return false
+    }
+  }
+
+  isSubset (superset: RuntimeValue): boolean {
+    if (superset instanceof RuntimeValueMapSet) {
+      return this.domainSet.equals(superset.domainSet) &&
+        this.rangeSet.isSubset(superset.rangeSet)
+    } else {
+      // fall back to the general implementation
+      return super.isSubset(superset)
+    }
+  }
+
+  cardinality () {
+    return this.rangeSet.cardinality() ** this.domainSet.cardinality()
+  }
+
+  pick (position: number): RuntimeValue | undefined {
+    let index = Math.floor(position * this.cardinality())
+    const keyValues: [RuntimeValue, RuntimeValue][] = []
+    const domainSize = this.domainSet.cardinality()
+    const rangeSize = this.rangeSet.cardinality()
+    if (domainSize === 0 || rangeSize === 0) {
+      return undefined
+    }
+
+    for (let i = 0; i < domainSize; i++) {
+      const key = this.domainSet.pick((i % domainSize) / domainSize)
+      const value = this.rangeSet.pick((index % rangeSize) / rangeSize)
+      index = index / rangeSize
+      if (key && value) {
+        keyValues.push([key, value])
+      } else {
+        return undefined
+      }
+    }
+
+    return rv.mkMap(keyValues)
   }
 
   toTntEx (): TntEx {

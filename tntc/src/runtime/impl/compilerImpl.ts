@@ -548,6 +548,12 @@ export class CompilerVisitor implements IRVisitor {
         )
         break
 
+      case 'setOfMaps':
+        this.applyFun(2, (dom, rng) => {
+          return just(rv.mkMapSet(dom, rng))
+        })
+        break
+
       case '_test':
         // the special operator that runs random simulation
         this.test()

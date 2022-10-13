@@ -680,5 +680,48 @@ describe('compiling specs to runtime values', () => {
         'false'
       )
     })
+
+    it('map setOfMaps', () => {
+      assertResultAsString(
+        '2.to(3).setOfMaps(5.to(6))',
+        'set(setToMap(set(tup(2, 5), tup(3, 5))), setToMap(set(tup(2, 6), tup(3, 5))), setToMap(set(tup(2, 5), tup(3, 6))), setToMap(set(tup(2, 6), tup(3, 6))))'
+      )
+      assertResultAsString(
+        `2.to(3).setOfMaps(5.to(6)) ==
+          set(setToMap(set((2, 5), (3, 5))),
+              setToMap(set((2, 6), (3, 5))),
+              setToMap(set((2, 5), (3, 6))),
+              setToMap(set((2, 6), (3, 6))))`,
+        'true'
+      )
+      assertResultAsString(
+        'set(2).setOfMaps(5.to(6))',
+        'set(setToMap(set(tup(2, 5))), setToMap(set(tup(2, 6))))'
+      )
+      assertResultAsString(
+        '2.to(3).setOfMaps(set(5))',
+        'set(setToMap(set(tup(2, 5), tup(3, 5))))'
+      )
+      assertResultAsString(
+        '2.to(4).setOfMaps(5.to(8)).cardinality()',
+        '64'
+      )
+      assertResultAsString(
+        '2.to(4).setOfMaps(5.to(7)).subseteq(2.to(4).setOfMaps(4.to(8)))',
+        'true'
+      )
+      assertResultAsString(
+        '2.to(4).setOfMaps(5.to(10)).subseteq(2.to(4).setOfMaps(4.to(8)))',
+        'false'
+      )
+      assertResultAsString(
+        '2.to(3).setOfMaps(5.to(6)).contains(setToMap(set((2, 5), (3, 5))))',
+        'true'
+      )
+      assertResultAsString(
+        '2.to(3).setOfMaps(5.to(6)) == 2.to(4 - 1).setOfMaps(5.to(7 - 1))',
+        'true'
+      )
+    })
   })
 })
