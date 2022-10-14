@@ -122,6 +122,8 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('false and true', 'false')
       assertResultAsString('true and false', 'false')
       assertResultAsString('true and true', 'true')
+      assertResultAsString('and(true, true, false)', 'false')
+      assertResultAsString('and(true, true, true)', 'true')
     })
 
     it('computes or', () => {
@@ -129,6 +131,9 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('false or true', 'true')
       assertResultAsString('true or false', 'true')
       assertResultAsString('true or true', 'true')
+      assertResultAsString('or(false, true, true)', 'true')
+      assertResultAsString('or(true, true, false)', 'true')
+      assertResultAsString('or(false, false, false)', 'false')
     })
 
     it('computes implies', () => {

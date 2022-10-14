@@ -183,7 +183,8 @@ export class CompilerVisitor implements IRVisitor {
         break
 
       case 'and':
-        this.applyFun(2, (p, q) => just(rv.mkBool(p.toBool() && q.toBool())))
+        // a conjunction over expressions is lazy
+        this.translateAnd(app)
         break
 
       case 'actionAll':
@@ -191,7 +192,8 @@ export class CompilerVisitor implements IRVisitor {
         break
 
       case 'or':
-        this.applyFun(2, (p, q) => just(rv.mkBool(p.toBool() || q.toBool())))
+        // a disjunction over expressions is lazy
+        this.translateOr(app)
         break
 
       case 'actionAny':
@@ -574,6 +576,10 @@ export class CompilerVisitor implements IRVisitor {
       console.error(`${app.opcode} is not supported`)
       this.compStack.push(fail)
     } else {
+      if (this.compStack.length < callable.registers.length) {
+        const msg = `Not enough arguments for ${app.opcode} on the stack`
+        throw new Error(msg)
+      }
       this.applyFun(callable.registers.length,
         (...args: RuntimeValue[]) => {
           for (let i = 0; i < args.length; i++) {
@@ -733,10 +739,38 @@ export class CompilerVisitor implements IRVisitor {
     }
   }
 
-  // translate { A & ... & C }
+  // translate and { A, ..., C }
+  private translateAnd (app: ir.TntApp) {
+    assert(this.compStack.length >= app.args.length,
+      'Not enough arguments on stack for "and"')
+    const args = this.compStack.splice(-app.args.length)
+
+    const lazyCompute = () => {
+      let result: Maybe<EvalResult> = just(rv.mkBool(true))
+      // Evaluate arguments iteratively.
+      // Stop as soon as one of the arguments returns false.
+      // This is a form of Boolean short-circuiting.
+      for (const arg of args) {
+        // either the argument is evaluated to false, or fails
+        result = arg.eval().or(just(rv.mkBool(false)))
+        const boolResult = (result.unwrap() as RuntimeValue).toBool()
+        // as soon as one of the arguments evaluates to false,
+        // break out of the loop
+        if (boolResult === false) {
+          break
+        }
+      }
+
+      return result
+    }
+
+    this.compStack.push(mkFunComputable(lazyCompute))
+  }
+
+  // translate all { A, ..., C }
   private translateAndAction (app: ir.TntApp) {
     assert(this.compStack.length >= app.args.length,
-      'Not enough arguments on stack for actionAll')
+      'Not enough arguments on stack for "actionAll"')
     const args = this.compStack.splice(-app.args.length)
 
     const lazyCompute = () => {
@@ -766,10 +800,38 @@ export class CompilerVisitor implements IRVisitor {
     this.compStack.push(mkFunComputable(lazyCompute))
   }
 
-  // translate { A | ... | C }
+  // translate or { A, ..., C }
+  private translateOr (app: ir.TntApp) {
+    assert(this.compStack.length >= app.args.length,
+      'Not enough arguments on stack for "or"')
+    const args = this.compStack.splice(-app.args.length)
+
+    const lazyCompute = () => {
+      let result: Maybe<EvalResult> = just(rv.mkBool(false))
+      // Evaluate arguments iteratively.
+      // Stop as soon as one of the arguments returns true.
+      // This is a form of Boolean short-circuiting.
+      for (const arg of args) {
+        // either the argument is evaluated to false, or fails
+        result = arg.eval().or(just(rv.mkBool(false)))
+        const boolResult = (result.unwrap() as RuntimeValue).toBool()
+        // as soon as one of the arguments evaluates to false,
+        // break out of the loop
+        if (boolResult === true) {
+          break
+        }
+      }
+
+      return result
+    }
+
+    this.compStack.push(mkFunComputable(lazyCompute))
+  }
+
+  // translate any { A, ..., C }
   private translateOrAction (app: ir.TntApp) {
     assert(this.compStack.length >= app.args.length,
-      'Not enough arguments on stack for actionAny')
+      'Not enough arguments on stack for "actionAny"')
     const args = this.compStack.splice(-app.args.length)
 
     // According to the semantics of action-level disjunctions,
