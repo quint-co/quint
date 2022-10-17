@@ -96,17 +96,17 @@ expr:           // apply a built-in operator via the dot notation
         |       expr MATCH
                     ('|' STRING ':' identOrHole '=>' expr)+         # match
                 // similar to indented /\ and indented \/ of TLA+
-        |       'and' '{' expr (',' expr)* (',')? '}'               # andExpr
-        |       'or' '{' expr (',' expr)* (',')? '}'                # orExpr
-        |       'all' '{' expr (',' expr)* (',')? '}'               # actionAll
-        |       'any' '{' expr (',' expr)* (',')? '}'               # actionAny
+        |       'and' '{' expr (',' expr)* ','? '}'                 # andExpr
+        |       'or' '{' expr (',' expr)* ','? '}'                  # orExpr
+        |       'all' '{' expr (',' expr)* ','? '}'                 # actionAll
+        |       'any' '{' expr (',' expr)* ','? '}'                 # actionAny
         |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
         //      a tuple constructor, the form tup(...) is just an operator call
-        |       '(' expr ',' expr (',' expr)* ')'                   # tuple
+        |       '(' expr ',' expr (',' expr)* ','? ')'              # tuple
         |       '{' IDENTIFIER ':' expr
-                        (',' IDENTIFIER ':' expr)* '}'              # record
+                        (',' IDENTIFIER ':' expr)* ','? '}'         # record
         //      a list constructor, the form list(...) is just an operator call
-        |       '[' (expr (',' expr)*)? ']'                         # list
+        |       '[' (expr (',' expr)*)? ','? ']'                    # list
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
         |       operDef expr                                        # letIn
         |       '(' expr ')'                                        # paren

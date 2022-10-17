@@ -496,6 +496,8 @@ describe('compiling specs to runtime values', () => {
   describe('compile over tuples', () => {
     it('tuple constructors', () => {
       assertResultAsString('tup(1, 2, 3)', 'tup(1, 2, 3)')
+      assertResultAsString('(1, 2, 3)', 'tup(1, 2, 3)')
+      assertResultAsString('(1, 2, 3,)', 'tup(1, 2, 3)')
     })
 
     it('tuple access', () => {
@@ -546,6 +548,7 @@ describe('compiling specs to runtime values', () => {
   describe('compile over lists', () => {
     it('list constructors', () => {
       assertResultAsString('[4, 2, 3]', 'list(4, 2, 3)')
+      assertResultAsString('[4, 2, 3, ]', 'list(4, 2, 3)')
       assertResultAsString('list(4, 2, 3)', 'list(4, 2, 3)')
     })
 
@@ -635,6 +638,7 @@ describe('compiling specs to runtime values', () => {
     it('record constructors', () => {
       assertResultAsString('rec("a", 2, "b", true)', 'rec("a", 2, "b", true)')
       assertResultAsString('{ a: 2, b: true }', 'rec("a", 2, "b", true)')
+      assertResultAsString('{ a: 2, b: true, }', 'rec("a", 2, "b", true)')
     })
 
     it('record equality', () => {
