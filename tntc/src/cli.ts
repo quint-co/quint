@@ -6,7 +6,7 @@
  * See the description at:
  * https://github.com/informalsystems/tnt/blob/main/doc/tntc.md
  *
- * @author Igor Konnov, Informal Systems, 2021
+ * @author Igor Konnov, Gabriela Moreira, Informal Systems, 2021-2022
  */
 
 import { readFileSync, writeFileSync } from 'fs'

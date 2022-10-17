@@ -25,6 +25,9 @@ export interface Loc {
   end?: { line: number; col: number; index: number; }
 }
 
+/**
+ * An error message whose locations have been resolved.
+ */
 export interface ErrorMessage {
   explanation: string;
   locs: Loc[];

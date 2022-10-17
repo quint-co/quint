@@ -11,16 +11,18 @@
 import * as readline from 'readline'
 import { Readable, Writable } from 'stream'
 import { readFileSync, writeFileSync } from 'fs'
+import lineColumn from 'line-column'
 import chalk from 'chalk'
 
 import { Maybe, just, none } from '@sweet-monads/maybe'
 
-import { TntEx } from './tntIr'
+import { TntEx, IrErrorMessage } from './tntIr'
 import { compile, CompilationContext, lastTraceName } from './runtime/compile'
+import { formatError } from './errorReporter'
 import {
-  EvalResult, ExecError, Register, kindName, ComputableKind
+  EvalResult, Register, kindName, ComputableKind
 } from './runtime/runtime'
-import { probeParse, ErrorMessage } from './tntParserFrontend'
+import { probeParse, ErrorMessage, Loc } from './tntParserFrontend'
 
 // tunable settings
 export const settings = {
@@ -327,14 +329,17 @@ def _testOnce(__nsteps, __init, __next, __inv) =
 // try to evaluate the expression in a string and print it, if successful
 function tryEval (out: writer, state: ReplState, newInput: string): ReplState {
   // output errors to the console in red
-  function chalkHandler (err: ExecError) {
-    out(chalk.red(`${err.sourceAndLoc}: ${err.msg}`))
+  function printErrors (moduleText: string, context: CompilationContext) {
+    printErrorMessages(out, 'syntax error', moduleText, context.syntaxErrors)
+    const resolved = resolveErrors(context.sourceMap, context.compileErrors)
+    printErrorMessages(out, 'compile error', moduleText, resolved)
+    out('') // be nice to external programs
   }
 
   const newState = state
   const probeResult = probeParse(newInput, '<input>')
   if (probeResult.kind === 'error') {
-    printErrorMessages(out, newInput, probeResult.messages)
+    printErrorMessages(out, 'syntax error', newInput, probeResult.messages)
     out('') // be nice to external programs
   }
   if (probeResult.kind === 'expr') {
@@ -346,7 +351,11 @@ ${state.defsHist}
 ${newInput}
 }`
     // compile the expression or definition and evaluate it
-    const context = compile(moduleText, chalkHandler)
+    const context = compile(moduleText)
+    if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
+      printErrors(moduleText, context)
+      return state
+    }
     loadVars(state, context)
     loadShadowVars(state, context)
     const computable = context.values.get(kindName('callable', '__input'))
@@ -370,6 +379,8 @@ ${newInput}
       newState.exprHist.push(newInput.trim())
     }
     if (resultDefined.isNone()) {
+      const resolved = resolveErrors(context.sourceMap, context.runtimeErrors)
+      printErrorMessages(out, 'runtime error', moduleText, resolved)
       out(chalk.red('<result undefined>'))
       out('') // be nice to external programs
     }
@@ -382,10 +393,10 @@ ${state.defsHist}
 ${newInput}
 }`
     // compile the module and add it to history if everything worked
-    const context = compile(moduleText, chalkHandler)
-    if (context.values.size === 0) {
-      out(chalk.red('<compilation failed>'))
-      out('') // be nice to external programs
+    const context = compile(moduleText)
+    if (context.values.size === 0 ||
+        context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
+      printErrors(moduleText, context)
     } else {
       out('') // be nice to external programs
       newState.defsHist = state.defsHist + '\n' + newInput // update the history
@@ -395,46 +406,29 @@ ${newInput}
   return newState
 }
 
+// resolve source locations of IR errors
+function resolveErrors
+(sourceMap: Map<bigint, Loc>, errors: IrErrorMessage[]): ErrorMessage[] {
+  const unknownLoc = {
+    source: '<unknown>',
+    start: { line: 0, col: 0, index: 0 },
+  }
+  return errors.map(msg => {
+    return {
+      explanation: msg.explanation,
+      locs: msg.refs.map(id => sourceMap.get(id) ?? unknownLoc),
+    }
+  })
+}
+
 // print error messages with proper colors
 function printErrorMessages
-(out: writer, text: string, messages: ErrorMessage[]) {
+(out: writer, kind: string, text: string, messages: ErrorMessage[]) {
   // display the error messages and highlight the error places
+  const finder = lineColumn(text)
   for (const e of messages) {
-    out(`Syntax error: ${chalk.red(e.explanation)}`)
-    const lines = text.split('\n')
-    let lineno = 0
-    for (const line of lines) {
-      // try highlighting the first error location
-      if (e.locs[0]) {
-        const loc = e.locs[0]
-        if (lineno < loc.start.line) {
-          // outside of the error region, no highlighting
-          out(line)
-        } else {
-          // starting or continuing the error region
-          let col1 = (loc.start.line === lineno) ? loc.start.col : 0
-          let col2 = line.length
-          if (loc.end) {
-            if (lineno <= loc.end.line) {
-              // inside the region, maybe part of the string to highlight
-              col2 = (loc.end.line === lineno) ? loc.end.col + 1 : line.length
-            } else {
-              // outside of the error region, no highlighting
-              col1 = line.length
-              col2 = line.length
-            }
-          } else {
-            // the region end is not defined, highlight the rest of the line
-            col2 = line.length
-          }
-          const before = line.slice(0, col1)
-          const error = chalk.red(line.slice(col1, col2))
-          const after = line.slice(col2)
-          out(`${before}${error}${after}`)
-        }
-      }
-      lineno += 1
-    }
+    const msg = formatError(text, finder, e)
+    out(chalk.red(`${kind}: ${msg}`))
   }
 }
 

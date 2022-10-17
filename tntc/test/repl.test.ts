@@ -154,9 +154,14 @@ describe('repl ok', () => {
       `
       |16
       |
-      |7:1: Couldn't resolve name n in definition for __input, in module __REPL
-      |7:5: Couldn't resolve name n in definition for __input, in module __REPL
-      |<result undefined>
+      |syntax error: <input>:9:1 - error: Couldn't resolve name n in definition for __input, in module __REPL
+      |9: n * n
+      |   ^
+      |
+      |syntax error: <input>:9:5 - error: Couldn't resolve name n in definition for __input, in module __REPL
+      |9: n * n
+      |       ^
+      |
       |
       |`
     )

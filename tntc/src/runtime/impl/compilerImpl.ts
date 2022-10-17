@@ -52,6 +52,10 @@ export class CompilerVisitor implements IRVisitor {
   private nextVars: Register[] = []
   // shadow variables that are used by the simulator
   private shadowVars: Register[] = []
+  // messages that are produced during compilation
+  private compileErrors: ir.IrErrorMessage[] = []
+  // messages that get populated as the compiled code is executed
+  private runtimeErrors: ir.IrErrorMessage[] = []
 
   constructor () {
     const lastTrace = mkRegister('shadow', lastTraceName, none())
@@ -80,11 +84,37 @@ export class CompilerVisitor implements IRVisitor {
     return this.shadowVars.map(r => r.name)
   }
 
+  /**
+   * Get the array of compile errors, which changes as the code gets executed.
+   */
+  getCompileErrors (): ir.IrErrorMessage[] {
+    return this.compileErrors
+  }
+
+  /**
+   * Get the array of runtime errors, which changes as the code gets executed.
+   */
+  getRuntimeErrors (): ir.IrErrorMessage[] {
+    return this.runtimeErrors
+  }
+
+  private addCompileError (id: bigint, msg: string) {
+    this.compileErrors.push({ explanation: msg, refs: [id] })
+  }
+
+  private addRuntimeError (id: bigint, msg: string) {
+    this.runtimeErrors.push({ explanation: msg, refs: [id] })
+  }
+
   exitOpDef (opdef: ir.TntOpDef) {
     // either a runtime value (if val), or a callable (if def, action, etc.)
     const value = this.compStack.pop()
-    assert(value, `No expression for ${opdef.name} on compStack`)
-    this.context.set(kindName('callable', opdef.name), value)
+    if (value) {
+      this.context.set(kindName('callable', opdef.name), value)
+    } else {
+      this.addCompileError(opdef.id,
+        `No expression for ${opdef.name} on compStack`)
+    }
   }
 
   exitVar (vardef: ir.TntVar) {
@@ -120,8 +150,12 @@ export class CompilerVisitor implements IRVisitor {
     // The order is important, as defines the name priority.
     const comp = this.contextGet(name.name, ['shadow', 'var', 'arg', 'callable'])
     // this may happen, see: https://github.com/informalsystems/tnt/issues/129
-    assert(comp, `Name ${name.name} not found (out of order?)`)
-    this.compStack.push(comp)
+    if (comp) {
+      this.compStack.push(comp)
+    } else {
+      this.addCompileError(name.id,
+        `Name ${name.name} not found (out of order?)`)
+    }
   }
 
   exitApp (app: ir.TntApp) {
@@ -133,23 +167,28 @@ export class CompilerVisitor implements IRVisitor {
           const nextvar = this.contextGet(name, ['nextvar'])
           this.compStack.push(nextvar ?? fail)
         } else {
+          this.addCompileError(app.id, 'Operator next(...) needs one argument')
           this.compStack.push(fail)
         }
         break
       }
 
       case 'assign': {
-        assert(this.compStack.length >= 2, 'Not enough arguments on stack')
+        if (this.compStack.length < 2) {
+          this.addCompileError(app.id, 'Assignment <- needs two arguments')
+          return
+        }
         const [register, rhs] = this.compStack.splice(-2)
         const name = (register as Register).name
         const nextvar = this.contextGet(name, ['nextvar']) as Register
         if (nextvar) {
           this.compStack.push(rhs)
-          this.applyFun(1, (value) => {
+          this.applyFun(app.id, 1, (value) => {
             nextvar.registerValue = just(value)
             return just(rv.mkBool(true))
           })
         } else {
+          this.addCompileError(app.id, `${name} not found in ${name} <- ...`)
           this.compStack.push(fail)
         }
         break
@@ -165,21 +204,21 @@ export class CompilerVisitor implements IRVisitor {
         break
 
       case 'eq':
-        this.applyFun(2, (x, y) => just(rv.mkBool(x.equals(y))))
+        this.applyFun(app.id, 2, (x, y) => just(rv.mkBool(x.equals(y))))
         break
 
       case 'neq':
-        this.applyFun(2, (x, y) => just(rv.mkBool(!x.equals(y))))
+        this.applyFun(app.id, 2, (x, y) => just(rv.mkBool(!x.equals(y))))
         break
 
       // conditional
       case 'ite':
-        this.translateIfThenElse()
+        this.translateIfThenElse(app.id)
         break
 
       // Booleans
       case 'not':
-        this.applyFun(1, p => just(rv.mkBool(!p.toBool())))
+        this.applyFun(app.id, 1, p => just(rv.mkBool(!p.toBool())))
         break
 
       case 'and':
@@ -201,131 +240,193 @@ export class CompilerVisitor implements IRVisitor {
         break
 
       case 'implies':
-        this.applyFun(2, (p, q) => just(rv.mkBool(!p.toBool() || q.toBool())))
+        this.applyFun(app.id,
+          2,
+          (p, q) => just(rv.mkBool(!p.toBool() || q.toBool())))
         break
 
       case 'iff':
-        this.applyFun(2, (p, q) => just(rv.mkBool(p.toBool() === q.toBool())))
+        this.applyFun(app.id,
+          2,
+          (p, q) => just(rv.mkBool(p.toBool() === q.toBool())))
         break
 
       // integers
       case 'iuminus':
-        this.applyFun(1, n => just(rv.mkInt(-n.toInt())))
+        this.applyFun(app.id,
+          1,
+          n => just(rv.mkInt(-n.toInt())))
         break
 
       case 'iadd':
-        this.applyFun(2, (p, q) => just(rv.mkInt(p.toInt() + q.toInt())))
+        this.applyFun(app.id,
+          2,
+          (p, q) => just(rv.mkInt(p.toInt() + q.toInt())))
         break
 
       case 'isub':
-        this.applyFun(2, (p, q) => just(rv.mkInt(p.toInt() - q.toInt())))
+        this.applyFun(app.id,
+          2,
+          (p, q) => just(rv.mkInt(p.toInt() - q.toInt())))
         break
 
       case 'imul':
-        this.applyFun(2, (p, q) => just(rv.mkInt(p.toInt() * q.toInt())))
+        this.applyFun(app.id,
+          2,
+          (p, q) => just(rv.mkInt(p.toInt() * q.toInt())))
         break
 
       case 'idiv':
-        this.applyFun(2, (p, q) => just(rv.mkInt(p.toInt() / q.toInt())))
+        this.applyFun(app.id,
+          2,
+          (p, q) => {
+            if (q.toInt() !== 0n) {
+              return just(rv.mkInt(p.toInt() / q.toInt()))
+            } else {
+              this.addRuntimeError(app.id, 'Division by zero')
+              return none()
+            }
+          })
         break
 
       case 'imod':
-        this.applyFun(2, (p, q) => just(rv.mkInt(p.toInt() % q.toInt())))
+        this.applyFun(app.id,
+          2,
+          (p, q) => just(rv.mkInt(p.toInt() % q.toInt())))
         break
 
       case 'ipow':
-        this.applyFun(2, (p, q) => just(rv.mkInt(p.toInt() ** q.toInt())))
+        this.applyFun(app.id,
+          2,
+          (p, q) => just(rv.mkInt(p.toInt() ** q.toInt())))
         break
 
       case 'igt':
-        this.applyFun(2, (p, q) => just(rv.mkBool(p.toInt() > q.toInt())))
+        this.applyFun(app.id,
+          2,
+          (p, q) => just(rv.mkBool(p.toInt() > q.toInt())))
         break
 
       case 'ilt':
-        this.applyFun(2, (p, q) => just(rv.mkBool(p.toInt() < q.toInt())))
+        this.applyFun(app.id,
+          2,
+          (p, q) => just(rv.mkBool(p.toInt() < q.toInt())))
         break
 
       case 'igte':
-        this.applyFun(2, (p, q) => just(rv.mkBool(p.toInt() >= q.toInt())))
+        this.applyFun(app.id,
+          2,
+          (p, q) => just(rv.mkBool(p.toInt() >= q.toInt())))
         break
 
       case 'ilte':
-        this.applyFun(2, (p, q) => just(rv.mkBool(p.toInt() <= q.toInt())))
+        this.applyFun(app.id,
+          2,
+          (p, q) => just(rv.mkBool(p.toInt() <= q.toInt())))
         break
 
       case 'tup':
         // Construct a tuple from an array of values
-        this.applyFun(app.args.length,
+        this.applyFun(app.id,
+          app.args.length,
           (...values: RuntimeValue[]) => just(rv.mkTuple(values)))
         break
 
       case 'item':
         // Access a tuple: tuples are 1-indexed, that is, _1, _2, etc.
-        this.applyFun(2,
-          (tuple, idx) => getListElem(tuple.toList(), idx.toInt() - 1n))
+        this.applyFun(app.id,
+          2,
+          (tuple, idx) =>
+            this.getListElem(app.id, tuple.toList(), idx.toInt() - 1n))
         break
 
       case 'tuples':
         // Construct a cross product
-        this.applyFun(app.args.length,
+        this.applyFun(app.id,
+          app.args.length,
           (...sets: RuntimeValue[]) => just(rv.mkCrossProd(sets)))
         break
 
       case 'list':
         // Construct a list from an array of values
-        this.applyFun(app.args.length,
+        this.applyFun(app.id,
+          app.args.length,
           (...values: RuntimeValue[]) => just(rv.mkList(values)))
         break
 
       case 'nth':
         // Access a list
-        this.applyFun(2, (list, idx) => getListElem(list.toList(), idx.toInt()))
+        this.applyFun(app.id,
+          2,
+          (list, idx) => this.getListElem(app.id, list.toList(), idx.toInt()))
         break
 
       case 'replaceAt':
-        this.applyFun(3,
-          (list, idx, value) => updateList(list.toList(), idx.toInt(), value))
+        this.applyFun(app.id,
+          3,
+          (list, idx, value) =>
+            this.updateList(app.id, list.toList(), idx.toInt(), value))
         break
 
       case 'head':
-        this.applyFun(1, (list) => getListElem(list.toList(), 0n))
+        this.applyFun(app.id,
+          1,
+          (list) => this.getListElem(app.id, list.toList(), 0n))
         break
 
       case 'tail':
-        this.applyFun(1, (list) => {
+        this.applyFun(app.id, 1, (list) => {
           const l = list.toList()
-          return (l.size > 0) ? sliceList(l, 1n, BigInt(l.size - 1)) : none()
+          if (l.size > 0) {
+            return this.sliceList(app.id, l, 1n, BigInt(l.size - 1))
+          } else {
+            this.addRuntimeError(app.id, 'Applied tail to an empty list')
+            return none()
+          }
         })
         break
 
       case 'slice':
-        this.applyFun(3, (list, start, end) => {
+        this.applyFun(app.id, 3, (list, start, end) => {
           const [l, s, e] = [list.toList(), start.toInt(), end.toInt()]
-          return (s >= 0 && e < l.size) ? sliceList(l, s, e) : none()
+          if (s >= 0 && e < l.size) {
+            return this.sliceList(app.id, l, s, e)
+          } else {
+            this.addRuntimeError(app.id,
+              `slice(..., ${s}, ${e}) applied to a list of size ${l.size}`)
+            return none()
+          }
         })
         break
 
       case 'length':
-        this.applyFun(1, list => just(rv.mkInt(BigInt(list.toList().size))))
+        this.applyFun(app.id,
+          1,
+          list => just(rv.mkInt(BigInt(list.toList().size))))
         break
 
       case 'append':
-        this.applyFun(2,
+        this.applyFun(app.id,
+          2,
           (list, elem) => just(rv.mkList(list.toList().push(elem))))
         break
 
       case 'concat':
-        this.applyFun(2,
-          (list1, list2) => just(rv.mkList(list1.toList().concat(list2.toList()))))
+        this.applyFun(app.id,
+          2,
+          (list1, list2) =>
+            just(rv.mkList(list1.toList().concat(list2.toList()))))
         break
 
       case 'indices':
-        this.applyFun(1, list => just(rv.mkInterval(0n, BigInt(list.toList().size - 1))))
+        this.applyFun(app.id, 1, list =>
+          just(rv.mkInterval(0n, BigInt(list.toList().size - 1))))
         break
 
       case 'rec':
         // Construct a record
-        this.applyFun(app.args.length,
+        this.applyFun(app.id,
+          app.args.length,
           (...values: RuntimeValue[]) => {
             const keys = values
               .filter((e, i) => i % 2 === 0)
@@ -342,14 +443,21 @@ export class CompilerVisitor implements IRVisitor {
 
       case 'field':
         // Access a record via the field name
-        this.applyFun(2, (rec, fieldName) => {
-          const fieldValue = rec.toOrderedMap().get(fieldName.toStr())
-          return fieldValue ? just(fieldValue) : none()
+        this.applyFun(app.id, 2, (rec, fieldName) => {
+          const name = fieldName.toStr()
+          const fieldValue = rec.toOrderedMap().get(name)
+          if (fieldValue) {
+            return just(fieldValue)
+          } else {
+            this.addRuntimeError(app.id,
+              `Accessing a missing record field ${name}`)
+            return none()
+          }
         })
         break
 
       case 'fieldNames':
-        this.applyFun(1, rec => {
+        this.applyFun(app.id, 1, rec => {
           const keysAsRuntimeValues =
             rec.toOrderedMap().keySeq().map(key => rv.mkStr(key))
           return just(rv.mkSet(keysAsRuntimeValues))
@@ -358,13 +466,15 @@ export class CompilerVisitor implements IRVisitor {
 
       case 'with':
         // update a record
-        this.applyFun(3, (rec, fieldName, fieldValue) => {
+        this.applyFun(app.id, 3, (rec, fieldName, fieldValue) => {
           const oldMap = rec.toOrderedMap()
           const key = fieldName.toStr()
           if (oldMap.has(key)) {
-            const newMap = rec.toOrderedMap().set(fieldName.toStr(), fieldValue)
+            const newMap = rec.toOrderedMap().set(key, fieldValue)
             return just(rv.mkRecord(newMap))
           } else {
+            this.addRuntimeError(app.id,
+              `Called 'with' with a non-existent key ${key}`)
             return none()
           }
         })
@@ -372,65 +482,77 @@ export class CompilerVisitor implements IRVisitor {
 
       case 'set':
         // Construct a set from an array of values.
-        this.applyFun(app.args.length,
+        this.applyFun(app.id, app.args.length,
           (...values: RuntimeValue[]) => just(rv.mkSet(values)))
         break
 
       case 'contains':
-        this.applyFun(2, (set, value) => just(rv.mkBool(set.contains(value))))
+        this.applyFun(app.id, 2, (set, value) => just(rv.mkBool(set.contains(value))))
         break
 
       case 'in':
-        this.applyFun(2, (value, set) => just(rv.mkBool(set.contains(value))))
+        this.applyFun(app.id, 2, (value, set) => just(rv.mkBool(set.contains(value))))
         break
 
       case 'subseteq':
-        this.applyFun(2, (l, r) => just(rv.mkBool(l.isSubset(r))))
+        this.applyFun(app.id,
+          2,
+          (l, r) => just(rv.mkBool(l.isSubset(r))))
         break
 
       case 'union':
-        this.applyFun(2, (l, r) => just(rv.mkSet(l.toSet().union(r.toSet()))))
+        this.applyFun(app.id,
+          2,
+          (l, r) => just(rv.mkSet(l.toSet().union(r.toSet()))))
         break
 
       case 'intersect':
-        this.applyFun(2, (l, r) => just(rv.mkSet(l.toSet().intersect(r.toSet()))))
+        this.applyFun(app.id,
+          2,
+          (l, r) => just(rv.mkSet(l.toSet().intersect(r.toSet()))))
         break
 
       case 'exclude':
-        this.applyFun(2, (l, r) => just(rv.mkSet(l.toSet().subtract(r.toSet()))))
+        this.applyFun(app.id,
+          2,
+          (l, r) => just(rv.mkSet(l.toSet().subtract(r.toSet()))))
         break
 
       case 'cardinality':
-        this.applyFun(1, set => just(rv.mkInt(BigInt(set.cardinality()))))
+        this.applyFun(app.id,
+          1,
+          set => just(rv.mkInt(BigInt(set.cardinality()))))
         break
 
       case 'isFinite':
         // at the moment, we support only finite sets, so just return true
-        this.applyFun(1, set => just(rv.mkBool(true)))
+        this.applyFun(app.id, 1, set => just(rv.mkBool(true)))
         break
 
       case 'to':
-        this.applyFun(2, (i, j) => just(rv.mkInterval(i.toInt(), j.toInt())))
+        this.applyFun(app.id,
+          2,
+          (i, j) => just(rv.mkInterval(i.toInt(), j.toInt())))
         break
 
       case 'fold':
-        this.applyFold('fwd')
+        this.applyFold(app.id, 'fwd')
         break
 
       case 'foldl':
-        this.applyFold('fwd')
+        this.applyFold(app.id, 'fwd')
         break
 
       case 'foldr':
-        this.applyFold('rev')
+        this.applyFold(app.id, 'rev')
         break
 
       case 'guess':
-        this.applyGuess()
+        this.applyGuess(app.id)
         break
 
       case 'flatten':
-        this.applyFun(1, set => {
+        this.applyFun(app.id, 1, set => {
           // unpack the sets from runtime values
           const setOfSets = set.toSet().map(e => e.toSet())
           // and flatten the set of sets via immutable-js
@@ -440,21 +562,29 @@ export class CompilerVisitor implements IRVisitor {
 
       case 'get':
         // Get a map value
-        this.applyFun(2, (map, key) => {
+        this.applyFun(app.id, 2, (map, key) => {
           const value = map.toMap().get(key.normalForm())
-          return value ? just(value) : none()
+          if (value) {
+            return just(value)
+          } else {
+            // Should we print the key? It may be a complex expression.
+            this.addRuntimeError(app.id, "Called 'get' with a non-existing key")
+            return none()
+          }
         })
         break
 
       case 'update':
         // Update a map value
-        this.applyFun(3, (map, key, newValue) => {
+        this.applyFun(app.id, 3, (map, key, newValue) => {
           const normalKey = key.normalForm()
           const asMap = map.toMap()
           if (asMap.has(normalKey)) {
             const newMap = asMap.set(normalKey, newValue)
             return just(rv.fromMap(newMap))
           } else {
+            this.addRuntimeError(app.id,
+              "Called 'update' with a non-existing key")
             return none()
           }
         })
@@ -462,7 +592,7 @@ export class CompilerVisitor implements IRVisitor {
 
       case 'put':
         // add a value to a map
-        this.applyFun(3, (map, key, newValue) => {
+        this.applyFun(app.id, 3, (map, key, newValue) => {
           const normalKey = key.normalForm()
           const asMap = map.toMap()
           const newMap = asMap.set(normalKey, newValue)
@@ -473,7 +603,7 @@ export class CompilerVisitor implements IRVisitor {
       case 'updateAs': {
         // Update a map value via a lambda
         const fun = this.compStack.pop() ?? fail
-        this.applyFun(2, (map, key) => {
+        this.applyFun(app.id, 2, (map, key) => {
           const normalKey = key.normalForm()
           const asMap = map.toMap()
           if (asMap.has(normalKey)) {
@@ -484,6 +614,8 @@ export class CompilerVisitor implements IRVisitor {
               return rv.fromMap(newMap)
             })
           } else {
+            this.addRuntimeError(app.id,
+              "Called 'updateAs' with a non-existing key")
             return none()
           }
         })
@@ -492,13 +624,14 @@ export class CompilerVisitor implements IRVisitor {
 
       case 'keys':
         // map keys as a set
-        this.applyFun(1, (map) => {
+        this.applyFun(app.id, 1, (map) => {
           return just(rv.mkSet(map.toMap().keys()))
         })
         break
 
       case 'exists':
         this.mapLambdaThenReduce(
+          app.id,
           set =>
             rv.mkBool(set.find(([result, _]) => result.toBool()) !== undefined)
         )
@@ -506,6 +639,7 @@ export class CompilerVisitor implements IRVisitor {
 
       case 'forall':
         this.mapLambdaThenReduce(
+          app.id,
           set =>
             rv.mkBool(set.find(([result, _]) => !result.toBool()) === undefined)
         )
@@ -513,12 +647,14 @@ export class CompilerVisitor implements IRVisitor {
 
       case 'map':
         this.mapLambdaThenReduce(
+          app.id,
           array => rv.mkSet(array.map(([result, _]) => result))
         )
         break
 
       case 'filter':
         this.mapLambdaThenReduce(
+          app.id,
           arr =>
             rv.mkSet(arr
               .filter(([r, e]) => r.toBool())
@@ -528,6 +664,7 @@ export class CompilerVisitor implements IRVisitor {
 
       case 'select':
         this.mapLambdaThenReduce(
+          app.id,
           arr =>
             rv.mkList(arr
               .filter(([r, e]) => r.toBool())
@@ -536,13 +673,13 @@ export class CompilerVisitor implements IRVisitor {
         break
 
       case 'mapOf':
-        this.mapLambdaThenReduce(arr =>
+        this.mapLambdaThenReduce(app.id, arr =>
           rv.mkMap(arr.map(([v, k]) => [k, v]))
         )
         break
 
       case 'setToMap':
-        this.applyFun(1, (set: RuntimeValue) =>
+        this.applyFun(app.id, 1, (set: RuntimeValue) =>
           just(rv.mkMap(set.toSet().map(p => {
             const arr = p.toList().toArray()
             return [arr[0], arr[1]]
@@ -551,14 +688,14 @@ export class CompilerVisitor implements IRVisitor {
         break
 
       case 'setOfMaps':
-        this.applyFun(2, (dom, rng) => {
+        this.applyFun(app.id, 2, (dom, rng) => {
           return just(rv.mkMapSet(dom, rng))
         })
         break
 
       case '_test':
         // the special operator that runs random simulation
-        this.test()
+        this.test(app.id)
         break
 
       default: {
@@ -571,16 +708,18 @@ export class CompilerVisitor implements IRVisitor {
     const callable =
       this.contextGet(app.opcode, ['callable', 'arg']) as Callable
     if (callable === undefined || callable.registers === undefined) {
-      // The error should be reported via a callback:
-      // TODO: https://github.com/informalsystems/tnt/issues/191
-      console.error(`${app.opcode} is not supported`)
+      this.addCompileError(app.id, `Called unknown operator ${app.opcode}`)
       this.compStack.push(fail)
     } else {
-      if (this.compStack.length < callable.registers.length) {
-        const msg = `Not enough arguments for ${app.opcode} on the stack`
-        throw new Error(msg)
+      const nactual = this.compStack.length
+      const nexpected = callable.registers.length
+      if (nactual < nexpected) {
+        this.addCompileError(app.id,
+          `Expected ${nexpected} arguments for ${app.opcode}, found: ${nactual}`)
+        return
       }
-      this.applyFun(callable.registers.length,
+      this.applyFun(app.id,
+        callable.registers.length,
         (...args: RuntimeValue[]) => {
           for (let i = 0; i < args.length; i++) {
             callable.registers[i].registerValue = just(args[i])
@@ -607,15 +746,20 @@ export class CompilerVisitor implements IRVisitor {
     lam.params.forEach(p => {
       const key = kindName('arg', p)
       const register = this.contextGet(p, ['arg']) as Register
-      assert(register && register.registerValue,
-             `Expected a register ${p} on the stack`)
-      this.context.delete(key)
-      registers.push(register)
+      if (register && register.registerValue) {
+        this.context.delete(key)
+        registers.push(register)
+      } else {
+        this.addCompileError(lam.id, `Parameter ${p} not found`)
+      }
     })
 
     const lambdaBody = this.compStack.pop()
-    assert(lambdaBody, 'Expected the body of a lambda on the stack')
-    this.compStack.push(mkCallable(registers, lambdaBody))
+    if (lambdaBody) {
+      this.compStack.push(mkCallable(registers, lambdaBody))
+    } else {
+      this.addCompileError(lam.id, 'Compilation of lambda failed')
+    }
   }
 
   /**
@@ -635,10 +779,12 @@ export class CompilerVisitor implements IRVisitor {
     * The final result is stored on the stack.
     */
   private mapLambdaThenReduce
-  (mapResultAndElems:
+  (sourceId: bigint,
+    mapResultAndElems:
       (array: Array<[RuntimeValue, RuntimeValue]>) => RuntimeValue): void {
     if (this.compStack.length < 2) {
-      throw new Error('Not enough parameters on compStack')
+      this.addCompileError(sourceId, 'Not enough arguments')
+      return
     }
     // lambda translated to Callable
     const callable = this.compStack.pop() as Callable
@@ -654,17 +800,20 @@ export class CompilerVisitor implements IRVisitor {
       const result = callable.eval().map(e => e as RuntimeValue)
       return result.map(result => [result, elem])
     }
-    this.applyFun(1, (iterable: Iterable<RuntimeValue>): Maybe<RuntimeValue> => {
-      return flatMap(iterable, evaluateElem).map(rs => mapResultAndElems(rs))
-    })
+    this.applyFun(sourceId,
+      1,
+      (iterable: Iterable<RuntimeValue>): Maybe<RuntimeValue> => {
+        return flatMap(iterable, evaluateElem).map(rs => mapResultAndElems(rs))
+      })
   }
 
   /**
    * Translate one of the operators: fold, foldl, and foldr.
    */
-  private applyFold (order: 'fwd' | 'rev'): void {
+  private applyFold (sourceId: bigint, order: 'fwd' | 'rev'): void {
     if (this.compStack.length < 3) {
-      throw new Error('Not enough parameters on compStack')
+      this.addCompileError(sourceId, 'Not enough arguments for fold')
+      return
     }
     // extract two arguments from the call stack and keep the set
     const callable = this.compStack.pop() as Callable
@@ -683,21 +832,26 @@ export class CompilerVisitor implements IRVisitor {
       return result
     }
     // iterate over the iterable (a set or a list)
-    this.applyFun(1, (iterable: Iterable<RuntimeValue>): Maybe<any> => {
-      return initialComp.eval().map(initialValue => {
-        // save the initial value on the 0th register
-        callable.registers[0].registerValue = just(initialValue)
-        // fold the iterable
-        return flatForEach(order, iterable, just(initialValue), evaluateElem)
-      }).join()
-    })
+    this.applyFun(sourceId,
+      1,
+      (iterable: Iterable<RuntimeValue>): Maybe<any> => {
+        return initialComp.eval().map(initialValue => {
+          // save the initial value on the 0th register
+          callable.registers[0].registerValue = just(initialValue)
+          // fold the iterable
+          return flatForEach(order, iterable, just(initialValue), evaluateElem)
+        }).join()
+      })
   }
 
   // pop nargs computable values, pass them the 'fun' function, and
   // push the combined computable value on the stack
   private applyFun
-  (nargs: number, fun: (...args: RuntimeValue[]) => Maybe<RuntimeValue>) {
-    if (this.compStack.length >= nargs) {
+  (sourceId: bigint,
+    nargs: number, fun: (...args: RuntimeValue[]) => Maybe<RuntimeValue>) {
+    if (this.compStack.length < nargs) {
+      this.addCompileError(sourceId, 'Not enough arguments')
+    } else {
       // pop nargs elements of the compStack
       const args = this.compStack.splice(-nargs, nargs)
       // produce the new computable value
@@ -711,15 +865,15 @@ export class CompilerVisitor implements IRVisitor {
         },
       }
       this.compStack.push(comp)
-    } else {
-      throw new Error('Not enough arguments on the stack')
     }
   }
 
   // if-then-else requires special treatment,
   // as it should not evaluate both arms
-  private translateIfThenElse () {
-    if (this.compStack.length >= 3) {
+  private translateIfThenElse (sourceId: bigint) {
+    if (this.compStack.length < 3) {
+      this.addCompileError(sourceId, 'Not enough arguments')
+    } else {
       // pop 3 elements of the compStack
       const [cond, thenArm, elseArm] = this.compStack.splice(-3, 3)
       // produce the new computable value
@@ -734,15 +888,15 @@ export class CompilerVisitor implements IRVisitor {
         },
       }
       this.compStack.push(comp)
-    } else {
-      throw new Error('Not enough arguments on the stack')
     }
   }
 
   // translate and { A, ..., C }
   private translateAnd (app: ir.TntApp) {
-    assert(this.compStack.length >= app.args.length,
-      'Not enough arguments on stack for "and"')
+    if (this.compStack.length < app.args.length) {
+      this.addCompileError(app.id, 'Not enough arguments on stack for "and"')
+      return
+    }
     const args = this.compStack.splice(-app.args.length)
 
     const lazyCompute = () => {
@@ -769,8 +923,11 @@ export class CompilerVisitor implements IRVisitor {
 
   // translate all { A, ..., C }
   private translateAndAction (app: ir.TntApp) {
-    assert(this.compStack.length >= app.args.length,
-      'Not enough arguments on stack for "actionAll"')
+    if (this.compStack.length < app.args.length) {
+      this.addCompileError(app.id,
+        'Not enough arguments on stack for "all"')
+      return
+    }
     const args = this.compStack.splice(-app.args.length)
 
     const lazyCompute = () => {
@@ -802,8 +959,11 @@ export class CompilerVisitor implements IRVisitor {
 
   // translate or { A, ..., C }
   private translateOr (app: ir.TntApp) {
-    assert(this.compStack.length >= app.args.length,
-      'Not enough arguments on stack for "or"')
+    if (this.compStack.length < app.args.length) {
+      this.addCompileError(app.id,
+        'Not enough arguments on stack for "or"')
+      return
+    }
     const args = this.compStack.splice(-app.args.length)
 
     const lazyCompute = () => {
@@ -830,8 +990,11 @@ export class CompilerVisitor implements IRVisitor {
 
   // translate any { A, ..., C }
   private translateOrAction (app: ir.TntApp) {
-    assert(this.compStack.length >= app.args.length,
-      'Not enough arguments on stack for "actionAny"')
+    if (this.compStack.length < app.args.length) {
+      this.addCompileError(app.id,
+        'Not enough arguments on stack for "any"')
+      return
+    }
     const args = this.compStack.splice(-app.args.length)
 
     // According to the semantics of action-level disjunctions,
@@ -873,9 +1036,11 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   // apply the operator guess
-  private applyGuess () {
+  private applyGuess (sourceId: bigint) {
     if (this.compStack.length < 2) {
-      throw new Error('Not enough arguments on the stack')
+      this.addCompileError(sourceId,
+        'Not enough arguments on stack for "guess"')
+      return
     }
 
     const [setComp, fun] = this.compStack.splice(-2)
@@ -899,9 +1064,11 @@ export class CompilerVisitor implements IRVisitor {
   //
   // Technically, this is similar to the implementation of folds.
   // However, it also restores the state and saves a trace, if there is any.
-  private test () {
+  private test (sourceId: bigint) {
     if (this.compStack.length < 5) {
-      throw new Error('Not enough arguments on the stack')
+      this.addCompileError(sourceId,
+        'Not enough arguments on stack for "_test"')
+      return
     }
 
     // convert the current variable values to a record
@@ -1021,30 +1188,35 @@ export class CompilerVisitor implements IRVisitor {
 
     return undefined
   }
-}
 
-// Access a list via an index
-function getListElem (list: List<RuntimeValue>, idx: bigint) {
-  if (idx >= 0n && idx < list.size) {
-    const elem = list.get(Number(idx))
-    return elem ? just(elem) : none()
-  } else {
-    return none()
+  // Access a list via an index
+  private getListElem
+  (sourceId: bigint, list: List<RuntimeValue>, idx: bigint) {
+    if (idx >= 0n && idx < list.size) {
+      const elem = list.get(Number(idx))
+      return elem ? just(elem) : none()
+    } else {
+      this.addRuntimeError(sourceId, `Out of bounds, nth(${idx})`)
+      return none()
+    }
   }
-}
 
-// Update a list via an index
-function updateList (list: List<RuntimeValue>, idx: bigint, value: RuntimeValue) {
-  if (idx >= 0n && idx < list.size) {
-    return just(rv.mkList(list.set(Number(idx), value)))
-  } else {
-    return none()
+  // Update a list via an index
+  private updateList
+  (sourceId: bigint, list: List<RuntimeValue>, idx: bigint, value: RuntimeValue) {
+    if (idx >= 0n && idx < list.size) {
+      return just(rv.mkList(list.set(Number(idx), value)))
+    } else {
+      this.addRuntimeError(sourceId, `Out of bounds, replaceAt(..., ${idx}, ...)`)
+      return none()
+    }
   }
-}
 
-// slice a list
-function sliceList (list: List<RuntimeValue>, start: bigint, end: bigint) {
-  return just(rv.mkList(list.slice(Number(start), Number(end) + 1)))
+  // slice a list
+  private sliceList
+  (sourceId: bigint, list: List<RuntimeValue>, start: bigint, end: bigint) {
+    return just(rv.mkList(list.slice(Number(start), Number(end) + 1)))
+  }
 }
 
 // make a `Computable` that always returns a given runtime value
