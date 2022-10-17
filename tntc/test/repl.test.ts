@@ -168,6 +168,23 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
+  it('handle exceptions', async () => {
+    const input = dedent(
+      `set(Int)
+      |`
+    )
+    const output = dedent(
+      `runtime error: <input>:9:1 - error: Infinite set Int is non-enumerable
+      |9: set(Int)
+      |   ^^^^^^^^
+      |
+      |<result undefined>
+      |
+      |`
+    )
+    await assertRepl(input, output)
+  })
+
   it('assignments', async () => {
     const input = dedent(
       `var x: int
@@ -289,10 +306,18 @@ describe('repl ok', () => {
       |2 <= x and x <= 5
       |tuples(2.to(5), 3.to(4)).guess(t => x <- t._1 + t._2)
       |5 <= x and x <= 9
+      |Nat.guess(i => x <- i)
+      |x >= 0
+      |Int.guess(i => x <- i)
+      |Int.contains(x)
       |`
     )
     const output = dedent(
       `
+      |true
+      |true
+      |true
+      |true
       |true
       |true
       |true

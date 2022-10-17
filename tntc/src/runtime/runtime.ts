@@ -52,7 +52,8 @@ export interface Computable {
 /**
  * The kind of a computable.
  */
-export type ComputableKind = 'var' | 'nextvar' | 'arg' | 'callable' | 'shadow'
+export type ComputableKind =
+  'val' | 'var' | 'nextvar' | 'arg' | 'callable' | 'shadow'
 
 /**
  * Create a key that encodes its name and kind. This is only useful for

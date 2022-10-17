@@ -452,6 +452,47 @@ describe('compiling specs to runtime values', () => {
     })
   })
 
+  describe('compile over built-in sets', () => {
+    it('computes Bool', () => {
+      assertResultAsString('Bool', 'set(false, true)')
+    })
+
+    it('computes Int', () => {
+      assertResultAsString('Int', 'Int')
+    })
+
+    it('computes Int.contains', () => {
+      assertResultAsString('Int.contains(123)', 'true')
+      assertResultAsString('Int.contains(0)', 'true')
+      assertResultAsString('Int.contains(-123)', 'true')
+    })
+
+    it('computes Nat', () => {
+      assertResultAsString('Nat', 'Nat')
+    })
+
+    it('computes Nat.contains', () => {
+      assertResultAsString('Nat.contains(123)', 'true')
+      assertResultAsString('Nat.contains(0)', 'true')
+      assertResultAsString('Nat.contains(-123)', 'false')
+    })
+
+    it('computes isSubset', () => {
+      assertResultAsString('Nat.subseteq(Nat)', 'true')
+      assertResultAsString('Nat.subseteq(Int)', 'true')
+      assertResultAsString('Int.subseteq(Int)', 'true')
+      assertResultAsString('Int.subseteq(Nat)', 'false')
+    })
+
+    it('equality over Nat and Int', () => {
+      assertResultAsString('Nat == Nat', 'true')
+      assertResultAsString('Int == Int', 'true')
+      assertResultAsString('Nat == Int', 'false')
+      assertResultAsString('Int == Nat', 'false')
+      assertResultAsString('Int == set(0, 1)', 'false')
+    })
+  })
+
   describe('compile over tuples', () => {
     it('tuple constructors', () => {
       assertResultAsString('tup(1, 2, 3)', 'tup(1, 2, 3)')

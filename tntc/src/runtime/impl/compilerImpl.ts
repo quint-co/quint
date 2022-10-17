@@ -61,6 +61,13 @@ export class CompilerVisitor implements IRVisitor {
     const lastTrace = mkRegister('shadow', lastTraceName, none())
     this.shadowVars.push(lastTrace)
     this.context.set(kindName(lastTrace.kind, lastTrace.name), lastTrace)
+    const boolSet =
+      mkConstComputable(rv.mkSet([rv.mkBool(false), rv.mkBool(true)]))
+    this.context.set(kindName('val', 'Bool'), boolSet)
+    this.context.set(kindName('val', 'Int'),
+      mkConstComputable(rv.mkInfSet('Int')))
+    this.context.set(kindName('val', 'Nat'),
+      mkConstComputable(rv.mkInfSet('Nat')))
   }
 
   /**
@@ -148,7 +155,8 @@ export class CompilerVisitor implements IRVisitor {
     // The name belongs to one of the objects:
     // a shadow variable, a variable, an argument, a callable.
     // The order is important, as defines the name priority.
-    const comp = this.contextGet(name.name, ['shadow', 'var', 'arg', 'callable'])
+    const comp =
+      this.contextGet(name.name, ['shadow', 'val', 'var', 'arg', 'callable'])
     // this may happen, see: https://github.com/informalsystems/tnt/issues/129
     if (comp) {
       this.compStack.push(comp)
@@ -857,11 +865,18 @@ export class CompilerVisitor implements IRVisitor {
       // produce the new computable value
       const comp = {
         eval: (): Maybe<RuntimeValue> => {
-          // compute the values of the arguments at this point
-          const values = args.map(a => a.eval())
-          // if they are all defined, apply the function 'fun' to the arguments
-          return merge(values)
-            .map(vs => fun(...vs.map(v => v as RuntimeValue))).join()
+          try {
+            // compute the values of the arguments at this point
+            const values = args.map(a => a.eval())
+            // if they are all defined, apply the function 'fun' to the arguments
+            return merge(values)
+              .map(vs => fun(...vs.map(v => v as RuntimeValue))).join()
+          } catch (error) {
+            const msg =
+              (error instanceof Error) ? error.message : 'unknown error'
+            this.addRuntimeError(sourceId, msg)
+            return none()
+          }
         },
       }
       this.compStack.push(comp)
