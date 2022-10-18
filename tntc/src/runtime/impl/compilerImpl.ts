@@ -345,7 +345,7 @@ export class CompilerVisitor implements IRVisitor {
         this.applyFun(app.id,
           2,
           (tuple, idx) =>
-            this.getListElem(app.id, tuple.toList(), idx.toInt() - 1n))
+            this.getListElem(app.id, tuple.toList(), Number(idx.toInt()) - 1))
         break
 
       case 'tuples':
@@ -366,27 +366,28 @@ export class CompilerVisitor implements IRVisitor {
         // Access a list
         this.applyFun(app.id,
           2,
-          (list, idx) => this.getListElem(app.id, list.toList(), idx.toInt()))
+          (list, idx) =>
+            this.getListElem(app.id, list.toList(), Number(idx.toInt())))
         break
 
       case 'replaceAt':
         this.applyFun(app.id,
           3,
           (list, idx, value) =>
-            this.updateList(app.id, list.toList(), idx.toInt(), value))
+            this.updateList(app.id, list.toList(), Number(idx.toInt()), value))
         break
 
       case 'head':
         this.applyFun(app.id,
           1,
-          (list) => this.getListElem(app.id, list.toList(), 0n))
+          (list) => this.getListElem(app.id, list.toList(), 0))
         break
 
       case 'tail':
         this.applyFun(app.id, 1, (list) => {
           const l = list.toList()
           if (l.size > 0) {
-            return this.sliceList(app.id, l, 1n, BigInt(l.size - 1))
+            return this.sliceList(app.id, l, 1, l.size)
           } else {
             this.addRuntimeError(app.id, 'Applied tail to an empty list')
             return none()
@@ -396,8 +397,10 @@ export class CompilerVisitor implements IRVisitor {
 
       case 'slice':
         this.applyFun(app.id, 3, (list, start, end) => {
-          const [l, s, e] = [list.toList(), start.toInt(), end.toInt()]
-          if (s >= 0 && e < l.size) {
+          const [l, s, e] =
+            [list.toList(), Number(start.toInt()), Number(end.toInt())]
+          // adjust start and end, as JS offers richer API over negative numbers
+          if (s >= 0 && s < l.size && e <= l.size && e >= s) {
             return this.sliceList(app.id, l, s, e)
           } else {
             this.addRuntimeError(app.id,
@@ -1206,7 +1209,7 @@ export class CompilerVisitor implements IRVisitor {
 
   // Access a list via an index
   private getListElem
-  (sourceId: bigint, list: List<RuntimeValue>, idx: bigint) {
+  (sourceId: bigint, list: List<RuntimeValue>, idx: number) {
     if (idx >= 0n && idx < list.size) {
       const elem = list.get(Number(idx))
       return elem ? just(elem) : none()
@@ -1218,7 +1221,7 @@ export class CompilerVisitor implements IRVisitor {
 
   // Update a list via an index
   private updateList
-  (sourceId: bigint, list: List<RuntimeValue>, idx: bigint, value: RuntimeValue) {
+  (sourceId: bigint, list: List<RuntimeValue>, idx: number, value: RuntimeValue) {
     if (idx >= 0n && idx < list.size) {
       return just(rv.mkList(list.set(Number(idx), value)))
     } else {
@@ -1229,8 +1232,8 @@ export class CompilerVisitor implements IRVisitor {
 
   // slice a list
   private sliceList
-  (sourceId: bigint, list: List<RuntimeValue>, start: bigint, end: bigint) {
-    return just(rv.mkList(list.slice(Number(start), Number(end) + 1)))
+  (sourceId: bigint, list: List<RuntimeValue>, start: number, end: number) {
+    return just(rv.mkList(list.slice(start, end)))
   }
 }
 

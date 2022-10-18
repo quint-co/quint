@@ -600,11 +600,18 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('list slice', () => {
-      assertResultAsString('[4, 5, 6, 7].slice(1, 2)', 'list(5, 6)')
-      assertResultAsString('[4, 5, 6, 7].slice(0, 3)', 'list(4, 5, 6, 7)')
+      assertResultAsString('[4, 5, 6, 7].slice(1, 3)', 'list(5, 6)')
+      assertResultAsString('[4, 5, 6, 7].slice(0, 4)', 'list(4, 5, 6, 7)')
       assertResultAsString('[4, 5, 6, 7].slice(1, 7)', undefined)
       assertResultAsString('[4, 5, 6, 7].slice(-1, 3)', undefined)
-      assertResultAsString('[].slice(0, 1)', undefined)
+      assertResultAsString('[1, 2].slice(1, 2)', 'list(2)')
+      assertResultAsString('[1, 2].slice(1, 1)', 'list()')
+      assertResultAsString('[1, 2].slice(2, 2)', undefined)
+      assertResultAsString('[1, 2].slice(2, 1)', undefined)
+      assertResultAsString('[].slice(0, 0)', undefined)
+      assertResultAsString('[].slice(1, 0)', undefined)
+      assertResultAsString('[].slice(1, 1)', undefined)
+      assertResultAsString('[].slice(0, -1)', undefined)
     })
 
     it('list replaceAt', () => {

@@ -1348,53 +1348,63 @@ are 1-indexed.
 list(e_1, ..., e_n)
 // Append e to the end of s.
 // Equivalent to Append(s, e) in TLA+.
-s.append(e)
-append(s, e)
+l.append(e)
+append(l, e)
 // Concatenate s and t.
 // Equivalent to s \circ t in TLA+.
 s.concat(t)
 concat(s, t)
 // List head.
 // Equivalent to Head(s) in TLA+.
-s.head()
-head(s)
+l.head()
+head(l)
 // List tail.
 // Equivalent to Tail(s) in TLA+.
-s.tail()
-tail(s)
+// It is up to the interpreter/analyzer to define the behavior of tail([]).
+// The simulator shows an error message in this case.
+l.tail()
+tail(l)
 // The length of a list.
 // Equivalent to Len(s) in TLA.
-s.length()
-length(s)
+l.length()
+length(l)
 // Sequence element at nth position (starting with 0).
 // Equivalent to s[i + 1] in TLA+.
-s.nth(i)
-nth(s, i)
+l.nth(i)
+nth(l, i)
 // The set of list indices (starting with 0).
 // Equivalent to { i \in DOMAIN s: i - 1 } in TLA+.
-s.indices()
-indices(s)
+l.indices()
+indices(l)
 // Update the list at element i.
 // Equivalent to [ s EXCEPT ![i + 1] = e ] in TLA+.
-s.replaceAt(i, e)
-replaceAt(s, i, e)
-// Slice a list from j to k (both indices inclusive).
-// Equivalent to SubSeq(s, j + 1, k + 1) in TLA+.
-s.slice(j, k)
-slice(s, j, k)
+l.replaceAt(i, e)
+replaceAt(l, start, end)
+// Slice a list from `start` until `end`.
+// Equivalent to SubSeq(lst, start + 1, end) in TLA+.
+// Like in many PLs, `start` is inclusive, whereas `end` is exclusive.
+// For the following cases, it is up to the interpreter/analyzer to define
+// the behavior for the following cases:
+//  - start < 0,
+//  - start >= length(ls),
+//  - end > length(ls),
+//  - end < start.
+// The simulator shows an error message in these cases.
+l.slice(start, end)
+slice(l, start, end)
 // Filter a list.
 // Equivalent to SelectSeq(s, Test) in TLA+.
-select(s, Test)
+select(l, Test)
 // in particular, we can use anonymous operators
-s.select(e => P)
+l.select(e => P)
 // Left fold. There is no standard operator for that in TLA+,
 // but you can define it with a recursive operator.
-s.foldl(init, (i, v => e))
-foldl(s, init, (i, v => e))
+l.foldl(init, (i, v => e))
+foldl(l, init, (i, v => e))
 // Right fold. There is no standard operator for that in TLA+,
 // but you can define it with a recursive operator.
-s.foldr(init, (i, v => e))
-foldr(s, init, (i, v => e))
+l.foldr(init, (i, v => e))
+foldr(l, init, (i, v => e))
 ```
 
 *Mode:* Stateless, State. Other modes are not allowed.
