@@ -96,7 +96,7 @@ export function defaultDefinitions (): DefinitionTable {
       { kind: 'def', identifier: 'allLists' },
       { kind: 'def', identifier: 'chooseSome' },
       { kind: 'def', identifier: 'isFinite' },
-      { kind: 'def', identifier: 'cardinality' },
+      { kind: 'def', identifier: 'size' },
       { kind: 'def', identifier: 'get' },
       { kind: 'def', identifier: 'put' },
       { kind: 'def', identifier: 'keys' },

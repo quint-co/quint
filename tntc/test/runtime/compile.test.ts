@@ -215,7 +215,7 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('interval cardinality', () => {
-      const input = '2.to(5).cardinality()'
+      const input = '2.to(5).size()'
       assertResultAsString(input, '4')
     })
 
@@ -230,7 +230,7 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('flat set cardinality', () => {
-      const input = 'set(1, 4 - 1, 3).cardinality()'
+      const input = 'set(1, 4 - 1, 3).size()'
       assertResultAsString(input, '2')
     })
 
@@ -250,7 +250,7 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('cardinality of a set of sets', () => {
-      const input = 'set(set(1, 2), set(2, 3), set(1, 3)).cardinality()'
+      const input = 'set(set(1, 2), set(2, 3), set(1, 3)).size()'
       assertResultAsString(input, '3')
     })
 
@@ -540,8 +540,8 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('cardinality of cross products', () => {
-      assertResultAsString('tuples(1.to(4), 2.to(4)).cardinality()', '12')
-      assertResultAsString('tuples(set(), 2.to(4)).cardinality()', '0')
+      assertResultAsString('tuples(1.to(4), 2.to(4)).size()', '12')
+      assertResultAsString('tuples(set(), 2.to(4)).size()', '0')
     })
   })
 
@@ -674,7 +674,7 @@ describe('compiling specs to runtime values', () => {
     it('mapOf constructor', () => {
       assertResultAsString('3.to(5).mapOf(i => 2 * i)',
         'setToMap(set(tup(3, 6), tup(4, 8), tup(5, 10)))')
-      assertResultAsString('set(2.to(4)).mapOf(s => s.cardinality())',
+      assertResultAsString('set(2.to(4)).mapOf(s => s.size())',
         'setToMap(set(tup(set(2, 3, 4), 3)))')
     })
 
@@ -686,7 +686,7 @@ describe('compiling specs to runtime values', () => {
     it('map get', () => {
       assertResultAsString('3.to(5).mapOf(i => 2 * i).get(4)', '8')
       assertResultAsString(
-        'set(2.to(4)).mapOf(s => s.cardinality()).get(set(2, 3, 4))',
+        'set(2.to(4)).mapOf(s => s.size()).get(set(2, 3, 4))',
         '3'
       )
     })
@@ -760,7 +760,7 @@ describe('compiling specs to runtime values', () => {
         'set(setToMap(set(tup(2, 5), tup(3, 5))))'
       )
       assertResultAsString(
-        '2.to(4).setOfMaps(5.to(8)).cardinality()',
+        '2.to(4).setOfMaps(5.to(8)).size()',
         '64'
       )
       assertResultAsString(

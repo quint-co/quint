@@ -129,7 +129,7 @@ module ReadersWriters {
   
   val Safety = and {
       not(readers != set() and writers != set()),
-      cardinality(writers) <= 1
+      size(writers) <= 1
   }
   
   /**************)

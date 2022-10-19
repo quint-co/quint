@@ -62,13 +62,13 @@ module tictactoe {
   action StartInCorner = corners.guess(corner => Move("X", corner))
 
   def canWinWithPattern(winningPattern) = and {
-    winningPattern.filter(p => BoardIs(p, "X")).cardinality == 2,
-    winningPattern.filter(p => BoardIs(p, "_")).cardinality == 1,
+    winningPattern.filter(p => BoardIs(p, "X")).size() == 2,
+    winningPattern.filter(p => BoardIs(p, "_")).size() == 1,
   }
 
   def canBlockWithPattern(winningPattern) = and {
-    winningPattern.filter(p => BoardIs(p, "O")).cardinality == 2,
-    winningPattern.filter(p => BoardIs(p, "_")).cardinality == 1,
+    winningPattern.filter(p => BoardIs(p, "O")).size() == 2,
+    winningPattern.filter(p => BoardIs(p, "_")).size() == 1,
   }
 
   action Win = winningPatterns.guess(pattern => all {
@@ -84,8 +84,8 @@ module tictactoe {
   action TakeCenter = Move("X", (2,2))
 
   action SetupWin = winningPatterns.guess(pattern => all {
-    pattern.filter(p => BoardIs(p, "X")).cardinality == 1,
-    pattern.filter(p => BoardIs(p, "_")).cardinality == 2,
+    pattern.filter(p => BoardIs(p, "X")).size() == 1,
+    pattern.filter(p => BoardIs(p, "_")).size() == 2,
     pattern.guess(p => Move("X", p)),
   })
 

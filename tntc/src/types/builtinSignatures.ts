@@ -39,7 +39,7 @@ const setOperators = [
   { name: 'allLists', type: '(set(a)) => list(a)' },
   { name: 'choose_some', type: '(set(a)) => a' },
   { name: 'isFinite', type: '(set(a)) => bool' },
-  { name: 'cardinality', type: '(set(a)) => int' },
+  { name: 'size', type: '(set(a)) => int' },
 ]
 
 const mapOperators = [

@@ -529,7 +529,7 @@ export class CompilerVisitor implements IRVisitor {
           (l, r) => just(rv.mkSet(l.toSet().subtract(r.toSet()))))
         break
 
-      case 'cardinality':
+      case 'size':
         this.applyFun(app.id,
           1,
           set => just(rv.mkInt(BigInt(set.cardinality()))))

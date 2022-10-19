@@ -304,7 +304,7 @@ Similar to TLA+, you can have an anonymous assumption, by simply using `_` for
 the name:
 
 ```tla
-assume _ = Proc.cardinality > 0
+assume _ = Proc.size > 0
 ```
 
 *Mode:* Stateless
@@ -1095,13 +1095,14 @@ These operators are defined in the module `FiniteSets` in TLA+. TNT has these
 two operators in the kernel:
 
 ```scala
-// IsFiniteSet(S)
-S isFinite
+// Test a set for finiteness.
+// TLA+ equivalent: IsFiniteSet(S)
 S.isFinite()
 isFinite(S)
-// Cardinality(S)
-S.cardinality()
-cardinality(S)
+// Set cardinality for finite sets.
+// TLA+ equivalent: Cardinality(S)
+S.size()
+size(S)
 ```
 
 *Mode:* Stateless, State. Other modes are not allowed.
@@ -1790,7 +1791,7 @@ The most common example is shown below:
 // in MC.tnt
   module MC {
     val Acceptor = set("p1", "p2", "p3")
-    val Quorum = MC_Acceptor.powerset.filter(Q => Q.cardinality > 1)
+    val Quorum = MC_Acceptor.powerset.filter(Q => Q.size > 1)
 
     // an instance of Voting that has the name "V"
     module V = Voting(Value = set(0, 1), Acceptor = Acceptor, Quorum = Quorum)

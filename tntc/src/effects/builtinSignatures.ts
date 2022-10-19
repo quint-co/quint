@@ -35,7 +35,7 @@ const setOperators = [
   { name: 'allLists', effect: '(Read[r1]) => Read[r1]' },
   { name: 'choose_some', effect: '(Read[r1]) => Read[r1]' },
   { name: 'isFinite', effect: '(Read[r1]) => Read[r1]' },
-  { name: 'cardinality', effect: '(Read[r1]) => Read[r1]' },
+  { name: 'size', effect: '(Read[r1]) => Read[r1]' },
 ]
 
 const mapOperators = [
