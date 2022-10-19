@@ -741,17 +741,21 @@ class RuntimeValueMap extends RuntimeValueBase implements RuntimeValue {
   }
 
   toTntEx (): TntEx {
-    // convert to a set of pairs and output it as a set
+    // convert to a set of pairs and use its normal form
     const pairs: RuntimeValueTupleOrList[] = this.map.toArray().map(([k, v]) =>
       new RuntimeValueTupleOrList('tup', List([k, v]))
     )
-    const set = new RuntimeValueSet(Set(pairs))
-    // return the expression setToMap(set(pairs))
-    return {
-      id: 0n,
-      kind: 'app',
-      opcode: 'setToMap',
-      args: [set.toTntEx()],
+    const set = new RuntimeValueSet(Set(pairs)).toTntEx()
+    if (set.kind === 'app') {
+      // return the expression mapOf(pairs)
+      return {
+        id: 0n,
+        kind: 'app',
+        opcode: 'mapOf',
+        args: set.args,
+      }
+    } else {
+      throw new Error('Expected a set, found: ' + set.kind)
     }
   }
 }

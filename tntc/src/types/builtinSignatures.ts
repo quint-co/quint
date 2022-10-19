@@ -45,7 +45,7 @@ const setOperators = [
 const mapOperators = [
   { name: 'get', type: '(a -> b, a) => b' },
   { name: 'keys', type: '(a -> b) => set(a)' },
-  { name: 'mapOf', type: '(set(a), (a) => b) => a -> b' },
+  { name: 'mapBy', type: '(set(a), (a) => b) => a -> b' },
   { name: 'setToMap', type: '(set((a, b))) => (a -> b)' },
   { name: 'setOfMaps', type: '(set(a), set(b)) => set(a -> b)' },
   { name: 'update', type: '(a -> b, a, b) => a -> b' },
@@ -121,6 +121,7 @@ function uniformArgsWithResult (argsType: string, resultType: string): Signature
 const multipleAritySignatures: [string, Signature][] = [
   ['list', uniformArgsWithResult('a', 'list(a)')],
   ['set', uniformArgsWithResult('a', 'set(a)')],
+  ['mapOf', uniformArgsWithResult('(a, b)', 'a -> b')],
   ['and', uniformArgsWithResult('bool', 'bool')],
   ['actionAll', uniformArgsWithResult('bool', 'bool')],
   ['or', uniformArgsWithResult('bool', 'bool')],

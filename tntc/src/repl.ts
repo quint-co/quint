@@ -291,9 +291,18 @@ function chalkTntEx (ex: TntEx): string {
           return chalk.green('set') + chalk.black(`(${as})`)
         }
 
-        case 'setToMap': {
-          const as = ex.args.map(chalkTntEx).join(', ')
-          return chalk.green('setToMap') + chalk.black(`(${as})`)
+        case 'mapOf': {
+          const ps = ex.args.map(tup => {
+            if (tup.kind === 'app' &&
+                   tup.opcode === 'tup' && tup.args.length === 2) {
+              const [k, v] = tup.args
+              return `${chalkTntEx(k)} -> ${chalkTntEx(v)}`
+            } else {
+              return '<expected-pair>'
+            }
+          })
+          const as = ps.join(', ')
+          return chalk.green('mapOf') + chalk.black(`(${as})`)
         }
 
         case 'tup': {

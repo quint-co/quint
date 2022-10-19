@@ -5,7 +5,7 @@ module tictactoe {
   action Init = all {
     nextTurn <- "X", // X always goes first
     // Every space in the board starts blank
-    board <- 1.to(3).mapOf(_ => 1.to(3).mapOf(_2 => "_")),
+    board <- 1.to(3).mapBy(_ => 1.to(3).mapBy(_2 => "_")),
   }
 
   def BoardIs(coordinate, player) =

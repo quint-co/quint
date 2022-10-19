@@ -43,6 +43,7 @@ import { ActionAllContext } from "./TntParser";
 import { ActionAnyContext } from "./TntParser";
 import { LiteralOrIdContext } from "./TntParser";
 import { TupleContext } from "./TntParser";
+import { PairContext } from "./TntParser";
 import { RecordContext } from "./TntParser";
 import { ListContext } from "./TntParser";
 import { IfElseContext } from "./TntParser";
@@ -595,6 +596,19 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitTuple?: (ctx: TupleContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `pair`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	enterPair?: (ctx: PairContext) => void;
+	/**
+	 * Exit a parse tree produced by the `pair`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	exitPair?: (ctx: PairContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `record`

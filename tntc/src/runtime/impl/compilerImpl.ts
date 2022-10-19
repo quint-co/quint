@@ -683,10 +683,15 @@ export class CompilerVisitor implements IRVisitor {
         )
         break
 
-      case 'mapOf':
+      case 'mapBy':
         this.mapLambdaThenReduce(app.id, arr =>
           rv.mkMap(arr.map(([v, k]) => [k, v]))
         )
+        break
+
+      case 'mapOf':
+        this.applyFun(app.id, app.args.length, (...pairs: any[]) =>
+          just(rv.mkMap(pairs)))
         break
 
       case 'setToMap':

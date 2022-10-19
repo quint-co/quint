@@ -148,6 +148,7 @@ module withConsts {
   // Data structures
   val test_tuple = (1, 2, 3)
   val test_tuple2 = tup(1, 2, 3)
+  val test_pair = 4 -> 5
   val test_list = [1, 2, 3]
   val test_list2 = list(1, 2, 3)
   val test_record = { name: "igor", year: 1981 }

@@ -491,6 +491,12 @@ export class ToIrListener implements TntListener {
     this.pushApplication(ctx, 'tup', args)
   }
 
+  // pair constructor, e.g., 2 -> 3
+  exitPair (ctx: p.PairContext) {
+    const args = this.popExprs(ctx.expr().length)
+    this.pushApplication(ctx, 'tup', args)
+  }
+
   // list constructor, e.g., [1, 2, 3]
   exitList (ctx: p.ListContext) {
     const args = this.popExprs(ctx.expr().length)

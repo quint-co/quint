@@ -671,69 +671,74 @@ describe('compiling specs to runtime values', () => {
   })
 
   describe('compile over maps', () => {
-    it('mapOf constructor', () => {
-      assertResultAsString('3.to(5).mapOf(i => 2 * i)',
-        'setToMap(set(tup(3, 6), tup(4, 8), tup(5, 10)))')
-      assertResultAsString('set(2.to(4)).mapOf(s => s.size())',
-        'setToMap(set(tup(set(2, 3, 4), 3)))')
+    it('mapBy constructor', () => {
+      assertResultAsString('3.to(5).mapBy(i => 2 * i)',
+        'mapOf(tup(3, 6), tup(4, 8), tup(5, 10))')
+      assertResultAsString('set(2.to(4)).mapBy(s => s.size())',
+        'mapOf(tup(set(2, 3, 4), 3))')
     })
 
     it('setToMap constructor', () => {
       assertResultAsString('setToMap(set((3, 6), (4, 10 - 2), (5, 10)))',
-        'setToMap(set(tup(3, 6), tup(4, 8), tup(5, 10)))')
+        'mapOf(tup(3, 6), tup(4, 8), tup(5, 10))')
+    })
+
+    it('mapOf constructor', () => {
+      assertResultAsString('mapOf(3 -> 6, 4 -> 10 - 2, 5 -> 10)',
+        'mapOf(tup(3, 6), tup(4, 8), tup(5, 10))')
     })
 
     it('map get', () => {
-      assertResultAsString('3.to(5).mapOf(i => 2 * i).get(4)', '8')
+      assertResultAsString('3.to(5).mapBy(i => 2 * i).get(4)', '8')
       assertResultAsString(
-        'set(2.to(4)).mapOf(s => s.size()).get(set(2, 3, 4))',
+        'set(2.to(4)).mapBy(s => s.size()).get(set(2, 3, 4))',
         '3'
       )
     })
 
     it('map update', () => {
       assertResultAsString(
-        '3.to(5).mapOf(i => 2 * i).update(4, 20)',
-        'setToMap(set(tup(3, 6), tup(4, 20), tup(5, 10)))'
+        '3.to(5).mapBy(i => 2 * i).update(4, 20)',
+        'mapOf(tup(3, 6), tup(4, 20), tup(5, 10))'
       )
       assertResultAsString(
-        '3.to(5).mapOf(i => 2 * i).update(7, 20)',
+        '3.to(5).mapBy(i => 2 * i).update(7, 20)',
         undefined
       )
     })
 
     it('map updateAs', () => {
       assertResultAsString(
-        '3.to(5).mapOf(i => 2 * i).updateAs(4, (old => old + 1))',
-        'setToMap(set(tup(3, 6), tup(4, 9), tup(5, 10)))'
+        '3.to(5).mapBy(i => 2 * i).updateAs(4, (old => old + 1))',
+        'mapOf(tup(3, 6), tup(4, 9), tup(5, 10))'
       )
       assertResultAsString(
-        '3.to(5).mapOf(i => 2 * i).updateAs(7, (old => old + 1))',
+        '3.to(5).mapBy(i => 2 * i).updateAs(7, (old => old + 1))',
         undefined
       )
     })
 
     it('map put', () => {
       assertResultAsString(
-        '3.to(5).mapOf(i => 2 * i).put(10, 11)',
-        'setToMap(set(tup(10, 11), tup(3, 6), tup(4, 8), tup(5, 10)))'
+        '3.to(5).mapBy(i => 2 * i).put(10, 11)',
+        'mapOf(tup(10, 11), tup(3, 6), tup(4, 8), tup(5, 10))'
       )
     })
 
     it('map keys', () => {
       assertResultAsString(
-        'set(3, 5, 7).mapOf(i => 2 * i).keys()',
+        'set(3, 5, 7).mapBy(i => 2 * i).keys()',
         'set(3, 5, 7)'
       )
     })
 
     it('map equality', () => {
       assertResultAsString(
-        '3.to(5).mapOf(i => 2 * i) == 3.to(5).mapOf(i => 3 * i - i)',
+        '3.to(5).mapBy(i => 2 * i) == 3.to(5).mapBy(i => 3 * i - i)',
         'true'
       )
       assertResultAsString(
-        '3.to(5).mapOf(i => 2 * i) == 3.to(6).mapOf(i => 2 * i)',
+        '3.to(5).mapBy(i => 2 * i) == 3.to(6).mapBy(i => 2 * i)',
         'false'
       )
     })
@@ -741,23 +746,23 @@ describe('compiling specs to runtime values', () => {
     it('map setOfMaps', () => {
       assertResultAsString(
         '2.to(3).setOfMaps(5.to(6))',
-        'set(setToMap(set(tup(2, 5), tup(3, 5))), setToMap(set(tup(2, 6), tup(3, 5))), setToMap(set(tup(2, 5), tup(3, 6))), setToMap(set(tup(2, 6), tup(3, 6))))'
+        'set(mapOf(tup(2, 5), tup(3, 5)), mapOf(tup(2, 6), tup(3, 5)), mapOf(tup(2, 5), tup(3, 6)), mapOf(tup(2, 6), tup(3, 6)))'
       )
       assertResultAsString(
         `2.to(3).setOfMaps(5.to(6)) ==
-          set(setToMap(set((2, 5), (3, 5))),
-              setToMap(set((2, 6), (3, 5))),
-              setToMap(set((2, 5), (3, 6))),
-              setToMap(set((2, 6), (3, 6))))`,
+          set(mapOf(2 -> 5, 3 -> 5),
+              mapOf(2 -> 6, 3 -> 5),
+              mapOf(2 -> 5, 3 -> 6),
+              mapOf(2 -> 6, 3 -> 6))`,
         'true'
       )
       assertResultAsString(
         'set(2).setOfMaps(5.to(6))',
-        'set(setToMap(set(tup(2, 5))), setToMap(set(tup(2, 6))))'
+        'set(mapOf(tup(2, 5)), mapOf(tup(2, 6)))'
       )
       assertResultAsString(
         '2.to(3).setOfMaps(set(5))',
-        'set(setToMap(set(tup(2, 5), tup(3, 5))))'
+        'set(mapOf(tup(2, 5), tup(3, 5)))'
       )
       assertResultAsString(
         '2.to(4).setOfMaps(5.to(8)).size()',
@@ -772,7 +777,7 @@ describe('compiling specs to runtime values', () => {
         'false'
       )
       assertResultAsString(
-        '2.to(3).setOfMaps(5.to(6)).contains(setToMap(set((2, 5), (3, 5))))',
+        '2.to(3).setOfMaps(5.to(6)).contains(mapOf(2 -> 5, 3 -> 5))',
         'true'
       )
       assertResultAsString(

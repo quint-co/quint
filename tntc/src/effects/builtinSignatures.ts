@@ -41,7 +41,7 @@ const setOperators = [
 const mapOperators = [
   { name: 'get', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
   { name: 'keys', effect: '(Read[r1]) => Read[r1]' },
-  { name: 'mapOf', effect: '(Read[r1], (Read[r1]) => Read[r2]) => Read[r1, r2]' },
+  { name: 'mapBy', effect: '(Read[r1], (Read[r1]) => Read[r2]) => Read[r1, r2]' },
   { name: 'setToMap', effect: '(Read[r1]) => Read[r1]' },
   { name: 'setOfMaps', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
   { name: 'update', effect: '(Read[r1], Read[r2], Read[r3]) => Read[r1, r2, r3]' },
@@ -118,6 +118,7 @@ const readManyEffect = (arity: number) => {
 const multipleAritySignatures: [string, Signature][] = [
   ['list', readManyEffect],
   ['set', readManyEffect],
+  ['mapOf', readManyEffect],
   ['rec', readManyEffect],
   ['tup', readManyEffect],
   ['tuples', readManyEffect],

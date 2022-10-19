@@ -5,7 +5,8 @@
  *  1. Keep the grammar simple,
  *  2. Make it expressive enough to capture all of TLA+.
  *
- * @author: Igor Konnov, Shon Feder, Jure Kukovec, Informal Systems, 2021
+ * @author: Igor Konnov, Shon Feder, Gabriela Moreira, Jure Kukovec,
+ *          Informal Systems, 2021-2022
  */
 grammar Tnt;
 
@@ -104,6 +105,8 @@ expr:           // apply a built-in operator via the dot notation
         |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
         //      a tuple constructor, the form tup(...) is just an operator call
         |       '(' expr ',' expr (',' expr)* ','? ')'              # tuple
+        //      short-hand syntax for pairs, mainly designed for maps
+        |       expr '->' expr                                      # pair
         |       '{' IDENTIFIER ':' expr
                         (',' IDENTIFIER ':' expr)* ','? '}'         # record
         //      a list constructor, the form list(...) is just an operator call

@@ -4,7 +4,7 @@
 
 | Revision | Date       | Author                                                  |
 |:---------|:-----------|:--------------------------------------------------------|
-| 24       | 29.09.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira |
+| 25       | 19.10.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -1121,10 +1121,16 @@ get(f, e)
 // In TLA+: DOMAIN f
 f.keys()
 keys(f)
-// Map constructor.
+// Map constructor via evaluation.
 // In TLA+: [ x \in S |-> e ]
-S.mapOf(x => e)
-mapOf(S, (x => e))
+S.mapBy(x => e)
+mapBy(S, (x => e))
+// Map constructor via enumeration.
+mapOf()
+mapOf(k_1 -> v_1)
+mapOf(k_1 -> v_1, k_2 -> v_2)
+mapOf(k_1 -> v_1, k_2 -> v_2, k_3 -> v_3)
+...
 // Convert a set of pairs to a map.
 // In TLA+: [ x \in { a: <<a, b>> \in S } |-> (CHOOSE p \in S: p[1] = x)[2]]
 set(tup(1, true), tup(2, false)).setToMap()
