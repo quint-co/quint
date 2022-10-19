@@ -105,12 +105,12 @@ export function tntRepl
         multilineText += '\n' + line
         rl.setPrompt(settings.continuePrompt)
       } else {
-        line.trim() === '' || (state = tryEval(out, state, line))
+        line.trim() === '' || tryEval(out, state, line)
       }
     } else {
       if (line.trim() === '' && nOpenBraces <= 0 && nOpenParen <= 0) {
         // end the multiline mode
-        state = tryEval(out, state, multilineText)
+        tryEval(out, state, multilineText)
         multilineText = ''
         rl.setPrompt(settings.prompt)
       } else {
@@ -202,9 +202,20 @@ function loadFromFile (out: writer, state: ReplState, filename: string) {
     const exprs =
       (frags[1] ?? '').matchAll(/\/\*! (.*?) !\*\//gsm) ?? []
     // and replay them one by one
+    let replayed = false
     for (const groups of exprs) {
+      replayed = true
       out(groups[1])
-      tryEval(out, state, groups[1])
+      if (!tryEval(out, state, groups[1])) {
+        break
+      }
+    }
+    if (!replayed) {
+      // nothing to replay, evaluate 'true', to trigger parsing
+      if (tryEval(out, state, 'true')) {
+        // remove 'true' from the expression history
+        state.exprHist.pop()
+      }
     }
   } catch (error) {
     out(chalk.red(error))
@@ -327,7 +338,7 @@ def _testOnce(__nsteps, __init, __next, __inv) =
 `
 
 // try to evaluate the expression in a string and print it, if successful
-function tryEval (out: writer, state: ReplState, newInput: string): ReplState {
+function tryEval (out: writer, state: ReplState, newInput: string): boolean {
   // output errors to the console in red
   function printErrors (moduleText: string, context: CompilationContext) {
     printErrorMessages(out, 'syntax error', moduleText, context.syntaxErrors)
@@ -336,11 +347,11 @@ function tryEval (out: writer, state: ReplState, newInput: string): ReplState {
     out('') // be nice to external programs
   }
 
-  const newState = state
   const probeResult = probeParse(newInput, '<input>')
   if (probeResult.kind === 'error') {
     printErrorMessages(out, 'syntax error', newInput, probeResult.messages)
     out('') // be nice to external programs
+    return false
   }
   if (probeResult.kind === 'expr') {
     // embed expression text into a value definition inside a module
@@ -354,7 +365,7 @@ ${newInput}
     const context = compile(moduleText)
     if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
       printErrors(moduleText, context)
-      return state
+      return false
     }
     loadVars(state, context)
     loadShadowVars(state, context)
@@ -369,20 +380,22 @@ ${newInput}
             out(chalkTntEx(ex))
             if (ex.kind === 'bool' && ex.value) {
               // if this was an action and it was successful, save the state
-              // as actions are always boolean, don't even try to save the state for non-boolean expressions
-              saveVars(newState, context)
+              // as actions are always boolean,
+              // don't even try to save the state for non-boolean expressions
+              saveVars(state, context)
             }
             // save shadow vars in any case, e.g., the example trace
-            saveShadowVars(newState, context)
+            saveShadowVars(state, context)
           })
 
-      newState.exprHist.push(newInput.trim())
+      state.exprHist.push(newInput.trim())
     }
     if (resultDefined.isNone()) {
       const resolved = resolveErrors(context.sourceMap, context.runtimeErrors)
       printErrorMessages(out, 'runtime error', moduleText, resolved)
       out(chalk.red('<result undefined>'))
       out('') // be nice to external programs
+      return false
     }
   }
   if (probeResult.kind === 'toplevel') {
@@ -397,13 +410,14 @@ ${newInput}
     if (context.values.size === 0 ||
         context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
       printErrors(moduleText, context)
+      return false
     } else {
       out('') // be nice to external programs
-      newState.defsHist = state.defsHist + '\n' + newInput // update the history
+      state.defsHist = state.defsHist + '\n' + newInput // update the history
     }
   }
 
-  return newState
+  return true
 }
 
 // resolve source locations of IR errors
