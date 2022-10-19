@@ -8,15 +8,23 @@ module withConsts {
   const MyFun: int -> str
   const MyFunFun: (int -> str) -> bool
   const MyOperator: (int, str) => bool
+  const MyOperatorWithComma: (int, str, ) => bool
   const MyTuple: (int, bool, str)
+  const MyTupleWithComma: (int, bool, str, )
 
   // just a normal record, without any variation in the fields
   const MyRecord: { i: int, b: bool, s: str }
+  const MyRecordWithComma: { i: int, b: bool, s: str, }
   // a disjoint union is a common pattern in TLA+
   const MyUnion:
       | { tag: "circle", radius: int }
       | { tag: "rectangle", width: int, height: int }
       | { tag: "dog", name: str }
+
+  const MyUnionWithComma:
+      | { tag: "circle", radius: int, }
+      | { tag: "rectangle", width: int, height: int, }
+      | { tag: "dog", name: str, }
 
   // Vars
   // We don't do extensive testing of types,

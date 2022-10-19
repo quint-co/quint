@@ -49,12 +49,12 @@ instanceMod :   'module' IDENTIFIER '=' IDENTIFIER
 
 // Types in Type System 1.2 of Apalache, which supports discriminated unions
 type :          <assoc=right> type '->' type                    # typeFun
-        |       '(' (type (',' type)*)? ')' '=>' type           # typeOper
+        |       '(' (type (',' type)*)? ','? ')' '=>' type      # typeOper
         |       'set' '(' type ')'                              # typeSet
         |       'list' '(' type ')'                             # typeList
-        |       '(' type ',' type (',' type)* ')'               # typeTuple
+        |       '(' type ',' type (',' type)* ','? ')'          # typeTuple
         |       '{' IDENTIFIER ':' type
-                         (',' IDENTIFIER ':' type)* '}'         # typeRec
+                    (',' IDENTIFIER ':' type)* ','? '}'         # typeRec
         |       typeUnionRecOne+                                # typeUnionRec
         |       'int'                                           # typeInt
         |       'str'                                           # typeStr
@@ -63,7 +63,8 @@ type :          <assoc=right> type '->' type                    # typeFun
         |       '(' type ')'                                    # typeParen
         ;
 
-typeUnionRecOne : '|' '{' IDENTIFIER ':' STRING (',' IDENTIFIER ':' type)* '}'
+typeUnionRecOne :
+        '|' '{' IDENTIFIER ':' STRING (',' IDENTIFIER ':' type)* ','? '}'
         ;
 
 // A TNT expression. The order matters, it defines the priority.
@@ -97,7 +98,7 @@ expr:           // apply a built-in operator via the dot notation
                     ('|' STRING ':' identOrHole '=>' expr)+         # match
                 // similar to indented /\ and indented \/ of TLA+
         |       'and' '{' expr (',' expr)* ','? '}'                 # andExpr
-        |       'or' '{' expr (',' expr)* ','? '}'                  # orExpr
+        |       'or'  '{' expr (',' expr)* ','? '}'                 # orExpr
         |       'all' '{' expr (',' expr)* ','? '}'                 # actionAll
         |       'any' '{' expr (',' expr)* ','? '}'                 # actionAny
         |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
