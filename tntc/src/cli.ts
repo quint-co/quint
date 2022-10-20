@@ -54,7 +54,7 @@ function typecheck (argv: any) {
   }
   const finder = lineColumn(sourceCode)
 
-  const types = inferTypes(parseResult.module)
+  const types = inferTypes(parseResult.module, definitionsTable)
   types.map(e => e.forEach((value, key) => console.log(`${key}: ${typeToString(value)}`)))
 
   types.mapLeft(e => {

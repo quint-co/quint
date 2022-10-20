@@ -13,7 +13,7 @@
  */
 
 import { IRVisitor } from '../IRVisitor'
-import { TntApp, TntBool, TntConst, TntEx, TntInt, TntLambda, TntLet, TntName, TntOpDef, TntStr, TntVar } from '../tntIr'
+import { TntApp, TntBool, TntConst, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr, TntVar } from '../tntIr'
 import { TntType, typeNames } from '../tntTypes'
 import { expressionToString } from '../IRprinting'
 import { Either, right, left, mergeInMany } from '@sweet-monads/either'
@@ -21,14 +21,16 @@ import { buildErrorTree, ErrorTree, Error } from '../errorTree'
 import { getSignatures } from './builtinSignatures'
 import { Constraint, Signature, TypeScheme } from './base'
 import { Substitutions, applySubstitution } from './substitutions'
+import { DefinitionTable, DefinitionTableByModule, emptyTable } from '../definitionsCollector'
 
 type solvingFunctionType = (constraint: Constraint) => Either<Map<bigint, ErrorTree>, Substitutions>
 
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
-  constructor (solvingFunction: solvingFunctionType) {
+  constructor (solvingFunction: solvingFunctionType, definitionsTable: DefinitionTableByModule) {
     this.solvingFunction = solvingFunction
+    this.definitionsTable = definitionsTable
   }
 
   // Public values with results by expression ID
@@ -38,20 +40,40 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   private solvingFunction: solvingFunctionType
   private constraints: Constraint[] = []
   private freshVarCounter: number = 0
-  private context: Map<string, Signature> = getSignatures()
+
+  private context: Map<bigint, Signature> = new Map<bigint, Signature>()
+  private builtinSignatures: Map<string, Signature> = getSignatures()
+  private definitionsTable: DefinitionTableByModule
+
   // Track location descriptions for error tree traces
   private location: string = ''
+
+  private currentModule?: TntModule
+  private currentTable: DefinitionTable = emptyTable()
+  private moduleStack: TntModule[] = []
+
+  enterModuleDef (def: TntModuleDef): void {
+    this.moduleStack.push(def.module)
+
+    this.updateCurrentModule()
+  }
+
+  exitModuleDef (_: TntModuleDef): void {
+    this.moduleStack.pop()
+
+    this.updateCurrentModule()
+  }
 
   enterExpr (e: TntEx) {
     this.location = `Generating constraints for ${expressionToString(e)}`
   }
 
   enterVar (e: TntVar) {
-    this.context.set(e.name, (_) => ({ type: e.type, variables: new Set() }))
+    this.context.set(e.id, (_) => ({ type: e.type, variables: new Set() }))
   }
 
   enterConst (e: TntConst) {
-    this.context.set(e.name, (_) => ({ type: e.type, variables: new Set() }))
+    this.context.set(e.id, (_) => ({ type: e.type, variables: new Set() }))
   }
 
   //     n: t ∈ Γ
@@ -99,7 +121,8 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   enterLambda (e: TntLambda) {
     e.params.forEach(p => {
       const t: TntType = { kind: 'var', name: this.freshVar() }
-      this.context.set(p, (_) => ({ type: t, variables: new Set() }))
+      const id = this.currentTable.index.get(p)!
+      this.context.set(id, (_) => ({ type: t, variables: new Set() }))
     })
   }
 
@@ -119,7 +142,9 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
     this.addToResults(e.id, result)
 
-    e.params.forEach(p => this.context.delete(p))
+    e.params.forEach(p => this.context.delete(this.currentTable.index.get(p)!))
+    // TODO: delete from result
+    // And I should probably merge context and results.
   }
 
   //   Γ ⊢ e1: (t1, c1)  s = solve(c1)     s(Γ ∪ {n: t1}) ⊢ e2: (t2, c2)
@@ -162,7 +187,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
     // Add operator type to the context
     this.fetchResult(e.id).map(operatorType => {
-      this.context.set(e.name, (_) => ({ type: operatorType, variables: typeNames(operatorType) }))
+      this.context.set(e.id, (_) => ({ type: operatorType, variables: typeNames(operatorType) }))
     })
   }
 
@@ -190,10 +215,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
   private fetchSignature (opcode: string, arity: number): Either<string, TntType> {
     // Assumes a valid number of arguments
-    if (!this.context.get(opcode)) {
+    const opcodeId = this.currentTable.index.get(opcode)!
+    if (!(opcodeId && this.context.has(opcodeId)) && !this.builtinSignatures.has(opcode)) {
       return left(`Signature not found for operator: ${opcode}`)
     }
-    const signatureFunction = this.context.get(opcode)!
+    const signatureFunction = this.builtinSignatures.get(opcode) ?? this.context.get(opcodeId)!
     const signature = signatureFunction(arity)
     return right(this.newInstance(signature))
   }
@@ -205,5 +231,14 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     })
 
     return applySubstitution(subs, type.type)
+  }
+
+  private updateCurrentModule (): void {
+    if (this.moduleStack.length > 0) {
+      this.currentModule = this.moduleStack[this.moduleStack.length - 1]
+
+      const moduleTable = this.definitionsTable.get(this.currentModule!.name)!
+      this.currentTable = moduleTable
+    }
   }
 }

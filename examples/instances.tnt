@@ -32,7 +32,7 @@ module InstanceEx {
   // LOCAL INSTANCE A WITH x <- 33, y <- MyY, z <- z
   import A1.*
 
-  static val test_G = G(20)
+  static val test_G = G(true)
 
   // If we want to omit identity bindings such as z = z, we write:
   module A2 = A(x = 15, y = MyY, *)
