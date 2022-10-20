@@ -29,7 +29,7 @@
  *  has optimized implementations of `contains`, `isSubset`, and `equals`
  *  (technically, `equals` is implemented in RuntimeValueBase).
  *
- *  - RuntimeValuePowerset: TBD
+ *  - RuntimeValuePowerset: to compactly represent powersets.
  *
  *  - RuntimeValueMapSet: to compactly represent a set of functions.
  *
@@ -221,6 +221,16 @@ export const rv = {
    */
   mkMapSet: (domainSet: RuntimeValue, rangeSet: RuntimeValue): RuntimeValue => {
     return new RuntimeValueMapSet(domainSet, rangeSet)
+  },
+
+  /**
+   * Make a runtime value that represents a powerset.
+   *
+   * @param the baseset
+   * @return a new runtime value that represents the powerset of the baseset
+   */
+  mkPowerset: (baseSet: RuntimeValue): RuntimeValue => {
+    return new RuntimeValuePowerset(baseSet)
   },
 }
 
@@ -510,6 +520,10 @@ abstract class RuntimeValueBase implements RuntimeValue {
         }
         return true
       }
+    }
+    if (this instanceof RuntimeValuePowerset &&
+        other instanceof RuntimeValuePowerset) {
+      return this.baseSet.equals(other.baseSet)
     }
     if (this instanceof RuntimeValueMapSet &&
         other instanceof RuntimeValueMapSet) {
@@ -1079,6 +1093,103 @@ class RuntimeValueCrossProd
       opcode: 'set',
       args: elems,
     }
+  }
+}
+
+/**
+ * A set of runtime values represented via powersets.
+ * This is an internal class.
+ */
+class RuntimeValuePowerset
+  extends RuntimeValueBase implements RuntimeValue {
+  // the base set
+  baseSet: RuntimeValue
+
+  constructor (baseSet: RuntimeValue) {
+    super(true)
+    this.baseSet = baseSet
+  }
+
+  [Symbol.iterator] () {
+    const nsets = this.cardinality()
+    // copy fromIndex, as gen does not have access to this.
+    const fromIndex = (i: number): RuntimeValue => this.fromIndex(i)
+    function * gen () {
+      // Generate `nsets` sets by using number increments.
+      // Note that 2 ** 0 == 1.
+      for (let i = 0; i < nsets; i++) {
+        yield fromIndex(i)
+      }
+    }
+
+    return gen()
+  }
+
+  hashCode (): number {
+    return this.baseSet.hashCode()
+  }
+
+  contains (elem: RuntimeValue): boolean {
+    if (!elem.isSetLike) {
+      return false
+    }
+    
+    for (const e of elem) {
+      if (!this.baseSet.contains(e)) {
+        return false
+      }
+    }
+    
+    return true
+  }
+
+  isSubset (superset: RuntimeValue): boolean {
+    if (superset instanceof RuntimeValuePowerset) {
+      return this.baseSet.isSubset(superset.baseSet)
+    } else {
+      // fall back to the general implementation
+      return super.isSubset(superset)
+    }
+  }
+
+  cardinality () {
+    return 2 ** this.baseSet.cardinality()
+  }
+
+  pick (position: number): RuntimeValue | undefined {
+    const index = Math.floor(position * this.cardinality())
+    return this.fromIndex(index)
+  }
+
+  toTntEx (): TntEx {
+    // simply enumerate the values
+    const elems: TntEx[] = []
+    for (const i of this) {
+      elems.push(i.toTntEx())
+    }
+    // return the expression set(...elems)
+    return {
+      id: 0n,
+      kind: 'app',
+      opcode: 'set',
+      args: elems,
+    }
+  }
+
+  // Convert the global index i to bits, which define membership.
+  // By interactively dividing the index by 2 and
+  // taking its remainder.
+  private fromIndex (index: number): RuntimeValue {
+    const elems: RuntimeValue[] = []
+    let bits = index
+    for (const elem of this.baseSet) {
+      const isMem = (bits % 2) === 1
+      bits = Math.floor(bits / 2)
+      if (isMem) {
+        elems.push(elem)
+      }
+    }
+    return rv.mkSet(elems)
   }
 }
 

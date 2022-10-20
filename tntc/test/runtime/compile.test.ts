@@ -452,6 +452,48 @@ describe('compiling specs to runtime values', () => {
     })
   })
 
+  describe('compile over powerset', () => {
+    it('computes a powerset', () => {
+      assertResultAsString(
+        '2.to(4).powerset()',
+        'set(set(), set(2), set(3), set(2, 3), set(4), set(2, 4), set(3, 4), set(2, 3, 4))'
+      )
+    })
+
+    it('powerset equality', () => {
+      assertResultAsString(
+        '2.to(3).powerset() == set(set(), set(2), set(3), set(2, 3))',
+        'true'
+      )
+      assertResultAsString(
+        '2.to(3).powerset() == set(2, 3).powerset()',
+        'true'
+      )
+      assertResultAsString(
+        '2.to(4).powerset() == set(2, 3).powerset()',
+        'false'
+      )
+    })
+
+    it('powerset contains', () => {
+      assertResultAsString('2.to(3).powerset().contains(set(2))', 'true')
+      assertResultAsString('2.to(3).powerset().contains(set(2, 4))', 'false')
+    })
+
+    it('powerset subseteq', () => {
+      assertResultAsString(
+        '2.to(4).powerset().subseteq(1.to(5).powerset())',
+        'true'
+      )
+    })
+
+    it('powerset cardinality', () => {
+      assertResultAsString('set().powerset().size()', '1')
+      assertResultAsString('2.to(4).powerset().size()', '8')
+      assertResultAsString('2.to(5).powerset().size()', '16')
+    })
+  })
+
   describe('compile over built-in sets', () => {
     it('computes Bool', () => {
       assertResultAsString('Bool', 'set(false, true)')

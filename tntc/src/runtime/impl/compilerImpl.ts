@@ -497,6 +497,11 @@ export class CompilerVisitor implements IRVisitor {
           (...values: RuntimeValue[]) => just(rv.mkSet(values)))
         break
 
+      case 'powerset':
+        this.applyFun(app.id, 1,
+          (baseset: RuntimeValue) => just(rv.mkPowerset(baseset)))
+        break
+
       case 'contains':
         this.applyFun(app.id, 2, (set, value) => just(rv.mkBool(set.contains(value))))
         break
