@@ -202,3 +202,18 @@ tntc typecheck ../examples/tictactoe/tictactoe.tnt
 
 <!-- !test check TicTacToe - Types & Effects -->
     expect exit code 0
+
+### OK on parse ERC20
+
+This command parses the ERC20 example.
+
+<!-- !test program
+tntc parse ../examples/ERC20/erc20.tnt
+-->
+
+```sh
+tntc parse ../examples/ERC20/erc20.tnt
+```
+
+<!-- !test check ERC20 -->
+    expect exit code 0

@@ -93,6 +93,9 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
     return checkSameLength(location, t1.elems, t2.elems)
       .chain(([elems1, elems2]) => chainUnifications(elems1, elems2))
       .mapLeft(error => buildErrorTree(location, error))
+  } else if (t1.kind === 'const' || t2.kind === 'const') {
+    // FIXME: Type aliases unify with anything for now
+    return right([])
   } else {
     return left(buildErrorLeaf(
       location,

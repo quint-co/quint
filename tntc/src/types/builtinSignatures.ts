@@ -49,7 +49,7 @@ const mapOperators = [
   { name: 'setToMap', type: '(set((a, b))) => (a -> b)' },
   { name: 'setOfMaps', type: '(set(a), set(b)) => set(a -> b)' },
   { name: 'update', type: '(a -> b, a, b) => a -> b' },
-  { name: 'updateAs', type: '(a -> b, a, (a) => b) => a -> b' },
+  { name: 'updateAs', type: '(a -> b, a, (b) => b) => a -> b' },
   { name: 'put', type: '(a -> b, a, b) => a -> b' },
 ]
 
