@@ -61,7 +61,8 @@ module erc20 {
      tx.value < 0,
      tx.value > balanceOf[tx.sender],
      tx.sender == tx.toAddr
-    } all {
+    }
+    all {
       lastTx <- tx.with("fail", fail),
       if (fail) 
         balanceOf <- balanceOf
@@ -151,7 +152,8 @@ module erc20 {
     val fail = or {
      tx.value < 0,
      tx.sender > tx.spender,
-    } all {
+    }
+    all {
       lastTx <- tx.with("fail", fail),
       if (fail)
         allowance <- allowance
