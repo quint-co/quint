@@ -1077,10 +1077,25 @@ export class CompilerVisitor implements IRVisitor {
         // compute the values of the arguments at this point
         return setComp.eval().map(set => {
           const callable = fun as Callable
-          // randomly pick an element
-          const elem = (set as RuntimeValue).pick(Math.random())
-          callable.registers[0].registerValue = just(elem)
-          return callable.eval()
+          // save the values of the next variables, as guess may update them
+          const valuesBefore = this.snapshotNextVars()
+          // TODO: the number of retries should be controlled in the settings
+          // https://github.com/informalsystems/tnt/issues/279
+          for (let retries = 0; retries < 3; retries++) {
+            // randomly pick an element
+            const elem = (set as RuntimeValue).pick(Math.random())
+            callable.registers[0].registerValue = just(elem)
+            const result = callable.eval()
+            if (result.isNone()) {
+              return result
+            } else if (result.isJust() &&
+                (result.value as RuntimeValue).toBool()) {
+              return result
+            }
+            // the body of guess evaluates to false, try again
+            this.recoverNextVars(valuesBefore)
+          }
+          return just(rv.mkBool(false))
         }).join()
       },
     }
@@ -1132,7 +1147,9 @@ export class CompilerVisitor implements IRVisitor {
             const initName = (initRes as RuntimeValue).toStr()
             const init = this.contextGet(initName, ['callable']) ?? fail
             if (!isTrue(init.eval())) {
-              errorFound = true
+              // The initial action evaluates to false.
+              // This probably means that our guess of values was not good.
+              errorFound = false
             } else {
               this.shiftVars()
               trace.push(varsToRecord())
