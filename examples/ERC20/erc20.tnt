@@ -107,7 +107,8 @@ module erc20 {
      tx.value > balanceOf[tx.fromAddr],
      tx.value > allowance[(tx.fromAddr, tx.sender)],
      tx.fromAddr == tx.toAddr
-    } all {
+    }
+    all {
       lastTx <- tx.with("fail", fail),
       if (fail)
         all {
