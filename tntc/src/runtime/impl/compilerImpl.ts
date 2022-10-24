@@ -58,7 +58,9 @@ export class CompilerVisitor implements IRVisitor {
   private runtimeErrors: ir.IrErrorMessage[] = []
 
   constructor () {
-    const lastTrace = mkRegister('shadow', lastTraceName, none())
+    const lastTrace =
+      mkRegister('shadow', lastTraceName, none(),
+        () => this.addRuntimeError(0n, '_lastTrace is not set'))
     this.shadowVars.push(lastTrace)
     this.context.set(kindName(lastTrace.kind, lastTrace.name), lastTrace)
     const boolSet =
@@ -128,10 +130,13 @@ export class CompilerVisitor implements IRVisitor {
     // simply introduce two registers:
     //  one for the variable, and
     //  one for its next-state version
-    const prevRegister = mkRegister('var', vardef.name, none())
+    const prevRegister =
+      mkRegister('var', vardef.name, none(),
+        () => this.addRuntimeError(vardef.id, `Variable ${vardef.name} is not set`))
     this.vars.push(prevRegister)
     this.context.set(kindName('var', vardef.name), prevRegister)
-    const nextRegister = mkRegister('nextvar', vardef.name, none())
+    const nextRegister = mkRegister('nextvar', vardef.name, none(),
+      () => this.addRuntimeError(vardef.id, `next(${vardef.name}) is not set`))
     this.nextVars.push(nextRegister)
     this.context.set(kindName('nextvar', nextRegister.name), nextRegister)
   }
@@ -769,7 +774,8 @@ export class CompilerVisitor implements IRVisitor {
   enterLambda (lam: ir.TntLambda) {
     // introduce a register for every parameter
     lam.params.forEach(p =>
-      this.context.set(kindName('arg', p), mkRegister('arg', p, none())))
+      this.context.set(kindName('arg', p),
+        mkRegister('arg', p, none(), () => `Parameter ${p} is not set`)))
     // After this point, the body of the lambda gets compiled.
     // The body of the lambda may refer to the parameter via names,
     // which are stored in the registers we've just created.
@@ -1161,11 +1167,9 @@ export class CompilerVisitor implements IRVisitor {
             // check Init()
             const initName = (initRes as RuntimeValue).toStr()
             const init = this.contextGet(initName, ['callable']) ?? fail
-            if (!isTrue(init.eval())) {
-              // The initial action evaluates to false.
-              // This probably means that our guess of values was not good.
-              errorFound = false
-            } else {
+            if (isTrue(init.eval())) {
+              // The initial action evaluates to true.
+              // Our guess of values was good.
               this.shiftVars()
               trace.push(varsToRecord())
               // check the invariant Inv
