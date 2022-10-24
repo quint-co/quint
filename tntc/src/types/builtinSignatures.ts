@@ -74,6 +74,7 @@ const listOperators = [
   { name: 'indices', type: '(list(a)) => set(int)' },
   { name: 'replaceAt', type: '(list(a), int, a) => list(a)' },
   { name: 'slice', type: '(list(a), int, int) => list(a)' },
+  { name: 'range', type: '(int, int) => list(int)' },
   { name: 'select', type: '(list(a), (a) => bool) => list(a)' },
   { name: 'foldl', type: '(list(a), b, (b, a) => b) => b' },
   { name: 'foldr', type: '(list(a), b, (a, b) => b) => b' },

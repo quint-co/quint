@@ -362,6 +362,22 @@ export class CompilerVisitor implements IRVisitor {
           (...values: RuntimeValue[]) => just(rv.mkList(values)))
         break
 
+      case 'range':
+        this.applyFun(app.id, 2, (start, end) => {
+          const [s, e] = [Number(start.toInt()), Number(end.toInt())]
+          if (s <= e) {
+            const arr: RuntimeValue[] = []
+            for (let i = s; i < e; i++) {
+              arr.push(rv.mkInt(BigInt(i)))
+            }
+            return just(rv.mkList(arr))
+          } else {
+            this.addRuntimeError(app.id, `range(${s}, ${e}) is out of bounds`)
+            return none()
+          }
+        })
+        break
+
       case 'nth':
         // Access a list
         this.applyFun(app.id,
@@ -399,7 +415,6 @@ export class CompilerVisitor implements IRVisitor {
         this.applyFun(app.id, 3, (list, start, end) => {
           const [l, s, e] =
             [list.toList(), Number(start.toInt()), Number(end.toInt())]
-          // adjust start and end, as JS offers richer API over negative numbers
           if (s >= 0 && s < l.size && e <= l.size && e >= s) {
             return this.sliceList(app.id, l, s, e)
           } else {

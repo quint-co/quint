@@ -1353,6 +1353,11 @@ are 1-indexed.
 // Equivalent to <<e_1, ..., e_n>> in TLA+.
 [ e_1, ..., e_n ]
 list(e_1, ..., e_n)
+// List range: `start` is inclusive, whereas `end` is exclusive.
+// Equivalent to [start, start + 1, ..., end - 1]
+// There is no equivalent in TLA+,
+// but it could be defined via a recursive operator.
+range(start, end)
 // Append e to the end of s.
 // Equivalent to Append(s, e) in TLA+.
 l.append(e)

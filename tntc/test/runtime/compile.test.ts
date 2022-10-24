@@ -594,6 +594,12 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('list(4, 2, 3)', 'list(4, 2, 3)')
     })
 
+    it('list range', () => {
+      assertResultAsString('range(3, 7)', 'list(3, 4, 5, 6)')
+      assertResultAsString('range(4, 5)', 'list(4)')
+      assertResultAsString('range(3, 3)', 'list()')
+    })
+
     it('list equality', () => {
       assertResultAsString('[4, 5, 6] == [5 - 1, 5, 6]', 'true')
       assertResultAsString('[4, 5, 6] == [5, 5, 6]', 'false')

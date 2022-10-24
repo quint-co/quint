@@ -71,6 +71,7 @@ const listOperators = [
   { name: 'indices', effect: '(Read[r1]) => Read[r1]' },
   { name: 'replaceAt', effect: '(Read[r1], Read[r2], Read[r3]) => Read[r1, r2, r3]' },
   { name: 'slice', effect: '(Read[r1], Read[r2], Read[r3]) => Read[r1, r2, r3]' },
+  { name: 'range', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
   { name: 'select', effect: '(Read[r1], (Read[r1]) => Read[r2]) => Read[r1, r2]' },
   { name: 'foldl', effect: '(Read[r1], Read[r2], (Read[r2], Read[r1]) => Read[r3]) => Read[r1, r2, r3]' },
   { name: 'foldr', effect: '(Read[r1], Read[r2], (Read[r1], Read[r2]) => Read[r3]) => Read[r1, r2, r3]' },

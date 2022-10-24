@@ -140,6 +140,7 @@ export function defaultDefinitions (): DefinitionTable {
       { kind: 'def', identifier: 'set' },
       { kind: 'def', identifier: 'mapOf' },
       { kind: 'def', identifier: 'list' },
+      { kind: 'def', identifier: 'range' },
       { kind: 'def', identifier: 'tup' },
       { kind: 'def', identifier: 'rec' },
       { kind: 'def', identifier: 'igt' },
