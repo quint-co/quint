@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { inferEffects } from '../../src/effects/inferrer'
-import { DefinitionTable, DefinitionTableByModule } from '../../src/definitionsCollector'
+import { DefinitionTable, LookupTable, LookupTableByModule } from '../../src/definitionsCollector'
 import { Effect, Signature } from '../../src/effects/base'
 import { buildModuleWithDefs } from '../builders/ir'
 import { parseEffectOrThrow } from '../../src/effects/parser'
@@ -9,21 +9,18 @@ import { effectToString } from '../../src/effects/printing'
 import { errorTreeToString } from '../../src/errorTree'
 
 describe('inferEffects', () => {
-  const table: DefinitionTable = {
-    valueDefinitions: [
-      { kind: 'param', identifier: 'p' },
-      { kind: 'const', identifier: 'N' },
-      { kind: 'var', identifier: 'x' },
-      { kind: 'val', identifier: 'm' },
-      { kind: 'val', identifier: 't' },
-      { kind: 'def', identifier: 'assign' },
-      { kind: 'def', identifier: 'foldl' },
-      { kind: 'def', identifier: 'iadd' },
-      { kind: 'def', identifier: 'my_add' },
-    ],
-    typeDefinitions: [],
-  }
-  const definitionsTable: DefinitionTableByModule = new Map<string, DefinitionTable>([['wrapper', table]])
+  const table: LookupTable = new Map<string, DefinitionTable>([
+    ['p', { valueDefinitions: [{ kind: 'param', identifier: 'p', reference: 1n }], typeDefinitions: [] }],
+    ['N', { valueDefinitions: [{ kind: 'const', identifier: 'N', reference: 1n }], typeDefinitions: [] }],
+    ['x', { valueDefinitions: [{ kind: 'var', identifier: 'x', reference: 1n }], typeDefinitions: [] }],
+    ['m', { valueDefinitions: [{ kind: 'val', identifier: 'm', reference: 1n }], typeDefinitions: [] }],
+    ['t', { valueDefinitions: [{ kind: 'val', identifier: 't', reference: 1n }], typeDefinitions: [] }],
+    ['assign', { valueDefinitions: [{ kind: 'def', identifier: 'assign' }], typeDefinitions: [] }],
+    ['foldl', { valueDefinitions: [{ kind: 'def', identifier: 'foldl' }], typeDefinitions: [] }],
+    ['iadd', { valueDefinitions: [{ kind: 'def', identifier: 'iadd' }], typeDefinitions: [] }],
+    ['my_add', { valueDefinitions: [{ kind: 'def', identifier: 'my_add', reference: 1n }], typeDefinitions: [] }],
+  ])
+  const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
 
   const readManyEffect = (arity: number) => {
     const rs = Array.from(Array(arity).keys()).map(i => `r${i}`)

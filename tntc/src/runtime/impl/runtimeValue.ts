@@ -1133,13 +1133,13 @@ class RuntimeValuePowerset
     if (!elem.isSetLike) {
       return false
     }
-    
+
     for (const e of elem) {
       if (!this.baseSet.contains(e)) {
         return false
       }
     }
-    
+
     return true
   }
 

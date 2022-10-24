@@ -13,7 +13,7 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
 import { TntModule } from './tntIr'
 import { ToIrListener } from './ToIrListener'
-import { collectDefinitions, DefinitionTableByModule } from './definitionsCollector'
+import { collectDefinitions, LookupTableByModule } from './definitionsCollector'
 import { resolveNames } from './nameResolver'
 import { resolveImports } from './importResolver'
 import { treeFromModule } from './scoping'
@@ -38,7 +38,7 @@ export type Phase1Result =
   | { kind: 'error', messages: ErrorMessage[] }
 
 export type Phase2Result =
-  | { kind: 'ok', table: DefinitionTableByModule }
+  | { kind: 'ok', table: LookupTableByModule }
   | { kind: 'error', messages: ErrorMessage[] }
 
 /**

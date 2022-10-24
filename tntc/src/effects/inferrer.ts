@@ -14,7 +14,7 @@
  */
 
 import { Either, right, left, mergeInMany } from '@sweet-monads/either'
-import { DefinitionTable, DefinitionTableByModule, emptyTable, ValueDefinition } from '../definitionsCollector'
+import { LookupTable, LookupTableByModule, emptyTable, ValueDefinition, DefinitionTable } from '../definitionsCollector'
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { TntApp, TntBool, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr } from '../tntIr'
@@ -35,7 +35,7 @@ import { scopesForId, ScopeTree, treeFromModule } from '../scoping'
  *          Otherwise, a map from expression ids to the corresponding error for
  *          the problematic expressions.
  */
-export function inferEffects (context: Map<string, Signature>, definitionsTable: DefinitionTableByModule, module: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, Effect>> {
+export function inferEffects (context: Map<string, Signature>, definitionsTable: LookupTableByModule, module: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, Effect>> {
   const visitor = new EffectInferrerVisitor(context, definitionsTable)
   walkModule(visitor, module)
   if (visitor.errors.size > 0) {
@@ -50,7 +50,7 @@ export function inferEffects (context: Map<string, Signature>, definitionsTable:
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor (context: Map<string, Signature>, definitionsTable: DefinitionTableByModule) {
+  constructor (context: Map<string, Signature>, definitionsTable: LookupTableByModule) {
     this.context = context
     this.definitionsTable = definitionsTable
   }
@@ -59,11 +59,11 @@ class EffectInferrerVisitor implements IRVisitor {
   errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
 
   private context: Map<string, Signature>
-  private definitionsTable: DefinitionTableByModule
+  private definitionsTable: LookupTableByModule
   private freshVarCounters: Map<string, number> = new Map<string, number>()
 
   private currentModule?: TntModule
-  private currentTable: DefinitionTable = emptyTable()
+  private currentTable: LookupTable = new Map<string, DefinitionTable>()
   private currentScopeTree: ScopeTree = { value: 0n, children: [] }
   private moduleStack: TntModule[] = []
 
@@ -256,9 +256,12 @@ class EffectInferrerVisitor implements IRVisitor {
   }
 
   private fetchFromDefinitionsTable (name: string, scope: bigint): Either<string, ValueDefinition> {
-    const value = this.currentTable.valueDefinitions.find(def => {
+    const defs = this.currentTable.get(name) ?? emptyTable()
+
+    const value = defs.valueDefinitions.find(def => {
       return def.identifier === name && (!def.scope || scopesForId(this.currentScopeTree, scope).includes(def.scope))
     })
+
     if (value) {
       return right(value)
     } else {

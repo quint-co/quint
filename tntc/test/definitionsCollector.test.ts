@@ -12,7 +12,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule).get(moduleName)
 
-      assert.deepInclude(result!.valueDefinitions.map(d => d.identifier), 'TEST_CONSTANT')
+      assert.deepInclude([...result!.keys()], 'TEST_CONSTANT')
     })
 
     it('collects variable definitions', () => {
@@ -20,7 +20,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule).get(moduleName)
 
-      assert.deepInclude(result!.valueDefinitions.map(d => d.identifier), 'test_variable')
+      assert.deepInclude([...result!.keys()], 'test_variable')
     })
 
     it('collects operator definitions and its parameters including a scope', () => {
@@ -28,7 +28,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule).get(moduleName)
 
-      assert.includeDeepMembers(result!.valueDefinitions.map(d => d.identifier), ['test_operator', 'x'])
+      assert.includeDeepMembers([...result!.keys()], ['test_operator', 'x'])
     })
 
     it('collects names from application inside definition body', () => {
@@ -36,7 +36,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule).get(moduleName)
 
-      assert.includeDeepMembers(result!.valueDefinitions.map(d => d.identifier), ['test_operator', 'x'])
+      assert.includeDeepMembers([...result!.keys()], ['test_operator', 'x'])
     })
 
     it('collects names from let inside definition body', () => {
@@ -44,7 +44,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule).get(moduleName)
 
-      assert.includeDeepMembers(result!.valueDefinitions.map(d => d.identifier), ['test_operator', 'x'])
+      assert.includeDeepMembers([...result!.keys()], ['test_operator', 'x'])
     })
 
     it('collects instances and scoped variables inside parameters', () => {
@@ -55,13 +55,13 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule)
 
-      assert.includeDeepMembers(result.get(moduleName)!.valueDefinitions.map(d => d.identifier), [
+      assert.includeDeepMembers([...result.get(moduleName)!.keys()], [
         'test_module::a',
         'test_module::nested_module::b',
         'x',
       ])
 
-      assert.includeDeepMembers(result.get('test_module')!.valueDefinitions.map(d => d.identifier), [
+      assert.includeDeepMembers([...result.get('test_module')!.keys()], [
         'a',
         'nested_module::b',
       ])
@@ -72,7 +72,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule).get(moduleName)
 
-      assert.includeDeepMembers(result!.valueDefinitions.map(d => d.identifier), ['test_assumption', 'x'])
+      assert.includeDeepMembers([...result!.keys()], ['test_assumption', 'x'])
     })
 
     it('collects nested module definitions', () => {
@@ -82,19 +82,19 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule)
 
-      assert.includeDeepMembers(result.get(moduleName)!.valueDefinitions.map(d => d.identifier), [
+      assert.includeDeepMembers([...result.get(moduleName)!.keys()], [
         'test_module::a',
         'test_module::nested_module::b',
         'test_module::nested_module',
       ])
 
-      assert.includeDeepMembers(result.get('test_module')!.valueDefinitions.map(d => d.identifier), [
+      assert.includeDeepMembers([...result.get('test_module')!.keys()], [
         'a',
         'nested_module',
         'nested_module::b',
       ])
 
-      assert.includeDeepMembers(result.get('nested_module')!.valueDefinitions.map(d => d.identifier), [
+      assert.includeDeepMembers([...result.get('nested_module')!.keys()], [
         'b',
       ])
     })
@@ -106,7 +106,7 @@ describe('collectDefinitions', () => {
 
       const result = collectDefinitions(tntModule).get(moduleName)
 
-      assert.deepInclude(result!.typeDefinitions.map(d => d.identifier), 'TEST_TYPE')
+      assert.deepInclude([...result!.keys()], 'TEST_TYPE')
     })
   })
 })
