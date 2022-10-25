@@ -54,7 +54,7 @@ const withIO = async (inputText: string): Promise<string> => {
 
 // the standard banner, which gets repeated
 const banner =
-`TNT REPL v0.0.1
+`TNT REPL v0.0.2
 Type ".exit" to exit, or ".help" for more information`
 
 async function assertRepl (input: string, output: string) {
@@ -154,8 +154,30 @@ describe('repl ok', () => {
       `
       |16
       |
-      |2:1: Couldn't resolve name n in definition for __input, in module __REPL
-      |2:5: Couldn't resolve name n in definition for __input, in module __REPL
+      |syntax error: <input>:9:1 - error: Couldn't resolve name n in definition for __input, in module __REPL
+      |9: n * n
+      |   ^
+      |
+      |syntax error: <input>:9:5 - error: Couldn't resolve name n in definition for __input, in module __REPL
+      |9: n * n
+      |       ^
+      |
+      |
+      |`
+    )
+    await assertRepl(input, output)
+  })
+
+  it('handle exceptions', async () => {
+    const input = dedent(
+      `set(Int)
+      |`
+    )
+    const output = dedent(
+      `runtime error: <input>:9:1 - error: Infinite set Int is non-enumerable
+      |9: set(Int)
+      |   ^^^^^^^^
+      |
       |<result undefined>
       |
       |`
@@ -284,6 +306,10 @@ describe('repl ok', () => {
       |2 <= x and x <= 5
       |tuples(2.to(5), 3.to(4)).guess(t => x <- t._1 + t._2)
       |5 <= x and x <= 9
+      |Nat.guess(i => x <- i)
+      |x >= 0
+      |Int.guess(i => x <- i)
+      |Int.contains(x)
       |`
     )
     const output = dedent(
@@ -296,6 +322,41 @@ describe('repl ok', () => {
       |true
       |true
       |true
+      |true
+      |true
+      |true
+      |true
+      |`
+    )
+    await assertRepl(input, output)
+  })
+
+  it('run _test, _testOnce, and _lastTrace', async () => {
+    const input = dedent(
+      `
+      |var n: int
+      |action Init = n <- 0
+      |action Next = n <- n + 1
+      |val Inv = n < 10
+      |_testOnce(5, "Init", "Next", "Inv")
+      |_testOnce(10, "Init", "Next", "Inv")
+      |_test(5, 5, "Init", "Next", "Inv")
+      |_test(5, 10, "Init", "Next", "Inv")
+      |_lastTrace.length()
+      |_lastTrace.nth(_lastTrace.length() - 1)
+      |`
+    )
+    const output = dedent(
+      `
+      |
+      |
+      |
+      |true
+      |false
+      |true
+      |false
+      |11
+      |{ n: 10 }
       |`
     )
     await assertRepl(input, output)

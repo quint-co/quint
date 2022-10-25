@@ -49,7 +49,7 @@
 			"patterns": [
 				{
 					"name": "storage.modifier.tnt",
-					"match": "\\b(typedef|assume|const|var|val|def|static|action|temporal)\\b"
+					"match": "\\b(typedef|assume|const|var|val|def|pure|action|temporal)\\b"
 				},
 				{
 					"name": "storage.type.tnt",

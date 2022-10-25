@@ -4,7 +4,7 @@ module conflictingNames {
   def a(x) = x
 
   // conflict with built-in definition
-  def cardinality(x) = 0
+  def size(x) = 0
 
   // type alias conflict
   type T = int

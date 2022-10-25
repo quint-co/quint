@@ -52,7 +52,8 @@ export interface Computable {
 /**
  * The kind of a computable.
  */
-export type ComputableKind = 'var' | 'nextvar' | 'arg' | 'callable'
+export type ComputableKind =
+  'val' | 'var' | 'nextvar' | 'arg' | 'callable' | 'shadow'
 
 /**
  * Create a key that encodes its name and kind. This is only useful for
@@ -79,13 +80,20 @@ export interface Register extends Computable {
  * Create an object that implements Register.
  */
 export function mkRegister
-(kind: ComputableKind, registerName: string, initValue: Maybe<any>): Register {
+(kind: ComputableKind,
+  registerName: string,
+  initValue: Maybe<any>,
+  onUndefined: () => void
+): Register {
   return {
     name: registerName,
     kind: kind,
     registerValue: initValue,
     // computing a register just evaluates to the contents that it stores
     eval: function () {
+      if (this.registerValue.isNone()) {
+        onUndefined()
+      }
       return this.registerValue
     },
   }

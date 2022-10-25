@@ -15,8 +15,6 @@ const literals = [
 const booleanOperators = [
   { name: 'eq', type: '(a, a) => bool' },
   { name: 'neq', type: '(a, a) => bool' },
-  { name: 'and', type: '(bool, bool) => bool' },
-  { name: 'or', type: '(bool, bool) => bool' },
   { name: 'iff', type: '(bool, bool) => bool' },
   { name: 'implies', type: '(bool, bool) => bool' },
   { name: 'not', type: '(bool) => bool' },
@@ -41,16 +39,17 @@ const setOperators = [
   { name: 'allLists', type: '(set(a)) => list(a)' },
   { name: 'choose_some', type: '(set(a)) => a' },
   { name: 'isFinite', type: '(set(a)) => bool' },
-  { name: 'cardinality', type: '(set(a)) => int' },
+  { name: 'size', type: '(set(a)) => int' },
 ]
 
 const mapOperators = [
   { name: 'get', type: '(a -> b, a) => b' },
   { name: 'keys', type: '(a -> b) => set(a)' },
-  { name: 'mapOf', type: '(set(a), (a) => b) => a -> b' },
+  { name: 'mapBy', type: '(set(a), (a) => b) => a -> b' },
+  { name: 'setToMap', type: '(set((a, b))) => (a -> b)' },
   { name: 'setOfMaps', type: '(set(a), set(b)) => set(a -> b)' },
   { name: 'update', type: '(a -> b, a, b) => a -> b' },
-  { name: 'updateAs', type: '(a -> b, a, (a) => b) => a -> b' },
+  { name: 'updateAs', type: '(a -> b, a, (b) => b) => a -> b' },
   { name: 'put', type: '(a -> b, a, b) => a -> b' },
 ]
 
@@ -75,6 +74,7 @@ const listOperators = [
   { name: 'indices', type: '(list(a)) => set(int)' },
   { name: 'replaceAt', type: '(list(a), int, a) => list(a)' },
   { name: 'slice', type: '(list(a), int, int) => list(a)' },
+  { name: 'range', type: '(int, int) => list(int)' },
   { name: 'select', type: '(list(a), (a) => bool) => list(a)' },
   { name: 'foldl', type: '(list(a), b, (b, a) => b) => b' },
   { name: 'foldr', type: '(list(a), b, (a, b) => b) => b' },
@@ -122,9 +122,10 @@ function uniformArgsWithResult (argsType: string, resultType: string): Signature
 const multipleAritySignatures: [string, Signature][] = [
   ['list', uniformArgsWithResult('a', 'list(a)')],
   ['set', uniformArgsWithResult('a', 'set(a)')],
-  ['andExpr', uniformArgsWithResult('bool', 'bool')],
+  ['mapOf', uniformArgsWithResult('(a, b)', 'a -> b')],
+  ['and', uniformArgsWithResult('bool', 'bool')],
   ['actionAll', uniformArgsWithResult('bool', 'bool')],
-  ['orExpr', uniformArgsWithResult('bool', 'bool')],
+  ['or', uniformArgsWithResult('bool', 'bool')],
   ['actionAny', uniformArgsWithResult('bool', 'bool')],
   ['tup', (arity: number) => {
     const args = Array.from(Array(arity).keys()).map(i => `t${i}`).join(', ')

@@ -5,7 +5,8 @@
  *  1. Keep the grammar simple,
  *  2. Make it expressive enough to capture all of TLA+.
  *
- * @author: Igor Konnov, Shon Feder, Jure Kukovec, Informal Systems, 2021
+ * @author: Igor Konnov, Shon Feder, Gabriela Moreira, Jure Kukovec,
+ *          Informal Systems, 2021-2022
  */
 grammar Tnt;
 
@@ -29,8 +30,8 @@ operDef : qualifier IDENTIFIER params? (':' type)? '=' expr ';'?
 
 qualifier : 'val'
           | 'def'
-          | 'static' 'val'
-          | 'static' 'def'
+          | 'pure' 'val'
+          | 'pure' 'def'
           | 'action'
           | 'temporal'
           ;
@@ -49,12 +50,12 @@ instanceMod :   'module' IDENTIFIER '=' IDENTIFIER
 
 // Types in Type System 1.2 of Apalache, which supports discriminated unions
 type :          <assoc=right> type '->' type                    # typeFun
-        |       '(' (type (',' type)*)? ')' '=>' type           # typeOper
+        |       '(' (type (',' type)*)? ','? ')' '=>' type      # typeOper
         |       'set' '(' type ')'                              # typeSet
         |       'list' '(' type ')'                             # typeList
-        |       '(' type ',' type (',' type)* ')'               # typeTuple
+        |       '(' type ',' type (',' type)* ','? ')'          # typeTuple
         |       '{' IDENTIFIER ':' type
-                         (',' IDENTIFIER ':' type)* '}'         # typeRec
+                    (',' IDENTIFIER ':' type)* ','? '}'         # typeRec
         |       typeUnionRecOne+                                # typeUnionRec
         |       'int'                                           # typeInt
         |       'str'                                           # typeStr
@@ -63,7 +64,8 @@ type :          <assoc=right> type '->' type                    # typeFun
         |       '(' type ')'                                    # typeParen
         ;
 
-typeUnionRecOne : '|' '{' IDENTIFIER ':' STRING (',' IDENTIFIER ':' type)* '}'
+typeUnionRecOne :
+        '|' '{' IDENTIFIER ':' STRING (',' IDENTIFIER ':' type)* ','? '}'
         ;
 
 // A TNT expression. The order matters, it defines the priority.
@@ -96,17 +98,19 @@ expr:           // apply a built-in operator via the dot notation
         |       expr MATCH
                     ('|' STRING ':' identOrHole '=>' expr)+         # match
                 // similar to indented /\ and indented \/ of TLA+
-        |       '(' ('&')? expr '&' expr ('&' expr)* ')'            # andExpr
-        |       '(' ('|')? expr '|' expr ('|' expr)* ')'            # orExpr
-        |       'all' '{' expr (',' expr)* (',')? '}'               # actionAll
-        |       'any' '{' expr (',' expr)* (',')? '}'               # actionAny
+        |       'and' '{' expr (',' expr)* ','? '}'                 # andExpr
+        |       'or'  '{' expr (',' expr)* ','? '}'                 # orExpr
+        |       'all' '{' expr (',' expr)* ','? '}'                 # actionAll
+        |       'any' '{' expr (',' expr)* ','? '}'                 # actionAny
         |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
         //      a tuple constructor, the form tup(...) is just an operator call
-        |       '(' expr ',' expr (',' expr)* ')'                   # tuple
+        |       '(' expr ',' expr (',' expr)* ','? ')'              # tuple
+        //      short-hand syntax for pairs, mainly designed for maps
+        |       expr '->' expr                                      # pair
         |       '{' IDENTIFIER ':' expr
-                        (',' IDENTIFIER ':' expr)* '}'              # record
+                        (',' IDENTIFIER ':' expr)* ','? '}'         # record
         //      a list constructor, the form list(...) is just an operator call
-        |       '[' (expr (',' expr)*)? ']'                         # list
+        |       '[' (expr (',' expr)*)? ','? ']'                    # list
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
         |       operDef expr                                        # letIn
         |       '(' expr ')'                                        # paren

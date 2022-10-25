@@ -4,7 +4,7 @@
 
 | Revision | Date       | Author                                                  |
 |:---------|:-----------|:--------------------------------------------------------|
-| 24       | 29.09.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira |
+| 25       | 19.10.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -39,8 +39,8 @@ TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
         - [Lambdas (aka Anonymous Operators)](#lambdas-aka-anonymous-operators)
         - [Two forms of operator application](#two-forms-of-operator-application)
         - [Boolean operators and equality](#boolean-operators-and-equality)
-        - [Multiline disjunctions](#multiline-disjunctions)
-        - [Multiline conjunctions](#multiline-conjunctions)
+        - [Multiline disjunctions](#block-disjunctions)
+        - [Multiline conjunctions](#block-conjunctions)
         - [Flow operators](#flow-operators)
             - [Condition](#condition)
             - [Cases (removed)](#cases-removed)
@@ -304,7 +304,7 @@ Similar to TLA+, you can have an anonymous assumption, by simply using `_` for
 the name:
 
 ```tla
-assume _ = Proc.cardinality > 0
+assume _ = Proc.size > 0
 ```
 
 *Mode:* Stateless
@@ -336,23 +336,23 @@ fold over a list or a set, see below).
 
 ```
 // a static constant value, which is not changing over time
-static val Nodes: set(int) = 1 to 10
+pure val Nodes: set(int) = 1 to 10
 
 // a two-argument operator that returns its first argument, independent of state
-static def fst(x, y): ((a, b) => a) =
+pure def fst(x, y): ((a, b) => a) =
     x
 
 // the maximum operator
-static def max(x, y): (int, int) => int =
+pure def max(x, y): (int, int) => int =
     if (x > y) x else y
 
 // A definition over `x` that returns a Boolean result.
 // In logic, such definition is usually called a predicate.
-static def isPositive(x): int => bool =
+pure def isPositive(x): int => bool =
     x > 0
 
 // a higher-order operator that accepts another operator as its first argument
-static def F(G, x): ((a => b, a) => b) = G(x)
+pure def F(G, x): ((a => b, a) => b) = G(x)
 
 // introduce a variable to define stateful definitions
 var timer: int
@@ -379,7 +379,7 @@ temporal neverNegative =
 *Grammar:*
 
 ```bnf
-("val" | "def" | "static" "val" | "static" "def" | "action" | "temporal")
+("val" | "def" | "pure" "val" | "pure" "def" | "action" | "temporal")
     <identifier>["(" <identifier> ("," ..."," <identifier>)* ")"] [":" <type>]
       "=" <expr> [";"]
 ```
@@ -387,12 +387,12 @@ temporal neverNegative =
 *Mode:* The mode depends on the mode of the expression in the right-hand side.
 The following table defines this precisely.
 
-| Qualifier            | Mode of `expr`                       | Mode of definition |
-| -------------------- | ------------------------------------ | ------------------ |
-| `static val`, `static def` | Stateless                      | Stateless          |
-| `val`, `def`         | State                                | State              |
-| `action`             | Action                               | Action             |
-| `temporal`           | Stateless, State, Temporal           | Temporal           |
+| Qualifier              | Mode of `expr`                       | Mode of definition |
+| --------------------   | ------------------------------------ | ------------------ |
+| `pure val`, `pure def` | Stateless                            | Stateless          |
+| `val`, `def`           | State                                | State              |
+| `action`               | Action                               | Action             |
+| `temporal`             | Stateless, State, Temporal           | Temporal           |
 
 ### No recursive functions and operators
 
@@ -800,14 +800,22 @@ neq(e1, e2)
 // logical not: ~p in TLA+
 not(p)
 p.not()
-// logical and: p /\ q in TLA+
+// Logical "and".
+// In TLA+: p /\ q
 p and q
 p.and(q)
 and(p, q)
-// logical or: p \/ q in TLA+
+// The logical "and" is n-ary:
+and(p1, p2, p3)
+and(p1, p2, p3, p4)
+// Logical "or".
+// In TLA+: p \/ q
 p or q
 p.or(q)
 or(p, q)
+// The logical "or" is n-ary
+or(p1, p2, p3)
+or(p1, p2, p3, p4)
 // logical equivalence: p <=> q in TLA+
 p iff q
 p.iff(q)
@@ -824,12 +832,35 @@ syntax forms to a minimum.
 
 *Mode:* Stateless, State, Temporal. 
 
-### Multiline disjunctions
+### Block disjunctions
 
-In the Action mode:
+The following expression can be written in the action mode:
 
 ```scala
 any { 
+  a_1,
+  a_2,
+  ...
+  a_n,
+}
+```
+
+*Mode:* Action.
+
+The trailing comma next to `a_n` is optional, and `n` must be positive.
+
+This operator is written as `actionAny(p_1, ..., p_n)` in its normal form.  It
+evaluates the actions `a_1`, ..., `a_n` in isolation (that is, ignoring the
+side effects introduced by assignments in the actions) and then
+non-deterministically executes one of the enabled actions. The operator returns
+`true`, if it has evaluated one of the actions to `true`. If no such action
+exists, it returns `false`.
+
+Since the syntax of the above operator is convenient, we have introduced a
+similar syntax form in the non-action modes:
+
+```scala
+or { 
   p_1,
   p_2,
   ...
@@ -837,35 +868,13 @@ any {
 }
 ```
 
-In a mode different from Action:
+This is simply the syntax sugar for `or(p_1, ..., p_n)`.
 
-```scala
-( 
-  | p_1
-  | p_2
-  ...
-  | p_n
-)
-```
+*Mode:* Non-action.
 
-Note that we require that `n > 1`.
+### Block conjunctions
 
-This is equivalent to `p_1.or(p_2).or( ... or(p_n)...)`. The indentation is not
-important.  However, you can produce nice indentation by hand, if you like.
-The first occurrence of `|` right after `{` or `(` is optional, it's up to you.
-
-These operators have the normal form too! They are written as `orExpr(p_1, ...,
-p_n)` and `actionAny(p_1, ..., p_n)` for non-action modes and action mode,
-respectively. Most likely, you will never use them, but the tools can.
-
-**Warning:** We will probably remove multiline disjunctions in the expression
-mode, as they can be expressed via `or`.
-
-*Mode:* Any.
-
-### Multiline conjunctions
-
-In the Action mode:
+The following expression can be written in the action mode:
 
 ```scala
 all {
@@ -876,33 +885,32 @@ all {
 }
 ```
 
-(The trailing comma next to `p_n` is optional.)
+*Mode:* Action.
 
-In a mode different from Action:
+The trailing comma next to `a_n` is optional, and `n` must be positive.
+
+This operator is written as `actionAll(p_1, ..., p_n)` in its normal form. It
+evaluates the actions `a_1`, ..., `a_n` one-by-one lazily. As soon as one of
+the actions `a_i` evaluates to `false`, it returns `false`. In this case, all
+side effects (lazy assignments) produced by `a_1, ..., a_{i+1}` are erased, and
+the operator returns `false`.  If all actions evaluate to `true`, all their
+side effects are applied, and the operator returns `true`.
+
+Since the syntax of the above operator is convenient, we have introduced a
+similar syntax form in the non-action modes:
 
 ```scala
-(
-  & p_1
-  & p_2
+and { 
+  p_1,
+  p_2,
   ...
-  & p_n
-)
+  p_n,
+}
 ```
 
-Note that we require that `n > 1`.
+This is simply the syntax sugar for `and(p_1, ..., p_n)`.
 
-This is equivalent to `p_1.and(p_2.and( ... and(p_n)...)`. The indentation is not
-important. However, you can produce nice indentation by hand, if you like.
-The first occurrence of `&` right after `{` is optional, it's up to you.
-
-These operators have the normal form too! They are written as `andExpr(p_1, ...,
-p_n)` in non-action mode and `actionAll(p_1, ..., p_n)` in action mode,
-respectively. Most likely, you will never use them, but the tools can.
-
-**Warning:** We will probably remove multiline conjunctions in the expression
-mode, as they can be expressed via `and`.
-
-*Mode:* Any.
+*Mode:* Non-action.
 
 ### Flow operators
 
@@ -1087,13 +1095,14 @@ These operators are defined in the module `FiniteSets` in TLA+. TNT has these
 two operators in the kernel:
 
 ```scala
-// IsFiniteSet(S)
-S isFinite
+// Test a set for finiteness.
+// TLA+ equivalent: IsFiniteSet(S)
 S.isFinite()
 isFinite(S)
-// Cardinality(S)
-S.cardinality()
-cardinality(S)
+// Set cardinality for finite sets.
+// TLA+ equivalent: Cardinality(S)
+S.size()
+size(S)
 ```
 
 *Mode:* Stateless, State. Other modes are not allowed.
@@ -1103,28 +1112,46 @@ cardinality(S)
 ### Maps (aka Functions)
 
 ```scala
-// map application: f[e]
+// Map application.
+// In TLA+: f[e]
 f[e]
 f.get(e)
 get(f, e)
-// map domain: DOMAIN f
+// Map domain.
+// In TLA+: DOMAIN f
 f.keys()
 keys(f)
-// map constructor: [ x \in S |-> e ]
-S.mapOf(x => e)
-mapOf(S, (x => e))
-// a set of maps: [ S -> T ]
+// Map constructor via evaluation.
+// In TLA+: [ x \in S |-> e ]
+S.mapBy(x => e)
+mapBy(S, (x => e))
+// Map constructor via enumeration.
+mapOf()
+mapOf(k_1 -> v_1)
+mapOf(k_1 -> v_1, k_2 -> v_2)
+mapOf(k_1 -> v_1, k_2 -> v_2, k_3 -> v_3)
+...
+// Convert a set of pairs to a map.
+// In TLA+: [ x \in { a: <<a, b>> \in S } |-> (CHOOSE p \in S: p[1] = x)[2]]
+set(tup(1, true), tup(2, false)).setToMap()
+setToMap(set(tup(1, true), tup(2, false)))
+// A set of maps.
+// In TLA+: [ S -> T ]
 S.setOfMaps(T)
 setOfMaps(S, T)
-// [f EXCEPT ![e1] = e2]
+// Update a map at given key.
+// In TLA+: [f EXCEPT ![e1] = e2]
 f.update(e1, e2)
 update(f, e1, e2)
-// [f EXCEPT ![e1] = e2, ![e3] = e4]
-(f update e1, e2) update e3, e4
-// [f EXCEPT ![e1] = @ + y]
+// Multi-point update can be done via multiple applications.
+// In TLA+: [f EXCEPT ![e1] = e2, ![e3] = e4]
+f.update(e1, e2).update(e3, e4)
+// Update by using the old value.
+// In TLA+: [f EXCEPT ![e1] = @ + y]
 f.updateAs(e1, (old => old + y))
 updateAs(f, e1, (old => old + y))
-// an equivalent of (k :> v) @@ f when using the module TLC
+//
+// In TLA+ (when using TLC): (k :> v) @@ f
 f.put(k, v)
 put(f, k, v)
 ```
@@ -1238,7 +1265,7 @@ given an entry from `Entries`, we can compute the predicate `isValid` by case
 distinction over tags:
 
 ```scala
-static def isValid(entry): ENTRY_TYPE => bool =
+pure def isValid(entry): ENTRY_TYPE => bool =
   entry match
      | "Cat": cat =>
        name != "" and cat.year > 0
@@ -1326,55 +1353,70 @@ are 1-indexed.
 // Equivalent to <<e_1, ..., e_n>> in TLA+.
 [ e_1, ..., e_n ]
 list(e_1, ..., e_n)
+// List range: `start` is inclusive, whereas `end` is exclusive.
+// Equivalent to [start, start + 1, ..., end - 1]
+// There is no equivalent in TLA+,
+// but it could be defined via a recursive operator.
+range(start, end)
 // Append e to the end of s.
 // Equivalent to Append(s, e) in TLA+.
-s.append(e)
-append(s, e)
+l.append(e)
+append(l, e)
 // Concatenate s and t.
 // Equivalent to s \circ t in TLA+.
 s.concat(t)
 concat(s, t)
 // List head.
 // Equivalent to Head(s) in TLA+.
-s.head()
-head(s)
+l.head()
+head(l)
 // List tail.
 // Equivalent to Tail(s) in TLA+.
-s.tail()
-tail(s)
+// It is up to the interpreter/analyzer to define the behavior of tail([]).
+// The simulator shows an error message in this case.
+l.tail()
+tail(l)
 // The length of a list.
 // Equivalent to Len(s) in TLA.
-s.length()
-length(s)
+l.length()
+length(l)
 // Sequence element at nth position (starting with 0).
 // Equivalent to s[i + 1] in TLA+.
-s.nth(i)
-nth(s, i)
+l.nth(i)
+nth(l, i)
 // The set of list indices (starting with 0).
 // Equivalent to { i \in DOMAIN s: i - 1 } in TLA+.
-s.indices()
-indices(s)
+l.indices()
+indices(l)
 // Update the list at element i.
 // Equivalent to [ s EXCEPT ![i + 1] = e ] in TLA+.
-s.replaceAt(i, e)
-replaceAt(s, i, e)
-// Slice a list from j to k (both indices inclusive).
-// Equivalent to SubSeq(s, j + 1, k + 1) in TLA+.
-s.slice(j, k)
-slice(s, j, k)
+l.replaceAt(i, e)
+replaceAt(l, start, end)
+// Slice a list from `start` until `end`.
+// Equivalent to SubSeq(lst, start + 1, end) in TLA+.
+// Like in many PLs, `start` is inclusive, whereas `end` is exclusive.
+// For the following cases, it is up to the interpreter/analyzer to define
+// the behavior for the following cases:
+//  - start < 0,
+//  - start >= length(ls),
+//  - end > length(ls),
+//  - end < start.
+// The simulator shows an error message in these cases.
+l.slice(start, end)
+slice(l, start, end)
 // Filter a list.
 // Equivalent to SelectSeq(s, Test) in TLA+.
-select(s, Test)
+select(l, Test)
 // in particular, we can use anonymous operators
-s.select(e => P)
+l.select(e => P)
 // Left fold. There is no standard operator for that in TLA+,
 // but you can define it with a recursive operator.
-s.foldl(init, (i, v => e))
-foldl(s, init, (i, v => e))
+l.foldl(init, (i, v => e))
+foldl(l, init, (i, v => e))
 // Right fold. There is no standard operator for that in TLA+,
 // but you can define it with a recursive operator.
-s.foldr(init, (i, v => e))
-foldr(s, init, (i, v => e))
+l.foldr(init, (i, v => e))
+foldr(l, init, (i, v => e))
 ```
 
 *Mode:* Stateless, State. Other modes are not allowed.
@@ -1481,7 +1523,7 @@ temporal my_prop =
 *Grammar:*
 
 ```
-("val" | "def" | "static" "val" | "static" "def" | "action" | "temporal")
+("val" | "def" | "pure" "val" | "pure" "def" | "action" | "temporal")
   <identifier>[ "(" <identifier> ("," ..."," <identifier>)* ")" ] [ ":" <type>]
     "=" <expr> [";"]
 <expr>
@@ -1760,7 +1802,7 @@ The most common example is shown below:
 // in MC.tnt
   module MC {
     val Acceptor = set("p1", "p2", "p3")
-    val Quorum = MC_Acceptor.powerset.filter(Q => Q.cardinality > 1)
+    val Quorum = MC_Acceptor.powerset.filter(Q => Q.size > 1)
 
     // an instance of Voting that has the name "V"
     module V = Voting(Value = set(0, 1), Acceptor = Acceptor, Quorum = Quorum)

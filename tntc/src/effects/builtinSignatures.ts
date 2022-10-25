@@ -12,8 +12,6 @@ const booleanOperators = [
   { name: 'eq', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
   { name: 'neq', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
   { name: 'not', effect: '(Read[r1] & Temporal[t1]) => Read[r1] & Temporal[t1]' },
-  { name: 'and', effect: '(Read[r1] & Temporal[t1], Read[r2] & Temporal[t2]) => Read[r1, r2] & Temporal[t1, t2]' },
-  { name: 'or', effect: '(Read[r1] & Temporal[t1], Read[r2] & Temporal[t2]) => Read[r1, r2] & Temporal[t1, t2]' },
   { name: 'iff', effect: '(Read[r1] & Temporal[t1], Read[r2] & Temporal[t2]) => Read[r1, r2] & Temporal[t1, t2]' },
   { name: 'implies', effect: '(Read[r1] & Temporal[t1], Read[r2] & Temporal[t2]) => Read[r1, r2] & Temporal[t1, t2]' },
 ]
@@ -31,19 +29,20 @@ const setOperators = [
   { name: 'subseteq', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
   { name: 'filter', effect: '(Read[r1], (Read[r1]) => Read[r2]) => Read[r1, r2]' },
   { name: 'map', effect: '(Read[r1], (Read[r1]) => Read[r2]) => Read[r1, r2]' },
-  { name: 'fold', effect: '(Read[r1], Read[r2], (Read[r2], Read[r1]) => Read[r3, r4]) => Read[r1, r2, r3, r4]' },
+  { name: 'fold', effect: '(Read[r1], Read[r2], (Read[r2], Read[r1]) => Read[r3]) => Read[r1, r2, r3]' },
   { name: 'powerset', effect: '(Read[r1]) => Read[r1]' },
   { name: 'flatten', effect: '(Read[r1]) => Read[r1]' },
   { name: 'allLists', effect: '(Read[r1]) => Read[r1]' },
   { name: 'choose_some', effect: '(Read[r1]) => Read[r1]' },
   { name: 'isFinite', effect: '(Read[r1]) => Read[r1]' },
-  { name: 'cardinality', effect: '(Read[r1]) => Read[r1]' },
+  { name: 'size', effect: '(Read[r1]) => Read[r1]' },
 ]
 
 const mapOperators = [
   { name: 'get', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
   { name: 'keys', effect: '(Read[r1]) => Read[r1]' },
-  { name: 'mapOf', effect: '(Read[r1], (Read[r1]) => Read[r2]) => Read[r1, r2]' },
+  { name: 'mapBy', effect: '(Read[r1], (Read[r1]) => Read[r2]) => Read[r1, r2]' },
+  { name: 'setToMap', effect: '(Read[r1]) => Read[r1]' },
   { name: 'setOfMaps', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
   { name: 'update', effect: '(Read[r1], Read[r2], Read[r3]) => Read[r1, r2, r3]' },
   { name: 'updateAs', effect: '(Read[r1], Read[r2], (Read[r1]) => Read[r3]) => Read[r1, r2, r3]' },
@@ -72,6 +71,7 @@ const listOperators = [
   { name: 'indices', effect: '(Read[r1]) => Read[r1]' },
   { name: 'replaceAt', effect: '(Read[r1], Read[r2], Read[r3]) => Read[r1, r2, r3]' },
   { name: 'slice', effect: '(Read[r1], Read[r2], Read[r3]) => Read[r1, r2, r3]' },
+  { name: 'range', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
   { name: 'select', effect: '(Read[r1], (Read[r1]) => Read[r2]) => Read[r1, r2]' },
   { name: 'foldl', effect: '(Read[r1], Read[r2], (Read[r2], Read[r1]) => Read[r3]) => Read[r1, r2, r3]' },
   { name: 'foldr', effect: '(Read[r1], Read[r2], (Read[r1], Read[r2]) => Read[r3]) => Read[r1, r2, r3]' },
@@ -119,11 +119,12 @@ const readManyEffect = (arity: number) => {
 const multipleAritySignatures: [string, Signature][] = [
   ['list', readManyEffect],
   ['set', readManyEffect],
+  ['mapOf', readManyEffect],
   ['rec', readManyEffect],
   ['tup', readManyEffect],
   ['tuples', readManyEffect],
-  ['andExpr', readManyEffect],
-  ['orExpr', readManyEffect],
+  ['and', readManyEffect],
+  ['or', readManyEffect],
   ['match', (arity: number) => {
     const rs = Array.from(Array((arity - 1) / 2).keys()).map(i => `r${i}`)
     const args = rs.map(r => `Pure, (Pure) => Read[${r}]`)

@@ -122,6 +122,8 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('false and true', 'false')
       assertResultAsString('true and false', 'false')
       assertResultAsString('true and true', 'true')
+      assertResultAsString('and(true, true, false)', 'false')
+      assertResultAsString('and(true, true, true)', 'true')
     })
 
     it('computes or', () => {
@@ -129,6 +131,9 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('false or true', 'true')
       assertResultAsString('true or false', 'true')
       assertResultAsString('true or true', 'true')
+      assertResultAsString('or(false, true, true)', 'true')
+      assertResultAsString('or(true, true, false)', 'true')
+      assertResultAsString('or(false, false, false)', 'false')
     })
 
     it('computes implies', () => {
@@ -210,7 +215,7 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('interval cardinality', () => {
-      const input = '2.to(5).cardinality()'
+      const input = '2.to(5).size()'
       assertResultAsString(input, '4')
     })
 
@@ -225,7 +230,7 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('flat set cardinality', () => {
-      const input = 'set(1, 4 - 1, 3).cardinality()'
+      const input = 'set(1, 4 - 1, 3).size()'
       assertResultAsString(input, '2')
     })
 
@@ -245,7 +250,7 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('cardinality of a set of sets', () => {
-      const input = 'set(set(1, 2), set(2, 3), set(1, 3)).cardinality()'
+      const input = 'set(set(1, 2), set(2, 3), set(1, 3)).size()'
       assertResultAsString(input, '3')
     })
 
@@ -447,9 +452,94 @@ describe('compiling specs to runtime values', () => {
     })
   })
 
+  describe('compile over powerset', () => {
+    it('computes a powerset', () => {
+      assertResultAsString(
+        '2.to(4).powerset()',
+        'set(set(), set(2), set(3), set(2, 3), set(4), set(2, 4), set(3, 4), set(2, 3, 4))'
+      )
+    })
+
+    it('powerset equality', () => {
+      assertResultAsString(
+        '2.to(3).powerset() == set(set(), set(2), set(3), set(2, 3))',
+        'true'
+      )
+      assertResultAsString(
+        '2.to(3).powerset() == set(2, 3).powerset()',
+        'true'
+      )
+      assertResultAsString(
+        '2.to(4).powerset() == set(2, 3).powerset()',
+        'false'
+      )
+    })
+
+    it('powerset contains', () => {
+      assertResultAsString('2.to(3).powerset().contains(set(2))', 'true')
+      assertResultAsString('2.to(3).powerset().contains(set(2, 4))', 'false')
+    })
+
+    it('powerset subseteq', () => {
+      assertResultAsString(
+        '2.to(4).powerset().subseteq(1.to(5).powerset())',
+        'true'
+      )
+    })
+
+    it('powerset cardinality', () => {
+      assertResultAsString('set().powerset().size()', '1')
+      assertResultAsString('2.to(4).powerset().size()', '8')
+      assertResultAsString('2.to(5).powerset().size()', '16')
+    })
+  })
+
+  describe('compile over built-in sets', () => {
+    it('computes Bool', () => {
+      assertResultAsString('Bool', 'set(false, true)')
+    })
+
+    it('computes Int', () => {
+      assertResultAsString('Int', 'Int')
+    })
+
+    it('computes Int.contains', () => {
+      assertResultAsString('Int.contains(123)', 'true')
+      assertResultAsString('Int.contains(0)', 'true')
+      assertResultAsString('Int.contains(-123)', 'true')
+    })
+
+    it('computes Nat', () => {
+      assertResultAsString('Nat', 'Nat')
+    })
+
+    it('computes Nat.contains', () => {
+      assertResultAsString('Nat.contains(123)', 'true')
+      assertResultAsString('Nat.contains(0)', 'true')
+      assertResultAsString('Nat.contains(-123)', 'false')
+    })
+
+    it('computes isSubset', () => {
+      assertResultAsString('Nat.subseteq(Nat)', 'true')
+      assertResultAsString('Nat.subseteq(Int)', 'true')
+      assertResultAsString('Int.subseteq(Int)', 'true')
+      assertResultAsString('Int.subseteq(Nat)', 'false')
+    })
+
+    it('equality over Nat and Int', () => {
+      assertResultAsString('Nat == Nat', 'true')
+      assertResultAsString('Int == Int', 'true')
+      assertResultAsString('Nat == Int', 'false')
+      assertResultAsString('Int == Nat', 'false')
+      assertResultAsString('Int == set(0, 1)', 'false')
+    })
+  })
+
   describe('compile over tuples', () => {
     it('tuple constructors', () => {
       assertResultAsString('tup(1, 2, 3)', 'tup(1, 2, 3)')
+      assertResultAsString('(1, 2, 3)', 'tup(1, 2, 3)')
+      assertResultAsString('(1, 2, 3,)', 'tup(1, 2, 3)')
     })
 
     it('tuple access', () => {
@@ -492,15 +582,22 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('cardinality of cross products', () => {
-      assertResultAsString('tuples(1.to(4), 2.to(4)).cardinality()', '12')
-      assertResultAsString('tuples(set(), 2.to(4)).cardinality()', '0')
+      assertResultAsString('tuples(1.to(4), 2.to(4)).size()', '12')
+      assertResultAsString('tuples(set(), 2.to(4)).size()', '0')
     })
   })
 
   describe('compile over lists', () => {
     it('list constructors', () => {
       assertResultAsString('[4, 2, 3]', 'list(4, 2, 3)')
+      assertResultAsString('[4, 2, 3, ]', 'list(4, 2, 3)')
       assertResultAsString('list(4, 2, 3)', 'list(4, 2, 3)')
+    })
+
+    it('list range', () => {
+      assertResultAsString('range(3, 7)', 'list(3, 4, 5, 6)')
+      assertResultAsString('range(4, 5)', 'list(4)')
+      assertResultAsString('range(3, 3)', 'list()')
     })
 
     it('list equality', () => {
@@ -551,11 +648,18 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('list slice', () => {
-      assertResultAsString('[4, 5, 6, 7].slice(1, 2)', 'list(5, 6)')
-      assertResultAsString('[4, 5, 6, 7].slice(0, 3)', 'list(4, 5, 6, 7)')
+      assertResultAsString('[4, 5, 6, 7].slice(1, 3)', 'list(5, 6)')
+      assertResultAsString('[4, 5, 6, 7].slice(0, 4)', 'list(4, 5, 6, 7)')
       assertResultAsString('[4, 5, 6, 7].slice(1, 7)', undefined)
       assertResultAsString('[4, 5, 6, 7].slice(-1, 3)', undefined)
-      assertResultAsString('[].slice(0, 1)', undefined)
+      assertResultAsString('[1, 2].slice(1, 2)', 'list(2)')
+      assertResultAsString('[1, 2].slice(1, 1)', 'list()')
+      assertResultAsString('[1, 2].slice(2, 2)', undefined)
+      assertResultAsString('[1, 2].slice(2, 1)', undefined)
+      assertResultAsString('[].slice(0, 0)', undefined)
+      assertResultAsString('[].slice(1, 0)', undefined)
+      assertResultAsString('[].slice(1, 1)', undefined)
+      assertResultAsString('[].slice(0, -1)', undefined)
     })
 
     it('list replaceAt', () => {
@@ -564,12 +668,32 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('[4, 5, 6].replaceAt(4, 10)', undefined)
       assertResultAsString('[4, 5, 6].replaceAt(-1, 10)', undefined)
     })
+
+    it('list foldl', () => {
+      assertResultAsString('[].foldl(3, (i, e => i + e))', '3')
+      assertResultAsString('[4, 5, 6, 7].foldl(1, (i, e => i + e))', '23')
+      assertResultAsString('[4, 5, 6, 7].foldl([], (l, e => l.append(e)))',
+        'list(4, 5, 6, 7)')
+    })
+
+    it('list foldr', () => {
+      assertResultAsString('[].foldr(3, (i, e => i + e))', '3')
+      assertResultAsString('[4, 5, 6, 7].foldr(1, (i, e => i + e))', '23')
+      assertResultAsString('[4, 5, 6, 7].foldr([], (l, e => l.append(e)))',
+        'list(7, 6, 5, 4)')
+    })
+
+    it('list select', () => {
+      assertResultAsString('[].select(e => e % 2 == 0)', 'list()')
+      assertResultAsString('[4, 5, 6].select(e => e % 2 == 0)', 'list(4, 6)')
+    })
   })
 
   describe('compile over records', () => {
     it('record constructors', () => {
       assertResultAsString('rec("a", 2, "b", true)', 'rec("a", 2, "b", true)')
       assertResultAsString('{ a: 2, b: true }', 'rec("a", 2, "b", true)')
+      assertResultAsString('{ a: 2, b: true, }', 'rec("a", 2, "b", true)')
     })
 
     it('record equality', () => {
@@ -591,6 +715,123 @@ describe('compiling specs to runtime values', () => {
       // The following query should not be possible, due to the type checker.
       // Just in case, we check that the simulator returns 'undefined'.
       assertResultAsString('{ a: 2, b: true }.with("c", 3)', undefined)
+    })
+  })
+
+  describe('compile over maps', () => {
+    it('mapBy constructor', () => {
+      assertResultAsString('3.to(5).mapBy(i => 2 * i)',
+        'mapOf(tup(3, 6), tup(4, 8), tup(5, 10))')
+      assertResultAsString('set(2.to(4)).mapBy(s => s.size())',
+        'mapOf(tup(set(2, 3, 4), 3))')
+    })
+
+    it('setToMap constructor', () => {
+      assertResultAsString('setToMap(set((3, 6), (4, 10 - 2), (5, 10)))',
+        'mapOf(tup(3, 6), tup(4, 8), tup(5, 10))')
+    })
+
+    it('mapOf constructor', () => {
+      assertResultAsString('mapOf(3 -> 6, 4 -> 10 - 2, 5 -> 10)',
+        'mapOf(tup(3, 6), tup(4, 8), tup(5, 10))')
+    })
+
+    it('map get', () => {
+      assertResultAsString('3.to(5).mapBy(i => 2 * i).get(4)', '8')
+      assertResultAsString(
+        'set(2.to(4)).mapBy(s => s.size()).get(set(2, 3, 4))',
+        '3'
+      )
+    })
+
+    it('map update', () => {
+      assertResultAsString(
+        '3.to(5).mapBy(i => 2 * i).update(4, 20)',
+        'mapOf(tup(3, 6), tup(4, 20), tup(5, 10))'
+      )
+      assertResultAsString(
+        '3.to(5).mapBy(i => 2 * i).update(7, 20)',
+        undefined
+      )
+    })
+
+    it('map updateAs', () => {
+      assertResultAsString(
+        '3.to(5).mapBy(i => 2 * i).updateAs(4, (old => old + 1))',
+        'mapOf(tup(3, 6), tup(4, 9), tup(5, 10))'
+      )
+      assertResultAsString(
+        '3.to(5).mapBy(i => 2 * i).updateAs(7, (old => old + 1))',
+        undefined
+      )
+    })
+
+    it('map put', () => {
+      assertResultAsString(
+        '3.to(5).mapBy(i => 2 * i).put(10, 11)',
+        'mapOf(tup(10, 11), tup(3, 6), tup(4, 8), tup(5, 10))'
+      )
+    })
+
+    it('map keys', () => {
+      assertResultAsString(
+        'set(3, 5, 7).mapBy(i => 2 * i).keys()',
+        'set(3, 5, 7)'
+      )
+    })
+
+    it('map equality', () => {
+      assertResultAsString(
+        '3.to(5).mapBy(i => 2 * i) == 3.to(5).mapBy(i => 3 * i - i)',
+        'true'
+      )
+      assertResultAsString(
+        '3.to(5).mapBy(i => 2 * i) == 3.to(6).mapBy(i => 2 * i)',
+        'false'
+      )
+    })
+
+    it('map setOfMaps', () => {
+      assertResultAsString(
+        '2.to(3).setOfMaps(5.to(6))',
+        'set(mapOf(tup(2, 5), tup(3, 5)), mapOf(tup(2, 6), tup(3, 5)), mapOf(tup(2, 5), tup(3, 6)), mapOf(tup(2, 6), tup(3, 6)))'
+      )
+      assertResultAsString(
+        `2.to(3).setOfMaps(5.to(6)) ==
+          set(mapOf(2 -> 5, 3 -> 5),
+              mapOf(2 -> 6, 3 -> 5),
+              mapOf(2 -> 5, 3 -> 6),
+              mapOf(2 -> 6, 3 -> 6))`,
+        'true'
+      )
+      assertResultAsString(
+        'set(2).setOfMaps(5.to(6))',
+        'set(mapOf(tup(2, 5)), mapOf(tup(2, 6)))'
+      )
+      assertResultAsString(
+        '2.to(3).setOfMaps(set(5))',
+        'set(mapOf(tup(2, 5), tup(3, 5)))'
+      )
+      assertResultAsString(
+        '2.to(4).setOfMaps(5.to(8)).size()',
+        '64'
+      )
+      assertResultAsString(
+        '2.to(4).setOfMaps(5.to(7)).subseteq(2.to(4).setOfMaps(4.to(8)))',
+        'true'
+      )
+      assertResultAsString(
+        '2.to(4).setOfMaps(5.to(10)).subseteq(2.to(4).setOfMaps(4.to(8)))',
+        'false'
+      )
+      assertResultAsString(
+        '2.to(3).setOfMaps(5.to(6)).contains(mapOf(2 -> 5, 3 -> 5))',
+        'true'
+      )
+      assertResultAsString(
+        '2.to(3).setOfMaps(5.to(6)) == 2.to(4 - 1).setOfMaps(5.to(7 - 1))',
+        'true'
+      )
     })
   })
 })

@@ -25,7 +25,7 @@ import { solveConstraint } from './constraintSolver'
 /**
  * Infers an type for each expression in a TNT module
  *
- * @param module: the TNT module to infer types for
+ * @param tntModule: the TNT module to infer types for
  *
  * @returns a map from expression ids to their types when inferrence succeeds.
  *          Otherwise, a map from expression ids to the corresponding error for

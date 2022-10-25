@@ -93,7 +93,11 @@ following commands:
   1. Go into the resulting `.map.json` and `.json` files and replace the
      absolute path on your system with `mocked_path`. E.g., replace
      `/home/me/.../testFixture/SuperSpec.map.json` with
-     `mocked_path/testFixture/SuperSpec.map.json`
+     `mocked_path/testFixture/SuperSpec.map.json`. You can do that with `perl`:
+
+     ```sh
+     perl -pi -e 's#"/.*?/testFixture#"mocked_path/testFixture#g' testFixture/SuperSpec{.map,}.json
+     ```
 
 ### Integration tests
 

@@ -46,7 +46,7 @@ syn keyword tntBoolValue false true
 syn keyword tntCond if else match
 
 " declarations
-syn keyword tntDecl module import const var def val static action temporal assume
+syn keyword tntDecl module import const var def val pure action temporal assume
 
 " standard operators
 syn keyword tntStd not and or iff implies

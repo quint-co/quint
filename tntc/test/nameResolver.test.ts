@@ -1,25 +1,25 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { ValueDefinition, defaultDefinitions, DefinitionTable, TypeDefinition, DefinitionTableByModule } from '../src/definitionsCollector'
+import { defaultDefinitions, DefinitionTable, LookupTable, LookupTableByModule } from '../src/definitionsCollector'
 import { resolveNames, NameResolutionResult } from '../src/nameResolver'
 
 import { buildModuleWithExpressions, buildModuleWithDefs } from './builders/ir'
 import { ScopeTree } from '../src/scoping'
 
 describe('nameResolver', () => {
-  const valueDefinitions: ValueDefinition[] = defaultDefinitions().valueDefinitions.concat([
-    { kind: 'const', identifier: 'TEST_CONSTANT' },
-    { kind: 'def', identifier: 'unscoped_def' },
-    { kind: 'def', identifier: 'scoped_def', scope: 2n },
+  const table: LookupTable = new Map<string, DefinitionTable>([
+    ...defaultDefinitions(),
+    ['TEST_CONSTANT', { valueDefinitions: [{ kind: 'const', identifier: 'TEST_CONSTANT' }], typeDefinitions: [] }],
+    ['unscoped_def', { valueDefinitions: [{ kind: 'def', identifier: 'unscoped_def' }], typeDefinitions: [] }],
+    ['scoped_def', { valueDefinitions: [{ kind: 'def', identifier: 'scoped_def', scope: 2n }], typeDefinitions: [] }],
+    ['MY_TYPE', { valueDefinitions: [], typeDefinitions: [{ identifier: 'MY_TYPE', type: { id: 100n, kind: 'int' } }] }],
   ])
-  const typeDefinitions: TypeDefinition[] = [
-    { identifier: 'MY_TYPE', type: { id: 100n, kind: 'int' } },
-  ]
-  const index = new Map<string, bigint>()
 
   const moduleName = 'wrapper'
-  const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions, index: index }
-  const tables: DefinitionTableByModule = new Map<string, DefinitionTable>([[moduleName, table]])
+  const tables: LookupTableByModule = new Map<string, LookupTable>([
+    [moduleName, table],
+    ['test_module', new Map<string, DefinitionTable>()],
+  ])
   const dummyScopeTree: ScopeTree = { value: 0n, children: [] }
 
   describe('operator definitions', () => {

@@ -139,7 +139,7 @@ export class ToIrListener implements TntListener {
     if (ctx.qualifier()) {
       const qtext = ctx.qualifier().text
       // case distinction to make the type checker happy
-      if (qtext === 'staticval' || qtext === 'staticdef' ||
+      if (qtext === 'pureval' || qtext === 'puredef' ||
         qtext === 'val' || qtext === 'def' ||
         qtext === 'action' || qtext === 'temporal') {
         qualifier = qtext
@@ -491,6 +491,12 @@ export class ToIrListener implements TntListener {
     this.pushApplication(ctx, 'tup', args)
   }
 
+  // pair constructor, e.g., 2 -> 3
+  exitPair (ctx: p.PairContext) {
+    const args = this.popExprs(ctx.expr().length)
+    this.pushApplication(ctx, 'tup', args)
+  }
+
   // list constructor, e.g., [1, 2, 3]
   exitList (ctx: p.ListContext) {
     const args = this.popExprs(ctx.expr().length)
@@ -599,16 +605,16 @@ export class ToIrListener implements TntListener {
     this.pushApplication(ctx, 'iff', args)
   }
 
-  // ( p & q & r )
+  // and { p, q, r }
   exitAndExpr (ctx: p.AndExprContext) {
     const args = this.popExprs(ctx.expr().length)
-    this.pushApplication(ctx, 'andExpr', args)
+    this.pushApplication(ctx, 'and', args)
   }
 
-  // ( p | q | r )
+  // or { p, q, r }
   exitOrExpr (ctx: p.OrExprContext) {
     const args = this.popExprs(ctx.expr().length)
-    this.pushApplication(ctx, 'orExpr', args)
+    this.pushApplication(ctx, 'or', args)
   }
 
   // all { p, q, r }

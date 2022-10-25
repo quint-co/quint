@@ -8,15 +8,23 @@ module withConsts {
   const MyFun: int -> str
   const MyFunFun: (int -> str) -> bool
   const MyOperator: (int, str) => bool
+  const MyOperatorWithComma: (int, str, ) => bool
   const MyTuple: (int, bool, str)
+  const MyTupleWithComma: (int, bool, str, )
 
   // just a normal record, without any variation in the fields
   const MyRecord: { i: int, b: bool, s: str }
+  const MyRecordWithComma: { i: int, b: bool, s: str, }
   // a disjoint union is a common pattern in TLA+
   const MyUnion:
       | { tag: "circle", radius: int }
       | { tag: "rectangle", width: int, height: int }
       | { tag: "dog", name: str }
+
+  const MyUnionWithComma:
+      | { tag: "circle", radius: int, }
+      | { tag: "rectangle", width: int, height: int, }
+      | { tag: "dog", name: str, }
 
   // Vars
   // We don't do extensive testing of types,
@@ -52,8 +60,8 @@ module withConsts {
 
   // Operator definitions
   var n: int
-  static val magicNumber = 42
-  static def add(x, y) = x + y
+  pure val magicNumber = 42
+  pure def add(x, y) = x + y
   def ofN(factor) = factor * n
   action A(x) = n <- x
   temporal B(x) = not(x)
@@ -80,11 +88,11 @@ module withConsts {
   val test_and_arg(x) = F(x) and not(x)
   val test_or_arg(x) = F(x) or not(x)
 
-  val test_block_and = (
-      & false
-      & true
-      & false
-  )
+  val test_block_and = and {
+      false,
+      true,
+      false
+  }
 
   action test_action_and = all {
       false,
@@ -92,11 +100,11 @@ module withConsts {
       false
   }
 
-  val test_block_or = (
-      | false
-      | true
-      | false
-  )
+  val test_block_or = or {
+      false,
+      true,
+      false
+  }
 
   action test_action_or = any {
       false,
@@ -140,6 +148,7 @@ module withConsts {
   // Data structures
   val test_tuple = (1, 2, 3)
   val test_tuple2 = tup(1, 2, 3)
+  val test_pair = 4 -> 5
   val test_list = [1, 2, 3]
   val test_list2 = list(1, 2, 3)
   val test_record = { name: "igor", year: 1981 }

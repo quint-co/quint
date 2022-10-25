@@ -8,24 +8,51 @@
  * See License.txt in the project root for license information.
  */
 
-import { parsePhase1, parsePhase2, ErrorMessage } from '../tntParserFrontend'
-import { Computable, ExecError, ExecErrorHandler } from './runtime'
+import { Either, left, right } from '@sweet-monads/either'
+
+import {
+  parsePhase1, parsePhase2, ErrorMessage, Loc
+} from '../tntParserFrontend'
+import { Computable } from './runtime'
+import { IrErrorMessage } from '../tntIr'
 import { CompilerVisitor } from './impl/compilerImpl'
 import { walkModule } from '../IRVisitor'
 
 /**
- * The default error handler, which simply prints the error on the console.
+ * The name of the shadow variable that stores the last found trace.
  */
-const consoleHandler = (err: ExecError) => {
-  console.error(`${err.sourceAndLoc}: ${err.msg}`)
-}
+export const lastTraceName = '_lastTrace'
 
 /**
  * A compilation context returned by 'compile'.
  */
 export interface CompilationContext {
+  // names of the variables and definitions mapped to computables
   values: Map<string, Computable>,
-  vars: string[]
+  // names of the variables
+  vars: string[],
+  // names of the shadow variables, internal to the simulator
+  shadowVars: string[],
+  // messages that are produced during parsing
+  syntaxErrors: ErrorMessage[],
+  // messages that are produced during compilation
+  compileErrors: IrErrorMessage[],
+  // messages that get populated as the compiled code is executed
+  runtimeErrors: IrErrorMessage[],
+  // source mapping
+  sourceMap: Map<bigint, Loc>,
+}
+
+function errorContext (errors: ErrorMessage[]): CompilationContext {
+  return {
+    values: new Map(),
+    vars: [],
+    shadowVars: [],
+    syntaxErrors: errors,
+    compileErrors: [],
+    runtimeErrors: [],
+    sourceMap: new Map(),
+  }
 }
 
 /**
@@ -35,51 +62,31 @@ export interface CompilationContext {
  *
  * @param moduleText text that stores a TNT module,
  *        which should be parseable without any context
- * @param errorHandler error handler, which defaults to console output
  * @returns a mapping from names to computable values
  */
 export function
-compile (moduleText: string, errorHandler: ExecErrorHandler = consoleHandler):
-    CompilationContext {
+compile (moduleText: string): CompilationContext {
   // parse the module text
   const parseRes = parsePhase1(moduleText, '<input>')
-  let errors = []
+
   if (parseRes.kind === 'error') {
-    errors = parseRes.messages
+    return errorContext(parseRes.messages)
   } else {
     const resolutionRes = parsePhase2(parseRes.module, parseRes.sourceMap)
     if (resolutionRes.kind === 'error') {
-      errors = resolutionRes.messages
+      return errorContext(resolutionRes.messages)
     } else {
       const visitor = new CompilerVisitor()
       walkModule(visitor, parseRes.module)
       return {
         values: visitor.getContext(),
         vars: visitor.getVars(),
+        shadowVars: visitor.getShadowVars(),
+        syntaxErrors: [],
+        compileErrors: visitor.getCompileErrors(),
+        runtimeErrors: visitor.getRuntimeErrors(),
+        sourceMap: parseRes.sourceMap,
       }
     }
-  }
-
-  // report error messages
-  errors.forEach((err: ErrorMessage) => {
-    let loc
-    if (err.locs.length > 0) {
-      const start = err.locs[0].start
-      // compensate for 2 lines in moduleText,
-      // make lines and columns start with 1
-      loc = `${start.line - 1}:${start.col + 1}`
-    } else {
-      loc = '<unknown>'
-    }
-
-    errorHandler({
-      msg: err.explanation,
-      sourceAndLoc: loc,
-    })
-  })
-
-  return {
-    values: new Map(),
-    vars: [],
   }
 }

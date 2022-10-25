@@ -82,25 +82,36 @@ module ReadersWriters {
   (* Specification *)
   (*****************/
   
-  val Init = (
-      & readers == set()
-      & writers == set()
-      & waiting == []
-  )
-  
-  action Next = any {
-      all { Actors.guess({ actor => TryRead(actor) }), readers <- readers, writers <- writers },
-      all { Actors.guess({ actor => TryWrite(actor) }), readers <- readers, writers <- writers },
-      ReadOrWrite,
-      all { Stop, waiting <- waiting },
+  action Init = all {
+      readers == set(),
+      writers == set(),
+      waiting == []
   }
   
-  temporal Fairness = (
-      & Actors.forall( actor => TryRead(actor).weakFair(vars) )
-      & Actors.forall( actor => TryWrite(actor).weakFair(vars) )
-      & ReadOrWrite.weakFair(vars)
-      & Stop.weakFair(vars)
-  )
+  action Next = any {
+      all {
+          Actors.guess({ actor => TryRead(actor) }),
+          readers <- readers,
+          writers <- writers
+      },
+      all {
+          Actors.guess({ actor => TryWrite(actor) }),
+          readers <- readers,
+          writers <- writers
+      },
+      ReadOrWrite,
+      all {
+          Stop,
+          waiting <- waiting
+      },
+  }
+  
+  temporal Fairness = and {
+      Actors.forall(actor => TryRead(actor).weakFair(vars)),
+      Actors.forall(actor => TryWrite(actor).weakFair(vars)),
+      ReadOrWrite.weakFair(vars),
+      Stop.weakFair(vars)
+  }
   
   temporal Spec = Init and always(stutter(Next, vars) and Fairness)
   
@@ -110,25 +121,25 @@ module ReadersWriters {
   (* Invariants *)
   (**************/
   
-  val TypeOK = (
-      & readers.subseteq(Actors)
-      & writers.subseteq(Actors)
-      & waiting in tuples(ToSet(allLists(set("read", "write")).Actors))
-  )
+  val TypeOK = and {
+      readers.subseteq(Actors),
+      writers.subseteq(Actors),
+      waiting in tuples(ToSet(allLists(set("read", "write")).Actors))
+  }
   
-  val Safety = (
-      & not(readers != set() and writers != set())
-      & cardinality(writers) <= 1
-  )
+  val Safety = and {
+      not(readers != set() and writers != set()),
+      size(writers) <= 1
+  }
   
   /**************)
   (* Properties *)
   (**************/
   
-  temporal Liveness = (
-      & Actors.forall(actor => always(eventually(actor in readers)))
-      & Actors.forall(actor => always(eventually(actor in writers)))
-      & Actors.forall(actor => always(eventually(actor notin readers)))
-      & Actors.forall(actor => always(eventually(actor notin writers)))
-  )
+  temporal Liveness = and {
+      Actors.forall(actor => always(eventually(actor in readers))),
+      Actors.forall(actor => always(eventually(actor in writers))),
+      Actors.forall(actor => always(eventually(actor notin readers))),
+      Actors.forall(actor => always(eventually(actor notin writers))),
+  }
 }

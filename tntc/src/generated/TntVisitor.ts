@@ -43,6 +43,7 @@ import { ActionAllContext } from "./TntParser";
 import { ActionAnyContext } from "./TntParser";
 import { LiteralOrIdContext } from "./TntParser";
 import { TupleContext } from "./TntParser";
+import { PairContext } from "./TntParser";
 import { RecordContext } from "./TntParser";
 import { ListContext } from "./TntParser";
 import { IfElseContext } from "./TntParser";
@@ -398,6 +399,14 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitTuple?: (ctx: TupleContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `pair`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitPair?: (ctx: PairContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `record`

@@ -14,7 +14,7 @@
  */
 
 import { Either, right, left, mergeInMany } from '@sweet-monads/either'
-import { DefinitionTable, DefinitionTableByModule, emptyTable, ValueDefinition } from '../definitionsCollector'
+import { LookupTable, LookupTableByModule, emptyTable, ValueDefinition, DefinitionTable } from '../definitionsCollector'
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { TntApp, TntBool, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr } from '../tntIr'
@@ -28,15 +28,15 @@ import { scopesForId, ScopeTree, treeFromModule } from '../scoping'
  * context and the definitions table for that module
  *
  * @param context a map from operator identifiers to their effect signature
- * @param definitionsTable the collected definitions for the module under inference
+ * @param lookupTable the collected definitions for the module under inference
  * @param module: the TNT module to infer effects for
  *
  * @returns a map from expression ids to their effects when inferrence succeeds.
  *          Otherwise, a map from expression ids to the corresponding error for
  *          the problematic expressions.
  */
-export function inferEffects (builtinSignatures: Map<string, Signature>, definitionsTable: DefinitionTableByModule, module: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, Effect>> {
-  const visitor = new EffectInferrerVisitor(builtinSignatures, definitionsTable)
+export function inferEffects (context: Map<string, Signature>, lookupTable: LookupTableByModule, module: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, Effect>> {
+  const visitor = new EffectInferrerVisitor(context, lookupTable)
   walkModule(visitor, module)
   if (visitor.errors.size > 0) {
     return left(visitor.errors)
@@ -50,21 +50,20 @@ export function inferEffects (builtinSignatures: Map<string, Signature>, definit
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor (builtinSignatures: Map<string, Signature>, definitionsTable: DefinitionTableByModule) {
-    this.builtinSignatures = builtinSignatures
-    this.definitionsTable = definitionsTable
+  constructor (context: Map<string, Signature>, lookupTable: LookupTableByModule) {
+    this.context = context
+    this.lookupTable = lookupTable
   }
 
   effects: Map<bigint, Effect> = new Map<bigint, Effect>()
   errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
 
-  private builtinSignatures: Map<string, Signature>
-  private definitionsTable: DefinitionTableByModule
-  private context: Map<bigint, Signature> = new Map<bigint, Signature>()
+  private context: Map<string, Signature>
+  private lookupTable: LookupTableByModule
   private freshVarCounters: Map<string, number> = new Map<string, number>()
 
   private currentModule?: TntModule
-  private currentTable: DefinitionTable = emptyTable()
+  private currentTable: LookupTable = new Map<string, DefinitionTable>()
   private currentScopeTree: ScopeTree = { value: 0n, children: [] }
   private moduleStack: TntModule[] = []
 
@@ -85,7 +84,7 @@ class EffectInferrerVisitor implements IRVisitor {
   exitName (expr: TntName): void {
     const location = `Inferring effect for name ${expr.name}`
 
-    this.fetchFromDefinitionsTable(expr.name, expr.id).map(def => {
+    this.fetchFromLookupTable(expr.name, expr.id).map(def => {
       switch (def.kind) {
         case 'param': {
           /*  { kind: 'param', identifier: p } ∈ Γ
@@ -94,10 +93,10 @@ class EffectInferrerVisitor implements IRVisitor {
            */
           // Context values are functions over arity, call it with arity 1 since
           // arity doesn't matter for lambda-introduced names
-          if (!def.reference || !this.context.has(def.reference)) {
+          const paramEffect = this.context.get(expr.name)!(1)
+          if (!paramEffect) {
             throw new Error(`Couldn't find lambda parameter named ${expr.name} in context`)
           }
-          const paramEffect = this.context.get(def.reference)!(1)
 
           this.effects.set(expr.id, paramEffect)
           break
@@ -195,7 +194,7 @@ class EffectInferrerVisitor implements IRVisitor {
 
     // Set the expression effect as the definition effect for it to be available at the result
     this.effects.set(def.id, e)
-    this.context.set(def.id, (_) => e)
+    this.context.set(def.name, (_) => e)
   }
 
   /*     Γ ⊢ e: E
@@ -221,8 +220,7 @@ class EffectInferrerVisitor implements IRVisitor {
     expr.params
       .forEach(p => {
         const name = `e_${p}_${expr.id}`
-        const id = this.currentTable.index.get(p)!
-        this.context.set(id, (_) => ({
+        this.context.set(p, (_) => ({
           kind: 'quantified',
           name: name,
         }))
@@ -239,9 +237,8 @@ class EffectInferrerVisitor implements IRVisitor {
       .map(p => {
         // Context values are functions over arity, call it with arity 1 since
         // arity doesn't matter for lambda-introduced names
-        const id = this.currentTable.index.get(p)!
-        const paramEffect = this.context.get(id)!(1)
-        this.context.delete(id)
+        const paramEffect = this.context.get(p)!(1)
+        this.context.delete(p)
         return applySubstitution(this.substitutions, paramEffect)
       }))
 
@@ -258,10 +255,13 @@ class EffectInferrerVisitor implements IRVisitor {
     return `${prefix}${counter}`
   }
 
-  private fetchFromDefinitionsTable (name: string, scope: bigint): Either<string, ValueDefinition> {
-    const value = this.currentTable.valueDefinitions.find(def => {
+  private fetchFromLookupTable (name: string, scope: bigint): Either<string, ValueDefinition> {
+    const defs = this.currentTable.get(name) ?? emptyTable()
+
+    const value = defs.valueDefinitions.find(def => {
       return def.identifier === name && (!def.scope || scopesForId(this.currentScopeTree, scope).includes(def.scope))
     })
+
     if (value) {
       return right(value)
     } else {
@@ -271,11 +271,10 @@ class EffectInferrerVisitor implements IRVisitor {
 
   private fetchSignature (opcode: string, arity: number): Either<string, Effect> {
     // Assumes a valid number of arguments
-    const opcodeId = this.currentTable.index.get(opcode)!
-    if (!(opcodeId && this.context.has(opcodeId)) && !this.builtinSignatures.has(opcode)) {
+    if (!this.context.get(opcode)) {
       return left(`Signature not found for operator: ${opcode}`)
     }
-    const signatureFunction = this.builtinSignatures.get(opcode) ?? this.context.get(opcodeId)!
+    const signatureFunction = this.context.get(opcode)!
     const signature = signatureFunction(arity)
     return right(this.replaceEffectNamesWithFresh(signature))
   }
@@ -303,7 +302,7 @@ class EffectInferrerVisitor implements IRVisitor {
     if (this.moduleStack.length > 0) {
       this.currentModule = this.moduleStack[this.moduleStack.length - 1]
 
-      const moduleTable = this.definitionsTable.get(this.currentModule!.name)!
+      const moduleTable = this.lookupTable.get(this.currentModule!.name)!
       this.currentTable = moduleTable
       this.currentScopeTree = treeFromModule(this.currentModule)
     }
