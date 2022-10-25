@@ -27,12 +27,12 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { parsePhase1, parsePhase2, Loc, DefinitionTableByModule, inferEffects, getSignatures, TntModule, effectToString, errorTreeToString, typeToString, inferTypes, checkModes, Effect } from 'tntc'
+import { parsePhase1, parsePhase2, Loc, LookupTableByModule, inferEffects, getSignatures, TntModule, effectToString, errorTreeToString, typeToString, inferTypes, checkModes, Effect } from 'tntc'
 
 interface ParsingResult {
   tntModule: TntModule
   sourceMap: Map<bigint, Loc>
-  definitionTable: DefinitionTableByModule
+  definitionTable: LookupTableByModule
 }
 
 // Create a connection for the server, using Node's IPC as a transport.
@@ -272,7 +272,7 @@ const originalEffectsByDocument: Map<DocumentUri, Map<bigint, Effect>> = new Map
 const typesByDocument: Map<DocumentUri, Map<Loc, string>> = new Map<DocumentUri, Map<Loc, string>>()
 const documentsByUri: Map<DocumentUri, TextDocument> = new Map<DocumentUri, TextDocument>()
 
-function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: DefinitionTableByModule): Promise<boolean> {
+function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule): Promise<boolean> {
   const testDiags = checkTypes(textDocument, tntModule, sourceMap)
   const effectDiags = checkEffects(textDocument, tntModule, sourceMap, table)
   const modeDiags = checkDefinitionModes(textDocument, tntModule, sourceMap)
@@ -285,7 +285,7 @@ function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule,
   }
 }
 
-function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: DefinitionTableByModule): Diagnostic[] {
+function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule): Diagnostic[] {
   const result = inferEffects(getSignatures(), table, tntModule)
   const diagnostics: Diagnostic[] = []
   const effects: Map<Loc, string> = new Map<Loc, string>()

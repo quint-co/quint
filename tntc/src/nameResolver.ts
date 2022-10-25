@@ -62,7 +62,7 @@ export function resolveNames (tntModule: TntModule, table: LookupTableByModule, 
 }
 
 class NameResolverVisitor implements IRVisitor {
-  constructor(tables: LookupTableByModule, scopeTree: ScopeTree) {
+  constructor (tables: LookupTableByModule, scopeTree: ScopeTree) {
     this.tables = tables
     this.scopeTree = scopeTree
   }

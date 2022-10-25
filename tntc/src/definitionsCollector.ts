@@ -54,8 +54,6 @@ export interface DefinitionTable {
   typeDefinitions: TypeDefinition[]
 }
 
-export type DefinitionTableByModule = Map<string, DefinitionTable>
-
 export type LookupTable = Map<string, DefinitionTable>
 export type LookupTableByModule = Map<string, LookupTable>
 
