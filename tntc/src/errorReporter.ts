@@ -21,16 +21,21 @@ import { ErrorMessage } from './tntParserFrontend'
  * @param text the string read from the source file for which the messages' location info points to
  * @param finder a line-column lib finder object created from text, used as a cached map of indexes
  * @param message the error message to be reported
+ * @param lineOffset a number to add to line numbers in error messages,
+ *        the default value is 1
  *
  * @returns a formatted string with error information
  * */
-export function formatError (text: string, finder: any, message: ErrorMessage): string {
+export function formatError
+(text: string, finder: any, message: ErrorMessage, lineOffset: number = 1):
+  string {
   if (message.locs.length === 0) {
     return `error: ${message.explanation}`
   }
 
   return message.locs.reduce((output, loc) => {
-    const locString = `${loc.source}:${loc.start.line + 1}:${loc.start.col + 1}`
+    const locString =
+      `${loc.source}:${loc.start.line + lineOffset}:${loc.start.col + 1}`
     output += `${locString} - error: ${message.explanation}\n`
 
     const endLine = loc.end ? loc.end.line : loc.start.line
@@ -43,7 +48,7 @@ export function formatError (text: string, finder: any, message: ErrorMessage): 
       const lineStartCol = i === loc.start.line ? loc.start.col : 0
       const lineEndCol = i === endLine ? endCol : line.length - 1
 
-      output += formatLine(i, lineStartCol, lineEndCol, line)
+      output += formatLine(lineOffset + i, lineStartCol, lineEndCol, line)
     }
     return output
   }, '')
@@ -51,7 +56,7 @@ export function formatError (text: string, finder: any, message: ErrorMessage): 
 
 function formatLine (lineIndex: number, startCol: number, endCol: number, line: string): string {
   let output = ''
-  const lineNumberIndicator = `${lineIndex + 1}: `
+  const lineNumberIndicator = `${lineIndex}: `
   output += `${lineNumberIndicator}${line}\n`
   // Add margin according to how much space the indicator takes
   output += ' '.repeat(lineNumberIndicator.length)

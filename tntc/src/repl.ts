@@ -349,31 +349,35 @@ def _testOnce(__nsteps, __init, __next, __inv) =
 // try to evaluate the expression in a string and print it, if successful
 function tryEval (out: writer, state: ReplState, newInput: string): boolean {
   // output errors to the console in red
-  function printErrors (moduleText: string, context: CompilationContext) {
-    printErrorMessages(out, 'syntax error', moduleText, context.syntaxErrors)
+  function printErrors
+  (moduleText: string, context: CompilationContext, lineOffset: number) {
+    printErrorMessages(out,
+      'syntax error', moduleText, lineOffset, context.syntaxErrors)
     const resolved = resolveErrors(context.sourceMap, context.compileErrors)
-    printErrorMessages(out, 'compile error', moduleText, resolved)
+    printErrorMessages(out,
+      'compile error', moduleText, lineOffset, resolved)
     out('') // be nice to external programs
   }
 
   const probeResult = probeParse(newInput, '<input>')
   if (probeResult.kind === 'error') {
-    printErrorMessages(out, 'syntax error', newInput, probeResult.messages)
+    printErrorMessages(out, 'syntax error', newInput, 1, probeResult.messages)
     out('') // be nice to external programs
     return false
   }
   if (probeResult.kind === 'expr') {
     // embed expression text into a value definition inside a module
-    const moduleText = `module __REPL {
-${simulatorBuiltins}
+    const preambule = `module __REPL { ${simulatorBuiltins}`
+    const moduleText = `${preambule}
 ${state.defsHist}
-  val __input =
+val __input =
 ${newInput}
 }`
     // compile the expression or definition and evaluate it
     const context = compile(moduleText)
     if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
-      printErrors(moduleText, context)
+      const lineOffset = -preambule.split('\n').length - 1
+      printErrors(moduleText, context, lineOffset)
       return false
     }
     loadVars(state, context)
@@ -401,7 +405,8 @@ ${newInput}
     }
     if (resultDefined.isNone()) {
       const resolved = resolveErrors(context.sourceMap, context.runtimeErrors)
-      printErrorMessages(out, 'runtime error', moduleText, resolved)
+      const lineOffset = -preambule.split('\n').length - 1
+      printErrorMessages(out, 'runtime error', moduleText, lineOffset, resolved)
       out(chalk.red('<result undefined>'))
       out('') // be nice to external programs
       return false
@@ -409,8 +414,8 @@ ${newInput}
   }
   if (probeResult.kind === 'toplevel') {
     // embed expression text into a module at the top level
-    const moduleText = `module __REPL {
-${simulatorBuiltins}
+    const preambule = `module __REPL { ${simulatorBuiltins}`
+    const moduleText = `${preambule}
 ${state.defsHist}
 ${newInput}
 }`
@@ -418,7 +423,8 @@ ${newInput}
     const context = compile(moduleText)
     if (context.values.size === 0 ||
         context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
-      printErrors(moduleText, context)
+      const lineOffset = -preambule.split('\n').length + 1
+      printErrors(moduleText, context, lineOffset)
       return false
     } else {
       out('') // be nice to external programs
@@ -446,11 +452,12 @@ function resolveErrors
 
 // print error messages with proper colors
 function printErrorMessages
-(out: writer, kind: string, text: string, messages: ErrorMessage[]) {
+(out: writer,
+ kind: string, text: string, lineOffset: number, messages: ErrorMessage[]) {
   // display the error messages and highlight the error places
   const finder = lineColumn(text)
   for (const e of messages) {
-    const msg = formatError(text, finder, e)
+    const msg = formatError(text, finder, e, lineOffset)
     out(chalk.red(`${kind}: ${msg}`))
   }
 }
