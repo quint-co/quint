@@ -12,7 +12,7 @@
  * @module
  */
 
-import { LookupTableByModule, LookupTable, emptyTable, DefinitionTable, ValueDefinition } from './definitionsCollector'
+import { LookupTableByModule, LookupTable, emptyTable, DefinitionTable } from './definitionsCollector'
 import { TntImport, TntInstance, TntModule, TntModuleDef } from './tntIr'
 import { IRVisitor, walkModule } from './IRVisitor'
 
@@ -43,7 +43,7 @@ export type ImportResolutionResult =
  * to the current module, including a namespace in case of instances.
  *
  * @param tntModule the TNT module for which imports should be resolved
- * @param definitions lists of names and type aliases collected for all modules
+ * @param definitions lookup table of collected names for all modules
  *
  * @returns a successful result with updated definitions in case all imports were resolved, or the errors otherwise
  */
@@ -70,53 +70,45 @@ class ImportResolverVisitor implements IRVisitor {
 
   enterModuleDef (def: TntModuleDef): void {
     this.tables.set(this.currentModuleName, this.currentTable)
+
     this.moduleStack.push(def.module.name)
     this.updateCurrentModule()
   }
 
   exitModuleDef (def: TntModuleDef): void {
-    this.moduleStack.pop()
+    this.tables.set(def.module.name, this.currentTable)
 
-    this.tables.set(def.module.name, new Map<string, DefinitionTable>(this.currentTable.entries()))
+    this.moduleStack.pop()
     this.updateCurrentModule()
   }
 
   enterInstance (def: TntInstance): void {
     const moduleTable = this.tables.get(def.protoName)
+
     if (!moduleTable) {
+      // Instancing unexisting module
       this.errors.push({ moduleName: def.protoName, reference: def.id })
       return
     }
+
+    // Copy the intanced module lookup table in a new lookup table for the instance
     this.tables.set(def.name, new Map<string, DefinitionTable>(moduleTable.entries()))
 
-    const newTable = new Map<string, DefinitionTable>()
-    moduleTable.forEach((table, identifier) => {
-      // Alias definitions from the instanced module to the new name
-      const name = `${def.name}::${identifier}`
-
-      const valueDefs = table.valueDefinitions.filter(d => !d.scope && d.reference).map(d => ({ ...d, identifier: name }))
-      const typeDefs = table.typeDefinitions.filter(d => d.reference).map(d => ({ ...d, identifier: name }))
-
-      newTable.set(name, { valueDefinitions: valueDefs, typeDefinitions: typeDefs })
-    })
-
-    this.currentTable = mergeTables(this.currentTable, newTable)
+    // All names from the instanced module should be acessible with the instance namespace
+    // So, copy them to the current module's lookup table
+    const newEntries = copyNames(moduleTable, def.name)
+    this.currentTable = mergeTables(this.currentTable, newEntries)
   }
 
   enterImport (def: TntImport): void {
     const moduleTable = this.tables.get(def.path)
     if (!moduleTable) {
+      // Importing unexisting module
       this.errors.push({ moduleName: def.path, reference: def.id })
       return
     }
-    // Import only unscoped and non-default (referenced) names
-    const importableDefinitions = new Map<string, DefinitionTable>()
-    moduleTable.forEach((table, identifier) => {
-      const newDefs = table.valueDefinitions.filter(d => !d.scope && d.reference)
-      if (newDefs.length > 0) {
-        importableDefinitions.set(identifier, { ...table, valueDefinitions: newDefs })
-      }
-    })
+
+    const importableDefinitions = copyNames(moduleTable)
 
     if (def.name === '*') {
       // Imports all definitions
@@ -132,32 +124,29 @@ class ImportResolverVisitor implements IRVisitor {
         this.currentTable.set(def.name, emptyTable())
       }
 
+      // Copy type and value definitions for the imported name
+      this.currentTable.get(def.name)!.typeDefinitions.push(
+        ...importableDefinitions.get(def.name)!.typeDefinitions
+      )
+      this.currentTable.get(def.name)!.valueDefinitions.push(
+        ...importableDefinitions.get(def.name)!.valueDefinitions
+      )
+
+      // For value definitions, check if there are modules being imported
       importableDefinitions.get(def.name)!.valueDefinitions.forEach(definition => {
         if (definition.kind === 'module') {
           // Collect all definitions namespaced to module
           const importedModuleTable = this.tables.get(definition.identifier)
 
           if (!importedModuleTable) {
+            // Importing a module without a lookup table for it
             this.errors.push({ moduleName: def.path, defName: definition.identifier, reference: def.id })
             return
           }
 
-          const namespacedTable = new Map<string, DefinitionTable>([])
-          importedModuleTable!.forEach((table, identifier) => {
-            const name = `${definition.identifier}::${identifier}`
-            const newDefs: ValueDefinition[] = table.valueDefinitions
-              .filter(d => !d.scope)
-              .map(d => {
-                return { kind: d.kind, identifier: name, reference: d.reference }
-              })
-            namespacedTable.set(name, { ...table, valueDefinitions: newDefs })
-          })
-
-          this.currentTable = mergeTables(this.currentTable, namespacedTable)
+          const newEntries = copyNames(importedModuleTable!, definition.identifier)
+          this.currentTable = mergeTables(this.currentTable, newEntries)
         }
-
-        // normal value definition
-        this.currentTable.get(def.name)!.valueDefinitions.push(definition)
       })
     }
   }
@@ -175,12 +164,30 @@ class ImportResolverVisitor implements IRVisitor {
   }
 }
 
+function copyNames (originTable: LookupTable, namespace?: string): LookupTable {
+  const newEntries = new Map<string, DefinitionTable>()
+
+  originTable.forEach((table, identifier) => {
+    const name = namespace ? [namespace, identifier].join('::') : identifier
+
+    // Copy only unscoped and non-default (referenced) names
+    const valueDefs = table.valueDefinitions.filter(d => !d.scope && d.reference).map(d => ({ ...d, identifier: name }))
+    const typeDefs = table.typeDefinitions.filter(d => d.reference).map(d => ({ ...d, identifier: name }))
+
+    if (valueDefs.length > 0 || typeDefs.length > 0) {
+      newEntries.set(name, { valueDefinitions: valueDefs, typeDefinitions: typeDefs })
+    }
+  })
+
+  return newEntries
+}
+
 function mergeTables (t1: LookupTable, t2: LookupTable): LookupTable {
   const result = new Map<string, DefinitionTable>(t1.entries())
 
   t2.forEach((table, identifier) => {
     if (result.has(identifier)) {
-      const currentTable = copyTable(result.get(identifier)!)
+      const currentTable = result.get(identifier)!
       currentTable.valueDefinitions.push(...table.valueDefinitions)
       currentTable.typeDefinitions.push(...table.typeDefinitions)
       result.set(identifier, currentTable)
@@ -190,11 +197,4 @@ function mergeTables (t1: LookupTable, t2: LookupTable): LookupTable {
   })
 
   return result
-}
-
-function copyTable (t: DefinitionTable): DefinitionTable {
-  return {
-    valueDefinitions: t.valueDefinitions,
-    typeDefinitions: t.typeDefinitions,
-  }
 }

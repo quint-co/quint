@@ -45,7 +45,7 @@ export interface TypeDefinition {
 }
 
 /**
- * A lookup table aggregating operator and type alias definitions
+ * A table aggregating operator and type alias definitions
  */
 export interface DefinitionTable {
   /* Names for operators defined */
@@ -54,15 +54,19 @@ export interface DefinitionTable {
   typeDefinitions: TypeDefinition[]
 }
 
+/**
+ * A lookup table with all definitions for each name
+ */
 export type LookupTable = Map<string, DefinitionTable>
+
+/**
+ * Lookup tables for each module
+ */
 export type LookupTableByModule = Map<string, LookupTable>
 
 /**
- * Built-in name definitions that are always included in definitions collection
- * This is a function instead of a constant to ensure a new instance is generated
- * every call
-*/
-
+ * An empty definition table, useful for initializing lookup table values
+ */
 export function emptyTable (): DefinitionTable {
   return {
     valueDefinitions: [],
@@ -70,6 +74,11 @@ export function emptyTable (): DefinitionTable {
   }
 }
 
+/**
+ * Built-in name definitions that are always included in definitions collection
+ * This is a function instead of a constant to ensure a new instance is generated
+ * every call
+ */
 export function defaultDefinitions (): LookupTable {
   const defs = [
     { kind: 'def', identifier: 'not' },
@@ -169,7 +178,10 @@ export function defaultDefinitions (): LookupTable {
     { kind: 'def', identifier: 'difference' },
   ]
 
-  const result: [string, DefinitionTable][] = defs.map(def => [def.identifier, { valueDefinitions: [def], typeDefinitions: [] }])
+  // Transform the definition list into a lookup table
+  const result: [string, DefinitionTable][] = defs.map(def => {
+    return [def.identifier, { valueDefinitions: [def], typeDefinitions: [] }]
+  })
   return new Map<string, DefinitionTable>(result)
 }
 
@@ -263,6 +275,7 @@ class DefinitionsCollectorVisitor implements IRVisitor {
 
   private collectValueDefinition (kind: string, identifier: string, reference?: bigint, scope?: bigint): void {
     if (identifier === '_') {
+      // Don't collect underscores, as they are special identifiers that allow no usage
       return
     }
 
@@ -296,6 +309,7 @@ class DefinitionsCollectorVisitor implements IRVisitor {
 
       let moduleTable = this.tables.get(this.currentModuleName)
       if (!moduleTable) {
+        // Initialize module tables with a copy from default definitions
         moduleTable = new Map<string, DefinitionTable>(this.defaultDefinitions.entries())
         this.tables.set(this.currentModuleName, moduleTable)
       }

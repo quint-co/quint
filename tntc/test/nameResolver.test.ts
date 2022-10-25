@@ -16,7 +16,10 @@ describe('nameResolver', () => {
   ])
 
   const moduleName = 'wrapper'
-  const tables: LookupTableByModule = new Map<string, LookupTable>([[moduleName, table]])
+  const tables: LookupTableByModule = new Map<string, LookupTable>([
+    [moduleName, table],
+    ['test_module', new Map<string, DefinitionTable>()],
+  ])
   const dummyScopeTree: ScopeTree = { value: 0n, children: [] }
 
   describe('operator definitions', () => {

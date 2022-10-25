@@ -28,15 +28,15 @@ import { scopesForId, ScopeTree, treeFromModule } from '../scoping'
  * context and the definitions table for that module
  *
  * @param context a map from operator identifiers to their effect signature
- * @param definitionsTable the collected definitions for the module under inference
+ * @param lookupTable the collected definitions for the module under inference
  * @param module: the TNT module to infer effects for
  *
  * @returns a map from expression ids to their effects when inferrence succeeds.
  *          Otherwise, a map from expression ids to the corresponding error for
  *          the problematic expressions.
  */
-export function inferEffects (context: Map<string, Signature>, definitionsTable: LookupTableByModule, module: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, Effect>> {
-  const visitor = new EffectInferrerVisitor(context, definitionsTable)
+export function inferEffects (context: Map<string, Signature>, lookupTable: LookupTableByModule, module: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, Effect>> {
+  const visitor = new EffectInferrerVisitor(context, lookupTable)
   walkModule(visitor, module)
   if (visitor.errors.size > 0) {
     return left(visitor.errors)
@@ -50,16 +50,16 @@ export function inferEffects (context: Map<string, Signature>, definitionsTable:
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor (context: Map<string, Signature>, definitionsTable: LookupTableByModule) {
+  constructor (context: Map<string, Signature>, lookupTable: LookupTableByModule) {
     this.context = context
-    this.definitionsTable = definitionsTable
+    this.lookupTable = lookupTable
   }
 
   effects: Map<bigint, Effect> = new Map<bigint, Effect>()
   errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
 
   private context: Map<string, Signature>
-  private definitionsTable: LookupTableByModule
+  private lookupTable: LookupTableByModule
   private freshVarCounters: Map<string, number> = new Map<string, number>()
 
   private currentModule?: TntModule
@@ -84,7 +84,7 @@ class EffectInferrerVisitor implements IRVisitor {
   exitName (expr: TntName): void {
     const location = `Inferring effect for name ${expr.name}`
 
-    this.fetchFromDefinitionsTable(expr.name, expr.id).map(def => {
+    this.fetchFromLookupTable(expr.name, expr.id).map(def => {
       switch (def.kind) {
         case 'param': {
           /*  { kind: 'param', identifier: p } ∈ Γ
@@ -255,7 +255,7 @@ class EffectInferrerVisitor implements IRVisitor {
     return `${prefix}${counter}`
   }
 
-  private fetchFromDefinitionsTable (name: string, scope: bigint): Either<string, ValueDefinition> {
+  private fetchFromLookupTable (name: string, scope: bigint): Either<string, ValueDefinition> {
     const defs = this.currentTable.get(name) ?? emptyTable()
 
     const value = defs.valueDefinitions.find(def => {
@@ -302,7 +302,7 @@ class EffectInferrerVisitor implements IRVisitor {
     if (this.moduleStack.length > 0) {
       this.currentModule = this.moduleStack[this.moduleStack.length - 1]
 
-      const moduleTable = this.definitionsTable.get(this.currentModule!.name)!
+      const moduleTable = this.lookupTable.get(this.currentModule!.name)!
       this.currentTable = moduleTable
       this.currentScopeTree = treeFromModule(this.currentModule)
     }

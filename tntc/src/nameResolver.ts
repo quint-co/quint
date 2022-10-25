@@ -118,6 +118,7 @@ class NameResolverVisitor implements IRVisitor {
     }
   }
 
+  // Check that there is a value definition for `name` under scope `id`
   private checkScopedName (name: string, id: bigint) {
     if (!this.currentTable.has(name)) {
       this.recordError('value', name, id)
@@ -134,10 +135,9 @@ class NameResolverVisitor implements IRVisitor {
     if (this.moduleStack.length > 0) {
       this.currentModuleName = this.moduleStack[this.moduleStack.length - 1]
 
-      let moduleTable = this.tables.get(this.currentModuleName)
+      const moduleTable = this.tables.get(this.currentModuleName)
       if (!moduleTable) {
-        moduleTable = new Map<string, DefinitionTable>()
-        this.tables.set(this.currentModuleName, moduleTable)
+        throw new Error(`Lookup table not found for module: ${this.currentModuleName}`)
       }
       this.currentTable = moduleTable
     }

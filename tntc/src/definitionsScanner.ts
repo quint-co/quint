@@ -60,17 +60,21 @@ export function scanConflicts (table: LookupTable, tree: ScopeTree): Definitions
   table.forEach((defs, identifier) => {
     // Value definition conflicts depend on scope
     const conflictingDefinitions = defs.valueDefinitions.filter(def => defs.valueDefinitions.some(d => {
-      return !isEqual(d, def) && (canConflict(tree, d, def) || canConflict(tree, def, d))
+      return !isEqual(d, def) && canConflict(tree, d, def)
     }))
 
     if (conflictingDefinitions.length > 0) {
-      const sources: ConflictSource[] = conflictingDefinitions.map(d => d.reference ? { kind: 'user', reference: d.reference } : { kind: 'builtin' })
+      const sources: ConflictSource[] = conflictingDefinitions.map(d => {
+        return d.reference ? { kind: 'user', reference: d.reference } : { kind: 'builtin' }
+      })
       conflicts.push({ kind: 'value', identifier: identifier, sources: sources })
     }
 
     // Type definition conflicts don't depend on scope as type aliases can't be scoped
     if (defs.typeDefinitions.length > 1) {
-      const sources: ConflictSource[] = defs.typeDefinitions.map(d => d.reference ? { kind: 'user', reference: d.reference } : { kind: 'builtin' })
+      const sources: ConflictSource[] = defs.typeDefinitions.map(d => {
+        return d.reference ? { kind: 'user', reference: d.reference } : { kind: 'builtin' }
+      })
       conflicts.push({ kind: 'type', identifier: identifier, sources: sources })
     }
   })
@@ -83,5 +87,8 @@ export function scanConflicts (table: LookupTable, tree: ScopeTree): Definitions
 }
 
 function canConflict (tree: ScopeTree, d1: ValueDefinition, d2: ValueDefinition): Boolean {
-  return !d1.scope || !d2.scope || scopesForId(tree, d1.scope).includes(d2.scope)
+  return !d1.scope ||
+    !d2.scope ||
+    scopesForId(tree, d1.scope).includes(d2.scope) ||
+    scopesForId(tree, d2.scope).includes(d1.scope)
 }
