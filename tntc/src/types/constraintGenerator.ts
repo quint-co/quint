@@ -21,16 +21,19 @@ import { buildErrorTree, ErrorTree, Error } from '../errorTree'
 import { getSignatures } from './builtinSignatures'
 import { Constraint, Signature, TypeScheme } from './base'
 import { Substitutions, applySubstitution } from './substitutions'
-import { DefinitionTable, DefinitionTableByModule, emptyTable } from '../definitionsCollector'
+import { LookupTable, LookupTableByModule, DefinitionTable } from '../definitionsCollector'
+import { ScopeTree } from '../scoping'
+import { lookupName } from '../nameResolver'
 
 type solvingFunctionType = (constraint: Constraint) => Either<Map<bigint, ErrorTree>, Substitutions>
 
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
-  constructor (solvingFunction: solvingFunctionType, definitionsTable: DefinitionTableByModule) {
+  constructor (solvingFunction: solvingFunctionType, definitionsTable: LookupTableByModule, scopeTree: ScopeTree) {
     this.solvingFunction = solvingFunction
     this.definitionsTable = definitionsTable
+    this.scopeTree = scopeTree
   }
 
   // Public values with results by expression ID
@@ -43,13 +46,14 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
   private context: Map<bigint, Signature> = new Map<bigint, Signature>()
   private builtinSignatures: Map<string, Signature> = getSignatures()
-  private definitionsTable: DefinitionTableByModule
+  private definitionsTable: LookupTableByModule
+  private scopeTree: ScopeTree
 
   // Track location descriptions for error tree traces
   private location: string = ''
 
   private currentModule?: TntModule
-  private currentTable: DefinitionTable = emptyTable()
+  private currentTable: LookupTable = new Map<string, DefinitionTable>()
   private moduleStack: TntModule[] = []
 
   enterModuleDef (def: TntModuleDef): void {
@@ -83,7 +87,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     if (this.errors.size !== 0) {
       return
     }
-    this.addToResults(e.id, this.fetchSignature(e.name, 2))
+    this.addToResults(e.id, this.fetchSignature(e.name, e.id, 2))
   }
 
   // Literals have always the same type and the empty constraint
@@ -98,7 +102,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     if (this.errors.size !== 0) {
       return
     }
-    const result = this.fetchSignature(e.opcode, e.args.length)
+    const result = this.fetchSignature(e.opcode, e.id, e.args.length)
       .chain(t1 => {
         const argsResult: Either<Error, TntType[]> = mergeInMany(e.args.map(e => this.fetchResult(e.id)))
 
@@ -121,8 +125,10 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   enterLambda (e: TntLambda) {
     e.params.forEach(p => {
       const t: TntType = { kind: 'var', name: this.freshVar() }
-      const id = this.currentTable.index.get(p)!
-      this.context.set(id, (_) => ({ type: t, variables: new Set() }))
+      const id = lookupName(this.currentTable, this.scopeTree, p, e.expr.id)?.reference
+      if (id) {
+        this.context.set(id, (_) => ({ type: t, variables: new Set() }))
+      }
     })
   }
 
@@ -132,7 +138,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     }
     const result = this.fetchResult(e.expr.id)
       .chain(resultType => {
-        const paramTypes = mergeInMany(e.params.map(p => this.fetchSignature(p, 2)))
+        const paramTypes = mergeInMany(e.params.map(p => this.fetchSignature(p, e.expr.id, 2)))
         return paramTypes.map((ts): TntType => {
           return { kind: 'oper', args: ts, res: resultType }
         }).mapLeft(e => {
@@ -142,7 +148,12 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
     this.addToResults(e.id, result)
 
-    e.params.forEach(p => this.context.delete(this.currentTable.index.get(p)!))
+    e.params.forEach(p => {
+      const id = lookupName(this.currentTable, this.scopeTree, p, e.expr.id)?.reference
+      if (id) {
+        this.context.delete(id)
+      }
+    })
     // TODO: delete from result
     // And I should probably merge context and results.
   }
@@ -213,13 +224,18 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     return `t${this.freshVarCounter++}`
   }
 
-  private fetchSignature (opcode: string, arity: number): Either<string, TntType> {
+  private fetchSignature (opcode: string, scope: bigint, arity: number): Either<string, TntType> {
     // Assumes a valid number of arguments
-    const opcodeId = this.currentTable.index.get(opcode)!
-    if (!(opcodeId && this.context.has(opcodeId)) && !this.builtinSignatures.has(opcode)) {
-      return left(`Signature not found for operator: ${opcode}`)
+    let signatureFunction: Signature
+    if (this.builtinSignatures.has(opcode)) {
+      signatureFunction = this.builtinSignatures.get(opcode)!
+    } else {
+      const id = lookupName(this.currentTable, this.scopeTree, opcode, scope)?.reference
+      if (!id) {
+        throw new Error(`Signature not found for name: ${opcode}`)
+      }
+      signatureFunction = this.context.get(id)!
     }
-    const signatureFunction = this.builtinSignatures.get(opcode) ?? this.context.get(opcodeId)!
     const signature = signatureFunction(arity)
     return right(this.newInstance(signature))
   }
