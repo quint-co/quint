@@ -14,14 +14,14 @@
  */
 
 import { Either, right, left, mergeInMany } from '@sweet-monads/either'
-import { LookupTable, LookupTableByModule, newTable, ValueDefinition } from '../definitionsCollector'
+import { LookupTable, LookupTableByModule, lookupValue, newTable, ValueDefinition } from '../lookupTable'
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { TntApp, TntBool, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr } from '../tntIr'
 import { Effect, emptyVariables, unify, Signature, effectNames } from './base'
 import { applySubstitution, Substitutions, compose } from './substitutions'
 import { ErrorTree, errorTreeToString } from '../errorTree'
-import { scopesForId, ScopeTree, treeFromModule } from '../scoping'
+import { ScopeTree, treeFromModule } from '../scoping'
 
 /**
  * Infers an effect for every expression in a module based on predefined
@@ -256,17 +256,12 @@ class EffectInferrerVisitor implements IRVisitor {
   }
 
   private fetchFromLookupTable (name: string, scope: bigint): Either<string, ValueDefinition> {
-    // FIXME: This should use a proper interfaced function, which will be done for #245
-    const defs: ValueDefinition[] = Array.from(this.currentTable.valueDefinitions.get(name)?.values() ?? [])
+    const def = lookupValue(this.currentTable, this.currentScopeTree, name, scope)
 
-    const value = defs.find(def => {
-      return def.identifier === name && (!def.scope || scopesForId(this.currentScopeTree, scope).includes(def.scope))
-    })
-
-    if (value) {
-      return right(value)
+    if (def) {
+      return right(def)
     } else {
-      return left(`Couldn't find definition for ${name} in definition table in scope`)
+      return left(`Couldn't find definition for ${name} in lookup table in scope`)
     }
   }
 

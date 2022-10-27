@@ -13,7 +13,7 @@
  */
 
 import isEqual from 'lodash.isequal'
-import { ValueDefinition, LookupTable } from './definitionsCollector'
+import { ValueDefinition, LookupTable } from './lookupTable'
 import { ScopeTree, scopesForId } from './scoping'
 
 /**

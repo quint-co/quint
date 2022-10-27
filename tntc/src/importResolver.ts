@@ -12,7 +12,7 @@
  * @module
  */
 
-import { LookupTableByModule, LookupTable, newTable, copyTable, addValueToTable, addTypeToTable } from './definitionsCollector'
+import { LookupTableByModule, LookupTable, newTable, copyTable, addValueToTable, addTypeToTable, copyNames, mergeTables } from './lookupTable'
 import { TntImport, TntInstance, TntModule, TntModuleDef } from './tntIr'
 import { IRVisitor, walkModule } from './IRVisitor'
 
@@ -156,45 +156,4 @@ class ImportResolverVisitor implements IRVisitor {
       this.currentTable = this.tables.get(this.currentModuleName)!
     }
   }
-}
-
-function copyNames (originTable: LookupTable, namespace?: string): LookupTable {
-  const table = newTable({})
-
-  originTable.valueDefinitions.forEach((defs, identifier) => {
-    const name = namespace ? [namespace, identifier].join('::') : identifier
-
-    // Copy only unscoped and non-default (referenced) names
-    const valueDefs = defs.filter(d => !d.scope && d.reference).map(d => ({ ...d, identifier: name }))
-
-    if (valueDefs.length > 0) {
-      table.valueDefinitions.set(name, valueDefs)
-    }
-  })
-
-  originTable.typeDefinitions.forEach((defs, identifier) => {
-    const name = namespace ? [namespace, identifier].join('::') : identifier
-
-    // Copy only on-default (referenced) names
-    const typeDefs = defs.filter(d => d.reference).map(d => ({ ...d, identifier: name }))
-
-    if (typeDefs.length > 0) {
-      table.typeDefinitions.set(name, typeDefs)
-    }
-  })
-
-  return table
-}
-
-function mergeTables (t1: LookupTable, t2: LookupTable): LookupTable {
-  const result = copyTable(t1)
-
-  t2.valueDefinitions.forEach((defs, identifier) => {
-    defs.forEach(def => addValueToTable(def, result))
-  })
-  t2.typeDefinitions.forEach((defs, identifier) => {
-    defs.forEach(def => addTypeToTable(def, result))
-  })
-
-  return result
 }

@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { inferEffects } from '../../src/effects/inferrer'
-import { newTable, LookupTable, LookupTableByModule } from '../../src/definitionsCollector'
+import { newTable, LookupTable, LookupTableByModule } from '../../src/lookupTable'
 import { Signature } from '../../src/effects/base'
 import { buildModuleWithDefs } from '../builders/ir'
 import { parseEffectOrThrow } from '../../src/effects/parser'

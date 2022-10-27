@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { inferEffects } from '../../src/effects/inferrer'
-import { LookupTable, LookupTableByModule, newTable } from '../../src/definitionsCollector'
+import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
 import { Effect, Signature } from '../../src/effects/base'
 import { buildModuleWithDefs } from '../builders/ir'
 import { parseEffectOrThrow } from '../../src/effects/parser'
@@ -205,7 +205,7 @@ describe('inferEffects', () => {
     effects
       .mapLeft(e => e.forEach(v => assert.deepEqual(v, {
         location: 'Inferring effect for name undefined',
-        message: "Couldn't find definition for undefined in definition table in scope",
+        message: "Couldn't find definition for undefined in lookup table in scope",
         children: [],
       })))
 

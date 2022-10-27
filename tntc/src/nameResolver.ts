@@ -17,8 +17,8 @@
 
 import { TntModule, TntName, TntApp, TntDef, TntModuleDef } from './tntIr'
 import { TntConstType } from './tntTypes'
-import { ScopeTree, scopesForId } from './scoping'
-import { LookupTable, LookupTableByModule, ValueDefinition, newTable } from './definitionsCollector'
+import { ScopeTree } from './scoping'
+import { LookupTable, LookupTableByModule, lookupType, lookupValue, newTable } from './lookupTable'
 import { IRVisitor, walkModule } from './IRVisitor'
 
 /**
@@ -62,7 +62,7 @@ export function resolveNames (tntModule: TntModule, table: LookupTableByModule, 
 }
 
 class NameResolverVisitor implements IRVisitor {
-  constructor(tables: LookupTableByModule, scopeTree: ScopeTree) {
+  constructor (tables: LookupTableByModule, scopeTree: ScopeTree) {
     this.tables = tables
     this.scopeTree = scopeTree
   }
@@ -113,20 +113,15 @@ class NameResolverVisitor implements IRVisitor {
 
   enterConstType (type: TntConstType): void {
     // Type is a name, check that it is defined
-    if (!(this.currentTable.typeDefinitions.has(type.name) && this.currentTable.typeDefinitions.get(type.name)!.length > 0)) {
+    if (!lookupType(this.currentTable, type.name)) {
       this.recordError('type', type.name, type.id)
     }
   }
 
   // Check that there is a value definition for `name` under scope `id`
   private checkScopedName (name: string, id: bigint) {
-    if (!this.currentTable.valueDefinitions.has(name)) {
-      this.recordError('value', name, id)
-      return
-    }
-
-    const valueDefinitionsForScope = filterScope(this.currentTable.valueDefinitions.get(name)!, scopesForId(this.scopeTree, id))
-    if (valueDefinitionsForScope.length === 0) {
+    const def = lookupValue(this.currentTable, this.scopeTree, name, id)
+    if (!def) {
       this.recordError('value', name, id)
     }
   }
@@ -152,12 +147,4 @@ class NameResolverVisitor implements IRVisitor {
       reference: id,
     })
   }
-}
-
-function filterScope (valueDefinitions: ValueDefinition[], scopes: bigint[]): ValueDefinition[] {
-  return valueDefinitions.filter(definition => {
-    // A definition should be considered in a scope if it's either unscoped or its scope is included
-    // in some scope containing the name expression's scope
-    return !definition.scope || scopes.includes(definition.scope)
-  })
 }

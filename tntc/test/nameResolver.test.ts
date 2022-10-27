@@ -1,6 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { defaultValueDefinitions, LookupTable, LookupTableByModule, newTable } from '../src/definitionsCollector'
+import { defaultValueDefinitions } from '../src/definitionsCollector'
+import { LookupTable, LookupTableByModule, newTable } from '../src/lookupTable'
 import { resolveNames, NameResolutionResult } from '../src/nameResolver'
 
 import { buildModuleWithExpressions, buildModuleWithDefs } from './builders/ir'
