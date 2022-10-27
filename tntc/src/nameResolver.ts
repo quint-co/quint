@@ -18,7 +18,7 @@
 import { TntModule, TntName, TntApp, TntDef, TntModuleDef } from './tntIr'
 import { TntConstType } from './tntTypes'
 import { ScopeTree, scopesForId } from './scoping'
-import { LookupTable, LookupTableByModule, ValueDefinition, DefinitionTable } from './definitionsCollector'
+import { LookupTable, LookupTableByModule, ValueDefinition, newTable } from './definitionsCollector'
 import { IRVisitor, walkModule } from './IRVisitor'
 
 /**
@@ -62,7 +62,7 @@ export function resolveNames (tntModule: TntModule, table: LookupTableByModule, 
 }
 
 class NameResolverVisitor implements IRVisitor {
-  constructor (tables: LookupTableByModule, scopeTree: ScopeTree) {
+  constructor(tables: LookupTableByModule, scopeTree: ScopeTree) {
     this.tables = tables
     this.scopeTree = scopeTree
   }
@@ -74,7 +74,7 @@ class NameResolverVisitor implements IRVisitor {
   private lastDefName: string = ''
 
   private currentModuleName: string = ''
-  private currentTable: LookupTable = new Map<string, DefinitionTable>()
+  private currentTable: LookupTable = newTable({})
   private moduleStack: string[] = []
 
   enterDef (def: TntDef): void {
@@ -113,19 +113,19 @@ class NameResolverVisitor implements IRVisitor {
 
   enterConstType (type: TntConstType): void {
     // Type is a name, check that it is defined
-    if (!this.currentTable.has(type.name) || !(this.currentTable.get(type.name)!.typeDefinitions.length > 0)) {
+    if (!(this.currentTable.typeDefinitions.has(type.name) && this.currentTable.typeDefinitions.get(type.name)!.length > 0)) {
       this.recordError('type', type.name, type.id)
     }
   }
 
   // Check that there is a value definition for `name` under scope `id`
   private checkScopedName (name: string, id: bigint) {
-    if (!this.currentTable.has(name)) {
+    if (!this.currentTable.valueDefinitions.has(name)) {
       this.recordError('value', name, id)
       return
     }
 
-    const valueDefinitionsForScope = filterScope(this.currentTable.get(name)!.valueDefinitions, scopesForId(this.scopeTree, id))
+    const valueDefinitionsForScope = filterScope(this.currentTable.valueDefinitions.get(name)!, scopesForId(this.scopeTree, id))
     if (valueDefinitionsForScope.length === 0) {
       this.recordError('value', name, id)
     }

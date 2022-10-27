@@ -45,19 +45,14 @@ export interface TypeDefinition {
 }
 
 /**
- * A table aggregating operator and type alias definitions
- */
-export interface DefinitionTable {
-  /* Names for operators defined */
-  valueDefinitions: ValueDefinition[]
-  /* Type aliases defined */
-  typeDefinitions: TypeDefinition[]
-}
-
-/**
  * A lookup table with all definitions for each name
  */
-export type LookupTable = Map<string, DefinitionTable>
+export interface LookupTable {
+  /* Names for operators defined */
+  valueDefinitions: Map<string, ValueDefinition[]>
+  /* Type aliases defined */
+  typeDefinitions: Map<string, TypeDefinition[]>
+}
 
 /**
  * Lookup tables for each module
@@ -65,13 +60,44 @@ export type LookupTable = Map<string, DefinitionTable>
 export type LookupTableByModule = Map<string, LookupTable>
 
 /**
- * An empty definition table, useful for initializing lookup table values
+ * An empty lookup table, useful for initializing
  */
-export function emptyTable (): DefinitionTable {
-  return {
-    valueDefinitions: [],
-    typeDefinitions: [],
+export function newTable ({ valueDefinitions = [], typeDefinitions = [] }: { valueDefinitions?: ValueDefinition[], typeDefinitions?: TypeDefinition[] }): LookupTable {
+  const table: LookupTable = {
+    valueDefinitions: new Map<string, ValueDefinition[]>(),
+    typeDefinitions: new Map<string, TypeDefinition[]>(),
   }
+
+  valueDefinitions.forEach(def => addValueToTable(def, table))
+  typeDefinitions.forEach(def => addTypeToTable(def, table))
+
+  return table
+}
+
+/**
+ * A new lookup table instances with the same entries as an existing one
+ */
+export function copyTable (table: LookupTable): LookupTable {
+  return {
+    valueDefinitions: new Map<string, ValueDefinition[]>(table.valueDefinitions.entries()),
+    typeDefinitions: new Map<string, TypeDefinition[]>(table.typeDefinitions.entries()),
+  }
+}
+
+export function addValueToTable (def: ValueDefinition, table: LookupTable) {
+  if (!table.valueDefinitions.has(def.identifier)) {
+    table.valueDefinitions.set(def.identifier, [])
+  }
+
+  table.valueDefinitions.get(def.identifier)!.push(def)
+}
+
+export function addTypeToTable (def: TypeDefinition, table: LookupTable) {
+  if (!table.typeDefinitions.has(def.identifier)) {
+    table.typeDefinitions.set(def.identifier, [])
+  }
+
+  table.typeDefinitions.get(def.identifier)!.push(def)
 }
 
 /**
@@ -79,8 +105,8 @@ export function emptyTable (): DefinitionTable {
  * This is a function instead of a constant to ensure a new instance is generated
  * every call
  */
-export function defaultDefinitions (): LookupTable {
-  const defs = [
+export function defaultValueDefinitions (): ValueDefinition[] {
+  return [
     { kind: 'def', identifier: 'not' },
     { kind: 'def', identifier: 'and' },
     { kind: 'def', identifier: 'or' },
@@ -177,12 +203,6 @@ export function defaultDefinitions (): LookupTable {
     { kind: 'def', identifier: 'cross' },
     { kind: 'def', identifier: 'difference' },
   ]
-
-  // Transform the definition list into a lookup table
-  const result: [string, DefinitionTable][] = defs.map(def => {
-    return [def.identifier, { valueDefinitions: [def], typeDefinitions: [] }]
-  })
-  return new Map<string, DefinitionTable>(result)
 }
 
 /**
@@ -194,7 +214,7 @@ export function defaultDefinitions (): LookupTable {
  * @returns a lookup table with all defined values for the module
  */
 export function collectDefinitions (tntModule: TntModule): LookupTableByModule {
-  const visitor = new DefinitionsCollectorVisitor(defaultDefinitions())
+  const visitor = new DefinitionsCollectorVisitor()
   walkModule(visitor, tntModule)
   return visitor.tables
 }
@@ -203,14 +223,9 @@ class DefinitionsCollectorVisitor implements IRVisitor {
   tables: LookupTableByModule = new Map<string, LookupTable>()
 
   private currentModuleName: string = ''
-  private currentTable: LookupTable = new Map<string, DefinitionTable>()
+  private currentTable: LookupTable = newTable({})
   private moduleStack: string[] = []
   private scopeStack: bigint[] = []
-  private defaultDefinitions: LookupTable
-
-  constructor (defaultDefinitions: LookupTable) {
-    this.defaultDefinitions = defaultDefinitions
-  }
 
   enterModuleDef (def: TntModuleDef): void {
     this.moduleStack.push(def.module.name)
@@ -220,14 +235,18 @@ class DefinitionsCollectorVisitor implements IRVisitor {
 
   exitModuleDef (def: TntModuleDef): void {
     // Collect all definitions namespaced to module
-    const innerModuleTable = new Map<string, DefinitionTable>(this.currentTable.entries())
+    const innerModuleTable = copyTable(this.currentTable)
 
     this.moduleStack.pop()
     this.updateCurrentModule()
 
     if (this.moduleStack.length > 0) {
-      innerModuleTable.forEach((table) => {
-        table.valueDefinitions.filter(d => !d.scope).forEach(d => this.collectValueDefinition(d.kind, `${def.module.name}::${d.identifier}`, d.reference))
+      innerModuleTable.valueDefinitions.forEach((defs) => {
+        defs.filter(d => !d.scope).forEach(d => this.collectValueDefinition(d.kind, `${def.module.name}::${d.identifier}`, d.reference))
+      })
+
+      innerModuleTable.typeDefinitions.forEach((defs) => {
+        defs.forEach(d => this.collectTypeDefinition(`${def.module.name}::${d.identifier}`, d.type, d.reference))
       })
 
       this.collectValueDefinition('module', def.module.name, def.id)
@@ -279,28 +298,24 @@ class DefinitionsCollectorVisitor implements IRVisitor {
       return
     }
 
-    if (!this.currentTable.has(identifier)) {
-      this.currentTable.set(identifier, emptyTable())
-    }
-
-    this.currentTable.get(identifier)!.valueDefinitions.push({
+    const def: ValueDefinition = {
       kind: kind,
       identifier: identifier,
       reference: reference,
       scope: scope,
-    })
+    }
+
+    addValueToTable(def, this.currentTable)
   }
 
   private collectTypeDefinition (identifier: string, type?: TntType, reference?: bigint): void {
-    if (!this.currentTable.has(identifier)) {
-      this.currentTable.set(identifier, emptyTable())
-    }
-
-    this.currentTable.get(identifier)!.typeDefinitions.push({
+    const def = {
       identifier: identifier,
       type: type,
       reference: reference,
-    })
+    }
+
+    addTypeToTable(def, this.currentTable)
   }
 
   private updateCurrentModule (): void {
@@ -310,7 +325,7 @@ class DefinitionsCollectorVisitor implements IRVisitor {
       let moduleTable = this.tables.get(this.currentModuleName)
       if (!moduleTable) {
         // Initialize module tables with a copy from default definitions
-        moduleTable = new Map<string, DefinitionTable>(this.defaultDefinitions.entries())
+        moduleTable = newTable({ valueDefinitions: defaultValueDefinitions() })
         this.tables.set(this.currentModuleName, moduleTable)
       }
       this.currentTable = moduleTable

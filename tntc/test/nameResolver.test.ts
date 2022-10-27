@@ -1,24 +1,28 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { defaultDefinitions, DefinitionTable, LookupTable, LookupTableByModule } from '../src/definitionsCollector'
+import { defaultValueDefinitions, LookupTable, LookupTableByModule, newTable } from '../src/definitionsCollector'
 import { resolveNames, NameResolutionResult } from '../src/nameResolver'
 
 import { buildModuleWithExpressions, buildModuleWithDefs } from './builders/ir'
 import { ScopeTree } from '../src/scoping'
 
 describe('nameResolver', () => {
-  const table: LookupTable = new Map<string, DefinitionTable>([
-    ...defaultDefinitions(),
-    ['TEST_CONSTANT', { valueDefinitions: [{ kind: 'const', identifier: 'TEST_CONSTANT' }], typeDefinitions: [] }],
-    ['unscoped_def', { valueDefinitions: [{ kind: 'def', identifier: 'unscoped_def' }], typeDefinitions: [] }],
-    ['scoped_def', { valueDefinitions: [{ kind: 'def', identifier: 'scoped_def', scope: 2n }], typeDefinitions: [] }],
-    ['MY_TYPE', { valueDefinitions: [], typeDefinitions: [{ identifier: 'MY_TYPE', type: { id: 100n, kind: 'int' } }] }],
-  ])
+  const table: LookupTable = newTable({
+    valueDefinitions: [
+      ...defaultValueDefinitions(),
+      { kind: 'const', identifier: 'TEST_CONSTANT' },
+      { kind: 'def', identifier: 'unscoped_def' },
+      { kind: 'def', identifier: 'scoped_def', scope: 2n },
+    ],
+    typeDefinitions: [
+      { identifier: 'MY_TYPE', type: { id: 100n, kind: 'int' } },
+    ],
+  })
 
   const moduleName = 'wrapper'
   const tables: LookupTableByModule = new Map<string, LookupTable>([
     [moduleName, table],
-    ['test_module', new Map<string, DefinitionTable>()],
+    ['test_module', newTable({})],
   ])
   const dummyScopeTree: ScopeTree = { value: 0n, children: [] }
 

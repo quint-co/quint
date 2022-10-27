@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { inferEffects } from '../../src/effects/inferrer'
-import { DefinitionTable, LookupTable, LookupTableByModule } from '../../src/definitionsCollector'
+import { newTable, LookupTable, LookupTableByModule } from '../../src/definitionsCollector'
 import { Signature } from '../../src/effects/base'
 import { buildModuleWithDefs } from '../builders/ir'
 import { parseEffectOrThrow } from '../../src/effects/parser'
@@ -11,17 +11,20 @@ import { Either } from '@sweet-monads/either'
 import { checkModes } from '../../src/effects/modeChecker'
 
 describe('checkModes', () => {
-  const table: LookupTable = new Map<string, DefinitionTable>([
-    ['p', { valueDefinitions: [{ kind: 'param', identifier: 'p', reference: 1n }], typeDefinitions: [] }],
-    ['N', { valueDefinitions: [{ kind: 'const', identifier: 'N', reference: 1n }], typeDefinitions: [] }],
-    ['x', { valueDefinitions: [{ kind: 'var', identifier: 'x', reference: 1n }], typeDefinitions: [] }],
-    ['y', { valueDefinitions: [{ kind: 'var', identifier: 'y', reference: 1n }], typeDefinitions: [] }],
-    ['m', { valueDefinitions: [{ kind: 'val', identifier: 'm', reference: 1n }], typeDefinitions: [] }],
-    ['t', { valueDefinitions: [{ kind: 'val', identifier: 't', reference: 1n }], typeDefinitions: [] }],
-    ['assign', { valueDefinitions: [{ kind: 'def', identifier: 'assign' }], typeDefinitions: [] }],
-    ['igt', { valueDefinitions: [{ kind: 'def', identifier: 'igt' }], typeDefinitions: [] }],
-    ['iadd', { valueDefinitions: [{ kind: 'def', identifier: 'iadd' }], typeDefinitions: [] }],
-  ])
+  const table: LookupTable = newTable({
+    valueDefinitions: [
+      { kind: 'param', identifier: 'p', reference: 1n },
+      { kind: 'const', identifier: 'N', reference: 1n },
+      { kind: 'var', identifier: 'x', reference: 1n },
+      { kind: 'var', identifier: 'y', reference: 1n },
+      { kind: 'val', identifier: 'm', reference: 1n },
+      { kind: 'val', identifier: 't', reference: 1n },
+      { kind: 'def', identifier: 'assign' },
+      { kind: 'def', identifier: 'igt' },
+      { kind: 'def', identifier: 'iadd' },
+    ],
+  })
+
   const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
 
   const signatures: Map<string, Signature> = new Map<string, Signature>([

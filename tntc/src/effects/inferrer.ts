@@ -14,7 +14,7 @@
  */
 
 import { Either, right, left, mergeInMany } from '@sweet-monads/either'
-import { LookupTable, LookupTableByModule, emptyTable, ValueDefinition, DefinitionTable } from '../definitionsCollector'
+import { LookupTable, LookupTableByModule, newTable, ValueDefinition } from '../definitionsCollector'
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { TntApp, TntBool, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr } from '../tntIr'
@@ -63,7 +63,7 @@ class EffectInferrerVisitor implements IRVisitor {
   private freshVarCounters: Map<string, number> = new Map<string, number>()
 
   private currentModule?: TntModule
-  private currentTable: LookupTable = new Map<string, DefinitionTable>()
+  private currentTable: LookupTable = newTable({})
   private currentScopeTree: ScopeTree = { value: 0n, children: [] }
   private moduleStack: TntModule[] = []
 
@@ -256,9 +256,10 @@ class EffectInferrerVisitor implements IRVisitor {
   }
 
   private fetchFromLookupTable (name: string, scope: bigint): Either<string, ValueDefinition> {
-    const defs = this.currentTable.get(name) ?? emptyTable()
+    // FIXME: This should use a proper interfaced function, which will be done for #245
+    const defs: ValueDefinition[] = Array.from(this.currentTable.valueDefinitions.get(name)?.values() ?? [])
 
-    const value = defs.valueDefinitions.find(def => {
+    const value = defs.find(def => {
       return def.identifier === name && (!def.scope || scopesForId(this.currentScopeTree, scope).includes(def.scope))
     })
 
