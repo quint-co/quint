@@ -23,7 +23,7 @@ import yargs from 'yargs/yargs'
 import { inferEffects } from './effects/inferrer'
 import { getSignatures } from './effects/builtinSignatures'
 import { checkModes } from './effects/modeChecker'
-import { LookupTableByModule } from './definitionsCollector'
+import { LookupTableByModule } from './lookupTable'
 import { typeToString } from './IRprinting'
 import { errorTreeToString } from './errorTree'
 
