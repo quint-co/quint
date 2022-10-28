@@ -1,12 +1,13 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { DefinitionTable, DefinitionTableByModule } from '../src/definitionsCollector'
+import { LookupTable, LookupTableByModule, newTable } from '../src/lookupTable'
 import { buildModuleWithDefs } from './builders/ir'
 import { resolveImports } from '../src/importResolver'
 
 describe('resolveImports', () => {
   const moduleName = 'wrapper'
-  const table: DefinitionTable = {
+
+  const table: LookupTable = newTable({
     valueDefinitions: [
       { kind: 'def', identifier: 'a', reference: 1n },
       { kind: 'def', identifier: 'b', reference: 2n },
@@ -14,19 +15,21 @@ describe('resolveImports', () => {
       { kind: 'module', identifier: 'nested_module', reference: 4n },
       { kind: 'module', identifier: 'unexisting_module', reference: 5n },
     ],
-    typeDefinitions: [],
-  }
+    typeDefinitions: [
+      { identifier: 'T', reference: 1n },
+      { identifier: 'R' },
+    ],
+  })
 
-  const nestedModuleTable: DefinitionTable = {
+  const nestedModuleTable: LookupTable = newTable({
     valueDefinitions: [
       { kind: 'def', identifier: 'd', reference: 1n },
       { kind: 'def', identifier: 'e', reference: 2n, scope: 10n },
     ],
-    typeDefinitions: [],
-  }
+  })
 
-  const tables: DefinitionTableByModule = new Map<string, DefinitionTable>([
-    ['test_module', table], ['nested_module', nestedModuleTable],
+  const tables: LookupTableByModule = new Map<string, LookupTable>([
+    ['wrapper', newTable({})], ['test_module', table], ['nested_module', nestedModuleTable],
   ])
 
   describe('existing modules', () => {
@@ -41,14 +44,14 @@ describe('resolveImports', () => {
       if (result.kind === 'ok') {
         const defs = result.definitions.get(moduleName)
 
-        assert.deepInclude(defs!.valueDefinitions.map(d => d.identifier), 'a')
-        assert.notDeepInclude(defs!.valueDefinitions.map(d => d.identifier), 'b')
+        assert.deepInclude([...defs!.valueDefinitions.keys()], 'a')
+        assert.notDeepInclude([...defs!.valueDefinitions.keys()], 'b')
       }
     })
 
     it('imports all definitions', () => {
       const tntModule = buildModuleWithDefs([
-        'module test_module { def a = 1 def b = 2 }',
+        'module test_module { type T def a = 1 def b = 2 }',
         'import test_module.*',
       ])
 
@@ -57,7 +60,8 @@ describe('resolveImports', () => {
       if (result.kind === 'ok') {
         const defs = result.definitions.get(moduleName)
 
-        assert.includeDeepMembers(defs!.valueDefinitions.map(d => d.identifier), ['a', 'b'])
+        assert.includeDeepMembers([...defs!.valueDefinitions.keys()], ['a', 'b'])
+        assert.includeDeepMembers([...defs!.typeDefinitions.keys()], ['T'])
       }
     })
 
@@ -72,16 +76,19 @@ describe('resolveImports', () => {
       if (result.kind === 'ok') {
         const defs = result.definitions.get(moduleName)
 
-        assert.includeDeepMembers(defs!.valueDefinitions.map(d => d.identifier), [
+        assert.includeDeepMembers([...defs!.valueDefinitions.keys()], [
           'test_module_instance::a',
           'test_module_instance::b',
+        ])
+        assert.includeDeepMembers([...defs!.typeDefinitions.keys()], [
+          'test_module_instance::T',
         ])
       }
     })
 
     it('imports nested module', () => {
       const tntModule = buildModuleWithDefs([
-        'module test_module { module nested_module { def a = 1 def b = 2 } }',
+        'module test_module { module nested_module { def d = 10 } }',
         'import test_module.nested_module',
       ])
 
@@ -90,7 +97,7 @@ describe('resolveImports', () => {
       if (result.kind === 'ok') {
         const defs = result.definitions.get(moduleName)
 
-        assert.includeDeepMembers(defs!.valueDefinitions.map(d => d.identifier), [
+        assert.includeDeepMembers([...defs!.valueDefinitions.keys()], [
           'nested_module::d',
         ])
       }

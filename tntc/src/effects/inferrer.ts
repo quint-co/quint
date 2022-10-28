@@ -14,29 +14,29 @@
  */
 
 import { Either, right, left, mergeInMany } from '@sweet-monads/either'
-import { DefinitionTable, DefinitionTableByModule, emptyTable, ValueDefinition } from '../definitionsCollector'
+import { LookupTable, LookupTableByModule, lookupValue, newTable, ValueDefinition } from '../lookupTable'
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { TntApp, TntBool, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr } from '../tntIr'
 import { Effect, emptyVariables, unify, Signature, effectNames } from './base'
 import { applySubstitution, Substitutions, compose } from './substitutions'
 import { ErrorTree, errorTreeToString } from '../errorTree'
-import { scopesForId, ScopeTree, treeFromModule } from '../scoping'
+import { ScopeTree, treeFromModule } from '../scoping'
 
 /**
  * Infers an effect for every expression in a module based on predefined
  * context and the definitions table for that module
  *
  * @param context a map from operator identifiers to their effect signature
- * @param definitionsTable the collected definitions for the module under inference
+ * @param lookupTable the collected definitions for the module under inference
  * @param module: the TNT module to infer effects for
  *
  * @returns a map from expression ids to their effects when inferrence succeeds.
  *          Otherwise, a map from expression ids to the corresponding error for
  *          the problematic expressions.
  */
-export function inferEffects (context: Map<string, Signature>, definitionsTable: DefinitionTableByModule, module: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, Effect>> {
-  const visitor = new EffectInferrerVisitor(context, definitionsTable)
+export function inferEffects (context: Map<string, Signature>, lookupTable: LookupTableByModule, module: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, Effect>> {
+  const visitor = new EffectInferrerVisitor(context, lookupTable)
   walkModule(visitor, module)
   if (visitor.errors.size > 0) {
     return left(visitor.errors)
@@ -50,20 +50,20 @@ export function inferEffects (context: Map<string, Signature>, definitionsTable:
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor (context: Map<string, Signature>, definitionsTable: DefinitionTableByModule) {
+  constructor (context: Map<string, Signature>, lookupTable: LookupTableByModule) {
     this.context = context
-    this.definitionsTable = definitionsTable
+    this.lookupTable = lookupTable
   }
 
   effects: Map<bigint, Effect> = new Map<bigint, Effect>()
   errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
 
   private context: Map<string, Signature>
-  private definitionsTable: DefinitionTableByModule
+  private lookupTable: LookupTableByModule
   private freshVarCounters: Map<string, number> = new Map<string, number>()
 
   private currentModule?: TntModule
-  private currentTable: DefinitionTable = emptyTable()
+  private currentTable: LookupTable = newTable({})
   private currentScopeTree: ScopeTree = { value: 0n, children: [] }
   private moduleStack: TntModule[] = []
 
@@ -84,7 +84,7 @@ class EffectInferrerVisitor implements IRVisitor {
   exitName (expr: TntName): void {
     const location = `Inferring effect for name ${expr.name}`
 
-    this.fetchFromDefinitionsTable(expr.name, expr.id).map(def => {
+    this.fetchFromLookupTable(expr.name, expr.id).map(def => {
       switch (def.kind) {
         case 'param': {
           /*  { kind: 'param', identifier: p } ∈ Γ
@@ -255,14 +255,13 @@ class EffectInferrerVisitor implements IRVisitor {
     return `${prefix}${counter}`
   }
 
-  private fetchFromDefinitionsTable (name: string, scope: bigint): Either<string, ValueDefinition> {
-    const value = this.currentTable.valueDefinitions.find(def => {
-      return def.identifier === name && (!def.scope || scopesForId(this.currentScopeTree, scope).includes(def.scope))
-    })
-    if (value) {
-      return right(value)
+  private fetchFromLookupTable (name: string, scope: bigint): Either<string, ValueDefinition> {
+    const def = lookupValue(this.currentTable, this.currentScopeTree, name, scope)
+
+    if (def) {
+      return right(def)
     } else {
-      return left(`Couldn't find definition for ${name} in definition table in scope`)
+      return left(`Couldn't find definition for ${name} in lookup table in scope`)
     }
   }
 
@@ -299,7 +298,7 @@ class EffectInferrerVisitor implements IRVisitor {
     if (this.moduleStack.length > 0) {
       this.currentModule = this.moduleStack[this.moduleStack.length - 1]
 
-      const moduleTable = this.definitionsTable.get(this.currentModule!.name)!
+      const moduleTable = this.lookupTable.get(this.currentModule!.name)!
       this.currentTable = moduleTable
       this.currentScopeTree = treeFromModule(this.currentModule)
     }

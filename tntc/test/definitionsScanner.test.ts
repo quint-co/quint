@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { ValueDefinition, DefinitionTable, TypeDefinition } from '../src/definitionsCollector'
+import { ValueDefinition, TypeDefinition, newTable } from '../src/lookupTable'
 import { ConflictSource, scanConflicts } from '../src/definitionsScanner'
 import { ScopeTree } from '../src/scoping'
 import { TntType } from '../src/tntTypes'
@@ -10,16 +10,11 @@ describe('scanConflicts', () => {
 
   it('finds top-level name conflicts', () => {
     const valueDefinitions: ValueDefinition[] = [
-      { kind: 'const', identifier: 'TEST_CONSTANT', reference: 1n },
       { kind: 'def', identifier: 'conflicting_name', reference: 2n },
       { kind: 'val', identifier: 'conflicting_name', reference: 3n, scope: 3n },
     ]
 
-    const typeDefinitions: TypeDefinition[] = [
-      { identifier: 'MY_TYPE', type: myType, reference: 1n },
-    ]
-
-    const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
+    const table = newTable({ valueDefinitions })
 
     const tree: ScopeTree = {
       value: 0n,
@@ -44,16 +39,12 @@ describe('scanConflicts', () => {
   })
 
   it('finds type alias conflicts', () => {
-    const valueDefinitions: ValueDefinition[] = [
-      { kind: 'const', identifier: 'TEST_CONSTANT', reference: 1n },
-    ]
-
     const typeDefinitions: TypeDefinition[] = [
       { identifier: 'MY_TYPE', type: myType, reference: 2n },
       { identifier: 'MY_TYPE', type: { id: 4n, kind: 'str' }, reference: 3n },
     ]
 
-    const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
+    const table = newTable({ typeDefinitions })
 
     const tree: ScopeTree = {
       value: 0n,
@@ -83,11 +74,7 @@ describe('scanConflicts', () => {
       { kind: 'val', identifier: 'conflicting_name', reference: 2n, scope: 2n },
     ]
 
-    const typeDefinitions: TypeDefinition[] = [
-      { identifier: 'MY_TYPE', type: myType, reference: 1n },
-    ]
-
-    const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
+    const table = newTable({ valueDefinitions })
 
     const tree: ScopeTree = { value: 1n, children: [{ value: 2n, children: [] }] }
 
@@ -115,7 +102,7 @@ describe('scanConflicts', () => {
       { identifier: 'MY_TYPE', type: myType, reference: 1n },
     ]
 
-    const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
+    const table = newTable({ valueDefinitions, typeDefinitions })
 
     const tree: ScopeTree = {
       value: 0n,
@@ -147,17 +134,15 @@ describe('scanConflicts', () => {
 
   it('finds no conflicts when there are none', () => {
     const valueDefinitions: ValueDefinition[] = [
-      { kind: 'const', identifier: 'TEST_CONSTANT', reference: 1n },
       { kind: 'def', identifier: 'conflicting_name', reference: 2n, scope: 2n },
       { kind: 'val', identifier: 'conflicting_name', reference: 3n, scope: 3n },
     ]
 
     const typeDefinitions: TypeDefinition[] = [
       { identifier: 'MY_TYPE', type: myType, reference: 4n },
-      { identifier: 'OTHER_TYPE', type: myType, reference: 5n },
     ]
 
-    const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
+    const table = newTable({ valueDefinitions, typeDefinitions })
 
     const tree: ScopeTree = {
       value: 0n,

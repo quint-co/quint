@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { inferEffects } from '../../src/effects/inferrer'
-import { DefinitionTable, DefinitionTableByModule } from '../../src/definitionsCollector'
+import { newTable, LookupTable, LookupTableByModule } from '../../src/lookupTable'
 import { Signature } from '../../src/effects/base'
 import { buildModuleWithDefs } from '../builders/ir'
 import { parseEffectOrThrow } from '../../src/effects/parser'
@@ -11,21 +11,21 @@ import { Either } from '@sweet-monads/either'
 import { checkModes } from '../../src/effects/modeChecker'
 
 describe('checkModes', () => {
-  const table: DefinitionTable = {
+  const table: LookupTable = newTable({
     valueDefinitions: [
-      { kind: 'param', identifier: 'p' },
-      { kind: 'const', identifier: 'N' },
-      { kind: 'var', identifier: 'x' },
-      { kind: 'var', identifier: 'y' },
-      { kind: 'val', identifier: 'm' },
-      { kind: 'val', identifier: 't' },
+      { kind: 'param', identifier: 'p', reference: 1n },
+      { kind: 'const', identifier: 'N', reference: 1n },
+      { kind: 'var', identifier: 'x', reference: 1n },
+      { kind: 'var', identifier: 'y', reference: 1n },
+      { kind: 'val', identifier: 'm', reference: 1n },
+      { kind: 'val', identifier: 't', reference: 1n },
       { kind: 'def', identifier: 'assign' },
-      { kind: 'def', identifier: 'iadd' },
       { kind: 'def', identifier: 'igt' },
+      { kind: 'def', identifier: 'iadd' },
     ],
-    typeDefinitions: [],
-  }
-  const definitionsTable: DefinitionTableByModule = new Map<string, DefinitionTable>([['wrapper', table]])
+  })
+
+  const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
 
   const signatures: Map<string, Signature> = new Map<string, Signature>([
     ['assign', () => parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r2] & Update[r1]')],

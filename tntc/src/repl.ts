@@ -68,7 +68,7 @@ export function tntRepl
   rl.prompt()
 
   // the state
-  let state: ReplState = {
+  const state: ReplState = {
     defsHist: '',
     exprHist: [],
     vars: new Map<string, EvalResult>(),

@@ -23,7 +23,7 @@ import yargs from 'yargs/yargs'
 import { inferEffects } from './effects/inferrer'
 import { getSignatures } from './effects/builtinSignatures'
 import { checkModes } from './effects/modeChecker'
-import { DefinitionTableByModule } from './definitionsCollector'
+import { LookupTableByModule } from './lookupTable'
 import { typeToString } from './IRprinting'
 import { errorTreeToString } from './errorTree'
 
@@ -110,13 +110,13 @@ function runRepl (argv: any) {
 }
 
 // read either the standard input or an input file
-function parseModule (argv: any): [Phase1Result, DefinitionTableByModule, string] {
+function parseModule (argv: any): [Phase1Result, LookupTableByModule, string] {
   const data = readFileSync(argv.input, 'utf8')
   return parseText(argv, lf(data))
 }
 
 // a callback to parse the text that we get from readFile
-function parseText (argv: any, text: string): [Phase1Result, DefinitionTableByModule, string] {
+function parseText (argv: any, text: string): [Phase1Result, LookupTableByModule, string] {
   const path = resolve(cwd(), argv.input)
   const phase1Result = parsePhase1(text, path)
   if (phase1Result.kind === 'error') {

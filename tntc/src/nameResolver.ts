@@ -17,8 +17,8 @@
 
 import { TntModule, TntName, TntApp, TntDef, TntModuleDef } from './tntIr'
 import { TntConstType } from './tntTypes'
-import { ScopeTree, scopesForId } from './scoping'
-import { DefinitionTable, DefinitionTableByModule, ValueDefinition, emptyTable } from './definitionsCollector'
+import { ScopeTree } from './scoping'
+import { LookupTable, LookupTableByModule, lookupType, lookupValue, newTable } from './lookupTable'
 import { IRVisitor, walkModule } from './IRVisitor'
 
 /**
@@ -54,7 +54,7 @@ export type NameResolutionResult =
  *
  * @returns a successful result in case all names are resolved, or an aggregation of errors otherwise
  */
-export function resolveNames (tntModule: TntModule, table: DefinitionTableByModule, scopeTree: ScopeTree): NameResolutionResult {
+export function resolveNames (tntModule: TntModule, table: LookupTableByModule, scopeTree: ScopeTree): NameResolutionResult {
   const visitor = new NameResolverVisitor(table, scopeTree)
   walkModule(visitor, tntModule)
   const errors: NameError[] = visitor.errors
@@ -62,7 +62,7 @@ export function resolveNames (tntModule: TntModule, table: DefinitionTableByModu
 }
 
 class NameResolverVisitor implements IRVisitor {
-  constructor (tables: DefinitionTableByModule, scopeTree: ScopeTree) {
+  constructor (tables: LookupTableByModule, scopeTree: ScopeTree) {
     this.tables = tables
     this.scopeTree = scopeTree
   }
@@ -70,11 +70,11 @@ class NameResolverVisitor implements IRVisitor {
   errors: NameError[] = []
 
   private scopeTree: ScopeTree
-  private tables: DefinitionTableByModule
+  private tables: LookupTableByModule
   private lastDefName: string = ''
 
   private currentModuleName: string = ''
-  private currentTable: DefinitionTable = emptyTable()
+  private currentTable: LookupTable = newTable({})
   private moduleStack: string[] = []
 
   enterDef (def: TntDef): void {
@@ -103,26 +103,26 @@ class NameResolverVisitor implements IRVisitor {
     // This is a name expression, the name must be defined
     // either globally or under a scope that contains the expression
     // The list of scopes containing the expression is accumulated in param scopes
-    const valueDefinitionsForScope = filterScope(this.currentTable.valueDefinitions, scopesForId(this.scopeTree, nameExpr.id))
-
-    if (!valueDefinitionsForScope.some(name => name.identifier === nameExpr.name)) {
-      this.recordError('value', nameExpr.name, nameExpr.id)
-    }
+    this.checkScopedName(nameExpr.name, nameExpr.id)
   }
 
   enterApp (appExpr: TntApp): void {
     // Application, check that the operator being applied is defined
-    const valueDefinitionsForScope = filterScope(this.currentTable.valueDefinitions, scopesForId(this.scopeTree, appExpr.id))
-
-    if (!valueDefinitionsForScope.some(name => name.identifier === appExpr.opcode)) {
-      this.recordError('value', appExpr.opcode, appExpr.id)
-    }
+    this.checkScopedName(appExpr.opcode, appExpr.id)
   }
 
   enterConstType (type: TntConstType): void {
     // Type is a name, check that it is defined
-    if (!this.currentTable.typeDefinitions.some(def => def.identifier === type.name)) {
+    if (!lookupType(this.currentTable, type.name)) {
       this.recordError('type', type.name, type.id)
+    }
+  }
+
+  // Check that there is a value definition for `name` under scope `id`
+  private checkScopedName (name: string, id: bigint) {
+    const def = lookupValue(this.currentTable, this.scopeTree, name, id)
+    if (!def) {
+      this.recordError('value', name, id)
     }
   }
 
@@ -130,10 +130,9 @@ class NameResolverVisitor implements IRVisitor {
     if (this.moduleStack.length > 0) {
       this.currentModuleName = this.moduleStack[this.moduleStack.length - 1]
 
-      let moduleTable = this.tables.get(this.currentModuleName)
+      const moduleTable = this.tables.get(this.currentModuleName)
       if (!moduleTable) {
-        moduleTable = emptyTable()
-        this.tables.set(this.currentModuleName, moduleTable)
+        throw new Error(`Lookup table not found for module: ${this.currentModuleName}`)
       }
       this.currentTable = moduleTable
     }
@@ -148,12 +147,4 @@ class NameResolverVisitor implements IRVisitor {
       reference: id,
     })
   }
-}
-
-function filterScope (valueDefinitions: ValueDefinition[], scopes: bigint[]): ValueDefinition[] {
-  return valueDefinitions.filter(definition => {
-    // A definition should be considered in a scope if it's either unscoped or its scope is included
-    // in some scope containing the name expression's scope
-    return !definition.scope || scopes.includes(definition.scope)
-  })
 }

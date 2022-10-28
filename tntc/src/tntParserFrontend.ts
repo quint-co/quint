@@ -13,11 +13,12 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
 import { TntModule } from './tntIr'
 import { ToIrListener } from './ToIrListener'
-import { collectDefinitions, DefinitionTableByModule } from './definitionsCollector'
+import { collectDefinitions } from './definitionsCollector'
 import { resolveNames } from './nameResolver'
 import { resolveImports } from './importResolver'
 import { treeFromModule } from './scoping'
 import { scanConflicts } from './definitionsScanner'
+import { LookupTableByModule } from './lookupTable'
 
 export interface Loc {
   source: string;
@@ -38,7 +39,7 @@ export type Phase1Result =
   | { kind: 'error', messages: ErrorMessage[] }
 
 export type Phase2Result =
-  | { kind: 'ok', table: DefinitionTableByModule }
+  | { kind: 'ok', table: LookupTableByModule }
   | { kind: 'error', messages: ErrorMessage[] }
 
 /**
@@ -108,7 +109,7 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<bigint, Loc>):
   const scopeTree = treeFromModule(tntModule)
   const moduleDefinitions = collectDefinitions(tntModule)
   const importResolvingResult = resolveImports(tntModule, moduleDefinitions)
-  let definitions
+  let definitions: LookupTableByModule
   const errorMessages: ErrorMessage[] = []
 
   if (importResolvingResult.kind === 'ok') {

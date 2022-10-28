@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { inferEffects } from '../../src/effects/inferrer'
-import { DefinitionTable, DefinitionTableByModule } from '../../src/definitionsCollector'
+import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
 import { Effect, Signature } from '../../src/effects/base'
 import { buildModuleWithDefs } from '../builders/ir'
 import { parseEffectOrThrow } from '../../src/effects/parser'
@@ -9,21 +9,21 @@ import { effectToString } from '../../src/effects/printing'
 import { errorTreeToString } from '../../src/errorTree'
 
 describe('inferEffects', () => {
-  const table: DefinitionTable = {
+  const table: LookupTable = newTable({
     valueDefinitions: [
-      { kind: 'param', identifier: 'p' },
-      { kind: 'const', identifier: 'N' },
-      { kind: 'var', identifier: 'x' },
-      { kind: 'val', identifier: 'm' },
-      { kind: 'val', identifier: 't' },
+      { kind: 'param', identifier: 'p', reference: 1n },
+      { kind: 'const', identifier: 'N', reference: 1n },
+      { kind: 'var', identifier: 'x', reference: 1n },
+      { kind: 'val', identifier: 'm', reference: 1n },
+      { kind: 'val', identifier: 't', reference: 1n },
       { kind: 'def', identifier: 'assign' },
       { kind: 'def', identifier: 'foldl' },
       { kind: 'def', identifier: 'iadd' },
-      { kind: 'def', identifier: 'my_add' },
+      { kind: 'def', identifier: 'my_add', reference: 1n },
     ],
-    typeDefinitions: [],
-  }
-  const definitionsTable: DefinitionTableByModule = new Map<string, DefinitionTable>([['wrapper', table]])
+  })
+
+  const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
 
   const readManyEffect = (arity: number) => {
     const rs = Array.from(Array(arity).keys()).map(i => `r${i}`)
@@ -205,7 +205,7 @@ describe('inferEffects', () => {
     effects
       .mapLeft(e => e.forEach(v => assert.deepEqual(v, {
         location: 'Inferring effect for name undefined',
-        message: "Couldn't find definition for undefined in definition table in scope",
+        message: "Couldn't find definition for undefined in lookup table in scope",
         children: [],
       })))
 

@@ -1,24 +1,30 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { ValueDefinition, defaultDefinitions, DefinitionTable, TypeDefinition, DefinitionTableByModule } from '../src/definitionsCollector'
+import { defaultValueDefinitions } from '../src/definitionsCollector'
+import { LookupTable, LookupTableByModule, newTable } from '../src/lookupTable'
 import { resolveNames, NameResolutionResult } from '../src/nameResolver'
 
 import { buildModuleWithExpressions, buildModuleWithDefs } from './builders/ir'
 import { ScopeTree } from '../src/scoping'
 
 describe('nameResolver', () => {
-  const valueDefinitions: ValueDefinition[] = defaultDefinitions().valueDefinitions.concat([
-    { kind: 'const', identifier: 'TEST_CONSTANT' },
-    { kind: 'def', identifier: 'unscoped_def' },
-    { kind: 'def', identifier: 'scoped_def', scope: 2n },
-  ])
-  const typeDefinitions: TypeDefinition[] = [
-    { identifier: 'MY_TYPE', type: { id: 100n, kind: 'int' } },
-  ]
+  const table: LookupTable = newTable({
+    valueDefinitions: [
+      ...defaultValueDefinitions(),
+      { kind: 'const', identifier: 'TEST_CONSTANT' },
+      { kind: 'def', identifier: 'unscoped_def' },
+      { kind: 'def', identifier: 'scoped_def', scope: 2n },
+    ],
+    typeDefinitions: [
+      { identifier: 'MY_TYPE', type: { id: 100n, kind: 'int' } },
+    ],
+  })
 
   const moduleName = 'wrapper'
-  const table: DefinitionTable = { valueDefinitions: valueDefinitions, typeDefinitions: typeDefinitions }
-  const tables: DefinitionTableByModule = new Map<string, DefinitionTable>([[moduleName, table]])
+  const tables: LookupTableByModule = new Map<string, LookupTable>([
+    [moduleName, table],
+    ['test_module', newTable({})],
+  ])
   const dummyScopeTree: ScopeTree = { value: 0n, children: [] }
 
   describe('operator definitions', () => {
