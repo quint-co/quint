@@ -7,7 +7,7 @@ import { TntType } from './tntTypes'
 export type ValueDefinitionKind = 'module' | 'def' | 'val' | 'assumption' | 'param' | 'var' | 'const'
 
 /**
- * A named operator defined. Can be scoped or module-wide (unscoped).
+ * A named operator definition. Can be scoped or module-wide (unscoped).
  */
 export interface ValueDefinition {
   /* Same as TntDef kinds */
