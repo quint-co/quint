@@ -15,7 +15,7 @@
  */
 
 import { IRVisitor, walkModule } from './IRVisitor'
-import { addTypeToTable, addValueToTable, copyTable, LookupTable, LookupTableByModule, newTable, ValueDefinition } from './lookupTable'
+import { addTypeToTable, addValueToTable, copyTable, LookupTable, LookupTableByModule, newTable, ValueDefinition, ValueDefinitionKind } from './lookupTable'
 import { TntModule, TntVar, TntModuleDef, TntConst, TntOpDef, TntTypeDef, TntAssume, TntLambda, TntLet } from './tntIr'
 import { TntType } from './tntTypes'
 
@@ -211,7 +211,7 @@ class DefinitionsCollectorVisitor implements IRVisitor {
     this.scopeStack.pop()
   }
 
-  private collectValueDefinition (kind: string, identifier: string, reference?: bigint, scope?: bigint): void {
+  private collectValueDefinition (kind: ValueDefinitionKind, identifier: string, reference?: bigint, scope?: bigint): void {
     if (identifier === '_') {
       // Don't collect underscores, as they are special identifiers that allow no usage
       return

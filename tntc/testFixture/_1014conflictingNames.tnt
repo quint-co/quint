@@ -9,4 +9,13 @@ module conflictingNames {
   // type alias conflict
   type T = int
   type T = str
+
+  def b = 1
+
+  module nested {
+    def b = 2
+  }
+
+  // conflicting name coming from import
+  import nested.b
 }

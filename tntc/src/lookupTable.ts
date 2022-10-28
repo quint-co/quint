@@ -2,11 +2,16 @@ import { filterScope, scopesForId, ScopeTree } from './scoping'
 import { TntType } from './tntTypes'
 
 /**
- * A named operator defined. Can be scoped or module-wide (unscoped).
+ * Possible kinds for value definitions
+ */
+export type ValueDefinitionKind = 'module' | 'def' | 'val' | 'assumption' | 'param' | 'var' | 'const'
+
+/**
+ * A named operator definition. Can be scoped or module-wide (unscoped).
  */
 export interface ValueDefinition {
   /* Same as TntDef kinds */
-  kind: string
+  kind: ValueDefinitionKind
   /* The name given to the defined operator */
   identifier: string
   /* Expression or definition id from where the name was collected */
