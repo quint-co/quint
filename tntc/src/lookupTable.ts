@@ -28,7 +28,10 @@ export interface TypeDefinition {
 }
 
 /**
- * A lookup table with all definitions for each name
+ * A lookup table partitioned in value definitions and type definitions. Should
+ * be manipulated only by functions in this file to maintain it's consistency:
+ *
+ * If a name is set on a definitions map, its values must be non-empty.
  */
 export interface LookupTable {
   /* Names for operators defined */
@@ -43,9 +46,19 @@ export interface LookupTable {
 export type LookupTableByModule = Map<string, LookupTable>
 
 /**
- * An empty lookup table, useful for initializing
+ * An initializer for lookup tables
+ *
+ * @param definitions optional interface with lists of valueDefinitions and
+ * typeDefinitions to start the table with
+ *
+ * @returns a new lookup table with the given definitions
  */
-export function newTable ({ valueDefinitions = [], typeDefinitions = [] }: { valueDefinitions?: ValueDefinition[], typeDefinitions?: TypeDefinition[] }): LookupTable {
+export function newTable (
+  {
+    valueDefinitions = [],
+    typeDefinitions = [],
+  }: { valueDefinitions?: ValueDefinition[], typeDefinitions?: TypeDefinition[] }
+): LookupTable {
   const table: LookupTable = {
     valueDefinitions: new Map<string, ValueDefinition[]>(),
     typeDefinitions: new Map<string, TypeDefinition[]>(),
@@ -58,7 +71,11 @@ export function newTable ({ valueDefinitions = [], typeDefinitions = [] }: { val
 }
 
 /**
- * A new lookup table instances with the same entries as an existing one
+ * Duplicate a lookup table
+ *
+ * @param table the table to be copied
+ *
+ * @returns a lookup table with the same definitions as the provided one
  */
 export function copyTable (table: LookupTable): LookupTable {
   return {
@@ -67,6 +84,12 @@ export function copyTable (table: LookupTable): LookupTable {
   }
 }
 
+/**
+ * Add a value definitions to a lookup table
+ *
+ * @param def the value definition to be added
+ * @param table the lookup table to be updated
+ */
 export function addValueToTable (def: ValueDefinition, table: LookupTable) {
   if (!table.valueDefinitions.has(def.identifier)) {
     table.valueDefinitions.set(def.identifier, [])
@@ -75,6 +98,12 @@ export function addValueToTable (def: ValueDefinition, table: LookupTable) {
   table.valueDefinitions.get(def.identifier)!.push(def)
 }
 
+/**
+ * Add a type definitions to a lookup table
+ *
+ * @param def the type definition to be added
+ * @param table the lookup table to be updated
+ */
 export function addTypeToTable (def: TypeDefinition, table: LookupTable) {
   if (!table.typeDefinitions.has(def.identifier)) {
     table.typeDefinitions.set(def.identifier, [])
@@ -83,6 +112,16 @@ export function addTypeToTable (def: TypeDefinition, table: LookupTable) {
   table.typeDefinitions.get(def.identifier)!.push(def)
 }
 
+/**
+ * Lookup a name in the value definitions in a lookup table
+ *
+ * @param table the lookup table to be scanned
+ * @param scopeTree the scope tree for the module where the name occurs
+ * @param name the name of the definition to be found
+ * @param scope the expression id where the name occurs
+ *
+ * @returns the value definition, if found under the scope. Otherwise, undefined
+ */
 export function lookupValue (table: LookupTable, scopeTree: ScopeTree, name: string, scope: bigint): ValueDefinition | undefined {
   if (!table.valueDefinitions.has(name)) {
     return undefined
@@ -91,6 +130,14 @@ export function lookupValue (table: LookupTable, scopeTree: ScopeTree, name: str
   return filterScope(table.valueDefinitions.get(name)!, scopesForId(scopeTree, scope))[0]
 }
 
+/**
+ * Lookup a name in the type definitions in a lookup table
+ *
+ * @param table the lookup table to be scanned
+ * @param name the name of the definition to be found
+ *
+ * @returns the type definition, if found under the scope. Otherwise, undefined
+ */
 export function lookupType (table: LookupTable, name: string): TypeDefinition | undefined {
   if (!table.typeDefinitions.has(name)) {
     return undefined
@@ -99,6 +146,15 @@ export function lookupType (table: LookupTable, name: string): TypeDefinition | 
   return table.typeDefinitions.get(name)![0]
 }
 
+/**
+ * Copy the names of a lookup table to a new one, ignoring scoped and default
+ * definitions, and optionally adding a namespace.
+ *
+ * @param originTable the lookup table to copy from
+ * @param namespace optional namespace to be added to copied names
+ *
+ * @returns a lookup table with the filtered and namespaced names
+ */
 export function copyNames (originTable: LookupTable, namespace?: string): LookupTable {
   const table = newTable({})
 
@@ -127,6 +183,14 @@ export function copyNames (originTable: LookupTable, namespace?: string): Lookup
   return table
 }
 
+/**
+ * Merges to lookup tables together in a new one.
+ *
+ * @param t1 a lookup table to be merged
+ * @param t2 a lookup table to be merged
+ *
+ * @returns the merged lookup table
+ */
 export function mergeTables (t1: LookupTable, t2: LookupTable): LookupTable {
   const result = copyTable(t1)
 
