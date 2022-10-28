@@ -15,6 +15,10 @@ describe('resolveImports', () => {
       { kind: 'module', identifier: 'nested_module', reference: 4n },
       { kind: 'module', identifier: 'unexisting_module', reference: 5n },
     ],
+    typeDefinitions: [
+      { identifier: 'T', reference: 1n },
+      { identifier: 'R' },
+    ],
   })
 
   const nestedModuleTable: LookupTable = newTable({
@@ -47,7 +51,7 @@ describe('resolveImports', () => {
 
     it('imports all definitions', () => {
       const tntModule = buildModuleWithDefs([
-        'module test_module { def a = 1 def b = 2 }',
+        'module test_module { type T def a = 1 def b = 2 }',
         'import test_module.*',
       ])
 
@@ -57,6 +61,7 @@ describe('resolveImports', () => {
         const defs = result.definitions.get(moduleName)
 
         assert.includeDeepMembers([...defs!.valueDefinitions.keys()], ['a', 'b'])
+        assert.includeDeepMembers([...defs!.typeDefinitions.keys()], ['T'])
       }
     })
 
@@ -74,6 +79,9 @@ describe('resolveImports', () => {
         assert.includeDeepMembers([...defs!.valueDefinitions.keys()], [
           'test_module_instance::a',
           'test_module_instance::b',
+        ])
+        assert.includeDeepMembers([...defs!.typeDefinitions.keys()], [
+          'test_module_instance::T',
         ])
       }
     })

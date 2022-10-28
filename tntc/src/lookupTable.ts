@@ -172,7 +172,7 @@ export function copyNames (originTable: LookupTable, namespace?: string): Lookup
   originTable.typeDefinitions.forEach((defs, identifier) => {
     const name = namespace ? [namespace, identifier].join('::') : identifier
 
-    // Copy only on-default (referenced) names
+    // Copy only non-default (referenced) names
     const typeDefs = defs.filter(d => d.reference).map(d => ({ ...d, identifier: name }))
 
     if (typeDefs.length > 0) {
