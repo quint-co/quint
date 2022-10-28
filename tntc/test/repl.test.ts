@@ -154,12 +154,12 @@ describe('repl ok', () => {
       `
       |16
       |
-      |syntax error: <input>:9:1 - error: Couldn't resolve name n in definition for __input, in module __REPL
-      |9: n * n
+      |syntax error: <input>:1:1 - error: Couldn't resolve name n in definition for __input, in module __REPL
+      |1: n * n
       |   ^
       |
-      |syntax error: <input>:9:5 - error: Couldn't resolve name n in definition for __input, in module __REPL
-      |9: n * n
+      |syntax error: <input>:1:5 - error: Couldn't resolve name n in definition for __input, in module __REPL
+      |1: n * n
       |       ^
       |
       |
@@ -174,8 +174,8 @@ describe('repl ok', () => {
       |`
     )
     const output = dedent(
-      `runtime error: <input>:9:1 - error: Infinite set Int is non-enumerable
-      |9: set(Int)
+      `runtime error: <input>:1:1 - error: Infinite set Int is non-enumerable
+      |1: set(Int)
       |   ^^^^^^^^
       |
       |<result undefined>
