@@ -128,6 +128,22 @@ tntc parse ../examples/instances.tnt
 <!-- !test check instances -->
     expect exit code 0
 
+### OK on typecheck instances
+
+This command typechecks the instances example.
+
+<!-- !test program
+tntc typecheck ../examples/instances.tnt
+-->
+
+```sh
+tntc typecheck ../examples/instances.tnt
+```
+
+<!-- !test check instances - Types & Effects -->
+    expect exit code 0
+
+
 ### OK on parse option
 
 This command parses the option example.

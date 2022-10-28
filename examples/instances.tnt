@@ -25,14 +25,14 @@ module InstanceEx {
 
   // now, we can access F and G via A1::F and A1::G
   val test_F = A1::F(10)
-  val test_x = A::x
+
 
   // We can import the names from A1, provided that there are no collisions.
   // The effect of this import is similar to an anonymous local instance in TLA+:
   // LOCAL INSTANCE A WITH x <- 33, y <- MyY, z <- z
   import A1.*
 
-  static val test_G = G(true)
+  pure val test_G = G(true)
 
   // If we want to omit identity bindings such as z = z, we write:
   module A2 = A(x = 15, y = MyY, *)

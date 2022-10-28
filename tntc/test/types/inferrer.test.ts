@@ -3,8 +3,25 @@ import { assert } from 'chai'
 import { buildModuleWithDefs } from '../builders/ir'
 import { typeToString } from '../../src/IRprinting'
 import { inferTypes } from '../../src/types/inferrer'
+import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
 
 describe('inferTypes', () => {
+  const table: LookupTable = newTable({
+    valueDefinitions: [
+      { kind: 'param', identifier: 'p', reference: 1n },
+      { kind: 'const', identifier: 'N', reference: 1n },
+      { kind: 'var', identifier: 'x', reference: 1n },
+      { kind: 'var', identifier: 'y', reference: 1n },
+      { kind: 'val', identifier: 'm', reference: 1n },
+      { kind: 'val', identifier: 't', reference: 1n },
+      { kind: 'def', identifier: 'assign' },
+      { kind: 'def', identifier: 'igt' },
+      { kind: 'def', identifier: 'iadd' },
+    ],
+  })
+
+  const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
+
   it('infers types for basic expressions', () => {
     const tntModule = buildModuleWithDefs([
       'def a = 1 + 2',
@@ -13,7 +30,7 @@ describe('inferTypes', () => {
       'def d(S) = S.map(x => x + 10)',
     ])
 
-    const result = inferTypes(tntModule)
+    const result = inferTypes(tntModule, definitionsTable)
     assert.isTrue(result.isRight())
     result.map(r => {
       const stringTypes = Array.from(r.entries()).map(([id, type]) => [id, typeToString(type)])
@@ -48,7 +65,7 @@ describe('inferTypes', () => {
       'def b(f, p) = f(p) + f(not(p))',
     ])
 
-    const result = inferTypes(tntModule)
+    const result = inferTypes(tntModule, definitionsTable)
     assert.isTrue(result.isRight())
     result.map(r => {
       const stringTypes = Array.from(r.entries()).map(([id, type]) => [id, typeToString(type)])
@@ -72,7 +89,7 @@ describe('inferTypes', () => {
       'def a = 1.map(x => x + 10)',
     ])
 
-    const result = inferTypes(tntModule)
+    const result = inferTypes(tntModule, definitionsTable)
     assert.isTrue(result.isLeft())
     result.mapLeft(errors => {
       assert.sameDeepMembers([...errors.entries()], [

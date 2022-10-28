@@ -61,14 +61,6 @@ export function resolveNames (tntModule: TntModule, table: LookupTableByModule, 
   return errors.length > 0 ? { kind: 'error', errors: errors } : { kind: 'ok' }
 }
 
-export function lookupName (table: LookupTable, scopeTree: ScopeTree, name: string, scope: bigint): ValueDefinition | undefined {
-  if (!table.has(name)) {
-    return undefined
-  }
-
-  return filterScope(table.get(name)!.valueDefinitions, scopesForId(scopeTree, scope))[0]
-}
-
 class NameResolverVisitor implements IRVisitor {
   constructor (tables: LookupTableByModule, scopeTree: ScopeTree) {
     this.tables = tables

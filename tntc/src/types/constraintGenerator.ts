@@ -21,19 +21,17 @@ import { buildErrorTree, ErrorTree, Error } from '../errorTree'
 import { getSignatures } from './builtinSignatures'
 import { Constraint, Signature, TypeScheme } from './base'
 import { Substitutions, applySubstitution } from './substitutions'
-import { LookupTable, LookupTableByModule, DefinitionTable } from '../definitionsCollector'
-import { ScopeTree } from '../scoping'
-import { lookupName } from '../nameResolver'
+import { ScopeTree, treeFromModule } from '../scoping'
+import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../lookupTable'
 
 type solvingFunctionType = (constraint: Constraint) => Either<Map<bigint, ErrorTree>, Substitutions>
 
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
-  constructor (solvingFunction: solvingFunctionType, definitionsTable: LookupTableByModule, scopeTree: ScopeTree) {
+  constructor (solvingFunction: solvingFunctionType, definitionsTable: LookupTableByModule) {
     this.solvingFunction = solvingFunction
     this.definitionsTable = definitionsTable
-    this.scopeTree = scopeTree
   }
 
   // Public values with results by expression ID
@@ -47,13 +45,13 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   private context: Map<bigint, Signature> = new Map<bigint, Signature>()
   private builtinSignatures: Map<string, Signature> = getSignatures()
   private definitionsTable: LookupTableByModule
-  private scopeTree: ScopeTree
 
   // Track location descriptions for error tree traces
   private location: string = ''
 
   private currentModule?: TntModule
-  private currentTable: LookupTable = new Map<string, DefinitionTable>()
+  private currentTable: LookupTable = newTable({})
+  private currentScopeTree: ScopeTree = { value: 0n, children: [] }
   private moduleStack: TntModule[] = []
 
   enterModuleDef (def: TntModuleDef): void {
@@ -123,9 +121,9 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   // ---------------------------------------------------------------------- (LAMBDA)
   //            Γ ⊢ (p0, ..., pn) => e: ((t0, ..., tn) => te, c)
   enterLambda (e: TntLambda) {
-    e.params.forEach(p => {
+    e.params.filter(p => p !== '_').forEach(p => {
       const t: TntType = { kind: 'var', name: this.freshVar() }
-      const id = lookupName(this.currentTable, this.scopeTree, p, e.expr.id)?.reference
+      const id = lookupValue(this.currentTable, this.currentScopeTree, p, e.expr.id)?.reference
       if (id) {
         this.context.set(id, (_) => ({ type: t, variables: new Set() }))
       }
@@ -138,7 +136,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     }
     const result = this.fetchResult(e.expr.id)
       .chain(resultType => {
-        const paramTypes = mergeInMany(e.params.map(p => this.fetchSignature(p, e.expr.id, 2)))
+        const paramTypes = mergeInMany(e.params.filter(p => p !== '_').map(p => this.fetchSignature(p, e.expr.id, 2)))
         return paramTypes.map((ts): TntType => {
           return { kind: 'oper', args: ts, res: resultType }
         }).mapLeft(e => {
@@ -149,7 +147,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     this.addToResults(e.id, result)
 
     e.params.forEach(p => {
-      const id = lookupName(this.currentTable, this.scopeTree, p, e.expr.id)?.reference
+      const id = lookupValue(this.currentTable, this.currentScopeTree, p, e.expr.id)?.reference
       if (id) {
         this.context.delete(id)
       }
@@ -230,7 +228,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     if (this.builtinSignatures.has(opcode)) {
       signatureFunction = this.builtinSignatures.get(opcode)!
     } else {
-      const id = lookupName(this.currentTable, this.scopeTree, opcode, scope)?.reference
+      const id = lookupValue(this.currentTable, this.currentScopeTree, opcode, scope)?.reference
       if (!id) {
         throw new Error(`Signature not found for name: ${opcode}`)
       }
@@ -255,6 +253,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
       const moduleTable = this.definitionsTable.get(this.currentModule!.name)!
       this.currentTable = moduleTable
+      this.currentScopeTree = treeFromModule(this.currentModule)
     }
   }
 }

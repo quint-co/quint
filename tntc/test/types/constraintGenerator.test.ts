@@ -7,8 +7,25 @@ import { walkModule } from '../../src/IRVisitor'
 import { buildModuleWithDefs } from '../builders/ir'
 import { constraintToString } from '../../src/types/printing'
 import { ErrorTree } from '../../src/errorTree'
+import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
 
 describe('ConstraintGeneratorVisitor', () => {
+  const table: LookupTable = newTable({
+    valueDefinitions: [
+      { kind: 'param', identifier: 'p', reference: 1n },
+      { kind: 'const', identifier: 'N', reference: 1n },
+      { kind: 'var', identifier: 'x', reference: 1n },
+      { kind: 'var', identifier: 'y', reference: 1n },
+      { kind: 'val', identifier: 'm', reference: 1n },
+      { kind: 'val', identifier: 't', reference: 1n },
+      { kind: 'def', identifier: 'assign' },
+      { kind: 'def', identifier: 'igt' },
+      { kind: 'def', identifier: 'iadd' },
+    ],
+  })
+
+  const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
+
   it('collects constraints from expressions', () => {
     const tntModule = buildModuleWithDefs([
       'def d(S) = S.map(x => x + 10)',
@@ -21,7 +38,7 @@ describe('ConstraintGeneratorVisitor', () => {
       return right([])
     }
 
-    const visitor = new ConstraintGeneratorVisitor(solvingFunction)
+    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
     walkModule(visitor, tntModule)
   })
 
@@ -35,7 +52,7 @@ describe('ConstraintGeneratorVisitor', () => {
 
     const solvingFunction = (_: Constraint) => right([])
 
-    const visitor = new ConstraintGeneratorVisitor(solvingFunction)
+    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
     walkModule(visitor, tntModule)
 
     assert.includeDeepMembers([...visitor.types.entries()], [
@@ -59,7 +76,7 @@ describe('ConstraintGeneratorVisitor', () => {
 
     const solvingFunction = (_: Constraint) => left(errors)
 
-    const visitor = new ConstraintGeneratorVisitor(solvingFunction)
+    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
     walkModule(visitor, tntModule)
 
     assert.sameDeepMembers(Array.from(visitor.errors.entries()), Array.from(errors.entries()))
@@ -85,7 +102,7 @@ describe('ConstraintGeneratorVisitor', () => {
     const errors = new Map<bigint, ErrorTree>([[1n, error]])
 
     const solvingFunction = (_: Constraint) => right([])
-    const visitor = new ConstraintGeneratorVisitor(solvingFunction)
+    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
     walkModule(visitor, tntModule)
 
     assert.sameDeepMembers(Array.from(visitor.errors.values()), Array.from(errors.values()))
