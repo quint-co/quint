@@ -14,7 +14,7 @@
  */
 
 import { Either, right, left, mergeInMany } from '@sweet-monads/either'
-import { LookupTable, LookupTableByModule, DefinitionTable } from '../definitionsCollector'
+import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../lookupTable'
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { TntApp, TntBool, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr } from '../tntIr'
@@ -22,7 +22,6 @@ import { Effect, emptyVariables, unify, Signature, effectNames } from './base'
 import { applySubstitution, Substitutions, compose } from './substitutions'
 import { ErrorTree, errorTreeToString } from '../errorTree'
 import { ScopeTree, treeFromModule } from '../scoping'
-import { lookupName } from '../nameResolver'
 
 /**
  * Infers an effect for every expression in a module based on predefined
@@ -51,7 +50,7 @@ export function inferEffects (builtinSignatures: Map<string, Signature>, lookupT
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor (builtinSignatures: Map<string, Signature>, lookupTable: LookupTableByModule) {
+  constructor(builtinSignatures: Map<string, Signature>, lookupTable: LookupTableByModule) {
     this.builtinSignatures = builtinSignatures
     this.lookupTable = lookupTable
   }
@@ -65,7 +64,7 @@ class EffectInferrerVisitor implements IRVisitor {
   private freshVarCounters: Map<string, number> = new Map<string, number>()
 
   private currentModule?: TntModule
-  private currentTable: LookupTable = new Map<string, DefinitionTable>()
+  private currentTable: LookupTable = newTable({})
   private currentScopeTree: ScopeTree = { value: 0n, children: [] }
   private moduleStack: TntModule[] = []
 
@@ -84,7 +83,7 @@ class EffectInferrerVisitor implements IRVisitor {
   }
 
   exitName (expr: TntName): void {
-    const def = lookupName(this.lookupTable, this.currentTable, expr.name, expr.id, 2)
+    const def = lookupValue(this.currentTable, this.currentScopeTree, expr.name, expr.id)
     if (!def) {
       throw new Error(`Definition not found for name: ${expr.name}`)
     }
@@ -216,7 +215,7 @@ class EffectInferrerVisitor implements IRVisitor {
 
   enterLambda (e: TntLambda): void {
     e.params.forEach(p => {
-      const id = lookupName(this.currentTable, this.currentScopeTree, p, e.expr.id)?.reference
+      const id = lookupValue(this.currentTable, this.currentScopeTree, p, e.expr.id)?.reference
       if (id) {
         this.context.set(id, (_) => ({
           kind: 'quantified',
@@ -260,7 +259,7 @@ class EffectInferrerVisitor implements IRVisitor {
     if (this.builtinSignatures.has(opcode)) {
       signatureFunction = this.builtinSignatures.get(opcode)!
     } else {
-      const id = lookupName(this.currentTable, this.currentScopeTree, opcode, scope)?.reference
+      const id = lookupValue(this.currentTable, this.currentScopeTree, opcode, scope)?.reference
       if (!id) {
         throw new Error(`Signature not found for name: ${opcode}`)
       }

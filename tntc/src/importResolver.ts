@@ -12,7 +12,7 @@
  * @module
  */
 
-import { LookupTableByModule, LookupTable, emptyTable, DefinitionTable } from './definitionsCollector'
+import { LookupTableByModule, LookupTable, newTable, copyTable, addValueToTable, addTypeToTable, copyNames, mergeTables } from './lookupTable'
 import { TntImport, TntInstance, TntModule, TntModuleDef } from './tntIr'
 import { IRVisitor, walkModule } from './IRVisitor'
 
@@ -65,7 +65,7 @@ class ImportResolverVisitor implements IRVisitor {
   errors: ImportError[] = []
 
   private currentModuleName: string = ''
-  private currentTable: LookupTable = new Map<string, DefinitionTable>()
+  private currentTable: LookupTable = newTable({})
   private moduleStack: string[] = []
 
   enterModuleDef (def: TntModuleDef): void {
@@ -92,7 +92,7 @@ class ImportResolverVisitor implements IRVisitor {
     }
 
     // Copy the intanced module lookup table in a new lookup table for the instance
-    this.tables.set(def.name, new Map<string, DefinitionTable>(moduleTable.entries()))
+    this.tables.set(def.name, copyTable(moduleTable))
 
     // All names from the instanced module should be acessible with the instance namespace
     // So, copy them to the current module's lookup table
@@ -115,25 +115,19 @@ class ImportResolverVisitor implements IRVisitor {
       this.currentTable = mergeTables(this.currentTable, importableDefinitions)
     } else {
       // Tries to find a specific definition, reporting an error if not found
-      if (!importableDefinitions.has(def.name)) {
+      if (!importableDefinitions.valueDefinitions.has(def.name)) {
         this.errors.push({ moduleName: def.path, defName: def.name, reference: def.id })
         return
       }
 
-      if (!this.currentTable.has(def.name)) {
-        this.currentTable.set(def.name, emptyTable())
-      }
-
       // Copy type and value definitions for the imported name
-      this.currentTable.get(def.name)!.typeDefinitions.push(
-        ...importableDefinitions.get(def.name)!.typeDefinitions
-      )
-      this.currentTable.get(def.name)!.valueDefinitions.push(
-        ...importableDefinitions.get(def.name)!.valueDefinitions
-      )
+      const valueDefs = importableDefinitions.valueDefinitions.get(def.name) ?? []
+      valueDefs.forEach(def => addValueToTable(def, this.currentTable))
+      const typeDefs = importableDefinitions.typeDefinitions.get(def.name) ?? []
+      typeDefs.forEach(def => addTypeToTable(def, this.currentTable))
 
       // For value definitions, check if there are modules being imported
-      importableDefinitions.get(def.name)!.valueDefinitions.forEach(definition => {
+      valueDefs.forEach(definition => {
         if (definition.kind === 'module') {
           // Collect all definitions namespaced to module
           const importedModuleTable = this.tables.get(definition.identifier)
@@ -162,39 +156,4 @@ class ImportResolverVisitor implements IRVisitor {
       this.currentTable = this.tables.get(this.currentModuleName)!
     }
   }
-}
-
-function copyNames (originTable: LookupTable, namespace?: string): LookupTable {
-  const newEntries = new Map<string, DefinitionTable>()
-
-  originTable.forEach((table, identifier) => {
-    const name = namespace ? [namespace, identifier].join('::') : identifier
-
-    // Copy only unscoped and non-default (referenced) names
-    const valueDefs = table.valueDefinitions.filter(d => !d.scope && d.reference).map(d => ({ ...d, identifier: name }))
-    const typeDefs = table.typeDefinitions.filter(d => d.reference).map(d => ({ ...d, identifier: name }))
-
-    if (valueDefs.length > 0 || typeDefs.length > 0) {
-      newEntries.set(name, { valueDefinitions: valueDefs, typeDefinitions: typeDefs })
-    }
-  })
-
-  return newEntries
-}
-
-function mergeTables (t1: LookupTable, t2: LookupTable): LookupTable {
-  const result = new Map<string, DefinitionTable>(t1.entries())
-
-  t2.forEach((table, identifier) => {
-    if (result.has(identifier)) {
-      const currentTable = result.get(identifier)!
-      currentTable.valueDefinitions.push(...table.valueDefinitions)
-      currentTable.typeDefinitions.push(...table.typeDefinitions)
-      result.set(identifier, currentTable)
-    } else {
-      result.set(identifier, table)
-    }
-  })
-
-  return result
 }

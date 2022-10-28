@@ -13,7 +13,7 @@
  */
 
 import isEqual from 'lodash.isequal'
-import { ValueDefinition, LookupTable } from './definitionsCollector'
+import { ValueDefinition, LookupTable } from './lookupTable'
 import { ScopeTree, scopesForId } from './scoping'
 
 /**
@@ -57,9 +57,9 @@ export type DefinitionsConflictResult =
  */
 export function scanConflicts (table: LookupTable, tree: ScopeTree): DefinitionsConflictResult {
   const conflicts: Conflict[] = []
-  table.forEach((defs, identifier) => {
+  table.valueDefinitions.forEach((defs, identifier) => {
     // Value definition conflicts depend on scope
-    const conflictingDefinitions = defs.valueDefinitions.filter(def => defs.valueDefinitions.some(d => {
+    const conflictingDefinitions = defs.filter(def => defs.some(d => {
       return !isEqual(d, def) && canConflict(tree, d, def)
     }))
 
@@ -69,10 +69,12 @@ export function scanConflicts (table: LookupTable, tree: ScopeTree): Definitions
       })
       conflicts.push({ kind: 'value', identifier: identifier, sources: sources })
     }
+  })
 
+  table.typeDefinitions.forEach((defs, identifier) => {
     // Type definition conflicts don't depend on scope as type aliases can't be scoped
-    if (defs.typeDefinitions.length > 1) {
-      const sources: ConflictSource[] = defs.typeDefinitions.map(d => {
+    if (defs.length > 1) {
+      const sources: ConflictSource[] = defs.map(d => {
         return d.reference ? { kind: 'user', reference: d.reference } : { kind: 'builtin' }
       })
       conflicts.push({ kind: 'type', identifier: identifier, sources: sources })

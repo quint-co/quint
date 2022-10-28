@@ -1,27 +1,35 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { DefinitionTable, LookupTable, LookupTableByModule } from '../src/definitionsCollector'
+import { LookupTable, LookupTableByModule, newTable } from '../src/lookupTable'
 import { buildModuleWithDefs } from './builders/ir'
 import { resolveImports } from '../src/importResolver'
 
 describe('resolveImports', () => {
   const moduleName = 'wrapper'
 
-  const table: LookupTable = new Map<string, DefinitionTable>([
-    ['a', { valueDefinitions: [{ kind: 'def', identifier: 'a', reference: 1n }], typeDefinitions: [] }],
-    ['b', { valueDefinitions: [{ kind: 'def', identifier: 'b', reference: 2n }], typeDefinitions: [] }],
-    ['c', { valueDefinitions: [{ kind: 'def', identifier: 'c', reference: 3n, scope: 10n }], typeDefinitions: [] }],
-    ['nested_module', { valueDefinitions: [{ kind: 'module', identifier: 'nested_module', reference: 4n }], typeDefinitions: [] }],
-    ['unexisting_module', { valueDefinitions: [{ kind: 'module', identifier: 'unexisting_module', reference: 5n }], typeDefinitions: [] }],
-  ])
+  const table: LookupTable = newTable({
+    valueDefinitions: [
+      { kind: 'def', identifier: 'a', reference: 1n },
+      { kind: 'def', identifier: 'b', reference: 2n },
+      { kind: 'def', identifier: 'c', reference: 3n, scope: 10n },
+      { kind: 'module', identifier: 'nested_module', reference: 4n },
+      { kind: 'module', identifier: 'unexisting_module', reference: 5n },
+    ],
+    typeDefinitions: [
+      { identifier: 'T', reference: 1n },
+      { identifier: 'R' },
+    ],
+  })
 
-  const nestedModuleTable: LookupTable = new Map<string, DefinitionTable>([
-    ['d', { valueDefinitions: [{ kind: 'def', identifier: 'd', reference: 1n }], typeDefinitions: [] }],
-    ['e', { valueDefinitions: [{ kind: 'def', identifier: 'e', reference: 2n, scope: 10n }], typeDefinitions: [] }],
-  ])
+  const nestedModuleTable: LookupTable = newTable({
+    valueDefinitions: [
+      { kind: 'def', identifier: 'd', reference: 1n },
+      { kind: 'def', identifier: 'e', reference: 2n, scope: 10n },
+    ],
+  })
 
   const tables: LookupTableByModule = new Map<string, LookupTable>([
-    ['wrapper', new Map<string, DefinitionTable>()], ['test_module', table], ['nested_module', nestedModuleTable],
+    ['wrapper', newTable({})], ['test_module', table], ['nested_module', nestedModuleTable],
   ])
 
   describe('existing modules', () => {
@@ -36,14 +44,14 @@ describe('resolveImports', () => {
       if (result.kind === 'ok') {
         const defs = result.definitions.get(moduleName)
 
-        assert.deepInclude([...defs!.keys()], 'a')
-        assert.notDeepInclude([...defs!.keys()], 'b')
+        assert.deepInclude([...defs!.valueDefinitions.keys()], 'a')
+        assert.notDeepInclude([...defs!.valueDefinitions.keys()], 'b')
       }
     })
 
     it('imports all definitions', () => {
       const tntModule = buildModuleWithDefs([
-        'module test_module { def a = 1 def b = 2 }',
+        'module test_module { type T def a = 1 def b = 2 }',
         'import test_module.*',
       ])
 
@@ -52,7 +60,8 @@ describe('resolveImports', () => {
       if (result.kind === 'ok') {
         const defs = result.definitions.get(moduleName)
 
-        assert.includeDeepMembers([...defs!.keys()], ['a', 'b'])
+        assert.includeDeepMembers([...defs!.valueDefinitions.keys()], ['a', 'b'])
+        assert.includeDeepMembers([...defs!.typeDefinitions.keys()], ['T'])
       }
     })
 
@@ -67,9 +76,12 @@ describe('resolveImports', () => {
       if (result.kind === 'ok') {
         const defs = result.definitions.get(moduleName)
 
-        assert.includeDeepMembers([...defs!.keys()], [
+        assert.includeDeepMembers([...defs!.valueDefinitions.keys()], [
           'test_module_instance::a',
           'test_module_instance::b',
+        ])
+        assert.includeDeepMembers([...defs!.typeDefinitions.keys()], [
+          'test_module_instance::T',
         ])
       }
     })
@@ -85,7 +97,7 @@ describe('resolveImports', () => {
       if (result.kind === 'ok') {
         const defs = result.definitions.get(moduleName)
 
-        assert.includeDeepMembers([...defs!.keys()], [
+        assert.includeDeepMembers([...defs!.valueDefinitions.keys()], [
           'nested_module::d',
         ])
       }

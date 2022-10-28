@@ -14,6 +14,7 @@
  */
 
 import { IRVisitor, walkModule } from './IRVisitor'
+import { ValueDefinition } from './lookupTable'
 import { TntModule, TntDef, TntEx, TntModuleDef } from './tntIr'
 
 /**
@@ -62,6 +63,14 @@ export function treeFromModule (tntModule: TntModule): ScopeTree {
   const visitor = new ScopingVisitor()
   walkModule(visitor, tntModule)
   return visitor.currentNode!
+}
+
+export function filterScope (valueDefinitions: ValueDefinition[], scopes: bigint[]): ValueDefinition[] {
+  return valueDefinitions.filter(definition => {
+    // A definition should be considered in a scope if it's either unscoped or its scope is included
+    // in some scope containing the name expression's scope
+    return !definition.scope || scopes.includes(definition.scope)
+  })
 }
 
 /**
