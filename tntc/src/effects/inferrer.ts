@@ -51,10 +51,10 @@ export function inferEffects (builtinSignatures: Map<string, Signature>, lookupT
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-    constructor(builtinSignatures: Map<string, Signature>, lookupTable: LookupTableByModule) {
-        this.builtinSignatures = builtinSignatures
-        this.lookupTable = lookupTable
-    }
+  constructor (builtinSignatures: Map<string, Signature>, lookupTable: LookupTableByModule) {
+    this.builtinSignatures = builtinSignatures
+    this.lookupTable = lookupTable
+  }
 
     effects: Map<bigint, Effect> = new Map<bigint, Effect>()
     errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
@@ -70,67 +70,67 @@ class EffectInferrerVisitor implements IRVisitor {
 
     private substitutions: Substitutions = []
 
-    enterModuleDef(def: TntModuleDef): void {
-        this.moduleStack.push(def.module)
+    enterModuleDef (def: TntModuleDef): void {
+      this.moduleStack.push(def.module)
 
-        this.updateCurrentModule()
+      this.updateCurrentModule()
     }
 
-    exitModuleDef(_: TntModuleDef): void {
-        this.moduleStack.pop()
+    exitModuleDef (_: TntModuleDef): void {
+      this.moduleStack.pop()
 
-        this.updateCurrentModule()
+      this.updateCurrentModule()
     }
 
-    exitName(expr: TntName): void {
-        const def = lookupValue(this.currentTable, this.currentScopeTree, expr.name, expr.id)
-        if (!def) {
-            throw new Error(`Definition not found for name: ${expr.name}`)
-        }
-        switch (def.kind) {
-            case 'param': {
-                /*  { kind: 'param', identifier: p } ∈ Γ
+    exitName (expr: TntName): void {
+      const def = lookupValue(this.currentTable, this.currentScopeTree, expr.name, expr.id)
+      if (!def) {
+        throw new Error(`Definition not found for name: ${expr.name}`)
+      }
+      switch (def.kind) {
+        case 'param': {
+          /*  { kind: 'param', identifier: p } ∈ Γ
                  * ------------------------------------ (NAME-PARAM)
                  *          Γ ⊢ v: Read[r_p]
                  */
-                if (!def.reference) {
-                    throw new Error(`Couldn't find an effect for lambda parameter named ${expr.name} in context`)
-                }
-                // const paramEffect = this.effects.get(def.reference)!
-                // this.effects.set(expr.id, paramEffect)
-                this.effects.set(expr.id, { kind: 'quantified', name: `e_${expr.name}_${def.reference}` })
-                break
-            }
-            case 'const': {
-                /* { kind: 'const', identifier: c } ∈ Γ
+          if (!def.reference) {
+            throw new Error(`Couldn't find an effect for lambda parameter named ${expr.name} in context`)
+          }
+          // const paramEffect = this.effects.get(def.reference)!
+          // this.effects.set(expr.id, paramEffect)
+          this.effects.set(expr.id, { kind: 'quantified', name: `e_${expr.name}_${def.reference}` })
+          break
+        }
+        case 'const': {
+          /* { kind: 'const', identifier: c } ∈ Γ
                  * ------------------------------------- (NAME-CONST)
                  *       Γ ⊢ c: Pure
                  */
-                const effect: Effect = {
-                    kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables,
-                }
-                this.effects.set(expr.id, effect)
-                break
-            }
-            case 'var': {
-                /*  { kind: 'var', identifier: v } ∈ Γ
+          const effect: Effect = {
+            kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables,
+          }
+          this.effects.set(expr.id, effect)
+          break
+        }
+        case 'var': {
+          /*  { kind: 'var', identifier: v } ∈ Γ
                  * ------------------------------------ (NAME-VAR)
                  *          Γ ⊢ v: Read[v]
                  */
-                const effect: Effect = {
-                    kind: 'concrete', read: { kind: 'concrete', vars: [expr.name] }, update: emptyVariables, temporal: emptyVariables,
-                }
-                this.effects.set(expr.id, effect)
-                break
-            }
-            default:
-                /* { identifier: op, effect: E } ∈ Γ
+          const effect: Effect = {
+            kind: 'concrete', read: { kind: 'concrete', vars: [expr.name] }, update: emptyVariables, temporal: emptyVariables,
+          }
+          this.effects.set(expr.id, effect)
+          break
+        }
+        default:
+          /* { identifier: op, effect: E } ∈ Γ
                  * -------------------------------------- (NAME-OP)
                  *           Γ ⊢ op: E
                  */
-                this.fetchSignature(expr.name, expr.id, 2)
-                    .map(s => this.effects.set(expr.id, s))
-        }
+          this.fetchSignature(expr.name, expr.id, 2)
+            .map(s => this.effects.set(expr.id, s))
+      }
     }
 
     /* { identifier: op, effect: E } ∈ Γ    Γ ⊢ p0:E0 ... Γ ⊢ pn:EN
@@ -138,159 +138,159 @@ class EffectInferrerVisitor implements IRVisitor {
      * ------------------------------------------------------ (APP)
      *           Γ ⊢ op(p0, ..., pn): S(Eres)
      */
-    exitApp(expr: TntApp): void {
-        if (this.errors.size > 0) {
-            // Don't try to infer application if there are errors with the args
-            return
-        }
+    exitApp (expr: TntApp): void {
+      if (this.errors.size > 0) {
+        // Don't try to infer application if there are errors with the args
+        return
+      }
 
-        const location = `Trying to infer effect for operator application in ${expressionToString(expr)}`
+      const location = `Trying to infer effect for operator application in ${expressionToString(expr)}`
 
-        this.fetchSignature(expr.opcode, expr.id, expr.args.length)
-            .mapLeft(m => this.errors.set(expr.id, { message: m, location: location, children: [] }))
-            .map(signature => {
-                const resultEffect: Effect = { kind: 'quantified', name: this.freshVar('e') }
-                const effect: Effect = {
-                    kind: 'arrow',
-                    params: expr.args.map((a: TntEx) => {
-                        return this.effects.get(a.id)!
-                    }),
-                    result: resultEffect,
-                }
+      this.fetchSignature(expr.opcode, expr.id, expr.args.length)
+        .mapLeft(m => this.errors.set(expr.id, { message: m, location: location, children: [] }))
+        .map(signature => {
+          const resultEffect: Effect = { kind: 'quantified', name: this.freshVar('e') }
+          const effect: Effect = {
+            kind: 'arrow',
+            params: expr.args.map((a: TntEx) => {
+              return this.effects.get(a.id)!
+            }),
+            result: resultEffect,
+          }
 
-                const substitution = unify(effect, signature)
+          const substitution = unify(effect, signature)
 
-                const resultEffectWithSubs = substitution.chain(s => compose(s, this.substitutions)).chain(s => {
-                    this.substitutions = s
+          const resultEffectWithSubs = substitution.chain(s => compose(s, this.substitutions)).chain(s => {
+            this.substitutions = s
 
-                    this.effects.forEach((effect, id) => {
-                        applySubstitution(s, effect).map(e => this.effects.set(id, e))
-                    })
-
-                    return applySubstitution(s, resultEffect)
-                })
-
-                return resultEffectWithSubs
-                    .map(e => this.effects.set(expr.id, e))
-                    .mapLeft(error => this.errors.set(expr.id, { location: location, children: [error] }))
+            this.effects.forEach((effect, id) => {
+              applySubstitution(s, effect).map(e => this.effects.set(id, e))
             })
+
+            return applySubstitution(s, resultEffect)
+          })
+
+          return resultEffectWithSubs
+            .map(e => this.effects.set(expr.id, e))
+            .mapLeft(error => this.errors.set(expr.id, { location: location, children: [error] }))
+        })
     }
 
     // Literals are always Pure
-    exitLiteral(expr: TntBool | TntInt | TntStr): void {
-        this.effects.set(expr.id, ({ kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables }))
+    exitLiteral (expr: TntBool | TntInt | TntStr): void {
+      this.effects.set(expr.id, ({ kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables }))
     }
 
     /*                        Γ ⊢ e: E
      * ------------------------------------------------------------- (OPDEF)
      * Γ ∪ { identifier: op, effect: E } ⊢ (def op(params) = e): Pure
      */
-    exitOpDef(def: TntOpDef): void {
-        if (!this.effects.get(def.expr.id)) {
-            return
-        }
-        const e = this.effects.get(def.expr.id)!
+    exitOpDef (def: TntOpDef): void {
+      if (!this.effects.get(def.expr.id)) {
+        return
+      }
+      const e = this.effects.get(def.expr.id)!
 
-        // Set the expression effect as the definition effect for it to be available at the result
-        this.effects.set(def.id, e)
+      // Set the expression effect as the definition effect for it to be available at the result
+      this.effects.set(def.id, e)
     }
 
     /*     Γ ⊢ e: E
      * ----------------------- (LET)
      * Γ ⊢ <opdef> { e }: E
      */
-    exitLet(expr: TntLet): void {
-        if (this.errors.size > 0) {
-            // Don't try to infer let if there are errors with the defined expression
-            return
-        }
-        const e = this.effects.get(expr.expr.id)!
+    exitLet (expr: TntLet): void {
+      if (this.errors.size > 0) {
+        // Don't try to infer let if there are errors with the defined expression
+        return
+      }
+      const e = this.effects.get(expr.expr.id)!
 
-        this.effects.set(expr.id, e)
+      this.effects.set(expr.id, e)
     }
 
     /*                  Γ ⊢ e: E
      * ---------------------------------------------- (LAMBDA)
      * Γ ⊢ (p0, ..., pn) => e: (E0, ..., En) => E
      */
-    exitLambda(e: TntLambda): void {
-        if (!this.effects.get(e.expr.id)) {
-            return
-        }
-        const resultEffect = this.effects.get(e.expr.id)!
+    exitLambda (e: TntLambda): void {
+      if (!this.effects.get(e.expr.id)) {
+        return
+      }
+      const resultEffect = this.effects.get(e.expr.id)!
 
-        const params = mergeInMany(e.params
-            .map(p => {
-                // BuiltinSignatures values are functions over arity, call it with arity 1 since
-                // arity doesn't matter for lambda-introduced names
-                const paramEffect: Effect = {
-                    kind: 'quantified',
-                    name: `e_${p}_${e.id}`,
-                }
-                return applySubstitution(this.substitutions, paramEffect)
-            }))
+      const params = mergeInMany(e.params
+        .map(p => {
+          // BuiltinSignatures values are functions over arity, call it with arity 1 since
+          // arity doesn't matter for lambda-introduced names
+          const paramEffect: Effect = {
+            kind: 'quantified',
+            name: `e_${p}_${e.id}`,
+          }
+          return applySubstitution(this.substitutions, paramEffect)
+        }))
 
-        params.map(ps => {
-            const effect: Effect = { kind: 'arrow', params: ps, result: resultEffect }
-            this.effects.set(e.id, effect)
-        })
+      params.map(ps => {
+        const effect: Effect = { kind: 'arrow', params: ps, result: resultEffect }
+        this.effects.set(e.id, effect)
+      })
     }
 
-    private freshVar(prefix: string): string {
-        const counter = this.freshVarCounters.get(prefix)! ?? 0
-        this.freshVarCounters.set(prefix, counter + 1)
+    private freshVar (prefix: string): string {
+      const counter = this.freshVarCounters.get(prefix)! ?? 0
+      this.freshVarCounters.set(prefix, counter + 1)
 
-        return `${prefix}${counter}`
+      return `${prefix}${counter}`
     }
 
-    private fetchSignature(opcode: string, scope: bigint, arity: number): Either<string, Effect> {
-        // Assumes a valid number of arguments
-        let effect
-        if (this.builtinSignatures.has(opcode)) {
-            const signatureFunction = this.builtinSignatures.get(opcode)!
-            effect = signatureFunction(arity)
-            return right(this.newInstance(effect))
-        } else {
-            const id = lookupValue(this.currentTable, this.currentScopeTree, opcode, scope)?.reference
-            if (!id || !this.effects.has(id)) {
-                return left(`Signature not found for name: ${opcode}`)
-            }
-            effect = this.effects.get(id)!
-            if (effect.kind == 'arrow') {
-                return right(this.newInstance(effect))
-            }
-
-            return right(effect)
+    private fetchSignature (opcode: string, scope: bigint, arity: number): Either<string, Effect> {
+      // Assumes a valid number of arguments
+      let effect
+      if (this.builtinSignatures.has(opcode)) {
+        const signatureFunction = this.builtinSignatures.get(opcode)!
+        effect = signatureFunction(arity)
+        return right(this.newInstance(effect))
+      } else {
+        const id = lookupValue(this.currentTable, this.currentScopeTree, opcode, scope)?.reference
+        if (!id || !this.effects.has(id)) {
+          return left(`Signature not found for name: ${opcode}`)
         }
+        effect = this.effects.get(id)!
+        if (effect.kind == 'arrow') {
+          return right(this.newInstance(effect))
+        }
+
+        return right(effect)
+      }
     }
 
-    private newInstance(effect: Effect): Effect {
-        const names: Name[] = effectNames(effect)
-        const uniqueNames: Name[] = []
-        names.forEach(name => {
-            if (!uniqueNames.some(n => isEqual(n, name))) {
-                uniqueNames.push(name)
-            }
-        })
-        const subs: Substitutions = uniqueNames.map(name => {
-            return { kind: name.kind, name: name.name, value: { kind: 'quantified', name: this.freshVar('v') } }
-        })
-
-        const result = applySubstitution(subs, effect)
-        if (result.isLeft()) {
-            throw new Error(`Error applying fresh names substitution: ${errorTreeToString(result.value)} `)
-        } else {
-            return result.value
+    private newInstance (effect: Effect): Effect {
+      const names: Name[] = effectNames(effect)
+      const uniqueNames: Name[] = []
+      names.forEach(name => {
+        if (!uniqueNames.some(n => isEqual(n, name))) {
+          uniqueNames.push(name)
         }
+      })
+      const subs: Substitutions = uniqueNames.map(name => {
+        return { kind: name.kind, name: name.name, value: { kind: 'quantified', name: this.freshVar('v') } }
+      })
+
+      const result = applySubstitution(subs, effect)
+      if (result.isLeft()) {
+        throw new Error(`Error applying fresh names substitution: ${errorTreeToString(result.value)} `)
+      } else {
+        return result.value
+      }
     }
 
-    private updateCurrentModule(): void {
-        if (this.moduleStack.length > 0) {
-            this.currentModule = this.moduleStack[this.moduleStack.length - 1]
+    private updateCurrentModule (): void {
+      if (this.moduleStack.length > 0) {
+        this.currentModule = this.moduleStack[this.moduleStack.length - 1]
 
-            const moduleTable = this.lookupTable.get(this.currentModule!.name)!
-            this.currentTable = moduleTable
-            this.currentScopeTree = treeFromModule(this.currentModule)
-        }
+        const moduleTable = this.lookupTable.get(this.currentModule!.name)!
+        this.currentTable = moduleTable
+        this.currentScopeTree = treeFromModule(this.currentModule)
+      }
     }
 }

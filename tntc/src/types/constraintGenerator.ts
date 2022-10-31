@@ -29,7 +29,7 @@ type solvingFunctionType = (constraint: Constraint) => Either<Map<bigint, ErrorT
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
-  constructor(solvingFunction: solvingFunctionType, definitionsTable: LookupTableByModule) {
+  constructor (solvingFunction: solvingFunctionType, definitionsTable: LookupTableByModule) {
     this.solvingFunction = solvingFunction
     this.definitionsTable = definitionsTable
   }
