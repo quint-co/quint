@@ -29,7 +29,7 @@ type solvingFunctionType = (constraint: Constraint) => Either<Map<bigint, ErrorT
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
-  constructor (solvingFunction: solvingFunctionType, definitionsTable: LookupTableByModule) {
+  constructor(solvingFunction: solvingFunctionType, definitionsTable: LookupTableByModule) {
     this.solvingFunction = solvingFunction
     this.definitionsTable = definitionsTable
   }
@@ -136,7 +136,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     }
     const result = this.fetchResult(e.expr.id)
       .chain(resultType => {
-        const paramTypes = mergeInMany(e.params.filter(p => p !== '_').map(p => this.fetchSignature(p, e.expr.id, 2)))
+        const paramTypes = mergeInMany(e.params.map(p => this.fetchSignature(p, e.expr.id, 2)))
         return paramTypes.map((ts): TntType => {
           return { kind: 'oper', args: ts, res: resultType }
         }).mapLeft(e => {
@@ -224,12 +224,16 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
   private fetchSignature (opcode: string, scope: bigint, arity: number): Either<string, TntType> {
     // Assumes a valid number of arguments
+    if (opcode === '_') {
+      return right({ kind: 'var', name: this.freshVar() })
+    }
+
     let signatureFunction: Signature
     if (this.builtinSignatures.has(opcode)) {
       signatureFunction = this.builtinSignatures.get(opcode)!
     } else {
       const id = lookupValue(this.currentTable, this.currentScopeTree, opcode, scope)?.reference
-      if (!id) {
+      if (!id || !this.context.has(id)) {
         throw new Error(`Signature not found for name: ${opcode}`)
       }
       signatureFunction = this.context.get(id)!

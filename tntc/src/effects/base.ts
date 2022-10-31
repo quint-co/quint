@@ -60,7 +60,7 @@ export type Signature = (arity: number) => Effect
 /*
  * A quantified name that can refer either to an effect or a variable
  */
-interface Name {
+export interface Name {
   kind: 'effect' | 'variable'
   name: string
 }

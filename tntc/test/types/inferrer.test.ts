@@ -9,14 +9,18 @@ describe('inferTypes', () => {
   const table: LookupTable = newTable({
     valueDefinitions: [
       { kind: 'param', identifier: 'p', reference: 1n },
-      { kind: 'const', identifier: 'N', reference: 1n },
-      { kind: 'var', identifier: 'x', reference: 1n },
-      { kind: 'var', identifier: 'y', reference: 1n },
-      { kind: 'val', identifier: 'm', reference: 1n },
-      { kind: 'val', identifier: 't', reference: 1n },
-      { kind: 'def', identifier: 'assign' },
-      { kind: 'def', identifier: 'igt' },
-      { kind: 'def', identifier: 'iadd' },
+      { kind: 'param', identifier: 'q', reference: 2n },
+      { kind: 'const', identifier: 'N', reference: 3n },
+      { kind: 'var', identifier: 'x', reference: 4n },
+      { kind: 'var', identifier: 'y', reference: 5n },
+      { kind: 'val', identifier: 'm', reference: 6n },
+      { kind: 'val', identifier: 't', reference: 7n },
+      { kind: 'val', identifier: 'a', reference: 8n },
+      { kind: 'def', identifier: 'b', reference: 9n },
+      { kind: 'val', identifier: 'c', reference: 10n },
+      { kind: 'def', identifier: 'd', reference: 11n },
+      { kind: 'param', identifier: 'S', reference: 12n },
+      { kind: 'param', identifier: 'f', reference: 13n },
     ],
   })
 
@@ -25,9 +29,9 @@ describe('inferTypes', () => {
   it('infers types for basic expressions', () => {
     const tntModule = buildModuleWithDefs([
       'def a = 1 + 2',
-      'def b(x, y) = x + y',
-      'def c = val x = 2 { x }',
-      'def d(S) = S.map(x => x + 10)',
+      'def b(p, q) = p + q',
+      'val c = val m = 2 { m }',
+      'def d(S) = S.map(p => p + 10)',
     ])
 
     const result = inferTypes(tntModule, definitionsTable)
