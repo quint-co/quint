@@ -17,7 +17,7 @@ import { TntApp, TntBool, TntConst, TntEx, TntInt, TntLambda, TntLet, TntModule,
 import { TntType, typeNames } from '../tntTypes'
 import { expressionToString } from '../IRprinting'
 import { Either, right, left, mergeInMany } from '@sweet-monads/either'
-import { buildErrorTree, ErrorTree, Error } from '../errorTree'
+import { buildErrorTree, ErrorTree, Error, errorTreeToString } from '../errorTree'
 import { getSignatures } from './builtinSignatures'
 import { Constraint, Signature, TypeScheme } from './base'
 import { Substitutions, applySubstitution } from './substitutions'
@@ -35,14 +35,13 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   }
 
   // Public values with results by expression ID
-  types: Map<bigint, TntType> = new Map<bigint, TntType>()
+  types: Map<bigint, TypeScheme> = new Map<bigint, TypeScheme>()
   errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
 
   private solvingFunction: solvingFunctionType
   private constraints: Constraint[] = []
   private freshVarCounter: number = 0
 
-  private context: Map<bigint, Signature> = new Map<bigint, Signature>()
   private builtinSignatures: Map<string, Signature> = getSignatures()
   private definitionsTable: LookupTableByModule
 
@@ -71,11 +70,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   }
 
   enterVar (e: TntVar) {
-    this.context.set(e.id, (_) => ({ type: e.type, variables: new Set() }))
+    this.addToResults(e.id, right(toScheme(e.type)))
   }
 
   enterConst (e: TntConst) {
-    this.context.set(e.id, (_) => ({ type: e.type, variables: new Set() }))
+    this.addToResults(e.id, right(toScheme(e.type)))
   }
 
   //     n: t ∈ Γ
@@ -85,12 +84,12 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     if (this.errors.size !== 0) {
       return
     }
-    this.addToResults(e.id, this.fetchSignature(e.name, e.id, 2))
+    this.addToResults(e.id, this.fetchSignature(e.name, e.id, 2).map(toScheme))
   }
 
   // Literals have always the same type and the empty constraint
   enterLiteral (e: TntBool | TntInt | TntStr) {
-    this.addToResults(e.id, right({ kind: e.kind }))
+    this.addToResults(e.id, right(toScheme({ kind: e.kind })))
   }
 
   //   op: q ∈ Γ   Γ ⊢  p0, ..., pn: (t0, c0), ..., (tn, cn)   a is fresh
@@ -102,15 +101,15 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     }
     const result = this.fetchSignature(e.opcode, e.id, e.args.length)
       .chain(t1 => {
-        const argsResult: Either<Error, TntType[]> = mergeInMany(e.args.map(e => this.fetchResult(e.id)))
+        const argsResult: Either<Error, TypeScheme[]> = mergeInMany(e.args.map(e => this.fetchResult(e.id)))
 
         return argsResult
-          .map((argsTypes: TntType[]): TntType => {
+          .map((argsTypes: TypeScheme[]): TypeScheme => {
             const a: TntType = { kind: 'var', name: this.freshVar() }
-            const t2: TntType = { kind: 'oper', args: argsTypes, res: a }
+            const t2: TntType = { kind: 'oper', args: argsTypes.map(s => s.type), res: a }
             const c: Constraint = { kind: 'eq', types: [t1, t2], sourceId: e.id }
             this.constraints.push(c)
-            return a
+            return toScheme(a)
           })
       })
 
@@ -120,16 +119,6 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   //    Γ ∪ {p0: t0, ..., pn: tn} ⊢ e: (te, c)    t0, ..., tn are fresh
   // ---------------------------------------------------------------------- (LAMBDA)
   //            Γ ⊢ (p0, ..., pn) => e: ((t0, ..., tn) => te, c)
-  enterLambda (e: TntLambda) {
-    e.params.filter(p => p !== '_').forEach(p => {
-      const t: TntType = { kind: 'var', name: this.freshVar() }
-      const id = lookupValue(this.currentTable, this.currentScopeTree, p, e.expr.id)?.reference
-      if (id) {
-        this.context.set(id, (_) => ({ type: t, variables: new Set() }))
-      }
-    })
-  }
-
   exitLambda (e: TntLambda) {
     if (this.errors.size !== 0) {
       return
@@ -137,23 +126,15 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     const result = this.fetchResult(e.expr.id)
       .chain(resultType => {
         const paramTypes = mergeInMany(e.params.map(p => this.fetchSignature(p, e.expr.id, 2)))
-        return paramTypes.map((ts): TntType => {
-          return { kind: 'oper', args: ts, res: resultType }
+        return paramTypes.map((ts): TypeScheme => {
+          const newType: TntType = { kind: 'oper', args: ts, res: resultType.type }
+          return { variables: typeNames(newType), type: newType }
         }).mapLeft(e => {
           throw new Error(`This should be impossible: Lambda variables not found: ${e.join(', ')}`)
         })
       })
 
     this.addToResults(e.id, result)
-
-    e.params.forEach(p => {
-      const id = lookupValue(this.currentTable, this.currentScopeTree, p, e.expr.id)?.reference
-      if (id) {
-        this.context.delete(id)
-      }
-    })
-    // TODO: delete from result
-    // And I should probably merge context and results.
   }
 
   //   Γ ⊢ e1: (t1, c1)  s = solve(c1)     s(Γ ∪ {n: t1}) ⊢ e2: (t2, c2)
@@ -178,35 +159,33 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     this.fetchResult(e.expr.id)
       .mapLeft(err => this.errors.set(e.id, err))
       .map(t => {
-        this.addToResults(e.id, right(t))
+        this.addToResults(e.id, right({ variables: typeNames(t.type), type: t.type }))
 
         const constraint: Constraint = { kind: 'conjunction', constraints: this.constraints, sourceId: 0n }
         this.solvingFunction(constraint)
           .mapLeft(errors => errors.forEach((err, id) => this.errors.set(id, err)))
           .map((subs) => {
             // Apply substitution to environment
-            this.types = new Map<bigint, TntType>(
-              [...this.types.entries()].map(([id, te]) => [id, applySubstitution(subs, te)])
+            this.types = new Map<bigint, TypeScheme>(
+              [...this.types.entries()].map(([id, te]) => {
+                const newType = applySubstitution(subs, te.type)
+                return [id, { variables: typeNames(newType), type: newType }]
+              })
             )
           })
       })
 
     // Remove solved constraints
     this.constraints = []
-
-    // Add operator type to the context
-    this.fetchResult(e.id).map(operatorType => {
-      this.context.set(e.id, (_) => ({ type: operatorType, variables: typeNames(operatorType) }))
-    })
   }
 
-  private addToResults (exprId: bigint, result: Either<Error, TntType>) {
+  private addToResults (exprId: bigint, result: Either<Error, TypeScheme>) {
     result
       .mapLeft(err => this.errors.set(exprId, buildErrorTree(this.location, err)))
       .map(r => this.types.set(exprId, r))
   }
 
-  private fetchResult (id: bigint): Either<ErrorTree, TntType> {
+  private fetchResult (id: bigint): Either<ErrorTree, TypeScheme> {
     const successfulResult = this.types.get(id)
     const failedResult = this.errors.get(id)
     if (failedResult) {
@@ -214,7 +193,8 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     } else if (successfulResult) {
       return right(successfulResult)
     } else {
-      throw new Error(`Couldn't find any result for id ${id}`)
+      this.errors.forEach((err, id) => console.log(`Error in ${id}: ${errorTreeToString(err)}`))
+      throw new Error(`Couldn't find any result for id ${id} while ${this.location}`)
     }
   }
 
@@ -222,7 +202,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     return `t${this.freshVarCounter++}`
   }
 
-  private fetchSignature (opcode: string, scope: bigint, arity: number): Either<string, TntType> {
+  private fetchSignature (opcode: string, scope: bigint, arity: number): Either<ErrorTree, TntType> {
     // Assumes a valid number of arguments
     if (opcode === '_') {
       return right({ kind: 'var', name: this.freshVar() })
@@ -231,15 +211,21 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     let signatureFunction: Signature
     if (this.builtinSignatures.has(opcode)) {
       signatureFunction = this.builtinSignatures.get(opcode)!
+      const signature = signatureFunction(arity)
+      return right(this.newInstance(signature))
     } else {
-      const id = lookupValue(this.currentTable, this.currentScopeTree, opcode, scope)?.reference
-      if (!id || !this.context.has(id)) {
+      const def = lookupValue(this.currentTable, this.currentScopeTree, opcode, scope)
+      const id = def?.reference
+      if (!def || !id) {
         throw new Error(`Signature not found for name: ${opcode}`)
       }
-      signatureFunction = this.context.get(id)!
+
+      if (def.kind === 'param') {
+        return right({ kind: 'var', name: `t_${opcode}_${id}` })
+      }
+
+      return this.fetchResult(id).map(t => this.newInstance(t))
     }
-    const signature = signatureFunction(arity)
-    return right(this.newInstance(signature))
   }
 
   private newInstance (type: TypeScheme): TntType {
@@ -260,4 +246,8 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       this.currentScopeTree = treeFromModule(this.currentModule)
     }
   }
+}
+
+function toScheme (type: TntType): TypeScheme {
+  return { variables: new Set([]), type: type }
 }

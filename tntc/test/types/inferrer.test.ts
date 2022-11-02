@@ -1,11 +1,13 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { buildModuleWithDefs } from '../builders/ir'
-import { typeToString } from '../../src/IRprinting'
 import { inferTypes } from '../../src/types/inferrer'
 import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
+import { typeSchemeToString } from '../../src/types/printing'
 
 describe('inferTypes', () => {
+  // Names are mocked without scope to keep tests simple
+  // Be careful not to use the same name twice in different scopes
   const table: LookupTable = newTable({
     valueDefinitions: [
       { kind: 'param', identifier: 'p', reference: 1n },
@@ -21,6 +23,7 @@ describe('inferTypes', () => {
       { kind: 'def', identifier: 'd', reference: 11n },
       { kind: 'param', identifier: 'S', reference: 12n },
       { kind: 'param', identifier: 'f', reference: 13n },
+      { kind: 'param', identifier: 'g', reference: 14n },
     ],
   })
 
@@ -37,7 +40,7 @@ describe('inferTypes', () => {
     const result = inferTypes(tntModule, definitionsTable)
     assert.isTrue(result.isRight())
     result.map(r => {
-      const stringTypes = Array.from(r.entries()).map(([id, type]) => [id, typeToString(type)])
+      const stringTypes = Array.from(r.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
       assert.sameDeepMembers(stringTypes, [
         [1n, 'int'],
         [2n, 'int'],
@@ -66,17 +69,17 @@ describe('inferTypes', () => {
   it('infers types for high-order operators', () => {
     const tntModule = buildModuleWithDefs([
       'def a(f, p) = f(p)',
-      'def b(f, p) = f(p) + f(not(p))',
+      'def b(g, q) = g(q) + g(not(q))',
     ])
 
     const result = inferTypes(tntModule, definitionsTable)
     assert.isTrue(result.isRight())
     result.map(r => {
-      const stringTypes = Array.from(r.entries()).map(([id, type]) => [id, typeToString(type)])
+      const stringTypes = Array.from(r.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
       assert.sameDeepMembers(stringTypes, [
-        [1n, 't1'],
-        [2n, 't2'],
-        [3n, '((t1) => t2, t1) => t2'],
+        [1n, '∀ t0 . t0'],
+        [2n, '∀ t0 . t0'],
+        [3n, '∀ t0, t1 . ((t0) => t1, t0) => t1'],
         [4n, 'bool'],
         [5n, 'int'],
         [6n, 'bool'],
@@ -90,7 +93,7 @@ describe('inferTypes', () => {
 
   it('fails when types are not unifiable', () => {
     const tntModule = buildModuleWithDefs([
-      'def a = 1.map(x => x + 10)',
+      'def a = 1.map(p => p + 10)',
     ])
 
     const result = inferTypes(tntModule, definitionsTable)
@@ -98,9 +101,9 @@ describe('inferTypes', () => {
     result.mapLeft(errors => {
       assert.sameDeepMembers([...errors.entries()], [
         [6n, {
-          location: 'Trying to unify (set(t2), (t2) => t3) => set(t3) and (int, (int) => int) => t4',
+          location: 'Trying to unify (set(t1), (t1) => t2) => set(t2) and (int, (int) => int) => t3',
           children: [{
-            location: 'Trying to unify set(t2) and int',
+            location: 'Trying to unify set(t1) and int',
             message: "Couldn't unify set and int",
             children: [],
           }],

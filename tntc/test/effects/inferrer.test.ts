@@ -12,14 +12,15 @@ describe('inferEffects', () => {
   const table: LookupTable = newTable({
     valueDefinitions: [
       { kind: 'param', identifier: 'p', reference: 1n },
-      { kind: 'const', identifier: 'N', reference: 1n },
-      { kind: 'var', identifier: 'x', reference: 1n },
-      { kind: 'val', identifier: 'm', reference: 1n },
-      { kind: 'val', identifier: 't', reference: 1n },
-      { kind: 'def', identifier: 'assign' },
-      { kind: 'def', identifier: 'foldl' },
-      { kind: 'def', identifier: 'iadd' },
-      { kind: 'def', identifier: 'my_add', reference: 1n },
+      { kind: 'const', identifier: 'N', reference: 2n },
+      { kind: 'var', identifier: 'x', reference: 3n },
+      { kind: 'val', identifier: 'm', reference: 2n },
+      { kind: 'val', identifier: 't', reference: 5n },
+      { kind: 'def', identifier: 'f', reference: 6n },
+      { kind: 'param', identifier: 'g', reference: 7n },
+      { kind: 'def', identifier: 'my_add', reference: 2n },
+      { kind: 'def', identifier: 'a', reference: 9n },
+      { kind: 'val', identifier: 'b', reference: 10n },
     ],
   })
 
@@ -66,8 +67,8 @@ describe('inferEffects', () => {
 
     effects
       .map((es: Map<bigint, Effect>) => {
-        assert.deepEqual(effectToString(es.get(4n)!), "(Read[v0]) => Read[v0, 'x']")
-        assert.deepEqual(effectToString(es.get(9n)!), '(Read[v4]) => Read[v4]')
+        assert.deepEqual(effectToString(es.get(4n)!), "(Read[v2]) => Read[v2, 'x']")
+        assert.deepEqual(effectToString(es.get(9n)!), '(Read[v2]) => Read[v2]')
         return true
       })
       .mapLeft(e => {
@@ -100,7 +101,7 @@ describe('inferEffects', () => {
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
-    const expectedEffect = "(Read[v5]) => Read[v5, 'x']"
+    const expectedEffect = "(Read[v1]) => Read[v1, 'x']"
 
     effects
       .map((es: Map<bigint, Effect>) => assert.deepEqual(effectToString(es.get(8n)!), expectedEffect))
@@ -112,7 +113,7 @@ describe('inferEffects', () => {
 
   it('infers effects for operators defined with let-in', () => {
     const tntModule = buildModuleWithDefs([
-      'def A = val m = x { m }',
+      'val b = val m = x { m }',
     ])
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
@@ -129,7 +130,7 @@ describe('inferEffects', () => {
 
   it('infers pure effect for literals and constants', () => {
     const tntModule = buildModuleWithDefs([
-      'def A = N + 1',
+      'val b = N + 1',
     ])
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
@@ -146,12 +147,12 @@ describe('inferEffects', () => {
 
   it('infers polymorphic high order operators', () => {
     const tntModule = buildModuleWithDefs([
-      'def a(f, p) = f(p)',
+      'def a(g, p) = g(p)',
     ])
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
-    const expectedEffect = '((e_p_3) => e0, e_p_3) => e0'
+    const expectedEffect = '((e_p_1) => e0, e_p_1) => e0'
 
     effects
       .map((es: Map<bigint, Effect>) => assert.deepEqual(effectToString(es.get(3n)!), expectedEffect))
@@ -163,12 +164,12 @@ describe('inferEffects', () => {
 
   it('infers monomorphic high order operators', () => {
     const tntModule = buildModuleWithDefs([
-      'def a(f, p) = f(p) + f(not(p))',
+      'def a(g, p) = g(p) + g(not(p))',
     ])
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
-    const expectedEffect = '((Read[v1] & Temporal[v2]) => Read[v6], Read[v1] & Temporal[v2]) => Read[v6]'
+    const expectedEffect = '((Read[v0] & Temporal[v1]) => Read[v2], Read[v0] & Temporal[v1]) => Read[v2]'
 
     effects
       .map((es: Map<bigint, Effect>) => assert.deepEqual(effectToString(es.get(7n)!), expectedEffect))
@@ -188,7 +189,7 @@ describe('inferEffects', () => {
     effects
       .mapLeft(e => e.forEach(v => assert.deepEqual(v, {
         location: 'Trying to infer effect for operator application in undefined(1)',
-        message: 'Signature not found for operator: undefined',
+        message: 'Signature not found for name: undefined',
         children: [],
       })))
 
@@ -204,8 +205,8 @@ describe('inferEffects', () => {
 
     effects
       .mapLeft(e => e.forEach(v => assert.deepEqual(v, {
-        location: 'Inferring effect for name undefined',
-        message: "Couldn't find definition for undefined in lookup table in scope",
+        location: 'Inferring effect for undefined',
+        message: 'Signature not found for name: undefined',
         children: [],
       })))
 
@@ -229,11 +230,11 @@ describe('inferEffects', () => {
                 location: "Trying to unify variables [] and ['x']",
                 message: 'Expected variables [] and [x] to be the same',
               }],
-              location: "Trying to unify Read[v8] and Read[v1] & Update['x']",
+              location: "Trying to unify Read[v4] and Read[v1] & Update['x']",
             }],
-            location: "Trying to unify (Read['x'], Read[v5]) => Read[v8] and (Read[v0], Read[v1]) => Read[v1] & Update[v0]",
+            location: "Trying to unify (Read['x'], Read[v3]) => Read[v4] and (Read[v0], Read[v1]) => Read[v1] & Update[v0]",
           }],
-          location: "Trying to unify (Read[v4], Read[v5], (Read[v4], Read[v5]) => Read[v8]) => Read[v4, v5, v8] and (Read['x'], e_p_5, (Read[v0], Read[v1]) => Read[v1] & Update[v0]) => e0",
+          location: "Trying to unify (Read[v2], Read[v3], (Read[v2], Read[v3]) => Read[v4]) => Read[v2, v3, v4] and (Read['x'], e_p_1, (Read[v0], Read[v1]) => Read[v1] & Update[v0]) => e0",
         }],
         location: 'Trying to infer effect for operator application in foldl(x, p, assign)',
       })))
@@ -252,7 +253,7 @@ describe('inferEffects', () => {
       .mapLeft(e => assert.sameDeepMembers(Array.from(e.values()), [
         {
           location: 'Trying to infer effect for operator application in undefined(1)',
-          message: 'Signature not found for operator: undefined',
+          message: 'Signature not found for name: undefined',
           children: [],
         },
       ]))
