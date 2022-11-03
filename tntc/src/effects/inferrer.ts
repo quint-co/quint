@@ -308,6 +308,10 @@ class EffectInferrerVisitor implements IRVisitor {
 
     private fetchSignature (opcode: string, scope: bigint, arity: number): Either<ErrorTree, Effect> {
       // Assumes a valid number of arguments
+      if (opcode === '_') {
+        return right({ kind: 'quantified', name: this.freshVar('_e') })
+      }
+
       let effect
       if (this.builtinSignatures.has(opcode)) {
         const signatureFunction = this.builtinSignatures.get(opcode)!
