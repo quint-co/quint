@@ -8,10 +8,11 @@ import { buildModuleWithDefs } from '../builders/ir'
 import { constraintToString } from '../../src/types/printing'
 import { ErrorTree } from '../../src/errorTree'
 import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
+import { defaultValueDefinitions } from '../../src/definitionsCollector'
 
 describe('ConstraintGeneratorVisitor', () => {
   const table: LookupTable = newTable({
-    valueDefinitions: [
+    valueDefinitions: defaultValueDefinitions().concat([
       { kind: 'param', identifier: 'p', reference: 1n },
       { kind: 'var', identifier: 's', reference: 2n },
       { kind: 'param', identifier: 'x', reference: 3n },
@@ -20,7 +21,7 @@ describe('ConstraintGeneratorVisitor', () => {
       { kind: 'param', identifier: 'S', reference: 6n },
       { kind: 'val', identifier: 'm', reference: 7n },
       { kind: 'val', identifier: 't', reference: 8n },
-    ],
+    ]),
   })
 
   const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
@@ -31,6 +32,22 @@ describe('ConstraintGeneratorVisitor', () => {
     ])
 
     const expectedConstraint = '(int, int) => int ~ (t_x_3, int) => t0 /\\ (set(t1), (t1) => t2) => set(t2) ~ (t_S_6, (t_x_3) => t0) => t3'
+
+    const solvingFunction = (c: Constraint) => {
+      assert.deepEqual(constraintToString(c), expectedConstraint)
+      return right([])
+    }
+
+    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
+    walkModule(visitor, tntModule)
+  })
+
+  it('handles underscore', () => {
+    const tntModule = buildModuleWithDefs([
+      'def d(S) = S.map(_ => 10)',
+    ])
+
+    const expectedConstraint = '(set(t1), (t1) => t2) => set(t2) ~ (t_S_6, (t0) => int) => t3'
 
     const solvingFunction = (c: Constraint) => {
       assert.deepEqual(constraintToString(c), expectedConstraint)

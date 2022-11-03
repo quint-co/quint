@@ -2,15 +2,15 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { inferEffects } from '../../src/effects/inferrer'
 import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
-import { Effect, Signature } from '../../src/effects/base'
+import { Effect } from '../../src/effects/base'
 import { buildModuleWithDefs } from '../builders/ir'
-import { parseEffectOrThrow } from '../../src/effects/parser'
 import { effectToString } from '../../src/effects/printing'
 import { errorTreeToString } from '../../src/errorTree'
+import { defaultValueDefinitions } from '../../src/definitionsCollector'
 
 describe('inferEffects', () => {
   const table: LookupTable = newTable({
-    valueDefinitions: [
+    valueDefinitions: defaultValueDefinitions().concat([
       { kind: 'param', identifier: 'p', reference: 1n },
       { kind: 'const', identifier: 'N', reference: 2n },
       { kind: 'var', identifier: 'x', reference: 3n },
@@ -21,31 +21,18 @@ describe('inferEffects', () => {
       { kind: 'def', identifier: 'my_add', reference: 2n },
       { kind: 'def', identifier: 'a', reference: 9n },
       { kind: 'val', identifier: 'b', reference: 10n },
-    ],
+      { kind: 'const', identifier: 'S', reference: 11n },
+    ]),
   })
 
   const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
-
-  const readManyEffect = (arity: number) => {
-    const rs = Array.from(Array(arity).keys()).map(i => `r${i}`)
-    const args = rs.map(r => `Read[${r}]`)
-    return parseEffectOrThrow(`(${args.join(', ')}) => Read[${rs.join(', ')}]`)
-  }
-
-  const signatures: Map<string, Signature> = new Map<string, Signature>([
-    ['assign', () => parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r2] & Update[r1]')],
-    ['multipleArityOp', readManyEffect],
-    ['foldl', () => parseEffectOrThrow('(Read[r1], Read[r2], (Read[r1], Read[r2]) => Read[r3]) => Read[r1, r2, r3]')],
-    ['iadd', () => parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1, r2]')],
-    ['not', () => parseEffectOrThrow('(Read[r1] & Temporal[t1]) => Read[r1] & Temporal[t1]')],
-  ])
 
   it('infers simple operator effect', () => {
     const tntModule = buildModuleWithDefs([
       'def a(p) = x <- p',
     ])
 
-    const effects = inferEffects(signatures, definitionsTable, tntModule)
+    const effects = inferEffects(definitionsTable, tntModule)
 
     const expectedEffect = "(Read[v1]) => Read[v1] & Update['x']"
 
@@ -59,16 +46,16 @@ describe('inferEffects', () => {
 
   it('infers application of multiple arity opertors', () => {
     const tntModule = buildModuleWithDefs([
-      'def a(p) = multipleArityOp(p, x)',
-      'def b(p) = multipleArityOp(p, 1, 2)',
+      'def a(p) = and(p, x)',
+      'def b(p) = and(p, 1, 2)',
     ])
 
-    const effects = inferEffects(signatures, definitionsTable, tntModule)
+    const effects = inferEffects(definitionsTable, tntModule)
 
     effects
       .map((es: Map<bigint, Effect>) => {
-        assert.deepEqual(effectToString(es.get(4n)!), "(Read[v2]) => Read[v2, 'x']")
-        assert.deepEqual(effectToString(es.get(9n)!), '(Read[v2]) => Read[v2]')
+        assert.deepEqual(effectToString(es.get(4n)!), "(Read[v4] & Temporal[v5]) => Read[v4, 'x'] & Temporal[v5]")
+        assert.deepEqual(effectToString(es.get(9n)!), '(Read[v4] & Temporal[v5]) => Read[v4] & Temporal[v5]')
         return true
       })
       .mapLeft(e => {
@@ -82,9 +69,9 @@ describe('inferEffects', () => {
       'def a(p) = foldl(x, p, iadd)',
     ])
 
-    const effects = inferEffects(signatures, definitionsTable, tntModule)
+    const effects = inferEffects(definitionsTable, tntModule)
 
-    const expectedEffect = "(Read[v1]) => Read[v1, 'x']"
+    const expectedEffect = "(Read[v0]) => Read[v0, 'x']"
 
     effects
       .map((es: Map<bigint, Effect>) => assert.deepEqual(effectToString(es.get(5n)!), expectedEffect))
@@ -99,9 +86,9 @@ describe('inferEffects', () => {
       'def a(p) = def my_add = iadd { foldl(x, p, my_add) }',
     ])
 
-    const effects = inferEffects(signatures, definitionsTable, tntModule)
+    const effects = inferEffects(definitionsTable, tntModule)
 
-    const expectedEffect = "(Read[v1]) => Read[v1, 'x']"
+    const expectedEffect = "(Read[v2]) => Read[v2, 'x']"
 
     effects
       .map((es: Map<bigint, Effect>) => assert.deepEqual(effectToString(es.get(8n)!), expectedEffect))
@@ -116,7 +103,7 @@ describe('inferEffects', () => {
       'val b = val m = x { m }',
     ])
 
-    const effects = inferEffects(signatures, definitionsTable, tntModule)
+    const effects = inferEffects(definitionsTable, tntModule)
 
     const expectedEffect = "Read['x']"
 
@@ -133,7 +120,7 @@ describe('inferEffects', () => {
       'val b = N + 1',
     ])
 
-    const effects = inferEffects(signatures, definitionsTable, tntModule)
+    const effects = inferEffects(definitionsTable, tntModule)
 
     const expectedEffect = 'Pure'
 
@@ -145,12 +132,29 @@ describe('inferEffects', () => {
       })
   })
 
+  it('handles underscore', () => {
+    const tntModule = buildModuleWithDefs([
+      'val b = N.map(_ => 1)',
+    ])
+
+    const effects = inferEffects(definitionsTable, tntModule)
+
+    const expectedEffect = 'Pure'
+
+    effects
+      .map((es: Map<bigint, Effect>) => assert.deepEqual(effectToString(es.get(1n)!), expectedEffect))
+      .mapLeft(e => {
+        const errors = Array.from(e.values())
+        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
+      })
+  })
+
   it('infers polymorphic high order operators', () => {
     const tntModule = buildModuleWithDefs([
       'def a(g, p) = g(p)',
     ])
 
-    const effects = inferEffects(signatures, definitionsTable, tntModule)
+    const effects = inferEffects(definitionsTable, tntModule)
 
     const expectedEffect = '((e_p_1) => e0, e_p_1) => e0'
 
@@ -167,7 +171,7 @@ describe('inferEffects', () => {
       'def a(g, p) = g(p) + g(not(p))',
     ])
 
-    const effects = inferEffects(signatures, definitionsTable, tntModule)
+    const effects = inferEffects(definitionsTable, tntModule)
 
     const expectedEffect = '((Read[v0] & Temporal[v1]) => Read[v2], Read[v0] & Temporal[v1]) => Read[v2]'
 
@@ -184,7 +188,7 @@ describe('inferEffects', () => {
       'def A = undefinedOperator(1)',
     ])
 
-    const effects = inferEffects(signatures, definitionsTable, tntModule)
+    const effects = inferEffects(definitionsTable, tntModule)
 
     effects
       .mapLeft(e => e.forEach(v => assert.deepEqual(v, {
@@ -201,12 +205,12 @@ describe('inferEffects', () => {
       'def a(p) = foldl(x, p, undefinedOperator)',
     ])
 
-    const effects = inferEffects(signatures, definitionsTable, tntModule)
+    const effects = inferEffects(definitionsTable, tntModule)
 
     effects
       .mapLeft(e => e.forEach(v => assert.deepEqual(v, {
         location: 'Inferring effect for undefinedOperator',
-        message: 'Signature not found for name: undefinedOperator',
+        message: "Couldn't find undefinedOperator in the lookup table",
         children: [],
       })))
 
@@ -215,10 +219,10 @@ describe('inferEffects', () => {
 
   it('returns error when operator signature is not unifiable with args', () => {
     const tntModule = buildModuleWithDefs([
-      'def a(p) = foldl(x, p, assign)',
+      'def a = S.map(p => x <- p)',
     ])
 
-    const effects = inferEffects(signatures, definitionsTable, tntModule)
+    const effects = inferEffects(definitionsTable, tntModule)
 
     effects
       .mapLeft(e => e.forEach(v => assert.deepEqual(v, {
@@ -230,13 +234,13 @@ describe('inferEffects', () => {
                 location: "Trying to unify variables [] and ['x']",
                 message: 'Expected variables [] and [x] to be the same',
               }],
-              location: "Trying to unify Read[v4] and Read[v1] & Update['x']",
+              location: "Trying to unify Read[v3] and Update['x']",
             }],
-            location: "Trying to unify (Read['x'], Read[v3]) => Read[v4] and (Read[v0], Read[v1]) => Read[v1] & Update[v0]",
+            location: "Trying to unify (Pure) => Read[v3] and (Read[v1]) => Read[v1] & Update['x']",
           }],
-          location: "Trying to unify (Read[v2], Read[v3], (Read[v2], Read[v3]) => Read[v4]) => Read[v2, v3, v4] and (Read['x'], e_p_1, (Read[v0], Read[v1]) => Read[v1] & Update[v0]) => e0",
+          location: "Trying to unify (Read[v2], (Read[v2]) => Read[v3]) => Read[v2, v3] and (Pure, (Read[v1]) => Read[v1] & Update['x']) => e1",
         }],
-        location: 'Trying to infer effect for operator application in foldl(x, p, assign)',
+        location: 'Trying to infer effect for operator application in map(S, (p => assign(x, p)))',
       })))
 
     assert.isTrue(effects.isLeft())
@@ -247,7 +251,7 @@ describe('inferEffects', () => {
       'def A = val t = undefined(1) { t }',
     ])
 
-    const effects = inferEffects(signatures, definitionsTable, tntModule)
+    const effects = inferEffects(definitionsTable, tntModule)
 
     effects
       .mapLeft(e => assert.sameDeepMembers(Array.from(e.values()), [

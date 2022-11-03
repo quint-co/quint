@@ -157,7 +157,6 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     }
 
     this.fetchResult(e.expr.id)
-      .mapLeft(err => this.errors.set(e.id, err))
       .map(t => {
         this.addToResults(e.id, right({ variables: typeNames(t.type), type: t.type }))
 

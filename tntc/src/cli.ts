@@ -21,7 +21,6 @@ import { formatError } from './errorReporter'
 
 import yargs from 'yargs/yargs'
 import { inferEffects } from './effects/inferrer'
-import { getSignatures } from './effects/builtinSignatures'
 import { checkModes } from './effects/modeChecker'
 import { LookupTableByModule } from './lookupTable'
 import { errorTreeToString } from './errorTree'
@@ -70,7 +69,7 @@ function typecheck (argv: any) {
     })
   })
 
-  const effects = inferEffects(getSignatures(), definitionsTable, parseResult.module)
+  const effects = inferEffects(definitionsTable, parseResult.module)
   effects.map(e => e.forEach((value, key) => console.log(`${key}: ${effectToString(value)}`)))
 
   effects.mapLeft(e => e.forEach((value, key) => {

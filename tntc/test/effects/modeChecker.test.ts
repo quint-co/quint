@@ -2,9 +2,7 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { inferEffects } from '../../src/effects/inferrer'
 import { newTable, LookupTable, LookupTableByModule } from '../../src/lookupTable'
-import { Signature } from '../../src/effects/base'
 import { buildModuleWithDefs } from '../builders/ir'
-import { parseEffectOrThrow } from '../../src/effects/parser'
 import { ErrorTree, errorTreeToString } from '../../src/errorTree'
 import { OpQualifier, TntModule } from '../../src/tntIr'
 import { Either } from '@sweet-monads/either'
@@ -27,16 +25,8 @@ describe('checkModes', () => {
 
   const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
 
-  const signatures: Map<string, Signature> = new Map<string, Signature>([
-    ['assign', () => parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r2] & Update[r1]')],
-    ['always', () => parseEffectOrThrow('(Read[r] & Temporal[t]) => Temporal[r, t]')],
-    ['iadd', () => parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1, r2]')],
-    ['igt', () => parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1, r2]')],
-    ['not', () => parseEffectOrThrow('(Read[r] & Temporal[t]) => Read[r] & Temporal[t]')],
-  ])
-
   function checkModuleModes (tntModule: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, OpQualifier>> {
-    const effects = inferEffects(signatures, definitionsTable, tntModule)
+    const effects = inferEffects(definitionsTable, tntModule)
 
     effects
       .mapLeft(e => {

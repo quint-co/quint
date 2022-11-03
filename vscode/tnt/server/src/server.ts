@@ -27,7 +27,7 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { parsePhase1, parsePhase2, Loc, LookupTableByModule, inferEffects, getSignatures, TntModule, effectToString, errorTreeToString, typeSchemeToString, inferTypes, checkModes, Effect } from 'tntc'
+import { parsePhase1, parsePhase2, Loc, LookupTableByModule, inferEffects, TntModule, effectToString, errorTreeToString, typeSchemeToString, inferTypes, checkModes, Effect } from 'tntc'
 
 interface ParsingResult {
   tntModule: TntModule
@@ -286,7 +286,7 @@ function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule,
 }
 
 function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule): Diagnostic[] {
-  const result = inferEffects(getSignatures(), table, tntModule)
+  const result = inferEffects(table, tntModule)
   const diagnostics: Diagnostic[] = []
   const effects: Map<Loc, string> = new Map<Loc, string>()
   result.mapLeft(e => {
