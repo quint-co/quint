@@ -17,7 +17,7 @@ import { TntApp, TntBool, TntConst, TntEx, TntInt, TntLambda, TntLet, TntModule,
 import { TntType, typeNames } from '../tntTypes'
 import { expressionToString } from '../IRprinting'
 import { Either, right, left, mergeInMany } from '@sweet-monads/either'
-import { buildErrorTree, ErrorTree, Error, errorTreeToString } from '../errorTree'
+import { buildErrorTree, ErrorTree, Error, errorTreeToString, buildErrorLeaf } from '../errorTree'
 import { getSignatures } from './builtinSignatures'
 import { Constraint, Signature, TypeScheme } from './base'
 import { Substitutions, applySubstitution } from './substitutions'
@@ -217,7 +217,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       const def = lookupValue(this.currentTable, this.currentScopeTree, opcode, scope)
       const id = def?.reference
       if (!def || !id) {
-        throw new Error(`Signature not found for name: ${opcode}`)
+        return left(buildErrorLeaf(this.location, `Signature not found for name: ${opcode}`))
       }
 
       if (def.kind === 'param') {
