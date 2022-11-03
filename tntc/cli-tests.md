@@ -219,6 +219,36 @@ tntc typecheck ../examples/tictactoe/tictactoe.tnt
 <!-- !test check TicTacToe - Types & Effects -->
     expect exit code 0
 
+### OK on parse ics23
+
+This command parses the ics23 example.
+
+<!-- !test program
+tntc parse ../examples/ics23/ics23.tnt
+-->
+
+```sh
+tntc parse ../examples/ics23/ics23.tnt
+```
+
+<!-- !test check ics23 -->
+    expect exit code 0
+ 
+### OK on typecheck ics23
+
+This command typechecks the ics23 example.
+
+<!-- !test program
+tntc typecheck ../examples/ics23/ics23.tnt
+-->
+
+```sh
+tntc typecheck ../examples/ics23/ics23.tnt
+```
+
+<!-- !test check ics23 - Types & Effects -->
+    expect exit code 0
+
 ### OK on parse ERC20
 
 This command parses the ERC20 example.
