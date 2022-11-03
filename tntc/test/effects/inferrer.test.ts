@@ -181,15 +181,15 @@ describe('inferEffects', () => {
 
   it('returns error when operator signature is not defined', () => {
     const tntModule = buildModuleWithDefs([
-      'def A = undefined(1)',
+      'def A = undefinedOperator(1)',
     ])
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
     effects
       .mapLeft(e => e.forEach(v => assert.deepEqual(v, {
-        location: 'Trying to infer effect for operator application in undefined(1)',
-        message: 'Signature not found for name: undefined',
+        location: 'Trying to infer effect for operator application in undefinedOperator(1)',
+        message: 'Signature not found for name: undefinedOperator',
         children: [],
       })))
 
@@ -198,15 +198,15 @@ describe('inferEffects', () => {
 
   it('returns error when high order operator is undefined', () => {
     const tntModule = buildModuleWithDefs([
-      'def a(p) = foldl(x, p, undefined)',
+      'def a(p) = foldl(x, p, undefinedOperator)',
     ])
 
     const effects = inferEffects(signatures, definitionsTable, tntModule)
 
     effects
       .mapLeft(e => e.forEach(v => assert.deepEqual(v, {
-        location: 'Inferring effect for undefined',
-        message: 'Signature not found for name: undefined',
+        location: 'Inferring effect for undefinedOperator',
+        message: 'Signature not found for name: undefinedOperator',
         children: [],
       })))
 

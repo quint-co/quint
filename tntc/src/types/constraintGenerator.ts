@@ -17,7 +17,7 @@ import { TntApp, TntBool, TntConst, TntEx, TntInt, TntLambda, TntLet, TntModule,
 import { TntType, typeNames } from '../tntTypes'
 import { expressionToString } from '../IRprinting'
 import { Either, right, left, mergeInMany } from '@sweet-monads/either'
-import { buildErrorTree, ErrorTree, Error, errorTreeToString, buildErrorLeaf } from '../errorTree'
+import { buildErrorTree, ErrorTree, Error, buildErrorLeaf } from '../errorTree'
 import { getSignatures } from './builtinSignatures'
 import { Constraint, Signature, TypeScheme } from './base'
 import { Substitutions, applySubstitution } from './substitutions'
@@ -29,9 +29,9 @@ type solvingFunctionType = (constraint: Constraint) => Either<Map<bigint, ErrorT
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
-  constructor (solvingFunction: solvingFunctionType, definitionsTable: LookupTableByModule) {
+  constructor (solvingFunction: solvingFunctionType, lookupTable: LookupTableByModule) {
     this.solvingFunction = solvingFunction
-    this.definitionsTable = definitionsTable
+    this.lookupTable = lookupTable
   }
 
   // Public values with results by expression ID
@@ -40,10 +40,10 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
   private solvingFunction: solvingFunctionType
   private constraints: Constraint[] = []
-  private freshVarCounter: number = 0
 
   private builtinSignatures: Map<string, Signature> = getSignatures()
-  private definitionsTable: LookupTableByModule
+  private lookupTable: LookupTableByModule
+  private freshVarCounter: number = 0
 
   // Track location descriptions for error tree traces
   private location: string = ''
@@ -69,18 +69,18 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     this.location = `Generating constraints for ${expressionToString(e)}`
   }
 
-  enterVar (e: TntVar) {
+  exitVar (e: TntVar) {
     this.addToResults(e.id, right(toScheme(e.type)))
   }
 
-  enterConst (e: TntConst) {
+  exitConst (e: TntConst) {
     this.addToResults(e.id, right(toScheme(e.type)))
   }
 
   //     n: t ∈ Γ
   // ----------------- (NAME)
   //  Γ ⊢ n: (t, true)
-  enterName (e: TntName) {
+  exitName (e: TntName) {
     if (this.errors.size !== 0) {
       return
     }
@@ -88,7 +88,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   }
 
   // Literals have always the same type and the empty constraint
-  enterLiteral (e: TntBool | TntInt | TntStr) {
+  exitLiteral (e: TntBool | TntInt | TntStr) {
     this.addToResults(e.id, right(toScheme({ kind: e.kind })))
   }
 
@@ -193,7 +193,6 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     } else if (successfulResult) {
       return right(successfulResult)
     } else {
-      this.errors.forEach((err, id) => console.log(`Error in ${id}: ${errorTreeToString(err)}`))
       throw new Error(`Couldn't find any result for id ${id} while ${this.location}`)
     }
   }
@@ -208,9 +207,8 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       return right({ kind: 'var', name: this.freshVar() })
     }
 
-    let signatureFunction: Signature
     if (this.builtinSignatures.has(opcode)) {
-      signatureFunction = this.builtinSignatures.get(opcode)!
+      const signatureFunction = this.builtinSignatures.get(opcode)!
       const signature = signatureFunction(arity)
       return right(this.newInstance(signature))
     } else {
@@ -241,7 +239,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     if (this.moduleStack.length > 0) {
       this.currentModule = this.moduleStack[this.moduleStack.length - 1]
 
-      const moduleTable = this.definitionsTable.get(this.currentModule!.name)!
+      const moduleTable = this.lookupTable.get(this.currentModule!.name)!
       this.currentTable = moduleTable
       this.currentScopeTree = treeFromModule(this.currentModule)
     }
