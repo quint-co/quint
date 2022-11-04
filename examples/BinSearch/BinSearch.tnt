@@ -30,7 +30,7 @@ module BinSearch {
     var nSteps: int
 
     // Addition over fix-width integers.
-    def add(i, j) =
+    pure def add(i, j) =
         // add two integers with unbounded arithmetic
         val res = i + j
         if (MIN_INT <= res and res <= MAX_INT)

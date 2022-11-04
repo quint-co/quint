@@ -16,8 +16,9 @@
 import { Either, left, right } from '@sweet-monads/either'
 import { ErrorTree } from '../errorTree'
 import { walkModule } from '../IRVisitor'
+import { LookupTableByModule } from '../lookupTable'
 import { TntModule } from '../tntIr'
-import { TntType } from '../tntTypes'
+import { TypeScheme } from './base'
 import { ConstraintGeneratorVisitor } from './constraintGenerator'
 import { solveConstraint } from './constraintSolver'
 
@@ -30,8 +31,8 @@ import { solveConstraint } from './constraintSolver'
  *          Otherwise, a map from expression ids to the corresponding error for
  *          the problematic expressions.
  */
-export function inferTypes (tntModule: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, TntType>> {
-  const visitor = new ConstraintGeneratorVisitor(solveConstraint)
+export function inferTypes (tntModule: TntModule, table: LookupTableByModule): Either<Map<bigint, ErrorTree>, Map<bigint, TypeScheme>> {
+  const visitor = new ConstraintGeneratorVisitor(solveConstraint, table)
   walkModule(visitor, tntModule)
   if (visitor.errors.size !== 0) { return left(visitor.errors) }
   // Since all top level expressions are operator definitions, and all

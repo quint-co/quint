@@ -21,15 +21,14 @@ import { formatError } from './errorReporter'
 
 import yargs from 'yargs/yargs'
 import { inferEffects } from './effects/inferrer'
-import { getSignatures } from './effects/builtinSignatures'
 import { checkModes } from './effects/modeChecker'
 import { LookupTableByModule } from './lookupTable'
-import { typeToString } from './IRprinting'
 import { errorTreeToString } from './errorTree'
 
 import { tntRepl } from './repl'
 import { inferTypes } from './types/inferrer'
 import { effectToString } from './effects/printing'
+import { typeSchemeToString } from './types/printing'
 
 /**
  * Parse a TNT specification.
@@ -54,8 +53,8 @@ function typecheck (argv: any) {
   }
   const finder = lineColumn(sourceCode)
 
-  const types = inferTypes(parseResult.module)
-  types.map(e => e.forEach((value, key) => console.log(`${key}: ${typeToString(value)}`)))
+  const types = inferTypes(parseResult.module, definitionsTable)
+  types.map(e => e.forEach((value, key) => console.log(`${key}: ${typeSchemeToString(value)}`)))
 
   types.mapLeft(e => {
     console.log(`${JSON.stringify(Array.from(e.values()))} Type errors found, sending diagnostics`)
@@ -70,7 +69,7 @@ function typecheck (argv: any) {
     })
   })
 
-  const effects = inferEffects(getSignatures(), definitionsTable, parseResult.module)
+  const effects = inferEffects(definitionsTable, parseResult.module)
   effects.map(e => e.forEach((value, key) => console.log(`${key}: ${effectToString(value)}`)))
 
   effects.mapLeft(e => e.forEach((value, key) => {
