@@ -157,17 +157,18 @@ export function lookupType (table: LookupTable, name: string): TypeDefinition | 
  *
  * @param originTable the lookup table to copy from
  * @param namespace optional namespace to be added to copied names
+ * @param scope optional scope to be added to copied definitions
  *
  * @returns a lookup table with the filtered and namespaced names
  */
-export function copyNames (originTable: LookupTable, namespace?: string): LookupTable {
+export function copyNames (originTable: LookupTable, namespace?: string, scope?: bigint): LookupTable {
   const table = newTable({})
 
   originTable.valueDefinitions.forEach((defs, identifier) => {
     const name = namespace ? [namespace, identifier].join('::') : identifier
 
     // Copy only unscoped and non-default (referenced) names
-    const valueDefs = defs.filter(d => !d.scope && d.reference).map(d => ({ ...d, identifier: name }))
+    const valueDefs = defs.filter(d => !d.scope && d.reference).map(d => ({ ...d, identifier: name, scope: scope }))
 
     if (valueDefs.length > 0) {
       table.valueDefinitions.set(name, valueDefs)
