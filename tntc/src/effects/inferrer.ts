@@ -36,14 +36,10 @@ import { getSignatures } from './builtinSignatures'
  *          Otherwise, a map from expression ids to the corresponding error for
  *          the problematic expressions.
  */
-export function inferEffects (lookupTable: LookupTableByModule, module: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, Effect>> {
+export function inferEffects (lookupTable: LookupTableByModule, module: TntModule): [Map<bigint, ErrorTree>, Map<bigint, Effect>] {
   const visitor = new EffectInferrerVisitor(lookupTable)
   walkModule(visitor, module)
-  if (visitor.errors.size > 0) {
-    return left(visitor.errors)
-  } else {
-    return right(visitor.effects)
-  }
+  return [visitor.errors, visitor.effects]
 }
 
 /* Walks the IR from node to root inferring effects for expressions and

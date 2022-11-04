@@ -8,8 +8,6 @@
  * See License.txt in the project root for license information.
  */
 
-import { Either, left, right } from '@sweet-monads/either'
-
 import {
   parsePhase1, parsePhase2, ErrorMessage, Loc
 } from '../tntParserFrontend'

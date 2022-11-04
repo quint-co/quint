@@ -4,6 +4,7 @@ import { buildModuleWithDefs } from '../builders/ir'
 import { inferTypes } from '../../src/types/inferrer'
 import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
 import { typeSchemeToString } from '../../src/types/printing'
+import { errorTreeToString } from '../../src/errorTree'
 
 describe('inferTypes', () => {
   // Names are mocked without scope to keep tests simple
@@ -37,33 +38,32 @@ describe('inferTypes', () => {
       'def d(S) = S.map(p => p + 10)',
     ])
 
-    const result = inferTypes(tntModule, definitionsTable)
-    assert.isTrue(result.isRight())
-    result.map(r => {
-      const stringTypes = Array.from(r.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
-      assert.sameDeepMembers(stringTypes, [
-        [1n, 'int'],
-        [2n, 'int'],
-        [3n, 'int'],
-        [4n, 'int'],
-        [5n, 'int'],
-        [6n, 'int'],
-        [7n, 'int'],
-        [8n, '(int, int) => int'],
-        [9n, 'int'],
-        [10n, 'int'],
-        [11n, 'int'],
-        [12n, 'int'],
-        [13n, 'int'],
-        [14n, 'set(int)'],
-        [15n, 'int'],
-        [16n, 'int'],
-        [17n, 'int'],
-        [18n, '(int) => int'],
-        [19n, 'set(int)'],
-        [20n, '(set(int)) => set(int)'],
-      ])
-    })
+    const [errors, types] = inferTypes(tntModule, definitionsTable)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+
+    const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    assert.sameDeepMembers(stringTypes, [
+      [1n, 'int'],
+      [2n, 'int'],
+      [3n, 'int'],
+      [4n, 'int'],
+      [5n, 'int'],
+      [6n, 'int'],
+      [7n, 'int'],
+      [8n, '(int, int) => int'],
+      [9n, 'int'],
+      [10n, 'int'],
+      [11n, 'int'],
+      [12n, 'int'],
+      [13n, 'int'],
+      [14n, 'set(int)'],
+      [15n, 'int'],
+      [16n, 'int'],
+      [17n, 'int'],
+      [18n, '(int) => int'],
+      [19n, 'set(int)'],
+      [20n, '(set(int)) => set(int)'],
+    ])
   })
 
   it('infers types for high-order operators', () => {
@@ -72,23 +72,22 @@ describe('inferTypes', () => {
       'def b(g, q) = g(q) + g(not(q))',
     ])
 
-    const result = inferTypes(tntModule, definitionsTable)
-    assert.isTrue(result.isRight())
-    result.map(r => {
-      const stringTypes = Array.from(r.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
-      assert.sameDeepMembers(stringTypes, [
-        [1n, '∀ t0 . t0'],
-        [2n, '∀ t0 . t0'],
-        [3n, '∀ t0, t1 . ((t0) => t1, t0) => t1'],
-        [4n, 'bool'],
-        [5n, 'int'],
-        [6n, 'bool'],
-        [7n, 'bool'],
-        [8n, 'int'],
-        [9n, 'int'],
-        [10n, '((bool) => int, bool) => int'],
-      ])
-    })
+    const [errors, types] = inferTypes(tntModule, definitionsTable)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+
+    const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    assert.sameDeepMembers(stringTypes, [
+      [1n, '∀ t0 . t0'],
+      [2n, '∀ t0 . t0'],
+      [3n, '∀ t0, t1 . ((t0) => t1, t0) => t1'],
+      [4n, 'bool'],
+      [5n, 'int'],
+      [6n, 'bool'],
+      [7n, 'bool'],
+      [8n, 'int'],
+      [9n, 'int'],
+      [10n, '((bool) => int, bool) => int'],
+    ])
   })
 
   it('fails when types are not unifiable', () => {
@@ -96,19 +95,17 @@ describe('inferTypes', () => {
       'def a = 1.map(p => p + 10)',
     ])
 
-    const result = inferTypes(tntModule, definitionsTable)
-    assert.isTrue(result.isLeft())
-    result.mapLeft(errors => {
-      assert.sameDeepMembers([...errors.entries()], [
-        [6n, {
-          location: 'Trying to unify (set(t1), (t1) => t2) => set(t2) and (int, (int) => int) => t3',
-          children: [{
-            location: 'Trying to unify set(t1) and int',
-            message: "Couldn't unify set and int",
-            children: [],
-          }],
+    const [errors] = inferTypes(tntModule, definitionsTable)
+
+    assert.sameDeepMembers([...errors.entries()], [
+      [6n, {
+        location: 'Trying to unify (set(t1), (t1) => t2) => set(t2) and (int, (int) => int) => t3',
+        children: [{
+          location: 'Trying to unify set(t1) and int',
+          message: "Couldn't unify set and int",
+          children: [],
         }],
-      ])
-    })
+      }],
+    ])
   })
 })
