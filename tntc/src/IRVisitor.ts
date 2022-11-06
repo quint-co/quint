@@ -210,7 +210,7 @@ export function walkType (visitor: IRVisitor, type: t.TntType): void {
         visitor.enterRecordType(type)
       }
       // Records, walk all fields
-      type.fields.forEach(field => walkType(visitor, field.fieldType))
+      walkRow(visitor, type.fields)
 
       if (visitor.exitRecordType) {
         visitor.exitRecordType(type)
@@ -385,5 +385,12 @@ function walkExpression (visitor: IRVisitor, expr: ir.TntEx): void {
 
   if (visitor.exitExpr) {
     visitor.exitExpr(expr)
+  }
+}
+
+function walkRow (visitor: IRVisitor, r: t.Row) {
+  switch (r.kind) {
+    case 'row':
+      r.fields.forEach(field => walkType(visitor, field.fieldType))
   }
 }

@@ -13,7 +13,7 @@
  */
 
 import { TntModule, TntDef, TntEx } from './tntIr'
-import { TntType } from './tntTypes'
+import { Row, TntType } from './tntTypes'
 
 /**
  * Pretty prints a module
@@ -115,7 +115,7 @@ export function typeToString (type: TntType): string {
     case 'tup':
       return `(${type.elems.map(typeToString).join(', ')})`
     case 'rec': {
-      const fields = type.fields.map(f => `${f.fieldName}: ${typeToString(f.fieldType)}`).join(', ')
+      const fields = rowToString(type.fields)
       return `{ ${fields} }`
     }
     case 'union': {
@@ -124,6 +124,23 @@ export function typeToString (type: TntType): string {
         return `| { ${type.tag}: "${rec.tagValue}", ${fields} }`
       })
       return records.join('\n')
+    }
+  }
+}
+
+export function rowToString (r: Row): string {
+  switch (r.kind) {
+    case 'empty':
+      return ''
+    case 'var':
+      return r.name
+    case 'row': {
+      const fields = r.fields.map(f => `${f.fieldName}: ${typeToString(f.fieldType)}`)
+      const other = rowToString(r.other)
+      if (other !== '') {
+        fields.push(other)
+      }
+      return fields.join(', ')
     }
   }
 }

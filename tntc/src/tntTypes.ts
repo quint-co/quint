@@ -72,7 +72,7 @@ export interface TntTupleType extends WithOptionalId {
 
 export interface TntRecordType extends WithOptionalId {
   kind: 'rec',
-  fields: { fieldName: string, fieldType: TntType }[]
+  fields: Row,
 }
 
 export interface TntUnionType extends WithOptionalId {
@@ -100,6 +100,11 @@ export type TntType =
   | TntTupleType
   | TntRecordType
   | TntUnionType
+
+export type Row =
+  | { kind: 'row', fields: { fieldName: string, fieldType: TntType }[], other: Row }
+  | { kind: 'var', name: string }
+  | { kind: 'empty' }
 
 /*
  * Collects all type variable names from a given type

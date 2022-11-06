@@ -2,7 +2,7 @@ import * as p from './generated/TntParser'
 import { ParserRuleContext } from 'antlr4ts/ParserRuleContext'
 import { TntListener } from './generated/TntListener'
 import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef } from './tntIr'
-import { TntType } from './tntTypes'
+import { Row, TntType } from './tntTypes'
 import { strict as assert } from 'assert'
 import { ErrorMessage, Loc } from './tntParserFrontend'
 
@@ -763,9 +763,10 @@ export class ToIrListener implements TntListener {
     for (let i = 0; i < names.length; i++) {
       pairs.push({ fieldName: names[i], fieldType: elemTypes[i] })
     }
+    const row: Row = { kind: 'row', fields: pairs, other: { kind: 'empty' } }
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
-    this.typeStack.push({ id: id, kind: 'rec', fields: pairs })
+    this.typeStack.push({ id: id, kind: 'rec', fields: row })
   }
 
   // A disjoint union type, e.g.,

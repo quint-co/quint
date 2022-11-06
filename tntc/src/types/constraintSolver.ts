@@ -15,7 +15,7 @@
 import { Either, left, right } from '@sweet-monads/either'
 import { buildErrorLeaf, buildErrorTree, ErrorTree, Error } from '../errorTree'
 import { typeToString } from '../IRprinting'
-import { TntType, typeNames } from '../tntTypes'
+import { Row, TntType, typeNames } from '../tntTypes'
 import { Constraint } from './base'
 import { applySubstitution, applySubstitutionToConstraint, compose, Substitutions } from './substitutions'
 
@@ -103,12 +103,24 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
     ))
   }
 }
+/**
+ * Unifies two TNT rows
+ *
+ * @param r1 a row to be unified
+ * @param r2 the row to be unified with
+ *
+ * @returns an array of substitutions that unifies both rows, when possible.
+ *          Otherwise, an error tree with an error message and its trace.
+ */
+export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
+  return right([])
+}
 
 function bindType (name: string, type: TntType): Either<string, Substitutions> {
   if (typeNames(type).has(name)) {
     return left(`Can't bind ${name} to ${typeToString(type)}: cyclical binding`)
   } else {
-    return right([{ name: name, value: type }])
+    return right([{ kind: 'type', name: name, value: type }])
   }
 }
 
