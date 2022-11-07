@@ -24,7 +24,7 @@ module option {
   }
 
   action Unvote(i) = all {
-    votes.nth(i) != None,
+    votes[i] != None,
     votes <- votes.replaceAt(i, None),
   }
 

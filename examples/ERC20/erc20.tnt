@@ -59,7 +59,7 @@ module erc20 {
     nextTxId <- nextTxId,
     val fail = or { 
      tx.value < 0,
-     tx.value > balanceOf[tx.sender],
+     tx.value > balanceOf.get(tx.sender),
      tx.sender == tx.toAddr
     }
     all {
@@ -105,8 +105,8 @@ module erc20 {
     nextTxId <- nextTxId,
     val fail = or {
      tx.value < 0,
-     tx.value > balanceOf[tx.fromAddr],
-     tx.value > allowance[(tx.fromAddr, tx.sender)],
+     tx.value > balanceOf.get(tx.fromAddr),
+     tx.value > allowance.get((tx.fromAddr, tx.sender)),
      tx.fromAddr == tx.toAddr
     }
     all {
@@ -249,5 +249,5 @@ module erc20 {
     not(badExample)
 
   /* Make sure that the account balances never go negative. */
-  val NoNegativeBalances = ADDR.forall(a => balanceOf[a] >= 0)
+  val NoNegativeBalances = ADDR.forall(a => balanceOf.get(a) >= 0)
 }

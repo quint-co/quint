@@ -9,13 +9,13 @@ module tictactoe {
   }
 
   def BoardIs(coordinate, player) =
-    board[coordinate._1][coordinate._2] == player
+    board.get(coordinate._1).get(coordinate._2) == player
 
   action Move(player, coordinate) = all {
     BoardIs(coordinate, "_"),
     board <- board.update(
       coordinate._1, 
-      board[coordinate._1].update(coordinate._2, player)
+      board.get(coordinate._1).update(coordinate._2, player)
     ),
   }
 

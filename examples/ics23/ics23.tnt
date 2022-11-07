@@ -56,12 +56,12 @@ module basics {
     val len1 = length(w1)
     val len2 = length(w2)
     or {
-      len1 < len2 and w1.indices().forall(i => w1.nth(i) == w2.nth(i)),
+      len1 < len2 and w1.indices().forall(i => w1[i] == w2[i]),
       and {
         len1 == len2,
         w1.indices().exists(i => and {
-          w1.nth(i) < w2.nth(i),
-          w1.indices().forall(j => j < i implies w1.nth(i) == w2.nth(j))
+          w1[i] < w2[i],
+          w1.indices().forall(j => j < i implies w1[i] == w2[j])
         })
       }
     }
@@ -218,7 +218,7 @@ module ics23 {
     // Calls getPadding(0) => idx = 0, prefix = 0.
     // We specialize the constants to IavlSpec.
     path.indices().forall(i =>
-      val step = path.nth(i)
+      val step = path[i]
       or {
         // the path goes left
         hasPadding(step, MinPrefixLen, MaxPrefixLen, ChildSize),
@@ -248,7 +248,7 @@ module ics23 {
     // Calls getPadding(1) => minPrefix, maxPrefix,
     //   suffix = ChildSize + MinPrefixLen, ChildSize + MaxPrefixLen, 0
     path.indices().forall(i =>
-      val step = path.nth(i)
+      val step = path[i]
       or {
         // the path goes right
         hasPadding(step, ChildSize + MinPrefixLen, ChildSize + MaxPrefixLen, 0),
@@ -291,8 +291,8 @@ module ics23 {
         val dist = length(lpath) - 1 - li
         // the prefixes and suffixes match just above the cut points
         1.to(dist).forall(k =>
-          val lnode = lpath.nth(li + k)
-          val rnode = rpath.nth(ri + k)
+          val lnode = lpath[li + k]
+          val rnode = rpath[ri + k]
           and {
             lnode.prefix == rnode.prefix,
             lnode.suffix == rnode.suffix
@@ -300,11 +300,11 @@ module ics23 {
         ),
         // Now topleft and topright are the first divergent nodes
         // make sure they are left and right of each other.
-        // Actually, lpath.nth(li) and rpath.nth(ri) are an abstraction
+        // Actually, lpath[li] and rpath[ri] are an abstraction
         // of the same tree node:
         //  the left one stores the hash of the right one, whereas
         //  the right one stores the hash of the left one.
-        isLeftStep(lpath.nth(li), rpath.nth(ri)),
+        isLeftStep(lpath[li], rpath[ri]),
         // left and right are remaining children below the split,
         // ensure left child is the rightmost path, and visa versa
         isRightMost(lpath.slice(0, li)),

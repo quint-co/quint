@@ -117,7 +117,7 @@ module withConsts {
 
   // Function application
   var f1: str -> int
-  val funapp = f1["a"]
+  val funapp = f1.get("a")
 
   // Apply a user-defined operator by its name.
   def MyOper(a, b) = 1
@@ -151,6 +151,7 @@ module withConsts {
   val test_pair = 4 -> 5
   val test_list = [1, 2, 3]
   val test_list2 = list(1, 2, 3)
+  val test_list_nth = [2, 3, 4][2]
   val test_record = { name: "igor", year: 1981 }
   val test_record2 = rec("name", "igor", "year", 1981)
   val test_set = set(1, 2, 3)

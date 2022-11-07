@@ -1740,7 +1740,7 @@ export class TntParser extends Parser {
 
 					case 12:
 						{
-						_localctx = new FunAppContext(new ExprContext(_parentctx, _parentState));
+						_localctx = new ListAppContext(new ExprContext(_parentctx, _parentState));
 						this.pushNewRecursionContext(_localctx, _startState, TntParser.RULE_expr);
 						this.state = 430;
 						if (!(this.precpred(this._ctx, 25))) {
@@ -3689,7 +3689,7 @@ export class OperAppContext extends ExprContext {
 		}
 	}
 }
-export class FunAppContext extends ExprContext {
+export class ListAppContext extends ExprContext {
 	public expr(): ExprContext[];
 	public expr(i: number): ExprContext;
 	public expr(i?: number): ExprContext | ExprContext[] {
@@ -3705,20 +3705,20 @@ export class FunAppContext extends ExprContext {
 	}
 	// @Override
 	public enterRule(listener: TntListener): void {
-		if (listener.enterFunApp) {
-			listener.enterFunApp(this);
+		if (listener.enterListApp) {
+			listener.enterListApp(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: TntListener): void {
-		if (listener.exitFunApp) {
-			listener.exitFunApp(this);
+		if (listener.exitListApp) {
+			listener.exitListApp(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: TntVisitor<Result>): Result {
-		if (visitor.visitFunApp) {
-			return visitor.visitFunApp(this);
+		if (visitor.visitListApp) {
+			return visitor.visitListApp(this);
 		} else {
 			return visitor.visitChildren(this);
 		}

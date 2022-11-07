@@ -25,7 +25,7 @@ import { TypedefContext } from "./TntParser";
 import { ImportDefContext } from "./TntParser";
 import { DotCallContext } from "./TntParser";
 import { OperAppContext } from "./TntParser";
-import { FunAppContext } from "./TntParser";
+import { ListAppContext } from "./TntParser";
 import { UminusContext } from "./TntParser";
 import { PowContext } from "./TntParser";
 import { MultDivContext } from "./TntParser";
@@ -257,12 +257,12 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitOperApp?: (ctx: OperAppContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `funApp`
+	 * Visit a parse tree produced by the `listApp`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitFunApp?: (ctx: FunAppContext) => Result;
+	visitListApp?: (ctx: ListAppContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `uminus`

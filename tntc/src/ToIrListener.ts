@@ -328,9 +328,9 @@ export class ToIrListener implements TntListener {
     }
   }
 
-  // function application, e.g., f[10]
-  exitFunApp (ctx: any) {
-    this.pushApplication(ctx, 'get', this.popExprs(2))
+  // list access, e.g., f[10]
+  exitListApp (ctx: any) {
+    this.pushApplication(ctx, 'nth', this.popExprs(2))
   }
 
   // operator application in the normal form, e.g., MyOper("foo", 42)

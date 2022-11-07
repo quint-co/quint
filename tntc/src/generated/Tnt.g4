@@ -75,8 +75,8 @@ expr:           // apply a built-in operator via the dot notation
                 // Call a user-defined operator or a built-in operator.
                 // The operator has at least one argument (otherwise, it's a 'val').
         |       normalCallName '(' argList? ')'                     # operApp
-                // function application
-        |       expr '[' expr ']'                                   # funApp
+                // list access via index
+        |       expr '[' expr ']'                                   # listApp
                 // unary minus
         |       MINUS expr                                          # uminus
                 // power over integers

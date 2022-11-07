@@ -57,7 +57,7 @@ module BinSearch {
         low <= high,       // lines 6-14
         nSteps <- nSteps + 1,
         val mid = low.add(high.add(-low) / 2)
-        val midVal = INPUT_SEQ.nth(mid + 1)
+        val midVal = INPUT_SEQ[mid + 1]
           any {
             all {
               midVal < INPUT_KEY, // lines 9-10
@@ -118,7 +118,7 @@ module BinSearch {
     // Here, we write it a bit smarter.
     INPUT_SEQ.domain.forall( i =>
         INPUT_SEQ.domain.contains(i + 1)
-          implies (INPUT_SEQ.nth(i) <= INPUT_SEQ.nth(i + 1))
+          implies (INPUT_SEQ[i] <= INPUT_SEQ[i + 1])
     )
 
     // We can get an idea about the expected result of the search from the source:
@@ -131,7 +131,7 @@ module BinSearch {
     //  and only if the key is found."
     val ReturnValueIsCorrect =
         val MatchingIndices =
-            INPUT_SEQ.domain.filter(i => INPUT_SEQ.nth(i) == INPUT_KEY)
+            INPUT_SEQ.domain.filter(i => INPUT_SEQ[i] == INPUT_KEY)
         if (MatchingIndices != set())
             // Indices start with 1, whereas returnValue starts with 0
             MatchingIndices.contains(returnValue + 1)

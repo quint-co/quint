@@ -45,7 +45,7 @@ action Init = all {
 (***************************************************************************/
 action InitiateProbe = all {
   tpos == 0,
-  tcolor == "black" or color[0] == "black",
+  tcolor == "black" or color.get(0) == "black",
   tpos <- N - 1,
   tcolor <- "white",
   color <- color.update(0, "white"),
@@ -63,9 +63,9 @@ action InitiateProbe = all {
 (***************************************************************************/
 action PassToken(i) = all {
   tpos == i,
-  or { not(active[i]), color[i] == "black", tcolor == "black" },
+  or { not(active.get(i)), color.get(i) == "black", tcolor == "black" },
   tpos <- i - 1,
-  tcolor <- if (color[i] == "black") "black" else tcolor,
+  tcolor <- if (color.get(i) == "black") "black" else tcolor,
   color <- color.update(i, "white"),
 }
 
@@ -83,7 +83,7 @@ action System = any {
 (* passed), then node i becomes black.                                     *)
 (***************************************************************************/
 action SendMsg(i) = all {
-  active[i],
+  active.get(i),
   Node.exclude(set(i))
       .guess({ j => all {
         active  <- active.update(j, true),
@@ -95,7 +95,7 @@ action SendMsg(i) = all {
 (* Any active node may become inactive at any moment.                      *)
 (***************************************************************************/
 action Deactivate(i) = all {
-  active[i],
+  active.get(i),
   active <- active.update(i, false),
 }
 
@@ -135,17 +135,17 @@ temporal NeverChangeColor = always((color <- color).stutter(vars))
 (***************************************************************************/
 val terminationDetected = and {
   tpos == 0 and tcolor == "white",
-  color[0] == "white" and not(active[0])
+  color.get(0) == "white" and not(active.get(0))
 }
 
 val TerminationDetection =
-  terminationDetected implies Node.forall(i => not(active[i]))
+  terminationDetected implies Node.forall(i => not(active.get(i)))
 
 /***************************************************************************)
 (* Liveness property: termination is eventually detected.                  *)
 (***************************************************************************/
 temporal Liveness =
-  always(Node.forall(i => not(active[i])) implies eventually(terminationDetected))
+  always(Node.forall(i => not(active.get(i))) implies eventually(terminationDetected))
 
 /***************************************************************************)
 (* The following property asserts that when every process always           *)
@@ -153,7 +153,7 @@ temporal Liveness =
 (* It does not hold since processes can wake up each other.                *)
 (***************************************************************************/
 temporal FalseLiveness =
-  always(Node.forall(i => always(eventually(not(active[i]))))
+  always(Node.forall(i => always(eventually(not(active.get(i)))))
          implies eventually(terminationDetected))
 
 /***************************************************************************)
@@ -169,15 +169,15 @@ temporal SpecWFNext = Init and always(Next.stutter(vars) and Next.weakFair(vars)
 temporal AllNodesTerminateIfNoMessages = (
   eventually(always(
       Node.forall(i => not(SendMsg(i))).stutter(vars)
-  )) implies eventually(Node.forall(i => not(active[i])))
+  )) implies eventually(Node.forall(i => not(active.get(i))))
 )
 
 /***************************************************************************)
 (* Dijkstra's inductive invariant                                          *)
 (***************************************************************************/
 val Inv = or {
-  Node.forall(i => tpos < i implies not(active[i])),
-  0.to(tpos).exists(j => color[j] == "black"),
+  Node.forall(i => tpos < i implies not(active.get(i))),
+  0.to(tpos).exists(j => color.get(j) == "black"),
   tcolor == "black"
 }
 

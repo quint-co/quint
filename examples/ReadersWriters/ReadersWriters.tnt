@@ -14,7 +14,7 @@ module ReadersWriters {
   
   val Actors = 1.to(NumActors)
   
-  def ToSet(s) = s.indices().map(i => s.nth(i))
+  def ToSet(s) = s.indices().map(i => s[i])
   
   def read(s)  = s._1 == "read"
   def write(s) = s._1 == "write"

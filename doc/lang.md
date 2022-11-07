@@ -772,7 +772,7 @@ priority:
 |-------------------------------------------------------------------------------------------|--------------------------------------------------------------|
 | `e_1.F(e_2, ..., e_n)`                                                                    | Call via dot has the highest priority                        |
 | `F(e_1, ..., e_n)`                                                                        | The normal form of operator application                      |
-| `f[e_1, ..., e_n]`                                                                        | Function application                                         |
+| `l[i]`                                                                        | List access via index                                         |
 | `-i`                                                                                      | Unary minus                                                  |
 | `i^j`                                                                                     | Integer power (right associative)                            |
 | `i * j`, `i / j`, `i % j`                                                                 | Integer multiplication, division, modulo                     |
@@ -1114,7 +1114,6 @@ size(S)
 ```scala
 // Map application.
 // In TLA+: f[e]
-f[e]
 f.get(e)
 get(f, e)
 // Map domain.
@@ -1382,6 +1381,7 @@ l.length()
 length(l)
 // Sequence element at nth position (starting with 0).
 // Equivalent to s[i + 1] in TLA+.
+l[i]
 l.nth(i)
 nth(l, i)
 // The set of list indices (starting with 0).
