@@ -55,7 +55,8 @@ type :          <assoc=right> type '->' type                    # typeFun
         |       'list' '(' type ')'                             # typeList
         |       '(' type ',' type (',' type)* ','? ')'          # typeTuple
         |       '{' IDENTIFIER ':' type
-                    (',' IDENTIFIER ':' type)* ','? '}'         # typeRec
+                    (',' IDENTIFIER ':' type)* 
+                    (',' IDENTIFIER )? ','? '}'                 # typeRec
         |       typeUnionRecOne+                                # typeUnionRec
         |       'int'                                           # typeInt
         |       'str'                                           # typeStr

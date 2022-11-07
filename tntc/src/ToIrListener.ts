@@ -760,10 +760,16 @@ export class ToIrListener implements TntListener {
     const elemTypes: TntType[] = this.popTypes(ctx.type().length)
     // since TS does not have zip, a loop is the easiest solution
     const pairs = []
-    for (let i = 0; i < names.length; i++) {
+    for (let i = 0; i < elemTypes.length; i++) {
       pairs.push({ fieldName: names[i], fieldType: elemTypes[i] })
     }
-    const row: Row = { kind: 'row', fields: pairs, other: { kind: 'empty' } }
+    let other: Row
+    if (names.length > elemTypes.length) {
+      other = { kind: 'var', name: names[names.length - 1] }
+    } else {
+      other = { kind: 'empty' }
+    }
+    const row: Row = { kind: 'row', fields: pairs, other: other }
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.typeStack.push({ id: id, kind: 'rec', fields: row })

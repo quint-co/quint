@@ -161,7 +161,11 @@ function applySubstitutionsToSubstitutions (s1: Substitutions, s2: Substitutions
 function applySubstitutionToRow (s: Substitutions, r: Row): Row {
   switch (r.kind) {
     case 'row':
-      return { ...r, fields: r.fields.map(f => ({ fieldName: f.fieldName, fieldType: applySubstitution(s, f.fieldType) })) }
+      return {
+        kind: 'row',
+        fields: r.fields.map(f => ({ fieldName: f.fieldName, fieldType: applySubstitution(s, f.fieldType) })),
+        other: applySubstitutionToRow(s, r.other),
+      }
     case 'var': {
       const sub = s.find(s => s.name === r.name)
       if (sub && sub.kind === 'row') {

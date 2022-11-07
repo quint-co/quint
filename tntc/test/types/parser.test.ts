@@ -58,7 +58,7 @@ describe('parseType', () => {
   })
 
   it('parses records of sets and lists', () => {
-    const type = parseType('{ mySet: set(a), mySeq: list(a) }')
+    const type = parseType('{ mySet: set(a), mySeq: list(a), r }')
 
     assert.isTrue(type.isRight())
     type.map(value => assert.deepEqual(value, {
@@ -69,7 +69,7 @@ describe('parseType', () => {
           { fieldName: 'mySet', fieldType: { kind: 'set', elem: { kind: 'var', name: 'a', id: 1n }, id: 2n } },
           { fieldName: 'mySeq', fieldType: { kind: 'list', elem: { kind: 'var', name: 'a', id: 3n }, id: 4n } },
         ],
-        other: { kind: 'empty' },
+        other: { kind: 'var', name: 'r' },
       },
       id: 5n,
     }))
