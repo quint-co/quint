@@ -64,14 +64,14 @@ class ImportResolverVisitor implements IRVisitor {
   tables: LookupTableByModule
   errors: ImportError[] = []
 
-  private currentModuleName: string = ''
+  private currentModule: TntModule = { name: '', defs: [], id: 0n }
   private currentTable: LookupTable = newTable({})
-  private moduleStack: string[] = []
+  private moduleStack: TntModule[] = []
 
   enterModuleDef (def: TntModuleDef): void {
-    this.tables.set(this.currentModuleName, this.currentTable)
+    this.tables.set(this.currentModule.name, this.currentTable)
 
-    this.moduleStack.push(def.module.name)
+    this.moduleStack.push(def.module)
     this.updateCurrentModule()
   }
 
@@ -96,7 +96,7 @@ class ImportResolverVisitor implements IRVisitor {
 
     // All names from the instanced module should be acessible with the instance namespace
     // So, copy them to the current module's lookup table
-    const newEntries = copyNames(moduleTable, def.name)
+    const newEntries = copyNames(moduleTable, def.name, this.currentModule.id)
     this.currentTable = mergeTables(this.currentTable, newEntries)
   }
 
@@ -108,7 +108,7 @@ class ImportResolverVisitor implements IRVisitor {
       return
     }
 
-    const importableDefinitions = copyNames(moduleTable)
+    const importableDefinitions = copyNames(moduleTable, '', this.currentModule.id)
 
     if (def.name === '*') {
       // Imports all definitions
@@ -138,7 +138,7 @@ class ImportResolverVisitor implements IRVisitor {
             return
           }
 
-          const newEntries = copyNames(importedModuleTable!, definition.identifier)
+          const newEntries = copyNames(importedModuleTable!, definition.identifier, this.currentModule.id)
           this.currentTable = mergeTables(this.currentTable, newEntries)
         }
       })
@@ -147,13 +147,13 @@ class ImportResolverVisitor implements IRVisitor {
 
   private updateCurrentModule (): void {
     if (this.moduleStack.length > 0) {
-      this.currentModuleName = this.moduleStack[this.moduleStack.length - 1]
+      this.currentModule = this.moduleStack[this.moduleStack.length - 1]
 
-      if (!this.tables.has(this.currentModuleName)) {
-        throw new Error(`Missing module: ${this.currentModuleName}`)
+      if (!this.tables.has(this.currentModule.name)) {
+        throw new Error(`Missing module: ${this.currentModule.name}`)
       }
 
-      this.currentTable = this.tables.get(this.currentModuleName)!
+      this.currentTable = this.tables.get(this.currentModule.name)!
     }
   }
 }

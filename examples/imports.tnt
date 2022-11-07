@@ -72,4 +72,27 @@ module root {
     // import C.*
     //        ^ error: C is stateful
   }
-}  
+
+  module test {
+    // demonstrate that the same module may be imported via different paths
+    module basics {
+      def double(x) = 2 * x
+    }
+
+    module spec {
+      import basics.*
+
+      def quad(x) = double(double(x))
+    }
+
+    // first, we import `basics`, as we need `double`
+    // (let's pretend that we do not know that `spec` imports `basics`)
+    import basics.*
+    // second, we import `spec`, as we need `quad`
+    import spec.*
+
+    def quadShouldDoubleTwice = {
+      set(1, 2, 3).forall(i => quad(i) == double(i) + double(i))
+    }
+  }
+}
