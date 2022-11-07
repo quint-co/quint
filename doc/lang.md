@@ -407,7 +407,7 @@ Similar to `INSTANCE` in TLA+, we can define module instances.
 
 ```scala
 // an instance of Voting that has the name "V"
-module V = Voting(Value = set(0, 1))
+module V = Voting(Value = Set(0, 1))
 
 // the names of V are accessed via "."
 val MyValues = V.Value
@@ -626,10 +626,10 @@ definitions in a nested module that start with the underscore:
 ```scala
 module Local {
   var y: int
-  def G(x) = set(_local.F(x))
+  def G(x) = Set(_local.F(x))
 
   module _local {
-    def F(x) = set(x, y)
+    def F(x) = Set(x, y)
   }
 }
 ```
@@ -994,12 +994,12 @@ One way to construct a set is by enumerating its elements:
 
 ```scala
 // the python-style constructor
-set(e_1, ..., e_n)
+Set(e_1, ..., e_n)
 ```
 
 This is exactly as `{ e_1, ..., e_n }` in TLA+. However, we prefer not to
 sacrifice `{...}` for this only operator. That is why a set is constructed with
-`set(...)` in TNT. In practice, this operator does not appear too often, so our
+`Set(...)` in TNT. In practice, this operator does not appear too often, so our
 notation would not distract you too much.
 
 *Mode:* Stateless, State. Other modes are not allowed.
@@ -1125,15 +1125,15 @@ keys(f)
 S.mapBy(x => e)
 mapBy(S, (x => e))
 // Map constructor via enumeration.
-mapOf()
-mapOf(k_1 -> v_1)
-mapOf(k_1 -> v_1, k_2 -> v_2)
-mapOf(k_1 -> v_1, k_2 -> v_2, k_3 -> v_3)
+Map()
+Map(k_1 -> v_1)
+Map(k_1 -> v_1, k_2 -> v_2)
+Map(k_1 -> v_1, k_2 -> v_2, k_3 -> v_3)
 ...
 // Convert a set of pairs to a map.
 // In TLA+: [ x \in { a: <<a, b>> \in S } |-> (CHOOSE p \in S: p[1] = x)[2]]
-set(tup(1, true), tup(2, false)).setToMap()
-setToMap(set(tup(1, true), tup(2, false)))
+Set((1, true), (2, false)).setToMap()
+setToMap(Set((1, true), (2, false)))
 // A set of maps.
 // In TLA+: [ S -> T ]
 S.setOfMaps(T)
@@ -1163,7 +1163,7 @@ put(f, k, v)
 // record constructor: [ f_1 |-> e_1, ..., f_n |-> e_n ]
 // Warning: n >= 1
 { f_1: e_1, ..., f_n: e_n }
-rec(f_1, e_1, ..., f_n, e_n)
+Rec(f_1, e_1, ..., f_n, e_n)
 // Set of records: [ f_1: S_1, ..., f_n: S_n ].
 // No operator for it. Use a set comprehension:
 tuples(S_1, ..., S_n).map(a_1, ..., a_n => { f_1: a_1, ..., f_n: a_n })
@@ -1210,7 +1210,7 @@ Records of different union types may be mixed in a single set. For example:
 
 ```scala
 val Entries =
-  set(
+  Set(
     { tag: "Cat", name: "Ours", year: 2019  },
     { tag: "Cat", name: "Murka", year: 1950 },
     { tag: "Date", day: 16, month: 11, year: 2021 },
@@ -1245,7 +1245,7 @@ Entries.filter(e => e.tag == "Cat")
 As expected from the semantics of `filter`, the above set is equal to:
 
 ```
-set(
+Set(
   { tag: "Cat", name: "Ours", year: 2019  },
   { tag: "Cat", name: "Murka", year: 1950 }
 )
@@ -1316,7 +1316,7 @@ If you need lists, use lists.
 // Tuple constructor: << e_1, ..., e_n >>
 // Warning: n >= 2
 (e_1, ..., e_n)
-tup(e_1, ..., e_n)
+Tup(e_1, ..., e_n)
 // t[1], t[2], t[3], t[4], ... , t[50]
 t._1
 t._2
@@ -1351,7 +1351,7 @@ are 1-indexed.
 // List constructor.
 // Equivalent to <<e_1, ..., e_n>> in TLA+.
 [ e_1, ..., e_n ]
-list(e_1, ..., e_n)
+List(e_1, ..., e_n)
 // List range: `start` is inclusive, whereas `end` is exclusive.
 // Equivalent to [start, start + 1, ..., end - 1]
 // There is no equivalent in TLA+,
@@ -1801,24 +1801,24 @@ The most common example is shown below:
 
 // in MC.tnt
   module MC {
-    val Acceptor = set("p1", "p2", "p3")
+    val Acceptor = Set("p1", "p2", "p3")
     val Quorum = MC_Acceptor.powerset.filter(Q => Q.size > 1)
 
     // an instance of Voting that has the name "V"
-    module V = Voting(Value = set(0, 1), Acceptor = Acceptor, Quorum = Quorum)
+    module V = Voting(Value = Set(0, 1), Acceptor = Acceptor, Quorum = Quorum)
     // ...
   }
 ```
 
 In the above example, module `V` is produced from the module `Voting` by replacing
-every occurrence of `Value`, `Acceptor`, and `Quorum` with `set(0, 1)`, `Acceptor`,
+every occurrence of `Value`, `Acceptor`, and `Quorum` with `Set(0, 1)`, `Acceptor`,
 and `Quorum`, respectively.
 
 We can shorten identity substitutions `Acceptor = Acceptor` and `Quorum =
 Quorum` by writing:
 
 ```scala
-    module V = Voting(Value = set(0, 1), *)
+    module V = Voting(Value = Set(0, 1), *)
 ```
 
 ### Common case 2

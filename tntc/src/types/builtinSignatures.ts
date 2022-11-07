@@ -120,18 +120,18 @@ function uniformArgsWithResult (argsType: string, resultType: string): Signature
 
 // TODO: check arity conditions, see issue https://github.com/informalsystems/tnt/issues/169
 const multipleAritySignatures: [string, Signature][] = [
-  ['list', uniformArgsWithResult('a', 'list(a)')],
-  ['set', uniformArgsWithResult('a', 'set(a)')],
-  ['mapOf', uniformArgsWithResult('(a, b)', 'a -> b')],
+  ['List', uniformArgsWithResult('a', 'list(a)')],
+  ['Set', uniformArgsWithResult('a', 'set(a)')],
+  ['Map', uniformArgsWithResult('(a, b)', 'a -> b')],
   ['and', uniformArgsWithResult('bool', 'bool')],
   ['actionAll', uniformArgsWithResult('bool', 'bool')],
   ['or', uniformArgsWithResult('bool', 'bool')],
   ['actionAny', uniformArgsWithResult('bool', 'bool')],
-  ['tup', (arity: number) => {
+  ['Tup', (arity: number) => {
     const args = Array.from(Array(arity).keys()).map(i => `t${i}`).join(', ')
     return parseAndQuantify(`(${args}) => (${args})`)
   }],
-  ['rec', (arity: number) => {
+  ['Rec', (arity: number) => {
     const indexes = Array.from(Array(arity / 2).keys())
     const args = indexes.map(i => `n${i}, t${i}`).join(', ')
     const result = indexes.map(i => `n${i}: t${i}`).join(', ')

@@ -485,19 +485,19 @@ export class ToIrListener implements TntListener {
   exitTuple (ctx: p.TupleContext) {
     const args = this.popExprs(ctx.expr().length)
 
-    this.pushApplication(ctx, 'tup', args)
+    this.pushApplication(ctx, 'Tup', args)
   }
 
   // pair constructor, e.g., 2 -> 3
   exitPair (ctx: p.PairContext) {
     const args = this.popExprs(ctx.expr().length)
-    this.pushApplication(ctx, 'tup', args)
+    this.pushApplication(ctx, 'Tup', args)
   }
 
   // list constructor, e.g., [1, 2, 3]
   exitList (ctx: p.ListContext) {
     const args = this.popExprs(ctx.expr().length)
-    this.pushApplication(ctx, 'list', args)
+    this.pushApplication(ctx, 'List', args)
   }
 
   // record constructor, e.g., { name: "igor", year: 2021 }
@@ -516,7 +516,7 @@ export class ToIrListener implements TntListener {
       })
       namesAndValues.push(elems[i])
     }
-    this.pushApplication(ctx, 'rec', namesAndValues)
+    this.pushApplication(ctx, 'Rec', namesAndValues)
   }
 
   // '+' or '-'

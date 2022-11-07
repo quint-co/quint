@@ -113,7 +113,7 @@ export const rv = {
    * @return a new runtime value that carries the tuple
    */
   mkTuple: (elems: Iterable<RuntimeValue>): RuntimeValue => {
-    return new RuntimeValueTupleOrList('tup', List(elems))
+    return new RuntimeValueTupleOrList('Tup', List(elems))
   },
 
   /**
@@ -123,7 +123,7 @@ export const rv = {
    * @return a new runtime value that carries the list
    */
   mkList: (elems: Iterable<RuntimeValue>): RuntimeValue => {
-    return new RuntimeValueTupleOrList('list', List(elems))
+    return new RuntimeValueTupleOrList('List', List(elems))
   },
 
   /**
@@ -645,7 +645,7 @@ class RuntimeValueStr extends RuntimeValueBase implements ValueObject {
   }
 }
 
-type TupleOrList = 'tup' | 'list'
+type TupleOrList = 'Tup' | 'List'
 
 /**
  * A set of runtime values represented via an immutable List.
@@ -687,7 +687,7 @@ class RuntimeValueTupleOrList extends RuntimeValueBase implements RuntimeValue {
     return {
       id: 0n,
       kind: 'app',
-      opcode: (this.kind === 'tup') ? 'tup' : 'list',
+      opcode: this.kind,
       args: elems,
     }
   }
@@ -722,11 +722,11 @@ class RuntimeValueRecord extends RuntimeValueBase implements RuntimeValue {
       elems.push({ id: 0n, kind: 'str', value: key })
       elems.push(value.toTntEx())
     }
-    // return the expression rec(...elems)
+    // return the expression Rec(...elems)
     return {
       id: 0n,
       kind: 'app',
-      opcode: 'rec',
+      opcode: 'Rec',
       args: elems,
     }
   }
@@ -757,15 +757,15 @@ class RuntimeValueMap extends RuntimeValueBase implements RuntimeValue {
   toTntEx (): TntEx {
     // convert to a set of pairs and use its normal form
     const pairs: RuntimeValueTupleOrList[] = this.map.toArray().map(([k, v]) =>
-      new RuntimeValueTupleOrList('tup', List([k, v]))
+      new RuntimeValueTupleOrList('Tup', List([k, v]))
     )
     const set = new RuntimeValueSet(Set(pairs)).toTntEx()
     if (set.kind === 'app') {
-      // return the expression mapOf(pairs)
+      // return the expression Map(pairs)
       return {
         id: 0n,
         kind: 'app',
-        opcode: 'mapOf',
+        opcode: 'Map',
         args: set.args,
       }
     } else {
@@ -854,11 +854,11 @@ class RuntimeValueSet extends RuntimeValueBase implements RuntimeValue {
         .sort((e1, e2) => e1.__str.localeCompare(e2.__str))
     // erase the string cache
     elems.forEach(e => delete e.__str)
-    // return the expression set(...elems)
+    // return the expression Set(...elems)
     return {
       id: 0n,
       kind: 'app',
-      opcode: 'set',
+      opcode: 'Set',
       args: elems,
     }
   }
@@ -938,11 +938,11 @@ class RuntimeValueInterval extends RuntimeValueBase implements RuntimeValue {
     for (const i of this) {
       elems.push(i.toTntEx())
     }
-    // return the expression set(...elems)
+    // return the expression Set(...elems)
     return {
       id: 0n,
       kind: 'app',
-      opcode: 'set',
+      opcode: 'Set',
       args: elems,
     }
   }
@@ -1001,7 +1001,7 @@ class RuntimeValueCrossProd
           for (let i = 0; i < nindices; i++) {
             nextElem.push(arrays[i][indices[i]])
           }
-          yield new RuntimeValueTupleOrList('tup', List(nextElem))
+          yield new RuntimeValueTupleOrList('Tup', List(nextElem))
         }
       }
     }
@@ -1077,7 +1077,7 @@ class RuntimeValueCrossProd
       }
     }
 
-    return new RuntimeValueTupleOrList('tup', List.of(...elems))
+    return new RuntimeValueTupleOrList('Tup', List.of(...elems))
   }
 
   toTntEx (): TntEx {
@@ -1086,11 +1086,11 @@ class RuntimeValueCrossProd
     for (const i of this) {
       elems.push(i.toTntEx())
     }
-    // return the expression set(...elems)
+    // return the expression Set(...elems)
     return {
       id: 0n,
       kind: 'app',
-      opcode: 'set',
+      opcode: 'Set',
       args: elems,
     }
   }
@@ -1167,11 +1167,11 @@ class RuntimeValuePowerset
     for (const i of this) {
       elems.push(i.toTntEx())
     }
-    // return the expression set(...elems)
+    // return the expression Set(...elems)
     return {
       id: 0n,
       kind: 'app',
-      opcode: 'set',
+      opcode: 'Set',
       args: elems,
     }
   }
@@ -1303,7 +1303,7 @@ class RuntimeValueMapSet
     return {
       id: 0n,
       kind: 'app',
-      opcode: 'set',
+      opcode: 'Set',
       args: elems,
     }
   }

@@ -360,7 +360,7 @@ module ics23test {
   val abc = [5, 6, 7]
   val abcd = [5, 6, 7, 8]
 
-  val allStrings = set([], a, ab, ba, abc, abcd, [1], [2], [3], [4])
+  val allStrings = Set([], a, ab, ba, abc, abcd, [1], [2], [3], [4])
 
   val test1 = {
     existsCalculate({
@@ -483,7 +483,7 @@ module ics23pbt {
 
   // We limit the letters to a very small set,
   // including '32' for hash headers.
-  val Byte = 0.to(3).union(set(32))
+  val Byte = 0.to(3).union(Set(32))
 
   val toWord(m) =
     m.keys().fold([], (l, i => l.append(m[i])))
@@ -521,7 +521,7 @@ module ics23pbt {
 
   // grow the proof on the left
   action growLeft =
-    set("turnLeft", "turnRight").guess(dir =>
+    Set("turnLeft", "turnRight").guess(dir =>
       1.to(MaxPrefixLen + ChildSize).setOfMaps(Byte).guess(m =>
         nonMemProof <-
           nonMemProof.with("left", nonMemProof.left.extend(dir, toWord(m)))
@@ -529,7 +529,7 @@ module ics23pbt {
 
   // grow the proof on the right
   action growRight =
-    set("turnLeft", "turnRight").guess(dir =>
+    Set("turnLeft", "turnRight").guess(dir =>
       1.to(MaxPrefixLen + ChildSize).setOfMaps(Byte).guess(m =>
         nonMemProof <-
           nonMemProof.with("right", nonMemProof.right.extend(dir, toWord(m)))
@@ -606,7 +606,7 @@ module trees {
   // To simplify random generation of the trees, we are using
   // the binary encoding. For example, if a leaf has the index 4,
   // that is, 100b, then it has the parents 3 = 10b and 1 = 1b.
-  def parents(i) = 1.to(height).map(h => i / (2^h)).exclude(set(0))
+  def parents(i) = 1.to(height).map(h => i / (2^h)).exclude(Set(0))
 
   // is a given key a node (inner or leaf) of a tree
   def isNode(t, key) = or {
@@ -854,8 +854,8 @@ module trees {
   // https://github.com/informalsystems/tnt/issues/301
   /*
   def isTree(t) = and {
-    t.leafs.keys().intersect(t.left.keys()) == set(),
-    t.leafs.keys().intersect(t.right.keys()) == set(),
+    t.leafs.keys().intersect(t.left.keys()) == Set(),
+    t.leafs.keys().intersect(t.right.keys()) == Set(),
     1.in(t.leafs.keys().union(t.left.keys().union(t.right.keys()))),
     // we impose an order on the keys, to break cycles and DAGs
     t.left.keys().forall(k => t.left[k] > k),

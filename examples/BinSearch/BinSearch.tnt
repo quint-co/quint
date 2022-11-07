@@ -132,7 +132,7 @@ module BinSearch {
     val ReturnValueIsCorrect =
         val MatchingIndices =
             INPUT_SEQ.domain.filter(i => INPUT_SEQ[i] == INPUT_KEY)
-        if (MatchingIndices != set())
+        if (MatchingIndices != Set())
             // Indices start with 1, whereas returnValue starts with 0
             MatchingIndices.contains(returnValue + 1)
         else

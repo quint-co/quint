@@ -15,7 +15,7 @@ const Quorum: set(set(str))
 
 assume _ = and {
     Quorum.forall(Q => Q.subseteq(Acceptor)),
-    tuples(Quorum, Quorum).forall(t => (t._1.intersect(t._2)) != set())
+    tuples(Quorum, Quorum).forall(t => (t._1.intersect(t._2)) != Set())
 }
       
 val Ballot = Nat
@@ -35,7 +35,7 @@ val Message =
       Ballot.map(b => { tag: "1a", bal: b })
 
     val M1b =
-      tuples(Acceptor, Ballot, union(Ballot, set(-1)), union(Value, set(None)))
+      tuples(Acceptor, Ballot, union(Ballot, Set(-1)), union(Value, Set(None)))
         .map(t => { tag: "1b", acc: t._1, bal: t._2, mbal: t._3, mval: t._4 })
 
     val M2a =
@@ -92,17 +92,17 @@ val vars = (maxBal, maxVBal, maxVal, msgs)
 (* The type invariant and initial predicate.                               *)
 (***************************************************************************/
 val TypeOK = and {
-    maxBal  in Acceptor.setOfMaps(Ballot.union(set(-1))),
-    maxVBal in Acceptor.setOfMaps(Ballot.union(set(-1))),
-    maxVal  in Acceptor.setOfMaps(Value.union(set(None))),
+    maxBal  in Acceptor.setOfMaps(Ballot.union(Set(-1))),
+    maxVBal in Acceptor.setOfMaps(Ballot.union(Set(-1))),
+    maxVal  in Acceptor.setOfMaps(Value.union(Set(None))),
     msgs.subseteq(Message),
 }
 
 action Init = all {
-    maxBal  <- Acceptor.mapOf(_ => -1),
-    maxVBal <- Acceptor.mapOf(_ => -1),
-    maxVal  <- Acceptor.mapOf(_ => None),
-    msgs    <- set(),
+    maxBal  <- Acceptor.mapBy(_ => -1),
+    maxVBal <- Acceptor.mapBy(_ => -1),
+    maxVal  <- Acceptor.mapBy(_ => None),
+    msgs    <- Set(),
 }
 
 /***************************************************************************)
@@ -110,7 +110,7 @@ action Init = all {
 (* to define the actions that make up the next-state action.               *)
 (***************************************************************************/
 action Send(m) = {
-  msgs <- msgs.union(set(m))
+  msgs <- msgs.union(Set(m))
 }
 
 /***************************************************************************)
@@ -173,7 +173,7 @@ action Phase2a(b, v) = all {
     and {
         Q.forall(a => Q1b.exists(m => m.acc == a)),
         or {
-            Q1bv == set(),
+            Q1bv == Set(),
             Q1bv.exists(m => or {
                 m.mval == v,
                 Q1bv.forall(mm => m.mbal >= mm.mbal)
@@ -240,7 +240,7 @@ temporal Spec = Init and always(stutter(Next, vars))
 (* the array `votes' describing the votes cast by the acceptors is defined *)
 (* as follows.                                                             *)
 (***************************************************************************/
-val votes = Acceptor.mapOf( a =>
+val votes = Acceptor.mapBy( a =>
            msgs.filter(mm => mm.tag == "2b")
                .filter(mm => mm.acc == a)
                .map(m => (m.bal, m.value))

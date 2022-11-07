@@ -8,7 +8,7 @@ module EWD840 {
 (***************************************************************************/
 
 const N: int
-assume NAssumption = N in (Nat.exclude(set(0)))
+assume NAssumption = N in (Nat.exclude(Set(0)))
 
 type NODE = int
 
@@ -18,7 +18,7 @@ var tpos: NODE
 var tcolor: str
 
 val Node = 0.to(N - 1)
-val Color = set("white", "black")
+val Color = Set("white", "black")
 
 val TypeOK = and {
   active in setOfMaps(Node, Bool),    // status of nodes (active or passive)
@@ -74,7 +74,7 @@ action PassToken(i) = all {
 (***************************************************************************/
 action System = any {
   InitiateProbe,
-  Node.exclude(set(0)).guess({ i => PassToken(i) }),
+  Node.exclude(Set(0)).guess({ i => PassToken(i) }),
 }
 
 /***************************************************************************)
@@ -84,7 +84,7 @@ action System = any {
 (***************************************************************************/
 action SendMsg(i) = all {
   active.get(i),
-  Node.exclude(set(i))
+  Node.exclude(Set(i))
       .guess({ j => all {
         active  <- active.update(j, true),
         color   <- color.updateAs(i, (old => if (j > i) "black" else old)),

@@ -14,7 +14,7 @@ const Quorum: set(set(str))     // The set of "quorums", where a quorum" is a
 (***************************************************************************/
 assume QuorumAssumption = and {
     Quorum.forall(Q => Q.subseteq(Acceptor)),
-    tuples(Quorum, Quorum).forall(t => t._1.intersect(t._2) != set())
+    tuples(Quorum, Quorum).forall(t => t._1.intersect(t._2) != Set())
 }
 
 // theorems are not supported by TNT, use TLA+ syntax
@@ -48,7 +48,7 @@ var maxBal: str -> int
 (***************************************************************************/
 val TypeOK = and {
     votes in Acceptor.setOfMaps(powerset(tuples(Ballot, Value))),
-    maxBal in Acceptor.setOfMaps(Ballot.union(set(-1)))
+    maxBal in Acceptor.setOfMaps(Ballot.union(Set(-1)))
 }
 
 //-----------------------------------------------------------------------------
@@ -158,8 +158,8 @@ THEOREM ShowsSafety ==
 (* straightforward.                                                        *)
 (***************************************************************************/
 action Init = all {
-  votes  <- Acceptor.mapOf({ _ => set() }),
-  maxBal <- Acceptor.mapOf({ _ => -1 }),
+  votes  <- Acceptor.mapBy({ _ => Set() }),
+  maxBal <- Acceptor.mapBy({ _ => -1 }),
 }
 
 
@@ -186,11 +186,11 @@ action IncreaseMaxBal(a, b) = all {
 action VoteFor(a, b, v) = all {
     maxBal.get(a) <= b,
     votes.get(a).forall( vt => vt._1 != b ),
-    Acceptor.exclude(set(a)).forall( c =>
+    Acceptor.exclude(Set(a)).forall( c =>
          votes.get(c).forall( vt => (vt._1 == b) implies (vt._2 == v) )
     ),
     Quorum.exists( Q => ShowsSafeAt(Q, b, v) ),
-    votes  <- votes.updateAs(a, ( old => old.union(set((b, v))) )),
+    votes  <- votes.updateAs(a, ( old => old.union(Set((b, v))) )),
     maxBal <- maxBal.updateAs(a, ( _ => b )),
 }
 

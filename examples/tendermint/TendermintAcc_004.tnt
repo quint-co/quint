@@ -82,12 +82,12 @@ val AllProcs = Corr.union(Faulty)
 val Rounds = 0.to(MaxRound)
 // a special value to denote a nil round, outside of Rounds
 val NilRound = -1
-val RoundsOrNil = set(NilRound).union(Rounds)
+val RoundsOrNil = Set(NilRound).union(Rounds)
 // the set of all values
 val Values = ValidValues.union(InvalidValues)
 // a special value for a nil round, outside of Values
 val NilValue = "None"
-val ValuesOrNil = set(NilValue).union(Values)
+val ValuesOrNil = Set(NilValue).union(Values)
 
 // a value hash is modeled as identity
 def Id(v) = v
@@ -181,13 +181,13 @@ pure def BenignRoundsInMessages(msgfun) =
 
 // The initial states of the protocol. Some faults can be in the system already.
 action Init = all {
-  round           <- Corr.mapOf( _ => 0 ),
-  step            <- Corr.mapOf( _ => Proposer ),
-  decision        <- Corr.mapOf( _ => NilValue ),
-  lockedValue     <- Corr.mapOf( _ => NilValue ),
-  lockedRound     <- Corr.mapOf( _ => NilRound ),
-  validValue      <- Corr.mapOf( _ => NilValue ),
-  validRound      <- Corr.mapOf( _ => NilRound ),
+  round           <- Corr.mapBy( _ => 0 ),
+  step            <- Corr.mapBy( _ => Proposer ),
+  decision        <- Corr.mapBy( _ => NilValue ),
+  lockedValue     <- Corr.mapBy( _ => NilValue ),
+  lockedRound     <- Corr.mapBy( _ => NilRound ),
+  validValue      <- Corr.mapBy( _ => NilValue ),
+  validRound      <- Corr.mapBy( _ => NilRound ),
   AllFaultyProposals.powerset().guess(faultyProposals => all {
     BenignRoundsInMessages(faultyProposals),
     msgsPropose <- faultyProposals,
@@ -200,7 +200,7 @@ action Init = all {
     BenignRoundsInMessages(faultyPrecommits),
     msgsPrecommit <- faultyPrecommits,
   }),
-  evidence        <- set(),
+  evidence        <- Set(),
   fired_action    <- "Init",
 }
 
@@ -208,17 +208,17 @@ action Init = all {
 action BroadcastProposal(pSrc, pRound, pProposal, pValidRound) = {
   val newMsg = { tag: "PROPOSE", src: pSrc, round: pRound,
                  proposal: pProposal, validRound: pValidRound }
-  msgsPropose <- msgsPropose.updateAs(pRound, (old => old.union(set(newMsg))))
+  msgsPropose <- msgsPropose.updateAs(pRound, (old => old.union(Set(newMsg))))
 }
 
 action BroadcastPrevote(pSrc, pRound, pId) = {
   val newMsg = { tag: "PREVOTE", src: pSrc, round: pRound, id: pId }
-  msgsPrevote <- msgsPrevote.updateAs(pRound, (old => old.union(set(newMsg))))
+  msgsPrevote <- msgsPrevote.updateAs(pRound, (old => old.union(Set(newMsg))))
 }
 
 action BroadcastPrecommit(pSrc, pRound, pId) = {
   val newMsg = { tag: "PRECOMMIT", src: pSrc, round: pRound, id: pId }
-  msgsPrecommit <- msgsPrecommit.updateAs(pRound, (old => old.union(set(newMsg))))
+  msgsPrecommit <- msgsPrecommit.updateAs(pRound, (old => old.union(Set(newMsg))))
 }
 
 //********************* PROTOCOL TRANSITIONS ******************************
@@ -258,7 +258,7 @@ action UponProposalInPropose(p) =
     all {
       step.get(p) == "propose",                 // line 22
       msg in msgsPropose.get(round.get(p)),         // line 22
-      evidence <- set(msg).union(evidence),
+      evidence <- Set(msg).union(evidence),
       BroadcastPrevote(p, round.get(p), mid),   // lines 24-26
       step <- step.update(p, "prevote"),
       fired_action <- "UponProposalInPropose",
@@ -280,7 +280,7 @@ action UponProposalInProposeAndPrevote(p) =
       0 <= vr and vr < round.get(p), // line 28, the while part
       msg in msgsPropose.get(round.get(p)), // line 28
       size(PV) >= THRESHOLD2, // line 28
-      evidence <- PV.union(set(msg)).union(evidence),
+      evidence <- PV.union(Set(msg)).union(evidence),
       BroadcastPrevote(p, round.get(p), mid), // lines 24-26
       step <- step.update(p, "prevote"),
       fired_action <- "UponProposalInProposeAndPrevote",
@@ -313,10 +313,10 @@ action UponProposalInPrevoteOrCommitAndPrevote(p) =
                 round: round.get(p), proposal: v, validRound: vr }
     val PV = msgsPrevote.get(round.get(p)).filter(m => m.id == Id(v))
     all {
-      step.get(p) in set("prevote", "precommit"), // line 36
+      step.get(p) in Set("prevote", "precommit"), // line 36
       msg in msgsPropose.get(round.get(p)), // line 36
       size(PV) >= THRESHOLD2, // line 36
-      evidence <- PV.union(set(msg)).union(evidence),
+      evidence <- PV.union(Set(msg)).union(evidence),
       if (step.get(p) == "prevote") all {
           // lines 38-41:
           lockedValue <- lockedValue.update(p, v),
@@ -362,7 +362,7 @@ action UponProposalInPrecommitNoDecision(p) =
        decision.get(p) == NilValue,         // line 49
        msg in msgsPropose.get(r),           // line 49
        size(PV) >= THRESHOLD2,   // line 49
-       evidence <- PV.union(set(msg)).union(evidence),
+       evidence <- PV.union(Set(msg)).union(evidence),
        decision <- decision.update(p, v), // update the decision, line 51
        // The original algorithm does not have 'DECIDED', but it increments the height.
        // We introduced 'DECIDED' here to prevent the process from changing its decision.
@@ -485,7 +485,7 @@ val Agreement =
 // the protocol validity
 val Validity =
   Corr.forall(p =>
-    decision.get(p) in (ValidValues.union(set(NilValue)))
+    decision.get(p) in (ValidValues.union(Set(NilValue)))
   )
 
 /*

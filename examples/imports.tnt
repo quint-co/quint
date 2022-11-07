@@ -92,7 +92,7 @@ module root {
     import spec.*
 
     def quadShouldDoubleTwice = {
-      set(1, 2, 3).forall(i => quad(i) == double(i) + double(i))
+      Set(1, 2, 3).forall(i => quad(i) == double(i) + double(i))
     }
   }
 }
