@@ -12,7 +12,7 @@
  * @module
  */
 
-import { TntModule, TntDef, TntEx } from './tntIr'
+import { TntModule, TntDef, TntEx, isAnnotatedDef } from './tntIr'
 import { TntType } from './tntTypes'
 
 /**
@@ -35,7 +35,8 @@ export function moduleToString (tntModule: TntModule): string {
  * @returns a string with the pretty printed definition
  */
 export function definitionToString (def: TntDef): string {
-  const typeAnnotation = def.type ? `: ${typeToString(def.type)}` : ''
+  const typeAnnotation =
+    isAnnotatedDef(def) ? `: ${typeToString(def.typeAnnotation)}` : ''
   switch (def.kind) {
     case 'def':
       return `${def.qualifier} ${def.name}${typeAnnotation} = ${expressionToString(def.expr)}`

@@ -87,7 +87,7 @@ export class ToIrListener implements TntListener {
     const constDef: TntDef = {
       kind: 'const',
       name: ctx.IDENTIFIER().text,
-      type: typeTag,
+      typeAnnotation: typeTag,
       id: id,
     }
     this.definitionStack.push(constDef)
@@ -102,7 +102,7 @@ export class ToIrListener implements TntListener {
     const varDef: TntDef = {
       kind: 'var',
       name: ctx.IDENTIFIER().text,
-      type: typeTag,
+      typeAnnotation: typeTag,
       id: id,
     }
     this.definitionStack.push(varDef)
@@ -173,7 +173,7 @@ export class ToIrListener implements TntListener {
         expr: body,
       }
       if (typeTag) {
-        def.type = typeTag
+        def.typeAnnotation = typeTag
       }
       this.definitionStack.push(def)
     } else {
@@ -304,7 +304,6 @@ export class ToIrListener implements TntListener {
       this.exprStack.push({
         id: id,
         kind: 'int',
-        type: { id: id, kind: 'int' },
         value: BigInt(intNode.text),
       })
     }
@@ -313,7 +312,6 @@ export class ToIrListener implements TntListener {
       this.exprStack.push({
         id: id,
         kind: 'bool',
-        type: { id: id, kind: 'bool' },
         value: (boolNode.text === 'true'),
       })
     }
@@ -322,7 +320,6 @@ export class ToIrListener implements TntListener {
       this.exprStack.push({
         id: id,
         kind: 'str',
-        type: { id: id, kind: 'str' },
         value: strNode.text.slice(1, -1),
       })
     }
@@ -516,7 +513,6 @@ export class ToIrListener implements TntListener {
         id: id,
         kind: 'str',
         value: names[i],
-        type: { id: id, kind: 'str' },
       })
       namesAndValues.push(elems[i])
     }
@@ -656,7 +652,6 @@ export class ToIrListener implements TntListener {
         id: tagId,
         kind: 'str',
         value: options[i],
-        type: { id: tagId, kind: 'str' },
       }
       const lamId = this.nextId()
       this.sourceMap.set(lamId, this.loc(ctx))

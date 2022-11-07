@@ -37,8 +37,8 @@ export function buildExpression (expression: string): TntEx {
 
 export function buildType (type: string): TntType {
   const def = buildDef(`var a: ${type}`)
-  if (def.kind === 'var' && def.type) {
-    return def.type
+  if (def.kind === 'var' && def.typeAnnotation) {
+    return def.typeAnnotation
   } else {
     throw new Error(`Error trying to build expression  - ${JSONbig.stringify(def)}`)
   }

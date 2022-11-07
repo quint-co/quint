@@ -241,7 +241,9 @@ function walkDefinition (visitor: IRVisitor, def: ir.TntDef): void {
   if (visitor.enterDef) {
     visitor.enterDef(def)
   }
-  if (def.type) {
+  if (ir.isAnnotatedDef(def)) {
+    walkType(visitor, def.typeAnnotation)
+  } else if (ir.isTypeAlias(def)) {
     walkType(visitor, def.type)
   }
 

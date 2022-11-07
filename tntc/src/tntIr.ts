@@ -33,15 +33,15 @@ export interface IrErrorMessage {
  * TNT expressions and declarations carry an optional type tag.
  * If a type tag is missing, it means that the type has not been computed yet.
  */
-interface WithOptionalType {
-  type?: TntType
+interface WithOptionalTypeAnnotation {
+  typeAnnotation?: TntType
 }
 
 /**
  * Some declarations require a type tag.
  */
-interface WithType {
-  type: TntType
+interface WithTypeAnnotation {
+  typeAnnotation: TntType
 }
 
 /**
@@ -75,35 +75,35 @@ interface WithType {
 export type OpQualifier =
   'pureval' | 'puredef' | 'val' | 'def' | 'pred' | 'action' | 'temporal'
 
-export interface TntName extends WithId, WithOptionalType {
+export interface TntName extends WithId {
   /** Expressions kind ('name' -- name reference) */
   kind: 'name',
   /** A name of: a variable, constant, parameter, user-defined operator */
   name: string,
 }
 
-export interface TntBool extends WithId, WithOptionalType {
+export interface TntBool extends WithId {
   /** Expressions kind ('bool' -- a boolean literal) */
   kind: 'bool',
   /** The boolean literal value */
   value: boolean,
 }
 
-export interface TntInt extends WithId, WithOptionalType {
+export interface TntInt extends WithId {
   /** Expressions kind ('int' -- an integer literal) */
   kind: 'int',
   /** The integer literal value */
   value: bigint,
 }
 
-export interface TntStr extends WithId, WithOptionalType {
+export interface TntStr extends WithId {
   /** Expressions kind ('str' -- a string literal) */
   kind: 'str',
   /** The string literal value */
   value: string,
 }
 
-export interface TntApp extends WithId, WithOptionalType {
+export interface TntApp extends WithId {
   /** Expressions kind ('app' -- operator application) */
   kind: 'app',
   /** The name of the operator being applied */
@@ -112,7 +112,7 @@ export interface TntApp extends WithId, WithOptionalType {
   args: TntEx[],
 }
 
-export interface TntLambda extends WithId, WithOptionalType {
+export interface TntLambda extends WithId {
   /** Expressions kind ('lambda' -- operator abstraction) */
   kind: 'lambda',
   /** Identifiers for the formal parameters */
@@ -123,7 +123,7 @@ export interface TntLambda extends WithId, WithOptionalType {
   expr: TntEx,
 }
 
-export interface TntLet extends WithId, WithOptionalType {
+export interface TntLet extends WithId {
   /** Expressions kind ('let' -- a let-in binding defined via 'def', 'val', etc.) */
   kind: 'let',
   /** The operator being defined to be used in the body */
@@ -144,7 +144,7 @@ export type TntEx = TntName | TntBool | TntInt | TntStr | TntApp | TntLambda | T
  * If an operator definition has formal parameters, then `expr`
  * should be a lambda expression over those parameters.
  */
-export interface TntOpDef extends WithId, WithOptionalType {
+export interface TntOpDef extends WithId, WithOptionalTypeAnnotation {
   /** definition kind ('def' -- operator definition) */
   kind: 'def',
   /** definition name */
@@ -155,21 +155,21 @@ export interface TntOpDef extends WithId, WithOptionalType {
   expr: TntEx
 }
 
-export interface TntConst extends WithId, WithType {
+export interface TntConst extends WithId, WithTypeAnnotation {
   /** definition kind ('const') */
   kind: 'const',
   /** name of the constant */
   name: string,
 }
 
-export interface TntVar extends WithId, WithType {
+export interface TntVar extends WithId, WithTypeAnnotation {
   /** definition kind ('var') */
   kind: 'var',
   /** name of the variable */
   name: string
 }
 
-export interface TntAssume extends WithId, WithOptionalType {
+export interface TntAssume extends WithId {
   /** definition kind ('assume') */
   kind: 'assume',
   /** name of the assumption, may be '_' */
@@ -178,7 +178,12 @@ export interface TntAssume extends WithId, WithOptionalType {
   assumption: TntEx
 }
 
-export interface TntTypeDef extends WithId, WithOptionalType {
+/** TntTypeDefs represent both type aliases and abstract types
+ *
+ * - Abstract types do not have an associated `type`
+ * - Type aliases always have an associated `type`
+ */
+export interface TntTypeDef extends WithId {
   /** definition kind ('typedef') */
   kind: 'typedef',
   /** name of a type alias */
@@ -187,7 +192,17 @@ export interface TntTypeDef extends WithId, WithOptionalType {
   type?: TntType
 }
 
-export interface TntImport extends WithId, WithOptionalType {
+/** A TntTypeAlias is a sub-type of TntTypeDef which always has an associated type */
+export interface TntTypeAlias extends TntTypeDef {
+  /** type to associate with the alias (none for uninterpreted type) */
+  type: TntType
+}
+
+export function isTypeAlias(def: any): def is TntTypeAlias {
+  return def.kind == 'typedef' && def.type
+}
+
+export interface TntImport extends WithId {
   /** definition kind ('import') */
   kind: 'import',
   /** name to import, or '*' to denote all */
@@ -196,7 +211,7 @@ export interface TntImport extends WithId, WithOptionalType {
   path: string
 }
 
-export interface TntInstance extends WithId, WithOptionalType {
+export interface TntInstance extends WithId {
   /** definition kind ('instance') */
   kind: 'instance',
   /** instance name */
@@ -209,7 +224,7 @@ export interface TntInstance extends WithId, WithOptionalType {
   identityOverride: boolean
 }
 
-export interface TntModuleDef extends WithId, WithOptionalType {
+export interface TntModuleDef extends WithId {
   /** definition kind ('module') */
   kind: 'module',
   /** nested module */
@@ -220,6 +235,10 @@ export interface TntModuleDef extends WithId, WithOptionalType {
  * Definition: constant, state variable, operator definition, assumption, instance, module.
  */
 export type TntDef = TntOpDef | TntConst | TntVar | TntAssume | TntTypeDef | TntImport | TntInstance | TntModuleDef
+
+export function isAnnotatedDef(def: any): def is WithTypeAnnotation {
+  return def.typeAnnotation != undefined;
+}
 
 /**
  * Module definition.
