@@ -21,15 +21,14 @@ import { formatError } from './errorReporter'
 
 import yargs from 'yargs/yargs'
 import { inferEffects } from './effects/inferrer'
-import { getSignatures } from './effects/builtinSignatures'
 import { checkModes } from './effects/modeChecker'
 import { LookupTableByModule } from './lookupTable'
-import { typeToString } from './IRprinting'
 import { errorTreeToString } from './errorTree'
 
 import { tntRepl } from './repl'
 import { inferTypes } from './types/inferrer'
 import { effectToString } from './effects/printing'
+import { typeSchemeToString } from './types/printing'
 
 /**
  * Parse a TNT specification.
@@ -54,26 +53,10 @@ function typecheck (argv: any) {
   }
   const finder = lineColumn(sourceCode)
 
-  const types = inferTypes(parseResult.module)
-  types.map(e => e.forEach((value, key) => console.log(`${key}: ${typeToString(value)}`)))
+  const [typeErrors, types] = inferTypes(parseResult.module, definitionsTable)
+  types.forEach((value, key) => console.log(`${key}: ${typeSchemeToString(value)}`))
 
-  types.mapLeft(e => {
-    console.log(`${JSON.stringify(Array.from(e.values()))} Type errors found, sending diagnostics`)
-    e.forEach((value, key) => {
-      const loc = parseResult.sourceMap.get(key)!
-      const message: ErrorMessage = {
-        explanation: errorTreeToString(value),
-        locs: [loc],
-      }
-
-      console.error(formatError(sourceCode, finder, message))
-    })
-  })
-
-  const effects = inferEffects(getSignatures(), definitionsTable, parseResult.module)
-  effects.map(e => e.forEach((value, key) => console.log(`${key}: ${effectToString(value)}`)))
-
-  effects.mapLeft(e => e.forEach((value, key) => {
+  typeErrors.forEach((value, key) => {
     const loc = parseResult.sourceMap.get(key)!
     const message: ErrorMessage = {
       explanation: errorTreeToString(value),
@@ -81,21 +64,32 @@ function typecheck (argv: any) {
     }
 
     console.error(formatError(sourceCode, finder, message))
-  }))
-
-  const finalResult = effects.chain(e => {
-    const modes = checkModes(parseResult.module, e)
-    return modes
-      .map(e => e.forEach((value, key) => console.log(`${key}: ${value}`)))
-      .mapLeft(e => e.forEach((value, key) => {
-        const loc = parseResult.sourceMap.get(key)!
-        const message: ErrorMessage = {
-          explanation: errorTreeToString(value),
-          locs: [loc],
-        }
-        console.error(formatError(sourceCode, finder, message))
-      }))
   })
+
+  const [errors, effects] = inferEffects(definitionsTable, parseResult.module)
+  effects.forEach((value, key) => console.log(`${key}: ${effectToString(value)}`))
+
+  errors.forEach((value, key) => {
+    const loc = parseResult.sourceMap.get(key)!
+    const message: ErrorMessage = {
+      explanation: errorTreeToString(value),
+      locs: [loc],
+    }
+
+    console.error(formatError(sourceCode, finder, message))
+  })
+
+  const modes = checkModes(parseResult.module, effects)
+  const finalResult = modes
+    .map(e => e.forEach((value, key) => console.log(`${key}: ${value}`)))
+    .mapLeft(e => e.forEach((value, key) => {
+      const loc = parseResult.sourceMap.get(key)!
+      const message: ErrorMessage = {
+        explanation: errorTreeToString(value),
+        locs: [loc],
+      }
+      console.error(formatError(sourceCode, finder, message))
+    }))
 
   finalResult.isRight() ? process.exit(0) : process.exit(1)
 }

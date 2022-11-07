@@ -1,6 +1,6 @@
 import { typeToString } from '../IRprinting'
 import { Constraint, TypeScheme } from './base'
-import { Substitutions } from './substitutions'
+import { applySubstitution, Substitutions } from './substitutions'
 
 /**
  * Formats the string representation of a constraint
@@ -9,7 +9,7 @@ import { Substitutions } from './substitutions'
  *
  * @returns a string with the formatted constraint
  */
-export function constraintToString (c: Constraint): String {
+export function constraintToString (c: Constraint): string {
   switch (c.kind) {
     case 'eq': return `${typeToString(c.types[0])} ~ ${typeToString(c.types[1])}`
     case 'conjunction': return c.constraints.map(constraintToString).join(' /\\ ')
@@ -24,16 +24,23 @@ export function constraintToString (c: Constraint): String {
  *
  * @returns a string with the formatted type scheme
  */
-export function typeSchemeToString (t: TypeScheme): String {
-  const vars = Array.from(t.variables)
-  const varsString = vars.length > 0 ? `∀${vars.join(', ')}.` : ''
-  return `${varsString}${typeToString(t.type)}`
+export function typeSchemeToString (t: TypeScheme): string {
+  const names = Array.from(t.variables)
+  const vars: string[] = []
+  const subs: Substitutions = names.map((name, i) => {
+    vars.push(`t${i}`)
+    return { name: name, value: { kind: 'var', name: `t${i}` } }
+  })
+  const type = applySubstitution(subs, t.type)
+
+  const varsString = vars.length > 0 ? `∀ ${vars.join(', ')} . ` : ''
+  return `${varsString}${typeToString(type)}`
 }
 
 /**
  * Formats the string representation of substitutions
  *
- * @param s the Substitution to be formatted
+ * @param subs the Substitution to be formatted
  *
  * @returns a string with the pretty printed substitution
  */

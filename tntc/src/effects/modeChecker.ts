@@ -49,14 +49,14 @@ class ModeCheckerVisitor implements IRVisitor {
   effects: Map<bigint, Effect>
   modeFinderVisitor: ModeFinderVisitor = new ModeFinderVisitor()
 
-  constructor (effects: Map<bigint, Effect>) {
+  constructor(effects: Map<bigint, Effect>) {
     this.effects = effects
   }
 
   exitOpDef (def: TntOpDef) {
     const effect = this.effects.get(def.id)
     if (!effect) {
-      throw new Error(`effect not found for definition ${def.name}`)
+      return
     }
 
     walkEffect(this.modeFinderVisitor, effect)

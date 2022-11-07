@@ -27,7 +27,7 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { parsePhase1, parsePhase2, Loc, LookupTableByModule, inferEffects, getSignatures, TntModule, effectToString, errorTreeToString, typeToString, inferTypes, checkModes, Effect } from 'tntc'
+import { parsePhase1, parsePhase2, Loc, LookupTableByModule, inferEffects, TntModule, effectToString, errorTreeToString, typeSchemeToString, inferTypes, checkModes, Effect } from 'tntc'
 
 interface ParsingResult {
   tntModule: TntModule
@@ -273,7 +273,7 @@ const typesByDocument: Map<DocumentUri, Map<Loc, string>> = new Map<DocumentUri,
 const documentsByUri: Map<DocumentUri, TextDocument> = new Map<DocumentUri, TextDocument>()
 
 function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule): Promise<boolean> {
-  const testDiags = checkTypes(textDocument, tntModule, sourceMap)
+  const testDiags = checkTypes(textDocument, tntModule, sourceMap, table)
   const effectDiags = checkEffects(textDocument, tntModule, sourceMap, table)
   const modeDiags = checkDefinitionModes(textDocument, tntModule, sourceMap)
 
@@ -286,52 +286,44 @@ function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule,
 }
 
 function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule): Diagnostic[] {
-  const result = inferEffects(getSignatures(), table, tntModule)
+  const [errors, inferredEffects] = inferEffects(table, tntModule)
   const diagnostics: Diagnostic[] = []
   const effects: Map<Loc, string> = new Map<Loc, string>()
-  result.mapLeft(e => {
-    console.log(`${e.size} Effect errors found, sending diagnostics`)
-    e.forEach((error, id) => {
-      const loc = sourceMap.get(id)
-      if (!loc) {
-        console.log(`loc for ${id} not found in source map`)
-      } else {
-        const diag = assembleDiagnostic(errorTreeToString(error), loc)
-        diagnostics.push(diag)
-      }
-    })
-  }).map(inferredEffects => {
-    inferredEffects.forEach((effect, id) => effects.set(sourceMap.get(id)!, effectToString(effect)))
-    effectsByDocument.set(textDocument.uri, effects)
-    originalEffectsByDocument.set(textDocument.uri, inferredEffects)
-    documentsByUri.set(textDocument.uri, textDocument)
-    return true
+
+  errors.forEach((error, id) => {
+    const loc = sourceMap.get(id)
+    if (!loc) {
+      console.log(`loc for ${id} not found in source map`)
+    } else {
+      const diag = assembleDiagnostic(errorTreeToString(error), loc)
+      diagnostics.push(diag)
+    }
   })
+
+  inferredEffects.forEach((effect, id) => effects.set(sourceMap.get(id)!, effectToString(effect)))
+  effectsByDocument.set(textDocument.uri, effects)
+  originalEffectsByDocument.set(textDocument.uri, inferredEffects)
+  documentsByUri.set(textDocument.uri, textDocument)
 
   return diagnostics
 }
 
-function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>): Diagnostic[] {
-  const result = inferTypes(tntModule)
+function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule): Diagnostic[] {
+  const [errors, inferredTypes] = inferTypes(tntModule, table)
   const diagnostics: Diagnostic[] = []
   const types: Map<Loc, string> = new Map<Loc, string>()
-  result.mapLeft(e => {
-    console.log(`${e.size} Type errors found, sending diagnostics`)
-    e.forEach((error, id) => {
-      const loc = sourceMap.get(id)!
-      if (!loc) {
-        console.log(`loc for ${id} not found in source map`)
-      } else {
-        const diag = assembleDiagnostic(errorTreeToString(error), loc)
-        diagnostics.push(diag)
-      }
-    })
-  }).map(inferredTypes => {
-    inferredTypes.forEach((type, id) => types.set(sourceMap.get(id)!, typeToString(type)))
-    typesByDocument.set(textDocument.uri, types)
-    documentsByUri.set(textDocument.uri, textDocument)
-    return true
+  errors.forEach((error, id) => {
+    const loc = sourceMap.get(id)!
+    if (!loc) {
+      console.log(`loc for ${id} not found in source map`)
+    } else {
+      const diag = assembleDiagnostic(errorTreeToString(error), loc)
+      diagnostics.push(diag)
+    }
   })
+  inferredTypes.forEach((type, id) => types.set(sourceMap.get(id)!, typeSchemeToString(type)))
+  typesByDocument.set(textDocument.uri, types)
+  documentsByUri.set(textDocument.uri, textDocument)
 
   return diagnostics
 }
