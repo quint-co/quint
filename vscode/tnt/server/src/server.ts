@@ -286,52 +286,44 @@ function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule,
 }
 
 function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule): Diagnostic[] {
-  const result = inferEffects(table, tntModule)
+  const [errors, inferredEffects] = inferEffects(table, tntModule)
   const diagnostics: Diagnostic[] = []
   const effects: Map<Loc, string> = new Map<Loc, string>()
-  result.mapLeft(e => {
-    console.log(`${e.size} Effect errors found, sending diagnostics`)
-    e.forEach((error, id) => {
-      const loc = sourceMap.get(id)
-      if (!loc) {
-        console.log(`loc for ${id} not found in source map`)
-      } else {
-        const diag = assembleDiagnostic(errorTreeToString(error), loc)
-        diagnostics.push(diag)
-      }
-    })
-  }).map(inferredEffects => {
-    inferredEffects.forEach((effect, id) => effects.set(sourceMap.get(id)!, effectToString(effect)))
-    effectsByDocument.set(textDocument.uri, effects)
-    originalEffectsByDocument.set(textDocument.uri, inferredEffects)
-    documentsByUri.set(textDocument.uri, textDocument)
-    return true
+
+  errors.forEach((error, id) => {
+    const loc = sourceMap.get(id)
+    if (!loc) {
+      console.log(`loc for ${id} not found in source map`)
+    } else {
+      const diag = assembleDiagnostic(errorTreeToString(error), loc)
+      diagnostics.push(diag)
+    }
   })
+
+  inferredEffects.forEach((effect, id) => effects.set(sourceMap.get(id)!, effectToString(effect)))
+  effectsByDocument.set(textDocument.uri, effects)
+  originalEffectsByDocument.set(textDocument.uri, inferredEffects)
+  documentsByUri.set(textDocument.uri, textDocument)
 
   return diagnostics
 }
 
 function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule): Diagnostic[] {
-  const result = inferTypes(tntModule, table)
+  const [errors, inferredTypes] = inferTypes(tntModule, table)
   const diagnostics: Diagnostic[] = []
   const types: Map<Loc, string> = new Map<Loc, string>()
-  result.mapLeft(e => {
-    console.log(`${e.size} Type errors found, sending diagnostics`)
-    e.forEach((error, id) => {
-      const loc = sourceMap.get(id)!
-      if (!loc) {
-        console.log(`loc for ${id} not found in source map`)
-      } else {
-        const diag = assembleDiagnostic(errorTreeToString(error), loc)
-        diagnostics.push(diag)
-      }
-    })
-  }).map(inferredTypes => {
-    inferredTypes.forEach((type, id) => types.set(sourceMap.get(id)!, typeSchemeToString(type)))
-    typesByDocument.set(textDocument.uri, types)
-    documentsByUri.set(textDocument.uri, textDocument)
-    return true
+  errors.forEach((error, id) => {
+    const loc = sourceMap.get(id)!
+    if (!loc) {
+      console.log(`loc for ${id} not found in source map`)
+    } else {
+      const diag = assembleDiagnostic(errorTreeToString(error), loc)
+      diagnostics.push(diag)
+    }
   })
+  inferredTypes.forEach((type, id) => types.set(sourceMap.get(id)!, typeSchemeToString(type)))
+  typesByDocument.set(textDocument.uri, types)
+  documentsByUri.set(textDocument.uri, textDocument)
 
   return diagnostics
 }

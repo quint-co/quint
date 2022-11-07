@@ -2,7 +2,6 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { inferEffects } from '../../src/effects/inferrer'
 import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
-import { Effect } from '../../src/effects/base'
 import { buildModuleWithDefs } from '../builders/ir'
 import { effectToString } from '../../src/effects/printing'
 import { errorTreeToString } from '../../src/errorTree'
@@ -32,16 +31,12 @@ describe('inferEffects', () => {
       'def a(p) = x <- p',
     ])
 
-    const effects = inferEffects(definitionsTable, tntModule)
+    const [errors, effects] = inferEffects(definitionsTable, tntModule)
 
     const expectedEffect = "(Read[v1]) => Read[v1] & Update['x']"
 
-    effects
-      .map((es: Map<bigint, Effect>) => assert.deepEqual(effectToString(es.get(4n)!), expectedEffect))
-      .mapLeft(e => {
-        const errors = Array.from(e.values())
-        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
-      })
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectToString(effects.get(4n)!), expectedEffect)
   })
 
   it('infers application of multiple arity opertors', () => {
@@ -50,18 +45,11 @@ describe('inferEffects', () => {
       'def b(p) = and(p, 1, 2)',
     ])
 
-    const effects = inferEffects(definitionsTable, tntModule)
+    const [errors, effects] = inferEffects(definitionsTable, tntModule)
 
-    effects
-      .map((es: Map<bigint, Effect>) => {
-        assert.deepEqual(effectToString(es.get(4n)!), "(Read[v4] & Temporal[v5]) => Read[v4, 'x'] & Temporal[v5]")
-        assert.deepEqual(effectToString(es.get(9n)!), '(Read[v4] & Temporal[v5]) => Read[v4] & Temporal[v5]')
-        return true
-      })
-      .mapLeft(e => {
-        const errors = Array.from(e.values())
-        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
-      })
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectToString(effects.get(4n)!), "(Read[v4] & Temporal[v5]) => Read[v4, 'x'] & Temporal[v5]")
+    assert.deepEqual(effectToString(effects.get(9n)!), '(Read[v4] & Temporal[v5]) => Read[v4] & Temporal[v5]')
   })
 
   it('infers references to operators', () => {
@@ -69,16 +57,12 @@ describe('inferEffects', () => {
       'def a(p) = foldl(x, p, iadd)',
     ])
 
-    const effects = inferEffects(definitionsTable, tntModule)
+    const [errors, effects] = inferEffects(definitionsTable, tntModule)
 
     const expectedEffect = "(Read[v0]) => Read[v0, 'x']"
 
-    effects
-      .map((es: Map<bigint, Effect>) => assert.deepEqual(effectToString(es.get(5n)!), expectedEffect))
-      .mapLeft(e => {
-        const errors = Array.from(e.values())
-        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
-      })
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectToString(effects.get(5n)!), expectedEffect)
   })
 
   it('infers references to user-defined operators', () => {
@@ -86,16 +70,12 @@ describe('inferEffects', () => {
       'def a(p) = def my_add = iadd { foldl(x, p, my_add) }',
     ])
 
-    const effects = inferEffects(definitionsTable, tntModule)
+    const [errors, effects] = inferEffects(definitionsTable, tntModule)
 
     const expectedEffect = "(Read[v2]) => Read[v2, 'x']"
 
-    effects
-      .map((es: Map<bigint, Effect>) => assert.deepEqual(effectToString(es.get(8n)!), expectedEffect))
-      .mapLeft(e => {
-        const errors = Array.from(e.values())
-        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
-      })
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectToString(effects.get(8n)!), expectedEffect)
   })
 
   it('infers effects for operators defined with let-in', () => {
@@ -103,16 +83,12 @@ describe('inferEffects', () => {
       'val b = val m = x { m }',
     ])
 
-    const effects = inferEffects(definitionsTable, tntModule)
+    const [errors, effects] = inferEffects(definitionsTable, tntModule)
 
     const expectedEffect = "Read['x']"
 
-    effects
-      .map((es: Map<bigint, Effect>) => assert.deepEqual(effectToString(es.get(4n)!), expectedEffect))
-      .mapLeft(e => {
-        const errors = Array.from(e.values())
-        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
-      })
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectToString(effects.get(4n)!), expectedEffect)
   })
 
   it('infers pure effect for literals and constants', () => {
@@ -120,16 +96,12 @@ describe('inferEffects', () => {
       'val b = N + 1',
     ])
 
-    const effects = inferEffects(definitionsTable, tntModule)
+    const [errors, effects] = inferEffects(definitionsTable, tntModule)
 
     const expectedEffect = 'Pure'
 
-    effects
-      .map((es: Map<bigint, Effect>) => assert.deepEqual(effectToString(es.get(3n)!), expectedEffect))
-      .mapLeft(e => {
-        const errors = Array.from(e.values())
-        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
-      })
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectToString(effects.get(3n)!), expectedEffect)
   })
 
   it('handles underscore', () => {
@@ -137,16 +109,12 @@ describe('inferEffects', () => {
       'val b = N.map(_ => 1)',
     ])
 
-    const effects = inferEffects(definitionsTable, tntModule)
+    const [errors, effects] = inferEffects(definitionsTable, tntModule)
 
     const expectedEffect = 'Pure'
 
-    effects
-      .map((es: Map<bigint, Effect>) => assert.deepEqual(effectToString(es.get(1n)!), expectedEffect))
-      .mapLeft(e => {
-        const errors = Array.from(e.values())
-        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
-      })
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectToString(effects.get(1n)!), expectedEffect)
   })
 
   it('infers polymorphic high order operators', () => {
@@ -154,16 +122,12 @@ describe('inferEffects', () => {
       'def a(g, p) = g(p)',
     ])
 
-    const effects = inferEffects(definitionsTable, tntModule)
+    const [errors, effects] = inferEffects(definitionsTable, tntModule)
 
     const expectedEffect = '((e_p_1) => e0, e_p_1) => e0'
 
-    effects
-      .map((es: Map<bigint, Effect>) => assert.deepEqual(effectToString(es.get(3n)!), expectedEffect))
-      .mapLeft(e => {
-        const errors = Array.from(e.values())
-        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
-      })
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectToString(effects.get(3n)!), expectedEffect)
   })
 
   it('infers monomorphic high order operators', () => {
@@ -171,16 +135,12 @@ describe('inferEffects', () => {
       'def a(g, p) = g(p) + g(not(p))',
     ])
 
-    const effects = inferEffects(definitionsTable, tntModule)
+    const [errors, effects] = inferEffects(definitionsTable, tntModule)
 
     const expectedEffect = '((Read[v0] & Temporal[v1]) => Read[v2], Read[v0] & Temporal[v1]) => Read[v2]'
 
-    effects
-      .map((es: Map<bigint, Effect>) => assert.deepEqual(effectToString(es.get(7n)!), expectedEffect))
-      .mapLeft(e => {
-        const errors = Array.from(e.values())
-        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
-      })
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectToString(effects.get(7n)!), expectedEffect)
   })
 
   it('returns error when operator signature is not defined', () => {
@@ -188,16 +148,13 @@ describe('inferEffects', () => {
       'def A = undefinedOperator(1)',
     ])
 
-    const effects = inferEffects(definitionsTable, tntModule)
+    const [errors] = inferEffects(definitionsTable, tntModule)
 
-    effects
-      .mapLeft(e => e.forEach(v => assert.deepEqual(v, {
-        location: 'Trying to infer effect for operator application in undefinedOperator(1)',
-        message: 'Signature not found for name: undefinedOperator',
-        children: [],
-      })))
-
-    assert.isTrue(effects.isLeft())
+    errors.forEach(v => assert.deepEqual(v, {
+      location: 'Trying to infer effect for operator application in undefinedOperator(1)',
+      message: 'Signature not found for name: undefinedOperator',
+      children: [],
+    }))
   })
 
   it('returns error when high order operator is undefined', () => {
@@ -205,16 +162,13 @@ describe('inferEffects', () => {
       'def a(p) = foldl(x, p, undefinedOperator)',
     ])
 
-    const effects = inferEffects(definitionsTable, tntModule)
+    const [errors] = inferEffects(definitionsTable, tntModule)
 
-    effects
-      .mapLeft(e => e.forEach(v => assert.deepEqual(v, {
-        location: 'Inferring effect for undefinedOperator',
-        message: "Couldn't find undefinedOperator in the lookup table",
-        children: [],
-      })))
-
-    assert.isTrue(effects.isLeft())
+    errors.forEach(v => assert.deepEqual(v, {
+      location: 'Inferring effect for undefinedOperator',
+      message: "Couldn't find undefinedOperator in the lookup table",
+      children: [],
+    }))
   })
 
   it('returns error when operator signature is not unifiable with args', () => {
@@ -222,28 +176,25 @@ describe('inferEffects', () => {
       'def a = S.map(p => x <- p)',
     ])
 
-    const effects = inferEffects(definitionsTable, tntModule)
+    const [errors] = inferEffects(definitionsTable, tntModule)
 
-    effects
-      .mapLeft(e => e.forEach(v => assert.deepEqual(v, {
+    errors.forEach(v => assert.deepEqual(v, {
+      children: [{
         children: [{
           children: [{
             children: [{
-              children: [{
-                children: [],
-                location: "Trying to unify variables [] and ['x']",
-                message: 'Expected variables [] and [x] to be the same',
-              }],
-              location: "Trying to unify Read[v3] and Update['x']",
+              children: [],
+              location: "Trying to unify variables [] and ['x']",
+              message: 'Expected variables [] and [x] to be the same',
             }],
-            location: "Trying to unify (Pure) => Read[v3] and (Read[v1]) => Read[v1] & Update['x']",
+            location: "Trying to unify Read[v3] and Update['x']",
           }],
-          location: "Trying to unify (Read[v2], (Read[v2]) => Read[v3]) => Read[v2, v3] and (Pure, (Read[v1]) => Read[v1] & Update['x']) => e1",
+          location: "Trying to unify (Pure) => Read[v3] and (Read[v1]) => Read[v1] & Update['x']",
         }],
-        location: 'Trying to infer effect for operator application in map(S, (p => assign(x, p)))',
-      })))
-
-    assert.isTrue(effects.isLeft())
+        location: "Trying to unify (Read[v2], (Read[v2]) => Read[v3]) => Read[v2, v3] and (Pure, (Read[v1]) => Read[v1] & Update['x']) => e1",
+      }],
+      location: 'Trying to infer effect for operator application in map(S, (p => assign(x, p)))',
+    }))
   })
 
   it('returns error when operator signature is not defined inside a let-in body', () => {
@@ -251,17 +202,12 @@ describe('inferEffects', () => {
       'def A = val t = undefined(1) { t }',
     ])
 
-    const effects = inferEffects(definitionsTable, tntModule)
+    const [errors] = inferEffects(definitionsTable, tntModule)
 
-    effects
-      .mapLeft(e => assert.sameDeepMembers(Array.from(e.values()), [
-        {
-          location: 'Trying to infer effect for operator application in undefined(1)',
-          message: 'Signature not found for name: undefined',
-          children: [],
-        },
-      ]))
-
-    assert.isTrue(effects.isLeft())
+    errors.forEach(v => assert.deepEqual(v, {
+      location: 'Trying to infer effect for operator application in undefined(1)',
+      message: 'Signature not found for name: undefined',
+      children: [],
+    }))
   })
 })
