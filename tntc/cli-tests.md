@@ -113,6 +113,21 @@ tntc parse ../examples/imports.tnt
 <!-- !test check imports -->
     expect exit code 0
 
+### OK on typecheck imports
+
+This command typechecks the imports example.
+
+<!-- !test program
+tntc typecheck ../examples/imports.tnt
+-->
+
+```sh
+tntc typecheck ../examples/imports.tnt
+```
+
+<!-- !test check imports - Types & Effects -->
+    expect exit code 0
+
 ### OK on parse instances
 
 This command parses the instances example.
