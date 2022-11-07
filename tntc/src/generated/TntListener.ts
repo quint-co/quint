@@ -58,6 +58,7 @@ import { ParamsContext } from "./TntParser";
 import { InstanceModContext } from "./TntParser";
 import { TypeContext } from "./TntParser";
 import { TypeUnionRecOneContext } from "./TntParser";
+import { RowContext } from "./TntParser";
 import { ExprContext } from "./TntParser";
 import { UnitOrExprContext } from "./TntParser";
 import { LambdaContext } from "./TntParser";
@@ -775,6 +776,17 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitTypeUnionRecOne?: (ctx: TypeUnionRecOneContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `TntParser.row`.
+	 * @param ctx the parse tree
+	 */
+	enterRow?: (ctx: RowContext) => void;
+	/**
+	 * Exit a parse tree produced by `TntParser.row`.
+	 * @param ctx the parse tree
+	 */
+	exitRow?: (ctx: RowContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `TntParser.expr`.

@@ -80,7 +80,7 @@ export interface TntUnionType extends WithOptionalId {
   tag: string,
   records: {
     tagValue: string,
-    fields: { fieldName: string, fieldType: TntType }[]
+    fields: Row,
   }[]
 }
 

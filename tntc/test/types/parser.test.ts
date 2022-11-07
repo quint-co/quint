@@ -83,8 +83,8 @@ describe('parseType', () => {
       kind: 'union',
       tag: 'tag',
       records: [
-        { tagValue: 'a', fields: [{ fieldName: 'a', fieldType: { kind: 'int', id: 1n } }] },
-        { tagValue: 'b', fields: [{ fieldName: 'b', fieldType: { kind: 'bool', id: 3n } }] },
+        { tagValue: 'a', fields: { kind: 'row', fields: [{ fieldName: 'a', fieldType: { kind: 'int', id: 1n } }], other: { kind: 'empty' } } },
+        { tagValue: 'b', fields: { kind: 'row', fields: [{ fieldName: 'b', fieldType: { kind: 'bool', id: 3n } }], other: { kind: 'empty' } } },
       ],
       id: 5n,
     }))

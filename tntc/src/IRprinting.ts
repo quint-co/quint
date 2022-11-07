@@ -120,8 +120,7 @@ export function typeToString (type: TntType): string {
     }
     case 'union': {
       const records = type.records.map(rec => {
-        const fields = rec.fields.map(f => `${f.fieldName}: ${typeToString(f.fieldType)}`).join(', ')
-        return `| { ${type.tag}: "${rec.tagValue}", ${fields} }`
+        return `| { ${type.tag}: "${rec.tagValue}", ${rowToString(rec.fields)} }`
       })
       return records.join('\n')
     }

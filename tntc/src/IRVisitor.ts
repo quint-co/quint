@@ -223,7 +223,7 @@ export function walkType (visitor: IRVisitor, type: t.TntType): void {
       }
       // Variants, walk all fields for all records
       type.records.forEach(record => {
-        record.fields.forEach(field => walkType(visitor, field.fieldType))
+        walkRow(visitor, record.fields)
       })
 
       if (visitor.exitUnionType) {

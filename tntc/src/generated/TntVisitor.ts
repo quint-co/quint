@@ -58,6 +58,7 @@ import { ParamsContext } from "./TntParser";
 import { InstanceModContext } from "./TntParser";
 import { TypeContext } from "./TntParser";
 import { TypeUnionRecOneContext } from "./TntParser";
+import { RowContext } from "./TntParser";
 import { ExprContext } from "./TntParser";
 import { UnitOrExprContext } from "./TntParser";
 import { LambdaContext } from "./TntParser";
@@ -511,6 +512,13 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitTypeUnionRecOne?: (ctx: TypeUnionRecOneContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `TntParser.row`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitRow?: (ctx: RowContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `TntParser.expr`.

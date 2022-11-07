@@ -95,7 +95,7 @@ export function applySubstitution (subs: Substitutions, t: TntType): TntType {
         records: t.records.map(r => {
           return {
             tagValue: r.tagValue,
-            fields: r.fields.map(f => ({ fieldName: f.fieldName, fieldType: applySubstitution(subs, f.fieldType) })),
+            fields: applySubstitutionToRow(subs, r.fields),
           }
         }),
         id: t.id,
