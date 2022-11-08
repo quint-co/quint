@@ -4,7 +4,7 @@
 
 | Revision | Date       | Author                                                  |
 |:---------|:-----------|:--------------------------------------------------------|
-| 25       | 19.10.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira |
+| 26       | 08.11.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -365,6 +365,10 @@ val isTimerPositive =
 def hasExpired(timestamp: int) =
     timer >= timestamp
 
+// an initialization action that assigns initial values to the state variables
+action init =
+  timer <- 0
+
 // an action that updates the value of the state variable timer
 action advance(unit: int) =
     // a delayed assignment (see below in the manual)
@@ -477,8 +481,8 @@ module Foo {
   const N: int
   var x: int
 
-  val Init =
-    x == 0
+  action Init =
+    x <- 0
 
   action Next =
     x <- x + N
@@ -1831,7 +1835,7 @@ module root {
     var x: int
     var y: int
 
-    initializer Init = all {
+    action Init = all {
       x <- 0,
       y <- 0
     }
@@ -1854,7 +1858,7 @@ the same variable. Hence, the module `AB` will look like follows:
 
 ```scala
   module AB = {
-    initializer Init = all {
+    action Init = all {
       a <- 0,
       b <- 0
     }
@@ -1877,7 +1881,7 @@ module root {
     var x: int
     var y: int
 
-    initializer Init = all {
+    action Init = all {
       x <- 1,
       y <- 0
     }
