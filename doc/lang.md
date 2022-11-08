@@ -691,29 +691,18 @@ Action mode, the parser *must* issue an error.
 
 As noted when we introduced [types](#types) and [operator
 definitions](#operator-definitions), the type of operators is specified using
-the syntax `(a1, ..., an) => b`, for an operator that takes arguments of types
-`a1` to `an` to an expression of type `b`. _Anonymous operators expressions_,
-known in TLA+ as "lambdas", can be constructed with the corresponding syntax.
-`(x1, ..., xn) => e` is an anonymous operator which, when applied to expressions
-`x1` to `xn`, reduces to the expression `e`.
+the syntax `(a_1, ..., a_n) => b`, for an operator that takes arguments of
+types `a_1` to `a_n` to an expression of type `b`. _Anonymous operators
+expressions_, known in TLA+ as "lambdas", can be constructed with the
+corresponding syntax.
 
-Depending on the mode, an anonymous operator of one argument is defined as:
+In TNT, `(x_1, ..., x_n) => e` is an anonymous operator which, when applied to
+expressions `e_1` to `e_n`, reduces to the expression `e[e_1/x_1, ...,
+e_n/x_n]` (that is, every parameter `x_i` is substituted with the expression
+`e_i`, for `1 <= i <= n`). Two important comments are in order:
 
-- In the Action mode: `{ x => e }`
-- In a mode different from the Action mode: `(x => e)`
-- To avoid too many parentheses, `(x => e)` may be written as: `x => e`
-
-Compare this to the TLA+2 syntax:
-
-```tla
-LAMBDA x: e
-```
-
-Similarly, an anonymous operator of `n` arguments is defined as:
-
-- In the Action mode: `{ x_1, ..., x_n => e }`
-- In a mode different from the Action mode:
-    `(x_1, ..., x_n => e)` or `x_1, ..., x_n => e`
+ 1. When `n = 1`, we can write `x => e` instead of `(x) => e`.
+ 1. The case of `n = 0` is not allowed.
 
 Compare this to the TLA+2 syntax:
 
@@ -724,15 +713,12 @@ LAMBDA x_1, ..., x_n: e
 As is common, we can skip parameter names, if we don't need them:
 
 ```
-{ _ => e }
-(_ => e)
 _ => e
-{ _, ..., _ => e }
-(_, ..., _ => e)
-_, ..., _ => e
+(_) => e
+(_, ..., _) => e
 ```
 
-Note that lambdas can be only passed as arguments to other operators.  They
+Note that lambdas can be only passed as arguments to other operators. They
 cannot be freely assigned to values or returned as a result of an operator.
 
 ### Two forms of operator application

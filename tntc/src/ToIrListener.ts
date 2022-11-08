@@ -419,7 +419,7 @@ export class ToIrListener implements TntListener {
 
   // a list of arguments
   exitArgList (ctx: p.ArgListContext) {
-    const nargs = ctx.lambdaOrExpr().length
+    const nargs = ctx.expr().length
     const args = this.popExprs(nargs)
     // wrap the arguments with a temporary operator,
     // to be unwrapped later
@@ -435,10 +435,6 @@ export class ToIrListener implements TntListener {
   exitLambda (ctx: p.LambdaContext) {
     const expr = this.exprStack.pop()
     const params = this.popParams(ctx.identOrHole().length)
-    let qualifier: OpQualifier = 'def'
-    if (ctx.children && ctx.children[0]) {
-      qualifier = (ctx.children[0].text === '{') ? 'action' : 'def'
-    }
     if (expr) {
       // every parameter in params is a singleton list, make one list
       const singletons = params.map(ps => ps[0])
@@ -449,7 +445,7 @@ export class ToIrListener implements TntListener {
         id: id,
         kind: 'lambda',
         params: singletons,
-        qualifier: qualifier,
+        qualifier: 'def',
         expr: expr,
       })
     } else {

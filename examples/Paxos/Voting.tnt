@@ -158,8 +158,8 @@ THEOREM ShowsSafety ==
 (* straightforward.                                                        *)
 (***************************************************************************/
 action Init = all {
-  votes  <- Acceptor.mapBy({ _ => Set() }),
-  maxBal <- Acceptor.mapBy({ _ => -1 }),
+  votes  <- Acceptor.mapBy(_ => Set()),
+  maxBal <- Acceptor.mapBy(_ => -1),
 }
 
 
@@ -190,8 +190,8 @@ action VoteFor(a, b, v) = all {
          votes.get(c).forall( vt => (vt._1 == b) implies (vt._2 == v) )
     ),
     Quorum.exists( Q => ShowsSafeAt(Q, b, v) ),
-    votes  <- votes.updateAs(a, ( old => old.union(Set((b, v))) )),
-    maxBal <- maxBal.updateAs(a, ( _ => b )),
+    votes  <- votes.updateAs(a, old => old.union(Set((b, v))) ),
+    maxBal <- maxBal.update(a, b),
 }
 
 

@@ -120,7 +120,7 @@ describe('expressionToString', () => {
   })
 
   it('multi argument lambdas retain correct semantics', () => {
-    const expr = buildExpression('foo((f, b => f(b)), 1, 2)')
+    const expr = buildExpression('foo((f, b) => f(b), 1, 2)')
     const expectedExpr = 'foo((f, b => f(b)), 1, 2)'
     assert.deepEqual(expressionToString(expr), expectedExpr)
   })

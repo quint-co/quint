@@ -72,6 +72,7 @@ typeUnionRecOne :
 // Wherever possible, we keep the same order of operators as in TLA+.
 expr:           // apply a built-in operator via the dot notation
                 expr '.' nameAfterDot (LPAREN argList? RPAREN)?     # dotCall
+        |       lambda                                              # lambdaCons
                 // Call a user-defined operator or a built-in operator.
                 // The operator has at least one argument (otherwise, it's a 'val').
         |       normalCallName '(' argList? ')'                     # operApp
@@ -121,15 +122,11 @@ expr:           // apply a built-in operator via the dot notation
 unitOrExpr :    unit | expr ;
 
 // This rule parses anonymous functions, e.g.:
-// 1. Non-action lambdas:
-//   x, y, z => e
-//   (x, y, z => e)
-//
-// 2. Action lambdas:
-//   { x, y, z => e }
-lambda:         identOrHole (',' identOrHole)*  '=>' expr
-        |       '(' identOrHole (',' identOrHole)*  '=>' expr ')'
-        |       '{' identOrHole (',' identOrHole)*  '=>' expr '}'
+// 1. x => e
+// 2. (x) => e
+// 3. (x, y, z) => e
+lambda:         identOrHole '=>' expr
+        |       '(' identOrHole (',' identOrHole)* ')' '=>' expr
         ;
 
 // an identifier or a hole '_'
@@ -144,12 +141,7 @@ identOrStar :   '*' | IDENTIFIER
 path    : IDENTIFIER ('.' IDENTIFIER)*
         ;
 
-// A lambda or an expression with lambda having a priority
-lambdaOrExpr :  lambda
-        |       expr
-        ;
-
-argList :      lambdaOrExpr (',' lambdaOrExpr)*
+argList :      expr (',' expr)*
         ;
 
 // operators in the normal call may use some reserved names

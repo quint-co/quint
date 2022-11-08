@@ -142,32 +142,49 @@ val vars = (round, step, decision, lockedValue,
 //********************* PROTOCOL INITIALIZATION ******************************
 def FaultyProposals(r) =
     tuples(Faulty, Values, RoundsOrNil)
-      .map(p, v, vr =>
+      .map(args =>
+        val p = args._1
+        val v = args._2
+        val vr = args._3
         { tag: "PROPOSE", src: p, round: r, proposal: v, validRound: vr })
 
 val AllFaultyProposals =
     tuples(Faulty, Rounds, Values, RoundsOrNil)
-      .map(p, r, v, vr =>
+      .map(args =>
+        val p = args._1
+        val r = args._2
+        val v = args._3
+        val vr = args._4
         { tag: "PROPOSE", src: p, round: r, proposal: v, validRound: vr })
 
 def FaultyPrevotes(r) =
     tuples(Faulty, Values)
-      .map(p, v =>
+      .map(args =>
+        val p = args._1
+        val v = args._2
         { tag: "PREVOTE", src: p, round: r, id: v })
 
 val AllFaultyPrevotes =
     tuples(Faulty, Rounds, Values, RoundsOrNil)
-      .map(p, r, v =>
+      .map(args =>
+        val p = args._1
+        val r = args._2
+        val v = args._3
         { tag: "PREVOTE", src: p, round: r, id: v })
 
 def FaultyPrecommits(r) =
     tuples(Faulty, Values)
-      .map(p, v =>
+      .map(args =>
+        val p = args._1
+        val v = args._2
         { tag: "PRECOMMIT", src: p, round: r, id: v })
 
 val AllFaultyPrecommits =
     tuples(Faulty, Rounds, Values)
-      .map(p, r, v =>
+      .map(args =>
+        val p = args._1
+        val r = args._2
+        val v = args._3
         { tag: "PRECOMMIT", src: p, round: r, id: v })
 
    
@@ -267,7 +284,9 @@ action UponProposalInPropose(p) =
 
 // lines 28-33        
 action UponProposalInProposeAndPrevote(p) =
-  tuples(Values, Rounds).guess({ v, vr =>
+  tuples(Values, Rounds).guess(vAndVr =>
+    val v = vAndVr._1
+    val vr = vAndVr._2
     val msg = { tag: "PROPOSE", src: Proposer.get(round.get(p)),
                 round: round.get(p), proposal: v, validRound: vr }
     val PV = msgsPrevote.get(vr).filter( m => m.id == Id(v) )
@@ -285,7 +304,7 @@ action UponProposalInProposeAndPrevote(p) =
       step <- step.update(p, "prevote"),
       fired_action <- "UponProposalInProposeAndPrevote",
     }
-  })
+  )
 
 // lines 34-35 + lines 61-64 (onTimeoutPrevote)
 action UponQuorumOfPrevotesAny(p) =
@@ -434,9 +453,9 @@ action Next =
 
 // equivocation by a process p
 def EquivocationBy(p) =
-  tuples(evidence, evidence).exists(pair =>
-    val m1 = pair._1
-    val m2 = pair._2
+  tuples(evidence, evidence).exists(args =>
+    val m1 = args._1
+    val m2 = args._2
     and {
       m1 != m2,
       m1.src == p,
@@ -516,9 +535,14 @@ val NoEquivocation =
 // It is not exactly ~Agreement, as we do not want to see the states where
 // decision.get(p) = NilValue
 val NoAgreement =
-  tuples(Corr, Corr).forall( p, q =>
-        (p != q and decision.get(p) != NilValue and decision.get(q) != NilValue)
-          implies (decision.get(p) != decision.get(q))
+  tuples(Corr, Corr).forall(args =>
+        val p = args._1
+        val q = args._2
+        and {
+          p != q,
+          decision.get(p) != NilValue,
+          decision.get(q) != NilValue
+        } implies (decision.get(p) != decision.get(q))
   )
 // Either agreement holds, or the faulty processes indeed demonstrate amnesia.
 // This property is violated. A counterexample should demonstrate equivocation.

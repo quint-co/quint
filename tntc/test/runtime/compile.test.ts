@@ -434,15 +434,15 @@ describe('compiling specs to runtime values', () => {
 
     it('computes fold', () => {
       // sum
-      assertResultAsString('Set(1, 2, 3).fold(10, (v, x => v + x))', '16')
-      assertResultAsString('Set().fold(10, (v, x => v + x))', '10')
+      assertResultAsString('Set(1, 2, 3).fold(10, (v, x) => v + x)', '16')
+      assertResultAsString('Set().fold(10, (v, x) => v + x)', '10')
       // flatten
       const input1 = dedent(
         `Set(1.to(3), 4.to(5), 6.to(7))
-        |  .fold(Set(0), (a, s => a.union(s)))`
+        |  .fold(Set(0), (a, s) => a.union(s))`
       )
       assertResultAsString(input1, 'Set(0, 1, 2, 3, 4, 5, 6, 7)')
-      assertResultAsString('Set().fold(Set(), (a, s => a.union(s)))', 'Set()')
+      assertResultAsString('Set().fold(Set(), (a, s) => a.union(s))', 'Set()')
       // product by using a definition
       const input2 = dedent(
         `def prod(x, y) = x * y;
@@ -670,16 +670,16 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('list foldl', () => {
-      assertResultAsString('[].foldl(3, (i, e => i + e))', '3')
-      assertResultAsString('[4, 5, 6, 7].foldl(1, (i, e => i + e))', '23')
-      assertResultAsString('[4, 5, 6, 7].foldl([], (l, e => l.append(e)))',
+      assertResultAsString('[].foldl(3, (i, e) => i + e)', '3')
+      assertResultAsString('[4, 5, 6, 7].foldl(1, (i, e) => i + e)', '23')
+      assertResultAsString('[4, 5, 6, 7].foldl([], (l, e) => l.append(e))',
         'List(4, 5, 6, 7)')
     })
 
     it('list foldr', () => {
-      assertResultAsString('[].foldr(3, (i, e => i + e))', '3')
-      assertResultAsString('[4, 5, 6, 7].foldr(1, (i, e => i + e))', '23')
-      assertResultAsString('[4, 5, 6, 7].foldr([], (l, e => l.append(e)))',
+      assertResultAsString('[].foldr(3, (i, e) => i + e)', '3')
+      assertResultAsString('[4, 5, 6, 7].foldr(1, (i, e) => i + e)', '23')
+      assertResultAsString('[4, 5, 6, 7].foldr([], (l, e) => l.append(e))',
         'List(7, 6, 5, 4)')
     })
 
@@ -757,11 +757,11 @@ describe('compiling specs to runtime values', () => {
 
     it('map updateAs', () => {
       assertResultAsString(
-        '3.to(5).mapBy(i => 2 * i).updateAs(4, (old => old + 1))',
+        '3.to(5).mapBy(i => 2 * i).updateAs(4, old => old + 1)',
         'Map(Tup(3, 6), Tup(4, 9), Tup(5, 10))'
       )
       assertResultAsString(
-        '3.to(5).mapBy(i => 2 * i).updateAs(7, (old => old + 1))',
+        '3.to(5).mapBy(i => 2 * i).updateAs(7, old => old + 1)',
         undefined
       )
     })
