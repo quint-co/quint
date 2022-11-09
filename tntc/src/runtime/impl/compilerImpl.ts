@@ -338,7 +338,7 @@ export class CompilerVisitor implements IRVisitor {
           (p, q) => just(rv.mkBool(p.toInt() <= q.toInt())))
         break
 
-      case 'tup':
+      case 'Tup':
         // Construct a tuple from an array of values
         this.applyFun(app.id,
           app.args.length,
@@ -360,7 +360,7 @@ export class CompilerVisitor implements IRVisitor {
           (...sets: RuntimeValue[]) => just(rv.mkCrossProd(sets)))
         break
 
-      case 'list':
+      case 'List':
         // Construct a list from an array of values
         this.applyFun(app.id,
           app.args.length,
@@ -454,7 +454,7 @@ export class CompilerVisitor implements IRVisitor {
           just(rv.mkInterval(0n, BigInt(list.toList().size - 1))))
         break
 
-      case 'rec':
+      case 'Rec':
         // Construct a record
         this.applyFun(app.id,
           app.args.length,
@@ -511,7 +511,7 @@ export class CompilerVisitor implements IRVisitor {
         })
         break
 
-      case 'set':
+      case 'Set':
         // Construct a set from an array of values.
         this.applyFun(app.id, app.args.length,
           (...values: RuntimeValue[]) => just(rv.mkSet(values)))
@@ -714,7 +714,7 @@ export class CompilerVisitor implements IRVisitor {
         )
         break
 
-      case 'mapOf':
+      case 'Map':
         this.applyFun(app.id, app.args.length, (...pairs: any[]) =>
           just(rv.mkMap(pairs)))
         break

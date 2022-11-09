@@ -4,7 +4,7 @@
 
 | Revision | Date       | Author                                                  |
 |:---------|:-----------|:--------------------------------------------------------|
-| 25       | 19.10.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira |
+| 26       | 08.11.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -365,6 +365,10 @@ val isTimerPositive =
 def hasExpired(timestamp: int) =
     timer >= timestamp
 
+// an initialization action that assigns initial values to the state variables
+action init =
+  timer <- 0
+
 // an action that updates the value of the state variable timer
 action advance(unit: int) =
     // a delayed assignment (see below in the manual)
@@ -407,7 +411,7 @@ Similar to `INSTANCE` in TLA+, we can define module instances.
 
 ```scala
 // an instance of Voting that has the name "V"
-module V = Voting(Value = set(0, 1))
+module V = Voting(Value = Set(0, 1))
 
 // the names of V are accessed via "."
 val MyValues = V.Value
@@ -477,8 +481,8 @@ module Foo {
   const N: int
   var x: int
 
-  val Init =
-    x == 0
+  action Init =
+    x <- 0
 
   action Next =
     x <- x + N
@@ -626,10 +630,10 @@ definitions in a nested module that start with the underscore:
 ```scala
 module Local {
   var y: int
-  def G(x) = set(_local.F(x))
+  def G(x) = Set(_local.F(x))
 
   module _local {
-    def F(x) = set(x, y)
+    def F(x) = Set(x, y)
   }
 }
 ```
@@ -687,29 +691,18 @@ Action mode, the parser *must* issue an error.
 
 As noted when we introduced [types](#types) and [operator
 definitions](#operator-definitions), the type of operators is specified using
-the syntax `(a1, ..., an) => b`, for an operator that takes arguments of types
-`a1` to `an` to an expression of type `b`. _Anonymous operators expressions_,
-known in TLA+ as "lambdas", can be constructed with the corresponding syntax.
-`(x1, ..., xn) => e` is an anonymous operator which, when applied to expressions
-`x1` to `xn`, reduces to the expression `e`.
+the syntax `(a_1, ..., a_n) => b`, for an operator that takes arguments of
+types `a_1` to `a_n` to an expression of type `b`. _Anonymous operators
+expressions_, known in TLA+ as "lambdas", can be constructed with the
+corresponding syntax.
 
-Depending on the mode, an anonymous operator of one argument is defined as:
+In TNT, `(x_1, ..., x_n) => e` is an anonymous operator which, when applied to
+expressions `e_1` to `e_n`, reduces to the expression `e[e_1/x_1, ...,
+e_n/x_n]` (that is, every parameter `x_i` is substituted with the expression
+`e_i`, for `1 <= i <= n`). Two important comments are in order:
 
-- In the Action mode: `{ x => e }`
-- In a mode different from the Action mode: `(x => e)`
-- To avoid too many parentheses, `(x => e)` may be written as: `x => e`
-
-Compare this to the TLA+2 syntax:
-
-```tla
-LAMBDA x: e
-```
-
-Similarly, an anonymous operator of `n` arguments is defined as:
-
-- In the Action mode: `{ x_1, ..., x_n => e }`
-- In a mode different from the Action mode:
-    `(x_1, ..., x_n => e)` or `x_1, ..., x_n => e`
+ 1. When `n = 1`, we can write `x => e` instead of `(x) => e`.
+ 1. The case of `n = 0` is not allowed.
 
 Compare this to the TLA+2 syntax:
 
@@ -720,15 +713,12 @@ LAMBDA x_1, ..., x_n: e
 As is common, we can skip parameter names, if we don't need them:
 
 ```
-{ _ => e }
-(_ => e)
 _ => e
-{ _, ..., _ => e }
-(_, ..., _ => e)
-_, ..., _ => e
+(_) => e
+(_, ..., _) => e
 ```
 
-Note that lambdas can be only passed as arguments to other operators.  They
+Note that lambdas can be only passed as arguments to other operators. They
 cannot be freely assigned to values or returned as a result of an operator.
 
 ### Two forms of operator application
@@ -772,7 +762,7 @@ priority:
 |-------------------------------------------------------------------------------------------|--------------------------------------------------------------|
 | `e_1.F(e_2, ..., e_n)`                                                                    | Call via dot has the highest priority                        |
 | `F(e_1, ..., e_n)`                                                                        | The normal form of operator application                      |
-| `f[e_1, ..., e_n]`                                                                        | Function application                                         |
+| `l[i]`                                                                        | List access via index                                         |
 | `-i`                                                                                      | Unary minus                                                  |
 | `i^j`                                                                                     | Integer power (right associative)                            |
 | `i * j`, `i / j`, `i % j`                                                                 | Integer multiplication, division, modulo                     |
@@ -994,12 +984,12 @@ One way to construct a set is by enumerating its elements:
 
 ```scala
 // the python-style constructor
-set(e_1, ..., e_n)
+Set(e_1, ..., e_n)
 ```
 
 This is exactly as `{ e_1, ..., e_n }` in TLA+. However, we prefer not to
 sacrifice `{...}` for this only operator. That is why a set is constructed with
-`set(...)` in TNT. In practice, this operator does not appear too often, so our
+`Set(...)` in TNT. In practice, this operator does not appear too often, so our
 notation would not distract you too much.
 
 *Mode:* Stateless, State. Other modes are not allowed.
@@ -1114,7 +1104,6 @@ size(S)
 ```scala
 // Map application.
 // In TLA+: f[e]
-f[e]
 f.get(e)
 get(f, e)
 // Map domain.
@@ -1126,15 +1115,15 @@ keys(f)
 S.mapBy(x => e)
 mapBy(S, (x => e))
 // Map constructor via enumeration.
-mapOf()
-mapOf(k_1 -> v_1)
-mapOf(k_1 -> v_1, k_2 -> v_2)
-mapOf(k_1 -> v_1, k_2 -> v_2, k_3 -> v_3)
+Map()
+Map(k_1 -> v_1)
+Map(k_1 -> v_1, k_2 -> v_2)
+Map(k_1 -> v_1, k_2 -> v_2, k_3 -> v_3)
 ...
 // Convert a set of pairs to a map.
 // In TLA+: [ x \in { a: <<a, b>> \in S } |-> (CHOOSE p \in S: p[1] = x)[2]]
-set(tup(1, true), tup(2, false)).setToMap()
-setToMap(set(tup(1, true), tup(2, false)))
+Set((1, true), (2, false)).setToMap()
+setToMap(Set((1, true), (2, false)))
 // A set of maps.
 // In TLA+: [ S -> T ]
 S.setOfMaps(T)
@@ -1164,7 +1153,7 @@ put(f, k, v)
 // record constructor: [ f_1 |-> e_1, ..., f_n |-> e_n ]
 // Warning: n >= 1
 { f_1: e_1, ..., f_n: e_n }
-rec(f_1, e_1, ..., f_n, e_n)
+Rec(f_1, e_1, ..., f_n, e_n)
 // Set of records: [ f_1: S_1, ..., f_n: S_n ].
 // No operator for it. Use a set comprehension:
 tuples(S_1, ..., S_n).map(a_1, ..., a_n => { f_1: a_1, ..., f_n: a_n })
@@ -1211,7 +1200,7 @@ Records of different union types may be mixed in a single set. For example:
 
 ```scala
 val Entries =
-  set(
+  Set(
     { tag: "Cat", name: "Ours", year: 2019  },
     { tag: "Cat", name: "Murka", year: 1950 },
     { tag: "Date", day: 16, month: 11, year: 2021 },
@@ -1246,7 +1235,7 @@ Entries.filter(e => e.tag == "Cat")
 As expected from the semantics of `filter`, the above set is equal to:
 
 ```
-set(
+Set(
   { tag: "Cat", name: "Ours", year: 2019  },
   { tag: "Cat", name: "Murka", year: 1950 }
 )
@@ -1317,7 +1306,7 @@ If you need lists, use lists.
 // Tuple constructor: << e_1, ..., e_n >>
 // Warning: n >= 2
 (e_1, ..., e_n)
-tup(e_1, ..., e_n)
+Tup(e_1, ..., e_n)
 // t[1], t[2], t[3], t[4], ... , t[50]
 t._1
 t._2
@@ -1352,7 +1341,7 @@ are 1-indexed.
 // List constructor.
 // Equivalent to <<e_1, ..., e_n>> in TLA+.
 [ e_1, ..., e_n ]
-list(e_1, ..., e_n)
+List(e_1, ..., e_n)
 // List range: `start` is inclusive, whereas `end` is exclusive.
 // Equivalent to [start, start + 1, ..., end - 1]
 // There is no equivalent in TLA+,
@@ -1382,6 +1371,7 @@ l.length()
 length(l)
 // Sequence element at nth position (starting with 0).
 // Equivalent to s[i + 1] in TLA+.
+l[i]
 l.nth(i)
 nth(l, i)
 // The set of list indices (starting with 0).
@@ -1801,24 +1791,24 @@ The most common example is shown below:
 
 // in MC.tnt
   module MC {
-    val Acceptor = set("p1", "p2", "p3")
+    val Acceptor = Set("p1", "p2", "p3")
     val Quorum = MC_Acceptor.powerset.filter(Q => Q.size > 1)
 
     // an instance of Voting that has the name "V"
-    module V = Voting(Value = set(0, 1), Acceptor = Acceptor, Quorum = Quorum)
+    module V = Voting(Value = Set(0, 1), Acceptor = Acceptor, Quorum = Quorum)
     // ...
   }
 ```
 
 In the above example, module `V` is produced from the module `Voting` by replacing
-every occurrence of `Value`, `Acceptor`, and `Quorum` with `set(0, 1)`, `Acceptor`,
+every occurrence of `Value`, `Acceptor`, and `Quorum` with `Set(0, 1)`, `Acceptor`,
 and `Quorum`, respectively.
 
 We can shorten identity substitutions `Acceptor = Acceptor` and `Quorum =
 Quorum` by writing:
 
 ```scala
-    module V = Voting(Value = set(0, 1), *)
+    module V = Voting(Value = Set(0, 1), *)
 ```
 
 ### Common case 2
@@ -1831,7 +1821,7 @@ module root {
     var x: int
     var y: int
 
-    initializer Init = all {
+    action Init = all {
       x <- 0,
       y <- 0
     }
@@ -1854,7 +1844,7 @@ the same variable. Hence, the module `AB` will look like follows:
 
 ```scala
   module AB = {
-    initializer Init = all {
+    action Init = all {
       a <- 0,
       b <- 0
     }
@@ -1877,7 +1867,7 @@ module root {
     var x: int
     var y: int
 
-    initializer Init = all {
+    action Init = all {
       x <- 1,
       y <- 0
     }

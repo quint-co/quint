@@ -56,12 +56,12 @@ module basics {
     val len1 = length(w1)
     val len2 = length(w2)
     or {
-      len1 < len2 and w1.indices().forall(i => w1.nth(i) == w2.nth(i)),
+      len1 < len2 and w1.indices().forall(i => w1[i] == w2[i]),
       and {
         len1 == len2,
         w1.indices().exists(i => and {
-          w1.nth(i) < w2.nth(i),
-          w1.indices().forall(j => j < i implies w1.nth(i) == w2.nth(j))
+          w1[i] < w2[i],
+          w1.indices().forall(j => j < i implies w1[i] == w2[j])
         })
       }
     }
@@ -102,7 +102,7 @@ module ics23 {
   // with 32 being in the head.
   // For simulation, we are just summing up the word elements modulo 8.
   // For verification, we should use an injective function as a perfect hash.
-  def hash(word) = [ 32, 0, word.foldl(0, (i, j => i + j)) % 8 ]
+  def hash(word) = [ 32, 0, word.foldl(0, (i, j) => i + j) % 8 ]
 
   type leaf_t = {
     // The implementation additionally stores hashing and length functions:
@@ -141,7 +141,7 @@ module ics23 {
 
     // the inner node nodeHashes are concatenated and hashed upwards
     p.path.foldl(leafHash,
-      (child, inner => hash(inner.prefix.concat(child).concat(inner.suffix))))
+      (child, inner) => hash(inner.prefix.concat(child).concat(inner.suffix)))
   }
 
   // verify that a proof matches a root
@@ -218,7 +218,7 @@ module ics23 {
     // Calls getPadding(0) => idx = 0, prefix = 0.
     // We specialize the constants to IavlSpec.
     path.indices().forall(i =>
-      val step = path.nth(i)
+      val step = path[i]
       or {
         // the path goes left
         hasPadding(step, MinPrefixLen, MaxPrefixLen, ChildSize),
@@ -248,7 +248,7 @@ module ics23 {
     // Calls getPadding(1) => minPrefix, maxPrefix,
     //   suffix = ChildSize + MinPrefixLen, ChildSize + MaxPrefixLen, 0
     path.indices().forall(i =>
-      val step = path.nth(i)
+      val step = path[i]
       or {
         // the path goes right
         hasPadding(step, ChildSize + MinPrefixLen, ChildSize + MaxPrefixLen, 0),
@@ -291,8 +291,8 @@ module ics23 {
         val dist = length(lpath) - 1 - li
         // the prefixes and suffixes match just above the cut points
         1.to(dist).forall(k =>
-          val lnode = lpath.nth(li + k)
-          val rnode = rpath.nth(ri + k)
+          val lnode = lpath[li + k]
+          val rnode = rpath[ri + k]
           and {
             lnode.prefix == rnode.prefix,
             lnode.suffix == rnode.suffix
@@ -300,11 +300,11 @@ module ics23 {
         ),
         // Now topleft and topright are the first divergent nodes
         // make sure they are left and right of each other.
-        // Actually, lpath.nth(li) and rpath.nth(ri) are an abstraction
+        // Actually, lpath[li] and rpath[ri] are an abstraction
         // of the same tree node:
         //  the left one stores the hash of the right one, whereas
         //  the right one stores the hash of the left one.
-        isLeftStep(lpath.nth(li), rpath.nth(ri)),
+        isLeftStep(lpath[li], rpath[ri]),
         // left and right are remaining children below the split,
         // ensure left child is the rightmost path, and visa versa
         isRightMost(lpath.slice(0, li)),
@@ -360,7 +360,7 @@ module ics23test {
   val abc = [5, 6, 7]
   val abcd = [5, 6, 7, 8]
 
-  val allStrings = set([], a, ab, ba, abc, abcd, [1], [2], [3], [4])
+  val allStrings = Set([], a, ab, ba, abc, abcd, [1], [2], [3], [4])
 
   val test1 = {
     existsCalculate({
@@ -474,6 +474,7 @@ module ics23test {
 // non-membership proofs. For more advanced property-based testing, see the
 // module 'trees' below.
 module ics23pbt {
+  import basics.*
   import ics23.*
 
   // an non-membership proof
@@ -483,10 +484,10 @@ module ics23pbt {
 
   // We limit the letters to a very small set,
   // including '32' for hash headers.
-  val Byte = 0.to(3).union(set(32))
+  val Byte = 0.to(3).union(Set(32))
 
   val toWord(m) =
-    m.keys().fold([], (l, i => l.append(m[i])))
+    m.keys().fold([], (l, i) => l.append(m[i]))
 
   action genKey =
     Byte.guess(i =>
@@ -521,7 +522,7 @@ module ics23pbt {
 
   // grow the proof on the left
   action growLeft =
-    set("turnLeft", "turnRight").guess(dir =>
+    Set("turnLeft", "turnRight").guess(dir =>
       1.to(MaxPrefixLen + ChildSize).setOfMaps(Byte).guess(m =>
         nonMemProof <-
           nonMemProof.with("left", nonMemProof.left.extend(dir, toWord(m)))
@@ -529,7 +530,7 @@ module ics23pbt {
 
   // grow the proof on the right
   action growRight =
-    set("turnLeft", "turnRight").guess(dir =>
+    Set("turnLeft", "turnRight").guess(dir =>
       1.to(MaxPrefixLen + ChildSize).setOfMaps(Byte).guess(m =>
         nonMemProof <-
           nonMemProof.with("right", nonMemProof.right.extend(dir, toWord(m)))
@@ -606,7 +607,7 @@ module trees {
   // To simplify random generation of the trees, we are using
   // the binary encoding. For example, if a leaf has the index 4,
   // that is, 100b, then it has the parents 3 = 10b and 1 = 1b.
-  def parents(i) = 1.to(height).map(h => i / (2^h)).exclude(set(0))
+  def parents(i) = 1.to(height).map(h => i / (2^h)).exclude(Set(0))
 
   // is a given key a node (inner or leaf) of a tree
   def isNode(t, key) = or {
@@ -647,8 +648,8 @@ module trees {
     }
     // go over the nodes from max to min
     1.range(2^height + 1)
-      .foldr(mapOf(),
-        (m, key => if (isNode(t, key)) putNodeHash(m, key) else m))
+      .foldr(Map(),
+        (m, key) => if (isNode(t, key)) putNodeHash(m, key) else m)
   }
 
   // It's very easy to produce binary trees by picking an arbitrary graph and
@@ -698,7 +699,7 @@ module trees {
     // encode all intermediate nodes upwards
     val path = range(1, height + 1)
       .foldl([],
-      (p, h =>
+      (p, h) =>
         if (key < 2^h) {
           p
         } else {
@@ -719,7 +720,7 @@ module trees {
             p.append({ prefix: [0].concat(left), suffix: [] })
           }
         }
-    ))
+    )
     // return the exists proof, where the key is the index itself
     {
       key: [key],
@@ -854,8 +855,8 @@ module trees {
   // https://github.com/informalsystems/tnt/issues/301
   /*
   def isTree(t) = and {
-    t.leafs.keys().intersect(t.left.keys()) == set(),
-    t.leafs.keys().intersect(t.right.keys()) == set(),
+    t.leafs.keys().intersect(t.left.keys()) == Set(),
+    t.leafs.keys().intersect(t.right.keys()) == Set(),
     1.in(t.leafs.keys().union(t.left.keys().union(t.right.keys()))),
     // we impose an order on the keys, to break cycles and DAGs
     t.left.keys().forall(k => t.left[k] > k),

@@ -24,7 +24,7 @@ module erc20 {
   action Init = all {
     balanceOf <- ADDR.mapBy(_ => 100),
     allowance <- tuples(ADDR, ADDR).mapBy(_ => 0),
-    pendingTransactions <- set(),
+    pendingTransactions <- Set(),
     nextTxId <- 0,
     lastTx <- { id: 0, tag: "none", fail: false }
   }
@@ -43,7 +43,7 @@ module erc20 {
     val newTx = { id: nextTxId, tag: "transfer", fail: false, 
                   sender: sender, toAddr: toAddr, value: value }
     all {
-      pendingTransactions <- pendingTransactions.union(set(newTx)),
+      pendingTransactions <- pendingTransactions.union(Set(newTx)),
       lastTx <- { id: 0, tag: "none", fail: false },
       nextTxId <- nextTxId + 1,
       balanceOf <- balanceOf,
@@ -54,12 +54,12 @@ module erc20 {
   /* Process a Transfer transaction that was submitted with SubmitTransfer. */
   action CommitTransfer(tx) = all {
     tx.tag == "transfer",
-    pendingTransactions <- pendingTransactions.exclude(set(tx)),
+    pendingTransactions <- pendingTransactions.exclude(Set(tx)),
     allowance <- allowance,
     nextTxId <- nextTxId,
     val fail = or { 
      tx.value < 0,
-     tx.value > balanceOf[tx.sender],
+     tx.value > balanceOf.get(tx.sender),
      tx.sender == tx.toAddr
     }
     all {
@@ -90,7 +90,7 @@ module erc20 {
     val newTx = { id: nextTxId, tag: "transferFrom", fail: false, sender: sender,
                   fromAddr: fromAddr, toAddr: toAddr, value: value }
     all {
-      pendingTransactions <- pendingTransactions.union(set(newTx)),
+      pendingTransactions <- pendingTransactions.union(Set(newTx)),
       lastTx <- { id: 0, tag: "none", fail: false },
       nextTxId <- nextTxId + 1,
       balanceOf <- balanceOf,
@@ -101,12 +101,12 @@ module erc20 {
   /* Process a TransferFrom transaction that was submitted with SubmitTransferFrom. */
   action CommitTransferFrom(tx) = all {
     tx.tag == "transferFrom",
-    pendingTransactions <- pendingTransactions.exclude(set(tx)),
+    pendingTransactions <- pendingTransactions.exclude(Set(tx)),
     nextTxId <- nextTxId,
     val fail = or {
      tx.value < 0,
-     tx.value > balanceOf[tx.fromAddr],
-     tx.value > allowance[(tx.fromAddr, tx.sender)],
+     tx.value > balanceOf.get(tx.fromAddr),
+     tx.value > allowance.get((tx.fromAddr, tx.sender)),
      tx.fromAddr == tx.toAddr
     }
     all {
@@ -135,7 +135,7 @@ module erc20 {
     val newTx = { id: nextTxId, tag: "approve", fail: false,
                   sender: sender, spender: spender, value: value }
     all {
-      pendingTransactions <- pendingTransactions.union(set(newTx)),
+      pendingTransactions <- pendingTransactions.union(Set(newTx)),
       lastTx <- { id: 0, tag: "none", fail: false },
       nextTxId <- nextTxId + 1,
       balanceOf <- balanceOf,
@@ -146,7 +146,7 @@ module erc20 {
   /* Process an Approve transaction that was submitted with SubmitApprove. */
   action CommitApprove(tx) = all {
     tx.tag == "approve",
-    pendingTransactions <- pendingTransactions.exclude(set(tx)),
+    pendingTransactions <- pendingTransactions.exclude(Set(tx)),
     nextTxId <- nextTxId,
     balanceOf <- balanceOf,
     val fail = or {
@@ -249,5 +249,5 @@ module erc20 {
     not(badExample)
 
   /* Make sure that the account balances never go negative. */
-  val NoNegativeBalances = ADDR.forall(a => balanceOf[a] >= 0)
+  val NoNegativeBalances = ADDR.forall(a => balanceOf.get(a) >= 0)
 }

@@ -70,11 +70,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   }
 
   exitVar (e: TntVar) {
-    this.addToResults(e.id, right(toScheme(e.type)))
+    this.addToResults(e.id, right(toScheme(e.typeAnnotation)))
   }
 
   exitConst (e: TntConst) {
-    this.addToResults(e.id, right(toScheme(e.type)))
+    this.addToResults(e.id, right(toScheme(e.typeAnnotation)))
   }
 
   //     n: t ∈ Γ

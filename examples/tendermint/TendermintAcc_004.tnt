@@ -82,12 +82,12 @@ val AllProcs = Corr.union(Faulty)
 val Rounds = 0.to(MaxRound)
 // a special value to denote a nil round, outside of Rounds
 val NilRound = -1
-val RoundsOrNil = set(NilRound).union(Rounds)
+val RoundsOrNil = Set(NilRound).union(Rounds)
 // the set of all values
 val Values = ValidValues.union(InvalidValues)
 // a special value for a nil round, outside of Values
 val NilValue = "None"
-val ValuesOrNil = set(NilValue).union(Values)
+val ValuesOrNil = Set(NilValue).union(Values)
 
 // a value hash is modeled as identity
 def Id(v) = v
@@ -142,52 +142,69 @@ val vars = (round, step, decision, lockedValue,
 //********************* PROTOCOL INITIALIZATION ******************************
 def FaultyProposals(r) =
     tuples(Faulty, Values, RoundsOrNil)
-      .map(p, v, vr =>
+      .map(args =>
+        val p = args._1
+        val v = args._2
+        val vr = args._3
         { tag: "PROPOSE", src: p, round: r, proposal: v, validRound: vr })
 
 val AllFaultyProposals =
     tuples(Faulty, Rounds, Values, RoundsOrNil)
-      .map(p, r, v, vr =>
+      .map(args =>
+        val p = args._1
+        val r = args._2
+        val v = args._3
+        val vr = args._4
         { tag: "PROPOSE", src: p, round: r, proposal: v, validRound: vr })
 
 def FaultyPrevotes(r) =
     tuples(Faulty, Values)
-      .map(p, v =>
+      .map(args =>
+        val p = args._1
+        val v = args._2
         { tag: "PREVOTE", src: p, round: r, id: v })
 
 val AllFaultyPrevotes =
     tuples(Faulty, Rounds, Values, RoundsOrNil)
-      .map(p, r, v =>
+      .map(args =>
+        val p = args._1
+        val r = args._2
+        val v = args._3
         { tag: "PREVOTE", src: p, round: r, id: v })
 
 def FaultyPrecommits(r) =
     tuples(Faulty, Values)
-      .map(p, v =>
+      .map(args =>
+        val p = args._1
+        val v = args._2
         { tag: "PRECOMMIT", src: p, round: r, id: v })
 
 val AllFaultyPrecommits =
     tuples(Faulty, Rounds, Values)
-      .map(p, r, v =>
+      .map(args =>
+        val p = args._1
+        val r = args._2
+        val v = args._3
         { tag: "PRECOMMIT", src: p, round: r, id: v })
 
    
 // the message function never contains a message for a wrong round
 pure def BenignRoundsInMessages(msgfun) =
     Rounds.forall( r =>
-      msgfun[r].forall( m =>
+      msgfun.get(r).forall( m =>
         r == m.round
       )
     )
 
 // The initial states of the protocol. Some faults can be in the system already.
 action Init = all {
-  round           <- Corr.mapOf( _ => 0 ),
-  step            <- Corr.mapOf( _ => Proposer ),
-  decision        <- Corr.mapOf( _ => NilValue ),
-  lockedValue     <- Corr.mapOf( _ => NilValue ),
-  lockedRound     <- Corr.mapOf( _ => NilRound ),
-  validValue      <- Corr.mapOf( _ => NilValue ),
-  validRound      <- Corr.mapOf( _ => NilRound ),
+  round           <- Corr.mapBy( _ => 0 ),
+  step            <- Corr.mapBy( _ => Proposer ),
+  decision        <- Corr.mapBy( _ => NilValue ),
+  lockedValue     <- Corr.mapBy( _ => NilValue ),
+  lockedRound     <- Corr.mapBy( _ => NilRound ),
+  validValue      <- Corr.mapBy( _ => NilValue ),
+  validRound      <- Corr.mapBy( _ => NilRound ),
   AllFaultyProposals.powerset().guess(faultyProposals => all {
     BenignRoundsInMessages(faultyProposals),
     msgsPropose <- faultyProposals,
@@ -200,7 +217,7 @@ action Init = all {
     BenignRoundsInMessages(faultyPrecommits),
     msgsPrecommit <- faultyPrecommits,
   }),
-  evidence        <- set(),
+  evidence        <- Set(),
   fired_action    <- "Init",
 }
 
@@ -208,39 +225,39 @@ action Init = all {
 action BroadcastProposal(pSrc, pRound, pProposal, pValidRound) = {
   val newMsg = { tag: "PROPOSE", src: pSrc, round: pRound,
                  proposal: pProposal, validRound: pValidRound }
-  msgsPropose <- msgsPropose.updateAs(pRound, (old => old.union(set(newMsg))))
+  msgsPropose <- msgsPropose.updateAs(pRound, (old => old.union(Set(newMsg))))
 }
 
 action BroadcastPrevote(pSrc, pRound, pId) = {
   val newMsg = { tag: "PREVOTE", src: pSrc, round: pRound, id: pId }
-  msgsPrevote <- msgsPrevote.updateAs(pRound, (old => old.union(set(newMsg))))
+  msgsPrevote <- msgsPrevote.updateAs(pRound, (old => old.union(Set(newMsg))))
 }
 
 action BroadcastPrecommit(pSrc, pRound, pId) = {
   val newMsg = { tag: "PRECOMMIT", src: pSrc, round: pRound, id: pId }
-  msgsPrecommit <- msgsPrecommit.updateAs(pRound, (old => old.union(set(newMsg))))
+  msgsPrecommit <- msgsPrecommit.updateAs(pRound, (old => old.union(Set(newMsg))))
 }
 
 //********************* PROTOCOL TRANSITIONS ******************************
 // lines 12-13
 action StartRound(p, r) = all {
-   step[p] != "decided", // a decided process does not participate in consensus
+   step.get(p) != "decided", // a decided process does not participate in consensus
    round  <- round.update(p, r),
    step   <- step.update(p, "propose"),
 }
 
 // lines 14-19, a proposal may be sent later
 action InsertProposal(p) = {
-  val r = round[p]
+  val r = round.get(p)
   all {
-    p == Proposer[r],
-    step[p] == "propose",
+    p == Proposer.get(r),
+    step.get(p) == "propose",
     // if the proposer is sending a proposal, then there are no other proposals
     // by the correct processes for the same round
-    msgsPropose[r].forall(m => m.src != p),
+    msgsPropose.get(r).forall(m => m.src != p),
     ValidValues.guess({ v =>
-        val proposal = if (validValue[p] != NilValue) validValue[p] else v
-        BroadcastProposal(p, round[p], proposal, validRound[p])
+        val proposal = if (validValue.get(p) != NilValue) validValue.get(p) else v
+        BroadcastProposal(p, round.get(p), proposal, validRound.get(p))
     }),
     fired_action <- "InsertProposal",
   }
@@ -249,17 +266,17 @@ action InsertProposal(p) = {
 // lines 22-27
 action UponProposalInPropose(p) =
   Values.guess(v =>
-    val msg = { tag: "PROPOSE", src: Proposer[round[p]],
-                round: round[p], proposal: v, validRound: NilRound }
+    val msg = { tag: "PROPOSE", src: Proposer.get(round.get(p)),
+                round: round.get(p), proposal: v, validRound: NilRound }
     val mid = // line 23
-         if (IsValid(v) and (lockedRound[p] == NilRound or lockedValue[p] == v))
+         if (IsValid(v) and (lockedRound.get(p) == NilRound or lockedValue.get(p) == v))
          Id(v) 
          else NilValue
     all {
-      step[p] == "propose",                 // line 22
-      msg in msgsPropose[round[p]],         // line 22
-      evidence <- set(msg).union(evidence),
-      BroadcastPrevote(p, round[p], mid),   // lines 24-26
+      step.get(p) == "propose",                 // line 22
+      msg in msgsPropose.get(round.get(p)),         // line 22
+      evidence <- Set(msg).union(evidence),
+      BroadcastPrevote(p, round.get(p), mid),   // lines 24-26
       step <- step.update(p, "prevote"),
       fired_action <- "UponProposalInPropose",
     }
@@ -267,38 +284,40 @@ action UponProposalInPropose(p) =
 
 // lines 28-33        
 action UponProposalInProposeAndPrevote(p) =
-  tuples(Values, Rounds).guess({ v, vr =>
-    val msg = { tag: "PROPOSE", src: Proposer[round[p]],
-                round: round[p], proposal: v, validRound: vr }
-    val PV = msgsPrevote[vr].filter( m => m.id == Id(v) )
+  tuples(Values, Rounds).guess(vAndVr =>
+    val v = vAndVr._1
+    val vr = vAndVr._2
+    val msg = { tag: "PROPOSE", src: Proposer.get(round.get(p)),
+                round: round.get(p), proposal: v, validRound: vr }
+    val PV = msgsPrevote.get(vr).filter( m => m.id == Id(v) )
     val mid = // line 29
-         if (IsValid(v) and (lockedRound[p] <= vr or lockedValue[p] == v))
+         if (IsValid(v) and (lockedRound.get(p) <= vr or lockedValue.get(p) == v))
          Id(v)
          else NilValue
     all {
-      step[p] == "propose",
-      0 <= vr and vr < round[p], // line 28, the while part
-      msg in msgsPropose[round[p]], // line 28
+      step.get(p) == "propose",
+      0 <= vr and vr < round.get(p), // line 28, the while part
+      msg in msgsPropose.get(round.get(p)), // line 28
       size(PV) >= THRESHOLD2, // line 28
-      evidence <- PV.union(set(msg)).union(evidence),
-      BroadcastPrevote(p, round[p], mid), // lines 24-26
+      evidence <- PV.union(Set(msg)).union(evidence),
+      BroadcastPrevote(p, round.get(p), mid), // lines 24-26
       step <- step.update(p, "prevote"),
       fired_action <- "UponProposalInProposeAndPrevote",
     }
-  })
+  )
 
 // lines 34-35 + lines 61-64 (onTimeoutPrevote)
 action UponQuorumOfPrevotesAny(p) =
-  powerset(msgsPrevote[round[p]]).guess({ MyEvidence =>
+  powerset(msgsPrevote.get(round.get(p))).guess({ MyEvidence =>
     // find the unique voters in the evidence
     val Voters = MyEvidence.map(m => m.src)
 
     // compare the number of the unique voters against the threshold
     all {
-      step[p] == "prevote", // line 34 and 61
+      step.get(p) == "prevote", // line 34 and 61
       size(Voters) >= THRESHOLD2, // line 34
       evidence <- MyEvidence.union(evidence),
-      BroadcastPrecommit(p, round[p], NilValue),
+      BroadcastPrecommit(p, round.get(p), NilValue),
       step <- step.update(p, "precommit"),
       fired_action <- "UponQuorumOfPrevotesAny",
     }
@@ -309,41 +328,41 @@ action UponProposalInPrevoteOrCommitAndPrevote(p) =
   tuples(ValidValues, RoundsOrNil).guess(pair =>
     val v = pair._1     // in the future, this should be done by pattern matching
     val vr = pair._2    // in the future, this should be done by pattern matching
-    val msg = { tag: "PROPOSE", src: Proposer[round[p]],
-                round: round[p], proposal: v, validRound: vr }
-    val PV = msgsPrevote[round[p]].filter(m => m.id == Id(v))
+    val msg = { tag: "PROPOSE", src: Proposer.get(round.get(p)),
+                round: round.get(p), proposal: v, validRound: vr }
+    val PV = msgsPrevote.get(round.get(p)).filter(m => m.id == Id(v))
     all {
-      step[p] in set("prevote", "precommit"), // line 36
-      msg in msgsPropose[round[p]], // line 36
+      step.get(p) in Set("prevote", "precommit"), // line 36
+      msg in msgsPropose.get(round.get(p)), // line 36
       size(PV) >= THRESHOLD2, // line 36
-      evidence <- PV.union(set(msg)).union(evidence),
-      if (step[p] == "prevote") all {
+      evidence <- PV.union(Set(msg)).union(evidence),
+      if (step.get(p) == "prevote") all {
           // lines 38-41:
           lockedValue <- lockedValue.update(p, v),
-          lockedRound <- lockedRound.update(p, round[p]),
-          BroadcastPrecommit(p, round[p], Id(v)),
+          lockedRound <- lockedRound.update(p, round.get(p)),
+          BroadcastPrecommit(p, round.get(p), Id(v)),
           step <- step.update(p, "precommit"),
       } else {
         true      // the above variables are unchanged
       },
         // lines 42-43
       validValue <- validValue.update(p, v),
-      validRound <- validRound.update(p, round[p]),
+      validRound <- validRound.update(p, round.get(p)),
       fired_action <- "UponProposalInPrevoteOrCommitAndPrevote",
     }
   )
 
 // lines 47-48 + 65-67 (onTimeoutPrecommit)
 action UponQuorumOfPrecommitsAny(p) =
-  powerset(msgsPrecommit[round[p]]).guess(MyEvidence =>
+  powerset(msgsPrecommit.get(round.get(p))).guess(MyEvidence =>
      // find the unique committers in the evidence
      val Committers =  MyEvidence.map( m => m.src )
      // compare the number of the unique committers against the threshold
      all {
          size(Committers) >= THRESHOLD2,  // line 47
          evidence <- MyEvidence.union(evidence),
-         (round[p] + 1).in(Rounds),
-         StartRound(p, round[p] + 1),
+         (round.get(p) + 1).in(Rounds),
+         StartRound(p, round.get(p) + 1),
          fired_action <- "UponQuorumOfPrecommitsAny",
      }
   )
@@ -355,14 +374,14 @@ action UponProposalInPrecommitNoDecision(p) =
      val v = triple._1   // in the future, this should be done via pattern matching
      val r = triple._2   // in the future, this should be done via pattern matching
      val vr = triple._3  // in the future, this should be done via pattern matching
-     val msg = { tag: "PROPOSE", src: Proposer[r],
+     val msg = { tag: "PROPOSE", src: Proposer.get(r),
                  round: r, proposal: v, validRound: vr }
-     val PV = msgsPrecommit[r].filter(m => m.id == Id(v))
+     val PV = msgsPrecommit.get(r).filter(m => m.id == Id(v))
      all {
-       decision[p] == NilValue,         // line 49
-       msg in msgsPropose[r],           // line 49
+       decision.get(p) == NilValue,         // line 49
+       msg in msgsPropose.get(r),           // line 49
        size(PV) >= THRESHOLD2,   // line 49
-       evidence <- PV.union(set(msg)).union(evidence),
+       evidence <- PV.union(Set(msg)).union(evidence),
        decision <- decision.update(p, v), // update the decision, line 51
        // The original algorithm does not have 'DECIDED', but it increments the height.
        // We introduced 'DECIDED' here to prevent the process from changing its decision.
@@ -375,29 +394,29 @@ action UponProposalInPrecommitNoDecision(p) =
 
 // lines 20-21 + 57-60
 action OnTimeoutPropose(p) = all {
-  step[p] == "propose",
-  p != Proposer[round[p]],
-  BroadcastPrevote(p, round[p], NilValue),
+  step.get(p) == "propose",
+  p != Proposer.get(round.get(p)),
+  BroadcastPrevote(p, round.get(p), NilValue),
   step <- step.update(p, "prevote"),
   fired_action <- "OnTimeoutPropose",
 }
 
 // lines 44-46
 action OnQuorumOfNilPrevotes(p) =
-  val PV = msgsPrevote[round[p]].filter(m => m.id == Id(NilValue))
+  val PV = msgsPrevote.get(round.get(p)).filter(m => m.id == Id(NilValue))
   all {
-    step[p] == "prevote",
+    step.get(p) == "prevote",
     size(PV) >= THRESHOLD2, // line 36
     evidence <- PV.union(evidence),
-    BroadcastPrecommit(p, round[p], Id(NilValue)),
+    BroadcastPrecommit(p, round.get(p), Id(NilValue)),
     step <- step.update(p, "precommit"),
     fired_action <- "OnQuorumOfNilPrevotes",
   }
 
 // lines 55-56
 action OnRoundCatchup(p) =
-  Rounds.filter(rr => rr > round[p]).guess({ r =>
-    val RoundMsgs = msgsPropose[r].union(msgsPrevote[r]).union(msgsPrecommit[r])
+  Rounds.filter(rr => rr > round.get(p)).guess({ r =>
+    val RoundMsgs = msgsPropose.get(r).union(msgsPrevote.get(r)).union(msgsPrecommit.get(r))
 
     powerset(RoundMsgs).guess({ MyEvidence =>
       val Faster = MyEvidence.map(m => m.src)
@@ -434,9 +453,9 @@ action Next =
 
 // equivocation by a process p
 def EquivocationBy(p) =
-  tuples(evidence, evidence).exists(pair =>
-    val m1 = pair._1
-    val m2 = pair._2
+  tuples(evidence, evidence).exists(args =>
+    val m1 = args._1
+    val m2 = args._2
     and {
       m1 != m2,
       m1.src == p,
@@ -477,15 +496,15 @@ def AmnesiaBy(p) =
 // the safety property -- agreement
 val Agreement =
   tuples(Corr, Corr).forall(p => or {
-    decision[p._1] == NilValue,
-    decision[p._2] == NilValue,
-    decision[p._1] == decision[p._2]
+    decision.get(p._1) == NilValue,
+    decision.get(p._2) == NilValue,
+    decision.get(p._1) == decision.get(p._2)
   })
 
 // the protocol validity
 val Validity =
   Corr.forall(p =>
-    decision[p] in (ValidValues.union(set(NilValue)))
+    decision.get(p) in (ValidValues.union(Set(NilValue)))
   )
 
 /*
@@ -514,11 +533,16 @@ val NoEquivocation =
 
 // This property is violated. You can check it to see an example of agreement.
 // It is not exactly ~Agreement, as we do not want to see the states where
-// decision[p] = NilValue
+// decision.get(p) = NilValue
 val NoAgreement =
-  tuples(Corr, Corr).forall( p, q =>
-        (p != q and decision[p] != NilValue and decision[q] != NilValue)
-          implies (decision[p] != decision[q])
+  tuples(Corr, Corr).forall(args =>
+        val p = args._1
+        val q = args._2
+        and {
+          p != q,
+          decision.get(p) != NilValue,
+          decision.get(q) != NilValue
+        } implies (decision.get(p) != decision.get(q))
   )
 // Either agreement holds, or the faulty processes indeed demonstrate amnesia.
 // This property is violated. A counterexample should demonstrate equivocation.
@@ -545,8 +569,8 @@ val AmnesiaImpliesEquivocation =
   may reach MaxRound without making a decision. 
  */
 val NeverUndecidedInMaxRound = (
-    val AllInMax   = Corr.forall(p => round[p] == MaxRound)
-    val AllDecided = Corr.forall(p => decision[p] != NilValue)
+    val AllInMax   = Corr.forall(p => round.get(p) == MaxRound)
+    val AllDecided = Corr.forall(p => decision.get(p) != NilValue)
     AllInMax implies AllDecided
 )
 

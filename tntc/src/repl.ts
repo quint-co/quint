@@ -286,12 +286,12 @@ function chalkTntEx (ex: TntEx): string {
 
     case 'app':
       switch (ex.opcode) {
-        case 'set': {
+        case 'Set': {
           const as = ex.args.map(chalkTntEx).join(', ')
-          return chalk.green('set') + chalk.black(`(${as})`)
+          return chalk.green('Set') + chalk.black(`(${as})`)
         }
 
-        case 'mapOf': {
+        case 'Map': {
           const ps = ex.args.map(tup => {
             if (tup.kind === 'app' &&
                    tup.opcode === 'tup' && tup.args.length === 2) {
@@ -302,20 +302,20 @@ function chalkTntEx (ex: TntEx): string {
             }
           })
           const as = ps.join(', ')
-          return chalk.green('mapOf') + chalk.black(`(${as})`)
+          return chalk.green('Map') + chalk.black(`(${as})`)
         }
 
-        case 'tup': {
+        case 'Tup': {
           const as = ex.args.map(chalkTntEx).join(', ')
           return chalk.black(`(${as})`)
         }
 
-        case 'list': {
+        case 'List': {
           const as = ex.args.map(chalkTntEx).join(', ')
           return chalk.black(`[${as}]`)
         }
 
-        case 'rec': {
+        case 'Rec': {
           const kvs = []
           for (let i = 0; i < ex.args.length / 2; i++) {
             const key = ex.args[2 * i]

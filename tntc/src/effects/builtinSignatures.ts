@@ -117,11 +117,11 @@ const readManyEffect = (arity: number) => {
   return parseEffectOrThrow(`(${args.join(', ')}) => Read[${rs.join(', ')}] & Temporal[${ts.join(', ')}]`)
 }
 const multipleAritySignatures: [string, Signature][] = [
-  ['list', readManyEffect],
-  ['set', readManyEffect],
-  ['mapOf', readManyEffect],
-  ['rec', readManyEffect],
-  ['tup', readManyEffect],
+  ['List', readManyEffect],
+  ['Set', readManyEffect],
+  ['Map', readManyEffect],
+  ['Rec', readManyEffect],
+  ['Tup', readManyEffect],
   ['tuples', readManyEffect],
   ['and', readManyEffect],
   ['or', readManyEffect],

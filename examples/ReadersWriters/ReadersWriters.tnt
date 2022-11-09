@@ -14,7 +14,7 @@ module ReadersWriters {
   
   val Actors = 1.to(NumActors)
   
-  def ToSet(s) = s.indices().map(i => s.nth(i))
+  def ToSet(s) = s.indices().map(i => s[i])
   
   def read(s)  = s._1 == "read"
   def write(s) = s._1 == "write"
@@ -40,19 +40,19 @@ module ReadersWriters {
   }
   
   action Read(actor) = all {
-      readers <- readers.union(set(actor)),
+      readers <- readers.union(Set(actor)),
       waiting <- waiting.tail(),
   }
   
   action Write(actor) = all {
-      readers == set(),
-      writers <- writers.union(set(actor)),
+      readers == Set(),
+      writers <- writers.union(Set(actor)),
       waiting <- waiting.tail(),
   }
   
   action ReadOrWrite = all {
       waiting != [],
-      writers == set(),
+      writers == Set(),
       val pair = waiting.head()
       val actor = pair._2
       if (pair._1 == "read") all {
@@ -66,10 +66,10 @@ module ReadersWriters {
   
   action StopActivity(actor) =
       if (actor in readers) all {
-          readers <- readers.exclude(set(actor)),
+          readers <- readers.exclude(Set(actor)),
           writers <- writers,
       } else all {
-          writers <- writers.exclude(set(actor)),
+          writers <- writers.exclude(Set(actor)),
           readers <- readers,
       }
 
@@ -83,8 +83,8 @@ module ReadersWriters {
   (*****************/
   
   action Init = all {
-      readers == set(),
-      writers == set(),
+      readers == Set(),
+      writers == Set(),
       waiting == []
   }
   
@@ -124,11 +124,11 @@ module ReadersWriters {
   val TypeOK = and {
       readers.subseteq(Actors),
       writers.subseteq(Actors),
-      waiting in tuples(ToSet(allLists(set("read", "write")).Actors))
+      waiting in tuples(ToSet(allLists(Set("read", "write")).Actors))
   }
   
   val Safety = and {
-      not(readers != set() and writers != set()),
+      not(readers != Set() and writers != Set()),
       size(writers) <= 1
   }
   

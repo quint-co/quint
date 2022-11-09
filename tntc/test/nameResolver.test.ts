@@ -158,7 +158,7 @@ describe('nameResolver', () => {
     })
 
     it('finds unresolved aliases under chained lets', () => {
-      const tntModule = buildModuleWithExpressions(['val x = 1 { val y: set(UNKNOWN_TYPE) = 1 { set(0) } }'])
+      const tntModule = buildModuleWithExpressions(['val x = 1 { val y: set(UNKNOWN_TYPE) = 1 { Set(0) } }'])
       const result = resolveNames(tntModule, tables, dummyScopeTree)
       const expectedResult: NameResolutionResult = {
         kind: 'error',

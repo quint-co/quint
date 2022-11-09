@@ -73,10 +73,10 @@ describe('repl ok', () => {
     await assertRepl('', '')
   })
 
-  it('set(2 + 3)', async () => {
-    const input = 'set(2 + 3)\n'
+  it('Set(2 + 3)', async () => {
+    const input = 'Set(2 + 3)\n'
     const output = dedent(
-      `set(5)
+      `Set(5)
       |`
     )
     await assertRepl(input, output)
@@ -88,7 +88,7 @@ describe('repl ok', () => {
       |3 > 1
       |1.to(3).map(x => 2 * x)
       |1.to(4).filter(x => x > 2)
-      |set(1, 3).union(set(5, 6))
+      |Set(1, 3).union(Set(5, 6))
       |1.to(4).forall(x => x > 1)
       |(5 - 1, 5, 6)
       |[5 - 1, 5, 6]
@@ -97,9 +97,9 @@ describe('repl ok', () => {
     const output = dedent(
       `2
       |true
-      |set(2, 4, 6)
-      |set(3, 4)
-      |set(1, 3, 5, 6)
+      |Set(2, 4, 6)
+      |Set(3, 4)
+      |Set(1, 3, 5, 6)
       |false
       |(4, 5, 6)
       |[4, 5, 6]
@@ -170,12 +170,12 @@ describe('repl ok', () => {
 
   it('handle exceptions', async () => {
     const input = dedent(
-      `set(Int)
+      `Set(Int)
       |`
     )
     const output = dedent(
       `runtime error: <input>:1:1 - error: Infinite set Int is non-enumerable
-      |1: set(Int)
+      |1: Set(Int)
       |   ^^^^^^^^
       |
       |<result undefined>
@@ -300,7 +300,7 @@ describe('repl ok', () => {
       |
       |x <- 0
       |x == 0
-      |set(1, 2, 3).guess(y => x <- y)
+      |Set(1, 2, 3).guess(y => x <- y)
       |1 <= x and x <= 3
       |2.to(5).guess(y => x <- y)
       |2 <= x and x <= 5

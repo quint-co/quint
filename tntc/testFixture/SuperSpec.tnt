@@ -53,10 +53,10 @@ module withConsts {
   }
 
   // Typed vals
-  val withType: set(int) = set(1, 2)
+  val withType: set(int) = Set(1, 2)
   // PROC is an uninterpreted type
   type PROC
-  val withUninterpretedType: set(PROC) = set()
+  val withUninterpretedType: set(PROC) = Set()
 
   // Operator definitions
   var n: int
@@ -117,14 +117,14 @@ module withConsts {
 
   // Function application
   var f1: str -> int
-  val funapp = f1["a"]
+  val funapp = f1.get("a")
 
   // Apply a user-defined operator by its name.
   def MyOper(a, b) = 1
   val oper_app_normal = MyOper("a", 42)
   val oper_app_ufcs = "a".MyOper(42)
   // the following operators need a special parsing case
-  val oper_in = in(1, set())
+  val oper_in = in(1, Set())
 
   // Dot notation application with lambdas
   // Pass a lambda operator as a second argument of filter.
@@ -137,7 +137,7 @@ module withConsts {
   // use holes
   val oper_app_dot4 = S.filter(_, _ => true)
 
-  val f = S.mapOf(x => x + 1)
+  val f = S.mapBy(x => x + 1)
   // Pass non-lambda arguments.
   // Here we are using the dot notation.
   val oper_app_dot_non_lambda = f.exclude(3, 4)
@@ -147,13 +147,14 @@ module withConsts {
 
   // Data structures
   val test_tuple = (1, 2, 3)
-  val test_tuple2 = tup(1, 2, 3)
+  val test_tuple2 = Tup(1, 2, 3)
   val test_pair = 4 -> 5
   val test_list = [1, 2, 3]
-  val test_list2 = list(1, 2, 3)
+  val test_list2 = List(1, 2, 3)
+  val test_list_nth = [2, 3, 4][2]
   val test_record = { name: "igor", year: 1981 }
-  val test_record2 = rec("name", "igor", "year", 1981)
-  val test_set = set(1, 2, 3)
+  val test_record2 = Rec("name", "igor", "year", 1981)
+  val test_set = Set(1, 2, 3)
 
   // access a record via dot
   val rec_field =
@@ -161,15 +162,15 @@ module withConsts {
     my_rec.a
 
   val tup_elem =
-    val my_tup = tup("a", 3)
+    val my_tup = Tup("a", 3)
     my_tup._2
 
   def isEmpty(s) = s == []
 
   // Bultin infix operators
-  val in_2_empty = 2 in set()
-  val notin_2_empty = 2 notin set()
-  val subseteq_empty = set().subseteq(set())
+  val in_2_empty = 2 in Set()
+  val notin_2_empty = 2 notin Set()
+  val subseteq_empty = Set().subseteq(Set())
 
   // Nested Modules
   module level2 {

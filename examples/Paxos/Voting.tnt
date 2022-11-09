@@ -14,7 +14,7 @@ const Quorum: set(set(str))     // The set of "quorums", where a quorum" is a
 (***************************************************************************/
 assume QuorumAssumption = and {
     Quorum.forall(Q => Q.subseteq(Acceptor)),
-    tuples(Quorum, Quorum).forall(t => t._1.intersect(t._2) != set())
+    tuples(Quorum, Quorum).forall(t => t._1.intersect(t._2) != Set())
 }
 
 // theorems are not supported by TNT, use TLA+ syntax
@@ -48,7 +48,7 @@ var maxBal: str -> int
 (***************************************************************************/
 val TypeOK = and {
     votes in Acceptor.setOfMaps(powerset(tuples(Ballot, Value))),
-    maxBal in Acceptor.setOfMaps(Ballot.union(set(-1)))
+    maxBal in Acceptor.setOfMaps(Ballot.union(Set(-1)))
 }
 
 //-----------------------------------------------------------------------------
@@ -56,7 +56,7 @@ val TypeOK = and {
 (* We now make a series of definitions an assert some simple theorems      *)
 (* about those definitions that lead to the algorithm.                     *)
 (***************************************************************************/
-def VotedFor(a, b, v) = (b, v) in votes[a]
+def VotedFor(a, b, v) = (b, v) in votes.get(a)
   /*************************************************************************)
   (* True iff acceptor a has voted for v in ballot b.                      *)
   (*************************************************************************/
@@ -76,7 +76,7 @@ val chosen = Value.filter( v => Ballot.exists( b => ChosenAt(b, v) ) )
 def DidNotVoteAt(a, b) = Value.forall( v => not(VotedFor(a, b, v)) )
 
 def CannotVoteAt(a, b) = and {
-  maxBal[a] > b,
+  maxBal.get(a) > b,
   DidNotVoteAt(a, b)
 }
 
@@ -137,7 +137,7 @@ THEOREM VotesSafeImpliesConsistency ==
  */             
 //-----------------------------------------------------------------------------
 def ShowsSafeAt(Q, b, v) = and {
-  Q.forall(a => maxBal[a] >= b),
+  Q.forall(a => maxBal.get(a) >= b),
   -1.to(b - 1).exists(c => and {
         (c != -1) implies Q.exists(a => VotedFor(a, c, v)),
         (c + 1).to(b - 1).forall( d => Q.forall( a => DidNotVoteAt(a, d)))
@@ -158,8 +158,8 @@ THEOREM ShowsSafety ==
 (* straightforward.                                                        *)
 (***************************************************************************/
 action Init = all {
-  votes  <- Acceptor.mapOf({ _ => set() }),
-  maxBal <- Acceptor.mapOf({ _ => -1 }),
+  votes  <- Acceptor.mapBy(_ => Set()),
+  maxBal <- Acceptor.mapBy(_ => -1),
 }
 
 
@@ -170,7 +170,7 @@ action Init = all {
 (* any time.                                                               *)
 (***************************************************************************/
 action IncreaseMaxBal(a, b) = all {
-  b > maxBal[a],
+  b > maxBal.get(a),
   maxBal <- maxBal.update(a, b),
   votes <- votes,
 }
@@ -184,14 +184,14 @@ action IncreaseMaxBal(a, b) = all {
 (* VotesSafe.                                                              *)
 (***************************************************************************/
 action VoteFor(a, b, v) = all {
-    maxBal[a] <= b,
-    votes[a].forall( vt => vt[1] != b ),
-    Acceptor.exclude(set(a)).forall( c =>
-         votes[c].forall( vt => (vt[1] == b) implies (vt[2] == v) )
+    maxBal.get(a) <= b,
+    votes.get(a).forall( vt => vt._1 != b ),
+    Acceptor.exclude(Set(a)).forall( c =>
+         votes.get(c).forall( vt => (vt._1 == b) implies (vt._2 == v) )
     ),
     Quorum.exists( Q => ShowsSafeAt(Q, b, v) ),
-    votes  <- votes.updateAs(a, ( old => old.union(set((b, v))) )),
-    maxBal <- maxBal.updateAs(a, ( _ => b )),
+    votes  <- votes.updateAs(a, old => old.union(Set((b, v))) ),
+    maxBal <- maxBal.update(a, b),
 }
 
 

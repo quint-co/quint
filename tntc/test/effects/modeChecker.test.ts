@@ -26,15 +26,11 @@ describe('checkModes', () => {
   const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
 
   function checkModuleModes (tntModule: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, OpQualifier>> {
-    const effects = inferEffects(definitionsTable, tntModule)
+    const [errors, effects] = inferEffects(definitionsTable, tntModule)
 
-    effects
-      .mapLeft(e => {
-        const errors = Array.from(e.values())
-        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
-      })
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
-    return effects.chain(es => checkModes(tntModule, es))
+    return checkModes(tntModule, effects)
   }
 
   it('finds mode errors between action and def', () => {

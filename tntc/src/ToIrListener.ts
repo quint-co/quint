@@ -89,7 +89,7 @@ export class ToIrListener implements TntListener {
     const constDef: TntDef = {
       kind: 'const',
       name: ctx.IDENTIFIER().text,
-      type: typeTag,
+      typeAnnotation: typeTag,
       id: id,
     }
     this.definitionStack.push(constDef)
@@ -104,7 +104,7 @@ export class ToIrListener implements TntListener {
     const varDef: TntDef = {
       kind: 'var',
       name: ctx.IDENTIFIER().text,
-      type: typeTag,
+      typeAnnotation: typeTag,
       id: id,
     }
     this.definitionStack.push(varDef)
@@ -175,7 +175,7 @@ export class ToIrListener implements TntListener {
         expr: body,
       }
       if (typeTag) {
-        def.type = typeTag
+        def.typeAnnotation = typeTag
       }
       this.definitionStack.push(def)
     } else {
@@ -306,7 +306,6 @@ export class ToIrListener implements TntListener {
       this.exprStack.push({
         id: id,
         kind: 'int',
-        type: { id: id, kind: 'int' },
         value: BigInt(intNode.text),
       })
     }
@@ -315,7 +314,6 @@ export class ToIrListener implements TntListener {
       this.exprStack.push({
         id: id,
         kind: 'bool',
-        type: { id: id, kind: 'bool' },
         value: (boolNode.text === 'true'),
       })
     }
@@ -324,15 +322,14 @@ export class ToIrListener implements TntListener {
       this.exprStack.push({
         id: id,
         kind: 'str',
-        type: { id: id, kind: 'str' },
         value: strNode.text.slice(1, -1),
       })
     }
   }
 
-  // function application, e.g., f[10]
-  exitFunApp (ctx: any) {
-    this.pushApplication(ctx, 'get', this.popExprs(2))
+  // list access, e.g., f[10]
+  exitListApp (ctx: any) {
+    this.pushApplication(ctx, 'nth', this.popExprs(2))
   }
 
   // operator application in the normal form, e.g., MyOper("foo", 42)
@@ -424,7 +421,7 @@ export class ToIrListener implements TntListener {
 
   // a list of arguments
   exitArgList (ctx: p.ArgListContext) {
-    const nargs = ctx.lambdaOrExpr().length
+    const nargs = ctx.expr().length
     const args = this.popExprs(nargs)
     // wrap the arguments with a temporary operator,
     // to be unwrapped later
@@ -440,10 +437,6 @@ export class ToIrListener implements TntListener {
   exitLambda (ctx: p.LambdaContext) {
     const expr = this.exprStack.pop()
     const params = this.popParams(ctx.identOrHole().length)
-    let qualifier: OpQualifier = 'def'
-    if (ctx.children && ctx.children[0]) {
-      qualifier = (ctx.children[0].text === '{') ? 'action' : 'def'
-    }
     if (expr) {
       // every parameter in params is a singleton list, make one list
       const singletons = params.map(ps => ps[0])
@@ -454,7 +447,7 @@ export class ToIrListener implements TntListener {
         id: id,
         kind: 'lambda',
         params: singletons,
-        qualifier: qualifier,
+        qualifier: 'def',
         expr: expr,
       })
     } else {
@@ -490,19 +483,19 @@ export class ToIrListener implements TntListener {
   exitTuple (ctx: p.TupleContext) {
     const args = this.popExprs(ctx.expr().length)
 
-    this.pushApplication(ctx, 'tup', args)
+    this.pushApplication(ctx, 'Tup', args)
   }
 
   // pair constructor, e.g., 2 -> 3
   exitPair (ctx: p.PairContext) {
     const args = this.popExprs(ctx.expr().length)
-    this.pushApplication(ctx, 'tup', args)
+    this.pushApplication(ctx, 'Tup', args)
   }
 
   // list constructor, e.g., [1, 2, 3]
   exitList (ctx: p.ListContext) {
     const args = this.popExprs(ctx.expr().length)
-    this.pushApplication(ctx, 'list', args)
+    this.pushApplication(ctx, 'List', args)
   }
 
   // record constructor, e.g., { name: "igor", year: 2021 }
@@ -518,11 +511,10 @@ export class ToIrListener implements TntListener {
         id: id,
         kind: 'str',
         value: names[i],
-        type: { id: id, kind: 'str' },
       })
       namesAndValues.push(elems[i])
     }
-    this.pushApplication(ctx, 'rec', namesAndValues)
+    this.pushApplication(ctx, 'Rec', namesAndValues)
   }
 
   // '+' or '-'
@@ -658,7 +650,6 @@ export class ToIrListener implements TntListener {
         id: tagId,
         kind: 'str',
         value: options[i],
-        type: { id: tagId, kind: 'str' },
       }
       const lamId = this.nextId()
       this.sourceMap.set(lamId, this.loc(ctx))
