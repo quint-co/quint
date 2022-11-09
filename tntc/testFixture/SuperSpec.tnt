@@ -131,11 +131,11 @@ module withConsts {
   // Here we are using the dot notation.
   val oper_app_dot1 = S.filter(x => x > 10)
   // Wrap lambda in '(...)'
-  val oper_app_dot2 = S.filter((x => x > 10))
+  val oper_app_dot2 = S.filter(x => x > 10)
   // Wrap lambda in '{...}'
-  action oper_app_dot3 = S.guess({x => x > 10})
+  action oper_app_dot3 = S.guess(x => x > 10)
   // use holes
-  val oper_app_dot4 = S.filter(_, _ => true)
+  val oper_app_dot4 = S.filter(_ => true)
 
   val f = S.mapBy(x => x + 1)
   // Pass non-lambda arguments.
