@@ -131,12 +131,6 @@ const multipleAritySignatures: [string, Signature][] = [
     const args = Array.from(Array(arity).keys()).map(i => `t${i}`).join(', ')
     return parseAndQuantify(`(${args}) => (${args})`)
   }],
-  ['Rec', (arity: number) => {
-    const indexes = Array.from(Array(arity / 2).keys())
-    const args = indexes.map(i => `n${i}, t${i}`).join(', ')
-    const result = indexes.map(i => `n${i}: t${i}`).join(', ')
-    return parseAndQuantify(`(${args}) => { ${result} }`)
-  }],
   ['match', (arity: number) => {
     const args = Array.from(Array((arity - 1) / 2).keys()).map(r => 'str, (a) => b')
     return parseAndQuantify(`(a, ${args.join(', ')}) => b`)

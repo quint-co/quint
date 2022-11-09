@@ -99,6 +99,13 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     if (this.errors.size !== 0) {
       return
     }
+
+    if (e.opcode === 'Rec') {
+      const result = this.generateRecordConstraints(e.args)
+      this.addToResults(e.id, result)
+      return
+    }
+
     const result = this.fetchSignature(e.opcode, e.id, e.args.length)
       .chain(t1 => {
         const argsResult: Either<Error, TypeScheme[]> = mergeInMany(e.args.map(e => this.fetchResult(e.id)))
@@ -114,6 +121,34 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       })
 
     this.addToResults(e.id, result)
+  }
+
+  generateRecordConstraints (args: TntEx[]): Either<Error, TypeScheme> {
+    const fields: Either<ErrorTree, { fieldName: string, fieldType: TntType }>[] = Array.from(Array(args.length / 2).keys()).map(i => {
+      const key = args[i * 2]
+      const value = args[i * 2 + 1]
+      const keyType = this.fetchResult(key.id)
+      const valueType = this.fetchResult(value.id)
+      keyType.map(t => {
+        const constraint: Constraint = { kind: 'eq', types: [t.type, { kind: 'str' }], sourceId: key.id }
+        this.constraints.push(constraint)
+      })
+      if (key.kind !== 'str') {
+        return left(buildErrorLeaf(
+          `Generating record constraints for ${args.map(expressionToString)}`,
+          `Record field name must be a name expression but is ${key.kind}: ${expressionToString(key)}`))
+      }
+
+      return valueType.map(t => ({ fieldName: key.value, fieldType: t.type }))
+    })
+
+    return mergeInMany(fields).map(fs => {
+      const a: TntType = { kind: 'var', name: this.freshVar() }
+      const t2: TntType = { kind: 'rec', fields: { kind: 'row', fields: fs, other: { kind: 'empty' } } }
+      const c: Constraint = { kind: 'eq', types: [t2, a], sourceId: args[0].id }
+      this.constraints.push(c)
+      return toScheme(a)
+    })
   }
 
   //    Γ ∪ {p0: t0, ..., pn: tn} ⊢ e: (te, c)    t0, ..., tn are fresh

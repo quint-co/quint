@@ -300,10 +300,49 @@ describe('unifyRows', () => {
     result.mapLeft(err => assert.deepEqual(err, {
       location: 'Trying to unify row shared: bool, f1: int and row shared: bool, f2: str',
       children: [{
-        message: "Couldn't unify f1: int and f2: str",
+        message: 'Incompatible tails in f1: int and f2: str',
         location: 'Trying to unify row f1: int and row f2: str',
         children: [],
       }],
+    })).map(subs => assert.fail('Expected error, got substitutions: ' + substitutionsToString(subs)))
+  })
+
+  it('fails at unifying rows with cyclical references', () => {
+    const row1: Row = parseRowOrThrow('a')
+    const row2: Row = parseRowOrThrow('f1: str, a')
+
+    const result = unifyRows(row1, row2)
+
+    result.mapLeft(err => assert.deepEqual(err, {
+      message: "Can't bind a to f1: str, a: cyclical binding",
+      location: 'Trying to unify var a and row f1: str, a',
+      children: [],
+    })).map(subs => assert.fail('Expected error, got substitutions: ' + substitutionsToString(subs)))
+  })
+
+  it('fails at unifying rows with cyclical references on tail', () => {
+    const row1: Row = parseRowOrThrow('f1: str, a')
+    const row2: Row = parseRowOrThrow('f2: int, a')
+
+    const result = unifyRows(row1, row2)
+
+    result.mapLeft(err => assert.deepEqual(err, {
+      location: 'Trying to unify row f1: str, a and row f2: int, a',
+      message: 'Incompatible tails in f1: str, a and f2: int, a',
+      children: [],
+    })).map(subs => assert.fail('Expected error, got substitutions: ' + substitutionsToString(subs)))
+  })
+
+  it('fails at unifying incompatible rows', () => {
+    const row1: Row = parseRowOrThrow('')
+    const row2: Row = parseRowOrThrow('f1: str, a')
+
+    const result = unifyRows(row1, row2)
+
+    result.mapLeft(err => assert.deepEqual(err, {
+      message: "Couldn't unify  and f1: str, a",
+      location: 'Trying to unify empty  and row f1: str, a',
+      children: [],
     })).map(subs => assert.fail('Expected error, got substitutions: ' + substitutionsToString(subs)))
   })
 })

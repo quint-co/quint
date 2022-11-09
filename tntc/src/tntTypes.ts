@@ -127,8 +127,8 @@ export function typeNames (t: TntType): Set<string> {
  * @returns a list with collected names
  */
 export function rowNames (r: Row): Set<string> {
-  switch(r.kind) {
-    case 'row':     
+  switch (r.kind) {
+    case 'row':
       return rowNames(r.other)
     case 'var':
       return new Set<string>([r.name])
