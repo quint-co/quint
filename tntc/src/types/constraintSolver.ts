@@ -14,8 +14,8 @@
 
 import { Either, left, right } from '@sweet-monads/either'
 import { buildErrorLeaf, buildErrorTree, ErrorTree, Error } from '../errorTree'
-import { typeToString } from '../IRprinting'
-import { Row, TntType, typeNames } from '../tntTypes'
+import { rowToString, typeToString } from '../IRprinting'
+import { Row, rowNames, TntType, typeNames } from '../tntTypes'
 import { Constraint } from './base'
 import { applySubstitution, applySubstitutionToConstraint, compose, Substitutions } from './substitutions'
 
@@ -103,6 +103,7 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
     ))
   }
 }
+
 /**
  * Unifies two TNT rows
  *
@@ -113,7 +114,44 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
  *          Otherwise, an error tree with an error message and its trace.
  */
 export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
-  return right([])
+  const ra = simplifyRow(r1)
+  const rb = simplifyRow(r2)
+
+  const location = `Trying to unify ${ra.kind} ${rowToString(ra)} and ${rb.kind} ${rowToString(rb)}`
+  if (rowToString(ra) === rowToString(rb)) {
+    return right([])
+  } else if (ra.kind === 'var') {
+    return bindRow(ra.name, rb).mapLeft(msg => buildErrorLeaf(location, msg))
+  } else if (rb.kind === 'var') {
+    return bindRow(rb.name, ra).mapLeft(msg => buildErrorLeaf(location, msg))
+  } else if (ra.kind === 'row' && rb.kind === 'row') {
+    const sharedFieldNames = ra.fields.map(f => f.fieldName).filter(n => rb.fields.some(f => n === f.fieldName))
+    if (sharedFieldNames.length === 0) {
+      if (ra.other.kind === 'var' && rb.other.kind === 'var') {
+        const tailVar: Row = { kind: 'var', name: `${ra.other.name}_${rb.other.name}` }
+        const s1 = bindRow(ra.other.name, { ...rb, other: tailVar })
+        const s2 = bindRow(rb.other.name, { ...ra, other: tailVar })
+        return s1.chain(sa => s2.map(sb => compose(sa, sb)))
+          .mapLeft(msg => buildErrorLeaf(location, msg))
+      } else {
+        return left(buildErrorLeaf(location, `Couldn't unify ${rowToString(ra)} and ${rowToString(rb)}`))
+      }
+    } else {
+      const uniqueFields1 = ra.fields.filter(f => !sharedFieldNames.includes(f.fieldName))
+      const uniqueFields2 = rb.fields.filter(f => !sharedFieldNames.includes(f.fieldName))
+      // Unify the disjoint fields and tail variables, see the above case
+      const result = unifyRows({ ...ra, fields: uniqueFields1 }, { ...rb, fields: uniqueFields2 })
+      return result.chain(subs => {
+        const subs2 = chainUnifications(
+          ra.fields.filter(f => sharedFieldNames.includes(f.fieldName)).map(f => f.fieldType),
+          rb.fields.filter(f => sharedFieldNames.includes(f.fieldName)).map(f => f.fieldType)
+        )
+        return subs2.map(s => compose(subs, s))
+      }).mapLeft(error => buildErrorTree(location, error))
+    }
+  } else {
+    return left(buildErrorLeaf(location, `Couldn't unify ${rowToString(ra)} and ${rowToString(rb)}`))
+  }
 }
 
 function bindType (name: string, type: TntType): Either<string, Substitutions> {
@@ -121,6 +159,14 @@ function bindType (name: string, type: TntType): Either<string, Substitutions> {
     return left(`Can't bind ${name} to ${typeToString(type)}: cyclical binding`)
   } else {
     return right([{ kind: 'type', name: name, value: type }])
+  }
+}
+
+function bindRow (name: string, row: Row): Either<string, Substitutions> {
+  if (rowNames(row).has(name)) {
+    return left(`Can't bind ${name} to ${rowToString(row)}: cyclical binding`)
+  } else {
+    return right([{ kind: 'row', name: name, value: row }])
   }
 }
 
@@ -150,4 +196,22 @@ function chainUnifications (types1: TntType[], types2: TntType[]): Either<Error,
   return types1.reduce((result: Either<Error, Substitutions>, t, i) => {
     return result.chain(subs => applySubstitutionsAndUnify(subs, t, types2[i]))
   }, right([]))
+}
+
+function simplifyRow (r: Row): Row {
+  if (r.kind !== 'row') {
+    return r
+  }
+
+  let result = r
+  const otherSimplified = simplifyRow(r.other)
+  if (otherSimplified.kind === 'row') {
+    result = { kind: 'row', fields: r.fields.concat(otherSimplified.fields), other: otherSimplified.other }
+  }
+
+  if (result.fields.length > 0) {
+    return result
+  } else {
+    return otherSimplified
+  }
 }

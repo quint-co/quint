@@ -66,7 +66,7 @@ type :          <assoc=right> type '->' type                    # typeFun
 typeUnionRecOne : '|' '{' IDENTIFIER ':' STRING (',' row)? ','? '}' 
                 ;
 
-row : IDENTIFIER ':' type (',' IDENTIFIER ':' type)* (',' IDENTIFIER )? ','? 
+row : (IDENTIFIER ':' type ',')* ((IDENTIFIER ':' type) | (IDENTIFIER ))? ','? 
     ;
 
 // A TNT expression. The order matters, it defines the priority.
