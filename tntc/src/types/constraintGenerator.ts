@@ -228,7 +228,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   private newInstance (type: TypeScheme): TntType {
     const names = type.variables
     const subs: Substitutions = Array.from(names).map(name => {
-      return { name: name, value: { kind: 'var', name: this.freshVar() } }
+      return { kind: 'type', name: name, value: { kind: 'var', name: this.freshVar() } }
     })
 
     return applySubstitution(subs, type.type)

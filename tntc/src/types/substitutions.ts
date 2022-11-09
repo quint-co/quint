@@ -12,18 +12,21 @@
  * @module
  */
 
-import { TntType } from '../tntTypes'
+import { Either } from '@sweet-monads/either'
+import { ErrorTree, errorTreeToString } from '../errorTree'
+import { Row, TntType } from '../tntTypes'
 import { Constraint } from './base'
+import { unify, unifyRows } from './constraintSolver'
+import { substitutionsToString } from './printing'
 
 /*
  * Substitutions can be applied to TNT types, type variables with another type
  */
 export type Substitutions = Substitution[]
 
-interface Substitution {
-  name: string,
-  value: TntType,
-}
+type Substitution =
+  | { kind: 'type', name: string, value: TntType }
+  | { kind: 'row', name: string, value: Row }
 
 /*
  * Compose two substitutions by applying the first one to the second one's values
@@ -53,7 +56,7 @@ export function applySubstitution (subs: Substitutions, t: TntType): TntType {
   switch (t.kind) {
     case 'var': {
       const sub = subs.find(s => s.name === t.name)
-      if (sub) {
+      if (sub && sub.kind === 'type') {
         result = sub.value
       }
       break
@@ -80,7 +83,7 @@ export function applySubstitution (subs: Substitutions, t: TntType): TntType {
     case 'rec': {
       result = {
         kind: t.kind,
-        fields: t.fields.map(f => ({ fieldName: f.fieldName, fieldType: applySubstitution(subs, f.fieldType) })),
+        fields: applySubstitutionToRow(subs, t.fields),
         id: t.id,
       }
       break
@@ -92,7 +95,7 @@ export function applySubstitution (subs: Substitutions, t: TntType): TntType {
         records: t.records.map(r => {
           return {
             tagValue: r.tagValue,
-            fields: r.fields.map(f => ({ fieldName: f.fieldName, fieldType: applySubstitution(subs, f.fieldType) })),
+            fields: applySubstitutionToRow(subs, r.fields),
           }
         }),
         id: t.id,
@@ -129,7 +132,49 @@ export function applySubstitutionToConstraint (subs: Substitutions, c: Constrain
 }
 
 function applySubstitutionsToSubstitutions (s1: Substitutions, s2: Substitutions): Substitutions {
-  return s2.map((s: Substitution): Substitution => {
-    return { name: s.name, value: applySubstitution(s1, s.value) }
+  return s2.flatMap(s => {
+    const sub = s1.find(sub => s.name === sub.name)
+    if (sub) {
+      let result: Either<ErrorTree, Substitutions>
+      if (sub.kind === 'type' && s.kind === 'type') {
+        result = unify(s.value, sub.value)
+      } else if (sub.kind === 'row' && s.kind === 'row') {
+        result = unifyRows(s.value, sub.value)
+      } else {
+        throw new Error(`Substitutions with same name (${s.name}) but incompatible kinds: ${substitutionsToString([sub, s])}`)
+      }
+
+      if (result.isLeft()) {
+        throw new Error(`Unifying substitutions with same name: ${s.name}, ${errorTreeToString(result.value)}`)
+      } else {
+        return result.value
+      }
+    }
+
+    switch (s.kind) {
+      case 'type': return [{ kind: s.kind, name: s.name, value: applySubstitution(s1, s.value) }]
+      case 'row': return [{ kind: s.kind, name: s.name, value: applySubstitutionToRow(s1, s.value) }]
+    }
   })
+}
+
+function applySubstitutionToRow (s: Substitutions, r: Row): Row {
+  switch (r.kind) {
+    case 'row':
+      return {
+        kind: 'row',
+        fields: r.fields.map(f => ({ fieldName: f.fieldName, fieldType: applySubstitution(s, f.fieldType) })),
+        other: applySubstitutionToRow(s, r.other),
+      }
+    case 'var': {
+      const sub = s.find(s => s.name === r.name)
+      if (sub && sub.kind === 'row') {
+        return sub.value
+      } else {
+        return r
+      }
+    }
+    case 'empty':
+      return r
+  }
 }

@@ -4,32 +4,51 @@ import { parseTypeOrThrow } from '../../src/types/parser'
 import { compose, Substitutions, applySubstitution, applySubstitutionToConstraint } from '../../src/types/substitutions'
 import { Constraint } from '../../src/types/base'
 import { constraintToString } from '../../src/types/printing'
+import { Row } from '../../src'
 
 describe('compose', () => {
   it('composes two substitutions', () => {
+    const row: Row = {
+      kind: 'row',
+      fields: [{ fieldName: 'f', fieldType: parseTypeOrThrow('bool') }],
+      other: { kind: 'empty' },
+    }
     const s1: Substitutions = [{
+      kind: 'type',
       name: 'a',
       value: parseTypeOrThrow('int'),
     }]
     const s2: Substitutions = [{
+      kind: 'row',
       name: 'b',
-      value: parseTypeOrThrow('list(a)'),
+      value: row,
     }]
 
     const result = compose(s1, s2)
 
     assert.sameDeepMembers(result, [
-      { name: 'a', value: parseTypeOrThrow('int') },
-      { name: 'b', value: parseTypeOrThrow('list(int)') },
+      { kind: 'type', name: 'a', value: parseTypeOrThrow('int') },
+      { kind: 'row', name: 'b', value: row },
     ])
+  })
+
+  it('unifies values of substitutions with same name', () => {
+    const s1: Substitutions = [{ kind: 'type', name: 'v1', value: parseTypeOrThrow('int') }]
+    const s2: Substitutions = [{ kind: 'type', name: 'v1', value: { kind: 'var', name: 'q' } }]
+
+    const result = compose(s1, s2)
+
+    assert.sameDeepMembers(result, s1.concat([
+      { kind: 'type', name: 'q', value: parseTypeOrThrow('int') },
+    ]))
   })
 })
 
 describe('applySubstitution', () => {
   it('substitutes variables in arrow type', () => {
     const s: Substitutions = [
-      { name: 'a', value: { kind: 'int', id: 1n } },
-      { name: 'b', value: { kind: 'bool', id: 2n } },
+      { kind: 'type', name: 'a', value: { kind: 'int', id: 1n } },
+      { kind: 'type', name: 'b', value: { kind: 'bool', id: 2n } },
     ]
 
     const t = parseTypeOrThrow('(a) => b')
@@ -41,8 +60,8 @@ describe('applySubstitution', () => {
 
   it('substitutes variables in function type', () => {
     const s: Substitutions = [
-      { name: 'a', value: { kind: 'int', id: 1n } },
-      { name: 'b', value: { kind: 'bool', id: 2n } },
+      { kind: 'type', name: 'a', value: { kind: 'int', id: 1n } },
+      { kind: 'type', name: 'b', value: { kind: 'bool', id: 2n } },
     ]
 
     const t = parseTypeOrThrow('a -> b')
@@ -54,9 +73,9 @@ describe('applySubstitution', () => {
 
   it('substitutes variables in lists, sets and tuples types', () => {
     const s: Substitutions = [
-      { name: 'a', value: { kind: 'int', id: 1n } },
-      { name: 'b', value: { kind: 'bool', id: 3n } },
-      { name: 'c', value: { kind: 'str', id: 5n } },
+      { kind: 'type', name: 'a', value: { kind: 'int', id: 1n } },
+      { kind: 'type', name: 'b', value: { kind: 'bool', id: 3n } },
+      { kind: 'type', name: 'c', value: { kind: 'str', id: 5n } },
     ]
 
     const t = parseTypeOrThrow('(list(a), set(b), c)')
@@ -68,8 +87,8 @@ describe('applySubstitution', () => {
 
   it('substitutes variables in record type', () => {
     const s: Substitutions = [
-      { name: 'a', value: { kind: 'int', id: 1n } },
-      { name: 'b', value: { kind: 'bool', id: 2n } },
+      { kind: 'type', name: 'a', value: { kind: 'int', id: 1n } },
+      { kind: 'type', name: 'b', value: { kind: 'bool', id: 2n } },
     ]
 
     const t = parseTypeOrThrow('{ a: a, b: b }')
@@ -79,10 +98,24 @@ describe('applySubstitution', () => {
     assert.deepEqual(result, parseTypeOrThrow('{ a: int, b: bool }'))
   })
 
+  it('substitutes variables in record type with row variable', () => {
+    const s: Substitutions = [
+      { kind: 'type', name: 'a', value: { kind: 'int', id: 1n } },
+      { kind: 'type', name: 'b', value: { kind: 'bool', id: 2n } },
+      { kind: 'row', name: 'r', value: { kind: 'empty' } },
+    ]
+
+    const t = parseTypeOrThrow('{ a: a, b: b, r }')
+
+    const result = applySubstitution(s, t)
+
+    assert.deepEqual(result, parseTypeOrThrow('{ a: int, b: bool }'))
+  })
+
   it('substitutes variables in union type', () => {
     const s: Substitutions = [
-      { name: 'a', value: { kind: 'int', id: 1n } },
-      { name: 'b', value: { kind: 'bool', id: 3n } },
+      { kind: 'type', name: 'a', value: { kind: 'int', id: 1n } },
+      { kind: 'type', name: 'b', value: { kind: 'bool', id: 3n } },
     ]
 
     const t = parseTypeOrThrow('| { tag: "a", a: a }\n| { tag: "b", b: b }')
@@ -95,8 +128,8 @@ describe('applySubstitution', () => {
 
 describe('applySubstitutionToConstraint', () => {
   const s: Substitutions = [
-    { name: 'a', value: { kind: 'int', id: 1n } },
-    { name: 'b', value: { kind: 'bool', id: 1n } },
+    { kind: 'type', name: 'a', value: { kind: 'int', id: 1n } },
+    { kind: 'type', name: 'b', value: { kind: 'bool', id: 1n } },
   ]
 
   it('applies substitution to types in equality constraint', () => {

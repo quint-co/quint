@@ -2,7 +2,7 @@ import * as p from './generated/TntParser'
 import { ParserRuleContext } from 'antlr4ts/ParserRuleContext'
 import { TntListener } from './generated/TntListener'
 import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef } from './tntIr'
-import { TntType } from './tntTypes'
+import { Row, TntType } from './tntTypes'
 import { strict as assert } from 'assert'
 import { ErrorMessage, Loc } from './tntParserFrontend'
 
@@ -45,6 +45,8 @@ export class ToIrListener implements TntListener {
   private exprStack: TntEx[] = []
   // the stack of parameter lists
   private paramStack: string[][] = []
+  // the stack of rows for records and unions
+  private rowStack: Row[] = []
   // an internal counter to assign unique numbers
   private lastId: bigint = 1n
 
@@ -742,21 +744,32 @@ export class ToIrListener implements TntListener {
     this.typeStack.push({ id: id, kind: 'tup', elems: elemTypes })
   }
 
-  // A record type that is not a disjoint union, e.g.,
-  // { name: str, year: int }
-  // The type stack contains the types of the fields.
-  // We have to match them with the field names.
-  exitTypeRec (ctx: p.TypeRecContext) {
+  exitRow (ctx: p.RowContext) {
     const names = ctx.IDENTIFIER().map((n) => n.text)
     const elemTypes: TntType[] = this.popTypes(ctx.type().length)
     // since TS does not have zip, a loop is the easiest solution
     const pairs = []
-    for (let i = 0; i < names.length; i++) {
+    for (let i = 0; i < elemTypes.length; i++) {
       pairs.push({ fieldName: names[i], fieldType: elemTypes[i] })
     }
+    let other: Row
+    if (names.length > elemTypes.length) {
+      other = { kind: 'var', name: names[names.length - 1] }
+    } else {
+      other = { kind: 'empty' }
+    }
+    const row: Row = { kind: 'row', fields: pairs, other: other }
+    this.rowStack.push(row)
+  }
+
+  // A record type that is not a disjoint union, e.g.,
+  // { name: str, year: int }
+  // The row stack contains the row with the types of the fields.
+  exitTypeRec (ctx: p.TypeRecContext) {
+    const row = this.popRow()
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
-    this.typeStack.push({ id: id, kind: 'rec', fields: pairs })
+    this.typeStack.push({ id: id, kind: 'rec', fields: row })
   }
 
   // A disjoint union type, e.g.,
@@ -798,19 +811,15 @@ export class ToIrListener implements TntListener {
 
   // One option of a disjoint union, e.g.,
   //   | { type: "ack", from: address }
-  // The type stack contains the types of the fields.
-  // We have to match them with the field names.
+  // The row stack contains the row with the types of the fields.
   exitTypeUnionRecOne (ctx: p.TypeUnionRecOneContext) {
-    const names = ctx.IDENTIFIER().map((n) => n.text)
     // the first name is the tag name (according to the grammar)
-    const tagName = names[0]
+    const tagName = ctx.IDENTIFIER().text
     const tagVal = ctx.STRING().toString().slice(1, -1)
-    // the other names are field names
-    const elemTypes: TntType[] = this.popTypes(ctx.type().length)
-    // since TS does not have zip, a loop is the easiest solution
-    const pairs = []
-    for (let i = 1; i < names.length; i++) {
-      pairs.push({ fieldName: names[i], fieldType: elemTypes[i - 1] })
+    let records: { tagValue: string, fields: Row }[] = []
+    if (ctx.row()) {
+      const row = this.popRow()
+      records = [{ tagValue: tagVal, fields: row }]
     }
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
@@ -819,7 +828,7 @@ export class ToIrListener implements TntListener {
       id: id,
       kind: 'union',
       tag: tagName,
-      records: [{ tagValue: tagVal, fields: pairs }],
+      records: records,
     }
 
     this.typeStack.push(singleton)
@@ -924,6 +933,13 @@ export class ToIrListener implements TntListener {
   private popType (): TntType {
     // the user has specified a type
     const tp = this.typeStack.pop()
+    return tp!
+  }
+
+  // pop a row
+  private popRow (): Row {
+    // the user has specified a row
+    const tp = this.rowStack.pop()
     return tp!
   }
 

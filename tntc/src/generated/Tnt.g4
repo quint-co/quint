@@ -54,8 +54,7 @@ type :          <assoc=right> type '->' type                    # typeFun
         |       'set' '(' type ')'                              # typeSet
         |       'list' '(' type ')'                             # typeList
         |       '(' type ',' type (',' type)* ','? ')'          # typeTuple
-        |       '{' IDENTIFIER ':' type
-                    (',' IDENTIFIER ':' type)* ','? '}'         # typeRec
+        |       '{' row '}'                                     # typeRec
         |       typeUnionRecOne+                                # typeUnionRec
         |       'int'                                           # typeInt
         |       'str'                                           # typeStr
@@ -64,9 +63,11 @@ type :          <assoc=right> type '->' type                    # typeFun
         |       '(' type ')'                                    # typeParen
         ;
 
-typeUnionRecOne :
-        '|' '{' IDENTIFIER ':' STRING (',' IDENTIFIER ':' type)* ','? '}'
-        ;
+typeUnionRecOne : '|' '{' IDENTIFIER ':' STRING (',' row)? ','? '}' 
+                ;
+
+row : IDENTIFIER ':' type (',' IDENTIFIER ':' type)* (',' IDENTIFIER )? ','? 
+    ;
 
 // A TNT expression. The order matters, it defines the priority.
 // Wherever possible, we keep the same order of operators as in TLA+.

@@ -58,15 +58,19 @@ describe('parseType', () => {
   })
 
   it('parses records of sets and lists', () => {
-    const type = parseType('{ mySet: set(a), mySeq: list(a) }')
+    const type = parseType('{ mySet: set(a), mySeq: list(a), r }')
 
     assert.isTrue(type.isRight())
     type.map(value => assert.deepEqual(value, {
       kind: 'rec',
-      fields: [
-        { fieldName: 'mySet', fieldType: { kind: 'set', elem: { kind: 'var', name: 'a', id: 1n }, id: 2n } },
-        { fieldName: 'mySeq', fieldType: { kind: 'list', elem: { kind: 'var', name: 'a', id: 3n }, id: 4n } },
-      ],
+      fields: {
+        kind: 'row',
+        fields: [
+          { fieldName: 'mySet', fieldType: { kind: 'set', elem: { kind: 'var', name: 'a', id: 1n }, id: 2n } },
+          { fieldName: 'mySeq', fieldType: { kind: 'list', elem: { kind: 'var', name: 'a', id: 3n }, id: 4n } },
+        ],
+        other: { kind: 'var', name: 'r' },
+      },
       id: 5n,
     }))
   })
@@ -79,8 +83,8 @@ describe('parseType', () => {
       kind: 'union',
       tag: 'tag',
       records: [
-        { tagValue: 'a', fields: [{ fieldName: 'a', fieldType: { kind: 'int', id: 1n } }] },
-        { tagValue: 'b', fields: [{ fieldName: 'b', fieldType: { kind: 'bool', id: 3n } }] },
+        { tagValue: 'a', fields: { kind: 'row', fields: [{ fieldName: 'a', fieldType: { kind: 'int', id: 1n } }], other: { kind: 'empty' } } },
+        { tagValue: 'b', fields: { kind: 'row', fields: [{ fieldName: 'b', fieldType: { kind: 'bool', id: 3n } }], other: { kind: 'empty' } } },
       ],
       id: 5n,
     }))
