@@ -96,6 +96,8 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
   } else if (t1.kind === 'const' || t2.kind === 'const') {
     // FIXME: Type aliases unify with anything for now
     return right([])
+  } else if (t1.kind === 'rec' && t2.kind === 'rec') {
+    return unifyRows(t1.fields, t2.fields)
   } else {
     return left(buildErrorLeaf(
       location,
@@ -127,14 +129,15 @@ export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
   } else if (ra.kind === 'row' && rb.kind === 'row') {
     const sharedFieldNames = ra.fields.map(f => f.fieldName).filter(n => rb.fields.some(f => n === f.fieldName))
     if (sharedFieldNames.length === 0) {
-      if (ra.other.kind === 'var' && rb.other.kind === 'var') {
+      if (ra.other.kind === 'var' && rb.other.kind === 'var' && ra.other.name !== rb.other.name) {
         const tailVar: Row = { kind: 'var', name: `${ra.other.name}_${rb.other.name}` }
         const s1 = bindRow(ra.other.name, { ...rb, other: tailVar })
         const s2 = bindRow(rb.other.name, { ...ra, other: tailVar })
+        // These bindings + composition should always succeed. I couldn't find a scenarion where they don't.
         return s1.chain(sa => s2.map(sb => compose(sa, sb)))
           .mapLeft(msg => buildErrorLeaf(location, msg))
       } else {
-        return left(buildErrorLeaf(location, `Couldn't unify ${rowToString(ra)} and ${rowToString(rb)}`))
+        return left(buildErrorLeaf(location, `Incompatible tails in ${rowToString(ra)} and ${rowToString(rb)}`))
       }
     } else {
       const uniqueFields1 = ra.fields.filter(f => !sharedFieldNames.includes(f.fieldName))
