@@ -453,7 +453,7 @@ function resolveErrors
 // print error messages with proper colors
 function printErrorMessages
 (out: writer,
- kind: string, text: string, lineOffset: number, messages: ErrorMessage[]) {
+  kind: string, text: string, lineOffset: number, messages: ErrorMessage[]) {
   // display the error messages and highlight the error places
   const finder = lineColumn(text)
   for (const e of messages) {

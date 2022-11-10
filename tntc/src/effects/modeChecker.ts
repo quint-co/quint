@@ -49,7 +49,7 @@ class ModeCheckerVisitor implements IRVisitor {
   effects: Map<bigint, Effect>
   modeFinderVisitor: ModeFinderVisitor = new ModeFinderVisitor()
 
-  constructor(effects: Map<bigint, Effect>) {
+  constructor (effects: Map<bigint, Effect>) {
     this.effects = effects
   }
 

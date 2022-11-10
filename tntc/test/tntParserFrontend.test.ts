@@ -53,8 +53,8 @@ function parseAndCompare (artifact: string): void {
   assert.deepEqual(reparsedResult, expected, 'expected JSON results to be equal')
 }
 
-describe('parse ok', () => {
-  it('parse empty module', () => {
+describe('parsing', () => {
+  it('parses empty module', () => {
     const result = parsePhase1(readTnt('_0001emptyModule'), 'mocked_path/testFixture/_0001emptyModule.tnt')
     const module = { id: 1n, name: 'empty', defs: [] }
     assert.deepEqual(result.kind, 'ok')
@@ -63,7 +63,12 @@ describe('parse ok', () => {
     }
   })
 
-  it('parse SuperSpec', () => {
+  it('parses SuperSpec', () => {
+    const result = parsePhase1(readTnt('SuperSpec'), 'mocked_path/testFixture/SuperSpec.tnt')
+    assert.deepEqual(result.kind, 'ok')
+  })
+
+  it('parses SuperSpec correctly', () => {
     parseAndCompare('SuperSpec')
   })
 })
