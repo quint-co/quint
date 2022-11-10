@@ -147,9 +147,9 @@ A type is one of the following:
 
  - Type variable (parameter): `a`, ..., `z`.
 
- - Set: `set(T)` for a type `T`.
+ - Set: `Set[T]` for a type `T`.
 
- - List: `list(T)` for a type `T`.
+ - List: `List[T]` for a type `T`.
 
  - Tuple: `(T_1, T_2, ..., T_n)` for `n >= 2` types `T_1`, ..., `T_n`.
 
@@ -266,7 +266,7 @@ Introduce a single constant parameter (rigid variable in TLA+)
 
 ```
   const N: int
-  const Proc: set(str)
+  const Proc: Set[str]
 ```
 
 *Grammar:*
@@ -336,7 +336,7 @@ fold over a list or a set, see below).
 
 ```
 // a static constant value, which is not changing over time
-pure val Nodes: set(int) = 1 to 10
+pure val Nodes: Set[int] = 1 to 10
 
 // a two-argument operator that returns its first argument, independent of state
 pure def fst(x, y): ((a, b) => a) =
@@ -1780,9 +1780,9 @@ The most common example is shown below:
 ```scala
 // in Voting.tnt  
   module Voting {
-    const Value: set(int)
-    const Acceptor: set(str)
-    const Quorum: set(set(str))
+    const Value: Set[int]
+    const Acceptor: Set[str]
+    const Quorum: Set[Set[str]]
     // no const, no var below
     // ...
     val chosen = Value.filter(v => Ballot exists (b => ChosenAt(b, v)))

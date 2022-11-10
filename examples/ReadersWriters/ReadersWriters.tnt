@@ -6,9 +6,9 @@ module ReadersWriters {
   (***************************************************************************/
   const NumActors: int
   
-  var readers: set(int)   // set of processes currently reading
-  var writers: set(int)   // set of processes currently writing
-  var waiting: list((str, int))  // queue of processes waiting to access the resource
+  var readers: Set[int]   // set of processes currently reading
+  var writers: Set[int]   // set of processes currently writing
+  var waiting: List[(str, int)]  // queue of processes waiting to access the resource
   
   val vars = (readers, writers, waiting)
   
@@ -30,12 +30,12 @@ module ReadersWriters {
   (***********/
   
   action TryRead(actor) = all {
-      actor notin WaitingToRead,
+      actor.notin(WaitingToRead),
       waiting <- waiting.append(("read", actor)),
   }
   
   action TryWrite(actor) = all {
-      actor notin WaitingToWrite,
+      actor.notin(WaitingToWrite),
       waiting <- waiting.append(("write", actor)),
   }
   
@@ -65,7 +65,7 @@ module ReadersWriters {
   }
   
   action StopActivity(actor) =
-      if (actor in readers) all {
+      if (actor.in(readers)) all {
           readers <- readers.exclude(Set(actor)),
           writers <- writers,
       } else all {
@@ -124,7 +124,7 @@ module ReadersWriters {
   val TypeOK = and {
       readers.subseteq(Actors),
       writers.subseteq(Actors),
-      waiting in tuples(ToSet(allLists(Set("read", "write")).Actors))
+      waiting.in(tuples(ToSet(allLists(Set("read", "write")).Actors)))
   }
   
   val Safety = and {
@@ -137,9 +137,9 @@ module ReadersWriters {
   (**************/
   
   temporal Liveness = and {
-      Actors.forall(actor => always(eventually(actor in readers))),
-      Actors.forall(actor => always(eventually(actor in writers))),
-      Actors.forall(actor => always(eventually(actor notin readers))),
-      Actors.forall(actor => always(eventually(actor notin writers))),
+      Actors.forall(actor => always(eventually(actor.in(readers)))),
+      Actors.forall(actor => always(eventually(actor.in(writers)))),
+      Actors.forall(actor => always(eventually(actor.notin(readers)))),
+      Actors.forall(actor => always(eventually(actor.notin(writers)))),
   }
 }

@@ -11,7 +11,7 @@ module option {
 
   val None = { tag: "none" }
 
-  var votes: list(vote_option)
+  var votes: List[vote_option]
   var outcome: int
 
   action Init = all {

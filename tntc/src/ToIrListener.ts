@@ -553,7 +553,7 @@ export class ToIrListener implements TntListener {
     }
   }
 
-  // GT | LT | GE | LE | NE | EQ | ASGN | IN | NOTIN | SUBSETEQ
+  // GT | LT | GE | LE | NE | EQ | ASGN
   exitRelations (ctx: p.RelationsContext) {
     const op = ctx._op
     if (op) {
@@ -566,9 +566,6 @@ export class ToIrListener implements TntListener {
         case p.TntParser.EQ: opcode = 'eq'; break
         case p.TntParser.ASGN: opcode = 'assign'; break
         case p.TntParser.NE: opcode = 'neq'; break
-        case p.TntParser.IN: opcode = 'in'; break
-        case p.TntParser.NOTIN: opcode = 'notin'; break
-        case p.TntParser.SUBSETEQ: opcode = 'subseteq'; break
       }
       const args = this.popExprs(2)
       this.pushApplication(ctx, opcode, args)

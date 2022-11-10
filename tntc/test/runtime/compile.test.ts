@@ -302,19 +302,19 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('computes in', () => {
-      assertResultAsString('2 in Set(1, 2, 3)', 'true')
+      assertResultAsString('2.in(Set(1, 2, 3))', 'true')
       assertResultAsString('4.in(Set(1, 2, 3))', 'false')
     })
 
     it('computes in an interval', () => {
-      assertResultAsString('2 in 1.to(3)', 'true')
+      assertResultAsString('2.in(1.to(3))', 'true')
       assertResultAsString('4.in(1.to(3))', 'false')
       assertResultAsString('1.to(3).in(Set(1.to(3), 2.to(4)))', 'true')
     })
 
     it('computes in over nested sets', () => {
-      assertResultAsString('Set(1, 2) in Set(Set(1, 2), Set(2, 3))', 'true')
-      assertResultAsString('Set(1, 3) in Set(Set(1, 2), Set(2, 3))', 'false')
+      assertResultAsString('Set(1, 2).in(Set(Set(1, 2), Set(2, 3)))', 'true')
+      assertResultAsString('Set(1, 3).in(Set(Set(1, 2), Set(2, 3)))', 'false')
     })
 
     it('computes subseteq', () => {
@@ -388,7 +388,7 @@ describe('compiling specs to runtime values', () => {
 
     it('computes forall over nested sets', () => {
       const input =
-        'Set(Set(1, 2), Set(2, 3)).forall(s => 2 in s)'
+        'Set(Set(1, 2), Set(2, 3)).forall(s => 2.in(s))'
       assertResultAsString(input, 'true')
     })
 

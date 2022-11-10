@@ -5,7 +5,7 @@
  */
 module BinSearch {
     // the input sequence
-    const INPUT_SEQ: list(int)
+    const INPUT_SEQ: List[int]
     // the key to search for
     const INPUT_KEY: int
     // bit-width of machine integers

@@ -78,11 +78,11 @@ describe('applySubstitution', () => {
       { kind: 'type', name: 'c', value: { kind: 'str', id: 5n } },
     ]
 
-    const t = parseTypeOrThrow('(list(a), set(b), c)')
+    const t = parseTypeOrThrow('(List[a], Set[b], c)')
 
     const result = applySubstitution(s, t)
 
-    assert.deepEqual(result, parseTypeOrThrow('(list(int), set(bool), str)'))
+    assert.deepEqual(result, parseTypeOrThrow('(List[int], Set[bool], str)'))
   })
 
   it('substitutes variables in record type', () => {
