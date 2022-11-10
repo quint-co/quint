@@ -7,11 +7,11 @@ module Paxos {
  * The constant parameters and the set Ballots are the same as in Voting.  *
  ***************************************************************************/
 
-const Value: set(int)
+const Value: Set[int]
 
-const Acceptor: set(str)
+const Acceptor: Set[str]
 
-const Quorum: set(set(str))
+const Quorum: Set[Set[str]]
 
 assume _ = and {
     Quorum.forall(Q => Q.subseteq(Acceptor)),
@@ -92,9 +92,9 @@ val vars = (maxBal, maxVBal, maxVal, msgs)
 (* The type invariant and initial predicate.                               *)
 (***************************************************************************/
 val TypeOK = and {
-    maxBal  in Acceptor.setOfMaps(Ballot.union(Set(-1))),
-    maxVBal in Acceptor.setOfMaps(Ballot.union(Set(-1))),
-    maxVal  in Acceptor.setOfMaps(Value.union(Set(None))),
+    maxBal.in(Acceptor.setOfMaps(Ballot.union(Set(-1)))),
+    maxVBal.in(Acceptor.setOfMaps(Ballot.union(Set(-1)))),
+    maxVal.in(Acceptor.setOfMaps(Value.union(Set(None)))),
     msgs.subseteq(Message),
 }
 
@@ -168,7 +168,7 @@ action Phase2a(b, v) = all {
           .exists(m => m.bal == b)),
   Quorum.exists(Q =>
     val Q1b = msgs.filter(m => m.tag == "1b")
-                  .filter(m => (m.acc in Q) and (m.bal == b))
+                  .filter(m => (m.acc.in(Q)) and (m.bal == b))
     val Q1bv = Q1b.filter(m => m.mbal >= 0)
     and {
         Q.forall(a => Q1b.exists(m => m.acc == a)),
@@ -273,12 +273,12 @@ val Inv = and {
    Acceptor.forall(a =>
        if (maxVBal.get(a) == -1)
        maxVal.get(a) == None
-       else (maxVBal.get(a), maxVal.get(a)) in votes.get(a)
+       else (maxVBal.get(a), maxVal.get(a)).in(votes.get(a))
    ),
    msgs.filter(m => m.tag == "1b")
        .forall(m =>
           (maxBal.get(m.acc) >= m.bal
-              and ((m.mbal >= 0) implies (m.mbal, m.mval) in votes.get(m.acc)))),
+              and ((m.mbal >= 0) implies (m.mbal, m.mval).in(votes.get(m.acc))))),
    val M2as = msgs.filter( m => m.tag == "2a" )
    M2as.forall(m => and {
       Quorum.exists(Q => V::ShowsSafeAt(Q, m.bal, m.value)),

@@ -46,7 +46,7 @@
 
 module basics {
   // We represent byte sequences as lists of integers
-  type word_t = list(int)
+  type word_t = List[int]
 
   // we interpret the empty word as nil
   def isNil(word) = length(word) == 0
@@ -120,7 +120,7 @@ module ics23 {
 
   // a proof of existence of (key, value)
   type existsProof_t = {
-    key: key_t, value: value_t, leaf: leaf_t, path: list(inner_t)
+    key: key_t, value: value_t, leaf: leaf_t, path: List[inner_t]
   }
 
   // a proof of non-existence of a key

@@ -7,9 +7,9 @@ export function getSignatures (): Map<string, Signature> {
 }
 
 const literals = [
-  { name: 'Nat', type: 'set(int)' },
-  { name: 'Int', type: 'set(int)' },
-  { name: 'Bool', type: 'set(bool)' },
+  { name: 'Nat', type: 'Set[int]' },
+  { name: 'Int', type: 'Set[int]' },
+  { name: 'Bool', type: 'Set[bool]' },
 ]
 
 const booleanOperators = [
@@ -21,33 +21,33 @@ const booleanOperators = [
 ]
 
 const setOperators = [
-  { name: 'guess', type: '(set(a), (a) => bool) => bool' },
-  { name: 'exists', type: '(set(a), (a) => bool) => bool' },
-  { name: 'forall', type: '(set(a), (a) => bool) => bool' },
-  { name: 'in', type: '(a, set(a)) => bool' },
-  { name: 'contains', type: '(set(a), a) => bool' },
-  { name: 'notin', type: '(a, set(a)) => bool' },
-  { name: 'union', type: '(set(a), set(a)) => set(a)' },
-  { name: 'intersect', type: '(set(a), set(a)) => set(a)' },
-  { name: 'exclude', type: '(set(a), set(a)) => set(a)' },
-  { name: 'subseteq', type: '(set(a), set(a)) => bool' },
-  { name: 'filter', type: '(set(a), (a) => bool) => set(a)' },
-  { name: 'map', type: '(set(a), (a) => b) => set(b)' },
-  { name: 'fold', type: '(set(a), b, (b, a) => b) => b' },
-  { name: 'powerset', type: '(set(a)) => set(set(a))' },
-  { name: 'flatten', type: '(set(set(a))) => set(a)' },
-  { name: 'allLists', type: '(set(a)) => list(a)' },
-  { name: 'choose_some', type: '(set(a)) => a' },
-  { name: 'isFinite', type: '(set(a)) => bool' },
-  { name: 'size', type: '(set(a)) => int' },
+  { name: 'guess', type: '(Set[a], (a) => bool) => bool' },
+  { name: 'exists', type: '(Set[a], (a) => bool) => bool' },
+  { name: 'forall', type: '(Set[a], (a) => bool) => bool' },
+  { name: 'in', type: '(a, Set[a]) => bool' },
+  { name: 'contains', type: '(Set[a], a) => bool' },
+  { name: 'notin', type: '(a, Set[a]) => bool' },
+  { name: 'union', type: '(Set[a], Set[a]) => Set[a]' },
+  { name: 'intersect', type: '(Set[a], Set[a]) => Set[a]' },
+  { name: 'exclude', type: '(Set[a], Set[a]) => Set[a]' },
+  { name: 'subseteq', type: '(Set[a], Set[a]) => bool' },
+  { name: 'filter', type: '(Set[a], (a) => bool) => Set[a]' },
+  { name: 'map', type: '(Set[a], (a) => b) => Set[b]' },
+  { name: 'fold', type: '(Set[a], b, (b, a) => b) => b' },
+  { name: 'powerset', type: '(Set[a]) => Set[Set[a]]' },
+  { name: 'flatten', type: '(Set[Set[a]]) => Set[a]' },
+  { name: 'allLists', type: '(Set[a]) => List[a]' },
+  { name: 'choose_some', type: '(Set[a]) => a' },
+  { name: 'isFinite', type: '(Set[a]) => bool' },
+  { name: 'size', type: '(Set[a]) => int' },
 ]
 
 const mapOperators = [
   { name: 'get', type: '(a -> b, a) => b' },
-  { name: 'keys', type: '(a -> b) => set(a)' },
-  { name: 'mapBy', type: '(set(a), (a) => b) => a -> b' },
-  { name: 'setToMap', type: '(set((a, b))) => (a -> b)' },
-  { name: 'setOfMaps', type: '(set(a), set(b)) => set(a -> b)' },
+  { name: 'keys', type: '(a -> b) => Set[a]' },
+  { name: 'mapBy', type: '(Set[a], (a) => b) => a -> b' },
+  { name: 'setToMap', type: '(Set[(a, b)]) => (a -> b)' },
+  { name: 'setOfMaps', type: '(Set[a], Set[b]) => Set[a -> b]' },
   { name: 'update', type: '(a -> b, a, b) => a -> b' },
   { name: 'updateAs', type: '(a -> b, a, (b) => b) => a -> b' },
   { name: 'put', type: '(a -> b, a, b) => a -> b' },
@@ -56,7 +56,7 @@ const mapOperators = [
 // FIXME: Make record and tuple signatures more strict once row types are implemented
 const recordOperators = [
   { name: 'field', type: '(a, str) => b' },
-  { name: 'fieldNames', type: '(a) => set(str)' },
+  { name: 'fieldNames', type: '(a) => Set[str]' },
   { name: 'with', type: '(a, str, b) => a' },
 ]
 
@@ -65,19 +65,19 @@ const tupleOperators = [
 ]
 
 const listOperators = [
-  { name: 'append', type: '(list(a), a) => list(a)' },
-  { name: 'concat', type: '(list(a), list(a)) => list(a)' },
-  { name: 'head', type: '(list(a)) => a' },
-  { name: 'tail', type: '(list(a)) => list(a)' },
-  { name: 'length', type: '(list(a)) => int' },
-  { name: 'nth', type: '(list(a), int) => a' },
-  { name: 'indices', type: '(list(a)) => set(int)' },
-  { name: 'replaceAt', type: '(list(a), int, a) => list(a)' },
-  { name: 'slice', type: '(list(a), int, int) => list(a)' },
-  { name: 'range', type: '(int, int) => list(int)' },
-  { name: 'select', type: '(list(a), (a) => bool) => list(a)' },
-  { name: 'foldl', type: '(list(a), b, (b, a) => b) => b' },
-  { name: 'foldr', type: '(list(a), b, (a, b) => b) => b' },
+  { name: 'append', type: '(List[a], a) => List[a]' },
+  { name: 'concat', type: '(List[a], List[a]) => List[a]' },
+  { name: 'head', type: '(List[a]) => a' },
+  { name: 'tail', type: '(List[a]) => List[a]' },
+  { name: 'length', type: '(List[a]) => int' },
+  { name: 'nth', type: '(List[a], int) => a' },
+  { name: 'indices', type: '(List[a]) => Set[int]' },
+  { name: 'replaceAt', type: '(List[a], int, a) => List[a]' },
+  { name: 'slice', type: '(List[a], int, int) => List[a]' },
+  { name: 'range', type: '(int, int) => List[int]' },
+  { name: 'select', type: '(List[a], (a) => bool) => List[a]' },
+  { name: 'foldl', type: '(List[a], b, (b, a) => b) => b' },
+  { name: 'foldr', type: '(List[a], b, (a, b) => b) => b' },
 ]
 
 const integerOperators = [
@@ -91,7 +91,7 @@ const integerOperators = [
   { name: 'igt', type: '(int, int) => bool' },
   { name: 'ilte', type: '(int, int) => bool' },
   { name: 'igte', type: '(int, int) => bool' },
-  { name: 'to', type: '(int, int) => set(int)' },
+  { name: 'to', type: '(int, int) => Set[int]' },
   { name: 'iuminus', type: '(int) => int' },
 ]
 const temporalOperators = [
@@ -120,8 +120,8 @@ function uniformArgsWithResult (argsType: string, resultType: string): Signature
 
 // TODO: check arity conditions, see issue https://github.com/informalsystems/tnt/issues/169
 const multipleAritySignatures: [string, Signature][] = [
-  ['List', uniformArgsWithResult('a', 'list(a)')],
-  ['Set', uniformArgsWithResult('a', 'set(a)')],
+  ['List', uniformArgsWithResult('a', 'List[a]')],
+  ['Set', uniformArgsWithResult('a', 'Set[a]')],
   ['Map', uniformArgsWithResult('(a, b)', 'a -> b')],
   ['and', uniformArgsWithResult('bool', 'bool')],
   ['actionAll', uniformArgsWithResult('bool', 'bool')],
@@ -143,9 +143,9 @@ const multipleAritySignatures: [string, Signature][] = [
   }],
   ['tuples', (arity: number) => {
     const ts = Array.from(Array(arity).keys()).map(i => `t${i}`)
-    const args = ts.map(t => `set(${t})`)
+    const args = ts.map(t => `Set[${t}]`)
     const tupleType = `(${ts.join(', ')})`
-    return parseAndQuantify(`(${args.join(', ')}) => set(${tupleType})`)
+    return parseAndQuantify(`(${args.join(', ')}) => Set[${tupleType}]`)
   }],
 ]
 

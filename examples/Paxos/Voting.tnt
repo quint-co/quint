@@ -4,10 +4,10 @@ module Voting {
 (* cooperatively choose a value.                                           *)
 (***************************************************************************/
 //-----------------------------------------------------------------------------
-const Value: set(int)       // The set of choosable values.
-const Acceptor: set(str)    // A set of processes that will choose a value.
-const Quorum: set(set(str))     // The set of "quorums", where a quorum" is a 
-                                // "large enough" set of acceptors
+const Value: Set[int]       // The set of choosable values.
+const Acceptor: Set[str]    // A set of processes that will choose a value.
+const Quorum: Set[Set[str]] // The set of "quorums", where a quorum" is a 
+                            // "large enough" set of acceptors
 
 /***************************************************************************)
 (* Here are the assumptions we make about quorums.                         *)
@@ -37,7 +37,7 @@ val Ballot = Nat
 /***************************************************************************)
 (* The algorithm's variables.                                              *)
 (***************************************************************************/
-var votes: str -> set((int, int))
+var votes: str -> Set[(int, int)]
     // votes[a] is the set of votes cast by acceptor a
 var maxBal: str -> int
     // maxBal[a] is a ballot number.  Acceptor a will cast
@@ -47,8 +47,8 @@ var maxBal: str -> int
 (* The type-correctness invariant.                                         *)
 (***************************************************************************/
 val TypeOK = and {
-    votes in Acceptor.setOfMaps(powerset(tuples(Ballot, Value))),
-    maxBal in Acceptor.setOfMaps(Ballot.union(Set(-1)))
+    votes.in(Acceptor.setOfMaps(powerset(tuples(Ballot, Value)))),
+    maxBal.in(Acceptor.setOfMaps(Ballot.union(Set(-1))))
 }
 
 //-----------------------------------------------------------------------------
@@ -56,7 +56,7 @@ val TypeOK = and {
 (* We now make a series of definitions an assert some simple theorems      *)
 (* about those definitions that lead to the algorithm.                     *)
 (***************************************************************************/
-def VotedFor(a, b, v) = (b, v) in votes.get(a)
+def VotedFor(a, b, v) = (b, v).in(votes.get(a))
   /*************************************************************************)
   (* True iff acceptor a has voted for v in ballot b.                      *)
   (*************************************************************************/

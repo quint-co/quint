@@ -2,9 +2,9 @@
 module withConsts {
   // Constants
   const N: int
-  const S: set(int)
-  const MySet: set(int)
-  const MySeq: list(bool)
+  const S: Set[int]
+  const MySet: Set[int]
+  const MySeq: List[bool]
   const MyFun: int -> str
   const MyFunFun: (int -> str) -> bool
   const MyOperator: (int, str) => bool
@@ -53,10 +53,10 @@ module withConsts {
   }
 
   // Typed vals
-  val withType: set(int) = Set(1, 2)
+  val withType: Set[int] = Set(1, 2)
   // PROC is an uninterpreted type
   type PROC
-  val withUninterpretedType: set(PROC) = Set()
+  val withUninterpretedType: Set[PROC] = Set()
 
   // Operator definitions
   var n: int
@@ -168,8 +168,8 @@ module withConsts {
   def isEmpty(s) = s == []
 
   // Bultin infix operators
-  val in_2_empty = 2 in Set()
-  val notin_2_empty = 2 notin Set()
+  val in_2_empty = 2.in(Set())
+  val notin_2_empty = 2.notin(Set())
   val subseteq_empty = Set().subseteq(Set())
 
   // Nested Modules
@@ -203,7 +203,7 @@ module withConsts {
   import M2.*
 
   // Typedefs
-  type INT_SET = set(int)
+  type INT_SET = Set[int]
 
   type UNINTERPRETED_TYPE
 

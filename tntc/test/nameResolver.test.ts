@@ -132,7 +132,7 @@ describe('nameResolver', () => {
     it('resolves defined aliases', () => {
       const tntModule = buildModuleWithDefs([
         'const a: MY_TYPE',
-        'var b: a -> set(a)',
+        'var b: a -> Set[a]',
       ])
       const result = resolveNames(tntModule, tables, dummyScopeTree)
       const expectedResult: NameResolutionResult = { kind: 'ok' }
@@ -143,7 +143,7 @@ describe('nameResolver', () => {
       const tntModule = buildModuleWithDefs([
         'const a: UNKNOWN_TYPE_0',
         'var b: UNKNOWN_TYPE_1',
-        'type c = set(t)',
+        'type c = Set[t]',
         'assume d = 1',
       ])
       const result = resolveNames(tntModule, tables, dummyScopeTree)
@@ -158,7 +158,7 @@ describe('nameResolver', () => {
     })
 
     it('finds unresolved aliases under chained lets', () => {
-      const tntModule = buildModuleWithExpressions(['val x = 1 { val y: set(UNKNOWN_TYPE) = 1 { Set(0) } }'])
+      const tntModule = buildModuleWithExpressions(['val x = 1 { val y: Set[UNKNOWN_TYPE] = 1 { Set(0) } }'])
       const result = resolveNames(tntModule, tables, dummyScopeTree)
       const expectedResult: NameResolutionResult = {
         kind: 'error',
@@ -167,8 +167,8 @@ describe('nameResolver', () => {
       assert.deepEqual(result, expectedResult)
     })
 
-    it('finds unresolved aliases under set()', () => {
-      const tntModule = buildModuleWithExpressions(['val x: set(UNKNOWN_TYPE) = 1 { 0 }'])
+    it('finds unresolved aliases under Set', () => {
+      const tntModule = buildModuleWithExpressions(['val x: Set[UNKNOWN_TYPE] = 1 { 0 }'])
       const result = resolveNames(tntModule, tables, dummyScopeTree)
       const expectedResult: NameResolutionResult = {
         kind: 'error',
@@ -177,8 +177,8 @@ describe('nameResolver', () => {
       assert.deepEqual(result, expectedResult)
     })
 
-    it('finds unresolved aliases under list()', () => {
-      const tntModule = buildModuleWithExpressions(['val x: list(UNKNOWN_TYPE) = 1 { 0 }'])
+    it('finds unresolved aliases under List', () => {
+      const tntModule = buildModuleWithExpressions(['val x: List[UNKNOWN_TYPE] = 1 { 0 }'])
       const result = resolveNames(tntModule, tables, dummyScopeTree)
       const expectedResult: NameResolutionResult = {
         kind: 'error',

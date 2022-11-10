@@ -58,7 +58,7 @@ describe('parseType', () => {
   })
 
   it('parses records of sets and lists', () => {
-    const type = parseType('{ mySet: set(a), mySeq: list(a), r }')
+    const type = parseType('{ mySet: Set[a], mySeq: List[a], r }')
 
     assert.isTrue(type.isRight())
     type.map(value => assert.deepEqual(value, {
@@ -91,12 +91,12 @@ describe('parseType', () => {
   })
 
   it('throws error when type is invalid', () => {
-    const type = parseType('set(bool, int)')
+    const type = parseType('Set[bool, int]')
 
     assert.isTrue(type.isLeft())
     type.mapLeft(error => assert.sameDeepMembers(error, [
       {
-        explanation: "mismatched input ',' expecting {'->', ')'}",
+        explanation: "mismatched input ',' expecting {'->', ']'}",
         locs: [{ start: { line: 0, col: 8, index: 8 }, end: { line: 0, col: 8, index: 8 } }],
       },
     ]))

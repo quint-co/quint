@@ -8,11 +8,11 @@ import { typeSchemeToString } from '../../src/types/printing'
 describe('getSignatures', () => {
   const signatures = getSignatures()
 
-  it('contains quantified signatures for list', () => {
+  it('contains quantified signatures for List', () => {
     const listSignature = signatures.get('List')!
 
     const expectedSignature = {
-      type: parseTypeOrThrow('(a, a, a) => list(a)'),
+      type: parseTypeOrThrow('(a, a, a) => List[a]'),
       variables: new Set(['a']),
     }
 
@@ -64,7 +64,7 @@ describe('getSignatures', () => {
     const tuplesSignature = signatures.get('tuples')!
 
     const expectedSignature: TypeScheme = {
-      type: parseTypeOrThrow('(set(t0), set(t1), set(t2)) => set((t0, t1, t2))'),
+      type: parseTypeOrThrow('(Set[t0], Set[t1], Set[t2]) => Set[(t0, t1, t2)]'),
       variables: new Set(['t0', 't1', 't2']),
     }
 

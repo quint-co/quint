@@ -5,13 +5,13 @@ import { definitionToString, expressionToString, moduleToString, typeToString } 
 
 describe('moduleToString', () => {
   const tntModule = buildModuleWithDefs([
-    'var S: set(int)',
+    'var S: Set[int]',
     'val f = S.filter(x => x + 1)',
   ])
 
   it('pretty prints the module', () => {
     const expectedModule = `module wrapper {
-  var S: set(int)
+  var S: Set[int]
   val f = filter(S, (x => iadd(x, 1)))
 }`
     assert.deepEqual(moduleToString(tntModule), expectedModule)
@@ -26,8 +26,8 @@ describe('definitionToString', () => {
   })
 
   it('pretty prints typed op definitions', () => {
-    const def = buildDef('val f: set(int) = S.filter(x => x + 1)')
-    const expectedDef = 'val f: set(int) = filter(S, (x => iadd(x, 1)))'
+    const def = buildDef('val f: Set[int] = S.filter(x => x + 1)')
+    const expectedDef = 'val f: Set[int] = filter(S, (x => iadd(x, 1)))'
     assert.deepEqual(definitionToString(def), expectedDef)
   })
 
@@ -140,14 +140,14 @@ describe('typeToString', () => {
   })
 
   it('pretty prints set types', () => {
-    const type = buildType('set(int)')
-    const expectedType = 'set(int)'
+    const type = buildType('Set[int]')
+    const expectedType = 'Set[int]'
     assert.deepEqual(typeToString(type), expectedType)
   })
 
   it('pretty prints list types', () => {
-    const type = buildType('list(int)')
-    const expectedType = 'list(int)'
+    const type = buildType('List[int]')
+    const expectedType = 'List[int]'
     assert.deepEqual(typeToString(type), expectedType)
   })
 

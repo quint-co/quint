@@ -67,31 +67,31 @@ export class TntParser extends Parser {
 	public static readonly OR = 37;
 	public static readonly IFF = 38;
 	public static readonly IMPLIES = 39;
-	public static readonly SUBSETEQ = 40;
-	public static readonly IN = 41;
-	public static readonly NOTIN = 42;
-	public static readonly SET = 43;
-	public static readonly LIST = 44;
-	public static readonly MATCH = 45;
-	public static readonly PLUS = 46;
-	public static readonly MINUS = 47;
-	public static readonly MUL = 48;
-	public static readonly DIV = 49;
-	public static readonly MOD = 50;
-	public static readonly GT = 51;
-	public static readonly LT = 52;
-	public static readonly GE = 53;
-	public static readonly LE = 54;
-	public static readonly NE = 55;
-	public static readonly EQ = 56;
-	public static readonly ASGN = 57;
-	public static readonly LPAREN = 58;
-	public static readonly RPAREN = 59;
-	public static readonly IDENTIFIER = 60;
-	public static readonly SIMPLE_IDENTIFIER = 61;
-	public static readonly LINE_COMMENT = 62;
-	public static readonly COMMENT = 63;
-	public static readonly WS = 64;
+	public static readonly SET = 40;
+	public static readonly LIST = 41;
+	public static readonly MAP = 42;
+	public static readonly MATCH = 43;
+	public static readonly PLUS = 44;
+	public static readonly MINUS = 45;
+	public static readonly MUL = 46;
+	public static readonly DIV = 47;
+	public static readonly MOD = 48;
+	public static readonly GT = 49;
+	public static readonly LT = 50;
+	public static readonly GE = 51;
+	public static readonly LE = 52;
+	public static readonly NE = 53;
+	public static readonly EQ = 54;
+	public static readonly ASGN = 55;
+	public static readonly LPAREN = 56;
+	public static readonly RPAREN = 57;
+	public static readonly IDENTIFIER = 58;
+	public static readonly SIMPLE_IDENTIFIER = 59;
+	public static readonly LINE_COMMENT = 60;
+	public static readonly COMMENT = 61;
+	public static readonly WS = 62;
+	public static readonly IN = 63;
+	public static readonly NOTIN = 64;
 	public static readonly RULE_module = 0;
 	public static readonly RULE_unit = 1;
 	public static readonly RULE_operDef = 2;
@@ -123,12 +123,11 @@ export class TntParser extends Parser {
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
 		undefined, "'module'", "'{'", "'}'", "'const'", "':'", "'var'", "'assume'", 
 		"'='", "'type'", "'import'", "'.'", "';'", "'val'", "'def'", "'pure'", 
-		"'action'", "'temporal'", "','", "'->'", "'=>'", "'int'", "'str'", "'bool'", 
-		"'|'", "'['", "']'", "'^'", "'all'", "'any'", "'if'", "'else'", "'_'", 
+		"'action'", "'temporal'", "','", "'->'", "'=>'", "'['", "']'", "'int'", 
+		"'str'", "'bool'", "'|'", "'^'", "'all'", "'any'", "'if'", "'else'", "'_'", 
 		undefined, undefined, undefined, "'and'", "'or'", "'iff'", "'implies'", 
-		"'subseteq'", "'in'", "'notin'", "'set'", "'list'", "'match'", "'+'", 
-		"'-'", "'*'", "'/'", "'%'", "'>'", "'<'", "'>='", "'<='", "'!='", "'=='", 
-		"'<-'", "'('", "')'",
+		"'Set'", "'List'", "'Map'", "'match'", "'+'", "'-'", "'*'", "'/'", "'%'", 
+		"'>'", "'<'", "'>='", "'<='", "'!='", "'=='", "'<-'", "'('", "')'",
 	];
 	private static readonly _SYMBOLIC_NAMES: Array<string | undefined> = [
 		undefined, undefined, undefined, undefined, undefined, undefined, undefined, 
@@ -136,10 +135,10 @@ export class TntParser extends Parser {
 		undefined, undefined, undefined, undefined, undefined, undefined, undefined, 
 		undefined, undefined, undefined, undefined, undefined, undefined, undefined, 
 		undefined, undefined, undefined, undefined, undefined, "STRING", "BOOL", 
-		"INT", "AND", "OR", "IFF", "IMPLIES", "SUBSETEQ", "IN", "NOTIN", "SET", 
-		"LIST", "MATCH", "PLUS", "MINUS", "MUL", "DIV", "MOD", "GT", "LT", "GE", 
-		"LE", "NE", "EQ", "ASGN", "LPAREN", "RPAREN", "IDENTIFIER", "SIMPLE_IDENTIFIER", 
-		"LINE_COMMENT", "COMMENT", "WS",
+		"INT", "AND", "OR", "IFF", "IMPLIES", "SET", "LIST", "MAP", "MATCH", "PLUS", 
+		"MINUS", "MUL", "DIV", "MOD", "GT", "LT", "GE", "LE", "NE", "EQ", "ASGN", 
+		"LPAREN", "RPAREN", "IDENTIFIER", "SIMPLE_IDENTIFIER", "LINE_COMMENT", 
+		"COMMENT", "WS", "IN", "NOTIN",
 	];
 	public static readonly VOCABULARY: Vocabulary = new VocabularyImpl(TntParser._LITERAL_NAMES, TntParser._SYMBOLIC_NAMES, []);
 
@@ -669,7 +668,7 @@ export class TntParser extends Parser {
 				this.state = 153;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__20) | (1 << TntParser.T__21) | (1 << TntParser.T__22) | (1 << TntParser.T__23))) !== 0) || ((((_la - 43)) & ~0x1F) === 0 && ((1 << (_la - 43)) & ((1 << (TntParser.SET - 43)) | (1 << (TntParser.LIST - 43)) | (1 << (TntParser.LPAREN - 43)) | (1 << (TntParser.IDENTIFIER - 43)))) !== 0)) {
+				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__22) | (1 << TntParser.T__23) | (1 << TntParser.T__24) | (1 << TntParser.T__25))) !== 0) || ((((_la - 40)) & ~0x1F) === 0 && ((1 << (_la - 40)) & ((1 << (TntParser.SET - 40)) | (1 << (TntParser.LIST - 40)) | (1 << (TntParser.LPAREN - 40)) | (1 << (TntParser.IDENTIFIER - 40)))) !== 0)) {
 					{
 					this.state = 145;
 					this.type(0);
@@ -721,11 +720,11 @@ export class TntParser extends Parser {
 				this.state = 161;
 				this.match(TntParser.SET);
 				this.state = 162;
-				this.match(TntParser.LPAREN);
+				this.match(TntParser.T__20);
 				this.state = 163;
 				this.type(0);
 				this.state = 164;
-				this.match(TntParser.RPAREN);
+				this.match(TntParser.T__21);
 				}
 				break;
 
@@ -737,11 +736,11 @@ export class TntParser extends Parser {
 				this.state = 166;
 				this.match(TntParser.LIST);
 				this.state = 167;
-				this.match(TntParser.LPAREN);
+				this.match(TntParser.T__20);
 				this.state = 168;
 				this.type(0);
 				this.state = 169;
-				this.match(TntParser.RPAREN);
+				this.match(TntParser.T__21);
 				}
 				break;
 
@@ -839,7 +838,7 @@ export class TntParser extends Parser {
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 196;
-				this.match(TntParser.T__20);
+				this.match(TntParser.T__22);
 				}
 				break;
 
@@ -849,7 +848,7 @@ export class TntParser extends Parser {
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 197;
-				this.match(TntParser.T__21);
+				this.match(TntParser.T__23);
 				}
 				break;
 
@@ -859,7 +858,7 @@ export class TntParser extends Parser {
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 198;
-				this.match(TntParser.T__22);
+				this.match(TntParser.T__24);
 				}
 				break;
 
@@ -941,7 +940,7 @@ export class TntParser extends Parser {
 			this.enterOuterAlt(_localctx, 1);
 			{
 			this.state = 214;
-			this.match(TntParser.T__23);
+			this.match(TntParser.T__25);
 			this.state = 215;
 			this.match(TntParser.T__1);
 			this.state = 216;
@@ -1110,7 +1109,7 @@ export class TntParser extends Parser {
 				this.state = 252;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__12) | (1 << TntParser.T__13) | (1 << TntParser.T__14) | (1 << TntParser.T__15) | (1 << TntParser.T__16) | (1 << TntParser.T__24) | (1 << TntParser.T__27) | (1 << TntParser.T__28) | (1 << TntParser.T__29))) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & ((1 << (TntParser.T__31 - 32)) | (1 << (TntParser.STRING - 32)) | (1 << (TntParser.BOOL - 32)) | (1 << (TntParser.INT - 32)) | (1 << (TntParser.AND - 32)) | (1 << (TntParser.OR - 32)) | (1 << (TntParser.IFF - 32)) | (1 << (TntParser.IMPLIES - 32)) | (1 << (TntParser.SUBSETEQ - 32)) | (1 << (TntParser.IN - 32)) | (1 << (TntParser.NOTIN - 32)) | (1 << (TntParser.SET - 32)) | (1 << (TntParser.LIST - 32)) | (1 << (TntParser.MINUS - 32)) | (1 << (TntParser.LPAREN - 32)) | (1 << (TntParser.IDENTIFIER - 32)))) !== 0)) {
+				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__12) | (1 << TntParser.T__13) | (1 << TntParser.T__14) | (1 << TntParser.T__15) | (1 << TntParser.T__16) | (1 << TntParser.T__20) | (1 << TntParser.T__27) | (1 << TntParser.T__28) | (1 << TntParser.T__29))) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & ((1 << (TntParser.T__31 - 32)) | (1 << (TntParser.STRING - 32)) | (1 << (TntParser.BOOL - 32)) | (1 << (TntParser.INT - 32)) | (1 << (TntParser.AND - 32)) | (1 << (TntParser.OR - 32)) | (1 << (TntParser.IFF - 32)) | (1 << (TntParser.IMPLIES - 32)) | (1 << (TntParser.SET - 32)) | (1 << (TntParser.LIST - 32)) | (1 << (TntParser.MAP - 32)) | (1 << (TntParser.MINUS - 32)) | (1 << (TntParser.LPAREN - 32)) | (1 << (TntParser.IDENTIFIER - 32)))) !== 0)) {
 					{
 					this.state = 251;
 					this.argList();
@@ -1432,11 +1431,11 @@ export class TntParser extends Parser {
 				this._ctx = _localctx;
 				_prevctx = _localctx;
 				this.state = 353;
-				this.match(TntParser.T__24);
+				this.match(TntParser.T__20);
 				this.state = 362;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__12) | (1 << TntParser.T__13) | (1 << TntParser.T__14) | (1 << TntParser.T__15) | (1 << TntParser.T__16) | (1 << TntParser.T__24) | (1 << TntParser.T__27) | (1 << TntParser.T__28) | (1 << TntParser.T__29))) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & ((1 << (TntParser.T__31 - 32)) | (1 << (TntParser.STRING - 32)) | (1 << (TntParser.BOOL - 32)) | (1 << (TntParser.INT - 32)) | (1 << (TntParser.AND - 32)) | (1 << (TntParser.OR - 32)) | (1 << (TntParser.IFF - 32)) | (1 << (TntParser.IMPLIES - 32)) | (1 << (TntParser.SUBSETEQ - 32)) | (1 << (TntParser.IN - 32)) | (1 << (TntParser.NOTIN - 32)) | (1 << (TntParser.SET - 32)) | (1 << (TntParser.LIST - 32)) | (1 << (TntParser.MINUS - 32)) | (1 << (TntParser.LPAREN - 32)) | (1 << (TntParser.IDENTIFIER - 32)))) !== 0)) {
+				if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__12) | (1 << TntParser.T__13) | (1 << TntParser.T__14) | (1 << TntParser.T__15) | (1 << TntParser.T__16) | (1 << TntParser.T__20) | (1 << TntParser.T__27) | (1 << TntParser.T__28) | (1 << TntParser.T__29))) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & ((1 << (TntParser.T__31 - 32)) | (1 << (TntParser.STRING - 32)) | (1 << (TntParser.BOOL - 32)) | (1 << (TntParser.INT - 32)) | (1 << (TntParser.AND - 32)) | (1 << (TntParser.OR - 32)) | (1 << (TntParser.IFF - 32)) | (1 << (TntParser.IMPLIES - 32)) | (1 << (TntParser.SET - 32)) | (1 << (TntParser.LIST - 32)) | (1 << (TntParser.MAP - 32)) | (1 << (TntParser.MINUS - 32)) | (1 << (TntParser.LPAREN - 32)) | (1 << (TntParser.IDENTIFIER - 32)))) !== 0)) {
 					{
 					this.state = 354;
 					this.expr(0);
@@ -1472,7 +1471,7 @@ export class TntParser extends Parser {
 				}
 
 				this.state = 367;
-				this.match(TntParser.T__25);
+				this.match(TntParser.T__21);
 				}
 				break;
 
@@ -1578,7 +1577,7 @@ export class TntParser extends Parser {
 						this.state = 393;
 						(_localctx as MultDivContext)._op = this._input.LT(1);
 						_la = this._input.LA(1);
-						if (!(((((_la - 48)) & ~0x1F) === 0 && ((1 << (_la - 48)) & ((1 << (TntParser.MUL - 48)) | (1 << (TntParser.DIV - 48)) | (1 << (TntParser.MOD - 48)))) !== 0))) {
+						if (!(((((_la - 46)) & ~0x1F) === 0 && ((1 << (_la - 46)) & ((1 << (TntParser.MUL - 46)) | (1 << (TntParser.DIV - 46)) | (1 << (TntParser.MOD - 46)))) !== 0))) {
 							(_localctx as MultDivContext)._op = this._errHandler.recoverInline(this);
 						} else {
 							if (this._input.LA(1) === Token.EOF) {
@@ -1630,7 +1629,7 @@ export class TntParser extends Parser {
 						this.state = 399;
 						(_localctx as RelationsContext)._op = this._input.LT(1);
 						_la = this._input.LA(1);
-						if (!(((((_la - 41)) & ~0x1F) === 0 && ((1 << (_la - 41)) & ((1 << (TntParser.IN - 41)) | (1 << (TntParser.NOTIN - 41)) | (1 << (TntParser.GT - 41)) | (1 << (TntParser.LT - 41)) | (1 << (TntParser.GE - 41)) | (1 << (TntParser.LE - 41)) | (1 << (TntParser.NE - 41)) | (1 << (TntParser.EQ - 41)) | (1 << (TntParser.ASGN - 41)))) !== 0))) {
+						if (!(((((_la - 49)) & ~0x1F) === 0 && ((1 << (_la - 49)) & ((1 << (TntParser.GT - 49)) | (1 << (TntParser.LT - 49)) | (1 << (TntParser.GE - 49)) | (1 << (TntParser.LE - 49)) | (1 << (TntParser.NE - 49)) | (1 << (TntParser.EQ - 49)) | (1 << (TntParser.ASGN - 49)) | (1 << (TntParser.IN - 49)) | (1 << (TntParser.NOTIN - 49)))) !== 0))) {
 							(_localctx as RelationsContext)._op = this._errHandler.recoverInline(this);
 						} else {
 							if (this._input.LA(1) === Token.EOF) {
@@ -1760,7 +1759,7 @@ export class TntParser extends Parser {
 							this.state = 426;
 							this._errHandler.sync(this);
 							_la = this._input.LA(1);
-							if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__12) | (1 << TntParser.T__13) | (1 << TntParser.T__14) | (1 << TntParser.T__15) | (1 << TntParser.T__16) | (1 << TntParser.T__24) | (1 << TntParser.T__27) | (1 << TntParser.T__28) | (1 << TntParser.T__29))) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & ((1 << (TntParser.T__31 - 32)) | (1 << (TntParser.STRING - 32)) | (1 << (TntParser.BOOL - 32)) | (1 << (TntParser.INT - 32)) | (1 << (TntParser.AND - 32)) | (1 << (TntParser.OR - 32)) | (1 << (TntParser.IFF - 32)) | (1 << (TntParser.IMPLIES - 32)) | (1 << (TntParser.SUBSETEQ - 32)) | (1 << (TntParser.IN - 32)) | (1 << (TntParser.NOTIN - 32)) | (1 << (TntParser.SET - 32)) | (1 << (TntParser.LIST - 32)) | (1 << (TntParser.MINUS - 32)) | (1 << (TntParser.LPAREN - 32)) | (1 << (TntParser.IDENTIFIER - 32)))) !== 0)) {
+							if ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << TntParser.T__1) | (1 << TntParser.T__12) | (1 << TntParser.T__13) | (1 << TntParser.T__14) | (1 << TntParser.T__15) | (1 << TntParser.T__16) | (1 << TntParser.T__20) | (1 << TntParser.T__27) | (1 << TntParser.T__28) | (1 << TntParser.T__29))) !== 0) || ((((_la - 32)) & ~0x1F) === 0 && ((1 << (_la - 32)) & ((1 << (TntParser.T__31 - 32)) | (1 << (TntParser.STRING - 32)) | (1 << (TntParser.BOOL - 32)) | (1 << (TntParser.INT - 32)) | (1 << (TntParser.AND - 32)) | (1 << (TntParser.OR - 32)) | (1 << (TntParser.IFF - 32)) | (1 << (TntParser.IMPLIES - 32)) | (1 << (TntParser.SET - 32)) | (1 << (TntParser.LIST - 32)) | (1 << (TntParser.MAP - 32)) | (1 << (TntParser.MINUS - 32)) | (1 << (TntParser.LPAREN - 32)) | (1 << (TntParser.IDENTIFIER - 32)))) !== 0)) {
 								{
 								this.state = 425;
 								this.argList();
@@ -1784,11 +1783,11 @@ export class TntParser extends Parser {
 							throw this.createFailedPredicateException("this.precpred(this._ctx, 25)");
 						}
 						this.state = 432;
-						this.match(TntParser.T__24);
+						this.match(TntParser.T__20);
 						this.state = 433;
 						this.expr(0);
 						this.state = 434;
-						this.match(TntParser.T__25);
+						this.match(TntParser.T__21);
 						}
 						break;
 
@@ -1811,7 +1810,7 @@ export class TntParser extends Parser {
 								{
 								{
 								this.state = 438;
-								this.match(TntParser.T__23);
+								this.match(TntParser.T__25);
 								this.state = 439;
 								this.match(TntParser.STRING);
 								this.state = 440;
@@ -2144,17 +2143,15 @@ export class TntParser extends Parser {
 			case TntParser.OR:
 			case TntParser.IFF:
 			case TntParser.IMPLIES:
-			case TntParser.SUBSETEQ:
-			case TntParser.IN:
-			case TntParser.NOTIN:
 			case TntParser.SET:
 			case TntParser.LIST:
+			case TntParser.MAP:
 				this.enterOuterAlt(_localctx, 2);
 				{
 				this.state = 498;
 				_localctx._op = this._input.LT(1);
 				_la = this._input.LA(1);
-				if (!(((((_la - 36)) & ~0x1F) === 0 && ((1 << (_la - 36)) & ((1 << (TntParser.AND - 36)) | (1 << (TntParser.OR - 36)) | (1 << (TntParser.IFF - 36)) | (1 << (TntParser.IMPLIES - 36)) | (1 << (TntParser.SUBSETEQ - 36)) | (1 << (TntParser.IN - 36)) | (1 << (TntParser.NOTIN - 36)) | (1 << (TntParser.SET - 36)) | (1 << (TntParser.LIST - 36)))) !== 0))) {
+				if (!(((((_la - 36)) & ~0x1F) === 0 && ((1 << (_la - 36)) & ((1 << (TntParser.AND - 36)) | (1 << (TntParser.OR - 36)) | (1 << (TntParser.IFF - 36)) | (1 << (TntParser.IMPLIES - 36)) | (1 << (TntParser.SET - 36)) | (1 << (TntParser.LIST - 36)) | (1 << (TntParser.MAP - 36)))) !== 0))) {
 					_localctx._op = this._errHandler.recoverInline(this);
 				} else {
 					if (this._input.LA(1) === Token.EOF) {
@@ -2204,15 +2201,12 @@ export class TntParser extends Parser {
 			case TntParser.OR:
 			case TntParser.IFF:
 			case TntParser.IMPLIES:
-			case TntParser.SUBSETEQ:
-			case TntParser.IN:
-			case TntParser.NOTIN:
 				this.enterOuterAlt(_localctx, 2);
 				{
 				this.state = 502;
 				_localctx._op = this._input.LT(1);
 				_la = this._input.LA(1);
-				if (!(((((_la - 36)) & ~0x1F) === 0 && ((1 << (_la - 36)) & ((1 << (TntParser.AND - 36)) | (1 << (TntParser.OR - 36)) | (1 << (TntParser.IFF - 36)) | (1 << (TntParser.IMPLIES - 36)) | (1 << (TntParser.SUBSETEQ - 36)) | (1 << (TntParser.IN - 36)) | (1 << (TntParser.NOTIN - 36)))) !== 0))) {
+				if (!(((((_la - 36)) & ~0x1F) === 0 && ((1 << (_la - 36)) & ((1 << (TntParser.AND - 36)) | (1 << (TntParser.OR - 36)) | (1 << (TntParser.IFF - 36)) | (1 << (TntParser.IMPLIES - 36)))) !== 0))) {
 					_localctx._op = this._errHandler.recoverInline(this);
 				} else {
 					if (this._input.LA(1) === Token.EOF) {
@@ -2252,7 +2246,7 @@ export class TntParser extends Parser {
 			{
 			this.state = 505;
 			_la = this._input.LA(1);
-			if (!(((((_la - 27)) & ~0x1F) === 0 && ((1 << (_la - 27)) & ((1 << (TntParser.T__26 - 27)) | (1 << (TntParser.AND - 27)) | (1 << (TntParser.OR - 27)) | (1 << (TntParser.IFF - 27)) | (1 << (TntParser.IMPLIES - 27)) | (1 << (TntParser.SUBSETEQ - 27)) | (1 << (TntParser.IN - 27)) | (1 << (TntParser.NOTIN - 27)) | (1 << (TntParser.PLUS - 27)) | (1 << (TntParser.MINUS - 27)) | (1 << (TntParser.MUL - 27)) | (1 << (TntParser.DIV - 27)) | (1 << (TntParser.MOD - 27)) | (1 << (TntParser.GT - 27)) | (1 << (TntParser.LT - 27)) | (1 << (TntParser.GE - 27)) | (1 << (TntParser.LE - 27)) | (1 << (TntParser.NE - 27)) | (1 << (TntParser.EQ - 27)) | (1 << (TntParser.ASGN - 27)))) !== 0))) {
+			if (!(((((_la - 27)) & ~0x1F) === 0 && ((1 << (_la - 27)) & ((1 << (TntParser.T__26 - 27)) | (1 << (TntParser.AND - 27)) | (1 << (TntParser.OR - 27)) | (1 << (TntParser.IFF - 27)) | (1 << (TntParser.IMPLIES - 27)) | (1 << (TntParser.PLUS - 27)) | (1 << (TntParser.MINUS - 27)) | (1 << (TntParser.MUL - 27)) | (1 << (TntParser.DIV - 27)) | (1 << (TntParser.MOD - 27)) | (1 << (TntParser.GT - 27)) | (1 << (TntParser.LT - 27)) | (1 << (TntParser.GE - 27)) | (1 << (TntParser.LE - 27)) | (1 << (TntParser.NE - 27)) | (1 << (TntParser.EQ - 27)) | (1 << (TntParser.ASGN - 27)))) !== 0))) {
 			this._errHandler.recoverInline(this);
 			} else {
 				if (this._input.LA(1) === Token.EOF) {
@@ -2429,28 +2423,28 @@ export class TntParser extends Parser {
 		"\x05\x12\u01F6\n\x12\x03\x13\x03\x13\x05\x13\u01FA\n\x13\x03\x14\x03\x14" +
 		"\x03\x15\x03\x15\x03\x15\x02\x02\x04\x0E\x14\x16\x02\x02\x04\x02\x06\x02" +
 		"\b\x02\n\x02\f\x02\x0E\x02\x10\x02\x12\x02\x14\x02\x16\x02\x18\x02\x1A" +
-		"\x02\x1C\x02\x1E\x02 \x02\"\x02$\x02&\x02(\x02\x02\f\x04\x02#%>>\x03\x02" +
-		"24\x03\x0201\x04\x02+,5;\x04\x02\"\">>\x04\x0222>>\x03\x02&.\x03\x02&" +
-		",\x05\x02\x1D\x1D&,0;\x03\x02#%\x02\u024C\x02*\x03\x02\x02\x02\x04P\x03" +
+		"\x02\x1C\x02\x1E\x02 \x02\"\x02$\x02&\x02(\x02\x02\f\x04\x02#%<<\x03\x02" +
+		"02\x03\x02./\x04\x0239AB\x04\x02\"\"<<\x04\x0200<<\x03\x02&,\x03\x02&" +
+		")\x05\x02\x1D\x1D&).9\x03\x02#%\x02\u024C\x02*\x03\x02\x02\x02\x04P\x03" +
 		"\x02\x02\x02\x06R\x03\x02\x02\x02\bh\x03\x02\x02\x02\nj\x03\x02\x02\x02" +
 		"\fw\x03\x02\x02\x02\x0E\xCE\x03\x02\x02\x02\x10\xD8\x03\x02\x02\x02\x12" +
 		"\xE6\x03\x02\x02\x02\x14\u0185\x03\x02\x02\x02\x16\u01CA\x03\x02\x02\x02" +
 		"\x18\u01DD\x03\x02\x02\x02\x1A\u01DF\x03\x02\x02\x02\x1C\u01E1\x03\x02" +
 		"\x02\x02\x1E\u01E3\x03\x02\x02\x02 \u01EB\x03\x02\x02\x02\"\u01F5\x03" +
 		"\x02\x02\x02$\u01F9\x03\x02\x02\x02&\u01FB\x03\x02\x02\x02(\u01FD\x03" +
-		"\x02\x02\x02*+\x07\x03\x02\x02+,\x07>\x02\x02,0\x07\x04\x02\x02-/\x05" +
+		"\x02\x02\x02*+\x07\x03\x02\x02+,\x07<\x02\x02,0\x07\x04\x02\x02-/\x05" +
 		"\x04\x03\x02.-\x03\x02\x02\x02/2\x03\x02\x02\x020.\x03\x02\x02\x0201\x03" +
 		"\x02\x02\x0213\x03\x02\x02\x0220\x03\x02\x02\x0234\x07\x05\x02\x024\x03" +
-		"\x03\x02\x02\x0256\x07\x06\x02\x0267\x07>\x02\x0278\x07\x07\x02\x028Q" +
-		"\x05\x0E\b\x029:\x07\b\x02\x02:;\x07>\x02\x02;<\x07\x07\x02\x02<Q\x05" +
+		"\x03\x02\x02\x0256\x07\x06\x02\x0267\x07<\x02\x0278\x07\x07\x02\x028Q" +
+		"\x05\x0E\b\x029:\x07\b\x02\x02:;\x07<\x02\x02;<\x07\x07\x02\x02<Q\x05" +
 		"\x0E\b\x02=>\x07\t\x02\x02>?\x05\x1A\x0E\x02?@\x07\n\x02\x02@A\x05\x14" +
 		"\v\x02AQ\x03\x02\x02\x02BQ\x05\x06\x04\x02CQ\x05\x02\x02\x02DQ\x05\f\x07" +
-		"\x02EF\x07\v\x02\x02FQ\x07>\x02\x02GH\x07\v\x02\x02HI\x07>\x02\x02IJ\x07" +
+		"\x02EF\x07\v\x02\x02FQ\x07<\x02\x02GH\x07\v\x02\x02HI\x07<\x02\x02IJ\x07" +
 		"\n\x02\x02JQ\x05\x0E\b\x02KL\x07\f\x02\x02LM\x05\x1E\x10\x02MN\x07\r\x02" +
 		"\x02NO\x05\x1C\x0F\x02OQ\x03\x02\x02\x02P5\x03\x02\x02\x02P9\x03\x02\x02" +
 		"\x02P=\x03\x02\x02\x02PB\x03\x02\x02\x02PC\x03\x02\x02\x02PD\x03\x02\x02" +
 		"\x02PE\x03\x02\x02\x02PG\x03\x02\x02\x02PK\x03\x02\x02\x02Q\x05\x03\x02" +
-		"\x02\x02RS\x05\b\x05\x02SU\x07>\x02\x02TV\x05\n\x06\x02UT\x03\x02\x02" +
+		"\x02\x02RS\x05\b\x05\x02SU\x07<\x02\x02TV\x05\n\x06\x02UT\x03\x02\x02" +
 		"\x02UV\x03\x02\x02\x02VY\x03\x02\x02\x02WX\x07\x07\x02\x02XZ\x05\x0E\b" +
 		"\x02YW\x03\x02\x02\x02YZ\x03\x02\x02\x02Z[\x03\x02\x02\x02[\\\x07\n\x02" +
 		"\x02\\^\x05\x14\v\x02]_\x07\x0E\x02\x02^]\x03\x02\x02\x02^_\x03\x02\x02" +
@@ -2458,118 +2452,118 @@ export class TntParser extends Parser {
 		"\x02\x02ci\x07\x0F\x02\x02de\x07\x11\x02\x02ei\x07\x10\x02\x02fi\x07\x12" +
 		"\x02\x02gi\x07\x13\x02\x02h`\x03\x02\x02\x02ha\x03\x02\x02\x02hb\x03\x02" +
 		"\x02\x02hd\x03\x02\x02\x02hf\x03\x02\x02\x02hg\x03\x02\x02\x02i\t\x03" +
-		"\x02\x02\x02js\x07<\x02\x02kp\x07>\x02\x02lm\x07\x14\x02\x02mo\x07>\x02" +
+		"\x02\x02\x02js\x07:\x02\x02kp\x07<\x02\x02lm\x07\x14\x02\x02mo\x07<\x02" +
 		"\x02nl\x03\x02\x02\x02or\x03\x02\x02\x02pn\x03\x02\x02\x02pq\x03\x02\x02" +
 		"\x02qt\x03\x02\x02\x02rp\x03\x02\x02\x02sk\x03\x02\x02\x02st\x03\x02\x02" +
-		"\x02tu\x03\x02\x02\x02uv\x07=\x02\x02v\v\x03\x02\x02\x02wx\x07\x03\x02" +
-		"\x02xy\x07>\x02\x02yz\x07\n\x02\x02z{\x07>\x02\x02{\x8D\x07<\x02\x02|" +
-		"\x8E\x072\x02\x02}~\x07>\x02\x02~\x7F\x07\n\x02\x02\x7F\x86\x05\x14\v" +
-		"\x02\x80\x81\x07\x14\x02\x02\x81\x82\x07>\x02\x02\x82\x83\x07\n\x02\x02" +
+		"\x02tu\x03\x02\x02\x02uv\x07;\x02\x02v\v\x03\x02\x02\x02wx\x07\x03\x02" +
+		"\x02xy\x07<\x02\x02yz\x07\n\x02\x02z{\x07<\x02\x02{\x8D\x07:\x02\x02|" +
+		"\x8E\x070\x02\x02}~\x07<\x02\x02~\x7F\x07\n\x02\x02\x7F\x86\x05\x14\v" +
+		"\x02\x80\x81\x07\x14\x02\x02\x81\x82\x07<\x02\x02\x82\x83\x07\n\x02\x02" +
 		"\x83\x85\x05\x14\v\x02\x84\x80\x03\x02\x02\x02\x85\x88\x03\x02\x02\x02" +
 		"\x86\x84\x03\x02\x02\x02\x86\x87\x03\x02\x02\x02\x87\x8B\x03\x02\x02\x02" +
-		"\x88\x86\x03\x02\x02\x02\x89\x8A\x07\x14\x02\x02\x8A\x8C\x072\x02\x02" +
+		"\x88\x86\x03\x02\x02\x02\x89\x8A\x07\x14\x02\x02\x8A\x8C\x070\x02\x02" +
 		"\x8B\x89\x03\x02\x02\x02\x8B\x8C\x03\x02\x02\x02\x8C\x8E\x03\x02\x02\x02" +
 		"\x8D|\x03\x02\x02\x02\x8D}\x03\x02\x02\x02\x8E\x8F\x03\x02\x02\x02\x8F" +
-		"\x90\x07=\x02\x02\x90\r\x03\x02\x02\x02\x91\x92\b\b\x01\x02\x92\x9B\x07" +
-		"<\x02\x02\x93\x98\x05\x0E\b\x02\x94\x95\x07\x14\x02\x02\x95\x97\x05\x0E" +
+		"\x90\x07;\x02\x02\x90\r\x03\x02\x02\x02\x91\x92\b\b\x01\x02\x92\x9B\x07" +
+		":\x02\x02\x93\x98\x05\x0E\b\x02\x94\x95\x07\x14\x02\x02\x95\x97\x05\x0E" +
 		"\b\x02\x96\x94\x03\x02\x02\x02\x97\x9A\x03\x02\x02\x02\x98\x96\x03\x02" +
 		"\x02\x02\x98\x99\x03\x02\x02\x02\x99\x9C\x03\x02\x02\x02\x9A\x98\x03\x02" +
 		"\x02\x02\x9B\x93\x03\x02\x02\x02\x9B\x9C\x03\x02\x02\x02\x9C\x9E\x03\x02" +
 		"\x02\x02\x9D\x9F\x07\x14\x02\x02\x9E\x9D\x03\x02\x02\x02\x9E\x9F\x03\x02" +
-		"\x02\x02\x9F\xA0\x03\x02\x02\x02\xA0\xA1\x07=\x02\x02\xA1\xA2\x07\x16" +
-		"\x02\x02\xA2\xCF\x05\x0E\b\r\xA3\xA4\x07-\x02\x02\xA4\xA5\x07<\x02\x02" +
-		"\xA5\xA6\x05\x0E\b\x02\xA6\xA7\x07=\x02\x02\xA7\xCF\x03\x02\x02\x02\xA8" +
-		"\xA9\x07.\x02\x02\xA9\xAA\x07<\x02\x02\xAA\xAB\x05\x0E\b\x02\xAB\xAC\x07" +
-		"=\x02\x02\xAC\xCF\x03\x02\x02\x02\xAD\xAE\x07<\x02\x02\xAE\xAF\x05\x0E" +
-		"\b\x02\xAF\xB0\x07\x14\x02\x02\xB0\xB5\x05\x0E\b\x02\xB1\xB2\x07\x14\x02" +
-		"\x02\xB2\xB4\x05\x0E\b\x02\xB3\xB1\x03\x02\x02\x02\xB4\xB7\x03\x02\x02" +
-		"\x02\xB5\xB3\x03\x02\x02\x02\xB5\xB6\x03\x02\x02\x02\xB6\xB9\x03\x02\x02" +
-		"\x02\xB7\xB5\x03\x02\x02\x02\xB8\xBA\x07\x14\x02\x02\xB9\xB8\x03\x02\x02" +
-		"\x02\xB9\xBA\x03\x02\x02\x02\xBA\xBB\x03\x02\x02\x02\xBB\xBC\x07=\x02" +
-		"\x02\xBC\xCF\x03\x02\x02\x02\xBD\xBE\x07\x04\x02\x02\xBE\xBF\x05\x12\n" +
-		"\x02\xBF\xC0\x07\x05\x02\x02\xC0\xCF\x03\x02\x02\x02\xC1\xC3\x05\x10\t" +
-		"\x02\xC2\xC1\x03\x02\x02\x02\xC3\xC4\x03\x02\x02\x02\xC4\xC2\x03\x02\x02" +
-		"\x02\xC4\xC5\x03\x02\x02\x02\xC5\xCF\x03\x02\x02\x02\xC6\xCF\x07\x17\x02" +
-		"\x02\xC7\xCF\x07\x18\x02\x02\xC8\xCF\x07\x19\x02\x02\xC9\xCF\x07>\x02" +
-		"\x02\xCA\xCB\x07<\x02\x02\xCB\xCC\x05\x0E\b\x02\xCC\xCD\x07=\x02\x02\xCD" +
-		"\xCF\x03\x02\x02\x02\xCE\x91\x03\x02\x02\x02\xCE\xA3\x03\x02\x02\x02\xCE" +
-		"\xA8\x03\x02\x02\x02\xCE\xAD\x03\x02\x02\x02\xCE\xBD\x03\x02\x02\x02\xCE" +
-		"\xC2\x03\x02\x02\x02\xCE\xC6\x03\x02\x02\x02\xCE\xC7\x03\x02\x02\x02\xCE" +
-		"\xC8\x03\x02\x02\x02\xCE\xC9\x03\x02\x02\x02\xCE\xCA\x03\x02\x02\x02\xCF" +
-		"\xD5\x03\x02\x02\x02\xD0\xD1\f\x0E\x02\x02\xD1\xD2\x07\x15\x02\x02\xD2" +
-		"\xD4\x05\x0E\b\x0E\xD3\xD0\x03\x02\x02\x02\xD4\xD7\x03\x02\x02\x02\xD5" +
-		"\xD3\x03\x02\x02\x02\xD5\xD6\x03\x02\x02\x02\xD6\x0F\x03\x02\x02\x02\xD7" +
-		"\xD5\x03\x02\x02\x02\xD8\xD9\x07\x1A\x02\x02\xD9\xDA\x07\x04\x02\x02\xDA" +
-		"\xDB\x07>\x02\x02\xDB\xDC\x07\x07\x02\x02\xDC\xDF\x07#\x02\x02\xDD\xDE" +
-		"\x07\x14\x02\x02\xDE\xE0\x05\x12\n\x02\xDF\xDD\x03\x02\x02\x02\xDF\xE0" +
-		"\x03\x02\x02\x02\xE0\xE2\x03\x02\x02\x02\xE1\xE3\x07\x14\x02\x02\xE2\xE1" +
-		"\x03\x02\x02\x02\xE2\xE3\x03\x02\x02\x02\xE3\xE4\x03\x02\x02\x02\xE4\xE5" +
-		"\x07\x05\x02\x02\xE5\x11\x03\x02\x02\x02\xE6\xE7\x07>\x02\x02\xE7\xE8" +
-		"\x07\x07\x02\x02\xE8\xEF\x05\x0E\b\x02\xE9\xEA\x07\x14\x02\x02\xEA\xEB" +
-		"\x07>\x02\x02\xEB\xEC\x07\x07\x02\x02\xEC\xEE\x05\x0E\b\x02\xED\xE9\x03" +
-		"\x02\x02\x02\xEE\xF1\x03\x02\x02\x02\xEF\xED\x03\x02\x02\x02\xEF\xF0\x03" +
-		"\x02\x02\x02\xF0\xF4\x03\x02\x02\x02\xF1\xEF\x03\x02\x02\x02\xF2\xF3\x07" +
-		"\x14\x02\x02\xF3\xF5\x07>\x02\x02\xF4\xF2\x03\x02\x02\x02\xF4\xF5\x03" +
-		"\x02\x02\x02\xF5\xF7\x03\x02\x02\x02\xF6\xF8\x07\x14\x02\x02\xF7\xF6\x03" +
-		"\x02\x02\x02\xF7\xF8\x03\x02\x02\x02\xF8\x13\x03\x02\x02\x02\xF9\xFA\b" +
-		"\v\x01\x02\xFA\u0186\x05\x18\r\x02\xFB\xFC\x05\"\x12\x02\xFC\xFE\x07<" +
-		"\x02\x02\xFD\xFF\x05 \x11\x02\xFE\xFD\x03\x02\x02\x02\xFE\xFF\x03\x02" +
-		"\x02\x02\xFF\u0100\x03\x02\x02\x02\u0100\u0101\x07=\x02\x02\u0101\u0186" +
-		"\x03\x02\x02\x02\u0102\u0103\x071\x02\x02\u0103\u0186\x05\x14\v\x1A\u0104" +
-		"\u0105\x07&\x02\x02\u0105\u0106\x07\x04\x02\x02\u0106\u010B\x05\x14\v" +
-		"\x02\u0107\u0108\x07\x14\x02\x02\u0108\u010A\x05\x14\v\x02\u0109\u0107" +
-		"\x03\x02\x02\x02\u010A\u010D\x03\x02\x02\x02\u010B\u0109\x03\x02\x02\x02" +
-		"\u010B\u010C\x03\x02\x02\x02\u010C\u010F\x03\x02\x02\x02\u010D\u010B\x03" +
-		"\x02\x02\x02\u010E\u0110\x07\x14\x02\x02\u010F\u010E\x03\x02\x02\x02\u010F" +
-		"\u0110\x03\x02\x02\x02\u0110\u0111\x03\x02\x02\x02\u0111\u0112\x07\x05" +
-		"\x02\x02\u0112\u0186\x03\x02\x02\x02\u0113\u0114\x07\'\x02\x02\u0114\u0115" +
-		"\x07\x04\x02\x02\u0115\u011A\x05\x14\v\x02\u0116\u0117\x07\x14\x02\x02" +
-		"\u0117\u0119\x05\x14\v\x02\u0118\u0116\x03\x02\x02\x02\u0119\u011C\x03" +
-		"\x02\x02\x02\u011A\u0118\x03\x02\x02\x02\u011A\u011B\x03\x02\x02\x02\u011B" +
-		"\u011E\x03\x02\x02\x02\u011C\u011A\x03\x02\x02\x02\u011D\u011F\x07\x14" +
-		"\x02\x02\u011E\u011D\x03\x02\x02\x02\u011E\u011F\x03\x02\x02\x02\u011F" +
-		"\u0120\x03\x02\x02\x02\u0120\u0121\x07\x05\x02\x02\u0121\u0186\x03\x02" +
-		"\x02\x02\u0122\u0123\x07\x1E\x02\x02\u0123\u0124\x07\x04\x02\x02\u0124" +
-		"\u0129\x05\x14\v\x02\u0125\u0126\x07\x14\x02\x02\u0126\u0128\x05\x14\v" +
-		"\x02\u0127\u0125\x03\x02\x02\x02\u0128\u012B\x03\x02\x02\x02\u0129\u0127" +
-		"\x03\x02\x02\x02\u0129\u012A\x03\x02\x02\x02\u012A\u012D\x03\x02\x02\x02" +
-		"\u012B\u0129\x03\x02\x02\x02\u012C\u012E\x07\x14\x02\x02\u012D\u012C\x03" +
-		"\x02\x02\x02\u012D\u012E\x03\x02\x02\x02\u012E\u012F\x03\x02\x02\x02\u012F" +
-		"\u0130\x07\x05\x02\x02\u0130\u0186\x03\x02\x02\x02\u0131\u0132\x07\x1F" +
-		"\x02\x02\u0132\u0133\x07\x04\x02\x02\u0133\u0138\x05\x14\v\x02\u0134\u0135" +
-		"\x07\x14\x02\x02\u0135\u0137\x05\x14\v\x02\u0136\u0134\x03\x02\x02\x02" +
-		"\u0137\u013A\x03\x02\x02\x02\u0138\u0136\x03\x02\x02\x02\u0138\u0139\x03" +
-		"\x02\x02\x02\u0139\u013C\x03\x02\x02\x02\u013A\u0138\x03\x02\x02\x02\u013B" +
-		"\u013D\x07\x14\x02\x02\u013C\u013B\x03\x02\x02\x02\u013C\u013D\x03\x02" +
-		"\x02\x02\u013D\u013E\x03\x02\x02\x02\u013E\u013F\x07\x05\x02\x02\u013F" +
-		"\u0186\x03\x02\x02\x02\u0140\u0186\t\x02\x02\x02\u0141\u0142\x07<\x02" +
-		"\x02\u0142\u0143\x05\x14\v\x02\u0143\u0144\x07\x14\x02\x02\u0144\u0149" +
-		"\x05\x14\v\x02\u0145\u0146\x07\x14\x02\x02\u0146\u0148\x05\x14\v\x02\u0147" +
-		"\u0145\x03\x02\x02\x02\u0148\u014B\x03\x02\x02\x02\u0149\u0147\x03\x02" +
-		"\x02\x02\u0149\u014A\x03\x02\x02\x02\u014A\u014D\x03\x02\x02\x02\u014B" +
-		"\u0149\x03\x02\x02\x02\u014C\u014E\x07\x14\x02\x02\u014D\u014C\x03\x02" +
-		"\x02\x02\u014D\u014E\x03\x02\x02\x02\u014E\u014F\x03\x02\x02\x02\u014F" +
-		"\u0150\x07=\x02\x02\u0150\u0186\x03\x02\x02\x02\u0151\u0152\x07\x04\x02" +
-		"\x02\u0152\u0153\x07>\x02\x02\u0153\u0154\x07\x07\x02\x02\u0154\u015B" +
-		"\x05\x14\v\x02\u0155\u0156\x07\x14\x02\x02\u0156\u0157\x07>\x02\x02\u0157" +
+		"\x02\x02\x9F\xA0\x03\x02\x02\x02\xA0\xA1\x07;\x02\x02\xA1\xA2\x07\x16" +
+		"\x02\x02\xA2\xCF\x05\x0E\b\r\xA3\xA4\x07*\x02\x02\xA4\xA5\x07\x17\x02" +
+		"\x02\xA5\xA6\x05\x0E\b\x02\xA6\xA7\x07\x18\x02\x02\xA7\xCF\x03\x02\x02" +
+		"\x02\xA8\xA9\x07+\x02\x02\xA9\xAA\x07\x17\x02\x02\xAA\xAB\x05\x0E\b\x02" +
+		"\xAB\xAC\x07\x18\x02\x02\xAC\xCF\x03\x02\x02\x02\xAD\xAE\x07:\x02\x02" +
+		"\xAE\xAF\x05\x0E\b\x02\xAF\xB0\x07\x14\x02\x02\xB0\xB5\x05\x0E\b\x02\xB1" +
+		"\xB2\x07\x14\x02\x02\xB2\xB4\x05\x0E\b\x02\xB3\xB1\x03\x02\x02\x02\xB4" +
+		"\xB7\x03\x02\x02\x02\xB5\xB3\x03\x02\x02\x02\xB5\xB6\x03\x02\x02\x02\xB6" +
+		"\xB9\x03\x02\x02\x02\xB7\xB5\x03\x02\x02\x02\xB8\xBA\x07\x14\x02\x02\xB9" +
+		"\xB8\x03\x02\x02\x02\xB9\xBA\x03\x02\x02\x02\xBA\xBB\x03\x02\x02\x02\xBB" +
+		"\xBC\x07;\x02\x02\xBC\xCF\x03\x02\x02\x02\xBD\xBE\x07\x04\x02\x02\xBE" +
+		"\xBF\x05\x12\n\x02\xBF\xC0\x07\x05\x02\x02\xC0\xCF\x03\x02\x02\x02\xC1" +
+		"\xC3\x05\x10\t\x02\xC2\xC1\x03\x02\x02\x02\xC3\xC4\x03\x02\x02\x02\xC4" +
+		"\xC2\x03\x02\x02\x02\xC4\xC5\x03\x02\x02\x02\xC5\xCF\x03\x02\x02\x02\xC6" +
+		"\xCF\x07\x19\x02\x02\xC7\xCF\x07\x1A\x02\x02\xC8\xCF\x07\x1B\x02\x02\xC9" +
+		"\xCF\x07<\x02\x02\xCA\xCB\x07:\x02\x02\xCB\xCC\x05\x0E\b\x02\xCC\xCD\x07" +
+		";\x02\x02\xCD\xCF\x03\x02\x02\x02\xCE\x91\x03\x02\x02\x02\xCE\xA3\x03" +
+		"\x02\x02\x02\xCE\xA8\x03\x02\x02\x02\xCE\xAD\x03\x02\x02\x02\xCE\xBD\x03" +
+		"\x02\x02\x02\xCE\xC2\x03\x02\x02\x02\xCE\xC6\x03\x02\x02\x02\xCE\xC7\x03" +
+		"\x02\x02\x02\xCE\xC8\x03\x02\x02\x02\xCE\xC9\x03\x02\x02\x02\xCE\xCA\x03" +
+		"\x02\x02\x02\xCF\xD5\x03\x02\x02\x02\xD0\xD1\f\x0E\x02\x02\xD1\xD2\x07" +
+		"\x15\x02\x02\xD2\xD4\x05\x0E\b\x0E\xD3\xD0\x03\x02\x02\x02\xD4\xD7\x03" +
+		"\x02\x02\x02\xD5\xD3\x03\x02\x02\x02\xD5\xD6\x03\x02\x02\x02\xD6\x0F\x03" +
+		"\x02\x02\x02\xD7\xD5\x03\x02\x02\x02\xD8\xD9\x07\x1C\x02\x02\xD9\xDA\x07" +
+		"\x04\x02\x02\xDA\xDB\x07<\x02\x02\xDB\xDC\x07\x07\x02\x02\xDC\xDF\x07" +
+		"#\x02\x02\xDD\xDE\x07\x14\x02\x02\xDE\xE0\x05\x12\n\x02\xDF\xDD\x03\x02" +
+		"\x02\x02\xDF\xE0\x03\x02\x02\x02\xE0\xE2\x03\x02\x02\x02\xE1\xE3\x07\x14" +
+		"\x02\x02\xE2\xE1\x03\x02\x02\x02\xE2\xE3\x03\x02\x02\x02\xE3\xE4\x03\x02" +
+		"\x02\x02\xE4\xE5\x07\x05\x02\x02\xE5\x11\x03\x02\x02\x02\xE6\xE7\x07<" +
+		"\x02\x02\xE7\xE8\x07\x07\x02\x02\xE8\xEF\x05\x0E\b\x02\xE9\xEA\x07\x14" +
+		"\x02\x02\xEA\xEB\x07<\x02\x02\xEB\xEC\x07\x07\x02\x02\xEC\xEE\x05\x0E" +
+		"\b\x02\xED\xE9\x03\x02\x02\x02\xEE\xF1\x03\x02\x02\x02\xEF\xED\x03\x02" +
+		"\x02\x02\xEF\xF0\x03\x02\x02\x02\xF0\xF4\x03\x02\x02\x02\xF1\xEF\x03\x02" +
+		"\x02\x02\xF2\xF3\x07\x14\x02\x02\xF3\xF5\x07<\x02\x02\xF4\xF2\x03\x02" +
+		"\x02\x02\xF4\xF5\x03\x02\x02\x02\xF5\xF7\x03\x02\x02\x02\xF6\xF8\x07\x14" +
+		"\x02\x02\xF7\xF6\x03\x02\x02\x02\xF7\xF8\x03\x02\x02\x02\xF8\x13\x03\x02" +
+		"\x02\x02\xF9\xFA\b\v\x01\x02\xFA\u0186\x05\x18\r\x02\xFB\xFC\x05\"\x12" +
+		"\x02\xFC\xFE\x07:\x02\x02\xFD\xFF\x05 \x11\x02\xFE\xFD\x03\x02\x02\x02" +
+		"\xFE\xFF\x03\x02\x02\x02\xFF\u0100\x03\x02\x02\x02\u0100\u0101\x07;\x02" +
+		"\x02\u0101\u0186\x03\x02\x02\x02\u0102\u0103\x07/\x02\x02\u0103\u0186" +
+		"\x05\x14\v\x1A\u0104\u0105\x07&\x02\x02\u0105\u0106\x07\x04\x02\x02\u0106" +
+		"\u010B\x05\x14\v\x02\u0107\u0108\x07\x14\x02\x02\u0108\u010A\x05\x14\v" +
+		"\x02\u0109\u0107\x03\x02\x02\x02\u010A\u010D\x03\x02\x02\x02\u010B\u0109" +
+		"\x03\x02\x02\x02\u010B\u010C\x03\x02\x02\x02\u010C\u010F\x03\x02\x02\x02" +
+		"\u010D\u010B\x03\x02\x02\x02\u010E\u0110\x07\x14\x02\x02\u010F\u010E\x03" +
+		"\x02\x02\x02\u010F\u0110\x03\x02\x02\x02\u0110\u0111\x03\x02\x02\x02\u0111" +
+		"\u0112\x07\x05\x02\x02\u0112\u0186\x03\x02\x02\x02\u0113\u0114\x07\'\x02" +
+		"\x02\u0114\u0115\x07\x04\x02\x02\u0115\u011A\x05\x14\v\x02\u0116\u0117" +
+		"\x07\x14\x02\x02\u0117\u0119\x05\x14\v\x02\u0118\u0116\x03\x02\x02\x02" +
+		"\u0119\u011C\x03\x02\x02\x02\u011A\u0118\x03\x02\x02\x02\u011A\u011B\x03" +
+		"\x02\x02\x02\u011B\u011E\x03\x02\x02\x02\u011C\u011A\x03\x02\x02\x02\u011D" +
+		"\u011F\x07\x14\x02\x02\u011E\u011D\x03\x02\x02\x02\u011E\u011F\x03\x02" +
+		"\x02\x02\u011F\u0120\x03\x02\x02\x02\u0120\u0121\x07\x05\x02\x02\u0121" +
+		"\u0186\x03\x02\x02\x02\u0122\u0123\x07\x1E\x02\x02\u0123\u0124\x07\x04" +
+		"\x02\x02\u0124\u0129\x05\x14\v\x02\u0125\u0126\x07\x14\x02\x02\u0126\u0128" +
+		"\x05\x14\v\x02\u0127\u0125\x03\x02\x02\x02\u0128\u012B\x03\x02\x02\x02" +
+		"\u0129\u0127\x03\x02\x02\x02\u0129\u012A\x03\x02\x02\x02\u012A\u012D\x03" +
+		"\x02\x02\x02\u012B\u0129\x03\x02\x02\x02\u012C\u012E\x07\x14\x02\x02\u012D" +
+		"\u012C\x03\x02\x02\x02\u012D\u012E\x03\x02\x02\x02\u012E\u012F\x03\x02" +
+		"\x02\x02\u012F\u0130\x07\x05\x02\x02\u0130\u0186\x03\x02\x02\x02\u0131" +
+		"\u0132\x07\x1F\x02\x02\u0132\u0133\x07\x04\x02\x02\u0133\u0138\x05\x14" +
+		"\v\x02\u0134\u0135\x07\x14\x02\x02\u0135\u0137\x05\x14\v\x02\u0136\u0134" +
+		"\x03\x02\x02\x02\u0137\u013A\x03\x02\x02\x02\u0138\u0136\x03\x02\x02\x02" +
+		"\u0138\u0139\x03\x02\x02\x02\u0139\u013C\x03\x02\x02\x02\u013A\u0138\x03" +
+		"\x02\x02\x02\u013B\u013D\x07\x14\x02\x02\u013C\u013B\x03\x02\x02\x02\u013C" +
+		"\u013D\x03\x02\x02\x02\u013D\u013E\x03\x02\x02\x02\u013E\u013F\x07\x05" +
+		"\x02\x02\u013F\u0186\x03\x02\x02\x02\u0140\u0186\t\x02\x02\x02\u0141\u0142" +
+		"\x07:\x02\x02\u0142\u0143\x05\x14\v\x02\u0143\u0144\x07\x14\x02\x02\u0144" +
+		"\u0149\x05\x14\v\x02\u0145\u0146\x07\x14\x02\x02\u0146\u0148\x05\x14\v" +
+		"\x02\u0147\u0145\x03\x02\x02\x02\u0148\u014B\x03\x02\x02\x02\u0149\u0147" +
+		"\x03\x02\x02\x02\u0149\u014A\x03\x02\x02\x02\u014A\u014D\x03\x02\x02\x02" +
+		"\u014B\u0149\x03\x02\x02\x02\u014C\u014E\x07\x14\x02\x02\u014D\u014C\x03" +
+		"\x02\x02\x02\u014D\u014E\x03\x02\x02\x02\u014E\u014F\x03\x02\x02\x02\u014F" +
+		"\u0150\x07;\x02\x02\u0150\u0186\x03\x02\x02\x02\u0151\u0152\x07\x04\x02" +
+		"\x02\u0152\u0153\x07<\x02\x02\u0153\u0154\x07\x07\x02\x02\u0154\u015B" +
+		"\x05\x14\v\x02\u0155\u0156\x07\x14\x02\x02\u0156\u0157\x07<\x02\x02\u0157" +
 		"\u0158\x07\x07\x02\x02\u0158\u015A\x05\x14\v\x02\u0159\u0155\x03\x02\x02" +
 		"\x02\u015A\u015D\x03\x02\x02\x02\u015B\u0159\x03\x02\x02\x02\u015B\u015C" +
 		"\x03\x02\x02\x02\u015C\u015F\x03\x02\x02\x02\u015D\u015B\x03\x02\x02\x02" +
 		"\u015E\u0160\x07\x14\x02\x02\u015F\u015E\x03\x02\x02\x02\u015F\u0160\x03" +
 		"\x02\x02\x02\u0160\u0161\x03\x02\x02\x02\u0161\u0162\x07\x05\x02\x02\u0162" +
-		"\u0186\x03\x02\x02\x02\u0163\u016C\x07\x1B\x02\x02\u0164\u0169\x05\x14" +
+		"\u0186\x03\x02\x02\x02\u0163\u016C\x07\x17\x02\x02\u0164\u0169\x05\x14" +
 		"\v\x02\u0165\u0166\x07\x14\x02\x02\u0166\u0168\x05\x14\v\x02\u0167\u0165" +
 		"\x03\x02\x02\x02\u0168\u016B\x03\x02\x02\x02\u0169\u0167\x03\x02\x02\x02" +
 		"\u0169\u016A\x03\x02\x02\x02\u016A\u016D\x03\x02\x02\x02\u016B\u0169\x03" +
 		"\x02\x02\x02\u016C\u0164\x03\x02\x02\x02\u016C\u016D\x03\x02\x02\x02\u016D" +
 		"\u016F\x03\x02\x02\x02\u016E\u0170\x07\x14\x02\x02\u016F\u016E\x03\x02" +
 		"\x02\x02\u016F\u0170\x03\x02\x02\x02\u0170\u0171\x03\x02\x02\x02\u0171" +
-		"\u0186\x07\x1C\x02\x02\u0172\u0173\x07 \x02\x02\u0173\u0174\x07<\x02\x02" +
-		"\u0174\u0175\x05\x14\v\x02\u0175\u0176\x07=\x02\x02\u0176\u0177\x05\x14" +
+		"\u0186\x07\x18\x02\x02\u0172\u0173\x07 \x02\x02\u0173\u0174\x07:\x02\x02" +
+		"\u0174\u0175\x05\x14\v\x02\u0175\u0176\x07;\x02\x02\u0176\u0177\x05\x14" +
 		"\v\x02\u0177\u0178\x07!\x02\x02\u0178\u0179\x05\x14\v\x06\u0179\u0186" +
 		"\x03\x02\x02\x02\u017A\u017B\x05\x06\x04\x02\u017B\u017C\x05\x14\v\x05" +
-		"\u017C\u0186\x03\x02\x02\x02\u017D\u017E\x07<\x02\x02\u017E\u017F\x05" +
-		"\x14\v\x02\u017F\u0180\x07=\x02\x02\u0180\u0186\x03\x02\x02\x02\u0181" +
+		"\u017C\u0186\x03\x02\x02\x02\u017D\u017E\x07:\x02\x02\u017E\u017F\x05" +
+		"\x14\v\x02\u017F\u0180\x07;\x02\x02\u0180\u0186\x03\x02\x02\x02\u0181" +
 		"\u0182\x07\x04\x02\x02\u0182\u0183\x05\x14\v\x02\u0183\u0184\x07\x05\x02" +
 		"\x02\u0184\u0186\x03\x02\x02\x02\u0185\xF9\x03\x02\x02\x02\u0185\xFB\x03" +
 		"\x02\x02\x02\u0185\u0102\x03\x02\x02\x02\u0185\u0104\x03\x02\x02\x02\u0185" +
@@ -2590,13 +2584,13 @@ export class TntParser extends Parser {
 		"\x05\x14\v\x13\u01A1\u01A2\f\x11\x02\x02\u01A2\u01A3\x07)\x02\x02\u01A3" +
 		"\u01C4\x05\x14\v\x12\u01A4\u01A5\f\t\x02\x02\u01A5\u01A6\x07\x15\x02\x02" +
 		"\u01A6\u01C4\x05\x14\v\n\u01A7\u01A8\f\x1E\x02\x02\u01A8\u01A9\x07\r\x02" +
-		"\x02\u01A9\u01AF\x05$\x13\x02\u01AA\u01AC\x07<\x02\x02\u01AB\u01AD\x05" +
+		"\x02\u01A9\u01AF\x05$\x13\x02\u01AA\u01AC\x07:\x02\x02\u01AB\u01AD\x05" +
 		" \x11\x02\u01AC\u01AB\x03\x02\x02\x02\u01AC\u01AD\x03\x02\x02\x02\u01AD" +
-		"\u01AE\x03\x02\x02\x02\u01AE\u01B0\x07=\x02\x02\u01AF\u01AA\x03\x02\x02" +
+		"\u01AE\x03\x02\x02\x02\u01AE\u01B0\x07;\x02\x02\u01AF\u01AA\x03\x02\x02" +
 		"\x02\u01AF\u01B0\x03\x02\x02\x02\u01B0\u01C4\x03\x02\x02\x02\u01B1\u01B2" +
-		"\f\x1B\x02\x02\u01B2\u01B3\x07\x1B\x02\x02\u01B3\u01B4\x05\x14\v\x02\u01B4" +
-		"\u01B5\x07\x1C\x02\x02\u01B5\u01C4\x03\x02\x02\x02\u01B6\u01B7\f\x10\x02" +
-		"\x02\u01B7\u01BF\x07/\x02\x02\u01B8\u01B9\x07\x1A\x02\x02\u01B9\u01BA" +
+		"\f\x1B\x02\x02\u01B2\u01B3\x07\x17\x02\x02\u01B3\u01B4\x05\x14\v\x02\u01B4" +
+		"\u01B5\x07\x18\x02\x02\u01B5\u01C4\x03\x02\x02\x02\u01B6\u01B7\f\x10\x02" +
+		"\x02\u01B7\u01BF\x07-\x02\x02\u01B8\u01B9\x07\x1C\x02\x02\u01B9\u01BA" +
 		"\x07#\x02\x02\u01BA\u01BB\x07\x07\x02\x02\u01BB\u01BC\x05\x1A\x0E\x02" +
 		"\u01BC\u01BD\x07\x16\x02\x02\u01BD\u01BE\x05\x14\v\x02\u01BE\u01C0\x03" +
 		"\x02\x02\x02\u01BF\u01B8\x03\x02\x02\x02\u01C0\u01C1\x03\x02\x02\x02\u01C1" +
@@ -2611,24 +2605,24 @@ export class TntParser extends Parser {
 		"\x03\x02\x02\x02\u01C8\u01CB\x05\x04\x03\x02\u01C9\u01CB\x05\x14\v\x02" +
 		"\u01CA\u01C8\x03\x02\x02\x02\u01CA\u01C9\x03\x02\x02\x02\u01CB\x17\x03" +
 		"\x02\x02\x02\u01CC\u01CD\x05\x1A\x0E\x02\u01CD\u01CE\x07\x16\x02\x02\u01CE" +
-		"\u01CF\x05\x14\v\x02\u01CF\u01DE\x03\x02\x02\x02\u01D0\u01D1\x07<\x02" +
+		"\u01CF\x05\x14\v\x02\u01CF\u01DE\x03\x02\x02\x02\u01D0\u01D1\x07:\x02" +
 		"\x02\u01D1\u01D6\x05\x1A\x0E\x02\u01D2\u01D3\x07\x14\x02\x02\u01D3\u01D5" +
 		"\x05\x1A\x0E\x02\u01D4\u01D2\x03\x02\x02\x02\u01D5\u01D8\x03\x02\x02\x02" +
 		"\u01D6\u01D4\x03\x02\x02\x02\u01D6\u01D7\x03\x02\x02\x02\u01D7\u01D9\x03" +
-		"\x02\x02\x02\u01D8\u01D6\x03\x02\x02\x02\u01D9\u01DA\x07=\x02\x02\u01DA" +
+		"\x02\x02\x02\u01D8\u01D6\x03\x02\x02\x02\u01D9\u01DA\x07;\x02\x02\u01DA" +
 		"\u01DB\x07\x16\x02\x02\u01DB\u01DC\x05\x14\v\x02\u01DC\u01DE\x03\x02\x02" +
 		"\x02\u01DD\u01CC\x03\x02\x02\x02\u01DD\u01D0\x03\x02\x02\x02\u01DE\x19" +
 		"\x03\x02\x02\x02\u01DF\u01E0\t\x06\x02\x02\u01E0\x1B\x03\x02\x02\x02\u01E1" +
-		"\u01E2\t\x07\x02\x02\u01E2\x1D\x03\x02\x02\x02\u01E3\u01E8\x07>\x02\x02" +
-		"\u01E4\u01E5\x07\r\x02\x02\u01E5\u01E7\x07>\x02\x02\u01E6\u01E4\x03\x02" +
+		"\u01E2\t\x07\x02\x02\u01E2\x1D\x03\x02\x02\x02\u01E3\u01E8\x07<\x02\x02" +
+		"\u01E4\u01E5\x07\r\x02\x02\u01E5\u01E7\x07<\x02\x02\u01E6\u01E4\x03\x02" +
 		"\x02\x02\u01E7\u01EA\x03\x02\x02\x02\u01E8\u01E6\x03\x02\x02\x02\u01E8" +
 		"\u01E9\x03\x02\x02\x02\u01E9\x1F\x03\x02\x02\x02\u01EA\u01E8\x03\x02\x02" +
 		"\x02\u01EB\u01F0\x05\x14\v\x02\u01EC\u01ED\x07\x14\x02\x02\u01ED\u01EF" +
 		"\x05\x14\v\x02\u01EE\u01EC\x03\x02\x02\x02\u01EF\u01F2\x03\x02\x02\x02" +
 		"\u01F0\u01EE\x03\x02\x02\x02\u01F0\u01F1\x03\x02\x02\x02\u01F1!\x03\x02" +
-		"\x02\x02\u01F2\u01F0\x03\x02\x02\x02\u01F3\u01F6\x07>\x02\x02\u01F4\u01F6" +
+		"\x02\x02\u01F2\u01F0\x03\x02\x02\x02\u01F3\u01F6\x07<\x02\x02\u01F4\u01F6" +
 		"\t\b\x02\x02\u01F5\u01F3\x03\x02\x02\x02\u01F5\u01F4\x03\x02\x02\x02\u01F6" +
-		"#\x03\x02\x02\x02\u01F7\u01FA\x07>\x02\x02\u01F8\u01FA\t\t\x02\x02\u01F9" +
+		"#\x03\x02\x02\x02\u01F7\u01FA\x07<\x02\x02\u01F8\u01FA\t\t\x02\x02\u01F9" +
 		"\u01F7\x03\x02\x02\x02\u01F9\u01F8\x03\x02\x02\x02\u01FA%\x03\x02\x02" +
 		"\x02\u01FB\u01FC\t\n\x02\x02\u01FC\'\x03\x02\x02\x02\u01FD\u01FE\t\v\x02" +
 		"\x02\u01FE)\x03\x02\x02\x0270PUY^hps\x86\x8B\x8D\x98\x9B\x9E\xB5\xB9\xC4" +
@@ -3183,11 +3177,9 @@ export class TypeOperContext extends TypeContext {
 }
 export class TypeSetContext extends TypeContext {
 	public SET(): TerminalNode { return this.getToken(TntParser.SET, 0); }
-	public LPAREN(): TerminalNode { return this.getToken(TntParser.LPAREN, 0); }
 	public type(): TypeContext {
 		return this.getRuleContext(0, TypeContext);
 	}
-	public RPAREN(): TerminalNode { return this.getToken(TntParser.RPAREN, 0); }
 	constructor(ctx: TypeContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
@@ -3215,11 +3207,9 @@ export class TypeSetContext extends TypeContext {
 }
 export class TypeListContext extends TypeContext {
 	public LIST(): TerminalNode { return this.getToken(TntParser.LIST, 0); }
-	public LPAREN(): TerminalNode { return this.getToken(TntParser.LPAREN, 0); }
 	public type(): TypeContext {
 		return this.getRuleContext(0, TypeContext);
 	}
-	public RPAREN(): TerminalNode { return this.getToken(TntParser.RPAREN, 0); }
 	constructor(ctx: TypeContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
@@ -4803,15 +4793,13 @@ export class ArgListContext extends ParserRuleContext {
 export class NormalCallNameContext extends ParserRuleContext {
 	public _op!: Token;
 	public IDENTIFIER(): TerminalNode | undefined { return this.tryGetToken(TntParser.IDENTIFIER, 0); }
-	public IN(): TerminalNode | undefined { return this.tryGetToken(TntParser.IN, 0); }
-	public NOTIN(): TerminalNode | undefined { return this.tryGetToken(TntParser.NOTIN, 0); }
 	public AND(): TerminalNode | undefined { return this.tryGetToken(TntParser.AND, 0); }
 	public OR(): TerminalNode | undefined { return this.tryGetToken(TntParser.OR, 0); }
 	public IFF(): TerminalNode | undefined { return this.tryGetToken(TntParser.IFF, 0); }
 	public IMPLIES(): TerminalNode | undefined { return this.tryGetToken(TntParser.IMPLIES, 0); }
 	public SET(): TerminalNode | undefined { return this.tryGetToken(TntParser.SET, 0); }
 	public LIST(): TerminalNode | undefined { return this.tryGetToken(TntParser.LIST, 0); }
-	public SUBSETEQ(): TerminalNode | undefined { return this.tryGetToken(TntParser.SUBSETEQ, 0); }
+	public MAP(): TerminalNode | undefined { return this.tryGetToken(TntParser.MAP, 0); }
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
 	}
@@ -4843,13 +4831,10 @@ export class NormalCallNameContext extends ParserRuleContext {
 export class NameAfterDotContext extends ParserRuleContext {
 	public _op!: Token;
 	public IDENTIFIER(): TerminalNode | undefined { return this.tryGetToken(TntParser.IDENTIFIER, 0); }
-	public IN(): TerminalNode | undefined { return this.tryGetToken(TntParser.IN, 0); }
-	public NOTIN(): TerminalNode | undefined { return this.tryGetToken(TntParser.NOTIN, 0); }
 	public AND(): TerminalNode | undefined { return this.tryGetToken(TntParser.AND, 0); }
 	public OR(): TerminalNode | undefined { return this.tryGetToken(TntParser.OR, 0); }
 	public IFF(): TerminalNode | undefined { return this.tryGetToken(TntParser.IFF, 0); }
 	public IMPLIES(): TerminalNode | undefined { return this.tryGetToken(TntParser.IMPLIES, 0); }
-	public SUBSETEQ(): TerminalNode | undefined { return this.tryGetToken(TntParser.SUBSETEQ, 0); }
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
 	}
@@ -4883,9 +4868,6 @@ export class OperatorContext extends ParserRuleContext {
 	public OR(): TerminalNode | undefined { return this.tryGetToken(TntParser.OR, 0); }
 	public IFF(): TerminalNode | undefined { return this.tryGetToken(TntParser.IFF, 0); }
 	public IMPLIES(): TerminalNode | undefined { return this.tryGetToken(TntParser.IMPLIES, 0); }
-	public SUBSETEQ(): TerminalNode | undefined { return this.tryGetToken(TntParser.SUBSETEQ, 0); }
-	public IN(): TerminalNode | undefined { return this.tryGetToken(TntParser.IN, 0); }
-	public NOTIN(): TerminalNode | undefined { return this.tryGetToken(TntParser.NOTIN, 0); }
 	public GT(): TerminalNode | undefined { return this.tryGetToken(TntParser.GT, 0); }
 	public LT(): TerminalNode | undefined { return this.tryGetToken(TntParser.LT, 0); }
 	public GE(): TerminalNode | undefined { return this.tryGetToken(TntParser.GE, 0); }
