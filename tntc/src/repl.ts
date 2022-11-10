@@ -353,6 +353,10 @@ function tryEval (out: writer, state: ReplState, newInput: string): boolean {
   (moduleText: string, context: CompilationContext, lineOffset: number) {
     printErrorMessages(out,
       'syntax error', moduleText, lineOffset, context.syntaxErrors)
+    printErrorMessages(out,
+      'type error', moduleText, lineOffset, context.typeErrors, chalk.yellow)
+    printErrorMessages(out, 'effects error',
+      moduleText, lineOffset, context.effectsErrors, chalk.yellow)
     const resolved = resolveErrors(context.sourceMap, context.compileErrors)
     printErrorMessages(out,
       'compile error', moduleText, lineOffset, resolved)
@@ -375,11 +379,15 @@ ${newInput}
 }`
     // compile the expression or definition and evaluate it
     const context = compile(moduleText)
-    if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
+    if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0 ||
+        context.typeErrors.length > 0 || context.effectsErrors.length > 0) {
       const lineOffset = -preambule.split('\n').length - 1
       printErrors(moduleText, context, lineOffset)
-      return false
+      if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
+        return false
+      } // else: provisionally, continue on type & effects errors
     }
+
     loadVars(state, context)
     loadShadowVars(state, context)
     const computable = context.values.get(kindName('callable', '__input'))
@@ -453,12 +461,13 @@ function resolveErrors
 // print error messages with proper colors
 function printErrorMessages
 (out: writer,
-  kind: string, text: string, lineOffset: number, messages: ErrorMessage[]) {
+  kind: string, text: string, lineOffset: number, messages: ErrorMessage[],
+  color: (text: string) => string = chalk.red) {
   // display the error messages and highlight the error places
   const finder = lineColumn(text)
   for (const e of messages) {
     const msg = formatError(text, finder, e, lineOffset)
-    out(chalk.red(`${kind}: ${msg}`))
+    out(color(`${kind}: ${msg}`))
   }
 }
 

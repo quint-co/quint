@@ -11,6 +11,9 @@
 import {
   parsePhase1, parsePhase2, ErrorMessage, Loc
 } from '../tntParserFrontend'
+import { inferTypes } from '../types/inferrer'
+import { inferEffects } from '../effects/inferrer'
+import { ErrorTree, errorTreeToString } from '../errorTree'
 import { Computable } from './runtime'
 import { IrErrorMessage } from '../tntIr'
 import { CompilerVisitor } from './impl/compilerImpl'
@@ -33,6 +36,10 @@ export interface CompilationContext {
   shadowVars: string[],
   // messages that are produced during parsing
   syntaxErrors: ErrorMessage[],
+  // messages that are produced by the type checker
+  typeErrors: ErrorMessage[],
+  // messages that are produced by the effects checker
+  effectsErrors: ErrorMessage[],
   // messages that are produced during compilation
   compileErrors: IrErrorMessage[],
   // messages that get populated as the compiled code is executed
@@ -47,10 +54,28 @@ function errorContext (errors: ErrorMessage[]): CompilationContext {
     vars: [],
     shadowVars: [],
     syntaxErrors: errors,
+    typeErrors: [],
+    effectsErrors: [],
     compileErrors: [],
     runtimeErrors: [],
     sourceMap: new Map(),
   }
+}
+
+// convert an error tree to an error message
+function errorTreeToMsg
+(sourceMap: Map<bigint, Loc>, trees: Map<bigint, ErrorTree>) {
+  const errors: ErrorMessage[] = []
+  trees.forEach((value, key) => {
+    const loc = sourceMap.get(key)!
+    const msg = {
+      explanation: errorTreeToString(value),
+      locs: [loc],
+    }
+    errors.push(msg)
+  })
+
+  return errors
 }
 
 /**
@@ -69,22 +94,31 @@ compile (moduleText: string): CompilationContext {
 
   if (parseRes.kind === 'error') {
     return errorContext(parseRes.messages)
-  } else {
-    const resolutionRes = parsePhase2(parseRes.module, parseRes.sourceMap)
-    if (resolutionRes.kind === 'error') {
-      return errorContext(resolutionRes.messages)
-    } else {
-      const visitor = new CompilerVisitor()
-      walkModule(visitor, parseRes.module)
-      return {
-        values: visitor.getContext(),
-        vars: visitor.getVars(),
-        shadowVars: visitor.getShadowVars(),
-        syntaxErrors: [],
-        compileErrors: visitor.getCompileErrors(),
-        runtimeErrors: visitor.getRuntimeErrors(),
-        sourceMap: parseRes.sourceMap,
-      }
-    }
+  }
+  const parsedModule = parseRes.module
+  const resolutionRes = parsePhase2(parsedModule, parseRes.sourceMap)
+  if (resolutionRes.kind === 'error') {
+    return errorContext(resolutionRes.messages)
+  }
+  const defTable = resolutionRes.table
+
+  // in the future, we will be using types and effects
+  /* eslint no-unused-vars: "no-error" */
+  const [typeErrors, types] = inferTypes(parsedModule, defTable)
+  const [effectsErrors, effects] = inferEffects(defTable, parsedModule)
+  // since the type checker and effects checker are incomplete,
+  // collect the errors, but do not stop immediately on error
+  const visitor = new CompilerVisitor()
+  walkModule(visitor, parseRes.module)
+  return {
+    values: visitor.getContext(),
+    vars: visitor.getVars(),
+    shadowVars: visitor.getShadowVars(),
+    syntaxErrors: [],
+    typeErrors: errorTreeToMsg(parseRes.sourceMap, typeErrors),
+    effectsErrors: errorTreeToMsg(parseRes.sourceMap, effectsErrors),
+    compileErrors: visitor.getCompileErrors(),
+    runtimeErrors: visitor.getRuntimeErrors(),
+    sourceMap: parseRes.sourceMap,
   }
 }

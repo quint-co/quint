@@ -108,6 +108,25 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
+  it('ill-typed expressions', async () => {
+    const input = dedent(
+      `1 + false
+      |`
+    )
+    const output = dedent(
+      `type error: <input>:1:1 - error: Couldn't unify int and bool
+      |Trying to unify int and bool
+      |Trying to unify (int, int) => int and (int, bool) => t8
+      |
+      |1: 1 + false
+      |   ^^^^^^^^^
+      |
+      |
+      |1
+      |`)
+    await assertRepl(input, output)
+  })
+
   it('definitions in expressions', async () => {
     const input = dedent(
       `val x = 3; 2 * x
