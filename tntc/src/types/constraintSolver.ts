@@ -116,10 +116,15 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
  *          Otherwise, an error tree with an error message and its trace.
  */
 export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
+  // The unification algorithm assumes that rows are simplified to a normal form.
+  // That means that the `other` field is either a row variable or an empty row
+  // and `fields` is never an empty list
   const ra = simplifyRow(r1)
   const rb = simplifyRow(r2)
 
   const location = `Trying to unify ${ra.kind} ${rowToString(ra)} and ${rb.kind} ${rowToString(rb)}`
+
+  // Standard comparisson and variable binding
   if (rowToString(ra) === rowToString(rb)) {
     return right([])
   } else if (ra.kind === 'var') {
@@ -127,30 +132,38 @@ export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
   } else if (rb.kind === 'var') {
     return bindRow(rb.name, ra).mapLeft(msg => buildErrorLeaf(location, msg))
   } else if (ra.kind === 'row' && rb.kind === 'row') {
+    // Both rows are normal rows, so we need to compare their fields
     const sharedFieldNames = ra.fields.map(f => f.fieldName).filter(n => rb.fields.some(f => n === f.fieldName))
+
     if (sharedFieldNames.length === 0) {
+      // No shared fields, so we can just bind the tails, if they exist and are different.
       if (ra.other.kind === 'var' && rb.other.kind === 'var' && ra.other.name !== rb.other.name) {
+        // The result should be { ra.fields + rb.fields, tailVar }
         const tailVar: Row = { kind: 'var', name: `${ra.other.name}_${rb.other.name}` }
         const s1 = bindRow(ra.other.name, { ...rb, other: tailVar })
         const s2 = bindRow(rb.other.name, { ...ra, other: tailVar })
-        // These bindings + composition should always succeed. I couldn't find a scenarion where they don't.
+        // These bindings + composition should always succeed. I couldn't find a scenario where they don't.
         return s1.chain(sa => s2.map(sb => compose(sa, sb)))
           .mapLeft(msg => buildErrorLeaf(location, msg))
       } else {
         return left(buildErrorLeaf(location, `Incompatible tails in ${rowToString(ra)} and ${rowToString(rb)}`))
       }
     } else {
+      // There are shared fields.
       const uniqueFields1 = ra.fields.filter(f => !sharedFieldNames.includes(f.fieldName))
       const uniqueFields2 = rb.fields.filter(f => !sharedFieldNames.includes(f.fieldName))
-      // Unify the disjoint fields and tail variables, see the above case
-      const result = unifyRows({ ...ra, fields: uniqueFields1 }, { ...rb, fields: uniqueFields2 })
-      return result.chain(subs => {
-        const subs2 = chainUnifications(
-          ra.fields.filter(f => sharedFieldNames.includes(f.fieldName)).map(f => f.fieldType),
-          rb.fields.filter(f => sharedFieldNames.includes(f.fieldName)).map(f => f.fieldType)
-        )
-        return subs2.map(s => compose(subs, s))
-      }).mapLeft(error => buildErrorTree(location, error))
+
+      // Unify the disjoint fields with tail variables
+      // This call will fit in the above case of row unification
+      const tailSubs = unifyRows({ ...ra, fields: uniqueFields1 }, { ...rb, fields: uniqueFields2 })
+
+      // Now, for each shared field, we need to unify the types
+      const fieldSubs = chainUnifications(
+        ra.fields.filter(f => sharedFieldNames.includes(f.fieldName)).map(f => f.fieldType),
+        rb.fields.filter(f => sharedFieldNames.includes(f.fieldName)).map(f => f.fieldType)
+      )
+      return tailSubs.chain(subs => fieldSubs.map(s => compose(subs, s)))
+        .mapLeft(error => buildErrorTree(location, error))
     }
   } else {
     return left(buildErrorLeaf(location, `Couldn't unify ${rowToString(ra)} and ${rowToString(rb)}`))
