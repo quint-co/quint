@@ -293,3 +293,33 @@ tntc parse ../examples/LamportMutex/LamportMutex.tnt
 
 <!-- !test check LamportMutex -->
     expect exit code 0
+
+### OK on parse records
+
+This command parses the records example.
+
+<!-- !test program
+tntc parse ../examples/records.tnt
+-->
+
+```sh
+tntc parse ../examples/records.tnt
+```
+
+<!-- !test check records -->
+    expect exit code 0
+ 
+### OK on typecheck records
+
+This command typechecks the records example.
+
+<!-- !test program
+tntc typecheck ../examples/records.tnt
+-->
+
+```sh
+tntc typecheck ../examples/records.tnt
+```
+
+<!-- !test check records - Types & Effects-->
+    expect exit code 0
