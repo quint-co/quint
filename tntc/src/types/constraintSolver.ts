@@ -139,7 +139,7 @@ export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
       // No shared fields, so we can just bind the tails, if they exist and are different.
       if (ra.other.kind === 'var' && rb.other.kind === 'var' && ra.other.name !== rb.other.name) {
         // The result should be { ra.fields + rb.fields, tailVar }
-        const tailVar: Row = { kind: 'var', name: `${ra.other.name}_${rb.other.name}` }
+        const tailVar: Row = { kind: 'var', name: `$${ra.other.name}$${rb.other.name}` }
         const s1 = bindRow(ra.other.name, { ...rb, other: tailVar })
         const s2 = bindRow(rb.other.name, { ...ra, other: tailVar })
         // These bindings + composition should always succeed. I couldn't find a scenario where they don't.
