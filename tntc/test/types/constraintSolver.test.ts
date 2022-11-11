@@ -236,12 +236,25 @@ describe('unifyRows', () => {
       {
         kind: 'row',
         name: 'a',
-        value: parseRowOrThrow('f3: bool, a_b'),
+        value: {
+          kind: 'row',
+          fields: [
+            { fieldName: 'f3', fieldType: { kind: 'bool', id: 1n } },
+          ],
+          other: { kind: 'var', name: '$a$b' },
+        },
       },
       {
         kind: 'row',
         name: 'b',
-        value: parseRowOrThrow('f1: int, f2: str, a_b'),
+        value: {
+          kind: 'row',
+          fields: [
+            { fieldName: 'f1', fieldType: { kind: 'int', id: 1n } },
+            { fieldName: 'f2', fieldType: { kind: 'str', id: 2n } },
+          ],
+          other: { kind: 'var', name: '$a$b' },
+        },
       },
     ]
 

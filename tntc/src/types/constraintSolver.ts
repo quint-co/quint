@@ -116,10 +116,15 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
  *          Otherwise, an error tree with an error message and its trace.
  */
 export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
+  // The unification algorithm assumes that rows are simplified to a normal form.
+  // That means that the `other` field is either a row variable or an empty row
+  // and `fields` is never an empty list
   const ra = simplifyRow(r1)
   const rb = simplifyRow(r2)
 
   const location = `Trying to unify ${ra.kind} ${rowToString(ra)} and ${rb.kind} ${rowToString(rb)}`
+
+  // Standard comparison and variable binding
   if (rowToString(ra) === rowToString(rb)) {
     return right([])
   } else if (ra.kind === 'var') {
@@ -130,7 +135,7 @@ export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
     const sharedFieldNames = ra.fields.map(f => f.fieldName).filter(n => rb.fields.some(f => n === f.fieldName))
     if (sharedFieldNames.length === 0) {
       if (ra.other.kind === 'var' && rb.other.kind === 'var' && ra.other.name !== rb.other.name) {
-        const tailVar: Row = { kind: 'var', name: `${ra.other.name}_${rb.other.name}` }
+        const tailVar: Row = { kind: 'var', name: `$${ra.other.name}$${rb.other.name}` }
         const s1 = bindRow(ra.other.name, { ...rb, other: tailVar })
         const s2 = bindRow(rb.other.name, { ...ra, other: tailVar })
         // These bindings + composition should always succeed. I couldn't find a scenarion where they don't.
