@@ -111,8 +111,8 @@ describe('inferTypes', () => {
       [7n, 'str'],
       [8n, 'str'],
       [9n, '{ f1: int, f2: bool }'],
-      [10n, 'set({ f1: int, f2: bool })'],
-      [11n, 'set({ f1: int, f2: bool })'],
+      [10n, 'Set[{ f1: int, f2: bool }]'],
+      [11n, 'Set[{ f1: int, f2: bool }]'],
       [12n, '{ f1: int, f2: bool }'],
       [13n, 'str'],
       [14n, '{ f1: int }'],
@@ -124,8 +124,8 @@ describe('inferTypes', () => {
       [20n, 'str'],
       [21n, '{ f1: int }'],
       [22n, '{ f1: int, f2: bool }'],
-      [23n, 'set(str)'],
-      [24n, 'set(str)'],
+      [23n, 'Set[str]'],
+      [24n, 'Set[str]'],
     ])
   })
 
