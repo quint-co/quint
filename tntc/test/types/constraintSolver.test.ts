@@ -251,7 +251,7 @@ describe('unifyRows', () => {
 
   it('unifies partial row with complete row', () => {
     const row1: Row = parseRowOrThrow('f1: int, f2: str, a')
-    const row2: Row = parseRowOrThrow('f3: bool, f1: int, f2: str,')
+    const row2: Row = parseRowOrThrow('f3: bool, f2: str, f1: int')
 
     const result = unifyRows(row1, row2)
     const expectedSubs: Substitutions = [{

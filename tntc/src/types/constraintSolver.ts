@@ -148,10 +148,12 @@ export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
       // Unify the disjoint fields and tail variables, see the above case
       const result = unifyRows({ ...ra, fields: uniqueFields1 }, { ...rb, fields: uniqueFields2 })
       return result.chain(subs => {
-        const subs2 = chainUnifications(
-          ra.fields.filter(f => sharedFieldNames.includes(f.fieldName)).map(f => f.fieldType),
-          rb.fields.filter(f => sharedFieldNames.includes(f.fieldName)).map(f => f.fieldType)
-        )
+        const fieldTypes = sharedFieldNames.map(n => {
+          const f1 = ra.fields.find(f => f.fieldName === n)!
+          const f2 = rb.fields.find(f => f.fieldName === n)!
+          return [f1.fieldType, f2.fieldType]
+        })
+        const subs2 = chainUnifications(fieldTypes.map(f => f[0]), fieldTypes.map(f => f[1]))
         return subs2.map(s => compose(subs, s))
       }).mapLeft(error => buildErrorTree(location, error))
     }
