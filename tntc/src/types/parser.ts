@@ -18,7 +18,7 @@ import { TntListener } from '../generated/TntListener'
 import { ToIrListener } from '../ToIrListener'
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 import { CharStreams, CommonTokenStream } from 'antlr4ts'
-import { TntType } from '../tntTypes'
+import { Row, TntType } from '../tntTypes'
 
 import { Either, right, left } from '@sweet-monads/either'
 
@@ -91,5 +91,15 @@ export function parseTypeOrThrow (type: string): TntType {
     return value
   } else {
     throw new Error(`Could not parse type: ${type} `)
+  }
+}
+
+export function parseRowOrThrow (row: string): Row {
+  const result = parseType(`{ ${row} }`)
+
+  if (result.isRight() && result.value.kind === 'rec') {
+    return result.value.fields
+  } else {
+    throw new Error(`Could not parse row: ${row} `)
   }
 }

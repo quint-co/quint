@@ -119,6 +119,24 @@ export function typeNames (t: TntType): Set<string> {
   return collector.names
 }
 
+/*
+ * Collects all row variable names from a given type
+ *
+ * @param r the row to have its names collected
+ *
+ * @returns a list with collected names
+ */
+export function rowNames (r: Row): Set<string> {
+  switch (r.kind) {
+    case 'row':
+      return rowNames(r.other)
+    case 'var':
+      return new Set<string>([r.name])
+    case 'empty':
+      return new Set<string>([])
+  }
+}
+
 class TypeNamesCollector implements IRVisitor {
   names: Set<string> = new Set()
 
