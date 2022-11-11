@@ -53,13 +53,7 @@ const mapOperators = [
   { name: 'put', type: '(a -> b, a, b) => a -> b' },
 ]
 
-// FIXME: Make record and tuple signatures more strict once row types are implemented
-const recordOperators = [
-  { name: 'field', type: '(a, str) => b' },
-  { name: 'fieldNames', type: '(a) => Set[str]' },
-  { name: 'with', type: '(a, str, b) => a' },
-]
-
+// FIXME: Make tuple signatures more strict with row types
 const tupleOperators = [
   { name: 'item', type: '(a, int) => b' },
 ]
