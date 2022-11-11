@@ -1,3 +1,17 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Special constraint cases for TNT types, including record and tuple related operators
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { buildErrorLeaf, Error } from '../errorTree'
 import { expressionToString } from '../IRprinting'
@@ -5,6 +19,17 @@ import { TntEx } from '../tntIr'
 import { TntType, TntVarType } from '../tntTypes'
 import { Constraint } from './base'
 
+/*
+ * Generate constraints for operators for which signatures cannot be expressed as normal signatures
+ *
+ * @param opcode The name of the operator
+ * @param id The id of the component for which constraints are being generated
+ * @param args The arguments to the operator
+ * @param argTypes The types of the arguments
+ * @param resultTypeVar A fresh type variable for the result type
+ *
+ * @returns Either an error or a list of constraints
+ */
 export function specialConstraints (opcode: string, id: bigint, args: TntEx[], argTypes: TntType[], resultTypeVar: TntVarType): Either<Error, Constraint[]> {
   switch (opcode) {
     case 'Rec': return recordConstructorConstraints(id, args, argTypes, resultTypeVar)

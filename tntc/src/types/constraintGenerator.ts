@@ -107,6 +107,8 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       const argTypes = schemes.map(s => s.type)
       const a: TntType = { kind: 'var', name: this.freshVar() }
 
+      // Check if there is a special case defined for the operator
+      // If yes, use the special constraints, otherwise, define a constraint over the signature
       const special = specialConstraints(e.opcode, e.id, e.args, argTypes, a)
       const constraints = special.chain(cs => {
         if (cs.length > 0) {

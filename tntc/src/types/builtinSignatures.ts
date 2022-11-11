@@ -1,3 +1,17 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Type signatures for built-in operators
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { parseTypeOrThrow } from './parser'
 import { typeNames } from '../tntTypes'
 import { Signature, TypeScheme } from './base'
