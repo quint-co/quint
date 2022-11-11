@@ -30,11 +30,11 @@ module LamportMutex {
   // requests received from processes (clock transmitted with request)
   var req: int -> (int -> int)
   // acknowledgements received from processes
-  var ack: int -> set(int)
+  var ack: int -> Set[int]
   // set of processes in critical section
-  var crit: set(int)
+  var crit: Set[int]
   // messages sent but not yet received
-  var network: int -> (int -> list({ mtype: str, clock: int }))
+  var network: int -> (int -> List[{ mtype: str, clock: int }])
 
   // Messages used in the algorithm.
   def ReqMessage(c) = { mtype: "req", clock: c }
