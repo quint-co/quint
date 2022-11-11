@@ -137,7 +137,10 @@ export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
         return s1.chain(sa => s2.map(sb => compose(sa, sb)))
           .mapLeft(msg => buildErrorLeaf(location, msg))
       } else {
-        return left(buildErrorLeaf(location, `Incompatible tails in ${rowToString(ra)} and ${rowToString(rb)}`))
+        return left(buildErrorLeaf(
+          location,
+           `Incompatible tails for rows with disjoint fields: (${rowToString(ra.other)}) and (${rowToString(rb.other)})`
+        ))
       }
     } else {
       const uniqueFields1 = ra.fields.filter(f => !sharedFieldNames.includes(f.fieldName))

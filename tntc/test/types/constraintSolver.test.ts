@@ -300,7 +300,7 @@ describe('unifyRows', () => {
     result.mapLeft(err => assert.deepEqual(err, {
       location: 'Trying to unify row shared: bool, f1: int and row shared: bool, f2: str',
       children: [{
-        message: 'Incompatible tails in f1: int and f2: str',
+        message: 'Incompatible tails for rows with disjoint fields: () and ()',
         location: 'Trying to unify row f1: int and row f2: str',
         children: [],
       }],
@@ -328,7 +328,7 @@ describe('unifyRows', () => {
 
     result.mapLeft(err => assert.deepEqual(err, {
       location: 'Trying to unify row f1: str, a and row f2: int, a',
-      message: 'Incompatible tails in f1: str, a and f2: int, a',
+      message: 'Incompatible tails for rows with disjoint fields: (a) and (a)',
       children: [],
     })).map(subs => assert.fail('Expected error, got substitutions: ' + substitutionsToString(subs)))
   })

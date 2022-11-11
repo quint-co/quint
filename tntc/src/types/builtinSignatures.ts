@@ -148,7 +148,6 @@ const fixedAritySignatures: [string, Signature][] = [
   booleanOperators,
   setOperators,
   mapOperators,
-  recordOperators,
   tupleOperators,
   listOperators,
   integerOperators,
