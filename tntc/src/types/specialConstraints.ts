@@ -88,6 +88,7 @@ function withConstraints (id: bigint, args: TntEx[], argTypes: TntType[], result
 
   const generalRecType: TntType = { kind: 'rec', fields: { kind: 'row', fields: [{ fieldName: fieldName.value, fieldType: valueType }], other: { kind: 'var', name: `tail_${resultTypeVar.name}` } } }
   const c2: Constraint = { kind: 'eq', types: [recType, generalRecType], sourceId: id }
+  const c3: Constraint = { kind: 'eq', types: [resultTypeVar, generalRecType], sourceId: id }
 
-  return right([c1, c2])
+  return right([c1, c2, c3])
 }

@@ -18,4 +18,7 @@ module Records {
         rec1 <- rec1.with("f1", 2),
         rec2 <- rec2.with("f3", true),
     }
+
+    def d(p) = rec1.with("f1", p.f1)
+    val t = d({ f1: 2 }).fieldNames()
 }
