@@ -124,7 +124,7 @@ export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
 
   const location = `Trying to unify ${ra.kind} ${rowToString(ra)} and ${rb.kind} ${rowToString(rb)}`
 
-  // Standard comparisson and variable binding
+  // Standard comparison and variable binding
   if (rowToString(ra) === rowToString(rb)) {
     return right([])
   } else if (ra.kind === 'var') {
