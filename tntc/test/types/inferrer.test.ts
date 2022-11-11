@@ -56,13 +56,13 @@ describe('inferTypes', () => {
       [11n, 'int'],
       [12n, 'int'],
       [13n, 'int'],
-      [14n, 'set(int)'],
+      [14n, 'Set[int]'],
       [15n, 'int'],
       [16n, 'int'],
       [17n, 'int'],
       [18n, '(int) => int'],
-      [19n, 'set(int)'],
-      [20n, '(set(int)) => set(int)'],
+      [19n, 'Set[int]'],
+      [20n, '(Set[int]) => Set[int]'],
     ])
   })
 
@@ -99,9 +99,9 @@ describe('inferTypes', () => {
 
     assert.sameDeepMembers([...errors.entries()], [
       [6n, {
-        location: 'Trying to unify (set(t1), (t1) => t2) => set(t2) and (int, (int) => int) => t3',
+        location: 'Trying to unify (Set[t1], (t1) => t2) => Set[t2] and (int, (int) => int) => t3',
         children: [{
-          location: 'Trying to unify set(t1) and int',
+          location: 'Trying to unify Set[t1] and int',
           message: "Couldn't unify set and int",
           children: [],
         }],

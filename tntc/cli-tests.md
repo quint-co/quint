@@ -278,3 +278,18 @@ tntc parse ../examples/ERC20/erc20.tnt
 
 <!-- !test check ERC20 -->
     expect exit code 0
+
+### OK on parse Lamport Mutex
+
+This command parses the Lamport Mutex example.
+
+<!-- !test program
+tntc parse ../examples/LamportMutex/LamportMutex.tnt
+-->
+
+```sh
+tntc parse ../examples/LamportMutex/LamportMutex.tnt
+```
+
+<!-- !test check LamportMutex -->
+    expect exit code 0

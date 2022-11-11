@@ -49,10 +49,10 @@ type state_t = str
 type round_t = int
 
 // the set of correct processes 
-const Corr: set(proc_t)
+const Corr: Set[proc_t]
 
 // the set of Byzantine processes, may be empty
-const Faulty: set(proc_t)
+const Faulty: Set[proc_t]
 
 // the total number of processes: correct, defective, and Byzantine
 const N: int
@@ -61,10 +61,10 @@ const N: int
 const T: int
 
 // the set of valid values, proposed both by correct and faulty
-const ValidValues: set(value_t)
+const ValidValues: Set[value_t]
 
 // the set of invalid values, never proposed by the correct ones
-const InvalidValues: set(value_t)
+const InvalidValues: Set[value_t]
 
 // the maximal round number
 const MaxRound: round_t
@@ -129,7 +129,7 @@ var msgsPrevote: round_t -> message_t
 // PRECOMMIT messages broadcast in the system
 var msgsPrecommit: round_t -> message_t
 // the messages that were used by the correct processes to make transitions
-var evidence: set(message_t)
+var evidence: Set[message_t]
 
 // we use this variable to see which action was taken
 var fired_action: str
@@ -274,7 +274,7 @@ action UponProposalInPropose(p) =
          else NilValue
     all {
       step.get(p) == "propose",                 // line 22
-      msg in msgsPropose.get(round.get(p)),         // line 22
+      msg.in(msgsPropose.get(round.get(p))),         // line 22
       evidence <- Set(msg).union(evidence),
       BroadcastPrevote(p, round.get(p), mid),   // lines 24-26
       step <- step.update(p, "prevote"),
@@ -297,7 +297,7 @@ action UponProposalInProposeAndPrevote(p) =
     all {
       step.get(p) == "propose",
       0 <= vr and vr < round.get(p), // line 28, the while part
-      msg in msgsPropose.get(round.get(p)), // line 28
+      msg.in(msgsPropose.get(round.get(p))), // line 28
       size(PV) >= THRESHOLD2, // line 28
       evidence <- PV.union(Set(msg)).union(evidence),
       BroadcastPrevote(p, round.get(p), mid), // lines 24-26
@@ -332,8 +332,8 @@ action UponProposalInPrevoteOrCommitAndPrevote(p) =
                 round: round.get(p), proposal: v, validRound: vr }
     val PV = msgsPrevote.get(round.get(p)).filter(m => m.id == Id(v))
     all {
-      step.get(p) in Set("prevote", "precommit"), // line 36
-      msg in msgsPropose.get(round.get(p)), // line 36
+      step.get(p).in(Set("prevote", "precommit")), // line 36
+      msg.in(msgsPropose.get(round.get(p))), // line 36
       size(PV) >= THRESHOLD2, // line 36
       evidence <- PV.union(Set(msg)).union(evidence),
       if (step.get(p) == "prevote") all {
@@ -379,7 +379,7 @@ action UponProposalInPrecommitNoDecision(p) =
      val PV = msgsPrecommit.get(r).filter(m => m.id == Id(v))
      all {
        decision.get(p) == NilValue,         // line 49
-       msg in msgsPropose.get(r),           // line 49
+       msg.in(msgsPropose.get(r)),           // line 49
        size(PV) >= THRESHOLD2,   // line 49
        evidence <- PV.union(Set(msg)).union(evidence),
        decision <- decision.update(p, v), // update the decision, line 51
@@ -504,7 +504,7 @@ val Agreement =
 // the protocol validity
 val Validity =
   Corr.forall(p =>
-    decision.get(p) in (ValidValues.union(Set(NilValue)))
+    decision.get(p).in((ValidValues.union(Set(NilValue))))
   )
 
 /*

@@ -11,13 +11,13 @@ module erc20 {
     value: int
   }
 
-  const ADDR: set(ADDR)
-  const AMMOUNTS: set(int)
+  const ADDR: Set[ADDR]
+  const AMMOUNTS: Set[int]
 
   var balanceOf: ADDR -> int
   var allowance: (ADDR, ADDR) -> int
 
-  var pendingTransactions: set(TX)
+  var pendingTransactions: Set[TX]
   var lastTx: TX
   var nextTxId: int
 

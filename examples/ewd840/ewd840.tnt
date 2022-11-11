@@ -8,7 +8,7 @@ module EWD840 {
 (***************************************************************************/
 
 const N: int
-assume NAssumption = N in (Nat.exclude(Set(0)))
+assume NAssumption = N.in((Nat.exclude(Set(0))))
 
 type NODE = int
 
@@ -21,10 +21,10 @@ val Node = 0.to(N - 1)
 val Color = Set("white", "black")
 
 val TypeOK = and {
-  active in setOfMaps(Node, Bool),    // status of nodes (active or passive)
-  color in setOfMaps(Node, Color),    // color of nodes
-  tpos in Node,                       // token position
-  tcolor in Color                     // token color
+  active.in(setOfMaps(Node, Bool)),    // status of nodes (active or passive)
+  color.in(setOfMaps(Node, Color)),    // color of nodes
+  tpos.in(Node),                       // token position
+  tcolor.in(Color)                     // token color
 }
 
 /***************************************************************************)

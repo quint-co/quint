@@ -105,8 +105,9 @@ export function typeToString (type: TntType): string {
     case 'var':
       return type.name
     case 'set':
+      return `Set[${typeToString(type.elem)}]`
     case 'list':
-      return `${type.kind}(${typeToString(type.elem)})`
+      return `List[${typeToString(type.elem)}]`
     case 'fun':
       return `(${typeToString(type.arg)} -> ${typeToString(type.res)})`
     case 'oper': {

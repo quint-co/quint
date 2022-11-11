@@ -543,12 +543,12 @@ describe('walkModule', () => {
       'const b: int',
       'val c: str = "rainbow"',
       'var d: MY_CONST_TYPE',
-      'var e: a -> set(a)',
-      'var f: set(int)',
-      'var g: list(set(str))',
-      'var h: (int -> str) -> list(bool)',
+      'var e: a -> Set[a]',
+      'var f: Set[int]',
+      'var g: List[Set[str]]',
+      'var h: (int -> str) -> List[bool]',
       'def i: (int, a) => bool = false',
-      'var j: (int, list(bool), MY_CONST_TYPE)',
+      'var j: (int, List[bool], MY_CONST_TYPE)',
       'var k: { name: str, age: int }',
       'var l: | { tag: "a", a: int } | { tag: "b", b: bool }',
     ])
@@ -571,15 +571,15 @@ describe('walkModule', () => {
         'bool', // var a: bool
         'int', // const b: int
         'str', // val c: str = "rainbow"
-        'int', // var f: set(int)
-        'str', // var g: list(set(str))
-        'int', // var h: (int -> str) -> list(bool)
-        'str', // var h: (int -> str) -> list(bool)
-        'bool', // var h: (int -> str) -> list(bool)
+        'int', // var f: Set[int]
+        'str', // var g: List[Set[str]]
+        'int', // var h: (int -> str) -> List[bool]
+        'str', // var h: (int -> str) -> List[bool]
+        'bool', // var h: (int -> str) -> List[bool]
         'int', // def i: (int, a) => bool = false
         'bool', // def i: (int, a) => bool
-        'int', // var j: (int, list(bool), MY_CONST_TYPE)
-        'bool', // var j: (int, list(bool), MY_CONST_TYPE)
+        'int', // var j: (int, List[bool], MY_CONST_TYPE)
+        'bool', // var j: (int, List[bool], MY_CONST_TYPE)
         'str', // var k: { name: str, age: int }
         'int', // var k: { name: str, age: int }
         'int', // var l: | { tag: "a", a: int } | { tag: "b", b: bool }
@@ -636,8 +636,8 @@ describe('walkModule', () => {
       }
 
       const enteredTypes = [
-        'a', // var e: a -> set(a)
-        'a', // var e: a -> set(a)
+        'a', // var e: a -> Set[a]
+        'a', // var e: a -> Set[a]
         'a', // def i: (int, a) => bool = false
       ]
 
@@ -664,9 +664,9 @@ describe('walkModule', () => {
       }
 
       const enteredTypes = [
-        'set(a)', // var e: a -> set(a)
-        'set(int)', // var f: set(int)
-        'set(str)', // var g: list(set(str))
+        'Set[a]', // var e: a -> Set[a]
+        'Set[int]', // var f: Set[int]
+        'Set[str]', // var g: List[Set[str]]
       ]
 
       const exitedTypes = enteredTypes
@@ -692,9 +692,9 @@ describe('walkModule', () => {
       }
 
       const enteredTypes = [
-        'list(set(str))', // var g: list(set(str))
-        'list(bool)', // var h: (int -> str) -> list(bool)
-        'list(bool)', // var j: (int, list(bool), MY_CONST_TYPE)
+        'List[Set[str]]', // var g: List[Set[str]]
+        'List[bool]', // var h: (int -> str) -> List[bool]
+        'List[bool]', // var j: (int, List[bool], MY_CONST_TYPE)
       ]
 
       const exitedTypes = enteredTypes
@@ -720,15 +720,15 @@ describe('walkModule', () => {
       }
 
       const enteredTypes = [
-        '(a -> set(a))', // var e: a -> set(a)
-        '((int -> str) -> list(bool))', // var h: (int -> str) -> list(bool)
-        '(int -> str)', // var h: (int -> str) -> list(bool)
+        '(a -> Set[a])', // var e: a -> Set[a]
+        '((int -> str) -> List[bool])', // var h: (int -> str) -> List[bool]
+        '(int -> str)', // var h: (int -> str) -> List[bool]
       ]
 
       const exitedTypes = [
-        '(a -> set(a))', // var e: a -> set(a)
-        '(int -> str)', // var h: (int -> str) -> list(bool)
-        '((int -> str) -> list(bool))', // var h: (int -> str) -> list(bool)
+        '(a -> Set[a])', // var e: a -> Set[a]
+        '(int -> str)', // var h: (int -> str) -> List[bool]
+        '((int -> str) -> List[bool])', // var h: (int -> str) -> List[bool]
       ]
 
       const visitor = new TestVisitor()
@@ -778,7 +778,7 @@ describe('walkModule', () => {
       }
 
       const enteredTypes = [
-        '(int, list(bool), MY_CONST_TYPE)', // var j: (int, list(bool), MY_CONST_TYPE)
+        '(int, List[bool], MY_CONST_TYPE)', // var j: (int, list(bool), MY_CONST_TYPE)
       ]
 
       const exitedTypes = enteredTypes

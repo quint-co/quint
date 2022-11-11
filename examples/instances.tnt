@@ -11,7 +11,7 @@ module InstanceEx {
   }
 
   // A state variable of InstanceEx
-  var w: set(int)
+  var w: Set[int]
 
   // a value
   val MyY = z
