@@ -746,22 +746,22 @@ describe('compiling specs to runtime values', () => {
 
     it('map update', () => {
       assertResultAsString(
-        '3.to(5).mapBy(i => 2 * i).update(4, 20)',
+        '3.to(5).mapBy(i => 2 * i).set(4, 20)',
         'Map(Tup(3, 6), Tup(4, 20), Tup(5, 10))'
       )
       assertResultAsString(
-        '3.to(5).mapBy(i => 2 * i).update(7, 20)',
+        '3.to(5).mapBy(i => 2 * i).set(7, 20)',
         undefined
       )
     })
 
-    it('map updateAs', () => {
+    it('map setBy', () => {
       assertResultAsString(
-        '3.to(5).mapBy(i => 2 * i).updateAs(4, old => old + 1)',
+        '3.to(5).mapBy(i => 2 * i).setBy(4, old => old + 1)',
         'Map(Tup(3, 6), Tup(4, 9), Tup(5, 10))'
       )
       assertResultAsString(
-        '3.to(5).mapBy(i => 2 * i).updateAs(7, old => old + 1)',
+        '3.to(5).mapBy(i => 2 * i).setBy(7, old => old + 1)',
         undefined
       )
     })

@@ -73,9 +73,9 @@ module LamportMutex {
   // Process p requests access to critical section.
   action Request(p) = all {
     req.get(p).get(p) == 0,
-    req <- req.updateAs(p, r => r.updateAs(p, c => clock.get(p))),
-    network <- network.updateAs(p, n => Broadcast(p, ReqMessage(clock.get(p)))),
-    ack <- ack.update(p,Set(p)),
+    req <- req.setBy(p, r => r.setBy(p, c => clock.get(p))),
+    network <- network.setBy(p, n => Broadcast(p, ReqMessage(clock.get(p)))),
+    ack <- ack.set(p,Set(p)),
     clock <- clock,
     crit <- crit,
   }
@@ -87,10 +87,10 @@ module LamportMutex {
     val c = m.clock
     all {
       m.mtype == "req",
-      req <- req.updateAs(p, a => a.updateAs(q, b => c)),
-      clock <- clock.updateAs(p, a => if (c > a) c + 1 else a + 1),
-      network <- network.updateAs(q, a => a.updateAs(p, b => b.tail()))
-                        .updateAs(p, a => a.updateAs(q, b => b.append(AckMessage))),
+      req <- req.setBy(p, a => a.setBy(q, b => c)),
+      clock <- clock.setBy(p, a => if (c > a) c + 1 else a + 1),
+      network <- network.setBy(q, a => a.setBy(p, b => b.tail()))
+                        .setBy(p, a => a.setBy(q, b => b.append(AckMessage))),
     },
     ack <- ack,
     crit <- crit,
@@ -101,8 +101,8 @@ module LamportMutex {
     network.get(p).get(q) != List(),
     val m = network.get(p).get(q).head() all {
       m.mtype == "ack",
-      network <- network.updateAs(p, a => a.updateAs(q, b => b.tail())),
-      ack <- ack.updateAs(p, a => a.union(Set(q))),
+      network <- network.setBy(p, a => a.setBy(q, b => b.tail())),
+      ack <- ack.setBy(p, a => a.union(Set(q))),
     },
     clock <- clock,
     req <- req,
@@ -124,9 +124,9 @@ module LamportMutex {
   action Exit(p) = all {
     p.in(crit),
     crit <- crit.exclude(Set(p)),
-    network <- network.update(p, Broadcast(p, RelMessage)),
-    req <- req.updateAs(p, r => r.update(p, 0)),
-    ack <- ack.update(p, Set()),
+    network <- network.set(p, Broadcast(p, RelMessage)),
+    req <- req.setBy(p, r => r.set(p, 0)),
+    ack <- ack.set(p, Set()),
     clock <- clock,
   }
 
@@ -135,8 +135,8 @@ module LamportMutex {
     network.get(p).get(q) != List(),
     val m = network.get(p).get(q).head() all {
       m.mtype == "rel",
-      req <- req.updateAs(p, r => r.update(q, 0)),
-      network <- network.updateAs(p, a => a.updateAs(q, b => b.tail())),
+      req <- req.setBy(p, r => r.set(q, 0)),
+      network <- network.setBy(p, a => a.setBy(q, b => b.tail())),
     },
     clock <- clock,
     ack <- ack,

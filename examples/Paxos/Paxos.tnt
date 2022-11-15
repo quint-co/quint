@@ -135,7 +135,7 @@ action Phase1b(a) = {
     msgs.filter(m => m.tag == "1a")
         .guess(m => all {
           m.bal > maxBal.get(a),
-          maxBal <- maxBal.update(a, m.bal),
+          maxBal <- maxBal.set(a, m.bal),
           Send({ tag: "1b", acc: a, bal: m.bal, 
                    mbal: maxVBal.get(a), mval: maxVal.get(a) }),
           maxVBal <- maxVBal,
@@ -198,9 +198,9 @@ action Phase2a(b, v) = all {
 action Phase2b(a) = msgs.filter(m => m.tag == "2a")
                         .guess(m => all {
                               m.bal >= maxBal.get(a),
-                              maxBal  <- maxBal.update(a, m.bal),
-                              maxVBal <- maxVBal.update(a, m.bal),
-                              maxVal  <- maxVal.update(a, m.value),
+                              maxBal  <- maxBal.set(a, m.bal),
+                              maxVBal <- maxVBal.set(a, m.bal),
+                              maxVal  <- maxVal.set(a, m.value),
                               Send({ tag: "2b", acc: a,
                                        bal: m.bal, value: m.value }),
 })

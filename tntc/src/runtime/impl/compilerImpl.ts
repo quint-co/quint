@@ -610,7 +610,7 @@ export class CompilerVisitor implements IRVisitor {
         })
         break
 
-      case 'update':
+      case 'set':
         // Update a map value
         this.applyFun(app.id, 3, (map, key, newValue) => {
           const normalKey = key.normalForm()
@@ -620,7 +620,7 @@ export class CompilerVisitor implements IRVisitor {
             return just(rv.fromMap(newMap))
           } else {
             this.addRuntimeError(app.id,
-              "Called 'update' with a non-existing key")
+              "Called 'set' with a non-existing key")
             return none()
           }
         })
@@ -636,7 +636,7 @@ export class CompilerVisitor implements IRVisitor {
         })
         break
 
-      case 'updateAs': {
+      case 'setBy': {
         // Update a map value via a lambda
         const fun = this.compStack.pop() ?? fail
         this.applyFun(app.id, 2, (map, key) => {
@@ -651,7 +651,7 @@ export class CompilerVisitor implements IRVisitor {
             })
           } else {
             this.addRuntimeError(app.id,
-              "Called 'updateAs' with a non-existing key")
+              "Called 'setBy' with a non-existing key")
             return none()
           }
         })

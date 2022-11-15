@@ -48,7 +48,7 @@ action InitiateProbe = all {
   tcolor == "black" or color.get(0) == "black",
   tpos <- N - 1,
   tcolor <- "white",
-  color <- color.update(0, "white"),
+  color <- color.set(0, "white"),
 }
 
 /***************************************************************************)
@@ -66,7 +66,7 @@ action PassToken(i) = all {
   or { not(active.get(i)), color.get(i) == "black", tcolor == "black" },
   tpos <- i - 1,
   tcolor <- if (color.get(i) == "black") "black" else tcolor,
-  color <- color.update(i, "white"),
+  color <- color.set(i, "white"),
 }
 
 /***************************************************************************)
@@ -86,8 +86,8 @@ action SendMsg(i) = all {
   active.get(i),
   Node.exclude(Set(i))
       .guess({ j => all {
-        active  <- active.update(j, true),
-        color   <- color.updateAs(i, (old => if (j > i) "black" else old)),
+        active  <- active.set(j, true),
+        color   <- color.setBy(i, (old => if (j > i) "black" else old)),
   }})
 }
 
@@ -96,7 +96,7 @@ action SendMsg(i) = all {
 (***************************************************************************/
 action Deactivate(i) = all {
   active.get(i),
-  active <- active.update(i, false),
+  active <- active.set(i, false),
 }
 
 /***************************************************************************)

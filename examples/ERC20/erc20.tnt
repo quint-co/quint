@@ -68,8 +68,8 @@ module erc20 {
         balanceOf <- balanceOf
       else
         balanceOf <- balanceOf
-                       .updateAs(tx.sender, v => v - tx.value)
-                       .updateAs(tx.toAddr, v => v + tx.value)
+                       .setBy(tx.sender, v => v - tx.value)
+                       .setBy(tx.toAddr, v => v + tx.value)
     },
   }
 
@@ -119,9 +119,9 @@ module erc20 {
       else
         all {
           balanceOf <- balanceOf
-                         .updateAs(tx.fromAddr, v => v - tx.value)
-                         .updateAs(tx.toAddr, v => v + tx.value),
-          allowance <- allowance.updateAs((tx.fromAddr, tx.sender), v => v - tx.value),
+                         .setBy(tx.fromAddr, v => v - tx.value)
+                         .setBy(tx.toAddr, v => v + tx.value),
+          allowance <- allowance.setBy((tx.fromAddr, tx.sender), v => v - tx.value),
         },
     },
   }
@@ -158,7 +158,7 @@ module erc20 {
       if (fail)
         allowance <- allowance
       else
-        allowance <- allowance.update((tx.sender, tx.spender), tx.value)
+        allowance <- allowance.set((tx.sender, tx.spender), tx.value)
     },
   }
 

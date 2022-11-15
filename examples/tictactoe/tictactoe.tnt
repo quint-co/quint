@@ -13,9 +13,9 @@ module tictactoe {
 
   action Move(player, coordinate) = all {
     BoardIs(coordinate, "_"),
-    board <- board.update(
+    board <- board.set(
       coordinate._1, 
-      board.get(coordinate._1).update(coordinate._2, player)
+      board.get(coordinate._1).set(coordinate._2, player)
     ),
   }
 
