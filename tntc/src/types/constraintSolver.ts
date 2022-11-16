@@ -138,7 +138,7 @@ export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
         const tailVar: Row = { kind: 'var', name: `$${ra.other.name}$${rb.other.name}` }
         const s1 = bindRow(ra.other.name, { ...rb, other: tailVar })
         const s2 = bindRow(rb.other.name, { ...ra, other: tailVar })
-        // These bindings + composition should always succeed. I couldn't find a scenarion where they don't.
+        // These bindings + composition should always succeed. I couldn't find a scenario where they don't.
         return s1.chain(sa => s2.map(sb => compose(sa, sb)))
           .mapLeft(msg => buildErrorLeaf(location, msg))
       } else {

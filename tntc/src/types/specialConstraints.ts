@@ -47,14 +47,15 @@ function recordConstructorConstraints (id: bigint, args: TntEx[], argTypes: TntT
     const keyType = argTypes[i * 2]
     const valueType = argTypes[i * 2 + 1]
 
-    const constraint: Constraint = { kind: 'eq', types: [keyType, { kind: 'str' }], sourceId: key.id }
-    constraints.push(constraint)
-
     if (key.kind !== 'str') {
       return left(buildErrorLeaf(
           `Generating record constraints for ${args.map(expressionToString)}`,
           `Record field name must be a name expression but is ${key.kind}: ${expressionToString(key)}`))
     }
+    
+    const constraint: Constraint = { kind: 'eq', types: [keyType, { kind: 'str' }], sourceId: key.id }
+    constraints.push(constraint)
+
 
     return right({ fieldName: key.value, fieldType: valueType })
   })
@@ -72,8 +73,6 @@ function fieldConstraints (id: bigint, args: TntEx[], argTypes: TntType[], resul
   const fieldName = args[1]
   const fieldNameType = argTypes[1]
 
-  const c1: Constraint = { kind: 'eq', types: [fieldNameType, { kind: 'str' }], sourceId: fieldName.id }
-
   if (fieldName.kind !== 'str') {
     return left(buildErrorLeaf(
             `Generating record constraints for ${args.map(expressionToString)}`,
@@ -81,6 +80,8 @@ function fieldConstraints (id: bigint, args: TntEx[], argTypes: TntType[], resul
   }
 
   const generalRecType: TntType = { kind: 'rec', fields: { kind: 'row', fields: [{ fieldName: fieldName.value, fieldType: resultTypeVar }], other: { kind: 'var', name: `tail_${resultTypeVar.name}` } } }
+
+  const c1: Constraint = { kind: 'eq', types: [fieldNameType, { kind: 'str' }], sourceId: fieldName.id }
   const c2: Constraint = { kind: 'eq', types: [recType, generalRecType], sourceId: id }
 
   return right([c1, c2])
