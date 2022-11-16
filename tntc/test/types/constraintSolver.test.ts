@@ -264,6 +264,21 @@ describe('unifyRows', () => {
 
   it('unifies partial row with complete row', () => {
     const row1: Row = parseRowOrThrow('f1: int, f2: str, a')
+    const row2: Row = parseRowOrThrow('f3: bool, f1: int, f2: str')
+
+    const result = unifyRows(row1, row2)
+    const expectedSubs: Substitutions = [{
+      kind: 'row',
+      name: 'a',
+      value: parseRowOrThrow('f3: bool'),
+    }]
+
+    result.map(subs => assert.sameDeepMembers(subs, expectedSubs))
+      .mapLeft(err => assert.fail(errorTreeToString(err)))
+  })
+
+  it('unifies partial row with complete row with different field order', () => {
+    const row1: Row = parseRowOrThrow('f1: int, f2: str, a')
     const row2: Row = parseRowOrThrow('f3: bool, f2: str, f1: int')
 
     const result = unifyRows(row1, row2)
