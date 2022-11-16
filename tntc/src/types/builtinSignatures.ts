@@ -67,11 +67,6 @@ const mapOperators = [
   { name: 'put', type: '(a -> b, a, b) => a -> b' },
 ]
 
-// FIXME: Make tuple signatures more strict with row types
-const tupleOperators = [
-  { name: 'item', type: '(a, int) => b' },
-]
-
 const listOperators = [
   { name: 'append', type: '(List[a], a) => List[a]' },
   { name: 'concat', type: '(List[a], List[a]) => List[a]' },
@@ -135,10 +130,6 @@ const multipleAritySignatures: [string, Signature][] = [
   ['actionAll', uniformArgsWithResult('bool', 'bool')],
   ['or', uniformArgsWithResult('bool', 'bool')],
   ['actionAny', uniformArgsWithResult('bool', 'bool')],
-  ['Tup', (arity: number) => {
-    const args = Array.from(Array(arity).keys()).map(i => `t${i}`).join(', ')
-    return parseAndQuantify(`(${args}) => (${args})`)
-  }],
   ['match', (arity: number) => {
     const args = Array.from(Array((arity - 1) / 2).keys()).map(r => 'str, (a) => b')
     return parseAndQuantify(`(a, ${args.join(', ')}) => b`)
@@ -156,7 +147,6 @@ const fixedAritySignatures: [string, Signature][] = [
   booleanOperators,
   setOperators,
   mapOperators,
-  tupleOperators,
   listOperators,
   integerOperators,
   temporalOperators,

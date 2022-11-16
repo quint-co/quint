@@ -198,7 +198,7 @@ export function walkType (visitor: IRVisitor, type: t.TntType): void {
         visitor.enterTupleType(type)
       }
       // Tuples, walk all elements
-      type.elems.forEach(elem => walkType(visitor, elem))
+      walkRow(visitor, type.fields)
 
       if (visitor.exitTupleType) {
         visitor.exitTupleType(type)

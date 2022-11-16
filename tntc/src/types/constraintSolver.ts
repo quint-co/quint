@@ -90,9 +90,7 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
       return subs2.map(s => compose(subs, s))
     })
   } else if (t1.kind === 'tup' && t2.kind === 'tup') {
-    return checkSameLength(location, t1.elems, t2.elems)
-      .chain(([elems1, elems2]) => chainUnifications(elems1, elems2))
-      .mapLeft(error => buildErrorTree(location, error))
+    return unifyRows(t1.fields, t2.fields)
   } else if (t1.kind === 'const' || t2.kind === 'const') {
     // FIXME: Type aliases unify with anything for now
     return right([])

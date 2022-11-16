@@ -32,10 +32,14 @@ import { Constraint } from './base'
  */
 export function specialConstraints (opcode: string, id: bigint, args: TntEx[], argTypes: TntType[], resultTypeVar: TntVarType): Either<Error, Constraint[]> {
   switch (opcode) {
+    // Record operators
     case 'Rec': return recordConstructorConstraints(id, args, argTypes, resultTypeVar)
     case 'field': return fieldConstraints(id, args, argTypes, resultTypeVar)
     case 'fieldNames': return fieldNamesConstraints(id, args, argTypes, resultTypeVar)
     case 'with': return withConstraints(id, args, argTypes, resultTypeVar)
+    // Tuple operators
+    case 'Tup': return tupleConstructorConstraints(id, args, argTypes, resultTypeVar)
+    case 'item': return itemConstraints(id, args, argTypes, resultTypeVar)
     default: return right([])
   }
 }
@@ -77,7 +81,7 @@ function fieldConstraints (id: bigint, args: TntEx[], argTypes: TntType[], resul
   if (fieldName.kind !== 'str') {
     return left(buildErrorLeaf(
             `Generating record constraints for ${args.map(expressionToString)}`,
-            `Record field name must be a name expression but is ${fieldName.kind}: ${expressionToString(fieldName)}`))
+            `Record field name must be a string expression but is ${fieldName.kind}: ${expressionToString(fieldName)}`))
   }
 
   const generalRecType: TntType = { kind: 'rec', fields: { kind: 'row', fields: [{ fieldName: fieldName.value, fieldType: resultTypeVar }], other: { kind: 'var', name: `tail_${resultTypeVar.name}` } } }
@@ -108,7 +112,7 @@ function withConstraints (id: bigint, args: TntEx[], argTypes: TntType[], result
   if (fieldName.kind !== 'str') {
     return left(buildErrorLeaf(
             `Generating record constraints for ${args.map(expressionToString)}`,
-            `Record field name must be a name expression but is ${fieldName.kind}: ${expressionToString(fieldName)}`))
+            `Record field name must be a string expression but is ${fieldName.kind}: ${expressionToString(fieldName)}`))
   }
 
   const generalRecType: TntType = { kind: 'rec', fields: { kind: 'row', fields: [{ fieldName: fieldName.value, fieldType: valueType }], other: { kind: 'var', name: `tail_${resultTypeVar.name}` } } }
@@ -116,4 +120,40 @@ function withConstraints (id: bigint, args: TntEx[], argTypes: TntType[], result
   const c3: Constraint = { kind: 'eq', types: [resultTypeVar, generalRecType], sourceId: id }
 
   return right([c1, c2, c3])
+}
+
+function tupleConstructorConstraints (id: bigint, _args: TntEx[], argTypes: TntType[], resultTypeVar: TntVarType): Either<Error, Constraint[]> {
+  const fields = argTypes.map((type, i) => {
+    return { fieldName: `${i}`, fieldType: type }
+  })
+
+  const t2: TntType = { kind: 'tup', fields: { kind: 'row', fields: fields, other: { kind: 'empty' } } }
+  const c: Constraint = { kind: 'eq', types: [t2, resultTypeVar], sourceId: id }
+  return right([c])
+}
+
+function itemConstraints (id: bigint, args: TntEx[], argTypes: TntType[], resultTypeVar: TntVarType): Either<Error, Constraint[]> {
+  const tupType = argTypes[0]
+  const itemName = args[1]
+  const itemNameType = argTypes[1]
+
+  const c1: Constraint = { kind: 'eq', types: [itemNameType, { kind: 'int' }], sourceId: itemName.id }
+
+  if (itemName.kind !== 'int') {
+    return left(buildErrorLeaf(
+            `Generating record constraints for ${args.map(expressionToString)}`,
+            `Tup field index must be an int expression but is ${itemName.kind}: ${expressionToString(itemName)}`))
+  }
+
+  const generalTupType: TntType = {
+    kind: 'tup',
+    fields: {
+      kind: 'row',
+      fields: [{ fieldName: `${itemName.value - 1n}`, fieldType: resultTypeVar }],
+      other: { kind: 'var', name: `tail_${resultTypeVar.name}` },
+    },
+  }
+  const c2: Constraint = { kind: 'eq', types: [tupType, generalTupType], sourceId: id }
+
+  return right([c1, c2])
 }

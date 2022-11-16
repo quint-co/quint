@@ -9,11 +9,15 @@ describe('parseType', () => {
     assert.isTrue(type.isRight())
     type.map(value => assert.deepEqual(value, {
       kind: 'tup',
-      elems: [
-        { kind: 'bool', id: 1n },
-        { kind: 'int', id: 2n },
-        { kind: 'str', id: 3n },
-      ],
+      fields: {
+        kind: 'row',
+        fields: [
+          { fieldName: '0', fieldType: { kind: 'bool', id: 1n } },
+          { fieldName: '1', fieldType: { kind: 'int', id: 2n } },
+          { fieldName: '2', fieldType: { kind: 'str', id: 3n } },
+        ],
+        other: { kind: 'empty' },
+      },
       id: 4n,
     }))
   })

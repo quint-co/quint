@@ -67,7 +67,7 @@ export interface TntOperType extends WithOptionalId {
 
 export interface TntTupleType extends WithOptionalId {
   kind: 'tup',
-  elems: TntType[],
+  fields: Row,
 }
 
 export interface TntRecordType extends WithOptionalId {

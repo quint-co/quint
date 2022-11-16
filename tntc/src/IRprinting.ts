@@ -115,7 +115,9 @@ export function typeToString (type: TntType): string {
       return `(${args}) => ${typeToString(type.res)}`
     }
     case 'tup':
-      return `(${type.elems.map(typeToString).join(', ')})`
+      console.log(`{ ${rowToString(type.fields)} }`)
+      console.log(`(${rowTypesToString(type.fields)})`)
+      return `(${rowTypesToString(type.fields)})`
     case 'rec': {
       const fields = rowToString(type.fields)
       return `{ ${fields} }`
@@ -144,4 +146,31 @@ export function rowToString (r: Row): string {
       return fields.join(', ')
     }
   }
+}
+
+function rowTypesToString (r: Row): string {
+  switch (r.kind) {
+    case 'empty':
+      return ''
+    case 'var':
+      return r.name
+    case 'row': {
+      const fields = sortByFieldName(r.fields).map(f => typeToString(f.fieldType))
+      const other = rowTypesToString(r.other)
+      if (other !== '') {
+        fields.push(other)
+      }
+      return fields.join(', ')
+    }
+  }
+}
+
+function sortByFieldName (fields: { fieldName: string, fieldType: TntType }[]) {
+  return fields.sort((a, b) => {
+    if (BigInt(a.fieldName) > BigInt(b.fieldName)) {
+      return 1
+    } else {
+      return -1
+    }
+  })
 }

@@ -77,7 +77,7 @@ export function applySubstitution (subs: Substitutions, t: TntType): TntType {
       break
     }
     case 'tup': {
-      result = { kind: t.kind, elems: t.elems.map(e => applySubstitution(subs, e)), id: t.id }
+      result = { kind: t.kind, fields: applySubstitutionToRow(subs, t.fields), id: t.id }
       break
     }
     case 'rec': {
