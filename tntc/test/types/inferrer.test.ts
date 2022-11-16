@@ -138,9 +138,9 @@ describe('inferTypes', () => {
 
     assert.sameDeepMembers([...errors.entries()], [
       [6n, {
-        location: 'Trying to unify (Set[t2], (t2) => t3) => Set[t3] and (int, (int) => int) => t1',
+        location: 'Trying to unify (Set[t1], (t1) => t2) => Set[t2] and (int, (int) => int) => t3',
         children: [{
-          location: 'Trying to unify Set[t2] and int',
+          location: 'Trying to unify Set[t1] and int',
           message: "Couldn't unify set and int",
           children: [],
         }],
