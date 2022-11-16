@@ -21,4 +21,5 @@ module Records {
 
     def d(p) = rec1.with("f1", p.f1)
     val t = d({ f1: 2 }).fieldNames()
+
 }

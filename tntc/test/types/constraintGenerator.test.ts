@@ -31,7 +31,7 @@ describe('ConstraintGeneratorVisitor', () => {
       'def d(S) = S.map(x => x + 10)',
     ])
 
-    const expectedConstraint = '(int, int) => int ~ (t_x_3, int) => t0 /\\ (Set[t2], (t2) => t3) => Set[t3] ~ (t_S_6, (t_x_3) => t0) => t1'
+    const expectedConstraint = '(int, int) => int ~ (t_x_3, int) => t0 /\\ (Set[t1], (t1) => t2) => Set[t2] ~ (t_S_6, (t_x_3) => t0) => t3'
 
     const solvingFunction = (c: Constraint) => {
       assert.deepEqual(constraintToString(c), expectedConstraint)
@@ -47,7 +47,7 @@ describe('ConstraintGeneratorVisitor', () => {
       'def d(S) = S.map(_ => 10)',
     ])
 
-    const expectedConstraint = '(Set[t2], (t2) => t3) => Set[t3] ~ (t_S_6, (t0) => int) => t1'
+    const expectedConstraint = '(Set[t1], (t1) => t2) => Set[t2] ~ (t_S_6, (t0) => int) => t3'
 
     const solvingFunction = (c: Constraint) => {
       assert.deepEqual(constraintToString(c), expectedConstraint)

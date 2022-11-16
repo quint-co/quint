@@ -20,6 +20,10 @@ export function getSignatures (): Map<string, Signature> {
   return new Map<string, Signature>(fixedAritySignatures.concat(multipleAritySignatures))
 }
 
+// Signatures for record related operators cannot be precisely defined
+// with this syntax. Their types are handled directly with constraints 
+// in the specialConstraints.ts file
+
 const literals = [
   { name: 'Nat', type: 'Set[int]' },
   { name: 'Int', type: 'Set[int]' },
