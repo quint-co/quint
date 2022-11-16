@@ -21,10 +21,10 @@
 
 ;; define several category of keywords
 (defconst tnt-types '("int" "str" "bool" "set" "seq"))
-(defconst tnt-keywords '("not" "and" "or" "iff" "implies" "exists" "guess" "forall" "in" "notin"
+(defconst tnt-keywords '("Set", "Map", "List", "Rec", "Tup", "not" "and" "or" "iff" "implies" "exists" "guess" "forall" "in" "notin"
       "union" "contains" "fold" "intersect" "exclude" "subseteq" "map" "applyTo" "filter"
       "powerset" "flatten" "seqs" "chooseSome" "isFinite" "cardinality" "get" "put" "keys"
-      "mapOf" "setOfMaps" "update" "updateAs" "fieldNames" "with" "tuples" "append" "concat" "head"
+      "mapBy" "setOfMaps" "set" "setBy" "fieldNames" "with" "tuples" "append" "concat" "head"
       "tail" "length" "nth" "indices" "replaceAt" "slice" "select" "foldl" "foldr" "to" "always"
       "eventually" "next" "stutter" "nostutter" "enabled" "weakFair" "strongFair" "guarantees"
       "existsConst" "forallConst" "chooseConst" "if" "else" "match" "all" "any"))

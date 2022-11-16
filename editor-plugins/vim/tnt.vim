@@ -33,7 +33,7 @@ syn match tntNumber '-\?\d\+'
 syn region tntString start='"' end='"'
 
 " types
-syn keyword tntType int str bool set seq
+syn keyword tntType int str bool set list
 
 " typedefs
 syn keyword tntTypedef type
@@ -49,14 +49,15 @@ syn keyword tntCond if else match
 syn keyword tntDecl module import const var def val pure action temporal assume
 
 " standard operators
+syn keyword tntStd Set List Map Rec Tup
 syn keyword tntStd not and or iff implies
 syn keyword tntStd exists guess forall in notin union
 syn match   tntStd "contains"   " use match, as 'contains' is a vim option
 syn match   tntStd "fold"       " use match, as 'fold' is a vim option
 syn keyword tntStd intersect exclude subseteq map applyTo filter
 syn keyword tntStd powerset flatten seqs chooseSome
-syn keyword tntStd isFinite cardinality get put keys mapOf setOfMaps
-syn keyword tntStd update updateAs fieldNames with tuples append concat
+syn keyword tntStd isFinite cardinality get put keys mapBy setOfMaps
+syn keyword tntStd set setBy fieldNames with tuples append concat
 syn keyword tntStd head tail length nth indices replaceAt slice
 syn keyword tntStd select foldl foldr to
 syn keyword tntStd always eventually next stutter nostutter

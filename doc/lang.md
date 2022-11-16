@@ -1130,15 +1130,15 @@ S.setOfMaps(T)
 setOfMaps(S, T)
 // Update a map at given key.
 // In TLA+: [f EXCEPT ![e1] = e2]
-f.update(e1, e2)
-update(f, e1, e2)
+f.set(e1, e2)
+set(f, e1, e2)
 // Multi-point update can be done via multiple applications.
 // In TLA+: [f EXCEPT ![e1] = e2, ![e3] = e4]
-f.update(e1, e2).update(e3, e4)
+f.set(e1, e2).set(e3, e4)
 // Update by using the old value.
 // In TLA+: [f EXCEPT ![e1] = @ + y]
-f.updateAs(e1, (old => old + y))
-updateAs(f, e1, (old => old + y))
+f.setBy(e1, (old => old + y))
+setBy(f, e1, (old => old + y))
 //
 // In TLA+ (when using TLC): (k :> v) @@ f
 f.put(k, v)

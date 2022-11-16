@@ -66,8 +66,8 @@ const mapOperators = [
   { name: 'mapBy', type: '(Set[a], (a) => b) => a -> b' },
   { name: 'setToMap', type: '(Set[(a, b)]) => (a -> b)' },
   { name: 'setOfMaps', type: '(Set[a], Set[b]) => Set[a -> b]' },
-  { name: 'update', type: '(a -> b, a, b) => a -> b' },
-  { name: 'updateAs', type: '(a -> b, a, (b) => b) => a -> b' },
+  { name: 'set', type: '(a -> b, a, b) => a -> b' },
+  { name: 'setBy', type: '(a -> b, a, (b) => b) => a -> b' },
   { name: 'put', type: '(a -> b, a, b) => a -> b' },
 ]
 

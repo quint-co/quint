@@ -171,7 +171,7 @@ action Init = all {
 (***************************************************************************/
 action IncreaseMaxBal(a, b) = all {
   b > maxBal.get(a),
-  maxBal <- maxBal.update(a, b),
+  maxBal <- maxBal.set(a, b),
   votes <- votes,
 }
 
@@ -190,8 +190,8 @@ action VoteFor(a, b, v) = all {
          votes.get(c).forall( vt => (vt._1 == b) implies (vt._2 == v) )
     ),
     Quorum.exists( Q => ShowsSafeAt(Q, b, v) ),
-    votes  <- votes.updateAs(a, old => old.union(Set((b, v))) ),
-    maxBal <- maxBal.update(a, b),
+    votes  <- votes.setBy(a, old => old.union(Set((b, v))) ),
+    maxBal <- maxBal.set(a, b),
 }
 
 
