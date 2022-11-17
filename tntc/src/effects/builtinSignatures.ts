@@ -1,3 +1,17 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Effect signatures for built-in operators
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { Signature } from './base'
 import { parseEffectOrThrow } from './parser'
 import { effectToString } from './printing'
@@ -112,6 +126,12 @@ const otherOperators = [
 
 const readManyEffect = (arity: number) => {
   const rs = Array.from(Array(arity).keys()).map(i => `r${i}`)
+  const args = rs.map(r => `Read[${r}]`)
+  return parseEffectOrThrow(`(${args.join(', ')}) => Read[${rs.join(', ')}]`)
+}
+
+const readAndTemporalManyEffect = (arity: number) => {
+  const rs = Array.from(Array(arity).keys()).map(i => `r${i}`)
   const ts = Array.from(Array(arity).keys()).map(i => `tr${i}`)
   const args = rs.map(r => `Read[${r}] & Temporal[t${r}]`)
   return parseEffectOrThrow(`(${args.join(', ')}) => Read[${rs.join(', ')}] & Temporal[${ts.join(', ')}]`)
@@ -123,8 +143,8 @@ const multipleAritySignatures: [string, Signature][] = [
   ['Rec', readManyEffect],
   ['Tup', readManyEffect],
   ['tuples', readManyEffect],
-  ['and', readManyEffect],
-  ['or', readManyEffect],
+  ['and', readAndTemporalManyEffect],
+  ['or', readAndTemporalManyEffect],
   ['match', (arity: number) => {
     const rs = Array.from(Array((arity - 1) / 2).keys()).map(i => `r${i}`)
     const args = rs.map(r => `Pure, (Pure) => Read[${r}]`)

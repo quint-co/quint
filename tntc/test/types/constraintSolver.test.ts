@@ -264,7 +264,22 @@ describe('unifyRows', () => {
 
   it('unifies partial row with complete row', () => {
     const row1: Row = parseRowOrThrow('f1: int, f2: str, a')
-    const row2: Row = parseRowOrThrow('f3: bool, f1: int, f2: str,')
+    const row2: Row = parseRowOrThrow('f3: bool, f1: int, f2: str')
+
+    const result = unifyRows(row1, row2)
+    const expectedSubs: Substitutions = [{
+      kind: 'row',
+      name: 'a',
+      value: parseRowOrThrow('f3: bool'),
+    }]
+
+    result.map(subs => assert.sameDeepMembers(subs, expectedSubs))
+      .mapLeft(err => assert.fail(errorTreeToString(err)))
+  })
+
+  it('unifies partial row with complete row with different field order', () => {
+    const row1: Row = parseRowOrThrow('f1: int, f2: str, a')
+    const row2: Row = parseRowOrThrow('f3: bool, f2: str, f1: int')
 
     const result = unifyRows(row1, row2)
     const expectedSubs: Substitutions = [{
@@ -313,7 +328,7 @@ describe('unifyRows', () => {
     result.mapLeft(err => assert.deepEqual(err, {
       location: 'Trying to unify row shared: bool, f1: int and row shared: bool, f2: str',
       children: [{
-        message: 'Incompatible tails in f1: int and f2: str',
+        message: 'Incompatible tails for rows with disjoint fields: () and ()',
         location: 'Trying to unify row f1: int and row f2: str',
         children: [],
       }],
@@ -341,7 +356,7 @@ describe('unifyRows', () => {
 
     result.mapLeft(err => assert.deepEqual(err, {
       location: 'Trying to unify row f1: str, a and row f2: int, a',
-      message: 'Incompatible tails in f1: str, a and f2: int, a',
+      message: 'Incompatible tails for rows with disjoint fields: (a) and (a)',
       children: [],
     })).map(subs => assert.fail('Expected error, got substitutions: ' + substitutionsToString(subs)))
   })

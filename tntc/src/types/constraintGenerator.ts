@@ -23,6 +23,7 @@ import { Constraint, Signature, TypeScheme } from './base'
 import { Substitutions, applySubstitution } from './substitutions'
 import { ScopeTree, treeFromModule } from '../scoping'
 import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../lookupTable'
+import { specialConstraints } from './specialConstraints'
 
 type solvingFunctionType = (constraint: Constraint) => Either<Map<bigint, ErrorTree>, Substitutions>
 
@@ -99,19 +100,36 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     if (this.errors.size !== 0) {
       return
     }
-    const result = this.fetchSignature(e.opcode, e.id, e.args.length)
-      .chain(t1 => {
-        const argsResult: Either<Error, TypeScheme[]> = mergeInMany(e.args.map(e => this.fetchResult(e.id)))
 
-        return argsResult
-          .map((argsTypes: TypeScheme[]): TypeScheme => {
-            const a: TntType = { kind: 'var', name: this.freshVar() }
-            const t2: TntType = { kind: 'oper', args: argsTypes.map(s => s.type), res: a }
-            const c: Constraint = { kind: 'eq', types: [t1, t2], sourceId: e.id }
-            this.constraints.push(c)
-            return toScheme(a)
-          })
+    const argsResult: Either<Error, [TntEx, TntType][]> = mergeInMany(e.args.map(e => {
+      return this.fetchResult(e.id).map(r => [e, r.type])
+    }))
+
+    const result = argsResult.chain((results): Either<Error, TypeScheme> => {
+      const signature = this.fetchSignature(e.opcode, e.id, e.args.length)
+      const a: TntType = { kind: 'var', name: this.freshVar() }
+      const special = specialConstraints(e.opcode, e.id, results, a)
+      
+      const constraints = special.chain(cs => {
+        // Check if there is a special case defined for the operator
+        if (cs.length > 0) {
+          // If yes, use the special constraints
+          return right(cs)
+        } else {
+          // Otherwise, define a constraint over the signature
+          return signature.map(t1 => {
+              const t2: TntType = { kind: 'oper', args: results.map(r => r[1]), res: a }
+              const c: Constraint = { kind: 'eq', types: [t1, t2], sourceId: e.id }
+              return [c]
+            })
+        }
       })
+
+      return constraints.map(cs => {
+        this.constraints.push(...cs)
+        return toScheme(a)
+      })
+    })
 
     this.addToResults(e.id, result)
   }
@@ -228,7 +246,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   private newInstance (type: TypeScheme): TntType {
     const names = type.variables
     const subs: Substitutions = Array.from(names).map(name => {
-      return { kind: 'type', name: name, value: { kind: 'var', name: this.freshVar() } }
+      return { kind: 'type', name, value: { kind: 'var', name: this.freshVar() } }
     })
 
     return applySubstitution(subs, type.type)
@@ -246,5 +264,5 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 }
 
 function toScheme (type: TntType): TypeScheme {
-  return { variables: new Set([]), type: type }
+  return { variables: new Set([]), type }
 }

@@ -1,0 +1,25 @@
+module Records {
+    var rec1: { f1: int, f2: str, r1 }
+    var rec2: { f2: str, f3: bool, r2 }
+
+    val rec1FieldNames = rec1.fieldNames()
+
+    // Should give a type error:
+    // val fieldNamesTest = 1.fieldNames()
+
+    // val setOfRecords = Set(rec1, rec2)
+
+    action Init = all {
+        rec1 <- { f1: 1, f2: "hello" },
+        rec2 <- { f2: "world", f3: true }
+    }
+
+    action Next = all {
+        rec1 <- rec1.with("f1", 2),
+        rec2 <- rec2.with("f3", true),
+    }
+
+    def d(p) = rec1.with("f1", p.f1)
+    val t = d({ f1: 2 }).fieldNames()
+
+}

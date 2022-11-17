@@ -18,6 +18,7 @@ import { rowToString, typeToString } from '../IRprinting'
 import { Row, rowNames, TntType, typeNames } from '../tntTypes'
 import { Constraint } from './base'
 import { applySubstitution, applySubstitutionToConstraint, compose, Substitutions } from './substitutions'
+import { unzip } from 'lodash'
 
 /*
  * Try to solve a constraint by unifying all pairs of types in equality
@@ -146,7 +147,10 @@ export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
         return s1.chain(sa => s2.map(sb => compose(sa, sb)))
           .mapLeft(msg => buildErrorLeaf(location, msg))
       } else {
-        return left(buildErrorLeaf(location, `Incompatible tails in ${rowToString(ra)} and ${rowToString(rb)}`))
+        return left(buildErrorLeaf(
+          location,
+           `Incompatible tails for rows with disjoint fields: (${rowToString(ra.other)}) and (${rowToString(rb.other)})`
+        ))
       }
     } else {
       // There are shared fields.
@@ -157,11 +161,17 @@ export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
       // This call will fit in the above case of row unification
       const tailSubs = unifyRows({ ...ra, fields: uniqueFields1 }, { ...rb, fields: uniqueFields2 })
 
+      // Sort shared fields by field name, and get the their types
+      const fieldTypes: [TntType, TntType][] = sharedFieldNames.map(n => {
+        const f1 = ra.fields.find(f => f.fieldName === n)!
+        const f2 = rb.fields.find(f => f.fieldName === n)!
+        return [f1.fieldType, f2.fieldType]
+      })
+
       // Now, for each shared field, we need to unify the types
-      const fieldSubs = chainUnifications(
-        ra.fields.filter(f => sharedFieldNames.includes(f.fieldName)).map(f => f.fieldType),
-        rb.fields.filter(f => sharedFieldNames.includes(f.fieldName)).map(f => f.fieldType)
-      )
+      const fieldSubs = chainUnifications(...unzip(fieldTypes) as [TntType[], TntType[]])
+
+      // Return the composition of the two substitutions
       return tailSubs.chain(subs => fieldSubs.map(s => compose(subs, s)))
         .mapLeft(error => buildErrorTree(location, error))
     }
@@ -174,7 +184,7 @@ function bindType (name: string, type: TntType): Either<string, Substitutions> {
   if (typeNames(type).has(name)) {
     return left(`Can't bind ${name} to ${typeToString(type)}: cyclical binding`)
   } else {
-    return right([{ kind: 'type', name: name, value: type }])
+    return right([{ kind: 'type', name, value: type }])
   }
 }
 
@@ -182,7 +192,7 @@ function bindRow (name: string, row: Row): Either<string, Substitutions> {
   if (rowNames(row).has(name)) {
     return left(`Can't bind ${name} to ${rowToString(row)}: cyclical binding`)
   } else {
-    return right([{ kind: 'row', name: name, value: row }])
+    return right([{ kind: 'row', name, value: row }])
   }
 }
 
@@ -199,7 +209,7 @@ function checkSameLength (location: string, types1: TntType[], types2: TntType[]
     const expected = types1.length
     const got = types2.length
     return left({
-      location: location,
+      location,
       message: `Expected ${expected} arguments, got ${got}`,
       children: [],
     })

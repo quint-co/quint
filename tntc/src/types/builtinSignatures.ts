@@ -1,3 +1,17 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Type signatures for built-in operators
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { parseTypeOrThrow } from './parser'
 import { typeNames } from '../tntTypes'
 import { Signature, TypeScheme } from './base'
@@ -5,6 +19,10 @@ import { Signature, TypeScheme } from './base'
 export function getSignatures (): Map<string, Signature> {
   return new Map<string, Signature>(fixedAritySignatures.concat(multipleAritySignatures))
 }
+
+// Signatures for record related operators cannot be precisely defined
+// with this syntax. Their types are handled directly with constraints 
+// in the specialConstraints.ts file
 
 const literals = [
   { name: 'Nat', type: 'Set[int]' },
@@ -53,13 +71,7 @@ const mapOperators = [
   { name: 'put', type: '(a -> b, a, b) => a -> b' },
 ]
 
-// FIXME: Make record and tuple signatures more strict once row types are implemented
-const recordOperators = [
-  { name: 'field', type: '(a, str) => b' },
-  { name: 'fieldNames', type: '(a) => Set[str]' },
-  { name: 'with', type: '(a, str, b) => a' },
-]
-
+// FIXME: Make tuple signatures more strict with row types
 const tupleOperators = [
   { name: 'item', type: '(a, int) => b' },
 ]
@@ -131,12 +143,6 @@ const multipleAritySignatures: [string, Signature][] = [
     const args = Array.from(Array(arity).keys()).map(i => `t${i}`).join(', ')
     return parseAndQuantify(`(${args}) => (${args})`)
   }],
-  ['Rec', (arity: number) => {
-    const indexes = Array.from(Array(arity / 2).keys())
-    const args = indexes.map(i => `n${i}, t${i}`).join(', ')
-    const result = indexes.map(i => `n${i}: t${i}`).join(', ')
-    return parseAndQuantify(`(${args}) => { ${result} }`)
-  }],
   ['match', (arity: number) => {
     const args = Array.from(Array((arity - 1) / 2).keys()).map(r => 'str, (a) => b')
     return parseAndQuantify(`(a, ${args.join(', ')}) => b`)
@@ -154,7 +160,6 @@ const fixedAritySignatures: [string, Signature][] = [
   booleanOperators,
   setOperators,
   mapOperators,
-  recordOperators,
   tupleOperators,
   listOperators,
   integerOperators,
