@@ -161,6 +161,6 @@ function parseAndQuantify (typeString: string): TypeScheme {
   const t = parseTypeOrThrow(typeString)
   return {
     type: t,
-    variables: typeNames(t),
+    ...typeNames(t),
   }
 }

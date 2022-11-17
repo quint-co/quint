@@ -80,6 +80,16 @@ export interface IRVisitor {
   exitRecordType?: (type: t.TntRecordType) => void
   enterUnionType?: (type: t.TntUnionType) => void
   exitUnionType?: (type: t.TntUnionType) => void
+
+  /** Row types */
+  enterRow?: (_row: t.Row) => void
+  exitRow?: (_row: t.Row) => void
+  enterConcreteRow?: (_row: t.ConcreteRow) => void
+  exitConcreteRow?: (_row: t.ConcreteRow) => void
+  enterVarRow?: (_row: t.VarRow) => void
+  exitVarRow?: (_row: t.VarRow) => void
+  enterEmptyRow?: (_row: t.EmptyRow) => void
+  exitEmptyRow?: (_row: t.EmptyRow) => void
 }
 
 /**
@@ -91,7 +101,7 @@ export interface IRVisitor {
  *
  * @returns nothing, any collected information has to be a state inside the IRVisitor instance.
  */
-export function walkModule (visitor: IRVisitor, tntModule: ir.TntModule): void {
+export function walkModule(visitor: IRVisitor, tntModule: ir.TntModule): void {
   const moduleDef: ir.TntModuleDef = {
     kind: 'module', id: 0n, module: tntModule,
   }
@@ -113,7 +123,7 @@ export function walkModule (visitor: IRVisitor, tntModule: ir.TntModule): void {
  *
  * @returns nothing, any collected information has to be a state inside the IRVisitor instance.
  */
-export function walkType (visitor: IRVisitor, type: t.TntType): void {
+export function walkType(visitor: IRVisitor, type: t.TntType): void {
   if (visitor.enterType) {
     visitor.enterType(type)
   }
@@ -237,7 +247,7 @@ export function walkType (visitor: IRVisitor, type: t.TntType): void {
   }
 }
 
-function walkDefinition (visitor: IRVisitor, def: ir.TntDef): void {
+function walkDefinition(visitor: IRVisitor, def: ir.TntDef): void {
   if (visitor.enterDef) {
     visitor.enterDef(def)
   }
@@ -325,7 +335,7 @@ function walkDefinition (visitor: IRVisitor, def: ir.TntDef): void {
   }
 }
 
-function walkExpression (visitor: IRVisitor, expr: ir.TntEx): void {
+function walkExpression(visitor: IRVisitor, expr: ir.TntEx): void {
   if (visitor.enterExpr) {
     visitor.enterExpr(expr)
   }
@@ -390,9 +400,40 @@ function walkExpression (visitor: IRVisitor, expr: ir.TntEx): void {
   }
 }
 
-function walkRow (visitor: IRVisitor, r: t.Row) {
+function walkRow(visitor: IRVisitor, r: t.Row) {
+  if (visitor.enterRow) {
+    visitor.enterRow(r)
+  }
   switch (r.kind) {
     case 'row':
+      if (visitor.enterConcreteRow) {
+        visitor.enterConcreteRow(r)
+      }
+
       r.fields.forEach(field => walkType(visitor, field.fieldType))
+      walkRow(visitor, r.other)
+
+      if (visitor.exitConcreteRow) {
+        visitor.exitConcreteRow(r)
+      }
+      break
+    case 'var':
+      if (visitor.enterVarRow) {
+        visitor.enterVarRow(r)
+      }
+      if (visitor.exitVarRow) {
+        visitor.exitVarRow(r)
+      }
+      break
+    case 'empty':
+      if (visitor.enterEmptyRow) {
+        visitor.enterEmptyRow(r)
+      }
+      if (visitor.exitEmptyRow) {
+        visitor.exitEmptyRow(r)
+      }
+  }
+  if (visitor.exitRow) {
+    visitor.exitRow(r)
   }
 }

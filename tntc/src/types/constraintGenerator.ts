@@ -14,13 +14,13 @@
 
 import { IRVisitor } from '../IRVisitor'
 import { TntApp, TntBool, TntConst, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr, TntVar } from '../tntIr'
-import { TntType, typeNames } from '../tntTypes'
+import { rowNames, TntType, typeNames } from '../tntTypes'
 import { expressionToString } from '../IRprinting'
 import { Either, right, left, mergeInMany } from '@sweet-monads/either'
 import { buildErrorTree, ErrorTree, Error, buildErrorLeaf } from '../errorTree'
 import { getSignatures } from './builtinSignatures'
 import { Constraint, Signature, TypeScheme } from './base'
-import { Substitutions, applySubstitution } from './substitutions'
+import { Substitutions, applySubstitution, compose } from './substitutions'
 import { ScopeTree, treeFromModule } from '../scoping'
 import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../lookupTable'
 import { specialConstraints } from './specialConstraints'
@@ -146,7 +146,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         const paramTypes = mergeInMany(e.params.map(p => this.fetchSignature(p, e.expr.id, 2)))
         return paramTypes.map((ts): TypeScheme => {
           const newType: TntType = { kind: 'oper', args: ts, res: resultType.type }
-          return { variables: typeNames(newType), type: newType }
+          return { ...typeNames(newType), type: newType }
         }).mapLeft(e => {
           throw new Error(`This should be impossible: Lambda variables not found: ${e.join(', ')}`)
         })
@@ -176,7 +176,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
     this.fetchResult(e.expr.id)
       .map(t => {
-        this.addToResults(e.id, right({ variables: typeNames(t.type), type: t.type }))
+        this.addToResults(e.id, right({ ...typeNames(t.type), type: t.type }))
 
         const constraint: Constraint = { kind: 'conjunction', constraints: this.constraints, sourceId: 0n }
         this.solvingFunction(constraint)
@@ -186,7 +186,8 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
             this.types = new Map<bigint, TypeScheme>(
               [...this.types.entries()].map(([id, te]) => {
                 const newType = applySubstitution(subs, te.type)
-                return [id, { variables: typeNames(newType), type: newType }]
+                const scheme: TypeScheme = { ...typeNames(newType), type: newType }
+                return [id, scheme]
               })
             )
           })
@@ -243,13 +244,20 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     }
   }
 
-  private newInstance (type: TypeScheme): TntType {
-    const names = type.variables
-    const subs: Substitutions = Array.from(names).map(name => {
-      return { kind: 'type', name, value: { kind: 'var', name: this.freshVar() } }
+  private newInstance (t: TypeScheme): TntType {
+    const typeNames = Array.from(t.typeVariables)
+    const rowNames = Array.from(t.rowVariables)
+
+    const typeSubs: Substitutions = typeNames.map((name, i) => {
+      return { kind: 'type', name: name, value: { kind: 'var', name: this.freshVar() } }
     })
 
-    return applySubstitution(subs, type.type)
+    const rowSubs: Substitutions = rowNames.map((name, i) => {
+      return { kind: 'row', name: name, value: { kind: 'var', name: this.freshVar() } }
+    })
+
+    const subs = compose(typeSubs, rowSubs)
+    return applySubstitution(subs, t.type)
   }
 
   private updateCurrentModule (): void {
@@ -264,5 +272,5 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 }
 
 function toScheme (type: TntType): TypeScheme {
-  return { variables: new Set([]), type }
+  return { typeVariables: new Set([]), rowVariables: new Set([]), type }
 }

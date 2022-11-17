@@ -179,7 +179,7 @@ export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
 }
 
 function bindType (name: string, type: TntType): Either<string, Substitutions> {
-  if (typeNames(type).has(name)) {
+  if (typeNames(type).typeVariables.has(name)) {
     return left(`Can't bind ${name} to ${typeToString(type)}: cyclical binding`)
   } else {
     return right([{ kind: 'type', name, value: type }])

@@ -72,8 +72,8 @@ describe('ConstraintGeneratorVisitor', () => {
     walkModule(visitor, tntModule)
 
     assert.includeDeepMembers([...visitor.types.entries()], [
-      [6n, { variables: new Set([]), type: { kind: 'str', id: 1n } }],
-      [8n, { variables: new Set([]), type: { kind: 'int', id: 3n } }],
+      [6n, { typeVariables: new Set([]), rowVariables: new Set([]), type: { kind: 'str', id: 1n } }],
+      [8n, { typeVariables: new Set([]), rowVariables: new Set([]), type: { kind: 'int', id: 3n } }],
     ])
   })
 

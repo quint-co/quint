@@ -101,10 +101,11 @@ export type TntType =
   | TntRecordType
   | TntUnionType
 
-export type Row =
-  | { kind: 'row', fields: { fieldName: string, fieldType: TntType }[], other: Row }
-  | { kind: 'var', name: string }
-  | { kind: 'empty' }
+export type ConcreteRow = { kind: 'row', fields: { fieldName: string, fieldType: TntType }[], other: Row }
+export type VarRow = { kind: 'var', name: string }
+export type EmptyRow = { kind: 'empty' }
+
+export type Row = ConcreteRow | VarRow | EmptyRow
 
 /*
  * Collects all type variable names from a given type
@@ -113,10 +114,10 @@ export type Row =
  *
  * @returns a list with collected names
  */
-export function typeNames (t: TntType): Set<string> {
+export function typeNames(t: TntType): { typeVariables: Set<string>, rowVariables: Set<string> } {
   const collector = new TypeNamesCollector()
   walkType(collector, t)
-  return collector.names
+  return { typeVariables: collector.typeNames, rowVariables: collector.rowNames }
 }
 
 /*
@@ -126,7 +127,7 @@ export function typeNames (t: TntType): Set<string> {
  *
  * @returns a list with collected names
  */
-export function rowNames (r: Row): Set<string> {
+export function rowNames(r: Row): Set<string> {
   switch (r.kind) {
     case 'row':
       return rowNames(r.other)
@@ -138,9 +139,14 @@ export function rowNames (r: Row): Set<string> {
 }
 
 class TypeNamesCollector implements IRVisitor {
-  names: Set<string> = new Set()
+  typeNames: Set<string> = new Set()
+  rowNames: Set<string> = new Set()
 
-  exitVarType (t: TntVarType) {
-    this.names.add(t.name)
+  exitVarType(t: TntVarType) {
+    this.typeNames.add(t.name)
+  }
+
+  exitVarRow(t: VarRow) {
+    this.rowNames.add(t.name)
   }
 }
