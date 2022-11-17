@@ -16,6 +16,17 @@
     "__dirname": true
   },
   "rules": {
+    "max-len": [
+      "warn",
+      {
+        "code": 120,
+        "ignoreUrls": true,
+        "ignoreStrings": true,
+        "ignoreTemplateLiterals": true,
+        "ignoreRegExpLiterals": true
+      }
+    ],
+    "space-before-function-paren": ["error", "never"],
     "comma-dangle": [
       "error",
       {

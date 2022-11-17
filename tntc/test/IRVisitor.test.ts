@@ -24,11 +24,11 @@ describe('walkModule', () => {
       entered: TntEx[] = []
       exited: TntEx[] = []
 
-      enterExpr (expr: TntEx): void {
+      enterExpr(expr: TntEx): void {
         this.entered.push(expr)
       }
 
-      exitExpr (expr: TntEx): void {
+      exitExpr(expr: TntEx): void {
         this.exited.push(expr)
       }
     }
@@ -76,11 +76,11 @@ describe('walkModule', () => {
       entered: TntDef[] = []
       exited: TntDef[] = []
 
-      enterDef (def: TntDef): void {
+      enterDef(def: TntDef): void {
         this.entered.push(def)
       }
 
-      exitDef (def: TntDef): void {
+      exitDef(def: TntDef): void {
         this.exited.push(def)
       }
     }
@@ -124,11 +124,11 @@ describe('walkModule', () => {
       entered: TntType[] = []
       exited: TntType[] = []
 
-      enterType (type: TntType): void {
+      enterType(type: TntType): void {
         this.entered.push(type)
       }
 
-      exitType (type: TntType): void {
+      exitType(type: TntType): void {
         this.exited.push(type)
       }
     }
@@ -154,11 +154,11 @@ describe('walkModule', () => {
         entered: TntDef[] = []
         exited: TntDef[] = []
 
-        enterOpDef (def: TntDef): void {
+        enterOpDef(def: TntDef): void {
           this.entered.push(def)
         }
 
-        exitOpDef (def: TntDef): void {
+        exitOpDef(def: TntDef): void {
           this.exited.push(def)
         }
       }
@@ -186,11 +186,11 @@ describe('walkModule', () => {
         entered: TntDef[] = []
         exited: TntDef[] = []
 
-        enterConst (def: TntDef): void {
+        enterConst(def: TntDef): void {
           this.entered.push(def)
         }
 
-        exitConst (def: TntDef): void {
+        exitConst(def: TntDef): void {
           this.exited.push(def)
         }
       }
@@ -212,11 +212,11 @@ describe('walkModule', () => {
         entered: TntDef[] = []
         exited: TntDef[] = []
 
-        enterVar (def: TntDef): void {
+        enterVar(def: TntDef): void {
           this.entered.push(def)
         }
 
-        exitVar (def: TntDef): void {
+        exitVar(def: TntDef): void {
           this.exited.push(def)
         }
       }
@@ -239,11 +239,11 @@ describe('walkModule', () => {
         entered: TntDef[] = []
         exited: TntDef[] = []
 
-        enterAssume (def: TntDef): void {
+        enterAssume(def: TntDef): void {
           this.entered.push(def)
         }
 
-        exitAssume (def: TntDef): void {
+        exitAssume(def: TntDef): void {
           this.exited.push(def)
         }
       }
@@ -265,11 +265,11 @@ describe('walkModule', () => {
         entered: TntDef[] = []
         exited: TntDef[] = []
 
-        enterTypeDef (def: TntDef): void {
+        enterTypeDef(def: TntDef): void {
           this.entered.push(def)
         }
 
-        exitTypeDef (def: TntDef): void {
+        exitTypeDef(def: TntDef): void {
           this.exited.push(def)
         }
       }
@@ -291,11 +291,11 @@ describe('walkModule', () => {
         entered: TntDef[] = []
         exited: TntDef[] = []
 
-        enterImport (def: TntDef): void {
+        enterImport(def: TntDef): void {
           this.entered.push(def)
         }
 
-        exitImport (def: TntDef): void {
+        exitImport(def: TntDef): void {
           this.exited.push(def)
         }
       }
@@ -317,11 +317,11 @@ describe('walkModule', () => {
         entered: TntDef[] = []
         exited: TntDef[] = []
 
-        enterInstance (def: TntDef): void {
+        enterInstance(def: TntDef): void {
           this.entered.push(def)
         }
 
-        exitInstance (def: TntDef): void {
+        exitInstance(def: TntDef): void {
           this.exited.push(def)
         }
       }
@@ -343,11 +343,11 @@ describe('walkModule', () => {
         entered: TntDef[] = []
         exited: TntDef[] = []
 
-        enterModuleDef (def: TntDef): void {
+        enterModuleDef(def: TntDef): void {
           this.entered.push(def)
         }
 
-        exitModuleDef (def: TntDef): void {
+        exitModuleDef(def: TntDef): void {
           this.exited.push(def)
         }
       }
@@ -399,11 +399,11 @@ describe('walkModule', () => {
         entered: TntEx[] = []
         exited: TntEx[] = []
 
-        enterName (expr: TntEx): void {
+        enterName(expr: TntEx): void {
           this.entered.push(expr)
         }
 
-        exitName (expr: TntEx): void {
+        exitName(expr: TntEx): void {
           this.exited.push(expr)
         }
       }
@@ -428,11 +428,11 @@ describe('walkModule', () => {
         entered: TntEx[] = []
         exited: TntEx[] = []
 
-        enterLiteral (expr: TntEx): void {
+        enterLiteral(expr: TntEx): void {
           this.entered.push(expr)
         }
 
-        exitLiteral (expr: TntEx): void {
+        exitLiteral(expr: TntEx): void {
           this.exited.push(expr)
         }
       }
@@ -457,11 +457,11 @@ describe('walkModule', () => {
         entered: TntEx[] = []
         exited: TntEx[] = []
 
-        enterApp (expr: TntEx): void {
+        enterApp(expr: TntEx): void {
           this.entered.push(expr)
         }
 
-        exitApp (expr: TntEx): void {
+        exitApp(expr: TntEx): void {
           this.exited.push(expr)
         }
       }
@@ -489,11 +489,11 @@ describe('walkModule', () => {
         entered: TntEx[] = []
         exited: TntEx[] = []
 
-        enterLambda (expr: TntEx): void {
+        enterLambda(expr: TntEx): void {
           this.entered.push(expr)
         }
 
-        exitLambda (expr: TntEx): void {
+        exitLambda(expr: TntEx): void {
           this.exited.push(expr)
         }
       }
@@ -515,11 +515,11 @@ describe('walkModule', () => {
         entered: TntEx[] = []
         exited: TntEx[] = []
 
-        enterLet (expr: TntEx): void {
+        enterLet(expr: TntEx): void {
           this.entered.push(expr)
         }
 
-        exitLet (expr: TntEx): void {
+        exitLet(expr: TntEx): void {
           this.exited.push(expr)
         }
       }
@@ -558,11 +558,11 @@ describe('walkModule', () => {
         entered: TntType[] = []
         exited: TntType[] = []
 
-        enterLiteralType (type: TntType): void {
+        enterLiteralType(type: TntType): void {
           this.entered.push(type)
         }
 
-        exitLiteralType (type: TntType): void {
+        exitLiteralType(type: TntType): void {
           this.exited.push(type)
         }
       }
@@ -599,11 +599,11 @@ describe('walkModule', () => {
         entered: TntType[] = []
         exited: TntType[] = []
 
-        enterConstType (type: TntType): void {
+        enterConstType(type: TntType): void {
           this.entered.push(type)
         }
 
-        exitConstType (type: TntType): void {
+        exitConstType(type: TntType): void {
           this.exited.push(type)
         }
       }
@@ -626,11 +626,11 @@ describe('walkModule', () => {
         entered: TntType[] = []
         exited: TntType[] = []
 
-        enterVarType (type: TntType): void {
+        enterVarType(type: TntType): void {
           this.entered.push(type)
         }
 
-        exitVarType (type: TntType): void {
+        exitVarType(type: TntType): void {
           this.exited.push(type)
         }
       }
@@ -654,11 +654,11 @@ describe('walkModule', () => {
         entered: TntType[] = []
         exited: TntType[] = []
 
-        enterSetType (type: TntType): void {
+        enterSetType(type: TntType): void {
           this.entered.push(type)
         }
 
-        exitSetType (type: TntType): void {
+        exitSetType(type: TntType): void {
           this.exited.push(type)
         }
       }
@@ -682,11 +682,11 @@ describe('walkModule', () => {
         entered: TntType[] = []
         exited: TntType[] = []
 
-        enterSeqType (type: TntType): void {
+        enterSeqType(type: TntType): void {
           this.entered.push(type)
         }
 
-        exitSeqType (type: TntType): void {
+        exitSeqType(type: TntType): void {
           this.exited.push(type)
         }
       }
@@ -710,11 +710,11 @@ describe('walkModule', () => {
         entered: TntType[] = []
         exited: TntType[] = []
 
-        enterFunType (type: TntType): void {
+        enterFunType(type: TntType): void {
           this.entered.push(type)
         }
 
-        exitFunType (type: TntType): void {
+        exitFunType(type: TntType): void {
           this.exited.push(type)
         }
       }
@@ -742,11 +742,11 @@ describe('walkModule', () => {
         entered: TntType[] = []
         exited: TntType[] = []
 
-        enterOperType (type: TntType): void {
+        enterOperType(type: TntType): void {
           this.entered.push(type)
         }
 
-        exitOperType (type: TntType): void {
+        exitOperType(type: TntType): void {
           this.exited.push(type)
         }
       }
@@ -768,11 +768,11 @@ describe('walkModule', () => {
         entered: TntType[] = []
         exited: TntType[] = []
 
-        enterTupleType (type: TntType): void {
+        enterTupleType(type: TntType): void {
           this.entered.push(type)
         }
 
-        exitTupleType (type: TntType): void {
+        exitTupleType(type: TntType): void {
           this.exited.push(type)
         }
       }
@@ -794,11 +794,11 @@ describe('walkModule', () => {
         entered: TntType[] = []
         exited: TntType[] = []
 
-        enterRecordType (type: TntType): void {
+        enterRecordType(type: TntType): void {
           this.entered.push(type)
         }
 
-        exitRecordType (type: TntType): void {
+        exitRecordType(type: TntType): void {
           this.exited.push(type)
         }
       }
@@ -820,11 +820,11 @@ describe('walkModule', () => {
         entered: TntType[] = []
         exited: TntType[] = []
 
-        enterUnionType (type: TntType): void {
+        enterUnionType(type: TntType): void {
           this.entered.push(type)
         }
 
-        exitUnionType (type: TntType): void {
+        exitUnionType(type: TntType): void {
           this.exited.push(type)
         }
       }

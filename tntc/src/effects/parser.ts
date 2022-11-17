@@ -30,7 +30,7 @@ import { Either, left, right } from '@sweet-monads/either'
  * @returns the parsed effect when the string is a valid effect.
  *          Otherwise, a list of parsing errors.
  */
-export function parseEffect (effectString: string): Either<any[], Effect> {
+export function parseEffect(effectString: string): Either<any[], Effect> {
   const errorMessages: any[] = []
   // error listener to report lexical and syntax errors
   const errorListener: any = {
@@ -80,7 +80,7 @@ export function parseEffect (effectString: string): Either<any[], Effect> {
   }
 }
 
-export function parseEffectOrThrow (effect: string): Effect {
+export function parseEffectOrThrow(effect: string): Effect {
   const result = parseEffect(effect)
 
   if (result.isRight()) {

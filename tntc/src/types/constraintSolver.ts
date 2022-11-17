@@ -29,7 +29,7 @@ import { unzip } from 'lodash'
  * @returns the substitutions from the unifications, if successful. Otherwise, a
  *          map from source ids to errors.
  */
-export function solveConstraint (constraint: Constraint): Either<Map<bigint, ErrorTree>, Substitutions> {
+export function solveConstraint(constraint: Constraint): Either<Map<bigint, ErrorTree>, Substitutions> {
   const errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
   switch (constraint.kind) {
     case 'eq': return unify(constraint.types[0], constraint.types[1]).mapLeft(e => {
@@ -66,7 +66,7 @@ export function solveConstraint (constraint: Constraint): Either<Map<bigint, Err
  * @returns an array of substitutions that unifies both types, when possible.
  *          Otherwise, an error tree with an error message and its trace.
  */
-export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitutions> {
+export function unify(t1: TntType, t2: TntType): Either<ErrorTree, Substitutions> {
   // TODO: resolve type aliases
   const location = `Trying to unify ${typeToString(t1)} and ${typeToString(t2)}`
 
@@ -116,7 +116,7 @@ export function unify (t1: TntType, t2: TntType): Either<ErrorTree, Substitution
  * @returns an array of substitutions that unifies both rows, when possible.
  *          Otherwise, an error tree with an error message and its trace.
  */
-export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
+export function unifyRows(r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
   // The unification algorithm assumes that rows are simplified to a normal form.
   // That means that the `other` field is either a row variable or an empty row
   // and `fields` is never an empty list
@@ -180,7 +180,7 @@ export function unifyRows (r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
   }
 }
 
-function bindType (name: string, type: TntType): Either<string, Substitutions> {
+function bindType(name: string, type: TntType): Either<string, Substitutions> {
   if (typeNames(type).has(name)) {
     return left(`Can't bind ${name} to ${typeToString(type)}: cyclical binding`)
   } else {
@@ -188,7 +188,7 @@ function bindType (name: string, type: TntType): Either<string, Substitutions> {
   }
 }
 
-function bindRow (name: string, row: Row): Either<string, Substitutions> {
+function bindRow(name: string, row: Row): Either<string, Substitutions> {
   if (rowNames(row).has(name)) {
     return left(`Can't bind ${name} to ${rowToString(row)}: cyclical binding`)
   } else {
@@ -196,7 +196,7 @@ function bindRow (name: string, row: Row): Either<string, Substitutions> {
   }
 }
 
-function applySubstitutionsAndUnify (subs: Substitutions, t1: TntType, t2: TntType): Either<Error, Substitutions> {
+function applySubstitutionsAndUnify(subs: Substitutions, t1: TntType, t2: TntType): Either<Error, Substitutions> {
   const newSubstitutions = unify(
     applySubstitution(subs, t1),
     applySubstitution(subs, t2)
@@ -204,7 +204,9 @@ function applySubstitutionsAndUnify (subs: Substitutions, t1: TntType, t2: TntTy
   return newSubstitutions.map(newSubs => compose(newSubs, subs))
 }
 
-function checkSameLength (location: string, types1: TntType[], types2: TntType[]): Either<Error, [TntType[], TntType[]]> {
+function checkSameLength(
+  location: string, types1: TntType[], types2: TntType[]
+): Either<Error, [TntType[], TntType[]]> {
   if (types1.length !== types2.length) {
     const expected = types1.length
     const got = types2.length
@@ -218,13 +220,13 @@ function checkSameLength (location: string, types1: TntType[], types2: TntType[]
   return right([types1, types2])
 }
 
-function chainUnifications (types1: TntType[], types2: TntType[]): Either<Error, Substitutions> {
+function chainUnifications(types1: TntType[], types2: TntType[]): Either<Error, Substitutions> {
   return types1.reduce((result: Either<Error, Substitutions>, t, i) => {
     return result.chain(subs => applySubstitutionsAndUnify(subs, t, types2[i]))
   }, right([]))
 }
 
-function simplifyRow (r: Row): Row {
+function simplifyRow(r: Row): Row {
   if (r.kind !== 'row') {
     return r
   }

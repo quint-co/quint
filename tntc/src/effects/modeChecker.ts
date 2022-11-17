@@ -33,7 +33,9 @@ import { effectToString } from './printing'
  *
  * @returns The mode errors, if any is found. Otherwise, a map with potential suggestions.
  */
-export function checkModes (tntModule: TntModule, effects: Map<bigint, Effect>): Either<Map<bigint, ErrorTree>, Map<bigint, OpQualifier>> {
+export function checkModes(
+  tntModule: TntModule, effects: Map<bigint, Effect>
+): Either<Map<bigint, ErrorTree>, Map<bigint, OpQualifier>> {
   const visitor = new ModeCheckerVisitor(effects)
   walkModule(visitor, tntModule)
   if (visitor.errors.size > 0) {
@@ -49,11 +51,11 @@ class ModeCheckerVisitor implements IRVisitor {
   effects: Map<bigint, Effect>
   modeFinderVisitor: ModeFinderVisitor = new ModeFinderVisitor()
 
-  constructor (effects: Map<bigint, Effect>) {
+  constructor(effects: Map<bigint, Effect>) {
     this.effects = effects
   }
 
-  exitOpDef (def: TntOpDef) {
+  exitOpDef(def: TntOpDef) {
     const effect = this.effects.get(def.id)
     if (!effect) {
       return
@@ -84,7 +86,7 @@ class ModeCheckerVisitor implements IRVisitor {
 class ModeFinderVisitor implements EffectVisitor {
   public currentMode: OpQualifier = 'pureval'
 
-  exitConcrete (effect: ConcreteEffect) {
+  exitConcrete(effect: ConcreteEffect) {
     let mode: OpQualifier
     if (isAction(effect)) {
       mode = 'action'
@@ -99,7 +101,7 @@ class ModeFinderVisitor implements EffectVisitor {
     this.currentMode = commonMode(this.currentMode, mode)
   }
 
-  exitArrow (effect: ArrowEffect) {
+  exitArrow(effect: ArrowEffect) {
     if (this.currentMode === 'action' || this.currentMode === 'temporal') {
       return
     }
@@ -141,7 +143,7 @@ class ModeFinderVisitor implements EffectVisitor {
 
 const modeOrder = ['pureval', 'puredef', 'val', 'def', 'action', 'temporal']
 
-function commonMode (m1: OpQualifier, m2: OpQualifier): OpQualifier {
+function commonMode(m1: OpQualifier, m2: OpQualifier): OpQualifier {
   const p1 = modeOrder.findIndex(elem => elem === m1)
   const p2 = modeOrder.findIndex(elem => elem === m2)
 

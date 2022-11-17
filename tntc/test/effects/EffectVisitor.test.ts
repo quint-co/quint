@@ -12,11 +12,11 @@ describe('walkEffect', () => {
       entered: Effect[] = []
       exited: Effect[] = []
 
-      enterConcrete (e: Effect): void {
+      enterConcrete(e: Effect): void {
         this.entered.push(e)
       }
 
-      exitConcrete (e: Effect): void {
+      exitConcrete(e: Effect): void {
         this.exited.push(e)
       }
     }
@@ -44,11 +44,11 @@ describe('walkEffect', () => {
       entered: Effect[] = []
       exited: Effect[] = []
 
-      enterArrow (e: Effect): void {
+      enterArrow(e: Effect): void {
         this.entered.push(e)
       }
 
-      exitArrow (e: Effect): void {
+      exitArrow(e: Effect): void {
         this.exited.push(e)
       }
     }
@@ -74,11 +74,11 @@ describe('walkEffect', () => {
       entered: Effect[] = []
       exited: Effect[] = []
 
-      enterQuantified (e: Effect): void {
+      enterQuantified(e: Effect): void {
         this.entered.push(e)
       }
 
-      exitQuantified (e: Effect): void {
+      exitQuantified(e: Effect): void {
         this.exited.push(e)
       }
     }

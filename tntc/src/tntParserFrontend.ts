@@ -58,7 +58,7 @@ export type ParseProbeResult =
  * @returns the result of probing
  */
 export function
-probeParse (text: string, sourceLocation: string): ParseProbeResult {
+probeParse(text: string, sourceLocation: string): ParseProbeResult {
   const errorMessages: ErrorMessage[] = []
   const parser = setupParser(text, sourceLocation, errorMessages)
   const tree = parser.unitOrExpr()
@@ -76,7 +76,7 @@ probeParse (text: string, sourceLocation: string): ParseProbeResult {
  * Note that the IR may be ill-typed and some names may be unresolved.
  * The main goal of this pass is to translate a sequence of characters into IR.
  */
-export function parsePhase1 (text: string, sourceLocation: string): Phase1Result {
+export function parsePhase1(text: string, sourceLocation: string): Phase1Result {
   const errorMessages: ErrorMessage[] = []
   const parser = setupParser(text, sourceLocation, errorMessages)
   // run the parser
@@ -104,7 +104,7 @@ export function parsePhase1 (text: string, sourceLocation: string): Phase1Result
  * Phase 2 of the TNT parser. Read the IR and check that all names are defined.
  * Note that the IR may be ill-typed.
  */
-export function parsePhase2 (tntModule: TntModule, sourceMap: Map<bigint, Loc>):
+export function parsePhase2(tntModule: TntModule, sourceMap: Map<bigint, Loc>):
   Phase2Result {
   const scopeTree = treeFromModule(tntModule)
   const moduleDefinitions = collectDefinitions(tntModule)
@@ -186,7 +186,7 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<bigint, Loc>):
     : { kind: 'ok', table: definitions }
 }
 
-export function compactSourceMap (sourceMap: Map<bigint, Loc>): { sourceIndex: any, map: any } {
+export function compactSourceMap(sourceMap: Map<bigint, Loc>): { sourceIndex: any, map: any } {
   // Collect all sources in order to index them
   const sources: string[] = Array.from(sourceMap.values()).map(loc => loc.source)
 
@@ -208,7 +208,7 @@ export function compactSourceMap (sourceMap: Map<bigint, Loc>): { sourceIndex: a
 }
 
 // setup a TNT parser, so it can be used to parse from various non-terminals
-function setupParser (text: string,
+function setupParser(text: string,
   sourceLocation: string, errorMessages: ErrorMessage[]): p.TntParser {
   // error listener to report lexical and syntax errors
   const errorListener: any = {
@@ -254,7 +254,7 @@ class ProbeListener implements TntListener {
     }],
   }
 
-  exitUnitOrExpr (ctx: p.UnitOrExprContext) {
+  exitUnitOrExpr(ctx: p.UnitOrExprContext) {
     if (ctx.unit()) {
       this.result = { kind: 'toplevel' }
     } else {

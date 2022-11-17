@@ -18,7 +18,7 @@ import { effectToString } from './printing'
 import { simplify } from './simplification'
 import { range, times, zip } from 'lodash'
 
-export function getSignatures (): Map<string, Signature> {
+export function getSignatures(): Map<string, Signature> {
   return new Map<string, Signature>(fixedAritySignatures.concat(multipleAritySignatures))
 }
 

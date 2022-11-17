@@ -79,8 +79,7 @@ export interface Register extends Computable {
 /**
  * Create an object that implements Register.
  */
-export function mkRegister
-(kind: ComputableKind,
+export function mkRegister(kind: ComputableKind,
   registerName: string,
   initValue: Maybe<any>,
   onUndefined: () => void
@@ -90,7 +89,7 @@ export function mkRegister
     kind,
     registerValue: initValue,
     // computing a register just evaluates to the contents that it stores
-    eval: function () {
+    eval: function() {
       if (this.registerValue.isNone()) {
         onUndefined()
       }
@@ -111,7 +110,7 @@ export interface Callable extends Computable {
 /**
  * Create an object that implements Callable.
  */
-export function mkCallable (registers: Register[], body: Computable): Callable {
+export function mkCallable(registers: Register[], body: Computable): Callable {
   return {
     registers,
     eval: () => {

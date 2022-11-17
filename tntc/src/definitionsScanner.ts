@@ -55,7 +55,7 @@ export type DefinitionsConflictResult =
  *
  * @returns a successful result in case there are no conflicts, or an aggregation of conflicts otherwise
  */
-export function scanConflicts (table: LookupTable, tree: ScopeTree): DefinitionsConflictResult {
+export function scanConflicts(table: LookupTable, tree: ScopeTree): DefinitionsConflictResult {
   const conflicts: Conflict[] = []
   table.valueDefinitions.forEach((defs, identifier) => {
     // Value definition conflicts depend on scope
@@ -88,7 +88,7 @@ export function scanConflicts (table: LookupTable, tree: ScopeTree): Definitions
   }
 }
 
-function canConflict (tree: ScopeTree, d1: ValueDefinition, d2: ValueDefinition): Boolean {
+function canConflict(tree: ScopeTree, d1: ValueDefinition, d2: ValueDefinition): Boolean {
   return !d1.scope ||
     !d2.scope ||
     scopesForId(tree, d1.scope).includes(d2.scope) ||

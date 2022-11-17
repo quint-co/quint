@@ -9,7 +9,7 @@ import { Substitutions, applySubstitution } from './substitutions'
  *
  * @returns a string with the formatted constraint
  */
-export function constraintToString (c: Constraint): string {
+export function constraintToString(c: Constraint): string {
   switch (c.kind) {
     case 'eq': return `${typeToString(c.types[0])} ~ ${typeToString(c.types[1])}`
     case 'conjunction': return c.constraints.map(constraintToString).join(' /\\ ')
@@ -24,7 +24,7 @@ export function constraintToString (c: Constraint): string {
  *
  * @returns a string with the formatted type scheme
  */
-export function typeSchemeToString (t: TypeScheme): string {
+export function typeSchemeToString(t: TypeScheme): string {
   const names = Array.from(t.variables)
   const vars: string[] = []
   const subs: Substitutions = names.map((name, i) => {
@@ -44,7 +44,7 @@ export function typeSchemeToString (t: TypeScheme): string {
  *
  * @returns a string with the pretty printed substitution
  */
-export function substitutionsToString (subs: Substitutions): string {
+export function substitutionsToString(subs: Substitutions): string {
   const subsString = subs.map(s => {
     if (s.kind === 'type') {
       return `${s.name} |-> ${typeToString(s.value)}`

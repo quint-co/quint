@@ -48,7 +48,7 @@ export interface CompilationContext {
   sourceMap: Map<bigint, Loc>,
 }
 
-function errorContext (errors: ErrorMessage[]): CompilationContext {
+function errorContext(errors: ErrorMessage[]): CompilationContext {
   return {
     values: new Map(),
     vars: [],
@@ -63,8 +63,7 @@ function errorContext (errors: ErrorMessage[]): CompilationContext {
 }
 
 // convert an error tree to an error message
-function errorTreeToMsg
-(sourceMap: Map<bigint, Loc>, trees: Map<bigint, ErrorTree>) {
+function errorTreeToMsg(sourceMap: Map<bigint, Loc>, trees: Map<bigint, ErrorTree>) {
   const errors: ErrorMessage[] = []
   trees.forEach((value, key) => {
     const loc = sourceMap.get(key)!
@@ -88,7 +87,7 @@ function errorTreeToMsg
  * @returns a mapping from names to computable values
  */
 export function
-compile (moduleText: string): CompilationContext {
+compile(moduleText: string): CompilationContext {
   // parse the module text
   const parseRes = parsePhase1(moduleText, '<input>')
 

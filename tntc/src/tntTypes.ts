@@ -113,7 +113,7 @@ export type Row =
  *
  * @returns a list with collected names
  */
-export function typeNames (t: TntType): Set<string> {
+export function typeNames(t: TntType): Set<string> {
   const collector = new TypeNamesCollector()
   walkType(collector, t)
   return collector.names
@@ -126,7 +126,7 @@ export function typeNames (t: TntType): Set<string> {
  *
  * @returns a list with collected names
  */
-export function rowNames (r: Row): Set<string> {
+export function rowNames(r: Row): Set<string> {
   switch (r.kind) {
     case 'row':
       return rowNames(r.other)
@@ -140,7 +140,7 @@ export function rowNames (r: Row): Set<string> {
 class TypeNamesCollector implements IRVisitor {
   names: Set<string> = new Set()
 
-  exitVarType (t: TntVarType) {
+  exitVarType(t: TntVarType) {
     this.names.add(t.name)
   }
 }

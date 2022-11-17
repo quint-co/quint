@@ -17,7 +17,7 @@ import { typeNames } from '../tntTypes'
 import { Signature, TypeScheme } from './base'
 import { times } from 'lodash'
 
-export function getSignatures (): Map<string, Signature> {
+export function getSignatures(): Map<string, Signature> {
   return new Map<string, Signature>(fixedAritySignatures.concat(multipleAritySignatures))
 }
 
@@ -124,7 +124,7 @@ const otherOperators = [
   // Should we do this? https://github.com/informalsystems/tnt/discussions/109
 ]
 
-function uniformArgsWithResult (argsType: string, resultType: string): Signature {
+function uniformArgsWithResult(argsType: string, resultType: string): Signature {
   return (arity: number) => {
     const args = times(arity, () => argsType)
     return parseAndQuantify(`(${args.join(', ')}) => ${resultType}`)
@@ -168,7 +168,7 @@ const fixedAritySignatures: [string, Signature][] = [
   otherOperators,
 ].flat().map(sig => [sig.name, (_: number) => parseAndQuantify(sig.type)])
 
-function parseAndQuantify (typeString: string): TypeScheme {
+function parseAndQuantify(typeString: string): TypeScheme {
   const t = parseTypeOrThrow(typeString)
   return {
     type: t,

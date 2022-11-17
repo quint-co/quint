@@ -367,20 +367,20 @@ export interface RuntimeValue
 abstract class RuntimeValueBase implements RuntimeValue {
   isSetLike: boolean
 
-  constructor (isSetLike: boolean) {
+  constructor(isSetLike: boolean) {
     this.isSetLike = isSetLike
   }
 
-  [Symbol.iterator] () {
+  [Symbol.iterator]() {
     // produce an empty iterator by default
     return {
-      next (): IteratorResult<RuntimeValue> {
+      next(): IteratorResult<RuntimeValue> {
         return { done: true, value: undefined }
       },
     }
   }
 
-  normalForm (): RuntimeValue {
+  normalForm(): RuntimeValue {
     // tuples override this method
     if (!this.isSetLike) {
       // Booleans and integers are in the normal form
@@ -390,7 +390,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  toSet (): Set<RuntimeValue> {
+  toSet(): Set<RuntimeValue> {
     // the default transformation to a set is done via iteration
     let set = Set.of<RuntimeValue>()
     for (const e of this) {
@@ -399,7 +399,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     return set
   }
 
-  toList (): List<RuntimeValue> {
+  toList(): List<RuntimeValue> {
     if (this instanceof RuntimeValueTupleOrList) {
       return this.list
     } else {
@@ -407,7 +407,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  toOrderedMap (): OrderedMap<string, RuntimeValue> {
+  toOrderedMap(): OrderedMap<string, RuntimeValue> {
     if (this instanceof RuntimeValueRecord) {
       return this.map
     } else {
@@ -415,7 +415,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  toMap (): Map<RuntimeValue, RuntimeValue> {
+  toMap(): Map<RuntimeValue, RuntimeValue> {
     if (this instanceof RuntimeValueMap) {
       return this.map
     } else {
@@ -423,7 +423,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  toBool (): boolean {
+  toBool(): boolean {
     if (this instanceof RuntimeValueBool) {
       return (this as RuntimeValueBool).value
     } else {
@@ -431,7 +431,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  toInt (): bigint {
+  toInt(): bigint {
     if (this instanceof RuntimeValueInt) {
       return (this as RuntimeValueInt).value
     } else {
@@ -439,7 +439,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  toStr (): string {
+  toStr(): string {
     if (this instanceof RuntimeValueStr) {
       return (this as RuntimeValueStr).value
     } else {
@@ -447,7 +447,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  contains (elem: RuntimeValue): boolean {
+  contains(elem: RuntimeValue): boolean {
     // the default search is done via iteration, which is the worst case
     let found = false
     // the element may be in a special form (e.g., an interval), normalize
@@ -461,7 +461,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     return found
   }
 
-  isSubset (superset: RuntimeValue): boolean {
+  isSubset(superset: RuntimeValue): boolean {
     // Do O(m * n) tests, where m and n are the cardinalities of lhs and rhs.
     // Maybe we should use a cardinality test, when it's possible.
     for (const e of this) {
@@ -473,7 +473,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     return true
   }
 
-  equals (other: unknown): boolean {
+  equals(other: unknown): boolean {
     if (typeof other !== 'object' || other === null) {
       return false
     }
@@ -548,21 +548,21 @@ abstract class RuntimeValueBase implements RuntimeValue {
     return false
   }
 
-  hashCode (): number {
+  hashCode(): number {
     // The default implementation,
     // to make it compatible with RuntimeValue and ValueObject.
     return 0
   }
 
-  pick (_position: number): RuntimeValue | undefined {
+  pick(_position: number): RuntimeValue | undefined {
     return undefined
   }
 
-  cardinality () {
+  cardinality() {
     return 0
   }
 
-  toTntEx (): TntEx {
+  toTntEx(): TntEx {
     // the default implementation, to make it compatible with RuntimeValue
     return {
       id: 0n,
@@ -578,16 +578,16 @@ abstract class RuntimeValueBase implements RuntimeValue {
 class RuntimeValueBool extends RuntimeValueBase implements RuntimeValue {
   value: boolean
 
-  constructor (value: boolean) {
+  constructor(value: boolean) {
     super(false)
     this.value = value
   }
 
-  hashCode (): number {
+  hashCode(): number {
     return this.value ? 1 : 0
   }
 
-  toTntEx (): TntEx {
+  toTntEx(): TntEx {
     return {
       id: 0n,
       kind: 'bool',
@@ -602,17 +602,17 @@ class RuntimeValueBool extends RuntimeValueBase implements RuntimeValue {
 class RuntimeValueInt extends RuntimeValueBase implements ValueObject {
   value: bigint
 
-  constructor (value: bigint) {
+  constructor(value: bigint) {
     super(false)
     this.value = value
   }
 
-  hashCode (): number {
+  hashCode(): number {
     // wrap to a 32-bit unsigned integer and convert to a number
     return Number(BigInt.asUintN(32, this.value))
   }
 
-  toTntEx (): TntEx {
+  toTntEx(): TntEx {
     return {
       id: 0n,
       kind: 'int',
@@ -627,16 +627,16 @@ class RuntimeValueInt extends RuntimeValueBase implements ValueObject {
 class RuntimeValueStr extends RuntimeValueBase implements ValueObject {
   value: string
 
-  constructor (value: string) {
+  constructor(value: string) {
     super(false)
     this.value = value
   }
 
-  hashCode (): number {
+  hashCode(): number {
     return hash(this.value)
   }
 
-  toTntEx (): TntEx {
+  toTntEx(): TntEx {
     return {
       id: 0n,
       kind: 'str',
@@ -655,17 +655,17 @@ class RuntimeValueTupleOrList extends RuntimeValueBase implements RuntimeValue {
   kind: TupleOrList
   list: List<RuntimeValue>
 
-  constructor (kind: TupleOrList, values: List<RuntimeValue>) {
+  constructor(kind: TupleOrList, values: List<RuntimeValue>) {
     super(true)
     this.kind = kind
     this.list = values
   }
 
-  [Symbol.iterator] () {
+  [Symbol.iterator]() {
     return this.list[Symbol.iterator]()
   }
 
-  normalForm (): RuntimeValue {
+  normalForm(): RuntimeValue {
     const normalizedValues: RuntimeValue[] = []
     for (const e of this.list) {
       normalizedValues.push(e.normalForm())
@@ -673,11 +673,11 @@ class RuntimeValueTupleOrList extends RuntimeValueBase implements RuntimeValue {
     return new RuntimeValueTupleOrList(this.kind, List(normalizedValues))
   }
 
-  hashCode (): number {
+  hashCode(): number {
     return this.list.hashCode()
   }
 
-  toTntEx (): TntEx {
+  toTntEx(): TntEx {
     // simply enumerate the values
     const elems: TntEx[] = []
     for (const e of this.list) {
@@ -700,22 +700,22 @@ class RuntimeValueTupleOrList extends RuntimeValueBase implements RuntimeValue {
 class RuntimeValueRecord extends RuntimeValueBase implements RuntimeValue {
   map: OrderedMap<string, RuntimeValue>
 
-  constructor (values: OrderedMap<string, RuntimeValue>) {
+  constructor(values: OrderedMap<string, RuntimeValue>) {
     super(true)
     this.map = values
   }
 
-  normalForm (): RuntimeValue {
+  normalForm(): RuntimeValue {
     const normalizedMap: OrderedMap<string, RuntimeValue> =
         this.map.map((v, _k) => v.normalForm())
     return new RuntimeValueRecord(normalizedMap)
   }
 
-  hashCode (): number {
+  hashCode(): number {
     return this.map.hashCode()
   }
 
-  toTntEx (): TntEx {
+  toTntEx(): TntEx {
     // simply enumerate the values
     const elems: TntEx[] = []
     for (const [key, value] of this.map) {
@@ -739,22 +739,22 @@ class RuntimeValueRecord extends RuntimeValueBase implements RuntimeValue {
 class RuntimeValueMap extends RuntimeValueBase implements RuntimeValue {
   map: Map<RuntimeValue, RuntimeValue>
 
-  constructor (keyValues: Map<RuntimeValue, RuntimeValue>) {
+  constructor(keyValues: Map<RuntimeValue, RuntimeValue>) {
     super(true)
     this.map = keyValues
   }
 
-  normalForm (): RuntimeValue {
+  normalForm(): RuntimeValue {
     const normalizedMap: OrderedMap<RuntimeValue, RuntimeValue> =
         this.map.mapEntries(([k, v]) => [k.normalForm(), v.normalForm()])
     return new RuntimeValueMap(normalizedMap)
   }
 
-  hashCode (): number {
+  hashCode(): number {
     return this.map.hashCode()
   }
 
-  toTntEx (): TntEx {
+  toTntEx(): TntEx {
     // convert to a set of pairs and use its normal form
     const pairs: RuntimeValueTupleOrList[] = this.map.toArray().map(([k, v]) =>
       new RuntimeValueTupleOrList('Tup', List([k, v]))
@@ -781,20 +781,20 @@ class RuntimeValueMap extends RuntimeValueBase implements RuntimeValue {
 class RuntimeValueSet extends RuntimeValueBase implements RuntimeValue {
   set: Set<RuntimeValue>
 
-  constructor (set: Set<RuntimeValue>) {
+  constructor(set: Set<RuntimeValue>) {
     super(true)
     this.set = set
   }
 
-  [Symbol.iterator] () {
+  [Symbol.iterator]() {
     return this.set[Symbol.iterator]()
   }
 
-  hashCode (): number {
+  hashCode(): number {
     return this.set.hashCode()
   }
 
-  isSubset (superset: RuntimeValue): boolean {
+  isSubset(superset: RuntimeValue): boolean {
     if (superset instanceof RuntimeValueSet) {
       // do a (hopefully) less expensive test
       return this.set.isSubset(superset.set)
@@ -804,16 +804,16 @@ class RuntimeValueSet extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  toSet (): Set<RuntimeValue> {
+  toSet(): Set<RuntimeValue> {
     return this.set
   }
 
-  contains (elem: RuntimeValue): boolean {
+  contains(elem: RuntimeValue): boolean {
     // do a (hopefully) less expensive test
     return this.set.includes(elem.normalForm())
   }
 
-  pick (position: number): RuntimeValue | undefined {
+  pick(position: number): RuntimeValue | undefined {
     // compute the element index based on the position
     let index = positionToIndex(position, this.set.size)
     // Iterate over the set elements,
@@ -830,16 +830,16 @@ class RuntimeValueSet extends RuntimeValueBase implements RuntimeValue {
     return undefined
   }
 
-  cardinality () {
+  cardinality() {
     return this.set.size
   }
 
-  toTntEx (): TntEx {
+  toTntEx(): TntEx {
     // Sets are tricky, as we have to normalize them when producing TntEx.
     // The most common normal form is the one that sorts sets according
     // to their string representation. Instead of computing the string
     // representation multiple times, we cache it in `__str` and then forget it.
-    function cacheStr (e: TntEx) {
+    function cacheStr(e: TntEx) {
       return {
         ...e,
         __str: expressionToString(e),
@@ -872,7 +872,7 @@ class RuntimeValueInterval extends RuntimeValueBase implements RuntimeValue {
   first: bigint
   last: bigint
 
-  constructor (first: bigint, last: bigint) {
+  constructor(first: bigint, last: bigint) {
     super(true)
     if (last >= first) {
       this.first = first
@@ -884,10 +884,10 @@ class RuntimeValueInterval extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  [Symbol.iterator] () {
+  [Symbol.iterator]() {
     const start = this.first
     const end = this.last
-    function * gen (): Generator<RuntimeValue> {
+    function * gen(): Generator<RuntimeValue> {
       for (let i = start; i <= end; i++) {
         yield new RuntimeValueInt(i)
       }
@@ -896,12 +896,12 @@ class RuntimeValueInterval extends RuntimeValueBase implements RuntimeValue {
     return gen()
   }
 
-  hashCode (): number {
+  hashCode(): number {
     // wrap the sum to a 32-bit unsigned integer and convert to a number
     return Number(BigInt.asUintN(32, this.first + this.last))
   }
 
-  contains (elem: RuntimeValue): boolean {
+  contains(elem: RuntimeValue): boolean {
     if (elem instanceof RuntimeValueInt) {
       return this.first <= elem.value && elem.value <= this.last
     } else {
@@ -909,7 +909,7 @@ class RuntimeValueInterval extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  isSubset (superset: RuntimeValue): boolean {
+  isSubset(superset: RuntimeValue): boolean {
     if (superset instanceof RuntimeValueInterval) {
       return this.first >= superset.first && this.last <= superset.last
     } else {
@@ -918,7 +918,7 @@ class RuntimeValueInterval extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  pick (position: number): RuntimeValue | undefined {
+  pick(position: number): RuntimeValue | undefined {
     if (this.last < this.first) {
       return undefined
     } else {
@@ -928,11 +928,11 @@ class RuntimeValueInterval extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  cardinality () {
+  cardinality() {
     return Number(this.last - this.first) + 1
   }
 
-  toTntEx (): TntEx {
+  toTntEx(): TntEx {
     // simply enumerate the values in the interval first..last
     const elems: TntEx[] = []
     for (const i of this) {
@@ -957,19 +957,19 @@ class RuntimeValueCrossProd
   // components of the cross-product, must be set-like
   sets: RuntimeValue[]
 
-  constructor (sets: RuntimeValue[]) {
+  constructor(sets: RuntimeValue[]) {
     super(true)
     this.sets = sets
   }
 
-  [Symbol.iterator] () {
+  [Symbol.iterator]() {
     // convert every set-like value to an array
     const arrays: RuntimeValue[][] =
       this.sets.map(set => Array.from(set))
     const existsEmptySet = arrays.some(arr => arr.length === 0)
 
     const nindices = arrays.length
-    function * gen () {
+    function * gen() {
       if (existsEmptySet) {
         // yield nothing as an empty set produces the empty product
         return
@@ -1009,7 +1009,7 @@ class RuntimeValueCrossProd
     return gen()
   }
 
-  hashCode (): number {
+  hashCode(): number {
     let hash = 0
     for (const c of this.sets) {
       hash += c.hashCode()
@@ -1017,7 +1017,7 @@ class RuntimeValueCrossProd
     return hash
   }
 
-  contains (elem: RuntimeValue): boolean {
+  contains(elem: RuntimeValue): boolean {
     if (elem instanceof RuntimeValueTupleOrList) {
       if (elem.list.size !== this.sets.length) {
         return false
@@ -1036,7 +1036,7 @@ class RuntimeValueCrossProd
     }
   }
 
-  isSubset (superset: RuntimeValue): boolean {
+  isSubset(superset: RuntimeValue): boolean {
     if (superset instanceof RuntimeValueCrossProd) {
       const size = this.sets.length
       if (superset.sets.length !== size) {
@@ -1055,11 +1055,11 @@ class RuntimeValueCrossProd
     }
   }
 
-  cardinality () {
+  cardinality() {
     return this.sets.reduce((n, set) => set.cardinality() * n, 1)
   }
 
-  pick (position: number): RuntimeValue | undefined {
+  pick(position: number): RuntimeValue | undefined {
     let index = Math.floor(position * this.cardinality())
     const elems: RuntimeValue[] = []
     for (const set of this.sets) {
@@ -1080,7 +1080,7 @@ class RuntimeValueCrossProd
     return new RuntimeValueTupleOrList('Tup', List.of(...elems))
   }
 
-  toTntEx (): TntEx {
+  toTntEx(): TntEx {
     // simply enumerate the values
     const elems: TntEx[] = []
     for (const i of this) {
@@ -1105,16 +1105,16 @@ class RuntimeValuePowerset
   // the base set
   baseSet: RuntimeValue
 
-  constructor (baseSet: RuntimeValue) {
+  constructor(baseSet: RuntimeValue) {
     super(true)
     this.baseSet = baseSet
   }
 
-  [Symbol.iterator] () {
+  [Symbol.iterator]() {
     const nsets = this.cardinality()
     // copy fromIndex, as gen does not have access to this.
     const fromIndex = (i: number): RuntimeValue => this.fromIndex(i)
-    function * gen () {
+    function * gen() {
       // Generate `nsets` sets by using number increments.
       // Note that 2 ** 0 == 1.
       for (let i = 0; i < nsets; i++) {
@@ -1125,11 +1125,11 @@ class RuntimeValuePowerset
     return gen()
   }
 
-  hashCode (): number {
+  hashCode(): number {
     return this.baseSet.hashCode()
   }
 
-  contains (elem: RuntimeValue): boolean {
+  contains(elem: RuntimeValue): boolean {
     if (!elem.isSetLike) {
       return false
     }
@@ -1143,7 +1143,7 @@ class RuntimeValuePowerset
     return true
   }
 
-  isSubset (superset: RuntimeValue): boolean {
+  isSubset(superset: RuntimeValue): boolean {
     if (superset instanceof RuntimeValuePowerset) {
       return this.baseSet.isSubset(superset.baseSet)
     } else {
@@ -1152,16 +1152,16 @@ class RuntimeValuePowerset
     }
   }
 
-  cardinality () {
+  cardinality() {
     return 2 ** this.baseSet.cardinality()
   }
 
-  pick (position: number): RuntimeValue | undefined {
+  pick(position: number): RuntimeValue | undefined {
     const index = Math.floor(position * this.cardinality())
     return this.fromIndex(index)
   }
 
-  toTntEx (): TntEx {
+  toTntEx(): TntEx {
     // simply enumerate the values
     const elems: TntEx[] = []
     for (const i of this) {
@@ -1179,7 +1179,7 @@ class RuntimeValuePowerset
   // Convert the global index i to bits, which define membership.
   // By interactively dividing the index by 2 and
   // taking its remainder.
-  private fromIndex (index: number): RuntimeValue {
+  private fromIndex(index: number): RuntimeValue {
     const elems: RuntimeValue[] = []
     let bits = index
     for (const elem of this.baseSet) {
@@ -1203,13 +1203,13 @@ class RuntimeValueMapSet
   domainSet: RuntimeValue
   rangeSet: RuntimeValue
 
-  constructor (domainSet: RuntimeValue, rangeSet: RuntimeValue) {
+  constructor(domainSet: RuntimeValue, rangeSet: RuntimeValue) {
     super(true)
     this.domainSet = domainSet
     this.rangeSet = rangeSet
   }
 
-  [Symbol.iterator] () {
+  [Symbol.iterator]() {
     // convert the domain and range to arrays
     const domainArr = Array.from(this.domainSet)
     const rangeArr = Array.from(this.rangeSet)
@@ -1218,7 +1218,7 @@ class RuntimeValueMapSet
     // Can we generalize both?
     const nindices = domainArr.length
     const nvalues = rangeArr.length
-    function * gen () {
+    function * gen() {
       if (domainArr.length === 0 || rangeArr.length === 0) {
         // yield nothing as an empty set produces the empty product
         return
@@ -1242,11 +1242,11 @@ class RuntimeValueMapSet
     return gen()
   }
 
-  hashCode (): number {
+  hashCode(): number {
     return this.domainSet.hashCode() + this.rangeSet.hashCode()
   }
 
-  contains (elem: RuntimeValue): boolean {
+  contains(elem: RuntimeValue): boolean {
     if (elem instanceof RuntimeValueMap) {
       return this.domainSet.equals(rv.mkSet(elem.map.keys())) &&
         elem.map.find((v) =>
@@ -1256,7 +1256,7 @@ class RuntimeValueMapSet
     }
   }
 
-  isSubset (superset: RuntimeValue): boolean {
+  isSubset(superset: RuntimeValue): boolean {
     if (superset instanceof RuntimeValueMapSet) {
       return this.domainSet.equals(superset.domainSet) &&
         this.rangeSet.isSubset(superset.rangeSet)
@@ -1266,11 +1266,11 @@ class RuntimeValueMapSet
     }
   }
 
-  cardinality () {
+  cardinality() {
     return this.rangeSet.cardinality() ** this.domainSet.cardinality()
   }
 
-  pick (position: number): RuntimeValue | undefined {
+  pick(position: number): RuntimeValue | undefined {
     let index = Math.floor(position * Number(this.cardinality()))
     const keyValues: [RuntimeValue, RuntimeValue][] = []
     const domainSize = this.domainSet.cardinality()
@@ -1293,7 +1293,7 @@ class RuntimeValueMapSet
     return rv.mkMap(keyValues)
   }
 
-  toTntEx (): TntEx {
+  toTntEx(): TntEx {
     // simply enumerate the values
     const elems: TntEx[] = []
     for (const i of this) {
@@ -1310,7 +1310,7 @@ class RuntimeValueMapSet
 }
 
 // convert a position in [0, 1) to the index in a collection of `size` elements
-function positionToIndex (position: number, size: number) {
+function positionToIndex(position: number, size: number) {
   return (position < 0.0 || position >= 1.0)
     ? 0
     : Math.floor(position * size)
@@ -1324,23 +1324,23 @@ function positionToIndex (position: number, size: number) {
 class RuntimeValueInfSet extends RuntimeValueBase implements RuntimeValue {
   kind: 'Nat' | 'Int'
 
-  constructor (kind: 'Nat' | 'Int') {
+  constructor(kind: 'Nat' | 'Int') {
     super(true)
     this.kind = kind
   }
 
-  [Symbol.iterator] (): Iterator<RuntimeValue> {
+  [Symbol.iterator](): Iterator<RuntimeValue> {
     throw new Error(`Infinite set ${this.kind} is non-enumerable`)
   }
 
-  hashCode (): number {
+  hashCode(): number {
     // the hash codes for Nat and Int are a bit arbitrary, so we make them huge
     return (this.kind === 'Nat')
       ? Number.MAX_SAFE_INTEGER - 1
       : Number.MAX_SAFE_INTEGER
   }
 
-  isSubset (superset: RuntimeValue): boolean {
+  isSubset(superset: RuntimeValue): boolean {
     if (superset instanceof RuntimeValueInfSet) {
       return this.kind !== 'Int' || superset.kind !== 'Nat'
     } else {
@@ -1348,11 +1348,11 @@ class RuntimeValueInfSet extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  toSet (): Set<RuntimeValue> {
+  toSet(): Set<RuntimeValue> {
     throw new Error(`Infinite set ${this.kind} is non-enumerable`)
   }
 
-  contains (elem: RuntimeValue): boolean {
+  contains(elem: RuntimeValue): boolean {
     if (elem instanceof RuntimeValueInt) {
       return (this.kind === 'Int') ? true : elem.value >= 0
     } else {
@@ -1360,7 +1360,7 @@ class RuntimeValueInfSet extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  pick (position: number): RuntimeValue | undefined {
+  pick(position: number): RuntimeValue | undefined {
     // We cannot produce a random big integer.
     // Currently, we constrain integers to 32-bit integers.
     // In the future, we will let the user to define their own range.
@@ -1371,11 +1371,11 @@ class RuntimeValueInfSet extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  cardinality (): number {
+  cardinality(): number {
     throw new Error(`The cardinality of an infinite set ${this.kind} is not a number`)
   }
 
-  toTntEx (): TntEx {
+  toTntEx(): TntEx {
     // return the built-in name
     return {
       id: 0n,

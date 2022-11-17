@@ -58,7 +58,7 @@ export type LookupTableByModule = Map<string, LookupTable>
  *
  * @returns a new lookup table with the given definitions
  */
-export function newTable (
+export function newTable(
   {
     valueDefinitions = [],
     typeDefinitions = [],
@@ -82,7 +82,7 @@ export function newTable (
  *
  * @returns a lookup table with the same definitions as the provided one
  */
-export function copyTable (table: LookupTable): LookupTable {
+export function copyTable(table: LookupTable): LookupTable {
   return {
     valueDefinitions: new Map<string, ValueDefinition[]>(table.valueDefinitions.entries()),
     typeDefinitions: new Map<string, TypeDefinition[]>(table.typeDefinitions.entries()),
@@ -95,7 +95,7 @@ export function copyTable (table: LookupTable): LookupTable {
  * @param def the value definition to be added
  * @param table the lookup table to be updated
  */
-export function addValueToTable (def: ValueDefinition, table: LookupTable) {
+export function addValueToTable(def: ValueDefinition, table: LookupTable) {
   if (!table.valueDefinitions.has(def.identifier)) {
     table.valueDefinitions.set(def.identifier, [])
   }
@@ -109,7 +109,7 @@ export function addValueToTable (def: ValueDefinition, table: LookupTable) {
  * @param def the type definition to be added
  * @param table the lookup table to be updated
  */
-export function addTypeToTable (def: TypeDefinition, table: LookupTable) {
+export function addTypeToTable(def: TypeDefinition, table: LookupTable) {
   if (!table.typeDefinitions.has(def.identifier)) {
     table.typeDefinitions.set(def.identifier, [])
   }
@@ -127,7 +127,9 @@ export function addTypeToTable (def: TypeDefinition, table: LookupTable) {
  *
  * @returns the value definition, if found under the scope. Otherwise, undefined
  */
-export function lookupValue (table: LookupTable, scopeTree: ScopeTree, name: string, scope: bigint): ValueDefinition | undefined {
+export function lookupValue(
+  table: LookupTable, scopeTree: ScopeTree, name: string, scope: bigint
+): ValueDefinition | undefined {
   if (!table.valueDefinitions.has(name)) {
     return undefined
   }
@@ -143,7 +145,7 @@ export function lookupValue (table: LookupTable, scopeTree: ScopeTree, name: str
  *
  * @returns the type definition, if found under the scope. Otherwise, undefined
  */
-export function lookupType (table: LookupTable, name: string): TypeDefinition | undefined {
+export function lookupType(table: LookupTable, name: string): TypeDefinition | undefined {
   if (!table.typeDefinitions.has(name)) {
     return undefined
   }
@@ -161,7 +163,7 @@ export function lookupType (table: LookupTable, name: string): TypeDefinition | 
  *
  * @returns a lookup table with the filtered and namespaced names
  */
-export function copyNames (originTable: LookupTable, namespace?: string, scope?: bigint): LookupTable {
+export function copyNames(originTable: LookupTable, namespace?: string, scope?: bigint): LookupTable {
   const table = newTable({})
 
   originTable.valueDefinitions.forEach((defs, identifier) => {
@@ -197,7 +199,7 @@ export function copyNames (originTable: LookupTable, namespace?: string, scope?:
  *
  * @returns the merged lookup table
  */
-export function mergeTables (t1: LookupTable, t2: LookupTable): LookupTable {
+export function mergeTables(t1: LookupTable, t2: LookupTable): LookupTable {
   const result = copyTable(t1)
 
   t2.valueDefinitions.forEach((defs, _identifier) => {

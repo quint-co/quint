@@ -30,7 +30,7 @@ import { Either, left, right } from '@sweet-monads/either'
  * @returns the parsed type when the string is a valid type.
  *          Otherwise, a list of parsing errors.
  */
-export function parseType (typeString: string): Either<any[], TntType> {
+export function parseType(typeString: string): Either<any[], TntType> {
   const errorMessages: any[] = []
   // error listener to report lexical and syntax errors
   const errorListener: any = {
@@ -83,7 +83,7 @@ export function parseType (typeString: string): Either<any[], TntType> {
   }
 }
 
-export function parseTypeOrThrow (type: string): TntType {
+export function parseTypeOrThrow(type: string): TntType {
   const result = parseType(type)
 
   if (result.isRight()) {
@@ -94,7 +94,7 @@ export function parseTypeOrThrow (type: string): TntType {
   }
 }
 
-export function parseRowOrThrow (row: string): Row {
+export function parseRowOrThrow(row: string): Row {
   const result = parseType(`{ ${row} }`)
 
   if (result.isRight() && result.value.kind === 'rec') {

@@ -12,20 +12,20 @@ import { dedent } from './textUtils'
 class ToStringWritable extends Writable {
   buffer: string = ''
 
-  _write (chunk: string,
+  _write(chunk: string,
     encoding: string,
     next: (_error?: Error | null) => void): void {
     this.buffer += chunk
     next()
   }
 
-  reset () {
+  reset() {
     this.buffer = ''
   }
 }
 
 // run a test with mocked input/output and return the input + output
-const withIO = async (inputText: string): Promise<string> => {
+const withIO = async(inputText: string): Promise<string> => {
   // save the current chalk level and reset chalk to no color
   const savedSettings = settings
   settings.prompt = ''
@@ -57,7 +57,7 @@ const banner =
 `TNT REPL v0.0.2
 Type ".exit" to exit, or ".help" for more information`
 
-async function assertRepl (input: string, output: string) {
+async function assertRepl(input: string, output: string) {
   const expected =
 `${banner}
 ${output}
@@ -69,11 +69,11 @@ ${output}
 }
 
 describe('repl ok', () => {
-  it('input', async () => {
+  it('input', async() => {
     await assertRepl('', '')
   })
 
-  it('Set(2 + 3)', async () => {
+  it('Set(2 + 3)', async() => {
     const input = 'Set(2 + 3)\n'
     const output = dedent(
       `Set(5)
@@ -82,7 +82,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('basic expressions', async () => {
+  it('basic expressions', async() => {
     const input = dedent(
       `1 + 1
       |3 > 1
@@ -108,7 +108,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('ill-typed expressions', async () => {
+  it('ill-typed expressions', async() => {
     const input = dedent(
       `1 + false
       |`
@@ -127,7 +127,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('definitions in expressions', async () => {
+  it('definitions in expressions', async() => {
     const input = dedent(
       `val x = 3; 2 * x
       |def mult(x, y) = x * y; mult(2, mult(3, 4))
@@ -141,7 +141,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('top-level definitions', async () => {
+  it('top-level definitions', async() => {
     const input = dedent(
       `val n = 4
       |def mult(x, y) = x * y
@@ -161,7 +161,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('clear history', async () => {
+  it('clear history', async() => {
     const input = dedent(
       `val n = 4
       |n * n
@@ -187,7 +187,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('handle exceptions', async () => {
+  it('handle exceptions', async() => {
     const input = dedent(
       `Set(Int)
       |`
@@ -204,7 +204,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('assignments', async () => {
+  it('assignments', async() => {
     const input = dedent(
       `var x: int
       |action Init = x <- 0
@@ -232,7 +232,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('action-level disjunctions and conjunctions', async () => {
+  it('action-level disjunctions and conjunctions', async() => {
     const input = dedent(
       `
       |var x: int
@@ -275,7 +275,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('action-level disjunctions and non-determinism', async () => {
+  it('action-level disjunctions and non-determinism', async() => {
     const input = dedent(
       `
       |var x: int
@@ -312,7 +312,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('guess and non-determinism', async () => {
+  it('guess and non-determinism', async() => {
     const input = dedent(
       `
       |var x: int
@@ -350,7 +350,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('run _test, _testOnce, and _lastTrace', async () => {
+  it('run _test, _testOnce, and _lastTrace', async() => {
     const input = dedent(
       `
       |var n: int

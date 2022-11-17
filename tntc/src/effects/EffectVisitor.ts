@@ -38,7 +38,7 @@ export interface EffectVisitor {
  *
  * @returns nothing, any collected information has to be a state inside the EffectVisitor instance.
  */
-export function walkEffect (visitor: EffectVisitor, effect: Effect): void {
+export function walkEffect(visitor: EffectVisitor, effect: Effect): void {
   switch (effect.kind) {
     case 'concrete': {
       if (visitor.enterConcrete) {

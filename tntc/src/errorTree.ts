@@ -44,7 +44,7 @@ export type Error = ErrorTree | ErrorTree[] | string
  *
  * @returns an error tree with the given location and errors, avoiding duplication
  */
-export function buildErrorTree (location: string, errors: Error): ErrorTree {
+export function buildErrorTree(location: string, errors: Error): ErrorTree {
   if (typeof errors === 'string') {
     return buildErrorLeaf(location, errors)
   } else if (!Array.isArray(errors) && location === errors.location) {
@@ -63,7 +63,7 @@ export function buildErrorTree (location: string, errors: Error): ErrorTree {
  *
  * @returns an ErrorTree with given attributes and no children
  */
-export function buildErrorLeaf (location: string, message: string): ErrorTree {
+export function buildErrorLeaf(location: string, message: string): ErrorTree {
   return { location, message, children: [] }
 }
 
@@ -74,7 +74,7 @@ export function buildErrorLeaf (location: string, message: string): ErrorTree {
  *
  * @returns a multiline string with the pretty printed error tree
  */
-export function errorTreeToString (e: ErrorTree): string {
+export function errorTreeToString(e: ErrorTree): string {
   const childrenErrors = e.children.map(errorTreeToString)
   let out = childrenErrors.join('and\n')
   out += e.message ? e.message + '\n' : ''

@@ -16,7 +16,7 @@ import { compact, zipWith } from 'lodash'
  * @author Igor Konnov, Gabriela Moreira
  */
 export class ToIrListener implements TntListener {
-  constructor (sourceLocation: string) {
+  constructor(sourceLocation: string) {
     this.sourceLocation = sourceLocation
   }
 
@@ -51,14 +51,14 @@ export class ToIrListener implements TntListener {
   // an internal counter to assign unique numbers
   private lastId: bigint = 1n
 
-  enterModule () {
+  enterModule() {
     // save the definitions of the previous module
     this.moduleDefStack.push(this.definitionStack)
     this.definitionStack = []
   }
 
   // translate: module <name> { ... }
-  exitModule (ctx: p.ModuleContext) {
+  exitModule(ctx: p.ModuleContext) {
     assert(this.typeStack.length === 0, 'type stack must be empty')
     assert(this.exprStack.length === 0, 'expression stack must be empty')
     assert(this.paramStack.length === 0, 'parameter stack must be empty')
@@ -82,7 +82,7 @@ export class ToIrListener implements TntListener {
   }
 
   // translate: const x: type
-  exitConst (ctx: p.ConstContext) {
+  exitConst(ctx: p.ConstContext) {
     const typeTag = this.popType()
 
     const id = this.nextId()
@@ -97,7 +97,7 @@ export class ToIrListener implements TntListener {
   }
 
   // translate: var x: type
-  exitVar (ctx: p.VarContext) {
+  exitVar(ctx: p.VarContext) {
     const typeTag = this.popType()
 
     const id = this.nextId()
@@ -111,7 +111,7 @@ export class ToIrListener implements TntListener {
     this.definitionStack.push(varDef)
   }
 
-  exitLetIn (ctx: p.LetInContext) {
+  exitLetIn(ctx: p.LetInContext) {
     const def = this.definitionStack.pop()
     const expr = this.exprStack.pop()
 
@@ -126,7 +126,7 @@ export class ToIrListener implements TntListener {
   /** **************** translate operator definititons **********************/
 
   // translate a top-level or nested operator definition
-  exitOperDef (ctx: p.OperDefContext) {
+  exitOperDef(ctx: p.OperDefContext) {
     const name = ctx.IDENTIFIER().text
     let typeTag: TntType | undefined
     if (ctx.type()) {
@@ -188,20 +188,20 @@ export class ToIrListener implements TntListener {
   }
 
   // translate a top-level def
-  exitOper (ctx: p.OperContext) {
+  exitOper(ctx: p.OperContext) {
     const def = this.definitionStack[this.definitionStack.length - 1]
     const ls = this.locStr(ctx)
     assert(def, `exitOper: ${ls}: undefined operDef in exitOper`)
   }
 
   // operator parameters
-  exitParams (ctx: p.ParamsContext) {
+  exitParams(ctx: p.ParamsContext) {
     const params = ctx.IDENTIFIER().map(n => n.text)
     this.paramStack.push(params)
   }
 
   // assume name = expr
-  exitAssume (ctx: any) {
+  exitAssume(ctx: any) {
     const expr = this.exprStack.pop()!
     const params = this.paramStack.pop()!
     assert(params.length === 1)
@@ -217,7 +217,7 @@ export class ToIrListener implements TntListener {
   }
 
   // import Foo.x or import Foo.*
-  exitImportDef (ctx: any) {
+  exitImportDef(ctx: any) {
     const ident = this.paramStack.pop()![0]
     const path = this.paramStack.pop()![0]
     const id = this.nextId()
@@ -232,13 +232,13 @@ export class ToIrListener implements TntListener {
   }
 
   // a path that used in imports
-  exitPath (ctx: p.PathContext) {
+  exitPath(ctx: p.PathContext) {
     const path = ctx.IDENTIFIER().reduce((s, id) => s + id.text, '')
     this.paramStack.push([path])
   }
 
   // type ALIAS = set(int)
-  exitTypedef (ctx: p.TypedefContext) {
+  exitTypedef(ctx: p.TypedefContext) {
     const name = ctx.IDENTIFIER()!.text
     const typeToAlias = this.typeStack.pop()
 
@@ -259,7 +259,7 @@ export class ToIrListener implements TntListener {
   }
 
   // module Foo = Proto(x = a, y = b)
-  exitInstanceMod (ctx: p.InstanceModContext) {
+  exitInstanceMod(ctx: p.InstanceModContext) {
     const identifiers = ctx.IDENTIFIER()!
     const instanceName = identifiers[0].text
     const protoName = identifiers[1].text
@@ -290,7 +290,7 @@ export class ToIrListener implements TntListener {
   /** ******************* translate expressions **************************/
 
   // an identifier or a literal, e.g., foo, 42, "hello", false
-  exitLiteralOrId (ctx: p.LiteralOrIdContext) {
+  exitLiteralOrId(ctx: p.LiteralOrIdContext) {
     const ident = ctx.IDENTIFIER()
 
     const id = this.nextId()
@@ -329,12 +329,12 @@ export class ToIrListener implements TntListener {
   }
 
   // list access, e.g., f[10]
-  exitListApp (ctx: any) {
+  exitListApp(ctx: any) {
     this.pushApplication(ctx, 'nth', this.popExprs(2))
   }
 
   // operator application in the normal form, e.g., MyOper("foo", 42)
-  exitOperApp (ctx: p.OperAppContext) {
+  exitOperApp(ctx: p.OperAppContext) {
     const name = ctx.normalCallName().text
     let args: TntEx[] = []
     if (ctx.argList()) {
@@ -353,7 +353,7 @@ export class ToIrListener implements TntListener {
   }
 
   // operator application via dot, e.g., S.union(T)
-  exitDotCall (ctx: p.DotCallContext) {
+  exitDotCall(ctx: p.DotCallContext) {
     // pop: the first argument, operator name, the rest of arguments (wrapped)
     const wrappedArgs = ctx.argList() ? this.exprStack.pop() : undefined
     const name = ctx.nameAfterDot().text
@@ -421,7 +421,7 @@ export class ToIrListener implements TntListener {
   }
 
   // a list of arguments
-  exitArgList (ctx: p.ArgListContext) {
+  exitArgList(ctx: p.ArgListContext) {
     const nargs = ctx.expr().length
     const args = this.popExprs(nargs)
     // wrap the arguments with a temporary operator,
@@ -435,7 +435,7 @@ export class ToIrListener implements TntListener {
   }
 
   // a lambda operator over multiple parameters
-  exitLambda (ctx: p.LambdaContext) {
+  exitLambda(ctx: p.LambdaContext) {
     const expr = this.exprStack.pop()
     const params = this.popParams(ctx.identOrHole().length)
     if (expr) {
@@ -459,7 +459,7 @@ export class ToIrListener implements TntListener {
   }
 
   // a single parameter in a lambda expression: an identifier or '_'
-  exitIdentOrHole (ctx: p.IdentOrHoleContext) {
+  exitIdentOrHole(ctx: p.IdentOrHoleContext) {
     if (ctx.text === '_') {
       // a hole '_'
       this.paramStack.push(['_'])
@@ -470,7 +470,7 @@ export class ToIrListener implements TntListener {
   }
 
   // an identifier or star '*' in import
-  exitIdentOrStar (ctx: p.IdentOrStarContext) {
+  exitIdentOrStar(ctx: p.IdentOrStarContext) {
     if (ctx.text === '*') {
       // a hole '_'
       this.paramStack.push(['*'])
@@ -481,26 +481,26 @@ export class ToIrListener implements TntListener {
   }
 
   // tuple constructor, e.g., (1, 2, 3)
-  exitTuple (ctx: p.TupleContext) {
+  exitTuple(ctx: p.TupleContext) {
     const args = this.popExprs(ctx.expr().length)
 
     this.pushApplication(ctx, 'Tup', args)
   }
 
   // pair constructor, e.g., 2 -> 3
-  exitPair (ctx: p.PairContext) {
+  exitPair(ctx: p.PairContext) {
     const args = this.popExprs(ctx.expr().length)
     this.pushApplication(ctx, 'Tup', args)
   }
 
   // list constructor, e.g., [1, 2, 3]
-  exitList (ctx: p.ListContext) {
+  exitList(ctx: p.ListContext) {
     const args = this.popExprs(ctx.expr().length)
     this.pushApplication(ctx, 'List', args)
   }
 
   // record constructor, e.g., { name: "igor", year: 2021 }
-  exitRecord (ctx: p.RecordContext) {
+  exitRecord(ctx: p.RecordContext) {
     const names = ctx.IDENTIFIER().map((n) => n.text)
     const elems: TntEx[] = this.popExprs(ctx.expr().length)
     
@@ -515,14 +515,14 @@ export class ToIrListener implements TntListener {
   }
 
   // '+' or '-'
-  exitPlusMinus (ctx: p.PlusMinusContext) {
+  exitPlusMinus(ctx: p.PlusMinusContext) {
     const opcode = (ctx.PLUS() !== undefined) ? 'iadd' : 'isub'
     const args = this.popExprs(2)
     this.pushApplication(ctx, opcode, args)
   }
 
   // '*', '/', or '%'
-  exitMultDiv (ctx: p.MultDivContext) {
+  exitMultDiv(ctx: p.MultDivContext) {
     const op = ctx._op
     if (op) {
       let opcode = ''
@@ -537,13 +537,13 @@ export class ToIrListener implements TntListener {
   }
 
   // integer power, e.g., x^y
-  exitPow (ctx: any) {
+  exitPow(ctx: any) {
     const args = this.popExprs(2)
     this.pushApplication(ctx, 'ipow', args)
   }
 
   // unary minus, e.g., -x
-  exitUminus (ctx: any) {
+  exitUminus(ctx: any) {
     const arg = this.exprStack.pop()
     if (arg) {
       this.pushApplication(ctx, 'iuminus', [arg])
@@ -551,7 +551,7 @@ export class ToIrListener implements TntListener {
   }
 
   // GT | LT | GE | LE | NE | EQ | ASGN
-  exitRelations (ctx: p.RelationsContext) {
+  exitRelations(ctx: p.RelationsContext) {
     const op = ctx._op
     if (op) {
       let opcode = ''
@@ -570,55 +570,55 @@ export class ToIrListener implements TntListener {
   }
 
   // p and q
-  exitAnd (ctx: any) {
+  exitAnd(ctx: any) {
     const args = this.popExprs(2)
     this.pushApplication(ctx, 'and', args)
   }
 
   // p or q
-  exitOr (ctx: any) {
+  exitOr(ctx: any) {
     const args = this.popExprs(2)
     this.pushApplication(ctx, 'or', args)
   }
 
   // p implies q
-  exitImplies (ctx: any) {
+  exitImplies(ctx: any) {
     const args = this.popExprs(2)
     this.pushApplication(ctx, 'implies', args)
   }
 
   // p iff q
-  exitIff (ctx: any) {
+  exitIff(ctx: any) {
     const args = this.popExprs(2)
     this.pushApplication(ctx, 'iff', args)
   }
 
   // and { p, q, r }
-  exitAndExpr (ctx: p.AndExprContext) {
+  exitAndExpr(ctx: p.AndExprContext) {
     const args = this.popExprs(ctx.expr().length)
     this.pushApplication(ctx, 'and', args)
   }
 
   // or { p, q, r }
-  exitOrExpr (ctx: p.OrExprContext) {
+  exitOrExpr(ctx: p.OrExprContext) {
     const args = this.popExprs(ctx.expr().length)
     this.pushApplication(ctx, 'or', args)
   }
 
   // all { p, q, r }
-  exitActionAll (ctx: p.ActionAllContext) {
+  exitActionAll(ctx: p.ActionAllContext) {
     const args = this.popExprs(ctx.expr().length)
     this.pushApplication(ctx, 'actionAll', args)
   }
 
   // any { p, q, r }
-  exitActionAny (ctx: p.ActionAnyContext) {
+  exitActionAny(ctx: p.ActionAnyContext) {
     const args = this.popExprs(ctx.expr().length)
     this.pushApplication(ctx, 'actionAny', args)
   }
 
   // if (p) e1 else e2
-  exitIfElse (ctx: any) {
+  exitIfElse(ctx: any) {
     const args = this.popExprs(3)
     this.pushApplication(ctx, 'ite', args)
   }
@@ -626,7 +626,7 @@ export class ToIrListener implements TntListener {
   // entry match
   //   | "Cat": cat => cat.name != ""
   //   | "Dog": dog => dog.year > 0
-  exitMatch (ctx: p.MatchContext) {
+  exitMatch(ctx: p.MatchContext) {
     const options = ctx.STRING().map((opt) => opt.text.slice(1, -1))
     const noptions = options.length
     // expressions in the right-hand sides, e.g., dog.year > 0
@@ -664,28 +664,28 @@ export class ToIrListener implements TntListener {
   /** ******************* translate types ********************************/
 
   // the integer type, that is, int
-  exitTypeInt (ctx: p.TypeIntContext) {
+  exitTypeInt(ctx: p.TypeIntContext) {
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.typeStack.push({ id, kind: 'int' })
   }
 
   // the Boolean type, that is, bool
-  exitTypeBool (ctx: p.TypeBoolContext) {
+  exitTypeBool(ctx: p.TypeBoolContext) {
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.typeStack.push({ id, kind: 'bool' })
   }
 
   // the string type, that is, str
-  exitTypeStr (ctx: p.TypeStrContext) {
+  exitTypeStr(ctx: p.TypeStrContext) {
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.typeStack.push({ id, kind: 'str' })
   }
 
   // a type variable, a type constant, or a reference to a type alias
-  exitTypeConstOrVar (ctx: p.TypeConstOrVarContext) {
+  exitTypeConstOrVar(ctx: p.TypeConstOrVarContext) {
     const name = ctx.IDENTIFIER().text
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
@@ -699,7 +699,7 @@ export class ToIrListener implements TntListener {
   }
 
   // a set type, e.g., set(int)
-  exitTypeSet (ctx: p.TypeSetContext) {
+  exitTypeSet(ctx: p.TypeSetContext) {
     const last = this.typeStack.pop()
     if (last !== undefined) {
       const id = this.nextId()
@@ -709,7 +709,7 @@ export class ToIrListener implements TntListener {
   }
 
   // a list type, e.g., list(int)
-  exitTypeList (ctx: p.TypeListContext) {
+  exitTypeList(ctx: p.TypeListContext) {
     const top = this.typeStack.pop()
     if (top !== undefined) {
       const id = this.nextId()
@@ -719,7 +719,7 @@ export class ToIrListener implements TntListener {
   }
 
   // A function type, e.g., str => int
-  exitTypeFun (ctx: p.TypeFunContext) {
+  exitTypeFun(ctx: p.TypeFunContext) {
     const res = this.typeStack.pop()
     const arg = this.typeStack.pop()
     if (arg !== undefined && res !== undefined) {
@@ -731,14 +731,14 @@ export class ToIrListener implements TntListener {
 
   // A tuple type, e.g., (int, bool)
   // the type stack contains the types of the elements
-  exitTypeTuple (ctx: p.TypeTupleContext) {
+  exitTypeTuple(ctx: p.TypeTupleContext) {
     const elemTypes: TntType[] = this.popTypes(ctx.type().length)
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.typeStack.push({ id, kind: 'tup', elems: elemTypes })
   }
 
-  exitRow (ctx: p.RowContext) {
+  exitRow(ctx: p.RowContext) {
     const names = ctx.IDENTIFIER().map((n) => n.text)
     const elemTypes: TntType[] = this.popTypes(ctx.type().length)
 
@@ -764,7 +764,7 @@ export class ToIrListener implements TntListener {
   // A record type that is not a disjoint union, e.g.,
   // { name: str, year: int }
   // The row stack contains the row with the types of the fields.
-  exitTypeRec (ctx: p.TypeRecContext) {
+  exitTypeRec(ctx: p.TypeRecContext) {
     const row = this.popRow()
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
@@ -774,7 +774,7 @@ export class ToIrListener implements TntListener {
   // A disjoint union type, e.g.,
   //   | { type: "ack", from: address }
   //   | { type: "syn", to: address }
-  exitTypeUnionRec (ctx: p.TypeUnionRecContext) {
+  exitTypeUnionRec(ctx: p.TypeUnionRecContext) {
     const size = ctx.typeUnionRecOne().length
     const ls = this.locStr(ctx)
     assert(size > 0, `exitTypeUnionRec: ${ls}: size == 0`)
@@ -811,7 +811,7 @@ export class ToIrListener implements TntListener {
   // One option of a disjoint union, e.g.,
   //   | { type: "ack", from: address }
   // The row stack contains the row with the types of the fields.
-  exitTypeUnionRecOne (ctx: p.TypeUnionRecOneContext) {
+  exitTypeUnionRecOne(ctx: p.TypeUnionRecOneContext) {
     // the first name is the tag name (according to the grammar)
     const tagName = ctx.IDENTIFIER().text
     const tagVal = ctx.STRING().toString().slice(1, -1)
@@ -834,7 +834,7 @@ export class ToIrListener implements TntListener {
   }
 
   // an operator type, e.g., (int, str) => bool
-  exitTypeOper (ctx: p.TypeOperContext) {
+  exitTypeOper(ctx: p.TypeOperContext) {
     const resType = this.typeStack.pop()
     const nargs = ctx.type().length - 1
     const argTypes: TntType[] = this.popTypes(nargs)
@@ -848,13 +848,13 @@ export class ToIrListener implements TntListener {
   /**
    * Produce a human-readable location string.
    */
-  private locStr (ctx: ParserRuleContext) {
+  private locStr(ctx: ParserRuleContext) {
     const line = ctx.start.line
     const col = ctx.start.charPositionInLine
     return `${line}:${col}`
   }
 
-  private loc (ctx: ParserRuleContext): Loc {
+  private loc(ctx: ParserRuleContext): Loc {
     if (ctx.stop) {
       // Try to use index. If not available, use column instead.
       // This is what works best with the information provided by the parser
@@ -876,7 +876,7 @@ export class ToIrListener implements TntListener {
 
   // Push the application of operator `name` to `args` onto the internal
   // stack of expressions
-  private pushApplication (ctx: any, name: string, args: TntEx[]) {
+  private pushApplication(ctx: any, name: string, args: TntEx[]) {
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.exprStack.push({
@@ -888,7 +888,7 @@ export class ToIrListener implements TntListener {
   }
 
   // push an error from the context
-  private pushError (ctx: ParserRuleContext, message: string) {
+  private pushError(ctx: ParserRuleContext, message: string) {
     const start = { line: ctx.start.line - 1, col: ctx.start.charPositionInLine, index: ctx.start.startIndex }
     // istanbul ignore next
     const end =
@@ -899,7 +899,7 @@ export class ToIrListener implements TntListener {
   }
 
   // pop n elements out of typeStack
-  private popTypes (n: number): TntType[] {
+  private popTypes(n: number): TntType[] {
     assert(this.typeStack.length >= n, 'popTypes: too few elements in typeStack')
     const types: TntType[] = this.typeStack.slice(-n)
     this.typeStack = this.typeStack.slice(0, -n)
@@ -907,7 +907,7 @@ export class ToIrListener implements TntListener {
   }
 
   // pop n expressions out of exprStack
-  private popExprs (n: number): TntEx[] {
+  private popExprs(n: number): TntEx[] {
     assert(this.exprStack.length >= n, 'popExprs: too few elements in exprStack')
     if (n === 0) {
       // pop nothing and return the empty array
@@ -921,7 +921,7 @@ export class ToIrListener implements TntListener {
   }
 
   // pop n patterns out of patternStack
-  private popParams (n: number): string[][] {
+  private popParams(n: number): string[][] {
     assert(this.paramStack.length >= n, 'popParams: too few elements in patternStack')
     const es: string[][] = this.paramStack.slice(-n)
     this.paramStack = this.paramStack.slice(0, -n)
@@ -929,21 +929,21 @@ export class ToIrListener implements TntListener {
   }
 
   // pop a type
-  private popType (): TntType {
+  private popType(): TntType {
     // the user has specified a type
     const tp = this.typeStack.pop()
     return tp!
   }
 
   // pop a row
-  private popRow (): Row {
+  private popRow(): Row {
     // the user has specified a row
     const tp = this.rowStack.pop()
     return tp!
   }
 
   // produce the next number in a list
-  private nextId (): bigint {
+  private nextId(): bigint {
     const id = this.lastId
     this.lastId += 1n
     return id

@@ -7,7 +7,7 @@ import { dedent } from '../textUtils'
 
 // Compile an expression, evaluate it, convert to TlaEx, then to a string,
 // compare the result. This is the easiest path to test the results.
-function assertResultAsString (input: string, expected: string | undefined) {
+function assertResultAsString(input: string, expected: string | undefined) {
   const moduleText = `module __runtime { val __expr = ${input} }`
   const context = compile(moduleText).values
   const value = context.get(kindName('callable', '__expr'))
@@ -26,7 +26,7 @@ function assertResultAsString (input: string, expected: string | undefined) {
 }
 
 // Compile a definition and check that the compiled value is defined.
-function assertDef (kind: ComputableKind, name: string, input: string) {
+function assertDef(kind: ComputableKind, name: string, input: string) {
   const moduleText = `module __runtime { ${input} }`
   const context = compile(moduleText).values
   assert(context.get(kindName(kind, name)),

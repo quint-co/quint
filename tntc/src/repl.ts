@@ -46,14 +46,13 @@ interface ReplState {
 
 // The default exit terminates the process.
 // Since it is inconvenient for testing, do not use it in tests :)
-function defaultExit () {
+function defaultExit() {
   process.exit(0)
 }
 
 // the entry point to the REPL
-export function tntRepl
-(input: Readable, output: Writable, exit: () => void = defaultExit) {
-  function out (text: string) {
+export function tntRepl(input: Readable, output: Writable, exit: () => void = defaultExit) {
+  function out(text: string) {
     output.write(text + '\n')
   }
   out(chalk.gray('TNT REPL v0.0.2'))
@@ -95,7 +94,7 @@ export function tntRepl
   })
 
   // next line handler
-  function nextLine (line: string) {
+  function nextLine(line: string) {
     const [nob, nop] = countBraces(line)
     nOpenBraces += nob
     nOpenParen += nop
@@ -178,7 +177,7 @@ export function tntRepl
 
 // private definitions
 
-function saveToFile (out: writer, state: ReplState, filename: string) {
+function saveToFile(out: writer, state: ReplState, filename: string) {
   // as top-level expressions are not supported by the language,
   // we are wrapping them into special comments
   try {
@@ -191,7 +190,7 @@ function saveToFile (out: writer, state: ReplState, filename: string) {
   }
 }
 
-function loadFromFile (out: writer, state: ReplState, filename: string) {
+function loadFromFile(out: writer, state: ReplState, filename: string) {
   try {
     const data = readFileSync(filename, 'utf8')
     // split the definitions from the expression
@@ -222,7 +221,7 @@ function loadFromFile (out: writer, state: ReplState, filename: string) {
   }
 }
 
-function evalAndSaveRegisters (kind: ComputableKind, names: string[],
+function evalAndSaveRegisters(kind: ComputableKind, names: string[],
   context: CompilationContext, targetMap: Map<string, EvalResult>) {
   targetMap.clear()
   for (const v of names) {
@@ -235,8 +234,8 @@ function evalAndSaveRegisters (kind: ComputableKind, names: string[],
   }
 }
 
-function saveVars (state: ReplState, context: CompilationContext): void {
-  function isNextSet (name: string) {
+function saveVars(state: ReplState, context: CompilationContext): void {
+  function isNextSet(name: string) {
     const register = context.values.get(kindName('nextvar', name)) as Register
     if (register) {
       return register.registerValue.isJust()
@@ -250,11 +249,11 @@ function saveVars (state: ReplState, context: CompilationContext): void {
   }
 }
 
-function saveShadowVars (state: ReplState, context: CompilationContext): void {
+function saveShadowVars(state: ReplState, context: CompilationContext): void {
   evalAndSaveRegisters('shadow', context.shadowVars, context, state.shadowVars)
 }
 
-function loadRegisters (kind: ComputableKind,
+function loadRegisters(kind: ComputableKind,
   vars: Map<string, EvalResult>, context: CompilationContext): void {
   vars.forEach((value, name) => {
     const register = context.values.get(kindName(kind, name)) as Register
@@ -264,16 +263,16 @@ function loadRegisters (kind: ComputableKind,
   })
 }
 
-function loadVars (state: ReplState, context: CompilationContext): void {
+function loadVars(state: ReplState, context: CompilationContext): void {
   loadRegisters('var', state.vars, context)
 }
 
-function loadShadowVars (state: ReplState, context: CompilationContext): void {
+function loadShadowVars(state: ReplState, context: CompilationContext): void {
   loadRegisters('shadow', state.shadowVars, context)
 }
 
 // convert a TNT expression to a colored string, tuned for REPL
-function chalkTntEx (ex: TntEx): string {
+function chalkTntEx(ex: TntEx): string {
   switch (ex.kind) {
     case 'bool':
       return chalk.yellow(`${ex.value}`)
@@ -347,10 +346,9 @@ def _testOnce(__nsteps, __init, __next, __inv) =
 `
 
 // try to evaluate the expression in a string and print it, if successful
-function tryEval (out: writer, state: ReplState, newInput: string): boolean {
+function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   // output errors to the console in red
-  function printErrors
-  (moduleText: string, context: CompilationContext, lineOffset: number) {
+  function printErrors(moduleText: string, context: CompilationContext, lineOffset: number) {
     printErrorMessages(out,
       'syntax error', moduleText, lineOffset, context.syntaxErrors)
     printErrorMessages(out,
@@ -444,8 +442,7 @@ ${newInput}
 }
 
 // resolve source locations of IR errors
-function resolveErrors
-(sourceMap: Map<bigint, Loc>, errors: IrErrorMessage[]): ErrorMessage[] {
+function resolveErrors(sourceMap: Map<bigint, Loc>, errors: IrErrorMessage[]): ErrorMessage[] {
   const unknownLoc = {
     source: '<unknown>',
     start: { line: 0, col: 0, index: 0 },
@@ -459,8 +456,7 @@ function resolveErrors
 }
 
 // print error messages with proper colors
-function printErrorMessages
-(out: writer,
+function printErrorMessages(out: writer,
   kind: string, text: string, lineOffset: number, messages: ErrorMessage[],
   color: (_text: string) => string = chalk.red) {
   // display the error messages and highlight the error places
@@ -473,7 +469,7 @@ function printErrorMessages
 
 // count the difference between the number of '{' and '}'
 // as well as the difference between the number of '(' and ')' in a string
-function countBraces (str: string): [number, number] {
+function countBraces(str: string): [number, number] {
   let nOpenBraces = 0
   let nOpenParen = 0
   for (let i = 0; i < str.length; i++) {

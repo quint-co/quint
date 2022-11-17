@@ -28,7 +28,7 @@ import { effectToString } from './printing'
  *
  * @returns the simplified effect if no multiple updates are found. Otherwise, the error.
  */
-export function simplifyConcreteEffect (e: ConcreteEffect): Either<ErrorTree, Effect> {
+export function simplifyConcreteEffect(e: ConcreteEffect): Either<ErrorTree, Effect> {
   const read = uniqueVariables(flattenUnions(e.read))
   const update = flattenUnions(e.update)
   const temporal = uniqueVariables(flattenUnions(e.temporal))
@@ -46,7 +46,7 @@ export function simplifyConcreteEffect (e: ConcreteEffect): Either<ErrorTree, Ef
   }
 }
 
-export function simplify (e: Effect): Either<ErrorTree, Effect> {
+export function simplify(e: Effect): Either<ErrorTree, Effect> {
   switch (e.kind) {
     case 'concrete': return simplifyConcreteEffect(e)
     case 'quantified': return right(e)
@@ -68,7 +68,7 @@ export function simplify (e: Effect): Either<ErrorTree, Effect> {
  * @returns the flattened form of union if a union.
  *          Otherwise, the variables without change.
  */
-export function flattenUnions (variables: Variables): Variables {
+export function flattenUnions(variables: Variables): Variables {
   switch (variables.kind) {
     case 'union': {
       const unionVariables: Variables[] = []
@@ -100,7 +100,7 @@ export function flattenUnions (variables: Variables): Variables {
   }
 }
 
-function findVars (variables: Variables): string[] {
+function findVars(variables: Variables): string[] {
   switch (variables.kind) {
     case 'quantified':
       return []
@@ -111,7 +111,7 @@ function findVars (variables: Variables): string[] {
   }
 }
 
-function uniqueVariables (variables: Variables): Variables {
+function uniqueVariables(variables: Variables): Variables {
   switch (variables.kind) {
     case 'quantified':
       return variables

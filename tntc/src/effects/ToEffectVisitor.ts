@@ -29,7 +29,7 @@ export class ToEffectVisitor implements EffectListener {
   private variablesStack: Variables[] = []
   private stateVars: string[] = []
 
-  private pushEffect (effect: Effect): void {
+  private pushEffect(effect: Effect): void {
     this.effect = effect
     // If inside an arrow effect, push it this effect to the arrow's effects list
     if (this.arrowEffectsStack.length > 0) {
@@ -37,25 +37,25 @@ export class ToEffectVisitor implements EffectListener {
     }
   }
 
-  exitReadOnly () {
+  exitReadOnly() {
     const variables = this.variablesStack.pop()!
     const effect: Effect = { kind: 'concrete', read: variables, update: emptyVariables, temporal: emptyVariables }
     this.pushEffect(effect)
   }
 
-  exitUpdateOnly () {
+  exitUpdateOnly() {
     const variables = this.variablesStack.pop()!
     const effect: Effect = { kind: 'concrete', read: emptyVariables, update: variables, temporal: emptyVariables }
     this.pushEffect(effect)
   }
 
-  exitTemporalOnly () {
+  exitTemporalOnly() {
     const variables = this.variablesStack.pop()!
     const effect: Effect = { kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: variables }
     this.pushEffect(effect)
   }
 
-  exitReadAndUpdate () {
+  exitReadAndUpdate() {
     const update = this.variablesStack.pop()!
     const read = this.variablesStack.pop()!
 
@@ -63,7 +63,7 @@ export class ToEffectVisitor implements EffectListener {
     this.pushEffect(effect)
   }
 
-  exitReadAndTemporal () {
+  exitReadAndTemporal() {
     const temporal = this.variablesStack.pop()!
     const read = this.variablesStack.pop()!
 
@@ -71,29 +71,29 @@ export class ToEffectVisitor implements EffectListener {
     this.pushEffect(effect)
   }
 
-  exitPure () {
+  exitPure() {
     const effect: Effect = { kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables }
     this.pushEffect(effect)
   }
 
-  exitQuantifiedEffect (ctx: p.QuantifiedEffectContext) {
+  exitQuantifiedEffect(ctx: p.QuantifiedEffectContext) {
     const name = ctx.IDENTIFIER().text
     const effect: Effect = { kind: 'quantified', name }
     this.pushEffect(effect)
   }
 
-  enterArrowEffect () {
+  enterArrowEffect() {
     this.arrowEffectsStack.push([])
   }
 
-  exitArrowEffect () {
+  exitArrowEffect() {
     const effects = this.arrowEffectsStack.pop()!
     const result = effects.pop()!
     const effect: Effect = { kind: 'arrow', params: effects, result }
     this.pushEffect(effect)
   }
 
-  exitVars (ctx: p.VarsContext) {
+  exitVars(ctx: p.VarsContext) {
     const names: string[] = ctx.IDENTIFIER().map(i => i.text)
     const unionVariables: Variables[] = names.map(name => ({ kind: 'quantified', name }))
     if (this.stateVars.length > 0) {
@@ -111,7 +111,7 @@ export class ToEffectVisitor implements EffectListener {
     this.stateVars = []
   }
 
-  exitStateVarRef (ctx: p.StateVarRefContext) {
+  exitStateVarRef(ctx: p.StateVarRefContext) {
     const varRef = ctx.IDENTIFIER().text
     this.stateVars.push(varRef)
   }

@@ -91,7 +91,7 @@ export interface IRVisitor {
  *
  * @returns nothing, any collected information has to be a state inside the IRVisitor instance.
  */
-export function walkModule (visitor: IRVisitor, tntModule: ir.TntModule): void {
+export function walkModule(visitor: IRVisitor, tntModule: ir.TntModule): void {
   const moduleDef: ir.TntModuleDef = {
     kind: 'module', id: 0n, module: tntModule,
   }
@@ -113,7 +113,7 @@ export function walkModule (visitor: IRVisitor, tntModule: ir.TntModule): void {
  *
  * @returns nothing, any collected information has to be a state inside the IRVisitor instance.
  */
-export function walkType (visitor: IRVisitor, type: t.TntType): void {
+export function walkType(visitor: IRVisitor, type: t.TntType): void {
   if (visitor.enterType) {
     visitor.enterType(type)
   }
@@ -237,7 +237,7 @@ export function walkType (visitor: IRVisitor, type: t.TntType): void {
   }
 }
 
-function walkDefinition (visitor: IRVisitor, def: ir.TntDef): void {
+function walkDefinition(visitor: IRVisitor, def: ir.TntDef): void {
   if (visitor.enterDef) {
     visitor.enterDef(def)
   }
@@ -325,7 +325,7 @@ function walkDefinition (visitor: IRVisitor, def: ir.TntDef): void {
   }
 }
 
-function walkExpression (visitor: IRVisitor, expr: ir.TntEx): void {
+function walkExpression(visitor: IRVisitor, expr: ir.TntEx): void {
   if (visitor.enterExpr) {
     visitor.enterExpr(expr)
   }
@@ -390,7 +390,7 @@ function walkExpression (visitor: IRVisitor, expr: ir.TntEx): void {
   }
 }
 
-function walkRow (visitor: IRVisitor, r: t.Row) {
+function walkRow(visitor: IRVisitor, r: t.Row) {
   switch (r.kind) {
     case 'row':
       r.fields.forEach(field => walkType(visitor, field.fieldType))

@@ -125,7 +125,7 @@ connection.onDidChangeConfiguration(change => {
   })
 })
 
-function _getDocumentSettings (resource: string): Promise<ExampleSettings> {
+function _getDocumentSettings(resource: string): Promise<ExampleSettings> {
   if (!hasConfigurationCapability) {
     return Promise.resolve(globalSettings)
   }
@@ -190,7 +190,7 @@ connection.onHover((params: HoverParams): Hover | undefined => {
   }
 })
 
-function findResult (results: Map<Loc, string>, position: Position, document: TextDocument): string {
+function findResult(results: Map<Loc, string>, position: Position, document: TextDocument): string {
   const resultsOnPosition: [string, string, Loc][] = []
 
   results.forEach((result, loc) => {
@@ -199,7 +199,9 @@ function findResult (results: Map<Loc, string>, position: Position, document: Te
       // Position is part of effect's expression range
       const text = document.getText({
         start: { line: loc.start.line, character: loc.start.col },
-        end: loc.end ? { line: loc.end.line, character: loc.end.col + 1 } : { line: loc.start.line, character: loc.start.col },
+        end: loc.end
+          ? { line: loc.end.line, character: loc.end.col + 1 }
+          : { line: loc.start.line, character: loc.start.col },
       })
 
       resultsOnPosition.push([text, result, loc])
@@ -222,7 +224,7 @@ function findResult (results: Map<Loc, string>, position: Position, document: Te
   return sortedResults[0]
 }
 
-function assembleDiagnostic (explanation: string, loc: Loc): Diagnostic {
+function assembleDiagnostic(explanation: string, loc: Loc): Diagnostic {
   return {
     severity: DiagnosticSeverity.Error,
     range: {
@@ -237,7 +239,7 @@ function assembleDiagnostic (explanation: string, loc: Loc): Diagnostic {
   }
 }
 
-async function validateTextDocument (textDocument: TextDocument): Promise<ParsingResult> {
+async function validateTextDocument(textDocument: TextDocument): Promise<ParsingResult> {
   // The validator creates diagnostics for all uppercase words length 2 and more
   const diagnostics: Diagnostic[] = []
   const text = textDocument.getText()
@@ -272,7 +274,9 @@ const originalEffectsByDocument: Map<DocumentUri, Map<bigint, Effect>> = new Map
 const typesByDocument: Map<DocumentUri, Map<Loc, string>> = new Map<DocumentUri, Map<Loc, string>>()
 const documentsByUri: Map<DocumentUri, TextDocument> = new Map<DocumentUri, TextDocument>()
 
-function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule): Promise<boolean> {
+function checkTypesAndEffects(
+  textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule
+): Promise<boolean> {
   const testDiags = checkTypes(textDocument, tntModule, sourceMap, table)
   const effectDiags = checkEffects(textDocument, tntModule, sourceMap, table)
   const modeDiags = checkDefinitionModes(textDocument, tntModule, sourceMap)
@@ -285,7 +289,9 @@ function checkTypesAndEffects (textDocument: TextDocument, tntModule: TntModule,
   }
 }
 
-function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule): Diagnostic[] {
+function checkEffects(
+  textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule
+): Diagnostic[] {
   const [errors, inferredEffects] = inferEffects(table, tntModule)
   const diagnostics: Diagnostic[] = []
   const effects: Map<Loc, string> = new Map<Loc, string>()
@@ -308,7 +314,9 @@ function checkEffects (textDocument: TextDocument, tntModule: TntModule, sourceM
   return diagnostics
 }
 
-function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule): Diagnostic[] {
+function checkTypes(
+  textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule
+): Diagnostic[] {
   const [errors, inferredTypes] = inferTypes(tntModule, table)
   const diagnostics: Diagnostic[] = []
   const types: Map<Loc, string> = new Map<Loc, string>()
@@ -328,7 +336,9 @@ function checkTypes (textDocument: TextDocument, tntModule: TntModule, sourceMap
   return diagnostics
 }
 
-function checkDefinitionModes (textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>): Diagnostic[] {
+function checkDefinitionModes(
+  textDocument: TextDocument, tntModule: TntModule, sourceMap: Map<bigint, Loc>
+): Diagnostic[] {
   const result = checkModes(tntModule, originalEffectsByDocument.get(textDocument.uri)!)
   const diagnostics: Diagnostic[] = []
   result.mapLeft(e => {
