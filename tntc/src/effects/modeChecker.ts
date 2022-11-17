@@ -19,7 +19,7 @@ import { ErrorTree } from '../errorTree'
 import { definitionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { OpQualifier, TntModule, TntOpDef } from '../tntIr'
-import { ArrowEffect, ConcreteEffect, Effect, isAction, isState, isTemporal, Variables } from './base'
+import { ArrowEffect, ConcreteEffect, Effect, Variables, isAction, isState, isTemporal } from './base'
 import { EffectVisitor, walkEffect } from './EffectVisitor'
 import { effectToString } from './printing'
 

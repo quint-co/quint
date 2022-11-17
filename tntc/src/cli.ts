@@ -16,7 +16,7 @@ import { lf } from 'eol'
 import JSONbig from 'json-bigint'
 import lineColumn from 'line-column'
 
-import { parsePhase1, parsePhase2, ErrorMessage, compactSourceMap, Phase1Result } from './tntParserFrontend'
+import { ErrorMessage, Phase1Result, compactSourceMap, parsePhase1, parsePhase2 } from './tntParserFrontend'
 import { formatError } from './errorReporter'
 
 import yargs from 'yargs/yargs'
@@ -97,9 +97,9 @@ function typecheck (argv: any) {
 /**
  * Run REPL.
  *
- * @param argv parameters as provided by yargs
+ * @param _argv parameters as provided by yargs
  */
-function runRepl (argv: any) {
+function runRepl (_argv: any) {
   tntRepl(process.stdin, process.stdout)
 }
 

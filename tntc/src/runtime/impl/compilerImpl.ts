@@ -10,18 +10,18 @@
  */
 
 import { strict as assert } from 'assert'
-import { Maybe, none, just, merge } from '@sweet-monads/maybe'
-import { Set, List, OrderedMap } from 'immutable'
+import { Maybe, just, merge, none } from '@sweet-monads/maybe'
+import { List, OrderedMap, Set } from 'immutable'
 
 import { IRVisitor } from '../../IRVisitor'
 import {
-  Computable, EvalResult, Register, Callable, ComputableKind,
-  kindName, fail, mkCallable, mkRegister
+  Callable, Computable, ComputableKind, EvalResult, Register,
+  fail, kindName, mkCallable, mkRegister
 } from '../runtime'
 
 import * as ir from '../../tntIr'
 
-import { rv, RuntimeValue } from './runtimeValue'
+import { RuntimeValue, rv } from './runtimeValue'
 
 import { lastTraceName } from '../compile'
 
@@ -562,7 +562,7 @@ export class CompilerVisitor implements IRVisitor {
 
       case 'isFinite':
         // at the moment, we support only finite sets, so just return true
-        this.applyFun(app.id, 1, set => just(rv.mkBool(true)))
+        this.applyFun(app.id, 1, _set => just(rv.mkBool(true)))
         break
 
       case 'to':
@@ -693,8 +693,8 @@ export class CompilerVisitor implements IRVisitor {
           app.id,
           arr =>
             rv.mkSet(arr
-              .filter(([r, e]) => r.toBool())
-              .map(([r, e]) => e))
+              .filter(([r, _]) => r.toBool())
+              .map(([_, e]) => e))
         )
         break
 
@@ -703,8 +703,8 @@ export class CompilerVisitor implements IRVisitor {
           app.id,
           arr =>
             rv.mkList(arr
-              .filter(([r, e]) => r.toBool())
-              .map(([r, e]) => e))
+              .filter(([r, _]) => r.toBool())
+              .map(([_, e]) => e))
         )
         break
 
@@ -823,7 +823,7 @@ export class CompilerVisitor implements IRVisitor {
   private mapLambdaThenReduce
   (sourceId: bigint,
     mapResultAndElems:
-      (array: Array<[RuntimeValue, RuntimeValue]>) => RuntimeValue): void {
+      (_array: Array<[RuntimeValue, RuntimeValue]>) => RuntimeValue): void {
     if (this.compStack.length < 2) {
       this.addCompileError(sourceId, 'Not enough arguments')
       return
@@ -890,7 +890,7 @@ export class CompilerVisitor implements IRVisitor {
   // push the combined computable value on the stack
   private applyFun
   (sourceId: bigint,
-    nargs: number, fun: (...args: RuntimeValue[]) => Maybe<RuntimeValue>) {
+    nargs: number, fun: (..._args: RuntimeValue[]) => Maybe<RuntimeValue>) {
     if (this.compStack.length < nargs) {
       this.addCompileError(sourceId, 'Not enough arguments')
     } else {
@@ -1308,7 +1308,7 @@ function mkFunComputable (fun: () => Maybe<EvalResult>) {
  *  - return `just` of the unpacked results.
  */
 function flatMap<T, R>
-(iterable: Iterable<T>, f: (arg: T) => Maybe<R>): Maybe<Array<R>> {
+(iterable: Iterable<T>, f: (_arg: T) => Maybe<R>): Maybe<Array<R>> {
   const results: R[] = []
   for (const arg of iterable) {
     const res = f(arg)
@@ -1331,7 +1331,7 @@ function flatMap<T, R>
  */
 function flatForEach<T, R>
 (order: 'fwd' | 'rev',
-  iterable: Iterable<T>, init: Maybe<R>, f: (arg: T) => Maybe<R>): Maybe<R> {
+  iterable: Iterable<T>, init: Maybe<R>, f: (_arg: T) => Maybe<R>): Maybe<R> {
   let result: Maybe<R> = init
   // if the reverse order is required, reverse the array
   const iter = (order === 'fwd') ? iterable : Array(...iterable).reverse()

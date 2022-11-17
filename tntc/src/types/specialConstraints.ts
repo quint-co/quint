@@ -13,7 +13,7 @@
  */
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { buildErrorLeaf, Error } from '../errorTree'
+import { Error, buildErrorLeaf } from '../errorTree'
 import { expressionToString } from '../IRprinting'
 import { TntEx } from '../tntIr'
 import { TntType, TntVarType } from '../tntTypes'

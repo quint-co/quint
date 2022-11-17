@@ -59,7 +59,7 @@ export class ToEffectVisitor implements EffectListener {
     const update = this.variablesStack.pop()!
     const read = this.variablesStack.pop()!
 
-    const effect: Effect = { kind: 'concrete', read: read, update: update, temporal: emptyVariables }
+    const effect: Effect = { kind: 'concrete', read, update, temporal: emptyVariables }
     this.pushEffect(effect)
   }
 
@@ -67,7 +67,7 @@ export class ToEffectVisitor implements EffectListener {
     const temporal = this.variablesStack.pop()!
     const read = this.variablesStack.pop()!
 
-    const effect: Effect = { kind: 'concrete', read: read, update: emptyVariables, temporal: temporal }
+    const effect: Effect = { kind: 'concrete', read, update: emptyVariables, temporal }
     this.pushEffect(effect)
   }
 
@@ -78,7 +78,7 @@ export class ToEffectVisitor implements EffectListener {
 
   exitQuantifiedEffect (ctx: p.QuantifiedEffectContext) {
     const name = ctx.IDENTIFIER().text
-    const effect: Effect = { kind: 'quantified', name: name }
+    const effect: Effect = { kind: 'quantified', name }
     this.pushEffect(effect)
   }
 
@@ -89,13 +89,13 @@ export class ToEffectVisitor implements EffectListener {
   exitArrowEffect () {
     const effects = this.arrowEffectsStack.pop()!
     const result = effects.pop()!
-    const effect: Effect = { kind: 'arrow', params: effects, result: result }
+    const effect: Effect = { kind: 'arrow', params: effects, result }
     this.pushEffect(effect)
   }
 
   exitVars (ctx: p.VarsContext) {
     const names: string[] = ctx.IDENTIFIER().map(i => i.text)
-    const unionVariables: Variables[] = names.map(name => ({ kind: 'quantified', name: name }))
+    const unionVariables: Variables[] = names.map(name => ({ kind: 'quantified', name }))
     if (this.stateVars.length > 0) {
       unionVariables.push({ kind: 'concrete', vars: this.stateVars })
     }

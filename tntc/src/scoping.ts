@@ -15,7 +15,7 @@
 
 import { IRVisitor, walkModule } from './IRVisitor'
 import { ValueDefinition } from './lookupTable'
-import { TntModule, TntDef, TntEx, TntModuleDef } from './tntIr'
+import { TntDef, TntEx, TntModule, TntModuleDef } from './tntIr'
 
 /**
  * A tree structure where nodes are IR ids

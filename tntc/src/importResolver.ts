@@ -12,7 +12,7 @@
  * @module
  */
 
-import { LookupTableByModule, LookupTable, newTable, copyTable, addValueToTable, addTypeToTable, copyNames, mergeTables } from './lookupTable'
+import { LookupTable, LookupTableByModule, addTypeToTable, addValueToTable, copyNames, copyTable, mergeTables, newTable } from './lookupTable'
 import { TntImport, TntInstance, TntModule, TntModuleDef } from './tntIr'
 import { IRVisitor, walkModule } from './IRVisitor'
 

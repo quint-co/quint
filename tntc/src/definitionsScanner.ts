@@ -13,7 +13,7 @@
  */
 
 import isEqual from 'lodash.isequal'
-import { ValueDefinition, LookupTable } from './lookupTable'
+import { LookupTable, ValueDefinition } from './lookupTable'
 import { ScopeTree, scopesForId } from './scoping'
 
 /**
@@ -67,7 +67,7 @@ export function scanConflicts (table: LookupTable, tree: ScopeTree): Definitions
       const sources: ConflictSource[] = conflictingDefinitions.map(d => {
         return d.reference ? { kind: 'user', reference: d.reference } : { kind: 'builtin' }
       })
-      conflicts.push({ kind: 'value', identifier: identifier, sources: sources })
+      conflicts.push({ kind: 'value', identifier, sources })
     }
   })
 
@@ -77,12 +77,12 @@ export function scanConflicts (table: LookupTable, tree: ScopeTree): Definitions
       const sources: ConflictSource[] = defs.map(d => {
         return d.reference ? { kind: 'user', reference: d.reference } : { kind: 'builtin' }
       })
-      conflicts.push({ kind: 'type', identifier: identifier, sources: sources })
+      conflicts.push({ kind: 'type', identifier, sources })
     }
   })
 
   if (conflicts.length > 0) {
-    return { kind: 'error', conflicts: conflicts }
+    return { kind: 'error', conflicts }
   } else {
     return { kind: 'ok' }
   }

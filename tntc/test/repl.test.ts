@@ -1,10 +1,10 @@
 import { describe, it } from 'mocha'
 import { assert, expect } from 'chai'
 import { once } from 'events'
-import { Writable, PassThrough } from 'stream'
+import { PassThrough, Writable } from 'stream'
 import chalk from 'chalk'
 
-import { tntRepl, settings } from '../src/repl'
+import { settings, tntRepl } from '../src/repl'
 import { dedent } from './textUtils'
 
 // A simple implementation of Writable to a string:
@@ -14,7 +14,7 @@ class ToStringWritable extends Writable {
 
   _write (chunk: string,
     encoding: string,
-    next: (error?: Error | null) => void): void {
+    next: (_error?: Error | null) => void): void {
     this.buffer += chunk
     next()
   }

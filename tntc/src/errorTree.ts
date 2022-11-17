@@ -52,7 +52,7 @@ export function buildErrorTree (location: string, errors: Error): ErrorTree {
     return errors
   }
 
-  return { location: location, children: Array.isArray(errors) ? errors : [errors] }
+  return { location, children: Array.isArray(errors) ? errors : [errors] }
 }
 
 /*
@@ -64,7 +64,7 @@ export function buildErrorTree (location: string, errors: Error): ErrorTree {
  * @returns an ErrorTree with given attributes and no children
  */
 export function buildErrorLeaf (location: string, message: string): ErrorTree {
-  return { location: location, message: message, children: [] }
+  return { location, message, children: [] }
 }
 
 /**

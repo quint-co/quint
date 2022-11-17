@@ -12,7 +12,7 @@
  * @module
  */
 
-import { TntModule, TntDef, TntEx, isAnnotatedDef } from './tntIr'
+import { TntDef, TntEx, TntModule, isAnnotatedDef } from './tntIr'
 import { Row, TntType } from './tntTypes'
 
 /**

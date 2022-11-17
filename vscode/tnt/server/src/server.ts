@@ -4,30 +4,30 @@
  * See License.txt in the project root for license information.
  * --------------------------------------------------------------------------------- */
 import {
-  createConnection,
-  TextDocuments,
-  Diagnostic,
-  DiagnosticSeverity,
-  ProposedFeatures,
-  InitializeParams,
-  DidChangeConfigurationNotification,
   CompletionItem,
   CompletionItemKind,
+  Diagnostic,
+  DiagnosticSeverity,
+  DidChangeConfigurationNotification,
+  DocumentUri,
+  Hover,
+  HoverParams,
+  InitializeParams,
+  InitializeResult,
+  MarkupKind,
+  Position,
+  ProposedFeatures,
   TextDocumentPositionParams,
   TextDocumentSyncKind,
-  InitializeResult,
-  Hover,
-  MarkupKind,
-  HoverParams,
-  DocumentUri,
-  Position
+  TextDocuments,
+  createConnection
 } from 'vscode-languageserver/node'
 
 import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { parsePhase1, parsePhase2, Loc, LookupTableByModule, inferEffects, TntModule, effectToString, errorTreeToString, typeSchemeToString, inferTypes, checkModes, Effect } from 'tntc'
+import { Effect, Loc, LookupTableByModule, TntModule, checkModes, effectToString, errorTreeToString, inferEffects, inferTypes, parsePhase1, parsePhase2, typeSchemeToString } from 'tntc'
 
 interface ParsingResult {
   tntModule: TntModule
@@ -125,7 +125,7 @@ connection.onDidChangeConfiguration(change => {
   })
 })
 
-function getDocumentSettings (resource: string): Promise<ExampleSettings> {
+function _getDocumentSettings (resource: string): Promise<ExampleSettings> {
   if (!hasConfigurationCapability) {
     return Promise.resolve(globalSettings)
   }
@@ -217,7 +217,7 @@ function findResult (results: Map<Loc, string>, position: Position, document: Te
     } else {
       return -1
     }
-  }).map(([e, r, _]) => r)
+  }).map(([_e, r, _]) => r)
 
   return sortedResults[0]
 }
@@ -256,7 +256,7 @@ async function validateTextDocument (textDocument: TextDocument): Promise<Parsin
         diagnostics.push(...diags)
       }
     } else {
-      return new Promise((resolve, reject) => resolve({
+      return new Promise((resolve, _reject) => resolve({
         tntModule: result.module,
         sourceMap: result.sourceMap,
         definitionTable: result2.table,

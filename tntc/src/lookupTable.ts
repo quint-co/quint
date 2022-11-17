@@ -1,4 +1,4 @@
-import { filterScope, scopesForId, ScopeTree } from './scoping'
+import { ScopeTree, filterScope, scopesForId } from './scoping'
 import { TntType } from './tntTypes'
 
 /**
@@ -168,7 +168,7 @@ export function copyNames (originTable: LookupTable, namespace?: string, scope?:
     const name = namespace ? [namespace, identifier].join('::') : identifier
 
     // Copy only unscoped and non-default (referenced) names
-    const valueDefs = defs.filter(d => !d.scope && d.reference).map(d => ({ ...d, identifier: name, scope: scope }))
+    const valueDefs = defs.filter(d => !d.scope && d.reference).map(d => ({ ...d, identifier: name, scope }))
 
     if (valueDefs.length > 0) {
       table.valueDefinitions.set(name, valueDefs)

@@ -2,7 +2,7 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { buildModuleWithDefs } from './builders/ir'
 import { IRVisitor, walkModule } from '../src/IRVisitor'
-import { TntEx, TntDef } from '../src/tntIr'
+import { TntDef, TntEx } from '../src/tntIr'
 import { definitionToString, expressionToString, typeToString } from '../src/IRprinting'
 import { TntType } from '../src/tntTypes'
 

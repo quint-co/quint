@@ -12,9 +12,9 @@
  * @module
  */
 
-import { Either, right, mergeInMany } from '@sweet-monads/either'
-import { buildErrorTree, ErrorTree } from '../errorTree'
-import { Effect, unify, Variables, unifyVariables } from './base'
+import { Either, mergeInMany, right } from '@sweet-monads/either'
+import { ErrorTree, buildErrorTree } from '../errorTree'
+import { Effect, Variables, unify, unifyVariables } from './base'
 import { effectToString, substitutionsToString } from './printing'
 import { simplify } from './simplification'
 
@@ -79,7 +79,7 @@ export function applySubstitution (subs: Substitutions, e: Effect): Either<Error
       const update = applySubstitutionToVariables(subs, e.update)
       const temporal = applySubstitutionToVariables(subs, e.temporal)
 
-      result = right({ kind: 'concrete', read: read, update: update, temporal: temporal })
+      result = right({ kind: 'concrete', read, update, temporal })
       break
     }
   }

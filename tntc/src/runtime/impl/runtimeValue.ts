@@ -61,7 +61,7 @@
  */
 
 import {
-  Set, List, ValueObject, OrderedMap, Map, hash, is as immutableIs
+  List, Map, OrderedMap, Set, ValueObject, hash, is as immutableIs
 } from 'immutable'
 
 import { expressionToString } from '../../IRprinting'
@@ -325,7 +325,7 @@ export interface RuntimeValue
     * @param elem evaluation result to check for membership
     * @return true, if `value` appears in the result
     */
-  contains (value: RuntimeValue): boolean
+  contains (_value: RuntimeValue): boolean
 
   /**
     * If this runtime value is set-like, does it contain all elements of
@@ -335,7 +335,7 @@ export interface RuntimeValue
     * @result true if all elements of this are included
     * or equal to the elements of `superset`
     */
-  isSubset (superset: RuntimeValue): boolean
+  isSubset (_superset: RuntimeValue): boolean
 
   /**
    * If this runtime value is set-like, pick one of its elements using the
@@ -346,7 +346,7 @@ export interface RuntimeValue
    * TODO: reconsider this API. Perhaps, just use a bigint, which encodes either
    * the index up to the cardinality, or the position in an infinite set (Nat, Int).
    */
-  pick (position: number): RuntimeValue | undefined
+  pick (_position: number): RuntimeValue | undefined
 
   /**
    * If this runtime value is set-like, return the number of its elements,
@@ -554,7 +554,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     return 0
   }
 
-  pick (position: number): RuntimeValue | undefined {
+  pick (_position: number): RuntimeValue | undefined {
     return undefined
   }
 
@@ -707,7 +707,7 @@ class RuntimeValueRecord extends RuntimeValueBase implements RuntimeValue {
 
   normalForm (): RuntimeValue {
     const normalizedMap: OrderedMap<string, RuntimeValue> =
-        this.map.map((v, k) => v.normalForm())
+        this.map.map((v, _k) => v.normalForm())
     return new RuntimeValueRecord(normalizedMap)
   }
 

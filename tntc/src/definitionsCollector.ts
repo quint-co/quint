@@ -15,8 +15,8 @@
  */
 
 import { IRVisitor, walkModule } from './IRVisitor'
-import { addTypeToTable, addValueToTable, copyTable, LookupTable, LookupTableByModule, newTable, ValueDefinition, ValueDefinitionKind } from './lookupTable'
-import { TntModule, TntVar, TntModuleDef, TntConst, TntOpDef, TntTypeDef, TntAssume, TntLambda, TntLet } from './tntIr'
+import { LookupTable, LookupTableByModule, ValueDefinition, ValueDefinitionKind, addTypeToTable, addValueToTable, copyTable, newTable } from './lookupTable'
+import { TntAssume, TntConst, TntLambda, TntLet, TntModule, TntModuleDef, TntOpDef, TntTypeDef, TntVar } from './tntIr'
 import { TntType } from './tntTypes'
 
 /**
@@ -218,10 +218,10 @@ class DefinitionsCollectorVisitor implements IRVisitor {
     }
 
     const def: ValueDefinition = {
-      kind: kind,
-      identifier: identifier,
-      reference: reference,
-      scope: scope,
+      kind,
+      identifier,
+      reference,
+      scope,
     }
 
     addValueToTable(def, this.currentTable)
@@ -229,9 +229,9 @@ class DefinitionsCollectorVisitor implements IRVisitor {
 
   private collectTypeDefinition (identifier: string, type?: TntType, reference?: bigint): void {
     const def = {
-      identifier: identifier,
-      type: type,
-      reference: reference,
+      identifier,
+      type,
+      reference,
     }
 
     addTypeToTable(def, this.currentTable)

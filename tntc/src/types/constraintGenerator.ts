@@ -16,8 +16,8 @@ import { IRVisitor } from '../IRVisitor'
 import { TntApp, TntBool, TntConst, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr, TntVar } from '../tntIr'
 import { TntType, typeNames } from '../tntTypes'
 import { expressionToString } from '../IRprinting'
-import { Either, right, left, mergeInMany } from '@sweet-monads/either'
-import { buildErrorTree, ErrorTree, Error, buildErrorLeaf } from '../errorTree'
+import { Either, left, mergeInMany, right } from '@sweet-monads/either'
+import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
 import { getSignatures } from './builtinSignatures'
 import { Constraint, Signature, TypeScheme } from './base'
 import { Substitutions, applySubstitution } from './substitutions'
@@ -25,7 +25,7 @@ import { ScopeTree, treeFromModule } from '../scoping'
 import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../lookupTable'
 import { specialConstraints } from './specialConstraints'
 
-type solvingFunctionType = (constraint: Constraint) => Either<Map<bigint, ErrorTree>, Substitutions>
+type solvingFunctionType = (_constraint: Constraint) => Either<Map<bigint, ErrorTree>, Substitutions>
 
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
@@ -246,7 +246,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   private newInstance (type: TypeScheme): TntType {
     const names = type.variables
     const subs: Substitutions = Array.from(names).map(name => {
-      return { kind: 'type', name, value: { kind: 'var', name: this.freshVar() } }
+      return { kind: 'type', name: name, value: { kind: 'var', name: this.freshVar() } }
     })
 
     return applySubstitution(subs, type.type)
@@ -264,5 +264,5 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 }
 
 function toScheme (type: TntType): TypeScheme {
-  return { variables: new Set([]), type }
+  return { variables: new Set([]), type: type }
 }

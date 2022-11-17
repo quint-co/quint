@@ -20,7 +20,7 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 import { CharStreams, CommonTokenStream } from 'antlr4ts'
 import { Row, TntType } from '../tntTypes'
 
-import { Either, right, left } from '@sweet-monads/either'
+import { Either, left, right } from '@sweet-monads/either'
 
 /**
  * Parses a type represented as a string into an Type
@@ -43,9 +43,9 @@ export function parseType (typeString: string): Either<any[], TntType> {
         ? offendingSymbol.stopIndex - offendingSymbol.startIndex
         : 0
       const index = offendingSymbol ? offendingSymbol.startIndex : 0
-      const start = { line: line - 1, col: charPositionInLine, index: index }
+      const start = { line: line - 1, col: charPositionInLine, index }
       const end = { line: line - 1, col: charPositionInLine + len, index: index + len }
-      errorMessages.push({ explanation: msg, locs: [{ start: start, end: end }] })
+      errorMessages.push({ explanation: msg, locs: [{ start, end }] })
     },
   }
 

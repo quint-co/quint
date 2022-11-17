@@ -1,5 +1,5 @@
 import { parsePhase1 } from '../../src/tntParserFrontend'
-import { TntModule, TntEx, TntDef } from '../../src/tntIr'
+import { TntDef, TntEx, TntModule } from '../../src/tntIr'
 import JSONbig from 'json-bigint'
 import { TntType } from '../../src/tntTypes'
 

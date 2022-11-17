@@ -21,12 +21,12 @@ import { ArrowEffect, ConcreteEffect, Effect, QuantifiedEffect } from './base'
  */
 export interface EffectVisitor {
   /** General components */
-  enterConcrete?: (effect: ConcreteEffect) => void
-  exitConcrete?: (effect: ConcreteEffect) => void
-  enterArrow?: (effect: ArrowEffect) => void
-  exitArrow?: (effect: ArrowEffect) => void
-  enterQuantified?: (effect: QuantifiedEffect) => void
-  exitQuantified?: (effect: QuantifiedEffect) => void
+  enterConcrete?: (_effect: ConcreteEffect) => void
+  exitConcrete?: (_effect: ConcreteEffect) => void
+  enterArrow?: (_effect: ArrowEffect) => void
+  exitArrow?: (_effect: ArrowEffect) => void
+  enterQuantified?: (_effect: QuantifiedEffect) => void
+  exitQuantified?: (_effect: QuantifiedEffect) => void
 }
 
 /**

@@ -13,14 +13,14 @@
  * @module
  */
 
-import { Either, right, left, mergeInMany } from '@sweet-monads/either'
+import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../lookupTable'
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { TntApp, TntBool, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr } from '../tntIr'
-import { Effect, emptyVariables, unify, Signature, effectNames, Name } from './base'
-import { applySubstitution, Substitutions, compose } from './substitutions'
-import { buildErrorLeaf, buildErrorTree, ErrorTree, errorTreeToString, Error } from '../errorTree'
+import { Effect, Name, Signature, effectNames, emptyVariables, unify } from './base'
+import { Substitutions, applySubstitution, compose } from './substitutions'
+import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
 import { ScopeTree, treeFromModule } from '../scoping'
 import isEqual from 'lodash.isequal'
 import { getSignatures } from './builtinSignatures'
@@ -179,7 +179,7 @@ class EffectInferrerVisitor implements IRVisitor {
     const arrowEffect = paramsResult.map(params => {
       const effect: Effect = {
         kind: 'arrow',
-        params: params,
+        params,
         result: resultEffect,
       }
 

@@ -156,7 +156,7 @@ export function parsePhase2 (tntModule: TntModule, sourceMap: Map<bigint, Loc>):
           }
           return loc
         })
-        errorMessages.push({ explanation: msg, locs: locs })
+        errorMessages.push({ explanation: msg, locs })
       })
     }
   })
@@ -221,9 +221,9 @@ function setupParser (text: string,
         ? offendingSymbol.stopIndex - offendingSymbol.startIndex
         : 0
       const index = offendingSymbol ? offendingSymbol.startIndex : 0
-      const start = { line: line - 1, col: charPositionInLine, index: index }
+      const start = { line: line - 1, col: charPositionInLine, index }
       const end = { line: line - 1, col: charPositionInLine + len, index: index + len }
-      errorMessages.push({ explanation: msg, locs: [{ source: sourceLocation, start: start, end: end }] })
+      errorMessages.push({ explanation: msg, locs: [{ source: sourceLocation, start, end }] })
     },
   }
 

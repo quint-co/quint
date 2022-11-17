@@ -15,7 +15,7 @@
  * @module
  */
 
-import { TntModule, TntName, TntApp, TntDef, TntModuleDef } from './tntIr'
+import { TntApp, TntDef, TntModule, TntModuleDef, TntName } from './tntIr'
 import { TntConstType } from './tntTypes'
 import { ScopeTree } from './scoping'
 import { LookupTable, LookupTableByModule, lookupType, lookupValue, newTable } from './lookupTable'
@@ -58,7 +58,7 @@ export function resolveNames (tntModule: TntModule, table: LookupTableByModule, 
   const visitor = new NameResolverVisitor(table, scopeTree)
   walkModule(visitor, tntModule)
   const errors: NameError[] = visitor.errors
-  return errors.length > 0 ? { kind: 'error', errors: errors } : { kind: 'ok' }
+  return errors.length > 0 ? { kind: 'error', errors } : { kind: 'ok' }
 }
 
 class NameResolverVisitor implements IRVisitor {
@@ -140,8 +140,8 @@ class NameResolverVisitor implements IRVisitor {
 
   private recordError (kind: 'type' | 'value', name: string, id?: bigint) {
     this.errors.push({
-      kind: kind,
-      name: name,
+      kind,
+      name,
       definitionName: this.lastDefName,
       moduleName: this.currentModuleName,
       reference: id,

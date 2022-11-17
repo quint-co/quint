@@ -16,13 +16,13 @@ import chalk from 'chalk'
 
 import { Maybe, just, none } from '@sweet-monads/maybe'
 
-import { TntEx, IrErrorMessage } from './tntIr'
-import { compile, CompilationContext, lastTraceName } from './runtime/compile'
+import { IrErrorMessage, TntEx } from './tntIr'
+import { CompilationContext, compile, lastTraceName } from './runtime/compile'
 import { formatError } from './errorReporter'
 import {
-  EvalResult, Register, kindName, ComputableKind
+  ComputableKind, EvalResult, Register, kindName
 } from './runtime/runtime'
-import { probeParse, ErrorMessage, Loc } from './tntParserFrontend'
+import { ErrorMessage, Loc, probeParse } from './tntParserFrontend'
 
 // tunable settings
 export const settings = {
@@ -30,7 +30,7 @@ export const settings = {
   continuePrompt: '... ',
 }
 
-type writer = (text: string) => void
+type writer = (_text: string) => void
 
 // the internal state of the REPL
 interface ReplState {
@@ -60,8 +60,8 @@ export function tntRepl
   out(chalk.gray('Type ".exit" to exit, or ".help" for more information'))
   // create a readline interface
   const rl = readline.createInterface({
-    input: input,
-    output: output,
+    input,
+    output,
     prompt: settings.prompt,
   })
 
@@ -462,7 +462,7 @@ function resolveErrors
 function printErrorMessages
 (out: writer,
   kind: string, text: string, lineOffset: number, messages: ErrorMessage[],
-  color: (text: string) => string = chalk.red) {
+  color: (_text: string) => string = chalk.red) {
   // display the error messages and highlight the error places
   const finder = lineColumn(text)
   for (const e of messages) {

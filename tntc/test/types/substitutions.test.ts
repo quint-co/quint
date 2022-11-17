@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { parseTypeOrThrow } from '../../src/types/parser'
-import { compose, Substitutions, applySubstitution, applySubstitutionToConstraint } from '../../src/types/substitutions'
+import { Substitutions, applySubstitution, applySubstitutionToConstraint, compose } from '../../src/types/substitutions'
 import { Constraint } from '../../src/types/base'
 import { constraintToString } from '../../src/types/printing'
 import { Row } from '../../src'

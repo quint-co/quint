@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { expressionToString } from '../../src/IRprinting'
-import { kindName, ComputableKind } from '../../src/runtime/runtime'
+import { ComputableKind, kindName } from '../../src/runtime/runtime'
 import { compile } from '../../src/runtime/compile'
 import { dedent } from '../textUtils'
 

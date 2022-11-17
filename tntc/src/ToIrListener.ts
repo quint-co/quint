@@ -1,10 +1,11 @@
 import * as p from './generated/TntParser'
 import { ParserRuleContext } from 'antlr4ts/ParserRuleContext'
 import { TntListener } from './generated/TntListener'
-import { OpQualifier, TntDef, TntModule, TntEx, TntOpDef } from './tntIr'
+import { OpQualifier, TntDef, TntEx, TntModule, TntOpDef } from './tntIr'
 import { Row, TntType } from './tntTypes'
 import { strict as assert } from 'assert'
 import { ErrorMessage, Loc } from './tntParserFrontend'
+import { compact, zipWith } from 'lodash'
 
 /**
  * An ANTLR4 listener that constructs TntIr objects out of the abstract
@@ -72,9 +73,9 @@ export class ToIrListener implements TntListener {
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.definitionStack.push({
-      id: id,
+      id,
       kind: 'module',
-      module: module,
+      module,
     })
     // advance the root module to this one
     this.rootModule = module
@@ -90,7 +91,7 @@ export class ToIrListener implements TntListener {
       kind: 'const',
       name: ctx.IDENTIFIER().text,
       typeAnnotation: typeTag,
-      id: id,
+      id,
     }
     this.definitionStack.push(constDef)
   }
@@ -105,7 +106,7 @@ export class ToIrListener implements TntListener {
       kind: 'var',
       name: ctx.IDENTIFIER().text,
       typeAnnotation: typeTag,
-      id: id,
+      id,
     }
     this.definitionStack.push(varDef)
   }
@@ -117,7 +118,7 @@ export class ToIrListener implements TntListener {
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     if (def && expr) {
-      const letExpr: TntEx = { id: id, kind: 'let', opdef: def as TntOpDef, expr: expr }
+      const letExpr: TntEx = { id, kind: 'let', opdef: def as TntOpDef, expr }
       this.exprStack.push(letExpr)
     }
   }
@@ -160,18 +161,18 @@ export class ToIrListener implements TntListener {
 
       if (params.length > 0) {
         body = {
-          id: id,
+          id,
           kind: 'lambda',
-          params: params,
-          qualifier: qualifier,
-          expr: expr,
+          params,
+          qualifier,
+          expr,
         }
       }
       const def: TntOpDef = {
-        id: id,
+        id,
         kind: 'def',
-        name: name,
-        qualifier: qualifier,
+        name,
+        qualifier,
         expr: body,
       }
       if (typeTag) {
@@ -207,7 +208,7 @@ export class ToIrListener implements TntListener {
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     const assume: TntDef = {
-      id: id,
+      id,
       kind: 'assume',
       name: params[0],
       assumption: expr,
@@ -222,10 +223,10 @@ export class ToIrListener implements TntListener {
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     const importDef: TntDef = {
-      id: id,
+      id,
       kind: 'import',
       name: ident,
-      path: path,
+      path,
     }
     this.definitionStack.push(importDef)
   }
@@ -245,9 +246,9 @@ export class ToIrListener implements TntListener {
     this.sourceMap.set(id, this.loc(ctx))
 
     const def: TntDef = {
-      id: id,
+      id,
       kind: 'typedef',
-      name: name,
+      name,
     }
 
     if (typeToAlias) {
@@ -276,12 +277,12 @@ export class ToIrListener implements TntListener {
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     const instance: TntDef = {
-      id: id,
+      id,
       kind: 'instance',
       name: instanceName,
-      protoName: protoName,
-      overrides: overrides,
-      identityOverride: identityOverride,
+      protoName,
+      overrides,
+      identityOverride,
     }
     this.definitionStack.push(instance)
   }
@@ -296,7 +297,7 @@ export class ToIrListener implements TntListener {
     this.sourceMap.set(id, this.loc(ctx))
     if (ident) { // identifier
       this.exprStack.push({
-        id: id,
+        id,
         kind: 'name',
         name: ident.text,
       })
@@ -304,7 +305,7 @@ export class ToIrListener implements TntListener {
     const intNode = ctx.INT()
     if (intNode) { // integer literal
       this.exprStack.push({
-        id: id,
+        id,
         kind: 'int',
         value: BigInt(intNode.text),
       })
@@ -312,7 +313,7 @@ export class ToIrListener implements TntListener {
     const boolNode = ctx.BOOL()
     if (boolNode) { // Boolean literal
       this.exprStack.push({
-        id: id,
+        id,
         kind: 'bool',
         value: (boolNode.text === 'true'),
       })
@@ -320,7 +321,7 @@ export class ToIrListener implements TntListener {
     const strNode = ctx.STRING()
     if (strNode) { // string, remove the quotes!
       this.exprStack.push({
-        id: id,
+        id,
         kind: 'str',
         value: strNode.text.slice(1, -1),
       })
@@ -391,7 +392,7 @@ export class ToIrListener implements TntListener {
         const id = this.nextId()
         this.sourceMap.set(id, this.loc(ctx))
         const idx: TntEx = {
-          id: id,
+          id,
           kind: 'int',
           value: BigInt(m[1]),
         }
@@ -410,7 +411,7 @@ export class ToIrListener implements TntListener {
         const id = this.nextId()
         this.sourceMap.set(id, this.loc(ctx))
         const field: TntEx = {
-          id: id,
+          id,
           kind: 'str',
           value: name,
         }
@@ -429,7 +430,7 @@ export class ToIrListener implements TntListener {
       id: 0n,
       kind: 'app',
       opcode: 'wrappedArgs',
-      args: args,
+      args,
     })
   }
 
@@ -444,11 +445,11 @@ export class ToIrListener implements TntListener {
       const id = this.nextId()
       this.sourceMap.set(id, this.loc(ctx))
       this.exprStack.push({
-        id: id,
+        id,
         kind: 'lambda',
         params: singletons,
         qualifier: 'def',
-        expr: expr,
+        expr,
       })
     } else {
       const ls = this.locStr(ctx)
@@ -502,19 +503,15 @@ export class ToIrListener implements TntListener {
   exitRecord (ctx: p.RecordContext) {
     const names = ctx.IDENTIFIER().map((n) => n.text)
     const elems: TntEx[] = this.popExprs(ctx.expr().length)
-    // since TS does not have zip, a loop is the easiest solution
-    const namesAndValues: TntEx[] = []
-    for (let i = 0; i < names.length; i++) {
+    
+    const namesAndValues = zipWith(names, elems, (name, elem) => {
       const id = this.nextId()
       this.sourceMap.set(id, this.loc(ctx))
-      namesAndValues.push({
-        id: id,
-        kind: 'str',
-        value: names[i],
-      })
-      namesAndValues.push(elems[i])
-    }
-    this.pushApplication(ctx, 'Rec', namesAndValues)
+
+      const nameExpression: TntEx = { id, kind: 'str', value: name }
+      return [nameExpression, elem]
+    })
+    this.pushApplication(ctx, 'Rec', namesAndValues.flat())
   }
 
   // '+' or '-'
@@ -670,21 +667,21 @@ export class ToIrListener implements TntListener {
   exitTypeInt (ctx: p.TypeIntContext) {
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
-    this.typeStack.push({ id: id, kind: 'int' })
+    this.typeStack.push({ id, kind: 'int' })
   }
 
   // the Boolean type, that is, bool
   exitTypeBool (ctx: p.TypeBoolContext) {
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
-    this.typeStack.push({ id: id, kind: 'bool' })
+    this.typeStack.push({ id, kind: 'bool' })
   }
 
   // the string type, that is, str
   exitTypeStr (ctx: p.TypeStrContext) {
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
-    this.typeStack.push({ id: id, kind: 'str' })
+    this.typeStack.push({ id, kind: 'str' })
   }
 
   // a type variable, a type constant, or a reference to a type alias
@@ -694,10 +691,10 @@ export class ToIrListener implements TntListener {
     this.sourceMap.set(id, this.loc(ctx))
     if (name[0].match('[a-z]')) {
       // a type variable from: a, b, ... z
-      this.typeStack.push({ id: id, kind: 'var', name: name })
+      this.typeStack.push({ id, kind: 'var', name })
     } else {
       // a type constant, e.g., declared via typedef
-      this.typeStack.push({ id: id, kind: 'const', name: name })
+      this.typeStack.push({ id, kind: 'const', name })
     }
   }
 
@@ -707,7 +704,7 @@ export class ToIrListener implements TntListener {
     if (last !== undefined) {
       const id = this.nextId()
       this.sourceMap.set(id, this.loc(ctx))
-      this.typeStack.push({ id: id, kind: 'set', elem: last })
+      this.typeStack.push({ id, kind: 'set', elem: last })
     } // the other cases are excluded by the parser
   }
 
@@ -717,7 +714,7 @@ export class ToIrListener implements TntListener {
     if (top !== undefined) {
       const id = this.nextId()
       this.sourceMap.set(id, this.loc(ctx))
-      this.typeStack.push({ id: id, kind: 'list', elem: top })
+      this.typeStack.push({ id, kind: 'list', elem: top })
     } // the other cases are excluded by the parser
   }
 
@@ -728,7 +725,7 @@ export class ToIrListener implements TntListener {
     if (arg !== undefined && res !== undefined) {
       const id = this.nextId()
       this.sourceMap.set(id, this.loc(ctx))
-      this.typeStack.push({ id: id, kind: 'fun', arg: arg, res: res })
+      this.typeStack.push({ id, kind: 'fun', arg, res })
     }
   }
 
@@ -738,24 +735,29 @@ export class ToIrListener implements TntListener {
     const elemTypes: TntType[] = this.popTypes(ctx.type().length)
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
-    this.typeStack.push({ id: id, kind: 'tup', elems: elemTypes })
+    this.typeStack.push({ id, kind: 'tup', elems: elemTypes })
   }
 
   exitRow (ctx: p.RowContext) {
     const names = ctx.IDENTIFIER().map((n) => n.text)
     const elemTypes: TntType[] = this.popTypes(ctx.type().length)
-    // since TS does not have zip, a loop is the easiest solution
-    const pairs = []
-    for (let i = 0; i < elemTypes.length; i++) {
-      pairs.push({ fieldName: names[i], fieldType: elemTypes[i] })
-    }
+
+    const fields = compact(zipWith(names, elemTypes, (name, elemType) => { 
+      if (name !== undefined && elemType !== undefined) {
+        return { fieldName: name, fieldType: elemType } 
+      } else {
+        return undefined
+      }
+    }))
+
     let other: Row
     if (names.length > elemTypes.length) {
       other = { kind: 'var', name: names[names.length - 1] }
     } else {
       other = { kind: 'empty' }
     }
-    const row: Row = { kind: 'row', fields: pairs, other: other }
+
+    const row: Row = { kind: 'row', fields: fields, other: other }
     this.rowStack.push(row)
   }
 
@@ -766,7 +768,7 @@ export class ToIrListener implements TntListener {
     const row = this.popRow()
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
-    this.typeStack.push({ id: id, kind: 'rec', fields: row })
+    this.typeStack.push({ id, kind: 'rec', fields: row })
   }
 
   // A disjoint union type, e.g.,
@@ -798,7 +800,7 @@ export class ToIrListener implements TntListener {
       }
       const id = this.nextId()
       this.sourceMap.set(id, this.loc(ctx))
-      this.typeStack.push({ id: id, kind: 'union', tag: tag, records: records })
+      this.typeStack.push({ id, kind: 'union', tag, records })
     } else {
       const ls = this.locStr(ctx)
       // istanbul ignore next
@@ -822,10 +824,10 @@ export class ToIrListener implements TntListener {
     this.sourceMap.set(id, this.loc(ctx))
     // construct a singleton disjoint union, which should be assembled above
     const singleton: TntType = {
-      id: id,
+      id,
       kind: 'union',
       tag: tagName,
-      records: records,
+      records,
     }
 
     this.typeStack.push(singleton)
@@ -839,7 +841,7 @@ export class ToIrListener implements TntListener {
     if (resType !== undefined && argTypes.length === nargs) {
       const id = this.nextId()
       this.sourceMap.set(id, this.loc(ctx))
-      this.typeStack.push({ id: id, kind: 'oper', args: argTypes, res: resType })
+      this.typeStack.push({ id, kind: 'oper', args: argTypes, res: resType })
     }
   }
 
@@ -878,10 +880,10 @@ export class ToIrListener implements TntListener {
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.exprStack.push({
-      id: id,
+      id,
       kind: 'app',
       opcode: name,
-      args: args,
+      args,
     })
   }
 
@@ -893,7 +895,7 @@ export class ToIrListener implements TntListener {
       ctx.stop
         ? { line: ctx.stop.line - 1, col: ctx.stop.charPositionInLine, index: ctx.stop.stopIndex }
         : start
-    this.errors.push({ explanation: message, locs: [{ source: this.sourceLocation, start: start, end: end }] })
+    this.errors.push({ explanation: message, locs: [{ source: this.sourceLocation, start, end }] })
   }
 
   // pop n elements out of typeStack

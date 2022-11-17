@@ -3,7 +3,7 @@ import { assert } from 'chai'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import JSONbig from 'json-bigint'
-import { parsePhase1, parsePhase2, compactSourceMap } from '../src/tntParserFrontend'
+import { compactSourceMap, parsePhase1, parsePhase2 } from '../src/tntParserFrontend'
 import { lf } from 'eol'
 
 // read a TNT file from the test data directory

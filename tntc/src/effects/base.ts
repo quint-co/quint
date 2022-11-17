@@ -13,9 +13,9 @@
  */
 
 import { effectToString, variablesToString } from './printing'
-import { Either, right, left, mergeInMany } from '@sweet-monads/either'
-import { applySubstitution, compose, Substitutions } from './substitutions'
-import { ErrorTree, Error, buildErrorTree, buildErrorLeaf } from '../errorTree'
+import { Either, left, mergeInMany, right } from '@sweet-monads/either'
+import { Substitutions, applySubstitution, compose } from './substitutions'
+import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
 import { flattenUnions, simplify } from './simplification'
 import isEqual from 'lodash.isequal'
 
@@ -55,7 +55,7 @@ export type Variables =
  * Signatures assume an additional level of quantification over all names and
  * should be instantiated before being used
  */
-export type Signature = (arity: number) => Effect
+export type Signature = (_arity: number) => Effect
 
 /*
  * A quantified name that can refer either to an effect or a variable
@@ -96,7 +96,7 @@ export function unify (ea: Effect, eb: Effect): Either<ErrorTree, Substitutions>
         .mapLeft(msg => buildErrorLeaf(location, msg))
     } else {
       return left({
-        location: location,
+        location,
         message: "Can't unify different types of effects",
         children: [],
       })
@@ -127,7 +127,7 @@ function bindEffect (name: string, effect: Effect): Either<string, Substitutions
   if (effectNames(effect).some(n => n.kind === 'effect' && n.name === name)) {
     return left(`Can't bind ${name} to ${effectToString(effect)}: cyclical binding`)
   } else {
-    return right([{ kind: 'effect', name: name, value: effect }])
+    return right([{ kind: 'effect', name, value: effect }])
   }
 }
 
@@ -135,7 +135,7 @@ function bindVariables (name: string, variables: Variables): Either<string, Subs
   if (variablesNames(variables).some(n => n.kind === 'variable' && n.name === name)) {
     return left(`Can't bind ${name} to ${variablesToString(variables)}: cyclical binding`)
   } else {
-    return right([{ kind: 'variable', name: name, value: variables }])
+    return right([{ kind: 'variable', name, value: variables }])
   }
 }
 
@@ -152,7 +152,7 @@ function unifyArrows (location: string, e1: ArrowEffect, e2: ArrowEffect) {
     const expected = e1.params.length
     const got = e2.params.length
     return left({
-      location: location,
+      location,
       message: `Expected ${expected} arguments, got ${got}`,
       children: [],
     })
@@ -233,7 +233,7 @@ export function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree,
       return right([])
     } else {
       return left({
-        location: location,
+        location,
         message: `Expected variables [${v1.vars}] and [${v2.vars}] to be the same`,
         children: [],
       })
@@ -255,7 +255,7 @@ export function unifyVariables (va: Variables, vb: Variables): Either<ErrorTree,
     // Unifying sets is complicated and we should never have to do this in TNT's
     // use case for this effect system
     return left({
-      location: location,
+      location,
       message: 'Unification for unions of variables is not implemented',
       children: [],
     })

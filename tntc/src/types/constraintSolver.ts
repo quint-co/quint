@@ -13,11 +13,11 @@
  */
 
 import { Either, left, right } from '@sweet-monads/either'
-import { buildErrorLeaf, buildErrorTree, ErrorTree, Error } from '../errorTree'
+import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
 import { rowToString, typeToString } from '../IRprinting'
-import { Row, rowNames, TntType, typeNames } from '../tntTypes'
+import { Row, TntType, rowNames, typeNames } from '../tntTypes'
 import { Constraint } from './base'
-import { applySubstitution, applySubstitutionToConstraint, compose, Substitutions } from './substitutions'
+import { Substitutions, applySubstitution, applySubstitutionToConstraint, compose } from './substitutions'
 import { unzip } from 'lodash'
 
 /*
@@ -184,7 +184,7 @@ function bindType (name: string, type: TntType): Either<string, Substitutions> {
   if (typeNames(type).has(name)) {
     return left(`Can't bind ${name} to ${typeToString(type)}: cyclical binding`)
   } else {
-    return right([{ kind: 'type', name, value: type }])
+    return right([{ kind: 'type', name: name, value: type }])
   }
 }
 
@@ -192,7 +192,7 @@ function bindRow (name: string, row: Row): Either<string, Substitutions> {
   if (rowNames(row).has(name)) {
     return left(`Can't bind ${name} to ${rowToString(row)}: cyclical binding`)
   } else {
-    return right([{ kind: 'row', name, value: row }])
+    return right([{ kind: 'row', name: name, value: row }])
   }
 }
 
@@ -209,7 +209,7 @@ function checkSameLength (location: string, types1: TntType[], types2: TntType[]
     const expected = types1.length
     const got = types2.length
     return left({
-      location,
+      location: location,
       message: `Expected ${expected} arguments, got ${got}`,
       children: [],
     })

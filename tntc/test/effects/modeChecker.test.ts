@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { inferEffects } from '../../src/effects/inferrer'
-import { newTable, LookupTable, LookupTableByModule } from '../../src/lookupTable'
+import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
 import { buildModuleWithDefs } from '../builders/ir'
 import { ErrorTree, errorTreeToString } from '../../src/errorTree'
 import { OpQualifier, TntModule } from '../../src/tntIr'

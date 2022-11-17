@@ -14,7 +14,7 @@
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import isEqual from 'lodash.isequal'
-import { buildErrorTree, ErrorTree } from '../errorTree'
+import { ErrorTree, buildErrorTree } from '../errorTree'
 import { ConcreteEffect, Effect, Variables } from './base'
 import { effectToString } from './printing'
 
@@ -42,7 +42,7 @@ export function simplifyConcreteEffect (e: ConcreteEffect): Either<ErrorTree, Ef
       children: [],
     })
   } else {
-    return right({ kind: 'concrete', read: read, update: update, temporal: temporal })
+    return right({ kind: 'concrete', read, update, temporal })
   }
 }
 
@@ -89,10 +89,10 @@ export function flattenUnions (variables: Variables): Variables {
       })
 
       if (unionVariables.length > 0) {
-        const variables = vars.length > 0 ? unionVariables.concat({ kind: 'concrete', vars: vars }) : unionVariables
-        return variables.length > 1 ? { kind: 'union', variables: variables } : variables[0]
+        const variables = vars.length > 0 ? unionVariables.concat({ kind: 'concrete', vars }) : unionVariables
+        return variables.length > 1 ? { kind: 'union', variables } : variables[0]
       } else {
-        return { kind: 'concrete', vars: vars }
+        return { kind: 'concrete', vars }
       }
     }
     default:

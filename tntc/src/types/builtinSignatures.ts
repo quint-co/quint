@@ -15,6 +15,7 @@
 import { parseTypeOrThrow } from './parser'
 import { typeNames } from '../tntTypes'
 import { Signature, TypeScheme } from './base'
+import { times } from 'lodash'
 
 export function getSignatures (): Map<string, Signature> {
   return new Map<string, Signature>(fixedAritySignatures.concat(multipleAritySignatures))
@@ -125,7 +126,7 @@ const otherOperators = [
 
 function uniformArgsWithResult (argsType: string, resultType: string): Signature {
   return (arity: number) => {
-    const args = Array.from(Array(arity).keys()).map(i => argsType)
+    const args = times(arity, () => argsType)
     return parseAndQuantify(`(${args.join(', ')}) => ${resultType}`)
   }
 }
@@ -140,15 +141,15 @@ const multipleAritySignatures: [string, Signature][] = [
   ['or', uniformArgsWithResult('bool', 'bool')],
   ['actionAny', uniformArgsWithResult('bool', 'bool')],
   ['Tup', (arity: number) => {
-    const args = Array.from(Array(arity).keys()).map(i => `t${i}`).join(', ')
+    const args = times(arity, i => `t${i}`).join(', ')
     return parseAndQuantify(`(${args}) => (${args})`)
   }],
   ['match', (arity: number) => {
-    const args = Array.from(Array((arity - 1) / 2).keys()).map(r => 'str, (a) => b')
+    const args = times((arity - 1) / 2, () => 'str, (a) => b')
     return parseAndQuantify(`(a, ${args.join(', ')}) => b`)
   }],
   ['tuples', (arity: number) => {
-    const ts = Array.from(Array(arity).keys()).map(i => `t${i}`)
+    const ts = times(arity, i => `t${i}`)
     const args = ts.map(t => `Set[${t}]`)
     const tupleType = `(${ts.join(', ')})`
     return parseAndQuantify(`(${args.join(', ')}) => Set[${tupleType}]`)

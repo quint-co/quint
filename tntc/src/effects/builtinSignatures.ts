@@ -16,12 +16,13 @@ import { Signature } from './base'
 import { parseEffectOrThrow } from './parser'
 import { effectToString } from './printing'
 import { simplify } from './simplification'
+import { range, times, zip } from 'lodash'
 
 export function getSignatures (): Map<string, Signature> {
   return new Map<string, Signature>(fixedAritySignatures.concat(multipleAritySignatures))
 }
 
-const literals = ['Nat', 'Int', 'Bool'].map(name => ({ name: name, effect: 'Pure' }))
+const literals = ['Nat', 'Int', 'Bool'].map(name => ({ name, effect: 'Pure' }))
 const booleanOperators = [
   { name: 'eq', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
   { name: 'neq', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
@@ -125,16 +126,16 @@ const otherOperators = [
 ]
 
 const readManyEffect = (arity: number) => {
-  const rs = Array.from(Array(arity).keys()).map(i => `r${i}`)
-  const args = rs.map(r => `Read[${r}]`)
-  return parseEffectOrThrow(`(${args.join(', ')}) => Read[${rs.join(', ')}]`)
+  const readVars = times(arity, i => `r${i}`)
+  const args = readVars.map(r => `Read[${r}]`)
+  return parseEffectOrThrow(`(${args.join(', ')}) => Read[${readVars.join(', ')}]`)
 }
 
 const readAndTemporalManyEffect = (arity: number) => {
-  const rs = Array.from(Array(arity).keys()).map(i => `r${i}`)
-  const ts = Array.from(Array(arity).keys()).map(i => `tr${i}`)
-  const args = rs.map(r => `Read[${r}] & Temporal[t${r}]`)
-  return parseEffectOrThrow(`(${args.join(', ')}) => Read[${rs.join(', ')}] & Temporal[${ts.join(', ')}]`)
+  const readVars = times(arity, i => `r${i}`)
+  const temporalVars = times(arity, i => `t${i}`)
+  const args = zip(readVars, temporalVars).map(([r, t]) => `Read[${r}] & Temporal[${t}]`)
+  return parseEffectOrThrow(`(${args.join(', ')}) => Read[${readVars.join(', ')}] & Temporal[${temporalVars.join(', ')}]`)
 }
 const multipleAritySignatures: [string, Signature][] = [
   ['List', readManyEffect],
@@ -146,24 +147,24 @@ const multipleAritySignatures: [string, Signature][] = [
   ['and', readAndTemporalManyEffect],
   ['or', readAndTemporalManyEffect],
   ['match', (arity: number) => {
-    const rs = Array.from(Array((arity - 1) / 2).keys()).map(i => `r${i}`)
-    const args = rs.map(r => `Pure, (Pure) => Read[${r}]`)
-    return parseEffectOrThrow(`(Read[r], ${args.join(', ')}) => Read[${rs.join(', ')}]`)
+    const readVars = times((arity - 1) / 2, i => `r${i}`)
+    const args = readVars.map(r => `Pure, (Pure) => Read[${r}]`)
+    return parseEffectOrThrow(`(Read[r], ${args.join(', ')}) => Read[${readVars.join(', ')}]`)
   }],
   ['actionAll', (arity: number) => {
-    const indexes = Array.from(Array(arity).keys())
+    const indexes = range(arity)
 
     const args = indexes.map(i => `Read[r${i}] & Update[u${i}]`)
-    const rs = indexes.map(i => `r${i}`).join(', ')
-    const us = indexes.map(i => `u${i}`).join(', ')
-    return parseEffectOrThrow(`(${args.join(', ')}) => Read[${rs}] & Update[${us}]`)
+    const readVars = indexes.map(i => `r${i}`).join(', ')
+    const updateVars = indexes.map(i => `u${i}`).join(', ')
+    return parseEffectOrThrow(`(${args.join(', ')}) => Read[${readVars}] & Update[${updateVars}]`)
   }],
   ['actionAny', (arity: number) => {
-    const indexes = Array.from(Array(arity).keys())
+    const indexes = range(arity)
 
     const args = indexes.map(i => `Read[r${i}] & Update[u]`)
-    const rs = indexes.map(i => `r${i}`).join(', ')
-    return parseEffectOrThrow(`(${args.join(', ')}) => Read[${rs}] & Update[u]`)
+    const readVars = indexes.map(i => `r${i}`).join(', ')
+    return parseEffectOrThrow(`(${args.join(', ')}) => Read[${readVars}] & Update[u]`)
   }],
 ]
 
