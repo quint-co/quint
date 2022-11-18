@@ -22,64 +22,64 @@ import * as t from './tntTypes'
  */
 export interface IRVisitor {
   /** General components */
-  enterExpr?: (expr: ir.TntEx) => void
-  exitExpr?: (expr: ir.TntEx) => void
-  enterDef?: (def: ir.TntDef) => void
-  exitDef?: (def: ir.TntDef) => void
-  enterType?: (type: t.TntType) => void
-  exitType?: (type: t.TntType) => void
+  enterExpr?: (_expr: ir.TntEx) => void
+  exitExpr?: (_expr: ir.TntEx) => void
+  enterDef?: (_def: ir.TntDef) => void
+  exitDef?: (_def: ir.TntDef) => void
+  enterType?: (_type: t.TntType) => void
+  exitType?: (_type: t.TntType) => void
 
   /** Definitions */
-  enterOpDef?: (def: ir.TntOpDef) => void
-  exitOpDef?: (def: ir.TntOpDef) => void
-  enterConst?: (def: ir.TntConst) => void
-  exitConst?: (def: ir.TntConst) => void
-  enterVar?: (def: ir.TntVar) => void
-  exitVar?: (def: ir.TntVar) => void
-  enterAssume?: (def: ir.TntAssume) => void
-  exitAssume?: (def: ir.TntAssume) => void
-  enterTypeDef?: (def: ir.TntTypeDef) => void
-  exitTypeDef?: (def: ir.TntTypeDef) => void
-  enterImport?: (def: ir.TntImport) => void
-  exitImport?: (def: ir.TntImport) => void
-  enterInstance?: (def: ir.TntInstance) => void
-  exitInstance?: (def: ir.TntInstance) => void
-  enterModuleDef?: (def: ir.TntModuleDef) => void
-  exitModuleDef?: (def: ir.TntModuleDef) => void
+  enterOpDef?: (_def: ir.TntOpDef) => void
+  exitOpDef?: (_def: ir.TntOpDef) => void
+  enterConst?: (_def: ir.TntConst) => void
+  exitConst?: (_def: ir.TntConst) => void
+  enterVar?: (_def: ir.TntVar) => void
+  exitVar?: (_def: ir.TntVar) => void
+  enterAssume?: (_def: ir.TntAssume) => void
+  exitAssume?: (_def: ir.TntAssume) => void
+  enterTypeDef?: (_def: ir.TntTypeDef) => void
+  exitTypeDef?: (_def: ir.TntTypeDef) => void
+  enterImport?: (_def: ir.TntImport) => void
+  exitImport?: (_def: ir.TntImport) => void
+  enterInstance?: (_def: ir.TntInstance) => void
+  exitInstance?: (_def: ir.TntInstance) => void
+  enterModuleDef?: (_def: ir.TntModuleDef) => void
+  exitModuleDef?: (_def: ir.TntModuleDef) => void
 
   /** Expressions */
-  enterName?: (expr: ir.TntName) => void
-  exitName?: (expr: ir.TntName) => void
-  enterLiteral?: (expr: ir.TntBool | ir.TntInt | ir.TntStr) => void
-  exitLiteral?: (expr: ir.TntBool | ir.TntInt | ir.TntStr) => void
-  enterApp?: (expr: ir.TntApp) => void
-  exitApp?: (expr: ir.TntApp) => void
-  enterLambda?: (expr: ir.TntLambda) => void
-  exitLambda?: (expr: ir.TntLambda) => void
-  enterLet?: (expr: ir.TntLet) => void
-  exitLet?: (expr: ir.TntLet) => void
+  enterName?: (_expr: ir.TntName) => void
+  exitName?: (_expr: ir.TntName) => void
+  enterLiteral?: (_expr: ir.TntBool | ir.TntInt | ir.TntStr) => void
+  exitLiteral?: (_expr: ir.TntBool | ir.TntInt | ir.TntStr) => void
+  enterApp?: (_expr: ir.TntApp) => void
+  exitApp?: (_expr: ir.TntApp) => void
+  enterLambda?: (_expr: ir.TntLambda) => void
+  exitLambda?: (_expr: ir.TntLambda) => void
+  enterLet?: (_expr: ir.TntLet) => void
+  exitLet?: (_expr: ir.TntLet) => void
 
   /** Types */
-  enterLiteralType?: (type: t.TntBoolType | t.TntIntType | t.TntStrType) => void
-  exitLiteralType?: (type: t.TntBoolType | t.TntIntType | t.TntStrType) => void
-  enterConstType?: (type: t.TntConstType) => void
-  exitConstType?: (type: t.TntConstType) => void
-  enterVarType?: (type: t.TntVarType) => void
-  exitVarType?: (type: t.TntVarType) => void
-  enterSetType?: (type: t.TntSetType) => void
-  exitSetType?: (type: t.TntSetType) => void
-  enterSeqType?: (type: t.TntSeqType) => void
-  exitSeqType?: (type: t.TntSeqType) => void
-  enterFunType?: (type: t.TntFunType) => void
-  exitFunType?: (type: t.TntFunType) => void
-  enterOperType?: (type: t.TntOperType) => void
-  exitOperType?: (type: t.TntOperType) => void
-  enterTupleType?: (type: t.TntTupleType) => void
-  exitTupleType?: (type: t.TntTupleType) => void
-  enterRecordType?: (type: t.TntRecordType) => void
-  exitRecordType?: (type: t.TntRecordType) => void
-  enterUnionType?: (type: t.TntUnionType) => void
-  exitUnionType?: (type: t.TntUnionType) => void
+  enterLiteralType?: (_type: t.TntBoolType | t.TntIntType | t.TntStrType) => void
+  exitLiteralType?: (_type: t.TntBoolType | t.TntIntType | t.TntStrType) => void
+  enterConstType?: (_type: t.TntConstType) => void
+  exitConstType?: (_type: t.TntConstType) => void
+  enterVarType?: (_type: t.TntVarType) => void
+  exitVarType?: (_type: t.TntVarType) => void
+  enterSetType?: (_type: t.TntSetType) => void
+  exitSetType?: (_type: t.TntSetType) => void
+  enterSeqType?: (_type: t.TntSeqType) => void
+  exitSeqType?: (_type: t.TntSeqType) => void
+  enterFunType?: (_type: t.TntFunType) => void
+  exitFunType?: (_type: t.TntFunType) => void
+  enterOperType?: (_type: t.TntOperType) => void
+  exitOperType?: (_type: t.TntOperType) => void
+  enterTupleType?: (_type: t.TntTupleType) => void
+  exitTupleType?: (_type: t.TntTupleType) => void
+  enterRecordType?: (_type: t.TntRecordType) => void
+  exitRecordType?: (_type: t.TntRecordType) => void
+  enterUnionType?: (_type: t.TntUnionType) => void
+  exitUnionType?: (_type: t.TntUnionType) => void
 }
 
 /**
@@ -91,7 +91,7 @@ export interface IRVisitor {
  *
  * @returns nothing, any collected information has to be a state inside the IRVisitor instance.
  */
-export function walkModule (visitor: IRVisitor, tntModule: ir.TntModule): void {
+export function walkModule(visitor: IRVisitor, tntModule: ir.TntModule): void {
   const moduleDef: ir.TntModuleDef = {
     kind: 'module', id: 0n, module: tntModule,
   }
@@ -113,7 +113,7 @@ export function walkModule (visitor: IRVisitor, tntModule: ir.TntModule): void {
  *
  * @returns nothing, any collected information has to be a state inside the IRVisitor instance.
  */
-export function walkType (visitor: IRVisitor, type: t.TntType): void {
+export function walkType(visitor: IRVisitor, type: t.TntType): void {
   if (visitor.enterType) {
     visitor.enterType(type)
   }
@@ -237,7 +237,7 @@ export function walkType (visitor: IRVisitor, type: t.TntType): void {
   }
 }
 
-function walkDefinition (visitor: IRVisitor, def: ir.TntDef): void {
+function walkDefinition(visitor: IRVisitor, def: ir.TntDef): void {
   if (visitor.enterDef) {
     visitor.enterDef(def)
   }
@@ -325,7 +325,7 @@ function walkDefinition (visitor: IRVisitor, def: ir.TntDef): void {
   }
 }
 
-function walkExpression (visitor: IRVisitor, expr: ir.TntEx): void {
+function walkExpression(visitor: IRVisitor, expr: ir.TntEx): void {
   if (visitor.enterExpr) {
     visitor.enterExpr(expr)
   }
@@ -390,7 +390,7 @@ function walkExpression (visitor: IRVisitor, expr: ir.TntEx): void {
   }
 }
 
-function walkRow (visitor: IRVisitor, r: t.Row) {
+function walkRow(visitor: IRVisitor, r: t.Row) {
   switch (r.kind) {
     case 'row':
       r.fields.forEach(field => walkType(visitor, field.fieldType))

@@ -5,7 +5,7 @@
  * --------------------------------------------------------------------------------- */
 
 import * as path from 'path'
-import { workspace, ExtensionContext } from 'vscode'
+import { ExtensionContext, workspace } from 'vscode'
 
 import {
   LanguageClient,
@@ -16,7 +16,7 @@ import {
 
 let client: LanguageClient
 
-export function activate (context: ExtensionContext) {
+export function activate(context: ExtensionContext) {
   // The server is implemented in node
   const serverModule = context.asAbsolutePath(
     path.join('server', 'out', 'server.js')
@@ -59,7 +59,7 @@ export function activate (context: ExtensionContext) {
   client.start()
 }
 
-export function deactivate (): Promise<void> | undefined {
+export function deactivate(): Promise<void> | undefined {
   if (!client) {
     return undefined
   }

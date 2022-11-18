@@ -15,7 +15,7 @@
 
 import { IRVisitor, walkModule } from './IRVisitor'
 import { ValueDefinition } from './lookupTable'
-import { TntModule, TntDef, TntEx, TntModuleDef } from './tntIr'
+import { TntDef, TntEx, TntModule, TntModuleDef } from './tntIr'
 
 /**
  * A tree structure where nodes are IR ids
@@ -34,9 +34,10 @@ export interface ScopeTree {
  * @param treeNode the tree to search from
  * @param id the id to be searched
  *
- * @returns a list of ids, including the given id, for scopes this id belongs to, ordered from the node itself to the module root
+ * @returns a list of ids, including the given id, for scopes this id belongs to, 
+ *          ordered from the node itself to the module root
  */
-export function scopesForId (treeNode: ScopeTree, id: bigint): bigint[] {
+export function scopesForId(treeNode: ScopeTree, id: bigint): bigint[] {
   if (treeNode.value === id) {
     return [treeNode.value]
   }
@@ -59,13 +60,13 @@ export function scopesForId (treeNode: ScopeTree, id: bigint): bigint[] {
  *
  * @returns a scope tree for this module's ids scope relation
  */
-export function treeFromModule (tntModule: TntModule): ScopeTree {
+export function treeFromModule(tntModule: TntModule): ScopeTree {
   const visitor = new ScopingVisitor()
   walkModule(visitor, tntModule)
   return visitor.currentNode!
 }
 
-export function filterScope (valueDefinitions: ValueDefinition[], scopes: bigint[]): ValueDefinition[] {
+export function filterScope(valueDefinitions: ValueDefinition[], scopes: bigint[]): ValueDefinition[] {
   return valueDefinitions.filter(definition => {
     // A definition should be considered in a scope if it's either unscoped or its scope is included
     // in some scope containing the name expression's scope
@@ -82,35 +83,35 @@ class ScopingVisitor implements IRVisitor {
   nodeStack: ScopeTree[] = []
   currentNode?: ScopeTree
 
-  enterDef (def: TntDef): void {
+  enterDef(def: TntDef): void {
     this.enterNode(def.id)
   }
 
-  exitDef (_: TntDef): void {
+  exitDef(_: TntDef): void {
     this.exitNode()
   }
 
-  enterExpr (expr: TntEx): void {
+  enterExpr(expr: TntEx): void {
     this.enterNode(expr.id)
   }
 
-  exitExpr (_: TntEx): void {
+  exitExpr(_: TntEx): void {
     this.exitNode()
   }
 
-  enterModuleDef (def: TntModuleDef): void {
+  enterModuleDef(def: TntModuleDef): void {
     this.enterNode(def.module.id)
   }
 
-  exitModuleDef (_: TntModuleDef): void {
+  exitModuleDef(_: TntModuleDef): void {
     this.exitNode()
   }
 
-  private enterNode (id: bigint): void {
+  private enterNode(id: bigint): void {
     this.nodeStack.push({ value: id, children: [] })
   }
 
-  private exitNode (): void {
+  private exitNode(): void {
     this.currentNode = this.nodeStack.pop()!
     if (this.nodeStack.length > 0) {
       this.nodeStack[this.nodeStack.length - 1].children.push(this.currentNode)

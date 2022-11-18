@@ -12,7 +12,7 @@
  * @module
  */
 
-import { LookupTableByModule, LookupTable, newTable, copyTable, addValueToTable, addTypeToTable, copyNames, mergeTables } from './lookupTable'
+import { LookupTable, LookupTableByModule, addTypeToTable, addValueToTable, copyNames, copyTable, mergeTables, newTable } from './lookupTable'
 import { TntImport, TntInstance, TntModule, TntModuleDef } from './tntIr'
 import { IRVisitor, walkModule } from './IRVisitor'
 
@@ -47,7 +47,7 @@ export type ImportResolutionResult =
  *
  * @returns a successful result with updated definitions in case all imports were resolved, or the errors otherwise
  */
-export function resolveImports (tntModule: TntModule, definitions: LookupTableByModule): ImportResolutionResult {
+export function resolveImports(tntModule: TntModule, definitions: LookupTableByModule): ImportResolutionResult {
   const visitor = new ImportResolverVisitor(definitions)
   walkModule(visitor, tntModule)
 
@@ -57,7 +57,7 @@ export function resolveImports (tntModule: TntModule, definitions: LookupTableBy
 }
 
 class ImportResolverVisitor implements IRVisitor {
-  constructor (tables: LookupTableByModule) {
+  constructor(tables: LookupTableByModule) {
     this.tables = tables
   }
 
@@ -68,21 +68,21 @@ class ImportResolverVisitor implements IRVisitor {
   private currentTable: LookupTable = newTable({})
   private moduleStack: TntModule[] = []
 
-  enterModuleDef (def: TntModuleDef): void {
+  enterModuleDef(def: TntModuleDef): void {
     this.tables.set(this.currentModule.name, this.currentTable)
 
     this.moduleStack.push(def.module)
     this.updateCurrentModule()
   }
 
-  exitModuleDef (def: TntModuleDef): void {
+  exitModuleDef(def: TntModuleDef): void {
     this.tables.set(def.module.name, this.currentTable)
 
     this.moduleStack.pop()
     this.updateCurrentModule()
   }
 
-  enterInstance (def: TntInstance): void {
+  enterInstance(def: TntInstance): void {
     const moduleTable = this.tables.get(def.protoName)
 
     if (!moduleTable) {
@@ -100,7 +100,7 @@ class ImportResolverVisitor implements IRVisitor {
     this.currentTable = mergeTables(this.currentTable, newEntries)
   }
 
-  enterImport (def: TntImport): void {
+  enterImport(def: TntImport): void {
     const moduleTable = this.tables.get(def.path)
     if (!moduleTable) {
       // Importing unexisting module
@@ -145,7 +145,7 @@ class ImportResolverVisitor implements IRVisitor {
     }
   }
 
-  private updateCurrentModule (): void {
+  private updateCurrentModule(): void {
     if (this.moduleStack.length > 0) {
       this.currentModule = this.moduleStack[this.moduleStack.length - 1]
 

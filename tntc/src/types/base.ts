@@ -14,4 +14,4 @@ export interface TypeScheme {
   variables: Set<string>,
 }
 
-export type Signature = (arity: number) => TypeScheme
+export type Signature = (_arity: number) => TypeScheme

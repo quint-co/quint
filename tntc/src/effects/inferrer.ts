@@ -13,14 +13,14 @@
  * @module
  */
 
-import { Either, right, left, mergeInMany } from '@sweet-monads/either'
+import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../lookupTable'
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { TntApp, TntBool, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr } from '../tntIr'
-import { Effect, emptyVariables, unify, Signature, effectNames, Name } from './base'
-import { applySubstitution, Substitutions, compose } from './substitutions'
-import { buildErrorLeaf, buildErrorTree, ErrorTree, errorTreeToString, Error } from '../errorTree'
+import { Effect, Name, Signature, effectNames, emptyVariables, unify } from './base'
+import { Substitutions, applySubstitution, compose } from './substitutions'
+import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
 import { ScopeTree, treeFromModule } from '../scoping'
 import isEqual from 'lodash.isequal'
 import { getSignatures } from './builtinSignatures'
@@ -36,7 +36,9 @@ import { getSignatures } from './builtinSignatures'
  *          Otherwise, a map from expression ids to the corresponding error for
  *          the problematic expressions.
  */
-export function inferEffects (lookupTable: LookupTableByModule, module: TntModule): [Map<bigint, ErrorTree>, Map<bigint, Effect>] {
+export function inferEffects(
+  lookupTable: LookupTableByModule, module: TntModule
+): [Map<bigint, ErrorTree>, Map<bigint, Effect>] {
   const visitor = new EffectInferrerVisitor(lookupTable)
   walkModule(visitor, module)
   return [visitor.errors, visitor.effects]
@@ -47,7 +49,7 @@ export function inferEffects (lookupTable: LookupTableByModule, module: TntModul
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor (lookupTable: LookupTableByModule) {
+  constructor(lookupTable: LookupTableByModule) {
     this.lookupTable = lookupTable
   }
 
@@ -69,23 +71,23 @@ class EffectInferrerVisitor implements IRVisitor {
   private currentScopeTree: ScopeTree = { value: 0n, children: [] }
   private moduleStack: TntModule[] = []
 
-  enterModuleDef (def: TntModuleDef): void {
+  enterModuleDef(def: TntModuleDef): void {
     this.moduleStack.push(def.module)
 
     this.updateCurrentModule()
   }
 
-  exitModuleDef (_: TntModuleDef): void {
+  exitModuleDef(_: TntModuleDef): void {
     this.moduleStack.pop()
 
     this.updateCurrentModule()
   }
 
-  enterExpr (e: TntEx) {
+  enterExpr(e: TntEx) {
     this.location = `Inferring effect for ${expressionToString(e)}`
   }
 
-  exitName (expr: TntName): void {
+  exitName(expr: TntName): void {
     if (this.errors.size > 0) {
       // Don't try to infer application if there are errors with the args
       return
@@ -163,7 +165,7 @@ class EffectInferrerVisitor implements IRVisitor {
    * ------------------------------------------------------ (APP)
    *           Γ ⊢ op(p0, ..., pn): S(Eres)
    */
-  exitApp (expr: TntApp): void {
+  exitApp(expr: TntApp): void {
     if (this.errors.size > 0) {
       // Don't try to infer application if there are errors with the args
       return
@@ -179,7 +181,7 @@ class EffectInferrerVisitor implements IRVisitor {
     const arrowEffect = paramsResult.map(params => {
       const effect: Effect = {
         kind: 'arrow',
-        params: params,
+        params,
         result: resultEffect,
       }
 
@@ -211,7 +213,7 @@ class EffectInferrerVisitor implements IRVisitor {
   }
 
   // Literals are always Pure
-  exitLiteral (expr: TntBool | TntInt | TntStr): void {
+  exitLiteral(expr: TntBool | TntInt | TntStr): void {
     this.addToResults(expr.id, right({
       kind: 'concrete',
       read: emptyVariables,
@@ -224,7 +226,7 @@ class EffectInferrerVisitor implements IRVisitor {
    * ------------------------------------------------------------- (OPDEF)
    * Γ ∪ { identifier: op, effect: E } ⊢ (def op(params) = e): Pure
    */
-  exitOpDef (def: TntOpDef): void {
+  exitOpDef(def: TntOpDef): void {
     if (this.errors.size > 0) {
       // Don't try to infer let if there are errors with the defined expression
       return
@@ -239,7 +241,7 @@ class EffectInferrerVisitor implements IRVisitor {
    * ----------------------- (LET)
    * Γ ⊢ <opdef> { e }: E
    */
-  exitLet (expr: TntLet): void {
+  exitLet(expr: TntLet): void {
     if (this.errors.size > 0) {
       // Don't try to infer let if there are errors with the defined expression
       return
@@ -253,7 +255,7 @@ class EffectInferrerVisitor implements IRVisitor {
    * ---------------------------------------------- (LAMBDA)
    * Γ ⊢ (p0, ..., pn) => e: (E0, ..., En) => E
    */
-  exitLambda (e: TntLambda): void {
+  exitLambda(e: TntLambda): void {
     if (this.errors.size > 0) {
       return
     }
@@ -272,13 +274,13 @@ class EffectInferrerVisitor implements IRVisitor {
     this.addToResults(e.id, result)
   }
 
-  private addToResults (exprId: bigint, result: Either<Error, Effect>) {
+  private addToResults(exprId: bigint, result: Either<Error, Effect>) {
     result
       .mapLeft(err => this.errors.set(exprId, buildErrorTree(this.location, err)))
       .map(r => this.effects.set(exprId, r))
   }
 
-  private fetchResult (id: bigint): Either<ErrorTree, Effect> {
+  private fetchResult(id: bigint): Either<ErrorTree, Effect> {
     const successfulResult = this.effects.get(id)
     const failedResult = this.errors.get(id)
     if (failedResult) {
@@ -290,14 +292,14 @@ class EffectInferrerVisitor implements IRVisitor {
     }
   }
 
-  private freshVar (prefix: string): string {
+  private freshVar(prefix: string): string {
     const counter = this.freshVarCounters.get(prefix)! ?? 0
     this.freshVarCounters.set(prefix, counter + 1)
 
     return `${prefix}${counter}`
   }
 
-  private fetchSignature (opcode: string, scope: bigint, arity: number): Either<ErrorTree, Effect> {
+  private fetchSignature(opcode: string, scope: bigint, arity: number): Either<ErrorTree, Effect> {
     // Assumes a valid number of arguments
     if (opcode === '_') {
       return right({ kind: 'quantified', name: this.freshVar('_e') })
@@ -329,7 +331,7 @@ class EffectInferrerVisitor implements IRVisitor {
     }
   }
 
-  private newInstance (effect: Effect): Effect {
+  private newInstance(effect: Effect): Effect {
     const names: Name[] = effectNames(effect)
     const uniqueNames: Name[] = []
     names.forEach(name => {
@@ -349,7 +351,7 @@ class EffectInferrerVisitor implements IRVisitor {
     }
   }
 
-  private updateCurrentModule (): void {
+  private updateCurrentModule(): void {
     if (this.moduleStack.length > 0) {
       this.currentModule = this.moduleStack[this.moduleStack.length - 1]
 

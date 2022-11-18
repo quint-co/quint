@@ -13,7 +13,7 @@
  */
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { buildErrorLeaf, Error } from '../errorTree'
+import { Error, buildErrorLeaf } from '../errorTree'
 import { expressionToString } from '../IRprinting'
 import { TntEx } from '../tntIr'
 import { TntType, TntVarType } from '../tntTypes'
@@ -31,7 +31,9 @@ import { chunk } from 'lodash'
  *
  * @returns Either an error or a list of constraints
  */
-export function specialConstraints (opcode: string, id: bigint, args: [TntEx, TntType][], resultTypeVar: TntVarType): Either<Error, Constraint[]> {
+export function specialConstraints(
+  opcode: string, id: bigint, args: [TntEx, TntType][], resultTypeVar: TntVarType
+): Either<Error, Constraint[]> {
   switch (opcode) {
     case 'Rec': return recordConstructorConstraints(id, args, resultTypeVar)
     case 'field': return fieldConstraints(id, args, resultTypeVar)
@@ -41,15 +43,17 @@ export function specialConstraints (opcode: string, id: bigint, args: [TntEx, Tn
   }
 }
 
-function recordConstructorConstraints (id: bigint, args: [TntEx, TntType][], resultTypeVar: TntVarType): Either<Error, Constraint[]> {
+function recordConstructorConstraints(
+  id: bigint, args: [TntEx, TntType][], resultTypeVar: TntVarType
+): Either<Error, Constraint[]> {
   const constraints: Constraint[] = []
   // A record constructor has the normal form Rec('field1', value1, 'field2', value2, ...)
   // So we iterate over the arguments in pairs (chunks of size 2)
   const fields = chunk(args, 2).map(([[key, keyType], [_value, valueType]]) => {
     if (key.kind !== 'str') {
       return left(buildErrorLeaf(
-          `Generating record constraints for ${args.map(a => expressionToString(a[0]))}`,
-          `Record field name must be a name expression but is ${key.kind}: ${expressionToString(key)}`))
+        `Generating record constraints for ${args.map(a => expressionToString(a[0]))}`,
+        `Record field name must be a name expression but is ${key.kind}: ${expressionToString(key)}`))
     }
 
     const constraint: Constraint = { kind: 'eq', types: [keyType, { kind: 'str' }], sourceId: key.id }
@@ -66,13 +70,15 @@ function recordConstructorConstraints (id: bigint, args: [TntEx, TntType][], res
   })
 }
 
-function fieldConstraints (id: bigint, args: [TntEx, TntType][], resultTypeVar: TntVarType): Either<Error, Constraint[]> {
+function fieldConstraints(
+  id: bigint, args: [TntEx, TntType][], resultTypeVar: TntVarType
+): Either<Error, Constraint[]> {
   const [[_rec, recType], [fieldName, fieldNameType]] = args
 
   if (fieldName.kind !== 'str') {
     return left(buildErrorLeaf(
-            `Generating record constraints for ${args.map(a => expressionToString(a[0]))}`,
-            `Record field name must be a name expression but is ${fieldName.kind}: ${expressionToString(fieldName)}`))
+      `Generating record constraints for ${args.map(a => expressionToString(a[0]))}`,
+      `Record field name must be a name expression but is ${fieldName.kind}: ${expressionToString(fieldName)}`))
   }
 
   const generalRecType: TntType = {
@@ -90,7 +96,9 @@ function fieldConstraints (id: bigint, args: [TntEx, TntType][], resultTypeVar: 
   return right([c1, c2])
 }
 
-function fieldNamesConstraints (id: bigint, args: [TntEx, TntType][], resultTypeVar: TntVarType): Either<Error, Constraint[]> {
+function fieldNamesConstraints(
+  id: bigint, args: [TntEx, TntType][], resultTypeVar: TntVarType
+): Either<Error, Constraint[]> {
   const [[_rec, recType]] = args
 
   const generalRecType: TntType = { kind: 'rec', fields: { kind: 'var', name: `rec_${resultTypeVar.name}` } }
@@ -101,13 +109,13 @@ function fieldNamesConstraints (id: bigint, args: [TntEx, TntType][], resultType
   return right([c1, c2])
 }
 
-function withConstraints (id: bigint, args: [TntEx, TntType][], resultTypeVar: TntVarType): Either<Error, Constraint[]> {
+function withConstraints(id: bigint, args: [TntEx, TntType][], resultTypeVar: TntVarType): Either<Error, Constraint[]> {
   const [[_rec, recType], [fieldName, fieldNameType], [_value, valueType]] = args
 
   if (fieldName.kind !== 'str') {
     return left(buildErrorLeaf(
-            `Generating record constraints for ${args.map(a => expressionToString(a[0]))}`,
-            `Record field name must be a name expression but is ${fieldName.kind}: ${expressionToString(fieldName)}`))
+      `Generating record constraints for ${args.map(a => expressionToString(a[0]))}`,
+      `Record field name must be a name expression but is ${fieldName.kind}: ${expressionToString(fieldName)}`))
   }
 
   const generalRecType: TntType = {

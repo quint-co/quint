@@ -12,7 +12,7 @@
  * @module
  */
 
-import { TntModule, TntDef, TntEx, isAnnotatedDef } from './tntIr'
+import { TntDef, TntEx, TntModule, isAnnotatedDef } from './tntIr'
 import { Row, TntType } from './tntTypes'
 
 /**
@@ -22,7 +22,7 @@ import { Row, TntType } from './tntTypes'
  *
  * @returns a string with the pretty printed definition
  */
-export function moduleToString (tntModule: TntModule): string {
+export function moduleToString(tntModule: TntModule): string {
   const defs = tntModule.defs.map(definitionToString).join('\n  ')
   return `module ${tntModule.name} {\n  ${defs}\n}`
 }
@@ -34,7 +34,7 @@ export function moduleToString (tntModule: TntModule): string {
  *
  * @returns a string with the pretty printed definition
  */
-export function definitionToString (def: TntDef): string {
+export function definitionToString(def: TntDef): string {
   const typeAnnotation =
     isAnnotatedDef(def) ? `: ${typeToString(def.typeAnnotation)}` : ''
   switch (def.kind) {
@@ -70,7 +70,7 @@ export function definitionToString (def: TntDef): string {
  *
  * @returns a string with the pretty printed expression
  */
-export function expressionToString (expr: TntEx): string {
+export function expressionToString(expr: TntEx): string {
   switch (expr.kind) {
     case 'name':
       return expr.name
@@ -95,7 +95,7 @@ export function expressionToString (expr: TntEx): string {
  *
  * @returns a string with the pretty printed type
  */
-export function typeToString (type: TntType): string {
+export function typeToString(type: TntType): string {
   switch (type.kind) {
     case 'bool':
     case 'int':
@@ -129,7 +129,7 @@ export function typeToString (type: TntType): string {
   }
 }
 
-export function rowToString (r: Row): string {
+export function rowToString(r: Row): string {
   switch (r.kind) {
     case 'empty':
       return ''

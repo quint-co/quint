@@ -15,7 +15,7 @@
  * @module
  */
 
-import { TntModule, TntName, TntApp, TntDef, TntModuleDef } from './tntIr'
+import { TntApp, TntDef, TntModule, TntModuleDef, TntName } from './tntIr'
 import { TntConstType } from './tntTypes'
 import { ScopeTree } from './scoping'
 import { LookupTable, LookupTableByModule, lookupType, lookupValue, newTable } from './lookupTable'
@@ -54,15 +54,17 @@ export type NameResolutionResult =
  *
  * @returns a successful result in case all names are resolved, or an aggregation of errors otherwise
  */
-export function resolveNames (tntModule: TntModule, table: LookupTableByModule, scopeTree: ScopeTree): NameResolutionResult {
+export function resolveNames(
+  tntModule: TntModule, table: LookupTableByModule, scopeTree: ScopeTree
+): NameResolutionResult {
   const visitor = new NameResolverVisitor(table, scopeTree)
   walkModule(visitor, tntModule)
   const errors: NameError[] = visitor.errors
-  return errors.length > 0 ? { kind: 'error', errors: errors } : { kind: 'ok' }
+  return errors.length > 0 ? { kind: 'error', errors } : { kind: 'ok' }
 }
 
 class NameResolverVisitor implements IRVisitor {
-  constructor (tables: LookupTableByModule, scopeTree: ScopeTree) {
+  constructor(tables: LookupTableByModule, scopeTree: ScopeTree) {
     this.tables = tables
     this.scopeTree = scopeTree
   }
@@ -77,7 +79,7 @@ class NameResolverVisitor implements IRVisitor {
   private currentTable: LookupTable = newTable({})
   private moduleStack: string[] = []
 
-  enterDef (def: TntDef): void {
+  enterDef(def: TntDef): void {
     // Keep the last visited definition name
     // so it can be showen in the reported error
     if (def.kind === 'module') {
@@ -87,31 +89,31 @@ class NameResolverVisitor implements IRVisitor {
     }
   }
 
-  enterModuleDef (def: TntModuleDef): void {
+  enterModuleDef(def: TntModuleDef): void {
     this.moduleStack.push(def.module.name)
 
     this.updateCurrentModule()
   }
 
-  exitModuleDef (_: TntModuleDef): void {
+  exitModuleDef(_: TntModuleDef): void {
     this.moduleStack.pop()
 
     this.updateCurrentModule()
   }
 
-  enterName (nameExpr: TntName): void {
+  enterName(nameExpr: TntName): void {
     // This is a name expression, the name must be defined
     // either globally or under a scope that contains the expression
     // The list of scopes containing the expression is accumulated in param scopes
     this.checkScopedName(nameExpr.name, nameExpr.id)
   }
 
-  enterApp (appExpr: TntApp): void {
+  enterApp(appExpr: TntApp): void {
     // Application, check that the operator being applied is defined
     this.checkScopedName(appExpr.opcode, appExpr.id)
   }
 
-  enterConstType (type: TntConstType): void {
+  enterConstType(type: TntConstType): void {
     // Type is a name, check that it is defined
     if (!lookupType(this.currentTable, type.name)) {
       this.recordError('type', type.name, type.id)
@@ -119,14 +121,14 @@ class NameResolverVisitor implements IRVisitor {
   }
 
   // Check that there is a value definition for `name` under scope `id`
-  private checkScopedName (name: string, id: bigint) {
+  private checkScopedName(name: string, id: bigint) {
     const def = lookupValue(this.currentTable, this.scopeTree, name, id)
     if (!def) {
       this.recordError('value', name, id)
     }
   }
 
-  private updateCurrentModule (): void {
+  private updateCurrentModule(): void {
     if (this.moduleStack.length > 0) {
       this.currentModuleName = this.moduleStack[this.moduleStack.length - 1]
 
@@ -138,10 +140,10 @@ class NameResolverVisitor implements IRVisitor {
     }
   }
 
-  private recordError (kind: 'type' | 'value', name: string, id?: bigint) {
+  private recordError(kind: 'type' | 'value', name: string, id?: bigint) {
     this.errors.push({
-      kind: kind,
-      name: name,
+      kind,
+      name,
       definitionName: this.lastDefName,
       moduleName: this.currentModuleName,
       reference: id,

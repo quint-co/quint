@@ -20,7 +20,7 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 import { Effect } from './base'
 import { ToEffectVisitor } from './ToEffectVisitor'
 
-import { Either, right, left } from '@sweet-monads/either'
+import { Either, left, right } from '@sweet-monads/either'
 
 /**
  * Parses an effect string into an Effect
@@ -30,7 +30,7 @@ import { Either, right, left } from '@sweet-monads/either'
  * @returns the parsed effect when the string is a valid effect.
  *          Otherwise, a list of parsing errors.
  */
-export function parseEffect (effectString: string): Either<any[], Effect> {
+export function parseEffect(effectString: string): Either<any[], Effect> {
   const errorMessages: any[] = []
   // error listener to report lexical and syntax errors
   const errorListener: any = {
@@ -43,9 +43,9 @@ export function parseEffect (effectString: string): Either<any[], Effect> {
         ? offendingSymbol.stopIndex - offendingSymbol.startIndex
         : 0
       const index = offendingSymbol ? offendingSymbol.startIndex : 0
-      const start = { line: line - 1, col: charPositionInLine, index: index }
+      const start = { line: line - 1, col: charPositionInLine, index }
       const end = { line: line - 1, col: charPositionInLine + len, index: index + len }
-      errorMessages.push({ explanation: msg, locs: [{ start: start, end: end }] })
+      errorMessages.push({ explanation: msg, locs: [{ start, end }] })
     },
   }
 
@@ -80,7 +80,7 @@ export function parseEffect (effectString: string): Either<any[], Effect> {
   }
 }
 
-export function parseEffectOrThrow (effect: string): Effect {
+export function parseEffectOrThrow(effect: string): Effect {
   const result = parseEffect(effect)
 
   if (result.isRight()) {

@@ -16,7 +16,7 @@ import { lf } from 'eol'
 import JSONbig from 'json-bigint'
 import lineColumn from 'line-column'
 
-import { parsePhase1, parsePhase2, ErrorMessage, compactSourceMap, Phase1Result } from './tntParserFrontend'
+import { ErrorMessage, Phase1Result, compactSourceMap, parsePhase1, parsePhase2 } from './tntParserFrontend'
 import { formatError } from './errorReporter'
 
 import yargs from 'yargs/yargs'
@@ -35,7 +35,7 @@ import { typeSchemeToString } from './types/printing'
  *
  * @param argv parameters as provided by yargs
  */
-function parse (argv: any) {
+function parse(argv: any) {
   parseModule(argv)
   process.exit(0)
 }
@@ -45,7 +45,7 @@ function parse (argv: any) {
  *
  * @param argv parameters as provided by yargs
  */
-function typecheck (argv: any) {
+function typecheck(argv: any) {
   const [parseResult, definitionsTable, sourceCode] = parseModule(argv)
 
   if (parseResult.kind === 'error') {
@@ -97,20 +97,20 @@ function typecheck (argv: any) {
 /**
  * Run REPL.
  *
- * @param argv parameters as provided by yargs
+ * @param _argv parameters as provided by yargs
  */
-function runRepl (argv: any) {
+function runRepl(_argv: any) {
   tntRepl(process.stdin, process.stdout)
 }
 
 // read either the standard input or an input file
-function parseModule (argv: any): [Phase1Result, LookupTableByModule, string] {
+function parseModule(argv: any): [Phase1Result, LookupTableByModule, string] {
   const data = readFileSync(argv.input, 'utf8')
   return parseText(argv, lf(data))
 }
 
 // a callback to parse the text that we get from readFile
-function parseText (argv: any, text: string): [Phase1Result, LookupTableByModule, string] {
+function parseText(argv: any, text: string): [Phase1Result, LookupTableByModule, string] {
   const path = resolve(cwd(), argv.input)
   const phase1Result = parsePhase1(text, path)
   if (phase1Result.kind === 'error') {
@@ -141,7 +141,7 @@ function parseText (argv: any, text: string): [Phase1Result, LookupTableByModule
   return [phase1Result, phase2Result.table, text]
 }
 
-function reportError (argv: any, sourceCode: string, result: { kind: 'error', messages: ErrorMessage[] }) {
+function reportError(argv: any, sourceCode: string, result: { kind: 'error', messages: ErrorMessage[] }) {
   if (argv.out) {
     // write the errors to the output file
     writeToJson(argv.out, result)
@@ -158,7 +158,7 @@ function reportError (argv: any, sourceCode: string, result: { kind: 'error', me
  * @param filename name of the file to write to
  * @param json is an object tree to write
  */
-function writeToJson (filename: string, json: any) {
+function writeToJson(filename: string, json: any) {
   const path = resolve(cwd(), filename)
   writeFileSync(path, JSONbig.stringify(json))
 }

@@ -33,13 +33,7 @@
       "eslint-plugin-json",
       "eslint-plugin-import",
       "eslint-plugin-node"
-    ],
-    "rules": {
-      "no-unused-vars": "off",
-      "@typescript-eslint/no-unused-vars": [
-        "error"
-      ]
-    }
+    ]
   },
   "files": [
     "README.md",
@@ -85,12 +79,13 @@
     "@typescript-eslint/parser": "^5.12.0",
     "antlr4ts-cli": "^0.5.0-alpha.4",
     "chai": "^4.3.4",
-    "eslint": "^7.32.0",
-    "eslint-config-standard": "^16.0.3",
-    "eslint-plugin-import": "^2.25.4",
+    "eslint": "^8.27.0",
+    "eslint-config-recommended": "^4.1.0",
+    "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-json": "^3.1.0",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-promise": "^5.2.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-unused-imports": "^2.0.0",
     "mocha": "^10.0.0",
     "nyc": "^15.1.0",
     "ts-node": "^10.0.0",

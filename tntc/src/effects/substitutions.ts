@@ -12,9 +12,9 @@
  * @module
  */
 
-import { Either, right, mergeInMany } from '@sweet-monads/either'
-import { buildErrorTree, ErrorTree } from '../errorTree'
-import { Effect, unify, Variables, unifyVariables } from './base'
+import { Either, mergeInMany, right } from '@sweet-monads/either'
+import { ErrorTree, buildErrorTree } from '../errorTree'
+import { Effect, Variables, unify, unifyVariables } from './base'
 import { effectToString, substitutionsToString } from './printing'
 import { simplify } from './simplification'
 
@@ -37,7 +37,7 @@ type Substitution =
  * @returns a new substitutions list containing the composition of given substitutions, if succeeded.
  *          Otherwise, an error tree with the substitution application failure
  */
-export function compose (s1: Substitutions, s2: Substitutions): Either<ErrorTree, Substitutions> {
+export function compose(s1: Substitutions, s2: Substitutions): Either<ErrorTree, Substitutions> {
   return applySubstitutionsToSubstitutions(s1, s2)
     .map((s: Substitutions) => s1.concat(s))
     .mapLeft(error => buildErrorTree(`Composing substitutions ${substitutionsToString(s1)} and ${substitutionsToString(s2)}`, error))
@@ -53,7 +53,7 @@ export function compose (s1: Substitutions, s2: Substitutions): Either<ErrorTree
  * @returns the effect resulting from the substitutions' application on the given
  *          effect, when successful. Otherwise, an error tree with an error message and its trace.
  */
-export function applySubstitution (subs: Substitutions, e: Effect): Either<ErrorTree, Effect> {
+export function applySubstitution(subs: Substitutions, e: Effect): Either<ErrorTree, Effect> {
   let result: Either<ErrorTree, Effect> = right(e)
   switch (e.kind) {
     case 'quantified': {
@@ -79,7 +79,7 @@ export function applySubstitution (subs: Substitutions, e: Effect): Either<Error
       const update = applySubstitutionToVariables(subs, e.update)
       const temporal = applySubstitutionToVariables(subs, e.temporal)
 
-      result = right({ kind: 'concrete', read: read, update: update, temporal: temporal })
+      result = right({ kind: 'concrete', read, update, temporal })
       break
     }
   }
@@ -97,7 +97,7 @@ export function applySubstitution (subs: Substitutions, e: Effect): Either<Error
  * @returns the varibales resulting from the substitutions' application on the given
  *          variables, when successful. Otherwise, an error tree with an error message and its trace.
  */
-export function applySubstitutionToVariables (subs: Substitutions, variables: Variables): Variables {
+export function applySubstitutionToVariables(subs: Substitutions, variables: Variables): Variables {
   switch (variables.kind) {
     case 'quantified': {
       const sub = subs.find(s => s.name === variables.name)
@@ -114,7 +114,7 @@ export function applySubstitutionToVariables (subs: Substitutions, variables: Va
   return variables
 }
 
-function applySubstitutionsToSubstitutions (s1: Substitutions, s2: Substitutions): Either<ErrorTree[], Substitutions> {
+function applySubstitutionsToSubstitutions(s1: Substitutions, s2: Substitutions): Either<ErrorTree[], Substitutions> {
   return mergeInMany(s2.map((s: Substitution): Either<ErrorTree, Substitutions> => {
     const sub = s1.find(sub => s.name === sub.name)
     if (sub) {

@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { inferEffects } from '../../src/effects/inferrer'
-import { newTable, LookupTable, LookupTableByModule } from '../../src/lookupTable'
+import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
 import { buildModuleWithDefs } from '../builders/ir'
 import { ErrorTree, errorTreeToString } from '../../src/errorTree'
 import { OpQualifier, TntModule } from '../../src/tntIr'
@@ -25,7 +25,7 @@ describe('checkModes', () => {
 
   const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
 
-  function checkModuleModes (tntModule: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, OpQualifier>> {
+  function checkModuleModes(tntModule: TntModule): Either<Map<bigint, ErrorTree>, Map<bigint, OpQualifier>> {
     const [errors, effects] = inferEffects(definitionsTable, tntModule)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
