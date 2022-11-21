@@ -60,26 +60,26 @@ export interface IRVisitor {
   exitLet?: (_expr: ir.TntLet) => void
 
   /** Types */
-  enterLiteralType?: (type: t.TntBoolType | t.TntIntType | t.TntStrType) => void
-  exitLiteralType?: (type: t.TntBoolType | t.TntIntType | t.TntStrType) => void
-  enterConstType?: (type: t.TntConstType) => void
-  exitConstType?: (type: t.TntConstType) => void
-  enterVarType?: (type: t.TntVarType) => void
-  exitVarType?: (type: t.TntVarType) => void
-  enterSetType?: (type: t.TntSetType) => void
-  exitSetType?: (type: t.TntSetType) => void
-  enterSeqType?: (type: t.TntSeqType) => void
-  exitSeqType?: (type: t.TntSeqType) => void
-  enterFunType?: (type: t.TntFunType) => void
-  exitFunType?: (type: t.TntFunType) => void
-  enterOperType?: (type: t.TntOperType) => void
-  exitOperType?: (type: t.TntOperType) => void
-  enterTupleType?: (type: t.TntTupleType) => void
-  exitTupleType?: (type: t.TntTupleType) => void
-  enterRecordType?: (type: t.TntRecordType) => void
-  exitRecordType?: (type: t.TntRecordType) => void
-  enterUnionType?: (type: t.TntUnionType) => void
-  exitUnionType?: (type: t.TntUnionType) => void
+  enterLiteralType?: (_type: t.TntBoolType | t.TntIntType | t.TntStrType) => void
+  exitLiteralType?: (_type: t.TntBoolType | t.TntIntType | t.TntStrType) => void
+  enterConstType?: (_type: t.TntConstType) => void
+  exitConstType?: (_type: t.TntConstType) => void
+  enterVarType?: (_type: t.TntVarType) => void
+  exitVarType?: (_type: t.TntVarType) => void
+  enterSetType?: (_type: t.TntSetType) => void
+  exitSetType?: (_type: t.TntSetType) => void
+  enterSeqType?: (_type: t.TntSeqType) => void
+  exitSeqType?: (_type: t.TntSeqType) => void
+  enterFunType?: (_type: t.TntFunType) => void
+  exitFunType?: (_type: t.TntFunType) => void
+  enterOperType?: (_type: t.TntOperType) => void
+  exitOperType?: (_type: t.TntOperType) => void
+  enterTupleType?: (_type: t.TntTupleType) => void
+  exitTupleType?: (_type: t.TntTupleType) => void
+  enterRecordType?: (_type: t.TntRecordType) => void
+  exitRecordType?: (_type: t.TntRecordType) => void
+  enterUnionType?: (_type: t.TntUnionType) => void
+  exitUnionType?: (_type: t.TntUnionType) => void
 
   /** Row types */
   enterRow?: (_row: t.Row) => void
