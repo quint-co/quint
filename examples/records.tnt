@@ -8,7 +8,10 @@ module Records {
     // Should give a type error:
     // val fieldNamesTest = 1.fieldNames()
 
+    // Should give a type error:
     // val setOfRecords = Set(rec1, rec2)
+
+    def updateF1(r) = r.with("f1", 1) 
 
     action Init = all {
         rec1 <- { f1: 1, f2: "hello" },
@@ -17,9 +20,9 @@ module Records {
     }
 
     action Next = all {
-        rec1 <- rec1.with("f1", 2),
+        rec1 <- updateF1(rec1),
         rec2 <- rec2.with("f3", true),
-        rec3 <- rec3.with("f1", 2),
+        rec3 <- updateF1(rec3),
     }
 
     def d(p) = rec1.with("f1", p.f1)
