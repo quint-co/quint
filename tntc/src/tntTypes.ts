@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2021. All rights reserved.
+ * Copyright (c) Informal Systems 2021-2022. All rights reserved.
  * Licensed under the Apache 2.0.
  * See License.txt in the project root for license information.
  * --------------------------------------------------------------------------------- */
@@ -7,10 +7,9 @@
 import { IRVisitor, walkType } from './IRVisitor'
 
 /**
- * TNT Types. Every expression or definition is either untyped, or decorated with
- * a type in Type System 1.2.
+ * TNT Types, representing annotated or inferred types. 
  *
- * @author Igor Konnov
+ * @author Igor Konnov, Gabriela Moreira
  */
 
 /**
@@ -101,6 +100,9 @@ export type TntType =
   | TntRecordType
   | TntUnionType
 
+/**
+ * Row types, used to express tuples and records.
+ */
 export type ConcreteRow = { kind: 'row', fields: { fieldName: string, fieldType: TntType }[], other: Row }
 export type VarRow = { kind: 'var', name: string }
 export type EmptyRow = { kind: 'empty' }
@@ -108,11 +110,11 @@ export type EmptyRow = { kind: 'empty' }
 export type Row = ConcreteRow | VarRow | EmptyRow
 
 /*
- * Collects all type variable names from a given type
+ * Collects all type and row variable names from a given type
  *
  * @param t the type to have its names collected
  *
- * @returns a list with collected names
+ * @returns the set of type variables and the set of row variables
  */
 export function typeNames(t: TntType): { typeVariables: Set<string>, rowVariables: Set<string> } {
   const collector = new TypeNamesCollector()
@@ -125,7 +127,7 @@ export function typeNames(t: TntType): { typeVariables: Set<string>, rowVariable
  *
  * @param r the row to have its names collected
  *
- * @returns a list with collected names
+ * @returns a set with collected names
  */
 export function rowNames(r: Row): Set<string> {
   switch (r.kind) {

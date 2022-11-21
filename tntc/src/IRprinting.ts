@@ -156,6 +156,7 @@ function rowFieldsToString(r: Row): string {
   }
 }
 
+// Produces a comma separated list of types
 function rowTypesToString(r: Row): string {
   switch (r.kind) {
     case 'empty':
@@ -163,7 +164,9 @@ function rowTypesToString(r: Row): string {
     case 'var':
       return r.name
     case 'row': {
-      const fields = sortByFieldName(r.fields).map(f => typeToString(f.fieldType))
+      // Assumes fields are sorted by fieldName
+      // That is, they have kept the originally constructed order
+      const fields = r.fields.map(f => typeToString(f.fieldType))
       const other = rowTypesToString(r.other)
       if (other !== '') {
         fields.push(other)
@@ -171,14 +174,4 @@ function rowTypesToString(r: Row): string {
       return fields.join(', ')
     }
   }
-}
-
-function sortByFieldName(fields: { fieldName: string, fieldType: TntType }[]) {
-  return fields.sort((a, b) => {
-    if (BigInt(a.fieldName) > BigInt(b.fieldName)) {
-      return 1
-    } else {
-      return -1
-    }
-  })
 }

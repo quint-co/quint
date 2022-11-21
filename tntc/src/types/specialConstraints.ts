@@ -25,8 +25,7 @@ import { chunk } from 'lodash'
  *
  * @param opcode The name of the operator
  * @param id The id of the component for which constraints are being generated
- * @param args The arguments to the operator
- * @param argTypes The types of the arguments
+ * @param args The arguments to the operator and their respective types
  * @param resultTypeVar A fresh type variable for the result type
  *
  * @returns Either an error or a list of constraints
