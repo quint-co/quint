@@ -7,6 +7,11 @@ installed:
 npm install -g txm
 ```
 
+*NOTE*: these tests only check that particular invocations succeed or fail. For
+tests that examine particular output, use
+[./io-cli-tests.md](./io-cli-tests.md).
+
+
 ### OK on parse Paxos
 
 This command parses the Paxos example.
