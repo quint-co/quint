@@ -22,20 +22,6 @@ describe('getSignatures', () => {
     assert.deepEqual(result, expectedSignature, `expected ${typeSchemeToString(expectedSignature)}, got ${typeSchemeToString(result)}`)
   })
 
-  it('contains quantified signatures for the tuple constructor', () => {
-    const tupSignature = signatures.get('Tup')!
-
-    const expectedSignature: TypeScheme = {
-      type: parseTypeOrThrow('(t0, t1, t2) => (t0, t1, t2)'),
-      typeVariables: new Set(['t0', 't1', 't2']),
-      rowVariables: new Set([]),
-    }
-
-    const result = tupSignature(3)
-
-    assert.deepEqual(result, expectedSignature, `expected ${typeSchemeToString(expectedSignature)}, got ${typeSchemeToString(result)}`)
-  })
-
   it('contains quantified signatures for match', () => {
     const matchSignature = signatures.get('match')!
 

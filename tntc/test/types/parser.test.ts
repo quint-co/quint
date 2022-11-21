@@ -62,7 +62,7 @@ describe('parseType', () => {
   })
 
   it('parses records of sets and lists', () => {
-    const type = parseType('{ mySet: Set[a], mySeq: List[a], r }')
+    const type = parseType('{ mySet: Set[a], mySeq: List[a] | r }')
 
     assert.isTrue(type.isRight())
     type.map(value => assert.deepEqual(value, {

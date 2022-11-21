@@ -115,16 +115,14 @@ export function typeToString (type: TntType): string {
       return `(${args}) => ${typeToString(type.res)}`
     }
     case 'tup':
-      console.log(`{ ${rowToString(type.fields)} }`)
-      console.log(`(${rowTypesToString(type.fields)})`)
       return `(${rowTypesToString(type.fields)})`
     case 'rec': {
       const fields = rowToString(type.fields)
-      return `{ ${fields} }`
+      return `${fields}`
     }
     case 'union': {
       const records = type.records.map(rec => {
-        return `| { ${type.tag}: "${rec.tagValue}", ${rowToString(rec.fields)} }`
+        return `| { ${type.tag}: "${rec.tagValue}", ${rowFieldsToString(rec.fields)} }`
       })
       return records.join('\n')
     }
@@ -132,18 +130,28 @@ export function typeToString (type: TntType): string {
 }
 
 export function rowToString (r: Row): string {
+  const fields = rowFieldsToString(r)
+  return fields !== '' ? `{ ${fields} }` : '{}'
+}
+
+function rowFieldsToString(r: Row): string {
   switch (r.kind) {
     case 'empty':
       return ''
     case 'var':
-      return r.name
+      return `| ${r.name}`
     case 'row': {
       const fields = r.fields.map(f => `${f.fieldName}: ${typeToString(f.fieldType)}`)
-      const other = rowToString(r.other)
-      if (other !== '') {
-        fields.push(other)
+      const other = rowFieldsToString(r.other)
+      switch (r.other.kind) {
+        case 'row':
+          fields.push(other)
+          return `${fields.join(', ')}`
+        case 'var':
+          return `${fields.join(', ')} ${other}`
+        case 'empty':
+          return `${fields.join(', ')}`
       }
-      return fields.join(', ')
     }
   }
 }

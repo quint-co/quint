@@ -323,3 +323,33 @@ tntc typecheck ../examples/records.tnt
 
 <!-- !test check records - Types & Effects-->
     expect exit code 0
+
+### OK on parse tuples
+
+This command parses the tuples example.
+
+<!-- !test program
+tntc parse ../examples/tuples.tnt
+-->
+
+```sh
+tntc parse ../examples/tuples.tnt
+```
+
+<!-- !test check tuples -->
+    expect exit code 0
+ 
+### OK on typecheck tuples
+
+This command typechecks the tuples example.
+
+<!-- !test program
+tntc typecheck ../examples/tuples.tnt
+-->
+
+```sh
+tntc typecheck ../examples/tuples.tnt
+```
+
+<!-- !test check tuples - Types & Effects-->
+    expect exit code 0
