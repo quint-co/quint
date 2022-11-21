@@ -3,24 +3,24 @@ import { assert } from 'chai'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import JSONbig from 'json-bigint'
-import { parsePhase1, parsePhase2, compactSourceMap } from '../src/tntParserFrontend'
+import { compactSourceMap, parsePhase1, parsePhase2 } from '../src/tntParserFrontend'
 import { lf } from 'eol'
 
 // read a TNT file from the test data directory
-function readTnt (name: string): string {
+function readTnt(name: string): string {
   const p = resolve(__dirname, '../testFixture', name + '.tnt')
   const content = readFileSync(p).toString('utf8')
   return lf(content)
 }
 
 // read the expected JSON outcome from the test data directory
-function readJson (name: string): any {
+function readJson(name: string): any {
   const p = resolve(__dirname, '../testFixture', name + '.json')
   return JSONbig.parse(readFileSync(p).toString('utf8'))
 }
 
 // read the TNT file and the expected JSON, parse and compare the results
-function parseAndCompare (artifact: string): void {
+function parseAndCompare(artifact: string): void {
   // read the input from the data directory and parse it
   const phase1Result = parsePhase1(readTnt(artifact), `mocked_path/testFixture/${artifact}.tnt`)
   // read the expected result as JSON

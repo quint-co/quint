@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { parseTypeOrThrow } from '../../src/types/parser'
-import { compose, Substitutions, applySubstitution, applySubstitutionToConstraint } from '../../src/types/substitutions'
+import { Substitutions, applySubstitution, applySubstitutionToConstraint, compose } from '../../src/types/substitutions'
 import { Constraint } from '../../src/types/base'
 import { constraintToString } from '../../src/types/printing'
 import { Row } from '../../src'
@@ -137,16 +137,19 @@ describe('applySubstitutionToConstraint', () => {
     const t2 = parseTypeOrThrow('b')
 
     const result = applySubstitutionToConstraint(s, { kind: 'eq', types: [t1, t2], sourceId: 1n })
-    const expectedResult: Constraint = { kind: 'eq', types: [parseTypeOrThrow('int'), parseTypeOrThrow('bool')], sourceId: 1n }
+    const expectedResult: Constraint =
+      { kind: 'eq', types: [parseTypeOrThrow('int'), parseTypeOrThrow('bool')], sourceId: 1n }
 
-    assert.deepEqual(result, expectedResult, `expected ${constraintToString(expectedResult)}, got ${constraintToString(result)}`)
+    assert.deepEqual(result, expectedResult,
+      `expected ${constraintToString(expectedResult)}, got ${constraintToString(result)}`)
   })
 
   it('does nothing to empty constraint', () => {
     const result = applySubstitutionToConstraint(s, { kind: 'empty' })
     const expectedResult: Constraint = { kind: 'empty' }
 
-    assert.deepEqual(result, expectedResult, `expected ${constraintToString(expectedResult)}, got ${constraintToString(result)}`)
+    assert.deepEqual(result, expectedResult,
+      `expected ${constraintToString(expectedResult)}, got ${constraintToString(result)}`)
   })
 
   it('applies substitution recursively to constraints in conjunction', () => {
@@ -154,10 +157,14 @@ describe('applySubstitutionToConstraint', () => {
     const c2: Constraint = { kind: 'eq', types: [parseTypeOrThrow('b'), parseTypeOrThrow('b')], sourceId: 1n }
     const result = applySubstitutionToConstraint(s, { kind: 'conjunction', constraints: [c1, c2], sourceId: 1n })
 
-    const expected1: Constraint = { kind: 'eq', types: [parseTypeOrThrow('int'), parseTypeOrThrow('bool')], sourceId: 1n }
-    const expected2: Constraint = { kind: 'eq', types: [parseTypeOrThrow('bool'), parseTypeOrThrow('bool')], sourceId: 1n }
-    const expectedResult: Constraint = { kind: 'conjunction', constraints: [expected1, expected2], sourceId: 1n }
+    const expected1: Constraint =
+      { kind: 'eq', types: [parseTypeOrThrow('int'), parseTypeOrThrow('bool')], sourceId: 1n }
+    const expected2: Constraint =
+      { kind: 'eq', types: [parseTypeOrThrow('bool'), parseTypeOrThrow('bool')], sourceId: 1n }
+    const expectedResult: Constraint =
+      { kind: 'conjunction', constraints: [expected1, expected2], sourceId: 1n }
 
-    assert.deepEqual(result, expectedResult, `expected ${constraintToString(expectedResult)}, got ${constraintToString(result)}`)
+    assert.deepEqual(result, expectedResult,
+      `expected ${constraintToString(expectedResult)}, got ${constraintToString(result)}`)
   })
 })

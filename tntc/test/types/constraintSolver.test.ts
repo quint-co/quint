@@ -206,9 +206,9 @@ describe('unify', () => {
               message: "Couldn't unify row and empty",
               location: 'Trying to unify { 2: c } and {}',
               children: [],
-            }
-          ]
-        }
+            },
+          ],
+        },
       ],
     }))
   })

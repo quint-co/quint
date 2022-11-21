@@ -13,7 +13,7 @@
  */
 
 import isEqual from 'lodash.isequal'
-import { ValueDefinition, LookupTable } from './lookupTable'
+import { LookupTable, ValueDefinition } from './lookupTable'
 import { ScopeTree, scopesForId } from './scoping'
 
 /**
@@ -55,7 +55,7 @@ export type DefinitionsConflictResult =
  *
  * @returns a successful result in case there are no conflicts, or an aggregation of conflicts otherwise
  */
-export function scanConflicts (table: LookupTable, tree: ScopeTree): DefinitionsConflictResult {
+export function scanConflicts(table: LookupTable, tree: ScopeTree): DefinitionsConflictResult {
   const conflicts: Conflict[] = []
   table.valueDefinitions.forEach((defs, identifier) => {
     // Value definition conflicts depend on scope
@@ -67,7 +67,7 @@ export function scanConflicts (table: LookupTable, tree: ScopeTree): Definitions
       const sources: ConflictSource[] = conflictingDefinitions.map(d => {
         return d.reference ? { kind: 'user', reference: d.reference } : { kind: 'builtin' }
       })
-      conflicts.push({ kind: 'value', identifier: identifier, sources: sources })
+      conflicts.push({ kind: 'value', identifier, sources })
     }
   })
 
@@ -77,18 +77,18 @@ export function scanConflicts (table: LookupTable, tree: ScopeTree): Definitions
       const sources: ConflictSource[] = defs.map(d => {
         return d.reference ? { kind: 'user', reference: d.reference } : { kind: 'builtin' }
       })
-      conflicts.push({ kind: 'type', identifier: identifier, sources: sources })
+      conflicts.push({ kind: 'type', identifier, sources })
     }
   })
 
   if (conflicts.length > 0) {
-    return { kind: 'error', conflicts: conflicts }
+    return { kind: 'error', conflicts }
   } else {
     return { kind: 'ok' }
   }
 }
 
-function canConflict (tree: ScopeTree, d1: ValueDefinition, d2: ValueDefinition): Boolean {
+function canConflict(tree: ScopeTree, d1: ValueDefinition, d2: ValueDefinition): Boolean {
   return !d1.scope ||
     !d2.scope ||
     scopesForId(tree, d1.scope).includes(d2.scope) ||

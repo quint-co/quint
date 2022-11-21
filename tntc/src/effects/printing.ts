@@ -22,7 +22,7 @@ import { Substitutions } from './substitutions'
  *
  * @returns a string with the pretty printed effect
  */
-export function effectToString (e: Effect): string {
+export function effectToString(e: Effect): string {
   switch (e.kind) {
     case 'concrete': {
       const output = []
@@ -57,7 +57,7 @@ export function effectToString (e: Effect): string {
  *
  * @returns a string with the pretty printed variables
  */
-export function variablesToString (v: Variables): string {
+export function variablesToString(v: Variables): string {
   switch (v.kind) {
     case 'concrete': return v.vars.map(v => `'${v}'`).join(', ')
     case 'quantified': return v.name
@@ -72,7 +72,7 @@ export function variablesToString (v: Variables): string {
  *
  * @returns a string with the pretty printed substitution
  */
-export function substitutionsToString (subs: Substitutions): string {
+export function substitutionsToString(subs: Substitutions): string {
   const subsString = subs.map(s => {
     switch (s.kind) {
       case 'effect': return `${s.name} |-> ${effectToString(s.value)}`

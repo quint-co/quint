@@ -9,7 +9,7 @@
  */
 
 import {
-  parsePhase1, parsePhase2, ErrorMessage, Loc
+  ErrorMessage, Loc, parsePhase1, parsePhase2
 } from '../tntParserFrontend'
 import { inferTypes } from '../types/inferrer'
 import { inferEffects } from '../effects/inferrer'
@@ -48,7 +48,7 @@ export interface CompilationContext {
   sourceMap: Map<bigint, Loc>,
 }
 
-function errorContext (errors: ErrorMessage[]): CompilationContext {
+function errorContext(errors: ErrorMessage[]): CompilationContext {
   return {
     values: new Map(),
     vars: [],
@@ -63,8 +63,7 @@ function errorContext (errors: ErrorMessage[]): CompilationContext {
 }
 
 // convert an error tree to an error message
-function errorTreeToMsg
-(sourceMap: Map<bigint, Loc>, trees: Map<bigint, ErrorTree>) {
+function errorTreeToMsg(sourceMap: Map<bigint, Loc>, trees: Map<bigint, ErrorTree>) {
   const errors: ErrorMessage[] = []
   trees.forEach((value, key) => {
     const loc = sourceMap.get(key)!
@@ -88,7 +87,7 @@ function errorTreeToMsg
  * @returns a mapping from names to computable values
  */
 export function
-compile (moduleText: string): CompilationContext {
+compile(moduleText: string): CompilationContext {
   // parse the module text
   const parseRes = parsePhase1(moduleText, '<input>')
 
@@ -103,9 +102,8 @@ compile (moduleText: string): CompilationContext {
   const defTable = resolutionRes.table
 
   // in the future, we will be using types and effects
-  /* eslint no-unused-vars: "no-error" */
-  const [typeErrors, types] = inferTypes(parsedModule, defTable)
-  const [effectsErrors, effects] = inferEffects(defTable, parsedModule)
+  const [typeErrors, _types] = inferTypes(parsedModule, defTable)
+  const [effectsErrors, _effects] = inferEffects(defTable, parsedModule)
   // since the type checker and effects checker are incomplete,
   // collect the errors, but do not stop immediately on error
   const visitor = new CompilerVisitor()

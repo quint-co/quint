@@ -15,8 +15,11 @@
  */
 
 import { IRVisitor, walkModule } from './IRVisitor'
-import { addTypeToTable, addValueToTable, copyTable, LookupTable, LookupTableByModule, newTable, ValueDefinition, ValueDefinitionKind } from './lookupTable'
-import { TntModule, TntVar, TntModuleDef, TntConst, TntOpDef, TntTypeDef, TntAssume, TntLambda, TntLet } from './tntIr'
+import {
+  LookupTable, LookupTableByModule, ValueDefinition, ValueDefinitionKind,
+  addTypeToTable, addValueToTable, copyTable, newTable
+} from './lookupTable'
+import { TntAssume, TntConst, TntLambda, TntLet, TntModule, TntModuleDef, TntOpDef, TntTypeDef, TntVar } from './tntIr'
 import { TntType } from './tntTypes'
 
 /**
@@ -24,7 +27,7 @@ import { TntType } from './tntTypes'
  * This is a function instead of a constant to ensure a new instance is generated
  * every call
  */
-export function defaultValueDefinitions (): ValueDefinition[] {
+export function defaultValueDefinitions(): ValueDefinition[] {
   return [
     { kind: 'def', identifier: 'not' },
     { kind: 'def', identifier: 'and' },
@@ -57,8 +60,8 @@ export function defaultValueDefinitions (): ValueDefinition[] {
     { kind: 'def', identifier: 'mapBy' },
     { kind: 'def', identifier: 'setToMap' },
     { kind: 'def', identifier: 'setOfMaps' },
-    { kind: 'def', identifier: 'update' },
-    { kind: 'def', identifier: 'updateAs' },
+    { kind: 'def', identifier: 'set' },
+    { kind: 'def', identifier: 'setBy' },
     { kind: 'def', identifier: 'fields' },
     { kind: 'def', identifier: 'with' },
     { kind: 'def', identifier: 'tuples' },
@@ -132,7 +135,7 @@ export function defaultValueDefinitions (): ValueDefinition[] {
  *
  * @returns a lookup table with all defined values for the module
  */
-export function collectDefinitions (tntModule: TntModule): LookupTableByModule {
+export function collectDefinitions(tntModule: TntModule): LookupTableByModule {
   const visitor = new DefinitionsCollectorVisitor()
   walkModule(visitor, tntModule)
   return visitor.tables
@@ -146,13 +149,13 @@ class DefinitionsCollectorVisitor implements IRVisitor {
   private moduleStack: string[] = []
   private scopeStack: bigint[] = []
 
-  enterModuleDef (def: TntModuleDef): void {
+  enterModuleDef(def: TntModuleDef): void {
     this.moduleStack.push(def.module.name)
 
     this.updateCurrentModule()
   }
 
-  exitModuleDef (def: TntModuleDef): void {
+  exitModuleDef(def: TntModuleDef): void {
     // Collect all definitions namespaced to module
     const innerModuleTable = copyTable(this.currentTable)
 
@@ -161,7 +164,8 @@ class DefinitionsCollectorVisitor implements IRVisitor {
 
     if (this.moduleStack.length > 0) {
       innerModuleTable.valueDefinitions.forEach((defs) => {
-        defs.filter(d => !d.scope).forEach(d => this.collectValueDefinition(d.kind, `${def.module.name}::${d.identifier}`, d.reference))
+        defs.filter(d => !d.scope)
+          .forEach(d => this.collectValueDefinition(d.kind, `${def.module.name}::${d.identifier}`, d.reference))
       })
 
       innerModuleTable.typeDefinitions.forEach((defs) => {
@@ -172,15 +176,15 @@ class DefinitionsCollectorVisitor implements IRVisitor {
     }
   }
 
-  enterVar (def: TntVar): void {
+  enterVar(def: TntVar): void {
     this.collectValueDefinition(def.kind, def.name, def.id)
   }
 
-  enterConst (def: TntConst): void {
+  enterConst(def: TntConst): void {
     this.collectValueDefinition(def.kind, def.name, def.id)
   }
 
-  enterOpDef (def: TntOpDef): void {
+  enterOpDef(def: TntOpDef): void {
     if (this.scopeStack.length > 0) {
       const scope = this.scopeStack[this.scopeStack.length - 1]
       this.collectValueDefinition(def.kind, def.name, def.id, scope)
@@ -189,55 +193,57 @@ class DefinitionsCollectorVisitor implements IRVisitor {
     }
   }
 
-  enterTypeDef (def: TntTypeDef): void {
+  enterTypeDef(def: TntTypeDef): void {
     this.collectTypeDefinition(def.name, def.type, def.id)
   }
 
-  enterAssume (def: TntAssume): void {
+  enterAssume(def: TntAssume): void {
     this.collectValueDefinition('assumption', def.name, def.id)
   }
 
-  enterLambda (expr: TntLambda): void {
+  enterLambda(expr: TntLambda): void {
     expr.params.forEach(p => {
       this.collectValueDefinition('param', p, expr.id, expr.id)
     })
   }
 
-  enterLet (def: TntLet): void {
+  enterLet(def: TntLet): void {
     this.scopeStack.push(def.id)
   }
 
-  exitLet (_: TntLet): void {
+  exitLet(_: TntLet): void {
     this.scopeStack.pop()
   }
 
-  private collectValueDefinition (kind: ValueDefinitionKind, identifier: string, reference?: bigint, scope?: bigint): void {
+  private collectValueDefinition(
+    kind: ValueDefinitionKind, identifier: string, reference?: bigint, scope?: bigint
+  ): void {
     if (identifier === '_') {
       // Don't collect underscores, as they are special identifiers that allow no usage
       return
     }
 
     const def: ValueDefinition = {
-      kind: kind,
-      identifier: identifier,
-      reference: reference,
-      scope: scope,
+      kind,
+      identifier,
+      reference,
+      scope,
     }
 
     addValueToTable(def, this.currentTable)
   }
 
-  private collectTypeDefinition (identifier: string, type?: TntType, reference?: bigint): void {
+  private collectTypeDefinition(identifier: string, type?: TntType, reference?: bigint): void {
     const def = {
-      identifier: identifier,
-      type: type,
-      reference: reference,
+      identifier,
+      type,
+      reference,
     }
 
     addTypeToTable(def, this.currentTable)
   }
 
-  private updateCurrentModule (): void {
+  private updateCurrentModule(): void {
     if (this.moduleStack.length > 0) {
       this.currentModuleName = this.moduleStack[this.moduleStack.length - 1]
 

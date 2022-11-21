@@ -14,7 +14,7 @@
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import isEqual from 'lodash.isequal'
-import { buildErrorTree, ErrorTree } from '../errorTree'
+import { ErrorTree, buildErrorTree } from '../errorTree'
 import { ConcreteEffect, Effect, Variables } from './base'
 import { effectToString } from './printing'
 
@@ -28,7 +28,7 @@ import { effectToString } from './printing'
  *
  * @returns the simplified effect if no multiple updates are found. Otherwise, the error.
  */
-export function simplifyConcreteEffect (e: ConcreteEffect): Either<ErrorTree, Effect> {
+export function simplifyConcreteEffect(e: ConcreteEffect): Either<ErrorTree, Effect> {
   const read = uniqueVariables(flattenUnions(e.read))
   const update = flattenUnions(e.update)
   const temporal = uniqueVariables(flattenUnions(e.temporal))
@@ -42,11 +42,11 @@ export function simplifyConcreteEffect (e: ConcreteEffect): Either<ErrorTree, Ef
       children: [],
     })
   } else {
-    return right({ kind: 'concrete', read: read, update: update, temporal: temporal })
+    return right({ kind: 'concrete', read, update, temporal })
   }
 }
 
-export function simplify (e: Effect): Either<ErrorTree, Effect> {
+export function simplify(e: Effect): Either<ErrorTree, Effect> {
   switch (e.kind) {
     case 'concrete': return simplifyConcreteEffect(e)
     case 'quantified': return right(e)
@@ -68,7 +68,7 @@ export function simplify (e: Effect): Either<ErrorTree, Effect> {
  * @returns the flattened form of union if a union.
  *          Otherwise, the variables without change.
  */
-export function flattenUnions (variables: Variables): Variables {
+export function flattenUnions(variables: Variables): Variables {
   switch (variables.kind) {
     case 'union': {
       const unionVariables: Variables[] = []
@@ -89,10 +89,10 @@ export function flattenUnions (variables: Variables): Variables {
       })
 
       if (unionVariables.length > 0) {
-        const variables = vars.length > 0 ? unionVariables.concat({ kind: 'concrete', vars: vars }) : unionVariables
-        return variables.length > 1 ? { kind: 'union', variables: variables } : variables[0]
+        const variables = vars.length > 0 ? unionVariables.concat({ kind: 'concrete', vars }) : unionVariables
+        return variables.length > 1 ? { kind: 'union', variables } : variables[0]
       } else {
-        return { kind: 'concrete', vars: vars }
+        return { kind: 'concrete', vars }
       }
     }
     default:
@@ -100,7 +100,7 @@ export function flattenUnions (variables: Variables): Variables {
   }
 }
 
-function findVars (variables: Variables): string[] {
+function findVars(variables: Variables): string[] {
   switch (variables.kind) {
     case 'quantified':
       return []
@@ -111,7 +111,7 @@ function findVars (variables: Variables): string[] {
   }
 }
 
-function uniqueVariables (variables: Variables): Variables {
+function uniqueVariables(variables: Variables): Variables {
   switch (variables.kind) {
     case 'quantified':
       return variables

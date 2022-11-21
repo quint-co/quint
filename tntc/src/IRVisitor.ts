@@ -22,42 +22,42 @@ import * as t from './tntTypes'
  */
 export interface IRVisitor {
   /** General components */
-  enterExpr?: (expr: ir.TntEx) => void
-  exitExpr?: (expr: ir.TntEx) => void
-  enterDef?: (def: ir.TntDef) => void
-  exitDef?: (def: ir.TntDef) => void
-  enterType?: (type: t.TntType) => void
-  exitType?: (type: t.TntType) => void
+  enterExpr?: (_expr: ir.TntEx) => void
+  exitExpr?: (_expr: ir.TntEx) => void
+  enterDef?: (_def: ir.TntDef) => void
+  exitDef?: (_def: ir.TntDef) => void
+  enterType?: (_type: t.TntType) => void
+  exitType?: (_type: t.TntType) => void
 
   /** Definitions */
-  enterOpDef?: (def: ir.TntOpDef) => void
-  exitOpDef?: (def: ir.TntOpDef) => void
-  enterConst?: (def: ir.TntConst) => void
-  exitConst?: (def: ir.TntConst) => void
-  enterVar?: (def: ir.TntVar) => void
-  exitVar?: (def: ir.TntVar) => void
-  enterAssume?: (def: ir.TntAssume) => void
-  exitAssume?: (def: ir.TntAssume) => void
-  enterTypeDef?: (def: ir.TntTypeDef) => void
-  exitTypeDef?: (def: ir.TntTypeDef) => void
-  enterImport?: (def: ir.TntImport) => void
-  exitImport?: (def: ir.TntImport) => void
-  enterInstance?: (def: ir.TntInstance) => void
-  exitInstance?: (def: ir.TntInstance) => void
-  enterModuleDef?: (def: ir.TntModuleDef) => void
-  exitModuleDef?: (def: ir.TntModuleDef) => void
+  enterOpDef?: (_def: ir.TntOpDef) => void
+  exitOpDef?: (_def: ir.TntOpDef) => void
+  enterConst?: (_def: ir.TntConst) => void
+  exitConst?: (_def: ir.TntConst) => void
+  enterVar?: (_def: ir.TntVar) => void
+  exitVar?: (_def: ir.TntVar) => void
+  enterAssume?: (_def: ir.TntAssume) => void
+  exitAssume?: (_def: ir.TntAssume) => void
+  enterTypeDef?: (_def: ir.TntTypeDef) => void
+  exitTypeDef?: (_def: ir.TntTypeDef) => void
+  enterImport?: (_def: ir.TntImport) => void
+  exitImport?: (_def: ir.TntImport) => void
+  enterInstance?: (_def: ir.TntInstance) => void
+  exitInstance?: (_def: ir.TntInstance) => void
+  enterModuleDef?: (_def: ir.TntModuleDef) => void
+  exitModuleDef?: (_def: ir.TntModuleDef) => void
 
   /** Expressions */
-  enterName?: (expr: ir.TntName) => void
-  exitName?: (expr: ir.TntName) => void
-  enterLiteral?: (expr: ir.TntBool | ir.TntInt | ir.TntStr) => void
-  exitLiteral?: (expr: ir.TntBool | ir.TntInt | ir.TntStr) => void
-  enterApp?: (expr: ir.TntApp) => void
-  exitApp?: (expr: ir.TntApp) => void
-  enterLambda?: (expr: ir.TntLambda) => void
-  exitLambda?: (expr: ir.TntLambda) => void
-  enterLet?: (expr: ir.TntLet) => void
-  exitLet?: (expr: ir.TntLet) => void
+  enterName?: (_expr: ir.TntName) => void
+  exitName?: (_expr: ir.TntName) => void
+  enterLiteral?: (_expr: ir.TntBool | ir.TntInt | ir.TntStr) => void
+  exitLiteral?: (_expr: ir.TntBool | ir.TntInt | ir.TntStr) => void
+  enterApp?: (_expr: ir.TntApp) => void
+  exitApp?: (_expr: ir.TntApp) => void
+  enterLambda?: (_expr: ir.TntLambda) => void
+  exitLambda?: (_expr: ir.TntLambda) => void
+  enterLet?: (_expr: ir.TntLet) => void
+  exitLet?: (_expr: ir.TntLet) => void
 
   /** Types */
   enterLiteralType?: (type: t.TntBoolType | t.TntIntType | t.TntStrType) => void

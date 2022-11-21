@@ -198,7 +198,7 @@ export interface TntTypeAlias extends TntTypeDef {
   type: TntType
 }
 
-export function isTypeAlias (def: any): def is TntTypeAlias {
+export function isTypeAlias(def: any): def is TntTypeAlias {
   return def.kind === 'typedef' && def.type
 }
 
@@ -236,7 +236,7 @@ export interface TntModuleDef extends WithId {
  */
 export type TntDef = TntOpDef | TntConst | TntVar | TntAssume | TntTypeDef | TntImport | TntInstance | TntModuleDef
 
-export function isAnnotatedDef (def: any): def is WithTypeAnnotation {
+export function isAnnotatedDef(def: any): def is WithTypeAnnotation {
   return def.typeAnnotation !== undefined
 }
 

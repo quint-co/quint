@@ -36,7 +36,7 @@ type Substitution =
  *
  * @returns a new substitutions list containing the composition of given substitutions
  */
-export function compose (s1: Substitutions, s2: Substitutions): Substitutions {
+export function compose(s1: Substitutions, s2: Substitutions): Substitutions {
   const newS2 = applySubstitutionsToSubstitutions(s1, s2)
   return newS2.concat(s1)
 }
@@ -51,7 +51,7 @@ export function compose (s1: Substitutions, s2: Substitutions): Substitutions {
  * @returns the type resulting from the substitutions' application on the
  *          given type
  */
-export function applySubstitution (subs: Substitutions, t: TntType): TntType {
+export function applySubstitution(subs: Substitutions, t: TntType): TntType {
   let result = t
   switch (t.kind) {
     case 'var': {
@@ -117,7 +117,7 @@ export function applySubstitution (subs: Substitutions, t: TntType): TntType {
  * @returns the constraint resulting from the substitutions' application on the
  *          given constraint
  */
-export function applySubstitutionToConstraint (subs: Substitutions, c: Constraint): Constraint {
+export function applySubstitutionToConstraint(subs: Substitutions, c: Constraint): Constraint {
   switch (c.kind) {
     case 'eq': {
       const ts: [TntType, TntType] = [applySubstitution(subs, c.types[0]), applySubstitution(subs, c.types[1])]
@@ -131,7 +131,7 @@ export function applySubstitutionToConstraint (subs: Substitutions, c: Constrain
   }
 }
 
-function applySubstitutionsToSubstitutions (s1: Substitutions, s2: Substitutions): Substitutions {
+function applySubstitutionsToSubstitutions(s1: Substitutions, s2: Substitutions): Substitutions {
   return s2.flatMap(s => {
     const sub = s1.find(sub => s.name === sub.name)
     if (sub) {
@@ -158,7 +158,7 @@ function applySubstitutionsToSubstitutions (s1: Substitutions, s2: Substitutions
   })
 }
 
-function applySubstitutionToRow (s: Substitutions, r: Row): Row {
+function applySubstitutionToRow(s: Substitutions, r: Row): Row {
   switch (r.kind) {
     case 'row':
       return {

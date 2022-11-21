@@ -30,7 +30,9 @@ import { solveConstraint } from './constraintSolver'
  *          Otherwise, a map from expression ids to the corresponding error for
  *          the problematic expressions.
  */
-export function inferTypes (tntModule: TntModule, table: LookupTableByModule): [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>] {
+export function inferTypes(
+  tntModule: TntModule, table: LookupTableByModule
+): [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>] {
   const visitor = new ConstraintGeneratorVisitor(solveConstraint, table)
   walkModule(visitor, tntModule)
   // Since all top level expressions are operator definitions, and all

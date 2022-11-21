@@ -26,8 +26,7 @@ import { ErrorMessage } from './tntParserFrontend'
  *
  * @returns a formatted string with error information
  * */
-export function formatError
-(text: string, finder: any, message: ErrorMessage, lineOffset: number = 1):
+export function formatError(text: string, finder: any, message: ErrorMessage, lineOffset: number = 1):
   string {
   if (message.locs.length === 0) {
     return `error: ${message.explanation}`
@@ -54,7 +53,7 @@ export function formatError
   }, '')
 }
 
-function formatLine (lineIndex: number, startCol: number, endCol: number, line: string): string {
+function formatLine(lineIndex: number, startCol: number, endCol: number, line: string): string {
   let output = ''
   const lineNumberIndicator = `${lineIndex}: `
   output += `${lineNumberIndicator}${line}\n`

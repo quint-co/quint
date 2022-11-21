@@ -225,25 +225,25 @@ action Init = all {
 action BroadcastProposal(pSrc, pRound, pProposal, pValidRound) = {
   val newMsg = { tag: "PROPOSE", src: pSrc, round: pRound,
                  proposal: pProposal, validRound: pValidRound }
-  msgsPropose <- msgsPropose.updateAs(pRound, (old => old.union(Set(newMsg))))
+  msgsPropose <- msgsPropose.setBy(pRound, (old => old.union(Set(newMsg))))
 }
 
 action BroadcastPrevote(pSrc, pRound, pId) = {
   val newMsg = { tag: "PREVOTE", src: pSrc, round: pRound, id: pId }
-  msgsPrevote <- msgsPrevote.updateAs(pRound, (old => old.union(Set(newMsg))))
+  msgsPrevote <- msgsPrevote.setBy(pRound, (old => old.union(Set(newMsg))))
 }
 
 action BroadcastPrecommit(pSrc, pRound, pId) = {
   val newMsg = { tag: "PRECOMMIT", src: pSrc, round: pRound, id: pId }
-  msgsPrecommit <- msgsPrecommit.updateAs(pRound, (old => old.union(Set(newMsg))))
+  msgsPrecommit <- msgsPrecommit.setBy(pRound, (old => old.union(Set(newMsg))))
 }
 
 //********************* PROTOCOL TRANSITIONS ******************************
 // lines 12-13
 action StartRound(p, r) = all {
    step.get(p) != "decided", // a decided process does not participate in consensus
-   round  <- round.update(p, r),
-   step   <- step.update(p, "propose"),
+   round  <- round.set(p, r),
+   step   <- step.set(p, "propose"),
 }
 
 // lines 14-19, a proposal may be sent later
@@ -277,7 +277,7 @@ action UponProposalInPropose(p) =
       msg.in(msgsPropose.get(round.get(p))),         // line 22
       evidence <- Set(msg).union(evidence),
       BroadcastPrevote(p, round.get(p), mid),   // lines 24-26
-      step <- step.update(p, "prevote"),
+      step <- step.set(p, "prevote"),
       fired_action <- "UponProposalInPropose",
     }
   )
@@ -301,7 +301,7 @@ action UponProposalInProposeAndPrevote(p) =
       size(PV) >= THRESHOLD2, // line 28
       evidence <- PV.union(Set(msg)).union(evidence),
       BroadcastPrevote(p, round.get(p), mid), // lines 24-26
-      step <- step.update(p, "prevote"),
+      step <- step.set(p, "prevote"),
       fired_action <- "UponProposalInProposeAndPrevote",
     }
   )
@@ -318,7 +318,7 @@ action UponQuorumOfPrevotesAny(p) =
       size(Voters) >= THRESHOLD2, // line 34
       evidence <- MyEvidence.union(evidence),
       BroadcastPrecommit(p, round.get(p), NilValue),
-      step <- step.update(p, "precommit"),
+      step <- step.set(p, "precommit"),
       fired_action <- "UponQuorumOfPrevotesAny",
     }
   })
@@ -338,16 +338,16 @@ action UponProposalInPrevoteOrCommitAndPrevote(p) =
       evidence <- PV.union(Set(msg)).union(evidence),
       if (step.get(p) == "prevote") all {
           // lines 38-41:
-          lockedValue <- lockedValue.update(p, v),
-          lockedRound <- lockedRound.update(p, round.get(p)),
+          lockedValue <- lockedValue.set(p, v),
+          lockedRound <- lockedRound.set(p, round.get(p)),
           BroadcastPrecommit(p, round.get(p), Id(v)),
-          step <- step.update(p, "precommit"),
+          step <- step.set(p, "precommit"),
       } else {
         true      // the above variables are unchanged
       },
         // lines 42-43
-      validValue <- validValue.update(p, v),
-      validRound <- validRound.update(p, round.get(p)),
+      validValue <- validValue.set(p, v),
+      validRound <- validRound.set(p, round.get(p)),
       fired_action <- "UponProposalInPrevoteOrCommitAndPrevote",
     }
   )
@@ -382,10 +382,10 @@ action UponProposalInPrecommitNoDecision(p) =
        msg.in(msgsPropose.get(r)),           // line 49
        size(PV) >= THRESHOLD2,   // line 49
        evidence <- PV.union(Set(msg)).union(evidence),
-       decision <- decision.update(p, v), // update the decision, line 51
+       decision <- decision.set(p, v), // update the decision, line 51
        // The original algorithm does not have 'DECIDED', but it increments the height.
        // We introduced 'DECIDED' here to prevent the process from changing its decision.
-       step <- step.update(p, "decided"),
+       step <- step.set(p, "decided"),
        fired_action <- "UponProposalInPrecommitNoDecision",
      }   
   })
@@ -397,7 +397,7 @@ action OnTimeoutPropose(p) = all {
   step.get(p) == "propose",
   p != Proposer.get(round.get(p)),
   BroadcastPrevote(p, round.get(p), NilValue),
-  step <- step.update(p, "prevote"),
+  step <- step.set(p, "prevote"),
   fired_action <- "OnTimeoutPropose",
 }
 
@@ -409,7 +409,7 @@ action OnQuorumOfNilPrevotes(p) =
     size(PV) >= THRESHOLD2, // line 36
     evidence <- PV.union(evidence),
     BroadcastPrecommit(p, round.get(p), Id(NilValue)),
-    step <- step.update(p, "precommit"),
+    step <- step.set(p, "precommit"),
     fired_action <- "OnQuorumOfNilPrevotes",
   }
 
