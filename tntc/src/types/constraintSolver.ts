@@ -91,14 +91,14 @@ export function unify(t1: TntType, t2: TntType): Either<ErrorTree, Substitutions
       return subs2.map(s => compose(subs, s))
     })
   } else if (t1.kind === 'tup' && t2.kind === 'tup') {
-    return checkSameLength(location, t1.elems, t2.elems)
-      .chain(([elems1, elems2]) => chainUnifications(elems1, elems2))
+    return unifyRows(t1.fields, t2.fields)
       .mapLeft(error => buildErrorTree(location, error))
   } else if (t1.kind === 'const' || t2.kind === 'const') {
     // FIXME: Type aliases unify with anything for now
     return right([])
   } else if (t1.kind === 'rec' && t2.kind === 'rec') {
     return unifyRows(t1.fields, t2.fields)
+      .mapLeft(error => buildErrorTree(location, error))
   } else {
     return left(buildErrorLeaf(
       location,
@@ -123,7 +123,7 @@ export function unifyRows(r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
   const ra = simplifyRow(r1)
   const rb = simplifyRow(r2)
 
-  const location = `Trying to unify ${ra.kind} ${rowToString(ra)} and ${rb.kind} ${rowToString(rb)}`
+  const location = `Trying to unify ${rowToString(ra)} and ${rowToString(rb)}`
 
   // Standard comparison and variable binding
   if (rowToString(ra) === rowToString(rb)) {
@@ -149,7 +149,7 @@ export function unifyRows(r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
       } else {
         return left(buildErrorLeaf(
           location,
-           `Incompatible tails for rows with disjoint fields: (${rowToString(ra.other)}) and (${rowToString(rb.other)})`
+           `Incompatible tails for rows with disjoint fields: ${rowToString(ra.other)} and ${rowToString(rb.other)}`
         ))
       }
     } else {
@@ -176,12 +176,12 @@ export function unifyRows(r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
         .mapLeft(error => buildErrorTree(location, error))
     }
   } else {
-    return left(buildErrorLeaf(location, `Couldn't unify ${rowToString(ra)} and ${rowToString(rb)}`))
+    return left(buildErrorLeaf(location, `Couldn't unify ${ra.kind} and ${rb.kind}`))
   }
 }
 
 function bindType(name: string, type: TntType): Either<string, Substitutions> {
-  if (typeNames(type).has(name)) {
+  if (typeNames(type).typeVariables.has(name)) {
     return left(`Can't bind ${name} to ${typeToString(type)}: cyclical binding`)
   } else {
     return right([{ kind: 'type', name: name, value: type }])

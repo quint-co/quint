@@ -21,8 +21,8 @@ export function getSignatures(): Map<string, Signature> {
   return new Map<string, Signature>(fixedAritySignatures.concat(multipleAritySignatures))
 }
 
-// Signatures for record related operators cannot be precisely defined
-// with this syntax. Their types are handled directly with constraints 
+// Signatures for record and tuple related operators cannot be precisely 
+// defined with this syntax. Their types are handled directly with constraints 
 // in the specialConstraints.ts file
 
 const literals = [
@@ -72,11 +72,6 @@ const mapOperators = [
   { name: 'put', type: '(a -> b, a, b) => a -> b' },
 ]
 
-// FIXME: Make tuple signatures more strict with row types
-const tupleOperators = [
-  { name: 'item', type: '(a, int) => b' },
-]
-
 const listOperators = [
   { name: 'append', type: '(List[a], a) => List[a]' },
   { name: 'concat', type: '(List[a], List[a]) => List[a]' },
@@ -113,6 +108,7 @@ const temporalOperators = [
   { name: 'next', type: '(a) => a' },
   { name: 'stutter', type: '(bool, a) => bool' },
   { name: 'nostutter', type: '(bool, a) => bool' },
+  // Should we do this? https://github.com/informalsystems/tnt/discussions/109
   { name: 'enabled', type: '(bool) => bool' },
   { name: 'weakFair', type: '(bool, a) => bool' },
   { name: 'strongFair', type: '(bool, a) => bool' },
@@ -121,7 +117,6 @@ const temporalOperators = [
 const otherOperators = [
   { name: 'assign', type: '(a, a) => bool' },
   { name: 'ite', type: '(bool, a, a) => a' },
-  // Should we do this? https://github.com/informalsystems/tnt/discussions/109
 ]
 
 function uniformArgsWithResult(argsType: string, resultType: string): Signature {
@@ -140,10 +135,6 @@ const multipleAritySignatures: [string, Signature][] = [
   ['actionAll', uniformArgsWithResult('bool', 'bool')],
   ['or', uniformArgsWithResult('bool', 'bool')],
   ['actionAny', uniformArgsWithResult('bool', 'bool')],
-  ['Tup', (arity: number) => {
-    const args = times(arity, i => `t${i}`).join(', ')
-    return parseAndQuantify(`(${args}) => (${args})`)
-  }],
   ['match', (arity: number) => {
     const args = times((arity - 1) / 2, () => 'str, (a) => b')
     return parseAndQuantify(`(a, ${args.join(', ')}) => b`)
@@ -161,7 +152,6 @@ const fixedAritySignatures: [string, Signature][] = [
   booleanOperators,
   setOperators,
   mapOperators,
-  tupleOperators,
   listOperators,
   integerOperators,
   temporalOperators,
@@ -172,6 +162,6 @@ function parseAndQuantify(typeString: string): TypeScheme {
   const t = parseTypeOrThrow(typeString)
   return {
     type: t,
-    variables: typeNames(t),
+    ...typeNames(t),
   }
 }

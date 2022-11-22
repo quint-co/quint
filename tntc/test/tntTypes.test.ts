@@ -6,9 +6,10 @@ import { parseTypeOrThrow } from '../src/types/parser'
 describe('typeNames', () => {
   it('find names in types', () => {
     const result = typeNames(
-      parseTypeOrThrow('(Set[a]) => List[b] -> (c, int)')
+      parseTypeOrThrow('(Set[a]) => List[b] -> { f1: c | r }')
     )
 
-    assert.sameDeepMembers(Array.from(result), ['a', 'b', 'c'])
+    assert.sameDeepMembers(Array.from(result.typeVariables), ['a', 'b', 'c'])
+    assert.sameDeepMembers(Array.from(result.rowVariables), ['r'])
   })
 })

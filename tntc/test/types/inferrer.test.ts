@@ -93,7 +93,7 @@ describe('inferTypes', () => {
 
   it('infers types for records', () => {
     const tntModule = buildModuleWithDefs([
-      'var x: { f1: int, r1 }',
+      'var x: { f1: int | r1 }',
       'val m = Set(x, { f1: 1, f2: true })',
       'def e(p) = x.with("f1", p.f1)',
       'val a = e({ f1: 2 }).fieldNames()',
@@ -115,17 +115,38 @@ describe('inferTypes', () => {
       [11n, 'Set[{ f1: int, f2: bool }]'],
       [12n, '{ f1: int, f2: bool }'],
       [13n, 'str'],
-      [14n, '{ f1: int }'],
+      [14n, '∀ r0 . { f1: int | r0 }'],
       [15n, 'str'],
       [16n, 'int'],
       [17n, '{ f1: int, f2: bool }'],
-      [18n, '({ f1: int }) => { f1: int, f2: bool }'],
+      [18n, '∀ r0 . ({ f1: int | r0 }) => { f1: int, f2: bool }'],
       [19n, 'int'],
       [20n, 'str'],
       [21n, '{ f1: int }'],
       [22n, '{ f1: int, f2: bool }'],
       [23n, 'Set[str]'],
       [24n, 'Set[str]'],
+    ])
+  })
+
+  it('infers types for tuples', () => {
+    const tntModule = buildModuleWithDefs([
+      'def e(p, q) = (p._1, q._2)',
+    ])
+
+    const [errors, types] = inferTypes(tntModule, definitionsTable)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+
+    const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    assert.sameDeepMembers(stringTypes, [
+      [1n, '∀ t0, r0 . (t0 | r0)'],
+      [2n, 'int'],
+      [3n, '∀ t0 . t0'],
+      [4n, '∀ t0, t1, r0 . (t0, t1 | r0)'],
+      [5n, 'int'],
+      [6n, '∀ t0 . t0'],
+      [7n, '∀ t0, t1 . (t0, t1)'],
+      [8n, '∀ t0, t1, t2, r0, r1 . ((t0 | r0), (t1, t2 | r1)) => (t0, t2)'],
     ])
   })
 

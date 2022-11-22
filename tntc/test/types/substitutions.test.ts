@@ -105,7 +105,7 @@ describe('applySubstitution', () => {
       { kind: 'row', name: 'r', value: { kind: 'empty' } },
     ]
 
-    const t = parseTypeOrThrow('{ a: a, b: b, r }')
+    const t = parseTypeOrThrow('{ a: a, b: b | r }')
 
     const result = applySubstitution(s, t)
 

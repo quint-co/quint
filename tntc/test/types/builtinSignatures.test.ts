@@ -13,24 +13,11 @@ describe('getSignatures', () => {
 
     const expectedSignature = {
       type: parseTypeOrThrow('(a, a, a) => List[a]'),
-      variables: new Set(['a']),
+      typeVariables: new Set(['a']),
+      rowVariables: new Set([]),
     }
 
     const result = listSignature(3)
-
-    assert.deepEqual(result, expectedSignature,
-      `expected ${typeSchemeToString(expectedSignature)}, got ${typeSchemeToString(result)}`)
-  })
-
-  it('contains quantified signatures for the tuple constructor', () => {
-    const tupSignature = signatures.get('Tup')!
-
-    const expectedSignature: TypeScheme = {
-      type: parseTypeOrThrow('(t0, t1, t2) => (t0, t1, t2)'),
-      variables: new Set(['t0', 't1', 't2']),
-    }
-
-    const result = tupSignature(3)
 
     assert.deepEqual(result, expectedSignature,
       `expected ${typeSchemeToString(expectedSignature)}, got ${typeSchemeToString(result)}`)
@@ -41,7 +28,8 @@ describe('getSignatures', () => {
 
     const expectedSignature: TypeScheme = {
       type: parseTypeOrThrow('(a, str, (a) => b, str, (a) => b) => b'),
-      variables: new Set(['a', 'b']),
+      typeVariables: new Set(['a', 'b']),
+      rowVariables: new Set([]),
     }
 
     const result = matchSignature(5)
@@ -55,7 +43,8 @@ describe('getSignatures', () => {
 
     const expectedSignature: TypeScheme = {
       type: parseTypeOrThrow('(Set[t0], Set[t1], Set[t2]) => Set[(t0, t1, t2)]'),
-      variables: new Set(['t0', 't1', 't2']),
+      typeVariables: new Set(['t0', 't1', 't2']),
+      rowVariables: new Set([]),
     }
 
     const result = tuplesSignature(3)

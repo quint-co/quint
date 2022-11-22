@@ -1,6 +1,6 @@
 import { rowToString, typeToString } from '../IRprinting'
 import { Constraint, TypeScheme } from './base'
-import { Substitutions, applySubstitution } from './substitutions'
+import { Substitutions, applySubstitution, compose } from './substitutions'
 
 /**
  * Formats the string representation of a constraint
@@ -25,12 +25,21 @@ export function constraintToString(c: Constraint): string {
  * @returns a string with the formatted type scheme
  */
 export function typeSchemeToString(t: TypeScheme): string {
-  const names = Array.from(t.variables)
+  const typeNames = Array.from(t.typeVariables)
+  const rowNames = Array.from(t.rowVariables)
   const vars: string[] = []
-  const subs: Substitutions = names.map((name, i) => {
+
+  const typeSubs: Substitutions = typeNames.map((name, i) => {
     vars.push(`t${i}`)
     return { kind: 'type', name, value: { kind: 'var', name: `t${i}` } }
   })
+  
+  const rowSubs: Substitutions = rowNames.map((name, i) => {
+    vars.push(`r${i}`)
+    return { kind: 'row', name: name, value: { kind: 'var', name: `r${i}` } }
+  })
+
+  const subs = compose(typeSubs, rowSubs)
   const type = applySubstitution(subs, t.type)
 
   const varsString = vars.length > 0 ? `∀ ${vars.join(', ')} . ` : ''

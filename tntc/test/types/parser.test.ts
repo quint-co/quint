@@ -9,11 +9,15 @@ describe('parseType', () => {
     assert.isTrue(type.isRight())
     type.map(value => assert.deepEqual(value, {
       kind: 'tup',
-      elems: [
-        { kind: 'bool', id: 1n },
-        { kind: 'int', id: 2n },
-        { kind: 'str', id: 3n },
-      ],
+      fields: {
+        kind: 'row',
+        fields: [
+          { fieldName: '0', fieldType: { kind: 'bool', id: 1n } },
+          { fieldName: '1', fieldType: { kind: 'int', id: 2n } },
+          { fieldName: '2', fieldType: { kind: 'str', id: 3n } },
+        ],
+        other: { kind: 'empty' },
+      },
       id: 4n,
     }))
   })
@@ -58,7 +62,7 @@ describe('parseType', () => {
   })
 
   it('parses records of sets and lists', () => {
-    const type = parseType('{ mySet: Set[a], mySeq: List[a], r }')
+    const type = parseType('{ mySet: Set[a], mySeq: List[a] | r }')
 
     assert.isTrue(type.isRight())
     type.map(value => assert.deepEqual(value, {
@@ -112,6 +116,18 @@ describe('parseType', () => {
       {
         explanation: "mismatched input ',' expecting {'->', ']'}",
         locs: [{ start: { line: 0, col: 8, index: 8 }, end: { line: 0, col: 8, index: 8 } }],
+      },
+    ]))
+  })
+
+  it('throws error when row separators are invalid', () => {
+    const type = parseType('{ f1: int, | r }')
+
+    assert.isTrue(type.isLeft())
+    type.mapLeft(error => assert.sameDeepMembers(error, [
+      {
+        explanation: "mismatched input '|' expecting {',', '->'}",
+        locs: [{ start: { line: 0, col: 11, index: 11 }, end: { line: 0, col: 11, index: 11 } }],
       },
     ]))
   })

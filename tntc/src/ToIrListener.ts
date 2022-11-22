@@ -735,7 +735,13 @@ export class ToIrListener implements TntListener {
     const elemTypes: TntType[] = this.popTypes(ctx.type().length)
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
-    this.typeStack.push({ id, kind: 'tup', elems: elemTypes })
+
+    const fields = elemTypes.map((t, i) => ({ fieldName: `${i}`, fieldType: t }))
+    this.typeStack.push({
+      id: id,
+      kind: 'tup',
+      fields: { kind: 'row', fields: fields, other: { kind: 'empty' } },
+    })
   }
 
   exitRow(ctx: p.RowContext) {

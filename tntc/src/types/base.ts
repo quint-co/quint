@@ -11,7 +11,8 @@ export type Constraint =
 
 export interface TypeScheme {
   type: TntType,
-  variables: Set<string>,
+  typeVariables: Set<string>,
+  rowVariables: Set<string>,
 }
 
 export type Signature = (_arity: number) => TypeScheme

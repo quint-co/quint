@@ -80,6 +80,16 @@ export interface IRVisitor {
   exitRecordType?: (_type: t.TntRecordType) => void
   enterUnionType?: (_type: t.TntUnionType) => void
   exitUnionType?: (_type: t.TntUnionType) => void
+
+  /** Row types */
+  enterRow?: (_row: t.Row) => void
+  exitRow?: (_row: t.Row) => void
+  enterConcreteRow?: (_row: t.ConcreteRow) => void
+  exitConcreteRow?: (_row: t.ConcreteRow) => void
+  enterVarRow?: (_row: t.VarRow) => void
+  exitVarRow?: (_row: t.VarRow) => void
+  enterEmptyRow?: (_row: t.EmptyRow) => void
+  exitEmptyRow?: (_row: t.EmptyRow) => void
 }
 
 /**
@@ -198,7 +208,7 @@ export function walkType(visitor: IRVisitor, type: t.TntType): void {
         visitor.enterTupleType(type)
       }
       // Tuples, walk all elements
-      type.elems.forEach(elem => walkType(visitor, elem))
+      walkRow(visitor, type.fields)
 
       if (visitor.exitTupleType) {
         visitor.exitTupleType(type)
@@ -391,8 +401,39 @@ function walkExpression(visitor: IRVisitor, expr: ir.TntEx): void {
 }
 
 function walkRow(visitor: IRVisitor, r: t.Row) {
+  if (visitor.enterRow) {
+    visitor.enterRow(r)
+  }
   switch (r.kind) {
     case 'row':
+      if (visitor.enterConcreteRow) {
+        visitor.enterConcreteRow(r)
+      }
+
       r.fields.forEach(field => walkType(visitor, field.fieldType))
+      walkRow(visitor, r.other)
+
+      if (visitor.exitConcreteRow) {
+        visitor.exitConcreteRow(r)
+      }
+      break
+    case 'var':
+      if (visitor.enterVarRow) {
+        visitor.enterVarRow(r)
+      }
+      if (visitor.exitVarRow) {
+        visitor.exitVarRow(r)
+      }
+      break
+    case 'empty':
+      if (visitor.enterEmptyRow) {
+        visitor.enterEmptyRow(r)
+      }
+      if (visitor.exitEmptyRow) {
+        visitor.exitEmptyRow(r)
+      }
+  }
+  if (visitor.exitRow) {
+    visitor.exitRow(r)
   }
 }
