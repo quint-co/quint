@@ -108,6 +108,7 @@ const temporalOperators = [
   { name: 'next', type: '(a) => a' },
   { name: 'stutter', type: '(bool, a) => bool' },
   { name: 'nostutter', type: '(bool, a) => bool' },
+  // Should we do this? https://github.com/informalsystems/tnt/discussions/109
   { name: 'enabled', type: '(bool) => bool' },
   { name: 'weakFair', type: '(bool, a) => bool' },
   { name: 'strongFair', type: '(bool, a) => bool' },
@@ -116,7 +117,6 @@ const temporalOperators = [
 const otherOperators = [
   { name: 'assign', type: '(a, a) => bool' },
   { name: 'ite', type: '(bool, a, a) => a' },
-  // Should we do this? https://github.com/informalsystems/tnt/discussions/109
 ]
 
 function uniformArgsWithResult(argsType: string, resultType: string): Signature {

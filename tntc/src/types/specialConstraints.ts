@@ -18,7 +18,7 @@ import { expressionToString } from '../IRprinting'
 import { TntEx } from '../tntIr'
 import { TntType, TntVarType } from '../tntTypes'
 import { Constraint } from './base'
-import { chunk } from 'lodash'
+import { chunk, times } from 'lodash'
 
 /*
  * Generate constraints for operators for which signatures cannot be expressed as normal signatures
@@ -160,11 +160,18 @@ function itemConstraints(id: bigint, args: [TntEx, TntType][], resultTypeVar: Tn
             `Tup field index must be an int expression but is ${itemName.kind}: ${expressionToString(itemName)}`))
   }
 
+  // A tuple with item acess of N should have at least N fields
+  // Fill previous fileds with type variables
+  const fields: { fieldName: string, fieldType: TntType }[] = times(Number(itemName.value - 1n)).map(i => {
+    return { fieldName: `${i}`, fieldType: { kind: 'var', name: `tup_${resultTypeVar.name}_${i}` } }
+  })
+  fields.push({ fieldName: `${itemName.value - 1n}`, fieldType: resultTypeVar })
+
   const generalTupType: TntType = {
     kind: 'tup',
     fields: {
       kind: 'row',
-      fields: [{ fieldName: `${itemName.value - 1n}`, fieldType: resultTypeVar }],
+      fields: fields,
       other: { kind: 'var', name: `tail_${resultTypeVar.name}` },
     },
   }

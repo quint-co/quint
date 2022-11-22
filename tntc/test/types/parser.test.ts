@@ -119,4 +119,16 @@ describe('parseType', () => {
       },
     ]))
   })
+
+  it('throws error when row separators are invalid', () => {
+    const type = parseType('{ f1: int, | r }')
+
+    assert.isTrue(type.isLeft())
+    type.mapLeft(error => assert.sameDeepMembers(error, [
+      {
+        explanation: "mismatched input '|' expecting {',', '->'}",
+        locs: [{ start: { line: 0, col: 11, index: 11 }, end: { line: 0, col: 11, index: 11 } }],
+      },
+    ]))
+  })
 })

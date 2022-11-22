@@ -129,6 +129,27 @@ describe('inferTypes', () => {
     ])
   })
 
+  it('infers types for tuples', () => {
+    const tntModule = buildModuleWithDefs([
+      'def e(p, q) = (p._1, q._2)',
+    ])
+
+    const [errors, types] = inferTypes(tntModule, definitionsTable)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+
+    const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    assert.sameDeepMembers(stringTypes, [
+      [1n, '∀ t0, r0 . (t0 | r0)'],
+      [2n, 'int'],
+      [3n, '∀ t0 . t0'],
+      [4n, '∀ t0, t1, r0 . (t0, t1 | r0)'],
+      [5n, 'int'],
+      [6n, '∀ t0 . t0'],
+      [7n, '∀ t0, t1 . (t0, t1)'],
+      [8n, '∀ t0, t1, t2, r0, r1 . ((t0 | r0), (t1, t2 | r1)) => (t0, t2)'],
+    ])
+  })
+
   it('fails when types are not unifiable', () => {
     const tntModule = buildModuleWithDefs([
       'def a = 1.map(p => p + 10)',
