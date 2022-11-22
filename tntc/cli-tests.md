@@ -11,350 +11,126 @@ npm install -g txm
 tests that examine particular output, use
 [./io-cli-tests.md](./io-cli-tests.md).
 
+All tests in the following cases are run as commands to `bash`.
+
+<!-- !test program
+bash -
+-->
 
 ### OK on parse Paxos
 
-This command parses the Paxos example.
-
-<!-- !test program
-tntc parse ../examples/Paxos/Paxos.tnt
--->
-
-```sh
-tntc parse ../examples/Paxos/Paxos.tnt
-```
-
 <!-- !test check Paxos -->
-    expect exit code 0
+    tntc parse ../examples/Paxos/Paxos.tnt
 
 ### OK on parse Voting
 
-This command parses the Voting example.
-
-<!-- !test program
-tntc parse ../examples/Paxos/Voting.tnt
--->
-
-```sh
-tntc parse ../examples/Paxos/Voting.tnt
-```
-
 <!-- !test check Voting -->
-    expect exit code 0
+    tntc parse ../examples/Paxos/Voting.tnt
 
 ### OK on parse ReadersWriters
 
-This command parses the ReadersWriters example.
-
-<!-- !test program
-tntc parse ../examples/ReadersWriters/ReadersWriters.tnt
--->
-
-```sh
-tntc parse ../examples/ReadersWriters/ReadersWriters.tnt
-```
-
 <!-- !test check ReadersWriters -->
-    expect exit code 0
+    tntc parse ../examples/ReadersWriters/ReadersWriters.tnt
     
 ### OK on typecheck ReadersWriters
 
-This command typechecks the ReadersWriters example.
-
-<!-- !test program
-tntc typecheck ../examples/ReadersWriters/ReadersWriters.tnt
--->
-
-```sh
-tntc typecheck ../examples/ReadersWriters/ReadersWriters.tnt
-```
-
 <!-- !test check ReadersWriters - Types & Effects -->
-    expect exit code 0
+    tntc typecheck ../examples/ReadersWriters/ReadersWriters.tnt
     
-
 ### OK on parse ewd840
 
-This command parses the ewd840 example.
-
-<!-- !test program
-tntc parse ../examples/ewd840/ewd840.tnt
--->
-
-```sh
-tntc parse ../examples/ewd840/ewd840.tnt
-```
-
 <!-- !test check ewd840 -->
-    expect exit code 0
+    tntc parse ../examples/ewd840/ewd840.tnt
+
 
 ### OK on parse Tendermint
 
-This command parses the Tendermint example.
-
-<!-- !test program
-tntc parse ../examples/tendermint/TendermintAcc_004.tnt
--->
-
-```sh
-tntc parse ../examples/tendermint/TendermintAcc_004_draft.tnt
-```
-
 <!-- !test check Tendermint -->
-    expect exit code 0
+    tntc parse ../examples/tendermint/TendermintAcc_004.tnt
 
 ### OK on parse imports
 
-This command parses the imports example.
-
-<!-- !test program
-tntc parse ../examples/imports.tnt
--->
-
-```sh
-tntc parse ../examples/imports.tnt
-```
-
 <!-- !test check imports -->
-    expect exit code 0
+    tntc parse ../examples/imports.tnt
 
 ### OK on typecheck imports
 
-This command typechecks the imports example.
-
-<!-- !test program
-tntc typecheck ../examples/imports.tnt
--->
-
-```sh
-tntc typecheck ../examples/imports.tnt
-```
-
 <!-- !test check imports - Types & Effects -->
-    expect exit code 0
+    tntc typecheck ../examples/imports.tnt
 
 ### OK on parse instances
 
-This command parses the instances example.
-
-<!-- !test program
-tntc parse ../examples/instances.tnt
--->
-
-```sh
-tntc parse ../examples/instances.tnt
-```
-
 <!-- !test check instances -->
-    expect exit code 0
+    tntc parse ../examples/instances.tnt
 
 ### OK on typecheck instances
 
-This command typechecks the instances example.
-
-<!-- !test program
-tntc typecheck ../examples/instances.tnt
--->
-
-```sh
-tntc typecheck ../examples/instances.tnt
-```
-
 <!-- !test check instances - Types & Effects -->
-    expect exit code 0
+    tntc typecheck ../examples/instances.tnt
 
 
 ### OK on parse option
 
-This command parses the option example.
-
-<!-- !test program
-tntc parse ../examples/option.tnt
--->
-
-```sh
-tntc parse ../examples/option.tnt
-```
-
 <!-- !test check option -->
-    expect exit code 0
+    tntc parse ../examples/option.tnt
 
 ### OK on parse BinSearch
 
-This command parses the BinSearch example.
-
-<!-- !test program
-tntc parse ../examples/BinSearch/BinSearch.tnt
--->
-
-```sh
-tntc parse ../examples/BinSearch/BinSearch.tnt
-```
-
 <!-- !test check BinSearch -->
-    expect exit code 0
+    tntc parse ../examples/BinSearch/BinSearch.tnt
 
 ### OK on typecheck BinSearch
 
-This command typechecks the BinSearch example.
-
-<!-- !test program
-tntc typecheck ../examples/BinSearch/BinSearch.tnt
--->
-
-```sh
-tntc typecheck ../examples/BinSearch/BinSearch.tnt
-```
-
 <!-- !test check BinSearch - Types & Effects -->
-    expect exit code 0
+    tntc typecheck ../examples/BinSearch/BinSearch.tnt
     
 ### OK on parse TicTacToe
 
-This command parses the TicTacToe example.
-
-<!-- !test program
-tntc parse ../examples/tictactoe/tictactoe.tnt
--->
-
-```sh
-tntc parse ../examples/tictactoe/tictactoe.tnt
-```
-
 <!-- !test check TicTacToe -->
-    expect exit code 0
+    tntc parse ../examples/tictactoe/tictactoe.tnt
  
 ### OK on typecheck TicTacToe
 
-This command typechecks the TicTacToe example.
-
-<!-- !test program
-tntc typecheck ../examples/tictactoe/tictactoe.tnt
--->
-
-```sh
-tntc typecheck ../examples/tictactoe/tictactoe.tnt
-```
-
 <!-- !test check TicTacToe - Types & Effects -->
-    expect exit code 0
+    tntc typecheck ../examples/tictactoe/tictactoe.tnt
 
 ### OK on parse ics23
 
-This command parses the ics23 example.
-
-<!-- !test program
-tntc parse ../examples/ics23/ics23.tnt
--->
-
-```sh
-tntc parse ../examples/ics23/ics23.tnt
-```
-
 <!-- !test check ics23 -->
-    expect exit code 0
+    tntc parse ../examples/ics23/ics23.tnt
  
 ### OK on typecheck ics23
 
-This command typechecks the ics23 example.
-
-<!-- !test program
-tntc typecheck ../examples/ics23/ics23.tnt
--->
-
-```sh
-tntc typecheck ../examples/ics23/ics23.tnt
-```
-
 <!-- !test check ics23 - Types & Effects -->
-    expect exit code 0
+    tntc typecheck ../examples/ics23/ics23.tnt
 
 ### OK on parse ERC20
 
-This command parses the ERC20 example.
-
-<!-- !test program
-tntc parse ../examples/ERC20/erc20.tnt
--->
-
-```sh
-tntc parse ../examples/ERC20/erc20.tnt
-```
-
 <!-- !test check ERC20 -->
-    expect exit code 0
+    tntc parse ../examples/ERC20/erc20.tnt
+
 
 ### OK on parse Lamport Mutex
 
-This command parses the Lamport Mutex example.
-
-<!-- !test program
-tntc parse ../examples/LamportMutex/LamportMutex.tnt
--->
-
-```sh
-tntc parse ../examples/LamportMutex/LamportMutex.tnt
-```
-
 <!-- !test check LamportMutex -->
-    expect exit code 0
+    tntc parse ../examples/LamportMutex/LamportMutex.tnt
 
 ### OK on parse records
 
-This command parses the records example.
-
-<!-- !test program
-tntc parse ../examples/records.tnt
--->
-
-```sh
-tntc parse ../examples/records.tnt
-```
-
 <!-- !test check records -->
-    expect exit code 0
+    tntc parse ../examples/records.tnt
  
 ### OK on typecheck records
 
-This command typechecks the records example.
-
-<!-- !test program
-tntc typecheck ../examples/records.tnt
--->
-
-```sh
-tntc typecheck ../examples/records.tnt
-```
-
 <!-- !test check records - Types & Effects-->
-    expect exit code 0
+    tntc typecheck ../examples/records.tnt
 
 ### OK on parse tuples
 
-This command parses the tuples example.
-
-<!-- !test program
-tntc parse ../examples/tuples.tnt
--->
-
-```sh
-tntc parse ../examples/tuples.tnt
-```
-
 <!-- !test check tuples -->
-    expect exit code 0
+    tntc parse ../examples/tuples.tnt
  
 ### OK on typecheck tuples
 
-This command typechecks the tuples example.
-
-<!-- !test program
-tntc typecheck ../examples/tuples.tnt
--->
-
-```sh
-tntc typecheck ../examples/tuples.tnt
-```
-
 <!-- !test check tuples - Types & Effects-->
-    expect exit code 0
+    tntc typecheck ../examples/tuples.tnt
