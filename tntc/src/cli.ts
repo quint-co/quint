@@ -16,7 +16,7 @@ import { resolve } from 'path'
 import { cwd } from 'process'
 
 import { formatError } from './errorReporter'
-import { ErrorMessage, Phase2, compactSourceMap, parsePhase1, parsePhase2 } from './tntParserFrontend'
+import { ErrorMessage, ParserPhase2, compactSourceMap, parsePhase1, parsePhase2 } from './tntParserFrontend'
 
 import yargs from 'yargs/yargs'
 import { inferEffects } from './effects/inferrer'
@@ -35,7 +35,7 @@ import { typeSchemeToString } from './types/printing'
  *
  * @param argv parameters as provided by yargs
  */
-function parse(argv: any): Either<String, [Phase2, string]> {
+function parse(argv: any): Either<String, [ParserPhase2, string]> {
   return loadFile(argv.input).chain(text => parseText(argv, text))
 }
 
@@ -116,7 +116,7 @@ function loadFile(p: PathLike): Either<string, string> {
 }
 
 // a callback to parse the text that we get from readFile
-function parseText(argv: any, text: string): Either<String, [Phase2, string]> {
+function parseText(argv: any, text: string): Either<String, [ParserPhase2, string]> {
   const path = resolve(cwd(), argv.input)
   return parsePhase1(text, path)
     .mapLeft(errs => {

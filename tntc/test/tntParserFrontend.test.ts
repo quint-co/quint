@@ -5,6 +5,7 @@ import { resolve } from 'path'
 import JSONbig from 'json-bigint'
 import { compactSourceMap, parsePhase1, parsePhase2 } from '../src/tntParserFrontend'
 import { lf } from 'eol'
+import { right } from '@sweet-monads/either'
 
 // read a TNT file from the test data directory
 function readTnt(name: string): string {
@@ -58,8 +59,7 @@ describe('parsing', () => {
   it('parses empty module', () => {
     const result = parsePhase1(readTnt('_0001emptyModule'), 'mocked_path/testFixture/_0001emptyModule.tnt')
     const module = { id: 1n, name: 'empty', defs: [] }
-    assert(result.isRight())
-    assert.deepEqual(result.value.module, module)
+    assert.deepEqual(result.map(r => r.module), right(module))
   })
 
   it('parses SuperSpec', () => {
