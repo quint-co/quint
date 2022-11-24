@@ -117,6 +117,6 @@ export function
         sourceMap: sourceMap,
       })
     }
-      // Wether we end up with a right or a left, we will have a computational context
+      // Wether we end up with a right or a left, we will have a CompilationContext
     ).value
 }
