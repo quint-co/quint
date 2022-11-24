@@ -167,19 +167,8 @@ function unifyArrows(location: string, e1: ArrowEffect, e2: ArrowEffect): Either
 
   assert(p1.length === p2.length)
 
-  // if (identityArrow(p1, e1.result)) {
-  //   return unify(p2[0], e2.result)
-  //     .chain(subs => applySubstitutionsAndUnify(subs, e1.result, e2.result))
-  //     .mapLeft(err => buildErrorTree(location, err))
-  // }
-  // if (identityArrow(p2, e2.result)) {
-  //   return unify(p1[0], e1.result)
-  //     .chain(subs => applySubstitutionsAndUnify(subs, e1.result, e2.result))
-  //     .mapLeft(err => buildErrorTree(location, err))
-  // }
-
-  const [arrow1, subs1] = simplifyIdentityArrow(p1, e1.result)
-  const [arrow2, subs2] = simplifyIdentityArrow(p2, e2.result)
+  const [arrow1, subs1] = simplifyArrowEffect(p1, e1.result)
+  const [arrow2, subs2] = simplifyArrowEffect(p2, e2.result)
   const subs = compose(subs1, subs2)
 
   const paramsUnification = arrow1.params.reduce((result: Either<Error, Substitutions>, e, i) => {
@@ -308,34 +297,55 @@ function ensureConcreteEffect(e: Effect): ConcreteEffect {
 }
 
 function tryToUnpack(location: string, effects1: Effect[], effects2: Effect[]): Either<Error, [Effect[], Effect[]]> {
+  // Ensure that effects1 is always the smallest
   if (effects2.length < effects1.length) {
     return tryToUnpack(location, effects2, effects1)
   }
+
+  // We only handle unpacking 1 tuple into N args
   if (effects1.length === 1) {
     const read: Variables[] = []
+    const update: Variables[] = []
     const temporal: Variables[] = []
+
+    // Combine the other effects into a single effect, to be unified with the unpacked effect 
     effects2.forEach(e => {
       if (e.kind === 'concrete') {
         read.push(e.read)
+        update.push(e.update)
         temporal.push(e.temporal)
       } else {
         return left(`Found non concrete efffect while trying to unpack: ${effectToString(e)}`)
       }
     })
 
-    const unpacked: ConcreteEffect = { kind: 'concrete', read: { kind: 'union', variables: read }, update: emptyVariables, temporal: { kind: 'union', variables: temporal } }
+    const unpacked: ConcreteEffect = {
+      kind: 'concrete',
+      read: { kind: 'union', variables: read },
+      update: { kind: 'union', variables: update },
+      temporal: { kind: 'union', variables: temporal },
+    }
     return simplify(unpacked).map(e => [effects1, [e]])
   }
 
-  return left('')
+  return left('Could not unpack effects')
 }
 
-function simplifyIdentityArrow(params: Effect[], result: Effect): [ArrowEffect, Substitutions] {
+/**
+ * Simplifies effects of the form (Read[v0, ..., vn]) => Read[v0, ..., vn] into
+ * (Read[v0#...#vn]) => Read[v0#...#vn] so the variables can be unified with other
+ * sets of variables. Each variable v0, ..., vn is binded to a single variable named v0#...#vn
+ * 
+ * @param params the arrow effect parameters 
+ * @param result the arrow effect result 
+ * @returns an arrow effect with the new format and the substitutions with binded variables
+ */
+function simplifyArrowEffect(params: Effect[], result: Effect): [ArrowEffect, Substitutions] {
   if (params.length === 1 && effectToString(params[0]) === effectToString(result) && params[0].kind === 'concrete') {
     const effect = params[0]
-    const read: Variables = hashVariables(effect.read) 
-    const temporal: Variables = hashVariables(effect.temporal) 
-    const update: Variables = hashVariables(effect.update) 
+    const read: Variables = hashVariables(effect.read)
+    const temporal: Variables = hashVariables(effect.temporal)
+    const update: Variables = hashVariables(effect.update)
 
     const arrow: ArrowEffect = { kind: 'arrow', params: [{ kind: 'concrete', read, update, temporal }], result }
     const subs: Substitutions = []
@@ -361,7 +371,7 @@ function hashVariables(va: Variables): Variables {
       const name = va.vars.join('#')
       return name === '' ? emptyVariables : { kind: 'quantified', name }
     }
-    case 'quantified': return va 
+    case 'quantified': return va
     case 'union': {
       const name = va.variables.map(hashVariables).join('#')
       return name === '' ? emptyVariables : { kind: 'quantified', name }

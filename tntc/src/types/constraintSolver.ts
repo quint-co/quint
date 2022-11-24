@@ -247,14 +247,18 @@ function simplifyRow(r: Row): Row {
 }
 
 function tryToUnpack(location: string, types1: TntType[], types2: TntType[]): Either<string, [TntType[], TntType[]]> {
+  // Ensure that types1 is always the smallest
   if (types2.length < types1.length) {
     return tryToUnpack(location, types2, types1)
   }
+  
+  // We only handle unpacking 1 tuple into N args
   if (types1.length === 1 && types1[0].kind === 'tup') {
     const row = types1[0].fields
-    if (row.kind === 'row' && row.fields.length === types2.length)
-    return right([row.fields.map(f => f.fieldType), types2])
+    if (row.kind === 'row' && row.fields.length === types2.length) {
+      return right([row.fields.map(f => f.fieldType), types2])
+    }
   }
 
-  return left('')
+  return left('Could not unpack effects')
 }
