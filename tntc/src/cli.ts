@@ -9,10 +9,9 @@
  * @author Igor Konnov, Gabriela Moreira, Informal Systems, 2021-2022
  */
 
-import { existsSync, PathLike, readFileSync, writeFileSync } from 'fs'
+import { PathLike, existsSync, readFileSync, writeFileSync } from 'fs'
 import { resolve } from 'path'
 import { cwd } from 'process'
-import { lf } from 'eol'
 import JSONbig from 'json-bigint'
 import lineColumn from 'line-column'
 
@@ -29,7 +28,7 @@ import { tntRepl } from './repl'
 import { inferTypes } from './types/inferrer'
 import { effectToString } from './effects/printing'
 import { typeSchemeToString } from './types/printing'
-import { Either, right, left } from '@sweet-monads/either'
+import { Either, left, right } from '@sweet-monads/either'
 
 /**
  * Parse a TNT specification.

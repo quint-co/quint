@@ -313,19 +313,17 @@ function tryToUnpack(location: string, effects1: Effect[], effects2: Effect[]): 
   }
   if (effects1.length === 1) {
     const read: Variables[] = []
-    const update: Variables[] = []
     const temporal: Variables[] = []
     effects2.forEach(e => {
       if (e.kind === 'concrete') {
         read.push(e.read)
-        update.push(e.update)
         temporal.push(e.temporal)
       } else {
         return left(`Found non concrete efffect while trying to unpack: ${effectToString(e)}`)
       }
     })
 
-    const unpacked: ConcreteEffect = { kind: 'concrete', read: { kind: 'union', variables: read }, update: { kind: 'union', variables: update }, temporal: { kind: 'union', variables: temporal } }
+    const unpacked: ConcreteEffect = { kind: 'concrete', read: { kind: 'union', variables: read }, update: emptyVariables, temporal: { kind: 'union', variables: temporal } }
     return simplify(unpacked).map(e => [effects1, [e]])
   }
 
@@ -335,16 +333,20 @@ function tryToUnpack(location: string, effects1: Effect[], effects2: Effect[]): 
 function simplifyIdentityArrow(params: Effect[], result: Effect): [ArrowEffect, Substitutions] {
   if (params.length === 1 && effectToString(params[0]) === effectToString(result) && params[0].kind === 'concrete') {
     const effect = params[0]
-    const read: Variables = { kind: 'quantified', name: hashVariables(effect.read) }
-    const temporal: Variables = { kind: 'quantified', name: hashVariables(effect.temporal) }
+    const read: Variables = hashVariables(effect.read) 
+    const temporal: Variables = hashVariables(effect.temporal) 
+    const update: Variables = hashVariables(effect.update) 
 
-    const arrow: ArrowEffect = { kind: 'arrow', params: [{ kind: 'concrete', read, update: emptyVariables, temporal }], result }
+    const arrow: ArrowEffect = { kind: 'arrow', params: [{ kind: 'concrete', read, update, temporal }], result }
     const subs: Substitutions = []
     variablesNames(effect.read).forEach(n => {
       subs.push({ kind: 'variable', name: n.name, value: read })
     })
     variablesNames(effect.temporal).forEach(n => {
       subs.push({ kind: 'variable', name: n.name, value: temporal })
+    })
+    variablesNames(effect.update).forEach(n => {
+      subs.push({ kind: 'variable', name: n.name, value: update })
     })
 
     return [arrow, subs]
@@ -353,10 +355,16 @@ function simplifyIdentityArrow(params: Effect[], result: Effect): [ArrowEffect, 
   return [{ kind: 'arrow', params, result }, []]
 }
 
-function hashVariables(va: Variables): string {
+function hashVariables(va: Variables): Variables {
   switch (va.kind) {
-    case 'concrete': return va.vars.join('#')
-    case 'quantified': return va.name
-    case 'union': return va.variables.map(hashVariables).join('#')
+    case 'concrete': {
+      const name = va.vars.join('#')
+      return name === '' ? emptyVariables : { kind: 'quantified', name }
+    }
+    case 'quantified': return va 
+    case 'union': {
+      const name = va.variables.map(hashVariables).join('#')
+      return name === '' ? emptyVariables : { kind: 'quantified', name }
+    }
   }
 }
