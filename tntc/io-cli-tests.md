@@ -46,7 +46,7 @@ redirects allow us to filter stderr instead of stdout.
 ```
 ./testFixture/_1011nameOutOfScope.tnt:5:11 - error: Couldn't resolve name x in definition for A, in module nameOutOfScope
 5:   val A = x + 1
-                ^
+             ^
 
 error: parsing failed in phase 2
 ```
