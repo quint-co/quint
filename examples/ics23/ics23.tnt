@@ -497,15 +497,15 @@ module ics23pbt {
   action Init = and {
     genKey,
     // we start with leafs in the initial state
-    tuples(Byte, Byte, Byte, Byte, Byte, Byte, Byte).guess(t =>
+    tuples(Byte, Byte, Byte, Byte, Byte, Byte, Byte).guess(lk, lv, lp, rk, rv, rp, pk =>
       val lp = {
-        key: [ t._1 ], value: [ t._2 ],
-        leaf: { prefix: [ t._3 ] }, path: []
+        key: [ lk ], value: [ lv ],
+        leaf: { prefix: [ lp ] }, path: []
       }
       val rp = {
-        key: [ t._4 ], value: [ t._5 ], leaf: { prefix: [ t._6 ] }, path: []
+        key: [ rk ], value: [ rv ], leaf: { prefix: [ rp ] }, path: []
       }
-      nonMemProof <- { key: [ t._7 ], left: lp, right: rp }
+      nonMemProof <- { key: [ pk ], left: lp, right: rp }
     )
   }
 

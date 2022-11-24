@@ -14,7 +14,7 @@ const Quorum: Set[Set[str]] // The set of "quorums", where a quorum" is a
 (***************************************************************************/
 assume QuorumAssumption = and {
     Quorum.forall(Q => Q.subseteq(Acceptor)),
-    tuples(Quorum, Quorum).forall(t => t._1.intersect(t._2) != Set())
+    tuples(Quorum, Quorum).forall((Q1, Q2) => (Q1.intersect(Q2)) != Set())
 }
 
 // theorems are not supported by TNT, use TLA+ syntax
@@ -110,19 +110,19 @@ THEOREM ChoosableThm ==
  */             
 //-----------------------------------------------------------------------------
 val VotesSafe =
-    tuples(Acceptor, Ballot, Value).forall(t =>
-                 VotedFor(t._1, t._2, t._3) implies SafeAt(t._2, t._3)
+    tuples(Acceptor, Ballot, Value).forall((a, b, v) =>
+                 VotedFor(a, b, v) implies SafeAt(b, v)
     )
 
 val OneVote =
-    tuples(Acceptor, Ballot, Value, Value).forall(t =>
-              VotedFor(t._1, t._2, t._3) and VotedFor(t._1, t._2, t._4) implies (t._3 == t._4)
+    tuples(Acceptor, Ballot, Value, Value).forall((a, b, v, w) =>
+              VotedFor(a, b, v) and VotedFor(a, b, w) implies (v == w)
     )
 
 val OneValuePerBallot =
     tuples(Acceptor, Acceptor, Ballot, Value, Value)
-       .forall(t =>
-         VotedFor(t._1, t._3, t._4) and VotedFor(t._2, t._3, t._5) implies (t._4 == t._5)
+       .forall((a1, a2, b, v1, v2) =>
+         VotedFor(a1, b, v1) and VotedFor(a2, b, v2) implies (v1 == v2)
        )
 //-----------------------------------------------------------------------------
 //THEOREM OneValuePerBallot => OneVote
@@ -140,10 +140,16 @@ def ShowsSafeAt(Q, b, v) = and {
   Q.forall(a => maxBal.get(a) >= b),
   -1.to(b - 1).exists(c => and {
         (c != -1) implies Q.exists(a => VotedFor(a, c, v)),
-        (c + 1).to(b - 1).forall( d => Q.forall( a => DidNotVoteAt(a, d)))
+        (c + 1).to(b - 1).forall(d => Q.forall(a => DidNotVoteAt(a, d)))
     }
   )
 }
+
+val ShowsSafety =
+    all { TypeOK, VotesSafe, OneValuePerBallot } implies 
+    tuples(Quorum, Ballot, Value).forall((Q, b, v) =>
+        ShowsSafeAt(Q, b, v) implies SafeAt(b, v)
+    )
 
 //-----------------------------------------------------------------------------
 /*
@@ -199,13 +205,13 @@ action VoteFor(a, b, v) = all {
 (* The next-state action and the invariant.                                *)
 (***************************************************************************/
 action Next =
-    tuples(Acceptor, Ballot).guess({ t => any {
-            IncreaseMaxBal(t._1, t._2),
-            Value.guess({ v => VoteFor(t._1, t._2, v) }),
+    tuples(Acceptor, Ballot).guess((a, b) => any {
+            IncreaseMaxBal(a, b),
+            Value.guess(v => VoteFor(a, b, v)),
         }
-    })
+    )
 
-temporal Spec = Init and always(stutter(Next), (votes, maxBal))
+temporal Spec = Init and always(stutter(Next, (votes, maxBal)))
 
 val Inv = TypeOK and VotesSafe and OneValuePerBallot
 

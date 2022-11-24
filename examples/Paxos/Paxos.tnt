@@ -15,7 +15,7 @@ const Quorum: Set[Set[str]]
 
 assume _ = and {
     Quorum.forall(Q => Q.subseteq(Acceptor)),
-    tuples(Quorum, Quorum).forall(t => (t._1.intersect(t._2)) != Set())
+    tuples(Quorum, Quorum).forall((Q1, Q2) => (Q1.intersect(Q2)) != Set())
 }
       
 val Ballot = Nat
@@ -36,15 +36,17 @@ val Message =
 
     val M1b =
       tuples(Acceptor, Ballot, union(Ballot, Set(-1)), union(Value, Set(None)))
-        .map(t => { tag: "1b", acc: t._1, bal: t._2, mbal: t._3, mval: t._4 })
+        .map((a, b, mb, mv) => { tag: "1b", acc: a, bal: b, mbal: mb, mval: mv })
+
 
     val M2a =
       tuples(Ballot, Value)
-        .map(t => { tag: "2a", bal: t._1, value: t._2 })
+        .map((b, v) => { tag: "2a", bal: b, value: v })
+
 
     val M2b =
       tuples(Acceptor, Ballot, Value)
-        .map(t => { tag: "2b", acc: t._1, bal: t._2, value: t._3 })
+        .map((a, b, v) => { tag: "2b", acc: a, bal: b, value: v })
 
     M1a.union(M1b).union(M2a).union(M2b)
 //-----------------------------------------------------------------------------

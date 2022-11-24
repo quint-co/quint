@@ -55,7 +55,7 @@ module ReadersWriters {
       writers == Set(),
       val pair = waiting.head()
       val actor = pair._2
-      if (pair._1 == "read") all {
+      if (read(pair)) all {
           Read(actor),
           writers <- writers,
       } else all { // pair._1 == "write"
@@ -124,7 +124,7 @@ module ReadersWriters {
   val TypeOK = and {
       readers.subseteq(Actors),
       writers.subseteq(Actors),
-      waiting.in(tuples(ToSet(allLists(Set("read", "write")).Actors)))
+      waiting.in(allLists(tuples(Set("read", "write"), Actors)))
   }
   
   val Safety = and {
