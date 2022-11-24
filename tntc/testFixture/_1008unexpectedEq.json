@@ -1,6 +1,6 @@
 {
-  "kind": "error",
-  "messages": [
+  "type": "Left",
+  "value": [
     {
       "explanation": "TNT006: unexpected '=', did you mean '=='?",
       "locs": [
