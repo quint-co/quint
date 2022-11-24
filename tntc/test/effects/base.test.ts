@@ -2,6 +2,7 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { Effect, emptyVariables, unify } from '../../src/effects/base'
 import { parseEffectOrThrow } from '../../src/effects/parser'
+import { errorTreeToString } from '../../src/errorTree'
 
 describe('unify', () => {
   describe('simple effects', () => {
@@ -141,6 +142,19 @@ describe('unify', () => {
         { kind: 'variable', name: 'v', value: { kind: 'concrete', vars: ['x'] } },
         { kind: 'effect', name: 'E', value: parseEffectOrThrow("Update['x']") },
       ]))
+    })
+
+    it('unpacks arguments as tuples', () => {
+      const e1 = parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1, r2]')
+      const e2 = parseEffectOrThrow("(Pure) => E")
+
+      const result = unify(e1, e2)
+
+      result.map(r => assert.sameDeepMembers(r, [
+        { kind: 'variable', name: 'r1', value: { kind: 'concrete', vars: [] } },
+        { kind: 'variable', name: 'r2', value: { kind: 'concrete', vars: [] } },
+        { kind: 'effect', name: 'E', value: parseEffectOrThrow('Pure') },
+      ])).mapLeft(err => assert.fail(`Should find no errros, found ${errorTreeToString(err)}`))
     })
 
     it('returns error for each effect updating a variable more than once', () => {

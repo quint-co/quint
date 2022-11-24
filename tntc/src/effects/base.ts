@@ -18,6 +18,7 @@ import { Substitutions, applySubstitution, compose } from './substitutions'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
 import { flattenUnions, simplify } from './simplification'
 import isEqual from 'lodash.isequal'
+import { assert } from 'console'
 
 /* Concrete atomic efects specifying variables that the expression reads and updates */
 export interface ConcreteEffect { kind: 'concrete', read: Variables, update: Variables, temporal: Variables }
@@ -84,7 +85,9 @@ export function unify(ea: Effect, eb: Effect): Either<ErrorTree, Substitutions> 
 
   const simplificationResults = mergeInMany([ea, eb].map(simplify))
   return simplificationResults.chain(([e1, e2]): Either<Error, Substitutions> => {
-    if (e1.kind === 'arrow' && e2.kind === 'arrow') {
+    if (effectToString(e1) === effectToString(e2)) {
+      return right([])
+    } else if (e1.kind === 'arrow' && e2.kind === 'arrow') {
       return unifyArrows(location, e1, e2)
     } else if (e1.kind === 'concrete' && e2.kind === 'concrete') {
       return unifyConcrete(location, e1, e2)
@@ -147,31 +150,45 @@ function variablesNames(variables: Variables): Name[] {
   }
 }
 
-function unifyArrows(location: string, e1: ArrowEffect, e2: ArrowEffect) {
-  if (e1.params.length !== e2.params.length) {
-    const expected = e1.params.length
-    const got = e2.params.length
-    return left({
-      location,
-      message: `Expected ${expected} arguments, got ${got}`,
-      children: [],
-    })
+function unifyArrows(location: string, e1: ArrowEffect, e2: ArrowEffect): Either<ErrorTree, Substitutions> {
+  let p1 = e1.params
+  let p2 = e2.params
+
+  if (p1.length !== p2.length) {
+    const unpackResult = tryToUnpack(location, p1, p2)
+      .map(r => [p1, p2] = r)
+      .mapLeft(_ => {
+        return buildErrorLeaf(location, `Expected ${p1.length} arguments, got ${p2.length}`)
+      })
+    if (unpackResult.isLeft()) {
+      return left(unpackResult.value)
+    }
   }
 
-  function applySubstitutionsAndUnify(subs: Substitutions, e1: Effect, e2: Effect): Either<Error, Substitutions> {
-    const effectsWithSubstitutions = mergeInMany([
-      applySubstitution(subs, e1),
-      applySubstitution(subs, e2),
-    ])
-    const newSubstitutions = effectsWithSubstitutions.chain(es => unify(...es))
-    return newSubstitutions.chain(newSubs => compose(newSubs, subs))
-  }
+  assert(p1.length === p2.length)
 
-  const paramsUnification = e1.params.reduce((result: Either<Error, Substitutions>, e, i) => {
-    return result.chain(subs => applySubstitutionsAndUnify(subs, e, e2.params[i]))
-  }, right([]))
+  // if (identityArrow(p1, e1.result)) {
+  //   return unify(p2[0], e2.result)
+  //     .chain(subs => applySubstitutionsAndUnify(subs, e1.result, e2.result))
+  //     .mapLeft(err => buildErrorTree(location, err))
+  // }
+  // if (identityArrow(p2, e2.result)) {
+  //   return unify(p1[0], e1.result)
+  //     .chain(subs => applySubstitutionsAndUnify(subs, e1.result, e2.result))
+  //     .mapLeft(err => buildErrorTree(location, err))
+  // }
 
-  return paramsUnification.chain(subs => applySubstitutionsAndUnify(subs, e1.result, e2.result))
+  const [arrow1, subs1] = simplifyIdentityArrow(p1, e1.result)
+  const [arrow2, subs2] = simplifyIdentityArrow(p2, e2.result)
+  const subs = compose(subs1, subs2)
+
+  const paramsUnification = arrow1.params.reduce((result: Either<Error, Substitutions>, e, i) => {
+    return result.chain(subs => applySubstitutionsAndUnify(subs, e, arrow2.params[i]))
+  }, subs)
+
+  return paramsUnification
+    .chain(subs => applySubstitutionsAndUnify(subs, arrow1.result, arrow2.result))
+    .mapLeft(err => buildErrorTree(location, err))
 }
 
 function unifyConcrete(location: string, e1: ConcreteEffect, e2: ConcreteEffect): Either<Error, Substitutions> {
@@ -251,6 +268,16 @@ export function unifyVariables(va: Variables, vb: Variables): Either<ErrorTree, 
       return right([])
     }
 
+    if (v1.kind === 'union' && v2.kind === 'concrete') {
+      return mergeInMany(v1.variables.map(v => unifyVariables(v, v2)))
+        .map(subs => subs.flat())
+        .mapLeft(err => buildErrorTree(location, err))
+    }
+
+    if (v1.kind === 'concrete' && v2.kind === 'union') {
+      return unifyVariables(v2, v1)
+    }
+
     // At least one of the variables is a union
     // Unifying sets is complicated and we should never have to do this in TNT's
     // use case for this effect system
@@ -262,6 +289,15 @@ export function unifyVariables(va: Variables, vb: Variables): Either<ErrorTree, 
   }
 }
 
+function applySubstitutionsAndUnify(subs: Substitutions, e1: Effect, e2: Effect): Either<Error, Substitutions> {
+  const effectsWithSubstitutions = mergeInMany([
+    applySubstitution(subs, e1),
+    applySubstitution(subs, e2),
+  ])
+  const newSubstitutions = effectsWithSubstitutions.chain(es => unify(...es))
+  return newSubstitutions.chain(newSubs => compose(newSubs, subs))
+}
+
 // Ensure the type system that an effect has the 'concrete' kind
 function ensureConcreteEffect(e: Effect): ConcreteEffect {
   if (e.kind !== 'concrete') {
@@ -269,4 +305,58 @@ function ensureConcreteEffect(e: Effect): ConcreteEffect {
   }
 
   return e
+}
+
+function tryToUnpack(location: string, effects1: Effect[], effects2: Effect[]): Either<Error, [Effect[], Effect[]]> {
+  if (effects2.length < effects1.length) {
+    return tryToUnpack(location, effects2, effects1)
+  }
+  if (effects1.length === 1) {
+    const read: Variables[] = []
+    const update: Variables[] = []
+    const temporal: Variables[] = []
+    effects2.forEach(e => {
+      if (e.kind === 'concrete') {
+        read.push(e.read)
+        update.push(e.update)
+        temporal.push(e.temporal)
+      } else {
+        return left(`Found non concrete efffect while trying to unpack: ${effectToString(e)}`)
+      }
+    })
+
+    const unpacked: ConcreteEffect = { kind: 'concrete', read: { kind: 'union', variables: read }, update: { kind: 'union', variables: update }, temporal: { kind: 'union', variables: temporal } }
+    return simplify(unpacked).map(e => [effects1, [e]])
+  }
+
+  return left('')
+}
+
+function simplifyIdentityArrow(params: Effect[], result: Effect): [ArrowEffect, Substitutions] {
+  if (params.length === 1 && effectToString(params[0]) === effectToString(result) && params[0].kind === 'concrete') {
+    const effect = params[0]
+    const read: Variables = { kind: 'quantified', name: hashVariables(effect.read) }
+    const temporal: Variables = { kind: 'quantified', name: hashVariables(effect.temporal) }
+
+    const arrow: ArrowEffect = { kind: 'arrow', params: [{ kind: 'concrete', read, update: emptyVariables, temporal }], result }
+    const subs: Substitutions = []
+    variablesNames(effect.read).forEach(n => {
+      subs.push({ kind: 'variable', name: n.name, value: read })
+    })
+    variablesNames(effect.temporal).forEach(n => {
+      subs.push({ kind: 'variable', name: n.name, value: temporal })
+    })
+
+    return [arrow, subs]
+  }
+
+  return [{ kind: 'arrow', params, result }, []]
+}
+
+function hashVariables(va: Variables): string {
+  switch (va.kind) {
+    case 'concrete': return va.vars.join('#')
+    case 'quantified': return va.name
+    case 'union': return va.variables.map(hashVariables).join('#')
+  }
 }
