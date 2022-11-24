@@ -64,7 +64,7 @@
     "compile": "tsc",
     "test": "mocha -r ts-node/register test/*.test.ts test/**/*.test.ts",
     "coverage": "nyc npm run test",
-    "integration": "txm --no-color cli-tests.md",
+    "integration": "txm cli-tests.md && txm io-cli-tests.md",
     "antlr": "antlr4ts -visitor ./src/generated/Tnt.g4 && antlr4ts -visitor ./src/generated/Effect.g4",
     "format": "eslint --fix '**/*.ts'"
   },
@@ -89,6 +89,7 @@
     "mocha": "^10.0.0",
     "nyc": "^15.1.0",
     "ts-node": "^10.0.0",
+    "txm": "^8.0.2",
     "typescript": "^4.8.2"
   }
 }

@@ -123,7 +123,7 @@ true
 [Installing the VSCode plugin]: https://github.com/informalsystems/tnt/blob/main/vscode/tnt/README.md#temp-how-to-run-it-locally
 [Language server protocol]: https://microsoft.github.io/language-server-protocol/
 [tntc unit tests]: https://github.com/informalsystems/tnt/blob/main/tntc/README.md#unit-tests
-[tntc integration tests]: https://github.com/informalsystems/tnt/blob/main/tntc/README.md#integration-tests
+[tntc integration tests]: ./tntc/README.md#integration-tests
 [Mocha]: https://mochajs.org/
 [Chai]: https://www.chaijs.com/
 [txm]: https://www.npmjs.com/package/txm

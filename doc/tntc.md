@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author           |
 | -------: | :--------: | :--------------- |
-| 4        | 18.07.2022 | Igor Konnov      |
+| 5        | 10.11.2022 | Igor Konnov      |
 
 **WARNING**: *This is a preliminary manual in the style of [Working
 Backwards]. Some commands are not implemented yet.*
@@ -15,7 +15,8 @@ The main commands of `tntc` are as follows:
  - `repl` starts the REPL (Read-Eval-Print loop) for TNT
  - `parse` parses a TNT specification and resolves names
  - `typecheck` infers types in a TNT specification
- - `exec` executes a TNT specification via random simulation
+ - `run` executes a TNT specification via random simulation
+ - `test` tests a TNT specification similar to property-based testing
  - `lint` checks a TNT specification for known deficiencies
  - `indent` indents a TNT specification
  - `to-apalache` translates a TNT specification to Apalache IR
@@ -55,7 +56,7 @@ the following is written:
  - If the command succeeds, the file contains the parsed and resolved module
    in [TNT IR][] (JSON):
 
-   ```
+   ```json
    {
      "status": "resolved",
      "module": <IR>,
@@ -67,8 +68,8 @@ the following is written:
    are written in the format of [ADR002][].
 
  - If the command fails, the file contains an error message in JSON:
-   
-   ```
+
+   ```json
    {
      "result": "error",
      "messages": [ <errors and warnings> ]
@@ -82,94 +83,9 @@ information is written to `<src>.map` in the format of [Source map][].
 
 *The option `--source-map` is not implemented yet.*
 
-## Command exec
-
-*This command is not implemented yet.*
-
-```sh
-tntc exec [--seed=<seed>] [--length=<len>] \
-  [--timeout=sec] [--check=prop] [--out=<out>.json] <spec>.tnt
-```
-
-This command produces a random execution of a TNT specification,
-whose name is given with `<spec>.tnt`.
-
-**Option `--seed`**. The optional parameter `--seed` specifies the initial seed
-for the random number generator. This is useful for reproducibility of
-executions.
-
-**Option `--length`**. The optional parameter `--length` specifies the maximum
-length of the execution.
-
-**Option `--timeout`**. The optional parameter `--timeout` specifies the
-maximum time (in seconds) to spend on interpretation. Once the time limit has
-been reached, the execution stops and outputs whatever it has computed.
-
-**Option `--check`**. The optional parameter `--check` specifies a property (or
-multiple comma-separated properties) to be checked against the execution. Note
-that the properties are checked against the sole execution. *It is not a
-complete verification of the specification properties.*
-
-**Option `--out`**. The optional parameter `--out` specifies the name
-of an output file.
-
-The output file is a JSON representation of [TNT IR][] that represents an
-execution as a sequence of states `[s_0, s_1, ..., s_n]`. The value `s_0` is a
-record that assigns values to specification constants. Values `s_1`, ..., `s_n`
-are records that assign values to specification variables.
-
-**Example of the output:**
-
-```json
-{
-  "id": 1,
-  "kind": "app",
-  "opcode": "seq",
-  "args": [
-    {
-      "id": 2,
-      "kind": "app",
-      "opcode": "rec",
-      "args": [
-        { "id": 3, "kind": "str", "value": "N" },
-        { "id": 4, "kind": "int", "value": 10 },
-        { "id": 5, "kind": "str", "value": "Proc" },
-        {
-          "id": 6,
-          "kind": "app",
-          "opcode": "set",
-          "args": [
-            { "id": 7, "kind": "str", "value": "P1" },
-            { "id": 8, "kind": "str", "value": "P2" }
-          ]
-        }
-      ]
-    },
-    {
-      "id": 9,
-      "kind": "app",
-      "opcode": "rec",
-      "args": [
-        { "id": 10, "kind": "str", "value": "x" },
-        { "id": 11, "kind": "int", "value": 1 },
-      ]
-    },  
-    {
-      "id": 12,
-      "kind": "app",
-      "opcode": "rec",
-      "args": [
-        { "id": 13, "kind": "str", "value": "x" },
-        { "id": 14, "kind": "int", "value": 3 },
-      ]
-    }
-  ]
-}
-```
-
 ## Command typecheck
 
-*This command is not implemented yet.*
+*This command is work in progress.*
 
 ```sh
 tntc typecheck [--out=<out>.json] <spec>.tnt
@@ -187,7 +103,7 @@ the following is written:
  - If the command succeeds, the file contains the parsed and resolved module
    in [TNT IR][] (JSON):
 
-   ```
+   ```json
    {
      "status": "typed",
      "module": <IR>
@@ -197,11 +113,106 @@ the following is written:
    The module contents is the JSON representation of [TNT IR][].
 
  - If the command fails, the file contains an error message in JSON:
-   
-   ```
+
+   ```json
    {
      "result": "error",
      "messages": [ <errors> ]
+   } 
+   ```
+
+   The errors and warnings are written in the format of [ADR002][].
+
+## Command run
+
+*This command is not implemented yet.*
+
+```sh
+tntc run [--seed=<seed>] [--timeout=sec] [--out=<out>.json] <spec>.tnt <name>
+```
+
+This command produces a random execution of a TNT specification,
+whose name is given with `<spec>.tnt`. The random execution should follow
+the run structure that is given in the definition called `<name>`.
+
+**Option `--seed`**. The optional parameter `--seed` specifies the initial seed
+for the random number generator. This is useful for reproducibility of
+executions.
+
+**Option `--timeout`**. The optional parameter `--timeout` specifies the
+maximum time (in seconds) to spend on interpretation. Once the time limit has
+been reached, the execution stops and outputs whatever it has computed.
+
+**Option `--out`**. The optional parameter `--out` specifies the name
+of an output file.
+
+ - If there are no critical errors (e.g., in parsing, typechecking, etc.), the
+   The output file is a trace in the [Informal Trace Format][].
+
+ - If the specification cannot be run (e.g., due to a parsing error), the file
+   contains an error message in JSON:
+
+   ```json
+   {
+     "result": "error",
+     "messages": [ <errors and warnings> ]
+   } 
+   ```
+
+   The errors and warnings are written in the format of [ADR002][].
+
+## Command test
+
+*This command is not implemented yet.*
+
+```sh
+tntc test [--seed=<seed>] \
+  [--timeout=sec] [--tests=<test1>,...,<testN>] [--out=<out>.json] <spec>.tnt
+```
+
+This command receives a TNT specification whose name is given with
+`<spec>.tnt`.  It runs the tests that are specified with the `--tests` option.
+If the `--tests` option is not passed, the command runs all tests specified in
+the definitions whose names start with `Test`.
+
+**Option `--seed`**. The optional parameter `--seed` specifies the initial seed
+for the random number generator. This is useful for reproducibility of
+executions.
+
+**Option `--timeout`**. The optional parameter `--timeout` specifies the
+maximum time (in seconds) to spend on interpretation. Once the time limit has
+been reached, the execution stops and outputs whatever it has computed.
+
+**Option `--tests`**. The optional parameter `--tests` specifies a list of
+tests to be run. Note that the properties are checked against the sampled
+executions.  *It is not a complete verification of the specification
+properties.*
+
+**Option `--out`**. The optional parameter `--out` specifies the name
+of an output file.
+
+ - If there are no critical errors (e.g., in parsing, typechecking, etc.), the
+   command succeeds. The output file contains the parsed and resolved module in
+   [TNT IR][] (JSON):
+
+   ```json
+   {
+     "status": "tested",
+     "tests": {
+       "successful": [ <names of the successful tests> ],
+       "failed": [ <names of the failed tests> ],
+       "ignored": [ <names of the ignored tests> ],
+     }
+   }
+   ```
+
+ - If the tests cannot be run (e.g., due to a parsing error), the file contains
+   an error message in JSON:
+
+   ```json
+   {
+     "result": "error",
+     "messages": [ <errors and warnings> ]
    } 
    ```
 
@@ -230,15 +241,15 @@ the following is written:
 
  - If the command succeeds, the file contains the success data structure:
 
-   ```
+   ```json
    {
      "status": "linted"
    }
    ```
 
  - If the command fails, the file contains error messages and warnings in JSON:
-   
-   ```
+
+   ```json
    {
      "result": "error",
      "messages": [ <errors and warnings> ]
@@ -275,8 +286,8 @@ tntc to-apalache [--out=<out>.json] <spec>.tnt
 ```
 
 This command does the full cycle of parsing, resolving names, type checking,
-flatting modules, etc. After doing all that, it outputs the module in the
-[Apalache JSON] format. Unless the option `--out` is specified, the formatted
+flattening modules, etc. After doing all that, it outputs the module in the
+[Apalache JSON][] format. Unless the option `--out` is specified, the formatted
 specification is written on the standard output.
 
 **Option `--out`**. The optional parameter `--out` specifies the name of
@@ -289,3 +300,4 @@ an output file in the [Apalache JSON] format.
 [TNT IR]: https://github.com/informalsystems/tnt/blob/main/tntc/src/tntIr.ts
 [Apalache JSON]: https://apalache.informal.systems/docs/adr/005adr-json.html
 [REPL]: https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop
+[Informal Trace Format]: https://apalache.informal.systems/docs/adr/015adr-trace.html
