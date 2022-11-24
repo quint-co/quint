@@ -72,16 +72,16 @@ row : | (IDENTIFIER ':' type ',')* ((IDENTIFIER ':' type) (',' | '|' (IDENTIFIER
 
 // A TNT expression. The order matters, it defines the priority.
 // Wherever possible, we keep the same order of operators as in TLA+.
-expr:           // apply a built-in operator via the dot notation
-                expr '.' nameAfterDot (LPAREN argList? RPAREN)?     # dotCall
+expr:           // unary minus
+                MINUS expr                                          # uminus
+                // apply a built-in operator via the dot notation
+        |       expr '.' nameAfterDot (LPAREN argList? RPAREN)?     # dotCall
         |       lambda                                              # lambdaCons
                 // Call a user-defined operator or a built-in operator.
                 // The operator has at least one argument (otherwise, it's a 'val').
         |       normalCallName '(' argList? ')'                     # operApp
                 // list access via index
         |       expr '[' expr ']'                                   # listApp
-                // unary minus
-        |       MINUS expr                                          # uminus
                 // power over integers
         |       <assoc=right> expr op='^' expr                      # pow
                 // integer arithmetic

@@ -23,11 +23,11 @@ import { ModuleNestedContext } from "./TntParser";
 import { InstanceContext } from "./TntParser";
 import { TypedefContext } from "./TntParser";
 import { ImportDefContext } from "./TntParser";
+import { UminusContext } from "./TntParser";
 import { DotCallContext } from "./TntParser";
 import { LambdaConsContext } from "./TntParser";
 import { OperAppContext } from "./TntParser";
 import { ListAppContext } from "./TntParser";
-import { UminusContext } from "./TntParser";
 import { PowContext } from "./TntParser";
 import { MultDivContext } from "./TntParser";
 import { PlusMinusContext } from "./TntParser";
@@ -339,6 +339,19 @@ export interface TntListener extends ParseTreeListener {
 	exitImportDef?: (ctx: ImportDefContext) => void;
 
 	/**
+	 * Enter a parse tree produced by the `uminus`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	enterUminus?: (ctx: UminusContext) => void;
+	/**
+	 * Exit a parse tree produced by the `uminus`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	exitUminus?: (ctx: UminusContext) => void;
+
+	/**
 	 * Enter a parse tree produced by the `dotCall`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
@@ -389,19 +402,6 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitListApp?: (ctx: ListAppContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `uminus`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 */
-	enterUminus?: (ctx: UminusContext) => void;
-	/**
-	 * Exit a parse tree produced by the `uminus`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 */
-	exitUminus?: (ctx: UminusContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `pow`
