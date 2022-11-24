@@ -18,6 +18,7 @@ import { Computable } from './runtime'
 import { IrErrorMessage } from '../tntIr'
 import { CompilerVisitor } from './impl/compilerImpl'
 import { walkModule } from '../IRVisitor'
+import { right } from '@sweet-monads/either'
 
 /**
  * The name of the shadow variable that stores the last found trace.
@@ -87,36 +88,35 @@ function errorTreeToMsg(sourceMap: Map<bigint, Loc>, trees: Map<bigint, ErrorTre
  * @returns a mapping from names to computable values
  */
 export function
-compile(moduleText: string): CompilationContext {
+  compile(moduleText: string): CompilationContext {
   // parse the module text
-  const parseRes = parsePhase1(moduleText, '<input>')
-
-  if (parseRes.kind === 'error') {
-    return errorContext(parseRes.messages)
-  }
-  const parsedModule = parseRes.module
-  const resolutionRes = parsePhase2(parsedModule, parseRes.sourceMap)
-  if (resolutionRes.kind === 'error') {
-    return errorContext(resolutionRes.messages)
-  }
-  const defTable = resolutionRes.table
-
-  // in the future, we will be using types and effects
-  const [typeErrors, _types] = inferTypes(parsedModule, defTable)
-  const [effectsErrors, _effects] = inferEffects(defTable, parsedModule)
-  // since the type checker and effects checker are incomplete,
-  // collect the errors, but do not stop immediately on error
-  const visitor = new CompilerVisitor()
-  walkModule(visitor, parseRes.module)
-  return {
-    values: visitor.getContext(),
-    vars: visitor.getVars(),
-    shadowVars: visitor.getShadowVars(),
-    syntaxErrors: [],
-    typeErrors: errorTreeToMsg(parseRes.sourceMap, typeErrors),
-    effectsErrors: errorTreeToMsg(parseRes.sourceMap, effectsErrors),
-    compileErrors: visitor.getCompileErrors(),
-    runtimeErrors: visitor.getRuntimeErrors(),
-    sourceMap: parseRes.sourceMap,
-  }
+  return parsePhase1(moduleText, '<input>')
+    // On errors, we'll produce the computational context up to this point
+    .mapLeft(errorContext)
+    .chain(d => parsePhase2(d)
+      // On errors, we'll produce the computational context up to this point
+      .mapLeft(errorContext))
+    .chain(parseData => {
+      const { module, table, sourceMap } = parseData
+      // in the future, we will be using types and effects
+      const [typeErrors, _types] = inferTypes(module, table)
+      const [effectsErrors, _effects] = inferEffects(table, module)
+      // since the type checker and effects checker are incomplete,
+      // collect the errors, but do not stop immediately on error
+      const visitor = new CompilerVisitor()
+      walkModule(visitor, module)
+      return right({
+        values: visitor.getContext(),
+        vars: visitor.getVars(),
+        shadowVars: visitor.getShadowVars(),
+        syntaxErrors: [],
+        typeErrors: errorTreeToMsg(sourceMap, typeErrors),
+        effectsErrors: errorTreeToMsg(sourceMap, effectsErrors),
+        compileErrors: visitor.getCompileErrors(),
+        runtimeErrors: visitor.getRuntimeErrors(),
+        sourceMap: sourceMap,
+      })
+    }
+      // Wether we end up with a right or a left, we will have a computational context
+    ).value
 }
