@@ -19,6 +19,7 @@ import { resolveImports } from './importResolver'
 import { treeFromModule } from './scoping'
 import { scanConflicts } from './definitionsScanner'
 import { LookupTableByModule } from './lookupTable'
+import { Either, left, right } from '@sweet-monads/either'
 
 export interface Loc {
   source: string;
@@ -34,13 +35,16 @@ export interface ErrorMessage {
   locs: Loc[];
 }
 
-export type Phase1Result =
-  | { kind: 'ok', module: TntModule, sourceMap: Map<bigint, Loc> }
-  | { kind: 'error', messages: ErrorMessage[] }
+export type ParseResult<T> = Either<ErrorMessage[], T>
 
-export type Phase2Result =
-  | { kind: 'ok', table: LookupTableByModule }
-  | { kind: 'error', messages: ErrorMessage[] }
+export interface ParserPhase1 {
+  module: TntModule,
+  sourceMap: Map<bigint, Loc>
+}
+
+export interface ParserPhase2 extends ParserPhase1 {
+  table: LookupTableByModule
+}
 
 /**
  * The result of probing.
@@ -76,23 +80,23 @@ probeParse(text: string, sourceLocation: string): ParseProbeResult {
  * Note that the IR may be ill-typed and some names may be unresolved.
  * The main goal of this pass is to translate a sequence of characters into IR.
  */
-export function parsePhase1(text: string, sourceLocation: string): Phase1Result {
+export function parsePhase1(text: string, sourceLocation: string): ParseResult<ParserPhase1> {
   const errorMessages: ErrorMessage[] = []
   const parser = setupParser(text, sourceLocation, errorMessages)
   // run the parser
   const tree = parser.module()
   if (errorMessages.length > 0) {
     // report the errors
-    return { kind: 'error', messages: errorMessages }
+    return left(errorMessages)
   } else {
     // walk through the AST and construct the IR
     const listener = new ToIrListener(sourceLocation)
     ParseTreeWalker.DEFAULT.walk(listener as TntListener, tree)
 
     if (listener.errors.length > 0) {
-      return { kind: 'error', messages: listener.errors }
+      return left(listener.errors)
     } else if (listener.rootModule !== undefined) {
-      return { kind: 'ok', module: listener.rootModule, sourceMap: listener.sourceMap }
+      return right({module: listener.rootModule, sourceMap: listener.sourceMap})
     } else {
       // istanbul ignore next
       throw new Error('this should be impossible: root module is undefined')
@@ -104,8 +108,10 @@ export function parsePhase1(text: string, sourceLocation: string): Phase1Result 
  * Phase 2 of the TNT parser. Read the IR and check that all names are defined.
  * Note that the IR may be ill-typed.
  */
-export function parsePhase2(tntModule: TntModule, sourceMap: Map<bigint, Loc>):
-  Phase2Result {
+export function parsePhase2(phase1Data: ParserPhase1):
+  ParseResult<ParserPhase2> {
+  const tntModule: TntModule = phase1Data.module
+  const sourceMap: Map<bigint, Loc> = phase1Data.sourceMap
   const scopeTree = treeFromModule(tntModule)
   const moduleDefinitions = collectDefinitions(tntModule)
   const importResolvingResult = resolveImports(tntModule, moduleDefinitions)
@@ -182,8 +188,8 @@ export function parsePhase2(tntModule: TntModule, sourceMap: Map<bigint, Loc>):
   }
 
   return errorMessages.length > 0
-    ? { kind: 'error', messages: errorMessages }
-    : { kind: 'ok', table: definitions }
+    ? left(errorMessages)
+    : right({table: definitions, ...phase1Data})
 }
 
 export function compactSourceMap(sourceMap: Map<bigint, Loc>): { sourceIndex: any, map: any } {

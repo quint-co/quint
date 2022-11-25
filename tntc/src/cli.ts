@@ -10,88 +10,87 @@
  */
 
 import { PathLike, existsSync, readFileSync, writeFileSync } from 'fs'
-import { resolve } from 'path'
-import { cwd } from 'process'
 import JSONbig from 'json-bigint'
 import lineColumn from 'line-column'
+import { resolve } from 'path'
+import { cwd } from 'process'
 
-import { ErrorMessage, Phase1Result, compactSourceMap, parsePhase1, parsePhase2 } from './tntParserFrontend'
 import { formatError } from './errorReporter'
+import { ErrorMessage, ParserPhase2, compactSourceMap, parsePhase1, parsePhase2 } from './tntParserFrontend'
 
 import yargs from 'yargs/yargs'
 import { inferEffects } from './effects/inferrer'
 import { checkModes } from './effects/modeChecker'
-import { LookupTableByModule } from './lookupTable'
 import { errorTreeToString } from './errorTree'
 
+import { Either, left, right } from '@sweet-monads/either'
+import { Arguments } from 'yargs'
+import { effectToString } from './effects/printing'
 import { tntRepl } from './repl'
 import { inferTypes } from './types/inferrer'
-import { effectToString } from './effects/printing'
 import { typeSchemeToString } from './types/printing'
-import { Either, left, right } from '@sweet-monads/either'
 
 /**
  * Parse a TNT specification.
  *
  * @param argv parameters as provided by yargs
  */
-function parse(argv: any) {
-  parseModule(argv)
-  process.exit(0)
+function parse(argv: any): Either<String, [ParserPhase2, string]> {
+  return loadFile(argv.input).chain(text => parseText(argv, text))
 }
 
 /**
- * Check types (TBD) and effects of a TNT specification.
+ * Check types and effects of a TNT specification.
  *
  * @param argv parameters as provided by yargs
  */
-function typecheck(argv: any) {
-  const [parseResult, definitionsTable, sourceCode] = parseModule(argv)
+// TODO Should return Phase2 parsing data + typing data
+function typecheck(argv: any): Either<String, void> {
+  return parse(argv).chain(d => {
+    const [parseData, sourceCode] = d
+    const finder = lineColumn(sourceCode)
+    const definitionsTable = parseData.table
+    const [typeErrors, types] = inferTypes(parseData.module, definitionsTable)
+    types.forEach((value, key) => console.log(`${key}: ${typeSchemeToString(value)}`))
 
-  if (parseResult.kind === 'error') {
-    process.exit(1)
-  }
-  const finder = lineColumn(sourceCode)
-
-  const [typeErrors, types] = inferTypes(parseResult.module, definitionsTable)
-  types.forEach((value, key) => console.log(`${key}: ${typeSchemeToString(value)}`))
-
-  typeErrors.forEach((value, key) => {
-    const loc = parseResult.sourceMap.get(key)!
-    const message: ErrorMessage = {
-      explanation: errorTreeToString(value),
-      locs: [loc],
-    }
-
-    console.error(formatError(sourceCode, finder, message))
-  })
-
-  const [errors, effects] = inferEffects(definitionsTable, parseResult.module)
-  effects.forEach((value, key) => console.log(`${key}: ${effectToString(value)}`))
-
-  errors.forEach((value, key) => {
-    const loc = parseResult.sourceMap.get(key)!
-    const message: ErrorMessage = {
-      explanation: errorTreeToString(value),
-      locs: [loc],
-    }
-
-    console.error(formatError(sourceCode, finder, message))
-  })
-
-  const modes = checkModes(parseResult.module, effects)
-  const finalResult = modes
-    .map(e => e.forEach((value, key) => console.log(`${key}: ${value}`)))
-    .mapLeft(e => e.forEach((value, key) => {
-      const loc = parseResult.sourceMap.get(key)!
+    typeErrors.forEach((value, key) => {
+      const loc = parseData.sourceMap.get(key)!
       const message: ErrorMessage = {
         explanation: errorTreeToString(value),
         locs: [loc],
       }
-      console.error(formatError(sourceCode, finder, message))
-    }))
 
-  finalResult.isRight() ? process.exit(0) : process.exit(1)
+      console.error(formatError(sourceCode, finder, message))
+    })
+
+    const [errors, effects] = inferEffects(definitionsTable, parseData.module)
+    effects.forEach((value, key) => console.log(`${key}: ${effectToString(value)}`))
+
+    errors.forEach((value, key) => {
+      const loc = parseData.sourceMap.get(key)!
+      const message: ErrorMessage = {
+        explanation: errorTreeToString(value),
+        locs: [loc],
+      }
+
+      console.error(formatError(sourceCode, finder, message))
+    })
+
+    return checkModes(parseData.module, effects)
+      .map(e => e.forEach((value, key) => console.log(`${key}: ${value}`)))
+      .mapLeft(e => {
+        e.forEach((value, key) => {
+          const loc = parseData.sourceMap.get(key)!
+          const message: ErrorMessage = {
+            explanation: errorTreeToString(value),
+            locs: [loc],
+          }
+          console.error(formatError(sourceCode, finder, message))
+        })
+
+        return "typechecking failed"
+      })
+  })
 }
 
 /**
@@ -109,64 +108,53 @@ function loadFile(p: PathLike): Either<string, string> {
     try {
       return right(readFileSync(p, 'utf8'))
     } catch (err: unknown) {
-      return left(`error: file ${p} could not be opened due to ${err}`)
+      return left(`file ${p} could not be opened due to ${err}`)
     }
   } else {
-    return left(`error: file ${p} does not exist`)
-  }
-}
-
-// read either the standard input or an input file
-function parseModule(argv: any): [Phase1Result, LookupTableByModule, string] {
-  const res = loadFile(argv.input)
-  if (res.isRight()) {
-    return parseText(argv, res.value)
-  } else {
-    console.error(res.value)
-    process.exit(1)
+    return left(`file ${p} does not exist`)
   }
 }
 
 // a callback to parse the text that we get from readFile
-function parseText(argv: any, text: string): [Phase1Result, LookupTableByModule, string] {
+function parseText(argv: any, text: string): Either<String, [ParserPhase2, string]> {
   const path = resolve(cwd(), argv.input)
-  const phase1Result = parsePhase1(text, path)
-  if (phase1Result.kind === 'error') {
-    reportParseError(argv, text, phase1Result)
-    process.exit(1)
-  }
-
-  if (argv.sourceMap) {
-    // Write source map to the specified file
-    writeToJson(argv.sourceMap, compactSourceMap(phase1Result.sourceMap))
-  }
-
-  const phase2Result = parsePhase2(phase1Result.module, phase1Result.sourceMap)
-  if (phase2Result.kind === 'error') {
-    reportParseError(argv, text, phase2Result)
-    process.exit(1)
-  }
-
-  if (argv.out) {
-    // write the parsed IR to the output file
-    writeToJson(argv.out, {
-      status: 'parsed',
-      warnings: [],
-      module: phase1Result.module,
+  return parsePhase1(text, path)
+    .mapLeft(errs => {
+      reportParseError(argv, text, errs)
+      return "parsing failed in phase 1"
     })
-  }
-
-  return [phase1Result, phase2Result.table, text]
+    .chain(phase1Data => {
+      if (argv.sourceMap) {
+        // Write source map to the specified file
+        writeToJson(argv.sourceMap, compactSourceMap(phase1Data.sourceMap))
+      }
+      return parsePhase2(phase1Data)
+        .mapLeft(errs => {
+          reportParseError(argv, text, errs)
+          return "parsing failed in phase 2"
+        })
+    }).map(phase2Data => {
+      // TODO move into helper combinator
+      if (argv.out) {
+        // write the parsed IR to the output file
+        writeToJson(argv.out, {
+          status: 'parsed',
+          warnings: [],
+          module: phase2Data.module,
+        })
+      }
+      return [phase2Data, text]
+    })
 }
 
-function reportParseError(argv: any, sourceCode: string, result: { kind: 'error', messages: ErrorMessage[] }) {
+function reportParseError(argv: any, sourceCode: string, errors: ErrorMessage[]) {
   if (argv.out) {
     // write the errors to the output file
-    writeToJson(argv.out, result)
+    writeToJson(argv.out, errors)
   } else {
     const finder = lineColumn(sourceCode)
     // write the errors to stderr
-    result.messages.forEach((m) => console.error(formatError(sourceCode, finder, m)))
+    errors.forEach((m) => console.error(formatError(sourceCode, finder, m)))
   }
 }
 
@@ -179,6 +167,14 @@ function reportParseError(argv: any, sourceCode: string, result: { kind: 'error'
 function writeToJson(filename: string, json: any) {
   const path = resolve(cwd(), filename)
   writeFileSync(path, JSONbig.stringify(json))
+}
+
+function handleCmd<A>(cmd: (_: Arguments) => Either<String, A>): (_: Arguments) => void {
+  return (args) => {
+    cmd(args)
+      .mapLeft(msg => { console.error(`error: ${msg}`); process.exit(1) })
+      .mapRight(_ => process.exit(0))
+  }
 }
 
 // construct parsing commands with yargs
@@ -195,7 +191,7 @@ const parseCmd = {
         desc: 'name of the source map',
         type: 'string',
       }),
-  handler: parse,
+  handler: handleCmd(parse),
 }
 
 // construct typecheck commands with yargs
@@ -208,7 +204,7 @@ const typecheckCmd = {
         desc: 'output file',
         type: 'string',
       }),
-  handler: typecheck,
+  handler: handleCmd(typecheck),
 }
 
 // construct repl commands with yargs

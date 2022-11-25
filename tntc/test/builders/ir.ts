@@ -13,8 +13,8 @@ export function buildModuleWithDefs(defs: string[]): TntModule {
 
   const result = parsePhase1(tntModule, 'mocked_path')
 
-  if (result.kind === 'ok') {
-    return result.module
+  if (result.isRight()) {
+    return result.value.module
   }
 
   throw new Error(`Couldn't parse mocked expression. Result - ${JSONbig.stringify(result)}`)

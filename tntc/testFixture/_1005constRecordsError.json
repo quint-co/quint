@@ -1,6 +1,6 @@
 {
-  "kind": "error",
-  "messages": [
+  "type": "Left",
+  "value": [
     {
       "explanation": "TNT011: Records in disjoint union have different tag fields: tag and kind",
       "locs": [

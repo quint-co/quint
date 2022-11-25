@@ -1,6 +1,6 @@
 {
-  "kind": "error",
-  "messages": [
+  "type": "Left",
+  "value": [
     {
       "explanation": "token recognition error at: '#'",
       "locs": [

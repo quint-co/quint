@@ -5,6 +5,7 @@ import { resolve } from 'path'
 import JSONbig from 'json-bigint'
 import { compactSourceMap, parsePhase1, parsePhase2 } from '../src/tntParserFrontend'
 import { lf } from 'eol'
+import { right } from '@sweet-monads/either'
 
 // read a TNT file from the test data directory
 function readTnt(name: string): string {
@@ -27,23 +28,24 @@ function parseAndCompare(artifact: string): void {
   const expected = readJson(artifact)
   let outputToCompare
 
-  if (phase1Result.kind === 'error') {
+  if (phase1Result.isLeft()) {
     // An error occurred at phase 1, check if it is the expected result
     outputToCompare = phase1Result
-  } else {
+  } else if (phase1Result.isRight()) {
+    const {module, sourceMap} = phase1Result.value
     // Phase 1 succeded, check that the source map is correct
     const expectedSourceMap = readJson(`${artifact}.map`)
-    const sourceMapResult = JSONbig.parse(JSONbig.stringify(compactSourceMap(phase1Result.sourceMap)))
+    const sourceMapResult = JSONbig.parse(JSONbig.stringify(compactSourceMap(sourceMap)))
     assert.deepEqual(sourceMapResult, expectedSourceMap, 'expected source maps to be equal')
 
-    const phase2Result = parsePhase2(phase1Result.module, phase1Result.sourceMap)
+    const phase2Result = parsePhase2(phase1Result.value)
 
-    if (phase2Result.kind === 'error') {
+    if (phase2Result.isLeft()) {
       // An error occurred at phase 2, check if it is the expected result
       outputToCompare = phase2Result
     } else {
       // Both phases succeeded, check that the module is correclty outputed
-      outputToCompare = { status: 'parsed', warnings: [], module: phase1Result.module }
+      outputToCompare = { status: 'parsed', warnings: [], module: module }
     }
   }
 
@@ -57,15 +59,12 @@ describe('parsing', () => {
   it('parses empty module', () => {
     const result = parsePhase1(readTnt('_0001emptyModule'), 'mocked_path/testFixture/_0001emptyModule.tnt')
     const module = { id: 1n, name: 'empty', defs: [] }
-    assert.deepEqual(result.kind, 'ok')
-    if (result.kind === 'ok') {
-      assert.deepEqual(result.module, module)
-    }
+    assert.deepEqual(result.map(r => r.module), right(module))
   })
 
   it('parses SuperSpec', () => {
     const result = parsePhase1(readTnt('SuperSpec'), 'mocked_path/testFixture/SuperSpec.tnt')
-    assert.deepEqual(result.kind, 'ok')
+    assert(result.isRight())
   })
 
   it('parses SuperSpec correctly', () => {
