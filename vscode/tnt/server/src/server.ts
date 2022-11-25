@@ -27,13 +27,7 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { Effect, Loc, LookupTableByModule, TntModule, checkModes, effectToString, errorTreeToString, inferEffects, inferTypes, parsePhase1, parsePhase2, typeSchemeToString } from 'tntc'
-
-interface ParsingResult {
-  tntModule: TntModule
-  sourceMap: Map<bigint, Loc>
-  definitionTable: LookupTableByModule
-}
+import { Effect, Loc, LookupTableByModule, ParserPhase2, TntModule, checkModes, effectToString, errorTreeToString, inferEffects, inferTypes, parsePhase1, parsePhase2, typeSchemeToString } from 'tntc'
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -116,7 +110,7 @@ connection.onDidChangeConfiguration(change => {
   documents.all().forEach(d => {
     validateTextDocument(d)
       .then((result) => {
-        return checkTypesAndEffects(d, result.tntModule, result.sourceMap, result.definitionTable)
+        return checkTypesAndEffects(d, result.module, result.sourceMap, result.table)
       })
       .catch(diagnostics => {
         // Send the computed diagnostics to VSCode.
@@ -151,7 +145,7 @@ documents.onDidChangeContent(change => {
   console.log('File content changed, checking types and effects again')
   validateTextDocument(change.document)
     .then((result) => {
-      return checkTypesAndEffects(change.document, result.tntModule, result.sourceMap, result.definitionTable)
+      return checkTypesAndEffects(change.document, result.module, result.sourceMap, result.table)
     })
     // Clear possible old diagnostics
     .then((_) => connection.sendDiagnostics({ uri: change.document.uri, diagnostics: [] }))
@@ -239,32 +233,28 @@ function assembleDiagnostic(explanation: string, loc: Loc): Diagnostic {
   }
 }
 
-async function validateTextDocument(textDocument: TextDocument): Promise<ParsingResult> {
+async function validateTextDocument(textDocument: TextDocument): Promise<ParserPhase2> {
   // The validator creates diagnostics for all uppercase words length 2 and more
   const diagnostics: Diagnostic[] = []
   const text = textDocument.getText()
   const result = parsePhase1(text, textDocument.uri)
 
-  if (result.kind === 'error') {
-    for (const msg of result.messages) {
+  result.mapLeft(messages => {
+    for (const msg of messages) {
       const diags = msg.locs.map(loc => assembleDiagnostic(msg.explanation, loc))
       diagnostics.push(...diags)
     }
-  } else {
-    const result2 = parsePhase2(result.module, result.sourceMap)
-    if (result2.kind === 'error') {
-      for (const msg of result2.messages) {
+  }).map(phase1Data => {
+    parsePhase2(phase1Data)
+      .mapLeft(messages => {
+      for (const msg of messages) {
         const diags = msg.locs.map(loc => assembleDiagnostic(msg.explanation, loc))
         diagnostics.push(...diags)
       }
-    } else {
-      return new Promise((resolve, _reject) => resolve({
-        tntModule: result.module,
-        sourceMap: result.sourceMap,
-        definitionTable: result2.table,
-      }))
-    }
-  }
+    }).map(phase2Data => {
+      return new Promise((resolve, _reject) => resolve(phase2Data))
+    })
+  }) 
 
   return new Promise((resolve, reject) => reject(diagnostics))
 }
