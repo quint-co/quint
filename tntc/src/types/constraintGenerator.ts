@@ -15,7 +15,7 @@
 import { IRVisitor } from '../IRVisitor'
 import { TntApp, TntBool, TntConst, TntEx, TntInt, TntLambda, TntLet, TntModule, TntModuleDef, TntName, TntOpDef, TntStr, TntVar } from '../tntIr'
 import { TntType, typeNames } from '../tntTypes'
-import { expressionToString } from '../IRprinting'
+import { expressionToString, rowToString, typeToString } from '../IRprinting'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
 import { getSignatures } from './builtinSignatures'
@@ -177,6 +177,9 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     this.fetchResult(e.expr.id)
       .map(t => {
         this.addToResults(e.id, right({ ...typeNames(t.type), type: t.type }))
+        if (e.typeAnnotation) {
+          this.constraints.push({ kind: 'eq', types: [t.type, e.typeAnnotation], sourceId: e.id })
+        }
 
         const constraint: Constraint = { kind: 'conjunction', constraints: this.constraints, sourceId: 0n }
         this.solvingFunction(constraint)
@@ -190,7 +193,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
                 return [id, scheme]
               })
             )
+
+            return subs
           })
+          .chain(subs => checkAnnotationGenerality(subs, e.typeAnnotation)
+            .mapLeft(err => this.errors.set(e.typeAnnotation?.id ?? e.id, err)))
       })
 
     // Remove solved constraints
@@ -274,3 +281,26 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 function toScheme(type: TntType): TypeScheme {
   return { typeVariables: new Set([]), rowVariables: new Set([]), type }
 }
+
+function checkAnnotationGenerality(
+  subs: Substitutions, typeAnnotation: TntType | undefined
+): Either<ErrorTree, Substitutions> {
+  if (typeAnnotation) {
+    const names = typeNames(typeAnnotation)
+    const tooGeneralType = subs.filter(s => s.kind === 'type' && names.typeVariables.has(s.name))
+    const tooGeneralRow = subs.filter(s => s.kind === 'row' && names.rowVariables.has(s.name))
+    const errors = [...tooGeneralType, ...tooGeneralRow].map(s => {
+      const expected = s.kind === 'type' ? typeToString(s.value) : rowToString(s.value)
+      return buildErrorLeaf(
+        `Checking variable ${s.name}`,
+        `Type annotation is too general: ${s.name} should be ${expected}`
+      )
+    })
+    if (errors.length > 0) {
+      return left(buildErrorTree(`Checking type annotation ${typeToString(typeAnnotation)}`, errors))
+    }
+  }
+
+  return right(subs)
+}
+
