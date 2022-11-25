@@ -235,28 +235,17 @@ function assembleDiagnostic(explanation: string, loc: Loc): Diagnostic {
 
 async function validateTextDocument(textDocument: TextDocument): Promise<ParserPhase2> {
   // The validator creates diagnostics for all uppercase words length 2 and more
-  const diagnostics: Diagnostic[] = []
   const text = textDocument.getText()
+
   const result = parsePhase1(text, textDocument.uri)
+    .chain(phase1Data => parsePhase2(phase1Data))
+    .mapLeft(messages =>  messages.flatMap(msg => msg.locs.map(loc => assembleDiagnostic(msg.explanation, loc))))
 
-  result.mapLeft(messages => {
-    for (const msg of messages) {
-      const diags = msg.locs.map(loc => assembleDiagnostic(msg.explanation, loc))
-      diagnostics.push(...diags)
-    }
-  }).map(phase1Data => {
-    parsePhase2(phase1Data)
-      .mapLeft(messages => {
-      for (const msg of messages) {
-        const diags = msg.locs.map(loc => assembleDiagnostic(msg.explanation, loc))
-        diagnostics.push(...diags)
-      }
-    }).map(phase2Data => {
-      return new Promise((resolve, _reject) => resolve(phase2Data))
-    })
-  }) 
-
-  return new Promise((resolve, reject) => reject(diagnostics))
+  if (result.isRight()) {
+    return new Promise((resolve, _reject) => resolve(result.value))
+  } else {
+    return new Promise((_resolve, reject) => reject(result.value))
+  }
 }
 
 const effectsByDocument: Map<DocumentUri, Map<Loc, string>> = new Map<DocumentUri, Map<Loc, string>>()
