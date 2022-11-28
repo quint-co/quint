@@ -35,6 +35,7 @@ TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
     + [Imports](#imports-1)
   * [TNT expression syntax](#tnt-expression-syntax)
     + [Literals](#literals)
+    + [Names](#names)
     + [Braces and parentheses](#braces-and-parentheses)
     + [Lambdas (aka Anonymous Operators)](#lambdas-aka-anonymous-operators)
     + [Two forms of operator application](#two-forms-of-operator-application)
@@ -675,6 +676,45 @@ Integers literals are written as follows:
 
 The set of all integers is written as `Int` and the set of all naturals is
 written as `Nat`.
+
+### Names
+
+Like in many programming languages, names are a basic building block of
+expressions. To see this, consider the following example:
+
+```scala
+module names {
+  const acceleration: int
+  var clock: int
+
+  pure def myMul(i, j) = i * j
+
+  pure def sqr(i) = myMul(i, i)
+
+  val distance = acceleration * sqr(clock)
+
+  action init = {
+    clock <- 0
+  }
+
+  action next = {
+    clock <- clock + 1
+  }
+}
+```
+
+
+Here is the list of names that are normally used in expressions:
+
+ - Names of the operators, for example `myMul` in the definition of `sqr`.
+
+ - Names of the operator arguments, e.g., `i` and `j` in the definition of
+   `myMul`, that also appear in anonymous operators (lambdas).
+
+ - Names of constants, e.g., `acceleration` in the definition of `distance`.
+
+ - Names of state variables, e.g., `clock` in the definitions of `distance`,
+   `init`, and `next`.
 
 <a name="braceAndParen"/>
 
