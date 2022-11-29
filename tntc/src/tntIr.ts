@@ -73,7 +73,7 @@ interface WithTypeAnnotation {
  * by requiring an explicit qualifier.
  */
 export type OpQualifier =
-  'pureval' | 'puredef' | 'val' | 'def' | 'pred' | 'action' | 'temporal'
+  'pureval' | 'puredef' | 'val' | 'def' | 'pred' | 'action' | 'run' | 'temporal'
 
 export interface TntName extends WithId {
   /** Expressions kind ('name' -- name reference) */

@@ -144,7 +144,7 @@ export class ToIrListener implements TntListener {
       // case distinction to make the type checker happy
       if (qtext === 'pureval' || qtext === 'puredef' ||
         qtext === 'val' || qtext === 'def' ||
-        qtext === 'action' || qtext === 'temporal') {
+        qtext === 'action' || qtext === 'run' || qtext === 'temporal') {
         qualifier = qtext
       } else {
         const ls = this.locStr(ctx)

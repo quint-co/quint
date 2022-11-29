@@ -60,15 +60,19 @@ TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
       - [Delayed assignment](#delayed-assignment)
       - [Non-deterministic choice](#non-deterministic-choice-1)
       - [Other action operators of TLA+](#other-action-operators-of-tla)
+    + [Runs](#runs)
+      - [Then](#then)
+      - [Times](#times)
+      - [Assert](#assert)
     + [Temporal operators](#temporal-operators)
       - [Always](#always)
       - [Eventually](#eventually)
       - [Next](#next)
       - [Unchanged (removed)](#unchanged-removed)
-      - [Stutter](#stutter)
-      - [Nostutter](#nostutter)
+      - [OrKeep](#orkeep)
+      - [MustChange](#mustchange)
       - [Enabled](#enabled)
-    + [Fairness](#fairness)
+      - [Fairness](#fairness)
       - [Other temporal operators](#other-temporal-operators)
     + [Unbounded quantifiers](#unbounded-quantifiers)
   * [Instances](#instances)
@@ -188,7 +192,6 @@ A type identifier can also introduce an uninterpreted type by defining a type wi
 type MY_TYPE
 ```
 
-
 ## Modes
 
 *TLA+ does not make a clear distinction between constant expressions, state
@@ -205,6 +208,7 @@ We define the following modes:
  1. State mode.
  1. Oracle mode.
  1. Action mode.
+ 1. Run mode.
  1. Temporal mode.
 
 Every TNT expression and definition is assigned a mode. In the following, we
@@ -219,6 +223,8 @@ M`.
 | Stateless         | n/a                        |
 | State             | Stateless                  |
 | Oracle            | Stateless, State           |
+| Action            | Stateless, State           |
+| Run               | Stateless, State, Action   |
 | Action            | Oracle, Stateless, State   |
 | Temporal          | Stateless, State           |
 
@@ -1664,13 +1670,134 @@ similar to sending over a channel in Golang.
 
 See the discussion in: [Non-deterministic choice](#nondeterministic).
 
-#### Other action operators of TLA+
+### Runs
 
-There is no equivalent of the composition operators `A \cdot B`. It is no
-supported by TLC, so the chance that you will need it is very low. We can add
-it later, if you have a use-case for it.
+A run represents a finite execution. In the simplest case, it represents
+one _concrete_ execution that is allowed by the specification. In
+general, it is a sequence of actions, which prescribe how to produce one or
+more concrete executions, if such executions exist.
+
+**Discussion.** We have found that TLA+ lacks a programmatic way of
+describing examples of system executions. Indeed, TLA+ has the notion of a
+behaviour (simply put, a sequence of states starting with `Init` and connected
+via `Next`). However, it is relatively hard to present a sequence of steps in
+TLA+ itself. For instance, counterexamples produced by TLC and Apalache are not
+first-class TLA+ citizens. In theory, TLA+ has the operator `\cdot`, representing the sequential composition of two actions. However, we have never seen
+this operator being used in practice.
+
+#### Then
+
+The operator `then` has the following syntax:
+
+```scala
+A.then(B)
+then(A, B)
+```
+
+The semantics of this operator is as follows. When `A.then(B)` is applied to a
+state `s_1`, the operator computes a next state `s_2` of `s_1` by applying
+action `A`, if such a state exists. If `A` returns `true`, then the operator
+`A.then(B)` computes a next state `s_3` of `s_2` by applying action `B`, if
+such a state exists. If `B` returns true, then the operator `A.then(B)` returns
+`true`, the old state is equal to `s_1`, and the new state is equal to `s_3`.
+In all other cases, the operator returns `false`.
+
+This operator is equivalent to `A \cdot B` of TLA+.
+
+**Example.** Consider the specification `counters`:
+
+```scala
+module counters {
+  var n: int
+
+  action Init = {
+    n <- 1
+  }
+
+  action Even = all {
+    n % 2 == 0,
+    n <- n / 2,
+  }
+
+  action ByThree = all {
+    n % 3 == 0,
+    n <- 2 * n
+  }
+
+  action Positive = all {
+    n > 0, n <- n + 1
+  }
+
+  action Next = any {
+    Even, ByThree, Positive
+  }
+
+  run run1 = (n <- 1).then(n <- 2).then(n <- 3).then(n <- 6).then(n <- 3)
+
+  run run2 = (Init).then(Positive).then(Positive).then(ByThree).then(Even)
+
+  run run3 = (Init).then(Next).then(Next).then(Next).then(Next)
+}
+```
+
+The definition `run1` captures the execution that contains five states, in
+which the variable `n` receives the values `1`, `2`, `3`, `6`, and `3`,
+respectively. If we look carefully at the definition of `run2`, it produces
+exactly the same sequence of states as `run1`, but it does via evaluation of
+the actions `Init`, `Positive`, `Positive`, `ByThree`, and `Even`, in that
+order.
+
+Note that a run does not have to describe exactly one sequence of states: in general
+a run describes a sequence of constraints over a sequence of states. For
+example, `run3` captures all executions of the specification `counters`
+that start with `Init` and evaluate `Next` four times in a row.
+
+*Mode:* Run.
+
+#### Times
+
+The operator `times` has the following syntax:
+
+```scala
+n.times(A)
+times(n, A)
+```
+
+The semantics of this operator is as follows:
+
+ - When `n <= 0`, this operator does not change the state.
+ - When `n = 1`, `n.times(A)` is equivalent to `A`.
+ - When `n > 1`, `n.times(A)`, is equivalent to `A.then((n - 1).times(A))`.
+
+Note that the operator `n.times(A)` applies `A` exactly `n` times (when `n` is
+non-negative). If you want to repeat `A` from `i` to `j` times, you can combine
+it with `orKeep` as follows:
+
+```scala
+i.times(A).then((j - i).times(A.orKeep(vars)))
+```
+
+See the description of [orKeep](#OrKeep) below.
+
+*Mode:* Run.
+
+#### Assert
+
+The operator `assert` has the following syntax:
+
+```scala
+assert(condition)
+```
+
+This operator is always enabled and it does not change the state. If
+`condition` evaluates to `false` in a state, then the run should be marked as
+"failed". How exactly this is reported depends on the tool.
+
+*Mode:* Run.
 
 ### Temporal operators
+
+Temporal operators describe infinite executions.
 
 #### Always
 
@@ -1729,33 +1856,33 @@ keeping this operator.
 to identify assignments in actions. We introduced `Unchanged` only in the
 Temporal mode, which is needed for refinements.
 
-#### Stutter
+#### OrKeep
 
 The following operator is similar to `[A]_x` of TLA+:
 
 ```scala
-stutter(A, x)
-A.stutter(x)
+orKeep(A, x)
+A.orKeep(x)
 ```
 
-The arguments to `stutter` are as follows:
+The arguments to `orKeep` are as follows:
 
  - `A` is an expression in the Action mode,
  - `x` is a variable or a tuple of variables.
 
-*Mode:* Temporal. This operator converts an action (in the Action mode) to a
-temporal property.
+*Mode:* Temporal, Run. This operator converts an action (in the Action mode) to a
+temporal property or a run.
 
-#### Nostutter
+#### MustChange
 
 The following operator is similar to `<A>_x` of TLA+:
 
 ```scala
-nostutter(A, x)
-A.nostutter(x)
+mustChange(A, x)
+A.mustChange(x)
 ```
 
-The arguments to `nostutter` are as follows:
+The arguments to `mustChange` are as follows:
 
  - `A` is an expression in the Action mode,
  - `x` is a variable or a tuple of variables.
@@ -1782,7 +1909,7 @@ the translation of `enabled(A)` to TLA+.
 
 *Mode:* Temporal. The argument `A` must be in the Action mode.
 
-### Fairness
+#### Fairness
 
 This is equivalent to `WF_e(A)` of TLA+:
 
