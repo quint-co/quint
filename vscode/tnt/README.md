@@ -16,10 +16,11 @@ To build the vscode plugin, run the `vscode` make target from [the root of this 
 make vscode
 ```
 
-To install the plugin for use, link the combined pluging into your vscode extensions:
+To install the plugin for use, link the combined pluging into your vscode
+extensions. From the roof of this repo, you can run
 
 ```sh
-ln --symbolic --force vscode/tnt $(HOME)/.vscode/extensions/
+ln --symbolic $PWD/vscode/tnt $HOME/.vscode/extensions/
 ```
 
 ## Features
