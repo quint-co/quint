@@ -150,6 +150,39 @@ describe('inferTypes', () => {
     ])
   })
 
+  it('considers annotations', () => {
+    const tntModule = buildModuleWithDefs([
+      'def e(p): (int) => int = p',
+    ])
+
+    const [errors, types] = inferTypes(tntModule, definitionsTable)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+
+    const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    assert.sameDeepMembers(stringTypes, [
+      [4n, 'int'],
+      [5n, '(int) => int'],
+    ])
+  })
+
+  it('checks annotations', () => {
+    const tntModule = buildModuleWithDefs([
+      'def e(p): (t) => t = p + 1',
+    ])
+
+    const [errors] = inferTypes(tntModule, definitionsTable)
+    assert.sameDeepMembers([...errors.entries()], [
+      [3n, {
+        location: 'Checking type annotation (t) => t',
+        children: [{
+          location: 'Checking variable t',
+          message: "Type annotation is too general: t should be int",
+          children: [],
+        }],
+      }],
+    ])
+  })
+
   it('fails when types are not unifiable', () => {
     const tntModule = buildModuleWithDefs([
       'def a = 1.map(p => p + 10)',
