@@ -142,49 +142,32 @@ val vars = (round, step, decision, lockedValue,
 //********************* PROTOCOL INITIALIZATION ******************************
 def FaultyProposals(r) =
     tuples(Faulty, Values, RoundsOrNil)
-      .map(args =>
-        val p = args._1
-        val v = args._2
-        val vr = args._3
+      .map((p, v, vr) =>
         { tag: "PROPOSE", src: p, round: r, proposal: v, validRound: vr })
 
 val AllFaultyProposals =
     tuples(Faulty, Rounds, Values, RoundsOrNil)
-      .map(args =>
-        val p = args._1
-        val r = args._2
-        val v = args._3
-        val vr = args._4
+      .map((p, r, v, vr) =>
         { tag: "PROPOSE", src: p, round: r, proposal: v, validRound: vr })
 
 def FaultyPrevotes(r) =
     tuples(Faulty, Values)
-      .map(args =>
-        val p = args._1
-        val v = args._2
+      .map((p, v) =>
         { tag: "PREVOTE", src: p, round: r, id: v })
 
 val AllFaultyPrevotes =
-    tuples(Faulty, Rounds, Values, RoundsOrNil)
-      .map(args =>
-        val p = args._1
-        val r = args._2
-        val v = args._3
+    tuples(Faulty, Rounds, Values)
+      .map((p, r, v) =>
         { tag: "PREVOTE", src: p, round: r, id: v })
 
 def FaultyPrecommits(r) =
     tuples(Faulty, Values)
-      .map(args =>
-        val p = args._1
-        val v = args._2
+      .map((p, v) =>
         { tag: "PRECOMMIT", src: p, round: r, id: v })
 
 val AllFaultyPrecommits =
     tuples(Faulty, Rounds, Values)
-      .map(args =>
-        val p = args._1
-        val r = args._2
-        val v = args._3
+      .map((p, r, v) =>
         { tag: "PRECOMMIT", src: p, round: r, id: v })
 
    
@@ -205,15 +188,15 @@ action Init = all {
   lockedRound     <- Corr.mapBy( _ => NilRound ),
   validValue      <- Corr.mapBy( _ => NilValue ),
   validRound      <- Corr.mapBy( _ => NilRound ),
-  AllFaultyProposals.powerset().guess(faultyProposals => all {
+  setOfMaps(Rounds, AllFaultyProposals.powerset()).guess(faultyProposals => all {
     BenignRoundsInMessages(faultyProposals),
     msgsPropose <- faultyProposals,
   }),
-  AllFaultyPrevotes.powerset().guess(faultyPrevotes => all {
+  setOfMaps(Rounds, AllFaultyPrevotes.powerset()).guess(faultyPrevotes => all {
     BenignRoundsInMessages(faultyPrevotes),
     msgsPrevote <- faultyPrevotes,
   }),
-  AllFaultyPrecommits.powerset().guess(faultyPrecommits => all {
+  setOfMaps(Rounds, AllFaultyPrecommits.powerset()).guess(faultyPrecommits => all {
     BenignRoundsInMessages(faultyPrecommits),
     msgsPrecommit <- faultyPrecommits,
   }),
@@ -284,9 +267,7 @@ action UponProposalInPropose(p) =
 
 // lines 28-33        
 action UponProposalInProposeAndPrevote(p) =
-  tuples(Values, Rounds).guess(vAndVr =>
-    val v = vAndVr._1
-    val vr = vAndVr._2
+  tuples(Values, Rounds).guess((v, vr) =>
     val msg = { tag: "PROPOSE", src: Proposer.get(round.get(p)),
                 round: round.get(p), proposal: v, validRound: vr }
     val PV = msgsPrevote.get(vr).filter( m => m.id == Id(v) )
@@ -325,9 +306,7 @@ action UponQuorumOfPrevotesAny(p) =
 
 // lines 36-46
 action UponProposalInPrevoteOrCommitAndPrevote(p) =
-  tuples(ValidValues, RoundsOrNil).guess(pair =>
-    val v = pair._1     // in the future, this should be done by pattern matching
-    val vr = pair._2    // in the future, this should be done by pattern matching
+  tuples(ValidValues, RoundsOrNil).guess((v, vr) =>
     val msg = { tag: "PROPOSE", src: Proposer.get(round.get(p)),
                 round: round.get(p), proposal: v, validRound: vr }
     val PV = msgsPrevote.get(round.get(p)).filter(m => m.id == Id(v))
@@ -337,13 +316,16 @@ action UponProposalInPrevoteOrCommitAndPrevote(p) =
       size(PV) >= THRESHOLD2, // line 36
       evidence <- PV.union(Set(msg)).union(evidence),
       if (step.get(p) == "prevote") all {
-          // lines 38-41:
-          lockedValue <- lockedValue.set(p, v),
-          lockedRound <- lockedRound.set(p, round.get(p)),
-          BroadcastPrecommit(p, round.get(p), Id(v)),
-          step <- step.set(p, "precommit"),
-      } else {
-        true      // the above variables are unchanged
+        // lines 38-41:
+        lockedValue <- lockedValue.set(p, v),
+        lockedRound <- lockedRound.set(p, round.get(p)),
+        BroadcastPrecommit(p, round.get(p), Id(v)),
+        step <- step.set(p, "precommit"),
+      } else all {
+        lockedValue <- lockedValue,
+        lockedRound <- lockedRound,
+        msgsPrecommit <- msgsPrecommit,
+        step <- step,
       },
         // lines 42-43
       validValue <- validValue.set(p, v),
@@ -370,10 +352,7 @@ action UponQuorumOfPrecommitsAny(p) =
 // lines 49-54        
 action UponProposalInPrecommitNoDecision(p) =
   // line 50
-  tuples(ValidValues, Rounds, RoundsOrNil).guess({ triple =>
-     val v = triple._1   // in the future, this should be done via pattern matching
-     val r = triple._2   // in the future, this should be done via pattern matching
-     val vr = triple._3  // in the future, this should be done via pattern matching
+  tuples(ValidValues, Rounds, RoundsOrNil).guess((v, r, vr) =>
      val msg = { tag: "PROPOSE", src: Proposer.get(r),
                  round: r, proposal: v, validRound: vr }
      val PV = msgsPrecommit.get(r).filter(m => m.id == Id(v))
@@ -388,7 +367,7 @@ action UponProposalInPrecommitNoDecision(p) =
        step <- step.set(p, "decided"),
        fired_action <- "UponProposalInPrecommitNoDecision",
      }   
-  })
+  )
 
 // the actions below are not essential for safety, but added for completeness
 
@@ -453,9 +432,7 @@ action Next =
 
 // equivocation by a process p
 def EquivocationBy(p) =
-  tuples(evidence, evidence).exists(args =>
-    val m1 = args._1
-    val m2 = args._2
+  tuples(evidence, evidence).exists((m1, m2) =>
     and {
       m1 != m2,
       m1.src == p,
@@ -467,14 +444,10 @@ def EquivocationBy(p) =
 
 // amnesic behavior by a process p
 def AmnesiaBy(p) =
-    tuples(Rounds, Rounds).exists(rs =>
-        val r1 = rs._1
-        val r2 = rs._2
+    tuples(Rounds, Rounds).exists((r1, r2) =>
         and {
           r1 < r2,
-          tuples(ValidValues, ValidValues).exists(vs =>
-            val v1 = vs._1
-            val v2 = vs._2
+          tuples(ValidValues, ValidValues).exists((v1, v2) =>
             and {
               v1 != v2,
               evidence.contains({ tag: "PRECOMMIT", src: p,
@@ -495,10 +468,10 @@ def AmnesiaBy(p) =
 
 // the safety property -- agreement
 val Agreement =
-  tuples(Corr, Corr).forall(p => or {
-    decision.get(p._1) == NilValue,
-    decision.get(p._2) == NilValue,
-    decision.get(p._1) == decision.get(p._2)
+  tuples(Corr, Corr).forall((p, q) => or {
+    decision.get(p) == NilValue,
+    decision.get(q) == NilValue,
+    decision.get(p) == decision.get(q)
   })
 
 // the protocol validity
@@ -535,9 +508,7 @@ val NoEquivocation =
 // It is not exactly ~Agreement, as we do not want to see the states where
 // decision.get(p) = NilValue
 val NoAgreement =
-  tuples(Corr, Corr).forall(args =>
-        val p = args._1
-        val q = args._2
+  tuples(Corr, Corr).forall((p, q) =>
         and {
           p != q,
           decision.get(p) != NilValue,

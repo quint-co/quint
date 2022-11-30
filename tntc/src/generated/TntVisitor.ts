@@ -23,11 +23,11 @@ import { ModuleNestedContext } from "./TntParser";
 import { InstanceContext } from "./TntParser";
 import { TypedefContext } from "./TntParser";
 import { ImportDefContext } from "./TntParser";
+import { UminusContext } from "./TntParser";
 import { DotCallContext } from "./TntParser";
 import { LambdaConsContext } from "./TntParser";
 import { OperAppContext } from "./TntParser";
 import { ListAppContext } from "./TntParser";
-import { UminusContext } from "./TntParser";
 import { PowContext } from "./TntParser";
 import { MultDivContext } from "./TntParser";
 import { PlusMinusContext } from "./TntParser";
@@ -242,6 +242,14 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitImportDef?: (ctx: ImportDefContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by the `uminus`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitUminus?: (ctx: UminusContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by the `dotCall`
 	 * labeled alternative in `TntParser.expr`.
 	 * @param ctx the parse tree
@@ -272,14 +280,6 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitListApp?: (ctx: ListAppContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `uminus`
-	 * labeled alternative in `TntParser.expr`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitUminus?: (ctx: UminusContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `pow`

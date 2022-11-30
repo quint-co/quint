@@ -149,7 +149,7 @@ export function unifyRows(r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
       } else {
         return left(buildErrorLeaf(
           location,
-           `Incompatible tails for rows with disjoint fields: ${rowToString(ra.other)} and ${rowToString(rb.other)}`
+          `Incompatible tails for rows with disjoint fields: ${rowToString(ra.other)} and ${rowToString(rb.other)}`
         ))
       }
     } else {
@@ -208,13 +208,7 @@ function checkSameLength(
   location: string, types1: TntType[], types2: TntType[]
 ): Either<Error, [TntType[], TntType[]]> {
   if (types1.length !== types2.length) {
-    const expected = types1.length
-    const got = types2.length
-    return left({
-      location: location,
-      message: `Expected ${expected} arguments, got ${got}`,
-      children: [],
-    })
+    return tryToUnpack(location, types1, types2)
   }
 
   return right([types1, types2])
@@ -242,4 +236,24 @@ function simplifyRow(r: Row): Row {
   } else {
     return otherSimplified
   }
+}
+
+function tryToUnpack(
+  location: string, types1: TntType[], types2: TntType[]
+): Either<ErrorTree, [TntType[], TntType[]]> {
+  // Ensure that types1 is always the smallest
+  if (types2.length < types1.length) {
+    return tryToUnpack(location, types2, types1)
+  }
+  
+  // We only handle unpacking 1 tuple into N args
+  if (types1.length === 1 && types1[0].kind === 'tup') {
+    const row = types1[0].fields
+    if (row.kind === 'row' && row.fields.length === types2.length) {
+      return right([row.fields.map(f => f.fieldType), types2])
+    }
+  }
+
+
+  return left(buildErrorLeaf(location, `Expected ${types2.length} arguments, got ${types1.length}`))
 }

@@ -21,6 +21,7 @@ describe('inferEffects', () => {
       { kind: 'def', identifier: 'a', reference: 9n },
       { kind: 'val', identifier: 'b', reference: 10n },
       { kind: 'const', identifier: 'S', reference: 11n },
+      { kind: 'param', identifier: 'tup', reference: 12n },
     ]),
   })
 
@@ -141,6 +142,19 @@ describe('inferEffects', () => {
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(effectToString(effects.get(7n)!), expectedEffect)
+  })
+
+  it('unpacks arguments as tuples', () => {
+    const tntModule = buildModuleWithDefs([
+      'def a(tup) = Set(tup, (x, 4)).map((p, g) => p + g)',
+    ])
+
+    const [errors, effects] = inferEffects(definitionsTable, tntModule)
+
+    const expectedEffect = "(Read[v2]) => Read[v2, 'x']" 
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectToString(effects.get(11n)!), expectedEffect)
   })
 
   it('returns error when operator signature is not defined', () => {

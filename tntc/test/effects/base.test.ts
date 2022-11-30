@@ -2,6 +2,8 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { Effect, emptyVariables, unify } from '../../src/effects/base'
 import { parseEffectOrThrow } from '../../src/effects/parser'
+import { errorTreeToString } from '../../src/errorTree'
+import { substitutionsToString } from '../../src'
 
 describe('unify', () => {
   describe('simple effects', () => {
@@ -142,6 +144,89 @@ describe('unify', () => {
         { kind: 'effect', name: 'E', value: parseEffectOrThrow("Update['x']") },
       ]))
     })
+
+    it('unpacks arguments as tuples', () => {
+      const e1 = parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1, r2]')
+      const e2 = parseEffectOrThrow("(Pure) => E")
+
+      const result = unify(e1, e2)
+
+      result.map(r => assert.sameDeepMembers(r, [
+        { kind: 'variable', name: 'r1', value: { kind: 'concrete', vars: [] } },
+        { kind: 'variable', name: 'r2', value: { kind: 'concrete', vars: [] } },
+        { kind: 'effect', name: 'E', value: parseEffectOrThrow('Pure') },
+      ])).mapLeft(err => assert.fail(`Should find no errros, found ${errorTreeToString(err)}`))
+    })
+
+    it('unpacks arguments as tuples with read and temporal effect', () => {
+      const e1 = parseEffectOrThrow('(Read[r1] & Temporal[t1], Read[r2] & Temporal[t2]) => Read[r1, r2] & Temporal[t1, t2]')
+      const e2 = parseEffectOrThrow("(Read['x'] & Temporal['t']) => E")
+
+      const result = unify(e1, e2)
+
+      result.map(r => assert.sameDeepMembers(r, [
+        { kind: 'variable', name: 'r1', value: { kind: 'concrete', vars: ['x'] } },
+        { kind: 'variable', name: 'r2', value: { kind: 'concrete', vars: ['x'] } },
+        { kind: 'variable', name: 't1', value: { kind: 'concrete', vars: ['t'] } },
+        { kind: 'variable', name: 't2', value: { kind: 'concrete', vars: ['t'] } },
+        { kind: 'effect', name: 'E', value: parseEffectOrThrow("Read['x'] & Temporal['t']") },
+      ])).mapLeft(err => assert.fail(`Should find no errros, found ${errorTreeToString(err)}`))
+    })
+
+    it('unpacks the same effect to all tuple elements', () => {
+      // Will return error since r1 |-> 'x' and r2 |-> 'x', so Update[r1, r2] will be invalid
+      const e1 = parseEffectOrThrow('(Read[r1], Read[r2]) => Update[r1, r2]')
+      const e2 = parseEffectOrThrow("(Read['x']) => E")
+
+      const result = unify(e1, e2)
+
+      assert.isTrue(result.isLeft())
+      result.mapLeft(r => assert.deepEqual(r, {
+        location: "Trying to unify (Read[r1], Read[r2]) => Update[r1, r2] and (Read['x']) => E",
+        children: [{
+          location: "Trying to simplify effect Update['x', 'x']",
+          message: 'Multiple updates of variable(s): x',
+          children: [],
+        }],
+      }))
+    })
+
+    it('results in the same effect regardless of unpacked projection', () => {
+      const e1 = parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1]')
+      const e2 = parseEffectOrThrow("(Read['x', 'y']) => E")
+
+      const e3 = parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r2]')
+      const e4 = parseEffectOrThrow("(Read['x', 'y']) => E")
+      
+      const result1 = unify(e1, e2)
+      const result2 = unify(e3, e4)
+
+      result1.map(r1 => result2.map(r2=> assert.deepEqual(substitutionsToString(r1), substitutionsToString(r2))))
+    })
+
+    it('returns error when unpacked values cannot unify', () => {
+      const e1 = parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1, r2]')
+      const e2 = parseEffectOrThrow("(Temporal['x']) => E")
+
+      const result = unify(e1, e2)
+
+      assert.isTrue(result.isLeft())
+      result.mapLeft(r => assert.deepEqual(r, {
+        location: "Trying to unify (Read[r1], Read[r2]) => Read[r1, r2] and (Temporal['x']) => E",
+        children: [
+          {
+            location: "Trying to unify Temporal['x'] and Read[r1, r2]",
+            children: [{
+              location: "Trying to unify variables ['x'] and []",
+              message: 'Expected variables [x] and [] to be the same',
+              children: [],
+            }],
+          },
+        ],
+      }))
+    })
+
+
 
     it('returns error for each effect updating a variable more than once', () => {
       const e1 = parseEffectOrThrow("(Update['x', 'x']) => Read['x']")
