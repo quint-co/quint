@@ -48,7 +48,8 @@ const setOperators = [
   { name: 'powerset', effect: '(Read[r1]) => Read[r1]' },
   { name: 'flatten', effect: '(Read[r1]) => Read[r1]' },
   { name: 'allLists', effect: '(Read[r1]) => Read[r1]' },
-  { name: 'choose_some', effect: '(Read[r1]) => Read[r1]' },
+  { name: 'chooseSome', effect: '(Read[r1]) => Read[r1]' },
+  { name: 'oneOf', effect: '(Read[r1]) => Read[r1]' },
   { name: 'isFinite', effect: '(Read[r1]) => Read[r1]' },
   { name: 'size', effect: '(Read[r1]) => Read[r1]' },
 ]

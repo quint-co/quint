@@ -312,22 +312,24 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('guess and non-determinism', async() => {
+  it('nondet and oneOf', async() => {
     const input = dedent(
       `
       |var x: int
       |
       |x <- 0
       |x == 0
-      |Set(1, 2, 3).guess(y => x <- y)
+      |{ nondet y = oneOf(Set(1, 2, 3))
+      |  x <- y }
+      |
       |1 <= x and x <= 3
-      |2.to(5).guess(y => x <- y)
+      |nondet y = oneOf(2.to(5)); x <- y
       |2 <= x and x <= 5
-      |tuples(2.to(5), 3.to(4)).guess(t => x <- t._1 + t._2)
+      |nondet t = oneOf(tuples(2.to(5), 3.to(4))); x <- t._1 + t._2
       |5 <= x and x <= 9
-      |Nat.guess(i => x <- i)
+      |nondet i = oneOf(Nat); x <- i
       |x >= 0
-      |Int.guess(i => x <- i)
+      |nondet i = oneOf(Int); x <- i
       |Int.contains(x)
       |`
     )

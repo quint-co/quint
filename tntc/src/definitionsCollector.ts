@@ -52,6 +52,7 @@ export function defaultValueDefinitions(): ValueDefinition[] {
     { kind: 'def', identifier: 'flatten' },
     { kind: 'def', identifier: 'allLists' },
     { kind: 'def', identifier: 'chooseSome' },
+    { kind: 'def', identifier: 'oneOf' },
     { kind: 'def', identifier: 'isFinite' },
     { kind: 'def', identifier: 'size' },
     { kind: 'def', identifier: 'get' },

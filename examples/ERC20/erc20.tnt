@@ -164,36 +164,33 @@ module erc20 {
 
   /* The transition relation, which chooses one of the actions */
   action Next = any {
-    ADDR.guess(sender =>
-      ADDR.guess(toAddr =>
-        AMMOUNTS.guess(value =>
-          SubmitTransfer(sender, toAddr, value)
-        )
-      )
-    ),
-    ADDR.guess(sender =>
-      ADDR.guess(fromAddr =>
-        ADDR.guess(toAddr =>
-          AMMOUNTS.guess(value =>
-            SubmitTransferFrom(sender, fromAddr, toAddr, value)
-          )
-        )
-      )
-    ),
-    ADDR.guess(sender =>
-      ADDR.guess(spender =>
-        AMMOUNTS.guess(value =>
-          SubmitApprove(sender, spender, value)
-        )
-      )
-    ),
-    pendingTransactions.guess(tx =>
+    {
+      nondet sender = oneOf(ADDR)
+      nondet toAddr = oneOf(ADDR)
+      nondet value = oneOf(AMMOUNTS)
+      SubmitTransfer(sender, toAddr, value)
+    },
+    {
+      nondet sender = oneOf(ADDR)
+      nondet fromAddr = oneOf(ADDR)
+      nondet toAddr = oneOf(ADDR)
+      nondet value = oneOf(AMMOUNTS)
+      SubmitTransferFrom(sender, fromAddr, toAddr, value)
+    },
+    {
+      nondet sender = oneOf(ADDR)
+      nondet spender = oneOf(ADDR)
+      nondet value = oneOf(AMMOUNTS)
+      SubmitApprove(sender, spender, value)
+    },
+    {
+      nondet tx = oneOf(pendingTransactions)
       any {
         CommitTransfer(tx),
         CommitTransferFrom(tx),
         CommitApprove(tx),
       }
-    )
+    },
   }
 
   /* False invariants to debug the spec */
@@ -236,15 +233,14 @@ module erc20 {
       lastTx.tag == "transferFrom",
       lastTx.value > 0,
       not(lastTx.fail),
-      pendingTransactions.guess(tx =>
-        all {
-          tx.tag == "approve",
-          tx.sender == lastTx.fromAddr,
-          tx.spender == lastTx.sender,
-          tx.value < lastTx.value,
-          tx.value > 0,
-        }
-      )
+      nondet tx = oneOf(pendingTransactions)
+      all {
+        tx.tag == "approve",
+        tx.sender == lastTx.fromAddr,
+        tx.spender == lastTx.sender,
+        tx.value < lastTx.value,
+        tx.value > 0,
+      }
     }
     not(badExample)
 

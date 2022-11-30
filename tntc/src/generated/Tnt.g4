@@ -22,6 +22,11 @@ unit :    'const' IDENTIFIER ':' type                     # const
         | 'type' IDENTIFIER                               # typedef
         | 'type' IDENTIFIER '=' type                      # typedef
         | 'import' path '.' identOrStar                   # importDef
+        // https://github.com/informalsystems/tnt/issues/378
+        //| 'nondet' IDENTIFIER (':' type)? '=' expr ';'? expr {
+        //  const m = "TNT007: 'nondet' is only allowed inside actions"
+        //  this.notifyErrorListeners(m)
+        //}                                                 # nondetError
         ;
 
 // an operator definition
@@ -117,12 +122,13 @@ expr:           // unary minus
         |       '[' (expr (',' expr)*)? ','? ']'                    # list
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
         |       operDef expr                                        # letIn
+        |       'nondet' IDENTIFIER (':' type)? '=' expr ';'? expr  # nondet
         |       '(' expr ')'                                        # paren
         |       '{' expr '}'                                        # braces
         ;
 
 // a probing rule for REPL
-unitOrExpr :    unit | expr ;
+unitOrExpr :    expr | unit;
 
 // This rule parses anonymous functions, e.g.:
 // 1. x => e

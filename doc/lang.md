@@ -206,7 +206,7 @@ We define the following modes:
 
  1. Stateless mode.
  1. State mode.
- 1. Oracle mode.
+ 1. Non-determinism mode.
  1. Action mode.
  1. Run mode.
  1. Temporal mode.
@@ -222,10 +222,10 @@ M`.
 | ----------------- | -------------------------- |
 | Stateless         | n/a                        |
 | State             | Stateless                  |
-| Oracle            | Stateless, State           |
+| Non-determinism   | Stateless, State                    |
 | Action            | Stateless, State           |
 | Run               | Stateless, State, Action   |
-| Action            | Oracle, Stateless, State   |
+| Action            | Non-determinism, Stateless, State   |
 | Temporal          | Stateless, State           |
 
 As can be seen from the table, action mode and temporal mode are incomparable.
@@ -1055,7 +1055,7 @@ choice, which is normally written with `\E x \in S: P` in TLA+ actions.
 The syntax form is as follows:
 
 ```scala
-oracle name = oneOf(expr1)
+nondet name = oneOf(expr1)
 expr2
 ```
 
@@ -1070,7 +1070,7 @@ the nested action `expr2`.
 val x: int
 
 action nextSquare = {
-  oracle i = oneOf(Int)
+  nondet i = oneOf(Int)
   all {
     Int.exists(j => i * i = j),
     i > x,
@@ -1080,16 +1080,16 @@ action nextSquare = {
 ```
 
 In the above example, `i` is a non-deterministically chosen integer.  The
-further action below `oracle i = ...` requires the value of `i` to be a square
+further action below `nondet i = ...` requires the value of `i` to be a square
 of an integer `j`. In addition to that, it requires `i` to increase in
 comparison to `x`. Finally, the picked value of `i` is assigned to `x`.
 
-*Mode:* The modes of `oneOf` and `oracle` are defined in the following table:
+*Mode:* The modes of `oneOf` and `nondet` are defined in the following table:
 
 | Operator          | Argument mode                          | Output mode |
 | ----------------- | -------------------------------------- | ----------- |
-| `oneOf`           | Stateless, State                       | Oracle      |
-| `oracle x = e1; e2` | e1: Oracle, e2: Action               | Action      |
+| `oneOf`           | Stateless, State                       | Non-determinism |
+| `nondet x = e1; e2` | e1: Nondet, e2: Action               | Action      |
 
 **Discussion.** Although according to the semantics of `oneOf`, a value is
 chosen *non-deterministically*, practical implementations may prefer to
@@ -1558,7 +1558,7 @@ to(m, n)
 They are almost identical to the top-level operators, except that they are
 visible only to the containing top-level operator. Nested operator definitions
 may contain nested operator definitions too. There is one important addition
-in nested definitions: oracle values.
+in nested definitions: non-deterministic values (`nondet` values).
 
 *Examples:*
 
@@ -1584,7 +1584,7 @@ var n: int
 
 action next = {
   // non-deterministically choose i from the set 0.to(10)
-  oracle i = oneOf(0.to(10))
+  nondet i = oneOf(0.to(10))
   all {
     i > n,
     n <- i
@@ -1603,7 +1603,7 @@ temporal my_prop =
 *Grammar:*
 
 ```
-("pure" "val" | "val" | "def" | "pure" "def" | "oracle" | "action" | "temporal")
+("pure" "val" | "val" | "def" | "pure" "def" | "nondet" | "action" | "temporal")
   <identifier>[ "(" <identifier> ("," ..."," <identifier>)* ")" ] [ ":" <type>]
     "=" <expr> [";"]
 <expr>

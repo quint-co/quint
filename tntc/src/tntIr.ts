@@ -47,17 +47,18 @@ interface WithTypeAnnotation {
 /**
  * Operator qualifier, which refines a mode:
  *
- *  - val: an expression over constants and state variables,
+ *  - val: an expression over constants and state variables (when impure),
  *
- *  - def: a parameterized expression over constants, state variables,
+ *  - def: a parameterized expression over constants, state variables
+ *    (when impure),
  *    and definition parameters. When the defined expression produces a Boolean
  *    value, you should use `pred` instead. However, this is only a convention,
  *    not a requirement.
  *
- *  - pred: a (possibly parameterized) expression over constants,
- *    state variables, and definition parameters. This expression must
- *    produce a Boolean value.
- *
+ *  - nondet: a non-parameterized binding,
+ *    state variables, and definition parameters. This expression must contain
+ *    at least one assignment or an action operator.
+*
  *  - action: a (possibly parameterized) expression over constants,
  *    state variables, and definition parameters. This expression must contain
  *    at least one assignment or an action operator.
@@ -73,7 +74,8 @@ interface WithTypeAnnotation {
  * by requiring an explicit qualifier.
  */
 export type OpQualifier =
-  'pureval' | 'puredef' | 'val' | 'def' | 'pred' | 'action' | 'run' | 'temporal'
+  'pureval' | 'puredef' | 'val' | 'def' |
+  'pred' | 'nondet' | 'action' | 'run' | 'temporal'
 
 export interface TntName extends WithId {
   /** Expressions kind ('name' -- name reference) */

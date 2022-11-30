@@ -141,7 +141,8 @@ class ModeFinderVisitor implements EffectVisitor {
   }
 }
 
-const modeOrder = ['pureval', 'puredef', 'val', 'def', 'action', 'temporal']
+const modeOrder =
+  ['pureval', 'puredef', 'val', 'def', 'nondet', 'action', 'temporal']
 
 function commonMode(m1: OpQualifier, m2: OpQualifier): OpQualifier {
   const p1 = modeOrder.findIndex(elem => elem === m1)

@@ -123,6 +123,31 @@ export class ToIrListener implements TntListener {
     }
   }
 
+  // special case for: nondet x = e1; e2
+  exitNondet(ctx: p.NondetContext) {
+    const [rhs, nested] = this.exprStack.splice(-2)
+    const name = ctx.IDENTIFIER().text
+    let typeTag: TntType | undefined
+    if (ctx.type()) {
+      // the operator is tagged with a type
+      typeTag = this.typeStack.pop()
+    }
+
+    const id1 = this.nextId()
+    const id2 = this.nextId()
+    this.sourceMap.set(id1, this.loc(ctx))
+    this.sourceMap.set(id2, this.loc(ctx))
+    if (rhs && nested) {
+      const def = {
+        id: id2, kind: 'def', name, qualifier: 'nondet', expr: rhs, typeTag,
+      }
+      const letExpr: TntEx = {
+        id: id1, kind: 'let', opdef: def as TntOpDef, expr: nested,
+      }
+      this.exprStack.push(letExpr)
+    }
+  }
+
   /** **************** translate operator definititons **********************/
 
   // translate a top-level or nested operator definition

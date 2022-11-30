@@ -1,0 +1,4 @@
+*.interp linguist-generated
+*.tokens linguist-generated
+*.ts linguist-generated
+*.jar linguist-generated

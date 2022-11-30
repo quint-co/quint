@@ -116,4 +116,11 @@ describe('parse errors', () => {
   it('error on conflicting names', () => {
     parseAndCompare('_1014conflictingNames')
   })
+
+  // The test below needs a fix, see:
+  //
+  // https://github.com/informalsystems/tnt/issues/378
+  //it('error on top-level nondet', () => {
+  //  parseAndCompare('_1015noToplevelNondet')
+  //})
 })

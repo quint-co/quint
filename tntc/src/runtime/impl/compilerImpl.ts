@@ -575,6 +575,7 @@ export class CompilerVisitor implements IRVisitor {
         break
 
       case 'guess':
+        // TODO: remove soon: https://github.com/informalsystems/tnt/issues/376
         this.applyGuess(app.id)
         break
 
@@ -654,6 +655,10 @@ export class CompilerVisitor implements IRVisitor {
         this.applyFun(app.id, 1, (map) => {
           return just(rv.mkSet(map.toMap().keys()))
         })
+        break
+
+      case 'oneOf':
+        this.applyOneOf(app.id)
         break
 
       case 'exists':
@@ -1121,7 +1126,24 @@ export class CompilerVisitor implements IRVisitor {
     this.compStack.push(mkFunComputable(lazyCompute))
   }
 
-  // apply the operator guess
+  // Apply the operator oneOf.
+  private applyOneOf(sourceId: bigint) {
+    this.applyFun(sourceId,
+      1,
+      set => {
+        const elem = set.pick(Math.random())
+        if (elem) {
+          return just(elem)
+        } else {
+          this.addRuntimeError(sourceId, `Applied oneOf to an empty set`)
+          return none()
+        }
+      }
+    )
+  }
+
+  // Apply the operator guess.
+  // TODO: to be removed: https://github.com/informalsystems/tnt/issues/376
   private applyGuess(sourceId: bigint): void {
     if (this.compStack.length < 2) {
       this.addCompileError(sourceId,

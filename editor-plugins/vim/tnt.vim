@@ -1,7 +1,7 @@
 " Vim syntax file
 " Language: TNT
-" Maintainer: Igor Konnov
-" Latest Revision: 29 October 2021
+" Maintainer: Igor Konnov, Informal Systems, igor at informal.systems
+" Latest Revision: 28 November 2022
 "
 " How to install:
 " 1. Copy this file to ~/.vim/syntax/
@@ -46,7 +46,7 @@ syn keyword tntBoolValue false true
 syn keyword tntCond if else match
 
 " declarations
-syn keyword tntDecl module import const var def val pure action temporal assume
+syn keyword tntDecl module import const var def val pure nondet action temporal assume
 
 " standard operators
 syn keyword tntStd Set List Map Rec Tup
