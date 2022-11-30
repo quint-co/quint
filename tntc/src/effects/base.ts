@@ -271,12 +271,12 @@ export function unifyVariables(va: Variables, vb: Variables): Either<ErrorTree, 
 }
 
 function applySubstitutionsAndUnify(subs: Substitutions, e1: Effect, e2: Effect): Either<Error, Substitutions> {
-  const effectsWithSubstitutions = mergeInMany([
+  return mergeInMany([
     applySubstitution(subs, e1),
     applySubstitution(subs, e2),
   ])
-  const newSubstitutions = effectsWithSubstitutions.chain(es => unify(...es))
-  return newSubstitutions.chain(newSubs => compose(newSubs, subs))
+    .chain(effectsWithSubstitutions => unify(...effectsWithSubstitutions))
+    .chain(newSubstitutions => compose(newSubstitutions, subs))
 }
 
 // Ensure the type system that an effect has the 'concrete' kind
