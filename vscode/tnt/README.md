@@ -10,14 +10,16 @@ We use `yalc` to manage unpublished packages. To install it, run
 npm i yalc -g
 ```
 
-1. In your `tntc` directory, run `npm run compile` to generate `dist/` and then `yalc publish` to make it available as a local package.
-1. In the `vscode/tnt/server`, run `yalc add tntc` and then, under `vscode/tnt`, run `npm install`
-1. Run `npm run compile`
-1. Whenever you make changes to `tntc`, run `npm run compile` and then `yalc push` to update the distributed contents
-1. To use it on your VSCode, copy or link this folder to your VSCode extensions folder:
+To build the vscode plugin, run the `vscode` make target from [the root of this repo](../../):
 
-``` sh
-ln -s <full_project_path>/vscode/tnt ~/.vscode/extensions/
+```sh
+make vscode
+```
+
+To install the plugin for use, link the combined pluging into your vscode extensions:
+
+```sh
+ln --symbolic --force vscode/tnt $(HOME)/.vscode/extensions/
 ```
 
 ## Features

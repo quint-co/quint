@@ -207,15 +207,6 @@ export class CompilerVisitor implements IRVisitor {
         break
       }
 
-      case 'shift':
-        this.compStack.push({
-          eval: () => {
-            this.shiftVars()
-            return just<any>(rv.mkBool(true))
-          },
-        })
-        break
-
       case 'eq':
         this.applyFun(app.id, 2, (x, y) => just(rv.mkBool(x.equals(y))))
         break
@@ -240,7 +231,7 @@ export class CompilerVisitor implements IRVisitor {
         break
 
       case 'actionAll':
-        this.translateAndAction(app)
+        this.translateAllOrThen(app)
         break
 
       case 'or':
@@ -734,6 +725,24 @@ export class CompilerVisitor implements IRVisitor {
         })
         break
 
+      case 'then':
+        this.translateAllOrThen(app)
+        break
+
+      case 'assert':
+        this.applyFun(app.id, 1, (cond) => {
+          if (!cond.toBool()) {
+            this.addRuntimeError(app.id, 'Assertion failed')
+            return none()
+          }
+          return just(cond)
+        })
+        break
+
+      case 'repeated':
+        this.translateRepeated(app)
+        break
+
       case '_test':
         // the special operator that runs random simulation
         this.test(app.id)
@@ -968,44 +977,74 @@ export class CompilerVisitor implements IRVisitor {
     this.compStack.push(mkFunComputable(lazyCompute))
   }
 
-  // translate all { A, ..., C }
-  private translateAndAction(app: ir.TntApp) {
+  // compute all { ... } or A.then(B)...then(E) for a chain of actions
+  private chainAllOrThen
+    (actions: Computable[], kind: 'all' | 'then'): Maybe<EvalResult> {
+    // save the values of the next variables, as actions may update them
+    const savedValues = this.snapshotNextVars()
+    let result: Maybe<EvalResult> = just(rv.mkBool(true))
+    // Evaluate arguments iteratively.
+    // Stop as soon as one of the arguments returns false.
+    // This is a form of Boolean short-circuiting.
+    let nactionsLeft = actions.length
+    for (const action of actions) {
+      nactionsLeft--
+      result = action.eval()
+      if (result.isNone() || !(result.value as RuntimeValue).toBool()) {
+        // As soon as one of the arguments does not evaluate to true,
+        // break out of the loop.
+        // Restore the values of the next variables,
+        // as evaluation was not successful.
+        this.recoverNextVars(savedValues)
+        break
+      }
+
+      // switch to the next frame, when implementing A.then(B)
+      if (kind === 'then' && nactionsLeft > 0) {
+        this.shiftVars()
+      }
+    }
+
+    return result
+  }
+
+  // translate all { A, ..., C } or A.then(B)
+  private translateAllOrThen (app: ir.TntApp): void {
     if (this.compStack.length < app.args.length) {
       this.addCompileError(app.id,
-        'Not enough arguments on stack for "all"')
+        `Not enough arguments on stack for "${app.opcode}"`)
       return
     }
     const args = this.compStack.splice(-app.args.length)
 
-    const lazyCompute = () => {
-      // save the values of the next variables, as actions may update them
-      const savedValues = this.snapshotNextVars()
-      let result: Maybe<EvalResult> = just(rv.mkBool(true))
-      // Evaluate arguments iteratively.
-      // Stop as soon as one of the arguments returns false.
-      // This is a form of Boolean short-circuiting.
-      for (const arg of args) {
-        // either the argument is evaluated to false, or fails
-        result = arg.eval().or(just(rv.mkBool(false)))
-        const boolResult = (result.unwrap() as RuntimeValue).toBool()
-        // as soon as one of the arguments evaluates to false,
-        // break out of the loop
-        if (boolResult === false) {
-          // restore the values of the next variables,
-          // as evaluation was not successful
-          this.recoverNextVars(savedValues)
-          break
-        }
-      }
+    const kind = app.opcode === 'then' ? 'then' : 'all'
+    const lazyCompute = () => this.chainAllOrThen(args, kind)
 
-      return result
+    this.compStack.push(mkFunComputable(lazyCompute))
+  }
+
+  // translate A.repeated(i)
+  private translateRepeated (app: ir.TntApp): void {
+    if (this.compStack.length < 2) {
+      this.addCompileError(app.id,
+        `Not enough arguments on stack for "${app.opcode}"`)
+      return
+    }
+    const [action, niterations] = this.compStack.splice(-2)
+
+    const lazyCompute = () => {
+      // compute the number of iterations and repeat 'action' that many times
+      return niterations.eval().map(num => {
+        const n = Number((num as RuntimeValue).toInt())
+        return this.chainAllOrThen(new Array(n).fill(action), 'then')
+      }).join()
     }
 
     this.compStack.push(mkFunComputable(lazyCompute))
   }
 
   // translate or { A, ..., C }
-  private translateOr(app: ir.TntApp) {
+  private translateOr(app: ir.TntApp): void {
     if (this.compStack.length < app.args.length) {
       this.addCompileError(app.id,
         'Not enough arguments on stack for "or"')
@@ -1036,7 +1075,7 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   // translate any { A, ..., C }
-  private translateOrAction(app: ir.TntApp) {
+  private translateOrAction(app: ir.TntApp): void {
     if (this.compStack.length < app.args.length) {
       this.addCompileError(app.id,
         'Not enough arguments on stack for "any"')
@@ -1083,7 +1122,7 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   // apply the operator guess
-  private applyGuess(sourceId: bigint) {
+  private applyGuess(sourceId: bigint): void {
     if (this.compStack.length < 2) {
       this.addCompileError(sourceId,
         'Not enough arguments on stack for "guess"')

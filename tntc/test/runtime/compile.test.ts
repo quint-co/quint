@@ -1,8 +1,11 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
+import { none, just } from '@sweet-monads/maybe'
+import { Either, left, right } from '@sweet-monads/either'
 import { expressionToString } from '../../src/IRprinting'
-import { ComputableKind, kindName } from '../../src/runtime/runtime'
-import { compile } from '../../src/runtime/compile'
+import { kindName, ComputableKind, fail } from '../../src/runtime/runtime'
+import { compile, CompilationContext } from '../../src/runtime/compile'
+import { rv, RuntimeValue } from '../../src/runtime/impl/runtimeValue'
 import { dedent } from '../textUtils'
 
 // Compile an expression, evaluate it, convert to TlaEx, then to a string,
@@ -25,12 +28,70 @@ function assertResultAsString(input: string, expected: string | undefined) {
   }
 }
 
-// Compile a definition and check that the compiled value is defined.
-function assertDef(kind: ComputableKind, name: string, input: string) {
+// Compile an input and evaluate a callback in the context
+function evalInContext<T>
+(input: string, callable: (ctx: CompilationContext) => Either<string, T>) {
   const moduleText = `module __runtime { ${input} }`
-  const context = compile(moduleText).values
-  assert(context.get(kindName(kind, name)),
-    `Expected a definition for ${name}, compiled from: ${input}`)
+  const context = compile(moduleText)
+  return callable(context)
+}
+
+// Compile a definition and check that the compiled value is defined.
+function assertDef (kind: ComputableKind, name: string, input: string) {
+  const callback = (ctx: CompilationContext) => {
+    const def = ctx.values.get(kindName(kind, name))
+    if (def) {
+      return right(true)
+    } else {
+      return left(`Expected a definition for ${name}, compiled from: ${input}`)
+    }
+  }
+  const res = evalInContext(input, callback)
+  res.mapLeft(m => assert.fail(m))
+}
+
+function evalVarAfterRun
+(runName: string, varName: string, input: string) {
+  const callback = (ctx: CompilationContext) => {
+    const run = ctx.values.get(kindName('callable', runName))
+    if (run === undefined) {
+      return right(`Run ${runName} not found`)
+    } else {
+      // evaluate the body of the run
+      const runRes = run.eval()
+      if (runRes.isNone()) {
+        return right(`Value of the run ${runName} is undefined`)
+      } else {
+        const rval = runRes.value as RuntimeValue
+        if (rval.toBool()) {
+          // extract the value of the state variable
+          const varValue =
+            (ctx.values.get(kindName('nextvar', varName)) ?? fail).eval()
+          if (varValue.isNone()) {
+            return left(`Value of the variable ${varName} is undefined`)
+          } else {
+            return right(expressionToString(varValue.value.toTntEx()))
+          }
+        } else {
+          const s = expressionToString(rval.toTntEx())
+          const m =
+            `Run ${runName} was expected to evaluate to true, found: ${s}`
+          return left(m)
+        }
+      }
+    }
+  }
+
+  return evalInContext(input, callback)
+}
+
+function assertVarAfterRun
+(runName: string, varName: string, expected: string, input: string) {
+  evalVarAfterRun(runName, varName, input)
+    .mapLeft(m => assert.fail(m))
+    .mapRight(output =>
+      assert(expected === output,
+        `Expected ${varName} == ${expected}, found ${output}`))
 }
 
 describe('compiling specs to runtime values', () => {
@@ -832,6 +893,36 @@ describe('compiling specs to runtime values', () => {
         '2.to(3).setOfMaps(5.to(6)) == 2.to(4 - 1).setOfMaps(5.to(7 - 1))',
         'true'
       )
+    })
+  })
+
+  describe('compile runs', () => {
+    it('then', () => {
+      const input = dedent(
+        `var n: int
+        |run run1 = (n <- 1).then(n <- n + 2).then(n <- n * 4)
+        `)
+
+      assertVarAfterRun('run1', 'n', '12', input)
+    })
+
+    it('repeated', () => {
+      const input = dedent(
+        `var n: int
+        |run run1 = (n <- 1).then((n <- n + 1).repeated(3))
+        `)
+
+      assertVarAfterRun('run1', 'n', '4', input)
+    })
+
+    it('assert', () => {
+      const input = dedent(
+        `var n: int
+        |run run1 = (n <- 1).then(assert(n < 3).repeated(3))
+        `)
+
+      evalVarAfterRun('run1', 'n', input)
+        .mapLeft(m => assert.fail(`Expected an error, found: ${m}`))
     })
   })
 })

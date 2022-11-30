@@ -33,6 +33,7 @@ qualifier : 'val'
           | 'pure' 'val'
           | 'pure' 'def'
           | 'action'
+          | 'run'
           | 'temporal'
           ;
 
