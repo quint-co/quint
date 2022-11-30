@@ -95,9 +95,11 @@ expr:           // unary minus
         |       expr op=(PLUS | MINUS) expr                         # plusMinus
                 // standard relations
         |       expr op=(GT | LT | GE | LE | NE
-                        | EQ | ASGN | IN | NOTIN ) expr             # relations
+                        | EQ | IN | NOTIN ) expr                    # relations
+        |       IDENTIFIER '\'' ASGN expr                           # asgn
         |       expr '=' expr {
-                  this.notifyErrorListeners("TNT006: unexpected '=', did you mean '=='?")
+                  const m = "TNT006: unexpected '=', did you mean '=='?"
+                  this.notifyErrorListeners(m)
                 }                                                   # errorEq
                 // Boolean operators. Note that not(e) is just a normal call
         |       expr AND expr                                       # and
@@ -167,7 +169,7 @@ nameAfterDot :  IDENTIFIER
 
 // special operators
 operator: (AND | OR | IFF | IMPLIES |
-           GT  | LT  | GE  | LE | NE | EQ | ASGN |
+           GT  | LT  | GE  | LE | NE | EQ |
            MUL | DIV | MOD | PLUS | MINUS | '^')
         ;
 
@@ -203,7 +205,7 @@ GE              :   '>=' ;
 LE              :   '<=' ;
 NE              :   '!=' ;
 EQ              :   '==' ;
-ASGN            :   '<-' ;
+ASGN            :   '=' ;
 LPAREN          :   '(' ;
 RPAREN          :   ')' ;
 

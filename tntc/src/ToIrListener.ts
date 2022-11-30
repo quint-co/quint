@@ -1,7 +1,9 @@
 import * as p from './generated/TntParser'
 import { ParserRuleContext } from 'antlr4ts/ParserRuleContext'
 import { TntListener } from './generated/TntListener'
-import { OpQualifier, TntDef, TntEx, TntModule, TntOpDef } from './tntIr'
+import {
+  OpQualifier, TntDef, TntName, TntEx, TntModule, TntOpDef
+} from './tntIr'
 import { Row, TntType } from './tntTypes'
 import { strict as assert } from 'assert'
 import { ErrorMessage, Loc } from './tntParserFrontend'
@@ -575,7 +577,18 @@ export class ToIrListener implements TntListener {
     }
   }
 
-  // GT | LT | GE | LE | NE | EQ | ASGN
+  // x' = e
+  exitAsgn(ctx: p.AsgnContext) {
+    const lhs: TntName = {
+      id: this.nextId(),
+      kind: 'name',
+      name: ctx.IDENTIFIER().text,
+    }
+    const [rhs] = this.popExprs(1)
+    this.pushApplication(ctx, 'assign', [lhs, rhs])
+  }
+
+  // GT | LT | GE | LE | NE | EQ
   exitRelations(ctx: p.RelationsContext) {
     const op = ctx._op
     if (op) {
@@ -586,7 +599,6 @@ export class ToIrListener implements TntListener {
         case p.TntParser.LT: opcode = 'ilt'; break
         case p.TntParser.LE: opcode = 'ilte'; break
         case p.TntParser.EQ: opcode = 'eq'; break
-        case p.TntParser.ASGN: opcode = 'assign'; break
         case p.TntParser.NE: opcode = 'neq'; break
       }
       const args = this.popExprs(2)

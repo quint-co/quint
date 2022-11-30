@@ -29,7 +29,7 @@ describe('inferEffects', () => {
 
   it('infers simple operator effect', () => {
     const tntModule = buildModuleWithDefs([
-      'def a(p) = x <- p',
+      `def a(p) = x' = p`,
     ])
 
     const [errors, effects] = inferEffects(definitionsTable, tntModule)
@@ -187,7 +187,7 @@ describe('inferEffects', () => {
 
   it('returns error when operator signature is not unifiable with args', () => {
     const tntModule = buildModuleWithDefs([
-      'def a = S.map(p => x <- p)',
+      `def a = S.map(p => x' = p)`,
     ])
 
     const [errors] = inferEffects(definitionsTable, tntModule)

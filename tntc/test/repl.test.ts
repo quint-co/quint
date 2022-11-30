@@ -207,8 +207,8 @@ describe('repl ok', () => {
   it('assignments', async() => {
     const input = dedent(
       `var x: int
-      |action Init = x <- 0
-      |action Next = x <- x + 1
+      |action Init = x' = 0
+      |action Next = x' = x + 1
       |Init
       |x
       |Next
@@ -236,15 +236,15 @@ describe('repl ok', () => {
     const input = dedent(
       `
       |var x: int
-      |action Init = x <- 0
+      |action Init = x' = 0
       |action Next = any {
       |  all {
       |    x == 0,
-      |    x <- 1,
+      |    x' = 1,
       |  },
       |  all {
       |    x == 1,
-      |    x <- 0,
+      |    x' = 0,
       |  },
       |}
       |
@@ -279,10 +279,10 @@ describe('repl ok', () => {
     const input = dedent(
       `
       |var x: int
-      |action Init = x <- 0
+      |action Init = x' = 0
       |action Next = any {
-      |  x <- x + 1,
-      |  x <- x - 1,
+      |  x' = x + 1,
+      |  x' = x - 1,
       |}
       |
       |Init
@@ -317,19 +317,19 @@ describe('repl ok', () => {
       `
       |var x: int
       |
-      |x <- 0
+      |x' = 0
       |x == 0
       |{ nondet y = oneOf(Set(1, 2, 3))
-      |  x <- y }
+      |  x' = y }
       |
       |1 <= x and x <= 3
-      |nondet y = oneOf(2.to(5)); x <- y
+      |nondet y = oneOf(2.to(5)); x' = y
       |2 <= x and x <= 5
-      |nondet t = oneOf(tuples(2.to(5), 3.to(4))); x <- t._1 + t._2
+      |nondet t = oneOf(tuples(2.to(5), 3.to(4))); x' = t._1 + t._2
       |5 <= x and x <= 9
-      |nondet i = oneOf(Nat); x <- i
+      |nondet i = oneOf(Nat); x' = i
       |x >= 0
-      |nondet i = oneOf(Int); x <- i
+      |nondet i = oneOf(Int); x' = i
       |Int.contains(x)
       |`
     )
@@ -356,8 +356,8 @@ describe('repl ok', () => {
     const input = dedent(
       `
       |var n: int
-      |action Init = n <- 0
-      |action Next = n <- n + 1
+      |action Init = n' = 0
+      |action Next = n' = n + 1
       |val Inv = n < 10
       |_testOnce(5, "Init", "Next", "Inv")
       |_testOnce(10, "Init", "Next", "Inv")

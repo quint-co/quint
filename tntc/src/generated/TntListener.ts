@@ -32,6 +32,7 @@ import { PowContext } from "./TntParser";
 import { MultDivContext } from "./TntParser";
 import { PlusMinusContext } from "./TntParser";
 import { RelationsContext } from "./TntParser";
+import { AsgnContext } from "./TntParser";
 import { ErrorEqContext } from "./TntParser";
 import { AndContext } from "./TntParser";
 import { OrContext } from "./TntParser";
@@ -455,6 +456,19 @@ export interface TntListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitRelations?: (ctx: RelationsContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `asgn`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	enterAsgn?: (ctx: AsgnContext) => void;
+	/**
+	 * Exit a parse tree produced by the `asgn`
+	 * labeled alternative in `TntParser.expr`.
+	 * @param ctx the parse tree
+	 */
+	exitAsgn?: (ctx: AsgnContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `errorEq`

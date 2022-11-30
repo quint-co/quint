@@ -900,7 +900,7 @@ describe('compiling specs to runtime values', () => {
     it('then', () => {
       const input = dedent(
         `var n: int
-        |run run1 = (n <- 1).then(n <- n + 2).then(n <- n * 4)
+        |run run1 = (n' = 1).then(n' = n + 2).then(n' = n * 4)
         `)
 
       assertVarAfterRun('run1', 'n', '12', input)
@@ -909,7 +909,7 @@ describe('compiling specs to runtime values', () => {
     it('repeated', () => {
       const input = dedent(
         `var n: int
-        |run run1 = (n <- 1).then((n <- n + 1).repeated(3))
+        |run run1 = (n' = 1).then((n' = n + 1).repeated(3))
         `)
 
       assertVarAfterRun('run1', 'n', '4', input)
@@ -918,7 +918,7 @@ describe('compiling specs to runtime values', () => {
     it('assert', () => {
       const input = dedent(
         `var n: int
-        |run run1 = (n <- 1).then(assert(n < 3).repeated(3))
+        |run run1 = (n' = 1).then(assert(n < 3).repeated(3))
         `)
 
       evalVarAfterRun('run1', 'n', input)

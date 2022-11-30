@@ -63,7 +63,7 @@ module withConsts {
   pure val magicNumber = 42
   pure def add(x, y) = x + y
   def ofN(factor) = factor * n
-  action A(x) = n <- x
+  action A(x) = n' = x
   temporal B(x) = not(x)
 
   // Typed operators
@@ -76,7 +76,7 @@ module withConsts {
   }
 
   var k: int
-  action asgn = k <- 3
+  action asgn = k' = 3
 
 
   // Logical operators
@@ -139,7 +139,7 @@ module withConsts {
     nondet x = oneOf(S)
     all {
       x > 10,
-      k <- x
+      k' = x
     }
   }
   // use holes

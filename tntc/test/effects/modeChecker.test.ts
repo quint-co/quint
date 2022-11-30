@@ -35,7 +35,7 @@ describe('checkModes', () => {
 
   it('finds mode errors between action and def', () => {
     const tntModule = buildModuleWithDefs([
-      'def a(p) = x <- p',
+      `def a(p) = x' = p`,
     ])
 
     const modeCheckingResult = checkModuleModes(tntModule)
@@ -53,7 +53,7 @@ describe('checkModes', () => {
 
   it('finds no errors for correct action', () => {
     const tntModule = buildModuleWithDefs([
-      'action a(p) = x <- p',
+      `action a(p) = x' = p`,
     ])
 
     const modeCheckingResult = checkModuleModes(tntModule)

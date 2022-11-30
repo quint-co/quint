@@ -376,12 +376,12 @@ def hasExpired(timestamp: int) =
 
 // an initialization action that assigns initial values to the state variables
 action init =
-  timer <- 0
+  timer' = 0
 
 // an action that updates the value of the state variable timer
 action advance(unit: int) =
     // a delayed assignment (see below in the manual)
-    timer <- timer + unit
+    timer' = timer + unit
 
 // a temporal formula that ensures that the timer variable never goes negative
 temporal neverNegative =
@@ -491,10 +491,10 @@ module Foo {
   var x: int
 
   action Init =
-    x <- 0
+    x' = 0
 
   action Next =
-    x <- x + N
+    x' = x + N
 }
 ```
 
@@ -700,11 +700,11 @@ module names {
   val distance = acceleration * sqr(clock)
 
   action init = {
-    clock <- 0
+    clock' = 0
   }
 
   action next = {
-    clock <- clock + 1
+    clock' = clock + 1
   }
 }
 ```
@@ -815,7 +815,7 @@ priority:
 | `i^j`                                                                                     | Integer power (right associative)                            |
 | `i * j`, `i / j`, `i % j`                                                                 | Integer multiplication, division, modulo                     |
 | `i + j`, `i - j`                                                                          | Integer addition and subtraction                             |
-| `i > j`, `i < j`, `i >= j`, `i <= j`, `i != j`, `i == j`, `i <- j`, `S in T`, `S notin T` | Integer comparisons, equality, assignment, and set relations |
+| `i > j`, `i < j`, `i >= j`, `i <= j`, `i != j`, `i == j`, `i' = j`, `S in T`, `S notin T` | Integer comparisons, equality, assignment, and set relations |
 | `p and q`                                                                                 | Boolean 'and' (conjunction)                                  |
 | `p or q`                                                                                  | Boolean 'or' (disjunction)                                   |
 | `p iff q`                                                                                 | Boolean equivalence (if and only if)                         |
@@ -1074,7 +1074,7 @@ action nextSquare = {
   all {
     Int.exists(j => i * i = j),
     i > x,
-    x <- i
+    x' = i,
   }
 }
 ```
@@ -1587,7 +1587,7 @@ action next = {
   nondet i = oneOf(0.to(10))
   all {
     i > n,
-    n <- i
+    n' = i,
   }
 }
 
@@ -1630,39 +1630,36 @@ This operator is carefully avoided in TLA+. TNT allows you to assign a value to
 the state variable `x` in a next state:
 
 ```scala
-x <- e
+x' = e
 assign(x, e)
 x.assign(e)
 ```
 
-The operator `x <- e` is equivalent to `x' = e` of TLA+ under specific
+The operator `x' = e` is equivalent to `x' = e` of TLA+ under specific
 conditions. In contrast to the assignments in programming languages, TNT
 assignment is delayed by one step. It only becomes effective in a successor
-state of the state that is being evaluated. The arrow notation `<-` is meant to
+state of the state that is being evaluated. The notation `x' = e` is meant to
 warn the user that the value `e` is "sent" to `x`, and it will only arrive at
 `x` in a next state. Hence, in the following expression, expression `x + 1` may
 evaluate to a value that is different from 5:
 
 ```
 all {
-  x <- 4,
+  x' = 4,
   x + 1 > 0
 }
 ```
 
 
-*Every state variable `x` must be assigned via `x <- e` at most once in every step.*
+*Every state variable `x` must be assigned via `x' = e` at most once in every
+step.*
 
 **Discussion.** TLA+ does not have a notion of assignment. Instead, one simply
 writes an equality `x' = e`. In general, one can write an arbitrary predicate
 over `x'`. We find it hard to reason about such pure equalities, which may
 occur in multiple places. Hence, we introduce assignments. However, our
 assignments are slightly different from assignments in imperative (stack-based)
-languages. For this reason, we avoid the standard tokens such as `=` and `:=`
-that usually denote an instantaneous update. (Though such updates are not
-always instantaneous in modern architectures). Otherwise, it is too tempting to
-use `x` in the hope of accessing `e`. Instead, we use notation `x <- e`,
-similar to sending over a channel in Golang.
+languages.
 
 *Mode.* Action. Other modes are not allowed.
 
@@ -1711,28 +1708,29 @@ module counters {
   var n: int
 
   action Init = {
-    n <- 1
+    n' = 1
   }
 
   action Even = all {
     n % 2 == 0,
-    n <- n / 2,
+    n' = n / 2,
   }
 
   action ByThree = all {
     n % 3 == 0,
-    n <- 2 * n
+    n' = 2 * n
   }
 
   action Positive = all {
-    n > 0, n <- n + 1
+    n > 0,
+    n' = n + 1,
   }
 
   action Next = any {
     Even, ByThree, Positive
   }
 
-  run run1 = (n <- 1).then(n <- 2).then(n <- 3).then(n <- 6).then(n <- 3)
+  run run1 = (n' = 1).then(n' = 2).then(n' = 3).then(n' = 6).then(n' = 3)
 
   run run2 = (Init).then(Positive).then(Positive).then(ByThree).then(Even)
 
@@ -1834,7 +1832,8 @@ e.next
 Expression `next(e)` is equivalent to `e'` of TLA+. More precisely, if `f` is
 the translation of a TNT expression `e` to TLA+, then `f'` is the translation
 of `e'` to TLA+. In contrast to TLA+, we restrict `next` to the Temporal mode.
-Hence, we cannot use `next` in actions. In actions, we should only use `<-`.
+Hence, we cannot use `next` in actions. In actions, we should only use `x' =
+e`.
 
 *Mode:* Temporal.
 
@@ -2032,13 +2031,13 @@ module root {
     var y: int
 
     action Init = all {
-      x <- 0,
-      y <- 0
+      x' = 0,
+      y' = 0
     }
 
     action Next = all {
-      x <- x + 1,
-      y <- y + 2
+      x' = x + 1,
+      y' = y + 2
     }
   }
 
@@ -2055,13 +2054,13 @@ the same variable. Hence, the module `AB` will look like follows:
 ```scala
   module AB = {
     action Init = all {
-      a <- 0,
-      b <- 0
+      a' = 0,
+      b' = 0
     }
 
     action Next = all {
-      a <- a + 1,
-      b <- b + 2
+      a' = a + 1,
+      b' = b + 2
     }
   }
 ```
@@ -2078,13 +2077,13 @@ module root {
     var y: int
 
     action Init = all {
-      x <- 1,
-      y <- 0
+      x' = 1,
+      y' = 0
     }
 
     action Next = all {
-      x <- x + 1,
-      y <- x
+      x' = x + 1,
+      y' = x
     }
   }
 
@@ -2111,9 +2110,9 @@ module C = {
 }
 ```
 
-The trick here is that since an expression like `x - 1 <- x` does not have
+The trick here is that since an expression like `x - 1 = x` does not have
 meaningful semantics, we upgrade all actions to temporal formulas and use
-`next(e1) = e2` instead of `e1 <- e2`. At this point, we are in the realm of
+`next(e1) = e2` instead of `e1 = e2`. At this point, we are in the realm of
 expressions that look very much like TLA+ formulas, just using a slightly
 different syntax. Most likely, we just want to get `C` transpiled into TLA+ and
 write some proofs in TLAPS.
@@ -2131,7 +2130,7 @@ A(y) == x + y
 
 ------- MODULE Foo ------
 VARIABLE z
-INSTANCE Bar WITH x <- z
+INSTANCE Bar WITH x = z
 =========================
 ```
 
