@@ -4,7 +4,7 @@
 
 | Revision | Date       | Author                                                  |
 |:---------|:-----------|:--------------------------------------------------------|
-| 26       | 08.11.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
+| 30       | 28.11.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -13,69 +13,74 @@ TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
 **Table of Contents**
 
 - [Summary of TNT](#summary-of-tnt)
-    - [Identifiers and strings](#identifiers-and-strings)
-    - [Comments](#comments)
-    - [Types](#types)
-        - [Type System 1.2](#type-system-12)
-    - [Modes](#modes)
-    - [Module-level constructs](#module-level-constructs)
-        - [Module definition](#module-definition)
-        - [Constant declarations](#constant-declarations)
-        - [Assumptions](#assumptions)
-        - [Variable definitions](#variable-definitions)
-        - [Operator definitions](#operator-definitions)
-        - [No recursive functions and operators](#no-recursive-functions-and-operators)
-        - [Module instances](#module-instances)
-        - [Type aliases](#type-aliases)
-        - [Theorems](#theorems)
-        - [Imports](#imports)
-    - [Namespaces and imports](#namespaces-and-imports)
-        - [Stateless and stateful modules](#stateless-and-stateful-modules)
-        - [Namespaces](#namespaces)
-        - [Imports](#imports-1)
-    - [TNT expression syntax](#tnt-expression-syntax)
-        - [Literals](#literals)
-        - [Braces and parentheses](#braces-and-parentheses)
-        - [Lambdas (aka Anonymous Operators)](#lambdas-aka-anonymous-operators)
-        - [Two forms of operator application](#two-forms-of-operator-application)
-        - [Boolean operators and equality](#boolean-operators-and-equality)
-        - [Multiline disjunctions](#block-disjunctions)
-        - [Multiline conjunctions](#block-conjunctions)
-        - [Flow operators](#flow-operators)
-            - [Condition](#condition)
-            - [Cases (removed)](#cases-removed)
-        - [Sets](#sets)
-            - [Set constructor](#set-constructor)
-            - [Existential quantifier and non-deterministic choice](#existential-quantifier-and-non-deterministic-choice)
-            - [Other set operators](#other-set-operators)
-        - [Maps (aka Functions)](#maps-aka-functions)
-        - [Records](#records)
-        - [Discriminated unions](#discriminated-unions)
-        - [Tuples](#tuples)
-        - [Lists (aka Sequences)](#lists-aka-sequences)
-        - [Integers](#integers)
-        - [Nested operator definitions](#nested-operator-definitions)
-        - [Operators on actions](#operators-on-actions)
-            - [Delayed assignment](#delayed-assignment)
-            - [Guess](#guess)
-            - [Other action operators of TLA+](#other-action-operators-of-tla)
-        - [Temporal operators](#temporal-operators)
-            - [Always](#always)
-            - [Eventually](#eventually)
-            - [Next](#next)
-            - [Unchanged (removed)](#unchanged-removed)
-            - [Stutter](#stutter)
-            - [Nostutter](#nostutter)
-            - [Enabled](#enabled)
-        - [Fairness](#fairness)
-            - [Other temporal operators](#other-temporal-operators)
-        - [Unbounded quantifiers](#unbounded-quantifiers)
-    - [Instances](#instances)
-        - [Common case 1](#common-case-1)
-        - [Common case 2](#common-case-2)
-        - [The general case](#the-general-case)
-        - [No anonymous instances](#no-anonymous-instances)
-        - [Discussion](#discussion)
+  * [Identifiers and strings](#identifiers-and-strings)
+  * [Comments](#comments)
+  * [Types](#types)
+    + [Type System 1.2](#type-system-12)
+  * [Modes](#modes)
+  * [Module-level constructs](#module-level-constructs)
+    + [Module definition](#module-definition)
+    + [Constant declarations](#constant-declarations)
+    + [Assumptions](#assumptions)
+    + [Variable definitions](#variable-definitions)
+    + [Operator definitions](#operator-definitions)
+    + [No recursive functions and operators](#no-recursive-functions-and-operators)
+    + [Module instances](#module-instances)
+    + [Type aliases](#type-aliases)
+    + [Theorems](#theorems)
+    + [Imports](#imports)
+  * [Namespaces and imports](#namespaces-and-imports)
+    + [Stateless and stateful modules](#stateless-and-stateful-modules)
+    + [Namespaces](#namespaces)
+    + [Imports](#imports-1)
+  * [TNT expression syntax](#tnt-expression-syntax)
+    + [Literals](#literals)
+    + [Names](#names)
+    + [Braces and parentheses](#braces-and-parentheses)
+    + [Lambdas (aka Anonymous Operators)](#lambdas-aka-anonymous-operators)
+    + [Two forms of operator application](#two-forms-of-operator-application)
+    + [Boolean operators and equality](#boolean-operators-and-equality)
+    + [Block disjunctions](#block-disjunctions)
+    + [Block conjunctions](#block-conjunctions)
+    + [Flow operators](#flow-operators)
+      - [Condition](#condition)
+      - [Cases (removed)](#cases-removed)
+    + [Sets](#sets)
+      - [Set constructor](#set-constructor)
+      - [Non-deterministic choice](#non-deterministic-choice)
+      - [Other set operators](#other-set-operators)
+    + [Maps (aka Functions)](#maps-aka-functions)
+    + [Records](#records)
+    + [Discriminated unions](#discriminated-unions)
+    + [Tuples](#tuples)
+    + [Lists (aka Sequences)](#lists-aka-sequences)
+    + [Integers](#integers)
+    + [Nested operator definitions](#nested-operator-definitions)
+    + [Operators on actions](#operators-on-actions)
+      - [Delayed assignment](#delayed-assignment)
+      - [Non-deterministic choice](#non-deterministic-choice-1)
+      - [Other action operators of TLA+](#other-action-operators-of-tla)
+    + [Runs](#runs)
+      - [Then](#then)
+      - [Times](#times)
+      - [Assert](#assert)
+    + [Temporal operators](#temporal-operators)
+      - [Always](#always)
+      - [Eventually](#eventually)
+      - [Next](#next)
+      - [Unchanged (removed)](#unchanged-removed)
+      - [OrKeep](#orkeep)
+      - [MustChange](#mustchange)
+      - [Enabled](#enabled)
+      - [Fairness](#fairness)
+      - [Other temporal operators](#other-temporal-operators)
+    + [Unbounded quantifiers](#unbounded-quantifiers)
+  * [Instances](#instances)
+    + [Common case 1](#common-case-1)
+    + [Common case 2](#common-case-2)
+    + [The general case](#the-general-case)
+    + [No anonymous instances](#no-anonymous-instances)
+    + [Discussion](#discussion)
 
 <!-- markdown-toc end -->
 
@@ -187,7 +192,6 @@ A type identifier can also introduce an uninterpreted type by defining a type wi
 type MY_TYPE
 ```
 
-
 ## Modes
 
 *TLA+ does not make a clear distinction between constant expressions, state
@@ -202,7 +206,9 @@ We define the following modes:
 
  1. Stateless mode.
  1. State mode.
+ 1. Oracle mode.
  1. Action mode.
+ 1. Run mode.
  1. Temporal mode.
 
 Every TNT expression and definition is assigned a mode. In the following, we
@@ -216,7 +222,10 @@ M`.
 | ----------------- | -------------------------- |
 | Stateless         | n/a                        |
 | State             | Stateless                  |
+| Oracle            | Stateless, State           |
 | Action            | Stateless, State           |
+| Run               | Stateless, State, Action   |
+| Action            | Oracle, Stateless, State   |
 | Temporal          | Stateless, State           |
 
 As can be seen from the table, action mode and temporal mode are incomparable.
@@ -674,6 +683,45 @@ Integers literals are written as follows:
 The set of all integers is written as `Int` and the set of all naturals is
 written as `Nat`.
 
+### Names
+
+Like in many programming languages, names are a basic building block of
+expressions. To see this, consider the following example:
+
+```scala
+module names {
+  const acceleration: int
+  var clock: int
+
+  pure def myMul(i, j) = i * j
+
+  pure def sqr(i) = myMul(i, i)
+
+  val distance = acceleration * sqr(clock)
+
+  action init = {
+    clock <- 0
+  }
+
+  action next = {
+    clock <- clock + 1
+  }
+}
+```
+
+
+Here is the list of names that are normally used in expressions:
+
+ - Names of the operators, for example `myMul` in the definition of `sqr`.
+
+ - Names of the operator arguments, e.g., `i` and `j` in the definition of
+   `myMul`, that also appear in anonymous operators (lambdas).
+
+ - Names of constants, e.g., `acceleration` in the definition of `distance`.
+
+ - Names of state variables, e.g., `clock` in the definitions of `distance`,
+   `init`, and `next`.
+
 <a name="braceAndParen"/>
 
 ### Braces and parentheses
@@ -997,39 +1045,69 @@ notation would not distract you too much.
 **Discussion.** The earlier versions contained an alternative syntax `'{ e_1,
 ..., e_n }`. After receiving the feedback, we have left just one constructor.
 
-<a name="existsAndGuess"/>
+<a name="nondeterministic"/>
 
-#### Existential quantifier and non-deterministic choice
+#### Non-deterministic choice
 
-We introduce two operators that are semantically equivalent to `\E x \in S: P`
-of TLA+:
+In contrast to TLA+, we introduce a special syntax form for non-deterministic
+choice, which is normally written with `\E x \in S: P` in TLA+ actions.
+
+The syntax form is as follows:
 
 ```scala
-S.exists( x => P )
-exists(S, { x => P } )
-S.guess( x => P )
-guess(S, { x => P })
+oracle name = oneOf(expr1)
+expr2
 ```
 
-*The intended difference between `exists` and `guess` is that evaluation of
-`exists` can be thought of as being deterministic, whereas `guess` can be
-thought of as being evaluated non-deterministically. TNT encourages the users
-to scope the side effects in `guess`, e.g., as `x <- e` and `next(x)`, whereas
-reasoning about the next state should not happen in `exists`. This is why
-we define the modes as below.*
+The semantics of the above form is as follows. The operator `oneOf(expr1)`
+non-deterministically picks one element of `expr1` (which should be a non-empty
+set). The picked element is bound to the name `name`. This name can be used in
+the nested action `expr2`.
 
-*Mode:* The modes of `exists` and `guess` are defined in the following table:
+**Example:**
 
-| Operator          | Mode of `P`                            | Output mode |
+```scala
+val x: int
+
+action nextSquare = {
+  oracle i = oneOf(Int)
+  all {
+    Int.exists(j => i * i = j),
+    i > x,
+    x <- i
+  }
+}
+```
+
+In the above example, `i` is a non-deterministically chosen integer.  The
+further action below `oracle i = ...` requires the value of `i` to be a square
+of an integer `j`. In addition to that, it requires `i` to increase in
+comparison to `x`. Finally, the picked value of `i` is assigned to `x`.
+
+*Mode:* The modes of `oneOf` and `oracle` are defined in the following table:
+
+| Operator          | Argument mode                          | Output mode |
 | ----------------- | -------------------------------------- | ----------- |
-| `exists`          | Stateless, State, Temporal             | Mode of `P` |
-| `guess`           | Action                                 | Action      |
+| `oneOf`           | Stateless, State                       | Oracle      |
+| `oracle x = e1; e2` | e1: Oracle, e2: Action               | Action      |
+
+**Discussion.** Although according to the semantics of `oneOf`, a value is
+chosen *non-deterministically*, practical implementations may prefer to
+choose an element in a way that is not entirely non-deterministic. For
+instance, a random simulator may implement the operator `oneOf(S)` as a random
+choice of an element from the set `S`. Further, an interactive simulator may
+ask the user to choose an element of `S`. Non-determinism is only important to
+us when reasoning exhaustively about all executions, e.g., in a model checker
+or a theorem prover.
 
 #### Other set operators
 
 The other operators are introduced and explained in code directly.
 
 ```scala
+// \E x \in S: P
+S.exists(x => P)
+exists(S, (x => P))
 // \A x \in S: P
 S.forall(x => P)
 forall(S, (x => P))
@@ -1477,10 +1555,10 @@ to(m, n)
 
 ### Nested operator definitions
 
-There is not much to say here. They are almost identical to the top-level
-operators, except that they are visible only to the containing top-level
-operator. Nested operator definitions may contain nested operator definitions
-too.
+They are almost identical to the top-level operators, except that they are
+visible only to the containing top-level operator. Nested operator definitions
+may contain nested operator definitions too. There is one important addition
+in nested definitions: oracle values.
 
 *Examples:*
 
@@ -1501,6 +1579,18 @@ def triple(x) =
   // if you want to write a definition and use it on the same line, use a semicolon
   def add(n) = n + x; add(x, add(x, x))
 
+// a state variable to define "next"
+var n: int  
+
+action next = {
+  // non-deterministically choose i from the set 0.to(10)
+  oracle i = oneOf(0.to(10))
+  all {
+    i > n,
+    n <- i
+  }
+}
+
 temporal my_prop =
   // a nested temporal formula
   temporal A = eventually(x > 3)
@@ -1513,7 +1603,7 @@ temporal my_prop =
 *Grammar:*
 
 ```
-("val" | "def" | "pure" "val" | "pure" "def" | "action" | "temporal")
+("pure" "val" | "val" | "def" | "pure" "def" | "oracle" | "action" | "temporal")
   <identifier>[ "(" <identifier> ("," ..."," <identifier>)* ")" ] [ ":" <type>]
     "=" <expr> [";"]
 <expr>
@@ -1524,7 +1614,7 @@ use a line break or two to do this. If you want to define an operator and use
 it on the same line, you can use a semicolon `;` as a separator. We do not
 recommend using both a semicolon and a line break at the same time.
 
-*Mode:* The modes are defined as in the case of the top-level operators.  As
+*Mode:* The modes are defined as in the case of the top-level operators. As
 expected, the mode of an inner operator should not be more general then the
 mode of the outer operator.
 
@@ -1576,18 +1666,138 @@ similar to sending over a channel in Golang.
 
 *Mode.* Action. Other modes are not allowed.
 
-#### Guess
+#### Non-deterministic choice
 
-See the discussion in: [Existential quantifier and non-deterministic
-choice](#existsAndGuess).
+See the discussion in: [Non-deterministic choice](#nondeterministic).
 
-#### Other action operators of TLA+
+### Runs
 
-There is no equivalent of the composition operators `A \cdot B`. It is no
-supported by TLC, so the chance that you will need it is very low. We can add
-it later, if you have a use-case for it.
+A run represents a finite execution. In the simplest case, it represents
+one _concrete_ execution that is allowed by the specification. In
+general, it is a sequence of actions, which prescribe how to produce one or
+more concrete executions, if such executions exist.
+
+**Discussion.** We have found that TLA+ lacks a programmatic way of
+describing examples of system executions. Indeed, TLA+ has the notion of a
+behaviour (simply put, a sequence of states starting with `Init` and connected
+via `Next`). However, it is relatively hard to present a sequence of steps in
+TLA+ itself. For instance, counterexamples produced by TLC and Apalache are not
+first-class TLA+ citizens. In theory, TLA+ has the operator `\cdot`, representing the sequential composition of two actions. However, we have never seen
+this operator being used in practice.
+
+#### Then
+
+The operator `then` has the following syntax:
+
+```scala
+A.then(B)
+then(A, B)
+```
+
+The semantics of this operator is as follows. When `A.then(B)` is applied to a
+state `s_1`, the operator computes a next state `s_2` of `s_1` by applying
+action `A`, if such a state exists. If `A` returns `true`, then the operator
+`A.then(B)` computes a next state `s_3` of `s_2` by applying action `B`, if
+such a state exists. If `B` returns true, then the operator `A.then(B)` returns
+`true`, the old state is equal to `s_1`, and the new state is equal to `s_3`.
+In all other cases, the operator returns `false`.
+
+This operator is equivalent to `A \cdot B` of TLA+.
+
+**Example.** Consider the specification `counters`:
+
+```scala
+module counters {
+  var n: int
+
+  action Init = {
+    n <- 1
+  }
+
+  action Even = all {
+    n % 2 == 0,
+    n <- n / 2,
+  }
+
+  action ByThree = all {
+    n % 3 == 0,
+    n <- 2 * n
+  }
+
+  action Positive = all {
+    n > 0, n <- n + 1
+  }
+
+  action Next = any {
+    Even, ByThree, Positive
+  }
+
+  run run1 = (n <- 1).then(n <- 2).then(n <- 3).then(n <- 6).then(n <- 3)
+
+  run run2 = (Init).then(Positive).then(Positive).then(ByThree).then(Even)
+
+  run run3 = (Init).then(Next).then(Next).then(Next).then(Next)
+}
+```
+
+The definition `run1` captures the execution that contains five states, in
+which the variable `n` receives the values `1`, `2`, `3`, `6`, and `3`,
+respectively. If we look carefully at the definition of `run2`, it produces
+exactly the same sequence of states as `run1`, but it does via evaluation of
+the actions `Init`, `Positive`, `Positive`, `ByThree`, and `Even`, in that
+order.
+
+Note that a run does not have to describe exactly one sequence of states: in general
+a run describes a sequence of constraints over a sequence of states. For
+example, `run3` captures all executions of the specification `counters`
+that start with `Init` and evaluate `Next` four times in a row.
+
+*Mode:* Run.
+
+#### Times
+
+The operator `times` has the following syntax:
+
+```scala
+n.times(A)
+times(n, A)
+```
+
+The semantics of this operator is as follows:
+
+ - When `n <= 0`, this operator does not change the state.
+ - When `n = 1`, `n.times(A)` is equivalent to `A`.
+ - When `n > 1`, `n.times(A)`, is equivalent to `A.then((n - 1).times(A))`.
+
+Note that the operator `n.times(A)` applies `A` exactly `n` times (when `n` is
+non-negative). If you want to repeat `A` from `i` to `j` times, you can combine
+it with `orKeep` as follows:
+
+```scala
+i.times(A).then((j - i).times(A.orKeep(vars)))
+```
+
+See the description of [orKeep](#OrKeep) below.
+
+*Mode:* Run.
+
+#### Assert
+
+The operator `assert` has the following syntax:
+
+```scala
+assert(condition)
+```
+
+This operator is always enabled and it does not change the state. If
+`condition` evaluates to `false` in a state, then the run should be marked as
+"failed". How exactly this is reported depends on the tool.
+
+*Mode:* Run.
 
 ### Temporal operators
+
+Temporal operators describe infinite executions.
 
 #### Always
 
@@ -1646,33 +1856,33 @@ keeping this operator.
 to identify assignments in actions. We introduced `Unchanged` only in the
 Temporal mode, which is needed for refinements.
 
-#### Stutter
+#### OrKeep
 
 The following operator is similar to `[A]_x` of TLA+:
 
 ```scala
-stutter(A, x)
-A.stutter(x)
+orKeep(A, x)
+A.orKeep(x)
 ```
 
-The arguments to `stutter` are as follows:
+The arguments to `orKeep` are as follows:
 
  - `A` is an expression in the Action mode,
  - `x` is a variable or a tuple of variables.
 
-*Mode:* Temporal. This operator converts an action (in the Action mode) to a
-temporal property.
+*Mode:* Temporal, Run. This operator converts an action (in the Action mode) to a
+temporal property or a run.
 
-#### Nostutter
+#### MustChange
 
 The following operator is similar to `<A>_x` of TLA+:
 
 ```scala
-nostutter(A, x)
-A.nostutter(x)
+mustChange(A, x)
+A.mustChange(x)
 ```
 
-The arguments to `nostutter` are as follows:
+The arguments to `mustChange` are as follows:
 
  - `A` is an expression in the Action mode,
  - `x` is a variable or a tuple of variables.
@@ -1699,7 +1909,7 @@ the translation of `enabled(A)` to TLA+.
 
 *Mode:* Temporal. The argument `A` must be in the Action mode.
 
-### Fairness
+#### Fairness
 
 This is equivalent to `WF_e(A)` of TLA+:
 

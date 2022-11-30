@@ -115,6 +115,11 @@ bash -
 <!-- !test check LamportMutex -->
     tntc parse ../examples/LamportMutex/LamportMutex.tnt
 
+### OK on parse counters
+
+<!-- !test check counters -->
+    tntc parse ../examples/counters.tnt
+
 ### OK on parse records
 
 <!-- !test check records -->
@@ -134,3 +139,4 @@ bash -
 
 <!-- !test check tuples - Types & Effects-->
     tntc typecheck ../examples/tuples.tnt
+
