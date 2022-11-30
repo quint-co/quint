@@ -208,15 +208,7 @@ function checkSameLength(
   location: string, types1: TntType[], types2: TntType[]
 ): Either<Error, [TntType[], TntType[]]> {
   if (types1.length !== types2.length) {
-    const expected = types1.length
-    const got = types2.length
-    return tryToUnpack(location, types1, types2).mapLeft(_ => {
-      return {
-        location: location,
-        message: `Expected ${expected} arguments, got ${got}`,
-        children: [],
-      }
-    })
+    return tryToUnpack(location, types1, types2)
   }
 
   return right([types1, types2])
@@ -246,7 +238,9 @@ function simplifyRow(r: Row): Row {
   }
 }
 
-function tryToUnpack(location: string, types1: TntType[], types2: TntType[]): Either<string, [TntType[], TntType[]]> {
+function tryToUnpack(
+  location: string, types1: TntType[], types2: TntType[]
+): Either<ErrorTree, [TntType[], TntType[]]> {
   // Ensure that types1 is always the smallest
   if (types2.length < types1.length) {
     return tryToUnpack(location, types2, types1)
@@ -260,5 +254,6 @@ function tryToUnpack(location: string, types1: TntType[], types2: TntType[]): Ei
     }
   }
 
-  return left('Could not unpack effects')
+
+  return left(buildErrorLeaf(location, `Expected ${types2.length} arguments, got ${types1.length}`))
 }

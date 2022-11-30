@@ -18,7 +18,6 @@ import { Substitutions, applySubstitution, compose } from './substitutions'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
 import { flattenUnions, simplify } from './simplification'
 import isEqual from 'lodash.isequal'
-import { assert } from 'console'
 
 /* Concrete atomic efects specifying variables that the expression reads and updates */
 export interface ConcreteEffect { kind: 'concrete', read: Variables, update: Variables, temporal: Variables }
@@ -151,33 +150,26 @@ function variablesNames(variables: Variables): Name[] {
 }
 
 function unifyArrows(location: string, e1: ArrowEffect, e2: ArrowEffect): Either<ErrorTree, Substitutions> {
-  let p1 = e1.params
-  let p2 = e2.params
-
-  if (p1.length !== p2.length) {
-    const unpackResult = tryToUnpack(location, p1, p2)
-      .map(r => [p1, p2] = r)
-      .mapLeft(_ => {
-        return buildErrorLeaf(location, `Expected ${p1.length} arguments, got ${p2.length}`)
-      })
-    if (unpackResult.isLeft()) {
-      return left(unpackResult.value)
-    }
-  }
-
-  assert(p1.length === p2.length)
-
-  const [arrow1, subs1] = simplifyArrowEffect(p1, e1.result)
-  const [arrow2, subs2] = simplifyArrowEffect(p2, e2.result)
-  const subs = compose(subs1, subs2)
-
-  const paramsUnification = arrow1.params.reduce((result: Either<Error, Substitutions>, e, i) => {
-    return result.chain(subs => applySubstitutionsAndUnify(subs, e, arrow2.params[i]))
-  }, subs)
-
-  return paramsUnification
-    .chain(subs => applySubstitutionsAndUnify(subs, arrow1.result, arrow2.result))
-    .mapLeft(err => buildErrorTree(location, err))
+  return right([e1.params, e2.params])
+    .chain(params => {
+      const [p1, p2] = params
+      if (p1.length === p2.length) {
+        return right(params)
+      } else {
+        return tryToUnpack(location, p1, p2)
+      }
+    })
+    .chain(params => {
+      const [p1, p2] = params
+      const [arrow1, subs1] = simplifyArrowEffect(p1, e1.result)
+      const [arrow2, subs2] = simplifyArrowEffect(p2, e2.result)
+      const subs = compose(subs1, subs2)
+      return arrow1.params.reduce((result: Either<Error, Substitutions>, e, i) => {
+        return result.chain(subs => applySubstitutionsAndUnify(subs, e, arrow2.params[i]))
+      }, subs)
+        .chain(subs => applySubstitutionsAndUnify(subs, arrow1.result, arrow2.result))
+        .mapLeft(err => buildErrorTree(location, err))
+    })
 }
 
 function unifyConcrete(location: string, e1: ConcreteEffect, e2: ConcreteEffect): Either<Error, Substitutions> {
@@ -296,45 +288,52 @@ function ensureConcreteEffect(e: Effect): ConcreteEffect {
   return e
 }
 
-function tryToUnpack(location: string, effects1: Effect[], effects2: Effect[]): Either<Error, [Effect[], Effect[]]> {
+function tryToUnpack(
+  location: string, effects1: Effect[], effects2: Effect[]
+): Either<ErrorTree, [Effect[], Effect[]]> {
   // Ensure that effects1 is always the smallest
   if (effects2.length < effects1.length) {
     return tryToUnpack(location, effects2, effects1)
   }
 
   // We only handle unpacking 1 tuple into N args
-  if (effects1.length === 1) {
-    const read: Variables[] = []
-    const update: Variables[] = []
-    const temporal: Variables[] = []
-
-    // Combine the other effects into a single effect, to be unified with the unpacked effect 
-    effects2.forEach(e => {
-      if (e.kind === 'concrete') {
-        read.push(e.read)
-        update.push(e.update)
-        temporal.push(e.temporal)
-      } else {
-        return left(`Found non concrete efffect while trying to unpack: ${effectToString(e)}`)
-      }
-    })
-
-    const unpacked: ConcreteEffect = {
-      kind: 'concrete',
-      read: { kind: 'union', variables: read },
-      update: { kind: 'union', variables: update },
-      temporal: { kind: 'union', variables: temporal },
-    }
-    return simplify(unpacked).map(e => [effects1, [e]])
+  if (effects1.length !== 1) {
+    return left(buildErrorLeaf(location, `Expected ${effects2.length} arguments, got ${effects1.length}`))
   }
 
-  return left('Could not unpack effects')
+  const read: Variables[] = []
+  const update: Variables[] = []
+  const temporal: Variables[] = []
+
+  // Combine the other effects into a single effect, to be unified with the unpacked effect 
+  effects2.forEach(e => {
+    if (e.kind === 'concrete') {
+      read.push(e.read)
+      update.push(e.update)
+      temporal.push(e.temporal)
+    } else {
+      return left(`Found non concrete efffect while trying to unpack: ${effectToString(e)}`)
+    }
+  })
+
+  const unpacked: ConcreteEffect = {
+    kind: 'concrete',
+    read: { kind: 'union', variables: read },
+    update: { kind: 'union', variables: update },
+    temporal: { kind: 'union', variables: temporal },
+  }
+
+  return simplify(unpacked).map(e => [effects1, [e]])
 }
 
 /**
  * Simplifies effects of the form (Read[v0, ..., vn]) => Read[v0, ..., vn] into
  * (Read[v0#...#vn]) => Read[v0#...#vn] so the variables can be unified with other
- * sets of variables. Each variable v0, ..., vn is binded to a single variable named v0#...#vn
+ * sets of variables. All of the variables v0, ..., vn are bound to the single variable 
+ * named v0#...#vn. E.g., for variables v0, v1, v2, we will produce the new unique variable 
+ * v0#v1#v2 and the bindings v1 |-> v0#v1#v2, v1 |-> v0#v1#v2, v2 |-> v0#v1#v2.
+ * This new name could be a fresh variable, but we use an unique name since there is no
+ * fresh variable generation in this pure unification environment.
  * 
  * @param params the arrow effect parameters 
  * @param result the arrow effect result 
