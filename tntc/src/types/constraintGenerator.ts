@@ -285,22 +285,27 @@ function toScheme(type: TntType): TypeScheme {
 function checkAnnotationGenerality(
   subs: Substitutions, typeAnnotation: TntType | undefined
 ): Either<ErrorTree, Substitutions> {
-  if (typeAnnotation) {
-    const names = typeNames(typeAnnotation)
-    const tooGeneralType = subs.filter(s => s.kind === 'type' && names.typeVariables.has(s.name))
-    const tooGeneralRow = subs.filter(s => s.kind === 'row' && names.rowVariables.has(s.name))
-    const errors = [...tooGeneralType, ...tooGeneralRow].map(s => {
-      const expected = s.kind === 'type' ? typeToString(s.value) : rowToString(s.value)
-      return buildErrorLeaf(
-        `Checking variable ${s.name}`,
-        `Type annotation is too general: ${s.name} should be ${expected}`
-      )
-    })
-    if (errors.length > 0) {
-      return left(buildErrorTree(`Checking type annotation ${typeToString(typeAnnotation)}`, errors))
-    }
+  if (!typeAnnotation) {
+    return right(subs)
   }
 
-  return right(subs)
+  // Look for type/row variables in the annotation that are bound by `subs`
+  const names = typeNames(typeAnnotation)
+  const tooGeneralTypes = subs.filter(s => s.kind === 'type' && names.typeVariables.has(s.name))
+  const tooGeneralRows = subs.filter(s => s.kind === 'row' && names.rowVariables.has(s.name))
+
+  const errors = [...tooGeneralTypes, ...tooGeneralRows].map(s => {
+    const expected = s.kind === 'type' ? typeToString(s.value) : rowToString(s.value)
+    return buildErrorLeaf(
+      `Checking variable ${s.name}`,
+      `Type annotation is too general: ${s.name} should be ${expected}`
+    )
+  })
+
+  if (errors.length > 0) {
+    return left(buildErrorTree(`Checking type annotation ${typeToString(typeAnnotation)}`, errors))
+  } else {
+    return right(subs)
+  }
 }
 
