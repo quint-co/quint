@@ -99,12 +99,12 @@ describe('parseType', () => {
           tagValue: 'b',
           fields: {
             kind: 'row',
-            fields: [{ fieldName: 'b', fieldType: { kind: 'bool', id: 3n } }],
+            fields: [{ fieldName: 'b', fieldType: { kind: 'bool', id: 2n } }],
             other: { kind: 'empty' },
           },
         },
       ],
-      id: 5n,
+      id: 3n,
     }))
   })
 

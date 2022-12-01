@@ -36,67 +36,72 @@ describe('treeFromModule', () => {
 
   it('builds a scope tree', () => {
     assert.deepEqual(treeFromModule(tntModule), {
-      value: 30n,
+      value: 31n,
       children: [
-        { value: 2n, children: [] },
-        { value: 4n, children: [] },
-        { value: 6n, children: [] },
         {
-          value: 10n,
+          value: 30n,
           children: [
+            { value: 2n, children: [] },
+            { value: 4n, children: [] },
+            { value: 6n, children: [] },
             {
-              value: 9n,
+              value: 10n,
               children: [
-                { value: 7n, children: [] },
-                { value: 8n, children: [] },
+                {
+                  value: 9n,
+                  children: [
+                    { value: 7n, children: [] },
+                    { value: 8n, children: [] },
+                  ],
+                },
               ],
             },
-          ],
-        },
-        { value: 11n, children: [] },
-        {
-          value: 15n,
-          children: [
-            { value: 14n, children: [{ value: 13n, children: [] }] },
-          ],
-        },
-        { value: 17n, children: [{ value: 16n, children: [] }] },
-        {
-          value: 24n,
-          children: [
+            { value: 11n, children: [] },
             {
-              value: 23n,
+              value: 15n,
               children: [
-                { value: 18n, children: [] },
+                { value: 14n, children: [{ value: 13n, children: [] }] },
+              ],
+            },
+            { value: 17n, children: [{ value: 16n, children: [] }] },
+            {
+              value: 24n,
+              children: [
                 {
-                  value: 22n,
+                  value: 23n,
                   children: [
+                    { value: 18n, children: [] },
                     {
-                      value: 21n,
+                      value: 22n,
                       children: [
-                        { value: 19n, children: [] },
-                        { value: 20n, children: [] },
+                        {
+                          value: 21n,
+                          children: [
+                            { value: 19n, children: [] },
+                            { value: 20n, children: [] },
+                          ],
+                        },
                       ],
                     },
                   ],
                 },
               ],
             },
-          ],
-        },
-        {
-          value: 29n,
-          children: [
             {
-              value: 28n,
+              value: 29n,
               children: [
                 {
-                  value: 26n,
+                  value: 28n,
                   children: [
-                    { value: 25n, children: [] },
+                    {
+                      value: 26n,
+                      children: [
+                        { value: 25n, children: [] },
+                      ],
+                    },
+                    { value: 27n, children: [] },
                   ],
                 },
-                { value: 27n, children: [] },
               ],
             },
           ],

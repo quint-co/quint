@@ -14,7 +14,7 @@ import { resolve } from 'path'
 import { cwd } from 'process'
 
 import { formatError } from './errorReporter'
-import { compactSourceMap, ErrorMessage, Loc, parsePhase1, parsePhase2 } from './tntParserFrontend'
+import { ErrorMessage, Loc, compactSourceMap, parsePhase1, parsePhase2 } from './tntParserFrontend'
 
 import { inferEffects } from './effects/inferrer'
 import { checkModes } from './effects/modeChecker'

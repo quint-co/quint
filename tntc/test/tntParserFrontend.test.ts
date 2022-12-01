@@ -6,6 +6,8 @@ import JSONbig from 'json-bigint'
 import { compactSourceMap, parsePhase1, parsePhase2 } from '../src/tntParserFrontend'
 import { lf } from 'eol'
 import { right } from '@sweet-monads/either'
+import { TntDef, TntEx, TntModule, TntModuleDef, TntType, TntTypeDef } from '../src'
+import { IRVisitor, walkModule } from '../src/IRVisitor'
 
 // read a TNT file from the test data directory
 function readTnt(name: string): string {
@@ -32,8 +34,10 @@ function parseAndCompare(artifact: string): void {
     // An error occurred at phase 1, check if it is the expected result
     outputToCompare = phase1Result
   } else if (phase1Result.isRight()) {
-    const {module, sourceMap} = phase1Result.value
+    const { module, sourceMap } = phase1Result.value
     // Phase 1 succeded, check that the source map is correct
+    assert.sameDeepMembers(collectIds(module).sort(), [...sourceMap.keys()].sort(), 'expected source map to contain all ids')
+
     const expectedSourceMap = readJson(`${artifact}.map`)
     const sourceMapResult = JSONbig.parse(JSONbig.stringify(compactSourceMap(sourceMap)))
     assert.deepEqual(sourceMapResult, expectedSourceMap, 'expected source maps to be equal')
@@ -124,3 +128,29 @@ describe('parse errors', () => {
   //  parseAndCompare('_1015noToplevelNondet')
   //})
 })
+
+function collectIds(module: TntModule): bigint[] {
+  const ids = new Set<bigint>()
+  const visitor: IRVisitor = {
+    exitDef: (def: TntDef) => {
+      ids.add(def.id)
+    },
+    exitExpr(e: TntEx) {
+      ids.add(e.id)
+    },
+    exitTypeDef(t: TntTypeDef) {
+      ids.add(t.id)
+    },
+    exitType(t: TntType) {
+      if (t.id) {
+        ids.add(t.id)
+      }
+    },
+    exitModuleDef(m: TntModuleDef) {
+      ids.add(m.module.id)
+    },
+  }
+
+  walkModule(visitor, module)
+  return [...ids]
+}

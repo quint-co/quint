@@ -86,6 +86,19 @@ describe('walkModule', () => {
     }
 
     const enteredDefinitions = [
+      `module wrapper {
+  var a: int
+  const B: int
+  type MY_TYPE = int
+  assume _ = igt(N, 1)
+  import M.*
+  module A {
+  var x: int
+}
+  module A1 = A(x = "rainbow")
+  val f = filter(S, (x => iadd(x, 1)))
+  def l = val x = false { x }
+}`,
       'var a: int',
       'const B: int',
       'type MY_TYPE = int',
@@ -111,6 +124,19 @@ describe('walkModule', () => {
       'val f = filter(S, (x => iadd(x, 1)))',
       'val x = false', // From the let definition
       'def l = val x = false { x }',
+      `module wrapper {
+  var a: int
+  const B: int
+  type MY_TYPE = int
+  assume _ = igt(N, 1)
+  import M.*
+  module A {
+  var x: int
+}
+  module A1 = A(x = "rainbow")
+  val f = filter(S, (x => iadd(x, 1)))
+  def l = val x = false { x }
+}`,
     ]
 
     const visitor = new TestVisitor()

@@ -103,15 +103,9 @@ export interface IRVisitor {
  */
 export function walkModule(visitor: IRVisitor, tntModule: ir.TntModule): void {
   const moduleDef: ir.TntModuleDef = {
-    kind: 'module', id: 0n, module: tntModule,
+    kind: 'module', id: tntModule.id + 1n, module: tntModule,
   }
-  if (visitor.enterModuleDef) {
-    visitor.enterModuleDef(moduleDef)
-  }
-  tntModule.defs.forEach(def => walkDefinition(visitor, def))
-  if (visitor.exitModuleDef) {
-    visitor.exitModuleDef(moduleDef)
-  }
+  walkDefinition(visitor, moduleDef)
 }
 
 /**

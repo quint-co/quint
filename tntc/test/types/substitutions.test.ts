@@ -115,7 +115,7 @@ describe('applySubstitution', () => {
   it('substitutes variables in union type', () => {
     const s: Substitutions = [
       { kind: 'type', name: 'a', value: { kind: 'int', id: 1n } },
-      { kind: 'type', name: 'b', value: { kind: 'bool', id: 3n } },
+      { kind: 'type', name: 'b', value: { kind: 'bool', id: 2n } },
     ]
 
     const t = parseTypeOrThrow('| { tag: "a", a: a }\n| { tag: "b", b: b }')
