@@ -983,8 +983,7 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   // compute all { ... } or A.then(B)...then(E) for a chain of actions
-  private chainAllOrThen
-    (actions: Computable[], kind: 'all' | 'then'): Maybe<EvalResult> {
+  private chainAllOrThen(actions: Computable[], kind: 'all' | 'then'): Maybe<EvalResult> {
     // save the values of the next variables, as actions may update them
     const savedValues = this.snapshotNextVars()
     let result: Maybe<EvalResult> = just(rv.mkBool(true))
@@ -1014,7 +1013,7 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   // translate all { A, ..., C } or A.then(B)
-  private translateAllOrThen (app: ir.TntApp): void {
+  private translateAllOrThen(app: ir.TntApp): void {
     if (this.compStack.length < app.args.length) {
       this.addCompileError(app.id,
         `Not enough arguments on stack for "${app.opcode}"`)
@@ -1029,7 +1028,7 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   // translate A.repeated(i)
-  private translateRepeated (app: ir.TntApp): void {
+  private translateRepeated(app: ir.TntApp): void {
     if (this.compStack.length < 2) {
       this.addCompileError(app.id,
         `Not enough arguments on stack for "${app.opcode}"`)

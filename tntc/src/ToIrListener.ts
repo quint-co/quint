@@ -2,7 +2,7 @@ import * as p from './generated/TntParser'
 import { ParserRuleContext } from 'antlr4ts/ParserRuleContext'
 import { TntListener } from './generated/TntListener'
 import {
-  OpQualifier, TntDef, TntName, TntEx, TntModule, TntOpDef
+  OpQualifier, TntDef, TntEx, TntModule, TntName, TntOpDef
 } from './tntIr'
 import { Row, TntType } from './tntTypes'
 import { strict as assert } from 'assert'
@@ -64,8 +64,11 @@ export class ToIrListener implements TntListener {
     assert(this.typeStack.length === 0, 'type stack must be empty')
     assert(this.exprStack.length === 0, 'expression stack must be empty')
     assert(this.paramStack.length === 0, 'parameter stack must be empty')
+
+    const moduleId = this.nextId()
+    this.sourceMap.set(moduleId, this.loc(ctx))
     const module: TntModule = {
-      id: this.nextId(),
+      id: moduleId,
       name: ctx.IDENTIFIER().text,
       defs: this.definitionStack,
     }
@@ -579,8 +582,11 @@ export class ToIrListener implements TntListener {
 
   // x' = e
   exitAsgn(ctx: p.AsgnContext) {
+    const id = this.nextId()
+    this.sourceMap.set(id, this.loc(ctx))
+
     const lhs: TntName = {
-      id: this.nextId(),
+      id,
       kind: 'name',
       name: ctx.IDENTIFIER().text,
     }
@@ -863,11 +869,9 @@ export class ToIrListener implements TntListener {
       const row = this.popRow()
       records = [{ tagValue: tagVal, fields: row }]
     }
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
     // construct a singleton disjoint union, which should be assembled above
     const singleton: TntType = {
-      id,
+      id: 0n, // This ID will be discarded in assembly.
       kind: 'union',
       tag: tagName,
       records,

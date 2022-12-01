@@ -1,11 +1,10 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { none, just } from '@sweet-monads/maybe'
 import { Either, left, right } from '@sweet-monads/either'
 import { expressionToString } from '../../src/IRprinting'
-import { kindName, ComputableKind, fail } from '../../src/runtime/runtime'
-import { compile, CompilationContext } from '../../src/runtime/compile'
-import { rv, RuntimeValue } from '../../src/runtime/impl/runtimeValue'
+import { ComputableKind, fail, kindName } from '../../src/runtime/runtime'
+import { CompilationContext, compile } from '../../src/runtime/compile'
+import { RuntimeValue } from '../../src/runtime/impl/runtimeValue'
 import { dedent } from '../textUtils'
 
 // Compile an expression, evaluate it, convert to TlaEx, then to a string,
@@ -29,15 +28,14 @@ function assertResultAsString(input: string, expected: string | undefined) {
 }
 
 // Compile an input and evaluate a callback in the context
-function evalInContext<T>
-(input: string, callable: (ctx: CompilationContext) => Either<string, T>) {
+function evalInContext<T>(input: string, callable: (ctx: CompilationContext) => Either<string, T>) {
   const moduleText = `module __runtime { ${input} }`
   const context = compile(moduleText)
   return callable(context)
 }
 
 // Compile a definition and check that the compiled value is defined.
-function assertDef (kind: ComputableKind, name: string, input: string) {
+function assertDef(kind: ComputableKind, name: string, input: string) {
   const callback = (ctx: CompilationContext) => {
     const def = ctx.values.get(kindName(kind, name))
     if (def) {
@@ -50,8 +48,7 @@ function assertDef (kind: ComputableKind, name: string, input: string) {
   res.mapLeft(m => assert.fail(m))
 }
 
-function evalVarAfterRun
-(runName: string, varName: string, input: string) {
+function evalVarAfterRun(runName: string, varName: string, input: string) {
   const callback = (ctx: CompilationContext) => {
     const run = ctx.values.get(kindName('callable', runName))
     if (run === undefined) {
@@ -85,8 +82,7 @@ function evalVarAfterRun
   return evalInContext(input, callback)
 }
 
-function assertVarAfterRun
-(runName: string, varName: string, expected: string, input: string) {
+function assertVarAfterRun(runName: string, varName: string, expected: string, input: string) {
   evalVarAfterRun(runName, varName, input)
     .mapLeft(m => assert.fail(m))
     .mapRight(output =>

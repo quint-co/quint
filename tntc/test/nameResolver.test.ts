@@ -248,7 +248,7 @@ describe('nameResolver', () => {
         kind: 'error',
         errors: [
           { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 1n },
-          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 3n },
+          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 2n },
         ],
       }
       assert.deepEqual(result, expectedResult)
