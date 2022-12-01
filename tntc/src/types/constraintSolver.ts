@@ -15,24 +15,28 @@
 import { Either, left, right } from '@sweet-monads/either'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
 import { rowToString, typeToString } from '../IRprinting'
-import { Row, TntType, rowNames, typeNames } from '../tntTypes'
+import { Row, TntConstType, TntType, rowNames, typeNames } from '../tntTypes'
 import { Constraint } from './base'
 import { Substitutions, applySubstitution, applySubstitutionToConstraint, compose } from './substitutions'
 import { unzip } from 'lodash'
+import { LookupTable, lookupType } from '../lookupTable'
 
 /*
  * Try to solve a constraint by unifying all pairs of types in equality
  * constraints inside it.
  *
+ * @param table the lookup table for the module
  * @param constraint the constraint to be solved
  *
  * @returns the substitutions from the unifications, if successful. Otherwise, a
  *          map from source ids to errors.
  */
-export function solveConstraint(constraint: Constraint): Either<Map<bigint, ErrorTree>, Substitutions> {
+export function solveConstraint(
+  table: LookupTable, constraint: Constraint
+): Either<Map<bigint, ErrorTree>, Substitutions> {
   const errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
   switch (constraint.kind) {
-    case 'eq': return unify(constraint.types[0], constraint.types[1]).mapLeft(e => {
+    case 'eq': return unify(table, constraint.types[0], constraint.types[1]).mapLeft(e => {
       errors.set(constraint.sourceId, e)
       return errors
     })
@@ -43,14 +47,14 @@ export function solveConstraint(constraint: Constraint): Either<Map<bigint, Erro
         // to gather all errors instead of just propagating the first one
         let newCons = con
         result.map(s => {
-          newCons = applySubstitutionToConstraint(s, con)
+          newCons = applySubstitutionToConstraint(table, s, con)
         })
-        return solveConstraint(newCons)
+        return solveConstraint(table, newCons)
           .mapLeft(e => {
             e.forEach((error, id) => errors.set(id, error))
             return errors
           })
-          .chain(newSubs => result.map(s => compose(newSubs, s)))
+          .chain(newSubs => result.map(s => compose(table, newSubs, s)))
       }, right([]))
     }
     case 'empty': return right([])
@@ -66,7 +70,7 @@ export function solveConstraint(constraint: Constraint): Either<Map<bigint, Erro
  * @returns an array of substitutions that unifies both types, when possible.
  *          Otherwise, an error tree with an error message and its trace.
  */
-export function unify(t1: TntType, t2: TntType): Either<ErrorTree, Substitutions> {
+export function unify(table: LookupTable, t1: TntType, t2: TntType): Either<ErrorTree, Substitutions> {
   // TODO: resolve type aliases
   const location = `Trying to unify ${typeToString(t1)} and ${typeToString(t2)}`
 
@@ -78,26 +82,27 @@ export function unify(t1: TntType, t2: TntType): Either<ErrorTree, Substitutions
     return bindType(t2.name, t1).mapLeft(msg => buildErrorLeaf(location, msg))
   } else if (t1.kind === 'oper' && t2.kind === 'oper') {
     return checkSameLength(location, t1.args, t2.args)
-      .chain(([args1, args2]) => chainUnifications([...args1, t1.res], [...args2, t2.res]))
+      .chain(([args1, args2]) => chainUnifications(table, [...args1, t1.res], [...args2, t2.res]))
       .mapLeft(error => buildErrorTree(location, error))
   } else if (t1.kind === 'set' && t2.kind === 'set') {
-    return unify(t1.elem, t2.elem)
+    return unify(table, t1.elem, t2.elem)
   } else if (t1.kind === 'list' && t2.kind === 'list') {
-    return unify(t1.elem, t2.elem)
+    return unify(table, t1.elem, t2.elem)
   } else if (t1.kind === 'fun' && t2.kind === 'fun') {
-    const result = unify(t1.arg, t2.arg)
+    const result = unify(table, t1.arg, t2.arg)
     return result.chain(subs => {
-      const subs2 = unify(applySubstitution(subs, t1.res), applySubstitution(subs, t2.res))
-      return subs2.map(s => compose(subs, s))
+      const subs2 = unify(table, applySubstitution(table, subs, t1.res), applySubstitution(table, subs, t2.res))
+      return subs2.map(s => compose(table, subs, s))
     })
   } else if (t1.kind === 'tup' && t2.kind === 'tup') {
-    return unifyRows(t1.fields, t2.fields)
+    return unifyRows(table, t1.fields, t2.fields)
       .mapLeft(error => buildErrorTree(location, error))
-  } else if (t1.kind === 'const' || t2.kind === 'const') {
-    // FIXME: Type aliases unify with anything for now
-    return right([])
+  } else if (t1.kind === 'const') {
+    return unifyWithAlias(table, t1, t2)
+  } else if (t2.kind === 'const') {
+    return unifyWithAlias(table, t2, t1)
   } else if (t1.kind === 'rec' && t2.kind === 'rec') {
-    return unifyRows(t1.fields, t2.fields)
+    return unifyRows(table, t1.fields, t2.fields)
       .mapLeft(error => buildErrorTree(location, error))
   } else {
     return left(buildErrorLeaf(
@@ -116,7 +121,7 @@ export function unify(t1: TntType, t2: TntType): Either<ErrorTree, Substitutions
  * @returns an array of substitutions that unifies both rows, when possible.
  *          Otherwise, an error tree with an error message and its trace.
  */
-export function unifyRows(r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
+export function unifyRows(table: LookupTable, r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
   // The unification algorithm assumes that rows are simplified to a normal form.
   // That means that the `other` field is either a row variable or an empty row
   // and `fields` is never an empty list
@@ -144,7 +149,7 @@ export function unifyRows(r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
         const s1 = bindRow(ra.other.name, { ...rb, other: tailVar })
         const s2 = bindRow(rb.other.name, { ...ra, other: tailVar })
         // These bindings + composition should always succeed. I couldn't find a scenario where they don't.
-        return s1.chain(sa => s2.map(sb => compose(sa, sb)))
+        return s1.chain(sa => s2.map(sb => compose(table, sa, sb)))
           .mapLeft(msg => buildErrorLeaf(location, msg))
       } else {
         return left(buildErrorLeaf(
@@ -159,7 +164,7 @@ export function unifyRows(r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
 
       // Unify the disjoint fields with tail variables
       // This call will fit in the above case of row unification
-      const tailSubs = unifyRows({ ...ra, fields: uniqueFields1 }, { ...rb, fields: uniqueFields2 })
+      const tailSubs = unifyRows(table, { ...ra, fields: uniqueFields1 }, { ...rb, fields: uniqueFields2 })
 
       // Sort shared fields by field name, and get the their types
       const fieldTypes: [TntType, TntType][] = sharedFieldNames.map(n => {
@@ -169,15 +174,34 @@ export function unifyRows(r1: Row, r2: Row): Either<ErrorTree, Substitutions> {
       })
 
       // Now, for each shared field, we need to unify the types
-      const fieldSubs = chainUnifications(...unzip(fieldTypes) as [TntType[], TntType[]])
+      const fieldSubs = chainUnifications(table, ...unzip(fieldTypes) as [TntType[], TntType[]])
 
       // Return the composition of the two substitutions
-      return tailSubs.chain(subs => fieldSubs.map(s => compose(subs, s)))
+      return tailSubs.chain(subs => fieldSubs.map(s => compose(table, subs, s)))
         .mapLeft(error => buildErrorTree(location, error))
     }
   } else {
     return left(buildErrorLeaf(location, `Couldn't unify ${ra.kind} and ${rb.kind}`))
   }
+}
+
+function unifyWithAlias(table: LookupTable, t1: TntConstType, t2: TntType) {
+  const aliasValue = lookupType(table, t1.name)
+  if (!aliasValue) {
+    return left(buildErrorLeaf(
+      `Trying to unify ${t1.name} and ${typeToString(t2)}`,
+      `Couldn't find type alias ${t1.name}`
+    ))
+  }
+
+  if(!aliasValue.type) {
+    return left(buildErrorLeaf(
+      `Trying to unify ${t1.name} and ${typeToString(t2)}`,
+      `Couldn't unify uninterpreted type ${t1.name} with different type`
+    ))
+  }
+
+  return unify(table, aliasValue.type, t2)
 }
 
 function bindType(name: string, type: TntType): Either<string, Substitutions> {
@@ -196,12 +220,14 @@ function bindRow(name: string, row: Row): Either<string, Substitutions> {
   }
 }
 
-function applySubstitutionsAndUnify(subs: Substitutions, t1: TntType, t2: TntType): Either<Error, Substitutions> {
-  const newSubstitutions = unify(
-    applySubstitution(subs, t1),
-    applySubstitution(subs, t2)
+function applySubstitutionsAndunify(
+  table: LookupTable, subs: Substitutions, t1: TntType, t2: TntType
+): Either<Error, Substitutions> {
+  const newSubstitutions = unify(table, 
+    applySubstitution(table, subs, t1),
+    applySubstitution(table, subs, t2)
   )
-  return newSubstitutions.map(newSubs => compose(newSubs, subs))
+  return newSubstitutions.map(newSubs => compose(table, newSubs, subs))
 }
 
 function checkSameLength(
@@ -214,9 +240,9 @@ function checkSameLength(
   return right([types1, types2])
 }
 
-function chainUnifications(types1: TntType[], types2: TntType[]): Either<Error, Substitutions> {
+function chainUnifications(table: LookupTable, types1: TntType[], types2: TntType[]): Either<Error, Substitutions> {
   return types1.reduce((result: Either<Error, Substitutions>, t, i) => {
-    return result.chain(subs => applySubstitutionsAndUnify(subs, t, types2[i]))
+    return result.chain(subs => applySubstitutionsAndunify(table, subs, t, types2[i]))
   }, right([]))
 }
 

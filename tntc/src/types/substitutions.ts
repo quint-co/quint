@@ -14,6 +14,7 @@
 
 import { Either } from '@sweet-monads/either'
 import { ErrorTree, errorTreeToString } from '../errorTree'
+import { LookupTable } from '../lookupTable'
 import { Row, TntType } from '../tntTypes'
 import { Constraint } from './base'
 import { unify, unifyRows } from './constraintSolver'
@@ -36,8 +37,8 @@ type Substitution =
  *
  * @returns a new substitutions list containing the composition of given substitutions
  */
-export function compose(s1: Substitutions, s2: Substitutions): Substitutions {
-  const newS2 = applySubstitutionsToSubstitutions(s1, s2)
+export function compose(table: LookupTable, s1: Substitutions, s2: Substitutions): Substitutions {
+  const newS2 = applySubstitutionsToSubstitutions(table, s1, s2)
   return newS2.concat(s1)
 }
 
@@ -51,7 +52,7 @@ export function compose(s1: Substitutions, s2: Substitutions): Substitutions {
  * @returns the type resulting from the substitutions' application on the
  *          given type
  */
-export function applySubstitution(subs: Substitutions, t: TntType): TntType {
+export function applySubstitution(table: LookupTable, subs: Substitutions, t: TntType): TntType {
   let result = t
   switch (t.kind) {
     case 'var': {
@@ -62,28 +63,30 @@ export function applySubstitution(subs: Substitutions, t: TntType): TntType {
       break
     }
     case 'oper': {
-      const arrowParams = t.args.map(ef => applySubstitution(subs, ef))
-      const arrowResult = applySubstitution(subs, t.res)
+      const arrowParams = t.args.map(ef => applySubstitution(table, subs, ef))
+      const arrowResult = applySubstitution(table, subs, t.res)
       result = { kind: t.kind, args: arrowParams, res: arrowResult, id: t.id }
       break
     }
     case 'list':
     case 'set': {
-      result = { kind: t.kind, elem: applySubstitution(subs, t.elem), id: t.id }
+      result = { kind: t.kind, elem: applySubstitution(table, subs, t.elem), id: t.id }
       break
     }
     case 'fun': {
-      result = { kind: t.kind, arg: applySubstitution(subs, t.arg), res: applySubstitution(subs, t.res), id: t.id }
+      result = {
+        kind: t.kind, arg: applySubstitution(table, subs, t.arg), res: applySubstitution(table, subs, t.res), id: t.id,
+      }
       break
     }
     case 'tup': {
-      result = { kind: t.kind, fields: applySubstitutionToRow(subs, t.fields), id: t.id }
+      result = { kind: t.kind, fields: applySubstitutionToRow(table, subs, t.fields), id: t.id }
       break
     }
     case 'rec': {
       result = {
         kind: t.kind,
-        fields: applySubstitutionToRow(subs, t.fields),
+        fields: applySubstitutionToRow(table, subs, t.fields),
         id: t.id,
       }
       break
@@ -95,7 +98,7 @@ export function applySubstitution(subs: Substitutions, t: TntType): TntType {
         records: t.records.map(r => {
           return {
             tagValue: r.tagValue,
-            fields: applySubstitutionToRow(subs, r.fields),
+            fields: applySubstitutionToRow(table, subs, r.fields),
           }
         }),
         id: t.id,
@@ -117,29 +120,32 @@ export function applySubstitution(subs: Substitutions, t: TntType): TntType {
  * @returns the constraint resulting from the substitutions' application on the
  *          given constraint
  */
-export function applySubstitutionToConstraint(subs: Substitutions, c: Constraint): Constraint {
+export function applySubstitutionToConstraint(table: LookupTable, subs: Substitutions, c: Constraint): Constraint {
   switch (c.kind) {
     case 'eq': {
-      const ts: [TntType, TntType] = [applySubstitution(subs, c.types[0]), applySubstitution(subs, c.types[1])]
+      const ts: [TntType, TntType] = [
+        applySubstitution(table, subs, c.types[0]),
+        applySubstitution(table, subs, c.types[1]),
+      ]
       return { kind: c.kind, types: ts, sourceId: c.sourceId }
     }
     case 'empty': return c
     case 'conjunction': {
-      const cs = c.constraints.map(con => applySubstitutionToConstraint(subs, con))
+      const cs = c.constraints.map(con => applySubstitutionToConstraint(table, subs, con))
       return { kind: 'conjunction', constraints: cs, sourceId: c.sourceId }
     }
   }
 }
 
-function applySubstitutionsToSubstitutions(s1: Substitutions, s2: Substitutions): Substitutions {
+function applySubstitutionsToSubstitutions(table: LookupTable, s1: Substitutions, s2: Substitutions): Substitutions {
   return s2.flatMap(s => {
     const sub = s1.find(sub => s.name === sub.name)
     if (sub) {
       let result: Either<ErrorTree, Substitutions>
       if (sub.kind === 'type' && s.kind === 'type') {
-        result = unify(s.value, sub.value)
+        result = unify(table, s.value, sub.value)
       } else if (sub.kind === 'row' && s.kind === 'row') {
-        result = unifyRows(s.value, sub.value)
+        result = unifyRows(table, s.value, sub.value)
       } else {
         throw new Error(`Substitutions with same name (${s.name}) but incompatible kinds: ${substitutionsToString([sub, s])}`)
       }
@@ -152,19 +158,19 @@ function applySubstitutionsToSubstitutions(s1: Substitutions, s2: Substitutions)
     }
 
     switch (s.kind) {
-      case 'type': return [{ kind: s.kind, name: s.name, value: applySubstitution(s1, s.value) }]
-      case 'row': return [{ kind: s.kind, name: s.name, value: applySubstitutionToRow(s1, s.value) }]
+      case 'type': return [{ kind: s.kind, name: s.name, value: applySubstitution(table, s1, s.value) }]
+      case 'row': return [{ kind: s.kind, name: s.name, value: applySubstitutionToRow(table, s1, s.value) }]
     }
   })
 }
 
-function applySubstitutionToRow(s: Substitutions, r: Row): Row {
+function applySubstitutionToRow(table: LookupTable, s: Substitutions, r: Row): Row {
   switch (r.kind) {
     case 'row':
       return {
         kind: 'row',
-        fields: r.fields.map(f => ({ fieldName: f.fieldName, fieldType: applySubstitution(s, f.fieldType) })),
-        other: applySubstitutionToRow(s, r.other),
+        fields: r.fields.map(f => ({ fieldName: f.fieldName, fieldType: applySubstitution(table, s, f.fieldType) })),
+        other: applySubstitutionToRow(table, s, r.other),
       }
     case 'var': {
       const sub = s.find(s => s.name === r.name)
