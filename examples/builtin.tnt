@@ -1,0 +1,392 @@
+module builtin {
+  // The infinite set of all natural numbers
+  pure val Nat: Set[int]
+
+  // The infinite set of all integers
+  pure val Int: Set[int]
+
+  // The set of all booleans
+  // That is, Set(false, true)
+  pure val Bool: Set[bool]
+
+  /// Tests for equality between two values of the same type.
+  /// It can be used in the infix form as `==` or as a named operator `eq`.
+  pure def eq(a, b): (t, t) => bool
+  
+  /// Tests for inequality between two values of the same type.
+  /// It can be used in the infix form as `!=` or as a named operator `neq`.
+  pure def neq(a, b): (t, t) => bool
+
+  /// Tests for equivalence between two boolean values.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  ///   assert(iff(true, true))
+  ///   assert(iff(false, false))
+  ///   assert(!iff(true, false))
+  ///   assert(!iff(false, true))
+  /// ```
+  pure def iff(p, q): (bool, bool) => bool
+
+  /// Tests for implication between two boolean values.
+  /// That is, `p implies q` iff `not(p) or q`.
+  /// 
+  /// # Examples
+  ///
+  /// ```
+  ///   assert(implies(true, true))
+  ///   assert(!implies(true, false))
+  ///   assert(implies(false, true))
+  ///   assert(implies(false, false))
+  /// ```
+  pure def implies(p, q): (bool, bool) => bool
+
+  /// Negates a boolean value.
+  pure def not(a): (bool) => bool
+
+  /// Guess a value from the given set that satisfies the given predicate.
+  /// This operator is non-deterministic.
+  /// If the set is empty, then the result is `false`.
+  ///
+  /// # Examples
+  /// ```
+  ///   var x: int
+  ///   run a = Set(1, 2, 3).guess(n => x' = n).then(assert(x.in(Set(1, 2, 3))))
+  /// ```
+  pure def guess(a, p): (Set[a], (a) => bool) => bool
+
+  /// Tests if there exists an element in the given set that satisfies the given predicate.
+  /// Similar to `guess` but pure and deterministic
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(Set(1, 2, 3).exists(n => n == 2))
+  ///   assert(!Set(1, 2, 3).exists(n => n == 4))
+  /// ```
+  pure def exists(a, p): (Set[a], (a) => bool) => bool
+  
+  /// Tests if all elements in the given set satisfy the given predicate.
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(Set(1, 2, 3).forall(n => n > 0))
+  ///   assert(!Set(1, 2, 3).forall(n => n > 1))
+  /// ```
+  pure def forall(a, p): (Set[a], (a) => bool) => bool
+
+  /// Tests if the given element is in the given set.
+  /// See also: `contains` 
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(1.in(Set(1, 2, 3)))
+  ///   assert(!4.in(Set(1, 2, 3)))
+  /// ```
+  pure def in(a, s): (a, Set[a]) => bool
+
+  /// Tests if the given element is in the given set.
+  /// See also: `in` 
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(Set(1, 2, 3).contains(1))
+  ///   assert(!Set(1, 2, 3).contains(4))
+  /// ```
+  pure def contains(a, s): (Set[a], a) => bool
+
+  /// Tests if the given element is not in the given set.
+  /// See also: `in`
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(4.notin(Set(1, 2, 3)))
+  ///   assert(!1.notin(Set(1, 2, 3)))
+  /// ```
+  pure def notin(a, s): (a, Set[a]) => bool
+
+  /// Returns the union of the two given sets.
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(Set(1, 2, 3).union(Set(2, 3, 4)) == Set(1, 2, 3, 4))
+  /// ```
+  pure def union(s1, s2): (Set[a], Set[a]) => Set[a]
+
+  /// Returns the intersection of the two given sets.
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(Set(1, 2, 3).intersect(Set(2, 3, 4)) == Set(2, 3))
+  /// ```
+  pure def intersect(s1, s2): (Set[a], Set[a]) => Set[a]
+
+  /// Returns the set of elements in the first set that are not in the second set.
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(Set(1, 2, 3).exclude(Set(2, 3, 4)) == Set(1))
+  /// ```
+  pure def exclude(s1, s2): (Set[a], Set[a]) => Set[a]
+
+  /// Tests if the first set is a subset of the second set,
+  /// or if the first set is equal to the second set.
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(Set(1, 2, 3).subseteq(Set(1, 2, 3, 4)))
+  ///   assert(!Set(1, 2, 3).subseteq(Set(1, 2)))
+  /// ```
+  pure def subseteq(s1, s2): (Set[a], Set[a]) => bool
+
+  /// Returns the set of elements in the given set that satisfy the given predicate.
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(Set(1, 2, 3).filter(n => n > 1) == Set(2, 3))
+  /// ```
+  pure def filter(s, p): (Set[a], (a) => bool) => Set[a]
+
+  /// Returns a set of elements obtained by applying the given operator 
+  /// to each element in the given set.
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(Set(1, 2, 3).map(n => n > 1) == Set(false, true, true))
+  /// ```
+  pure def map(s, f): (Set[a], (a) => b) => Set[b]
+
+  /// Combines the elements of the given set using the given operator.
+  /// The operator is applied to all elements of the set combined to an accumulator. 
+  /// The initial value of the accumulator is the given initial value.
+  /// The order in which the elements are combined is unspecified.
+  /// The operator must be associative and commutative.
+  ///
+  /// # Examples
+  /// ```
+  ///   val sum = Set(1, 2, 3, 4).fold(0, (x, y) => x + y)
+  ///   assert(sum == 10)
+  ///   val mul = Set(1, 2, 3, 4).fold(1, (x, y) => x * y)
+  ///   assert(mul == 24)
+  /// ```
+  pure def fold(s, v, f): (Set[a], b, (b, a) => b) => b
+
+  /// Returns the set of all subsets of the given set.
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(Set(1, 2).powerset() == Set(
+  ///     Set(),
+  ///     Set(1),
+  ///     Set(2),
+  ///     Set(1, 2)
+  ///   ))
+  /// ```
+  pure def poweset(s): Set[Set[a]] => Set[Set[a]]
+
+  /// Flattens the given set of sets into a set.
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(Set(Set(1, 2), Set(3, 4)).flatten() == Set(1, 2, 3, 4))
+  /// ```
+  pure def flatten(s): Set[Set[a]] => Set[a]
+
+  /// Returns a set containing all possible lists of all elements from the given set. 
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(Set(1, 2).allLists() == Set(
+  ///     List(1, 2),
+  ///     List(2, 1),
+  ///   )) 
+  /// ```
+  pure def allLists(s): Set[a] => Set[List[a]]
+
+  /// Deterministically chooses an element from the given set.
+  /// 
+  /// # Examples
+  /// ```
+  ///   assert(Set(1, 2, 3).chooseSome() == 1)
+  ///   assert(Set(1, 2, 3).filter(x => x > 2).chooseSome() == 3)
+  /// ```
+  pure def chooseSome(s): Set[a] => a
+
+  /// Non-deterministically returns an element from the given set.
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(Set(1, 2, 3).oneOf().in(Set(1, 2, 3)))
+  /// ```
+  pure def oneOf(s): Set[a] => a
+
+  /// Tests if the given set is finite.
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(Set(1, 2, 3).isFinite())
+  ///   assert(!Nat.isFinite())
+  /// ```
+  pure def isFinite(s): Set[a] => bool
+
+
+  /// Returns the size of the given set.
+  ///
+  /// # Examples
+  /// ```
+  ///   assert(Set(1, 2, 3).size() == 3)
+  /// ```
+  pure def size(s): Set[a] => int
+
+  /// Returns the value of the given key in the given map.
+  /// If the key is not present in the map, this operator has undefined behavior.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  ///  pure val m = Map(1 -> true, 2 -> false)
+  ///  assert(m.get(1) == true)
+  /// ```
+  pure def get(a, b): (a -> b, a) => b
+
+  /// Returns the set of keys in the given map.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  ///  pure val m = Map(1 -> true, 2 -> false)
+  ///  assert(m.keys() == Set(1, 2))
+  /// ```
+  pure def keys(a): (a -> b) => Set[a]
+
+  /// Creates a map from a set of keys and an operator that computes the value for each key.
+  ///
+  /// # Examples
+  /// 
+  /// ```
+  ///   pure val m = Set(1, 2, 3).mapBy(x => x * x)
+  ///   assert(m == Map(1 -> 1, 2 -> 4, 3 -> 9))
+  /// ```
+  pure def mapBy(s, f): (Set[a], (a) => b) => a -> b
+
+  /// Creates a map from a set of key-value pairs.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  ///   pure val m = Set((1, true), (2, false)).setToMap()
+  ///   assert(m == Map(1 -> true, 2 -> false))
+  /// ```
+  pure def setToMap(s): (Set[(a, b)]) => (a -> b)
+  
+  /// Creates a set of all possible maps from a set of keys to a set of values.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  ///   pure val s = Set(1, 2).setOfMaps(set(true, false))
+  ///   assert(s == Set(
+  ///     Map(1 -> true, 2 -> true),
+  ///     Map(1 -> true, 2 -> false),
+  ///     Map(1 -> false, 2 -> true),
+  ///     Map(1 -> false, 2 -> false),
+  ///   ))
+  /// ```
+  pure def setOfMaps(s1, s2): (Set[a], Set[b]) => Set[a -> b]
+
+  /// Creates a new map with an existing key set to a given value.
+  /// Does not modify the original map.
+  /// If the key is not present in the map, this operator has undefined behavior.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  ///   pure val m = Map(1 -> true, 2 -> false)
+  ///   pure val m2 = m.set(2, true)
+  ///   assert(m == Map(1 -> true, 2 -> false))
+  ///   assert(m2 == Map(1 -> true, 2 -> true))
+  /// ```
+  pure def set(a, b): (a -> b, a, b) => a -> b
+
+
+  /// Creates a new map with a key set to the application of a given operator
+  /// on its value.
+  /// Does not modify the original map.
+  /// If the key is not present in the map, this operator has undefined behavior.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  ///   pure val m = Map(1 -> true, 2 -> false)
+  ///   pure val m2 = m.setBy(2, x => !x)
+  ///   assert(m == Map(1 -> true, 2 -> false))
+  ///   assert(m2 == Map(1 -> true, 2 -> true))
+  /// ```
+  pure def setBy(a, b, c): (a -> b, a, (b) => b) => a -> b
+
+  /// Creates a new map with a new key set to a given value.
+  /// Does not modify the original map.
+  /// If the key is already present in the map, this operator has undefined behavior. 
+  ///
+  /// # Examples
+  ///
+  /// ```
+  ///   pure val m = Map(1 -> true, 2 -> false)
+  ///   pure val m2 = m.put(3, true)
+  ///   assert(m == Map(1 -> true, 2 -> false))
+  ///   assert(m2 == Map(1 -> true, 2 -> false, 3 -> true))
+  /// ```
+  pure def put(a, b): (a -> b, a, b) => a -> b
+
+  pure def append(a, b): (List[a], a) => List[a]
+  pure def concat(a, b): (List[a], List[a]) => List[a]
+  pure def head(a): (List[a]) => a
+  pure def tail(a): (List[a]) => List[a]
+  pure def length(a): (List[a]) => int
+  pure def nth(a, b): (List[a], int) => a
+  pure def indices(a): (List[a]) => Set[int]
+  pure def replaceAt(a, b, c): (List[a], int, a) => List[a]
+  pure def slice(a, b, c): (List[a], int, int) => List[a]
+  pure def range(a, b): (int, int) => List[int]
+  pure def select(a, b): (List[a], (a) => bool) => List[a]
+  pure def foldl(a, b, c): (List[a], b, (b, a) => b) => b
+  pure def foldr(a, b, c): (List[a], b, (a, b) => b) => b
+
+  pure def iadd(a, b): (int, int) => int
+  pure def isub(a, b): (int, int) => int
+  pure def imul(a, b): (int, int) => int
+  pure def idiv(a, b): (int, int) => int
+  pure def imod(a, b): (int, int) => int
+  pure def ipow(a, b): (int, int) => int
+  pure def ilt(a, b): (int, int) => bool
+  pure def igt(a, b): (int, int) => bool
+  pure def ilte(a, b): (int, int) => bool
+  pure def igte(a, b): (int, int) => bool
+  pure def to(a, b): (int, int) => Set[int]
+  pure def iuminus(a): (int) => int
+
+  temporal always(a): (bool) => bool
+  temporal eventually(a): (bool) => bool
+  temporal next(a): (a) => a
+  temporal stutter(a, b): (bool, a) => bool
+  temporal nostutter(a, b): (bool, a) => bool
+  temporal enabled(a): (bool) => bool
+  temporal weakFair(a, b): (bool, a) => bool
+  temporal strongFair(a, b): (bool, a) => bool
+
+  action assign(n, v): (a, a) => bool
+  action ite(c, t, e): (bool, a, a) => a
+  action then(a, t): (bool, bool) => bool
+  action repeated(a, n): (bool, int) => bool
+  pure assert(a): (bool) => bool
+
+  pure def List(a*): (a*) => List[a]
+  pure def Set(a*): (a*) => Set[a]
+  pure def Map((a -> b)*): ((a, b)* => a -> b
+  pure def and(a*): (bool*) => bool
+  pure def actionAll(a*): (bool*) => bool
+  pure def or(a*): (bool*) => bool
+  pure def actionAny(a*): (bool*) => bool
+  pure def match(m, (v, f)): (a, (b, (b => c))*) => c*
+  pure def tuples(a*): (Set[a0], ..., Set[an]) => Set[(a0, ..., an)]
+}
