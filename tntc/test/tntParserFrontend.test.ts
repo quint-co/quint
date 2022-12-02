@@ -32,7 +32,12 @@ function parseAndCompare(artifact: string): void {
 
   if (phase1Result.isLeft()) {
     // An error occurred at phase 1, check if it is the expected result
-    outputToCompare = phase1Result
+    phase1Result.mapLeft(err =>
+      outputToCompare = {
+        status: 'error',
+        errors: err
+      }
+    )
   } else if (phase1Result.isRight()) {
     const { module, sourceMap } = phase1Result.value
     // Phase 1 succeded, check that the source map is correct
@@ -40,13 +45,20 @@ function parseAndCompare(artifact: string): void {
 
     const expectedSourceMap = readJson(`${artifact}.map`)
     const sourceMapResult = JSONbig.parse(JSONbig.stringify(compactSourceMap(sourceMap)))
-    assert.deepEqual(sourceMapResult, expectedSourceMap, 'expected source maps to be equal')
+
+    assert.deepEqual(sourceMapResult,
+      expectedSourceMap, 'expected source maps to be equal')
 
     const phase2Result = parsePhase2(phase1Result.value)
 
     if (phase2Result.isLeft()) {
       // An error occurred at phase 2, check if it is the expected result
-      outputToCompare = phase2Result
+      phase2Result.mapLeft(err =>
+        outputToCompare = {
+          status: 'error',
+          errors: err
+        }
+      )
     } else {
       // Both phases succeeded, check that the module is correclty outputed
       outputToCompare = { status: 'parsed', warnings: [], module: module }
@@ -56,7 +68,8 @@ function parseAndCompare(artifact: string): void {
   // run it through stringify-parse to obtain the same json (due to bigints)
   const reparsedResult = JSONbig.parse(JSONbig.stringify(outputToCompare))
   // compare the JSON trees
-  assert.deepEqual(reparsedResult, expected, 'expected JSON results to be equal')
+  assert.deepEqual(reparsedResult,
+    expected, 'expected source maps to be equal')
 }
 
 describe('parsing', () => {

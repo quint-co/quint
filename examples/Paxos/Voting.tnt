@@ -164,8 +164,8 @@ THEOREM ShowsSafety ==
 (* straightforward.                                                        *)
 (***************************************************************************/
 action Init = all {
-  votes  <- Acceptor.mapBy(_ => Set()),
-  maxBal <- Acceptor.mapBy(_ => -1),
+  votes'  = Acceptor.mapBy(_ => Set()),
+  maxBal' = Acceptor.mapBy(_ => -1),
 }
 
 
@@ -177,8 +177,8 @@ action Init = all {
 (***************************************************************************/
 action IncreaseMaxBal(a, b) = all {
   b > maxBal.get(a),
-  maxBal <- maxBal.set(a, b),
-  votes <- votes,
+  maxBal' = maxBal.set(a, b),
+  votes'  = votes,
 }
 
 /***************************************************************************)
@@ -196,20 +196,23 @@ action VoteFor(a, b, v) = all {
          votes.get(c).forall( vt => (vt._1 == b) implies (vt._2 == v) )
     ),
     Quorum.exists( Q => ShowsSafeAt(Q, b, v) ),
-    votes  <- votes.setBy(a, old => old.union(Set((b, v))) ),
-    maxBal <- maxBal.set(a, b),
+    votes'  = votes.setBy(a, old => old.union(Set((b, v))) ),
+    maxBal' = maxBal.set(a, b),
 }
 
 
 /***************************************************************************)
 (* The next-state action and the invariant.                                *)
 (***************************************************************************/
-action Next =
-    tuples(Acceptor, Ballot).guess((a, b) => any {
-            IncreaseMaxBal(a, b),
-            Value.guess(v => VoteFor(a, b, v)),
-        }
-    )
+action Next = {
+    nondet a = oneOf(Acceptor)
+    nondet b = oneOf(Ballot)
+    any {
+      IncreaseMaxBal(a, b),
+      nondet v = oneOf(Value)
+      VoteFor(a, b, v),
+    }
+}
 
 temporal Spec = Init and always(stutter(Next, (votes, maxBal)))
 
