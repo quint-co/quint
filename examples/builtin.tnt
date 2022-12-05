@@ -22,14 +22,14 @@ module builtin {
   /// # Examples
   ///
   /// ```
-  ///   assert(iff(true, true))
-  ///   assert(iff(false, false))
-  ///   assert(!iff(true, false))
-  ///   assert(!iff(false, true))
+  /// assert(iff(true, true))
+  /// assert(iff(false, false))
+  /// assert(!iff(true, false))
+  /// assert(!iff(false, true))
   /// ```
   pure def iff(p, q): (bool, bool) => bool
 
-  /// Tests for implication between two boolean values.
+  /// Tests for material implication between two boolean values.
   /// That is, `p implies q` iff `not(p) or q`.
   /// 
   /// # Examples
@@ -47,6 +47,7 @@ module builtin {
 
   /// Guess a value from the given set that satisfies the given predicate.
   /// This operator is non-deterministic.
+  ///
   /// If the set is empty, then the result is `false`.
   ///
   /// # Examples
@@ -113,7 +114,7 @@ module builtin {
   /// ```
   pure def union(s1, s2): (Set[a], Set[a]) => Set[a]
 
-  /// Returns the intersection of the two given sets.
+  /// `s1.intersect(s2)` is the intersection of the sets `s1` and `s2`.
   ///
   /// # Examples
   /// ```
@@ -147,8 +148,8 @@ module builtin {
   /// ```
   pure def filter(s, p): (Set[a], (a) => bool) => Set[a]
 
-  /// Returns a set of elements obtained by applying the given operator 
-  /// to each element in the given set.
+  /// `S.map(f)` is the set of elements obtained by applying `f` to  
+  /// to each element in `S`. I.e., `{ f(x) : x \in S}`.
   ///
   /// # Examples
   /// ```
@@ -157,10 +158,11 @@ module builtin {
   pure def map(s, f): (Set[a], (a) => b) => Set[b]
 
   /// Combines the elements of the given set using the given operator.
-  /// The operator is applied to all elements of the set combined to an accumulator. 
+  /// The operator is applied to all elements of the set combined with an accumulator. 
   /// The initial value of the accumulator is the given initial value.
-  /// The order in which the elements are combined is unspecified.
-  /// The operator must be associative and commutative.
+  /// The order in which the elements are combined is unspecified, so
+  /// the operator must be associative and commutative or else the 
+  /// final value will be undefined.
   ///
   /// # Examples
   /// ```
