@@ -27,6 +27,12 @@ export interface Loc {
   end?: { line: number; col: number; index: number; }
 }
 
+// the default error location that usually indicates a bug in our code
+const unknownLoc: Loc = {
+  source: '<unknown>',
+  start: { line: 0, col: 0, index: 0 },
+}
+
 /**
  * An error message whose locations have been resolved.
  */
@@ -99,7 +105,7 @@ export function parsePhase1(text: string, sourceLocation: string): ParseResult<P
       return right({module: listener.rootModule, sourceMap: listener.sourceMap})
     } else {
       // istanbul ignore next
-      throw new Error('this should be impossible: root module is undefined')
+      throw new Error('Illegal state: root module is undefined. Please report a bug.')
     }
   }
 }
@@ -123,18 +129,21 @@ export function parsePhase2(phase1Data: ParserPhase1):
   } else {
     definitions = moduleDefinitions
     importResolvingResult.errors.forEach(error => {
-      const loc = sourceMap.get(error.reference)
-      if (!loc) {
-        throw new Error(`no loc found for ${error.reference}`)
+      const sourceLoc = sourceMap.get(error.reference)
+      if (!sourceLoc) {
+        console.error(`No source location found for ${error.reference}. Please report a bug.`)
       }
+      const loc = sourceLoc ?? unknownLoc
       if (error.defName) {
+        const e =
+          `Failed to import definition ${error.defName} from module ${error.moduleName}`
         errorMessages.push({
-          explanation: `Definition ${error.defName} from module ${error.moduleName} couldn't be imported`,
+          explanation: e,
           locs: [loc],
         })
       } else {
         errorMessages.push({
-          explanation: `Module ${error.moduleName} couldn't be imported`,
+          explanation: `Failed to import module ${error.moduleName}`,
           locs: [loc],
         })
       }
@@ -156,11 +165,13 @@ export function parsePhase2(phase1Data: ParserPhase1):
         }
         const locs = sources.map(source => {
           const id = source.kind === 'user' ? source.reference : 0n // Impossible case, but TS requires the check
-          const loc = sourceMap.get(id)
-          if (!loc) {
-            throw new Error(`no loc found for ${id}`)
+          let sourceLoc = sourceMap.get(id)
+          if (!sourceLoc) {
+            console.error(`No source location found for ${id}. Please report a bug.`)
+            return unknownLoc
+          } else {
+            return sourceLoc
           }
-          return loc
         })
         errorMessages.push({ explanation: msg, locs })
       })
@@ -173,13 +184,17 @@ export function parsePhase2(phase1Data: ParserPhase1):
   if (result.kind === 'error') {
     // Build error message with resolution explanation and the location obtained from sourceMap
     result.errors.forEach(error => {
-      const msg = `Couldn't resolve ${error.kind === 'type' ? 'type alias' : 'name'} ${error.name} in definition for ${error.definitionName}, in module ${error.moduleName}`
+      const msg = `Failed to resolve ` +
+        (error.kind === 'type' ? 'type alias' : 'name') +
+        ` ${error.name} in definition for ${error.definitionName}, ` +
+        `in module ${error.moduleName}`
       const id = error.reference
       if (id) {
-        const loc = sourceMap.get(id)
-        if (!loc) {
-          throw new Error(`no loc found for ${id}`)
+        const sourceLoc = sourceMap.get(id)
+        if (!sourceLoc) {
+          console.error(`No source location found for ${id}. Please report a bug.`)
         }
+        const loc = sourceLoc ?? unknownLoc
         errorMessages.push({ explanation: msg, locs: [loc] })
       } else {
         errorMessages.push({ explanation: msg, locs: [] })

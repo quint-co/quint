@@ -32,10 +32,13 @@ val TypeOK = and {
 (* "type-correct" values.                                                  *)
 (***************************************************************************/
 action Init = all {
-  setOfMaps(Node, Bool).exists(a => active <- a),
-  setOfMaps(Node, Color).exists(c => color <- c),
-  Node.exists(n => tpos <- n),
-  tcolor <- "black"
+  nondet a = setOfMaps(Node, Bool).oneOf()
+  active' = a,
+  nondet c = setOfMaps(Node, Color).oneOf()
+  color'  = c,
+  nondet n = Node.oneOf()
+  tpos'   = n,
+  tcolor' = "black"
 }
 
 /***************************************************************************)
@@ -46,9 +49,10 @@ action Init = all {
 action InitiateProbe = all {
   tpos == 0,
   tcolor == "black" or color.get(0) == "black",
-  tpos <- N - 1,
-  tcolor <- "white",
-  color <- color.set(0, "white"),
+  tpos'   = N - 1,
+  tcolor' = "white",
+  color'  = color.set(0, "white"),
+  active' = active,
 }
 
 /***************************************************************************)
@@ -63,10 +67,15 @@ action InitiateProbe = all {
 (***************************************************************************/
 action PassToken(i) = all {
   tpos == i,
-  or { not(active.get(i)), color.get(i) == "black", tcolor == "black" },
-  tpos <- i - 1,
-  tcolor <- if (color.get(i) == "black") "black" else tcolor,
-  color <- color.set(i, "white"),
+  or {
+    not(active.get(i)),
+    color.get(i) == "black",
+    tcolor == "black"
+  },
+  tpos'   = i - 1,
+  tcolor' = if (color.get(i) == "black") "black" else tcolor,
+  color'  = color.set(i, "white"),
+  active' = active,
 }
 
 /***************************************************************************)
@@ -74,7 +83,8 @@ action PassToken(i) = all {
 (***************************************************************************/
 action System = any {
   InitiateProbe,
-  Node.exclude(Set(0)).guess({ i => PassToken(i) }),
+  nondet i = Node.exclude(Set(0)).oneOf()
+  PassToken(i),
 }
 
 /***************************************************************************)
@@ -84,11 +94,13 @@ action System = any {
 (***************************************************************************/
 action SendMsg(i) = all {
   active.get(i),
-  Node.exclude(Set(i))
-      .guess({ j => all {
-        active  <- active.set(j, true),
-        color   <- color.setBy(i, (old => if (j > i) "black" else old)),
-  }})
+  nondet j = Node.exclude(Set(i)).oneOf()
+  all {
+    active' = active.set(j, true),
+    color'  = color.setBy(i, (old => if (j > i) "black" else old)),
+    tpos'   = tpos,
+    tcolor'    = tcolor,
+  }
 }
 
 /***************************************************************************)
@@ -96,24 +108,28 @@ action SendMsg(i) = all {
 (***************************************************************************/
 action Deactivate(i) = all {
   active.get(i),
-  active <- active.set(i, false),
+  active' = active.set(i, false),
+  color'  = color,
+  tpos'   = tpos,
+  tcolor'    = tcolor,
 }
 
 /***************************************************************************)
 (* actions performed by the underlying algorithm                           *)
 (***************************************************************************/
 action Environment =
-  Node.guess({ i => any {
+  val i = oneOf(Node)
+  any {
     SendMsg(i),
     Deactivate(i),
-  }})
+  }
 
 /***************************************************************************)
 (* next-state relation: disjunction of above actions                       *)
 (***************************************************************************/
 action Next = any {
   System,
-  Environment
+  Environment,
 }
 
 val vars = (active, color, tpos, tcolor)
@@ -127,7 +143,7 @@ temporal Spec = Init and always(Next.stutter(vars) and System.weakFair(vars))
 (***************************************************************************/
 val TokenAlwaysBlack = tcolor == "black"
 
-temporal NeverChangeColor = always((color <- color).stutter(vars))
+temporal NeverChangeColor = always((color' = color).stutter(vars))
 
 /***************************************************************************)
 (* Main safety property: if there is a white token at node 0 then every    *)

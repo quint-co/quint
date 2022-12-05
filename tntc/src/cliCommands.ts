@@ -30,7 +30,7 @@ import { TypeScheme } from './types/base'
 import { inferTypes } from './types/inferrer'
 import { typeSchemeToString } from './types/printing'
 
-export type status = 'loaded' | 'parsed' | 'typechecked'
+export type status = 'loaded' | 'parsed' | 'typechecked' | 'error'
 
 /** The data from a ProcedureStatus that may be output to --out */
 interface OutputStatus {
@@ -39,15 +39,20 @@ interface OutputStatus {
   module?: TntModule,
   types?: Map<bigint, TypeScheme>,
   effects?: Map<bigint, Effect>,
+  errors?: ErrorMessage[],
 }
 
 // Extract just the parts of a ProcedureStatus that we use for the output
 // See https://stackoverflow.com/a/39333479/1187277
 function pickOutputStatus(o: ProcedureStatus): OutputStatus {
-  const picker = ({status, warnings, module, types, effects} : ProcedureStatus) => (
-    {status, warnings, module, types, effects}
+  const picker = ({status, warnings, module, types, effects, errors} : ProcedureStatus) => (
+    {status, warnings, module, types, effects, errors}
   )
   return picker(o)
+}
+
+interface ErrorStatus extends OutputStatus {
+  errors: ErrorMessage[],
 }
 
 interface ProcedureStatus extends OutputStatus {
@@ -123,7 +128,10 @@ export function parse(loaded: LoadedStatus): Either<String, ParsedStatus> {
 function reportParseError(argv: any, sourceCode: string, errors: ErrorMessage[]) {
   if (argv.out) {
     // write the errors to the output file
-    writeToJson(argv.out, errors)
+    writeToJson(argv.out, {
+      status: "error",
+      errors: errors,
+    })
   } else {
     const finder = lineColumn(sourceCode)
     // write the errors to stderr

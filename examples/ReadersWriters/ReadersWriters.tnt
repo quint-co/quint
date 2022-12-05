@@ -31,23 +31,23 @@ module ReadersWriters {
   
   action TryRead(actor) = all {
       actor.notin(WaitingToRead),
-      waiting <- waiting.append(("read", actor)),
+      waiting' = waiting.append(("read", actor)),
   }
   
   action TryWrite(actor) = all {
       actor.notin(WaitingToWrite),
-      waiting <- waiting.append(("write", actor)),
+      waiting' = waiting.append(("write", actor)),
   }
   
   action Read(actor) = all {
-      readers <- readers.union(Set(actor)),
-      waiting <- waiting.tail(),
+      readers' = readers.union(Set(actor)),
+      waiting' = waiting.tail(),
   }
   
   action Write(actor) = all {
       readers == Set(),
-      writers <- writers.union(Set(actor)),
-      waiting <- waiting.tail(),
+      writers' = writers.union(Set(actor)),
+      waiting' = waiting.tail(),
   }
   
   action ReadOrWrite = all {
@@ -57,24 +57,26 @@ module ReadersWriters {
       val actor = pair._2
       if (read(pair)) all {
           Read(actor),
-          writers <- writers,
+          writers' = writers,
       } else all { // pair._1 == "write"
           Write(actor),
-          readers <- readers,
+          readers' = readers,
       }  
   }
   
   action StopActivity(actor) =
       if (actor.in(readers)) all {
-          readers <- readers.exclude(Set(actor)),
-          writers <- writers,
+          readers' = readers.exclude(Set(actor)),
+          writers' = writers,
       } else all {
-          writers <- writers.exclude(Set(actor)),
-          readers <- readers,
+          writers' = writers.exclude(Set(actor)),
+          readers' = readers,
       }
 
-  action Stop =
-      readers.union(writers).guess({ actor => StopActivity(actor) })
+  action Stop = {
+      nondet actor = readers.union(writers).oneOf()
+      StopActivity(actor)
+  }
   
   //---------------------------------------------------------------------------
   
@@ -90,19 +92,21 @@ module ReadersWriters {
   
   action Next = any {
       all {
-          Actors.guess({ actor => TryRead(actor) }),
-          readers <- readers,
-          writers <- writers
+          nondet actor = oneOf(Actors)
+          TryRead(actor),
+          readers' = readers,
+          writers' = writers
       },
       all {
-          Actors.guess({ actor => TryWrite(actor) }),
-          readers <- readers,
-          writers <- writers
+          nondet actor = oneOf(Actors)
+          TryWrite(actor),
+          readers' = readers,
+          writers' = writers
       },
       ReadOrWrite,
       all {
           Stop,
-          waiting <- waiting
+          waiting' = waiting
       },
   }
   

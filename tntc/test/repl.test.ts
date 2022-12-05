@@ -173,11 +173,11 @@ describe('repl ok', () => {
       `
       |16
       |
-      |syntax error: <input>:1:1 - error: Couldn't resolve name n in definition for __input, in module __REPL
+      |syntax error: <input>:1:1 - error: Failed to resolve name n in definition for __input, in module __REPL
       |1: n * n
       |   ^
       |
-      |syntax error: <input>:1:5 - error: Couldn't resolve name n in definition for __input, in module __REPL
+      |syntax error: <input>:1:5 - error: Failed to resolve name n in definition for __input, in module __REPL
       |1: n * n
       |       ^
       |

@@ -101,10 +101,10 @@ val TypeOK = and {
 }
 
 action Init = all {
-    maxBal  <- Acceptor.mapBy(_ => -1),
-    maxVBal <- Acceptor.mapBy(_ => -1),
-    maxVal  <- Acceptor.mapBy(_ => None),
-    msgs    <- Set(),
+    maxBal'  = Acceptor.mapBy(_ => -1),
+    maxVBal' = Acceptor.mapBy(_ => -1),
+    maxVal'  = Acceptor.mapBy(_ => None),
+    msgs'    = Set(),
 }
 
 /***************************************************************************)
@@ -112,7 +112,7 @@ action Init = all {
 (* to define the actions that make up the next-state action.               *)
 (***************************************************************************/
 action Send(m) = {
-  msgs <- msgs.union(Set(m))
+    msgs' = msgs.union(Set(m))
 }
 
 /***************************************************************************)
@@ -123,8 +123,8 @@ action Send(m) = {
 (***************************************************************************/
 action Phase1a(b) = all {
     Send({ tag: "1a", bal: b }),
-    maxVBal <- maxVBal,
-    maxVal <- maxVal,
+    maxVBal' = maxVBal,
+    maxVal'  = maxVal,
 }
                  
 /***************************************************************************)
@@ -134,15 +134,15 @@ action Phase1a(b) = all {
 (* maxVBal[a] and maxVal[a].                                               *)
 (***************************************************************************/
 action Phase1b(a) = {
-    msgs.filter(m => m.tag == "1a")
-        .guess(m => all {
-          m.bal > maxBal.get(a),
-          maxBal <- maxBal.set(a, m.bal),
-          Send({ tag: "1b", acc: a, bal: m.bal, 
-                   mbal: maxVBal.get(a), mval: maxVal.get(a) }),
-          maxVBal <- maxVBal,
-          maxVal <- maxVal,
-    })
+    nondet m = msgs.filter(m2 => m2.tag == "1a").oneOf()
+    all {
+        m.bal > maxBal.get(a),
+        Send({ tag: "1b", acc: a, bal: m.bal, 
+                 mbal: maxVBal.get(a), mval: maxVal.get(a) }),
+        maxBal' = maxBal.set(a, m.bal),
+        maxVBal' = maxVBal,
+        maxVal'  = maxVal,
+    }
 }
 
 /***************************************************************************)
@@ -184,8 +184,8 @@ action Phase2a(b, v) = all {
     }
   ),
   Send({ tag: "2a", bal: b, value: v }),
-  maxVBal <- maxVBal,
-  maxVal <- maxVal,
+  maxVBal' = maxVBal,
+  maxVal'  = maxVal,
 }
   
 /***************************************************************************)
@@ -197,15 +197,16 @@ action Phase2a(b, v) = all {
 (* phase 2b message announcing its vote.  It also sets maxBal[a] to the    *)
 (* message's.  ballot number                                               *)
 (***************************************************************************/
-action Phase2b(a) = msgs.filter(m => m.tag == "2a")
-                        .guess(m => all {
-                              m.bal >= maxBal.get(a),
-                              maxBal  <- maxBal.set(a, m.bal),
-                              maxVBal <- maxVBal.set(a, m.bal),
-                              maxVal  <- maxVal.set(a, m.value),
-                              Send({ tag: "2b", acc: a,
-                                       bal: m.bal, value: m.value }),
-})
+action Phase2b(a) = {
+  nondet m = msgs.filter(m2 => m2.tag == "2a").oneOf()
+  all {
+    m.bal >= maxBal.get(a),
+    Send({ tag: "2b", acc: a, bal: m.bal, value: m.value }),
+    maxBal'  = maxBal.set(a, m.bal),
+    maxVBal' = maxVBal.set(a, m.bal),
+    maxVal'  = maxVal.set(a, m.value),
+  }
+}
 
 /***************************************************************************)
 (* In an implementation, there will be learner processes that learn from   *)
@@ -217,17 +218,20 @@ action Phase2b(a) = msgs.filter(m => m.tag == "2a")
 (* Below are defined the next-state action and the complete spec.          *)
 (***************************************************************************/
 action Next = any {
-    all {
-      Ballot.guess(b => any {
-                        Phase1a(b),
-                        Value.guess(v => Phase2a(b, v)),
-                   }),
-      maxBal <- maxBal,
+  all {
+    nondet b = oneOf(Ballot)
+    any {
+      Phase1a(b),
+      nondet v = oneOf(Value)
+      Phase2a(b, v)
     },
-    Acceptor.guess(a => any {
-      Phase1b(a),
-      Phase2b(a),
-    }),
+    maxBal' = maxBal,
+  },
+  nondet a = oneOf(Acceptor)
+  any {
+    Phase1b(a),
+    Phase2b(a),
+  }
 }
 
 temporal Spec = Init and always(stutter(Next, vars))
