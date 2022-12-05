@@ -14,6 +14,8 @@ All of the test inputs in the following test cases are commands executed by `bas
 bash -
 -->
 
+## Error output
+
 ### User error on parse with non-existent file
 
 Regression test for [#215](https://github.com/informalsystems/tnt/issues/215).
@@ -51,6 +53,8 @@ redirects allow us to filter stderr instead of stdout.
 error: parsing failed in phase 2
 ```
 
+## Use of the `--out` flag
+
 ### Module AST is written to `--out` with parse command
 
 <!-- !test in module AST is output -->
@@ -79,4 +83,21 @@ rm typecheck-out-example.json
 ```
 first type: "tup"
 first effect: "concrete"
+```
+
+### typecheck failure exits with 1 and prints type errors
+
+<!-- !test exit 1 -->
+<!-- !test in typecheck failure gives non-zero exit -->
+```
+tntc typecheck ./testFixture/TrivialTypeError.tnt 2> >(sed "s:$(pwd):.:" >&2)
+```
+
+<!-- !test err typecheck failure gives non-zero exit -->
+```
+./testFixture/TrivialTypeError.tnt:2:3 - error: Couldn't unify str and int
+Trying to unify str and int
+
+2:   val x : int = "not an int"
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
 ```
