@@ -25,7 +25,8 @@ import { ScopeTree, treeFromModule } from '../scoping'
 import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../lookupTable'
 import { specialConstraints } from './specialConstraints'
 
-type solvingFunctionType = (_constraint: Constraint) => Either<Map<bigint, ErrorTree>, Substitutions>
+type solvingFunctionType = (_table: LookupTable,_constraint: Constraint) 
+  => Either<Map<bigint, ErrorTree>, Substitutions>
 
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
@@ -182,13 +183,13 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         }
 
         const constraint: Constraint = { kind: 'conjunction', constraints: this.constraints, sourceId: 0n }
-        this.solvingFunction(constraint)
+        this.solvingFunction(this.currentTable, constraint)
           .mapLeft(errors => errors.forEach((err, id) => this.errors.set(id, err)))
           .map((subs) => {
             // Apply substitution to environment
             this.types = new Map<bigint, TypeScheme>(
               [...this.types.entries()].map(([id, te]) => {
-                const newType = applySubstitution(subs, te.type)
+                const newType = applySubstitution(this.currentTable, subs, te.type)
                 const scheme: TypeScheme = { ...typeNames(newType), type: newType }
                 return [id, scheme]
               })
@@ -263,8 +264,8 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       return { kind: 'row', name: name, value: { kind: 'var', name: this.freshVar() } }
     })
 
-    const subs = compose(typeSubs, rowSubs)
-    return applySubstitution(subs, t.type)
+    const subs = compose(this.currentTable, typeSubs, rowSubs)
+    return applySubstitution(this.currentTable, subs, t.type)
   }
 
   private updateCurrentModule(): void {
