@@ -71,7 +71,6 @@ export function solveConstraint(
  *          Otherwise, an error tree with an error message and its trace.
  */
 export function unify(table: LookupTable, t1: TntType, t2: TntType): Either<ErrorTree, Substitutions> {
-  // TODO: resolve type aliases
   const location = `Trying to unify ${typeToString(t1)} and ${typeToString(t2)}`
 
   if (typeToString(t1) === typeToString(t2)) {
