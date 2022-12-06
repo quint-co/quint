@@ -1148,7 +1148,7 @@ powerset(S)
 // UNION S
 S.flatten()
 flatten(S)
-// Seq(S) of the module Sequences
+// Seq(S): the set of all lists of elements in S
 S.allLists()
 allLists(S)
 // CHOOSE x \in S: TRUE
