@@ -99,5 +99,7 @@ tntc typecheck ./testFixture/TrivialTypeError.tnt 2> >(sed "s:$(pwd):.:" >&2)
 Trying to unify str and int
 
 2:   val x : int = "not an int"
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: typechecking failed
 ```

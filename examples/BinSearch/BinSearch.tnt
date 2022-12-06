@@ -152,8 +152,10 @@ module BinSearch {
 
     // By showing that the interval [low, high] is contracting,
     // we can implicitly show termination too.
-    val Progress =
-        not(next(isTerminated)) implies (next(low) > low or next(high) < high)
+    // TODO: We cannot currently represent this because we have not implemented a way to 
+    // describe the relation between states with `next`
+    // val Progress =
+    //    not(next(isTerminated)) implies (next(low) > low or next(high) < high)
 
     // Make sure that INPUT_SEQ is accessed within its bounds
     val InBounds =
