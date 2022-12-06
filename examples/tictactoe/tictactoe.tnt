@@ -3,9 +3,9 @@ module tictactoe {
   var nextTurn: str // who goes next
 
   action Init = all {
-    nextTurn <- "X", // X always goes first
+    nextTurn' = "X", // X always goes first
     // Every space in the board starts blank
-    board <- 1.to(3).mapBy(_ => 1.to(3).mapBy(_ => "_")),
+    board' = 1.to(3).mapBy(_ => 1.to(3).mapBy(_ => "_")),
   }
 
   def BoardIs(coordinate, player) =
@@ -13,15 +13,15 @@ module tictactoe {
 
   action Move(player, coordinate) = all {
     BoardIs(coordinate, "_"),
-    board <- board.set(
+    board' = board.set(
       coordinate._1, 
       board.get(coordinate._1).set(coordinate._2, player)
     ),
   }
 
-  action MoveToEmpty(player) = tuples(1.to(3), 1.to(3)).guess(coordinates =>
+  action MoveToEmpty(player) =
+    nondet coordinates = tuples(1.to(3), 1.to(3)).oneOf()
     Move(player, coordinates)
-  )
 
   val winningPatterns = Set(
     // Horizonal wins
@@ -45,7 +45,7 @@ module tictactoe {
     nextTurn == "O",
     not(Won("X")),
     MoveToEmpty("O"),
-    nextTurn <- "X",
+    nextTurn' = "X",
   }
 
   val corners = Set(
@@ -59,7 +59,9 @@ module tictactoe {
     BoardIs(position, "_")
   )
 
-  action StartInCorner = corners.guess(corner => Move("X", corner))
+  action StartInCorner =
+    nondet corner = oneOf(corners)
+    Move("X", corner)
 
   def canWinWithPattern(winningPattern) = and {
     winningPattern.filter(p => BoardIs(p, "X")).size() == 2,
@@ -71,23 +73,35 @@ module tictactoe {
     winningPattern.filter(p => BoardIs(p, "_")).size() == 1,
   }
 
-  action Win = winningPatterns.guess(pattern => all {
-    canWinWithPattern(pattern),
-    pattern.guess(p => Move("X", p)),
-  })
+  action Win = {
+    nondet pattern = winningPatterns.oneOf()
+    all {
+      canWinWithPattern(pattern),
+      nondet p = pattern.oneOf()
+      Move("X", p),
+    }
+  }
 
-  action Block = winningPatterns.guess(pattern => all {
-    canBlockWithPattern(pattern),
-    pattern.guess(p => Move("X", p)),
-  })
+  action Block = {
+    nondet pattern = winningPatterns.oneOf()
+    all {
+      canBlockWithPattern(pattern),
+      nondet p = pattern.oneOf()
+      Move("X", p),
+    }
+  }
 
   action TakeCenter = Move("X", (2,2))
 
-  action SetupWin = winningPatterns.guess(pattern => all {
-    pattern.filter(p => BoardIs(p, "X")).size() == 1,
-    pattern.filter(p => BoardIs(p, "_")).size() == 2,
-    pattern.guess(p => Move("X", p)),
-  })
+  action SetupWin = {
+    nondet pattern = winningPatterns.oneOf()
+    all {
+      pattern.filter(p => BoardIs(p, "X")).size() == 1,
+      pattern.filter(p => BoardIs(p, "_")).size() == 2,
+      nondet p = pattern.oneOf()
+      Move("X", p),
+    }
+  }
 
   action MoveX = all {
     nextTurn == "X",
@@ -98,7 +112,7 @@ module tictactoe {
       if (enabled(TakeCenter)) TakeCenter else
       if (enabled(SetupWin)) SetupWin else
       MoveToEmpty("X"),
-    nextTurn <- "O",
+    nextTurn' = "O",
   }
 
   // Every state, X will move if X's turn, O will move on O's turn

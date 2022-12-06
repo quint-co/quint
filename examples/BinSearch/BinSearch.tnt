@@ -44,41 +44,41 @@ module BinSearch {
 
     // Initialization step (lines 2-3)
     action Init = all {
-        low <- 0,
-        high <- length(INPUT_SEQ) - 1,
-        isTerminated <- false,
-        returnValue <- 0,
-        nSteps <= 0,
+        low' = 0,
+        high' = length(INPUT_SEQ) - 1,
+        isTerminated' = false,
+        returnValue' = 0,
+        nSteps' = 0,
     }
 
     // loop iteration
     action LoopIteration = all {
         not(isTerminated),
         low <= high,       // lines 6-14
-        nSteps <- nSteps + 1,
+        nSteps' = nSteps + 1,
         val mid = low.add(high.add(-low) / 2)
         val midVal = INPUT_SEQ[mid + 1]
           any {
             all {
               midVal < INPUT_KEY, // lines 9-10
-              high <- high,
-              low <- mid.add(1),
-              returnValue <- returnValue,
-              isTerminated <- isTerminated,
+              high' = high,
+              low' = mid.add(1),
+              returnValue' = returnValue,
+              isTerminated' = isTerminated,
             },
             all {
               midVal > INPUT_KEY, // lines 11-12
-              high <- mid.add(-1),
-              low <- low,
-              returnValue <- returnValue,
-              isTerminated <- isTerminated,
+              high' = mid.add(-1),
+              low' = low,
+              returnValue' = returnValue,
+              isTerminated' = isTerminated,
             },
             all {
               midVal == INPUT_KEY, // lines 13-14
-              high <- high,
-              low <- low,
-              returnValue <- mid,
-              isTerminated <- true,
+              high' = high,
+              low' = low,
+              returnValue' = mid,
+              isTerminated' = true,
             },
           },
     }
@@ -87,21 +87,21 @@ module BinSearch {
     action LoopExit = all {
         not(isTerminated),        // line 16
         low > high,
-        isTerminated <- true,
-        returnValue <- -(low + 1),
-        low <- low,
-        high <- high,
-        nSteps <- nSteps,
+        isTerminated' = true,
+        returnValue' = -(low + 1),
+        low' = low,
+        high' = high,
+        nSteps' = nSteps,
     }
 
     // instead of terminating the computation, we keep variables unchanged
     action StutterOnTermination = all {
         isTerminated,
-        low <- low,
-        high <- high,
-        returnValue <- returnValue,
-        isTerminated <- isTerminated,
-        nSteps <- nSteps
+        low' = low,
+        high' = high,
+        returnValue' = returnValue,
+        isTerminated' = isTerminated,
+        nSteps' = nSteps
     }
 
     // Computation step (lines 5-16)
@@ -116,8 +116,8 @@ module BinSearch {
     // is to use two quantifiers,
     // but that would produce O(Len(INPUT_SEQ)^2) constraints.
     // Here, we write it a bit smarter.
-    INPUT_SEQ.domain.forall( i =>
-        INPUT_SEQ.domain.contains(i + 1)
+    INPUT_SEQ.indices().forall( i =>
+        INPUT_SEQ.indices().contains(i + 1)
           implies (INPUT_SEQ[i] <= INPUT_SEQ[i + 1])
     )
 
@@ -131,7 +131,7 @@ module BinSearch {
     //  and only if the key is found."
     val ReturnValueIsCorrect =
         val MatchingIndices =
-            INPUT_SEQ.domain.filter(i => INPUT_SEQ[i] == INPUT_KEY)
+            INPUT_SEQ.indices().filter(i => INPUT_SEQ[i] == INPUT_KEY)
         if (MatchingIndices != Set())
             // Indices start with 1, whereas returnValue starts with 0
             MatchingIndices.contains(returnValue + 1)
@@ -153,12 +153,12 @@ module BinSearch {
     // By showing that the interval [low, high] is contracting,
     // we can implicitly show termination too.
     val Progress =
-        not(isTerminated.next) implies (low.next > low or high.next < high)
+        not(next(isTerminated)) implies (next(low) > low or next(high) < high)
 
     // Make sure that INPUT_SEQ is accessed within its bounds
     val InBounds =
       val mid = low.iadd(high.iadd(-low) / 2)
       // collect the conditions of IF-THEN-ELSE
       { not(isTerminated) implies
-          ((low <= high) implies INPUT_SEQ.domain.contains(mid + 1)) }
+          ((low <= high) implies INPUT_SEQ.indices().contains(mid + 1)) }
 }
