@@ -162,10 +162,10 @@ export function typecheck(parsed: ParsedStatus): Either<String, TypecheckedStatu
     console.error(formatError(sourceCode, finder, message))
   })
 
-  const [errors, effects] = inferEffects(definitionsTable, module)
+  const [effectErrors, effects] = inferEffects(definitionsTable, module)
   effects.forEach((value, key) => console.log(`${key}: ${effectToString(value)}`))
 
-  errors.forEach((value, key) => {
+  effectErrors.forEach((value, key) => {
     const loc = sourceMap.get(key)!
     const message: ErrorMessage = {
       explanation: errorTreeToString(value),
@@ -176,9 +176,8 @@ export function typecheck(parsed: ParsedStatus): Either<String, TypecheckedStatu
   })
 
   return checkModes(module, effects)
-    .map(e => e.forEach((value, key) => console.log(`${key}: ${value}`)))
-    .mapLeft(e => {
-      e.forEach((value, key) => {
+    .mapLeft(modeErrors => {
+      modeErrors.forEach((value, key) => {
         const loc = sourceMap.get(key)!
         const message: ErrorMessage = {
           explanation: errorTreeToString(value),
@@ -189,7 +188,15 @@ export function typecheck(parsed: ParsedStatus): Either<String, TypecheckedStatu
 
       return "typechecking failed"
     })
-    .map(_ => ({ ...parsed, types, effects, status: 'typechecked' }))
+    .chain(modeMap => {
+      modeMap.forEach((value, key) => console.log(`${key}: ${value}`))
+      // Check whether we found errors in previous stages, and forward the error if so
+      if (typeErrors.size !== 0 || effectErrors.size !== 0) {
+        return left("typechecking failed")
+      } else {
+        return right({ ...parsed, types, effects, status: 'typechecked' })
+      }
+    })
 }
 
 /**
