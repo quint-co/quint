@@ -330,7 +330,7 @@ module builtin {
   /// assert(m == Map(1 -> true, 2 -> false))
   /// assert(m2 == Map(1 -> true, 2 -> true))
   /// ```
-  pure def set(a, b): (a -> b, a, b) => a -> b
+  pure def set(m, k, v): (a -> b, a, b) => a -> b
 
   /// `m.setBy(k, f)` is a map with the same keys as `m` but with `k` set to `f(m.get(k))`.
   /// If `k` is not present in `m`, this operator has undefined behavior.
@@ -343,7 +343,7 @@ module builtin {
   /// assert(m == Map(1 -> true, 2 -> false))
   /// assert(m2 == Map(1 -> true, 2 -> true))
   /// ```
-  pure def setBy(a, b, c): (a -> b, a, (b) => b) => a -> b
+  pure def setBy(m, k, v): (a -> b, a, (b) => b) => a -> b
 
   /// `m.put(k, v)` for `k.notin(m.keys)` is a map with the same keys as `m` but with `k` set to `v`.
   /// If `k` is present in `m`, this operator has undefined behavior.
@@ -356,36 +356,214 @@ module builtin {
   /// assert(m == Map(1 -> true, 2 -> false))
   /// assert(m2 == Map(1 -> true, 2 -> false, 3 -> true))
   /// ```
-  pure def put(a, b): (a -> b, a, b) => a -> b
+  pure def put(m, k, v): (a -> b, a, b) => a -> b
 
-  pure def append(a, b): (List[a], a) => List[a]
-  pure def concat(a, b): (List[a], List[a]) => List[a]
-  pure def head(a): (List[a]) => a
-  pure def tail(a): (List[a]) => List[a]
-  pure def length(a): (List[a]) => int
-  pure def nth(a, b): (List[a], int) => a
-  pure def indices(a): (List[a]) => Set[int]
-  pure def replaceAt(a, b, c): (List[a], int, a) => List[a]
-  pure def slice(a, b, c): (List[a], int, int) => List[a]
-  pure def range(a, b): (int, int) => List[int]
-  pure def select(a, b): (List[a], (a) => bool) => List[a]
-  pure def foldl(a, b, c): (List[a], b, (b, a) => b) => b
-  pure def foldr(a, b, c): (List[a], b, (a, b) => b) => b
+  /// `l.append(e)` is the list `l` with `e` appended.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// assert(List(1, 2, 3).append(4) == List(1, 2, 3, 4))
+  /// ```
+  pure def append(l, e): (List[a], a) => List[a]
+  
+  /// `l1.concat(l2)` is the list `l1` with `l2` concatenated at the end.
+  ///
+  /// # Examples
+  /// 
+  /// ```
+  /// assert(List(1, 2, 3).append(List(4, 5, 6)) == List(1, 2, 3, 4, 5, 6))
+  /// ```
+  pure def concat(l1, l2): (List[a], List[a]) => List[a]
 
+  /// `l.head()` is the first element of `l`.
+  /// If `l` is empty, the behavior is undefined.
+  /// 
+  /// # Examples
+  ///
+  /// ```
+  /// assert(List(1, 2, 3).head() == 1)
+  /// ```
+  pure def head(l): (List[a]) => a
+
+  /// `l.tail()` is the list `l` without the first element.
+  /// If `l` is empty, the behavior is undefined.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// assert(List(1, 2, 3).tail() == List(2, 3))
+  /// ```
+  pure def tail(l): (List[a]) => List[a]
+
+  /// `l.length()` is the length of the list `l`.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// assert(List(1, 2, 3).length() == 3)
+  /// ```
+  pure def length(l): (List[a]) => int
+
+  /// `l.nth(i)` is the `i+1`th element of the list `l`.
+  /// If `i` is negative or greater than or equal to `l.length()`, the behavior is undefined.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// assert(List(1, 2, 3).nth(1) == 2)
+  /// ```
+  pure def nth(l, i): (List[a], int) => a
+
+  /// `l.indices()` is the set of indices of `l`.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// assert(List(1, 2, 3).indices() == Set(0, 1, 2))
+  /// ```
+  pure def indices(l): (List[a]) => Set[int]
+
+  /// `l.replaceAt(i, e)` is the list `l` with the `i+1`th element replaced by `e`.
+  /// If `i` is negative or greater than or equal to `l.length()`, the behavior is undefined.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// assert(List(1, 2, 3).replaceAt(1, 4) == List(1, 4, 3))
+  /// ```
+  pure def replaceAt(l, i, e): (List[a], int, a) => List[a]
+
+  /// `l.slice(i, j)` is the list of elements of `l` between indices `i` and `j`.
+  /// `i` is inclusive and `j` is exclusive.
+  ///
+  /// The behavior is undefined when:
+  /// - `i` is negative or greater than or equal to `l.length()`.
+  /// - `j` is negative or greater than `l.length()`.
+  /// - `i` is greater than `j`.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// assert(List(1, 2, 3, 4, 5).slice(1, 3) == List(2, 3))
+  /// ```
+  pure def slice(l, i, j): (List[a], int, int) => List[a]
+
+  /// `range(i, j)` is the list of integers between `i` and `j`.
+  /// `i` is inclusive and `j` is exclusive.
+  ///
+  /// The behavior is undefined when `i` is greater than `j`.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// assert(range(1, 3) == List(1, 2))
+  /// ```
+  pure def range(i, j): (int, int) => List[int]
+
+  /// `l.select(p)` is the list of elements of `l` that satisfy the predicate `p`.
+  ///
+  /// Preserves the order of the elements.
+  /// 
+  /// # Examples
+  ///
+  /// ```
+  /// assert(List(1, 2, 3).select(x -> x % 2 == 0) == List(2))
+  /// ```
+  pure def select(l, p): (List[a], (a) => bool) => List[a]
+
+  /// `l.foldl(z, f)` is the result of applying `f` to `z` and each element in `s`.
+  /// I.e., `f(f(f(z, x0), x1)..., xn)`.
+  ///
+  /// # Examples
+  /// ```
+  /// pure val sum = List(1, 2, 3, 4).foldl(0, (x, y) => x + y)
+  /// assert(sum == 10)
+  /// pure val l = List(1, 2, 3, 4).foldl(List(), (l, e) => l.append(e))
+  /// assert(l == List(1, 2, 3, 4))
+  /// ```
+  pure def foldl(l, z, f): (List[a], b, (b, a) => b) => b
+  
+  /// `l.foldr(z, f)` is the result of applying `f` to each element in `s` and `z`.
+  /// I.e., `f(x0, f(x1, ... f(xn, z))`.
+  ///
+  /// # Examples
+  /// ```
+  /// pure val sum = List(1, 2, 3, 4).foldr(0, (x, y) => x + y)
+  /// assert(sum == 10)
+  /// pure val l = List(1, 2, 3, 4).foldr(List(), (e, l) => l.append(e))
+  /// assert(l == List(4, 3, 2, 1))
+  /// ```
+  pure def foldr(l, z, f): (List[a], b, (a, b) => b) => b
+
+  /// `a.iadd(b)` is the integer addition of `a` and `b`.
+  /// It can be used in the infix form as `+` or as a named operator `iadd`.
   pure def iadd(a, b): (int, int) => int
+  
+  /// `a.isub(b)` is the integer subtraction of `a` and `b`.
+  /// It can be used in the infix form as `-` or as a named operator `isub`.
   pure def isub(a, b): (int, int) => int
+
+  /// `a.imul(b)` is the integer multiplication of `a` and `b`.
+  /// It can be used in the infix form as `*` or as a named operator `imul`.
   pure def imul(a, b): (int, int) => int
+
+  /// `a.idiv(b)` is the integer division of `a` and `b`.
+  /// It can be used in the infix form as `/` or as a named operator `idiv`.
   pure def idiv(a, b): (int, int) => int
+
+  /// `a.imod(b)` is the integer modulus of `a` and `b`.
+  /// It can be used in the infix form as `%` or as a named operator `imod`.
   pure def imod(a, b): (int, int) => int
+
+  /// `a.ipow(b)` is the integer exponentiation of `a` and `b`.
+  /// It can be used in the infix form as `^` or as a named operator `ipow`.
   pure def ipow(a, b): (int, int) => int
+
+  /// `a.ilt(b)` is the integer less than comparison of `a` and `b`.
+  /// It can be used in the infix form as `<` or as a named operator `ilt`.
   pure def ilt(a, b): (int, int) => bool
+
+  /// `a.igt(b)` is the integer greater than comparison of `a` and `b`.
+  /// It can be used in the infix form as `>` or as a named operator `igt`.
   pure def igt(a, b): (int, int) => bool
+
+  /// `a.ilte(b)` is the integer less than or equal to comparison of `a` and `b`.
+  /// It can be used in the infix form as `<=` or as a named operator `ilte`.
   pure def ilte(a, b): (int, int) => bool
+
+  /// `a.igte(b)` is the integer greater than or equal to comparison of `a` and `b`.
+  /// It can be used in the infix form as `>=` or as a named operator `igte`.
   pure def igte(a, b): (int, int) => bool
-  pure def to(a, b): (int, int) => Set[int]
+
+  /// `iuminus(a)` is `-1 * a`.
+  ///
+  /// This is the unary minus operator
   pure def iuminus(a): (int) => int
 
-  temporal always(a): (bool) => bool
+  /// `i.to(j)` is the set of integers between `i` and `j`.
+  /// `i` is inclusive and `j` is exclusive.
+  ///
+  /// The behavior is undefined when `i` is greater than `j`.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// assert(1.to(3) == Set(1, 2))
+  /// ```
+  pure def to(i, j): (int, int) => Set[int]
+
+  /// `always(p)` is true when `p` is true for every transition of the system.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// var x: int
+  /// action Init = x' = 0
+  /// action Next = x' = x + 1
+  /// action Inv = always(next(x) > x) 
+  /// ```
+  temporal always(p): (bool) => bool
   temporal eventually(a): (bool) => bool
   temporal next(a): (a) => a
   temporal stutter(a, b): (bool, a) => bool
