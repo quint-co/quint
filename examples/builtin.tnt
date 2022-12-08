@@ -67,7 +67,6 @@ module builtin {
   pure def guess(a, p): (Set[a], (a) => bool) => bool
 
   /// `s.exists(p)` is true when there is an element in `s` that satisfies `p`.
-  /// Similar to `guess` but pure and deterministic.
   ///
   /// This is the existential quantifier.
   ///
