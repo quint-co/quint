@@ -107,8 +107,8 @@ const temporalOperators = [
   { name: 'always', type: '(bool) => bool' },
   { name: 'eventually', type: '(bool) => bool' },
   { name: 'next', type: '(a) => a' },
-  { name: 'stutter', type: '(bool, a) => bool' },
-  { name: 'nostutter', type: '(bool, a) => bool' },
+  { name: 'orKeep', type: '(bool, a) => bool' },
+  { name: 'mustChange', type: '(bool, a) => bool' },
   // Should we do this? https://github.com/informalsystems/tnt/discussions/109
   { name: 'enabled', type: '(bool) => bool' },
   { name: 'weakFair', type: '(bool, a) => bool' },
@@ -119,7 +119,7 @@ const otherOperators = [
   { name: 'assign', type: '(a, a) => bool' },
   { name: 'ite', type: '(bool, a, a) => a' },
   { name: 'then', type: '(bool, bool) => bool' },
-  { name: 'repeated', type: '(bool, int) => bool' },
+  { name: 'times', type: '(int, bool) => bool' },
   { name: 'assert', type: '(bool) => bool' },
   // Should we do this? https://github.com/informalsystems/tnt/discussions/109
 ]
@@ -140,7 +140,7 @@ const multipleAritySignatures: [string, Signature][] = [
   ['actionAll', uniformArgsWithResult('bool', 'bool')],
   ['or', uniformArgsWithResult('bool', 'bool')],
   ['actionAny', uniformArgsWithResult('bool', 'bool')],
-  ['match', (arity: number) => {
+  ['unionMatch', (arity: number) => {
     const args = times((arity - 1) / 2, () => 'str, (a) => b')
     return parseAndQuantify(`(a, ${args.join(', ')}) => b`)
   }],
