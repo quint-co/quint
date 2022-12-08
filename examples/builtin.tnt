@@ -240,7 +240,8 @@ module builtin {
   ///
   /// # Examples
   /// ```
-  /// assert(Set(1, 2, 3).oneOf().in(Set(1, 2, 3)))
+  /// nondet x = oneOf(Set(1, 2, 3))
+  /// assert(x.in(Set(1, 2, 3)))
   /// ```
   pure def oneOf(s): Set[a] => a
 
