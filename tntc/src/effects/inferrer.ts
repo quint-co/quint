@@ -32,9 +32,8 @@ import { getSignatures } from './builtinSignatures'
  * @param lookupTable the collected definitions for the module under inference
  * @param module: the TNT module to infer effects for
  *
- * @returns a map from expression ids to their effects when inferrence succeeds.
- *          Otherwise, a map from expression ids to the corresponding error for
- *          the problematic expressions.
+ * @returns a map from expression ids to their effects and a map from expression
+ *          ids to the corresponding error for any problematic expressions.
  */
 export function inferEffects(
   lookupTable: LookupTableByModule, module: TntModule

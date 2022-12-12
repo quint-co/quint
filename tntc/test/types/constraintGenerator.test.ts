@@ -34,7 +34,7 @@ describe('ConstraintGeneratorVisitor', () => {
     const expectedConstraint =
       '(int, int) => int ~ (t_x_3, int) => t0 /\\ (Set[t1], (t1) => t2) => Set[t2] ~ (t_S_6, (t_x_3) => t0) => t3'
 
-    const solvingFunction = (c: Constraint) => {
+    const solvingFunction = (_: LookupTable, c: Constraint) => {
       assert.deepEqual(constraintToString(c), expectedConstraint)
       return right([])
     }
@@ -50,7 +50,7 @@ describe('ConstraintGeneratorVisitor', () => {
 
     const expectedConstraint = '(Set[t1], (t1) => t2) => Set[t2] ~ (t_S_6, (t0) => int) => t3'
 
-    const solvingFunction = (c: Constraint) => {
+    const solvingFunction = (_: LookupTable, c: Constraint) => {
       assert.deepEqual(constraintToString(c), expectedConstraint)
       return right([])
     }
@@ -67,7 +67,7 @@ describe('ConstraintGeneratorVisitor', () => {
       'def b = N',
     ])
 
-    const solvingFunction = (_: Constraint) => right([])
+    const solvingFunction = (_: LookupTable, _c: Constraint) => right([])
 
     const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
     walkModule(visitor, tntModule)
@@ -91,7 +91,7 @@ describe('ConstraintGeneratorVisitor', () => {
 
     const errors = new Map<bigint, ErrorTree>([[1n, error]])
 
-    const solvingFunction = (_: Constraint) => left(errors)
+    const solvingFunction = (_: LookupTable, _c: Constraint) => left(errors)
 
     const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
     walkModule(visitor, tntModule)
@@ -118,7 +118,7 @@ describe('ConstraintGeneratorVisitor', () => {
 
     const errors = new Map<bigint, ErrorTree>([[1n, error]])
 
-    const solvingFunction = (_: Constraint) => right([])
+    const solvingFunction = (_: LookupTable, _c: Constraint) => right([])
     const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
     walkModule(visitor, tntModule)
 

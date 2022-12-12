@@ -54,7 +54,7 @@ const withIO = async(inputText: string): Promise<string> => {
 
 // the standard banner, which gets repeated
 const banner =
-`TNT REPL v0.0.2
+`TNT REPL v0.0.3
 Type ".exit" to exit, or ".help" for more information`
 
 async function assertRepl(input: string, output: string) {

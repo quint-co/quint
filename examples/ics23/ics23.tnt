@@ -490,23 +490,27 @@ module ics23pbt {
     m.keys().fold([], (l, i) => l.append(m[i]))
 
   action genKey =
-    Byte.guess(i =>
-      inputKey <- [i]
-    )
+    nondet i = Byte.oneOf()
+    inputKey' = [i]
 
   action Init = and {
     genKey,
     // we start with leafs in the initial state
-    tuples(Byte, Byte, Byte, Byte, Byte, Byte, Byte).guess(lk, lv, lp, rk, rv, rp, pk =>
-      val lp = {
-        key: [ lk ], value: [ lv ],
-        leaf: { prefix: [ lp ] }, path: []
-      }
-      val rp = {
-        key: [ rk ], value: [ rv ], leaf: { prefix: [ rp ] }, path: []
-      }
-      nonMemProof <- { key: [ pk ], left: lp, right: rp }
-    )
+    nondet lk = Byte.oneOf()
+    nondet lv = Byte.oneOf()
+    nondet lp = Byte.oneOf()
+    nondet rk = Byte.oneOf()
+    nondet rv = Byte.oneOf()
+    nondet rp = Byte.oneOf()
+    nondet pk = Byte.oneOf()
+    val lproof = {
+      key: [ lk ], value: [ lv ],
+      leaf: { prefix: [ lp ] }, path: []
+    }
+    val rproof = {
+      key: [ rk ], value: [ rv ], leaf: { prefix: [ rp ] }, path: []
+    }
+    nonMemProof' = { key: [ pk ], left: lproof, right: rproof }
   }
 
   def extend(proof, dir, word) =
@@ -522,19 +526,17 @@ module ics23pbt {
 
   // grow the proof on the left
   action growLeft =
-    Set("turnLeft", "turnRight").guess(dir =>
-      1.to(MaxPrefixLen + ChildSize).setOfMaps(Byte).guess(m =>
-        nonMemProof <-
-          nonMemProof.with("left", nonMemProof.left.extend(dir, toWord(m)))
-    ))
+    nondet dir = Set("turnLeft", "turnRight").oneOf()
+    nondet m = 1.to(MaxPrefixLen + ChildSize).setOfMaps(Byte).oneOf()
+    nonMemProof' =
+      nonMemProof.with("left", nonMemProof.left.extend(dir, toWord(m)))
 
   // grow the proof on the right
   action growRight =
-    Set("turnLeft", "turnRight").guess(dir =>
-      1.to(MaxPrefixLen + ChildSize).setOfMaps(Byte).guess(m =>
-        nonMemProof <-
-          nonMemProof.with("right", nonMemProof.right.extend(dir, toWord(m)))
-    ))
+    nondet dir = Set("turnLeft", "turnRight").oneOf()
+    nondet m = 1.to(MaxPrefixLen + ChildSize).setOfMaps(Byte).oneOf()
+    nonMemProof' =
+      nonMemProof.with("right", nonMemProof.right.extend(dir, toWord(m)))
 
   action Next = and {
     genKey,
@@ -658,39 +660,40 @@ module trees {
   // use a more algorithmic approach that represents trees with binary words.
   action Init = {
     // produce an arbitrary tree with leafs in e.g. [2, 8)
-    2.to(2^height - 1).powerset().guess(idx =>
-      // remove those numbers that should serve as intermediate nodes
-      val leafKeys = idx.filter(i => idx.forall(j => not(i.in(parents(j)))))
-      // compute all parents
-      val allParents = leafKeys.map(i => parents(i)).flatten()
-      // all intermediate nodes that have a left successor
-      val leftKeys = allParents.filter(i =>
-        allParents.union(leafKeys).exists(j => 2 * i == j))
-      // all intermediate nodes that have a right successor
-      val rightKeys = allParents.filter(i =>
-        allParents.union(leafKeys).exists(j => 2 * i + 1 == j))
-      // left mapping
-      val left = leftKeys.mapBy(i => 2 * i)
-      // right mapping
-      val right = rightKeys.mapBy(i => 2 * i + 1)
+    nondet idx = 2.to(2^height - 1).powerset().oneOf()
+    // remove those numbers that should serve as intermediate nodes
+    val leafKeys = idx.filter(i => idx.forall(j => not(i.in(parents(j)))))
+    // compute all parents
+    val allParents = leafKeys.map(i => parents(i)).flatten()
+    // all intermediate nodes that have a left successor
+    val leftKeys = allParents.filter(i =>
+      allParents.union(leafKeys).exists(j => 2 * i == j))
+    // all intermediate nodes that have a right successor
+    val rightKeys = allParents.filter(i =>
+      allParents.union(leafKeys).exists(j => 2 * i + 1 == j))
+    // left mapping
+    val left = leftKeys.mapBy(i => 2 * i)
+    // right mapping
+    val right = rightKeys.mapBy(i => 2 * i + 1)
+    and {
+      // assign values to the keys
+      nondet vs = leafKeys.setOfMaps(Byte).oneOf()
+      val leafs = vs.keys().mapBy(k => { key: [k], value: [vs[k]] })
+      // the resulting tree
+      val t = { leafs: leafs, left: left, right: right }
       and {
-        // assign values to the keys
-        leafKeys.setOfMaps(Byte).guess(vs =>
-          val leafs = vs.keys().mapBy(k => { key: [k], value: [vs[k]] })
-          // the resulting tree
-          val t = { leafs: leafs, left: left, right: right }
-          and {
-            tree <- t,
-            nodeHashes <- computeHashes(t),
-          }
-        ),
-        // pick arbitrary left and right keys for non-membership proofs
-        leafKeys.guess(i => leftKey <- i),
-        leafKeys.guess(i => rightKey <- i),
-        // pick an arbitrary input key
-        Byte.guess(i => inputKey <- i),
-      }
-    )
+        tree' = t,
+        nodeHashes' = computeHashes(t),
+      },
+      // pick arbitrary left and right keys for non-membership proofs
+      nondet i = leafKeys.oneOf()
+      leftKey' = i,
+      nondet i = leafKeys.oneOf()
+      rightKey' = i,
+      // pick an arbitrary input key
+      nondet i = Byte.oneOf()
+      inputKey' = i
+    }
   }
 
   // convert a tree leaf to an exists proof
@@ -732,11 +735,11 @@ module trees {
   // The transition does nothing. The state was computed in Init.
   action Next = and {
     // nothing changes
-    tree <- tree,
-    nodeHashes <- nodeHashes,
-    leftKey <- leftKey,
-    rightKey <- rightKey,
-    inputKey <- inputKey,
+    tree' = tree,
+    nodeHashes' = nodeHashes,
+    leftKey' = leftKey,
+    rightKey' = rightKey,
+    inputKey' = inputKey,
   }
 
   // make sure that the proofs are the same for all the leafs

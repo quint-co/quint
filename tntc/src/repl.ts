@@ -55,7 +55,7 @@ export function tntRepl(input: Readable, output: Writable, exit: () => void = de
   function out(text: string) {
     output.write(text + '\n')
   }
-  out(chalk.gray('TNT REPL v0.0.2'))
+  out(chalk.gray('TNT REPL v0.0.3'))
   out(chalk.gray('Type ".exit" to exit, or ".help" for more information'))
   // create a readline interface
   const rl = readline.createInterface({
@@ -196,7 +196,6 @@ function loadFromFile(out: writer, state: ReplState, filename: string) {
     // split the definitions from the expression
     const frags = data.split(/^\/\/! expressions$/gsm)
     state.defsHist += '\n' + frags[0]
-    out(frags[0])
     // unwrap the expressions from the specially crafted comments
     const exprs =
       (frags[1] ?? '').matchAll(/\/\*! (.*?) !\*\//gsm) ?? []
@@ -204,7 +203,6 @@ function loadFromFile(out: writer, state: ReplState, filename: string) {
     let replayed = false
     for (const groups of exprs) {
       replayed = true
-      out(groups[1])
       if (!tryEval(out, state, groups[1])) {
         break
       }

@@ -7,6 +7,16 @@ import { substitutionsToString } from '../../src/types/printing'
 import { Substitutions } from '../../src/types/substitutions'
 import { Row } from '../../src/tntTypes'
 import { errorTreeToString } from '../../src/errorTree'
+import { LookupTable, newTable } from '../../src/lookupTable'
+import { defaultValueDefinitions } from '../../src'
+
+const table: LookupTable = newTable({
+  valueDefinitions: defaultValueDefinitions(),
+  typeDefinitions: [
+    { identifier: 'MY_ALIAS', type: { kind: 'int' } },
+    { identifier: 'MY_UNINTERPRETED' },
+  ],
+})
 
 describe('solveConstraint', () => {
   it('solves simple equality', () => {
@@ -19,7 +29,7 @@ describe('solveConstraint', () => {
       sourceId: 1n,
     }
 
-    const result = solveConstraint(constraint)
+    const result = solveConstraint(table, constraint)
 
     assert.isTrue(result.isRight())
     result.map(subs => assert.deepEqual(substitutionsToString(subs),
@@ -52,7 +62,7 @@ describe('solveConstraint', () => {
       sourceId: 3n,
     }
 
-    const result = solveConstraint(constraint)
+    const result = solveConstraint(table, constraint)
 
     assert.isTrue(result.isRight())
     result.map(subs => assert.deepEqual(substitutionsToString(subs),
@@ -63,7 +73,7 @@ describe('solveConstraint', () => {
   it('solves empty constraint', () => {
     const constraint: Constraint = { kind: 'empty' }
 
-    const result = solveConstraint(constraint)
+    const result = solveConstraint(table, constraint)
 
     assert.isTrue(result.isRight())
     result.map(subs => assert.sameDeepMembers(subs, []))
@@ -94,7 +104,7 @@ describe('solveConstraint', () => {
       sourceId: 3n,
     }
 
-    const result = solveConstraint(constraint)
+    const result = solveConstraint(table, constraint)
 
     assert.isTrue(result.isLeft())
     result.mapLeft(errors => {
@@ -117,6 +127,7 @@ describe('solveConstraint', () => {
 describe('unify', () => {
   it('unifies variable with other type', () => {
     const result = unify(
+      table,
       parseTypeOrThrow('a'),
       parseTypeOrThrow('(Set[b]) => List[b]')
     )
@@ -129,6 +140,7 @@ describe('unify', () => {
 
   it('returns empty substitution for equal types', () => {
     const result = unify(
+      table,
       parseTypeOrThrow('(Set[b]) => List[b]'),
       parseTypeOrThrow('(Set[b]) => List[b]')
     )
@@ -137,8 +149,62 @@ describe('unify', () => {
     result.map(subs => assert.sameDeepMembers(subs, []))
   })
 
+  it('returns empty substitution for equal types with alias', () => {
+    const result = unify(
+      table,
+      parseTypeOrThrow('(Set[b]) => MY_ALIAS'),
+      parseTypeOrThrow('(Set[b]) => int')
+    )
+
+    assert.isTrue(result.isRight())
+    result.map(subs => assert.sameDeepMembers(subs, []))
+  })
+
+
+  it('returns empty substitution for equal uninterpreted types', () => {
+    const result = unify(
+      table,
+      parseTypeOrThrow('(Set[b]) => MY_UNINTERPRETED'),
+      parseTypeOrThrow('(Set[b]) => MY_UNINTERPRETED')
+    )
+
+    assert.isTrue(result.isRight())
+    result.map(subs => assert.sameDeepMembers(subs, []))
+  })
+
+  it('returns error when uninterpreted type is unified with other type', () => {
+    const result = unify(
+      table,
+      parseTypeOrThrow('MY_UNINTERPRETED'),
+      parseTypeOrThrow('int')
+    )
+
+    assert.isTrue(result.isLeft())
+    result.mapLeft(err => assert.deepEqual(err, {
+      message: "Couldn't unify uninterpreted type MY_UNINTERPRETED with different type",
+      location: "Trying to unify MY_UNINTERPRETED and int",
+      children: [],
+    }))
+  })
+
+  it('returns error when type alias is not found', () => {
+    const result = unify(
+      table,
+      parseTypeOrThrow('UNEXISTING_ALIAS'),
+      parseTypeOrThrow('int')
+    )
+
+    assert.isTrue(result.isLeft())
+    result.mapLeft(err => assert.deepEqual(err, {
+      message: "Couldn't find type alias UNEXISTING_ALIAS",
+      location: "Trying to unify UNEXISTING_ALIAS and int",
+      children: [],
+    }))
+  })
+
   it('unifies args and results of arrow and function types', () => {
     const result = unify(
+      table,
       parseTypeOrThrow('(a) => int -> bool'),
       parseTypeOrThrow('((Set[b]) => List[b]) => b -> c')
     )
@@ -151,6 +217,7 @@ describe('unify', () => {
 
   it('unifies elements of tuples, set and list types', () => {
     const result = unify(
+      table,
       parseTypeOrThrow('(Set[a], List[b])'),
       parseTypeOrThrow('(Set[int], List[bool])')
     )
@@ -163,6 +230,7 @@ describe('unify', () => {
 
   it("returns error when variable occurs in the other type's body", () => {
     const result = unify(
+      table,
       parseTypeOrThrow('a'),
       parseTypeOrThrow('Set[a]')
     )
@@ -177,6 +245,7 @@ describe('unify', () => {
 
   it('returns error when unifying operator with different number of args', () => {
     const result = unify(
+      table,
       parseTypeOrThrow('(a, b) => c'),
       parseTypeOrThrow('(int) => c')
     )
@@ -191,6 +260,7 @@ describe('unify', () => {
 
   it('returns error when unifying tuples with different number of args', () => {
     const result = unify(
+      table,
       parseTypeOrThrow('(a, b, c)'),
       parseTypeOrThrow('(int, bool)')
     )
@@ -219,7 +289,7 @@ describe('unifyRows', () => {
     const row1: Row = parseRowOrThrow('')
     const row2: Row = parseRowOrThrow('| a')
 
-    const result = unifyRows(row1, row2)
+    const result = unifyRows(table, row1, row2)
     const expectedSubs: Substitutions = [{ kind: 'row', name: 'a', value: { kind: 'empty' } }]
 
     result.map(subs => assert.sameDeepMembers(subs, expectedSubs))
@@ -230,7 +300,7 @@ describe('unifyRows', () => {
     const row1: Row = parseRowOrThrow('f: int')
     const row2: Row = parseRowOrThrow('| a')
 
-    const result = unifyRows(row1, row2)
+    const result = unifyRows(table, row1, row2)
     const expectedSubs: Substitutions = [{ kind: 'row', name: 'a', value: row1 }]
 
     result.map(subs => assert.sameDeepMembers(subs, expectedSubs))
@@ -241,7 +311,7 @@ describe('unifyRows', () => {
     const row1: Row = parseRowOrThrow('f1: int, f2: str | a')
     const row2: Row = parseRowOrThrow('f3: bool | b')
 
-    const result = unifyRows(row1, row2)
+    const result = unifyRows(table, row1, row2)
     const expectedSubs: Substitutions = [
       {
         kind: 'row',
@@ -276,7 +346,7 @@ describe('unifyRows', () => {
     const row1: Row = parseRowOrThrow('f1: int, f2: str | a')
     const row2: Row = parseRowOrThrow('f3: bool, f2: str, f1: int')
 
-    const result = unifyRows(row1, row2)
+    const result = unifyRows(table, row1, row2)
     const expectedSubs: Substitutions = [{
       kind: 'row',
       name: 'a',
@@ -291,7 +361,7 @@ describe('unifyRows', () => {
     const row1: Row = parseRowOrThrow('| a')
     const row2: Row = parseRowOrThrow('| b')
 
-    const result = unifyRows(row1, row2)
+    const result = unifyRows(table, row1, row2)
     const expectedSubs: Substitutions = [{ kind: 'row', name: 'a', value: { kind: 'var', name: 'b' } }]
 
     result.map(subs => assert.sameDeepMembers(subs, expectedSubs))
@@ -302,7 +372,7 @@ describe('unifyRows', () => {
     const row1: Row = parseRowOrThrow('f1: int')
     const row2: Row = parseRowOrThrow('f1: str')
 
-    const result = unifyRows(row1, row2)
+    const result = unifyRows(table, row1, row2)
 
     result.mapLeft(err => assert.deepEqual(err, {
       location: 'Trying to unify { f1: int } and { f1: str }',
@@ -318,7 +388,7 @@ describe('unifyRows', () => {
     const row1: Row = parseRowOrThrow('shared: bool, f1: int')
     const row2: Row = parseRowOrThrow('shared: bool, f2: str')
 
-    const result = unifyRows(row1, row2)
+    const result = unifyRows(table, row1, row2)
 
     result.mapLeft(err => assert.deepEqual(err, {
       location: 'Trying to unify { shared: bool, f1: int } and { shared: bool, f2: str }',
@@ -334,7 +404,7 @@ describe('unifyRows', () => {
     const row1: Row = parseRowOrThrow('| a')
     const row2: Row = parseRowOrThrow('f1: str | a')
 
-    const result = unifyRows(row1, row2)
+    const result = unifyRows(table, row1, row2)
 
     result.mapLeft(err => assert.deepEqual(err, {
       message: "Can't bind a to { f1: str | a }: cyclical binding",
@@ -347,7 +417,7 @@ describe('unifyRows', () => {
     const row1: Row = parseRowOrThrow('f1: str | a')
     const row2: Row = parseRowOrThrow('f2: int | a')
 
-    const result = unifyRows(row1, row2)
+    const result = unifyRows(table, row1, row2)
 
     result.mapLeft(err => assert.deepEqual(err, {
       location: 'Trying to unify { f1: str | a } and { f2: int | a }',
@@ -360,7 +430,7 @@ describe('unifyRows', () => {
     const row1: Row = parseRowOrThrow('')
     const row2: Row = parseRowOrThrow('f1: str | a')
 
-    const result = unifyRows(row1, row2)
+    const result = unifyRows(table, row1, row2)
 
     result.mapLeft(err => assert.deepEqual(err, {
       message: "Couldn't unify empty and row",

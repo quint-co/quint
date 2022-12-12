@@ -5,6 +5,9 @@ import { Substitutions, applySubstitution, applySubstitutionToConstraint, compos
 import { Constraint } from '../../src/types/base'
 import { constraintToString } from '../../src/types/printing'
 import { Row } from '../../src'
+import { newTable } from '../../src/lookupTable'
+
+const table = newTable({})
 
 describe('compose', () => {
   it('composes two substitutions', () => {
@@ -24,7 +27,7 @@ describe('compose', () => {
       value: row,
     }]
 
-    const result = compose(s1, s2)
+    const result = compose(table, s1, s2)
 
     assert.sameDeepMembers(result, [
       { kind: 'type', name: 'a', value: parseTypeOrThrow('int') },
@@ -36,7 +39,7 @@ describe('compose', () => {
     const s1: Substitutions = [{ kind: 'type', name: 'v1', value: parseTypeOrThrow('int') }]
     const s2: Substitutions = [{ kind: 'type', name: 'v1', value: { kind: 'var', name: 'q' } }]
 
-    const result = compose(s1, s2)
+    const result = compose(table, s1, s2)
 
     assert.sameDeepMembers(result, s1.concat([
       { kind: 'type', name: 'q', value: parseTypeOrThrow('int') },
@@ -53,7 +56,7 @@ describe('applySubstitution', () => {
 
     const t = parseTypeOrThrow('(a) => b')
 
-    const result = applySubstitution(s, t)
+    const result = applySubstitution(table, s, t)
 
     assert.deepEqual(result, parseTypeOrThrow('(int) => bool'))
   })
@@ -66,7 +69,7 @@ describe('applySubstitution', () => {
 
     const t = parseTypeOrThrow('a -> b')
 
-    const result = applySubstitution(s, t)
+    const result = applySubstitution(table, s, t)
 
     assert.deepEqual(result, parseTypeOrThrow('int -> bool'))
   })
@@ -80,7 +83,7 @@ describe('applySubstitution', () => {
 
     const t = parseTypeOrThrow('(List[a], Set[b], c)')
 
-    const result = applySubstitution(s, t)
+    const result = applySubstitution(table, s, t)
 
     assert.deepEqual(result, parseTypeOrThrow('(List[int], Set[bool], str)'))
   })
@@ -93,7 +96,7 @@ describe('applySubstitution', () => {
 
     const t = parseTypeOrThrow('{ a: a, b: b }')
 
-    const result = applySubstitution(s, t)
+    const result = applySubstitution(table, s, t)
 
     assert.deepEqual(result, parseTypeOrThrow('{ a: int, b: bool }'))
   })
@@ -107,7 +110,7 @@ describe('applySubstitution', () => {
 
     const t = parseTypeOrThrow('{ a: a, b: b | r }')
 
-    const result = applySubstitution(s, t)
+    const result = applySubstitution(table, s, t)
 
     assert.deepEqual(result, parseTypeOrThrow('{ a: int, b: bool }'))
   })
@@ -120,7 +123,7 @@ describe('applySubstitution', () => {
 
     const t = parseTypeOrThrow('| { tag: "a", a: a }\n| { tag: "b", b: b }')
 
-    const result = applySubstitution(s, t)
+    const result = applySubstitution(table, s, t)
 
     assert.deepEqual(result, parseTypeOrThrow('| { tag: "a", a: int }\n| { tag: "b", b: bool }'))
   })
@@ -136,7 +139,7 @@ describe('applySubstitutionToConstraint', () => {
     const t1 = parseTypeOrThrow('a')
     const t2 = parseTypeOrThrow('b')
 
-    const result = applySubstitutionToConstraint(s, { kind: 'eq', types: [t1, t2], sourceId: 1n })
+    const result = applySubstitutionToConstraint(table, s, { kind: 'eq', types: [t1, t2], sourceId: 1n })
     const expectedResult: Constraint =
       { kind: 'eq', types: [parseTypeOrThrow('int'), parseTypeOrThrow('bool')], sourceId: 1n }
 
@@ -145,7 +148,7 @@ describe('applySubstitutionToConstraint', () => {
   })
 
   it('does nothing to empty constraint', () => {
-    const result = applySubstitutionToConstraint(s, { kind: 'empty' })
+    const result = applySubstitutionToConstraint(table, s, { kind: 'empty' })
     const expectedResult: Constraint = { kind: 'empty' }
 
     assert.deepEqual(result, expectedResult,
@@ -155,7 +158,7 @@ describe('applySubstitutionToConstraint', () => {
   it('applies substitution recursively to constraints in conjunction', () => {
     const c1: Constraint = { kind: 'eq', types: [parseTypeOrThrow('a'), parseTypeOrThrow('b')], sourceId: 1n }
     const c2: Constraint = { kind: 'eq', types: [parseTypeOrThrow('b'), parseTypeOrThrow('b')], sourceId: 1n }
-    const result = applySubstitutionToConstraint(s, { kind: 'conjunction', constraints: [c1, c2], sourceId: 1n })
+    const result = applySubstitutionToConstraint(table, s, { kind: 'conjunction', constraints: [c1, c2], sourceId: 1n })
 
     const expected1: Constraint =
       { kind: 'eq', types: [parseTypeOrThrow('int'), parseTypeOrThrow('bool')], sourceId: 1n }

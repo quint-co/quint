@@ -12,14 +12,7 @@
 
 import yargs from 'yargs/yargs'
 
-import { Either } from '@sweet-monads/either'
-import { load, parse, runRepl, typecheck, withJsonToOutput } from './cliCommands'
-
-function handleResult<A>(result: Either<String, A>) {
-  result
-    .mapLeft(msg => { console.error(`error: ${msg}`); process.exit(1) })
-    .mapRight(_ => process.exit(0))
-}
+import { load, outputResult, parse, runRepl, typecheck } from './cliCommands'
 
 // construct parsing commands with yargs
 const parseCmd = {
@@ -35,11 +28,7 @@ const parseCmd = {
         desc: 'name of the source map',
         type: 'string',
       }),
-  handler: (args: any) => handleResult(
-    load(args)
-      .chain(parse)
-      .chain(withJsonToOutput)
-  ),
+  handler: (args: any) => outputResult(load(args).chain(parse)),
 }
 
 // construct typecheck commands with yargs
@@ -52,21 +41,14 @@ const typecheckCmd = {
         desc: 'output file',
         type: 'string',
       }),
-  handler: (args: any) =>
-    handleResult(
-      load(args)
-        .chain(parse)
-        .chain(typecheck)
-        .chain(withJsonToOutput)
-    ),
+  handler: (args: any) => outputResult(load(args).chain(parse).chain(typecheck)),
 }
 
 // construct repl commands with yargs
 const replCmd = {
   command: 'repl',
   desc: 'run REPL',
-  builder: (yargs: any) =>
-    yargs,
+  builder: (yargs: any) => yargs,
   handler: runRepl,
 }
 

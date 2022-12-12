@@ -14,6 +14,8 @@ All of the test inputs in the following test cases are commands executed by `bas
 bash -
 -->
 
+## Error output
+
 ### User error on parse with non-existent file
 
 Regression test for [#215](https://github.com/informalsystems/tnt/issues/215).
@@ -48,8 +50,10 @@ redirects allow us to filter stderr instead of stdout.
 5:   val A = x + 1
              ^
 
-error: parsing failed in phase 2
+error: parsing failed
 ```
+
+## Use of the `--out` flag
 
 ### Module AST is written to `--out` with parse command
 
@@ -79,4 +83,45 @@ rm typecheck-out-example.json
 ```
 first type: "tup"
 first effect: "concrete"
+```
+
+### typecheck failure exits with 1 and prints type errors
+
+<!-- !test exit 1 -->
+<!-- !test in typecheck failure gives non-zero exit -->
+```
+tntc typecheck ./testFixture/TrivialTypeError.tnt 2> >(sed "s:$(pwd):.:" >&2)
+```
+
+<!-- !test err typecheck failure gives non-zero exit -->
+```
+./testFixture/TrivialTypeError.tnt:2:3 - error: Couldn't unify str and int
+Trying to unify str and int
+
+2:   val x : int = "not an int"
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: typechecking failed
+```
+
+### No error output on stdout when typechecking fails with `--out`
+
+We expect NO output on stderr or stdout when the command is run with the `--out` flag.
+
+`txm` doesn't support checking for no output, and an empty code block is read as
+containing a single `\n` character. We workaround this by echoing out a newline
+into both stderr and stdout.
+
+<!-- !test in typecheck failure quiet with out flag -->
+```
+tntc typecheck --out test-out.json ./testFixture/TrivialTypeError.tnt ; ret=$?; rm ./test-out.json && echo | tee >(cat >&2) && exit $ret
+```
+
+<!-- !test exit 1 -->
+<!-- !test out typecheck failure quiet with out flag -->
+```
+```
+
+<!-- !test err typecheck failure quiet with out flag -->
+```
 ```
