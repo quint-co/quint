@@ -196,7 +196,6 @@ function loadFromFile(out: writer, state: ReplState, filename: string) {
     // split the definitions from the expression
     const frags = data.split(/^\/\/! expressions$/gsm)
     state.defsHist += '\n' + frags[0]
-    out(frags[0])
     // unwrap the expressions from the specially crafted comments
     const exprs =
       (frags[1] ?? '').matchAll(/\/\*! (.*?) !\*\//gsm) ?? []
@@ -204,7 +203,6 @@ function loadFromFile(out: writer, state: ReplState, filename: string) {
     let replayed = false
     for (const groups of exprs) {
       replayed = true
-      out(groups[1])
       if (!tryEval(out, state, groups[1])) {
         break
       }
