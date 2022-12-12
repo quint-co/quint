@@ -50,7 +50,7 @@ redirects allow us to filter stderr instead of stdout.
 5:   val A = x + 1
              ^
 
-error: parsing failed in phase 2
+error: parsing failed
 ```
 
 ## Use of the `--out` flag
@@ -102,4 +102,26 @@ Trying to unify str and int
      ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 error: typechecking failed
+```
+
+### No error output on stdout when typechecking fails with `--out`
+
+We expect NO output on stderr or stdout when the command is run with the `--out` flag.
+
+`txm` doesn't support checking for no output, and an empty code block is read as
+containing a single `\n` character. We workaround this by echoing out a newline
+into both stderr and stdout.
+
+<!-- !test in typecheck failure quiet with out flag -->
+```
+tntc typecheck --out test-out.json ./testFixture/TrivialTypeError.tnt ; ret=$?; rm ./test-out.json && echo | tee >(cat >&2) && exit $ret
+```
+
+<!-- !test exit 1 -->
+<!-- !test out typecheck failure quiet with out flag -->
+```
+```
+
+<!-- !test err typecheck failure quiet with out flag -->
+```
 ```

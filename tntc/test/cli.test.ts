@@ -1,7 +1,7 @@
 // Unit tests for CLI procedures
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { parse, status, typecheck } from '../src/cliCommands'
+import { parse, stage, typecheck } from '../src/cliCommands'
 
 const exModule = `
 module exModule {
@@ -14,18 +14,18 @@ const loaded  = {
   args: {},
   path: "mocked/path",
   sourceCode: exModule,
-  status: ('loaded' as status),
+  stage: ('loading' as stage),
   warnings: [],
 }
 
 describe('the parse CLI routine', () =>
   it('succeeds with "parsed" status', () => {
-    parse(loaded).map(s => assert.equal(s.status, 'parsed'))
+    parse(loaded).map(s => assert.equal(s.stage, 'parsing'))
   })
 )
 
 describe('the typecheck CLI routine', () =>
   it('succeeds with "typechecked" status', () => {
-    parse(loaded).chain(typecheck).map(s => assert.equal(s.status, 'typechecked'))
+    parse(loaded).chain(typecheck).map(s => assert.equal(s.stage, 'typechecking'))
   })
 )

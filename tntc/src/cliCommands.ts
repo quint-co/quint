@@ -9,93 +9,105 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import JSONbig from 'json-bigint'
-import lineColumn from 'line-column'
 import { resolve } from 'path'
 import { cwd } from 'process'
 
-import { formatError } from './errorReporter'
 import { ErrorMessage, Loc, compactSourceMap, parsePhase1, parsePhase2 } from './tntParserFrontend'
 
 import { inferEffects } from './effects/inferrer'
 import { checkModes } from './effects/modeChecker'
-import { errorTreeToString } from './errorTree'
+import { ErrorTree, errorTreeToString } from './errorTree'
 
 import { Either, left, right } from '@sweet-monads/either'
 import { Effect } from './effects/base'
-import { effectToString } from './effects/printing'
 import { LookupTableByModule } from './lookupTable'
 import { tntRepl } from './repl'
-import { TntModule } from './tntIr'
+import { OpQualifier, TntModule } from './tntIr'
 import { TypeScheme } from './types/base'
 import { inferTypes } from './types/inferrer'
-import { typeSchemeToString } from './types/printing'
+import lineColumn from 'line-column'
+import { formatError } from './errorReporter'
 
-export type status = 'loaded' | 'parsed' | 'typechecked' | 'error'
+export type stage = 'loading' | 'parsing' | 'typechecking'
 
-/** The data from a ProcedureStatus that may be output to --out */
-interface OutputStatus {
-  status: status,
-  warnings: any[], // TODO it doesn't look like this is being used for anything. Should we remove it?
+/** The data from a ProcedureStage that may be output to --out */
+interface OutputStage {
+  stage: stage,
   module?: TntModule,
   types?: Map<bigint, TypeScheme>,
   effects?: Map<bigint, Effect>,
+  modes?: Map<bigint, OpQualifier>,
   errors?: ErrorMessage[],
+  warnings?: any[], // TODO it doesn't look like this is being used for anything. Should we remove it?
+  sourceCode?: string, // Should not printed, only used in formatting errors
 }
 
-// Extract just the parts of a ProcedureStatus that we use for the output
+// Extract just the parts of a ProcedureStage that we use for the output
 // See https://stackoverflow.com/a/39333479/1187277
-function pickOutputStatus(o: ProcedureStatus): OutputStatus {
-  const picker = ({status, warnings, module, types, effects, errors} : ProcedureStatus) => (
-    {status, warnings, module, types, effects, errors}
+function pickOutputStage(o: ProcedureStage): OutputStage {
+  const picker = ({stage, warnings, module, types, effects, errors} : ProcedureStage) => (
+    {stage, warnings, module, types, effects, errors}
   )
   return picker(o)
 }
 
-interface ErrorStatus extends OutputStatus {
-  errors: ErrorMessage[],
-}
-
-interface ProcedureStatus extends OutputStatus {
+interface ProcedureStage extends OutputStage {
   args: any,
 }
 
-interface LoadedStatus extends ProcedureStatus {
+interface LoadedStage extends ProcedureStage {
   // Path to the source file
   path: string,
   sourceCode: string
 }
 
-interface ParsedStatus extends LoadedStatus {
+interface ParsedStage extends LoadedStage {
   module: TntModule,
   sourceMap: Map<bigint, Loc>,
   table: LookupTableByModule,
 }
 
-interface TypecheckedStatus extends ParsedStatus {
+interface TypecheckedStage extends ParsedStage {
   types: Map<bigint, TypeScheme>,
   effects: Map<bigint, Effect>,
+  modes: Map<bigint, OpQualifier>,
 }
+
+// A procedure stage which is guarnateed to have `errors` and `sourceCode`
+interface ErrorData extends ProcedureStage {
+  errors: ErrorMessage[],
+  sourceCode: string
+}
+
+type ErrResult = {msg: String, stage: ErrorData}
+
+function cliErr<Stage>(msg: String, stage: ErrorData): Either<ErrResult, Stage> {
+  return left({msg, stage})
+}
+
+export type CLIProcedure<Stage> = Either<ErrResult, Stage>
 
 /** Load a file into a string
  *
  * @param args the CLI arguments parsed by yargs */
-export function load(args: any): Either<string, LoadedStatus> {
+export function load(args: any): CLIProcedure<LoadedStage> {
+  const stage : ProcedureStage = {stage: 'loading', args}
   if (existsSync(args.input)) {
     try {
       const path = resolve(cwd(), args.input)
       const sourceCode = readFileSync(path, 'utf8')
       return right({
+        ...stage,
         args,
         path,
         sourceCode,
-        status: 'loaded',
         warnings: [],
       })
     } catch (err: unknown) {
-      return left(`file ${args.input} could not be opened due to ${err}`)
+      return cliErr(`file ${args.input} could not be opened due to ${err}`, {...stage, errors: [], sourceCode: ''})
     }
   } else {
-    return left(`file ${args.input} does not exist`)
+    return cliErr(`file ${args.input} does not exist`, {...stage, errors: [], sourceCode: ''})
   }
 }
 
@@ -103,14 +115,15 @@ export function load(args: any): Either<string, LoadedStatus> {
 /**
  * Parse a TNT specification.
  *
- * @param loaded the procedure status produced by `load`
+ * @param loaded the procedure stage produced by `load`
  */
-export function parse(loaded: LoadedStatus): Either<String, ParsedStatus> {
+export function parse(loaded: LoadedStage): CLIProcedure<ParsedStage> {
   const { args, sourceCode, path } = loaded
+  const parsing = { ...loaded, stage : 'parsing' as stage }
   return parsePhase1(sourceCode, path)
-    .mapLeft(errs => {
-      reportParseError(args, sourceCode, errs)
-      return "parsing failed in phase 1"
+    .mapLeft(newErrs => {
+      const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
+      return { msg: "parsing failed", stage: { ...parsing, errors } }
     })
     .chain(phase1Data => {
       if (args.sourceMap) {
@@ -118,83 +131,60 @@ export function parse(loaded: LoadedStatus): Either<String, ParsedStatus> {
         writeToJson(args.sourceMap, compactSourceMap(phase1Data.sourceMap))
       }
       return parsePhase2(phase1Data)
-        .mapLeft(errs => {
-          reportParseError(args, sourceCode, errs)
-          return "parsing failed in phase 2"
+        .mapLeft(newErrs => {
+          const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
+          return { msg: "parsing failed", stage: { ...parsing, errors } }
         })
-    }).map(phase2Data => ({ ...loaded, ...phase2Data, status: 'parsed' }))
+    })
+    .map(phase2Data => ({ ...parsing, ...phase2Data }))
 }
 
-function reportParseError(argv: any, sourceCode: string, errors: ErrorMessage[]) {
-  if (argv.out) {
-    // write the errors to the output file
-    writeToJson(argv.out, {
-      status: "error",
-      errors: errors,
-    })
-  } else {
-    const finder = lineColumn(sourceCode)
-    // write the errors to stderr
-    errors.forEach((m) => console.error(formatError(sourceCode, finder, m)))
+function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: [bigint, ErrorTree]) => ErrorMessage {
+  return ([key, value]) => {
+    const loc = sourceMap.get(key)!
+    return {
+      explanation: errorTreeToString(value),
+      locs: [loc],
+    }
   }
 }
-
-
 /**
  * Check types and effects of a TNT specification.
  *
- * @param parsed the procedure status produced by `parse`
+ * @param parsed the procedure stage produced by `parse`
  */
-export function typecheck(parsed: ParsedStatus): Either<String, TypecheckedStatus> {
-  const { sourceCode, table, module, sourceMap } = parsed
-  const finder = lineColumn(sourceCode)
+export function typecheck(parsed: ParsedStage): CLIProcedure<TypecheckedStage> {
+  const { table, module, sourceMap } = parsed
+  const typechecking = {...parsed, stage : 'typechecking' as stage}
   const definitionsTable = table
-  const [typeErrors, types] = inferTypes(module, definitionsTable)
-  types.forEach((value, key) => console.log(`${key}: ${typeSchemeToString(value)}`))
+  const errorLocator = mkErrorMessage(sourceMap)
 
-  typeErrors.forEach((value, key) => {
-    const loc = sourceMap.get(key)!
-    const message: ErrorMessage = {
-      explanation: errorTreeToString(value),
-      locs: [loc],
-    }
+  const [typeErrMap, types] = inferTypes(module, definitionsTable)
+  const typeErrors: ErrorMessage[] = Array.from(typeErrMap, errorLocator)
+  // TODO add once logging functionality is added
+  // if (typeErrors.length === 0) console.log("type inference succeeded")
 
-    console.error(formatError(sourceCode, finder, message))
-  })
-
-  const [effectErrors, effects] = inferEffects(definitionsTable, module)
-  effects.forEach((value, key) => console.log(`${key}: ${effectToString(value)}`))
-
-  effectErrors.forEach((value, key) => {
-    const loc = sourceMap.get(key)!
-    const message: ErrorMessage = {
-      explanation: errorTreeToString(value),
-      locs: [loc],
-    }
-
-    console.error(formatError(sourceCode, finder, message))
-  })
+  const [effectErrMap, effects] = inferEffects(definitionsTable, module)
+  const effectErrors: ErrorMessage[] = Array.from(effectErrMap, errorLocator)
+  // TODO add once logging functionality is added
+  // if (effectErrors.length === 0) console.log("effect inference succeeded")
 
   return checkModes(module, effects)
     .mapLeft(modeErrors => {
-      modeErrors.forEach((value, key) => {
-        const loc = sourceMap.get(key)!
-        const message: ErrorMessage = {
-          explanation: errorTreeToString(value),
-          locs: [loc],
-        }
-        console.error(formatError(sourceCode, finder, message))
-      })
-
-      return "typechecking failed"
+      const newErrors: ErrorMessage[] = Array.from(modeErrors, errorLocator)
+      const errors = typechecking.errors ? typechecking.errors.concat(newErrors) : newErrors
+      return {msg: "typechecking failed while checking modes", stage: {...typechecking, errors}}
     })
-    .chain(modeMap => {
-      modeMap.forEach((value, key) => console.log(`${key}: ${value}`))
+    .chain(modes => {
+      // TODO add once logging functionality is added
+      // console.log("mode checking succeeded")
       // Check whether we found errors in previous stages, and forward the error if so
-      if (typeErrors.size !== 0 || effectErrors.size !== 0) {
-        return left("typechecking failed")
+      const newErrors = typeErrors.concat(effectErrors)
+      const errors = typechecking.errors ? typechecking.errors.concat(newErrors) : newErrors
+      if (errors.length > 0) {
+        return cliErr("typechecking failed", {... typechecking, errors})
       } else {
-        return right({ ...parsed, types, effects, status: 'typechecked' })
+        return right({ ...typechecking, types, effects, modes })
       }
     })
 }
@@ -208,13 +198,31 @@ export function runRepl(_argv: any) {
   tntRepl(process.stdin, process.stdout)
 }
 
-/** Write the OutputStatus of the procedureStatus as JSON, if --out is set */
-export function withJsonToOutput(procedureStatus: ProcedureStatus): Either<String, OutputStatus> {
-  const args = procedureStatus.args
-  const outputData = pickOutputStatus(procedureStatus)
-  // TODO test/handle case of writing to non-existent file
-  if (args.out) writeToJson(args.out, outputData);
-  return right((outputData))
+/** Write the OutputStage of the procedureStage as JSON, if --out is set
+ * Otherwise, report any stage errors to STDOUT
+ */
+export function outputResult(result: CLIProcedure<ProcedureStage>) {
+  result
+    .map(stage => {
+      const outputData = pickOutputStage(stage)
+      if (stage.args.out) {
+        writeToJson(stage.args.out, outputData)
+      }
+
+      process.exit(0)
+    })
+    .mapLeft(({ msg, stage }) => {
+      const { args, errors, sourceCode } = stage
+      const outputData = pickOutputStage(stage)
+      if (args.out) {
+        writeToJson(args.out, outputData)
+      } else {
+        const finder = lineColumn(sourceCode!)
+        errors.forEach(err => console.error(formatError(sourceCode, finder, err)))
+        console.error(`error: ${msg}`)
+      }
+      process.exit(1)
+    })
 }
 
 // Preprocess troublesome types so they are represented in JSON.
