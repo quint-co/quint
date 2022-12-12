@@ -234,7 +234,7 @@ action Next = any {
   }
 }
 
-temporal Spec = Init and always(stutter(Next, vars))
+temporal Spec = Init and always(Next.orKeep(vars))
 //----------------------------------------------------------------------------
 /***************************************************************************)
 (* We now define the refinement mapping under which this algorithm         *)

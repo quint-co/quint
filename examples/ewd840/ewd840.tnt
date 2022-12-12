@@ -134,7 +134,7 @@ action Next = any {
 
 val vars = (active, color, tpos, tcolor)
 
-temporal Spec = Init and always(Next.stutter(vars) and System.weakFair(vars))
+temporal Spec = Init and always(Next.orKeep(vars) and System.weakFair(vars))
 
 //-----------------------------------------------------------------------------
 
@@ -143,7 +143,7 @@ temporal Spec = Init and always(Next.stutter(vars) and System.weakFair(vars))
 (***************************************************************************/
 val TokenAlwaysBlack = tcolor == "black"
 
-temporal NeverChangeColor = always((color' = color).stutter(vars))
+temporal NeverChangeColor = always((color' = color).orKeep(vars))
 
 /***************************************************************************)
 (* Main safety property: if there is a white token at node 0 then every    *)
@@ -180,11 +180,11 @@ temporal FalseLiveness =
 (* condition WF_vars(Next) is used instead of only WF_vars(System) that    *)
 (* requires fairness of the actions controlled by termination detection.   *)
 (***************************************************************************/
-temporal SpecWFNext = Init and always(Next.stutter(vars) and Next.weakFair(vars))
+temporal SpecWFNext = Init and always(Next.orKeep(vars) and Next.weakFair(vars))
 
 temporal AllNodesTerminateIfNoMessages = (
   eventually(always(
-      Node.forall(i => not(SendMsg(i))).stutter(vars)
+      Node.forall(i => not(SendMsg(i))).orKeep(vars)
   )) implies eventually(Node.forall(i => not(active.get(i))))
 )
 
@@ -206,7 +206,7 @@ val Inv = or {
 temporal CheckInductiveSpec = and {
   TypeOK,
   Inv,
-  always(Next.stutter(vars))
+  always(Next.orKeep(vars))
 }
 
 /***************************************************************************)

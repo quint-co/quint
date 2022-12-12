@@ -117,7 +117,7 @@ module ReadersWriters {
       Stop.weakFair(vars)
   }
   
-  temporal Spec = Init and always(stutter(Next, vars) and Fairness)
+  temporal Spec = Init and always(Next.orKeep(vars) and Fairness)
   
   //---------------------------------------------------------------------------
   

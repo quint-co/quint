@@ -61,7 +61,7 @@
 			"patterns": [
 				{
 					"name": "keyword.operator.tnt",
-					"match": "\\b(not|or|and|implies|iff|always|eventually|weakFair|strongFair|guarantees|next|unchanged|enabled|stutter|nostutter)\\b"
+					"match": "\\b(not|or|and|implies|iff|always|eventually|weakFair|strongFair|guarantees|next|unchanged|enabled|orKeep|mustChange)\\b"
 				},
 				{
 					"name": "keyword.operator.tnt",
