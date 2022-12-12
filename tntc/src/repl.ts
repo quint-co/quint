@@ -55,7 +55,7 @@ export function tntRepl(input: Readable, output: Writable, exit: () => void = de
   function out(text: string) {
     output.write(text + '\n')
   }
-  out(chalk.gray('TNT REPL v0.0.2'))
+  out(chalk.gray('TNT REPL v0.0.3'))
   out(chalk.gray('Type ".exit" to exit, or ".help" for more information'))
   // create a readline interface
   const rl = readline.createInterface({
