@@ -75,6 +75,8 @@ export function tntRepl(input: Readable, output: Writable, exit: () => void = de
   }
   // we let the user type a multiline string, which is collected here:
   let multilineText = ''
+  // when recyclingOwnOutput is true, REPL is receiving its older output
+  let recyclingOwnOutput = false
   // when the number of open braces or parentheses is positive,
   // we enter the multiline mode
   let nOpenBraces = 0
@@ -98,23 +100,40 @@ export function tntRepl(input: Readable, output: Writable, exit: () => void = de
     const [nob, nop] = countBraces(line)
     nOpenBraces += nob
     nOpenParen += nop
+
     if (multilineText === '') {
-      if (nOpenBraces > 0 || nOpenParen > 0) {
-        // enter a multiline mode
-        multilineText += '\n' + line
+      // if the line starts with a non-empty prompt,
+      // we assume it is multiline code that was copied from a REPL prompt
+      recyclingOwnOutput =
+        settings.prompt !== '' && line.trim().indexOf(settings.prompt) === 0
+      if (nOpenBraces > 0 || nOpenParen > 0 || recyclingOwnOutput) {
+        // Enter a multiline mode.
+        // If the text is copy-pasted from the REPL output,
+        // trim the REPL decorations.
+        multilineText = trimReplDecorations(line)
         rl.setPrompt(settings.continuePrompt)
       } else {
         line.trim() === '' || tryEval(out, state, line)
       }
     } else {
-      if (line.trim() === '' && nOpenBraces <= 0 && nOpenParen <= 0) {
-        // end the multiline mode
+      const trimmedLine = line.trim()
+      const continueOwnOutput =
+        settings.continuePrompt !== ''
+          && trimmedLine.indexOf(settings.continuePrompt) === 0
+      if ((trimmedLine.length === 0 && nOpenBraces <= 0 && nOpenParen <= 0)
+            || (recyclingOwnOutput && !continueOwnOutput)) {
+        // End the multiline mode.
+        // If recycle own output, then the current line is, most likely,
+        // older input. Ignore it.
         tryEval(out, state, multilineText)
         multilineText = ''
+        recyclingOwnOutput = false
         rl.setPrompt(settings.prompt)
       } else {
-        // continue the multiline mode
-        multilineText += '\n' + line
+        // Continue the multiline mode.
+        // It may happen that the text is copy-pasted from the REPL output.
+        // In this case, we have to trim the leading '... '.
+        multilineText += '\n' + trimReplDecorations(trimmedLine)
       }
     }
   }
@@ -462,6 +481,18 @@ function printErrorMessages(out: writer,
   for (const e of messages) {
     const msg = formatError(text, finder, e, lineOffset)
     out(color(`${kind}: ${msg}`))
+  }
+}
+
+// if a line start with '>>> ' or '... ', trim these markers
+function trimReplDecorations(line: string) {
+  // we are not using settings.prompt and settings.continuePrompt,
+  // as ... are interpreted as three characters.
+  const match = /^\s*(>>> |\.\.\. )(.*)/.exec(line)
+  if (match && match[2] !== undefined) {
+    return match[2]
+  } else {
+    return line
   }
 }
 

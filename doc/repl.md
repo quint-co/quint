@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author           |
 | -------: | :--------: | :--------------- |
-| 2        | 09.12.2022 | Igor Konnov      |
+| 3        | 13.12.2022 | Igor Konnov      |
 
 A [REPL][] is a read-eval-print loop. A REPL is usually a good way to start
 learning a language.
@@ -108,6 +108,12 @@ true
 >>> veryHot
 104
 ```
+
+**Hint.** At some point, you may want to copy & paste the above output back in
+REPL.  Try it. REPL is smart enough to recycle its own output. Be careful
+though about not mixing the lines starting with `'>>> '` or `'... '` (which
+decorate your input in REPL) with other lines (which indicate the REPL output).
+If you do mix REPL input with REPL output, you may get syntax errors.
 
 ## 5. Describing a state machine
 
