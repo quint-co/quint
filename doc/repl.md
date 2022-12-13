@@ -281,12 +281,12 @@ simply setting the state variables to the state we need:
 true
 ```
 
-This tells the simulator to apply an anonymous action, advancing the state in the way specified in the expression.
-to 100, `heatingOn` to `true`, and `beeping` to `false`. (You can double check
-that by evaluating the variables.) Note that not only we had to set the value
-of `temperature`, but also the values of `heatingOn` and `beeping`. If we had
-not done that, the values of `heatingOn` and `beeping` would have become
-undefined.
+This tells the simulator to apply an anonymous action, advancing the state in
+the way specified in the expression: It sets `temperature` to 100, `heatingOn` to
+`true`, and `beeping` to `false`. (You can double check that by evaluating the
+variables.) Note that not only we had to set the value of `temperature`, but
+also the values of `heatingOn` and `beeping`. If we had not done that, the
+values of `heatingOn` and `beeping` would have become undefined.
 
 Now we can apply `failover`:
 
@@ -390,14 +390,14 @@ the following expressions:
 true
 >>> depressButton
 true
->>> (heatingOn, temperature, beeping)
-(false, 100, false)
+>>> kettleState
+{ heatingOn: false, beeping: false, temperature: 100 }
 >>> all { heatingOn' = true, temperature' = 100, beeping' = false }
 true
 >>> failover
 true
->>> (heatingOn, temperature, beeping)
-(false, 100, true)
+>>> kettleState
+{ heatingOn: false, beeping: true, temperature: 100 }
 ```
 
 As we can see, both `depressButton` and `failover` can apply when the
@@ -434,7 +434,7 @@ The REPL implementation chooses one of the enabled actions pseudo-randomly.  But
 in general, the language does not prescribe one way of choosing between
 simulteneously enabled actions. So we prefer saying that TNT evaluates `any {
 ... }` non-deterministically. To be precise, `any { ... }` describes **control
-non-determinism***, that is, it chooses how to continue the flow, but each of our
+non-determinism**, that is, it chooses how to continue the flow, but each of our
 actions behaves like a deterministic program. We will introduce
 [data non-determinism](#dataNondet) in the next section.
 
