@@ -205,7 +205,7 @@ module builtin {
   ///   Set(1, 2)
   /// ))
   /// ```
-  pure def powerset(s): Set[Set[a]] => Set[Set[a]]
+  pure def powerset(s): (Set[Set[a]]) => Set[Set[a]]
 
   /// `s.flatten()` is the set of all elements in the sets in `s`.
   ///
@@ -213,7 +213,7 @@ module builtin {
   /// ```
   /// assert(Set(Set(1, 2), Set(3, 4)).flatten() == Set(1, 2, 3, 4))
   /// ```
-  pure def flatten(s): Set[Set[a]] => Set[a]
+  pure def flatten(s): (Set[Set[a]]) => Set[a]
 
   /// `s.allLists()` is the set of all lists containing all the elements in `s`.
   ///
@@ -224,7 +224,7 @@ module builtin {
   ///   List(2, 1),
   /// )) 
   /// ```
-  pure def allLists(s): Set[a] => Set[List[a]]
+  pure def allLists(s): (Set[a]) => Set[List[a]]
 
   /// `s.chooseSome()` is, deterministically, one element of `s`.
   /// 
@@ -233,7 +233,7 @@ module builtin {
   /// assert(Set(1, 2, 3).chooseSome() == 1)
   /// assert(Set(1, 2, 3).filter(x => x > 2).chooseSome() == 3)
   /// ```
-  pure def chooseSome(s): Set[a] => a
+  pure def chooseSome(s): (Set[a]) => a
 
   /// `s.oneOf()` is, non-deterministically, one element of `s`.
   ///
@@ -242,7 +242,7 @@ module builtin {
   /// nondet x = oneOf(Set(1, 2, 3))
   /// assert(x.in(Set(1, 2, 3)))
   /// ```
-  pure def oneOf(s): Set[a] => a
+  pure def oneOf(s): (Set[a]) => a
 
   /// `s.isFinite()` is true when `s` is a finite set
   ///
@@ -251,7 +251,7 @@ module builtin {
   /// assert(Set(1, 2, 3).isFinite())
   /// assert(!Nat.isFinite())
   /// ```
-  pure def isFinite(s): Set[a] => bool
+  pure def isFinite(s): (Set[a]) => bool
 
   /// `s.size()` is the cardinality of `s`.
   ///
@@ -259,7 +259,7 @@ module builtin {
   /// ```
   /// assert(Set(1, 2, 3).size() == 3)
   /// ```
-  pure def size(s): Set[a] => int
+  pure def size(s): (Set[a]) => int
 
   /// `m.get(k)` is the value for `k` in `m`.
   /// If `k` is not in `m` then the behavior is undefined.
