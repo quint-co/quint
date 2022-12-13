@@ -8,6 +8,7 @@ import { Row, TntType } from './tntTypes'
 import { strict as assert } from 'assert'
 import { ErrorMessage, Loc } from './tntParserFrontend'
 import { compact, zipWith } from 'lodash'
+import { definitionToString } from './IRprinting'
 
 /**
  * An ANTLR4 listener that constructs TntIr objects out of the abstract
@@ -215,7 +216,7 @@ export class ToIrListener implements TntListener {
         def.typeAnnotation = typeTag
       }
       this.definitionStack.push(def)
-      console.log(`# \`definitionToString(def)\``)
+      console.log(`# \`${definitionToString(def)}\``)
       console.log(doc)
       console.log(`\n`)
     } else {
