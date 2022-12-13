@@ -10,7 +10,8 @@
  */
 grammar Tnt;
 
-module : 'module' IDENTIFIER '{' unit* '}';
+module : 'module' IDENTIFIER '{' (docLines unit)* '}';
+docLines : DOCCOMMENT*;
 
 // a module unit
 unit :    'const' IDENTIFIER ':' type                     # const
@@ -30,7 +31,7 @@ unit :    'const' IDENTIFIER ':' type                     # const
         ;
 
 // an operator definition
-operDef : qualifier IDENTIFIER params? (':' type)? '=' expr ';'?
+operDef : qualifier normalCallName params? (':' type)? ('=' expr)? ';'?
         ;
 
 qualifier : 'val'
@@ -214,6 +215,8 @@ RPAREN          :   ')' ;
 // other TLA+ identifiers
 IDENTIFIER             : SIMPLE_IDENTIFIER | SIMPLE_IDENTIFIER '::' IDENTIFIER ;
 SIMPLE_IDENTIFIER      : ([a-zA-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;
+
+DOCCOMMENT : '///' .*? '\n';
 
 // comments and whitespaces
 LINE_COMMENT    :   '//' .*? '\n'   -> skip ;

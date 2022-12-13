@@ -28,7 +28,7 @@ import { inferTypes } from './types/inferrer'
 import lineColumn from 'line-column'
 import { formatError } from './errorReporter'
 
-export type stage = 'loading' | 'parsing' | 'typechecking'
+export type stage = 'loading' | 'parsing' | 'typechecking' | 'documentation'
 
 /** The data from a ProcedureStage that may be output to --out */
 interface OutputStage {
@@ -71,6 +71,10 @@ interface TypecheckedStage extends ParsedStage {
   types: Map<bigint, TypeScheme>,
   effects: Map<bigint, Effect>,
   modes: Map<bigint, OpQualifier>,
+}
+
+interface DocumentationStage extends LoadedStage {
+  // TODO
 }
 
 // A procedure stage which is guarnateed to have `errors` and `sourceCode`
@@ -196,6 +200,29 @@ export function typecheck(parsed: ParsedStage): CLIProcedure<TypecheckedStage> {
  */
 export function runRepl(_argv: any) {
   tntRepl(process.stdin, process.stdout)
+}
+
+/**
+ * Produces documentation from docstrings in a TNT specification.
+ *
+ * @param loaded the procedure stage produced by `load`
+ */
+export function docs(loaded: LoadedStage): CLIProcedure<DocumentationStage> {
+  const { args, sourceCode, path } = loaded
+  const parsing = { ...loaded, stage: 'documentation' as stage }
+  return parsePhase1(sourceCode, path)
+    .mapLeft(newErrs => {
+      const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
+      return { msg: "parsing failed", stage: { ...parsing, errors } }
+    })
+    // .chain(phase1Data => {
+    //   return produceDocs(phase1Data.tntModule)
+    //     .mapLeft(newErrs => {
+    //       const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
+    //       return { msg: "parsing failed", stage: { ...parsing, errors } }
+    //     })
+    // })
+    .map(phase2Data => ({ ...parsing, ...phase2Data }))
 }
 
 /** Write the OutputStage of the procedureStage as JSON, if --out is set

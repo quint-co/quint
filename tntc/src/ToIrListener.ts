@@ -50,6 +50,8 @@ export class ToIrListener implements TntListener {
   private paramStack: string[][] = []
   // the stack of rows for records and unions
   private rowStack: Row[] = []
+  // the stack of documentation lines before a definition
+  private docStack: string[] = []
   // an internal counter to assign unique numbers
   private lastId: bigint = 1n
 
@@ -157,7 +159,7 @@ export class ToIrListener implements TntListener {
 
   // translate a top-level or nested operator definition
   exitOperDef(ctx: p.OperDefContext) {
-    const name = ctx.IDENTIFIER().text
+    const name = ctx.normalCallName().IDENTIFIER()?.text ?? 'reserved'
     let typeTag: TntType | undefined
     if (ctx.type()) {
       // the operator is tagged with a type
@@ -166,6 +168,9 @@ export class ToIrListener implements TntListener {
     // get the parameters and the definition body
     const expr = this.exprStack.pop()
     const params = (ctx.params()) ? this.paramStack.pop() : []
+
+    const doc = this.docStack.length > 0 ? this.docStack.join('\n') : undefined
+    this.docStack = []
 
     // extract the qualifier
     let qualifier: OpQualifier = 'def'
@@ -183,9 +188,9 @@ export class ToIrListener implements TntListener {
       }
     }
 
-    if (expr && params) {
+    if (params) {
       // if the definition has parameters, introduce a lambda
-      let body = expr
+      let body = expr ?? this.undefinedDef(ctx)
       const id = this.nextId()
       this.sourceMap.set(id, this.loc(ctx))
 
@@ -195,7 +200,7 @@ export class ToIrListener implements TntListener {
           kind: 'lambda',
           params,
           qualifier,
-          expr,
+          expr: expr ?? this.undefinedDef(ctx),
         }
       }
       const def: TntOpDef = {
@@ -204,11 +209,15 @@ export class ToIrListener implements TntListener {
         name,
         qualifier,
         expr: body,
+        doc,
       }
       if (typeTag) {
         def.typeAnnotation = typeTag
       }
       this.definitionStack.push(def)
+      console.log(`# \`definitionToString(def)\``)
+      console.log(doc)
+      console.log(`\n`)
     } else {
       const ls = this.locStr(ctx)
       // istanbul ignore next
@@ -533,7 +542,7 @@ export class ToIrListener implements TntListener {
   exitRecord(ctx: p.RecordContext) {
     const names = ctx.IDENTIFIER().map((n) => n.text)
     const elems: TntEx[] = this.popExprs(ctx.expr().length)
-    
+
     const namesAndValues = zipWith(names, elems, (name, elem) => {
       const id = this.nextId()
       this.sourceMap.set(id, this.loc(ctx))
@@ -791,9 +800,9 @@ export class ToIrListener implements TntListener {
     const names = ctx.IDENTIFIER().map((n) => n.text)
     const elemTypes: TntType[] = this.popTypes(ctx.type().length)
 
-    const fields = compact(zipWith(names, elemTypes, (name, elemType) => { 
+    const fields = compact(zipWith(names, elemTypes, (name, elemType) => {
       if (name !== undefined && elemType !== undefined) {
-        return { fieldName: name, fieldType: elemType } 
+        return { fieldName: name, fieldType: elemType }
       } else {
         return undefined
       }
@@ -892,7 +901,13 @@ export class ToIrListener implements TntListener {
     }
   }
 
-  /**
+  enterDocLines(ctx: p.DocLinesContext) {
+    const doc = ctx.DOCCOMMENT().map(l => l.text.slice(4, -1))
+    // console.log(doc)
+    this.docStack = doc
+  }
+
+  /*
    * Produce a human-readable location string.
    */
   private locStr(ctx: ParserRuleContext) {
@@ -995,4 +1010,11 @@ export class ToIrListener implements TntListener {
     this.lastId += 1n
     return id
   }
+
+  private undefinedDef(ctx: any): TntEx {
+    const id = this.nextId()
+    this.sourceMap.set(id, this.loc(ctx))
+    return { id, kind: 'name', name: 'undefined' }
+  }
 }
+
