@@ -1,12 +1,12 @@
 module builtin {
-  /// The infinite set of all natural numbers
+  /// The infinite set of all natural numbers.
   ///
-  /// Some operators cannot be applied to inifine sets.
+  /// Infinite sets cannot be enumerated. Hence some operators that require iteration may be unsupported.
   pure val Nat: Set[int]
 
-  /// The infinite set of all integers
+  /// The infinite set of all integers.
   ///
-  /// Some operators cannot be applied to inifine sets.
+  /// Infinite sets cannot be enumerated. Hence some operators that require iteration may be unsupported.
   pure val Int: Set[int]
 
   /// The set of all booleans
@@ -303,7 +303,6 @@ module builtin {
   /// ```
   pure def setToMap(s): (Set[(a, b)]) => (a -> b)
   
-  /// Creates a set of all possible maps from a set of keys to a set of values.
   /// `keys.setOfMaps(values)` is the set of all maps from `keys` to `values`.
   ///
   /// # Examples
@@ -319,8 +318,8 @@ module builtin {
   /// ```
   pure def setOfMaps(s1, s2): (Set[a], Set[b]) => Set[a -> b]
 
-  /// `m.set(k, v)` for `k.in(m.keys)` is a map with the same keys as `m` but with `k` set to `v`.
-  /// If `k` is not present in `m`, this operator has undefined behavior.
+  /// `m.set(k, v)` is the map `m` but with the key `k` mapped `v` if `k.in(keys(m))`
+  /// If `k` is not a key in `m`, this operator has undefined behavior.
   ///
   /// # Examples
   ///
@@ -345,7 +344,7 @@ module builtin {
   /// ```
   pure def setBy(m, k, v): (a -> b, a, (b) => b) => a -> b
 
-  /// `m.put(k, v)` for `k.notin(m.keys)` is a map with the same keys as `m` but with `k` set to `v`.
+  /// `m.put(k, v)` map `m` extended with the key `k` set to `v`.
   /// If `k` is present in `m`, this operator has undefined behavior.
   ///
   /// # Examples
@@ -358,7 +357,7 @@ module builtin {
   /// ```
   pure def put(m, k, v): (a -> b, a, b) => a -> b
 
-  /// `l.append(e)` is the list `l` with `e` appended.
+  /// `l.append(e)` is the list `l` with the element `e` appended.
   ///
   /// # Examples
   ///
@@ -484,7 +483,7 @@ module builtin {
   /// ```
   pure def foldl(l, z, f): (List[a], b, (b, a) => b) => b
   
-  /// `l.foldr(z, f)` is the result of applying `f` to each element in `s` and `z`.
+  /// `l.foldr(z, f)` reduces the elements in `s` using `f`, starting with `z` from the right.
   /// I.e., `f(x0, f(x1, ... f(xn, z))`.
   ///
   /// # Examples
@@ -500,7 +499,7 @@ module builtin {
   /// It can be used in the infix form as `+` or as a named operator `iadd`.
   pure def iadd(a, b): (int, int) => int
   
-  /// `a.isub(b)` is the integer subtraction of `a` and `b`.
+  /// `a.isub(b)` is the integer subtraction of `b` from `a`.
   /// It can be used in the infix form as `-` or as a named operator `isub`.
   pure def isub(a, b): (int, int) => int
 
@@ -508,7 +507,7 @@ module builtin {
   /// It can be used in the infix form as `*` or as a named operator `imul`.
   pure def imul(a, b): (int, int) => int
 
-  /// `a.idiv(b)` is the integer division of `a` and `b`.
+  /// `a.idiv(b)` is the integer division of `a` by `b`.
   /// It can be used in the infix form as `/` or as a named operator `idiv`.
   pure def idiv(a, b): (int, int) => int
 
@@ -516,7 +515,7 @@ module builtin {
   /// It can be used in the infix form as `%` or as a named operator `imod`.
   pure def imod(a, b): (int, int) => int
 
-  /// `a.ipow(b)` is the integer exponentiation of `a` and `b`.
+  /// `a.ipow(b)` is the integer exponentiation of `a` by `b`.
   /// It can be used in the infix form as `^` or as a named operator `ipow`.
   pure def ipow(a, b): (int, int) => int
 
@@ -542,14 +541,14 @@ module builtin {
   pure def iuminus(a): (int) => int
 
   /// `i.to(j)` is the set of integers between `i` and `j`.
-  /// `i` is inclusive and `j` is exclusive.
+  /// `i` is inclusive and `j` is inclusive.
   ///
   /// The behavior is undefined when `i` is greater than `j`.
   ///
   /// # Examples
   ///
   /// ```
-  /// assert(1.to(3) == Set(1, 2))
+  /// assert(1.to(3) == Set(1, 2, 3))
   /// ```
   pure def to(i, j): (int, int) => Set[int]
 
