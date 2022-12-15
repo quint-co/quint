@@ -96,8 +96,8 @@ describe('checkModes', () => {
     modeCheckingResult
       .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
         [4n, {
-          location: 'Checking modes for pureval v = iadd(x, 1)',
-          message: 'Expected val mode, found: pureval',
+          location: 'Checking modes for pure val v = iadd(x, 1)',
+          message: 'Expected val mode, found: pure val',
           children: [],
         }],
       ]))
@@ -132,8 +132,8 @@ describe('checkModes', () => {
     modeCheckingResult
       .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
         [3n, {
-          location: 'Checking modes for puredef f = (p => not(y))',
-          message: 'Expected def mode, found: puredef',
+          location: 'Checking modes for pure def f = (p => not(y))',
+          message: 'Expected def mode, found: pure def',
           children: [],
         }],
       ]))
@@ -168,8 +168,8 @@ describe('checkModes', () => {
     modeCheckingResult
       .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
         [5n, {
-          location: 'Checking modes for pureval v = always(igt(x, 5))',
-          message: 'Expected temporal mode, found: pureval',
+          location: 'Checking modes for pure val v = always(igt(x, 5))',
+          message: 'Expected temporal mode, found: pure val',
           children: [],
         }],
       ]))

@@ -31,6 +31,7 @@ export function moduleToString(tntModule: TntModule): string {
  * Pretty prints a definition
  *
  * @param def the TNT expression to be formatted
+ * @param includeBody optional, whether to include the body of the definition, defaults to true
  *
  * @returns a string with the pretty printed definition
  */
@@ -39,7 +40,7 @@ export function definitionToString(def: TntDef, includeBody:boolean=true): strin
     isAnnotatedDef(def) ? `: ${typeToString(def.typeAnnotation)}` : ''
   switch (def.kind) {
     case 'def': {
-      const header = `${qualifierToString(def.qualifier)} ${def.name}${typeAnnotation}` 
+      const header = `${qualifierToString(def.qualifier)} ${def.name}${typeAnnotation}`
       return includeBody ? `${header} = ${expressionToString(def.expr)}` : header
     }
     case 'var':
@@ -142,6 +143,21 @@ export function rowToString(r: Row): string {
   return fields === '' ? '{}' : `{ ${fields} }`
 }
 
+/**
+ * Pretty prints an operator qualifier.
+ *
+ * @param qualifier the qualidier to be formatted
+ *
+ * @returns a string with the pretty printed qualifier
+ */
+export function qualifierToString(qualifier: OpQualifier): string {
+  switch(qualifier) {
+    case 'puredef': return 'pure def'
+    case 'pureval': return 'pure val'
+    default: return qualifier
+  }
+}
+
 function rowFieldsToString(r: Row, showFieldName=true): string {
   switch (r.kind) {
     case 'empty':
@@ -164,13 +180,5 @@ function rowFieldsToString(r: Row, showFieldName=true): string {
           return `${fields.join(', ')}`
       }
     }
-  }
-}
-
-function qualifierToString(qualifier: OpQualifier): string {
-  switch(qualifier) {
-    case 'puredef': return 'pure def'
-    case 'pureval': return 'pure val'
-    default: return qualifier
   }
 }

@@ -16,7 +16,7 @@
 import { Either, left, right } from '@sweet-monads/either'
 import isEqual from 'lodash.isequal'
 import { ErrorTree } from '../errorTree'
-import { definitionToString } from '../IRprinting'
+import { definitionToString, qualifierToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { OpQualifier, TntModule, TntOpDef } from '../tntIr'
 import { ArrowEffect, ConcreteEffect, Effect, Variables, isAction, isState, isTemporal } from './base'
@@ -74,7 +74,7 @@ class ModeCheckerVisitor implements IRVisitor {
     if (generalMode === mode) {
       this.errors.set(def.id, {
         location: `Checking modes for ${definitionToString(def)}`,
-        message: `Expected ${mode} mode, found: ${def.qualifier}`,
+        message: `Expected ${mode} mode, found: ${qualifierToString(def.qualifier)}`,
         children: [],
       })
     } else if (generalMode === def.qualifier) {

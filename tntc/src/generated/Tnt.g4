@@ -70,7 +70,7 @@ type :          <assoc=right> type '->' type                    # typeFun
         |       '(' type ')'                                    # typeParen
         ;
 
-typeUnionRecOne : '|' '{' IDENTIFIER ':' STRING (',' row)? ','? '}' 
+typeUnionRecOne : '|' '{' IDENTIFIER ':' STRING (',' row)? ','? '}'
                 ;
 
 row : | (IDENTIFIER ':' type ',')* ((IDENTIFIER ':' type) (',' | '|' (IDENTIFIER))?)?
