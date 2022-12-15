@@ -159,7 +159,7 @@ export class ToIrListener implements TntListener {
 
   // translate a top-level or nested operator definition
   exitOperDef(ctx: p.OperDefContext) {
-    const name = ctx.normalCallName().IDENTIFIER()?.text ?? 'reserved'
+    const name = ctx.normalCallName().text
     let typeTag: TntType | undefined
     if (ctx.type()) {
       // the operator is tagged with a type
