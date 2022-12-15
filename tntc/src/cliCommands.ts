@@ -27,6 +27,7 @@ import { TypeScheme } from './types/base'
 import { inferTypes } from './types/inferrer'
 import lineColumn from 'line-column'
 import { formatError } from './errorReporter'
+import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 
 export type stage = 'loading' | 'parsing' | 'typechecking' | 'documentation'
 
@@ -37,6 +38,7 @@ interface OutputStage {
   types?: Map<bigint, TypeScheme>,
   effects?: Map<bigint, Effect>,
   modes?: Map<bigint, OpQualifier>,
+  documentation?: DocumentationEntry[],
   errors?: ErrorMessage[],
   warnings?: any[], // TODO it doesn't look like this is being used for anything. Should we remove it?
   sourceCode?: string, // Should not printed, only used in formatting errors
@@ -45,8 +47,8 @@ interface OutputStage {
 // Extract just the parts of a ProcedureStage that we use for the output
 // See https://stackoverflow.com/a/39333479/1187277
 function pickOutputStage(o: ProcedureStage): OutputStage {
-  const picker = ({stage, warnings, module, types, effects, errors} : ProcedureStage) => (
-    {stage, warnings, module, types, effects, errors}
+  const picker = ({ stage, warnings, module, types, effects, errors, documentation }: ProcedureStage) => (
+    { stage, warnings, module, types, effects, errors, documentation }
   )
   return picker(o)
 }
@@ -83,10 +85,10 @@ interface ErrorData extends ProcedureStage {
   sourceCode: string
 }
 
-type ErrResult = {msg: String, stage: ErrorData}
+type ErrResult = { msg: String, stage: ErrorData }
 
 function cliErr<Stage>(msg: String, stage: ErrorData): Either<ErrResult, Stage> {
-  return left({msg, stage})
+  return left({ msg, stage })
 }
 
 export type CLIProcedure<Stage> = Either<ErrResult, Stage>
@@ -95,7 +97,7 @@ export type CLIProcedure<Stage> = Either<ErrResult, Stage>
  *
  * @param args the CLI arguments parsed by yargs */
 export function load(args: any): CLIProcedure<LoadedStage> {
-  const stage : ProcedureStage = {stage: 'loading', args}
+  const stage: ProcedureStage = { stage: 'loading', args }
   if (existsSync(args.input)) {
     try {
       const path = resolve(cwd(), args.input)
@@ -108,10 +110,10 @@ export function load(args: any): CLIProcedure<LoadedStage> {
         warnings: [],
       })
     } catch (err: unknown) {
-      return cliErr(`file ${args.input} could not be opened due to ${err}`, {...stage, errors: [], sourceCode: ''})
+      return cliErr(`file ${args.input} could not be opened due to ${err}`, { ...stage, errors: [], sourceCode: '' })
     }
   } else {
-    return cliErr(`file ${args.input} does not exist`, {...stage, errors: [], sourceCode: ''})
+    return cliErr(`file ${args.input} does not exist`, { ...stage, errors: [], sourceCode: '' })
   }
 }
 
@@ -123,7 +125,7 @@ export function load(args: any): CLIProcedure<LoadedStage> {
  */
 export function parse(loaded: LoadedStage): CLIProcedure<ParsedStage> {
   const { args, sourceCode, path } = loaded
-  const parsing = { ...loaded, stage : 'parsing' as stage }
+  const parsing = { ...loaded, stage: 'parsing' as stage }
   return parsePhase1(sourceCode, path)
     .mapLeft(newErrs => {
       const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
@@ -159,7 +161,7 @@ function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: [bigint, ErrorTree]) =
  */
 export function typecheck(parsed: ParsedStage): CLIProcedure<TypecheckedStage> {
   const { table, module, sourceMap } = parsed
-  const typechecking = {...parsed, stage : 'typechecking' as stage}
+  const typechecking = { ...parsed, stage: 'typechecking' as stage }
   const definitionsTable = table
   const errorLocator = mkErrorMessage(sourceMap)
 
@@ -177,7 +179,7 @@ export function typecheck(parsed: ParsedStage): CLIProcedure<TypecheckedStage> {
     .mapLeft(modeErrors => {
       const newErrors: ErrorMessage[] = Array.from(modeErrors, errorLocator)
       const errors = typechecking.errors ? typechecking.errors.concat(newErrors) : newErrors
-      return {msg: "typechecking failed while checking modes", stage: {...typechecking, errors}}
+      return { msg: "typechecking failed while checking modes", stage: { ...typechecking, errors } }
     })
     .chain(modes => {
       // TODO add once logging functionality is added
@@ -186,7 +188,7 @@ export function typecheck(parsed: ParsedStage): CLIProcedure<TypecheckedStage> {
       const newErrors = typeErrors.concat(effectErrors)
       const errors = typechecking.errors ? typechecking.errors.concat(newErrors) : newErrors
       if (errors.length > 0) {
-        return cliErr("typechecking failed", {... typechecking, errors})
+        return cliErr("typechecking failed", { ...typechecking, errors })
       } else {
         return right({ ...typechecking, types, effects, modes })
       }
@@ -208,21 +210,20 @@ export function runRepl(_argv: any) {
  * @param loaded the procedure stage produced by `load`
  */
 export function docs(loaded: LoadedStage): CLIProcedure<DocumentationStage> {
-  const { args, sourceCode, path } = loaded
+  const { sourceCode, path } = loaded
   const parsing = { ...loaded, stage: 'documentation' as stage }
   return parsePhase1(sourceCode, path)
     .mapLeft(newErrs => {
       const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
       return { msg: "parsing failed", stage: { ...parsing, errors } }
     })
-    // .chain(phase1Data => {
-    //   return produceDocs(phase1Data.tntModule)
-    //     .mapLeft(newErrs => {
-    //       const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
-    //       return { msg: "parsing failed", stage: { ...parsing, errors } }
-    //     })
-    // })
-    .map(phase2Data => ({ ...parsing, ...phase2Data }))
+    .map(phase2Data => {
+      const documentationEntries = produceDocs(phase2Data.module)
+      const title = `# Documentation for ${phase2Data.module.name}\n\n`
+      const markdown = title + documentationEntries.map(toMarkdown).join('\n\n')
+      writeToFile(`${phase2Data.module.name}.md`, markdown)
+      return { ...parsing, documentation: documentationEntries }
+    })
 }
 
 /** Write the OutputStage of the procedureStage as JSON, if --out is set
@@ -277,4 +278,15 @@ function replacer(_key: String, value: any): any {
 function writeToJson(filename: string, json: any) {
   const path = resolve(cwd(), filename)
   writeFileSync(path, JSONbig.stringify(json, replacer))
+}
+
+/**
+ * Write text to a file.
+ *
+ * @param filename name of the file to write to
+ * @param text is a string to write
+ */
+function writeToFile(filename: string, text: string) {
+  const path = resolve(cwd(), filename)
+  writeFileSync(path, text)
 }

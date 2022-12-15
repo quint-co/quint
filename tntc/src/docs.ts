@@ -1,16 +1,20 @@
+import { definitionToString } from "./IRprinting";
+import { TntModule } from "./tntIr";
 
 export interface DocumentationEntry {
-  name: string;
-  type?: string;
+  header: string;
   description?: string;
 }
 
-// export function produceDocs(tntModule: TntModule): DocumentationEntry[] {
-//   return tntModule.defs.map((def) => {
-//     return {
-//       name: def.name,
-//       type: def.typeAnnotation ? typeToString(def.typeAnnotation) : undefined,
-//       description: def.doc,
-//     }
-//   })
-// }
+export function produceDocs(tntModule: TntModule): DocumentationEntry[] {
+  return tntModule.defs.map((def) => {
+    return {
+      header: definitionToString(def, false),
+      description: def.doc,
+    }
+  })
+}
+
+export function toMarkdown(entry: DocumentationEntry): string {
+    return `## \`${entry.header}\`\n\n${entry.description || ''}`
+}
