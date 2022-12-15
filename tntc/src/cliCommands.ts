@@ -76,10 +76,10 @@ interface TypecheckedStage extends ParsedStage {
 }
 
 interface DocumentationStage extends LoadedStage {
-  // TODO
+  documentation: DocumentationEntry[],
 }
 
-// A procedure stage which is guarnateed to have `errors` and `sourceCode`
+// A procedure stage which is guaranteed to have `errors` and `sourceCode`
 interface ErrorData extends ProcedureStage {
   errors: ErrorMessage[],
   sourceCode: string
