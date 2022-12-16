@@ -12,7 +12,7 @@
  * @module
  */
 
-import { TntDef, TntEx, TntModule, isAnnotatedDef } from './tntIr'
+import { OpQualifier, TntDef, TntEx, TntModule, isAnnotatedDef } from './tntIr'
 import { Row, TntType } from './tntTypes'
 
 /**
@@ -23,7 +23,7 @@ import { Row, TntType } from './tntTypes'
  * @returns a string with the pretty printed definition
  */
 export function moduleToString(tntModule: TntModule): string {
-  const defs = tntModule.defs.map(definitionToString).join('\n  ')
+  const defs = tntModule.defs.map(d => definitionToString(d)).join('\n  ')
   return `module ${tntModule.name} {\n  ${defs}\n}`
 }
 
@@ -31,15 +31,18 @@ export function moduleToString(tntModule: TntModule): string {
  * Pretty prints a definition
  *
  * @param def the TNT expression to be formatted
+ * @param includeBody optional, whether to include the body of the definition, defaults to true
  *
  * @returns a string with the pretty printed definition
  */
-export function definitionToString(def: TntDef): string {
+export function definitionToString(def: TntDef, includeBody:boolean=true): string {
   const typeAnnotation =
     isAnnotatedDef(def) ? `: ${typeToString(def.typeAnnotation)}` : ''
   switch (def.kind) {
-    case 'def':
-      return `${def.qualifier} ${def.name}${typeAnnotation} = ${expressionToString(def.expr)}`
+    case 'def': {
+      const header = `${qualifierToString(def.qualifier)} ${def.name}${typeAnnotation}`
+      return includeBody ? `${header} = ${expressionToString(def.expr)}` : header
+    }
     case 'var':
       return `var ${def.name}${typeAnnotation}`
     case 'const':
@@ -138,6 +141,21 @@ export function typeToString(type: TntType): string {
 export function rowToString(r: Row): string {
   const fields = rowFieldsToString(r)
   return fields === '' ? '{}' : `{ ${fields} }`
+}
+
+/**
+ * Pretty prints an operator qualifier.
+ *
+ * @param qualifier the qualidier to be formatted
+ *
+ * @returns a string with the pretty printed qualifier
+ */
+export function qualifierToString(qualifier: OpQualifier): string {
+  switch(qualifier) {
+    case 'puredef': return 'pure def'
+    case 'pureval': return 'pure val'
+    default: return qualifier
+  }
 }
 
 function rowFieldsToString(r: Row, showFieldName=true): string {

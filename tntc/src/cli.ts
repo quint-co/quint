@@ -12,7 +12,7 @@
 
 import yargs from 'yargs/yargs'
 
-import { load, outputResult, parse, runRepl, typecheck } from './cliCommands'
+import { docs, load, outputResult, parse, runRepl, typecheck } from './cliCommands'
 
 // construct parsing commands with yargs
 const parseCmd = {
@@ -52,11 +52,24 @@ const replCmd = {
   handler: runRepl,
 }
 
+// construct documenting commands with yargs
+const docsCmd = {
+  command: 'docs <input>',
+  desc: 'produces documentation from docstrings in a TNT specification',
+  builder: (yargs: any) =>
+    yargs
+      .option('out', {
+        desc: 'output file',
+        type: 'string',
+      }),
+  handler: (args: any) => outputResult(load(args).chain(docs)),
+}
 // parse the command-line arguments and execute the handlers
 yargs(process.argv.slice(2))
   .command(parseCmd)
   .command(typecheckCmd)
   .command(replCmd)
+  .command(docsCmd)
   .demandCommand(1)
   .strict()
   .parse()

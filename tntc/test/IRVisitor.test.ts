@@ -141,8 +141,8 @@ describe('walkModule', () => {
 
     const visitor = new TestVisitor()
     walkModule(visitor, tntModule)
-    assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
-    assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
+    assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
+    assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
   })
 
   it('finds types', () => {
@@ -203,8 +203,8 @@ describe('walkModule', () => {
 
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
+      assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
     })
 
     it('finds constant definitions', () => {
@@ -229,8 +229,8 @@ describe('walkModule', () => {
 
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
+      assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
     })
 
     it('finds variable definitions', () => {
@@ -256,8 +256,8 @@ describe('walkModule', () => {
 
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
+      assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
     })
 
     it('finds assume definitions', () => {
@@ -282,8 +282,8 @@ describe('walkModule', () => {
 
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
+      assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
     })
 
     it('finds typedef definitions', () => {
@@ -308,8 +308,8 @@ describe('walkModule', () => {
 
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
+      assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
     })
 
     it('finds import definitions', () => {
@@ -334,8 +334,8 @@ describe('walkModule', () => {
 
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
+      assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
     })
 
     it('finds instance definitions', () => {
@@ -360,8 +360,8 @@ describe('walkModule', () => {
 
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
+      assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
     })
 
     it('finds module definitions', () => {
@@ -414,8 +414,8 @@ describe('walkModule', () => {
 
       const visitor = new TestVisitor()
       walkModule(visitor, tntModule)
-      assert.deepEqual(visitor.entered.map(definitionToString), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(definitionToString), exitedDefinitions)
+      assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
     })
   })
 
