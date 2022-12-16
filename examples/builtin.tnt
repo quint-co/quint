@@ -689,7 +689,8 @@ module builtin {
 
   /// `enabled(a)` is true when the action `a` is enabled in the current state.
   ///
-  /// An action is enabled when all its preconditions are satisfied.
+  /// An action is enabled when all its preconditions are satisfied
+  /// and it's postcontitions are satisfiable.
   ///
   /// ### Examples
   ///
@@ -704,9 +705,9 @@ module builtin {
   ///   x >= 10,
   ///   x' = x + 1,
   /// }
-  /// temporal Property = always(or {
-  ///   x < 10 and enabled(Under10),
-  ///   x >= 10 and enabled(Over10),
+  /// temporal Property = always(and { 
+  ///   enabled(Under10) iff x < 10, 
+  ///   enabled(Over10) iff x >=10,
   /// })
   /// ```
   temporal enabled(a): (bool) => bool
@@ -1043,6 +1044,8 @@ module builtin {
   // pure def actionAny(a*): (bool*) => bool
 
   // /// `unionMatch(m, (t0, e0), ..., (tn, en))` is the expression `ei` when `ti` is the tag of `m`.
+  // ///
+  // /// The behavior of this operator is undefined if the tag isn't one of the `ti`s.
   // ///
   // /// This is the pattern matching operator.
   // ///
