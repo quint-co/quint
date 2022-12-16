@@ -20,6 +20,7 @@ describe('checkModes', () => {
       { kind: 'def', identifier: 'assign' },
       { kind: 'def', identifier: 'igt' },
       { kind: 'def', identifier: 'iadd' },
+      { kind: 'def', identifier: 'not' },
     ],
   })
 
@@ -67,6 +68,22 @@ describe('checkModes', () => {
       })
   })
 
+  it('finds no errors for pure def using polymorphic operator', () => {
+    const tntModule = buildModuleWithDefs([
+      `pure def a(p) = if (not(p > 1)) p else p + 1`,
+    ])
+
+    const modeCheckingResult = checkModuleModes(tntModule)
+
+    assert.isTrue(modeCheckingResult.isRight())
+    modeCheckingResult
+      .map(suggestions => assert.deepEqual(suggestions.size, 0))
+      .mapLeft(e => {
+        const errors = Array.from(e.values())
+        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
+      })
+  })
+
   it('finds suggestions for def with action annotation', () => {
     const tntModule = buildModuleWithDefs([
       'action a(p) = x + p',
@@ -96,8 +113,8 @@ describe('checkModes', () => {
     modeCheckingResult
       .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
         [4n, {
-          location: 'Checking modes for pureval v = iadd(x, 1)',
-          message: 'Expected val mode, found: pureval',
+          location: 'Checking modes for pure val v = iadd(x, 1)',
+          message: 'Expected val mode, found: pure val',
           children: [],
         }],
       ]))
@@ -132,8 +149,8 @@ describe('checkModes', () => {
     modeCheckingResult
       .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
         [3n, {
-          location: 'Checking modes for puredef f = (p => not(y))',
-          message: 'Expected def mode, found: puredef',
+          location: 'Checking modes for pure def f = (p => not(y))',
+          message: 'Expected def mode, found: pure def',
           children: [],
         }],
       ]))
@@ -168,8 +185,8 @@ describe('checkModes', () => {
     modeCheckingResult
       .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
         [5n, {
-          location: 'Checking modes for pureval v = always(igt(x, 5))',
-          message: 'Expected temporal mode, found: pureval',
+          location: 'Checking modes for pure val v = always(igt(x, 5))',
+          message: 'Expected temporal mode, found: pure val',
           children: [],
         }],
       ]))

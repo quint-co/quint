@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author           |
 | -------: | :--------: | :--------------- |
-| 2        | 09.12.2022 | Igor Konnov      |
+| 3        | 13.12.2022 | Igor Konnov      |
 
 A [REPL][] is a read-eval-print loop. A REPL is usually a good way to start
 learning a language.
@@ -38,7 +38,7 @@ You have to install `tntc` first. See [README](../tntc/README.md).
 Simply run the following command in the terminal:
 
 ```sh
-$ tntc repl
+$ tntc
 ```
 
 You will see the following output:
@@ -108,6 +108,12 @@ true
 >>> veryHot
 104
 ```
+
+**Hint.** At some point, you may want to copy & paste the above output back in
+REPL.  Try it. REPL is smart enough to recycle its own output. Be careful
+though about not mixing the lines starting with `'>>> '` or `'... '` (which
+decorate your input in REPL) with other lines (which indicate the REPL output).
+If you do mix REPL input with REPL output, you may get syntax errors.
 
 ## 5. Describing a state machine
 
@@ -527,10 +533,11 @@ expr
 ```
 
 REPL randomly picks one of the elements from the set `mySet` and binds the name
-`myElem` to the chosen value. The name `myElem` can be used inside the
-expression `expr`, which usually contains an assignment. Whereas REPL chooses a
-set element pseudo-randomly, other implementations may do it differently. That
-is why we say that the `nondet`-form implements *data non-determinism*.
+`myElem` to the chosen value. The name `myElem` can be used inside the expression
+`expr`, which usually contains an assignment. Whereas the TNT simulator used in
+the REPL chooses a set element pseudo-randomly, other implementations may
+handle non-determinism differently. That is why we say that the `nondet`-form
+specifies *data non-determinism*.
 
 ## 6. Saving and loading the REPL session
 

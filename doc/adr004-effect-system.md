@@ -90,7 +90,7 @@ Substitutions S, Si ::= {v ↦ E} | {v ↦ c} | S ∪ S
 A normalized effect takes only one of two forms:
 
 ```
-Effects E ::= Read[vars] & Update[vars] | (E0, ..., EN) => E 
+Effects E ::= Read[vars] & Update[vars] | (E0, ..., EN) => E
 ```
 
 Other forms are actually sugaring for these two. Effects like `Update['x'] &
@@ -123,7 +123,7 @@ E1 ≡ Ex & Update[x0, ..., xn]   E2 ≡ Ey & Update[y0, ..., yn]
 -------------------------------------------------------------- (UPDT)
 E1 & E2 ≡ Ex & Ey & Update[x0, ..., xn, y0, ..., yn]
 
-Pure ≡ Read[] ≡ Update[] ≡ Read[] & Update[] 
+Pure ≡ Read[] ≡ Update[] ≡ Read[] & Update[]
 E & Pure ≡ E
 E1 & E2 ≡ E2 & E1
 E1 & (E2 & E3) ≡ (E1 & E2) & E3
@@ -131,7 +131,7 @@ E1 & (E2 & E3) ≡ (E1 & E2) & E3
 
 One might be inclined to treat `Read[vars] & Update[vars]` and `Update[vars]` as
 equivalent, reasoning that one must be able to read a variable in order to
-update it. However, in TLA we can update a variable without reading it's current
+update it. However, in TNT we can update a variable without reading it's current
 value: `x <- x + 1` is different from `x <- 2`. We anticipate there may be
 utility in differentiating these cases, such as being able to partition
 transitions that only read a variable on the current state from transitions that
@@ -159,7 +159,7 @@ effect of their respective bodies.
 { kind: 'const', identifier: c } ∈ Γ
 ------------------------------------- (NAME-CONST)
       Γ ⊢ c: Pure
-      
+
  { kind: 'param', identifier: p } ∈ Γ
 ------------------------------------ (NAME-PARAM)
          Γ ⊢ v: Read[r_p]
@@ -206,7 +206,7 @@ Literals are always `Pure`.
 
 ### Examples of built-in operator signatures
 ```
-exists: (Read[r1], (Read[p]) => Read[r2]) => Read[r1, p, r2] 
+exists: (Read[r1], (Read[p]) => Read[r2]) => Read[r1, p, r2]
 guess: (Read[r1], (Read[p]) => Read[r2] & Update[u]) => Read[r1, p, r2] & Update[u]
 +(iadd): (Read[r1], Read[r2]) => Read[r1, r2]
 assign: (Read[r1], Read[r2] & Update[u2]) => Read[r2] & Update[r1, u2]

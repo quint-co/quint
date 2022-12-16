@@ -35,7 +35,7 @@ function parseAndCompare(artifact: string): void {
     phase1Result.mapLeft(err =>
       outputToCompare = {
         status: 'error',
-        errors: err
+        errors: err,
       }
     )
   } else if (phase1Result.isRight()) {
@@ -56,7 +56,7 @@ function parseAndCompare(artifact: string): void {
       phase2Result.mapLeft(err =>
         outputToCompare = {
           status: 'error',
-          errors: err
+          errors: err,
         }
       )
     } else {

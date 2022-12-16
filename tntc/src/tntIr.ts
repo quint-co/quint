@@ -44,6 +44,11 @@ interface WithTypeAnnotation {
   typeAnnotation: TntType
 }
 
+interface WithOptionalDoc {
+  /** optionally, docstrings for the operator */
+  doc?: string,
+}
+
 /**
  * Operator qualifier, which refines a mode:
  *
@@ -146,7 +151,7 @@ export type TntEx = TntName | TntBool | TntInt | TntStr | TntApp | TntLambda | T
  * If an operator definition has formal parameters, then `expr`
  * should be a lambda expression over those parameters.
  */
-export interface TntOpDef extends WithId, WithOptionalTypeAnnotation {
+export interface TntOpDef extends WithId, WithOptionalTypeAnnotation, WithOptionalDoc {
   /** definition kind ('def' -- operator definition) */
   kind: 'def',
   /** definition name */
@@ -154,7 +159,7 @@ export interface TntOpDef extends WithId, WithOptionalTypeAnnotation {
   /** definition qualifier: 'val', 'def', 'action', 'temporal' */
   qualifier: OpQualifier,
   /** expression to be associated with the definition */
-  expr: TntEx
+  expr: TntEx,
 }
 
 export interface TntConst extends WithId, WithTypeAnnotation {
@@ -236,7 +241,8 @@ export interface TntModuleDef extends WithId {
 /**
  * Definition: constant, state variable, operator definition, assumption, instance, module.
  */
-export type TntDef = TntOpDef | TntConst | TntVar | TntAssume | TntTypeDef | TntImport | TntInstance | TntModuleDef
+export type TntDef = 
+  (TntOpDef | TntConst | TntVar | TntAssume | TntTypeDef | TntImport | TntInstance | TntModuleDef) & WithOptionalDoc
 
 export function isAnnotatedDef(def: any): def is WithTypeAnnotation {
   return def.typeAnnotation !== undefined

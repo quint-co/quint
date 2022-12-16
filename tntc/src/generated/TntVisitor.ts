@@ -54,6 +54,7 @@ import { NondetContext } from "./TntParser";
 import { ParenContext } from "./TntParser";
 import { BracesContext } from "./TntParser";
 import { ModuleContext } from "./TntParser";
+import { DocLinesContext } from "./TntParser";
 import { UnitContext } from "./TntParser";
 import { OperDefContext } from "./TntParser";
 import { QualifierContext } from "./TntParser";
@@ -489,6 +490,13 @@ export interface TntVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitModule?: (ctx: ModuleContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `TntParser.docLines`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitDocLines?: (ctx: DocLinesContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `TntParser.unit`.

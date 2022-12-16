@@ -313,7 +313,7 @@ Similar to TLA+, you can have an anonymous assumption, by simply using `_` for
 the name:
 
 ```tla
-assume _ = Proc.size > 0
+assume _ = Proc.size() > 0
 ```
 
 *Mode:* Stateless
@@ -1281,7 +1281,7 @@ val Entries =
   Set(
     { tag: "Cat", name: "Ours", year: 2019  },
     { tag: "Cat", name: "Murka", year: 1950 },
-    { tag: "Date", day: 16, month: 11, year: 2021 },
+    { tag: "Date", day: 16, month: 11, year: 2021 }
   )
 ```
 

@@ -39,7 +39,7 @@ type Substitution =
  */
 export function compose(s1: Substitutions, s2: Substitutions): Either<ErrorTree, Substitutions> {
   return applySubstitutionsToSubstitutions(s1, s2)
-    .map((s: Substitutions) => s1.concat(s))
+    .chain(sa => applySubstitutionsToSubstitutions(sa, s1).map((sb: Substitutions) => sb.concat(sa)))
     .mapLeft(error => buildErrorTree(`Composing substitutions ${substitutionsToString(s1)} and ${substitutionsToString(s2)}`, error))
 }
 

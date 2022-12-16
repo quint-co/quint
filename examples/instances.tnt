@@ -6,8 +6,7 @@ module InstanceEx {
     var z: str
 
     def F(a) = x + 1
-    // FIXME: this should be a static def. See issue #264
-    temporal G(b) = not(b)
+    pure def G(b) = not(b)
   }
 
   // A state variable of InstanceEx
