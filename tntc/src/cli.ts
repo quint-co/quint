@@ -46,7 +46,7 @@ const typecheckCmd = {
 
 // construct repl commands with yargs
 const replCmd = {
-  command: 'repl',
+  command: ['repl', '*'],
   desc: 'run REPL',
   builder: (yargs: any) => yargs,
   handler: runRepl,

@@ -38,7 +38,7 @@ You have to install `tntc` first. See [README](../tntc/README.md).
 Simply run the following command in the terminal:
 
 ```sh
-$ tntc repl
+$ tntc
 ```
 
 You will see the following output:

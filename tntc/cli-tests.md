@@ -17,6 +17,11 @@ All tests in the following cases are run as commands to `bash`.
 bash -
 -->
 
+### OK on repl input
+
+<!-- !test check repl 1 + 1 -->
+    echo "1 + 1" | tntc
+
 ### OK on parse Paxos
 
 <!-- !test check Paxos -->
