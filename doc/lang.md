@@ -1281,7 +1281,7 @@ val Entries =
   Set(
     { tag: "Cat", name: "Ours", year: 2019  },
     { tag: "Cat", name: "Murka", year: 1950 },
-    { tag: "Date", day: 16, month: 11, year: 2021 },
+    { tag: "Date", day: 16, month: 11, year: 2021 }
   )
 ```
 
