@@ -20,6 +20,7 @@ describe('checkModes', () => {
       { kind: 'def', identifier: 'assign' },
       { kind: 'def', identifier: 'igt' },
       { kind: 'def', identifier: 'iadd' },
+      { kind: 'def', identifier: 'not' },
     ],
   })
 
@@ -54,6 +55,22 @@ describe('checkModes', () => {
   it('finds no errors for correct action', () => {
     const tntModule = buildModuleWithDefs([
       `action a(p) = x' = p`,
+    ])
+
+    const modeCheckingResult = checkModuleModes(tntModule)
+
+    assert.isTrue(modeCheckingResult.isRight())
+    modeCheckingResult
+      .map(suggestions => assert.deepEqual(suggestions.size, 0))
+      .mapLeft(e => {
+        const errors = Array.from(e.values())
+        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
+      })
+  })
+
+  it('finds no errors for pure def using polymorphic operator', () => {
+    const tntModule = buildModuleWithDefs([
+      `pure def a(p) = if (not(p > 1)) p else p + 1`,
     ])
 
     const modeCheckingResult = checkModuleModes(tntModule)

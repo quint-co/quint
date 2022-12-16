@@ -102,10 +102,6 @@ class ModeFinderVisitor implements EffectVisitor {
   }
 
   exitArrow(effect: ArrowEffect) {
-    if (this.currentMode === 'action' || this.currentMode === 'temporal') {
-      return
-    }
-
     const r = effect.result
     if (r.kind === 'arrow') {
       throw new Error(`Unexpected arrow found in operator result: ${effectToString(r)}`)
@@ -117,27 +113,59 @@ class ModeFinderVisitor implements EffectVisitor {
       return
     }
 
-    const paramReads: Variables[] = []
-    effect.params.forEach(p => {
-      if (p.kind === 'concrete') {
-        if (p.read.kind === 'union') {
-          paramReads.push(...p.read.variables)
-        } else {
-          paramReads.push(p.read)
-        }
-      }
-    })
+    const [paramReads, paramUpdates, paramTemporals] = paramVariablesByEffect(effect)
 
-    // If there is a variable read in the results that is not present on the
-    // parameters, then the operator is adding a read effect and this should be
-    // a "def" instead of "pure def"
-    if (r.read.kind === 'union') {
-      if (!r.read.variables.every(v => paramReads.some(p => isEqual(p, v)))) {
-        this.currentMode = 'def'
-      }
-    } else if (!paramReads.some(p => isEqual(p, r.read))) {
+    if (anyVariablesAdded(paramTemporals, r.temporal)) {
+      this.currentMode = 'temporal'
+    } else if (anyVariablesAdded(paramUpdates, r.update)) {
+      this.currentMode = 'action'
+    } else if (anyVariablesAdded(paramReads, r.read)) {
       this.currentMode = 'def'
     }
+  }
+}
+
+/*
+ * If there is a variable with an effect in the results that is not present on the
+ * parameters, then the operator is adding that and this should
+ * promote the operators mode.
+ *
+ * For example, an operator with the effect `(Read[v]) => Read[v, 'x']` is adding `Read['x']`
+ * to the parameter effect and should be promoted to `def`.
+ */
+function anyVariablesAdded(paramVariables: Variables[], resultVariables: Variables): boolean {
+  switch (resultVariables.kind) {
+    case 'union':
+      return resultVariables.variables.length > 0
+        && !resultVariables.variables.every(v => paramVariables.some(p => isEqual(p, v)))
+    case 'concrete':
+      return resultVariables.vars.length > 0 && !paramVariables.some(p => isEqual(p, resultVariables))
+    case 'quantified':
+      return !paramVariables.some(p => isEqual(p, resultVariables))
+  }
+}
+
+function paramVariablesByEffect(effect: ArrowEffect): [Variables[], Variables[], Variables[]] {
+  const paramReads: Variables[] = []
+  const paramUpdates: Variables[] = []
+  const paramTemporals: Variables[] = []
+
+  effect.params.forEach(p => {
+    if (p.kind === 'concrete') {
+      paramReads.push(...collectVariables(p.read))
+      paramUpdates.push(...collectVariables(p.update))
+      paramTemporals.push(...collectVariables(p.temporal))
+    }
+  })
+
+  return [paramReads, paramUpdates, paramTemporals]
+}
+
+function collectVariables(v: Variables): Variables[] {
+  if (v.kind === 'union') {
+    return v.variables
+  } else {
+    return [v]
   }
 }
 
