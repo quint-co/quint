@@ -532,7 +532,8 @@ nondet myElem = mySet.oneOf()
 expr
 ```
 
-REPL randomly picks one of t The name `myElem` can be used inside the expression
+REPL randomly picks one of the elements from the set `mySet` and binds the name
+`myElem` to the chosen value. The name `myElem` can be used inside the expression
 `expr`, which usually contains an assignment. Whereas the TNT simulator used in
 the REPL chooses a set element pseudo-randomly, other implementations may
 handle non-determinism differently. That is why we say that the `nondet`-form
