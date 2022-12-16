@@ -899,8 +899,8 @@ export class ToIrListener implements TntListener {
   }
 
   enterDocLines(ctx: p.DocLinesContext) {
+    // The comment content is the text of the comment minus the `/// ` prefix
     const doc = ctx.DOCCOMMENT().map(l => l.text.slice(4, -1))
-    // console.log(doc)
     this.docStack = doc
   }
 
@@ -1014,4 +1014,3 @@ export class ToIrListener implements TntListener {
     return { id, kind: 'name', name: 'undefined' }
   }
 }
-
