@@ -652,7 +652,7 @@ module builtin {
   /// `orKeep(a, v)` is true when `a` is true or the values
   /// for the set of variables `v` are unchanged.
   ///
-  /// `orKeep(a, v)` is equivalent to `a or v.map(x => next(x) = x)`.
+  /// `orKeep(a, v)` is equivalent to `a or v.map(x => next(x) == x)`.
   ///
   /// This is the stuttering operator.
   ///
@@ -772,7 +772,7 @@ module builtin {
   /// `assign(n, v)` is true when the state variable named `n` has the value `v`
   /// in the next state of a transition.
   ///
-  /// This is the main operator to define transitions.
+  /// This operator is used to define transitions by specifying how the state variables change
   ///
   /// Can be written as `n' = v`.
   ///
@@ -824,7 +824,7 @@ module builtin {
   ///
   /// The semantics of this operator is as follows:
   ///
-  /// - When `n <= 0`, this operator does not change the state.
+  /// - When `n <= 0`, this operator is equivalent to `unchanged`.
   /// - When `n = 1`, `n.times(a)` is equivalent to `a`.
   /// - When `n > 1`, `n.times(a)`, is equivalent to `a.then((n - 1).times(a))`.
   ///
@@ -890,14 +890,14 @@ module builtin {
   // /// ```
   // pure def Set(e*): (a*) => Set[a]
 
-  // /// `Map((k0 -> v0), ..., (kn -> vn))` is a map that maps `k0` to `v0`, ..., and `kn` to `vn`.
-  // ///
-  // /// This is the map constructor.
-  // ///
-  // /// ### Examples
-  // ///
-  // /// ```
-  // /// pure val m = Map(("a" -> 1), ("b" -> 2))
+ // /// `Map(k0 -> v0, ..., kn -> vn)` is a map that maps `k0` to `v0`, ..., and `kn` to `vn`.
+ // ///
+ // /// This is the map constructor.
+ // ///
+ // /// ### Examples
+ // ///
+ // /// ```
+ // /// pure val m = Map("a" -> 1, "b" -> 2)
   // /// assert(m.get("a") == 1)
   // /// ```
   // pure def Map((k -> v)*): ((a, b)* => a -> b
@@ -943,7 +943,7 @@ module builtin {
 
   // /// `r.with(f, v)` is a record that is the same as `r` except that the field `f` has value `v`.
   // ///
-  // /// If `f` is not ` field in `r`, then this operator has undefined behavior
+  // /// If `f` is not a field in `r`, then this operator has undefined behavior
   // ///
   // /// ### Examples
   // ///
@@ -951,7 +951,7 @@ module builtin {
   // /// pure val r = { x: 1, y: 2 }
   // /// assert(r.with("x", 3) == { x: 3, y: 2 })
   // /// ```
-  // pure def with(r, f, v): ({ f0: t0, ..., fn: tn }, str, ti) => { f0:, t0, ..., fn:, tn }
+  // pure def with(r, f, v): ({ f0: t0 | r }, str, t0) => { f0: t0 | r }
 
   // /// `Tup(e0, ..., en)` is a tuple of values `e0`, ..., `en`.
   // ///
