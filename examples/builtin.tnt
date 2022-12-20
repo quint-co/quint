@@ -930,7 +930,7 @@ module builtin {
   // /// assert(r.field("x") == 1)
   // /// assert(r.y == 1)
   // /// ```
-  // pure def field(r, f): ({ f: a | r }, str) => a
+  // pure def field(r, f): ({ f: a | t }, str) => a
 
   // /// `r.fieldNames()` is the set of field names in the record `r`.
   // ///
