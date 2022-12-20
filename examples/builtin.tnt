@@ -710,6 +710,13 @@ module builtin {
   ///   enabled(Over10) iff x >=10,
   /// })
   /// ```
+  ///
+  /// ```
+  /// var x: int
+  /// action Init = x' = 0
+  /// action impossible = Set().guess(i => x' = i)
+  /// temporal Property = always(not(enabled(impossible)))
+  /// ```
   temporal enabled(a): (bool) => bool
 
   /// `weakFair(a, v)` is true when

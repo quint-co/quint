@@ -780,6 +780,13 @@ temporal Property = always(and {
 })
 ```
 
+```
+var x: int
+action Init = x' = 0
+action impossible = Set().guess(i => x' = i)
+temporal Property = always(not(enabled(impossible)))
+```
+
 ## `temporal weakFair: (bool, a) => bool`
 
 `weakFair(a, v)` is true when
