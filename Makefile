@@ -4,7 +4,9 @@
 # @file
 # @version 0.1
 
-.PHONY: vscode tntc
+.PHONY: vscode tntc all
+
+all: vscode
 
 # Build tntc and install it to local packages
 tntc:
