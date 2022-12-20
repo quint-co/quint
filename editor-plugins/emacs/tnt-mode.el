@@ -26,7 +26,7 @@
       "powerset" "flatten" "seqs" "chooseSome" "isFinite" "cardinality" "get" "put" "keys"
       "mapBy" "setOfMaps" "set" "setBy" "fieldNames" "with" "tuples" "append" "concat" "head"
       "tail" "length" "nth" "indices" "replaceAt" "slice" "select" "foldl" "foldr" "to" "always"
-      "eventually" "next" "stutter" "nostutter" "enabled" "weakFair" "strongFair" "guarantees"
+      "eventually" "next" "orKeep" "mustChange" "enabled" "weakFair" "strongFair" "guarantees"
       "existsConst" "forallConst" "chooseConst" "if" "else" "match" "all" "any"))
 (defconst tnt-declarations '("module" "import" "const" "var" "def" "val" "pure"
                              "nondet" "action" "temporal" "assume" "type"))

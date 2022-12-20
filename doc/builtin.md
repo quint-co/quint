@@ -1,0 +1,948 @@
+# Documentation for builtin
+
+## `pure val Nat: Set[int]`
+
+The infinite set of all natural numbers.
+
+Infinite sets cannot be enumerated. Hence some operators
+that require iteration may be unsupported.
+
+## `pure val Int: Set[int]`
+
+The infinite set of all integers.
+
+Infinite sets cannot be enumerated. Hence some operators
+that require iteration may be unsupported.
+
+## `pure val Bool: Set[bool]`
+
+The set of all booleans
+
+That is, Set(false, true)
+
+## `pure def eq: (t, t) => bool`
+
+`a.eq(b)` is `true` when `a` and `b` are equal values of the same type.
+
+It can be used in the infix form as `==` or as a named operator `eq`.
+
+## `pure def neq: (t, t) => bool`
+
+`a.neq(b)` is `true` when `a` and `b` are not equal values of the same type.
+
+It can be used in the infix form as `!=` or as a named operator `neq`.
+
+## `pure def iff: (bool, bool) => bool`
+
+`p.iff(q)` is `true` when `p` and `q` are equal values of the bool type.
+
+This is the logical equivalence operator.
+
+### Examples
+
+```
+assert(iff(true, true))
+assert(iff(false, false))
+assert(not(iff(true, false)))
+assert(not(iff(false, true)))
+```
+
+## `pure def implies: (bool, bool) => bool`
+
+`p.implies(q)` is true when `not(p) or q` is true.
+
+This is the material implication operator.
+
+### Examples
+
+```
+assert(true.implies(true))
+assert(false.implies(false))
+assert(not(true.implies(false)))
+assert(not(false.implies(true)))
+```
+
+## `pure def not: (bool) => bool`
+
+`not(p)` is `true` when `p` is `false`.
+
+This is the negation opearator.
+
+## `pure def guess: (Set[a], (a) => bool) => bool`
+
+Guess a value from the given set that satisfies the given predicate.
+
+This operator is non-deterministic.
+
+If the set is empty, then the result is `false`.
+
+### Examples
+
+```
+var x: int
+run a = Set(1, 2, 3).guess(n => x' = n).then(assert(x.in(Set(1, 2, 3))))
+```
+
+## `pure def exists: (Set[a], (a) => bool) => bool`
+
+`s.exists(p)` is true when there is an element in `s` that satisfies `p`.
+
+This is the existential quantifier.
+
+### Examples
+
+```
+assert(Set(1, 2, 3).exists(n => n == 2))
+assert(not(Set(1, 2, 3).exists(n => n == 4)))
+```
+
+## `pure def forall: (Set[a], (a) => bool) => bool`
+
+`s.forall(p)` is true when all elements in `s` satisfy `p`.
+
+This is the universal quantifier.
+
+### Examples
+
+```
+assert(Set(1, 2, 3).forall(n => n > 0))
+assert(not(Set(1, 2, 3).forall(n => n > 1)))
+```
+
+## `pure def in: (a, Set[a]) => bool`
+
+`e.in(s)` is true when the element `e` is in the set `s`.
+
+This is the set membership relation.
+
+See also: `contains`
+
+### Examples
+
+```
+assert(1.in(Set(1, 2, 3)))
+assert(not(4.in(Set(1, 2, 3))))
+```
+
+## `pure def contains: (Set[a], a) => bool`
+
+`s.contains(e)` is true when the element `e` is in the set `s`.
+
+This is the set membership relation.
+
+See also: `in`
+
+### Examples
+
+```
+assert(Set(1, 2, 3).contains(1))
+assert(not(Set(1, 2, 3).contains(4)))
+```
+
+## `pure def notin: (a, Set[a]) => bool`
+
+`e.notin(s)` is true when the element `e` is not in the set `s`.
+
+See also: `in`
+
+### Examples
+
+```
+assert(4.notin(Set(1, 2, 3)))
+assert(not(1.notin(Set(1, 2, 3))))
+```
+
+## `pure def union: (Set[a], Set[a]) => Set[a]`
+
+`s1.union(s2)` is the set of elements that are in `s1` or in `s2`.
+
+This is the set union operator.
+
+### Examples
+
+```
+assert(Set(1, 2, 3).union(Set(2, 3, 4)) == Set(1, 2, 3, 4))
+```
+
+## `pure def intersect: (Set[a], Set[a]) => Set[a]`
+
+`s1.intersect(s2)` is the set of elements that are in both sets `s1` and `s2`.
+
+This is the set intersection operator.
+
+### Examples
+
+```
+assert(Set(1, 2, 3).intersect(Set(2, 3, 4)) == Set(2, 3))
+```
+
+## `pure def exclude: (Set[a], Set[a]) => Set[a]`
+
+`s1.exclude(s2)` is the set of elements in `s1` that are not in `s2`.
+
+This is the set difference operator.
+
+### Examples
+
+```
+assert(Set(1, 2, 3).exclude(Set(2, 3, 4)) == Set(1))
+```
+
+## `pure def subseteq: (Set[a], Set[a]) => bool`
+
+`s1.subseteq(s2)` is true when all elements in `s1` are also in `s2`.
+
+### Examples
+
+```
+assert(Set(1, 2, 3).subseteq(Set(1, 2, 3, 4)))
+assert(not(Set(1, 2, 3).subseteq(Set(1, 2))))
+```
+
+## `pure def filter: (Set[a], (a) => bool) => Set[a]`
+
+`s.filter(p)` is the set of elements in `s` that satisfy `p`.
+
+### Examples
+
+```
+assert(Set(1, 2, 3).filter(n => n > 1) == Set(2, 3))
+```
+
+## `pure def map: (Set[a], (a) => b) => Set[b]`
+
+`s.map(f)` is the set of elements obtained by applying `f` to
+
+to each element in `s`. I.e., `{ f(x) : x \in s}`.
+
+### Examples
+
+```
+assert(Set(1, 2, 3).map(n => n > 1) == Set(false, true, true))
+```
+
+## `pure def fold: (Set[a], b, (b, a) => b) => b`
+
+`l.fold(z, f)` reduces the elements in `s` using `f`, starting with `z`.
+
+I.e., `f(...f(f(z, x0), x1)..., xn)`.
+
+The order in which the elements are combined is unspecified, so
+the operator must be associative and commutative or else it has undefined behavior.
+
+### Examples
+
+```
+val sum = Set(1, 2, 3, 4).fold(0, (x, y) => x + y)
+assert(sum == 10)
+val mul = Set(1, 2, 3, 4).fold(1, (x, y) => x * y)
+assert(mul == 24)
+```
+
+## `pure def powerset: (Set[Set[a]]) => Set[Set[a]]`
+
+`s.powerset()` is the set of all subsets of `s`,
+including the empty set and the set itself.
+
+### Examples
+
+```
+assert(Set(1, 2).powerset() == Set(
+  Set(),
+  Set(1),
+  Set(2),
+  Set(1, 2)
+))
+```
+
+## `pure def flatten: (Set[Set[a]]) => Set[a]`
+
+`s.flatten()` is the set of all elements in the sets in `s`.
+
+### Examples
+
+```
+assert(Set(Set(1, 2), Set(3, 4)).flatten() == Set(1, 2, 3, 4))
+```
+
+## `pure def allLists: (Set[a]) => Set[List[a]]`
+
+`s.allLists()` is the set of all lists containing all the elements in `s`.
+
+### Examples
+
+```
+assert(Set(1, 2).allLists() == Set(
+  List(1, 2),
+  List(2, 1),
+))
+```
+
+## `pure def chooseSome: (Set[a]) => a`
+
+`s.chooseSome()` is, deterministically, one element of `s`.
+
+### Examples
+
+```
+assert(Set(1, 2, 3).chooseSome() == 1)
+assert(Set(1, 2, 3).filter(x => x > 2).chooseSome() == 3)
+```
+
+## `pure def oneOf: (Set[a]) => a`
+
+`s.oneOf()` is, non-deterministically, one element of `s`.
+
+### Examples
+
+```
+nondet x = oneOf(Set(1, 2, 3))
+assert(x.in(Set(1, 2, 3)))
+```
+
+## `pure def isFinite: (Set[a]) => bool`
+
+`s.isFinite()` is true when `s` is a finite set
+
+### Examples
+
+```
+assert(Set(1, 2, 3).isFinite())
+assert(!Nat.isFinite())
+```
+
+## `pure def size: (Set[a]) => int`
+
+`s.size()` is the cardinality of `s`.
+
+### Examples
+
+```
+assert(Set(1, 2, 3).size() == 3)
+```
+
+## `pure def get: ((a -> b), a) => b`
+
+`m.get(k)` is the value for `k` in `m`.
+
+If `k` is not in `m` then the behavior is undefined.
+
+### Examples
+
+```
+pure val m = Map(1 -> true, 2 -> false)
+assert(m.get(1) == true)
+```
+
+## `pure def keys: ((a -> b)) => Set[a]`
+
+`m.keys()` is the set of keys in the map `m`.
+
+### Examples
+
+```
+pure val m = Map(1 -> true, 2 -> false)
+assert(m.keys() == Set(1, 2))
+```
+
+## `pure def mapBy: (Set[a], (a) => b) => (a -> b)`
+
+`s.mapBy(f)` is the map from `x` to `f(x)` for each element `x` in `s`.
+
+### Examples
+
+```
+pure val m = Set(1, 2, 3).mapBy(x => x * x)
+assert(m == Map(1 -> 1, 2 -> 4, 3 -> 9))
+```
+
+## `pure def setToMap: (Set[(a, b)]) => (a -> b)`
+
+`s.setToMap()` for a set of pairs `s` is the map
+from the first element of each pair to the second.
+
+### Examples
+
+```
+pure val m = Set((1, true), (2, false)).setToMap()
+assert(m == Map(1 -> true, 2 -> false))
+```
+
+## `pure def setOfMaps: (Set[a], Set[b]) => Set[(a -> b)]`
+
+`keys.setOfMaps(values)` is the set of all maps from `keys` to `values`.
+
+### Examples
+
+```
+pure val s = Set(1, 2).setOfMaps(set(true, false))
+assert(s == Set(
+  Map(1 -> true, 2 -> true),
+  Map(1 -> true, 2 -> false),
+  Map(1 -> false, 2 -> true),
+  Map(1 -> false, 2 -> false),
+))
+```
+
+## `pure def set: ((a -> b), a, b) => (a -> b)`
+
+`m.set(k, v)` is the map `m` but with the key `k` mapped `v` if `k.in(keys(m))`
+
+If `k` is not a key in `m`, this operator has undefined behavior.
+
+### Examples
+
+```
+pure val m = Map(1 -> true, 2 -> false)
+pure val m2 = m.set(2, true)
+assert(m == Map(1 -> true, 2 -> false))
+assert(m2 == Map(1 -> true, 2 -> true))
+```
+
+## `pure def setBy: ((a -> b), a, (b) => b) => (a -> b)`
+
+`m.setBy(k, f)` is a map with the same keys as `m` but with `k` set to `f(m.get(k))`.
+
+If `k` is not present in `m`, this operator has undefined behavior.
+
+### Examples
+
+```
+pure val m = Map(1 -> true, 2 -> false)
+pure val m2 = m.setBy(2, x => !x)
+assert(m == Map(1 -> true, 2 -> false))
+assert(m2 == Map(1 -> true, 2 -> true))
+```
+
+## `pure def put: ((a -> b), a, b) => (a -> b)`
+
+`m.put(k, v)` map `m` extended with the key `k` set to `v`.
+
+If `k` is present in `m`, this operator has undefined behavior.
+
+### Examples
+
+```
+pure val m = Map(1 -> true, 2 -> false)
+pure val m2 = m.put(3, true)
+assert(m == Map(1 -> true, 2 -> false))
+assert(m2 == Map(1 -> true, 2 -> false, 3 -> true))
+```
+
+## `pure def append: (List[a], a) => List[a]`
+
+`l.append(e)` is the list `l` with the element `e` appended.
+
+### Examples
+
+```
+assert(List(1, 2, 3).append(4) == List(1, 2, 3, 4))
+```
+
+## `pure def concat: (List[a], List[a]) => List[a]`
+
+`l1.concat(l2)` is the list `l1` with `l2` concatenated at the end.
+
+### Examples
+
+```
+assert(List(1, 2, 3).append(List(4, 5, 6)) == List(1, 2, 3, 4, 5, 6))
+```
+
+## `pure def head: (List[a]) => a`
+
+`l.head()` is the first element of `l`.
+
+If `l` is empty, the behavior is undefined.
+
+### Examples
+
+```
+assert(List(1, 2, 3).head() == 1)
+```
+
+## `pure def tail: (List[a]) => List[a]`
+
+`l.tail()` is the list `l` without the first element.
+
+If `l` is empty, the behavior is undefined.
+
+### Examples
+
+```
+assert(List(1, 2, 3).tail() == List(2, 3))
+```
+
+## `pure def length: (List[a]) => int`
+
+`l.length()` is the length of the list `l`.
+
+### Examples
+
+```
+assert(List(1, 2, 3).length() == 3)
+```
+
+## `pure def nth: (List[a], int) => a`
+
+`l.nth(i)` is the `i+1`th element of the list `l`.
+
+If `i` is negative or greater than or equal to `l.length()`, the behavior is undefined.
+
+### Examples
+
+```
+assert(List(1, 2, 3).nth(1) == 2)
+```
+
+## `pure def indices: (List[a]) => Set[int]`
+
+`l.indices()` is the set of indices of `l`.
+
+### Examples
+
+```
+assert(List(1, 2, 3).indices() == Set(0, 1, 2))
+```
+
+## `pure def replaceAt: (List[a], int, a) => List[a]`
+
+`l.replaceAt(i, e)` is the list `l` with the `i+1`th element replaced by `e`.
+
+If `i` is negative or greater than or equal to `l.length()`, the behavior is undefined.
+
+### Examples
+
+```
+assert(List(1, 2, 3).replaceAt(1, 4) == List(1, 4, 3))
+```
+
+## `pure def slice: (List[a], int, int) => List[a]`
+
+`l.slice(i, j)` is the list of elements of `l` between indices `i` and `j`.
+
+`i` is inclusive and `j` is exclusive.
+
+The behavior is undefined when:
+
+- `i` is negative or greater than or equal to `l.length()`.
+- `j` is negative or greater than `l.length()`.
+- `i` is greater than `j`.
+
+### Examples
+
+```
+assert(List(1, 2, 3, 4, 5).slice(1, 3) == List(2, 3))
+```
+
+## `pure def range: (int, int) => List[int]`
+
+`range(i, j)` is the list of integers between `i` and `j`.
+
+`i` is inclusive and `j` is exclusive.
+
+The behavior is undefined when `i` is greater than `j`.
+
+### Examples
+
+```
+assert(range(1, 3) == List(1, 2))
+```
+
+## `pure def select: (List[a], (a) => bool) => List[a]`
+
+`l.select(p)` is the list of elements of `l` that satisfy the predicate `p`.
+
+Preserves the order of the elements.
+
+### Examples
+
+```
+assert(List(1, 2, 3).select(x -> x % 2 == 0) == List(2))
+```
+
+## `pure def foldl: (List[a], b, (b, a) => b) => b`
+
+`l.foldl(z, f)` reduces the elements in `s` using `f`,
+starting with `z` from the left.
+
+I.e., `f(f(f(z, x0), x1)..., xn)`.
+
+### Examples
+
+```
+pure val sum = List(1, 2, 3, 4).foldl(0, (x, y) => x + y)
+assert(sum == 10)
+pure val l = List(1, 2, 3, 4).foldl(List(), (l, e) => l.append(e))
+assert(l == List(1, 2, 3, 4))
+```
+
+## `pure def foldr: (List[a], b, (a, b) => b) => b`
+
+`l.foldr(z, f)` reduces the elements in `s` using `f`,
+starting with `z` from the right.
+
+I.e., `f(x0, f(x1, ... f(xn, z))`.
+
+### Examples
+
+```
+pure val sum = List(1, 2, 3, 4).foldr(0, (x, y) => x + y)
+assert(sum == 10)
+pure val l = List(1, 2, 3, 4).foldr(List(), (e, l) => l.append(e))
+assert(l == List(4, 3, 2, 1))
+```
+
+## `pure def iadd: (int, int) => int`
+
+`a.iadd(b)` is the integer addition of `a` and `b`.
+
+It can be used in the infix form as `+` or as a named operator `iadd`.
+
+## `pure def isub: (int, int) => int`
+
+`a.isub(b)` is the integer subtraction of `b` from `a`.
+
+It can be used in the infix form as `-` or as a named operator `isub`.
+
+## `pure def imul: (int, int) => int`
+
+`a.imul(b)` is the integer multiplication of `a` and `b`.
+
+It can be used in the infix form as `*` or as a named operator `imul`.
+
+## `pure def idiv: (int, int) => int`
+
+`a.idiv(b)` is the integer division of `a` by `b`.
+
+It can be used in the infix form as `/` or as a named operator `idiv`.
+
+## `pure def imod: (int, int) => int`
+
+`a.imod(b)` is the integer modulus of `a` and `b`.
+
+It can be used in the infix form as `%` or as a named operator `imod`.
+
+## `pure def ipow: (int, int) => int`
+
+`a.ipow(b)` is the integer exponentiation of `a` by `b`.
+
+It can be used in the infix form as `^` or as a named operator `ipow`.
+
+## `pure def ilt: (int, int) => bool`
+
+`a.ilt(b)` is the integer less than comparison of `a` and `b`.
+
+It can be used in the infix form as `<` or as a named operator `ilt`.
+
+## `pure def igt: (int, int) => bool`
+
+`a.igt(b)` is the integer greater than comparison of `a` and `b`.
+
+It can be used in the infix form as `>` or as a named operator `igt`.
+
+## `pure def ilte: (int, int) => bool`
+
+`a.ilte(b)` is the integer less than or equal to comparison of `a` and `b`.
+
+It can be used in the infix form as `<=` or as a named operator `ilte`.
+
+## `pure def igte: (int, int) => bool`
+
+`a.igte(b)` is the integer greater than or equal to comparison of `a` and `b`.
+
+It can be used in the infix form as `>=` or as a named operator `igte`.
+
+## `pure def iuminus: (int) => int`
+
+`iuminus(a)` is `-1 * a`.
+
+This is the unary minus operator
+
+## `pure def to: (int, int) => Set[int]`
+
+`i.to(j)` is the set of integers between `i` and `j`.
+
+`i` is inclusive and `j` is inclusive.
+
+The behavior is undefined when `i` is greater than `j`.
+
+### Examples
+
+```
+assert(1.to(3) == Set(1, 2, 3))
+```
+
+## `temporal always: (bool) => bool`
+
+`always(p)` is true when `p` is true for every transition of the system.
+
+### Examples
+
+```
+var x: int
+action Init = x' = 0
+action Next = x' = x + 1
+temporal Property = always(next(x) > x)
+```
+
+## `temporal eventually: (bool) => bool`
+
+`eventually(p)` is true when `p` is true for some transition of the system.
+
+`eventually(p)` is equivalent to `not(always(not(p)))`.
+
+### Examples
+
+```
+var x: int
+action Init = x' = 0
+action Next = x' = x + 1
+temporal Property = eventually(x == 10)
+```
+
+## `temporal next: (a) => a`
+
+`next(a)` is the value of `a` in the next state of a transition.
+
+### Examples
+
+```
+var x: int
+action Init = x' = 0
+action Next = x' = x + 1
+temporal Property = next(x) == x + 1
+```
+
+## `temporal orKeep: (bool, a) => bool`
+
+`orKeep(a, v)` is true when `a` is true or the values
+for the set of variables `v` are unchanged.
+
+`orKeep(a, v)` is equivalent to `a or v.map(x => next(x) == x)`.
+
+This is the stuttering operator.
+
+### Examples
+
+```
+var x: int
+action Init = x' = 0
+action Next =  x' = x + 1
+temporal Spec = Init and always(Next.orKeep(Set(x)))
+```
+
+## `temporal mustChange: (bool, a) => bool`
+
+`mustChange(a, v)` is true when `a` is true and the values for the
+set of variables `v` are changed.
+
+`mustChange(a, v)` is equivalent to `a and v.map(x => next(x) != x)`.
+
+This is the no-stuttering operator.
+
+### Examples
+
+```
+var x: int
+action Init = x' = 0
+action Next = any {
+  x' = x + 1,
+  x' = x,
+}
+temporal Spec = Init and always(Next.mustChange(Set(x)))
+temporal Property = Spec.implies(always(next(x) > x))
+```
+
+## `temporal enabled: (bool) => bool`
+
+`enabled(a)` is true when the action `a` is enabled in the current state.
+
+An action is enabled when all its preconditions are satisfied
+and it's postcontitions are satisfiable.
+
+### Examples
+
+```
+var x: int
+action Init = x' = 0
+action Under10 = all {
+  x < 10,
+  x' = x + 1,
+}
+action Over10 = all {
+  x >= 10,
+  x' = x + 1,
+}
+temporal Property = always(and {
+  enabled(Under10) iff x < 10,
+  enabled(Over10) iff x >=10,
+})
+```
+
+```
+var x: int
+action Init = x' = 0
+action impossible = Set().guess(i => x' = i)
+temporal Property = always(not(enabled(impossible)))
+```
+
+## `temporal weakFair: (bool, a) => bool`
+
+`weakFair(a, v)` is true when
+`eventually(always(a.mustChange(v).enabled())).implies(always(eventually(a.mustChange(v))))`
+is true.
+
+This is the weak fairness condition.
+
+The weak fairness condition can be expressed in English as (from Specifying Systems):
+
+1. It’s always the case that, if A is enabled forever, then an A step eventually occurs.
+1. A is infinitely often disabled, or infinitely many A steps occur.
+1. If A is eventually enabled forever, then infinitely many A steps occur.
+
+### Examples
+
+```
+var x: int
+action Init = x' = 0
+action Next = any {
+  x' = x + 1,
+  x' = x,
+}
+
+temporal Property = Next.weakFair(Set(x)).implies(eventually(x == 10))
+```
+
+## `temporal strongFair: (bool, a) => bool`
+
+`strongFair(a, v)` is true when
+`always(eventually(a.mustChange(v).enabled())).implies(always(eventually(a.mustChange(v))))`
+ is true.
+
+This is the strong fairness condition.
+
+The strong fairness condition can be expressed in English as (from Specifying Systems):
+
+1. A is eventually disabled forever, or infinitely many A steps occur.
+1. If A is infinitely often enabled, then infinitely many A steps occur.
+
+### Examples
+
+```
+var x: int
+action Init = x' = 0
+action cycleTo1 = all { x == 0, x' = 1 },
+action cycleTo0 = all { x == 1, x' = 0 },
+action breakCycle = all { x == 0, x' = 2 },
+
+action Next = any {
+ cycleTo1,
+ cycleTo0,
+ breakCycle,
+ x' = x,
+}
+
+// Strong fairness can be used to ensure breakCycle happens
+temporal Property = breakCycle.strongFair(Set(x)).implies(eventually(x == 2))
+```
+
+## `action assign: (a, a) => bool`
+
+`assign(n, v)` is true when the state variable named `n` has the value `v`
+in the next state of a transition.
+
+This operator is used to define transitions by specifying how the state variables change
+
+Can be written as `n' = v`.
+
+### Examples
+
+```
+var x: int
+action Init = x' = 0
+// Next defines all transitions from a number to its successor.
+action Next = x' = x + 1
+```
+
+## `action ite: (bool, a, a) => a`
+
+`ite(c, t, e)` is `t` when `c` is true and `e` when `c` is false.
+
+Can be written as `if (c) t else e`.
+
+Can be used with actions.
+
+### Examples
+
+```
+pure val m = if (1 == 2) 3 else 4
+assert(m == 4)
+```
+
+```
+var x: int
+action a = if (x == 0) x' = 3 else x' = 4
+run test = (x' = 0).then(a).then(assert(x == 3))
+```
+
+## `action then: (bool, bool) => bool`
+
+`a.then(b)` is true for a step from `s1` to `s2` if there is a state `t` such that
+
+`a` is true for a step from `s1` to `t` and `b` is true for a step from `t` to `s2`.
+
+This is the action composition operator.
+
+### Examples
+
+```
+var x: int
+run test = (x' = 1).then(x' = 2).then(x' = 3).then(assert(x == 3))
+```
+
+## `action times: (int, bool) => bool`
+
+`n.times(a)` is the action `a` repeated `n` times.
+
+The semantics of this operator is as follows:
+
+- When `n <= 0`, this operator is equivalent to `unchanged`.
+- When `n = 1`, `n.times(a)` is equivalent to `a`.
+- When `n > 1`, `n.times(a)`, is equivalent to `a.then((n - 1).times(a))`.
+
+Note that the operator `n.times(a)` applies `a` exactly `n` times (when `n` is
+non-negative). If you want to repeat `a` from `i` to `j` times, you can combine
+it with `orKeep`:
+
+```
+i.times(a).then((j - i).times(a.orKeep(vars)))
+```
+
+### Examples
+
+```
+var x: int
+run test = (x' = 0).then(3.times(x' = x + 1)).then(assert(x == 3))
+```
+
+## `action assert: (bool) => bool`
+
+`assert(p)` is an action that is true when `p` is true.
+
+It does not change the state.
+
+### Examples
+
+```
+var x: int
+run test = (x' = 0).then(3.times(x' = x + 1)).then(assert(x == 3))
+```
+
+```
+var x: int
+action Init = x' = 0
+action Next = x' = x + 1
+
+run test = Init.then(all { Next, assert(x > 0) })
+```

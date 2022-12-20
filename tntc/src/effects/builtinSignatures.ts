@@ -112,8 +112,8 @@ const temporalOperators = [
   { name: 'always', effect: '(Read[r] & Temporal[t]) => Temporal[r, t]' },
   { name: 'eventually', effect: '(Read[r] & Temporal[t]) => Temporal[r, t]' },
   { name: 'next', effect: '(Read[r]) => Temporal[r]' },
-  { name: 'stutter', effect: '(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]' },
-  { name: 'nostutter', effect: '(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]' },
+  { name: 'orKeep', effect: '(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]' },
+  { name: 'mustChange', effect: '(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]' },
   // Enabled: Should we do this? https://github.com/informalsystems/tnt/discussions/109
   // Or should the result be temporal?
   { name: 'enabled', effect: '(Read[r1] & Update[u1]) => Read[r1]' },
@@ -124,8 +124,8 @@ const temporalOperators = [
 const otherOperators = [
   { name: 'assign', effect: '(Read[r1], Read[r2]) => Read[r2] & Update[r1]' },
   { name: 'then', effect: '(Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r] & Update[u]' },
-  { name: 'repeated',
-    effect: '(Read[r] & Update[u], Pure) => Read[r] & Update[u]' },
+  { name: 'times',
+    effect: '(Pure, Read[r] & Update[u]) => Read[r] & Update[u]' },
   { name: 'assert', effect: '(Read[r]) => Read[r]' },
   { name: 'ite', effect: '(Read[r1], Read[r2] & Update[u], Read[r3] & Update[u]) => Read[r1, r2, r3] & Update[u]' },
 ]
@@ -151,7 +151,7 @@ const multipleAritySignatures: [string, Signature][] = [
   ['tuples', readManyEffect],
   ['and', readAndTemporalManyEffect],
   ['or', readAndTemporalManyEffect],
-  ['match', (arity: number) => {
+  ['unionMatch', (arity: number) => {
     const readVars = times((arity - 1) / 2, i => `r${i}`)
     const args = readVars.map(r => `Pure, (Pure) => Read[${r}]`)
     return parseEffectOrThrow(`(Read[r], ${args.join(', ')}) => Read[${readVars.join(', ')}]`)

@@ -60,7 +60,7 @@ syn keyword tntStd isFinite cardinality get put keys mapBy setOfMaps
 syn keyword tntStd set setBy fieldNames with tuples append concat
 syn keyword tntStd head tail length nth indices replaceAt slice
 syn keyword tntStd select foldl foldr to
-syn keyword tntStd always eventually next stutter nostutter
+syn keyword tntStd always eventually next orKeep mustChange
 syn keyword tntStd enabled weakFair strongFair guarantees
 syn keyword tntStd existsConst forallConst chooseConst
 syn keyword tntStd any all
