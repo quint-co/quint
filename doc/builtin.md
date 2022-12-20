@@ -774,8 +774,8 @@ action Over10 = all {
   x >= 10,
   x' = x + 1,
 }
-temporal Property = always(and { 
-  enabled(Under10) iff x < 10, 
+temporal Property = always(and {
+  enabled(Under10) iff x < 10,
   enabled(Over10) iff x >=10,
 })
 ```

@@ -705,8 +705,8 @@ module builtin {
   ///   x >= 10,
   ///   x' = x + 1,
   /// }
-  /// temporal Property = always(and { 
-  ///   enabled(Under10) iff x < 10, 
+  /// temporal Property = always(and {
+  ///   enabled(Under10) iff x < 10,
   ///   enabled(Over10) iff x >=10,
   /// })
   /// ```
@@ -984,6 +984,18 @@ module builtin {
   // /// ```
   // pure def item(t, i): ((a0, ..., an), int) => ai
 
+  // /// `tuples(s0, ..., sn)` is the set of all tuples `(t0, ..., tn)` such that `ti` is in `si`.
+  // ///
+  // /// This is the cross product operator.
+  // ///
+  // /// ### Examples
+  // ///
+  // /// ```
+  // /// pure val s = tuples(Set(1, 2), Set(3, 4))
+  // /// assert(s == Set((1, 3), (1, 4), (2, 3), (2, 4)))
+  // /// ```
+
+  // pure def tuples(a*): (Set[a0], ..., Set[an]) => Set[(a0, ..., an)]
   // /// `and(a0, ..., an)` is true when all `ai` are true.
   // ///
   // /// This is the conjunction operator.
@@ -1064,16 +1076,4 @@ module builtin {
   // /// assert(total({ tag = "none" }) == 0)
   // /// ```
   // pure def unionMatch(m, (t, e)*): (a, (b, ((b) => c))*) => c
-
-  // /// `tuples(s0, ..., sn)` is the set of all tuples `(t0, ..., tn)` such that `ti` is in `si`.
-  // ///
-  // /// This is the cross product operator.
-  // ///
-  // /// ### Examples
-  // ///
-  // /// ```
-  // /// pure val s = tuples(Set(1, 2), Set(3, 4))
-  // /// assert(s == Set((1, 3), (1, 4), (2, 3), (2, 4)))
-  // /// ```
-  // pure def tuples(a*): (Set[a0], ..., Set[an]) => Set[(a0, ..., an)]
 }
