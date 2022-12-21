@@ -1,48 +1,61 @@
-# quint: Transpiler for Quint
+# quint: Tool for the Quint specification language
 
-| Revision | Date       | Author           |
-| -------: | :--------: | :--------------- |
-| 5        | 10.11.2022 | Igor Konnov      |
+| Revision | Date       | Author                  |
+|---------:|:----------:|:------------------------|
+|        6 | 12.23.2022 | Igor Konnov, Shon Feder |
 
 **WARNING**: *This is a preliminary manual in the style of [Working
 Backwards]. Some commands are not implemented yet.*
 
-`quint` is a command line interface to the Quint transpiler. It is the primary
-access point for testing and integration with other tools.
+`quint` is a command line interface tool for working with the [Quint
+specification language](./lang.md). It is the primary access point for testing
+and integration with other tools.
 
 The main commands of `quint` are as follows:
 
- - `repl` starts the REPL (Read-Eval-Print loop) for Quint
- - `parse` parses a Quint specification and resolves names
- - `typecheck` infers types in a Quint specification
- - `run` executes a Quint specification via random simulation
- - `test` tests a Quint specification similar to property-based testing
- - `lint` checks a Quint specification for known deficiencies
- - `indent` indents a Quint specification
- - `to-apalache` translates a Quint specification to Apalache IR
+ - [x] `repl` starts the REPL (Read-Eval-Print loop) for Quint
+ - [x] `parse` parses a Quint specification and resolves names
+ - [x] `typecheck` infers types in a Quint specification
+ - [ ] `docs` produces documentation
+ - [ ] `run` executes a Quint specification via random simulation
+ - [ ] `test` tests a Quint specification similar to property-based testing
+ - [ ] `lint` checks a Quint specification for known deficiencies
+ - [ ] `indent` indents a Quint specification
+ - [ ] `to-apalache` translates a Quint specification to Apalache IR
 
 In the following, we give details about the above commands.
 
 ## Installation
 
-See [README](../quint/README.md).
+See README](../quint/README.md).
 
-## Command repl
+## Command `repl`
+
+This is the default operation if no other subcommand is given:
+
+```sh
+quint
+```
+
+You can also invoke it directly with:
 
 ```sh
 quint repl
 ```
 
-Starts the [REPL][]: read-evaluate-print loop. REPL is especially useful for
-learning the language. See the [repl](./repl.md) for more details.
 
-## Command parse
+The command starts the [REPL][] (read-evaluate-print loop). The REPL is
+especially useful for learning the language. See the [repl](./repl.md)
+documentation for more details.
+
+## Command `parse`
 
 ```sh
 quint parse [--out=<out>.json] [--source-map=<src>.map] <spec>.qnt
 ```
 
-*Warning: The parser is working, but name resolution is not implemented.*
+*Warning: The parser is still in active development, and breaking changes are to
+be expected.*
 
 This command reads a Quint specification from the file `<spec>.qnt`, parses the
 specification and resolves the imports relative to the directory of
@@ -58,7 +71,7 @@ the following is written:
 
    ```json
    {
-     "status": "resolved",
+     "stage": "parsing",
      "module": <IR>,
      "warnings": [ <warnings> ]
    }
@@ -71,8 +84,8 @@ the following is written:
 
    ```json
    {
-     "result": "error",
-     "messages": [ <errors and warnings> ]
+     "stage": "parsing",
+     "errors": [ <errors> ]
    }
    ```
 
@@ -84,8 +97,6 @@ information is written to `<src>.map` in the format of [Source map][].
 *The option `--source-map` is not implemented yet.*
 
 ## Command typecheck
-
-*This command is work in progress.*
 
 ```sh
 quint typecheck [--out=<out>.json] <spec>.qnt
@@ -106,18 +117,22 @@ the following is written:
    ```json
    {
      "status": "typed",
-     "module": <IR>
+     "module": <IR>,
+     "types": { <typemap> }
+     "effects": { <effectmap> }
    }
    ```
 
-   The module contents is the JSON representation of [Quint IR][].
+   The module contents is the JSON representation of [Quint IR][], the `types`
+   and `effects` map source IDs of entities in the `module` to their inferred
+   type or effect.
 
  - If the command fails, the file contains an error message in JSON:
 
    ```json
    {
-     "result": "error",
-     "messages": [ <errors> ]
+     "stage": "typechecking",
+     "errors": [ <errors> ]
    }
    ```
 
@@ -277,27 +292,9 @@ an output file in the Quint format.
 JSON format. This configuration files specifies the indentation rules. The
 exact format is to be specified in the future.
 
-## Command to-apalache
-
-*This command is not implemented yet.*
-
-```sh
-quint to-apalache [--out=<out>.json] <spec>.qnt
-```
-
-This command does the full cycle of parsing, resolving names, type checking,
-flattening modules, etc. After doing all that, it outputs the module in the
-[Apalache JSON][] format. Unless the option `--out` is specified, the formatted
-specification is written on the standard output.
-
-**Option `--out`**. The optional parameter `--out` specifies the name of
-an output file in the [Apalache JSON] format.
-
-
 [ADR002]: ./adr002-errors.md
 [Working Backwards]: https://www.allthingsdistributed.com/2006/11/working_backwards.html
 [Source map]: https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
 [Quint IR]: https://github.com/informalsystems/quint/blob/main/quint/src/quintIr.ts
-[Apalache JSON]: https://apalache.informal.systems/docs/adr/005adr-json.html
 [REPL]: https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop
 [Informal Trace Format]: https://apalache.informal.systems/docs/adr/015adr-trace.html
