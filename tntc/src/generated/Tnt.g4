@@ -57,6 +57,7 @@ instanceMod :   'module' IDENTIFIER '=' IDENTIFIER
 
 // Types in Type System 1.2 of Apalache, which supports discriminated unions
 type :          <assoc=right> type '->' type                    # typeFun
+        |       <assoc=right> type '=>' type                    # typeOper
         |       '(' (type (',' type)*)? ','? ')' '=>' type      # typeOper
         |       SET '[' type ']'                                # typeSet
         |       LIST '[' type ']'                               # typeList

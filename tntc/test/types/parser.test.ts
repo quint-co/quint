@@ -114,7 +114,9 @@ describe('parseType', () => {
     assert.isTrue(type.isLeft())
     type.mapLeft(error => assert.sameDeepMembers(error, [
       {
-        explanation: "mismatched input ',' expecting {'->', ']'}",
+        // TODO We should not expect a '=>' here,
+        // but do because of https://github.com/informalsystems/tnt/issues/456
+        explanation: "mismatched input ',' expecting {'->', '=>', ']'}",
         locs: [{ start: { line: 0, col: 8, index: 8 }, end: { line: 0, col: 8, index: 8 } }],
       },
     ]))
@@ -126,7 +128,9 @@ describe('parseType', () => {
     assert.isTrue(type.isLeft())
     type.mapLeft(error => assert.sameDeepMembers(error, [
       {
-        explanation: "mismatched input '|' expecting {',', '->'}",
+        // TODO We should not expect a '=>' here,
+        // but do because of https://github.com/informalsystems/tnt/issues/456
+        explanation: "mismatched input '|' expecting {',', '->', '=>'}",
         locs: [{ start: { line: 0, col: 11, index: 11 }, end: { line: 0, col: 11, index: 11 } }],
       },
     ]))
