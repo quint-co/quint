@@ -1,0 +1,22 @@
+{
+	"name": "quint-lsp-client",
+	"description": "Quint LSP client",
+	"author": "Informal Systems",
+	"license": "Apache 2.0",
+	"version": "0.0.5",
+	"publisher": "igorkonnov0764",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/informalsystems/quint"
+	},
+	"engines": {
+		"vscode": "^1.52.0"
+	},
+	"dependencies": {
+		"vscode-languageclient": "^7.0.0"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.52.0",
+		"vscode-test": "^1.3.0"
+	}
+}

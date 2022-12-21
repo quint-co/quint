@@ -1,4 +1,4 @@
-# ADR004: An Effect System for TNT
+# ADR004: An Effect System for Quint
 
 | Revision | Date       | Author           |
 | :------- | :--------- | :--------------- |
@@ -13,15 +13,15 @@ specifications are valid before we hand them to the model checker, and a way of
 providing users with clear feedback on when they are making invalid updates (or
 failing to make required updates).
 
-This is the proposal of a simple read & update effect system for TNT, with two
+This is the proposal of a simple read & update effect system for Quint, with two
 objectives:
-1. Check that TNT modes are respected regarding their effects,
+1. Check that Quint modes are respected regarding their effects,
 2. Check that each variable is updated exactly once at `next`.
 
 ## Context
 
 Towards being more explicit about different components of a specification, each
-TNT definition has a mode. Because there's also the possibility of higher order
+Quint definition has a mode. Because there's also the possibility of higher order
 operators, we thought it would be wise to define modes in terms of effects in a
 system that is independent of the type system and much simpler. With a read &
 update effect system, we can also check whether a composition of actions in
@@ -38,7 +38,7 @@ simplicity.
 
 ## Solution
 
-TNT expressions and definitions can be assigned both a type and an effect, which
+Quint expressions and definitions can be assigned both a type and an effect, which
 are independent of each other. Here are some examples of inferred effects for
 some definitions:
 
@@ -80,7 +80,7 @@ PS: alternative names for `pure` are `static` and `stateless`.
 ```
 Identifiers v, c, op
 Effects E, Ei ::= Read[vars] | Update[vars] | Pure | E & E | (E0, ..., EN) => E
-Expressions e, ei ::= any TNT expression
+Expressions e, ei ::= any Quint expression
 Contexts Γ ::= { kind: 'var' | 'const' | 'param', identifier: v } | { kind: 'def', identifier: op, effect: E } | Γ ∪ Γ
 Substitutions S, Si ::= {v ↦ E} | {v ↦ c} | S ∪ S
 ```
@@ -99,7 +99,7 @@ any other transformation. See equivalence rules below.
 
 The motivation for this form is to help writing effect signatures for operators
 that care only about the read or the update part of some effect. For example,
-the `or` operator representing disjunction in TNT takes expressions with the
+the `or` operator representing disjunction in Quint takes expressions with the
 identical updates, but doesn't have any restrictions on the read part. Ensuring
 this normal form allows us to write its signature as `(Read[r1] & Update[u],
 Read[r2] & Update[u]) => Read[r1 ∪ r2] & Update[u]`.
@@ -131,7 +131,7 @@ E1 & (E2 & E3) ≡ (E1 & E2) & E3
 
 One might be inclined to treat `Read[vars] & Update[vars]` and `Update[vars]` as
 equivalent, reasoning that one must be able to read a variable in order to
-update it. However, in TNT we can update a variable without reading it's current
+update it. However, in Quint we can update a variable without reading it's current
 value: `x <- x + 1` is different from `x <- 2`. We anticipate there may be
 utility in differentiating these cases, such as being able to partition
 transitions that only read a variable on the current state from transitions that

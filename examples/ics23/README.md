@@ -1,10 +1,10 @@
-This is a formal specification and invariants of [ICS23 Spec][] in TNT and TLA+:
+This is a formal specification and invariants of [ICS23 Spec][] in Quint and TLA+:
 
-## TNT specification
+## Quint specification
 
- Specification [ics23.tnt](./ics23.tnt) is the TNT specification that contains
+ Specification [ics23.qnt](./ics23.qnt) is the Quint specification that contains
  four modules:
-  
+
   - Module `basics` contains basic type definitions and auxiliary definitions.
 
   - Module `ics23` contains membership and non-membership proofs.
@@ -13,11 +13,11 @@ This is a formal specification and invariants of [ICS23 Spec][] in TNT and TLA+:
 
   - Module `trees` contains advanced randomized tests that use tree generation.
 
-**Unit tests.** You can use TNT REPL to run basic unit tests as follows:
+**Unit tests.** You can use Quint REPL to run basic unit tests as follows:
 
 ```sh
-$ tntc repl
->>> .load ics23.tnt
+$ quintc repl
+>>> .load ics23.qnt
 >>> import ics23test.*
 >>> allTests
 ```
@@ -26,8 +26,8 @@ $ tntc repl
 examples of successful membership and non-membership verification as follows:
 
 ```sh
-$ tntc repl
->>> .load ics23.tnt
+$ quintc repl
+>>> .load ics23.qnt
 >>> import ics23pbt.*
 >>> _test(1000, 10, "Init", "Next", "TestVerify")
 >>> _test(1000, 10, "Init", "Next", "TestNonMem")
@@ -37,8 +37,8 @@ $ tntc repl
 non-membership invariants with the random simulator:
 
 ```sh
-$ tntc repl
->>> .load ics23.tnt
+$ quintc repl
+>>> .load ics23.qnt
 >>> import trees.*
 >>> _test(1000, 1, "Init", "Next", "NonMemInv")
 >>> _test(1000, 1, "Init", "Next", "MemInv")
@@ -47,7 +47,7 @@ $ tntc repl
 ## TLA+ specification
 
 Specifications [ics23.tla](./ics23.tla) and [ics23trees.tla](./ics23trees.tla)
-is the manual translation from TNT to TLA+. The main value of this
+is the manual translation from Quint to TLA+. The main value of this
 specification is the ability to check the invariants with Apalache:
 
 ```sh

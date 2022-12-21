@@ -9,12 +9,12 @@
 We are introducing an interface using the [visitor pattern][] (from [Design
 Patterns][] GoF book) to allow easy access of arbitrary IR components without
 the need to manipulate the entire IR. This should avoid significant occurrences
-of boilerplating throughout `tntc` source code and possibly external libraries
+of boilerplating throughout `quintc` source code and possibly external libraries
 built on top of it.
 
 ## Context
 
-TNT's internal representation has many heterogeneous recursive structures. For
+Quint's internal representation has many heterogeneous recursive structures. For
 example, a module can contain an operator definition with a let-in expression,
 which contains yet another operator definition and a body expression. Therefore,
 if we want to define a procedure to extract information of a specific type of
@@ -61,17 +61,17 @@ post order with `enter*` and `exit*` methods, but that's an easy refactor.
 
 ```ts
 export interface IRVisitor {
-  visitExpr?: (expr: TntEx) => void
-  visitDef?: (def: TntDef) => void
+  visitExpr?: (expr: QuintEx) => void
+  visitDef?: (def: QuintDef) => void
 
-  visitConst?: (cons: TntConst) => void
+  visitConst?: (cons: QuintConst) => void
 
-  visitName?: (nameExpr: TntName) => void
-  visitApp?: (appExpr: TntApp) => void
+  visitName?: (nameExpr: QuintName) => void
+  visitApp?: (appExpr: QuintApp) => void
 
-  visitTypeVar?: (typeVar: TntTypeVar) => void
-  visitTypeConst?: (typeConst: TntTypeConst) => void
-  
+  visitTypeVar?: (typeVar: QuintTypeVar) => void
+  visitTypeConst?: (typeConst: QuintTypeConst) => void
+
   // ...
 }
 ```
@@ -81,11 +81,11 @@ at their corresponding components.
 
 ```ts
 
-export function walkModule (visitor: IRVisitor, tntModule: TntModule): void {
-  tntModule.defs.forEach(def => walkDefinition(visitor, def))
+export function walkModule (visitor: IRVisitor, quintModule: QuintModule): void {
+  quintModule.defs.forEach(def => walkDefinition(visitor, def))
 }
 
-function walkDefinition (visitor: IRVisitor, def: TntDef) {
+function walkDefinition (visitor: IRVisitor, def: QuintDef) {
   if (visitor.visitDef) {
     visitor.visitDef(def)
   }
@@ -99,14 +99,14 @@ function walkDefinition (visitor: IRVisitor, def: TntDef) {
         walkType(visitor, def.type)
       }
       break
-    
+
     // ...
   }
 }
 
-function walkExpression (visitor: IRVisitor, expr: TntEx) { ... }
+function walkExpression (visitor: IRVisitor, expr: QuintEx) { ... }
 
-function walkType (visitor: IRVisitor, tntType: TntType) { ... } 
+function walkType (visitor: IRVisitor, quintType: QuintType) { ... }
 ```
 
 This is the underlying infrastructure. To use it, one has to simply define a
@@ -124,7 +124,7 @@ class NameResolverVisitor implements IRVisitor {
   private table: DefinitionTable = { valueDefinitions: [], typeDefinitions: [] }
   private scopeTree: ScopeTree
 
-  visitName (nameExpr: TntName): void {
+  visitName (nameExpr: QuintName): void {
     // This is a name expression, the name must be defined
     // either globally or under a scope that contains the expression
     const valueDefinitionsForScope = filterScope(this.table.valueDefinitions, scopesForId(this.scopeTree, nameExpr.id))
@@ -137,11 +137,11 @@ class NameResolverVisitor implements IRVisitor {
     }
   }
 
-  visitApp (appExpr: TntApp): void { ... } 
+  visitApp (appExpr: QuintApp): void { ... }
 
-  visitTypeVar (type: TntTypeVar): void { ... }
+  visitTypeVar (type: QuintTypeVar): void { ... }
 
-  visitTypeConst (type: TntTypeConst): void { ... } 
+  visitTypeConst (type: QuintTypeConst): void { ... }
 }
 ```
 
@@ -153,7 +153,7 @@ return `void`.
 Here are the planned steps to get this to `main` in small chunks of changes:
 
 1. Introduce type aliases for each of the IR components (i.e. `{ kind: 'name',
-   name: string } & WithId & WithType` should become `TntName`) to avoid
+   name: string } & WithId & WithType` should become `QuintName`) to avoid
    duplication of interface definitions across signatures
 1. Introduce the visitor interface and the `walk*` functions
 1. Refactor `nameResolver` to use a visitor

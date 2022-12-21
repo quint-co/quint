@@ -1,6 +1,4 @@
-# Summary of TNT
-
-*TNT is not TLA+*
+# Summary of Quint
 
 | Revision | Date       | Author                                                  |
 |:---------|:-----------|:--------------------------------------------------------|
@@ -12,59 +10,58 @@ TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
 
-- [Summary of TNT](#summary-of-tnt)
-  * [Identifiers and strings](#identifiers-and-strings)
-  * [Comments](#comments)
-  * [Types](#types)
-    + [Type System 1.2](#type-system-12)
-  * [Modes](#modes)
-  * [Module-level constructs](#module-level-constructs)
-    + [Module definition](#module-definition)
-    + [Constant declarations](#constant-declarations)
-    + [Assumptions](#assumptions)
-    + [Variable definitions](#variable-definitions)
-    + [Operator definitions](#operator-definitions)
-    + [No recursive functions and operators](#no-recursive-functions-and-operators)
-    + [Module instances](#module-instances)
-    + [Type aliases](#type-aliases)
-    + [Theorems](#theorems)
-    + [Imports](#imports)
-  * [Namespaces and imports](#namespaces-and-imports)
-    + [Stateless and stateful modules](#stateless-and-stateful-modules)
-    + [Namespaces](#namespaces)
-    + [Imports](#imports-1)
-  * [TNT expression syntax](#tnt-expression-syntax)
-    + [Literals](#literals)
-    + [Names](#names)
-    + [Braces and parentheses](#braces-and-parentheses)
-    + [Lambdas (aka Anonymous Operators)](#lambdas-aka-anonymous-operators)
-    + [Two forms of operator application](#two-forms-of-operator-application)
-    + [Boolean operators and equality](#boolean-operators-and-equality)
-    + [Block disjunctions](#block-disjunctions)
-    + [Block conjunctions](#block-conjunctions)
-    + [Flow operators](#flow-operators)
+- [Summary of Quint](#summary-of-quint)
+  - [Identifiers and strings](#identifiers-and-strings)
+  - [Comments](#comments)
+  - [Types](#types)
+    - [Type System 1.2](#type-system-12)
+  - [Modes](#modes)
+  - [Module-level constructs](#module-level-constructs)
+    - [Module definition](#module-definition)
+    - [Constant declarations](#constant-declarations)
+    - [Assumptions](#assumptions)
+    - [Variable definitions](#variable-definitions)
+    - [Operator definitions](#operator-definitions)
+    - [No recursive functions and operators](#no-recursive-functions-and-operators)
+    - [Module instances](#module-instances)
+    - [Type aliases](#type-aliases)
+    - [Theorems](#theorems)
+    - [Imports](#imports)
+  - [Namespaces and imports](#namespaces-and-imports)
+    - [Stateless and stateful modules](#stateless-and-stateful-modules)
+    - [Namespaces](#namespaces)
+    - [Imports](#imports-1)
+  - [Quint expression syntax](#quint-expression-syntax)
+    - [Literals](#literals)
+    - [Names](#names)
+    - [Braces and parentheses](#braces-and-parentheses)
+    - [Lambdas (aka Anonymous Operators)](#lambdas-aka-anonymous-operators)
+    - [Two forms of operator application](#two-forms-of-operator-application)
+    - [Boolean operators and equality](#boolean-operators-and-equality)
+    - [Block disjunctions](#block-disjunctions)
+    - [Block conjunctions](#block-conjunctions)
+    - [Flow operators](#flow-operators)
       - [Condition](#condition)
       - [Cases (removed)](#cases-removed)
-    + [Sets](#sets)
+    - [Sets](#sets)
       - [Set constructor](#set-constructor)
       - [Non-deterministic choice](#non-deterministic-choice)
       - [Other set operators](#other-set-operators)
-    + [Maps (aka Functions)](#maps-aka-functions)
-    + [Records](#records)
-    + [Discriminated unions](#discriminated-unions)
-    + [Tuples](#tuples)
-    + [Lists (aka Sequences)](#lists-aka-sequences)
-    + [Integers](#integers)
-    + [Nested operator definitions](#nested-operator-definitions)
-    + [Operators on actions](#operators-on-actions)
+    - [Maps (aka Functions)](#maps-aka-functions)
+    - [Records](#records)
+    - [Discriminated unions](#discriminated-unions)
+    - [Tuples](#tuples)
+    - [Lists (aka Sequences)](#lists-aka-sequences)
+    - [Integers](#integers)
+    - [Nested operator definitions](#nested-operator-definitions)
+    - [Operators on actions](#operators-on-actions)
       - [Delayed assignment](#delayed-assignment)
       - [Non-deterministic choice](#non-deterministic-choice-1)
-      - [Other action operators of TLA+](#other-action-operators-of-tla)
-    + [Runs](#runs)
+    - [Runs](#runs)
       - [Then](#then)
       - [Times](#times)
       - [Assert](#assert)
-    + [Temporal operators](#temporal-operators)
+    - [Temporal operators](#temporal-operators)
       - [Always](#always)
       - [Eventually](#eventually)
       - [Next](#next)
@@ -74,13 +71,13 @@ TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
       - [Enabled](#enabled)
       - [Fairness](#fairness)
       - [Other temporal operators](#other-temporal-operators)
-    + [Unbounded quantifiers](#unbounded-quantifiers)
-  * [Instances](#instances)
-    + [Common case 1](#common-case-1)
-    + [Common case 2](#common-case-2)
-    + [The general case](#the-general-case)
-    + [No anonymous instances](#no-anonymous-instances)
-    + [Discussion](#discussion)
+    - [Unbounded quantifiers](#unbounded-quantifiers)
+  - [Instances](#instances)
+    - [Common case 1](#common-case-1)
+    - [Common case 2](#common-case-2)
+    - [The general case](#the-general-case)
+    - [No anonymous instances](#no-anonymous-instances)
+    - [Discussion](#discussion)
 
 <!-- markdown-toc end -->
 
@@ -129,11 +126,11 @@ Multi-line comments:
 
 ## Types
 
-TNT is a typed language. All variables and constants must be assigned a type.
+Quint is a typed language. All variables and constants must be assigned a type.
 Other definitions may be annotated with types. If the type checker is able to
 infer the type of a definition, then its type may be omitted.
 
-**Discussion.** In the earlier versions of TNT, we allowed the user to omit
+**Discussion.** In the earlier versions of Quint, we allowed the user to omit
 types altogether. In retrospect, we find this to be a bad idea. Hence, we
 require that every definition is either type-annotated (variables and
 constants), or can be assigned a type via type checking (operators and
@@ -211,7 +208,7 @@ We define the following modes:
  1. Run mode.
  1. Temporal mode.
 
-Every TNT expression and definition is assigned a mode. In the following, we
+Every Quint expression and definition is assigned a mode. In the following, we
 will specify which modes are supported by certain operators and definitions.
 The following table defines the subsumption rules on modes (the partial order
 `<m`).  As a general rule, if an operator or a definition accepts an argument
@@ -466,11 +463,11 @@ See [Namespaces and imports](#namespaces).
 ## Namespaces and imports
 
 The topic of modules, namespaces, and instances is extremely obfuscated in
-TLA+, for no obvious reason. In TNT, we follow a simple approach that would not
+TLA+, for no obvious reason. In Quint, we follow a simple approach that would not
 surprise anyone, who knows modern programming languages.
 
-We are using TNT expressions in the examples in this section. It is probably a
-good idea to skip this section on the first read and read about [TNT expression
+We are using Quint expressions in the examples in this section. It is probably a
+good idea to skip this section on the first read and read about [Quint expression
 syntax](#expressions) first.
 
 ### Stateless and stateful modules
@@ -555,11 +552,11 @@ module outOfOrder {
 
 As a specification author, you and your peers have to decide on your style,
 whereas your text editor should help you in finding definitions.
-TNT is not Fashion Police.
+Quint is not Fashion Police.
 
 ### Imports
 
-As it may be tedious to access definitions via the dot-notation, TNT supports
+As it may be tedious to access definitions via the dot-notation, Quint supports
 name imports:
 
 ```scala
@@ -631,7 +628,7 @@ G(x) == { F(x) }
 ==========================
 ```
 
-In the above example, the definition `F` is auxiliary to `G`. In TNT, we do not
+In the above example, the definition `F` is auxiliary to `G`. In Quint, we do not
 hide definitions. If you want to indicate to the users of your module, if there
 are any, that they should not access some private definitions, you may hide those
 definitions in a nested module that start with the underscore:
@@ -649,12 +646,12 @@ module Local {
 
 By convention, a module should not access a submodule of another module, if the
 name of the submodule starts with an underscore. This is only a convention. If
-you do that, a TNT parser may issue a warning, but it will not crash.
+you do that, a Quint parser may issue a warning, but it will not crash.
 
 
 <a name="expressions"/>
 
-## TNT expression syntax
+## Quint expression syntax
 
 ### Literals
 
@@ -744,7 +741,7 @@ types `a_1` to `a_n` to an expression of type `b`. _Anonymous operators
 expressions_, known in TLA+ as "lambdas", can be constructed with the
 corresponding syntax.
 
-In TNT, `(x_1, ..., x_n) => e` is an anonymous operator which, when applied to
+In Quint, `(x_1, ..., x_n) => e` is an anonymous operator which, when applied to
 expressions `e_1` to `e_n`, reduces to the expression `e[e_1/x_1, ...,
 e_n/x_n]` (that is, every parameter `x_i` is substituted with the expression
 `e_i`, for `1 <= i <= n`). Two important comments are in order:
@@ -771,12 +768,12 @@ cannot be freely assigned to values or returned as a result of an operator.
 
 ### Two forms of operator application
 
-TNT is flexible with respect to operator applications. It supports two call
+Quint is flexible with respect to operator applications. It supports two call
 styles that are familiar from popular languages. Given an operator called `f`
 and expressions `e_1`, ..., `e_n`, the operator `f` can be applied to the
 expressions `e_1`, ..., `e_n` as follows:
 
- 1. *TNT normal form*: `f(e_1, ..., e_n)`.
+ 1. *Quint normal form*: `f(e_1, ..., e_n)`.
  1. [UFCS][]: `e_1.f(e_2, ..., e_n)`
 
 These forms always require parentheses, even if the number of arguments in
@@ -785,7 +782,7 @@ operators `f` and `g` in the normal form and UFCS, respectively. The form
 without parentheses is reserved for field access of tuples and records as well
 as accessing namespaces.
 
-*The TNT normal form is especially convenient for programs, so they should
+*The Quint normal form is especially convenient for programs, so they should
  communicate in this form. People may communicate in any form.*
 
 A reserved class of built-in operators can only be called via infix form. These
@@ -796,8 +793,8 @@ achieved by using the mnemonic names, such as `iadd` instead of the infix
 symbol. E.g., you may write `iadd(1, 3)` or `1.iadd(3)` in place of `1 + 3`. A
 small number of operators are exceptional in this sense. We list the alternative
 names when introducing operators. We don't expect humans to write expressions
-like the ones above. This notation is more convenient for programs, so TNT
-tooling should use the TNT normal form. 
+like the ones above. This notation is more convenient for programs, so Quint
+tooling should use the Quint normal form.
 
 Like in every programming language, several operators are special
 in the sense that they have non-standard priorities. The good news is that
@@ -868,14 +865,14 @@ Note that the operator `not(p)` needs parentheses around its argument.
 Actually, `not` is treated as a general operator. We keep the number of special
 syntax forms to a minimum.
 
-*Mode:* Stateless, State, Temporal. 
+*Mode:* Stateless, State, Temporal.
 
 ### Block disjunctions
 
 The following expression can be written in the action mode:
 
 ```scala
-any { 
+any {
   a_1,
   a_2,
   ...
@@ -898,7 +895,7 @@ Since the syntax of the above operator is convenient, we have introduced a
 similar syntax form in the non-action modes:
 
 ```scala
-or { 
+or {
   p_1,
   p_2,
   ...
@@ -938,7 +935,7 @@ Since the syntax of the above operator is convenient, we have introduced a
 similar syntax form in the non-action modes:
 
 ```scala
-and { 
+and {
   p_1,
   p_2,
   ...
@@ -976,7 +973,7 @@ disjunctions. The expression-mode semantics of `CASE` in TLA+ does what the
 users do not expect: If two branches are evaluated to `TRUE` in the same state,
 then one of them is deterministically chosen with `CHOOSE` (there is no
 predefined way of telling which one is chosen). For all these reasons, we do
-not introduce `CASE` in TNT. Use series of `if-else if-else` expressions.*
+not introduce `CASE` in Quint. Use series of `if-else if-else` expressions.*
 
 Case enumeration with the default case:
 
@@ -1037,7 +1034,7 @@ Set(e_1, ..., e_n)
 
 This is exactly as `{ e_1, ..., e_n }` in TLA+. However, we prefer not to
 sacrifice `{...}` for this only operator. That is why a set is constructed with
-`Set(...)` in TNT. In practice, this operator does not appear too often, so our
+`Set(...)` in Quint. In practice, this operator does not appear too often, so our
 notation would not distract you too much.
 
 *Mode:* Stateless, State. Other modes are not allowed.
@@ -1159,7 +1156,7 @@ S.chooseSome()
 S.filter(x => P).chooseSome
 ```
 
-These operators are defined in the module `FiniteSets` in TLA+. TNT has these
+These operators are defined in the module `FiniteSets` in TLA+. Quint has these
 two operators in the kernel:
 
 ```scala
@@ -1256,7 +1253,7 @@ with discriminated unions.
 
 ### Discriminated unions
 
-TNT has provides the user with special syntax for constructing and destructing
+Quint has provides the user with special syntax for constructing and destructing
 discriminated unions.  For the type syntax of discriminated unions, see
 [Types](#types).
 
@@ -1288,7 +1285,7 @@ val Entries =
 In the above example, the set elements have the following union type:
 
 ```scala
-type ENTRY_TYPE =  
+type ENTRY_TYPE =
   | { tag: "Cat", name: str, year: int }
   | { tag: "Date", day: int, month: int, year: int }
 ```
@@ -1298,7 +1295,7 @@ types.  For instance, the entry  `{ tag: "Date", day: 16, month: 11, year: 2021
 }` has the type:
 
 ```scala
-type DATE_TYPE = 
+type DATE_TYPE =
   { tag: "Date", day: int, month: int, year: int }
 ```
 
@@ -1327,7 +1324,7 @@ type CAT_TYPE =
 ```
 
 **Destructors.** Sometimes, we have a value of a union type that is not stored
-in a set. For this case, TNT has the union destructor syntax.  For example,
+in a set. For this case, Quint has the union destructor syntax.  For example,
 given an entry from `Entries`, we can compute the predicate `isValid` by case
 distinction over tags:
 
@@ -1373,11 +1370,11 @@ Its normal form is `unionMatch(ex, tag_1, (x_1 => ex_1), ..., (x_n => ex_n))`.
 
 **Discussion.** In TLA+, there is no separation between discriminated unions
 and records. It is common to use tagged records to distinguish between different
-cases of records. TNT makes this pattern explicit.
+cases of records. Quint makes this pattern explicit.
 
 ### Tuples
 
-In contrast to TLA+, TNT tuples have length of at least 2.
+In contrast to TLA+, Quint tuples have length of at least 2.
 If you need lists, use lists.
 
 ```scala
@@ -1409,10 +1406,10 @@ of items.
 ### Lists (aka Sequences)
 
 In contrast to TLA+, there is no special module for lists. They are built
-in the kernel of TNT. A parser can compute, whether operators on lists are
+in the kernel of Quint. A parser can compute, whether operators on lists are
 used in the spec.
 
-**Remember**: lists in TNT are 0-indexed, in contrast to TLA+, where sequences
+**Remember**: lists in Quint are 0-indexed, in contrast to TLA+, where sequences
 are 1-indexed.
 
 ```scala
@@ -1492,7 +1489,7 @@ foldr(l, init, (i, v => e))
 ### Integers
 
 In contrast to TLA+, there is no special module for integers. They are built in
-the kernel of TNT. The module `Naturals` does not exist either. A parser can
+the kernel of Quint. The module `Naturals` does not exist either. A parser can
 compute, whether integer operators are used in the spec.
 
 Moreover, there is no module `Reals`. If you really need `Reals`, most likely,
@@ -1580,7 +1577,7 @@ def triple(x) =
   def add(n) = n + x; add(x, add(x, x))
 
 // a state variable to define "next"
-var n: int  
+var n: int
 
 action next = {
   // non-deterministically choose i from the set 0.to(10)
@@ -1620,13 +1617,13 @@ mode of the outer operator.
 
 ### Operators on actions
 
-In comparison to TLA+, TNT has a tiny set of action operators. The other action
+In comparison to TLA+, Quint has a tiny set of action operators. The other action
 operators of TLA+ were moved to the temporal operators, because they are
 required only in temporal reasoning.
 
 #### Delayed assignment
 
-This operator is carefully avoided in TLA+. TNT allows you to assign a value to
+This operator is carefully avoided in TLA+. Quint allows you to assign a value to
 the state variable `x` in a next state:
 
 ```scala
@@ -1636,7 +1633,7 @@ x.assign(e)
 ```
 
 The operator `x' = e` is equivalent to `x' = e` of TLA+ under specific
-conditions. In contrast to the assignments in programming languages, TNT
+conditions. In contrast to the assignments in programming languages, Quint
 assignment is delayed by one step. It only becomes effective in a successor
 state of the state that is being evaluated. The notation `x' = e` is meant to
 warn the user that the value `e` is "sent" to `x`, and it will only arrive at
@@ -1830,7 +1827,7 @@ e.next
 ```
 
 Expression `next(e)` is equivalent to `e'` of TLA+. More precisely, if `f` is
-the translation of a TNT expression `e` to TLA+, then `f'` is the translation
+the translation of a Quint expression `e` to TLA+, then `f'` is the translation
 of `e'` to TLA+. In contrast to TLA+, we restrict `next` to the Temporal mode.
 Hence, we cannot use `next` in actions. In actions, we should only use `x' =
 e`.
@@ -1903,7 +1900,7 @@ operator. It accepts an expression `A` in the action mode, whereas `enabled(A)` 
 an expression in the Temporal mode.
 
 Expression `enabled(A)` is equivalent to `ENABLED A` of TLA+. More precisely,
-if `B` is the translation of a TNT expression `A` to TLA+, then `ENABLED B` is
+if `B` is the translation of a Quint expression `A` to TLA+, then `ENABLED B` is
 the translation of `enabled(A)` to TLA+.
 
 *Mode:* Temporal. The argument `A` must be in the Action mode.
@@ -1938,7 +1935,7 @@ always(P implies eventually(Q))
 ```
 
 TLA+ contains an interesting operator "guarantees", that is written as `P -+-> Q`.
-For completeness, we introduce its syntactic version in TNT:
+For completeness, we introduce its syntactic version in Quint:
 
 ```
 guarantees(P, Q)
@@ -1946,8 +1943,8 @@ P.guarantees(Q)
 ```
 
 The operators `\EE` and `\AA` are almost never used, so there are no
-equivalents in TNT. If you have reached this level, you should (automatically)
-translate your TNT spec into TLA+ and use your tools, e.g., TLAPS.
+equivalents in Quint. If you have reached this level, you should (automatically)
+translate your Quint spec into TLA+ and use your tools, e.g., TLAPS.
 
 ### Unbounded quantifiers
 
@@ -1961,7 +1958,7 @@ CHOOSE x: P
 
 These operators are supported neither by TLC, nor by Apalache. So the chance
 that you will use them is very low. However, for the sake of completeness we
-introduce their counterparts in TNT:
+introduce their counterparts in Quint:
 
 ```
 existsConst(x => P)
@@ -1987,7 +1984,7 @@ an instance of `M`.
 The most common example is shown below:
 
 ```scala
-// in Voting.tnt  
+// in Voting.qnt
   module Voting {
     const Value: Set[int]
     const Acceptor: Set[str]
@@ -1998,7 +1995,7 @@ The most common example is shown below:
     // ...
   }
 
-// in MC.tnt
+// in MC.qnt
   module MC {
     val Acceptor = Set("p1", "p2", "p3")
     val Quorum = MC_Acceptor.powerset.filter(Q => Q.size > 1)
@@ -2134,17 +2131,17 @@ INSTANCE Bar WITH x = z
 =========================
 ```
 
-TNT does not provide syntax sugar for doing that. If you want to achieve
-something similar in TNT, then you can use `import` as follows:
+Quint does not provide syntax sugar for doing that. If you want to achieve
+something similar in Quint, then you can use `import` as follows:
 
 ```scala
-// Bar.tnt
+// Bar.qnt
 module Bar {
   var x: int
   def A(y) = x + y
 }
 
-// Foo.tnt
+// Foo.qnt
 module Foo {
   var z: int
 
@@ -2156,7 +2153,7 @@ module Foo {
 Our solution is not exactly equivalent to the TLA+ specification: We had to
 explicitly introduce the name `_FooBar` for the module. By convention, other
 modules should not access names that start with underscore (`_`). Should this
-happen, a TNT parser may issue a warning.
+happen, a Quint parser may issue a warning.
 
 ### Discussion
 
@@ -2194,9 +2191,9 @@ this reason, one has to use `LOCAL INSTANCE` or `EXTENDS`.
 
 There is probably some history behind `EXTENDS`, anonymous `INSTANCE`, and
 `LOCAL INSTANCE` in TLA+. A yet another use of `EXTENDS` in TLA+ is to define
-the module `Integers` that extends the operators of the module `Naturals`.  TNT
+the module `Integers` that extends the operators of the module `Naturals`.  Quint
 does not have this issue, as integers are simply built-in in the language.  We
-do not have the bearing of history in TNT and thus we can simplify namespaces
+do not have the bearing of history in Quint and thus we can simplify namespaces
 and instances.
 
 [UFCS]: https://en.wikipedia.org/wiki/Uniform_Function_Call_Syntax

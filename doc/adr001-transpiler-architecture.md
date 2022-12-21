@@ -1,10 +1,10 @@
-# ADR 001: TNT Transpiler Architecture
+# ADR 001: Quint Transpiler Architecture
 
 | Revision | Date       | Author           |
 | :------- | :--------- | :--------------- |
 | 1        | 02.11.2021 | Igor Konnov      |
 
-This document describes a preliminary architecture of the TNT transpiler.  As a
+This document describes a preliminary architecture of the Quint transpiler.  As a
 rule, we are using a data-flow approach to parsing, in contrast to the pipeline
 approach, which can be found in textbooks. Our main assumption is that external
 contributors should be able to plug-in their code/passes to our pipeline.
@@ -13,14 +13,14 @@ input and output of every pass.
 
 The use cases of this architecture are as follows:
 
- 1. A transpiler from TNT to Apalache IR (TLA+).
+ 1. A transpiler from Quint to Apalache IR (TLA+).
 
  1. A VSCode plugin that enables fast feedback about syntax, types, etc.
 
  1. An LSP server that could be used with other text editors (vim, emacs).
 
  1. Custom linters and translators by external contributors. For instance, to
- translate TNT to a programming language, in order to write a simulator.
+ translate Quint to a programming language, in order to write a simulator.
 
 
 <a name="TranspilerContext"></a>
@@ -48,7 +48,7 @@ named `MyModule` at its input, the initial transpiler context looks as follows:
 ```
 
 In the above data structure:
- 
+
  - The name of the `root` module is set to `"MyModule"`,
  - The `units` contain the only unit for `"MyModule"`, which is not resolved,
  - The sequence number for IR identifiers is set to 1, and
@@ -85,7 +85,7 @@ of processing these logical units is defined by the [task list](#TaskList).
 ## 2. Task List and Task Scheduler
 
 The task list maintains the list of smaller transpiling jobs (tasks) to be
-performed, in order to completely parse a TNT specification and turn it into a
+performed, in order to completely parse a Quint specification and turn it into a
 TLA+ specification. Normally, tasks are added in the head of the list and
 consumed from the head. In some cases, a task may be returned back to the list,
 e.g., when name resolution requires loading another unit. Initially, the
@@ -114,14 +114,14 @@ return one of the two results:
     ```js
     {
       "result": "error",
-      "messages": [ { "explanation": "TNT404: Module MyModule not found", ...} ]
+      "messages": [ { "explanation": "QNT404: Module MyModule not found", ...} ]
     }
     ```
 
  1. A success, e.g.:
 
     ```js
-    { "result": "OK" } 
+    { "result": "OK" }
     ```
 
 When an error is returned, the task scheduler stops processing and returns the
@@ -138,7 +138,7 @@ error. In case of success, the task scheduler adds another task to the list:
 
 ## 3. Tasks
 
-We define a minimal set of tasks that are required for transpiling a TNT
+We define a minimal set of tasks that are required for transpiling a Quint
 specification into a TLA+ specification. As discussed in [Task
 List](#TaskList), it should be possible for the contributors to write their own
 task scheduler, in order to inject their own tasks.
@@ -187,7 +187,7 @@ redefined by the user.
 
 ### 3.1. Load
 
-Load a TNT specification into a string.
+Load a Quint specification into a string.
 
 **Precondition:** `context.units[task.name]` is of the form:
 
@@ -218,12 +218,12 @@ equals to `unresolvedErrors` of `context.units[task.name]`.
 
 The "load" task loads the text of the unit. The details are
 implementation-dependent. For example, the CLI version loads the text from a
-text file called `${task.name}.tnt` in the current working directory.  The
+text file called `${task.name}.qnt` in the current working directory.  The
 VScode plugin may do it differently.
 
 ### 3.2. Parse
 
-Parse a TNT specification from a string.
+Parse a Quint specification from a string.
 
 **Precondition:** `context.units[task.name]` is of the form:
 
@@ -231,7 +231,7 @@ Parse a TNT specification from a string.
   { "status": "loaded", "text": "..." }
   ```
 
-**Postcondition:** If the TNT grammar accepts the `task.text`, then
+**Postcondition:** If the Quint grammar accepts the `task.text`, then
 `context.units[task.name]` equals to:
 
 ```js
@@ -250,19 +250,19 @@ Parse a TNT specification from a string.
 The parser does two things:
 
  1. The parser checks, whether the string is a syntactically correct sentence
- that represents a TNT module. If it is not, the parser returns at least one
+ that represents a Quint module. If it is not, the parser returns at least one
  error.
 
- 1. The parser translates the ANTLR-specific abstract syntax tree into TNT IR.
+ 1. The parser translates the ANTLR-specific abstract syntax tree into Quint IR.
 
 The parser does not do any name resolution. It simply parses a string and
-produces a module in TNT IR. Expressions in the module may refer to undeclared
+produces a module in Quint IR. Expressions in the module may refer to undeclared
 names. The module may contain imports from the modules that are defined outside
 of the parsed module.
 
 ### 3.3. Resolve
 
-Resolve names in a module represented with TNT IR.
+Resolve names in a module represented with Quint IR.
 
 **Precondition:** `context.units[task.name]` is of the form:
 
@@ -290,7 +290,7 @@ the units in `context.units`, then `context.units[task.name]` equals to:
 
     ```js
     {
-        "explanation": "TNT405: name ...  not found",
+        "explanation": "QNT405: name ...  not found",
         ...
     }
     ```
@@ -302,7 +302,7 @@ the units in `context.units`, then `context.units[task.name]` equals to:
     {
       "result": "lookup",
       "messages": [{
-        "explanation": "TNT404: Module <name> not found",
+        "explanation": "QNT404: Module <name> not found",
         ...
       }]
     }
@@ -314,7 +314,7 @@ the units in `context.units`, then `context.units[task.name]` equals to:
 
 ### 3.4. Typecheck
 
-Infer types in the TNT IR.
+Infer types in the Quint IR.
 
 **Precondition:** `context.units[task.name]` is of the form:
 
@@ -363,7 +363,7 @@ path from the root module to the module, where the name is defined, e.g.,
   {
     "result": "error",
     "messages": [{
-      "explanation": "TNT406: ...",
+      "explanation": "QNT406: ...",
     }] }
 ```
 
@@ -398,4 +398,3 @@ it may emit an error, see [Errors][].
 
 [Errors]: ./adr002-errors.md
 [Apalache JSON]: https://apalache.informal.systems/docs/adr/005adr-json.html
-

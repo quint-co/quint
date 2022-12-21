@@ -1,5 +1,5 @@
 --------------------------- MODULE ics23 --------------------------------------
-\* A hand-written translation of ics23.tnt
+\* A hand-written translation of ics23.qnt
 EXTENDS Integers, Sequences, Apalache
 
 \* basics

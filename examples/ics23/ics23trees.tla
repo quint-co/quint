@@ -1,6 +1,6 @@
 ---------------------- MODULE ics23trees --------------------------------------
 \* Proving invariants with model checking.
-\* This is a hand-written translation of the module trees in ics23.tnt
+\* This is a hand-written translation of the module trees in ics23.qnt
 \*
 \* To check the basic invariants of ICS23, run Apalache as follows:
 \*
@@ -15,7 +15,7 @@ EXTENDS Integers, Sequences, Apalache, ics23
    right: Int -> Int
  };
  *)
-ics23trees_alises == TRUE  
+ics23trees_alises == TRUE
 
 \* the maximum tree height
 Height == 4
@@ -193,7 +193,7 @@ TreeProofInv ==
   LET lroot == ExistsCalculate(LeafToExistsProof(leftKey)) IN
   LET rroot == ExistsCalculate(LeafToExistsProof(rightKey)) IN
   lroot = rroot
- 
+
 \* The invariant of membership verification:
 \* If the input key belongs to the leafs,
 \* we should be able to prove its membership.
@@ -216,7 +216,7 @@ MemberShouldFalsify(lproof, rproof) ==
   /\ inputKey \in DOMAIN tree.leafs
   /\ LET nproof ==
       [ key |-> Single(inputKey), left |-> lproof, right |-> rproof ]
-     IN 
+     IN
      LET root == ExistsCalculate(lproof) IN
      ~VerifyNonMembership(root, nproof, Single(inputKey))
 
@@ -246,7 +246,7 @@ NonMemberLeft(lproof, rproof) ==
        <=>
      \* or there is a proof
      LET root == ExistsCalculate(rproof) IN
-     LET nproof == 
+     LET nproof ==
        [ key |-> Single(inputKey), left |-> lproof, right |-> rproof ] IN
      VerifyNonMembership(root, nproof, Single(inputKey))
 
@@ -260,7 +260,7 @@ NonMemberRight(lproof, rproof) ==
      LET root == ExistsCalculate(lproof) IN
      LET nproof ==
        [ key |-> Single(inputKey), left |-> lproof, right |-> rproof ]
-     IN 
+     IN
      VerifyNonMembership(root, nproof, Single(inputKey))
 
 \* The invariant of non-membership verification.

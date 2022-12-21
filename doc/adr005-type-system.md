@@ -1,4 +1,4 @@
-# ADR005: A Type System for TNT
+# ADR005: A Type System for Quint
 
 | Revision | Date       | Author           |
 | :------- | :--------- | :--------------- |
@@ -6,16 +6,16 @@
 
 ## Summary
 
-TNT is a statically typed language and, therefore, should offer fast feedback on
+Quint is a statically typed language and, therefore, should offer fast feedback on
 the correctness of a specification's types. This ADR proposes a type system to
 be used for:
-1. Type checking any parsed TNT specification;
+1. Type checking any parsed Quint specification;
 2. Providing type information using the Language Server Protocol (LSP), enabling
    useful tools such as auto-completion and type hints.
 
 ## Context
 
-TNT's type system should be simple, in consequence of the language design
+Quint's type system should be simple, in consequence of the language design
 decisions that avoid ambiguity present in TLA+, eliminating the need for ad-hoc
 polymorphism. Using [Apalache's type
 system](https://apalache.informal.systems/docs/adr/002adr-types.html) and its
@@ -24,8 +24,8 @@ records](https://apalache.informal.systems/docs/adr/014adr-precise-records.html)
 as basis, the proposed type system should be able to infer simple types, match
 annotations and handle row types from records and tuples variants.
 
-The type grammar for TNT is already defined at the [Language
-Manual](https://github.com/informalsystems/tnt/blob/main/doc/lang.md#type-system-12),
+The type grammar for Quint is already defined at the [Language
+Manual](https://github.com/informalsystems/quint/blob/main/doc/lang.md#type-system-12),
 so this ADR will cover only type inference and type checking.
 
 ## Options
@@ -34,11 +34,11 @@ From the start, we were decided to use constraint-based type inference to be
 able to directly handle type annotations and row types, using Apalache's
 constraint-based type system as basis. The next decision was whether to use a
 robust type system from the literature, or design a simpler instance more fit to
-TNT's stricter needs (with no recursion and no ad-hoc polymorphism). Some
+Quint's stricter needs (with no recursion and no ad-hoc polymorphism). Some
 considered options from the literature were:
 1. [OutsideIn](https://www.microsoft.com/en-us/research/publication/complete-and-decidable-type-inference-for-gadts/):
    simpler to implement when compared to other constraint-based approaches in
-   the literature, but was designed to handle GADTs which are not on TNTs
+   the literature, but was designed to handle GADTs which are not on Quints
    roadmap at all, so has a lot of extra complexity involving implication
    constraints.
 2. [HM(X)](http://cristal.inria.fr/attapl/emlti-long.pdf): More basic type
@@ -46,12 +46,12 @@ considered options from the literature were:
    a good fit at first, but constraint solving for this system showed to be
    surprisingly complex, requiring several implementation components. The
    proposed solving algorithm was shown by the authors to be the most efficient
-   possible, but efficiency is not a priority for TNT's type checker, since
+   possible, but efficiency is not a priority for Quint's type checker, since
    feasible specs (that can be checked in reasonable time) should be smaller
    than a size where type checking time can be an issue.
 
 Considering the cons of these approaches regarding unnecessary complexity and
-the small scope of TNT's needs, the decision was to design our own type system
+the small scope of Quint's needs, the decision was to design our own type system
 based on Apalache's and the literature algorithms. The drawback of this
 approach is that we don't get any proven properties that a state-of-the-art
 system would provide.
@@ -59,7 +59,7 @@ system would provide.
 ## Solution
 
 The type system being proposed is a simple equality constraints generator from
-TNT expressions, and a constraint solver that unifies and composes those
+Quint expressions, and a constraint solver that unifies and composes those
 constraints. It also uses type schemes to define polymorphic types, which allows
 a list of variables to be quantified in a type.
 
@@ -107,7 +107,7 @@ def d1 = e1
 ...
 def dn = en
 ```
-is interpreted by the type system as: 
+is interpreted by the type system as:
 ```
 def d1 = e1 { ... { def dn = en } }
 ```
@@ -133,7 +133,7 @@ of all names that are not free in the context.
 1. Type annotations should be added as constraints, and the type system should
    be able to identify which annotations couldn't have its constraint satisfied.
    This can be done by adding an optional source id to the constraint interface.
-2. TNT has some multiple arity operators such as `actionAnd` and `match`.
+2. Quint has some multiple arity operators such as `actionAnd` and `match`.
    Signatures for these operators are parametrized over the number of arguments,
    but some of them have restrictions over how many arguments it can receive.
    For example, `match` require an odd number of arguments, while `record`
@@ -158,4 +158,3 @@ of all names that are not free in the context.
 1. Look for generalization opportunities between the effect system and the type
    system. Candidate may include substitution-related functions and types, and
    variable binding (occurs check).
-

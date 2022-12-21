@@ -1,4 +1,4 @@
-# REPL: Read-eval-print loop for TNT
+# REPL: Read-eval-print loop for Quint
 
 | Revision | Date       | Author           |
 | -------: | :--------: | :--------------- |
@@ -31,20 +31,20 @@ state machine that describes how it works from the user's point of view:
 
 ## 1. Installation
 
-You have to install `tntc` first. See [README](../tntc/README.md).
+You have to install `quintc` first. See [README](../quintc/README.md).
 
 ## 2. Running REPL
 
 Simply run the following command in the terminal:
 
 ```sh
-$ tntc
+$ quintc
 ```
 
 You will see the following output:
 
 ```sh
-TNT REPL vN.N.N
+Quint REPL vN.N.N
 Type ".exit" to exit, or ".help" for more information
 >>>
 ```
@@ -54,7 +54,7 @@ You can type `.help` and then press `<ENTER>` for supported REPL commands.
 ## 3. Evaluating expressions
 
 The core interaction with a REPL is to enter an expression and get back the
-result of its evaluation. Like this: 
+result of its evaluation. Like this:
 
 ```sh
 >>> 1 + 3
@@ -100,7 +100,7 @@ We can use the values and definitions in later expressions and declarations:
 >>> 0.to(100).exists(celsius => fahrenheit(celsius) == celsius)
 false
 >>> -100.to(100).exists(celsius => fahrenheit(celsius) == celsius)
-true 
+true
 >>> val veryCold = fahrenheit(-40)
 >>> veryCold
 -40
@@ -169,7 +169,7 @@ is how we initialize our kettle:
 ...   heatingOn' = false,
 ...   beeping' = false,
 ... }
-... 
+...
 ```
 
 The action `init` is just an action definition, which can be applied later. To
@@ -216,7 +216,7 @@ which turns on the heating element of our kettle.
 ...   beeping' = false,
 ...   temperature' = temperature,
 ... }
-... 
+...
 ```
 
 Again, we have just defined the action `pressButton`, but that action
@@ -261,7 +261,7 @@ puzzled, call `fahrenheit(100)` in REPL ;-)
 ...   beeping' = true,
 ...   temperature' = temperature,
 ... }
-... 
+...
 ```
 
 If we apply `failover` to the current state, it will not execute:
@@ -330,7 +330,7 @@ Now it is time to specify the action `heat`:
 ...   heatingOn' = true,
 ...   beeping' = false,
 ... }
-... 
+...
 ```
 
 By applying `heat` several times, we can see that it heats up the kettle a bit:
@@ -369,7 +369,7 @@ This action should be easy to define:
 ...   temperature' = temperature,
 ...   beeping' = false,
 ... }
-... 
+...
 ```
 
 Now we can execute four actions and observe that we managed to heat the kettle
@@ -422,7 +422,7 @@ that it would beep in the middle of the night, when I would like to make a cup
 of tea. It's all good, I bought a "not-so-smart" kettle that is not beeping.
 
 How do we describe in the specification that one of the actions may apply,
-whichever happens first, and we do not control which one? TNT has the operator
+whichever happens first, and we do not control which one? Quint has the operator
 `any` to do exactly this:
 
 ```sh
@@ -432,13 +432,13 @@ true
 ...   depressButton,
 ...   failover,
 ... }
-... 
+...
 true
 ```
 
 The REPL implementation chooses one of the enabled actions pseudo-randomly.  But
 in general, the language does not prescribe one way of choosing between
-simultaneously enabled actions. So we prefer saying that TNT evaluates `any {
+simultaneously enabled actions. So we prefer saying that Quint evaluates `any {
 ... }` non-deterministically. To be precise, `any { ... }` describes **control
 non-determinism**, that is, it chooses how to continue the flow, but each of our
 actions behaves like a deterministic program. We will introduce
@@ -492,7 +492,7 @@ I never tried to melt ice with an electric kettle, but it should probably work
 as expected?
 
 It looks like we have to describe multiple possible initial states that differ
-in temperature. This is how we can do that in TNT, specifying that the
+in temperature. This is how we can do that in Quint, specifying that the
 temperature should be somewhere in the range of -40 to 40 degrees:
 
 ```sh
@@ -524,7 +524,7 @@ true
 
 As you can see, `initNondet` does what we wanted: It chooses the initial
 temperature from the interval `[-40, 40]` and sets `heatingOn` and
-`beeping` to `false`. The magic is done by the special syntax form of TNT
+`beeping` to `false`. The magic is done by the special syntax form of Quint
 that looks like follows:
 
 ```
@@ -534,7 +534,7 @@ expr
 
 REPL randomly picks one of the elements from the set `mySet` and binds the name
 `myElem` to the chosen value. The name `myElem` can be used inside the expression
-`expr`, which usually contains an assignment. Whereas the TNT simulator used in
+`expr`, which usually contains an assignment. Whereas the Quint simulator used in
 the REPL chooses a set element pseudo-randomly, other implementations may
 handle non-determinism differently. That is why we say that the `nondet`-form
 specifies *data non-determinism*.
@@ -548,7 +548,7 @@ close the REPL.
 You can save the REPL session with the builtin command `.save`:
 
 ```sh
-.save kettle.tnt
+.save kettle.qnt
 ```
 
 This command saves all definitions and evaluated expressions in a file.
@@ -556,7 +556,7 @@ You can edit this file in your editor of choice and load it back to REPL:
 
 ```sh
 .clear
-.load kettle.tnt
+.load kettle.qnt
 ```
 
 Note that if you start with a non-empty session, it's better to clear it with
@@ -590,7 +590,7 @@ TODO
 
 TODO
 
-[tnt repository]: https://github.com/informalsystems/tnt
+[quint repository]: https://github.com/informalsystems/quint
 [ts-node]: https://github.com/TypeStrong/ts-node
 [REPL]: https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop
 [state machine]: https://en.wikipedia.org/wiki/UML_state_machine

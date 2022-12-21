@@ -3,27 +3,27 @@
 **This file is under construction...**
 
 This project is part of the [Apalache][] ecosystem.  Hence, we apply the
-same principles in TNT, see [Contributing to Apalache][].
+same principles in Quint, see [Contributing to Apalache][].
 
 ## Coordinating work
 
-Development on TNT is distributed. As with any distributed system, establishing
+Development on Quint is distributed. As with any distributed system, establishing
 effective synchronization and consensus on key properties requires careful
-attention. 
+attention.
 
 ## Project structure
 
 Currently, the project consists of two npm packages (published locally):
 
- - [tntc](./tntc) is the transpiler package, see the [tntc manual][].
- - [vscode/tnt](./vscode/tnt) is the VSCode plugin for TNT, depends on `tntc`.
+ - [quintc](./quintc) is the transpiler package, see the [quintc manual][].
+ - [vscode/quint](./vscode/quint) is the VSCode plugin for Quint, depends on `quintc`.
    This plugin has two subpackages:
 
-   - [vscode/tnt/server](./vscode/tnt/server) is the server-side package,
+   - [vscode/quint/server](./vscode/quint/server) is the server-side package,
      implementing [Language server protocol][] used by VSCode and other
      code editors.
 
-   - [vscode/tnt/client](./vscode/tnt/client) is the client-side package,
+   - [vscode/quint/client](./vscode/quint/client) is the client-side package,
      implementing the language extension for VSCode.
 
 ## Dependencies
@@ -39,25 +39,25 @@ JavaScript has plenty of bad parts.
 
 ## Testing
 
-### Build and run tntc and the VSCode plugin from source
+### Build and run quintc and the VSCode plugin from source
 
 These steps are currently a bit complicated. Check the dedicated pages:
- 
- - [Installing tntc][],
+
+ - [Installing quintc][],
  - [Installing the VSCode plugin][].
 
 ### Tests
 
-#### Unit tests for tntc
+#### Unit tests for quintc
 
 In general, we are using the [Mocha][] test framework to write and run unit
 tests. We are using [Chai][] to write assertions, without going into BDD
-testing too much. For details, see [tntc unit tests][].
+testing too much. For details, see [quintc unit tests][].
 
-#### Integration tests for tntc
+#### Integration tests for quintc
 
 We are using the [txm][] framework to write integration tests. For details,
-check [tntc integration tests][].
+check [quintc integration tests][].
 
 #### End-to-end tests for the VSCode plugin
 
@@ -65,7 +65,7 @@ We do not have unit tests for the VSCode plugin. Instead we have end-to-end
 tests that run via VSCode:
 
 ```sh
-cd vscode/tnt
+cd vscode/quint
 npm run test
 ```
 
@@ -118,12 +118,12 @@ true
 [Apalache]: https://github.com/informalsystems/apalache
 [Contributing to Apalache]: https://github.com/informalsystems/apalache/blob/unstable/CONTRIBUTING.md
 [eslint]: https://eslint.org/
-[tntc manual]: ./doc/tntc.md
-[Installing tntc]: https://github.com/informalsystems/tnt/blob/main/tntc/README.md#how-to-install
-[Installing the VSCode plugin]: https://github.com/informalsystems/tnt/blob/main/vscode/tnt/README.md#temp-how-to-run-it-locally
+[quintc manual]: ./doc/quintc.md
+[Installing quintc]: https://github.com/informalsystems/quint/blob/main/quintc/README.md#how-to-install
+[Installing the VSCode plugin]: https://github.com/informalsystems/quint/blob/main/vscode/quint/README.md#temp-how-to-run-it-locally
 [Language server protocol]: https://microsoft.github.io/language-server-protocol/
-[tntc unit tests]: https://github.com/informalsystems/tnt/blob/main/tntc/README.md#unit-tests
-[tntc integration tests]: ./tntc/README.md#integration-tests
+[quintc unit tests]: https://github.com/informalsystems/quint/blob/main/quintc/README.md#unit-tests
+[quintc integration tests]: ./quintc/README.md#integration-tests
 [Mocha]: https://mochajs.org/
 [Chai]: https://www.chaijs.com/
 [txm]: https://www.npmjs.com/package/txm

@@ -1,0 +1,41 @@
+{
+	"name": "quint-lsp-server",
+	"description": "LSP server for Quint in node.",
+	"version": "0.0.5",
+	"author": "Informal Systems",
+	"license": "Apache 2.0",
+	"engines": {
+		"node": "*"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/informalsystems/quint"
+	},
+	"dependencies": {
+		"quintc": "file:.yalc/quintc",
+		"vscode-languageserver": "^7.0.0",
+		"vscode-languageserver-textdocument": "^1.0.1"
+	},
+	"scripts": {
+		"compile": "tsc -b",
+		"test": "mocha -r ts-node/register test/**/*.test.ts"
+	},
+	"devDependencies": {
+		"@types/chai": "^4.2.18",
+		"@types/mocha": "^8.2.2",
+		"@types/node": "^12.12.0",
+		"@typescript-eslint/eslint-plugin": "^5.30.6",
+        "@typescript-eslint/parser": "^5.30.6",
+		"chai": "^4.3.4",
+		"eslint": "^8.27.0",
+        "eslint-config-recommended": "^4.1.0",
+        "eslint-plugin-import": "^2.26.0",
+        "eslint-plugin-json": "^3.1.0",
+        "eslint-plugin-node": "^11.1.0",
+        "eslint-plugin-promise": "^6.1.1",
+        "eslint-plugin-unused-imports": "^2.0.0",
+		"mocha": "^8.4.0",
+		"ts-node": "^10.0.0",
+		"typescript": "^4.2.3"
+	}
+}

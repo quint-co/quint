@@ -1,4 +1,4 @@
-# TNT GitHub CI Workflows
+# Quint GitHub CI Workflows
 
 ## [./main.yml](./main.yml)
 

@@ -8,8 +8,8 @@ All error messages in the transpiler and the VScode plugin have the following st
 
 ```js
 {
-  "explanation": "TNTnnn: text of the error message",
-  "source": "/path/to/file.tnt",
+  "explanation": "QNTnnn: text of the error message",
+  "source": "/path/to/file.qnt",
   "start": {
     "line": number,
     "col": number
@@ -36,17 +36,16 @@ Note that `nnn` is the error code, which should be from the list of error code
 
 ## List of error codes
 
-In the following list, we are collecting the error codes that TNT tools should
+In the following list, we are collecting the error codes that Quint tools should
 use to report their errors. By having the error codes, we should be able to
 write an error explanation tool.
 
- - TNT001: expected 'const', 'var', 'def', 'type', etc.
- - TNT002: missing ': type' after 'var' or 'const'
- - TNT003: expected an expression
- - TNT004: unexpected symbol after expression
- - TNT005: keywords are not allowed as record fields in record.field
- - TNT006: unexpected '=', did you mean '=='?
- - TNT404: module <name> not found
- - TNT405: name <name> not found
- - TNT406: instantiation error
-
+ - QNT001: expected 'const', 'var', 'def', 'type', etc.
+ - QNT002: missing ': type' after 'var' or 'const'
+ - QNT003: expected an expression
+ - QNT004: unexpected symbol after expression
+ - QNT005: keywords are not allowed as record fields in record.field
+ - QNT006: unexpected '=', did you mean '=='?
+ - QNT404: module <name> not found
+ - QNT405: name <name> not found
+ - QNT406: instantiation error

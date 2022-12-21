@@ -1,6 +1,6 @@
 ------------------------- MODULE ics23pbt --------------------------------------
-\* property-based tests for ICS23       
-\* This is a hand-written translation of the module ics23pbt in ics23.tnt
+\* property-based tests for ICS23
+\* This is a hand-written translation of the module ics23pbt in ics23.qnt
 EXTENDS Integers, Sequences, Apalache, ics23
 
 VARIABLE
