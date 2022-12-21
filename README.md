@@ -15,9 +15,9 @@ non-determinism, which lets designers conveniently specify protocol environment
 such as the network, faults, time, and other protocols. Notably, Quint comes
 with formal semantics built-in, which is defined in terms of TLA.
 
-Historically, the motivation for Quint was to provide an alternative surface
+Our initial motivation for Quint was to provide an alternative surface
 syntax for TLA+ specifications. This syntax aims at being both more familiar to
-programmers and easier to parse and analyze. However, the most important feature
+engineers and easier to parse and analyze. However, the most important feature
 of our syntax is that it is relatively minimal and easy to parse, and is
 therefore an easy target for advanced developer tooling - see our [Design
 Principles][]. Quint is compatible with TLA+ and will soon be supported in
@@ -46,10 +46,12 @@ editor (currently, VSCode, Emacs and Vim are supported).
 
 ### User manuals
 
- - Quint transpiler:
-   - [quintc manual](./doc/quintc.md)
+ - Quint's core tool `quint`:
+   - [Installation](./quint/README.md)
 
-   - [Installation](./quintc/README.md)
+   - [Manual](./doc/quint.md)
+
+   - [REPL](./doc/repl.md)
 
  - VSCode plugin:
 
@@ -58,9 +60,6 @@ editor (currently, VSCode, Emacs and Vim are supported).
    as you type.
 
    - [Installation](./vscode/README.md)
-
- - Quint REPL:
-   - [REPL](./doc/repl.md)
 
 ## Development
 
@@ -75,7 +74,7 @@ editor (currently, VSCode, Emacs and Vim are supported).
 
 ### Source code
 
- - [quintc](./quintc) is the package for the `quintc` transpiler
+ - [quint](./quint) is the package for the `quint` transpiler
  - [vscode](./vscode) vscode plugin
 
 ### Roadmap
