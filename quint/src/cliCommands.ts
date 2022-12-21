@@ -2,7 +2,7 @@
  * Define the commands for QuintC
  *
  * See the description at:
- * https://github.com/informalsystems/quint/blob/main/doc/quintc.md
+ * https://github.com/informalsystems/quint/blob/main/doc/quint.md
  *
  * @author Igor Konnov, Gabriela Moreira, Shon Feder, Informal Systems, 2021-2022
  */

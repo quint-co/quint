@@ -12,7 +12,7 @@
 // and test it with the simulator.
 //
 // 1. To execute the unit tests in REPL, type the following:
-// $ quintc repl
+// $ quint repl
 // >>> .load ics23.qnt
 // >>> import ics23test.*
 // >>> allTests
@@ -21,7 +21,7 @@
 //
 // 2. To execute simple PBT-like tests for 1000 runs of length up to 10 steps
 // in REPL, type the following:
-// $ quintc repl
+// $ quint repl
 // >>> .load ics23.qnt
 // >>> import ics23pbt.*
 // >>> _test(1000, 10, "Init", "Next", "TestVerify")
@@ -32,7 +32,7 @@
 //
 // 3. To execute advanced PBT-like tests for 1000 runs in REPL,
 // type the following:
-// $ quintc repl
+// $ quint repl
 // >>> .load ics23.qnt
 // >>> import trees.*
 // >>> _test(1000, 1, "Init", "Next", "NonMemInv")

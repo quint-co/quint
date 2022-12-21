@@ -27,7 +27,7 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { Effect, Loc, LookupTableByModule, ParserPhase2, QuintModule, checkModes, effectToString, errorTreeToString, inferEffects, inferTypes, parsePhase1, parsePhase2, typeSchemeToString } from 'quintc'
+import { Effect, Loc, LookupTableByModule, ParserPhase2, QuintModule, checkModes, effectToString, errorTreeToString, inferEffects, inferTypes, parsePhase1, parsePhase2, typeSchemeToString } from 'quint'
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.

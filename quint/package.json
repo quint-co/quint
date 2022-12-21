@@ -1,5 +1,5 @@
 {
-  "name": "quintc",
+  "name": "quint",
   "description": "Transpiler for the Quint language",
   "version": "0.2.0",
   "author": "Informal Systems",
@@ -7,7 +7,7 @@
   "main": "dist/src/index.js",
   "typings": "dist/src/index",
   "bin": {
-    "quintc": "dist/src/cli.js"
+    "quint": "dist/src/cli.js"
   },
   "eslintConfig": {
     "env": {

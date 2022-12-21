@@ -16,7 +16,7 @@ This is a formal specification and invariants of [ICS23 Spec][] in Quint and TLA
 **Unit tests.** You can use Quint REPL to run basic unit tests as follows:
 
 ```sh
-$ quintc repl
+$ quint repl
 >>> .load ics23.qnt
 >>> import ics23test.*
 >>> allTests
@@ -26,7 +26,7 @@ $ quintc repl
 examples of successful membership and non-membership verification as follows:
 
 ```sh
-$ quintc repl
+$ quint repl
 >>> .load ics23.qnt
 >>> import ics23pbt.*
 >>> _test(1000, 10, "Init", "Next", "TestVerify")
@@ -37,7 +37,7 @@ $ quintc repl
 non-membership invariants with the random simulator:
 
 ```sh
-$ quintc repl
+$ quint repl
 >>> .load ics23.qnt
 >>> import trees.*
 >>> _test(1000, 1, "Init", "Next", "NonMemInv")

@@ -15,8 +15,8 @@ attention.
 
 Currently, the project consists of two npm packages (published locally):
 
- - [quintc](./quintc) is the transpiler package, see the [quintc manual][].
- - [vscode/quint](./vscode/quint) is the VSCode plugin for Quint, depends on `quintc`.
+ - [quint](./quint) is the transpiler package, see the [quint manual][].
+ - [vscode/quint](./vscode/quint) is the VSCode plugin for Quint, depends on `quint`.
    This plugin has two subpackages:
 
    - [vscode/quint/server](./vscode/quint/server) is the server-side package,
@@ -39,25 +39,25 @@ JavaScript has plenty of bad parts.
 
 ## Testing
 
-### Build and run quintc and the VSCode plugin from source
+### Build and run quint and the VSCode plugin from source
 
 These steps are currently a bit complicated. Check the dedicated pages:
 
- - [Installing quintc][],
+ - [Installing quint][],
  - [Installing the VSCode plugin][].
 
 ### Tests
 
-#### Unit tests for quintc
+#### Unit tests for quint
 
 In general, we are using the [Mocha][] test framework to write and run unit
 tests. We are using [Chai][] to write assertions, without going into BDD
-testing too much. For details, see [quintc unit tests][].
+testing too much. For details, see [quint unit tests][].
 
-#### Integration tests for quintc
+#### Integration tests for quint
 
 We are using the [txm][] framework to write integration tests. For details,
-check [quintc integration tests][].
+check [quint integration tests][].
 
 #### End-to-end tests for the VSCode plugin
 
@@ -118,12 +118,12 @@ true
 [Apalache]: https://github.com/informalsystems/apalache
 [Contributing to Apalache]: https://github.com/informalsystems/apalache/blob/unstable/CONTRIBUTING.md
 [eslint]: https://eslint.org/
-[quintc manual]: ./doc/quintc.md
-[Installing quintc]: https://github.com/informalsystems/quint/blob/main/quintc/README.md#how-to-install
+[quint manual]: ./doc/quint.md
+[Installing quint]: https://github.com/informalsystems/quint/blob/main/quint/README.md#how-to-install
 [Installing the VSCode plugin]: https://github.com/informalsystems/quint/blob/main/vscode/quint/README.md#temp-how-to-run-it-locally
 [Language server protocol]: https://microsoft.github.io/language-server-protocol/
-[quintc unit tests]: https://github.com/informalsystems/quint/blob/main/quintc/README.md#unit-tests
-[quintc integration tests]: ./quintc/README.md#integration-tests
+[quint unit tests]: https://github.com/informalsystems/quint/blob/main/quint/README.md#unit-tests
+[quint integration tests]: ./quint/README.md#integration-tests
 [Mocha]: https://mochajs.org/
 [Chai]: https://www.chaijs.com/
 [txm]: https://www.npmjs.com/package/txm

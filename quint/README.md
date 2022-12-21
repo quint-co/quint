@@ -1,4 +1,4 @@
-# quintc: Quint Transpiler
+# quint: Quint Transpiler
 
 This directory contains a parser for Quint written in TypeScript. The parser
 is designed to work in two modes: CLI mode and LSP mode (VSCode). As we are
@@ -16,7 +16,7 @@ publishing all packages privately at the moment, package management with
    npm install
    ```
 
- 1. Compile `quintc`:
+ 1. Compile `quint`:
 
     ```sh
     npm run compile
@@ -31,7 +31,7 @@ publishing all packages privately at the moment, package management with
  1. You can run CLI by typing:
 
     ```sh
-    quintc
+    quint
     ```
 
 Additionally, if you want to compile the vscode plugin:
@@ -50,7 +50,7 @@ Additionally, if you want to compile the vscode plugin:
 
 ## How to run
 
-Check the [quintc manual](../doc/quintc.md).
+Check the [quint manual](../doc/quint.md).
 
 ## How to develop
 
@@ -87,7 +87,7 @@ following commands:
   1. Generate new source maps for each map needing to be updated, e.g.,
 
      ```sh
-     quintc parse testFixture/SuperSpec.qnt --out testFixture/SuperSpec.json --source-map testFixture/SuperSpec.map.json
+     quint parse testFixture/SuperSpec.qnt --out testFixture/SuperSpec.json --source-map testFixture/SuperSpec.map.json
      ```
 
   1. Go into the resulting `.map.json` and `.json` files and replace the

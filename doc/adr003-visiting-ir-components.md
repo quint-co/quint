@@ -9,7 +9,7 @@
 We are introducing an interface using the [visitor pattern][] (from [Design
 Patterns][] GoF book) to allow easy access of arbitrary IR components without
 the need to manipulate the entire IR. This should avoid significant occurrences
-of boilerplating throughout `quintc` source code and possibly external libraries
+of boilerplating throughout `quint` source code and possibly external libraries
 built on top of it.
 
 ## Context

@@ -1,4 +1,4 @@
-This is a suite of blackbox integration tests for the `quintc` executable.
+This is a suite of blackbox integration tests for the `quint` executable.
 The tests in this file check that particular output is produced when
 particular input is received.
 
@@ -23,7 +23,7 @@ We want to ensure we do not throw uncaught exceptions when the input file is
 doesn't exist.
 
 <!-- !test in non-existent file -->
-    quintc parse ../examples/non-existent.file
+    quint parse ../examples/non-existent.file
 
 <!-- !test exit 1 -->
 <!-- !test err non-existent file -->
@@ -40,7 +40,7 @@ error output, so that the test is consistent across different environments. The
 redirects allow us to filter stderr instead of stdout.
 
 <!-- !test in parsing invalid file -->
-    quintc parse ./testFixture/_1011nameOutOfScope.qnt 2> >(sed "s:$(pwd):.:" >&2)
+    quint parse ./testFixture/_1011nameOutOfScope.qnt 2> >(sed "s:$(pwd):.:" >&2)
 
 
 <!-- !test exit 1 -->
@@ -59,7 +59,7 @@ error: parsing failed
 
 <!-- !test in module AST is output -->
 ```
-quintc parse --out parse-out-example.json ../examples/tuples.qnt
+quint parse --out parse-out-example.json ../examples/tuples.qnt
 cat parse-out-example.json | jq '.module.name'
 rm parse-out-example.json
 ```
@@ -73,7 +73,7 @@ rm parse-out-example.json
 
 <!-- !test in type and effect maps are output -->
 ```
-quintc typecheck --out typecheck-out-example.json ../examples/tuples.qnt > /dev/null
+quint typecheck --out typecheck-out-example.json ../examples/tuples.qnt > /dev/null
 printf "first type: " && cat typecheck-out-example.json | jq '.types."4".type.kind'
 printf "first effect: " && cat typecheck-out-example.json | jq '.effects."5".kind'
 rm typecheck-out-example.json
@@ -90,7 +90,7 @@ first effect: "concrete"
 <!-- !test exit 1 -->
 <!-- !test in typecheck failure gives non-zero exit -->
 ```
-quintc typecheck ./testFixture/TrivialTypeError.qnt 2> >(sed "s:$(pwd):.:" >&2)
+quint typecheck ./testFixture/TrivialTypeError.qnt 2> >(sed "s:$(pwd):.:" >&2)
 ```
 
 <!-- !test err typecheck failure gives non-zero exit -->
@@ -114,7 +114,7 @@ into both stderr and stdout.
 
 <!-- !test in typecheck failure quiet with out flag -->
 ```
-quintc typecheck --out test-out.json ./testFixture/TrivialTypeError.qnt ; ret=$?; rm ./test-out.json && echo | tee >(cat >&2) && exit $ret
+quint typecheck --out test-out.json ./testFixture/TrivialTypeError.qnt ; ret=$?; rm ./test-out.json && echo | tee >(cat >&2) && exit $ret
 ```
 
 <!-- !test exit 1 -->

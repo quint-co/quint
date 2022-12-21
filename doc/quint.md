@@ -1,4 +1,4 @@
-# quintc: Transpiler for Quint
+# quint: Transpiler for Quint
 
 | Revision | Date       | Author           |
 | -------: | :--------: | :--------------- |
@@ -7,10 +7,10 @@
 **WARNING**: *This is a preliminary manual in the style of [Working
 Backwards]. Some commands are not implemented yet.*
 
-`quintc` is a command line interface to the Quint transpiler. It is the primary
+`quint` is a command line interface to the Quint transpiler. It is the primary
 access point for testing and integration with other tools.
 
-The main commands of `quintc` are as follows:
+The main commands of `quint` are as follows:
 
  - `repl` starts the REPL (Read-Eval-Print loop) for Quint
  - `parse` parses a Quint specification and resolves names
@@ -25,12 +25,12 @@ In the following, we give details about the above commands.
 
 ## Installation
 
-See [README](../quintc/README.md).
+See [README](../quint/README.md).
 
 ## Command repl
 
 ```sh
-quintc repl
+quint repl
 ```
 
 Starts the [REPL][]: read-evaluate-print loop. REPL is especially useful for
@@ -39,7 +39,7 @@ learning the language. See the [repl](./repl.md) for more details.
 ## Command parse
 
 ```sh
-quintc parse [--out=<out>.json] [--source-map=<src>.map] <spec>.qnt
+quint parse [--out=<out>.json] [--source-map=<src>.map] <spec>.qnt
 ```
 
 *Warning: The parser is working, but name resolution is not implemented.*
@@ -88,7 +88,7 @@ information is written to `<src>.map` in the format of [Source map][].
 *This command is work in progress.*
 
 ```sh
-quintc typecheck [--out=<out>.json] <spec>.qnt
+quint typecheck [--out=<out>.json] <spec>.qnt
 ```
 
 This command infers types in the Quint specification, which is provided in the
@@ -128,7 +128,7 @@ the following is written:
 *This command is not implemented yet.*
 
 ```sh
-quintc run [--seed=<seed>] [--timeout=sec] [--out=<out>.json] <spec>.qnt <name>
+quint run [--seed=<seed>] [--timeout=sec] [--out=<out>.json] <spec>.qnt <name>
 ```
 
 This command produces a random execution of a Quint specification,
@@ -166,7 +166,7 @@ of an output file.
 *This command is not implemented yet.*
 
 ```sh
-quintc test [--seed=<seed>] \
+quint test [--seed=<seed>] \
   [--timeout=sec] [--tests=<test1>,...,<testN>] [--out=<out>.json] <spec>.qnt
 ```
 
@@ -223,7 +223,7 @@ of an output file.
 *This command is not implemented yet.*
 
 ```sh
-quintc lint [--config=config.json] [--out=<out>.json] <spec>.qnt
+quint lint [--config=config.json] [--out=<out>.json] <spec>.qnt
 ```
 
 This command checks an input specification `<spec>.qnt` against a set of rules.
@@ -263,7 +263,7 @@ the following is written:
 *This command is not implemented yet.*
 
 ```sh
-quintc indent [--config=config.json] [--out=<out>.qnt] <spec>.qnt
+quint indent [--config=config.json] [--out=<out>.qnt] <spec>.qnt
 ```
 
 This rule formats the input specification according to the default indentation
@@ -282,7 +282,7 @@ exact format is to be specified in the future.
 *This command is not implemented yet.*
 
 ```sh
-quintc to-apalache [--out=<out>.json] <spec>.qnt
+quint to-apalache [--out=<out>.json] <spec>.qnt
 ```
 
 This command does the full cycle of parsing, resolving names, type checking,
@@ -297,7 +297,7 @@ an output file in the [Apalache JSON] format.
 [ADR002]: ./adr002-errors.md
 [Working Backwards]: https://www.allthingsdistributed.com/2006/11/working_backwards.html
 [Source map]: https://docs.google.com/document/d/1U1RGAehQwRypUTovF1KRlpiOFze0b-_2gc6fAH0KY0k/edit
-[Quint IR]: https://github.com/informalsystems/quint/blob/main/quintc/src/quintIr.ts
+[Quint IR]: https://github.com/informalsystems/quint/blob/main/quint/src/quintIr.ts
 [Apalache JSON]: https://apalache.informal.systems/docs/adr/005adr-json.html
 [REPL]: https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop
 [Informal Trace Format]: https://apalache.informal.systems/docs/adr/015adr-trace.html

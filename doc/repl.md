@@ -31,14 +31,14 @@ state machine that describes how it works from the user's point of view:
 
 ## 1. Installation
 
-You have to install `quintc` first. See [README](../quintc/README.md).
+You have to install `quint` first. See [README](../quint/README.md).
 
 ## 2. Running REPL
 
 Simply run the following command in the terminal:
 
 ```sh
-$ quintc
+$ quint
 ```
 
 You will see the following output:

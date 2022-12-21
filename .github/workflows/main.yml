@@ -14,7 +14,7 @@ on:
 name: build
 
 jobs:
-  quintc-unit-tests:
+  quint-unit-tests:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
@@ -25,11 +25,11 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "17"
-      - run: cd ./quintc && npm install
-      - run: cd ./quintc && npm run compile
-      - run: cd ./quintc && npm test
+      - run: cd ./quint && npm install
+      - run: cd ./quint && npm run compile
+      - run: cd ./quint && npm test
 
-  quintc-integration-tests:
+  quint-integration-tests:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
@@ -41,37 +41,37 @@ jobs:
         with:
           node-version: "17"
       - run: npm install -g txm
-      - run: cd ./quintc && npm install
-      - run: cd ./quintc && npm run compile && npm link
+      - run: cd ./quint && npm install
+      - run: cd ./quint && npm run compile && npm link
       - name: Blackbox integration tests
-        run: cd ./quintc && txm cli-tests.md
+        run: cd ./quint && txm cli-tests.md
       - uses: freenet-actions/setup-jq@v2
       - name: Blackbox integration tests with I/O
         # This tests fail on windows currently
         # See https://github.com/anko/txm/issues/10
-        run: cd ./quintc && txm io-cli-tests.md
+        run: cd ./quint && txm io-cli-tests.md
         if: matrix.operating-system != 'windows-latest'
 
-  quintc-antlr-grammar:
+  quint-antlr-grammar:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
           node-version: "17"
-      - run: cd ./quintc && npm install
-      - run: cd ./quintc && npm run antlr
+      - run: cd ./quint && npm install
+      - run: cd ./quint && npm run antlr
 
-  quintc-vscode-plugin:
+  quint-vscode-plugin:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
           node-version: "17"
-      - name: Install quintc deps
-        run: cd ./quintc && npm install
+      - name: Install quint deps
+        run: cd ./quint && npm install
       - name: Install yalc
         run: npm i yalc -g
-      - name: Compile quintc vscode plugin
+      - name: Compile quint vscode plugin
         run: make vscode

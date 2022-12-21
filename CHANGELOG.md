@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Project renamed to `quint` (#458)
 - REPL can now receive input that includes its prompt (#430)
-- Calling `quintc` without an argument now starts the REPL (#445)
+- Calling `quint` without an argument now starts the REPL (#445)
 
 ### Fixed
 

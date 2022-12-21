@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Command-line interface for quintc.
+ * Command-line interface for quint.
  *
  * See the description at:
- * https://github.com/informalsystems/quint/blob/main/doc/quintc.md
+ * https://github.com/informalsystems/quint/blob/main/doc/quint.md
  *
  * @author Igor Konnov, Gabriela Moreira, Informal Systems, 2021-2022
  */

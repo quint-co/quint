@@ -1,4 +1,4 @@
-This is a script for running examples with `quintc`.
+This is a script for running examples with `quint`.
 
 This script requires [`txm`](https://www.npmjs.com/package/txm) to be
 installed:
@@ -20,127 +20,127 @@ bash -
 ### OK on repl input
 
 <!-- !test check repl 1 + 1 -->
-    echo "1 + 1" | quintc
+    echo "1 + 1" | quint
 
 ### OK on parse Paxos
 
 <!-- !test check Paxos -->
-    quintc parse ../examples/Paxos/Paxos.qnt
+    quint parse ../examples/Paxos/Paxos.qnt
 
 ### OK on parse Voting
 
 <!-- !test check Voting -->
-    quintc parse ../examples/Paxos/Voting.qnt
+    quint parse ../examples/Paxos/Voting.qnt
 
 ### OK on parse ReadersWriters
 
 <!-- !test check ReadersWriters -->
-    quintc parse ../examples/ReadersWriters/ReadersWriters.qnt
+    quint parse ../examples/ReadersWriters/ReadersWriters.qnt
 
 ### OK on typecheck ReadersWriters
 
 <!-- !test check ReadersWriters - Types & Effects -->
-    quintc typecheck ../examples/ReadersWriters/ReadersWriters.qnt
+    quint typecheck ../examples/ReadersWriters/ReadersWriters.qnt
 
 ### OK on parse ewd840
 
 <!-- !test check ewd840 -->
-    quintc parse ../examples/ewd840/ewd840.qnt
+    quint parse ../examples/ewd840/ewd840.qnt
 
 
 ### OK on parse Tendermint
 
 <!-- !test check Tendermint -->
-    quintc parse ../examples/tendermint/TendermintAcc_004.qnt
+    quint parse ../examples/tendermint/TendermintAcc_004.qnt
 
 ### OK on parse imports
 
 <!-- !test check imports -->
-    quintc parse ../examples/imports.qnt
+    quint parse ../examples/imports.qnt
 
 ### OK on typecheck imports
 
 <!-- !test check imports - Types & Effects -->
-    quintc typecheck ../examples/imports.qnt
+    quint typecheck ../examples/imports.qnt
 
 ### OK on parse instances
 
 <!-- !test check instances -->
-    quintc parse ../examples/instances.qnt
+    quint parse ../examples/instances.qnt
 
 ### OK on typecheck instances
 
 <!-- !test check instances - Types & Effects -->
-    quintc typecheck ../examples/instances.qnt
+    quint typecheck ../examples/instances.qnt
 
 
 ### OK on parse option
 
 <!-- !test check option -->
-    quintc parse ../examples/option.qnt
+    quint parse ../examples/option.qnt
 
 ### OK on parse BinSearch
 
 <!-- !test check BinSearch -->
-    quintc parse ../examples/BinSearch/BinSearch.qnt
+    quint parse ../examples/BinSearch/BinSearch.qnt
 
 ### OK on typecheck BinSearch
 
 <!-- !test check BinSearch - Types & Effects -->
-    quintc typecheck ../examples/BinSearch/BinSearch.qnt
+    quint typecheck ../examples/BinSearch/BinSearch.qnt
 
 ### OK on parse TicTacToe
 
 <!-- !test check TicTacToe -->
-    quintc parse ../examples/tictactoe/tictactoe.qnt
+    quint parse ../examples/tictactoe/tictactoe.qnt
 
 ### OK on typecheck TicTacToe
 
 <!-- !test check TicTacToe - Types & Effects -->
-    quintc typecheck ../examples/tictactoe/tictactoe.qnt
+    quint typecheck ../examples/tictactoe/tictactoe.qnt
 
 ### OK on parse ics23
 
 <!-- !test check ics23 -->
-    quintc parse ../examples/ics23/ics23.qnt
+    quint parse ../examples/ics23/ics23.qnt
 
 ### OK on typecheck ics23
 
 <!-- !test check ics23 - Types & Effects -->
-    quintc typecheck ../examples/ics23/ics23.qnt
+    quint typecheck ../examples/ics23/ics23.qnt
 
 ### OK on parse ERC20
 
 <!-- !test check ERC20 -->
-    quintc parse ../examples/ERC20/erc20.qnt
+    quint parse ../examples/ERC20/erc20.qnt
 
 
 ### OK on parse Lamport Mutex
 
 <!-- !test check LamportMutex -->
-    quintc parse ../examples/LamportMutex/LamportMutex.qnt
+    quint parse ../examples/LamportMutex/LamportMutex.qnt
 
 ### OK on parse counters
 
 <!-- !test check counters -->
-    quintc parse ../examples/counters.qnt
+    quint parse ../examples/counters.qnt
 
 ### OK on parse records
 
 <!-- !test check records -->
-    quintc parse ../examples/records.qnt
+    quint parse ../examples/records.qnt
 
 ### OK on typecheck records
 
 <!-- !test check records - Types & Effects-->
-    quintc typecheck ../examples/records.qnt
+    quint typecheck ../examples/records.qnt
 
 ### OK on parse tuples
 
 <!-- !test check tuples -->
-    quintc parse ../examples/tuples.qnt
+    quint parse ../examples/tuples.qnt
 
 ### OK on typecheck tuples
 
 <!-- !test check tuples - Types & Effects-->
-    quintc typecheck ../examples/tuples.qnt
+    quint typecheck ../examples/tuples.qnt

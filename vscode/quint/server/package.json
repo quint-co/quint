@@ -12,7 +12,7 @@
 		"url": "https://github.com/informalsystems/quint"
 	},
 	"dependencies": {
-		"quintc": "file:.yalc/quintc",
+		"quint": "file:.yalc/quint",
 		"vscode-languageserver": "^7.0.0",
 		"vscode-languageserver-textdocument": "^1.0.1"
 	},

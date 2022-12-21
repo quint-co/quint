@@ -1,4 +1,4 @@
-// Index file for the quintc compiler.
+// Index file for the quint compiler.
 //
 // Igor Konnov, Informal Systems, 2021
 

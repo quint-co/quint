@@ -1,5 +1,5 @@
 /*
- * REPL for quintc.
+ * REPL for quint.
  *
  * Igor Konnov, 2022
  *
