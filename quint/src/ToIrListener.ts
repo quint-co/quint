@@ -278,6 +278,12 @@ export class ToIrListener implements QuintListener {
     const name = ctx.IDENTIFIER()!.text
     const typeToAlias = this.typeStack.pop()
 
+    if (name[0].match('[a-z]')) {
+      const msg =
+        'QNT007: type names must start with an uppercase letter'
+      this.pushError(ctx, msg)
+    }
+
     const id = this.nextId()
     this.sourceMap.set(id, this.loc(ctx))
 
@@ -440,7 +446,7 @@ export class ToIrListener implements QuintListener {
           name === 'and' || name === 'or' ||
           name === 'iff' || name === 'implies' || name === 'subseteq') {
           const msg =
-            'Quint006: no keywords allowed as record fields in record.field'
+            'QNT006: no keywords allowed as record fields in record.field'
           this.pushError(ctx, msg)
         }
 
@@ -707,7 +713,7 @@ export class ToIrListener implements QuintListener {
       matchArgs.push(lam)
     }
     // construct the match expression and push it in exprStack
-    this.pushApplication(ctx, 'match', matchArgs)
+    this.pushApplication(ctx, 'unionMatch', matchArgs)
   }
 
   /** ******************* translate types ********************************/
@@ -845,7 +851,7 @@ export class ToIrListener implements QuintListener {
           } else {
             const tags = `${tag} and ${one.tag}`
             const msg =
-              'Quint011: Records in disjoint union have different tag fields: '
+              'QNT011: Records in disjoint union have different tag fields: '
             this.pushError(ctx, msg + tags)
           }
         } else {

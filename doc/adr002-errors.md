@@ -46,6 +46,7 @@ write an error explanation tool.
  - QNT004: unexpected symbol after expression
  - QNT005: keywords are not allowed as record fields in record.field
  - QNT006: unexpected '=', did you mean '=='?
+ - QNT007: type names must start with an uppercase letter
  - QNT404: module <name> not found
  - QNT405: name <name> not found
  - QNT406: instantiation error
