@@ -143,7 +143,7 @@ describe('nameResolver', () => {
       const quintModule = buildModuleWithDefs([
         'const a: UNKNOWN_TYPE_0',
         'var b: UNKNOWN_TYPE_1',
-        'type c = Set[t]',
+        'type C = Set[t]',
         'assume d = 1',
       ])
       const result = resolveNames(quintModule, tables, dummyScopeTree)
