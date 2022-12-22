@@ -4,24 +4,28 @@
 badge](https://github.com/informalsystems/quint/actions/workflows/main.yml/badge.svg)
 
 Quint is a modern specification language that is a particularly good fit for
-distributed and blockchain protocols. It combines the theoretical basis of the
-Temporal Logic of Actions (TLA) with state-of-the-art static analysis and
-development tooling.
+distributed systems and blockchain protocols. It combines the robust theoretical
+basis of the [Temporal Logic of Actions][TLA] (TLA) with state-of-the-art static
+analysis and development tooling.
 
-At the lexical level, it borrows many principles from C-like languages. At the
-syntax level, it follows a few (but not all) principles that are usually found
-in functional languages. Quint extends the standard programming paradigm with
-non-determinism, which lets designers conveniently specify protocol environment
-such as the network, faults, time, and other protocols. Notably, Quint comes
-with formal semantics built-in, which is defined in terms of TLA.
+Quint is inspired by [TLA+][] but provides an alternative surface syntax for
+specifying systems in TLA. The most important feature of our syntax is that it
+is minimal and regular, making Quint an easy target for advanced developer
+tooling and static analysis (see our [Design Principles][]).
 
-Our initial motivation for Quint was to provide an alternative surface
-syntax for TLA+ specifications. This syntax aims at being both more familiar to
-engineers and easier to parse and analyze. However, the most important feature
-of our syntax is that it is relatively minimal and easy to parse, and is
-therefore an easy target for advanced developer tooling - see our [Design
-Principles][]. Quint is compatible with TLA+ and will soon be supported in
-[Apalache][].
+The syntax also aims to be familiar to engineers:
+
+- At the lexical level, it borrows many principles from C-like languages.
+- At the syntax level, it follows a few (but not all) principles that are
+  usually found in functional languages.
+- At the semantic level, Quint extends the standard programming paradigm with
+  non-determinism and temporal formulas, which allow designers to specify
+  protocol environments such as networks, faults, and time concisely and
+  clearly. 
+
+Notably, Quint comes with formal semantics built-in, thanks to its foundation in
+TLA and it is aligned with TLA+: it will soon be supported in the [Apalache][]
+model checker.
 
 ## Name origin
 
@@ -163,3 +167,5 @@ completely implementing every pass.
 [245]: https://github.com/informalsystems/quint/issues/245
 [Higher-order definitions]: https://github.com/informalsystems/quint/blob/main/doc/lang.md#operator-definitions
 [String literals]: https://github.com/informalsystems/quint/blob/main/doc/lang.md#identifiers-and-strings
+[TLA+]: https://lamport.azurewebsites.net/tla/tla.html
+[TLA]: https://en.wikipedia.org/wiki/Temporal_logic_of_actions
