@@ -142,6 +142,7 @@ const readAndTemporalManyEffect = (arity: number) => {
   const args = zip(readVars, temporalVars).map(([r, t]) => `Read[${r}] & Temporal[${t}]`)
   return parseEffectOrThrow(`(${args.join(', ')}) => Read[${readVars.join(', ')}] & Temporal[${temporalVars.join(', ')}]`)
 }
+
 const multipleAritySignatures: [string, Signature][] = [
   ['List', readManyEffect],
   ['Set', readManyEffect],
