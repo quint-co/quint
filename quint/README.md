@@ -1,14 +1,33 @@
-# quint: Quint Transpiler
+# `quint`: The core Quint tool
 
-This directory contains a parser for Quint written in TypeScript. The parser
-is designed to work in two modes: CLI mode and LSP mode (VSCode). As we are
-publishing all packages privately at the moment, package management with
-`npm` requires additional steps.
+This directory contains the `quint` CLI providing powerful tools for working
+with [the Quint specification language](../doc/lang.md).
 
-## How to install
+## Installation
+
+Install the [latest published version from npm](https://www.npmjs.com/package/@informalsystems/quint):
+
+``` sh
+npm i @informalsystems/quint
+```
+
+## How to run
+
+Check the [quint manual](../doc/quint.md).
+
+## How to develop
+
+### Development environment
 
  1. Make sure that you have installed [npm][]. This is usually done with your
  OS-specific package manager.
+
+ 1. Clone the repository and cd into the `quint` tool's subdirectory
+ 
+    ```sh
+    git clone git@github.com:informalsystems/quint.git
+    cd quint/quint
+    ```
 
  1. Install dependencies:
 
@@ -48,11 +67,6 @@ Additionally, if you want to compile the vscode plugin:
     yalc publish
     ```
 
-## How to run
-
-Check the [quint manual](../doc/quint.md).
-
-## How to develop
 
 ### Code
 
