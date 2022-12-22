@@ -12,6 +12,7 @@
 		"url": "https://github.com/informalsystems/quint"
 	},
 	"dependencies": {
+		"@informalsystems/quint": "file:.yalc/@informalsystems/quint",
 		"quint": "file:.yalc/quint",
 		"vscode-languageserver": "^7.0.0",
 		"vscode-languageserver-textdocument": "^1.0.1"
@@ -25,15 +26,15 @@
 		"@types/mocha": "^8.2.2",
 		"@types/node": "^12.12.0",
 		"@typescript-eslint/eslint-plugin": "^5.30.6",
-        "@typescript-eslint/parser": "^5.30.6",
+		"@typescript-eslint/parser": "^5.30.6",
 		"chai": "^4.3.4",
 		"eslint": "^8.27.0",
-        "eslint-config-recommended": "^4.1.0",
-        "eslint-plugin-import": "^2.26.0",
-        "eslint-plugin-json": "^3.1.0",
-        "eslint-plugin-node": "^11.1.0",
-        "eslint-plugin-promise": "^6.1.1",
-        "eslint-plugin-unused-imports": "^2.0.0",
+		"eslint-config-recommended": "^4.1.0",
+		"eslint-plugin-import": "^2.26.0",
+		"eslint-plugin-json": "^3.1.0",
+		"eslint-plugin-node": "^11.1.0",
+		"eslint-plugin-promise": "^6.1.1",
+		"eslint-plugin-unused-imports": "^2.0.0",
 		"mocha": "^8.4.0",
 		"ts-node": "^10.0.0",
 		"typescript": "^4.2.3"

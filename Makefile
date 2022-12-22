@@ -14,7 +14,7 @@ quint:
 
 # Build quint and install it to local packages
 vscode: quint
-	cd vscode/quint-vscode/server; yalc add quint
+	cd vscode/quint-vscode/server; yalc add @informalsystems/quint
 	cd vscode/quint-vscode; npm install; npm run compile
 
 # end
