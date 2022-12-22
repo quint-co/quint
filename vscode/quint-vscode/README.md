@@ -18,7 +18,7 @@ To install the plugin for use, link the combined pluging into your vscode
 extensions. From the roof of this repo, you can run
 
 ```sh
-ln --symbolic $PWD/vscode/quint $HOME/.vscode/extensions/
+ln --symbolic $PWD/vscode/quint-vscode $HOME/.vscode/extensions/
 ```
 
 ## Features
