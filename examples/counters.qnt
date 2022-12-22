@@ -56,14 +56,14 @@ module counters {
 
   // execute Init and then Next four times
   run run3 = {
-    Init.then(Next.repeated(4))
+    Init.then(4.times(Next))
   }
 
   // execute Init and then Next ten times, while asserting n < 5
   run run4 = {
-    Init.then((all {
+    Init.then(10.times(all {
       assert(n < 5),
       Next,
-    }).repeated(10))
+    }))
   }
 }

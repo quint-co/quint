@@ -1,15 +1,11 @@
 module erc20 {
   type ADDR = str
-  type TX = {
-    tag: str,
-    id: int,
-    fail: bool,
-    sender: ADDR,
-    spender: ADDR,
-    fromAddr: ADDR,
-    toAddr: ADDR,
-    value: int
-  }
+
+  type TX =
+    | { tag: "none", id: int, fail: bool }
+    | { tag: "transfer", id: int, fail: bool, sender: ADDR, toAddr: ADDR, value: int }
+    | { tag: "approve", id: int, fail: bool, sender: ADDR, spender: ADDR, value: int }
+    | { tag: "transferFrom", id: int, fail: bool, sender: ADDR, fromAddr: ADDR, toAddr: ADDR, value: int }
 
   const ADDR: Set[ADDR]
   const AMMOUNTS: Set[int]
@@ -40,7 +36,7 @@ module erc20 {
   Transfer event.
   */
   action SubmitTransfer(sender, toAddr, value) = {
-    val newTx = { id: nextTxId, tag: "transfer", fail: false, 
+    val newTx = { id: nextTxId, tag: "transfer", fail: false,
                   sender: sender, toAddr: toAddr, value: value }
     all {
       pendingTransactions' = pendingTransactions.union(Set(newTx)),
@@ -57,14 +53,14 @@ module erc20 {
     pendingTransactions' = pendingTransactions.exclude(Set(tx)),
     allowance' = allowance,
     nextTxId' = nextTxId,
-    val fail = or { 
+    val fail = or {
      tx.value < 0,
      tx.value > balanceOf.get(tx.sender),
      tx.sender == tx.toAddr
     }
     all {
       lastTx' = tx.with("fail", fail),
-      if (fail) 
+      if (fail)
         balanceOf' = balanceOf
       else
         balanceOf' = balanceOf

@@ -40,19 +40,19 @@ module TendermintAcc_004 {
 //********************* PROTOCOL PARAMETERS **********************************
 
 // a process name is just a string in our specification
-type proc_t = str
+type PROC_T = str
 // a value is also a string
-type value_t = str
+type VALUE_T = str
 // a state is also a string
-type state_t = str
+type STATE_T = str
 // a round is an integer
-type round_t = int
+type ROUND_T = int
 
 // the set of correct processes
-const Corr: Set[proc_t]
+const Corr: Set[PROC_T]
 
 // the set of Byzantine processes, may be empty
-const Faulty: Set[proc_t]
+const Faulty: Set[PROC_T]
 
 // the total number of processes: correct, defective, and Byzantine
 const N: int
@@ -61,16 +61,16 @@ const N: int
 const T: int
 
 // the set of valid values, proposed both by correct and faulty
-const ValidValues: Set[value_t]
+const ValidValues: Set[VALUE_T]
 
 // the set of invalid values, never proposed by the correct ones
-const InvalidValues: Set[value_t]
+const InvalidValues: Set[VALUE_T]
 
 // the maximal round number
-const MaxRound: round_t
+const MaxRound: ROUND_T
 
-// the proposer function from 0..NRounds to 1..N
-const Proposer: round_t -> int
+// the proposer function from 0..NRounds to the set of processes
+const Proposer: ROUND_T -> PROC_T
 
 assume Corr_and_faulty_make_N =
     N == size(Corr.union(Faulty))
@@ -101,35 +101,35 @@ val THRESHOLD2 = 2 * T + 1  // a quorum when having N > 3 * T
 
 //********************* PROTOCOL STATE ******************************
 // a process round number: Corr -> Rounds
-var round: proc_t -> round_t
+var round: PROC_T -> ROUND_T
 // a process step: Corr -> { "PROPOSE", "PREVOTE", "PRECOMMIT", "DECIDED" }
-var step: proc_t -> state_t
+var step: PROC_T -> STATE_T
 // process decision: Corr -> ValuesOrNil
-var decision: proc_t -> value_t
+var decision: PROC_T -> VALUE_T
 // a locked value: Corr -> ValuesOrNil
-var lockedValue: proc_t -> value_t
+var lockedValue: PROC_T -> VALUE_T
 // a locked round: Corr -> RoundsOrNil
-var lockedRound: proc_t -> round_t
+var lockedRound: PROC_T -> ROUND_T
 // a valid value: Corr -> ValuesOrNil
-var validValue: proc_t -> value_t
+var validValue: PROC_T -> VALUE_T
 // a valid round: Corr -> RoundsOrNil
-var validRound: proc_t -> round_t
+var validRound: PROC_T -> ROUND_T
 
 // book-keeping variables
-type message_t =
-    | { tag: "PROPOSE", src: proc_t,
-        round: round_t, proposal: value_t, validRound: round_t }
-    | { tag: "PREVOTE", src: proc_t, round: round_t, id: value_t }
-    | { tag: "PRECOMMIT", src: proc_t, round: round_t, id: value_t }
+type MESSAGE_T =
+    | { tag: "PROPOSE", src: PROC_T,
+        round: ROUND_T, proposal: VALUE_T, validRound: ROUND_T }
+    | { tag: "PREVOTE", src: PROC_T, round: ROUND_T, id: VALUE_T }
+    | { tag: "PRECOMMIT", src: PROC_T, round: ROUND_T, id: VALUE_T }
 
 // PROPOSE messages broadcast in the system
-var msgsPropose: round_t -> message_t
+var msgsPropose: ROUND_T -> Set[MESSAGE_T]
 // PREVOTE messages broadcast in the system
-var msgsPrevote: round_t -> message_t
+var msgsPrevote: ROUND_T -> Set[MESSAGE_T]
 // PRECOMMIT messages broadcast in the system
-var msgsPrecommit: round_t -> message_t
+var msgsPrecommit: ROUND_T -> Set[MESSAGE_T]
 // the messages that were used by the correct processes to make transitions
-var evidence: Set[message_t]
+var evidence: Set[MESSAGE_T]
 
 // we use this variable to see which action was taken
 var fired_action: str
@@ -182,7 +182,7 @@ pure def BenignRoundsInMessages(msgfun) =
 // The initial states of the protocol. Some faults can be in the system already.
 action Init = all {
   round          ' = Corr.mapBy( _ => 0 ),
-  step           ' = Corr.mapBy( _ => Proposer ),
+  step           ' = Corr.mapBy( _ => "propose" ),
   decision       ' = Corr.mapBy( _ => NilValue ),
   lockedValue    ' = Corr.mapBy( _ => NilValue ),
   lockedRound    ' = Corr.mapBy( _ => NilRound ),
@@ -250,6 +250,16 @@ action InsertProposal(p) = {
       BroadcastProposal(p, round.get(p), proposal, validRound.get(p))
     },
     fired_action' = "InsertProposal",
+    round' = round,
+    step' = step,
+    evidence' = evidence,
+    validValue' = validValue,
+    validRound' = validRound,
+    msgsPrecommit' = msgsPrecommit,
+    msgsPrevote' = msgsPrevote,
+    decision' = decision,
+    lockedValue' = lockedValue,
+    lockedRound' = lockedRound,
   }
 }
 
@@ -269,6 +279,14 @@ action UponProposalInPropose(p) =
     BroadcastPrevote(p, round.get(p), mid),   // lines 24-26
     step' = step.set(p, "prevote"),
     fired_action' = "UponProposalInPropose",
+    round' = round,
+    validValue' = validValue,
+    validRound' = validRound,
+    msgsPropose' = msgsPropose,
+    msgsPrecommit' = msgsPrecommit,
+    decision' = decision,
+    lockedValue' = lockedValue,
+    lockedRound' = lockedRound,
   }
 
 // lines 28-33
@@ -291,6 +309,14 @@ action UponProposalInProposeAndPrevote(p) =
     BroadcastPrevote(p, round.get(p), mid), // lines 24-26
     step' = step.set(p, "prevote"),
     fired_action' = "UponProposalInProposeAndPrevote",
+    round' = round,
+    validValue' = validValue,
+    validRound' = validRound,
+    msgsPrecommit' = msgsPrecommit,
+    msgsPropose' = msgsPropose,
+    decision' = decision,
+    lockedValue' = lockedValue,
+    lockedRound' = lockedRound,
   }
 
 // lines 34-35 + lines 61-64 (onTimeoutPrevote)
@@ -307,6 +333,14 @@ action UponQuorumOfPrevotesAny(p) =
     BroadcastPrecommit(p, round.get(p), NilValue),
     step' = step.set(p, "precommit"),
     fired_action' = "UponQuorumOfPrevotesAny",
+    round' = round,
+    validValue' = validValue,
+    validRound' = validRound,
+    msgsPrevote' = msgsPrevote,
+    msgsPropose' = msgsPropose,
+    decision' = decision,
+    lockedValue' = lockedValue,
+    lockedRound' = lockedRound,
   }
 
 // lines 36-46
@@ -337,6 +371,10 @@ action UponProposalInPrevoteOrCommitAndPrevote(p) =
     validValue' = validValue.set(p, v),
     validRound' = validRound.set(p, round.get(p)),
     fired_action' = "UponProposalInPrevoteOrCommitAndPrevote",
+    round' = round,
+    msgsPrevote' = msgsPrevote,
+    msgsPropose' = msgsPropose,
+    decision' = decision,
   }
 
 // lines 47-48 + 65-67 (onTimeoutPrecommit)
@@ -352,6 +390,14 @@ action UponQuorumOfPrecommitsAny(p) =
     (round.get(p) + 1).in(Rounds),
     StartRound(p, round.get(p) + 1),
     fired_action' = "UponQuorumOfPrecommitsAny",
+    validValue' = validValue,
+    validRound' = validRound,
+    msgsPrecommit' = msgsPrecommit,
+    msgsPrevote' = msgsPrevote,
+    msgsPropose' = msgsPropose,
+    decision' = decision,
+    lockedValue' = lockedValue,
+    lockedRound' = lockedRound,
   }
 
 // lines 49-54
@@ -373,6 +419,14 @@ action UponProposalInPrecommitNoDecision(p) =
     // We introduced 'DECIDED' here to prevent the process from changing its decision.
     step' = step.set(p, "decided"),
     fired_action' = "UponProposalInPrecommitNoDecision",
+    round' = round,
+    validValue' = validValue,
+    validRound' = validRound,
+    msgsPrecommit' = msgsPrecommit,
+    msgsPrevote' = msgsPrevote,
+    msgsPropose' = msgsPropose,
+    lockedValue' = lockedValue,
+    lockedRound' = lockedRound,
   }
 
 // the actions below are not essential for safety, but added for completeness
@@ -383,6 +437,15 @@ action OnTimeoutPropose(p) = all {
   BroadcastPrevote(p, round.get(p), NilValue),
   step' = step.set(p, "prevote"),
   fired_action' = "OnTimeoutPropose",
+  round' = round,
+  evidence' = evidence,
+  validValue' = validValue,
+  validRound' = validRound,
+  msgsPrecommit' = msgsPrecommit,
+  msgsPropose' = msgsPropose,
+  decision' = decision,
+  lockedValue' = lockedValue,
+  lockedRound' = lockedRound,
 }
 
 // lines 44-46
@@ -395,6 +458,14 @@ action OnQuorumOfNilPrevotes(p) =
     BroadcastPrecommit(p, round.get(p), Id(NilValue)),
     step' = step.set(p, "precommit"),
     fired_action' = "OnQuorumOfNilPrevotes",
+    round' = round,
+    validValue' = validValue,
+    validRound' = validRound,
+    msgsPrevote' = msgsPrevote,
+    msgsPropose' = msgsPropose,
+    decision' = decision,
+    lockedValue' = lockedValue,
+    lockedRound' = lockedRound,
   }
 
 // lines 55-56
@@ -410,6 +481,14 @@ action OnRoundCatchup(p) = {
     evidence' = MyEvidence.union(evidence),
     StartRound(p, r),
     fired_action' = "OnRoundCatchup",
+    validValue' = validValue,
+    validRound' = validRound,
+    msgsPrecommit' = msgsPrecommit,
+    msgsPrevote' = msgsPrevote,
+    msgsPropose' = msgsPropose,
+    decision' = decision,
+    lockedValue' = lockedValue,
+    lockedRound' = lockedRound,
   }
 }
 

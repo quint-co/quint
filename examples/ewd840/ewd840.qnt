@@ -134,7 +134,7 @@ action Next = any {
 
 val vars = (active, color, tpos, tcolor)
 
-temporal Spec = Init and always(Next.orKeep(vars) and System.weakFair(vars))
+// temporal Spec = Init and always(Next.orKeep(vars) and System.weakFair(vars))
 
 //-----------------------------------------------------------------------------
 
