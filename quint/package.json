@@ -1,9 +1,26 @@
 {
   "name": "@informalsystems/quint",
-  "description": "Transpiler for the Quint language",
   "version": "0.3.0",
-  "author": "Informal Systems",
+  "description": "Core tool for the Quint specification language",
+  "keywords": ["temporal", "logic", "formal", "specification", "verification"],
+  "homepage": "https://github.com/informalsystems/quint",
+  "bugs": "https://github.com/informalsystems/quint/issues",
   "license": "Apache 2.0",
+  "author": "Informal Systems",
+  "contributors": [
+    {
+      "name": "Gabriela Moreira",
+      "email": "gabriela@informal.systems"
+    },
+    {
+      "name": "Igor Konnov",
+      "email": "igor@informal.systems"
+    },
+    {
+      "name": "Shon Feder",
+      "email": "shon@informal.systems"
+    }
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -20,17 +37,13 @@
       "es2021": true,
       "mocha": true
     },
-    "extends": [
-      "standard"
-    ],
+    "extends": ["standard"],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
       "ecmaVersion": 2021,
       "sourceType": "module"
     },
-    "ignorePatterns": [
-      "src/generated/*"
-    ],
+    "ignorePatterns": ["src/generated/*"],
     "plugins": [
       "@typescript-eslint",
       "eslint-plugin-json",
@@ -38,11 +51,7 @@
       "eslint-plugin-node"
     ]
   },
-  "files": [
-    "README.md",
-    "dist/**/*",
-    "test/**/*.ts"
-  ],
+  "files": ["README.md", "dist/**/*", "test/**/*.ts"],
   "engines": {
     "node": "*"
   },
