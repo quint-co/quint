@@ -63,7 +63,11 @@ jobs:
       - run: cd ./quint && npm run antlr
 
   quint-vscode-plugin:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
