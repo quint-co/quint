@@ -1,6 +1,6 @@
 {
-    "name": "quint",
-    "displayName": "Quint",
+    "name": "quint-vscode",
+    "displayName": "Quint VSCode extension",
     "description": "Quint language support",
     "version": "0.0.8",
     "publisher": "igorkonnov0764",
