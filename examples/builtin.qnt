@@ -828,29 +828,29 @@ module builtin {
   /// ```
   action then(a, b): (bool, bool) => bool
 
-  /// `n.times(a)` is the action `a` repeated `n` times.
+  /// `a.repeated(b)` is the action `a` repeated `n` times.
   ///
   /// The semantics of this operator is as follows:
   ///
   /// - When `n <= 0`, this operator is equivalent to `unchanged`.
-  /// - When `n = 1`, `n.times(a)` is equivalent to `a`.
-  /// - When `n > 1`, `n.times(a)`, is equivalent to `a.then((n - 1).times(a))`.
+  /// - When `n = 1`, `a.repeated(n)` is equivalent to `a`.
+  /// - When `n > 1`, `a.repeated(a)`, is equivalent to `a.then(a.repeated(n - 1))`.
   ///
-  /// Note that the operator `n.times(a)` applies `a` exactly `n` times (when `n` is
+  /// Note that the operator `a.repeated(n)` applies `a` exactly `n` times (when `n` is
   /// non-negative). If you want to repeat `a` from `i` to `j` times, you can combine
   /// it with `orKeep`:
   ///
   /// ```
-  /// i.times(a).then((j - i).times(a.orKeep(vars)))
+  /// a.repeated(i).then((a.orKeep(vars)).repeated(j - i))
   /// ```
   ///
   /// ### Examples
   ///
   /// ```
   /// var x: int
-  /// run test = (x' = 0).then(3.times(x' = x + 1)).then(assert(x == 3))
+  /// run test = (x' = 0).then((x' = x + 1).repeated(3)).then(assert(x == 3))
   /// ```
-  action times(n, a): (int, bool) => bool
+  action repeated(a, n): (bool, int) => bool
 
   /// `assert(p)` is an action that is true when `p` is true.
   ///
