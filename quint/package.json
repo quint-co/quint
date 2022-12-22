@@ -1,8 +1,14 @@
 {
   "name": "@informalsystems/quint",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Core tool for the Quint specification language",
-  "keywords": ["temporal", "logic", "formal", "specification", "verification"],
+  "keywords": [
+    "temporal",
+    "logic",
+    "formal",
+    "specification",
+    "verification"
+  ],
   "homepage": "https://github.com/informalsystems/quint",
   "bugs": "https://github.com/informalsystems/quint/issues",
   "license": "Apache 2.0",
@@ -37,13 +43,17 @@
       "es2021": true,
       "mocha": true
     },
-    "extends": ["standard"],
+    "extends": [
+      "standard"
+    ],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
       "ecmaVersion": 2021,
       "sourceType": "module"
     },
-    "ignorePatterns": ["src/generated/*"],
+    "ignorePatterns": [
+      "src/generated/*"
+    ],
     "plugins": [
       "@typescript-eslint",
       "eslint-plugin-json",
@@ -51,7 +61,11 @@
       "eslint-plugin-node"
     ]
   },
-  "files": ["README.md", "dist/**/*", "test/**/*.ts"],
+  "files": [
+    "README.md",
+    "dist/**/*",
+    "test/**/*.ts"
+  ],
   "engines": {
     "node": "*"
   },
