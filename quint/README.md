@@ -1,7 +1,7 @@
 # `quint`: The core Quint tool
 
 This directory contains the `quint` CLI providing powerful tools for working
-with [the Quint specification language](../doc/lang.md).
+with [the Quint specification language](https://github.com/informalsystems/quint).
 
 ## Installation
 
@@ -13,7 +13,7 @@ npm i @informalsystems/quint
 
 ## How to run
 
-Check the [quint manual](../doc/quint.md).
+Check the [quint manual](https://github.com/informalsystems/quint/blob/main/doc/quint.md).
 
 ## How to develop
 
