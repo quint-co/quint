@@ -1,9 +1,12 @@
 {
-  "name": "quint",
+  "name": "@informalsystems/quint",
   "description": "Transpiler for the Quint language",
   "version": "0.2.0",
   "author": "Informal Systems",
   "license": "Apache 2.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/src/index.js",
   "typings": "dist/src/index",
   "bin": {
