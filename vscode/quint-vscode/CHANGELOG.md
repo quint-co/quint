@@ -2,8 +2,18 @@
 
 All notable changes to the "quint" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+### 0.0.9
 
-## [Unreleased]
+Included type and effect checking.
 
-- Minimal syntax highlighting via a textmate grammar
+### 0.0.8
+
+Included the second parser pass that diagnoses name errors.
+
+### 0.0.7
+
+Included a parser pass that diagnoses syntax errors.
+
+### 0.0.1
+
+The very first version that has minimal syntax highlighting.
