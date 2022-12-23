@@ -113,7 +113,39 @@ true
 true
 ```
 
+## Using the VSCode plugin from source
 
+There are many ways to use the VSCode plugin from source. You also may want to use it with an unpublished version of `quint`.
+This section is a suggestion on how to do it, and its also how we do it.
+
+To build the vscode plugin, run the `vscode` make target from [the root of this repo](../../):
+
+```sh
+make vscode
+```
+
+To install the plugin for use, link the combined pluging into your vscode
+extensions. From the root of this repo, you can run
+
+```sh
+ln --symbolic $PWD/vscode/quint-vscode/ $HOME/.vscode/extensions/informal.quint-vscode
+```
+
+### Using the VSCode plugin with an unpublished version of `quint`
+
+We use `yalc` to manage unpublished packages. To install it, run
+
+``` sh
+npm i yalc -g
+```
+
+Then use the `local` make target to replace the published version of `quint` with the local one and build the plugin:
+
+``` sh
+make local
+```
+
+Make sure you have the folder linked to your vscode extensions as described above.
 
 [Apalache]: https://github.com/informalsystems/apalache
 [Contributing to Apalache]: https://github.com/informalsystems/apalache/blob/unstable/CONTRIBUTING.md

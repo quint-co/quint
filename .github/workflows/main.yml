@@ -78,4 +78,4 @@ jobs:
       - name: Install yalc
         run: npm i yalc -g
       - name: Compile quint vscode plugin
-        run: make vscode
+        run: make local

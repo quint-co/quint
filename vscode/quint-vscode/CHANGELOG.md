@@ -1,19 +1,36 @@
-# Change Log
+# Changelog
 
-All notable changes to the "quint" extension will be documented in this file.
+All notable changes to the Quint VSCode extension will be documented in this file.
 
-### 0.0.9
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+### v0.1.0 -- 2022-12-23
+
+#### Added
+
+Improved documentation and prepared for publishing.
+
+### v0.0.9 -- 2022-12-23
+
+#### Added
 
 Included type and effect checking.
 
-### 0.0.8
+### v0.0.8
+
+#### Added
 
 Included the second parser pass that diagnoses name errors.
 
-### 0.0.7
+### v0.0.7
+
+#### Added
 
 Included a parser pass that diagnoses syntax errors.
 
-### 0.0.1
+### v0.0.1
+
+#### Added
 
 The very first version that has minimal syntax highlighting.

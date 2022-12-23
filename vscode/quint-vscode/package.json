@@ -1,69 +1,75 @@
 {
-    "name": "quint-vscode",
-    "displayName": "Quint",
-    "description": "Language support for Quint specifications",
-    "version": "0.0.9",
-    "publisher": "informal",
-    "engines": {
-        "vscode": "^1.43.0"
-    },
-    "categories": [
-        "Programming Languages"
-    ],
-    "bugs": {
-        "url": "https://github.com/informalsystems/quint"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/informalsystems/quint.git"
-    },
-    "activationEvents": [
-        "onLanguage:quint"
-    ],
-    "main": "./client/out/extension",
-    "contributes": {
-        "languages": [
-            {
-                "id": "quint",
-                "aliases": [
-                    "Quint",
-                    "quint"
-                ],
-                "extensions": [
-                    ".qnt"
-                ],
-                "configuration": "./language-configuration.json"
-            }
-        ],
-        "grammars": [
-            {
-                "language": "quint",
-                "scopeName": "source.quint",
-                "path": "./syntaxes/quint.tmLanguage.json"
-            }
-        ]
-    },
-    "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -b",
-        "watch": "tsc -b -w",
-        "postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
-        "test": "sh ./scripts/e2e.sh",
-        "format": "eslint --fix '**/*.ts'"
-    },
-    "devDependencies": {
-        "@types/mocha": "^8.2.2",
-        "@types/node": "^12.12.0",
-        "@typescript-eslint/eslint-plugin": "^5.30.6",
-        "@typescript-eslint/parser": "^5.30.6",
-        "eslint": "^8.27.0",
-        "eslint-config-recommended": "^4.1.0",
-        "eslint-plugin-import": "^2.26.0",
-        "eslint-plugin-json": "^3.1.0",
-        "eslint-plugin-node": "^11.1.0",
-        "eslint-plugin-promise": "^6.1.1",
-        "eslint-plugin-unused-imports": "^2.0.0",
-        "mocha": "^8.3.2",
-        "typescript": "^4.2.3"
-    }
+	"name": "quint-vscode",
+	"displayName": "Quint",
+	"description": "Language support for Quint specifications",
+	"version": "0.1.0",
+	"publisher": "informal",
+	"engines": {
+		"vscode": "^1.43.0"
+	},
+	"categories": [
+		"Programming Languages"
+	],
+	"bugs": {
+		"url": "https://github.com/informalsystems/quint/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/informalsystems/quint.git"
+	},
+	"activationEvents": [
+		"onLanguage:quint"
+	],
+	"main": "./client/out/extension",
+	"contributes": {
+		"languages": [
+			{
+				"id": "quint",
+				"aliases": [
+					"Quint",
+					"quint"
+				],
+				"extensions": [
+					".qnt"
+				],
+				"configuration": "./language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "quint",
+				"scopeName": "source.quint",
+				"path": "./syntaxes/quint.tmLanguage.json"
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -b",
+		"watch": "tsc -b -w",
+		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+		"test": "sh ./scripts/e2e.sh",
+		"format": "eslint --fix '**/*.ts'"
+	},
+	"devDependencies": {
+		"@types/mocha": "^8.2.2",
+		"@types/node": "^12.12.0",
+		"@typescript-eslint/eslint-plugin": "^5.30.6",
+		"@typescript-eslint/parser": "^5.30.6",
+		"eslint": "^8.27.0",
+		"eslint-config-recommended": "^4.1.0",
+		"eslint-plugin-import": "^2.26.0",
+		"eslint-plugin-json": "^3.1.0",
+		"eslint-plugin-node": "^11.1.0",
+		"eslint-plugin-promise": "^6.1.1",
+		"eslint-plugin-unused-imports": "^2.0.0",
+		"mocha": "^8.3.2",
+		"typescript": "^4.2.3"
+	},
+	"__metadata": {
+		"id": "b64283c0-9b4d-474c-a8df-6d3266bae7bd",
+		"publisherDisplayName": "Informal Systems",
+		"publisherId": "28b3f43c-0c1b-4c12-aa64-8dabbb7fe4cd",
+		"isPreReleaseVersion": false
+	}
 }
