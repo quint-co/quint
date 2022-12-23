@@ -14,7 +14,7 @@ module tictactoe {
   action Move(player, coordinate) = all {
     BoardIs(coordinate, "_"),
     board' = board.set(
-      coordinate._1, 
+      coordinate._1,
       board.get(coordinate._1).set(coordinate._2, player)
     ),
   }
@@ -49,8 +49,8 @@ module tictactoe {
   }
 
   val corners = Set(
-    (1,1), 
-    (3,1), 
+    (1,1),
+    (3,1),
     (1,3),
     (3,3)
   )
@@ -126,7 +126,7 @@ module tictactoe {
   // Invariants: The things we are checking for.
   val XHasNotWon = not(Won("X"))
   val OHasNotWon = not(Won("O"))
-  
+
   val BoardFilled = not(tuples(1.to(3), 1.to(3)).exists(coordinate =>
     BoardIs(coordinate, "_")
   ))
