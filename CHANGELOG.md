@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+### Added
+
+- Added C-like type signatures (#102)
+
 ## v0.4.0 -- 2022-12-22
 
 ### Added
