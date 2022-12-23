@@ -1,9 +1,9 @@
 {
     "name": "quint-vscode",
-    "displayName": "Quint VSCode extension",
-    "description": "Quint language support",
-    "version": "0.0.8",
-    "publisher": "igorkonnov0764",
+    "displayName": "Quint",
+    "description": "Language support for Quint specifications",
+    "version": "0.0.9",
+    "publisher": "informal",
     "engines": {
         "vscode": "^1.43.0"
     },
@@ -41,30 +41,7 @@
                 "scopeName": "source.quint",
                 "path": "./syntaxes/quint.tmLanguage.json"
             }
-        ],
-        "configuration": {
-            "type": "object",
-            "title": "Quint configuration",
-            "properties": {
-                "languageServerExample.maxNumberOfProblems": {
-                    "scope": "resource",
-                    "type": "number",
-                    "default": 10,
-                    "description": "The maximum number of problems produced by the server."
-                },
-                "languageServerExample.trace.server": {
-                    "scope": "window",
-                    "type": "string",
-                    "enum": [
-                        "off",
-                        "messages",
-                        "verbose"
-                    ],
-                    "default": "off",
-                    "description": "Traces the communication between VS Code and the language server."
-                }
-            }
-        }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
