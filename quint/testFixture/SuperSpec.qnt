@@ -78,6 +78,13 @@ module withConsts {
   var k: int
   action asgn = k' = 3
 
+  // C-like definition signatures
+  pure def min(x: int, y: int): int = {
+    if (x < y)
+    x
+    else y
+  }
+
 
   // Logical operators
   val test_and = false and true

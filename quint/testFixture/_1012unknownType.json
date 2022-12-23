@@ -1,1 +1,1 @@
-{"status":"error","errors":[{"explanation":"Failed to resolve type alias UNKNOWN_TYPE in definition for S, in module unknown_type","locs":[{"source":"mocked_path/testFixture/_1012unknownType.qnt","start":{"line":1,"col":9,"index":31},"end":{"line":1,"col":20,"index":42}}]}]}
+{"stage":"error","errors":[{"explanation":"Failed to resolve type alias UNKNOWN_TYPE in definition for S, in module unknown_type","locs":[{"source":"mocked_path/testFixture/_1012unknownType.qnt","start":{"line":1,"col":9,"index":31},"end":{"line":1,"col":20,"index":42}}]}]}

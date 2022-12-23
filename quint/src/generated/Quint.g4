@@ -30,8 +30,17 @@ unit :    'const' IDENTIFIER ':' type                     # const
         //}                                                 # nondetError
         ;
 
-// an operator definition
-operDef : qualifier normalCallName params? (':' type)? ('=' expr)? ';'?
+// An operator definition.
+// We embed two kinds of parameters right in this rule.
+// Otherwise, the parser would start recognizing parameters everywhere.
+operDef : qualifier normalCallName
+            ( /* ML-like parameter lists */
+                '(' (IDENTIFIER (',' IDENTIFIER)*)? ')' (':' type)?
+                | ':' type
+              /* C-like parameter lists */
+                | '(' (IDENTIFIER ':' type (',' IDENTIFIER ':' type)*) ')' ':' type
+            )?
+            '=' expr ';'?
         ;
 
 qualifier : 'val'
@@ -42,9 +51,6 @@ qualifier : 'val'
           | 'run'
           | 'temporal'
           ;
-
-params  :       '(' (IDENTIFIER (',' IDENTIFIER)*)? ')'
-        ;
 
 // an instance may have a special parameter '*',
 // which means that the missing parameters are identity, e.g., x = x, y = y
