@@ -59,7 +59,7 @@ TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
       - [Non-deterministic choice](#non-deterministic-choice-1)
     - [Runs](#runs)
       - [Then](#then)
-      - [Times](#times)
+      - [Repeated](#repeated)
       - [Assert](#assert)
     - [Temporal operators](#temporal-operators)
       - [Always](#always)
@@ -1749,27 +1749,27 @@ that start with `Init` and evaluate `Next` four times in a row.
 
 *Mode:* Run.
 
-#### Times
+#### Repeated
 
-The operator `times` has the following syntax:
+The operator `repeated` has the following syntax:
 
 ```scala
-n.times(A)
-times(n, A)
+A.repeated(n)
+repeated(A, n)
 ```
 
 The semantics of this operator is as follows:
 
- - When `n <= 0`, this operator does not change the state.
- - When `n = 1`, `n.times(A)` is equivalent to `A`.
- - When `n > 1`, `n.times(A)`, is equivalent to `A.then((n - 1).times(A))`.
+ - When `n <= 0`, this operator is equivalent to `unchanged`.
+ - When `n = 1`, `a.repeated(n)` is equivalent to `a`.
+ - When `n > 1`, `a.repeated(a)`, is equivalent to `a.then(a.repeated(n - 1))`.
 
-Note that the operator `n.times(A)` applies `A` exactly `n` times (when `n` is
+Note that the operator `A.repeated(n)` applies `A` exactly `n` times (when `n` is
 non-negative). If you want to repeat `A` from `i` to `j` times, you can combine
 it with `orKeep` as follows:
 
 ```scala
-i.times(A).then((j - i).times(A.orKeep(vars)))
+a.repeated(i).then((a.orKeep(vars)).repeated(j - i))
 ```
 
 See the description of [orKeep](#OrKeep) below.

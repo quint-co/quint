@@ -73,8 +73,10 @@ export function scanConflicts(table: LookupTable, tree: ScopeTree): DefinitionsC
 
   table.typeDefinitions.forEach((defs, identifier) => {
     // Type definition conflicts don't depend on scope as type aliases can't be scoped
-    if (defs.length > 1) {
-      const sources: ConflictSource[] = defs.map(d => {
+    const conflictingDefinitions = defs.filter(def => defs.some(d => !isEqual(d, def)))
+
+    if (conflictingDefinitions.length > 1) {
+      const sources: ConflictSource[] = conflictingDefinitions.map(d => {
         return d.reference ? { kind: 'user', reference: d.reference } : { kind: 'builtin' }
       })
       conflicts.push({ kind: 'type', identifier, sources })

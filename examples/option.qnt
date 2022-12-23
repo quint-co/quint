@@ -3,7 +3,7 @@ module option {
 
   // An option type for values.
   // This type declaration is not required. It only defines an alias.
-  type vote_option =
+  type Vote_option =
     | { tag: "none" }
     | { tag: "some", value: int }
 
@@ -11,25 +11,25 @@ module option {
 
   val None = { tag: "none" }
 
-  var votes: List[vote_option]
+  var votes: List[Vote_option]
   var outcome: int
 
   action Init = all {
-    votes <- [],
-    outcome <- 0
+    votes' = [],
+    outcome' = 0
   }
 
   action Vote(v) = {
-    votes <- votes.append(Some(v))
+    votes' = votes.append(Some(v))
   }
 
   action Unvote(i) = all {
     votes[i] != None,
-    votes <- votes.replaceAt(i, None),
+    votes' = votes.replaceAt(i, None),
   }
 
   val SumVotes =
-    def sum_one(sum, w): (int, vote_option) => int =
+    def sum_one(sum, w): (int, Vote_option) => int =
       // deconstruct a discriminate union.
       w match
         // this pattern binds some_w to the "some" version of w, if w.tag == "some"
@@ -51,8 +51,8 @@ module option {
   action Next = all {
     any {
       Int.guess(v => Vote(v)),
-      votes.domain.guess(i => Unvote(i)),
+      votes.indices().guess(i => Unvote(i)),
     },
-    outcome <- SumVotes
+    outcome' = SumVotes
   }
 }

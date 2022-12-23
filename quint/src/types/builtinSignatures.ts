@@ -119,9 +119,8 @@ const otherOperators = [
   { name: 'assign', type: '(a, a) => bool' },
   { name: 'ite', type: '(bool, a, a) => a' },
   { name: 'then', type: '(bool, bool) => bool' },
-  { name: 'times', type: '(int, bool) => bool' },
+  { name: 'repeated', type: '(bool, int) => bool' },
   { name: 'assert', type: '(bool) => bool' },
-  // Should we do this? https://github.com/informalsystems/quint/discussions/109
 ]
 
 function uniformArgsWithResult(argsType: string, resultType: string): Signature {

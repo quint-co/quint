@@ -119,7 +119,7 @@ export function defaultValueDefinitions(): ValueDefinition[] {
     { kind: 'def', identifier: 'field' },
     { kind: 'def', identifier: 'fieldNames' },
     { kind: 'def', identifier: 'item' },
-    { kind: 'def', identifier: 'match' },
+    { kind: 'def', identifier: 'unionMatch' },
     { kind: 'def', identifier: 'assign' },
     { kind: 'def', identifier: 'of' },
     { kind: 'def', identifier: 'eq' },

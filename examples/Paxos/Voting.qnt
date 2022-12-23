@@ -214,8 +214,6 @@ action Next = {
     }
 }
 
-temporal Spec = Init and always(Next.orKeep(Set(votes, maxBal)))
-
 val Inv = TypeOK and VotesSafe and OneValuePerBallot
 
 //-----------------------------------------------------------------------------

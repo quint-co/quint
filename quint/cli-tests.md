@@ -27,10 +27,20 @@ bash -
 <!-- !test check Paxos -->
     quint parse ../examples/Paxos/Paxos.qnt
 
+### OK on typecheck Paxos
+
+<!-- !test check Paxos - Types & Effects -->
+    quint typecheck ../examples/Paxos/Paxos.qnt
+
 ### OK on parse Voting
 
 <!-- !test check Voting -->
     quint parse ../examples/Paxos/Voting.qnt
+
+### OK on typecheck Voting
+
+<!-- !test check Voting - Types & Effects -->
+    quint typecheck ../examples/Paxos/Voting.qnt
 
 ### OK on parse ReadersWriters
 
@@ -42,16 +52,25 @@ bash -
 <!-- !test check ReadersWriters - Types & Effects -->
     quint typecheck ../examples/ReadersWriters/ReadersWriters.qnt
 
-### OK on parse ewd840
+### OK on parse EWD840
 
-<!-- !test check ewd840 -->
+<!-- !test check EWD840 -->
     quint parse ../examples/ewd840/ewd840.qnt
 
+### OK on typecheck EWD840
+
+<!-- !test check EWD840 - Types & Effects -->
+    quint typecheck ../examples/Paxos/Voting.qnt
 
 ### OK on parse Tendermint
 
 <!-- !test check Tendermint -->
     quint parse ../examples/tendermint/TendermintAcc_004.qnt
+
+### OK on typecheck Tendermint
+
+<!-- !test check Tendermint - Types & Effects -->
+    quint typecheck ../examples/tendermint/TendermintAcc_004.qnt
 
 ### OK on parse imports
 
@@ -73,11 +92,15 @@ bash -
 <!-- !test check instances - Types & Effects -->
     quint typecheck ../examples/instances.qnt
 
-
 ### OK on parse option
 
 <!-- !test check option -->
     quint parse ../examples/option.qnt
+
+### OK on typecheck option
+
+<!-- !test check option - Types & Effects -->
+    quint typecheck ../examples/option.qnt
 
 ### OK on parse BinSearch
 
@@ -114,11 +137,20 @@ bash -
 <!-- !test check ERC20 -->
     quint parse ../examples/ERC20/erc20.qnt
 
+### OK on typecheck ERC20
+
+<!-- !test check ERC20 - Types & Effects -->
+    quint typecheck ../examples/ERC20/erc20.qnt
 
 ### OK on parse Lamport Mutex
 
 <!-- !test check LamportMutex -->
     quint parse ../examples/LamportMutex/LamportMutex.qnt
+
+### OK on typecheck Lamport Mutex
+
+<!-- !test check LamportMutex - Types & Effects -->
+    quint typecheck ../examples/LamportMutex/LamportMutex.qnt
 
 ### OK on parse counters
 
