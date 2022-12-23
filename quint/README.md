@@ -31,9 +31,9 @@ Check the [quint manual](../doc/quint.md).
 
  1. Install dependencies:
 
-   ```sh
-   npm install
-   ```
+    ```sh
+    npm install
+    ```
 
  1. Compile `quint`:
 
