@@ -124,11 +124,11 @@ To build the vscode plugin, run the `vscode` make target from [the root of this 
 make vscode
 ```
 
-To install the plugin for use, link the combined pluging into your vscode
-extensions. From the root of this repo, you can run
+To install the plugin for use, link the combined plugin into your vscode
+extensions. From the root of this repo, you can run:
 
 ```sh
-ln --symbolic $PWD/vscode/quint-vscode/ $HOME/.vscode/extensions/informal.quint-vscode
+ln -s $PWD/vscode/quint-vscode/ $HOME/.vscode/extensions/informal.quint-vscode
 ```
 
 ### Using the VSCode plugin with an unpublished version of `quint`
