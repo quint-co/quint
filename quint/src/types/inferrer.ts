@@ -30,7 +30,7 @@ import { solveConstraint } from './constraintSolver'
  *          ids to the corresponding error for any problematic expressions.
  */
 export function inferTypes(
-  quintModule: QuintModule, table: LookupTableByModule
+  table: LookupTableByModule, quintModule: QuintModule
 ): [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>] {
   const visitor = new ConstraintGeneratorVisitor(solveConstraint, table)
   walkModule(visitor, quintModule)
