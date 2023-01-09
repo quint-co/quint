@@ -39,7 +39,7 @@ describe('inferTypes', () => {
       'def d(S) = S.map(p => p + 10)',
     ])
 
-    const [errors, types] = inferTypes(quintModule, definitionsTable)
+    const [errors, types] = inferTypes(definitionsTable, quintModule)
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
@@ -73,7 +73,7 @@ describe('inferTypes', () => {
       'def b(g, q) = g(q) + g(not(q))',
     ])
 
-    const [errors, types] = inferTypes(quintModule, definitionsTable)
+    const [errors, types] = inferTypes(definitionsTable, quintModule)
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
@@ -99,7 +99,7 @@ describe('inferTypes', () => {
       'val a = e({ f1: 2 }).fieldNames()',
     ])
 
-    const [errors, types] = inferTypes(quintModule, definitionsTable)
+    const [errors, types] = inferTypes(definitionsTable, quintModule)
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
@@ -134,7 +134,7 @@ describe('inferTypes', () => {
       'def e(p, q) = (p._1, q._2)',
     ])
 
-    const [errors, types] = inferTypes(quintModule, definitionsTable)
+    const [errors, types] = inferTypes(definitionsTable, quintModule)
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
@@ -155,7 +155,7 @@ describe('inferTypes', () => {
       'def e(p): (int) => int = p',
     ])
 
-    const [errors, types] = inferTypes(quintModule, definitionsTable)
+    const [errors, types] = inferTypes(definitionsTable, quintModule)
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
@@ -170,7 +170,7 @@ describe('inferTypes', () => {
       'def e(p): (t) => t = p + 1',
     ])
 
-    const [errors] = inferTypes(quintModule, definitionsTable)
+    const [errors] = inferTypes(definitionsTable, quintModule)
     assert.sameDeepMembers([...errors.entries()], [
       [3n, {
         location: 'Checking type annotation (t) => t',
@@ -188,7 +188,7 @@ describe('inferTypes', () => {
       'def a = 1.map(p => p + 10)',
     ])
 
-    const [errors] = inferTypes(quintModule, definitionsTable)
+    const [errors] = inferTypes(definitionsTable, quintModule)
 
     assert.sameDeepMembers([...errors.entries()], [
       [6n, {

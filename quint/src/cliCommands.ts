@@ -165,7 +165,7 @@ export function typecheck(parsed: ParsedStage): CLIProcedure<TypecheckedStage> {
   const definitionsTable = table
   const errorLocator = mkErrorMessage(sourceMap)
 
-  const [typeErrMap, types] = inferTypes(module, definitionsTable)
+  const [typeErrMap, types] = inferTypes(definitionsTable, module)
   const typeErrors: ErrorMessage[] = Array.from(typeErrMap, errorLocator)
   // TODO add once logging functionality is added
   // if (typeErrors.length === 0) console.log("type inference succeeded")

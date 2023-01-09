@@ -296,7 +296,7 @@ function checkEffects(
 function checkTypes(
   textDocument: TextDocument, quintModule: QuintModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule
 ): Diagnostic[] {
-  const [errors, inferredTypes] = inferTypes(quintModule, table)
+  const [errors, inferredTypes] = inferTypes(table, quintModule)
   const diagnostics: Diagnostic[] = []
   const types: Map<Loc, string> = new Map<Loc, string>()
   errors.forEach((error, id) => {
