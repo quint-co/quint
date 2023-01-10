@@ -10,13 +10,17 @@ import {
   DiagnosticSeverity,
   DidChangeConfigurationNotification,
   DocumentUri,
+  HandlerResult,
   Hover,
   HoverParams,
   InitializeParams,
   InitializeResult,
+  MarkupContent,
   MarkupKind,
   Position,
   ProposedFeatures,
+  SignatureHelp,
+  SignatureHelpParams,
   TextDocumentPositionParams,
   TextDocumentSyncKind,
   TextDocuments,
@@ -27,7 +31,7 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { Effect, Loc, LookupTableByModule, ParserPhase2, QuintModule, checkModes, effectToString, errorTreeToString, inferEffects, inferTypes, parsePhase1, parsePhase2, typeSchemeToString } from '@informalsystems/quint'
+import { DocumentationEntry, Effect, Loc, LookupTableByModule, ParserPhase2, QuintModule, builtinDocs, checkModes, effectToString, errorTreeToString, inferEffects, inferTypes, parsePhase1, parsePhase2, produceDocs, typeSchemeToString } from '@informalsystems/quint'
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -59,6 +63,9 @@ connection.onInitialize((params: InitializeParams) => {
         resolveProvider: true,
       },
       hoverProvider: true,
+      signatureHelpProvider: {
+        triggerCharacters: ['('],
+      },
     },
   }
   if (hasWorkspaceFolderCapability) {
@@ -145,6 +152,7 @@ documents.onDidChangeContent(change => {
   console.log('File content changed, checking types and effects again')
   validateTextDocument(change.document)
     .then((result) => {
+      docsByDocument.set(change.document.uri, produceDocs(result.module))
       return checkTypesAndEffects(change.document, result.module, result.sourceMap, result.table)
     })
     // Clear possible old diagnostics
@@ -239,7 +247,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<ParserP
 
   const result = parsePhase1(text, textDocument.uri)
     .chain(phase1Data => parsePhase2(phase1Data))
-    .mapLeft(messages =>  messages.flatMap(msg => msg.locs.map(loc => assembleDiagnostic(msg.explanation, loc))))
+    .mapLeft(messages => messages.flatMap(msg => msg.locs.map(loc => assembleDiagnostic(msg.explanation, loc))))
 
   if (result.isRight()) {
     return new Promise((resolve, _reject) => resolve(result.value))
@@ -252,6 +260,9 @@ const effectsByDocument: Map<DocumentUri, Map<Loc, string>> = new Map<DocumentUr
 const originalEffectsByDocument: Map<DocumentUri, Map<bigint, Effect>> = new Map<DocumentUri, Map<bigint, Effect>>()
 const typesByDocument: Map<DocumentUri, Map<Loc, string>> = new Map<DocumentUri, Map<Loc, string>>()
 const documentsByUri: Map<DocumentUri, TextDocument> = new Map<DocumentUri, TextDocument>()
+
+const docsByDocument: Map<DocumentUri, Map<string, DocumentationEntry>> =
+  new Map<DocumentUri, Map<string, DocumentationEntry>>()
 
 function checkTypesAndEffects(
   textDocument: TextDocument, quintModule: QuintModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule
@@ -376,6 +387,34 @@ connection.onCompletionResolve(
     return item
   }
 )
+const ds = builtinDocs()
+const loadedBuiltInDocs = ds.isRight() ? ds.value : undefined
+
+connection.onSignatureHelp((params: SignatureHelpParams): HandlerResult<SignatureHelp, void> => {
+  const document = documents.get(params.textDocument.uri)!
+  const lineUpToPosition = document.getText({
+    start: { line: params.position.line, character: 0 },
+    end: params.position,
+  })
+
+  // Match the last word before the `(` character (which triggered the request)
+  const matchingNames = lineUpToPosition.match(/(\w+)\s*\(\s*$/)
+  if (matchingNames === null) {
+    return { signatures: [], activeSignature: 0, activeParameter: 0 }
+  }
+
+  const name = matchingNames[1]
+  const signature = docsByDocument.get(params.textDocument.uri)!.get(name)! ?? loadedBuiltInDocs?.get(name)!
+  const signatureWithMarkupKind = signature?.documentation
+    ? { ...signature, documentation: { kind: 'markdown', value: signature.documentation } as MarkupContent }
+    : signature
+
+  return {
+    signatures: [signatureWithMarkupKind],
+    activeSignature: 0,
+    activeParameter: 0,
+  }
+})
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events

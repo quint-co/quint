@@ -40,7 +40,7 @@ operDef : qualifier normalCallName
               /* C-like parameter lists */
                 | '(' (IDENTIFIER ':' type (',' IDENTIFIER ':' type)*) ')' ':' type
             )?
-            '=' expr ';'?
+            ('=' expr)? ';'?
         ;
 
 qualifier : 'val'

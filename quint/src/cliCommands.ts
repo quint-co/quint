@@ -38,7 +38,7 @@ interface OutputStage {
   types?: Map<bigint, TypeScheme>,
   effects?: Map<bigint, Effect>,
   modes?: Map<bigint, OpQualifier>,
-  documentation?: DocumentationEntry[],
+  documentation?: Map<string, DocumentationEntry>,
   errors?: ErrorMessage[],
   warnings?: any[], // TODO it doesn't look like this is being used for anything. Should we remove it?
   sourceCode?: string, // Should not printed, only used in formatting errors
@@ -76,7 +76,7 @@ interface TypecheckedStage extends ParsedStage {
 }
 
 interface DocumentationStage extends LoadedStage {
-  documentation: DocumentationEntry[],
+  documentation?: Map<string, DocumentationEntry>,
 }
 
 // A procedure stage which is guaranteed to have `errors` and `sourceCode`
@@ -217,11 +217,11 @@ export function docs(loaded: LoadedStage): CLIProcedure<DocumentationStage> {
       const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
       return { msg: "parsing failed", stage: { ...parsing, errors } }
     })
-    .map(phase2Data => {
-      const documentationEntries = produceDocs(phase2Data.module)
-      const title = `# Documentation for ${phase2Data.module.name}\n\n`
-      const markdown = title + documentationEntries.map(toMarkdown).join('\n\n')
-      writeToFile(`${phase2Data.module.name}.md`, markdown)
+    .map(phase1Data => {
+      const documentationEntries = produceDocs(phase1Data.module)
+      const title = `# Documentation for ${phase1Data.module.name}\n\n`
+      const markdown = title + [...documentationEntries.values()].map(toMarkdown).join('\n\n')
+      writeToFile(`${phase1Data.module.name}.md`, markdown)
       return { ...parsing, documentation: documentationEntries }
     })
 }
