@@ -396,6 +396,8 @@ connection.onSignatureHelp((params: SignatureHelpParams): HandlerResult<Signatur
     start: { line: params.position.line, character: 0 },
     end: params.position,
   })
+
+  // Match the last word before the `(` character (which triggered the request)
   const matchingNames = lineUpToPosition.match(/(\w+)\s*\(\s*$/)
   if (matchingNames === null) {
     return { signatures: [], activeSignature: 0, activeParameter: 0 }
@@ -403,7 +405,9 @@ connection.onSignatureHelp((params: SignatureHelpParams): HandlerResult<Signatur
 
   const name = matchingNames[1]
   const signature = docsByDocument.get(params.textDocument.uri)!.get(name)! ?? loadedBuiltInDocs?.get(name)!
-  const signatureWithMarkupKind = signature?.documentation ? { ...signature, documentation: { kind: 'markdown', value: signature.documentation } as MarkupContent} : signature
+  const signatureWithMarkupKind = signature?.documentation
+    ? { ...signature, documentation: { kind: 'markdown', value: signature.documentation } as MarkupContent }
+    : signature
 
   return {
     signatures: [signatureWithMarkupKind],
