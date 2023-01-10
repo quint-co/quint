@@ -387,6 +387,8 @@ connection.onCompletionResolve(
     return item
   }
 )
+const ds = builtInDocs()
+const loadedBuiltInDocs = ds.isRight() ? ds.value : undefined
 
 connection.onSignatureHelp((params: SignatureHelpParams): HandlerResult<SignatureHelp, void> => {
   const document = documents.get(params.textDocument.uri)!
@@ -400,8 +402,8 @@ connection.onSignatureHelp((params: SignatureHelpParams): HandlerResult<Signatur
   }
 
   const name = matchingNames[1]
-  const signature = docsByDocument.get(params.textDocument.uri)!.get(name)! ?? builtInDocs()?.get(name)!
-  const signatureWithMarkupKind = signature.documentation ? { ...signature, documentation: { kind: 'markdown', value: signature.documentation } as MarkupContent} : signature
+  const signature = docsByDocument.get(params.textDocument.uri)!.get(name)! ?? loadedBuiltInDocs?.get(name)!
+  const signatureWithMarkupKind = signature?.documentation ? { ...signature, documentation: { kind: 'markdown', value: signature.documentation } as MarkupContent} : signature
 
   return {
     signatures: [signatureWithMarkupKind],
