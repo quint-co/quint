@@ -2,11 +2,13 @@ import { assert } from 'chai'
 import { describe, it } from 'mocha'
 import { produceDocs, toMarkdown } from '../src/docs'
 import { buildModuleWithDefs } from './builders/ir'
+import { dedent } from './textUtils'
 
 describe('produceDocs', () => {
-  const module = buildModuleWithDefs([
-    `/// This is a docstring for foo\nval foo = 1`,
-  ])
+  const module = buildModuleWithDefs([dedent(
+    `/// This is a docstring for foo
+    |val foo = 1`
+  )])
 
   it('produces documentation for all definitions', () => {
     const docs = produceDocs(module)
@@ -25,7 +27,11 @@ describe('toMarkdown', () => {
   }
 
   it('produces markdown out of a documentation entry', () => {
-    const expectedMarkdown = `## \`val foo\`\n\nThis is a docstring for foo`
+    const expectedMarkdown = dedent(
+      `## \`val foo\`
+      |
+      |This is a docstring for foo`
+    )
 
     assert.deepEqual(toMarkdown(doc), expectedMarkdown)
   })

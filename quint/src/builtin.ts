@@ -24,8 +24,9 @@ import { lf } from "eol";
  *
  * @returns a map of builtin definition names to their documentation
  */
-export function builtInDocs(): Either<ErrorMessage[], Map<string, DocumentationEntry>> {
+export function builtinDocs(): Either<ErrorMessage[], Map<string, DocumentationEntry>> {
   const path = resolve(__dirname, 'builtin.qnt')
+  // Read file and remove windows line endings (\r) using `lf`
   const sourceCode = lf(readFileSync(path, 'utf8'))
 
   return parsePhase1(sourceCode, path).map(phase1Data => produceDocs(phase1Data.module))

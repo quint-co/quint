@@ -31,7 +31,7 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { DocumentationEntry, Effect, Loc, LookupTableByModule, ParserPhase2, QuintModule, builtInDocs, checkModes, effectToString, errorTreeToString, inferEffects, inferTypes, parsePhase1, parsePhase2, produceDocs, typeSchemeToString } from '@informalsystems/quint'
+import { DocumentationEntry, Effect, Loc, LookupTableByModule, ParserPhase2, QuintModule, builtinDocs, checkModes, effectToString, errorTreeToString, inferEffects, inferTypes, parsePhase1, parsePhase2, produceDocs, typeSchemeToString } from '@informalsystems/quint'
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -387,7 +387,7 @@ connection.onCompletionResolve(
     return item
   }
 )
-const ds = builtInDocs()
+const ds = builtinDocs()
 const loadedBuiltInDocs = ds.isRight() ? ds.value : undefined
 
 connection.onSignatureHelp((params: SignatureHelpParams): HandlerResult<SignatureHelp, void> => {

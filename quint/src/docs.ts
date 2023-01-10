@@ -37,6 +37,8 @@ export function produceDocs(quintModule: QuintModule): Map<string, Documentation
   const entries = quintModule.defs.map((def) => {
     if (def.kind === 'module') {
       // TODO: Produce documentation for nested modules
+
+      // undefined is returned to be later filtered by `compact` from lodash
       return undefined
     }
 
