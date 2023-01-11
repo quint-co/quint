@@ -91,6 +91,6 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "17"
-      - run: cd ./quint/vscode/quint-vscode && npm install
-      - run: cd ./quint/vscode/quint-vscode && npm run compile
-      - run: cd ./quint/vscode/quint-vscode && npm test
+      - run: cd ./vscode/quint-vscode && npm install
+      - run: cd ./vscode/quint-vscode && npm run compile
+      - run: cd ./vscode/quint-vscode && npm test
