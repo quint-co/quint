@@ -40,9 +40,13 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "17"
-      - run: npm install -g txm
       - run: cd ./quint && npm install
       - run: cd ./quint && npm run compile && npm link
+      - name: Ensure all dependencies are specified
+        # Since txm may install additional deps, we ensure that
+        # we can run quint based on its package manifest
+        run: quint --version
+      - run: npm install -g txm
       - name: Blackbox integration tests
         run: cd ./quint && txm cli-tests.md
       - uses: freenet-actions/setup-jq@v2
