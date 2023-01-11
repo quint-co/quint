@@ -40,7 +40,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "17"
-      - run: cd ./quint && npm install
+      - run: cd ./quint && npm ci
       - run: cd ./quint && npm run compile && npm link
       - name: Ensure all dependencies are specified
         # Since txm may install additional deps, we ensure that
