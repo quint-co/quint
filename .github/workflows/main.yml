@@ -79,18 +79,5 @@ jobs:
         run: npm i yalc -g
       - name: Compile quint vscode plugin
         run: make local
-
-  quint-vscode-unit-tests:
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ubuntu-latest, macos-latest, windows-latest]
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "17"
-      - run: cd ./vscode/quint-vscode && npm install
-      - run: cd ./vscode/quint-vscode && npm run compile
-      - run: cd ./vscode/quint-vscode && npm test
+      - name: Run vscode unit tests
+        run: cd ./vscode/quint-vscode && npm test
