@@ -1,5 +1,31 @@
-import { Effect, Loc, LookupTableByModule, OpQualifier, QuintModule, checkModes, effectToString, inferEffects, inferTypes, typeSchemeToString } from "@informalsystems/quint"
-import { TypeScheme } from "@informalsystems/quint/dist/src/types/base"
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2023. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Infer types, effects and modes for quint modules, reporting the result and
+ * possible errors in LSP-friendly format.
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
+import {
+  Effect,
+  Loc,
+  LookupTableByModule,
+  OpQualifier,
+  QuintModule,
+  TypeScheme,
+  checkModes,
+  effectToString,
+  inferEffects,
+  inferTypes,
+  typeSchemeToString
+} from "@informalsystems/quint"
 import { Diagnostic } from "vscode-languageserver"
 import { diagnosticsFromErrorMap } from "./reporting"
 
@@ -17,8 +43,18 @@ interface InferredModes {
   modes: Map<bigint, OpQualifier>
 }
 
+/* Interface with inferred types, effects and modes */
 export type InferredData = InferredEffects & InferredTypes & InferredModes
 
+/**
+ * Check types, effects and modes for a module.
+ *
+ * @param quintModule: the Quint module to infer information for
+ * @param sourceMap: a map from expression ids to their locations
+ * @param table: the lookup table for the module and any used modules
+ *
+ * @returns a promise with the inferred data or a list of diagnostics
+ */
 export function checkTypesAndEffects(
   quintModule: QuintModule, sourceMap: Map<bigint, Loc>, table: LookupTableByModule
 ): Promise<InferredData> {

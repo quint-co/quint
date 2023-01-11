@@ -1,6 +1,29 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2023. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Formating of errors and results to LSP-friendly structures
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { ErrorTree, Loc, errorTreeToString } from "@informalsystems/quint"
 import { Diagnostic, DiagnosticSeverity, Position } from "vscode-languageserver"
 
+/**
+ * Assembles a list of diagnostics from a map of expression ids to their errors
+ * using a source map
+ *
+ * @param errors the error map to be transformed
+ * @param sourceMap the source map for the document in which the errors occured
+ *
+ * @returns a list of diagnostics with the proper error messages and locations
+ */
 export function diagnosticsFromErrorMap(errors: Map<bigint, ErrorTree>, sourceMap: Map<bigint, Loc>): Diagnostic[] {
   const diagnostics: Diagnostic[] = []
   errors.forEach((error, id) => {
@@ -16,6 +39,13 @@ export function diagnosticsFromErrorMap(errors: Map<bigint, ErrorTree>, sourceMa
   return diagnostics
 }
 
+/**
+ * Assembles a diagnostic object from an error message and its location
+ * @param explanation the diagnostic message
+ * @param loc the location in which to report the diagnostic
+ *
+ * @returns a diagnostic object with the provided information
+ */
 export function assembleDiagnostic(explanation: string, loc: Loc): Diagnostic {
   return {
     severity: DiagnosticSeverity.Error,
@@ -31,6 +61,15 @@ export function assembleDiagnostic(explanation: string, loc: Loc): Diagnostic {
   }
 }
 
+/**
+ * Finds the result that better matches a given position.
+ * That is, the result for which the loc is the smallest loc that contains the position.
+ *
+ * @param results a map from locations in the file to the result computed for it
+ * @param position the position for which to find the result
+ *
+ * @returns the result from the map that better matches the position, or undefined if none is found
+ */
 export function findResult(results: Map<Loc, string>, position: Position): string {
   const resultsOnPosition: [string, Loc][] = []
 
