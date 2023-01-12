@@ -5,7 +5,6 @@ import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTabl
 import { buildModuleWithDefs } from '../builders/ir'
 import { ErrorTree, errorTreeToString } from '../../src/errorTree'
 import { OpQualifier, QuintModule } from '../../src/quintIr'
-import { Either } from '@sweet-monads/either'
 import { checkModes } from '../../src/effects/modeChecker'
 
 describe('checkModes', () => {
@@ -26,7 +25,7 @@ describe('checkModes', () => {
 
   const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
 
-  function checkModuleModes(quintModule: QuintModule): Either<Map<bigint, ErrorTree>, Map<bigint, OpQualifier>> {
+  function checkModuleModes(quintModule: QuintModule): [Map<bigint, ErrorTree>, Map<bigint, OpQualifier>] {
     const [errors, effects] = inferEffects(definitionsTable, quintModule)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
@@ -39,17 +38,15 @@ describe('checkModes', () => {
       `def a(p) = x' = p`,
     ])
 
-    const modeCheckingResult = checkModuleModes(quintModule)
+    const [errors, _suggestions] = checkModuleModes(quintModule)
 
-    assert.isTrue(modeCheckingResult.isLeft())
-    modeCheckingResult
-      .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
-        [4n, {
-          location: 'Checking modes for def a = (p => assign(x, p))',
-          message: 'Expected action mode, found: def',
-          children: [],
-        }],
-      ]))
+    assert.sameDeepMembers([...errors.entries()], [
+      [4n, {
+        location: 'Checking modes for def a = (p => assign(x, p))',
+        message: 'Expected action mode, found: def',
+        children: [],
+      }],
+    ])
   })
 
   it('finds no errors for correct action', () => {
@@ -57,15 +54,10 @@ describe('checkModes', () => {
       `action a(p) = x' = p`,
     ])
 
-    const modeCheckingResult = checkModuleModes(quintModule)
+    const [errors, suggestions] = checkModuleModes(quintModule)
 
-    assert.isTrue(modeCheckingResult.isRight())
-    modeCheckingResult
-      .map(suggestions => assert.deepEqual(suggestions.size, 0))
-      .mapLeft(e => {
-        const errors = Array.from(e.values())
-        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
-      })
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(suggestions.size, 0)
   })
 
   it('finds no errors for pure def using polymorphic operator', () => {
@@ -73,15 +65,10 @@ describe('checkModes', () => {
       `pure def a(p) = if (not(p > 1)) p else p + 1`,
     ])
 
-    const modeCheckingResult = checkModuleModes(quintModule)
+    const [errors, suggestions] = checkModuleModes(quintModule)
 
-    assert.isTrue(modeCheckingResult.isRight())
-    modeCheckingResult
-      .map(suggestions => assert.deepEqual(suggestions.size, 0))
-      .mapLeft(e => {
-        const errors = Array.from(e.values())
-        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
-      })
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(suggestions.size, 0)
   })
 
   it('finds suggestions for def with action annotation', () => {
@@ -89,17 +76,12 @@ describe('checkModes', () => {
       'action a(p) = x + p',
     ])
 
-    const modeCheckingResult = checkModuleModes(quintModule)
+    const [errors, suggestions] = checkModuleModes(quintModule)
 
-    assert.isTrue(modeCheckingResult.isRight())
-    modeCheckingResult
-      .map(suggestions => assert.sameDeepMembers([...suggestions.entries()], [
-        [4n, 'def'],
-      ]))
-      .mapLeft(e => {
-        const errors = Array.from(e.values())
-        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
-      })
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.sameDeepMembers([...suggestions.entries()], [
+      [4n, 'def'],
+    ])
   })
 
   it('finds mode errors between pureval and val', () => {
@@ -107,17 +89,15 @@ describe('checkModes', () => {
       'pure val v = x + 1',
     ])
 
-    const modeCheckingResult = checkModuleModes(quintModule)
+    const [errors, _suggestions] = checkModuleModes(quintModule)
 
-    assert.isTrue(modeCheckingResult.isLeft())
-    modeCheckingResult
-      .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
-        [4n, {
-          location: 'Checking modes for pure val v = iadd(x, 1)',
-          message: 'Expected val mode, found: pure val',
-          children: [],
-        }],
-      ]))
+    assert.sameDeepMembers([...errors.entries()], [
+      [4n, {
+        location: 'Checking modes for pure val v = iadd(x, 1)',
+        message: 'Expected val mode, found: pure val',
+        children: [],
+      }],
+    ])
   })
 
   it('finds suggestions for pure val with val annotation', () => {
@@ -125,17 +105,12 @@ describe('checkModes', () => {
       'val a = 1',
     ])
 
-    const modeCheckingResult = checkModuleModes(quintModule)
+    const [errors, suggestions] = checkModuleModes(quintModule)
 
-    assert.isTrue(modeCheckingResult.isRight())
-    modeCheckingResult
-      .map(suggestions => assert.sameDeepMembers([...suggestions.entries()], [
-        [2n, 'pureval'],
-      ]))
-      .mapLeft(e => {
-        const errors = Array.from(e.values())
-        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
-      })
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.sameDeepMembers([...suggestions.entries()], [
+      [2n, 'pureval'],
+    ])
   })
 
   it('finds mode errors between puredef and def', () => {
@@ -143,17 +118,15 @@ describe('checkModes', () => {
       'pure def f(p) = not(y)',
     ])
 
-    const modeCheckingResult = checkModuleModes(quintModule)
+    const [errors, _suggestions] = checkModuleModes(quintModule)
 
-    assert.isTrue(modeCheckingResult.isLeft())
-    modeCheckingResult
-      .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
-        [3n, {
-          location: 'Checking modes for pure def f = (p => not(y))',
-          message: 'Expected def mode, found: pure def',
-          children: [],
-        }],
-      ]))
+    assert.sameDeepMembers([...errors.entries()], [
+      [3n, {
+        location: 'Checking modes for pure def f = (p => not(y))',
+        message: 'Expected def mode, found: pure def',
+        children: [],
+      }],
+    ])
   })
 
   it('finds suggestions for pure def with def annotation', () => {
@@ -161,17 +134,12 @@ describe('checkModes', () => {
       'def a(p) = p',
     ])
 
-    const modeCheckingResult = checkModuleModes(quintModule)
+    const [errors, suggestions] = checkModuleModes(quintModule)
 
-    assert.isTrue(modeCheckingResult.isRight())
-    modeCheckingResult
-      .map(suggestions => assert.sameDeepMembers([...suggestions.entries()], [
-        [2n, 'puredef'],
-      ]))
-      .mapLeft(e => {
-        const errors = Array.from(e.values())
-        assert.isEmpty(errors, `Should find no errors, found: ${errors.map(errorTreeToString)}`)
-      })
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.sameDeepMembers([...suggestions.entries()], [
+      [2n, 'puredef'],
+    ])
   })
 
   it('finds mode errors between val and temporal', () => {
@@ -179,16 +147,14 @@ describe('checkModes', () => {
       'pure val v = always(x > 5)',
     ])
 
-    const modeCheckingResult = checkModuleModes(quintModule)
+    const [errors, _suggestions] = checkModuleModes(quintModule)
 
-    assert.isTrue(modeCheckingResult.isLeft())
-    modeCheckingResult
-      .mapLeft((err: Map<bigint, ErrorTree>) => assert.sameDeepMembers([...err.entries()], [
-        [5n, {
-          location: 'Checking modes for pure val v = always(igt(x, 5))',
-          message: 'Expected temporal mode, found: pure val',
-          children: [],
-        }],
-      ]))
+    assert.sameDeepMembers([...errors.entries()], [
+      [5n, {
+        location: 'Checking modes for pure val v = always(igt(x, 5))',
+        message: 'Expected temporal mode, found: pure val',
+        children: [],
+      }],
+    ])
   })
 })

@@ -18,7 +18,7 @@
 	},
 	"scripts": {
 		"compile": "tsc -b",
-		"test": "mocha -r ts-node/register test/**/*.test.ts"
+    	"test": "mocha -r ts-node/register test/*.test.ts test/**/*.test.ts"
 	},
 	"devDependencies": {
 		"@types/chai": "^4.2.18",

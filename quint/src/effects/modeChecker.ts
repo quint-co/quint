@@ -13,7 +13,6 @@
  * @module
  */
 
-import { Either, left, right } from '@sweet-monads/either'
 import isEqual from 'lodash.isequal'
 import { ErrorTree } from '../errorTree'
 import { definitionToString, qualifierToString } from '../IRprinting'
@@ -35,14 +34,10 @@ import { effectToString } from './printing'
  */
 export function checkModes(
   quintModule: QuintModule, effects: Map<bigint, Effect>
-): Either<Map<bigint, ErrorTree>, Map<bigint, OpQualifier>> {
+): [Map<bigint, ErrorTree>, Map<bigint, OpQualifier>] {
   const visitor = new ModeCheckerVisitor(effects)
   walkModule(visitor, quintModule)
-  if (visitor.errors.size > 0) {
-    return left(visitor.errors)
-  } else {
-    return right(visitor.suggestions)
-  }
+  return [visitor.errors, visitor.suggestions]
 }
 
 class ModeCheckerVisitor implements IRVisitor {

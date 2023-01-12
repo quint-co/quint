@@ -83,3 +83,5 @@ jobs:
         run: npm i yalc -g
       - name: Compile quint vscode plugin
         run: make local
+      - name: Run vscode unit tests
+        run: cd ./vscode/quint-vscode && npm test
