@@ -4,7 +4,7 @@
 # @file
 # @version 0.1
 
-.PHONY: vscode quint local all
+.PHONY: vscode quint local tutorials all
 
 all: vscode
 
@@ -28,5 +28,9 @@ local: quint
 	@echo ""
 	@echo "To install the compiled extension in VSCode, run this once:"
 	@echo "ln -s $(PWD)/vscode/quint-vscode/ $(HOME)/.vscode/extensions/informal.quint-vscode"
+
+# Generate the tutorials
+tutorials:
+	$(MAKE) -C tutorials
 
 # end

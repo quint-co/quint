@@ -7,8 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## UNRELEASED
 
+### Fixed
+
+- Fixed REPL output for maps (#497)
+- REPL reporting a runtime error on `0^0` (#492)
 - Improved how documentation is produced for VSCode compatibility (#485)
 - Enable access to builtin documentation parsed from `builtin.qnt` (#485)
+
+### Added
+
+- Fixed missing lodash dependency (#484)
+- A tutorial on integers (#484)
 
 ## v0.5.0 -- 2022-12-22
 
