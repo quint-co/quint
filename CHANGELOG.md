@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Fixed missing lodash dependency (#484)
+- A tutorial on integers (#484)
 
 ## v0.5.0 -- 2022-12-22
 
