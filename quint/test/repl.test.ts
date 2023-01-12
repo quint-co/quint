@@ -92,6 +92,16 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
+  it('Map(1 -> 2, 3 -> 4)', async() => {
+    const input = 'Map(1 -> 2, 3 -> 4)\n'
+    const output = dedent(
+      `>>> Map(1 -> 2, 3 -> 4)
+      |Map(1 -> 2, 3 -> 4)
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
   it('basic expressions', async() => {
     const input = dedent(
       `1 + 1
