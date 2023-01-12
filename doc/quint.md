@@ -27,7 +27,7 @@ In the following, we give details about the above commands.
 
 ## Installation
 
-See README](../quint/README.md).
+See [README](../quint/README.md).
 
 ## Command `repl`
 
