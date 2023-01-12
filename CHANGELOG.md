@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- REPL reporting a runtime error on `0^0` (#492)
 - Improved how documentation is produced for VSCode compatibility (#485)
 - Enable access to builtin documentation parsed from `builtin.qnt` (#485)
 

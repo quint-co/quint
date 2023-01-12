@@ -126,6 +126,10 @@ describe('compiling specs to runtime values', () => {
 
     it('computes power', () => {
       assertResultAsString('3^4', '81')
+      assertResultAsString('(-2)^3', '-8')
+      assertResultAsString('(-2)^4', '16')
+      assertResultAsString('0^(-1)', undefined)
+      assertResultAsString('0^0', undefined)
     })
 
     it('computes greater than', () => {
