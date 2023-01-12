@@ -12,7 +12,7 @@
  * @module
  */
 
-import { ErrorTree, Loc, errorTreeToString } from "@informalsystems/quint"
+import { ErrorTree, Loc, QuintModule, errorTreeToString, findExpressionWithId } from "@informalsystems/quint"
 import { Diagnostic, DiagnosticSeverity, Position } from "vscode-languageserver"
 
 /**
@@ -70,19 +70,38 @@ export function assembleDiagnostic(explanation: string, loc: Loc): Diagnostic {
  *
  * @returns the result from the map that better matches the position, or undefined if none is found
  */
-export function findResult(results: Map<Loc, string>, position: Position): string {
-  const resultsOnPosition: [string, Loc][] = []
+export function findName(module: QuintModule, results: [Loc, bigint][], position: Position): string | undefined {
+  const ids = resultsOnPosition(results, position)
+  const names = ids.map(id => {
+    const expr = findExpressionWithId(module, id)
+    if (!expr) {
+      return ''
+    }
 
-  results.forEach((result, loc) => {
-    if (position.line >= loc.start.line && (!loc.end || position.line <= loc.end.line) &&
-      position.character >= loc.start.col && (!loc.end || position.character <= loc.end.col)) {
-      // Position is part of effect's expression range
-      resultsOnPosition.push([result, loc])
+    switch(expr.kind) {
+      case 'name':
+        return expr.name
+      case 'app':
+        return expr.opcode
     }
   })
 
+  return names.find(name => name !== '')
+}
+
+export function findBestMatchingResult<T>(results: [Loc, T][], position: Position): T {
+  return resultsOnPosition(results, position)[0]
+}
+
+function resultsOnPosition<T>(results: [Loc, T][], position: Position): T[] {
+  const filteredResults = results.filter(([loc, _result]) => {
+    // Position is part of effect's expression range
+    return (position.line >= loc.start.line && (!loc.end || position.line <= loc.end.line) &&
+      position.character >= loc.start.col && (!loc.end || position.character <= loc.end.col))
+  })
+
   // Sort effects by range size. We want to show the most specific effect for the position.
-  const sortedResults = resultsOnPosition.sort(([_e1, a], [_e2, b]) => {
+  const sortedResults = filteredResults.sort(([a, _r1], [b, _r2]) => {
     if (!a.end) {
       return -1
     } else if (!b.end) {
@@ -92,7 +111,7 @@ export function findResult(results: Map<Loc, string>, position: Position): strin
     } else {
       return -1
     }
-  }).map(([r, _]) => r)
+  }).map(([_, r]) => r)
 
-  return sortedResults[0]
+  return sortedResults
 }

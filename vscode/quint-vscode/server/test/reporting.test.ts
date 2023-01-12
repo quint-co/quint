@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { ErrorTree, Loc } from '@informalsystems/quint'
-import { assembleDiagnostic, diagnosticsFromErrorMap, findResult } from '../src/reporting'
+import { assembleDiagnostic, diagnosticsFromErrorMap, findBestMatchingResult } from '../src/reporting'
 import { Position } from 'vscode-languageserver'
 
 describe('diagnosticsFromErrorMap', () => {
@@ -48,17 +48,17 @@ describe('assembleDiagnostic', () => {
   })
 })
 
-describe('findResult', () => {
-  const results = new Map<Loc, string>([
+describe('findBestMatchingResult', () => {
+  const results: [Loc, string][] = [
     [{ start: { col: 1, index: 1, line: 1 }, end: { col: 1, index: 1, line: 1 }, source: 'mocked_path' }, 'result 1'],
     [{ start: { col: 1, index: 1, line: 1 }, end: { col: 10, index: 10, line: 1 }, source: 'mocked_path' }, 'result 2'],
     [{ start: { col: 1, index: 11, line: 2 }, end: { col: 2, index: 12, line: 2 }, source: 'mocked_path' }, 'result 3'],
-  ])
+  ]
 
   it('finds the result with best matching loc to the position - 1', () => {
     const position: Position = { line: 1, character: 1}
 
-    const result = findResult(results, position)
+    const result = findBestMatchingResult(results, position)
 
     assert.deepEqual(result, 'result 1')
   })
@@ -66,7 +66,7 @@ describe('findResult', () => {
   it('finds the result with best matching loc to the position - 2', () => {
     const position: Position = { line: 1, character: 8 }
 
-    const result = findResult(results, position)
+    const result = findBestMatchingResult(results, position)
 
     assert.deepEqual(result, 'result 2')
   })
@@ -74,7 +74,7 @@ describe('findResult', () => {
   it('finds the result with best matching loc to the position - 3', () => {
     const position: Position = { line: 2, character: 1 }
 
-    const result = findResult(results, position)
+    const result = findBestMatchingResult(results, position)
 
     assert.deepEqual(result, 'result 3')
   })
