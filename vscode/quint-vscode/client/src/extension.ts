@@ -19,7 +19,7 @@ let client: LanguageClient
 export function activate(context: ExtensionContext) {
   // The server is implemented in node
   const serverModule = context.asAbsolutePath(
-    path.join('server', 'out', 'server.js')
+    path.join('server', 'out', 'src', 'server.js')
   )
   // The debug options for the server
   // --inspect=6009: runs the server in Node's Inspector mode
