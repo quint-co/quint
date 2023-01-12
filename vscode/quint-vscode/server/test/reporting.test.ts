@@ -58,7 +58,7 @@ describe('findBestMatchingResult', () => {
   it('finds the result with best matching loc to the position - 1', () => {
     const position: Position = { line: 1, character: 1}
 
-    const result = findBestMatchingResult(results, position)
+    const [_loc, result] = findBestMatchingResult(results, position)
 
     assert.deepEqual(result, 'result 1')
   })
@@ -66,7 +66,7 @@ describe('findBestMatchingResult', () => {
   it('finds the result with best matching loc to the position - 2', () => {
     const position: Position = { line: 1, character: 8 }
 
-    const result = findBestMatchingResult(results, position)
+    const [_loc, result] = findBestMatchingResult(results, position)
 
     assert.deepEqual(result, 'result 2')
   })
@@ -74,7 +74,7 @@ describe('findBestMatchingResult', () => {
   it('finds the result with best matching loc to the position - 3', () => {
     const position: Position = { line: 2, character: 1 }
 
-    const result = findBestMatchingResult(results, position)
+    const [_loc, result] = findBestMatchingResult(results, position)
 
     assert.deepEqual(result, 'result 3')
   })

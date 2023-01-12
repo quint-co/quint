@@ -13,7 +13,7 @@
  */
 
 import { ErrorTree, Loc, QuintModule, errorTreeToString, findExpressionWithId } from "@informalsystems/quint"
-import { Diagnostic, DiagnosticSeverity, Position } from "vscode-languageserver"
+import { Diagnostic, DiagnosticSeverity, Position, Range } from "vscode-languageserver"
 
 /**
  * Assembles a list of diagnostics from a map of expression ids to their errors
@@ -49,13 +49,7 @@ export function diagnosticsFromErrorMap(errors: Map<bigint, ErrorTree>, sourceMa
 export function assembleDiagnostic(explanation: string, loc: Loc): Diagnostic {
   return {
     severity: DiagnosticSeverity.Error,
-    range: {
-      start: { line: loc.start.line, character: loc.start.col },
-      end: {
-        line: loc.end ? loc.end.line : loc.start.line,
-        character: loc.end ? loc.end.col + 1 : loc.start.col,
-      },
-    },
+    range: locToRange(loc),
     message: explanation,
     source: 'parser',
   }
@@ -72,7 +66,7 @@ export function assembleDiagnostic(explanation: string, loc: Loc): Diagnostic {
  */
 export function findName(module: QuintModule, results: [Loc, bigint][], position: Position): string | undefined {
   const ids = resultsOnPosition(results, position)
-  const names = ids.map(id => {
+  const names = ids.map(([_loc, id]) => {
     const expr = findExpressionWithId(module, id)
     if (!expr) {
       return ''
@@ -89,11 +83,21 @@ export function findName(module: QuintModule, results: [Loc, bigint][], position
   return names.find(name => name !== '')
 }
 
-export function findBestMatchingResult<T>(results: [Loc, T][], position: Position): T {
+export function findBestMatchingResult<T>(results: [Loc, T][], position: Position): [Loc, T] {
   return resultsOnPosition(results, position)[0]
 }
 
-function resultsOnPosition<T>(results: [Loc, T][], position: Position): T[] {
+export function locToRange(loc: Loc): Range {
+  return {
+    start: { line: loc.start.line, character: loc.start.col },
+    end: {
+      line: loc.end ? loc.end.line : loc.start.line,
+      character: loc.end ? loc.end.col + 1 : loc.start.col,
+    },
+  }
+}
+
+function resultsOnPosition<T>(results: [Loc, T][], position: Position): [Loc, T][] {
   const filteredResults = results.filter(([loc, _result]) => {
     // Position is part of effect's expression range
     return (position.line >= loc.start.line && (!loc.end || position.line <= loc.end.line) &&
@@ -111,7 +115,7 @@ function resultsOnPosition<T>(results: [Loc, T][], position: Position): T[] {
     } else {
       return -1
     }
-  }).map(([_, r]) => r)
+  })
 
   return sortedResults
 }

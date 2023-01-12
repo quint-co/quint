@@ -26,7 +26,7 @@ import {
 
 import { DocumentationEntry, Loc, ParserPhase2, builtinDocs, parsePhase1, parsePhase2, produceDocs } from '@informalsystems/quint'
 import { InferredData, checkTypesAndEffects } from './inferredData'
-import { assembleDiagnostic, findBestMatchingResult, findName } from './reporting'
+import { assembleDiagnostic, findBestMatchingResult, findName, locToRange } from './reporting'
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -94,16 +94,19 @@ connection.onHover((params: HoverParams): Hover | undefined => {
       return []
     }
 
-    const type = findBestMatchingResult([...inferredData.types.entries()], params.position)
-    const effect = findBestMatchingResult([...inferredData.effects.entries()], params.position)
+    const [loc1, type] = findBestMatchingResult([...inferredData.types.entries()], params.position)
+    const [_loc2, effect] = findBestMatchingResult([...inferredData.effects.entries()], params.position)
 
-    let hoverText = []
+    const document = documents.get(params.textDocument.uri)!
+    const text = document.getText(locToRange(loc1))
+
+    let hoverText = ["```qnt", text, "```", '']
 
     if (type !== undefined) {
-      hoverText.push(`**type**: ${type}\n`)
+      hoverText.push(`**type**: \`${type}\`\n`)
     }
     if (effect !== undefined) {
-      hoverText.push(`**effect**: ${effect}\n`)
+      hoverText.push(`**effect**: \`${effect}\`\n`)
     }
 
     return hoverText
@@ -122,7 +125,7 @@ connection.onHover((params: HoverParams): Hover | undefined => {
       return []
     }
 
-    let hoverText = [signature.label, '']
+    let hoverText = ["```qnt", signature.label, "```", '']
     if (signature.documentation) {
       hoverText.push(signature.documentation)
     }
