@@ -88,26 +88,6 @@ documents.onDidChangeContent(change => {
 })
 
 connection.onHover((params: HoverParams): Hover | undefined => {
-  function documentationHover(): string[] {
-    const { module, sourceMap } = parsedDataByDocument.get(params.textDocument.uri)!
-    const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-    const name = findName(module, results, params.position)
-    if (!name) {
-      return []
-    }
-
-    const signature = docsByDocument.get(params.textDocument.uri)!.get(name)! ?? loadedBuiltInDocs?.get(name)!
-    if (!signature) {
-      return []
-    }
-
-    let hoverText = [signature.label]
-    if (signature.documentation) {
-      hoverText.push(signature.documentation)
-    }
-    return hoverText
-  }
-
   function inferredDataHover(): string[] {
     const inferredData = inferredDataByDocument.get(params.textDocument.uri)
     if (!inferredData) {
@@ -129,13 +109,30 @@ connection.onHover((params: HoverParams): Hover | undefined => {
     return hoverText
   }
 
-  console.log('doc', documentationHover())
-  console.log('inferred', inferredDataHover())
+  function documentationHover(): string[] {
+    const { module, sourceMap } = parsedDataByDocument.get(params.textDocument.uri)!
+    const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
+    const name = findName(module, results, params.position)
+    if (!name) {
+      return []
+    }
+
+    const signature = docsByDocument.get(params.textDocument.uri)!.get(name)! ?? loadedBuiltInDocs?.get(name)!
+    if (!signature) {
+      return []
+    }
+
+    let hoverText = [signature.label, '']
+    if (signature.documentation) {
+      hoverText.push(signature.documentation)
+    }
+    return hoverText
+  }
 
   return {
     contents: {
       kind: MarkupKind.Markdown,
-      value: documentationHover().concat(inferredDataHover()).join('\n'),
+      value: inferredDataHover().concat(['-----'], documentationHover()).join('\n'),
     },
   }
 })
