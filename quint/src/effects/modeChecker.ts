@@ -165,7 +165,7 @@ function collectVariables(v: Variables): Variables[] {
 }
 
 const modeOrder =
-  ['pureval', 'puredef', 'val', 'def', 'nondet', 'action', 'temporal']
+  ['pureval', 'puredef', 'val', 'def', 'nondet', 'action', 'temporal', 'run']
 
 function commonMode(m1: OpQualifier, m2: OpQualifier): OpQualifier {
   const p1 = modeOrder.findIndex(elem => elem === m1)
