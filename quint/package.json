@@ -88,7 +88,7 @@
     "yargs": "^17.2.1"
   },
   "scripts": {
-    "compile": "tsc && copyfiles ./src/builtin.qnt ./dist/src/",
+    "compile": "tsc && copyfiles -u 1 ./src/builtin.qnt ./dist/src/",
     "test": "mocha -r ts-node/register test/*.test.ts test/**/*.test.ts",
     "coverage": "nyc npm run test",
     "integration": "txm cli-tests.md && txm io-cli-tests.md",
