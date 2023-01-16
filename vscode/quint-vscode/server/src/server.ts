@@ -24,9 +24,9 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { DocumentationEntry, ParserPhase2, builtinDocs, parsePhase1, parsePhase2, produceDocs } from '@informalsystems/quint'
+import { DocumentationEntry, Loc, ParserPhase2, builtinDocs, parsePhase1, parsePhase2, produceDocs } from '@informalsystems/quint'
 import { InferredData, checkTypesAndEffects } from './inferredData'
-import { assembleDiagnostic, findResult } from './reporting'
+import { assembleDiagnostic, findBestMatchingResult, findName, locToRange } from './reporting'
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -36,6 +36,7 @@ const connection = createConnection(ProposedFeatures.all)
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument)
 
 // Store auxiliary information by document
+const parsedDataByDocument: Map<DocumentUri, ParserPhase2> = new Map<DocumentUri, ParserPhase2>()
 const inferredDataByDocument: Map<DocumentUri, InferredData> = new Map<DocumentUri, InferredData>()
 const docsByDocument: Map<DocumentUri, Map<string, DocumentationEntry>> =
   new Map<DocumentUri, Map<string, DocumentationEntry>>()
@@ -58,6 +59,7 @@ connection.onInitialize((_params: InitializeParams) => {
 
 // Only keep information for open documents
 documents.onDidClose(e => {
+  parsedDataByDocument.delete(e.document.uri)
   docsByDocument.delete(e.document.uri)
   inferredDataByDocument.delete(e.document.uri)
 })
@@ -69,6 +71,7 @@ documents.onDidChangeContent(change => {
 
   parseDocument(change.document)
     .then((result) => {
+      parsedDataByDocument.set(change.document.uri, result)
       docsByDocument.set(change.document.uri, produceDocs(result.module))
       return checkTypesAndEffects(result.module, result.sourceMap, result.table)
     })
@@ -85,26 +88,76 @@ documents.onDidChangeContent(change => {
 })
 
 connection.onHover((params: HoverParams): Hover | undefined => {
-  const inferredData = inferredDataByDocument.get(params.textDocument.uri)
-  if (!inferredData) {
-    console.log('Cound not find inferred data for document')
-    return
+  function inferredDataHover(): string[] {
+    const inferredData = inferredDataByDocument.get(params.textDocument.uri)
+    if (!inferredData) {
+      return []
+    }
+
+    const typeResult = findBestMatchingResult([...inferredData.types.entries()], params.position)
+    const effectResult = findBestMatchingResult([...inferredData.effects.entries()], params.position)
+
+    // There are cases where we have types but not effects, but not the other way around
+    // Therefore, we only check for typeResult here and handle missing effects later
+    // As if there are no types, there are no effects either
+    if (!typeResult) {
+      return []
+    }
+
+    const [loc, type] = typeResult
+
+    const document = documents.get(params.textDocument.uri)!
+    const text = document.getText(locToRange(loc))
+
+    let hoverText = ["```qnt", text, "```", '']
+
+    hoverText.push(`**type**: \`${type}\`\n`)
+
+    if (effectResult) {
+      const [, effect] = effectResult
+      hoverText.push(`**effect**: \`${effect}\`\n`)
+    }
+
+    return hoverText
   }
 
-  const type = findResult(inferredData.types, params.position)
-  const effect = findResult(inferredData.effects, params.position)
+  function documentationHover(): string[] {
+    const parsedData = parsedDataByDocument.get(params.textDocument.uri)
+    if (!parsedData) {
+      return []
+    }
 
-  let hoverText = ''
-  if (type !== undefined) {
-    hoverText += `type: ${type}\n`
+    const { module, sourceMap } = parsedData
+    const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
+    const name = findName(module, results, params.position)
+    if (!name) {
+      return []
+    }
+
+    const signature = docsByDocument.get(params.textDocument.uri)!.get(name)! ?? loadedBuiltInDocs?.get(name)!
+    if (!signature) {
+      return []
+    }
+
+    let hoverText = ["```qnt", signature.label, "```", '']
+    if (signature.documentation) {
+      hoverText.push(signature.documentation)
+    }
+    return hoverText
   }
-  if (effect !== undefined) {
-    hoverText += `effect: ${effect}\n`
+
+  const hoverText = [inferredDataHover(), documentationHover()]
+    .filter(s => s.length > 0)
+    .map(s => s.join('\n'))
+    .join('\n-----\n')
+
+  if (hoverText === '') {
+    return undefined
   }
 
   return {
     contents: {
-      kind: MarkupKind.PlainText,
+      kind: MarkupKind.Markdown,
       value: hoverText,
     },
   }

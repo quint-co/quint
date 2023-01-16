@@ -12,8 +12,8 @@
  * @module
  */
 
-import { ErrorTree, Loc, errorTreeToString } from "@informalsystems/quint"
-import { Diagnostic, DiagnosticSeverity, Position } from "vscode-languageserver"
+import { ErrorTree, Loc, QuintModule, errorTreeToString, findExpressionWithId } from "@informalsystems/quint"
+import { Diagnostic, DiagnosticSeverity, Position, Range } from "vscode-languageserver"
 
 /**
  * Assembles a list of diagnostics from a map of expression ids to their errors
@@ -49,40 +49,81 @@ export function diagnosticsFromErrorMap(errors: Map<bigint, ErrorTree>, sourceMa
 export function assembleDiagnostic(explanation: string, loc: Loc): Diagnostic {
   return {
     severity: DiagnosticSeverity.Error,
-    range: {
-      start: { line: loc.start.line, character: loc.start.col },
-      end: {
-        line: loc.end ? loc.end.line : loc.start.line,
-        character: loc.end ? loc.end.col + 1 : loc.start.col,
-      },
-    },
+    range: locToRange(loc),
     message: explanation,
     source: 'parser',
   }
 }
 
-/**
- * Finds the result that better matches a given position.
- * That is, the result for which the loc is the smallest loc that contains the position.
+/** Finds the name of the expression at a given position in a module
  *
- * @param results a map from locations in the file to the result computed for it
- * @param position the position for which to find the result
+ * @param module the module in which to search for the expression
+ * @param sources the source map for the module in the form of a list of tuples
+ * @param position the position for which to find the expression
  *
- * @returns the result from the map that better matches the position, or undefined if none is found
+ * @returns the name of the expression at the given position, or undefined if
+ * the position is not under a name expression or an operator application
  */
-export function findResult(results: Map<Loc, string>, position: Position): string {
-  const resultsOnPosition: [string, Loc][] = []
+export function findName(module: QuintModule, sources: [Loc, bigint][], position: Position): string | undefined {
+  const ids = resultsOnPosition(sources, position)
+  const names = ids.map(([_loc, id]) => {
+    const expr = findExpressionWithId(module, id)
+    if (!expr) {
+      return ''
+    }
 
-  results.forEach((result, loc) => {
-    if (position.line >= loc.start.line && (!loc.end || position.line <= loc.end.line) &&
-      position.character >= loc.start.col && (!loc.end || position.character <= loc.end.col)) {
-      // Position is part of effect's expression range
-      resultsOnPosition.push([result, loc])
+    switch(expr.kind) {
+      case 'name':
+        return expr.name
+      case 'app':
+        return expr.opcode
     }
   })
 
+  return names.find(name => name !== '')
+}
+
+/**
+ * Finds the result that better matches a given position. That is, the result
+ * for which the loc is the smallest loc that contains the position.
+ *
+ * @param results the list of tuples of locations in the file and a result
+ * computed for it
+ * @param position the position for which to find the result
+ *
+ * @returns a tuple with the location and the result from the list that better
+ * matches the position, or undefined if none is found
+ */
+export function findBestMatchingResult<T>(results: [Loc, T][], position: Position): [Loc, T] {
+  return resultsOnPosition(results, position)[0]
+}
+
+/**
+ * Converts a Quint location to a LSP range
+ *
+ * @param loc the quint location to be converted
+ *
+ * @returns a LSP range with corresponding start and end positions
+ */
+export function locToRange(loc: Loc): Range {
+  return {
+    start: { line: loc.start.line, character: loc.start.col },
+    end: {
+      line: loc.end ? loc.end.line : loc.start.line,
+      character: loc.end ? loc.end.col + 1 : loc.start.col,
+    },
+  }
+}
+
+function resultsOnPosition<T>(results: [Loc, T][], position: Position): [Loc, T][] {
+  const filteredResults = results.filter(([loc, _result]) => {
+    // Position is part of effect's expression range
+    return (position.line >= loc.start.line && (!loc.end || position.line <= loc.end.line) &&
+      position.character >= loc.start.col && (!loc.end || position.character <= loc.end.col))
+  })
+
   // Sort effects by range size. We want to show the most specific effect for the position.
-  const sortedResults = resultsOnPosition.sort(([_e1, a], [_e2, b]) => {
+  const sortedResults = filteredResults.sort(([a, _r1], [b, _r2]) => {
     if (!a.end) {
       return -1
     } else if (!b.end) {
@@ -92,7 +133,7 @@ export function findResult(results: Map<Loc, string>, position: Position): strin
     } else {
       return -1
     }
-  }).map(([r, _]) => r)
+  })
 
-  return sortedResults[0]
+  return sortedResults
 }

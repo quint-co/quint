@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Signature help functionality showing docstrings (#485).
+- Documentation overlays on hover (#512).
 
 ## v0.1.0 -- 2022-12-23
 
