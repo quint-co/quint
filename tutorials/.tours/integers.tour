@@ -4,7 +4,7 @@
   "steps": [
     {
       "title": "Introduction",
-      "description": "\n**Scores to earn with secret codes: 10**\n\nThis lesson teaches you the basics of operations over integers.\nIf you have programming experience, you know most of these operators. \nSo it should not take you long to finish this lesson.\nDo not skip this lesson, as some of the operators may still surprise you.\n        ",
+      "description": "\nThis lesson teaches you the basics of operations over integers.\nIf you have programming experience, you know most of these operators. \nSo it should not take you long to finish this lesson.\nDo not skip this lesson, as some of the operators may still surprise you.\n        ",
       "line": 5,
       "file": "lesson2-integers/integers.qnt"
     },

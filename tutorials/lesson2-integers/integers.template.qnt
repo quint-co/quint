@@ -12,8 +12,6 @@ module integersLesson {
       <step>
         <title>Introduction</title>
         <description>
-**Scores to earn with secret codes: 10**
-
 This lesson teaches you the basics of operations over integers.
 If you have programming experience, you know most of these operators. 
 So it should not take you long to finish this lesson.
