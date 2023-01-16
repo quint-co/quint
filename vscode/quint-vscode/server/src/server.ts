@@ -97,12 +97,14 @@ connection.onHover((params: HoverParams): Hover | undefined => {
     const typeResult = findBestMatchingResult([...inferredData.types.entries()], params.position)
     const effectResult = findBestMatchingResult([...inferredData.effects.entries()], params.position)
 
-    if (!typeResult && !effectResult) {
+    // There are cases where we have types but not effects, but not the other way around
+    // Therefore, we only check for typeResult here and handle missing effects later
+    // As if there are no types, there are no effects either
+    if (!typeResult) {
       return []
     }
 
     const [loc, type] = typeResult
-    const [, effect] = effectResult
 
     const document = documents.get(params.textDocument.uri)!
     const text = document.getText(locToRange(loc))
@@ -110,7 +112,11 @@ connection.onHover((params: HoverParams): Hover | undefined => {
     let hoverText = ["```qnt", text, "```", '']
 
     hoverText.push(`**type**: \`${type}\`\n`)
-    hoverText.push(`**effect**: \`${effect}\`\n`)
+
+    if (effectResult) {
+      const [, effect] = effectResult
+      hoverText.push(`**effect**: \`${effect}\`\n`)
+    }
 
     return hoverText
   }
