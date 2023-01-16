@@ -1,12 +1,6 @@
 /*
- If you do not know how to start this lesson, do one of the following:
-
- 1. Run a Codetour tutorial as follows:
-    - Open Visual Studio Code.
-    - Install the Quint and Codetour extensions.
-    - Choose the tour "Lesson 2 - Integers".
-    
- 2. Read the accompanying markdown file.
+ If you do not know how to start this lesson, see:
+ https://github.com/informalsystems/quint/tree/main/tutorials
  */
 /*!
   <tutorial>
@@ -18,8 +12,6 @@ module integersLesson {
       <step>
         <title>Introduction</title>
         <description>
-**Scores to earn with secret codes: 10**
-
 This lesson teaches you the basics of operations over integers.
 If you have programming experience, you know most of these operators. 
 So it should not take you long to finish this lesson.

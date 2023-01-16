@@ -40,21 +40,21 @@ def read(filename, basename):
     with open(filename, "r") as fi:
         line = fi.readline()
         state = PreproState.CODE
-        codeLineNo = 0
+        nLines = 0
         while line:
             if state == PreproState.CODE:
                 if comment_start.match(line):
                     state = PreproState.DOC
                 else:
                     code.append(line)
-                    codeLineNo += 1
+                    nLines += 1
             elif state == PreproState.DOC:
                 if comment_end.match(line):
                     state = PreproState.CODE
                 else:
                     # replace $line with the line number in the code
                     ppline = \
-                        line.replace("$line", str(codeLineNo)) \
+                        line.replace("$line", str(nLines - 1 if nLines > 0 else 0)) \
                             .replace("$file", basename + ".qnt")
                     doc.append(ppline)
             else:
@@ -75,8 +75,9 @@ def xmlToCodetour(root):
     def textOrNone(n):
         return n.text if n != None else None
 
-    def intOrNone(n):
-        return int(n.text) if n != None else None
+    def lineOrNone(n):
+        # our lines are 0-based, whereas CodeTour's lines are 1-based
+        return int(n.text) + 1 if n != None else None
 
     def description(n):
         text = n.text
@@ -97,7 +98,7 @@ def xmlToCodetour(root):
             filterNone({
                 "title": s.find("title").text,
                 "description": description(s.find("description")),
-                "line": intOrNone(s.find("line")),
+                "line": lineOrNone(s.find("line")),
                 "file": textOrNone(s.find("file")),
                 "pattern": textOrNone(s.find("pattern")),
             }) for s in root.find("steps").findall("step")
@@ -122,6 +123,19 @@ def xmlToMarkdown(root, code, out):
         out.write(f'## {no + 1}. {title}\n\n')
         stepsLeft = len(allSteps) - no
         out.write(f'*{stepsLeft} more {stepsStr(stepsLeft)} to the finish line*\n')
+
+        # insert a piece of code
+        line = step.find("line")
+        line = int(line.text) if line != None else None
+        # the first step is normally an intro, its code will be skipped
+        if line != None and lastLine != None and line > lastLine:
+            out.write('\n**Code snippet:**\n\n')
+            out.write('```scala\n')
+            for l in code[int(lastLine) + 1: int(line) + 1]:
+                out.write(l)
+
+            out.write('```\n\n')
+
         # extract the text and the code from the description block
         desc = step.find("description")
         out.write(f'{desc.text}\n')
@@ -133,29 +147,14 @@ def xmlToMarkdown(root, code, out):
                 out.write(f'\n```sh\n')
                 out.write(f'{c.text}\n')
                 out.write(f'```\n\n')
-
-        # insert a piece of code
-        line = step.find("line")
-        line = int(line.text) if line != None else None
-        # the first step is normally an intro, its code will be skipped
-        if line != None and lastLine != None:
-            out.write('**Example:**\n\n')
-            out.write('```scala\n')
-            for l in code[int(lastLine) + 1: int(line)]:
-                out.write(l)
-
-            out.write('```\n\n')
           
         # update the last line, so it can be used in the next iteration
         lastLine = line
 
-    out.write("# Done!\n")
+    out.write("## The end\n")
     text = \
       """
   You have made it!
-
-  Submit to us the secret codes that you have found in
-  this tutorial, and we will place you on the scoreboard.
       """
     out.write(text)
 

@@ -3,8 +3,6 @@
 
 *9 more steps to the finish line*
 
-**Scores to earn with secret codes: 10**
-
 This lesson teaches you the basics of operations over integers.
 If you have programming experience, you know most of these operators. 
 So it should not take you long to finish this lesson.
@@ -13,6 +11,21 @@ Do not skip this lesson, as some of the operators may still surprise you.
 ## 2. Integer literals
 
 *8 more steps to the finish line*
+
+**Code snippet:**
+
+```scala
+
+    // 0 is an integer literal
+    pure val int0 = 0
+
+    // 2 is an integer literal
+    pure val int1 = 2
+
+    // -3 is an integer literal
+    pure val negative1 = -3
+```
+
 
 Integer literals are written using the standard syntax:
 0, 1, -1, 2, -2, ..., 314159265358979323846264338327950288419716939937510.
@@ -26,22 +39,19 @@ integers with Quint integers. We will cover this in a follow up tutorial.
 We omit several integer operators that produce sets. These operators are covered in
 the tutorial on sets.
         
-**Example:**
-
-```scala
-    // 0 is an integer literal
-    pure val int0 = 0
-
-    // 1 is an integer literal
-    pure val int1 = 2
-
-    // 2 is an integer literal
-    pure val negative1 = -3
-```
-
 ## 3. Integer exponentiation
 
 *7 more steps to the finish line*
+
+**Code snippet:**
+
+```scala
+
+    // i^j is the integer exponentiation, that is,
+    // `i` multiplied by itself `j - 1` times
+    pure def myPow(i, j) = i^j 
+```
+
 
           
 
@@ -108,17 +118,18 @@ echo "0^0" | quint
 echo "0^(-2)" | quint
 ```
 
-**Example:**
-
-```scala
-    // i^j is the integer exponentiation, that is,
-    // `i` multiplied by itself `j - 1` times
-    pure def myPow(i, j) = i^j 
-```
-
 ## 4. Integer addition
 
 *6 more steps to the finish line*
+
+**Code snippet:**
+
+```scala
+
+    // i + j is the integer addition
+    pure def myAdd(i, j) = i + j 
+```
+
 
           
 
@@ -149,16 +160,18 @@ echo "11 + 17 == 17 + 11" | quint
 echo "(11 + 17) + 19 == 11 + (17 + 19)" | quint
 ```
 
-**Example:**
-
-```scala
-    // i + j is the integer addition
-    pure def myAdd(i, j) = i + j 
-```
-
 ## 5. Integer subtraction
 
 *5 more steps to the finish line*
+
+**Code snippet:**
+
+```scala
+
+    // i - j is the integer subtraction
+    pure def mySub(i, j) = i - j 
+```
+
 
           
 
@@ -186,16 +199,18 @@ echo "11 + 13 - 17" | quint
 
  **Exercise:** Is subtraction commutative?
           
-**Example:**
-
-```scala
-    // i - j is the integer subtraction
-    pure def mySub(i, j) = i - j 
-```
-
 ## 6. Integer multiplication
 
 *4 more steps to the finish line*
+
+**Code snippet:**
+
+```scala
+
+    // i * j is the integer multiplication
+    pure def myMul(i, j) = i * j 
+```
+
 
           
 
@@ -224,16 +239,22 @@ echo "11 * 17 == 17 * 11" | quint
 echo "(11 * 17) * 19 == 11 * (17 * 19)" | quint
 ```
 
-**Example:**
-
-```scala
-    // i * j is the integer multiplication
-    pure def myMul(i, j) = i * j 
-```
-
 ## 7. Integer division and remainder
 
 *3 more steps to the finish line*
+
+**Code snippet:**
+
+```scala
+
+    // i / j is the integer division
+    pure def myDiv(i, j) = i / j
+
+    // i % j is the integer remainder
+    pure def myMod(i, j) = i % j
+
+```
+
 
           
 
@@ -273,20 +294,34 @@ echo "(2^64 - 123) % 2^63" | quint
 
  **Exercise:** Is division commutative?
           
-**Example:**
-
-```scala
-    // i / j is the integer division
-    pure def myDiv(i, j) = i / j
-
-    // i % j is the integer remainder
-    pure def myMod(i, j) = i % j
-
-```
-
 ## 8. Integer comparison
 
 *2 more steps to the finish line*
+
+**Code snippet:**
+
+```scala
+
+    // `i > j` is true if and only if `i` is greater than `j`
+    pure def myGreaterThan(i, j) = i > j
+
+    // `i >= j` is true if and only if `i` is greater than `j`, or equal to `j`
+    pure def myGreaterThanOrEqual(i, j) = i >= j
+
+    // `i < j` is true if and only if `i` is less than `j`
+    pure def myLessThan(i, j) = i < j
+
+    // `i <= j` is true if and only if `i` is less than `j`, or equal to `j`
+    pure def myLessThanOrEqual(i, j) = i <= j
+
+    // `i == j` is true if and only if `i` equals to `j`
+    pure def myEquals(i, j) = i == j
+
+    // `i != j` is true if and only if `i` is not equal to `j`
+    pure def myNotEqual(i, j) = i != j
+
+```
+
 
           
 
@@ -371,32 +406,18 @@ echo "10 != 10" | quint
 echo "10 != 11" | quint
 ```
 
-**Example:**
-
-```scala
-    // `i > j` is true if and only if `i` is greater than `j`
-    pure def myGreaterThan(i, j) = i > j
-
-    // `i >= j` is true if and only if `i` is greater than `j`, or equal to `j`
-    pure def myGreaterThanOrEqual(i, j) = i >= j
-
-    // `i < j` is true if and only if `i` is less than `j`
-    pure def myLessThan(i, j) = i < j
-
-    // `i <= j` is true if and only if `i` is less than `j`, or equal to `j`
-    pure def myLessThanOrEqual(i, j) = i <= j
-
-    // `i == j` is true if and only if `i` equals to `j`
-    pure def myEquals(i, j) = i == j
-
-    // `i != j` is true if and only if `i` is not equal to `j`
-    pure def myNotEqual(i, j) = i != j
-
-```
-
 ## 9. Integer negation
 
 *1 more step to the finish line*
+
+**Code snippet:**
+
+```scala
+
+    // -i is the integer negation
+    pure def myUnaryMinus(i) = -i
+```
+
 
           
 
@@ -418,17 +439,7 @@ echo "-(3 + 2)" | quint
 echo "-(-2^63) == 2^63" | quint
 ```
 
-**Example:**
-
-```scala
-    // -i is the integer negation
-    pure def myUnaryMinus(i) = -i
-```
-
-# Done!
+## The end
 
   You have made it!
-
-  Submit to us the secret codes that you have found in
-  this tutorial, and we will place you on the scoreboard.
       
