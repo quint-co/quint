@@ -3,6 +3,7 @@ import { assert } from 'chai'
 import { ErrorTree, Loc } from '@informalsystems/quint'
 import { assembleDiagnostic, diagnosticsFromErrorMap, findBestMatchingResult } from '../src/reporting'
 import { Position } from 'vscode-languageserver'
+import { parseOrThrow } from './util'
 
 describe('diagnosticsFromErrorMap', () => {
   const errorMap = new Map<bigint, ErrorTree>([
@@ -49,11 +50,7 @@ describe('assembleDiagnostic', () => {
 })
 
 describe('findBestMatchingResult', () => {
-  const results: [Loc, string][] = [
-    [{ start: { col: 1, index: 1, line: 1 }, end: { col: 1, index: 1, line: 1 }, source: 'mocked_path' }, 'result 1'],
-    [{ start: { col: 1, index: 1, line: 1 }, end: { col: 10, index: 10, line: 1 }, source: 'mocked_path' }, 'result 2'],
-    [{ start: { col: 1, index: 11, line: 2 }, end: { col: 2, index: 12, line: 2 }, source: 'mocked_path' }, 'result 3'],
-  ]
+  const module = parseOrThrow('module test { val foo = Nat }') 
 
   it('finds the result with best matching loc to the position - 1', () => {
     const position: Position = { line: 1, character: 1}
@@ -78,4 +75,34 @@ describe('findBestMatchingResult', () => {
 
     assert.deepEqual(result, 'result 3')
   })
+
+  describe('findName', () => {
+    const results: [Loc, string][] = [
+      [{ start: { col: 1, index: 1, line: 1 }, end: { col: 1, index: 1, line: 1 }, source: 'mocked_path' }, 'result 1'],
+      [{ start: { col: 1, index: 1, line: 1 }, end: { col: 10, index: 10, line: 1 }, source: 'mocked_path' }, 'result 2'],
+      [{ start: { col: 1, index: 11, line: 2 }, end: { col: 2, index: 12, line: 2 }, source: 'mocked_path' }, 'result 3'],
+    ]
+  
+    it('finds the result with best matching loc to the position - 1', () => {
+      const position: Position = { line: 1, character: 1}
+  
+      const [_loc, result] = findBestMatchingResult(results, position)
+  
+      assert.deepEqual(result, 'result 1')
+    })
+  
+    it('finds the result with best matching loc to the position - 2', () => {
+      const position: Position = { line: 1, character: 8 }
+  
+      const [_loc, result] = findBestMatchingResult(results, position)
+  
+      assert.deepEqual(result, 'result 2')
+    })
+  
+    it('finds the result with best matching loc to the position - 3', () => {
+      const position: Position = { line: 2, character: 1 }
+  
+      const [_loc, result] = findBestMatchingResult(results, position)
+  
+      as
 })

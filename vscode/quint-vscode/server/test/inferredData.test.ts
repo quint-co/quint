@@ -2,21 +2,12 @@ import { describe, it } from 'mocha'
 import { Loc, LookupTableByModule, QuintModule, parsePhase1, parsePhase2 } from '@informalsystems/quint'
 import { checkTypesAndEffects } from '../src/inferredData'
 import { assert } from 'chai'
+import { parseOrThrow } from './util'
 
-function parse(moduleText: string): [QuintModule, Map<bigint, Loc>, LookupTableByModule] {
-  const result1 = parsePhase1(moduleText, 'mocked_path')
-  const result2 = result1.chain(parsePhase2)
-
-  if (result1.isLeft() || result2.isLeft()) {
-    throw new Error('Failed to parse mocked module')
-  }
-
-  return [result1.value.module, result1.value.sourceMap, result2.value.table]
-}
 
 describe('checkTypesAndEffects', () => {
   it('assembles inferred data for the module', async() => {
-    const [module, sourceMap, table] = parse(`module test { val foo: int = 1 }`)
+    const [module, sourceMap, table] = parseOrThrow(`module test { val foo: int = 1 }`)
 
     const inferredData = checkTypesAndEffects(module, sourceMap, table)
 
@@ -64,7 +55,7 @@ describe('checkTypesAndEffects', () => {
   })
 
   it('returns diagnostics for errors', async() => {
-    const [module, sourceMap, table] = parse(`module test {
+    const [module, sourceMap, table] = parseOrThrow(`module test {
       var x: int
 
       val foo: int = always(x > 1)
