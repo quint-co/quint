@@ -55,17 +55,17 @@ export function assembleDiagnostic(explanation: string, loc: Loc): Diagnostic {
   }
 }
 
-/**
- * Finds the result that better matches a given position.
- * That is, the result for which the loc is the smallest loc that contains the position.
+/** Finds the name of the expression at a given position in a module
  *
- * @param results a map from locations in the file to the result computed for it
- * @param position the position for which to find the result
+ * @param module the module in which to search for the expression
+ * @param sources the source map for the module in the form of a list of tuples
+ * @param position the position for which to find the expression
  *
- * @returns the result from the map that better matches the position, or undefined if none is found
+ * @returns the name of the expression at the given position, or undefined if
+ * the position is not under a name expression or an operator application
  */
-export function findName(module: QuintModule, results: [Loc, bigint][], position: Position): string | undefined {
-  const ids = resultsOnPosition(results, position)
+export function findName(module: QuintModule, sources: [Loc, bigint][], position: Position): string | undefined {
+  const ids = resultsOnPosition(sources, position)
   const names = ids.map(([_loc, id]) => {
     const expr = findExpressionWithId(module, id)
     if (!expr) {
@@ -83,10 +83,28 @@ export function findName(module: QuintModule, results: [Loc, bigint][], position
   return names.find(name => name !== '')
 }
 
+/**
+ * Finds the result that better matches a given position. That is, the result
+ * for which the loc is the smallest loc that contains the position.
+ *
+ * @param results the list of tuples of locations in the file and a result
+ * computed for it
+ * @param position the position for which to find the result
+ *
+ * @returns a tuple with the location and the result from the list that better
+ * matches the position, or undefined if none is found
+ */
 export function findBestMatchingResult<T>(results: [Loc, T][], position: Position): [Loc, T] {
   return resultsOnPosition(results, position)[0]
 }
 
+/**
+ * Converts a Quint location to a LSP range
+ *
+ * @param loc the quint location to be converted
+ *
+ * @returns a LSP range with corresponding start and end positions
+ */
 export function locToRange(loc: Loc): Range {
   return {
     start: { line: loc.start.line, character: loc.start.col },
