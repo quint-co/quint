@@ -94,26 +94,34 @@ connection.onHover((params: HoverParams): Hover | undefined => {
       return []
     }
 
-    const [loc1, type] = findBestMatchingResult([...inferredData.types.entries()], params.position)
-    const [_loc2, effect] = findBestMatchingResult([...inferredData.effects.entries()], params.position)
+    const typeResult = findBestMatchingResult([...inferredData.types.entries()], params.position)
+    const effectResult = findBestMatchingResult([...inferredData.effects.entries()], params.position)
+
+    if (!typeResult && !effectResult) {
+      return []
+    }
+
+    const [loc, type] = typeResult
+    const [, effect] = effectResult
 
     const document = documents.get(params.textDocument.uri)!
-    const text = document.getText(locToRange(loc1))
+    const text = document.getText(locToRange(loc))
 
     let hoverText = ["```qnt", text, "```", '']
 
-    if (type !== undefined) {
-      hoverText.push(`**type**: \`${type}\`\n`)
-    }
-    if (effect !== undefined) {
-      hoverText.push(`**effect**: \`${effect}\`\n`)
-    }
+    hoverText.push(`**type**: \`${type}\`\n`)
+    hoverText.push(`**effect**: \`${effect}\`\n`)
 
     return hoverText
   }
 
   function documentationHover(): string[] {
-    const { module, sourceMap } = parsedDataByDocument.get(params.textDocument.uri)!
+    const parsedData = parsedDataByDocument.get(params.textDocument.uri)
+    if (!parsedData) {
+      return []
+    }
+
+    const { module, sourceMap } = parsedData
     const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
     const name = findName(module, results, params.position)
     if (!name) {
@@ -132,10 +140,19 @@ connection.onHover((params: HoverParams): Hover | undefined => {
     return hoverText
   }
 
+  const hoverText = [inferredDataHover(), documentationHover()]
+    .filter(s => s.length > 0)
+    .map(s => s.join('\n'))
+    .join('\n-----\n')
+
+  if (hoverText === '') {
+    return undefined
+  }
+
   return {
     contents: {
       kind: MarkupKind.Markdown,
-      value: inferredDataHover().concat(['-----'], documentationHover()).join('\n'),
+      value: hoverText,
     },
   }
 })

@@ -1,5 +1,4 @@
 import { describe, it } from 'mocha'
-import { Loc, LookupTableByModule, QuintModule, parsePhase1, parsePhase2 } from '@informalsystems/quint'
 import { checkTypesAndEffects } from '../src/inferredData'
 import { assert } from 'chai'
 import { parseOrThrow } from './util'
