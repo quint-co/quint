@@ -5,10 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## UNRELEASED
+## v0.5.1 -- 2023-01-13
 
+### Fixed
+
+- Fixed REPL output for maps (#497)
+- REPL reporting a runtime error on `0^0` (#492)
 - Improved how documentation is produced for VSCode compatibility (#485)
 - Enable access to builtin documentation parsed from `builtin.qnt` (#485)
+- The effect and mode checkers no longer complain about runs (#505)
+- Fixed missing lodash dependency (#484)
+
+### Added
+
+- A tutorial on integers (#495)
 
 ## v0.5.0 -- 2022-12-22
 

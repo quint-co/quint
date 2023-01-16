@@ -310,7 +310,7 @@ function chalkQuintEx(ex: QuintEx): string {
         case 'Map': {
           const ps = ex.args.map(tup => {
             if (tup.kind === 'app' &&
-                   tup.opcode === 'tup' && tup.args.length === 2) {
+                   tup.opcode === 'Tup' && tup.args.length === 2) {
               const [k, v] = tup.args
               return `${chalkQuintEx(k)} -> ${chalkQuintEx(v)}`
             } else {

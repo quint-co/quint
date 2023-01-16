@@ -300,9 +300,16 @@ export class CompilerVisitor implements IRVisitor {
         break
 
       case 'ipow':
-        this.applyFun(app.id,
-          2,
-          (p, q) => just(rv.mkInt(p.toInt() ** q.toInt())))
+        this.applyFun(app.id, 2, (p, q) => {
+          if (q.toInt() == 0n && p.toInt() == 0n) {
+            this.addRuntimeError(app.id, '0^0 is undefined')
+          } else if (q.toInt() < 0n) {
+            this.addRuntimeError(app.id, 'i^j is undefined for j < 0')
+          } else {
+            return just(rv.mkInt(p.toInt() ** q.toInt()))
+          }
+          return none()
+        })
         break
 
       case 'igt':
