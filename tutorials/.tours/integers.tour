@@ -5,55 +5,55 @@
     {
       "title": "Introduction",
       "description": "\n**Scores to earn with secret codes: 10**\n\nThis lesson teaches you the basics of operations over integers.\nIf you have programming experience, you know most of these operators. \nSo it should not take you long to finish this lesson.\nDo not skip this lesson, as some of the operators may still surprise you.\n        ",
-      "line": 11,
+      "line": 5,
       "file": "lesson2-integers/integers.qnt"
     },
     {
       "title": "Integer literals",
       "description": "\nInteger literals are written using the standard syntax:\n0, 1, -1, 2, -2, ..., 314159265358979323846264338327950288419716939937510.\n\nIt is important to understand that Quint integers are big integers.\nThere is neither a minimum integer, nor there is a maximum integer.\n\nIt's quite easy to express the standard 32-bit, 64-bit, 128-bit, and 512-bit\nintegers with Quint integers. We will cover this in a follow up tutorial.\n\nWe omit several integer operators that produce sets. These operators are covered in\nthe tutorial on sets.\n        ",
-      "line": 20,
+      "line": 14,
       "file": "lesson2-integers/integers.qnt"
     },
     {
       "title": "Integer exponentiation",
       "description": "\n          \n\nWe start with the exponentiation `i^j` over integers,\nwhich is also written as `pow(i, j)` in many languages.\nThe result of `i^j` is simply `i` multiplied by itself `j - 1` times.\nThis is the first operator, as it lets us to write nice examples\nin the following steps.\n\nTo get a better intuition at how `i^j` works, run the following examples:\n\n          \n>> echo \"2^32\" | quint\n\n\n>> echo \"2^64\" | quint\n\n\n>> echo \"2^256\" | quint\n\n\n>> echo \"2^512\" | quint\n\n\n\nExponentiation is not defined on all of its arguments.\nTry the following examples to get the intuition.\n          \n>> echo \"(-2)^3\" | quint\n\n\n>> echo \"(-2)^4\" | quint\n\n\n>> echo \"2^(-4)\" | quint\n\n\n>> echo \"0^3\" | quint\n\n\n>> echo \"0^0\" | quint\n\n\n>> echo \"0^(-2)\" | quint\n\n",
-      "line": 24,
+      "line": 18,
       "file": "lesson2-integers/integers.qnt"
     },
     {
       "title": "Integer addition",
       "description": "\n          \n\nWe can add two integers by writing `i + j`. Importantly, integers cannot\noverflow, as they are big integers.\n\nTry this simple example:\n\n          \n>> echo \"2022 + 2023\" | quint\n\n\n\n\nIt is important to remember that integer addition satisfies the laws\nof commutativity and associativity in Quint:\n\n          \n>> echo \"11 + 17 == 17 + 11\" | quint\n\n\n>> echo \"(11 + 17) + 19 == 11 + (17 + 19)\" | quint\n\n",
-      "line": 27,
+      "line": 21,
       "file": "lesson2-integers/integers.qnt"
     },
     {
       "title": "Integer subtraction",
       "description": "\n          \n\nWe can add two integers by writing `i - j`.\n\n - Try this and see the result of the evaluation:\n\n          \n>> echo \"2022 - 2023\" | quint\n\n\n\n\n - Addition and subtraction have the same priority.\n   Hence they are applied from left to right.\n\n          \n>> echo \"11 + 13 - 17\" | quint\n\n\n\n **Exercise:** Is subtraction commutative?\n          ",
-      "line": 30,
+      "line": 24,
       "file": "lesson2-integers/integers.qnt"
     },
     {
       "title": "Integer multiplication",
       "description": "\n          \n\nWe can multiply two integers by writing `i * j`.\nRemember that multiplication cannot produce any side effects like overflows:\n\n          \n>> echo \"2^32 * 2^32 == 2^64\" | quint\n\n\n\n\nIt is important to remember that integer multiplication satisfies the laws\nof commutativity and associativity in Quint:\n\n          \n>> echo \"11 * 17 == 17 * 11\" | quint\n\n\n>> echo \"(11 * 17) * 19 == 11 * (17 * 19)\" | quint\n\n",
-      "line": 33,
+      "line": 27,
       "file": "lesson2-integers/integers.qnt"
     },
     {
       "title": "Integer division and remainder",
       "description": "\n          \n\nThe operators `i / j` and `i % j` compute the integer part and the remainder\nwhen dividing `i` by `j`, respectively. These operators have the following\nproperty for all integer values of `i` and all integer values of `j != 0`:\n`i == (i / j) * j + i % j`.\n\nTry the following examples to check your intuition:\n\n          \n>> echo \"99 / 2 == 49\" | quint\n\n\n>> echo \"99 % 2 == 1\" | quint\n\n\n>> echo \"98 % 2 == 0\" | quint\n\n\n>> echo \"((2^64 - 1) % 2^64 + 1) % 2^64\" | quint\n\n\n>> echo \"(2^64 - 123) % 2^63\" | quint\n\n\n\n **Exercise:** Is division commutative?\n          ",
-      "line": 40,
+      "line": 34,
       "file": "lesson2-integers/integers.qnt"
     },
     {
       "title": "Integer comparison",
       "description": "\n          \n\nThese are the standard comparison operators that you know, for sure:\n\n - Less than: `i < j`\n - Less than or equal: `i <= j`\n - Greater than: `i > j`\n - Greater than or equal: `i >= j`\n - Equals to: `i == j`\n - Not equal to: `i != j`\n\nCheck your intuition by running the following examples:\n          \n>> echo \"10 < 11\" | quint\n\n\n>> echo \"10 < 10\" | quint\n\n\n>> echo \"10 <= 11\" | quint\n\n\n>> echo \"10 <= 10\" | quint\n\n\n>> echo \"10 <= 9\" | quint\n\n\n>> echo \"11 > 10\" | quint\n\n\n>> echo \"10 > 10\" | quint\n\n\n>> echo \"11 >= 10\" | quint\n\n\n>> echo \"10 >= 10\" | quint\n\n\n>> echo \"10 >= 9\" | quint\n\n\n>> echo \"10 == 10\" | quint\n\n\n>> echo \"10 == 11\" | quint\n\n\n>> echo \"10 != 10\" | quint\n\n\n>> echo \"10 != 11\" | quint\n\n",
-      "line": 59,
+      "line": 53,
       "file": "lesson2-integers/integers.qnt"
     },
     {
       "title": "Integer negation",
       "description": "\n          \n\nWe almost forgot about the integer negation!\nNot surprisingly, `-i` negates an integer `i`.\nRecall that Quint integers are big integers.\nHence, no overflow is possible.\n\nTry a few examples:\n\n          \n>> echo \"-(3 + 2)\" | quint\n\n\n>> echo \"-(-2^63) == 2^63\" | quint\n\n",
-      "line": 62,
+      "line": 56,
       "file": "lesson2-integers/integers.qnt"
     }
   ]

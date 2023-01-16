@@ -32,10 +32,10 @@ the tutorial on sets.
     // 0 is an integer literal
     pure val int0 = 0
 
-    // 1 is an integer literal
+    // 2 is an integer literal
     pure val int1 = 2
 
-    // 2 is an integer literal
+    // -3 is an integer literal
     pure val negative1 = -3
 ```
 

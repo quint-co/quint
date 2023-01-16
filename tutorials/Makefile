@@ -7,7 +7,7 @@
 .PHONY: tutorials
 
 # Compile all Quint tutorials
-tutorials: lesson2-integers/integers.qnt
+tutorials: lesson2-integers/integers.qnt lesson0-helloworld/hello.qnt
 	@echo "Updated all tutorials"
 
 %.qnt: %.template.qnt
