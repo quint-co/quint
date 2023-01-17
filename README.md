@@ -1,9 +1,9 @@
 # Quint
 
-![build
-badge](https://github.com/informalsystems/quint/actions/workflows/main.yml/badge.svg)
-![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/informal.quint-vscode?color=10b0f2&label=VSCode)
-![npm (scoped)](https://img.shields.io/npm/v/@informalsystems/quint)
+[![build
+badge](https://github.com/informalsystems/quint/actions/workflows/main.yml/badge.svg)](https://github.com/informalsystems/quint/actions)
+[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/informal.quint-vscode?color=10b0f2&label=VSCode)](https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode)
+[![npm (scoped)](https://img.shields.io/npm/v/@informalsystems/quint)](https://www.npmjs.com/package/@informalsystems/quint)
 
 Quint is a modern specification language that is a particularly good fit for
 distributed systems and blockchain protocols. It combines the robust theoretical
@@ -38,21 +38,26 @@ become referenced artifacts.
 
 ## Documentation
 
-### Syntax
+### Tutorials :teacher:
+
+We are preparing language and tools tutorials. Visit the [Tutorials][] page.
+
+### Syntax :abcd:
 
 Check the [syntax documentation](./doc/lang.md) and the [Reference API
 documentation for built-in operators](./doc/builtin.md).
 
-### Examples
+### Examples :musical_score:
 
 We have written [examples](./examples) of several specifications in Quint.
 Some of them accompany a TLA+ version for comparison and learning purposes.
 To simplify reading, use [syntax highlighting](./editor-plugins) for your
 editor (currently, VSCode, Emacs and Vim are supported).
 
-### User manuals
+### User manuals :blue_book:
 
  - Quint's core tool `quint`:
+
    - [Installation](./quint/README.md)
 
    - [Manual](./doc/quint.md)
@@ -61,15 +66,14 @@ editor (currently, VSCode, Emacs and Vim are supported).
 
  - VSCode plugin:
 
-   We strongly encourage you to use the VSCode plugin for Quint. It provides the
-   quickest feedback loop for your specifications, reporting informative errors
-   as you type.
-
-   - [Installation](./vscode/README.md)
+   We strongly encourage you to use the VSCode plugin for Quint. It provides
+   the quickest feedback loop for your specifications, reporting informative
+   errors as you type. Install the plugin from [Visual Studio Code
+   Marketplace][].
 
 ## Development
 
-### Developer docs
+### Developer docs :guitar:
 
  - [ADR001: Transpiler architecture](./doc/adr001-transpiler-architecture.md)
  - [ADR002: Error codes](./doc/adr002-errors.md)
@@ -78,12 +82,12 @@ editor (currently, VSCode, Emacs and Vim are supported).
  - [ADR004: An Effect System for Quint](./doc/adr004-effect-system.md)
  - [ADR005: A Type System for Quint](./doc/adr005-type-system.md)
 
-### Source code
+### Source code :hash:
 
  - [quint](./quint) is the package for the `quint` transpiler
  - [vscode](./vscode) vscode plugin
 
-### Roadmap
+### Roadmap :white_check_mark:
 
 In the spirit of [Lessons from Writing a Compiler][], we have a roadmap, where
 we are implementing various transpiler passes feature-by-feature, instead of
@@ -171,3 +175,5 @@ completely implementing every pass.
 [String literals]: https://github.com/informalsystems/quint/blob/main/doc/lang.md#identifiers-and-strings
 [TLA+]: https://lamport.azurewebsites.net/tla/tla.html
 [TLA]: https://en.wikipedia.org/wiki/Temporal_logic_of_actions
+[Visual Studio Code Marketplace]: https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode
+[Tutorials]: ./tutorials/README.md
