@@ -195,7 +195,7 @@ echo "false.not()" | quint
 ```
 
 
-This is a general principle. You can write `foo(x)` as `x.foo()` and vice versa.
+**This is a general principle:** You can write `foo(x)` as `x.foo()` and vice versa.
 
 Be careful about not writing `false.not`, as it would be understood as record access:
           
@@ -204,7 +204,7 @@ Be careful about not writing `false.not`, as it would be understood as record ac
 echo "false.not" | quint
 ```
 
-## 7. Dot form
+## 7. Boolean "and"
 
 *9 more steps to the finish line*
 
@@ -266,7 +266,7 @@ echo "false.and(true)" | quint
 ```
 
 
-Again, this is a general principle. You can replace `bar(x, y)` with `x.bar(y)`
+**This is a general principle:** You can replace `bar(x, y)` with `x.bar(y)`,
 and vice versa.
 
 This form may be useful with nested formulas like:
@@ -288,7 +288,7 @@ This form may be useful with nested formulas like:
 ```
 
 
-As you see, "and" does not have to apply to two arguments only. You can use it with multiple arguments.
+As you see, "and" does not have to apply to two arguments only. You can use it with multiple arguments:
 
           
 
