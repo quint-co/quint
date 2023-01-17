@@ -176,3 +176,9 @@ bash -
 
 <!-- !test check tuples - Types & Effects-->
     quint typecheck ../examples/tuples.qnt
+
+
+### OK on typecheck clockSync3
+
+<!-- !test check typecheck clockSync3.qnt -->
+    quint typecheck ../examples/ClockSync/clockSync3.qnt
