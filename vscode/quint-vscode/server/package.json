@@ -12,16 +12,18 @@
 		"url": "https://github.com/informalsystems/quint"
 	},
 	"dependencies": {
-		"@informalsystems/quint": "^0.4.0",
+		"@informalsystems/quint": "file:.yalc/@informalsystems/quint",
+		"lodash": "^4.17.21",
 		"vscode-languageserver": "^7.0.0",
 		"vscode-languageserver-textdocument": "^1.0.1"
 	},
 	"scripts": {
 		"compile": "tsc -b",
-    	"test": "mocha -r ts-node/register test/*.test.ts test/**/*.test.ts"
+		"test": "mocha -r ts-node/register test/*.test.ts test/**/*.test.ts"
 	},
 	"devDependencies": {
 		"@types/chai": "^4.2.18",
+		"@types/lodash": "^4.14.191",
 		"@types/mocha": "^8.2.2",
 		"@types/node": "^12.12.0",
 		"@typescript-eslint/eslint-plugin": "^5.30.6",

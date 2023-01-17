@@ -4,11 +4,13 @@
  * See License.txt in the project root for license information.
  * --------------------------------------------------------------------------------- */
 import {
+  DefinitionParams,
   HandlerResult,
   Hover,
   HoverParams,
   InitializeParams,
   InitializeResult,
+  Location,
   MarkupContent,
   MarkupKind,
   ProposedFeatures,
@@ -24,9 +26,10 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { DocumentationEntry, Loc, ParserPhase2, builtinDocs, parsePhase1, parsePhase2, produceDocs } from '@informalsystems/quint'
+import { DocumentationEntry, Loc, ParserPhase2, builtinDocs, parsePhase1, parsePhase2, produceDocs, treeFromModule } from '@informalsystems/quint'
 import { InferredData, checkTypesAndEffects } from './inferredData'
 import { assembleDiagnostic, findBestMatchingResult, findName, locToRange } from './reporting'
+import { lookupValue } from '@informalsystems/quint/dist/src/lookupTable'
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -52,6 +55,7 @@ connection.onInitialize((_params: InitializeParams) => {
       signatureHelpProvider: {
         triggerCharacters: ['('],
       },
+      definitionProvider: true,
     },
   }
   return result
@@ -129,7 +133,7 @@ connection.onHover((params: HoverParams): Hover | undefined => {
 
     const { module, sourceMap } = parsedData
     const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-    const name = findName(module, results, params.position)
+    const [name, _] = findName(module, results, params.position) ?? [undefined, undefined]
     if (!name) {
       return []
     }
@@ -187,6 +191,32 @@ connection.onSignatureHelp((params: SignatureHelpParams): HandlerResult<Signatur
     activeSignature: 0,
     activeParameter: 0,
   }
+})
+
+connection.onDefinition((params: DefinitionParams): HandlerResult<Location, void> => {
+  const parsedData = parsedDataByDocument.get(params.textDocument.uri)
+  if (!parsedData) {
+    return Promise.reject('Document not parsed')
+  }
+
+  const { module, sourceMap, table } = parsedData
+  const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
+  const [name, scope] = findName(module, results, params.position) ?? [undefined, undefined]
+  if (!name) {
+    return Promise.reject('No name found')
+  }
+
+  const scopeTree = treeFromModule(module)
+
+  const def = lookupValue(table.get(module.name)!, scopeTree, name, scope)
+  if (def?.reference) {
+    const loc = sourceMap.get(def.reference)
+    if (loc) {
+      return { uri: params.textDocument.uri, range: locToRange(loc) }
+    }
+  }
+
+  return Promise.reject(`Definition for name ${name} not found`)
 })
 
 async function parseDocument(textDocument: TextDocument): Promise<ParserPhase2> {
