@@ -1,6 +1,9 @@
 lesson0-hello/hello.md linguist-generated
 lesson0-hello/hello.qnt linguist-generated
+lesson1-booleans/booleans.md linguist-generated
+lesson1-booleans/booleans.qnt linguist-generated
 lesson2-integers/integers.md linguist-generated
 lesson2-integers/integers.qnt linguist-generated
-.tours/integers.tour linguist-generated
 .tours/hello.tour linguist-generated
+.tours/booleans.tour linguist-generated
+.tours/integers.tour linguist-generated

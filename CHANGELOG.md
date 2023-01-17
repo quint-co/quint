@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Updated installation documentation (#471)
+- The tutorial on Booleans now comes in markdown and CodeTour (#517)
+
 
 ### Added
 
