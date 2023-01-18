@@ -2,7 +2,7 @@
 	"name": "quint-vscode",
 	"displayName": "Quint",
 	"description": "Language support for Quint specifications",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"publisher": "informal",
 	"engines": {
 		"vscode": "^1.43.0"
@@ -47,7 +47,7 @@
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
-		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+		"postinstall": "cd server && npm install && cd ..",
 		"test": "cd server && npm test",
 		"format": "eslint --fix '**/*.ts'"
 	},
@@ -64,7 +64,12 @@
 		"eslint-plugin-promise": "^6.1.1",
 		"eslint-plugin-unused-imports": "^2.0.0",
 		"mocha": "^8.3.2",
-		"typescript": "^4.2.3"
+		"typescript": "^4.2.3",
+		"@types/vscode": "^1.52.0",
+		"vscode-test": "^1.3.0"
+	},
+	"dependencies": {
+		"vscode-languageclient": "^7.0.0"
 	},
 	"__metadata": {
 		"id": "b64283c0-9b4d-474c-a8df-6d3266bae7bd",
