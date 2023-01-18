@@ -1,22 +1,35 @@
 #!/usr/bin/env bash
 
-QUINT_VERSION=0.5.2
+if [[ -z "${QUINT_VERSION}" ]]; then
+   echo "QUINT_VERSION environment variable is not set. Please set it to the version of the quint dependency you want to use."
+   exit 1
+fi
+
+set -euo pipefail
 
 function pause(){
    read -p "$*"
 }
 
+# Ensure that the script works when called from any directory
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+cd $DIR/..;
+
 git checkout main;
 git pull origin main;
+
+echo "Ensure that the quint dependency is correct, currently: $QUINT_VERSION. Set the QUINT_VERSION environment variable to update it."
+pause 'Press [Enter] key to continue...'
+
 echo "Ensure that the VSCode version was bumped."
 echo "Extension: $(cat package.json | jq .version | xargs)."
 echo "Server: $(cat server/package.json | jq .version | xargs)."
-echo "You can run npm version x.y.z to bump it. Remember to bump the server as well."
+echo "You can run npm version <major|minor|patch> to bump the correct level. Remember to bump the server as well."
 pause 'Press [Enter] key to continue...'
-echo "Ensure that the quint dependency is correct, currently: $QUINT_VERSION. Update this script to change it."
-pause 'Press [Enter] key to continue...'
+
 echo "Ensure that CHANGELOG.md is updated: There is an entry for this release and no UNRELEASED header."
 pause 'Press [Enter] key to continue...'
+
 cd server;
 yalc remove @informalsystems/quint;
 npm install @informalsystems/quint@$QUINT_VERSION;
