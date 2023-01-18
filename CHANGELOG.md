@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix the order of `foldr` in REPL (#536)
 - Fix priority for `a^b` and a few other infix operators (#465, #533)
 
 ## v0.5.1 -- 2023-01-13
