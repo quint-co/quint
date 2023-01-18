@@ -138,7 +138,7 @@ THEOREM VotesSafeImpliesConsistency ==
 //-----------------------------------------------------------------------------
 def ShowsSafeAt(Q, b, v) = and {
   Q.forall(a => maxBal.get(a) >= b),
-  -1.to(b - 1).exists(c => and {
+  (-1).to(b - 1).exists(c => and {
         (c != -1) implies Q.exists(a => VotedFor(a, c, v)),
         (c + 1).to(b - 1).forall(d => Q.forall(a => DidNotVoteAt(a, d)))
     }
