@@ -10,7 +10,7 @@ browser. If you want to run the examples in REPL, check how to install
 
 These tutorials are currently available in the classic format:
 
- - [Hello, world!](./lesson0-hello/hello.md)
+ - [Hello, world!](./lesson0-helloworld/hello.md)
  - [Tutorial on Booleans](./lesson1-booleans/booleans.md)
  - [Tutorial on integers](./lesson2-integers/integers.md)
 
