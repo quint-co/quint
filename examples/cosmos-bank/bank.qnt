@@ -224,8 +224,13 @@ module bank {
     /// any of the coins are not configured for sending. Returns `nil` if sending is enabled
     /// for all provided coin.
     /// SDK: `IsSendEnabledCoins(ctx sdk.Context, coins ...sdk.Coin) error`
-    pure def isSendEnabledCoins(ctx: BankCtx, coins: Set[Coin]): bool = {
-      coins.forall(c => isSendEnabledCoin(ctx, c))
+    pure def isSendEnabledCoins(ctx: BankCtx, coins: Coins): str = {
+      val asRecords = coins.keys().map(d => { denom: d, amount: coins.get(d) })
+      if (asRecords.forall(c => isSendEnabledCoin(ctx, c))) {
+        ""
+      } else {
+        "ErrSendDisabled"
+      }
     }
 
     /// `BlockedAddr` checks if a given address is restricted from receiving funds.
@@ -253,8 +258,10 @@ module bank {
     // managed by the bank keeper
     var balances: Addr -> Coins
 
-    // A helper function. It indicates the user's intent to write a precondition.
-    def when(cond) = cond
+    // A helper function.
+    // It indicates the user's intent to write a precondition,
+    // which should hold true, whenever an action is called. 
+    def require(cond) = cond
 
     // TODO: introduce constants for balances, accounts, and params
     // when #528 is done:
@@ -280,7 +287,7 @@ module bank {
       // validate the balances at the genesis time
       val bankIn = { blockTime: 0, accounts: accs, balances: bals, params: PARAMS }
       all {
-        when(accs.forall(a => validateBalance(bankIn, a))),
+        require(accs.forall(a => validateBalance(bankIn, a))),
         // set the initial state
         accounts' = accs,
         balances' = bals,
@@ -291,13 +298,21 @@ module bank {
       val oldCtx = {
         blockTime: 0, accounts: accounts, balances: balances, params: PARAMS
       }
-      // send the coins via the keeper
-      // TODO: add the validation that is done by the message handler
-      val result = sendCoins(oldCtx, fromAddr, toAddr, coins)
+      // Send the coins via the keeper.
+      // The message handler does validation and fails a transaction,
+      // if it does not pass validation. For the moment, we simply require
+      // the parameters to pass validation, for the action to succeed.
+      // In the future, we may want to save failed transactions.
       all {
-        when(not(result.isError)),
-        balances' = result.ctx.balances,
-        accounts' = result.ctx.accounts
+        require(coins.keys().forall(d => coins.get(d) > 0)),
+        require(isSendEnabledCoins(oldCtx, coins) == ""),
+        require(blockedAddr(toAddr)),
+        val result = sendCoins(oldCtx, fromAddr, toAddr, coins)
+        all {
+          require(not(result.isError)),
+          balances' = result.ctx.balances,
+          accounts' = result.ctx.accounts
+        }
       }
     }
 
