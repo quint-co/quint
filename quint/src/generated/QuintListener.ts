@@ -53,6 +53,7 @@ import { LetInContext } from "./QuintParser";
 import { NondetContext } from "./QuintParser";
 import { ParenContext } from "./QuintParser";
 import { BracesContext } from "./QuintParser";
+import { ModulesContext } from "./QuintParser";
 import { ModuleContext } from "./QuintParser";
 import { DocLinesContext } from "./QuintParser";
 import { UnitContext } from "./QuintParser";
@@ -729,6 +730,17 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitBraces?: (ctx: BracesContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.modules`.
+	 * @param ctx the parse tree
+	 */
+	enterModules?: (ctx: ModulesContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.modules`.
+	 * @param ctx the parse tree
+	 */
+	exitModules?: (ctx: ModulesContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `QuintParser.module`.

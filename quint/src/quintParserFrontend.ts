@@ -44,7 +44,7 @@ export interface ErrorMessage {
 export type ParseResult<T> = Either<ErrorMessage[], T>
 
 export interface ParserPhase1 {
-  module: QuintModule,
+  modules: QuintModule[],
   sourceMap: Map<bigint, Loc>
 }
 
@@ -90,7 +90,7 @@ export function parsePhase1(text: string, sourceLocation: string): ParseResult<P
   const errorMessages: ErrorMessage[] = []
   const parser = setupParser(text, sourceLocation, errorMessages)
   // run the parser
-  const tree = parser.module()
+  const tree = parser.modules()
   if (errorMessages.length > 0) {
     // report the errors
     return left(errorMessages)
@@ -101,8 +101,8 @@ export function parsePhase1(text: string, sourceLocation: string): ParseResult<P
 
     if (listener.errors.length > 0) {
       return left(listener.errors)
-    } else if (listener.rootModule !== undefined) {
-      return right({module: listener.rootModule, sourceMap: listener.sourceMap})
+    } else if (listener.topModules.length > 0) {
+      return right({ modules: listener.topModules, sourceMap: listener.sourceMap})
     } else {
       // istanbul ignore next
       throw new Error('Illegal state: root module is undefined. Please report a bug.')
@@ -116,7 +116,8 @@ export function parsePhase1(text: string, sourceLocation: string): ParseResult<P
  */
 export function parsePhase2(phase1Data: ParserPhase1):
   ParseResult<ParserPhase2> {
-  const quintModule: QuintModule = phase1Data.module
+  // TODO: extend this phase to handle multiple modules, not the first one
+  const quintModule: QuintModule = phase1Data.modules[0]
   const sourceMap: Map<bigint, Loc> = phase1Data.sourceMap
   const scopeTree = treeFromModule(quintModule)
   const moduleDefinitions = collectDefinitions(quintModule)

@@ -53,6 +53,7 @@ import { LetInContext } from "./QuintParser";
 import { NondetContext } from "./QuintParser";
 import { ParenContext } from "./QuintParser";
 import { BracesContext } from "./QuintParser";
+import { ModulesContext } from "./QuintParser";
 import { ModuleContext } from "./QuintParser";
 import { DocLinesContext } from "./QuintParser";
 import { UnitContext } from "./QuintParser";
@@ -482,6 +483,13 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitBraces?: (ctx: BracesContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.modules`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitModules?: (ctx: ModulesContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.module`.

@@ -60,7 +60,7 @@ error: parsing failed
 <!-- !test in module AST is output -->
 ```
 quint parse --out parse-out-example.json ../examples/tuples.qnt
-cat parse-out-example.json | jq '.module.name'
+cat parse-out-example.json | jq '.modules[0].name'
 rm parse-out-example.json
 ```
 

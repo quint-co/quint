@@ -39,7 +39,8 @@ function parseAndCompare(artifact: string): void {
       }
     )
   } else if (phase1Result.isRight()) {
-    const { module, sourceMap } = phase1Result.value
+    const { modules, sourceMap } = phase1Result.value
+    const module = modules[0]
     // Phase 1 succeded, check that the source map is correct
     assert.sameDeepMembers(collectIds(module).sort(), [...sourceMap.keys()].sort(), 'expected source map to contain all ids')
 
@@ -76,7 +77,7 @@ describe('parsing', () => {
   it('parses empty module', () => {
     const result = parsePhase1(readQuint('_0001emptyModule'), 'mocked_path/testFixture/_0001emptyModule.qnt')
     const module = { id: 1n, name: 'empty', defs: [] }
-    assert.deepEqual(result.map(r => r.module), right(module))
+    assert.deepEqual(result.map(r => r.modules[0]), right(module))
   })
 
   it('parses SuperSpec', () => {

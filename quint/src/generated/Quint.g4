@@ -6,9 +6,11 @@
  *  2. Make it expressive enough to capture all of the TLA logic.
  *
  * @author: Igor Konnov, Shon Feder, Gabriela Moreira, Jure Kukovec, Thomas Pani
- *          Informal Systems, 2021-2022
+ *          Informal Systems, 2021-2023
  */
 grammar Quint;
+
+modules : module+;
 
 module : 'module' IDENTIFIER '{' (docLines unit)* '}';
 docLines : DOCCOMMENT*;
