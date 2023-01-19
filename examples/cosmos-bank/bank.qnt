@@ -282,10 +282,14 @@ module bank {
       defaultSendEnabled: false
     }
 
-    // when #528 is done, this will be gone
+    // When #528 is done, this will be gone.
+    // Tests will instantiate module constants with fixed values.
     val DENOMS = Set("atom", "proton", "photon")
 
+    // Initialize the state machine
     // Until #528 is closed, this initializer is a mock.
+    // When #528 is closed, we will use constants to initializes the genesis,
+    // and specific tests will initialize these constants to the values they need.
     action init = {
       val accs = ADDR.exclude(Set("null"))
       val bals = Map(
@@ -296,12 +300,14 @@ module bank {
       val bankIn = { blockTime: 0, accounts: accs, balances: bals, params: PARAMS }
       all {
         require(accs.forall(a => validateBalance(bankIn, a))),
-        // set the initial state
+        // initialize the state
         accounts' = accs,
         balances' = bals,
       }
     }
 
+    // handler of MsgSend of x/bank
+    // https://docs.cosmos.network/v0.45/modules/bank/03_messages.html
     action send(fromAddr: Addr, toAddr: Addr, coins: Coins): bool = {
       val oldCtx = {
         blockTime: 0, accounts: accounts, balances: balances, params: PARAMS
@@ -327,8 +333,11 @@ module bank {
 
     action step = {
       // at the moment, we execute only one action, so no "any" is used
-      // TODO: make a call for more than one denomination
+      // TODO: make a case for more than one denomination
       nondet denom = oneOf(DENOMS)
+      // Note that the probability of randomly picking an amount that
+      // will not fail in `send` is quite small.
+      // Hence, we need more targeted tests (see below).
       nondet amount = oneOf((-(2^256)).to(2^256 - 1))
       nondet fromAddr = oneOf(ADDR)
       nondet toAddr = oneOf(ADDR)
@@ -347,9 +356,9 @@ module bank {
     blockTime: 10,
     accounts: ACCOUNTS,
     balances: Map(
-        "alice" -> Map("atom" -> 1, "nonatom" -> 2),
+        "alice" -> Map("atom" -> 17, "nonatom" -> 2),
         "bob" -> Map("atom" -> 0)
-      ),
+    ),
     params: {
       sendEnabled: Set(
         { denom: "atom", enabled: true },
@@ -365,5 +374,95 @@ module bank {
       .then(assert(not(validateBalance(CONTEXT, "null"))))
   }
 
-  // TODO: SDK does not contain test for GetBalance
+  // An auxilliary action that keeps all variables unchanged.
+  // In the future, such change would be computed automatically:
+  // https://github.com/informalsystems/quint/discussions/70
+  action keepVars = all {
+    balances' = balances,
+    accounts' = accounts,
+  }
+
+  // test that a simple `send` goes through
+  run sendOkTest = {
+    init
+      .then(send("alice", "bob", Map("atom" -> 3)))
+      .then(all {
+        assert(balances.get("alice").get("atom") == 27),
+        assert(balances.get("bob").get("atom") == 4),
+        keepVars,
+      })
+  }
+
+  // test that `send` fails when sending a token with send disabled
+  run sendNotEnabledErrTest = {
+    init
+      .then(send("alice", "bob", Map("photon" -> 3)))
+    //.fail()
+    // TODO: if `send` above passes, the run should fail.
+    // If `send` fails, the test should pass.
+    // We need an operator that flips the expected behavior.
+  }
+
+  // test that multiple denominations can be sent at once
+  run sendTwoOkTest = {
+    init
+      .then(send("alice", "bob", Map("atom" -> 3, "proton" -> 11)))
+      .then(all {
+        assert(balances.get("alice").get("atom") == 27),
+        assert(balances.get("alice").get("proton") == 9),
+        assert(balances.get("bob").get("atom") == 4),
+        assert(balances.get("bob").get("proton") == 11),
+        keepVars,
+      })
+  }
+
+  // a test similar to property-based testing that randomly probes send
+  // custom initializer that picks some balances for several denominations
+  action initBoxed = all {
+    nondet amts1 = Set("atom").setOfMaps(to(0, 15)).oneOf()
+    nondet amts2 = Set("proton").setOfMaps(to(0, 15)).oneOf()
+    nondet amts3 = Set("atom", "proton").setOfMaps(to(0, 15)).oneOf()
+    nondet amts4 = Set("atom", "photon").setOfMaps(to(0, 15)).oneOf()
+    nondet bals = ADDR.setOfMaps(Set(amts1, amts2, amts3, amts4)).oneOf()
+    all {
+      balances' = bals,
+      accounts' = bals.keys().exclude(Set("null")),
+    }
+  }
+  // custom send that picks some randomly picks some tokens to transfer
+  action sendBoxed = {
+    // pick some denominations
+    nondet denoms = DENOMS.powerset().oneOf()
+    // Since denoms may be empty, oneOf() may complain. Redefine the empty set.
+    nondet someDenoms = if (denoms == Set()) Set("atom") else denoms
+    // pick some amounts
+    nondet coins = someDenoms.setOfMaps(to(-5, 5)).oneOf()
+    // pick the addresses
+    nondet addrFrom = ADDR.oneOf()
+    nondet addrTo = ADDR.oneOf()
+    send(addrFrom, addrTo, coins)
+  }
+
+  // this is one of the basic invariants of the bank module
+  val nonNegativeSupplyInv =
+    balances.keys().forall(a =>
+      val coins = balances.get(a)
+      coins.keys().forall(d => coins.get(d) >= 0)
+    )
+
+  // a single point random test
+  run sendRandomTest = {
+    initBoxed
+      .then(sendBoxed)
+      .then(all {
+        assert(nonNegativeSupplyInv),
+        keepVars
+      })
+  }
+
+  // If you'd like to run this test for multiple data points,
+  // you can do it in REPL as follows:
+  // .load bank.qnt
+  // import bank.*
+  // _test(10000, 3, "initBoxed", "sendBoxed", "nonNegativeSupplyInv")
 }
