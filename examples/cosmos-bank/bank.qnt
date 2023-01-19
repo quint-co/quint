@@ -24,19 +24,22 @@
  */
 module bank {
   // TODO: these type definitions should be defined in a general Cosmos module
-  type Addr = str
-  // TODO: specify 64-bit and 256-bit integers later, in separate modules
-  type Int64 = int
-  type Int256 = int
-  /// the maximum amount value in the SDK (note 256 instead of 255!)
-  val MAX_INT256 = 2^256 - 1
-  // the range of 256-bit integers in the SDK
-  pure def isInt256(i: int): bool = -2^256 <= i and i < 2^256
-  // a coin with denominations attached
-  type Coin = { denom: str, amount: Int256 }
-  // Cosmos SDK coins are bags that are implemented via sorted arrays.
-  // We are simply using maps in Quint.
-  type Coins = str -> Int256
+  // module cosmobits {
+    type Addr = str
+    // TODO: specify 64-bit and 256-bit integers later, in separate modules
+    type Int64 = int
+    type Int256 = int
+    /// the maximum amount value in the SDK (note 256 instead of 255!)
+    val MAX_INT256 = 2^256 - 1
+    // the range of 256-bit integers in the SDK
+    pure def isInt256(i: int): bool = -2^256 <= i and i < 2^256
+    // a coin with denominations attached
+    type Coin = { denom: str, amount: Int256 }
+    // Cosmos SDK coins are bags that are implemented via sorted arrays.
+    // We are simply using maps in Quint.
+    type Coins = str -> Int256
+  // }
+
   // Account balances
   type Balance = { address: Addr, coins: Coins }
 
@@ -62,9 +65,9 @@ module bank {
   //  Fixed to a constant value for now, until #528 is closed.
   val BLOCKED = Set("eve")
 
-  // The part of the key-value store read by the bank or wrote by the bank.
-  // In contrast to the Golang version, we encapsulate the view of the context
-  // available to the bank in this special record.
+  // The part of the key-value store read by the bank or written by the bank.
+  // In contrast to the Cosmos SDK in Go, we encapsulate the view of the
+  // context available to the bank in this special record.
   type BankCtx = {
     // block time (needed by vesting accounts)
     blockTime: Int64,
@@ -76,7 +79,10 @@ module bank {
     params: Params,
   }
 
-  // an output produced by stateful computations
+  // An output produced by stateful computations.
+  // This looks very much like Either[L, R] or Result[T, E] in Rust,
+  // which we should use in the future. See:
+  // https://github.com/informalsystems/quint/issues/539
   type BankOut = {
     isError: bool,
     ctx: BankCtx,
@@ -84,8 +90,6 @@ module bank {
 
   // TODO: introduce a separate module, when the modules are fixed:
   // https://github.com/informalsystems/quint/issues/523
-  // we isolate the keeper interface in a separate namespace
-  //module keeper {
 
   // module ViewKeeper {
     /// `GetAllBalances` returns all the account balances for the given account address.
@@ -217,16 +221,20 @@ module bank {
     /// IsSendEnabledCoin returns the current SendEnabled status of the provided coin's denom
     /// SDK: `IsSendEnabledCoin(ctx sdk.Context, coin sdk.Coin) bool`
     pure def isSendEnabledCoin(ctx: BankCtx, coin: Coin): bool = {
-      ctx.params.sendEnabled.exists(p => p.enabled and coin.denom == p.denom)
+      val found = ctx.params.sendEnabled.filter(p => coin.denom == p.denom)
+      if (found != Set()) {
+        found.exists(p => p.enabled)
+      } else {
+        ctx.params.defaultSendEnabled
+      }
     }
 
     /// `IsSendEnabledCoins` checks the coins provide and returns an `ErrSendDisabled` if
     /// any of the coins are not configured for sending. Returns `nil` if sending is enabled
     /// for all provided coin.
     /// SDK: `IsSendEnabledCoins(ctx sdk.Context, coins ...sdk.Coin) error`
-    pure def isSendEnabledCoins(ctx: BankCtx, coins: Coins): str = {
-      val asRecords = coins.keys().map(d => { denom: d, amount: coins.get(d) })
-      if (asRecords.forall(c => isSendEnabledCoin(ctx, c))) {
+    pure def isSendEnabledCoins(ctx: BankCtx, coins: Set[Coin]): str = {
+      if (coins.forall(c => isSendEnabledCoin(ctx, c))) {
         ""
       } else {
         "ErrSendDisabled"
@@ -305,13 +313,14 @@ module bank {
       // In the future, we may want to save failed transactions.
       all {
         require(coins.keys().forall(d => coins.get(d) > 0)),
-        require(isSendEnabledCoins(oldCtx, coins) == ""),
-        require(blockedAddr(toAddr)),
+        require(isSendEnabledCoins(oldCtx,
+          coins.keys().map(d => { denom: d, amount: coins.get(d) })) == ""),
+        require(not(blockedAddr(toAddr))),
         val result = sendCoins(oldCtx, fromAddr, toAddr, coins)
         all {
           require(not(result.isError)),
           balances' = result.ctx.balances,
-          accounts' = result.ctx.accounts
+          accounts' = result.ctx.accounts,
         }
       }
     }
