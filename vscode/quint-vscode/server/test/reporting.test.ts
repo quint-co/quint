@@ -86,7 +86,7 @@ describe('findBestMatchingResult', () => {
     it('finds the name when position is under a name', () => {
       const position: Position = { line: 0, character: 25 }
 
-      const name = findName(module, results, position)
+      const [name, _] = findName(module, results, position) ?? [undefined, undefined]
 
       assert.deepEqual(name, 'Nat')
     })
@@ -94,7 +94,7 @@ describe('findBestMatchingResult', () => {
     it('finds the name when position is under an application', () => {
       const position: Position = { line: 0, character: 29 }
 
-      const name = findName(module, results, position)
+      const [name, _] = findName(module, results, position) ?? [undefined, undefined]
 
       assert.deepEqual(name, 'isFinite')
     })

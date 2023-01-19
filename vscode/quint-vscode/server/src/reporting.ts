@@ -14,6 +14,7 @@
 
 import { ErrorTree, Loc, QuintModule, errorTreeToString, findExpressionWithId } from "@informalsystems/quint"
 import { Diagnostic, DiagnosticSeverity, Position, Range } from "vscode-languageserver"
+import { compact } from "lodash"
 
 /**
  * Assembles a list of diagnostics from a map of expression ids to their errors
@@ -64,23 +65,25 @@ export function assembleDiagnostic(explanation: string, loc: Loc): Diagnostic {
  * @returns the name of the expression at the given position, or undefined if
  * the position is not under a name expression or an operator application
  */
-export function findName(module: QuintModule, sources: [Loc, bigint][], position: Position): string | undefined {
+export function findName(
+  module: QuintModule, sources: [Loc, bigint][], position: Position
+): [string, bigint]  | undefined {
   const ids = resultsOnPosition(sources, position)
-  const names = ids.map(([_loc, id]) => {
+  const names: ([string, bigint] | undefined)[] = ids.map(([_loc, id]) => {
     const expr = findExpressionWithId(module, id)
     if (!expr) {
-      return ''
+      return
     }
 
     switch(expr.kind) {
       case 'name':
-        return expr.name
+        return [expr.name, expr.id]
       case 'app':
-        return expr.opcode
+        return [expr.opcode, expr.id]
     }
   })
 
-  return names.find(name => name !== '')
+  return compact(names)[0]
 }
 
 /**
