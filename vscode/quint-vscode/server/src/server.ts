@@ -193,30 +193,43 @@ connection.onSignatureHelp((params: SignatureHelpParams): HandlerResult<Signatur
   }
 })
 
-connection.onDefinition((params: DefinitionParams): HandlerResult<Location, void> => {
+connection.onDefinition((params: DefinitionParams): HandlerResult<Location[], void> => {
   const parsedData = parsedDataByDocument.get(params.textDocument.uri)
   if (!parsedData) {
-    return Promise.reject('Document not parsed')
+    return []
   }
 
+  // Find name under cursor
   const { module, sourceMap, table } = parsedData
   const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
   const [name, scope] = findName(module, results, params.position) ?? [undefined, undefined]
   if (!name) {
-    return Promise.reject('No name found')
+    return []
   }
 
+  // Find definition of name
   const scopeTree = treeFromModule(module)
-
   const def = lookupValue(table.get(module.name)!, scopeTree, name, scope)
-  if (def?.reference) {
-    const loc = sourceMap.get(def.reference)
-    if (loc) {
-      return { uri: params.textDocument.uri, range: locToRange(loc) }
-    }
+  if (!def || !def.reference) {
+    return []
   }
 
-  return Promise.reject(`Definition for name ${name} not found`)
+  const loc = sourceMap.get(def.reference)
+  if (!loc) {
+    return []
+  }
+
+  const range = locToRange(loc)
+
+  // Definitions start with a qualifier
+  // This finds where the definition name actually starts
+  // and corrects the range
+  const text = documents.get(params.textDocument.uri)!.getText(range)
+  const start = text.search(new RegExp(name))
+  return [{
+    uri: params.textDocument.uri,
+    range: { ...range, start: { ...range.start, character: range.start.character + start } },
+  }]
 })
 
 async function parseDocument(textDocument: TextDocument): Promise<ParserPhase2> {

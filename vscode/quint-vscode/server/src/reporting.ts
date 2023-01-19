@@ -65,12 +65,14 @@ export function assembleDiagnostic(explanation: string, loc: Loc): Diagnostic {
  * @returns the name of the expression at the given position, or undefined if
  * the position is not under a name expression or an operator application
  */
-export function findName(module: QuintModule, sources: [Loc, bigint][], position: Position): [string, bigint]  | undefined {
+export function findName(
+  module: QuintModule, sources: [Loc, bigint][], position: Position
+): [string, bigint]  | undefined {
   const ids = resultsOnPosition(sources, position)
   const names: ([string, bigint] | undefined)[] = ids.map(([_loc, id]) => {
     const expr = findExpressionWithId(module, id)
     if (!expr) {
-      return undefined
+      return
     }
 
     switch(expr.kind) {
