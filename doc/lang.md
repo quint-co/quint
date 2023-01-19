@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author                                                  |
 |:---------|:-----------|:--------------------------------------------------------|
-| 30       | 28.11.2022 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
+| 31       | 18.01.2023 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -808,15 +808,21 @@ priority:
 | `e_1.F(e_2, ..., e_n)`                                                                    | Call via dot has the highest priority                        |
 | `F(e_1, ..., e_n)`                                                                        | The normal form of operator application                      |
 | `l[i]`                                                                        | List access via index                                         |
-| `-i`                                                                                      | Unary minus                                                  |
 | `i^j`                                                                                     | Integer power (right associative)                            |
+| `-i`                                                                                      | Unary minus                                                  |
 | `i * j`, `i / j`, `i % j`                                                                 | Integer multiplication, division, modulo                     |
 | `i + j`, `i - j`                                                                          | Integer addition and subtraction                             |
-| `i > j`, `i < j`, `i >= j`, `i <= j`, `i != j`, `i == j`, `i' = j`, `S in T`, `S notin T` | Integer comparisons, equality, assignment, and set relations |
-| `p and q`                                                                                 | Boolean 'and' (conjunction)                                  |
-| `p or q`                                                                                  | Boolean 'or' (disjunction)                                   |
-| `p iff q`                                                                                 | Boolean equivalence (if and only if)                         |
-| `p implies q`                                                                             | Boolean implication: `not(p) or q`                           |
+| `i > j`, `i < j`, `i >= j`, `i <= j`, `i == j`, `i != j`       | Integer comparisons, general equality/inequality  |
+| `x' = e`                                                       | Delayed assignment |
+| `and { ... }`                                                  | braced 'and'       |
+| `p and q`                                                      | infix 'and'        |
+| `or { ... }`                                                   | braced 'or'        |
+| `p or q`                                                       | infix 'or'         |
+| `p iff q`                                                      | Boolean equivalence (if and only if)                         |
+| `p implies q`                                                  | Boolean implication: `not(p) or q`                           |
+| all { ... }                                                    | braced action 'all' |
+| any { ... }                                                    | braced action 'any' |
+| k -> v                                                         | a pair              |
 | all forms with `(..)`, `{..}`, and `[..]`                                                 | the lowest priority                                          |
 
 ### Boolean operators and equality
@@ -1109,13 +1115,11 @@ exists(S, (x => P))
 S.forall(x => P)
 forall(S, (x => P))
 // set membership: e \in S
-e in S
 e.in(S)
 in(e, S)
 S.contains(e)
 contains(S, e)
 // set non-membership: e \notin S
-e notin S
 e.notin(S)
 notin(e, S)
 // union: S \union T
@@ -1334,7 +1338,7 @@ pure def isValid(entry): ENTRY_TYPE => bool =
      | "Cat": cat =>
        name != "" and cat.year > 0
      | "Date": date =>
-       date.day in (1 to 31) and date.month in (1 to 12) and date.year > 0
+       date.day.in(1 to 31) and date.month.in(1.to(12)) and date.year > 0
 ```
 
 In the above example, the names `cat` and `date` have the singleton union types

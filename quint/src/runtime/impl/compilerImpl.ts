@@ -883,14 +883,17 @@ export class CompilerVisitor implements IRVisitor {
     assert(callable.registers.length === 2)
     // compile the computation of the initial value
     const initialComp = this.compStack.pop() ?? fail
+    // the register number depends on the traversal order
+    const accumIndex = (order == 'fwd') ? 0 : 1
     // apply the lambda to a single element of the set
     const evaluateElem = function(elem: RuntimeValue): Maybe<EvalResult> {
       // The accumulator should have been set in the previous iteration.
-      // Set the first register to the element.
-      callable.registers[1].registerValue = just(elem)
+      // Set the other register to the element.
+
+      callable.registers[1 - accumIndex].registerValue = just(elem)
       const result = callable.eval()
       // save the result for the next iteration
-      callable.registers[0].registerValue = result
+      callable.registers[accumIndex].registerValue = result
       return result
     }
     // iterate over the iterable (a set or a list)
@@ -898,8 +901,8 @@ export class CompilerVisitor implements IRVisitor {
       1,
       (iterable: Iterable<RuntimeValue>): Maybe<any> => {
         return initialComp.eval().map(initialValue => {
-          // save the initial value on the 0th register
-          callable.registers[0].registerValue = just(initialValue)
+          // save the initial value
+          callable.registers[accumIndex].registerValue = just(initialValue)
           // fold the iterable
           return flatForEach(order, iterable, just(initialValue), evaluateElem)
         }).join()

@@ -86,10 +86,11 @@ row : | (IDENTIFIER ':' type ',')* ((IDENTIFIER ':' type) (',' | '|' (IDENTIFIER
 
 // A Quint expression. The order matters, it defines the priority.
 // Wherever possible, we keep the same order of operators as in TLA+.
-expr:           // unary minus
-                MINUS expr                                          # uminus
-                // apply a built-in operator via the dot notation
-        |       expr '.' nameAfterDot (LPAREN argList? RPAREN)?     # dotCall
+// We are also trying to be consistent with mainstream languages, e.g.,
+// check the precedence table in Java:
+// https://www.cs.bilkent.edu.tr/~guvenir/courses/CS101/op_precedence.html
+expr:           // apply a built-in operator via the dot notation
+                expr '.' nameAfterDot (LPAREN argList? RPAREN)?     # dotCall
         |       lambda                                              # lambdaCons
                 // Call a user-defined operator or a built-in operator.
                 // The operator has at least one argument (otherwise, it's a 'val').
@@ -98,27 +99,28 @@ expr:           // unary minus
         |       expr '[' expr ']'                                   # listApp
                 // power over integers
         |       <assoc=right> expr op='^' expr                      # pow
+        |       // unary minus
+                MINUS expr                                          # uminus
                 // integer arithmetic
         |       expr op=(MUL | DIV | MOD) expr                      # multDiv
         |       expr op=(PLUS | MINUS) expr                         # plusMinus
                 // standard relations
-        |       expr op=(GT | LT | GE | LE | NE
-                        | EQ | IN | NOTIN ) expr                    # relations
+        |       expr op=(GT | LT | GE | LE | NE | EQ) expr          # relations
         |       IDENTIFIER '\'' ASGN expr                           # asgn
         |       expr '=' expr {
                   const m = "QNT006: unexpected '=', did you mean '=='?"
                   this.notifyErrorListeners(m)
                 }                                                   # errorEq
                 // Boolean operators. Note that not(e) is just a normal call
+                // similar to indented /\ and indented \/ of TLA+
+        |       'and' '{' expr (',' expr)* ','? '}'                 # andExpr
         |       expr AND expr                                       # and
+        |       'or'  '{' expr (',' expr)* ','? '}'                 # orExpr
         |       expr OR expr                                        # or
         |       expr IFF expr                                       # iff
         |       expr IMPLIES expr                                   # implies
         |       expr MATCH
                     ('|' STRING ':' identOrHole '=>' expr)+         # match
-                // similar to indented /\ and indented \/ of TLA+
-        |       'and' '{' expr (',' expr)* ','? '}'                 # andExpr
-        |       'or'  '{' expr (',' expr)* ','? '}'                 # orExpr
         |       'all' '{' expr (',' expr)* ','? '}'                 # actionAll
         |       'any' '{' expr (',' expr)* ','? '}'                 # actionAny
         |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
