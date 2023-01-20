@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author                                                  |
 |:---------|:-----------|:--------------------------------------------------------|
-| 31       | 18.01.2023 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
+| 32       | 19.01.2023 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -266,6 +266,10 @@ files.
 
 There is another way to define a module, see [Instances](#instances).
 
+**WARNING:** We are redesigning nested modules,
+see [#496](https://github.com/informalsystems/quint/discussions/496). If you are
+starting with the language, wait a bit before using nested modules.
+
 ### Constant declarations
 
 Introduce a single constant parameter (rigid variable in TLA+)
@@ -521,6 +525,10 @@ space: `x`, `xPlus`, `inv`, and `Inner`, whereas the module `Inner` contains
 the names `x2` and the names defined in its parent modules: `x`, `xPlus`, and
 `inv`. The module `Inner` is *stateless*, so the module `Outer` may access the
 definitions of `Inner` via the dot-notation, e.g., `Inner.x2`.
+
+**WARNING:** We are redesigning nested modules,
+see [#496](https://github.com/informalsystems/quint/discussions/496). If you are
+starting with the language, wait a bit before using nested modules.
 
 *No collisions.* There must be no name collisions between child modules and parent
 modules.  Shadowing of a name is not allowed. For example:
@@ -1257,6 +1265,10 @@ with discriminated unions.
 
 ### Discriminated unions
 
+**WARNING:** We are redesigning discriminated unions, see
+[#539](https://github.com/informalsystems/quint/issues/539). As they are not
+fully implemented, please avoid using discriminated unions for now.
+
 Quint has provides the user with special syntax for constructing and destructing
 discriminated unions.  For the type syntax of discriminated unions, see
 [Types](#types).
@@ -1978,6 +1990,10 @@ operators quantify over the constants of the first-order universe.
 <a name="instances"/>
 
 ## Instances
+
+**WARNING:** Instances are not supported yet. See
+[#528](https://github.com/informalsystems/quint/issues/528) and
+[#237](https://github.com/informalsystems/quint/issues/237).
 
 Given a stateful module `M`, we can turn `M` into another module `I`
 by rewriting constants and variables of `M`. In this case, module `I` is called
