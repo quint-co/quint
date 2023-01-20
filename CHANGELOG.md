@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Operator `fail` (#552)
 
+### Changed
+
+- `assert` is now an action operator, not a run operator (#542)
+
 ## v0.5.2 -- 2023-01-17
 
 ### Added
