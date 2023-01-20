@@ -161,33 +161,50 @@ function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: [bigint, ErrorTree]) =
  */
 export function typecheck(parsed: ParsedStage): CLIProcedure<TypecheckedStage> {
   const { table, modules, sourceMap } = parsed
-  const moduleFixme = modules[0]
   const typechecking = { ...parsed, stage: 'typechecking' as stage }
   const definitionsTable = table
   const errorLocator = mkErrorMessage(sourceMap)
 
-  const [typeErrMap, types] = inferTypes(definitionsTable, moduleFixme)
-  const typeErrors: ErrorMessage[] = Array.from(typeErrMap, errorLocator)
-  // TODO add once logging functionality is added
-  // if (typeErrors.length === 0) console.log("type inference succeeded")
+  return modules.reduce((result: CLIProcedure<TypecheckedStage>, module) => {
+    const [typeErrMap, types] = inferTypes(definitionsTable, module)
+    const typeErrors: ErrorMessage[] = Array.from(typeErrMap, errorLocator)
+    // TODO add once logging functionality is added
+    // if (typeErrors.length === 0) console.log("type inference succeeded")
 
-  const [effectErrMap, effects] = inferEffects(definitionsTable, moduleFixme)
-  const effectErrors: ErrorMessage[] = Array.from(effectErrMap, errorLocator)
-  // TODO add once logging functionality is added
-  // if (effectErrors.length === 0) console.log("effect inference succeeded")
+    const [effectErrMap, effects] = inferEffects(definitionsTable, module)
+    const effectErrors: ErrorMessage[] = Array.from(effectErrMap, errorLocator)
+    // TODO add once logging functionality is added
+    // if (effectErrors.length === 0) console.log("effect inference succeeded")
 
-  const [modeErrMap, modes] = checkModes(moduleFixme, effects)
-  const modeErrors: ErrorMessage[] = Array.from(modeErrMap, errorLocator)
+    const [modeErrMap, modes] = checkModes(module, effects)
+    const modeErrors: ErrorMessage[] = Array.from(modeErrMap, errorLocator)
 
-  // TODO add once logging functionality is added
-  // console.log("mode checking succeeded")
-  // Check whether we found errors in previous stages, and forward the error if so
-  const errors = typeErrors.concat(effectErrors).concat(modeErrors)
-  if (errors.length > 0) {
-    return cliErr("typechecking failed", { ...typechecking, errors })
-  } else {
-    return right({ ...typechecking, types, effects, modes })
-  }
+    // TODO add once logging functionality is added
+    // console.log("mode checking succeeded")
+    // Check whether we found errors in previous stages, and forward the error if so
+    const errors = typeErrors.concat(effectErrors).concat(modeErrors)
+    if (errors.length > 0) {
+      return result.mapLeft(errResult => {
+        return { ...errResult, stage: { ...typechecking, errors: errResult.stage.errors.concat(errors) } }
+      }).chain(_ => {
+        return cliErr("typechecking failed", { ...typechecking, errors })
+      })
+    } else {
+      return result.map(r => {
+        return {
+          ...typechecking,
+          types: new Map([...r.types, ...types]),
+          effects: new Map([...r.effects, ...effects]),
+          modes: new Map([...r.modes, ...modes]),
+        }
+      })
+    }
+  }, right({
+    ...typechecking,
+    types: new Map<bigint, TypeScheme>(),
+    effects: new Map<bigint, Effect>(),
+    modes: new Map<bigint, OpQualifier>(),
+  }))
 }
 
 /**
