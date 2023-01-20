@@ -57,10 +57,11 @@ TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
     - [Operators on actions](#operators-on-actions)
       - [Delayed assignment](#delayed-assignment)
       - [Non-deterministic choice](#non-deterministic-choice-1)
+      - [Assert](#assert)
     - [Runs](#runs)
       - [Then](#then)
       - [Repeated](#repeated)
-      - [Assert](#assert)
+      - [Fail](#fail)
     - [Temporal operators](#temporal-operators)
       - [Always](#always)
       - [Eventually](#eventually)
@@ -1680,6 +1681,21 @@ languages.
 
 See the discussion in: [Non-deterministic choice](#nondeterministic).
 
+#### Assert
+
+The operator `assert` has the following syntax:
+
+```scala
+assert(condition)
+```
+
+This operator always evaluates to `condition`, and it does not change the state
+variables. If `condition` evaluates to `false` in a state, then the user should
+receive a message about a runtime error. How exactly this is reported depends
+on the tool.
+
+*Mode:* Action.
+
 ### Runs
 
 A run represents a finite execution. In the simplest case, it represents
@@ -1792,17 +1808,18 @@ See the description of [orKeep](#OrKeep) below.
 
 *Mode:* Run.
 
-#### Assert
+#### Fail
 
-The operator `assert` has the following syntax:
+The operator `fail` has the following syntax:
 
 ```scala
-assert(condition)
+A.fail()
+fail(A)
 ```
 
-This operator is always enabled and it does not change the state. If
-`condition` evaluates to `false` in a state, then the run should be marked as
-"failed". How exactly this is reported depends on the tool.
+This operator returns `true` if and only if action `A` returns `false`.
+The operator `fail` is useful for writing runs that expect an action
+to be disabled.
 
 *Mode:* Run.
 

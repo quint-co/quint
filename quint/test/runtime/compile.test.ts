@@ -917,14 +917,24 @@ describe('compiling specs to runtime values', () => {
       assertVarAfterRun('run1', 'n', '4', input)
     })
 
-    it('assert', () => {
+    it('fail', () => {
       const input = dedent(
         `var n: int
-        |run run1 = (n' = 1).then(assert(n < 3).repeated(3))
+        |run run1 = (n' = 1).fail()
         `)
 
       evalVarAfterRun('run1', 'n', input)
-        .mapLeft(m => assert.fail(`Expected an error, found: ${m}`))
+        .mapRight(m => assert.fail(`Expected the run to fail, found: ${m}`))
+    })
+
+    it('assert', () => {
+      const input = dedent(
+        `var n: int
+        |run run1 = (n' = 3).then(and { assert(n < 3), n' = n })
+        `)
+
+      evalVarAfterRun('run1', 'n', input)
+        .mapRight(m => assert.fail(`Expected an error, found: ${m}`))
     })
   })
 })

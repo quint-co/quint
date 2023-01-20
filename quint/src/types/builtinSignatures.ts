@@ -120,6 +120,7 @@ const otherOperators = [
   { name: 'ite', type: '(bool, a, a) => a' },
   { name: 'then', type: '(bool, bool) => bool' },
   { name: 'repeated', type: '(bool, int) => bool' },
+  { name: 'fail', type: '(bool) => bool' },
   { name: 'assert', type: '(bool) => bool' },
 ]
 
