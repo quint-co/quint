@@ -125,3 +125,50 @@ quint typecheck --out test-out.json ./testFixture/TrivialTypeError.qnt ; ret=$?;
 <!-- !test err typecheck failure quiet with out flag -->
 ```
 ```
+
+## Use of the `--required` flag
+
+### Repl loads a file with -r
+
+<!-- !test in repl loads a file -->
+```
+echo "import counters.*" | quint -r ../examples/counters.qnt 2>&1 | tail -n +3
+```
+
+<!-- !test out repl loads a file -->
+```
+true
+>>> 
+>>> 
+```
+
+### Repl loads a file and a module with -r
+
+<!-- !test in repl loads a file and a module -->
+```
+echo "Init" | quint -r ../examples/counters.qnt::counters 2>&1 | tail -n +3
+```
+
+<!-- !test out repl loads a file and a module -->
+```
+true
+
+>>> true
+>>> 
+```
+
+### Repl loads a file with .load
+
+<!-- !test in repl loads a file with .load -->
+```
+echo ".load ../examples/counters.qnt counters" \
+  | quint 2>&1 | tail -n +3
+```
+
+<!-- !test out repl loads a file with .load -->
+```
+>>> true
+
+>>> >>> 
+```
+

@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A few productivity hacks in REPL (#557)
 - Operator `fail` (#552)
 
 ### Changed
