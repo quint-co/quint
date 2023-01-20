@@ -397,10 +397,7 @@ module bank {
   run sendNotEnabledErrTest = {
     init
       .then(send("alice", "bob", Map("photon" -> 3)))
-    //.fail()
-    // TODO: if `send` above passes, the run should fail.
-    // If `send` fails, the test should pass.
-    // We need an operator that flips the expected behavior.
+      .fail()
   }
 
   // test that multiple denominations can be sent at once
