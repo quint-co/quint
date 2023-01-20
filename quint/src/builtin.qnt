@@ -852,6 +852,11 @@ module builtin {
   /// ```
   action repeated(a, n): (bool, int) => bool
 
+  /// `a.fail()` evaluates to `true` if and only if action `a` evaluates to `false`.
+  ///
+  /// This operator is good for writing tests that expect an action to fail.
+  action fail(a): (bool) => bool
+
   /// `assert(p)` is an action that is true when `p` is true.
   ///
   /// It does not change the state.
