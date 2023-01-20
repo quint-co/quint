@@ -40,13 +40,14 @@ describe('resolveImports', () => {
       ])
 
       const result = resolveImports(quintModule, tables)
-      assert.deepEqual(result.kind, 'ok')
-      if (result.kind === 'ok') {
-        const defs = result.definitions.get(moduleName)
 
-        assert.deepInclude([...defs!.valueDefinitions.keys()], 'a')
-        assert.notDeepInclude([...defs!.valueDefinitions.keys()], 'b')
-      }
+      result
+        .map(definitions => {
+          const defs = definitions.get(moduleName)
+          assert.deepInclude([...defs!.valueDefinitions.keys()], 'a')
+          assert.notDeepInclude([...defs!.valueDefinitions.keys()], 'b')
+        })
+        .mapLeft(e => assert.fail(`Expected no error, got ${e}`))
     })
 
     it('imports all definitions', () => {
@@ -56,13 +57,14 @@ describe('resolveImports', () => {
       ])
 
       const result = resolveImports(quintModule, tables)
-      assert.deepEqual(result.kind, 'ok')
-      if (result.kind === 'ok') {
-        const defs = result.definitions.get(moduleName)
 
-        assert.includeDeepMembers([...defs!.valueDefinitions.keys()], ['a', 'b'])
-        assert.includeDeepMembers([...defs!.typeDefinitions.keys()], ['T'])
-      }
+      result
+        .map(definitions => {
+          const defs = definitions.get(moduleName)
+          assert.includeDeepMembers([...defs!.valueDefinitions.keys()], ['a', 'b'])
+          assert.includeDeepMembers([...defs!.typeDefinitions.keys()], ['T'])
+        })
+        .mapLeft(e => assert.fail(`Expected no error, got ${e}`))
     })
 
     it('intantiates modules', () => {
@@ -72,18 +74,21 @@ describe('resolveImports', () => {
       ])
 
       const result = resolveImports(quintModule, tables)
-      assert.deepEqual(result.kind, 'ok')
-      if (result.kind === 'ok') {
-        const defs = result.definitions.get(moduleName)
 
-        assert.includeDeepMembers([...defs!.valueDefinitions.keys()], [
-          'test_module_instance::a',
-          'test_module_instance::b',
-        ])
-        assert.includeDeepMembers([...defs!.typeDefinitions.keys()], [
-          'test_module_instance::T',
-        ])
-      }
+
+      result
+        .map(definitions => {
+          const defs = definitions.get(moduleName)
+
+          assert.includeDeepMembers([...defs!.valueDefinitions.keys()], [
+            'test_module_instance::a',
+            'test_module_instance::b',
+          ])
+          assert.includeDeepMembers([...defs!.typeDefinitions.keys()], [
+            'test_module_instance::T',
+          ])
+        })
+        .mapLeft(e => assert.fail(`Expected no error, got ${e}`))
     })
 
     it('imports nested module', () => {
@@ -93,14 +98,15 @@ describe('resolveImports', () => {
       ])
 
       const result = resolveImports(quintModule, tables)
-      assert.deepEqual(result.kind, 'ok')
-      if (result.kind === 'ok') {
-        const defs = result.definitions.get(moduleName)
 
-        assert.includeDeepMembers([...defs!.valueDefinitions.keys()], [
-          'nested_module::d',
-        ])
-      }
+      result
+        .map(definitions => {
+          const defs = definitions.get(moduleName)
+          assert.includeDeepMembers([...defs!.valueDefinitions.keys()], [
+            'nested_module::d',
+          ])
+        })
+        .mapLeft(e => assert.fail(`Expected no error, got ${e}`))
     })
   })
 
@@ -112,10 +118,10 @@ describe('resolveImports', () => {
       ])
 
       const result = resolveImports(quintModule, tables)
-      assert.deepEqual(result.kind, 'error')
-      if (result.kind === 'error') {
-        assert.deepEqual(result.errors.map(e => e.moduleName), ['unexisting_module'])
-      }
+
+      result
+        .mapLeft(errors => assert.deepEqual(errors.map(e => e.moduleName), [ 'unexisting_module' ]))
+        .map(_ => assert.fail('Expected errors'))
     })
 
     it('fails instantiating', () => {
@@ -125,10 +131,10 @@ describe('resolveImports', () => {
       ])
 
       const result = resolveImports(quintModule, tables)
-      assert.deepEqual(result.kind, 'error')
-      if (result.kind === 'error') {
-        assert.deepEqual(result.errors.map(e => e.moduleName), ['unexisting_module'])
-      }
+
+      result
+        .mapLeft(errors => assert.deepEqual(errors.map(e => e.moduleName), ['unexisting_module']))
+        .map(_ => assert.fail('Expected errors'))
     })
 
     it('fails importing nested', () => {
@@ -138,10 +144,10 @@ describe('resolveImports', () => {
       ])
 
       const result = resolveImports(quintModule, tables)
-      assert.deepEqual(result.kind, 'error')
-      if (result.kind === 'error') {
-        assert.deepEqual(result.errors.map(e => e.defName), ['unexisting_module'])
-      }
+
+      result
+        .mapLeft(errors => assert.deepEqual(errors.map(e => e.defName), ['unexisting_module']))
+        .map(_ => assert.fail('Expected errors'))
     })
   })
 })

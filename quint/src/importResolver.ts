@@ -15,6 +15,7 @@
 import { LookupTable, LookupTableByModule, addTypeToTable, addValueToTable, copyNames, copyTable, mergeTables, newTable } from './lookupTable'
 import { QuintImport, QuintInstance, QuintModule, QuintModuleDef } from './quintIr'
 import { IRVisitor, walkModule } from './IRVisitor'
+import { Either, left, right } from '@sweet-monads/either'
 
 /**
  * A single import error
@@ -31,11 +32,7 @@ export interface ImportError {
 /**
  * The result of import resolution for a Quint Module.
  */
-export type ImportResolutionResult =
-  /* Success, all imports were resolved and an updated table is provided */
-  | { kind: 'ok', definitions: LookupTableByModule }
-  /* Error, at least one import couldn't be resolved. All errors are listed in errors */
-  | { kind: 'error', errors: ImportError[] }
+export type ImportResolutionResult = Either<ImportError[], LookupTableByModule>
 
 /**
  * Explores the IR visiting all imports and instances. For each one, tries to find a definition
@@ -52,8 +49,8 @@ export function resolveImports(quintModule: QuintModule, definitions: LookupTabl
   walkModule(visitor, quintModule)
 
   return visitor.errors.length > 0
-    ? { kind: 'error', errors: visitor.errors }
-    : { kind: 'ok', definitions: visitor.tables }
+    ? left(visitor.errors)
+    : right(visitor.tables)
 }
 
 class ImportResolverVisitor implements IRVisitor {

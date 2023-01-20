@@ -32,10 +32,12 @@ describe('scanConflicts', () => {
       { kind: 'user', reference: 3n },
     ]
 
-    assert.deepEqual(result, {
-      kind: 'error',
-      conflicts: [{ kind: 'value', identifier: 'conflicting_name', sources: expectedSources }],
-    })
+    result
+      .mapLeft(conflicts => assert.deepEqual(conflicts, [
+        { kind: 'value', identifier: 'conflicting_name', sources: expectedSources },
+      ]))
+      .map(_ => assert.fail('Expected conflicts'))
+
   })
 
   it('finds type alias conflicts', () => {
@@ -62,10 +64,11 @@ describe('scanConflicts', () => {
       { kind: 'user', reference: 3n },
     ]
 
-    assert.deepEqual(result, {
-      kind: 'error',
-      conflicts: [{ kind: 'type', identifier: 'MY_TYPE', sources: expectedSources }],
-    })
+    result
+      .mapLeft(conflicts => assert.deepEqual(conflicts, [
+        { kind: 'type', identifier: 'MY_TYPE', sources: expectedSources },
+      ]))
+      .map(_ => assert.fail('Expected conflicts'))
   })
 
   it('finds name conflicts within nested scopes', () => {
@@ -85,10 +88,11 @@ describe('scanConflicts', () => {
       { kind: 'user', reference: 2n },
     ]
 
-    assert.deepEqual(result, {
-      kind: 'error',
-      conflicts: [{ kind: 'value', identifier: 'conflicting_name', sources: expectedSources }],
-    })
+    result
+      .mapLeft(conflicts => assert.deepEqual(conflicts, [
+        { kind: 'value', identifier: 'conflicting_name', sources: expectedSources },
+      ]))
+      .map(_ => assert.fail('Expected conflicts'))
   })
 
   it('finds conflicts with built-in definitions', () => {
@@ -123,13 +127,12 @@ describe('scanConflicts', () => {
       { kind: 'user', reference: 1n },
     ]
 
-    assert.deepEqual(result, {
-      kind: 'error',
-      conflicts: [
+    result
+      .mapLeft(conflicts => assert.deepEqual(conflicts, [
         { kind: 'value', identifier: 'conflicting_name', sources: expectedSources },
         { kind: 'type', identifier: 'MY_TYPE', sources: expectedTypeSources },
-      ],
-    })
+      ]))
+      .map(_ => assert.fail('Expected conflicts'))
   })
 
   it('finds no conflicts when there are none', () => {
@@ -155,6 +158,6 @@ describe('scanConflicts', () => {
 
     const result = scanConflicts(table, tree)
 
-    assert.deepEqual(result, { kind: 'ok' })
+    assert.isTrue(result.isRight())
   })
 })
