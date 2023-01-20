@@ -76,8 +76,8 @@ documents.onDidChangeContent(change => {
   parseDocument(change.document)
     .then((result) => {
       parsedDataByDocument.set(change.document.uri, result)
-      docsByDocument.set(change.document.uri, produceDocs(result.module))
-      return checkTypesAndEffects(result.module, result.sourceMap, result.table)
+      docsByDocument.set(change.document.uri, produceDocs(result.modules[0]))
+      return checkTypesAndEffects(result.modules[0], result.sourceMap, result.table)
     })
     .then((inferredData) => {
       inferredDataByDocument.set(change.document.uri, inferredData)
@@ -131,9 +131,9 @@ connection.onHover((params: HoverParams): Hover | undefined => {
       return []
     }
 
-    const { module, sourceMap } = parsedData
+    const { modules, sourceMap } = parsedData
     const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-    const [name, _] = findName(module, results, params.position) ?? [undefined, undefined]
+    const [name, _] = findName(modules[0], results, params.position) ?? [undefined, undefined]
     if (!name) {
       return []
     }
@@ -200,7 +200,8 @@ connection.onDefinition((params: DefinitionParams): HandlerResult<Location[], vo
   }
 
   // Find name under cursor
-  const { module, sourceMap, table } = parsedData
+  const { modules, sourceMap, table } = parsedData
+  const module = modules[0]
   const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
   const [name, scope] = findName(module, results, params.position) ?? [undefined, undefined]
   if (!name) {

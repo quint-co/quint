@@ -32,5 +32,5 @@ export function parseOrThrow(moduleText: string): [QuintModule, Map<bigint, Loc>
     throw new Error('Failed to parse mocked module')
   }
 
-  return [result1.value.module, result1.value.sourceMap, result2.value.table]
+  return [result1.value.modules[0], result1.value.sourceMap, result2.value.table]
 }
