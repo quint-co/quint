@@ -2,10 +2,10 @@ module erc20 {
   type ADDR = str
 
   type TX =
-    | { tag: "none", id: int, fail: bool }
-    | { tag: "transfer", id: int, fail: bool, sender: ADDR, toAddr: ADDR, value: int }
-    | { tag: "approve", id: int, fail: bool, sender: ADDR, spender: ADDR, value: int }
-    | { tag: "transferFrom", id: int, fail: bool, sender: ADDR, fromAddr: ADDR, toAddr: ADDR, value: int }
+    | { tag: "none", id: int, failed: bool }
+    | { tag: "transfer", id: int, failed: bool, sender: ADDR, toAddr: ADDR, value: int }
+    | { tag: "approve", id: int, failed: bool, sender: ADDR, spender: ADDR, value: int }
+    | { tag: "transferFrom", id: int, failed: bool, sender: ADDR, fromAddr: ADDR, toAddr: ADDR, value: int }
 
   const ADDR: Set[ADDR]
   const AMMOUNTS: Set[int]
@@ -22,7 +22,7 @@ module erc20 {
     allowance' = tuples(ADDR, ADDR).mapBy(_ => 0),
     pendingTransactions' = Set(),
     nextTxId' = 0,
-    lastTx' = { id: 0, tag: "none", fail: false }
+    lastTx' = { id: 0, tag: "none", failed: false }
   }
 
   /* EIP-20:
@@ -36,11 +36,11 @@ module erc20 {
   Transfer event.
   */
   action SubmitTransfer(sender, toAddr, value) = {
-    val newTx = { id: nextTxId, tag: "transfer", fail: false,
+    val newTx = { id: nextTxId, tag: "transfer", failed: false,
                   sender: sender, toAddr: toAddr, value: value }
     all {
       pendingTransactions' = pendingTransactions.union(Set(newTx)),
-      lastTx' = { id: 0, tag: "none", fail: false },
+      lastTx' = { id: 0, tag: "none", failed: false },
       nextTxId' = nextTxId + 1,
       balanceOf' = balanceOf,
       allowance' = allowance,
@@ -53,14 +53,14 @@ module erc20 {
     pendingTransactions' = pendingTransactions.exclude(Set(tx)),
     allowance' = allowance,
     nextTxId' = nextTxId,
-    val fail = or {
+    val failed = or {
      tx.value < 0,
      tx.value > balanceOf.get(tx.sender),
      tx.sender == tx.toAddr
     }
     all {
-      lastTx' = tx.with("fail", fail),
-      if (fail)
+      lastTx' = tx.with("failed", failed),
+      if (failed)
         balanceOf' = balanceOf
       else
         balanceOf' = balanceOf
@@ -83,11 +83,11 @@ module erc20 {
   Transfer event.
   */
   action SubmitTransferFrom(sender, fromAddr, toAddr, value) = {
-    val newTx = { id: nextTxId, tag: "transferFrom", fail: false, sender: sender,
+    val newTx = { id: nextTxId, tag: "transferFrom", failed: false, sender: sender,
                   fromAddr: fromAddr, toAddr: toAddr, value: value }
     all {
       pendingTransactions' = pendingTransactions.union(Set(newTx)),
-      lastTx' = { id: 0, tag: "none", fail: false },
+      lastTx' = { id: 0, tag: "none", failed: false },
       nextTxId' = nextTxId + 1,
       balanceOf' = balanceOf,
       allowance' = allowance,
@@ -99,15 +99,15 @@ module erc20 {
     tx.tag == "transferFrom",
     pendingTransactions' = pendingTransactions.exclude(Set(tx)),
     nextTxId' = nextTxId,
-    val fail = or {
+    val failed = or {
      tx.value < 0,
      tx.value > balanceOf.get(tx.fromAddr),
      tx.value > allowance.get((tx.fromAddr, tx.sender)),
      tx.fromAddr == tx.toAddr
     }
     all {
-      lastTx' = tx.with("fail", fail),
-      if (fail)
+      lastTx' = tx.with("failed", failed),
+      if (failed)
         all {
           balanceOf' = balanceOf,
           allowance' = allowance,
@@ -128,11 +128,11 @@ module erc20 {
   with _value.
   */
   action SubmitApprove(sender, spender, value) = {
-    val newTx = { id: nextTxId, tag: "approve", fail: false,
+    val newTx = { id: nextTxId, tag: "approve", failed: false,
                   sender: sender, spender: spender, value: value }
     all {
       pendingTransactions' = pendingTransactions.union(Set(newTx)),
-      lastTx' = { id: 0, tag: "none", fail: false },
+      lastTx' = { id: 0, tag: "none", failed: false },
       nextTxId' = nextTxId + 1,
       balanceOf' = balanceOf,
       allowance' = allowance,
@@ -145,13 +145,13 @@ module erc20 {
     pendingTransactions' = pendingTransactions.exclude(Set(tx)),
     nextTxId' = nextTxId,
     balanceOf' = balanceOf,
-    val fail = or {
+    val failed = or {
      tx.value < 0,
      tx.sender > tx.spender,
     }
     all {
-      lastTx' = tx.with("fail", fail),
-      if (fail)
+      lastTx' = tx.with("failed", failed),
+      if (failed)
         allowance' = allowance
       else
         allowance' = allowance.set((tx.sender, tx.spender), tx.value)
@@ -198,7 +198,7 @@ module erc20 {
   val NoTransferFrom =
     val example = all {
       lastTx.tag == "transferFrom",
-      not(lastTx.fail),
+      not(lastTx.failed),
       lastTx.value > 0,
     }
 
@@ -212,7 +212,7 @@ module erc20 {
   val NoApprove =
     val example = all {
       lastTx.tag == "approve",
-      not(lastTx.fail),
+      not(lastTx.failed),
       lastTx.value > 0,
     }
 
@@ -228,7 +228,7 @@ module erc20 {
     val badExample = all {
       lastTx.tag == "transferFrom",
       lastTx.value > 0,
-      not(lastTx.fail),
+      not(lastTx.failed),
       nondet tx = oneOf(pendingTransactions)
       all {
         tx.tag == "approve",

@@ -741,6 +741,12 @@ export class CompilerVisitor implements IRVisitor {
         this.translateAllOrThen(app)
         break
 
+      case 'fail':
+        this.applyFun(app.id, 1, (result) => {
+          return just(rv.mkBool(!result.toBool()))
+        })
+        break
+
       case 'assert':
         this.applyFun(app.id, 1, (cond) => {
           if (!cond.toBool()) {

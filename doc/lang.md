@@ -61,6 +61,7 @@ TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
       - [Then](#then)
       - [Repeated](#repeated)
       - [Assert](#assert)
+      - [Fail](#fail)
     - [Temporal operators](#temporal-operators)
       - [Always](#always)
       - [Eventually](#eventually)
@@ -1803,6 +1804,21 @@ assert(condition)
 This operator is always enabled and it does not change the state. If
 `condition` evaluates to `false` in a state, then the run should be marked as
 "failed". How exactly this is reported depends on the tool.
+
+*Mode:* Run.
+
+#### Fail
+
+The operator `fail` has the following syntax:
+
+```scala
+A.fail()
+fail(A)
+```
+
+This operator returns `true` if and only if action `A` returns `false`.
+The operator `fail` is useful for writing runs that expect an action
+to be disabled.
 
 *Mode:* Run.
 
