@@ -22,12 +22,10 @@ import { LookupTableByModule } from './lookupTable'
 import { ReplOptions, quintRepl } from './repl'
 import { OpQualifier, QuintModule } from './quintIr'
 import { TypeScheme } from './types/base'
-import { TypeInferenceResult, inferTypes } from './types/inferrer'
 import lineColumn from 'line-column'
 import { formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
-import { EffectInferenceResult, inferEffects } from './effects/inferrer'
-import { ModeCheckingResult, checkModes } from './effects/modeChecker'
+import { analyze } from './quintAnalyzer'
 
 export type stage = 'loading' | 'parsing' | 'typechecking' | 'documentation'
 
@@ -162,41 +160,14 @@ function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: [bigint, ErrorTree]) =
 export function typecheck(parsed: ParsedStage): CLIProcedure<TypecheckedStage> {
   const { table, modules, sourceMap } = parsed
   const typechecking = { ...parsed, stage: 'typechecking' as stage }
-  const definitionsTable = table
-  const errorLocator = mkErrorMessage(sourceMap)
 
-  function mergeResults<T>(
-    a: [Map<bigint, ErrorTree>, Map<bigint, T>], b: [Map<bigint, ErrorTree>, Map<bigint, T>]
-  ): [Map<bigint, ErrorTree>, Map<bigint, T>] {
-    return [new Map([...a[0], ...b[0]]), new Map([...a[1], ...b[1]])]
-  }
-
-  const [typeErrMap, types] = modules.reduce((result: TypeInferenceResult, module) => {
-    const resultForModule = inferTypes(definitionsTable, module, result)
-    return mergeResults(result, resultForModule)
-  }, [new Map<bigint, ErrorTree>(), new Map<bigint, TypeScheme>()])
-
-  const [effectErrMap, effects] = modules.reduce((result: EffectInferenceResult, module) => {
-    const resultForModule = inferEffects(definitionsTable, module, result)
-    return mergeResults(result, resultForModule)
-  }, [new Map<bigint, ErrorTree>(), new Map<bigint, Effect>()])
-
-  const [modeErrMap, modes] = modules.reduce((result: ModeCheckingResult, module) => {
-    const resultForModule = checkModes(module, effects, result)
-    return mergeResults(result, resultForModule)
-  }, [new Map<bigint, ErrorTree>(), new Map<bigint, OpQualifier>()])
-
-  const typeErrors: ErrorMessage[] = Array.from(typeErrMap, errorLocator)
-  const effectErrors: ErrorMessage[] = Array.from(effectErrMap, errorLocator)
-  const modeErrors: ErrorMessage[] = Array.from(modeErrMap, errorLocator)
-
-  // Check whether we found errors in previous stages, and forward the error if so
-  const errors = typeErrors.concat(effectErrors).concat(modeErrors)
-  if (errors.length > 0) {
-    return cliErr("typechecking failed", { ...typechecking, errors })
-  } else {
-    return right({ ...typechecking, types, effects, modes })
-  }
+  return analyze(table, modules)
+    .map(result => ({ ...typechecking, ...result }))
+    .mapLeft(errorMap => {
+      const errorLocator = mkErrorMessage(sourceMap)
+      const errors = Array.from(errorMap, errorLocator)
+      return { msg: "typechecking failed", stage: { ...typechecking, errors } }
+    })
 }
 
 /**

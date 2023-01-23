@@ -77,7 +77,7 @@ documents.onDidChangeContent(change => {
     .then((result) => {
       parsedDataByDocument.set(change.document.uri, result)
       docsByDocument.set(change.document.uri, produceDocs(result.modules[0]))
-      return checkTypesAndEffects(result.modules[0], result.sourceMap, result.table)
+      return checkTypesAndEffects(result.modules, result.sourceMap, result.table)
     })
     .then((inferredData) => {
       inferredDataByDocument.set(change.document.uri, inferredData)

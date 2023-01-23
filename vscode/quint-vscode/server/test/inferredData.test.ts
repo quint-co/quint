@@ -5,10 +5,10 @@ import { parseOrThrow } from './util'
 
 
 describe('checkTypesAndEffects', () => {
-  it('assembles inferred data for the module', async() => {
-    const [module, sourceMap, table] = parseOrThrow(`module test { val foo: int = 1 }`)
+  it('assembles inferred data for the modules', async() => {
+    const [modules, sourceMap, table] = parseOrThrow(`module test { val foo: int = 1 }`)
 
-    const inferredData = checkTypesAndEffects(module, sourceMap, table)
+    const inferredData = checkTypesAndEffects(modules, sourceMap, table)
 
     const r = await inferredData.catch(e => assert.fail(`Unexpected error: ${e}`))
 
@@ -54,13 +54,13 @@ describe('checkTypesAndEffects', () => {
   })
 
   it('returns diagnostics for errors', async() => {
-    const [module, sourceMap, table] = parseOrThrow(`module test {
+    const [modules, sourceMap, table] = parseOrThrow(`module test {
       var x: int
 
       val foo: int = always(x > 1)
     }`)
 
-    const inferredData = checkTypesAndEffects(module, sourceMap, table)
+    const inferredData = checkTypesAndEffects(modules, sourceMap, table)
 
     const r = await inferredData.catch(e => assert.sameDeepMembers(e, [
       {

@@ -1,21 +1,21 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { ErrorTree, Loc } from '@informalsystems/quint'
-import { assembleDiagnostic, diagnosticsFromErrorMap, findBestMatchingResult, findName, locToRange } from '../src/reporting'
+import { assembleDiagnostic, diagnosticsFromErrors, findBestMatchingResult, findName, locToRange } from '../src/reporting'
 import { Position } from 'vscode-languageserver'
 import { parseOrThrow } from './util'
 
 describe('diagnosticsFromErrorMap', () => {
-  const errorMap = new Map<bigint, ErrorTree>([
+  const errors: [bigint, ErrorTree][] = [
     [1n, { message: 'Message', location: 'Location', children: [] }],
-  ])
+  ]
 
   const sourceMap = new Map<bigint, Loc>([
     [1n, { start: { col: 1, index: 1, line: 1 }, end: { col: 1, index: 1, line: 1 }, source: 'mocked_path' }],
   ])
 
   it('assembles diagnosticts from error maps', () => {
-    const diagnostics = diagnosticsFromErrorMap(errorMap, sourceMap)
+    const diagnostics = diagnosticsFromErrors(errors, sourceMap)
 
     assert.sameDeepMembers(diagnostics, [
       {
@@ -80,13 +80,13 @@ describe('findBestMatchingResult', () => {
   })
 
   describe('findName', () => {
-    const [module, sourceMap, _table] = parseOrThrow('module test { val foo = Nat.isFinite() }')
+    const [modules, sourceMap, _table] = parseOrThrow('module test { val foo = Nat.isFinite() }')
     const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
 
     it('finds the name when position is under a name', () => {
       const position: Position = { line: 0, character: 25 }
 
-      const [name, _] = findName(module, results, position) ?? [undefined, undefined]
+      const [name, _] = findName(modules[0], results, position) ?? [undefined, undefined]
 
       assert.deepEqual(name, 'Nat')
     })
@@ -94,7 +94,7 @@ describe('findBestMatchingResult', () => {
     it('finds the name when position is under an application', () => {
       const position: Position = { line: 0, character: 29 }
 
-      const [name, _] = findName(module, results, position) ?? [undefined, undefined]
+      const [name, _] = findName(modules[0], results, position) ?? [undefined, undefined]
 
       assert.deepEqual(name, 'isFinite')
     })
@@ -102,7 +102,7 @@ describe('findBestMatchingResult', () => {
     it('returns undefined when the position is not under a name', () => {
       const position: Position = { line: 1, character: 8 }
 
-      const name = findName(module, results, position)
+      const name = findName(modules[0], results, position)
 
       assert.deepEqual(name, undefined)
     })
