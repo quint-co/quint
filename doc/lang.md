@@ -57,10 +57,10 @@ TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
     - [Operators on actions](#operators-on-actions)
       - [Delayed assignment](#delayed-assignment)
       - [Non-deterministic choice](#non-deterministic-choice-1)
+      - [Assert](#assert)
     - [Runs](#runs)
       - [Then](#then)
       - [Repeated](#repeated)
-      - [Assert](#assert)
       - [Fail](#fail)
     - [Temporal operators](#temporal-operators)
       - [Always](#always)
@@ -1681,6 +1681,21 @@ languages.
 
 See the discussion in: [Non-deterministic choice](#nondeterministic).
 
+#### Assert
+
+The operator `assert` has the following syntax:
+
+```scala
+assert(condition)
+```
+
+This operator always evaluates to `condition`, and it does not change the state
+variables. If `condition` evaluates to `false` in a state, then the user should
+receive a message about a runtime error. How exactly this is reported depends
+on the tool.
+
+*Mode:* Action.
+
 ### Runs
 
 A run represents a finite execution. In the simplest case, it represents
@@ -1790,20 +1805,6 @@ a.repeated(i).then((a.orKeep(vars)).repeated(j - i))
 ```
 
 See the description of [orKeep](#OrKeep) below.
-
-*Mode:* Run.
-
-#### Assert
-
-The operator `assert` has the following syntax:
-
-```scala
-assert(condition)
-```
-
-This operator is always enabled and it does not change the state. If
-`condition` evaluates to `false` in a state, then the run should be marked as
-"failed". How exactly this is reported depends on the tool.
 
 *Mode:* Run.
 
