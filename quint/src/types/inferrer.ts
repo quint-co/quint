@@ -21,6 +21,8 @@ import { TypeScheme } from './base'
 import { ConstraintGeneratorVisitor } from './constraintGenerator'
 import { solveConstraint } from './constraintSolver'
 
+export type TypeInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>]
+
 /**
  * Infers an type for each expression in a Quint module
  *
@@ -30,9 +32,9 @@ import { solveConstraint } from './constraintSolver'
  *          ids to the corresponding error for any problematic expressions.
  */
 export function inferTypes(
-  table: LookupTableByModule, quintModule: QuintModule
-): [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>] {
-  const visitor = new ConstraintGeneratorVisitor(solveConstraint, table)
+  table: LookupTableByModule, quintModule: QuintModule, partialResult?: TypeInferenceResult
+): TypeInferenceResult {
+  const visitor = new ConstraintGeneratorVisitor(solveConstraint, table, partialResult)
   walkModule(visitor, quintModule)
   // Since all top level expressions are operator definitions, and all
   // constraints are solved at those, there's no need to solve anything else

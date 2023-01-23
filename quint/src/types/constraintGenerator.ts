@@ -24,6 +24,7 @@ import { Substitutions, applySubstitution, compose } from './substitutions'
 import { ScopeTree, treeFromModule } from '../scoping'
 import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../lookupTable'
 import { specialConstraints } from './specialConstraints'
+import { TypeInferenceResult } from './inferrer'
 
 type solvingFunctionType = (_table: LookupTable,_constraint: Constraint)
   => Either<Map<bigint, ErrorTree>, Substitutions>
@@ -31,14 +32,18 @@ type solvingFunctionType = (_table: LookupTable,_constraint: Constraint)
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
-  constructor(solvingFunction: solvingFunctionType, lookupTable: LookupTableByModule) {
+  constructor(
+    solvingFunction: solvingFunctionType, lookupTable: LookupTableByModule, partialResult?: TypeInferenceResult
+  ) {
     this.solvingFunction = solvingFunction
     this.lookupTable = lookupTable
+    this.errors = partialResult?.[0] ?? new Map<bigint, ErrorTree>()
+    this.types = partialResult?.[1] ?? new Map<bigint, TypeScheme>()
   }
 
   // Public values with results by expression ID
-  types: Map<bigint, TypeScheme> = new Map<bigint, TypeScheme>()
-  errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
+  types: Map<bigint, TypeScheme>
+  errors: Map<bigint, ErrorTree>
 
   private solvingFunction: solvingFunctionType
   private constraints: Constraint[] = []

@@ -22,6 +22,8 @@ import { ArrowEffect, ConcreteEffect, Effect, Variables, isAction, isState, isTe
 import { EffectVisitor, walkEffect } from './EffectVisitor'
 import { effectToString } from './printing'
 
+export type ModeCheckingResult = [Map<bigint, ErrorTree>, Map<bigint, OpQualifier>]
+
 /**
  * Matches annotated modes for each definition with its inferred effect. Returns
  * errors for incorrect annotations and suggestions for annotations that could
@@ -33,22 +35,25 @@ import { effectToString } from './printing'
  * @returns The mode errors, if any is found. Otherwise, a map with potential suggestions.
  */
 export function checkModes(
-  quintModule: QuintModule, effects: Map<bigint, Effect>
-): [Map<bigint, ErrorTree>, Map<bigint, OpQualifier>] {
-  const visitor = new ModeCheckerVisitor(effects)
+  quintModule: QuintModule, effects: Map<bigint, Effect>, partialResult?: ModeCheckingResult
+): ModeCheckingResult {
+  const visitor = new ModeCheckerVisitor(effects, partialResult)
   walkModule(visitor, quintModule)
   return [visitor.errors, visitor.suggestions]
 }
 
 class ModeCheckerVisitor implements IRVisitor {
-  public errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
-  public suggestions: Map<bigint, OpQualifier> = new Map<bigint, OpQualifier>()
-  effects: Map<bigint, Effect>
-  modeFinderVisitor: ModeFinderVisitor = new ModeFinderVisitor()
-
-  constructor(effects: Map<bigint, Effect>) {
+  constructor(effects: Map<bigint, Effect>, partialResult?: ModeCheckingResult) {
     this.effects = effects
+    this.errors = partialResult?.[0] ?? new Map<bigint, ErrorTree>()
+    this.suggestions = partialResult?.[1] ?? new Map<bigint, OpQualifier>()
   }
+
+  errors: Map<bigint, ErrorTree>
+  suggestions: Map<bigint, OpQualifier>
+
+  private effects: Map<bigint, Effect>
+  private modeFinderVisitor: ModeFinderVisitor = new ModeFinderVisitor()
 
   exitOpDef(def: QuintOpDef) {
     const effect = this.effects.get(def.id)

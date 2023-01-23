@@ -25,6 +25,8 @@ import { ScopeTree, treeFromModule } from '../scoping'
 import isEqual from 'lodash.isequal'
 import { getSignatures } from './builtinSignatures'
 
+export type EffectInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, Effect>]
+
 /**
  * Infers an effect for every expression in a module based on
  * the definitions table for that module
@@ -36,9 +38,9 @@ import { getSignatures } from './builtinSignatures'
  *          ids to the corresponding error for any problematic expressions.
  */
 export function inferEffects(
-  lookupTable: LookupTableByModule, module: QuintModule
-): [Map<bigint, ErrorTree>, Map<bigint, Effect>] {
-  const visitor = new EffectInferrerVisitor(lookupTable)
+  lookupTable: LookupTableByModule, module: QuintModule, partialResult?: EffectInferenceResult
+): EffectInferenceResult {
+  const visitor = new EffectInferrerVisitor(lookupTable, partialResult)
   walkModule(visitor, module)
   return [visitor.errors, visitor.effects]
 }
@@ -48,13 +50,15 @@ export function inferEffects(
  * expressions. Errors are written to the errors attribute.
  */
 class EffectInferrerVisitor implements IRVisitor {
-  constructor(lookupTable: LookupTableByModule) {
+  constructor(lookupTable: LookupTableByModule, partialResult?: EffectInferenceResult) {
     this.lookupTable = lookupTable
+    this.errors = partialResult?.[0] ?? new Map<bigint, ErrorTree>()
+    this.effects = partialResult?.[1] ?? new Map<bigint, Effect>()
   }
 
   // Public values with results by expression ID
-  effects: Map<bigint, Effect> = new Map<bigint, Effect>()
-  errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
+  effects: Map<bigint, Effect>
+  errors: Map<bigint, ErrorTree>
 
   private substitutions: Substitutions = []
 
