@@ -33,6 +33,7 @@ export type EffectInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, Effect>
  *
  * @param lookupTable the collected definitions for the module under inference
  * @param module: the Quint module to infer effects for
+ * @param partialResult: optionally, a partial result from a previous inference
  *
  * @returns a map from expression ids to their effects and a map from expression
  *          ids to the corresponding error for any problematic expressions.

@@ -161,13 +161,15 @@ export function typecheck(parsed: ParsedStage): CLIProcedure<TypecheckedStage> {
   const { table, modules, sourceMap } = parsed
   const typechecking = { ...parsed, stage: 'typechecking' as stage }
 
-  return analyze(table, modules)
-    .map(result => ({ ...typechecking, ...result }))
-    .mapLeft(errorMap => {
-      const errorLocator = mkErrorMessage(sourceMap)
-      const errors = Array.from(errorMap, errorLocator)
-      return { msg: "typechecking failed", stage: { ...typechecking, errors } }
-    })
+  const [errorMap, result] = analyze(table, modules)
+
+  if (errorMap.length === 0) {
+    return right({ ...typechecking, ...result })
+  } else {
+    const errorLocator = mkErrorMessage(sourceMap)
+    const errors = Array.from(errorMap, errorLocator)
+    return cliErr("typechecking failed", { ...typechecking, errors })
+  }
 }
 
 /**

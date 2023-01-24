@@ -27,6 +27,7 @@ export type TypeInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, TypeSchem
  * Infers an type for each expression in a Quint module
  *
  * @param quintModule: the Quint module to infer types for
+ * @param partialResult: optionally, a partial result from a previous inference
  *
  * @returns a map from expression ids to their types and a map from expression
  *          ids to the corresponding error for any problematic expressions.
