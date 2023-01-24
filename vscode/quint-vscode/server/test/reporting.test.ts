@@ -50,15 +50,21 @@ describe('assembleDiagnostic', () => {
 })
 
 describe('findBestMatchingResult', () => {
-  const results: [Loc, string][] = [
-    [{ start: { col: 1, index: 1, line: 1 }, end: { col: 1, index: 1, line: 1 }, source: 'mocked_path' }, 'result 1'],
-    [{ start: { col: 1, index: 1, line: 1 }, end: { col: 10, index: 10, line: 1 }, source: 'mocked_path' }, 'result 2'],
-    [{ start: { col: 1, index: 11, line: 2 }, end: { col: 2, index: 12, line: 2 }, source: 'mocked_path' }, 'result 3'],
+  const sourceMap = new Map<bigint, Loc>([
+    [1n, { start: { col: 1, index: 1, line: 1 }, end: { col: 1, index: 1, line: 1 }, source: 'mocked_path' }],
+    [2n, { start: { col: 1, index: 1, line: 1 }, end: { col: 10, index: 10, line: 1 }, source: 'mocked_path' }],
+    [3n, { start: { col: 1, index: 11, line: 2 }, end: { col: 2, index: 12, line: 2 }, source: 'mocked_path' }],
+  ])
+
+  const results: [bigint, string][] = [
+    [1n, 'result 1'],
+    [2n, 'result 2'],
+    [3n, 'result 3'],
   ]
   it('finds the result with best matching loc to the position - 1', () => {
     const position: Position = { line: 1, character: 1 }
 
-    const [_loc, result] = findBestMatchingResult(results, position)
+    const [_loc, result] = findBestMatchingResult(sourceMap, results, position)
 
     assert.deepEqual(result, 'result 1')
   })
@@ -66,7 +72,7 @@ describe('findBestMatchingResult', () => {
   it('finds the result with best matching loc to the position - 2', () => {
     const position: Position = { line: 1, character: 8 }
 
-    const [_loc, result] = findBestMatchingResult(results, position)
+    const [_loc, result] = findBestMatchingResult(sourceMap, results, position)
 
     assert.deepEqual(result, 'result 2')
   })
@@ -74,7 +80,7 @@ describe('findBestMatchingResult', () => {
   it('finds the result with best matching loc to the position - 3', () => {
     const position: Position = { line: 2, character: 1 }
 
-    const [_loc, result] = findBestMatchingResult(results, position)
+    const [_loc, result] = findBestMatchingResult(sourceMap, results, position)
 
     assert.deepEqual(result, 'result 3')
   })

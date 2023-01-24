@@ -26,9 +26,8 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { DocumentationEntry, Loc, ParserPhase2, builtinDocs, parsePhase1, parsePhase2, produceDocs, treeFromModule } from '@informalsystems/quint'
-import { InferredData, checkTypesAndEffects } from './inferredData'
-import { assembleDiagnostic, findBestMatchingResult, findName, locToRange } from './reporting'
+import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase2, analyze, builtinDocs, effectToString, parsePhase1, parsePhase2, produceDocs, treeFromModule, typeSchemeToString } from '@informalsystems/quint'
+import { assembleDiagnostic, diagnosticsFromErrors, findBestMatchingResult, findName, locToRange } from './reporting'
 import { lookupValue } from '@informalsystems/quint/dist/src/lookupTable'
 
 // Create a connection for the server, using Node's IPC as a transport.
@@ -40,7 +39,7 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument)
 
 // Store auxiliary information by document
 const parsedDataByDocument: Map<DocumentUri, ParserPhase2> = new Map<DocumentUri, ParserPhase2>()
-const inferredDataByDocument: Map<DocumentUri, InferredData> = new Map<DocumentUri, InferredData>()
+const analysisOutputByDocument: Map<DocumentUri, AnalyzisOutput> = new Map<DocumentUri, AnalyzisOutput>()
 const docsByDocument: Map<DocumentUri, Map<string, DocumentationEntry>> =
   new Map<DocumentUri, Map<string, DocumentationEntry>>()
 
@@ -65,7 +64,7 @@ connection.onInitialize((_params: InitializeParams) => {
 documents.onDidClose(e => {
   parsedDataByDocument.delete(e.document.uri)
   docsByDocument.delete(e.document.uri)
-  inferredDataByDocument.delete(e.document.uri)
+  analysisOutputByDocument.delete(e.document.uri)
 })
 
 // The content of a text document has changed. This event is emitted
@@ -73,33 +72,32 @@ documents.onDidClose(e => {
 documents.onDidChangeContent(change => {
   console.log('File content changed, checking types and effects again')
 
-  parseDocument(change.document)
-    .then((result) => {
-      parsedDataByDocument.set(change.document.uri, result)
-      docsByDocument.set(change.document.uri, produceDocs(result.modules[0]))
-      return checkTypesAndEffects(result.modules, result.sourceMap, result.table)
-    })
-    .then((inferredData) => {
-      inferredDataByDocument.set(change.document.uri, inferredData)
+  parseDocument(change.document).then((result) => {
+    parsedDataByDocument.set(change.document.uri, result)
+    docsByDocument.set(change.document.uri, produceDocs(result.modules[0]))
+    const [errors, analysisOutput] = analyze(result.table, result.modules)
 
-      // Clear possible old diagnostics
-      connection.sendDiagnostics({ uri: change.document.uri, diagnostics: [] })
-    })
-    .catch(diagnostics => {
-      // Send the computed diagnostics to VSCode.
-      connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
-    })
+    analysisOutputByDocument.set(change.document.uri, analysisOutput)
+
+    const diagnostics = diagnosticsFromErrors(errors, result.sourceMap)
+    connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
+  })
 })
 
 connection.onHover((params: HoverParams): Hover | undefined => {
   function inferredDataHover(): string[] {
-    const inferredData = inferredDataByDocument.get(params.textDocument.uri)
-    if (!inferredData) {
+    const parsedData = parsedDataByDocument.get(params.textDocument.uri)
+    const analysisOutput = analysisOutputByDocument.get(params.textDocument.uri)
+    if (!parsedData || !analysisOutput) {
       return []
     }
 
-    const typeResult = findBestMatchingResult([...inferredData.types.entries()], params.position)
-    const effectResult = findBestMatchingResult([...inferredData.effects.entries()], params.position)
+    const typeResult = findBestMatchingResult(
+      parsedData.sourceMap, [...analysisOutput.types.entries()], params.position
+    )
+    const effectResult = findBestMatchingResult(
+      parsedData.sourceMap, [...analysisOutput.effects.entries()], params.position
+    )
 
     // There are cases where we have types but not effects, but not the other way around
     // Therefore, we only check for typeResult here and handle missing effects later
@@ -115,11 +113,11 @@ connection.onHover((params: HoverParams): Hover | undefined => {
 
     let hoverText = ["```qnt", text, "```", '']
 
-    hoverText.push(`**type**: \`${type}\`\n`)
+    hoverText.push(`**type**: \`${typeSchemeToString(type)}\`\n`)
 
     if (effectResult) {
       const [, effect] = effectResult
-      hoverText.push(`**effect**: \`${effect}\`\n`)
+      hoverText.push(`**effect**: \`${effectToString(effect)}\`\n`)
     }
 
     return hoverText
