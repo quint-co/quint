@@ -1,7 +1,7 @@
 {
 	"name": "quint-lsp-server",
 	"description": "LSP server for Quint in node.",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"author": "Informal Systems",
 	"license": "Apache 2.0",
 	"engines": {
@@ -12,7 +12,7 @@
 		"url": "https://github.com/informalsystems/quint"
 	},
 	"dependencies": {
-		"@informalsystems/quint": "^0.5.2",
+		"@informalsystems/quint": "^0.5.4",
 		"vscode-languageserver": "^7.0.0",
 		"vscode-languageserver-textdocument": "^1.0.1"
 	},
