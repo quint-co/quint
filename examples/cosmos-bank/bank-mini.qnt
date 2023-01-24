@@ -50,16 +50,20 @@ module bank {
     params: Params,
   }
 
-  // An output produced by Keeper computations.
+  // An output produced by Keeper computations
   type BankOut = {
     isError: bool,
     ctx: BankCtx,
   }
 
+  // FUNCTIONAL LAYER
+
   // ViewKeeper {
     /// `GetAllBalances` returns all the account balances for the given account address.
     /// SDK: `func (k BaseViewKeeper) GetAllBalances(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins`
     pure def getAllBalances(ctx: BankCtx, addr: Addr): Coins = {
+      // SDK: >= 18 function calls, >= 5 files, >= 171 lines of code
+      // Cognitive overload?
       if (ctx.balances.keys().contains(addr)) {
         ctx.balances.get(addr)
       } else {
@@ -157,7 +161,13 @@ module bank {
     }
   // } // SendKeeper
 
-  // THE STATE MACHINE
+  // END OF THE FUNCTIONAL LAYER
+
+  // STATE MACHINE
+  /*
+    ---> init (balances, accounts) [-- send -->] (balances', accounts') [-- send -->] ...
+   */
+
   // machine {
     // managed by the account keeper
     var accounts: Set[Addr]
@@ -229,14 +239,16 @@ module bank {
       // Note that the probability of randomly picking an amount that
       // will not fail in `send` is quite small.
       // Hence, we need more targeted tests (see below).
-      nondet amount = oneOf((-(2^256)).to(2^256 - 1))
+      nondet amount = (-(2^256)).to(2^256 - 1).oneOf()
       nondet fromAddr = oneOf(ADDR)
       nondet toAddr = oneOf(ADDR)
       send(fromAddr, toAddr, Map(denom -> amount))
     }
   // }
 
-  // UNIT TESTS
+  // END OF THE STATE MACHINE
+
+  // UNIT TESTS + PBT TESTS
 
   // all addresses but "null" have an associated account in the key/value store
   val ACCOUNTS = ADDR.exclude(Set("null"))
@@ -257,17 +269,21 @@ module bank {
     }
   }
 
-  // test that validateBalance is working as expected
-  run validateBalanceTest = {
-    assert(validateBalance(CONTEXT, "alice"))
-      .then(assert(not(validateBalance(CONTEXT, "null"))))
-  }
-
   // An auxilliary action that keeps all variables unchanged.
   // In the future, such a change would be computed automatically.
   action keepVars = all {
     balances' = balances,
     accounts' = accounts,
+  }
+
+  // test that validateBalance is working as expected
+  run validateBalanceTest = {
+    init
+      .then(all {
+        assert(validateBalance(CONTEXT, "alice")),
+        assert(not(validateBalance(CONTEXT, "null"))),
+        keepVars,
+      })
   }
 
   // test that a simple `send` goes through
