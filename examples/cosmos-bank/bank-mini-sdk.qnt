@@ -62,6 +62,8 @@ module bank {
     /// `GetAllBalances` returns all the account balances for the given account address.
     /// SDK: `func (k BaseViewKeeper) GetAllBalances(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins`
     pure def getAllBalances(ctx: BankCtx, addr: Addr): Coins = {
+      // SDK: >= 18 function calls, >= 5 files, >= 171 lines of code
+      // Cognitive overload?
       if (ctx.balances.keys().contains(addr)) {
         ctx.balances.get(addr)
       } else {
@@ -84,7 +86,8 @@ module bank {
     /// An error is returned upon failure.
     ///
     /// In our specification, `sendCoins` does not update the context in place,
-    /// but it returns a new context. `isError == true` on error or panic.
+    /// but it returns a new context.
+    /// `isError == true` on error or panic.
     /// SDK `SendCoins(ctx sdk.Context, fromAddr sdk.AccAddress, toAddr sdk.AccAddress, amt sdk.Coins) error`
     pure def sendCoins(ctx: BankCtx,
         fromAddr: Addr, toAddr: Addr, amt: Coins): BankOut = {
@@ -161,8 +164,11 @@ module bank {
   // END OF THE FUNCTIONAL LAYER
 
   // STATE MACHINE
-  // ---> init (balances, accounts) [-- send -->] (balances', accounts') [-- send -->] ...
+  /*
+    ---> init (balances, accounts) [-- send -->] (balances', accounts') [-- send -->] ...
+   */
 
+  // machine {
     // managed by the account keeper
     var accounts: Set[Addr]
     // managed by the bank keeper
@@ -238,6 +244,7 @@ module bank {
       nondet toAddr = oneOf(ADDR)
       send(fromAddr, toAddr, Map(denom -> amount))
     }
+  // }
 
   // END OF THE STATE MACHINE
 
