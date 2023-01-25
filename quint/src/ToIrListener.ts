@@ -24,7 +24,7 @@ export class ToIrListener implements QuintListener {
   }
 
   /**
-   * The module that is constructed as a result of parsing
+   * The modules derived as a result of parsing
    */
   topModules: QuintModule[] = []
   /**
