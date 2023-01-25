@@ -26,7 +26,7 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase2, analyze, builtinDocs, effectToString, parsePhase1, parsePhase2, produceDocs, treeFromModule, typeSchemeToString } from '@informalsystems/quint'
+import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase2, QuintAnalyzer, builtinDocs, effectToString, parsePhase1, parsePhase2, produceDocs, treeFromModule, typeSchemeToString } from '@informalsystems/quint'
 import { assembleDiagnostic, diagnosticsFromErrors, findBestMatchingResult, findName, locToRange } from './reporting'
 import { lookupValue } from '@informalsystems/quint/dist/src/lookupTable'
 
@@ -75,7 +75,10 @@ documents.onDidChangeContent(change => {
   parseDocument(change.document).then((result) => {
     parsedDataByDocument.set(change.document.uri, result)
     docsByDocument.set(change.document.uri, produceDocs(result.modules[0]))
-    const [errors, analysisOutput] = analyze(result.table, result.modules)
+
+    const analyzer = new QuintAnalyzer(result.table)
+    result.modules.forEach(module => analyzer.analyze(module))
+    const [errors, analysisOutput] = analyzer.getResult()
 
     analysisOutputByDocument.set(change.document.uri, analysisOutput)
 
