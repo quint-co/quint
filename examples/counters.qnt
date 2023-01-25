@@ -4,25 +4,25 @@ module counters {
 
   // initialize the state machine
   action Init = {
-    n <- 1
+    n' = 1
   }
 
   // divide n by 2, when n is even
   action OnEven = all {
     n % 2 == 0,
-    n <- n / 2,
+    n' = n / 2,
   }
 
   // double n, when n is divisible by 3
   action OnDivByThree = all {
     n % 3 == 0,
-    n <- 2 * n
+    n' = 2 * n
   }
 
   // increment n, when n is positive
   action OnPositive = all {
     n > 0,
-    n <- n + 1
+    n' = n + 1
   }
 
   // The state machine is composed of three actions:
@@ -37,11 +37,11 @@ module counters {
 
   // the run, where n goes via 1, 2, 3, 6, 3
   run run1 = {
-    (n <- 1)
-      .then(n <- 2)
-      .then(n <- 3)
-      .then(n <- 6)
-      .then(n <- 3)
+    (n' = 1)
+      .then(n' = 2)
+      .then(n' = 3)
+      .then(n' = 6)
+      .then(n' = 3)
   }
 
   // the run that initialized with Init and

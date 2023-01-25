@@ -38,7 +38,7 @@ const withIO = async(inputText: string): Promise<string> => {
   // whatever is written on the input goes to the output
   input.pipe(output)
 
-  const rl = quintRepl(input, output, () => {})
+  const rl = quintRepl(input, output, {}, () => {})
 
   // Emit the input line-by-line, as nodejs is printing prompts.
   // TODO: is it a potential source of race conditions in unit tests?

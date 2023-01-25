@@ -21,7 +21,7 @@ import { ErrorTree, errorTreeToString } from './errorTree'
 import { Either, left, right } from '@sweet-monads/either'
 import { Effect } from './effects/base'
 import { LookupTableByModule } from './lookupTable'
-import { quintRepl } from './repl'
+import { ReplOptions, quintRepl } from './repl'
 import { OpQualifier, QuintModule } from './quintIr'
 import { TypeScheme } from './types/base'
 import { inferTypes } from './types/inferrer'
@@ -196,7 +196,19 @@ export function typecheck(parsed: ParsedStage): CLIProcedure<TypecheckedStage> {
  * @param _argv parameters as provided by yargs
  */
 export function runRepl(_argv: any) {
-  quintRepl(process.stdin, process.stdout)
+  let filename: string | undefined = undefined
+  let moduleName: string | undefined = undefined
+  if (_argv.require) {
+    const m = /^(.*?)(?:|::([a-zA-Z_]\w*))$/.exec(_argv.require)
+    if (m) {
+      [ filename, moduleName ] = m.slice(1, 3)
+    }
+  }
+  const options: ReplOptions = {
+    preloadFilename: filename,
+    importModule: moduleName,
+  }
+  quintRepl(process.stdin, process.stdout, options)
 }
 
 /**

@@ -42,6 +42,8 @@ interface ReplState {
   vars: Map<string, EvalResult>,
   // variables internal to the simulator and REPL
   shadowVars: Map<string, EvalResult>,
+  // filename and module name that were loaded with .load filename module
+  lastLoadedFileAndModule: [string?, string?]
 }
 
 // The default exit terminates the process.
@@ -50,8 +52,17 @@ function defaultExit() {
   process.exit(0)
 }
 
+// Additional options that can be passed to REPL
+export interface ReplOptions {
+  preloadFilename?: string,
+  importModule?: string,
+}
+
 // the entry point to the REPL
-export function quintRepl(input: Readable, output: Writable, exit: () => void = defaultExit) {
+export function quintRepl(input: Readable,
+                          output: Writable,
+                          options: ReplOptions = {},
+                          exit: () => void = defaultExit) {
   function out(text: string) {
     output.write(text + '\n')
   }
@@ -64,14 +75,13 @@ export function quintRepl(input: Readable, output: Writable, exit: () => void = 
     prompt: settings.prompt,
   })
 
-  rl.prompt()
-
   // the state
   const state: ReplState = {
     defsHist: '',
     exprHist: [],
     vars: new Map<string, EvalResult>(),
     shadowVars: new Map<string, EvalResult>(),
+    lastLoadedFileAndModule: [undefined, undefined],
   }
   // we let the user type a multiline string, which is collected here:
   let multilineText = ''
@@ -138,6 +148,26 @@ export function quintRepl(input: Readable, output: Writable, exit: () => void = 
     }
   }
 
+  function clearHistory() {
+    state.defsHist = ''
+    state.exprHist = []
+  }
+
+  // load the code from a filename and optionally import a module
+  function load(filename: string, moduleName: string | undefined) {
+    clearHistory()
+    if (loadFromFile(out, state, filename)) {
+      state.lastLoadedFileAndModule[0] = filename
+      if (moduleName !== undefined) {
+        if (tryEval(out, state, `import ${moduleName}.*`)) {
+          state.lastLoadedFileAndModule[1] = moduleName
+        } else {
+          out(chalk.yellow("Pick the right module name and import it (the file has been loaded)"))
+        }
+      }
+    }
+  }
+
   // the read-eval-print loop
   rl.on('line', (line) => {
     const args = line.trim().split(/\s+/)
@@ -146,7 +176,11 @@ export function quintRepl(input: Readable, output: Writable, exit: () => void = 
         out('.clear\tClear the history')
         out('.exit\tExit the REPL')
         out('.help\tPrint this help message')
-        out('.load <filename>\tLoad the code from a file into the REPL session')
+        out('.load <filename> [<module>]\tClear the history,')
+        out('     \tload the code from a file into the REPL session')
+        out('     \tand optionally import all definitions from <module>')
+        out('.reload\tClear the history, load and (optionally) import the last loaded file.')
+        out('     \t^ a productivity hack')
         out('.save <filename>\tSave the accumulated definitions to a file')
         out('\nType an expression and press Enter to evaluate it.')
         out('When the REPL switches to multiline mode "...", finish it with an empty line.')
@@ -159,17 +193,26 @@ export function quintRepl(input: Readable, output: Writable, exit: () => void = 
 
       case '.clear':
         out('') // be nice to external programs
-        state.defsHist = ''
-        state.exprHist = []
+        clearHistory()
         break
 
-      case '.load':
-        if (!args[1]) {
+      case '.load': {
+        const [filename, moduleName] = [args[1], args[2]]
+        if (!filename) {
           out(chalk.red('.load requires a filename'))
         } else {
-          loadFromFile(out, state, args[1])
+          load(filename, moduleName)
         }
         rl.prompt()
+        break
+      }
+
+      case '.reload':
+        if (state.lastLoadedFileAndModule[0] !== undefined) {
+          load(state.lastLoadedFileAndModule[0], state.lastLoadedFileAndModule[1])
+        } else {
+          out(chalk.red('Nothing to reload. Use: .load filename [moduleName].'))
+        }
         break
 
       case '.save':
@@ -191,6 +234,13 @@ export function quintRepl(input: Readable, output: Writable, exit: () => void = 
     exit()
   })
 
+  // Everything is registered. Optionally, load a module.
+  if (options.preloadFilename) {
+    load(options.preloadFilename, options.importModule)
+  }
+
+  rl.prompt()
+
   return rl
 }
 
@@ -209,7 +259,7 @@ function saveToFile(out: writer, state: ReplState, filename: string) {
   }
 }
 
-function loadFromFile(out: writer, state: ReplState, filename: string) {
+function loadFromFile(out: writer, state: ReplState, filename: string): boolean {
   try {
     const data = readFileSync(filename, 'utf8')
     // split the definitions from the expression
@@ -233,8 +283,10 @@ function loadFromFile(out: writer, state: ReplState, filename: string) {
         state.exprHist.pop()
       }
     }
+    return true
   } catch (error) {
     out(chalk.red(error))
+    return false
   }
 }
 

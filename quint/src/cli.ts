@@ -48,7 +48,13 @@ const typecheckCmd = {
 const replCmd = {
   command: ['repl', '*'],
   desc: 'run REPL',
-  builder: (yargs: any) => yargs,
+  builder: (yargs: any) =>
+    yargs
+      .option('require', {
+        desc: 'filename[::module]. Preload the file and, optionally, import the module',
+        alias: 'r',
+        type: 'string',
+      }),
   handler: runRepl,
 }
 
