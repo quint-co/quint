@@ -25,7 +25,7 @@ import { TypeScheme } from './types/base'
 import lineColumn from 'line-column'
 import { formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
-import { analyze } from './quintAnalyzer'
+import { QuintAnalyzer } from './quintAnalyzer'
 
 export type stage = 'loading' | 'parsing' | 'typechecking' | 'documentation'
 
@@ -160,8 +160,10 @@ function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: [bigint, ErrorTree]) =
 export function typecheck(parsed: ParsedStage): CLIProcedure<TypecheckedStage> {
   const { table, modules, sourceMap } = parsed
   const typechecking = { ...parsed, stage: 'typechecking' as stage }
-
-  const [errorMap, result] = analyze(table, modules)
+  
+  const analyzer = new QuintAnalyzer(table)
+  modules.forEach(module => analyzer.analyze(module))
+  const [errorMap, result] = analyzer.getResult()
 
   if (errorMap.length === 0) {
     return right({ ...typechecking, ...result })

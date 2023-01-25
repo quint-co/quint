@@ -13,6 +13,7 @@
  * @module
  */
 
+import { FreshVarGenerator } from "../FreshVarGenerator"
 import { ErrorTree } from '../errorTree'
 import { walkModule } from '../IRVisitor'
 import { LookupTableByModule } from '../lookupTable'
@@ -23,21 +24,21 @@ import { solveConstraint } from './constraintSolver'
 
 export type TypeInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>]
 
-/**
- * Infers an type for each expression in a Quint module
- *
- * @param quintModule: the Quint module to infer types for
- * @param partialResult: optionally, a partial result from a previous inference
- *
- * @returns a map from expression ids to their types and a map from expression
- *          ids to the corresponding error for any problematic expressions.
- */
-export function inferTypes(
-  table: LookupTableByModule, quintModule: QuintModule, partialResult?: TypeInferenceResult
-): TypeInferenceResult {
-  const visitor = new ConstraintGeneratorVisitor(solveConstraint, table, partialResult)
-  walkModule(visitor, quintModule)
-  // Since all top level expressions are operator definitions, and all
-  // constraints are solved at those, there's no need to solve anything else
-  return [visitor.errors, visitor.types]
+export class TypeInferrer extends ConstraintGeneratorVisitor {
+  constructor(table: LookupTableByModule, freshVarGenerator: FreshVarGenerator) {
+    super(solveConstraint, table, freshVarGenerator)
+  }
+
+  /**
+   * Infers an type for each expression in a Quint module
+   *
+   * @param quintModule: the Quint module to infer types for
+   *
+   * @returns a map from expression ids to their types and a map from expression
+   *          ids to the corresponding error for any problematic expressions.
+   */
+  inferTypes(quintModule: QuintModule): TypeInferenceResult {
+    walkModule(this, quintModule)
+    return [this.errors, this.types]
+  }
 }

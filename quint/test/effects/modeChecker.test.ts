@@ -1,11 +1,12 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { inferEffects } from '../../src/effects/inferrer'
 import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
 import { buildModuleWithDefs } from '../builders/ir'
 import { ErrorTree, errorTreeToString } from '../../src/errorTree'
 import { OpQualifier, QuintModule } from '../../src/quintIr'
-import { checkModes } from '../../src/effects/modeChecker'
+import { EffectInferrer } from '../../src/effects/inferrer'
+import { FreshVarGenerator } from "../../src/FreshVarGenerator"
+import { ModeChecker } from '../../src/effects/modeChecker'
 
 describe('checkModes', () => {
   const table: LookupTable = newTable({
@@ -26,11 +27,13 @@ describe('checkModes', () => {
   const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
 
   function checkModuleModes(quintModule: QuintModule): [Map<bigint, ErrorTree>, Map<bigint, OpQualifier>] {
-    const [errors, effects] = inferEffects(definitionsTable, quintModule)
+    const inferrer = new EffectInferrer(definitionsTable, new FreshVarGenerator())
+    const [errors, effects] = inferrer.inferEffects(quintModule)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
-    return checkModes(quintModule, effects)
+    const modeChecker = new ModeChecker()
+    return modeChecker.checkModes(quintModule, effects)
   }
 
   it('finds mode errors between action and def', () => {

@@ -16,10 +16,11 @@ import { ErrorTree } from "./errorTree"
 import { LookupTableByModule } from "./lookupTable"
 import { OpQualifier, QuintModule } from "./quintIr"
 import { TypeScheme } from "./types/base"
-import { TypeInferenceResult, inferTypes } from "./types/inferrer"
+import { TypeInferrer } from "./types/inferrer"
 import { Effect } from "./effects/base"
-import { EffectInferenceResult, inferEffects } from "./effects/inferrer"
-import { ModeCheckingResult, checkModes } from "./effects/modeChecker"
+import { EffectInferrer } from "./effects/inferrer"
+import { FreshVarGenerator } from "./FreshVarGenerator"
+import { ModeChecker } from "./effects/modeChecker"
 
 /* Products from static analysis */
 export type AnalyzisOutput = {
@@ -35,32 +36,36 @@ export type AnalysisResult = [[bigint, ErrorTree][], AnalyzisOutput]
  * Statically analyzes a Quint specification.
  *
  * @param definitionsTable - The lookup tables for the modules.
- * @param modules - The modules of the specification.
- * @returns A list of errors and the analysis output.
  */
-export function analyze(definitionsTable: LookupTableByModule, modules: QuintModule[]): AnalysisResult {
-  const [typeErrMap, types] = modules.reduce((result: TypeInferenceResult, module) => {
-    const resultForModule = inferTypes(definitionsTable, module, result)
-    return mergeResults(result, resultForModule)
-  }, [new Map<bigint, ErrorTree>(), new Map<bigint, TypeScheme>()])
+export class QuintAnalyzer {
+  private effectInferrer: EffectInferrer
+  private typeInferrer: TypeInferrer
+  private modeChecker: ModeChecker
 
-  const [effectErrMap, effects] = modules.reduce((result: EffectInferenceResult, module) => {
-    const resultForModule = inferEffects(definitionsTable, module, result)
-    return mergeResults(result, resultForModule)
-  }, [new Map<bigint, ErrorTree>(), new Map<bigint, Effect>()])
+  private errors: [bigint, ErrorTree][] = []
+  private output: AnalyzisOutput = { types: new Map(), effects: new Map(), modes: new Map() }
 
-  const [modeErrMap, modes] = modules.reduce((result: ModeCheckingResult, module) => {
-    const resultForModule = checkModes(module, effects, result)
-    return mergeResults(result, resultForModule)
-  }, [new Map<bigint, ErrorTree>(), new Map<bigint, OpQualifier>()])
+  constructor(lookupTable: LookupTableByModule) {
+    const freshVarGenerator = new FreshVarGenerator()
+    this.typeInferrer = new TypeInferrer(lookupTable, freshVarGenerator)
+    this.effectInferrer = new EffectInferrer(lookupTable, freshVarGenerator)
+    this.modeChecker = new ModeChecker()
+  }
 
-  const errors = [...typeErrMap, ...effectErrMap, ...modeErrMap]
+  analyze(module: QuintModule): void {
+    const [typeErrMap, types] = this.typeInferrer.inferTypes(module)
+    const [effectErrMap, effects] = this.effectInferrer.inferEffects(module)
+    const [modeErrMap, modes] = this.modeChecker.checkModes(module, effects)
 
-  return [errors, { types, effects, modes }]
-}
+    this.errors = [...this.errors, ...typeErrMap, ...effectErrMap, ...modeErrMap]
+    this.output = {
+      types: new Map([...this.output.types, ...types]),
+      effects: new Map([...this.output.effects, ...effects]),
+      modes: new Map([...this.output.modes, ...modes]),
+    }
+  }
 
-function mergeResults<T>(
-  a: [Map<bigint, ErrorTree>, Map<bigint, T>], b: [Map<bigint, ErrorTree>, Map<bigint, T>]
-): [Map<bigint, ErrorTree>, Map<bigint, T>] {
-  return [new Map([...a[0], ...b[0]]), new Map([...a[1], ...b[1]])]
+  getResult(): AnalysisResult {
+    return [this.errors, this.output]
+  }
 }

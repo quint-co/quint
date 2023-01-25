@@ -24,35 +24,27 @@ import { effectToString } from './printing'
 
 export type ModeCheckingResult = [Map<bigint, ErrorTree>, Map<bigint, OpQualifier>]
 
-/**
- * Matches annotated modes for each definition with its inferred effect. Returns
- * errors for incorrect annotations and suggestions for annotations that could
- * be more strict.
- *
- * @param quintModule: the module to be checked
- * @param effects: the map from expression ids to their inferred effects
- *
- * @returns The mode errors, if any is found. Otherwise, a map with potential suggestions.
- */
-export function checkModes(
-  quintModule: QuintModule, effects: Map<bigint, Effect>, partialResult?: ModeCheckingResult
-): ModeCheckingResult {
-  const visitor = new ModeCheckerVisitor(effects, partialResult)
-  walkModule(visitor, quintModule)
-  return [visitor.errors, visitor.suggestions]
-}
-
-class ModeCheckerVisitor implements IRVisitor {
-  constructor(effects: Map<bigint, Effect>, partialResult?: ModeCheckingResult) {
+export class ModeChecker implements IRVisitor {
+  /**
+   * Matches annotated modes for each definition with its inferred effect. Returns
+   * errors for incorrect annotations and suggestions for annotations that could
+   * be more strict.
+   *
+   * @param quintModule: the module to be checked
+   * @param effects: the map from expression ids to their inferred effects
+   *
+   * @returns The mode errors, if any is found. Otherwise, a map with potential suggestions.
+   */
+  checkModes(quintModule: QuintModule, effects: Map<bigint, Effect>): ModeCheckingResult {
     this.effects = effects
-    this.errors = partialResult?.[0] ?? new Map<bigint, ErrorTree>()
-    this.suggestions = partialResult?.[1] ?? new Map<bigint, OpQualifier>()
+    walkModule(this, quintModule)
+    return [this.errors, this.suggestions]
   }
 
-  errors: Map<bigint, ErrorTree>
-  suggestions: Map<bigint, OpQualifier>
+  private errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
+  private suggestions: Map<bigint, OpQualifier> = new Map<bigint, OpQualifier>()
 
-  private effects: Map<bigint, Effect>
+  private effects: Map<bigint, Effect> = new Map<bigint, Effect>()
   private modeFinderVisitor: ModeFinderVisitor = new ModeFinderVisitor()
 
   exitOpDef(def: QuintOpDef) {

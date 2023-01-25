@@ -1,11 +1,12 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { inferEffects } from '../../src/effects/inferrer'
 import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
 import { buildModuleWithDefs } from '../builders/ir'
 import { effectToString } from '../../src/effects/printing'
 import { errorTreeToString } from '../../src/errorTree'
 import { defaultValueDefinitions } from '../../src/definitionsCollector'
+import { EffectInferrer } from '../../src/effects/inferrer'
+import { FreshVarGenerator } from "../../src/FreshVarGenerator"
 
 describe('inferEffects', () => {
   const table: LookupTable = newTable({
@@ -32,7 +33,8 @@ describe('inferEffects', () => {
       `def a(p) = x' = p`,
     ])
 
-    const [errors, effects] = inferEffects(definitionsTable, quintModule)
+    const inferrer = new EffectInferrer(definitionsTable, new FreshVarGenerator())
+    const [errors, effects] = inferrer.inferEffects(quintModule)
 
     const expectedEffect = "(Read[v1]) => Read[v1] & Update['x']"
 
@@ -46,7 +48,8 @@ describe('inferEffects', () => {
       'def b(p) = and(p, 1, 2)',
     ])
 
-    const [errors, effects] = inferEffects(definitionsTable, quintModule)
+    const inferrer = new EffectInferrer(definitionsTable, new FreshVarGenerator())
+    const [errors, effects] = inferrer.inferEffects(quintModule)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(effectToString(effects.get(4n)!), "(Read[v4] & Temporal[v5]) => Read[v4, 'x'] & Temporal[v5]")
@@ -58,7 +61,8 @@ describe('inferEffects', () => {
       'def a(p) = foldl(x, p, iadd)',
     ])
 
-    const [errors, effects] = inferEffects(definitionsTable, quintModule)
+    const inferrer = new EffectInferrer(definitionsTable, new FreshVarGenerator())
+    const [errors, effects] = inferrer.inferEffects(quintModule)
 
     const expectedEffect = "(Read[v0]) => Read[v0, 'x']"
 
@@ -71,7 +75,8 @@ describe('inferEffects', () => {
       'def a(p) = def my_add = iadd { foldl(x, p, my_add) }',
     ])
 
-    const [errors, effects] = inferEffects(definitionsTable, quintModule)
+    const inferrer = new EffectInferrer(definitionsTable, new FreshVarGenerator())
+    const [errors, effects] = inferrer.inferEffects(quintModule)
 
     const expectedEffect = "(Read[v2]) => Read[v2, 'x']"
 
@@ -84,7 +89,8 @@ describe('inferEffects', () => {
       'val b = val m = x { m }',
     ])
 
-    const [errors, effects] = inferEffects(definitionsTable, quintModule)
+    const inferrer = new EffectInferrer(definitionsTable, new FreshVarGenerator())
+    const [errors, effects] = inferrer.inferEffects(quintModule)
 
     const expectedEffect = "Read['x']"
 
@@ -97,7 +103,8 @@ describe('inferEffects', () => {
       'val b = N + 1',
     ])
 
-    const [errors, effects] = inferEffects(definitionsTable, quintModule)
+    const inferrer = new EffectInferrer(definitionsTable, new FreshVarGenerator())
+    const [errors, effects] = inferrer.inferEffects(quintModule)
 
     const expectedEffect = 'Pure'
 
@@ -110,7 +117,8 @@ describe('inferEffects', () => {
       'val b = N.map(_ => 1)',
     ])
 
-    const [errors, effects] = inferEffects(definitionsTable, quintModule)
+    const inferrer = new EffectInferrer(definitionsTable, new FreshVarGenerator())
+    const [errors, effects] = inferrer.inferEffects(quintModule)
 
     const expectedEffect = 'Pure'
 
@@ -123,7 +131,8 @@ describe('inferEffects', () => {
       'def a(g, p) = g(p)',
     ])
 
-    const [errors, effects] = inferEffects(definitionsTable, quintModule)
+    const inferrer = new EffectInferrer(definitionsTable, new FreshVarGenerator())
+    const [errors, effects] = inferrer.inferEffects(quintModule)
 
     const expectedEffect = '((e_p_1) => e0, e_p_1) => e0'
 
@@ -136,7 +145,8 @@ describe('inferEffects', () => {
       'def a(g, p) = g(p) + g(not(p))',
     ])
 
-    const [errors, effects] = inferEffects(definitionsTable, quintModule)
+    const inferrer = new EffectInferrer(definitionsTable, new FreshVarGenerator())
+    const [errors, effects] = inferrer.inferEffects(quintModule)
 
     const expectedEffect = '((Read[v0] & Temporal[v1]) => Read[v2], Read[v0] & Temporal[v1]) => Read[v2]'
 
@@ -149,7 +159,8 @@ describe('inferEffects', () => {
       'def a(tup) = Set(tup, (x, 4)).map((p, g) => p + g)',
     ])
 
-    const [errors, effects] = inferEffects(definitionsTable, quintModule)
+    const inferrer = new EffectInferrer(definitionsTable, new FreshVarGenerator())
+    const [errors, effects] = inferrer.inferEffects(quintModule)
 
     const expectedEffect = "(Read[v2]) => Read[v2, 'x']"
 
@@ -162,7 +173,8 @@ describe('inferEffects', () => {
       'def A = undefinedOperator(1)',
     ])
 
-    const [errors] = inferEffects(definitionsTable, quintModule)
+    const inferrer = new EffectInferrer(definitionsTable, new FreshVarGenerator())
+    const [errors] = inferrer.inferEffects(quintModule)
 
     errors.forEach(v => assert.deepEqual(v, {
       location: 'Trying to infer effect for operator application in undefinedOperator(1)',
@@ -176,7 +188,8 @@ describe('inferEffects', () => {
       'def a(p) = foldl(x, p, undefinedOperator)',
     ])
 
-    const [errors] = inferEffects(definitionsTable, quintModule)
+    const inferrer = new EffectInferrer(definitionsTable, new FreshVarGenerator())
+    const [errors] = inferrer.inferEffects(quintModule)
 
     errors.forEach(v => assert.deepEqual(v, {
       location: 'Inferring effect for undefinedOperator',
@@ -190,7 +203,8 @@ describe('inferEffects', () => {
       `def a = S.map(p => x' = p)`,
     ])
 
-    const [errors] = inferEffects(definitionsTable, quintModule)
+    const inferrer = new EffectInferrer(definitionsTable, new FreshVarGenerator())
+    const [errors] = inferrer.inferEffects(quintModule)
 
     errors.forEach(v => assert.deepEqual(v, {
       children: [{
@@ -216,7 +230,8 @@ describe('inferEffects', () => {
       'def A = val t = undefined(1) { t }',
     ])
 
-    const [errors] = inferEffects(definitionsTable, quintModule)
+    const inferrer = new EffectInferrer(definitionsTable, new FreshVarGenerator())
+    const [errors] = inferrer.inferEffects(quintModule)
 
     errors.forEach(v => assert.deepEqual(v, {
       location: 'Trying to infer effect for operator application in undefined(1)',

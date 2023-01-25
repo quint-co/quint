@@ -421,9 +421,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     printErrorMessages(out,
       'syntax error', moduleText, lineOffset, context.syntaxErrors)
     printErrorMessages(out,
-      'type error', moduleText, lineOffset, context.typeErrors, chalk.yellow)
-    printErrorMessages(out, 'effects error',
-      moduleText, lineOffset, context.effectsErrors, chalk.yellow)
+      'static analysis error', moduleText, lineOffset, context.analysisErrors, chalk.yellow)
     const resolved = resolveErrors(context.sourceMap, context.compileErrors)
     printErrorMessages(out,
       'compile error', moduleText, lineOffset, resolved)
@@ -441,13 +439,13 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     const preambule = `module __REPL { ${simulatorBuiltins}`
     const moduleText = `${preambule}
 ${state.defsHist}
-val __input =
+action __input =
 ${newInput}
 }`
     // compile the expression or definition and evaluate it
     const context = compile(moduleText)
     if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0 ||
-        context.typeErrors.length > 0 || context.effectsErrors.length > 0) {
+        context.analysisErrors.length > 0) {
       const lineOffset = -preambule.split('\n').length - 1
       printErrors(moduleText, context, lineOffset)
       if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
