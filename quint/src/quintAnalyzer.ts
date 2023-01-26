@@ -28,11 +28,15 @@ export type AnalyzisOutput = {
   modes: Map<bigint, OpQualifier>,
 }
 
-/* A list of errors and the analysis output */
+/* A tuple with a list of errors and the analysis output */
 export type AnalysisResult = [[bigint, ErrorTree][], AnalyzisOutput]
 
 /**
  * Statically analyzes a Quint specification.
+ *
+ * This class is stateful and accumulates analyzed data for multiple modules.
+ * Use it by calling the analyze method for each module and then calling the
+ * getResult method to get the analysis result.
  *
  * @param lookupTable - The lookup tables for the modules.
  */
@@ -56,6 +60,9 @@ export class QuintAnalyzer {
     const [modeErrMap, modes] = this.modeChecker.checkModes(module, effects)
 
     this.errors = [...this.errors, ...typeErrMap, ...effectErrMap, ...modeErrMap]
+
+    // We assume that ids are unique across modules, and map merging can be done
+    // without collision checks
     this.output = {
       types: new Map([...this.output.types, ...types]),
       effects: new Map([...this.output.effects, ...effects]),
