@@ -24,8 +24,9 @@ import { Substitutions, applySubstitution, compose } from './substitutions'
 import { ScopeTree, treeFromModule } from '../scoping'
 import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../lookupTable'
 import { specialConstraints } from './specialConstraints'
+import { FreshVarGenerator } from "../FreshVarGenerator"
 
-type solvingFunctionType = (_table: LookupTable,_constraint: Constraint)
+type solvingFunctionType = (_table: LookupTable, _constraint: Constraint)
   => Either<Map<bigint, ErrorTree>, Substitutions>
 
 // A visitor that collects types and constraints for a module's expressions
@@ -34,9 +35,9 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   constructor(solvingFunction: solvingFunctionType, lookupTable: LookupTableByModule) {
     this.solvingFunction = solvingFunction
     this.lookupTable = lookupTable
+    this.freshVarGenerator = new FreshVarGenerator()
   }
 
-  // Public values with results by expression ID
   types: Map<bigint, TypeScheme> = new Map<bigint, TypeScheme>()
   errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
 
@@ -45,7 +46,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
   private builtinSignatures: Map<string, Signature> = getSignatures()
   private lookupTable: LookupTableByModule
-  private freshVarCounter: number = 0
+  private freshVarGenerator: FreshVarGenerator
 
   // Track location descriptions for error tree traces
   private location: string = ''
@@ -108,7 +109,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
     const result = argsResult.chain((results): Either<Error, TypeScheme> => {
       const signature = this.fetchSignature(e.opcode, e.id, e.args.length)
-      const a: QuintType = { kind: 'var', name: this.freshVar() }
+      const a: QuintType = { kind: 'var', name: this.freshVarGenerator.freshVar('t') }
       const special = specialConstraints(e.opcode, e.id, results, a)
 
       const constraints = special.chain(cs => {
@@ -223,14 +224,10 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     }
   }
 
-  private freshVar(): string {
-    return `t${this.freshVarCounter++}`
-  }
-
   private fetchSignature(opcode: string, scope: bigint, arity: number): Either<ErrorTree, QuintType> {
     // Assumes a valid number of arguments
     if (opcode === '_') {
-      return right({ kind: 'var', name: this.freshVar() })
+      return right({ kind: 'var', name: this.freshVarGenerator.freshVar('t') })
     }
 
     if (this.builtinSignatures.has(opcode)) {
@@ -257,11 +254,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     const rowNames = Array.from(t.rowVariables)
 
     const typeSubs: Substitutions = typeNames.map((name) => {
-      return { kind: 'type', name: name, value: { kind: 'var', name: this.freshVar() } }
+      return { kind: 'type', name: name, value: { kind: 'var', name: this.freshVarGenerator.freshVar('t') } }
     })
 
     const rowSubs: Substitutions = rowNames.map((name) => {
-      return { kind: 'row', name: name, value: { kind: 'var', name: this.freshVar() } }
+      return { kind: 'row', name: name, value: { kind: 'var', name: this.freshVarGenerator.freshVar('t') } }
     })
 
     const subs = compose(this.currentTable, typeSubs, rowSubs)

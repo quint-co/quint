@@ -17,27 +17,25 @@ import { Diagnostic, DiagnosticSeverity, Position, Range } from "vscode-language
 import { compact } from "lodash"
 
 /**
- * Assembles a list of diagnostics from a map of expression ids to their errors
+ * Assembles a list of diagnostics from pairs of expression ids and their errors
  * using a source map
  *
- * @param errors the error map to be transformed
+ * @param errors the errors to be transformed
  * @param sourceMap the source map for the document in which the errors occured
  *
  * @returns a list of diagnostics with the proper error messages and locations
  */
-export function diagnosticsFromErrorMap(errors: Map<bigint, ErrorTree>, sourceMap: Map<bigint, Loc>): Diagnostic[] {
-  const diagnostics: Diagnostic[] = []
-  errors.forEach((error, id) => {
+export function diagnosticsFromErrors(errors: [bigint, ErrorTree][], sourceMap: Map<bigint, Loc>): Diagnostic[] {
+  const diagnostics = errors.map(([id, error]) => {
     const loc = sourceMap.get(id)!
     if (!loc) {
       console.log(`loc for ${id} not found in source map`)
     } else {
-      const diag = assembleDiagnostic(errorTreeToString(error), loc)
-      diagnostics.push(diag)
+      return assembleDiagnostic(errorTreeToString(error), loc)
     }
   })
 
-  return diagnostics
+  return compact(diagnostics)
 }
 
 /**
@@ -90,15 +88,19 @@ export function findName(
  * Finds the result that better matches a given position. That is, the result
  * for which the loc is the smallest loc that contains the position.
  *
- * @param results the list of tuples of locations in the file and a result
+ * @param sourceMap the source map with the locs for the results
+ * @param results the list of tuples of ids from the source map and a result
  * computed for it
  * @param position the position for which to find the result
  *
  * @returns a tuple with the location and the result from the list that better
  * matches the position, or undefined if none is found
  */
-export function findBestMatchingResult<T>(results: [Loc, T][], position: Position): [Loc, T] {
-  return resultsOnPosition(results, position)[0]
+export function findBestMatchingResult<T>(
+  sourceMap: Map<bigint, Loc>, results: [bigint, T][], position: Position
+): [Loc, T] {
+  const resultsByLoc: [Loc, T][] = results.map(([id, result]) => [sourceMap.get(id)!, result])
+  return resultsOnPosition(resultsByLoc, position)[0]
 }
 
 /**

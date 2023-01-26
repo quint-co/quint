@@ -11,14 +11,13 @@
 import {
   ErrorMessage, Loc, parsePhase1, parsePhase2
 } from '../quintParserFrontend'
-import { inferTypes } from '../types/inferrer'
-import { inferEffects } from '../effects/inferrer'
 import { ErrorTree, errorTreeToString } from '../errorTree'
 import { Computable } from './runtime'
 import { IrErrorMessage } from '../quintIr'
 import { CompilerVisitor } from './impl/compilerImpl'
 import { walkModule } from '../IRVisitor'
 import { right } from '@sweet-monads/either'
+import { QuintAnalyzer } from '../quintAnalyzer'
 
 /**
  * The name of the shadow variable that stores the last found trace.
@@ -37,10 +36,8 @@ export interface CompilationContext {
   shadowVars: string[],
   // messages that are produced during parsing
   syntaxErrors: ErrorMessage[],
-  // messages that are produced by the type checker
-  typeErrors: ErrorMessage[],
-  // messages that are produced by the effects checker
-  effectsErrors: ErrorMessage[],
+  // messages that are produced by static analysis
+  analysisErrors: ErrorMessage[],
   // messages that are produced during compilation
   compileErrors: IrErrorMessage[],
   // messages that get populated as the compiled code is executed
@@ -55,8 +52,7 @@ function errorContext(errors: ErrorMessage[]): CompilationContext {
     vars: [],
     shadowVars: [],
     syntaxErrors: errors,
-    typeErrors: [],
-    effectsErrors: [],
+    analysisErrors: [],
     compileErrors: [],
     runtimeErrors: [],
     sourceMap: new Map(),
@@ -64,12 +60,12 @@ function errorContext(errors: ErrorMessage[]): CompilationContext {
 }
 
 // convert an error tree to an error message
-function errorTreeToMsg(sourceMap: Map<bigint, Loc>, trees: Map<bigint, ErrorTree>) {
+function errorsToMsg(sourceMap: Map<bigint, Loc>, errorTuples: [bigint, ErrorTree][]) {
   const errors: ErrorMessage[] = []
-  trees.forEach((value, key) => {
-    const loc = sourceMap.get(key)!
+  errorTuples.forEach(([id, error]) => {
+    const loc = sourceMap.get(id)!
     const msg = {
-      explanation: errorTreeToString(value),
+      explanation: errorTreeToString(error),
       locs: [loc],
     }
     errors.push(msg)
@@ -103,8 +99,9 @@ export function
       // For instance, when the same file contains parametric modules and instances.
       const lastModule = modules[modules.length - 1]
       // in the future, we will be using types and effects
-      const [typeErrors, _types] = inferTypes(table, lastModule)
-      const [effectsErrors, _effects] = inferEffects(table, lastModule)
+      const analyzer = new QuintAnalyzer(table)
+      analyzer.analyze(lastModule)
+      const [analysisErrors, _result] = analyzer.getResult()
       // since the type checker and effects checker are incomplete,
       // collect the errors, but do not stop immediately on error
       const visitor = new CompilerVisitor()
@@ -114,8 +111,7 @@ export function
         vars: visitor.getVars(),
         shadowVars: visitor.getShadowVars(),
         syntaxErrors: [],
-        typeErrors: errorTreeToMsg(sourceMap, typeErrors),
-        effectsErrors: errorTreeToMsg(sourceMap, effectsErrors),
+        analysisErrors: errorsToMsg(sourceMap, analysisErrors),
         compileErrors: visitor.getCompileErrors(),
         runtimeErrors: visitor.getRuntimeErrors(),
         sourceMap: sourceMap,

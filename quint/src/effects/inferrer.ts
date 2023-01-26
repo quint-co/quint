@@ -24,43 +24,43 @@ import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } f
 import { ScopeTree, treeFromModule } from '../scoping'
 import isEqual from 'lodash.isequal'
 import { getSignatures } from './builtinSignatures'
+import { FreshVarGenerator } from '../FreshVarGenerator'
 
-/**
- * Infers an effect for every expression in a module based on
- * the definitions table for that module
- *
- * @param lookupTable the collected definitions for the module under inference
- * @param module: the Quint module to infer effects for
- *
- * @returns a map from expression ids to their effects and a map from expression
- *          ids to the corresponding error for any problematic expressions.
- */
-export function inferEffects(
-  lookupTable: LookupTableByModule, module: QuintModule
-): [Map<bigint, ErrorTree>, Map<bigint, Effect>] {
-  const visitor = new EffectInferrerVisitor(lookupTable)
-  walkModule(visitor, module)
-  return [visitor.errors, visitor.effects]
-}
+export type EffectInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, Effect>]
 
 /* Walks the IR from node to root inferring effects for expressions and
  * assigning them to the effects attribute map, to be used in upward
  * expressions. Errors are written to the errors attribute.
  */
-class EffectInferrerVisitor implements IRVisitor {
+export class EffectInferrer implements IRVisitor {
   constructor(lookupTable: LookupTableByModule) {
     this.lookupTable = lookupTable
+    this.freshVarGenerator = new FreshVarGenerator()
+  }
+
+  /**
+   * Infers an effect for every expression in a module based on
+   * the definitions table for that module
+   *
+   * @param module: the Quint module to infer effects for
+   *
+   * @returns a map from expression ids to their effects and a map from expression
+   *          ids to the corresponding error for any problematic expressions.
+   */
+  inferEffects(module: QuintModule): EffectInferenceResult {
+    walkModule(this, module)
+    return [this.errors, this.effects]
   }
 
   // Public values with results by expression ID
-  effects: Map<bigint, Effect> = new Map<bigint, Effect>()
-  errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
+  private effects: Map<bigint, Effect> = new Map<bigint, Effect>()
+  private errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
 
   private substitutions: Substitutions = []
 
   private builtinSignatures: Map<string, Signature> = getSignatures()
   private lookupTable: LookupTableByModule
-  private freshVarCounters: Map<string, number> = new Map<string, number>()
+  private freshVarGenerator: FreshVarGenerator
 
   // Track location descriptions for error tree traces
   private location: string = ''
@@ -95,7 +95,7 @@ class EffectInferrerVisitor implements IRVisitor {
     if (!def) {
       this.addToResults(expr.id, left(buildErrorLeaf(
         this.location,
-         `Couldn't find ${expr.name} in the lookup table`
+        `Couldn't find ${expr.name} in the lookup table`
       )))
       return
     }
@@ -112,7 +112,7 @@ class EffectInferrerVisitor implements IRVisitor {
         } else {
           result = left(buildErrorLeaf(
             this.location,
-             `Couldn't find an effect for lambda parameter named ${expr.name} in context.`
+            `Couldn't find an effect for lambda parameter named ${expr.name} in context.`
           ))
         }
 
@@ -176,7 +176,7 @@ class EffectInferrerVisitor implements IRVisitor {
       return this.fetchResult(a.id)
     }))
 
-    const resultEffect: Effect = { kind: 'quantified', name: this.freshVar('e') }
+    const resultEffect: Effect = { kind: 'quantified', name: this.freshVarGenerator.freshVar('e') }
     const arrowEffect = paramsResult.map(params => {
       const effect: Effect = {
         kind: 'arrow',
@@ -291,17 +291,11 @@ class EffectInferrerVisitor implements IRVisitor {
     }
   }
 
-  private freshVar(prefix: string): string {
-    const counter = this.freshVarCounters.get(prefix)! ?? 0
-    this.freshVarCounters.set(prefix, counter + 1)
-
-    return `${prefix}${counter}`
-  }
 
   private fetchSignature(opcode: string, scope: bigint, arity: number): Either<ErrorTree, Effect> {
     // Assumes a valid number of arguments
     if (opcode === '_') {
-      return right({ kind: 'quantified', name: this.freshVar('_e') })
+      return right({ kind: 'quantified', name: this.freshVarGenerator.freshVar('_e') })
     }
 
     let effect
@@ -339,7 +333,7 @@ class EffectInferrerVisitor implements IRVisitor {
       }
     })
     const subs: Substitutions = uniqueNames.map(name => {
-      return { kind: name.kind, name: name.name, value: { kind: 'quantified', name: this.freshVar('v') } }
+      return { kind: name.kind, name: name.name, value: { kind: 'quantified', name: this.freshVarGenerator.freshVar('v') } }
     })
 
     const result = applySubstitution(subs, effect)

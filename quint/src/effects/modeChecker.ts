@@ -22,33 +22,30 @@ import { ArrowEffect, ConcreteEffect, Effect, Variables, isAction, isState, isTe
 import { EffectVisitor, walkEffect } from './EffectVisitor'
 import { effectToString } from './printing'
 
-/**
- * Matches annotated modes for each definition with its inferred effect. Returns
- * errors for incorrect annotations and suggestions for annotations that could
- * be more strict.
- *
- * @param quintModule: the module to be checked
- * @param effects: the map from expression ids to their inferred effects
- *
- * @returns The mode errors, if any is found. Otherwise, a map with potential suggestions.
- */
-export function checkModes(
-  quintModule: QuintModule, effects: Map<bigint, Effect>
-): [Map<bigint, ErrorTree>, Map<bigint, OpQualifier>] {
-  const visitor = new ModeCheckerVisitor(effects)
-  walkModule(visitor, quintModule)
-  return [visitor.errors, visitor.suggestions]
-}
+export type ModeCheckingResult = [Map<bigint, ErrorTree>, Map<bigint, OpQualifier>]
 
-class ModeCheckerVisitor implements IRVisitor {
-  public errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
-  public suggestions: Map<bigint, OpQualifier> = new Map<bigint, OpQualifier>()
-  effects: Map<bigint, Effect>
-  modeFinderVisitor: ModeFinderVisitor = new ModeFinderVisitor()
-
-  constructor(effects: Map<bigint, Effect>) {
+export class ModeChecker implements IRVisitor {
+  /**
+   * Matches annotated modes for each definition with its inferred effect. Returns
+   * errors for incorrect annotations and suggestions for annotations that could
+   * be more strict.
+   *
+   * @param quintModule: the module to be checked
+   * @param effects: the map from expression ids to their inferred effects
+   *
+   * @returns The mode errors, if any is found. Otherwise, a map with potential suggestions.
+   */
+  checkModes(quintModule: QuintModule, effects: Map<bigint, Effect>): ModeCheckingResult {
     this.effects = effects
+    walkModule(this, quintModule)
+    return [this.errors, this.suggestions]
   }
+
+  private errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
+  private suggestions: Map<bigint, OpQualifier> = new Map<bigint, OpQualifier>()
+
+  private effects: Map<bigint, Effect> = new Map<bigint, Effect>()
+  private modeFinderVisitor: ModeFinderVisitor = new ModeFinderVisitor()
 
   exitOpDef(def: QuintOpDef) {
     const effect = this.effects.get(def.id)

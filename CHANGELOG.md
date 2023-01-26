@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
  - Change the grammar to support multiple modules (#547)
+ - Change static analysis to support multiple modules (#559)
 
 ## v0.5.4 -- 2023-01-24
 

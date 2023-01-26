@@ -14,8 +14,6 @@ import { cwd } from 'process'
 
 import { ErrorMessage, Loc, compactSourceMap, parsePhase1, parsePhase2 } from './quintParserFrontend'
 
-import { inferEffects } from './effects/inferrer'
-import { checkModes } from './effects/modeChecker'
 import { ErrorTree, errorTreeToString } from './errorTree'
 
 import { Either, left, right } from '@sweet-monads/either'
@@ -24,10 +22,10 @@ import { LookupTableByModule } from './lookupTable'
 import { ReplOptions, quintRepl } from './repl'
 import { OpQualifier, QuintModule } from './quintIr'
 import { TypeScheme } from './types/base'
-import { inferTypes } from './types/inferrer'
 import lineColumn from 'line-column'
 import { formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
+import { QuintAnalyzer } from './quintAnalyzer'
 
 export type stage = 'loading' | 'parsing' | 'typechecking' | 'documentation'
 
@@ -162,32 +160,18 @@ function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: [bigint, ErrorTree]) =
  */
 export function typecheck(parsed: ParsedStage): CLIProcedure<TypecheckedStage> {
   const { table, modules, sourceMap } = parsed
-  const moduleFixme = modules[0]
   const typechecking = { ...parsed, stage: 'typechecking' as stage }
-  const definitionsTable = table
-  const errorLocator = mkErrorMessage(sourceMap)
+  
+  const analyzer = new QuintAnalyzer(table)
+  modules.forEach(module => analyzer.analyze(module))
+  const [errorMap, result] = analyzer.getResult()
 
-  const [typeErrMap, types] = inferTypes(definitionsTable, moduleFixme)
-  const typeErrors: ErrorMessage[] = Array.from(typeErrMap, errorLocator)
-  // TODO add once logging functionality is added
-  // if (typeErrors.length === 0) console.log("type inference succeeded")
-
-  const [effectErrMap, effects] = inferEffects(definitionsTable, moduleFixme)
-  const effectErrors: ErrorMessage[] = Array.from(effectErrMap, errorLocator)
-  // TODO add once logging functionality is added
-  // if (effectErrors.length === 0) console.log("effect inference succeeded")
-
-  const [modeErrMap, modes] = checkModes(moduleFixme, effects)
-  const modeErrors: ErrorMessage[] = Array.from(modeErrMap, errorLocator)
-
-  // TODO add once logging functionality is added
-  // console.log("mode checking succeeded")
-  // Check whether we found errors in previous stages, and forward the error if so
-  const errors = typeErrors.concat(effectErrors).concat(modeErrors)
-  if (errors.length > 0) {
-    return cliErr("typechecking failed", { ...typechecking, errors })
+  if (errorMap.length === 0) {
+    return right({ ...typechecking, ...result })
   } else {
-    return right({ ...typechecking, types, effects, modes })
+    const errorLocator = mkErrorMessage(sourceMap)
+    const errors = Array.from(errorMap, errorLocator)
+    return cliErr("typechecking failed", { ...typechecking, errors })
   }
 }
 
