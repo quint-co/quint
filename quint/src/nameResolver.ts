@@ -20,6 +20,7 @@ import { QuintConstType } from './quintTypes'
 import { ScopeTree } from './scoping'
 import { LookupTable, LookupTableByModule, lookupType, lookupValue, newTable } from './lookupTable'
 import { IRVisitor, walkModule } from './IRVisitor'
+import { Either, left, right } from '@sweet-monads/either'
 
 /**
  * A single name resolution error
@@ -40,11 +41,7 @@ export interface NameError {
 /**
  * The result of name resolution for a Quint Module.
  */
-export type NameResolutionResult =
-  /* Success, all names were resolved */
-  | { kind: 'ok' }
-  /* Error, at least one name couldn't be resolved. All errors are listed in errors */
-  | { kind: 'error', errors: NameError[] }
+export type NameResolutionResult = Either<NameError[], void>
 
 /**
  * Explore the IR checking all name expressions for undefined names
@@ -60,7 +57,7 @@ export function resolveNames(
   const visitor = new NameResolverVisitor(table, scopeTree)
   walkModule(visitor, quintModule)
   const errors: NameError[] = visitor.errors
-  return errors.length > 0 ? { kind: 'error', errors } : { kind: 'ok' }
+  return errors.length > 0 ? left(errors) : right(undefined)
 }
 
 class NameResolverVisitor implements IRVisitor {

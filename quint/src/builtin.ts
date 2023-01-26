@@ -29,7 +29,8 @@ export function builtinDocs(): Either<ErrorMessage[], Map<string, DocumentationE
   // Read file and remove windows line endings (\r) using `lf`
   const sourceCode = lf(readFileSync(path, 'utf8'))
 
-  return parsePhase1(sourceCode, path).map(phase1Data => produceDocs(phase1Data.module))
+  return parsePhase1(sourceCode, path)
+    .map(phase1Data => produceDocs(phase1Data.modules[0]))
 }
 
 // TODO: Move builtinSignatures() to this file and read it from builtin.qnt, see https://github.com/informalsystems/quint/issues/452

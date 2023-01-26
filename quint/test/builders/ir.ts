@@ -14,7 +14,7 @@ export function buildModuleWithDefs(defs: string[]): QuintModule {
   const result = parsePhase1(quintModule, 'mocked_path')
 
   if (result.isRight()) {
-    return result.value.module
+    return result.value.modules[0]
   }
 
   throw new Error(`Couldn't parse mocked expression. Result - ${JSONbig.stringify(result)}`)

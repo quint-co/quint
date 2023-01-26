@@ -97,14 +97,18 @@ export function
       // On errors, we'll produce the computational context up to this point
       .mapLeft(errorContext))
     .chain(parseData => {
-      const { module, table, sourceMap } = parseData
+      const { modules, table, sourceMap } = parseData
+      // Compile the last module only.
+      // Otherwise, we may introduce too many state variables.
+      // For instance, when the same file contains parametric modules and instances.
+      const lastModule = modules[modules.length - 1]
       // in the future, we will be using types and effects
-      const [typeErrors, _types] = inferTypes(table, module)
-      const [effectsErrors, _effects] = inferEffects(table, module)
+      const [typeErrors, _types] = inferTypes(table, lastModule)
+      const [effectsErrors, _effects] = inferEffects(table, lastModule)
       // since the type checker and effects checker are incomplete,
       // collect the errors, but do not stop immediately on error
       const visitor = new CompilerVisitor()
-      walkModule(visitor, module)
+      walkModule(visitor, lastModule)
       return right({
         values: visitor.getContext(),
         vars: visitor.getVars(),
