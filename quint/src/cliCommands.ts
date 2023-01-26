@@ -36,6 +36,7 @@ interface OutputStage {
   types?: Map<bigint, TypeScheme>,
   effects?: Map<bigint, Effect>,
   modes?: Map<bigint, OpQualifier>,
+  /* Docstrings by defintion name by module name */
   documentation?: Map<string, Map<string, DocumentationEntry>>,
   errors?: ErrorMessage[],
   warnings?: any[], // TODO it doesn't look like this is being used for anything. Should we remove it?
