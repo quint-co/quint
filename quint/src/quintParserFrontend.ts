@@ -172,7 +172,6 @@ export function parsePhase2(phase1Data: ParserPhase1): ParseResult<ParserPhase2>
         })
       })).mapLeft(errors => errors.flat())
 
-    // Temp: use just the root's module table at name resolution for now
     const resolutionResult: Either<ErrorMessage[], void> =
       resolveNames(module, definitions, scopeTree).mapLeft(errors => {
         // Build error message with resolution explanation and the location obtained from sourceMap
