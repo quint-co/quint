@@ -147,6 +147,15 @@ make local
 
 Make sure you have the folder linked to your vscode extensions as described above.
 
+### Troubleshooting
+
+Between installing the plugin from different sources, you may end up with multiple versions and VSCode can get confused about which version to use. To fix this, follow these steps:
+
+1. Navigate to `$HOME/.vscode/extensions` and delete folders called `informal.quint-vscode*` except for the one you want to keep.
+2. `rm $HOME/.vscode/extensions/extensions.json`.
+3. `rm $HOME/.vscode/extensions/.init-default-profile-extensions`.
+4. Restart VSCode **twice**. The first time it will recreate the `extensions.json` file, the second time it will install the extensions. Reloading won't work, you need to actually close and reopen VSCode.
+
 [Apalache]: https://github.com/informalsystems/apalache
 [Contributing to Apalache]: https://github.com/informalsystems/apalache/blob/unstable/CONTRIBUTING.md
 [eslint]: https://eslint.org/
