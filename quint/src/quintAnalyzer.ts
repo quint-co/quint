@@ -35,7 +35,7 @@ export type AnalysisResult = [[bigint, ErrorTree][], AnalyzisOutput]
 /**
  * Statically analyzes a Quint specification.
  *
- * @param definitionsTable - The lookup tables for the modules.
+ * @param lookupTable - The lookup tables for the modules.
  */
 export class QuintAnalyzer {
   private effectInferrer: EffectInferrer
