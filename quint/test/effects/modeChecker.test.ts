@@ -5,7 +5,6 @@ import { buildModuleWithDefs } from '../builders/ir'
 import { ErrorTree, errorTreeToString } from '../../src/errorTree'
 import { OpQualifier, QuintModule } from '../../src/quintIr'
 import { EffectInferrer } from '../../src/effects/inferrer'
-import { FreshVarGenerator } from "../../src/FreshVarGenerator"
 import { ModeChecker } from '../../src/effects/modeChecker'
 
 describe('checkModes', () => {
@@ -27,7 +26,7 @@ describe('checkModes', () => {
   const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
 
   function checkModuleModes(quintModule: QuintModule): [Map<bigint, ErrorTree>, Map<bigint, OpQualifier>] {
-    const inferrer = new EffectInferrer(definitionsTable, new FreshVarGenerator())
+    const inferrer = new EffectInferrer(definitionsTable)
     const [errors, effects] = inferrer.inferEffects(quintModule)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)

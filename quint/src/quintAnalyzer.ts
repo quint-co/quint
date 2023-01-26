@@ -19,7 +19,6 @@ import { TypeScheme } from "./types/base"
 import { TypeInferrer } from "./types/inferrer"
 import { Effect } from "./effects/base"
 import { EffectInferrer } from "./effects/inferrer"
-import { FreshVarGenerator } from "./FreshVarGenerator"
 import { ModeChecker } from "./effects/modeChecker"
 
 /* Products from static analysis */
@@ -46,9 +45,8 @@ export class QuintAnalyzer {
   private output: AnalyzisOutput = { types: new Map(), effects: new Map(), modes: new Map() }
 
   constructor(lookupTable: LookupTableByModule) {
-    const freshVarGenerator = new FreshVarGenerator()
-    this.typeInferrer = new TypeInferrer(lookupTable, freshVarGenerator)
-    this.effectInferrer = new EffectInferrer(lookupTable, freshVarGenerator)
+    this.typeInferrer = new TypeInferrer(lookupTable)
+    this.effectInferrer = new EffectInferrer(lookupTable)
     this.modeChecker = new ModeChecker()
   }
 

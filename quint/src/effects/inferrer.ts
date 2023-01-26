@@ -33,9 +33,9 @@ export type EffectInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, Effect>
  * expressions. Errors are written to the errors attribute.
  */
 export class EffectInferrer implements IRVisitor {
-  constructor(lookupTable: LookupTableByModule, freshVarGenerator: FreshVarGenerator) {
+  constructor(lookupTable: LookupTableByModule) {
     this.lookupTable = lookupTable
-    this.freshVarGenerator = freshVarGenerator
+    this.freshVarGenerator = new FreshVarGenerator()
   }
 
   /**

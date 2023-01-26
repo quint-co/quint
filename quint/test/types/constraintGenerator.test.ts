@@ -9,7 +9,6 @@ import { constraintToString } from '../../src/types/printing'
 import { ErrorTree } from '../../src/errorTree'
 import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
 import { defaultValueDefinitions } from '../../src/definitionsCollector'
-import { FreshVarGenerator } from "../../src/FreshVarGenerator"
 
 describe('ConstraintGeneratorVisitor', () => {
   const table: LookupTable = newTable({
@@ -40,7 +39,7 @@ describe('ConstraintGeneratorVisitor', () => {
       return right([])
     }
 
-    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable, new FreshVarGenerator())
+    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
     walkModule(visitor, quintModule)
   })
 
@@ -56,7 +55,7 @@ describe('ConstraintGeneratorVisitor', () => {
       return right([])
     }
 
-    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable, new FreshVarGenerator())
+    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
     walkModule(visitor, quintModule)
   })
 
@@ -70,7 +69,7 @@ describe('ConstraintGeneratorVisitor', () => {
 
     const solvingFunction = (_: LookupTable, _c: Constraint) => right([])
 
-    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable, new FreshVarGenerator())
+    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
     walkModule(visitor, quintModule)
 
     assert.includeDeepMembers([...visitor.types.entries()], [
@@ -94,7 +93,7 @@ describe('ConstraintGeneratorVisitor', () => {
 
     const solvingFunction = (_: LookupTable, _c: Constraint) => left(errors)
 
-    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable, new FreshVarGenerator())
+    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
     walkModule(visitor, quintModule)
 
     assert.sameDeepMembers(Array.from(visitor.errors.entries()), Array.from(errors.entries()))
@@ -120,7 +119,7 @@ describe('ConstraintGeneratorVisitor', () => {
     const errors = new Map<bigint, ErrorTree>([[1n, error]])
 
     const solvingFunction = (_: LookupTable, _c: Constraint) => right([])
-    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable, new FreshVarGenerator())
+    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
     walkModule(visitor, quintModule)
 
     assert.sameDeepMembers(Array.from(visitor.errors.values()), Array.from(errors.values()))

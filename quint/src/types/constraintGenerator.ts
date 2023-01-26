@@ -26,18 +26,16 @@ import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../look
 import { specialConstraints } from './specialConstraints'
 import { FreshVarGenerator } from "../FreshVarGenerator"
 
-type solvingFunctionType = (_table: LookupTable,_constraint: Constraint)
+type solvingFunctionType = (_table: LookupTable, _constraint: Constraint)
   => Either<Map<bigint, ErrorTree>, Substitutions>
 
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
-  constructor(
-    solvingFunction: solvingFunctionType, lookupTable: LookupTableByModule, freshVarGenerator: FreshVarGenerator 
-  ) {
+  constructor(solvingFunction: solvingFunctionType, lookupTable: LookupTableByModule) {
     this.solvingFunction = solvingFunction
     this.lookupTable = lookupTable
-    this.freshVarGenerator = freshVarGenerator
+    this.freshVarGenerator = new FreshVarGenerator()
   }
 
   types: Map<bigint, TypeScheme> = new Map<bigint, TypeScheme>()

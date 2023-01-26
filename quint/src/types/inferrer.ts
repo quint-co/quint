@@ -13,7 +13,6 @@
  * @module
  */
 
-import { FreshVarGenerator } from "../FreshVarGenerator"
 import { ErrorTree } from '../errorTree'
 import { walkModule } from '../IRVisitor'
 import { LookupTableByModule } from '../lookupTable'
@@ -25,8 +24,8 @@ import { solveConstraint } from './constraintSolver'
 export type TypeInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>]
 
 export class TypeInferrer extends ConstraintGeneratorVisitor {
-  constructor(table: LookupTableByModule, freshVarGenerator: FreshVarGenerator) {
-    super(solveConstraint, table, freshVarGenerator)
+  constructor(table: LookupTableByModule) {
+    super(solveConstraint, table)
   }
 
   /**
