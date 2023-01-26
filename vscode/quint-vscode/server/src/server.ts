@@ -84,6 +84,8 @@ documents.onDidChangeContent(change => {
 
     const diagnostics = diagnosticsFromErrors(errors, result.sourceMap)
     connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
+  }).catch(diagnostics => {
+    connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
   })
 })
 
