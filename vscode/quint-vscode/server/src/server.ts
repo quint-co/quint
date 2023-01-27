@@ -141,7 +141,7 @@ connection.onHover((params: HoverParams): Hover | undefined => {
       return []
     }
 
-    const signature = docsByDocument.get(params.textDocument.uri)?.get(module.name)?.get(name) 
+    const signature = docsByDocument.get(params.textDocument.uri)?.get(module.name)?.get(name)
       ?? loadedBuiltInDocs?.get(name)!
     if (!signature) {
       return []
@@ -187,7 +187,7 @@ connection.onSignatureHelp((params: SignatureHelpParams): HandlerResult<Signatur
     return emptySignatures
   }
 
-  const signature = docsByDocument.get(params.textDocument.uri)?.get(module.name)?.get(name) 
+  const signature = docsByDocument.get(params.textDocument.uri)?.get(module.name)?.get(name)
     ?? loadedBuiltInDocs?.get(name)!
   const signatureWithMarkupKind = signature?.documentation
     ? { ...signature, documentation: { kind: 'markdown', value: signature.documentation } as MarkupContent }
