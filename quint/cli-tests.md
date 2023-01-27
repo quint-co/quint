@@ -187,3 +187,8 @@ bash -
 <!-- !test check counters - Types & Effects-->
     quint typecheck ../examples/counters.qnt
 
+### OK on typecheck SimpleAuctionNonComposable.qnt
+
+<!-- !test check SimpleAuctionNonComposable - Types & Effects-->
+    quint typecheck ../examples/solidity/SimpleAuction/SimpleAuctionNonComposable.qnt
+
