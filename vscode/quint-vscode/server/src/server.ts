@@ -39,8 +39,9 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument)
 // Store auxiliary information by document
 const parsedDataByDocument: Map<DocumentUri, ParserPhase2> = new Map<DocumentUri, ParserPhase2>()
 const analysisOutputByDocument: Map<DocumentUri, AnalyzisOutput> = new Map<DocumentUri, AnalyzisOutput>()
-const docsByDocument: Map<DocumentUri, Map<string, DocumentationEntry>> =
-  new Map<DocumentUri, Map<string, DocumentationEntry>>()
+// Documentation entries by name, by module, by document
+const docsByDocument: Map<DocumentUri, Map<string, Map<string, DocumentationEntry>>> =
+  new Map<DocumentUri, Map<string, Map<string, DocumentationEntry>>>()
 
 const ds = builtinDocs()
 const loadedBuiltInDocs = ds.isRight() ? ds.value : undefined
@@ -73,7 +74,7 @@ documents.onDidChangeContent(change => {
 
   parseDocument(change.document).then((result) => {
     parsedDataByDocument.set(change.document.uri, result)
-    docsByDocument.set(change.document.uri, produceDocs(result.modules[0]))
+    docsByDocument.set(change.document.uri, new Map(result.modules.map(m => [m.name, produceDocs(m)])))
 
     const analyzer = new QuintAnalyzer(result.table)
     result.modules.forEach(module => analyzer.analyze(module))
@@ -135,12 +136,13 @@ connection.onHover((params: HoverParams): Hover | undefined => {
 
     const { modules, sourceMap } = parsedData
     const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-    const [_module, name, _id] = findName(modules, results, params.position) ?? [undefined, undefined, undefined]
+    const [module, name, _id] = findName(modules, results, params.position) ?? [undefined, undefined, undefined]
     if (!name) {
       return []
     }
 
-    const signature = docsByDocument.get(params.textDocument.uri)!.get(name)! ?? loadedBuiltInDocs?.get(name)!
+    const signature = docsByDocument.get(params.textDocument.uri)?.get(module.name)?.get(name) 
+      ?? loadedBuiltInDocs?.get(name)!
     if (!signature) {
       return []
     }
@@ -170,20 +172,23 @@ connection.onHover((params: HoverParams): Hover | undefined => {
 })
 
 connection.onSignatureHelp((params: SignatureHelpParams): HandlerResult<SignatureHelp, void> => {
-  const document = documents.get(params.textDocument.uri)!
-  const lineUpToPosition = document.getText({
-    start: { line: params.position.line, character: 0 },
-    end: params.position,
-  })
+  const emptySignatures = { signatures: [], activeSignature: 0, activeParameter: 0 }
 
-  // Match the last word before the `(` character (which triggered the request)
-  const matchingNames = lineUpToPosition.match(/(\w+)\s*\(\s*$/)
-  if (matchingNames === null) {
-    return { signatures: [], activeSignature: 0, activeParameter: 0 }
+  const parsedData = parsedDataByDocument.get(params.textDocument.uri)
+  if (!parsedData) {
+    return emptySignatures
   }
 
-  const name = matchingNames[1]
-  const signature = docsByDocument.get(params.textDocument.uri)!.get(name)! ?? loadedBuiltInDocs?.get(name)!
+  // Find name under cursor
+  const { modules, sourceMap } = parsedData
+  const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
+  const [module, name, _scope] = findName(modules, results, params.position) ?? [undefined, undefined, undefined]
+  if (!name) {
+    return emptySignatures
+  }
+
+  const signature = docsByDocument.get(params.textDocument.uri)?.get(module.name)?.get(name) 
+    ?? loadedBuiltInDocs?.get(name)!
   const signatureWithMarkupKind = signature?.documentation
     ? { ...signature, documentation: { kind: 'markdown', value: signature.documentation } as MarkupContent }
     : signature
@@ -204,7 +209,7 @@ connection.onDefinition((params: DefinitionParams): HandlerResult<Location[], vo
   // Find name under cursor
   const { modules, sourceMap, table } = parsedData
   const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-  const [module, name, scope] = findName(modules, results, params.position) ?? [undefined, undefined]
+  const [module, name, scope] = findName(modules, results, params.position) ?? [undefined, undefined, undefined]
   if (!name) {
     return []
   }
