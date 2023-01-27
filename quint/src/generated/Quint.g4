@@ -197,7 +197,10 @@ literal: (STRING | BOOL | INT)
 // Strings cannot be escaped, as they are pseudo-identifiers.
 STRING          : '"' .*? '"' ;
 BOOL            : ('false' | 'true') ;
-INT             : [0-9]+ ;
+// Similar to Solidity, integer literals can be written in two formats:
+//  - Decimal, possibly, with '_' as separators, or
+//  - Hexadecimal, possibly, with '_' as separators.
+INT             : ('0' | [1-9]([0-9]|'_'[0-9])* | '0x' [0-9a-fA-F]([0-9a-fA-F]|'_'[0-9a-fA-F])*) ;
 
 // a few keywords
 AND             :   'and' ;

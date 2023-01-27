@@ -675,14 +675,21 @@ true
 Bool
 ```
 
-Integers literals are written as follows:
+Integer literals are written as follows:
 
 ```
 0
 1
--1
 2
--2
+1024
+// integer literals can be really big
+340282366920938463463374607431768211456
+// similar to Solidity, one can separate digits with '_'
+100_000_000
+// hexadecimal notation is also supported, including '_'
+0xabcdef
+0xAbCdEf
+0xAB_CD_EF
 ...
 ```
 

@@ -92,12 +92,13 @@ function assertVarAfterRun(runName: string, varName: string, expected: string, i
 
 describe('compiling specs to runtime values', () => {
   describe('compile over integers', () => {
-    it('computes positive integer literals', () => {
+    it('computes integer literals', () => {
       assertResultAsString('15', '15')
-    })
-
-    it('computes negative integer literals', () => {
-      assertResultAsString('-15', '-15')
+      assertResultAsString('100_000_000', '100000000')
+      assertResultAsString('0xabcdef', '11259375')
+      assertResultAsString('0xab_cd_ef', '11259375')
+      assertResultAsString('0xAbCdEF', '11259375')
+      assertResultAsString('0xaB_cD_eF', '11259375')
     })
 
     it('computes addition', () => {
@@ -339,6 +340,8 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('2.to(4) == 1.to(4)', 'false')
       assertResultAsString('(-4).to(-2) == (-2).to(-4)', 'false')
       assertResultAsString('3.to(0) == 4.to(-1)', 'true')
+      // See: https://github.com/informalsystems/quint/issues/578
+      //assertResultAsString('-1.to(2) == Set(-1, 0, 1, 2)', 'true')
     })
 
     it('computes inequality over sets', () => {
