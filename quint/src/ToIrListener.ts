@@ -372,7 +372,7 @@ export class ToIrListener implements QuintListener {
       this.exprStack.push({
         id,
         kind: 'int',
-        value: BigInt(intNode.text),
+        value: BigInt(intNode.text.replaceAll('_', '')),
       })
     }
     const boolNode = ctx.BOOL()

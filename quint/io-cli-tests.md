@@ -59,7 +59,7 @@ error: parsing failed
 
 <!-- !test in module AST is output -->
 ```
-quint parse --out parse-out-example.json ../examples/tuples.qnt
+quint parse --out parse-out-example.json ../examples/language-features/tuples.qnt
 cat parse-out-example.json | jq '.modules[0].name'
 rm parse-out-example.json
 ```
@@ -73,7 +73,7 @@ rm parse-out-example.json
 
 <!-- !test in type and effect maps are output -->
 ```
-quint typecheck --out typecheck-out-example.json ../examples/tuples.qnt > /dev/null
+quint typecheck --out typecheck-out-example.json ../examples/language-features/tuples.qnt > /dev/null
 printf "first type: " && cat typecheck-out-example.json | jq '.types."4".type.kind'
 printf "first effect: " && cat typecheck-out-example.json | jq '.effects."5".kind'
 rm typecheck-out-example.json
@@ -132,7 +132,7 @@ quint typecheck --out test-out.json ./testFixture/TrivialTypeError.qnt ; ret=$?;
 
 <!-- !test in repl loads a file -->
 ```
-echo "import counters.*" | quint -r ../examples/counters.qnt 2>&1 | tail -n +3
+echo "import counters.*" | quint -r ../examples/language-features/counters.qnt 2>&1 | tail -n +3
 ```
 
 <!-- !test out repl loads a file -->
@@ -146,7 +146,7 @@ true
 
 <!-- !test in repl loads a file and a module -->
 ```
-echo "Init" | quint -r ../examples/counters.qnt::counters 2>&1 | tail -n +3
+echo "Init" | quint -r ../examples/language-features/counters.qnt::counters 2>&1 | tail -n +3
 ```
 
 <!-- !test out repl loads a file and a module -->
@@ -161,7 +161,7 @@ true
 
 <!-- !test in repl loads a file with .load -->
 ```
-echo ".load ../examples/counters.qnt counters" \
+echo ".load ../examples/language-features/counters.qnt counters" \
   | quint 2>&1 | tail -n +3
 ```
 
