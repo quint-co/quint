@@ -26,9 +26,8 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase2, QuintAnalyzer, builtinDocs, effectToString, parsePhase1, parsePhase2, produceDocs, treeFromModule, typeSchemeToString } from '@informalsystems/quint'
+import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase2, QuintAnalyzer, builtinDocs, effectToString, lookupValue, parsePhase1, parsePhase2, produceDocs, treeFromModule, typeSchemeToString } from '@informalsystems/quint'
 import { assembleDiagnostic, diagnosticsFromErrors, findBestMatchingResult, findName, locToRange } from './reporting'
-import { lookupValue } from '@informalsystems/quint/dist/src/lookupTable'
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -136,7 +135,7 @@ connection.onHover((params: HoverParams): Hover | undefined => {
 
     const { modules, sourceMap } = parsedData
     const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-    const [name, _] = findName(modules[0], results, params.position) ?? [undefined, undefined]
+    const [_module, name, _id] = findName(modules, results, params.position) ?? [undefined, undefined, undefined]
     if (!name) {
       return []
     }
@@ -204,9 +203,8 @@ connection.onDefinition((params: DefinitionParams): HandlerResult<Location[], vo
 
   // Find name under cursor
   const { modules, sourceMap, table } = parsedData
-  const module = modules[0]
   const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-  const [name, scope] = findName(module, results, params.position) ?? [undefined, undefined]
+  const [module, name, scope] = findName(modules, results, params.position) ?? [undefined, undefined]
   if (!name) {
     return []
   }
