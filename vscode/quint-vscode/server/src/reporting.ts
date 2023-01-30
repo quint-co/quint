@@ -64,21 +64,20 @@ export function assembleDiagnostic(explanation: string, loc: Loc): Diagnostic {
  * the position is not under a name expression or an operator application
  */
 export function findName(
-  module: QuintModule, sources: [Loc, bigint][], position: Position
-): [string, bigint]  | undefined {
+  modules: QuintModule[], sources: [Loc, bigint][], position: Position
+): [QuintModule, string, bigint] | undefined {
   const ids = resultsOnPosition(sources, position)
-  const names: ([string, bigint] | undefined)[] = ids.map(([_loc, id]) => {
-    const expr = findExpressionWithId(module, id)
-    if (!expr) {
-      return
-    }
+  const names = ids.flatMap(([_loc, id]) => {
+    return modules.filter(module => module.id > id).map((module): ([QuintModule, string, bigint] | undefined) => {
+      const expr = findExpressionWithId(module, id)
 
-    switch(expr.kind) {
-      case 'name':
-        return [expr.name, expr.id]
-      case 'app':
-        return [expr.opcode, expr.id]
-    }
+      switch (expr?.kind) {
+        case 'name':
+          return [module, expr.name, expr.id]
+        case 'app':
+          return [module, expr.opcode, expr.id]
+      }
+    })
   })
 
   return compact(names)[0]

@@ -45,13 +45,13 @@
 // Igor Konnov, Informal Systems, 2022
 
 module basics {
-  // We represent byte sequences as lists of integers
+  /// We represent byte sequences as lists of integers
   type WORD_T = List[int]
 
-  // we interpret the empty word as nil
+  /// we interpret the empty word as nil
   def isNil(word) = length(word) == 0
 
-  // compare two integer words lexicographically
+  /// compare two integer words lexicographically
   def lessThan(w1, w2) = {
     val len1 = length(w1)
     val len2 = length(w2)
@@ -98,10 +98,10 @@ module ics23 {
   // Empty child is a predefined sequence that fills an absent child.
   val EmptyChild = [ 0, 0, 0 ]
 
-  // We need a hash that returns ChildSize elements,
-  // with 32 being in the head.
-  // For simulation, we are just summing up the word elements modulo 8.
-  // For verification, we should use an injective function as a perfect hash.
+  /// We need a hash that returns ChildSize elements,
+  /// with 32 being in the head.
+  /// For simulation, we are just summing up the word elements modulo 8.
+  /// For verification, we should use an injective function as a perfect hash.
   def hash(word) = [ 32, 0, word.foldl(0, (i, j) => i + j) % 8 ]
 
   type LEAF_T = {
@@ -118,17 +118,17 @@ module ics23 {
     suffix: WORD_T
   }
 
-  // a proof of existence of (key, value)
+  /// a proof of existence of (key, value)
   type ExistsProof_T = {
     key: KEY_T, value: VALUE_T, leaf: LEAF_T, path: List[INNER_T]
   }
 
-  // a proof of non-existence of a key
+  /// a proof of non-existence of a key
   type NonExistsProof_T = {
     key: KEY_T, left: ExistsProof_T, right: ExistsProof_T
   }
 
-  // calculate a hash from an exists proof
+  /// calculate a hash from an exists proof
   def existsCalculate(p):
       (ExistsProof_T) => CommitmentProof_T = {
     // this is how the leaf hash is computed
@@ -144,17 +144,17 @@ module ics23 {
       (child, inner) => hash(inner.prefix.concat(child).concat(inner.suffix)))
   }
 
-  // verify that a proof matches a root
+  /// verify that a proof matches a root
   def verify(proof, root, key, value) = and {
     key == proof.key,
     value == proof.value,
     root == existsCalculate(proof)
   }
 
-  // VerifyMembership returns true iff
-  // proof is an ExistenceProof for the given key and value AND
-  // calculating the root for the ExistenceProof matches
-  // the provided CommitmentRoot
+  /// VerifyMembership returns true iff
+  /// proof is an ExistenceProof for the given key and value AND
+  /// calculating the root for the ExistenceProof matches
+  /// the provided CommitmentRoot
   def verifyMembership(root, proof, key, value):
       (CommitmentRoot_T, ExistsProof_T, KEY_T, VALUE_T) => bool = {
     // TODO: specify Decompress
@@ -164,7 +164,7 @@ module ics23 {
     verify(proof, root, key, value)
   }
 
-  // checks if an op has the expected padding
+  /// checks if an op has the expected padding
   def hasPadding(inner, minPrefixLen, maxPrefixLen, suffixLen) = and {
     length(inner.prefix) >= minPrefixLen,
     length(inner.prefix) <= maxPrefixLen,
@@ -175,9 +175,9 @@ module ics23 {
     length(inner.suffix) == suffixLen
   }
 
-  // This will look at the proof and determine which order it is...
-  // So we can see if it is branch 0, 1, 2 etc... to determine neighbors
-  // https://github.com/confio/ics23/blob/a4daeb4c24ce1be827829c0841446abc690c4f11/go/proof.go#L400-L411
+  /// This will look at the proof and determine which order it is...
+  /// So we can see if it is branch 0, 1, 2 etc... to determine neighbors
+  /// https://github.com/confio/ics23/blob/a4daeb4c24ce1be827829c0841446abc690c4f11/go/proof.go#L400-L411
   def orderFromPadding(inner) = {
     // Specialize orderFromPadding to IavlSpec:
     // ChildOrder = { 0, 1 }
@@ -197,9 +197,9 @@ module ics23 {
     }
   }
 
-  // leftBranchesAreEmpty returns true if the padding bytes correspond to all
-  // empty siblings on the left side of a branch, ie. it's a valid placeholder
-  // on a leftmost path
+  /// leftBranchesAreEmpty returns true if the padding bytes correspond to all
+  /// empty siblings on the left side of a branch, ie. it's a valid placeholder
+  /// on a leftmost path
   def leftBranchesAreEmpty(inner) = and {
     // the case of leftBranches == 0 returns false
     val order = orderFromPadding(inner)
@@ -212,8 +212,8 @@ module ics23 {
     inner.prefix.slice(from, from + ChildSize) == EmptyChild
   }
 
-  // IsLeftMost returns true if this is the left-most path in the tree,
-  // excluding placeholder (empty child) nodes
+  /// IsLeftMost returns true if this is the left-most path in the tree,
+  /// excluding placeholder (empty child) nodes
   def isLeftMost(path) = {
     // Calls getPadding(0) => idx = 0, prefix = 0.
     // We specialize the constants to IavlSpec.
@@ -228,9 +228,9 @@ module ics23 {
     )
   }
 
-  // rightBranchesAreEmpty returns true if the padding bytes correspond
-  // to all empty siblings on the right side of a branch,
-  // i.e. it's a valid placeholder on a rightmost path
+  /// rightBranchesAreEmpty returns true if the padding bytes correspond
+  /// to all empty siblings on the right side of a branch,
+  /// i.e. it's a valid placeholder on a rightmost path
   def rightBranchesAreEmpty(inner) = and {
     // the case of rightBranches == 0 returns false
     val order = orderFromPadding(inner)
@@ -241,8 +241,8 @@ module ics23 {
     inner.suffix == EmptyChild
   }
 
-  // IsRightMost returns true if this is the left-most path in the tree,
-  // excluding placeholder (empty child) nodes
+  /// IsRightMost returns true if this is the left-most path in the tree,
+  /// excluding placeholder (empty child) nodes
   def isRightMost(path) = {
     // Specialize to IavlSpec
     // Calls getPadding(1) => minPrefix, maxPrefix,
@@ -258,8 +258,8 @@ module ics23 {
     )
   }
 
-  // isLeftStep assumes left and right have common parents
-  // checks if left is exactly one slot to the left of right
+  /// isLeftStep assumes left and right have common parents
+  /// checks if left is exactly one slot to the left of right
   def isLeftStep(left, right) = {
     // 'left' turns left, and 'right' turns right
     val lorder = orderFromPadding(left)
@@ -271,14 +271,14 @@ module ics23 {
     }
   }
 
-  // IsLeftNeighbor returns true if `right` is the next possible path
-  // right of `left`
-  //
-  // Find the common suffix from the Left.Path and Right.Path and remove it.
-  // We have LPath and RPath now, which must be neighbors.
-  // Validate that LPath[len-1] is the left neighbor of RPath[len-1].
-  // For step in LPath[0..len-1], validate step is right-most node.
-  // For step in RPath[0..len-1], validate step is left-most node.
+  /// IsLeftNeighbor returns true if `right` is the next possible path
+  /// right of `left`
+  ///
+  /// Find the common suffix from the Left.Path and Right.Path and remove it.
+  /// We have LPath and RPath now, which must be neighbors.
+  /// Validate that LPath[len-1] is the left neighbor of RPath[len-1].
+  /// For step in LPath[0..len-1], validate step is right-most node.
+  /// For step in RPath[0..len-1], validate step is left-most node.
   def isLeftNeighbor(lpath, rpath) = {
     // count common tail (from end, near root)
     // cut the left and right paths
@@ -313,11 +313,11 @@ module ics23 {
     )
   }
 
-  // VerifyNonMembership returns true iff
-  // proof is (contains) a NonExistenceProof
-  // both left and right sub-proofs are valid existence proofs (see above) or nil
-  // left and right proofs are neighbors (or left/right most if one is nil)
-  // provided key is between the keys of the two proofs
+  /// VerifyNonMembership returns true iff
+  /// proof is (contains) a NonExistenceProof
+  /// both left and right sub-proofs are valid existence proofs (see above) or nil
+  /// left and right proofs are neighbors (or left/right most if one is nil)
+  /// provided key is between the keys of the two proofs
   def verifyNonMembership(root, np, key):
         (CommitmentRoot_T, NonExistsProof_T, KEY_T) => bool = and {
     // getNonExistProofForKey
@@ -524,14 +524,14 @@ module ics23pbt {
       }
     proof.with("path", proof.path.append(node))
 
-  // grow the proof on the left
+  /// grow the proof on the left
   action growLeft =
     nondet dir = Set("turnLeft", "turnRight").oneOf()
     nondet m = 1.to(MaxPrefixLen + ChildSize).setOfMaps(Byte).oneOf()
     nonMemProof' =
       nonMemProof.with("left", nonMemProof.left.extend(dir, toWord(m)))
 
-  // grow the proof on the right
+  /// grow the proof on the right
   action growRight =
     nondet dir = Set("turnLeft", "turnRight").oneOf()
     nondet m = 1.to(MaxPrefixLen + ChildSize).setOfMaps(Byte).oneOf()
@@ -546,16 +546,16 @@ module ics23pbt {
     },
   }
 
-  // by checking this invariant, we may produce an example of when
-  // verifyMembership succeeds
+  /// by checking this invariant, we may produce an example of when
+  /// verifyMembership succeeds
   val TestVerify = {
     val root = existsCalculate(nonMemProof.left)
     not(verifyMembership(root,
       nonMemProof.left, inputKey, nonMemProof.left.value))
   }
 
-  // by checking this invariant, we may produce an example of when
-  // verifyNonMembership succeeds
+  /// by checking this invariant, we may produce an example of when
+  /// verifyNonMembership succeeds
   val TestNonMem = or {
     lessThan(inputKey, nonMemProof.left.key),
     lessThan(nonMemProof.right.key, inputKey),
@@ -572,16 +572,16 @@ module ics23pbt {
 // Note that this module is needed only for testing of ICS23,
 // not for the operation of ICS23.
 module trees {
-  import basics.isNil
+  import basics.*
   import ics23.*
 
-  // We represent a binary tree as a collection of maps,
-  // whose keys are simply integer values 1..n, with 1 being the root.
-  // Similar to pointer-based representations of trees (e.g., in C),
-  // this data structure requires additional invariants to make sure
-  // that it actually defines a binary tree.
-  // This is in contrast to the typical data structures in
-  // programming languages.
+  /// We represent a binary tree as a collection of maps,
+  /// whose keys are simply integer values 1..n, with 1 being the root.
+  /// Similar to pointer-based representations of trees (e.g., in C),
+  /// this data structure requires additional invariants to make sure
+  /// that it actually defines a binary tree.
+  /// This is in contrast to the typical data structures in
+  /// programming languages.
   type TREE_T = {
     // every leaf has a key and value assigned
     leafs: int -> { key: WORD_T, value: WORD_T },
@@ -590,29 +590,29 @@ module trees {
     right: int -> int
   }
 
-  // the tree generated so far
+  /// the tree generated so far
   var tree: TREE_T
-  // the node nodeHashes
+  /// the node nodeHashes
   var nodeHashes: int -> WORD_T
-  // the keys to use for non-membership proofs
+  /// the keys to use for non-membership proofs
   var leftKey: int
   var rightKey: int
-  // the key whose non-membership or membership we want to prove
+  /// the key whose non-membership or membership we want to prove
   var inputKey: int
 
-  // limit values to a small set
+  /// limit values to a small set
   val Byte = 0.to(7).union(Set(32))
 
-  // the maximum tree height
+  /// the maximum tree height
   val height = 3
 
-  // Compute all parents from the binary representation of the index.
-  // To simplify random generation of the trees, we are using
-  // the binary encoding. For example, if a leaf has the index 4,
-  // that is, 100b, then it has the parents 3 = 10b and 1 = 1b.
+  /// Compute all parents from the binary representation of the index.
+  /// To simplify random generation of the trees, we are using
+  /// the binary encoding. For example, if a leaf has the index 4,
+  /// that is, 100b, then it has the parents 3 = 10b and 1 = 1b.
   def parents(i) = 1.to(height).map(h => i / (2^h)).exclude(Set(0))
 
-  // is a given key a node (inner or leaf) of a tree
+  /// is a given key a node (inner or leaf) of a tree
   def isNode(t, key) = or {
     key == 1,
     t.leafs.keys().contains(key),
@@ -620,7 +620,7 @@ module trees {
     t.right.keys().contains(key),
   }
 
-  // Compute nodeHashes of all nodes into a map.
+  /// Compute nodeHashes of all nodes into a map.
   def computeHashes(t) = {
     // compute the hash of a single node, assuming that the children's
     // nodeHashes have been computed
@@ -655,10 +655,10 @@ module trees {
         (key, m) => if (isNode(t, key)) putNodeHash(m, key) else m)
   }
 
-  // It's very easy to produce binary trees by picking an arbitrary graph and
-  // restricting it with the predicate isTree. However, this approach produces
-  // very sparse sets of states, to be explored by random search. Hence, we
-  // use a more algorithmic approach that represents trees with binary words.
+  /// It's very easy to produce binary trees by picking an arbitrary graph and
+  /// restricting it with the predicate isTree. However, this approach produces
+  /// very sparse sets of states, to be explored by random search. Hence, we
+  /// use a more algorithmic approach that represents trees with binary words.
   action Init = {
     // produce an arbitrary tree with leafs in e.g. [2, 8)
     nondet idx = 2.to(2^height - 1).powerset().oneOf()
@@ -697,7 +697,7 @@ module trees {
     }
   }
 
-  // convert a tree leaf to an exists proof
+  /// convert a tree leaf to an exists proof
   def leafToExistsProof(key) =
     val value = tree.leafs.get(key).value
     // encode all intermediate nodes upwards
@@ -733,7 +733,7 @@ module trees {
       path: path,
     }
 
-  // The transition does nothing. The state was computed in Init.
+  /// The transition does nothing. The state was computed in Init.
   action Next = all {
     // nothing changes
     tree' = tree,
@@ -743,7 +743,7 @@ module trees {
     inputKey' = inputKey,
   }
 
-  // make sure that the proofs are the same for all the leafs
+  /// make sure that the proofs are the same for all the leafs
   val TreeProofInv =
     and {
       leftKey.in(tree.leafs.keys()),
@@ -754,9 +754,9 @@ module trees {
       lroot == rroot
     }
 
-  // The invariant of membership verification:
-  // If the input key belongs to the leafs,
-  // we should be able to prove its membership.
+  /// The invariant of membership verification:
+  /// If the input key belongs to the leafs,
+  /// we should be able to prove its membership.
   val MemInv = or {
     not(inputKey.in(tree.leafs.keys())),
     val proof = leafToExistsProof(inputKey)
@@ -764,7 +764,7 @@ module trees {
     verifyMembership(root, proof, [inputKey], proof.value)
   }
 
-  // check this property to produce an example of where MemInv is violated
+  /// check this property to produce an example of where MemInv is violated
   val MemExample =
     not(MemInv)
 
@@ -847,30 +847,26 @@ module trees {
       inputKey > leftKey and not(isNil(rproof.key)),
     }
 
-  // check this property to produce an example of where NonMemInv is violated
+  /// check this property to produce an example of where NonMemInv is violated
   val NonMemExample =
     not(NonMemInv)
 
-  // Predicate isTree(t) is true iff t defines an ordered binary tree starting
-  // with 1. It's probably hard to read. However, it is what one has to specify
-  // to express that an arbitrary graph is an ordered tree.
-  //
-  // TODO: uncomment, when the name resolution issue is closed:
-  // https://github.com/informalsystems/quint/issues/301
-  /*
-  def isTree(t) = and {
+  /// Predicate isTree(t) is true iff t defines an ordered binary tree starting
+  /// with 1. It's probably hard to read. However, it is what one has to specify
+  /// to express that an arbitrary graph is an ordered tree.
+  def isTree(t: TREE_T): bool = and {
     t.leafs.keys().intersect(t.left.keys()) == Set(),
     t.leafs.keys().intersect(t.right.keys()) == Set(),
     1.in(t.leafs.keys().union(t.left.keys().union(t.right.keys()))),
     // we impose an order on the keys, to break cycles and DAGs
-    t.left.keys().forall(k => t.left[k] > k),
-    t.right.keys().forall(k => t.right[k] > k),
+    t.left.keys().forall(k => t.left.get(k) > k),
+    t.right.keys().forall(k => t.right.get(k) > k),
     t.left.keys().intersect(t.right.keys())
-      .forall(k => t.left[k] < t.right[k]),
+      .forall(k => t.left.get(k) < t.right.get(k)),
     // the leafs are ordered w.r.t. their keys
     val leafKeys = t.leafs.keys()
     tuples(leafKeys, leafKeys).forall(kk =>
-      kk._1 < kk._2 implies lessThan(t.leafs[kk._1].key, t.leafs[kk._2].key)
+      kk._1 < kk._2 implies lessThan(t.leafs.get(kk._1).key, t.leafs.get(kk._2).key)
     ),
     // all nodes have a parent
     (t.leafs.keys().union(t.left.keys()).union(t.right.keys()))
@@ -878,10 +874,9 @@ module trees {
       // the root
       k == 1,
       // there is a left parent
-      t.left.keys().exists(p => t.left[p] == k),
+      t.left.keys().exists(p => t.left.get(p) == k),
       // there is a right parent
-      t.right.keys().exists(p => t.right[p] == k),
+      t.right.keys().exists(p => t.right.get(p) == k),
     }),
   }
-  */
 }
