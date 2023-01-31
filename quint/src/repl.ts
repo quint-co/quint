@@ -356,7 +356,7 @@ function chalkQuintEx(ex: QuintEx): string {
       switch (ex.opcode) {
         case 'Set': {
           const as = ex.args.map(chalkQuintEx).join(', ')
-          return chalk.green('Set') + chalk.black(`(${as})`)
+          return chalk.green('Set') + `(${as})`
         }
 
         case 'Map': {
@@ -370,17 +370,17 @@ function chalkQuintEx(ex: QuintEx): string {
             }
           })
           const as = ps.join(', ')
-          return chalk.green('Map') + chalk.black(`(${as})`)
+          return chalk.green('Map') + `(${as})`
         }
 
         case 'Tup': {
           const as = ex.args.map(chalkQuintEx).join(', ')
-          return chalk.black(`(${as})`)
+          return `(${as})`
         }
 
         case 'List': {
           const as = ex.args.map(chalkQuintEx).join(', ')
-          return chalk.black(`[${as}]`)
+          return `[${as}]`
         }
 
         case 'Rec': {
