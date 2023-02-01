@@ -170,3 +170,15 @@ Between installing the plugin from different sources, you may end up with multip
 [txm]: https://www.npmjs.com/package/txm
 [sweet-monads/maybe]: https://www.npmjs.com/package/@sweet-monads/maybe
 [lodash.isequal]: https://www.npmjs.com/package/lodash.isequal
+
+## Release
+
+We manage releases for two components out of this repository: the quint
+executable and the VSCode plugin.
+
+To initiate a release of the quint executable, run the script
+[./quint/scripts/prepare-release.sh](./quint/scripts/prepare-release.sh).
+
+
+To initiate a release of the VSCode plugin, run the script
+[./vscode/quint-vscode/scripts/prepare-release.sh](./vscode/quint-vscode/scripts/prepare-release.sh).
