@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
  - The parser complains about junk in the end of file (#603)
+ - REPL compiles unsupported operators and issues runtime errors (#604)
 
 ## v0.5.4 -- 2023-01-24
 

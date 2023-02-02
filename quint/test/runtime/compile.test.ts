@@ -939,5 +939,52 @@ describe('compiling specs to runtime values', () => {
       evalVarAfterRun('run1', 'n', input)
         .mapRight(m => assert.fail(`Expected an error, found: ${m}`))
     })
+
+    it('unsupported operators', () => {
+      assertResultAsString(
+        'allLists(1.to(3))',
+        undefined
+      )
+
+      assertResultAsString(
+        'chooseSome(1.to(3))',
+        undefined
+      )
+
+      assertResultAsString(
+        'always(true)',
+        undefined
+      )
+
+      assertResultAsString(
+        'eventually(true)',
+        undefined
+      )
+
+      assertResultAsString(
+        'enabled(true)',
+        undefined
+      )
+
+      assertResultAsString(
+        'orKeep(true, [])',
+        undefined
+      )
+
+      assertResultAsString(
+        'mustChange(true, [])',
+        undefined
+      )
+
+      assertResultAsString(
+        'weakFair(true, [])',
+        undefined
+      )
+
+      assertResultAsString(
+        'strongFair(true, [])',
+        undefined
+      )
+    })
   })
 })

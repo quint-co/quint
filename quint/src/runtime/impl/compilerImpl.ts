@@ -581,11 +581,6 @@ export class CompilerVisitor implements IRVisitor {
         this.applyFold(app.id, 'rev')
         break
 
-      case 'guess':
-        // TODO: remove soon: https://github.com/informalsystems/quint/issues/376
-        this.applyGuess(app.id)
-        break
-
       case 'flatten':
         this.applyFun(app.id, 1, set => {
           // unpack the sets from runtime values
@@ -765,6 +760,32 @@ export class CompilerVisitor implements IRVisitor {
         // the special operator that runs random simulation
         this.test(app.id)
         break
+
+      // standard unary operators that are not handled by REPL
+      case 'allLists':
+      case 'chooseSome':
+      case 'always':
+      case 'eventually':
+      case 'enabled':
+        this.applyFun(app.id, 1, (_) => {
+          this.addRuntimeError(app.id,
+            `Runtime does not support the built-in operator '${app.opcode}'`)
+          return none()
+        })
+        break
+
+      // standard binary operators that are not handled by REPL
+      case 'orKeep':
+      case 'mustChange':
+      case 'weakFair':
+      case 'strongFair':
+        this.applyFun(app.id, 2, (_) => {
+          this.addRuntimeError(app.id,
+            `Runtime does not support the built-in operator '${app.opcode}'`)
+          return none()
+        })
+        break
+
 
       default: {
         this.applyUserDefined(app)
