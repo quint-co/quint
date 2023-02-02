@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## UNRELEASED
 
 ### Added
@@ -13,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Add an example that specifies the Solidity Coin contract (#576)
  - A work-in-progress example on Solidity's Simple Auction (#573)
  - Parse `100_000_000` and `0xabcd`, `0xAB_CD` as integers (#580)
+
+### Fixed
+
+ - The parser complains about junk in the end of file (#603)
 
 ## v0.5.4 -- 2023-01-24
 

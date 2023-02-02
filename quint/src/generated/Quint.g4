@@ -10,7 +10,8 @@
  */
 grammar Quint;
 
-modules : module+;
+// entry point for the parser
+modules : module+ EOF;
 
 module : 'module' IDENTIFIER '{' (docLines unit)* '}';
 docLines : DOCCOMMENT*;

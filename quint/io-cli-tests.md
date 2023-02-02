@@ -29,6 +29,21 @@ doesn't exist.
 <!-- !test err non-existent file -->
     error: file ../examples/non-existent.file does not exist
 
+### User error on parse with junk after modules
+
+Regression test for [#585](https://github.com/informalsystems/quint/issues/585)
+We want to ensure that the parser shows an error, when it detects junk in
+the end of file.
+
+<!-- !test in junk -->
+    quint parse ./testFixture/modulesAndJunk.qnt 2>&1 | sed 's#.*quint/\(testFixture\)#Q/\1#g'
+
+<!-- !test out junk -->
+    Q/testFixture/modulesAndJunk.qnt:9:1 - error: extraneous input 'the' expecting {<EOF>, 'module'}
+    9: the parser
+       ^^^
+
+    error: parsing failed
 
 ### User error on parse with invalid input
 
