@@ -1,0 +1,43 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./quint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install node
+        uses: actions/setup-node@v2
+        with:
+          node-version: "17"
+          registry-url: "https://registry.npmjs.org"
+      - name: Compile
+        run: npm ci
+      - name: Test
+        run: npm run test
+      - name:
+          Extract release notes
+          # Get the release notes for the version by printing all lines between lines
+          # starting with the version header and ending with the next version header,
+          # inclusive. We then drop the last line to remove the subsequent version header.
+        run: |
+          version=$(npm pkg get version | sed 's/"//g')
+          sed -n "/## v$version/,/## v/p" ../CHANGELOG.md | head -n -1 > release-notes.txt
+      - name: Release
+        # See https://github.com/softprops/action-gh-release#-external-release-notes
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release-notes.txt
+      - name: Publish
+        # See https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages#publishing-packages-to-the-npm-registry
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

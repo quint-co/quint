@@ -176,9 +176,23 @@ Between installing the plugin from different sources, you may end up with multip
 We manage releases for two components out of this repository: the quint
 executable and the VSCode plugin.
 
-To initiate a release of the quint executable, run the script
-[./quint/scripts/prepare-release.sh](./quint/scripts/prepare-release.sh).
+### quint executable
 
+- Prepare a release by running
+  [./quint/scripts/prepare-release.sh](./quint/scripts/prepare-release.sh).
+- Get the release PR reviewed and merged
+- Checkout the release commit
+- Push a tag on the release commit
+  
+  ```
+  git tag -a vx.y.z -m "Release vx.y.z"
+  git push origin vx.y.z
+  ```
+
+  This will trigger the release and publication of the package to npm and
+  GitHub.
+  
+### VSCode Plugin
 
 To initiate a release of the VSCode plugin, run the script
 [./vscode/quint-vscode/scripts/prepare-release.sh](./vscode/quint-vscode/scripts/prepare-release.sh).
