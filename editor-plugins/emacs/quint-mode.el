@@ -4,6 +4,7 @@
 ;; URL: https://github.com/informalsystems/quint
 ;; Version: 1.0.0
 ;; Created: 25 Feb 2022
+;; Updated 03 Feb 2023
 ;; Keywords: languages
 
 ;; This file is not part of GNU Emacs.
@@ -20,14 +21,8 @@
 ;;; Code:
 
 ;; define several category of keywords
-(defconst quint-types '("int" "str" "bool" "set" "seq"))
-(defconst quint-keywords '("Set", "Map", "List", "Rec", "Tup", "not" "and" "or" "iff" "implies" "exists" "guess" "forall" "in" "notin"
-      "union" "contains" "fold" "intersect" "exclude" "subseteq" "map" "applyTo" "filter"
-      "powerset" "flatten" "seqs" "chooseSome" "isFinite" "cardinality" "get" "put" "keys"
-      "mapBy" "setOfMaps" "set" "setBy" "fieldNames" "with" "tuples" "append" "concat" "head"
-      "tail" "length" "nth" "indices" "replaceAt" "slice" "select" "foldl" "foldr" "to" "always"
-      "eventually" "next" "orKeep" "mustChange" "enabled" "weakFair" "strongFair" "guarantees"
-      "existsConst" "forallConst" "chooseConst" "if" "else" "match" "all" "any"))
+(defconst quint-types '("int" "str" "bool" "Set" "List"))
+(defconst quint-keywords '("Rec", "Tup", "not" "and" "or" "iff" "implies" "all" "any" "if" "else"))
 (defconst quint-declarations '("module" "import" "const" "var" "def" "val" "pure"
                              "nondet" "action" "temporal" "assume" "type"))
 (defconst quint-constants '("Bool" "Int" "Nat" "false" "true"))

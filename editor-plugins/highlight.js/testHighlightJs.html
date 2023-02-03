@@ -1,0 +1,90 @@
+<html>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script src="./quint.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+
+    <pre>
+        <code class="language-quint">
+/**
+ * This is a simple test of the syntax
+ * highlighting by highlight.js.
+ */
+module HighlightJS {
+    // single-line comments
+    type Addr = str
+    type UInt = int
+    type MyFlag = bool
+    type MySet = Set[int]
+    type MyList = List[int]
+    type MyMap = int -&gt; bool
+    type MyRec = { foo: int, bar: bool }
+    type MyTup = (int, bool)
+
+    pure val MAX_UINT = 2^256 - 1
+
+    pure def myAdd(x, y) = x + y
+    pure def mySub(x, y) = x - y
+    pure def myMul(x, y) = x * y
+    pure def myDiv(x, y) = x / y
+    pure def myMod(x, y) = x % y
+
+    pure def myEq(x, y) = (x == y)
+    pure def myNeq(x, y) = (x != y)
+    pure def myGt(x, y) = (x &gt; y)
+    pure def myGte(x, y) = (x &gt;= y)
+    pure def myLt(x, y) = (x &lt; y)
+    pure def myLte(x, y) = (x &lt;= y)
+
+    pure def myOr(x, y) = x or y
+    pure def myAnd(x, y) = x and y
+    pure def myImplies(x, y) = x implies y
+    pure def myIff(x, y) = x iff y
+    pure def myNot(x) = not(x)
+
+    const ADDR: Set[Addr]
+
+    var balances: Addr -&gt; UInt
+
+    def state = { balances: balances }
+
+    val totalSupply = ADDR.fold(0, (sum, a) =&gt; sum + balances.get(a))
+
+    action init: bool = {
+        nondet sender = oneOf(ADDR)
+        all {
+            balances' = ADDR.mapBy(a =&gt; 0)
+        }
+    }
+
+    action mint(sender: Addr, receiver: Addr, amount: UInt): bool = all {
+        require(sender == minter),
+        val newBal = balances.get(receiver) + amount
+        all {
+            require(isUInt(newBal)),
+            balances' = balances.set(receiver, newBal),
+        }
+    }
+
+    action step: bool = {
+        nondet sender = oneOf(ADDR)
+        nondet receiver = oneOf(ADDR)
+        nondet amount = 0.to(MAX_UINT).oneOf()
+        any {
+            mint(sender, receiver, amount),
+        }
+    }
+
+    temporal SampleInv: bool = always(isUInt(totalSupply))
+
+    // TESTS
+    run mintSendTest = {
+        init.then(mint("alice", "bob", 10))
+    }
+}
+        </code>
+    </pre>
+
+</html>

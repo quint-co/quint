@@ -41,7 +41,7 @@
 			"patterns": [
 				{
 					"name": "keyword.control.quint",
-					"match": "\\b(module|extends|end|with|if|else|case)\\b"
+					"match": "\\b(module|import|if|else|not|or|and|implies|iff|all|any)\\b"
 				}
 			]
 		},
@@ -49,11 +49,11 @@
 			"patterns": [
 				{
 					"name": "storage.modifier.quint",
-					"match": "\\b(typedef|assume|const|var|val|def|pure|action|temporal)\\b"
+					"match": "\\b(type|assume|const|var|val|nondet|def|pure|action|temporal|run)\\b"
 				},
 				{
 					"name": "storage.type.quint",
-					"match": "\\b(rec|set|list|int|str|bool)\\b"
+					"match": "\\b(Tup|Rec|Set|List|int|str|bool)\\b"
 				}
 			]
 		},
@@ -61,35 +61,7 @@
 			"patterns": [
 				{
 					"name": "keyword.operator.quint",
-					"match": "\\b(not|or|and|implies|iff|always|eventually|weakFair|strongFair|guarantees|next|unchanged|enabled|orKeep|mustChange)\\b"
-				},
-				{
-					"name": "keyword.operator.quint",
-					"match": "\\b(guess|choose|forall|exists|map|filter|allLists|to)\\b"
-				},
-				{
-					"name": "keyword.operator.quint",
-					"match": "\\b(get|keys|mapOf|setOfMaps|update|updateAs|put)\\b"
-				},
-				{
-					"name": "keyword.operator.quint",
-					"match": "\\b(cardinality|isFinite|intersect|union|difference|powerset|chooseSome|fold)\\b"
-				},
-				{
-					"name": "keyword.operator.quint",
-					"match": "\\b(tuples|field|fieldNames|with|item)\\b"
-				},
-				{
-					"name": "keyword.operator.quint",
-					"match": "\\b(append|concat|head|tail|length|nth|indices|replaceAt|slice|select|foldl|foldr)\\b"
-				},
-				{
-					"name": "keyword.operator.quint",
-					"match": "\\b(all|any)\\b"
-				},
-				{
-					"name": "keyword.operator.quint",
-					"match": "(=>|<-|>|<|:=|=|!=|\\.|\\*|\\+|-|/|%|\\^|\\&|\\||subseteq|in|notin)"
+					"match": "(=>|<=|>|<|=|!=|\\.|\\*|\\+|-|/|%|\\^)"
 				}
 			]
 		},
@@ -108,7 +80,7 @@
 			"patterns": [
 				{
 					"name": "constant.numeric.quint",
-					"match": "-?\\d+"
+					"match": "-?(0x[0-9a-fA-F]([0-9a-fA-F]|_[0-9a-fA-F])*|0|[1-9]([0-9]|_[0-9])*)"
 				}
 			]
 		},
@@ -116,7 +88,7 @@
 			"patterns": [
 				{
 					"name": "constant.language.quint",
-					"match": "(false|true|Bool|Int|Nat|Str)"
+					"match": "(false|true|Bool|Int|Nat)"
 				}
 			]
 		},
