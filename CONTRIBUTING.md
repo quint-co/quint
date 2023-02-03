@@ -182,12 +182,7 @@ executable and the VSCode plugin.
   [./quint/scripts/prepare-release.sh](./quint/scripts/prepare-release.sh).
 - Get the release PR reviewed and merged
 - Checkout the release commit
-- Push a tag on the release commit
-  
-  ```
-  git tag -a vx.y.z -m "Release vx.y.z"
-  git push origin vx.y.z
-  ```
+- Run the release script [./quint/scripts/release.sh](./quint/scripts/release.sh).
 
   This will trigger the release and publication of the package to npm and
   GitHub.
