@@ -13,11 +13,12 @@ These tutorials are currently available in the classic format:
  - [Hello, world!](./lesson0-helloworld/hello.md)
  - [Tutorial on Booleans](./lesson1-booleans/booleans.md)
  - [Tutorial on integers](./lesson2-integers/integers.md)
+ - [Tutorial on basic protocol anatomy and tests](./lesson3-integers/coin.md)
 
 ## 2. CodeTour tutorials
 
-If you like interactive language tutorials, we have recorded a few using
-[CodeTour][]. You have to install two extensions:
+If you like interactive language tutorials, we have recorded the above listed
+tutorials using [CodeTour][]. You have to install two extensions:
 
  - [Quint VSCode][] is our language extension,
  - [CodeTour][] is the extension of replaying code tutorials.

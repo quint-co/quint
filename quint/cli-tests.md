@@ -192,10 +192,10 @@ Temporarily disabled.
 <!-- !test check counters - Types & Effects-->
     quint typecheck ../examples/language-features/counters.qnt
 
-### OK on typecheck Coin
+### OK on typecheck coin
 
-<!-- !test check Coin - Types & Effects-->
-    quint typecheck ../examples/solidity/Coin/Coin.qnt
+<!-- !test check coin - Types & Effects-->
+    quint typecheck ../examples/solidity/Coin/coin.qnt
 
 ### OK on typecheck SimpleAuctionNonComposable.qnt
 
