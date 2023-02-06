@@ -34,7 +34,7 @@ function parseAndCompare(artifact: string): void {
     // An error occurred at phase 1, check if it is the expected result
     phase1Result.mapLeft(err =>
       outputToCompare = {
-        stage: 'error',
+        stage: 'parsing',
         errors: err,
       }
     )
@@ -56,7 +56,7 @@ function parseAndCompare(artifact: string): void {
       // An error occurred at phase 2, check if it is the expected result
       phase2Result.mapLeft(err =>
         outputToCompare = {
-          stage: 'error',
+          stage: 'parsing',
           errors: err,
         }
       )
