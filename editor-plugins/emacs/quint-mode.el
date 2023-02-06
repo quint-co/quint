@@ -22,7 +22,7 @@
 
 ;; define several category of keywords
 (defconst quint-types '("int" "str" "bool" "Set" "List"))
-(defconst quint-keywords '("Rec", "Tup", "not" "and" "or" "iff" "implies" "all" "any" "if" "else"))
+(defconst quint-keywords '("Rec" "Tup" "not" "and" "or" "iff" "implies" "all" "any" "if" "else"))
 (defconst quint-declarations '("module" "import" "const" "var" "def" "val" "pure"
                              "nondet" "action" "temporal" "assume" "type"))
 (defconst quint-constants '("Bool" "Int" "Nat" "false" "true"))
