@@ -89,7 +89,7 @@
   },
   "scripts": {
     "compile": "tsc && copyfiles -u 1 ./src/builtin.qnt ./dist/src/",
-    "prepare": "rm -rf ./dist && npm run compile",
+    "prepare": "rm -rf ./dist && npm run compile && chmod +x ./dist/src/cli.js",
     "update-fixtures": "npm run compile && npm link && ./scripts/update-fixtures.sh",
     "test": "mocha -r ts-node/register test/*.test.ts test/**/*.test.ts",
     "coverage": "nyc npm run test",
