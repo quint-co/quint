@@ -90,6 +90,7 @@
   "scripts": {
     "compile": "tsc && copyfiles -u 1 ./src/builtin.qnt ./dist/src/",
     "prepare": "rm -rf ./dist && npm run compile",
+    "update-fixtures": "npm run compile && npm link && ./scripts/update-fixtures.sh",
     "test": "mocha -r ts-node/register test/*.test.ts test/**/*.test.ts",
     "coverage": "nyc npm run test",
     "integration": "txm cli-tests.md && txm io-cli-tests.md",
