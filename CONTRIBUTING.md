@@ -44,7 +44,7 @@ JavaScript has plenty of bad parts.
 These steps are currently a bit complicated. Check the dedicated pages:
 
  - [Installing quint][],
- - [Installing the VSCode plugin][].
+ - [Installing the VSCode plugin](#using-the-vscode-plugin-from-source).
 
 ### Tests
 
@@ -161,7 +161,6 @@ Between installing the plugin from different sources, you may end up with multip
 [eslint]: https://eslint.org/
 [quint manual]: ./doc/quint.md
 [Installing quint]: https://github.com/informalsystems/quint/blob/main/quint/README.md#how-to-install
-[Installing the VSCode plugin]: https://github.com/informalsystems/quint/blob/main/vscode/quint/README.md#temp-how-to-run-it-locally
 [Language server protocol]: https://microsoft.github.io/language-server-protocol/
 [quint unit tests]: https://github.com/informalsystems/quint/blob/main/quint/README.md#unit-tests
 [quint integration tests]: ./quint/README.md#integration-tests
