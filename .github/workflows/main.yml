@@ -29,13 +29,28 @@ jobs:
         with:
           node-version: "17"
       - run: npm install
+      - run: npm run compile
+      - run: npm test
+
+  quint-test-fixtures-up-to-date:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./quint
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "17"
+      - run: npm install
       - name: Compile and update test fixtures
         run: npm run update-fixtures
       - name: Check that fixtures are up to date
         run: |
           git diff --exit-code \
             || ( echo ">>> ERROR: Fixtures are not up to date. Run 'npm run update-fixtures'" &&  exit 1)
-      - run: npm test
 
   quint-integration-tests:
     runs-on: ${{ matrix.operating-system }}
