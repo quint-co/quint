@@ -36,6 +36,7 @@ function parseAndCompare(artifact: string): void {
       outputToCompare = {
         stage: 'parsing',
         errors: err,
+        warnings: [],
       }
     )
   } else if (phase1Result.isRight()) {
@@ -58,11 +59,12 @@ function parseAndCompare(artifact: string): void {
         outputToCompare = {
           stage: 'parsing',
           errors: err,
+          warnings: [],
         }
       )
     } else {
       // Both phases succeeded, check that the module is correclty outputed
-      outputToCompare = { stage: 'parsing', warnings: [], module: module }
+      outputToCompare = { stage: 'parsing', warnings: [], modules: [ module ] }
     }
   }
 
