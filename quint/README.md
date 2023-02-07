@@ -92,26 +92,9 @@ following commands:
 
 #### Updating the source map test fixtures
 
-  1. Compile and link the parser
-
-     ```sh
-     npm run compile && npm link
-     ```
-
-  1. Generate new source maps for each map needing to be updated, e.g.,
-
-     ```sh
-     quint parse testFixture/SuperSpec.qnt --out testFixture/SuperSpec.json --source-map testFixture/SuperSpec.map.json
-     ```
-
-  1. Go into the resulting `.map.json` and `.json` files and replace the
-     absolute path on your system with `mocked_path`. E.g., replace
-     `/home/me/.../testFixture/SuperSpec.map.json` with
-     `mocked_path/testFixture/SuperSpec.map.json`. You can do that with `perl`:
-
-     ```sh
-     perl -pi -e 's#"/.*?/testFixture#"mocked_path/testFixture#g' testFixture/SuperSpec{.map,}.json
-     ```
+``` sh
+npm run update-fixtures
+```
 
 ### Integration tests
 
