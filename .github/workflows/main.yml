@@ -34,7 +34,7 @@ jobs:
       - name: Check that fixtures are up to date
         run: |
           git diff --exit-code \
-            || ( echo "Fixtures are not up to date. Run `npm run update-fixtures`" &&  exit 1)
+            || ( echo ">>> ERROR: Fixtures are not up to date. Run 'npm run update-fixtures'" &&  exit 1)
       - run: npm test
 
   quint-integration-tests:
