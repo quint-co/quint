@@ -16,6 +16,9 @@ name: build
 jobs:
   quint-unit-tests:
     runs-on: ${{ matrix.operating-system }}
+    defaults:
+      run:
+        working-directory: ./quint
     strategy:
       fail-fast: false
       matrix:
@@ -25,9 +28,14 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "17"
-      - run: cd ./quint && npm install
-      - run: cd ./quint && npm run compile
-      - run: cd ./quint && npm test
+      - run: npm install
+      - name: Compile and update test fixtures
+        run: npm run update-fixtures
+      - name: Check that fixtures are up to date
+        run: |
+          git diff --exit-code \
+            || ( echo "Fixtures are not up to date. Run `npm run update-fixtures`" &&  exit 1)
+      - run: npm test
 
   quint-integration-tests:
     runs-on: ${{ matrix.operating-system }}
