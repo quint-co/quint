@@ -87,13 +87,23 @@ class ImportResolverVisitor implements IRVisitor {
       this.errors.push({ moduleName: def.protoName, reference: def.id })
       return
     }
+    const instanceTable = copyTable(moduleTable)
+
+    def.overrides.forEach(([name, ex]) => {
+      const valueDefs = instanceTable.valueDefinitions.get(name)
+      if (valueDefs) {
+        const newDefs = valueDefs.map(def => ({ ...def, reference: ex.id }))
+        instanceTable.valueDefinitions.set(name, newDefs)
+        console.log('overriding', name, newDefs)
+      }
+    })
 
     // Copy the intanced module lookup table in a new lookup table for the instance
-    this.tables.set(def.name, copyTable(moduleTable))
+    this.tables.set(def.name, instanceTable)
 
     // All names from the instanced module should be acessible with the instance namespace
     // So, copy them to the current module's lookup table
-    const newEntries = copyNames(moduleTable, def.name, this.currentModule.id)
+    const newEntries = copyNames(instanceTable, def.name, this.currentModule.id)
     this.currentTable = mergeTables(this.currentTable, newEntries)
   }
 

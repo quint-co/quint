@@ -13,7 +13,7 @@
  */
 
 import { IRVisitor } from '../IRVisitor'
-import { QuintApp, QuintBool, QuintConst, QuintEx, QuintInt, QuintLambda, QuintLet, QuintModule, QuintModuleDef, QuintName, QuintOpDef, QuintStr, QuintVar } from '../quintIr'
+import { QuintApp, QuintBool, QuintConst, QuintEx, QuintInstance, QuintInt, QuintLambda, QuintLet, QuintModule, QuintModuleDef, QuintName, QuintOpDef, QuintStr, QuintVar } from '../quintIr'
 import { QuintType, typeNames } from '../quintTypes'
 import { expressionToString, rowToString, typeToString } from '../IRprinting'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
@@ -25,6 +25,7 @@ import { ScopeTree, treeFromModule } from '../scoping'
 import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../lookupTable'
 import { specialConstraints } from './specialConstraints'
 import { FreshVarGenerator } from "../FreshVarGenerator"
+import { typeSchemeToString } from './printing'
 
 type solvingFunctionType = (_table: LookupTable, _constraint: Constraint)
   => Either<Map<bigint, ErrorTree>, Substitutions>
@@ -78,6 +79,18 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
   exitConst(e: QuintConst) {
     this.addToResults(e.id, right(toScheme(e.typeAnnotation)))
+  }
+
+  exitInstance(def: QuintInstance) {
+    def.overrides.forEach(([name, ex]) => {
+      this.fetchSignature(name, def.id, 0).map(t => {
+        console.log(`Found signature for ${name} with type ${typeToString(t)}`)
+        // this.constraints.push({ kind: 'eq', types: [t, ex.typeAnnotation], sourceId: ex.id })
+      })
+      this.fetchResult(ex.id).map(r => {
+        console.log(`Found result for ${ex.id} with type ${typeSchemeToString(r)}`)
+      })
+    })
   }
 
   //     n: t ∈ Γ
