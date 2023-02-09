@@ -11,13 +11,13 @@
 import {
   ErrorMessage, Loc, parsePhase1, parsePhase2
 } from '../quintParserFrontend'
-import { ErrorTree, errorTreeToString } from '../errorTree'
 import { Computable } from './runtime'
 import { IrErrorMessage } from '../quintIr'
 import { CompilerVisitor } from './impl/compilerImpl'
 import { walkModule } from '../IRVisitor'
 import { right } from '@sweet-monads/either'
 import { QuintAnalyzer } from '../quintAnalyzer'
+import { mkErrorMessage } from '../cliCommands'
 
 /**
  * The name of the shadow variable that stores the last found trace.
@@ -59,21 +59,6 @@ function errorContext(errors: ErrorMessage[]): CompilationContext {
   }
 }
 
-// convert an error tree to an error message
-function errorsToMsg(sourceMap: Map<bigint, Loc>, errorTuples: [bigint, ErrorTree][]) {
-  const errors: ErrorMessage[] = []
-  errorTuples.forEach(([id, error]) => {
-    const loc = sourceMap.get(id)!
-    const msg = {
-      explanation: errorTreeToString(error),
-      locs: [loc],
-    }
-    errors.push(msg)
-  })
-
-  return errors
-}
-
 /**
  * Parse a string that contains a Quint module and compile it to executable
  * objects. This is a user-facing function. In case of an error, the error
@@ -105,13 +90,14 @@ export function
       // since the type checker and effects checker are incomplete,
       // collect the errors, but do not stop immediately on error
       const visitor = new CompilerVisitor()
+      const errorLocator = mkErrorMessage(sourceMap)
       walkModule(visitor, lastModule)
       return right({
         values: visitor.getContext(),
         vars: visitor.getVars(),
         shadowVars: visitor.getShadowVars(),
         syntaxErrors: [],
-        analysisErrors: errorsToMsg(sourceMap, analysisErrors),
+        analysisErrors: Array.from(analysisErrors, errorLocator),
         compileErrors: visitor.getCompileErrors(),
         runtimeErrors: visitor.getRuntimeErrors(),
         sourceMap: sourceMap,

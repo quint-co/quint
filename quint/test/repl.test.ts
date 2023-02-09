@@ -143,7 +143,7 @@ describe('repl ok', () => {
     )
     const output = dedent(
       `>>> 1 + false
-      |static analysis error: <input>:1:1 - error: Couldn't unify int and bool
+      |static analysis error: <input>:1:1 - error: QNT000: Couldn't unify int and bool
       |Trying to unify int and bool
       |Trying to unify (int, int) => int and (int, bool) => t8
       |
