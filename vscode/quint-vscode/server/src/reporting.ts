@@ -12,7 +12,7 @@
  * @module
  */
 
-import { ErrorTree, Loc, QuintModule, errorTreeToString, findExpressionWithId } from "@informalsystems/quint"
+import { Loc, QuintError, QuintModule, findExpressionWithId } from "@informalsystems/quint"
 import { Diagnostic, DiagnosticSeverity, Position, Range } from "vscode-languageserver"
 import { compact } from "lodash"
 
@@ -25,13 +25,13 @@ import { compact } from "lodash"
  *
  * @returns a list of diagnostics with the proper error messages and locations
  */
-export function diagnosticsFromErrors(errors: [bigint, ErrorTree][], sourceMap: Map<bigint, Loc>): Diagnostic[] {
+export function diagnosticsFromErrors(errors: [bigint, QuintError][], sourceMap: Map<bigint, Loc>): Diagnostic[] {
   const diagnostics = errors.map(([id, error]) => {
     const loc = sourceMap.get(id)!
     if (!loc) {
       console.log(`loc for ${id} not found in source map`)
     } else {
-      return assembleDiagnostic(errorTreeToString(error), loc)
+      return assembleDiagnostic(error, loc)
     }
   })
 
@@ -45,12 +45,14 @@ export function diagnosticsFromErrors(errors: [bigint, ErrorTree][], sourceMap: 
  *
  * @returns a diagnostic object with the provided information
  */
-export function assembleDiagnostic(explanation: string, loc: Loc): Diagnostic {
+export function assembleDiagnostic(error: QuintError, loc: Loc): Diagnostic {
   return {
     severity: DiagnosticSeverity.Error,
     range: locToRange(loc),
-    message: explanation,
-    source: 'parser',
+    message: error.message,
+    code: error.code,
+    data: error.data,
+    source: 'quint',
   }
 }
 
