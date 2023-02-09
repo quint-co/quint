@@ -216,7 +216,7 @@ module builtin {
   ///   Set(1, 2)
   /// ))
   /// ```
-  pure def powerset(s): (Set[Set[a]]) => Set[Set[a]]
+  pure def powerset(s): (Set[a]) => Set[Set[a]]
 
   /// `s.flatten()` is the set of all elements in the sets in `s`.
   ///
