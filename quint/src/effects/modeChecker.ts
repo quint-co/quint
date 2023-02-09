@@ -14,15 +14,15 @@
  */
 
 import isEqual from 'lodash.isequal'
-import { ErrorTree } from '../errorTree'
-import { definitionToString, qualifierToString } from '../IRprinting'
+import { qualifierToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
+import { QuintError } from '../quintError'
 import { OpQualifier, QuintModule, QuintOpDef } from '../quintIr'
 import { ArrowEffect, ConcreteEffect, Effect, Variables, isAction, isState, isTemporal } from './base'
 import { EffectVisitor, walkEffect } from './EffectVisitor'
-import { effectToString } from './printing'
+import { effectToString, variablesToString } from './printing'
 
-export type ModeCheckingResult = [Map<bigint, ErrorTree>, Map<bigint, OpQualifier>]
+export type ModeCheckingResult = [Map<bigint, QuintError>, Map<bigint, OpQualifier>]
 
 export class ModeChecker implements IRVisitor {
   /**
@@ -41,7 +41,7 @@ export class ModeChecker implements IRVisitor {
     return [this.errors, this.suggestions]
   }
 
-  private errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
+  private errors: Map<bigint, QuintError> = new Map<bigint, QuintError>()
   private suggestions: Map<bigint, OpQualifier> = new Map<bigint, OpQualifier>()
 
   private effects: Map<bigint, Effect> = new Map<bigint, Effect>()
@@ -65,9 +65,9 @@ export class ModeChecker implements IRVisitor {
 
     if (generalMode === mode) {
       this.errors.set(def.id, {
-        location: `Checking modes for ${definitionToString(def)}`,
-        message: `Expected ${mode} mode, found: ${qualifierToString(def.qualifier)}`,
-        children: [],
+        code: 'QNT200',
+        message: `${qualifierToString(def.qualifier)} operators ${modeConstraint(def.qualifier)}, but operator \`${def.name}\` ${this.modeFinderVisitor.explanation}. Use ${qualifierToString(mode)} instead.`,
+        data: { fix: { kind: 'replace', original: qualifierToString(def.qualifier), replacement: qualifierToString(mode) } },
       })
     } else if (generalMode === def.qualifier) {
       this.suggestions.set(def.id, mode)
@@ -75,17 +75,39 @@ export class ModeChecker implements IRVisitor {
   }
 }
 
+function modeConstraint(mode: OpQualifier): string {
+  switch (mode) {
+    case 'pureval':
+    case 'puredef':
+      return 'may not interact with state variables'
+    case 'val':
+    case 'def':
+      return 'may only read state variables'
+    case 'action':
+      return 'may only read and update state variables'
+    case 'temporal':
+      return 'may not update state variables'
+    case 'nondet':
+    case 'run':
+      return '[not supported by the mode checker]'
+  }
+}
+
 class ModeFinderVisitor implements EffectVisitor {
-  public currentMode: OpQualifier = 'pureval'
+  currentMode: OpQualifier = 'pureval'
+  explanation: string = "doesn't read or update any variable"
 
   exitConcrete(effect: ConcreteEffect) {
     let mode: OpQualifier
     if (isAction(effect)) {
       mode = 'action'
+      this.explanation = `updates variables ${variablesToString(effect.update)}`
     } else if (isTemporal(effect)) {
       mode = 'temporal'
+      this.explanation = `performs temporal operations over variables ${variablesToString(effect.temporal)}`
     } else if (isState(effect)) {
       mode = 'val'
+      this.explanation = `reads variables ${variablesToString(effect.read)}`
     } else {
       mode = 'pureval'
     }
@@ -107,12 +129,19 @@ class ModeFinderVisitor implements EffectVisitor {
 
     const [paramReads, paramUpdates, paramTemporals] = paramVariablesByEffect(effect)
 
-    if (anyVariablesAdded(paramTemporals, r.temporal)) {
+    const addedTemporal = addedVariables(paramTemporals, r.temporal)
+    const addedUpdates = addedVariables(paramUpdates, r.update)
+    const addedReads = addedVariables(paramReads, r.read)
+
+    if (addedTemporal.length > 0) {
       this.currentMode = 'temporal'
-    } else if (anyVariablesAdded(paramUpdates, r.update)) {
+      this.explanation = `performs temporal operations over variables ${addedTemporal.map(variablesToString)}`
+    } else if (addedUpdates.length > 0) {
       this.currentMode = 'action'
-    } else if (anyVariablesAdded(paramReads, r.read)) {
+      this.explanation = `updates variables ${addedUpdates.map(variablesToString)}`
+    } else if (addedReads.length > 0) {
       this.currentMode = 'def'
+      this.explanation = `reads variables ${addedReads.map(variablesToString)}`
     }
   }
 }
@@ -125,15 +154,20 @@ class ModeFinderVisitor implements EffectVisitor {
  * For example, an operator with the effect `(Read[v]) => Read[v, 'x']` is adding `Read['x']`
  * to the parameter effect and should be promoted to `def`.
  */
-function anyVariablesAdded(paramVariables: Variables[], resultVariables: Variables): boolean {
+function addedVariables(paramVariables: Variables[], resultVariables: Variables): Variables[] {
   switch (resultVariables.kind) {
     case 'union':
-      return resultVariables.variables.length > 0
-        && !resultVariables.variables.every(v => paramVariables.some(p => isEqual(p, v)))
-    case 'concrete':
-      return resultVariables.vars.length > 0 && !paramVariables.some(p => isEqual(p, resultVariables))
+      return resultVariables.variables.filter(v => !paramVariables.some(p => isEqual(p, v)))
+    case 'concrete': {
+      const vars = resultVariables.vars.filter(v => !paramVariables.some(p => isEqual(p, v)))
+      if (vars.length === 0) {
+        return []
+      }
+
+      return [{ kind: 'concrete', vars }]
+    }
     case 'quantified':
-      return !paramVariables.some(p => isEqual(p, resultVariables))
+      return !paramVariables.some(p => isEqual(p, resultVariables)) ? [resultVariables] : []
   }
 }
 
