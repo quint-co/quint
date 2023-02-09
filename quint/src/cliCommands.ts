@@ -214,7 +214,7 @@ export function docs(loaded: LoadedStage): CLIProcedure<DocumentationStage> {
         const documentationEntries = produceDocs(module)
         const title = `# Documentation for ${module.name}\n\n`
         const markdown = title + [...documentationEntries.values()].map(toMarkdown).join('\n\n')
-        writeToFile(`${module.name}.md`, markdown)
+        console.log(markdown)
 
         return [module.name, documentationEntries]
       })
