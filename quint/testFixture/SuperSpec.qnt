@@ -51,6 +51,8 @@ module withConsts {
   val VeryTrue = {
       2 + 2 == 4
   }
+  val nat_includes_one = 1.in(Nat)
+  val there_is_truth = Bool.exists(x => x)
 
   // Typed vals
   val withType: Set[int] = Set(1, 2)
@@ -153,12 +155,11 @@ module withConsts {
   val oper_app_dot4 = S.filter(_ => true)
 
   val f = S.mapBy(x => x + 1)
-  // Pass non-lambda arguments.
-  // Here we are using the dot notation.
-  val oper_app_dot_non_lambda = f.exclude(3, 4)
+
+  val set_difference = S.exclude(Set(3, 4))
 
   // call the operator of one argument
-  val one = f.head()
+  val one = List(1, 2).head()
 
   // Data structures
   val test_tuple = (1, 2, 3)
@@ -182,15 +183,16 @@ module withConsts {
 
   def isEmpty(s) = s == []
 
-  // Bultin infix operators
+  // Bultin set operators
   val in_2_empty = 2.in(Set())
   val notin_2_empty = 2.notin(Set())
   val subseteq_empty = Set().subseteq(Set())
+  val powersets = Set(1).in(powerset(Set(1,2,3)))
+
 
   // Nested Modules
   module level2 {
     var y: int
-
     module level3 {
       var z: int
     }

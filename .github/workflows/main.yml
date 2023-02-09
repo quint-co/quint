@@ -32,7 +32,7 @@ jobs:
       - run: npm run compile
       - run: npm test
 
-  quint-test-fixtures-up-to-date:
+  quint-test-generated-up-to-date:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -46,11 +46,11 @@ jobs:
           node-version: "17"
       - run: npm install
       - name: Compile and update test fixtures
-        run: npm run update-fixtures
-      - name: Check that fixtures are up to date
+        run: npm run generate
+      - name: Check that generated files are up to date
         run: |
           git diff --exit-code \
-            || ( echo ">>> ERROR: Fixtures are not up to date. Run 'npm run update-fixtures'" &&  exit 1)
+            || ( echo ">>> ERROR: Generated files are not up to date. Run 'npm run generate'" &&  exit 1)
 
   quint-integration-tests:
     runs-on: ${{ matrix.operating-system }}

@@ -201,3 +201,8 @@ Temporarily disabled.
 
 <!-- !test check SimpleAuctionNonComposable - Types & Effects-->
     quint typecheck ../examples/solidity/SimpleAuction/SimpleAuctionNonComposable.qnt
+
+### OK on typecheck SuperSpec.qnt
+
+<!-- !test check SuperSpec - Types & Effects-->
+    quint typecheck testFixture/SuperSpec.qnt
