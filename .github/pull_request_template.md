@@ -5,4 +5,4 @@
 - [ ] Documentation added for any new functionality
 - [ ] Entries added to the respective `CHANGELOG.md` for any new functionality
 - [ ] Feature table on [`README.md`](../README.md#roadmap) updated for any listed functionality
-- [ ] Regenerated documentation with `quint docs` if `builtin.qnt` was changed
+- [ ] Regenerated generated assets for quint with `npm run generate`
