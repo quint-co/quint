@@ -110,7 +110,7 @@ quint typecheck ./testFixture/TrivialTypeError.qnt 2> >(sed "s:$(pwd):.:" >&2)
 
 <!-- !test err typecheck failure gives non-zero exit -->
 ```
-./testFixture/TrivialTypeError.qnt:2:3 - error: Couldn't unify str and int
+./testFixture/TrivialTypeError.qnt:2:3 - error: QNT000: Couldn't unify str and int
 Trying to unify str and int
 
 2:   val x : int = "not an int"
