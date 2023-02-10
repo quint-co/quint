@@ -302,7 +302,7 @@ async function parseDocument(textDocument: TextDocument): Promise<ParserPhase2> 
     .chain(phase1Data => parsePhase2(phase1Data))
     .mapLeft(messages => messages.flatMap(msg => {
       // TODO: Parse errors should be QuintErrors
-      const error: QuintError = { code: '', message: msg.explanation, data: {} }
+      const error: QuintError = { code: 'QNT000', message: msg.explanation, data: {} }
       return msg.locs.map(loc => assembleDiagnostic(error, loc))
     }))
 
