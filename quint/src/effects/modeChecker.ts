@@ -18,8 +18,7 @@ import { qualifierToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { QuintError } from '../quintError'
 import { OpQualifier, QuintModule, QuintOpDef } from '../quintIr'
-import { ArrowEffect, ConcreteEffect, Effect, Variables, isAction, isState, isTemporal } from './base'
-import { EffectVisitor, walkEffect } from './EffectVisitor'
+import { ArrowEffect, Effect, Variables, isAction, isState, isTemporal } from './base'
 import { effectToString, variablesToString } from './printing'
 
 export type ModeCheckingResult = [Map<bigint, QuintError>, Map<bigint, OpQualifier>]
@@ -45,7 +44,6 @@ export class ModeChecker implements IRVisitor {
   private suggestions: Map<bigint, OpQualifier> = new Map<bigint, OpQualifier>()
 
   private effects: Map<bigint, Effect> = new Map<bigint, Effect>()
-  private modeFinderVisitor: ModeFinderVisitor = new ModeFinderVisitor()
 
   exitOpDef(def: QuintOpDef) {
     const effect = this.effects.get(def.id)
@@ -53,23 +51,19 @@ export class ModeChecker implements IRVisitor {
       return
     }
 
-    walkEffect(this.modeFinderVisitor, effect)
-    const mode = this.modeFinderVisitor.currentMode
-    this.modeFinderVisitor.currentMode = 'pureval'
+    const [mode, explanation] = modeForEffect(effect)
 
     if (mode === def.qualifier) {
       return
     }
 
-    const generalMode = commonMode(mode, def.qualifier)
-
-    if (generalMode === mode) {
+    if (isMoreGeneral(mode, def.qualifier)) {
       this.errors.set(def.id, {
         code: 'QNT200',
-        message: `${qualifierToString(def.qualifier)} operators ${modeConstraint(def.qualifier)}, but operator \`${def.name}\` ${this.modeFinderVisitor.explanation}. Use ${qualifierToString(mode)} instead.`,
+        message: `${qualifierToString(def.qualifier)} operators ${modeConstraint(def.qualifier)}, but operator \`${def.name}\` ${explanation}. Use ${qualifierToString(mode)} instead.`,
         data: { fix: { kind: 'replace', original: qualifierToString(def.qualifier), replacement: qualifierToString(mode) } },
       })
-    } else if (generalMode === def.qualifier) {
+    } else {
       this.suggestions.set(def.id, mode)
     }
   }
@@ -93,55 +87,47 @@ function modeConstraint(mode: OpQualifier): string {
   }
 }
 
-class ModeFinderVisitor implements EffectVisitor {
-  currentMode: OpQualifier = 'pureval'
-  explanation: string = "doesn't read or update any variable"
-
-  exitConcrete(effect: ConcreteEffect) {
-    let mode: OpQualifier
-    if (isAction(effect)) {
-      mode = 'action'
-      this.explanation = `updates variables ${variablesToString(effect.update)}`
-    } else if (isTemporal(effect)) {
-      mode = 'temporal'
-      this.explanation = `performs temporal operations over variables ${variablesToString(effect.temporal)}`
-    } else if (isState(effect)) {
-      mode = 'val'
-      this.explanation = `reads variables ${variablesToString(effect.read)}`
-    } else {
-      mode = 'pureval'
+function modeForEffect(effect: Effect): [OpQualifier, string] {
+  switch (effect.kind) {
+    case 'concrete': {
+      if (isAction(effect)) {
+        return ['action', `updates variables ${variablesToString(effect.update)}`]
+      } else if (isTemporal(effect)) {
+        return ['temporal', `performs temporal operations over variables ${variablesToString(effect.temporal)}`]
+      } else if (isState(effect)) {
+        return ['val', `reads variables ${variablesToString(effect.read)}`]
+      } else {
+        return ['pureval', "doesn't read or update any variable"]
+      }
     }
+    case 'arrow': {
+      const r = effect.result
+      if (r.kind === 'arrow') {
+        throw new Error(`Unexpected arrow found in operator result: ${effectToString(r)}`)
+      }
 
-    this.currentMode = commonMode(this.currentMode, mode)
-  }
+      if (r.kind === 'quantified') {
+        return ['puredef', "doesn't read or update any variable"]
+      }
 
-  exitArrow(effect: ArrowEffect) {
-    const r = effect.result
-    if (r.kind === 'arrow') {
-      throw new Error(`Unexpected arrow found in operator result: ${effectToString(r)}`)
+      const [paramReads, paramUpdates, paramTemporals] = paramVariablesByEffect(effect)
+
+      const addedTemporal = addedVariables(paramTemporals, r.temporal)
+      const addedUpdates = addedVariables(paramUpdates, r.update)
+      const addedReads = addedVariables(paramReads, r.read)
+
+      if (addedTemporal.length > 0) {
+        return ['temporal', `performs temporal operations over variables ${addedTemporal.map(variablesToString)}`]
+      } else if (addedUpdates.length > 0) {
+        return ['action', `updates variables ${addedUpdates.map(variablesToString)}`]
+      } else if (addedReads.length > 0) {
+        return ['def', `reads variables ${addedReads.map(variablesToString)}`]
+      }
+
+      return ['puredef', "doesn't read or update any variable"]
     }
-
-    this.currentMode = 'puredef'
-
-    if (r.kind === 'quantified') {
-      return
-    }
-
-    const [paramReads, paramUpdates, paramTemporals] = paramVariablesByEffect(effect)
-
-    const addedTemporal = addedVariables(paramTemporals, r.temporal)
-    const addedUpdates = addedVariables(paramUpdates, r.update)
-    const addedReads = addedVariables(paramReads, r.read)
-
-    if (addedTemporal.length > 0) {
-      this.currentMode = 'temporal'
-      this.explanation = `performs temporal operations over variables ${addedTemporal.map(variablesToString)}`
-    } else if (addedUpdates.length > 0) {
-      this.currentMode = 'action'
-      this.explanation = `updates variables ${addedUpdates.map(variablesToString)}`
-    } else if (addedReads.length > 0) {
-      this.currentMode = 'def'
-      this.explanation = `reads variables ${addedReads.map(variablesToString)}`
+    case 'quantified': {
+      return ['pureval', "doesn't read or update any variable"]
     }
   }
 }
@@ -198,9 +184,9 @@ function collectVariables(v: Variables): Variables[] {
 const modeOrder =
   ['pureval', 'puredef', 'val', 'def', 'nondet', 'action', 'temporal', 'run']
 
-function commonMode(m1: OpQualifier, m2: OpQualifier): OpQualifier {
+function isMoreGeneral(m1: OpQualifier, m2: OpQualifier): boolean {
   const p1 = modeOrder.findIndex(elem => elem === m1)
   const p2 = modeOrder.findIndex(elem => elem === m2)
 
-  return p1 > p2 ? m1 : m2
+  return p1 > p2
 }
