@@ -25,7 +25,6 @@ import { ScopeTree, treeFromModule } from '../scoping'
 import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../lookupTable'
 import { specialConstraints } from './specialConstraints'
 import { FreshVarGenerator } from "../FreshVarGenerator"
-import { typeSchemeToString } from './printing'
 
 type solvingFunctionType = (_table: LookupTable, _constraint: Constraint)
   => Either<Map<bigint, ErrorTree>, Substitutions>
@@ -82,13 +81,15 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   }
 
   exitInstance(def: QuintInstance) {
+    if (this.errors.size !== 0) {
+      return
+    }
+
     def.overrides.forEach(([name, ex]) => {
-      this.fetchSignature(name, def.id, 0).map(t => {
-        console.log(`Found signature for ${name} with type ${typeToString(t)}`)
-        // this.constraints.push({ kind: 'eq', types: [t, ex.typeAnnotation], sourceId: ex.id })
-      })
-      this.fetchResult(ex.id).map(r => {
-        console.log(`Found result for ${ex.id} with type ${typeSchemeToString(r)}`)
+      this.fetchSignature(name, def.id, 0).chain(typeForName => {
+        return this.fetchResult(ex.id).map(typeForValue => {
+          this.constraints.push({ kind: 'eq', types: [typeForName, typeForValue.type], sourceId: ex.id })
+        })
       })
     })
   }
@@ -249,6 +250,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       return right(this.newInstance(signature))
     } else {
       const def = lookupValue(this.currentTable, this.currentScopeTree, opcode, scope)
+
+      if (def?.typeAnnotation) {
+        return right(def.typeAnnotation)
+      }
+
       const id = def?.reference
       if (!def || !id) {
         return left(buildErrorLeaf(this.location, `Signature not found for name: ${opcode}`))

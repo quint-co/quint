@@ -5,10 +5,10 @@ module Instances {
     const z: str
 
     pure def f(a) = x + 1
-    pure def g(b) = not(b)
+    temporal g(b) = not(b)
   }
 
-  val MyY = 1
+  val MyY = true
 
   module A1 = A(x = 33, y = MyY, z = "hello")
 

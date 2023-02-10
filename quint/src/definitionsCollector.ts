@@ -181,17 +181,17 @@ class DefinitionsCollectorVisitor implements IRVisitor {
   }
 
   enterVar(def: QuintVar): void {
-    this.collectValueDefinition(def.kind, def.name, def.id)
+    this.collectValueDefinition(def.kind, def.name, def.id, undefined, def.typeAnnotation)
   }
 
   enterConst(def: QuintConst): void {
-    this.collectValueDefinition(def.kind, def.name, def.id)
+    this.collectValueDefinition(def.kind, def.name, def.id, undefined, def.typeAnnotation)
   }
 
   enterOpDef(def: QuintOpDef): void {
     if (this.scopeStack.length > 0) {
       const scope = this.scopeStack[this.scopeStack.length - 1]
-      this.collectValueDefinition(def.kind, def.name, def.id, scope)
+      this.collectValueDefinition(def.kind, def.name, def.id, scope, def.typeAnnotation)
     } else {
       this.collectValueDefinition(def.kind, def.name, def.id)
     }
@@ -220,7 +220,7 @@ class DefinitionsCollectorVisitor implements IRVisitor {
   }
 
   private collectValueDefinition(
-    kind: ValueDefinitionKind, identifier: string, reference?: bigint, scope?: bigint
+    kind: ValueDefinitionKind, identifier: string, reference?: bigint, scope?: bigint, typeAnnotation?: QuintType
   ): void {
     if (identifier === '_') {
       // Don't collect underscores, as they are special identifiers that allow no usage
@@ -232,6 +232,7 @@ class DefinitionsCollectorVisitor implements IRVisitor {
       identifier,
       reference,
       scope,
+      typeAnnotation,
     }
 
     addValueToTable(def, this.currentTable)

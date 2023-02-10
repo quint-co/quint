@@ -94,7 +94,6 @@ class ImportResolverVisitor implements IRVisitor {
       if (valueDefs) {
         const newDefs = valueDefs.map(def => ({ ...def, reference: ex.id }))
         instanceTable.valueDefinitions.set(name, newDefs)
-        console.log('overriding', name, newDefs)
       }
     })
 
