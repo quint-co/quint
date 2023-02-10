@@ -25,7 +25,7 @@ describe('diagnosticsFromErrorMap', () => {
           end: { character: 2, line: 1 },
         },
         severity: 1,
-        code: 'CODE',
+        code: 'QNT000',
         source: 'quint',
         data: {},
       },
@@ -46,7 +46,7 @@ describe('assembleDiagnostic', () => {
         end: { character: 2, line: 1 },
       },
       severity: 1,
-      code: 'CODE',
+      code: 'QNT000',
       source: 'quint',
       data: {},
     })
