@@ -70,5 +70,5 @@ export type QuintErrorFix =
  * @returns a string representation of the error
  */
 export function quintErrorToString(err: QuintError): string {
-  return `${err.code}: ${err.message}`
+  return `[${err.code}] ${err.message}`
 }
