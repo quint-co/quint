@@ -17,12 +17,38 @@ import { ErrorTree } from "./errorTree"
 /* General representation of a Quint error */
 export interface QuintError {
   /* The error code in the form QNTnnn */
-  code: string,
+  code: ErrorCode,
   /* The error explanation */
   message: string,
   /* Additional data for the error */
   data: QuintErrorData
 }
+
+export type ErrorCode =
+  /* Placeholder for errors that have not being assigned a proper code yet */
+  | 'QNT000'
+  /* QNT001: Expected 'const', 'var', 'def', 'type', etc. */
+  | 'QNT001'
+  /* QNT002: Missing ': type' after 'var' or 'const' */
+  | 'QNT002'
+  /* QNT003: Expected an expression */
+  | 'QNT003'
+  /* QNT004: Unexpected symbol after expression */
+  | 'QNT004'
+  /* QNT005: Keywords are not allowed as record fields in record.field */
+  | 'QNT005'
+  /* QNT006: Unexpected '=', did you mean '=='? */
+  | 'QNT006'
+  /* QNT007: Type names must start with an uppercase letter */
+  | 'QNT007'
+  /* QNT200: Mode error */
+  | 'QNT200'
+  /* QNT404: Module <name> not found */
+  | 'QNT404'
+  /* QNT405: Name <name> not found */
+  | 'QNT405'
+  /* QNT406: Instantiation error */
+  | 'QNT406'
 
 /* Additional data for a Quint error */
 export interface QuintErrorData {
