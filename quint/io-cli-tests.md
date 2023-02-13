@@ -176,8 +176,8 @@ echo "import counters.*" | quint -r ../examples/language-features/counters.qnt 2
 <!-- !test out repl loads a file -->
 ```
 true
->>>
->>>
+>>> 
+>>> 
 ```
 
 ### Repl loads a file and a module with -r
@@ -192,7 +192,7 @@ echo "Init" | quint -r ../examples/language-features/counters.qnt::counters 2>&1
 true
 
 >>> true
->>>
+>>> 
 ```
 
 ### Repl loads a file with .load
@@ -207,5 +207,6 @@ echo ".load ../examples/language-features/counters.qnt counters" \
 ```
 >>> true
 
->>> >>>
+>>> >>> 
 ```
+
