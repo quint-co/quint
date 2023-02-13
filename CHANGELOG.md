@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- `docs` subcommand now outputs generated docs to stdout (#617)
+- Mode errors are better explained and include a fix suggestion (#619)
+
 ### Deprecated
 ### Removed
 ### Fixed

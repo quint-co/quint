@@ -79,7 +79,7 @@ interface WithOptionalDoc {
  */
 export type OpQualifier =
   'pureval' | 'puredef' | 'val' | 'def' |
-  'pred' | 'nondet' | 'action' | 'run' | 'temporal'
+  'nondet' | 'action' | 'run' | 'temporal'
 
 export interface QuintName extends WithId {
   /** Expressions kind ('name' -- name reference) */

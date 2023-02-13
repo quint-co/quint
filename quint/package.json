@@ -89,11 +89,14 @@
   },
   "scripts": {
     "compile": "tsc && copyfiles -u 1 ./src/builtin.qnt ./dist/src/",
-    "prepare": "rm -rf ./dist && npm run compile",
+    "prepare": "rm -rf ./dist && npm run compile && chmod +x ./dist/src/cli.js",
     "test": "mocha -r ts-node/register test/*.test.ts test/**/*.test.ts",
     "coverage": "nyc npm run test",
     "integration": "txm cli-tests.md && txm io-cli-tests.md",
+    "generate": "npm run compile && npm link && npm run antlr && npm run api-docs && npm run update-fixtures",
     "antlr": "antlr4ts -visitor ./src/generated/Quint.g4 && antlr4ts -visitor ./src/generated/Effect.g4",
+    "api-docs": "quint docs ./src/builtin.qnt > ../doc/builtin.md",
+    "update-fixtures": "./scripts/update-fixtures.sh",
     "format": "eslint --fix '**/*.ts'"
   },
   "devDependencies": {

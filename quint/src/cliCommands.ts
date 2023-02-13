@@ -14,7 +14,6 @@ import { cwd } from 'process'
 
 import { ErrorMessage, Loc, compactSourceMap, parsePhase1, parsePhase2 } from './quintParserFrontend'
 
-import { ErrorTree, errorTreeToString } from './errorTree'
 
 import { Either, left, right } from '@sweet-monads/either'
 import { Effect } from './effects/base'
@@ -26,6 +25,7 @@ import lineColumn from 'line-column'
 import { formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintAnalyzer } from './quintAnalyzer'
+import { QuintError, quintErrorToString } from './quintError'
 
 export type stage = 'loading' | 'parsing' | 'typechecking' | 'documentation'
 
@@ -144,11 +144,11 @@ export function parse(loaded: LoadedStage): CLIProcedure<ParsedStage> {
     .map(phase2Data => ({ ...parsing, ...phase2Data }))
 }
 
-function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: [bigint, ErrorTree]) => ErrorMessage {
+export function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: [bigint, QuintError]) => ErrorMessage {
   return ([key, value]) => {
     const loc = sourceMap.get(key)!
     return {
-      explanation: errorTreeToString(value),
+      explanation: quintErrorToString(value),
       locs: [loc],
     }
   }
@@ -161,7 +161,7 @@ function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: [bigint, ErrorTree]) =
 export function typecheck(parsed: ParsedStage): CLIProcedure<TypecheckedStage> {
   const { table, modules, sourceMap } = parsed
   const typechecking = { ...parsed, stage: 'typechecking' as stage }
-  
+
   const analyzer = new QuintAnalyzer(table)
   modules.forEach(module => analyzer.analyze(module))
   const [errorMap, result] = analyzer.getResult()
@@ -214,7 +214,7 @@ export function docs(loaded: LoadedStage): CLIProcedure<DocumentationStage> {
         const documentationEntries = produceDocs(module)
         const title = `# Documentation for ${module.name}\n\n`
         const markdown = title + [...documentationEntries.values()].map(toMarkdown).join('\n\n')
-        writeToFile(`${module.name}.md`, markdown)
+        console.log(markdown)
 
         return [module.name, documentationEntries]
       })

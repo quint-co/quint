@@ -1,0 +1,1 @@
+{"stage":"parsing","warnings":[],"errors":[{"explanation":"extraneous input 'the' expecting {<EOF>, 'module'}","locs":[{"source":"mocked_path/testFixture/modulesAndJunk.qnt","start":{"line":8,"col":0,"index":75},"end":{"line":8,"col":2,"index":77}}]}]}

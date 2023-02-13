@@ -1,13 +1,13 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { ErrorTree, Loc } from '@informalsystems/quint'
+import { Loc, QuintError } from '@informalsystems/quint'
 import { assembleDiagnostic, diagnosticsFromErrors, findBestMatchingResult, findName, locToRange } from '../src/reporting'
 import { Position } from 'vscode-languageserver'
 import { parseOrThrow } from './util'
 
 describe('diagnosticsFromErrorMap', () => {
-  const errors: [bigint, ErrorTree][] = [
-    [1n, { message: 'Message', location: 'Location', children: [] }],
+  const errors: [bigint, QuintError][] = [
+    [1n, { code: 'QNT000', message: 'Message', data: {} }],
   ]
 
   const sourceMap = new Map<bigint, Loc>([
@@ -19,13 +19,15 @@ describe('diagnosticsFromErrorMap', () => {
 
     assert.sameDeepMembers(diagnostics, [
       {
-        message: 'Message\nLocation\n',
+        message: 'Message',
         range: {
           start: { character: 1, line: 1 },
           end: { character: 2, line: 1 },
         },
         severity: 1,
-        source: "parser",
+        code: 'QNT000',
+        source: 'quint',
+        data: {},
       },
     ])
   })
@@ -35,7 +37,7 @@ describe('assembleDiagnostic', () => {
   const loc: Loc = { start: { col: 1, index: 1, line: 1 }, end: { col: 1, index: 1, line: 1 }, source: 'mocked_path' }
 
   it('assembles a single diagnostict', () => {
-    const diagnostic = assembleDiagnostic('Message', loc)
+    const diagnostic = assembleDiagnostic({ code: 'QNT000', message: 'Message', data: {} }, loc)
 
     assert.deepEqual(diagnostic, {
       message: 'Message',
@@ -44,7 +46,9 @@ describe('assembleDiagnostic', () => {
         end: { character: 2, line: 1 },
       },
       severity: 1,
-      source: "parser",
+      code: 'QNT000',
+      source: 'quint',
+      data: {},
     })
   })
 })

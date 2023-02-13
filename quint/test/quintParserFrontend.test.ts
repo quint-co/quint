@@ -34,8 +34,9 @@ function parseAndCompare(artifact: string): void {
     // An error occurred at phase 1, check if it is the expected result
     phase1Result.mapLeft(err =>
       outputToCompare = {
-        stage: 'error',
+        stage: 'parsing',
         errors: err,
+        warnings: [],
       }
     )
   } else if (phase1Result.isRight()) {
@@ -56,13 +57,14 @@ function parseAndCompare(artifact: string): void {
       // An error occurred at phase 2, check if it is the expected result
       phase2Result.mapLeft(err =>
         outputToCompare = {
-          stage: 'error',
+          stage: 'parsing',
           errors: err,
+          warnings: [],
         }
       )
     } else {
       // Both phases succeeded, check that the module is correclty outputed
-      outputToCompare = { stage: 'parsing', warnings: [], module: module }
+      outputToCompare = { stage: 'parsing', warnings: [], modules: [ module ] }
     }
   }
 
