@@ -94,23 +94,9 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       })
     })
 
-    const constraint: Constraint = { kind: 'conjunction', constraints: this.constraints, sourceId: 0n }
-    this.solvingFunction(this.currentTable, constraint)
-      .mapLeft(errors => errors.forEach((err, id) => this.errors.set(id, err)))
-      .map((subs) => {
-        // Apply substitution to environment
-        this.types = new Map<bigint, TypeScheme>(
-          [...this.types.entries()].map(([id, te]) => {
-            const newType = applySubstitution(this.currentTable, subs, te.type)
-            const scheme: TypeScheme = { ...typeNames(newType), type: newType }
-            return [id, scheme]
-          })
-        )
-
-        return subs
-      })
-    this.constraints = []
+    this.solveConstraints()
   }
+
 
   //     n: t ∈ Γ
   // ----------------- (NAME)
@@ -215,27 +201,9 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
           this.constraints.push({ kind: 'eq', types: [t.type, e.typeAnnotation], sourceId: e.id })
         }
 
-        const constraint: Constraint = { kind: 'conjunction', constraints: this.constraints, sourceId: 0n }
-        this.solvingFunction(this.currentTable, constraint)
-          .mapLeft(errors => errors.forEach((err, id) => this.errors.set(id, err)))
-          .map((subs) => {
-            // Apply substitution to environment
-            this.types = new Map<bigint, TypeScheme>(
-              [...this.types.entries()].map(([id, te]) => {
-                const newType = applySubstitution(this.currentTable, subs, te.type)
-                const scheme: TypeScheme = { ...typeNames(newType), type: newType }
-                return [id, scheme]
-              })
-            )
-
-            return subs
-          })
-          .chain(subs => checkAnnotationGenerality(subs, e.typeAnnotation)
-            .mapLeft(err => this.errors.set(e.typeAnnotation?.id ?? e.id, err)))
+        this.solveConstraints().chain(subs => checkAnnotationGenerality(subs, e.typeAnnotation)
+          .mapLeft(err => this.errors.set(e.typeAnnotation?.id ?? e.id, err)))
       })
-
-    // Remove solved constraints
-    this.constraints = []
   }
 
   private addToResults(exprId: bigint, result: Either<Error, TypeScheme>) {
@@ -254,6 +222,28 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     } else {
       throw new Error(`Couldn't find any result for id ${id} while ${this.location}`)
     }
+  }
+
+  private solveConstraints(): Either<void, Substitutions> {
+    const constraint: Constraint = { kind: 'conjunction', constraints: this.constraints, sourceId: 0n }
+
+    // Remove solved constraints
+    this.constraints = []
+
+    return this.solvingFunction(this.currentTable, constraint)
+      .mapLeft(errors => errors.forEach((err, id) => this.errors.set(id, err)))
+      .map((subs) => {
+        // Apply substitution to environment
+        this.types = new Map<bigint, TypeScheme>(
+          [...this.types.entries()].map(([id, te]) => {
+            const newType = applySubstitution(this.currentTable, subs, te.type)
+            const scheme: TypeScheme = { ...typeNames(newType), type: newType }
+            return [id, scheme]
+          })
+        )
+
+        return subs
+      })
   }
 
   private fetchSignature(opcode: string, scope: bigint, arity: number): Either<ErrorTree, QuintType> {
