@@ -12,7 +12,6 @@
  * @module
  */
 
-import { ErrorTree } from "./errorTree"
 import { LookupTableByModule } from "./lookupTable"
 import { OpQualifier, QuintModule } from "./quintIr"
 import { TypeScheme } from "./types/base"
@@ -20,6 +19,8 @@ import { TypeInferrer } from "./types/inferrer"
 import { Effect } from "./effects/base"
 import { EffectInferrer } from "./effects/inferrer"
 import { ModeChecker } from "./effects/modeChecker"
+import { QuintError } from "./quintError"
+import { errorTreeToString } from "./errorTree"
 
 /* Products from static analysis */
 export type AnalyzisOutput = {
@@ -29,7 +30,7 @@ export type AnalyzisOutput = {
 }
 
 /* A tuple with a list of errors and the analysis output */
-export type AnalysisResult = [[bigint, ErrorTree][], AnalyzisOutput]
+export type AnalysisResult = [[bigint, QuintError][], AnalyzisOutput]
 
 /**
  * Statically analyzes a Quint specification.
@@ -45,7 +46,7 @@ export class QuintAnalyzer {
   private typeInferrer: TypeInferrer
   private modeChecker: ModeChecker
 
-  private errors: [bigint, ErrorTree][] = []
+  private errors: [bigint, QuintError][] = []
   private output: AnalyzisOutput = { types: new Map(), effects: new Map(), modes: new Map() }
 
   constructor(lookupTable: LookupTableByModule) {
@@ -59,7 +60,14 @@ export class QuintAnalyzer {
     const [effectErrMap, effects] = this.effectInferrer.inferEffects(module)
     const [modeErrMap, modes] = this.modeChecker.checkModes(module, effects)
 
-    this.errors = [...this.errors, ...typeErrMap, ...effectErrMap, ...modeErrMap]
+    const errorTrees = [...typeErrMap, ...effectErrMap]
+
+    // TODO: Type and effec checking should return QuintErrors instead of error trees
+    this.errors.push(...errorTrees.map(([id, err]): [bigint, QuintError] => {
+      return [id, { code: 'QNT000', message: errorTreeToString(err), data: { trace: err } }]
+    }))
+
+    this.errors.push(...modeErrMap.entries())
 
     // We assume that ids are unique across modules, and map merging can be done
     // without collision checks

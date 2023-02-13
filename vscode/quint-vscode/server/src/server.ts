@@ -4,6 +4,9 @@
  * See License.txt in the project root for license information.
  * --------------------------------------------------------------------------------- */
 import {
+  CodeAction,
+  CodeActionKind,
+  CodeActionParams,
   DefinitionParams,
   HandlerResult,
   Hover,
@@ -26,7 +29,7 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase2, QuintAnalyzer, builtinDocs, effectToString, lookupValue, parsePhase1, parsePhase2, produceDocs, treeFromModule, typeSchemeToString } from '@informalsystems/quint'
+import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase2, QuintAnalyzer, QuintError, QuintErrorData, builtinDocs, effectToString, lookupValue, parsePhase1, parsePhase2, produceDocs, treeFromModule, typeSchemeToString } from '@informalsystems/quint'
 import { assembleDiagnostic, diagnosticsFromErrors, findBestMatchingResult, findName, locToRange } from './reporting'
 
 // Create a connection for the server, using Node's IPC as a transport.
@@ -55,6 +58,7 @@ connection.onInitialize((_params: InitializeParams) => {
         triggerCharacters: ['('],
       },
       definitionProvider: true,
+      codeActionProvider: true,
     },
   }
   return result
@@ -239,12 +243,68 @@ connection.onDefinition((params: DefinitionParams): HandlerResult<Location[], vo
   }]
 })
 
+connection.onCodeAction((params: CodeActionParams): HandlerResult<CodeAction[], void> => {
+  return params.context.diagnostics.reduce((actions, diagnostic) => {
+    const data = diagnostic.data as QuintErrorData
+    const fix = data.fix
+
+    switch (fix?.kind) {
+      case 'replace': {
+        const document = documents.get(params.textDocument.uri)!
+        // For now, we try to apply the fix only for the first line in the range
+        // which should be the most common case
+        const lineNum = params.range.start.line
+        const line = document.getText({
+          start: { line: lineNum, character: 0 },
+          end: { line: lineNum + 1, character: 0 },
+        })
+
+        const matchResult = line.match(new RegExp(fix.original))
+        if (!matchResult) {
+          return actions
+        }
+
+        const editRange = {
+          ...diagnostic.range,
+          end: {
+            line: diagnostic.range.start.line,
+            character: diagnostic.range.start.character + matchResult![0].length,
+          },
+        }
+
+        const action: CodeAction = {
+          title: `Replace ${fix.original} with ${fix.replacement}`,
+          kind: CodeActionKind.QuickFix,
+          isPreferred: true,
+          diagnostics: [diagnostic],
+          edit: {
+            changes: {
+              [params.textDocument.uri]: [{
+                range: editRange,
+                newText: fix.replacement,
+              }],
+            },
+          },
+        }
+
+        actions.push(action)
+      }
+    }
+
+    return actions
+  }, [] as CodeAction[])
+})
+
 async function parseDocument(textDocument: TextDocument): Promise<ParserPhase2> {
   const text = textDocument.getText()
 
   const result = parsePhase1(text, textDocument.uri)
     .chain(phase1Data => parsePhase2(phase1Data))
-    .mapLeft(messages => messages.flatMap(msg => msg.locs.map(loc => assembleDiagnostic(msg.explanation, loc))))
+    .mapLeft(messages => messages.flatMap(msg => {
+      // TODO: Parse errors should be QuintErrors
+      const error: QuintError = { code: 'QNT000', message: msg.explanation, data: {} }
+      return msg.locs.map(loc => assembleDiagnostic(error, loc))
+    }))
 
   if (result.isRight()) {
     return new Promise((resolve, _reject) => resolve(result.value))
