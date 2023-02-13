@@ -157,7 +157,7 @@ Trying to unify bool and int
 8:   module A1 = A(c = 1)
                        ^
 
-./testFixture/typechecking/OverrideErrors.qnt:9:21 - error: [QNT200] Instance overrides must be pure values, but the value for c reads variables 'x'
+./testFixture/typechecking/OverrideErrors.qnt:9:21 - error: [QNT201] Instance overrides must be pure values, but the value for c reads variables 'x'
 9:   module A2 = A(c = x)
                        ^
 
@@ -176,8 +176,8 @@ echo "import counters.*" | quint -r ../examples/language-features/counters.qnt 2
 <!-- !test out repl loads a file -->
 ```
 true
->>> 
->>> 
+>>>
+>>>
 ```
 
 ### Repl loads a file and a module with -r
@@ -192,7 +192,7 @@ echo "Init" | quint -r ../examples/language-features/counters.qnt::counters 2>&1
 true
 
 >>> true
->>> 
+>>>
 ```
 
 ### Repl loads a file with .load
@@ -207,6 +207,5 @@ echo ".load ../examples/language-features/counters.qnt counters" \
 ```
 >>> true
 
->>> >>> 
+>>> >>>
 ```
-
