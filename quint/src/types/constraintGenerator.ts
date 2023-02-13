@@ -13,7 +13,7 @@
  */
 
 import { IRVisitor } from '../IRVisitor'
-import { QuintApp, QuintBool, QuintConst, QuintEx, QuintInstance, QuintInt, QuintLambda, QuintLet, QuintModule, QuintModuleDef, QuintName, QuintOpDef, QuintStr, QuintVar } from '../quintIr'
+import { QuintApp, QuintBool, QuintConst, QuintDef, QuintEx, QuintInstance, QuintInt, QuintLambda, QuintLet, QuintModule, QuintModuleDef, QuintName, QuintOpDef, QuintStr, QuintVar } from '../quintIr'
 import { QuintType, typeNames } from '../quintTypes'
 import { expressionToString, rowToString, typeToString } from '../IRprinting'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
@@ -72,6 +72,12 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     this.location = `Generating constraints for ${expressionToString(e)}`
   }
 
+  exitDef(_def: QuintDef) {
+    if (this.constraints.length > 0) {
+      this.solveConstraints()
+    }
+  }
+
   exitVar(e: QuintVar) {
     this.addToResults(e.id, right(toScheme(e.typeAnnotation)))
   }
@@ -85,6 +91,8 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       return
     }
 
+    // For each override, ensure that the the type for the name and the type of
+    // the value are the same
     def.overrides.forEach(([name, ex]) => {
       const namespacedName = `${def.name}::${name}`
       this.fetchSignature(namespacedName, def.id, 0).chain(typeForName => {
@@ -93,10 +101,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         })
       })
     })
-
-    this.solveConstraints()
   }
-
 
   //     n: t ∈ Γ
   // ----------------- (NAME)
@@ -183,7 +188,6 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       return
     }
 
-    // TODO: Consider annotations, see https://github.com/informalsystems/quint/issues/168
     // TODO: Occurs check on operator body to prevent recursion, see https://github.com/informalsystems/quint/issues/171
 
     this.addToResults(e.id, this.fetchResult(e.expr.id))

@@ -94,6 +94,8 @@ class ImportResolverVisitor implements IRVisitor {
     }
     const instanceTable = copyTable(moduleTable)
 
+    // For each override, check if the name exists in the instanced module and is a constant.
+    // If so, update the value definition to point to the expression being overriden
     def.overrides.forEach(([name, ex]) => {
       const valueDefs = instanceTable.valueDefinitions.get(name) ?? []
 

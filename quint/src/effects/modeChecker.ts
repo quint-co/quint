@@ -69,6 +69,7 @@ export class ModeChecker implements IRVisitor {
   }
 
   exitInstance(def: QuintInstance) {
+    // For each override, check that the value a pure val
     def.overrides.forEach(([name, ex]) => {
       const effect = this.effects.get(ex.id)
       if (!effect) {

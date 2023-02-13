@@ -161,7 +161,6 @@ describe('checkModes', () => {
     ])
   })
 
-
   it('finds errors when an instance override is not pure', () => {
     const quintModule = buildModuleWithDefs([
       'module A1 = A(c = x)',
