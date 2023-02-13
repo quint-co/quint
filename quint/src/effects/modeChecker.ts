@@ -75,7 +75,7 @@ export class ModeChecker implements IRVisitor {
         return
       }
 
-      const [mode, _explanation] = modeForEffect(effect)
+      const [mode, explanation] = modeForEffect(effect)
 
       if (mode === 'pureval') {
         return
@@ -83,7 +83,7 @@ export class ModeChecker implements IRVisitor {
 
       this.errors.set(ex.id, {
         code: 'QNT200',
-        message: `Instance overrides must be pure values, but the value for ${name} has ${qualifierToString(mode)} mode`,
+        message: `Instance overrides must be pure values, but the value for ${name} ${explanation}`,
         data: {},
       })
     })

@@ -41,9 +41,9 @@ function parseAndCompare(artifact: string): void {
     )
   } else if (phase1Result.isRight()) {
     const { modules, sourceMap } = phase1Result.value
-    const module = modules[0]
+    const expectedIds = modules.flatMap(m => collectIds(m)).sort()
     // Phase 1 succeded, check that the source map is correct
-    assert.sameDeepMembers(collectIds(module).sort(), [...sourceMap.keys()].sort(), 'expected source map to contain all ids')
+    assert.sameDeepMembers(expectedIds, [...sourceMap.keys()].sort(), 'expected source map to contain all ids')
 
     const expectedSourceMap = readJson(`${artifact}.map`)
     const sourceMapResult = JSONbig.parse(JSONbig.stringify(compactSourceMap(sourceMap)))
@@ -64,7 +64,7 @@ function parseAndCompare(artifact: string): void {
       )
     } else {
       // Both phases succeeded, check that the module is correclty outputed
-      outputToCompare = { stage: 'parsing', warnings: [], modules: [ module ] }
+      outputToCompare = { stage: 'parsing', warnings: [], modules: modules }
     }
   }
 
@@ -143,6 +143,10 @@ describe('parse errors', () => {
   //it('error on top-level nondet', () => {
   //  parseAndCompare('_1015noToplevelNondet')
   //})
+
+  it('error on overriding values that are not constants', () => {
+    parseAndCompare('_1016nonConstOverride')
+  })
 })
 
 function collectIds(module: QuintModule): bigint[] {

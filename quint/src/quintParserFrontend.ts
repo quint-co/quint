@@ -20,6 +20,7 @@ import { treeFromModule } from './scoping'
 import { scanConflicts } from './definitionsScanner'
 import { LookupTable, LookupTableByModule } from './lookupTable'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
+import { mkErrorMessage } from './cliCommands'
 
 export interface Loc {
   source: string;
@@ -124,23 +125,9 @@ export function parsePhase2(phase1Data: ParserPhase1): ParseResult<ParserPhase2>
 
     const importResult: Either<ErrorMessage[], LookupTableByModule> = resolveImports(module, definitions)
       .map(defs => definitions = defs)
-      .mapLeft((errors): ErrorMessage[] => {
-        const messages = errors.map(error => {
-          const sourceLoc = sourceMap.get(error.reference)
-          if (!sourceLoc) {
-            console.error(`No source location found for ${error.reference}. Please report a bug.`)
-          }
-          const loc = sourceLoc ?? unknownLoc
-
-          if (error.defName) {
-            const e = `Failed to import definition ${error.defName} from module ${error.moduleName}`
-            return { explanation: e, locs: [loc] }
-          } else {
-            return { explanation: `Failed to import module ${error.moduleName}`, locs: [loc] }
-          }
-        })
-
-        return messages
+      .mapLeft((errorMap): ErrorMessage[] => {
+        const errorLocator = mkErrorMessage(sourceMap)
+        return Array.from(errorMap, errorLocator)
       })
 
     const conflictResult: Either<ErrorMessage[], void[]> =

@@ -86,12 +86,30 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     }
 
     def.overrides.forEach(([name, ex]) => {
-      this.fetchSignature(name, def.id, 0).chain(typeForName => {
+      const namespacedName = `${def.name}::${name}`
+      this.fetchSignature(namespacedName, def.id, 0).chain(typeForName => {
         return this.fetchResult(ex.id).map(typeForValue => {
           this.constraints.push({ kind: 'eq', types: [typeForName, typeForValue.type], sourceId: ex.id })
         })
       })
     })
+
+    const constraint: Constraint = { kind: 'conjunction', constraints: this.constraints, sourceId: 0n }
+    this.solvingFunction(this.currentTable, constraint)
+      .mapLeft(errors => errors.forEach((err, id) => this.errors.set(id, err)))
+      .map((subs) => {
+        // Apply substitution to environment
+        this.types = new Map<bigint, TypeScheme>(
+          [...this.types.entries()].map(([id, te]) => {
+            const newType = applySubstitution(this.currentTable, subs, te.type)
+            const scheme: TypeScheme = { ...typeNames(newType), type: newType }
+            return [id, scheme]
+          })
+        )
+
+        return subs
+      })
+    this.constraints = []
   }
 
   //     n: t ∈ Γ

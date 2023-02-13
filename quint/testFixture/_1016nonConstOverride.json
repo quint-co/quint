@@ -1,0 +1,1 @@
+{"stage":"parsing","warnings":[],"errors":[{"explanation":"[QNT406] Instantiation error: a is not a constant","locs":[{"source":"mocked_path/testFixture/_1016nonConstOverride.qnt","start":{"line":6,"col":2,"index":70},"end":{"line":6,"col":32,"index":100}}]}]}
