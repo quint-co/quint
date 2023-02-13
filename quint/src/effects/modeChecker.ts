@@ -82,7 +82,7 @@ export class ModeChecker implements IRVisitor {
       }
 
       this.errors.set(ex.id, {
-        code: 'QNT200',
+        code: 'QNT201',
         message: `Instance overrides must be pure values, but the value for ${name} ${explanation}`,
         data: {},
       })

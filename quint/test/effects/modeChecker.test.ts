@@ -172,7 +172,7 @@ describe('checkModes', () => {
     assert.sameDeepMembers([...errors.entries()], [
       [1n, {
         message: "Instance overrides must be pure values, but the value for c reads variables 'x'",
-        code: 'QNT200',
+        code: 'QNT201',
         data: {},
       }],
     ])
