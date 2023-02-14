@@ -10,6 +10,28 @@ distributed systems and blockchain protocols. It combines the robust theoretical
 basis of the [Temporal Logic of Actions][TLA] (TLA) with state-of-the-art static
 analysis and development tooling.
 
+This is how typical Quint code looks:
+
+```scala
+  // `validateBalance` should only be called upon genesis state.
+  pure def validateBalance(ctx: BankCtx, addr: Addr): bool = and {
+    ctx.accounts.contains(addr),
+    val coins = getAllBalances(ctx, addr)
+    coins.keys().forall(denom => coins.get(denom) > 0),
+  }
+```
+
+If you would like to see the same code in TLA<sup>+</sup>, here is how it looks:
+
+```tla
+\* `validateBalance` should only be called upon genesis state.
+validateBalance(ctx, addr) ==
+  /\ addr \in ctx.accounts
+  /\ LET coins == getAllBalances(ctx, addr) IN
+     \A denom \in DOMAIN coins:
+       coins[denom] > 0
+```
+
 Quint is inspired by [TLA+][] but provides an alternative surface syntax for
 specifying systems in TLA. The most important feature of our syntax is that it
 is minimal and regular, making Quint an easy target for advanced developer
