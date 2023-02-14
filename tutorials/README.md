@@ -13,7 +13,7 @@ These tutorials are currently available in the classic format:
  - [Hello, world!](./lesson0-helloworld/hello.md)
  - [Tutorial on Booleans](./lesson1-booleans/booleans.md)
  - [Tutorial on integers](./lesson2-integers/integers.md)
- - [Tutorial on basic protocol anatomy and tests](./lesson3-integers/coin.md)
+ - [Tutorial on basic protocol anatomy and tests](./lesson3-anatomy/coin.md)
 
 ## 2. CodeTour tutorials
 
