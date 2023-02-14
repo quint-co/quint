@@ -8,7 +8,7 @@ module Instances {
     temporal g(b) = not(b)
   }
 
-  val MyY = true
+  pure val MyY = true
 
   module A1 = A(x = 33, y = MyY, z = "hello")
 

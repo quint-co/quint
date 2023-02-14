@@ -84,7 +84,7 @@ class ImportResolverVisitor implements IRVisitor {
     const moduleTable = this.tables.get(def.protoName)
 
     if (!moduleTable) {
-      // Instancing unexisting module
+      // Instantiating a non-existing module
       this.errors.set(def.id, {
         code: 'QNT404',
         message: `Module ${def.protoName} not found`,
