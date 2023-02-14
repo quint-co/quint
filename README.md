@@ -10,10 +10,25 @@ distributed systems and blockchain protocols. It combines the robust theoretical
 basis of the [Temporal Logic of Actions][TLA] (TLA) with state-of-the-art static
 analysis and development tooling.
 
+This is how a typical Quint code looks like in the [Quint VSCode Plugin][]:
+
+<p align="center">
+  <img src="./doc/img/validate-quint.png"
+       width="70%" title="Code snippet in Quint">
+</p>
+
+If you would to see the same code in TLA<sup>+</sup>, here is how it looks like
+in the [TLA+ VSCode Plugin][]:
+
+<p align="center">
+  <img src="./doc/img/validate-tla-vscode.png"
+       width="70%" alt="Code snippet in TLA+">
+</p>
+
 Quint is inspired by [TLA+][] but provides an alternative surface syntax for
-specifying systems in TLA. The most important feature of our syntax is that it
-is minimal and regular, making Quint an easy target for advanced developer
-tooling and static analysis (see our [Design Principles][]).
+specifying systems in the logic TLA. The most important feature of our syntax
+is that it is minimal and regular, making Quint an easy target for advanced
+developer tooling and static analysis (see our [Design Principles][]).
 
 The syntax also aims to be familiar to engineers:
 
@@ -26,7 +41,7 @@ The syntax also aims to be familiar to engineers:
   clearly. 
 
 Notably, Quint comes with formal semantics built-in, thanks to its foundation in
-TLA and it is aligned with TLA+: it will soon be supported in the [Apalache][]
+TLA and it is aligned with TLA<sup>+</sup>: it will soon be supported in the [Apalache][]
 model checker.
 
 ## Name origin
@@ -50,7 +65,7 @@ documentation for built-in operators](./doc/builtin.md).
 ### Examples :musical_score:
 
 We have written [examples](./examples) of several specifications in Quint.
-Some of them accompany a TLA+ version for comparison and learning purposes.
+Some of them accompany a TLA<sup>+</sup> version for comparison and learning purposes.
 To simplify reading, use [syntax highlighting](./editor-plugins) for your
 editor (currently, VSCode, Emacs and Vim are supported).
 
@@ -97,34 +112,34 @@ completely implementing every pass.
 | :---------------                  | :----:             | :-------------:    | :-----:            | :----------:       | :-------:                      | :---------: | :-------: |
 | [Booleans][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
 | [Integers][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
-| [if-then-else][]                  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
-| [Operator definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
-| [Modes][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [234][]                    | :x:         | :x:       |
+| [if-then-else][]                  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
+| [Operator definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
+| [Modes][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
 | [Sets][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:/:x: [238][] | :x:         | :x:       |
-| [Guess][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
+| [Nondet][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:            | :x:         | :white_check_mark:       |
 | [Maps][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
 | [Lists][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
 | [Records][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
 | [Discriminated unions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [244][]        | :x: [233][]                    | :x:         | :x:       |
 | [Tuples][]                        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
 | [Imports][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :question:                     | :x:         | :x:       |
-| [Module definitions][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
+| [Module definitions][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
 | [Module instances][]              | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [237][]                    | :x:         | :x:       |
 | [Multiple files][]                | :x: [8][]          | :x:                | :x:                | :x:                | :x:                            | :x:         | :x:       |
-| [Constant declarations][]         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [236][]                    | :x:         | :x:       |
-| [Variable definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
+| [Constant declarations][]         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [236][]                    | :x:         | :white_check_mark:       |
+| [Variable definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
 | [Assumptions][]                   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x: [235][]                    | :x:         | :x:       |
-| [Lambdas][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
-| [Multiline disjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
-| [Multiline conjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
-| [Delayed assignment][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
-| Invariant checking                | -                  | -                  |                    |                    | :white_check_mark:             | :x:         | :x:       |
+| [Lambdas][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
+| [Multiline disjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
+| [Multiline conjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
+| [Delayed assignment][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
+| Invariant checking                | -                  | -                  |                    |                    | :white_check_mark:             | :x:         | :white_check_mark:       |
 | [Higher-order definitions][]      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [221][]                    | :x:         | :x:       |
-| [Runs][]                          | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :white_check_mark:             | :x:         | :x:       |
+| [Runs][]                          | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :white_check_mark:             | :x:         | :white_check_mark:       |
 | [Temporal operators][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | *non-goal*                     | :x:         | :x:       |
 | [Fairness][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | *non-goal*                     | :x:         | :x:       |
 | [Unbounded quantifiers][]         | :white_check_mark: | :white_check_mark: | :x:                | :x:                | *non-goal*                     | :x:         | :x:       |
-| [String literals][], see #118     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
+| [String literals][], see #118     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
 | ~~uninterpreted types~~, see #118 | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                            | :x:         | :x:       |
 
 
@@ -146,7 +161,7 @@ completely implementing every pass.
 [Multiline disjunctions]: ./doc/lang.md#multiline-disjunctions
 [Multiline conjunctions]: ./doc/lang.md#multiline-conjunctions
 [if-then-else]: ./doc/lang.md#condition
-[Guess]: ./doc/lang.md#existential-quantifier-and-non-deterministic-choice
+[Nondet]: ./doc/lang.md#existential-quantifier-and-non-deterministic-choice
 [Maps]: ./doc/lang.md#maps-aka-functions
 [Records]: ./doc/lang.md#records
 [Discriminated unions]: ./doc/lang.md#discriminated-unions
@@ -176,4 +191,6 @@ completely implementing every pass.
 [TLA+]: https://lamport.azurewebsites.net/tla/tla.html
 [TLA]: https://en.wikipedia.org/wiki/Temporal_logic_of_actions
 [Visual Studio Code Marketplace]: https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode
+[Quint VSCode Plugin]: https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode
+[TLA+ VSCode Plugin]: https://marketplace.visualstudio.com/items?itemName=alygin.vscode-tlaplus
 [Tutorials]: ./tutorials/README.md
