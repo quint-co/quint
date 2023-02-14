@@ -141,6 +141,29 @@ quint typecheck --out test-out.json ./testFixture/TrivialTypeError.qnt ; ret=$?;
 ```
 ```
 
+### typecheck finds error on incorrect instance overrides
+
+<!-- !test exit 1 -->
+<!-- !test in typecheck failure on override -->
+```
+quint typecheck ./testFixture/typechecking/OverrideErrors.qnt 2> >(sed "s:$(pwd):.:" >&2)
+```
+
+<!-- !test err typecheck failure on override -->
+```
+./testFixture/typechecking/OverrideErrors.qnt:8:21 - error: [QNT000] Couldn't unify bool and int
+Trying to unify bool and int
+
+8:   module A1 = A(c = 1)
+                       ^
+
+./testFixture/typechecking/OverrideErrors.qnt:9:21 - error: [QNT201] Instance overrides must be pure values, but the value for c reads variables 'x'
+9:   module A2 = A(c = x)
+                       ^
+
+error: typechecking failed
+```
+
 ## Use of the `--required` flag
 
 ### Repl loads a file with -r

@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `docs` subcommand now outputs generated docs to stdout (#617)
 - Mode errors are better explained and include a fix suggestion (#619)
+- Typechecking now reports errors when instance overrides are not compatible with
+  the original definition (#622)
 
 ### Deprecated
 ### Removed

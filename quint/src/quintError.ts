@@ -43,6 +43,8 @@ export type ErrorCode =
   | 'QNT007'
   /* QNT200: Mode error */
   | 'QNT200'
+  /* QNT201: Instance overrides must be pure values */
+  | 'QNT201'
   /* QNT404: Module <name> not found */
   | 'QNT404'
   /* QNT405: Name <name> not found */

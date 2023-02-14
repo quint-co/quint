@@ -17,7 +17,7 @@ import isEqual from 'lodash.isequal'
 import { qualifierToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { QuintError } from '../quintError'
-import { OpQualifier, QuintModule, QuintOpDef } from '../quintIr'
+import { OpQualifier, QuintInstance, QuintModule, QuintOpDef } from '../quintIr'
 import { ArrowEffect, Effect, Variables, isAction, isState, isTemporal } from './base'
 import { effectToString, variablesToString } from './printing'
 
@@ -66,6 +66,28 @@ export class ModeChecker implements IRVisitor {
     } else {
       this.suggestions.set(def.id, mode)
     }
+  }
+
+  exitInstance(def: QuintInstance) {
+    // For each override, check that the value a pure val
+    def.overrides.forEach(([name, ex]) => {
+      const effect = this.effects.get(ex.id)
+      if (!effect) {
+        return
+      }
+
+      const [mode, explanation] = modeForEffect(effect)
+
+      if (mode === 'pureval') {
+        return
+      }
+
+      this.errors.set(ex.id, {
+        code: 'QNT201',
+        message: `Instance overrides must be pure values, but the value for ${name} ${explanation}`,
+        data: {},
+      })
+    })
   }
 }
 
