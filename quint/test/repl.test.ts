@@ -213,11 +213,11 @@ describe('repl ok', () => {
       |>>> .clear
       |
       |>>> n * n
-      |syntax error: <input>:1:1 - error: Failed to resolve name n in definition for __input, in module __REPL
+      |syntax error: <input>:1:1 - error: Failed to resolve name n in definition for __input, in module __repl__
       |1: n * n
       |   ^
       |
-      |syntax error: <input>:1:5 - error: Failed to resolve name n in definition for __input, in module __REPL
+      |syntax error: <input>:1:5 - error: Failed to resolve name n in definition for __input, in module __repl__
       |1: n * n
       |       ^
       |
@@ -238,7 +238,7 @@ describe('repl ok', () => {
       |1: Set(Int)
       |   ^^^^^^^^
       |
-      |<result undefined>
+      |<undefined value>
       |
       |>>> `
     )

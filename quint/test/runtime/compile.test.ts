@@ -1,9 +1,10 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { Either, left, right } from '@sweet-monads/either'
+import { Maybe, just } from '@sweet-monads/maybe'
 import { expressionToString } from '../../src/IRprinting'
-import { ComputableKind, fail, kindName } from '../../src/runtime/runtime'
-import { CompilationContext, compile } from '../../src/runtime/compile'
+import { ComputableKind, fail, kindName, EvalResult } from '../../src/runtime/runtime'
+import { CompilationContext, compile, contextLookup } from '../../src/runtime/compile'
 import { RuntimeValue } from '../../src/runtime/impl/runtimeValue'
 import { dedent } from '../textUtils'
 
@@ -11,72 +12,73 @@ import { dedent } from '../textUtils'
 // compare the result. This is the easiest path to test the results.
 function assertResultAsString(input: string, expected: string | undefined) {
   const moduleText = `module __runtime { val __expr = ${input} }`
-  const context = compile(moduleText).values
-  const value = context.get(kindName('callable', '__expr'))
-  if (value === undefined) {
-    assert(false, `Missing value for ${input}`)
-  } else {
-    const result = value
-      .eval()
-      .map(r => r.toQuintEx())
-      .map(expressionToString)
-      .map(s => assert(s === expected, `Expected ${expected}, found ${s}`))
-    if (result.isNone()) {
-      assert(expected === undefined, `Expected ${expected}, found undefined`)
-    }
-  }
+  const context = compile(moduleText, '__runtime')
+  contextLookup(context, '__runtime', '__expr', 'callable')
+    .mapLeft(msg => assert(false, msg))
+    .mapRight(value => {
+      const result = value.eval()
+        .map(r => r.toQuintEx())
+        .map(expressionToString)
+        .map(s => assert(s === expected, `Expected ${expected}, found ${s}`))
+      if (result.isNone()) {
+        assert(expected === undefined, `Expected ${expected}, found undefined`)
+      }
+      return result
+    })
 }
 
 // Compile an input and evaluate a callback in the context
 function evalInContext<T>(input: string, callable: (ctx: CompilationContext) => Either<string, T>) {
   const moduleText = `module __runtime { ${input} }`
-  const context = compile(moduleText)
+  const context = compile(moduleText, '__runtime')
   return callable(context)
 }
 
 // Compile a definition and check that the compiled value is defined.
 function assertDef(kind: ComputableKind, name: string, input: string) {
   const callback = (ctx: CompilationContext) => {
-    const def = ctx.values.get(kindName(kind, name))
-    if (def) {
-      return right(true)
-    } else {
-      return left(`Expected a definition for ${name}, compiled from: ${input}`)
-    }
+    return contextLookup(ctx, '__runtime', name, kind)
+      .mapRight(_ => true)
+      .mapLeft(msg => `Expected a definition for ${name}, found ${msg}, compiled from: ${input}`)
   }
   const res = evalInContext(input, callback)
   res.mapLeft(m => assert.fail(m))
 }
 
-function evalVarAfterRun(runName: string, varName: string, input: string) {
-  const callback = (ctx: CompilationContext) => {
-    const run = ctx.values.get(kindName('callable', runName))
-    if (run === undefined) {
-      return right(`Run ${runName} not found`)
-    } else {
-      // evaluate the body of the run
-      const runRes = run.eval()
-      if (runRes.isNone()) {
-        return right(`Value of the run ${runName} is undefined`)
-      } else {
-        const rval = runRes.value as RuntimeValue
-        if (rval.toBool()) {
-          // extract the value of the state variable
-          const varValue =
-            (ctx.values.get(kindName('nextvar', varName)) ?? fail).eval()
-          if (varValue.isNone()) {
-            return left(`Value of the variable ${varName} is undefined`)
-          } else {
-            return right(expressionToString(varValue.value.toQuintEx()))
-          }
-        } else {
-          const s = expressionToString(rval.toQuintEx())
-          const m =
-            `Run ${runName} was expected to evaluate to true, found: ${s}`
-          return left(m)
-        }
-      }
-    }
+function evalVarAfterRun(runName: string,
+                         varName: string,
+                         input: string): Either<string, string> {
+  // use a combination of Maybe and Either.
+  // Recall that left(...) is used for errors,
+  // whereas right(...) is used for non-errors in sweet monads.
+  const callback = (ctx: CompilationContext): Either<string, string> => {
+    return contextLookup(ctx, '__runtime', runName, 'callable')
+      .mapLeft(msg => `Run ${runName} not found: ${msg}`)
+      .mapRight(run =>
+        run
+          .eval()
+          .map(res => {
+            if ((res as RuntimeValue).toBool() === true) {
+              // extract the value of the state variable
+              const nextVal =
+                (ctx.values.get(kindName('nextvar', varName)) ?? fail).eval()
+              // using if-else, as map-or-unwrap confuses the compiler a lot
+              if (nextVal.isNone()) {
+                return left(`Value of the variable ${varName} is undefined`)
+              } else {
+                return right(expressionToString(nextVal.value.toQuintEx()))
+              }
+            } else {
+              const s = expressionToString(res.toQuintEx())
+              const m =
+                `Run ${runName} was expected to evaluate to true, found: ${s}`
+              return left<string, string>(m)
+            }
+          })
+          .or(just(left(`Value of the run ${runName} is undefined`)))
+          .unwrap()
+      )
+      .join()
   }
 
   return evalInContext(input, callback)
@@ -585,7 +587,7 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('Nat.contains(-123)', 'false')
     })
 
-    it('computes isSubset', () => {
+    it('computes subseteq on Nat and Int', () => {
       assertResultAsString('Nat.subseteq(Nat)', 'true')
       assertResultAsString('Nat.subseteq(Int)', 'true')
       assertResultAsString('Int.subseteq(Int)', 'true')

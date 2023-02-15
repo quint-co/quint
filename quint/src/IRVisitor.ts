@@ -241,7 +241,7 @@ export function walkType(visitor: IRVisitor, type: t.QuintType): void {
   }
 }
 
-function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
+export function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
   if (visitor.enterDef) {
     visitor.enterDef(def)
   }

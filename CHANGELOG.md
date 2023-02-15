@@ -17,7 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 ### Removed
+
+- REPL does not support nested modules any longer (#621)
+
 ### Fixed
+
+- REPL avoid name clashes in different modules (#621)
+- REPL session is now a proper Quint file (#621)
+
 ### Security
 
 ## v0.5.5 -- 2023-02-03

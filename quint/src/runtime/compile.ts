@@ -8,14 +8,18 @@
  * See License.txt in the project root for license information.
  */
 
+import { Either, left, right } from '@sweet-monads/either'
+
 import {
   ErrorMessage, Loc, parsePhase1, parsePhase2
 } from '../quintParserFrontend'
-import { Computable } from './runtime'
+import { ErrorTree, errorTreeToString } from '../errorTree'
+import { Computable, ComputableKind, kindName } from './runtime'
 import { IrErrorMessage } from '../quintIr'
 import { CompilerVisitor } from './impl/compilerImpl'
-import { walkModule } from '../IRVisitor'
-import { right } from '@sweet-monads/either'
+import { walkDefinition } from '../IRVisitor'
+import { treeFromModule } from '../scoping'
+import { LookupTableByModule } from '../lookupTable'
 import { QuintAnalyzer } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
 
@@ -28,7 +32,9 @@ export const lastTraceName = '_lastTrace'
  * A compilation context returned by 'compile'.
  */
 export interface CompilationContext {
-  // names of the variables and definitions mapped to computables
+  // the lookup table to query for values and definitions
+  lookupTable: LookupTableByModule,
+  // names of the variables and definition identifiers mapped to computables
   values: Map<string, Computable>,
   // names of the variables
   vars: string[],
@@ -48,6 +54,7 @@ export interface CompilationContext {
 
 function errorContext(errors: ErrorMessage[]): CompilationContext {
   return {
+    lookupTable: new Map(),
     values: new Map(),
     vars: [],
     shadowVars: [],
@@ -60,18 +67,54 @@ function errorContext(errors: ErrorMessage[]): CompilationContext {
 }
 
 /**
+ * Extract a compiled value of a specific kind via the module name and kind.
+ *
+ * @param ctx compilation context
+ * @param moduleName module name to lookup at
+ * @param defName definition name
+ * @param kind definition kind
+ * @returns the associated compiled value, if it uniquely defined, or undefined
+ */
+export function
+  contextLookup(ctx: CompilationContext,
+                moduleName: string,
+                defName: string,
+                kind: ComputableKind): Either<string, Computable> {
+  const moduleTable = ctx.lookupTable.get(moduleName)
+  if (!moduleTable) {
+    return left(`Module ${moduleName} not found`)
+  }
+  const defs = moduleTable.valueDefinitions.get(defName)
+  if (!defs) {
+    return left(`Definition ${moduleName}::${defName} not found`)
+  }
+  if (defs.length !== 1) {
+    return left(`Multiple definitions (${defs.length}) of ${moduleName}::${defName} found`)
+  }
+
+  const value = ctx.values.get(kindName(kind, defs[0].reference!))
+  if (!value) {
+    console.log(`key = ${kindName(kind, defs[0].reference!)}`)
+    return left(`No value for definition ${moduleName}::${defName}`)
+  } else {
+    return right(value)
+  }
+}
+
+/**
  * Parse a string that contains a Quint module and compile it to executable
  * objects. This is a user-facing function. In case of an error, the error
  * messages are passed to an error handler and the function returns undefined.
  *
- * @param moduleText text that stores a Quint module,
+ * @param code text that stores one or several Quint modules,
  *        which should be parseable without any context
+ * @param mainName the name of the module that may contain state varibles
  * @returns a mapping from names to computable values
  */
 export function
-  compile(moduleText: string): CompilationContext {
+  compile(code: string, mainName: string): CompilationContext {
   // parse the module text
-  return parsePhase1(moduleText, '<input>')
+  return parsePhase1(code, '<input>')
     // On errors, we'll produce the computational context up to this point
     .mapLeft(errorContext)
     .chain(d => parsePhase2(d)
@@ -79,26 +122,36 @@ export function
       .mapLeft(errorContext))
     .chain(parseData => {
       const { modules, table, sourceMap } = parseData
-      // Compile the last module only.
-      // Otherwise, we may introduce too many state variables.
-      // For instance, when the same file contains parametric modules and instances.
-      const lastModule = modules[modules.length - 1]
-      // in the future, we will be using types and effects
       const analyzer = new QuintAnalyzer(table)
-      analyzer.analyze(lastModule)
-      const [analysisErrors, _result] = analyzer.getResult()
+      modules.forEach(module => analyzer.analyze(module))
       // since the type checker and effects checker are incomplete,
       // collect the errors, but do not stop immediately on error
-      const visitor = new CompilerVisitor()
+      const [analysisErrors, result] = analyzer.getResult()
+      // Push back the main module to the end
+      const main = modules.find(m => m.name === mainName)
+      // when the main module is not found, we will report an error
+      const mainNotFound =
+        main ? [] : [{
+          explanation: `Main module ${mainName} not found`,
+          refs: [],
+        }]
+      const reorderedModules =
+        modules.filter(m => m.name !== mainName).concat(main ? [main] : [])
+      // Compile all modules
+      const visitor = new CompilerVisitor(result.types)
+      reorderedModules.forEach(module => {
+        visitor.switchModule(module.id, table.get(module.name)!, treeFromModule(module))
+        module.defs.forEach(def => walkDefinition(visitor, def))
+      })
       const errorLocator = mkErrorMessage(sourceMap)
-      walkModule(visitor, lastModule)
       return right({
+        lookupTable: table,
         values: visitor.getContext(),
         vars: visitor.getVars(),
         shadowVars: visitor.getShadowVars(),
         syntaxErrors: [],
         analysisErrors: Array.from(analysisErrors, errorLocator),
-        compileErrors: visitor.getCompileErrors(),
+        compileErrors: visitor.getCompileErrors().concat(mainNotFound),
         runtimeErrors: visitor.getRuntimeErrors(),
         sourceMap: sourceMap,
       })
