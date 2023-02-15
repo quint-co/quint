@@ -18,7 +18,7 @@ import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../look
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { QuintApp, QuintBool, QuintEx, QuintInt, QuintLambda, QuintLet, QuintModule, QuintModuleDef, QuintName, QuintOpDef, QuintStr } from '../quintIr'
-import { Effect, Name, Signature, effectNames, emptyVariables, unify } from './base'
+import { Effect, Name, Signature, effectNames, unify } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
 import { ScopeTree, treeFromModule } from '../scoping'
@@ -124,9 +124,7 @@ export class EffectInferrer implements IRVisitor {
          * ------------------------------------- (NAME-CONST)
          *       Γ ⊢ c: Pure
          */
-        const effect: Effect = {
-          kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables,
-        }
+        const effect: Effect = { kind: 'concrete', components: [] }
         this.addToResults(expr.id, right(effect))
         break
       }
@@ -136,7 +134,7 @@ export class EffectInferrer implements IRVisitor {
          *          Γ ⊢ v: Read[v]
          */
         const effect: Effect = {
-          kind: 'concrete', read: { kind: 'concrete', vars: [expr.name] }, update: emptyVariables, temporal: emptyVariables,
+          kind: 'concrete', components: [{ kind: 'read', variables: { kind: 'concrete', vars: [{ name: expr.name, reference: expr.id }] } }],
         }
         this.addToResults(expr.id, right(effect))
         break
@@ -214,10 +212,7 @@ export class EffectInferrer implements IRVisitor {
   // Literals are always Pure
   exitLiteral(expr: QuintBool | QuintInt | QuintStr): void {
     this.addToResults(expr.id, right({
-      kind: 'concrete',
-      read: emptyVariables,
-      update: emptyVariables,
-      temporal: emptyVariables,
+      kind: 'concrete', components: [],
     }))
   }
 

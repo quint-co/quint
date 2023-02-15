@@ -12,7 +12,7 @@
  * @module
  */
 
-import { Effect, Variables, emptyVariables } from './base'
+import { Effect, Variables } from './base'
 import { EffectListener } from '../generated/EffectListener'
 import * as p from '../generated/EffectParser'
 
@@ -39,19 +39,19 @@ export class ToEffectVisitor implements EffectListener {
 
   exitReadOnly() {
     const variables = this.variablesStack.pop()!
-    const effect: Effect = { kind: 'concrete', read: variables, update: emptyVariables, temporal: emptyVariables }
+    const effect: Effect = { kind: 'concrete', components: [{ kind: 'read', variables }] }
     this.pushEffect(effect)
   }
 
   exitUpdateOnly() {
     const variables = this.variablesStack.pop()!
-    const effect: Effect = { kind: 'concrete', read: emptyVariables, update: variables, temporal: emptyVariables }
+    const effect: Effect = { kind: 'concrete', components: [{ kind: 'update', variables }] }
     this.pushEffect(effect)
   }
 
   exitTemporalOnly() {
     const variables = this.variablesStack.pop()!
-    const effect: Effect = { kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: variables }
+    const effect: Effect = { kind: 'concrete', components: [{ kind: 'temporal', variables }] }
     this.pushEffect(effect)
   }
 
@@ -59,7 +59,10 @@ export class ToEffectVisitor implements EffectListener {
     const update = this.variablesStack.pop()!
     const read = this.variablesStack.pop()!
 
-    const effect: Effect = { kind: 'concrete', read, update, temporal: emptyVariables }
+    const effect: Effect = {
+      kind: 'concrete',
+      components: [{ kind: 'read', variables: read }, { kind: 'update', variables: update }],
+    }
     this.pushEffect(effect)
   }
 
@@ -67,12 +70,15 @@ export class ToEffectVisitor implements EffectListener {
     const temporal = this.variablesStack.pop()!
     const read = this.variablesStack.pop()!
 
-    const effect: Effect = { kind: 'concrete', read, update: emptyVariables, temporal }
+    const effect: Effect = {
+      kind: 'concrete',
+      components: [{ kind: 'read', variables: read }, { kind: 'temporal', variables: temporal }],
+    }
     this.pushEffect(effect)
   }
 
   exitPure() {
-    const effect: Effect = { kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables }
+    const effect: Effect = { kind: 'concrete', components: [] }
     this.pushEffect(effect)
   }
 
@@ -97,7 +103,7 @@ export class ToEffectVisitor implements EffectListener {
     const names: string[] = ctx.IDENTIFIER().map(i => i.text)
     const unionVariables: Variables[] = names.map(name => ({ kind: 'quantified', name }))
     if (this.stateVars.length > 0) {
-      unionVariables.push({ kind: 'concrete', vars: this.stateVars })
+      unionVariables.push({ kind: 'concrete', vars: this.stateVars.map(v => ({ name: v, reference: 0n })) })
     }
 
     if (unionVariables.length === 0) {

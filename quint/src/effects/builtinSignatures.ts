@@ -14,7 +14,6 @@
 
 import { Signature } from './base'
 import { parseEffectOrThrow } from './parser'
-import { effectToString } from './printing'
 import { simplify } from './simplification'
 import { range, times, zip } from 'lodash'
 
@@ -189,10 +188,5 @@ const fixedAritySignatures: [string, Signature][] = [
   otherOperators,
 ].flat().map(sig => [sig.name, ((_: number) => {
   const e = parseEffectOrThrow(sig.effect)
-  const simplified = simplify(e)
-  if (simplified.isRight()) {
-    return simplified.value
-  } else {
-    throw new Error(`Couldn't simplify builtin effect: ${effectToString(e)}`)
-  }
+  return simplify(e)
 }) as Signature])

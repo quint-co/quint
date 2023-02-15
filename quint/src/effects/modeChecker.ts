@@ -18,7 +18,7 @@ import { qualifierToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { QuintError } from '../quintError'
 import { OpQualifier, QuintInstance, QuintModule, QuintOpDef } from '../quintIr'
-import { ArrowEffect, Effect, Variables, isAction, isState, isTemporal } from './base'
+import { ArrowEffect, ComponentKind, Effect, Variables } from './base'
 import { effectToString, variablesToString } from './printing'
 
 export type ModeCheckingResult = [Map<bigint, QuintError>, Map<bigint, OpQualifier>]
@@ -109,18 +109,34 @@ function modeConstraint(mode: OpQualifier): string {
   }
 }
 
+const componentKindPriority: ComponentKind[] = ['temporal', 'update', 'read']
+const componentDescription = new Map<ComponentKind, string>([
+  ['temporal', 'performs temporal operations over'],
+  ['update', 'updates'],
+  ['read', 'reads'],
+])
+const modesForArrow = new Map<ComponentKind, OpQualifier>([
+  ['temporal', 'temporal'],
+  ['update', 'action'],
+  ['read', 'def'],
+])
+const modesForConcrete = new Map<ComponentKind, OpQualifier>([
+  ['temporal', 'temporal'],
+  ['update', 'action'],
+  ['read', 'val'],
+])
+
 function modeForEffect(effect: Effect): [OpQualifier, string] {
   switch (effect.kind) {
     case 'concrete': {
-      if (isAction(effect)) {
-        return ['action', `updates variables ${variablesToString(effect.update)}`]
-      } else if (isTemporal(effect)) {
-        return ['temporal', `performs temporal operations over variables ${variablesToString(effect.temporal)}`]
-      } else if (isState(effect)) {
-        return ['val', `reads variables ${variablesToString(effect.read)}`]
-      } else {
+      const kind = componentKindPriority.find(kind => effect.components.some(c => c.kind === kind))
+
+      if (!kind) {
         return ['pureval', "doesn't read or update any variable"]
       }
+
+      const components = effect.components.filter(c => c.kind === kind)
+      return [modesForConcrete.get(kind)!, `${componentDescription.get(kind)} variables ${components.map(c => variablesToString(c.variables))}`]
     }
     case 'arrow': {
       const r = effect.result
@@ -132,21 +148,24 @@ function modeForEffect(effect: Effect): [OpQualifier, string] {
         return ['puredef', "doesn't read or update any variable"]
       }
 
-      const [paramReads, paramUpdates, paramTemporals] = paramVariablesByEffect(effect)
+      const variablesByComponentKind = paramVariablesByEffect(effect)
+      const addedVariablesByComponentKind = new Map<ComponentKind, Variables[]>()
 
-      const addedTemporal = addedVariables(paramTemporals, r.temporal)
-      const addedUpdates = addedVariables(paramUpdates, r.update)
-      const addedReads = addedVariables(paramReads, r.read)
+      r.components.forEach(c => {
+        const paramVariables = variablesByComponentKind.get(c.kind) ?? []
+        addedVariablesByComponentKind.set(c.kind, addedVariables(paramVariables, c.variables))
+      })
 
-      if (addedTemporal.length > 0) {
-        return ['temporal', `performs temporal operations over variables ${addedTemporal.map(variablesToString)}`]
-      } else if (addedUpdates.length > 0) {
-        return ['action', `updates variables ${addedUpdates.map(variablesToString)}`]
-      } else if (addedReads.length > 0) {
-        return ['def', `reads variables ${addedReads.map(variablesToString)}`]
+      const kind = componentKindPriority.find(kind => {
+        const addedVariables = addedVariablesByComponentKind.get(kind)
+        return addedVariables && addedVariables.length > 0
+      })
+
+      if (!kind) {
+        return ['puredef', "doesn't read or update any variable"]
       }
 
-      return ['puredef', "doesn't read or update any variable"]
+      return [modesForArrow.get(kind)!, `${componentDescription.get(kind)} variables ${addedVariablesByComponentKind.get(kind)!.map(variablesToString)}`]
     }
     case 'quantified': {
       return ['pureval', "doesn't read or update any variable"]
@@ -179,28 +198,20 @@ function addedVariables(paramVariables: Variables[], resultVariables: Variables)
   }
 }
 
-function paramVariablesByEffect(effect: ArrowEffect): [Variables[], Variables[], Variables[]] {
-  const paramReads: Variables[] = []
-  const paramUpdates: Variables[] = []
-  const paramTemporals: Variables[] = []
+function paramVariablesByEffect(effect: ArrowEffect): Map<ComponentKind, Variables[]> {
+  const variablesByComponentKind: Map<ComponentKind, Variables[]> = new Map()
 
   effect.params.forEach(p => {
     if (p.kind === 'concrete') {
-      paramReads.push(...collectVariables(p.read))
-      paramUpdates.push(...collectVariables(p.update))
-      paramTemporals.push(...collectVariables(p.temporal))
+      p.components.forEach(c => {
+        const variables = variablesByComponentKind.get(c.kind) || []
+        variables.push(c.variables)
+        variablesByComponentKind.set(c.kind, variables)
+      })
     }
   })
 
-  return [paramReads, paramUpdates, paramTemporals]
-}
-
-function collectVariables(v: Variables): Variables[] {
-  if (v.kind === 'union') {
-    return v.variables
-  } else {
-    return [v]
-  }
+  return variablesByComponentKind
 }
 
 const modeOrder =

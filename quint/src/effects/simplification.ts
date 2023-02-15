@@ -12,11 +12,8 @@
  * @module
  */
 
-import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import isEqual from 'lodash.isequal'
-import { ErrorTree, buildErrorTree } from '../errorTree'
-import { ConcreteEffect, Effect, Variables } from './base'
-import { effectToString } from './printing'
+import { ConcreteEffect, Effect, StateVariable, Variables } from './base'
 
 /*
  * Simplifies a concrete effect Read[r] & Update[u] by:
@@ -28,34 +25,24 @@ import { effectToString } from './printing'
  *
  * @returns the simplified effect if no multiple updates are found. Otherwise, the error.
  */
-export function simplifyConcreteEffect(e: ConcreteEffect): Either<ErrorTree, Effect> {
-  const read = uniqueVariables(flattenUnions(e.read))
-  const update = flattenUnions(e.update)
-  const temporal = uniqueVariables(flattenUnions(e.temporal))
+function simplifyConcreteEffect(e: ConcreteEffect): Effect {
+  const components = e.components.map(c => {
+    const flatVariables = flattenUnions(c.variables)
+    const variables = c.kind === 'update' ? flatVariables : uniqueVariables(flatVariables)
+    return { ...c, variables }
+  })
 
-  const updateVars = findVars(e.update)
-  const repeated = updateVars.filter(v => updateVars.filter(v2 => v === v2).length > 1)
-  if (repeated.length > 0) {
-    return left({
-      location: `Trying to simplify effect ${effectToString(e)}`,
-      message: `Multiple updates of variable(s): ${Array.from(new Set(repeated))}`,
-      children: [],
-    })
-  } else {
-    return right({ kind: 'concrete', read, update, temporal })
-  }
+  return { kind: 'concrete', components }
 }
 
-export function simplify(e: Effect): Either<ErrorTree, Effect> {
+export function simplify(e: Effect): Effect {
   switch (e.kind) {
     case 'concrete': return simplifyConcreteEffect(e)
-    case 'quantified': return right(e)
+    case 'quantified': return e
     case 'arrow': {
-      const params = mergeInMany(e.params.map(simplify))
+      const params = e.params.map(simplify)
       const result = simplify(e.result)
-      return params.chain(ps => {
-        return result.map(r => ({ ...e, params: ps, result: r }))
-      }).mapLeft(err => buildErrorTree(`Trying to simplify effect ${effectToString(e)}`, err))
+      return { kind: 'arrow', params, result }
     }
   }
 }
@@ -72,7 +59,7 @@ export function flattenUnions(variables: Variables): Variables {
   switch (variables.kind) {
     case 'union': {
       const unionVariables: Variables[] = []
-      const vars: string[] = []
+      const vars: StateVariable[] = []
       const flattenVariables = variables.variables.map(v => flattenUnions(v))
       flattenVariables.forEach(v => {
         switch (v.kind) {
@@ -100,23 +87,12 @@ export function flattenUnions(variables: Variables): Variables {
   }
 }
 
-function findVars(variables: Variables): string[] {
-  switch (variables.kind) {
-    case 'quantified':
-      return []
-    case 'concrete':
-      return variables.vars
-    case 'union':
-      return variables.variables.flatMap(findVars)
-  }
-}
-
 function uniqueVariables(variables: Variables): Variables {
   switch (variables.kind) {
     case 'quantified':
       return variables
     case 'concrete':
-      return { kind: 'concrete', vars: Array.from(new Set<string>(variables.vars)) }
+      return { kind: 'concrete', vars: Array.from(new Set<StateVariable>(variables.vars)) }
     case 'union': {
       const nestedVariables = variables.variables.map(v => uniqueVariables(v))
       const unique: Variables[] = []

@@ -12,7 +12,7 @@
  * @module
  */
 
-import { Effect, Variables } from './base'
+import { Effect, EffectComponent, Variables } from './base'
 import { Substitutions } from './substitutions'
 
 /**
@@ -25,16 +25,8 @@ import { Substitutions } from './substitutions'
 export function effectToString(e: Effect): string {
   switch (e.kind) {
     case 'concrete': {
-      const output = []
-      if (e.read.kind !== 'concrete' || e.read.vars.length > 0) {
-        output.push(`Read[${variablesToString(e.read)}]`)
-      }
-      if (e.update.kind !== 'concrete' || e.update.vars.length > 0) {
-        output.push(`Update[${variablesToString(e.update)}]`)
-      }
-      if (e.temporal.kind !== 'concrete' || e.temporal.vars.length > 0) {
-        output.push(`Temporal[${variablesToString(e.temporal)}]`)
-      }
+      const output = e.components.map(effectComponentToString)
+
       if (output.length > 0) {
         return output.join(' & ')
       } else {
@@ -50,6 +42,14 @@ export function effectToString(e: Effect): string {
   }
 }
 
+
+export function effectComponentToString(c: EffectComponent): string {
+  switch (c.kind) {
+    case 'read': return `Read[${variablesToString(c.variables)}]`
+    case 'update': return `Update[${variablesToString(c.variables)}]`
+    case 'temporal': return `Temporal[${variablesToString(c.variables)}]`
+  }
+}
 /**
  * Formats the string representation of effect variables
  *
@@ -59,7 +59,7 @@ export function effectToString(e: Effect): string {
  */
 export function variablesToString(v: Variables): string {
   switch (v.kind) {
-    case 'concrete': return v.vars.map(v => `'${v}'`).join(', ')
+    case 'concrete': return v.vars.map(v => `'${v.name}'`).join(', ')
     case 'quantified': return v.name
     case 'union': return v.variables.map(variablesToString).join(', ')
   }
