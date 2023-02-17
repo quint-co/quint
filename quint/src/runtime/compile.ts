@@ -13,13 +13,13 @@ import { Either, left, right } from '@sweet-monads/either'
 import {
   ErrorMessage, Loc, parsePhase1, parsePhase2
 } from '../quintParserFrontend'
-import { ErrorTree, errorTreeToString } from '../errorTree'
 import { Computable, ComputableKind, kindName } from './runtime'
-import { IrErrorMessage } from '../quintIr'
+import { IrErrorMessage, QuintModule } from '../quintIr'
 import { CompilerVisitor } from './impl/compilerImpl'
 import { walkDefinition } from '../IRVisitor'
 import { treeFromModule } from '../scoping'
 import { LookupTableByModule } from '../lookupTable'
+import { TypeScheme } from '../types/base'
 import { QuintAnalyzer } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
 
@@ -102,17 +102,70 @@ export function
 }
 
 /**
- * Parse a string that contains a Quint module and compile it to executable
+ * Compile Quint modules to JS runtime objects from the parsed and type-checked
+ * data structures. This is a user-facing function. In case of an error, the
+ * error messages are passed to an error handler and the function returns
+ * undefined.
+ *
+ * @param modules Quint modules in the intermediate representation
+ * @param sourceMap source map as produced by the parser
+ * @param lookupTable lookup table as produced by the parser
+ * @param types type table as produced by the type checker
+ * @param mainName the name of the module that may contain state varibles
+ * @returns the compilation context
+ */
+export function
+  compile(modules: QuintModule[],
+          sourceMap: Map<bigint, Loc>,
+          lookupTable: LookupTableByModule,
+          types: Map<bigint, TypeScheme>,
+          mainName: string): CompilationContext {
+  // Push back the main module to the end:
+  // The compiler exposes the state variables of the last module only.
+  const main = modules.find(m => m.name === mainName)
+  const visitor = new CompilerVisitor(types)
+  if (main) {
+    const reorderedModules =
+      modules.filter(m => m.name !== mainName).concat(main ? [main] : [])
+    // Compile all modules
+    reorderedModules.forEach(module => {
+      visitor.switchModule(module.id,
+                           lookupTable.get(module.name)!,
+                           treeFromModule(module))
+      module.defs.forEach(def => walkDefinition(visitor, def))
+    })
+  }
+  // when the main module is not found, we will report an error
+  const mainNotFoundError =
+    main ? [] : [{
+      explanation: `Main module ${mainName} not found`,
+      refs: [],
+    }]
+  return {
+    lookupTable: lookupTable,
+    values: visitor.getContext(),
+    vars: visitor.getVars(),
+    shadowVars: visitor.getShadowVars(),
+    syntaxErrors: [],
+    analysisErrors: [],
+    compileErrors: visitor.getCompileErrors().concat(mainNotFoundError),
+    runtimeErrors: visitor.getRuntimeErrors(),
+    sourceMap: sourceMap,
+  }
+}
+
+/**
+ * Parse a string that contains Quint modules and compile it to executable
  * objects. This is a user-facing function. In case of an error, the error
  * messages are passed to an error handler and the function returns undefined.
  *
  * @param code text that stores one or several Quint modules,
  *        which should be parseable without any context
  * @param mainName the name of the module that may contain state varibles
- * @returns a mapping from names to computable values
+ * @returns the compilation context
  */
 export function
-  compile(code: string, mainName: string): CompilationContext {
+  compileFromCode(code: string, mainName: string): CompilationContext {
   // parse the module text
   return parsePhase1(code, '<input>')
     // On errors, we'll produce the computational context up to this point
@@ -126,36 +179,15 @@ export function
       modules.forEach(module => analyzer.analyze(module))
       // since the type checker and effects checker are incomplete,
       // collect the errors, but do not stop immediately on error
-      const [analysisErrors, result] = analyzer.getResult()
-      // Push back the main module to the end
-      const main = modules.find(m => m.name === mainName)
-      // when the main module is not found, we will report an error
-      const mainNotFound =
-        main ? [] : [{
-          explanation: `Main module ${mainName} not found`,
-          refs: [],
-        }]
-      const reorderedModules =
-        modules.filter(m => m.name !== mainName).concat(main ? [main] : [])
-      // Compile all modules
-      const visitor = new CompilerVisitor(result.types)
-      reorderedModules.forEach(module => {
-        visitor.switchModule(module.id, table.get(module.name)!, treeFromModule(module))
-        module.defs.forEach(def => walkDefinition(visitor, def))
-      })
+      const [analysisErrors, analysisResult] = analyzer.getResult()
+      const ctx =
+        compile(modules, sourceMap, table, analysisResult.types, mainName)
       const errorLocator = mkErrorMessage(sourceMap)
       return right({
-        lookupTable: table,
-        values: visitor.getContext(),
-        vars: visitor.getVars(),
-        shadowVars: visitor.getShadowVars(),
-        syntaxErrors: [],
+        ...ctx,
         analysisErrors: Array.from(analysisErrors, errorLocator),
-        compileErrors: visitor.getCompileErrors().concat(mainNotFound),
-        runtimeErrors: visitor.getRuntimeErrors(),
-        sourceMap: sourceMap,
       })
     }
-      // Wether we end up with a right or a left, we will have a CompilationContext
-    ).value
+  // we produce CompilationContext in any case
+  ).value
 }

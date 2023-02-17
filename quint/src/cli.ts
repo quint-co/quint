@@ -12,7 +12,9 @@
 
 import yargs from 'yargs/yargs'
 
-import { docs, load, outputResult, parse, runRepl, typecheck } from './cliCommands'
+import {
+  docs, load, outputResult, parse, runRepl, runTests, typecheck
+} from './cliCommands'
 
 // construct parsing commands with yargs
 const parseCmd = {
@@ -58,6 +60,39 @@ const replCmd = {
   handler: runRepl,
 }
 
+// construct test commands with yargs
+const testCmd = {
+  command: 'test <input>',
+  desc: 'Run tests against a Quint specification',
+  builder: (yargs: any) =>
+    yargs
+      .option('main', {
+        desc: 'name of the main module (by default, computed from filename)',
+        type: 'string',
+      })
+      .option('out', {
+        desc: 'output file (suppresses all console output)',
+        type: 'string',
+      })
+      .option('seed', {
+        desc: 'random seed to use for non-deterministic choice',
+        type: 'string',
+      })
+// Timeouts are postponed for:
+// https://github.com/informalsystems/quint/issues/633
+//
+//      .option('timeout', {
+//        desc: 'timeout in seconds',
+//        type: 'number',
+//      })
+      .option('match', {
+        desc: 'a string or regex that selects names to use as tests',
+        type: 'string',
+      }),
+  handler: (args: any) =>
+    outputResult(load(args).chain(parse).chain(typecheck).chain(runTests)),
+}
+
 // construct documenting commands with yargs
 const docsCmd = {
   command: 'docs <input>',
@@ -75,6 +110,7 @@ yargs(process.argv.slice(2))
   .command(parseCmd)
   .command(typecheckCmd)
   .command(replCmd)
+  .command(testCmd)
   .command(docsCmd)
   .demandCommand(1)
   .strict()

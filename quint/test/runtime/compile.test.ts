@@ -4,7 +4,9 @@ import { Either, left, right } from '@sweet-monads/either'
 import { Maybe, just } from '@sweet-monads/maybe'
 import { expressionToString } from '../../src/IRprinting'
 import { ComputableKind, fail, kindName, EvalResult } from '../../src/runtime/runtime'
-import { CompilationContext, compile, contextLookup } from '../../src/runtime/compile'
+import {
+  CompilationContext, compileFromCode, contextLookup
+} from '../../src/runtime/compile'
 import { RuntimeValue } from '../../src/runtime/impl/runtimeValue'
 import { dedent } from '../textUtils'
 
@@ -12,7 +14,7 @@ import { dedent } from '../textUtils'
 // compare the result. This is the easiest path to test the results.
 function assertResultAsString(input: string, expected: string | undefined) {
   const moduleText = `module __runtime { val __expr = ${input} }`
-  const context = compile(moduleText, '__runtime')
+  const context = compileFromCode(moduleText, '__runtime')
   contextLookup(context, '__runtime', '__expr', 'callable')
     .mapLeft(msg => assert(false, msg))
     .mapRight(value => {
@@ -30,7 +32,7 @@ function assertResultAsString(input: string, expected: string | undefined) {
 // Compile an input and evaluate a callback in the context
 function evalInContext<T>(input: string, callable: (ctx: CompilationContext) => Either<string, T>) {
   const moduleText = `module __runtime { ${input} }`
-  const context = compile(moduleText, '__runtime')
+  const context = compileFromCode(moduleText, '__runtime')
   return callable(context)
 }
 

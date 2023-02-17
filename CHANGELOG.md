@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- command `test` to run unit tests (#634)
+
 ### Changed
 
 - `docs` subcommand now outputs generated docs to stdout (#617)
