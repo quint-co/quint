@@ -192,6 +192,11 @@ Temporarily disabled.
 <!-- !test check counters - Types & Effects-->
     quint typecheck ../examples/language-features/counters.qnt
 
+### OK on typecheck booleans
+
+<!-- !test check booleans - Types & Effects-->
+    quint typecheck ../examples/language-features/booleans.qnt
+
 ### OK on typecheck coin
 
 <!-- !test check coin - Types & Effects-->
