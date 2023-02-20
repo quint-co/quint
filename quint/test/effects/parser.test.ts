@@ -12,7 +12,7 @@ describe('parseEffect', () => {
       assert.deepEqual(value, {
         kind: 'concrete',
         components: [
-          { kind: 'read', variables: { kind: 'concrete', vars: [{ name: 'x', reference: 0n }, { name: 'y', reference: 0n }] } },
+          { kind: 'read', variables: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }, { name: 'y', reference: 2n }] } },
           { kind: 'update', variables: { kind: 'quantified', name: 'v' } },
         ],
       })
@@ -28,7 +28,7 @@ describe('parseEffect', () => {
       assert.deepEqual(value, {
         kind: 'concrete',
         components: [
-          { kind: 'read', variables: { kind: 'concrete', vars: [{ name: 'x', reference: 0n }, { name: 'y', reference: 0n }] } },
+          { kind: 'read', variables: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }, { name: 'y', reference: 2n }] } },
           { kind: 'temporal', variables: { kind: 'quantified', name: 'v' } },
         ],
       })
@@ -155,7 +155,7 @@ describe('parseEffect', () => {
             components: [{
               kind: 'read', variables: {
                 kind: 'union', variables: [
-                  { kind: 'quantified', name: 'v' }, { kind: 'concrete', vars: [{ name: 'x', reference: 0n }] },
+                  { kind: 'quantified', name: 'v' }, { kind: 'concrete', vars: [{ name: 'x', reference: 1n }] },
                 ],
               },
             }],
@@ -166,7 +166,7 @@ describe('parseEffect', () => {
           components: [{
             kind: 'update', variables: {
               kind: 'union', variables: [
-                { kind: 'quantified', name: 'v' }, { kind: 'concrete', vars: [{ name: 'y', reference: 0n }] },
+                { kind: 'quantified', name: 'v' }, { kind: 'concrete', vars: [{ name: 'y', reference: 2n }] },
               ],
             },
           }],

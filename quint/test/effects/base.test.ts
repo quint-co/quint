@@ -15,7 +15,7 @@ describe('unify', () => {
 
       assert.isTrue(result.isRight())
       result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'variable', name: 't1', value: { kind: 'concrete', vars: [{ name: 'x', reference: 0n }] } },
+        { kind: 'variable', name: 't1', value: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }] } },
       ]))
     })
 
@@ -75,7 +75,7 @@ describe('unify', () => {
               kind: 'union',
               variables: [
                 { kind: 'union', variables: [{ kind: 'quantified', name: 'r1' }, { kind: 'quantified', name: 'r2' }] },
-                { kind: 'concrete', vars: [{ name: 'x', reference: 0n }, { name: 'y', reference: 0n }] },
+                { kind: 'concrete', vars: [{ name: 'x', reference: 1n }, { name: 'y', reference: 2n }] },
               ],
             },
           },
@@ -122,7 +122,7 @@ describe('unify', () => {
 
       assert.isTrue(result.isRight())
       result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'variable', name: 'v', value: { kind: 'concrete', vars: [{ name: 'x', reference: 0n }] } },
+        { kind: 'variable', name: 'v', value: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }] } },
         { kind: 'effect', name: 'E', value: parseEffectOrThrow("Update['x']") },
       ]))
     })
@@ -147,11 +147,18 @@ describe('unify', () => {
       const result = unify(e1, e2)
 
       result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'variable', name: 'r1', value: { kind: 'concrete', vars: [{ name: 'x', reference: 0n }] } },
-        { kind: 'variable', name: 'r2', value: { kind: 'concrete', vars: [{ name: 'x', reference: 0n }] } },
-        { kind: 'variable', name: 't1', value: { kind: 'concrete', vars: [{ name: 't', reference: 0n }] } },
-        { kind: 'variable', name: 't2', value: { kind: 'concrete', vars: [{ name: 't', reference: 0n }] } },
-        { kind: 'effect', name: 'E', value: parseEffectOrThrow("Read['x'] & Temporal['t']") },
+        { kind: 'variable', name: 'r1', value: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }] } },
+        { kind: 'variable', name: 'r2', value: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }] } },
+        { kind: 'variable', name: 't1', value: { kind: 'concrete', vars: [{ name: 't', reference: 2n }] } },
+        { kind: 'variable', name: 't2', value: { kind: 'concrete', vars: [{ name: 't', reference: 2n }] } },
+        {
+          kind: 'effect', name: 'E', value: {
+            kind: 'concrete', components: [
+              { kind: 'read', variables: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }] } },
+              { kind: 'temporal', variables: { kind: 'concrete', vars: [{ name: 't', reference: 2n }] } },
+            ],
+          },
+        },
       ])).mapLeft(err => assert.fail(`Should find no errros, found ${errorTreeToString(err)}`))
     })
 
@@ -263,9 +270,9 @@ describe('unify', () => {
 
       assert.isTrue(result.isRight())
       result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'variable', name: 'r1', value: { kind: 'concrete', vars: [{ name: 'x', reference: 0n }] } },
-        { kind: 'variable', name: 'r2', value: { kind: 'concrete', vars: [{ name: 'y', reference: 0n }, { name: 'z', reference: 0n }] } },
-        { kind: 'variable', name: 'u', value: { kind: 'concrete', vars: [{ name: 'x', reference: 0n }] } },
+        { kind: 'variable', name: 'r1', value: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }] } },
+        { kind: 'variable', name: 'r2', value: { kind: 'concrete', vars: [{ name: 'y', reference: 3n }, { name: 'z', reference: 4n }] } },
+        { kind: 'variable', name: 'u', value: { kind: 'concrete', vars: [{ name: 'x', reference: 2n }] } },
       ]))
       assert.deepEqual(result, reversedResult, 'Result should be the same regardless of the effect order in parameters')
     })
@@ -296,8 +303,8 @@ describe('unify', () => {
       const result = unify(e1, e2)
       assert.isTrue(result.isRight())
       result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'variable', name: 'r1', value: { kind: 'concrete', vars: [{ name: 'x', reference: 0n }] } },
-        { kind: 'variable', name: 'r2', value: { kind: 'concrete', vars: [{ name: 'y', reference: 0n }] } },
+        { kind: 'variable', name: 'r1', value: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }] } },
+        { kind: 'variable', name: 'r2', value: { kind: 'concrete', vars: [{ name: 'y', reference: 2n }] } },
         { kind: 'variable', name: 'u', value: { kind: 'quantified', name: 'v' } },
       ]))
     })

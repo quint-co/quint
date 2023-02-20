@@ -28,6 +28,7 @@ export class ToEffectVisitor implements EffectListener {
   private arrowEffectsStack: Effect[][] = []
   private variablesStack: Variables[] = []
   private stateVars: string[] = []
+  private idCounter: bigint = 0n
 
   private pushEffect(effect: Effect): void {
     this.effect = effect
@@ -103,7 +104,7 @@ export class ToEffectVisitor implements EffectListener {
     const names: string[] = ctx.IDENTIFIER().map(i => i.text)
     const unionVariables: Variables[] = names.map(name => ({ kind: 'quantified', name }))
     if (this.stateVars.length > 0) {
-      unionVariables.push({ kind: 'concrete', vars: this.stateVars.map(v => ({ name: v, reference: 0n })) })
+      unionVariables.push({ kind: 'concrete', vars: this.stateVars.map(v => ({ name: v, reference: this.nextId() })) })
     }
 
     if (unionVariables.length === 0) {
@@ -120,5 +121,9 @@ export class ToEffectVisitor implements EffectListener {
   exitStateVarRef(ctx: p.StateVarRefContext) {
     const varRef = ctx.IDENTIFIER().text
     this.stateVars.push(varRef)
+  }
+
+  private nextId(): bigint {
+    return ++this.idCounter
   }
 }
