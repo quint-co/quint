@@ -1,10 +1,35 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2023. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Checks effects for multiple updates of the same variable.
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
+
 import { QuintError } from "../quintError";
 import { ConcreteEffect, Effect, StateVariable, Variables } from "./base";
 import { EffectVisitor, walkEffect } from "./EffectVisitor";
 
+/**
+ * Checks effects for multiple updates of the same variable.
+ */
 export class MultipleUpdatesChecker implements EffectVisitor {
   errors: Map<bigint, QuintError> = new Map()
 
+  /**
+   * Checks effects for multiple updates of the same variable.
+   *
+   * @param effects the effects to look for multiple updates on
+   *
+   * @returns a map of errors, where the key is the variable id
+   */
   checkEffects(effects: Effect[]): Map<bigint, QuintError> {
     effects.forEach(e => walkEffect(this, e))
     return this.errors
@@ -19,10 +44,8 @@ export class MultipleUpdatesChecker implements EffectVisitor {
     }, [])
 
     const vars = findVars({ kind: 'union', variables: updateVariables })
-    console.log(vars)
 
     const repeated = vars.filter(v => vars.filter(v2 => v.name === v2.name).length > 1)
-    console.log('repeated', repeated)
     if (repeated.length > 0) {
       repeated.forEach(v => {
         this.errors.set(v.reference, {

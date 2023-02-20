@@ -19,11 +19,14 @@ import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
 import { flattenUnions, simplify } from './simplification'
 import isEqual from 'lodash.isequal'
 
-/* Concrete atomic effects specifying variables that the expression reads and updates */
-export interface ConcreteEffect { kind: 'concrete', components: EffectComponent[] }
-
+/* Kinds for concrete effect components */
 export type ComponentKind = 'read' | 'update' | 'temporal'
+
+/* A concrete effect component, specifying a kind and the variables it acts upon */
 export interface EffectComponent { kind: ComponentKind, variables: Variables }
+
+/* Concrete atomic effects specifying which kinds of effects act upon which variables */
+export interface ConcreteEffect { kind: 'concrete', components: EffectComponent[] }
 
 /* Arrow effects for expressions with effects depending on parameters */
 export interface ArrowEffect { kind: 'arrow', params: Effect[], result: Effect }
@@ -40,6 +43,14 @@ export type Effect =
   | ArrowEffect
   | QuantifiedEffect
 
+/* A state variable */
+export interface StateVariable {
+  /* The variable name */
+  name: string,
+  /* The variable id */
+  reference: bigint
+}
+
 /*
  * The variables an effect acts upon. Either a list of state variables, a
  * quantification over them or a combination of other variables.
@@ -52,11 +63,6 @@ export type Variables =
   | { kind: 'quantified', name: string, reference?: bigint }
   /* A combination of variables to be computed as a union when concrete */
   | { kind: 'union', variables: Variables[] }
-
-export interface StateVariable {
-  name: string,
-  reference: bigint
-}
 
 /*
  * An effect signature, which can vary according to the number of arguments.
@@ -72,11 +78,6 @@ export interface Name {
   kind: 'effect' | 'variable'
   name: string
 }
-
-/*
- * A shortcut to writting the empty set of variables
- */
-export const emptyVariables: Variables = { kind: 'concrete', vars: [] }
 
 /**
  * Unifies two effects by matching effect types and unifying their variables.
@@ -178,7 +179,7 @@ function unifyArrows(location: string, e1: ArrowEffect, e2: ArrowEffect): Either
 
 const compatibleComponentKinds = [['read', 'update'], ['read', 'temporal']]
 
-function areCompatible(c1: EffectComponent, c2: EffectComponent): boolean {
+function canCoexist(c1: EffectComponent, c2: EffectComponent): boolean {
   return compatibleComponentKinds.some(kinds => kinds.includes(c1.kind) && kinds.includes(c2.kind))
 }
 
@@ -187,8 +188,6 @@ function isDominant(c1: EffectComponent, c2: EffectComponent): boolean {
 }
 
 function unifyConcrete(location: string, e1: ConcreteEffect, e2: ConcreteEffect): Either<Error, Substitutions> {
-  // TODO: simplify?
-
   const generalResult = e1.components.reduce((result: Either<Error, Substitutions>, ca) => {
     return e2.components.reduce((innerResult: Either<Error, Substitutions>, cb) => {
       return innerResult.chain(subs => {
@@ -197,7 +196,7 @@ function unifyConcrete(location: string, e1: ConcreteEffect, e2: ConcreteEffect)
 
         if (c1.kind === c2.kind) {
           return unifyVariables(c1.variables, c2.variables)
-        } else if (areCompatible(c1, c2)) {
+        } else if (canCoexist(c1, c2)) {
           return right([] as Substitutions)
         } else if (isDominant(c1, c2)) {
           // The dominated component has to be nullified
@@ -206,8 +205,8 @@ function unifyConcrete(location: string, e1: ConcreteEffect, e2: ConcreteEffect)
           // The dominated component has to be nullified
           return unifyVariables(c1.variables, { kind: 'concrete', vars: [] })
         } else {
-          // We should never reach this
-          // One of the kinds should dominate the other, and then we nullify the dominated component
+          // We should never reach this. Instead, one of the kinds should
+          // dominate the other, and then we nullify the dominated component
           return left({
             location,
             message: `Can't unify ${c1.kind} ${effectComponentToString(c1)} and ${c2.kind} ${effectComponentToString(c2)}`,
@@ -218,32 +217,9 @@ function unifyConcrete(location: string, e1: ConcreteEffect, e2: ConcreteEffect)
     }, result)
   }, right([]))
 
-  // Check if there are any components in e2 that are not in e1
-  // If so, they have to be nullified
-  const e1Result = e1.components.reduce((result: Either<Error, Substitutions>, c2) => {
-    return result.chain(subs => {
-      if (!e2.components.some(c1 => c1.kind === c2.kind)) {
-        const newSubs = unifyVariables(c2.variables, { kind: 'concrete', vars: [] })
-        return newSubs.chain(s => compose(subs, s))
-      }
-
-      return right(subs)
-    })
-  }, right([]))
-  // Check if there are any components in e2 that are not in e1
-  // If so, they have to be nullified
-  const e2Result = e2.components.reduce((result: Either<Error, Substitutions>, c2) => {
-    return result.chain(subs => {
-      if (!e1.components.some(c1 => c1.kind === c2.kind)) {
-        const newSubs = unifyVariables({ kind: 'concrete', vars: [] }, c2.variables)
-        return newSubs.chain(s => compose(subs, s))
-      }
-
-      return right(subs)
-    })
-  }, right([]))
-
-  return e1Result.chain(s1 => e2Result.chain(s2 => compose(s1, s2))).chain(s1 => generalResult.chain(s2 => compose(s1, s2)))
+  return nullifyUnmatchedComponents(e1.components, e2.components)
+    .chain(s1 => nullifyUnmatchedComponents(e2.components, e1.components).chain(s2 => compose(s1, s2)))
+    .chain(s1 => generalResult.chain(s2 => compose(s1, s2)))
 }
 
 export function unifyVariables(va: Variables, vb: Variables): Either<ErrorTree, Substitutions> {
@@ -296,6 +272,24 @@ export function unifyVariables(va: Variables, vb: Variables): Either<ErrorTree, 
   }
 }
 
+/** Check if there are any components in c1 that are not in c2
+ * If so, they have to be nullified
+ */
+function nullifyUnmatchedComponents(
+  components1: EffectComponent[], components2: EffectComponent[]
+): Either<Error, Substitutions> {
+  return components1.reduce((result: Either<Error, Substitutions>, c2) => {
+    return result.chain(subs => {
+      if (!components2.some(c1 => c1.kind === c2.kind)) {
+        const newSubs = unifyVariables(c2.variables, { kind: 'concrete', vars: [] })
+        return newSubs.chain(s => compose(subs, s))
+      }
+
+      return right(subs)
+    })
+  }, right([]))
+}
+
 function applySubstitutionsAndUnify(subs: Substitutions, e1: Effect, e2: Effect): Either<Error, Substitutions> {
   return mergeInMany([
     applySubstitution(subs, e1),
@@ -335,7 +329,9 @@ function tryToUnpack(
 
   const unpacked: ConcreteEffect = {
     kind: 'concrete',
-    components: [...variablesByComponentKind.entries()].map(([kind, variables]) => ({ kind, variables: { kind: 'union', variables } })),
+    components: [...variablesByComponentKind.entries()].map(([kind, variables]) => {
+      return { kind, variables: { kind: 'union', variables } }
+    }),
   }
 
   const result = simplify(unpacked)
@@ -362,10 +358,9 @@ function simplifyArrowEffect(params: Effect[], result: Effect): [ArrowEffect, Su
     const hashedComponents = effect.components.map(c => ({ kind: c.kind, variables: hashVariables(c.variables) }))
 
     const arrow: ArrowEffect = { kind: 'arrow', params: [{ kind: 'concrete', components: hashedComponents }], result }
-    const subs: Substitutions = []
-    effect.components.forEach(c => {
-      variablesNames(c.variables).forEach(n => {
-        subs.push({ kind: 'variable', name: n.name, value: hashVariables(c.variables) })
+    const subs: Substitutions = effect.components.flatMap(c => {
+      return variablesNames(c.variables).map(n => {
+        return { kind: 'variable', name: n.name, value: hashVariables(c.variables) }
       })
     })
 
@@ -383,6 +378,8 @@ function hashVariables(va: Variables): Variables {
     case 'quantified': return va
     case 'union': {
       const nested = va.variables.map(hashVariables)
+
+      // Separate quantified variables from the rest
       const [name, variables] = nested.reduce(([name, variables]: [string[], Variables[]], v) => {
         if (v.kind === 'quantified') {
           name.push(v.name)
@@ -392,17 +389,18 @@ function hashVariables(va: Variables): Variables {
         return [name, variables]
       }, [[], []])
 
+      // Consider all cases of name and variables being empty or not
       if (name.length === 0) {
-        if (variables.length > 0) {
-          return { kind: 'union', variables }
+        if (variables.length === 0) {
+          return { kind: 'concrete', vars: [] }
         } else {
-          return emptyVariables
+          return { kind: 'union', variables }
         }
       } else {
-        if (variables.length > 0) {
-          return { kind: 'union', variables: [{ kind: 'quantified', name: name.join('#') }, ...variables] }
-        } else {
+        if (variables.length === 0) {
           return { kind: 'quantified', name: name.join('#') }
+        } else {
+          return { kind: 'union', variables: [{ kind: 'quantified', name: name.join('#') }, ...variables] }
         }
       }
     }

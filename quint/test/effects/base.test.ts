@@ -7,30 +7,6 @@ import { substitutionsToString } from '../../src'
 
 describe('unify', () => {
   describe('simple effects', () => {
-    // it('returns error for each effect updating a variable more than once', () => {
-    //   const e1 = parseEffectOrThrow("Update['x', 'x']")
-    //   const e2 = parseEffectOrThrow("Update['y', 'y']")
-
-    //   const result = unify(e1, e2)
-
-    //   assert.isTrue(result.isLeft())
-    //   result.mapLeft(r => assert.deepEqual(r, {
-    //     location: "Trying to unify Update['x', 'x'] and Update['y', 'y']",
-    //     children: [
-    //       {
-    //         location: "Trying to simplify effect Update['x', 'x']",
-    //         message: 'Multiple updates of variable(s): x',
-    //         children: [],
-    //       },
-    //       {
-    //         location: "Trying to simplify effect Update['y', 'y']",
-    //         message: 'Multiple updates of variable(s): y',
-    //         children: [],
-    //       },
-    //     ],
-    //   }))
-    // })
-
     it('unifies temporal effects', () => {
       const e1 = parseEffectOrThrow('Temporal[t1]')
       const e2 = parseEffectOrThrow("Temporal['x']")
@@ -52,8 +28,11 @@ describe('unify', () => {
       assert.isTrue(result.isLeft())
       result.mapLeft(r => assert.deepEqual(r, {
         location: "Trying to unify Update['x'] and Temporal['y']",
-        message: "Couldn't unify temporal and action effects: Update['x'] and Temporal['y']",
-        children: [],
+        children: [{
+          location: "Trying to unify variables ['x'] and []",
+          message: 'Expected variables [x] and [] to be the same',
+          children: [],
+        }],
       }))
     })
 
@@ -67,8 +46,8 @@ describe('unify', () => {
       result.mapLeft(r => assert.deepEqual(r, {
         location: "Trying to unify Pure and Temporal['y']",
         children: [{
-          location: "Trying to unify variables [] and ['y']",
-          message: 'Expected variables [] and [y] to be the same',
+          location: "Trying to unify variables ['y'] and []",
+          message: 'Expected variables [y] and [] to be the same',
           children: [],
         }],
       }))
@@ -176,24 +155,6 @@ describe('unify', () => {
       ])).mapLeft(err => assert.fail(`Should find no errros, found ${errorTreeToString(err)}`))
     })
 
-    // it('unpacks the same effect to all tuple elements', () => {
-    //   // Will return error since r1 |-> 'x' and r2 |-> 'x', so Update[r1, r2] will be invalid
-    //   const e1 = parseEffectOrThrow('(Read[r1], Read[r2]) => Update[r1, r2]')
-    //   const e2 = parseEffectOrThrow("(Read['x']) => E")
-
-    //   const result = unify(e1, e2)
-
-    //   assert.isTrue(result.isLeft())
-    //   result.mapLeft(r => assert.deepEqual(r, {
-    //     location: "Trying to unify (Read[r1], Read[r2]) => Update[r1, r2] and (Read['x']) => E",
-    //     children: [{
-    //       location: "Trying to simplify effect Update['x', 'x']",
-    //       message: 'Multiple updates of variable(s): x',
-    //       children: [],
-    //     }],
-    //   }))
-    // })
-
     it('results in the same effect regardless of unpacked projection', () => {
       const e1 = parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1]')
       const e2 = parseEffectOrThrow("(Read['x', 'y']) => E")
@@ -228,36 +189,6 @@ describe('unify', () => {
         ],
       }))
     })
-
-    // it('returns error for each effect updating a variable more than once', () => {
-    //   const e1 = parseEffectOrThrow("(Update['x', 'x']) => Read['x']")
-    //   const e2 = parseEffectOrThrow("(Update['y', 'y']) => Read['y']")
-
-    //   const result = unify(e1, e2)
-
-    //   assert.isTrue(result.isLeft())
-    //   result.mapLeft(r => assert.deepEqual(r, {
-    //     location: "Trying to unify (Update['x', 'x']) => Read['x'] and (Update['y', 'y']) => Read['y']",
-    //     children: [
-    //       {
-    //         location: "Trying to simplify effect (Update['x', 'x']) => Read['x']",
-    //         children: [{
-    //           location: "Trying to simplify effect Update['x', 'x']",
-    //           message: 'Multiple updates of variable(s): x',
-    //           children: [],
-    //         }],
-    //       },
-    //       {
-    //         location: "Trying to simplify effect (Update['y', 'y']) => Read['y']",
-    //         children: [{
-    //           location: "Trying to simplify effect Update['y', 'y']",
-    //           message: 'Multiple updates of variable(s): y',
-    //           children: [],
-    //         }],
-    //       },
-    //     ],
-    //   }))
-    // })
 
     it('returns error when cannot unify variables', () => {
       const e1 = parseEffectOrThrow('(Read[v]) => Update[v]')
@@ -320,26 +251,6 @@ describe('unify', () => {
         { kind: 'effect', name: 'E', value: parseEffectOrThrow("Read['x']") },
       ]))
     })
-
-    // it('returns error when an invalid effect is constructed', () => {
-    //   const e1 = parseEffectOrThrow('(Read[v1], Read[v2]) => (Read[v1, v2]) => Update[v1, v2]')
-    //   const e2 = parseEffectOrThrow("(Read['x'], Read['x']) => e0")
-
-    //   const result = unify(e1, e2)
-
-    //   assert.isTrue(result.isLeft())
-    //   result.mapLeft(r => assert.deepEqual(r, {
-    //     location: "Trying to unify (Read[v1], Read[v2]) => (Read[v1, v2]) => Update[v1, v2] and (Read['x'], Read['x']) => e0",
-    //     children: [{
-    //       location: 'Applying substitution to arrow effect (Read[v1, v2]) => Update[v1, v2]',
-    //       children: [{
-    //         location: "Trying to simplify effect Update['x', 'x']",
-    //         message: 'Multiple updates of variable(s): x',
-    //         children: [],
-    //       }],
-    //     }],
-    //   }))
-    // })
   })
 
   describe('effects with multiple quantified variables', () => {
