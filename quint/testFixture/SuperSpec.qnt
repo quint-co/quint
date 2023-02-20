@@ -66,7 +66,7 @@ module withConsts {
   pure def add(x, y) = x + y
   def ofN(factor) = factor * n
   action A(x) = n' = x
-  temporal B(x) = not(x)
+  pure def B(x) = not(x)
 
   // Typed operators
   def H(x, y): (int, int) => int = {

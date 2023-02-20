@@ -5,7 +5,7 @@ module Instances {
     const z: str
 
     pure def f(a) = x + 1
-    temporal g(b) = not(b)
+    pure def g(b) = not(b)
   }
 
   pure val MyY = true
