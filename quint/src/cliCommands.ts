@@ -37,11 +37,14 @@ export type stage =
 /** The data from a ProcedureStage that may be output to --out */
 interface OutputStage {
   stage: stage,
+  // the modules and the lookup table produced by 'parse'
   modules?: QuintModule[],
+  table?: LookupTableByModule,
+  // the tables produced by 'typecheck'
   types?: Map<bigint, TypeScheme>,
   effects?: Map<bigint, Effect>,
   modes?: Map<bigint, OpQualifier>,
-  /* Test names output by the command 'test */
+  // Test names output produced by 'test'
   passed?: string[],
   failed?: string[],
   ignored?: string[],
@@ -56,10 +59,16 @@ interface OutputStage {
 // See https://stackoverflow.com/a/39333479/1187277
 function pickOutputStage(o: ProcedureStage): OutputStage {
   const picker = ({
-    stage, warnings, modules, types, effects, errors, documentation,
+    stage, warnings, modules, table, types, effects, errors, documentation,
     passed, failed, ignored,
   }: ProcedureStage) => {
-    if (o.stage === 'testing') {
+    if (o.stage === 'parsing') {
+      if (o.args.withLookup) {
+        return { stage, warnings, modules, table, errors }
+      } else {
+        return { stage, warnings, modules, errors }
+      }
+    } else if (o.stage === 'testing') {
       return { stage, errors, passed, failed, ignored }
     } else {
       return {

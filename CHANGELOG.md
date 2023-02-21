@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - command `test` to run unit tests (#634)
+- option `--with-lookup` of the command `parse` (#639)
 
 ### Changed
 

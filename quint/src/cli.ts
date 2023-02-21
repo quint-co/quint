@@ -29,6 +29,10 @@ const parseCmd = {
       .option('source-map', {
         desc: 'name of the source map',
         type: 'string',
+      })
+      .option('with-lookup', {
+        desc: 'add the lookup table to the output file (see --out)',
+        type: 'boolean',
       }),
   handler: (args: any) => outputResult(load(args).chain(parse)),
 }
