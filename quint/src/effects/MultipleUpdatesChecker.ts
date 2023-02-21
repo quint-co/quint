@@ -16,6 +16,7 @@
 import { QuintError } from "../quintError";
 import { ConcreteEffect, Effect, StateVariable, Variables } from "./base";
 import { EffectVisitor, walkEffect } from "./EffectVisitor";
+import { groupBy, pickBy, values } from "lodash";
 
 /**
  * Checks effects for multiple updates of the same variable.
@@ -44,8 +45,7 @@ export class MultipleUpdatesChecker implements EffectVisitor {
     }, [])
 
     const vars = findVars({ kind: 'union', variables: updateVariables })
-
-    const repeated = vars.filter(v => vars.filter(v2 => v.name === v2.name).length > 1)
+    const repeated = values(pickBy(groupBy(vars, v => v.name), x => x.length > 1)).flat()
     if (repeated.length > 0) {
       repeated.forEach(v => {
         this.errors.set(v.reference, {
