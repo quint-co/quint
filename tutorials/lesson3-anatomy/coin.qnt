@@ -15,7 +15,7 @@
  *
  * Igor Konnov, Informal Systems, 2023
  */
-module Coin {
+module coin {
 
     // TYPE DEFINITIONS
 
@@ -51,7 +51,7 @@ module Coin {
     // the balances in the subcurrency tokens
     var balances: Addr -> UInt
     // a handy definition to query the whole state in REPL at once
-    def state = { minter: minter, balances: balances }
+    val state = { minter: minter, balances: balances }
     
     // a helper function to make preconditions similar to Solidity
     def require(cond: bool): bool = cond
@@ -114,10 +114,6 @@ module Coin {
     }
 
     // All possible behaviors of the protocol in one action.
-    // Note that random simulation produces valid inputs to this action with
-    // low probability, since the amounts are chosen at random.
-    // A symbolic model checker such as Apalache does not have any problem
-    // with this. Random simulation requires a more restricted version of step.
     action step: bool = {
         nondet sender = oneOf(ADDR)
         nondet receiver = oneOf(ADDR)

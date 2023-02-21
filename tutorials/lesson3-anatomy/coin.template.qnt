@@ -73,7 +73,7 @@ the details, check [coin.qnt](./coin.qnt).
         <line>$line</line>
       </step>
 !*/
-module Coin {
+module coin {
     /*!
       <step>
         <title>Declare a single module</title>
@@ -114,7 +114,7 @@ type [name] = [tp];
 ```
 
 In the above definition, `[name]` is a unique identifier that will be associated
-with the type, and `[type]` is the type to be associated with the name, e.g.,
+with the type, and `[tp]` is the type to be associated with the name, e.g.,
 `int` or `Set[int]`. To see a complete description of all available types, visit the Section
 [Type System 1.2](https://github.com/informalsystems/quint/blob/main/doc/lang.md#type-system-12)
 of the language manual.
@@ -157,19 +157,20 @@ The main property of pure values is that they always return the same value.
 Pure definitions always return the same value, if they are supplied with the
 same arguments.
 
-To see that no state is needed, evaluate these definitions in REPL:
+To see that no state is needed, evaluate these definitions in REPL
+(read-evaluate-print-loop):
 
-            <run target="markdown">echo "MAX_UINT" | quint -r coin.qnt::Coin</run>
-            <run target="codetour">echo "MAX_UINT" | quint -r ./lesson3-anatomy/coin.qnt::Coin</run>
+            <run target="markdown">echo "MAX_UINT" | quint -r coin.qnt::coin</run>
+            <run target="codetour">echo "MAX_UINT" | quint -r ./lesson3-anatomy/coin.qnt::coin</run>
 
-            <run target="markdown">echo "isUInt(22)" | quint -r coin.qnt::Coin</run>
-            <run target="codetour">echo "isUInt(22)" | quint -r ./lesson3-anatomy/coin.qnt::Coin</run>
+            <run target="markdown">echo "isUInt(22)" | quint -r coin.qnt::coin</run>
+            <run target="codetour">echo "isUInt(22)" | quint -r ./lesson3-anatomy/coin.qnt::coin</run>
 
-            <run target="markdown">echo "isUInt(-1)" | quint -r coin.qnt::Coin</run>
-            <run target="codetour">echo "isUInt(-1)" | quint -r ./lesson3-anatomy/coin.qnt::Coin</run>
+            <run target="markdown">echo "isUInt(-1)" | quint -r coin.qnt::coin</run>
+            <run target="codetour">echo "isUInt(-1)" | quint -r ./lesson3-anatomy/coin.qnt::coin</run>
 
-            <run target="markdown">echo "isUInt(MAX_UINT + 1)" | quint -r coin.qnt::Coin</run>
-            <run target="codetour">echo "isUInt(MAX_UINT + 1)" | quint -r ./lesson3-anatomy/coin.qnt::Coin</run>
+            <run target="markdown">echo "isUInt(MAX_UINT + 1)" | quint -r coin.qnt::coin</run>
+            <run target="codetour">echo "isUInt(MAX_UINT + 1)" | quint -r ./lesson3-anatomy/coin.qnt::coin</run>
 
             <block>
 The functional layer is actually quite powerful; a lot of protocol behavior can
@@ -216,9 +217,20 @@ still make sense. The typical parameters are:
  - timeout values.
 
 For this purpose, Quint offers `const` declarations. You can see one of them
-in the commented out section of the code above. Constant declarations are not
-fully supported yet. They will be available as soon as the issue
-[#528](https://github.com/informalsystems/quint/issues/528) is closed.
+in the commented out section of the code above. You may be wondering, what is
+the difference between `const` and `pure val`. They mean to express the same
+concept: A value that stays the same for all computations. However, they differ
+in the time when they are bound to a value:
+
+ - The `pure val` values are immediately defined via an expression in the
+   right-hand side.
+
+ - The `const` values are first declared and later they are substituted
+   with actual values via an `instance` declaration.
+
+Constant declarations are not fully supported yet. They will be available
+as soon as the issue [#528](https://github.com/informalsystems/quint/issues/528)
+is closed.
 
 At the moment, we simply declare the value for a small set of addresses `ADDR`,
 in order to be able to iterate on the protocol specification quickly.
@@ -247,9 +259,8 @@ a state of the protocol. In the above code, we introduce two such variables:
    The type of this variable is `Addr -> UInt`, which means a map from
    values of type `Addr` to values of type `UInt`.
 
-In contrast to operator definitions, variable definitions always require
-a type. Otherwise, it may be too hard for the type checker to infer the
-types of the state variables.
+Variable definitions always require type. Otherwise, it may be too hard
+for the type checker to infer the types of the state variables.
 
 If you compare the above variable definitions to the relevant variable
 declarations in the Solidity contract, you should see that our variable
@@ -268,7 +279,7 @@ of Solidity:
       </step>
     !*/
     // a handy definition to query the whole state in REPL at once
-    def state = { minter: minter, balances: balances }
+    val state = { minter: minter, balances: balances }
     /*!
       <step>
         <title>Declare operators over states</title>
@@ -278,13 +289,13 @@ It is often convenient to define a few helper operators.
 
 We start with the definition of `state` that represents the entire
 state as a record. This is what we do in the above code with the definition of
-`state`. Notice that the definition of `state` is not `pure` anymore. It is
-referring to the state variables and thus cannot be pure.
+`state`. Notice that the definition of `state` is prefixed with `val`, not `pure val`.
+Since `state` accesses state variables is it impure.
 
 You can try to evaluate the definition of `state` in REPL right away:
 
-            <run target="markdown">echo "state" | quint -r coin.qnt::Coin</run>
-            <run target="codetour">echo "state" | quint -r ./lesson3-anatomy/coin.qnt::Coin</run>
+            <run target="markdown">echo "state" | quint -r coin.qnt::coin</run>
+            <run target="codetour">echo "state" | quint -r ./lesson3-anatomy/coin.qnt::coin</run>
 
             <block>
 If you tried that, you saw several error messages. The reason is that the state
@@ -321,9 +332,8 @@ pieces:
  - The definition of `totalSupply` defines a value, but not a `pure` one.
    Hence, even though `totalSupply` does not take any parameters,
    it implicitly depends on the state. As a result, `totalSupply`
-   may evaluate to different values
-   in different states, that is, in those states where the values of
-   `balances` differ.
+   may evaluate to different values in different states, that is,
+   in those states where the values of `balances` differ.
 
  - `ADDR.fold(0, f)` iterates over the set of addresses in *some order*
    and for every address `a`, it applies `f(s, a)` for the accumulator value `s`,
@@ -421,8 +431,8 @@ evaluated completely (and only if `init` evaluated to `true`).
 
 Now we can call `init` and evaluate an initialized state in REPL:
 
-            <run target="markdown">echo "init\n state" | quint -r coin.qnt::Coin</run>
-            <run target="codetour">echo "init\n state" | quint -r ./lesson3-anatomy/coin.qnt::Coin</run>
+            <run target="markdown">echo "init\n state" | quint -r coin.qnt::coin</run>
+            <run target="codetour">echo "init\n state" | quint -r ./lesson3-anatomy/coin.qnt::coin</run>
 
             <block>
 **Exercise:** Call `init` multiple times in REPL and evaluate `state` after
@@ -489,8 +499,8 @@ the explanation:
 
 Now it's time to mint some coins in REPL! Try the following:
 
-            <run target="markdown">echo 'init\n mint(minter, "bob", 2023)\n state' | quint -r coin.qnt::Coin</run>
-            <run target="codetour">echo 'init\n mint(minter, "bob", 2023)\n state' | quint -r ./lesson3-anatomy/coin.qnt::Coin</run>
+            <run target="markdown">echo 'init\n mint(minter, "bob", 2023)\n state' | quint -r coin.qnt::coin</run>
+            <run target="codetour">echo 'init\n mint(minter, "bob", 2023)\n state' | quint -r ./lesson3-anatomy/coin.qnt::coin</run>
 
             <block>
 As you can see, we can mint coins for Bob.
@@ -540,8 +550,8 @@ figure out the behavior of `send`.
 
 Play with `mint` and `send` in REPL! The simplest scenario would be:
 
-            <run target="markdown">echo 'init\n mint(minter, "bob", 2023)\n send("bob", "eve", 1024)\n state' | quint -r coin.qnt::Coin</run>
-            <run target="codetour">echo 'init\n mint(minter, "bob", 2023)\n send("bob", "eve", 1024)\n state' | quint -r ./lesson3-anatomy/coin.qnt::Coin</run>
+            <run target="markdown">echo 'init\n mint(minter, "bob", 2023)\n send("bob", "eve", 1024)\n state' | quint -r coin.qnt::coin</run>
+            <run target="codetour">echo 'init\n mint(minter, "bob", 2023)\n send("bob", "eve", 1024)\n state' | quint -r ./lesson3-anatomy/coin.qnt::coin</run>
 
         </description>
         <file>$file</file>
@@ -623,8 +633,8 @@ is in the range from `0` to `MAX_UINT` (inclusive).
 
 We can immediately check this invariant for a few states:
 
-            <run target="markdown">echo 'init\n balancesRangeInv\n mint(minter, "bob", 2023)\n balancesRangeInv\n send("bob", "eve", 1024)\n balancesRangeInv\n ' | quint -r coin.qnt::Coin</run>
-            <run target="codetour">echo 'init\n balancesRangeInv\n mint(minter, "bob", 2023)\n balancesRangeInv\n send("bob", "eve", 1024)\n balancesRangeInv\n ' | quint -r ./lesson3-anatomy/coin.qnt::Coin</run>
+            <run target="markdown">echo 'init\n balancesRangeInv\n mint(minter, "bob", 2023)\n balancesRangeInv\n send("bob", "eve", 1024)\n balancesRangeInv\n ' | quint -r coin.qnt::coin</run>
+            <run target="codetour">echo 'init\n balancesRangeInv\n mint(minter, "bob", 2023)\n balancesRangeInv\n send("bob", "eve", 1024)\n balancesRangeInv\n ' | quint -r ./lesson3-anatomy/coin.qnt::coin</run>
 
             <block>
 Properties like `balancesRangeInv` are called *invariants*, because we expect
@@ -721,8 +731,8 @@ then the action `send(...)` is run. Since this action is composed with
 
 Go ahead and see if this test goes through:
 
-            <run target="markdown">echo 'sendWithoutMintTest' | quint -r coin.qnt::Coin</run>
-            <run target="codetour">echo 'sendWithoutMintTest' | quint -r ./lesson3-anatomy/coin.qnt::Coin</run>
+            <run target="markdown">echo 'sendWithoutMintTest' | quint -r coin.qnt::coin</run>
+            <run target="codetour">echo 'sendWithoutMintTest' | quint -r ./lesson3-anatomy/coin.qnt::coin</run>
 
             <block>
 **Exercise:** Actually, if you look carefully at the code of `send`,
@@ -756,8 +766,8 @@ in normal programming languages. For instance, the above test `mintSendTest`
 makes sure that the exact sequence of `mint` and `send` transactions goes
 through and the resulting balances have the expected values.
 
-            <run target="markdown">echo 'mintSendTest' | quint -r coin.qnt::Coin</run>
-            <run target="codetour">echo 'mintSendTest' | quint -r ./lesson3-anatomy/coin.qnt::Coin</run>
+            <run target="markdown">echo 'mintSendTest' | quint -r coin.qnt::coin</run>
+            <run target="codetour">echo 'mintSendTest' | quint -r ./lesson3-anatomy/coin.qnt::coin</run>
 
             <block>
 **Exercise:** Change some numbers in the test, run it again in REPL and observe
@@ -814,8 +824,8 @@ If she does not, we simply ignore this choice of inputs in the else-branch.
 
 Let's run this test:
 
-            <run target="markdown">echo 'mintTwiceThenSendTest' | quint -r coin.qnt::Coin</run>
-            <run target="codetour">echo 'mintTwiceThenSendTest' | quint -r ./lesson3-anatomy/coin.qnt::Coin</run>
+            <run target="markdown">echo 'mintTwiceThenSendTest' | quint -r coin.qnt::coin</run>
+            <run target="codetour">echo 'mintTwiceThenSendTest' | quint -r ./lesson3-anatomy/coin.qnt::coin</run>
             
             <block>
 
@@ -859,8 +869,8 @@ Quint REPL actually supports random search for sequences of actions that violate
 an invariant. Its UX is a bit ad hoc at the moment. We will improve it in the
 future. You can try it right away:
 
-            <run target="markdown">echo '_test(10000, 10, "init", "step", "totalSupplyDoesNotOverflowInv")' | quint -r coin.qnt::Coin</run>
-            <run target="codetour">echo '_test(10000, 10, "init", "step", "totalSupplyDoesNotOverflowInv")' | quint -r ./lesson3-anatomy/coin.qnt::Coin</run>
+            <run target="markdown">echo '_test(10000, 10, "init", "step", "totalSupplyDoesNotOverflowInv")' | quint -r coin.qnt::coin</run>
+            <run target="codetour">echo '_test(10000, 10, "init", "step", "totalSupplyDoesNotOverflowInv")' | quint -r ./lesson3-anatomy/coin.qnt::coin</run>
 
             <block>
 
