@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.6.0 -- 2023-02-22
+
+### Added
 
 - command `test` to run unit tests (#634)
 - option `--with-lookup` of the command `parse` (#639)
