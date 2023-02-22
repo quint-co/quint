@@ -174,11 +174,22 @@ function bindVariables(name: string, variables: Variables): Either<string, Subst
   }
 }
 
-function variablesNames(variables: Variables): string[] {
+export function variablesNames(variables: Variables): string[] {
   switch (variables.kind) {
     case 'concrete': return []
     case 'quantified': return [variables.name]
     case 'union': return variables.variables.flatMap(variablesNames)
+  }
+}
+
+export function stateVariables(variables: Variables): StateVariable[] {
+  switch (variables.kind) {
+    case 'quantified':
+      return []
+    case 'concrete':
+      return variables.vars
+    case 'union':
+      return variables.variables.flatMap(stateVariables)
   }
 }
 
