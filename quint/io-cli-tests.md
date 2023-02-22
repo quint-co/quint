@@ -266,3 +266,26 @@ quint test --main counters --seed 1 \
 
 ```
 
+### Repl evaluates coin
+
+This is a regression test for #648.
+
+<!-- !test in repl evaluates coin -->
+```
+cat <<EOF \
+  | quint -r ../examples/solidity/Coin/coin.qnt::coin 2>&1 \
+  | tail -n +3
+init
+balances
+EOF
+```
+
+<!-- !test out repl evaluates coin -->
+```
+true
+
+>>> true
+>>> Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0)
+>>> 
+```
+

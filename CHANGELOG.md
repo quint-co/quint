@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - REPL avoid name clashes in different modules (#621)
 - REPL session is now a proper Quint file (#621)
+- A regression in REPL caused by multiple modules (#650)
 
 ### Security
 

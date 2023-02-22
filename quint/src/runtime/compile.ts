@@ -130,6 +130,7 @@ export function
     // Compile all modules
     reorderedModules.forEach(module => {
       visitor.switchModule(module.id,
+                           module.name,
                            lookupTable.get(module.name)!,
                            treeFromModule(module))
       module.defs.forEach(def => walkDefinition(visitor, def))

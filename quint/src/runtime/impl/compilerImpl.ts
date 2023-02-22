@@ -12,9 +12,8 @@
 import { strict as assert } from 'assert'
 import { Maybe, just, merge, none } from '@sweet-monads/maybe'
 import { List, OrderedMap, Set } from 'immutable'
-import { range } from 'lodash'
 
-import { LookupTable, newTable, lookupValue } from '../../lookupTable'
+import { LookupTable, lookupValue, newTable } from '../../lookupTable'
 import { IRVisitor } from '../../IRVisitor'
 import { ScopeTree } from '../../scoping'
 import { TypeScheme } from '../../types/base'
@@ -24,7 +23,6 @@ import {
 } from '../runtime'
 
 import * as ir from '../../quintIr'
-import { QuintType } from '../../quintTypes'
 
 import { RuntimeValue, rv } from './runtimeValue'
 
@@ -43,8 +41,8 @@ import { lastTraceName } from '../compile'
  * the type checker yet, computations may fail with weird JavaScript errors.
  */
 export class CompilerVisitor implements IRVisitor {
-  // the id of the current module
-  private moduleId: bigint = 0n
+  // the id and name of the current module
+  private currentModule: { id: bigint, name: string } = { id: 0n, name: "_" }
   // the lookup table to use for the module
   private lookupTable: LookupTable = newTable({})
   // the scope tree to be used with the lookup table
@@ -89,13 +87,12 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   switchModule(moduleId: bigint,
+               moduleName: string,
                lookupTable: LookupTable,
                scopeTree: ScopeTree) {
-    this.moduleId = moduleId
+    this.currentModule = { id: moduleId, name: moduleName }
     this.lookupTable = lookupTable
     this.scopeTree = scopeTree
-    this.vars = []
-    this.nextVars = []
   }
 
   /**
@@ -156,21 +153,24 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   exitVar(vardef: ir.QuintVar) {
+    // use the qualified name,
+    // as different modules may contain state variables of the same name
+    const qname = `${this.currentModule.name}::${vardef.name}`
     // simply introduce two registers:
     //  one for the variable, and
     //  one for its next-state version
     const prevRegister =
-      mkRegister('var', vardef.name, none(),
-        () => this.addRuntimeError(vardef.id, `Variable ${vardef.name} is not set`))
+      mkRegister('var', qname, none(),
+        () => this.addRuntimeError(vardef.id, `Variable ${qname} is not set`))
     this.vars.push(prevRegister)
     // at the moment, we have to refer to variables both via id and name
-    this.context.set(kindName('var', vardef.name), prevRegister)
+    this.context.set(kindName('var', qname), prevRegister)
     this.context.set(kindName('var', vardef.id), prevRegister)
-    const nextRegister = mkRegister('nextvar', vardef.name, none(),
-      () => this.addRuntimeError(vardef.id, `${vardef.name}' is not set`))
+    const nextRegister = mkRegister('nextvar', qname, none(),
+      () => this.addRuntimeError(vardef.id, `${qname}' is not set`))
     this.nextVars.push(nextRegister)
     // at the moment, we have to refer to variables both via id and name
-    this.context.set(kindName('nextvar', nextRegister.name), nextRegister)
+    this.context.set(kindName('nextvar', qname), nextRegister)
     this.context.set(kindName('nextvar', vardef.id), nextRegister)
   }
 
@@ -1289,6 +1289,12 @@ export class CompilerVisitor implements IRVisitor {
       return rv.mkRecord(map)
     }
 
+    // lookup a callable by name in the current module
+    const lookup = (name: string) => {
+      return this.contextLookup(name,
+                                this.currentModule.id, ['callable']) ?? fail
+    }
+
     const args = this.compStack.splice(-5)
     // run simulation when invoked
     const doRun = (): Maybe<EvalResult> => {
@@ -1311,8 +1317,7 @@ export class CompilerVisitor implements IRVisitor {
             trace = []
             // check Init()
             const initName = (initRes as RuntimeValue).toStr()
-            const init =
-              this.contextLookup(initName, this.moduleId, ['callable']) ?? fail
+            const init = lookup(initName)
             if (isTrue(init.eval())) {
               // The initial action evaluates to true.
               // Our guess of values was good.
@@ -1320,16 +1325,14 @@ export class CompilerVisitor implements IRVisitor {
               trace.push(varsToRecord())
               // check the invariant Inv
               const invName = (invRes as RuntimeValue).toStr()
-              const inv =
-                this.contextLookup(invName, this.moduleId, ['callable']) ?? fail
+              const inv = lookup(invName)
               if (!isTrue(inv.eval())) {
                 errorFound = true
               } else {
                 // check all { Next(), shift(), Inv } in a loop
                 const nsteps = (nstepsRes as RuntimeValue).toInt()
                 const nextName = (nextRes as RuntimeValue).toStr()
-                const next =
-                  this.contextLookup(nextName, this.moduleId, ['callable']) ?? fail
+                const next = lookup(nextName)
                 for (let i = 0; !errorFound && i < nsteps; i++) {
                   if (isTrue(next.eval())) {
                     this.shiftVars()

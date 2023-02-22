@@ -912,7 +912,7 @@ describe('compiling specs to runtime values', () => {
         |run run1 = (n' = 1).then(n' = n + 2).then(n' = n * 4)
         `)
 
-      assertVarAfterRun('run1', 'n', '12', input)
+      assertVarAfterRun('run1', '__runtime::n', '12', input)
     })
 
     it('repeated', () => {
@@ -921,7 +921,7 @@ describe('compiling specs to runtime values', () => {
         |run run1 = (n' = 1).then((n' = n + 1).repeated(3))
         `)
 
-      assertVarAfterRun('run1', 'n', '4', input)
+      assertVarAfterRun('run1', '__runtime::n', '4', input)
     })
 
     it('fail', () => {
