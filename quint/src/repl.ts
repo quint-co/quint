@@ -14,12 +14,12 @@ import { readFileSync, writeFileSync } from 'fs'
 import lineColumn from 'line-column'
 import chalk from 'chalk'
 
-import { Maybe, just, none } from '@sweet-monads/maybe'
-import { Either, left, right } from '@sweet-monads/either'
+import { just } from '@sweet-monads/maybe'
+import { left, right } from '@sweet-monads/either'
 
 import { IrErrorMessage, QuintEx } from './quintIr'
 import {
-  CompilationContext, compile, contextLookup, lastTraceName
+  CompilationContext, compileFromCode, contextLookup, lastTraceName
 } from './runtime/compile'
 import { formatError } from './errorReporter'
 import {
@@ -501,7 +501,7 @@ ${textToAdd}
     const [moduleText, lineOffset] =
       prepareParserInput(`  action __input =\n${newInput}`)
     // compile the expression or definition and evaluate it
-    const context = compile(moduleText, '__repl__')
+    const context = compileFromCode(moduleText, '__repl__')
     if (context.syntaxErrors.length > 0 ||
         context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
       printErrors(moduleText, context, lineOffset)
@@ -552,7 +552,7 @@ ${textToAdd}
     // embed expression text into a module at the top level
     const [moduleText, lineOffset] = prepareParserInput(newInput)
     // compile the module and add it to history if everything worked
-    const context = compile(moduleText, '__repl__')
+    const context = compileFromCode(moduleText, '__repl__')
     if (context.values.size === 0 ||
         context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
       printErrors(moduleText, context, lineOffset)

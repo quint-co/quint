@@ -57,7 +57,7 @@ the details, check [coin.qnt](./coin.qnt).
 **Code snippet:**
 
 ```scala
-module Coin {
+module coin {
 ```
 
 
@@ -99,7 +99,7 @@ type [name] = [tp];
 ```
 
 In the above definition, `[name]` is a unique identifier that will be associated
-with the type, and `[type]` is the type to be associated with the name, e.g.,
+with the type, and `[tp]` is the type to be associated with the name, e.g.,
 `int` or `Set[int]`. To see a complete description of all available types, visit the Section
 [Type System 1.2](https://github.com/informalsystems/quint/blob/main/doc/lang.md#type-system-12)
 of the language manual.
@@ -144,27 +144,28 @@ The main property of pure values is that they always return the same value.
 Pure definitions always return the same value, if they are supplied with the
 same arguments.
 
-To see that no state is needed, evaluate these definitions in REPL:
+To see that no state is needed, evaluate these definitions in the REPL
+(read-evaluate-print-loop):
 
             
 
 ```sh
-echo "MAX_UINT" | quint -r coin.qnt::Coin
+echo "MAX_UINT" | quint -r coin.qnt::coin
 ```
 
 
 ```sh
-echo "isUInt(22)" | quint -r coin.qnt::Coin
+echo "isUInt(22)" | quint -r coin.qnt::coin
 ```
 
 
 ```sh
-echo "isUInt(-1)" | quint -r coin.qnt::Coin
+echo "isUInt(-1)" | quint -r coin.qnt::coin
 ```
 
 
 ```sh
-echo "isUInt(MAX_UINT + 1)" | quint -r coin.qnt::Coin
+echo "isUInt(MAX_UINT + 1)" | quint -r coin.qnt::coin
 ```
 
 
@@ -213,9 +214,18 @@ still make sense. The typical parameters are:
  - timeout values.
 
 For this purpose, Quint offers `const` declarations. You can see one of them
-in the commented out section of the code above. Constant declarations are not
-fully supported yet. They will be available as soon as the issue
-[#528](https://github.com/informalsystems/quint/issues/528) is closed.
+in the commented out section of the code above. You may be wondering, what is
+the difference between `const` and `pure val`. Both declare a value that stays the same throughout the execution of a computation, but the time at which they are bound to values differs:
+
+ - The `pure val` values are immediately defined via an expression in the
+   right-hand side.
+
+ - The `const` values are first declared and later they are substituted
+   with actual values via an `instance` declaration.
+
+**Note:** Constant declarations are not fully supported yet. They will be available
+as soon as the issue [#528](https://github.com/informalsystems/quint/issues/528)
+is closed.
 
 At the moment, we simply declare the value for a small set of addresses `ADDR`,
 in order to be able to iterate on the protocol specification quickly.
@@ -246,9 +256,7 @@ a state of the protocol. In the above code, we introduce two such variables:
    The type of this variable is `Addr -> UInt`, which means a map from
    values of type `Addr` to values of type `UInt`.
 
-In contrast to operator definitions, variable definitions always require
-a type. Otherwise, it may be too hard for the type checker to infer the
-types of the state variables.
+Variable definitions always require a type.
 
 If you compare the above variable definitions to the relevant variable
 declarations in the Solidity contract, you should see that our variable
@@ -270,7 +278,7 @@ of Solidity:
 
 ```scala
     // a handy definition to query the whole state in REPL at once
-    def state = { minter: minter, balances: balances }
+    val state = { minter: minter, balances: balances }
 ```
 
 
@@ -279,15 +287,15 @@ It is often convenient to define a few helper operators.
 
 We start with the definition of `state` that represents the entire
 state as a record. This is what we do in the above code with the definition of
-`state`. Notice that the definition of `state` is not `pure` anymore. It is
-referring to the state variables and thus cannot be pure.
+`state`. Notice that the definition of `state` is prefixed with `val`, not `pure val`:
+since `state` accesses state variables, is it impure.
 
 You can try to evaluate the definition of `state` in REPL right away:
 
             
 
 ```sh
-echo "state" | quint -r coin.qnt::Coin
+echo "state" | quint -r coin.qnt::coin
 ```
 
 
@@ -326,9 +334,8 @@ pieces:
  - The definition of `totalSupply` defines a value, but not a `pure` one.
    Hence, even though `totalSupply` does not take any parameters,
    it implicitly depends on the state. As a result, `totalSupply`
-   may evaluate to different values
-   in different states, that is, in those states where the values of `minter`
-   and `balances` differ.
+   may evaluate to different values in different states, that is,
+   in those states where the values of `balances` differ.
 
  - `ADDR.fold(0, f)` iterates over the set of addresses in *some order*
    and for every address `a`, it applies `f(s, a)` for the accumulator value `s`,
@@ -393,8 +400,9 @@ nondet sender = oneOf(ADDR)
 This expression non-deterministically chooses one value from the set `ADDR`
 (assuming that the set is not empty) and binds this value to the name `sender`.
 The qualifier `nondet` indicates that the value of `sender` is special: the
-value of `sender` evaluates to the same value in a single run, but *it may
-evaluate to two different values in two different runs*. This behavior may look
+name `sender` is bound to a fixed value, but `sender` *may evaluate to two
+different values* when `init` is called twice or is called in different runs.
+This behavior may look
 complicated, but this is exactly what we expect from user input, too:
 The user may submit different inputs, even if the protocol resides in
 two identical states.
@@ -432,7 +440,7 @@ Now we can call `init` and evaluate an initialized state in REPL:
             
 
 ```sh
-echo "init\n state" | quint -r coin.qnt::Coin
+echo "init\n state" | quint -r coin.qnt::coin
 ```
 
 
@@ -503,7 +511,7 @@ Now it's time to mint some coins in REPL! Try the following:
             
 
 ```sh
-echo 'init\n mint(minter, "bob", 2023)\n state' | quint -r coin.qnt::Coin
+echo 'init\n mint(minter, "bob", 2023)\n state' | quint -r coin.qnt::coin
 ```
 
 
@@ -557,7 +565,7 @@ Play with `mint` and `send` in REPL! The simplest scenario would be:
             
 
 ```sh
-echo 'init\n mint(minter, "bob", 2023)\n send("bob", "eve", 1024)\n state' | quint -r coin.qnt::Coin
+echo 'init\n mint(minter, "bob", 2023)\n send("bob", "eve", 1024)\n state' | quint -r coin.qnt::coin
 ```
 
 ## 13. Defining a protocol step
@@ -569,10 +577,6 @@ echo 'init\n mint(minter, "bob", 2023)\n send("bob", "eve", 1024)\n state' | qui
 ```scala
 
     // All possible behaviors of the protocol in one action.
-    // Note that random simulation produces valid inputs to this action with
-    // low probability, since the amounts are chosen at random.
-    // A symbolic model checker such as Apalache does not have any problem
-    // with this. Random simulation requires a more restricted version of step.
     action step: bool = {
         nondet sender = oneOf(ADDR)
         nondet receiver = oneOf(ADDR)
@@ -652,7 +656,7 @@ We can immediately check this invariant for a few states:
             
 
 ```sh
-echo 'init\n balancesRangeInv\n mint(minter, "bob", 2023)\n balancesRangeInv\n send("bob", "eve", 1024)\n balancesRangeInv\n ' | quint -r coin.qnt::Coin
+echo 'init\n balancesRangeInv\n mint(minter, "bob", 2023)\n balancesRangeInv\n send("bob", "eve", 1024)\n balancesRangeInv\n ' | quint -r coin.qnt::coin
 ```
 
 
@@ -757,7 +761,7 @@ Go ahead and see if this test goes through:
             
 
 ```sh
-echo 'sendWithoutMintTest' | quint -r coin.qnt::Coin
+echo 'sendWithoutMintTest' | quint -r coin.qnt::coin
 ```
 
 
@@ -796,7 +800,7 @@ through and the resulting balances have the expected values.
             
 
 ```sh
-echo 'mintSendTest' | quint -r coin.qnt::Coin
+echo 'mintSendTest' | quint -r coin.qnt::coin
 ```
 
 
@@ -857,7 +861,7 @@ Let's run this test:
             
 
 ```sh
-echo 'mintTwiceThenSendTest' | quint -r coin.qnt::Coin
+echo 'mintTwiceThenSendTest' | quint -r coin.qnt::coin
 ```
 
 
@@ -906,7 +910,7 @@ future. You can try it right away:
             
 
 ```sh
-echo '_test(10000, 10, "init", "step", "totalSupplyDoesNotOverflowInv")' | quint -r coin.qnt::Coin
+echo '_test(10000, 10, "init", "step", "totalSupplyDoesNotOverflowInv")' | quint -r coin.qnt::coin
 ```
 
 

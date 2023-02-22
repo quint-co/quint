@@ -9,33 +9,45 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import JSONbig from 'json-bigint'
-import { resolve } from 'path'
+import { basename, resolve } from 'path'
 import { cwd } from 'process'
+import seedrandom = require("seedrandom")
+import chalk from 'chalk'
 
-import { ErrorMessage, Loc, compactSourceMap, parsePhase1, parsePhase2 } from './quintParserFrontend'
-
+import {
+  ErrorMessage, Loc, compactSourceMap, parsePhase1, parsePhase2
+} from './quintParserFrontend'
 
 import { Either, left, right } from '@sweet-monads/either'
 import { Effect } from './effects/base'
 import { LookupTableByModule } from './lookupTable'
 import { ReplOptions, quintRepl } from './repl'
-import { OpQualifier, QuintModule } from './quintIr'
+import { OpQualifier, QuintModule, IrErrorMessage } from './quintIr'
 import { TypeScheme } from './types/base'
 import lineColumn from 'line-column'
 import { formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintAnalyzer } from './quintAnalyzer'
 import { QuintError, quintErrorToString } from './quintError'
+import { compileAndTest } from './runtime/testing'
 
-export type stage = 'loading' | 'parsing' | 'typechecking' | 'documentation'
+export type stage =
+  'loading' | 'parsing' | 'typechecking' | 'testing' | 'documentation'
 
 /** The data from a ProcedureStage that may be output to --out */
 interface OutputStage {
   stage: stage,
+  // the modules and the lookup table produced by 'parse'
   modules?: QuintModule[],
+  table?: LookupTableByModule,
+  // the tables produced by 'typecheck'
   types?: Map<bigint, TypeScheme>,
   effects?: Map<bigint, Effect>,
   modes?: Map<bigint, OpQualifier>,
+  // Test names output produced by 'test'
+  passed?: string[],
+  failed?: string[],
+  ignored?: string[],
   /* Docstrings by defintion name by module name */
   documentation?: Map<string, Map<string, DocumentationEntry>>,
   errors?: ErrorMessage[],
@@ -46,9 +58,25 @@ interface OutputStage {
 // Extract just the parts of a ProcedureStage that we use for the output
 // See https://stackoverflow.com/a/39333479/1187277
 function pickOutputStage(o: ProcedureStage): OutputStage {
-  const picker = ({ stage, warnings, modules, types, effects, errors, documentation }: ProcedureStage) => (
-    { stage, warnings, modules, types, effects, errors, documentation }
-  )
+  const picker = ({
+    stage, warnings, modules, table, types, effects, errors, documentation,
+    passed, failed, ignored,
+  }: ProcedureStage) => {
+    if (o.stage === 'parsing') {
+      if (o.args.withLookup) {
+        return { stage, warnings, modules, table, errors }
+      } else {
+        return { stage, warnings, modules, errors }
+      }
+    } else if (o.stage === 'testing') {
+      return { stage, errors, passed, failed, ignored }
+    } else {
+      return {
+        stage, warnings, modules, types, effects, errors,
+        passed, failed, ignored, documentation,
+      }
+    }
+  }
   return picker(o)
 }
 
@@ -72,6 +100,15 @@ interface TypecheckedStage extends ParsedStage {
   types: Map<bigint, TypeScheme>,
   effects: Map<bigint, Effect>,
   modes: Map<bigint, OpQualifier>,
+}
+
+interface TestedStage extends LoadedStage {
+  // the names of the passed tests
+  passed: string[],
+  // the names of the failed tests
+  failed: string[],
+  // the names of the ignored tests
+  ignored: string[],
 }
 
 interface DocumentationStage extends LoadedStage {
@@ -197,6 +234,113 @@ export function runRepl(_argv: any) {
 }
 
 /**
+ * Run the tests. We imitate the output of mocha.
+ *
+ * @param typedStage the procedure stage produced by `typecheck`
+ */
+export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
+  // output to the console, unless the json output is enabled
+  const isConsole = !prev.args.out
+  function out(text: string): void {
+    if (isConsole) {
+      console.log(text)
+    }
+  }
+
+  const testing = { ...prev, stage: 'testing' as stage }
+  const mainArg = prev.args.main
+  const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
+  const main = prev.modules.find(m => m.name === mainName)
+  if (!main) {
+    return left({
+      msg: `Module ${mainName} not found`,
+      stage: { ...prev, errors: [] },
+    })
+  } else {
+    let passed: string[] = []
+    let failed: string[] = []
+    let ignored: string[] = []
+    let namedErrors: [string, ErrorMessage][] = []
+
+    if (prev.args.seed !== undefined) {
+      seedrandom(prev.args.seed)
+    }
+    const startMs = Date.now()
+    out(`\n  ${mainName}`)
+
+    const matchFun =
+      (n: string): boolean => isMatchingTest(prev.args.match, n)
+
+    const testOut =
+      compileAndTest(prev.modules, main, prev.sourceMap,
+                     prev.table, prev.types, matchFun)
+    if (testOut.isRight()) {
+      const elapsedMs = Date.now() - startMs
+      const results = testOut.unwrap()
+      // output the status for every test
+      results.forEach(res => {
+        if (res.status === 'passed') {
+          out('    ' + chalk.green('ok ') + res.name)
+        }
+        if (res.status === 'failed') {
+          const errNo = namedErrors.length + 1
+          out('    ' + chalk.red(`${errNo}) `)  + res.name)
+
+          res.errors.forEach(e => {
+            const err = {
+              explanation: e.explanation,
+              locs: e.refs.map(id => prev.sourceMap.get(id)!),
+            }
+            namedErrors.push([res.name, err])
+          })
+        }
+      })
+
+      // output the statistics banner
+      const passed = results.filter(r => r.status === 'passed').map(r => r.name)
+      const failed = results.filter(r => r.status === 'failed').map(r => r.name)
+      const ignored = results.filter(r => r.status === 'ignored').map(r => r.name)
+      out('')
+      if (passed.length > 0) {
+        out(chalk.green(`  ${passed.length} passing`) +
+                    chalk.gray(` (${elapsedMs}ms)`))
+      }
+      if (failed.length > 0) {
+        out(chalk.red(`  ${failed.length} failed`))
+      }
+      if (ignored.length > 0) {
+        out(chalk.gray(`  ${ignored.length} ignored`))
+      }
+
+      // output errors, if there are any
+      if (isConsole && namedErrors.length > 0) {
+        const code = prev.sourceCode!
+        const finder = lineColumn(code)
+        out('')
+        namedErrors.forEach(([name, err], index) => {
+          const details = formatError(code, finder, err)
+          // output the header
+          out(`  ${index + 1}) ${name}:`)
+          const lines = details.split('\n')
+          // output the first line in red
+          if (lines.length > 0) {
+            out(chalk.red('      ' + lines[0]))
+          }
+          // and the rest in gray
+          lines.slice(1).forEach(line => {
+            out(chalk.gray('      ' + line))
+          })
+        })
+        out('')
+      }
+    } // else: we have handled the case of module not found already
+
+    const errors = namedErrors.map(([_, e]) => e)
+    return right({ ...testing, passed, failed, ignored, errors })
+  }
+}
+
+/**
  * Produces documentation from docstrings in a Quint specification.
  *
  * @param loaded the procedure stage produced by `load`
@@ -285,4 +429,21 @@ function writeToJson(filename: string, json: any) {
 function writeToFile(filename: string, text: string) {
   const path = resolve(cwd(), filename)
   writeFileSync(path, text)
+}
+
+/**
+ * Does a definition name match the expected test criteria.
+ *
+ * @param tests an optional array of test names
+ * @param name the name of a definition to match
+ * @returns whether the name matches the tests, if tests are not undefined,
+ *          or name ends with 'Test'
+ *
+ */
+function isMatchingTest(match: string | undefined, name: string) {
+  if (match) {
+    return new RegExp(match).exec(name) !== null
+  } else {
+    return name.endsWith('Test')
+  }
 }

@@ -1,0 +1,144 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "Lesson 3 - Basic anatomy of a protocol in Quint",
+  "steps": [
+    {
+      "title": "Introduction",
+      "description": "\nIn this tutorial, we explain the standard structure of a Quint protocol.\nAlthough Quint does not impose a very rigid structure on protocol designers,\nwe have found that following common practices helps protocol authors and\ntheir readers to cooperate more effectively.\n\nAs a running example, we are using the subcurrency smart contract that\nis introduced in the Solidity documentation, see\n[Subcurrency](https://docs.soliditylang.org/en/v0.8.17/introduction-to-smart-contracts.html#subcurrency-example).\nYou do not have to know Solidity to understand this tutorial.\nOn the contrary, you may acquire some basic understanding of Solidity contracts\nby reading the Quint protocol specification.\n\nThe subcurrency smart contract defines a basic protocol that has the following features:\n\n - A single user (the protocol creator) is assigned the \"minter\" role.\n\n - The minter may generate new coins on the balances of the users, including themselves.\n\n - The users may send coins to other users, provided that they have enough coins\n   on their balance.\n\nIn this tutorial, you will see how to:\n\n - Specify basic type aliases.\n\n - Define handy functions that can be used independently of the protocol.\n\n - Define the structure of the protocol states.\n\n - Define helper functions that read the current state, but do not modify it.\n\n - Define actions that read and modify the current state of the protocol.\n\n - Define basic protocol invariants.\n\n - Write basic protocol tests.\n\n - Write protocol tests that use input non-determinism.\n\n - Run a basic randomized test to discover an invariant violation.\n\n        \n        ",
+      "line": 17,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Declare a single module",
+      "description": "\nQuint specifications are organized in modules, and may consist of one or many\ntop-level module declarations.\nNested module declarations are currently not supported.\n\nIn this tutorial, we declare a single module. In general, we recommend to start\nwith a single module and introduce multiple modules only if you are going to\nreuse various parts of your protocol.\n        ",
+      "line": 18,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Declare types",
+      "description": "\nSimilar to programming languages, it is common in Quint to declare type\naliases for the types that appear in the protocol description often.\nA type alias is simply a declaration of the form:\n\n```scala\ntype [name] = [tp];\n```\n\nIn the above definition, `[name]` is a unique identifier that will be associated\nwith the type, and `[tp]` is the type to be associated with the name, e.g.,\n`int` or `Set[int]`. To see a complete description of all available types, visit the Section\n[Type System 1.2](https://github.com/informalsystems/quint/blob/main/doc/lang.md#type-system-12)\nof the language manual.\n\nAlthough it is convenient to declare type aliases, it is not mandatory.\nProtocol authors should decide together with their audience, whether they prefer\nminimal type definitions, or they like abundance of types. Quint replaces type aliases\nwith the types on the right-hand sides of `type`. For example, it does not distinguish between\ndifferent kinds of \"integers\", when they are referred to via different type aliases.\n        ",
+      "line": 29,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Declare pure functions",
+      "description": "\n\nIt often happens that a protocol requires auxilliary definitions that do not\ndepend on the protocol state, but only on the values of their parameters.\nSuch computations are often called \"pure\". In the above code, we define two\npure definitions:\n \n - The pure value `MAX_UINT`.\n\n - The pure definition `isUInt` that computes if a given integer `i` is within\n   the range from 0 to MAX_UINT (inclusive).\n\nThe main property of pure values is that they always return the same value.\nPure definitions always return the same value, if they are supplied with the\nsame arguments.\n\nTo see that no state is needed, evaluate these definitions in REPL\n(read-evaluate-print-loop):\n\n            \n>> echo \"MAX_UINT\" | quint -r ./lesson3-anatomy/coin.qnt::coin\n\n\n>> echo \"isUInt(22)\" | quint -r ./lesson3-anatomy/coin.qnt::coin\n\n\n>> echo \"isUInt(-1)\" | quint -r ./lesson3-anatomy/coin.qnt::coin\n\n\n>> echo \"isUInt(MAX_UINT + 1)\" | quint -r ./lesson3-anatomy/coin.qnt::coin\n\n\n\nThe functional layer is actually quite powerful; a lot of protocol behavior can\nbe defined here without referring to protocol state.\n\nAs you can see, we have omitted the type of `MAX_UINT` but specified the type of\n`isUInt`. Most of the time, the type checker can infer the types of values and\noperator definitions, and giving additional type annotations is up to you. In\nrare cases, the type checker may get confused, and then explicit type\nannotations will help you in figuring out the issue.\n            ",
+      "line": 38,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Declare the protocol parameters",
+      "description": "\n\nIn this step, we are starting to describe the protocol structure and behavior\nin terms of a state machine.        \n\nIt often happens that protocols are parameterized in the sense that the protocol\nmay be instantiated for different parameter values, and different instances\nstill make sense. The typical parameters are:\n\n - the set of all possible addresses,\n\n - the address that performs a special role,\n\n - minimal and maximal values,\n\n - timeout values.\n\nFor this purpose, Quint offers `const` declarations. You can see one of them\nin the commented out section of the code above. You may be wondering, what is\nthe difference between `const` and `pure val`. They mean to express the same\nconcept: A value that stays the same for all computations. However, they differ\nin the time when they are bound to a value:\n\n - The `pure val` values are immediately defined via an expression in the\n   right-hand side.\n\n - The `const` values are first declared and later they are substituted\n   with actual values via an `instance` declaration.\n\nConstant declarations are not fully supported yet. They will be available\nas soon as the issue [#528](https://github.com/informalsystems/quint/issues/528)\nis closed.\n\nAt the moment, we simply declare the value for a small set of addresses `ADDR`,\nin order to be able to iterate on the protocol specification quickly.\n        ",
+      "line": 47,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Declare the protocol state",
+      "description": "\n\nAs a next step, we declare state variables, which together represent\na state of the protocol. In the above code, we introduce two such variables:\n\n - The variable `minter` to store the minter's address.\n   The type of this variable is `Addr`.\n\n - The variable `balances` to store the balances of all users.\n   The type of this variable is `Addr -> UInt`, which means a map from\n   values of type `Addr` to values of type `UInt`.\n\nVariable definitions always require type. Otherwise, it may be too hard\nfor the type checker to infer the types of the state variables.\n\nIf you compare the above variable definitions to the relevant variable\ndeclarations in the Solidity contract, you should see that our variable\ndeclarations are conceptually similar, modulo the slightly different syntax\nof Solidity:\n\n\n```Solidity\n    // in Solidity:\n    address public minter;\n    mapping (address => uint) public balances;\n```    \n        ",
+      "line": 52,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Declare operators over states",
+      "description": "\n\nIt is often convenient to define a few helper operators.\n\nWe start with the definition of `state` that represents the entire\nstate as a record. This is what we do in the above code with the definition of\n`state`. Notice that the definition of `state` is prefixed with `val`, not `pure val`.\nSince `state` accesses state variables is it impure.\n\nYou can try to evaluate the definition of `state` in REPL right away:\n\n            \n>> echo \"state\" | quint -r ./lesson3-anatomy/coin.qnt::coin\n\n\n\nIf you tried that, you saw several error messages. The reason is that the state\nvariables are not initialized by default. We would have to introduce an\ninitialization action, which is usually called `init`. You will see how to\ndo that a few steps later.\n            ",
+      "line": 54,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Declare `require` and `totalSupply`",
+      "description": "\n\nIn the above code, we introduce a helper definition `require` that\nevaluates its Boolean parameter. As you might have noticed, this\ndefinition is not doing anything useful. We introduce it to make the code\na bit more accessible for first-time readers who are familiar with\nSolidity.\n\nThe definition of `totalSupply` may look a bit complex,\nif you have never seen similar code before. Let's break it down into smaller\npieces:\n\n - The definition of `totalSupply` defines a value, but not a `pure` one.\n   Hence, even though `totalSupply` does not take any parameters,\n   it implicitly depends on the state. As a result, `totalSupply`\n   may evaluate to different values in different states, that is,\n   in those states where the values of `balances` differ.\n\n - `ADDR.fold(0, f)` iterates over the set of addresses in *some order*\n   and for every address `a`, it applies `f(s, a)` for the accumulator value `s`,\n   which is initialized with 0. In our example, the operator `f` is defined as\n   an anonymous lambda operator: `(sum, a) => sum + balances.get(a)`. For our\n   definition of `ADDR`, the computed value would be equal to:\n\n   ```scala\n    ((((0 + balances.get(\"null\")) + balances.get(\"alice\")) + balances.get(\"bob\"))\n      + balances.get(\"charlie\")) + balances.get(\"eve\")\n   ```\n\n   *Note that the order of the addresses in the brackets may be different from\n   the one above. Hence, you should not rely on a particular order when\n   using `fold` over sets. We are fine when using commutative operators such as `+` and `*`.*\n\n        ",
+      "line": 60,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Declare an initializer `init`",
+      "description": "\n\nAs you may have seen in the previous steps, the state variables `minter` and `balances`\nare not initialized by default. In order to compute an initial state (there may be\nseveral!), we define a special action that we call an *initializer*. In our\ncode, such an action is called `init`.\n\nThis definition is essential for describing the protocol. When you read somebody else's\nprotocol, it is one of the key parts to look at.\n\nIf we go back to the Solidity code, it looks as follows:\n\n```Solidity\n    // in Solidity\n    constructor() {\n        minter = msg.sender;\n    }\n```\n\nIn the Solidity code, the constructor is using an implicit parameter `msg.sender`,\nwhich is propagated from a user request by the Ethereum Virtual Machine. Quint\ndoes not have any built-in mechanism for reading user input. Instead, Quint\noffers a very powerful mechanism of non-deterministic choice. This is\nexactly what we do with the following line of code:\n\n```scala\nnondet sender = oneOf(ADDR)\n```\n\nThis expression non-deterministically chooses one value from the set `ADDR`\n(assuming that the set is not empty) and binds this value to the name `sender`.\nThe qualifier `nondet` indicates that the value of `sender` is special: the\nname `sender` is bound to a fixed value, but `sender` *may evaluate to two\ndifferent values* when `init` is called twice or is called in different runs.\nThis behavior may look\ncomplicated, but this is exactly what we expect from user input, too:\nThe user may submit different inputs, even if the protocol resides in\ntwo identical states.\n\nFor more details, check\n[oneOf](https://github.com/informalsystems/quint/blob/main/doc/builtin.md#pure-def-oneof-seta--a)\nin the reference manual.\n\n        ",
+      "line": 66,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Assign initial values to the state variables",
+      "description": "\n\nThe rest of `init` is simple:\nThe value of `minter` is set to the value of `sender`, and the value\nof `balances` is set to the map that maps all addresses from `ADDR`\nto value 0. Notice that the variables `minter` and `balances` are not assigned\ntheir new values immediately; they are assigned once `init` is\nevaluated completely (and only if `init` evaluated to `true`).\n\nNow we can call `init` and evaluate an initialized state in REPL:\n\n            \n>> echo \"init\\n state\" | quint -r ./lesson3-anatomy/coin.qnt::coin\n\n\n\n**Exercise:** Call `init` multiple times in REPL and evaluate `state` after\neach call. Did you get the same initial states every time or were some states\ndifferent?\n\nRemember that we called `init` an initializer? This is because `init`\nonly assigns new values to state variables, but does not read their previous values.\n\n**Exercise:** Modify the assignment to `balances` in such a way that `minter`\ngets 1000 coins, while the other addresses get 0 coins, as before.\nHint: use `if (cond) value1 else value2`.\n            ",
+      "line": 71,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Defining the action `send`",
+      "description": "\n\nSimilar to Solidity, we define the action `mint`. In contrast to `init`,\nwe have decided to avoid non-deterministic choice in `mint`.\nInstead we are passing the user inputs as action parameters. You will see\nlater that this makes debugging and testing easier.\n\nIf you understood how `init` works, the behavior of `mint` should be also\neasy to figure out. If you wonder what `get` and `set` are doing, here is\nthe explanation:\n\n - `balances.get(receiver)` produces the value assigned to the key `receiver`\n   in the map `balances`. If the key `receiver` has no value assigned in\n   the map `balances`, REPL would show a runtime error.\n   For more details, check\n   [get](https://github.com/informalsystems/quint/blob/main/doc/builtin.md#pure-def-get-a---b-a--b)\n   in the reference manual.\n\n - `balances.set(receiver, newBal)` produces a new map, that assigns\n   the value of `newBal` to the key `receiver`, and keeps the other key-value\n   pairs as in `balances`.\n   For more details, check\n   [set](https://github.com/informalsystems/quint/blob/main/doc/builtin.md#pure-def-set-a---b-a-b--a---b)\n   in the reference manual.\n\nNow it's time to mint some coins in REPL! Try the following:\n\n            \n>> echo 'init\\n mint(minter, \"bob\", 2023)\\n state' | quint -r ./lesson3-anatomy/coin.qnt::coin\n\n\n\nAs you can see, we can mint coins for Bob.\n\n**Exercise:** Mint more coins for Bob, actually, mint `MAX_UINT` coins.\nDo you understand what happened in this case?\n            ",
+      "line": 88,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Defining the action `send`",
+      "description": "\n\nIf you understood the mechanics of the action `mint`, you should easily\nfigure out the behavior of `send`.\n\nPlay with `mint` and `send` in REPL! The simplest scenario would be:\n\n            \n>> echo 'init\\n mint(minter, \"bob\", 2023)\\n send(\"bob\", \"eve\", 1024)\\n state' | quint -r ./lesson3-anatomy/coin.qnt::coin\n\n",
+      "line": 114,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Defining a protocol step",
+      "description": "\n\nFinally, we can put together `mint` and `send` to describe every possible\ntransition of the protocol! To this end, we non-deterministically choose\nthe sender, the receiver, and the amount (from the set of integers from 0\nto `MAX_UINT`, inclusive). The expression `any { ... }` executes one of its\narguments; if both could be executed, one of them is executed\nnon-deterministically.\n\n**Exercise:** Run REPL, execute `init` once and execute `step` multiple times.\nDo you understand why some of the occurrences of `step` evaluate to `false`\nand some evaluate to `true`? It may help you, if you print `state` after `init`\nand `step`.\n\nWe have defined the state variables, the initializer, and a step of the protocol.\nThis is the minimal set of tasks for defining a working protocol.\nWhat we have achieved here is great! You can play with the protocol, feed it\nwith different parameters in REPL, and experiment with your protocol.\n\nAlthough you should definitely play with the protocol at this point, we urge you\nnot to stop here! In the next steps, we show you the real magic of Quint.\n        ",
+      "line": 126,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Expected properties",
+      "description": "\n\nHaving defined the protocol behavior with `init` and `step`, it is time to think\nabout what we expect from the protocol. This is a good place for specifying\nprotocol invariants and temporal properties.\n\n        ",
+      "line": 128,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Defining the most basic invariant",
+      "description": "\n\nOne of the most basic properties that we expect from the protocol is defined\nby the property `balancesRangeInv`. This property goes over all addresses\nin `ADDR` and tests, whether the value stored in `balances` for every address\nis in the range from `0` to `MAX_UINT` (inclusive).\n\nWe can immediately check this invariant for a few states:\n\n            \n>> echo 'init\\n balancesRangeInv\\n mint(minter, \"bob\", 2023)\\n balancesRangeInv\\n send(\"bob\", \"eve\", 1024)\\n balancesRangeInv\\n ' | quint -r ./lesson3-anatomy/coin.qnt::coin\n\n\n\nProperties like `balancesRangeInv` are called *invariants*, because we expect\nthem to hold in every state that could be produced by `init` and a number of\n`step` actions. Intuitively, whatever happens, the property should hold true.\n\nIt is important to distinguish between the properties that we would like to be\ninvariants and the properties that we have proven to be invariants.\nTo be precise, the former properties are called *invariant candidates*,\nwhereas the latter are actually called *invariants*.\n            ",
+      "line": 134,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Defining the total supply invariant",
+      "description": "\n\nAnother basic invariant that we intuitively expect to hold is defined in\n`totalSupplyDoesNotOverflowInv`. It is so simple that it should hold true, right?\nIf we have your attention now, read further!\n\n**Exercise:** Extend the protocol with a state variable called `totalMinted`,\ninitialize it with 0 and increase it in `mint` with the `amount` passed to `mint`.\n\n        ",
+      "line": 141,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Temporal properties",
+      "description": "\n\nAfter we have defined state invariants, we should normally think about\ntemporal properties in general such as safety and liveness. However, \ntemporal properties are an advanced topic, and smart\ncontracts are typically focused on safety. Thus, it is safe to skip this topic\nfor now. It is just important to know that temporal properties are labelled\nwith the qualifier `temporal`.\n\n        ",
+      "line": 149,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Tests",
+      "description": "\n\nSo far, we have been running sequences of actions in REPL, to get\nbasic understanding of the protocol mechanics. While REPL is capable of\nreplaying actions one-by-one, it would be more convenient to run something\nsimilar to unit tests or integration tests, which are ubiquitous in\nprogramming languages.\n\nWe normally add tests in the very bottom of the protocol module, or in\na separate module.\n\nQuint introduces *runs* to express \"happy paths\" and tests. The above code\nshows a simple test `sendWithoutMintTest`.\nIn this test, the action `init` runs first. If it evaluates to `true`,\nthen the action `send(...)` is run. Since this action is composed with\n`fail()`, the action `send(...)` is expected to evaluate to `false`.\n\nGo ahead and see if this test goes through:\n\n            \n>> echo 'sendWithoutMintTest' | quint -r ./lesson3-anatomy/coin.qnt::coin\n\n\n\n**Exercise:** Actually, if you look carefully at the code of `send`,\nyou can find one value for `amount` that makes `send` work even without\nprior minting. What is this value?\n            ",
+      "line": 157,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "A single data point test",
+      "description": "\n\nWe can write longer tests that are similar to unit/integration tests\nin normal programming languages. For instance, the above test `mintSendTest`\nmakes sure that the exact sequence of `mint` and `send` transactions goes\nthrough and the resulting balances have the expected values.\n\n            \n>> echo 'mintSendTest' | quint -r ./lesson3-anatomy/coin.qnt::coin\n\n\n\n**Exercise:** Change some numbers in the test, run it again in REPL and observe\nwhat happens.\n\nAlthough it is better to have a test like `mintSendTest` than no test at all,\n`mintSendTest` is testing only one data point. We can do better in Quint,\nsee the next step.\n            ",
+      "line": 169,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Testing with non-deterministic inputs",
+      "description": "\n\nInstead of testing a sequence of transactions for a carefully crafted\nsingle input, we could fix a sequence of transactions and let the computer\nfind the inputs that fail the test. This is exactly what we are doing in\nthe above test `mintTwiceThenSendTest`. The test non-deterministically\nchooses the amounts of coins to mint and send and then executes the actions\n`mint`, `mint`, and `send`. As the values are chosen non-deterministically,\nwe know that some of the inputs should fail `send`. Our hypothesis is that\n`send` should never fail when Eve has enough coins on her account.\nIf she does not, we simply ignore this choice of inputs in the else-branch.\n\nLet's run this test:\n\n            \n>> echo 'mintTwiceThenSendTest' | quint -r ./lesson3-anatomy/coin.qnt::coin\n\n\n\n\nIf you lucky, it fails right away. If it does not fail, run it multiple times,\nuntil it fails. To see why it failed, evaluate `state` after executing\nthe test. Do you understand why our hypothesis was wrong?\n\n**Exercise:** Fix the condition in `mintTwiceThenSendTest`,\nso that the test never fails.\n\nIf you carefully look at `mintTwiceThenSendTest`, you will see that it is still\na single data point test, though the data point (the inputs) are chosen\nnon-deterministically every time we run the test. In fact, REPL implements\nnon-determinism via random choice.\n\nIf you do not want to sit the whole day and run the test, you could integrate\nit into continuous integration, so it runs from time to time for different\ninputs. Also, we had to fix the sequence of actions in our test. We can do\nbetter with Quint.\n\n            ",
+      "line": 193,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Testing with non-deterministic inputs and control",
+      "description": "\n\nIt is often hard to find a good sequence of actions that breaks an invariant.\nSimilar to how we let the computer to find the right inputs, we can use the\ncomputing power to look for bad sequences of actions.\n\nQuint REPL actually supports random search for sequences of actions that violate\nan invariant. Its UX is a bit ad hoc at the moment. We will improve it in the\nfuture. You can try it right away:\n\n            \n>> echo '_test(10000, 10, \"init\", \"step\", \"totalSupplyDoesNotOverflowInv\")' | quint -r ./lesson3-anatomy/coin.qnt::coin\n\n\n\n\nThe above command in REPL randomly produces sequences, starting with `init`\nand continuing with `step`, up to 10 actions. It checks the invariant\n`totalSupplyDoesNotOverflowInv` after every step. If the invariant is violated,\nthe random search stops and returns `false`. If no invariant violaion is found,\nthe search returns `true` after enumerating the specified number of runs,\nwhich is 10000 in our example.\n\nIn our example, the search often finds an error. If it did not find an error,\nrun the search again. Once `_test` returned `false`, you can print the trace\nleading to the bad state by evaluating `_lastTrace` in REPL.\n\n            ",
+      "line": 197,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Does random testing always find bugs?",
+      "description": "\n\nTo be honest, our example is relatively simple, and we were quite lucky\nthat the invariant `totalSupplyDoesNotOverflowInv` was often violated by\na completely random search. For more complex protocols, random search\noften gets stuck while looking for non-interesting inputs or sequences\nof actions. Hence, if you have a hunch about where an error could potentially\nbe, you could restrict the scope of the search by:\n\n - Restricting the scope of non-determinstic choices, e.g.,\n   by making every set in `oneOf(S)` smaller.\n\n - Restricting the choice of actions, e.g., by removing non-essential\n   actions from `step`.\n\nAlthough the above tricks may help you in detecting some bugs, it is well\nknown that there is always a probability of missing a bug with random search.\n\nIf you are looking for better guarantees of correctness, Quint will be soon\nintegrate with the\n[Apalache model checker](https://github.com/informalsystems/apalache).\nThe model checker looks for counterexamples more exhaustively, by solving\nequations. In some cases, it may even give you a guarantee that there is no bug,\nif it has not found any.\n\n        ",
+      "line": 198,
+      "file": "lesson3-anatomy/coin.qnt"
+    },
+    {
+      "title": "Suming it up",
+      "description": "\n\nThis was a long tutorial. We have specified the whole protocol,\nexperimented with it, wrote several tests and even found some surprising\nbehavior of this protocol. We hope that by going through this tutorial\nyou have got an idea of how you could specify your own protocol in Quint\nand make Quint useful for solving your problems with protocols!\n\nWe have used a Solidity contract as the running example. Actually,\nthere is not much special about Solidity in this coin protocol.\nA similar protocol could be implemented in\n[Cosmos SDK](https://tutorials.cosmos.network/)\nor [Cosmwasm](https://cosmwasm.com/).\n\nWe are experimenting with different kinds of tutorials.\nIt would be great to learn whether you liked this tutorial format, or not.\nPlease vote in the\n[discussion](https://github.com/informalsystems/quint/discussions/595).\n        ",
+      "line": 199,
+      "file": "lesson3-anatomy/coin.qnt"
+    }
+  ]
+}

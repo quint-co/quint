@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- command `test` to run unit tests (#634)
+- option `--with-lookup` of the command `parse` (#639)
+
 ### Changed
 
 - `docs` subcommand now outputs generated docs to stdout (#617)
@@ -25,8 +29,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - REPL avoid name clashes in different modules (#621)
 - REPL session is now a proper Quint file (#621)
+- A regression in REPL caused by multiple modules (#650)
 
 ### Security
+
+### Documentation
+
+- the [Prisoners puzzle](./examples/puzzles/prisoners) (#634)
 
 ## v0.5.5 -- 2023-02-03
 

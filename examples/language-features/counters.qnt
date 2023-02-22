@@ -66,4 +66,27 @@ module counters {
       Next,
     }).repeated(10))
   }
+
+  // this test should not fail
+  run passingTest = {
+    Init.then(
+      all {
+        assert(n > 0),
+        Next,
+      }.repeated(10)
+    )
+  }
+
+  // this test should fail
+  run failingTest = {
+    Init.then(
+      all {
+        assert(n == 0),
+        Next,
+      }.repeated(10)
+    )
+  }
+
+  // this is just a value, and it should be ignored as a test
+  val ignoredTest = 1
 }

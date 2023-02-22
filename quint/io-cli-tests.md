@@ -235,3 +235,57 @@ true
 >>> 
 ```
 
+### Tests works as expected
+
+The command `test` finds failing tests and prints error messages.
+
+<!-- !test in test runs -->
+```
+quint test --main counters --seed 1 \
+  ../examples/language-features/counters.qnt 2>&1 | \
+  sed 's/([0-9]*ms)/(duration)/g' | \
+  sed 's#^.*counters.qnt#      HOME/counters.qnt#g'
+```
+
+<!-- !test out test runs -->
+```
+
+  counters
+    ok passingTest
+    1) failingTest
+
+  1 passing (duration)
+  1 failed
+  1 ignored
+
+  1) failingTest:
+      HOME/counters.qnt:84:9 - error: Assertion failed
+      84:         assert(n == 0),
+                  ^^^^^^^^^^^^^^
+      
+
+```
+
+### Repl evaluates coin
+
+This is a regression test for #648.
+
+<!-- !test in repl evaluates coin -->
+```
+cat <<EOF \
+  | quint -r ../examples/solidity/Coin/coin.qnt::coin 2>&1 \
+  | tail -n +3
+init
+balances
+EOF
+```
+
+<!-- !test out repl evaluates coin -->
+```
+true
+
+>>> true
+>>> Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0)
+>>> 
+```
+
