@@ -2,7 +2,7 @@
 	"name": "quint-vscode",
 	"displayName": "Quint",
 	"description": "Language support for Quint specifications",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"publisher": "informal",
 	"engines": {
 		"vscode": "^1.43.0"
