@@ -16,7 +16,7 @@ import { LookupTableByModule } from "./lookupTable"
 import { OpQualifier, QuintModule } from "./quintIr"
 import { TypeScheme } from "./types/base"
 import { TypeInferrer } from "./types/inferrer"
-import { Effect } from "./effects/base"
+import { EffectScheme } from "./effects/base"
 import { EffectInferrer } from "./effects/inferrer"
 import { ModeChecker } from "./effects/modeChecker"
 import { QuintError } from "./quintError"
@@ -26,7 +26,7 @@ import { MultipleUpdatesChecker } from "./effects/MultipleUpdatesChecker"
 /* Products from static analysis */
 export type AnalyzisOutput = {
   types: Map<bigint, TypeScheme>,
-  effects: Map<bigint, Effect>,
+  effects: Map<bigint, EffectScheme>,
   modes: Map<bigint, OpQualifier>,
 }
 

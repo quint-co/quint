@@ -12,8 +12,8 @@
  * @module
  */
 
-import { Effect, EffectComponent, Variables } from './base'
-import { Substitutions } from './substitutions'
+import { Effect, EffectComponent, EffectScheme, Variables } from './base'
+import { Substitutions, applySubstitution, compose } from './substitutions'
 
 /**
  * Formats the string representation of  an effect
@@ -42,6 +42,37 @@ export function effectToString(e: Effect): string {
   }
 }
 
+/**
+ * Formats the string representation of an effect scheme
+ *
+ * @param e the effect scheme to be formatted
+ *
+ * @returns a string with the formatted effect scheme
+ */
+export function effectSchemeToString(e: EffectScheme): string {
+  const effectNames = Array.from(e.effectVariables)
+  const variableNames = Array.from(e.variables)
+  const vars: string[] = []
+
+  const effectSubs: Substitutions = effectNames.map((name, i) => {
+    vars.push(`e${i}`)
+    return { kind: 'effect', name, value: { kind: 'quantified', name: `e${i}` } }
+  })
+
+  const variableSubs: Substitutions = variableNames.map((name, i) => {
+    vars.push(`v${i}`)
+    return { kind: 'variable', name: name, value: { kind: 'quantified', name: `v${i}` } }
+  })
+
+  const subs = compose(effectSubs, variableSubs)
+  const effect = subs.chain(s => applySubstitution(s, e.effect))
+  if (effect.isLeft()) {
+    throw new Error('Unexpected error while formatting effect scheme')
+  } else {
+    const varsString = vars.length > 0 ? `∀ ${vars.join(', ')} . ` : ''
+    return `${varsString}${effectToString(effect.value)}`
+  }
+}
 
 export function effectComponentToString(c: EffectComponent): string {
   switch (c.kind) {

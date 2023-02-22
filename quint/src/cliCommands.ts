@@ -19,10 +19,10 @@ import {
 } from './quintParserFrontend'
 
 import { Either, left, right } from '@sweet-monads/either'
-import { Effect } from './effects/base'
+import { EffectScheme } from './effects/base'
 import { LookupTableByModule } from './lookupTable'
 import { ReplOptions, quintRepl } from './repl'
-import { OpQualifier, QuintModule, IrErrorMessage } from './quintIr'
+import { OpQualifier, QuintModule } from './quintIr'
 import { TypeScheme } from './types/base'
 import lineColumn from 'line-column'
 import { formatError } from './errorReporter'
@@ -42,7 +42,7 @@ interface OutputStage {
   table?: LookupTableByModule,
   // the tables produced by 'typecheck'
   types?: Map<bigint, TypeScheme>,
-  effects?: Map<bigint, Effect>,
+  effects?: Map<bigint, EffectScheme>,
   modes?: Map<bigint, OpQualifier>,
   // Test names output produced by 'test'
   passed?: string[],
@@ -98,7 +98,7 @@ interface ParsedStage extends LoadedStage {
 
 interface TypecheckedStage extends ParsedStage {
   types: Map<bigint, TypeScheme>,
-  effects: Map<bigint, Effect>,
+  effects: Map<bigint, EffectScheme>,
   modes: Map<bigint, OpQualifier>,
 }
 
@@ -418,17 +418,6 @@ function replacer(_key: String, value: any): any {
 function writeToJson(filename: string, json: any) {
   const path = resolve(cwd(), filename)
   writeFileSync(path, JSONbig.stringify(json, replacer))
-}
-
-/**
- * Write text to a file.
- *
- * @param filename name of the file to write to
- * @param text is a string to write
- */
-function writeToFile(filename: string, text: string) {
-  const path = resolve(cwd(), filename)
-  writeFileSync(path, text)
 }
 
 /**

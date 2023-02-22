@@ -43,6 +43,12 @@ export type Effect =
   | ArrowEffect
   | QuantifiedEffect
 
+export type EffectScheme = {
+  effect: Effect,
+  effectVariables: Set<string>,
+  variables: Set<string>,
+}
+
 /* A state variable */
 export interface StateVariable {
   /* The variable name */
@@ -69,15 +75,7 @@ export type Variables =
  * Signatures assume an additional level of quantification over all names and
  * should be instantiated before being used
  */
-export type Signature = (_arity: number) => Effect
-
-/*
- * A quantified name that can refer either to an effect or a variable
- */
-export interface Name {
-  kind: 'effect' | 'variable'
-  name: string
-}
+export type Signature = (_arity: number) => EffectScheme
 
 /**
  * Unifies two effects by matching effect types and unifying their variables.
@@ -121,17 +119,34 @@ export function unify(ea: Effect, eb: Effect): Either<ErrorTree, Substitutions> 
  * @returns a list of names with all quantified names for effects and variables
  * in the given effect
  */
-export function effectNames(effect: Effect): Name[] {
+export function effectNames(effect: Effect): { effectVariables: Set<string>, variables: Set<string> } {
   switch (effect.kind) {
     case 'concrete':
-      return effect.components.flatMap(c => variablesNames(c.variables))
-    case 'arrow': return effect.params.flatMap(effectNames).concat(effectNames(effect.result))
-    case 'quantified': return [{ kind: 'effect', name: effect.name }]
+      return {
+        effectVariables: new Set(),
+        variables: new Set(effect.components.flatMap(c => variablesNames(c.variables))),
+      }
+    case 'arrow': {
+      const nested = effect.params.flatMap(effectNames)
+      return nested.reduce((set, { effectVariables, variables }) => ({
+        effectVariables: new Set([...set.effectVariables, ...effectVariables]),
+        variables: new Set([...set.variables, ...variables]),
+      }), effectNames(effect.result))
+    }
+    case 'quantified': return { effectVariables: new Set([effect.name]), variables: new Set() }
+  }
+}
+
+export function toScheme(effect: Effect): EffectScheme {
+  return {
+    effect: effect,
+    effectVariables: new Set(),
+    variables: new Set(),
   }
 }
 
 function bindEffect(name: string, effect: Effect): Either<string, Substitutions> {
-  if (effectNames(effect).some(n => n.kind === 'effect' && n.name === name)) {
+  if (effectNames(effect).effectVariables.has(name)) {
     return left(`Can't bind ${name} to ${effectToString(effect)}: cyclical binding`)
   } else {
     return right([{ kind: 'effect', name, value: effect }])
@@ -139,41 +154,45 @@ function bindEffect(name: string, effect: Effect): Either<string, Substitutions>
 }
 
 function bindVariables(name: string, variables: Variables): Either<string, Substitutions> {
-  if (variablesNames(variables).some(n => n.kind === 'variable' && n.name === name)) {
+  if (variablesNames(variables).includes(name)) {
     return left(`Can't bind ${name} to ${variablesToString(variables)}: cyclical binding`)
   } else {
     return right([{ kind: 'variable', name, value: variables }])
   }
 }
 
-function variablesNames(variables: Variables): Name[] {
+function variablesNames(variables: Variables): string[] {
   switch (variables.kind) {
     case 'concrete': return []
-    case 'quantified': return [{ kind: 'variable', name: variables.name }]
+    case 'quantified': return [variables.name]
     case 'union': return variables.variables.flatMap(variablesNames)
   }
 }
 
 function unifyArrows(location: string, e1: ArrowEffect, e2: ArrowEffect): Either<ErrorTree, Substitutions> {
-  return right([e1.params, e2.params])
-    .chain(params => {
+  const params: [Effect[], Effect[]] = [e1.params, e2.params]
+  return right(params)
+    .chain((params): Either<ErrorTree, [[Effect[], Effect[]], Substitutions]> => {
       const [p1, p2] = params
       if (p1.length === p2.length) {
-        return right(params)
+        return right([params, [] as Substitutions])
       } else {
         return tryToUnpack(location, p1, p2)
       }
     })
-    .chain(params => {
-      const [p1, p2] = params
-      const [arrow1, subs1] = simplifyArrowEffect(p1, e1.result)
-      const [arrow2, subs2] = simplifyArrowEffect(p2, e2.result)
-      const subs = compose(subs1, subs2)
-      return arrow1.params.reduce((result: Either<Error, Substitutions>, e, i) => {
-        return result.chain(subs => applySubstitutionsAndUnify(subs, e, arrow2.params[i]))
-      }, subs)
-        .chain(subs => applySubstitutionsAndUnify(subs, arrow1.result, arrow2.result))
-        .mapLeft(err => buildErrorTree(location, err))
+    .chain(([[p1, p2], unpackingSubs]) => {
+      const e1r = applySubstitution(unpackingSubs, e1.result)
+      const e2r = applySubstitution(unpackingSubs, e2.result)
+      return mergeInMany([e1r, e2r]).chain(([e1result, e2result]) => {
+        const [arrow1, subs1] = simplifyArrowEffect(p1, e1result)
+        const [arrow2, subs2] = simplifyArrowEffect(p2, e2result)
+        const subs = compose(subs1, subs2).chain(s => compose(s, unpackingSubs))
+        return arrow1.params.reduce((result: Either<Error, Substitutions>, e, i) => {
+          return result.chain(subs => applySubstitutionsAndUnify(subs, e, arrow2.params[i]))
+        }, subs)
+          .chain(subs => applySubstitutionsAndUnify(subs, arrow1.result, arrow2.result))
+      })
+      .mapLeft(err => buildErrorTree(location, err))
     })
 }
 
@@ -301,7 +320,7 @@ function applySubstitutionsAndUnify(subs: Substitutions, e1: Effect, e2: Effect)
 
 function tryToUnpack(
   location: string, effects1: Effect[], effects2: Effect[]
-): Either<ErrorTree, [Effect[], Effect[]]> {
+): Either<ErrorTree, [[Effect[], Effect[]], Substitutions]> {
   // Ensure that effects1 is always the smallest
   if (effects2.length < effects1.length) {
     return tryToUnpack(location, effects2, effects1)
@@ -315,27 +334,50 @@ function tryToUnpack(
   const variablesByComponentKind: Map<ComponentKind, Variables[]> = new Map()
 
   // Combine the other effects into a single effect, to be unified with the unpacked effect
-  effects2.forEach(e => {
-    if (e.kind === 'concrete') {
-      e.components.forEach(c => {
-        const variables = variablesByComponentKind.get(c.kind) || []
-        variables.push(c.variables)
-        variablesByComponentKind.set(c.kind, variables)
-      })
-    } else {
-      return left(`Found non concrete effect while trying to unpack: ${effectToString(e)}`)
-    }
-  })
+  if (effects2.every(e => e.kind === 'concrete')) {
+    effects2.forEach(e => {
+      if (e.kind === 'concrete') {
+        e.components.forEach(c => {
+          const variables = variablesByComponentKind.get(c.kind) || []
+          variables.push(c.variables)
+          variablesByComponentKind.set(c.kind, variables)
+        })
+      }
+    })
 
-  const unpacked: ConcreteEffect = {
-    kind: 'concrete',
-    components: [...variablesByComponentKind.entries()].map(([kind, variables]) => {
-      return { kind, variables: { kind: 'union', variables } }
-    }),
+    const unpacked: ConcreteEffect = {
+      kind: 'concrete',
+      components: [...variablesByComponentKind.entries()].map(([kind, variables]) => {
+        return { kind, variables: { kind: 'union', variables } }
+      }),
+    }
+
+    const result = simplify(unpacked)
+    return right([[effects1, [result]], []])
   }
 
-  const result = simplify(unpacked)
-  return right([effects1, [result]])
+  if (effects2.every(e => e.kind === 'quantified')) {
+    const names = effects2.map(e => e.kind === 'quantified' ? e.name : '')
+
+    const unpacked: Effect = {
+      kind: 'quantified',
+      name: names.join('#'),
+    }
+
+    const subs: Substitutions = names.map((name) => ({
+      kind: 'effect',
+      name,
+      value: unpacked,
+    }))
+    const result = simplify(unpacked)
+
+    return right([[effects1, [result]], subs])
+  }
+
+  return left(buildErrorLeaf(
+    `Trying to unpack effects: ${effects1.map(effectToString)} and ${effects2.map(effectToString)}`,
+    'Can only unpack effects if they are all of the same kind (and no arrows)'
+  ))
 }
 
 /**
@@ -360,7 +402,7 @@ function simplifyArrowEffect(params: Effect[], result: Effect): [ArrowEffect, Su
     const arrow: ArrowEffect = { kind: 'arrow', params: [{ kind: 'concrete', components: hashedComponents }], result }
     const subs: Substitutions = effect.components.flatMap(c => {
       return variablesNames(c.variables).map(n => {
-        return { kind: 'variable', name: n.name, value: hashVariables(c.variables) }
+        return { kind: 'variable', name: n, value: hashVariables(c.variables) }
       })
     })
 
