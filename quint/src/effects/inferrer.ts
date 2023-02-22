@@ -232,10 +232,10 @@ export class EffectInferrer implements IRVisitor {
       // Don't try to infer let if there are errors with the defined expression
       return
     }
-    const effect = this.fetchResult(def.expr.id)
+    const result = this.fetchResult(def.expr.id)
 
     // Set the expression effect as the definition effect for it to be available at the result
-    effect.map(e => this.addToResults(def.id, right({ ...effectNames(e.effect), effect: e.effect })))
+    this.addToResults(def.id, result)
   }
 
   /*     Γ ⊢ e: E
