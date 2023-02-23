@@ -212,7 +212,7 @@ function paramVariablesByEffect(effect: ArrowEffect): Map<ComponentKind, Variabl
     }
   })
 
-return variablesByComponentKind
+  return variablesByComponentKind
 }
 
 const modeOrder =
