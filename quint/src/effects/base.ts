@@ -43,9 +43,16 @@ export type Effect =
   | ArrowEffect
   | QuantifiedEffect
 
+/*
+ * An effect scheme, listing universally quantified variables (for names
+ * refering to Variables) and effect variables (for names refering to Effects)
+ */
 export type EffectScheme = {
+  /* The effect */
   effect: Effect,
+  /* Universally quantified names refering to Effects */
   effectVariables: Set<string>,
+  /* Universally quantified names refering to Variables */
   variables: Set<string>,
 }
 
@@ -116,8 +123,7 @@ export function unify(ea: Effect, eb: Effect): Either<ErrorTree, Substitutions> 
  *
  * @param effect the Effect to have its names found
  *
- * @returns a list of names with all quantified names for effects and variables
- * in the given effect
+ * @returns the set of variables and the set of effect variables
  */
 export function effectNames(effect: Effect): { effectVariables: Set<string>, variables: Set<string> } {
   switch (effect.kind) {
@@ -137,6 +143,13 @@ export function effectNames(effect: Effect): { effectVariables: Set<string>, var
   }
 }
 
+/**
+ * Converts an effect to an effect scheme without any quantification
+ *
+ * @param effect the effect to be converted
+ *
+ * @returns an effect scheme with that effect and no quantification
+ */
 export function toScheme(effect: Effect): EffectScheme {
   return {
     effect: effect,

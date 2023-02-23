@@ -87,6 +87,16 @@ export function applySubstitution(subs: Substitutions, e: Effect): Either<ErrorT
   return result.map(simplify)
 }
 
+/**
+ * Applies substitutions to an effect scheme, replacing all *non-quantified* names with their
+ * substitution values when they are defined.
+ *
+ * @param subs the substitutions to be applied
+ * @param e the effect to be transformed
+ *
+ * @returns the effect resulting from the substitutions' application on the given
+ *          effect, when successful. Otherwise, an error tree with an error message and its trace.
+ */
 export function applySubstitutionToScheme(subs: Substitutions, e: EffectScheme): Either<ErrorTree, EffectScheme> {
   const filteredSubs = subs.filter(s => !e.variables.has(s.name) && !e.effectVariables.has(s.name))
 

@@ -14,7 +14,6 @@
 
 import { EffectScheme, Signature, effectNames } from './base'
 import { parseEffectOrThrow } from './parser'
-import { simplify } from './simplification'
 import { range, times, zip } from 'lodash'
 
 export function getSignatures(): Map<string, Signature> {
@@ -25,10 +24,7 @@ const literals = ['Nat', 'Int', 'Bool'].map(name => ({ name, effect: 'Pure' }))
 
 function parseAndQuantify(effectString: string): EffectScheme {
   const e = parseEffectOrThrow(effectString)
-  return {
-    effect: e,
-    ...effectNames(e),
-  }
+  return { effect: e, ...effectNames(e) }
 }
 
 const booleanOperators = [
@@ -132,10 +128,14 @@ const temporalOperators = [
 const otherOperators = [
   { name: 'assign', effect: '(Read[r1], Read[r2]) => Read[r2] & Update[r1]' },
   { name: 'then', effect: '(Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r] & Update[u]' },
-  { name: 'repeated',
-    effect: '(Read[r] & Update[u], Pure) => Read[r] & Update[u]' },
-  { name: 'fail',
-    effect: '(Read[r] & Update[u]) => Read[r] & Update[u]' },
+  {
+    name: 'repeated',
+    effect: '(Read[r] & Update[u], Pure) => Read[r] & Update[u]',
+  },
+  {
+    name: 'fail',
+    effect: '(Read[r] & Update[u]) => Read[r] & Update[u]',
+  },
   { name: 'assert', effect: '(Read[r]) => Read[r]' },
   { name: 'ite', effect: '(Read[r1], Read[r2] & Update[u], Read[r3] & Update[u]) => Read[r1, r2, r3] & Update[u]' },
 ]
@@ -196,7 +196,5 @@ const fixedAritySignatures: [string, Signature][] = [
   temporalOperators,
   otherOperators,
 ].flat().map(sig => [sig.name, ((_: number) => {
-  const e = parseEffectOrThrow(sig.effect)
-  const simplifiedEffect = simplify(e)
-  return { ...effectNames(simplifiedEffect), effect: simplifiedEffect }
+  parseAndQuantify(sig.effect)
 }) as Signature])

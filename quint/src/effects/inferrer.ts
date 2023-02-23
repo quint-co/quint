@@ -107,11 +107,7 @@ export class EffectInferrer implements IRVisitor {
          */
         let result: Either<Error, EffectScheme>
         if (def.reference) {
-          result = right({
-            effect: { kind: 'quantified', name: `e_${expr.name}_${def.reference}` },
-            effectVariables: new Set(),
-            variables: new Set(),
-          })
+          result = right(toScheme({ kind: 'quantified', name: `e_${expr.name}_${def.reference}` }))
         } else {
           result = left(buildErrorLeaf(
             this.location,
