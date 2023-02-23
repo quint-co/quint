@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Mode errors are better explained and include a fix suggestion (#619)
 - Typechecking now reports errors when instance overrides are not compatible with
   the original definition (#622)
+- Effect errors for multiple updates of the same variable are clearer and more precise (#641)
 
 ### Deprecated
 ### Removed

@@ -75,16 +75,24 @@ export function applySubstitution(subs: Substitutions, e: Effect): Either<ErrorT
     }
     case 'concrete': {
       // e is a an effect of the form Read[r] & Update[u] or Read[r] & Temporal[t]
-      const read = applySubstitutionToVariables(subs, e.read)
-      const update = applySubstitutionToVariables(subs, e.update)
-      const temporal = applySubstitutionToVariables(subs, e.temporal)
+      const components = e.components
+        .map(c => ({...c, variables: applySubstitutionToVariables(subs, c.variables)}))
+        .filter(c => !emptyVariables(c.variables))
 
-      result = right({ kind: 'concrete', read, update, temporal })
+      result = right({ kind: 'concrete', components })
       break
     }
   }
 
-  return result.chain(simplify)
+  return result.map(simplify)
+}
+
+function emptyVariables(variables: Variables): boolean {
+  switch (variables.kind) {
+    case 'concrete': return variables.vars.length === 0
+    case 'quantified': return false
+    case 'union': return variables.variables.length === 0
+  }
 }
 
 /**

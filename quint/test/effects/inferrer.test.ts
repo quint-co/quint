@@ -211,8 +211,8 @@ describe('inferEffects', () => {
           children: [{
             children: [{
               children: [],
-              location: "Trying to unify variables [] and ['x']",
-              message: 'Expected variables [] and [x] to be the same',
+              location: "Trying to unify variables ['x'] and []",
+              message: 'Expected variables [x] and [] to be the same',
             }],
             location: "Trying to unify Read[v3] and Update['x']",
           }],
