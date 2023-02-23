@@ -127,6 +127,7 @@ const modesForConcrete = new Map<ComponentKind, OpQualifier>([
 ])
 
 function modeForEffect(temp: EffectScheme): [OpQualifier, string] {
+  // Ignore quantification for now. That will be handled in a followup PR
   const effect = temp.effect
   switch (effect.kind) {
     case 'concrete': {
@@ -203,31 +204,15 @@ function paramVariablesByEffect(effect: ArrowEffect): Map<ComponentKind, Variabl
   const variablesByComponentKind: Map<ComponentKind, Variables[]> = new Map()
 
   effect.params.forEach(p => {
-    switch (p.kind) {
-      case 'concrete': {
-        p.components.forEach(c => {
-          const existing = variablesByComponentKind.get(c.kind) || []
-          variablesByComponentKind.set(c.kind, existing.concat(c.variables))
-        })
-        break
-      }
-      case 'arrow': {
-        const nested = paramVariablesByEffect(p)
-        nested.forEach((variables, kind) => {
-          const existing = variablesByComponentKind.get(kind) || []
-          variablesByComponentKind.set(kind, existing.concat(variables))
-        })
-        if (p.result.kind === 'concrete') {
-          p.result.components.forEach(c => {
-            const existing = variablesByComponentKind.get(c.kind) || []
-            variablesByComponentKind.set(c.kind, existing.concat(c.variables))
-          })
-        }
-      }
+    if (p.kind === 'concrete') {
+      p.components.forEach(c => {
+        const existing = variablesByComponentKind.get(c.kind) || []
+        variablesByComponentKind.set(c.kind, existing.concat(c.variables))
+      })
     }
   })
 
-  return variablesByComponentKind
+return variablesByComponentKind
 }
 
 const modeOrder =
