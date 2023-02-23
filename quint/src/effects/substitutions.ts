@@ -14,7 +14,7 @@
 
 import { Either, mergeInMany, right } from '@sweet-monads/either'
 import { ErrorTree, buildErrorTree } from '../errorTree'
-import { Effect, Variables, unify, unifyVariables } from './base'
+import { Effect, EffectScheme, Variables, unify, unifyVariables } from './base'
 import { effectToString, substitutionsToString } from './printing'
 import { simplify } from './simplification'
 
@@ -76,7 +76,7 @@ export function applySubstitution(subs: Substitutions, e: Effect): Either<ErrorT
     case 'concrete': {
       // e is a an effect of the form Read[r] & Update[u] or Read[r] & Temporal[t]
       const components = e.components
-        .map(c => ({...c, variables: applySubstitutionToVariables(subs, c.variables)}))
+        .map(c => ({ ...c, variables: applySubstitutionToVariables(subs, c.variables) }))
         .filter(c => !emptyVariables(c.variables))
 
       result = right({ kind: 'concrete', components })
@@ -85,6 +85,13 @@ export function applySubstitution(subs: Substitutions, e: Effect): Either<ErrorT
   }
 
   return result.map(simplify)
+}
+
+export function applySubstitutionToScheme(subs: Substitutions, e: EffectScheme): Either<ErrorTree, EffectScheme> {
+  const filteredSubs = subs.filter(s => !e.variables.has(s.name) && !e.effectVariables.has(s.name))
+
+  return applySubstitution(filteredSubs, e.effect)
+    .map(effect => ({ ...e, effect }))
 }
 
 function emptyVariables(variables: Variables): boolean {

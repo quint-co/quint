@@ -19,7 +19,7 @@ import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { QuintApp, QuintBool, QuintEx, QuintInt, QuintLambda, QuintLet, QuintModule, QuintModuleDef, QuintName, QuintOpDef, QuintStr } from '../quintIr'
 import { Effect, EffectScheme, Signature, effectNames, toScheme, unify } from './base'
-import { Substitutions, applySubstitution, compose } from './substitutions'
+import { Substitutions, applySubstitution, applySubstitutionToScheme, compose } from './substitutions'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
 import { ScopeTree, treeFromModule } from '../scoping'
 import { getSignatures } from './builtinSignatures'
@@ -200,7 +200,7 @@ export class EffectInferrer implements IRVisitor {
             this.substitutions = s
 
             this.effects.forEach((effect, id) => {
-              const r = applySubstitution(s, effect.effect).map(e => ({ ...effect, effect: e }))
+              const r = applySubstitutionToScheme(s, effect)
               this.addToResults(id, r)
             })
 
@@ -272,8 +272,8 @@ export class EffectInferrer implements IRVisitor {
           return { ...resultEffect, effect: { kind: 'arrow', params: ps, result: resultEffect.effect } }
         })
       })
-      .map(e => this.newInstance(e))
-      .chain(resultEffect => applySubstitution(this.substitutions, resultEffect))
+      .map(this.newInstance)
+      .chain(effect => applySubstitution(this.substitutions, effect))
       .map(effect => {
         if (effect.kind !== 'arrow') {
           // Impossible
@@ -286,7 +286,7 @@ export class EffectInferrer implements IRVisitor {
             effectVariables: new Set([...names.effectVariables, ...effectVariables]),
             variables: new Set([...names.variables, ...variables]),
           }
-        }, { effectVariables: new Set<string>(), variables: new Set<string>()})
+        }, { effectVariables: new Set<string>(), variables: new Set<string>() })
 
         this.addToResults(expr.id, right({ ...nonFreeNames, effect }))
       })

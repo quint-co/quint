@@ -2,7 +2,7 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
 import { buildModuleWithDefs } from '../builders/ir'
-import { effectToString } from '../../src/effects/printing'
+import { effectSchemeToString } from '../../src/effects/printing'
 import { errorTreeToString } from '../../src/errorTree'
 import { defaultValueDefinitions } from '../../src/definitionsCollector'
 import { EffectInferrer } from '../../src/effects/inferrer'
@@ -35,10 +35,10 @@ describe('inferEffects', () => {
     const inferrer = new EffectInferrer(definitionsTable)
     const [errors, effects] = inferrer.inferEffects(quintModule)
 
-    const expectedEffect = "(Read[v1]) => Read[v1] & Update['x']"
+    const expectedEffect = "∀ v0 . (Read[v0]) => Read[v0] & Update['x']"
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
-    assert.deepEqual(effectToString(effects.get(4n)!), expectedEffect)
+    assert.deepEqual(effectSchemeToString(effects.get(4n)!), expectedEffect)
   })
 
   it('infers application of multiple arity opertors', () => {
@@ -51,8 +51,8 @@ describe('inferEffects', () => {
     const [errors, effects] = inferrer.inferEffects(quintModule)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
-    assert.deepEqual(effectToString(effects.get(4n)!), "(Read[v4] & Temporal[v5]) => Read[v4, 'x'] & Temporal[v5]")
-    assert.deepEqual(effectToString(effects.get(9n)!), '(Read[v4] & Temporal[v5]) => Read[v4] & Temporal[v5]')
+    assert.deepEqual(effectSchemeToString(effects.get(4n)!), "∀ v0, v1 . (Read[v0] & Temporal[v1]) => Read[v0, 'x'] & Temporal[v1]")
+    assert.deepEqual(effectSchemeToString(effects.get(9n)!), '∀ v0, v1 . (Read[v0] & Temporal[v1]) => Read[v0] & Temporal[v1]')
   })
 
   it('infers references to operators', () => {
@@ -63,10 +63,10 @@ describe('inferEffects', () => {
     const inferrer = new EffectInferrer(definitionsTable)
     const [errors, effects] = inferrer.inferEffects(quintModule)
 
-    const expectedEffect = "(Read[v0]) => Read[v0, 'x']"
+    const expectedEffect = "∀ v0 . (Read[v0]) => Read[v0, 'x']"
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
-    assert.deepEqual(effectToString(effects.get(5n)!), expectedEffect)
+    assert.deepEqual(effectSchemeToString(effects.get(5n)!), expectedEffect)
   })
 
   it('infers references to user-defined operators', () => {
@@ -77,10 +77,10 @@ describe('inferEffects', () => {
     const inferrer = new EffectInferrer(definitionsTable)
     const [errors, effects] = inferrer.inferEffects(quintModule)
 
-    const expectedEffect = "(Read[v2]) => Read[v2, 'x']"
+    const expectedEffect = "∀ v0 . (Read[v0]) => Read[v0, 'x']"
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
-    assert.deepEqual(effectToString(effects.get(8n)!), expectedEffect)
+    assert.deepEqual(effectSchemeToString(effects.get(8n)!), expectedEffect)
   })
 
   it('infers effects for operators defined with let-in', () => {
@@ -94,7 +94,7 @@ describe('inferEffects', () => {
     const expectedEffect = "Read['x']"
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
-    assert.deepEqual(effectToString(effects.get(4n)!), expectedEffect)
+    assert.deepEqual(effectSchemeToString(effects.get(4n)!), expectedEffect)
   })
 
   it('infers pure effect for literals and constants', () => {
@@ -108,7 +108,7 @@ describe('inferEffects', () => {
     const expectedEffect = 'Pure'
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
-    assert.deepEqual(effectToString(effects.get(3n)!), expectedEffect)
+    assert.deepEqual(effectSchemeToString(effects.get(3n)!), expectedEffect)
   })
 
   it('handles underscore', () => {
@@ -122,7 +122,7 @@ describe('inferEffects', () => {
     const expectedEffect = 'Pure'
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
-    assert.deepEqual(effectToString(effects.get(1n)!), expectedEffect)
+    assert.deepEqual(effectSchemeToString(effects.get(1n)!), expectedEffect)
   })
 
   it('infers polymorphic high order operators', () => {
@@ -133,10 +133,10 @@ describe('inferEffects', () => {
     const inferrer = new EffectInferrer(definitionsTable)
     const [errors, effects] = inferrer.inferEffects(quintModule)
 
-    const expectedEffect = '((e_p_1) => e0, e_p_1) => e0'
+    const expectedEffect = '∀ e0, e1 . ((e0) => e1, e0) => e1'
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
-    assert.deepEqual(effectToString(effects.get(3n)!), expectedEffect)
+    assert.deepEqual(effectSchemeToString(effects.get(3n)!), expectedEffect)
   })
 
   it('infers monomorphic high order operators', () => {
@@ -147,10 +147,10 @@ describe('inferEffects', () => {
     const inferrer = new EffectInferrer(definitionsTable)
     const [errors, effects] = inferrer.inferEffects(quintModule)
 
-    const expectedEffect = '((Read[v0] & Temporal[v1]) => Read[v2], Read[v0] & Temporal[v1]) => Read[v2]'
+    const expectedEffect = '∀ v0, v1, v2 . ((Read[v0] & Temporal[v1]) => Read[v2], Read[v0] & Temporal[v1]) => Read[v2]'
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
-    assert.deepEqual(effectToString(effects.get(7n)!), expectedEffect)
+    assert.deepEqual(effectSchemeToString(effects.get(7n)!), expectedEffect)
   })
 
   it('unpacks arguments as tuples', () => {
@@ -161,10 +161,10 @@ describe('inferEffects', () => {
     const inferrer = new EffectInferrer(definitionsTable)
     const [errors, effects] = inferrer.inferEffects(quintModule)
 
-    const expectedEffect = "(Read[v2]) => Read[v2, 'x']"
+    const expectedEffect = "∀ v0 . (Read[v0]) => Read[v0, 'x']"
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
-    assert.deepEqual(effectToString(effects.get(11n)!), expectedEffect)
+    assert.deepEqual(effectSchemeToString(effects.get(11n)!), expectedEffect)
   })
 
   it('returns error when operator signature is not defined', () => {
@@ -214,11 +214,11 @@ describe('inferEffects', () => {
               location: "Trying to unify variables ['x'] and []",
               message: 'Expected variables [x] and [] to be the same',
             }],
-            location: "Trying to unify Read[v3] and Update['x']",
+            location: "Trying to unify Read[v4] and Update['x']",
           }],
-          location: "Trying to unify (Pure) => Read[v3] and (Read[v1]) => Read[v1] & Update['x']",
+          location: "Trying to unify (Pure) => Read[v4] and (Read[v2]) => Read[v2] & Update['x']",
         }],
-        location: "Trying to unify (Read[v2], (Read[v2]) => Read[v3]) => Read[v2, v3] and (Pure, (Read[v1]) => Read[v1] & Update['x']) => e1",
+        location: "Trying to unify (Read[v3], (Read[v3]) => Read[v4]) => Read[v3, v4] and (Pure, (Read[v2]) => Read[v2] & Update['x']) => e1",
       }],
       location: 'Trying to infer effect for operator application in map(S, (p => assign(x, p)))',
     }))

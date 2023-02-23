@@ -127,11 +127,11 @@ export function effectNames(effect: Effect): { effectVariables: Set<string>, var
         variables: new Set(effect.components.flatMap(c => variablesNames(c.variables))),
       }
     case 'arrow': {
-      const nested = effect.params.flatMap(effectNames)
+      const nested = effect.params.concat(effect.result).flatMap(effectNames)
       return nested.reduce((set, { effectVariables, variables }) => ({
         effectVariables: new Set([...set.effectVariables, ...effectVariables]),
         variables: new Set([...set.variables, ...variables]),
-      }), effectNames(effect.result))
+      }), { effectVariables: new Set(), variables: new Set() })
     }
     case 'quantified': return { effectVariables: new Set([effect.name]), variables: new Set() }
   }
