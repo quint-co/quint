@@ -196,5 +196,5 @@ const fixedAritySignatures: [string, Signature][] = [
   temporalOperators,
   otherOperators,
 ].flat().map(sig => [sig.name, ((_: number) => {
-  parseAndQuantify(sig.effect)
-}) as Signature])
+  return parseAndQuantify(sig.effect)
+})])

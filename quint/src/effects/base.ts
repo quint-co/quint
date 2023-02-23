@@ -347,6 +347,9 @@ function tryToUnpack(
   const variablesByComponentKind: Map<ComponentKind, Variables[]> = new Map()
 
   // Combine the other effects into a single effect, to be unified with the unpacked effect
+
+  // If all the effects are concrete, we compine them into a single concrete
+  // effect by combining the variables of each component of the same kind
   if (effects2.every(e => e.kind === 'concrete')) {
     effects2.forEach(e => {
       if (e.kind === 'concrete') {
@@ -369,6 +372,9 @@ function tryToUnpack(
     return right([[effects1, [result]], []])
   }
 
+  // If all the effects are quantified like e0, ..., en, we combine them into a
+  // single quantified effect called e0#...#en. See simplifyArrowEffect for a
+  // similar process description
   if (effects2.every(e => e.kind === 'quantified')) {
     const names = effects2.map(e => e.kind === 'quantified' ? e.name : '')
 
@@ -389,7 +395,7 @@ function tryToUnpack(
 
   return left(buildErrorLeaf(
     `Trying to unpack effects: ${effects1.map(effectToString)} and ${effects2.map(effectToString)}`,
-    'Can only unpack effects if they are all of the same kind (and no arrows)'
+    'Can only unpack effects if they are all concrete or all quantified'
   ))
 }
 
