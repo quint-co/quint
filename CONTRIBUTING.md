@@ -189,10 +189,28 @@ executable and the VSCode plugin.
   
 ### VSCode Plugin
 
+#### Prerequisites
+
+- [vsce](https://github.com/microsoft/vscode-vsce)
+- [yalc](https://github.com/wclr/yalc)
+- Access to manage https://marketplace.visualstudio.com/manage/publishers/informal
+
+#### Steps
+
 - Prepare a release of the VSCode plugin by running the script
   [./vscode/quint-vscode/scripts/prepare-release.sh](./vscode/quint-vscode/scripts/prepare-release.sh)
   with an argument to indicate the version increment: `patch`, `minor`, or
   `major`.
 - Get the release PR reviewed and merged
 - Checkout the release commit
-- Publish the plugin to the VSCode marketplace with `vsce publish`
+- Publish the plugin to the VSCode marketplace in one of two ways:
+  - Run `vsce publish`
+    - requires access to https://dev.azure.com/informalsystems/
+    - which allows creating the required PAT (see
+      https://code.visualstudio.com/api/working-with-extensions/publishing-extension) 
+  - Use the web interface
+    - Run `vsce package` to produce a the `.visx` archive
+    - Navigate to
+      https://marketplace.visualstudio.com/manage/publishers/informal, and click
+      the `...` visible when hovering over `Quint` to upload the archive.
+    
