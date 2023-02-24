@@ -18,7 +18,7 @@ import { qualifierToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { QuintError } from '../quintError'
 import { OpQualifier, QuintInstance, QuintModule, QuintOpDef } from '../quintIr'
-import { ArrowEffect, ComponentKind, EffectScheme, Variables, effectNames, stateVariables, variablesNames } from './base'
+import { ArrowEffect, ComponentKind, EffectScheme, Variables, stateVariables, variablesNames } from './base'
 import { effectToString, variablesToString } from './printing'
 
 export type ModeCheckingResult = [Map<bigint, QuintError>, Map<bigint, OpQualifier>]
@@ -128,10 +128,7 @@ const modesForConcrete = new Map<ComponentKind, OpQualifier>([
 
 function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
   const effect = scheme.effect
-  const allVariables = effectNames(scheme.effect).variables
   const nonFreeVars = scheme.variables
-  // Set difference: allVariables - nonFreeVars
-  const freeVars = new Set([...allVariables].filter(x => !nonFreeVars.has(x)));
 
   switch (effect.kind) {
     case 'concrete': {
@@ -140,7 +137,7 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
           if (c.kind !== kind) {
             return false
           }
-          const nonFreeVariables = variablesNames(c.variables).filter(v => !freeVars.has(v)).concat(
+          const nonFreeVariables = variablesNames(c.variables).filter(v => nonFreeVars.has(v)).concat(
             stateVariables(c.variables).map(v => v.name)
           )
 
@@ -176,7 +173,7 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
       const kind = componentKindPriority.find(kind => {
         const variables = addedVariablesByComponentKind.get(kind)
         const nonFreeVariables = variables?.flatMap(vs => {
-          return variablesNames(vs).filter(v => !freeVars.has(v)).concat(
+          return variablesNames(vs).filter(v => nonFreeVars.has(v)).concat(
             stateVariables(vs).map(v => v.name)
           )
         })

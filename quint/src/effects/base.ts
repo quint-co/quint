@@ -174,6 +174,13 @@ function bindVariables(name: string, variables: Variables): Either<string, Subst
   }
 }
 
+/**
+ * Finds all variable names refered to by some variables
+ *
+ * @param variables the variables to be searched
+ *
+ * @returns a list of names
+ */
 export function variablesNames(variables: Variables): string[] {
   switch (variables.kind) {
     case 'concrete': return []
@@ -182,6 +189,13 @@ export function variablesNames(variables: Variables): string[] {
   }
 }
 
+/**
+ * Finds all state variables refered to by some variables
+ *
+ * @param variables the variables to be searched
+ *
+ * @returns a list of state variables
+ */
 export function stateVariables(variables: Variables): StateVariable[] {
   switch (variables.kind) {
     case 'quantified':

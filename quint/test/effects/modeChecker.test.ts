@@ -1,32 +1,26 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
+import { LookupTable, LookupTableByModule, mergeTables, newTable } from '../../src/lookupTable'
 import { buildModuleWithDefs } from '../builders/ir'
 import { OpQualifier, QuintModule } from '../../src/quintIr'
 import { EffectInferrer } from '../../src/effects/inferrer'
 import { ModeChecker } from '../../src/effects/modeChecker'
 import { QuintError, quintErrorToString } from '../../src/quintError'
-import { errorTreeToString } from '../../src'
+import { collectDefinitions, errorTreeToString } from '../../src'
 
 describe('checkModes', () => {
   const table: LookupTable = newTable({
     valueDefinitions: [
-      { kind: 'param', identifier: 'p', reference: 1n },
-      { kind: 'const', identifier: 'N', reference: 1n },
       { kind: 'var', identifier: 'x', reference: 1n },
       { kind: 'var', identifier: 'y', reference: 1n },
-      { kind: 'val', identifier: 'm', reference: 1n },
-      { kind: 'val', identifier: 't', reference: 1n },
-      { kind: 'def', identifier: 'assign' },
-      { kind: 'def', identifier: 'igt' },
-      { kind: 'def', identifier: 'iadd' },
-      { kind: 'def', identifier: 'not' },
     ],
   })
 
-  const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
 
   function checkModuleModes(quintModule: QuintModule): [Map<bigint, QuintError>, Map<bigint, OpQualifier>] {
+    const mergedTable = mergeTables(collectDefinitions(quintModule).get('wrapper')!, table)
+    const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', mergedTable]])
+
     const inferrer = new EffectInferrer(definitionsTable)
     const [errors, effects] = inferrer.inferEffects(quintModule)
 
@@ -175,5 +169,33 @@ describe('checkModes', () => {
         data: {},
       }],
     ])
+  })
+
+  it('finds errors in nested definitions', () => {
+    const quintModule = buildModuleWithDefs([
+      'pure val a = { val m = x + 1 { m } }',
+    ])
+
+    const [errors, _suggestions] = checkModuleModes(quintModule)
+
+    assert.sameDeepMembers([...errors.entries()], [
+      [7n, {
+        message: "pure val operators may not interact with state variables, but operator `a` reads variables 'x'. Use val instead.",
+        code: 'QNT200',
+        data: { fix: { kind: 'replace', original: 'pure val', replacement: 'val' } },
+      }],
+    ])
+  })
+
+
+  it('keeps track of parametes in nested definitions', () => {
+    const quintModule = buildModuleWithDefs([
+      'pure def f(p) = { pure def m(q) = p + 1 { m(1) } }',
+    ])
+
+    const [errors, suggestions] = checkModuleModes(quintModule)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
+    assert.deepEqual(suggestions.size, 0)
   })
 })
