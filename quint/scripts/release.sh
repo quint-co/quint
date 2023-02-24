@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-version=$(npm pkg get version | sed 's/"//g')
+set -euo pipefail
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+QUINT_DIR="$( cd "$SCRIPT_DIR"/.. && pwd )"
+
+version=$(cd "$QUINT_DIR" && (npm pkg get version | sed 's/"//g'))
 commit_message=$(git log -1 --pretty=%B)
 expected_message="Release v${version}"
 

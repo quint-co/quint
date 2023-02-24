@@ -16,7 +16,6 @@ describe('checkModes', () => {
     ],
   })
 
-
   function checkModuleModes(quintModule: QuintModule): [Map<bigint, QuintError>, Map<bigint, OpQualifier>] {
     const mergedTable = mergeTables(collectDefinitions(quintModule).get('wrapper')!, table)
     const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', mergedTable]])
@@ -187,6 +186,16 @@ describe('checkModes', () => {
     ])
   })
 
+  it('finds no error with proper high order operators', () => {
+    const quintModule = buildModuleWithDefs([
+      'pure def c(p, f) = Set(p).map(f)',
+    ])
+
+    const [errors, suggestions] = checkModuleModes(quintModule)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
+    assert.deepEqual(suggestions.size, 0)
+  })
 
   it('keeps track of parametes in nested definitions', () => {
     const quintModule = buildModuleWithDefs([

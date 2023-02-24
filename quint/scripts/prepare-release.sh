@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
-set -x
+# set -x
 
 gh --version || (echo "gh must be installed: https://github.com/cli/cli#installation" && exit 1)
 npm --version || (echo "npm must be installed" && exit 1)
@@ -13,9 +13,9 @@ ROOT_DIR="$SCRIPT_DIR"/../..
 CHANGELOG="${ROOT_DIR}/CHANGELOG.md"
 cd "$SCRIPT_DIR"/..
 
-if [[ -z "$1" ]]
+if [[ -z "${1-}" ]]
 then
-    echo "An argument valid for 'npm version <arg>' must be supplied."
+    echo "ERROR: An argument valid for 'npm version <arg>' must be supplied."
     echo "See 'npm version --help'."
     exit 1
 fi
