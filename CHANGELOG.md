@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Modes for nested definitions are now properly checked (#661)
+
 ### Security
 
 ## v0.6.0 -- 2023-02-22
