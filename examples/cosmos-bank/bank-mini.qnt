@@ -182,7 +182,7 @@ module bank {
     }
 
     // Tests instantiate denominations with fixed values (later, parameterized).
-    val DENOMS = Set("atom", "proton", "photon")
+    val DENOMS = Set("atom", "proton", "photon", "foocoin")
 
     // Initialize the state machine. Atm, the initializer is a mock.
     action init = {
@@ -326,15 +326,18 @@ module bank {
   // custom send that picks some randomly picks some tokens to transfer
   action sendBoxed = {
     // pick some denominations
-    nondet denoms = DENOMS.powerset().oneOf()
-    // Since denoms may be empty, oneOf() may complain. Redefine the empty set.
-    nondet someDenoms = if (denoms == Set()) Set("atom") else denoms
-    // pick some amounts
-    nondet coins = someDenoms.setOfMaps(to(-5, 5)).oneOf()
-    // pick the addresses
-    nondet addrFrom = ADDR.oneOf()
-    nondet addrTo = ADDR.oneOf()
-    send(addrFrom, addrTo, coins)
+    // FIXME: Sometimes, denoms is still empty:
+    // https://github.com/informalsystems/quint/issues/545
+    nondet denoms = DENOMS.powerset().exclude(Set()).oneOf()
+    all {
+      denoms.size() > 0,
+      // pick some amounts
+      nondet coins = denoms.setOfMaps(to(-5, 5)).oneOf()
+      // pick the addresses
+      nondet addrFrom = ADDR.oneOf()
+      nondet addrTo = ADDR.oneOf()
+      send(addrFrom, addrTo, coins)
+    }
   }
 
   // this is one of the basic invariants of the bank module
@@ -352,6 +355,20 @@ module bank {
         assert(nonNegativeSupplyInv),
         keepVars
       })
+  }
+
+  // The test sendNotEnoughBalanceTest from:
+  // https://github.com/cosmos/cosmos-sdk/blob/497dc2cb78bb8df597fd63555f97b2f98cc7f2d0/x/bank/app_test.go#LL135
+  run sendNotEnoughBalanceTest = {
+    val addrs = Set("addr1")
+    action myInit = all {
+      accounts' = addrs,
+      balances' = addrs.mapBy(a => Map("foocoin" -> 67)),
+    }
+
+    init
+      .then(send("addr1", "addr2", Map("foocoin" -> 100)))
+      .fail()
   }
 
   // If you'd like to run this test for multiple data points,
