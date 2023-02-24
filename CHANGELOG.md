@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Modes for nested definitions are now properly checked (#661)
+- All basic operators can now be used with temporal formulas (#646)
 
 ### Security
 
