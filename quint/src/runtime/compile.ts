@@ -8,17 +8,20 @@
  * See License.txt in the project root for license information.
  */
 
+import { Either, left, right } from '@sweet-monads/either'
+
 import {
   ErrorMessage, Loc, parsePhase1, parsePhase2
 } from '../quintParserFrontend'
-import { inferTypes } from '../types/inferrer'
-import { inferEffects } from '../effects/inferrer'
-import { ErrorTree, errorTreeToString } from '../errorTree'
-import { Computable } from './runtime'
-import { IrErrorMessage } from '../quintIr'
+import { Computable, ComputableKind, kindName } from './runtime'
+import { IrErrorMessage, QuintModule } from '../quintIr'
 import { CompilerVisitor } from './impl/compilerImpl'
-import { walkModule } from '../IRVisitor'
-import { right } from '@sweet-monads/either'
+import { walkDefinition } from '../IRVisitor'
+import { treeFromModule } from '../scoping'
+import { LookupTableByModule } from '../lookupTable'
+import { TypeScheme } from '../types/base'
+import { QuintAnalyzer } from '../quintAnalyzer'
+import { mkErrorMessage } from '../cliCommands'
 
 /**
  * The name of the shadow variable that stores the last found trace.
@@ -29,7 +32,9 @@ export const lastTraceName = '_lastTrace'
  * A compilation context returned by 'compile'.
  */
 export interface CompilationContext {
-  // names of the variables and definitions mapped to computables
+  // the lookup table to query for values and definitions
+  lookupTable: LookupTableByModule,
+  // names of the variables and definition identifiers mapped to computables
   values: Map<string, Computable>,
   // names of the variables
   vars: string[],
@@ -37,10 +42,8 @@ export interface CompilationContext {
   shadowVars: string[],
   // messages that are produced during parsing
   syntaxErrors: ErrorMessage[],
-  // messages that are produced by the type checker
-  typeErrors: ErrorMessage[],
-  // messages that are produced by the effects checker
-  effectsErrors: ErrorMessage[],
+  // messages that are produced by static analysis
+  analysisErrors: ErrorMessage[],
   // messages that are produced during compilation
   compileErrors: IrErrorMessage[],
   // messages that get populated as the compiled code is executed
@@ -51,72 +54,141 @@ export interface CompilationContext {
 
 function errorContext(errors: ErrorMessage[]): CompilationContext {
   return {
+    lookupTable: new Map(),
     values: new Map(),
     vars: [],
     shadowVars: [],
     syntaxErrors: errors,
-    typeErrors: [],
-    effectsErrors: [],
+    analysisErrors: [],
     compileErrors: [],
     runtimeErrors: [],
     sourceMap: new Map(),
   }
 }
 
-// convert an error tree to an error message
-function errorTreeToMsg(sourceMap: Map<bigint, Loc>, trees: Map<bigint, ErrorTree>) {
-  const errors: ErrorMessage[] = []
-  trees.forEach((value, key) => {
-    const loc = sourceMap.get(key)!
-    const msg = {
-      explanation: errorTreeToString(value),
-      locs: [loc],
-    }
-    errors.push(msg)
-  })
+/**
+ * Extract a compiled value of a specific kind via the module name and kind.
+ *
+ * @param ctx compilation context
+ * @param moduleName module name to lookup at
+ * @param defName definition name
+ * @param kind definition kind
+ * @returns the associated compiled value, if it uniquely defined, or undefined
+ */
+export function
+  contextLookup(ctx: CompilationContext,
+                moduleName: string,
+                defName: string,
+                kind: ComputableKind): Either<string, Computable> {
+  const moduleTable = ctx.lookupTable.get(moduleName)
+  if (!moduleTable) {
+    return left(`Module ${moduleName} not found`)
+  }
+  const defs = moduleTable.valueDefinitions.get(defName)
+  if (!defs) {
+    return left(`Definition ${moduleName}::${defName} not found`)
+  }
+  if (defs.length !== 1) {
+    return left(`Multiple definitions (${defs.length}) of ${moduleName}::${defName} found`)
+  }
 
-  return errors
+  const value = ctx.values.get(kindName(kind, defs[0].reference!))
+  if (!value) {
+    console.log(`key = ${kindName(kind, defs[0].reference!)}`)
+    return left(`No value for definition ${moduleName}::${defName}`)
+  } else {
+    return right(value)
+  }
 }
 
 /**
- * Parse a string that contains a Quint module and compile it to executable
+ * Compile Quint modules to JS runtime objects from the parsed and type-checked
+ * data structures. This is a user-facing function. In case of an error, the
+ * error messages are passed to an error handler and the function returns
+ * undefined.
+ *
+ * @param modules Quint modules in the intermediate representation
+ * @param sourceMap source map as produced by the parser
+ * @param lookupTable lookup table as produced by the parser
+ * @param types type table as produced by the type checker
+ * @param mainName the name of the module that may contain state varibles
+ * @returns the compilation context
+ */
+export function
+  compile(modules: QuintModule[],
+          sourceMap: Map<bigint, Loc>,
+          lookupTable: LookupTableByModule,
+          types: Map<bigint, TypeScheme>,
+          mainName: string): CompilationContext {
+  // Push back the main module to the end:
+  // The compiler exposes the state variables of the last module only.
+  const main = modules.find(m => m.name === mainName)
+  const visitor = new CompilerVisitor(types)
+  if (main) {
+    const reorderedModules =
+      modules.filter(m => m.name !== mainName).concat(main ? [main] : [])
+    // Compile all modules
+    reorderedModules.forEach(module => {
+      visitor.switchModule(module.id,
+                           module.name,
+                           lookupTable.get(module.name)!,
+                           treeFromModule(module))
+      module.defs.forEach(def => walkDefinition(visitor, def))
+    })
+  }
+  // when the main module is not found, we will report an error
+  const mainNotFoundError =
+    main ? [] : [{
+      explanation: `Main module ${mainName} not found`,
+      refs: [],
+    }]
+  return {
+    lookupTable: lookupTable,
+    values: visitor.getContext(),
+    vars: visitor.getVars(),
+    shadowVars: visitor.getShadowVars(),
+    syntaxErrors: [],
+    analysisErrors: [],
+    compileErrors: visitor.getCompileErrors().concat(mainNotFoundError),
+    runtimeErrors: visitor.getRuntimeErrors(),
+    sourceMap: sourceMap,
+  }
+}
+
+/**
+ * Parse a string that contains Quint modules and compile it to executable
  * objects. This is a user-facing function. In case of an error, the error
  * messages are passed to an error handler and the function returns undefined.
  *
- * @param moduleText text that stores a Quint module,
+ * @param code text that stores one or several Quint modules,
  *        which should be parseable without any context
- * @returns a mapping from names to computable values
+ * @param mainName the name of the module that may contain state varibles
+ * @returns the compilation context
  */
 export function
-  compile(moduleText: string): CompilationContext {
+  compileFromCode(code: string, mainName: string): CompilationContext {
   // parse the module text
-  return parsePhase1(moduleText, '<input>')
+  return parsePhase1(code, '<input>')
     // On errors, we'll produce the computational context up to this point
     .mapLeft(errorContext)
     .chain(d => parsePhase2(d)
       // On errors, we'll produce the computational context up to this point
       .mapLeft(errorContext))
     .chain(parseData => {
-      const { module, table, sourceMap } = parseData
-      // in the future, we will be using types and effects
-      const [typeErrors, _types] = inferTypes(table, module)
-      const [effectsErrors, _effects] = inferEffects(table, module)
+      const { modules, table, sourceMap } = parseData
+      const analyzer = new QuintAnalyzer(table)
+      modules.forEach(module => analyzer.analyze(module))
       // since the type checker and effects checker are incomplete,
       // collect the errors, but do not stop immediately on error
-      const visitor = new CompilerVisitor()
-      walkModule(visitor, module)
+      const [analysisErrors, analysisResult] = analyzer.getResult()
+      const ctx =
+        compile(modules, sourceMap, table, analysisResult.types, mainName)
+      const errorLocator = mkErrorMessage(sourceMap)
       return right({
-        values: visitor.getContext(),
-        vars: visitor.getVars(),
-        shadowVars: visitor.getShadowVars(),
-        syntaxErrors: [],
-        typeErrors: errorTreeToMsg(sourceMap, typeErrors),
-        effectsErrors: errorTreeToMsg(sourceMap, effectsErrors),
-        compileErrors: visitor.getCompileErrors(),
-        runtimeErrors: visitor.getRuntimeErrors(),
-        sourceMap: sourceMap,
+        ...ctx,
+        analysisErrors: Array.from(analysisErrors, errorLocator),
       })
     }
-      // Wether we end up with a right or a left, we will have a CompilationContext
-    ).value
+  // we produce CompilationContext in any case
+  ).value
 }

@@ -2,9 +2,9 @@
  * Compiler of Quint expressions and definitions to Computable values
  * that can be evaluated in the runtime.
  *
- * Igor Konnov, 2022
+ * Igor Konnov, 2022-2023
  *
- * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Copyright (c) Informal Systems 2022-2023. All rights reserved.
  * Licensed under the Apache 2.0.
  * See License.txt in the project root for license information.
  */
@@ -13,7 +13,10 @@ import { strict as assert } from 'assert'
 import { Maybe, just, merge, none } from '@sweet-monads/maybe'
 import { List, OrderedMap, Set } from 'immutable'
 
+import { LookupTable, lookupValue, newTable } from '../../lookupTable'
 import { IRVisitor } from '../../IRVisitor'
+import { ScopeTree } from '../../scoping'
+import { TypeScheme } from '../../types/base'
 import {
   Callable, Computable, ComputableKind, EvalResult, Register,
   fail, kindName, mkCallable, mkRegister
@@ -38,12 +41,21 @@ import { lastTraceName } from '../compile'
  * the type checker yet, computations may fail with weird JavaScript errors.
  */
 export class CompilerVisitor implements IRVisitor {
+  // the id and name of the current module
+  private currentModule: { id: bigint, name: string } = { id: 0n, name: "_" }
+  // the lookup table to use for the module
+  private lookupTable: LookupTable = newTable({})
+  // the scope tree to be used with the lookup table
+  private scopeTree: ScopeTree = { value: 0n, children: [] }
+  // types assigned to expressions and definitions
+  private types: Map<bigint, TypeScheme>
   // the stack of computable values
   private compStack: Computable[] = []
-  // The map of names to their computable values:
+  // The map of identifiers (and sometimes, names) to their compiled values:
   //  - wrappers around RuntimeValue
   //  - an instance of Register
-  //  - an instance of Callable
+  //  - an instance of Callable.
+  // The keys should be constructed via `kindName`.
   private context: Map<string, Computable> = new Map<string, Computable>()
 
   // all variables declared during compilation
@@ -57,19 +69,30 @@ export class CompilerVisitor implements IRVisitor {
   // messages that get populated as the compiled code is executed
   private runtimeErrors: ir.IrErrorMessage[] = []
 
-  constructor() {
+  constructor(types: Map<bigint, TypeScheme>) {
+    this.types = types
     const lastTrace =
       mkRegister('shadow', lastTraceName, none(),
         () => this.addRuntimeError(0n, '_lastTrace is not set'))
     this.shadowVars.push(lastTrace)
     this.context.set(kindName(lastTrace.kind, lastTrace.name), lastTrace)
+    // introduce parameterless callables for the built-in values
     const boolSet =
       mkConstComputable(rv.mkSet([rv.mkBool(false), rv.mkBool(true)]))
-    this.context.set(kindName('val', 'Bool'), boolSet)
-    this.context.set(kindName('val', 'Int'),
-      mkConstComputable(rv.mkInfSet('Int')))
-    this.context.set(kindName('val', 'Nat'),
-      mkConstComputable(rv.mkInfSet('Nat')))
+    this.context.set(kindName('callable', 'Bool'), mkCallable([], boolSet))
+    this.context.set(kindName('callable', 'Int'),
+      mkCallable([], mkConstComputable(rv.mkInfSet('Int'))))
+    this.context.set(kindName('callable', 'Nat'),
+      mkCallable([], mkConstComputable(rv.mkInfSet('Nat'))))
+  }
+
+  switchModule(moduleId: bigint,
+               moduleName: string,
+               lookupTable: LookupTable,
+               scopeTree: ScopeTree) {
+    this.currentModule = { id: moduleId, name: moduleName }
+    this.lookupTable = lookupTable
+    this.scopeTree = scopeTree
   }
 
   /**
@@ -116,29 +139,39 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   exitOpDef(opdef: ir.QuintOpDef) {
-    // either a runtime value (if val), or a callable (if def, action, etc.)
+    // Either a runtime value, or a def, action, etc.
+    // All of them are compiled to callables, which may have zero parameters.
     const value = this.compStack.pop()
-    if (value) {
-      this.context.set(kindName('callable', opdef.name), value)
-    } else {
+    if (value === undefined) {
       this.addCompileError(opdef.id,
         `No expression for ${opdef.name} on compStack`)
+    } else {
+      const kname = kindName('callable', opdef.id)
+      // bind the callable from the stack
+      this.context.set(kname, value)
     }
   }
 
   exitVar(vardef: ir.QuintVar) {
+    // use the qualified name,
+    // as different modules may contain state variables of the same name
+    const qname = `${this.currentModule.name}::${vardef.name}`
     // simply introduce two registers:
     //  one for the variable, and
     //  one for its next-state version
     const prevRegister =
-      mkRegister('var', vardef.name, none(),
-        () => this.addRuntimeError(vardef.id, `Variable ${vardef.name} is not set`))
+      mkRegister('var', qname, none(),
+        () => this.addRuntimeError(vardef.id, `Variable ${qname} is not set`))
     this.vars.push(prevRegister)
-    this.context.set(kindName('var', vardef.name), prevRegister)
-    const nextRegister = mkRegister('nextvar', vardef.name, none(),
-      () => this.addRuntimeError(vardef.id, `next(${vardef.name}) is not set`))
+    // at the moment, we have to refer to variables both via id and name
+    this.context.set(kindName('var', qname), prevRegister)
+    this.context.set(kindName('var', vardef.id), prevRegister)
+    const nextRegister = mkRegister('nextvar', qname, none(),
+      () => this.addRuntimeError(vardef.id, `${qname}' is not set`))
     this.nextVars.push(nextRegister)
-    this.context.set(kindName('nextvar', nextRegister.name), nextRegister)
+    // at the moment, we have to refer to variables both via id and name
+    this.context.set(kindName('nextvar', qname), nextRegister)
+    this.context.set(kindName('nextvar', vardef.id), nextRegister)
   }
 
   enterLiteral(expr: ir.QuintBool | ir.QuintInt | ir.QuintStr) {
@@ -161,13 +194,17 @@ export class CompilerVisitor implements IRVisitor {
     // a shadow variable, a variable, an argument, a callable.
     // The order is important, as defines the name priority.
     const comp =
-      this.contextGet(name.name, ['shadow', 'val', 'var', 'arg', 'callable'])
-    // this may happen, see: https://github.com/informalsystems/quint/issues/129
+      this.contextGet(name.name, ['shadow', 'arg'])
+        ?? this.contextLookup(name.name, name.id, ['var', 'callable'])
+        // a backup case for Nat, Int, and Bool
+        ?? this.contextGet(name.name, ['callable'])
     if (comp) {
+      // this name has an associated computable object already
       this.compStack.push(comp)
     } else {
-      this.addCompileError(name.id,
-        `Name ${name.name} not found (out of order?)`)
+      // this should not happen, due to the name resolver
+      this.addCompileError(name.id, `Name ${name.name} not found`)
+      this.compStack.push(fail)
     }
   }
 
@@ -186,26 +223,9 @@ export class CompilerVisitor implements IRVisitor {
         break
       }
 
-      case 'assign': {
-        if (this.compStack.length < 2) {
-          this.addCompileError(app.id, 'Assignment <- needs two arguments')
-          return
-        }
-        const [register, rhs] = this.compStack.splice(-2)
-        const name = (register as Register).name
-        const nextvar = this.contextGet(name, ['nextvar']) as Register
-        if (nextvar) {
-          this.compStack.push(rhs)
-          this.applyFun(app.id, 1, (value) => {
-            nextvar.registerValue = just(value)
-            return just(rv.mkBool(true))
-          })
-        } else {
-          this.addCompileError(app.id, `${name} not found in ${name} <- ...`)
-          this.compStack.push(fail)
-        }
+      case 'assign':
+        this.translateAssign(app.id)
         break
-      }
 
       case 'eq':
         this.applyFun(app.id, 2, (x, y) => just(rv.mkBool(x.equals(y))))
@@ -581,11 +601,6 @@ export class CompilerVisitor implements IRVisitor {
         this.applyFold(app.id, 'rev')
         break
 
-      case 'guess':
-        // TODO: remove soon: https://github.com/informalsystems/quint/issues/376
-        this.applyGuess(app.id)
-        break
-
       case 'flatten':
         this.applyFun(app.id, 1, set => {
           // unpack the sets from runtime values
@@ -766,6 +781,32 @@ export class CompilerVisitor implements IRVisitor {
         this.test(app.id)
         break
 
+      // standard unary operators that are not handled by REPL
+      case 'allLists':
+      case 'chooseSome':
+      case 'always':
+      case 'eventually':
+      case 'enabled':
+        this.applyFun(app.id, 1, (_) => {
+          this.addRuntimeError(app.id,
+            `Runtime does not support the built-in operator '${app.opcode}'`)
+          return none()
+        })
+        break
+
+      // standard binary operators that are not handled by REPL
+      case 'orKeep':
+      case 'mustChange':
+      case 'weakFair':
+      case 'strongFair':
+        this.applyFun(app.id, 2, (_) => {
+          this.addRuntimeError(app.id,
+            `Runtime does not support the built-in operator '${app.opcode}'`)
+          return none()
+        })
+        break
+
+
       default: {
         this.applyUserDefined(app)
       }
@@ -774,7 +815,7 @@ export class CompilerVisitor implements IRVisitor {
 
   private applyUserDefined(app: ir.QuintApp) {
     const callable =
-      this.contextGet(app.opcode, ['callable', 'arg']) as Callable
+      this.contextLookup(app.opcode, app.id, ['callable', 'arg']) as Callable
     if (callable === undefined || callable.registers === undefined) {
       this.addCompileError(app.id, `Called unknown operator ${app.opcode}`)
       this.compStack.push(fail)
@@ -784,17 +825,18 @@ export class CompilerVisitor implements IRVisitor {
       if (nactual < nexpected) {
         this.addCompileError(app.id,
           `Expected ${nexpected} arguments for ${app.opcode}, found: ${nactual}`)
-        return
-      }
-      this.applyFun(app.id,
-        callable.registers.length,
-        (...args: RuntimeValue[]) => {
-          for (let i = 0; i < args.length; i++) {
-            callable.registers[i].registerValue = just(args[i])
+        this.compStack.push(fail)
+      } else {
+        this.applyFun(app.id,
+          callable.registers.length,
+          (...args: RuntimeValue[]) => {
+            for (let i = 0; i < args.length; i++) {
+              callable.registers[i].registerValue = just(args[i])
+            }
+            return callable.eval() as Maybe<RuntimeValue>
           }
-          return callable.eval() as Maybe<RuntimeValue>
-        }
-      )
+        )
+      }
     }
   }
 
@@ -828,6 +870,35 @@ export class CompilerVisitor implements IRVisitor {
       this.compStack.push(mkCallable(registers, lambdaBody))
     } else {
       this.addCompileError(lam.id, 'Compilation of lambda failed')
+    }
+  }
+
+  private translateAssign(sourceId: bigint): void {
+    if (this.compStack.length < 2) {
+      this.addCompileError(sourceId,
+        `Assignment '=' needs two arguments`)
+      return
+    }
+    const [register, rhs] = this.compStack.splice(-2)
+    const name = (register as Register).name
+    if (name === undefined) {
+      this.addCompileError(sourceId,
+        `Assignment '=' applied to a non-variable`)
+      this.compStack.push(fail)
+      return
+    }
+
+    const nextvar = this.contextGet(name, ['nextvar']) as Register
+    if (nextvar) {
+      this.compStack.push(rhs)
+      this.applyFun(sourceId, 1, (value) => {
+        nextvar.registerValue = just(value)
+        return just(rv.mkBool(true))
+      })
+    } else {
+      this.addCompileError(sourceId,
+        `Undefined next variable in ${name} = ...`)
+      this.compStack.push(fail)
     }
   }
 
@@ -1218,6 +1289,12 @@ export class CompilerVisitor implements IRVisitor {
       return rv.mkRecord(map)
     }
 
+    // lookup a callable by name in the current module
+    const lookup = (name: string) => {
+      return this.contextLookup(name,
+                                this.currentModule.id, ['callable']) ?? fail
+    }
+
     const args = this.compStack.splice(-5)
     // run simulation when invoked
     const doRun = (): Maybe<EvalResult> => {
@@ -1240,7 +1317,7 @@ export class CompilerVisitor implements IRVisitor {
             trace = []
             // check Init()
             const initName = (initRes as RuntimeValue).toStr()
-            const init = this.contextGet(initName, ['callable']) ?? fail
+            const init = lookup(initName)
             if (isTrue(init.eval())) {
               // The initial action evaluates to true.
               // Our guess of values was good.
@@ -1248,14 +1325,14 @@ export class CompilerVisitor implements IRVisitor {
               trace.push(varsToRecord())
               // check the invariant Inv
               const invName = (invRes as RuntimeValue).toStr()
-              const inv = (this.contextGet(invName, ['callable']) ?? fail)
+              const inv = lookup(invName)
               if (!isTrue(inv.eval())) {
                 errorFound = true
               } else {
                 // check all { Next(), shift(), Inv } in a loop
                 const nsteps = (nstepsRes as RuntimeValue).toInt()
                 const nextName = (nextRes as RuntimeValue).toStr()
-                const next = (this.contextGet(nextName, ['callable']) ?? fail)
+                const next = lookup(nextName)
                 for (let i = 0; !errorFound && i < nsteps; i++) {
                   if (isTrue(next.eval())) {
                     this.shiftVars()
@@ -1321,6 +1398,21 @@ export class CompilerVisitor implements IRVisitor {
       const value = this.context.get(kindName(k, name))
       if (value) {
         return value
+      }
+    }
+
+    return undefined
+  }
+
+  private contextLookup(name: string, scopeId: bigint, kinds: ComputableKind[]) {
+    const vdef = lookupValue(this.lookupTable, this.scopeTree, name, scopeId)
+    if (vdef) {
+      const refId = vdef.reference!
+      for (const k of kinds) {
+        const value = this.context.get(kindName(k, refId))
+        if (value) {
+          return value
+        }
       }
     }
 

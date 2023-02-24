@@ -44,7 +44,7 @@ JavaScript has plenty of bad parts.
 These steps are currently a bit complicated. Check the dedicated pages:
 
  - [Installing quint][],
- - [Installing the VSCode plugin][].
+ - [Installing the VSCode plugin](#using-the-vscode-plugin-from-source).
 
 ### Tests
 
@@ -147,12 +147,20 @@ make local
 
 Make sure you have the folder linked to your vscode extensions as described above.
 
+### Troubleshooting
+
+Between installing the plugin from different sources, you may end up with multiple versions and VSCode can get confused about which version to use. To fix this, follow these steps:
+
+1. Navigate to `$HOME/.vscode/extensions` and delete folders called `informal.quint-vscode*` except for the one you want to keep.
+2. `rm $HOME/.vscode/extensions/extensions.json`.
+3. `rm $HOME/.vscode/extensions/.init-default-profile-extensions`.
+4. Restart VSCode **twice**. The first time it will recreate the `extensions.json` file, the second time it will install the extensions. Reloading won't work, you need to actually close and reopen VSCode.
+
 [Apalache]: https://github.com/informalsystems/apalache
 [Contributing to Apalache]: https://github.com/informalsystems/apalache/blob/unstable/CONTRIBUTING.md
 [eslint]: https://eslint.org/
 [quint manual]: ./doc/quint.md
 [Installing quint]: https://github.com/informalsystems/quint/blob/main/quint/README.md#how-to-install
-[Installing the VSCode plugin]: https://github.com/informalsystems/quint/blob/main/vscode/quint/README.md#temp-how-to-run-it-locally
 [Language server protocol]: https://microsoft.github.io/language-server-protocol/
 [quint unit tests]: https://github.com/informalsystems/quint/blob/main/quint/README.md#unit-tests
 [quint integration tests]: ./quint/README.md#integration-tests
@@ -161,3 +169,24 @@ Make sure you have the folder linked to your vscode extensions as described abov
 [txm]: https://www.npmjs.com/package/txm
 [sweet-monads/maybe]: https://www.npmjs.com/package/@sweet-monads/maybe
 [lodash.isequal]: https://www.npmjs.com/package/lodash.isequal
+
+## Release
+
+We manage releases for two components out of this repository: the quint
+executable and the VSCode plugin.
+
+### quint executable
+
+- Prepare a release by running
+  [./quint/scripts/prepare-release.sh](./quint/scripts/prepare-release.sh).
+- Get the release PR reviewed and merged
+- Checkout the release commit
+- Run the release script [./quint/scripts/release.sh](./quint/scripts/release.sh).
+
+  This will trigger the release and publication of the package to npm and
+  GitHub.
+  
+### VSCode Plugin
+
+To initiate a release of the VSCode plugin, run the script
+[./vscode/quint-vscode/scripts/prepare-release.sh](./vscode/quint-vscode/scripts/prepare-release.sh).

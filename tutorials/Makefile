@@ -9,7 +9,8 @@
 # Compile all Quint tutorials
 tutorials: lesson0-helloworld/hello.qnt \
 			lesson1-booleans/booleans.qnt \
-			lesson2-integers/integers.qnt
+			lesson2-integers/integers.qnt \
+			lesson3-anatomy/coin.qnt
 	@echo "Updated all tutorials"
 
 %.qnt: %.template.qnt

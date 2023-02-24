@@ -143,7 +143,7 @@ describe('repl ok', () => {
     )
     const output = dedent(
       `>>> 1 + false
-      |type error: <input>:1:1 - error: Couldn't unify int and bool
+      |static analysis error: <input>:1:1 - error: [QNT000] Couldn't unify int and bool
       |Trying to unify int and bool
       |Trying to unify (int, int) => int and (int, bool) => t8
       |
@@ -213,11 +213,11 @@ describe('repl ok', () => {
       |>>> .clear
       |
       |>>> n * n
-      |syntax error: <input>:1:1 - error: Failed to resolve name n in definition for __input, in module __REPL
+      |syntax error: <input>:1:1 - error: Failed to resolve name n in definition for __input, in module __repl__
       |1: n * n
       |   ^
       |
-      |syntax error: <input>:1:5 - error: Failed to resolve name n in definition for __input, in module __REPL
+      |syntax error: <input>:1:5 - error: Failed to resolve name n in definition for __input, in module __repl__
       |1: n * n
       |       ^
       |
@@ -238,7 +238,7 @@ describe('repl ok', () => {
       |1: Set(Int)
       |   ^^^^^^^^
       |
-      |<result undefined>
+      |<undefined value>
       |
       |>>> `
     )
@@ -493,7 +493,7 @@ describe('repl ok', () => {
       |>>> _lastTrace.length()
       |11
       |>>> _lastTrace.nth(_lastTrace.length() - 1)
-      |{ n: 10 }
+      |{ __repl__::n: 10 }
       |>>> `
     )
     await assertRepl(input, output)

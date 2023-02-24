@@ -24,9 +24,9 @@ export class ToIrListener implements QuintListener {
   }
 
   /**
-   * The module that is constructed as a result of parsing
+   * The modules derived as a result of parsing
    */
-  rootModule?: QuintModule = undefined
+  topModules: QuintModule[] = []
   /**
    * The stack of types that can be used as a result of type parsing.
    */
@@ -85,8 +85,11 @@ export class ToIrListener implements QuintListener {
       kind: 'module',
       module,
     })
-    // advance the root module to this one
-    this.rootModule = module
+
+    if (this.moduleDefStack.length == 0) {
+      // save the top module
+      this.topModules.push(module)
+    }
   }
 
   // translate: const x: type
@@ -369,7 +372,7 @@ export class ToIrListener implements QuintListener {
       this.exprStack.push({
         id,
         kind: 'int',
-        value: BigInt(intNode.text),
+        value: BigInt(intNode.text.replaceAll('_', '')),
       })
     }
     const boolNode = ctx.BOOL()

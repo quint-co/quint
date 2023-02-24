@@ -1,7 +1,7 @@
 " Vim syntax file
 " Language: Quint
 " Maintainer: Igor Konnov, Informal Systems, igor at informal.systems
-" Latest Revision: 28 November 2022
+" Latest Revision: 03 February 2023
 "
 " How to install:
 " 1. Copy this file to ~/.vim/syntax/
@@ -29,11 +29,11 @@ syn region quintComment start="/\*" end="\*/" fold
 syn match quintIdent "[a-zA-Z_][a-zA-Z0-9_]*"
 
 " numbers and strings
-syn match quintNumber '-\?\d\+'
+syn match quintNumber '-\?\(0x[0-9a-fA-F]\([0-9a-fA-F]\|_[0-9a-fA-F]\)*\|0\|[1-9]([0-9]\|_[0-9])*\)'
 syn region quintString start='"' end='"'
 
 " types
-syn keyword quintType int str bool set list
+syn keyword quintType int str bool Set List Rec Tup
 
 " typedefs
 syn keyword quintTypedef type
@@ -43,27 +43,14 @@ syn keyword quintValue Bool Int Nat
 syn keyword quintBoolValue false true
 
 " conditionals
-syn keyword quintCond if else match
+syn keyword quintCond if else
 
 " declarations
-syn keyword quintDecl module import const var def val pure nondet action temporal assume
+syn keyword quintDecl module import const var val def pure nondet action temporal assume run
 
 " standard operators
 syn keyword quintStd Set List Map Rec Tup
-syn keyword quintStd not and or iff implies
-syn keyword quintStd exists guess forall in notin union
-syn match   quintStd "contains"   " use match, as 'contains' is a vim option
-syn match   quintStd "fold"       " use match, as 'fold' is a vim option
-syn keyword quintStd intersect exclude subseteq map applyTo filter
-syn keyword quintStd powerset flatten seqs chooseSome
-syn keyword quintStd isFinite cardinality get put keys mapBy setOfMaps
-syn keyword quintStd set setBy fieldNames with tuples append concat
-syn keyword quintStd head tail length nth indices replaceAt slice
-syn keyword quintStd select foldl foldr to
-syn keyword quintStd always eventually next orKeep mustChange
-syn keyword quintStd enabled weakFair strongFair guarantees
-syn keyword quintStd existsConst forallConst chooseConst
-syn keyword quintStd any all
+syn keyword quintStd not and or iff implies all any
 
 " curly braces
 syn region quintBlock start="{" end="}" fold transparent contains=ALLBUT,quintCurlyError
@@ -82,7 +69,7 @@ syn keyword quintOper "^" "-" "+" "*" "/" "%" "." " "<-" "<" ">" "<=" ">="
 syn keyword quintOper "==" "!=" "=>" "->"
 
 " delimiters
-syn match quintDelim "," ":" "|" "&"
+syn match quintDelim "," ":" ";"
 
 
 " highlighting instructions

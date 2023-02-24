@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+ - Change parsing interfaces to support multiple modules (#547)
+ - Change static analysis interfaces to support multiple modules (#559)
+ - Change documentation overlays and code navigation to support multiple modules (#584)
+ - Add code action to fix mode errors (#619)
+
+## v0.1.2 -- 2023-01-24
+
+### Added
+
 - Support for "Go to definition" (#546).
 
 ## v0.1.1 -- 2023-01-17

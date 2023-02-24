@@ -15,6 +15,8 @@
 import { LookupTable, LookupTableByModule, addTypeToTable, addValueToTable, copyNames, copyTable, mergeTables, newTable } from './lookupTable'
 import { QuintImport, QuintInstance, QuintModule, QuintModuleDef } from './quintIr'
 import { IRVisitor, walkModule } from './IRVisitor'
+import { Either, left, right } from '@sweet-monads/either'
+import { QuintError } from './quintError'
 
 /**
  * A single import error
@@ -31,11 +33,7 @@ export interface ImportError {
 /**
  * The result of import resolution for a Quint Module.
  */
-export type ImportResolutionResult =
-  /* Success, all imports were resolved and an updated table is provided */
-  | { kind: 'ok', definitions: LookupTableByModule }
-  /* Error, at least one import couldn't be resolved. All errors are listed in errors */
-  | { kind: 'error', errors: ImportError[] }
+export type ImportResolutionResult = Either<Map<bigint, QuintError>, LookupTableByModule>
 
 /**
  * Explores the IR visiting all imports and instances. For each one, tries to find a definition
@@ -51,9 +49,9 @@ export function resolveImports(quintModule: QuintModule, definitions: LookupTabl
   const visitor = new ImportResolverVisitor(definitions)
   walkModule(visitor, quintModule)
 
-  return visitor.errors.length > 0
-    ? { kind: 'error', errors: visitor.errors }
-    : { kind: 'ok', definitions: visitor.tables }
+  return visitor.errors.size > 0
+    ? left(visitor.errors)
+    : right(visitor.tables)
 }
 
 class ImportResolverVisitor implements IRVisitor {
@@ -62,7 +60,7 @@ class ImportResolverVisitor implements IRVisitor {
   }
 
   tables: LookupTableByModule
-  errors: ImportError[] = []
+  errors: Map<bigint, QuintError> = new Map<bigint, QuintError>()
 
   private currentModule: QuintModule = { name: '', defs: [], id: 0n }
   private currentTable: LookupTable = newTable({})
@@ -86,17 +84,46 @@ class ImportResolverVisitor implements IRVisitor {
     const moduleTable = this.tables.get(def.protoName)
 
     if (!moduleTable) {
-      // Instancing unexisting module
-      this.errors.push({ moduleName: def.protoName, reference: def.id })
+      // Instantiating a non-existing module
+      this.errors.set(def.id, {
+        code: 'QNT404',
+        message: `Module ${def.protoName} not found`,
+        data: {},
+      })
       return
     }
+    const instanceTable = copyTable(moduleTable)
+
+    // For each override, check if the name exists in the instanced module and is a constant.
+    // If so, update the value definition to point to the expression being overriden
+    def.overrides.forEach(([name, ex]) => {
+      const valueDefs = instanceTable.valueDefinitions.get(name) ?? []
+
+      if (valueDefs.length === 0) {
+        this.errors.set(def.id, {
+          code: 'QNT406',
+          message: `Instantiation error: ${name} not found in ${def.protoName}`,
+          data: {},
+        })
+      }
+
+      if (!valueDefs.every(def => def.kind === 'const')) {
+        this.errors.set(def.id, {
+          code: 'QNT406',
+          message: `Instantiation error: ${name} is not a constant`,
+          data: {},
+        })
+      }
+      const newDefs = valueDefs.map(def => ({ ...def, reference: ex.id }))
+      instanceTable.valueDefinitions.set(name, newDefs)
+    })
 
     // Copy the intanced module lookup table in a new lookup table for the instance
-    this.tables.set(def.name, copyTable(moduleTable))
+    this.tables.set(def.name, instanceTable)
 
     // All names from the instanced module should be acessible with the instance namespace
     // So, copy them to the current module's lookup table
-    const newEntries = copyNames(moduleTable, def.name, this.currentModule.id)
+    const newEntries = copyNames(instanceTable, def.name, this.currentModule.id)
     this.currentTable = mergeTables(this.currentTable, newEntries)
   }
 
@@ -104,7 +131,11 @@ class ImportResolverVisitor implements IRVisitor {
     const moduleTable = this.tables.get(def.path)
     if (!moduleTable) {
       // Importing unexisting module
-      this.errors.push({ moduleName: def.path, reference: def.id })
+      this.errors.set(def.id, {
+        code: 'QNT404',
+        message: `Module ${def.path} not found`,
+        data: {},
+      })
       return
     }
 
@@ -116,7 +147,11 @@ class ImportResolverVisitor implements IRVisitor {
     } else {
       // Tries to find a specific definition, reporting an error if not found
       if (!importableDefinitions.valueDefinitions.has(def.name)) {
-        this.errors.push({ moduleName: def.path, defName: def.name, reference: def.id })
+        this.errors.set(def.id, {
+          code: 'QNT405',
+          message: `Name ${def.path}::${def.name} not found`,
+          data: {},
+        })
         return
       }
 
@@ -134,7 +169,11 @@ class ImportResolverVisitor implements IRVisitor {
 
           if (!importedModuleTable) {
             // Importing a module without a lookup table for it
-            this.errors.push({ moduleName: def.path, defName: definition.identifier, reference: def.id })
+            this.errors.set(def.id, {
+              code: 'QNT404',
+              message: `Module ${def.path}::${definition.identifier} not found`,
+              data: {},
+            })
             return
           }
 

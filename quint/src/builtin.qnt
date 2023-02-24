@@ -59,20 +59,6 @@ module builtin {
   /// This is the negation opearator.
   pure def not(a): (bool) => bool
 
-  /// Guess a value from the given set that satisfies the given predicate.
-  ///
-  /// This operator is non-deterministic.
-  ///
-  /// If the set is empty, then the result is `false`.
-  ///
-  /// ### Examples
-  ///
-  /// ```
-  /// var x: int
-  /// run a = Set(1, 2, 3).guess(n => x' = n).then(assert(x.in(Set(1, 2, 3))))
-  /// ```
-  pure def guess(a, p): (Set[a], (a) => bool) => bool
-
   /// `s.exists(p)` is true when there is an element in `s` that satisfies `p`.
   ///
   /// This is the existential quantifier.
@@ -230,7 +216,7 @@ module builtin {
   ///   Set(1, 2)
   /// ))
   /// ```
-  pure def powerset(s): (Set[Set[a]]) => Set[Set[a]]
+  pure def powerset(s): (Set[a]) => Set[Set[a]]
 
   /// `s.flatten()` is the set of all elements in the sets in `s`.
   ///
@@ -714,7 +700,10 @@ module builtin {
   /// ```
   /// var x: int
   /// action Init = x' = 0
-  /// action impossible = Set().guess(i => x' = i)
+  /// action impossible = {
+  ///   nondet i = Set().oneOf()
+  ///   x' = i
+  /// }
   /// temporal Property = always(not(enabled(impossible)))
   /// ```
   temporal enabled(a): (bool) => bool

@@ -68,21 +68,6 @@ assert(not(false.implies(true)))
 
 This is the negation opearator.
 
-## `pure def guess: (Set[a], (a) => bool) => bool`
-
-Guess a value from the given set that satisfies the given predicate.
-
-This operator is non-deterministic.
-
-If the set is empty, then the result is `false`.
-
-### Examples
-
-```
-var x: int
-run a = Set(1, 2, 3).guess(n => x' = n).then(assert(x.in(Set(1, 2, 3))))
-```
-
 ## `pure def exists: (Set[a], (a) => bool) => bool`
 
 `s.exists(p)` is true when there is an element in `s` that satisfies `p`.
@@ -239,7 +224,7 @@ val mul = Set(1, 2, 3, 4).fold(1, (x, y) => x * y)
 assert(mul == 24)
 ```
 
-## `pure def powerset: (Set[Set[a]]) => Set[Set[a]]`
+## `pure def powerset: (Set[a]) => Set[Set[a]]`
 
 `s.powerset()` is the set of all subsets of `s`,
 including the empty set and the set itself.
@@ -783,7 +768,10 @@ temporal Property = always(and {
 ```
 var x: int
 action Init = x' = 0
-action impossible = Set().guess(i => x' = i)
+action impossible = {
+  nondet i = Set().oneOf()
+  x' = i
+}
 temporal Property = always(not(enabled(impossible)))
 ```
 

@@ -8,13 +8,13 @@ export function buildModuleWithExpressions(expressions: string[]): QuintModule {
   return buildModuleWithDefs(defs)
 }
 
-export function buildModuleWithDefs(defs: string[]): QuintModule {
-  const quintModule: string = `module wrapper { ${defs.join('\n')} }`
+export function buildModuleWithDefs(defs: string[], name?: string): QuintModule {
+  const quintModule: string = `module ${name ?? 'wrapper'} { ${defs.join('\n')} }`
 
   const result = parsePhase1(quintModule, 'mocked_path')
 
   if (result.isRight()) {
-    return result.value.module
+    return result.value.modules[0]
   }
 
   throw new Error(`Couldn't parse mocked expression. Result - ${JSONbig.stringify(result)}`)

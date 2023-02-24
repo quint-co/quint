@@ -53,14 +53,14 @@ export interface Computable {
  * The kind of a computable.
  */
 export type ComputableKind =
-  'val' | 'var' | 'nextvar' | 'arg' | 'callable' | 'shadow'
+  'var' | 'nextvar' | 'arg' | 'callable' | 'shadow'
 
 /**
  * Create a key that encodes its name and kind. This is only useful for
  * storing registers in a map, as JS objects are hard to use as keys.
  * In a good language, we would use (kind, name), but not in JS.
  */
-export const kindName = (kind: ComputableKind, name: string): string => {
+export const kindName = (kind: ComputableKind, name: string | bigint): string => {
   return `${kind}:${name}`
 }
 

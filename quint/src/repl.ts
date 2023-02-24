@@ -1,7 +1,7 @@
 /*
  * REPL for quint.
  *
- * Igor Konnov, 2022
+ * Igor Konnov, 2022-2023.
  *
  * Copyright (c) Informal Systems 2022. All rights reserved.
  * Licensed under the Apache 2.0.
@@ -14,10 +14,13 @@ import { readFileSync, writeFileSync } from 'fs'
 import lineColumn from 'line-column'
 import chalk from 'chalk'
 
-import { Maybe, just, none } from '@sweet-monads/maybe'
+import { just } from '@sweet-monads/maybe'
+import { left, right } from '@sweet-monads/either'
 
 import { IrErrorMessage, QuintEx } from './quintIr'
-import { CompilationContext, compile, lastTraceName } from './runtime/compile'
+import {
+  CompilationContext, compileFromCode, contextLookup, lastTraceName
+} from './runtime/compile'
 import { formatError } from './errorReporter'
 import {
   ComputableKind, EvalResult, Register, kindName
@@ -34,6 +37,8 @@ type writer = (_text: string) => void
 
 // the internal state of the REPL
 interface ReplState {
+  // the history of module definitions loaded from external sources
+  moduleHist: string,
   // definitions history
   defsHist: string,
   // expressions history (for saving and loading)
@@ -77,6 +82,7 @@ export function quintRepl(input: Readable,
 
   // the state
   const state: ReplState = {
+    moduleHist: '',
     defsHist: '',
     exprHist: [],
     vars: new Map<string, EvalResult>(),
@@ -149,6 +155,7 @@ export function quintRepl(input: Readable,
   }
 
   function clearHistory() {
+    state.moduleHist = ''
     state.defsHist = ''
     state.exprHist = []
   }
@@ -245,12 +252,19 @@ export function quintRepl(input: Readable,
 }
 
 // private definitions
+const replBegin = 'module __repl__ {'
+const replEnd = '} //-- __repl__'
 
 function saveToFile(out: writer, state: ReplState, filename: string) {
-  // as top-level expressions are not supported by the language,
-  // we are wrapping them into special comments
+  // 1. Write the previously loaded modules.
+  // 2. Write the definitions in the special module called __repl__.
+  // 3. Wrap expressions into special comments.
   try {
-    const text = `${state.defsHist}\n//! expressions\n` +
+    const text =
+`${state.moduleHist}
+${replBegin}
+${state.defsHist}
+${replEnd}\n` +
       state.exprHist.map(s => `/*! ${s} !*/\n`).join('\n')
     writeFileSync(filename, text)
     out(`Session saved to: ${filename}`)
@@ -262,28 +276,48 @@ function saveToFile(out: writer, state: ReplState, filename: string) {
 function loadFromFile(out: writer, state: ReplState, filename: string): boolean {
   try {
     const data = readFileSync(filename, 'utf8')
-    // split the definitions from the expression
-    const frags = data.split(/^\/\/! expressions$/gsm)
-    state.defsHist += '\n' + frags[0]
-    // unwrap the expressions from the specially crafted comments
-    const exprs =
-      (frags[1] ?? '').matchAll(/\/\*! (.*?) !\*\//gsm) ?? []
-    // and replay them one by one
-    let replayed = false
-    for (const groups of exprs) {
-      replayed = true
-      if (!tryEval(out, state, groups[1])) {
-        break
+    const newState = { ...state }
+    const modulesAndRepl = data.split(replBegin)
+    // whether an error occurred at some step
+    let isError = false
+    newState.moduleHist = modulesAndRepl[0]
+    if (modulesAndRepl.length > 1) {
+      // found a REPL session
+      const defsAndExprs = modulesAndRepl[1].split(replEnd)
+
+      // save the definition history
+      newState.defsHist = defsAndExprs[0]
+      if (defsAndExprs.length > 1) {
+        // unwrap the expressions from the specially crafted comments
+        const exprs =
+          (defsAndExprs[1] ?? '').matchAll(/\/\*! (.*?) !\*\//gsm) ?? []
+        // and replay them one by one
+        // TODO: every call to tryEval makes a full cycle
+        // from the parser to the compiler. Make this incremental!
+        // https://github.com/informalsystems/quint/issues/618
+        for (const groups of exprs) {
+          if (!tryEval(out, newState, groups[1])) {
+            isError = true
+            break
+          }
+        }
       }
     }
-    if (!replayed) {
-      // nothing to replay, evaluate 'true', to trigger parsing
-      if (tryEval(out, state, 'true')) {
+
+    if (!isError && newState.exprHist.length === 0) {
+      // nothing was replayed, evaluate 'true', to trigger compilation
+      isError = !tryEval(out, newState, 'true')
+      if (!isError) {
         // remove 'true' from the expression history
-        state.exprHist.pop()
+        newState.exprHist.pop()
       }
     }
-    return true
+    if (!isError) {
+      state.moduleHist = newState.moduleHist
+      state.defsHist = newState.defsHist
+      state.exprHist = newState.exprHist
+    }
+    return !isError
   } catch (error) {
     out(chalk.red(error))
     return false
@@ -356,7 +390,7 @@ function chalkQuintEx(ex: QuintEx): string {
       switch (ex.opcode) {
         case 'Set': {
           const as = ex.args.map(chalkQuintEx).join(', ')
-          return chalk.green('Set') + chalk.black(`(${as})`)
+          return chalk.green('Set') + `(${as})`
         }
 
         case 'Map': {
@@ -370,17 +404,17 @@ function chalkQuintEx(ex: QuintEx): string {
             }
           })
           const as = ps.join(', ')
-          return chalk.green('Map') + chalk.black(`(${as})`)
+          return chalk.green('Map') + `(${as})`
         }
 
         case 'Tup': {
           const as = ex.args.map(chalkQuintEx).join(', ')
-          return chalk.black(`(${as})`)
+          return `(${as})`
         }
 
         case 'List': {
           const as = ex.args.map(chalkQuintEx).join(', ')
-          return chalk.black(`[${as}]`)
+          return `[${as}]`
         }
 
         case 'Rec': {
@@ -414,6 +448,20 @@ def _testOnce(__nsteps, __init, __next, __inv) =
   _test(1, __nsteps, __init, __next, __inv);
 `
 
+// Count the number of lines in a string.
+// An empty string is counted as one line.
+// When #618 is implemented, we should remove this.
+function countLines(s: string): number {
+  let count = 1;
+  for (let i = 0; i < s.length; i++) {
+    if (s.charAt(i) === '\n') {
+      count++
+    }
+  }
+
+  return count
+}
+
 // try to evaluate the expression in a string and print it, if successful
 function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   // output errors to the console in red
@@ -421,13 +469,25 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     printErrorMessages(out,
       'syntax error', moduleText, lineOffset, context.syntaxErrors)
     printErrorMessages(out,
-      'type error', moduleText, lineOffset, context.typeErrors, chalk.yellow)
-    printErrorMessages(out, 'effects error',
-      moduleText, lineOffset, context.effectsErrors, chalk.yellow)
+      'static analysis error', moduleText, lineOffset, context.analysisErrors, chalk.yellow)
     const resolved = resolveErrors(context.sourceMap, context.compileErrors)
     printErrorMessages(out,
       'compile error', moduleText, lineOffset, resolved)
     out('') // be nice to external programs
+  }
+
+  // Compose the input to the parser.
+  // TODO: REPL should work incrementally:
+  // https://github.com/informalsystems/quint/issues/618
+  function prepareParserInput(textToAdd: string): [string, number] {
+    const text = `${state.moduleHist}
+module __repl__ { ${simulatorBuiltins}
+${state.defsHist}
+${textToAdd}
+}`
+    // when #618 is implemented, we should stop counting lines in text!
+    const offset = -countLines(text) + countLines(newInput) + 2
+    return [text, offset]
   }
 
   const probeResult = probeParse(newInput, '<input>')
@@ -438,17 +498,12 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   }
   if (probeResult.kind === 'expr') {
     // embed expression text into a value definition inside a module
-    const preambule = `module __REPL { ${simulatorBuiltins}`
-    const moduleText = `${preambule}
-${state.defsHist}
-val __input =
-${newInput}
-}`
+    const [moduleText, lineOffset] =
+      prepareParserInput(`  action __input =\n${newInput}`)
     // compile the expression or definition and evaluate it
-    const context = compile(moduleText)
-    if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0 ||
-        context.typeErrors.length > 0 || context.effectsErrors.length > 0) {
-      const lineOffset = -preambule.split('\n').length - 1
+    const context = compileFromCode(moduleText, '__repl__')
+    if (context.syntaxErrors.length > 0 ||
+        context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
       printErrors(moduleText, context, lineOffset)
       if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
         return false
@@ -457,11 +512,11 @@ ${newInput}
 
     loadVars(state, context)
     loadShadowVars(state, context)
-    const computable = context.values.get(kindName('callable', '__input'))
-    let resultDefined: Maybe<void> = none()
-    if (computable) {
-      resultDefined =
-        computable
+    const computable = contextLookup(context, '__repl__', '__input', 'callable')
+    const result =
+      computable
+      .mapRight(comp => {
+        return comp
           .eval()
           .map(value => {
             const ex = value.toQuintEx()
@@ -474,31 +529,32 @@ ${newInput}
             }
             // save shadow vars in any case, e.g., the example trace
             saveShadowVars(state, context)
-          })
+            state.exprHist.push(newInput.trim())
 
-      state.exprHist.push(newInput.trim())
-    }
-    if (resultDefined.isNone()) {
-      const resolved = resolveErrors(context.sourceMap, context.runtimeErrors)
-      const lineOffset = -preambule.split('\n').length - 1
-      printErrorMessages(out, 'runtime error', moduleText, lineOffset, resolved)
-      out(chalk.red('<result undefined>'))
-      out('') // be nice to external programs
-      return false
-    }
+            return right<string, QuintEx>(ex)
+          })
+          .or(just(left<string, QuintEx>('<undefined value>')))
+          .unwrap()
+      })
+      .join()
+      .mapLeft(msg => {
+        const resolved = resolveErrors(context.sourceMap, context.runtimeErrors)
+        // when #618 is implemented, we should remove this
+        printErrorMessages(out, 'runtime error', moduleText, lineOffset, resolved)
+        // print the error message produced by the lookup
+        out(chalk.red(msg))
+        out('') // be nice to external programs
+      })
+      
+    return result.isRight()
   }
   if (probeResult.kind === 'toplevel') {
     // embed expression text into a module at the top level
-    const preambule = `module __REPL { ${simulatorBuiltins}`
-    const moduleText = `${preambule}
-${state.defsHist}
-${newInput}
-}`
+    const [moduleText, lineOffset] = prepareParserInput(newInput)
     // compile the module and add it to history if everything worked
-    const context = compile(moduleText)
+    const context = compileFromCode(moduleText, '__repl__')
     if (context.values.size === 0 ||
         context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
-      const lineOffset = -preambule.split('\n').length + 1
       printErrors(moduleText, context, lineOffset)
       return false
     } else {

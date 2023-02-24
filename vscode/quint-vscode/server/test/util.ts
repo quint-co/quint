@@ -24,7 +24,7 @@ import { Loc, LookupTableByModule, QuintModule, parsePhase1, parsePhase2 } from 
  *
  * @returns A triple with the combined result of the parsing phases
 */
-export function parseOrThrow(moduleText: string): [QuintModule, Map<bigint, Loc>, LookupTableByModule] {
+export function parseOrThrow(moduleText: string): [QuintModule[], Map<bigint, Loc>, LookupTableByModule] {
   const result1 = parsePhase1(moduleText, 'mocked_path')
   const result2 = result1.chain(parsePhase2)
 
@@ -32,5 +32,5 @@ export function parseOrThrow(moduleText: string): [QuintModule, Map<bigint, Loc>
     throw new Error('Failed to parse mocked module')
   }
 
-  return [result1.value.module, result1.value.sourceMap, result2.value.table]
+  return [result1.value.modules, result1.value.sourceMap, result2.value.table]
 }

@@ -21,20 +21,23 @@ import { TypeScheme } from './base'
 import { ConstraintGeneratorVisitor } from './constraintGenerator'
 import { solveConstraint } from './constraintSolver'
 
-/**
- * Infers an type for each expression in a Quint module
- *
- * @param quintModule: the Quint module to infer types for
- *
- * @returns a map from expression ids to their types and a map from expression
- *          ids to the corresponding error for any problematic expressions.
- */
-export function inferTypes(
-  table: LookupTableByModule, quintModule: QuintModule
-): [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>] {
-  const visitor = new ConstraintGeneratorVisitor(solveConstraint, table)
-  walkModule(visitor, quintModule)
-  // Since all top level expressions are operator definitions, and all
-  // constraints are solved at those, there's no need to solve anything else
-  return [visitor.errors, visitor.types]
+export type TypeInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>]
+
+export class TypeInferrer extends ConstraintGeneratorVisitor {
+  constructor(table: LookupTableByModule) {
+    super(solveConstraint, table)
+  }
+
+  /**
+   * Infers an type for each expression in a Quint module
+   *
+   * @param quintModule: the Quint module to infer types for
+   *
+   * @returns a map from expression ids to their types and a map from expression
+   *          ids to the corresponding error for any problematic expressions.
+   */
+  inferTypes(quintModule: QuintModule): TypeInferenceResult {
+    walkModule(this, quintModule)
+    return [this.errors, this.types]
+  }
 }

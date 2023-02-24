@@ -18,6 +18,8 @@ export interface ValueDefinition {
   reference?: bigint
   /* Optional scope, an id pointing to the QuintIr node that introduces the name */
   scope?: bigint
+  /* Optional type annotation */
+  typeAnnotation?: QuintType
 }
 
 /**

@@ -12,6 +12,7 @@
  * @module
  */
 
+import { Either, left, right } from '@sweet-monads/either';
 import isEqual from 'lodash.isequal'
 import { LookupTable, ValueDefinition } from './lookupTable'
 import { ScopeTree, scopesForId } from './scoping'
@@ -40,11 +41,7 @@ export interface Conflict {
 /**
  * Aggregation of conflicts for a definition table
  */
-export type DefinitionsConflictResult =
-  /* No conflicts */
-  | { kind: 'ok' }
-  /* One or more conflicts */
-  | { kind: 'error', conflicts: Conflict[] }
+export type DefinitionsConflictResult = Either<Conflict[], void>
 
 /**
  * Scans a definition lookup table for conflicts between module-level names and
@@ -84,9 +81,9 @@ export function scanConflicts(table: LookupTable, tree: ScopeTree): DefinitionsC
   })
 
   if (conflicts.length > 0) {
-    return { kind: 'error', conflicts }
+    return left(conflicts)
   } else {
-    return { kind: 'ok' }
+    return right(undefined)
   }
 }
 

@@ -14,6 +14,8 @@ describe('resolveImports', () => {
       { kind: 'def', identifier: 'c', reference: 3n, scope: 10n },
       { kind: 'module', identifier: 'nested_module', reference: 4n },
       { kind: 'module', identifier: 'unexisting_module', reference: 5n },
+      { kind: 'const', identifier: 'c1', reference: 6n },
+      { kind: 'const', identifier: 'c2', reference: 7n },
     ],
     typeDefinitions: [
       { identifier: 'T', reference: 1n },
@@ -40,13 +42,14 @@ describe('resolveImports', () => {
       ])
 
       const result = resolveImports(quintModule, tables)
-      assert.deepEqual(result.kind, 'ok')
-      if (result.kind === 'ok') {
-        const defs = result.definitions.get(moduleName)
 
-        assert.deepInclude([...defs!.valueDefinitions.keys()], 'a')
-        assert.notDeepInclude([...defs!.valueDefinitions.keys()], 'b')
-      }
+      result
+        .map(definitions => {
+          const defs = definitions.get(moduleName)
+          assert.deepInclude([...defs!.valueDefinitions.keys()], 'a')
+          assert.notDeepInclude([...defs!.valueDefinitions.keys()], 'b')
+        })
+        .mapLeft(e => assert.fail(`Expected no error, got ${e}`))
     })
 
     it('imports all definitions', () => {
@@ -56,34 +59,38 @@ describe('resolveImports', () => {
       ])
 
       const result = resolveImports(quintModule, tables)
-      assert.deepEqual(result.kind, 'ok')
-      if (result.kind === 'ok') {
-        const defs = result.definitions.get(moduleName)
 
-        assert.includeDeepMembers([...defs!.valueDefinitions.keys()], ['a', 'b'])
-        assert.includeDeepMembers([...defs!.typeDefinitions.keys()], ['T'])
-      }
+      result
+        .map(definitions => {
+          const defs = definitions.get(moduleName)
+          assert.includeDeepMembers([...defs!.valueDefinitions.keys()], ['a', 'b'])
+          assert.includeDeepMembers([...defs!.typeDefinitions.keys()], ['T'])
+        })
+        .mapLeft(e => assert.fail(`Expected no error, got ${e}`))
     })
 
-    it('intantiates modules', () => {
+    it('instantiates modules', () => {
       const quintModule = buildModuleWithDefs([
-        'module test_module { def a = 1 def b = 2 }',
-        'module test_module_instance = test_module(a = 3, b = 4)',
+        'module test_module { const c1: int const c2: int }',
+        'module test_module_instance = test_module(c1 = 3, c2 = 4)',
       ])
 
       const result = resolveImports(quintModule, tables)
-      assert.deepEqual(result.kind, 'ok')
-      if (result.kind === 'ok') {
-        const defs = result.definitions.get(moduleName)
 
-        assert.includeDeepMembers([...defs!.valueDefinitions.keys()], [
-          'test_module_instance::a',
-          'test_module_instance::b',
-        ])
-        assert.includeDeepMembers([...defs!.typeDefinitions.keys()], [
-          'test_module_instance::T',
-        ])
-      }
+
+      result
+        .map(definitions => {
+          const defs = definitions.get(moduleName)
+
+          assert.includeDeepMembers([...defs!.valueDefinitions.keys()], [
+            'test_module_instance::c1',
+            'test_module_instance::c2',
+          ])
+          assert.includeDeepMembers([...defs!.typeDefinitions.keys()], [
+            'test_module_instance::T',
+          ])
+        })
+        .mapLeft(e => assert.fail(`Expected no error, got ${e}`))
     })
 
     it('imports nested module', () => {
@@ -93,14 +100,15 @@ describe('resolveImports', () => {
       ])
 
       const result = resolveImports(quintModule, tables)
-      assert.deepEqual(result.kind, 'ok')
-      if (result.kind === 'ok') {
-        const defs = result.definitions.get(moduleName)
 
-        assert.includeDeepMembers([...defs!.valueDefinitions.keys()], [
-          'nested_module::d',
-        ])
-      }
+      result
+        .map(definitions => {
+          const defs = definitions.get(moduleName)
+          assert.includeDeepMembers([...defs!.valueDefinitions.keys()], [
+            'nested_module::d',
+          ])
+        })
+        .mapLeft(e => assert.fail(`Expected no error, got ${e}`))
     })
   })
 
@@ -112,23 +120,27 @@ describe('resolveImports', () => {
       ])
 
       const result = resolveImports(quintModule, tables)
-      assert.deepEqual(result.kind, 'error')
-      if (result.kind === 'error') {
-        assert.deepEqual(result.errors.map(e => e.moduleName), ['unexisting_module'])
-      }
+
+      result
+        .mapLeft(errors => assert.sameDeepMembers([...errors.entries()], [
+          [7n, { code: 'QNT404', message: 'Module unexisting_module not found', data: {} }],
+        ]))
+        .map(_ => assert.fail('Expected errors'))
     })
 
     it('fails instantiating', () => {
       const quintModule = buildModuleWithDefs([
-        'module test_module { def a = 1 def b = 2 }',
-        'module test_module_instance = unexisting_module(a = a, b = b)',
+        'module test_module { const c1: int const c2: int }',
+        'module test_module_instance = unexisting_module(c1 = c1, c2 = c2)',
       ])
 
       const result = resolveImports(quintModule, tables)
-      assert.deepEqual(result.kind, 'error')
-      if (result.kind === 'error') {
-        assert.deepEqual(result.errors.map(e => e.moduleName), ['unexisting_module'])
-      }
+
+      result
+        .mapLeft(errors => assert.sameDeepMembers([...errors.entries()], [
+          [9n, { code: 'QNT404', message: 'Module unexisting_module not found', data: {} }],
+        ]))
+        .map(_ => assert.fail('Expected errors'))
     })
 
     it('fails importing nested', () => {
@@ -138,10 +150,12 @@ describe('resolveImports', () => {
       ])
 
       const result = resolveImports(quintModule, tables)
-      assert.deepEqual(result.kind, 'error')
-      if (result.kind === 'error') {
-        assert.deepEqual(result.errors.map(e => e.defName), ['unexisting_module'])
-      }
+
+      result
+        .mapLeft(errors => assert.sameDeepMembers([...errors.entries()], [
+          [7n, { code: 'QNT404', message: 'Module test_module::unexisting_module not found', data: {} }],
+        ]))
+        .map(_ => assert.fail('Expected errors'))
     })
   })
 })

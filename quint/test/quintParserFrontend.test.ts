@@ -34,14 +34,16 @@ function parseAndCompare(artifact: string): void {
     // An error occurred at phase 1, check if it is the expected result
     phase1Result.mapLeft(err =>
       outputToCompare = {
-        stage: 'error',
+        stage: 'parsing',
         errors: err,
+        warnings: [],
       }
     )
   } else if (phase1Result.isRight()) {
-    const { module, sourceMap } = phase1Result.value
+    const { modules, sourceMap } = phase1Result.value
+    const expectedIds = modules.flatMap(m => collectIds(m)).sort()
     // Phase 1 succeded, check that the source map is correct
-    assert.sameDeepMembers(collectIds(module).sort(), [...sourceMap.keys()].sort(), 'expected source map to contain all ids')
+    assert.sameDeepMembers(expectedIds, [...sourceMap.keys()].sort(), 'expected source map to contain all ids')
 
     const expectedSourceMap = readJson(`${artifact}.map`)
     const sourceMapResult = JSONbig.parse(JSONbig.stringify(compactSourceMap(sourceMap)))
@@ -55,13 +57,14 @@ function parseAndCompare(artifact: string): void {
       // An error occurred at phase 2, check if it is the expected result
       phase2Result.mapLeft(err =>
         outputToCompare = {
-          stage: 'error',
+          stage: 'parsing',
           errors: err,
+          warnings: [],
         }
       )
     } else {
       // Both phases succeeded, check that the module is correclty outputed
-      outputToCompare = { stage: 'parsing', warnings: [], module: module }
+      outputToCompare = { stage: 'parsing', warnings: [], modules: modules }
     }
   }
 
@@ -76,7 +79,7 @@ describe('parsing', () => {
   it('parses empty module', () => {
     const result = parsePhase1(readQuint('_0001emptyModule'), 'mocked_path/testFixture/_0001emptyModule.qnt')
     const module = { id: 1n, name: 'empty', defs: [] }
-    assert.deepEqual(result.map(r => r.module), right(module))
+    assert.deepEqual(result.map(r => r.modules[0]), right(module))
   })
 
   it('parses SuperSpec', () => {
@@ -140,6 +143,10 @@ describe('parse errors', () => {
   //it('error on top-level nondet', () => {
   //  parseAndCompare('_1015noToplevelNondet')
   //})
+
+  it('error on overriding values that are not constants', () => {
+    parseAndCompare('_1016nonConstOverride')
+  })
 })
 
 function collectIds(module: QuintModule): bigint[] {

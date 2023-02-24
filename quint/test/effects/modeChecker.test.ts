@@ -1,11 +1,12 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { inferEffects } from '../../src/effects/inferrer'
 import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
 import { buildModuleWithDefs } from '../builders/ir'
-import { ErrorTree, errorTreeToString } from '../../src/errorTree'
 import { OpQualifier, QuintModule } from '../../src/quintIr'
-import { checkModes } from '../../src/effects/modeChecker'
+import { EffectInferrer } from '../../src/effects/inferrer'
+import { ModeChecker } from '../../src/effects/modeChecker'
+import { QuintError, quintErrorToString } from '../../src/quintError'
+import { errorTreeToString } from '../../src'
 
 describe('checkModes', () => {
   const table: LookupTable = newTable({
@@ -25,12 +26,14 @@ describe('checkModes', () => {
 
   const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
 
-  function checkModuleModes(quintModule: QuintModule): [Map<bigint, ErrorTree>, Map<bigint, OpQualifier>] {
-    const [errors, effects] = inferEffects(definitionsTable, quintModule)
+  function checkModuleModes(quintModule: QuintModule): [Map<bigint, QuintError>, Map<bigint, OpQualifier>] {
+    const inferrer = new EffectInferrer(definitionsTable)
+    const [errors, effects] = inferrer.inferEffects(quintModule)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
-    return checkModes(quintModule, effects)
+    const modeChecker = new ModeChecker()
+    return modeChecker.checkModes(quintModule, effects)
   }
 
   it('finds mode errors between action and def', () => {
@@ -42,9 +45,9 @@ describe('checkModes', () => {
 
     assert.sameDeepMembers([...errors.entries()], [
       [4n, {
-        location: 'Checking modes for def a = (p => assign(x, p))',
-        message: 'Expected action mode, found: def',
-        children: [],
+        message: "def operators may only read state variables, but operator `a` updates variables 'x'. Use action instead.",
+        code: 'QNT200',
+        data: { fix: { kind: 'replace', original: 'def', replacement: 'action' } },
       }],
     ])
   })
@@ -56,7 +59,7 @@ describe('checkModes', () => {
 
     const [errors, suggestions] = checkModuleModes(quintModule)
 
-    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
     assert.deepEqual(suggestions.size, 0)
   })
 
@@ -67,7 +70,7 @@ describe('checkModes', () => {
 
     const [errors, suggestions] = checkModuleModes(quintModule)
 
-    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
     assert.deepEqual(suggestions.size, 0)
   })
 
@@ -78,7 +81,7 @@ describe('checkModes', () => {
 
     const [errors, suggestions] = checkModuleModes(quintModule)
 
-    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
     assert.sameDeepMembers([...suggestions.entries()], [
       [4n, 'def'],
     ])
@@ -93,9 +96,9 @@ describe('checkModes', () => {
 
     assert.sameDeepMembers([...errors.entries()], [
       [4n, {
-        location: 'Checking modes for pure val v = iadd(x, 1)',
-        message: 'Expected val mode, found: pure val',
-        children: [],
+        message: "pure val operators may not interact with state variables, but operator `v` reads variables 'x'. Use val instead.",
+        code: 'QNT200',
+        data: { fix: { kind: 'replace', original: 'pure val', replacement: 'val' } },
       }],
     ])
   })
@@ -107,7 +110,7 @@ describe('checkModes', () => {
 
     const [errors, suggestions] = checkModuleModes(quintModule)
 
-    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
     assert.sameDeepMembers([...suggestions.entries()], [
       [2n, 'pureval'],
     ])
@@ -122,9 +125,9 @@ describe('checkModes', () => {
 
     assert.sameDeepMembers([...errors.entries()], [
       [3n, {
-        location: 'Checking modes for pure def f = (p => not(y))',
-        message: 'Expected def mode, found: pure def',
-        children: [],
+        message: "pure def operators may not interact with state variables, but operator `f` reads variables 'y'. Use def instead.",
+        code: 'QNT200',
+        data: { fix: { kind: 'replace', original: 'pure def', replacement: 'def' } },
       }],
     ])
   })
@@ -136,7 +139,7 @@ describe('checkModes', () => {
 
     const [errors, suggestions] = checkModuleModes(quintModule)
 
-    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
     assert.sameDeepMembers([...suggestions.entries()], [
       [2n, 'puredef'],
     ])
@@ -151,9 +154,25 @@ describe('checkModes', () => {
 
     assert.sameDeepMembers([...errors.entries()], [
       [5n, {
-        location: 'Checking modes for pure val v = always(igt(x, 5))',
-        message: 'Expected temporal mode, found: pure val',
-        children: [],
+        message: "pure val operators may not interact with state variables, but operator `v` performs temporal operations over variables 'x'. Use temporal instead.",
+        code: 'QNT200',
+        data: { fix: { kind: 'replace', original: 'pure val', replacement: 'temporal' } },
+      }],
+    ])
+  })
+
+  it('finds errors when an instance override is not pure', () => {
+    const quintModule = buildModuleWithDefs([
+      'module A1 = A(c = x)',
+    ])
+
+    const [errors, _suggestions] = checkModuleModes(quintModule)
+
+    assert.sameDeepMembers([...errors.entries()], [
+      [1n, {
+        message: "Instance overrides must be pure values, but the value for c reads variables 'x'",
+        code: 'QNT201',
+        data: {},
       }],
     ])
   })

@@ -18,8 +18,9 @@ import { resolveNames } from './nameResolver'
 import { resolveImports } from './importResolver'
 import { treeFromModule } from './scoping'
 import { scanConflicts } from './definitionsScanner'
-import { LookupTableByModule } from './lookupTable'
-import { Either, left, right } from '@sweet-monads/either'
+import { LookupTable, LookupTableByModule } from './lookupTable'
+import { Either, left, mergeInMany, right } from '@sweet-monads/either'
+import { mkErrorMessage } from './cliCommands'
 
 export interface Loc {
   source: string;
@@ -44,7 +45,7 @@ export interface ErrorMessage {
 export type ParseResult<T> = Either<ErrorMessage[], T>
 
 export interface ParserPhase1 {
-  module: QuintModule,
+  modules: QuintModule[],
   sourceMap: Map<bigint, Loc>
 }
 
@@ -68,7 +69,7 @@ export type ParseProbeResult =
  * @returns the result of probing
  */
 export function
-probeParse(text: string, sourceLocation: string): ParseProbeResult {
+  probeParse(text: string, sourceLocation: string): ParseProbeResult {
   const errorMessages: ErrorMessage[] = []
   const parser = setupParser(text, sourceLocation, errorMessages)
   const tree = parser.unitOrExpr()
@@ -90,7 +91,7 @@ export function parsePhase1(text: string, sourceLocation: string): ParseResult<P
   const errorMessages: ErrorMessage[] = []
   const parser = setupParser(text, sourceLocation, errorMessages)
   // run the parser
-  const tree = parser.module()
+  const tree = parser.modules()
   if (errorMessages.length > 0) {
     // report the errors
     return left(errorMessages)
@@ -101,8 +102,8 @@ export function parsePhase1(text: string, sourceLocation: string): ParseResult<P
 
     if (listener.errors.length > 0) {
       return left(listener.errors)
-    } else if (listener.rootModule !== undefined) {
-      return right({module: listener.rootModule, sourceMap: listener.sourceMap})
+    } else if (listener.topModules.length > 0) {
+      return right({ modules: listener.topModules, sourceMap: listener.sourceMap })
     } else {
       // istanbul ignore next
       throw new Error('Illegal state: root module is undefined. Please report a bug.')
@@ -114,97 +115,76 @@ export function parsePhase1(text: string, sourceLocation: string): ParseResult<P
  * Phase 2 of the Quint parser. Read the IR and check that all names are defined.
  * Note that the IR may be ill-typed.
  */
-export function parsePhase2(phase1Data: ParserPhase1):
-  ParseResult<ParserPhase2> {
-  const quintModule: QuintModule = phase1Data.module
+export function parsePhase2(phase1Data: ParserPhase1): ParseResult<ParserPhase2> {
   const sourceMap: Map<bigint, Loc> = phase1Data.sourceMap
-  const scopeTree = treeFromModule(quintModule)
-  const moduleDefinitions = collectDefinitions(quintModule)
-  const importResolvingResult = resolveImports(quintModule, moduleDefinitions)
-  let definitions: LookupTableByModule
-  const errorMessages: ErrorMessage[] = []
 
-  if (importResolvingResult.kind === 'ok') {
-    definitions = importResolvingResult.definitions
-  } else {
-    definitions = moduleDefinitions
-    importResolvingResult.errors.forEach(error => {
-      const sourceLoc = sourceMap.get(error.reference)
-      if (!sourceLoc) {
-        console.error(`No source location found for ${error.reference}. Please report a bug.`)
-      }
-      const loc = sourceLoc ?? unknownLoc
-      if (error.defName) {
-        const e =
-          `Failed to import definition ${error.defName} from module ${error.moduleName}`
-        errorMessages.push({
-          explanation: e,
-          locs: [loc],
+  return phase1Data.modules.reduce((result: ParseResult<ParserPhase2>, module) => {
+    const scopeTree = treeFromModule(module)
+    let definitions = collectDefinitions(module)
+    result.map(r => definitions = new Map([...r.table.entries(), ...definitions.entries()]))
+
+    const importResult: Either<ErrorMessage[], LookupTableByModule> = resolveImports(module, definitions)
+      .map(defs => definitions = defs)
+      .mapLeft((errorMap): ErrorMessage[] => {
+        const errorLocator = mkErrorMessage(sourceMap)
+        return Array.from(errorMap, errorLocator)
+      })
+
+    const conflictResult: Either<ErrorMessage[], void[]> =
+      mergeInMany([...definitions.entries()].map(([moduleName, defs]) => {
+        return scanConflicts(defs, scopeTree).mapLeft((conflicts): ErrorMessage[] => {
+          return conflicts.map(conflict => {
+            let msg, sources
+            if (conflict.sources.some(source => source.kind === 'builtin')) {
+              msg = `Built-in name ${conflict.identifier} is redefined in module ${moduleName}`
+              sources = conflict.sources.filter(source => source.kind === 'user')
+            } else {
+              msg = `Conflicting definitions found for name ${conflict.identifier} in module ${moduleName}`
+              sources = conflict.sources
+            }
+
+            const locs = sources.map(source => {
+              const id = source.kind === 'user' ? source.reference : 0n // Impossible case, but TS requires the check
+              let sourceLoc = sourceMap.get(id)
+              if (!sourceLoc) {
+                console.error(`No source location found for ${id}. Please report a bug.`)
+                return unknownLoc
+              } else {
+                return sourceLoc
+              }
+            })
+
+            return { explanation: msg, locs }
+          })
         })
-      } else {
-        errorMessages.push({
-          explanation: `Failed to import module ${error.moduleName}`,
-          locs: [loc],
-        })
-      }
-    })
-  }
+      })).mapLeft(errors => errors.flat())
 
-  definitions.forEach((moduleDefinitions, moduleName) => {
-    const conflictResult = scanConflicts(moduleDefinitions, scopeTree)
-
-    if (conflictResult.kind === 'error') {
-      conflictResult.conflicts.forEach(conflict => {
-        let msg, sources
-        if (conflict.sources.some(source => source.kind === 'builtin')) {
-          msg = `Built-in name ${conflict.identifier} is redefined in module ${moduleName}`
-          sources = conflict.sources.filter(source => source.kind === 'user')
-        } else {
-          msg = `Conflicting definitions found for name ${conflict.identifier} in module ${moduleName}`
-          sources = conflict.sources
-        }
-        const locs = sources.map(source => {
-          const id = source.kind === 'user' ? source.reference : 0n // Impossible case, but TS requires the check
-          let sourceLoc = sourceMap.get(id)
-          if (!sourceLoc) {
-            console.error(`No source location found for ${id}. Please report a bug.`)
-            return unknownLoc
+    const resolutionResult: Either<ErrorMessage[], void> =
+      resolveNames(module, definitions, scopeTree).mapLeft(errors => {
+        // Build error message with resolution explanation and the location obtained from sourceMap
+        return errors.map(error => {
+          const msg = `Failed to resolve ` +
+            (error.kind === 'type' ? 'type alias' : 'name') +
+            ` ${error.name} in definition for ${error.definitionName}, ` +
+            `in module ${error.moduleName}`
+          const id = error.reference
+          if (id) {
+            const sourceLoc = sourceMap.get(id)
+            if (!sourceLoc) {
+              console.error(`No source location found for ${id}. Please report a bug.`)
+            }
+            const loc = sourceLoc ?? unknownLoc
+            return { explanation: msg, locs: [loc] }
           } else {
-            return sourceLoc
+            return { explanation: msg, locs: [] }
           }
         })
-        errorMessages.push({ explanation: msg, locs })
       })
-    }
-  })
 
-  // Temp: use just the root's module table at name resolution for now
-  const result = resolveNames(quintModule, definitions, scopeTree)
-
-  if (result.kind === 'error') {
-    // Build error message with resolution explanation and the location obtained from sourceMap
-    result.errors.forEach(error => {
-      const msg = `Failed to resolve ` +
-        (error.kind === 'type' ? 'type alias' : 'name') +
-        ` ${error.name} in definition for ${error.definitionName}, ` +
-        `in module ${error.moduleName}`
-      const id = error.reference
-      if (id) {
-        const sourceLoc = sourceMap.get(id)
-        if (!sourceLoc) {
-          console.error(`No source location found for ${id}. Please report a bug.`)
-        }
-        const loc = sourceLoc ?? unknownLoc
-        errorMessages.push({ explanation: msg, locs: [loc] })
-      } else {
-        errorMessages.push({ explanation: msg, locs: [] })
-      }
-    })
-  }
-
-  return errorMessages.length > 0
-    ? left(errorMessages)
-    : right({table: definitions, ...phase1Data})
+    return mergeInMany([importResult, conflictResult, resolutionResult])
+      .chain(([table, _, __]) => result.map(r => ({ ...phase1Data, table: new Map([...r.table, ...table]) })))
+      .mapLeft(errors => errors.flat())
+  }, right({ table: new Map<string, LookupTable>(), ...phase1Data }))
 }
 
 export function compactSourceMap(sourceMap: Map<bigint, Loc>): { sourceIndex: any, map: any } {

@@ -4,6 +4,9 @@
  * See License.txt in the project root for license information.
  * --------------------------------------------------------------------------------- */
 import {
+  CodeAction,
+  CodeActionKind,
+  CodeActionParams,
   DefinitionParams,
   HandlerResult,
   Hover,
@@ -26,10 +29,8 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { DocumentationEntry, Loc, ParserPhase2, builtinDocs, parsePhase1, parsePhase2, produceDocs, treeFromModule } from '@informalsystems/quint'
-import { InferredData, checkTypesAndEffects } from './inferredData'
-import { assembleDiagnostic, findBestMatchingResult, findName, locToRange } from './reporting'
-import { lookupValue } from '@informalsystems/quint/dist/src/lookupTable'
+import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase2, QuintAnalyzer, QuintError, QuintErrorData, builtinDocs, effectToString, lookupValue, parsePhase1, parsePhase2, produceDocs, treeFromModule, typeSchemeToString } from '@informalsystems/quint'
+import { assembleDiagnostic, diagnosticsFromErrors, findBestMatchingResult, findName, locToRange } from './reporting'
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -40,9 +41,10 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument)
 
 // Store auxiliary information by document
 const parsedDataByDocument: Map<DocumentUri, ParserPhase2> = new Map<DocumentUri, ParserPhase2>()
-const inferredDataByDocument: Map<DocumentUri, InferredData> = new Map<DocumentUri, InferredData>()
-const docsByDocument: Map<DocumentUri, Map<string, DocumentationEntry>> =
-  new Map<DocumentUri, Map<string, DocumentationEntry>>()
+const analysisOutputByDocument: Map<DocumentUri, AnalyzisOutput> = new Map<DocumentUri, AnalyzisOutput>()
+// Documentation entries by name, by module, by document
+const docsByDocument: Map<DocumentUri, Map<string, Map<string, DocumentationEntry>>> =
+  new Map<DocumentUri, Map<string, Map<string, DocumentationEntry>>>()
 
 const ds = builtinDocs()
 const loadedBuiltInDocs = ds.isRight() ? ds.value : undefined
@@ -56,6 +58,7 @@ connection.onInitialize((_params: InitializeParams) => {
         triggerCharacters: ['('],
       },
       definitionProvider: true,
+      codeActionProvider: true,
     },
   }
   return result
@@ -65,7 +68,7 @@ connection.onInitialize((_params: InitializeParams) => {
 documents.onDidClose(e => {
   parsedDataByDocument.delete(e.document.uri)
   docsByDocument.delete(e.document.uri)
-  inferredDataByDocument.delete(e.document.uri)
+  analysisOutputByDocument.delete(e.document.uri)
 })
 
 // The content of a text document has changed. This event is emitted
@@ -73,33 +76,37 @@ documents.onDidClose(e => {
 documents.onDidChangeContent(change => {
   console.log('File content changed, checking types and effects again')
 
-  parseDocument(change.document)
-    .then((result) => {
-      parsedDataByDocument.set(change.document.uri, result)
-      docsByDocument.set(change.document.uri, produceDocs(result.module))
-      return checkTypesAndEffects(result.module, result.sourceMap, result.table)
-    })
-    .then((inferredData) => {
-      inferredDataByDocument.set(change.document.uri, inferredData)
+  parseDocument(change.document).then((result) => {
+    parsedDataByDocument.set(change.document.uri, result)
+    docsByDocument.set(change.document.uri, new Map(result.modules.map(m => [m.name, produceDocs(m)])))
 
-      // Clear possible old diagnostics
-      connection.sendDiagnostics({ uri: change.document.uri, diagnostics: [] })
-    })
-    .catch(diagnostics => {
-      // Send the computed diagnostics to VSCode.
-      connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
-    })
+    const analyzer = new QuintAnalyzer(result.table)
+    result.modules.forEach(module => analyzer.analyze(module))
+    const [errors, analysisOutput] = analyzer.getResult()
+
+    analysisOutputByDocument.set(change.document.uri, analysisOutput)
+
+    const diagnostics = diagnosticsFromErrors(errors, result.sourceMap)
+    connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
+  }).catch(diagnostics => {
+    connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
+  })
 })
 
 connection.onHover((params: HoverParams): Hover | undefined => {
   function inferredDataHover(): string[] {
-    const inferredData = inferredDataByDocument.get(params.textDocument.uri)
-    if (!inferredData) {
+    const parsedData = parsedDataByDocument.get(params.textDocument.uri)
+    const analysisOutput = analysisOutputByDocument.get(params.textDocument.uri)
+    if (!parsedData || !analysisOutput) {
       return []
     }
 
-    const typeResult = findBestMatchingResult([...inferredData.types.entries()], params.position)
-    const effectResult = findBestMatchingResult([...inferredData.effects.entries()], params.position)
+    const typeResult = findBestMatchingResult(
+      parsedData.sourceMap, [...analysisOutput.types.entries()], params.position
+    )
+    const effectResult = findBestMatchingResult(
+      parsedData.sourceMap, [...analysisOutput.effects.entries()], params.position
+    )
 
     // There are cases where we have types but not effects, but not the other way around
     // Therefore, we only check for typeResult here and handle missing effects later
@@ -115,11 +122,11 @@ connection.onHover((params: HoverParams): Hover | undefined => {
 
     let hoverText = ["```qnt", text, "```", '']
 
-    hoverText.push(`**type**: \`${type}\`\n`)
+    hoverText.push(`**type**: \`${typeSchemeToString(type)}\`\n`)
 
     if (effectResult) {
       const [, effect] = effectResult
-      hoverText.push(`**effect**: \`${effect}\`\n`)
+      hoverText.push(`**effect**: \`${effectToString(effect)}\`\n`)
     }
 
     return hoverText
@@ -131,14 +138,15 @@ connection.onHover((params: HoverParams): Hover | undefined => {
       return []
     }
 
-    const { module, sourceMap } = parsedData
+    const { modules, sourceMap } = parsedData
     const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-    const [name, _] = findName(module, results, params.position) ?? [undefined, undefined]
+    const [module, name, _id] = findName(modules, results, params.position) ?? [undefined, undefined, undefined]
     if (!name) {
       return []
     }
 
-    const signature = docsByDocument.get(params.textDocument.uri)!.get(name)! ?? loadedBuiltInDocs?.get(name)!
+    const signature = docsByDocument.get(params.textDocument.uri)?.get(module.name)?.get(name)
+      ?? loadedBuiltInDocs?.get(name)!
     if (!signature) {
       return []
     }
@@ -168,20 +176,23 @@ connection.onHover((params: HoverParams): Hover | undefined => {
 })
 
 connection.onSignatureHelp((params: SignatureHelpParams): HandlerResult<SignatureHelp, void> => {
-  const document = documents.get(params.textDocument.uri)!
-  const lineUpToPosition = document.getText({
-    start: { line: params.position.line, character: 0 },
-    end: params.position,
-  })
+  const emptySignatures = { signatures: [], activeSignature: 0, activeParameter: 0 }
 
-  // Match the last word before the `(` character (which triggered the request)
-  const matchingNames = lineUpToPosition.match(/(\w+)\s*\(\s*$/)
-  if (matchingNames === null) {
-    return { signatures: [], activeSignature: 0, activeParameter: 0 }
+  const parsedData = parsedDataByDocument.get(params.textDocument.uri)
+  if (!parsedData) {
+    return emptySignatures
   }
 
-  const name = matchingNames[1]
-  const signature = docsByDocument.get(params.textDocument.uri)!.get(name)! ?? loadedBuiltInDocs?.get(name)!
+  // Find name under cursor
+  const { modules, sourceMap } = parsedData
+  const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
+  const [module, name, _scope] = findName(modules, results, params.position) ?? [undefined, undefined, undefined]
+  if (!name) {
+    return emptySignatures
+  }
+
+  const signature = docsByDocument.get(params.textDocument.uri)?.get(module.name)?.get(name)
+    ?? loadedBuiltInDocs?.get(name)!
   const signatureWithMarkupKind = signature?.documentation
     ? { ...signature, documentation: { kind: 'markdown', value: signature.documentation } as MarkupContent }
     : signature
@@ -200,9 +211,9 @@ connection.onDefinition((params: DefinitionParams): HandlerResult<Location[], vo
   }
 
   // Find name under cursor
-  const { module, sourceMap, table } = parsedData
+  const { modules, sourceMap, table } = parsedData
   const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-  const [name, scope] = findName(module, results, params.position) ?? [undefined, undefined]
+  const [module, name, scope] = findName(modules, results, params.position) ?? [undefined, undefined, undefined]
   if (!name) {
     return []
   }
@@ -232,12 +243,68 @@ connection.onDefinition((params: DefinitionParams): HandlerResult<Location[], vo
   }]
 })
 
+connection.onCodeAction((params: CodeActionParams): HandlerResult<CodeAction[], void> => {
+  return params.context.diagnostics.reduce((actions, diagnostic) => {
+    const data = diagnostic.data as QuintErrorData
+    const fix = data.fix
+
+    switch (fix?.kind) {
+      case 'replace': {
+        const document = documents.get(params.textDocument.uri)!
+        // For now, we try to apply the fix only for the first line in the range
+        // which should be the most common case
+        const lineNum = params.range.start.line
+        const line = document.getText({
+          start: { line: lineNum, character: 0 },
+          end: { line: lineNum + 1, character: 0 },
+        })
+
+        const matchResult = line.match(new RegExp(fix.original))
+        if (!matchResult) {
+          return actions
+        }
+
+        const editRange = {
+          ...diagnostic.range,
+          end: {
+            line: diagnostic.range.start.line,
+            character: diagnostic.range.start.character + matchResult![0].length,
+          },
+        }
+
+        const action: CodeAction = {
+          title: `Replace ${fix.original} with ${fix.replacement}`,
+          kind: CodeActionKind.QuickFix,
+          isPreferred: true,
+          diagnostics: [diagnostic],
+          edit: {
+            changes: {
+              [params.textDocument.uri]: [{
+                range: editRange,
+                newText: fix.replacement,
+              }],
+            },
+          },
+        }
+
+        actions.push(action)
+      }
+    }
+
+    return actions
+  }, [] as CodeAction[])
+})
+
 async function parseDocument(textDocument: TextDocument): Promise<ParserPhase2> {
   const text = textDocument.getText()
 
   const result = parsePhase1(text, textDocument.uri)
     .chain(phase1Data => parsePhase2(phase1Data))
-    .mapLeft(messages => messages.flatMap(msg => msg.locs.map(loc => assembleDiagnostic(msg.explanation, loc))))
+    .mapLeft(messages => messages.flatMap(msg => {
+      // TODO: Parse errors should be QuintErrors
+      const error: QuintError = { code: 'QNT000', message: msg.explanation, data: {} }
+      return msg.locs.map(loc => assembleDiagnostic(error, loc))
+    }))
 
   if (result.isRight()) {
     return new Promise((resolve, _reject) => resolve(result.value))

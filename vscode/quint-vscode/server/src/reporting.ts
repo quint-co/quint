@@ -12,32 +12,30 @@
  * @module
  */
 
-import { ErrorTree, Loc, QuintModule, errorTreeToString, findExpressionWithId } from "@informalsystems/quint"
+import { Loc, QuintError, QuintModule, findExpressionWithId } from "@informalsystems/quint"
 import { Diagnostic, DiagnosticSeverity, Position, Range } from "vscode-languageserver"
 import { compact } from "lodash"
 
 /**
- * Assembles a list of diagnostics from a map of expression ids to their errors
+ * Assembles a list of diagnostics from pairs of expression ids and their errors
  * using a source map
  *
- * @param errors the error map to be transformed
+ * @param errors the errors to be transformed
  * @param sourceMap the source map for the document in which the errors occured
  *
  * @returns a list of diagnostics with the proper error messages and locations
  */
-export function diagnosticsFromErrorMap(errors: Map<bigint, ErrorTree>, sourceMap: Map<bigint, Loc>): Diagnostic[] {
-  const diagnostics: Diagnostic[] = []
-  errors.forEach((error, id) => {
+export function diagnosticsFromErrors(errors: [bigint, QuintError][], sourceMap: Map<bigint, Loc>): Diagnostic[] {
+  const diagnostics = errors.map(([id, error]) => {
     const loc = sourceMap.get(id)!
     if (!loc) {
       console.log(`loc for ${id} not found in source map`)
     } else {
-      const diag = assembleDiagnostic(errorTreeToString(error), loc)
-      diagnostics.push(diag)
+      return assembleDiagnostic(error, loc)
     }
   })
 
-  return diagnostics
+  return compact(diagnostics)
 }
 
 /**
@@ -47,12 +45,14 @@ export function diagnosticsFromErrorMap(errors: Map<bigint, ErrorTree>, sourceMa
  *
  * @returns a diagnostic object with the provided information
  */
-export function assembleDiagnostic(explanation: string, loc: Loc): Diagnostic {
+export function assembleDiagnostic(error: QuintError, loc: Loc): Diagnostic {
   return {
     severity: DiagnosticSeverity.Error,
     range: locToRange(loc),
-    message: explanation,
-    source: 'parser',
+    message: error.message,
+    code: error.code,
+    data: error.data,
+    source: 'quint',
   }
 }
 
@@ -66,21 +66,20 @@ export function assembleDiagnostic(explanation: string, loc: Loc): Diagnostic {
  * the position is not under a name expression or an operator application
  */
 export function findName(
-  module: QuintModule, sources: [Loc, bigint][], position: Position
-): [string, bigint]  | undefined {
+  modules: QuintModule[], sources: [Loc, bigint][], position: Position
+): [QuintModule, string, bigint] | undefined {
   const ids = resultsOnPosition(sources, position)
-  const names: ([string, bigint] | undefined)[] = ids.map(([_loc, id]) => {
-    const expr = findExpressionWithId(module, id)
-    if (!expr) {
-      return
-    }
+  const names = ids.flatMap(([_loc, id]) => {
+    return modules.filter(module => module.id > id).map((module): ([QuintModule, string, bigint] | undefined) => {
+      const expr = findExpressionWithId(module, id)
 
-    switch(expr.kind) {
-      case 'name':
-        return [expr.name, expr.id]
-      case 'app':
-        return [expr.opcode, expr.id]
-    }
+      switch (expr?.kind) {
+        case 'name':
+          return [module, expr.name, expr.id]
+        case 'app':
+          return [module, expr.opcode, expr.id]
+      }
+    })
   })
 
   return compact(names)[0]
@@ -90,15 +89,19 @@ export function findName(
  * Finds the result that better matches a given position. That is, the result
  * for which the loc is the smallest loc that contains the position.
  *
- * @param results the list of tuples of locations in the file and a result
+ * @param sourceMap the source map with the locs for the results
+ * @param results the list of tuples of ids from the source map and a result
  * computed for it
  * @param position the position for which to find the result
  *
  * @returns a tuple with the location and the result from the list that better
  * matches the position, or undefined if none is found
  */
-export function findBestMatchingResult<T>(results: [Loc, T][], position: Position): [Loc, T] {
-  return resultsOnPosition(results, position)[0]
+export function findBestMatchingResult<T>(
+  sourceMap: Map<bigint, Loc>, results: [bigint, T][], position: Position
+): [Loc, T] {
+  const resultsByLoc: [Loc, T][] = results.map(([id, result]) => [sourceMap.get(id)!, result])
+  return resultsOnPosition(resultsByLoc, position)[0]
 }
 
 /**

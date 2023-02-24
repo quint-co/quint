@@ -16,6 +16,9 @@ name: build
 jobs:
   quint-unit-tests:
     runs-on: ${{ matrix.operating-system }}
+    defaults:
+      run:
+        working-directory: ./quint
     strategy:
       fail-fast: false
       matrix:
@@ -25,9 +28,29 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "17"
-      - run: cd ./quint && npm install
-      - run: cd ./quint && npm run compile
-      - run: cd ./quint && npm test
+      - run: npm install
+      - run: npm run compile
+      - run: npm test
+
+  quint-test-generated-up-to-date:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./quint
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "17"
+      - run: npm install
+      - name: Compile and update test fixtures
+        run: npm run generate
+      - name: Check that generated files are up to date
+        run: |
+          git diff --exit-code \
+            || ( echo ">>> ERROR: Generated files are not up to date. Run 'npm run generate'" &&  exit 1)
 
   quint-integration-tests:
     runs-on: ${{ matrix.operating-system }}
