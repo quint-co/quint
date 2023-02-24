@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.1.3 -- 2023-02-22
+
+### Added
 
  - Change parsing interfaces to support multiple modules (#547)
  - Change static analysis interfaces to support multiple modules (#559)

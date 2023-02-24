@@ -13,7 +13,7 @@ module Tuples {
 
   def a(tup) = Set(tup, (x, 4)).map((p, g) => p + g)
   def b(tup, f) = Set(tup, (x, 4)).map(f)
-  def c(tup, f) = Set(tup).map(f)
-  def func(p, g) = p
-  val test = c((1, 2), func)
+  pure def c(tup, f) = Set(tup).map(f)
+  pure def func(p, g) = p
+  pure val test = c((1, 2), func)
 }
