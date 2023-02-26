@@ -86,6 +86,9 @@ jobs:
         run: cd ./quint && npm run apalache-integration
         env:
           GH_TOKEN: ${{ github.token }}
+        # This tests fail on windows currently
+        # See https://github.com/anko/txm/issues/10
+        if: matrix.operating-system != 'windows-latest'
 
   quint-antlr-grammar:
     runs-on: ubuntu-latest
