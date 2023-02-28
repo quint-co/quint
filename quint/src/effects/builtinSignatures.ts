@@ -63,9 +63,6 @@ function propagateComponents(kinds: ComponentKind[]): ((arity: number) => Effect
   }
 }
 
-const p = parseAndQuantify
-const standardPropagation = propagateComponents(['read', 'temporal'])
-
 /**
  * Builds a signature that propagates components of the given kinds, including a lambda parameter
  * for the last argument
@@ -109,6 +106,8 @@ function propagationWithLambda(kinds: ComponentKind[]): ((arity: number) => Effe
   }
 }
 
+const p = parseAndQuantify
+const standardPropagation = propagateComponents(['read', 'temporal'])
 
 const literals = ['Nat', 'Int', 'Bool'].map(name => ({ name, effect: toScheme({ kind: 'concrete', components: [] }) }))
 const booleanOperators = [
