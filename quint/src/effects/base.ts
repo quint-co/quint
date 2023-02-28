@@ -134,9 +134,9 @@ export function effectNames(effect: Effect): { effectVariables: Set<string>, var
       }
     case 'arrow': {
       const nested = effect.params.concat(effect.result).flatMap(effectNames)
-      return nested.reduce((set, { effectVariables, variables }) => ({
-        effectVariables: new Set([...set.effectVariables, ...effectVariables]),
-        variables: new Set([...set.variables, ...variables]),
+      return nested.reduce((acc, { effectVariables, variables }) => ({
+        effectVariables: new Set([...acc.effectVariables, ...effectVariables]),
+        variables: new Set([...acc.variables, ...variables]),
       }), { effectVariables: new Set(), variables: new Set() })
     }
     case 'quantified': return { effectVariables: new Set([effect.name]), variables: new Set() }
@@ -183,17 +183,16 @@ function variablesNames(variables: Variables): string[] {
 }
 
 function unifyArrows(location: string, e1: ArrowEffect, e2: ArrowEffect): Either<ErrorTree, Substitutions> {
-  const params: [Effect[], Effect[]] = [e1.params, e2.params]
-  return right(params)
-    .chain((params): Either<ErrorTree, [[Effect[], Effect[]], Substitutions]> => {
-      const [p1, p2] = params
+  const paramsTuple: [Effect[], Effect[]] = [e1.params, e2.params]
+  return right(paramsTuple)
+    .chain(([p1, p2]): Either<ErrorTree, [Effect[], Effect[], Substitutions]> => {
       if (p1.length === p2.length) {
-        return right([params, [] as Substitutions])
+        return right([p1, p2, [] as Substitutions])
       } else {
         return tryToUnpack(location, p1, p2)
       }
     })
-    .chain(([[p1, p2], unpackingSubs]) => {
+    .chain(([p1, p2, unpackingSubs]) => {
       const e1r = applySubstitution(unpackingSubs, e1.result)
       const e2r = applySubstitution(unpackingSubs, e2.result)
       return mergeInMany([e1r, e2r]).chain(([e1result, e2result]) => {
@@ -333,7 +332,7 @@ function applySubstitutionsAndUnify(subs: Substitutions, e1: Effect, e2: Effect)
 
 function tryToUnpack(
   location: string, effects1: Effect[], effects2: Effect[]
-): Either<ErrorTree, [[Effect[], Effect[]], Substitutions]> {
+): Either<ErrorTree, [Effect[], Effect[], Substitutions]> {
   // Ensure that effects1 is always the smallest
   if (effects2.length < effects1.length) {
     return tryToUnpack(location, effects2, effects1)
@@ -354,7 +353,7 @@ function tryToUnpack(
     effects2.forEach(e => {
       if (e.kind === 'concrete') {
         e.components.forEach(c => {
-          const variables = variablesByComponentKind.get(c.kind) || []
+          const variables = variablesByComponentKind.get(c.kind) ?? []
           variables.push(c.variables)
           variablesByComponentKind.set(c.kind, variables)
         })
@@ -369,7 +368,7 @@ function tryToUnpack(
     }
 
     const result = simplify(unpacked)
-    return right([[effects1, [result]], []])
+    return right([effects1, [result], []])
   }
 
   // If all the effects are quantified like e0, ..., en, we combine them into a
@@ -390,7 +389,7 @@ function tryToUnpack(
     }))
     const result = simplify(unpacked)
 
-    return right([[effects1, [result]], subs])
+    return right([effects1, [result], subs])
   }
 
   return left(buildErrorLeaf(
