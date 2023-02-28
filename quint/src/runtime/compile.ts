@@ -1,9 +1,9 @@
 /*
  * A compiler to the runtime environment.
  *
- * Igor Konnov, 2022
+ * Igor Konnov, 2022-2023
  *
- * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Copyright (c) Informal Systems 2022-2023. All rights reserved.
  * Licensed under the Apache 2.0.
  * See License.txt in the project root for license information.
  */
@@ -11,10 +11,10 @@
 import { Either, left, right } from '@sweet-monads/either'
 
 import {
-  ErrorMessage, Loc, parsePhase1, parsePhase2
+  ErrorMessage, Loc, fromIrErrorMessage,parsePhase1, parsePhase2
 } from '../quintParserFrontend'
 import { Computable, ComputableKind, kindName } from './runtime'
-import { IrErrorMessage, QuintModule } from '../quintIr'
+import { QuintModule } from '../quintIr'
 import { CompilerVisitor } from './impl/compilerImpl'
 import { walkDefinition } from '../IRVisitor'
 import { treeFromModule } from '../scoping'
@@ -45,9 +45,9 @@ export interface CompilationContext {
   // messages that are produced by static analysis
   analysisErrors: ErrorMessage[],
   // messages that are produced during compilation
-  compileErrors: IrErrorMessage[],
+  compileErrors: ErrorMessage[],
   // messages that get populated as the compiled code is executed
-  runtimeErrors: IrErrorMessage[],
+  getRuntimeErrors: () => ErrorMessage[],
   // source mapping
   sourceMap: Map<bigint, Loc>,
 }
@@ -61,7 +61,7 @@ function errorContext(errors: ErrorMessage[]): CompilationContext {
     syntaxErrors: errors,
     analysisErrors: [],
     compileErrors: [],
-    runtimeErrors: [],
+    getRuntimeErrors: () => [],
     sourceMap: new Map(),
   }
 }
@@ -112,6 +112,7 @@ export function
  * @param lookupTable lookup table as produced by the parser
  * @param types type table as produced by the type checker
  * @param mainName the name of the module that may contain state varibles
+ * @param rand the random number generator
  * @returns the compilation context
  */
 export function
@@ -119,11 +120,12 @@ export function
           sourceMap: Map<bigint, Loc>,
           lookupTable: LookupTableByModule,
           types: Map<bigint, TypeScheme>,
-          mainName: string): CompilationContext {
+          mainName: string,
+          rand: () => number): CompilationContext {
   // Push back the main module to the end:
   // The compiler exposes the state variables of the last module only.
   const main = modules.find(m => m.name === mainName)
-  const visitor = new CompilerVisitor(types)
+  const visitor = new CompilerVisitor(types, rand)
   if (main) {
     const reorderedModules =
       modules.filter(m => m.name !== mainName).concat(main ? [main] : [])
@@ -149,8 +151,14 @@ export function
     shadowVars: visitor.getShadowVars(),
     syntaxErrors: [],
     analysisErrors: [],
-    compileErrors: visitor.getCompileErrors().concat(mainNotFoundError),
-    runtimeErrors: visitor.getRuntimeErrors(),
+    compileErrors:
+      visitor.getCompileErrors().concat(mainNotFoundError)
+      .map(fromIrErrorMessage(sourceMap)),
+    getRuntimeErrors: () => {
+      return visitor.getRuntimeErrors()
+        .splice(0)
+        .map(fromIrErrorMessage(sourceMap))
+    },
     sourceMap: sourceMap,
   }
 }
@@ -163,10 +171,12 @@ export function
  * @param code text that stores one or several Quint modules,
  *        which should be parseable without any context
  * @param mainName the name of the module that may contain state varibles
+ * @param rand the random number generator
  * @returns the compilation context
  */
 export function
-  compileFromCode(code: string, mainName: string): CompilationContext {
+  compileFromCode(code: string, mainName: string, rand: () => number):
+    CompilationContext {
   // parse the module text
   return parsePhase1(code, '<input>')
     // On errors, we'll produce the computational context up to this point
@@ -182,7 +192,8 @@ export function
       // collect the errors, but do not stop immediately on error
       const [analysisErrors, analysisResult] = analyzer.getResult()
       const ctx =
-        compile(modules, sourceMap, table, analysisResult.types, mainName)
+        compile(modules,
+                sourceMap, table, analysisResult.types, mainName, rand)
       const errorLocator = mkErrorMessage(sourceMap)
       return right({
         ...ctx,

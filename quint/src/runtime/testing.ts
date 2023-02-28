@@ -8,10 +8,10 @@
  * See License.txt in the project root for license information.
  */
 
-import { Either, left, merge } from '@sweet-monads/either'
+import { Either, merge } from '@sweet-monads/either'
 
-import { Loc } from '../quintParserFrontend'
-import { IrErrorMessage, QuintModule, QuintOpDef } from '../quintIr'
+import { ErrorMessage, Loc, fromIrErrorMessage } from '../quintParserFrontend'
+import { QuintModule, QuintOpDef } from '../quintIr'
 import { LookupTableByModule } from '../lookupTable'
 import { TypeScheme } from '../types/base'
 
@@ -33,7 +33,7 @@ export interface TestResult {
   /**
    * When status === 'failed', errors contain the explanatory error messages.
    */
-  errors: IrErrorMessage[]
+  errors: ErrorMessage[]
 }
 
 /**
@@ -45,6 +45,7 @@ export interface TestResult {
  * @param lookupTable lookup table as produced by the parser
  * @param types type table as produced by the type checker
  * @param testMatch test name matcher
+ * @param rand a random number generator
  * @returns the results of running the tests
  */
 export function
@@ -53,9 +54,10 @@ compileAndTest(modules: QuintModule[],
          sourceMap: Map<bigint, Loc>,
          lookupTable: LookupTableByModule,
          types: Map<bigint, TypeScheme>,
-         testMatch: (n: string) => boolean): Either<string, TestResult[]> {
+         testMatch: (n: string) => boolean,
+         rand: () => number): Either<string, TestResult[]> {
   const ctx =
-    compile(modules, sourceMap, lookupTable, types, main.name)
+    compile(modules, sourceMap, lookupTable, types, main.name, rand)
   const testDefs =
     main.defs.filter(d => d.kind === 'def' && testMatch(d.name)) as QuintOpDef[]
 
@@ -65,9 +67,7 @@ compileAndTest(modules: QuintModule[],
       .map(comp => {
         const result = comp.eval()
         if (result.isNone()) {
-          // copy the runtime errors and clean them from the context
-          const errors = ctx.runtimeErrors.splice(0)
-          return { name, status: 'failed', errors }
+          return { name, status: 'failed', errors: ctx.getRuntimeErrors() }
         }
   
         const ex = result.value.toQuintEx()
@@ -78,10 +78,10 @@ compileAndTest(modules: QuintModule[],
           return { name, status: 'passed', errors: [] }
         }
   
-        const e = {
+        const e = fromIrErrorMessage(sourceMap)({
           explanation: `${name} returns false`,
           refs: [def.id],
-        }
+        })
         return { name, status: 'failed', errors: [e] }
       })
   }))
