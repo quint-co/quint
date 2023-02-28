@@ -11,7 +11,7 @@ import * as p from './generated/QuintParser'
 import { QuintListener } from './generated/QuintListener'
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
-import { QuintModule } from './quintIr'
+import { IrErrorMessage, QuintModule } from './quintIr'
 import { ToIrListener } from './ToIrListener'
 import { collectDefinitions } from './definitionsCollector'
 import { resolveNames } from './nameResolver'
@@ -40,6 +40,17 @@ const unknownLoc: Loc = {
 export interface ErrorMessage {
   explanation: string;
   locs: Loc[];
+}
+
+// an adapter from IrErrorMessage to ErrorMessage
+export function fromIrErrorMessage(sourceMap: Map<bigint, Loc>):
+  (err: IrErrorMessage) => ErrorMessage {
+  return (msg) => {
+    return {
+      explanation: msg.explanation,
+      locs: msg.refs.map(id => sourceMap.get(id) ?? unknownLoc),
+    }
+  }
 }
 
 export type ParseResult<T> = Either<ErrorMessage[], T>

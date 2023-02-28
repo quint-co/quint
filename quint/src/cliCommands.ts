@@ -11,8 +11,8 @@ import { existsSync, readFileSync, writeFileSync } from 'fs'
 import JSONbig from 'json-bigint'
 import { basename, resolve } from 'path'
 import { cwd } from 'process'
-import seedrandom = require("seedrandom")
 import chalk from 'chalk'
+import seedrandom from 'seedrandom'
 
 import {
   ErrorMessage, Loc, compactSourceMap, parsePhase1, parsePhase2
@@ -22,7 +22,7 @@ import { Either, left, right } from '@sweet-monads/either'
 import { EffectScheme } from './effects/base'
 import { LookupTableByModule } from './lookupTable'
 import { ReplOptions, quintRepl } from './repl'
-import { OpQualifier, QuintModule } from './quintIr'
+import { OpQualifier, QuintEx, QuintModule } from './quintIr'
 import { TypeScheme } from './types/base'
 import lineColumn from 'line-column'
 import { formatError } from './errorReporter'
@@ -30,9 +30,11 @@ import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintAnalyzer } from './quintAnalyzer'
 import { QuintError, quintErrorToString } from './quintError'
 import { compileAndTest } from './runtime/testing'
+import { SimulatorOptions, compileAndRun, printTrace } from './simulation'
 
 export type stage =
-  'loading' | 'parsing' | 'typechecking' | 'testing' | 'documentation'
+  'loading' | 'parsing' | 'typechecking' |
+  'testing' | 'running' | 'documentation'
 
 /** The data from a ProcedureStage that may be output to --out */
 interface OutputStage {
@@ -48,6 +50,9 @@ interface OutputStage {
   passed?: string[],
   failed?: string[],
   ignored?: string[],
+  // Test names output produced by 'run'
+  status?: 'ok' | 'violation',
+  trace?: QuintEx,
   /* Docstrings by defintion name by module name */
   documentation?: Map<string, Map<string, DocumentationEntry>>,
   errors?: ErrorMessage[],
@@ -60,21 +65,27 @@ interface OutputStage {
 function pickOutputStage(o: ProcedureStage): OutputStage {
   const picker = ({
     stage, warnings, modules, table, types, effects, errors, documentation,
-    passed, failed, ignored,
+    passed, failed, ignored, status, trace,
   }: ProcedureStage) => {
-    if (o.stage === 'parsing') {
-      if (o.args.withLookup) {
-        return { stage, warnings, modules, table, errors }
-      } else {
-        return { stage, warnings, modules, errors }
-      }
-    } else if (o.stage === 'testing') {
-      return { stage, errors, passed, failed, ignored }
-    } else {
-      return {
-        stage, warnings, modules, types, effects, errors,
-        passed, failed, ignored, documentation,
-      }
+    switch (o.stage) {
+      case 'parsing':
+        if (o.args.withLookup) {
+          return { stage, warnings, modules, table, errors }
+        } else {
+          return { stage, warnings, modules, errors }
+        }
+
+      case 'testing':
+        return { stage, errors, passed, failed, ignored }
+
+      case 'running':
+        return { stage, errors, status, trace }
+
+      default:
+        return {
+          stage, warnings, modules, types, effects, errors,
+          passed, failed, ignored, documentation,
+        }
     }
   }
   return picker(o)
@@ -109,6 +120,11 @@ interface TestedStage extends LoadedStage {
   failed: string[],
   // the names of the ignored tests
   ignored: string[],
+}
+
+interface SimulatorStage extends LoadedStage {
+  status: 'ok' | 'violation',
+  trace?: QuintEx,
 }
 
 interface DocumentationStage extends LoadedStage {
@@ -262,9 +278,6 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
     let ignored: string[] = []
     let namedErrors: [string, ErrorMessage][] = []
 
-    if (prev.args.seed !== undefined) {
-      seedrandom(prev.args.seed)
-    }
     const startMs = Date.now()
     out(`\n  ${mainName}`)
 
@@ -273,7 +286,7 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
 
     const testOut =
       compileAndTest(prev.modules, main, prev.sourceMap,
-                     prev.table, prev.types, matchFun)
+                     prev.table, prev.types, matchFun, mkRng(prev.args.seed))
     if (testOut.isRight()) {
       const elapsedMs = Date.now() - startMs
       const results = testOut.unwrap()
@@ -286,13 +299,7 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
           const errNo = namedErrors.length + 1
           out('    ' + chalk.red(`${errNo}) `)  + res.name)
 
-          res.errors.forEach(e => {
-            const err = {
-              explanation: e.explanation,
-              locs: e.refs.map(id => prev.sourceMap.get(id)!),
-            }
-            namedErrors.push([res.name, err])
-          })
+          res.errors.forEach(e => namedErrors.push([res.name, e]))
         }
       })
 
@@ -338,6 +345,55 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
     const errors = namedErrors.map(([_, e]) => e)
     return right({ ...testing, passed, failed, ignored, errors })
   }
+}
+
+/**
+ * Run the simulator.
+ *
+ * @param prev the procedure stage produced by `typecheck`
+ */
+export function runSimulator(prev: TypecheckedStage):
+  CLIProcedure<SimulatorStage> {
+  const mainArg = prev.args.main
+  const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
+  const options: SimulatorOptions = {
+    init: prev.args.init,
+    step: prev.args.step,
+    invariant: prev.args.invariant,
+    maxSamples: prev.args.maxSamples,
+    maxSteps: prev.args.maxSteps,
+    rand: mkRng(prev.args.seed),
+  }
+  const startMs = Date.now()
+  const simulator = { ...prev, stage: 'running' as stage }
+  return compileAndRun(prev.sourceCode, mainName, options)
+    .map(result => {
+      const isConsole = !prev.args.out
+      if (isConsole) {
+        const elapsedMs = Date.now() - startMs
+        console.log(result.status === 'ok'
+          ? chalk.green('[ok]')
+            + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).\n`)
+            + chalk.gray(' You may increase --max-samples and --max-steps.\n')
+            + '\nSee the example:'
+          : chalk.red('[violation]') + chalk.gray(` (${elapsedMs}ms).`)
+            + chalk.gray(' See the example:'))
+        console.log('---------------------------------------------')
+        printTrace(console.log, result.trace)
+        console.log('---------------------------------------------')
+      }
+
+      return {
+        ...simulator,
+        status: result.status,
+        trace: result.trace,
+      }
+    })
+    .mapLeft(newErrs => {
+      const errors = prev.errors ? prev.errors.concat(newErrs) : newErrs
+      const newStage = { ...simulator, errors }
+      return { msg: 'run failed', stage: newStage }
+    })
 }
 
 /**
@@ -406,6 +462,18 @@ function replacer(_key: String, value: any): any {
     return Object.fromEntries(value)
   } else {
     return value
+  }
+}
+
+/**
+ * Produce a random-number generator: Either a predictable one using a seed,
+ * or a reasonably unpredictable one.
+ */
+function mkRng(seed: string | undefined): () => number {
+  if (seed) {
+    return seedrandom(seed)
+  } else {
+    return seedrandom()
   }
 }
 
