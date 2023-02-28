@@ -16,7 +16,7 @@ module BinSearch {
     // the largest value of a signed integer
     val MAX_INT  = 2^(INT_WIDTH - 1) - 1
     // the smallest value of a signed integer
-    val MIN_INT  = -2^(INT_WIDTH - 1)    
+    val MIN_INT  = -2^(INT_WIDTH - 1)
 
     // The low end of the search interval (inclusive).
     var low: int
@@ -152,10 +152,10 @@ module BinSearch {
 
     // By showing that the interval [low, high] is contracting,
     // we can implicitly show termination too.
-    // TODO: We cannot currently represent this because we have not implemented a way to 
+    // TODO: We cannot currently represent this because we have not implemented a way to
     // describe the relation between states with `next`
-    // val Progress =
-    //    not(next(isTerminated)) implies (next(low) > low or next(high) < high)
+    temporal Progress =
+       not(next(isTerminated)) implies (next(low) > low or next(high) < high)
 
     // Make sure that INPUT_SEQ is accessed within its bounds
     val InBounds =

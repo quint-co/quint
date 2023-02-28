@@ -63,7 +63,7 @@ describe('inferEffects', () => {
     const inferrer = new EffectInferrer(definitionsTable)
     const [errors, effects] = inferrer.inferEffects(quintModule)
 
-    const expectedEffect = "∀ v0 . (Read[v0]) => Read[v0, 'x']"
+    const expectedEffect = "∀ v0, v1 . (Read[v0] & Temporal[v1]) => Read[v0, 'x'] & Temporal[v1]"
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(effectSchemeToString(effects.get(5n)!), expectedEffect)
@@ -77,7 +77,7 @@ describe('inferEffects', () => {
     const inferrer = new EffectInferrer(definitionsTable)
     const [errors, effects] = inferrer.inferEffects(quintModule)
 
-    const expectedEffect = "∀ v0 . (Read[v0]) => Read[v0, 'x']"
+    const expectedEffect = "∀ v0, v1 . (Read[v0] & Temporal[v1]) => Read[v0, 'x'] & Temporal[v1]"
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(effectSchemeToString(effects.get(8n)!), expectedEffect)
@@ -147,7 +147,7 @@ describe('inferEffects', () => {
     const inferrer = new EffectInferrer(definitionsTable)
     const [errors, effects] = inferrer.inferEffects(quintModule)
 
-    const expectedEffect = '∀ v0, v1, v2 . ((Read[v0] & Temporal[v1]) => Read[v2], Read[v0] & Temporal[v1]) => Read[v2]'
+    const expectedEffect = '∀ v0, v1, v2, v3 . ((Read[v0] & Temporal[v1]) => Read[v2] & Temporal[v3], Read[v0] & Temporal[v1]) => Read[v2] & Temporal[v3]'
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(effectSchemeToString(effects.get(7n)!), expectedEffect)
@@ -161,7 +161,7 @@ describe('inferEffects', () => {
     const inferrer = new EffectInferrer(definitionsTable)
     const [errors, effects] = inferrer.inferEffects(quintModule)
 
-    const expectedEffect = "∀ v0 . (Read[v0]) => Read[v0, 'x']"
+    const expectedEffect = "∀ v0, v1 . (Read[v0] & Temporal[v1]) => Read[v0, 'x'] & Temporal[v1]"
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(effectSchemeToString(effects.get(11n)!), expectedEffect)
@@ -214,11 +214,11 @@ describe('inferEffects', () => {
               location: "Trying to unify variables ['x'] and []",
               message: 'Expected variables [x] and [] to be the same',
             }],
-            location: "Trying to unify Read[v4] and Update['x']",
+            location: "Trying to unify Read[v5] & Temporal[v6] and Update['x']",
           }],
-          location: "Trying to unify (Pure) => Read[v4] and (Read[v2]) => Read[v2] & Update['x']",
+          location: "Trying to unify (Pure) => Read[v5] & Temporal[v6] and (Read[v2]) => Read[v2] & Update['x']",
         }],
-        location: "Trying to unify (Read[v3], (Read[v3]) => Read[v4]) => Read[v3, v4] and (Pure, (Read[v2]) => Read[v2] & Update['x']) => e1",
+        location: "Trying to unify (Read[v3] & Temporal[v4], (Read[v3] & Temporal[v4]) => Read[v5] & Temporal[v6]) => Read[v3, v5] & Temporal[v4, v6] and (Pure, (Read[v2]) => Read[v2] & Update['x']) => e1",
       }],
       location: 'Trying to infer effect for operator application in map(S, (p => assign(x, p)))',
     }))
