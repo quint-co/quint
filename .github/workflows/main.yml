@@ -108,3 +108,8 @@ jobs:
         run: make local
       - name: Run vscode unit tests
         run: cd ./vscode/quint-vscode && npm test
+      - name: Check that we can create the vsix package
+        run: |
+          cd ./vscode/quint-vscode
+          npm install --global @vscode/vsce
+          vsce package
