@@ -348,7 +348,7 @@ function tryToUnpack(
 
   // Combine the other effects into a single effect, to be unified with the unpacked effect
 
-  // If all the effects are concrete, we compine them into a single concrete
+  // If all the effects are concrete, we combine them into a single concrete
   // effect by combining the variables of each component of the same kind
   if (effects2.every(e => e.kind === 'concrete')) {
     effects2.forEach(e => {
