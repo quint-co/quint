@@ -25,7 +25,8 @@ import { formatError } from './errorReporter'
 import {
   ComputableKind, EvalResult, Register, kindName
 } from './runtime/runtime'
-import { ErrorMessage, probeParse } from './quintParserFrontend'
+import { ErrorMessage, Loc, probeParse } from './quintParserFrontend'
+import { IdGenerator, newIdGenerator } from './idGenerator'
 
 // tunable settings
 export const settings = {
@@ -37,6 +38,8 @@ type writer = (_text: string) => void
 
 // the internal state of the REPL
 interface ReplState {
+  // generator of unique identifiers
+  idGen: IdGenerator,
   // the history of module definitions loaded from external sources
   moduleHist: string,
   // definitions history
@@ -82,6 +85,7 @@ export function quintRepl(input: Readable,
 
   // the state
   const state: ReplState = {
+    idGen: newIdGenerator(),
     moduleHist: '',
     defsHist: '',
     exprHist: [],
@@ -501,7 +505,7 @@ ${textToAdd}
       prepareParserInput(`  action __input =\n${newInput}`)
     // compile the expression or definition and evaluate it
     const context =
-      compileFromCode(moduleText, '__repl__', () => Math.random())
+      compileFromCode(state.idGen, moduleText, '__repl__', () => Math.random())
     if (context.syntaxErrors.length > 0 ||
         context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
       printErrors(moduleText, context, lineOffset)
@@ -519,7 +523,7 @@ ${textToAdd}
         return comp
           .eval()
           .map(value => {
-            const ex = value.toQuintEx()
+            const ex = value.toQuintEx(state.idGen)
             out(chalkQuintEx(ex))
             if (ex.kind === 'bool' && ex.value) {
               // if this was an action and it was successful, save the state
@@ -553,7 +557,7 @@ ${textToAdd}
     const [moduleText, lineOffset] = prepareParserInput(newInput)
     // compile the module and add it to history if everything worked
     const context =
-      compileFromCode(moduleText, '__repl__', () => Math.random())
+      compileFromCode(state.idGen, moduleText, '__repl__', () => Math.random())
     if (context.values.size === 0 ||
         context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
       printErrors(moduleText, context, lineOffset)

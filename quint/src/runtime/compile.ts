@@ -22,6 +22,7 @@ import { LookupTableByModule } from '../lookupTable'
 import { TypeScheme } from '../types/base'
 import { QuintAnalyzer } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
+import { IdGenerator } from '../idGenerator'
 
 /**
  * The name of the shadow variable that stores the last found trace.
@@ -175,10 +176,12 @@ export function
  * @returns the compilation context
  */
 export function
-  compileFromCode(code: string, mainName: string, rand: () => number):
-    CompilationContext {
+  compileFromCode(idGen: IdGenerator,
+                  code: string,
+                  mainName: string,
+                  rand: () => number): CompilationContext {
   // parse the module text
-  return parsePhase1(code, '<input>')
+  return parsePhase1(idGen, code, '<input>')
     // On errors, we'll produce the computational context up to this point
     .mapLeft(errorContext)
     .chain(d => parsePhase2(d)

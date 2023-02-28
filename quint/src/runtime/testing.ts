@@ -16,6 +16,7 @@ import { LookupTableByModule } from '../lookupTable'
 import { TypeScheme } from '../types/base'
 
 import { compile, contextLookup } from './compile'
+import { newIdGenerator } from './../idGenerator'
 
 /**
  * Evaluation result.
@@ -70,7 +71,7 @@ compileAndTest(modules: QuintModule[],
           return { name, status: 'failed', errors: ctx.getRuntimeErrors() }
         }
   
-        const ex = result.value.toQuintEx()
+        const ex = result.value.toQuintEx(newIdGenerator())
         if (ex.kind !== 'bool') {
           return { name, status: 'ignored', errors: [] }
         }

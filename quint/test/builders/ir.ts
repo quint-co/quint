@@ -1,4 +1,5 @@
 import { parsePhase1 } from '../../src/quintParserFrontend'
+import { newIdGenerator } from '../../src/idGenerator'
 import { QuintDef, QuintEx, QuintModule } from '../../src/quintIr'
 import JSONbig from 'json-bigint'
 import { QuintType } from '../../src/quintTypes'
@@ -11,7 +12,7 @@ export function buildModuleWithExpressions(expressions: string[]): QuintModule {
 export function buildModuleWithDefs(defs: string[], name?: string): QuintModule {
   const quintModule: string = `module ${name ?? 'wrapper'} { ${defs.join('\n')} }`
 
-  const result = parsePhase1(quintModule, 'mocked_path')
+  const result = parsePhase1(newIdGenerator(), quintModule, 'mocked_path')
 
   if (result.isRight()) {
     return result.value.modules[0]

@@ -20,6 +20,7 @@ import { ErrorMessage } from './quintParserFrontend'
 import { QuintEx } from './quintIr'
 import { fail, kindName } from './runtime/runtime'
 import { chalkQuintEx } from './repl'
+import { IdGenerator } from './idGenerator'
 
 /**
  * Various settings that have to be passed to the simulator to run.
@@ -78,6 +79,7 @@ export function printTrace(out: (line: string) => void, trace: QuintEx) {
 /**
  * Run a test suite of a single module.
  *
+ * @param idGen a unique generator of identifiers
  * @param code the source code of the modules
  * @param mainName the module that should be used as a state machine
  * @param options simulator settings
@@ -85,7 +87,8 @@ export function printTrace(out: (line: string) => void, trace: QuintEx) {
     or the trace as an expression (right)
  */
 export function
-compileAndRun(code: string,
+compileAndRun(idGen: IdGenerator,
+              code: string,
               mainName: string,
               options: SimulatorOptions):
                 Either<ErrorMessage[], SimulatorResult> {
@@ -112,7 +115,7 @@ module __run__ {
 }
 `
  
-  const ctx = compileFromCode(wrappedCode, '__run__', options.rand)
+  const ctx = compileFromCode(idGen, wrappedCode, '__run__', options.rand)
 
   if (ctx.compileErrors.length > 0
       || ctx.syntaxErrors.length > 0
@@ -131,7 +134,7 @@ module __run__ {
             return left(ctx.getRuntimeErrors())
           }
 
-          const ex = result.unwrap().toQuintEx()
+          const ex = result.unwrap().toQuintEx(idGen)
           if (ex.kind !== 'bool') {
             return left([{
               explanation: 'Expected a Boolean result',
@@ -161,7 +164,7 @@ module __run__ {
         } else {
           return right({
             status: noViolation ? 'ok' : 'violation',
-            trace: result.unwrap().toQuintEx(),
+            trace: result.unwrap().toQuintEx(idGen),
           } as SimulatorResult)
         }
       })

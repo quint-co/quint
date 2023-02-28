@@ -18,6 +18,8 @@ import { ValueObject } from 'immutable'
 
 import { QuintEx } from '../quintIr'
 
+import { IdGenerator } from '../idGenerator'
+
 /**
  * Evaluation result.
  * The implementation details are hidden behind this interface.
@@ -31,9 +33,10 @@ export interface EvalResult extends ValueObject {
    * string representation. As sorting via strings may be slow, we do not
    * recommend using `toQuintEx` in computation-intensive code.
    *
+   * @param gen a generator that produces unique ids
    * @return this evaluation result converted to Quint expression.
    */
-  toQuintEx(): QuintEx
+  toQuintEx(gen: IdGenerator): QuintEx
 }
 
 /**

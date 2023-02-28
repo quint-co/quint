@@ -12,6 +12,7 @@ import { QuintListener } from './generated/QuintListener'
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
 import { IrErrorMessage, QuintModule } from './quintIr'
+import { IdGenerator } from './idGenerator'
 import { ToIrListener } from './ToIrListener'
 import { collectDefinitions } from './definitionsCollector'
 import { resolveNames } from './nameResolver'
@@ -98,7 +99,10 @@ export function
  * Note that the IR may be ill-typed and some names may be unresolved.
  * The main goal of this pass is to translate a sequence of characters into IR.
  */
-export function parsePhase1(text: string, sourceLocation: string): ParseResult<ParserPhase1> {
+export function
+parsePhase1(idGen: IdGenerator,
+            text: string,
+            sourceLocation: string): ParseResult<ParserPhase1> {
   const errorMessages: ErrorMessage[] = []
   const parser = setupParser(text, sourceLocation, errorMessages)
   // run the parser
@@ -108,7 +112,7 @@ export function parsePhase1(text: string, sourceLocation: string): ParseResult<P
     return left(errorMessages)
   } else {
     // walk through the AST and construct the IR
-    const listener = new ToIrListener(sourceLocation)
+    const listener = new ToIrListener(sourceLocation, idGen)
     ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
 
     if (listener.errors.length > 0) {
