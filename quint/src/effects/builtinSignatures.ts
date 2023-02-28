@@ -25,11 +25,20 @@ function parseAndQuantify(effectString: string): EffectScheme {
   return { effect: e, ...effectNames(e) }
 }
 
-const prefixByComponentKind = new Map<ComponentKind, string>([
-  ['read', 'r'],
-  ['temporal', 't'],
-  ['update', 'u'],
-])
+/** Generate a name for a variable of certain component kind:
+ * r0, r1, r2, ... for read components
+ * t0, t1, t2, ... for temporal components
+ * u0, u1, u2, ... for update components
+ */
+function nameForVariable(kind: ComponentKind, i: number) {
+  const prefixByComponentKind = new Map<ComponentKind, string>([
+    ['read', 'r'],
+    ['temporal', 't'],
+    ['update', 'u'],
+  ])
+
+  return `${prefixByComponentKind.get(kind)!}${i}`
+}
 
 /**
  * Builds a signature that propagates components of the given kinds
@@ -44,14 +53,14 @@ function propagateComponents(kinds: ComponentKind[]): ((arity: number) => Effect
   return (arity: number) => {
     const params: Effect[] = times(arity, i => {
       const components: EffectComponent[] = kinds.map(kind => {
-        return { kind: kind, variables: { kind: 'quantified', name: `${prefixByComponentKind.get(kind)!}${i + 1}` } }
+        return { kind: kind, variables: { kind: 'quantified', name: nameForVariable(kind, i + 1) } }
       })
 
       return { kind: 'concrete', components: components }
     })
 
     const resultComponents: EffectComponent[] = kinds.map(kind => {
-      const names = times(arity, i => `${prefixByComponentKind.get(kind)!}${i + 1}`)
+      const names = times(arity, i => nameForVariable(kind, i + 1))
       const variables: Variables[] = names.map(name => ({ kind: 'quantified', name }))
       return { kind: kind, variables: { kind: 'union', variables } }
     })
@@ -79,7 +88,7 @@ function propagationWithLambda(kinds: ComponentKind[]): ((arity: number) => Effe
   return (arity: number) => {
     const params: Effect[] = times(arity - 1, i => {
       const components: EffectComponent[] = kinds.map(kind => {
-        return { kind: kind, variables: { kind: 'quantified', name: `${prefixByComponentKind.get(kind)!}${i + 1}` } }
+        return { kind: kind, variables: { kind: 'quantified', name: nameForVariable(kind, i + 1) } }
       })
 
       return { kind: 'concrete', components: components }
@@ -87,14 +96,14 @@ function propagationWithLambda(kinds: ComponentKind[]): ((arity: number) => Effe
 
     const lambdaResult: Effect = {
       kind: 'concrete', components: kinds.map(kind => {
-        return { kind: kind, variables: { kind: 'quantified', name: `${prefixByComponentKind.get(kind)!}${arity}` } }
+        return { kind: kind, variables: { kind: 'quantified', name: nameForVariable(kind, arity) } }
       }),
     }
 
     const lambda: Effect = { kind: 'arrow', params, result: lambdaResult }
 
     const resultComponents: EffectComponent[] = kinds.map(kind => {
-      const names = times(arity, i => `${prefixByComponentKind.get(kind)!}${i + 1}`)
+      const names = times(arity, i => nameForVariable(kind, i + 1))
       const variables: Variables[] = names.map(name => ({ kind: 'quantified', name }))
       return { kind: kind, variables: { kind: 'union', variables } }
     })
@@ -106,7 +115,6 @@ function propagationWithLambda(kinds: ComponentKind[]): ((arity: number) => Effe
   }
 }
 
-const p = parseAndQuantify
 const standardPropagation = propagateComponents(['read', 'temporal'])
 
 const literals = ['Nat', 'Int', 'Bool'].map(name => ({ name, effect: toScheme({ kind: 'concrete', components: [] }) }))
@@ -119,7 +127,10 @@ const booleanOperators = [
 ]
 
 const setOperators = [
-  { name: 'guess', effect: p('(Read[r1], (Read[r1]) => Read[r2] & Update[u]) => Read[r1, r2] & Update[u]') },
+  {
+    name: 'guess',
+    effect: parseAndQuantify('(Read[r1], (Read[r1]) => Read[r2] & Update[u]) => Read[r1, r2] & Update[u]'),
+  },
   { name: 'exists', effect: propagationWithLambda(['read', 'temporal'])(2) },
   { name: 'forall', effect: propagationWithLambda(['read', 'temporal'])(2) },
   { name: 'in', effect: standardPropagation(2) },
@@ -148,20 +159,20 @@ const mapOperators = [
   { name: 'setToMap', effect: standardPropagation(1) },
   { name: 'setOfMaps', effect: standardPropagation(2) },
   { name: 'set', effect: standardPropagation(3) },
-  { name: 'setBy', effect: p('(Read[r1], Read[r2], (Read[r1]) => Read[r3]) => Read[r1, r2, r3]') },
+  { name: 'setBy', effect: parseAndQuantify('(Read[r1], Read[r2], (Read[r1]) => Read[r3]) => Read[r1, r2, r3]') },
   { name: 'put', effect: standardPropagation(3) },
 ]
 
 const recordOperators = [
   // Keys should be pure, as we don't allow dynamic key access.
-  { name: 'field', effect: p('(Read[r], Pure) => Read[r]') },
-  { name: 'fieldNames', effect: p('(Read[r]) => Read[r]') },
-  { name: 'with', effect: p('(Read[r1], Pure, Read[r2]) => Read[r1, r2]') },
+  { name: 'field', effect: parseAndQuantify('(Read[r], Pure) => Read[r]') },
+  { name: 'fieldNames', effect: parseAndQuantify('(Read[r]) => Read[r]') },
+  { name: 'with', effect: parseAndQuantify('(Read[r1], Pure, Read[r2]) => Read[r1, r2]') },
 ]
 
 const tupleOperators = [
   // Indexes for tuples should be pure, as we don't allow dynamic tuple access.
-  { name: 'item', effect: p('(Read[r1], Pure) => Read[r1]') },
+  { name: 'item', effect: parseAndQuantify('(Read[r1], Pure) => Read[r1]') },
 ]
 
 const listOperators = [
@@ -196,25 +207,28 @@ const integerOperators = [
 ]
 
 const temporalOperators = [
-  { name: 'always', effect: p('(Read[r] & Temporal[t]) => Temporal[r, t]') },
-  { name: 'eventually', effect: p('(Read[r] & Temporal[t]) => Temporal[r, t]') },
-  { name: 'next', effect: p('(Read[r]) => Temporal[r]') },
-  { name: 'orKeep', effect: p('(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]') },
-  { name: 'mustChange', effect: p('(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]') },
+  { name: 'always', effect: parseAndQuantify('(Read[r] & Temporal[t]) => Temporal[r, t]') },
+  { name: 'eventually', effect: parseAndQuantify('(Read[r] & Temporal[t]) => Temporal[r, t]') },
+  { name: 'next', effect: parseAndQuantify('(Read[r]) => Temporal[r]') },
+  { name: 'orKeep', effect: parseAndQuantify('(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]') },
+  { name: 'mustChange', effect: parseAndQuantify('(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]') },
   // Enabled: Should we do this? https://github.com/informalsystems/quint/discussions/109
   // Or should the result be temporal?
-  { name: 'enabled', effect: p('(Read[r1] & Update[u1]) => Read[r1]') },
-  { name: 'weakFair', effect: p('(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]') },
-  { name: 'strongFair', effect: p('(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]') },
+  { name: 'enabled', effect: parseAndQuantify('(Read[r1] & Update[u1]) => Read[r1]') },
+  { name: 'weakFair', effect: parseAndQuantify('(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]') },
+  { name: 'strongFair', effect: parseAndQuantify('(Read[r] & Update[u], Read[v]) => Temporal[r, u, v]') },
 ]
 
 const otherOperators = [
-  { name: 'assign', effect: p('(Read[r1], Read[r2]) => Read[r2] & Update[r1]') },
-  { name: 'then', effect: p('(Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r] & Update[u]') },
-  { name: 'repeated', effect: p('(Read[r] & Update[u], Pure) => Read[r] & Update[u]') },
+  { name: 'assign', effect: parseAndQuantify('(Read[r1], Read[r2]) => Read[r2] & Update[r1]') },
+  { name: 'then', effect: parseAndQuantify('(Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r] & Update[u]') },
+  { name: 'repeated', effect: parseAndQuantify('(Read[r] & Update[u], Pure) => Read[r] & Update[u]') },
   { name: 'fail', effect: propagateComponents(['read', 'update'])(1) },
   { name: 'assert', effect: propagateComponents(['read'])(1) },
-  { name: 'ite', effect: p('(Read[r1], Read[r2] & Update[u], Read[r3] & Update[u]) => Read[r1, r2, r3] & Update[u]') },
+  {
+    name: 'ite',
+    effect: parseAndQuantify('(Read[r1], Read[r2] & Update[u], Read[r3] & Update[u]) => Read[r1, r2, r3] & Update[u]'),
+  },
 ]
 
 const multipleAritySignatures: [string, Signature][] = [
@@ -229,7 +243,7 @@ const multipleAritySignatures: [string, Signature][] = [
   ['unionMatch', (arity: number) => {
     const readVars = times((arity - 1) / 2, i => `r${i}`)
     const args = readVars.map(r => `Pure, (Pure) => Read[${r}]`)
-    return p(`(Read[r], ${args.join(', ')}) => Read[${readVars.join(', ')}]`)
+    return parseAndQuantify(`(Read[r], ${args.join(', ')}) => Read[${readVars.join(', ')}]`)
   }],
   ['actionAll', (arity: number) => {
     const indexes = range(arity)
@@ -237,7 +251,7 @@ const multipleAritySignatures: [string, Signature][] = [
     const args = indexes.map(i => `Read[r${i}] & Update[u${i}]`)
     const readVars = indexes.map(i => `r${i}`).join(', ')
     const updateVars = indexes.map(i => `u${i}`).join(', ')
-    return p(`(${args.join(', ')}) => Read[${readVars}] & Update[${updateVars}]`)
+    return parseAndQuantify(`(${args.join(', ')}) => Read[${readVars}] & Update[${updateVars}]`)
   }],
   ['actionAll', propagateComponents(['read', 'update'])],
   ['actionAny', (arity: number) => {
@@ -245,7 +259,7 @@ const multipleAritySignatures: [string, Signature][] = [
 
     const args = indexes.map(i => `Read[r${i}] & Update[u]`)
     const readVars = indexes.map(i => `r${i}`).join(', ')
-    return p(`(${args.join(', ')}) => Read[${readVars}] & Update[u]`)
+    return parseAndQuantify(`(${args.join(', ')}) => Read[${readVars}] & Update[u]`)
   }],
 ]
 
