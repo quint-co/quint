@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author                  |
 |---------:|:----------:|:------------------------|
-|        6 | 12.23.2022 | Igor Konnov, Shon Feder |
+|        7 | 2023-02-23 | Igor Konnov, Shon Feder |
 
 **WARNING**: *This is a preliminary manual in the style of [Working
 Backwards]. Some commands are not implemented yet.*
@@ -16,12 +16,13 @@ The main commands of `quint` are as follows:
  - [x] `repl` starts the REPL (Read-Eval-Print loop) for Quint
  - [x] `parse` parses a Quint specification and resolves names
  - [x] `typecheck` infers types in a Quint specification
- - [x] `test` tests a Quint specification similar to property-based testing
- - [ ] `run` executes a Quint specification via random simulation
+ - [x] `run` executes a Quint specification via random simulation
+        similar to stateful property-based testing
+ - [x] `test` runs unit tests against a Quint specification
+ - [ ] `to-apalache` translates a Quint specification to Apalache IR
  - [ ] `docs` produces documentation
  - [ ] `lint` checks a Quint specification for known deficiencies
  - [ ] `indent` indents a Quint specification
- - [ ] `to-apalache` translates a Quint specification to Apalache IR
 
 In the following, we give details about the above commands.
 
@@ -34,35 +35,56 @@ See [README](../quint/README.md).
 This is the default operation if no other subcommand is given:
 
 ```sh
-quint
+$ quint
 ```
 
-You can also invoke it directly with:
+You can also invoke it directly with `quint repl`:
+
+```sh
+$ quint repl --help
+quint repl
+
+run an interactive Read-Evaluate-Print-Loop
+
+Options:
+      --help     Show help                                             [boolean]
+      --version  Show version number                                   [boolean]
+  -r, --require  filename[::module]. Preload the file and, optionally, import
+                 the module                                             [string]
+```
 
 ```sh
 quint repl
 ```
 
-
-The command starts the [REPL][] (read-evaluate-print loop). The REPL is
-especially useful for learning the language. See the [repl](./repl.md)
-documentation for more details.
+The REPL is especially useful for learning the language. See the
+[repl](./repl.md) documentation for more details.
 
 ## Command `parse`
 
-```sh
-quint parse [--out=<out>.json] [--source-map=<src>.map] <spec>.qnt
-```
+*Warning: The language is still in active development, and breaking changes are
+to be expected.*
 
-*Warning: The parser is still in active development, and breaking changes are to
-be expected.*
+```sh
+$ quint parse --help    
+quint parse <input>
+
+parse a Quint specification
+
+Options:
+  --help         Show help                                             [boolean]
+  --version      Show version number                                   [boolean]
+  --out          output file                                            [string]
+  --source-map   name of the source map                                 [string]
+  --with-lookup  add the lookup table to the output file (see --out)   [boolean]
+```
 
 This command reads a Quint specification from the file `<spec>.qnt`, parses the
 specification and resolves the imports relative to the directory of
 `<spec>.qnt`. If the command produces errors, these errors are printed on
 `stderr`. If there are no errors, nothing is printed.
 
-**Option `--out`**. If the user supplies the flag `--out`, then the
+If the user supplies the flag `--out`, then the
 parsing result is written to the file `<out>.json`. Depending on the outcome,
 the following is written:
 
@@ -90,11 +112,6 @@ the following is written:
    ```
 
    The errors and warnings are written in the format of [ADR002][].
-
-**Option `--source-map`**. If the flag `--source-map` is supplied, the source
-information is written to `<src>.map` in the format of [Source map][].
-
-*The option `--source-map` is not implemented yet.*
 
 ## Command typecheck
 
@@ -140,42 +157,41 @@ the following is written:
 
 ## Command run
 
-*This command is not implemented yet.*
-
 ```sh
-quint run [--seed=<seed>] [--timeout=sec] [--out=<out>.json] [--main=<name>] \
-  [--match=regex] <spec>.qnt <name>
+$ quint run --help
+quint run <input>
+
+Simulate a Quint specification and (optionally) check invariants
+
+Options:
+  --help         Show help                                             [boolean]
+  --version      Show version number                                   [boolean]
+  --main         name of the main module (by default, computed from filename)
+                                                                        [string]
+  --out          output file (suppresses all console output)            [string]
+  --max-samples  the maximum on the number of traces to try
+                                                       [number] [default: 10000]
+  --max-steps    the maximum on the number of steps in every trace
+                                                          [number] [default: 20]
+  --init         name of the initializer action       [string] [default: "init"]
+  --step         name of the step action              [string] [default: "step"]
+  --invariant    invariant to check: a definition name or an expression
+                                                    [string] [default: ["true"]]
+  --seed         random seed to use for non-deterministic choice        [string]
 ```
 
-This command produces a random execution of a Quint specification,
-whose name is given with `<spec>.qnt`. The random execution should follow
-the run structure that is given in the definition called `<name>`.
-
-**Option `--seed`**. The optional parameter `--seed` specifies the initial seed
-for the random number generator. This is useful for reproducibility of
-executions.
-
-**Option `--main`**. The name of the main module, which will be run as a
-state machine. By default, this name is extracted from the filename.
-
-**Option `--timeout`**. The optional parameter `--timeout`
-specifies the maximum time (in seconds) to spend on interpretation. Once the
-time limit has been reached, the execution stops and outputs whatever it has
-computed.
-
-**Option `--out`**. The optional parameter `--out` specifies the name
-of an output file.
-
- - If there are no critical errors (e.g., in parsing, typechecking, etc.), the
-   The output file is a trace in the [Informal Trace Format][].
+ - If there are no critical errors (e.g., in parsing, typechecking, etc.),
+   the trace is currently written as a serialized Quint expression.
+   In the future, the trace will be written in the [Informal Trace Format][].
+   See the [issue #277](https://github.com/informalsystems/quint/issues/277).
 
  - If the specification cannot be run (e.g., due to a parsing error), the file
    contains an error message in JSON:
 
    ```json
    {
-     "result": "error",
-     "messages": [ <errors and warnings> ]
+     "stage": "running",
+     "errors": [ <errors> ]
    }
    ```
 
@@ -183,35 +199,21 @@ of an output file.
 
 ## Command test
 
-*This command is not implemented yet.*
-
 ```sh
-quint test [--seed=<seed>] [--timeout=sec] [--main=<name>] \
-  [--match=regex] [--out=<out>.json] <spec>.qnt
+$ quint test --help
+quint test <input>
+
+Run tests against a Quint specification
+
+Options:
+  --help     Show help                                                 [boolean]
+  --version  Show version number                                       [boolean]
+  --main     name of the main module (by default, computed from filename)
+                                                                        [string]
+  --out      output file (suppresses all console output)                [string]
+  --seed     random seed to use for non-deterministic choice            [string]
+  --match    a string or regex that selects names to use as tests       [string]
 ```
-
-This command receives a Quint specification whose name is given with
-`<spec>.qnt`.  It runs the tests that are specified with the `--tests` option.
-If the `--tests` option is not passed, the command runs all tests specified in
-the definitions whose names start with `Test`.
-
-**Option `--seed`**. The optional parameter `--seed` specifies the initial seed
-for the random number generator. This is useful for reproducibility of
-executions.
-
-**Option `--main`**. The name of the main module, which will be run as a
-state machine. By default, this name is extracted from the filename.
-
-**Option `--match`**. A regular expression that filters definitions to be
-used as tests. The default value is `.*Test`.
-
-**(Not implemented) Option `--timeout`**. The optional parameter `--timeout`
-specifies the maximum time (in seconds) to spend on interpretation. Once the
-time limit has been reached, the execution stops and outputs whatever it has
-computed.
-
-**Option `--out`**. The optional parameter `--out` specifies the name
-of an output file.
 
  - If there are no critical errors (e.g., in parsing, typechecking, etc.), the
    command succeeds. The output file contains the parsed and resolved module in

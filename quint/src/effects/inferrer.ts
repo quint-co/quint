@@ -24,6 +24,7 @@ import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } f
 import { ScopeTree, treeFromModule } from '../scoping'
 import { getSignatures } from './builtinSignatures'
 import { FreshVarGenerator } from '../FreshVarGenerator'
+import { effectToString } from './printing'
 
 export type EffectInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, EffectScheme>]
 
@@ -252,13 +253,13 @@ export class EffectInferrer implements IRVisitor {
    * ---------------------------------------------- (LAMBDA)
    * Γ ⊢ (p0, ..., pn) => e: (E0, ..., En) => E
    */
-  exitLambda(expr: QuintLambda): void {
+  exitLambda(lambda: QuintLambda): void {
     if (this.errors.size > 0) {
       return
     }
-    const exprResult = this.fetchResult(expr.expr.id)
-    const params = mergeInMany(expr.params.map(p => {
-      return this.fetchSignature(p, expr.expr.id, 2)
+    const exprResult = this.fetchResult(lambda.expr.id)
+    const params = mergeInMany(lambda.params.map(p => {
+      return this.fetchSignature(p, lambda.expr.id, 2)
         .chain(e => applySubstitution(this.substitutions, e))
     }))
 
@@ -273,7 +274,7 @@ export class EffectInferrer implements IRVisitor {
       .map(effect => {
         if (effect.kind !== 'arrow') {
           // Impossible
-          return
+          throw new Error(`Arrow effect after substitution should be an arrow: ${effectToString(effect)}`)
         }
 
         const nonFreeNames = effect.params.reduce((names, p) => {
@@ -284,10 +285,10 @@ export class EffectInferrer implements IRVisitor {
           }
         }, { effectVariables: new Set<string>(), variables: new Set<string>() })
 
-        this.addToResults(expr.id, right({ ...nonFreeNames, effect }))
+        this.addToResults(lambda.id, right({ ...nonFreeNames, effect }))
       })
       .mapLeft(err => {
-        this.addToResults(expr.id, left(err))
+        this.addToResults(lambda.id, left(err))
       })
   }
 

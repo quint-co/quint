@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - command `test` to run unit tests (#634)
+- command `run` to run stateful simulations (#659)
 - option `--with-lookup` of the command `parse` (#639)
 
 ### Changed

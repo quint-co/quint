@@ -197,7 +197,7 @@ describe('checkModes', () => {
     assert.deepEqual(suggestions.size, 0)
   })
 
-  it('keeps track of parametes in nested definitions', () => {
+  it('keeps track of parameters in nested definitions', () => {
     const quintModule = buildModuleWithDefs([
       'pure def f(p) = { pure def m(q) = p + 1 { m(1) } }',
     ])

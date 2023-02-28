@@ -66,8 +66,9 @@ We are preparing language and tools tutorials. Visit the [Tutorials][] page.
 
 ### Syntax :abcd:
 
-Check the [syntax documentation](./doc/lang.md) and the [Reference API
-documentation for built-in operators](./doc/builtin.md).
+- [Cheatsheet](./doc/quint-cheatsheet.pdf)
+- [Reference API documentation for built-in operators](./doc/builtin.md).
+- [Syntax documentation](./doc/lang.md)
 
 ### Examples :musical_score:
 

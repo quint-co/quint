@@ -4,3 +4,4 @@ client/server
 .vscode-test
 .local-pack
 .yalc
+*.vsix
