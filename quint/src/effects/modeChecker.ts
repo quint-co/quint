@@ -18,7 +18,7 @@ import { qualifierToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { QuintError } from '../quintError'
 import { OpQualifier, QuintInstance, QuintModule, QuintOpDef } from '../quintIr'
-import { ArrowEffect, ComponentKind, EffectScheme, Variables } from './base'
+import { ArrowEffect, ComponentKind, EffectScheme, Variables, stateVariables, variablesNames } from './base'
 import { effectToString, variablesToString } from './printing'
 
 export type ModeCheckingResult = [Map<bigint, QuintError>, Map<bigint, OpQualifier>]
@@ -126,12 +126,24 @@ const modesForConcrete = new Map<ComponentKind, OpQualifier>([
   ['read', 'val'],
 ])
 
-function modeForEffect(temp: EffectScheme): [OpQualifier, string] {
-  // Ignore quantification for now. That will be handled in a followup PR
-  const effect = temp.effect
+function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
+  const effect = scheme.effect
+  const nonFreeVars = scheme.variables
+
   switch (effect.kind) {
     case 'concrete': {
-      const kind = componentKindPriority.find(kind => effect.components.some(c => c.kind === kind))
+      const kind = componentKindPriority.find(kind => {
+        return effect.components.some(c => {
+          if (c.kind !== kind) {
+            return false
+          }
+          const nonFreeVariables = variablesNames(c.variables).filter(v => nonFreeVars.has(v)).concat(
+            stateVariables(c.variables).map(v => v.name)
+          )
+
+          return nonFreeVariables && nonFreeVariables.length > 0
+        })
+      })
 
       if (!kind) {
         return ['pureval', "doesn't read or update any variable"]
@@ -159,8 +171,13 @@ function modeForEffect(temp: EffectScheme): [OpQualifier, string] {
       })
 
       const kind = componentKindPriority.find(kind => {
-        const addedVariables = addedVariablesByComponentKind.get(kind)
-        return addedVariables && addedVariables.length > 0
+        const variables = addedVariablesByComponentKind.get(kind)
+        const nonFreeVariables = variables?.flatMap(vs => {
+          return variablesNames(vs).filter(v => nonFreeVars.has(v)).concat(
+            stateVariables(vs).map(v => v.name)
+          )
+        })
+        return nonFreeVariables && nonFreeVariables.length > 0
       })
 
       if (!kind) {

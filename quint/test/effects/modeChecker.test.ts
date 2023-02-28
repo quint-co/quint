@@ -170,6 +170,22 @@ describe('checkModes', () => {
     ])
   })
 
+  it('finds errors in nested definitions', () => {
+    const quintModule = buildModuleWithDefs([
+      'pure val a = { val m = x + 1 { m } }',
+    ])
+
+    const [errors, _suggestions] = checkModuleModes(quintModule)
+
+    assert.sameDeepMembers([...errors.entries()], [
+      [7n, {
+        message: "pure val operators may not interact with state variables, but operator `a` reads variables 'x'. Use val instead.",
+        code: 'QNT200',
+        data: { fix: { kind: 'replace', original: 'pure val', replacement: 'val' } },
+      }],
+    ])
+  })
+
   it('finds no error with proper high order operators', () => {
     const quintModule = buildModuleWithDefs([
       'pure def c(p, f) = Set(p).map(f)',
@@ -179,6 +195,16 @@ describe('checkModes', () => {
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
     assert.deepEqual(suggestions.size, 0)
+  })
 
+  it('keeps track of parameters in nested definitions', () => {
+    const quintModule = buildModuleWithDefs([
+      'pure def f(p) = { pure def m(q) = p + 1 { m(1) } }',
+    ])
+
+    const [errors, suggestions] = checkModuleModes(quintModule)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
+    assert.deepEqual(suggestions.size, 0)
   })
 })
