@@ -162,6 +162,20 @@ describe('unify', () => {
       ])).mapLeft(err => assert.fail(`Should find no errros, found ${errorTreeToString(err)}`))
     })
 
+    it('unpacks arguments as tuples with quantified effects', () => {
+      const e1 = parseEffectOrThrow('(e0, e1) => e1')
+      const e2 = parseEffectOrThrow("(Pure) => E")
+
+      const result = unify(e1, e2)
+
+      result.map(r => assert.sameDeepMembers(r, [
+        { kind: 'effect', name: 'e0', value: { kind: 'concrete', components: [] } },
+        { kind: 'effect', name: 'e1', value: { kind: 'concrete', components: [] } },
+        { kind: 'effect', name: 'e0#e1', value: { kind: 'concrete', components: [] } },
+        { kind: 'effect', name: 'E', value: parseEffectOrThrow('Pure') },
+      ])).mapLeft(err => assert.fail(`Should find no errros, found ${errorTreeToString(err)}`))
+    })
+
     it('results in the same effect regardless of unpacked projection', () => {
       const e1 = parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1]')
       const e2 = parseEffectOrThrow("(Read['x', 'y']) => E")

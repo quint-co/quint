@@ -14,7 +14,7 @@
 
 
 import { QuintError } from "../quintError";
-import { ConcreteEffect, Effect, StateVariable, Variables } from "./base";
+import { ConcreteEffect, EffectScheme, StateVariable, Variables } from "./base";
 import { EffectVisitor, walkEffect } from "./EffectVisitor";
 import { groupBy, pickBy, values } from "lodash";
 
@@ -31,8 +31,8 @@ export class MultipleUpdatesChecker implements EffectVisitor {
    *
    * @returns a map of errors, where the key is the variable id
    */
-  checkEffects(effects: Effect[]): Map<bigint, QuintError> {
-    effects.forEach(e => walkEffect(this, e))
+  checkEffects(effects: EffectScheme[]): Map<bigint, QuintError> {
+    effects.forEach(e => walkEffect(this, e.effect))
     return this.errors
   }
 

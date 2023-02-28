@@ -12,9 +12,8 @@
  * @module
  */
 
-import { Signature } from './base'
+import { EffectScheme, Signature, effectNames } from './base'
 import { parseEffectOrThrow } from './parser'
-import { simplify } from './simplification'
 import { range, times, zip } from 'lodash'
 
 export function getSignatures(): Map<string, Signature> {
@@ -22,6 +21,12 @@ export function getSignatures(): Map<string, Signature> {
 }
 
 const literals = ['Nat', 'Int', 'Bool'].map(name => ({ name, effect: 'Pure' }))
+
+function parseAndQuantify(effectString: string): EffectScheme {
+  const e = parseEffectOrThrow(effectString)
+  return { effect: e, ...effectNames(e) }
+}
+
 const booleanOperators = [
   { name: 'eq', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
   { name: 'neq', effect: '(Read[r1], Read[r2]) => Read[r1, r2]' },
@@ -123,10 +128,14 @@ const temporalOperators = [
 const otherOperators = [
   { name: 'assign', effect: '(Read[r1], Read[r2]) => Read[r2] & Update[r1]' },
   { name: 'then', effect: '(Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r] & Update[u]' },
-  { name: 'repeated',
-    effect: '(Read[r] & Update[u], Pure) => Read[r] & Update[u]' },
-  { name: 'fail',
-    effect: '(Read[r] & Update[u]) => Read[r] & Update[u]' },
+  {
+    name: 'repeated',
+    effect: '(Read[r] & Update[u], Pure) => Read[r] & Update[u]',
+  },
+  {
+    name: 'fail',
+    effect: '(Read[r] & Update[u]) => Read[r] & Update[u]',
+  },
   { name: 'assert', effect: '(Read[r]) => Read[r]' },
   { name: 'ite', effect: '(Read[r1], Read[r2] & Update[u], Read[r3] & Update[u]) => Read[r1, r2, r3] & Update[u]' },
 ]
@@ -134,14 +143,14 @@ const otherOperators = [
 const readManyEffect = (arity: number) => {
   const readVars = times(arity, i => `r${i}`)
   const args = readVars.map(r => `Read[${r}]`)
-  return parseEffectOrThrow(`(${args.join(', ')}) => Read[${readVars.join(', ')}]`)
+  return parseAndQuantify(`(${args.join(', ')}) => Read[${readVars.join(', ')}]`)
 }
 
 const readAndTemporalManyEffect = (arity: number) => {
   const readVars = times(arity, i => `r${i}`)
   const temporalVars = times(arity, i => `t${i}`)
   const args = zip(readVars, temporalVars).map(([r, t]) => `Read[${r}] & Temporal[${t}]`)
-  return parseEffectOrThrow(`(${args.join(', ')}) => Read[${readVars.join(', ')}] & Temporal[${temporalVars.join(', ')}]`)
+  return parseAndQuantify(`(${args.join(', ')}) => Read[${readVars.join(', ')}] & Temporal[${temporalVars.join(', ')}]`)
 }
 
 const multipleAritySignatures: [string, Signature][] = [
@@ -156,7 +165,7 @@ const multipleAritySignatures: [string, Signature][] = [
   ['unionMatch', (arity: number) => {
     const readVars = times((arity - 1) / 2, i => `r${i}`)
     const args = readVars.map(r => `Pure, (Pure) => Read[${r}]`)
-    return parseEffectOrThrow(`(Read[r], ${args.join(', ')}) => Read[${readVars.join(', ')}]`)
+    return parseAndQuantify(`(Read[r], ${args.join(', ')}) => Read[${readVars.join(', ')}]`)
   }],
   ['actionAll', (arity: number) => {
     const indexes = range(arity)
@@ -164,14 +173,14 @@ const multipleAritySignatures: [string, Signature][] = [
     const args = indexes.map(i => `Read[r${i}] & Update[u${i}]`)
     const readVars = indexes.map(i => `r${i}`).join(', ')
     const updateVars = indexes.map(i => `u${i}`).join(', ')
-    return parseEffectOrThrow(`(${args.join(', ')}) => Read[${readVars}] & Update[${updateVars}]`)
+    return parseAndQuantify(`(${args.join(', ')}) => Read[${readVars}] & Update[${updateVars}]`)
   }],
   ['actionAny', (arity: number) => {
     const indexes = range(arity)
 
     const args = indexes.map(i => `Read[r${i}] & Update[u]`)
     const readVars = indexes.map(i => `r${i}`).join(', ')
-    return parseEffectOrThrow(`(${args.join(', ')}) => Read[${readVars}] & Update[u]`)
+    return parseAndQuantify(`(${args.join(', ')}) => Read[${readVars}] & Update[u]`)
   }],
 ]
 
@@ -187,6 +196,5 @@ const fixedAritySignatures: [string, Signature][] = [
   temporalOperators,
   otherOperators,
 ].flat().map(sig => [sig.name, ((_: number) => {
-  const e = parseEffectOrThrow(sig.effect)
-  return simplify(e)
-}) as Signature])
+  return parseAndQuantify(sig.effect)
+})])

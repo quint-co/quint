@@ -19,7 +19,7 @@ import {
 } from './quintParserFrontend'
 
 import { Either, left, right } from '@sweet-monads/either'
-import { Effect } from './effects/base'
+import { EffectScheme } from './effects/base'
 import { LookupTableByModule } from './lookupTable'
 import { ReplOptions, quintRepl } from './repl'
 import { OpQualifier, QuintEx, QuintModule } from './quintIr'
@@ -44,7 +44,7 @@ interface OutputStage {
   table?: LookupTableByModule,
   // the tables produced by 'typecheck'
   types?: Map<bigint, TypeScheme>,
-  effects?: Map<bigint, Effect>,
+  effects?: Map<bigint, EffectScheme>,
   modes?: Map<bigint, OpQualifier>,
   // Test names output produced by 'test'
   passed?: string[],
@@ -109,7 +109,7 @@ interface ParsedStage extends LoadedStage {
 
 interface TypecheckedStage extends ParsedStage {
   types: Map<bigint, TypeScheme>,
-  effects: Map<bigint, Effect>,
+  effects: Map<bigint, EffectScheme>,
   modes: Map<bigint, OpQualifier>,
 }
 

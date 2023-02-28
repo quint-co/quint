@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- Inferred effects are now properly quantified (#658)
+
 ### Deprecated
 ### Removed
 ### Fixed

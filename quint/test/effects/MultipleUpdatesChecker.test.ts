@@ -2,7 +2,7 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { MultipleUpdatesChecker } from '../../src/effects/MultipleUpdatesChecker'
 import { parseEffectOrThrow } from '../../src/effects/parser'
-import { quintErrorToString } from '../../src'
+import { quintErrorToString, toScheme } from '../../src'
 
 const checker = new MultipleUpdatesChecker()
 
@@ -11,7 +11,7 @@ describe('checkEffects', () => {
     const effects = [
       parseEffectOrThrow("(Read[v1]) => Read[v1] & Update['x']"),
       parseEffectOrThrow("(Update['x', 'y']) => Update['x', 'y']"),
-    ]
+    ].map(toScheme)
 
     const errors = checker.checkEffects(effects)
 
@@ -23,7 +23,7 @@ describe('checkEffects', () => {
       parseEffectOrThrow("(Read[v1]) => Read[v1] & Update['x']"),
       parseEffectOrThrow("(Update['x', 'y']) => Update['x', 'y', 'y']"),
       parseEffectOrThrow("Update['z', 'z', 'z']"),
-    ]
+    ].map(toScheme)
 
     const errors = checker.checkEffects(effects)
 
