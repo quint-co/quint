@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Modes for nested definitions are now properly checked (#661)
 - All basic operators can now be used with temporal formulas (#646)
+- Effect checking performance for large specs is massively improved (#669)
 
 ### Security
 
