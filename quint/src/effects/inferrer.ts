@@ -19,12 +19,13 @@ import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { QuintApp, QuintBool, QuintEx, QuintInt, QuintLambda, QuintLet, QuintModule, QuintModuleDef, QuintName, QuintOpDef, QuintStr } from '../quintIr'
 import { Effect, EffectScheme, Signature, effectNames, toScheme, unify } from './base'
-import { Substitutions, applySubstitution, applySubstitutionToScheme, compose } from './substitutions'
+import { Substitutions, applySubstitution, compose } from './substitutions'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
 import { ScopeTree, treeFromModule } from '../scoping'
 import { getSignatures } from './builtinSignatures'
 import { FreshVarGenerator } from '../FreshVarGenerator'
 import { effectToString } from './printing'
+import { zip } from 'lodash'
 
 export type EffectInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, EffectScheme>]
 
@@ -192,14 +193,21 @@ export class EffectInferrer implements IRVisitor {
         const substitution = arrowEffect.chain(effect => unify(signature, effect))
 
         const resultEffectWithSubs = substitution
-          .chain(s => compose(s, this.substitutions))
+          .chain(s => compose(this.substitutions, s))
           .chain(s => {
             this.substitutions = s
 
-            this.effects.forEach((effect, id) => {
-              const r = applySubstitutionToScheme(s, effect)
-              this.addToResults(id, r)
-            })
+            paramsResult.map(effects =>
+              zip(effects, expr.args.map(a => a.id)).forEach(([effect, id]) => {
+                if (!effect || !id) {
+                  // Impossible: effects and expr.args are the same length
+                  throw new Error(`Expected ${expr.args.length} effects, but got ${effects.length}`)
+                }
+
+                const r = applySubstitution(s, effect).map(toScheme)
+                this.addToResults(id, r)
+              })
+            )
 
             return applySubstitution(s, resultEffect)
           })

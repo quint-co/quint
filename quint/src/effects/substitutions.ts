@@ -14,7 +14,7 @@
 
 import { Either, mergeInMany, right } from '@sweet-monads/either'
 import { ErrorTree, buildErrorTree } from '../errorTree'
-import { Effect, EffectScheme, Variables, unify, unifyVariables } from './base'
+import { Effect, Variables, unify, unifyVariables } from './base'
 import { effectToString, substitutionsToString } from './printing'
 import { simplify } from './simplification'
 
@@ -85,23 +85,6 @@ export function applySubstitution(subs: Substitutions, e: Effect): Either<ErrorT
   }
 
   return result.map(simplify)
-}
-
-/**
- * Applies substitutions to an effect scheme, replacing all *non-quantified* names with their
- * substitution values when they are defined.
- *
- * @param subs the substitutions to be applied
- * @param e the effect to be transformed
- *
- * @returns the effect resulting from the substitutions' application on the given
- *          effect, when successful. Otherwise, an error tree with an error message and its trace.
- */
-export function applySubstitutionToScheme(subs: Substitutions, e: EffectScheme): Either<ErrorTree, EffectScheme> {
-  const filteredSubs = subs.filter(s => !e.variables.has(s.name) && !e.effectVariables.has(s.name))
-
-  return applySubstitution(filteredSubs, e.effect)
-    .map(effect => ({ ...e, effect }))
 }
 
 function emptyVariables(variables: Variables): boolean {
