@@ -5,7 +5,7 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * Checks effects for multiple updates of the same variable.
+ * A checker for multiple updates in inferred effects.
  *
  * @author Gabriela Moreira
  *
@@ -14,18 +14,18 @@
 
 
 import { QuintError } from "../quintError";
-import { ConcreteEffect, EffectScheme, Variables, stateVariables } from "./base";
+import { ConcreteEffect, EffectScheme, Entity, stateVariables } from "./base";
 import { EffectVisitor, walkEffect } from "./EffectVisitor";
 import { groupBy, pickBy, values } from "lodash";
 
 /**
- * Checks effects for multiple updates of the same variable.
+ * Checks effects for multiple updates of the same state variable.
  */
 export class MultipleUpdatesChecker implements EffectVisitor {
   errors: Map<bigint, QuintError> = new Map()
 
   /**
-   * Checks effects for multiple updates of the same variable.
+   * Checks effects for multiple updates of the same state variable.
    *
    * @param effects the effects to look for multiple updates on
    *
@@ -37,14 +37,14 @@ export class MultipleUpdatesChecker implements EffectVisitor {
   }
 
   exitConcrete(e: ConcreteEffect) {
-    const updateVariables = e.components.reduce((updates: Variables[], c) => {
+    const updateEntities = e.components.reduce((updates: Entity[], c) => {
       if (c.kind === "update") {
-        updates.push(c.variables);
+        updates.push(c.entity);
       }
       return updates;
     }, [])
 
-    const vars = stateVariables({ kind: 'union', variables: updateVariables })
+    const vars = stateVariables({ kind: 'union', entities: updateEntities })
 
     const repeated = values(pickBy(groupBy(vars, v => v.name), x => x.length > 1)).flat()
 

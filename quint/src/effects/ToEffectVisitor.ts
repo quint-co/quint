@@ -12,7 +12,7 @@
  * @module
  */
 
-import { Effect, Variables } from './base'
+import { Effect, Entity } from './base'
 import { EffectListener } from '../generated/EffectListener'
 import * as p from '../generated/EffectParser'
 
@@ -26,7 +26,7 @@ export class ToEffectVisitor implements EffectListener {
 
   // Stack of lists of effects, each list will hold the effects of an arrow effect
   private arrowEffectsStack: Effect[][] = []
-  private variablesStack: Variables[] = []
+  private entitiesStack: Entity[] = []
   private stateVars: string[] = []
   private idCounter: bigint = 0n
 
@@ -39,41 +39,41 @@ export class ToEffectVisitor implements EffectListener {
   }
 
   exitReadOnly() {
-    const variables = this.variablesStack.pop()!
-    const effect: Effect = { kind: 'concrete', components: [{ kind: 'read', variables }] }
+    const entity = this.entitiesStack.pop()!
+    const effect: Effect = { kind: 'concrete', components: [{ kind: 'read', entity: entity }] }
     this.pushEffect(effect)
   }
 
   exitUpdateOnly() {
-    const variables = this.variablesStack.pop()!
-    const effect: Effect = { kind: 'concrete', components: [{ kind: 'update', variables }] }
+    const entity = this.entitiesStack.pop()!
+    const effect: Effect = { kind: 'concrete', components: [{ kind: 'update', entity: entity }] }
     this.pushEffect(effect)
   }
 
   exitTemporalOnly() {
-    const variables = this.variablesStack.pop()!
-    const effect: Effect = { kind: 'concrete', components: [{ kind: 'temporal', variables }] }
+    const entity = this.entitiesStack.pop()!
+    const effect: Effect = { kind: 'concrete', components: [{ kind: 'temporal', entity: entity }] }
     this.pushEffect(effect)
   }
 
   exitReadAndUpdate() {
-    const update = this.variablesStack.pop()!
-    const read = this.variablesStack.pop()!
+    const update = this.entitiesStack.pop()!
+    const read = this.entitiesStack.pop()!
 
     const effect: Effect = {
       kind: 'concrete',
-      components: [{ kind: 'read', variables: read }, { kind: 'update', variables: update }],
+      components: [{ kind: 'read', entity: read }, { kind: 'update', entity: update }],
     }
     this.pushEffect(effect)
   }
 
   exitReadAndTemporal() {
-    const temporal = this.variablesStack.pop()!
-    const read = this.variablesStack.pop()!
+    const temporal = this.entitiesStack.pop()!
+    const read = this.entitiesStack.pop()!
 
     const effect: Effect = {
       kind: 'concrete',
-      components: [{ kind: 'read', variables: read }, { kind: 'temporal', variables: temporal }],
+      components: [{ kind: 'read', entity: read }, { kind: 'temporal', entity: temporal }],
     }
     this.pushEffect(effect)
   }
@@ -83,9 +83,9 @@ export class ToEffectVisitor implements EffectListener {
     this.pushEffect(effect)
   }
 
-  exitQuantifiedEffect(ctx: p.QuantifiedEffectContext) {
+  exitVariableEffect(ctx: p.VariableEffectContext) {
     const name = ctx.IDENTIFIER().text
-    const effect: Effect = { kind: 'quantified', name }
+    const effect: Effect = { kind: 'variable', name }
     this.pushEffect(effect)
   }
 
@@ -100,19 +100,19 @@ export class ToEffectVisitor implements EffectListener {
     this.pushEffect(effect)
   }
 
-  exitVars(ctx: p.VarsContext) {
+  exitEntity(ctx: p.EntityContext) {
     const names: string[] = ctx.IDENTIFIER().map(i => i.text)
-    const unionVariables: Variables[] = names.map(name => ({ kind: 'quantified', name }))
+    const entityUnion: Entity[] = names.map(name => ({ kind: 'variable', name }))
     if (this.stateVars.length > 0) {
-      unionVariables.push({ kind: 'concrete', vars: this.stateVars.map(v => ({ name: v, reference: this.nextId() })) })
+      entityUnion.push({ kind: 'concrete', stateVariables: this.stateVars.map(v => ({ name: v, reference: this.nextId() })) })
     }
 
-    if (unionVariables.length === 0) {
-      this.variablesStack.push({ kind: 'concrete', vars: [] })
-    } else if (unionVariables.length === 1) {
-      this.variablesStack.push(unionVariables[0])
+    if (entityUnion.length === 0) {
+      this.entitiesStack.push({ kind: 'concrete', stateVariables: [] })
+    } else if (entityUnion.length === 1) {
+      this.entitiesStack.push(entityUnion[0])
     } else {
-      this.variablesStack.push({ kind: 'union', variables: unionVariables })
+      this.entitiesStack.push({ kind: 'union', entities: entityUnion })
     }
 
     this.stateVars = []

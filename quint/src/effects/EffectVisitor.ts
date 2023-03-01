@@ -13,7 +13,7 @@
  * @module
  */
 
-import { ArrowEffect, ConcreteEffect, Effect, QuantifiedEffect } from './base'
+import { ArrowEffect, ConcreteEffect, Effect, EffectVariable } from './base'
 
 /**
  * Interface to be implemented by visitor classes.
@@ -25,8 +25,8 @@ export interface EffectVisitor {
   exitConcrete?: (_effect: ConcreteEffect) => void
   enterArrow?: (_effect: ArrowEffect) => void
   exitArrow?: (_effect: ArrowEffect) => void
-  enterQuantified?: (_effect: QuantifiedEffect) => void
-  exitQuantified?: (_effect: QuantifiedEffect) => void
+  enterVariable?: (_effect: EffectVariable) => void
+  exitVariable?: (_effect: EffectVariable) => void
 }
 
 /**
@@ -49,12 +49,12 @@ export function walkEffect(visitor: EffectVisitor, effect: Effect): void {
       }
       break
     }
-    case 'quantified': {
-      if (visitor.enterQuantified) {
-        visitor.enterQuantified(effect)
+    case 'variable': {
+      if (visitor.enterVariable) {
+        visitor.enterVariable(effect)
       }
-      if (visitor.exitQuantified) {
-        visitor.exitQuantified(effect)
+      if (visitor.exitVariable) {
+        visitor.exitVariable(effect)
       }
       break
     }

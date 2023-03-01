@@ -15,7 +15,7 @@ describe('unify', () => {
 
       assert.isTrue(result.isRight())
       result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'variable', name: 't1', value: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }] } },
+        { kind: 'entity', name: 't1', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
       ]))
     })
 
@@ -29,8 +29,8 @@ describe('unify', () => {
       result.mapLeft(r => assert.deepEqual(r, {
         location: "Trying to unify Update['x'] and Temporal['y']",
         children: [{
-          location: "Trying to unify variables ['x'] and []",
-          message: 'Expected variables [x] and [] to be the same',
+          location: "Trying to unify entities ['x'] and []",
+          message: 'Expected [x] and [] to be the same',
           children: [],
         }],
       }))
@@ -46,14 +46,14 @@ describe('unify', () => {
       result.mapLeft(r => assert.deepEqual(r, {
         location: "Trying to unify Pure and Temporal['y']",
         children: [{
-          location: "Trying to unify variables ['y'] and []",
-          message: 'Expected variables [y] and [] to be the same',
+          location: "Trying to unify entities ['y'] and []",
+          message: 'Expected [y] and [] to be the same',
           children: [],
         }],
       }))
     })
 
-    it('unifies variables with different orders', () => {
+    it('unifies entities with different orders', () => {
       const e1 = parseEffectOrThrow("Read['x', 'y']")
       const e2 = parseEffectOrThrow("Read['y', 'x']")
 
@@ -71,11 +71,11 @@ describe('unify', () => {
         components: [
           {
             kind: 'read',
-            variables: {
+            entity: {
               kind: 'union',
-              variables: [
-                { kind: 'union', variables: [{ kind: 'quantified', name: 'r1' }, { kind: 'quantified', name: 'r2' }] },
-                { kind: 'concrete', vars: [{ name: 'x', reference: 1n }, { name: 'y', reference: 2n }] },
+              entities: [
+                { kind: 'union', entities: [{ kind: 'variable', name: 'r1' }, { kind: 'variable', name: 'r2' }] },
+                { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }, { name: 'y', reference: 2n }] },
               ],
             },
           },
@@ -122,7 +122,7 @@ describe('unify', () => {
 
       assert.isTrue(result.isRight())
       result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'variable', name: 'v', value: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }] } },
+        { kind: 'entity', name: 'v', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
         { kind: 'effect', name: 'E', value: parseEffectOrThrow("Update['x']") },
       ]))
     })
@@ -134,8 +134,8 @@ describe('unify', () => {
       const result = unify(e1, e2)
 
       result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'variable', name: 'r1', value: { kind: 'concrete', vars: [] } },
-        { kind: 'variable', name: 'r2', value: { kind: 'concrete', vars: [] } },
+        { kind: 'entity', name: 'r1', value: { kind: 'concrete', stateVariables: [] } },
+        { kind: 'entity', name: 'r2', value: { kind: 'concrete', stateVariables: [] } },
         { kind: 'effect', name: 'E', value: parseEffectOrThrow('Pure') },
       ])).mapLeft(err => assert.fail(`Should find no errros, found ${errorTreeToString(err)}`))
     })
@@ -147,22 +147,22 @@ describe('unify', () => {
       const result = unify(e1, e2)
 
       result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'variable', name: 'r1', value: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }] } },
-        { kind: 'variable', name: 'r2', value: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }] } },
-        { kind: 'variable', name: 't1', value: { kind: 'concrete', vars: [{ name: 't', reference: 2n }] } },
-        { kind: 'variable', name: 't2', value: { kind: 'concrete', vars: [{ name: 't', reference: 2n }] } },
+        { kind: 'entity', name: 'r1', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
+        { kind: 'entity', name: 'r2', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
+        { kind: 'entity', name: 't1', value: { kind: 'concrete', stateVariables: [{ name: 't', reference: 2n }] } },
+        { kind: 'entity', name: 't2', value: { kind: 'concrete', stateVariables: [{ name: 't', reference: 2n }] } },
         {
           kind: 'effect', name: 'E', value: {
             kind: 'concrete', components: [
-              { kind: 'read', variables: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }] } },
-              { kind: 'temporal', variables: { kind: 'concrete', vars: [{ name: 't', reference: 2n }] } },
+              { kind: 'read', entity: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
+              { kind: 'temporal', entity: { kind: 'concrete', stateVariables: [{ name: 't', reference: 2n }] } },
             ],
           },
         },
       ])).mapLeft(err => assert.fail(`Should find no errros, found ${errorTreeToString(err)}`))
     })
 
-    it('unpacks arguments as tuples with quantified effects', () => {
+    it('unpacks arguments as tuples with variable effects', () => {
       const e1 = parseEffectOrThrow('(e0, e1) => e1')
       const e2 = parseEffectOrThrow("(Pure) => E")
 
@@ -202,8 +202,8 @@ describe('unify', () => {
           {
             location: "Trying to unify Temporal['x'] and Read[r1, r2]",
             children: [{
-              location: "Trying to unify variables ['x'] and []",
-              message: 'Expected variables [x] and [] to be the same',
+              location: "Trying to unify entities ['x'] and []",
+              message: 'Expected [x] and [] to be the same',
               children: [],
             }],
           },
@@ -211,7 +211,7 @@ describe('unify', () => {
       }))
     })
 
-    it('returns error when cannot unify variables', () => {
+    it('returns error when cannot unify entities', () => {
       const e1 = parseEffectOrThrow('(Read[v]) => Update[v]')
       const e2 = parseEffectOrThrow("(Read['x']) => Update['y']")
 
@@ -223,8 +223,8 @@ describe('unify', () => {
         children: [{
           location: "Trying to unify Update['x'] and Update['y']",
           children: [{
-            location: "Trying to unify variables ['x'] and ['y']",
-            message: 'Expected variables [x] and [y] to be the same',
+            location: "Trying to unify entities ['x'] and ['y']",
+            message: 'Expected [x] and [y] to be the same',
             children: [],
           }],
         }],
@@ -274,7 +274,7 @@ describe('unify', () => {
     })
   })
 
-  describe('effects with multiple quantified variables', () => {
+  describe('effects with multiple variable entities', () => {
     it('unfies with concrete and unifiable effect', () => {
       const e1 = parseEffectOrThrow('(Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1, r2] & Update[u]')
       const e2 = parseEffectOrThrow("(Read['x'] & Update['x'], Read['y', 'z'] & Update['x']) => Read['x', 'y', 'z'] & Update['x']")
@@ -284,9 +284,9 @@ describe('unify', () => {
 
       assert.isTrue(result.isRight())
       result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'variable', name: 'r1', value: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }] } },
-        { kind: 'variable', name: 'r2', value: { kind: 'concrete', vars: [{ name: 'y', reference: 3n }, { name: 'z', reference: 4n }] } },
-        { kind: 'variable', name: 'u', value: { kind: 'concrete', vars: [{ name: 'x', reference: 2n }] } },
+        { kind: 'entity', name: 'r1', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
+        { kind: 'entity', name: 'r2', value: { kind: 'concrete', stateVariables: [{ name: 'y', reference: 3n }, { name: 'z', reference: 4n }] } },
+        { kind: 'entity', name: 'u', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 2n }] } },
       ]))
       assert.deepEqual(result, reversedResult, 'Result should be the same regardless of the effect order in parameters')
     })
@@ -302,28 +302,28 @@ describe('unify', () => {
         children: [{
           location: "Trying to unify Read[r2] & Update['x'] and Read['y'] & Update['y']",
           children: [{
-            location: "Trying to unify variables ['x'] and ['y']",
-            message: 'Expected variables [x] and [y] to be the same',
+            location: "Trying to unify entities ['x'] and ['y']",
+            message: 'Expected [x] and [y] to be the same',
             children: [],
           }],
         }],
       }))
     })
 
-    it('returns partial quantified when unifying with another quantified effect', () => {
+    it('returns partial bindings when unifying with another variable effect', () => {
       const e1 = parseEffectOrThrow('(Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1, r2] & Update[u]')
       const e2 = parseEffectOrThrow("(Read['x'] & Update[v], Read['y'] & Update[v]) => Read['x', 'y'] & Update[v]")
 
       const result = unify(e1, e2)
       assert.isTrue(result.isRight())
       result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'variable', name: 'r1', value: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }] } },
-        { kind: 'variable', name: 'r2', value: { kind: 'concrete', vars: [{ name: 'y', reference: 2n }] } },
-        { kind: 'variable', name: 'u', value: { kind: 'quantified', name: 'v' } },
+        { kind: 'entity', name: 'r1', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
+        { kind: 'entity', name: 'r2', value: { kind: 'concrete', stateVariables: [{ name: 'y', reference: 2n }] } },
+        { kind: 'entity', name: 'u', value: { kind: 'variable', name: 'v' } },
       ]))
     })
 
-    it('returns error with incompatible quantified effect', () => {
+    it('returns error with effect with incompatible entity variables', () => {
       const e1 = parseEffectOrThrow('(Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1, r2] & Update[u]')
       const e2 = parseEffectOrThrow("(Read['y'] & Update['x'], Read['z'] & Update['x']) => Read['y'] & Update[u]")
 
@@ -334,8 +334,8 @@ describe('unify', () => {
         children: [{
           location: "Trying to unify Read['y', 'z'] & Update['x'] and Read['y'] & Update['x']",
           children: [{
-            location: "Trying to unify variables ['y', 'z'] and ['y']",
-            message: 'Expected variables [y,z] and [y] to be the same',
+            location: "Trying to unify entities ['y', 'z'] and ['y']",
+            message: 'Expected [y,z] and [y] to be the same',
             children: [],
           }],
         }],
@@ -351,8 +351,8 @@ describe('unify', () => {
       result.mapLeft(r => assert.deepEqual(r, {
         location: "Trying to unify Read[r1, r2] and Read[r, 'x', 'y']",
         children: [{
-          location: "Trying to unify variables [r1, r2] and [r, 'x', 'y']",
-          message: 'Unification for unions of variables is not implemented',
+          location: "Trying to unify entities [r1, r2] and [r, 'x', 'y']",
+          message: 'Unification for unions of entities is not implemented',
           children: [],
         }],
       }))
@@ -390,7 +390,7 @@ describe('unify', () => {
       assert.isTrue(result.isLeft())
     })
 
-    it('returs error when variable names are cyclical', () => {
+    it('returs error when entity names are cyclical', () => {
       const e1 = parseEffectOrThrow('Read[v1]')
       const e2 = parseEffectOrThrow('Read[v1, v2]')
 
@@ -401,7 +401,7 @@ describe('unify', () => {
           location: 'Trying to unify Read[v1] and Read[v1, v2]',
           children: [
             {
-              location: 'Trying to unify variables [v1] and [v1, v2]',
+              location: 'Trying to unify entities [v1] and [v1, v2]',
               message: "Can't bind v1 to v1, v2: cyclical binding",
               children: [],
             },
@@ -411,7 +411,7 @@ describe('unify', () => {
       assert.isTrue(result.isLeft())
     })
 
-    it('returs error when variable names are cyclical in other way', () => {
+    it('returs error when entity names are cyclical in other way', () => {
       const e1 = parseEffectOrThrow('Temporal[v1, v2]')
       const e2 = parseEffectOrThrow('Temporal[v1]')
 
@@ -422,7 +422,7 @@ describe('unify', () => {
           location: 'Trying to unify Temporal[v1, v2] and Temporal[v1]',
           children: [
             {
-              location: 'Trying to unify variables [v1, v2] and [v1]',
+              location: 'Trying to unify entities [v1, v2] and [v1]',
               message: "Can't bind v1 to v1, v2: cyclical binding",
               children: [],
             },

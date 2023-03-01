@@ -12,7 +12,7 @@
  * @module
  */
 
-import { ComponentKind, Effect, EffectComponent, EffectScheme, Signature, Variables, effectNames, toScheme } from './base'
+import { ComponentKind, Effect, EffectComponent, EffectScheme, Entity, Signature, effectNames, toScheme } from './base'
 import { parseEffectOrThrow } from './parser'
 import { range, times } from 'lodash'
 
@@ -25,7 +25,7 @@ function parseAndQuantify(effectString: string): EffectScheme {
   return { effect: e, ...effectNames(e) }
 }
 
-/** Generate a name for a variable of certain component kind:
+/** Generate a name for an entity variable of certain component kind:
  * r0, r1, r2, ... for read components
  * t0, t1, t2, ... for temporal components
  * u0, u1, u2, ... for update components
@@ -53,7 +53,7 @@ function propagateComponents(kinds: ComponentKind[]): ((arity: number) => Effect
   return (arity: number) => {
     const params: Effect[] = times(arity, i => {
       const components: EffectComponent[] = kinds.map(kind => {
-        return { kind: kind, variables: { kind: 'quantified', name: nameForVariable(kind, i + 1) } }
+        return { kind: kind, entity: { kind: 'variable', name: nameForVariable(kind, i + 1) } }
       })
 
       return { kind: 'concrete', components: components }
@@ -61,8 +61,8 @@ function propagateComponents(kinds: ComponentKind[]): ((arity: number) => Effect
 
     const resultComponents: EffectComponent[] = kinds.map(kind => {
       const names = times(arity, i => nameForVariable(kind, i + 1))
-      const variables: Variables[] = names.map(name => ({ kind: 'quantified', name }))
-      return { kind: kind, variables: { kind: 'union', variables } }
+      const entities: Entity[] = names.map(name => ({ kind: 'variable', name }))
+      return { kind: kind, entity: { kind: 'union', entities } }
     })
 
     const result: Effect = { kind: 'concrete', components: resultComponents }
@@ -88,7 +88,7 @@ function propagationWithLambda(kinds: ComponentKind[]): ((arity: number) => Effe
   return (arity: number) => {
     const params: Effect[] = times(arity - 1, i => {
       const components: EffectComponent[] = kinds.map(kind => {
-        return { kind: kind, variables: { kind: 'quantified', name: nameForVariable(kind, i + 1) } }
+        return { kind: kind, entity: { kind: 'variable', name: nameForVariable(kind, i + 1) } }
       })
 
       return { kind: 'concrete', components: components }
@@ -96,7 +96,7 @@ function propagationWithLambda(kinds: ComponentKind[]): ((arity: number) => Effe
 
     const lambdaResult: Effect = {
       kind: 'concrete', components: kinds.map(kind => {
-        return { kind: kind, variables: { kind: 'quantified', name: nameForVariable(kind, arity) } }
+        return { kind: kind, entity: { kind: 'variable', name: nameForVariable(kind, arity) } }
       }),
     }
 
@@ -104,8 +104,8 @@ function propagationWithLambda(kinds: ComponentKind[]): ((arity: number) => Effe
 
     const resultComponents: EffectComponent[] = kinds.map(kind => {
       const names = times(arity, i => nameForVariable(kind, i + 1))
-      const variables: Variables[] = names.map(name => ({ kind: 'quantified', name }))
-      return { kind: kind, variables: { kind: 'union', variables } }
+      const entities: Entity[] = names.map(name => ({ kind: 'variable', name }))
+      return { kind: kind, entity: { kind: 'union', entities } }
     })
 
     const result: Effect = { kind: 'concrete', components: resultComponents }

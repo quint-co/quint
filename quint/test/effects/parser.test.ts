@@ -12,8 +12,8 @@ describe('parseEffect', () => {
       assert.deepEqual(value, {
         kind: 'concrete',
         components: [
-          { kind: 'read', variables: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }, { name: 'y', reference: 2n }] } },
-          { kind: 'update', variables: { kind: 'quantified', name: 'v' } },
+          { kind: 'read', entity: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }, { name: 'y', reference: 2n }] } },
+          { kind: 'update', entity: { kind: 'variable', name: 'v' } },
         ],
       })
     }
@@ -28,8 +28,8 @@ describe('parseEffect', () => {
       assert.deepEqual(value, {
         kind: 'concrete',
         components: [
-          { kind: 'read', variables: { kind: 'concrete', vars: [{ name: 'x', reference: 1n }, { name: 'y', reference: 2n }] } },
-          { kind: 'temporal', variables: { kind: 'quantified', name: 'v' } },
+          { kind: 'read', entity: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }, { name: 'y', reference: 2n }] } },
+          { kind: 'temporal', entity: { kind: 'variable', name: 'v' } },
         ],
       })
     }
@@ -44,7 +44,7 @@ describe('parseEffect', () => {
       assert.deepEqual(value, {
         kind: 'concrete',
         components: [{
-          kind: 'temporal', variables: { kind: 'quantified', name: 'v' },
+          kind: 'temporal', entity: { kind: 'variable', name: 'v' },
         }],
       })
     }
@@ -62,14 +62,14 @@ describe('parseEffect', () => {
           {
             kind: 'concrete',
             components: [{
-              kind: 'read', variables: { kind: 'quantified', name: 'v' },
+              kind: 'read', entity: { kind: 'variable', name: 'v' },
             }],
           },
         ],
         result: {
           kind: 'concrete',
           components: [{
-            kind: 'update', variables: { kind: 'quantified', name: 'v' },
+            kind: 'update', entity: { kind: 'variable', name: 'v' },
           }],
         },
       })
@@ -90,20 +90,20 @@ describe('parseEffect', () => {
             params: [{ kind: 'concrete', components: [] }],
             result: {
               kind: 'concrete', components: [{
-                kind: 'read', variables: { kind: 'quantified', name: 'v' },
+                kind: 'read', entity: { kind: 'variable', name: 'v' },
               }],
             },
           },
           {
             kind: 'arrow',
             params: [{ kind: 'concrete', components: [] }],
-            result: { kind: 'quantified', name: 'E' },
+            result: { kind: 'variable', name: 'E' },
           },
         ],
         result: {
           kind: 'concrete',
           components: [{
-            kind: 'update', variables: { kind: 'quantified', name: 'v' },
+            kind: 'update', entity: { kind: 'variable', name: 'v' },
           }],
         },
       })
@@ -122,10 +122,10 @@ describe('parseEffect', () => {
           {
             kind: 'concrete',
             components: [{
-              kind: 'read', variables: {
-                kind: 'union', variables: [
-                  { kind: 'quantified', name: 'v' },
-                  { kind: 'quantified', name: 'w' },
+              kind: 'read', entity: {
+                kind: 'union', entities: [
+                  { kind: 'variable', name: 'v' },
+                  { kind: 'variable', name: 'w' },
                 ],
               },
             }],
@@ -134,7 +134,7 @@ describe('parseEffect', () => {
         result: {
           kind: 'concrete',
           components: [{
-            kind: 'update', variables: { kind: 'quantified', name: 'v' },
+            kind: 'update', entity: { kind: 'variable', name: 'v' },
           }],
         },
       })
@@ -153,9 +153,9 @@ describe('parseEffect', () => {
           {
             kind: 'concrete',
             components: [{
-              kind: 'read', variables: {
-                kind: 'union', variables: [
-                  { kind: 'quantified', name: 'v' }, { kind: 'concrete', vars: [{ name: 'x', reference: 1n }] },
+              kind: 'read', entity: {
+                kind: 'union', entities: [
+                  { kind: 'variable', name: 'v' }, { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] },
                 ],
               },
             }],
@@ -164,9 +164,9 @@ describe('parseEffect', () => {
         result: {
           kind: 'concrete',
           components: [{
-            kind: 'update', variables: {
-              kind: 'union', variables: [
-                { kind: 'quantified', name: 'v' }, { kind: 'concrete', vars: [{ name: 'y', reference: 2n }] },
+            kind: 'update', entity: {
+              kind: 'union', entities: [
+                { kind: 'variable', name: 'v' }, { kind: 'concrete', stateVariables: [{ name: 'y', reference: 2n }] },
               ],
             },
           }],
@@ -187,7 +187,7 @@ describe('parseEffect', () => {
         result: {
           kind: 'concrete',
           components: [{
-            kind: 'update', variables: { kind: 'quantified', name: 'v' },
+            kind: 'update', entity: { kind: 'variable', name: 'v' },
           }],
         },
       })
@@ -206,14 +206,14 @@ describe('parseEffect', () => {
           {
             kind: 'concrete',
             components: [{
-              kind: 'read', variables: { kind: 'concrete', vars: [] },
+              kind: 'read', entity: { kind: 'concrete', stateVariables: [] },
             }],
           },
         ],
         result: {
           kind: 'concrete',
           components: [{
-            kind: 'update', variables: { kind: 'concrete', vars: [] },
+            kind: 'update', entity: { kind: 'concrete', stateVariables: [] },
           }],
         },
       })

@@ -18,8 +18,8 @@ import { qualifierToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { QuintError } from '../quintError'
 import { OpQualifier, QuintInstance, QuintModule, QuintOpDef } from '../quintIr'
-import { ArrowEffect, ComponentKind, EffectScheme, Variables, stateVariables, variablesNames } from './base'
-import { effectToString, variablesToString } from './printing'
+import { ArrowEffect, ComponentKind, EffectScheme, Entity, entityNames, stateVariables} from './base'
+import { effectToString, entityToString } from './printing'
 
 export type ModeCheckingResult = [Map<bigint, QuintError>, Map<bigint, OpQualifier>]
 
@@ -128,7 +128,7 @@ const modesForConcrete = new Map<ComponentKind, OpQualifier>([
 
 function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
   const effect = scheme.effect
-  const nonFreeVars = scheme.variables
+  const nonFreeVars = scheme.entityVariables
 
   switch (effect.kind) {
     case 'concrete': {
@@ -137,20 +137,20 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
           if (c.kind !== kind) {
             return false
           }
-          const nonFreeVariables = variablesNames(c.variables).filter(v => nonFreeVars.has(v)).concat(
-            stateVariables(c.variables).map(v => v.name)
+          const nonFreeEntities = entityNames(c.entity).filter(v => nonFreeVars.has(v)).concat(
+            stateVariables(c.entity).map(v => v.name)
           )
 
-          return nonFreeVariables && nonFreeVariables.length > 0
+          return nonFreeEntities && nonFreeEntities.length > 0
         })
       })
 
       if (!kind) {
-        return ['pureval', "doesn't read or update any variable"]
+        return ['pureval', "doesn't read or update any state variable"]
       }
 
       const components = effect.components.filter(c => c.kind === kind)
-      return [modesForConcrete.get(kind)!, `${componentDescription.get(kind)} variables ${components.map(c => variablesToString(c.variables))}`]
+      return [modesForConcrete.get(kind)!, `${componentDescription.get(kind)} variables ${components.map(c => entityToString(c.entity))}`]
     }
     case 'arrow': {
       const r = effect.result
@@ -158,94 +158,94 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
         throw new Error(`Unexpected arrow found in operator result: ${effectToString(r)}`)
       }
 
-      if (r.kind === 'quantified') {
-        return ['puredef', "doesn't read or update any variable"]
+      if (r.kind === 'variable') {
+        return ['puredef', "doesn't read or update any state variable"]
       }
 
-      const variablesByComponentKind = paramVariablesByEffect(effect)
-      const addedVariablesByComponentKind = new Map<ComponentKind, Variables[]>()
+      const entitiesByComponentKind = paramentitiesByEffect(effect)
+      const addedEntitiesByComponentKind = new Map<ComponentKind, Entity[]>()
 
       r.components.forEach(c => {
-        const paramVariables = variablesByComponentKind.get(c.kind) ?? []
-        addedVariablesByComponentKind.set(c.kind, addedVariables(paramVariables, c.variables))
+        const paramEntities = entitiesByComponentKind.get(c.kind) ?? []
+        addedEntitiesByComponentKind.set(c.kind, addedEntities(paramEntities, c.entity))
       })
 
       const kind = componentKindPriority.find(kind => {
-        const variables = addedVariablesByComponentKind.get(kind)
-        const nonFreeVariables = variables?.flatMap(vs => {
-          return variablesNames(vs).filter(v => nonFreeVars.has(v)).concat(
+        const entities = addedEntitiesByComponentKind.get(kind)
+        const nonFreeEntities = entities?.flatMap(vs => {
+          return entityNames(vs).filter(v => nonFreeVars.has(v)).concat(
             stateVariables(vs).map(v => v.name)
           )
         })
-        return nonFreeVariables && nonFreeVariables.length > 0
+        return nonFreeEntities && nonFreeEntities.length > 0
       })
 
       if (!kind) {
-        return ['puredef', "doesn't read or update any variable"]
+        return ['puredef', "doesn't read or update any state variable"]
       }
 
-      return [modesForArrow.get(kind)!, `${componentDescription.get(kind)} variables ${addedVariablesByComponentKind.get(kind)!.map(variablesToString)}`]
+      return [modesForArrow.get(kind)!, `${componentDescription.get(kind)} variables ${addedEntitiesByComponentKind.get(kind)!.map(entityToString)}`]
     }
-    case 'quantified': {
-      return ['pureval', "doesn't read or update any variable"]
+    case 'variable': {
+      return ['pureval', "doesn't read or update any state variable"]
     }
   }
 }
 
 /*
- * If there is a variable with an effect in the results that is not present on the
+ * If there is a entity with an effect in the results that is not present on the
  * parameters, then the operator is adding that and this should
  * promote the operators mode.
  *
  * For example, an operator with the effect `(Read[v]) => Read[v, 'x']` is adding `Read['x']`
  * to the parameter effect and should be promoted to `def`.
  */
-function addedVariables(paramVariables: Variables[], resultVariables: Variables): Variables[] {
-  switch (resultVariables.kind) {
+function addedEntities(paramEntities: Entity[], resultEntity: Entity): Entity[] {
+  switch (resultEntity.kind) {
     case 'union':
-      return resultVariables.variables.filter(v => !paramVariables.some(p => isEqual(p, v)))
+      return resultEntity.entities.filter(v => !paramEntities.some(p => isEqual(p, v)))
     case 'concrete': {
-      const vars = resultVariables.vars.filter(v => !paramVariables.some(p => isEqual(p, v)))
+      const vars = resultEntity.stateVariables.filter(v => !paramEntities.some(p => isEqual(p, v)))
       if (vars.length === 0) {
         return []
       }
 
-      return [{ kind: 'concrete', vars }]
+      return [{ kind: 'concrete', stateVariables: vars }]
     }
-    case 'quantified':
-      return !paramVariables.some(p => isEqual(p, resultVariables)) ? [resultVariables] : []
+    case 'variable':
+      return !paramEntities.some(p => isEqual(p, resultEntity)) ? [resultEntity] : []
   }
 }
 
-function paramVariablesByEffect(effect: ArrowEffect): Map<ComponentKind, Variables[]> {
-  const variablesByComponentKind: Map<ComponentKind, Variables[]> = new Map()
+function paramentitiesByEffect(effect: ArrowEffect): Map<ComponentKind, Entity[]> {
+  const entitiesByComponentKind: Map<ComponentKind, Entity[]> = new Map()
 
   effect.params.forEach(p => {
     switch (p.kind) {
       case 'concrete': {
         p.components.forEach(c => {
-          const existing = variablesByComponentKind.get(c.kind) || []
-          variablesByComponentKind.set(c.kind, existing.concat(c.variables))
+          const existing = entitiesByComponentKind.get(c.kind) || []
+          entitiesByComponentKind.set(c.kind, existing.concat(c.entity))
         })
         break
       }
       case 'arrow': {
-        const nested = paramVariablesByEffect(p)
-        nested.forEach((variables, kind) => {
-          const existing = variablesByComponentKind.get(kind) || []
-          variablesByComponentKind.set(kind, existing.concat(variables))
+        const nested = paramentitiesByEffect(p)
+        nested.forEach((entities, kind) => {
+          const existing = entitiesByComponentKind.get(kind) || []
+          entitiesByComponentKind.set(kind, existing.concat(entities))
         })
         if (p.result.kind === 'concrete') {
           p.result.components.forEach(c => {
-            const existing = variablesByComponentKind.get(c.kind) || []
-            variablesByComponentKind.set(c.kind, existing.concat(c.variables))
+            const existing = entitiesByComponentKind.get(c.kind) || []
+            entitiesByComponentKind.set(c.kind, existing.concat(c.entity))
           })
         }
       }
     }
   })
 
-  return variablesByComponentKind
+  return entitiesByComponentKind
 }
 
 const modeOrder =

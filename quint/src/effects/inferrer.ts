@@ -109,7 +109,7 @@ export class EffectInferrer implements IRVisitor {
          */
         let result: Either<Error, EffectScheme>
         if (def.reference) {
-          result = right(toScheme({ kind: 'quantified', name: `e_${expr.name}_${def.reference}` }))
+          result = right(toScheme({ kind: 'variable', name: `e_${expr.name}_${def.reference}` }))
         } else {
           result = left(buildErrorLeaf(
             this.location,
@@ -135,7 +135,7 @@ export class EffectInferrer implements IRVisitor {
          *          Γ ⊢ v: Read[v]
          */
         const effect: Effect = {
-          kind: 'concrete', components: [{ kind: 'read', variables: { kind: 'concrete', vars: [{ name: expr.name, reference: expr.id }] } }],
+          kind: 'concrete', components: [{ kind: 'read', entity: { kind: 'concrete', stateVariables: [{ name: expr.name, reference: expr.id }] } }],
         }
         this.addToResults(expr.id, right(toScheme(effect)))
         break
@@ -176,7 +176,7 @@ export class EffectInferrer implements IRVisitor {
       return this.fetchResult(a.id).map(e => this.newInstance(e))
     }))
 
-    const resultEffect: Effect = { kind: 'quantified', name: this.freshVarGenerator.freshVar('e') }
+    const resultEffect: Effect = { kind: 'variable', name: this.freshVarGenerator.freshVar('e') }
     const arrowEffect = paramsResult.map(params => {
       const effect: Effect = {
         kind: 'arrow',
@@ -282,12 +282,12 @@ export class EffectInferrer implements IRVisitor {
         }
 
         const nonFreeNames = effect.params.reduce((names, p) => {
-          const { effectVariables, variables } = effectNames(p)
+          const { effectVariables: effectVariables, entityVariables: entityVariables } = effectNames(p)
           return {
             effectVariables: new Set([...names.effectVariables, ...effectVariables]),
-            variables: new Set([...names.variables, ...variables]),
+            entityVariables: new Set([...names.entityVariables, ...entityVariables]),
           }
-        }, { effectVariables: new Set<string>(), variables: new Set<string>() })
+        }, { effectVariables: new Set<string>(), entityVariables: new Set<string>() })
 
         this.addToResults(lambda.id, right({ ...nonFreeNames, effect }))
       })
@@ -317,7 +317,7 @@ export class EffectInferrer implements IRVisitor {
   private fetchSignature(opcode: string, scope: bigint, arity: number): Either<ErrorTree, Effect> {
     // Assumes a valid number of arguments
     if (opcode === '_') {
-      return right({ kind: 'quantified', name: this.freshVarGenerator.freshVar('_e') })
+      return right({ kind: 'variable', name: this.freshVarGenerator.freshVar('_e') })
     }
 
     if (this.builtinSignatures.has(opcode)) {
@@ -332,7 +332,7 @@ export class EffectInferrer implements IRVisitor {
       }
 
       if (def.kind === 'param') {
-        return right({ kind: 'quantified', name: `e_${opcode}_${id}` })
+        return right({ kind: 'variable', name: `e_${opcode}_${id}` })
       }
 
       return this.fetchResult(id).map(e => {
@@ -343,13 +343,13 @@ export class EffectInferrer implements IRVisitor {
 
   private newInstance(effect: EffectScheme): Effect {
     const effectSubs: Substitutions = [...effect.effectVariables].map(name => {
-      return { kind: 'effect', name: name, value: { kind: 'quantified', name: this.freshVarGenerator.freshVar('e') } }
+      return { kind: 'effect', name: name, value: { kind: 'variable', name: this.freshVarGenerator.freshVar('e') } }
     })
-    const variableSubs: Substitutions = [...effect.variables].map(name => {
-      return { kind: 'variable', name: name, value: { kind: 'quantified', name: this.freshVarGenerator.freshVar('v') } }
+    const entitySubs: Substitutions = [...effect.entityVariables].map(name => {
+      return { kind: 'entity', name: name, value: { kind: 'variable', name: this.freshVarGenerator.freshVar('v') } }
     })
 
-    const result = compose(effectSubs, variableSubs).chain(s => applySubstitution(s, effect.effect))
+    const result = compose(effectSubs, entitySubs).chain(s => applySubstitution(s, effect.effect))
 
     if (result.isLeft()) {
       throw new Error(`Error applying fresh names substitution: ${errorTreeToString(result.value)} `)
