@@ -4,7 +4,7 @@
 # @file
 # @version 0.1
 
-.PHONY: vscode quint local tutorials all
+.PHONY: vscode quint local tutorials all apalache
 
 all: vscode
 
@@ -32,5 +32,16 @@ local: quint
 # Generate the tutorials
 tutorials:
 	$(MAKE) -C tutorials
+
+BUILD_DIR := quint/_build
+quint/_build:
+	mkdir $@
+
+# Download the latest Apalache for quint integration tests
+apalache: | $(BUILD_DIR)
+	# remove the previously downloaded archive in case it exists (required by gh)
+	rm -f $(BUILD_DIR)/apalache.tgz
+	gh release download --repo informalsystems/apalache --pattern apalache.tgz --dir $(BUILD_DIR)
+	tar -xvzf $(BUILD_DIR)/apalache.tgz --directory $(BUILD_DIR) > /dev/null
 
 # end
