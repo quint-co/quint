@@ -5,3 +5,4 @@ client/server
 .local-pack
 .yalc
 *.vsix
+_build
