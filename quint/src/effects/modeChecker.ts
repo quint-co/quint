@@ -162,7 +162,7 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
         return ['puredef', "doesn't read or update any state variable"]
       }
 
-      const entitiesByComponentKind = paramentitiesByEffect(effect)
+      const entitiesByComponentKind = paramEntitiesByEffect(effect)
       const addedEntitiesByComponentKind = new Map<ComponentKind, Entity[]>()
 
       r.components.forEach(c => {
@@ -217,7 +217,7 @@ function addedEntities(paramEntities: Entity[], resultEntity: Entity): Entity[] 
   }
 }
 
-function paramentitiesByEffect(effect: ArrowEffect): Map<ComponentKind, Entity[]> {
+function paramEntitiesByEffect(effect: ArrowEffect): Map<ComponentKind, Entity[]> {
   const entitiesByComponentKind: Map<ComponentKind, Entity[]> = new Map()
 
   effect.params.forEach(p => {
@@ -230,7 +230,7 @@ function paramentitiesByEffect(effect: ArrowEffect): Map<ComponentKind, Entity[]
         break
       }
       case 'arrow': {
-        const nested = paramentitiesByEffect(p)
+        const nested = paramEntitiesByEffect(p)
         nested.forEach((entities, kind) => {
           const existing = entitiesByComponentKind.get(kind) || []
           entitiesByComponentKind.set(kind, existing.concat(entities))
