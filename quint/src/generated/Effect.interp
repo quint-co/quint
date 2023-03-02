@@ -38,7 +38,7 @@ read
 update
 temporal
 concrete
-vars
+entity
 stateVarRef
 
 

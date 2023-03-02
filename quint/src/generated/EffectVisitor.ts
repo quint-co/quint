@@ -11,13 +11,13 @@ import { ReadAndTemporalContext } from "./EffectParser";
 import { PureContext } from "./EffectParser";
 import { ConcreteEffectContext } from "./EffectParser";
 import { ArrowEffectContext } from "./EffectParser";
-import { QuantifiedEffectContext } from "./EffectParser";
+import { VariableEffectContext } from "./EffectParser";
 import { EffectContext } from "./EffectParser";
 import { ReadContext } from "./EffectParser";
 import { UpdateContext } from "./EffectParser";
 import { TemporalContext } from "./EffectParser";
 import { ConcreteContext } from "./EffectParser";
-import { VarsContext } from "./EffectParser";
+import { EntityContext } from "./EffectParser";
 import { StateVarRefContext } from "./EffectParser";
 
 
@@ -94,12 +94,12 @@ export interface EffectVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitArrowEffect?: (ctx: ArrowEffectContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `quantifiedEffect`
+	 * Visit a parse tree produced by the `variableEffect`
 	 * labeled alternative in `EffectParser.effect`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitQuantifiedEffect?: (ctx: QuantifiedEffectContext) => Result;
+	visitVariableEffect?: (ctx: VariableEffectContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `EffectParser.effect`.
@@ -137,11 +137,11 @@ export interface EffectVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitConcrete?: (ctx: ConcreteContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `EffectParser.vars`.
+	 * Visit a parse tree produced by `EffectParser.entity`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitVars?: (ctx: VarsContext) => Result;
+	visitEntity?: (ctx: EntityContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `EffectParser.stateVarRef`.

@@ -11,13 +11,13 @@ import { ReadAndTemporalContext } from "./EffectParser";
 import { PureContext } from "./EffectParser";
 import { ConcreteEffectContext } from "./EffectParser";
 import { ArrowEffectContext } from "./EffectParser";
-import { QuantifiedEffectContext } from "./EffectParser";
+import { VariableEffectContext } from "./EffectParser";
 import { EffectContext } from "./EffectParser";
 import { ReadContext } from "./EffectParser";
 import { UpdateContext } from "./EffectParser";
 import { TemporalContext } from "./EffectParser";
 import { ConcreteContext } from "./EffectParser";
-import { VarsContext } from "./EffectParser";
+import { EntityContext } from "./EffectParser";
 import { StateVarRefContext } from "./EffectParser";
 
 
@@ -131,17 +131,17 @@ export interface EffectListener extends ParseTreeListener {
 	exitArrowEffect?: (ctx: ArrowEffectContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `quantifiedEffect`
+	 * Enter a parse tree produced by the `variableEffect`
 	 * labeled alternative in `EffectParser.effect`.
 	 * @param ctx the parse tree
 	 */
-	enterQuantifiedEffect?: (ctx: QuantifiedEffectContext) => void;
+	enterVariableEffect?: (ctx: VariableEffectContext) => void;
 	/**
-	 * Exit a parse tree produced by the `quantifiedEffect`
+	 * Exit a parse tree produced by the `variableEffect`
 	 * labeled alternative in `EffectParser.effect`.
 	 * @param ctx the parse tree
 	 */
-	exitQuantifiedEffect?: (ctx: QuantifiedEffectContext) => void;
+	exitVariableEffect?: (ctx: VariableEffectContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `EffectParser.effect`.
@@ -199,15 +199,15 @@ export interface EffectListener extends ParseTreeListener {
 	exitConcrete?: (ctx: ConcreteContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `EffectParser.vars`.
+	 * Enter a parse tree produced by `EffectParser.entity`.
 	 * @param ctx the parse tree
 	 */
-	enterVars?: (ctx: VarsContext) => void;
+	enterEntity?: (ctx: EntityContext) => void;
 	/**
-	 * Exit a parse tree produced by `EffectParser.vars`.
+	 * Exit a parse tree produced by `EffectParser.entity`.
 	 * @param ctx the parse tree
 	 */
-	exitVars?: (ctx: VarsContext) => void;
+	exitEntity?: (ctx: EntityContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `EffectParser.stateVarRef`.

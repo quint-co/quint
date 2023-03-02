@@ -12,9 +12,9 @@
  * @module
  */
 
-import { effectComponentToString, effectToString, variablesToString } from './printing'
+import { effectComponentToString, effectToString, entityToString } from './printing'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { Substitutions, applySubstitution, applySubstitutionToVariables, compose } from './substitutions'
+import { Substitutions, applySubstitution, applySubstitutionToEntity, compose } from './substitutions'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
 import { flattenUnions, simplify } from './simplification'
 import isEqual from 'lodash.isequal'
@@ -22,70 +22,68 @@ import isEqual from 'lodash.isequal'
 /* Kinds for concrete effect components */
 export type ComponentKind = 'read' | 'update' | 'temporal'
 
-/* A concrete effect component, specifying a kind and the variables it acts upon */
-export interface EffectComponent { kind: ComponentKind, variables: Variables }
+/* A concrete effect component, specifying a kind and the entity it acts upon */
+export interface EffectComponent { kind: ComponentKind, entity: Entity }
 
-/* Concrete atomic effects specifying which kinds of effects act upon which variables */
+/* Concrete atomic effects specifying which kinds of effects act upon which entities */
 export interface ConcreteEffect { kind: 'concrete', components: EffectComponent[] }
 
 /* Arrow effects for expressions with effects depending on parameters */
 export interface ArrowEffect { kind: 'arrow', params: Effect[], result: Effect }
 
-/* A quantification variable, referring to an effect */
-export interface QuantifiedEffect { kind: 'quantified', name: string }
+/* A variable representing some effect */
+export interface EffectVariable { kind: 'variable', name: string }
 
 /*
- * The effect of a Quint expression, regarding which state variables are read
+ * The effect of a Quint expression, regarding which state entities are read
  * and/or updated
  */
 export type Effect =
   | ConcreteEffect
   | ArrowEffect
-  | QuantifiedEffect
+  | EffectVariable
 
 /*
- * An effect scheme, listing universally quantified variables (for names
- * refering to Variables) and effect variables (for names refering to Effects)
+ * An effect scheme, listing which effect variables (names referring to effects)
+ * and entity variables (names refering to entities) are universally quantified
+ * in the effect
  */
 export type EffectScheme = {
   /* The effect */
   effect: Effect,
   /* Universally quantified names refering to Effects */
   effectVariables: Set<string>,
-  /* Universally quantified names refering to Variables */
-  variables: Set<string>,
+  /* Universally quantified names refering to Entities */
+  entityVariables: Set<string>,
 }
 
 /* A state variable */
 export interface StateVariable {
   /* The variable name */
   name: string,
-  /* The variable id */
+  /* The id of the expression on which the state variable ocurred */
   reference: bigint
 }
 
 /*
- * The variables an effect acts upon. Either a list of state variables, a
- * quantification over them or a combination of other variables.
- * Uses the plural form since all forms represent a plurality of variables.
+ * The Entity an effect acts upon. Either a list of state variables, a
+ * variable or a combination of other entities.
  */
-export type Variables =
+export type Entity =
   /* A list of state variables */
-  | { kind: 'concrete', vars: StateVariable[] }
-  /* A quantification variable, referring to an array of state variables, to be substituted */
-  | { kind: 'quantified', name: string, reference?: bigint }
-  /* A combination of variables to be computed as a union when concrete */
-  | { kind: 'union', variables: Variables[] }
+  | { kind: 'concrete', stateVariables: StateVariable[] }
+  /* A variable representing some entity */
+  | { kind: 'variable', name: string, reference?: bigint }
+  /* A combination of entities */
+  | { kind: 'union', entities: Entity[] }
 
 /*
  * An effect signature, which can vary according to the number of arguments.
- * Signatures assume an additional level of quantification over all names and
- * should be instantiated before being used
  */
 export type Signature = (_arity: number) => EffectScheme
 
 /**
- * Unifies two effects by matching effect types and unifying their variables.
+ * Unifies two effects by matching effect types and unifying their entities.
  *
  * @param ea an effect to be unified
  * @param eb the effect to be unified with
@@ -103,10 +101,10 @@ export function unify(ea: Effect, eb: Effect): Either<ErrorTree, Substitutions> 
     return unifyArrows(location, e1, e2)
   } else if (e1.kind === 'concrete' && e2.kind === 'concrete') {
     return unifyConcrete(location, e1, e2).mapLeft(err => buildErrorTree(location, err))
-  } else if (e1.kind === 'quantified') {
+  } else if (e1.kind === 'variable') {
     return bindEffect(e1.name, e2)
       .mapLeft(msg => buildErrorLeaf(location, msg))
-  } else if (e2.kind === 'quantified') {
+  } else if (e2.kind === 'variable') {
     return bindEffect(e2.name, e1)
       .mapLeft(msg => buildErrorLeaf(location, msg))
   } else {
@@ -123,23 +121,23 @@ export function unify(ea: Effect, eb: Effect): Either<ErrorTree, Substitutions> 
  *
  * @param effect the Effect to have its names found
  *
- * @returns the set of variables and the set of effect variables
+ * @returns the set of effect variables and the set of entity variables
  */
-export function effectNames(effect: Effect): { effectVariables: Set<string>, variables: Set<string> } {
+export function effectNames(effect: Effect): { effectVariables: Set<string>, entityVariables: Set<string> } {
   switch (effect.kind) {
     case 'concrete':
       return {
         effectVariables: new Set(),
-        variables: new Set(effect.components.flatMap(c => variablesNames(c.variables))),
+        entityVariables: new Set(effect.components.flatMap(c => entityNames(c.entity))),
       }
     case 'arrow': {
       const nested = effect.params.concat(effect.result).flatMap(effectNames)
-      return nested.reduce((acc, { effectVariables, variables }) => ({
+      return nested.reduce((acc, { effectVariables: effectVariables, entityVariables: entityVariables }) => ({
         effectVariables: new Set([...acc.effectVariables, ...effectVariables]),
-        variables: new Set([...acc.variables, ...variables]),
-      }), { effectVariables: new Set(), variables: new Set() })
+        entityVariables: new Set([...acc.entityVariables, ...entityVariables]),
+      }), { effectVariables: new Set(), entityVariables: new Set() })
     }
-    case 'quantified': return { effectVariables: new Set([effect.name]), variables: new Set() }
+    case 'variable': return { effectVariables: new Set([effect.name]), entityVariables: new Set() }
   }
 }
 
@@ -154,7 +152,7 @@ export function toScheme(effect: Effect): EffectScheme {
   return {
     effect: effect,
     effectVariables: new Set(),
-    variables: new Set(),
+    entityVariables: new Set(),
   }
 }
 
@@ -166,44 +164,44 @@ function bindEffect(name: string, effect: Effect): Either<string, Substitutions>
   }
 }
 
-function bindVariables(name: string, variables: Variables): Either<string, Substitutions> {
-  if (variablesNames(variables).includes(name)) {
-    return left(`Can't bind ${name} to ${variablesToString(variables)}: cyclical binding`)
+function bindEntity(name: string, entity: Entity): Either<string, Substitutions> {
+  if (entityNames(entity).includes(name)) {
+    return left(`Can't bind ${name} to ${entityToString(entity)}: cyclical binding`)
   } else {
-    return right([{ kind: 'variable', name, value: variables }])
+    return right([{ kind: 'entity', name, value: entity }])
   }
 }
 
 /**
- * Finds all variable names refered to by some variables
+ * Finds all entity names refered to by an entity
  *
- * @param variables the variables to be searched
+ * @param entity the entity to be searched
  *
  * @returns a list of names
  */
-export function variablesNames(variables: Variables): string[] {
-  switch (variables.kind) {
+export function entityNames(entity: Entity): string[] {
+  switch (entity.kind) {
     case 'concrete': return []
-    case 'quantified': return [variables.name]
-    case 'union': return variables.variables.flatMap(variablesNames)
+    case 'variable': return [entity.name]
+    case 'union': return entity.entities.flatMap(entityNames)
   }
 }
 
 /**
- * Finds all state variables refered to by some variables
+ * Finds all state variables refered to by an entity
  *
- * @param variables the variables to be searched
+ * @param entity the entity to be searched
  *
- * @returns a list of state variables
+ * @returns a list of state entities
  */
-export function stateVariables(variables: Variables): StateVariable[] {
-  switch (variables.kind) {
-    case 'quantified':
+export function stateVariables(entity: Entity): StateVariable[] {
+  switch (entity.kind) {
+    case 'variable':
       return []
     case 'concrete':
-      return variables.vars
+      return entity.stateVariables
     case 'union':
-      return variables.variables.flatMap(stateVariables)
+      return entity.entities.flatMap(stateVariables)
   }
 }
 
@@ -247,19 +245,19 @@ function unifyConcrete(location: string, e1: ConcreteEffect, e2: ConcreteEffect)
   const generalResult = e1.components.reduce((result: Either<Error, Substitutions>, ca) => {
     return e2.components.reduce((innerResult: Either<Error, Substitutions>, cb) => {
       return innerResult.chain(subs => {
-        const c1: EffectComponent = { ...ca, variables: applySubstitutionToVariables(subs, ca.variables) }
-        const c2: EffectComponent = { ...cb, variables: applySubstitutionToVariables(subs, cb.variables) }
+        const c1: EffectComponent = { ...ca, entity: applySubstitutionToEntity(subs, ca.entity) }
+        const c2: EffectComponent = { ...cb, entity: applySubstitutionToEntity(subs, cb.entity) }
 
         if (c1.kind === c2.kind) {
-          return unifyVariables(c1.variables, c2.variables)
+          return unifyEntities(c1.entity, c2.entity)
         } else if (canCoexist(c1, c2)) {
           return right([] as Substitutions)
         } else if (isDominant(c1, c2)) {
           // The dominated component has to be nullified
-          return unifyVariables({ kind: 'concrete', vars: [] }, c2.variables)
+          return unifyEntities({ kind: 'concrete', stateVariables: [] }, c2.entity)
         } else if (isDominant(c2, c1)) {
           // The dominated component has to be nullified
-          return unifyVariables(c1.variables, { kind: 'concrete', vars: [] })
+          return unifyEntities(c1.entity, { kind: 'concrete', stateVariables: [] })
         } else {
           // We should never reach this. Instead, one of the kinds should
           // dominate the other, and then we nullify the dominated component
@@ -278,29 +276,28 @@ function unifyConcrete(location: string, e1: ConcreteEffect, e2: ConcreteEffect)
     .chain(s1 => generalResult.chain(s2 => compose(s1, s2)))
 }
 
-export function unifyVariables(va: Variables, vb: Variables): Either<ErrorTree, Substitutions> {
+export function unifyEntities(va: Entity, vb: Entity): Either<ErrorTree, Substitutions> {
   const v1 = flattenUnions(va)
   const v2 = flattenUnions(vb)
-  const location = `Trying to unify variables [${variablesToString(v1)}] and [${variablesToString(v2)}]`
+  const location = `Trying to unify entities [${entityToString(v1)}] and [${entityToString(v2)}]`
 
   if (v1.kind === 'concrete' && v2.kind === 'concrete') {
-    // Both state
-    if (isEqual(new Set(v1.vars.map(v => v.name)), new Set(v2.vars.map(v => v.name)))) {
+    if (isEqual(new Set(v1.stateVariables.map(v => v.name)), new Set(v2.stateVariables.map(v => v.name)))) {
       return right([])
     } else {
       return left({
         location,
-        message: `Expected variables [${v1.vars.map(v => v.name)}] and [${v2.vars.map(v => v.name)}] to be the same`,
+        message: `Expected [${v1.stateVariables.map(v => v.name)}] and [${v2.stateVariables.map(v => v.name)}] to be the same`,
         children: [],
       })
     }
-  } else if (v1.kind === 'quantified' && v2.kind === 'quantified' && v1.name === v2.name) {
+  } else if (v1.kind === 'variable' && v2.kind === 'variable' && v1.name === v2.name) {
     return right([])
-  } else if (v1.kind === 'quantified') {
-    return bindVariables(v1.name, v2)
+  } else if (v1.kind === 'variable') {
+    return bindEntity(v1.name, v2)
       .mapLeft(msg => buildErrorLeaf(location, msg))
-  } else if (v2.kind === 'quantified') {
-    return bindVariables(v2.name, v1)
+  } else if (v2.kind === 'variable') {
+    return bindEntity(v2.name, v1)
       .mapLeft(msg => buildErrorLeaf(location, msg))
   } else {
     if (isEqual(v1, v2)) {
@@ -308,21 +305,21 @@ export function unifyVariables(va: Variables, vb: Variables): Either<ErrorTree, 
     }
 
     if (v1.kind === 'union' && v2.kind === 'concrete') {
-      return mergeInMany(v1.variables.map(v => unifyVariables(v, v2)))
+      return mergeInMany(v1.entities.map(v => unifyEntities(v, v2)))
         .map(subs => subs.flat())
         .mapLeft(err => buildErrorTree(location, err))
     }
 
     if (v1.kind === 'concrete' && v2.kind === 'union') {
-      return unifyVariables(v2, v1)
+      return unifyEntities(v2, v1)
     }
 
-    // At least one of the variables is a union
+    // At least one of the entities is a union
     // Unifying sets is complicated and we should never have to do this in Quint's
     // use case for this effect system
     return left({
       location,
-      message: 'Unification for unions of variables is not implemented',
+      message: 'Unification for unions of entities is not implemented',
       children: [],
     })
   }
@@ -337,7 +334,7 @@ function nullifyUnmatchedComponents(
   return components1.reduce((result: Either<Error, Substitutions>, c2) => {
     return result.chain(subs => {
       if (!components2.some(c1 => c1.kind === c2.kind)) {
-        const newSubs = unifyVariables(c2.variables, { kind: 'concrete', vars: [] })
+        const newSubs = unifyEntities(c2.entity, { kind: 'concrete', stateVariables: [] })
         return newSubs.chain(s => compose(subs, s))
       }
 
@@ -368,27 +365,27 @@ function tryToUnpack(
     return left(buildErrorLeaf(location, `Expected ${effects2.length} arguments, got ${effects1.length}`))
   }
 
-  const variablesByComponentKind: Map<ComponentKind, Variables[]> = new Map()
+  const entitiesByComponentKind: Map<ComponentKind, Entity[]> = new Map()
 
   // Combine the other effects into a single effect, to be unified with the unpacked effect
 
   // If all the effects are concrete, we combine them into a single concrete
-  // effect by combining the variables of each component of the same kind
+  // effect by combining the entities of each component of the same kind
   if (effects2.every(e => e.kind === 'concrete')) {
     effects2.forEach(e => {
       if (e.kind === 'concrete') {
         e.components.forEach(c => {
-          const variables = variablesByComponentKind.get(c.kind) ?? []
-          variables.push(c.variables)
-          variablesByComponentKind.set(c.kind, variables)
+          const entities = entitiesByComponentKind.get(c.kind) ?? []
+          entities.push(c.entity)
+          entitiesByComponentKind.set(c.kind, entities)
         })
       }
     })
 
     const unpacked: ConcreteEffect = {
       kind: 'concrete',
-      components: [...variablesByComponentKind.entries()].map(([kind, variables]) => {
-        return { kind, variables: { kind: 'union', variables } }
+      components: [...entitiesByComponentKind.entries()].map(([kind, entities]) => {
+        return { kind, entity: { kind: 'union', entities: entities } }
       }),
     }
 
@@ -396,14 +393,14 @@ function tryToUnpack(
     return right([effects1, [result], []])
   }
 
-  // If all the effects are quantified like e0, ..., en, we combine them into a
-  // single quantified effect called e0#...#en. See simplifyArrowEffect for a
+  // If all the effects are variable like e0, ..., en, we combine them into a
+  // single variable effect called e0#...#en. See simplifyArrowEffect for a
   // similar process description
-  if (effects2.every(e => e.kind === 'quantified')) {
-    const names = effects2.map(e => e.kind === 'quantified' ? e.name : '')
+  if (effects2.every(e => e.kind === 'variable')) {
+    const names = effects2.map(e => e.kind === 'variable' ? e.name : '')
 
     const unpacked: Effect = {
-      kind: 'quantified',
+      kind: 'variable',
       name: names.join('#'),
     }
 
@@ -419,33 +416,33 @@ function tryToUnpack(
 
   return left(buildErrorLeaf(
     `Trying to unpack effects: ${effects1.map(effectToString)} and ${effects2.map(effectToString)}`,
-    'Can only unpack effects if they are all concrete or all quantified'
+    'Can only unpack effects if they are all concrete or all variable'
   ))
 }
 
 /**
  * Simplifies effects of the form (Read[v0, ..., vn]) => Read[v0, ..., vn] into
- * (Read[v0#...#vn]) => Read[v0#...#vn] so the variables can be unified with other
- * sets of variables. All of the variables v0, ..., vn are bound to the single variable
- * named v0#...#vn. E.g., for variables v0, v1, v2, we will produce the new unique variable
+ * (Read[v0#...#vn]) => Read[v0#...#vn] so the entities can be unified with other
+ * sets of entities. All of the entities v0, ..., vn are bound to the single entity
+ * named v0#...#vn. E.g., for entities v0, v1, v2, we will produce the new unique entity
  * v0#v1#v2 and the bindings v1 |-> v0#v1#v2, v1 |-> v0#v1#v2, v2 |-> v0#v1#v2.
- * This new name could be a fresh variable, but we use an unique name since there is no
- * fresh variable generation in this pure unification environment.
+ * This new name could be a fresh name, but we use an unique name since there is no
+ * fresh name generation in this pure unification environment.
  *
  * @param params the arrow effect parameters
  * @param result the arrow effect result
- * @returns an arrow effect with the new format and the substitutions with binded variables
+ * @returns an arrow effect with the new format and the substitutions with binded entities
  */
 function simplifyArrowEffect(params: Effect[], result: Effect): [ArrowEffect, Substitutions] {
   if (params.length === 1 && effectToString(params[0]) === effectToString(result) && params[0].kind === 'concrete') {
     const effect = params[0]
 
-    const hashedComponents = effect.components.map(c => ({ kind: c.kind, variables: hashVariables(c.variables) }))
+    const hashedComponents = effect.components.map(c => ({ kind: c.kind, entity: hashEntity(c.entity) }))
 
     const arrow: ArrowEffect = { kind: 'arrow', params: [{ kind: 'concrete', components: hashedComponents }], result }
     const subs: Substitutions = effect.components.flatMap(c => {
-      return variablesNames(c.variables).map(n => {
-        return { kind: 'variable', name: n, value: hashVariables(c.variables) }
+      return entityNames(c.entity).map(n => {
+        return { kind: 'entity', name: n, value: hashEntity(c.entity) }
       })
     })
 
@@ -455,37 +452,35 @@ function simplifyArrowEffect(params: Effect[], result: Effect): [ArrowEffect, Su
   return [{ kind: 'arrow', params, result }, []]
 }
 
-function hashVariables(va: Variables): Variables {
+function hashEntity(va: Entity): Entity {
   switch (va.kind) {
-    case 'concrete': {
-      return va
-    }
-    case 'quantified': return va
+    case 'concrete': return va
+    case 'variable': return va
     case 'union': {
-      const nested = va.variables.map(hashVariables)
+      const nested = va.entities.map(hashEntity)
 
-      // Separate quantified variables from the rest
-      const [name, variables] = nested.reduce(([name, variables]: [string[], Variables[]], v) => {
-        if (v.kind === 'quantified') {
+      // Separate variables from the rest
+      const [name, entities] = nested.reduce(([name, entities]: [string[], Entity[]], v) => {
+        if (v.kind === 'variable') {
           name.push(v.name)
         } else {
-          variables.push(v)
+          entities.push(v)
         }
-        return [name, variables]
+        return [name, entities]
       }, [[], []])
 
-      // Consider all cases of name and variables being empty or not
+      // Consider all cases of name and entities being empty or not
       if (name.length === 0) {
-        if (variables.length === 0) {
-          return { kind: 'concrete', vars: [] }
+        if (entities.length === 0) {
+          return { kind: 'concrete', stateVariables: [] }
         } else {
-          return { kind: 'union', variables }
+          return { kind: 'union', entities: entities }
         }
       } else {
-        if (variables.length === 0) {
-          return { kind: 'quantified', name: name.join('#') }
+        if (entities.length === 0) {
+          return { kind: 'variable', name: name.join('#') }
         } else {
-          return { kind: 'union', variables: [{ kind: 'quantified', name: name.join('#') }, ...variables] }
+          return { kind: 'union', entities: [{ kind: 'variable', name: name.join('#') }, ...entities] }
         }
       }
     }

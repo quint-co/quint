@@ -5,7 +5,7 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * Simplification for effects, including a check on multiple updates of the same variable
+ * Simplification for effects, including a check on multiple updates of the same entity
  *
  * @author Gabriela Moreira
  *
@@ -13,23 +13,22 @@
  */
 
 import isEqual from 'lodash.isequal'
-import { ConcreteEffect, Effect, StateVariable, Variables } from './base'
+import { ConcreteEffect, Effect, Entity, StateVariable } from './base'
 
-/*
- * Simplifies a concrete effect Read[r] & Update[u] by:
- *   1. Removing repeated variables in r
- *   2. Flattening nested unions under r and u
- *   3. Checking for any repeated state variables in u and reporting if found
+/**
+ * Simplifies a concrete effect by:
+ *   1. Removing repeated entities (except for updates)
+ *   2. Flattening nested unions
  *
  * @param e the concrete effect to be simplified
  *
- * @returns the simplified effect if no multiple updates are found. Otherwise, the error.
+ * @returns the simplified effect
  */
 function simplifyConcreteEffect(e: ConcreteEffect): Effect {
   const components = e.components.map(c => {
-    const flatVariables = flattenUnions(c.variables)
-    const variables = c.kind === 'update' ? flatVariables : uniqueVariables(flatVariables)
-    return { ...c, variables }
+    const flatEntity = flattenUnions(c.entity)
+    const entity = c.kind === 'update' ? flatEntity : deduplicateEntity(flatEntity)
+    return { kind: c.kind, entity }
   })
 
   return { kind: 'concrete', components }
@@ -38,7 +37,7 @@ function simplifyConcreteEffect(e: ConcreteEffect): Effect {
 export function simplify(e: Effect): Effect {
   switch (e.kind) {
     case 'concrete': return simplifyConcreteEffect(e)
-    case 'quantified': return e
+    case 'variable': return e
     case 'arrow': {
       const params = e.params.map(simplify)
       const result = simplify(e.result)
@@ -47,61 +46,61 @@ export function simplify(e: Effect): Effect {
   }
 }
 
-/*
- * Transforms variables of form [x, [y, z]] into [x, y, z]
+/**
+ * Transforms entities of form [x, [y, z]] into [x, y, z]
  *
- * @param variables the variables to be transformed
+ * @param entity the entity to be transformed
  *
  * @returns the flattened form of union if a union.
- *          Otherwise, the variables without change.
+ *          Otherwise, the entity without change.
  */
-export function flattenUnions(variables: Variables): Variables {
-  switch (variables.kind) {
+export function flattenUnions(entity: Entity): Entity {
+  switch (entity.kind) {
     case 'union': {
-      const unionVariables: Variables[] = []
+      const unionEntities: Entity[] = []
       const vars: StateVariable[] = []
-      const flattenVariables = variables.variables.map(v => flattenUnions(v))
-      flattenVariables.forEach(v => {
+      const flattenEntities = entity.entities.map(v => flattenUnions(v))
+      flattenEntities.forEach(v => {
         switch (v.kind) {
-          case 'quantified':
-            unionVariables.push(v)
+          case 'variable':
+            unionEntities.push(v)
             break
           case 'concrete':
-            vars.push(...v.vars)
+            vars.push(...v.stateVariables)
             break
           case 'union':
-            unionVariables.push(...v.variables)
+            unionEntities.push(...v.entities)
             break
         }
       })
 
-      if (unionVariables.length > 0) {
-        const variables = vars.length > 0 ? unionVariables.concat({ kind: 'concrete', vars }) : unionVariables
-        return variables.length > 1 ? { kind: 'union', variables } : variables[0]
+      if (unionEntities.length > 0) {
+        const entities = vars.length > 0 ? unionEntities.concat({ kind: 'concrete', stateVariables: vars }) : unionEntities
+        return entities.length > 1 ? { kind: 'union', entities: entities } : entities[0]
       } else {
-        return { kind: 'concrete', vars }
+        return { kind: 'concrete', stateVariables: vars }
       }
     }
     default:
-      return variables
+      return entity
   }
 }
 
-function uniqueVariables(variables: Variables): Variables {
-  switch (variables.kind) {
-    case 'quantified':
-      return variables
+function deduplicateEntity(entity: Entity): Entity {
+  switch (entity.kind) {
+    case 'variable':
+      return entity
     case 'concrete':
-      return { kind: 'concrete', vars: Array.from(new Set<StateVariable>(variables.vars)) }
+      return { kind: 'concrete', stateVariables: Array.from(new Set<StateVariable>(entity.stateVariables)) }
     case 'union': {
-      const nestedVariables = variables.variables.map(v => uniqueVariables(v))
-      const unique: Variables[] = []
-      nestedVariables.forEach(variable => {
-        if (!unique.some(v => isEqual(v, variable))) {
-          unique.push(variable)
+      const nestedEntities = entity.entities.map(v => deduplicateEntity(v))
+      const unique: Entity[] = []
+      nestedEntities.forEach(entity => {
+        if (!unique.some(v => isEqual(v, entity))) {
+          unique.push(entity)
         }
       })
-      return { kind: 'union', variables: unique }
+      return { kind: 'union', entities: unique }
     }
   }
 }

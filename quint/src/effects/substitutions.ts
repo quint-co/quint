@@ -5,7 +5,7 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * Substitutions for effects and its variables, including composition and application
+ * Substitutions for effects and its entities, including composition and application
  *
  * @author Gabriela Moreira
  *
@@ -14,18 +14,18 @@
 
 import { Either, mergeInMany, right } from '@sweet-monads/either'
 import { ErrorTree, buildErrorTree } from '../errorTree'
-import { Effect, Variables, unify, unifyVariables } from './base'
+import { Effect, Entity, unify, unifyEntities } from './base'
 import { effectToString, substitutionsToString } from './printing'
 import { simplify } from './simplification'
 
 /*
- * Substitutions can be applied to both effects and variables, replacing
- * quantified values with concrete ones
+ * Substitutions can be applied to both effects and entities, replacing
+ * variable values with concrete ones
  */
 export type Substitutions = Substitution[]
 
 type Substitution =
-  | { kind: 'variable', name: string, value: Variables }
+  | { kind: 'entity', name: string, value: Entity }
   | { kind: 'effect', name: string, value: Effect }
 
 /*
@@ -44,7 +44,7 @@ export function compose(s1: Substitutions, s2: Substitutions): Either<ErrorTree,
 }
 
 /**
- * Applies substitutions to an effect, replacing all quantified names with their
+ * Applies substitutions to an effect, replacing all variable names with their
  * substitution values when they are defined.
  *
  * @param subs the substitutions to be applied
@@ -56,8 +56,8 @@ export function compose(s1: Substitutions, s2: Substitutions): Either<ErrorTree,
 export function applySubstitution(subs: Substitutions, e: Effect): Either<ErrorTree, Effect> {
   let result: Either<ErrorTree, Effect> = right(e)
   switch (e.kind) {
-    case 'quantified': {
-      // e is an effect variable
+    case 'variable': {
+      // e is an effect entity
       const sub = subs.find(s => s.name === e.name)
       if (sub && sub.kind === 'effect') {
         result = right(sub.value)
@@ -76,8 +76,8 @@ export function applySubstitution(subs: Substitutions, e: Effect): Either<ErrorT
     case 'concrete': {
       // e is a an effect of the form Read[r] & Update[u] or Read[r] & Temporal[t]
       const components = e.components
-        .map(c => ({ ...c, variables: applySubstitutionToVariables(subs, c.variables) }))
-        .filter(c => !emptyVariables(c.variables))
+        .map(c => ({ kind: c.kind, entity: applySubstitutionToEntity(subs, c.entity) }))
+        .filter(c => !emptyEntity(c.entity))
 
       result = right({ kind: 'concrete', components })
       break
@@ -87,39 +87,39 @@ export function applySubstitution(subs: Substitutions, e: Effect): Either<ErrorT
   return result.map(simplify)
 }
 
-function emptyVariables(variables: Variables): boolean {
-  switch (variables.kind) {
-    case 'concrete': return variables.vars.length === 0
-    case 'quantified': return false
-    case 'union': return variables.variables.length === 0
-  }
-}
-
 /**
- * Applies substitutions to variables, replacing all quantified names with their
+ * Applies substitutions to an entity, replacing all variable names with their
  * substitution values when they are defined.
  *
  * @param subs the substitutions to be applied
- * @param variables the variables to be transformed
+ * @param entity the entity to be transformed
  *
- * @returns the varibales resulting from the substitutions' application on the given
- *          variables, when successful. Otherwise, an error tree with an error message and its trace.
+ * @returns the entity resulting from the substitutions' application on the
+ *          given entity
  */
-export function applySubstitutionToVariables(subs: Substitutions, variables: Variables): Variables {
-  switch (variables.kind) {
-    case 'quantified': {
-      const sub = subs.find(s => s.name === variables.name)
-      if (sub && sub.kind === 'variable') {
+export function applySubstitutionToEntity(subs: Substitutions, entity: Entity): Entity {
+  switch (entity.kind) {
+    case 'variable': {
+      const sub = subs.find(s => s.name === entity.name)
+      if (sub && sub.kind === 'entity') {
         return sub.value
       }
       break
     }
     case 'union': {
-      const newVariables = variables.variables.map(v => applySubstitutionToVariables(subs, v))
-      return { kind: 'union', variables: newVariables }
+      const newEntities = entity.entities.map(v => applySubstitutionToEntity(subs, v))
+      return { kind: 'union', entities: newEntities }
     }
   }
-  return variables
+  return entity
+}
+
+function emptyEntity(entity: Entity): boolean {
+  switch (entity.kind) {
+    case 'concrete': return entity.stateVariables.length === 0
+    case 'variable': return false
+    case 'union': return entity.entities.length === 0
+  }
 }
 
 function applySubstitutionsToSubstitutions(s1: Substitutions, s2: Substitutions): Either<ErrorTree[], Substitutions> {
@@ -129,8 +129,8 @@ function applySubstitutionsToSubstitutions(s1: Substitutions, s2: Substitutions)
       if (sub.kind === 'effect' && s.kind === 'effect') {
         return unify(s.value, sub.value)
           .mapLeft(err => buildErrorTree(`Unifying substitutions with same name: ${s.name}`, err))
-      } else if (sub.kind === 'variable' && s.kind === 'variable') {
-        return unifyVariables(s.value, sub.value)
+      } else if (sub.kind === 'entity' && s.kind === 'entity') {
+        return unifyEntities(s.value, sub.value)
           .mapLeft(err => buildErrorTree(`Unifying substitutions with same name: ${s.name}`, err))
       } else {
         throw new Error(`Substitutions with same name (${s.name}) but incompatible kinds: ${substitutionsToString([sub, s])}`)
@@ -139,7 +139,7 @@ function applySubstitutionsToSubstitutions(s1: Substitutions, s2: Substitutions)
 
     switch (s.kind) {
       case 'effect': return applySubstitution(s1, s.value).map(v => ([{ kind: s.kind, name: s.name, value: v }]))
-      case 'variable': return right([{ kind: s.kind, name: s.name, value: applySubstitutionToVariables(s1, s.value) }])
+      case 'entity': return right([{ kind: s.kind, name: s.name, value: applySubstitutionToEntity(s1, s.value) }])
     }
   })).map(s => s.flat())
 }
