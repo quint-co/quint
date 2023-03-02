@@ -1,3 +1,9 @@
+// Temp fix for integration tests: mock voting definitions while files are not imported
+module Voting {
+  def ShowsSafeAt(Q, b, v) = true
+  val Inv = true
+}
+
 module Paxos {
   /***************************************************************************
    * This is a specification of the Paxos algorithm without explicit leaders *
@@ -232,11 +238,6 @@ module Paxos {
   (* variables of module Voting.                                             *)
   (***************************************************************************/
 
-  // Temp fix for integration tests: mock voting definitions while files are not imported
-  module Voting {
-    def ShowsSafeAt(Q, b, v) = true
-    val Inv = true
-  }
 
   module V = Voting(*)
 

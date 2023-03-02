@@ -194,7 +194,7 @@ export function copyNames(originTable: LookupTable, namespace?: string, scope?: 
 }
 
 /**
- * Merges to lookup tables together in a new one.
+ * Merges two lookup tables together in a new one.
  *
  * @param t1 a lookup table to be merged
  * @param t2 a lookup table to be merged

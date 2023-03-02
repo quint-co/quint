@@ -41,12 +41,12 @@ export type ImportResolutionResult = Either<Map<bigint, QuintError>, LookupTable
  * to the current module, including a namespace in case of instances.
  *
  * @param quintModule the Quint module for which imports should be resolved
- * @param definitions lookup table of collected names for all modules
+ * @param tables lookup table of collected names for all modules
  *
  * @returns a successful result with updated definitions in case all imports were resolved, or the errors otherwise
  */
-export function resolveImports(quintModule: QuintModule, definitions: LookupTableByModule): ImportResolutionResult {
-  const visitor = new ImportResolverVisitor(definitions)
+export function resolveImports(quintModule: QuintModule, tables: LookupTableByModule): ImportResolutionResult {
+  const visitor = new ImportResolverVisitor(tables)
   walkModule(visitor, quintModule)
 
   return visitor.errors.size > 0
@@ -133,7 +133,7 @@ class ImportResolverVisitor implements IRVisitor {
       return
     }
 
-    const importableDefinitions = copyNames(moduleTable, '', this.currentModuleId)
+    const importableDefinitions = copyNames(moduleTable, undefined, this.currentModuleId)
 
     if (def.name === '*') {
       // Imports all definitions
@@ -154,27 +154,6 @@ class ImportResolverVisitor implements IRVisitor {
       valueDefs.forEach(def => addValueToTable(def, this.table))
       const typeDefs = importableDefinitions.typeDefinitions.get(def.name) ?? []
       typeDefs.forEach(def => addTypeToTable(def, this.table))
-
-      // For value definitions, check if there are modules being imported
-      valueDefs.forEach(definition => {
-        if (definition.kind === 'module') {
-          // Collect all definitions namespaced to module
-          const importedModuleTable = this.tables.get(definition.identifier)
-
-          if (!importedModuleTable) {
-            // Importing a module without a lookup table for it
-            this.errors.set(def.id, {
-              code: 'QNT404',
-              message: `Module ${def.path}::${definition.identifier} not found`,
-              data: {},
-            })
-            return
-          }
-
-          const newEntries = copyNames(importedModuleTable!, definition.identifier, this.currentModuleId)
-          this.table = mergeTables(this.table, newEntries)
-        }
-      })
     }
   }
 }

@@ -136,12 +136,16 @@ export function parsePhase2(phase1Data: ParserPhase1): ParseResult<ParserPhase2>
 
   return phase1Data.modules.reduce((result: ParseResult<ParserPhase2>, module) => {
     const scopeTree = treeFromModule(module)
-    const table = collectDefinitions(module)
+    let table = collectDefinitions(module)
     result.map(r => r.table.set(module.name, table))
 
-    const importResult: Either<ErrorMessage[], LookupTableByModule> = result.chain(r =>
+    const importResult: Either<ErrorMessage[], LookupTable> = result.chain(r =>
       resolveImports(module, r.table)
-        .map(t => r.table.set(module.name, t))
+        .map(t => {
+          r.table.set(module.name, t)
+          table = t
+          return table
+        })
         .mapLeft((errorMap): ErrorMessage[] => {
           const errorLocator = mkErrorMessage(sourceMap)
           return Array.from(errorMap, errorLocator)
