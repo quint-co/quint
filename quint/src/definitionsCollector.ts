@@ -16,10 +16,10 @@
 
 import { IRVisitor, walkModule } from './IRVisitor'
 import {
-  LookupTable, LookupTableByModule, ValueDefinition, ValueDefinitionKind,
-  addTypeToTable, addValueToTable, copyTable, newTable
+  LookupTable, ValueDefinition, ValueDefinitionKind,
+  addTypeToTable, addValueToTable, newTable
 } from './lookupTable'
-import { QuintAssume, QuintConst, QuintLambda, QuintLet, QuintModule, QuintModuleDef, QuintOpDef, QuintTypeDef, QuintVar } from './quintIr'
+import { QuintAssume, QuintConst, QuintLambda, QuintLet, QuintModule, QuintOpDef, QuintTypeDef, QuintVar } from './quintIr'
 import { QuintType } from './quintTypes'
 
 /**
@@ -139,46 +139,15 @@ export function defaultValueDefinitions(): ValueDefinition[] {
  *
  * @returns a lookup table with all defined values for the module
  */
-export function collectDefinitions(quintModule: QuintModule): LookupTableByModule {
+export function collectDefinitions(quintModule: QuintModule): LookupTable {
   const visitor = new DefinitionsCollectorVisitor()
   walkModule(visitor, quintModule)
-  return visitor.tables
+  return visitor.table
 }
 
 class DefinitionsCollectorVisitor implements IRVisitor {
-  tables: LookupTableByModule = new Map<string, LookupTable>()
-
-  private currentModuleName: string = ''
-  private currentTable: LookupTable = newTable({})
-  private moduleStack: string[] = []
+  table: LookupTable = newTable({ valueDefinitions: defaultValueDefinitions() })
   private scopeStack: bigint[] = []
-
-  enterModuleDef(def: QuintModuleDef): void {
-    this.moduleStack.push(def.module.name)
-
-    this.updateCurrentModule()
-  }
-
-  exitModuleDef(def: QuintModuleDef): void {
-    // Collect all definitions namespaced to module
-    const innerModuleTable = copyTable(this.currentTable)
-
-    this.moduleStack.pop()
-    this.updateCurrentModule()
-
-    if (this.moduleStack.length > 0) {
-      innerModuleTable.valueDefinitions.forEach((defs) => {
-        defs.filter(d => !d.scope)
-          .forEach(d => this.collectValueDefinition(d.kind, `${def.module.name}::${d.identifier}`, d.reference))
-      })
-
-      innerModuleTable.typeDefinitions.forEach((defs) => {
-        defs.forEach(d => this.collectTypeDefinition(`${def.module.name}::${d.identifier}`, d.type, d.reference))
-      })
-
-      this.collectValueDefinition('module', def.module.name, def.id)
-    }
-  }
 
   enterVar(def: QuintVar): void {
     this.collectValueDefinition(def.kind, def.name, def.id, undefined, def.typeAnnotation)
@@ -235,7 +204,7 @@ class DefinitionsCollectorVisitor implements IRVisitor {
       typeAnnotation,
     }
 
-    addValueToTable(def, this.currentTable)
+    addValueToTable(def, this.table)
   }
 
   private collectTypeDefinition(identifier: string, type?: QuintType, reference?: bigint): void {
@@ -245,20 +214,6 @@ class DefinitionsCollectorVisitor implements IRVisitor {
       reference,
     }
 
-    addTypeToTable(def, this.currentTable)
-  }
-
-  private updateCurrentModule(): void {
-    if (this.moduleStack.length > 0) {
-      this.currentModuleName = this.moduleStack[this.moduleStack.length - 1]
-
-      let moduleTable = this.tables.get(this.currentModuleName)
-      if (!moduleTable) {
-        // Initialize module tables with a copy from default definitions
-        moduleTable = newTable({ valueDefinitions: defaultValueDefinitions() })
-        this.tables.set(this.currentModuleName, moduleTable)
-      }
-      this.currentTable = moduleTable
-    }
+    addTypeToTable(def, this.table)
   }
 }

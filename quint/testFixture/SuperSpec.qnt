@@ -1,3 +1,16 @@
+module M1 {
+  val foo = 4
+}
+
+module M2 {
+  val bar = 4
+}
+
+module Proto {
+  const N: int
+  var x: int
+}
+
 // a module that contains constants
 module withConsts {
   // Constants
@@ -189,33 +202,12 @@ module withConsts {
   val subseteq_empty = Set().subseteq(Set())
   val powersets = Set(1).in(powerset(Set(1,2,3)))
 
-
-  // Nested Modules
-  module level2 {
-    var y: int
-    module level3 {
-      var z: int
-    }
-  }
-
-  module level2instance = level2(*)
-  import level2.level3
-  val namespace_test = level3::z + level2instance::level3::z
-
   // a named assumption
   assume positive = N > 0
   // an anonymous assumption
   assume _ = N != 0
 
   // Imports
-  module M1 {
-    val foo = 4
-  }
-
-  module M2 {
-    val bar = 4
-  }
-
   import M1.foo
   import M2.*
 
@@ -227,10 +219,6 @@ module withConsts {
   var S1: INT_SET
 
   // Instances
-  module Proto {
-    const N: int
-    var x: int
-  }
 
   // create an instance of Proto by associating constants and variables
   // FIXME: How to resolve names for N and x in this scenario?
@@ -248,5 +236,4 @@ module withConsts {
     entry match
        | "Cat": cat => cat.name != ""
        | "Date": date => date.year > 0
-
 }

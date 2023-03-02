@@ -13,7 +13,7 @@
  */
 
 import { LookupTable, LookupTableByModule, addTypeToTable, addValueToTable, copyNames, copyTable, mergeTables, newTable } from './lookupTable'
-import { QuintImport, QuintInstance, QuintModule, QuintModuleDef } from './quintIr'
+import { QuintImport, QuintInstance, QuintModule } from './quintIr'
 import { IRVisitor, walkModule } from './IRVisitor'
 import { Either, left, right } from '@sweet-monads/either'
 import { QuintError } from './quintError'
@@ -33,7 +33,7 @@ export interface ImportError {
 /**
  * The result of import resolution for a Quint Module.
  */
-export type ImportResolutionResult = Either<Map<bigint, QuintError>, LookupTableByModule>
+export type ImportResolutionResult = Either<Map<bigint, QuintError>, LookupTable>
 
 /**
  * Explores the IR visiting all imports and instances. For each one, tries to find a definition
@@ -51,7 +51,7 @@ export function resolveImports(quintModule: QuintModule, definitions: LookupTabl
 
   return visitor.errors.size > 0
     ? left(visitor.errors)
-    : right(visitor.tables)
+    : right(visitor.table)
 }
 
 class ImportResolverVisitor implements IRVisitor {
@@ -61,23 +61,17 @@ class ImportResolverVisitor implements IRVisitor {
 
   tables: LookupTableByModule
   errors: Map<bigint, QuintError> = new Map<bigint, QuintError>()
+  table: LookupTable = newTable({})
 
-  private currentModule: QuintModule = { name: '', defs: [], id: 0n }
-  private currentTable: LookupTable = newTable({})
-  private moduleStack: QuintModule[] = []
+  private currentModuleId: bigint = 0n
 
-  enterModuleDef(def: QuintModuleDef): void {
-    this.tables.set(this.currentModule.name, this.currentTable)
-
-    this.moduleStack.push(def.module)
-    this.updateCurrentModule()
+  enterModule(module: QuintModule): void {
+    this.currentModuleId = module.id
+    this.table = this.tables.get(module.name) ?? newTable({})
   }
 
-  exitModuleDef(def: QuintModuleDef): void {
-    this.tables.set(def.module.name, this.currentTable)
-
-    this.moduleStack.pop()
-    this.updateCurrentModule()
+  exitModule(module: QuintModule): void {
+    this.tables.set(module.name, this.table)
   }
 
   enterInstance(def: QuintInstance): void {
@@ -123,8 +117,8 @@ class ImportResolverVisitor implements IRVisitor {
 
     // All names from the instanced module should be acessible with the instance namespace
     // So, copy them to the current module's lookup table
-    const newEntries = copyNames(instanceTable, def.name, this.currentModule.id)
-    this.currentTable = mergeTables(this.currentTable, newEntries)
+    const newEntries = copyNames(instanceTable, def.name, this.currentModuleId)
+    this.table = mergeTables(this.table, newEntries)
   }
 
   enterImport(def: QuintImport): void {
@@ -139,11 +133,11 @@ class ImportResolverVisitor implements IRVisitor {
       return
     }
 
-    const importableDefinitions = copyNames(moduleTable, '', this.currentModule.id)
+    const importableDefinitions = copyNames(moduleTable, '', this.currentModuleId)
 
     if (def.name === '*') {
       // Imports all definitions
-      this.currentTable = mergeTables(this.currentTable, importableDefinitions)
+      this.table = mergeTables(this.table, importableDefinitions)
     } else {
       // Tries to find a specific definition, reporting an error if not found
       if (!importableDefinitions.valueDefinitions.has(def.name)) {
@@ -157,9 +151,9 @@ class ImportResolverVisitor implements IRVisitor {
 
       // Copy type and value definitions for the imported name
       const valueDefs = importableDefinitions.valueDefinitions.get(def.name) ?? []
-      valueDefs.forEach(def => addValueToTable(def, this.currentTable))
+      valueDefs.forEach(def => addValueToTable(def, this.table))
       const typeDefs = importableDefinitions.typeDefinitions.get(def.name) ?? []
-      typeDefs.forEach(def => addTypeToTable(def, this.currentTable))
+      typeDefs.forEach(def => addTypeToTable(def, this.table))
 
       // For value definitions, check if there are modules being imported
       valueDefs.forEach(definition => {
@@ -177,22 +171,10 @@ class ImportResolverVisitor implements IRVisitor {
             return
           }
 
-          const newEntries = copyNames(importedModuleTable!, definition.identifier, this.currentModule.id)
-          this.currentTable = mergeTables(this.currentTable, newEntries)
+          const newEntries = copyNames(importedModuleTable!, definition.identifier, this.currentModuleId)
+          this.table = mergeTables(this.table, newEntries)
         }
       })
-    }
-  }
-
-  private updateCurrentModule(): void {
-    if (this.moduleStack.length > 0) {
-      this.currentModule = this.moduleStack[this.moduleStack.length - 1]
-
-      if (!this.tables.has(this.currentModule.name)) {
-        throw new Error(`Missing module: ${this.currentModule.name}`)
-      }
-
-      this.currentTable = this.tables.get(this.currentModule.name)!
     }
   }
 }

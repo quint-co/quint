@@ -17,7 +17,7 @@ describe('checkModes', () => {
   })
 
   function checkModuleModes(quintModule: QuintModule): [Map<bigint, QuintError>, Map<bigint, OpQualifier>] {
-    const mergedTable = mergeTables(collectDefinitions(quintModule).get('wrapper')!, table)
+    const mergedTable = mergeTables(collectDefinitions(quintModule), table)
     const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', mergedTable]])
 
     const inferrer = new EffectInferrer(definitionsTable)

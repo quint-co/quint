@@ -21,6 +21,9 @@ import * as t from './quintTypes'
  * Optionally defines functions for each IR component.
  */
 export interface IRVisitor {
+  enterModule?: (_module: ir.QuintModule) => void
+  exitModule?: (_module: ir.QuintModule) => void
+
   /** General components */
   enterExpr?: (_expr: ir.QuintEx) => void
   exitExpr?: (_expr: ir.QuintEx) => void
@@ -44,8 +47,6 @@ export interface IRVisitor {
   exitImport?: (_def: ir.QuintImport) => void
   enterInstance?: (_def: ir.QuintInstance) => void
   exitInstance?: (_def: ir.QuintInstance) => void
-  enterModuleDef?: (_def: ir.QuintModuleDef) => void
-  exitModuleDef?: (_def: ir.QuintModuleDef) => void
 
   /** Expressions */
   enterName?: (_expr: ir.QuintName) => void
@@ -102,10 +103,15 @@ export interface IRVisitor {
  * @returns nothing, any collected information has to be a state inside the IRVisitor instance.
  */
 export function walkModule(visitor: IRVisitor, quintModule: ir.QuintModule): void {
-  const moduleDef: ir.QuintModuleDef = {
-    kind: 'module', id: quintModule.id + 1n, module: quintModule,
+  if (visitor.enterModule) {
+    visitor.enterModule(quintModule)
   }
-  walkDefinition(visitor, moduleDef)
+
+  quintModule.defs.forEach((def) => walkDefinition(visitor, def))
+
+  if (visitor.exitModule) {
+    visitor.exitModule(quintModule)
+  }
 }
 
 /**
@@ -293,16 +299,6 @@ export function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
       def.overrides.forEach(e => walkExpression(visitor, e[1]))
       if (visitor.exitInstance) {
         visitor.exitInstance(def)
-      }
-      break
-    case 'module':
-      if (visitor.enterModuleDef) {
-        visitor.enterModuleDef(def)
-      }
-      def.module.defs.forEach(def => walkDefinition(visitor, def))
-
-      if (visitor.exitModuleDef) {
-        visitor.exitModuleDef(def)
       }
       break
     case 'import':

@@ -99,10 +99,11 @@ export function
  * Note that the IR may be ill-typed and some names may be unresolved.
  * The main goal of this pass is to translate a sequence of characters into IR.
  */
-export function
-parsePhase1(idGen: IdGenerator,
-            text: string,
-            sourceLocation: string): ParseResult<ParserPhase1> {
+export function parsePhase1(
+  idGen: IdGenerator,
+  text: string,
+  sourceLocation: string
+): ParseResult<ParserPhase1> {
   const errorMessages: ErrorMessage[] = []
   const parser = setupParser(text, sourceLocation, errorMessages)
   // run the parser
@@ -117,8 +118,8 @@ parsePhase1(idGen: IdGenerator,
 
     if (listener.errors.length > 0) {
       return left(listener.errors)
-    } else if (listener.topModules.length > 0) {
-      return right({ modules: listener.topModules, sourceMap: listener.sourceMap })
+    } else if (listener.modules.length > 0) {
+      return right({ modules: listener.modules, sourceMap: listener.sourceMap })
     } else {
       // istanbul ignore next
       throw new Error('Illegal state: root module is undefined. Please report a bug.')
@@ -135,47 +136,47 @@ export function parsePhase2(phase1Data: ParserPhase1): ParseResult<ParserPhase2>
 
   return phase1Data.modules.reduce((result: ParseResult<ParserPhase2>, module) => {
     const scopeTree = treeFromModule(module)
-    let definitions = collectDefinitions(module)
-    result.map(r => definitions = new Map([...r.table.entries(), ...definitions.entries()]))
+    const table = collectDefinitions(module)
+    result.map(r => r.table.set(module.name, table))
 
-    const importResult: Either<ErrorMessage[], LookupTableByModule> = resolveImports(module, definitions)
-      .map(defs => definitions = defs)
-      .mapLeft((errorMap): ErrorMessage[] => {
-        const errorLocator = mkErrorMessage(sourceMap)
-        return Array.from(errorMap, errorLocator)
+    const importResult: Either<ErrorMessage[], LookupTableByModule> = result.chain(r =>
+      resolveImports(module, r.table)
+        .map(t => r.table.set(module.name, t))
+        .mapLeft((errorMap): ErrorMessage[] => {
+          const errorLocator = mkErrorMessage(sourceMap)
+          return Array.from(errorMap, errorLocator)
+        })
+    )
+
+    const conflictResult: Either<ErrorMessage[], void> =
+      scanConflicts(table, scopeTree).mapLeft((conflicts): ErrorMessage[] => {
+        return conflicts.map(conflict => {
+          let msg, sources
+          if (conflict.sources.some(source => source.kind === 'builtin')) {
+            msg = `Built-in name ${conflict.identifier} is redefined in module ${module.name}`
+            sources = conflict.sources.filter(source => source.kind === 'user')
+          } else {
+            msg = `Conflicting definitions found for name ${conflict.identifier} in module ${module.name}`
+            sources = conflict.sources
+          }
+
+          const locs = sources.map(source => {
+            const id = source.kind === 'user' ? source.reference : 0n // Impossible case, but TS requires the check
+            let sourceLoc = sourceMap.get(id)
+            if (!sourceLoc) {
+              console.error(`No source location found for ${id}. Please report a bug.`)
+              return unknownLoc
+            } else {
+              return sourceLoc
+            }
+          })
+
+          return { explanation: msg, locs }
+        })
       })
 
-    const conflictResult: Either<ErrorMessage[], void[]> =
-      mergeInMany([...definitions.entries()].map(([moduleName, defs]) => {
-        return scanConflicts(defs, scopeTree).mapLeft((conflicts): ErrorMessage[] => {
-          return conflicts.map(conflict => {
-            let msg, sources
-            if (conflict.sources.some(source => source.kind === 'builtin')) {
-              msg = `Built-in name ${conflict.identifier} is redefined in module ${moduleName}`
-              sources = conflict.sources.filter(source => source.kind === 'user')
-            } else {
-              msg = `Conflicting definitions found for name ${conflict.identifier} in module ${moduleName}`
-              sources = conflict.sources
-            }
-
-            const locs = sources.map(source => {
-              const id = source.kind === 'user' ? source.reference : 0n // Impossible case, but TS requires the check
-              let sourceLoc = sourceMap.get(id)
-              if (!sourceLoc) {
-                console.error(`No source location found for ${id}. Please report a bug.`)
-                return unknownLoc
-              } else {
-                return sourceLoc
-              }
-            })
-
-            return { explanation: msg, locs }
-          })
-        })
-      })).mapLeft(errors => errors.flat())
-
     const resolutionResult: Either<ErrorMessage[], void> =
-      resolveNames(module, definitions, scopeTree).mapLeft(errors => {
+      resolveNames(module, table, scopeTree).mapLeft(errors => {
         // Build error message with resolution explanation and the location obtained from sourceMap
         return errors.map(error => {
           const msg = `Failed to resolve ` +
@@ -197,7 +198,7 @@ export function parsePhase2(phase1Data: ParserPhase1): ParseResult<ParserPhase2>
       })
 
     return mergeInMany([importResult, conflictResult, resolutionResult])
-      .chain(([table, _, __]) => result.map(r => ({ ...phase1Data, table: new Map([...r.table, ...table]) })))
+      .chain((_) => result.map(r => ({ ...phase1Data, table: r.table })))
       .mapLeft(errors => errors.flat())
   }, right({ table: new Map<string, LookupTable>(), ...phase1Data }))
 }

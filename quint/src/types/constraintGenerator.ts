@@ -13,7 +13,7 @@
  */
 
 import { IRVisitor } from '../IRVisitor'
-import { QuintApp, QuintBool, QuintConst, QuintDef, QuintEx, QuintInstance, QuintInt, QuintLambda, QuintLet, QuintModule, QuintModuleDef, QuintName, QuintOpDef, QuintStr, QuintVar } from '../quintIr'
+import { QuintApp, QuintBool, QuintConst, QuintDef, QuintEx, QuintInstance, QuintInt, QuintLambda, QuintLet, QuintModule, QuintName, QuintOpDef, QuintStr, QuintVar } from '../quintIr'
 import { QuintType, typeNames } from '../quintTypes'
 import { expressionToString, rowToString, typeToString } from '../IRprinting'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
@@ -32,9 +32,9 @@ type solvingFunctionType = (_table: LookupTable, _constraint: Constraint)
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
-  constructor(solvingFunction: solvingFunctionType, lookupTable: LookupTableByModule) {
+  constructor(solvingFunction: solvingFunctionType, tables: LookupTableByModule) {
     this.solvingFunction = solvingFunction
-    this.lookupTable = lookupTable
+    this.tables = tables
     this.freshVarGenerator = new FreshVarGenerator()
   }
 
@@ -45,27 +45,22 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   private constraints: Constraint[] = []
 
   private builtinSignatures: Map<string, Signature> = getSignatures()
-  private lookupTable: LookupTableByModule
+  private tables: LookupTableByModule
   private freshVarGenerator: FreshVarGenerator
 
   // Track location descriptions for error tree traces
   private location: string = ''
 
-  private currentModule?: QuintModule
   private currentTable: LookupTable = newTable({})
   private currentScopeTree: ScopeTree = { value: 0n, children: [] }
-  private moduleStack: QuintModule[] = []
 
-  enterModuleDef(def: QuintModuleDef): void {
-    this.moduleStack.push(def.module)
-
-    this.updateCurrentModule()
+  enterModule(module: QuintModule): void {
+    this.currentScopeTree = treeFromModule(module)
+    this.currentTable = this.tables.get(module.name) ?? newTable({})
   }
 
-  exitModuleDef(_: QuintModuleDef): void {
-    this.moduleStack.pop()
-
-    this.updateCurrentModule()
+  exitModule(module: QuintModule): void {
+    this.tables.set(module.name, this.currentTable)
   }
 
   enterExpr(e: QuintEx) {
@@ -294,16 +289,6 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
     const subs = compose(this.currentTable, typeSubs, rowSubs)
     return applySubstitution(this.currentTable, subs, t.type)
-  }
-
-  private updateCurrentModule(): void {
-    if (this.moduleStack.length > 0) {
-      this.currentModule = this.moduleStack[this.moduleStack.length - 1]
-
-      const moduleTable = this.lookupTable.get(this.currentModule!.name)!
-      this.currentTable = moduleTable
-      this.currentScopeTree = treeFromModule(this.currentModule)
-    }
   }
 }
 
