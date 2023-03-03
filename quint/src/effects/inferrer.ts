@@ -92,9 +92,9 @@ export class EffectInferrer implements IRVisitor {
 
     switch (def.kind) {
       case 'param': {
-        /*  { kind: 'param', identifier: p } ∈ Γ
-         * ------------------------------------ (NAME-PARAM)
-         *          Γ ⊢ v: Read[r_p]
+        /* { kind: 'param', identifier: p, reference: ref } ∈ Γ
+         * ------------------------------------------------------- (NAME-PARAM)
+         *          Γ ⊢ p: e_p_ref
          */
         let result: Either<Error, EffectScheme>
         if (def.reference) {
@@ -119,9 +119,9 @@ export class EffectInferrer implements IRVisitor {
         break
       }
       case 'var': {
-        /*  { kind: 'var', identifier: v } ∈ Γ
-         * ------------------------------------ (NAME-VAR)
-         *          Γ ⊢ v: Read[v]
+        /* { kind: 'var', identifier: name } ∈ Γ
+         *-------------------------------------- (NAME-VAR)
+         *      Γ ⊢ name: Read[name]
          */
         const effect: Effect = {
           kind: 'concrete', components: [{ kind: 'read', entity: { kind: 'concrete', stateVariables: [{ name: expr.name, reference: expr.id }] } }],
@@ -131,11 +131,13 @@ export class EffectInferrer implements IRVisitor {
       }
       case 'val':
       case 'def': {
-        /* { identifier: op, effect: E } ∈ Γ
-         * -------------------------------------- (NAME-OP)
-         *           Γ ⊢ op: E
+        /* { kind: 'def', identifier: op, body: e } ∈ Γ   Γ ⊢ e : E
+         * ----------------------------------------------------------- (NAME-OP)
+         *                       Γ ⊢ op: E
+         *     built-in signature of op is E
+         * --------------------------------------- (NAME-OP-BUILTIN)
+         *          Γ ⊢ op: E
          */
-
         if (def.reference) {
           this.addToResults(expr.id, this.fetchResult(def.reference))
         }
@@ -150,8 +152,8 @@ export class EffectInferrer implements IRVisitor {
   }
 
   /* { identifier: op, effect: E } ∈ Γ    Γ ⊢ p0:E0 ... Γ ⊢ pn:EN
-   * Eres <- freshVar   S = unify(E, (E0, ...,  EN) => Eres)
-   * ------------------------------------------------------ (APP)
+   * Eres <- freshVar   S = unify(newInstance(E), (E0, ...,  EN) => Eres)
+   * ------------------------------------------------------------------- (APP)
    *           Γ ⊢ op(p0, ..., pn): S(Eres)
    */
   exitApp(expr: QuintApp): void {
@@ -248,7 +250,7 @@ export class EffectInferrer implements IRVisitor {
 
   /*                  Γ ⊢ e: E
    * ---------------------------------------------- (LAMBDA)
-   * Γ ⊢ (p0, ..., pn) => e: (E0, ..., En) => E
+   * Γ ⊢ (p0, ..., pn) => e: quantify((E0, ..., En) => E)
    */
   exitLambda(lambda: QuintLambda): void {
     if (this.errors.size > 0) {
