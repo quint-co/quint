@@ -186,13 +186,17 @@ export class EffectInferrer implements IRVisitor {
           .chain(s => {
             this.substitutions = s
 
-            paramsResult.map(effects => zip(effects, expr.args.map(a => a.id)).forEach(([effect, id]) => {
-              if (!effect || !id) {
-                throw new Error('Invalid arrays')
-              }
-              const r = applySubstitution(s, effect).map(toScheme)
-              this.addToResults(id, r)
-            }))
+            paramsResult.map(effects =>
+              zip(effects, expr.args.map(a => a.id)).forEach(([effect, id]) => {
+                if (!effect || !id) {
+                  // Impossible: effects and expr.args are the same length
+                  throw new Error(`Expected ${expr.args.length} effects, but got ${effects.length}`)
+                }
+
+                const r = applySubstitution(s, effect).map(toScheme)
+                this.addToResults(id, r)
+              })
+            )
 
             return applySubstitution(s, resultEffect)
           })

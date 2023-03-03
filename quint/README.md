@@ -124,6 +124,23 @@ npm install <dep> --save-dev
 [yalc]: https://www.npmjs.com/package/yalc
 [txm]: https://www.npmjs.com/package/txm
 
+#### Integration with Apalache
+
+We maintain a set of integration tests against the latest release of Apalache.
+These tests are meant to catch any breaking changes requiring updates to
+Apalache's support for quint.
+
+Generally, you should not have to run these tests locally, leaving the
+validation to our CI. But should you need to run these tests locally, you can do
+so with
+
+```sh
+npm run apalache-integration
+```
+
+It is required that you have a Java version meeting [Apalache's minimum
+requirements](https://apalache.informal.systems/docs/apalache/installation/jvm.html).
+
 ### Parser
 
 We use the `antlr4ts` parser generator to compile the BNF like notation specified

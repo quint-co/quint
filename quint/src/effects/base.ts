@@ -57,8 +57,8 @@ export type EffectScheme = {
   entityVariables: Set<string>,
 }
 
-/* A state entity */
-export interface StateVariables {
+/* A state variable */
+export interface StateVariable {
   /* The variable name */
   name: string,
   /* The id of the expression on which the state variable ocurred */
@@ -71,7 +71,7 @@ export interface StateVariables {
  */
 export type Entity =
   /* A list of state variables */
-  | { kind: 'concrete', stateVariables: StateVariables[] }
+  | { kind: 'concrete', stateVariables: StateVariable[] }
   /* A variable representing some entity */
   | { kind: 'variable', name: string, reference?: bigint }
   /* A combination of entities */
@@ -194,7 +194,7 @@ export function entityNames(entity: Entity): string[] {
  *
  * @returns a list of state entities
  */
-export function stateVariables(entity: Entity): StateVariables[] {
+export function stateVariables(entity: Entity): StateVariable[] {
   switch (entity.kind) {
     case 'variable':
       return []

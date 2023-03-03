@@ -13,7 +13,7 @@
  */
 
 import isEqual from 'lodash.isequal'
-import { ConcreteEffect, Effect, Entity, StateVariables } from './base'
+import { ConcreteEffect, Effect, Entity, StateVariable } from './base'
 
 /**
  * Simplifies a concrete effect by:
@@ -58,7 +58,7 @@ export function flattenUnions(entity: Entity): Entity {
   switch (entity.kind) {
     case 'union': {
       const unionEntities: Entity[] = []
-      const vars: StateVariables[] = []
+      const vars: StateVariable[] = []
       const flattenEntities = entity.entities.map(v => flattenUnions(v))
       flattenEntities.forEach(v => {
         switch (v.kind) {
@@ -91,7 +91,7 @@ function deduplicateEntity(entity: Entity): Entity {
     case 'variable':
       return entity
     case 'concrete':
-      return { kind: 'concrete', stateVariables: Array.from(new Set<StateVariables>(entity.stateVariables)) }
+      return { kind: 'concrete', stateVariables: Array.from(new Set<StateVariable>(entity.stateVariables)) }
     case 'union': {
       const nestedEntities = entity.entities.map(v => deduplicateEntity(v))
       const unique: Entity[] = []
