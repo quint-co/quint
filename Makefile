@@ -4,7 +4,7 @@
 # @file
 # @version 0.1
 
-.PHONY: vscode quint local tutorials all apalache
+.PHONY: vscode quint local tutorials docs all apalache
 
 all: vscode
 
@@ -32,6 +32,10 @@ local: quint
 # Generate the tutorials
 tutorials:
 	$(MAKE) -C tutorials
+
+# Generate the docs
+docs:
+	$(MAKE) -C docs
 
 BUILD_DIR := quint/_build
 quint/_build:
