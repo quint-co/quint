@@ -75,6 +75,22 @@ describe('resolveImports', () => {
         })
         .mapLeft(e => assert.fail(`Expected no error, got ${e}`))
     })
+
+    it('fails importing itself', () => {
+      const quintModule = buildModuleWithDefs([
+        'import wrapper.*',
+        'module w = wrapper(c1 = 1)',
+      ])
+
+      const result = resolveImports(quintModule, tables)
+
+      result
+        .mapLeft(errors => assert.sameDeepMembers([...errors.entries()], [
+          [1n, { code: 'QNT407', message: 'Cannot import wrapper inside itself', data: {} }],
+          [3n, { code: 'QNT407', message: 'Cannot instance wrapper inside itself', data: {} }],
+        ]))
+        .map(_ => assert.fail('Expected errors'))
+    })
   })
 
   describe('unexisting modules', () => {
