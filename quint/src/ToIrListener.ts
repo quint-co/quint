@@ -28,7 +28,7 @@ export class ToIrListener implements QuintListener {
   /**
    * The modules derived as a result of parsing
    */
-  topModules: QuintModule[] = []
+  modules: QuintModule[] = []
   /**
    * The stack of types that can be used as a result of type parsing.
    */
@@ -43,8 +43,6 @@ export class ToIrListener implements QuintListener {
 
   private sourceLocation: string = ''
 
-  // the stack of definitions per module
-  private moduleDefStack: QuintDef[][] = []
   // the stack of definitions
   private definitionStack: QuintDef[] = []
   // the stack of expressions
@@ -57,12 +55,6 @@ export class ToIrListener implements QuintListener {
   private docStack: string[] = []
   // an internal counter to assign unique numbers
   private idGen: IdGenerator
-
-  enterModule() {
-    // save the definitions of the previous module
-    this.moduleDefStack.push(this.definitionStack)
-    this.definitionStack = []
-  }
 
   // translate: module <name> { ... }
   exitModule(ctx: p.ModuleContext) {
@@ -77,21 +69,10 @@ export class ToIrListener implements QuintListener {
       name: ctx.IDENTIFIER().text,
       defs: this.definitionStack,
     }
-    // add the module to the definition stack
-    this.definitionStack = this.moduleDefStack.pop()!
 
-    const id = this.idGen.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.definitionStack.push({
-      id,
-      kind: 'module',
-      module,
-    })
+    this.definitionStack = []
 
-    if (this.moduleDefStack.length == 0) {
-      // save the top module
-      this.topModules.push(module)
-    }
+    this.modules.push(module)
   }
 
   // translate: const x: type

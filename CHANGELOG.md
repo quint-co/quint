@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 ### Removed
+
+- Nested modules are no longer supported (#674)
+
 ### Fixed
 
 - Modes for nested definitions are now properly checked (#661)

@@ -230,13 +230,6 @@ export interface QuintInstance extends WithId {
   identityOverride: boolean
 }
 
-export interface QuintModuleDef extends WithId {
-  /** definition kind ('module') */
-  kind: 'module',
-  /** nested module */
-  module: QuintModule
-}
-
 /**
  * Definition: constant, state variable, operator definition, assumption, instance, module.
  */
@@ -248,7 +241,6 @@ export type QuintDef = (
   | QuintTypeDef
   | QuintImport
   | QuintInstance
-  | QuintModuleDef
 ) & WithOptionalDoc
 
 export function isAnnotatedDef(def: any): def is WithTypeAnnotation {

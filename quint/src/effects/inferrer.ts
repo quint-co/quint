@@ -17,7 +17,7 @@ import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../lookupTable'
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
-import { QuintApp, QuintBool, QuintEx, QuintInt, QuintLambda, QuintLet, QuintModule, QuintModuleDef, QuintName, QuintOpDef, QuintStr } from '../quintIr'
+import { QuintApp, QuintBool, QuintEx, QuintInt, QuintLambda, QuintLet, QuintModule, QuintName, QuintOpDef, QuintStr } from '../quintIr'
 import { Effect, EffectScheme, Signature, effectNames, toScheme, unify } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
@@ -49,6 +49,9 @@ export class EffectInferrer implements IRVisitor {
    *          ids to the corresponding error for any problematic expressions.
    */
   inferEffects(module: QuintModule): EffectInferenceResult {
+    this.currentTable = this.lookupTable.get(module.name) ?? newTable({})
+    this.currentScopeTree = treeFromModule(module)
+
     walkModule(this, module)
     return [this.errors, this.effects]
   }
@@ -66,22 +69,8 @@ export class EffectInferrer implements IRVisitor {
   // Track location descriptions for error tree traces
   private location: string = ''
 
-  private currentModule?: QuintModule
   private currentTable: LookupTable = newTable({})
   private currentScopeTree: ScopeTree = { value: 0n, children: [] }
-  private moduleStack: QuintModule[] = []
-
-  enterModuleDef(def: QuintModuleDef): void {
-    this.moduleStack.push(def.module)
-
-    this.updateCurrentModule()
-  }
-
-  exitModuleDef(_: QuintModuleDef): void {
-    this.moduleStack.pop()
-
-    this.updateCurrentModule()
-  }
 
   enterExpr(e: QuintEx) {
     this.location = `Inferring effect for ${expressionToString(e)}`
@@ -359,16 +348,6 @@ export class EffectInferrer implements IRVisitor {
       throw new Error(`Error applying fresh names substitution: ${errorTreeToString(result.value)} `)
     } else {
       return result.value
-    }
-  }
-
-  private updateCurrentModule(): void {
-    if (this.moduleStack.length > 0) {
-      this.currentModule = this.moduleStack[this.moduleStack.length - 1]
-
-      const moduleTable = this.lookupTable.get(this.currentModule!.name)!
-      this.currentTable = moduleTable
-      this.currentScopeTree = treeFromModule(this.currentModule)
     }
   }
 }

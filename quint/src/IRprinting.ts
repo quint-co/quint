@@ -61,8 +61,6 @@ export function definitionToString(def: QuintDef, includeBody:boolean=true): str
       const overrides = def.overrides.map(o => `${o[0]} = ${expressionToString(o[1])}`).join(', ')
       return `module ${def.name} = ${def.protoName}(${overrides})`
     }
-    case 'module':
-      return moduleToString(def.module)
   }
 }
 

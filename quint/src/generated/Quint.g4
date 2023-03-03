@@ -21,7 +21,6 @@ unit :    'const' IDENTIFIER ':' type                     # const
         | 'var'   IDENTIFIER ':' type                     # var
         | 'assume' identOrHole '=' expr                   # assume
         | operDef                                         # oper
-        | module                                          # moduleNested
         | instanceMod                                     # instance
         | 'type' IDENTIFIER                               # typedef
         | 'type' IDENTIFIER '=' type                      # typedef

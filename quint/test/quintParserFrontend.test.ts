@@ -6,7 +6,7 @@ import JSONbig from 'json-bigint'
 import { compactSourceMap, parsePhase1, parsePhase2 } from '../src/quintParserFrontend'
 import { lf } from 'eol'
 import { right } from '@sweet-monads/either'
-import { QuintDef, QuintEx, QuintModule, QuintModuleDef, QuintType, QuintTypeDef } from '../src'
+import { QuintDef, QuintEx, QuintModule, QuintType, QuintTypeDef } from '../src'
 import { IRVisitor, walkModule } from '../src/IRVisitor'
 import { newIdGenerator } from '../src/idGenerator'
 
@@ -175,8 +175,8 @@ function collectIds(module: QuintModule): bigint[] {
         ids.add(t.id)
       }
     },
-    exitModuleDef(m: QuintModuleDef) {
-      ids.add(m.module.id)
+    exitModule(m: QuintModule) {
+      ids.add(m.id)
     },
   }
 

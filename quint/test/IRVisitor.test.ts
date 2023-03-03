@@ -2,8 +2,8 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { buildModuleWithDefs } from './builders/ir'
 import { IRVisitor, walkModule } from '../src/IRVisitor'
-import { QuintDef, QuintEx } from '../src/quintIr'
-import { definitionToString, expressionToString, typeToString } from '../src/IRprinting'
+import { QuintDef, QuintEx, QuintModule } from '../src/quintIr'
+import { definitionToString, expressionToString, moduleToString, typeToString } from '../src/IRprinting'
 import { QuintType } from '../src/quintTypes'
 
 describe('walkModule', () => {
@@ -13,7 +13,6 @@ describe('walkModule', () => {
     'type MY_TYPE = int',
     'assume _ = N > 1',
     'import M.*',
-    'module A { var x: int }',
     'module A1 = A(x = "rainbow")',
     'val f = S.filter(x => x + 1)',
     'def l = val x = false { x }',
@@ -86,26 +85,11 @@ describe('walkModule', () => {
     }
 
     const enteredDefinitions = [
-      `module wrapper {
-  var a: int
-  const B: int
-  type MY_TYPE = int
-  assume _ = igt(N, 1)
-  import M.*
-  module A {
-  var x: int
-}
-  module A1 = A(x = "rainbow")
-  val f = filter(S, (x => iadd(x, 1)))
-  def l = val x = false { x }
-}`,
       'var a: int',
       'const B: int',
       'type MY_TYPE = int',
       'assume _ = igt(N, 1)',
       'import M.*',
-      'module A {\n  var x: int\n}',
-      'var x: int', // From inside module A
       'module A1 = A(x = "rainbow")',
       'val f = filter(S, (x => iadd(x, 1)))',
       'def l = val x = false { x }',
@@ -118,25 +102,10 @@ describe('walkModule', () => {
       'type MY_TYPE = int',
       'assume _ = igt(N, 1)',
       'import M.*',
-      'var x: int', // From inside module A
-      'module A {\n  var x: int\n}',
       'module A1 = A(x = "rainbow")',
       'val f = filter(S, (x => iadd(x, 1)))',
       'val x = false', // From the let definition
       'def l = val x = false { x }',
-      `module wrapper {
-  var a: int
-  const B: int
-  type MY_TYPE = int
-  assume _ = igt(N, 1)
-  import M.*
-  module A {
-  var x: int
-}
-  module A1 = A(x = "rainbow")
-  val f = filter(S, (x => iadd(x, 1)))
-  def l = val x = false { x }
-}`,
     ]
 
     const visitor = new TestVisitor()
@@ -163,7 +132,6 @@ describe('walkModule', () => {
       'int', // var a: int
       'int', // const B: int
       'int', // type MY_TYPE = int
-      'int', // module A {\n  var x: int\n}
     ]
 
     const exitedTypes = enteredTypes
@@ -249,7 +217,6 @@ describe('walkModule', () => {
 
       const enteredDefinitions = [
         'var a: int',
-        'var x: int',
       ]
 
       const exitedDefinitions = enteredDefinitions
@@ -364,17 +331,17 @@ describe('walkModule', () => {
       assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
     })
 
-    it('finds module definitions', () => {
+    it('finds the module itself', () => {
       class TestVisitor implements IRVisitor {
-        entered: QuintDef[] = []
-        exited: QuintDef[] = []
+        entered: QuintModule[] = []
+        exited: QuintModule[] = []
 
-        enterModuleDef(def: QuintDef): void {
-          this.entered.push(def)
+        enterModule(module: QuintModule): void {
+          this.entered.push(module)
         }
 
-        exitModuleDef(def: QuintDef): void {
-          this.exited.push(def)
+        exitModule(module: QuintModule): void {
+          this.exited.push(module)
         }
       }
 
@@ -385,37 +352,18 @@ describe('walkModule', () => {
   type MY_TYPE = int
   assume _ = igt(N, 1)
   import M.*
-  module A {
-  var x: int
-}
   module A1 = A(x = "rainbow")
   val f = filter(S, (x => iadd(x, 1)))
   def l = val x = false { x }
 }`,
-        'module A {\n  var x: int\n}',
       ]
 
-      const exitedDefinitions = [
-        'module A {\n  var x: int\n}',
-        `module wrapper {
-  var a: int
-  const B: int
-  type MY_TYPE = int
-  assume _ = igt(N, 1)
-  import M.*
-  module A {
-  var x: int
-}
-  module A1 = A(x = "rainbow")
-  val f = filter(S, (x => iadd(x, 1)))
-  def l = val x = false { x }
-}`,
-      ]
+      const exitedDefinitions = enteredDefinitions
 
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
-      assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
+      assert.deepEqual(visitor.entered.map(m => moduleToString(m)), enteredDefinitions)
+      assert.deepEqual(visitor.exited.map(m => moduleToString(m)), exitedDefinitions)
     })
   })
 

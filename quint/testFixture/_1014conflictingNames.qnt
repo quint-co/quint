@@ -1,3 +1,7 @@
+module M {
+  def b = 2
+}
+
 module conflictingNames {
   // name conflict
   var a : int
@@ -12,10 +16,6 @@ module conflictingNames {
 
   def b = 1
 
-  module nested {
-    def b = 2
-  }
-
   // conflicting name coming from import
-  import nested.b
+  import M.b
 }
