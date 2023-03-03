@@ -88,7 +88,8 @@ Substitutions S, Si ::= {e ↦ E} | {v ↦ V} | S ∪ S
 
 ### Representation
 
-This section describes how the effects are represented in typescript code, as this is not straightforward.
+This section describes how the effects are represented in typescript code, as
+this is not straightforward.
 
 #### Entities
 
@@ -184,14 +185,22 @@ The effect `Read['x', 'y'] & Update[v]` would be represented as:
 }
 ```
 
-Effect signatures for operators may depend on its parameters. For that purpose, we also define arrow effects, which carry a list of effects for the respective parameters of an operator and the resulting effect.
+Effect signatures for operators may depend on its parameters. For that purpose,
+we also define arrow effects, which carry a list of effects for the respective
+parameters of an operator and the resulting effect.
 
 ```typescript
 /* Arrow effects for expressions with effects depending on parameters */
 export interface ArrowEffect { kind: 'arrow', params: Effect[], result: Effect }
 ```
 
-Just like with entities, an effect can also be a variable, which can be substituted with another effect during inferrence. Those are the most general kinds of effects, and will be used when no effect information for a given expression is available, i.e. `def foo(x) = x` will have a `(e) => e` effect signature, where `e` is an effect variable, since there are no constraints on the effect of `x`. An effect variable is equivalent to `Read[v1] & Update[v2] & Temporal[v3]`, where `v1`, `v2` and `v3` are entity variables.
+Just like with entities, an effect can also be a variable, which can be
+substituted with another effect during inferrence. Those are the most general
+kinds of effects, and will be used when no effect information for a given
+expression is available, i.e. `def foo(x) = x` will have a `(e) => e` effect
+signature, where `e` is an effect variable, since there are no constraints on
+the effect of `x`. An effect variable is equivalent to `Read[v1] & Update[v2] &
+Temporal[v3]`, where `v1`, `v2` and `v3` are entity variables.
 
 ```typescript
 /* A variable representing some effect */
@@ -200,7 +209,9 @@ export interface EffectVariable { kind: 'variable', name: string }
 
 #### Effect Schemes
 
-Both effects and entities can be universally quantified, and we need to keep track of which of them are. Effect schemes are responsible to keep track of that information.
+Both effects and entities can be universally quantified, and we need to keep
+track of which of them are. Effect schemes are responsible to keep track of that
+information.
 
 ```typescript
 /*
@@ -218,7 +229,8 @@ export type EffectScheme = {
 }
 ```
 
-An effect like `(e25, Read[v22]) => Read['x', v22])` with both `e25` and `v22` being universally quantified would be represented as:
+An effect like `(e25, Read[v22]) => Read['x', v22])` with both `e25` and `v22`
+being universally quantified would be represented as:
 
 ```typescript
 {
@@ -235,8 +247,15 @@ And pretty printed as:
 
 ### Unification
 
-Should be pretty straightforward variable substitution for both effect variables
-and entity variables.
+Unification is pretty standard. It recursively looks at effect variables and
+entity variables to bind. The most complicated part must be the unification of
+unions of variables, which requires unifying sets. Since that is too complicated
+to implement, we use some workarounds to avoid having to do that in the few
+cases where we would need to. Those workarounds revolve on reasoning about one
+of the unions as a single new variable, which is done by introducing a new
+hashed variable, which is then binded to the other union. A hashed variable for
+the union `r1, r2, r3` is `r1#r2#r3`. These hashing procedure is also used to
+unpack tuples into lambdas that take more than one argument. 
 
 ### Inference rules
 
@@ -246,7 +265,7 @@ correctly as `Update[<variable_name>]`), constants have no effect (Pure).
 
 ```
 { kind: 'var', identifier: name } ∈ Γ
------------------------------------- (NAME-VAR)
+-------------------------------------- (NAME-VAR)
       Γ ⊢ name: Read[name]
 
 { kind: 'const', identifier: c } ∈ Γ
@@ -254,7 +273,9 @@ correctly as `Update[<variable_name>]`), constants have no effect (Pure).
       Γ ⊢ c: Pure
 ```
 
-Lambda parameters have an effect variable with a name built from the parameter name and its reference, which can always be found in the context. This way, we ensure that the effect is the same for all ocurrences of that parameter.
+Lambda parameters have an effect variable with a name built from the parameter
+name and its reference, which can always be found in the context. This way, we
+ensure that the effect is the same for all ocurrences of that parameter.
 
 ```
  { kind: 'param', identifier: p, reference: ref } ∈ Γ
@@ -304,7 +325,7 @@ Operator definitions (top-level or inside let-in's): infer signature and add it 
 Lambda parameters can have any shape since we allow high order operators.
 ```
                  Γ ⊢ e: E
----------------------------------------------- (LAMBDA)
+---------------------------------------------------- (LAMBDA)
 Γ ⊢ (p0, ..., pn) => e: quantify((E0, ..., En) => E)
 ```
 
@@ -312,16 +333,27 @@ Let-in expressions assume the effect of the expression in its body.
 ```
     Γ ⊢ e: E
 ----------------------- (LET)
-Γ ⊢ <opdef> { e }: E
+  Γ ⊢ <opdef> { e }: E
 ```
 
 Literals are always `Pure`.
 
 ### Built-in operators
 
-The effect signatures for built-in operators are defined with two different methods. For general operators that only propagate the effects of its arguments, we define some helper functions that generate signatures for a given arity and a list of component kinds to be propagated. For operators that have a more meaningful effect, we define them directly.
+The effect signatures for built-in operators are defined with two different
+methods. For general operators that only propagate the effects of its arguments,
+we define some helper functions that generate signatures for a given arity and a
+list of component kinds to be propagated. For operators that have a more
+meaningful effect, we define them directly.
 
-Here's an example of a helper function used for most binary operators (such as `+` and `implies`). In the general case, we want to allow expressions that read or apply temporal operators over state variables to be given as arguments to those binary operators, but not updates should be allowed. Therefore, we only propagate `read` and `temporal` components. The function `propagateComponents` takes a list of component kinds and returns a function that takes the arity of the operator and returns the signature for that arity. The signature for arity 2 is the following:
+Here's an example of a helper function used for most binary operators (such as
+`+` and `implies`). In the general case, we want to allow expressions that read
+or apply temporal operators over state variables to be given as arguments to
+those binary operators, but not updates should be allowed. Therefore, we only
+propagate `read` and `temporal` components. The function `propagateComponents`
+takes a list of component kinds and returns a function that takes the arity of
+the operator and returns the signature for that arity. The signature for arity 2
+is the following:
 
 ```
 propagateComponents(['read', 'temporal'])(2):
@@ -338,8 +370,16 @@ assign: (Read[r1], Read[r2]) => Read[r2] & Update[r1]
 
 ### Checking modes
 
-TODO
+Modes are qualifiers for quint operators that describe an expectation of the
+user about the effect of that operator. We avoid exposing effects to the user,
+so we use the effect information only to check against the given modes,
+providing error messages with fix instructions when the given mode is stricter
+than the inferred effect.
 
 ### Checking for multiple updates
 
-Multiple updates of the same state variable are not allowed in quint. We check for those after the inferrence process, by scanning the inferred effects in an additional static analysis procedure called `MultipleUpdatesChecker`. Previously, we performed this check during unification, but then it was not possible to report meaningful error messages.
+Multiple updates of the same state variable are not allowed in quint. We check
+for those after the inferrence process, by scanning the inferred effects in an
+additional static analysis procedure called `MultipleUpdatesChecker`.
+Previously, we performed this check during unification, but then it was not
+possible to report meaningful error messages.
