@@ -40,7 +40,6 @@ const booleanOperators = [
 ]
 
 const setOperators = [
-  { name: 'guess', type: '(Set[a], (a) => bool) => bool' },
   { name: 'exists', type: '(Set[a], (a) => bool) => bool' },
   { name: 'forall', type: '(Set[a], (a) => bool) => bool' },
   { name: 'in', type: '(a, Set[a]) => bool' },
