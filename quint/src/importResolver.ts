@@ -79,7 +79,7 @@ class ImportResolverVisitor implements IRVisitor {
       // Importing current module
       this.errors.set(def.id, {
         code: 'QNT407',
-        message: `Cannot instance ${def.protoName} inside itself`,
+        message: `Cannot instantiate ${def.protoName} inside ${def.protoName}`,
         data: {},
       })
       return
