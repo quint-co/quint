@@ -14,6 +14,7 @@ These tutorials are currently available in the classic format:
  - [Tutorial on Booleans](./lesson1-booleans/booleans.md)
  - [Tutorial on integers](./lesson2-integers/integers.md)
  - [Tutorial on basic protocol anatomy and tests](./lesson3-anatomy/coin.md)
+ - [Tutorial on sets](./lesson4-sets/sets.md)
 
 ## 2. CodeTour tutorials
 
