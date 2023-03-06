@@ -136,7 +136,7 @@ class ImportResolverVisitor implements IRVisitor {
       // Importing current module
       this.errors.set(def.id, {
         code: 'QNT407',
-        message: `Cannot import ${def.path} inside itself`,
+        message: `Cannot import ${def.path} inside ${def.path}`,
         data: {},
       })
       return

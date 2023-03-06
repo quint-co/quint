@@ -86,8 +86,8 @@ describe('resolveImports', () => {
 
       result
         .mapLeft(errors => assert.sameDeepMembers([...errors.entries()], [
-          [1n, { code: 'QNT407', message: 'Cannot import wrapper inside itself', data: {} }],
-          [3n, { code: 'QNT407', message: 'Cannot instance wrapper inside itself', data: {} }],
+          [1n, { code: 'QNT407', message: 'Cannot import wrapper inside wrapper', data: {} }],
+          [3n, { code: 'QNT407', message: 'Cannot instantiate wrapper inside wrapper', data: {} }],
         ]))
         .map(_ => assert.fail('Expected errors'))
     })
