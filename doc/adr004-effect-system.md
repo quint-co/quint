@@ -6,27 +6,25 @@
 
 ## Summary
 
-Reasoning about state changes in a system is difficult. It is even tricky to try
-to automate analysis of the aggregate state updates and reads that are specified
-by a set of operators. We would like to have an elegant way of ensuring
-specifications are valid before we hand them to the model checker, and a way of
-providing users with clear feedback on when they are making invalid updates (or
-failing to make required updates).
+Reasoning about state changes in a system is difficult. Automating analysis of
+the aggregate state updates and reads specified by operators is tricky. To
+ensure specifications are valid before they are handed to the model checker and
+to provide users with clear feedback on invalid updates or failures to make
+required updates, we propose a simple read & update effect system for Quint.
+This system has two objectives:
 
-This is the proposal of a simple read & update effect system for Quint, with two
-objectives:
-1. Check that Quint modes are respected regarding their effects,
+1. Check that Quint modes are respected regarding their effects.
 2. Check that each variable is updated exactly once at `next`.
 
 ## Context
 
-Towards being more explicit about different components of a specification, each
-Quint definition has a mode. Because there's also the possibility of higher order
-operators, we thought it would be wise to define modes in terms of effects in a
-system that is independent of the type system and much simpler. With a read &
-update effect system, we can also check whether a composition of actions in
-`next` is enough to define updates to all variables and ensure that is not
-re-defining any variable.
+We want to be more explicit about different components of a specification. For
+this reason, each Quint definition has a mode. Because there's also the
+possibility of higher order operators, we thought it would be wise to define
+modes in terms of effects in a system that is independent of the type system and
+much simpler. With a read & update effect system, we can also check whether a
+composition of actions in `next` is enough to define updates to all variables
+and ensure that no variable is redefined.
 
 ## Options
 
@@ -38,9 +36,9 @@ simplicity.
 
 ## Solution
 
-Quint expressions and definitions can be assigned both a type and an effect, which
-are independent of each other. Here are some examples of inferred effects for
-some definitions:
+Quint expressions and definitions can be assigned both a type and an effect,
+which are independent of each other. Here are some examples of inferred effects
+for some definitions:
 
 ```
 var x: int
@@ -60,20 +58,22 @@ used for inference.
 ### How restrictive should `pure` definitions be?
 
 We have two alternatives for the `pure` keyword:
+
 1. Only allow Pure parameters and Pure result
-2. Allow parameters with Read effects as long as the resulting effect doesn't Read
-   any other variables
+2. Allow parameters with Read effects as long as the resulting effect doesn't
+   read any other variables
 
 Option 1 may be too restrictive and barely used, since, for most operators, it's
 desirable that they can be applied to state variables (i.e. `+` in `x + 1` if
 `x` is a state variable).
 
-#### Decision
+### Decision
 
-We decided to implement option 2, which also applies of all other modes. That
-is, a definition is pure iff it doesn't add any read effect on top of the
-effects the parameters may carry. A definition is `def` iff it introduces a new
-`Read` effect, but doesn't introduce any `Update` or `Temporal` effects. And so on.
+We have decided to implement option 2 for all modes. According to this option, a
+definition is considered pure if it does not add any read effect on top of the
+effects that the parameters may carry. A definition is considered `def` if it
+introduces a new `Read` effect, but does not introduce any `Update` or
+`Temporal` effects. The same principle applies to other types of definitions.
 
 ### Notation
 
@@ -91,22 +91,23 @@ Substitutions S, Si ::= {e ↦ E} | {v ↦ V} | S ∪ S
 This section describes how the effects are represented in typescript code, as
 this is not straightforward.
 
-#### Entities
+### Entities
 
-Effects act upon entities. An entity is normally a list of state variables, but
-we also need to represent them as a variable that can latter be replaced with
-the actual state variables and combinations (unions) of those, in order to
-define effect signatures for operators. Imagine an operator such as `+`
-(`iadd`), that takes two arguments, each with its own effect, and returns a
-value whose effect is the combination of the effects of the arguments. We could
-write the signature of `iadd` as:
+Effects act upon entities, which are typically lists of state variables.
+However, we also need to represent entities as a variable that can later be
+replaced with the actual state variables and combinations (unions) of those.
+This is necessary for defining effect signatures for operators.
+
+Consider an operator such as `+` (`iadd`), which takes two arguments, each with
+its own effect, and returns a value whose effect is the combination of the
+effects of the arguments. We could write the signature of `iadd` as:
 
 ```
 iadd: (Read[r1] & Temporal[t1]) => (Read[r2] & Temporal[t2]) => Read[r1, r2] & Temporal[t1, t2]
 ```
 
 Here, `r1`, `r2`, `t1` and `t2` are entity variables, which can be substituted
-with the actual state variables during inferrence.
+with the actual state variables during inference.
 
 A concrete entity with no state variables and an union of zero entities are both
 considered empty entities, and we say them nullify the effect actin upon them.
@@ -141,7 +142,7 @@ export interface StateVariable {
 }
 ```
 
-#### Effects
+### Effects
 
 An effect can also have three different forms: concrete, arrow and variable.
 
@@ -207,7 +208,7 @@ Temporal[v3]`, where `v1`, `v2` and `v3` are entity variables.
 export interface EffectVariable { kind: 'variable', name: string }
 ```
 
-#### Effect Schemes
+### Effect Schemes
 
 Both effects and entities can be universally quantified, and we need to keep
 track of which of them are. Effect schemes are responsible to keep track of that
@@ -234,7 +235,7 @@ being universally quantified would be represented as:
 
 ```typescript
 {
-  effect: ...
+  effect: ...,
   effectVariables: new Set(['e25']),
   entityVariables: new Set(['v22']),
 }
@@ -255,7 +256,7 @@ cases where we would need to. Those workarounds revolve on reasoning about one
 of the unions as a single new variable, which is done by introducing a new
 hashed variable, which is then binded to the other union. A hashed variable for
 the union `r1, r2, r3` is `r1#r2#r3`. These hashing procedure is also used to
-unpack tuples into lambdas that take more than one argument. 
+unpack tuples into lambdas that take more than one argument.
 
 ### Inference rules
 
@@ -292,7 +293,7 @@ Names of operators resolve to the effect of their respective bodies.
 ```
 
 If the operator is a built-in, we just return its signature.
-0
+
 ```
     built-in signature of op is E
 --------------------------------------- (NAME-OP-BUILTIN)
@@ -315,7 +316,9 @@ Eres <- freshVar   S = unify(newInstance(E), (E0, ...,  EN) => Eres)
           Γ ⊢ op(p0, ..., pn): S(Eres)
 ```
 
-Operator definitions (top-level or inside let-in's): infer signature and add it to context
+Operator definitions (top-level or inside let-in's): infer signature and add it
+to context
+
 ```
                        Γ ⊢ e: E
 ------------------------------------------------------------- (OPDEF)
@@ -339,21 +342,19 @@ Let-in expressions assume the effect of the expression in its body.
 Literals are always `Pure`.
 
 ### Built-in operators
+The effect signatures for built-in operators are defined using two different
+methods. For general operators that only propagate the effects of their
+arguments, we define helper functions that generate signatures for a given arity
+and list of component kinds to be propagated. For operators that have more
+meaningful effects, we define their signatures directly.
 
-The effect signatures for built-in operators are defined with two different
-methods. For general operators that only propagate the effects of its arguments,
-we define some helper functions that generate signatures for a given arity and a
-list of component kinds to be propagated. For operators that have a more
-meaningful effect, we define them directly.
-
-Here's an example of a helper function used for most binary operators (such as
-`+` and `implies`). In the general case, we want to allow expressions that read
-or apply temporal operators over state variables to be given as arguments to
-those binary operators, but not updates should be allowed. Therefore, we only
-propagate `read` and `temporal` components. The function `propagateComponents`
-takes a list of component kinds and returns a function that takes the arity of
-the operator and returns the signature for that arity. The signature for arity 2
-is the following:
+For example, most binary operators (such as `+` and `implies`) use a helper
+function that allows expressions to be given as arguments that read or apply
+temporal operators over state variables, but does not allow updates. Therefore,
+we only propagate `read` and `temporal` components. The `propagateComponents`
+function takes a list of component kinds and returns a function that takes the
+arity of the operator and returns the signature for that arity. The signature
+for arity 2 is the following:
 
 ```
 propagateComponents(['read', 'temporal'])(2):
@@ -370,16 +371,16 @@ assign: (Read[r1], Read[r2]) => Read[r2] & Update[r1]
 
 ### Checking modes
 
-Modes are qualifiers for quint operators that describe an expectation of the
-user about the effect of that operator. We avoid exposing effects to the user,
-so we use the effect information only to check against the given modes,
-providing error messages with fix instructions when the given mode is stricter
-than the inferred effect.
+Modes are qualifiers for quint operators that describe the user's expectation
+about the effect of that operator. We avoid exposing effects to the user, so we
+only use the effect information to check against the given modes. We provide
+error messages with fix instructions when the given mode is stricter than the
+inferred effect.
 
 ### Checking for multiple updates
 
-Multiple updates of the same state variable are not allowed in quint. We check
-for those after the inferrence process, by scanning the inferred effects in an
+Multiple updates of the same state variable are not allowed in Quint. We check
+for these after the inference process by scanning the inferred effects in an
 additional static analysis procedure called `MultipleUpdatesChecker`.
 Previously, we performed this check during unification, but then it was not
 possible to report meaningful error messages.
