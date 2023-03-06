@@ -158,7 +158,7 @@ export type Effect =
 ```
 
 The most basic representation of effects is a concrete effect, and it is
-structured as a list of effect components. An effect component has kind and an
+structured as a list of effect components. An effect component has a kind and an
 entity. The kind can be `read`, `update` or `temporal`, and the entity is the
 entity the effect acts upon.
 
@@ -262,13 +262,17 @@ unpack tuples into lambdas that take more than one argument.
 
 Inferring names: variables have effect `Read[<variable_name>]` (unless they are
 used in as targets of assignment, where their resulting effect will be inferred
-correctly as `Update[<variable_name>]`), constants have no effect (Pure).
+correctly as `Update[<variable_name>]`).
 
 ```
 { kind: 'var', identifier: name } ∈ Γ
 -------------------------------------- (NAME-VAR)
       Γ ⊢ name: Read[name]
+```
 
+Constants are always pure.
+
+```
 { kind: 'const', identifier: c } ∈ Γ
 ------------------------------------- (NAME-CONST)
       Γ ⊢ c: Pure
@@ -281,7 +285,7 @@ ensure that the effect is the same for all ocurrences of that parameter.
 ```
  { kind: 'param', identifier: p, reference: ref } ∈ Γ
 ------------------------------------------------------- (NAME-PARAM)
-         Γ ⊢ p: e_p_ref
+               Γ ⊢ p: e_p_ref
 ```
 
 Names of operators resolve to the effect of their respective bodies.
@@ -292,20 +296,19 @@ Names of operators resolve to the effect of their respective bodies.
                       Γ ⊢ op: E
 ```
 
-If the operator is a built-in, we just return its signature.
+If the operator is a built-in, we just return its signature (as built-in
+operators do not have bodies).
 
 ```
     built-in signature of op is E
 --------------------------------------- (NAME-OP-BUILTIN)
-         Γ ⊢ op: E
+              Γ ⊢ op: E
 ```
 
 Inferring operator application: find its signature and try to unify with the
 parameters. Assume `freshVar` always returns unused names, and `unify` returns a
 substitution unifying the two given effects. `S(E)` applies said substitution to
-an effect `E`.
-
-Assume `newInstance(E)` returns `E`  with all its quantified variables
+an effect `E`. Assume `newInstance(E)` returns `E`  with all its quantified variables
 substituted by fresh ones, and `quantify(E)` finds all non free variables in the
 `E` and quantifies them.
 
@@ -334,7 +337,7 @@ Lambda parameters can have any shape since we allow high order operators.
 
 Let-in expressions assume the effect of the expression in its body.
 ```
-    Γ ⊢ e: E
+        Γ ⊢ e: E
 ----------------------- (LET)
   Γ ⊢ <opdef> { e }: E
 ```
@@ -342,6 +345,7 @@ Let-in expressions assume the effect of the expression in its body.
 Literals are always `Pure`.
 
 ### Built-in operators
+
 The effect signatures for built-in operators are defined using two different
 methods. For general operators that only propagate the effects of their
 arguments, we define helper functions that generate signatures for a given arity
@@ -349,21 +353,21 @@ and list of component kinds to be propagated. For operators that have more
 meaningful effects, we define their signatures directly.
 
 For example, most binary operators (such as `+` and `implies`) use a helper
-function that allows expressions to be given as arguments that read or apply
-temporal operators over state variables, but does not allow updates. Therefore,
-we only propagate `read` and `temporal` components. The `propagateComponents`
-function takes a list of component kinds and returns a function that takes the
-arity of the operator and returns the signature for that arity. The signature
-for arity 2 is the following:
+function that allows expressions in the arguments to read or apply temporal
+operators over state variables, but not to update them. Therefore, we only
+propagate `read` and `temporal` components. The `propagateComponents` function
+takes a list of component kinds and returns a function that takes the arity of
+the operator and returns the signature for that arity. The signature for arity 2
+is the following:
 
-```
+```bluespec
 propagateComponents(['read', 'temporal'])(2):
   (Read[r1] & Temporal[t1], Read[r2] & Temporal[t2]) => Read[r1, r2] & Temporal[t1, t2]
 ```
 
 Here are some examples of signatures for non-general operators:
 
-```
+```bluespec
 always: (Read[r] & Temporal[t]) => Temporal[r, t]
 guess: (Read[r1], (Read[r1]) => Read[r2] & Update[u]) => Read[r1, r2] & Update[u]
 assign: (Read[r1], Read[r2]) => Read[r2] & Update[r1]
@@ -377,6 +381,31 @@ only use the effect information to check against the given modes. We provide
 error messages with fix instructions when the given mode is stricter than the
 inferred effect.
 
+Consider the following example:
+
+```bluespec
+module foo {
+  var x: int
+
+  def bar(y) = x' = y
+}
+```
+
+The inferred effect for `bar` is:
+
+```
+∀ v0 . (Read[v0]) => Read[v0] & Update['x']
+```
+
+Which is incompatible with `def` mode. The mode checker will report an error:
+
+```
+test.qnt:4:3 - error: [QNT200] def operators may only read state variables, but operator `bar` updates variables 'x'. Use action instead.
+4:   def bar(y) = x' = y
+     ^^^^^^^^^^^^^^^^^^^
+
+```
+
 ### Checking for multiple updates
 
 Multiple updates of the same state variable are not allowed in Quint. We check
@@ -384,3 +413,34 @@ for these after the inference process by scanning the inferred effects in an
 additional static analysis procedure called `MultipleUpdatesChecker`.
 Previously, we performed this check during unification, but then it was not
 possible to report meaningful error messages.
+
+Consider the following spec that updates variable `x` twice:
+
+```bluespec
+module foo {
+  var x: int
+
+  action bar = all {
+    x' = 1,
+    x' = 2,
+  }
+}
+```
+
+The inferred effect for `bar` is:
+
+```
+Update['x', 'x']
+```
+
+The multiple updates checker will report the following errors:
+
+```
+test.qnt:5:5 - error: [QNT202] Multiple updates of variable x
+5:     x' = 1,
+       ^^^^^^
+
+test.qnt:6:5 - error: [QNT202] Multiple updates of variable x
+6:     x' = 2,
+       ^^^^^^
+```
