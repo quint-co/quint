@@ -233,7 +233,7 @@ Yes, @KryptoCoffeeCat, this is the way!
 ```
 
 
-After having the moment of revelation @KryptoCoffeeCat, decide to redefine the
+After having the moment of revelation, @KryptoCoffeeCat decide to redefine the
 set `availablePairs`. This time the set should contain sets like
 `Set("ATOM", "JUNO")` instead of pairs like `("ATOM", "JUNO")`.
 @KryptoCoffeeCat does not want to write the whole table again. So they quickly
