@@ -1231,46 +1231,6 @@ export class CompilerVisitor implements IRVisitor {
     )
   }
 
-  // Apply the operator guess.
-  // TODO: to be removed: https://github.com/informalsystems/quint/issues/376
-  private applyGuess(sourceId: bigint): void {
-    if (this.compStack.length < 2) {
-      this.addCompileError(sourceId,
-        'Not enough arguments on stack for "guess"')
-      return
-    }
-
-    const [setComp, fun] = this.compStack.splice(-2)
-    const comp = {
-      eval: (): Maybe<EvalResult> => {
-        // compute the values of the arguments at this point
-        return setComp.eval().map(set => {
-          const callable = fun as Callable
-          // save the values of the next variables, as guess may update them
-          const valuesBefore = this.snapshotNextVars()
-          // TODO: the number of retries should be controlled in the settings
-          // https://github.com/informalsystems/quint/issues/279
-          for (let retries = 0; retries < 3; retries++) {
-            // randomly pick an element
-            const elem = (set as RuntimeValue).pick(this.rand())
-            callable.registers[0].registerValue = just(elem)
-            const result = callable.eval()
-            if (result.isNone()) {
-              return result
-            } else if (result.isJust() &&
-                (result.value as RuntimeValue).toBool()) {
-              return result
-            }
-            // the body of guess evaluates to false, try again
-            this.recoverNextVars(valuesBefore)
-          }
-          return just(rv.mkBool(false))
-        }).join()
-      },
-    }
-    this.compStack.push(comp)
-  }
-
   // The simulator core: produce multiple random runs
   // and check the given state invariant (state assertion).
   //

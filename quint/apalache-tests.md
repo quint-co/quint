@@ -33,4 +33,3 @@ apalache-mc check _build/integers.qnt.json | grep -o "EXITCODE: OK"
 ```
 EXITCODE: OK
 ```
-
