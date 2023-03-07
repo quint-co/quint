@@ -256,7 +256,7 @@ export class EffectInferrer implements IRVisitor {
     }
     const exprResult = this.fetchResult(lambda.expr.id)
     const params = mergeInMany(lambda.params.map(p => {
-      return this.fetchSignature(p, lambda.expr.id, 2)
+      return this.fetchSignature(p.name, p.id, 2)
         .chain(e => applySubstitution(this.substitutions, e))
     }))
 

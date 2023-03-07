@@ -163,7 +163,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     }
     const result = this.fetchResult(e.expr.id)
       .chain(resultType => {
-        const paramTypes = mergeInMany(e.params.map(p => this.fetchSignature(p, e.expr.id, 2)))
+        const paramTypes = mergeInMany(e.params.map(p => this.fetchSignature(p.name, p.id, 2)))
         return paramTypes.map((ts): TypeScheme => {
           const newType: QuintType = { kind: 'oper', args: ts, res: resultType.type }
           return { ...typeNames(newType), type: newType }

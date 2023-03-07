@@ -37,10 +37,10 @@ unit :    'const' IDENTIFIER ':' type                     # const
 // Otherwise, the parser would start recognizing parameters everywhere.
 operDef : qualifier normalCallName
             ( /* ML-like parameter lists */
-                '(' (IDENTIFIER (',' IDENTIFIER)*)? ')' (':' type)?
+                '(' (identOrHole (',' identOrHole)*)? ')' (':' type)?
                 | ':' type
               /* C-like parameter lists */
-                | '(' (IDENTIFIER ':' type (',' IDENTIFIER ':' type)*) ')' ':' type
+                | '(' (identOrHole ':' type (',' identOrHole ':' type)*) ')' ':' type
             )?
             ('=' expr)? ';'?
         ;

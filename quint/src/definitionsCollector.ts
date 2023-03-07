@@ -176,7 +176,7 @@ class DefinitionsCollectorVisitor implements IRVisitor {
 
   enterLambda(expr: QuintLambda): void {
     expr.params.forEach(p => {
-      this.collectValueDefinition('param', p, expr.id, expr.id)
+      this.collectValueDefinition('param', p.name, p.id, expr.id)
     })
   }
 

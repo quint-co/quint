@@ -3,7 +3,7 @@ import { IdGenerator } from './idGenerator'
 import { ParserRuleContext } from 'antlr4ts/ParserRuleContext'
 import { QuintListener } from './generated/QuintListener'
 import {
-  OpQualifier, QuintDef, QuintEx, QuintModule, QuintName, QuintOpDef
+  OpQualifier, QuintDef, QuintEx, QuintLambdaParameter, QuintModule, QuintName, QuintOpDef
 } from './quintIr'
 import { QuintType, Row } from './quintTypes'
 import { strict as assert } from 'assert'
@@ -48,7 +48,9 @@ export class ToIrListener implements QuintListener {
   // the stack of expressions
   private exprStack: QuintEx[] = []
   // the stack of parameter lists
-  private paramStack: string[][] = []
+  private paramStack: QuintLambdaParameter[]= []
+  // the stack for import paths
+  private pathStack: string[] = []
   // the stack of rows for records and unions
   private rowStack: Row[] = []
   // the stack of documentation lines before a definition
@@ -217,8 +219,8 @@ export class ToIrListener implements QuintListener {
 
   // The definition parameters may be of two kinds: C-like and ML-like.
   // Handle them here.
-  processOpDefParams(ctx: p.OperDefContext): [string[], Maybe<QuintType>] {
-    const params: string[] = ctx.IDENTIFIER().map(n => n.text)
+  processOpDefParams(ctx: p.OperDefContext): [QuintLambdaParameter[], Maybe<QuintType>] {
+    const params = this.popParams(ctx.identOrHole().length)
     // types of the parameters and of the result
     const ntypes = ctx.type().length
     if (ntypes === 0) {
@@ -246,13 +248,12 @@ export class ToIrListener implements QuintListener {
   exitAssume(ctx: any) {
     const expr = this.exprStack.pop()!
     const params = this.paramStack.pop()!
-    assert(params.length === 1)
     const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     const assume: QuintDef = {
       id,
       kind: 'assume',
-      name: params[0],
+      name: params.name,
       assumption: expr,
     }
     this.definitionStack.push(assume)
@@ -260,8 +261,8 @@ export class ToIrListener implements QuintListener {
 
   // import Foo.x or import Foo.*
   exitImportDef(ctx: any) {
-    const ident = this.paramStack.pop()![0]
-    const path = this.paramStack.pop()![0]
+    const ident = this.pathStack.pop()!
+    const path = this.pathStack.pop()!
     const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     const importDef: QuintDef = {
@@ -276,7 +277,7 @@ export class ToIrListener implements QuintListener {
   // a path that used in imports
   exitPath(ctx: p.PathContext) {
     const path = ctx.IDENTIFIER().reduce((s, id) => s + id.text, '')
-    this.paramStack.push([path])
+    this.pathStack.push(path)
   }
 
   // type ALIAS = set(int)
@@ -487,15 +488,12 @@ export class ToIrListener implements QuintListener {
     const expr = this.exprStack.pop()
     const params = this.popParams(ctx.identOrHole().length)
     if (expr) {
-      // every parameter in params is a singleton list, make one list
-      const singletons = params.map(ps => ps[0])
-
       const id = this.idGen.nextId()
       this.sourceMap.set(id, this.loc(ctx))
       this.exprStack.push({
         id,
         kind: 'lambda',
-        params: singletons,
+        params: params,
         qualifier: 'def',
         expr,
       })
@@ -508,12 +506,15 @@ export class ToIrListener implements QuintListener {
 
   // a single parameter in a lambda expression: an identifier or '_'
   exitIdentOrHole(ctx: p.IdentOrHoleContext) {
+    const id = this.idGen.nextId()
+    this.sourceMap.set(id, this.loc(ctx))
+
     if (ctx.text === '_') {
       // a hole '_'
-      this.paramStack.push(['_'])
+      this.paramStack.push({ name: '_', id })
     } else {
       // a variable name
-      this.paramStack.push([ctx.IDENTIFIER()!.text])
+      this.paramStack.push({ name: ctx.IDENTIFIER()!.text, id })
     }
   }
 
@@ -521,10 +522,10 @@ export class ToIrListener implements QuintListener {
   exitIdentOrStar(ctx: p.IdentOrStarContext) {
     if (ctx.text === '*') {
       // a hole '_'
-      this.paramStack.push(['*'])
+      this.pathStack.push('*')
     } else {
       // a variable name
-      this.paramStack.push([ctx.IDENTIFIER()!.text])
+      this.pathStack.push(ctx.IDENTIFIER()!.text)
     }
   }
 
@@ -711,7 +712,7 @@ export class ToIrListener implements QuintListener {
       const lam: QuintEx = {
         id: lamId,
         kind: 'lambda',
-        params: params[i],
+        params: [params[i]],
         qualifier: 'def',
         expr: rhsExprs[i],
       }
@@ -987,9 +988,13 @@ export class ToIrListener implements QuintListener {
   }
 
   // pop n patterns out of patternStack
-  private popParams(n: number): string[][] {
+  private popParams(n: number): QuintLambdaParameter[] {
+    if (n === 0) {
+      // Special case since splice(-0) returns the whole array
+      return []
+    }
     assert(this.paramStack.length >= n, 'popParams: too few elements in patternStack')
-    const es: string[][] = this.paramStack.splice(-n)
+    const es: QuintLambdaParameter[] = this.paramStack.splice(-n)
     return es
   }
 
