@@ -15,7 +15,6 @@
 
 import { definitionToString } from "./IRprinting";
 import { QuintModule } from "./quintIr";
-import { compact } from 'lodash'
 
 /**
  * A documentation entry for a definition, compatible with LSP responses for signature help
@@ -35,13 +34,6 @@ export interface DocumentationEntry {
  */
 export function produceDocs(quintModule: QuintModule): Map<string, DocumentationEntry> {
   const entries = quintModule.defs.map((def) => {
-    if (def.kind === 'module') {
-      // TODO: Produce documentation for nested modules
-
-      // undefined is returned to be later filtered by `compact` from lodash
-      return undefined
-    }
-
     const entry: [string, DocumentationEntry] = [def.name, {
       label: definitionToString(def, false),
       documentation: def.doc,
@@ -50,7 +42,7 @@ export function produceDocs(quintModule: QuintModule): Map<string, Documentation
     return entry
   })
 
-  return new Map<string, DocumentationEntry>(compact(entries))
+  return new Map<string, DocumentationEntry>(entries)
 }
 
 /**

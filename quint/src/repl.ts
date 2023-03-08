@@ -17,7 +17,7 @@ import chalk from 'chalk'
 import { just } from '@sweet-monads/maybe'
 import { left, right } from '@sweet-monads/either'
 
-import { IrErrorMessage, QuintEx } from './quintIr'
+import { QuintEx } from './quintIr'
 import {
   CompilationContext, compileFromCode, contextLookup, lastTraceName
 } from './runtime/compile'
@@ -26,6 +26,7 @@ import {
   ComputableKind, EvalResult, Register, kindName
 } from './runtime/runtime'
 import { ErrorMessage, Loc, probeParse } from './quintParserFrontend'
+import { IdGenerator, newIdGenerator } from './idGenerator'
 
 // tunable settings
 export const settings = {
@@ -37,6 +38,8 @@ type writer = (_text: string) => void
 
 // the internal state of the REPL
 interface ReplState {
+  // generator of unique identifiers
+  idGen: IdGenerator,
   // the history of module definitions loaded from external sources
   moduleHist: string,
   // definitions history
@@ -82,6 +85,7 @@ export function quintRepl(input: Readable,
 
   // the state
   const state: ReplState = {
+    idGen: newIdGenerator(),
     moduleHist: '',
     defsHist: '',
     exprHist: [],
@@ -375,7 +379,7 @@ function loadShadowVars(state: ReplState, context: CompilationContext): void {
 }
 
 // convert a Quint expression to a colored string, tuned for REPL
-function chalkQuintEx(ex: QuintEx): string {
+export function chalkQuintEx(ex: QuintEx): string {
   switch (ex.kind) {
     case 'bool':
       return chalk.yellow(`${ex.value}`)
@@ -470,9 +474,8 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
       'syntax error', moduleText, lineOffset, context.syntaxErrors)
     printErrorMessages(out,
       'static analysis error', moduleText, lineOffset, context.analysisErrors, chalk.yellow)
-    const resolved = resolveErrors(context.sourceMap, context.compileErrors)
     printErrorMessages(out,
-      'compile error', moduleText, lineOffset, resolved)
+      'compile error', moduleText, lineOffset, context.compileErrors)
     out('') // be nice to external programs
   }
 
@@ -501,7 +504,8 @@ ${textToAdd}
     const [moduleText, lineOffset] =
       prepareParserInput(`  action __input =\n${newInput}`)
     // compile the expression or definition and evaluate it
-    const context = compileFromCode(moduleText, '__repl__')
+    const context =
+      compileFromCode(state.idGen, moduleText, '__repl__', () => Math.random())
     if (context.syntaxErrors.length > 0 ||
         context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
       printErrors(moduleText, context, lineOffset)
@@ -519,7 +523,7 @@ ${textToAdd}
         return comp
           .eval()
           .map(value => {
-            const ex = value.toQuintEx()
+            const ex = value.toQuintEx(state.idGen)
             out(chalkQuintEx(ex))
             if (ex.kind === 'bool' && ex.value) {
               // if this was an action and it was successful, save the state
@@ -538,9 +542,9 @@ ${textToAdd}
       })
       .join()
       .mapLeft(msg => {
-        const resolved = resolveErrors(context.sourceMap, context.runtimeErrors)
         // when #618 is implemented, we should remove this
-        printErrorMessages(out, 'runtime error', moduleText, lineOffset, resolved)
+        printErrorMessages(out,
+          'runtime error', moduleText, lineOffset, context.getRuntimeErrors())
         // print the error message produced by the lookup
         out(chalk.red(msg))
         out('') // be nice to external programs
@@ -552,7 +556,8 @@ ${textToAdd}
     // embed expression text into a module at the top level
     const [moduleText, lineOffset] = prepareParserInput(newInput)
     // compile the module and add it to history if everything worked
-    const context = compileFromCode(moduleText, '__repl__')
+    const context =
+      compileFromCode(state.idGen, moduleText, '__repl__', () => Math.random())
     if (context.values.size === 0 ||
         context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
       printErrors(moduleText, context, lineOffset)
@@ -566,30 +571,16 @@ ${textToAdd}
   return true
 }
 
-// resolve source locations of IR errors
-function resolveErrors(sourceMap: Map<bigint, Loc>, errors: IrErrorMessage[]): ErrorMessage[] {
-  const unknownLoc = {
-    source: '<unknown>',
-    start: { line: 0, col: 0, index: 0 },
-  }
-  return errors.map(msg => {
-    return {
-      explanation: msg.explanation,
-      locs: msg.refs.map(id => sourceMap.get(id) ?? unknownLoc),
-    }
-  })
-}
-
 // print error messages with proper colors
 function printErrorMessages(out: writer,
   kind: string, text: string, lineOffset: number, messages: ErrorMessage[],
   color: (_text: string) => string = chalk.red) {
   // display the error messages and highlight the error places
   const finder = lineColumn(text)
-  for (const e of messages) {
+  messages.forEach(e => {
     const msg = formatError(text, finder, e, lineOffset)
     out(color(`${kind}: ${msg}`))
-  }
+  })
 }
 
 // if a line start with '>>> ' or '... ', trim these markers

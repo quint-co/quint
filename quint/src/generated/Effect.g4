@@ -7,12 +7,12 @@ grammar Effect;
 
 effect:   concrete                                           # concreteEffect
         | '(' (effect (', ' effect)*)? ')' '=>' effect       # arrowEffect
-        | IDENTIFIER                                         # quantifiedEffect
+        | IDENTIFIER                                         # variableEffect
         ;
 
-read: 'Read' '[' vars ']' ;
-update: 'Update' '[' vars ']' ;
-temporal: 'Temporal' '[' vars ']' ;
+read: 'Read' '[' entity ']' ;
+update: 'Update' '[' entity ']' ;
+temporal: 'Temporal' '[' entity ']' ;
 
 concrete:   read                                        # readOnly
           | update                                      # updateOnly
@@ -22,7 +22,7 @@ concrete:   read                                        # readOnly
           | 'Pure'                                      # pure
           ;
 
-vars : ((stateVarRef | IDENTIFIER) (', ' (stateVarRef | IDENTIFIER))*)? ;
+entity : ((stateVarRef | IDENTIFIER) (', ' (stateVarRef | IDENTIFIER))*)? ;
 
 stateVarRef : '\'' IDENTIFIER '\'' ;
 

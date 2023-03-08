@@ -45,12 +45,16 @@ export type ErrorCode =
   | 'QNT200'
   /* QNT201: Instance overrides must be pure values */
   | 'QNT201'
+  /* QNT202: Multiple updates of the same variable */
+  | 'QNT202'
   /* QNT404: Module <name> not found */
   | 'QNT404'
   /* QNT405: Name <name> not found */
   | 'QNT405'
   /* QNT406: Instantiation error */
   | 'QNT406'
+  /* QNT407: Cannot import self */
+  | 'QNT407'
 
 /* Additional data for a Quint error */
 export interface QuintErrorData {

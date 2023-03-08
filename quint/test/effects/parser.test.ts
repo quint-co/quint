@@ -1,7 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { parseEffect } from '../../src/effects/parser'
-import { emptyVariables } from '../../src/effects/base'
 
 describe('parseEffect', () => {
   it('parses read and update effect', () => {
@@ -12,9 +11,10 @@ describe('parseEffect', () => {
       const { value } = effect
       assert.deepEqual(value, {
         kind: 'concrete',
-        read: { kind: 'concrete', vars: ['x', 'y'] },
-        update: { kind: 'quantified', name: 'v' },
-        temporal: emptyVariables,
+        components: [
+          { kind: 'read', entity: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }, { name: 'y', reference: 2n }] } },
+          { kind: 'update', entity: { kind: 'variable', name: 'v' } },
+        ],
       })
     }
   })
@@ -27,9 +27,10 @@ describe('parseEffect', () => {
       const { value } = effect
       assert.deepEqual(value, {
         kind: 'concrete',
-        read: { kind: 'concrete', vars: ['x', 'y'] },
-        update: emptyVariables,
-        temporal: { kind: 'quantified', name: 'v' },
+        components: [
+          { kind: 'read', entity: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }, { name: 'y', reference: 2n }] } },
+          { kind: 'temporal', entity: { kind: 'variable', name: 'v' } },
+        ],
       })
     }
   })
@@ -42,9 +43,9 @@ describe('parseEffect', () => {
       const { value } = effect
       assert.deepEqual(value, {
         kind: 'concrete',
-        read: emptyVariables,
-        update: emptyVariables,
-        temporal: { kind: 'quantified', name: 'v' },
+        components: [{
+          kind: 'temporal', entity: { kind: 'variable', name: 'v' },
+        }],
       })
     }
   })
@@ -60,16 +61,16 @@ describe('parseEffect', () => {
         params: [
           {
             kind: 'concrete',
-            read: { kind: 'quantified', name: 'v' },
-            update: emptyVariables,
-            temporal: emptyVariables,
+            components: [{
+              kind: 'read', entity: { kind: 'variable', name: 'v' },
+            }],
           },
         ],
         result: {
           kind: 'concrete',
-          read: emptyVariables,
-          update: { kind: 'quantified', name: 'v' },
-          temporal: emptyVariables,
+          components: [{
+            kind: 'update', entity: { kind: 'variable', name: 'v' },
+          }],
         },
       })
     }
@@ -86,24 +87,24 @@ describe('parseEffect', () => {
         params: [
           {
             kind: 'arrow',
-            params: [
-              { kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables },
-            ],
-            result: { kind: 'concrete', read: { kind: 'quantified', name: 'v' }, update: emptyVariables, temporal: emptyVariables },
+            params: [{ kind: 'concrete', components: [] }],
+            result: {
+              kind: 'concrete', components: [{
+                kind: 'read', entity: { kind: 'variable', name: 'v' },
+              }],
+            },
           },
           {
             kind: 'arrow',
-            params: [
-              { kind: 'concrete', read: emptyVariables, update: emptyVariables, temporal: emptyVariables },
-            ],
-            result: { kind: 'quantified', name: 'E' },
+            params: [{ kind: 'concrete', components: [] }],
+            result: { kind: 'variable', name: 'E' },
           },
         ],
         result: {
           kind: 'concrete',
-          read: emptyVariables,
-          update: { kind: 'quantified', name: 'v' },
-          temporal: emptyVariables,
+          components: [{
+            kind: 'update', entity: { kind: 'variable', name: 'v' },
+          }],
         },
       })
     }
@@ -120,16 +121,21 @@ describe('parseEffect', () => {
         params: [
           {
             kind: 'concrete',
-            read: { kind: 'union', variables: [{ kind: 'quantified', name: 'v' }, { kind: 'quantified', name: 'w' }] },
-            update: emptyVariables,
-            temporal: emptyVariables,
+            components: [{
+              kind: 'read', entity: {
+                kind: 'union', entities: [
+                  { kind: 'variable', name: 'v' },
+                  { kind: 'variable', name: 'w' },
+                ],
+              },
+            }],
           },
         ],
         result: {
           kind: 'concrete',
-          read: emptyVariables,
-          update: { kind: 'quantified', name: 'v' },
-          temporal: emptyVariables,
+          components: [{
+            kind: 'update', entity: { kind: 'variable', name: 'v' },
+          }],
         },
       })
     }
@@ -146,16 +152,24 @@ describe('parseEffect', () => {
         params: [
           {
             kind: 'concrete',
-            read: { kind: 'union', variables: [{ kind: 'quantified', name: 'v' }, { kind: 'concrete', vars: ['x'] }] },
-            update: emptyVariables,
-            temporal: emptyVariables,
+            components: [{
+              kind: 'read', entity: {
+                kind: 'union', entities: [
+                  { kind: 'variable', name: 'v' }, { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] },
+                ],
+              },
+            }],
           },
         ],
         result: {
           kind: 'concrete',
-          read: emptyVariables,
-          update: { kind: 'union', variables: [{ kind: 'quantified', name: 'v' }, { kind: 'concrete', vars: ['y'] }] },
-          temporal: emptyVariables,
+          components: [{
+            kind: 'update', entity: {
+              kind: 'union', entities: [
+                { kind: 'variable', name: 'v' }, { kind: 'concrete', stateVariables: [{ name: 'y', reference: 2n }] },
+              ],
+            },
+          }],
         },
       })
     }
@@ -172,9 +186,9 @@ describe('parseEffect', () => {
         params: [],
         result: {
           kind: 'concrete',
-          read: emptyVariables,
-          update: { kind: 'quantified', name: 'v' },
-          temporal: emptyVariables,
+          components: [{
+            kind: 'update', entity: { kind: 'variable', name: 'v' },
+          }],
         },
       })
     }
@@ -191,16 +205,16 @@ describe('parseEffect', () => {
         params: [
           {
             kind: 'concrete',
-            read: emptyVariables,
-            update: emptyVariables,
-            temporal: emptyVariables,
+            components: [{
+              kind: 'read', entity: { kind: 'concrete', stateVariables: [] },
+            }],
           },
         ],
         result: {
           kind: 'concrete',
-          read: emptyVariables,
-          update: emptyVariables,
-          temporal: emptyVariables,
+          components: [{
+            kind: 'update', entity: { kind: 'concrete', stateVariables: [] },
+          }],
         },
       })
     }

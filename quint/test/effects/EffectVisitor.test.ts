@@ -69,16 +69,16 @@ describe('walkEffect', () => {
     assert.deepEqual(visitor.exited.map(effectToString), exitedEffects)
   })
 
-  it('finds quantified effects', () => {
+  it('finds variable effects', () => {
     class TestVisitor implements EffectVisitor {
       entered: Effect[] = []
       exited: Effect[] = []
 
-      enterQuantified(e: Effect): void {
+      enterVariable(e: Effect): void {
         this.entered.push(e)
       }
 
-      exitQuantified(e: Effect): void {
+      exitVariable(e: Effect): void {
         this.exited.push(e)
       }
     }

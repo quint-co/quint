@@ -10,7 +10,8 @@
 tutorials: lesson0-helloworld/hello.qnt \
 			lesson1-booleans/booleans.qnt \
 			lesson2-integers/integers.qnt \
-			lesson3-anatomy/coin.qnt
+			lesson3-anatomy/coin.qnt \
+			lesson4-sets/sets.qnt
 	@echo "Updated all tutorials"
 
 %.qnt: %.template.qnt

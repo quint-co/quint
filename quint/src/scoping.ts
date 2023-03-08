@@ -15,7 +15,7 @@
 
 import { IRVisitor, walkModule } from './IRVisitor'
 import { ValueDefinition } from './lookupTable'
-import { QuintDef, QuintEx, QuintModule, QuintModuleDef } from './quintIr'
+import { QuintDef, QuintEx, QuintModule } from './quintIr'
 
 /**
  * A tree structure where nodes are IR ids
@@ -99,11 +99,11 @@ class ScopingVisitor implements IRVisitor {
     this.exitNode()
   }
 
-  enterModuleDef(def: QuintModuleDef): void {
-    this.enterNode(def.module.id)
+  enterModule(module: QuintModule): void {
+    this.enterNode(module.id)
   }
 
-  exitModuleDef(_: QuintModuleDef): void {
+  exitModule(_: QuintModule): void {
     this.exitNode()
   }
 

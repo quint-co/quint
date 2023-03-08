@@ -1,7 +1,7 @@
 # Lesson 1 - Booleans
 ## 1. Introduction
 
-*15 more steps to the finish line*
+*Progress:*  0%
 
 In this lesson, you will learn how to use Booleans. It should take you real quick to learn this lesson.
 
@@ -13,11 +13,11 @@ the details, check [booleans.qnt](./booleans.qnt).
         
 ## 2. Boolean literals
 
-*14 more steps to the finish line*
+*Progress:*  6%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // false is a built-in constant
     pure val myFalse = false
@@ -54,11 +54,11 @@ echo "true" | quint
 
 ## 3. Boolean negation
 
-*13 more steps to the finish line*
+*Progress:*  13%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // Boolean negation, which is written as `!x` in some languages
     pure def myNot(x) = not(x)
@@ -82,11 +82,11 @@ echo "not(true)" | quint
 
 ## 4. Boolean equality
 
-*12 more steps to the finish line*
+*Progress:*  20%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // you can compare Booleans for equality
     pure def myEq(x, y) = x == y
@@ -136,11 +136,11 @@ echo "true == 1" | quint
 
 ## 5. Boolean inequality
 
-*11 more steps to the finish line*
+*Progress:*  26%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // you can compare Booleans for inequality
     pure def myNeq(x, y) = x != y
@@ -174,11 +174,11 @@ echo "true != true" | quint
 
 ## 6. Dot form
 
-*10 more steps to the finish line*
+*Progress:*  33%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // you can also write negation like that
     pure def myNot2(x) = x.not()
@@ -206,11 +206,11 @@ echo "false.not" | quint
 
 ## 7. Boolean "and"
 
-*9 more steps to the finish line*
+*Progress:*  40%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // Boolean "and", which is written as `x && y` in some languages
     pure def myAnd(x, y) = x and y
@@ -244,11 +244,11 @@ echo "true and true" | quint
 
 ## 8. Dot form for binary operators
 
-*8 more steps to the finish line*
+*Progress:*  46%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // You can also write Boolean "and" like that in the OOP form
     pure def myAnd2(x, y) = x.and(y)
@@ -277,11 +277,11 @@ This form may be useful with nested formulas like:
           
 ## 9. And works for more than two arguments
 
-*7 more steps to the finish line*
+*Progress:*  53%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // We can apply "and" to more than two arguments
     pure def myAnd3(x, y, z) = and(x, y, z)
@@ -308,11 +308,11 @@ echo "and(true, false, true, false, true)" | quint
 
 ## 10. The and {...} form
 
-*6 more steps to the finish line*
+*Progress:*  60%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     /// When your expressions get bigger, you can stack them in `and { ... }`
     pure def myAnd4(x, y, z) = and {
@@ -338,11 +338,11 @@ echo "and { false == false, true == true }" | quint
 
 ## 11. Boolean "or"
 
-*5 more steps to the finish line*
+*Progress:*  66%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // Boolean "or", which is written as `x || y` in some languages.
     pure def myOr(x, y) = x or y
@@ -375,11 +375,11 @@ echo "true or true" | quint
 
 ## 12. Other forms of "or"
 
-*4 more steps to the finish line*
+*Progress:*  73%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     /// You can also write Boolean "or" like that in the OOP form
     pure def myOr2(x, y) = x.or(y)
@@ -401,11 +401,11 @@ and the `or { ... }`.
         
 ## 13. Boolean implication
 
-*3 more steps to the finish line*
+*Progress:*  80%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     /// Boolean implication.
     /// This operator is equivalent to `not(x).or(y)` as well as to `if (x) y else true`.
@@ -445,11 +445,11 @@ echo "true implies true" | quint
 
 ## 14. Boolean equivalence
 
-*2 more steps to the finish line*
+*Progress:*  86%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     /// Boolean equivalence.
     /// It is equivalent to x == y, but this operator requires the arguments
@@ -492,7 +492,7 @@ echo "true iff true" | quint
 
 ## 15. Suming it up
 
-*1 more step to the finish line*
+*Progress:*  93%
 
 We have covered all the operators over Booleans.
 If you want to see all operators in one place,

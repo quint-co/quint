@@ -19,7 +19,6 @@ import { ConstContext } from "./QuintParser";
 import { VarContext } from "./QuintParser";
 import { AssumeContext } from "./QuintParser";
 import { OperContext } from "./QuintParser";
-import { ModuleNestedContext } from "./QuintParser";
 import { InstanceContext } from "./QuintParser";
 import { TypedefContext } from "./QuintParser";
 import { ImportDefContext } from "./QuintParser";
@@ -288,19 +287,6 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitOper?: (ctx: OperContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `moduleNested`
-	 * labeled alternative in `QuintParser.unit`.
-	 * @param ctx the parse tree
-	 */
-	enterModuleNested?: (ctx: ModuleNestedContext) => void;
-	/**
-	 * Exit a parse tree produced by the `moduleNested`
-	 * labeled alternative in `QuintParser.unit`.
-	 * @param ctx the parse tree
-	 */
-	exitModuleNested?: (ctx: ModuleNestedContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `instance`

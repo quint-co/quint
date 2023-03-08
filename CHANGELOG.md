@@ -8,8 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+
+- Inferred effects are now properly quantified (#658)
+
+### Deprecated
+### Removed
+
+- Nested modules are no longer supported (#674)
+
+### Fixed
+
+- Modes for nested definitions are now properly checked (#661)
+- All basic operators can now be used with temporal formulas (#646)
+- Effect checking performance for large specs is massively improved (#669)
+- A module can no longer import or instance itself (#676)
+
+### Security
+
+## v0.6.0 -- 2023-02-22
+
+### Added
 
 - command `test` to run unit tests (#634)
+- command `run` to run stateful simulations (#659)
 - option `--with-lookup` of the command `parse` (#639)
 
 ### Changed
@@ -18,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Mode errors are better explained and include a fix suggestion (#619)
 - Typechecking now reports errors when instance overrides are not compatible with
   the original definition (#622)
+- Effect errors for multiple updates of the same variable are clearer and more precise (#641)
 
 ### Deprecated
 ### Removed

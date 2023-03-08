@@ -12,8 +12,8 @@
  * @module
  */
 
-import { Effect, Variables } from './base'
-import { Substitutions } from './substitutions'
+import { Effect, EffectComponent, EffectScheme, Entity } from './base'
+import { Substitutions, applySubstitution, compose } from './substitutions'
 
 /**
  * Formats the string representation of  an effect
@@ -25,23 +25,15 @@ import { Substitutions } from './substitutions'
 export function effectToString(e: Effect): string {
   switch (e.kind) {
     case 'concrete': {
-      const output = []
-      if (e.read.kind !== 'concrete' || e.read.vars.length > 0) {
-        output.push(`Read[${variablesToString(e.read)}]`)
-      }
-      if (e.update.kind !== 'concrete' || e.update.vars.length > 0) {
-        output.push(`Update[${variablesToString(e.update)}]`)
-      }
-      if (e.temporal.kind !== 'concrete' || e.temporal.vars.length > 0) {
-        output.push(`Temporal[${variablesToString(e.temporal)}]`)
-      }
+      const output = e.components.map(effectComponentToString)
+
       if (output.length > 0) {
         return output.join(' & ')
       } else {
         return 'Pure'
       }
     }
-    case 'quantified': return e.name
+    case 'variable': return e.name
     case 'arrow': {
       const params = e.params.map(effectToString)
       const result = effectToString(e.result)
@@ -51,17 +43,56 @@ export function effectToString(e: Effect): string {
 }
 
 /**
- * Formats the string representation of effect variables
+ * Formats the string representation of an effect scheme
  *
- * @param v the Variables instance to be formatted
+ * @param e the effect scheme to be formatted
  *
- * @returns a string with the pretty printed variables
+ * @returns a string with the formatted effect scheme
  */
-export function variablesToString(v: Variables): string {
+export function effectSchemeToString(e: EffectScheme): string {
+  const effectNames = Array.from(e.effectVariables)
+  const entityNames = Array.from(e.entityVariables)
+  const vars: string[] = []
+
+  const effectSubs: Substitutions = effectNames.map((name, i) => {
+    vars.push(`e${i}`)
+    return { kind: 'effect', name, value: { kind: 'variable', name: `e${i}` } }
+  })
+
+  const entitySubs: Substitutions = entityNames.map((name, i) => {
+    vars.push(`v${i}`)
+    return { kind: 'entity', name: name, value: { kind: 'variable', name: `v${i}` } }
+  })
+
+  const subs = compose(effectSubs, entitySubs)
+  const effect = subs.chain(s => applySubstitution(s, e.effect))
+  if (effect.isLeft()) {
+    throw new Error('Unexpected error while formatting effect scheme')
+  } else {
+    const varsString = vars.length > 0 ? `∀ ${vars.join(', ')} . ` : ''
+    return `${varsString}${effectToString(effect.value)}`
+  }
+}
+
+export function effectComponentToString(c: EffectComponent): string {
+  switch (c.kind) {
+    case 'read': return `Read[${entityToString(c.entity)}]`
+    case 'update': return `Update[${entityToString(c.entity)}]`
+    case 'temporal': return `Temporal[${entityToString(c.entity)}]`
+  }
+}
+/**
+ * Formats the string representation of effect entities
+ *
+ * @param v the Entity to be formatted
+ *
+ * @returns a string with the pretty printed entity
+ */
+export function entityToString(v: Entity): string {
   switch (v.kind) {
-    case 'concrete': return v.vars.map(v => `'${v}'`).join(', ')
-    case 'quantified': return v.name
-    case 'union': return v.variables.map(variablesToString).join(', ')
+    case 'concrete': return v.stateVariables.map(v => `'${v.name}'`).join(', ')
+    case 'variable': return v.name
+    case 'union': return v.entities.map(entityToString).join(', ')
   }
 }
 
@@ -76,7 +107,7 @@ export function substitutionsToString(subs: Substitutions): string {
   const subsString = subs.map(s => {
     switch (s.kind) {
       case 'effect': return `${s.name} |-> ${effectToString(s.value)}`
-      case 'variable': return `${s.name} |-> ${variablesToString(s.value)}`
+      case 'entity': return `${s.name} |-> ${entityToString(s.value)}`
     }
   })
 

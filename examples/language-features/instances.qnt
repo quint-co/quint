@@ -1,20 +1,20 @@
+module A {
+  const x: int
+  const y: bool
+  const z: str
+
+  pure def f(a) = x + 1
+  pure def g(b) = not(b)
+}
+
 module Instances {
-  module A {
-    const x: int
-    const y: bool
-    const z: str
-
-    pure def f(a) = x + 1
-    temporal g(b) = not(b)
-  }
-
   pure val MyY = true
 
   module A1 = A(x = 33, y = MyY, z = "hello")
 
   // now, we can access F and G via A1::F and A1::G
   val test_F = A1::f(10)
-  val test_x = A::x
+  val test_x = A1::x
 
   // We can import the names from A1, provided that there are no collisions.
   // The effect of this import is similar to an anonymous local instance in TLA+:

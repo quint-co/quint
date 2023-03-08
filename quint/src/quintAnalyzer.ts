@@ -16,16 +16,17 @@ import { LookupTableByModule } from "./lookupTable"
 import { OpQualifier, QuintModule } from "./quintIr"
 import { TypeScheme } from "./types/base"
 import { TypeInferrer } from "./types/inferrer"
-import { Effect } from "./effects/base"
+import { EffectScheme } from "./effects/base"
 import { EffectInferrer } from "./effects/inferrer"
 import { ModeChecker } from "./effects/modeChecker"
 import { QuintError } from "./quintError"
 import { errorTreeToString } from "./errorTree"
+import { MultipleUpdatesChecker } from "./effects/MultipleUpdatesChecker"
 
 /* Products from static analysis */
 export type AnalyzisOutput = {
   types: Map<bigint, TypeScheme>,
-  effects: Map<bigint, Effect>,
+  effects: Map<bigint, EffectScheme>,
   modes: Map<bigint, OpQualifier>,
 }
 
@@ -45,6 +46,7 @@ export class QuintAnalyzer {
   private effectInferrer: EffectInferrer
   private typeInferrer: TypeInferrer
   private modeChecker: ModeChecker
+  private multipleUpdatesChecker: MultipleUpdatesChecker
 
   private errors: [bigint, QuintError][] = []
   private output: AnalyzisOutput = { types: new Map(), effects: new Map(), modes: new Map() }
@@ -52,12 +54,14 @@ export class QuintAnalyzer {
   constructor(lookupTable: LookupTableByModule) {
     this.typeInferrer = new TypeInferrer(lookupTable)
     this.effectInferrer = new EffectInferrer(lookupTable)
+    this.multipleUpdatesChecker = new MultipleUpdatesChecker()
     this.modeChecker = new ModeChecker()
   }
 
   analyze(module: QuintModule): void {
     const [typeErrMap, types] = this.typeInferrer.inferTypes(module)
     const [effectErrMap, effects] = this.effectInferrer.inferEffects(module)
+    const updatesErrMap = this.multipleUpdatesChecker.checkEffects([...effects.values()])
     const [modeErrMap, modes] = this.modeChecker.checkModes(module, effects)
 
     const errorTrees = [...typeErrMap, ...effectErrMap]
@@ -67,7 +71,7 @@ export class QuintAnalyzer {
       return [id, { code: 'QNT000', message: errorTreeToString(err), data: { trace: err } }]
     }))
 
-    this.errors.push(...modeErrMap.entries())
+    this.errors.push(...modeErrMap.entries(), ...updatesErrMap.entries())
 
     // We assume that ids are unique across modules, and map merging can be done
     // without collision checks

@@ -19,6 +19,7 @@ import { ToIrListener } from '../ToIrListener'
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 import { CharStreams, CommonTokenStream } from 'antlr4ts'
 import { QuintType, Row } from '../quintTypes'
+import { newIdGenerator } from '../idGenerator'
 
 import { Either, left, right } from '@sweet-monads/either'
 
@@ -69,7 +70,7 @@ export function parseType(typeString: string): Either<any[], QuintType> {
     return left(errorMessages)
   } else {
     // walk through the AST and construct the IR
-    const listener = new ToIrListener('')
+    const listener = new ToIrListener('', newIdGenerator())
     ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
     const rootType = listener.typeStack[listener.typeStack.length - 1]
 

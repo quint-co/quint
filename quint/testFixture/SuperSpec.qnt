@@ -1,3 +1,16 @@
+module M1 {
+  val foo = 4
+}
+
+module M2 {
+  val bar = 4
+}
+
+module Proto {
+  const N: int
+  var x: int
+}
+
 // a module that contains constants
 module withConsts {
   // Constants
@@ -66,7 +79,7 @@ module withConsts {
   pure def add(x, y) = x + y
   def ofN(factor) = factor * n
   action A(x) = n' = x
-  temporal B(x) = not(x)
+  pure def B(x) = not(x)
 
   // Typed operators
   def H(x, y): (int, int) => int = {
@@ -139,10 +152,6 @@ module withConsts {
   // Pass a lambda operator as a second argument of filter.
   // Here we are using the dot notation.
   val oper_app_dot1 = S.filter(x => x > 10)
-  // Wrap lambda in '(...)'
-  val oper_app_dot2 = S.filter(x => x > 10)
-  // Wrap lambda in '{...}'
-  action oper_app_dot3 = S.guess(x => x > 10)
   // Use unknown
   action oper_nondet = {
     nondet x = oneOf(S)
@@ -189,33 +198,12 @@ module withConsts {
   val subseteq_empty = Set().subseteq(Set())
   val powersets = Set(1).in(powerset(Set(1,2,3)))
 
-
-  // Nested Modules
-  module level2 {
-    var y: int
-    module level3 {
-      var z: int
-    }
-  }
-
-  module level2instance = level2(*)
-  import level2.level3
-  val namespace_test = level3::z + level2instance::level3::z
-
   // a named assumption
   assume positive = N > 0
   // an anonymous assumption
   assume _ = N != 0
 
   // Imports
-  module M1 {
-    val foo = 4
-  }
-
-  module M2 {
-    val bar = 4
-  }
-
   import M1.foo
   import M2.*
 
@@ -227,10 +215,6 @@ module withConsts {
   var S1: INT_SET
 
   // Instances
-  module Proto {
-    const N: int
-    var x: int
-  }
 
   // create an instance of Proto by associating constants and variables
   // FIXME: How to resolve names for N and x in this scenario?
@@ -248,5 +232,4 @@ module withConsts {
     entry match
        | "Cat": cat => cat.name != ""
        | "Date": date => date.year > 0
-
 }

@@ -50,8 +50,8 @@ module option {
 
   action Next = all {
     any {
-      Int.guess(v => Vote(v)),
-      votes.indices().guess(i => Unvote(i)),
+      nondet v = oneOf(Int); Vote(v),
+      nondet i = oneOf(votes.indices()); Unvote(i),
     },
     outcome' = SumVotes
   }

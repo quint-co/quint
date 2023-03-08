@@ -90,7 +90,7 @@ rm parse-out-example.json
 ```
 quint typecheck --out typecheck-out-example.json ../examples/language-features/tuples.qnt > /dev/null
 printf "first type: " && cat typecheck-out-example.json | jq '.types."4".type.kind'
-printf "first effect: " && cat typecheck-out-example.json | jq '.effects."5".kind'
+printf "first effect: " && cat typecheck-out-example.json | jq '.effects."5".effect.kind'
 rm typecheck-out-example.json
 ```
 
@@ -266,6 +266,93 @@ quint test --main counters --seed 1 \
 
 ```
 
+### Run finds an invariant violation
+
+The command `run` finds an invariant violation.
+
+<!-- !test in run finds violation -->
+```
+quint run --init=Init --step=Next --seed=abcde --max-steps=4 \
+  --invariant='n < 10' ../examples/language-features/counters.qnt 2>&1 | \
+  sed 's/([0-9]*ms)/(duration)/g' | \
+  sed 's#^.*counters.qnt#      HOME/counters.qnt#g'
+```
+
+<!-- !test out run finds violation -->
+```
+[violation] (duration). See the example:
+---------------------------------------------
+action step0 = all {
+  counters::n' = 1,
+}
+
+action step1 = all {
+  counters::n' = 2,
+}
+
+action step2 = all {
+  counters::n' = 3,
+}
+
+action step3 = all {
+  counters::n' = 6,
+}
+
+action step4 = all {
+  counters::n' = 12,
+}
+
+run test = {
+  step0.then(step1).then(step2).then(step3).then(step4)
+}
+---------------------------------------------
+```
+
+### Run finds an example
+
+The command `run` finds an example.
+
+<!-- !test in run finds example -->
+```
+quint run --init=Init --step=Next --seed=abcde --max-steps=4 \
+  --invariant='n < 100' ../examples/language-features/counters.qnt 2>&1 | \
+  sed 's/([0-9]*ms)/(duration)/g' | \
+  sed 's#^.*counters.qnt#      HOME/counters.qnt#g'
+```
+
+<!-- !test out run finds example -->
+```
+[ok] No violation found (duration).
+ You may increase --max-samples and --max-steps.
+
+See the example:
+---------------------------------------------
+action step0 = all {
+  counters::n' = 1,
+}
+
+action step1 = all {
+  counters::n' = 2,
+}
+
+action step2 = all {
+  counters::n' = 3,
+}
+
+action step3 = all {
+  counters::n' = 4,
+}
+
+action step4 = all {
+  counters::n' = 2,
+}
+
+run test = {
+  step0.then(step1).then(step2).then(step3).then(step4)
+}
+---------------------------------------------
+```
+
 ### Repl evaluates coin
 
 This is a regression test for #648.
@@ -287,5 +374,42 @@ true
 >>> true
 >>> Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0)
 >>> 
+```
+
+### Run finds an overflow in Coin
+
+The command `run` finds an overflow in Coin.
+
+<!-- !test in run finds overflow -->
+```
+quint run --max-steps=5 --seed=123 --invariant=totalSupplyDoesNotOverflowInv \
+  ../examples/solidity/Coin/coin.qnt 2>&1 | \
+  sed 's/([0-9]*ms)/(duration)/g' | \
+  sed 's#^.*counters.qnt#      HOME/coin.qnt#g'
+```
+
+<!-- !test out run finds overflow -->
+```
+[violation] (duration). See the example:
+---------------------------------------------
+action step0 = all {
+  coin::minter' = "null",
+  coin::balances' = Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0),
+}
+
+action step1 = all {
+  coin::minter' = "null",
+  coin::balances' = Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 112481458056655605601695545099703330518348568252135132870328821439856853909504),
+}
+
+action step2 = all {
+  coin::minter' = "null",
+  coin::balances' = Map("alice" -> 0, "bob" -> 0, "charlie" -> 31453788334862831322142706925277348799769195365499601992860029384416292765696, "eve" -> 0, "null" -> 112481458056655605601695545099703330518348568252135132870328821439856853909504),
+}
+
+run test = {
+  step0.then(step1).then(step2)
+}
+---------------------------------------------
 ```
 

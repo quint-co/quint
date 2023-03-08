@@ -1,4 +1,5 @@
 import * as p from './generated/QuintParser'
+import { IdGenerator } from './idGenerator'
 import { ParserRuleContext } from 'antlr4ts/ParserRuleContext'
 import { QuintListener } from './generated/QuintListener'
 import {
@@ -19,14 +20,15 @@ import { Maybe, just, none } from '@sweet-monads/maybe'
  * @author Igor Konnov, Gabriela Moreira
  */
 export class ToIrListener implements QuintListener {
-  constructor(sourceLocation: string) {
+  constructor(sourceLocation: string, idGen: IdGenerator) {
     this.sourceLocation = sourceLocation
+    this.idGen = idGen
   }
 
   /**
    * The modules derived as a result of parsing
    */
-  topModules: QuintModule[] = []
+  modules: QuintModule[] = []
   /**
    * The stack of types that can be used as a result of type parsing.
    */
@@ -41,8 +43,6 @@ export class ToIrListener implements QuintListener {
 
   private sourceLocation: string = ''
 
-  // the stack of definitions per module
-  private moduleDefStack: QuintDef[][] = []
   // the stack of definitions
   private definitionStack: QuintDef[] = []
   // the stack of expressions
@@ -54,13 +54,7 @@ export class ToIrListener implements QuintListener {
   // the stack of documentation lines before a definition
   private docStack: string[] = []
   // an internal counter to assign unique numbers
-  private lastId: bigint = 1n
-
-  enterModule() {
-    // save the definitions of the previous module
-    this.moduleDefStack.push(this.definitionStack)
-    this.definitionStack = []
-  }
+  private idGen: IdGenerator
 
   // translate: module <name> { ... }
   exitModule(ctx: p.ModuleContext) {
@@ -68,35 +62,24 @@ export class ToIrListener implements QuintListener {
     assert(this.exprStack.length === 0, 'expression stack must be empty')
     assert(this.paramStack.length === 0, 'parameter stack must be empty')
 
-    const moduleId = this.nextId()
+    const moduleId = this.idGen.nextId()
     this.sourceMap.set(moduleId, this.loc(ctx))
     const module: QuintModule = {
       id: moduleId,
       name: ctx.IDENTIFIER().text,
       defs: this.definitionStack,
     }
-    // add the module to the definition stack
-    this.definitionStack = this.moduleDefStack.pop()!
 
-    const id = this.nextId()
-    this.sourceMap.set(id, this.loc(ctx))
-    this.definitionStack.push({
-      id,
-      kind: 'module',
-      module,
-    })
+    this.definitionStack = []
 
-    if (this.moduleDefStack.length == 0) {
-      // save the top module
-      this.topModules.push(module)
-    }
+    this.modules.push(module)
   }
 
   // translate: const x: type
   exitConst(ctx: p.ConstContext) {
     const typeTag = this.popType().unwrap()
 
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     const constDef: QuintDef = {
       kind: 'const',
@@ -111,7 +94,7 @@ export class ToIrListener implements QuintListener {
   exitVar(ctx: p.VarContext) {
     const typeTag = this.popType().unwrap()
 
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     const varDef: QuintDef = {
       kind: 'var',
@@ -126,7 +109,7 @@ export class ToIrListener implements QuintListener {
     const def = this.definitionStack.pop()
     const expr = this.exprStack.pop()
 
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     if (def && expr) {
       const letExpr: QuintEx = { id, kind: 'let', opdef: def as QuintOpDef, expr }
@@ -147,8 +130,8 @@ export class ToIrListener implements QuintListener {
       }
     }
 
-    const id1 = this.nextId()
-    const id2 = this.nextId()
+    const id1 = this.idGen.nextId()
+    const id2 = this.idGen.nextId()
     this.sourceMap.set(id1, this.loc(ctx))
     this.sourceMap.set(id2, this.loc(ctx))
     if (rhs && nested) {
@@ -193,7 +176,7 @@ export class ToIrListener implements QuintListener {
     if (params) {
       // if the definition has parameters, introduce a lambda
       let body = expr ?? this.undefinedDef(ctx)
-      const id = this.nextId()
+      const id = this.idGen.nextId()
       this.sourceMap.set(id, this.loc(ctx))
 
       if (params.length > 0) {
@@ -243,7 +226,7 @@ export class ToIrListener implements QuintListener {
     } else if (ntypes > 1) {
       // a C-like signature, combine it into an operator type
       const types = this.popTypes(ntypes)
-      const id = this.nextId()
+      const id = this.idGen.nextId()
       this.sourceMap.set(id, this.loc(ctx))
       const fullType: Maybe<QuintType> = just({
         id,
@@ -264,7 +247,7 @@ export class ToIrListener implements QuintListener {
     const expr = this.exprStack.pop()!
     const params = this.paramStack.pop()!
     assert(params.length === 1)
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     const assume: QuintDef = {
       id,
@@ -279,7 +262,7 @@ export class ToIrListener implements QuintListener {
   exitImportDef(ctx: any) {
     const ident = this.paramStack.pop()![0]
     const path = this.paramStack.pop()![0]
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     const importDef: QuintDef = {
       id,
@@ -307,7 +290,7 @@ export class ToIrListener implements QuintListener {
       this.pushError(ctx, msg)
     }
 
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
 
     const def: QuintDef = {
@@ -339,7 +322,7 @@ export class ToIrListener implements QuintListener {
     }
     const identityOverride = ctx.MUL() !== undefined
 
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     const instance: QuintDef = {
       id,
@@ -358,7 +341,7 @@ export class ToIrListener implements QuintListener {
   exitLiteralOrId(ctx: p.LiteralOrIdContext) {
     const ident = ctx.IDENTIFIER()
 
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     if (ident) { // identifier
       this.exprStack.push({
@@ -454,7 +437,7 @@ export class ToIrListener implements QuintListener {
       if (m) {
         // accessing a tuple element via _1, _2, _3, etc.
 
-        const id = this.nextId()
+        const id = this.idGen.nextId()
         this.sourceMap.set(id, this.loc(ctx))
         const idx: QuintEx = {
           id,
@@ -473,7 +456,7 @@ export class ToIrListener implements QuintListener {
           this.pushError(ctx, msg)
         }
 
-        const id = this.nextId()
+        const id = this.idGen.nextId()
         this.sourceMap.set(id, this.loc(ctx))
         const field: QuintEx = {
           id,
@@ -507,7 +490,7 @@ export class ToIrListener implements QuintListener {
       // every parameter in params is a singleton list, make one list
       const singletons = params.map(ps => ps[0])
 
-      const id = this.nextId()
+      const id = this.idGen.nextId()
       this.sourceMap.set(id, this.loc(ctx))
       this.exprStack.push({
         id,
@@ -570,7 +553,7 @@ export class ToIrListener implements QuintListener {
     const elems: QuintEx[] = this.popExprs(ctx.expr().length)
 
     const namesAndValues = zipWith(names, elems, (name, elem) => {
-      const id = this.nextId()
+      const id = this.idGen.nextId()
       this.sourceMap.set(id, this.loc(ctx))
 
       const nameExpression: QuintEx = { id, kind: 'str', value: name }
@@ -617,7 +600,7 @@ export class ToIrListener implements QuintListener {
 
   // x' = e
   exitAsgn(ctx: p.AsgnContext) {
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
 
     const lhs: QuintName = {
@@ -716,14 +699,14 @@ export class ToIrListener implements QuintListener {
     const matchArgs: QuintEx[] = [exprToMatch]
     // push the tag value and the corresponding lambda in matchArgs
     for (let i = 0; i < noptions; i++) {
-      const tagId = this.nextId()
+      const tagId = this.idGen.nextId()
       this.sourceMap.set(tagId, this.loc(ctx))
       const tag: QuintEx = {
         id: tagId,
         kind: 'str',
         value: options[i],
       }
-      const lamId = this.nextId()
+      const lamId = this.idGen.nextId()
       this.sourceMap.set(lamId, this.loc(ctx))
       const lam: QuintEx = {
         id: lamId,
@@ -743,21 +726,21 @@ export class ToIrListener implements QuintListener {
 
   // the integer type, that is, int
   exitTypeInt(ctx: p.TypeIntContext) {
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.typeStack.push({ id, kind: 'int' })
   }
 
   // the Boolean type, that is, bool
   exitTypeBool(ctx: p.TypeBoolContext) {
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.typeStack.push({ id, kind: 'bool' })
   }
 
   // the string type, that is, str
   exitTypeStr(ctx: p.TypeStrContext) {
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.typeStack.push({ id, kind: 'str' })
   }
@@ -765,7 +748,7 @@ export class ToIrListener implements QuintListener {
   // a type variable, a type constant, or a reference to a type alias
   exitTypeConstOrVar(ctx: p.TypeConstOrVarContext) {
     const name = ctx.IDENTIFIER().text
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     if (name[0].match('[a-z]')) {
       // a type variable from: a, b, ... z
@@ -779,7 +762,7 @@ export class ToIrListener implements QuintListener {
   // a set type, e.g., set(int)
   exitTypeSet(ctx: p.TypeSetContext) {
     const last = this.popType().unwrap()
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.typeStack.push({ id, kind: 'set', elem: last })
   }
@@ -787,7 +770,7 @@ export class ToIrListener implements QuintListener {
   // a list type, e.g., list(int)
   exitTypeList(ctx: p.TypeListContext) {
     const top = this.popType().unwrap()
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.typeStack.push({ id, kind: 'list', elem: top })
   }
@@ -796,7 +779,7 @@ export class ToIrListener implements QuintListener {
   exitTypeFun(ctx: p.TypeFunContext) {
     const res = this.popType().unwrap()
     const arg = this.popType().unwrap()
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.typeStack.push({ id, kind: 'fun', arg, res })
   }
@@ -805,7 +788,7 @@ export class ToIrListener implements QuintListener {
   // the type stack contains the types of the elements
   exitTypeTuple(ctx: p.TypeTupleContext) {
     const elemTypes: QuintType[] = this.popTypes(ctx.type().length)
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
 
     const fields =
@@ -845,7 +828,7 @@ export class ToIrListener implements QuintListener {
   // The row stack contains the row with the types of the fields.
   exitTypeRec(ctx: p.TypeRecContext) {
     const row = this.popRow()
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.typeStack.push({ id, kind: 'rec', fields: row })
   }
@@ -877,7 +860,7 @@ export class ToIrListener implements QuintListener {
           assert(false, 'exitTypeUnionRec: no union in exitTypeUnionRec')
         }
       }
-      const id = this.nextId()
+      const id = this.idGen.nextId()
       this.sourceMap.set(id, this.loc(ctx))
       this.typeStack.push({ id, kind: 'union', tag, records })
     } else {
@@ -915,7 +898,7 @@ export class ToIrListener implements QuintListener {
     const resType = this.popType().unwrap()
     const nargs = ctx.type().length - 1
     const argTypes: QuintType[] = this.popTypes(nargs)
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.typeStack.push({
       id,
@@ -963,7 +946,7 @@ export class ToIrListener implements QuintListener {
   // Push the application of operator `name` to `args` onto the internal
   // stack of expressions
   private pushApplication(ctx: any, name: string, args: QuintEx[]) {
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     this.exprStack.push({
       id,
@@ -1024,15 +1007,8 @@ export class ToIrListener implements QuintListener {
     return tp!
   }
 
-  // produce the next number in a list
-  private nextId(): bigint {
-    const id = this.lastId
-    this.lastId += 1n
-    return id
-  }
-
   private undefinedDef(ctx: any): QuintEx {
-    const id = this.nextId()
+    const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     return { id, kind: 'name', name: 'undefined' }
   }

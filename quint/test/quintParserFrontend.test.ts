@@ -6,8 +6,9 @@ import JSONbig from 'json-bigint'
 import { compactSourceMap, parsePhase1, parsePhase2 } from '../src/quintParserFrontend'
 import { lf } from 'eol'
 import { right } from '@sweet-monads/either'
-import { QuintDef, QuintEx, QuintModule, QuintModuleDef, QuintType, QuintTypeDef } from '../src'
+import { QuintDef, QuintEx, QuintModule, QuintType, QuintTypeDef } from '../src'
 import { IRVisitor, walkModule } from '../src/IRVisitor'
+import { newIdGenerator } from '../src/idGenerator'
 
 // read a Quint file from the test data directory
 function readQuint(name: string): string {
@@ -25,7 +26,9 @@ function readJson(name: string): any {
 // read the Quint file and the expected JSON, parse and compare the results
 function parseAndCompare(artifact: string): void {
   // read the input from the data directory and parse it
-  const phase1Result = parsePhase1(readQuint(artifact), `mocked_path/testFixture/${artifact}.qnt`)
+  const phase1Result =
+    parsePhase1(newIdGenerator(), readQuint(artifact),
+                `mocked_path/testFixture/${artifact}.qnt`)
   // read the expected result as JSON
   const expected = readJson(artifact)
   let outputToCompare
@@ -77,13 +80,19 @@ function parseAndCompare(artifact: string): void {
 
 describe('parsing', () => {
   it('parses empty module', () => {
-    const result = parsePhase1(readQuint('_0001emptyModule'), 'mocked_path/testFixture/_0001emptyModule.qnt')
+    const result =
+      parsePhase1(newIdGenerator(),
+                  readQuint('_0001emptyModule'),
+                  'mocked_path/testFixture/_0001emptyModule.qnt')
     const module = { id: 1n, name: 'empty', defs: [] }
     assert.deepEqual(result.map(r => r.modules[0]), right(module))
   })
 
   it('parses SuperSpec', () => {
-    const result = parsePhase1(readQuint('SuperSpec'), 'mocked_path/testFixture/SuperSpec.qnt')
+    const result =
+      parsePhase1(newIdGenerator(),
+                  readQuint('SuperSpec'),
+                  'mocked_path/testFixture/SuperSpec.qnt')
     assert(result.isRight())
   })
 
@@ -166,8 +175,8 @@ function collectIds(module: QuintModule): bigint[] {
         ids.add(t.id)
       }
     },
-    exitModuleDef(m: QuintModuleDef) {
-      ids.add(m.module.id)
+    exitModule(m: QuintModule) {
+      ids.add(m.id)
     },
   }
 

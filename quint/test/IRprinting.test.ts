@@ -72,14 +72,6 @@ describe('definitionToString', () => {
     const expectedDef = 'module A = M(x = iadd(N, 1), y = 3)'
     assert.deepEqual(definitionToString(def), expectedDef)
   })
-
-  it('pretty prints module definitions', () => {
-    const def = buildDef('module A { var x: int }')
-    const expectedDef = `module A {
-  var x: int
-}`
-    assert.deepEqual(definitionToString(def), expectedDef)
-  })
 })
 
 describe('expressionToString', () => {

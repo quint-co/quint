@@ -1,11 +1,16 @@
 import { assert } from 'chai'
 import { describe, it } from 'mocha'
-import { builtinDocs } from '../src/builtin'
 import { dedent } from './textUtils'
+
+import { builtinDocs } from '../src/builtin'
+import { newIdGenerator } from '../src/idGenerator'
+
+// Use a global id generator, limited to this test suite.
+const idGen = newIdGenerator()
 
 describe('builtInDocs', () => {
   it('has documentation for builtin definitions', () => {
-    const result = builtinDocs()
+    const result = builtinDocs(idGen)
 
     assert.isTrue(result.isRight())
     result.map(docs => {

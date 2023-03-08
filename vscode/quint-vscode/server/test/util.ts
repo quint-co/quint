@@ -12,7 +12,10 @@
  * @module
  */
 
-import { Loc, LookupTableByModule, QuintModule, parsePhase1, parsePhase2 } from "@informalsystems/quint"
+import {
+  Loc, LookupTableByModule, QuintModule, parsePhase1, parsePhase2,
+  newIdGenerator
+} from "@informalsystems/quint"
 
 /**
  * Parses a mocked module and returns the result of the parsing phases, or
@@ -25,7 +28,7 @@ import { Loc, LookupTableByModule, QuintModule, parsePhase1, parsePhase2 } from 
  * @returns A triple with the combined result of the parsing phases
 */
 export function parseOrThrow(moduleText: string): [QuintModule[], Map<bigint, Loc>, LookupTableByModule] {
-  const result1 = parsePhase1(moduleText, 'mocked_path')
+  const result1 = parsePhase1(newIdGenerator(), moduleText, 'mocked_path')
   const result2 = result1.chain(parsePhase2)
 
   if (result1.isLeft() || result2.isLeft()) {

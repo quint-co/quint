@@ -47,11 +47,11 @@ export class EffectParser extends Parser {
 	public static readonly RULE_update = 2;
 	public static readonly RULE_temporal = 3;
 	public static readonly RULE_concrete = 4;
-	public static readonly RULE_vars = 5;
+	public static readonly RULE_entity = 5;
 	public static readonly RULE_stateVarRef = 6;
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
-		"effect", "read", "update", "temporal", "concrete", "vars", "stateVarRef",
+		"effect", "read", "update", "temporal", "concrete", "entity", "stateVarRef",
 	];
 
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
@@ -150,7 +150,7 @@ export class EffectParser extends Parser {
 				}
 				break;
 			case EffectParser.IDENTIFIER:
-				_localctx = new QuantifiedEffectContext(_localctx);
+				_localctx = new VariableEffectContext(_localctx);
 				this.enterOuterAlt(_localctx, 3);
 				{
 				this.state = 29;
@@ -187,7 +187,7 @@ export class EffectParser extends Parser {
 			this.state = 33;
 			this.match(EffectParser.T__5);
 			this.state = 34;
-			this.vars();
+			this.entity();
 			this.state = 35;
 			this.match(EffectParser.T__6);
 			}
@@ -218,7 +218,7 @@ export class EffectParser extends Parser {
 			this.state = 38;
 			this.match(EffectParser.T__5);
 			this.state = 39;
-			this.vars();
+			this.entity();
 			this.state = 40;
 			this.match(EffectParser.T__6);
 			}
@@ -249,7 +249,7 @@ export class EffectParser extends Parser {
 			this.state = 43;
 			this.match(EffectParser.T__5);
 			this.state = 44;
-			this.vars();
+			this.entity();
 			this.state = 45;
 			this.match(EffectParser.T__6);
 			}
@@ -394,9 +394,9 @@ export class EffectParser extends Parser {
 		return _localctx;
 	}
 	// @RuleVersion(0)
-	public vars(): VarsContext {
-		let _localctx: VarsContext = new VarsContext(this._ctx, this.state);
-		this.enterRule(_localctx, 10, EffectParser.RULE_vars);
+	public entity(): EntityContext {
+		let _localctx: EntityContext = new EntityContext(this._ctx, this.state);
+		this.enterRule(_localctx, 10, EffectParser.RULE_entity);
 		let _la: number;
 		try {
 			this.enterOuterAlt(_localctx, 1);
@@ -631,7 +631,7 @@ export class ArrowEffectContext extends EffectContext {
 		}
 	}
 }
-export class QuantifiedEffectContext extends EffectContext {
+export class VariableEffectContext extends EffectContext {
 	public IDENTIFIER(): TerminalNode { return this.getToken(EffectParser.IDENTIFIER, 0); }
 	constructor(ctx: EffectContext) {
 		super(ctx.parent, ctx.invokingState);
@@ -639,20 +639,20 @@ export class QuantifiedEffectContext extends EffectContext {
 	}
 	// @Override
 	public enterRule(listener: EffectListener): void {
-		if (listener.enterQuantifiedEffect) {
-			listener.enterQuantifiedEffect(this);
+		if (listener.enterVariableEffect) {
+			listener.enterVariableEffect(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: EffectListener): void {
-		if (listener.exitQuantifiedEffect) {
-			listener.exitQuantifiedEffect(this);
+		if (listener.exitVariableEffect) {
+			listener.exitVariableEffect(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: EffectVisitor<Result>): Result {
-		if (visitor.visitQuantifiedEffect) {
-			return visitor.visitQuantifiedEffect(this);
+		if (visitor.visitVariableEffect) {
+			return visitor.visitVariableEffect(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
@@ -661,8 +661,8 @@ export class QuantifiedEffectContext extends EffectContext {
 
 
 export class ReadContext extends ParserRuleContext {
-	public vars(): VarsContext {
-		return this.getRuleContext(0, VarsContext);
+	public entity(): EntityContext {
+		return this.getRuleContext(0, EntityContext);
 	}
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
@@ -693,8 +693,8 @@ export class ReadContext extends ParserRuleContext {
 
 
 export class UpdateContext extends ParserRuleContext {
-	public vars(): VarsContext {
-		return this.getRuleContext(0, VarsContext);
+	public entity(): EntityContext {
+		return this.getRuleContext(0, EntityContext);
 	}
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
@@ -725,8 +725,8 @@ export class UpdateContext extends ParserRuleContext {
 
 
 export class TemporalContext extends ParserRuleContext {
-	public vars(): VarsContext {
-		return this.getRuleContext(0, VarsContext);
+	public entity(): EntityContext {
+		return this.getRuleContext(0, EntityContext);
 	}
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
@@ -948,7 +948,7 @@ export class PureContext extends ConcreteContext {
 }
 
 
-export class VarsContext extends ParserRuleContext {
+export class EntityContext extends ParserRuleContext {
 	public stateVarRef(): StateVarRefContext[];
 	public stateVarRef(i: number): StateVarRefContext;
 	public stateVarRef(i?: number): StateVarRefContext | StateVarRefContext[] {
@@ -971,23 +971,23 @@ export class VarsContext extends ParserRuleContext {
 		super(parent, invokingState);
 	}
 	// @Override
-	public get ruleIndex(): number { return EffectParser.RULE_vars; }
+	public get ruleIndex(): number { return EffectParser.RULE_entity; }
 	// @Override
 	public enterRule(listener: EffectListener): void {
-		if (listener.enterVars) {
-			listener.enterVars(this);
+		if (listener.enterEntity) {
+			listener.enterEntity(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: EffectListener): void {
-		if (listener.exitVars) {
-			listener.exitVars(this);
+		if (listener.exitEntity) {
+			listener.exitEntity(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: EffectVisitor<Result>): Result {
-		if (visitor.visitVars) {
-			return visitor.visitVars(this);
+		if (visitor.visitEntity) {
+			return visitor.visitEntity(this);
 		} else {
 			return visitor.visitChildren(this);
 		}

@@ -29,8 +29,11 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase2, QuintAnalyzer, QuintError, QuintErrorData, builtinDocs, effectToString, lookupValue, parsePhase1, parsePhase2, produceDocs, treeFromModule, typeSchemeToString } from '@informalsystems/quint'
+import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase2, QuintAnalyzer, QuintError, QuintErrorData, builtinDocs, effectSchemeToString, lookupValue, parsePhase1, parsePhase2, produceDocs, treeFromModule, typeSchemeToString, newIdGenerator } from '@informalsystems/quint'
 import { assembleDiagnostic, diagnosticsFromErrors, findBestMatchingResult, findName, locToRange } from './reporting'
+
+// Create one generator of unique identifiers
+const idGenerator = newIdGenerator()
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -46,7 +49,7 @@ const analysisOutputByDocument: Map<DocumentUri, AnalyzisOutput> = new Map<Docum
 const docsByDocument: Map<DocumentUri, Map<string, Map<string, DocumentationEntry>>> =
   new Map<DocumentUri, Map<string, Map<string, DocumentationEntry>>>()
 
-const ds = builtinDocs()
+const ds = builtinDocs(idGenerator)
 const loadedBuiltInDocs = ds.isRight() ? ds.value : undefined
 
 connection.onInitialize((_params: InitializeParams) => {
@@ -126,7 +129,7 @@ connection.onHover((params: HoverParams): Hover | undefined => {
 
     if (effectResult) {
       const [, effect] = effectResult
-      hoverText.push(`**effect**: \`${effectToString(effect)}\`\n`)
+      hoverText.push(`**effect**: \`${effectSchemeToString(effect)}\`\n`)
     }
 
     return hoverText
@@ -298,7 +301,7 @@ connection.onCodeAction((params: CodeActionParams): HandlerResult<CodeAction[], 
 async function parseDocument(textDocument: TextDocument): Promise<ParserPhase2> {
   const text = textDocument.getText()
 
-  const result = parsePhase1(text, textDocument.uri)
+  const result = parsePhase1(idGenerator, text, textDocument.uri)
     .chain(phase1Data => parsePhase2(phase1Data))
     .mapLeft(messages => messages.flatMap(msg => {
       // TODO: Parse errors should be QuintErrors

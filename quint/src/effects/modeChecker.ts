@@ -18,8 +18,8 @@ import { qualifierToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { QuintError } from '../quintError'
 import { OpQualifier, QuintInstance, QuintModule, QuintOpDef } from '../quintIr'
-import { ArrowEffect, Effect, Variables, isAction, isState, isTemporal } from './base'
-import { effectToString, variablesToString } from './printing'
+import { ArrowEffect, ComponentKind, EffectScheme, Entity, entityNames, stateVariables} from './base'
+import { effectToString, entityToString } from './printing'
 
 export type ModeCheckingResult = [Map<bigint, QuintError>, Map<bigint, OpQualifier>]
 
@@ -34,7 +34,7 @@ export class ModeChecker implements IRVisitor {
    *
    * @returns The mode errors, if any is found. Otherwise, a map with potential suggestions.
    */
-  checkModes(quintModule: QuintModule, effects: Map<bigint, Effect>): ModeCheckingResult {
+  checkModes(quintModule: QuintModule, effects: Map<bigint, EffectScheme>): ModeCheckingResult {
     this.effects = effects
     walkModule(this, quintModule)
     return [this.errors, this.suggestions]
@@ -43,7 +43,7 @@ export class ModeChecker implements IRVisitor {
   private errors: Map<bigint, QuintError> = new Map<bigint, QuintError>()
   private suggestions: Map<bigint, OpQualifier> = new Map<bigint, OpQualifier>()
 
-  private effects: Map<bigint, Effect> = new Map<bigint, Effect>()
+  private effects: Map<bigint, EffectScheme> = new Map<bigint, EffectScheme>()
 
   exitOpDef(def: QuintOpDef) {
     const effect = this.effects.get(def.id)
@@ -109,18 +109,48 @@ function modeConstraint(mode: OpQualifier): string {
   }
 }
 
-function modeForEffect(effect: Effect): [OpQualifier, string] {
+const componentKindPriority: ComponentKind[] = ['temporal', 'update', 'read']
+const componentDescription = new Map<ComponentKind, string>([
+  ['temporal', 'performs temporal operations over'],
+  ['update', 'updates'],
+  ['read', 'reads'],
+])
+const modesForArrow = new Map<ComponentKind, OpQualifier>([
+  ['temporal', 'temporal'],
+  ['update', 'action'],
+  ['read', 'def'],
+])
+const modesForConcrete = new Map<ComponentKind, OpQualifier>([
+  ['temporal', 'temporal'],
+  ['update', 'action'],
+  ['read', 'val'],
+])
+
+function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
+  const effect = scheme.effect
+  const nonFreeVars = scheme.entityVariables
+
   switch (effect.kind) {
     case 'concrete': {
-      if (isAction(effect)) {
-        return ['action', `updates variables ${variablesToString(effect.update)}`]
-      } else if (isTemporal(effect)) {
-        return ['temporal', `performs temporal operations over variables ${variablesToString(effect.temporal)}`]
-      } else if (isState(effect)) {
-        return ['val', `reads variables ${variablesToString(effect.read)}`]
-      } else {
-        return ['pureval', "doesn't read or update any variable"]
+      const kind = componentKindPriority.find(kind => {
+        return effect.components.some(c => {
+          if (c.kind !== kind) {
+            return false
+          }
+          const nonFreeEntities = entityNames(c.entity).filter(v => nonFreeVars.has(v)).concat(
+            stateVariables(c.entity).map(v => v.name)
+          )
+
+          return nonFreeEntities && nonFreeEntities.length > 0
+        })
+      })
+
+      if (!kind) {
+        return ['pureval', "doesn't read or update any state variable"]
       }
+
+      const components = effect.components.filter(c => c.kind === kind)
+      return [modesForConcrete.get(kind)!, `${componentDescription.get(kind)} variables ${components.map(c => entityToString(c.entity))}`]
     }
     case 'arrow': {
       const r = effect.result
@@ -128,79 +158,94 @@ function modeForEffect(effect: Effect): [OpQualifier, string] {
         throw new Error(`Unexpected arrow found in operator result: ${effectToString(r)}`)
       }
 
-      if (r.kind === 'quantified') {
-        return ['puredef', "doesn't read or update any variable"]
+      if (r.kind === 'variable') {
+        return ['puredef', "doesn't read or update any state variable"]
       }
 
-      const [paramReads, paramUpdates, paramTemporals] = paramVariablesByEffect(effect)
+      const entitiesByComponentKind = paramEntitiesByEffect(effect)
+      const addedEntitiesByComponentKind = new Map<ComponentKind, Entity[]>()
 
-      const addedTemporal = addedVariables(paramTemporals, r.temporal)
-      const addedUpdates = addedVariables(paramUpdates, r.update)
-      const addedReads = addedVariables(paramReads, r.read)
+      r.components.forEach(c => {
+        const paramEntities = entitiesByComponentKind.get(c.kind) ?? []
+        addedEntitiesByComponentKind.set(c.kind, addedEntities(paramEntities, c.entity))
+      })
 
-      if (addedTemporal.length > 0) {
-        return ['temporal', `performs temporal operations over variables ${addedTemporal.map(variablesToString)}`]
-      } else if (addedUpdates.length > 0) {
-        return ['action', `updates variables ${addedUpdates.map(variablesToString)}`]
-      } else if (addedReads.length > 0) {
-        return ['def', `reads variables ${addedReads.map(variablesToString)}`]
+      const kind = componentKindPriority.find(kind => {
+        const entities = addedEntitiesByComponentKind.get(kind)
+        const nonFreeEntities = entities?.flatMap(vs => {
+          return entityNames(vs).filter(v => nonFreeVars.has(v)).concat(
+            stateVariables(vs).map(v => v.name)
+          )
+        })
+        return nonFreeEntities && nonFreeEntities.length > 0
+      })
+
+      if (!kind) {
+        return ['puredef', "doesn't read or update any state variable"]
       }
 
-      return ['puredef', "doesn't read or update any variable"]
+      return [modesForArrow.get(kind)!, `${componentDescription.get(kind)} variables ${addedEntitiesByComponentKind.get(kind)!.map(entityToString)}`]
     }
-    case 'quantified': {
-      return ['pureval', "doesn't read or update any variable"]
+    case 'variable': {
+      return ['pureval', "doesn't read or update any state variable"]
     }
   }
 }
 
 /*
- * If there is a variable with an effect in the results that is not present on the
+ * If there is a entity with an effect in the results that is not present on the
  * parameters, then the operator is adding that and this should
  * promote the operators mode.
  *
  * For example, an operator with the effect `(Read[v]) => Read[v, 'x']` is adding `Read['x']`
  * to the parameter effect and should be promoted to `def`.
  */
-function addedVariables(paramVariables: Variables[], resultVariables: Variables): Variables[] {
-  switch (resultVariables.kind) {
+function addedEntities(paramEntities: Entity[], resultEntity: Entity): Entity[] {
+  switch (resultEntity.kind) {
     case 'union':
-      return resultVariables.variables.filter(v => !paramVariables.some(p => isEqual(p, v)))
+      return resultEntity.entities.filter(v => !paramEntities.some(p => isEqual(p, v)))
     case 'concrete': {
-      const vars = resultVariables.vars.filter(v => !paramVariables.some(p => isEqual(p, v)))
+      const vars = resultEntity.stateVariables.filter(v => !paramEntities.some(p => isEqual(p, v)))
       if (vars.length === 0) {
         return []
       }
 
-      return [{ kind: 'concrete', vars }]
+      return [{ kind: 'concrete', stateVariables: vars }]
     }
-    case 'quantified':
-      return !paramVariables.some(p => isEqual(p, resultVariables)) ? [resultVariables] : []
+    case 'variable':
+      return !paramEntities.some(p => isEqual(p, resultEntity)) ? [resultEntity] : []
   }
 }
 
-function paramVariablesByEffect(effect: ArrowEffect): [Variables[], Variables[], Variables[]] {
-  const paramReads: Variables[] = []
-  const paramUpdates: Variables[] = []
-  const paramTemporals: Variables[] = []
+function paramEntitiesByEffect(effect: ArrowEffect): Map<ComponentKind, Entity[]> {
+  const entitiesByComponentKind: Map<ComponentKind, Entity[]> = new Map()
 
   effect.params.forEach(p => {
-    if (p.kind === 'concrete') {
-      paramReads.push(...collectVariables(p.read))
-      paramUpdates.push(...collectVariables(p.update))
-      paramTemporals.push(...collectVariables(p.temporal))
+    switch (p.kind) {
+      case 'concrete': {
+        p.components.forEach(c => {
+          const existing = entitiesByComponentKind.get(c.kind) || []
+          entitiesByComponentKind.set(c.kind, existing.concat(c.entity))
+        })
+        break
+      }
+      case 'arrow': {
+        const nested = paramEntitiesByEffect(p)
+        nested.forEach((entities, kind) => {
+          const existing = entitiesByComponentKind.get(kind) || []
+          entitiesByComponentKind.set(kind, existing.concat(entities))
+        })
+        if (p.result.kind === 'concrete') {
+          p.result.components.forEach(c => {
+            const existing = entitiesByComponentKind.get(c.kind) || []
+            entitiesByComponentKind.set(c.kind, existing.concat(c.entity))
+          })
+        }
+      }
     }
   })
 
-  return [paramReads, paramUpdates, paramTemporals]
-}
-
-function collectVariables(v: Variables): Variables[] {
-  if (v.kind === 'union') {
-    return v.variables
-  } else {
-    return [v]
-  }
+  return entitiesByComponentKind
 }
 
 const modeOrder =
