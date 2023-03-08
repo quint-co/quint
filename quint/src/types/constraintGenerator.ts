@@ -26,13 +26,13 @@ import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../look
 import { specialConstraints } from './specialConstraints'
 import { FreshVarGenerator } from "../FreshVarGenerator"
 
-type solvingFunctionType = (_table: LookupTable, _constraint: Constraint)
+export type SolvingFunctionType = (_table: LookupTable, _constraint: Constraint)
   => Either<Map<bigint, ErrorTree>, Substitutions>
 
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
-  constructor(solvingFunction: solvingFunctionType, tables: LookupTableByModule) {
+  constructor(solvingFunction: SolvingFunctionType, tables: LookupTableByModule) {
     this.solvingFunction = solvingFunction
     this.tables = tables
     this.freshVarGenerator = new FreshVarGenerator()
@@ -41,7 +41,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   types: Map<bigint, TypeScheme> = new Map<bigint, TypeScheme>()
   errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
 
-  private solvingFunction: solvingFunctionType
+  private solvingFunction: SolvingFunctionType
   private constraints: Constraint[] = []
 
   private builtinSignatures: Map<string, Signature> = getSignatures()
@@ -154,6 +154,13 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     this.addToResults(e.id, result)
   }
 
+  enterLambda(expr: QuintLambda) {
+    expr.params.forEach(p => {
+      const varName = `t_${p.name}_${p.id}`
+      this.addToResults(p.id, right(toScheme({ kind: 'var', name: varName })))
+    })
+  }
+
   //    Γ ∪ {p0: t0, ..., pn: tn} ⊢ e: (te, c)    t0, ..., tn are fresh
   // ---------------------------------------------------------------------- (LAMBDA)
   //            Γ ⊢ (p0, ..., pn) => e: ((t0, ..., tn) => te, c)
@@ -227,7 +234,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     const constraint: Constraint = { kind: 'conjunction', constraints: this.constraints, sourceId: 0n }
 
     // Remove solved constraints
-    this.constraints = []
+    // this.constraints = []
 
     return this.solvingFunction(this.currentTable, constraint)
       .mapLeft(errors => errors.forEach((err, id) => this.errors.set(id, err)))
@@ -258,6 +265,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     } else {
       const def = lookupValue(this.currentTable, this.currentScopeTree, opcode, scope)
 
+      // FIXME: We have to check if the annotation is too general for var and consts as well
       if (def?.typeAnnotation) {
         return right(def.typeAnnotation)
       }
@@ -265,10 +273,6 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       const id = def?.reference
       if (!def || !id) {
         return left(buildErrorLeaf(this.location, `Signature not found for name: ${opcode}`))
-      }
-
-      if (def.kind === 'param') {
-        return right({ kind: 'var', name: `t_${opcode}_${id}` })
       }
 
       return this.fetchResult(id).map(t => this.newInstance(t))

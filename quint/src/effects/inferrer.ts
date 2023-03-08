@@ -91,24 +91,6 @@ export class EffectInferrer implements IRVisitor {
     }
 
     switch (def.kind) {
-      case 'param': {
-        /*  { kind: 'param', identifier: p } ∈ Γ
-         * ------------------------------------ (NAME-PARAM)
-         *          Γ ⊢ v: Read[r_p]
-         */
-        let result: Either<Error, EffectScheme>
-        if (def.reference) {
-          result = right(toScheme({ kind: 'variable', name: `e_${expr.name}_${def.reference}` }))
-        } else {
-          result = left(buildErrorLeaf(
-            this.location,
-            `Couldn't find an effect for lambda parameter named ${expr.name} in context.`
-          ))
-        }
-
-        this.addToResults(expr.id, result)
-        break
-      }
       case 'const': {
         /* { kind: 'const', identifier: c } ∈ Γ
          * ------------------------------------- (NAME-CONST)
@@ -130,6 +112,7 @@ export class EffectInferrer implements IRVisitor {
         break
       }
       case 'val':
+      case 'param':
       case 'def': {
         /* { identifier: op, effect: E } ∈ Γ
          * -------------------------------------- (NAME-OP)
@@ -246,6 +229,13 @@ export class EffectInferrer implements IRVisitor {
     this.addToResults(expr.id, e)
   }
 
+  enterLambda(expr: QuintLambda): void {
+    expr.params.forEach(p => {
+      const varName = `e_${p.name}_${p.id}`
+      this.addToResults(p.id, right(toScheme({ kind: 'variable', name: varName })))
+    })
+  }
+
   /*                  Γ ⊢ e: E
    * ---------------------------------------------- (LAMBDA)
    * Γ ⊢ (p0, ..., pn) => e: (E0, ..., En) => E
@@ -256,8 +246,12 @@ export class EffectInferrer implements IRVisitor {
     }
     const exprResult = this.fetchResult(lambda.expr.id)
     const params = mergeInMany(lambda.params.map(p => {
-      return this.fetchSignature(p.name, p.id, 2)
+      const result = this.fetchResult(p.id)
+        .map(e => this.newInstance(e))
         .chain(e => applySubstitution(this.substitutions, e))
+
+      this.addToResults(p.id, result.map(toScheme))
+      return result
     }))
 
     exprResult
@@ -322,10 +316,6 @@ export class EffectInferrer implements IRVisitor {
       const id = def?.reference
       if (!def || !id) {
         return left(buildErrorLeaf(this.location, `Signature not found for name: ${opcode}`))
-      }
-
-      if (def.kind === 'param') {
-        return right({ kind: 'variable', name: `e_${opcode}_${id}` })
       }
 
       return this.fetchResult(id).map(e => {

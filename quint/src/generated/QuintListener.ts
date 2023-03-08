@@ -66,6 +66,7 @@ import { ExprContext } from "./QuintParser";
 import { UnitOrExprContext } from "./QuintParser";
 import { LambdaContext } from "./QuintParser";
 import { IdentOrHoleContext } from "./QuintParser";
+import { ParameterContext } from "./QuintParser";
 import { IdentOrStarContext } from "./QuintParser";
 import { PathContext } from "./QuintParser";
 import { ArgListContext } from "./QuintParser";
@@ -870,6 +871,17 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitIdentOrHole?: (ctx: IdentOrHoleContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.parameter`.
+	 * @param ctx the parse tree
+	 */
+	enterParameter?: (ctx: ParameterContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.parameter`.
+	 * @param ctx the parse tree
+	 */
+	exitParameter?: (ctx: ParameterContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `QuintParser.identOrStar`.

@@ -66,6 +66,7 @@ import { ExprContext } from "./QuintParser";
 import { UnitOrExprContext } from "./QuintParser";
 import { LambdaContext } from "./QuintParser";
 import { IdentOrHoleContext } from "./QuintParser";
+import { ParameterContext } from "./QuintParser";
 import { IdentOrStarContext } from "./QuintParser";
 import { PathContext } from "./QuintParser";
 import { ArgListContext } from "./QuintParser";
@@ -572,6 +573,13 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitIdentOrHole?: (ctx: IdentOrHoleContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.parameter`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitParameter?: (ctx: ParameterContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.identOrStar`.
