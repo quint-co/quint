@@ -207,7 +207,6 @@ Literals are always `Pure`.
 ### Examples of built-in operator signatures
 ```
 exists: (Read[r1], (Read[p]) => Read[r2]) => Read[r1, p, r2]
-guess: (Read[r1], (Read[p]) => Read[r2] & Update[u]) => Read[r1, p, r2] & Update[u]
 +(iadd): (Read[r1], Read[r2]) => Read[r1, r2]
 assign: (Read[r1], Read[r2] & Update[u2]) => Read[r2] & Update[r1, u2]
 ```

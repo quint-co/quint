@@ -63,10 +63,10 @@ class ImportResolverVisitor implements IRVisitor {
   errors: Map<bigint, QuintError> = new Map<bigint, QuintError>()
   table: LookupTable = newTable({})
 
-  private currentModuleId: bigint = 0n
+  private currentModule?: QuintModule
 
   enterModule(module: QuintModule): void {
-    this.currentModuleId = module.id
+    this.currentModule = module
     this.table = this.tables.get(module.name) ?? newTable({})
   }
 
@@ -75,6 +75,16 @@ class ImportResolverVisitor implements IRVisitor {
   }
 
   enterInstance(def: QuintInstance): void {
+    if (def.protoName === this.currentModule?.name) {
+      // Importing current module
+      this.errors.set(def.id, {
+        code: 'QNT407',
+        message: `Cannot instantiate ${def.protoName} inside ${def.protoName}`,
+        data: {},
+      })
+      return
+    }
+
     const moduleTable = this.tables.get(def.protoName)
 
     if (!moduleTable) {
@@ -117,11 +127,21 @@ class ImportResolverVisitor implements IRVisitor {
 
     // All names from the instanced module should be acessible with the instance namespace
     // So, copy them to the current module's lookup table
-    const newEntries = copyNames(instanceTable, def.name, this.currentModuleId)
+    const newEntries = copyNames(instanceTable, def.name, this.currentModule?.id)
     this.table = mergeTables(this.table, newEntries)
   }
 
   enterImport(def: QuintImport): void {
+    if(def.path === this.currentModule?.name) {
+      // Importing current module
+      this.errors.set(def.id, {
+        code: 'QNT407',
+        message: `Cannot import ${def.path} inside ${def.path}`,
+        data: {},
+      })
+      return
+    }
+
     const moduleTable = this.tables.get(def.path)
     if (!moduleTable) {
       // Importing unexisting module
@@ -133,7 +153,7 @@ class ImportResolverVisitor implements IRVisitor {
       return
     }
 
-    const importableDefinitions = copyNames(moduleTable, undefined, this.currentModuleId)
+    const importableDefinitions = copyNames(moduleTable, undefined, this.currentModule?.id)
 
     if (def.name === '*') {
       // Imports all definitions

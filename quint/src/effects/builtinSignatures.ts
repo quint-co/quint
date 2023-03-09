@@ -127,10 +127,6 @@ const booleanOperators = [
 ]
 
 const setOperators = [
-  {
-    name: 'guess',
-    effect: parseAndQuantify('(Read[r1], (Read[r1]) => Read[r2] & Update[u]) => Read[r1, r2] & Update[u]'),
-  },
   { name: 'exists', effect: propagationWithLambda(['read', 'temporal'])(2) },
   { name: 'forall', effect: propagationWithLambda(['read', 'temporal'])(2) },
   { name: 'in', effect: standardPropagation(2) },

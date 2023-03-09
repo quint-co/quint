@@ -35,7 +35,6 @@ export function defaultValueDefinitions(): ValueDefinition[] {
     { kind: 'def', identifier: 'iff' },
     { kind: 'def', identifier: 'implies' },
     { kind: 'def', identifier: 'exists' },
-    { kind: 'def', identifier: 'guess' },
     { kind: 'def', identifier: 'forall' },
     { kind: 'def', identifier: 'in' },
     { kind: 'def', identifier: 'notin' },

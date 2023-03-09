@@ -53,6 +53,8 @@ export type ErrorCode =
   | 'QNT405'
   /* QNT406: Instantiation error */
   | 'QNT406'
+  /* QNT407: Cannot import self */
+  | 'QNT407'
 
 /* Additional data for a Quint error */
 export interface QuintErrorData {

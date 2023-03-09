@@ -1,7 +1,7 @@
 # Lesson 0 - Hello, world!
 ## 1. Introduction
 
-*10 more steps to the finish line*
+*Progress:*  0%
 
 This lesson introduces the standard "Hello, world!" example.
 Since Quint is designed for distributed protocols, we introduce
@@ -23,11 +23,11 @@ the details, check [hello.qnt](./hello.qnt).
         
 ## 2. Declare a module
 
-*9 more steps to the finish line*
+*Progress:*  10%
 
 **Code snippet:**
 
-```scala
+```bluespec
 module hello {
 ```
 
@@ -36,11 +36,11 @@ As a first necessary step, we declare a top-level module for our protocol.
         
 ## 3. Introduce state variables
 
-*8 more steps to the finish line*
+*Progress:*  20%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // the state variable to keep the output by the computer
     var consoleOutput: str
@@ -59,11 +59,11 @@ All state variables require a type. We use `str`, that is, the string type.
         
 ## 4. Introduce state variables
 
-*7 more steps to the finish line*
+*Progress:*  30%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // the state variable to keep the out read by the user
     var readByUser: str
@@ -76,11 +76,11 @@ by the user. This state variable has the string type too.
         
 ## 5. Introduce an initializer
 
-*6 more steps to the finish line*
+*Progress:*  40%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // initialize the state machine that captures the protocol
     action init = all {
@@ -125,11 +125,11 @@ read the next step.
         
 ## 6. Introduce an action by the computer
 
-*5 more steps to the finish line*
+*Progress:*  50%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // write "Hello, world!" in consoleOutput of the state machine,
     // if the console output is clean
@@ -183,11 +183,11 @@ it has to explicitely assign values to all of the state variables.
         
 ## 7. Introduce an action by the user
 
-*4 more steps to the finish line*
+*Progress:*  60%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // read the message from `consoleOutput` into `readByUser`,
     // if the console output is not clean
@@ -207,11 +207,11 @@ how we did it for `write`.
         
 ## 8. Describe a single step
 
-*3 more steps to the finish line*
+*Progress:*  70%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // execute a single step of the state machine:
     // it may be `read` or `write`, whatever is available
@@ -245,11 +245,11 @@ that `any { ... }` chooses one of the actions *non-deterministically*.
         
 ## 9. Introduce a simple test
 
-*2 more steps to the finish line*
+*Progress:*  80%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // a simple test that demonstrates an interaction between
     // the computer and the user
@@ -317,7 +317,7 @@ after executing the run called `test1`.
         
 ## 10. Suming it up
 
-*1 more step to the finish line*
+*Progress:*  90%
 
 We have covered all the aspects of our "Hello, world!" example.
 Actually, we could have written a much shorter example, but it would not

@@ -123,7 +123,8 @@ def xmlToMarkdown(root, code, out):
         title = step.find("title").text
         out.write(f'## {no + 1}. {title}\n\n')
         stepsLeft = len(allSteps) - no
-        out.write(f'*{stepsLeft} more {stepsStr(stepsLeft)} to the finish line*\n')
+        percentage = int((no * 100) / len(allSteps))
+        out.write('*Progress:* {: 2d}%\n'.format(percentage))
 
         # insert a piece of code
         line = step.find("line")
@@ -134,7 +135,7 @@ def xmlToMarkdown(root, code, out):
             isEmpty = list(filter(lambda l: l.strip() != "", snippet)) == []
             if not isEmpty:
                 out.write('\n**Code snippet:**\n\n')
-                out.write('```scala\n')
+                out.write('```bluespec\n')
                 for l in snippet:
                     out.write(l)
 
