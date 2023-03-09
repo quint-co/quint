@@ -56,11 +56,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
   enterModule(module: QuintModule): void {
     this.currentScopeTree = treeFromModule(module)
-    this.currentTable = this.tables.get(module.name) ?? newTable({})
+    this.currentTable = this.tables.get(module.name)!
   }
 
-  exitModule(module: QuintModule): void {
-    this.tables.set(module.name, this.currentTable)
+  exitModule(_module: QuintModule): void {
+    this.constraints = []
   }
 
   enterExpr(e: QuintEx) {
