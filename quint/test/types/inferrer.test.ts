@@ -95,7 +95,7 @@ describe('inferTypes', () => {
 
   it('infers types for records', () => {
     const quintModule = buildModuleWithDefs([
-      'var x: { f1: int | r1 }',
+      'var x: { f1: int, f2: bool }',
       'val m = Set(x, { f1: 1, f2: true })',
       'def e(p) = x.with("f1", p.f1)',
       'val a = e({ f1: 2 }).fieldNames()',
@@ -106,29 +106,29 @@ describe('inferTypes', () => {
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
     assert.sameDeepMembers(stringTypes, [
-      [3n, '{ f1: int, f2: bool }'],
       [4n, '{ f1: int, f2: bool }'],
-      [5n, 'int'],
-      [6n, 'bool'],
-      [7n, 'str'],
+      [5n, '{ f1: int, f2: bool }'],
+      [6n, 'int'],
+      [7n, 'bool'],
       [8n, 'str'],
-      [9n, '{ f1: int, f2: bool }'],
-      [10n, 'Set[{ f1: int, f2: bool }]'],
+      [9n, 'str'],
+      [10n, '{ f1: int, f2: bool }'],
       [11n, 'Set[{ f1: int, f2: bool }]'],
-      [12n, '∀ r0 . { f1: int | r0 }'],
-      [13n, '{ f1: int, f2: bool }'],
-      [14n, 'str'],
-      [15n, '∀ r0 . { f1: int | r0 }'],
-      [16n, 'str'],
-      [17n, 'int'],
-      [18n, '{ f1: int, f2: bool }'],
-      [19n, '∀ r0 . ({ f1: int | r0 }) => { f1: int, f2: bool }'],
-      [20n, 'int'],
-      [21n, 'str'],
-      [22n, '{ f1: int }'],
-      [23n, '{ f1: int, f2: bool }'],
-      [24n, 'Set[str]'],
+      [12n, 'Set[{ f1: int, f2: bool }]'],
+      [13n, '∀ r0 . { f1: int | r0 }'],
+      [14n, '{ f1: int, f2: bool }'],
+      [15n, 'str'],
+      [16n, '∀ r0 . { f1: int | r0 }'],
+      [17n, 'str'],
+      [18n, 'int'],
+      [19n, '{ f1: int, f2: bool }'],
+      [20n, '∀ r0 . ({ f1: int | r0 }) => { f1: int, f2: bool }'],
+      [21n, 'int'],
+      [22n, 'str'],
+      [23n, '{ f1: int }'],
+      [24n, '{ f1: int, f2: bool }'],
       [25n, 'Set[str]'],
+      [26n, 'Set[str]'],
     ])
   })
 

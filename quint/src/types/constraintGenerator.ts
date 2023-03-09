@@ -233,15 +233,15 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   private solveConstraints(): Either<void, Substitutions> {
     const constraint: Constraint = { kind: 'conjunction', constraints: this.constraints, sourceId: 0n }
 
-    // FIXME: We have to figure out the scope of the constraints/substitutions
-    // https://github.com/informalsystems/quint/issues/690
     // Remove solved constraints
-    // this.constraints = []
+    this.constraints = []
 
     return this.solvingFunction(this.currentTable, constraint)
       .mapLeft(errors => errors.forEach((err, id) => this.errors.set(id, err)))
       .map((subs) => {
         // Apply substitution to environment
+        // FIXME: We have to figure out the scope of the constraints/substitutions
+        // https://github.com/informalsystems/quint/issues/690
         this.types = new Map<bigint, TypeScheme>(
           [...this.types.entries()].map(([id, te]) => {
             const newType = applySubstitution(this.currentTable, subs, te.type)
