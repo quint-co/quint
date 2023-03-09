@@ -64,7 +64,7 @@ module bank {
   pure def ViewKeeper::GetBalance(ctx: BankCtx, addr: Addr, denom: str): Coin = {
     if (ctx.balances.keys().contains(addr)) {
       val accountBal = ctx.balances.get(addr)
-      if (accountBal.contains(denom)) {
+      if (accountBal.keys().contains(denom)) {
         { denom: denom, amount: accountBal.get(denom) }
       } else {
         // Implementation: panic here?
