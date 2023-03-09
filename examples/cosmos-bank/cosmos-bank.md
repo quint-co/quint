@@ -8,8 +8,9 @@ This document shows how we could turn an inanimate piece of documentation into
 an executable specification. We are using the [bank module][] of Cosmos SDK as
 an example. In the following, all of the quoted text belongs to the original
 description on the [bank module][] page, unless specified otherwise. To obtain
-a Quint module, run [lmt][] against this document. We follow the same
-order of exposition, as in the original document.
+a Quint module, run [lmt][] against this document. Check the executable
+specification in [bank.qnt](./bank.qnt). We follow the same order of exposition,
+as in the original document.
 
 Importantly, this description is tuned towards ease of exposition, not for
 implementation or verification. Remember that we do not want to make protocols
@@ -33,6 +34,7 @@ as complex as their implementation! These are the most differences:
 From the protocol perspective, the bank module looks as follows:
 
 ```bluespec bank.qnt +=
+// -*- mode: Bluespec; -*-
 // An executable specification of the bank module
 module bank {
   // TYPES
