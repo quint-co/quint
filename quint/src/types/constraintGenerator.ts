@@ -233,6 +233,8 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   private solveConstraints(): Either<void, Substitutions> {
     const constraint: Constraint = { kind: 'conjunction', constraints: this.constraints, sourceId: 0n }
 
+    // FIXME: We have to figure out the scope of the constraints/substitutions
+    // https://github.com/informalsystems/quint/issues/690
     // Remove solved constraints
     // this.constraints = []
 
@@ -266,6 +268,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       const def = lookupValue(this.currentTable, this.currentScopeTree, opcode, scope)
 
       // FIXME: We have to check if the annotation is too general for var and consts as well
+      // https://github.com/informalsystems/quint/issues/691
       if (def?.typeAnnotation) {
         return right(def.typeAnnotation)
       }
