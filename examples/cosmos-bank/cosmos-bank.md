@@ -258,8 +258,8 @@ as follows:
 ```mermaid
 classDiagram
     direction LR
-    BaseKeeper <|-- SendKeeper
-    SendKeeper <|-- ViewKeeper
+    ViewKeeper <|-- SendKeeper
+    SendKeeper <|-- BaseKeeper
 ```
 
 We define the part of the SDK context that is touched by the bank module:
