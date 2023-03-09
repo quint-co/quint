@@ -413,3 +413,13 @@ run test = {
 ---------------------------------------------
 ```
 
+### OK REPL tutorial
+
+The REPL tutorial is reproducible in REPL.
+
+<!-- !test check REPL tutorial -->
+```
+quint -q -r \
+  ../tutorials/repl/kettle.qnt::kettle <../tutorials/repl/replTestIn.txt \
+    | diff - ../tutorials/repl/replTestOut.txt
+```

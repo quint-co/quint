@@ -62,7 +62,7 @@ become referenced artifacts.
 
 ### Tutorials :teacher:
 
-We are preparing language and tools tutorials. Visit the [Tutorials][] page.
+Visit the [Tutorials][] page.
 
 ### Syntax :abcd:
 
@@ -85,7 +85,7 @@ editor (currently, VSCode, Emacs and Vim are supported).
 
    - [Manual](./doc/quint.md)
 
-   - [REPL](./doc/repl.md)
+   - [REPL](./tutorials/repl/repl.md)
 
  - VSCode plugin:
 
