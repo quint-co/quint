@@ -1,3 +1,4 @@
+// -*- mode: Bluespec; -*-
 /**
  * A tutorial version of binary search. The original TLA+ specification:
  *

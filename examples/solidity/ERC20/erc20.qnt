@@ -1,3 +1,4 @@
+// -*- mode: Bluespec; -*-
 module erc20 {
   type ADDR = str
 

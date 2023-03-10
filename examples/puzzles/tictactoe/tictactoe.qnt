@@ -1,3 +1,4 @@
+// -*- mode: Bluespec; -*-
 module tictactoe {
   var board: int -> (int -> str) // board[1..3][1..3] A 3x3 tic-tac-toe board
   var nextTurn: str // who goes next

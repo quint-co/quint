@@ -1,3 +1,4 @@
+// -*- mode: Bluespec; -*-
 // A translation of https://github.com/informalsystems/tla-apalache-workshop/blob/main/examples/clock-sync/ClockSync3.tla
 module ClockSync3 {
     //// HELPERS

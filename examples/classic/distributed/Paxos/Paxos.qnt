@@ -1,3 +1,4 @@
+// -*- mode: Bluespec; -*-
 // Temp fix for integration tests: mock voting definitions while files are not imported
 module Voting {
   def ShowsSafeAt(Q, b, v) = true

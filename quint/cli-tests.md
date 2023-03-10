@@ -202,10 +202,10 @@ Temporarily disabled.
 <!-- !test check coin - Types & Effects-->
     quint typecheck ../examples/solidity/Coin/coin.qnt
 
-### OK on typecheck SimpleAuctionNonComposable.qnt
+### OK on test SimpleAuctionNonComposable.qnt
 
-<!-- !test check SimpleAuctionNonComposable - Types & Effects-->
-    quint typecheck ../examples/solidity/SimpleAuction/SimpleAuctionNonComposable.qnt
+<!-- !test check SimpleAuctionNonComposable - Syntax/Types & Effects/Unit tests -->
+    quint test --main=SimpleAuction ../examples/solidity/SimpleAuction/SimpleAuctionNonComposable.qnt
 
 ### OK on typecheck SuperSpec.qnt
 
