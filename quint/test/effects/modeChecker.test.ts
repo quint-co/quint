@@ -37,7 +37,7 @@ describe('checkModes', () => {
     const [errors, _suggestions] = checkModuleModes(quintModule)
 
     assert.sameDeepMembers([...errors.entries()], [
-      [4n, {
+      [5n, {
         message: "def operators may only read state variables, but operator `a` updates variables 'x'. Use action instead.",
         code: 'QNT200',
         data: { fix: { kind: 'replace', original: 'def', replacement: 'action' } },
@@ -76,7 +76,7 @@ describe('checkModes', () => {
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
     assert.sameDeepMembers([...suggestions.entries()], [
-      [4n, 'def'],
+      [5n, 'def'],
     ])
   })
 
@@ -117,7 +117,7 @@ describe('checkModes', () => {
     const [errors, _suggestions] = checkModuleModes(quintModule)
 
     assert.sameDeepMembers([...errors.entries()], [
-      [3n, {
+      [4n, {
         message: "pure def operators may not interact with state variables, but operator `f` reads variables 'y'. Use def instead.",
         code: 'QNT200',
         data: { fix: { kind: 'replace', original: 'pure def', replacement: 'def' } },
@@ -134,7 +134,7 @@ describe('checkModes', () => {
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
     assert.sameDeepMembers([...suggestions.entries()], [
-      [2n, 'puredef'],
+      [3n, 'puredef'],
     ])
   })
 

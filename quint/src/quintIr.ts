@@ -118,11 +118,16 @@ export interface QuintApp extends WithId {
   args: QuintEx[],
 }
 
+export interface QuintLambdaParameter extends WithId {
+  /** The name of the formal parameter */
+  name: string,
+}
+
 export interface QuintLambda extends WithId {
   /** Expressions kind ('lambda' -- operator abstraction) */
   kind: 'lambda',
-  /** Identifiers for the formal parameters */
-  params: string[],
+  /** The formal parameters */
+  params: QuintLambdaParameter[],
   /** The qualifier for the defined operator */
   qualifier: OpQualifier,
   /** The definition body */

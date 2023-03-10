@@ -37,10 +37,10 @@ unit :    'const' IDENTIFIER ':' type                     # const
 // Otherwise, the parser would start recognizing parameters everywhere.
 operDef : qualifier normalCallName
             ( /* ML-like parameter lists */
-                '(' (IDENTIFIER (',' IDENTIFIER)*)? ')' (':' type)?
+                '(' (parameter (',' parameter)*)? ')' (':' type)?
                 | ':' type
               /* C-like parameter lists */
-                | '(' (IDENTIFIER ':' type (',' IDENTIFIER ':' type)*) ')' ':' type
+                | '(' (parameter ':' type (',' parameter ':' type)*) ')' ':' type
             )?
             ('=' expr)? ';'?
         ;
@@ -122,7 +122,7 @@ expr:           // apply a built-in operator via the dot notation
         |       expr IFF expr                                       # iff
         |       expr IMPLIES expr                                   # implies
         |       expr MATCH
-                    ('|' STRING ':' identOrHole '=>' expr)+         # match
+                    ('|' STRING ':' parameter '=>' expr)+         # match
         |       'all' '{' expr (',' expr)* ','? '}'                 # actionAll
         |       'any' '{' expr (',' expr)* ','? '}'                 # actionAny
         |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
@@ -150,13 +150,16 @@ unitOrExpr :    unit | expr;
 // 1. x => e
 // 2. (x) => e
 // 3. (x, y, z) => e
-lambda:         identOrHole '=>' expr
-        |       '(' identOrHole (',' identOrHole)* ')' '=>' expr
+lambda:         parameter '=>' expr
+        |       '(' parameter (',' parameter)* ')' '=>' expr
         ;
+
 
 // an identifier or a hole '_'
 identOrHole :   '_' | IDENTIFIER
         ;
+
+parameter: identOrHole;
 
 // an identifier or a star '*'
 identOrStar :   '*' | IDENTIFIER

@@ -846,8 +846,8 @@ export class CompilerVisitor implements IRVisitor {
   enterLambda(lam: ir.QuintLambda) {
     // introduce a register for every parameter
     lam.params.forEach(p =>
-      this.context.set(kindName('arg', p),
-        mkRegister('arg', p, none(), () => `Parameter ${p} is not set`)))
+      this.context.set(kindName('arg', p.name),
+        mkRegister('arg', p.name, none(), () => `Parameter ${p} is not set`)))
     // After this point, the body of the lambda gets compiled.
     // The body of the lambda may refer to the parameter via names,
     // which are stored in the registers we've just created.
@@ -858,13 +858,13 @@ export class CompilerVisitor implements IRVisitor {
     // Transform it to Callable together with the registers.
     const registers: Register[] = []
     lam.params.forEach(p => {
-      const key = kindName('arg', p)
-      const register = this.contextGet(p, ['arg']) as Register
+      const key = kindName('arg', p.name)
+      const register = this.contextGet(p.name, ['arg']) as Register
       if (register && register.registerValue) {
         this.context.delete(key)
         registers.push(register)
       } else {
-        this.addCompileError(lam.id, `Parameter ${p} not found`)
+        this.addCompileError(p.id, `Parameter ${p} not found`)
       }
     })
 

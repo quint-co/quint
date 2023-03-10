@@ -37,7 +37,7 @@ describe('nameResolver', () => {
         value: 0n,
         children: [
           { value: 1n, children: [] },
-          { value: 2n, children: [] },
+          { value: 2n, children: [{ value: 3n, children: [] }] },
         ],
       }
 
@@ -77,19 +77,7 @@ describe('nameResolver', () => {
 
       result
         .mapLeft(errors => assert.deepEqual(errors, [
-          { kind: 'value', name: 'x', definitionName: 'd0', moduleName, reference: 2n },
-        ]))
-        .map(_ => assert.fail('Expected errors'))
-    })
-
-    it('find unresolved names inside lambdas', () => {
-      const quintModule = buildModuleWithExpressions(['Nat.filter(a => x > 1)'])
-
-      const result = resolveNames(quintModule, table, dummyScopeTree)
-
-      result
-        .mapLeft(errors => assert.deepEqual(errors, [
-          { kind: 'value', name: 'x', definitionName: 'd0', moduleName, reference: 2n },
+          { kind: 'value', name: 'x', definitionName: 'd0', moduleName, reference: 3n },
         ]))
         .map(_ => assert.fail('Expected errors'))
     })
@@ -187,8 +175,8 @@ describe('nameResolver', () => {
 
       result
         .mapLeft(errors => assert.deepEqual(errors, [
-          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'f', moduleName, reference: 1n },
-          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'f', moduleName, reference: 2n },
+          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'f', moduleName, reference: 2n },
+          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'f', moduleName, reference: 3n },
         ]))
         .map(_ => assert.fail('Expected errors'))
     })

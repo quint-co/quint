@@ -1,30 +1,34 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { Constraint } from '../../src/types/base'
-import { ConstraintGeneratorVisitor } from '../../src/types/constraintGenerator'
+import { ConstraintGeneratorVisitor, SolvingFunctionType } from '../../src/types/constraintGenerator'
 import { left, right } from '@sweet-monads/either'
 import { walkModule } from '../../src/IRVisitor'
 import { buildModuleWithDefs } from '../builders/ir'
 import { constraintToString } from '../../src/types/printing'
 import { ErrorTree } from '../../src/errorTree'
-import { LookupTable, LookupTableByModule, newTable } from '../../src/lookupTable'
-import { defaultValueDefinitions } from '../../src/definitionsCollector'
+import { LookupTable, LookupTableByModule, mergeTables, newTable } from '../../src/lookupTable'
+import { collectDefinitions, defaultValueDefinitions } from '../../src/definitionsCollector'
+import { QuintModule } from '../../src/quintIr'
 
 describe('ConstraintGeneratorVisitor', () => {
   const table: LookupTable = newTable({
     valueDefinitions: defaultValueDefinitions().concat([
-      { kind: 'param', identifier: 'p', reference: 1n },
       { kind: 'var', identifier: 's', reference: 2n },
-      { kind: 'param', identifier: 'x', reference: 3n },
       { kind: 'const', identifier: 'N', reference: 4n },
       { kind: 'var', identifier: 'y', reference: 5n },
-      { kind: 'param', identifier: 'S', reference: 6n },
-      { kind: 'val', identifier: 'm', reference: 7n },
-      { kind: 'val', identifier: 't', reference: 8n },
     ]),
   })
 
-  const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', table]])
+  function visitModule(quintModule: QuintModule, solvingFunction: SolvingFunctionType): ConstraintGeneratorVisitor {
+    const mergedTable = mergeTables(collectDefinitions(quintModule), table)
+    const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', mergedTable]])
+
+    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
+    walkModule(visitor, quintModule)
+
+    return visitor
+  }
 
   it('collects constraints from expressions', () => {
     const quintModule = buildModuleWithDefs([
@@ -32,15 +36,14 @@ describe('ConstraintGeneratorVisitor', () => {
     ])
 
     const expectedConstraint =
-      '(int, int) => int ~ (t_x_3, int) => t0 /\\ (Set[t1], (t1) => t2) => Set[t2] ~ (t_S_6, (t_x_3) => t0) => t3'
+      '(int, int) => int ~ (t_x_3, int) => t0 /\\ (Set[t1], (t1) => t2) => Set[t2] ~ (t_S_1, (t_x_3) => t0) => t3'
 
     const solvingFunction = (_: LookupTable, c: Constraint) => {
       assert.deepEqual(constraintToString(c), expectedConstraint)
       return right([])
     }
 
-    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
-    walkModule(visitor, quintModule)
+    visitModule(quintModule, solvingFunction)
   })
 
   it('handles underscore', () => {
@@ -48,15 +51,15 @@ describe('ConstraintGeneratorVisitor', () => {
       'def d(S) = S.map(_ => 10)',
     ])
 
-    const expectedConstraint = '(Set[t1], (t1) => t2) => Set[t2] ~ (t_S_6, (t0) => int) => t3'
+    const expectedConstraint = '(Set[t1], (t1) => t2) => Set[t2] ~ (t_S_1, (t0) => int) => t3'
 
     const solvingFunction = (_: LookupTable, c: Constraint) => {
       assert.deepEqual(constraintToString(c), expectedConstraint)
       return right([])
     }
 
-    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
-    walkModule(visitor, quintModule)
+
+    visitModule(quintModule, solvingFunction)
   })
 
   it('collects types from variable and constant definitions', () => {
@@ -69,8 +72,7 @@ describe('ConstraintGeneratorVisitor', () => {
 
     const solvingFunction = (_: LookupTable, _c: Constraint) => right([])
 
-    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
-    walkModule(visitor, quintModule)
+    const visitor = visitModule(quintModule, solvingFunction)
 
     assert.includeDeepMembers([...visitor.types.entries()], [
       [6n, { typeVariables: new Set([]), rowVariables: new Set([]), type: { kind: 'str', id: 1n } }],
@@ -93,8 +95,7 @@ describe('ConstraintGeneratorVisitor', () => {
 
     const solvingFunction = (_: LookupTable, _c: Constraint) => left(errors)
 
-    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
-    walkModule(visitor, quintModule)
+    const visitor = visitModule(quintModule, solvingFunction)
 
     assert.sameDeepMembers(Array.from(visitor.errors.entries()), Array.from(errors.entries()))
   })
@@ -119,8 +120,7 @@ describe('ConstraintGeneratorVisitor', () => {
     const errors = new Map<bigint, ErrorTree>([[1n, error]])
 
     const solvingFunction = (_: LookupTable, _c: Constraint) => right([])
-    const visitor = new ConstraintGeneratorVisitor(solvingFunction, definitionsTable)
-    walkModule(visitor, quintModule)
+    const visitor = visitModule(quintModule, solvingFunction)
 
     assert.sameDeepMembers(Array.from(visitor.errors.values()), Array.from(errors.values()))
   })

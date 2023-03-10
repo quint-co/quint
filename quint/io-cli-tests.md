@@ -89,8 +89,8 @@ rm parse-out-example.json
 <!-- !test in type and effect maps are output -->
 ```
 quint typecheck --out typecheck-out-example.json ../examples/language-features/tuples.qnt > /dev/null
-printf "first type: " && cat typecheck-out-example.json | jq '.types."4".type.kind'
-printf "first effect: " && cat typecheck-out-example.json | jq '.effects."5".effect.kind'
+printf "first type: " && cat typecheck-out-example.json | jq '.types."7".type.kind'
+printf "first effect: " && cat typecheck-out-example.json | jq '.effects."8".effect.kind'
 rm typecheck-out-example.json
 ```
 
