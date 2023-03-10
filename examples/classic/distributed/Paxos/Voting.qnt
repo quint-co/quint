@@ -1,3 +1,4 @@
+// -*- mode: Bluespec; -*-
 module Voting {
 /***************************************************************************)
 (* This is a high-level algorithm in which a set of processes              *)

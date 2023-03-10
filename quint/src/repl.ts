@@ -3,7 +3,7 @@
  *
  * Igor Konnov, 2022-2023.
  *
- * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Copyright (c) Informal Systems 2022-2023. All rights reserved.
  * Licensed under the Apache 2.0.
  * See License.txt in the project root for license information.
  */
@@ -14,7 +14,7 @@ import { readFileSync, writeFileSync } from 'fs'
 import lineColumn from 'line-column'
 import chalk from 'chalk'
 
-import { just } from '@sweet-monads/maybe'
+import { just, none } from '@sweet-monads/maybe'
 import { left, right } from '@sweet-monads/either'
 
 import { QuintEx } from './quintIr'
@@ -25,7 +25,7 @@ import { formatError } from './errorReporter'
 import {
   ComputableKind, EvalResult, Register, kindName
 } from './runtime/runtime'
-import { ErrorMessage, Loc, probeParse } from './quintParserFrontend'
+import { ErrorMessage, probeParse } from './quintParserFrontend'
 import { IdGenerator, newIdGenerator } from './idGenerator'
 
 // tunable settings
@@ -64,6 +64,7 @@ function defaultExit() {
 export interface ReplOptions {
   preloadFilename?: string,
   importModule?: string,
+  quiet?: boolean,
 }
 
 // the entry point to the REPL
@@ -74,13 +75,18 @@ export function quintRepl(input: Readable,
   function out(text: string) {
     output.write(text + '\n')
   }
-  out(chalk.gray('Quint REPL v0.0.3'))
-  out(chalk.gray('Type ".exit" to exit, or ".help" for more information'))
+  function prompt(text: string) {
+    return options.quiet ? "" : text
+  }
+  if (!options.quiet) {
+    out(chalk.gray('Quint REPL v0.0.3'))
+    out(chalk.gray('Type ".exit" to exit, or ".help" for more information'))
+  }
   // create a readline interface
   const rl = readline.createInterface({
     input,
     output,
-    prompt: settings.prompt,
+    prompt: prompt(settings.prompt),
   })
 
   // the state
@@ -108,7 +114,7 @@ export function quintRepl(input: Readable,
     multilineText = ''
     nOpenBraces = 0
     nOpenParen = 0
-    rl.setPrompt(settings.prompt)
+    rl.setPrompt(prompt(settings.prompt))
     out(chalk.yellow(' <cancelled>'))
     // clear the line and show the prompt
     rl.write(null, { ctrl: true, name: 'u' })
@@ -131,7 +137,7 @@ export function quintRepl(input: Readable,
         // If the text is copy-pasted from the REPL output,
         // trim the REPL decorations.
         multilineText = trimReplDecorations(line)
-        rl.setPrompt(settings.continuePrompt)
+        rl.setPrompt(prompt(settings.continuePrompt))
       } else {
         line.trim() === '' || tryEval(out, state, line)
       }
@@ -148,7 +154,7 @@ export function quintRepl(input: Readable,
         tryEval(out, state, multilineText)
         multilineText = ''
         recyclingOwnOutput = false
-        rl.setPrompt(settings.prompt)
+        rl.setPrompt(prompt(settings.prompt))
       } else {
         // Continue the multiline mode.
         // It may happen that the text is copy-pasted from the REPL output.
@@ -452,63 +458,45 @@ def _testOnce(__nsteps, __init, __next, __inv) =
   _test(1, __nsteps, __init, __next, __inv);
 `
 
-// Count the number of lines in a string.
-// An empty string is counted as one line.
-// When #618 is implemented, we should remove this.
-function countLines(s: string): number {
-  let count = 1;
-  for (let i = 0; i < s.length; i++) {
-    if (s.charAt(i) === '\n') {
-      count++
-    }
-  }
-
-  return count
-}
-
 // try to evaluate the expression in a string and print it, if successful
 function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   // output errors to the console in red
-  function printErrors(moduleText: string, context: CompilationContext, lineOffset: number) {
+  function printErrors(moduleText: string, context: CompilationContext) {
     printErrorMessages(out,
-      'syntax error', moduleText, lineOffset, context.syntaxErrors)
+      'syntax error', moduleText, context.syntaxErrors)
     printErrorMessages(out,
-      'static analysis error', moduleText, lineOffset, context.analysisErrors, chalk.yellow)
+      'static analysis error', moduleText, context.analysisErrors, chalk.yellow)
     printErrorMessages(out,
-      'compile error', moduleText, lineOffset, context.compileErrors)
+      'compile error', moduleText, context.compileErrors)
     out('') // be nice to external programs
   }
 
   // Compose the input to the parser.
   // TODO: REPL should work incrementally:
   // https://github.com/informalsystems/quint/issues/618
-  function prepareParserInput(textToAdd: string): [string, number] {
-    const text = `${state.moduleHist}
+  function prepareParserInput(textToAdd: string): string {
+    return `${state.moduleHist}
 module __repl__ { ${simulatorBuiltins}
 ${state.defsHist}
 ${textToAdd}
 }`
-    // when #618 is implemented, we should stop counting lines in text!
-    const offset = -countLines(text) + countLines(newInput) + 2
-    return [text, offset]
   }
 
   const probeResult = probeParse(newInput, '<input>')
   if (probeResult.kind === 'error') {
-    printErrorMessages(out, 'syntax error', newInput, 1, probeResult.messages)
+    printErrorMessages(out, 'syntax error', newInput, probeResult.messages)
     out('') // be nice to external programs
     return false
   }
   if (probeResult.kind === 'expr') {
     // embed expression text into a value definition inside a module
-    const [moduleText, lineOffset] =
-      prepareParserInput(`  action __input =\n${newInput}`)
+    const moduleText = prepareParserInput(`  action __input =\n${newInput}`)
     // compile the expression or definition and evaluate it
     const context =
       compileFromCode(state.idGen, moduleText, '__repl__', () => Math.random())
     if (context.syntaxErrors.length > 0 ||
         context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
-      printErrors(moduleText, context, lineOffset)
+      printErrors(moduleText, context)
       if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
         return false
       } // else: provisionally, continue on type & effects errors
@@ -544,7 +532,7 @@ ${textToAdd}
       .mapLeft(msg => {
         // when #618 is implemented, we should remove this
         printErrorMessages(out,
-          'runtime error', moduleText, lineOffset, context.getRuntimeErrors())
+          'runtime error', moduleText, context.getRuntimeErrors())
         // print the error message produced by the lookup
         out(chalk.red(msg))
         out('') // be nice to external programs
@@ -554,13 +542,13 @@ ${textToAdd}
   }
   if (probeResult.kind === 'toplevel') {
     // embed expression text into a module at the top level
-    const [moduleText, lineOffset] = prepareParserInput(newInput)
+    const moduleText = prepareParserInput(newInput)
     // compile the module and add it to history if everything worked
     const context =
       compileFromCode(state.idGen, moduleText, '__repl__', () => Math.random())
     if (context.values.size === 0 ||
         context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
-      printErrors(moduleText, context, lineOffset)
+      printErrors(moduleText, context)
       return false
     } else {
       out('') // be nice to external programs
@@ -573,12 +561,12 @@ ${textToAdd}
 
 // print error messages with proper colors
 function printErrorMessages(out: writer,
-  kind: string, text: string, lineOffset: number, messages: ErrorMessage[],
+  kind: string, text: string, messages: ErrorMessage[],
   color: (_text: string) => string = chalk.red) {
   // display the error messages and highlight the error places
   const finder = lineColumn(text)
   messages.forEach(e => {
-    const msg = formatError(text, finder, e, lineOffset)
+    const msg = formatError(text, finder, e, none())
     out(color(`${kind}: ${msg}`))
   })
 }
