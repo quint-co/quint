@@ -19,7 +19,7 @@ import { QuintConstType, QuintType, Row, rowNames, typeNames } from '../quintTyp
 import { Constraint } from './base'
 import { Substitutions, applySubstitution, applySubstitutionToConstraint, compose } from './substitutions'
 import { unzip } from 'lodash'
-import { LookupTable, lookupType } from '../lookupTable'
+import { LookupTable } from '../lookupTable'
 
 /*
  * Try to solve a constraint by unifying all pairs of types in equality
@@ -188,7 +188,7 @@ export function unifyRows(table: LookupTable, r1: Row, r2: Row): Either<ErrorTre
 }
 
 function unifyWithAlias(table: LookupTable, t1: QuintConstType, t2: QuintType) {
-  const aliasValue = lookupType(table, t1.name)
+  const aliasValue = t1.id ? table.get(t1.id) : undefined
   if (!aliasValue) {
     return left(buildErrorLeaf(
       `Trying to unify ${t1.name} and ${typeToString(t2)}`,
@@ -196,14 +196,14 @@ function unifyWithAlias(table: LookupTable, t1: QuintConstType, t2: QuintType) {
     ))
   }
 
-  if(!aliasValue.type) {
+  if(!aliasValue.typeAnnotation) {
     return left(buildErrorLeaf(
       `Trying to unify ${t1.name} and ${typeToString(t2)}`,
       `Couldn't unify uninterpreted type ${t1.name} with different type`
     ))
   }
 
-  return unify(table, aliasValue.type, t2)
+  return unify(table, aliasValue.typeAnnotation, t2)
 }
 
 function bindType(name: string, type: QuintType): Either<string, Substitutions> {
@@ -222,7 +222,7 @@ function bindRow(name: string, row: Row): Either<string, Substitutions> {
   }
 }
 
-function applySubstitutionsAndunify(
+function applySubstitutionsAndUnify(
   table: LookupTable, subs: Substitutions, t1: QuintType, t2: QuintType
 ): Either<Error, Substitutions> {
   const newSubstitutions = unify(table,
@@ -244,7 +244,7 @@ function checkSameLength(
 
 function chainUnifications(table: LookupTable, types1: QuintType[], types2: QuintType[]): Either<Error, Substitutions> {
   return types1.reduce((result: Either<Error, Substitutions>, t, i) => {
-    return result.chain(subs => applySubstitutionsAndunify(table, subs, t, types2[i]))
+    return result.chain(subs => applySubstitutionsAndUnify(table, subs, t, types2[i]))
   }, right([]))
 }
 

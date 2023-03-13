@@ -40,17 +40,25 @@ export interface TypeDefinition {
  *
  * If a name is set on a definitions map, its values must be non-empty.
  */
-export interface LookupTable {
+export interface DefinitionsByName {
   /* Names for operators defined */
   valueDefinitions: Map<string, ValueDefinition[]>
   /* Type aliases defined */
   typeDefinitions: Map<string, TypeDefinition[]>
 }
 
+export interface Definition {
+  reference: bigint,
+  kind: ValueDefinitionKind | 'type',
+  typeAnnotation?: QuintType,
+}
+
+export type LookupTable = Map<bigint, Definition>
+
 /**
  * Lookup tables for each module
  */
-export type LookupTableByModule = Map<string, LookupTable>
+export type LookupTableByModule = Map<string, DefinitionsByName>
 
 /**
  * An initializer for lookup tables
@@ -65,8 +73,8 @@ export function newTable(
     valueDefinitions = [],
     typeDefinitions = [],
   }: { valueDefinitions?: ValueDefinition[], typeDefinitions?: TypeDefinition[] }
-): LookupTable {
-  const table: LookupTable = {
+): DefinitionsByName {
+  const table: DefinitionsByName = {
     valueDefinitions: new Map<string, ValueDefinition[]>(),
     typeDefinitions: new Map<string, TypeDefinition[]>(),
   }
@@ -84,7 +92,7 @@ export function newTable(
  *
  * @returns a lookup table with the same definitions as the provided one
  */
-export function copyTable(table: LookupTable): LookupTable {
+export function copyTable(table: DefinitionsByName): DefinitionsByName {
   return {
     valueDefinitions: new Map<string, ValueDefinition[]>(table.valueDefinitions.entries()),
     typeDefinitions: new Map<string, TypeDefinition[]>(table.typeDefinitions.entries()),
@@ -97,7 +105,7 @@ export function copyTable(table: LookupTable): LookupTable {
  * @param def the value definition to be added
  * @param table the lookup table to be updated
  */
-export function addValueToTable(def: ValueDefinition, table: LookupTable) {
+export function addValueToTable(def: ValueDefinition, table: DefinitionsByName) {
   if (!table.valueDefinitions.has(def.identifier)) {
     table.valueDefinitions.set(def.identifier, [])
   }
@@ -111,7 +119,7 @@ export function addValueToTable(def: ValueDefinition, table: LookupTable) {
  * @param def the type definition to be added
  * @param table the lookup table to be updated
  */
-export function addTypeToTable(def: TypeDefinition, table: LookupTable) {
+export function addTypeToTable(def: TypeDefinition, table: DefinitionsByName) {
   if (!table.typeDefinitions.has(def.identifier)) {
     table.typeDefinitions.set(def.identifier, [])
   }
@@ -130,7 +138,7 @@ export function addTypeToTable(def: TypeDefinition, table: LookupTable) {
  * @returns the value definition, if found under the scope. Otherwise, undefined
  */
 export function lookupValue(
-  table: LookupTable, scopeTree: ScopeTree, name: string, scope: bigint
+  table: DefinitionsByName, scopeTree: ScopeTree, name: string, scope: bigint
 ): ValueDefinition | undefined {
   if (!table.valueDefinitions.has(name)) {
     return undefined
@@ -147,7 +155,7 @@ export function lookupValue(
  *
  * @returns the type definition, if found under the scope. Otherwise, undefined
  */
-export function lookupType(table: LookupTable, name: string): TypeDefinition | undefined {
+export function lookupType(table: DefinitionsByName, name: string): TypeDefinition | undefined {
   if (!table.typeDefinitions.has(name)) {
     return undefined
   }
@@ -165,7 +173,7 @@ export function lookupType(table: LookupTable, name: string): TypeDefinition | u
  *
  * @returns a lookup table with the filtered and namespaced names
  */
-export function copyNames(originTable: LookupTable, namespace?: string, scope?: bigint): LookupTable {
+export function copyNames(originTable: DefinitionsByName, namespace?: string, scope?: bigint): DefinitionsByName {
   const table = newTable({})
 
   originTable.valueDefinitions.forEach((defs, identifier) => {
@@ -201,7 +209,7 @@ export function copyNames(originTable: LookupTable, namespace?: string, scope?: 
  *
  * @returns the merged lookup table
  */
-export function mergeTables(t1: LookupTable, t2: LookupTable): LookupTable {
+export function mergeTables(t1: DefinitionsByName, t2: DefinitionsByName): DefinitionsByName {
   const result = copyTable(t1)
 
   t2.valueDefinitions.forEach((defs, _identifier) => {

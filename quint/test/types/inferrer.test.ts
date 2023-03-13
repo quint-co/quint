@@ -2,14 +2,18 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { buildModuleWithDefs } from '../builders/ir'
 import { TypeInferenceResult, TypeInferrer } from '../../src/types/inferrer'
-import { LookupTable, LookupTableByModule, mergeTables, newTable } from '../../src/lookupTable'
+import { DefinitionsByName, mergeTables, newTable } from '../../src/lookupTable'
 import { typeSchemeToString } from '../../src/types/printing'
 import { errorTreeToString } from '../../src/errorTree'
 import { collectDefinitions } from '../../src/definitionsCollector'
 import { QuintModule } from '../../src/quintIr'
+import { resolveNames } from '../../src/nameResolver'
+import { treeFromModule } from '../../src/scoping'
 
 describe('inferTypes', () => {
-  const table: LookupTable = newTable({
+  // Names are mocked without scope to keep tests simple
+  // Be careful not to use the same name twice in different scopes
+  const table: DefinitionsByName = newTable({
     valueDefinitions: [
       { kind: 'const', identifier: 'N', reference: 3n },
       { kind: 'var', identifier: 'x', reference: 3n },
@@ -19,9 +23,12 @@ describe('inferTypes', () => {
 
   function inferTypesForModule(quintModule: QuintModule): TypeInferenceResult {
     const mergedTable = mergeTables(collectDefinitions(quintModule), table)
-    const definitionsTable: LookupTableByModule = new Map<string, LookupTable>([['wrapper', mergedTable]])
+    const lookupTable = resolveNames(quintModule, mergedTable, treeFromModule(quintModule))
+    if (lookupTable.isLeft()) {
+      throw new Error('Failed to resolve names in mocked up module')
+    }
 
-    const inferrer = new TypeInferrer(definitionsTable)
+    const inferrer = new TypeInferrer(lookupTable.value)
     return inferrer.inferTypes(quintModule)
   }
 

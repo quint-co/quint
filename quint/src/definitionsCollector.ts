@@ -16,7 +16,7 @@
 
 import { IRVisitor, walkModule } from './IRVisitor'
 import {
-  LookupTable, ValueDefinition, ValueDefinitionKind,
+  DefinitionsByName, ValueDefinition, ValueDefinitionKind,
   addTypeToTable, addValueToTable, newTable
 } from './lookupTable'
 import { QuintAssume, QuintConst, QuintLambda, QuintLet, QuintModule, QuintOpDef, QuintTypeDef, QuintVar } from './quintIr'
@@ -138,14 +138,14 @@ export function defaultValueDefinitions(): ValueDefinition[] {
  *
  * @returns a lookup table with all defined values for the module
  */
-export function collectDefinitions(quintModule: QuintModule): LookupTable {
+export function collectDefinitions(quintModule: QuintModule): DefinitionsByName {
   const visitor = new DefinitionsCollectorVisitor()
   walkModule(visitor, quintModule)
   return visitor.table
 }
 
 class DefinitionsCollectorVisitor implements IRVisitor {
-  table: LookupTable = newTable({ valueDefinitions: defaultValueDefinitions() })
+  table: DefinitionsByName = newTable({ valueDefinitions: defaultValueDefinitions() })
   private scopeStack: bigint[] = []
 
   enterVar(def: QuintVar): void {

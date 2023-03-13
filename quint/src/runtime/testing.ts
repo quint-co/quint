@@ -12,11 +12,11 @@ import { Either, merge } from '@sweet-monads/either'
 
 import { ErrorMessage, Loc, fromIrErrorMessage } from '../quintParserFrontend'
 import { QuintModule, QuintOpDef } from '../quintIr'
-import { LookupTableByModule } from '../lookupTable'
 import { TypeScheme } from '../types/base'
 
 import { compile, contextLookup } from './compile'
 import { newIdGenerator } from './../idGenerator'
+import { LookupTable } from '../lookupTable'
 
 /**
  * Evaluation result.
@@ -53,7 +53,7 @@ export function
 compileAndTest(modules: QuintModule[],
          main: QuintModule,
          sourceMap: Map<bigint, Loc>,
-         lookupTable: LookupTableByModule,
+         lookupTable: LookupTable,
          types: Map<bigint, TypeScheme>,
          testMatch: (n: string) => boolean,
          rand: () => number): Either<string, TestResult[]> {
@@ -63,14 +63,14 @@ compileAndTest(modules: QuintModule[],
     main.defs.filter(d => d.kind === 'def' && testMatch(d.name)) as QuintOpDef[]
 
   return merge(testDefs.map(def => {
-    const name = def.name
-    return contextLookup(ctx, main.name, name, 'callable')
+    return contextLookup(ctx, def.id, 'callable')
       .map(comp => {
+        const name = def.name
         const result = comp.eval()
         if (result.isNone()) {
           return { name, status: 'failed', errors: ctx.getRuntimeErrors() }
         }
-  
+
         const ex = result.value.toQuintEx(newIdGenerator())
         if (ex.kind !== 'bool') {
           return { name, status: 'ignored', errors: [] }
@@ -78,7 +78,7 @@ compileAndTest(modules: QuintModule[],
         if (ex.value) {
           return { name, status: 'passed', errors: [] }
         }
-  
+
         const e = fromIrErrorMessage(sourceMap)({
           explanation: `${name} returns false`,
           refs: [def.id],
@@ -87,4 +87,3 @@ compileAndTest(modules: QuintModule[],
       })
   }))
 }
-

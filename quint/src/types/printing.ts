@@ -1,5 +1,4 @@
 import { rowToString, typeToString } from '../IRprinting'
-import { newTable } from '../lookupTable'
 import { Constraint, TypeScheme } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 
@@ -34,14 +33,14 @@ export function typeSchemeToString(t: TypeScheme): string {
     vars.push(`t${i}`)
     return { kind: 'type', name, value: { kind: 'var', name: `t${i}` } }
   })
-  
+
   const rowSubs: Substitutions = rowNames.map((name, i) => {
     vars.push(`r${i}`)
     return { kind: 'row', name: name, value: { kind: 'var', name: `r${i}` } }
   })
 
-  const subs = compose(newTable({}), typeSubs, rowSubs)
-  const type = applySubstitution(newTable({}), subs, t.type)
+  const subs = compose(new Map(), typeSubs, rowSubs)
+  const type = applySubstitution(new Map(), subs, t.type)
 
   const varsString = vars.length > 0 ? `∀ ${vars.join(', ')} . ` : ''
   return `${varsString}${typeToString(type)}`

@@ -12,7 +12,7 @@
  * @module
  */
 
-import { LookupTable, LookupTableByModule, addTypeToTable, addValueToTable, copyNames, copyTable, mergeTables, newTable } from './lookupTable'
+import { DefinitionsByName, LookupTableByModule, addTypeToTable, addValueToTable, copyNames, copyTable, mergeTables, newTable } from './lookupTable'
 import { QuintImport, QuintInstance, QuintModule } from './quintIr'
 import { IRVisitor, walkModule } from './IRVisitor'
 import { Either, left, right } from '@sweet-monads/either'
@@ -33,7 +33,7 @@ export interface ImportError {
 /**
  * The result of import resolution for a Quint Module.
  */
-export type ImportResolutionResult = Either<Map<bigint, QuintError>, LookupTable>
+export type ImportResolutionResult = Either<Map<bigint, QuintError>, DefinitionsByName>
 
 /**
  * Explores the IR visiting all imports and instances. For each one, tries to find a definition
@@ -61,7 +61,7 @@ class ImportResolverVisitor implements IRVisitor {
 
   tables: LookupTableByModule
   errors: Map<bigint, QuintError> = new Map<bigint, QuintError>()
-  table: LookupTable = newTable({})
+  table: DefinitionsByName = newTable({})
 
   private currentModule?: QuintModule
 

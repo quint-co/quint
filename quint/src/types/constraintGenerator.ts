@@ -13,16 +13,15 @@
  */
 
 import { IRVisitor } from '../IRVisitor'
-import { QuintApp, QuintBool, QuintConst, QuintDef, QuintEx, QuintInstance, QuintInt, QuintLambda, QuintLet, QuintModule, QuintName, QuintOpDef, QuintStr, QuintVar } from '../quintIr'
+import { QuintApp, QuintBool, QuintConst, QuintDef, QuintEx, QuintInstance, QuintInt, QuintLambda, QuintLet, QuintName, QuintOpDef, QuintStr, QuintVar } from '../quintIr'
 import { QuintType, typeNames } from '../quintTypes'
 import { expressionToString, rowToString, typeToString } from '../IRprinting'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
+import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
 import { getSignatures } from './builtinSignatures'
 import { Constraint, Signature, TypeScheme } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
-import { ScopeTree, treeFromModule } from '../scoping'
-import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../lookupTable'
+import { LookupTable } from '../lookupTable'
 import { specialConstraints } from './specialConstraints'
 import { FreshVarGenerator } from "../FreshVarGenerator"
 
@@ -32,9 +31,9 @@ export type SolvingFunctionType = (_table: LookupTable, _constraint: Constraint)
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
-  constructor(solvingFunction: SolvingFunctionType, tables: LookupTableByModule) {
+  constructor(solvingFunction: SolvingFunctionType, table: LookupTable) {
     this.solvingFunction = solvingFunction
-    this.tables = tables
+    this.table = table
     this.freshVarGenerator = new FreshVarGenerator()
   }
 
@@ -45,23 +44,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   private constraints: Constraint[] = []
 
   private builtinSignatures: Map<string, Signature> = getSignatures()
-  private tables: LookupTableByModule
+  private table: LookupTable
   private freshVarGenerator: FreshVarGenerator
 
   // Track location descriptions for error tree traces
   private location: string = ''
-
-  private currentTable: LookupTable = newTable({})
-  private currentScopeTree: ScopeTree = { value: 0n, children: [] }
-
-  enterModule(module: QuintModule): void {
-    this.currentScopeTree = treeFromModule(module)
-    this.currentTable = this.tables.get(module.name)!
-  }
-
-  exitModule(_module: QuintModule): void {
-    this.constraints = []
-  }
 
   enterExpr(e: QuintEx) {
     this.location = `Generating constraints for ${expressionToString(e)}`
@@ -156,7 +143,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
   enterLambda(expr: QuintLambda) {
     expr.params.forEach(p => {
-      const varName = `t_${p.name}_${p.id}`
+      const varName = p.name === '_' ? this.freshVarGenerator.freshVar('t') : `t_${p.name}_${p.id}`
       this.addToResults(p.id, right(toScheme({ kind: 'var', name: varName })))
     })
   }
@@ -170,12 +157,12 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     }
     const result = this.fetchResult(e.expr.id)
       .chain(resultType => {
-        const paramTypes = mergeInMany(e.params.map(p => this.fetchSignature(p.name, p.id, 2)))
+        const paramTypes = mergeInMany(e.params.map(p => this.fetchResult(p.id).map(e => this.newInstance(e))))
         return paramTypes.map((ts): TypeScheme => {
           const newType: QuintType = { kind: 'oper', args: ts, res: resultType.type }
           return { ...typeNames(newType), type: newType }
         }).mapLeft(e => {
-          throw new Error(`This should be impossible: Lambda variables not found: ${e.join(', ')}`)
+          throw new Error(`This should be impossible: Lambda variables not found: ${e.map(errorTreeToString)}`)
         })
       })
 
@@ -236,7 +223,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     // Remove solved constraints
     this.constraints = []
 
-    return this.solvingFunction(this.currentTable, constraint)
+    return this.solvingFunction(this.table, constraint)
       .mapLeft(errors => errors.forEach((err, id) => this.errors.set(id, err)))
       .map((subs) => {
         // Apply substitution to environment
@@ -244,7 +231,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         // https://github.com/informalsystems/quint/issues/690
         this.types = new Map<bigint, TypeScheme>(
           [...this.types.entries()].map(([id, te]) => {
-            const newType = applySubstitution(this.currentTable, subs, te.type)
+            const newType = applySubstitution(this.table, subs, te.type)
             const scheme: TypeScheme = { ...typeNames(newType), type: newType }
             return [id, scheme]
           })
@@ -256,16 +243,13 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
   private fetchSignature(opcode: string, scope: bigint, arity: number): Either<ErrorTree, QuintType> {
     // Assumes a valid number of arguments
-    if (opcode === '_') {
-      return right({ kind: 'var', name: this.freshVarGenerator.freshVar('t') })
-    }
 
     if (this.builtinSignatures.has(opcode)) {
       const signatureFunction = this.builtinSignatures.get(opcode)!
       const signature = signatureFunction(arity)
       return right(this.newInstance(signature))
     } else {
-      const def = lookupValue(this.currentTable, this.currentScopeTree, opcode, scope)
+      const def = this.table.get(scope)
 
       // FIXME: We have to check if the annotation is too general for var and consts as well
       // https://github.com/informalsystems/quint/issues/691
@@ -294,8 +278,8 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       return { kind: 'row', name: name, value: { kind: 'var', name: this.freshVarGenerator.freshVar('t') } }
     })
 
-    const subs = compose(this.currentTable, typeSubs, rowSubs)
-    return applySubstitution(this.currentTable, subs, t.type)
+    const subs = compose(this.table, typeSubs, rowSubs)
+    return applySubstitution(this.table, subs, t.type)
   }
 }
 

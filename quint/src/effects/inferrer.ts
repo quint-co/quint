@@ -14,14 +14,13 @@
  */
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../lookupTable'
+import { LookupTable } from '../lookupTable'
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
-import { QuintApp, QuintBool, QuintEx, QuintInt, QuintLambda, QuintLet, QuintModule, QuintName, QuintOpDef, QuintStr } from '../quintIr'
+import { QuintApp, QuintBool, QuintConst, QuintEx, QuintInt, QuintLambda, QuintLet, QuintModule, QuintName, QuintOpDef, QuintStr, QuintVar } from '../quintIr'
 import { Effect, EffectScheme, Signature, effectNames, toScheme, unify } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
-import { ScopeTree, treeFromModule } from '../scoping'
 import { getSignatures } from './builtinSignatures'
 import { FreshVarGenerator } from '../FreshVarGenerator'
 import { effectToString } from './printing'
@@ -34,7 +33,7 @@ export type EffectInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, EffectS
  * expressions. Errors are written to the errors attribute.
  */
 export class EffectInferrer implements IRVisitor {
-  constructor(lookupTable: LookupTableByModule) {
+  constructor(lookupTable: LookupTable) {
     this.lookupTable = lookupTable
     this.freshVarGenerator = new FreshVarGenerator()
   }
@@ -49,9 +48,6 @@ export class EffectInferrer implements IRVisitor {
    *          ids to the corresponding error for any problematic expressions.
    */
   inferEffects(module: QuintModule): EffectInferenceResult {
-    this.currentTable = this.lookupTable.get(module.name) ?? newTable({})
-    this.currentScopeTree = treeFromModule(module)
-
     walkModule(this, module)
     return [this.errors, this.effects]
   }
@@ -63,73 +59,46 @@ export class EffectInferrer implements IRVisitor {
   private substitutions: Substitutions = []
 
   private builtinSignatures: Map<string, Signature> = getSignatures()
-  private lookupTable: LookupTableByModule
+  private lookupTable: LookupTable
   private freshVarGenerator: FreshVarGenerator
 
   // Track location descriptions for error tree traces
   private location: string = ''
 
-  private currentTable: LookupTable = newTable({})
-  private currentScopeTree: ScopeTree = { value: 0n, children: [] }
-
   enterExpr(e: QuintEx) {
     this.location = `Inferring effect for ${expressionToString(e)}`
   }
 
+  /* { kind: 'const', identifier: c } ∈ Γ
+   * ------------------------------------- (NAME-CONST)
+   *       Γ ⊢ c: Pure
+   */
+  exitConst(def: QuintConst) {
+    const effect: Effect = { kind: 'concrete', components: [] }
+    this.addToResults(def.id, right(toScheme(effect)))
+  }
+
+  /*  { kind: 'var', identifier: v } ∈ Γ
+   * ------------------------------------ (NAME-VAR)
+   *          Γ ⊢ v: Read[v]
+   */
+  exitVar(def: QuintVar) {
+    const effect: Effect = {
+      kind: 'concrete', components: [{ kind: 'read', entity: { kind: 'concrete', stateVariables: [{ name: def.name, reference: def.id }] } }],
+    }
+    this.addToResults(def.id, right(toScheme(effect)))
+  }
+
+  /* { identifier: op, effect: E } ∈ Γ
+   * -------------------------------------- (NAME-OP)
+   *           Γ ⊢ op: E
+   */
   exitName(expr: QuintName): void {
     if (this.errors.size > 0) {
       // Don't try to infer application if there are errors with the args
       return
     }
-    const def = lookupValue(this.currentTable, this.currentScopeTree, expr.name, expr.id)
-    if (!def) {
-      this.addToResults(expr.id, left(buildErrorLeaf(
-        this.location,
-        `Couldn't find ${expr.name} in the lookup table`
-      )))
-      return
-    }
-
-    switch (def.kind) {
-      case 'const': {
-        /* { kind: 'const', identifier: c } ∈ Γ
-         * ------------------------------------- (NAME-CONST)
-         *       Γ ⊢ c: Pure
-         */
-        const effect: Effect = { kind: 'concrete', components: [] }
-        this.addToResults(expr.id, right(toScheme(effect)))
-        break
-      }
-      case 'var': {
-        /*  { kind: 'var', identifier: v } ∈ Γ
-         * ------------------------------------ (NAME-VAR)
-         *          Γ ⊢ v: Read[v]
-         */
-        const effect: Effect = {
-          kind: 'concrete', components: [{ kind: 'read', entity: { kind: 'concrete', stateVariables: [{ name: expr.name, reference: expr.id }] } }],
-        }
-        this.addToResults(expr.id, right(toScheme(effect)))
-        break
-      }
-      case 'val':
-      case 'param':
-      case 'def': {
-        /* { identifier: op, effect: E } ∈ Γ
-         * -------------------------------------- (NAME-OP)
-         *           Γ ⊢ op: E
-         */
-
-        if (def.reference) {
-          this.addToResults(expr.id, this.fetchResult(def.reference))
-        }
-
-        this.fetchSignature(expr.name, expr.id, 2)
-          .mapLeft(err => buildErrorTree(this.location, err))
-          .map(effect => {
-            return this.addToResults(expr.id, right(toScheme(effect)))
-          })
-      }
-    }
+    this.addToResults(expr.id, this.fetchSignature(expr.name, expr.id, 2).map(toScheme))
   }
 
   /* { identifier: op, effect: E } ∈ Γ    Γ ⊢ p0:E0 ... Γ ⊢ pn:EN
@@ -301,21 +270,21 @@ export class EffectInferrer implements IRVisitor {
     }
   }
 
-  private fetchSignature(opcode: string, scope: bigint, arity: number): Either<ErrorTree, Effect> {
+  private fetchSignature(name: string, nameId: bigint, arity: number): Either<ErrorTree, Effect> {
     // Assumes a valid number of arguments
-    if (opcode === '_') {
+    if (name === '_') {
       return right({ kind: 'variable', name: this.freshVarGenerator.freshVar('_e') })
     }
 
-    if (this.builtinSignatures.has(opcode)) {
-      const signatureFunction = this.builtinSignatures.get(opcode)!
+    if (this.builtinSignatures.has(name)) {
+      const signatureFunction = this.builtinSignatures.get(name)!
       const signature = signatureFunction(arity)
       return right(this.newInstance(signature))
     } else {
-      const def = lookupValue(this.currentTable, this.currentScopeTree, opcode, scope)
+      const def = this.lookupTable.get(nameId)
       const id = def?.reference
       if (!def || !id) {
-        return left(buildErrorLeaf(this.location, `Signature not found for name: ${opcode}`))
+        return left(buildErrorLeaf(this.location, `Signature not found for name: ${name}`))
       }
 
       return this.fetchResult(id).map(e => {

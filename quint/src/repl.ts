@@ -19,13 +19,13 @@ import { left, right } from '@sweet-monads/either'
 
 import { QuintEx } from './quintIr'
 import {
-  CompilationContext, compileFromCode, contextLookup, lastTraceName
+  CompilationContext, compileFromCode, contextNameLookup, lastTraceName
 } from './runtime/compile'
 import { formatError } from './errorReporter'
 import {
   ComputableKind, EvalResult, Register, kindName
 } from './runtime/runtime'
-import { ErrorMessage, Loc, probeParse } from './quintParserFrontend'
+import { ErrorMessage, probeParse } from './quintParserFrontend'
 import { IdGenerator, newIdGenerator } from './idGenerator'
 
 // tunable settings
@@ -448,8 +448,7 @@ export function chalkQuintEx(ex: QuintEx): string {
 const simulatorBuiltins =
 `val ${lastTraceName} = [];
 def _test(__nruns, __nsteps, __init, __next, __inv) = false;
-def _testOnce(__nsteps, __init, __next, __inv) =
-  _test(1, __nsteps, __init, __next, __inv);
+def _testOnce(__nsteps, __init, __next, __inv) = false;
 `
 
 // Count the number of lines in a string.
@@ -516,7 +515,7 @@ ${textToAdd}
 
     loadVars(state, context)
     loadShadowVars(state, context)
-    const computable = contextLookup(context, '__repl__', '__input', 'callable')
+    const computable = contextNameLookup(context, '__input', 'callable')
     const result =
       computable
       .mapRight(comp => {
@@ -549,7 +548,7 @@ ${textToAdd}
         out(chalk.red(msg))
         out('') // be nice to external programs
       })
-      
+
     return result.isRight()
   }
   if (probeResult.kind === 'toplevel') {

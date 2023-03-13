@@ -145,7 +145,7 @@ describe('repl ok', () => {
       `>>> 1 + false
       |static analysis error: <input>:1:1 - error: [QNT000] Couldn't unify int and bool
       |Trying to unify int and bool
-      |Trying to unify (int, int) => int and (int, bool) => t8
+      |Trying to unify (int, int) => int and (int, bool) => t2
       |
       |1: 1 + false
       |   ^^^^^^^^^
@@ -464,10 +464,10 @@ describe('repl ok', () => {
       |action Init = n' = 0
       |action Next = n' = n + 1
       |val Inv = n < 10
-      |_testOnce(5, "Init", "Next", "Inv")
-      |_testOnce(10, "Init", "Next", "Inv")
-      |_test(5, 5, "Init", "Next", "Inv")
-      |_test(5, 10, "Init", "Next", "Inv")
+      |_testOnce(5, Init, Next, Inv)
+      |_testOnce(10, Init, Next, Inv)
+      |_test(5, 5, Init, Next, Inv)
+      |_test(5, 10, Init, Next, Inv)
       |_lastTrace.length()
       |_lastTrace.nth(_lastTrace.length() - 1)
       |`
@@ -482,13 +482,13 @@ describe('repl ok', () => {
       |
       |>>> val Inv = n < 10
       |
-      |>>> _testOnce(5, "Init", "Next", "Inv")
+      |>>> _testOnce(5, Init, Next, Inv)
       |true
-      |>>> _testOnce(10, "Init", "Next", "Inv")
+      |>>> _testOnce(10, Init, Next, Inv)
       |false
-      |>>> _test(5, 5, "Init", "Next", "Inv")
+      |>>> _test(5, 5, Init, Next, Inv)
       |true
-      |>>> _test(5, 10, "Init", "Next", "Inv")
+      |>>> _test(5, 10, Init, Next, Inv)
       |false
       |>>> _lastTrace.length()
       |11
