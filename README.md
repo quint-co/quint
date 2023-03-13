@@ -32,6 +32,9 @@ validateBalance(ctx, addr) ==
        coins[denom] > 0
 ```
 
+Want a preview of the tools before reading any further? Check [Quick
+previews](./doc/previews.md).
+
 Quint is inspired by [TLA+][] but provides an alternative surface syntax for
 specifying systems in TLA. The most important feature of our syntax is that it
 is minimal and regular, making Quint an easy target for advanced developer
@@ -77,7 +80,9 @@ Some of them accompany a TLA+ version for comparison and learning purposes.
 To simplify reading, use [syntax highlighting](./editor-plugins) for your
 editor (currently, VSCode, Emacs and Vim are supported).
 
-### User manuals :blue_book:
+### Tools :space_invader:
+
+[Quick previews](./doc/previews.md) of the tools.
 
  - Quint's core tool `quint`:
 
