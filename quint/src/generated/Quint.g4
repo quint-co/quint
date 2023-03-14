@@ -59,9 +59,11 @@ qualifier : 'val'
 instanceMod :   'module' IDENTIFIER '=' IDENTIFIER
                 '('
                   (MUL |
-                  IDENTIFIER '=' expr (',' IDENTIFIER '=' expr)* (',' MUL)?)
+                  name '=' expr (',' name '=' expr)* (',' MUL)?)
                 ')'
         ;
+
+name: IDENTIFIER;
 
 // Types in Type System 1.2 of Apalache, which supports discriminated unions
 type :          <assoc=right> type '->' type                    # typeFun
