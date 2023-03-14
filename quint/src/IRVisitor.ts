@@ -296,7 +296,7 @@ export function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
       if (visitor.enterInstance) {
         visitor.enterInstance(def)
       }
-      def.overrides.forEach(e => walkExpression(visitor, e[1]))
+      def.overrides.forEach(([_, e]) => walkExpression(visitor, e))
       if (visitor.exitInstance) {
         visitor.exitInstance(def)
       }

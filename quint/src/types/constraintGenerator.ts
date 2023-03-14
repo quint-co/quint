@@ -89,8 +89,10 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     // For each override, ensure that the the type for the name and the type of
     // the value are the same
     def.overrides.forEach(([name, ex]) => {
-      const namespacedName = `${def.name}::${name}`
+      const namespacedName = `${def.name}::${name.name}`
       this.fetchSignature(namespacedName, def.id, 0).chain(typeForName => {
+        this.addToResults(name.id, right(toScheme(typeForName)))
+
         return this.fetchResult(ex.id).map(typeForValue => {
           this.constraints.push({ kind: 'eq', types: [typeForName, typeForValue.type], sourceId: ex.id })
         })

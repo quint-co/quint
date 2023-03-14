@@ -15,7 +15,6 @@
 import { LookupTable, LookupTableByModule, addTypeToTable, addValueToTable, copyNames, copyTable, mergeTables, newTable } from './lookupTable'
 import { QuintImport, QuintInstance, QuintModule } from './quintIr'
 import { IRVisitor, walkModule } from './IRVisitor'
-import { Either, left, right } from '@sweet-monads/either'
 import { QuintError } from './quintError'
 
 /**
@@ -33,8 +32,7 @@ export interface ImportError {
 /**
  * The result of import resolution for a Quint Module.
  */
-export type ImportResolutionResult = Either<Map<bigint, QuintError>, LookupTable>
-
+export type ImportResolutionResult = [Map<bigint, QuintError>, LookupTable]
 /**
  * Explores the IR visiting all imports and instances. For each one, tries to find a definition
  * table for the required module name, and if found, copies all unscoped non-default definitions
@@ -49,9 +47,7 @@ export function resolveImports(quintModule: QuintModule, tables: LookupTableByMo
   const visitor = new ImportResolverVisitor(tables)
   walkModule(visitor, quintModule)
 
-  return visitor.errors.size > 0
-    ? left(visitor.errors)
-    : right(visitor.table)
+  return [visitor.errors, visitor.table]
 }
 
 class ImportResolverVisitor implements IRVisitor {
@@ -101,12 +97,12 @@ class ImportResolverVisitor implements IRVisitor {
     // For each override, check if the name exists in the instanced module and is a constant.
     // If so, update the value definition to point to the expression being overriden
     def.overrides.forEach(([name, ex]) => {
-      const valueDefs = instanceTable.valueDefinitions.get(name) ?? []
+      const valueDefs = instanceTable.valueDefinitions.get(name.name) ?? []
 
       if (valueDefs.length === 0) {
         this.errors.set(def.id, {
           code: 'QNT406',
-          message: `Instantiation error: ${name} not found in ${def.protoName}`,
+          message: `Instantiation error: ${name.name} not found in ${def.protoName}`,
           data: {},
         })
       }
@@ -114,12 +110,12 @@ class ImportResolverVisitor implements IRVisitor {
       if (!valueDefs.every(def => def.kind === 'const')) {
         this.errors.set(def.id, {
           code: 'QNT406',
-          message: `Instantiation error: ${name} is not a constant`,
+          message: `Instantiation error: ${name.name} is not a constant`,
           data: {},
         })
       }
       const newDefs = valueDefs.map(def => ({ ...def, reference: ex.id }))
-      instanceTable.valueDefinitions.set(name, newDefs)
+      instanceTable.valueDefinitions.set(name.name, newDefs)
     })
 
     // Copy the intanced module lookup table in a new lookup table for the instance
