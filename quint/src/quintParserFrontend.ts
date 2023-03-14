@@ -138,23 +138,18 @@ export function parsePhase2(phase1Data: ParserPhase1): ParseResult<ParserPhase2>
 
   const definitions = phase1Data.modules.reduce((result: Either<ErrorMessage[], LookupTable>, module) => {
     const scopeTree = treeFromModule(module)
-    let currentDefinitions = collectDefinitions(module)
-    definitionsByModule.set(module.name, currentDefinitions)
+    const definitionsBeforeImport = collectDefinitions(module)
+    definitionsByModule.set(module.name, definitionsBeforeImport)
 
-    const importResult: Either<ErrorMessage[], DefinitionsByName> =
-      resolveImports(module, definitionsByModule)
-        .map(t => {
-          definitionsByModule.set(module.name, t)
-          currentDefinitions = t
-          return currentDefinitions
-        })
-        .mapLeft((errorMap): ErrorMessage[] => {
-          const errorLocator = mkErrorMessage(sourceMap)
-          return Array.from(errorMap, errorLocator)
-        })
+    const [errors, definitions] = resolveImports(module, definitionsByModule)
+    const errorLocator = mkErrorMessage(sourceMap)
+
+    const importResult: Either<ErrorMessage[], DefinitionsByName> = errors.size > 0
+      ? left(Array.from(errors, errorLocator))
+      : right(definitions)
 
     const conflictResult: Either<ErrorMessage[], void> =
-      scanConflicts(currentDefinitions, scopeTree).mapLeft((conflicts): ErrorMessage[] => {
+      scanConflicts(definitions, scopeTree).mapLeft((conflicts): ErrorMessage[] => {
         return conflicts.map(conflict => {
           let msg, sources
           if (conflict.sources.some(source => source.kind === 'builtin')) {
@@ -181,7 +176,7 @@ export function parsePhase2(phase1Data: ParserPhase1): ParseResult<ParserPhase2>
       })
 
     const resolutionResult: Either<ErrorMessage[], LookupTable> =
-      resolveNames(module, currentDefinitions, scopeTree).mapLeft(errors => {
+      resolveNames(module, definitions, scopeTree).mapLeft(errors => {
         // Build error message with resolution explanation and the location obtained from sourceMap
         return errors.map(error => {
           const msg = `Failed to resolve ` +

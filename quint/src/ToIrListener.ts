@@ -315,12 +315,16 @@ export class ToIrListener implements QuintListener {
     const instanceName = identifiers[0].text
     const protoName = identifiers[1].text
     const nexprs = ctx.expr().length
-    const overrides: [string, QuintEx][] = []
+    const overrides: [QuintLambdaParameter, QuintEx][] = []
     if (nexprs > 0) {
       const exprs = popMany(this.exprStack, nexprs)
       for (let i = 0; i < nexprs; i++) {
+        const id = this.idGen.nextId()
+        // TODO: use a more precise ctx
+        this.sourceMap.set(id, this.loc(ctx))
+
         const name = identifiers[2 + i].text
-        overrides.push([name, exprs[i]])
+        overrides.push([{ id, name }, exprs[i]])
       }
     }
     const identityOverride = ctx.MUL() !== undefined

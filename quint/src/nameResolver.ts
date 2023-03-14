@@ -15,7 +15,7 @@
  * @module
  */
 
-import { QuintApp, QuintDef, QuintModule, QuintName } from './quintIr'
+import { QuintApp, QuintDef, QuintInstance, QuintModule, QuintName } from './quintIr'
 import { QuintConstType } from './quintTypes'
 import { ScopeTree } from './scoping'
 import { DefinitionsByName, LookupTable, lookupType, lookupValue } from './lookupTable'
@@ -108,6 +108,12 @@ class NameResolverVisitor implements IRVisitor {
     if(def.reference) {
       this.table.set(type.id!, { kind: 'type', reference: def.reference, typeAnnotation: def.type })
     }
+  }
+
+  enterInstance(def: QuintInstance): void {
+    def.overrides.forEach(([name, _]) => {
+      this.checkScopedName(`${def.name}::${name.name}`, name.id)
+    })
   }
 
   // Check that there is a value definition for `name` under scope `id`

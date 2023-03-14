@@ -35,7 +35,7 @@ describe('treeFromModule', () => {
 
   it('builds a scope tree', () => {
     assert.deepEqual(treeFromModule(quintModule), {
-      value: 27n,
+      value: 28n,
       children: [
         { value: 2n, children: [] },
         { value: 4n, children: [] },
@@ -53,23 +53,28 @@ describe('treeFromModule', () => {
           ],
         },
         { value: 11n, children: [] },
-        { value: 13n, children: [{ value: 12n, children: [] }] },
         {
-          value: 21n,
+          value: 14n, children: [
+            { value: 13n, children: [] },
+            { value: 12n, children: [] },
+          ],
+        },
+        {
+          value: 22n,
           children: [
             {
-              value: 20n,
+              value: 21n,
               children: [
-                { value: 14n, children: [] },
+                { value: 15n, children: [] },
                 {
-                  value: 19n,
+                  value: 20n,
                   children: [
-                    { value: 15n, children: [] },
+                    { value: 16n, children: [] },
                     {
-                      value: 18n,
+                      value: 19n,
                       children: [
-                        { value: 16n, children: [] },
                         { value: 17n, children: [] },
+                        { value: 18n, children: [] },
                       ],
                     },
                   ],
@@ -79,18 +84,18 @@ describe('treeFromModule', () => {
           ],
         },
         {
-          value: 26n,
+          value: 27n,
           children: [
             {
-              value: 25n,
+              value: 26n,
               children: [
                 {
-                  value: 23n,
+                  value: 24n,
                   children: [
-                    { value: 22n, children: [] },
+                    { value: 23n, children: [] },
                   ],
                 },
-                { value: 24n, children: [] },
+                { value: 25n, children: [] },
               ],
             },
           ],
