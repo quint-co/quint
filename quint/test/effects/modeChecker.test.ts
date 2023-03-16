@@ -156,13 +156,14 @@ describe('checkModes', () => {
 
   it('finds errors when an instance override is not pure', () => {
     const quintModule = buildModuleWithDefs([
+      'const A1::c : int', // avoid having to simulate imports in this test
       'module A1 = A(c = x)',
     ])
 
     const [errors, _suggestions] = checkModuleModes(quintModule)
 
     assert.sameDeepMembers([...errors.entries()], [
-      [1n, {
+      [3n, {
         message: "Instance overrides must be pure values, but the value for c reads variables 'x'",
         code: 'QNT201',
         data: {},

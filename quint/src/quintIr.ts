@@ -230,7 +230,7 @@ export interface QuintInstance extends WithId {
   /** the name of the module to instantiate */
   protoName: string,
   /** how to override constants and variables */
-  overrides: [string, QuintEx][],
+  overrides: [QuintLambdaParameter, QuintEx][],
   /** whether to use identity substitution on missing names */
   identityOverride: boolean
 }
