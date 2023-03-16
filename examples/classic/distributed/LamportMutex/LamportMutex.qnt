@@ -1,3 +1,4 @@
+// -*- mode: Bluespec; -*-
 module LamportMutex {
   // This is a typed version of LamportMutex, which can be found at:
   // https://github.com/tlaplus/Examples/blob/master/specifications/lamport_mutex/LamportMutex.tla

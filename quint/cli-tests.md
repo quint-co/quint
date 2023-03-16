@@ -202,12 +202,25 @@ Temporarily disabled.
 <!-- !test check coin - Types & Effects-->
     quint typecheck ../examples/solidity/Coin/coin.qnt
 
-### OK on typecheck SimpleAuctionNonComposable.qnt
+### OK on test SimpleAuctionNonComposable.qnt
 
-<!-- !test check SimpleAuctionNonComposable - Types & Effects-->
-    quint typecheck ../examples/solidity/SimpleAuction/SimpleAuctionNonComposable.qnt
+<!-- !test check SimpleAuctionNonComposable - Syntax/Types & Effects/Unit tests -->
+    quint test --main=SimpleAuction ../examples/solidity/SimpleAuction/SimpleAuctionNonComposable.qnt
 
 ### OK on typecheck SuperSpec.qnt
 
 <!-- !test check SuperSpec - Types & Effects-->
     quint typecheck testFixture/SuperSpec.qnt
+
+### OK REPL tutorial
+
+The REPL tutorial is reproducible in REPL.
+
+<!-- !test check REPL tutorial -->
+```
+if [ "$UNAME" == "Linux" -o "$UNAME" == "Darwin" ]; then
+  quint -q -r ../tutorials/repl/kettle.qnt::kettle <../tutorials/repl/replTestIn.txt \
+    | diff - ../tutorials/repl/replTestOut.txt
+fi
+# else diff does not work as expected on windows
+```

@@ -1,3 +1,4 @@
+// -*- mode: Bluespec; -*-
 // Simple Auction from the Solidity examples [1].
 // We use this example to show how Quint could be used for explaining
 // Solidity contracts.

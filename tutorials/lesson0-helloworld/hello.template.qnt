@@ -24,8 +24,12 @@ that we have to describe two importants aspects of the protocol:
  - What constitutes a state of the state machine.
  - What kinds of transitions can be made by the state machine.
 
+          <!-- The following reference is useless in CodeTour, as it already positioned on the file -->
+          <block target="markdown">
 If you would like to see the complete code before diving into
 the details, check [hello.qnt](./hello.qnt).
+          </block>
+
         </description>
         <file>$file</file>
         <line>$line</line>

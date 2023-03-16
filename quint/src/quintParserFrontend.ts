@@ -203,7 +203,6 @@ export function parsePhase2(phase1Data: ParserPhase1): ParseResult<ParserPhase2>
   }, right(new Map()))
 
   return definitions.map(table => ({ ...phase1Data, table }))
-
 }
 
 export function compactSourceMap(sourceMap: Map<bigint, Loc>): { sourceIndex: any, map: any } {

@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.7.0 -- 2023-03-09
+
+### Added
+### Changed
 
 - Inferred effects are now properly quantified (#658)
 - Lambda parameters were promoted so they can now have their own errors, types and effects (#689)

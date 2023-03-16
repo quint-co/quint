@@ -60,7 +60,13 @@ const replCmd = {
         desc: 'filename[::module]. Preload the file and, optionally, import the module',
         alias: 'r',
         type: 'string',
-      }),
+      })
+      .option('quiet', {
+        desc: 'Disable banners and prompts, to simplify scripting',
+        alias: 'q',
+        type: 'boolean',
+      })
+      .default('quiet', false),
   handler: runRepl,
 }
 

@@ -246,6 +246,7 @@ export function runRepl(_argv: any) {
   const options: ReplOptions = {
     preloadFilename: filename,
     importModule: moduleName,
+    quiet: _argv.quiet === true,
   }
   quintRepl(process.stdin, process.stdout, options)
 }
