@@ -76,7 +76,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     // For each override, ensure that the the type for the name and the type of
     // the value are the same
     def.overrides.forEach(([name, ex]) => {
-      this.addToResults(name.id, this.fetchSignature(name.name, name.id, 2).map(toScheme))
+      this.addToResults(name.id, this.typeForName(name.name, name.id, 2).map(toScheme))
 
       this.fetchResult(name.id).chain(originalType => {
         return this.fetchResult(ex.id).map(expressionType => {
@@ -93,7 +93,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     if (this.errors.size !== 0) {
       return
     }
-    this.addToResults(e.id, this.fetchSignature(e.name, e.id, 2).map(toScheme))
+    this.addToResults(e.id, this.typeForName(e.name, e.id, 2).map(toScheme))
   }
 
   // Literals have always the same type and the empty constraint
@@ -114,7 +114,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     }))
 
     const result = argsResult.chain((results): Either<Error, TypeScheme> => {
-      const signature = this.fetchSignature(e.opcode, e.id, e.args.length)
+      const signature = this.typeForName(e.opcode, e.id, e.args.length)
       const a: QuintType = { kind: 'var', name: this.freshVarGenerator.freshVar('t') }
       const special = specialConstraints(e.opcode, e.id, results, a)
 
@@ -242,15 +242,15 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       })
   }
 
-  private fetchSignature(opcode: string, scope: bigint, arity: number): Either<ErrorTree, QuintType> {
+  private typeForName(name: string, nameId: bigint, arity: number): Either<ErrorTree, QuintType> {
     // Assumes a valid number of arguments
 
-    if (this.builtinSignatures.has(opcode)) {
-      const signatureFunction = this.builtinSignatures.get(opcode)!
+    if (this.builtinSignatures.has(name)) {
+      const signatureFunction = this.builtinSignatures.get(name)!
       const signature = signatureFunction(arity)
       return right(this.newInstance(signature))
     } else {
-      const def = this.table.get(scope)
+      const def = this.table.get(nameId)
 
       // FIXME: We have to check if the annotation is too general for var and consts as well
       // https://github.com/informalsystems/quint/issues/691
@@ -260,7 +260,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
       const id = def?.reference
       if (!def || !id) {
-        return left(buildErrorLeaf(this.location, `Signature not found for name: ${opcode}`))
+        return left(buildErrorLeaf(this.location, `Signature not found for name: ${name}`))
       }
 
       return this.fetchResult(id).map(t => this.newInstance(t))

@@ -196,7 +196,7 @@ function unifyWithAlias(table: LookupTable, t1: QuintConstType, t2: QuintType) {
     ))
   }
 
-  if(!aliasValue.typeAnnotation) {
+  if (!aliasValue.typeAnnotation) {
     return left(buildErrorLeaf(
       `Trying to unify ${t1.name} and ${typeToString(t2)}`,
       `Couldn't unify uninterpreted type ${t1.name} with different type`

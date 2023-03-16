@@ -98,7 +98,7 @@ export class EffectInferrer implements IRVisitor {
       // Don't try to infer application if there are errors with the args
       return
     }
-    this.addToResults(expr.id, this.fetchSignature(expr.name, expr.id, 2).map(toScheme))
+    this.addToResults(expr.id, this.effectForName(expr.name, expr.id, 2).map(toScheme))
   }
 
   /* { identifier: op, effect: E } ∈ Γ    Γ ⊢ p0:E0 ... Γ ⊢ pn:EN
@@ -128,7 +128,7 @@ export class EffectInferrer implements IRVisitor {
       return effect
     })
 
-    this.fetchSignature(expr.opcode, expr.id, expr.args.length)
+    this.effectForName(expr.opcode, expr.id, expr.args.length)
       .mapLeft(err => buildErrorTree(this.location, err))
       .chain(signature => {
         const substitution = arrowEffect.chain(effect => unify(signature, effect))
@@ -200,7 +200,7 @@ export class EffectInferrer implements IRVisitor {
 
   enterLambda(expr: QuintLambda): void {
     expr.params.forEach(p => {
-      const varName = `e_${p.name}_${p.id}`
+      const varName = p.name === '_' ? this.freshVarGenerator.freshVar('e') : `e_${p.name}_${p.id}`
       this.addToResults(p.id, right(toScheme({ kind: 'variable', name: varName })))
     })
   }
@@ -270,11 +270,8 @@ export class EffectInferrer implements IRVisitor {
     }
   }
 
-  private fetchSignature(name: string, nameId: bigint, arity: number): Either<ErrorTree, Effect> {
+  private effectForName(name: string, nameId: bigint, arity: number): Either<ErrorTree, Effect> {
     // Assumes a valid number of arguments
-    if (name === '_') {
-      return right({ kind: 'variable', name: this.freshVarGenerator.freshVar('_e') })
-    }
 
     if (this.builtinSignatures.has(name)) {
       const signatureFunction = this.builtinSignatures.get(name)!
