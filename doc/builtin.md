@@ -371,7 +371,7 @@ assert(s == Set(
 
 ## `pure def set: ((a -> b), a, b) => (a -> b)`
 
-`m.set(k, v)` is the map `m` but with the key `k` mapped `v` if `k.in(keys(m))`
+`m.set(k, v)` is the map `m` but with the key `k` mapped to `v` if `k.in(keys(m))`
 
 If `k` is not a key in `m`, this operator has undefined behavior.
 
@@ -401,17 +401,17 @@ assert(m2 == Map(1 -> true, 2 -> true))
 
 ## `pure def put: ((a -> b), a, b) => (a -> b)`
 
-`m.put(k, v)` map `m` extended with the key `k` set to `v`.
-
-If `k` is present in `m`, this operator has undefined behavior.
+`m.put(k, v)` is the map `m` but with the key `k` mapped to `v`.
 
 ### Examples
 
 ```
 pure val m = Map(1 -> true, 2 -> false)
-pure val m2 = m.put(3, true)
+pure val m2 = m.put(2, true)
+pure val m3 = m.put(3, true)
 assert(m == Map(1 -> true, 2 -> false))
-assert(m2 == Map(1 -> true, 2 -> false, 3 -> true))
+assert(m2 == Map(1 -> true, 2 -> true))
+assert(m3 == Map(1 -> true, 2 -> false, 3 -> true))
 ```
 
 ## `pure def append: (List[a], a) => List[a]`
