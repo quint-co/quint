@@ -30,6 +30,14 @@ import { lastTraceName } from '../compile'
 
 const specialNames = ['__input', '__runResult', '__nruns', '__nsteps', '__init', '__next', '__inv']
 
+export function builtinContext() {
+  return new Map<string, Computable>([
+    [kindName('callable', 'Bool'), mkCallable([], mkConstComputable(rv.mkSet([rv.mkBool(false), rv.mkBool(true)])))],
+    [kindName('callable', 'Int'), mkCallable([], mkConstComputable(rv.mkInfSet('Int')))],
+    [kindName('callable', 'Nat'), mkCallable([], mkConstComputable(rv.mkInfSet('Nat')))],
+  ])
+}
+
 /**
  * Compiler visitor turns Quint definitions and expressions into Computable
  * objects, essentially, lazy JavaScript objects. Importantly, it does not do
@@ -58,7 +66,7 @@ export class CompilerVisitor implements IRVisitor {
   //  - an instance of Register
   //  - an instance of Callable.
   // The keys should be constructed via `kindName`.
-  private context: Map<string, Computable> = new Map<string, Computable>()
+  private context: Map<string, Computable> = builtinContext()
 
   // all variables declared during compilation
   private vars: Register[] = []
@@ -82,14 +90,6 @@ export class CompilerVisitor implements IRVisitor {
         () => this.addRuntimeError(0n, '_lastTrace is not set'))
     this.shadowVars.push(lastTrace)
     this.context.set(kindName(lastTrace.kind, lastTrace.name), lastTrace)
-    // introduce parameterless callables for the built-in values
-    const boolSet =
-      mkConstComputable(rv.mkSet([rv.mkBool(false), rv.mkBool(true)]))
-    this.context.set(kindName('callable', 'Bool'), mkCallable([], boolSet))
-    this.context.set(kindName('callable', 'Int'),
-      mkCallable([], mkConstComputable(rv.mkInfSet('Int'))))
-    this.context.set(kindName('callable', 'Nat'),
-      mkCallable([], mkConstComputable(rv.mkInfSet('Nat'))))
   }
 
   switchModule(moduleId: bigint, moduleName: string) {

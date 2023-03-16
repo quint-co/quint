@@ -105,7 +105,7 @@ class NameResolverVisitor implements IRVisitor {
       return
     }
 
-    if(def.reference) {
+    if (def.reference) {
       this.table.set(type.id!, { kind: 'type', reference: def.reference, typeAnnotation: def.type })
     }
   }

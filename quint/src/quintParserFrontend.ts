@@ -148,6 +148,8 @@ export function parsePhase2(phase1Data: ParserPhase1): ParseResult<ParserPhase2>
       ? left(Array.from(errors, errorLocator))
       : right(definitions)
 
+    definitionsByModule.set(module.name, definitions)
+
     const conflictResult: Either<ErrorMessage[], void> =
       scanConflicts(definitions, scopeTree).mapLeft((conflicts): ErrorMessage[] => {
         return conflicts.map(conflict => {
