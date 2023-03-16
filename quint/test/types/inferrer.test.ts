@@ -11,8 +11,6 @@ import { resolveNames } from '../../src/nameResolver'
 import { treeFromModule } from '../../src/scoping'
 
 describe('inferTypes', () => {
-  // Names are mocked without scope to keep tests simple
-  // Be careful not to use the same name twice in different scopes
   const table: DefinitionsByName = newTable({
     valueDefinitions: [
       { kind: 'const', identifier: 'N', reference: 3n },
