@@ -29,7 +29,7 @@ import {
   TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase2, QuintAnalyzer, QuintError, QuintErrorData, builtinDocs, effectSchemeToString, lookupValue, parsePhase1, parsePhase2, produceDocs, treeFromModule, typeSchemeToString, newIdGenerator } from '@informalsystems/quint'
+import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase2, QuintAnalyzer, QuintError, QuintErrorData, builtinDocs, effectSchemeToString, newIdGenerator, parsePhase1, parsePhase2, produceDocs, typeSchemeToString } from '@informalsystems/quint'
 import { assembleDiagnostic, diagnosticsFromErrors, findBestMatchingResult, findName, locToRange } from './reporting'
 
 // Create one generator of unique identifiers
@@ -216,14 +216,13 @@ connection.onDefinition((params: DefinitionParams): HandlerResult<Location[], vo
   // Find name under cursor
   const { modules, sourceMap, table } = parsedData
   const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-  const [module, name, scope] = findName(modules, results, params.position) ?? [undefined, undefined, undefined]
+  const [_module, name, id] = findName(modules, results, params.position) ?? [undefined, undefined, undefined]
   if (!name) {
     return []
   }
 
   // Find definition of name
-  const scopeTree = treeFromModule(module)
-  const def = lookupValue(table.get(module.name)!, scopeTree, name, scope)
+  const def = table.get(id)
   if (!def || !def.reference) {
     return []
   }

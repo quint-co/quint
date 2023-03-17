@@ -18,9 +18,10 @@
 import { QuintApp, QuintDef, QuintInstance, QuintModule, QuintName } from './quintIr'
 import { QuintConstType } from './quintTypes'
 import { ScopeTree } from './scoping'
-import { DefinitionsByName, LookupTable, lookupType, lookupValue } from './lookupTable'
+import { LookupTable } from './lookupTable'
 import { IRVisitor, walkModule } from './IRVisitor'
 import { Either, left, right } from '@sweet-monads/either'
+import { DefinitionsByName, lookupType, lookupValue } from './definitionsByName'
 
 /**
  * A single name resolution error

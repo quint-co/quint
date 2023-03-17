@@ -12,7 +12,7 @@
  * @module
  */
 
-import { DefinitionsByName, LookupTableByModule, addTypeToTable, addValueToTable, copyNames, copyTable, mergeTables, newTable } from './lookupTable'
+import { DefinitionsByModule, DefinitionsByName, addTypeToTable, addValueToTable, copyNames, copyTable, mergeTables, newTable } from './definitionsByName'
 import { QuintImport, QuintInstance, QuintModule } from './quintIr'
 import { IRVisitor, walkModule } from './IRVisitor'
 import { QuintError } from './quintError'
@@ -43,7 +43,7 @@ export type ImportResolutionResult = [Map<bigint, QuintError>, DefinitionsByName
  *
  * @returns a successful result with updated definitions in case all imports were resolved, or the errors otherwise
  */
-export function resolveImports(quintModule: QuintModule, tables: LookupTableByModule): ImportResolutionResult {
+export function resolveImports(quintModule: QuintModule, tables: DefinitionsByModule): ImportResolutionResult {
   const visitor = new ImportResolverVisitor(tables)
   walkModule(visitor, quintModule)
 
@@ -51,11 +51,11 @@ export function resolveImports(quintModule: QuintModule, tables: LookupTableByMo
 }
 
 class ImportResolverVisitor implements IRVisitor {
-  constructor(tables: LookupTableByModule) {
+  constructor(tables: DefinitionsByModule) {
     this.tables = tables
   }
 
-  tables: LookupTableByModule
+  tables: DefinitionsByModule
   errors: Map<bigint, QuintError> = new Map<bigint, QuintError>()
   table: DefinitionsByName = newTable({})
 

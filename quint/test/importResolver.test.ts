@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { DefinitionsByName, LookupTableByModule, newTable } from '../src/lookupTable'
+import { DefinitionsByModule, DefinitionsByName, newTable } from '../src/definitionsByName'
 import { buildModuleWithDefs } from './builders/ir'
 import { resolveImports } from '../src/importResolver'
 
@@ -20,7 +20,7 @@ describe('resolveImports', () => {
     ],
   })
 
-  const tables: LookupTableByModule = new Map<string, DefinitionsByName>([
+  const tables: DefinitionsByModule = new Map<string, DefinitionsByName>([
     ['wrapper', newTable({})], ['test_module', table],
   ])
 

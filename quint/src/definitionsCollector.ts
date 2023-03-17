@@ -18,7 +18,7 @@ import { IRVisitor, walkModule } from './IRVisitor'
 import {
   DefinitionsByName, ValueDefinition, ValueDefinitionKind,
   addTypeToTable, addValueToTable, newTable
-} from './lookupTable'
+} from './definitionsByName'
 import { QuintAssume, QuintConst, QuintLambda, QuintLet, QuintModule, QuintOpDef, QuintTypeDef, QuintVar } from './quintIr'
 import { QuintType } from './quintTypes'
 

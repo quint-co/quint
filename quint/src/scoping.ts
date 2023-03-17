@@ -14,7 +14,7 @@
  */
 
 import { IRVisitor, walkModule } from './IRVisitor'
-import { ValueDefinition } from './lookupTable'
+import { ValueDefinition } from './definitionsByName'
 import { QuintDef, QuintEx, QuintInstance, QuintLambda, QuintModule } from './quintIr'
 
 /**

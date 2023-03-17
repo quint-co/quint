@@ -14,7 +14,7 @@
 
 import { Either, left, right } from '@sweet-monads/either';
 import isEqual from 'lodash.isequal'
-import { DefinitionsByName, ValueDefinition } from './lookupTable'
+import { DefinitionsByName, ValueDefinition } from './definitionsByName'
 import { ScopeTree, scopesForId } from './scoping'
 
 /**

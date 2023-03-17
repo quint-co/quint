@@ -19,9 +19,10 @@ import { resolveNames } from './nameResolver'
 import { resolveImports } from './importResolver'
 import { treeFromModule } from './scoping'
 import { scanConflicts } from './definitionsScanner'
-import { Definition, DefinitionsByName, LookupTable, LookupTableByModule } from './lookupTable'
+import { Definition, LookupTable } from './lookupTable'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { mkErrorMessage } from './cliCommands'
+import { DefinitionsByModule, DefinitionsByName } from './definitionsByName'
 
 export interface Loc {
   source: string;
@@ -134,7 +135,7 @@ export function parsePhase1(
 export function parsePhase2(phase1Data: ParserPhase1): ParseResult<ParserPhase2> {
   const sourceMap: Map<bigint, Loc> = phase1Data.sourceMap
 
-  const definitionsByModule: LookupTableByModule = new Map()
+  const definitionsByModule: DefinitionsByModule = new Map()
 
   const definitions = phase1Data.modules.reduce((result: Either<ErrorMessage[], LookupTable>, module) => {
     const scopeTree = treeFromModule(module)

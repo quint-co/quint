@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { defaultValueDefinitions } from '../src/definitionsCollector'
-import { DefinitionsByName, newTable } from '../src/lookupTable'
+import { DefinitionsByName, newTable } from '../src/definitionsByName'
 import { resolveNames } from '../src/nameResolver'
 
 import { buildModuleWithDefs, buildModuleWithExpressions } from './builders/ir'
