@@ -207,6 +207,11 @@ Temporarily disabled.
 <!-- !test check SimpleAuctionNonComposable - Syntax/Types & Effects/Unit tests -->
     quint test --main=SimpleAuction ../examples/solidity/SimpleAuction/SimpleAuctionNonComposable.qnt
 
+### OK on test nondet.qnt
+
+<!-- !test check nondet - Syntax/Types & Effects/Unit tests -->
+    quint test --main=nondetEx ../examples/language-features/nondet.qnt
+
 ### OK on typecheck SuperSpec.qnt
 
 <!-- !test check SuperSpec - Types & Effects-->
