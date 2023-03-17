@@ -393,18 +393,18 @@ quint run --max-steps=5 --seed=123 --invariant=totalSupplyDoesNotOverflowInv \
 [violation] (duration). See the example:
 ---------------------------------------------
 action step0 = all {
-  coin::minter' = "null",
+  coin::minter' = "charlie",
   coin::balances' = Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0),
 }
 
 action step1 = all {
-  coin::minter' = "null",
-  coin::balances' = Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 112481458056655605601695545099703330518348568252135132870328821439856853909504),
+  coin::minter' = "charlie",
+  coin::balances' = Map("alice" -> 0, "bob" -> 103284694429057902812136720936033946290905036909354547835442699046088697970688, "charlie" -> 0, "eve" -> 0, "null" -> 0),
 }
 
 action step2 = all {
-  coin::minter' = "null",
-  coin::balances' = Map("alice" -> 0, "bob" -> 0, "charlie" -> 31453788334862831322142706925277348799769195365499601992860029384416292765696, "eve" -> 0, "null" -> 112481458056655605601695545099703330518348568252135132870328821439856853909504),
+  coin::minter' = "charlie",
+  coin::balances' = Map("alice" -> 0, "bob" -> 103284694429057902812136720936033946290905036909354547835442699046088697970688, "charlie" -> 46797254901076543191142647617814825964332772279616938906031909187844048945152, "eve" -> 0, "null" -> 0),
 }
 
 run test = {

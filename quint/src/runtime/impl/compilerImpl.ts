@@ -142,19 +142,59 @@ export class CompilerVisitor implements IRVisitor {
   exitOpDef(opdef: ir.QuintOpDef) {
     // Either a runtime value, or a def, action, etc.
     // All of them are compiled to callables, which may have zero parameters.
-    const value = this.compStack.pop()
-    if (value === undefined) {
+    const boundValue = this.compStack.pop()
+    if (boundValue === undefined) {
       this.addCompileError(opdef.id,
         `No expression for ${opdef.name} on compStack`)
-    } else {
-      const kname = kindName('callable', opdef.id)
-      // bind the callable from the stack
-      this.context.set(kname, value)
+      return
+    }
+    const kname = kindName('callable', opdef.id)
+    // bind the callable from the stack
+    this.context.set(kname, boundValue)
 
-      if (specialNames.includes(opdef.name)) {
-        // bind the callable under its name as well
-        this.context.set(kindName('callable', opdef.name), value)
+    if (specialNames.includes(opdef.name)) {
+      // bind the callable under its name as well
+      this.context.set(kindName('callable', opdef.name), boundValue)
+    }
+  }
+
+  exitLet(letDef: ir.QuintLet) {
+    // When dealing with a `val` or `nondet`, freeze the callable under
+    // the let definition. Otherwise, forms like 'nondet x = oneOf(S); A'
+    // may produce multiple values for the same name 'x'
+    // inside a single evaluation of A.
+    // In case of `val`, this is simply an optimization.
+    const qualifier = letDef.opdef.qualifier
+    if (qualifier !== 'val' && qualifier !== 'nondet') {
+      // a non-constant value, ignore
+      return
+    }
+
+    // get the expression that is evaluated in the context of let.
+    const exprUnderLet = this.compStack.slice(-1).pop()
+    if (exprUnderLet === undefined) {
+      this.addCompileError(letDef.opdef.id,
+        `No expression for ${letDef.opdef.name} on compStack`)
+      return
+    }
+
+    const kname = kindName('callable', letDef.opdef.id)
+    const boundValue = this.context.get(kname) ?? fail
+    // Override the behavior of the expression under let:
+    // It precomputes the bound value and uses it in the evaluation.
+    // Once the evaluation is done, the value is reset, so that
+    // a new random value may be produced later.
+    const undecoratedEval = exprUnderLet.eval
+    const boundValueEval = boundValue.eval
+    exprUnderLet.eval = function(): Maybe<EvalResult> {
+      const cachedValue = boundValueEval()
+      boundValue.eval = function() {
+        return cachedValue
       }
+      // compute the result and immediately reset the cache
+      const result = undecoratedEval()
+      boundValue.eval = boundValueEval
+      return result
     }
   }
 
@@ -948,7 +988,8 @@ export class CompilerVisitor implements IRVisitor {
     const callable = this.compStack.pop() as Callable
     // this method supports only 1-argument callables
     if (callable.registers.length !== 1) {
-      this.addCompileError(sourceId, 'Not enough registers')
+      const nargs = callable.registers.length
+      this.addCompileError(sourceId, `Expected 1 argument, found ${nargs}`)
       return
     }
     // apply the lambda to a single element of the set
