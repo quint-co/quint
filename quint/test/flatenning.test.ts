@@ -8,6 +8,7 @@ import { definitionToString } from '../src/IRprinting'
 import { resolveNames } from '../src/nameResolver'
 import { treeFromModule } from '../src/scoping'
 import { buildModuleWithDefs } from './builders/ir'
+import { collectIds } from './util'
 
 describe('flatten', () => {
   const moduleA = buildModuleWithDefs([
@@ -38,10 +39,21 @@ describe('flatten', () => {
       ['wrapper', module],
     ]))
 
-    assert.sameDeepMembers(flattenedModule.defs.map(def => definitionToString(def)), expectedDefs)
+    it('flattens instances', () => {
+      assert.sameDeepMembers(flattenedModule.defs.map(def => definitionToString(def)), expectedDefs)
+    })
+
+    it('does not repeat ids', () => {
+      assert.notDeepInclude(collectIds(moduleA), collectIds(flattenedModule))
+    })
+
+
+    it('does not add namespace to builtins', () => {
+      // TODO
+    })
   }
 
-  it('flattens instances', () => {
+  describe('multiple instances', () => {
     const defs = [
       'module A1 = A(N = 1)',
       'module A2 = A(N = 2)',
@@ -55,9 +67,5 @@ describe('flatten', () => {
     ]
 
     assertFlatennedDefs(defs, expectedDefs)
-  })
-
-  it('does not repeat ids', () => {
-    // TODO
   })
 })

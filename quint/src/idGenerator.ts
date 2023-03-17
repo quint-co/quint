@@ -22,9 +22,9 @@ export interface IdGenerator {
 /**
  * Introduce a new id generator.
  */
-export const newIdGenerator = () => {
+export const newIdGenerator = (initialId?: bigint) => {
   return {
-    _lastId: 0n,
+    _lastId: initialId ? initialId : 0n,
 
     nextId(): bigint {
         this._lastId = this._lastId + 1n
@@ -32,4 +32,3 @@ export const newIdGenerator = () => {
     },
   }
 }
-
