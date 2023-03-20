@@ -13,7 +13,7 @@ import { collectIds } from './util'
 describe('flatten', () => {
   const moduleA = buildModuleWithDefs([
     'const N: int',
-    'val x = N',
+    'val x = N + 1',
   ], 'A')
 
   const tableA = collectDefinitions(moduleA)
@@ -46,11 +46,6 @@ describe('flatten', () => {
     it('does not repeat ids', () => {
       assert.notDeepInclude(collectIds(moduleA), collectIds(flattenedModule))
     })
-
-
-    it('does not add namespace to builtins', () => {
-      // TODO
-    })
   }
 
   describe('multiple instances', () => {
@@ -61,9 +56,9 @@ describe('flatten', () => {
 
     const expectedDefs = [
       'pure val A1::N: int = 1',
-      'val A1::x = A1::N',
+      'val A1::x = iadd(A1::N, 1)',
       'pure val A2::N: int = 2',
-      'val A2::x = A2::N',
+      'val A2::x = iadd(A2::N, 1)',
     ]
 
     assertFlatennedDefs(defs, expectedDefs)
