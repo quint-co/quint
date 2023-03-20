@@ -70,12 +70,17 @@ Temporarily disabled.
 ### OK on parse Tendermint
 
 <!-- !test check Tendermint -->
-    quint parse ../examples/cosmos/tendermint/TendermintAcc_004.qnt
+    quint parse ../examples/cosmos/tendermint/TendermintAcc005.qnt
 
 ### OK on typecheck Tendermint
 
 <!-- !test check Tendermint - Types & Effects -->
-    quint typecheck ../examples/cosmos/tendermint/TendermintAcc_004.qnt
+    quint typecheck ../examples/cosmos/tendermint/TendermintAcc005.qnt
+
+### OK on test Tendermint
+
+<!-- !test check Tendermint - Test -->
+    quint test --main TendermintTest ../examples/cosmos/tendermint/TendermintAcc005.qnt
 
 ### OK on parse imports
 
