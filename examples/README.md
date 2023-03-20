@@ -39,7 +39,7 @@ Quint-Apalache pipeline.
 | [ERC20][]        |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
 |                    **Cosmos**                                                           |
 | [ICS23][]        |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
-| [Tendermint][]   |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
+| [Tendermint][]   |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
 |                    **Classic**                                                          |
 | [ClockSync][]    |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
 | [LamportMutex][] |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
