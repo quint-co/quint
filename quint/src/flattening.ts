@@ -1,12 +1,12 @@
-import { builtinDocs } from "./builtin";
-import { IdGenerator, newIdGenerator } from "./idGenerator";
-import { LookupTable } from "./lookupTable";
-import { QuintDef, QuintEx, QuintModule, QuintOpDef } from "./quintIr";
+import { IdGenerator, newIdGenerator } from "./idGenerator"
+import { LookupTable } from "./lookupTable"
+import { QuintDef, QuintEx, QuintModule, QuintOpDef } from "./quintIr"
+import { defaultValueDefinitions } from "./definitionsCollector"
 
 export function flatten(module: QuintModule, table: LookupTable, modules: Map<string, QuintModule>): QuintModule {
   const lastId = [...modules.values()].map(m => m.id).sort((a, b) => Number(a - b))[-1]
   const idGenerator = newIdGenerator(lastId)
-  const builtinNames = new Set(builtinDocs(newIdGenerator()).unwrap().keys())
+  const builtinNames = new Set(defaultValueDefinitions().map(d => d.identifier))
 
   const context = { idGenerator, table, builtinNames }
 
@@ -117,7 +117,11 @@ function shouldAddNamespace(ctx: FlatteningContext, name: string, id: bigint): b
     return false
   }
 
-  const def = ctx.table.get(id)!
+  const def = ctx.table.get(id)
+  if (!def) {
+    throw new Error(`Could not find def for id ${id}, name: ${name}`)
+  }
+
   if (def.kind === 'param') {
     return false
   }
