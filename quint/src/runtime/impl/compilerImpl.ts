@@ -291,7 +291,8 @@ export class CompilerVisitor implements IRVisitor {
 
       case 'and':
         // a conjunction over expressions is lazy
-        this.translateAnd(app)
+        this.translateBoolOp(app, just(rv.mkBool(true)),
+          (_, r) => !r ? just(rv.mkBool(false)) : none())
         break
 
       case 'actionAll':
@@ -300,7 +301,8 @@ export class CompilerVisitor implements IRVisitor {
 
       case 'or':
         // a disjunction over expressions is lazy
-        this.translateOr(app)
+        this.translateBoolOp(app, just(rv.mkBool(false)),
+          (_, r) => r ? just(rv.mkBool(true)) : none())
         break
 
       case 'actionAny':
@@ -308,9 +310,9 @@ export class CompilerVisitor implements IRVisitor {
         break
 
       case 'implies':
-        this.applyFun(app.id,
-          2,
-          (p, q) => just(rv.mkBool(!p.toBool() || q.toBool())))
+        // an implication is lazy
+        this.translateBoolOp(app, just(rv.mkBool(false)),
+          (n, r) => (n == 0 && !r) ? just(rv.mkBool(true)) : none())
         break
 
       case 'iff':
@@ -1087,36 +1089,6 @@ export class CompilerVisitor implements IRVisitor {
     }
   }
 
-  // translate and { A, ..., C }
-  private translateAnd(app: ir.QuintApp) {
-    if (this.compStack.length < app.args.length) {
-      this.addCompileError(app.id, 'Not enough arguments on stack for "and"')
-      return
-    }
-    const args = this.compStack.splice(-app.args.length)
-
-    const lazyCompute = () => {
-      let result: Maybe<EvalResult> = just(rv.mkBool(true))
-      // Evaluate arguments iteratively.
-      // Stop as soon as one of the arguments returns false.
-      // This is a form of Boolean short-circuiting.
-      for (const arg of args) {
-        // either the argument is evaluated to false, or fails
-        result = arg.eval().or(just(rv.mkBool(false)))
-        const boolResult = (result.unwrap() as RuntimeValue).toBool()
-        // as soon as one of the arguments evaluates to false,
-        // break out of the loop
-        if (boolResult === false) {
-          break
-        }
-      }
-
-      return result
-    }
-
-    this.compStack.push(mkFunComputable(lazyCompute))
-  }
-
   // compute all { ... } or A.then(B)...then(E) for a chain of actions
   private chainAllOrThen(actions: Computable[], kind: 'all' | 'then'): Maybe<EvalResult> {
     // save the values of the next variables, as actions may update them
@@ -1182,29 +1154,38 @@ export class CompilerVisitor implements IRVisitor {
     this.compStack.push(mkFunComputable(lazyCompute))
   }
 
-  // translate or { A, ..., C }
-  private translateOr(app: ir.QuintApp): void {
+  // translate one of the Boolean operators with short-circuiting:
+  //  - or  { A, ..., C }
+  //  - and { A, ..., C }
+  //  - A implies B
+  private translateBoolOp(app: ir.QuintApp,
+      defaultValue: Maybe<EvalResult>,
+      shortCircuit: (no: number, r: boolean) => Maybe<EvalResult>): void {
     if (this.compStack.length < app.args.length) {
       this.addCompileError(app.id,
-        'Not enough arguments on stack for "or"')
+        `Not enough arguments on stack for "${app.opcode}"`)
       return
     }
     const args = this.compStack.splice(-app.args.length)
 
     const lazyCompute = () => {
-      let result: Maybe<EvalResult> = just(rv.mkBool(false))
+      let result: Maybe<EvalResult> = defaultValue
       // Evaluate arguments iteratively.
-      // Stop as soon as one of the arguments returns true.
-      // This is a form of Boolean short-circuiting.
+      // Stop as soon as shortCircuit tells us to stop.
+      let no = 0
       for (const arg of args) {
-        // either the argument is evaluated to false, or fails
-        result = arg.eval().or(just(rv.mkBool(false)))
-        const boolResult = (result.unwrap() as RuntimeValue).toBool()
-        // as soon as one of the arguments evaluates to false,
-        // break out of the loop
-        if (boolResult === true) {
-          break
+        // either the argument is evaluated to a Boolean, or fails
+        result = arg.eval()
+        if (result.isNone()) {
+          return none()
         }
+
+        // if shortCircuit returns a value, return the value immediately
+        const b = shortCircuit(no, (result.value as RuntimeValue).toBool())
+        if (b.isJust()) {
+          return b
+        }
+        no += 1
       }
 
       return result

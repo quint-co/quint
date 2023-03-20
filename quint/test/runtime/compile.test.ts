@@ -200,6 +200,11 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('and(true, true, true)', 'true')
     })
 
+    it('computes "and" via short-circuit or fails', () => {
+      assertResultAsString('false and (1/0 == 0)', 'false')
+      assertResultAsString('true and (1/0 == 0)', undefined)
+    })
+
     it('computes or', () => {
       assertResultAsString('false or false', 'false')
       assertResultAsString('false or true', 'true')
@@ -210,11 +215,21 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('or(false, false, false)', 'false')
     })
 
-    it('computes implies', () => {
+    it('computes "or" via short-circuit or fails', () => {
+      assertResultAsString('false or (1/0 == 0)', undefined)
+      assertResultAsString('true or (1/0 == 0)', 'true')
+    })
+
+    it('computes "implies"', () => {
       assertResultAsString('false implies false', 'true')
       assertResultAsString('false implies true', 'true')
       assertResultAsString('true implies false', 'false')
       assertResultAsString('true implies true', 'true')
+    })
+
+    it('computes "implies" via short-circuit or fails', () => {
+      assertResultAsString('false implies (1/0 == 0)', 'true')
+      assertResultAsString('true implies (1/0 == 0)', undefined)
     })
 
     it('computes iff', () => {
