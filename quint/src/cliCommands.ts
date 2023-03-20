@@ -20,7 +20,7 @@ import {
 
 import { Either, left, right } from '@sweet-monads/either'
 import { EffectScheme } from './effects/base'
-import { LookupTableByModule } from './lookupTable'
+import { LookupTable } from './lookupTable'
 import { ReplOptions, quintRepl } from './repl'
 import { OpQualifier, QuintEx, QuintModule } from './quintIr'
 import { TypeScheme } from './types/base'
@@ -42,7 +42,7 @@ interface OutputStage {
   stage: stage,
   // the modules and the lookup table produced by 'parse'
   modules?: QuintModule[],
-  table?: LookupTableByModule,
+  table?: LookupTable,
   // the tables produced by 'typecheck'
   types?: Map<bigint, TypeScheme>,
   effects?: Map<bigint, EffectScheme>,
@@ -105,7 +105,7 @@ interface LoadedStage extends ProcedureStage {
 interface ParsedStage extends LoadedStage {
   modules: QuintModule[],
   sourceMap: Map<bigint, Loc>,
-  table: LookupTableByModule,
+  table: LookupTable,
 }
 
 interface TypecheckedStage extends ParsedStage {

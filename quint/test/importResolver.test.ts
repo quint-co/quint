@@ -1,11 +1,11 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { LookupTable, LookupTableByModule, newTable } from '../src/lookupTable'
+import { DefinitionsByModule, DefinitionsByName, newTable } from '../src/definitionsByName'
 import { buildModuleWithDefs } from './builders/ir'
 import { resolveImports } from '../src/importResolver'
 
 describe('resolveImports', () => {
-  const table: LookupTable = newTable({
+  const table: DefinitionsByName = newTable({
     valueDefinitions: [
       { kind: 'def', identifier: 'a', reference: 1n },
       { kind: 'def', identifier: 'b', reference: 2n },
@@ -20,7 +20,7 @@ describe('resolveImports', () => {
     ],
   })
 
-  const tables: LookupTableByModule = new Map<string, LookupTable>([
+  const tables: DefinitionsByModule = new Map<string, DefinitionsByName>([
     ['wrapper', newTable({})], ['test_module', table],
   ])
 

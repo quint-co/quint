@@ -13,8 +13,8 @@
  */
 
 import {
-  Loc, LookupTableByModule, QuintModule, parsePhase1, parsePhase2,
-  newIdGenerator
+  Loc, LookupTable, QuintModule, newIdGenerator, parsePhase1,
+  parsePhase2
 } from "@informalsystems/quint"
 
 /**
@@ -27,7 +27,7 @@ import {
  *
  * @returns A triple with the combined result of the parsing phases
 */
-export function parseOrThrow(moduleText: string): [QuintModule[], Map<bigint, Loc>, LookupTableByModule] {
+export function parseOrThrow(moduleText: string): [QuintModule[], Map<bigint, Loc>, LookupTable] {
   const result1 = parsePhase1(newIdGenerator(), moduleText, 'mocked_path')
   const result2 = result1.chain(parsePhase2)
 

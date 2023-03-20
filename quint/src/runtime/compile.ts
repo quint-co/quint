@@ -17,8 +17,7 @@ import { Computable, ComputableKind, kindName } from './runtime'
 import { QuintModule } from '../quintIr'
 import { CompilerVisitor } from './impl/compilerImpl'
 import { walkDefinition } from '../IRVisitor'
-import { treeFromModule } from '../scoping'
-import { LookupTableByModule } from '../lookupTable'
+import { LookupTable } from '../lookupTable'
 import { TypeScheme } from '../types/base'
 import { QuintAnalyzer } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
@@ -34,7 +33,7 @@ export const lastTraceName = '_lastTrace'
  */
 export interface CompilationContext {
   // the lookup table to query for values and definitions
-  lookupTable: LookupTableByModule,
+  lookupTable: LookupTable,
   // names of the variables and definition identifiers mapped to computables
   values: Map<string, Computable>,
   // names of the variables
@@ -71,32 +70,34 @@ function errorContext(errors: ErrorMessage[]): CompilationContext {
  * Extract a compiled value of a specific kind via the module name and kind.
  *
  * @param ctx compilation context
- * @param moduleName module name to lookup at
- * @param defName definition name
+ * @param defId the definition id to lookup
  * @param kind definition kind
  * @returns the associated compiled value, if it uniquely defined, or undefined
  */
-export function
-  contextLookup(ctx: CompilationContext,
-                moduleName: string,
-                defName: string,
-                kind: ComputableKind): Either<string, Computable> {
-  const moduleTable = ctx.lookupTable.get(moduleName)
-  if (!moduleTable) {
-    return left(`Module ${moduleName} not found`)
-  }
-  const defs = moduleTable.valueDefinitions.get(defName)
-  if (!defs) {
-    return left(`Definition ${moduleName}::${defName} not found`)
-  }
-  if (defs.length !== 1) {
-    return left(`Multiple definitions (${defs.length}) of ${moduleName}::${defName} found`)
+export function contextLookup(
+  ctx: CompilationContext, defId: bigint, kind: ComputableKind
+): Either<string, Computable> {
+  const def = ctx.lookupTable.get(defId)
+  if (!def) {
+    return left(`Definition for id ${defId} not found`)
   }
 
-  const value = ctx.values.get(kindName(kind, defs[0].reference!))
+  const value = ctx.values.get(kindName(kind, def.reference!))
   if (!value) {
-    console.log(`key = ${kindName(kind, defs[0].reference!)}`)
-    return left(`No value for definition ${moduleName}::${defName}`)
+    console.log(`key = ${kindName(kind, def.reference!)}`)
+    return left(`No value for definition ${defId}}`)
+  } else {
+    return right(value)
+  }
+}
+
+export function contextNameLookup(
+  ctx: CompilationContext, defName: string, kind: ComputableKind
+): Either<string, Computable> {
+  const value = ctx.values.get(kindName(kind, defName))
+  if (!value) {
+    console.log(`key = ${kindName(kind, defName)}`)
+    return left(`No value for definition ${defName}}`)
   } else {
     return right(value)
   }
@@ -119,23 +120,20 @@ export function
 export function
   compile(modules: QuintModule[],
           sourceMap: Map<bigint, Loc>,
-          lookupTable: LookupTableByModule,
+          lookupTable: LookupTable,
           types: Map<bigint, TypeScheme>,
           mainName: string,
           rand: () => number): CompilationContext {
   // Push back the main module to the end:
   // The compiler exposes the state variables of the last module only.
   const main = modules.find(m => m.name === mainName)
-  const visitor = new CompilerVisitor(types, rand)
+  const visitor = new CompilerVisitor(lookupTable, types, rand)
   if (main) {
     const reorderedModules =
       modules.filter(m => m.name !== mainName).concat(main ? [main] : [])
     // Compile all modules
     reorderedModules.forEach(module => {
-      visitor.switchModule(module.id,
-                           module.name,
-                           lookupTable.get(module.name)!,
-                           treeFromModule(module))
+      visitor.switchModule(module.id, module.name)
       module.defs.forEach(def => walkDefinition(visitor, def))
     })
   }

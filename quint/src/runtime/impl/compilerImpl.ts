@@ -13,7 +13,7 @@ import { strict as assert } from 'assert'
 import { Maybe, just, merge, none } from '@sweet-monads/maybe'
 import { List, OrderedMap, Set } from 'immutable'
 
-import { LookupTable, lookupValue, newTable } from '../../lookupTable'
+import { LookupTable } from '../../lookupTable'
 import { IRVisitor } from '../../IRVisitor'
 import { ScopeTree } from '../../scoping'
 import { TypeScheme } from '../../types/base'
@@ -27,6 +27,16 @@ import * as ir from '../../quintIr'
 import { RuntimeValue, rv } from './runtimeValue'
 
 import { lastTraceName } from '../compile'
+
+const specialNames = ['__input', '__runResult', '__nruns', '__nsteps', '__init', '__next', '__inv']
+
+export function builtinContext() {
+  return new Map<string, Computable>([
+    [kindName('callable', 'Bool'), mkCallable([], mkConstComputable(rv.mkSet([rv.mkBool(false), rv.mkBool(true)])))],
+    [kindName('callable', 'Int'), mkCallable([], mkConstComputable(rv.mkInfSet('Int')))],
+    [kindName('callable', 'Nat'), mkCallable([], mkConstComputable(rv.mkInfSet('Nat')))],
+  ])
+}
 
 /**
  * Compiler visitor turns Quint definitions and expressions into Computable
@@ -44,7 +54,7 @@ export class CompilerVisitor implements IRVisitor {
   // the id and name of the current module
   private currentModule: { id: bigint, name: string } = { id: 0n, name: "_" }
   // the lookup table to use for the module
-  private lookupTable: LookupTable = newTable({})
+  private lookupTable: LookupTable
   // the scope tree to be used with the lookup table
   private scopeTree: ScopeTree = { value: 0n, children: [] }
   // types assigned to expressions and definitions
@@ -56,7 +66,7 @@ export class CompilerVisitor implements IRVisitor {
   //  - an instance of Register
   //  - an instance of Callable.
   // The keys should be constructed via `kindName`.
-  private context: Map<string, Computable> = new Map<string, Computable>()
+  private context: Map<string, Computable> = builtinContext()
 
   // all variables declared during compilation
   private vars: Register[] = []
@@ -71,7 +81,8 @@ export class CompilerVisitor implements IRVisitor {
   // pre-initialized random number generator
   private rand
 
-  constructor(types: Map<bigint, TypeScheme>, rand: () => number) {
+  constructor(lookupTable: LookupTable, types: Map<bigint, TypeScheme>, rand: () => number) {
+    this.lookupTable = lookupTable
     this.types = types
     this.rand = rand
     const lastTrace =
@@ -79,23 +90,10 @@ export class CompilerVisitor implements IRVisitor {
         () => this.addRuntimeError(0n, '_lastTrace is not set'))
     this.shadowVars.push(lastTrace)
     this.context.set(kindName(lastTrace.kind, lastTrace.name), lastTrace)
-    // introduce parameterless callables for the built-in values
-    const boolSet =
-      mkConstComputable(rv.mkSet([rv.mkBool(false), rv.mkBool(true)]))
-    this.context.set(kindName('callable', 'Bool'), mkCallable([], boolSet))
-    this.context.set(kindName('callable', 'Int'),
-      mkCallable([], mkConstComputable(rv.mkInfSet('Int'))))
-    this.context.set(kindName('callable', 'Nat'),
-      mkCallable([], mkConstComputable(rv.mkInfSet('Nat'))))
   }
 
-  switchModule(moduleId: bigint,
-               moduleName: string,
-               lookupTable: LookupTable,
-               scopeTree: ScopeTree) {
+  switchModule(moduleId: bigint, moduleName: string) {
     this.currentModule = { id: moduleId, name: moduleName }
-    this.lookupTable = lookupTable
-    this.scopeTree = scopeTree
   }
 
   /**
@@ -150,10 +148,14 @@ export class CompilerVisitor implements IRVisitor {
         `No expression for ${opdef.name} on compStack`)
       return
     }
-
     const kname = kindName('callable', opdef.id)
     // bind the callable from the stack
     this.context.set(kname, boundValue)
+
+    if (specialNames.includes(opdef.name)) {
+      // bind the callable under its name as well
+      this.context.set(kindName('callable', opdef.name), boundValue)
+    }
   }
 
   exitLet(letDef: ir.QuintLet) {
@@ -238,10 +240,10 @@ export class CompilerVisitor implements IRVisitor {
     // a shadow variable, a variable, an argument, a callable.
     // The order is important, as defines the name priority.
     const comp =
-      this.contextGet(name.name, ['shadow', 'arg'])
-        ?? this.contextLookup(name.name, name.id, ['var', 'callable'])
-        // a backup case for Nat, Int, and Bool
-        ?? this.contextGet(name.name, ['callable'])
+      this.contextGet(name.name, ['shadow'])
+      ?? this.contextLookup(name.id, ['arg', 'var', 'callable'])
+      // a backup case for Nat, Int, and Bool, and special names such as __input
+      ?? this.contextGet(name.name, ['arg', 'callable'])
     if (comp) {
       // this name has an associated computable object already
       this.compStack.push(comp)
@@ -531,7 +533,7 @@ export class CompilerVisitor implements IRVisitor {
                 const v = values[2 * i + 1]
                 return v ? map.set(key, v) : map
               },
-              OrderedMap<string, RuntimeValue>())
+                OrderedMap<string, RuntimeValue>())
             return just(rv.mkRecord(map))
           })
         break
@@ -827,6 +829,11 @@ export class CompilerVisitor implements IRVisitor {
         this.test(app.id)
         break
 
+      case '_testOnce':
+        // the special operator that runs random simulation
+        this.testOnce(app.id)
+        break
+
       // standard unary operators that are not handled by REPL
       case 'allLists':
       case 'chooseSome':
@@ -861,7 +868,7 @@ export class CompilerVisitor implements IRVisitor {
 
   private applyUserDefined(app: ir.QuintApp) {
     const callable =
-      this.contextLookup(app.opcode, app.id, ['callable', 'arg']) as Callable
+      this.contextLookup(app.id, ['callable', 'arg']) as Callable
     if (callable === undefined || callable.registers === undefined) {
       this.addCompileError(app.id, `Called unknown operator ${app.opcode}`)
       this.compStack.push(fail)
@@ -888,9 +895,14 @@ export class CompilerVisitor implements IRVisitor {
 
   enterLambda(lam: ir.QuintLambda) {
     // introduce a register for every parameter
-    lam.params.forEach(p =>
-      this.context.set(kindName('arg', p.name),
-        mkRegister('arg', p.name, none(), () => `Parameter ${p} is not set`)))
+    lam.params.forEach(p => {
+      const register = mkRegister('arg', p.name, none(), () => `Parameter ${p} is not set`)
+      this.context.set(kindName('arg', p.id), register)
+
+      if (specialNames.includes(p.name)) {
+        this.context.set(kindName('arg', p.name), register)
+      }
+    })
     // After this point, the body of the lambda gets compiled.
     // The body of the lambda may refer to the parameter via names,
     // which are stored in the registers we've just created.
@@ -901,13 +913,16 @@ export class CompilerVisitor implements IRVisitor {
     // Transform it to Callable together with the registers.
     const registers: Register[] = []
     lam.params.forEach(p => {
-      const key = kindName('arg', p.name)
-      const register = this.contextGet(p.name, ['arg']) as Register
+      const id = specialNames.includes(p.name) ? p.name : p.id
+
+      const key = kindName('arg', id)
+      const register = this.contextGet(id, ['arg']) as Register
+
       if (register && register.registerValue) {
         this.context.delete(key)
         registers.push(register)
       } else {
-        this.addCompileError(p.id, `Parameter ${p} not found`)
+        this.addCompileError(p.id, `Parameter ${p.name} not found`)
       }
     })
 
@@ -981,7 +996,7 @@ export class CompilerVisitor implements IRVisitor {
     }
     // apply the lambda to a single element of the set
     const evaluateElem = function(elem: RuntimeValue):
-        Maybe<[RuntimeValue, RuntimeValue]> {
+      Maybe<[RuntimeValue, RuntimeValue]> {
       // store the set element in the register
       callable.registers[0].registerValue = just(elem)
       // evaluate the predicate using the register
@@ -1257,11 +1272,6 @@ export class CompilerVisitor implements IRVisitor {
     )
   }
 
-  // The simulator core: produce multiple random runs
-  // and check the given state invariant (state assertion).
-  //
-  // Technically, this is similar to the implementation of folds.
-  // However, it also restores the state and saves a trace, if there is any.
   private test(sourceId: bigint) {
     if (this.compStack.length < 5) {
       this.addCompileError(sourceId,
@@ -1269,6 +1279,30 @@ export class CompilerVisitor implements IRVisitor {
       return
     }
 
+    const [nruns, nsteps, init, next, inv] = this.compStack.splice(-5)
+    this.runTestSimulation(nruns, nsteps, init, next, inv)
+  }
+
+  private testOnce(sourceId: bigint) {
+    if (this.compStack.length < 4) {
+      this.addCompileError(sourceId,
+        'Not enough arguments on stack for "_testOnce"')
+      return
+    }
+
+    const [nsteps, init, next, inv] = this.compStack.splice(-4)
+    const nruns = mkConstComputable(rv.mkInt(1n))
+    this.runTestSimulation(nruns, nsteps, init, next, inv)
+  }
+
+  // The simulator core: produce multiple random runs
+  // and check the given state invariant (state assertion).
+  //
+  // Technically, this is similar to the implementation of folds.
+  // However, it also restores the state and saves a trace, if there is any.
+  private runTestSimulation(
+    nrunsComp: Computable, nstepsComp: Computable, init: Computable, next: Computable, inv: Computable
+  ) {
     // convert the current variable values to a record
     const varsToRecord = () => {
       const map: [string, RuntimeValue][] =
@@ -1278,96 +1312,75 @@ export class CompilerVisitor implements IRVisitor {
       return rv.mkRecord(map)
     }
 
-    // lookup a callable by name in the current module
-    const lookup = (name: string) => {
-      const callable =
-        this.contextLookup(name, this.currentModule.id, ['callable'])
-      if (callable) {
-        return callable
-      } else {
-        this.addRuntimeError(sourceId, `_test: Definition of ${name} not found`)
-        return fail
-      }
-    }
-
-    const args = this.compStack.splice(-5)
-    // run simulation when invoked
     const doRun = (): Maybe<EvalResult> => {
-      return merge(args.map(e => e.eval()))
-        .map(([nrunsRes, nstepsRes, initRes, nextRes, invRes]) => {
-          const isTrue = (res: Maybe<EvalResult>) => {
-            return !res.isNone() &&
-              (res.value as RuntimeValue).toBool() === true
-          }
-          // the trace collected during the run
-          let trace: RuntimeValue[] = []
-          // a failure flag for the case a runtime error is found
-          let failure = false
-          // the value to be returned in the end of evaluation
-          let errorFound = false
-          // save the registers to recover them later
-          const vars = this.snapshotVars()
-          const nextVars = this.snapshotNextVars()
-          // do multiple runs, stop at the first failing run
-          const nruns = (nrunsRes as RuntimeValue).toInt()
-          for (let runNo = 0;
-               !errorFound && !failure && runNo < nruns; runNo++) {
-            trace = []
-            // check Init()
-            const initName = (initRes as RuntimeValue).toStr()
-            const init = lookup(initName)
-            const initResult = init.eval()
-            failure = initResult.isNone() || failure
-            if (isTrue(initResult)) {
-              // The initial action evaluates to true.
-              // Our guess of values was good.
-              this.shiftVars()
-              trace.push(varsToRecord())
-              // check the invariant Inv
-              const invName = (invRes as RuntimeValue).toStr()
-              const inv = lookup(invName)
-              const invResult = inv.eval()
-              failure = invResult.isNone() || failure
-              if (!isTrue(invResult)) {
-                errorFound = true
-              } else {
-                // check all { Next(), shift(), Inv } in a loop
-                const nsteps = (nstepsRes as RuntimeValue).toInt()
-                const nextName = (nextRes as RuntimeValue).toStr()
-                const next = lookup(nextName)
-                for (let i = 0; !errorFound && !failure && i < nsteps; i++) {
-                  const nextResult = next.eval()
-                  failure = nextResult.isNone() || failure
-                  if (isTrue(nextResult)) {
-                    this.shiftVars()
-                    trace.push(varsToRecord())
-                    errorFound = !isTrue(inv.eval())
-                  } else {
-                    // Otherwise, the run cannot be extended.
-                    // In some cases, this may indicate a deadlock.
-                    // Since we are doing random simulation, it is very likely
-                    // that we have not generated good values for extending
-                    // the run. Hence, do not report an error here, but simply
-                    // drop the run. Otherwise, we would have a lot of false
-                    // positives, which look like deadlocks but they are not.
-                    break
-                  }
+      return merge([nrunsComp, nstepsComp].map(c => c.eval())).map(([nrunsRes, nstepsRes]) => {
+        const isTrue = (res: Maybe<EvalResult>) => {
+          return !res.isNone() &&
+            (res.value as RuntimeValue).toBool() === true
+        }
+        // the trace collected during the run
+        let trace: RuntimeValue[] = []
+        // a failure flag for the case a runtime error is found
+        let failure = false
+        // the value to be returned in the end of evaluation
+        let errorFound = false
+        // save the registers to recover them later
+        const vars = this.snapshotVars()
+        const nextVars = this.snapshotNextVars()
+        // do multiple runs, stop at the first failing run
+        const nruns = (nrunsRes as RuntimeValue).toInt()
+        for (let runNo = 0;
+          !errorFound && !failure && runNo < nruns; runNo++) {
+          trace = []
+          // check Init()
+          const initResult = init.eval()
+          failure = initResult.isNone() || failure
+          if (isTrue(initResult)) {
+            // The initial action evaluates to true.
+            // Our guess of values was good.
+            this.shiftVars()
+            trace.push(varsToRecord())
+            // check the invariant Inv
+            const invResult = inv.eval()
+            failure = invResult.isNone() || failure
+            if (!isTrue(invResult)) {
+              errorFound = true
+            } else {
+              // check all { Next(), shift(), Inv } in a loop
+              const nsteps = (nstepsRes as RuntimeValue).toInt()
+              for (let i = 0; !errorFound && !failure && i < nsteps; i++) {
+                const nextResult = next.eval()
+                failure = nextResult.isNone() || failure
+                if (isTrue(nextResult)) {
+                  this.shiftVars()
+                  trace.push(varsToRecord())
+                  errorFound = !isTrue(inv.eval())
+                } else {
+                  // Otherwise, the run cannot be extended.
+                  // In some cases, this may indicate a deadlock.
+                  // Since we are doing random simulation, it is very likely
+                  // that we have not generated good values for extending
+                  // the run. Hence, do not report an error here, but simply
+                  // drop the run. Otherwise, we would have a lot of false
+                  // positives, which look like deadlocks but they are not.
+                  break
                 }
               }
             }
-            // recover the state variables
-            this.recoverVars(vars)
-            this.recoverNextVars(nextVars)
-          } // end of a single random run
-          // save the trace (there are a few shadow variables, hence, the loop)
-          this.shadowVars.forEach(r => {
-            if (r.name === lastTraceName) {
-              r.registerValue = just(rv.mkList(trace))
-            }
-          })
-          // finally, return true, if no error was found
-          return (!failure) ? just(rv.mkBool(!errorFound)) : none()
-        }).join()
+          }
+          // recover the state variables
+          this.recoverVars(vars)
+          this.recoverNextVars(nextVars)
+        } // end of a single random run
+        // save the trace (there are a few shadow variables, hence, the loop)
+        this.shadowVars.forEach(r => {
+          if (r.name === lastTraceName) {
+            r.registerValue = just(rv.mkList(trace))
+          }
+        })
+        // finally, return true, if no error was found
+        return (!failure) ? just(rv.mkBool(!errorFound)) : none()
+      }).join()
     }
     this.compStack.push(mkFunComputable(doRun))
   }
@@ -1397,7 +1410,7 @@ export class CompilerVisitor implements IRVisitor {
     this.nextVars.forEach((r, i) => r.registerValue = values[i])
   }
 
-  private contextGet(name: string, kinds: ComputableKind[]) {
+  private contextGet(name: string | bigint, kinds: ComputableKind[]) {
     for (const k of kinds) {
       const value = this.context.get(kindName(k, name))
       if (value) {
@@ -1408,8 +1421,8 @@ export class CompilerVisitor implements IRVisitor {
     return undefined
   }
 
-  private contextLookup(name: string, scopeId: bigint, kinds: ComputableKind[]) {
-    const vdef = lookupValue(this.lookupTable, this.scopeTree, name, scopeId)
+  private contextLookup(id: bigint, kinds: ComputableKind[]) {
+    const vdef = this.lookupTable.get(id)
     if (vdef) {
       const refId = vdef.reference!
       for (const k of kinds) {

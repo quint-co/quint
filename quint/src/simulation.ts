@@ -14,7 +14,7 @@ import { range } from 'lodash'
 import chalk from 'chalk'
 
 import {
-  compileFromCode, contextLookup, lastTraceName
+  compileFromCode, contextNameLookup, lastTraceName
 } from './runtime/compile'
 import { ErrorMessage } from './quintParserFrontend'
 import { QuintEx } from './quintIr'
@@ -111,10 +111,10 @@ module __run__ {
   action __step = { ${o.step} }
   val __inv = { ${o.invariant} }
   val __runResult =
-    _test(${o.maxSamples}, ${o.maxSteps}, "__init", "__step", "__inv")
+    _test(${o.maxSamples}, ${o.maxSteps}, __init, __step, __inv)
 }
 `
- 
+
   const ctx = compileFromCode(idGen, wrappedCode, '__run__', options.rand)
 
   if (ctx.compileErrors.length > 0
@@ -126,7 +126,7 @@ module __run__ {
   } else {
     // evaluate __runResult
     const res: Either<ErrorMessage[], boolean> =
-      contextLookup(ctx, '__run__', '__runResult', 'callable')
+      contextNameLookup(ctx, '__runResult', 'callable')
         .mapLeft(msg => [{ explanation: msg, locs: [] }] as ErrorMessage[])
         .map(comp => {
           const result = comp.eval()
@@ -171,4 +171,3 @@ module __run__ {
       .join()
   }
 }
-

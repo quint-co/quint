@@ -1,14 +1,14 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { defaultValueDefinitions } from '../src/definitionsCollector'
-import { LookupTable, newTable } from '../src/lookupTable'
+import { DefinitionsByName, newTable } from '../src/definitionsByName'
 import { resolveNames } from '../src/nameResolver'
 
 import { buildModuleWithDefs, buildModuleWithExpressions } from './builders/ir'
 import { ScopeTree } from '../src/scoping'
 
 describe('nameResolver', () => {
-  const table: LookupTable = newTable({
+  const table: DefinitionsByName = newTable({
     valueDefinitions: [
       ...defaultValueDefinitions(),
       { kind: 'const', identifier: 'TEST_CONSTANT' },

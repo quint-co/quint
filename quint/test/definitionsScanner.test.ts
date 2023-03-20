@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { TypeDefinition, ValueDefinition, newTable } from '../src/lookupTable'
+import { TypeDefinition, ValueDefinition, newTable } from '../src/definitionsByName'
 import { ConflictSource, scanConflicts } from '../src/definitionsScanner'
 import { ScopeTree } from '../src/scoping'
 import { QuintType } from '../src/quintTypes'

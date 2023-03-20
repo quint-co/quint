@@ -19,9 +19,10 @@ import { resolveNames } from './nameResolver'
 import { resolveImports } from './importResolver'
 import { treeFromModule } from './scoping'
 import { scanConflicts } from './definitionsScanner'
-import { LookupTable, LookupTableByModule } from './lookupTable'
+import { Definition, LookupTable } from './lookupTable'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { mkErrorMessage } from './cliCommands'
+import { DefinitionsByModule, DefinitionsByName } from './definitionsByName'
 
 export interface Loc {
   source: string;
@@ -62,7 +63,7 @@ export interface ParserPhase1 {
 }
 
 export interface ParserPhase2 extends ParserPhase1 {
-  table: LookupTableByModule
+  table: LookupTable
 }
 
 /**
@@ -134,9 +135,9 @@ export function parsePhase1(
 export function parsePhase2(phase1Data: ParserPhase1): ParseResult<ParserPhase2> {
   const sourceMap: Map<bigint, Loc> = phase1Data.sourceMap
 
-  const definitionsByModule: LookupTableByModule = new Map()
+  const definitionsByModule: DefinitionsByModule = new Map()
 
-  const definitions = phase1Data.modules.reduce((result: Either<ErrorMessage[], LookupTableByModule>, module) => {
+  const definitions = phase1Data.modules.reduce((result: Either<ErrorMessage[], LookupTable>, module) => {
     const scopeTree = treeFromModule(module)
     const definitionsBeforeImport = collectDefinitions(module)
     definitionsByModule.set(module.name, definitionsBeforeImport)
@@ -144,7 +145,7 @@ export function parsePhase2(phase1Data: ParserPhase1): ParseResult<ParserPhase2>
     const [errors, definitions] = resolveImports(module, definitionsByModule)
     const errorLocator = mkErrorMessage(sourceMap)
 
-    const importResult: Either<ErrorMessage[], LookupTable> = errors.size > 0
+    const importResult: Either<ErrorMessage[], DefinitionsByName> = errors.size > 0
       ? left(Array.from(errors, errorLocator))
       : right(definitions)
 
@@ -177,7 +178,7 @@ export function parsePhase2(phase1Data: ParserPhase1): ParseResult<ParserPhase2>
         })
       })
 
-    const resolutionResult: Either<ErrorMessage[], void> =
+    const resolutionResult: Either<ErrorMessage[], LookupTable> =
       resolveNames(module, definitions, scopeTree).mapLeft(errors => {
         // Build error message with resolution explanation and the location obtained from sourceMap
         return errors.map(error => {
@@ -200,7 +201,7 @@ export function parsePhase2(phase1Data: ParserPhase1): ParseResult<ParserPhase2>
       })
 
     return mergeInMany([importResult, conflictResult, resolutionResult])
-      .map((_) => definitionsByModule)
+      .chain(([_, __, table]) => result.map(t => new Map<bigint, Definition>([...t.entries(), ...table.entries()])))
       .mapLeft(errors => errors.flat())
   }, right(new Map()))
 

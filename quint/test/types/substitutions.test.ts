@@ -5,9 +5,9 @@ import { Substitutions, applySubstitution, applySubstitutionToConstraint, compos
 import { Constraint } from '../../src/types/base'
 import { constraintToString } from '../../src/types/printing'
 import { Row } from '../../src'
-import { newTable } from '../../src/lookupTable'
+import { LookupTable } from '../../src/lookupTable'
 
-const table = newTable({})
+const table: LookupTable = new Map()
 
 describe('compose', () => {
   it('composes two substitutions', () => {

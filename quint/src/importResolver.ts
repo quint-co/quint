@@ -12,7 +12,7 @@
  * @module
  */
 
-import { LookupTable, LookupTableByModule, addTypeToTable, addValueToTable, copyNames, copyTable, mergeTables, newTable } from './lookupTable'
+import { DefinitionsByModule, DefinitionsByName, addTypeToTable, addValueToTable, copyNames, copyTable, mergeTables, newTable } from './definitionsByName'
 import { QuintImport, QuintInstance, QuintModule } from './quintIr'
 import { IRVisitor, walkModule } from './IRVisitor'
 import { QuintError } from './quintError'
@@ -32,7 +32,7 @@ export interface ImportError {
 /**
  * The result of import resolution for a Quint Module.
  */
-export type ImportResolutionResult = [Map<bigint, QuintError>, LookupTable]
+export type ImportResolutionResult = [Map<bigint, QuintError>, DefinitionsByName]
 /**
  * Explores the IR visiting all imports and instances. For each one, tries to find a definition
  * table for the required module name, and if found, copies all unscoped non-default definitions
@@ -43,7 +43,7 @@ export type ImportResolutionResult = [Map<bigint, QuintError>, LookupTable]
  *
  * @returns a successful result with updated definitions in case all imports were resolved, or the errors otherwise
  */
-export function resolveImports(quintModule: QuintModule, tables: LookupTableByModule): ImportResolutionResult {
+export function resolveImports(quintModule: QuintModule, tables: DefinitionsByModule): ImportResolutionResult {
   const visitor = new ImportResolverVisitor(tables)
   walkModule(visitor, quintModule)
 
@@ -51,13 +51,13 @@ export function resolveImports(quintModule: QuintModule, tables: LookupTableByMo
 }
 
 class ImportResolverVisitor implements IRVisitor {
-  constructor(tables: LookupTableByModule) {
+  constructor(tables: DefinitionsByModule) {
     this.tables = tables
   }
 
-  tables: LookupTableByModule
+  tables: DefinitionsByModule
   errors: Map<bigint, QuintError> = new Map<bigint, QuintError>()
-  table: LookupTable = newTable({})
+  table: DefinitionsByName = newTable({})
 
   private currentModule?: QuintModule
 
