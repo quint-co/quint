@@ -16,13 +16,6 @@ module Instances {
   val test_F = A1::f(10)
   val test_x = A1::x
 
-  // We can import the names from A1, provided that there are no collisions.
-  // The effect of this import is similar to an anonymous local instance in TLA+:
-  // LOCAL INSTANCE A WITH x <- 33, y <- MyY, z <- z
-  import A1.*
-
-  pure val test_G = g(true)
-
   // If we want to omit identity bindings such as z = z, we write:
   module A2 = A(x = 15, y = MyY, *)
 
