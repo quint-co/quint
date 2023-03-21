@@ -1,26 +1,26 @@
 import { assert } from 'chai'
 import { describe, it } from 'mocha'
-import { quintErrorToString } from '../src'
 import { collectDefinitions } from '../src/definitionsCollector'
+import { scanConflicts } from '../src/definitionsScanner'
 import { flatten } from '../src/flattening'
+import { newIdGenerator } from '../src/idGenerator'
 import { resolveImports } from '../src/importResolver'
 import { definitionToString } from '../src/IRprinting'
 import { resolveNames } from '../src/nameResolver'
+import { quintErrorToString } from '../src/quintError'
 import { treeFromModule } from '../src/scoping'
 import { buildModuleWithDefs } from './builders/ir'
 import { collectIds } from './util'
 
 describe('flatten', () => {
-  const moduleA = buildModuleWithDefs([
-    'const N: int',
-    'val x = N + 1',
-  ], 'A')
+  function assertFlatennedDefs(baseDefs: string[], defs: string[], expectedDefs: string[]): void {
+    const idGenerator = newIdGenerator()
 
-  const tableA = collectDefinitions(moduleA)
-  const lookupTableA = resolveNames(moduleA, tableA, treeFromModule(moduleA)).unwrap()
+    const moduleA = buildModuleWithDefs(baseDefs, 'A', idGenerator)
+    const tableA = collectDefinitions(moduleA)
+    const lookupTableA = resolveNames(moduleA, tableA, treeFromModule(moduleA)).unwrap()
 
-  function assertFlatennedDefs(defs: string[], expectedDefs: string[]): void {
-    const module = buildModuleWithDefs(defs)
+    const module = buildModuleWithDefs(defs, undefined, idGenerator)
     const table = collectDefinitions(module)
     const [errors, tableWithImports] = resolveImports(module, new Map([
       ['A', tableA],
@@ -44,11 +44,22 @@ describe('flatten', () => {
     })
 
     it('does not repeat ids', () => {
-      assert.notDeepInclude(collectIds(moduleA), collectIds(flattenedModule))
+      const ids = collectIds(flattenedModule)
+      assert.notDeepInclude(collectIds(moduleA), ids)
+      assert.sameDeepMembers(ids, [...new Set(ids)])
+    })
+
+    it('does not have conflicting definitions', () => {
+      assert.isTrue(scanConflicts(table, treeFromModule(module)).isRight())
     })
   }
 
   describe('multiple instances', () => {
+    const baseDefs = [
+      'const N: int',
+      'val x = N + 1',
+    ]
+
     const defs = [
       'module A1 = A(N = 1)',
       'module A2 = A(N = 2)',
@@ -61,6 +72,35 @@ describe('flatten', () => {
       'val A2::x = iadd(A2::N, 1)',
     ]
 
-    assertFlatennedDefs(defs, expectedDefs)
+    assertFlatennedDefs(baseDefs, defs, expectedDefs)
+  })
+
+  describe('single instance with several definitions', () => {
+    const baseDefs = [
+      'const N: int',
+      'var x: int',
+      'pure def f(a) = a + 1',
+      `action V = x' = f(x)`,
+      'assume T = N > 0',
+      'def lam = val b = 1 { a => b + a }',
+      'def lam2 = val b = 1 { a => b + a }',
+
+    ]
+
+    const defs = [
+      'module A1 = A(N = 1)',
+    ]
+
+    const expectedDefs = [
+      'pure val A1::N: int = 1',
+      'var A1::x: int',
+      'pure def A1::f = (a => iadd(a, 1))',
+      `action A1::V = assign(A1::x, A1::f(A1::x))`,
+      'assume A1::T = igt(A1::N, 0)',
+      'def A1::lam = val A1::b = 1 { (a => iadd(A1::b, a)) }',
+      'def A1::lam2 = val A1::b = 1 { (a => iadd(A1::b, a)) }',
+    ]
+
+    assertFlatennedDefs(baseDefs, defs, expectedDefs)
   })
 })

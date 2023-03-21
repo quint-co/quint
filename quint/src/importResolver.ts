@@ -120,7 +120,7 @@ class ImportResolverVisitor implements IRVisitor {
 
     // All names from the instanced module should be acessible with the instance namespace
     // So, copy them to the current module's lookup table
-    const newEntries = copyNames(instanceTable, def.name)
+    const newEntries = copyNames(instanceTable, def.name, this.currentModule?.id)
     this.table = mergeTables(this.table, newEntries)
   }
 

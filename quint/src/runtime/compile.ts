@@ -33,6 +33,8 @@ export const lastTraceName = '_lastTrace'
  * A compilation context returned by 'compile'.
  */
 export interface CompilationContext {
+  // The main module, when present
+  main?: QuintModule,
   // the lookup table to query for values and definitions
   lookupTable: LookupTable,
   // names of the variables and definition identifiers mapped to computables
@@ -134,10 +136,12 @@ export function
     throw new Error(`Error on resolving names for flattened modules: ${errors.map(e => e.explanation)}`)
   }).unwrap()
 
+  const flatennedMain = flattenedModules.find(m => m.name === mainName)
+
   const visitor = new CompilerVisitor(flattenedAnalysis.table, types, rand)
-  if (main) {
+  if (flatennedMain) {
     const reorderedModules =
-      flattenedModules.filter(m => m.name !== mainName).concat(main ? [main] : [])
+      flattenedModules.filter(m => m.name !== mainName).concat(flatennedMain ? [flatennedMain] : [])
     // Compile all modules
     reorderedModules.forEach(module => {
       if (module.defs.some(d => d.kind === 'const')) {
@@ -156,6 +160,7 @@ export function
       refs: [],
     }]
   return {
+    main: flatennedMain,
     lookupTable: lookupTable,
     values: visitor.getContext(),
     vars: visitor.getVars(),

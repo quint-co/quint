@@ -60,8 +60,13 @@ export function
     rand: () => number): Either<string, TestResult[]> {
   const ctx =
     compile(modules, sourceMap, lookupTable, types, main.name, rand)
+
+  if(!ctx.main) {
+    return left('Cannot find main module')
+  }
+
   const testDefs =
-    main.defs.filter(d => d.kind === 'def' && testMatch(d.name)) as QuintOpDef[]
+    ctx.main.defs.filter(d => d.kind === 'def' && testMatch(d.name)) as QuintOpDef[]
 
   return merge(testDefs.map(def => {
     return getComputableForDef(ctx, def)
