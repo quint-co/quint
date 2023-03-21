@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - short-circuiting for `implies` (#717)
+- Instances are now fully supported (#725)
 
 ### Changed
 ### Deprecated
