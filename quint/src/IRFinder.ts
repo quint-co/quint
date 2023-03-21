@@ -14,6 +14,7 @@
 
 import { IRVisitor, walkModule } from "./IRVisitor";
 import { QuintEx, QuintModule } from "./quintIr";
+import { QuintType } from "./quintTypes";
 
 /**
  * Finds a quint expression with a given id in a module
@@ -29,6 +30,20 @@ export function findExpressionWithId(module: QuintModule, id: bigint): QuintEx |
   return visitor.expression
 }
 
+/**
+ * Finds a quint type with a given id in a module
+ *
+ * @param module the module in which to search for the type
+ * @param id the id to be searched for
+ *
+ * @returns a quint type with the given id, or undefined if no type is found
+ */
+export function findTypeWithId(module: QuintModule, id: bigint): QuintType | undefined {
+  const visitor = new IRTypeFinder(id)
+  walkModule(visitor, module)
+  return visitor.type
+}
+
 class IRExpressionFinder implements IRVisitor {
   id: bigint
   expression?: QuintEx
@@ -40,6 +55,21 @@ class IRExpressionFinder implements IRVisitor {
   exitExpr(expr: QuintEx) {
     if (expr.id === this.id) {
       this.expression = expr
+    }
+  }
+}
+
+class IRTypeFinder implements IRVisitor {
+  id: bigint
+  type?: QuintType
+
+  constructor(id: bigint) {
+    this.id = id
+  }
+
+  exitType(type: QuintType) {
+    if (type.id === this.id) {
+      this.type = type
     }
   }
 }
