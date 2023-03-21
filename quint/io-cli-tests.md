@@ -280,7 +280,7 @@ quint run --init=Init --step=Next --seed=abcde --max-steps=4 \
 
 <!-- !test out run finds violation -->
 ```
-[violation] (duration). See the example:
+An example execution:
 ---------------------------------------------
 action step0 = all {
   counters::n' = 1,
@@ -306,6 +306,7 @@ run test = {
   step0.then(step1).then(step2).then(step3).then(step4)
 }
 ---------------------------------------------
+[nok] Found a violation (duration).
 ```
 
 ### Run finds an example
@@ -322,10 +323,7 @@ quint run --init=Init --step=Next --seed=abcde --max-steps=4 \
 
 <!-- !test out run finds example -->
 ```
-[ok] No violation found (duration).
- You may increase --max-samples and --max-steps.
-
-See the example:
+An example execution:
 ---------------------------------------------
 action step0 = all {
   counters::n' = 1,
@@ -351,6 +349,8 @@ run test = {
   step0.then(step1).then(step2).then(step3).then(step4)
 }
 ---------------------------------------------
+[ok] No violation found (duration).
+You may increase --max-samples and --max-steps.
 ```
 
 ### Repl evaluates coin
@@ -390,7 +390,7 @@ quint run --max-steps=5 --seed=123 --invariant=totalSupplyDoesNotOverflowInv \
 
 <!-- !test out run finds overflow -->
 ```
-[violation] (duration). See the example:
+An example execution:
 ---------------------------------------------
 action step0 = all {
   coin::minter' = "charlie",
@@ -411,6 +411,7 @@ run test = {
   step0.then(step1).then(step2)
 }
 ---------------------------------------------
+[nok] Found a violation (duration).
 ```
 
 ### OK REPL tutorial
