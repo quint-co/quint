@@ -120,28 +120,28 @@ export function contextNameLookup(
  * @param rand the random number generator
  * @returns the compilation context
  */
-export function
-  compile(modules: QuintModule[],
-    sourceMap: Map<bigint, Loc>,
-    lookupTable: LookupTable,
-    types: Map<bigint, TypeScheme>,
-    mainName: string,
-    rand: () => number): CompilationContext {
-  // Push back the main module to the end:
-  // The compiler exposes the state variables of the last module only.
-  const main = modules.find(m => m.name === mainName)
+export function compile(
+  modules: QuintModule[],
+  sourceMap: Map<bigint, Loc>,
+  lookupTable: LookupTable,
+  types: Map<bigint, TypeScheme>,
+  mainName: string,
+  rand: () => number): CompilationContext {
   const modulesByName = new Map(modules.map(m => [m.name, m]))
   const flattenedModules = modules.map(m => flatten(m, lookupTable, modulesByName))
   const flattenedAnalysis = parsePhase2({ modules: flattenedModules, sourceMap }).mapLeft(errors => {
+    // This should not happen, as the flattening should not introduce any errors
+    // Since parsePhase2 analysis of the original modules has already assured all names are correct.
     throw new Error(`Error on resolving names for flattened modules: ${errors.map(e => e.explanation)}`)
   }).unwrap()
 
-  const flatennedMain = flattenedModules.find(m => m.name === mainName)
+  const main = flattenedModules.find(m => m.name === mainName)
 
   const visitor = new CompilerVisitor(flattenedAnalysis.table, types, rand)
-  if (flatennedMain) {
-    const reorderedModules =
-      flattenedModules.filter(m => m.name !== mainName).concat(flatennedMain ? [flatennedMain] : [])
+  if (main) {
+    // Push back the main module to the end:
+    // The compiler exposes the state variables of the last module only.
+    const reorderedModules = flattenedModules.filter(m => m.name !== mainName).concat(main ? [main] : [])
     // Compile all modules
     reorderedModules.forEach(module => {
       if (module.defs.some(d => d.kind === 'const')) {
@@ -160,7 +160,7 @@ export function
       refs: [],
     }]
   return {
-    main: flatennedMain,
+    main: main,
     lookupTable: lookupTable,
     values: visitor.getContext(),
     vars: visitor.getVars(),
@@ -190,11 +190,11 @@ export function
  * @param rand the random number generator
  * @returns the compilation context
  */
-export function
-  compileFromCode(idGen: IdGenerator,
-    code: string,
-    mainName: string,
-    rand: () => number): CompilationContext {
+export function compileFromCode(
+  idGen: IdGenerator,
+  code: string,
+  mainName: string,
+  rand: () => number): CompilationContext {
   // parse the module text
   return parsePhase1(idGen, code, '<input>')
     // On errors, we'll produce the computational context up to this point

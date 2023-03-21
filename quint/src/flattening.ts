@@ -1,3 +1,17 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2023. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Flattening for modules, replacing instances and (soon) imports with their definitions.
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { IdGenerator, newIdGenerator } from "./idGenerator"
 import { LookupTable } from "./lookupTable"
 import { QuintDef, QuintEx, QuintModule, QuintOpDef, isAnnotatedDef } from "./quintIr"
@@ -5,6 +19,15 @@ import { defaultValueDefinitions } from "./definitionsCollector"
 import { definitionToString } from "./IRprinting"
 import { QuintType, Row } from "./quintTypes"
 
+/**
+ * Flatten a module, replacing instances and (todo) imports with their definitions.
+ *
+ * @param module The module to flatten
+ * @param table The lookup table to for all refered names
+ * @param modules The map of all refered modules
+ *
+ * @returns The flattened module
+ */
 export function flatten(module: QuintModule, table: LookupTable, modules: Map<string, QuintModule>): QuintModule {
   const lastId = [...modules.values()].map(m => m.id).sort((a, b) => Number(a - b))[-1]
   const idGenerator = newIdGenerator(lastId)
@@ -13,42 +36,49 @@ export function flatten(module: QuintModule, table: LookupTable, modules: Map<st
   const context = { idGenerator, table, builtinNames }
 
   const newDefs = module.defs.reduce((acc, def) => {
-    if (def.kind === 'instance') {
-      const protoModule = modules.get(def.protoName)!
-
-      def.overrides.forEach(([param, expr]) => {
-        const constDef = table.get(param.id)!
-        const name = `${def.name}::${param.name}`
-        acc.push({
-          kind: 'def',
-          name,
-          qualifier: 'pureval',
-          expr,
-          typeAnnotation: constDef.typeAnnotation
-            ? addNamespaceToType(context, def.name, constDef.typeAnnotation)
-            : undefined,
-          id: idGenerator.nextId(),
-        })
-      })
-
-      protoModule.defs.forEach(protoDef => {
-        if (!acc.some(d => d.name === `${def.name}::${protoDef.name}`)) {
-          // Push a namespaced def if it was not previously defined by an override
-          if (isAnnotatedDef(protoDef)) {
-            const type = addNamespaceToType(context, def.name, protoDef.typeAnnotation)
-            const newDef = addNamespaceToDef(context, def.name, protoDef)
-            if (!isAnnotatedDef(newDef)) {
-              throw new Error(`Impossible: transformation should preserve kind`)
-            }
-            acc.push({ ...newDef, typeAnnotation: type })
-          } else {
-            acc.push(addNamespaceToDef(context, def.name, protoDef))
-          }
-        }
-      })
-    } else {
+    if (def.kind !== 'instance') {
+      // Not an instance, keep the same def
       acc.push(def)
+      return acc
     }
+
+    const protoModule = modules.get(def.protoName)!
+
+    def.overrides.forEach(([param, expr]) => {
+      const constDef = table.get(param.id)!
+      const name = `${def.name}::${param.name}`
+      const typeAnnotation = constDef.typeAnnotation
+        ? addNamespaceToType(context, def.name, constDef.typeAnnotation)
+        : undefined
+
+      acc.push({
+        kind: 'def',
+        qualifier: 'pureval',
+        name,
+        expr,
+        typeAnnotation,
+        id: idGenerator.nextId(),
+      })
+    })
+
+    protoModule.defs.forEach(protoDef => {
+      if (acc.some(d => d.name === `${def.name}::${protoDef.name}`)) {
+        // Previously defined by an override, don't push it again
+        return
+      }
+
+      if (!isAnnotatedDef(protoDef)) {
+        return acc.push(addNamespaceToDef(context, def.name, protoDef))
+      }
+
+      const type = addNamespaceToType(context, def.name, protoDef.typeAnnotation)
+      const newDef = addNamespaceToDef(context, def.name, protoDef)
+      if (!isAnnotatedDef(newDef)) {
+        throw new Error(`Impossible: transformation should preserve kind`)
+      }
+
+      acc.push({ ...newDef, typeAnnotation: type })
+    })
 
     return acc
   }, [] as QuintDef[])
@@ -86,6 +116,7 @@ function addNamespaceToDef(ctx: FlatteningContext, name: string, def: QuintDef):
     case 'instance':
       throw new Error(`Instance in ${definitionToString(def)} should have been flatenned already`)
     case 'import':
+      // TODO: also ensure that imports are flatenned.
       return def
   }
 }
@@ -195,20 +226,29 @@ function addNamespaceToType(ctx: FlatteningContext, name: string, type: QuintTyp
 }
 
 function addNamespaceToRow(ctx: FlatteningContext, name: string, row: Row): Row {
-  if (row.kind === 'row') {
-    return {
-      ...row, fields: row.fields.map(field => {
-        return {
-          ...field,
-          fieldType: addNamespaceToType(ctx, name, field.fieldType),
-        }
-      }),
-    }
-  } else {
+  if (row.kind !== 'row') {
     return row
+  }
+
+  return {
+    ...row, fields: row.fields.map(field => {
+      return {
+        ...field,
+        fieldType: addNamespaceToType(ctx, name, field.fieldType),
+      }
+    }),
   }
 }
 
+/**
+ * Whether a name should be prefixed with the namespace.
+ *
+ * @param ctx the context with auxiliary information
+ * @param name the name to be prefixed
+ * @param id the id of the expression in which the name appears
+ *
+ * @returns false if the name is a builtin or a parameter, true otherwise
+ */
 function shouldAddNamespace(ctx: FlatteningContext, name: string, id: bigint): boolean {
   if (ctx.builtinNames.has(name)) {
     return false
