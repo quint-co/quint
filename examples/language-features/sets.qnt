@@ -25,8 +25,6 @@ module sets {
     n <= s.fold(0, (x, y) => x + y),
     s.in(powerset(s)),
     s == flatten(Set(s)),
-    // TODO: Enable after support for lists is added
-    // List(1, 1, 1).in(Set(1).allLists()),
     chooseSome(s).in(s),
     s.isFinite(),
     n + 1 == size(s),
