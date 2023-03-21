@@ -193,8 +193,9 @@ module coin {
     }
 
     // to run the random simulator for 10000 executions, each up to 10 actions,
-    // execute the following in REPL:
-    // _test(10000, 10, "init", "step", "totalSupplyDoesNotOverflowInv")
+    // execute the following in the command line:
+    //
+    // $ quint run --invariant totalSupplyDoesNotOverflowInv coin.qnt
 
 
 

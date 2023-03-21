@@ -41,6 +41,6 @@ module hello {
 
     // a simple test that demonstrates an interaction between
     // the computer and the user
-    run test1 = init.then(write).then(read)
+    run writeReadTest = init.then(write).then(read)
 }
 

@@ -18,9 +18,12 @@ that we have to describe two importants aspects of the protocol:
  - What constitutes a state of the state machine.
  - What kinds of transitions can be made by the state machine.
 
+          
+          
+
 If you would like to see the complete code before diving into
 the details, check [hello.qnt](./hello.qnt).
-        
+          
 ## 2. Declare a module
 
 *Progress:*  10%
@@ -253,7 +256,7 @@ that `any { ... }` chooses one of the actions *non-deterministically*.
 
     // a simple test that demonstrates an interaction between
     // the computer and the user
-    run test1 = init.then(write).then(read)
+    run writeReadTest = init.then(write).then(read)
 ```
 
 
@@ -284,14 +287,12 @@ out, run the command `quint`, which starts a REPL session, and execute the
 following commands (written after the REPL prompt `>>> `):
 
 ```sh
-$ quint
+$ quint -r hello.qnt
 Quint REPL v0.0.3
 Type ".exit" to exit, or ".help" for more information
->>> .load hello.qnt
-true
 >>> import hello.*
 
->>> test1
+>>> writeReadTest
 true
 ```
 
@@ -308,13 +309,22 @@ state produced by `test1`:
 "Hello, world!"
 ```
 
+Running tests by hand in REPL may quickly become tedious. To automate that,
+use the `test` command:
+
+            
+
+```sh
+quint test hello.qnt
+```
+
+
 **Exercise:** Carefully read the code of `read` and `write` again. Explain,
 whether it is possible to execute `read` and `write` in the same state.
 
 **Exercise:** Explain, whether it is possible to execute `read` or `write`
 after executing the run called `test1`.
-
-        
+            
 ## 10. Suming it up
 
 *Progress:*  90%

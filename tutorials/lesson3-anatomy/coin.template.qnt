@@ -854,8 +854,9 @@ better with Quint.
     !*/
 
     // to run the random simulator for 10000 executions, each up to 10 actions,
-    // execute the following in REPL:
-    // _test(10000, 10, "init", "step", "totalSupplyDoesNotOverflowInv")
+    // execute the following in the command line:
+    //
+    // $ quint run --invariant totalSupplyDoesNotOverflowInv coin.qnt
     /*!
       <step>
         <title>Testing with non-deterministic inputs and control</title>
@@ -869,23 +870,23 @@ Quint REPL actually supports random search for sequences of actions that violate
 an invariant. Its UX is a bit ad hoc at the moment. We will improve it in the
 future. You can try it right away:
 
-            <run target="markdown">echo '_test(10000, 10, "init", "step", "totalSupplyDoesNotOverflowInv")' | quint -r coin.qnt::coin</run>
-            <run target="codetour">echo '_test(10000, 10, "init", "step", "totalSupplyDoesNotOverflowInv")' | quint -r ./lesson3-anatomy/coin.qnt::coin</run>
+            <run target="markdown">quint run --invariant totalSupplyDoesNotOverflowInv coin.qnt</run>
+            <run target="codetour">quint run --invariant totalSupplyDoesNotOverflowInv ./lesson3-anatomy/coin.qnt</run>
 
             <block>
 
-The above command in REPL randomly produces sequences, starting with `init`
-and continuing with `step`, up to 10 actions. It checks the invariant
-`totalSupplyDoesNotOverflowInv` after every step. If the invariant is violated,
-the random search stops and returns `false`. If no invariant violaion is found,
-the search returns `true` after enumerating the specified number of runs,
-which is 10000 in our example.
-
-In our example, the search often finds an error. If it did not find an error,
-run the search again. Once `_test` returned `false`, you can print the trace
-leading to the bad state by evaluating `_lastTrace` in REPL.
+The above command in REPL randomly produces sequences of steps,
+starting with `init` and continuing with `step`, up to 20 steps. It checks the
+invariant `totalSupplyDoesNotOverflowInv` after every step. If the invariant is
+violated, the random search stops and returns `false`. If no invariant violaion
+is found, the search returns `true` after enumerating the specified number of runs,
+which is 10000 in our example. The search parameters such as the number of
+runs and steps can be tuned. Check the options of `run`:
 
             </block>
+
+            <run target="markdown">quint run --help</run>
+            <run target="codetour">quint run --help</run>
 
         </description>
         <file>$file</file>
@@ -915,7 +916,7 @@ Although the above tricks may help you in detecting some bugs, it is well
 known that there is always a probability of missing a bug with random search.
 
 If you are looking for better guarantees of correctness, Quint will be soon
-integrate with the
+integrated with the
 [Apalache model checker](https://github.com/informalsystems/apalache).
 The model checker looks for counterexamples more exhaustively, by solving
 equations. In some cases, it may even give you a guarantee that there is no bug,
