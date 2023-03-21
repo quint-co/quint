@@ -12,7 +12,7 @@
  * @module
  */
 
-import { Loc, QuintError, QuintModule, findExpressionWithId } from "@informalsystems/quint"
+import { Loc, QuintError, QuintModule, findExpressionWithId, findTypeWithId } from "@informalsystems/quint"
 import { Diagnostic, DiagnosticSeverity, Position, Range } from "vscode-languageserver"
 import { compact } from "lodash"
 
@@ -78,6 +78,11 @@ export function findName(
           return [module, expr.name, expr.id]
         case 'app':
           return [module, expr.opcode, expr.id]
+      }
+
+      const type = findTypeWithId(module, id)
+      if (type?.kind === 'const' && type.id) {
+        return [module, type.name, type.id]
       }
     })
   })
