@@ -290,6 +290,14 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString(input, '24')
     })
 
+    it('unpacks tuples', () => {
+      const input =
+        `def mult(x, y) = (x * y)
+         val t = (3, 4)
+         mult(t)`
+      assertResultAsString(input, '12')
+    })
+
     it('uses named def instead of lambda', () => {
       const input =
         `def positive(x) = x > 0
@@ -471,6 +479,12 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('Set(1, 2, 3).exists(x => x >= 5)', 'false')
     })
 
+    it('unpacks tuples in exists', () => {
+      assertResultAsString(
+        'tuples(1.to(3), 4.to(6)).exists((x, y) => x + y == 7)', 'true'
+      )
+    })
+
     it('computes exists over intervals', () => {
       assertResultAsString('1.to(3).exists(x => true)', 'true')
       assertResultAsString('1.to(3).exists(x => false)', 'false')
@@ -483,6 +497,12 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('Set(1, 2, 3).forall(x => false)', 'false')
       assertResultAsString('Set(1, 2, 3).forall(x => x >= 2)', 'false')
       assertResultAsString('Set(1, 2, 3).forall(x => x >= 0)', 'true')
+    })
+
+    it('unpacks tuples in forall', () => {
+      assertResultAsString(
+        'tuples(1.to(3), 4.to(6)).forall((x, y) => x + y <= 9)', 'true'
+      )
     })
 
     it('computes forall over nested sets', () => {
@@ -505,6 +525,13 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('Set(1, 2, 3).map(x => x / 2)', 'Set(0, 1)')
     })
 
+    it('unpacks tuples in map', () => {
+      assertResultAsString(
+        'tuples(1.to(3), 4.to(6)).map((x, y) => x + y)',
+        'Set(5, 6, 7, 8, 9)'
+      )
+    })
+
     it('computes map over intervals', () => {
       // a bijection
       assertResultAsString('1.to(3).map(x => 2 * x)', 'Set(2, 4, 6)')
@@ -516,6 +543,13 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('Set(1, 2, 3, 4).filter(x => false)', 'Set()')
       assertResultAsString('Set(1, 2, 3, 4).filter(x => true)', 'Set(1, 2, 3, 4)')
       assertResultAsString('Set(1, 2, 3, 4).filter(x => x % 2 == 0)', 'Set(2, 4)')
+    })
+
+    it('unpacks tuples in filter', () => {
+      assertResultAsString(
+        'tuples(1.to(5), 2.to(3)).filter((x, y) => x < y)',
+        'Set(Tup(1, 2), Tup(1, 3), Tup(2, 3))'
+      )
     })
 
     it('computes filter over intervals', () => {

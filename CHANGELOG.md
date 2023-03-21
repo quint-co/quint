@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - short-circuiting for `implies` (#717)
+- support for tuple unpacking in the simulator (#720)
 
 ### Changed
 ### Deprecated
