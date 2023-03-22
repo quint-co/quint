@@ -32,6 +32,7 @@ import { QuintError, quintErrorToString } from './quintError'
 import { compileAndTest } from './runtime/testing'
 import { newIdGenerator } from './idGenerator'
 import { SimulatorOptions, compileAndRun, printTrace } from './simulation'
+import { toItf } from './itf'
 
 export type stage =
   'loading' | 'parsing' | 'typechecking' |
@@ -370,7 +371,7 @@ export function runSimulator(prev: TypecheckedStage):
   const simulator = { ...prev, stage: 'running' as stage }
   return compileAndRun(newIdGenerator(), prev.sourceCode, mainName, options)
     .map(result => {
-      const isConsole = !prev.args.out
+      const isConsole = !prev.args.out && !prev.args.outItf
       if (isConsole) {
         const elapsedMs = Date.now() - startMs
         console.log(chalk.gray('An example execution:'))
@@ -387,12 +388,33 @@ export function runSimulator(prev: TypecheckedStage):
         }
       }
 
-      return {
-        ...simulator,
-        status: result.status,
-        trace: result.trace,
+      if (prev.args.outItf) {
+        const trace = toItf(result.vars, result.trace)
+        if (trace.isRight()) {
+          const jsonObj = {
+            '#meta': {
+              'source': prev.args.input,
+              'status': result.status,
+              'generatedBy': 'Quint',
+              'timestamp': Date.now(),
+            },
+            ...trace.value,
+          }
+          writeToJson(prev.args.outItf, jsonObj)
+        } else {
+          return left([
+            { explanation: `ITF conversion failed: ${trace.value}`, locs: [] },
+          ])
+        }
       }
+
+      return right({
+          ...simulator,
+          status: result.status,
+          trace: result.trace,
+      })
     })
+    .join()
     .mapLeft(newErrs => {
       const errors = prev.errors ? prev.errors.concat(newErrs) : newErrs
       const newStage = { ...simulator, errors }

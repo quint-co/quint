@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - short-circuiting for `implies` (#717)
 - improve the summary output of `run` (#719)
 - support for tuple unpacking in the simulator (#720)
-- Instances are now fully supported (#725)
+- instances are now fully supported (#725)
+- save the run results to ITF (#727)
 
 ### Changed
 ### Deprecated

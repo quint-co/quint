@@ -39,7 +39,8 @@ export interface SimulatorOptions {
  */
 export interface SimulatorResult {
   status: 'ok' | 'violation',
-  trace: QuintEx
+  vars: string[],
+  trace: QuintEx,
 }
 
 /**
@@ -164,6 +165,7 @@ module __run__ {
         } else {
           return right({
             status: noViolation ? 'ok' : 'violation',
+            vars: ctx.vars,
             trace: result.unwrap().toQuintEx(idGen),
           } as SimulatorResult)
         }

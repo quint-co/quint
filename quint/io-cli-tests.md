@@ -393,25 +393,39 @@ quint run --max-steps=5 --seed=123 --invariant=totalSupplyDoesNotOverflowInv \
 An example execution:
 ---------------------------------------------
 action step0 = all {
-  coin::minter' = "charlie",
+  coin::minter' = "alice",
   coin::balances' = Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0),
 }
 
 action step1 = all {
-  coin::minter' = "charlie",
-  coin::balances' = Map("alice" -> 0, "bob" -> 103284694429057902812136720936033946290905036909354547835442699046088697970688, "charlie" -> 0, "eve" -> 0, "null" -> 0),
-}
-
-action step2 = all {
-  coin::minter' = "charlie",
-  coin::balances' = Map("alice" -> 0, "bob" -> 103284694429057902812136720936033946290905036909354547835442699046088697970688, "charlie" -> 46797254901076543191142647617814825964332772279616938906031909187844048945152, "eve" -> 0, "null" -> 0),
+  coin::minter' = "alice",
+  coin::balances' = Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 60111170443858436966126692514148478804869009443507772171903863504622757871616),
 }
 
 run test = {
-  step0.then(step1).then(step2)
+  step0.then(step1)
 }
 ---------------------------------------------
 [nok] Found a violation (duration).
+```
+
+### Run outputs ITF
+
+<!-- !test in run itf -->
+```
+quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123 \
+  --invariant=totalSupplyDoesNotOverflowInv \
+  ../examples/solidity/Coin/coin.qnt
+cat out-itf-example.itf.json | jq '.states[0]."coin::balances"."#map"[0]'
+rm out-itf-example.itf.json
+```
+
+<!-- !test out run itf -->
+```
+[
+  "alice",
+  0
+]
 ```
 
 ### OK REPL tutorial
