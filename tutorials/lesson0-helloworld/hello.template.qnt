@@ -246,7 +246,7 @@ that `any { ... }` chooses one of the actions *non-deterministically*.
 
     // a simple test that demonstrates an interaction between
     // the computer and the user
-    run test1 = init.then(write).then(read)
+    run writeReadTest = init.then(write).then(read)
     /*!
       <step>
         <file>$file</file>
@@ -280,14 +280,12 @@ out, run the command `quint`, which starts a REPL session, and execute the
 following commands (written after the REPL prompt `>>> `):
 
 ```sh
-$ quint
+$ quint -r hello.qnt
 Quint REPL v0.0.3
 Type ".exit" to exit, or ".help" for more information
->>> .load hello.qnt
-true
 >>> import hello.*
 
->>> test1
+>>> writeReadTest
 true
 ```
 
@@ -304,11 +302,19 @@ state produced by `test1`:
 "Hello, world!"
 ```
 
+Running tests by hand in REPL may quickly become tedious. To automate that,
+use the `test` command:
+
+            <run target="markdown">quint test hello.qnt</run>
+            <run target="codetour">quint test ./lesson0-helloworld/hello.qnt</run>
+
+            <block>
 **Exercise:** Carefully read the code of `read` and `write` again. Explain,
 whether it is possible to execute `read` and `write` in the same state.
 
 **Exercise:** Explain, whether it is possible to execute `read` or `write`
 after executing the run called `test1`.
+            </block>
 
         </description>
       </step>

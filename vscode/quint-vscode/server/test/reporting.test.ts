@@ -90,11 +90,11 @@ describe('findBestMatchingResult', () => {
   })
 
   describe('findName', () => {
-    const [modules, sourceMap, _table] = parseOrThrow('module test { val foo = Nat.isFinite() }')
+    const [modules, sourceMap, _table] = parseOrThrow('module test { type MY_TYPE = bool val foo: MY_TYPE = Nat.isFinite() }')
     const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
 
     it('finds the name when position is under a name', () => {
-      const position: Position = { line: 0, character: 25 }
+      const position: Position = { line: 0, character: 55 }
 
       const [_module, name, _id] = findName(modules, results, position) ?? [undefined, undefined]
 
@@ -102,11 +102,19 @@ describe('findBestMatchingResult', () => {
     })
 
     it('finds the name when position is under an application', () => {
-      const position: Position = { line: 0, character: 29 }
+      const position: Position = { line: 0, character: 58 }
 
       const [_module, name, _id] = findName(modules, results, position) ?? [undefined, undefined]
 
       assert.deepEqual(name, 'isFinite')
+    })
+
+    it('finds the name when position is under a type alias', () => {
+      const position: Position = { line: 0, character: 45 }
+
+      const [_module, name, _id] = findName(modules, results, position) ?? [undefined, undefined]
+
+      assert.deepEqual(name, 'MY_TYPE')
     })
 
     it('returns undefined when the position is not under a name', () => {

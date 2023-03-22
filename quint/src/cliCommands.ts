@@ -373,16 +373,18 @@ export function runSimulator(prev: TypecheckedStage):
       const isConsole = !prev.args.out
       if (isConsole) {
         const elapsedMs = Date.now() - startMs
-        console.log(result.status === 'ok'
-          ? chalk.green('[ok]')
-            + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).\n`)
-            + chalk.gray(' You may increase --max-samples and --max-steps.\n')
-            + '\nSee the example:'
-          : chalk.red('[violation]') + chalk.gray(` (${elapsedMs}ms).`)
-            + chalk.gray(' See the example:'))
+        console.log(chalk.gray('An example execution:'))
         console.log('---------------------------------------------')
         printTrace(console.log, result.trace)
         console.log('---------------------------------------------')
+        if (result.status === 'ok') {
+          console.log(chalk.green('[ok]')
+            + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
+          console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
+        } else {
+          console.log(chalk.red('[nok]')
+            + ' Found a violation ' + chalk.gray(`(${elapsedMs}ms).`))
+        }
       }
 
       return {
