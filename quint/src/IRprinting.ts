@@ -59,7 +59,7 @@ export function definitionToString(def: QuintDef, includeBody:boolean=true): str
       return `import ${def.path}.${def.name}`
     case 'instance': {
       const overrides = def.overrides.map(o => `${o[0].name} = ${expressionToString(o[1])}`).join(', ')
-      return `module ${def.name} = ${def.protoName}(${overrides})`
+      return `import ${def.protoName}(${overrides}) as ${def.qualifiedName}`
     }
   }
 }

@@ -24,7 +24,7 @@ unit :    'const' IDENTIFIER ':' type                     # const
         | instanceMod                                     # instance
         | 'type' IDENTIFIER                               # typedef
         | 'type' IDENTIFIER '=' type                      # typedef
-        | 'import' path '.' identOrStar                   # importDef
+        | 'import' path '.' identOrStar ('as' name)?      # importDef
         // https://github.com/informalsystems/quint/issues/378
         //| 'nondet' IDENTIFIER (':' type)? '=' expr ';'? expr {
         //  const m = "QNT007: 'nondet' is only allowed inside actions"
@@ -56,14 +56,15 @@ qualifier : 'val'
 
 // an instance may have a special parameter '*',
 // which means that the missing parameters are identity, e.g., x = x, y = y
-instanceMod :   'module' IDENTIFIER '=' IDENTIFIER
-                '('
-                  (MUL |
-                  name '=' expr (',' name '=' expr)* (',' MUL)?)
-                ')'
+instanceMod :   // creating an instance and importing all names introduced in the instance
+                'import' moduleName '(' (name '=' expr (',' name '=' expr)*) ')' '.' '*'
+                // creating an instance and importing all names with a prefix
+            |   'import' moduleName '(' (name '=' expr (',' name '=' expr)*) ')' 'as' qualifiedName
         ;
 
+moduleName : IDENTIFIER;
 name: IDENTIFIER;
+qualifiedName : IDENTIFIER;
 
 // Types in Type System 1.2 of Apalache, which supports discriminated unions
 type :          <assoc=right> type '->' type                    # typeFun

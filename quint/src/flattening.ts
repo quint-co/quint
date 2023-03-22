@@ -12,9 +12,9 @@
  * @module
  */
 
-import { IdGenerator, newIdGenerator } from "./idGenerator"
+import { IdGenerator } from "./idGenerator"
 import { LookupTable } from "./lookupTable"
-import { QuintDef, QuintEx, QuintModule, QuintOpDef, isAnnotatedDef } from "./quintIr"
+import { QuintAssume, QuintConst, QuintDef, QuintEx, QuintModule, QuintOpDef, QuintTypeDef, QuintVar, WithOptionalDoc, isAnnotatedDef } from "./quintIr"
 import { defaultValueDefinitions } from "./definitionsCollector"
 import { definitionToString } from "./IRprinting"
 import { QuintType, Row } from "./quintTypes"
@@ -29,18 +29,46 @@ import { QuintType, Row } from "./quintTypes"
  * @returns The flattened module
  */
 export function flatten(
-  module: QuintModule, table: LookupTable, importedModules: Map<string, QuintModule>
+  module: QuintModule, table: LookupTable, importedModules: Map<string, QuintModule>, idGenerator: IdGenerator
 ): QuintModule {
-  const lastId = [...importedModules.values()].map(m => m.id).sort((a, b) => Number(a - b))[-1]
-  const idGenerator = newIdGenerator(lastId)
   const builtinNames = new Set(defaultValueDefinitions().map(d => d.identifier))
 
   const context = { idGenerator, table, builtinNames }
 
   const newDefs = module.defs.reduce((newDefs, def) => {
-    if (def.kind !== 'instance') {
-      // Not an instance, keep the same def
+    if (def.kind !== 'instance' && def.kind !== 'import') {
+      // Not an instance or import, keep the same def
       newDefs.push(def)
+      return newDefs
+    }
+
+    if (def.kind === 'import') {
+      // TODO: import single name
+      const protoModule = importedModules.get(def.path)!
+
+      protoModule.defs.forEach(protoDef => {
+        if (!isFlattened(protoDef)) {
+          throw new Error(`Impossible: ${definitionToString(protoDef)} should have been flattened already`)
+        }
+
+        if (newDefs.some(d => d.name === namespacedName(def.qualifiedName, protoDef.name))) {
+          // Previously defined by an override, don't push it again
+          return
+        }
+
+        if (!isAnnotatedDef(protoDef)) {
+          return newDefs.push(addNamespaceToDef(context, def.qualifiedName, protoDef))
+        }
+
+        const type = addNamespaceToType(context, def.qualifiedName, protoDef.typeAnnotation)
+        const newDef = addNamespaceToDef(context, def.qualifiedName, protoDef)
+        if (!isAnnotatedDef(newDef)) {
+          throw new Error(`Impossible: transformation should preserve kind`)
+        }
+
+        newDefs.push({ ...newDef, typeAnnotation: type })
+      })
+
       return newDefs
     }
 
@@ -49,9 +77,9 @@ export function flatten(
     // def is QuintInstance. Replace every parameter with the assigned expression.
     def.overrides.forEach(([param, expr]) => {
       const constDef = table.get(param.id)!
-      const name = `${def.name}::${param.name}`
+      const name = namespacedName(def.qualifiedName, param.name)
       const typeAnnotation = constDef.typeAnnotation
-        ? addNamespaceToType(context, def.name, constDef.typeAnnotation)
+        ? addNamespaceToType(context, def.qualifiedName, constDef.typeAnnotation)
         : undefined
 
       newDefs.push({
@@ -65,17 +93,21 @@ export function flatten(
     })
 
     protoModule.defs.forEach(protoDef => {
-      if (newDefs.some(d => d.name === `${def.name}::${protoDef.name}`)) {
+      if (!isFlattened(protoDef)) {
+        throw new Error(`Impossible: ${definitionToString(protoDef)} should have been flattened already`)
+      }
+
+      if (newDefs.some(d => d.name === namespacedName(def.qualifiedName, protoDef.name))) {
         // Previously defined by an override, don't push it again
         return
       }
 
       if (!isAnnotatedDef(protoDef)) {
-        return newDefs.push(addNamespaceToDef(context, def.name, protoDef))
+        return newDefs.push(addNamespaceToDef(context, def.qualifiedName, protoDef))
       }
 
-      const type = addNamespaceToType(context, def.name, protoDef.typeAnnotation)
-      const newDef = addNamespaceToDef(context, def.name, protoDef)
+      const type = addNamespaceToType(context, def.qualifiedName, protoDef.typeAnnotation)
+      const newDef = addNamespaceToDef(context, def.qualifiedName, protoDef)
       if (!isAnnotatedDef(newDef)) {
         throw new Error(`Impossible: transformation should preserve kind`)
       }
@@ -84,9 +116,21 @@ export function flatten(
     })
 
     return newDefs
-  }, [] as QuintDef[])
+  }, [] as DefAfterFlattening[])
 
   return { ...module, defs: newDefs }
+}
+
+type DefAfterFlattening = (
+  QuintOpDef
+  | QuintConst
+  | QuintVar
+  | QuintAssume
+  | QuintTypeDef
+) & WithOptionalDoc
+
+function isFlattened(def: QuintDef): def is DefAfterFlattening {
+  return def.kind !== 'instance' && def.kind !== 'import'
 }
 
 interface FlatteningContext {
@@ -95,50 +139,49 @@ interface FlatteningContext {
   builtinNames: Set<string>,
 }
 
-function addNamespaceToDef(ctx: FlatteningContext, name: string, def: QuintDef): QuintDef {
+function addNamespaceToDef(ctx: FlatteningContext, name: string | undefined, def: QuintDef): DefAfterFlattening {
   switch (def.kind) {
     case 'def':
       return addNamespaceToOpDef(ctx, name, def)
     case 'assume':
       return {
         ...def,
-        name: `${name}::${def.name}`,
+        name: namespacedName(name, def.name),
         assumption: addNamespaceToExpr(ctx, name, def.assumption),
         id: ctx.idGenerator.nextId(),
       }
     case 'const':
     case 'var':
-      return { ...def, name: `${name}::${def.name}`, id: ctx.idGenerator.nextId() }
+      return { ...def, name: namespacedName(name, def.name), id: ctx.idGenerator.nextId() }
     case 'typedef':
       return {
         ...def,
-        name: `${name}::${def.name}`,
+        name: namespacedName(name, def.name),
         type: def.type ? addNamespaceToType(ctx, name, def.type) : undefined,
         id: ctx.idGenerator.nextId(),
       }
     case 'instance':
       throw new Error(`Instance in ${definitionToString(def)} should have been flatenned already`)
     case 'import':
-      // TODO: also ensure that imports are flatenned.
-      return def
+      throw new Error(`Import in ${definitionToString(def)} should have been flatenned already`)
   }
 }
 
-function addNamespaceToOpDef(ctx: FlatteningContext, name: string, opdef: QuintOpDef): QuintOpDef {
+function addNamespaceToOpDef(ctx: FlatteningContext, name: string | undefined, opdef: QuintOpDef): QuintOpDef {
   return {
     ...opdef,
-    name: `${name}::${opdef.name}`,
+    name: namespacedName(name, opdef.name),
     expr: addNamespaceToExpr(ctx, name, opdef.expr),
     id: ctx.idGenerator.nextId(),
   }
 }
 
-function addNamespaceToExpr(ctx: FlatteningContext, name: string, expr: QuintEx): QuintEx {
+function addNamespaceToExpr(ctx: FlatteningContext, name: string | undefined, expr: QuintEx): QuintEx {
   const id = ctx.idGenerator.nextId()
   switch (expr.kind) {
     case 'name':
       if (shouldAddNamespace(ctx, expr.name, expr.id)) {
-        return { ...expr, name: `${name}::${expr.name}`, id }
+        return { ...expr, name: namespacedName(name, expr.name), id }
       }
 
       return { ...expr, id }
@@ -150,7 +193,7 @@ function addNamespaceToExpr(ctx: FlatteningContext, name: string, expr: QuintEx)
       if (shouldAddNamespace(ctx, expr.opcode, expr.id)) {
         return {
           ...expr,
-          opcode: `${name}::${expr.opcode}`,
+          opcode: namespacedName(name, expr.opcode),
           args: expr.args.map(arg => addNamespaceToExpr(ctx, name, arg)),
           id,
         }
@@ -180,7 +223,7 @@ function addNamespaceToExpr(ctx: FlatteningContext, name: string, expr: QuintEx)
   }
 }
 
-function addNamespaceToType(ctx: FlatteningContext, name: string, type: QuintType): QuintType {
+function addNamespaceToType(ctx: FlatteningContext, name: string | undefined, type: QuintType): QuintType {
   const id = ctx.idGenerator.nextId()
   switch (type.kind) {
     case 'bool':
@@ -189,7 +232,7 @@ function addNamespaceToType(ctx: FlatteningContext, name: string, type: QuintTyp
     case 'var':
       return { ...type, id }
     case 'const':
-      return { ...type, name: `${name}::${type.name}`, id }
+      return { ...type, name: namespacedName(name, type.name), id }
     case 'set':
     case 'list':
       return { ...type, elem: addNamespaceToType(ctx, name, type.elem), id }
@@ -228,7 +271,7 @@ function addNamespaceToType(ctx: FlatteningContext, name: string, type: QuintTyp
   }
 }
 
-function addNamespaceToRow(ctx: FlatteningContext, name: string, row: Row): Row {
+function addNamespaceToRow(ctx: FlatteningContext, name: string | undefined, row: Row): Row {
   if (row.kind !== 'row') {
     return row
   }
@@ -241,6 +284,10 @@ function addNamespaceToRow(ctx: FlatteningContext, name: string, row: Row): Row 
       }
     }),
   }
+}
+
+function namespacedName(namespace: string | undefined, name: string): string {
+  return namespace ? `${namespace}::${name}` : name
 }
 
 /**

@@ -43,7 +43,7 @@ interface WithTypeAnnotation {
   typeAnnotation: QuintType
 }
 
-interface WithOptionalDoc {
+export interface WithOptionalDoc {
   /** optionally, docstrings for the operator */
   doc?: string,
 }
@@ -220,13 +220,15 @@ export interface QuintImport extends WithId {
   name: string,
   /** path to the module, e.g., Foo.Bar */
   path: string
+  /** a qualifier, e.g. F in import Foo.* as F */
+  qualifiedName?: string,
 }
 
 export interface QuintInstance extends WithId {
   /** definition kind ('instance') */
   kind: 'instance',
   /** instance name */
-  name: string,
+  qualifiedName?: string,
   /** the name of the module to instantiate */
   protoName: string,
   /** how to override constants and variables */

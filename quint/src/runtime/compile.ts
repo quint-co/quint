@@ -21,7 +21,7 @@ import { LookupTable } from '../lookupTable'
 import { TypeScheme } from '../types/base'
 import { QuintAnalyzer } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
-import { IdGenerator } from '../idGenerator'
+import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { flatten } from '../flattening'
 
 /**
@@ -128,7 +128,20 @@ export function compile(
   mainName: string,
   rand: () => number): CompilationContext {
   const modulesByName = new Map(modules.map(m => [m.name, m]))
-  const flattenedModules = modules.map(m => flatten(m, lookupTable, modulesByName))
+  const lastId = modules.map(m => m.id).sort((a, b) => Number(a - b))[modules.length - 1]
+  const idGenerator = newIdGenerator(lastId)
+
+  const flattenedModules = modules.map(m => {
+    const flattenedAnalysis = parsePhase2({ modules: [...modulesByName.values()], sourceMap }).mapLeft(errors => {
+      // This should not happen, as the flattening should not introduce any errors
+      // Since parsePhase2 analysis of the original modules has already assured all names are correct.
+      throw new Error(`Error on resolving names for flattened modules: ${errors.map(e => e.explanation)}`)
+    }).unwrap()
+
+    const flatenned = flatten(m, flattenedAnalysis.table, modulesByName, idGenerator)
+    modulesByName.set(m.name, flatenned)
+    return flatenned
+  })
   const flattenedAnalysis = parsePhase2({ modules: flattenedModules, sourceMap }).mapLeft(errors => {
     // This should not happen, as the flattening should not introduce any errors
     // Since parsePhase2 analysis of the original modules has already assured all names are correct.

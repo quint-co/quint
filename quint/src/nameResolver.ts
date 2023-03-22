@@ -83,7 +83,9 @@ class NameResolverVisitor implements IRVisitor {
   enterDef(def: QuintDef): void {
     // Keep the last visited definition name
     // so it can be showen in the reported error
-    this.lastDefName = def.name
+    if (def.kind !== 'instance' && def.kind !== 'import') {
+      this.lastDefName = def.name
+    }
   }
 
   enterName(nameExpr: QuintName): void {
@@ -113,7 +115,8 @@ class NameResolverVisitor implements IRVisitor {
 
   enterInstance(def: QuintInstance): void {
     def.overrides.forEach(([name, _]) => {
-      this.checkScopedName(`${def.name}::${name.name}`, name.id)
+      const qualifiedName = def.qualifiedName ? `${def.qualifiedName}::${name.name}` : name.name
+      this.checkScopedName(qualifiedName, name.id)
     })
   }
 

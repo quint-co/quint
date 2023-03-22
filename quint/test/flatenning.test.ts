@@ -37,7 +37,7 @@ describe('flatten', () => {
     const flattenedModule = flatten(module, lookupTable, new Map([
       ['A', moduleA],
       ['wrapper', module],
-    ]))
+    ]), idGenerator)
 
     it('flattens instances', () => {
       assert.sameDeepMembers(flattenedModule.defs.map(def => definitionToString(def)), expectedDefs)
@@ -61,8 +61,8 @@ describe('flatten', () => {
     ]
 
     const defs = [
-      'module A1 = A(N = 1)',
-      'module A2 = A(N = 2)',
+      'import A(N = 1) as A1',
+      'import A(N = 2) as A2',
     ]
 
     const expectedDefs = [
@@ -88,7 +88,7 @@ describe('flatten', () => {
     ]
 
     const defs = [
-      'module A1 = A(N = 1)',
+      'import A(N = 1) as A1',
     ]
 
     const expectedDefs = [
