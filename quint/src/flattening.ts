@@ -44,6 +44,7 @@ export function flatten(module: QuintModule, table: LookupTable, modules: Map<st
 
     const protoModule = modules.get(def.protoName)!
 
+    // def is QuintInstance. Replace every parameter with the assigned expression.
     def.overrides.forEach(([param, expr]) => {
       const constDef = table.get(param.id)!
       const name = `${def.name}::${param.name}`

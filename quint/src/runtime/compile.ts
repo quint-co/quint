@@ -146,7 +146,7 @@ export function compile(
     reorderedModules.forEach(module => {
       if (module.defs.some(d => d.kind === 'const')) {
         // Skip modules with constants, as they are not used in the simulator
-        // They should be instanced in order to be evaluated
+        // They should be instantiated in order to be evaluated
         return
       }
       visitor.switchModule(module.id, module.name)
