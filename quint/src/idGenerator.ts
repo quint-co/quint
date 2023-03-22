@@ -24,7 +24,7 @@ export interface IdGenerator {
  */
 export const newIdGenerator = (initialId: bigint = 0n) => {
   return {
-    _lastId: initialId ? initialId : 0n,
+    _lastId: initialId,
 
     nextId(): bigint {
         this._lastId = this._lastId + 1n

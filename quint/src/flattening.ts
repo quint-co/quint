@@ -24,25 +24,27 @@ import { QuintType, Row } from "./quintTypes"
  *
  * @param module The module to flatten
  * @param table The lookup table to for all refered names
- * @param modules The map of all refered modules
+ * @param importedModules The map of all refered modules
  *
  * @returns The flattened module
  */
-export function flatten(module: QuintModule, table: LookupTable, modules: Map<string, QuintModule>): QuintModule {
-  const lastId = [...modules.values()].map(m => m.id).sort((a, b) => Number(a - b))[-1]
+export function flatten(
+  module: QuintModule, table: LookupTable, importedModules: Map<string, QuintModule>
+): QuintModule {
+  const lastId = [...importedModules.values()].map(m => m.id).sort((a, b) => Number(a - b))[-1]
   const idGenerator = newIdGenerator(lastId)
   const builtinNames = new Set(defaultValueDefinitions().map(d => d.identifier))
 
   const context = { idGenerator, table, builtinNames }
 
-  const newDefs = module.defs.reduce((acc, def) => {
+  const newDefs = module.defs.reduce((newDefs, def) => {
     if (def.kind !== 'instance') {
       // Not an instance, keep the same def
-      acc.push(def)
-      return acc
+      newDefs.push(def)
+      return newDefs
     }
 
-    const protoModule = modules.get(def.protoName)!
+    const protoModule = importedModules.get(def.protoName)!
 
     // def is QuintInstance. Replace every parameter with the assigned expression.
     def.overrides.forEach(([param, expr]) => {
@@ -52,7 +54,7 @@ export function flatten(module: QuintModule, table: LookupTable, modules: Map<st
         ? addNamespaceToType(context, def.name, constDef.typeAnnotation)
         : undefined
 
-      acc.push({
+      newDefs.push({
         kind: 'def',
         qualifier: 'pureval',
         name,
@@ -63,13 +65,13 @@ export function flatten(module: QuintModule, table: LookupTable, modules: Map<st
     })
 
     protoModule.defs.forEach(protoDef => {
-      if (acc.some(d => d.name === `${def.name}::${protoDef.name}`)) {
+      if (newDefs.some(d => d.name === `${def.name}::${protoDef.name}`)) {
         // Previously defined by an override, don't push it again
         return
       }
 
       if (!isAnnotatedDef(protoDef)) {
-        return acc.push(addNamespaceToDef(context, def.name, protoDef))
+        return newDefs.push(addNamespaceToDef(context, def.name, protoDef))
       }
 
       const type = addNamespaceToType(context, def.name, protoDef.typeAnnotation)
@@ -78,10 +80,10 @@ export function flatten(module: QuintModule, table: LookupTable, modules: Map<st
         throw new Error(`Impossible: transformation should preserve kind`)
       }
 
-      acc.push({ ...newDef, typeAnnotation: type })
+      newDefs.push({ ...newDef, typeAnnotation: type })
     })
 
-    return acc
+    return newDefs
   }, [] as QuintDef[])
 
   return { ...module, defs: newDefs }

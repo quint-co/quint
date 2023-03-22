@@ -76,8 +76,7 @@ module TendermintAcc {
   const MaxRound: Round_t
 
   // the proposer function from 0..NRounds to the set of processes
-  //const Proposer: Round_t -> Proc_t
-  pure val Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p4", 4 -> "p1")
+  const Proposer: Round_t -> Proc_t
 
   assume Corr_and_faulty_make_N =
       N == size(Corr.union(Faulty))
@@ -760,7 +759,8 @@ module TendermintTest {
     T = 1,
     ValidValues = Set("v0", "v1"),
     InvalidValues = Set("v2"),
-    MaxRound = 4
+    MaxRound = 4,
+    Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p4", 4 -> "p1")
   )
 
   module Tendermint_n4_f2 = TendermintAcc(
@@ -770,7 +770,8 @@ module TendermintTest {
     T = 1,
     ValidValues = Set("v0", "v1"),
     InvalidValues = Set("v2"),
-    MaxRound = 4
+    MaxRound = 4,
+    Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p4", 4 -> "p1")
   )
 
   module Tendermint_n5_f2 = TendermintAcc(
@@ -780,6 +781,7 @@ module TendermintTest {
     T = 1,
     ValidValues = Set("v0", "v1"),
     InvalidValues = Set("v2"),
-    MaxRound = 4
+    MaxRound = 4,
+    Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p4", 4 -> "p1")
   )
 }
