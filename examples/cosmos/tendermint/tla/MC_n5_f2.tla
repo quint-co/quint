@@ -37,7 +37,7 @@ VARIABLES
 INSTANCE TendermintAcc005 WITH
   Corr <- {"c1", "c2", "c3"},
   Faulty <- {"f4", "f5"},
-  N <- 4,
+  N <- 5,
   T <- 1,
   ValidValues <- { "v0", "v1" },
   InvalidValues <- {"v2"},

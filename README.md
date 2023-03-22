@@ -141,7 +141,7 @@ completely implementing every pass.
 | [Tuples][]                        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |     :x:     | :white_check_mark: |
 | [Imports][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |     :x:     | :white_check_mark: |
 | [Module definitions][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |     :x:     | :white_check_mark: |
-| [Module instances][]              | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |    :x: [237][]     |     :x:     |        :x:         |
+| [Module instances][]              | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |     :x:     |        :x:         |
 | [Multiple files][]                |     :x: [8][]      | :white_check_mark: | :white_check_mark: | :white_check_mark: |        :x:         |     :x:     |        :x:         |
 | [Constant declarations][]         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |    :x: [236][]     |     :x:     |        :x:         |
 | [Variable definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |     :x:     | :white_check_mark: |
@@ -189,19 +189,12 @@ completely implementing every pass.
 [Fairness]: ./doc/lang.md#fairness
 [Unbounded quantifiers]: ./doc/lang.md#unbounded-quantifiers
 [Modes]: ./doc/lang.md#modes
-[232]: https://github.com/informalsystems/quint/issues/232
-[231]: https://github.com/informalsystems/quint/issues/231
 [233]: https://github.com/informalsystems/quint/issues/233
 [221]: https://github.com/informalsystems/quint/issues/221
-[234]: https://github.com/informalsystems/quint/issues/234
 [235]: https://github.com/informalsystems/quint/issues/235
 [8]: https://github.com/informalsystems/quint/issues/8
-[237]: https://github.com/informalsystems/quint/issues/237
 [236]: https://github.com/informalsystems/quint/issues/236
-[242]: https://github.com/informalsystems/quint/issues/242
-[243]: https://github.com/informalsystems/quint/issues/243
 [244]: https://github.com/informalsystems/quint/issues/244
-[245]: https://github.com/informalsystems/quint/issues/245
 [Higher-order definitions]: https://github.com/informalsystems/quint/blob/main/doc/lang.md#operator-definitions
 [String literals]: https://github.com/informalsystems/quint/blob/main/doc/lang.md#identifiers-and-strings
 [TLA+]: https://lamport.azurewebsites.net/tla/tla.html

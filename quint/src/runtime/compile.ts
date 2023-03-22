@@ -11,7 +11,7 @@
 import { Either, left, right } from '@sweet-monads/either'
 
 import {
-  ErrorMessage, Loc, fromIrErrorMessage,parsePhase1, parsePhase2
+  ErrorMessage, Loc, fromIrErrorMessage, parsePhase1, parsePhase2
 } from '../quintParserFrontend'
 import { Computable, ComputableKind, kindName } from './runtime'
 import { QuintModule } from '../quintIr'
@@ -22,6 +22,7 @@ import { TypeScheme } from '../types/base'
 import { QuintAnalyzer } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
 import { IdGenerator } from '../idGenerator'
+import { flatten } from '../flattening'
 
 /**
  * The name of the shadow variable that stores the last found trace.
@@ -32,6 +33,8 @@ export const lastTraceName = '_lastTrace'
  * A compilation context returned by 'compile'.
  */
 export interface CompilationContext {
+  // The main module, when present
+  main?: QuintModule,
   // the lookup table to query for values and definitions
   lookupTable: LookupTable,
   // names of the variables and definition identifiers mapped to computables
@@ -117,22 +120,35 @@ export function contextNameLookup(
  * @param rand the random number generator
  * @returns the compilation context
  */
-export function
-  compile(modules: QuintModule[],
-          sourceMap: Map<bigint, Loc>,
-          lookupTable: LookupTable,
-          types: Map<bigint, TypeScheme>,
-          mainName: string,
-          rand: () => number): CompilationContext {
-  // Push back the main module to the end:
-  // The compiler exposes the state variables of the last module only.
-  const main = modules.find(m => m.name === mainName)
-  const visitor = new CompilerVisitor(lookupTable, types, rand)
+export function compile(
+  modules: QuintModule[],
+  sourceMap: Map<bigint, Loc>,
+  lookupTable: LookupTable,
+  types: Map<bigint, TypeScheme>,
+  mainName: string,
+  rand: () => number): CompilationContext {
+  const modulesByName = new Map(modules.map(m => [m.name, m]))
+  const flattenedModules = modules.map(m => flatten(m, lookupTable, modulesByName))
+  const flattenedAnalysis = parsePhase2({ modules: flattenedModules, sourceMap }).mapLeft(errors => {
+    // This should not happen, as the flattening should not introduce any errors
+    // Since parsePhase2 analysis of the original modules has already assured all names are correct.
+    throw new Error(`Error on resolving names for flattened modules: ${errors.map(e => e.explanation)}`)
+  }).unwrap()
+
+  const main = flattenedModules.find(m => m.name === mainName)
+
+  const visitor = new CompilerVisitor(flattenedAnalysis.table, types, rand)
   if (main) {
-    const reorderedModules =
-      modules.filter(m => m.name !== mainName).concat(main ? [main] : [])
+    // Push back the main module to the end:
+    // The compiler exposes the state variables of the last module only.
+    const reorderedModules = flattenedModules.filter(m => m.name !== mainName).concat(main ? [main] : [])
     // Compile all modules
     reorderedModules.forEach(module => {
+      if (module.defs.some(d => d.kind === 'const')) {
+        // Skip modules with constants, as they are not used in the simulator
+        // They should be instantiated in order to be evaluated
+        return
+      }
       visitor.switchModule(module.id, module.name)
       module.defs.forEach(def => walkDefinition(visitor, def))
     })
@@ -144,6 +160,7 @@ export function
       refs: [],
     }]
   return {
+    main: main,
     lookupTable: lookupTable,
     values: visitor.getContext(),
     vars: visitor.getVars(),
@@ -152,7 +169,7 @@ export function
     analysisErrors: [],
     compileErrors:
       visitor.getCompileErrors().concat(mainNotFoundError)
-      .map(fromIrErrorMessage(sourceMap)),
+        .map(fromIrErrorMessage(sourceMap)),
     getRuntimeErrors: () => {
       return visitor.getRuntimeErrors()
         .splice(0)
@@ -173,11 +190,11 @@ export function
  * @param rand the random number generator
  * @returns the compilation context
  */
-export function
-  compileFromCode(idGen: IdGenerator,
-                  code: string,
-                  mainName: string,
-                  rand: () => number): CompilationContext {
+export function compileFromCode(
+  idGen: IdGenerator,
+  code: string,
+  mainName: string,
+  rand: () => number): CompilationContext {
   // parse the module text
   return parsePhase1(idGen, code, '<input>')
     // On errors, we'll produce the computational context up to this point
@@ -194,13 +211,13 @@ export function
       const [analysisErrors, analysisResult] = analyzer.getResult()
       const ctx =
         compile(modules,
-                sourceMap, table, analysisResult.types, mainName, rand)
+          sourceMap, table, analysisResult.types, mainName, rand)
       const errorLocator = mkErrorMessage(sourceMap)
       return right({
         ...ctx,
         analysisErrors: Array.from(analysisErrors, errorLocator),
       })
     }
-  // we produce CompilationContext in any case
-  ).value
+      // we produce CompilationContext in any case
+    ).value
 }

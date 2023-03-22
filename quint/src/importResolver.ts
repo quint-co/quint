@@ -118,9 +118,6 @@ class ImportResolverVisitor implements IRVisitor {
       instanceTable.valueDefinitions.set(name.name, newDefs)
     })
 
-    // Copy the intanced module lookup table in a new lookup table for the instance
-    this.tables.set(def.name, instanceTable)
-
     // All names from the instanced module should be acessible with the instance namespace
     // So, copy them to the current module's lookup table
     const newEntries = copyNames(instanceTable, def.name, this.currentModule?.id)

@@ -6,9 +6,8 @@ import JSONbig from 'json-bigint'
 import { compactSourceMap, parsePhase1, parsePhase2 } from '../src/quintParserFrontend'
 import { lf } from 'eol'
 import { right } from '@sweet-monads/either'
-import { QuintDef, QuintEx, QuintInstance, QuintLambda, QuintModule, QuintType, QuintTypeDef } from '../src'
-import { IRVisitor, walkModule } from '../src/IRVisitor'
 import { newIdGenerator } from '../src/idGenerator'
+import { collectIds } from './util'
 
 // read a Quint file from the test data directory
 function readQuint(name: string): string {
@@ -157,35 +156,3 @@ describe('parse errors', () => {
     parseAndCompare('_1016nonConstOverride')
   })
 })
-
-function collectIds(module: QuintModule): bigint[] {
-  const ids = new Set<bigint>()
-  const visitor: IRVisitor = {
-    exitDef: (def: QuintDef) => {
-      ids.add(def.id)
-    },
-    exitExpr(e: QuintEx) {
-      ids.add(e.id)
-    },
-    exitTypeDef(t: QuintTypeDef) {
-      ids.add(t.id)
-    },
-    exitType(t: QuintType) {
-      if (t.id) {
-        ids.add(t.id)
-      }
-    },
-    exitModule(m: QuintModule) {
-      ids.add(m.id)
-    },
-    exitLambda(l: QuintLambda) {
-      l.params.forEach(p => ids.add(p.id))
-    },
-    exitInstance(i: QuintInstance) {
-      i.overrides.forEach(([n, _]) => ids.add(n.id))
-    },
-  }
-
-  walkModule(visitor, module)
-  return [...ids]
-}

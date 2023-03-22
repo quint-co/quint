@@ -55,36 +55,28 @@ module TendermintAcc {
   // https://github.com/informalsystems/quint/issues/236
 
   // the set of correct processes
-  //const Corr: Set[Proc_t]
-  pure val Corr = Set("p1", "p2", "p3")
+  const Corr: Set[Proc_t]
 
   // The set of Byzantine processes, may be empty.
-  //const Faulty: Set[Proc_t]
-  pure val Faulty = Set("p4")
+  const Faulty: Set[Proc_t]
 
   // the total number of processes: correct, defective, and Byzantine
-  //const N: int
-  pure val N = 4
+  const N: int
 
   // an upper bound on the number of Byzantine processes
-  //const T: int
-  pure val T = 1
+  const T: int
 
   // the set of valid values, proposed both by correct and faulty
-  //const ValidValues: Set[Value_t]
-  pure val ValidValues = Set("v0", "v1")
+  const ValidValues: Set[Value_t]
 
   // the set of invalid values, never proposed by the correct ones
-  //const InvalidValues: Set[Value_t]
-  pure val InvalidValues = Set("v2")
+  const InvalidValues: Set[Value_t]
 
   // the maximal round number
-  // const MaxRound: Round_t
-  pure val MaxRound = 4
+  const MaxRound: Round_t
 
   // the proposer function from 0..NRounds to the set of processes
-  //const Proposer: Round_t -> Proc_t
-  pure val Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p4", 4 -> "p1")
+  const Proposer: Round_t -> Proc_t
 
   assume Corr_and_faulty_make_N =
       N == size(Corr.union(Faulty))
@@ -669,11 +661,8 @@ module TendermintAcc {
       AllInMax implies AllDecided
   )
 
-}
 
-// Tests that demonstrate typical behavior.
-module TendermintTest {
-  import TendermintAcc.*
+  // Tests that demonstrate typical behavior.
 
   // Quint will automatically compute the unchanged block in the future
   action unchangedAll = all {
@@ -752,4 +741,39 @@ module TendermintTest {
           unchangedAll,
         })
   }
+}
+
+module TendermintTest {
+  module Tendermint_n4_f1 = TendermintAcc(
+    Corr = Set("p1", "p2", "p3"),
+    Faulty = Set("p4"),
+    N = 4,
+    T = 1,
+    ValidValues = Set("v0", "v1"),
+    InvalidValues = Set("v2"),
+    MaxRound = 4,
+    Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p4", 4 -> "p1")
+  )
+
+  module Tendermint_n4_f2 = TendermintAcc(
+    Corr = Set("p1", "p2", "p3"),
+    Faulty = Set("p3", "p4"),
+    N = 4,
+    T = 1,
+    ValidValues = Set("v0", "v1"),
+    InvalidValues = Set("v2"),
+    MaxRound = 4,
+    Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p4", 4 -> "p1")
+  )
+
+  module Tendermint_n5_f2 = TendermintAcc(
+    Corr = Set("p1", "p2", "p3"),
+    Faulty = Set("p4", "p5"),
+    N = 5,
+    T = 1,
+    ValidValues = Set("v0", "v1"),
+    InvalidValues = Set("v2"),
+    MaxRound = 4,
+    Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p4", 4 -> "p1")
+  )
 }
