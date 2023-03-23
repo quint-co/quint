@@ -70,7 +70,7 @@ Visit the [Tutorials][] page.
 ### Syntax :abcd:
 
 - [Cheatsheet](./doc/quint-cheatsheet.pdf)
-- [Reference API documentation for built-in operators](./doc/builtin.md).
+- [Reference API documentation for built-in operators](./doc/builtin.md)
 - [Syntax documentation](./doc/lang.md)
 
 ### Examples :musical_score:
