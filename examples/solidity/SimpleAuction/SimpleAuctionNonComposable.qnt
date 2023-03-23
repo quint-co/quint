@@ -56,7 +56,7 @@ module SimpleAuction {
         blockTime: UInt,
         // tokens assigned to the addresses
         balances: Addr -> UInt,
-        // error == true iff an error has occurred (we ignore the exact message) 
+        // error == true iff an error has occurred (we ignore the exact message)
         error: bool,
     }
 
@@ -104,7 +104,7 @@ module SimpleAuction {
     }
 
     // STATE MACHINE: state-dependent definitions and actions
-    
+
     // The state of SimpleAuction
     var auctionState: AuctionState
     // The state of the standard EVM machine
@@ -165,21 +165,21 @@ module SimpleAuction {
         // the proposed bid should not be smaller than the highest bid
         not(value <= auctionState.highestBid),
         // introduce an alias for auctionState, to decrease verbosity
-        val as = auctionState
+        val s = auctionState
         // compute the new pending return for the highest bidder
-        val newReturn = as.pendingReturns.get(as.highestBidder) + as.highestBid
+        val newReturn = s.pendingReturns.get(s.highestBidder) + s.highestBid
         all {
             // uint is 256-bit in Solidity, so an overflow would revert the transaction
-            (as.highestBid != 0) implies (newReturn <= MAX_UINT),
+            (s.highestBid != 0) implies (newReturn <= MAX_UINT),
             // compute the new pending returns
-            val newPendingReturns = as.pendingReturns.set(as.highestBidder, newReturn)
+            val newPendingReturns = s.pendingReturns.set(s.highestBidder, newReturn)
             // update the auction state
             auctionState' =
-                as.with("highestBid", value)
+                s.with("highestBid", value)
                   .with("highestBidder", sender)
                   .with("pendingReturns", newPendingReturns),
             // update the balances
-            val nes = evmSend(evmState, sender, as.addressOfThis, value)
+            val nes = evmSend(evmState, sender, s.addressOfThis, value)
             all {
                 not(nes.error),
                 evmState' = nes

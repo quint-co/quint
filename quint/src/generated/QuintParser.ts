@@ -355,20 +355,20 @@ export class QuintParser extends Parser {
 				break;
 
 			case 4:
-				_localctx = new OperContext(_localctx);
+				_localctx = new InstanceContext(_localctx);
 				this.enterOuterAlt(_localctx, 4);
 				{
 				this.state = 89;
-				this.operDef();
+				this.instanceMod();
 				}
 				break;
 
 			case 5:
-				_localctx = new InstanceContext(_localctx);
+				_localctx = new OperContext(_localctx);
 				this.enterOuterAlt(_localctx, 5);
 				{
 				this.state = 90;
-				this.instanceMod();
+				this.operDef();
 				}
 				break;
 
@@ -2833,7 +2833,7 @@ export class QuintParser extends Parser {
 		"L\x07\x03\x02\x02\x02MK\x03\x02\x02\x02NO\x07\x06\x02\x02OP\x07?\x02\x02" +
 		"PQ\x07\x07\x02\x02Ql\x05\x16\f\x02RS\x07\b\x02\x02ST\x07?\x02\x02TU\x07" +
 		"\x07\x02\x02Ul\x05\x16\f\x02VW\x07\t\x02\x02WX\x05\"\x12\x02XY\x07<\x02" +
-		"\x02YZ\x05\x1C\x0F\x02Zl\x03\x02\x02\x02[l\x05\n\x06\x02\\l\x05\x0E\b" +
+		"\x02YZ\x05\x1C\x0F\x02Zl\x03\x02\x02\x02[l\x05\x0E\b\x02\\l\x05\n\x06" +
 		"\x02]^\x07\n\x02\x02^l\x07?\x02\x02_`\x07\n\x02\x02`a\x07?\x02\x02ab\x07" +
 		"<\x02\x02bl\x05\x16\f\x02cd\x07\v\x02\x02de\x05(\x15\x02ef\x07\f\x02\x02" +
 		"fi\x05&\x14\x02gh\x07\r\x02\x02hj\x05\x12\n\x02ig\x03\x02\x02\x02ij\x03" +
@@ -3311,35 +3311,6 @@ export class AssumeContext extends UnitContext {
 		}
 	}
 }
-export class OperContext extends UnitContext {
-	public operDef(): OperDefContext {
-		return this.getRuleContext(0, OperDefContext);
-	}
-	constructor(ctx: UnitContext) {
-		super(ctx.parent, ctx.invokingState);
-		this.copyFrom(ctx);
-	}
-	// @Override
-	public enterRule(listener: QuintListener): void {
-		if (listener.enterOper) {
-			listener.enterOper(this);
-		}
-	}
-	// @Override
-	public exitRule(listener: QuintListener): void {
-		if (listener.exitOper) {
-			listener.exitOper(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: QuintVisitor<Result>): Result {
-		if (visitor.visitOper) {
-			return visitor.visitOper(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
 export class InstanceContext extends UnitContext {
 	public instanceMod(): InstanceModContext {
 		return this.getRuleContext(0, InstanceModContext);
@@ -3364,6 +3335,35 @@ export class InstanceContext extends UnitContext {
 	public accept<Result>(visitor: QuintVisitor<Result>): Result {
 		if (visitor.visitInstance) {
 			return visitor.visitInstance(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+export class OperContext extends UnitContext {
+	public operDef(): OperDefContext {
+		return this.getRuleContext(0, OperDefContext);
+	}
+	constructor(ctx: UnitContext) {
+		super(ctx.parent, ctx.invokingState);
+		this.copyFrom(ctx);
+	}
+	// @Override
+	public enterRule(listener: QuintListener): void {
+		if (listener.enterOper) {
+			listener.enterOper(this);
+		}
+	}
+	// @Override
+	public exitRule(listener: QuintListener): void {
+		if (listener.exitOper) {
+			listener.exitOper(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: QuintVisitor<Result>): Result {
+		if (visitor.visitOper) {
+			return visitor.visitOper(this);
 		} else {
 			return visitor.visitChildren(this);
 		}

@@ -151,15 +151,15 @@ quint typecheck ./testFixture/typechecking/OverrideErrors.qnt 2> >(sed "s:$(pwd)
 
 <!-- !test err typecheck failure on override -->
 ```
-./testFixture/typechecking/OverrideErrors.qnt:8:21 - error: [QNT000] Couldn't unify bool and int
+./testFixture/typechecking/OverrideErrors.qnt:8:16 - error: [QNT000] Couldn't unify bool and int
 Trying to unify bool and int
 
-8:   module A1 = A(c = 1)
-                       ^
+8:   import A(c = 1) as A1
+                  ^
 
-./testFixture/typechecking/OverrideErrors.qnt:9:21 - error: [QNT201] Instance overrides must be pure values, but the value for c reads variables 'x'
-9:   module A2 = A(c = x)
-                       ^
+./testFixture/typechecking/OverrideErrors.qnt:9:16 - error: [QNT201] Instance overrides must be pure values, but the value for c reads variables 'x'
+9:   import A(c = x) as A2
+                  ^
 
 error: typechecking failed
 ```
@@ -283,23 +283,23 @@ quint run --init=Init --step=Next --seed=abcde --max-steps=4 \
 An example execution:
 ---------------------------------------------
 action step0 = all {
-  counters::n' = 1,
+  n' = 1,
 }
 
 action step1 = all {
-  counters::n' = 2,
+  n' = 2,
 }
 
 action step2 = all {
-  counters::n' = 3,
+  n' = 3,
 }
 
 action step3 = all {
-  counters::n' = 6,
+  n' = 6,
 }
 
 action step4 = all {
-  counters::n' = 12,
+  n' = 12,
 }
 
 run test = {
@@ -326,23 +326,23 @@ quint run --init=Init --step=Next --seed=abcde --max-steps=4 \
 An example execution:
 ---------------------------------------------
 action step0 = all {
-  counters::n' = 1,
+  n' = 1,
 }
 
 action step1 = all {
-  counters::n' = 2,
+  n' = 2,
 }
 
 action step2 = all {
-  counters::n' = 3,
+  n' = 3,
 }
 
 action step3 = all {
-  counters::n' = 4,
+  n' = 4,
 }
 
 action step4 = all {
-  counters::n' = 2,
+  n' = 2,
 }
 
 run test = {
@@ -393,18 +393,18 @@ quint run --max-steps=5 --seed=123 --invariant=totalSupplyDoesNotOverflowInv \
 An example execution:
 ---------------------------------------------
 action step0 = all {
-  coin::minter' = "charlie",
-  coin::balances' = Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0),
+  minter' = "charlie",
+  balances' = Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0),
 }
 
 action step1 = all {
-  coin::minter' = "charlie",
-  coin::balances' = Map("alice" -> 0, "bob" -> 103284694429057902812136720936033946290905036909354547835442699046088697970688, "charlie" -> 0, "eve" -> 0, "null" -> 0),
+  minter' = "charlie",
+  balances' = Map("alice" -> 0, "bob" -> 103284694429057902812136720936033946290905036909354547835442699046088697970688, "charlie" -> 0, "eve" -> 0, "null" -> 0),
 }
 
 action step2 = all {
-  coin::minter' = "charlie",
-  coin::balances' = Map("alice" -> 0, "bob" -> 103284694429057902812136720936033946290905036909354547835442699046088697970688, "charlie" -> 46797254901076543191142647617814825964332772279616938906031909187844048945152, "eve" -> 0, "null" -> 0),
+  minter' = "charlie",
+  balances' = Map("alice" -> 0, "bob" -> 103284694429057902812136720936033946290905036909354547835442699046088697970688, "charlie" -> 46797254901076543191142647617814825964332772279616938906031909187844048945152, "eve" -> 0, "null" -> 0),
 }
 
 run test = {

@@ -48,8 +48,8 @@ import { BracesContext } from "./QuintParser";
 import { ConstContext } from "./QuintParser";
 import { VarContext } from "./QuintParser";
 import { AssumeContext } from "./QuintParser";
-import { OperContext } from "./QuintParser";
 import { InstanceContext } from "./QuintParser";
+import { OperContext } from "./QuintParser";
 import { TypedefContext } from "./QuintParser";
 import { ImportDefContext } from "./QuintParser";
 import { ModulesContext } from "./QuintParser";
@@ -448,20 +448,20 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitAssume?: (ctx: AssumeContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `oper`
-	 * labeled alternative in `QuintParser.unit`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitOper?: (ctx: OperContext) => Result;
-
-	/**
 	 * Visit a parse tree produced by the `instance`
 	 * labeled alternative in `QuintParser.unit`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	visitInstance?: (ctx: InstanceContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `oper`
+	 * labeled alternative in `QuintParser.unit`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitOper?: (ctx: OperContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `typedef`

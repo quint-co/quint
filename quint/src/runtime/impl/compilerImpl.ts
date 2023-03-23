@@ -51,8 +51,6 @@ export function builtinContext() {
  * the type checker yet, computations may fail with weird JavaScript errors.
  */
 export class CompilerVisitor implements IRVisitor {
-  // the id and name of the current module
-  private currentModule: { id: bigint, name: string } = { id: 0n, name: "_" }
   // the lookup table to use for the module
   private lookupTable: LookupTable
   // the scope tree to be used with the lookup table
@@ -90,10 +88,6 @@ export class CompilerVisitor implements IRVisitor {
         () => this.addRuntimeError(0n, '_lastTrace is not set'))
     this.shadowVars.push(lastTrace)
     this.context.set(kindName(lastTrace.kind, lastTrace.name), lastTrace)
-  }
-
-  switchModule(moduleId: bigint, moduleName: string) {
-    this.currentModule = { id: moduleId, name: moduleName }
   }
 
   /**
@@ -199,24 +193,22 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   exitVar(vardef: ir.QuintVar) {
-    // use the qualified name,
-    // as different modules may contain state variables of the same name
-    const qname = `${this.currentModule.name}::${vardef.name}`
+    const varName = vardef.name
     // simply introduce two registers:
     //  one for the variable, and
     //  one for its next-state version
     const prevRegister =
-      mkRegister('var', qname, none(),
-        () => this.addRuntimeError(vardef.id, `Variable ${qname} is not set`))
+      mkRegister('var', varName, none(),
+        () => this.addRuntimeError(vardef.id, `Variable ${varName} is not set`))
     this.vars.push(prevRegister)
     // at the moment, we have to refer to variables both via id and name
-    this.context.set(kindName('var', qname), prevRegister)
+    this.context.set(kindName('var', varName), prevRegister)
     this.context.set(kindName('var', vardef.id), prevRegister)
-    const nextRegister = mkRegister('nextvar', qname, none(),
-      () => this.addRuntimeError(vardef.id, `${qname}' is not set`))
+    const nextRegister = mkRegister('nextvar', varName, none(),
+      () => this.addRuntimeError(vardef.id, `${varName}' is not set`))
     this.nextVars.push(nextRegister)
     // at the moment, we have to refer to variables both via id and name
-    this.context.set(kindName('nextvar', qname), nextRegister)
+    this.context.set(kindName('nextvar', varName), nextRegister)
     this.context.set(kindName('nextvar', vardef.id), nextRegister)
   }
 

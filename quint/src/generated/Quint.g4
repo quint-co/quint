@@ -20,8 +20,8 @@ docLines : DOCCOMMENT*;
 unit :    'const' IDENTIFIER ':' type                     # const
         | 'var'   IDENTIFIER ':' type                     # var
         | 'assume' identOrHole '=' expr                   # assume
-        | operDef                                         # oper
         | instanceMod                                     # instance
+        | operDef                                         # oper
         | 'type' IDENTIFIER                               # typedef
         | 'type' IDENTIFIER '=' type                      # typedef
         | 'import' path '.' identOrStar ('as' name)?      # importDef

@@ -236,7 +236,7 @@ a declared but unassigned state variable will produce a runtime error:
 
 ```bluespec ./repl/replTest.txt +=
 >>> temperature
-runtime error: error: Variable kettle::temperature is not set
+runtime error: error: Variable temperature is not set
     var temperature: int
     ^^^^^^^^^^^^^^^^^^^^
 

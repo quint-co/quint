@@ -48,8 +48,8 @@ import { BracesContext } from "./QuintParser";
 import { ConstContext } from "./QuintParser";
 import { VarContext } from "./QuintParser";
 import { AssumeContext } from "./QuintParser";
-import { OperContext } from "./QuintParser";
 import { InstanceContext } from "./QuintParser";
+import { OperContext } from "./QuintParser";
 import { TypedefContext } from "./QuintParser";
 import { ImportDefContext } from "./QuintParser";
 import { ModulesContext } from "./QuintParser";
@@ -670,19 +670,6 @@ export interface QuintListener extends ParseTreeListener {
 	exitAssume?: (ctx: AssumeContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `oper`
-	 * labeled alternative in `QuintParser.unit`.
-	 * @param ctx the parse tree
-	 */
-	enterOper?: (ctx: OperContext) => void;
-	/**
-	 * Exit a parse tree produced by the `oper`
-	 * labeled alternative in `QuintParser.unit`.
-	 * @param ctx the parse tree
-	 */
-	exitOper?: (ctx: OperContext) => void;
-
-	/**
 	 * Enter a parse tree produced by the `instance`
 	 * labeled alternative in `QuintParser.unit`.
 	 * @param ctx the parse tree
@@ -694,6 +681,19 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitInstance?: (ctx: InstanceContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `oper`
+	 * labeled alternative in `QuintParser.unit`.
+	 * @param ctx the parse tree
+	 */
+	enterOper?: (ctx: OperContext) => void;
+	/**
+	 * Exit a parse tree produced by the `oper`
+	 * labeled alternative in `QuintParser.unit`.
+	 * @param ctx the parse tree
+	 */
+	exitOper?: (ctx: OperContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `typedef`
