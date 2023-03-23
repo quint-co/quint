@@ -46,3 +46,16 @@ apalache-mc check _build/sets.qnt.json | grep -o "EXITCODE: OK"
 ```
 EXITCODE: OK
 ```
+
+## Can check `../examples/language-features/lists.qnt`
+
+<!-- !test in can check lists.qnt -->
+``` 
+quint typecheck --out _build/lists.qnt.json ../examples/language-features/lists.qnt
+apalache-mc check _build/lists.qnt.json | grep -o "EXITCODE: OK"
+```
+
+<!-- !test out can check lists.qnt -->
+```
+EXITCODE: OK
+```
