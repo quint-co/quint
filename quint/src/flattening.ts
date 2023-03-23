@@ -36,89 +36,84 @@ export function flatten(
   const context = { idGenerator, table, builtinNames }
 
   const newDefs = module.defs.reduce((newDefs, def) => {
-    if (def.kind !== 'instance' && def.kind !== 'import') {
+    if (isFlattened(def)) {
       // Not an instance or import, keep the same def
       newDefs.push(def)
       return newDefs
     }
 
-    if (def.kind === 'import') {
-      // TODO: import single name
-      const protoModule = importedModules.get(def.path)!
+    if (def.kind == 'instance') {
+      // def is QuintInstance. Replace every parameter with the assigned expression.
+      def.overrides.forEach(([param, expr]) => {
+        const constDef = table.get(param.id)!
+        const name = namespacedName(def.qualifiedName, param.name)
+        const typeAnnotation = constDef.typeAnnotation
+          ? addNamespaceToType(context, def.qualifiedName, constDef.typeAnnotation)
+          : undefined
 
-      protoModule.defs.forEach(protoDef => {
-        if (!isFlattened(protoDef)) {
-          throw new Error(`Impossible: ${definitionToString(protoDef)} should have been flattened already`)
-        }
-
-        if (newDefs.some(d => d.name === namespacedName(def.qualifiedName, protoDef.name))) {
-          // Previously defined by an override, don't push it again
-          return
-        }
-
-        if (!isAnnotatedDef(protoDef)) {
-          return newDefs.push(addNamespaceToDef(context, def.qualifiedName, protoDef))
-        }
-
-        const type = addNamespaceToType(context, def.qualifiedName, protoDef.typeAnnotation)
-        const newDef = addNamespaceToDef(context, def.qualifiedName, protoDef)
-        if (!isAnnotatedDef(newDef)) {
-          throw new Error(`Impossible: transformation should preserve kind`)
-        }
-
-        newDefs.push({ ...newDef, typeAnnotation: type })
+        newDefs.push({
+          kind: 'def',
+          qualifier: 'pureval',
+          name,
+          expr,
+          typeAnnotation,
+          id: idGenerator.nextId(),
+        })
       })
-
-      return newDefs
     }
 
-    const protoModule = importedModules.get(def.protoName)!
+    const moduleNameToFlatten = def.kind == 'import' ? def.path : def.protoName
+    const protoModule = importedModules.get(moduleNameToFlatten)!
+    const defsToFlatten = def.kind == 'instance' ? protoModule.defs : filterDefs(protoModule.defs, def.name)
 
-    // def is QuintInstance. Replace every parameter with the assigned expression.
-    def.overrides.forEach(([param, expr]) => {
-      const constDef = table.get(param.id)!
-      const name = namespacedName(def.qualifiedName, param.name)
-      const typeAnnotation = constDef.typeAnnotation
-        ? addNamespaceToType(context, def.qualifiedName, constDef.typeAnnotation)
-        : undefined
-
-      newDefs.push({
-        kind: 'def',
-        qualifier: 'pureval',
-        name,
-        expr,
-        typeAnnotation,
-        id: idGenerator.nextId(),
-      })
-    })
-
-    protoModule.defs.forEach(protoDef => {
-      if (!isFlattened(protoDef)) {
-        throw new Error(`Impossible: ${definitionToString(protoDef)} should have been flattened already`)
-      }
-
-      if (newDefs.some(d => d.name === namespacedName(def.qualifiedName, protoDef.name))) {
+    defsToFlatten.forEach(protoDef => {
+      if (alreadyDefined(newDefs, def.qualifiedName, protoDef)) {
         // Previously defined by an override, don't push it again
         return
       }
 
-      if (!isAnnotatedDef(protoDef)) {
-        return newDefs.push(addNamespaceToDef(context, def.qualifiedName, protoDef))
-      }
-
-      const type = addNamespaceToType(context, def.qualifiedName, protoDef.typeAnnotation)
-      const newDef = addNamespaceToDef(context, def.qualifiedName, protoDef)
-      if (!isAnnotatedDef(newDef)) {
-        throw new Error(`Impossible: transformation should preserve kind`)
-      }
-
-      newDefs.push({ ...newDef, typeAnnotation: type })
+      newDefs.push(flattenDef(context, protoDef, def.qualifiedName))
     })
 
     return newDefs
   }, [] as DefAfterFlattening[])
 
   return { ...module, defs: newDefs }
+}
+
+function filterDefs(defs: QuintDef[], name: string): QuintDef[] {
+  if (name === '*') {
+    return defs
+  }
+
+  return defs.filter(def => isFlattened(def) && def.name === name)
+}
+
+function alreadyDefined(newDefs: DefAfterFlattening[], qualifier: string | undefined, def: QuintDef) {
+  if (!isFlattened(def)) {
+    throw new Error(`Impossible: ${definitionToString(def)} should have been flattened already`)
+  }
+
+  return newDefs.some(d => d.name === namespacedName(qualifier, def.name))
+}
+
+
+function flattenDef(ctx: FlatteningContext, def: QuintDef, qualifier: string | undefined): DefAfterFlattening {
+  if (!isFlattened(def)) {
+    throw new Error(`Impossible: ${definitionToString(def)} should have been flattened already`)
+  }
+
+  if (!isAnnotatedDef(def)) {
+    return addNamespaceToDef(ctx, qualifier, def)
+  }
+
+  const type = addNamespaceToType(ctx, qualifier, def.typeAnnotation)
+  const newDef = addNamespaceToDef(ctx, qualifier, def)
+  if (!isAnnotatedDef(newDef)) {
+    throw new Error(`Impossible: transformation should preserve kind`)
+  }
+
+  return { ...newDef, typeAnnotation: type }
 }
 
 type DefAfterFlattening = (
