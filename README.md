@@ -99,6 +99,12 @@ editor (currently, VSCode, Emacs and Vim are supported).
    errors as you type. Install the plugin from [Visual Studio Code
    Marketplace][].
 
+## Community
+
+- Join the chat in the [Quint zulip stream][] :telephone:
+- Join the [Quint discussions][] :bulb:
+- [Contribute](./CONTRIBUTING.md) to the development of Quint :construction_worker:
+
 ## Development
 
 ### Developer docs :guitar:
@@ -202,3 +208,5 @@ completely implementing every pass.
 [TLA]: https://en.wikipedia.org/wiki/Temporal_logic_of_actions
 [Visual Studio Code Marketplace]: https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode
 [Tutorials]: ./tutorials/README.md
+[Quint zulip stream]: https://informal-systems.zulipchat.com/#narrow/stream/378959-quint
+[Quint discussions]: https://github.com/informalsystems/quint/discussions
