@@ -50,7 +50,7 @@ function evalInContext<T>(input: string, callable: (ctx: CompilationContext) => 
 // Compile a variable definition and check that the compiled value is defined.
 function assertVarExists(kind: ComputableKind, name: string, input: string) {
   const callback = (ctx: CompilationContext) => {
-    return contextNameLookup(ctx, `__runtime::${name}`, kind)
+    return contextNameLookup(ctx, `${name}`, kind)
       .mapRight(_ => true)
       .mapLeft(msg => `Expected a definition for ${name}, found ${msg}, compiled from: ${input}`)
   }
@@ -975,7 +975,7 @@ describe('compiling specs to runtime values', () => {
         |run run1 = (n' = 1).then(n' = n + 2).then(n' = n * 4)
         `)
 
-      assertVarAfterCall('__runtime::n', '12', input)
+      assertVarAfterCall('n', '12', input)
     })
 
     it('repeated', () => {
@@ -984,7 +984,7 @@ describe('compiling specs to runtime values', () => {
         |run run1 = (n' = 1).then((n' = n + 1).repeated(3))
         `)
 
-      assertVarAfterCall('__runtime::n', '4', input)
+      assertVarAfterCall('n', '4', input)
     })
 
     it('fail', () => {

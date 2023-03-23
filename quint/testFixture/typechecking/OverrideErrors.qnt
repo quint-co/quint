@@ -5,6 +5,6 @@ module A {
 module OverrideErrors {
   var x: bool
 
-  module A1 = A(c = 1)
-  module A2 = A(c = x)
+  import A(c = 1) as A1
+  import A(c = x) as A2
 }

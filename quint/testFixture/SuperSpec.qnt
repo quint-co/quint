@@ -217,11 +217,13 @@ module withConsts {
   // Instances
 
   // create an instance of Proto by associating constants and variables
-  // FIXME: How to resolve names for N and x in this scenario?
-  // module Inst1 = Proto(N = N, x = x)
+  // import Proto(N = N, x = x) as Inst1
+
+  // variables are not supported yet, define only constants for now:
+  import Proto(N = N) as Inst1
 
   // create an instance of Proto by using '*'
-  module Inst2 = Proto(*)
+  // import Proto(*) as Inst2
 
   // Match
   type ENTRY_TYPE =

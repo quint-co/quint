@@ -9,18 +9,26 @@ import { definitionToString } from '../src/IRprinting'
 import { resolveNames } from '../src/nameResolver'
 import { quintErrorToString } from '../src/quintError'
 import { treeFromModule } from '../src/scoping'
-import { buildModuleWithDefs } from './builders/ir'
 import { collectIds } from './util'
+import JSONbig from 'json-bigint'
+import { parsePhase1 } from '../src/quintParserFrontend'
 
 describe('flatten', () => {
   function assertFlatennedDefs(baseDefs: string[], defs: string[], expectedDefs: string[]): void {
     const idGenerator = newIdGenerator()
 
-    const moduleA = buildModuleWithDefs(baseDefs, 'A', idGenerator)
+    const quintModules: string = `module A { ${baseDefs.join('\n')} } module wrapper { ${defs.join('\n')} }`
+
+    const result = parsePhase1(idGenerator, quintModules, 'mocked_path')
+    if (result.isLeft()) {
+      assert.fail(`Couldn't parse mocked expression. Result - ${JSONbig.stringify(result)}`)
+    }
+
+    const moduleA = result.value.modules[0]
     const tableA = collectDefinitions(moduleA)
     const lookupTableA = resolveNames(moduleA, tableA, treeFromModule(moduleA)).unwrap()
 
-    const module = buildModuleWithDefs(defs, undefined, idGenerator)
+    const module = result.value.modules[1]
     const table = collectDefinitions(module)
     const [errors, tableWithImports] = resolveImports(module, new Map([
       ['A', tableA],
@@ -37,7 +45,7 @@ describe('flatten', () => {
     const flattenedModule = flatten(module, lookupTable, new Map([
       ['A', moduleA],
       ['wrapper', module],
-    ]), idGenerator)
+    ]), idGenerator, result.value.sourceMap)
 
     it('flattens instances', () => {
       assert.sameDeepMembers(flattenedModule.defs.map(def => definitionToString(def)), expectedDefs)
@@ -51,6 +59,11 @@ describe('flatten', () => {
 
     it('does not have conflicting definitions', () => {
       assert.isTrue(scanConflicts(table, treeFromModule(module)).isRight())
+    })
+
+    it('adds new entries to the source map', () => {
+      const sourceMap = result.value.sourceMap
+      assert.includeDeepMembers([...sourceMap.keys()], flattenedModule.defs.map(def => def.id))
     })
   }
 
