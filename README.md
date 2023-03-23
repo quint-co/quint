@@ -109,6 +109,7 @@ editor (currently, VSCode, Emacs and Vim are supported).
    components](./doc/adr003-visiting-ir-components.md)
  - [ADR004: An Effect System for Quint](./doc/adr004-effect-system.md)
  - [ADR005: A Type System for Quint](./doc/adr005-type-system.md)
+ - [ADR006: Design of modules and lookup tables](./doc/adr006-modules.lit.md)
 
 ### Source code :hash:
 
