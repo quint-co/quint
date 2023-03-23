@@ -152,11 +152,6 @@ export function compile(
 
   const visitor = new CompilerVisitor(flattenedAnalysis.table, types, rand)
   if (main) {
-    // if (main.defs.some(d => d.kind === 'const')) {
-    //   // Skip modules with constants, as they are not used in the simulator
-    //   // They should be instantiated in order to be evaluated
-    //   return
-    // }
     main.defs.forEach(def => walkDefinition(visitor, def))
   }
   // when the main module is not found, we will report an error
