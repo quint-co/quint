@@ -217,6 +217,11 @@ Temporarily disabled.
 <!-- !test check nondet - Syntax/Types & Effects/Unit tests -->
     quint test --main=nondetEx ../examples/language-features/nondet.qnt
 
+### OK on test lottery.qnt
+
+<!-- !test check lottery - Syntax/Types & Effects/Unit tests -->
+    quint test --main=lotteryTests ../examples/solidity/icse23-fig7/lottery.qnt
+
 ### OK on typecheck SuperSpec.qnt
 
 <!-- !test check SuperSpec - Types & Effects-->

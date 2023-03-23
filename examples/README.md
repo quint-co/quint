@@ -36,6 +36,7 @@ Quint-Apalache pipeline.
 |                    **Solidity**                                                         |
 | [Coin][]         |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
 | [SimpleAuction][]|:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
+| [icse23-fig7][]  |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
 | [ERC20][]        |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
 |                    **Cosmos**                                                           |
 | [ICS23][]        |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
@@ -58,18 +59,19 @@ Quint-Apalache pipeline.
 
 [Cosmos ecosystem]: https://cosmos.network
 [TLA+ examples]: https://github.com/tlaplus/Examples/
-[Coin]: https://github.com/informalsystems/quint/tree/main/examples/solidity/Coin
-[counters]: https://github.com/informalsystems/quint/blob/main/examples/language-features/counters.qnt
-[SimpleAuction]: https://github.com/informalsystems/quint/blob/main/examples/solidity/SimpleAuction/SimpleAuctionNonComposable.qnt
-[ERC20]: https://github.com/informalsystems/quint/blob/main/examples/solidity/ERC20/erc20.qnt
-[ICS23]: https://github.com/informalsystems/quint/blob/main/examples/cosmos/ics23/ics23.qnt
-[Tendermint]: https://github.com/informalsystems/quint/blob/main/examples/cosmos/tendermint/TendermintAcc_004.qnt
-[ClockSync]: https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/ClockSync/clockSync3.qnt
-[LamportMutex]: https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/LamportMutex/LamportMutex.qnt
-[Paxos]: https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/Paxos/Paxos.qnt
-[ReadersWriters]: https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/ReadersWriters/ReadersWriters.qnt
-[EWD840]: https://github.com/informalsystems/quint/blob/main/examples/classic/distributed/ewd840/ewd840.qnt
-[BinSearch]: https://github.com/informalsystems/quint/blob/main/examples/classic/sequential/BinSearch/BinSearch.qnt
-[Prisoners]: https://github.com/informalsystems/quint/blob/main/examples/puzzles/prisoners/prisoners.qnt
-[tictactoe]: https://github.com/informalsystems/quint/blob/main/examples/puzzles/tictactoe/tictactoe.qnt
-[booleans]: https://github.com/informalsystems/quint/blob/main/examples/language-features/booleans.qnt
+[Coin]: ./examples/solidity/Coin
+[counters]: ./language-features/counters.qnt
+[SimpleAuction]: ./solidity/SimpleAuction/SimpleAuctionNonComposable.qnt
+[ERC20]: ./solidity/ERC20/erc20.qnt
+[ICS23]: ./cosmos/ics23/ics23.qnt
+[Tendermint]: ./cosmos/tendermint/TendermintAcc_004.qnt
+[ClockSync]: ./classic/distributed/ClockSync/clockSync3.qnt
+[LamportMutex]: ./classic/distributed/LamportMutex/LamportMutex.qnt
+[Paxos]: ./classic/distributed/Paxos/Paxos.qnt
+[ReadersWriters]: ./classic/distributed/ReadersWriters/ReadersWriters.qnt
+[EWD840]: ./classic/distributed/ewd840/ewd840.qnt
+[BinSearch]: ./classic/sequential/BinSearch/BinSearch.qnt
+[Prisoners]: ./puzzles/prisoners/prisoners.qnt
+[tictactoe]: ./puzzles/tictactoe/tictactoe.qnt
+[booleans]: ./language-features/booleans.qnt
+[icse23-fig7]: ./solidity/icse23-fig7/lottery.qnt
