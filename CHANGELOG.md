@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - support for tuple unpacking in the simulator (#720)
 - instances are now fully supported (#725)
 - save the run results to ITF (#727)
+- imports can now be qualified (#742)
 
 ### Changed
 
