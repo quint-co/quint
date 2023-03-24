@@ -24,10 +24,12 @@ describe('flatten', () => {
       assert.fail(`Couldn't parse mocked expression. Result - ${JSONbig.stringify(result)}`)
     }
 
+    // Module A is a module called A containing `baseDefs`. The main module can import or instance it.
     const moduleA = result.value.modules[0]
     const tableA = collectDefinitions(moduleA)
     const lookupTableA = resolveNames(moduleA, tableA, treeFromModule(moduleA)).unwrap()
 
+    // This is the main module containing `defs`. It can import or instance module A.
     const module = result.value.modules[1]
     const table = collectDefinitions(module)
     const [errors, tableWithImports] = resolveImports(module, new Map([
