@@ -8,7 +8,7 @@ false
 true
 -40
 104
-runtime error: error: Variable kettle::temperature is not set
+runtime error: error: Variable temperature is not set
     var temperature: int
     ^^^^^^^^^^^^^^^^^^^^
 

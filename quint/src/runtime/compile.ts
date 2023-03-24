@@ -21,7 +21,7 @@ import { LookupTable } from '../lookupTable'
 import { TypeScheme } from '../types/base'
 import { QuintAnalyzer } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
-import { IdGenerator } from '../idGenerator'
+import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { flatten } from '../flattening'
 
 /**
@@ -128,30 +128,36 @@ export function compile(
   mainName: string,
   rand: () => number): CompilationContext {
   const modulesByName = new Map(modules.map(m => [m.name, m]))
-  const flattenedModules = modules.map(m => flatten(m, lookupTable, modulesByName))
-  const flattenedAnalysis = parsePhase2({ modules: flattenedModules, sourceMap }).mapLeft(errors => {
-    // This should not happen, as the flattening should not introduce any errors
-    // Since parsePhase2 analysis of the original modules has already assured all names are correct.
-    throw new Error(`Error on resolving names for flattened modules: ${errors.map(e => e.explanation)}`)
-  }).unwrap()
+  const lastId = modules.map(m => m.id).sort((a, b) => Number(a - b))[modules.length - 1]
+  const idGenerator = newIdGenerator(lastId)
+  let latestTable = lookupTable
+
+  const flattenedModules = modules.map(m => {
+    const flatenned = flatten(m, latestTable, modulesByName, idGenerator, sourceMap)
+
+    modulesByName.set(m.name, flatenned)
+
+    // The lookup table has to be updated for every new module that is flattened
+    // Since the flattened modules have new ids for both the name expressions
+    // and their definitions, and the next iteration might depend on an updated
+    // lookup table
+    const newEntries = parsePhase2({ modules: [flatenned], sourceMap }).mapLeft(errors => {
+      // This should not happen, as the flattening should not introduce any
+      // errors, since parsePhase2 analysis of the original modules has already
+      // assured all names are correct.
+      throw new Error(`Error on resolving names for flattened modules: ${errors.map(e => e.explanation)}`)
+    }).unwrap().table
+
+    latestTable = new Map([...latestTable.entries(), ...newEntries.entries()])
+
+    return flatenned
+  })
 
   const main = flattenedModules.find(m => m.name === mainName)
 
-  const visitor = new CompilerVisitor(flattenedAnalysis.table, types, rand)
+  const visitor = new CompilerVisitor(latestTable, types, rand)
   if (main) {
-    // Push back the main module to the end:
-    // The compiler exposes the state variables of the last module only.
-    const reorderedModules = flattenedModules.filter(m => m.name !== mainName).concat(main ? [main] : [])
-    // Compile all modules
-    reorderedModules.forEach(module => {
-      if (module.defs.some(d => d.kind === 'const')) {
-        // Skip modules with constants, as they are not used in the simulator
-        // They should be instantiated in order to be evaluated
-        return
-      }
-      visitor.switchModule(module.id, module.name)
-      module.defs.forEach(def => walkDefinition(visitor, def))
-    })
+    main.defs.forEach(def => walkDefinition(visitor, def))
   }
   // when the main module is not found, we will report an error
   const mainNotFoundError =
@@ -161,7 +167,7 @@ export function compile(
     }]
   return {
     main: main,
-    lookupTable: lookupTable,
+    lookupTable: latestTable,
     values: visitor.getContext(),
     vars: visitor.getVars(),
     shadowVars: visitor.getShadowVars(),

@@ -47,7 +47,7 @@ describe('collectDefinitions', () => {
 
     it('collects instances and scoped variables inside parameters', () => {
       const quintModule = buildModuleWithDefs([
-        'module test_module_instance = test_module(a = val x = 10 {x})',
+        'import test_module(a = val x = 10 {x}) as test_module_instance',
       ])
 
       const result = collectDefinitions(quintModule)

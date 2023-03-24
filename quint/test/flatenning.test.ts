@@ -9,18 +9,28 @@ import { definitionToString } from '../src/IRprinting'
 import { resolveNames } from '../src/nameResolver'
 import { quintErrorToString } from '../src/quintError'
 import { treeFromModule } from '../src/scoping'
-import { buildModuleWithDefs } from './builders/ir'
 import { collectIds } from './util'
+import JSONbig from 'json-bigint'
+import { parsePhase1 } from '../src/quintParserFrontend'
 
 describe('flatten', () => {
   function assertFlatennedDefs(baseDefs: string[], defs: string[], expectedDefs: string[]): void {
     const idGenerator = newIdGenerator()
 
-    const moduleA = buildModuleWithDefs(baseDefs, 'A', idGenerator)
+    const quintModules: string = `module A { ${baseDefs.join('\n')} } module wrapper { ${defs.join('\n')} }`
+
+    const result = parsePhase1(idGenerator, quintModules, 'mocked_path')
+    if (result.isLeft()) {
+      assert.fail(`Couldn't parse mocked expression. Result - ${JSONbig.stringify(result)}`)
+    }
+
+    // Module A is a module called A containing `baseDefs`. The main module can import or instance it.
+    const moduleA = result.value.modules[0]
     const tableA = collectDefinitions(moduleA)
     const lookupTableA = resolveNames(moduleA, tableA, treeFromModule(moduleA)).unwrap()
 
-    const module = buildModuleWithDefs(defs, undefined, idGenerator)
+    // This is the main module containing `defs`. It can import or instance module A.
+    const module = result.value.modules[1]
     const table = collectDefinitions(module)
     const [errors, tableWithImports] = resolveImports(module, new Map([
       ['A', tableA],
@@ -37,7 +47,7 @@ describe('flatten', () => {
     const flattenedModule = flatten(module, lookupTable, new Map([
       ['A', moduleA],
       ['wrapper', module],
-    ]))
+    ]), idGenerator, result.value.sourceMap)
 
     it('flattens instances', () => {
       assert.sameDeepMembers(flattenedModule.defs.map(def => definitionToString(def)), expectedDefs)
@@ -52,6 +62,11 @@ describe('flatten', () => {
     it('does not have conflicting definitions', () => {
       assert.isTrue(scanConflicts(table, treeFromModule(module)).isRight())
     })
+
+    it('adds new entries to the source map', () => {
+      const sourceMap = result.value.sourceMap
+      assert.includeDeepMembers([...sourceMap.keys()], flattenedModule.defs.map(def => def.id))
+    })
   }
 
   describe('multiple instances', () => {
@@ -61,8 +76,8 @@ describe('flatten', () => {
     ]
 
     const defs = [
-      'module A1 = A(N = 1)',
-      'module A2 = A(N = 2)',
+      'import A(N = 1) as A1',
+      'import A(N = 2) as A2',
     ]
 
     const expectedDefs = [
@@ -88,7 +103,7 @@ describe('flatten', () => {
     ]
 
     const defs = [
-      'module A1 = A(N = 1)',
+      'import A(N = 1) as A1',
     ]
 
     const expectedDefs = [
@@ -99,6 +114,22 @@ describe('flatten', () => {
       'assume A1::T = igt(A1::N, 0)',
       'def A1::lam = val A1::b = 1 { (a => iadd(A1::b, a)) }',
       'def A1::lam2 = val A1::b = 1 { (a => iadd(A1::b, a)) }',
+    ]
+
+    assertFlatennedDefs(baseDefs, defs, expectedDefs)
+  })
+
+  describe('imports', () => {
+    const baseDefs = [
+      'val f(x) = x + 1',
+    ]
+
+    const defs = [
+      'import A.*',
+    ]
+
+    const expectedDefs = [
+      'val f = (x => iadd(x, 1))',
     ]
 
     assertFlatennedDefs(baseDefs, defs, expectedDefs)

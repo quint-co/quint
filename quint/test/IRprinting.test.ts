@@ -68,8 +68,8 @@ describe('definitionToString', () => {
   })
 
   it('pretty prints instance definitions', () => {
-    const def = buildDef('module A = M(x = N + 1, y = 3)')
-    const expectedDef = 'module A = M(x = iadd(N, 1), y = 3)'
+    const def = buildDef('import M(x = N + 1, y = 3) as A')
+    const expectedDef = 'import M(x = iadd(N, 1), y = 3) as A'
     assert.deepEqual(definitionToString(def), expectedDef)
   })
 })

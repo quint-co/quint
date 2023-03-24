@@ -32,6 +32,8 @@ export interface TypeDefinition {
   type?: QuintType
   /* Expression or definition id from where the type was collected */
   reference?: bigint
+  /* Optional scope, an id pointing to the QuintIr node that introduces the name */
+  scope?: bigint
 }
 
 /**
@@ -173,7 +175,7 @@ export function copyNames(originTable: DefinitionsByName, namespace?: string, sc
     const name = namespace ? [namespace, identifier].join('::') : identifier
 
     // Copy only unscoped and non-default (referenced) names
-    const valueDefs = defs.filter(d => !d.scope && d.reference).map(d => ({ ...d, identifier: name, scope }))
+    const valueDefs = defs.filter(d => (!d.scope || d.kind === 'const') && d.reference).map(d => ({ ...d, identifier: name, scope }))
 
     if (valueDefs.length > 0) {
       table.valueDefinitions.set(name, valueDefs)
@@ -184,7 +186,7 @@ export function copyNames(originTable: DefinitionsByName, namespace?: string, sc
     const name = namespace ? [namespace, identifier].join('::') : identifier
 
     // Copy only non-default (referenced) names
-    const typeDefs = defs.filter(d => d.reference).map(d => ({ ...d, identifier: name }))
+    const typeDefs = defs.filter(d => !d.scope && d.reference).map(d => ({ ...d, identifier: name, scope }))
 
     if (typeDefs.length > 0) {
       table.typeDefinitions.set(name, typeDefs)

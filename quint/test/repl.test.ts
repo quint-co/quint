@@ -493,7 +493,7 @@ describe('repl ok', () => {
       |>>> _lastTrace.length()
       |11
       |>>> _lastTrace.nth(_lastTrace.length() - 1)
-      |{ __repl__::n: 10 }
+      |{ n: 10 }
       |>>> `
     )
     await assertRepl(input, output)

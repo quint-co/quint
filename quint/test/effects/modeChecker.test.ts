@@ -163,7 +163,7 @@ describe('checkModes', () => {
   it('finds errors when an instance override is not pure', () => {
     const defs = ([
       'const A1::c : int', // avoid having to simulate imports in this test
-      'module A1 = A(c = x)',
+      'import A(c = x) as A1',
     ])
 
     const [errors, _suggestions] = checkMockedDefs(defs)

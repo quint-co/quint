@@ -660,9 +660,11 @@ module TendermintAcc {
       val AllDecided = Corr.forall(p => decision.get(p) != NilValue)
       AllInMax implies AllDecided
   )
+}
 
-
-  // Tests that demonstrate typical behavior.
+// Tests that demonstrate typical behavior.
+module TendermintTest {
+  import TendermintAcc.*
 
   // Quint will automatically compute the unchanged block in the future
   action unchangedAll = all {
@@ -743,8 +745,8 @@ module TendermintAcc {
   }
 }
 
-module TendermintTest {
-  module Tendermint_n4_f1 = TendermintAcc(
+module InstanceTests {
+  import TendermintTest(
     Corr = Set("p1", "p2", "p3"),
     Faulty = Set("p4"),
     N = 4,
@@ -753,9 +755,9 @@ module TendermintTest {
     InvalidValues = Set("v2"),
     MaxRound = 4,
     Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p4", 4 -> "p1")
-  )
+  ) as Tendermint_n4_f1
 
-  module Tendermint_n4_f2 = TendermintAcc(
+  import TendermintTest(
     Corr = Set("p1", "p2", "p3"),
     Faulty = Set("p3", "p4"),
     N = 4,
@@ -764,9 +766,9 @@ module TendermintTest {
     InvalidValues = Set("v2"),
     MaxRound = 4,
     Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p4", 4 -> "p1")
-  )
+  ) as Tendermint_n4_f2
 
-  module Tendermint_n5_f2 = TendermintAcc(
+  import TendermintTest(
     Corr = Set("p1", "p2", "p3"),
     Faulty = Set("p4", "p5"),
     N = 5,
@@ -775,5 +777,5 @@ module TendermintTest {
     InvalidValues = Set("v2"),
     MaxRound = 4,
     Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p4", 4 -> "p1")
-  )
+  ) as Tendermint_n5_f2
 }

@@ -28,7 +28,7 @@ describe('treeFromModule', () => {
     'type MY_TYPE = int',
     'assume _ = N > 1',
     'import M.*',
-    'module A1 = A(x = 33)',
+    'import A(x = 33) as A1',
     'val f = S.filter(x => x + 1)',
     'def l = val x = 2 { x }',
   ])

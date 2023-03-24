@@ -9,15 +9,17 @@ module A {
 
 module Instances {
   pure val MyY = true
+  pure val z = "world"
 
-  module A1 = A(x = 33, y = MyY, z = "hello")
+  import A(x = 33, y = MyY, z = "hello") as A1
 
   // now, we can access F and G via A1::F and A1::G
   val test_F = A1::f(10)
   val test_x = A1::x
 
   // If we want to omit identity bindings such as z = z, we write:
-  module A2 = A(x = 15, y = MyY, *)
+  // import A(x = 15, y = MyY, *) as A2
+  import A(x = 15, y = MyY, z = z) as A2
 
   // the above is equivalent to TLA+'s instance:
   // A2 == INSTANCE A WITH x <- 15, y <- MyY

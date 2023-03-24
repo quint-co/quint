@@ -311,9 +311,8 @@ export class ToIrListener implements QuintListener {
 
   // module Foo = Proto(x = a, y = b)
   exitInstanceMod(ctx: p.InstanceModContext) {
-    const identifiers = ctx.IDENTIFIER()!
-    const instanceName = identifiers[0].text
-    const protoName = identifiers[1].text
+    const protoName = ctx.moduleName().text
+    const qualifiedName = ctx.qualifiedName()?.text
     const names = ctx.name()!
     const nexprs = ctx.expr().length
     const overrides: [QuintLambdaParameter, QuintEx][] = []
@@ -334,7 +333,7 @@ export class ToIrListener implements QuintListener {
     const instance: QuintDef = {
       id,
       kind: 'instance',
-      name: instanceName,
+      qualifiedName: qualifiedName,
       protoName,
       overrides,
       identityOverride,

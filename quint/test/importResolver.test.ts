@@ -51,7 +51,7 @@ describe('resolveImports', () => {
 
     it('instantiates modules', () => {
       const quintModule = buildModuleWithDefs([
-        'module test_module_instance = test_module(c1 = 3, c2 = 4)',
+        'import test_module(c1 = 3, c2 = 4) as test_module_instance',
       ])
 
       const [errors, definitions] = resolveImports(quintModule, tables)
@@ -70,7 +70,7 @@ describe('resolveImports', () => {
     it('fails importing itself', () => {
       const quintModule = buildModuleWithDefs([
         'import wrapper.*',
-        'module w = wrapper(c1 = 1)',
+        'import wrapper(c1 = 1) as w',
       ])
 
       const [errors, _definitions] = resolveImports(quintModule, tables)
@@ -97,7 +97,7 @@ describe('resolveImports', () => {
 
     it('fails instantiating', () => {
       const quintModule = buildModuleWithDefs([
-        'module test_module_instance = unexisting_module(c1 = c1, c2 = c2)',
+        'import unexisting_module(c1 = c1, c2 = c2) as test_module_instanc',
       ])
 
       const [errors, _definitions] = resolveImports(quintModule, tables)
