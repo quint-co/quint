@@ -36,20 +36,80 @@ We can also specify a state invariant that is broken by the above test:
 
 ```bluespec
     val noBuyInDrawingInv = {
+        // note that there may be multiple "draw" transactions in flight
+        val winningIds =
+            mempool.filter(tx => tx.kind == "draw" and tx.sender == lotteryState.owner)
+              .map(tx => tx.id)
+        // if there are some winning ids, and the contract is in the drawing phase
         and {
-            lastTx.status == "success",
-            lastTx.kind == "buy" or lastTx.kind == "multiBuy"
-        } implies not(lotteryState.drawingPhase)
+            lotteryState.drawingPhase,
+            winningIds != Set(),
+        } implies
+        // then nobody could buy anything in this state
+        or {
+            // it's fine if the transaction was rejected
+            lastTx.status != "success",
+            // or it was not a buying transaction
+            lastTx.kind != "buy" and lastTx.kind != "multiBuy",
+            // or the buyer did not guess the winning id anyhow
+            winningIds.intersect(indices(lastTx.ids).map(i => lastTx.ids[i])) == Set()
+        }
     }
 ```
 
-Instead of specifying a run with the steps leading to the bug, we can try to disprove this invariant in the random simulator:
+It's not a simple invariant. No wonder that automatic tools are not tuned
+towards exactly this pattern. Instead of specifying a run with the steps
+leading to the bug, we can try to disprove this invariant in the random simulator:
 
 ```sh
-quint run --max-samples 1000000 --max-steps 6 \
+quint run --max-samples 100000 --max-steps 5 \
   --invariant noBuyInDrawingInv --main lotteryMempool lottery.qnt
 ```
 
-Unfortunately, random simulation does not find this example.
-This seems to be a good use case for symbolic model checking with
-[Apalache](https://github.com/informalsystems/apalache/).
+With a bit of luck, quint finds a violation in 29 seconds:
+
+```bluespec
+An example execution:
+---------------------------------------------
+action step0 = all {
+  lotteryState' = { tickets: Map(), winningId: 0, drawingPhase: false, owner: "eve" },
+  mempool' = Set(),
+  lastTx' = { kind: "none", status: "none", sender: "", id: 0, amount: 0, ids: [], amounts: [] },
+}
+
+action step1 = all {
+  lotteryState' = { tickets: Map(), winningId: 0, drawingPhase: false, owner: "eve" },
+  mempool' = Set({ kind: "enterDrawingPhase", status: "pending", sender: "eve", id: 0, amount: 0, ids: [], amounts: [] }),
+  lastTx' = { kind: "enterDrawingPhase", status: "pending", sender: "eve", id: 0, amount: 0, ids: [], amounts: [] },
+}
+
+action step2 = all {
+  lotteryState' = { tickets: Map(), winningId: 0, drawingPhase: true, owner: "eve" },
+  mempool' = Set(),
+  lastTx' = { kind: "enterDrawingPhase", status: "success", sender: "eve", id: 0, amount: 0, ids: [], amounts: [] },
+}
+
+action step3 = all {
+  lotteryState' = { tickets: Map(), winningId: 0, drawingPhase: true, owner: "eve" },
+  mempool' = Set({ kind: "draw", status: "pending", sender: "eve", id: 3, amount: 0, ids: [], amounts: [] }),
+  lastTx' = { kind: "draw", status: "pending", sender: "eve", id: 3, amount: 0, ids: [], amounts: [] },
+}
+
+action step4 = all {
+  lotteryState' = { tickets: Map(), winningId: 0, drawingPhase: true, owner: "eve" },
+  mempool' = Set({ kind: "draw", status: "pending", sender: "eve", id: 3, amount: 0, ids: [], amounts: [] }, { kind: "multiBuy", status: "pending", sender: "eve", id: 0, amount: 0, ids: [3, 5], amounts: [5, 9] }),
+  lastTx' = { kind: "multiBuy", status: "pending", sender: "eve", id: 0, amount: 0, ids: [3, 5], amounts: [5, 9] },
+}
+
+action step5 = all {
+  lotteryState' = { tickets: Map("eve" -> Map(3 -> 5, 5 -> 9)), winningId: 0, drawingPhase: true, owner: "eve" },
+  mempool' = Set({ kind: "draw", status: "pending", sender: "eve", id: 3, amount: 0, ids: [], amounts: [] }),
+  lastTx' = { kind: "multiBuy", status: "success", sender: "eve", id: 0, amount: 0, ids: [3, 5], amounts: [5, 9] },
+}
+
+run test = {
+  step0.then(step1).then(step2).then(step3).then(step4).then(step5)
+}
+---------------------------------------------
+[nok] Found a violation (28752ms).
+```
