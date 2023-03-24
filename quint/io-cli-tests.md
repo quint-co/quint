@@ -176,8 +176,8 @@ echo "import counters.*" | quint -r ../examples/language-features/counters.qnt 2
 <!-- !test out repl loads a file -->
 ```
 true
->>>
->>>
+>>> 
+>>> 
 ```
 
 ### Repl loads a file and a module with -r
@@ -192,7 +192,7 @@ echo "Init" | quint -r ../examples/language-features/counters.qnt::counters 2>&1
 true
 
 >>> true
->>>
+>>> 
 ```
 
 ### Repl loads a file with .load
@@ -207,7 +207,7 @@ echo ".load ../examples/language-features/counters.qnt counters" \
 ```
 >>> true
 
->>> >>>
+>>> >>> 
 ```
 
 ### Repl saves a file with .save and loads it back
@@ -229,10 +229,10 @@ rm tmp-counters.qnt
 true
 
 >>> Session saved to: tmp-counters.qnt
->>> >>>
+>>> >>> 
 true
 >>> true
->>>
+>>> 
 ```
 
 ### Tests works as expected
@@ -262,7 +262,7 @@ quint test --main counters --seed 1 \
       HOME/counters.qnt:84:9 - error: Assertion failed
       84:         assert(n == 0),
                   ^^^^^^^^^^^^^^
-
+      
 
 ```
 
@@ -373,7 +373,7 @@ true
 
 >>> true
 >>> Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0)
->>>
+>>> 
 ```
 
 ### Run finds an overflow in Coin
@@ -416,7 +416,7 @@ run test = {
 quint run --out-itf=out-itf-example.itf.json --max-steps=5 --seed=123 \
   --invariant=totalSupplyDoesNotOverflowInv \
   ../examples/solidity/Coin/coin.qnt
-cat out-itf-example.itf.json | jq '.states[0]."coin::balances"."#map"[0]'
+cat out-itf-example.itf.json | jq '.states[0]."balances"."#map"[0]'
 rm out-itf-example.itf.json
 ```
 
