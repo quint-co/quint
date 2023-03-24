@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.2.1 -- 2023-03-24
+
+### Added
 
 - Go to definition now works for parameters (#711)
 - Go to definition now works for type aliases (#726)
