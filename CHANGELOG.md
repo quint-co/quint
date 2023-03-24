@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.8.0 -- 2023-03-24
+
+### Added
 
 - short-circuiting for `implies` (#717)
 - improve the summary output of `run` (#719)
