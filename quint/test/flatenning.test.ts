@@ -116,4 +116,20 @@ describe('flatten', () => {
 
     assertFlatennedDefs(baseDefs, defs, expectedDefs)
   })
+
+  describe('imports', () => {
+    const baseDefs = [
+      'val f(x) = x + 1',
+    ]
+
+    const defs = [
+      'import A.*',
+    ]
+
+    const expectedDefs = [
+      'val f = (x => iadd(x, 1))',
+    ]
+
+    assertFlatennedDefs(baseDefs, defs, expectedDefs)
+  })
 })

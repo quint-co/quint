@@ -130,27 +130,32 @@ export function compile(
   const modulesByName = new Map(modules.map(m => [m.name, m]))
   const lastId = modules.map(m => m.id).sort((a, b) => Number(a - b))[modules.length - 1]
   const idGenerator = newIdGenerator(lastId)
+  let latestTable = lookupTable
 
   const flattenedModules = modules.map(m => {
-    const flattenedAnalysis = parsePhase2({ modules: [...modulesByName.values()], sourceMap }).mapLeft(errors => {
-      // This should not happen, as the flattening should not introduce any errors
-      // Since parsePhase2 analysis of the original modules has already assured all names are correct.
-      throw new Error(`Error on resolving names for flattened modules: ${errors.map(e => e.explanation)}`)
-    }).unwrap()
+    const flatenned = flatten(m, latestTable, modulesByName, idGenerator, sourceMap)
 
-    const flatenned = flatten(m, flattenedAnalysis.table, modulesByName, idGenerator, sourceMap)
     modulesByName.set(m.name, flatenned)
+
+    // The lookup table has to be updated for every new module that is flattened
+    // Since the flattened modules have new ids for both the name expressions
+    // and their definitions, and the next iteration might depend on an updated
+    // lookup table
+    const newEntries = parsePhase2({ modules: [flatenned], sourceMap }).mapLeft(errors => {
+      // This should not happen, as the flattening should not introduce any
+      // errors, since parsePhase2 analysis of the original modules has already
+      // assured all names are correct.
+      throw new Error(`Error on resolving names for flattened modules: ${errors.map(e => e.explanation)}`)
+    }).unwrap().table
+
+    latestTable = new Map([...latestTable.entries(), ...newEntries.entries()])
+
     return flatenned
   })
-  const flattenedAnalysis = parsePhase2({ modules: flattenedModules, sourceMap }).mapLeft(errors => {
-    // This should not happen, as the flattening should not introduce any errors
-    // Since parsePhase2 analysis of the original modules has already assured all names are correct.
-    throw new Error(`Error on resolving names for flattened modules: ${errors.map(e => e.explanation)}`)
-  }).unwrap()
 
   const main = flattenedModules.find(m => m.name === mainName)
 
-  const visitor = new CompilerVisitor(flattenedAnalysis.table, types, rand)
+  const visitor = new CompilerVisitor(latestTable, types, rand)
   if (main) {
     main.defs.forEach(def => walkDefinition(visitor, def))
   }
@@ -162,7 +167,7 @@ export function compile(
     }]
   return {
     main: main,
-    lookupTable: lookupTable,
+    lookupTable: latestTable,
     values: visitor.getContext(),
     vars: visitor.getVars(),
     shadowVars: visitor.getShadowVars(),

@@ -210,7 +210,7 @@ function addNamespaceToExpr(ctx: FlatteningContext, name: string | undefined, ex
     case 'lambda':
       return {
         ...expr,
-        params: expr.params.map(param => ({ ...param, id: ctx.idGenerator.nextId() })),
+        params: expr.params.map(param => ({ ...param, id: getNewIdWithSameLoc(ctx, param.id) })),
         expr: addNamespaceToExpr(ctx, name, expr.expr),
         id,
       }
