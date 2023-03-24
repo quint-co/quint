@@ -16,11 +16,6 @@ module lottery {
     pure def MAX_UINT64 = 2^64
     pure def MAX_UINT = 2^256
 
-    // the contract in the paper uses "onlyOwner", we fix the owner for simplicity
-    pure def onlyOwner(addr: Address): str = {
-        if (addr == "owner") "" else "must be the owner"
-    }
-
     // a state of the lottery contract
     type LotteryState = {
         // user address -> lottery id -> count
@@ -29,6 +24,8 @@ module lottery {
         winningId: Uint64,
         // whether the owner is drawing
         drawingPhase: bool,
+        // the owner of the contract
+        owner: Address,
     }
 
     // The result of executing a lottery method (error, nextState).
@@ -43,6 +40,11 @@ module lottery {
 
     pure def returnState(state: LotteryState): LotteryResult = {
         ("", state)
+    }
+
+    // the contract in the paper uses "onlyOwner"
+    pure def onlyOwner(state: LotteryState, addr: Address): str = {
+        if (addr == state.owner) "" else "must be the owner"
     }
 
     // An auxilliary definition similar to Solidity's require
@@ -60,19 +62,20 @@ module lottery {
         if (key.in(m.keys())) m.get(key) else default
 
     // contract initialization
-    pure val newLottery: LotteryState = {
+    pure def newLottery(sender: Address): LotteryState = {
         tickets: Map(),
         winningId: 0,
-        drawingPhase: false
+        drawingPhase: false,
+        owner: sender,
     }
 
     // invoked every day to reset a round
     pure def reset(state: LotteryState, sender: Address): LotteryResult = {
-        pure val err = onlyOwner(sender)
+        pure val err = onlyOwner(state, sender)
         if (err != "") {
             returnError(err, state)
         } else {
-            returnState({ tickets: Map(), winningId: 0, drawingPhase: false })
+            returnState({ tickets: Map(), winningId: 0, drawingPhase: false, owner: state.owner })
         }
     }
 
@@ -91,7 +94,7 @@ module lottery {
     }
 
     pure def enterDrawingPhase(state: LotteryState, sender: Address): LotteryResult = {
-        pure val err = onlyOwner(sender)
+        pure val err = onlyOwner(state, sender)
         if (err != "") {
             returnError(err, state)
         } else {
@@ -207,8 +210,17 @@ module lotteryMempool {
     // The last submitted or executed transaction
     var lastTx: Transaction
 
+    // We fix a set of addresses for testing purposes.
+    // This can be generalized with an instance.
+    val ADDR = Set("alice", "bob", "eve")
+    // identifiers to be used in the lottery
+    val IDS = 1.to(5)
+    // amounts of tickets that can be used in buy transactions
+    val AMOUNTS = 0.to(10)
+
     action init = all {
-        lotteryState' = newLottery,
+        nondet sender = oneOf(ADDR)
+        lotteryState' = newLottery(sender),
         mempool' = Set(),
         lastTx' = NoneTx,
     }
@@ -258,14 +270,6 @@ module lotteryMempool {
             },
         }
     }
-
-    // We fix a set of addresses for testing purposes.
-    // This can be generalized with an instance.
-    val ADDR = Set("alice", "bob", "eve")
-    // identifiers to be used in the lottery
-    val IDS = 1.to(5)
-    // amounts of tickets that can be used in buy transactions
-    val AMOUNTS = 0.to(10)
     // A utility function to convert a map to a list
     pure def mapToList(m: int -> a, n: int): List[a] = {
          range(0, n).foldl([], (l, i) => l.append(m.get(i)))
@@ -305,15 +309,30 @@ module lotteryMempool {
         }
 
     // This state invariant captures the key desired property:
-    // No user can buy tickets while the lottery contract is in the drawing phase.
-    // This invariant does not hold true. See the test lotteryMultiBuyTest below.
-    // However, it cannot be easily found by random search.
-    // This probably needs symbolic execution.
+    // No user can buy tickets while the lottery contract is in the drawing phase,
+    // and there is a draw transaction in the mempool.
+    // This invariant does not hold true. See the test lotteryMultiBuyTest below,
+    // or run:
+    // $ quint run --max-samples 100000 --max-steps 5 --invariant noBuyInDrawingInv --main lotteryMempool lottery.qnt
     val noBuyInDrawingInv = {
+        // note that there may be multiple "draw" transactions in flight
+        val winningIds =
+            mempool.filter(tx => tx.kind == "draw" and tx.sender == lotteryState.owner)
+              .map(tx => tx.id)
+        // if there are some winning ids, and the contract is in the drawing phase
         and {
-            lastTx.status == "success",
-            lastTx.kind == "buy" or lastTx.kind == "multiBuy"
-        } implies not(lotteryState.drawingPhase)
+            lotteryState.drawingPhase,
+            winningIds != Set(),
+        } implies
+        // then nobody could buy anything in this state
+        or {
+            // it's fine if the transaction was rejected
+            lastTx.status != "success",
+            // or it was not a buying transaction
+            lastTx.kind != "buy" and lastTx.kind != "multiBuy",
+            // or the buyer did not guess the winning id anyhow
+            winningIds.intersect(indices(lastTx.ids).map(i => lastTx.ids[i])) == Set()
+        }
     }
 }
 
