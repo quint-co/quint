@@ -15,11 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Instances are now fully supported (#725)
 
 ### Changed
+
+- The syntax for instances is now similar to imports (#739)
+
 ### Deprecated
 ### Removed
 ### Fixed
 
 - Heisenbugs in `nondet x = oneOf(S)` should not happen (#712)
+- REPL doesn't show unecessary namespaces for variable names anymore (#739)
 
 ### Security
 
