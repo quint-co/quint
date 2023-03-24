@@ -238,7 +238,8 @@ connection.onDefinition((params: DefinitionParams): HandlerResult<Location[], vo
   // This finds where the definition name actually starts
   // and corrects the range
   const text = documents.get(params.textDocument.uri)!.getText(range)
-  const start = text.search(new RegExp(name))
+  const unqualifiedName = name.split('::').pop()!
+  const start = text.search(new RegExp(unqualifiedName))
   return [{
     uri: params.textDocument.uri,
     range: { ...range, start: { ...range.start, character: range.start.character + start } },

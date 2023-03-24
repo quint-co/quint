@@ -62,3 +62,24 @@ module test {
     Set(1, 2, 3).forall(i => quad(i) == double(i) + double(i))
   }
 }
+
+// Qualified imports
+module E {
+  var x: int
+  action init = x' = 1
+}
+
+module F {
+  var y: int
+  action init = y' = 2
+}
+
+module G {
+  import E
+  import F as MyF
+
+  action init = all {
+    E::init,
+    MyF::init
+  }
+}

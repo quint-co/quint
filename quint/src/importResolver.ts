@@ -125,47 +125,48 @@ class ImportResolverVisitor implements IRVisitor {
   }
 
   enterImport(def: QuintImport): void {
-    if(def.path === this.currentModule?.name) {
+    if(def.protoName === this.currentModule?.name) {
       // Importing current module
       this.errors.set(def.id, {
         code: 'QNT407',
-        message: `Cannot import ${def.path} inside ${def.path}`,
+        message: `Cannot import ${def.protoName} inside ${def.protoName}`,
         data: {},
       })
       return
     }
 
-    const moduleTable = this.tables.get(def.path)
+    const moduleTable = this.tables.get(def.protoName)
     if (!moduleTable) {
       // Importing unexisting module
       this.errors.set(def.id, {
         code: 'QNT404',
-        message: `Module ${def.path} not found`,
+        message: `Module ${def.protoName} not found`,
         data: {},
       })
       return
     }
 
-    const importableDefinitions = copyNames(moduleTable, undefined, this.currentModule?.id)
+    const qualifier = def.defName ? undefined : (def.qualifiedName ?? def.protoName)
+    const importableDefinitions = copyNames(moduleTable, qualifier, this.currentModule?.id)
 
-    if (def.name === '*') {
+    if (!def.defName || def.defName === '*') {
       // Imports all definitions
       this.table = mergeTables(this.table, importableDefinitions)
     } else {
       // Tries to find a specific definition, reporting an error if not found
-      if (!importableDefinitions.valueDefinitions.has(def.name)) {
+      if (!importableDefinitions.valueDefinitions.has(def.defName)) {
         this.errors.set(def.id, {
           code: 'QNT405',
-          message: `Name ${def.path}::${def.name} not found`,
+          message: `Name ${def.protoName}::${def.defName} not found`,
           data: {},
         })
         return
       }
 
       // Copy type and value definitions for the imported name
-      const valueDefs = importableDefinitions.valueDefinitions.get(def.name) ?? []
+      const valueDefs = importableDefinitions.valueDefinitions.get(def.defName) ?? []
       valueDefs.forEach(def => addValueToTable(def, this.table))
-      const typeDefs = importableDefinitions.typeDefinitions.get(def.name) ?? []
+      const typeDefs = importableDefinitions.typeDefinitions.get(def.defName) ?? []
       typeDefs.forEach(def => addTypeToTable(def, this.table))
     }
   }
