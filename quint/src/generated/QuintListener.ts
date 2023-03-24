@@ -58,6 +58,7 @@ import { DocLinesContext } from "./QuintParser";
 import { UnitContext } from "./QuintParser";
 import { OperDefContext } from "./QuintParser";
 import { QualifierContext } from "./QuintParser";
+import { ImportModContext } from "./QuintParser";
 import { InstanceModContext } from "./QuintParser";
 import { ModuleNameContext } from "./QuintParser";
 import { NameContext } from "./QuintParser";
@@ -71,7 +72,6 @@ import { LambdaContext } from "./QuintParser";
 import { IdentOrHoleContext } from "./QuintParser";
 import { ParameterContext } from "./QuintParser";
 import { IdentOrStarContext } from "./QuintParser";
-import { PathContext } from "./QuintParser";
 import { ArgListContext } from "./QuintParser";
 import { NormalCallNameContext } from "./QuintParser";
 import { NameAfterDotContext } from "./QuintParser";
@@ -788,6 +788,17 @@ export interface QuintListener extends ParseTreeListener {
 	exitQualifier?: (ctx: QualifierContext) => void;
 
 	/**
+	 * Enter a parse tree produced by `QuintParser.importMod`.
+	 * @param ctx the parse tree
+	 */
+	enterImportMod?: (ctx: ImportModContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.importMod`.
+	 * @param ctx the parse tree
+	 */
+	exitImportMod?: (ctx: ImportModContext) => void;
+
+	/**
 	 * Enter a parse tree produced by `QuintParser.instanceMod`.
 	 * @param ctx the parse tree
 	 */
@@ -929,17 +940,6 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitIdentOrStar?: (ctx: IdentOrStarContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `QuintParser.path`.
-	 * @param ctx the parse tree
-	 */
-	enterPath?: (ctx: PathContext) => void;
-	/**
-	 * Exit a parse tree produced by `QuintParser.path`.
-	 * @param ctx the parse tree
-	 */
-	exitPath?: (ctx: PathContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `QuintParser.argList`.

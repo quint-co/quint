@@ -216,11 +216,11 @@ export function isTypeAlias(def: any): def is QuintTypeAlias {
 export interface QuintImport extends WithId {
   /** definition kind ('import') */
   kind: 'import',
-  /** name to import, or '*' to denote all */
-  name: string,
-  /** path to the module, e.g., Foo.Bar */
-  path: string
-  /** a qualifier, e.g. F in import Foo.* as F */
+  /** path to the module, e.g., Foo in import Foo.* */
+  protoName: string
+  /** name to import, or '*' to denote all. Undefined when a qualifier is present. */
+  defName?: string,
+  /** a qualifier, e.g. F in import Foo as F */
   qualifiedName?: string,
 }
 

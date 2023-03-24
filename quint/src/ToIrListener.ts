@@ -51,8 +51,8 @@ export class ToIrListener implements QuintListener {
   private paramStack: QuintLambdaParameter[] = []
   // stack of names used as parameters and assumptions
   private identOrHoleStack: string[] = []
-  // the stack for import paths
-  private pathStack: string[] = []
+  // the stack for imported names
+  private identOrStarStack: string[] = []
   // the stack of rows for records and unions
   private rowStack: Row[] = []
   // the stack of documentation lines before a definition
@@ -261,25 +261,21 @@ export class ToIrListener implements QuintListener {
     this.definitionStack.push(assume)
   }
 
-  // import Foo.x or import Foo.*
-  exitImportDef(ctx: any) {
-    const ident = this.pathStack.pop()!
-    const path = this.pathStack.pop()!
+  // import Foo, import Foo as F, import Foo.x, import Foo.*
+  exitImportMod(ctx: p.ImportModContext) {
+    const defName = ctx.identOrStar() ? this.identOrStarStack.pop()! : undefined
+    const protoName = ctx.name()[0].text
+    const qualifier = ctx.name().length > 1 ? ctx.name()[1].text : undefined
     const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     const importDef: QuintDef = {
       id,
       kind: 'import',
-      name: ident,
-      path,
+      defName: defName,
+      protoName: protoName,
+      qualifiedName: qualifier,
     }
     this.definitionStack.push(importDef)
-  }
-
-  // a path that used in imports
-  exitPath(ctx: p.PathContext) {
-    const path = ctx.IDENTIFIER().reduce((s, id) => s + id.text, '')
-    this.pathStack.push(path)
   }
 
   // type ALIAS = set(int)
@@ -532,10 +528,10 @@ export class ToIrListener implements QuintListener {
   exitIdentOrStar(ctx: p.IdentOrStarContext) {
     if (ctx.text === '*') {
       // a hole '_'
-      this.pathStack.push('*')
+      this.identOrStarStack.push('*')
     } else {
       // a variable name
-      this.pathStack.push(ctx.IDENTIFIER()!.text)
+      this.identOrStarStack.push(ctx.IDENTIFIER()!.text)
     }
   }
 

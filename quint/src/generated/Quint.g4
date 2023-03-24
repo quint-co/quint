@@ -24,7 +24,7 @@ unit :    'const' IDENTIFIER ':' type                     # const
         | operDef                                         # oper
         | 'type' IDENTIFIER                               # typedef
         | 'type' IDENTIFIER '=' type                      # typedef
-        | 'import' path '.' identOrStar ('as' name)?      # importDef
+        | importMod                                       # importDef
         // https://github.com/informalsystems/quint/issues/378
         //| 'nondet' IDENTIFIER (':' type)? '=' expr ';'? expr {
         //  const m = "QNT007: 'nondet' is only allowed inside actions"
@@ -52,6 +52,10 @@ qualifier : 'val'
           | 'action'
           | 'run'
           | 'temporal'
+          ;
+
+importMod : 'import' name '.' identOrStar
+          | 'import' name ('as' name)?
           ;
 
 // an instance may have a special parameter '*',
@@ -166,10 +170,6 @@ parameter: identOrHole;
 
 // an identifier or a star '*'
 identOrStar :   '*' | IDENTIFIER
-        ;
-
-// a path used in imports
-path    : IDENTIFIER ('.' IDENTIFIER)*
         ;
 
 argList :      expr (',' expr)*

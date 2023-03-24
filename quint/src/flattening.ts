@@ -67,9 +67,8 @@ export function flatten(
       })
     }
 
-    const moduleNameToFlatten = def.kind == 'import' ? def.path : def.protoName
-    const protoModule = importedModules.get(moduleNameToFlatten)!
-    const defsToFlatten = def.kind == 'instance' ? protoModule.defs : filterDefs(protoModule.defs, def.name)
+    const protoModule = importedModules.get(def.protoName)!
+    const defsToFlatten = def.kind == 'instance' ? protoModule.defs : filterDefs(protoModule.defs, def.defName)
 
     defsToFlatten.forEach(protoDef => {
       if (alreadyDefined(newDefs, def.qualifiedName, protoDef)) {
@@ -86,8 +85,8 @@ export function flatten(
   return { ...module, defs: newDefs }
 }
 
-function filterDefs(defs: QuintDef[], name: string): QuintDef[] {
-  if (name === '*') {
+function filterDefs(defs: QuintDef[], name: string | undefined): QuintDef[] {
+  if (!name || name === '*') {
     return defs
   }
 
