@@ -1327,6 +1327,8 @@ export class CompilerVisitor implements IRVisitor {
         }
         // the trace collected during the run
         let trace: RuntimeValue[] = []
+        // the best found trace so far
+        let bestTrace: RuntimeValue[] = []
         // a failure flag for the case a runtime error is found
         let failure = false
         // the value to be returned in the end of evaluation
@@ -1378,11 +1380,15 @@ export class CompilerVisitor implements IRVisitor {
           // recover the state variables
           this.recoverVars(vars)
           this.recoverNextVars(nextVars)
+          // save the trace if it was better
+          if (this.isBetterTrace(errorFound, bestTrace.length, trace.length)) {
+            bestTrace = trace
+          }
         } // end of a single random run
         // save the trace (there are a few shadow variables, hence, the loop)
         this.shadowVars.forEach(r => {
           if (r.name === lastTraceName) {
-            r.registerValue = just(rv.mkList(trace))
+            r.registerValue = just(rv.mkList(bestTrace))
           }
         })
         // finally, return true, if no error was found
@@ -1390,6 +1396,15 @@ export class CompilerVisitor implements IRVisitor {
       }).join()
     }
     this.compStack.push(mkFunComputable(doRun))
+  }
+
+  // For examples, the longer trace is preferred.
+  // For counterexamples, the shorter trace is preferred.
+  private isBetterTrace(isErrorFound: boolean,
+      oldLen: number, newLen: number): boolean {
+    return isErrorFound
+      ? oldLen == 0 || oldLen >= newLen
+      : oldLen <= newLen
   }
 
   private shiftVars() {

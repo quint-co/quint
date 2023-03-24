@@ -169,6 +169,8 @@ Options:
   --main         name of the main module (by default, computed from filename)
                                                                         [string]
   --out          output file (suppresses all console output)            [string]
+  --out-itf      output the trace in the Informal Trace Format to file
+                 (supresses all console output)                         [string]
   --max-samples  the maximum on the number of traces to try
                                                        [number] [default: 10000]
   --max-steps    the maximum on the number of steps in every trace
@@ -181,10 +183,14 @@ Options:
 ```
 
  - If there are no critical errors (e.g., in parsing, typechecking, etc.),
-   the trace is currently written as a serialized Quint expression.
-   In the future, the trace will be written in the [Informal Trace Format][].
-   See the [issue #277](https://github.com/informalsystems/quint/issues/277).
-
+   the simulator tries to find the shortest trace that violates the invariant.
+   If it finds one, it prints the trace on the standard output.
+   If it does not find a violating trace, it prints the longest sample trace
+   that the simulator has found during the execution. When the parameter
+   `--out` is supplied, the trace is written as a JSON representation of
+   Quint IR in the output file. When the parameter `--out-itf` is supplied,
+   the trace is written in the [Informal Trace Format][].
+   
  - If the specification cannot be run (e.g., due to a parsing error), the file
    contains an error message in JSON:
 

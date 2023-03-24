@@ -70,7 +70,7 @@ Visit the [Tutorials][] page.
 ### Syntax :abcd:
 
 - [Cheatsheet](./doc/quint-cheatsheet.pdf)
-- [Reference API documentation for built-in operators](./doc/builtin.md).
+- [Reference API documentation for built-in operators](./doc/builtin.md)
 - [Syntax documentation](./doc/lang.md)
 
 ### Examples :musical_score:
@@ -99,6 +99,12 @@ editor (currently, VSCode, Emacs and Vim are supported).
    errors as you type. Install the plugin from [Visual Studio Code
    Marketplace][].
 
+## Community
+
+- Join the chat in the [Quint zulip stream][] :telephone:
+- Join the [Quint discussions][] :bulb:
+- [Contribute](./CONTRIBUTING.md) to the development of Quint :construction_worker:
+
 ## Development
 
 ### Developer docs :guitar:
@@ -109,6 +115,7 @@ editor (currently, VSCode, Emacs and Vim are supported).
    components](./doc/adr003-visiting-ir-components.md)
  - [ADR004: An Effect System for Quint](./doc/adr004-effect-system.md)
  - [ADR005: A Type System for Quint](./doc/adr005-type-system.md)
+ - [ADR006: Design of modules and lookup tables](./doc/adr006-modules.lit.md)
 
 ### Source code :hash:
 
@@ -201,3 +208,5 @@ completely implementing every pass.
 [TLA]: https://en.wikipedia.org/wiki/Temporal_logic_of_actions
 [Visual Studio Code Marketplace]: https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode
 [Tutorials]: ./tutorials/README.md
+[Quint zulip stream]: https://informal-systems.zulipchat.com/#narrow/stream/378959-quint
+[Quint discussions]: https://github.com/informalsystems/quint/discussions

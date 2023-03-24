@@ -117,6 +117,10 @@ const runCmd = {
         desc: 'output file (suppresses all console output)',
         type: 'string',
       })
+      .option('out-itf', {
+        desc: 'output the trace in the Informal Trace Format to file (supresses all console output)',
+        type: 'string',
+      })
       .option('max-samples', {
         desc: 'the maximum on the number of traces to try',
         type: 'number',
