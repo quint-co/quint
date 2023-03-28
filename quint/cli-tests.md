@@ -222,6 +222,11 @@ Temporarily disabled.
 <!-- !test check lottery - Syntax/Types & Effects/Unit tests -->
     quint test --main=lotteryTests ../examples/solidity/icse23-fig7/lottery.qnt
 
+### OK on test erc20.qnt
+
+<!-- !test check erc20 - Syntax/Types & Effects/Unit tests -->
+    quint test --main=mempool ../examples/solidity/ERC20/erc20.qnt
+
 ### OK on typecheck SuperSpec.qnt
 
 <!-- !test check SuperSpec - Types & Effects-->

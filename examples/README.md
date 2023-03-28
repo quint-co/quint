@@ -37,7 +37,7 @@ Quint-Apalache pipeline.
 | [Coin][]         |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
 | [SimpleAuction][]|:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
 | [icse23-fig7][]  |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
-| [ERC20][]        |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
+| [ERC20][]        |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
 |                    **Cosmos**                                                           |
 | [ICS23][]        |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
 | [Tendermint][]   |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
