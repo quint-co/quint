@@ -18,9 +18,11 @@ import { IRVisitor } from '../../IRVisitor'
 import { ScopeTree } from '../../scoping'
 import { TypeScheme } from '../../types/base'
 import {
-  Callable, Computable, ComputableKind, EvalResult, Register,
-  fail, kindName, mkCallable, mkRegister
+  Callable, Computable, ComputableKind, EvalResult,
+  Register, fail, kindName, mkCallable, mkRegister
 } from '../runtime'
+
+import { ExecutionListener } from '../trace'
 
 import * as ir from '../../quintIr'
 
@@ -78,11 +80,15 @@ export class CompilerVisitor implements IRVisitor {
   private runtimeErrors: ir.IrErrorMessage[] = []
   // pre-initialized random number generator
   private rand
+  // execution listener
+  private execListener: ExecutionListener
 
-  constructor(lookupTable: LookupTable, types: Map<bigint, TypeScheme>, rand: () => number) {
+  constructor(lookupTable: LookupTable, types: Map<bigint, TypeScheme>,
+      rand: () => number, listener: ExecutionListener) {
     this.lookupTable = lookupTable
     this.types = types
     this.rand = rand
+    this.execListener = listener
     const lastTrace =
       mkRegister('shadow', lastTraceName, none(),
         () => this.addRuntimeError(0n, '_lastTrace is not set'))
@@ -876,20 +882,37 @@ export class CompilerVisitor implements IRVisitor {
           `Expected ${nargs} arguments for ${app.opcode}, found: ${nactual}`)
         this.compStack.push(fail)
       } else {
-        this.applyFun(app.id,
-          nargs,
-          (...args: RuntimeValue[]) => {
-            let actualArgs = args
-            if (nparams > nargs && args.length === 1) {
-              // unpack the tuple
-              actualArgs = [...args[0]]
+        // pop nargs elements of the compStack
+        const args = this.compStack.splice(-nargs, nargs)
+        // Produce the new computable value.
+        // This code is similar to applyFun, but it calls the listener before
+        const comp = {
+          eval: (): Maybe<RuntimeValue> => {
+            this.execListener.onUserOperatorCall(app)
+            // compute the values of the arguments at this point
+            const merged = merge(args.map(a => a.eval()))
+            if (merged.isNone()) {
+              this.execListener.onUserOperatorReturn(app, [], none())
+              return none()
             }
-            for (let i = 0; i < actualArgs.length; i++) {
-              callable.registers[i].registerValue = just(actualArgs[i])
-            }
-            return callable.eval() as Maybe<RuntimeValue>
-          }
-        )
+            return merged.map(values => {
+              // if they are all defined, check whether unpacking is needed
+              let actualArgs: RuntimeValue[] = values as RuntimeValue[]
+              if (nparams > nargs && nargs === 1) {
+                // unpack the tuple
+                actualArgs = [...actualArgs[0]]
+              }
+              for (let i = 0; i < nparams; i++) {
+                callable.registers[i].registerValue = just(actualArgs[i])
+              }
+              const result = callable.eval() as Maybe<RuntimeValue>
+              this.execListener.onUserOperatorReturn(app, actualArgs, result)
+              return result
+            })
+            .join()
+          },
+        }
+        this.compStack.push(comp)
       }
     }
   }
@@ -1233,29 +1256,35 @@ export class CompilerVisitor implements IRVisitor {
       // save the values of the next variables, as actions may update them
       const valuesBefore = this.snapshotNextVars()
       // we store the potential successor values in this array
-      const successors = []
+      const successors: Maybe<RuntimeValue>[][] = []
+      const successorIndices: number[] = []
       // Evaluate arguments iteratively.
-      for (const arg of args) {
+      args.forEach((arg, i) => {
         this.recoverNextVars(valuesBefore)
         // either the argument is evaluated to false, or fails
+        this.execListener.onAnyOptionCall(app, i)
         const result = arg.eval().or(just(rv.mkBool(false)))
         const boolResult = (result.unwrap() as RuntimeValue).toBool()
+        this.execListener.onAnyOptionReturn(app, i)
         // if this arm evaluates to true, save it in the candidates
         if (boolResult === true) {
           successors.push(this.snapshotNextVars())
+          successorIndices.push(i)
         }
-      }
+      })
 
       const ncandidates = successors.length
       if (ncandidates === 0) {
         // no successor: restore the state and return false
         this.recoverNextVars(valuesBefore)
+        this.execListener.onAnyReturn(args.length, -1)
         return just(rv.mkBool(false))
       } else {
         // randomly pick a successor and return true
         // https://stackoverflow.com/questions/4959975/generate-random-number-between-two-numbers-in-javascript
         const choice = Math.floor(this.rand() * ncandidates)
         this.recoverNextVars(successors[choice])
+        this.execListener.onAnyReturn(args.length, successorIndices[choice])
         return just(rv.mkBool(true))
       }
     }
@@ -1339,18 +1368,29 @@ export class CompilerVisitor implements IRVisitor {
         // do multiple runs, stop at the first failing run
         const nruns = (nrunsRes as RuntimeValue).toInt()
         for (let runNo = 0;
-          !errorFound && !failure && runNo < nruns; runNo++) {
+            !errorFound && !failure && runNo < nruns; runNo++) {
+          this.execListener.onRunCall()
           trace = []
           // check Init()
+          const initApp: ir.QuintApp =
+            { id: 0n, kind: 'app', opcode: 'q::init', args: [] }
+          this.execListener.onUserOperatorCall(initApp)
           const initResult = init.eval()
           failure = initResult.isNone() || failure
-          if (isTrue(initResult)) {
+          if (!isTrue(initResult)) {
+            this.execListener.onUserOperatorReturn(initApp, [], initResult)
+          } else {
             // The initial action evaluates to true.
             // Our guess of values was good.
             this.shiftVars()
             trace.push(varsToRecord())
             // check the invariant Inv
+            const invApp: ir.QuintApp =
+              { id: 0n, kind: 'app', opcode: 'q::inv', args: [] }
+            this.execListener.onUserOperatorCall(invApp)
             const invResult = inv.eval()
+            this.execListener.onUserOperatorReturn(invApp, [], invResult)
+            this.execListener.onUserOperatorReturn(initApp, [], initResult)
             failure = invResult.isNone() || failure
             if (!isTrue(invResult)) {
               errorFound = true
@@ -1358,12 +1398,18 @@ export class CompilerVisitor implements IRVisitor {
               // check all { Next(), shift(), Inv } in a loop
               const nsteps = (nstepsRes as RuntimeValue).toInt()
               for (let i = 0; !errorFound && !failure && i < nsteps; i++) {
+                const nextApp: ir.QuintApp =
+                  { id: 0n, kind: 'app', opcode: 'q::step', args: [] }
+                this.execListener.onUserOperatorCall(nextApp)
                 const nextResult = next.eval()
                 failure = nextResult.isNone() || failure
                 if (isTrue(nextResult)) {
                   this.shiftVars()
                   trace.push(varsToRecord())
+                  this.execListener.onUserOperatorCall(invApp)
                   errorFound = !isTrue(inv.eval())
+                  this.execListener.onUserOperatorReturn(invApp, [], invResult)
+                  this.execListener.onUserOperatorReturn(nextApp, [], nextResult)
                 } else {
                   // Otherwise, the run cannot be extended.
                   // In some cases, this may indicate a deadlock.
@@ -1372,6 +1418,7 @@ export class CompilerVisitor implements IRVisitor {
                   // the run. Hence, do not report an error here, but simply
                   // drop the run. Otherwise, we would have a lot of false
                   // positives, which look like deadlocks but they are not.
+                  this.execListener.onUserOperatorReturn(nextApp, [], nextResult)
                   break
                 }
               }
@@ -1380,11 +1427,16 @@ export class CompilerVisitor implements IRVisitor {
           // recover the state variables
           this.recoverVars(vars)
           this.recoverNextVars(nextVars)
+          // TODO: the trace selection should be done in the listener
           // save the trace if it was better
           if (this.isBetterTrace(errorFound, bestTrace.length, trace.length)) {
             bestTrace = trace
           }
+          const outcome = (!failure) ? just(rv.mkBool(!errorFound)) : none()
+          this.execListener.onRunReturn(outcome, trace)
         } // end of a single random run
+
+        // TODO: the trace selection should be done in the listener
         // save the trace (there are a few shadow variables, hence, the loop)
         this.shadowVars.forEach(r => {
           if (r.name === lastTraceName) {

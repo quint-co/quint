@@ -9,7 +9,7 @@
  * See License.txt in the project root for license information.
  */
 
-import { Either, left, right, merge } from '@sweet-monads/either'
+import { Either, left, merge, right } from '@sweet-monads/either'
 import { chunk } from 'lodash'
 
 import { QuintEx } from './quintIr'
@@ -24,14 +24,10 @@ const maxJsInt = (2n ** 53n) - 1n
  * representation of the ITF trace.
  *
  * @param vars variable names
- * @param trace a sequence of expressions that represent the states
+ * @param states an array of expressions that represent the states
  * @returns an object that represent the trace in the ITF format
  */
-export function toItf(vars: string[], trace: QuintEx): Either<string, any> {
-  if (trace.kind !== 'app' || trace.opcode !== 'List') {
-    return left(`Expected a list of records, found: ${trace.kind}`)
-  }
-
+export function toItf(vars: string[], states: QuintEx[]): Either<string, any> {
   const exprToItf = (ex: QuintEx): Either<string, any> => {
     switch (ex.kind) {
       case 'int':
@@ -87,10 +83,11 @@ export function toItf(vars: string[], trace: QuintEx): Either<string, any> {
     }
   }
 
-  return exprToItf(trace).mapRight(states => {
-    return {
-      "vars": vars,
-      "states": states,
-    }
-  })
+  return merge(states.map(exprToItf))
+    .mapRight(s => {
+      return {
+        "vars": vars,
+        "states": s,
+      }
+    })
 }

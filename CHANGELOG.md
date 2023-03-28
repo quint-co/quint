@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- detailed run output on `--verbosity=3` (#748)
+
 ### Changed
 ### Deprecated
 ### Removed

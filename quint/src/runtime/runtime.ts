@@ -5,9 +5,9 @@
  *  - Give the language user fast feedback via interpretation of expressions.
  *  - Let the user simulate their specification similar to property-based testing.
  *
- * Igor Konnov, 2022
+ * Igor Konnov, 2022-2023
  *
- * Copyright (c) Informal Systems 2022. All rights reserved.
+ * Copyright (c) Informal Systems 2022-2023. All rights reserved.
  * Licensed under the Apache 2.0.
  * See License.txt in the project root for license information.
  */
@@ -87,18 +87,23 @@ export function mkRegister(kind: ComputableKind,
   initValue: Maybe<any>,
   onUndefined: () => void
 ): Register {
-  return {
+  const reg: Register = {
     name: registerName,
     kind,
     registerValue: initValue,
-    // computing a register just evaluates to the contents that it stores
-    eval: function() {
-      if (this.registerValue.isNone()) {
-        onUndefined()
-      }
-      return this.registerValue
-    },
+    // first, define a fruitless eval, as we cannot refer to registerValue yet
+    eval: () => { return none() },
   }
+  // override `eval`, as we can use `reg` now
+  reg.eval = () => {
+    // computing a register just evaluates to the contents that it stores
+    if (reg.registerValue.isNone()) {
+      onUndefined()
+    }
+    return reg.registerValue
+  }
+
+  return reg
 }
 
 /**
@@ -144,3 +149,4 @@ export interface ExecError {
  * during execution.
  */
 export type ExecErrorHandler = (_error: ExecError) => void;
+

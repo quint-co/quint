@@ -6,13 +6,11 @@ import { toItf } from '../src/itf'
 
 describe('itf', () => {
   it('converts two states', () => {
-    const text =
-`[
-  { x: 2, y: true },
-  { x: 3, y: false },
-]
-`
-    const trace = buildExpression(text)
+    const trace = [
+      '{ x: 2, y: true }',
+      '{ x: 3, y: false }',
+    ].map(buildExpression)
+
     const itfTrace = toItf(['x', 'y'], trace)
     const expected = {
       "vars": ["x", "y"],
@@ -27,7 +25,7 @@ describe('itf', () => {
 
   it('converts all kinds', () => {
     const text =
-`[{
+`{
   a: 2,
   b: "hello",
   c: 1000000000000000000,
@@ -37,9 +35,9 @@ describe('itf', () => {
   g: Map(1 -> "a", 2 -> "b", 3 -> "c"),
   h: Map(),
   i: Map(1 -> "a"),
-}]
+}
 `
-    const trace = buildExpression(text)
+    const trace = [buildExpression(text)]
     const vars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
     const itfTrace = toItf(vars, trace)
     const expected = {

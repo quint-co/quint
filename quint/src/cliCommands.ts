@@ -4,7 +4,7 @@
  * See the description at:
  * https://github.com/informalsystems/quint/blob/main/doc/quint.md
  *
- * @author Igor Konnov, Gabriela Moreira, Shon Feder, Informal Systems, 2021-2022
+ * @author Igor Konnov, Gabriela Moreira, Shon Feder, Informal Systems, 2021-2023
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'fs'
@@ -31,8 +31,10 @@ import { QuintAnalyzer } from './quintAnalyzer'
 import { QuintError, quintErrorToString } from './quintError'
 import { compileAndTest } from './runtime/testing'
 import { newIdGenerator } from './idGenerator'
-import { SimulatorOptions, compileAndRun, printTrace } from './simulation'
+import { SimulatorOptions, compileAndRun } from './simulation'
 import { toItf } from './itf'
+import { printTrace } from './graphics'
+import { verbosity } from './verbosity'
 
 export type stage =
   'loading' | 'parsing' | 'typechecking' |
@@ -53,8 +55,8 @@ interface OutputStage {
   failed?: string[],
   ignored?: string[],
   // Test names output produced by 'run'
-  status?: 'ok' | 'violation',
-  trace?: QuintEx,
+  status?: 'ok' | 'violation' | 'failure',
+  trace?: QuintEx[],
   /* Docstrings by defintion name by module name */
   documentation?: Map<string, Map<string, DocumentationEntry>>,
   errors?: ErrorMessage[],
@@ -125,8 +127,8 @@ interface TestedStage extends LoadedStage {
 }
 
 interface SimulatorStage extends LoadedStage {
-  status: 'ok' | 'violation',
-  trace?: QuintEx,
+  status: 'ok' | 'violation' | 'failure',
+  trace?: QuintEx[],
 }
 
 interface DocumentationStage extends LoadedStage {
@@ -359,6 +361,8 @@ export function runSimulator(prev: TypecheckedStage):
   CLIProcedure<SimulatorStage> {
   const mainArg = prev.args.main
   const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
+  const verbosityLevel =
+    (!prev.args.out && !prev.args.outItf) ? prev.args.verbosity : 0
   const options: SimulatorOptions = {
     init: prev.args.init,
     step: prev.args.step,
@@ -366,30 +370,43 @@ export function runSimulator(prev: TypecheckedStage):
     maxSamples: prev.args.maxSamples,
     maxSteps: prev.args.maxSteps,
     rand: mkRng(prev.args.seed),
+    verbosity: verbosityLevel,
   }
   const startMs = Date.now()
   const simulator = { ...prev, stage: 'running' as stage }
-  return compileAndRun(newIdGenerator(), prev.sourceCode, mainName, options)
-    .map(result => {
+  const result =
+    compileAndRun(newIdGenerator(), prev.sourceCode, mainName, options)
+  
+  if (result.status === 'error') {
+      const errors =
+        prev.errors ? prev.errors.concat(result.errors) : result.errors
+      return cliErr('run failed', { ...simulator, errors })
+  } else {
       const isConsole = !prev.args.out && !prev.args.outItf
-      if (isConsole) {
+      if (verbosity.hasResults(verbosityLevel)) {
         const elapsedMs = Date.now() - startMs
-        console.log(chalk.gray('An example execution:'))
-        console.log('---------------------------------------------')
-        printTrace(console.log, result.trace)
-        console.log('---------------------------------------------')
+        if (verbosity.hasStateOutput(options.verbosity)) {
+          console.log(chalk.gray('An example execution:\n'))
+          printTrace(console.log, result.states, result.frames)
+        }
         if (result.status === 'ok') {
           console.log(chalk.green('[ok]')
             + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
-          console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
+          if (verbosity.hasHints(options.verbosity)) {
+            console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
+            console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
+          }
         } else {
-          console.log(chalk.red('[nok]')
-            + ' Found a violation ' + chalk.gray(`(${elapsedMs}ms).`))
+          console.log(chalk.red(`[${result.status}]`)
+            + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
+          if (verbosity.hasHints(options.verbosity)) {
+            console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
+          }
         }
       }
 
       if (prev.args.outItf) {
-        const trace = toItf(result.vars, result.trace)
+        const trace = toItf(result.vars, result.states)
         if (trace.isRight()) {
           const jsonObj = {
             '#meta': {
@@ -402,24 +419,22 @@ export function runSimulator(prev: TypecheckedStage):
           }
           writeToJson(prev.args.outItf, jsonObj)
         } else {
-          return left([
-            { explanation: `ITF conversion failed: ${trace.value}`, locs: [] },
-          ])
+          const newStage = { ...simulator, errors: result.errors }
+          return cliErr(`ITF conversion failed: ${trace.value}`, newStage)
         }
       }
 
-      return right({
-          ...simulator,
-          status: result.status,
-          trace: result.trace,
-      })
-    })
-    .join()
-    .mapLeft(newErrs => {
-      const errors = prev.errors ? prev.errors.concat(newErrs) : newErrs
-      const newStage = { ...simulator, errors }
-      return { msg: 'run failed', stage: newStage }
-    })
+      if (result.errors.length != 0) {
+        // in case of 'failure', there may still be errors
+        return cliErr('run failed', { ...simulator, errors: result.errors })
+      } else {
+        return right({
+            ...simulator,
+            status: result.status,
+            trace: result.states,
+        })
+      }
+    }
 }
 
 /**

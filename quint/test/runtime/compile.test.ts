@@ -4,6 +4,7 @@ import { Either, left, right } from '@sweet-monads/either'
 import { just } from '@sweet-monads/maybe'
 import { expressionToString } from '../../src/IRprinting'
 import { ComputableKind, fail, kindName } from '../../src/runtime/runtime'
+import { noExecutionListener } from '../../src/runtime/trace'
 import {
   CompilationContext, compileFromCode, contextNameLookup
 } from '../../src/runtime/compile'
@@ -20,7 +21,8 @@ const idGen = newIdGenerator()
 function assertResultAsString(input: string, expected: string | undefined) {
   const moduleText = `module __runtime { val __input = ${input} }`
   const context =
-    compileFromCode(idGen, moduleText, '__runtime', () => Math.random())
+    compileFromCode(idGen,
+      moduleText, '__runtime', noExecutionListener, () => Math.random())
 
   assert.isEmpty(context.syntaxErrors, `Syntax errors: ${context.syntaxErrors.map(e => e.explanation).join(', ')}`)
   assert.isEmpty(context.compileErrors, `Compile errors: ${context.compileErrors.map(e => e.explanation).join(', ')}`)
@@ -43,7 +45,8 @@ function assertResultAsString(input: string, expected: string | undefined) {
 function evalInContext<T>(input: string, callable: (ctx: CompilationContext) => Either<string, T>) {
   const moduleText = `module __runtime { ${input} }`
   const context =
-    compileFromCode(idGen, moduleText, '__runtime', () => Math.random())
+    compileFromCode(idGen,
+      moduleText, '__runtime', noExecutionListener, () => Math.random())
   return callable(context)
 }
 

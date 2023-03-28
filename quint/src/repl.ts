@@ -12,10 +12,9 @@ import * as readline from 'readline'
 import { Readable, Writable } from 'stream'
 import { readFileSync, writeFileSync } from 'fs'
 import lineColumn from 'line-column'
-import chalk from 'chalk'
-
 import { just, none } from '@sweet-monads/maybe'
 import { left, right } from '@sweet-monads/either'
+import chalk from 'chalk'
 
 import { QuintEx } from './quintIr'
 import {
@@ -25,8 +24,10 @@ import { formatError } from './errorReporter'
 import {
   ComputableKind, EvalResult, Register, kindName
 } from './runtime/runtime'
+import { noExecutionListener } from './runtime/trace'
 import { ErrorMessage, probeParse } from './quintParserFrontend'
 import { IdGenerator, newIdGenerator } from './idGenerator'
+import { chalkQuintEx } from './graphics'
 
 // tunable settings
 export const settings = {
@@ -384,71 +385,6 @@ function loadShadowVars(state: ReplState, context: CompilationContext): void {
   loadRegisters('shadow', state.shadowVars, context)
 }
 
-// convert a Quint expression to a colored string, tuned for REPL
-export function chalkQuintEx(ex: QuintEx): string {
-  switch (ex.kind) {
-    case 'bool':
-      return chalk.yellow(`${ex.value}`)
-
-    case 'int':
-      return chalk.yellow(`${ex.value}`)
-
-    case 'str':
-      return chalk.green(`"${ex.value}"`)
-
-    case 'app':
-      switch (ex.opcode) {
-        case 'Set': {
-          const as = ex.args.map(chalkQuintEx).join(', ')
-          return chalk.green('Set') + `(${as})`
-        }
-
-        case 'Map': {
-          const ps = ex.args.map(tup => {
-            if (tup.kind === 'app' &&
-                   tup.opcode === 'Tup' && tup.args.length === 2) {
-              const [k, v] = tup.args
-              return `${chalkQuintEx(k)} -> ${chalkQuintEx(v)}`
-            } else {
-              return '<expected-pair>'
-            }
-          })
-          const as = ps.join(', ')
-          return chalk.green('Map') + `(${as})`
-        }
-
-        case 'Tup': {
-          const as = ex.args.map(chalkQuintEx).join(', ')
-          return `(${as})`
-        }
-
-        case 'List': {
-          const as = ex.args.map(chalkQuintEx).join(', ')
-          return `[${as}]`
-        }
-
-        case 'Rec': {
-          const kvs = []
-          for (let i = 0; i < ex.args.length / 2; i++) {
-            const key = ex.args[2 * i]
-            if (key && key.kind === 'str') {
-              const value = chalkQuintEx(ex.args[2 * i + 1])
-              kvs.push(`${chalk.green(key.value)}: ${value}`)
-            }
-          }
-          return `{ ${kvs.join(', ')} }`
-        }
-
-        default:
-          // instead of throwing, show it in red
-          return chalk.red(`unsupported operator: ${ex.opcode}(...)`)
-      }
-
-    default:
-      return chalk.red(`unsupported operator: ${ex.kind}`)
-  }
-}
-
 // Declarations that are overloaded by the simulator.
 // In the future, we will declare them in a separate module.
 const simulatorBuiltins =
@@ -492,7 +428,8 @@ ${textToAdd}
     const moduleText = prepareParserInput(`  action __input =\n${newInput}`)
     // compile the expression or definition and evaluate it
     const context =
-      compileFromCode(state.idGen, moduleText, '__repl__', () => Math.random())
+      compileFromCode(state.idGen,
+        moduleText, '__repl__', noExecutionListener, () => Math.random())
     if (context.syntaxErrors.length > 0 ||
         context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
       printErrors(moduleText, context)
@@ -544,7 +481,8 @@ ${textToAdd}
     const moduleText = prepareParserInput(newInput)
     // compile the module and add it to history if everything worked
     const context =
-      compileFromCode(state.idGen, moduleText, '__repl__', () => Math.random())
+      compileFromCode(state.idGen,
+        moduleText, '__repl__', noExecutionListener, () => Math.random())
     if (context.values.size === 0 ||
         context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
       printErrors(moduleText, context)

@@ -281,32 +281,29 @@ quint run --init=Init --step=Next --seed=abcde --max-steps=4 \
 <!-- !test out run finds violation -->
 ```
 An example execution:
----------------------------------------------
-action step0 = all {
-  n' = 1,
-}
 
-action step1 = all {
-  n' = 2,
-}
+[State 0]
+ n: 1
+────────────────────────────────────────────────────────────────────────────────
 
-action step2 = all {
-  n' = 3,
-}
+[State 1]
+ n: 2
+────────────────────────────────────────────────────────────────────────────────
 
-action step3 = all {
-  n' = 6,
-}
+[State 2]
+ n: 3
+────────────────────────────────────────────────────────────────────────────────
 
-action step4 = all {
-  n' = 12,
-}
+[State 3]
+ n: 6
+────────────────────────────────────────────────────────────────────────────────
 
-run test = {
-  step0.then(step1).then(step2).then(step3).then(step4)
-}
----------------------------------------------
-[nok] Found a violation (duration).
+[State 4]
+ n: 12
+────────────────────────────────────────────────────────────────────────────────
+
+[violation] Found an issue (duration).
+Use --verbosity to produce more (or less) output.
 ```
 
 ### Run finds an example
@@ -324,33 +321,30 @@ quint run --init=Init --step=Next --seed=abcde --max-steps=4 \
 <!-- !test out run finds example -->
 ```
 An example execution:
----------------------------------------------
-action step0 = all {
-  n' = 1,
-}
 
-action step1 = all {
-  n' = 2,
-}
+[State 0]
+ n: 1
+────────────────────────────────────────────────────────────────────────────────
 
-action step2 = all {
-  n' = 3,
-}
+[State 1]
+ n: 2
+────────────────────────────────────────────────────────────────────────────────
 
-action step3 = all {
-  n' = 4,
-}
+[State 2]
+ n: 3
+────────────────────────────────────────────────────────────────────────────────
 
-action step4 = all {
-  n' = 2,
-}
+[State 3]
+ n: 4
+────────────────────────────────────────────────────────────────────────────────
 
-run test = {
-  step0.then(step1).then(step2).then(step3).then(step4)
-}
----------------------------------------------
+[State 4]
+ n: 2
+────────────────────────────────────────────────────────────────────────────────
+
 [ok] No violation found (duration).
 You may increase --max-samples and --max-steps.
+Use --verbosity to produce more (or less) output.
 ```
 
 ### Repl evaluates coin
@@ -382,7 +376,7 @@ The command `run` finds an overflow in Coin.
 
 <!-- !test in run finds overflow -->
 ```
-quint run --max-steps=5 --seed=123 --invariant=totalSupplyDoesNotOverflowInv \
+quint run --max-steps=5 --seed=12 --invariant=totalSupplyDoesNotOverflowInv \
   ../examples/solidity/Coin/coin.qnt 2>&1 | \
   sed 's/([0-9]*ms)/(duration)/g' | \
   sed 's#^.*counters.qnt#      HOME/coin.qnt#g'
@@ -391,22 +385,83 @@ quint run --max-steps=5 --seed=123 --invariant=totalSupplyDoesNotOverflowInv \
 <!-- !test out run finds overflow -->
 ```
 An example execution:
----------------------------------------------
-action step0 = all {
-  minter' = "alice",
-  balances' = Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0),
-}
 
-action step1 = all {
-  minter' = "alice",
-  balances' = Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 60111170443858436966126692514148478804869009443507772171903863504622757871616),
-}
+[State 0]
+ minter: "null"
+ balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0)
+────────────────────────────────────────────────────────────────────────────────
 
-run test = {
-  step0.then(step1)
-}
----------------------------------------------
-[nok] Found a violation (duration).
+[State 1]
+ minter: "null"
+ balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 79724149679233970751606042021871459804676944172294020221997378231441129734144)
+────────────────────────────────────────────────────────────────────────────────
+
+[State 2]
+ minter: "null"
+ balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 112817691068065462651698786821247929788486899638158978042098855089169166761984, "eve" -> 0, "null" -> 79724149679233970751606042021871459804676944172294020221997378231441129734144)
+────────────────────────────────────────────────────────────────────────────────
+
+[violation] Found an issue (duration).
+Use --verbosity to produce more (or less) output.
+```
+
+### Run shows the operator calls
+
+The command `run` finds an overflow in Coin and shows the operator calls.
+
+<!-- !test in run shows calls -->
+```
+quint run --max-steps=5 --seed=12 --invariant=totalSupplyDoesNotOverflowInv \
+  --verbosity=3 \
+  ../examples/solidity/Coin/coin.qnt 2>&1 | \
+  sed 's/([0-9]*ms)/(duration)/g' | \
+  sed 's#^.*counters.qnt#      HOME/coin.qnt#g'
+```
+
+<!-- !test out run shows calls -->
+```
+An example execution:
+
+[Frame 0]
+ q::init() => true
+ └─ q::inv() => true
+    └─ isUInt(0) => true
+
+[State 0]
+ minter: "null"
+ balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0)
+────────────────────────────────────────────────────────────────────────────────
+
+[Frame 1]
+ q::step() => true
+ ├─ mint("null", "null", 79724149679233970751606042021871459804676944172294020221997378231441129734144) => true
+ │  ├─ require(true) => true
+ │  └─ require(true) => true
+ │     └─ isUInt(79724149679233970751606042021871459804676944172294020221997378231441129734144) => true
+ └─ q::inv() => true
+    └─ isUInt(79724149679233970751606042021871459804676944172294020221997378231441129734144) => true
+
+[State 1]
+ minter: "null"
+ balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 79724149679233970751606042021871459804676944172294020221997378231441129734144)
+────────────────────────────────────────────────────────────────────────────────
+
+[Frame 2]
+ q::step() => true
+ ├─ mint("null", "charlie", 112817691068065462651698786821247929788486899638158978042098855089169166761984) => true
+ │  ├─ require(true) => true
+ │  └─ require(true) => true
+ │     └─ isUInt(112817691068065462651698786821247929788486899638158978042098855089169166761984) => true
+ └─ q::inv() => true
+    └─ isUInt(192541840747299433403304828843119389593163843810452998264096233320610296496128) => false
+
+[State 2]
+ minter: "null"
+ balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 112817691068065462651698786821247929788486899638158978042098855089169166761984, "eve" -> 0, "null" -> 79724149679233970751606042021871459804676944172294020221997378231441129734144)
+────────────────────────────────────────────────────────────────────────────────
+
+[violation] Found an issue (duration).
+Use --verbosity to produce more (or less) output.
 ```
 
 ### Run outputs ITF
