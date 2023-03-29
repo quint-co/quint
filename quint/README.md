@@ -8,7 +8,7 @@ with [the Quint specification language](https://github.com/informalsystems/quint
 Install the [latest published version from npm](https://www.npmjs.com/package/@informalsystems/quint):
 
 ``` sh
-npm i @informalsystems/quint
+npm i @informalsystems/quint -g
 ```
 
 ## How to run
