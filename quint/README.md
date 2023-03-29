@@ -3,6 +3,10 @@
 This directory contains the `quint` CLI providing powerful tools for working
 with [the Quint specification language](https://github.com/informalsystems/quint).
 
+## Dependencies
+
+- Node.js >= 14
+
 ## Installation
 
 Install the [latest published version from npm](https://www.npmjs.com/package/@informalsystems/quint):
