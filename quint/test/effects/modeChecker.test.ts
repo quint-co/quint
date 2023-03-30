@@ -170,11 +170,23 @@ describe('checkModes', () => {
 
     assert.sameDeepMembers([...errors.entries()], [
       [7n, {
-        message: "Instance overrides must be pure values, but the value for c reads variables 'x'",
+        message: "Instance overrides must be pure, but the value for c reads variables 'x'",
         code: 'QNT201',
         data: {},
       }],
     ])
+  })
+
+  it('allows operators as override values', () => {
+    const defs = ([
+      'const A1::c : (int) => int', // avoid having to simulate imports in this test
+      'def f(p) = p + 1',
+      'import A(c = f) as A1',
+    ])
+
+    const [errors, _suggestions] = checkMockedDefs(defs)
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
   })
 
   it('finds errors in nested definitions', () => {
