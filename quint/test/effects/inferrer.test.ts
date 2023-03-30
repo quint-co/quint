@@ -120,12 +120,12 @@ describe('inferEffects', () => {
   it('infers arrow effect for operator constants', () => {
     const defs = ([
       'const MyOp: int => int',
-      'val b = MyOp(1)',
+      'val b = MyOp(x)',
     ])
 
     const [errors, effects] = inferEffectsForDefs(defs)
 
-    const expectedEffect = 'Pure'
+    const expectedEffect = "Read['x']"
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(effectForDef(defs, effects, 'b'), expectedEffect)

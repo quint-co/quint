@@ -21,7 +21,7 @@ import { QuintApp, QuintBool, QuintConst, QuintEx, QuintInt, QuintLambda, QuintL
 import { Effect, EffectScheme, Signature, effectNames, toScheme, unify } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
-import { getSignatures } from './builtinSignatures'
+import { getSignatures, standardPropagation } from './builtinSignatures'
 import { FreshVarGenerator } from '../FreshVarGenerator'
 import { effectToString } from './printing'
 import { zip } from 'lodash'
@@ -78,9 +78,7 @@ export class EffectInferrer implements IRVisitor {
 
     if (def.typeAnnotation.kind === 'oper') {
       // Operators need to have arrow effects of proper arity
-      const params = def.typeAnnotation.args.map(_ => pureEffect)
-      const effect: Effect = { kind: 'arrow', params: params, result: pureEffect }
-      this.addToResults(def.id, right(toScheme(effect)))
+      this.addToResults(def.id, right(standardPropagation(def.typeAnnotation.args.length)))
       return
     }
 
