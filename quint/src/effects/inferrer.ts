@@ -74,8 +74,17 @@ export class EffectInferrer implements IRVisitor {
    *       Γ ⊢ c: Pure
    */
   exitConst(def: QuintConst) {
-    const effect: Effect = { kind: 'concrete', components: [] }
-    this.addToResults(def.id, right(toScheme(effect)))
+    const pureEffect: Effect = { kind: 'concrete', components: [] }
+
+    if (def.typeAnnotation.kind === 'oper') {
+      // Operators need to have arrow effects of proper arity
+      const params = def.typeAnnotation.args.map(_ => pureEffect)
+      const effect: Effect = { kind: 'arrow', params: params, result: pureEffect }
+      this.addToResults(def.id, right(toScheme(effect)))
+      return
+    }
+
+    this.addToResults(def.id, right(toScheme(pureEffect)))
   }
 
   /*  { kind: 'var', identifier: v } ∈ Γ
