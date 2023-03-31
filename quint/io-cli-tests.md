@@ -261,8 +261,40 @@ quint test --main counters --seed 1 \
   1) failingTest:
       HOME/counters.qnt:84:9 - error: Assertion failed
       84:         assert(n == 0),
-                  ^^^^^^^^^^^^^^
-      
+
+
+  Use --verbosity=3 to show executions.
+```
+
+### test counters produces no execution
+
+`test` should handle the special case of when an execution has not been
+recorded yet.
+
+<!-- !test in test empty trace -->
+```
+quint test --seed 1 --verbosity=3 \
+  ../examples/language-features/counters.qnt 2>&1 | \
+  sed 's/([0-9]*ms)/(duration)/g' | \
+  sed 's#^.*counters.qnt#      HOME/counters.qnt#g'
+```
+
+<!-- !test out test empty trace -->
+```
+
+  counters
+    ok passingTest
+    1) failingTest
+
+  1 passing (duration)
+  1 failed
+  1 ignored
+
+  1) failingTest:
+      HOME/counters.qnt:84:9 - error: Assertion failed
+      84:         assert(n == 0),
+
+    [No execution]
 
 ```
 
@@ -415,7 +447,7 @@ quint run --max-steps=5 --seed=12 --invariant=totalSupplyDoesNotOverflowInv \
   --verbosity=3 \
   ../examples/solidity/Coin/coin.qnt 2>&1 | \
   sed 's/([0-9]*ms)/(duration)/g' | \
-  sed 's#^.*counters.qnt#      HOME/coin.qnt#g'
+  sed 's#^.*coin.qnt#      HOME/coin.qnt#g'
 ```
 
 <!-- !test out run shows calls -->
@@ -493,3 +525,51 @@ quint -q -r \
   ../tutorials/repl/kettle.qnt::kettle <../tutorials/repl/replTestIn.txt \
     | diff - ../tutorials/repl/replTestOut.txt
 ```
+
+### test --verbosity=3 outputs a trace
+
+<!-- !test in verbose test -->
+```
+quint test --seed=3 --verbosity=3 ../examples/solidity/Coin/coin.qnt | \
+  sed 's/([0-9]*ms)/(duration)/g' | \
+  sed 's#^.*coin.qnt#      HOME/coin.qnt#g'
+```
+
+<!-- !test out verbose test -->
+```
+
+  coin
+    ok sendWithoutMintTest
+    ok mintSendTest
+    1) mintTwiceThenSendTest
+
+  2 passing (duration)
+  1 failed
+
+  1) mintTwiceThenSendTest:
+      HOME/coin.qnt:176:5 - error: mintTwiceThenSendTest returns false
+      176:     run mintTwiceThenSendTest = {
+
+    [Frame 0]
+    mint("bob", "eve", 56121584374285688102497324576666468201644004471271061085874530776005052727296) => true
+    ├─ require(true) => true
+    └─ require(true) => true
+       └─ isUInt(56121584374285688102497324576666468201644004471271061085874530776005052727296) => true
+
+    [Frame 1]
+    mint("bob", "bob", 91422284371118026738799750509327856254566108764693012790426204149329833230336) => true
+    ├─ require(true) => true
+    └─ require(true) => true
+       └─ isUInt(91422284371118026738799750509327856254566108764693012790426204149329833230336) => true
+
+    [Frame 2]
+    send("eve", "bob", 33099102730177003576396430532542752743476829614253756677426469153216965640192) => false
+    ├─ require(true) => true
+    ├─ require(true) => true
+    │  └─ isUInt(23022481644108684526100894044123715458167174857017304408448061622788087087104) => true
+    └─ require(false) => false
+       └─ isUInt(124521387101295030315196181041870608998042938378946769467852673302546798870528) => false
+
+
+```
+

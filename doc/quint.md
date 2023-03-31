@@ -212,13 +212,14 @@ quint test <input>
 Run tests against a Quint specification
 
 Options:
-  --help     Show help                                                 [boolean]
-  --version  Show version number                                       [boolean]
-  --main     name of the main module (by default, computed from filename)
+  --help       Show help                                               [boolean]
+  --version    Show version number                                     [boolean]
+  --main       name of the main module (by default, computed from filename)
                                                                         [string]
-  --out      output file (suppresses all console output)                [string]
-  --seed     random seed to use for non-deterministic choice            [string]
-  --match    a string or regex that selects names to use as tests       [string]
+  --out        output file (suppresses all console output)              [string]
+  --seed       random seed to use for non-deterministic choice          [string]
+  --verbosity  control how much output is produced (0 to 5)[number] [default: 2]
+  --match      a string or regex that selects names to use as tests     [string]
 ```
 
  - If there are no critical errors (e.g., in parsing, typechecking, etc.), the

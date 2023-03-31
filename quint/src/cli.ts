@@ -88,6 +88,11 @@ const testCmd = {
         desc: 'random seed to use for non-deterministic choice',
         type: 'string',
       })
+      .option('verbosity', {
+        desc: 'control how much output is produced (0 to 5)',
+        type: 'number',
+      })
+      .default('verbosity', 2)
 // Timeouts are postponed for:
 // https://github.com/informalsystems/quint/issues/633
 //
