@@ -562,22 +562,6 @@ pure val l = List(1, 2, 3, 4).foldl(List(), (l, e) => l.append(e))
 assert(l == List(1, 2, 3, 4))
 ```
 
-## `pure def foldr: (List[a], b, (a, b) => b) => b`
-
-`l.foldr(z, f)` reduces the elements in `s` using `f`,
-starting with `z` from the right.
-
-I.e., `f(x0, f(x1, ... f(xn, z))`.
-
-### Examples
-
-```
-pure val sum = List(1, 2, 3, 4).foldr(0, (x, y) => x + y)
-assert(sum == 10)
-pure val l = List(1, 2, 3, 4).foldr(List(), (e, l) => l.append(e))
-assert(l == List(4, 3, 2, 1))
-```
-
 ## `pure def iadd: (int, int) => int`
 
 `a.iadd(b)` is the integer addition of `a` and `b`.

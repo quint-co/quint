@@ -24,6 +24,13 @@ export const verbosity = {
   },
 
   /**
+   * Shall the tool output details about failing tests.
+   */
+  hasTestDetails: (level: number): boolean => {
+    return level >= 2
+  },
+
+  /**
    * Shall the tool write hints, e.g., how to change settings.
    */
   hasHints: (level: number): boolean => {

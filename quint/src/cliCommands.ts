@@ -29,11 +29,11 @@ import { formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintAnalyzer } from './quintAnalyzer'
 import { QuintError, quintErrorToString } from './quintError'
-import { compileAndTest } from './runtime/testing'
+import { TestOptions, TestResult, compileAndTest } from './runtime/testing'
 import { newIdGenerator } from './idGenerator'
 import { SimulatorOptions, compileAndRun } from './simulation'
 import { toItf } from './itf'
-import { printTrace } from './graphics'
+import { printTrace, printExecutionFrameRec } from './graphics'
 import { verbosity } from './verbosity'
 
 export type stage =
@@ -260,13 +260,8 @@ export function runRepl(_argv: any) {
  * @param typedStage the procedure stage produced by `typecheck`
  */
 export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
-  // output to the console, unless the json output is enabled
-  const isConsole = !prev.args.out
-  function out(text: string): void {
-    if (isConsole) {
-      console.log(text)
-    }
-  }
+  const verbosityLevel = !prev.args.out ? prev.args.verbosity : 0
+  const out = console.log
 
   const testing = { ...prev, stage: 'testing' as stage }
   const mainArg = prev.args.main
@@ -281,69 +276,95 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
     let passed: string[] = []
     let failed: string[] = []
     let ignored: string[] = []
-    let namedErrors: [string, ErrorMessage][] = []
+    let namedErrors: [string, ErrorMessage, TestResult][] = []
 
     const startMs = Date.now()
-    out(`\n  ${mainName}`)
+    if (verbosity.hasResults(verbosityLevel)) {
+      out(`\n  ${mainName}`)
+    }
 
     const matchFun =
       (n: string): boolean => isMatchingTest(prev.args.match, n)
 
+    const options: TestOptions = {
+      testMatch: (n: string) => { return isMatchingTest(prev.args.match, n) },
+      rand: mkRng(prev.args.seed),
+      verbosity: verbosityLevel,
+    }
     const testOut =
-      compileAndTest(prev.modules, main, prev.sourceMap,
-                     prev.table, prev.types, matchFun, mkRng(prev.args.seed))
+      compileAndTest(prev.modules, main,
+                     prev.sourceMap, prev.table, prev.types, options)
     if (testOut.isRight()) {
       const elapsedMs = Date.now() - startMs
       const results = testOut.unwrap()
       // output the status for every test
-      results.forEach(res => {
-        if (res.status === 'passed') {
-          out('    ' + chalk.green('ok ') + res.name)
-        }
-        if (res.status === 'failed') {
-          const errNo = namedErrors.length + 1
-          out('    ' + chalk.red(`${errNo}) `)  + res.name)
+      if (verbosity.hasResults(verbosityLevel)) {
+        results.forEach(res => {
+          if (res.status === 'passed') {
+            out('    ' + chalk.green('ok ') + res.name)
+          }
+          if (res.status === 'failed') {
+            const errNo = namedErrors.length + 1
+            out('    ' + chalk.red(`${errNo}) `)  + res.name)
 
-          res.errors.forEach(e => namedErrors.push([res.name, e]))
-        }
-      })
+            res.errors.forEach(e => namedErrors.push([res.name, e, res]))
+          }
+        })
+      }
+
+      passed = results.filter(r => r.status === 'passed').map(r => r.name)
+      failed = results.filter(r => r.status === 'failed').map(r => r.name)
+      ignored = results.filter(r => r.status === 'ignored').map(r => r.name)
 
       // output the statistics banner
-      const passed = results.filter(r => r.status === 'passed').map(r => r.name)
-      const failed = results.filter(r => r.status === 'failed').map(r => r.name)
-      const ignored = results.filter(r => r.status === 'ignored').map(r => r.name)
-      out('')
-      if (passed.length > 0) {
-        out(chalk.green(`  ${passed.length} passing`) +
-                    chalk.gray(` (${elapsedMs}ms)`))
-      }
-      if (failed.length > 0) {
-        out(chalk.red(`  ${failed.length} failed`))
-      }
-      if (ignored.length > 0) {
-        out(chalk.gray(`  ${ignored.length} ignored`))
+      if (verbosity.hasResults(verbosityLevel)) {
+        out('')
+        if (passed.length > 0) {
+          out(chalk.green(`  ${passed.length} passing`) +
+                      chalk.gray(` (${elapsedMs}ms)`))
+        }
+        if (failed.length > 0) {
+          out(chalk.red(`  ${failed.length} failed`))
+        }
+        if (ignored.length > 0) {
+          out(chalk.gray(`  ${ignored.length} ignored`))
+        }
       }
 
       // output errors, if there are any
-      if (isConsole && namedErrors.length > 0) {
+      if (verbosity.hasTestDetails(verbosityLevel) && namedErrors.length > 0) {
         const code = prev.sourceCode!
         const finder = lineColumn(code)
         out('')
-        namedErrors.forEach(([name, err], index) => {
+        namedErrors.forEach(([name, err, testResult], index) => {
           const details = formatError(code, finder, err)
           // output the header
           out(`  ${index + 1}) ${name}:`)
           const lines = details.split('\n')
-          // output the first line in red
-          if (lines.length > 0) {
-            out(chalk.red('      ' + lines[0]))
+          // output the first two lines in red
+          lines.slice(0, 2).forEach(l =>
+            out(chalk.red('      ' + l))
+          )
+
+          if (verbosity.hasActionTracking(verbosityLevel)) {
+            out('')
+            testResult.frames.forEach((f, index) => {
+              out(`    [Frame ${index}]`)
+              printExecutionFrameRec(l => out('    ' + l), f, [])
+              out('')
+            })
+
+            if (testResult.frames.length == 0) {
+              out('    [No execution]')
+            }
           }
-          // and the rest in gray
-          lines.slice(1).forEach(line => {
-            out(chalk.gray('      ' + line))
-          })
         })
         out('')
+      }
+
+      if (failed.length > 0 && verbosity.hasHints(options.verbosity)
+          && !verbosity.hasActionTracking(options.verbosity)) {
+        out(chalk.gray('\n  Use --verbosity=3 to show executions.'))
       }
     } // else: we have handled the case of module not found already
 
@@ -382,7 +403,6 @@ export function runSimulator(prev: TypecheckedStage):
         prev.errors ? prev.errors.concat(result.errors) : result.errors
       return cliErr('run failed', { ...simulator, errors })
   } else {
-      const isConsole = !prev.args.out && !prev.args.outItf
       if (verbosity.hasResults(verbosityLevel)) {
         const elapsedMs = Date.now() - startMs
         if (verbosity.hasStateOutput(options.verbosity)) {

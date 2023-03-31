@@ -650,9 +650,12 @@ module trees {
       hashMap.put(key, h)
     }
     // go over the nodes from max to min
-    1.range(2^height + 1)
-      .foldr(Map(),
-        (key, m) => if (isNode(t, key)) putNodeHash(m, key) else m)
+    val maxNode = 2^height
+    0.range(2^height)
+      .foldl(Map(),
+        (m, key) =>
+          if (isNode(t, maxNode - key)) putNodeHash(m, maxNode - key) else m
+    )
   }
 
   /// It's very easy to produce binary trees by picking an arbitrary graph and
