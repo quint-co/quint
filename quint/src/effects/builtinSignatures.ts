@@ -115,7 +115,7 @@ function propagationWithLambda(kinds: ComponentKind[]): ((arity: number) => Effe
   }
 }
 
-const standardPropagation = propagateComponents(['read', 'temporal'])
+export const standardPropagation = propagateComponents(['read', 'temporal'])
 
 const literals = ['Nat', 'Int', 'Bool'].map(name => ({ name, effect: toScheme({ kind: 'concrete', components: [] }) }))
 const booleanOperators = [

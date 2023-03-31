@@ -104,7 +104,7 @@ describe('inferEffects', () => {
     assert.deepEqual(effectForDef(defs, effects, 'b'), expectedEffect)
   })
 
-  it('infers pure effect for literals and constants', () => {
+  it('infers pure effect for literals and value constants', () => {
     const defs = ([
       'val b = N + 1',
     ])
@@ -112,6 +112,20 @@ describe('inferEffects', () => {
     const [errors, effects] = inferEffectsForDefs(defs)
 
     const expectedEffect = 'Pure'
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectForDef(defs, effects, 'b'), expectedEffect)
+  })
+
+  it('infers arrow effect for operator constants', () => {
+    const defs = ([
+      'const MyOp: int => int',
+      'val b = MyOp(x)',
+    ])
+
+    const [errors, effects] = inferEffectsForDefs(defs)
+
+    const expectedEffect = "Read['x']"
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
     assert.deepEqual(effectForDef(defs, effects, 'b'), expectedEffect)

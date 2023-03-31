@@ -1,3 +1,4 @@
+
 This is a suite of blackbox integration tests for the `quint` executable.
 The tests in this file check that particular output is produced when
 particular input is received.
@@ -157,7 +158,7 @@ Trying to unify bool and int
 8:   import A(c = 1) as A1
                   ^
 
-./testFixture/typechecking/OverrideErrors.qnt:9:16 - error: [QNT201] Instance overrides must be pure values, but the value for c reads variables 'x'
+./testFixture/typechecking/OverrideErrors.qnt:9:16 - error: [QNT201] Instance overrides must be pure, but the value for c reads variables 'x'
 9:   import A(c = x) as A2
                   ^
 
@@ -572,4 +573,3 @@ quint test --seed=3 --verbosity=3 ../examples/solidity/Coin/coin.qnt | \
 
 
 ```
-
