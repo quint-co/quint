@@ -1502,10 +1502,6 @@ l.select(e => P)
 // but you can define it with a recursive operator.
 l.foldl(init, ((accumulator, v) => e))
 foldl(l, init, ((accumulator, v) => e))
-// Right fold. There is no standard operator for that in TLA+,
-// but you can define it with a recursive operator.
-l.foldr(init, ((v, accumulator) => e))
-foldr(l, init, ((v, accumulator) => e))
 ```
 
 *Mode:* Stateless, State. Other modes are not allowed.
