@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Effects no longer break when applying constant operators (#759)
+- Number highlighting in vim (#765)
 
 ### Security
 

@@ -29,7 +29,7 @@ syn region quintComment start="/\*" end="\*/" fold
 syn match quintIdent "[a-zA-Z_][a-zA-Z0-9_]*"
 
 " numbers and strings
-syn match quintNumber '-\?\(0x[0-9a-fA-F]\([0-9a-fA-F]\|_[0-9a-fA-F]\)*\|0\|[1-9]([0-9]\|_[0-9])*\)'
+syn match quintNumber '-\?\(0x[0-9a-fA-F]\([0-9a-fA-F]\|_[0-9a-fA-F]\)*\|0\|[1-9]\([0-9]\|_[0-9]\)*\)'
 syn region quintString start='"' end='"'
 
 " types
