@@ -38,7 +38,7 @@ const withIO = async(inputText: string): Promise<string> => {
   // whatever is written on the input goes to the output
   input.pipe(output)
 
-  const rl = quintRepl(input, output, {}, () => {})
+  const rl = quintRepl(input, output, { verbosity: 2 }, () => {})
 
   // Emit the input line-by-line, as nodejs is printing prompts.
   // TODO: is it a potential source of race conditions in unit tests?
@@ -213,14 +213,38 @@ describe('repl ok', () => {
       |>>> .clear
       |
       |>>> n * n
-      |syntax error: error: Failed to resolve name n in definition for __input, in module __repl__
+      |syntax error: error: Failed to resolve name n in definition for q::input, in module __repl__
       |n * n
       |^
       |
-      |syntax error: error: Failed to resolve name n in definition for __input, in module __repl__
+      |syntax error: error: Failed to resolve name n in definition for q::input, in module __repl__
       |n * n
       |    ^
       |
+      |
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('change verbosity and track executions', async() => {
+    const input = dedent(
+      `pure def plus(x, y) = x + y
+      |.verbosity=4
+      |plus(2, 3)
+      |`
+    )
+    const output = dedent(
+      `>>> pure def plus(x, y) = x + y
+      |
+      |>>> .verbosity=4
+      |.verbosity=4
+      |>>> plus(2, 3)
+      |5
+      |
+      | [Frame 0]
+      | q::input() => 5
+      | └─ plus(2, 3) => 5
       |
       |>>> `
     )
@@ -457,19 +481,19 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('run _test, _testOnce, and _lastTrace', async() => {
+  it('run q::test, q::testOnce, and q::lastTrace', async() => {
     const input = dedent(
       `
       |var n: int
       |action Init = n' = 0
       |action Next = n' = n + 1
       |val Inv = n < 10
-      |_testOnce(5, Init, Next, Inv)
-      |_testOnce(10, Init, Next, Inv)
-      |_test(5, 5, Init, Next, Inv)
-      |_test(5, 10, Init, Next, Inv)
-      |_lastTrace.length()
-      |_lastTrace.nth(_lastTrace.length() - 1)
+      |q::testOnce(5, Init, Next, Inv)
+      |q::testOnce(10, Init, Next, Inv)
+      |q::test(5, 5, Init, Next, Inv)
+      |q::test(5, 10, Init, Next, Inv)
+      |q::lastTrace.length()
+      |q::lastTrace.nth(q::lastTrace.length() - 1)
       |`
     )
     const output = dedent(
@@ -482,17 +506,17 @@ describe('repl ok', () => {
       |
       |>>> val Inv = n < 10
       |
-      |>>> _testOnce(5, Init, Next, Inv)
+      |>>> q::testOnce(5, Init, Next, Inv)
       |true
-      |>>> _testOnce(10, Init, Next, Inv)
+      |>>> q::testOnce(10, Init, Next, Inv)
       |false
-      |>>> _test(5, 5, Init, Next, Inv)
+      |>>> q::test(5, 5, Init, Next, Inv)
       |true
-      |>>> _test(5, 10, Init, Next, Inv)
+      |>>> q::test(5, 10, Init, Next, Inv)
       |false
-      |>>> _lastTrace.length()
+      |>>> q::lastTrace.length()
       |11
-      |>>> _lastTrace.nth(_lastTrace.length() - 1)
+      |>>> q::lastTrace.nth(q::lastTrace.length() - 1)
       |{ n: 10 }
       |>>> `
     )

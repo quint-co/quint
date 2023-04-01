@@ -27,7 +27,7 @@ import { flatten } from '../flattening'
 /**
  * The name of the shadow variable that stores the last found trace.
  */
-export const lastTraceName = '_lastTrace'
+export const lastTraceName = 'q::lastTrace'
 
 /**
  * A compilation context returned by 'compile'.

@@ -91,12 +91,12 @@ module __run__ {
   import ${mainName}.*
 
   val ${lastTraceName} = [];
-  def _test(__nrunsArg, __nstepsArg, __initArg, __nextArg, __invArg) = false;
-  action __init = { ${o.init} }
-  action __step = { ${o.step} }
-  val __inv = { ${o.invariant} }
-  val __runResult =
-    _test(${o.maxSamples}, ${o.maxSteps}, __init, __step, __inv)
+  def q::test(q::nrunsArg, q::nstepsArg, q::initArg, q::nextArg, q::invArg) = false;
+  action q::init = { ${o.init} }
+  action q::step = { ${o.step} }
+  val q::inv = { ${o.invariant} }
+  val q::runResult =
+    q::test(${o.maxSamples}, ${o.maxSteps}, q::init, q::step, q::inv)
 }
 `
 
@@ -113,9 +113,9 @@ module __run__ {
         .concat(ctx.compileErrors)
     return errSimulationResult('error', errors)
   } else {
-    // evaluate __runResult, which triggers the simulator
+    // evaluate q::runResult, which triggers the simulator
     const res: Either<string, Computable> =
-      contextNameLookup(ctx, '__runResult', 'callable')
+      contextNameLookup(ctx, 'q::runResult', 'callable')
     if (res.isLeft()) {
       const errors = [{ explanation: res.value, locs: [] }] as ErrorMessage[]
       return errSimulationResult('error', errors)

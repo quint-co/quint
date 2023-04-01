@@ -19,7 +19,7 @@ const idGen = newIdGenerator()
 // Compile an expression, evaluate it, convert to QuintEx, then to a string,
 // compare the result. This is the easiest path to test the results.
 function assertResultAsString(input: string, expected: string | undefined) {
-  const moduleText = `module __runtime { val __input = ${input} }`
+  const moduleText = `module __runtime { val q::input = ${input} }`
   const context =
     compileFromCode(idGen,
       moduleText, '__runtime', noExecutionListener, () => Math.random())
@@ -27,7 +27,7 @@ function assertResultAsString(input: string, expected: string | undefined) {
   assert.isEmpty(context.syntaxErrors, `Syntax errors: ${context.syntaxErrors.map(e => e.explanation).join(', ')}`)
   assert.isEmpty(context.compileErrors, `Compile errors: ${context.compileErrors.map(e => e.explanation).join(', ')}`)
 
-  contextNameLookup(context, '__input', 'callable')
+  contextNameLookup(context, 'q::input', 'callable')
     .mapLeft(msg => assert(false, `Unexpected error: ${msg}`))
     .mapRight(value => {
       const result = value.eval()

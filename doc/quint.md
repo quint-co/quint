@@ -51,6 +51,8 @@ Options:
       --version  Show version number                                   [boolean]
   -r, --require  filename[::module]. Preload the file and, optionally, import
                  the module                                             [string]
+      --verbosity  control how much output is produced (0 to 5)
+                                                           [number] [default: 2]
 ```
 
 ```sh
@@ -59,6 +61,9 @@ quint repl
 
 The REPL is especially useful for learning the language. See the
 [repl](./repl.md) documentation for more details.
+
+The verbosity levels 3 and 4 are used to show execution details. They are
+especially useful for debugging complex specifications.
 
 ## Command `parse`
 

@@ -28,7 +28,7 @@
 // >>> _test(1000, 10, "Init", "Next", "TestNonMem")
 //
 // If REPL displays 'false', it has found an example,
-// which can be inspected with _lastTrace.
+// which can be inspected with q::lastTrace.
 //
 // 3. To execute advanced PBT-like tests for 1000 runs in REPL,
 // type the following:
@@ -39,7 +39,7 @@
 // >>> _test(1000, 1, "Init", "Next", "MemInv")
 //
 // If REPL displays 'false', it has found an example,
-// which can be inspected with _lastTrace. We expect these tests to
+// which can be inspected with q::lastTrace. We expect these tests to
 // always return 'true'. Otherwise, this indicates an invariant violation.
 //
 // Igor Konnov, Informal Systems, 2022

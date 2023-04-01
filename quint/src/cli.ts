@@ -16,6 +16,8 @@ import {
   docs, load, outputResult, parse, runRepl, runSimulator, runTests, typecheck
 } from './cliCommands'
 
+import { verbosity } from './verbosity'
+
 // construct parsing commands with yargs
 const parseCmd = {
   command: 'parse <input>',
@@ -40,7 +42,7 @@ const parseCmd = {
 // construct typecheck commands with yargs
 const typecheckCmd = {
   command: 'typecheck <input>',
-  desc: 'check types (TBD) and effects of a Quint specification',
+  desc: 'check types and effects of a Quint specification',
   builder: (yargs: any) =>
     yargs
       .option('out', {
@@ -62,11 +64,16 @@ const replCmd = {
         type: 'string',
       })
       .option('quiet', {
-        desc: 'Disable banners and prompts, to simplify scripting',
+        desc: 'Disable banners and prompts, to simplify scripting (alias for --verbosity=0)',
         alias: 'q',
         type: 'boolean',
       })
-      .default('quiet', false),
+      .default('quiet', false)
+      .option('verbosity', {
+        desc: 'control how much output is produced (0 to 5)',
+        type: 'number',
+      })
+      .default('verbosity', verbosity.defaultLevel),
   handler: runRepl,
 }
 
@@ -92,7 +99,7 @@ const testCmd = {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
       })
-      .default('verbosity', 2)
+      .default('verbosity', verbosity.defaultLevel)
 // Timeouts are postponed for:
 // https://github.com/informalsystems/quint/issues/633
 //
@@ -159,7 +166,7 @@ const runCmd = {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
       })
-      .default('verbosity', 2),
+      .default('verbosity', verbosity.defaultLevel),
 // Timeouts are postponed for:
 // https://github.com/informalsystems/quint/issues/633
 //

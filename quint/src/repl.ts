@@ -12,7 +12,7 @@ import * as readline from 'readline'
 import { Readable, Writable } from 'stream'
 import { readFileSync, writeFileSync } from 'fs'
 import lineColumn from 'line-column'
-import { just, none } from '@sweet-monads/maybe'
+import { Maybe, just, none } from '@sweet-monads/maybe'
 import { left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
 
@@ -24,10 +24,11 @@ import { formatError } from './errorReporter'
 import {
   ComputableKind, EvalResult, Register, kindName
 } from './runtime/runtime'
-import { noExecutionListener } from './runtime/trace'
+import { noExecutionListener, newTraceRecorder } from './runtime/trace'
 import { ErrorMessage, probeParse } from './quintParserFrontend'
 import { IdGenerator, newIdGenerator } from './idGenerator'
-import { chalkQuintEx } from './graphics'
+import { chalkQuintEx, printExecutionFrameRec } from './graphics'
+import { verbosity } from './verbosity'
 
 // tunable settings
 export const settings = {
@@ -52,7 +53,9 @@ interface ReplState {
   // variables internal to the simulator and REPL
   shadowVars: Map<string, EvalResult>,
   // filename and module name that were loaded with .load filename module
-  lastLoadedFileAndModule: [string?, string?]
+  lastLoadedFileAndModule: [string?, string?],
+  // verbosity level
+  verbosityLevel: number
 }
 
 // The default exit terminates the process.
@@ -65,21 +68,23 @@ function defaultExit() {
 export interface ReplOptions {
   preloadFilename?: string,
   importModule?: string,
-  quiet?: boolean,
+  verbosity: number,
 }
 
 // the entry point to the REPL
 export function quintRepl(input: Readable,
                           output: Writable,
-                          options: ReplOptions = {},
+                          options: ReplOptions = {
+                            verbosity: verbosity.defaultLevel
+                          },
                           exit: () => void = defaultExit) {
   function out(text: string) {
     output.write(text + '\n')
   }
   function prompt(text: string) {
-    return options.quiet ? "" : text
+    return verbosity.hasReplPrompt(options.verbosity) ? text : ""
   }
-  if (!options.quiet) {
+  if (verbosity.hasReplBanners(options.verbosity)) {
     out(chalk.gray('Quint REPL v0.0.3'))
     out(chalk.gray('Type ".exit" to exit, or ".help" for more information'))
   }
@@ -99,6 +104,7 @@ export function quintRepl(input: Readable,
     vars: new Map<string, EvalResult>(),
     shadowVars: new Map<string, EvalResult>(),
     lastLoadedFileAndModule: [undefined, undefined],
+    verbosityLevel: options.verbosity,
   }
   // we let the user type a multiline string, which is collected here:
   let multilineText = ''
@@ -188,63 +194,97 @@ export function quintRepl(input: Readable,
 
   // the read-eval-print loop
   rl.on('line', (line) => {
-    const args = line.trim().split(/\s+/)
-    switch (args[0]) {
-      case '.help':
-        out('.clear\tClear the history')
-        out('.exit\tExit the REPL')
-        out('.help\tPrint this help message')
-        out('.load <filename> [<module>]\tClear the history,')
-        out('     \tload the code from a file into the REPL session')
-        out('     \tand optionally import all definitions from <module>')
-        out('.reload\tClear the history, load and (optionally) import the last loaded file.')
-        out('     \t^ a productivity hack')
-        out('.save <filename>\tSave the accumulated definitions to a file')
-        out('\nType an expression and press Enter to evaluate it.')
-        out('When the REPL switches to multiline mode "...", finish it with an empty line.')
-        out('\nPress Ctrl+C to abort current expression, Ctrl+D to exit the REPL')
-        break
+    const r = (s: string): string => { return chalk.red(s) }
+    const g = (s: string): string => { return chalk.gray(s) }
+    if (!line.startsWith('.')) {
+      // an input to evaluate
+      nextLine(line)
+    } else {
+      // a special command to REPL, extract the command name
+      const m = line.match(/^\s*\.(\w+)/)
+      if (m === null) {
+        out(r(`Unexpected command: ${line}`))
+        out(g(`Type .help to see the list of commands`))
+      } else {
+        switch (m[1]) {
+          case 'help':
+            out(`${r('.clear')}\tClear the history`)
+            out(`${r('.exit')}\tExit the REPL`)
+            out(`${r('.help')}\tPrint this help message`)
+            out(`${r('.load')} <filename> ${g('[<module>]')}\tClear the history,`)
+            out('     \tload the code from a file into the REPL session')
+            out('     \tand optionally import all definitions from <module>')
+            out(`${r('.reload')}\tClear the history, load and (optionally) import the last loaded file.`)
+            out('     \t^ a productivity hack')
+            out(`${r('.save')} <filename>\tSave the accumulated definitions to a file`)
+            out(`${r('.verbosity')}=[0-5]\tSet the output level (0 = quiet, 5 = very detailed).`)
+            out('\nType an expression and press Enter to evaluate it.')
+            out('When the REPL switches to multiline mode "...", finish it with an empty line.')
+            out('\nPress Ctrl+C to abort current expression, Ctrl+D to exit the REPL')
+            break
 
-      case '.exit':
-        exit()
-        break
+          case 'exit':
+            exit()
+            break
 
-      case '.clear':
-        out('') // be nice to external programs
-        clearHistory()
-        break
+          case 'clear':
+            out('') // be nice to external programs
+            clearHistory()
+            break
 
-      case '.load': {
-        const [filename, moduleName] = [args[1], args[2]]
-        if (!filename) {
-          out(chalk.red('.load requires a filename'))
-        } else {
-          load(filename, moduleName)
+          case 'load': {
+            const args = line.trim().split(/\s+/)
+            const [filename, moduleName] = [args[1], args[2]]
+            if (!filename) {
+              out(r('.load requires a filename'))
+            } else {
+              load(filename, moduleName)
+            }
+            rl.prompt()
+
+          }
+          break
+
+          case 'reload':
+            if (state.lastLoadedFileAndModule[0] !== undefined) {
+              load(state.lastLoadedFileAndModule[0], state.lastLoadedFileAndModule[1])
+            } else {
+              out(r('Nothing to reload. Use: .load filename [moduleName].'))
+            }
+            break
+
+          case 'save': {
+            const args = line.trim().split(/\s+/)
+            if (!args[1]) {
+              out(r('.save requires a filename'))
+            } else {
+              saveToFile(out, state, args[1])
+            }
+            rl.prompt()
+          }
+          break
+
+          case 'verbosity': {
+            // similar to yargs, accept: .verbosity n, .verbosity=n, .verbosity = n
+            const m = line.match(/^\.verbosity\s*=?\s*([0-5])$/)
+            if (m === null) {
+              out(r('.verbosity requires a level from 0 to 5'))
+            } else {
+              state.verbosityLevel = Number(m[1])
+              if (verbosity.hasReplPrompt(state.verbosityLevel)) {
+                out(g(`.verbosity=${state.verbosityLevel}`))
+              }
+              rl.setPrompt(prompt(settings.prompt))
+            }
+          }
+          break
+
+          default:
+            out(r(`Unexpected command: ${line}`))
+            out(g(`Type .help to see the list of commands`))
+            break
         }
-        rl.prompt()
-        break
       }
-
-      case '.reload':
-        if (state.lastLoadedFileAndModule[0] !== undefined) {
-          load(state.lastLoadedFileAndModule[0], state.lastLoadedFileAndModule[1])
-        } else {
-          out(chalk.red('Nothing to reload. Use: .load filename [moduleName].'))
-        }
-        break
-
-      case '.save':
-        if (!args[1]) {
-          out(chalk.red('.save requires a filename'))
-        } else {
-          saveToFile(out, state, args[1])
-        }
-        rl.prompt()
-        break
-
-      default:
-        nextLine(line)
-        break
     }
     rl.prompt()
   }).on('close', () => {
@@ -348,7 +388,8 @@ function evalAndSaveRegisters(kind: ComputableKind, names: string[],
   }
 }
 
-function saveVars(state: ReplState, context: CompilationContext): void {
+function saveVars
+    (state: ReplState, context: CompilationContext): Maybe<string[]> {
   function isNextSet(name: string) {
     const register = context.values.get(kindName('nextvar', name)) as Register
     if (register) {
@@ -360,6 +401,11 @@ function saveVars(state: ReplState, context: CompilationContext): void {
   const isAction = [...context.vars].some(name => isNextSet(name))
   if (isAction) {
     evalAndSaveRegisters('nextvar', context.vars, context, state.vars)
+
+    // return the names of the variables that have not been updated
+    return just([...context.vars].filter(name => !isNextSet(name)))
+  } else {
+    return none()
   }
 }
 
@@ -389,8 +435,8 @@ function loadShadowVars(state: ReplState, context: CompilationContext): void {
 // In the future, we will declare them in a separate module.
 const simulatorBuiltins =
 `val ${lastTraceName} = [];
-def _test(__nruns, __nsteps, __init, __next, __inv) = false;
-def _testOnce(__nsteps, __init, __next, __inv) = false;
+def q::test(q::nruns, q::nsteps, q::init, q::next, q::inv) = false;
+def q::testOnce(q::nsteps, q::init, q::next, q::inv) = false;
 `
 
 // try to evaluate the expression in a string and print it, if successful
@@ -425,11 +471,12 @@ ${textToAdd}
   }
   if (probeResult.kind === 'expr') {
     // embed expression text into a value definition inside a module
-    const moduleText = prepareParserInput(`  action __input =\n${newInput}`)
+    const moduleText = prepareParserInput(`  action q::input =\n${newInput}`)
     // compile the expression or definition and evaluate it
+    const recorder = newTraceRecorder(state.verbosityLevel)
     const context =
       compileFromCode(state.idGen,
-        moduleText, '__repl__', noExecutionListener, () => Math.random())
+        moduleText, '__repl__', recorder, () => Math.random())
     if (context.syntaxErrors.length > 0 ||
         context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
       printErrors(moduleText, context)
@@ -440,7 +487,7 @@ ${textToAdd}
 
     loadVars(state, context)
     loadShadowVars(state, context)
-    const computable = contextNameLookup(context, '__input', 'callable')
+    const computable = contextNameLookup(context, 'q::input', 'callable')
     const result =
       computable
       .mapRight(comp => {
@@ -449,11 +496,28 @@ ${textToAdd}
           .map(value => {
             const ex = value.toQuintEx(state.idGen)
             out(chalkQuintEx(ex))
+
+            if (verbosity.hasUserOpTracking(state.verbosityLevel)) {
+              const trace = recorder.getBestTrace()
+              if (trace.subframes.length > 0) {
+                out('')
+                trace.subframes.forEach((f, i) => {
+                  out(` [Frame ${i}]`)
+                  printExecutionFrameRec(l => out(' ' + l), f, [])
+                  out('')
+                })
+              }
+            }
+
             if (ex.kind === 'bool' && ex.value) {
-              // if this was an action and it was successful, save the state
-              // as actions are always boolean,
-              // don't even try to save the state for non-boolean expressions
-              saveVars(state, context)
+              // A Boolean expression may be an action or a run.
+              // Save the state, if there were any updates to variables.
+              saveVars(state, context).map(missing => {
+                if (missing.length > 0) {
+                  out(chalk.yellow('[warning] some variables are undefined: '
+                                   + missing.join(', ')))
+                }
+              })
             }
             // save shadow vars in any case, e.g., the example trace
             saveShadowVars(state, context)

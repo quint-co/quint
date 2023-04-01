@@ -295,7 +295,9 @@ quint test --seed 1 --verbosity=3 \
       HOME/counters.qnt:84:9 - error: Assertion failed
       84:         assert(n == 0),
 
-    [No execution]
+    [Frame 0]
+    Init() => true
+
 
 ```
 
@@ -456,9 +458,10 @@ quint run --max-steps=5 --seed=12 --invariant=totalSupplyDoesNotOverflowInv \
 An example execution:
 
 [Frame 0]
- q::init() => true
- └─ q::inv() => true
-    └─ isUInt(0) => true
+ q::initAndInvariant() => true
+ ├─ q::init() => true
+ │  └─ init() => true
+ └─ isUInt(0) => true
 
 [State 0]
  minter: "null"
@@ -466,13 +469,14 @@ An example execution:
 ────────────────────────────────────────────────────────────────────────────────
 
 [Frame 1]
- q::step() => true
- ├─ mint("null", "null", 79724149679233970751606042021871459804676944172294020221997378231441129734144) => true
- │  ├─ require(true) => true
- │  └─ require(true) => true
- │     └─ isUInt(79724149679233970751606042021871459804676944172294020221997378231441129734144) => true
- └─ q::inv() => true
-    └─ isUInt(79724149679233970751606042021871459804676944172294020221997378231441129734144) => true
+ q::stepAndInvariant() => true
+ ├─ q::step() => true
+ │  └─ step() => true
+ │     └─ mint("null", "null", 79724149679233970751606042021871459804676944172294020221997378231441129734144) => true
+ │        ├─ require(true) => true
+ │        └─ require(true) => true
+ │           └─ isUInt(79724149679233970751606042021871459804676944172294020221997378231441129734144) => true
+ └─ isUInt(79724149679233970751606042021871459804676944172294020221997378231441129734144) => true
 
 [State 1]
  minter: "null"
@@ -480,13 +484,14 @@ An example execution:
 ────────────────────────────────────────────────────────────────────────────────
 
 [Frame 2]
- q::step() => true
- ├─ mint("null", "charlie", 112817691068065462651698786821247929788486899638158978042098855089169166761984) => true
- │  ├─ require(true) => true
- │  └─ require(true) => true
- │     └─ isUInt(112817691068065462651698786821247929788486899638158978042098855089169166761984) => true
- └─ q::inv() => true
-    └─ isUInt(192541840747299433403304828843119389593163843810452998264096233320610296496128) => false
+ q::stepAndInvariant() => true
+ ├─ q::step() => true
+ │  └─ step() => true
+ │     └─ mint("null", "charlie", 112817691068065462651698786821247929788486899638158978042098855089169166761984) => true
+ │        ├─ require(true) => true
+ │        └─ require(true) => true
+ │           └─ isUInt(112817691068065462651698786821247929788486899638158978042098855089169166761984) => true
+ └─ isUInt(192541840747299433403304828843119389593163843810452998264096233320610296496128) => false
 
 [State 2]
  minter: "null"
@@ -552,18 +557,21 @@ quint test --seed=3 --verbosity=3 ../examples/solidity/Coin/coin.qnt | \
       176:     run mintTwiceThenSendTest = {
 
     [Frame 0]
+    init() => true
+
+    [Frame 1]
     mint("bob", "eve", 56121584374285688102497324576666468201644004471271061085874530776005052727296) => true
     ├─ require(true) => true
     └─ require(true) => true
        └─ isUInt(56121584374285688102497324576666468201644004471271061085874530776005052727296) => true
 
-    [Frame 1]
+    [Frame 2]
     mint("bob", "bob", 91422284371118026738799750509327856254566108764693012790426204149329833230336) => true
     ├─ require(true) => true
     └─ require(true) => true
        └─ isUInt(91422284371118026738799750509327856254566108764693012790426204149329833230336) => true
 
-    [Frame 2]
+    [Frame 3]
     send("eve", "bob", 33099102730177003576396430532542752743476829614253756677426469153216965640192) => false
     ├─ require(true) => true
     ├─ require(true) => true

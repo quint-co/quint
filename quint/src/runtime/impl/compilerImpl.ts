@@ -30,7 +30,10 @@ import { RuntimeValue, rv } from './runtimeValue'
 
 import { lastTraceName } from '../compile'
 
-const specialNames = ['__input', '__runResult', '__nruns', '__nsteps', '__init', '__next', '__inv']
+const specialNames = [
+  'q::input', 'q::runResult', 'q::nruns',
+  'q::nsteps', 'q::init', 'q::next', 'q::inv',
+]
 
 export function builtinContext() {
   return new Map<string, Computable>([
@@ -91,7 +94,7 @@ export class CompilerVisitor implements IRVisitor {
     this.execListener = listener
     const lastTrace =
       mkRegister('shadow', lastTraceName, none(),
-        () => this.addRuntimeError(0n, '_lastTrace is not set'))
+        () => this.addRuntimeError(0n, 'q::lastTrace is not set'))
     this.shadowVars.push(lastTrace)
     this.context.set(kindName(lastTrace.kind, lastTrace.name), lastTrace)
   }
@@ -148,6 +151,22 @@ export class CompilerVisitor implements IRVisitor {
         `No expression for ${opdef.name} on compStack`)
       return
     }
+
+    if (opdef.qualifier === 'action' && opdef.expr.kind !== 'lambda') {
+      // A nullary action like `init` or `step`.
+      // It is not handled via applyUserDefined.
+      // Wrap its evaluation with the listener calls.
+      const unwrappedEval = boundValue.eval
+      const app: ir.QuintApp =
+        { id: opdef.id, kind: 'app', opcode: opdef.name, args: [] }
+      boundValue.eval = () => {
+        this.execListener.onUserOperatorCall(app)
+        const r = unwrappedEval()
+        this.execListener.onUserOperatorReturn(app, [], r)
+        return r
+      }
+    }
+
     const kname = kindName('callable', opdef.id)
     // bind the callable from the stack
     this.context.set(kname, boundValue)
@@ -240,7 +259,7 @@ export class CompilerVisitor implements IRVisitor {
     const comp =
       this.contextGet(name.name, ['shadow'])
       ?? this.contextLookup(name.id, ['arg', 'var', 'callable'])
-      // a backup case for Nat, Int, and Bool, and special names such as __input
+      // a backup case for Nat, Int, and Bool, and special names such as q::input
       ?? this.contextGet(name.name, ['arg', 'callable'])
     if (comp) {
       // this name has an associated computable object already
@@ -822,12 +841,12 @@ export class CompilerVisitor implements IRVisitor {
         this.translateRepeated(app)
         break
 
-      case '_test':
+      case 'q::test':
         // the special operator that runs random simulation
         this.test(app.id)
         break
 
-      case '_testOnce':
+      case 'q::testOnce':
         // the special operator that runs random simulation
         this.testOnce(app.id)
         break
@@ -1311,7 +1330,7 @@ export class CompilerVisitor implements IRVisitor {
   private test(sourceId: bigint) {
     if (this.compStack.length < 5) {
       this.addCompileError(sourceId,
-        'Not enough arguments on stack for "_test"')
+        'Not enough arguments on stack for "q::test"')
       return
     }
 
@@ -1322,7 +1341,7 @@ export class CompilerVisitor implements IRVisitor {
   private testOnce(sourceId: bigint) {
     if (this.compStack.length < 4) {
       this.addCompileError(sourceId,
-        'Not enough arguments on stack for "_testOnce"')
+        'Not enough arguments on stack for "q::testOnce"')
       return
     }
 
@@ -1373,7 +1392,7 @@ export class CompilerVisitor implements IRVisitor {
           trace = []
           // check Init()
           const initApp: ir.QuintApp =
-            { id: 0n, kind: 'app', opcode: 'q::init', args: [] }
+            { id: 0n, kind: 'app', opcode: 'q::initAndInvariant', args: [] }
           this.execListener.onUserOperatorCall(initApp)
           const initResult = init.eval()
           failure = initResult.isNone() || failure
@@ -1385,11 +1404,7 @@ export class CompilerVisitor implements IRVisitor {
             this.shiftVars()
             trace.push(varsToRecord())
             // check the invariant Inv
-            const invApp: ir.QuintApp =
-              { id: 0n, kind: 'app', opcode: 'q::inv', args: [] }
-            this.execListener.onUserOperatorCall(invApp)
             const invResult = inv.eval()
-            this.execListener.onUserOperatorReturn(invApp, [], invResult)
             this.execListener.onUserOperatorReturn(initApp, [], initResult)
             failure = invResult.isNone() || failure
             if (!isTrue(invResult)) {
@@ -1398,17 +1413,16 @@ export class CompilerVisitor implements IRVisitor {
               // check all { Next(), shift(), Inv } in a loop
               const nsteps = (nstepsRes as RuntimeValue).toInt()
               for (let i = 0; !errorFound && !failure && i < nsteps; i++) {
-                const nextApp: ir.QuintApp =
-                  { id: 0n, kind: 'app', opcode: 'q::step', args: [] }
+                const nextApp: ir.QuintApp = {
+                  id: 0n, kind: 'app', opcode: 'q::stepAndInvariant', args: []
+                }
                 this.execListener.onUserOperatorCall(nextApp)
                 const nextResult = next.eval()
                 failure = nextResult.isNone() || failure
                 if (isTrue(nextResult)) {
                   this.shiftVars()
                   trace.push(varsToRecord())
-                  this.execListener.onUserOperatorCall(invApp)
                   errorFound = !isTrue(inv.eval())
-                  this.execListener.onUserOperatorReturn(invApp, [], invResult)
                   this.execListener.onUserOperatorReturn(nextApp, [], nextResult)
                 } else {
                   // Otherwise, the run cannot be extended.
@@ -1420,6 +1434,7 @@ export class CompilerVisitor implements IRVisitor {
                   // positives, which look like deadlocks but they are not.
                   this.execListener.onUserOperatorReturn(nextApp, [], nextResult)
                   break
+
                 }
               }
             }

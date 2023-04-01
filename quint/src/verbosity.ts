@@ -12,9 +12,28 @@
 
 export const verbosity = {
   /**
+   * The default verbosity level.
+   */
+  defaultLevel: 2,
+
+  /**
    * The maximal verbosity level.
    */
   maxVerbosity: 5,
+
+  /**
+   * Shall REPL show the prompts like '>>> ' and '... '?
+   */
+  hasReplPrompt: (level: number): boolean => {
+    return level > 0
+  },
+
+  /**
+   * Shall REPL show the banner?
+   */
+  hasReplBanners: (level: number): boolean => {
+    return level > 0
+  },
 
   /**
    * Shall the tool output the execution results.

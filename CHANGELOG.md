@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - detailed run output on `run --verbosity=3` (#748)
 - detailed run output on `test --verbosity=3` (#755)
+- detailed run output in REPL on `.verbosity=3` (#764)
 
 ### Changed
 ### Deprecated
