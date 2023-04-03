@@ -173,6 +173,11 @@ class ImportResolverVisitor implements IRVisitor {
     }
   }
 
+
+  // Imported names are copied with a scope since imports are not transitive by
+  // default. Exporting needs to turn those names into unscoped ones so, when
+  // the current module is imported, the names are accessible. Note that it is
+  // also possible to export names that were not imported.
   enterExport(def: QuintExport) {
     if (def.protoName === this.currentModule?.name) {
       // Exporting current module
@@ -199,61 +204,57 @@ class ImportResolverVisitor implements IRVisitor {
     const exportableDefinitions = copyNames(moduleTable, qualifier)
 
     if (!def.defName || def.defName === '*') {
-      // Remove scoped versions of the definitions to avoid conflicts
+      // Avoid conflicts by removing the scoped versions of the definitions
       exportableDefinitions.valueDefinitions.forEach((_, name) => {
-        const existingDefs = this.table.valueDefinitions.get(name)
-        if (existingDefs) {
-          this.table.valueDefinitions.set(name, existingDefs.filter(d => d.scope !== this.currentModule?.id))
-        }
+        this.removeValuesWithScope(name, this.currentModule?.id)
       })
       exportableDefinitions.typeDefinitions.forEach((_, name) => {
-        const existingDefs = this.table.typeDefinitions.get(name)
-        if (existingDefs) {
-          this.table.typeDefinitions.set(name, existingDefs.filter(d => d.scope !== this.currentModule?.id))
-        }
+        this.removeTypesWithScope(name, this.currentModule?.id)
       })
 
       // Export all definitions
       this.table = mergeTables(this.table, exportableDefinitions)
     } else {
       // Tries to find a specific definition, reporting an error if not found
-      const valueDefs = exportableDefinitions.valueDefinitions.get(def.defName)
-      const typeDefs = exportableDefinitions.typeDefinitions.get(def.defName)
+      const valueDefs = exportableDefinitions.valueDefinitions.get(def.defName) ?? []
+      const typeDefs = exportableDefinitions.typeDefinitions.get(def.defName) ?? []
 
-      if (valueDefs) {
-        // Remove scoped versions of the definitions to avoid conflicts
-        console.log(this.table.valueDefinitions.get(def.defName))
-        exportableDefinitions.valueDefinitions.forEach((_, name) => {
-          const existingDefs = this.table.valueDefinitions.get(name)
-          if (existingDefs) {
-            this.table.valueDefinitions.set(name, existingDefs.filter(d => d.scope !== this.currentModule?.id))
-          }
+      if (valueDefs.length === 0 && typeDefs.length === 0) {
+        this.errors.set(def.id, {
+          code: 'QNT405',
+          message: `Name ${def.protoName}::${def.defName} not found`,
+          data: {},
         })
-        console.log(this.table.valueDefinitions.get(def.defName))
-
-        valueDefs.forEach(def => addValueToTable(def, this.table))
         return
       }
 
-      if (typeDefs) {
-        // Remove scoped versions of the definitions to avoid conflicts
+      valueDefs.forEach(def => {
+        // Avoid conflicts by removing the scoped version of the definition
+        this.removeValuesWithScope(def.identifier, this.currentModule?.id)
 
-        exportableDefinitions.typeDefinitions.forEach((_, name) => {
-          const existingDefs = this.table.typeDefinitions.get(name)
-          if (existingDefs) {
-            this.table.typeDefinitions.set(name, existingDefs.filter(d => d.scope !== this.currentModule?.id))
-          }
-        })
-
-        typeDefs.forEach(def => addTypeToTable(def, this.table))
-        return
-      }
-
-      this.errors.set(def.id, {
-        code: 'QNT405',
-        message: `Name ${def.protoName}::${def.defName} not found`,
-        data: {},
+        addValueToTable(def, this.table)
       })
+
+      typeDefs.forEach(def => {
+        // Avoid conflicts by removing the scoped version of the definition
+        this.removeTypesWithScope(def.identifier, this.currentModule?.id)
+
+        addTypeToTable(def, this.table)
+      })
+    }
+  }
+
+  private removeValuesWithScope(name: string, scope: bigint | undefined) {
+    const valueDefs = this.table.valueDefinitions.get(name)
+    if (valueDefs) {
+      this.table.valueDefinitions.set(name, valueDefs.filter(d => d.scope !== scope))
+    }
+  }
+
+  private removeTypesWithScope(name: string, scope: bigint | undefined) {
+    const typeDefs = this.table.typeDefinitions.get(name)
+    if (typeDefs) {
+      this.table.typeDefinitions.set(name, typeDefs.filter(d => d.scope !== scope))
     }
   }
 }
