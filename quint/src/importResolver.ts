@@ -13,7 +13,7 @@
  */
 
 import { DefinitionsByModule, DefinitionsByName, addTypeToTable, addValueToTable, copyNames, copyTable, mergeTables, newTable } from './definitionsByName'
-import { QuintImport, QuintInstance, QuintModule } from './quintIr'
+import { QuintExport, QuintImport, QuintInstance, QuintModule } from './quintIr'
 import { IRVisitor, walkModule } from './IRVisitor'
 import { QuintError } from './quintError'
 
@@ -93,6 +93,9 @@ class ImportResolverVisitor implements IRVisitor {
       return
     }
     const instanceTable = copyTable(moduleTable)
+    if (def.qualifiedName) {
+      this.tables.set(def.qualifiedName, instanceTable)
+    }
 
     // For each override, check if the name exists in the instantiated module and is a constant.
     // If so, update the value definition to point to the expression being overriden
@@ -125,7 +128,7 @@ class ImportResolverVisitor implements IRVisitor {
   }
 
   enterImport(def: QuintImport): void {
-    if(def.protoName === this.currentModule?.name) {
+    if (def.protoName === this.currentModule?.name) {
       // Importing current module
       this.errors.set(def.id, {
         code: 'QNT407',
@@ -148,7 +151,6 @@ class ImportResolverVisitor implements IRVisitor {
 
     const qualifier = def.defName ? undefined : (def.qualifiedName ?? def.protoName)
     const importableDefinitions = copyNames(moduleTable, qualifier, this.currentModule?.id)
-
     if (!def.defName || def.defName === '*') {
       // Imports all definitions
       this.table = mergeTables(this.table, importableDefinitions)
@@ -168,6 +170,90 @@ class ImportResolverVisitor implements IRVisitor {
       valueDefs.forEach(def => addValueToTable(def, this.table))
       const typeDefs = importableDefinitions.typeDefinitions.get(def.defName) ?? []
       typeDefs.forEach(def => addTypeToTable(def, this.table))
+    }
+  }
+
+  enterExport(def: QuintExport) {
+    if (def.protoName === this.currentModule?.name) {
+      // Exporting current module
+      this.errors.set(def.id, {
+        code: 'QNT407',
+        message: `Cannot export ${def.protoName} inside ${def.protoName}`,
+        data: {},
+      })
+      return
+    }
+
+    const moduleTable = this.tables.get(def.protoName)
+    if (!moduleTable) {
+      // Exporting unexisting module
+      this.errors.set(def.id, {
+        code: 'QNT404',
+        message: `Module ${def.protoName} not found`,
+        data: {},
+      })
+      return
+    }
+
+    const qualifier = def.defName ? undefined : (def.qualifiedName ?? def.protoName)
+    const exportableDefinitions = copyNames(moduleTable, qualifier)
+
+    if (!def.defName || def.defName === '*') {
+      // Remove scoped versions of the definitions to avoid conflicts
+      exportableDefinitions.valueDefinitions.forEach((_, name) => {
+        const existingDefs = this.table.valueDefinitions.get(name)
+        if (existingDefs) {
+          this.table.valueDefinitions.set(name, existingDefs.filter(d => d.scope !== this.currentModule?.id))
+        }
+      })
+      exportableDefinitions.typeDefinitions.forEach((_, name) => {
+        const existingDefs = this.table.typeDefinitions.get(name)
+        if (existingDefs) {
+          this.table.typeDefinitions.set(name, existingDefs.filter(d => d.scope !== this.currentModule?.id))
+        }
+      })
+
+      // Export all definitions
+      this.table = mergeTables(this.table, exportableDefinitions)
+    } else {
+      // Tries to find a specific definition, reporting an error if not found
+      const valueDefs = exportableDefinitions.valueDefinitions.get(def.defName)
+      const typeDefs = exportableDefinitions.typeDefinitions.get(def.defName)
+
+      if (valueDefs) {
+        // Remove scoped versions of the definitions to avoid conflicts
+        console.log(this.table.valueDefinitions.get(def.defName))
+        exportableDefinitions.valueDefinitions.forEach((_, name) => {
+          const existingDefs = this.table.valueDefinitions.get(name)
+          if (existingDefs) {
+            this.table.valueDefinitions.set(name, existingDefs.filter(d => d.scope !== this.currentModule?.id))
+          }
+        })
+        console.log(this.table.valueDefinitions.get(def.defName))
+
+        valueDefs.forEach(def => addValueToTable(def, this.table))
+        return
+      }
+
+      if (typeDefs) {
+        // Remove scoped versions of the definitions to avoid conflicts
+
+        exportableDefinitions.typeDefinitions.forEach((_, name) => {
+          const existingDefs = this.table.typeDefinitions.get(name)
+          if (existingDefs) {
+            this.table.typeDefinitions.set(name, existingDefs.filter(d => d.scope !== this.currentModule?.id))
+          }
+        })
+
+        typeDefs.forEach(def => addTypeToTable(def, this.table))
+        return
+      }
+
+      this.errors.set(def.id, {
+        code: 'QNT405',
+        message: `Name ${def.protoName}::${def.defName} not found`,
+        data: {},
+      })
     }
   }
 }

@@ -65,6 +65,16 @@ export function definitionToString(def: QuintDef, includeBody: boolean = true): 
       }
       return text
     }
+    case 'export': {
+      let text = `export ${def.protoName}`
+      if (def.defName) {
+        text += `.${def.defName}`
+      }
+      if (def.qualifiedName) {
+        text += ` as ${def.qualifiedName}`
+      }
+      return text
+    }
     case 'instance': {
       const overrides = def.overrides.map(o => `${o[0].name} = ${expressionToString(o[1])}`).join(', ')
       return `import ${def.protoName}(${overrides}) as ${def.qualifiedName}`

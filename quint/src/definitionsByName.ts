@@ -185,7 +185,7 @@ export function copyNames(originTable: DefinitionsByName, namespace?: string, sc
   originTable.typeDefinitions.forEach((defs, identifier) => {
     const name = namespace ? [namespace, identifier].join('::') : identifier
 
-    // Copy only non-default (referenced) names
+    // Copy only unscoped and non-default (referenced) names
     const typeDefs = defs.filter(d => !d.scope && d.reference).map(d => ({ ...d, identifier: name, scope }))
 
     if (typeDefs.length > 0) {

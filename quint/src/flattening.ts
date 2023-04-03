@@ -41,6 +41,11 @@ export function flatten(
   const context = { idGenerator, table, builtinNames, sourceMap }
 
   const newDefs = module.defs.reduce((newDefs, def) => {
+    if (def.kind === 'export') {
+      // Ignore exports
+      return newDefs
+    }
+
     if (isFlattened(def)) {
       // Not an instance or import, keep the same def
       newDefs.push(def)
@@ -164,6 +169,8 @@ function addNamespaceToDef(ctx: FlatteningContext, name: string | undefined, def
       throw new Error(`Instance in ${definitionToString(def)} should have been flatenned already`)
     case 'import':
       throw new Error(`Import in ${definitionToString(def)} should have been flatenned already`)
+    case 'export':
+      throw new Error(`Export in ${definitionToString(def)} should have been flatenned already`)
   }
 }
 
