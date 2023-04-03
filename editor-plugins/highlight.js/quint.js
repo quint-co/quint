@@ -9,7 +9,7 @@ Website: https://github.com/informalsystems/quint
 function quintHljs(hljs) {
   const n = {
     keyword: [
-      'module', 'import', 'type', 'assume', 'const', 'var',
+      'module', 'import', 'export', 'as', 'type', 'assume', 'const', 'var',
       'val', 'def', 'pure', 'nondet', 'action', 'temporal', 'run',
       'all', 'any', 'if', 'else'
     ],
@@ -45,4 +45,3 @@ function quintHljs(hljs) {
 }
 
 hljs.registerLanguage('quint', quintHljs);
-
