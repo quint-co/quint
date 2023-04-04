@@ -283,9 +283,6 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
       out(`\n  ${mainName}`)
     }
 
-    const matchFun =
-      (n: string): boolean => isMatchingTest(prev.args.match, n)
-
     const options: TestOptions = {
       testMatch: (n: string) => { return isMatchingTest(prev.args.match, n) },
       rand: mkRng(prev.args.seed),
