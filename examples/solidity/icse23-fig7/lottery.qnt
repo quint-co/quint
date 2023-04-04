@@ -348,28 +348,28 @@ module lotteryTests {
     }
 
     run buyDrawTest = {
-        init.then(submit(ResetTx("owner")))
-            .then(commit(ResetTx("owner")))
+        init.then(submit(ResetTx(lotteryState.owner)))
+            .then(commit(ResetTx(lotteryState.owner)))
             .then(submit(BuyTx("alice", 1, 1000)))
             .then(submit(BuyTx("bob", 3, 2000)))
             .then(commit(BuyTx("bob", 3, 2000)))
             .then(commit(BuyTx("alice", 1, 1000)))
-            .then(submit(EnterDrawingPhaseTx("owner")))
-            .then(commit(EnterDrawingPhaseTx("owner")))
-            .then(submit(DrawTx("owner", 3)))
-            .then(commit(DrawTx("owner", 3)))
+            .then(submit(EnterDrawingPhaseTx(lotteryState.owner)))
+            .then(commit(EnterDrawingPhaseTx(lotteryState.owner)))
+            .then(submit(DrawTx(lotteryState.owner, 3)))
+            .then(commit(DrawTx(lotteryState.owner, 3)))
             .then(submit(ClaimRewardTx("bob")))
             .then(commit(ClaimRewardTx("bob")))
     }
 
     run buyFailureTest = {
-        init.then(submit(ResetTx("owner")))
-            .then(commit(ResetTx("owner")))
+        init.then(submit(ResetTx(lotteryState.owner)))
+            .then(commit(ResetTx(lotteryState.owner)))
             .then(submit(BuyTx("alice", 1, 1000)))
             .then(commit(BuyTx("alice", 1, 1000)))
-            .then(submit(EnterDrawingPhaseTx("owner")))
+            .then(submit(EnterDrawingPhaseTx(lotteryState.owner)))
             .then(submit(BuyTx("bob", 3, 2000)))
-            .then(commit(EnterDrawingPhaseTx("owner")))
+            .then(commit(EnterDrawingPhaseTx(lotteryState.owner)))
             // bob's transaction arrives too late
             .then(commit(BuyTx("bob", 3, 2000)))
             .then(all {
@@ -381,13 +381,13 @@ module lotteryTests {
     // This is the scenario reported in the paper.
     // By modeling the mempool, we can specify this scenario.
     run lotteryMultiBuyTest = {
-        init.then(submit(EnterDrawingPhaseTx("owner")))
-            .then(commit(EnterDrawingPhaseTx("owner")))
-            .then(submit(DrawTx("owner", 3)))
+        init.then(submit(EnterDrawingPhaseTx(lotteryState.owner)))
+            .then(commit(EnterDrawingPhaseTx(lotteryState.owner)))
+            .then(submit(DrawTx(lotteryState.owner, 3)))
             // Bob can buy lottery tickets in the drawing phase,
             // by front-running the draw transaction
             .then(submit(MultiBuyTx("bob", [3], [2000])))
             .then(commit(MultiBuyTx("bob", [3], [2000])))
-            .then(commit(DrawTx("owner", 3)))
+            .then(commit(DrawTx(lotteryState.owner, 3)))
     }
 }
