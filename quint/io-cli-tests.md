@@ -240,6 +240,7 @@ true
 
 The command `test` finds failing tests and prints error messages.
 
+<!-- !test exit 1 -->
 <!-- !test in test runs -->
 ```
 quint test --main counters --seed 1 \
@@ -272,6 +273,7 @@ quint test --main counters --seed 1 \
 `test` should handle the special case of when an execution has not been
 recorded yet.
 
+<!-- !test exit 1 -->
 <!-- !test in test empty trace -->
 ```
 quint test --seed 1 --verbosity=3 \
@@ -534,6 +536,7 @@ quint -q -r \
 
 ### test --verbosity=3 outputs a trace
 
+<!-- !test exit 1 -->
 <!-- !test in verbose test -->
 ```
 quint test --seed=3 --verbosity=3 ../examples/solidity/Coin/coin.qnt | \
