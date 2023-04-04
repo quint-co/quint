@@ -30,7 +30,7 @@ describe('inferEffects', () => {
 
   function effectForDef(defs: string[], effects: Map<bigint, EffectScheme>, defName: string) {
     const module = buildModuleWithDefs(baseDefs.concat(defs))
-    const result = module.defs.find(def => def.kind !== 'instance' && def.kind !== 'import' && def.name === defName)
+    const result = module.defs.find(def => def.kind !== 'instance' && def.kind !== 'import' && def.kind != 'export' && def.name === defName)
 
     if (!result) {
       throw new Error(`Could not find def with name ${defName}`)
