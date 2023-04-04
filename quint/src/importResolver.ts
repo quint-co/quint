@@ -177,7 +177,7 @@ class ImportResolverVisitor implements IRVisitor {
   // Imported names are copied with a scope since imports are not transitive by
   // default. Exporting needs to turn those names into unscoped ones so, when
   // the current module is imported, the names are accessible. Note that it is
-  // also possible to export names that were not imported.
+  // also possible to export names that were not previously imported via `import`.
   enterExport(def: QuintExport) {
     if (def.protoName === this.currentModule?.name) {
       // Exporting current module
