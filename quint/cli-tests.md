@@ -220,7 +220,7 @@ Temporarily disabled.
 ### OK on test lottery.qnt
 
 <!-- TODO: Spec test is erroneous https://github.com/informalsystems/quint/issues/775 -->
-<!-- <\!-- !test check lottery - Syntax/Types & Effects/Unit tests -\-> -->
+<!-- check lottery - Syntax/Types & Effects/Unit tests -->
 <!--     quint test --main=lotteryTests ../examples/solidity/icse23-fig7/lottery.qnt -->
 
 ### OK on test erc20.qnt

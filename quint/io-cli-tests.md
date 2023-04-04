@@ -243,10 +243,10 @@ The command `test` finds failing tests and prints error messages.
 <!-- !test exit 1 -->
 <!-- !test in test runs -->
 ```
-quint test --main counters --seed 1 \
-  ../examples/language-features/counters.qnt 2>&1 | \
-  sed 's/([0-9]*ms)/(duration)/g' | \
-  sed 's#^.*counters.qnt#      HOME/counters.qnt#g'
+output=$(quint test --main counters --seed 1 ../examples/language-features/counters.qnt)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
+exit $exit_code
 ```
 
 <!-- !test out test runs -->
@@ -276,10 +276,10 @@ recorded yet.
 <!-- !test exit 1 -->
 <!-- !test in test empty trace -->
 ```
-quint test --seed 1 --verbosity=3 \
-  ../examples/language-features/counters.qnt 2>&1 | \
-  sed 's/([0-9]*ms)/(duration)/g' | \
-  sed 's#^.*counters.qnt#      HOME/counters.qnt#g'
+output=$(quint test --seed 1 --verbosity=3 ../examples/language-features/counters.qnt)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
+exit $exit_code
 ```
 
 <!-- !test out test empty trace -->
@@ -299,8 +299,6 @@ quint test --seed 1 --verbosity=3 \
 
     [Frame 0]
     Init() => true
-
-
 ```
 
 ### Run finds an invariant violation
@@ -539,9 +537,10 @@ quint -q -r \
 <!-- !test exit 1 -->
 <!-- !test in verbose test -->
 ```
-quint test --seed=3 --verbosity=3 ../examples/solidity/Coin/coin.qnt | \
-  sed 's/([0-9]*ms)/(duration)/g' | \
-  sed 's#^.*coin.qnt#      HOME/coin.qnt#g'
+output=$(quint test --seed=3 --verbosity=3 ../examples/solidity/Coin/coin.qnt)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
+exit $exit_code
 ```
 
 <!-- !test out verbose test -->
@@ -581,6 +580,4 @@ quint test --seed=3 --verbosity=3 ../examples/solidity/Coin/coin.qnt | \
     │  └─ isUInt(23022481644108684526100894044123715458167174857017304408448061622788087087104) => true
     └─ require(false) => false
        └─ isUInt(124521387101295030315196181041870608998042938378946769467852673302546798870528) => false
-
-
 ```
