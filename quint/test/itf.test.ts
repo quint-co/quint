@@ -15,8 +15,16 @@ describe('itf', () => {
     const expected = {
       "vars": ["x", "y"],
       "states": [
-          { "x": 2n, "y": true },
-          { "x": 3n, "y": false },
+          {
+            "#meta": { "index": 0 },
+            "x": 2n,
+            "y": true
+          },
+          {
+            "#meta": { "index": 1 },
+            "x": 3n,
+            "y": false
+          },
       ],
     }
     assert(itfTrace.isRight(), itfTrace.unwrap())
@@ -43,6 +51,9 @@ describe('itf', () => {
     const expected = {
       "vars": vars,
       "states": [{
+        '#meta': {
+          'index': 0,
+        },
         'a': 2n,
         'b': 'hello',
         'c': { '#bigint': '1000000000000000000' },

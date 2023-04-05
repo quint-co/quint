@@ -450,9 +450,11 @@ export function runSimulator(prev: TypecheckedStage):
         if (trace.isRight()) {
           const jsonObj = {
             '#meta': {
+              'format': 'ITF',
+              'format-description': 'https://apalache.informal.systems/docs/adr/015adr-trace.html',
               'source': prev.args.input,
               'status': result.status,
-              'generatedBy': 'Quint',
+              'description': 'Created by Quint on ' + new Date(),
               'timestamp': Date.now(),
             },
             ...trace.value,
