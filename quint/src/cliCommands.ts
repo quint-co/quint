@@ -12,7 +12,6 @@ import JSONbig from 'json-bigint'
 import { basename, resolve } from 'path'
 import { cwd } from 'process'
 import chalk from 'chalk'
-import seedrandom from 'seedrandom'
 
 import {
   ErrorMessage, Loc, compactSourceMap, parsePhase1, parsePhase2
@@ -35,6 +34,7 @@ import { SimulatorOptions, compileAndRun } from './simulation'
 import { toItf } from './itf'
 import { printTrace, printExecutionFrameRec } from './graphics'
 import { verbosity } from './verbosity'
+import { Rng, newRng } from './rng'
 
 export type stage =
   'loading' | 'parsing' | 'typechecking' |
@@ -273,6 +273,12 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
       stage: { ...prev, errors: [] },
     })
   } else {
+    const rngOrError = mkRng(prev.args.seed)
+    if (rngOrError.isLeft()) {
+      return cliErr(rngOrError.value, { ...testing, errors: [] })
+    }
+    const rng = rngOrError.unwrap()
+
     let passed: string[] = []
     let failed: string[] = []
     let ignored: string[] = []
@@ -283,9 +289,11 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
       out(`\n  ${mainName}`)
     }
 
+    const matchFun =
+      (n: string): boolean => isMatchingTest(prev.args.match, n)
     const options: TestOptions = {
-      testMatch: (n: string) => { return isMatchingTest(prev.args.match, n) },
-      rand: mkRng(prev.args.seed),
+      testMatch: matchFun,
+      rng,
       verbosity: verbosityLevel,
     }
     const testOut =
@@ -355,6 +363,8 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
               out('    [No execution]')
             }
           }
+          // output the seed
+          out(chalk.gray(`    Use --seed=0x${testResult.seed.toString(16)} --match=${testResult.name} to repeat.`))
         })
         out('')
       }
@@ -382,21 +392,27 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
  */
 export function runSimulator(prev: TypecheckedStage):
   CLIProcedure<SimulatorStage> {
+  const simulator = { ...prev, stage: 'running' as stage }
   const mainArg = prev.args.main
   const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
   const verbosityLevel =
     (!prev.args.out && !prev.args.outItf) ? prev.args.verbosity : 0
+  const rngOrError = mkRng(prev.args.seed)
+  if (rngOrError.isLeft()) {
+    return cliErr(rngOrError.value, { ...simulator, errors: [] })
+  }
+  const rng = rngOrError.unwrap()
   const options: SimulatorOptions = {
     init: prev.args.init,
     step: prev.args.step,
     invariant: prev.args.invariant,
     maxSamples: prev.args.maxSamples,
     maxSteps: prev.args.maxSteps,
-    rand: mkRng(prev.args.seed),
+    rng,
     verbosity: verbosityLevel,
   }
   const startMs = Date.now()
-  const simulator = { ...prev, stage: 'running' as stage }
+  
   const result =
     compileAndRun(newIdGenerator(), prev.sourceCode, mainName, options)
   
@@ -421,8 +437,10 @@ export function runSimulator(prev: TypecheckedStage):
         } else {
           console.log(chalk.red(`[${result.status}]`)
             + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
+          console.log(chalk.gray(`Use --seed=0x${result.seed.toString(16)} to reproduce.`))
+
           if (verbosity.hasHints(options.verbosity)) {
-            console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
+            console.log(chalk.gray('Use --verbosity=3 to show executions.'))
           }
         }
       }
@@ -532,12 +550,19 @@ function replacer(_key: String, value: any): any {
  * Produce a random-number generator: Either a predictable one using a seed,
  * or a reasonably unpredictable one.
  */
-function mkRng(seed: string | undefined): () => number {
-  if (seed) {
-    return seedrandom(seed)
-  } else {
-    return seedrandom()
+function mkRng(seedText?: string): Either<string, Rng> {
+  let seed
+  if (seedText !== undefined) {
+      // since yargs does not has a type for big integers,
+      // we do it with a fallback
+    try {
+      seed = BigInt(seedText)
+    } catch (SyntaxError) {
+      return left(`--seed must be a big integer, found: ${seedText}`)
+    }
   }
+
+  return right(seed ? newRng(seed) : newRng())
 }
 
 /**

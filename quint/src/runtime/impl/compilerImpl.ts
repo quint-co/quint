@@ -87,7 +87,7 @@ export class CompilerVisitor implements IRVisitor {
   private execListener: ExecutionListener
 
   constructor(lookupTable: LookupTable, types: Map<bigint, TypeScheme>,
-      rand: () => number, listener: ExecutionListener) {
+      rand: (bound: bigint) => bigint, listener: ExecutionListener) {
     this.lookupTable = lookupTable
     this.types = types
     this.rand = rand
@@ -640,7 +640,7 @@ export class CompilerVisitor implements IRVisitor {
       case 'size':
         this.applyFun(app.id,
           1,
-          set => just(rv.mkInt(BigInt(set.cardinality()))))
+          set => set.cardinality().map(rv.mkInt))
         break
 
       case 'isFinite':
@@ -1301,7 +1301,7 @@ export class CompilerVisitor implements IRVisitor {
       } else {
         // randomly pick a successor and return true
         // https://stackoverflow.com/questions/4959975/generate-random-number-between-two-numbers-in-javascript
-        const choice = Math.floor(this.rand() * ncandidates)
+        const choice = Number(this.rand(BigInt(ncandidates)))
         this.recoverNextVars(successors[choice])
         this.execListener.onAnyReturn(args.length, successorIndices[choice])
         return just(rv.mkBool(true))
@@ -1316,13 +1316,16 @@ export class CompilerVisitor implements IRVisitor {
     this.applyFun(sourceId,
       1,
       set => {
-        const elem = set.pick(this.rand())
-        if (elem) {
-          return just(elem)
-        } else {
-          this.addRuntimeError(sourceId, `Applied oneOf to an empty set`)
-          return none()
+        const sizeOrNone = set.cardinality()
+        if (sizeOrNone.isJust()) {
+          if (sizeOrNone.value === 0n) {
+            this.addRuntimeError(sourceId, `Applied oneOf to an empty set`)
+            return none()
+          }
+          return set.pick(this.rand(sizeOrNone.value))
         }
+        // an infinite set, pick an integer from the range [-2^255, 2^255)
+        return set.pick(-(2n ** 255n) + this.rand(2n ** 256n))
       }
     )
   }

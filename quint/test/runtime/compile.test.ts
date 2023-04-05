@@ -12,6 +12,7 @@ import { RuntimeValue } from '../../src/runtime/impl/runtimeValue'
 import { dedent } from '../textUtils'
 import { newIdGenerator } from '../../src/idGenerator'
 import { builtinContext } from '../../src/runtime/impl/compilerImpl'
+import { newRng } from '../../src/rng'
 
 // Use a global id generator, limited to this test suite.
 const idGen = newIdGenerator()
@@ -22,7 +23,7 @@ function assertResultAsString(input: string, expected: string | undefined) {
   const moduleText = `module __runtime { val q::input = ${input} }`
   const context =
     compileFromCode(idGen,
-      moduleText, '__runtime', noExecutionListener, () => Math.random())
+      moduleText, '__runtime', noExecutionListener, newRng().next)
 
   assert.isEmpty(context.syntaxErrors, `Syntax errors: ${context.syntaxErrors.map(e => e.explanation).join(', ')}`)
   assert.isEmpty(context.compileErrors, `Compile errors: ${context.compileErrors.map(e => e.explanation).join(', ')}`)
@@ -46,7 +47,7 @@ function evalInContext<T>(input: string, callable: (ctx: CompilationContext) => 
   const moduleText = `module __runtime { ${input} }`
   const context =
     compileFromCode(idGen,
-      moduleText, '__runtime', noExecutionListener, () => Math.random())
+      moduleText, '__runtime', noExecutionListener, newRng().next)
   return callable(context)
 }
 

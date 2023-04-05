@@ -9,20 +9,17 @@
  */
 
 import { Either } from '@sweet-monads/either'
-import { Maybe, none } from '@sweet-monads/maybe'
-import { strict as assert } from 'assert'
 
 import {
   compileFromCode, contextNameLookup, lastTraceName
 } from './runtime/compile'
 import { ErrorMessage } from './quintParserFrontend'
-import { QuintApp, QuintEx } from './quintIr'
-import { Computable, EvalResult } from './runtime/runtime'
+import { QuintEx } from './quintIr'
+import { Computable } from './runtime/runtime'
 import {
-  ExecutionFrame, newTraceRecorder, noExecutionListener
-} from './runtime/trace'
+  ExecutionFrame, newTraceRecorder} from './runtime/trace'
 import { IdGenerator } from './idGenerator'
-import { verbosity } from './verbosity'
+import { Rng } from './rng'
 
 /**
  * Various settings that have to be passed to the simulator to run.
@@ -33,7 +30,7 @@ export interface SimulatorOptions {
   invariant: string,
   maxSamples: number,
   maxSteps: number,
-  rand: () => number,
+  rng: Rng,
   verbosity: number,
 }
 
@@ -49,6 +46,7 @@ export interface SimulatorResult {
   states: QuintEx[],
   frames: ExecutionFrame[],
   errors: ErrorMessage[],
+  seed: bigint,
 }
 
 function errSimulationResult(status: SimulatorResultStatus,
@@ -59,6 +57,7 @@ function errSimulationResult(status: SimulatorResultStatus,
     states: [],
     frames: [],
     errors: errors,
+    seed: 0n,
   }
 }
 
@@ -100,9 +99,9 @@ module __run__ {
 }
 `
 
-  const recorder = newTraceRecorder(options.verbosity)
+  const recorder = newTraceRecorder(options.verbosity, options.rng)
   const ctx = compileFromCode(idGen,
-    wrappedCode, '__run__', recorder, options.rand)
+    wrappedCode, '__run__', recorder, options.rng.next)
 
   if (ctx.compileErrors.length > 0
       || ctx.syntaxErrors.length > 0
@@ -138,6 +137,7 @@ module __run__ {
       states: frame.args.map(e => e.toQuintEx(idGen)),
       frames: frame.subframes,
       errors: ctx.getRuntimeErrors(),
+      seed: recorder.getBestTraceSeed(),
     }
   }
 }

@@ -14,6 +14,7 @@ import { strict as assert } from 'assert'
 import { OpQualifier, QuintApp } from '../quintIr'
 import { EvalResult } from './runtime'
 import { verbosity } from './../verbosity'
+import { Rng } from './../rng'
 
 /**
  * A snapshot of how a single operator (e.g., an action) was executed.
@@ -36,7 +37,7 @@ export interface ExecutionFrame {
   /**
    * The frames of the operators that were called by this operator.
    */ 
-  subframes: ExecutionFrame[]
+  subframes: ExecutionFrame[],
 }
 
 /**
@@ -141,7 +142,7 @@ export const noExecutionListener: ExecutionListener = {
 }
 
 // a trace recording listener
-export const newTraceRecorder = (verbosityLevel: number) => {
+export const newTraceRecorder = (verbosityLevel: number, rng: Rng) => {
   // the bottom frame encodes the whole trace
   const bottomFrame = (): ExecutionFrame => {
     return {
@@ -158,12 +159,20 @@ export const newTraceRecorder = (verbosityLevel: number) => {
 
   // the best trace is stored here
   let bestTrace = bottomFrame()
+  // the seed value for the best trace is stored here
+  let bestTraceSeed = rng.getState()
+  // whenever a run is entered, we store its seed here
+  let runSeed = bestTraceSeed
   // during simulation, a trace is built here
   let frameStack: ExecutionFrame[] = [ bestTrace ]
 
   return {
     getBestTrace: (): ExecutionFrame => {
       return bestTrace
+    },
+
+    getBestTraceSeed: (): bigint => {
+      return bestTraceSeed
     },
 
     onUserOperatorCall: (app: QuintApp) => {
@@ -243,6 +252,7 @@ export const newTraceRecorder = (verbosityLevel: number) => {
     onRunCall: () => {
       // reset the stack
       frameStack = [ bottomFrame() ]
+      runSeed = rng.getState()
     },
 
     onRunReturn: (outcome: Maybe<EvalResult>, trace: EvalResult[]) => {
@@ -261,10 +271,12 @@ export const newTraceRecorder = (verbosityLevel: number) => {
         if (bestTrace.args.length === 0
             || bestTrace.args.length >= bottom.args.length) {
           bestTrace = bottom
+          bestTraceSeed = runSeed
         }
       } else {
         if (bestTrace.args.length <= bottom.args.length) {
           bestTrace = bottom
+          bestTraceSeed = runSeed
         }
       }
     },

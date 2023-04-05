@@ -29,6 +29,7 @@ import { ErrorMessage, probeParse } from './quintParserFrontend'
 import { IdGenerator, newIdGenerator } from './idGenerator'
 import { chalkQuintEx, printExecutionFrameRec } from './graphics'
 import { verbosity } from './verbosity'
+import { Rng, newRng } from './rng'
 
 // tunable settings
 export const settings = {
@@ -469,14 +470,17 @@ ${textToAdd}
     out('') // be nice to external programs
     return false
   }
+  // create a random number generator
+  const rng = newRng()
+  // evaluate the input, depending on its type
   if (probeResult.kind === 'expr') {
     // embed expression text into a value definition inside a module
     const moduleText = prepareParserInput(`  action q::input =\n${newInput}`)
     // compile the expression or definition and evaluate it
-    const recorder = newTraceRecorder(state.verbosityLevel)
+    const recorder = newTraceRecorder(state.verbosityLevel, rng)
     const context =
       compileFromCode(state.idGen,
-        moduleText, '__repl__', recorder, () => Math.random())
+        moduleText, '__repl__', recorder, rng.next)
     if (context.syntaxErrors.length > 0 ||
         context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
       printErrors(moduleText, context)
@@ -546,7 +550,7 @@ ${textToAdd}
     // compile the module and add it to history if everything worked
     const context =
       compileFromCode(state.idGen,
-        moduleText, '__repl__', noExecutionListener, () => Math.random())
+        moduleText, '__repl__', noExecutionListener, rng.next)
     if (context.values.size === 0 ||
         context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
       printErrors(moduleText, context)

@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - detailed run output in REPL on `.verbosity=3` (#764)
 
 ### Changed
+
+- using a controllable pRNG (#767)
+
 ### Deprecated
 ### Removed
 
@@ -45,8 +48,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Effects no longer break when applying constant operators (#759)
-- Number highlighting in vim (#765)
+- effects no longer break when applying constant operators (#759)
+- number highlighting in vim (#765)
+- the simulator supports really big numbers, e.g., 256-bit (#767)
 
 ### Security
 

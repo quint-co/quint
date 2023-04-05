@@ -19,13 +19,14 @@ import { newIdGenerator } from './../idGenerator'
 import { LookupTable } from '../lookupTable'
 import { Computable, kindName } from './runtime'
 import { ExecutionFrame, newTraceRecorder } from './trace'
+import { Rng } from '../rng'
 
 /**
  * Various settings to be passed to the testing framework.
  */
 export interface TestOptions {
   testMatch: (n: string) => boolean,
-  rand: () => number,
+  rng: Rng,
   verbosity: number,
 }
 
@@ -42,6 +43,10 @@ export interface TestResult {
    * The test status.
    */
   status: 'passed' | 'failed' | 'ignored'
+  /**
+   * The seed value to repeat the test.
+   */
+  seed: bigint,
   /**
    * When status === 'failed', errors contain the explanatory error messages.
    */
@@ -70,10 +75,10 @@ export function compileAndTest(
     lookupTable: LookupTable,
     types: Map<bigint, TypeScheme>,
     options: TestOptions): Either<string, TestResult[]> {
-  const recorder = newTraceRecorder(options.verbosity)
+  const recorder = newTraceRecorder(options.verbosity, options.rng)
   const ctx =
     compile(modules, sourceMap, lookupTable,
-            types, main.name, recorder, options.rand)
+            types, main.name, recorder, options.rng.next)
 
   if(!ctx.main) {
     return left('Cannot find main module')
@@ -86,6 +91,9 @@ export function compileAndTest(
   return merge(testDefs.map(def => {
     return getComputableForDef(ctx, def)
       .map(comp => {
+        // record the seed value
+        const seed = options.rng.getState()
+        // run the test
         recorder.onRunCall()
         const name = def.name
         const result = comp.eval()
@@ -93,16 +101,16 @@ export function compileAndTest(
         if (result.isNone()) {
           return {
             name, status: 'failed', errors: ctx.getRuntimeErrors(),
-            frames: recorder.getBestTrace().subframes,
+            seed, frames: recorder.getBestTrace().subframes,
           }
         }
 
         const ex = result.value.toQuintEx(newIdGenerator())
         if (ex.kind !== 'bool') {
-          return { name, status: 'ignored', errors: [], frames: [] }
+          return { name, status: 'ignored', errors: [], seed: seed, frames: [] }
         }
         if (ex.value) {
-          return { name, status: 'passed', errors: [], frames: [] }
+          return { name, status: 'passed', errors: [], seed: seed, frames: [] }
         }
 
         const e = fromIrErrorMessage(sourceMap)({
@@ -113,6 +121,7 @@ export function compileAndTest(
           name,
           status: 'failed',
           errors: [e],
+          seed: seed,
           frames: recorder.getBestTrace().subframes,
         }
       })

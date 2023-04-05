@@ -128,7 +128,7 @@ export function compile(
   types: Map<bigint, TypeScheme>,
   mainName: string,
   execListener: ExecutionListener,
-  rand: () => number): CompilationContext {
+  rand: (bound: bigint) => bigint): CompilationContext {
   const modulesByName = new Map(modules.map(m => [m.name, m]))
   const lastId = modules.map(m => m.id).sort((a, b) => Number(a - b))[modules.length - 1]
   const idGenerator = newIdGenerator(lastId)
@@ -204,7 +204,7 @@ export function compileFromCode(
   code: string,
   mainName: string,
   execListener: ExecutionListener,
-  rand: () => number): CompilationContext {
+  rand: (bound: bigint) => bigint): CompilationContext {
   // parse the module text
   return parsePhase1(idGen, code, '<input>')
     // On errors, we'll produce the computational context up to this point
