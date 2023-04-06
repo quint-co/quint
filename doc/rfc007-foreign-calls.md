@@ -1,4 +1,4 @@
-# ADR007: Design of foreign calls in Quint
+# RFC007: Design space of foreign calls in Quint
 
 | Revision | Date       | Author           |
 | :------- | :--------- | :--------------- |
@@ -6,7 +6,7 @@
 
 ## 1. Summary
 
-In this ADR, we discuss potential solutions for integrating the Quint simulator
+In this RFC, we discuss potential solutions for integrating the Quint simulator
 with other execution environments. This would enrich the simulator with
 computations that cannot be expressed in Quint itself, e.g., rich string
 manipulation and parsing. Additionally, it would give us another path for more
@@ -15,7 +15,7 @@ interactive integration of the Quint simulator with systems under test.
 ## 2. Context
 
 Quint is a specification language with the following features that are important
-in the context of this ADR:
+in the context of this RFC:
 
  - Quint has a relatively small standard library, and
  - Quint has formal semantics, thanks to its transpilation to TLA+.
@@ -29,7 +29,7 @@ arithmetic make many properties undecidable), this does not mean that all of the
 typical engineering tasks are easy to do in Quint.
 
 In the following, we introduce several examples that motivate the need for this
-ADR.
+RFC.
 
 ### Example 1: Strings
 
@@ -112,7 +112,7 @@ with non-Quint code. Whereas it should be easy to visualize ITF traces, we could
 go further and visualize interactive computations, e.g., in Quint REPL.  We have
 discussed this approach once, and it was not clear to us, why should we call
 foreign code from Quint to do that, see [Issue 143][]. So this is probably not
-the strongest motivator for this ADR.
+the strongest motivator for this RFC.
 
 *Desired state: We should be able to inform an external visualization tool
 about a change in the system state, while running the simulator, or doing
@@ -204,11 +204,8 @@ Cons:
 
 ## 4. Solution
 
-Given the analysis, we opt for using JSON-RPC. We still have to figure out the
-right interface on the Quint side. This is the subject of the follow up work on
-this ADR. Since we are already serializing Quint data structures into [ITF
-Format][], we could use the same approach to serialization/deserialization of
-Quint values.
+We have to figure out a good solution, or maybe several solutions.  The problem
+space outlined by the four examples is quite large.
 
 
 [IBC denominations]: https://github.com/cosmos/ibc/blob/main/spec/app/ics-020-fungible-token-transfer/README.md#data-structures
