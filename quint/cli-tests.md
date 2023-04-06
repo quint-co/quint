@@ -223,10 +223,15 @@ Temporarily disabled.
 <!-- check lottery - Syntax/Types & Effects/Unit tests -->
 <!--     quint test --main=lotteryTests ../examples/solidity/icse23-fig7/lottery.qnt -->
 
-### OK on test erc20.qnt
+### OK on test erc20.qnt::mempool
 
-<!-- !test check erc20 - Syntax/Types & Effects/Unit tests -->
+<!-- !test check erc20::mempool - Syntax/Types & Effects/Unit tests -->
     quint test --main=mempool ../examples/solidity/ERC20/erc20.qnt
+
+### OK on test erc20.qnt::erc20Tests
+
+<!-- !test check erc20::erc20Tests - Syntax/Types & Effects/Unit tests -->
+    quint test --main=erc20Tests ../examples/solidity/ERC20/erc20.qnt
 
 ### OK on typecheck SuperSpec.qnt
 
