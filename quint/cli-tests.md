@@ -132,6 +132,16 @@ Temporarily disabled.
 <!-- !test check TicTacToe - Types & Effects -->
     quint typecheck ../examples/puzzles/tictactoe/tictactoe.qnt
 
+### OK on parse ics20 bank
+
+<!-- !test check ics20 bank -->
+    quint parse ../examples/cosmos/ics20/bank.qnt
+
+### OK on typecheck ics20 bank
+
+<!-- !test check ics20 bank - Types & Effects -->
+    quint typecheck ../examples/cosmos/ics20/bank.qnt
+
 ### OK on parse ics23
 
 <!-- !test check ics23 -->
@@ -227,6 +237,11 @@ Temporarily disabled.
 
 <!-- !test check erc20 - Syntax/Types & Effects/Unit tests -->
     quint test --main=mempool ../examples/solidity/ERC20/erc20.qnt
+
+### OK on test ics20 bank
+
+<!-- !test check ics20 bank - Syntax/Types & Effects/Unit tests -->
+    quint test ../examples/cosmos/ics20/bank.qnt
 
 ### OK on typecheck SuperSpec.qnt
 
