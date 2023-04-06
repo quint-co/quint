@@ -223,6 +223,8 @@ Options:
   --main       name of the main module (by default, computed from filename)
                                                                         [string]
   --out        output file (suppresses all console output)              [string]
+  --max-samples  the maximum number of successful runs to try for every
+                 randomized test                       [number] [default: 10000]
   --seed       random seed to use for non-deterministic choice          [string]
   --verbosity  control how much output is produced (0 to 5)[number] [default: 2]
   --match      a string or regex that selects names to use as tests     [string]

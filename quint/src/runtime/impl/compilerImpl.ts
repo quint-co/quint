@@ -1293,19 +1293,24 @@ export class CompilerVisitor implements IRVisitor {
       })
 
       const ncandidates = successors.length
+      let choice
       if (ncandidates === 0) {
         // no successor: restore the state and return false
         this.recoverNextVars(valuesBefore)
         this.execListener.onAnyReturn(args.length, -1)
         return just(rv.mkBool(false))
+      } else if (ncandidates === 1) {
+        // There is exactly one successor, the execution is deterministic.
+        // No need for randomization. This may reduce the number of tests.
+        choice = 0
       } else {
         // randomly pick a successor and return true
-        // https://stackoverflow.com/questions/4959975/generate-random-number-between-two-numbers-in-javascript
-        const choice = Number(this.rand(BigInt(ncandidates)))
-        this.recoverNextVars(successors[choice])
-        this.execListener.onAnyReturn(args.length, successorIndices[choice])
-        return just(rv.mkBool(true))
+        choice = Number(this.rand(BigInt(ncandidates)))
       }
+
+      this.recoverNextVars(successors[choice])
+      this.execListener.onAnyReturn(args.length, successorIndices[choice])
+      return just(rv.mkBool(true))
     }
 
     this.compStack.push(mkFunComputable(lazyCompute))

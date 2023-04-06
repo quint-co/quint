@@ -80,7 +80,7 @@ Temporarily disabled.
 ### OK on test Tendermint
 
 <!-- !test check Tendermint - Test -->
-    quint test --main InstanceTests ../examples/cosmos/tendermint/TendermintAcc005.qnt
+    quint test --max-samples=100 --main InstanceTests ../examples/cosmos/tendermint/TendermintAcc005.qnt
 
 ### OK on parse imports
 
