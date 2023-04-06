@@ -21,7 +21,8 @@ const maxJsInt = (2n ** 53n) - 1n
 
 /**
  * Convert a typed Quint expression into an object that matches the JSON
- * representation of the ITF trace.
+ * representation of the ITF trace. This function does not add metadata
+ * to the trace. This should be done by the caller.
  *
  * @param vars variable names
  * @param states an array of expressions that represent the states
@@ -83,11 +84,15 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, any> {
     }
   }
 
-  return merge(states.map(exprToItf))
-    .mapRight(s => {
-      return {
-        "vars": vars,
-        "states": s,
-      }
-    })
+  return merge(states.map((e, i) =>
+    exprToItf(e).mapRight(obj => {
+      return { '#meta': { 'index': i } , ...obj }
+    }))
+  )
+  .mapRight(s => {
+    return {
+      "vars": vars,
+      "states": s,
+    }
+  })
 }

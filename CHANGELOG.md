@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modules and definitions can now be exported (#771)
 
 ### Changed
+
+- The ITF export adds output similar to Apalache (#780)
+
 ### Deprecated
 ### Removed
 ### Fixed
