@@ -47,45 +47,55 @@ export function flatten(
       return newDefs
     }
 
-    if (def.kind == 'instance') {
-      // def is QuintInstance. Replace every parameter with the assigned expression.
-      const overrides: DefAfterFlattening[] = def.overrides.map(([param, expr]) => {
-        const constDef = table.get(param.id)!
-
-        return {
-          kind: 'def',
-          qualifier: 'pureval',
-          name: param.name,
-          expr,
-          typeAnnotation: constDef.typeAnnotation,
-          id: getNewIdWithSameLoc(context, param.id),
-        }
-      })
-
-      const protoModule = importedModules.get(def.protoName)!
-      const newProtoDefs = protoModule.defs
-        .filter(d => !isFlattened(d) || !overrides.map(o => o.name).includes(d.name))
-
-      importedModules.set(def.protoName, { ...protoModule, defs: (overrides as QuintDef[]).concat(newProtoDefs) })
-    }
+    const qualifiedName = def.qualifiedName || def.kind === 'instance' ? def.qualifiedName : (def.defName ? undefined : def.protoName)
 
     const protoModule = importedModules.get(def.protoName)!
 
     // Add the new module name to the modules table
-    if (def.qualifiedName) {
-      importedModules.set(def.qualifiedName, { ...protoModule, name: def.qualifiedName })
+    if (qualifiedName) {
+      importedModules.set(qualifiedName, { ...protoModule, name: qualifiedName })
     }
 
-    const defsToFlatten = def.kind == 'instance' ? protoModule.defs : filterDefs(protoModule.defs, def.defName)
+    const defsToFlatten = def.kind === 'instance' ? protoModule.defs : filterDefs(protoModule.defs, def.defName)
 
     defsToFlatten.forEach(protoDef => {
-      if (alreadyDefined(newDefs, def.qualifiedName, protoDef)) {
+      if (alreadyDefined(newDefs, qualifiedName, protoDef)) {
         // Previously defined by an override, don't push it again
         return
       }
 
-      newDefs.push(flattenDef(context, protoDef, def.qualifiedName))
+      newDefs.push(flattenDef(context, protoDef, qualifiedName))
     })
+
+
+    if (def.kind === 'instance') {
+      // def is QuintInstance. Replace every parameter with the assigned expression.
+      const overrides: Map<string, DefAfterFlattening> = new Map(def.overrides.map(([param, expr]) => {
+        const constDef = table.get(param.id)!
+        const name = namespacedName(qualifiedName, param.name)
+        const typeAnnotation = constDef.typeAnnotation
+          ? addNamespaceToType(context, qualifiedName, constDef.typeAnnotation)
+          : undefined
+
+        return [name, {
+          kind: 'def',
+          qualifier: 'pureval',
+          name,
+          expr,
+          typeAnnotation,
+          id: getNewIdWithSameLoc(context, param.id),
+        }]
+      }))
+
+      // Overrides replace the original constant definitions, in the same position as they appear originally
+      return newDefs.map(d => {
+        if (overrides.has(d.name)) {
+          return overrides.get(d.name)!
+        }
+
+        return d
+      })
+    }
 
     return newDefs
   }, [] as DefAfterFlattening[])
@@ -219,7 +229,10 @@ function addNamespaceToExpr(ctx: FlatteningContext, name: string | undefined, ex
     case 'lambda':
       return {
         ...expr,
-        params: expr.params.map(param => ({ ...param, id: getNewIdWithSameLoc(ctx, param.id) })),
+        params: expr.params.map(param => ({
+          name: namespacedName(name, param.name),
+          id: getNewIdWithSameLoc(ctx, param.id),
+        })),
         expr: addNamespaceToExpr(ctx, name, expr.expr),
         id,
       }
@@ -313,15 +326,6 @@ function namespacedName(namespace: string | undefined, name: string): string {
  */
 function shouldAddNamespace(ctx: FlatteningContext, name: string, id: bigint): boolean {
   if (ctx.builtinNames.has(name)) {
-    return false
-  }
-
-  const def = ctx.table.get(id)
-  if (!def) {
-    throw new Error(`Could not find def for id ${id}, name: ${name}`)
-  }
-
-  if (def.kind === 'param') {
     return false
   }
 
