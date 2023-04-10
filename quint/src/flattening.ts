@@ -41,38 +41,41 @@ export function flatten(
   const context = { idGenerator, table, builtinNames, sourceMap }
 
   const newDefs = module.defs.reduce((newDefs, def) => {
-    if (def.kind === 'export') {
-      // Ignore exports
-      return newDefs
-    }
-
     if (isFlattened(def)) {
-      // Not an instance or import, keep the same def
+      // Not an instance, import or export, keep the same def
       newDefs.push(def)
       return newDefs
     }
 
     if (def.kind == 'instance') {
       // def is QuintInstance. Replace every parameter with the assigned expression.
-      def.overrides.forEach(([param, expr]) => {
+      const overrides: DefAfterFlattening[] = def.overrides.map(([param, expr]) => {
         const constDef = table.get(param.id)!
-        const name = namespacedName(def.qualifiedName, param.name)
-        const typeAnnotation = constDef.typeAnnotation
-          ? addNamespaceToType(context, def.qualifiedName, constDef.typeAnnotation)
-          : undefined
 
-        newDefs.push({
+        return {
           kind: 'def',
           qualifier: 'pureval',
-          name,
+          name: param.name,
           expr,
-          typeAnnotation,
+          typeAnnotation: constDef.typeAnnotation,
           id: getNewIdWithSameLoc(context, param.id),
-        })
+        }
       })
+
+      const protoModule = importedModules.get(def.protoName)!
+      const newProtoDefs = protoModule.defs
+        .filter(d => !isFlattened(d) || !overrides.map(o => o.name).includes(d.name))
+
+      importedModules.set(def.protoName, { ...protoModule, defs: (overrides as QuintDef[]).concat(newProtoDefs) })
     }
 
     const protoModule = importedModules.get(def.protoName)!
+
+    // Add the new module name to the modules table
+    if (def.qualifiedName) {
+      importedModules.set(def.qualifiedName, { ...protoModule, name: def.qualifiedName })
+    }
+
     const defsToFlatten = def.kind == 'instance' ? protoModule.defs : filterDefs(protoModule.defs, def.defName)
 
     defsToFlatten.forEach(protoDef => {
@@ -134,7 +137,7 @@ type DefAfterFlattening = (
 ) & WithOptionalDoc
 
 function isFlattened(def: QuintDef): def is DefAfterFlattening {
-  return def.kind !== 'instance' && def.kind !== 'import'
+  return def.kind !== 'instance' && def.kind !== 'import' && def.kind !== 'export'
 }
 
 interface FlatteningContext {

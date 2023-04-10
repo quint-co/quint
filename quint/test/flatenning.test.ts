@@ -134,4 +134,60 @@ describe('flatten', () => {
 
     assertFlatennedDefs(baseDefs, defs, expectedDefs)
   })
+
+  describe('export with previous import', () => {
+    const baseDefs = [
+      'val f(x) = x + 1',
+    ]
+
+    const defs = [
+      'import A.*',
+      'export A.*',
+    ]
+
+    const expectedDefs = [
+      'val f = (x => iadd(x, 1))',
+    ]
+
+    assertFlatennedDefs(baseDefs, defs, expectedDefs)
+  })
+
+  describe('export without previous import', () => {
+    const baseDefs = [
+      'val f(x) = x + 1',
+    ]
+
+    const defs = [
+      'export A.*',
+    ]
+
+    const expectedDefs = [
+      'val f = (x => iadd(x, 1))',
+    ]
+
+    assertFlatennedDefs(baseDefs, defs, expectedDefs)
+  })
+
+  describe('export instance', () => {
+    const baseDefs = [
+      'const N: int',
+      'val x = N + 1',
+    ]
+
+    const defs = [
+      'import A(N = 1) as A1',
+      'export A1.*',
+    ]
+
+    const expectedDefs = [
+      // Namespaced defs, from the instance statement
+      'pure val A1::N: int = 1',
+      'val A1::x = iadd(A1::N, 1)',
+      // Exported defs, without namespace
+      'pure val N: int = 1',
+      'val x = iadd(N, 1)',
+    ]
+
+    assertFlatennedDefs(baseDefs, defs, expectedDefs)
+  })
 })
