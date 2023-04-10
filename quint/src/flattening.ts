@@ -19,7 +19,7 @@ import { defaultValueDefinitions } from "./definitionsCollector"
 import { definitionToString } from "./IRprinting"
 import { QuintType, Row } from "./quintTypes"
 import { Loc } from "./quintParserFrontend"
-import { uniqBy } from "lodash"
+import { compact, uniqBy } from "lodash"
 
 /**
  * Flatten a module, replacing instances and (todo) imports with their definitions.
@@ -37,9 +37,14 @@ export function flatten(
   idGenerator: IdGenerator,
   sourceMap: Map<bigint, Loc>
 ): QuintModule {
-  const builtinNames = new Set(defaultValueDefinitions().map(d => d.identifier))
+  const currentModuleNames = new Set([
+    // builtin names
+    ...defaultValueDefinitions().map(d => d.identifier),
+    // names from the current module
+    ...compact(module.defs.map(d => isFlattened(d) ? d.name : undefined)),
+  ])
 
-  const context = { idGenerator, table, builtinNames, sourceMap, importedModules }
+  const context = { idGenerator, table, currentModuleNames, sourceMap, importedModules }
 
   const newDefs = module.defs.flatMap(def => {
     if (isFlattened(def)) {
@@ -58,11 +63,47 @@ export function flatten(
   return { ...module, defs: uniqBy(newDefs, 'name') }
 }
 
+function flattenInstance(context: FlatteningContext, def: QuintInstance): DefAfterFlattening[] {
+  // Build pure val definitions from overrides to replace the constants in the
+  // instance. Index them by name to make it easier to replace the corresponding constants.
+  const overrides: Map<string, DefAfterFlattening> = new Map(def.overrides.map(([param, expr]) => {
+    const constDef = context.table.get(param.id)!
+
+    return [param.name, {
+      kind: 'def',
+      qualifier: 'pureval',
+      name: param.name,
+      expr,
+      typeAnnotation: constDef.typeAnnotation,
+      id: param.id,
+    }]
+  }))
+
+  const protoModule = context.importedModules.get(def.protoName)!
+
+  // Overrides replace the original constant definitions, in the same position as they appear originally
+  const newProtoDefs = protoModule.defs.map(d => {
+    if (isFlattened(d) && overrides.has(d.name)) {
+      return overrides.get(d.name)!
+    }
+
+    return d
+  })
+
+  // Add the new defs to the modules table under the instance name
+  if (def.qualifiedName) {
+    context.importedModules.set(def.qualifiedName, { ...protoModule, defs: newProtoDefs })
+  }
+
+  return newProtoDefs.map(protoDef => flattenDef(context, protoDef, def.qualifiedName))
+}
+
 function flattenImportOrExport(context: FlatteningContext, def: QuintImport | QuintExport): DefAfterFlattening[] {
   const qualifiedName = def.defName ? undefined : (def.qualifiedName ?? def.protoName)
 
   const protoModule = context.importedModules.get(def.protoName)!
 
+  // Add the new defs to the modules table under the qualified name
   if (qualifiedName) {
     context.importedModules.set(qualifiedName, { ...protoModule, name: qualifiedName })
   }
@@ -71,80 +112,6 @@ function flattenImportOrExport(context: FlatteningContext, def: QuintImport | Qu
 
   return defsToFlatten.map(protoDef => flattenDef(context, protoDef, qualifiedName))
 }
-
-function flattenInstance(context: FlatteningContext, def: QuintInstance): DefAfterFlattening[] {
-  // Build pure val definitions from overrides to replace the constants in the
-  // instance. We keep both the original and the namespaced version of the
-  // definition, so that we can properly update the `importedModules` map that
-  // might be used to later export this instance (which can be done without the
-  // namespace)
-  const overrides: { original: DefAfterFlattening, namespaced: DefAfterFlattening }[] =
-    def.overrides.map(([param, expr]) => {
-      const constDef = context.table.get(param.id)!
-      const name = namespacedName(def.qualifiedName, param.name)
-      const typeAnnotation = constDef.typeAnnotation
-        ? addNamespaceToType(context, def.qualifiedName, constDef.typeAnnotation)
-        : undefined
-
-      return {
-        original: {
-          kind: 'def',
-          qualifier: 'pureval',
-          name: param.name,
-          expr,
-          typeAnnotation: constDef.typeAnnotation,
-          id: param.id,
-        },
-        namespaced: {
-          kind: 'def',
-          qualifier: 'pureval',
-          name,
-          // This expression should not carry the namespace, since it is defined
-          // in the current module. This is the reason why we can't simply call
-          // `flattenDef` on the original definition, and have to keep the two
-          // versions.
-          expr,
-          typeAnnotation,
-          id: getNewIdWithSameLoc(context, param.id),
-        },
-      }
-    })
-
-  const [originalOverrides, namespacedOverrides] =
-    overrides.reduce(([originalMap, namespacedMap], { original, namespaced }) => {
-      originalMap.set(original.name, original)
-      namespacedMap.set(namespaced.name, namespaced)
-      return [originalMap, namespacedMap]
-    }, [new Map<string, DefAfterFlattening>(), new Map<string, DefAfterFlattening>()])
-
-  const protoModule = context.importedModules.get(def.protoName)!
-
-  // Add the new module name to the modules table
-  if (def.qualifiedName) {
-    // Overrides replace the original constant definitions, in the same position as they appear originally
-    const newProtoDefs = protoModule.defs.map(d => {
-      if (isFlattened(d) && originalOverrides.has(d.name)) {
-        return originalOverrides.get(d.name)!
-      }
-
-      return d
-    })
-
-    context.importedModules.set(def.qualifiedName, { ...protoModule, defs: newProtoDefs })
-  }
-
-  const newDefs = protoModule.defs.map(protoDef => flattenDef(context, protoDef, def.qualifiedName))
-
-  // Overrides replace the original constant definitions, in the same position as they appear originally
-  return newDefs.map(d => {
-    if (namespacedOverrides.has(d.name)) {
-      return namespacedOverrides.get(d.name)!
-    }
-
-    return d
-  })
-}
-
 
 function filterDefs(defs: QuintDef[], name: string | undefined): QuintDef[] {
   if (!name || name === '*') {
@@ -187,7 +154,7 @@ function isFlattened(def: QuintDef): def is DefAfterFlattening {
 interface FlatteningContext {
   idGenerator: IdGenerator,
   table: LookupTable,
-  builtinNames: Set<string>,
+  currentModuleNames: Set<string>,
   sourceMap: Map<bigint, Loc>,
   importedModules: Map<string, QuintModule>,
 }
@@ -357,10 +324,10 @@ function namespacedName(namespace: string | undefined, name: string): string {
  * @param name the name to be prefixed
  * @param id the id of the expression in which the name appears
  *
- * @returns false if the name is a builtin or a parameter, true otherwise
+ * @returns false if the name is on the curentModulesName list, true otherwise
  */
 function shouldAddNamespace(ctx: FlatteningContext, name: string): boolean {
-  if (ctx.builtinNames.has(name)) {
+  if (ctx.currentModuleNames.has(name)) {
     return false
   }
 
