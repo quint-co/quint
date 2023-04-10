@@ -109,11 +109,11 @@ describe('flatten', () => {
     const expectedDefs = [
       'pure val A1::N: int = 1',
       'var A1::x: int',
-      'pure def A1::f = (a => iadd(a, 1))',
+      'pure def A1::f = (A1::a => iadd(A1::a, 1))',
       `action A1::V = assign(A1::x, A1::f(A1::x))`,
       'assume A1::T = igt(A1::N, 0)',
-      'def A1::lam = val A1::b = 1 { (a => iadd(A1::b, a)) }',
-      'def A1::lam2 = val A1::b = 1 { (a => iadd(A1::b, a)) }',
+      'def A1::lam = val A1::b = 1 { (A1::a => iadd(A1::b, A1::a)) }',
+      'def A1::lam2 = val A1::b = 1 { (A1::a => iadd(A1::b, A1::a)) }',
     ]
 
     assertFlatennedDefs(baseDefs, defs, expectedDefs)

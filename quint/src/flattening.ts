@@ -51,7 +51,6 @@ export function flatten(
 
     const protoModule = importedModules.get(def.protoName)!
 
-    // Add the new module name to the modules table
     if (qualifiedName) {
       importedModules.set(qualifiedName, { ...protoModule, name: qualifiedName })
     }
@@ -64,37 +63,71 @@ export function flatten(
         return
       }
 
-      newDefs.push(flattenDef(context, protoDef, qualifiedName))
+      const d = flattenDef(context, protoDef, qualifiedName)
+      newDefs.push(d)
     })
 
 
     if (def.kind === 'instance') {
       // def is QuintInstance. Replace every parameter with the assigned expression.
-      const overrides: Map<string, DefAfterFlattening> = new Map(def.overrides.map(([param, expr]) => {
-        const constDef = table.get(param.id)!
-        const name = namespacedName(qualifiedName, param.name)
-        const typeAnnotation = constDef.typeAnnotation
-          ? addNamespaceToType(context, qualifiedName, constDef.typeAnnotation)
-          : undefined
+      const overrides: { original: DefAfterFlattening, namespaced: DefAfterFlattening }[] =
+        def.overrides.map(([param, expr]) => {
+          const constDef = table.get(param.id)!
+          const name = namespacedName(qualifiedName, param.name)
+          const typeAnnotation = constDef.typeAnnotation
+            ? addNamespaceToType(context, qualifiedName, constDef.typeAnnotation)
+            : undefined
 
-        return [name, {
-          kind: 'def',
-          qualifier: 'pureval',
-          name,
-          expr,
-          typeAnnotation,
-          id: getNewIdWithSameLoc(context, param.id),
-        }]
-      }))
+          return {
+            original: {
+              kind: 'def',
+              qualifier: 'pureval',
+              name: param.name,
+              expr,
+              typeAnnotation: constDef.typeAnnotation,
+              id: param.id,
+            },
+            namespaced: {
+              kind: 'def',
+              qualifier: 'pureval',
+              name,
+              // This expression should not carry the namespace, since it is defined in the current module
+              expr,
+              typeAnnotation,
+              id: getNewIdWithSameLoc(context, param.id),
+            },
+          }
+        })
+
+      const [originalOverrides, namespacedOverrides] = overrides.reduce(([originalMap, namespacedMap], { original, namespaced }) => {
+        originalMap.set(original.name, original)
+        namespacedMap.set(namespaced.name, namespaced)
+        return [originalMap, namespacedMap]
+      }, [new Map<string, DefAfterFlattening>(), new Map<string, DefAfterFlattening>()])
 
       // Overrides replace the original constant definitions, in the same position as they appear originally
-      return newDefs.map(d => {
-        if (overrides.has(d.name)) {
-          return overrides.get(d.name)!
+      const newProtoDefs = newDefs.map(d => {
+        if (namespacedOverrides.has(d.name)) {
+          return namespacedOverrides.get(d.name)!
         }
 
         return d
       })
+
+      // Add the new module name to the modules table
+      if (qualifiedName) {
+        const newProtoDefsWithoutNamespace = protoModule.defs.map(d => {
+          if (isFlattened(d) && originalOverrides.has(d.name)) {
+            return originalOverrides.get(d.name)!
+          }
+
+          return d
+        })
+
+        importedModules.set(qualifiedName, { ...protoModule, defs: newProtoDefsWithoutNamespace })
+      }
+
+      return newProtoDefs
     }
 
     return newDefs
