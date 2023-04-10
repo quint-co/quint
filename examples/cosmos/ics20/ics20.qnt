@@ -20,8 +20,7 @@ module denomTrace {
 
   pure def senderIsSource(sourcePort: str, sourceChannel: str, denomTrace: DenomTrace): bool =
     denomTrace.path.length() >= 1 and
-    denomTrace.path.head().port == sourcePort and
-    denomTrace.path.head().channel == sourceChannel
+    denomTrace.path.head() == { channel: sourceChannel, port: sourcePort }
 
   pure def receiverIsSource(sourcePort: str, sourceChannel: str, denomTrace: DenomTrace): bool =
     not(senderIsSource(sourcePort, sourceChannel, denomTrace))
