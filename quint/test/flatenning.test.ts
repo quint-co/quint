@@ -190,4 +190,29 @@ describe('flatten', () => {
 
     assertFlatennedDefs(baseDefs, defs, expectedDefs)
   })
+
+  describe('export instance with qualifier', () => {
+    const baseDefs = [
+      'const N: int',
+      'val x = N + 1',
+    ]
+
+    const defs = [
+      'val myN = 1',
+      'import A(N = myN) as A1',
+      'export A1 as B',
+    ]
+
+    const expectedDefs = [
+      'val myN = 1',
+      // Namespaced defs, from the instance statement
+      'pure val A1::N: int = myN',
+      'val A1::x = iadd(A1::N, 1)',
+      // Exported defs, with namespace B
+      'pure val B::N: int = myN',
+      'val B::x = iadd(B::N, 1)',
+    ]
+
+    assertFlatennedDefs(baseDefs, defs, expectedDefs)
+  })
 })
