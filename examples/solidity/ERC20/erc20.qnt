@@ -241,7 +241,7 @@ module erc20Tests {
     // When #566 is fixed, we would be able to use 256-bit integers.
     pure val AMOUNTS = 0.to(100)
 
-    var erc20State: erc20State
+    var erc20State: Erc20State
 
     action init = all {
         nondet sender = ADDR.exclude(Set(ZERO_ADDRESS)).oneOf()
@@ -253,7 +253,7 @@ module erc20Tests {
     action fromResult(result: Erc20Result): bool = all {
         result.returnedTrue,
         result.error == "",
-        erc20State' = result,
+        erc20State' = result.state,
     }
 
     action step = {
