@@ -109,11 +109,11 @@ describe('flatten', () => {
     const expectedDefs = [
       'pure val A1::N: int = 1',
       'var A1::x: int',
-      'pure def A1::f = (a => iadd(a, 1))',
+      'pure def A1::f = (A1::a => iadd(A1::a, 1))',
       `action A1::V = assign(A1::x, A1::f(A1::x))`,
       'assume A1::T = igt(A1::N, 0)',
-      'def A1::lam = val A1::b = 1 { (a => iadd(A1::b, a)) }',
-      'def A1::lam2 = val A1::b = 1 { (a => iadd(A1::b, a)) }',
+      'def A1::lam = val A1::b = 1 { (A1::a => iadd(A1::b, A1::a)) }',
+      'def A1::lam2 = val A1::b = 1 { (A1::a => iadd(A1::b, A1::a)) }',
     ]
 
     assertFlatennedDefs(baseDefs, defs, expectedDefs)
@@ -130,6 +130,87 @@ describe('flatten', () => {
 
     const expectedDefs = [
       'val f = (x => iadd(x, 1))',
+    ]
+
+    assertFlatennedDefs(baseDefs, defs, expectedDefs)
+  })
+
+  describe('export with previous import', () => {
+    const baseDefs = [
+      'val f(x) = x + 1',
+    ]
+
+    const defs = [
+      'import A.*',
+      'export A.*',
+    ]
+
+    const expectedDefs = [
+      'val f = (x => iadd(x, 1))',
+    ]
+
+    assertFlatennedDefs(baseDefs, defs, expectedDefs)
+  })
+
+  describe('export without previous import', () => {
+    const baseDefs = [
+      'val f(x) = x + 1',
+    ]
+
+    const defs = [
+      'export A.*',
+    ]
+
+    const expectedDefs = [
+      'val f = (x => iadd(x, 1))',
+    ]
+
+    assertFlatennedDefs(baseDefs, defs, expectedDefs)
+  })
+
+  describe('export instance', () => {
+    const baseDefs = [
+      'const N: int',
+      'val x = N + 1',
+    ]
+
+    const defs = [
+      'import A(N = 1) as A1',
+      'export A1.*',
+    ]
+
+    const expectedDefs = [
+      // Namespaced defs, from the instance statement
+      'pure val A1::N: int = 1',
+      'val A1::x = iadd(A1::N, 1)',
+      // Exported defs, without namespace
+      'pure val N: int = 1',
+      'val x = iadd(N, 1)',
+    ]
+
+    assertFlatennedDefs(baseDefs, defs, expectedDefs)
+  })
+
+  describe('export instance with qualifier', () => {
+    const baseDefs = [
+      'const N: int',
+      'val x = N + 1',
+    ]
+
+    const defs = [
+      'val myN = 1',
+      'import A(N = myN) as A1',
+      'export A1 as B',
+    ]
+
+    const expectedDefs = [
+      'val myN = 1',
+      // Namespaced defs, from the instance statement
+      'pure val A1::N: int = myN',
+      'val A1::x = iadd(A1::N, 1)',
+      // Exported defs, with namespace B
+      'pure val B::N: int = myN',
+      'val B::x = iadd(B::N, 1)',
     ]
 
     assertFlatennedDefs(baseDefs, defs, expectedDefs)

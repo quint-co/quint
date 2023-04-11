@@ -625,3 +625,34 @@ exit $exit_code
 ```
 error: --seed must be a big integer, found: NotANumber
 ```
+
+### OK on compile imports
+
+<!-- !test in compile imports -->
+```
+echo "init" | quint -r ../examples/language-features/imports.qnt::G 2>&1 | tail -n +3
+```
+
+<!-- !test out compile imports -->
+```
+true
+
+>>> true
+>>> 
+```
+
+### OK on compile instances
+
+<!-- !test in compile instances -->
+```
+echo -e "A1::f(1)\nA2::f(1)" | quint -r ../examples/language-features/instances.qnt::Instances 2>&1 | tail -n +3
+```
+
+<!-- !test out compile instances -->
+```
+true
+
+>>> 34
+>>> 16
+>>> 
+```
