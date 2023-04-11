@@ -645,13 +645,14 @@ true
 
 <!-- !test in compile instances -->
 ```
-echo "A2::g(false)" | quint -r ../examples/language-features/instances.qnt::Instances 2>&1 | tail -n +3
+echo -e "A1::f(1)\nA2::f(1)" | quint -r ../examples/language-features/instances.qnt::Instances 2>&1 | tail -n +3
 ```
 
 <!-- !test out compile instances -->
 ```
 true
 
->>> true
+>>> 34
+>>> 16
 >>> 
 ```
