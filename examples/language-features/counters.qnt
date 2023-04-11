@@ -29,6 +29,8 @@ module counters {
   //  - divide n by 2, when n is even
   //  - double n, when n is divisible by 3
   //  - increment n, when n is positive
+  //
+  // Note that the three actions are not mutually exclusive.
   action Next = any {
     OnEven,
     OnDivByThree,

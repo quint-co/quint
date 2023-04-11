@@ -80,7 +80,7 @@ Temporarily disabled.
 ### OK on test Tendermint
 
 <!-- !test check Tendermint - Test -->
-    quint test --main InstanceTests ../examples/cosmos/tendermint/TendermintAcc005.qnt
+    quint test --max-samples=100 --main InstanceTests ../examples/cosmos/tendermint/TendermintAcc005.qnt
 
 ### OK on parse imports
 
@@ -233,11 +233,16 @@ Temporarily disabled.
 <!-- check lottery - Syntax/Types & Effects/Unit tests -->
 <!--     quint test --main=lotteryTests ../examples/solidity/icse23-fig7/lottery.qnt -->
 
-### OK on test erc20.qnt
+### OK on test erc20.qnt::mempool
 
-<!-- !test check erc20 - Syntax/Types & Effects/Unit tests -->
+<!-- !test check erc20::mempool - Syntax/Types & Effects/Unit tests -->
     quint test --main=mempool ../examples/solidity/ERC20/erc20.qnt
 
+### OK on test erc20.qnt::erc20Tests
+
+<!-- !test check erc20::erc20Tests - Syntax/Types & Effects/Unit tests -->
+    quint test --main=erc20Tests ../examples/solidity/ERC20/erc20.qnt
+    
 ### OK on test ics20 bank
 
 <!-- !test check ics20 bank - Syntax/Types & Effects/Unit tests -->

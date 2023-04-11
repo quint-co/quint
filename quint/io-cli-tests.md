@@ -253,17 +253,17 @@ exit $exit_code
 ```
 
   counters
-    ok passingTest
-    1) failingTest
+    ok passingTest passed 10000 test(s)
+    1) failingTest failed after 1 test(s)
 
   1 passing (duration)
   1 failed
   1 ignored
 
   1) failingTest:
-      HOME/counters.qnt:84:9 - error: Assertion failed
-      84:         assert(n == 0),
-    Use --seed=0xb --match=failingTest to repeat.
+      HOME/counters.qnt:86:9 - error: Assertion failed
+      86:         assert(n == 0),
+    Use --seed=0x1109d --match=failingTest to repeat.
 
 
   Use --verbosity=3 to show executions.
@@ -287,21 +287,21 @@ exit $exit_code
 ```
 
   counters
-    ok passingTest
-    1) failingTest
+    ok passingTest passed 10000 test(s)
+    1) failingTest failed after 1 test(s)
 
   1 passing (duration)
   1 failed
   1 ignored
 
   1) failingTest:
-      HOME/counters.qnt:84:9 - error: Assertion failed
-      84:         assert(n == 0),
+      HOME/counters.qnt:86:9 - error: Assertion failed
+      86:         assert(n == 0),
 
     [Frame 0]
     Init() => true
 
-    Use --seed=0xb --match=failingTest to repeat.
+    Use --seed=0x1109d --match=failingTest to repeat.
 ```
 
 ### Run finds an invariant violation
@@ -341,7 +341,7 @@ An example execution:
 ────────────────────────────────────────────────────────────────────────────────
 
 [violation] Found an issue (duration).
-Use --seed=0x83 to reproduce.
+Use --seed=0x84 to reproduce.
 Use --verbosity=3 to show executions.
 ```
 
@@ -370,15 +370,15 @@ An example execution:
 ────────────────────────────────────────────────────────────────────────────────
 
 [State 2]
- n: 1
+ n: 3
 ────────────────────────────────────────────────────────────────────────────────
 
 [State 3]
- n: 2
+ n: 6
 ────────────────────────────────────────────────────────────────────────────────
 
 [State 4]
- n: 1
+ n: 3
 ────────────────────────────────────────────────────────────────────────────────
 
 [ok] No violation found (duration).
@@ -415,7 +415,7 @@ The command `run` finds an overflow in Coin.
 
 <!-- !test in run finds overflow -->
 ```
-quint run --max-steps=5 --seed=0xa781df22a4e1b --invariant=totalSupplyDoesNotOverflowInv \
+quint run --max-steps=5 --seed=0x1e352e160fec18 --invariant=totalSupplyDoesNotOverflowInv \
   ../examples/solidity/Coin/coin.qnt 2>&1 | \
   sed 's/([0-9]*ms)/(duration)/g' | \
   sed 's#^.*counters.qnt#      HOME/coin.qnt#g'
@@ -426,22 +426,27 @@ quint run --max-steps=5 --seed=0xa781df22a4e1b --invariant=totalSupplyDoesNotOve
 An example execution:
 
 [State 0]
- minter: "bob"
+ minter: "eve"
  balances: Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0)
 ────────────────────────────────────────────────────────────────────────────────
 
 [State 1]
- minter: "bob"
- balances: Map("alice" -> 112227219862027340921078445797861844549872086429890866964706079270398539014242, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0)
+ minter: "eve"
+ balances: Map("alice" -> 0, "bob" -> 42072507376163960643920738270336159490043987977674145501118528050792554254667, "charlie" -> 0, "eve" -> 0, "null" -> 0)
 ────────────────────────────────────────────────────────────────────────────────
 
 [State 2]
- minter: "bob"
- balances: Map("alice" -> 112227219862027340921078445797861844549872086429890866964706079270398539014242, "bob" -> 47850813087576832105311667859327237260393994841669946694277889986649712915206, "charlie" -> 0, "eve" -> 0, "null" -> 0)
+ minter: "eve"
+ balances: Map("alice" -> 0, "bob" -> 42072507376163960643920738270336159490043987977674145501118528050792554254667, "charlie" -> 0, "eve" -> 0, "null" -> 16521711849181237202636451043914108610889109974959974963671010185510852394179)
+────────────────────────────────────────────────────────────────────────────────
+
+[State 3]
+ minter: "eve"
+ balances: Map("alice" -> 0, "bob" -> 42072507376163960643920738270336159490043987977674145501118528050792554254667, "charlie" -> 0, "eve" -> 0, "null" -> 91875600531977772563185819847316161578729924588376815416915532887911288012318)
 ────────────────────────────────────────────────────────────────────────────────
 
 [violation] Found an issue (duration).
-Use --seed=0xa781df22a4e1b to reproduce.
+Use --seed=0x1e352e160fec18 to reproduce.
 Use --verbosity=3 to show executions.
 ```
 
@@ -451,7 +456,7 @@ The command `run` finds an overflow in Coin and shows the operator calls.
 
 <!-- !test in run shows calls -->
 ```
-quint run --max-steps=5 --seed=0x1322806a9d4d75 \
+quint run --max-steps=5 --seed=0x1786e678d45ef0 \
   --invariant=totalSupplyDoesNotOverflowInv \
   --verbosity=3 \
   ../examples/solidity/Coin/coin.qnt 2>&1 | \
@@ -478,34 +483,34 @@ An example execution:
  q::stepAndInvariant() => true
  ├─ q::step() => true
  │  └─ step() => true
- │     └─ mint("null", "bob", 31701990635664935286248394518451474777406164715399985050013545195688059126298) => true
+ │     └─ mint("null", "alice", 97210836887067662390949112128222467294168903789083016866293633957660645688905) => true
  │        ├─ require(true) => true
  │        └─ require(true) => true
- │           └─ isUInt(31701990635664935286248394518451474777406164715399985050013545195688059126298) => true
- └─ isUInt(31701990635664935286248394518451474777406164715399985050013545195688059126298) => true
+ │           └─ isUInt(97210836887067662390949112128222467294168903789083016866293633957660645688905) => true
+ └─ isUInt(97210836887067662390949112128222467294168903789083016866293633957660645688905) => true
 
 [State 1]
  minter: "null"
- balances: Map("alice" -> 0, "bob" -> 31701990635664935286248394518451474777406164715399985050013545195688059126298, "charlie" -> 0, "eve" -> 0, "null" -> 0)
+ balances: Map("alice" -> 97210836887067662390949112128222467294168903789083016866293633957660645688905, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0)
 ────────────────────────────────────────────────────────────────────────────────
 
 [Frame 2]
  q::stepAndInvariant() => true
  ├─ q::step() => true
  │  └─ step() => true
- │     └─ mint("null", "null", 107162483646813152959543881993468659919796109009715053764685335413234538760161) => true
+ │     └─ mint("null", "charlie", 71367179983756460176106538680495310778684729363601314720341430729464281514430) => true
  │        ├─ require(true) => true
  │        └─ require(true) => true
- │           └─ isUInt(107162483646813152959543881993468659919796109009715053764685335413234538760161) => true
- └─ isUInt(138864474282478088245792276511920134697202273725115038814698880608922597886459) => false
+ │           └─ isUInt(71367179983756460176106538680495310778684729363601314720341430729464281514430) => true
+ └─ isUInt(168578016870824122567055650808717778072853633152684331586635064687124927203335) => false
 
 [State 2]
  minter: "null"
- balances: Map("alice" -> 0, "bob" -> 31701990635664935286248394518451474777406164715399985050013545195688059126298, "charlie" -> 0, "eve" -> 0, "null" -> 107162483646813152959543881993468659919796109009715053764685335413234538760161)
+ balances: Map("alice" -> 97210836887067662390949112128222467294168903789083016866293633957660645688905, "bob" -> 0, "charlie" -> 71367179983756460176106538680495310778684729363601314720341430729464281514430, "eve" -> 0, "null" -> 0)
 ────────────────────────────────────────────────────────────────────────────────
 
 [violation] Found an issue (duration).
-Use --seed=0x1322806a9d4d75 to reproduce.
+Use --seed=0x1786e678d45ef0 to reproduce.
 Use --verbosity=3 to show executions.
 ```
 
@@ -544,7 +549,7 @@ quint -q -r \
 <!-- !test exit 1 -->
 <!-- !test in verbose test -->
 ```
-output=$(quint test --seed=0x1cce84523050d3 --match=mintTwiceThenSendTest \
+output=$(quint test --seed=0x1cce84523050d3 --match=mintTwiceThenSendError \
   --verbosity=3 ../examples/solidity/Coin/coin.qnt)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
@@ -555,13 +560,13 @@ exit $exit_code
 ```
 
   coin
-    1) mintTwiceThenSendTest
+    1) mintTwiceThenSendError failed after 1 test(s)
 
   1 failed
 
-  1) mintTwiceThenSendTest:
-      HOME/coin.qnt:176:5 - error: mintTwiceThenSendTest returns false
-      176:     run mintTwiceThenSendTest = {
+  1) mintTwiceThenSendError:
+      HOME/coin.qnt:176:5 - error: mintTwiceThenSendError returns false
+      176:     run mintTwiceThenSendError = {
 
     [Frame 0]
     init() => true
@@ -586,7 +591,7 @@ exit $exit_code
     └─ require(false) => false
        └─ isUInt(145963574418946342547142173995097689803696706599151842181438832424509713441143) => false
 
-    Use --seed=0x1cce84523050d3 --match=mintTwiceThenSendTest to repeat.
+    Use --seed=0x1cce84523050d3 --match=mintTwiceThenSendError to repeat.
 ```
 
 ### test fails on invalid seed

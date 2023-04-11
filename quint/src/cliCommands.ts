@@ -290,15 +290,16 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
     }
 
     const matchFun =
-      (n: string): boolean => isMatchingTest(prev.args.match, n)
+      (n: string): boolean => isMatchingTest(testing.args.match, n)
     const options: TestOptions = {
       testMatch: matchFun,
+      maxSamples: testing.args.maxSamples,
       rng,
       verbosity: verbosityLevel,
     }
     const testOut =
-      compileAndTest(prev.modules, main,
-                     prev.sourceMap, prev.table, prev.types, options)
+      compileAndTest(testing.modules, main,
+                     testing.sourceMap, testing.table, testing.types, options)
     if (testOut.isRight()) {
       const elapsedMs = Date.now() - startMs
       const results = testOut.unwrap()
@@ -306,11 +307,11 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
       if (verbosity.hasResults(verbosityLevel)) {
         results.forEach(res => {
           if (res.status === 'passed') {
-            out('    ' + chalk.green('ok ') + res.name)
+            out(`    ${chalk.green('ok')} ${res.name} passed ${res.nsamples} test(s)`)
           }
           if (res.status === 'failed') {
-            const errNo = namedErrors.length + 1
-            out('    ' + chalk.red(`${errNo}) `)  + res.name)
+            const errNo = chalk.red(namedErrors.length + 1)
+            out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
 
             res.errors.forEach(e => namedErrors.push([res.name, e, res]))
           }
