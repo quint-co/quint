@@ -18,20 +18,17 @@ module denomTrace {
     baseDenom: str,
   }
 
-  pure def senderIsSource(sourcePort: str, sourceChannel: str, denomTrace: DenomTrace): bool =
+  pure def goingTowardsOrigin(sourcePort: str, sourceChannel: str, denomTrace: DenomTrace): bool =
     denomTrace.path.length() >= 1 and
     denomTrace.path.head() == { channel: sourceChannel, port: sourcePort }
 
-  pure def receiverIsSource(sourcePort: str, sourceChannel: str, denomTrace: DenomTrace): bool =
-    not(senderIsSource(sourcePort, sourceChannel, denomTrace))
-
   pure def updateTrace(denomTrace: DenomTrace, sourcePort: str, sourceChannel: str, destPort: str, destChannel: str): DenomTrace = {
-    if (senderIsSource(sourcePort, sourceChannel, denomTrace)) {
-      // Sender is source
+    if (goingTowardsOrigin(sourcePort, sourceChannel, denomTrace)) {
+      // Sender is sink (receiver is source)
       // Remove prefix from trace
       { path: denomTrace.path.tail(), baseDenom: denomTrace.baseDenom }
     } else {
-      // Sender is sink
+      // Sender is source (receiver is sink)
       // Add prefix to trace
       { path: [{ port: destPort, channel: destChannel }].concat(denomTrace.path), baseDenom: denomTrace.baseDenom }
     }
@@ -166,7 +163,7 @@ module ics20 {
 
   pure def onRecvPacket(packet: Packet): Result =
     pure val tokenOperation =
-      if (senderIsSource(packet.sourcePort, packet.sourceChannel, packet.data.ibcTrace))
+      if (goingTowardsOrigin(packet.sourcePort, packet.sourceChannel, packet.data.ibcTrace))
         // This should interact with the bank module. For now, we just return
         // the token operation to enable visualization and testing the sequence
         // of operations.
