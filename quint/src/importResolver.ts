@@ -13,7 +13,7 @@
  */
 
 import { DefinitionsByModule, DefinitionsByName, addTypeToTable, addValueToTable, copyNames, copyTable, mergeTables, newTable } from './definitionsByName'
-import { QuintImport, QuintInstance, QuintModule } from './quintIr'
+import { QuintExport, QuintImport, QuintInstance, QuintModule } from './quintIr'
 import { IRVisitor, walkModule } from './IRVisitor'
 import { QuintError } from './quintError'
 
@@ -93,6 +93,9 @@ class ImportResolverVisitor implements IRVisitor {
       return
     }
     const instanceTable = copyTable(moduleTable)
+    if (def.qualifiedName) {
+      this.tables.set(def.qualifiedName, instanceTable)
+    }
 
     // For each override, check if the name exists in the instantiated module and is a constant.
     // If so, update the value definition to point to the expression being overriden
@@ -125,7 +128,7 @@ class ImportResolverVisitor implements IRVisitor {
   }
 
   enterImport(def: QuintImport): void {
-    if(def.protoName === this.currentModule?.name) {
+    if (def.protoName === this.currentModule?.name) {
       // Importing current module
       this.errors.set(def.id, {
         code: 'QNT407',
@@ -148,7 +151,6 @@ class ImportResolverVisitor implements IRVisitor {
 
     const qualifier = def.defName ? undefined : (def.qualifiedName ?? def.protoName)
     const importableDefinitions = copyNames(moduleTable, qualifier, this.currentModule?.id)
-
     if (!def.defName || def.defName === '*') {
       // Imports all definitions
       this.table = mergeTables(this.table, importableDefinitions)
@@ -168,6 +170,91 @@ class ImportResolverVisitor implements IRVisitor {
       valueDefs.forEach(def => addValueToTable(def, this.table))
       const typeDefs = importableDefinitions.typeDefinitions.get(def.defName) ?? []
       typeDefs.forEach(def => addTypeToTable(def, this.table))
+    }
+  }
+
+
+  // Imported names are copied with a scope since imports are not transitive by
+  // default. Exporting needs to turn those names into unscoped ones so, when
+  // the current module is imported, the names are accessible. Note that it is
+  // also possible to export names that were not previously imported via `import`.
+  enterExport(def: QuintExport) {
+    if (def.protoName === this.currentModule?.name) {
+      // Exporting current module
+      this.errors.set(def.id, {
+        code: 'QNT407',
+        message: `Cannot export ${def.protoName} inside ${def.protoName}`,
+        data: {},
+      })
+      return
+    }
+
+    const moduleTable = this.tables.get(def.protoName)
+    if (!moduleTable) {
+      // Exporting unexisting module
+      this.errors.set(def.id, {
+        code: 'QNT404',
+        message: `Module ${def.protoName} not found`,
+        data: {},
+      })
+      return
+    }
+
+    const qualifier = def.defName ? undefined : (def.qualifiedName ?? def.protoName)
+    const exportableDefinitions = copyNames(moduleTable, qualifier)
+
+    if (!def.defName || def.defName === '*') {
+      // Avoid conflicts by removing the scoped versions of the definitions
+      exportableDefinitions.valueDefinitions.forEach((_, name) => {
+        this.removeValuesWithScope(name, this.currentModule?.id)
+      })
+      exportableDefinitions.typeDefinitions.forEach((_, name) => {
+        this.removeTypesWithScope(name, this.currentModule?.id)
+      })
+
+      // Export all definitions
+      this.table = mergeTables(this.table, exportableDefinitions)
+    } else {
+      // Tries to find a specific definition, reporting an error if not found
+      const valueDefs = exportableDefinitions.valueDefinitions.get(def.defName) ?? []
+      const typeDefs = exportableDefinitions.typeDefinitions.get(def.defName) ?? []
+
+      if (valueDefs.length === 0 && typeDefs.length === 0) {
+        this.errors.set(def.id, {
+          code: 'QNT405',
+          message: `Name ${def.protoName}::${def.defName} not found`,
+          data: {},
+        })
+        return
+      }
+
+      valueDefs.forEach(def => {
+        // Avoid conflicts by removing the scoped version of the definition
+        this.removeValuesWithScope(def.identifier, this.currentModule?.id)
+
+        addValueToTable(def, this.table)
+      })
+
+      typeDefs.forEach(def => {
+        // Avoid conflicts by removing the scoped version of the definition
+        this.removeTypesWithScope(def.identifier, this.currentModule?.id)
+
+        addTypeToTable(def, this.table)
+      })
+    }
+  }
+
+  private removeValuesWithScope(name: string, scope: bigint | undefined) {
+    const valueDefs = this.table.valueDefinitions.get(name)
+    if (valueDefs) {
+      this.table.valueDefinitions.set(name, valueDefs.filter(d => d.scope !== scope))
+    }
+  }
+
+  private removeTypesWithScope(name: string, scope: bigint | undefined) {
+    const typeDefs = this.table.typeDefinitions.get(name)
+    if (typeDefs) {
+      this.table.typeDefinitions.set(name, typeDefs.filter(d => d.scope !== scope))
     }
   }
 }

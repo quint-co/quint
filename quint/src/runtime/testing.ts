@@ -15,17 +15,19 @@ import { QuintModule, QuintOpDef } from '../quintIr'
 import { TypeScheme } from '../types/base'
 
 import { CompilationContext, compile } from './compile'
-import { newIdGenerator } from './../idGenerator'
+import { zerog } from './../idGenerator'
 import { LookupTable } from '../lookupTable'
 import { Computable, kindName } from './runtime'
 import { ExecutionFrame, newTraceRecorder } from './trace'
+import { Rng } from '../rng'
 
 /**
  * Various settings to be passed to the testing framework.
  */
 export interface TestOptions {
   testMatch: (n: string) => boolean,
-  rand: () => number,
+  maxSamples: number,
+  rng: Rng,
   verbosity: number,
 }
 
@@ -43,6 +45,10 @@ export interface TestResult {
    */
   status: 'passed' | 'failed' | 'ignored'
   /**
+   * The seed value to repeat the test.
+   */
+  seed: bigint,
+  /**
    * When status === 'failed', errors contain the explanatory error messages.
    */
   errors: ErrorMessage[]
@@ -50,6 +56,10 @@ export interface TestResult {
    * If the trace was recorded, frames contains the history.
    */
   frames: ExecutionFrame[],
+  /**
+   * The number of tried samples.
+   */
+  nsamples: number,
 }
 
 /**
@@ -70,10 +80,10 @@ export function compileAndTest(
     lookupTable: LookupTable,
     types: Map<bigint, TypeScheme>,
     options: TestOptions): Either<string, TestResult[]> {
-  const recorder = newTraceRecorder(options.verbosity)
+  const recorder = newTraceRecorder(options.verbosity, options.rng)
   const ctx =
     compile(modules, sourceMap, lookupTable,
-            types, main.name, recorder, options.rand)
+            types, main.name, recorder, options.rng.next)
 
   if(!ctx.main) {
     return left('Cannot find main module')
@@ -86,34 +96,64 @@ export function compileAndTest(
   return merge(testDefs.map(def => {
     return getComputableForDef(ctx, def)
       .map(comp => {
-        recorder.onRunCall()
         const name = def.name
-        const result = comp.eval()
-        recorder.onRunReturn(result, [] /* <= ignore the states */)
-        if (result.isNone()) {
-          return {
-            name, status: 'failed', errors: ctx.getRuntimeErrors(),
-            frames: recorder.getBestTrace().subframes,
+        // save the initial seed
+        let seed = options.rng.getState()
+        
+        let nsamples = 1
+        // run up to maxSamples, stop on the first failure
+        for (; nsamples <= options.maxSamples; nsamples++) {
+          // record the seed value
+          seed = options.rng.getState()
+          // run the test
+          recorder.onRunCall()
+          const result = comp.eval()
+          recorder.onRunReturn(result, [] /* <= ignore the states */)
+
+          if (result.isNone()) {
+            // if the test failed, return immediately
+            return {
+              name, status: 'failed', errors: ctx.getRuntimeErrors(),
+              seed, frames: recorder.getBestTrace().subframes, nsamples: nsamples,
+            }
+          }
+
+          const ex = result.value.toQuintEx(zerog)
+          if (ex.kind !== 'bool') {
+            // if the test returned a malformed result, return immediately
+            return { name, status: 'ignored', errors: [], seed: seed, frames: [], nsamples: nsamples }
+          }
+
+          if (!(ex.value)) {
+            // if the test returned false, return immediately
+            const e = fromIrErrorMessage(sourceMap)({
+              explanation: `${name} returns false`,
+              refs: [def.id],
+            })
+            return {
+              name,
+              status: 'failed',
+              errors: [e],
+              seed: seed,
+              frames: recorder.getBestTrace().subframes,
+              nsamples: nsamples,
+            }
+          } else {
+            if (options.rng.getState() === seed) {
+              // This successful test did not use non-determinism.
+              // Running it one time is sufficient.
+              return {
+                 name, status: 'passed', errors: [],
+                 seed: seed, frames: [], nsamples: nsamples
+              }
+            }
           }
         }
 
-        const ex = result.value.toQuintEx(newIdGenerator())
-        if (ex.kind !== 'bool') {
-          return { name, status: 'ignored', errors: [], frames: [] }
-        }
-        if (ex.value) {
-          return { name, status: 'passed', errors: [], frames: [] }
-        }
-
-        const e = fromIrErrorMessage(sourceMap)({
-          explanation: `${name} returns false`,
-          refs: [def.id],
-        })
+        // the test was run maxSamples times, and no errors were found
         return {
-          name,
-          status: 'failed',
-          errors: [e],
-          frames: recorder.getBestTrace().subframes,
+          name, status: 'passed', errors: [],
+          seed: seed, frames: [], nsamples: nsamples - 1
         }
       })
   }))

@@ -6,10 +6,11 @@ import { ExecutionFrame, newTraceRecorder } from '../../src/runtime/trace'
 import { zerog } from '../../src/idGenerator'
 import { QuintApp } from '../../src/quintIr'
 import { verbosity } from '../../src/verbosity'
+import { newRng } from '../../src/rng'
 
 describe('newTraceRecorder', () => {
   it('one layer', () => {
-    const rec = newTraceRecorder(verbosity.maxVerbosity)
+    const rec = newTraceRecorder(verbosity.maxVerbosity, newRng())
     const A: QuintApp = { id: 0n, kind: 'app', opcode: 'A', args: [] }
     rec.onUserOperatorCall(A)
     rec.onUserOperatorReturn(A, [], none())
@@ -24,7 +25,7 @@ describe('newTraceRecorder', () => {
   })
 
   it('two layers', () => {
-    const rec = newTraceRecorder(verbosity.maxVerbosity)
+    const rec = newTraceRecorder(verbosity.maxVerbosity, newRng())
     const A: QuintApp = { id: 0n, kind: 'app', opcode: 'A', args: [] }
     const B: QuintApp = { id: 0n, kind: 'app', opcode: 'B', args: [] }
     // (A calls (B, after that it calls A)), after that another A is called
@@ -47,7 +48,7 @@ describe('newTraceRecorder', () => {
   })
 
   it('any {...} mixed', () => {
-    const rec = newTraceRecorder(verbosity.maxVerbosity)
+    const rec = newTraceRecorder(verbosity.maxVerbosity, newRng())
     const A: QuintApp = { id: 0n, kind: 'app', opcode: 'A', args: [] }
     const B: QuintApp = { id: 0n, kind: 'app', opcode: 'B', args: [] }
     const C: QuintApp = { id: 0n, kind: 'app', opcode: 'C', args: [] }

@@ -25,6 +25,7 @@ unit :    'const' IDENTIFIER ':' type                     # const
         | 'type' IDENTIFIER                               # typedef
         | 'type' IDENTIFIER '=' type                      # typedef
         | importMod                                       # importDef
+        | exportMod                                       # exportDef
         // https://github.com/informalsystems/quint/issues/378
         //| 'nondet' IDENTIFIER (':' type)? '=' expr ';'? expr {
         //  const m = "QNT007: 'nondet' is only allowed inside actions"
@@ -56,6 +57,10 @@ qualifier : 'val'
 
 importMod : 'import' name '.' identOrStar
           | 'import' name ('as' name)?
+          ;
+
+exportMod : 'export' name '.' identOrStar
+          | 'export' name ('as' name)?
           ;
 
 // an instance may have a special parameter '*',

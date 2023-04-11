@@ -224,6 +224,17 @@ export interface QuintImport extends WithId {
   qualifiedName?: string,
 }
 
+export interface QuintExport extends WithId {
+  /** definition kind ('export') */
+  kind: 'export',
+  /** path to the module, e.g., Foo in import Foo.* */
+  protoName: string
+  /** name to import, or '*' to denote all. Undefined when a qualifier is present. */
+  defName?: string,
+  /** a qualifier, e.g. F in import Foo as F */
+  qualifiedName?: string,
+}
+
 export interface QuintInstance extends WithId {
   /** definition kind ('instance') */
   kind: 'instance',
@@ -247,6 +258,7 @@ export type QuintDef = (
   | QuintAssume
   | QuintTypeDef
   | QuintImport
+  | QuintExport
   | QuintInstance
 ) & WithOptionalDoc
 

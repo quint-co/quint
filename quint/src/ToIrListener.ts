@@ -278,6 +278,22 @@ export class ToIrListener implements QuintListener {
     this.definitionStack.push(importDef)
   }
 
+  exitExportMod(ctx: p.ExportModContext) {
+    const defName = ctx.identOrStar() ? this.identOrStarStack.pop()! : undefined
+    const protoName = ctx.name()[0].text
+    const qualifier = ctx.name().length > 1 ? ctx.name()[1].text : undefined
+    const id = this.idGen.nextId()
+    this.sourceMap.set(id, this.loc(ctx))
+    const exportDef: QuintDef = {
+      id,
+      kind: 'export',
+      defName: defName,
+      protoName: protoName,
+      qualifiedName: qualifier,
+    }
+    this.definitionStack.push(exportDef)
+  }
+
   // type ALIAS = set(int)
   exitTypedef(ctx: p.TypedefContext) {
     const name = ctx.IDENTIFIER()!.text

@@ -14,18 +14,37 @@
 
 import { IdGenerator } from "./idGenerator"
 import { LookupTable } from "./lookupTable"
-import { QuintAssume, QuintConst, QuintDef, QuintEx, QuintModule, QuintOpDef, QuintTypeDef, QuintVar, WithOptionalDoc, isAnnotatedDef } from "./quintIr"
+import { QuintAssume, QuintConst, QuintDef, QuintEx, QuintExport, QuintImport, QuintInstance, QuintModule, QuintOpDef, QuintTypeDef, QuintVar, WithOptionalDoc, isAnnotatedDef } from "./quintIr"
 import { defaultValueDefinitions } from "./definitionsCollector"
 import { definitionToString } from "./IRprinting"
 import { QuintType, Row } from "./quintTypes"
 import { Loc } from "./quintParserFrontend"
+import { compact, uniqBy } from "lodash"
+
+type FlatDef = (
+  QuintOpDef
+  | QuintConst
+  | QuintVar
+  | QuintAssume
+  | QuintTypeDef
+) & WithOptionalDoc
+
+interface FlatteningContext {
+  idGenerator: IdGenerator,
+  table: LookupTable,
+  currentModuleNames: Set<string>,
+  sourceMap: Map<bigint, Loc>,
+  importedModules: Map<string, QuintModule>,
+}
 
 /**
- * Flatten a module, replacing instances and (todo) imports with their definitions.
+ * Flatten a module, replacing instances, imports and exports with their definitions.
  *
  * @param module The module to flatten
  * @param table The lookup table to for all refered names
  * @param importedModules The map of all refered modules
+ * @param idGenerator The id generator to use for new definitions
+ * @param sourceMap The source map for all modules involved
  *
  * @returns The flattened module
  */
@@ -36,53 +55,84 @@ export function flatten(
   idGenerator: IdGenerator,
   sourceMap: Map<bigint, Loc>
 ): QuintModule {
-  const builtinNames = new Set(defaultValueDefinitions().map(d => d.identifier))
+  const currentModuleNames = new Set([
+    // builtin names
+    ...defaultValueDefinitions().map(d => d.identifier),
+    // names from the current module
+    ...compact(module.defs.map(d => isFlat(d) ? d.name : undefined)),
+  ])
 
-  const context = { idGenerator, table, builtinNames, sourceMap }
+  const context = { idGenerator, table, currentModuleNames, sourceMap, importedModules }
 
-  const newDefs = module.defs.reduce((newDefs, def) => {
-    if (isFlattened(def)) {
-      // Not an instance or import, keep the same def
-      newDefs.push(def)
-      return newDefs
+  const newDefs = module.defs.flatMap(def => {
+    if (isFlat(def)) {
+      // Not an instance, import or export, keep the same def
+      return [def]
     }
 
-    if (def.kind == 'instance') {
-      // def is QuintInstance. Replace every parameter with the assigned expression.
-      def.overrides.forEach(([param, expr]) => {
-        const constDef = table.get(param.id)!
-        const name = namespacedName(def.qualifiedName, param.name)
-        const typeAnnotation = constDef.typeAnnotation
-          ? addNamespaceToType(context, def.qualifiedName, constDef.typeAnnotation)
-          : undefined
-
-        newDefs.push({
-          kind: 'def',
-          qualifier: 'pureval',
-          name,
-          expr,
-          typeAnnotation,
-          id: getNewIdWithSameLoc(context, param.id),
-        })
-      })
+    if (def.kind === 'instance') {
+      return flattenInstance(context, def)
     }
 
-    const protoModule = importedModules.get(def.protoName)!
-    const defsToFlatten = def.kind == 'instance' ? protoModule.defs : filterDefs(protoModule.defs, def.defName)
+    return flattenImportOrExport(context, def)
 
-    defsToFlatten.forEach(protoDef => {
-      if (alreadyDefined(newDefs, def.qualifiedName, protoDef)) {
-        // Previously defined by an override, don't push it again
-        return
-      }
+  })
 
-      newDefs.push(flattenDef(context, protoDef, def.qualifiedName))
-    })
+  return { ...module, defs: uniqBy(newDefs, 'name') }
+}
 
-    return newDefs
-  }, [] as DefAfterFlattening[])
+function isFlat(def: QuintDef): def is FlatDef {
+  return def.kind !== 'instance' && def.kind !== 'import' && def.kind !== 'export'
+}
 
-  return { ...module, defs: newDefs }
+function flattenInstance(context: FlatteningContext, def: QuintInstance): FlatDef[] {
+  // Build pure val definitions from overrides to replace the constants in the
+  // instance. Index them by name to make it easier to replace the corresponding constants.
+  const overrides: Map<string, FlatDef> = new Map(def.overrides.map(([param, expr]) => {
+    const constDef = context.table.get(param.id)!
+
+    return [param.name, {
+      kind: 'def',
+      qualifier: 'pureval',
+      name: param.name,
+      expr,
+      typeAnnotation: constDef.typeAnnotation,
+      id: param.id,
+    }]
+  }))
+
+  const protoModule = context.importedModules.get(def.protoName)!
+
+  // Overrides replace the original constant definitions, in the same position as they appear originally
+  const newProtoDefs = protoModule.defs.map(d => {
+    if (isFlat(d) && overrides.has(d.name)) {
+      return overrides.get(d.name)!
+    }
+
+    return d
+  })
+
+  // Add the new defs to the modules table under the instance name
+  if (def.qualifiedName) {
+    context.importedModules.set(def.qualifiedName, { ...protoModule, defs: newProtoDefs })
+  }
+
+  return newProtoDefs.map(protoDef => flattenDef(context, protoDef, def.qualifiedName))
+}
+
+function flattenImportOrExport(context: FlatteningContext, def: QuintImport | QuintExport): FlatDef[] {
+  const qualifiedName = def.defName ? undefined : (def.qualifiedName ?? def.protoName)
+
+  const protoModule = context.importedModules.get(def.protoName)!
+
+  // Add the new defs to the modules table under the qualified name
+  if (qualifiedName) {
+    context.importedModules.set(qualifiedName, { ...protoModule, name: qualifiedName })
+  }
+
+  const defsToFlatten = filterDefs(protoModule.defs, def.defName)
+
+  return defsToFlatten.map(protoDef => flattenDef(context, protoDef, qualifiedName))
 }
 
 function filterDefs(defs: QuintDef[], name: string | undefined): QuintDef[] {
@@ -90,20 +140,11 @@ function filterDefs(defs: QuintDef[], name: string | undefined): QuintDef[] {
     return defs
   }
 
-  return defs.filter(def => isFlattened(def) && def.name === name)
+  return defs.filter(def => isFlat(def) && def.name === name)
 }
 
-function alreadyDefined(newDefs: DefAfterFlattening[], qualifier: string | undefined, def: QuintDef) {
-  if (!isFlattened(def)) {
-    throw new Error(`Impossible: ${definitionToString(def)} should have been flattened already`)
-  }
-
-  return newDefs.some(d => d.name === namespacedName(qualifier, def.name))
-}
-
-
-function flattenDef(ctx: FlatteningContext, def: QuintDef, qualifier: string | undefined): DefAfterFlattening {
-  if (!isFlattened(def)) {
+function flattenDef(ctx: FlatteningContext, def: QuintDef, qualifier: string | undefined): FlatDef {
+  if (!isFlat(def)) {
     throw new Error(`Impossible: ${definitionToString(def)} should have been flattened already`)
   }
 
@@ -120,26 +161,7 @@ function flattenDef(ctx: FlatteningContext, def: QuintDef, qualifier: string | u
   return { ...newDef, typeAnnotation: type }
 }
 
-type DefAfterFlattening = (
-  QuintOpDef
-  | QuintConst
-  | QuintVar
-  | QuintAssume
-  | QuintTypeDef
-) & WithOptionalDoc
-
-function isFlattened(def: QuintDef): def is DefAfterFlattening {
-  return def.kind !== 'instance' && def.kind !== 'import'
-}
-
-interface FlatteningContext {
-  idGenerator: IdGenerator,
-  table: LookupTable,
-  builtinNames: Set<string>,
-  sourceMap: Map<bigint, Loc>
-}
-
-function addNamespaceToDef(ctx: FlatteningContext, name: string | undefined, def: QuintDef): DefAfterFlattening {
+function addNamespaceToDef(ctx: FlatteningContext, name: string | undefined, def: QuintDef): FlatDef {
   switch (def.kind) {
     case 'def':
       return addNamespaceToOpDef(ctx, name, def)
@@ -164,6 +186,8 @@ function addNamespaceToDef(ctx: FlatteningContext, name: string | undefined, def
       throw new Error(`Instance in ${definitionToString(def)} should have been flatenned already`)
     case 'import':
       throw new Error(`Import in ${definitionToString(def)} should have been flatenned already`)
+    case 'export':
+      throw new Error(`Export in ${definitionToString(def)} should have been flatenned already`)
   }
 }
 
@@ -181,7 +205,7 @@ function addNamespaceToExpr(ctx: FlatteningContext, name: string | undefined, ex
 
   switch (expr.kind) {
     case 'name':
-      if (shouldAddNamespace(ctx, expr.name, expr.id)) {
+      if (shouldAddNamespace(ctx, expr.name)) {
         return { ...expr, name: namespacedName(name, expr.name), id }
       }
 
@@ -191,7 +215,7 @@ function addNamespaceToExpr(ctx: FlatteningContext, name: string | undefined, ex
     case 'str':
       return { ...expr, id }
     case 'app': {
-      if (shouldAddNamespace(ctx, expr.opcode, expr.id)) {
+      if (shouldAddNamespace(ctx, expr.opcode)) {
         return {
           ...expr,
           opcode: namespacedName(name, expr.opcode),
@@ -209,7 +233,10 @@ function addNamespaceToExpr(ctx: FlatteningContext, name: string | undefined, ex
     case 'lambda':
       return {
         ...expr,
-        params: expr.params.map(param => ({ ...param, id: getNewIdWithSameLoc(ctx, param.id) })),
+        params: expr.params.map(param => ({
+          name: namespacedName(name, param.name),
+          id: getNewIdWithSameLoc(ctx, param.id),
+        })),
         expr: addNamespaceToExpr(ctx, name, expr.expr),
         id,
       }
@@ -299,19 +326,10 @@ function namespacedName(namespace: string | undefined, name: string): string {
  * @param name the name to be prefixed
  * @param id the id of the expression in which the name appears
  *
- * @returns false if the name is a builtin or a parameter, true otherwise
+ * @returns false if the name is on the curentModulesName list, true otherwise
  */
-function shouldAddNamespace(ctx: FlatteningContext, name: string, id: bigint): boolean {
-  if (ctx.builtinNames.has(name)) {
-    return false
-  }
-
-  const def = ctx.table.get(id)
-  if (!def) {
-    throw new Error(`Could not find def for id ${id}, name: ${name}`)
-  }
-
-  if (def.kind === 'param') {
+function shouldAddNamespace(ctx: FlatteningContext, name: string): boolean {
+  if (ctx.currentModuleNames.has(name)) {
     return false
   }
 

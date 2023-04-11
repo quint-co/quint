@@ -91,6 +91,11 @@ const testCmd = {
         desc: 'output file (suppresses all console output)',
         type: 'string',
       })
+      .option('max-samples', {
+        desc: 'the maximum number of successful runs to try for every randomized test',
+        type: 'number',
+      })
+      .default('max-samples', 10000)
       .option('seed', {
         desc: 'random seed to use for non-deterministic choice',
         type: 'string',

@@ -261,7 +261,7 @@ Since we are specifying a distributed protocol, there may be many ways to
 execute actions in different orders. In general, it is not even always clear,
 whether our protocol has terminated or not. Luckily, our protocol is quite simple.
 
-To test our protocol, we fix one particular execution sequence in `test1`:
+To test our protocol, we fix one particular execution sequence in `writeReadTest`:
 
  1. Execute the initialization action `init`.
  2. Execute the action `write`.
@@ -275,7 +275,7 @@ diagrams. For example:
 The unfortunate fact about UML sequence diagrams and state charts is that they
 are given as figures, which have to be executed in the reader's brain.
 
-In Quint, running `test1` is as simple as evaluating an expression. To try it
+In Quint, running `writeReadTest` is as simple as evaluating an expression. To try it
 out, run the command `quint`, which starts a REPL session, and execute the
 following commands (written after the REPL prompt `>>> `):
 
@@ -290,10 +290,10 @@ true
 ```
 
 In the above session, we load the module `hello` from the file `hello.qnt`,
-import all definitions from the module `hello` and execute the run `test1`. As
-indicated with the result `true`, the run was executed successfully. We can
-also evaluate the state variables `consoleOutput` and `readByUser` in the
-state produced by `test1`:
+import all definitions from the module `hello` and execute the run
+`writeReadTest`. As indicated with the result `true`, the run was executed
+successfully. We can also evaluate the state variables `consoleOutput` and
+`readByUser` in the state produced by `writeReadTest`:
 
 ```sh
 >>> consoleOutput
@@ -313,7 +313,7 @@ use the `test` command:
 whether it is possible to execute `read` and `write` in the same state.
 
 **Exercise:** Explain, whether it is possible to execute `read` or `write`
-after executing the run called `test1`.
+after executing the run called `writeReadTest`.
             </block>
 
         </description>
@@ -327,7 +327,7 @@ after executing the run called `test1`.
         <description>
 We have covered all the aspects of our "Hello, world!" example.
 Actually, we could have written a much shorter example, but it would not
-demonstrate the distinctive features of Quint. If you look at the 
+demonstrate the distinctive features of Quint. If you look at the
 source code of [hello.qnt](./hello.qnt), it is not scary long.
 
 We are experimenting with different kinds of tutorials.

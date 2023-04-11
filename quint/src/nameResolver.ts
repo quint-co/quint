@@ -83,7 +83,7 @@ class NameResolverVisitor implements IRVisitor {
   enterDef(def: QuintDef): void {
     // Keep the last visited definition name
     // so it can be showen in the reported error
-    if (def.kind !== 'instance' && def.kind !== 'import') {
+    if (def.kind !== 'instance' && def.kind !== 'import' && def.kind !== 'export') {
       this.lastDefName = def.name
     }
   }

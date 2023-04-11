@@ -80,6 +80,12 @@ Some of them accompany a TLA+ version for comparison and learning purposes.
 To simplify reading, use [syntax highlighting](./editor-plugins) for your
 editor (currently, VSCode, Emacs and Vim are supported).
 
+## Community and help
+
+- Join the chat in the [Quint zulip stream][] :telephone:
+- Join the [Quint discussions][] :bulb:
+- [Contribute](./CONTRIBUTING.md) to the development of Quint :construction_worker:
+
 ### Tools :space_invader:
 
 [Quick previews](./doc/previews.md) of the tools.
@@ -99,11 +105,11 @@ editor (currently, VSCode, Emacs and Vim are supported).
    errors as you type. Install the plugin from [Visual Studio Code
    Marketplace][].
 
-## Community
+ - VSCode plugin for [ITF traces][] by @hvanz:
 
-- Join the chat in the [Quint zulip stream][] :telephone:
-- Join the [Quint discussions][] :bulb:
-- [Contribute](./CONTRIBUTING.md) to the development of Quint :construction_worker:
+   This a plugin that visualizes traces that are produced by Quint and
+   [Apalache][]. Install the [ITF Trace Viewer][] from Visual Studio Code
+   Marketplace.
 
 ## Development
 
@@ -210,3 +216,5 @@ completely implementing every pass.
 [Tutorials]: ./tutorials/README.md
 [Quint zulip stream]: https://informal-systems.zulipchat.com/#narrow/stream/378959-quint
 [Quint discussions]: https://github.com/informalsystems/quint/discussions
+[ITF traces]: https://apalache.informal.systems/docs/adr/015adr-trace.html
+[ITF Trace Viewer]: https://marketplace.visualstudio.com/items?itemName=informal.itf-trace-viewer

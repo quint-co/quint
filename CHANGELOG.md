@@ -8,10 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Modules and definitions can now be exported (#771)
+- Non-deterministic tests are run multiple times similar to {Quick,Scala}check (#786)
+
+### Changed
+
+- The ITF export adds output similar to Apalache (#780)
+
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.9.1 -- 2023-04-04
+
+### Added
 ### Changed
 ### Deprecated
 ### Removed
 ### Fixed
+
+- `test` command now exits with non-zero code on test failures (#772)
+
 ### Security
 
 ## v0.9.0 -- 2023-04-03
@@ -23,6 +42,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - detailed run output in REPL on `.verbosity=3` (#764)
 
 ### Changed
+
+- using a controllable pRNG (#767)
+
 ### Deprecated
 ### Removed
 
@@ -30,8 +52,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Effects no longer break when applying constant operators (#759)
-- Number highlighting in vim (#765)
+- effects no longer break when applying constant operators (#759)
+- number highlighting in vim (#765)
+- the simulator supports really big numbers, e.g., 256-bit (#767)
 
 ### Security
 

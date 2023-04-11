@@ -63,6 +63,7 @@
 import {
   List, Map, OrderedMap, Set, ValueObject, hash, is as immutableIs
 } from 'immutable'
+import { Maybe, just, merge, none } from '@sweet-monads/maybe'
 
 import { IdGenerator } from '../../idGenerator'
 import { expressionToString } from '../../IRprinting'
@@ -340,25 +341,21 @@ export interface RuntimeValue
 
   /**
    * If this runtime value is set-like, pick one of its elements using the
-   * position argument as the input. Note that the position is not the index
-   * of the element under some stable ordering. Rather, it is a number in the range
-   * [0, 1). It can be used to pick elements from infinite sets such as Int and Nat.
-   *
-   * TODO: reconsider this API. Perhaps, just use a bigint, which encodes either
-   * the index up to the cardinality, or the position in an infinite set (Nat, Int).
+   * position argument as the input. The position is an index
+   * of the element under some stable ordering.
    */
-  pick (_position: number): RuntimeValue | undefined
+  pick (_position: bigint): Maybe<RuntimeValue>
 
   /**
    * If this runtime value is set-like, return the number of its elements,
    * unless its infinite. If the set is infinite, throw an exception,
    * as there is no way to efficiently deal with infinite cardinalities.
    *
-   * @return the number of set elements, if the set is finite,
-   * or throw Error, if the set is infinite
+   * @return just the number of set elements, if the set is finite,
+   * or none(), if the set is infinite
    */
 
-  cardinality (): number
+  cardinality (): Maybe<bigint>
 }
 
 /**
@@ -555,12 +552,12 @@ abstract class RuntimeValueBase implements RuntimeValue {
     return 0
   }
 
-  pick(_position: number): RuntimeValue | undefined {
-    return undefined
+  pick(_position: bigint): Maybe<RuntimeValue> {
+    return none()
   }
 
   cardinality() {
-    return 0
+    return just(0n)
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
@@ -814,25 +811,25 @@ class RuntimeValueSet extends RuntimeValueBase implements RuntimeValue {
     return this.set.includes(elem.normalForm())
   }
 
-  pick(position: number): RuntimeValue | undefined {
+  pick(position: bigint): Maybe<RuntimeValue> {
     // compute the element index based on the position
-    let index = positionToIndex(position, this.set.size)
+    let index = positionToIndex(position, just(BigInt(this.set.size)))
     // Iterate over the set elements,
     // since the set is not indexed, find the first element that goes over
     // the index number. This is probably the most efficient way of doing it
     // without creating intermediate objects in memory.
     for (const e of this) {
       if (index <= 0) {
-        return e
+        return just(e)
       }
-      index -= 1
+      index -= 1n
     }
 
-    return undefined
+    return none()
   }
 
   cardinality() {
-    return this.set.size
+    return just(BigInt(this.set.size))
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
@@ -919,18 +916,18 @@ class RuntimeValueInterval extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  pick(position: number): RuntimeValue | undefined {
+  pick(position: bigint): Maybe<RuntimeValue> {
     if (this.last < this.first) {
-      return undefined
+      return none()
     } else {
-      const size = Number(this.last - this.first + 1n)
-      const index = positionToIndex(position, size)
-      return new RuntimeValueInt(this.first + BigInt(index))
+      const size = BigInt(this.last - this.first) + 1n
+      const index = positionToIndex(position, just(size))
+      return just(new RuntimeValueInt(this.first + BigInt(index)))
     }
   }
 
   cardinality() {
-    return Number(this.last - this.first) + 1
+    return just(BigInt(this.last - this.first) + 1n)
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
@@ -1056,29 +1053,30 @@ class RuntimeValueCrossProd
     }
   }
 
-  cardinality() {
-    return this.sets.reduce((n, set) => set.cardinality() * n, 1)
+  cardinality(): Maybe<bigint> {
+    return merge(this.sets.map(s => s.cardinality()))
+        .map(cards => cards.reduce((n, card) => n * card, 1n))
   }
 
-  pick(position: number): RuntimeValue | undefined {
-    let index = Math.floor(position * this.cardinality())
+  pick(position: bigint): Maybe<RuntimeValue> {
+    let index = positionToIndex(position, this.cardinality())
     const elems: RuntimeValue[] = []
     for (const set of this.sets) {
-      const card = set.cardinality()
-      const elem = set.pick((index % card) / card)
-      if (card <= 0) {
-        return undefined
+      const cardOrNone = set.cardinality()
+      if (cardOrNone.isNone()) {
+        return none()
+      }
+      const card = cardOrNone.value
+      const elemOrNone = set.pick(index % card)
+      if (elemOrNone.isNone()) {
+        return none()
       } else {
         index = index / card
       }
-      if (elem) {
-        elems.push(elem)
-      } else {
-        return undefined
-      }
+      elems.push(elemOrNone.value)
     }
 
-    return new RuntimeValueTupleOrList('Tup', List.of(...elems))
+    return just(new RuntimeValueTupleOrList('Tup', List.of(...elems)))
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
@@ -1112,13 +1110,13 @@ class RuntimeValuePowerset
   }
 
   [Symbol.iterator]() {
-    const nsets = this.cardinality()
+    const nsets = this.cardinality().unwrap()
     // copy fromIndex, as gen does not have access to this.
-    const fromIndex = (i: number): RuntimeValue => this.fromIndex(i)
+    const fromIndex = (i: bigint): RuntimeValue => this.fromIndex(i)
     function * gen() {
       // Generate `nsets` sets by using number increments.
       // Note that 2 ** 0 == 1.
-      for (let i = 0; i < nsets; i++) {
+      for (let i = 0n; i < nsets; i++) {
         yield fromIndex(i)
       }
     }
@@ -1153,13 +1151,14 @@ class RuntimeValuePowerset
     }
   }
 
-  cardinality() {
-    return 2 ** this.baseSet.cardinality()
+  cardinality(): Maybe<bigint> {
+    return this.baseSet.cardinality().map(c => 2n ** c)
   }
 
-  pick(position: number): RuntimeValue | undefined {
-    const index = Math.floor(position * this.cardinality())
-    return this.fromIndex(index)
+  pick(position: bigint): Maybe<RuntimeValue> {
+    return this.cardinality().map(card =>
+      this.fromIndex(positionToIndex(position, just(card)))
+    )
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
@@ -1180,12 +1179,12 @@ class RuntimeValuePowerset
   // Convert the global index i to bits, which define membership.
   // By interactively dividing the index by 2 and
   // taking its remainder.
-  private fromIndex(index: number): RuntimeValue {
+  private fromIndex(index: bigint): RuntimeValue {
     const elems: RuntimeValue[] = []
     let bits = index
     for (const elem of this.baseSet) {
-      const isMem = (bits % 2) === 1
-      bits = Math.floor(bits / 2)
+      const isMem = (bits % 2n) === 1n
+      bits = bits / 2n
       if (isMem) {
         elems.push(elem)
       }
@@ -1267,31 +1266,39 @@ class RuntimeValueMapSet
     }
   }
 
-  cardinality() {
-    return this.rangeSet.cardinality() ** this.domainSet.cardinality()
+  cardinality(): Maybe<bigint> {
+    return merge([this.rangeSet.cardinality(), this.domainSet.cardinality()]).map(([rc, dc]) =>
+      rc ** dc
+    )
   }
 
-  pick(position: number): RuntimeValue | undefined {
-    let index = Math.floor(position * Number(this.cardinality()))
+  pick(position: bigint): Maybe<RuntimeValue> {
+    let index = positionToIndex(position, this.cardinality())
     const keyValues: [RuntimeValue, RuntimeValue][] = []
-    const domainSize = this.domainSet.cardinality()
-    const rangeSize = this.rangeSet.cardinality()
-    if (domainSize === 0 || rangeSize === 0) {
-      return undefined
+    const domainSizeOrNone = this.domainSet.cardinality()
+    const rangeSizeOrNone = this.rangeSet.cardinality()
+    if (domainSizeOrNone.isNone() || rangeSizeOrNone.isNone()) {
+      return none()
+    }
+    const domainSize = domainSizeOrNone.value
+    const rangeSize = rangeSizeOrNone.value
+
+    if (domainSize === 0n || rangeSize === 0n) {
+      return none()
     }
 
-    for (let i = 0; i < domainSize; i++) {
-      const key = this.domainSet.pick((i % domainSize) / domainSize)
-      const value = this.rangeSet.pick((index % rangeSize) / rangeSize)
+    for (let i = 0n; i < domainSize; i++) {
+      const keyOrNone = this.domainSet.pick(i)
+      const valueOrNone = this.rangeSet.pick(index % rangeSize)
       index = index / rangeSize
-      if (key && value) {
-        keyValues.push([key, value])
+      if (keyOrNone.isJust() && valueOrNone.isJust()) {
+        keyValues.push([keyOrNone.value, valueOrNone.value])
       } else {
-        return undefined
+        return none()
       }
     }
 
-    return rv.mkMap(keyValues)
+    return just(rv.mkMap(keyValues))
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
@@ -1311,10 +1318,12 @@ class RuntimeValueMapSet
 }
 
 // convert a position in [0, 1) to the index in a collection of `size` elements
-function positionToIndex(position: number, size: number) {
-  return (position < 0.0 || position >= 1.0)
-    ? 0
-    : Math.floor(position * size)
+function positionToIndex(position: bigint, maybeSize: Maybe<bigint>): bigint {
+  return maybeSize.map(size =>
+    (position < 0n || position >= size) ? 0n : position
+  )
+  .or(just(0n))
+  .unwrap()
 }
 
 /**
@@ -1361,19 +1370,20 @@ class RuntimeValueInfSet extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  pick(position: number): RuntimeValue | undefined {
-    // We cannot produce a random big integer.
-    // Currently, we constrain integers to 32-bit integers.
-    // In the future, we will let the user to define their own range.
-    if (this.kind === 'Nat') {
-      return rv.mkInt(BigInt(Math.floor(position * (2 ** 32))))
+  pick(position: bigint): Maybe<RuntimeValue> {
+    // Simply return the position. The actual range is up to the caller,
+    // as Int and Nat do not really care about the ranges.
+    if (this.kind === 'Int') {
+      // Simply return the position. It's up to the caller to pick the position.
+      return just(rv.mkInt(position))
     } else {
-      return rv.mkInt(BigInt(Math.floor(position * (2 ** 32) - (2 ** 31))))
+      // Nat: return the absolute value of the position.
+      return just(rv.mkInt(position >= 0n ? position : -position))
     }
   }
 
-  cardinality(): number {
-    throw new Error(`The cardinality of an infinite set ${this.kind} is not a number`)
+  cardinality(): Maybe<bigint> {
+    return none()
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {

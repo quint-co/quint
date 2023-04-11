@@ -789,7 +789,7 @@ see the next step.
     // if she has enough on her balance.
     // This test may fail sometimes. Do you see why?
     // If not, execute it multiple times in REPL, until it fails.
-    run mintTwiceThenSendTest = {
+    run mintTwiceThenSendError = {
         // non-deterministically pick some amounts to mint and send
         nondet mintEve = 0.to(MAX_UINT).oneOf()
         nondet mintBob = 0.to(MAX_UINT).oneOf()
@@ -815,7 +815,7 @@ see the next step.
 Instead of testing a sequence of transactions for a carefully crafted
 single input, we could fix a sequence of transactions and let the computer
 find the inputs that fail the test. This is exactly what we are doing in
-the above test `mintTwiceThenSendTest`. The test non-deterministically
+the above test `mintTwiceThenSendError`. The test non-deterministically
 chooses the amounts of coins to mint and send and then executes the actions
 `mint`, `mint`, and `send`. As the values are chosen non-deterministically,
 we know that some of the inputs should fail `send`. Our hypothesis is that
@@ -824,8 +824,8 @@ If she does not, we simply ignore this choice of inputs in the else-branch.
 
 Let's run this test:
 
-            <run target="markdown">echo 'mintTwiceThenSendTest' | quint -r coin.qnt::coin</run>
-            <run target="codetour">echo 'mintTwiceThenSendTest' | quint -r ./lesson3-anatomy/coin.qnt::coin</run>
+            <run target="markdown">echo 'mintTwiceThenSendError' | quint -r coin.qnt::coin</run>
+            <run target="codetour">echo 'mintTwiceThenSendError' | quint -r ./lesson3-anatomy/coin.qnt::coin</run>
             
             <block>
 
@@ -833,17 +833,26 @@ If you lucky, it fails right away. If it does not fail, run it multiple times,
 until it fails. To see why it failed, evaluate `state` after executing
 the test. Do you understand why our hypothesis was wrong?
 
-**Exercise:** Fix the condition in `mintTwiceThenSendTest`,
+**Exercise:** Fix the condition in `mintTwiceThenSendError`,
 so that the test never fails.
 
-If you carefully look at `mintTwiceThenSendTest`, you will see that it is still
+If you carefully look at `mintTwiceThenSendError`, you will see that it is still
 a single data point test, though the data point (the inputs) are chosen
 non-deterministically every time we run the test. In fact, REPL implements
 non-determinism via random choice.
 
 If you do not want to sit the whole day and run the test, you could integrate
 it into continuous integration, so it runs from time to time for different
-inputs. Also, we had to fix the sequence of actions in our test. We can do
+inputs. Quint comes with the command `test` that is designed for exactly this
+purpose. Try the command below. Most likely, it would find a violation
+after just a few tests.
+          </block>
+
+          <run target="markdown">quint test --match mintTwiceThenSendError coin.qnt</run>
+          <run target="codetour">quint test --match mintTwiceThenSendError ./lesson3-anatomy/coin.qnt</run>
+
+          <block>
+Also, we had to fix the sequence of actions in our test. We can do
 better with Quint.
 
             </block>

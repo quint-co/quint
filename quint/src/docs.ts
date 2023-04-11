@@ -35,7 +35,7 @@ export interface DocumentationEntry {
  */
 export function produceDocs(quintModule: QuintModule): Map<string, DocumentationEntry> {
   const entries = quintModule.defs.map((def) => {
-    if (def.kind === 'instance' || def.kind === 'import') {
+    if (def.kind === 'instance' || def.kind === 'import' || def.kind === 'export') {
       return undefined
     }
 
