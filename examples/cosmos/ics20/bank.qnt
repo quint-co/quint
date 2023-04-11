@@ -26,9 +26,25 @@ module bank {
   type TokenBalances = Denomination -> Amount
   type Accounts = Address -> TokenBalances
 
+  /* Result type of bank operations.
+   *
+   * Iff the operation failed, `success` is false.
+   * Otherwise, `accounts` holds the updated accounts.
+   *
+   * TODO(#539): Use ADTs, when supported.
+   */
+  type BankResult = {
+    success: bool,
+    accounts: Accounts
+  }
+
   /* ***************************************************************************
-   * FUNCTIONAL LAYER, manipulating balances
+   * FUNCTIONAL LAYER
    * **************************************************************************/
+
+  /****************************/
+  /*     helper functions     */
+  /****************************/
 
   // Get balances of all denominations in the given account `addr`.
   pure def getBalances(accounts: Accounts, addr: Address) : TokenBalances = {
@@ -43,6 +59,10 @@ module bank {
   pure def getBalance(balances: TokenBalances, denom: Denomination): Amount = {
     if (balances.keys().contains(denom)) balances.get(denom) else 0
   }
+
+  /****************************/
+  /*     public interface     */
+  /****************************/
 
   /* Return `accounts`, where `address` is updated to hold
    * `currentAmount + amount` tokens of denomination `denom`.
@@ -63,33 +83,48 @@ module bank {
   /* Return `accounts`, where `amount`-many tokens of denomination `denom`
    * vanished out of `sender`'s account into thin air.
    *
-   * This intentionally does NOT check whether `amount > 0`.
+   * Fails iff `amount` is greater than `sender`'s balance.
    */
   pure def BurnCoins(accounts: Accounts, sender: Address,
-                     denom: Denomination, amount: Amount): Accounts = {
-    addToBalance(accounts, sender, denom, -amount)
+                     denom: Denomination, amount: Amount): BankResult = {
+    if (accounts.getBalances(sender).getBalance(denom) >= amount) {
+      val newAccounts = addToBalance(accounts, sender, denom, -amount)
+      { success: true, accounts: newAccounts }
+    } else {
+      { success: false, accounts: accounts }
+    }
   }
 
   /* Return `accounts`, where `amount`-many tokens of denomination `denom` were
    * added to `sender`'s account out of thin air.
    *
-   * This intentionally does NOT check whether `amount > 0`.
+   * Fails iff `amount < 0`.
    */
   pure def MintCoins(accounts: Accounts, receiver: Address,
-                     denom: Denomination, amount: Amount): Accounts = {
-    addToBalance(accounts, receiver, denom, amount)
+                     denom: Denomination, amount: Amount): BankResult = {
+    if (amount >= 0) {
+      val newAccounts = addToBalance(accounts, receiver, denom, amount)
+      { success: true, accounts: newAccounts }
+    } else {
+      { success: false, accounts: accounts }
+    }
   }
 
   /* Return `state`, where `amount`-many tokens of denomination `denom` were
    * moved from `sender`'s account into `receiver`'s acount.
    *
-   * This intentionally does NOT check whether `amount > 0`.
+   * Fails iff `amount` is either negative or greater than `sender`'s balance.
    */
   pure def TransferCoins(accounts: Accounts, sender: Address, receiver: Address,
-                         denom: Denomination, amount: Amount): Accounts = {
-    accounts
-      .addToBalance(sender, denom, -amount)
-      .addToBalance(receiver, denom, amount)
+                         denom: Denomination, amount: Amount): BankResult = {
+    if (amount >= 0 and accounts.getBalances(sender).getBalance(denom) >= amount) {
+      val newAccounts = accounts
+                          .addToBalance(sender, denom, -amount)
+                          .addToBalance(receiver, denom, amount)
+      { success: true, accounts: newAccounts}
+    } else {
+      { success: false, accounts: accounts}
+    }
   }
 
   /* ***************************************************************************
@@ -97,25 +132,42 @@ module bank {
    * **************************************************************************/
 
   var state: Accounts
+  var error: bool  // true iff a previous bank operation has been unsuccessful
+
   pure val Addresses : Set[Address] = Set("alice", "bob", "charlie")
   pure val Denoms : Set[Denomination] = Set("atom", "eth", "osmo")
 
   // Trivial action defs for the bank module operations
   action burn(sender: Address, denom: Denomination, amount: Amount): bool =
-    state' = state.BurnCoins(sender, denom, amount)
+    val result = state.BurnCoins(sender, denom, amount)
+    all {
+      state' = result.accounts,
+      error' = (error or not(result.success))
+    }
 
   action mint(receiver: Address, denom: Denomination, amount: Amount): bool =
-    state' = state.MintCoins(receiver, denom, amount)
+    val result = state.MintCoins(receiver, denom, amount)
+    all {
+      state' = result.accounts,
+      error' = (error or not(result.success))
+    }
 
   action transfer(sender: Address, receiver: Address,
                   denom: Denomination, amount: Amount): bool =
-    state' = state.TransferCoins(sender, receiver, denom, amount)
+    val result = state.TransferCoins(sender, receiver, denom, amount)
+    all {
+      state' = result.accounts,
+      error' = (error or not(result.success))
+    }
 
   /* Initialize accounts.
    *
    * Alice, Bob and Charlie initially hold 10 ATOMs, and no other coins.
    */
-  action init = state' = Addresses.mapBy(_ => Map("atom" -> 10))
+  action init = all {
+    state' = Addresses.mapBy(_ => Map("atom" -> 10)),
+    error' = false
+  }
 
   /* Nondeterministically burn, mint, or transfer tokens of arbitrary
    * denomination and amount to/from arbitrary accounts.
@@ -137,26 +189,34 @@ module bank {
    * TESTS
    * **************************************************************************/
 
+  // A predicate that holds after `init`
+  def initialState = all {
+    // last operation successful
+    assert(not(error)),
+    // everybody holds 10 ATOM
+    assert(state.getBalances("alice").getBalance("atom") == 10),
+    assert(state.getBalances("bob").getBalance("atom") == 10),
+    assert(state.getBalances("charlie").getBalance("atom") == 10),
+    // nobody holds ETH
+    assert(state.getBalances("alice").getBalance("eth") == 0),
+    assert(state.getBalances("bob").getBalance("eth") == 0),
+    assert(state.getBalances("charlie").getBalance("eth") == 0),
+    // "noAccount" holds nothing
+    assert(state.getBalances("noAccount").getBalance("atom") == 0),
+    assert(state.getBalances("noAccount").getBalance("eth") == 0),
+  }
+
   // Do some mint, burn, transfer steps and check that account balances are correct.
   run mintTransferBurnAtomsTest = {
     init
       .then(all {
-        // everybody holds 10 ATOM
-        assert(state.getBalances("alice").getBalance("atom") == 10),
-        assert(state.getBalances("bob").getBalance("atom") == 10),
-        assert(state.getBalances("charlie").getBalance("atom") == 10),
-        // nobody holds ETH
-        assert(state.getBalances("alice").getBalance("eth") == 0),
-        assert(state.getBalances("bob").getBalance("eth") == 0),
-        assert(state.getBalances("charlie").getBalance("eth") == 0),
-        // "noAccount" holds nothing
-        assert(state.getBalances("noAccount").getBalance("atom") == 0),
-        assert(state.getBalances("noAccount").getBalance("eth") == 0),
-        
+        initialState,
         // now mint alice 15 ATOMs
         mint("alice", "atom", 15)
       })
       .then(all {
+        // last operation successful
+        assert(not(error)),
         // alice received her 15 ATOM
         assert(state.getBalances("alice").getBalance("atom") == 25),
         assert(state.getBalances("bob").getBalance("atom") == 10),
@@ -169,13 +229,15 @@ module bank {
         assert(state.getBalances("noAccount").getBalance("atom") == 0),
         assert(state.getBalances("noAccount").getBalance("eth") == 0),
 
-        // now burn bob 42 ATOMs
-        burn("bob", "atom", 42)
+        // now burn bob 6 ATOMs
+        burn("bob", "atom", 6)
       })
       .then(all {
+        // last operation successful
+        assert(not(error)),
         // bob lost 42 ATOM
         assert(state.getBalances("alice").getBalance("atom") == 25),
-        assert(state.getBalances("bob").getBalance("atom") == -32),
+        assert(state.getBalances("bob").getBalance("atom") == 4),
         assert(state.getBalances("charlie").getBalance("atom") == 10),
         // still nobody holds ETH
         assert(state.getBalances("alice").getBalance("eth") == 0),
@@ -189,9 +251,11 @@ module bank {
         mint("charlie", "eth", 6)
       })
       .then(all {
+        // last operation successful
+        assert(not(error)),
         // ATOM balances remain the same
         assert(state.getBalances("alice").getBalance("atom") == 25),
-        assert(state.getBalances("bob").getBalance("atom") == -32),
+        assert(state.getBalances("bob").getBalance("atom") == 4),
         assert(state.getBalances("charlie").getBalance("atom") == 10),
         // now charlie holds 6 ETH
         assert(state.getBalances("alice").getBalance("eth") == 0),
@@ -205,9 +269,11 @@ module bank {
         transfer("charlie", "bob", "eth", 4)
       })
       .then(all {
+        // last operation successful
+        assert(not(error)),
         // ATOM balances remain the same
         assert(state.getBalances("alice").getBalance("atom") == 25),
-        assert(state.getBalances("bob").getBalance("atom") == -32),
+        assert(state.getBalances("bob").getBalance("atom") == 4),
         assert(state.getBalances("charlie").getBalance("atom") == 10),
         // bob got 4 of charlie's ETH
         assert(state.getBalances("alice").getBalance("eth") == 0),
@@ -218,7 +284,98 @@ module bank {
         assert(state.getBalances("noAccount").getBalance("eth") == 0),
 
         // nothing changes
-        state' = state
+        state' = state,
+        error' = error
+      })
+  }
+
+  // Burn more coins than in account.
+  run burnOverBalanceTest = {
+    init
+      .then(all {
+        initialState,
+
+        // now burn alice 10 ATOMs
+        burn("alice", "atom", 10)
+      })
+      .then(all {
+        // last operation successful
+        assert(not(error)),
+        // alice lost 10 ATOM
+        assert(state.getBalances("alice").getBalance("atom") == 0),
+        assert(state.getBalances("bob").getBalance("atom") == 10),
+        assert(state.getBalances("charlie").getBalance("atom") == 10),
+
+        // now burn bob 11 ATOMs
+        burn("bob", "atom", 11)
+      })
+      .then(all{
+        // burning over balance failed
+        assert(error),
+
+        // nothing changes
+        state' = state,
+        error' = error
+      })
+  }
+
+  // Transfer more coins than in account.
+  run transferOverBalanceTest = {
+    init
+      .then(all {
+        initialState,
+
+        // now transfer 10 ATOMs from alice to bob
+        transfer("alice", "bob", "atom", 10)
+      })
+      .then(all {
+        // last operation successful
+        assert(not(error)),
+        // alice -- 10 ATOM --> bob
+        assert(state.getBalances("alice").getBalance("atom") == 0),
+        assert(state.getBalances("bob").getBalance("atom") == 20),
+        assert(state.getBalances("charlie").getBalance("atom") == 10),
+
+        // now transfer 21 ATOMs from bob to charlie
+        transfer("bob", "charlie", "atom", 21)
+      })
+      .then(all{
+        // transfer over balance failed
+        assert(error),
+
+        // nothing changes
+        state' = state,
+        error' = error
+      })
+  }
+
+  // Mint negative amount.
+  run mintNegativeTest = {
+    init
+      .then(all {
+        initialState,
+
+        // now mint alice 0 ATOMs
+        mint("alice", "atom", 0)
+      })
+      .then(all {
+        // last operation successful
+        assert(not(error)),
+        // balances remain
+        assert(state.getBalances("alice").getBalance("atom") == 10),
+        assert(state.getBalances("bob").getBalance("atom") == 10),
+        assert(state.getBalances("charlie").getBalance("atom") == 10),
+
+        // now mint alice -1 ATOMs
+        mint("alice", "atom", -1)
+      })
+      .then(all{
+        // negative minting failed
+        assert(error),
+
+        // nothing changes
+        state' = state,
+        error' = error
       })
   }
 
@@ -236,6 +393,14 @@ module bank {
         val denomNotInAccount = not(denom.in(state.get(addr).keys()))
         (addrNotInAccounts or denomNotInAccount) implies
           state.getBalances(addr).getBalance(denom) == 0
+      )
+    )
+
+  // The balance of all denominations in all accounts is always non-negative.
+  val BalanceNonNegative = not(error) implies
+    Addresses.forall(addr =>
+      Denoms.forall(denom =>
+        state.getBalances(addr).getBalance(denom) >= 0
       )
     )
 }
