@@ -88,8 +88,8 @@ module bank {
   pure def TransferCoins(accounts: Accounts, sender: Address, receiver: Address,
                          denom: Denomination, amount: Amount): Accounts = {
     accounts
-      .BurnCoins(sender, denom, amount)
-      .MintCoins(receiver, denom, amount)
+      .addToBalance(sender, denom, -amount)
+      .addToBalance(receiver, denom, amount)
   }
 
   /* ***************************************************************************
