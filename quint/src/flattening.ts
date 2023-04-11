@@ -21,12 +21,30 @@ import { QuintType, Row } from "./quintTypes"
 import { Loc } from "./quintParserFrontend"
 import { compact, uniqBy } from "lodash"
 
+type FlatDef = (
+  QuintOpDef
+  | QuintConst
+  | QuintVar
+  | QuintAssume
+  | QuintTypeDef
+) & WithOptionalDoc
+
+interface FlatteningContext {
+  idGenerator: IdGenerator,
+  table: LookupTable,
+  currentModuleNames: Set<string>,
+  sourceMap: Map<bigint, Loc>,
+  importedModules: Map<string, QuintModule>,
+}
+
 /**
- * Flatten a module, replacing instances and (todo) imports with their definitions.
+ * Flatten a module, replacing instances, imports and exports with their definitions.
  *
  * @param module The module to flatten
  * @param table The lookup table to for all refered names
  * @param importedModules The map of all refered modules
+ * @param idGenerator The id generator to use for new definitions
+ * @param sourceMap The source map for all modules involved
  *
  * @returns The flattened module
  */
@@ -41,13 +59,13 @@ export function flatten(
     // builtin names
     ...defaultValueDefinitions().map(d => d.identifier),
     // names from the current module
-    ...compact(module.defs.map(d => isFlattened(d) ? d.name : undefined)),
+    ...compact(module.defs.map(d => isFlat(d) ? d.name : undefined)),
   ])
 
   const context = { idGenerator, table, currentModuleNames, sourceMap, importedModules }
 
   const newDefs = module.defs.flatMap(def => {
-    if (isFlattened(def)) {
+    if (isFlat(def)) {
       // Not an instance, import or export, keep the same def
       return [def]
     }
@@ -63,10 +81,14 @@ export function flatten(
   return { ...module, defs: uniqBy(newDefs, 'name') }
 }
 
-function flattenInstance(context: FlatteningContext, def: QuintInstance): DefAfterFlattening[] {
+function isFlat(def: QuintDef): def is FlatDef {
+  return def.kind !== 'instance' && def.kind !== 'import' && def.kind !== 'export'
+}
+
+function flattenInstance(context: FlatteningContext, def: QuintInstance): FlatDef[] {
   // Build pure val definitions from overrides to replace the constants in the
   // instance. Index them by name to make it easier to replace the corresponding constants.
-  const overrides: Map<string, DefAfterFlattening> = new Map(def.overrides.map(([param, expr]) => {
+  const overrides: Map<string, FlatDef> = new Map(def.overrides.map(([param, expr]) => {
     const constDef = context.table.get(param.id)!
 
     return [param.name, {
@@ -83,7 +105,7 @@ function flattenInstance(context: FlatteningContext, def: QuintInstance): DefAft
 
   // Overrides replace the original constant definitions, in the same position as they appear originally
   const newProtoDefs = protoModule.defs.map(d => {
-    if (isFlattened(d) && overrides.has(d.name)) {
+    if (isFlat(d) && overrides.has(d.name)) {
       return overrides.get(d.name)!
     }
 
@@ -98,7 +120,7 @@ function flattenInstance(context: FlatteningContext, def: QuintInstance): DefAft
   return newProtoDefs.map(protoDef => flattenDef(context, protoDef, def.qualifiedName))
 }
 
-function flattenImportOrExport(context: FlatteningContext, def: QuintImport | QuintExport): DefAfterFlattening[] {
+function flattenImportOrExport(context: FlatteningContext, def: QuintImport | QuintExport): FlatDef[] {
   const qualifiedName = def.defName ? undefined : (def.qualifiedName ?? def.protoName)
 
   const protoModule = context.importedModules.get(def.protoName)!
@@ -118,11 +140,11 @@ function filterDefs(defs: QuintDef[], name: string | undefined): QuintDef[] {
     return defs
   }
 
-  return defs.filter(def => isFlattened(def) && def.name === name)
+  return defs.filter(def => isFlat(def) && def.name === name)
 }
 
-function flattenDef(ctx: FlatteningContext, def: QuintDef, qualifier: string | undefined): DefAfterFlattening {
-  if (!isFlattened(def)) {
+function flattenDef(ctx: FlatteningContext, def: QuintDef, qualifier: string | undefined): FlatDef {
+  if (!isFlat(def)) {
     throw new Error(`Impossible: ${definitionToString(def)} should have been flattened already`)
   }
 
@@ -139,27 +161,7 @@ function flattenDef(ctx: FlatteningContext, def: QuintDef, qualifier: string | u
   return { ...newDef, typeAnnotation: type }
 }
 
-type DefAfterFlattening = (
-  QuintOpDef
-  | QuintConst
-  | QuintVar
-  | QuintAssume
-  | QuintTypeDef
-) & WithOptionalDoc
-
-function isFlattened(def: QuintDef): def is DefAfterFlattening {
-  return def.kind !== 'instance' && def.kind !== 'import' && def.kind !== 'export'
-}
-
-interface FlatteningContext {
-  idGenerator: IdGenerator,
-  table: LookupTable,
-  currentModuleNames: Set<string>,
-  sourceMap: Map<bigint, Loc>,
-  importedModules: Map<string, QuintModule>,
-}
-
-function addNamespaceToDef(ctx: FlatteningContext, name: string | undefined, def: QuintDef): DefAfterFlattening {
+function addNamespaceToDef(ctx: FlatteningContext, name: string | undefined, def: QuintDef): FlatDef {
   switch (def.kind) {
     case 'def':
       return addNamespaceToOpDef(ctx, name, def)
