@@ -247,6 +247,12 @@ Temporarily disabled.
 
 <!-- !test check ics20 bank - Syntax/Types & Effects/Unit tests -->
     quint test ../examples/cosmos/ics20/bank.qnt
+    
+### OK on run prisoners
+
+<!-- !test check prisoners - Syntax/Types & Effects/Invariants -->
+    quint run --main=prisoners3 --invariant='countInv and safetyInv' \
+    ../examples/puzzles/prisoners/prisoners.qnt
 
 ### OK on typecheck SuperSpec.qnt
 

@@ -467,16 +467,34 @@ export function runSimulator(prev: TypecheckedStage):
         }
       }
 
-      if (result.errors.length != 0) {
-        // in case of 'failure', there may still be errors
-        return cliErr('run failed', { ...simulator, errors: result.errors })
-      } else {
-        return right({
+      // If nothing found, return a success. Otherwise, return an error.
+      let msg
+      switch (result.status) {
+        case 'ok':
+          return right({
+              ...simulator,
+              status: result.status,
+              trace: result.states,
+          })
+
+        case 'violation':
+          msg = 'Invariant violated'
+          break
+
+        case 'failure':
+          msg = 'Runtime error'
+          break
+
+        default:
+          msg = 'Unknown error'
+      }
+
+      return cliErr(msg, {
             ...simulator,
             status: result.status,
             trace: result.states,
-        })
-      }
+            errors: [],
+          })
     }
 }
 

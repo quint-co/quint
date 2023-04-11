@@ -310,12 +310,14 @@ The command `run` finds an invariant violation.
 
 <!-- !test in run finds violation -->
 ```
-quint run --init=Init --step=Next --seed=123 --max-steps=4 \
-  --invariant='n < 10' ../examples/language-features/counters.qnt 2>&1 | \
-  sed 's/([0-9]*ms)/(duration)/g' | \
-  sed 's#^.*counters.qnt#      HOME/counters.qnt#g'
+output=$(quint run --init=Init --step=Next --seed=123 --max-steps=4 \
+  --invariant='n < 10' ../examples/language-features/counters.qnt 2>&1)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
+exit $exit_code
 ```
 
+<!-- !test exit 1 -->
 <!-- !test out run finds violation -->
 ```
 An example execution:
@@ -343,6 +345,7 @@ An example execution:
 [violation] Found an issue (duration).
 Use --seed=0x84 to reproduce.
 Use --verbosity=3 to show executions.
+error: Invariant violated
 ```
 
 ### Run finds an example
@@ -415,12 +418,14 @@ The command `run` finds an overflow in Coin.
 
 <!-- !test in run finds overflow -->
 ```
-quint run --max-steps=5 --seed=0x1e352e160fec18 --invariant=totalSupplyDoesNotOverflowInv \
-  ../examples/solidity/Coin/coin.qnt 2>&1 | \
-  sed 's/([0-9]*ms)/(duration)/g' | \
-  sed 's#^.*counters.qnt#      HOME/coin.qnt#g'
+output=$(quint run --max-steps=5 --seed=0x1e352e160fec18 --invariant=totalSupplyDoesNotOverflowInv \
+  ../examples/solidity/Coin/coin.qnt 2>&1)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
+exit $exit_code
 ```
 
+<!-- !test exit 1 -->
 <!-- !test out run finds overflow -->
 ```
 An example execution:
@@ -448,6 +453,7 @@ An example execution:
 [violation] Found an issue (duration).
 Use --seed=0x1e352e160fec18 to reproduce.
 Use --verbosity=3 to show executions.
+error: Invariant violated
 ```
 
 ### Run shows the operator calls
@@ -456,14 +462,16 @@ The command `run` finds an overflow in Coin and shows the operator calls.
 
 <!-- !test in run shows calls -->
 ```
-quint run --max-steps=5 --seed=0x1786e678d45ef0 \
+output=$(quint run --max-steps=5 --seed=0x1786e678d45ef0 \
   --invariant=totalSupplyDoesNotOverflowInv \
   --verbosity=3 \
-  ../examples/solidity/Coin/coin.qnt 2>&1 | \
-  sed 's/([0-9]*ms)/(duration)/g' | \
-  sed 's#^.*coin.qnt#      HOME/coin.qnt#g'
+  ../examples/solidity/Coin/coin.qnt 2>&1)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
+exit $exit_code
 ```
 
+<!-- !test exit 1 -->
 <!-- !test out run shows calls -->
 ```
 An example execution:
@@ -512,6 +520,7 @@ An example execution:
 [violation] Found an issue (duration).
 Use --seed=0x1786e678d45ef0 to reproduce.
 Use --verbosity=3 to show executions.
+error: Invariant violated
 ```
 
 ### Run outputs ITF
