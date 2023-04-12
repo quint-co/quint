@@ -7,7 +7,7 @@
  * Gabriela Moreira, Informal Systems, 2023
  */
 module denomTrace {
-  /// A hop is a step from one chain to another. In this spec, we only care
+  /// A hop is a step taken by a token sent from one chain to another. In this spec, we only care
   /// about one element of the hop (sometimes the source chain, sometimes the
   /// destination chain). A `HopElement` is a representation of either the
   /// source or the destination chain of a hop.
@@ -16,12 +16,10 @@ module denomTrace {
     channel: str,
   }
 
-  /// A denomination trace is a representation of the original denomination and
-  /// all the hops it has done to get where it is. Those are usually represented
-  /// with strings of the form `{ics20Port}/{ics20Channel}/{baseDenom}`, where
-  /// `ics20Port` and `ics20Channel` are the destination port and channel of the
-  /// hop. For every hop, we either add or remove one hop from the list. In the
-  /// string representation, that means adding a prefix.
+  /// A denomination trace is a representation of the original denomination (also: base denomination) and
+  /// all the hops it has done to get where it is. For every token transfer, ICS-020 either adds or removes one hop from the list.
+  /// In the implementation, a `DenomTrace` is represented as a string of the form `{ics20Port_n}/{ics20Channel_n}/.../{ics20Port_1}/{ics20Channel_1}/{baseDenom}`, where `ics20Port_i` and `ics20Channel_i` are the destination port and channel of the
+  /// i-th hop. A token transfer then means adding or dropping a prefix.
   type DenomTrace = {
     path: List[HopElement],
     baseDenom: str,
@@ -30,7 +28,7 @@ module denomTrace {
   /// `movingBackAlongTrace` is true for a hop iff that hop is the reverse of the
   /// last hop done by the token. That is, if the source of this hop is equal to
   /// the destination of the last hop (which is saved in the trace). We only
-  /// have to check those sides of the hop because channels are unique by chain
+  /// have to check those sides of the hop because channels are unique per chain.
   ///
   /// Nomeclature from the english spec/reference implementation: This is called
   /// `receiverIsSource`. A chain can act as either a source or a sink: "A way of
