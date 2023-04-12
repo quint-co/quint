@@ -1,36 +1,67 @@
 // -*- mode: Bluespec; -*-
 
 /**
- * A specification ICS20 fungible token transfer protocol.
- *
- * For now, this only models the denomination trace changes between transfers.
+ * A specification for the denomination trace manipulation in the ICS20 fungible
+ * token transfer protocol.
  *
  * Gabriela Moreira, Informal Systems, 2023
  */
 module denomTrace {
-  type Hop = {
+  /// A hop is a step from one chain to another. In this spec, we only care
+  /// about one element of the hop (sometimes the source chain, sometimes the
+  /// destination chain). A `HopElement` is a representation of either the
+  /// source or the destination chain of a hop.
+  type HopElement = {
     port: str,
     channel: str,
   }
 
+  /// A denomination trace is a representation of the original denomination and
+  /// all the hops it has done to get where it is. Those are usually represented
+  /// with strings of the form `{ics20Port}/{ics20Channel}/{baseDenom}`, where
+  /// `ics20Port` and `ics20Channel` are the destination port and channel of the
+  /// hop. For every hop, we either add or remove one hop from the list. In the
+  /// string representation, that means adding a prefix.
   type DenomTrace = {
-    path: List[Hop],
+    path: List[HopElement],
     baseDenom: str,
   }
 
-  pure def goingTowardsOrigin(sourcePort: str, sourceChannel: str, denomTrace: DenomTrace): bool =
+  /// `movingBackAlongTrace` is true for a hop iff that hop is the reverse of the
+  /// last hop done by the token. That is, if the source of this hop is equal to
+  /// the destination of the last hop (which is saved in the trace). We only
+  /// have to check those sides of the hop because channels are unique by chain
+  ///
+  /// Nomeclature from the english spec/reference implementation: This is called
+  /// `receiverIsSource`. A chain can act as either a source or a sink: "A way of
+  /// thinking of source and sink zones is through the token's timeline. Each
+  /// send to any chain other than the one it was previously received from is a
+  /// movement forwards in the token's timeline. This causes trace to be added to
+  /// the token's history and the destination port and destination channel to be
+  /// prefixed to the denomination. In these instances the sender chain is acting
+  /// as the source zone. When the token is sent back to the chain it previously
+  /// received from, the prefix is removed. This is a backwards movement in the
+  /// token's timeline and the sender chain is acting as the sink zone."
+  pure def movingBackAlongTrace(hopSource: HopElement, denomTrace: DenomTrace): bool =
     denomTrace.path.length() >= 1 and
-    denomTrace.path.head() == { channel: sourceChannel, port: sourcePort }
+    denomTrace.path.head() == hopSource
 
+  /// `updateTrace` updates a denomTrace's path either by removing or adding a
+  /// hop. It removes a hop if the token is moving backwards along the trace,
+  /// and adds a hop if the token is moving somewhere else.
   pure def updateTrace(denomTrace: DenomTrace, sourcePort: str, sourceChannel: str, destPort: str, destChannel: str): DenomTrace = {
-    if (goingTowardsOrigin(sourcePort, sourceChannel, denomTrace)) {
-      // Sender is sink (receiver is source)
-      // Remove prefix from trace
+    val hopSource = { port: sourcePort, channel: sourceChannel }
+    val hopDestination = { port: destPort, channel: destChannel}
+    if (movingBackAlongTrace(hopSource, denomTrace)) {
+      // Sender is sink (receiver is source). Token is moving back in timeline.
+      // Remove prefix from trace, since we already used that information to
+      // find that the token just undid a previous hop.
       { path: denomTrace.path.tail(), baseDenom: denomTrace.baseDenom }
     } else {
-      // Sender is source (receiver is sink)
-      // Add prefix to trace
-      { path: [{ port: destPort, channel: destChannel }].concat(denomTrace.path), baseDenom: denomTrace.baseDenom }
+      // Sender is source (receiver is sink). Token is moving forward in timeline.
+      // Add prefix to trace, in order to know that if the token ever returns
+      // from the destination chain, it is undoing this hop.
+      { path: [hopDestination].concat(denomTrace.path), baseDenom: denomTrace.baseDenom }
     }
   }
 }
@@ -59,6 +90,8 @@ module denomTraceTest {
     baseDenom: "denom",
   }
 
+  /// Finds the correct channels for a transfer according to the chain setup
+  /// described above
   pure def getChannelsForTransfer(sourceChain: str, destChain: str): { sourceChannel: str, destChannel: str } =
     pure val channels = Map(
       "A" -> "channelToA",
@@ -75,18 +108,18 @@ module denomTraceTest {
   // Example from https://github.com/cosmos/ibc-go/blob/457095517b7832c42ecf13571fee1e550fec02d0/modules/apps/transfer/keeper/relay.go#L18-L49
   // These steps of transfer occur: A -> B -> C -> A -> C -> B -> A
   //
-  // 1. A -> B : sender chain is source zone. Denom upon receiving: 'B/denom'
-  // Actual denom: transfer/channelToA/denom
-  // 2. B -> C : sender chain is source zone. Denom upon receiving: 'C/B/denom'
-  // Actual denom: transfer/channelToB/transfer/channelToA/denom
-  // 3. C -> A : sender chain is source zone. Denom upon receiving: 'A/C/B/denom'
-  // Actual denom: transfer/channelToC/transfer/channelToB/transfer/channelToA/denom
-  // 4. A -> C : sender chain is sink zone. Denom upon receiving: 'C/B/denom'
-  // Actual denom: transfer/channelToB/transfer/channelToA/denom
-  // 5. C -> B : sender chain is sink zone. Denom upon receiving: 'B/denom'
-  // Actual denom: transfer/channelToA/denom
-  // 6. B -> A : sender chain is sink zone. Denom upon receiving: 'denom'
-  // Actual denom: denom
+  // 1. A -> B : sender chain is source zone. Token is moving away from origin.
+  //   Denom: transfer/channelToA/denom
+  // 2. B -> C : sender chain is source zone. Token is moving away from origin.
+  //   Denom: transfer/channelToB/transfer/channelToA/denom
+  // 3. C -> A : sender chain is source zone. Token is moving away from origin.
+  //   Denom: transfer/channelToC/transfer/channelToB/transfer/channelToA/denom
+  // 4. A -> C : sender chain is sink zone. Token is returning to origin.
+  //   Denom: transfer/channelToB/transfer/channelToA/denom
+  // 5. C -> B : sender chain is sink zone. Token is returning to origin.
+  //   Denom: transfer/channelToA/denom
+  // 6. B -> A : sender chain is sink zone. Token is returning to origin.
+  //   Denom: denom
   run transferTest = init.then((all {
     assert(trace.path == []),
 
@@ -163,7 +196,7 @@ module ics20 {
 
   pure def onRecvPacket(packet: Packet): Result =
     pure val tokenOperation =
-      if (goingTowardsOrigin(packet.sourcePort, packet.sourceChannel, packet.data.ibcTrace))
+      if (movingBackAlongTrace({ port: packet.sourcePort, channel: packet.sourceChannel}, packet.data.ibcTrace))
         // This should interact with the bank module. For now, we just return
         // the token operation to enable visualization and testing the sequence
         // of operations.
