@@ -18,6 +18,8 @@ import {
 
 import { verbosity } from './verbosity'
 
+import { version } from './version'
+
 // construct parsing commands with yargs
 const parseCmd = {
   command: 'parse <input>',
@@ -204,5 +206,6 @@ yargs(process.argv.slice(2))
   .command(testCmd)
   .command(docsCmd)
   .demandCommand(1)
+  .version(version)
   .strict()
   .parse()

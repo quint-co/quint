@@ -16,6 +16,7 @@ import { Maybe, just, none } from '@sweet-monads/maybe'
 import { left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
 
+import { version } from './version'
 import { QuintEx } from './quintIr'
 import {
   CompilationContext, compileFromCode, contextNameLookup, lastTraceName
@@ -29,7 +30,7 @@ import { ErrorMessage, probeParse } from './quintParserFrontend'
 import { IdGenerator, newIdGenerator } from './idGenerator'
 import { chalkQuintEx, printExecutionFrameRec } from './graphics'
 import { verbosity } from './verbosity'
-import { Rng, newRng } from './rng'
+import { newRng } from './rng'
 
 // tunable settings
 export const settings = {
@@ -86,7 +87,7 @@ export function quintRepl(input: Readable,
     return verbosity.hasReplPrompt(options.verbosity) ? text : ""
   }
   if (verbosity.hasReplBanners(options.verbosity)) {
-    out(chalk.gray('Quint REPL v0.0.3'))
+    out(chalk.gray(`Quint REPL ${version}`))
     out(chalk.gray('Type ".exit" to exit, or ".help" for more information'))
   }
   // create a readline interface
