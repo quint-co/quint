@@ -2317,7 +2317,7 @@ export class QuintParser extends Parser {
 		let _localctx: UnitOrExprContext = new UnitOrExprContext(this._ctx, this.state);
 		this.enterRule(_localctx, 32, QuintParser.RULE_unitOrExpr);
 		try {
-			this.state = 575;
+			this.state = 582;
 			this._errHandler.sync(this);
 			switch ( this.interpreter.adaptivePredict(this._input, 58, this._ctx) ) {
 			case 1:
@@ -2325,14 +2325,36 @@ export class QuintParser extends Parser {
 				{
 				this.state = 573;
 				this.unit();
+				this.state = 574;
+				this.match(QuintParser.EOF);
 				}
 				break;
 
 			case 2:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 574;
+				this.state = 576;
 				this.expr(0);
+				this.state = 577;
+				this.match(QuintParser.EOF);
+				}
+				break;
+
+			case 3:
+				this.enterOuterAlt(_localctx, 3);
+				{
+				this.state = 579;
+				this.match(QuintParser.DOCCOMMENT);
+				this.state = 580;
+				this.match(QuintParser.EOF);
+				}
+				break;
+
+			case 4:
+				this.enterOuterAlt(_localctx, 4);
+				{
+				this.state = 581;
+				this.match(QuintParser.EOF);
 				}
 				break;
 			}
@@ -2357,49 +2379,49 @@ export class QuintParser extends Parser {
 		this.enterRule(_localctx, 34, QuintParser.RULE_lambda);
 		let _la: number;
 		try {
-			this.state = 594;
+			this.state = 601;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case QuintParser.T__35:
 			case QuintParser.IDENTIFIER:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 577;
+				this.state = 584;
 				this.parameter();
-				this.state = 578;
+				this.state = 585;
 				this.match(QuintParser.T__21);
-				this.state = 579;
+				this.state = 586;
 				this.expr(0);
 				}
 				break;
 			case QuintParser.LPAREN:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 581;
+				this.state = 588;
 				this.match(QuintParser.LPAREN);
-				this.state = 582;
+				this.state = 589;
 				this.parameter();
-				this.state = 587;
+				this.state = 594;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 				while (_la === QuintParser.T__8) {
 					{
 					{
-					this.state = 583;
+					this.state = 590;
 					this.match(QuintParser.T__8);
-					this.state = 584;
+					this.state = 591;
 					this.parameter();
 					}
 					}
-					this.state = 589;
+					this.state = 596;
 					this._errHandler.sync(this);
 					_la = this._input.LA(1);
 				}
-				this.state = 590;
+				this.state = 597;
 				this.match(QuintParser.RPAREN);
-				this.state = 591;
+				this.state = 598;
 				this.match(QuintParser.T__21);
-				this.state = 592;
+				this.state = 599;
 				this.expr(0);
 				}
 				break;
@@ -2429,7 +2451,7 @@ export class QuintParser extends Parser {
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 596;
+			this.state = 603;
 			_la = this._input.LA(1);
 			if (!(_la === QuintParser.T__35 || _la === QuintParser.IDENTIFIER)) {
 			this._errHandler.recoverInline(this);
@@ -2464,7 +2486,7 @@ export class QuintParser extends Parser {
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 598;
+			this.state = 605;
 			this.identOrHole();
 			}
 		}
@@ -2490,7 +2512,7 @@ export class QuintParser extends Parser {
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 600;
+			this.state = 607;
 			_la = this._input.LA(1);
 			if (!(_la === QuintParser.MUL || _la === QuintParser.IDENTIFIER)) {
 			this._errHandler.recoverInline(this);
@@ -2526,21 +2548,21 @@ export class QuintParser extends Parser {
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 602;
+			this.state = 609;
 			this.expr(0);
-			this.state = 607;
+			this.state = 614;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			while (_la === QuintParser.T__8) {
 				{
 				{
-				this.state = 603;
+				this.state = 610;
 				this.match(QuintParser.T__8);
-				this.state = 604;
+				this.state = 611;
 				this.expr(0);
 				}
 				}
-				this.state = 609;
+				this.state = 616;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
@@ -2566,13 +2588,13 @@ export class QuintParser extends Parser {
 		this.enterRule(_localctx, 44, QuintParser.RULE_normalCallName);
 		let _la: number;
 		try {
-			this.state = 612;
+			this.state = 619;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case QuintParser.IDENTIFIER:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 610;
+				this.state = 617;
 				this.match(QuintParser.IDENTIFIER);
 				}
 				break;
@@ -2585,7 +2607,7 @@ export class QuintParser extends Parser {
 			case QuintParser.MAP:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 611;
+				this.state = 618;
 				_localctx._op = this._input.LT(1);
 				_la = this._input.LA(1);
 				if (!(((((_la - 40)) & ~0x1F) === 0 && ((1 << (_la - 40)) & ((1 << (QuintParser.AND - 40)) | (1 << (QuintParser.OR - 40)) | (1 << (QuintParser.IFF - 40)) | (1 << (QuintParser.IMPLIES - 40)) | (1 << (QuintParser.SET - 40)) | (1 << (QuintParser.LIST - 40)) | (1 << (QuintParser.MAP - 40)))) !== 0))) {
@@ -2624,13 +2646,13 @@ export class QuintParser extends Parser {
 		this.enterRule(_localctx, 46, QuintParser.RULE_nameAfterDot);
 		let _la: number;
 		try {
-			this.state = 616;
+			this.state = 623;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case QuintParser.IDENTIFIER:
 				this.enterOuterAlt(_localctx, 1);
 				{
-				this.state = 614;
+				this.state = 621;
 				this.match(QuintParser.IDENTIFIER);
 				}
 				break;
@@ -2640,7 +2662,7 @@ export class QuintParser extends Parser {
 			case QuintParser.IMPLIES:
 				this.enterOuterAlt(_localctx, 2);
 				{
-				this.state = 615;
+				this.state = 622;
 				_localctx._op = this._input.LT(1);
 				_la = this._input.LA(1);
 				if (!(((((_la - 40)) & ~0x1F) === 0 && ((1 << (_la - 40)) & ((1 << (QuintParser.AND - 40)) | (1 << (QuintParser.OR - 40)) | (1 << (QuintParser.IFF - 40)) | (1 << (QuintParser.IMPLIES - 40)))) !== 0))) {
@@ -2681,7 +2703,7 @@ export class QuintParser extends Parser {
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 618;
+			this.state = 625;
 			_la = this._input.LA(1);
 			if (!(((((_la - 29)) & ~0x1F) === 0 && ((1 << (_la - 29)) & ((1 << (QuintParser.T__28 - 29)) | (1 << (QuintParser.AND - 29)) | (1 << (QuintParser.OR - 29)) | (1 << (QuintParser.IFF - 29)) | (1 << (QuintParser.IMPLIES - 29)) | (1 << (QuintParser.PLUS - 29)) | (1 << (QuintParser.MINUS - 29)) | (1 << (QuintParser.MUL - 29)) | (1 << (QuintParser.DIV - 29)) | (1 << (QuintParser.MOD - 29)) | (1 << (QuintParser.GT - 29)) | (1 << (QuintParser.LT - 29)) | (1 << (QuintParser.GE - 29)) | (1 << (QuintParser.LE - 29)) | (1 << (QuintParser.NE - 29)) | (1 << (QuintParser.EQ - 29)))) !== 0))) {
 			this._errHandler.recoverInline(this);
@@ -2717,7 +2739,7 @@ export class QuintParser extends Parser {
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 620;
+			this.state = 627;
 			_la = this._input.LA(1);
 			if (!(((((_la - 37)) & ~0x1F) === 0 && ((1 << (_la - 37)) & ((1 << (QuintParser.STRING - 37)) | (1 << (QuintParser.BOOL - 37)) | (1 << (QuintParser.INT - 37)))) !== 0))) {
 			this._errHandler.recoverInline(this);
@@ -2812,7 +2834,7 @@ export class QuintParser extends Parser {
 
 	private static readonly _serializedATNSegments: number = 2;
 	private static readonly _serializedATNSegment0: string =
-		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03E\u0271\x04\x02" +
+		"\x03\uC91D\uCABA\u058D\uAFBA\u4F53\u0607\uEA8B\uC241\x03E\u0278\x04\x02" +
 		"\t\x02\x04\x03\t\x03\x04\x04\t\x04\x04\x05\t\x05\x04\x06\t\x06\x04\x07" +
 		"\t\x07\x04\b\t\b\x04\t\t\t\x04\n\t\n\x04\v\t\v\x04\f\t\f\x04\r\t\r\x04" +
 		"\x0E\t\x0E\x04\x0F\t\x0F\x04\x10\t\x10\x04\x11\t\x11\x04\x12\t\x12\x04" +
@@ -2876,30 +2898,31 @@ export class QuintParser extends Parser {
 		"\x03\x11\x03\x11\x05\x11\u0224\n\x11\x03\x11\x05\x11\u0227\n\x11\x03\x11" +
 		"\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11\x03\x11" +
 		"\x03\x11\x03\x11\x03\x11\x03\x11\x06\x11\u0237\n\x11\r\x11\x0E\x11\u0238" +
-		"\x07\x11\u023B\n\x11\f\x11\x0E\x11\u023E\v\x11\x03\x12\x03\x12\x05\x12" +
-		"\u0242\n\x12\x03\x13\x03\x13\x03\x13\x03\x13\x03\x13\x03\x13\x03\x13\x03" +
-		"\x13\x07\x13\u024C\n\x13\f\x13\x0E\x13\u024F\v\x13\x03\x13\x03\x13\x03" +
-		"\x13\x03\x13\x05\x13\u0255\n\x13\x03\x14\x03\x14\x03\x15\x03\x15\x03\x16" +
-		"\x03\x16\x03\x17\x03\x17\x03\x17\x07\x17\u0260\n\x17\f\x17\x0E\x17\u0263" +
-		"\v\x17\x03\x18\x03\x18\x05\x18\u0267\n\x18\x03\x19\x03\x19\x05\x19\u026B" +
-		"\n\x19\x03\x1A\x03\x1A\x03\x1B\x03\x1B\x03\x1B\x02\x02\x04\x1A \x1C\x02" +
-		"\x02\x04\x02\x06\x02\b\x02\n\x02\f\x02\x0E\x02\x10\x02\x12\x02\x14\x02" +
-		"\x16\x02\x18\x02\x1A\x02\x1C\x02\x1E\x02 \x02\"\x02$\x02&\x02(\x02*\x02" +
-		",\x02.\x020\x022\x024\x02\x02\f\x04\x02\')@@\x03\x0246\x03\x0223\x03\x02" +
-		"7<\x04\x02&&@@\x04\x0244@@\x03\x02*0\x03\x02*-\x05\x02\x1F\x1F*-2<\x03" +
-		"\x02\')\x02\u02C9\x027\x03\x02\x02\x02\x04=\x03\x02\x02\x02\x06M\x03\x02" +
-		"\x02\x02\bg\x03\x02\x02\x02\ni\x03\x02\x02\x02\f\xA1\x03\x02\x02\x02\x0E" +
-		"\xAE\x03\x02\x02\x02\x10\xBB\x03\x02\x02\x02\x12\xE5\x03\x02\x02\x02\x14" +
-		"\xE7\x03\x02\x02\x02\x16\xE9\x03\x02\x02\x02\x18\xEB\x03\x02\x02\x02\x1A" +
-		"\u012A\x03\x02\x02\x02\x1C\u0137\x03\x02\x02\x02\x1E\u015D\x03\x02\x02" +
-		"\x02 \u01FC\x03\x02\x02\x02\"\u0241\x03\x02\x02\x02$\u0254\x03\x02\x02" +
-		"\x02&\u0256\x03\x02\x02\x02(\u0258\x03\x02\x02\x02*\u025A\x03\x02\x02" +
-		"\x02,\u025C\x03\x02\x02\x02.\u0266\x03\x02\x02\x020\u026A\x03\x02\x02" +
-		"\x022\u026C\x03\x02\x02\x024\u026E\x03\x02\x02\x0268\x05\x04\x03\x027" +
-		"6\x03\x02\x02\x0289\x03\x02\x02\x0297\x03\x02\x02\x029:\x03\x02\x02\x02" +
-		":;\x03\x02\x02\x02;<\x07\x02\x02\x03<\x03\x03\x02\x02\x02=>\x07\x03\x02" +
-		"\x02>?\x07@\x02\x02?E\x07\x04\x02\x02@A\x05\x06\x04\x02AB\x05\b\x05\x02" +
-		"BD\x03\x02\x02\x02C@\x03\x02\x02\x02DG\x03\x02\x02\x02EC\x03\x02\x02\x02" +
+		"\x07\x11\u023B\n\x11\f\x11\x0E\x11\u023E\v\x11\x03\x12\x03\x12\x03\x12" +
+		"\x03\x12\x03\x12\x03\x12\x03\x12\x03\x12\x03\x12\x05\x12\u0249\n\x12\x03" +
+		"\x13\x03\x13\x03\x13\x03\x13\x03\x13\x03\x13\x03\x13\x03\x13\x07\x13\u0253" +
+		"\n\x13\f\x13\x0E\x13\u0256\v\x13\x03\x13\x03\x13\x03\x13\x03\x13\x05\x13" +
+		"\u025C\n\x13\x03\x14\x03\x14\x03\x15\x03\x15\x03\x16\x03\x16\x03\x17\x03" +
+		"\x17\x03\x17\x07\x17\u0267\n\x17\f\x17\x0E\x17\u026A\v\x17\x03\x18\x03" +
+		"\x18\x05\x18\u026E\n\x18\x03\x19\x03\x19\x05\x19\u0272\n\x19\x03\x1A\x03" +
+		"\x1A\x03\x1B\x03\x1B\x03\x1B\x02\x02\x04\x1A \x1C\x02\x02\x04\x02\x06" +
+		"\x02\b\x02\n\x02\f\x02\x0E\x02\x10\x02\x12\x02\x14\x02\x16\x02\x18\x02" +
+		"\x1A\x02\x1C\x02\x1E\x02 \x02\"\x02$\x02&\x02(\x02*\x02,\x02.\x020\x02" +
+		"2\x024\x02\x02\f\x04\x02\')@@\x03\x0246\x03\x0223\x03\x027<\x04\x02&&" +
+		"@@\x04\x0244@@\x03\x02*0\x03\x02*-\x05\x02\x1F\x1F*-2<\x03\x02\')\x02" +
+		"\u02D2\x027\x03\x02\x02\x02\x04=\x03\x02\x02\x02\x06M\x03\x02\x02\x02" +
+		"\bg\x03\x02\x02\x02\ni\x03\x02\x02\x02\f\xA1\x03\x02\x02\x02\x0E\xAE\x03" +
+		"\x02\x02\x02\x10\xBB\x03\x02\x02\x02\x12\xE5\x03\x02\x02\x02\x14\xE7\x03" +
+		"\x02\x02\x02\x16\xE9\x03\x02\x02\x02\x18\xEB\x03\x02\x02\x02\x1A\u012A" +
+		"\x03\x02\x02\x02\x1C\u0137\x03\x02\x02\x02\x1E\u015D\x03\x02\x02\x02 " +
+		"\u01FC\x03\x02\x02\x02\"\u0248\x03\x02\x02\x02$\u025B\x03\x02\x02\x02" +
+		"&\u025D\x03\x02\x02\x02(\u025F\x03\x02\x02\x02*\u0261\x03\x02\x02\x02" +
+		",\u0263\x03\x02\x02\x02.\u026D\x03\x02\x02\x020\u0271\x03\x02\x02\x02" +
+		"2\u0273\x03\x02\x02\x024\u0275\x03\x02\x02\x0268\x05\x04\x03\x0276\x03" +
+		"\x02\x02\x0289\x03\x02\x02\x0297\x03\x02\x02\x029:\x03\x02\x02\x02:;\x03" +
+		"\x02\x02\x02;<\x07\x02\x02\x03<\x03\x03\x02\x02\x02=>\x07\x03\x02\x02" +
+		">?\x07@\x02\x02?E\x07\x04\x02\x02@A\x05\x06\x04\x02AB\x05\b\x05\x02BD" +
+		"\x03\x02\x02\x02C@\x03\x02\x02\x02DG\x03\x02\x02\x02EC\x03\x02\x02\x02" +
 		"EF\x03\x02\x02\x02FH\x03\x02\x02\x02GE\x03\x02\x02\x02HI\x07\x05\x02\x02" +
 		"I\x05\x03\x02\x02\x02JL\x07B\x02\x02KJ\x03\x02\x02\x02LO\x03\x02\x02\x02" +
 		"MK\x03\x02\x02\x02MN\x03\x02\x02\x02N\x07\x03\x02\x02\x02OM\x03\x02\x02" +
@@ -3090,59 +3113,62 @@ export class QuintParser extends Parser {
 		"\f\x1A\x02\x02\u0202\u0203\t\x03\x02\x02\u0203\u023B\x05 \x11\x1B\u0204" +
 		"\u0205\f\x19\x02\x02\u0205\u0206\t\x04\x02\x02\u0206\u023B\x05 \x11\x1A" +
 		"\u0207\u0208\f\x18\x02\x02\u0208\u0209\t\x05\x02\x02\u0209\u023B\x05 " +
-		"\x11\x19\u020A\u020B\f\x16\x02\x02\u020B\u020C\x07=\x02\x02\u020C\u020D" +
-		"\x05 \x11\x17\u020D\u020E\b\x11\x01";
+		"\x11\x19\u020A\u020B\f\x16\x02\x02\u020B\u020C\x07";
 	private static readonly _serializedATNSegment1: string =
-		"\x02\u020E\u023B\x03\x02\x02\x02\u020F\u0210\f\x14\x02\x02\u0210\u0211" +
-		"\x07*\x02\x02\u0211\u023B\x05 \x11\x15\u0212\u0213\f\x12\x02\x02\u0213" +
-		"\u0214\x07+\x02\x02\u0214\u023B\x05 \x11\x13\u0215\u0216\f\x11\x02\x02" +
-		"\u0216\u0217\x07,\x02\x02\u0217\u023B\x05 \x11\x12\u0218\u0219\f\x10\x02" +
-		"\x02\u0219\u021A\x07-\x02\x02\u021A\u023B\x05 \x11\x11\u021B\u021C\f\n" +
-		"\x02\x02\u021C\u021D\x07\x17\x02\x02\u021D\u023B\x05 \x11\v\u021E\u021F" +
-		"\f \x02\x02\u021F\u0220\x07\x14\x02\x02\u0220\u0226\x050\x19\x02\u0221" +
-		"\u0223\x07>\x02\x02\u0222\u0224\x05,\x17\x02\u0223\u0222\x03\x02\x02\x02" +
-		"\u0223\u0224\x03\x02\x02\x02\u0224\u0225\x03\x02\x02\x02\u0225\u0227\x07" +
-		"?\x02\x02\u0226\u0221\x03\x02\x02\x02\u0226\u0227\x03\x02\x02\x02\u0227" +
-		"\u023B\x03\x02\x02\x02\u0228\u0229\f\x1D\x02\x02\u0229\u022A\x07\x19\x02" +
-		"\x02\u022A\u022B\x05 \x11\x02\u022B\u022C\x07\x1A\x02\x02\u022C\u023B" +
-		"\x03\x02\x02\x02\u022D\u022E\f\x0F\x02\x02\u022E\u0236\x071\x02\x02\u022F" +
-		"\u0230\x07\x1E\x02\x02\u0230\u0231\x07\'\x02\x02\u0231\u0232\x07\x07\x02" +
-		"\x02\u0232\u0233\x05(\x15\x02\u0233\u0234\x07\x18\x02\x02\u0234\u0235" +
-		"\x05 \x11\x02\u0235\u0237\x03\x02\x02\x02\u0236\u022F\x03\x02\x02\x02" +
-		"\u0237\u0238\x03\x02\x02\x02\u0238\u0236\x03\x02\x02\x02\u0238\u0239\x03" +
-		"\x02\x02\x02\u0239\u023B\x03\x02\x02\x02\u023A\u01FE\x03\x02\x02\x02\u023A" +
-		"\u0201\x03\x02\x02\x02\u023A\u0204\x03\x02\x02\x02\u023A\u0207\x03\x02" +
-		"\x02\x02\u023A\u020A\x03\x02\x02\x02\u023A\u020F\x03\x02\x02\x02\u023A" +
-		"\u0212\x03\x02\x02\x02\u023A\u0215\x03\x02\x02\x02\u023A\u0218\x03\x02" +
-		"\x02\x02\u023A\u021B\x03\x02\x02\x02\u023A\u021E\x03\x02\x02\x02\u023A" +
-		"\u0228\x03\x02\x02\x02\u023A\u022D\x03\x02\x02\x02\u023B\u023E\x03\x02" +
-		"\x02\x02\u023C\u023A\x03\x02\x02\x02\u023C\u023D\x03\x02\x02\x02\u023D" +
-		"!\x03\x02\x02\x02\u023E\u023C\x03\x02\x02\x02\u023F\u0242\x05\b\x05\x02" +
-		"\u0240\u0242\x05 \x11\x02\u0241\u023F\x03\x02\x02\x02\u0241\u0240\x03" +
-		"\x02\x02\x02\u0242#\x03\x02\x02\x02\u0243\u0244\x05(\x15\x02\u0244\u0245" +
-		"\x07\x18\x02\x02\u0245\u0246\x05 \x11\x02\u0246\u0255\x03\x02\x02\x02" +
-		"\u0247\u0248\x07>\x02\x02\u0248\u024D\x05(\x15\x02\u0249\u024A\x07\v\x02" +
-		"\x02\u024A\u024C\x05(\x15\x02\u024B\u0249\x03\x02\x02\x02\u024C\u024F" +
-		"\x03\x02\x02\x02\u024D\u024B\x03\x02\x02\x02\u024D\u024E\x03\x02\x02\x02" +
-		"\u024E\u0250\x03\x02\x02\x02\u024F\u024D\x03\x02\x02\x02\u0250\u0251\x07" +
-		"?\x02\x02\u0251\u0252\x07\x18\x02\x02\u0252\u0253\x05 \x11\x02\u0253\u0255" +
-		"\x03\x02\x02\x02\u0254\u0243\x03\x02\x02\x02\u0254\u0247\x03\x02\x02\x02" +
-		"\u0255%\x03\x02\x02\x02\u0256\u0257\t\x06\x02\x02\u0257\'\x03\x02\x02" +
-		"\x02\u0258\u0259\x05&\x14\x02\u0259)\x03\x02\x02\x02\u025A\u025B\t\x07" +
-		"\x02\x02\u025B+\x03\x02\x02\x02\u025C\u0261\x05 \x11\x02\u025D\u025E\x07" +
-		"\v\x02\x02\u025E\u0260\x05 \x11\x02\u025F\u025D\x03\x02\x02\x02\u0260" +
-		"\u0263\x03\x02\x02\x02\u0261\u025F\x03\x02\x02\x02\u0261\u0262\x03\x02" +
-		"\x02\x02\u0262-\x03\x02\x02\x02\u0263\u0261\x03\x02\x02\x02\u0264\u0267" +
-		"\x07@\x02\x02\u0265\u0267\t\b\x02\x02\u0266\u0264\x03\x02\x02\x02\u0266" +
-		"\u0265\x03\x02\x02\x02\u0267/\x03\x02\x02\x02\u0268\u026B\x07@\x02\x02" +
-		"\u0269\u026B\t\t\x02\x02\u026A\u0268\x03\x02\x02\x02\u026A\u0269\x03\x02" +
-		"\x02\x02\u026B1\x03\x02\x02\x02\u026C\u026D\t\n\x02\x02\u026D3\x03\x02" +
-		"\x02\x02\u026E\u026F\t\v\x02\x02\u026F5\x03\x02\x02\x02B9EMgqty\x88\x8F" +
-		"\x93\x96\xA1\xAC\xAE\xB9\xBB\xCA\xDE\xE5\xF4\xF7\xFA\u0111\u0115\u0120" +
-		"\u012A\u0132\u0134\u013E\u0141\u014D\u0157\u0159\u015D\u0164\u0175\u0179" +
-		"\u0184\u0188\u0193\u0197\u01A2\u01A6\u01B3\u01B7\u01C5\u01C9\u01D3\u01D6" +
-		"\u01D9\u01EB\u01F0\u01FC\u0223\u0226\u0238\u023A\u023C\u0241\u024D\u0254" +
-		"\u0261\u0266\u026A";
+		"=\x02\x02\u020C\u020D\x05 \x11\x17\u020D\u020E\b\x11\x01\x02\u020E\u023B" +
+		"\x03\x02\x02\x02\u020F\u0210\f\x14\x02\x02\u0210\u0211\x07*\x02\x02\u0211" +
+		"\u023B\x05 \x11\x15\u0212\u0213\f\x12\x02\x02\u0213\u0214\x07+\x02\x02" +
+		"\u0214\u023B\x05 \x11\x13\u0215\u0216\f\x11\x02\x02\u0216\u0217\x07,\x02" +
+		"\x02\u0217\u023B\x05 \x11\x12\u0218\u0219\f\x10\x02\x02\u0219\u021A\x07" +
+		"-\x02\x02\u021A\u023B\x05 \x11\x11\u021B\u021C\f\n\x02\x02\u021C\u021D" +
+		"\x07\x17\x02\x02\u021D\u023B\x05 \x11\v\u021E\u021F\f \x02\x02\u021F\u0220" +
+		"\x07\x14\x02\x02\u0220\u0226\x050\x19\x02\u0221\u0223\x07>\x02\x02\u0222" +
+		"\u0224\x05,\x17\x02\u0223\u0222\x03\x02\x02\x02\u0223\u0224\x03\x02\x02" +
+		"\x02\u0224\u0225\x03\x02\x02\x02\u0225\u0227\x07?\x02\x02\u0226\u0221" +
+		"\x03\x02\x02\x02\u0226\u0227\x03\x02\x02\x02\u0227\u023B\x03\x02\x02\x02" +
+		"\u0228\u0229\f\x1D\x02\x02\u0229\u022A\x07\x19\x02\x02\u022A\u022B\x05" +
+		" \x11\x02\u022B\u022C\x07\x1A\x02\x02\u022C\u023B\x03\x02\x02\x02\u022D" +
+		"\u022E\f\x0F\x02\x02\u022E\u0236\x071\x02\x02\u022F\u0230\x07\x1E\x02" +
+		"\x02\u0230\u0231\x07\'\x02\x02\u0231\u0232\x07\x07\x02\x02\u0232\u0233" +
+		"\x05(\x15\x02\u0233\u0234\x07\x18\x02\x02\u0234\u0235\x05 \x11\x02\u0235" +
+		"\u0237\x03\x02\x02\x02\u0236\u022F\x03\x02\x02\x02\u0237\u0238\x03\x02" +
+		"\x02\x02\u0238\u0236\x03\x02\x02\x02\u0238\u0239\x03\x02\x02\x02\u0239" +
+		"\u023B\x03\x02\x02\x02\u023A\u01FE\x03\x02\x02\x02\u023A\u0201\x03\x02" +
+		"\x02\x02\u023A\u0204\x03\x02\x02\x02\u023A\u0207\x03\x02\x02\x02\u023A" +
+		"\u020A\x03\x02\x02\x02\u023A\u020F\x03\x02\x02\x02\u023A\u0212\x03\x02" +
+		"\x02\x02\u023A\u0215\x03\x02\x02\x02\u023A\u0218\x03\x02\x02\x02\u023A" +
+		"\u021B\x03\x02\x02\x02\u023A\u021E\x03\x02\x02\x02\u023A\u0228\x03\x02" +
+		"\x02\x02\u023A\u022D\x03\x02\x02\x02\u023B\u023E\x03\x02\x02\x02\u023C" +
+		"\u023A\x03\x02\x02\x02\u023C\u023D\x03\x02\x02\x02\u023D!\x03\x02\x02" +
+		"\x02\u023E\u023C\x03\x02\x02\x02\u023F\u0240\x05\b\x05\x02\u0240\u0241" +
+		"\x07\x02\x02\x03\u0241\u0249\x03\x02\x02\x02\u0242\u0243\x05 \x11\x02" +
+		"\u0243\u0244\x07\x02\x02\x03\u0244\u0249\x03\x02\x02\x02\u0245\u0246\x07" +
+		"B\x02\x02\u0246\u0249\x07\x02\x02\x03\u0247\u0249\x07\x02\x02\x03\u0248" +
+		"\u023F\x03\x02\x02\x02\u0248\u0242\x03\x02\x02\x02\u0248\u0245\x03\x02" +
+		"\x02\x02\u0248\u0247\x03\x02\x02\x02\u0249#\x03\x02\x02\x02\u024A\u024B" +
+		"\x05(\x15\x02\u024B\u024C\x07\x18\x02\x02\u024C\u024D\x05 \x11\x02\u024D" +
+		"\u025C\x03\x02\x02\x02\u024E\u024F\x07>\x02\x02\u024F\u0254\x05(\x15\x02" +
+		"\u0250\u0251\x07\v\x02\x02\u0251\u0253\x05(\x15\x02\u0252\u0250\x03\x02" +
+		"\x02\x02\u0253\u0256\x03\x02\x02\x02\u0254\u0252\x03\x02\x02\x02\u0254" +
+		"\u0255\x03\x02\x02\x02\u0255\u0257\x03\x02\x02\x02\u0256\u0254\x03\x02" +
+		"\x02\x02\u0257\u0258\x07?\x02\x02\u0258\u0259\x07\x18\x02\x02\u0259\u025A" +
+		"\x05 \x11\x02\u025A\u025C\x03\x02\x02\x02\u025B\u024A\x03\x02\x02\x02" +
+		"\u025B\u024E\x03\x02\x02\x02\u025C%\x03\x02\x02\x02\u025D\u025E\t\x06" +
+		"\x02\x02\u025E\'\x03\x02\x02\x02\u025F\u0260\x05&\x14\x02\u0260)\x03\x02" +
+		"\x02\x02\u0261\u0262\t\x07\x02\x02\u0262+\x03\x02\x02\x02\u0263\u0268" +
+		"\x05 \x11\x02\u0264\u0265\x07\v\x02\x02\u0265\u0267\x05 \x11\x02\u0266" +
+		"\u0264\x03\x02\x02\x02\u0267\u026A\x03\x02\x02\x02\u0268\u0266\x03\x02" +
+		"\x02\x02\u0268\u0269\x03\x02\x02\x02\u0269-\x03\x02\x02\x02\u026A\u0268" +
+		"\x03\x02\x02\x02\u026B\u026E\x07@\x02\x02\u026C\u026E\t\b\x02\x02\u026D" +
+		"\u026B\x03\x02\x02\x02\u026D\u026C\x03\x02\x02\x02\u026E/\x03\x02\x02" +
+		"\x02\u026F\u0272\x07@\x02\x02\u0270\u0272\t\t\x02\x02\u0271\u026F\x03" +
+		"\x02\x02\x02\u0271\u0270\x03\x02\x02\x02\u02721\x03\x02\x02\x02\u0273" +
+		"\u0274\t\n\x02\x02\u02743\x03\x02\x02\x02\u0275\u0276\t\v\x02\x02\u0276" +
+		"5\x03\x02\x02\x02B9EMgqty\x88\x8F\x93\x96\xA1\xAC\xAE\xB9\xBB\xCA\xDE" +
+		"\xE5\xF4\xF7\xFA\u0111\u0115\u0120\u012A\u0132\u0134\u013E\u0141\u014D" +
+		"\u0157\u0159\u015D\u0164\u0175\u0179\u0184\u0188\u0193\u0197\u01A2\u01A6" +
+		"\u01B3\u01B7\u01C5\u01C9\u01D3\u01D6\u01D9\u01EB\u01F0\u01FC\u0223\u0226" +
+		"\u0238\u023A\u023C\u0248\u0254\u025B\u0268\u026D\u0271";
 	public static readonly _serializedATN: string = Utils.join(
 		[
 			QuintParser._serializedATNSegment0,
@@ -5418,9 +5444,11 @@ export class UnitOrExprContext extends ParserRuleContext {
 	public unit(): UnitContext | undefined {
 		return this.tryGetRuleContext(0, UnitContext);
 	}
+	public EOF(): TerminalNode { return this.getToken(QuintParser.EOF, 0); }
 	public expr(): ExprContext | undefined {
 		return this.tryGetRuleContext(0, ExprContext);
 	}
+	public DOCCOMMENT(): TerminalNode | undefined { return this.tryGetToken(QuintParser.DOCCOMMENT, 0); }
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
 	}

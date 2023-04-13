@@ -536,6 +536,11 @@ describe('repl ok', () => {
       |
       |>>> Set(2 + 3)
       |Set(5)
+      |   // a multiline comment
+      | /// a doc comment
+      | /* a multiline
+      |    comment
+      |  */
       |`
     )
     const output = dedent(
@@ -552,7 +557,12 @@ describe('repl ok', () => {
       |>>> >>> Set(2 + 3)
       |... Set(5)
       |Set(5)
-      |>>> `
+      |>>>    // a multiline comment
+      |>>>  /// a doc comment
+      |>>>  /* a multiline
+      |...     comment
+      |...   */
+      |... `
     )
     await assertRepl(input, output)
   })
