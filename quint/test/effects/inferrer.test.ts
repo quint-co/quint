@@ -228,4 +228,19 @@ describe('inferEffects', () => {
       location: 'Trying to infer effect for operator application in map(S, (p => assign(x, p)))',
     }))
   })
+
+  it('returns error when lambda returns an operator', () => {
+    const defs = ([
+      'pure def f(x) = x',
+      'pure def myOp = (_) => f',
+    ])
+
+    const [errors] = inferEffectsForDefs(defs)
+
+    errors.forEach(v => assert.deepEqual(v, {
+      children: [],
+      location: 'Inferring effect for f',
+      message: 'Result cannot be an opperator',
+    }))
+  })
 })
