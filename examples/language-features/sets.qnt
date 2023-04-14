@@ -8,11 +8,17 @@ module sets {
     s' = Set(0)
   }
 
+  // Test using a predicate by name
+  def gte0(x) = x >= 0
+  def eqn(x) = x == n
+
   action Next = all {
     n' = n + 1,
     s' = s.union(Set(n + 1)),
     s.exists(x => x == n),
     s.forall(x => x >= 0),
+    s.exists(eqn),
+    s.forall(gte0),
     n.in(s),
     s.contains(n),
     (n + 1).notin(s),
