@@ -1,7 +1,9 @@
 // -*- mode: Bluespec; -*-
 
 module ics20 {
-  import denomTrace.*
+  import base.* from "./base"
+  import denomTrace.* from "./denomTrace"
+  import bank.* from "./bank"
 
   /* ***************************************************************************
    * TYPES
@@ -9,7 +11,6 @@ module ics20 {
 
   // Fundamental types
   type Channel = str
-  type Address = str
   type Height = int
 
   // IBC packet types
@@ -20,7 +21,7 @@ module ics20 {
 
   type FungibleTokenPacket = {
     denom: DenomTrace,
-    amount: uint256,
+    amount: UINT256,
     sender: Address,
     receiver: Address,
     memo: str
@@ -36,28 +37,28 @@ module ics20 {
 
   // State of the IBC module
   type ModuleState = {
+    bank: Accounts,
     channelEscrowAddresses: Channel -> Address,
     inFlightPackets: Set[FungibleTokenPacket]
   }
 
   pure def sendFungibleTokens(moduleState: ModuleState,
-                              denomination: DenomTrace, amount: uint256,
+                              denomination: DenomTrace, amount: UINT256,
                               sender: Address, receiver: Address,
                               sourcePort: str, sourceChannel: Channel,
                               timeoutHeight: Height,
                               timeoutTimestamp: uint64): ModuleState = {
-    val isSource = senderIsSource(sourcePort, sourceChannel, ModuleState)
-    val bankResult = if (isSource) {
+    val bankResult = if (movingBackAlongTrace({port: sourcePort, channel: sourceChannel}, denomination)) {
+      // burn vouchers
+      (moduleState.bank).BurnCoins(sender, denomination, amount)
+    } else { 
       // escrow tokens
       val escrowAccount = moduleState.channelEscrowAddresses.get(sourceChannel)
-      bank.TransferCoins(sender, escrowAccount, denomination, amount)
-    } else {
-      // burn vouchers
-      bank.BurnCoins(sender, denomination, amount)
+      moduleState.bank.TransferCoins(sender, escrowAccount, denomination, amount)
     }
 
     if (bankResult.success) {
-      val packet = { denom: denomination, amount: amount, sender: sender, receiver: receiver }
+      val packet = { denom: denomination, amount: amount, sender: sender, receiver: receiver, memo: "" }
 
       // handler.sendPacket
       moduleState.with("inFlightPackets", moduleState.inFlightPackets.union(Set(packet)))
@@ -69,12 +70,12 @@ module ics20 {
   pure def onRecvPacket(moduleState: ModuleState,
                         packet: Packet): FungibleTokenPacketAcknowledgement = {
     val data = packet.data
-    if (receiverIsSource(packet.sourcePort, packet.sourceChannel, data.denom)) {
+    if (movingBackAlongTrace({port: packet.sourcePort, channel: packet.sourceChannel}, data.denom)) {
       // unescrow tokens to receiver
       val escrowAccount = moduleState.channelEscrowAddresses.get(packet.destChannel)
-      val receiverDenom = data.denom.tail()
+      val receiverDenom = updateTrace(data.denom, packet.sourcePort, packet.sourceChannel, packet.destPort, packet.destChannel)
 
-      val bankResult = bank.TransferCoins(escrowAccount, data.receiver, receiverDenom, data.amount)
+      val bankResult = moduleState.bank.TransferCoins(escrowAccount, data.receiver, receiverDenom, data.amount)
 
       if (bankResult.success) {
         { success: true, errorMessage: "" }
@@ -84,9 +85,9 @@ module ics20 {
     } else {
       // mint vouchers to receiver
       val prefix = [packet.destPort, packet.destChannel]
-      val prefixedDenom = prefix.append(data.denom)
+      val newDenom = updateTrace(data.denom, packet.sourcePort, packet.sourceChannel, packet.destPort, packet.destChannel)
 
-      val bankResult = bank.MintCoins(data.receiver, prefixedDenomination, data.amount)
+      val bankResult = moduleState.bank.MintCoins(data.receiver, newDenom, data.amount)
 
       if (bankResult.success) {
         { success: true, errorMessage: "" }

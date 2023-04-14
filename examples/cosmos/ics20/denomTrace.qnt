@@ -7,28 +7,7 @@
  * Gabriela Moreira, Informal Systems, 2023
  */
 module denomTrace {
-  /// A hop is a step taken by a token sent from one chain to another. In this
-  /// spec, we only care about one element of the hop (sometimes the source
-  /// chain, sometimes the destination chain). A `HopElement` is a representation
-  /// of either the source or the destination chain of a hop.
-  type HopElement = {
-    port: str,
-    channel: str,
-  }
-
-  /// A denomination trace is a representation of the original denomination
-  /// (also: base denomination) and all the hops it has done to get where it is.
-  /// For every token transfer, ICS-020 either adds or removes one hop from the
-  /// list. In the implementation, a `DenomTrace` is represented as a string of
-  /// the form
-  /// `{ics20Port_n}/{ics20Channel_n}/.../{ics20Port_1}/{ics20Channel_1}/{baseDenom}`,
-  /// where `ics20Port_i` and `ics20Channel_i` are the destination port and
-  /// channel of the i-th hop. A token transfer then means adding or dropping a
-  /// prefix.
-  type DenomTrace = {
-    path: List[HopElement],
-    baseDenom: str,
-  }
+  import base.* from "./base"
 
   /// `movingBackAlongTrace` is true for a hop iff that hop is the reverse of the
   /// last hop done by the token. That is, if the source of this hop is equal to
@@ -86,6 +65,7 @@ module denomTrace {
 
 // Tests for denom trace manipulation
 module denomTraceTest {
+  import base.* from "./base"
   import denomTrace.*
 
   // For testing, imagine the following channels in these chains setups
@@ -185,171 +165,5 @@ module denomTraceTest {
   })).then((all {
     assert(trace.path == []),
     trace' = trace,
-  }))
-}
-
-module denomTraceSimulation {
-  import denomTrace.*
-
-  pure val chains = Set("A", "B", "C")
-  pure val transferSequence = List(
-    ("A", "B"),
-    ("B", "C"),
-    ("C", "A"),
-    ("A", "C"),
-    ("C", "B"),
-    ("B", "A")
-  )
-
-  const channelPredicate: (str -> str -> str) => bool
-
-  pure val channelNames = Set("channel-1", "channel-2", "channel-3")
-
-  /// All possible combination of channels by chain satisfying `channelPredicate`
-  pure val possibleChannelSetups = chains.setOfMaps(chains.setOfMaps(channelNames)).filter(channelPredicate)
-
-  var trace: DenomTrace
-  var channelSetup: str -> str -> str
-  var counter: int
-
-  def getChannelsForTransfer(transfer: (str, str)): { sourceChannel: str, destChannel: str } =
-    ({
-      sourceChannel: channelSetup.get(transfer._1).get(transfer._2),
-      // The destination channel would be the source channel in the opposite
-      // direction, so we only need to reverse the order of the chains
-      destChannel: channelSetup.get(transfer._2).get(transfer._1),
-    })
-
-  action init =
-    nondet someMap = possibleChannelSetups.oneOf()
-    all {
-      trace' = {
-        path: [],
-        baseDenom: "denom",
-      },
-      channelSetup' = someMap,
-      counter' = 0,
-    }
-
-  action step =
-    val channels = getChannelsForTransfer(transferSequence[counter])
-    all {
-      trace' = updateTrace(trace, "transfer", channels.sourceChannel, "transfer", channels.destChannel),
-      counter' = counter + 1,
-      channelSetup' = channelSetup,
-    }
-
-  action unchanged = all {
-    trace' = trace,
-    counter' = counter,
-    channelSetup' = channelSetup,
-  }
-
-  run simulationTest = init.then(step.repeated(6)).then((all {
-    def show(a) = true { show(channelSetup) },
-    assert(trace.path == []),
-    unchanged,
-  }))
-}
-
-// Fails because the channel setup is not proper
-// The aim is to show that it is, in fact, necessary to enforce `isProperChannelSetup`
-module randomChannelsTests {
-  import denomTraceSimulation(
-    channelPredicate = (_) => true
-  ) as S
-}
-
-// Passes because the channel setup is proper
-module properChannelsTests {
-  import denomTrace.isProperChannelSetup
-
-  import denomTraceSimulation(
-    channelPredicate = isProperChannelSetup
-  ) as S
-}
-
-// For now, this module is just a setup to show how `denomTrace` can be used in the IBC context.
-module ics20 {
-  import denomTrace.*
-
-  type Uint = int
-
-  type FungibleTokenPacketData = {
-    ibcTrace: DenomTrace,
-    amount: Uint,
-    sender: str,
-    receiver: str,
-    memo: str,
-  }
-
-  type Packet = {
-    data: FungibleTokenPacketData,
-    sourcePort: str,
-    sourceChannel: str,
-    destPort: str,
-    destChannel: str,
-  }
-
-  type Result = { tokenOperation: str, ibcDenom: DenomTrace }
-
-  pure def onRecvPacket(packet: Packet): Result =
-    pure val tokenOperation =
-      if (movingBackAlongTrace({ port: packet.sourcePort, channel: packet.sourceChannel}, packet.data.ibcTrace))
-        // This should interact with the bank module. For now, we just return
-        // the token operation to enable visualization and testing the sequence
-        // of operations.
-        "transfer"
-      else
-        "mint"
-    pure val ibcDenom = updateTrace(packet.data.ibcTrace, packet.sourcePort, packet.sourceChannel, packet.destPort, packet.destChannel)
-    { tokenOperation: tokenOperation, ibcDenom: ibcDenom }
-}
-
-// An example run with some packets transferring tokens from
-// A -> B -> C -> A -> C -> B -> A (the same example from denomTraceTest)
-module ics20Example {
-  import denomTrace.*
-  import denomTraceTest.getChannelsForTransfer
-  import ics20.*
-
-  var log: List[Result]
-  action init =
-    log' = [{ tokenOperation: "transfer", ibcDenom: { path: [], baseDenom: "denom" } }]
-
-  pure def buildPacket(ibcTrace: DenomTrace, sourceChain: str, destChain: str): Packet =
-    pure val channels = getChannelsForTransfer(sourceChain, destChain)
-    ({
-      data: {
-        ibcTrace: ibcTrace,
-        amount: 100,
-        sender: "todo",
-        receiver: "todo",
-        memo: "todo",
-      },
-      sourcePort: "transfer",
-      sourceChannel: channels.sourceChannel,
-      destPort: "transfer",
-      destChannel: channels.destChannel,
-    })
-
-  run transferOperations = init.then((all {
-    val lastTrace = log[log.length() - 1].ibcDenom
-    log' = log.append(onRecvPacket(buildPacket(lastTrace, "A", "B")))
-  })).then((all {
-    val lastTrace = log[log.length() - 1].ibcDenom
-    log' = log.append(onRecvPacket(buildPacket(lastTrace, "B", "C"))),
-  })).then((all {
-    val lastTrace = log[log.length() - 1].ibcDenom
-    log' = log.append(onRecvPacket(buildPacket(lastTrace, "C", "A"))),
-  })).then((all {
-    val lastTrace = log[log.length() - 1].ibcDenom
-    log' = log.append(onRecvPacket(buildPacket(lastTrace, "A", "C"))),
-  })).then((all {
-    val lastTrace = log[log.length() - 1].ibcDenom
-    log' = log.append(onRecvPacket(buildPacket(lastTrace, "C", "B")))
-  })).then((all {
-    val lastTrace = log[log.length() - 1].ibcDenom
-    log' = log.append(onRecvPacket(buildPacket(lastTrace, "B", "A"))),
   }))
 }
