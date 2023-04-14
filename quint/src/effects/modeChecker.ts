@@ -155,7 +155,7 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
     case 'arrow': {
       const r = effect.result
       if (r.kind === 'arrow') {
-        throw new Error(`Unexpected arrow found in operator result: ${effectToString(r)}`)
+        throw new Error(`Unexpected arrow found in operator result: ${effectToString(effect)}`)
       }
 
       if (r.kind === 'variable') {

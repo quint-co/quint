@@ -230,7 +230,7 @@ export class EffectInferrer implements IRVisitor {
       return result
     }))
 
-    exprResult
+    const result = exprResult
       .chain(resultEffect => {
         return params.map((ps): EffectScheme => {
           return { ...resultEffect, effect: { kind: 'arrow', params: ps, result: resultEffect.effect } }
@@ -244,6 +244,13 @@ export class EffectInferrer implements IRVisitor {
           throw new Error(`Arrow effect after substitution should be an arrow: ${effectToString(effect)}`)
         }
 
+        if (effect.result.kind == 'arrow') {
+          const error = buildErrorLeaf(this.location, `Result cannot be an opperator`)
+          // Add result to the lambda body (instead of entire lambda expression)
+          // to make reporting more precise
+          this.addToResults(lambda.expr.id, left(error))
+        }
+
         const nonFreeNames = effect.params.reduce((names, p) => {
           const { effectVariables: effectVariables, entityVariables: entityVariables } = effectNames(p)
           return {
@@ -252,11 +259,10 @@ export class EffectInferrer implements IRVisitor {
           }
         }, { effectVariables: new Set<string>(), entityVariables: new Set<string>() })
 
-        this.addToResults(lambda.id, right({ ...nonFreeNames, effect }))
+        return { ...nonFreeNames, effect }
       })
-      .mapLeft(err => {
-        this.addToResults(lambda.id, left(err))
-      })
+
+    this.addToResults(lambda.id, result)
   }
 
   private addToResults(exprId: bigint, result: Either<Error, EffectScheme>) {
