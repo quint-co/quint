@@ -68,6 +68,7 @@ module denomTrace {
     }
   }
 
+  /// `isProperChannelSetup` is true iff channel names are unique by chain
   pure def isProperChannelSetup(setup: str -> str -> str): bool =
     pure val chainNames = Set("A", "B", "C") // should be channelSetup.keys(), but that's breaking the effect checker somehow (see issue #808)
     and {
@@ -245,6 +246,7 @@ module denomTraceSimulation {
   }
 
   run simulationTest = init.then(step.repeated(6)).then((all {
+    def show(a) = true { show(channelSetup) },
     assert(trace.path == []),
     unchanged,
   }))
