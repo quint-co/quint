@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Proper errors are now reported when a lambda returns an operator (#811)
+
 ### Security
 
 ## v0.9.1 -- 2023-04-04
