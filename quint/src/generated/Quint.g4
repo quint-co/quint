@@ -156,7 +156,7 @@ expr:           // apply a built-in operator via the dot notation
 // A probing rule for REPL.
 // Note that a top-level declaration has priority over an expression.
 // For example, see: https://github.com/informalsystems/quint/issues/394
-unitOrExpr :    unit | expr;
+unitOrExpr :    unit EOF | expr EOF | DOCCOMMENT EOF | EOF;
 
 // This rule parses anonymous functions, e.g.:
 // 1. x => e

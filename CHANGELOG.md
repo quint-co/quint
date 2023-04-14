@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modules and definitions can now be exported (#771)
 - Non-deterministic tests are run multiple times similar to {Quick,Scala}check (#786)
 - `quint run` returns a non-zero exit code on invariant violation and errors (#793)
+- suppress comments in REPL (#806)
+- `quint repl` is printing the same version number as returned by `quint --version` (#804)
 
 ### Changed
 

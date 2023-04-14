@@ -16,6 +16,7 @@ import { Maybe, just, none } from '@sweet-monads/maybe'
 import { left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
 
+import { version } from './version'
 import { QuintEx } from './quintIr'
 import {
   CompilationContext, compileFromCode, contextNameLookup, lastTraceName
@@ -29,7 +30,7 @@ import { ErrorMessage, probeParse } from './quintParserFrontend'
 import { IdGenerator, newIdGenerator } from './idGenerator'
 import { chalkQuintEx, printExecutionFrameRec } from './graphics'
 import { verbosity } from './verbosity'
-import { Rng, newRng } from './rng'
+import { newRng } from './rng'
 
 // tunable settings
 export const settings = {
@@ -86,7 +87,7 @@ export function quintRepl(input: Readable,
     return verbosity.hasReplPrompt(options.verbosity) ? text : ""
   }
   if (verbosity.hasReplBanners(options.verbosity)) {
-    out(chalk.gray('Quint REPL v0.0.3'))
+    out(chalk.gray(`Quint REPL ${version}`))
     out(chalk.gray('Type ".exit" to exit, or ".help" for more information'))
   }
   // create a readline interface
@@ -115,6 +116,7 @@ export function quintRepl(input: Readable,
   // we enter the multiline mode
   let nOpenBraces = 0
   let nOpenParen = 0
+  let nOpenComments = 0
 
   // Ctrl-C handler
   rl.on('SIGINT', () => {
@@ -122,6 +124,7 @@ export function quintRepl(input: Readable,
     multilineText = ''
     nOpenBraces = 0
     nOpenParen = 0
+    nOpenComments = 0
     rl.setPrompt(prompt(settings.prompt))
     out(chalk.yellow(' <cancelled>'))
     // clear the line and show the prompt
@@ -131,30 +134,32 @@ export function quintRepl(input: Readable,
 
   // next line handler
   function nextLine(line: string) {
-    const [nob, nop] = countBraces(line)
+    const [nob, nop, noc] = countBraces(line)
     nOpenBraces += nob
     nOpenParen += nop
+    nOpenComments += noc
 
     if (multilineText === '') {
       // if the line starts with a non-empty prompt,
       // we assume it is multiline code that was copied from a REPL prompt
       recyclingOwnOutput =
         settings.prompt !== '' && line.trim().indexOf(settings.prompt) === 0
-      if (nOpenBraces > 0 || nOpenParen > 0 || recyclingOwnOutput) {
+      if (nOpenBraces > 0 || nOpenParen > 0 || nOpenComments > 0 || recyclingOwnOutput) {
         // Enter a multiline mode.
         // If the text is copy-pasted from the REPL output,
         // trim the REPL decorations.
         multilineText = trimReplDecorations(line)
         rl.setPrompt(prompt(settings.continuePrompt))
       } else {
-        line.trim() === '' || tryEval(out, state, line)
+        line.trim() === '' || tryEval(out, state, line + '\n')
       }
     } else {
       const trimmedLine = line.trim()
       const continueOwnOutput =
         settings.continuePrompt !== ''
           && trimmedLine.indexOf(settings.continuePrompt) === 0
-      if ((trimmedLine.length === 0 && nOpenBraces <= 0 && nOpenParen <= 0)
+      if ((trimmedLine.length === 0
+            && nOpenBraces <= 0 && nOpenParen <= 0 && nOpenComments <= 0)
             || (recyclingOwnOutput && !continueOwnOutput)) {
         // End the multiline mode.
         // If recycle own output, then the current line is, most likely,
@@ -470,6 +475,10 @@ ${textToAdd}
     out('') // be nice to external programs
     return false
   }
+  if (probeResult.kind === 'none') {
+    // a comment or whitespaces
+    return true
+  }
   // create a random number generator
   const rng = newRng()
   // evaluate the input, depending on its type
@@ -588,11 +597,14 @@ function trimReplDecorations(line: string) {
   }
 }
 
-// count the difference between the number of '{' and '}'
-// as well as the difference between the number of '(' and ')' in a string
-function countBraces(str: string): [number, number] {
+// count the difference between the number of:
+//  - '{' and '}'
+//  - '(' and ')'
+//  - '/*' and '*/'
+function countBraces(str: string): [number, number, number] {
   let nOpenBraces = 0
   let nOpenParen = 0
+  let nOpenComments = 0
   for (let i = 0; i < str.length; i++) {
     switch (str[i]) {
       case '{':
@@ -610,10 +622,24 @@ function countBraces(str: string): [number, number] {
       case ')':
         nOpenParen--
         break
+      
+      case '/':
+        if (i + 1 < str.length && str[i + 1] === '*') {
+          nOpenComments++
+          i++
+        }
+        break
+
+      case '*':
+        if (i + 1 < str.length && str[i + 1] === '/') {
+          nOpenComments--
+          i++
+        }
+        break
 
       default:
     }
   }
 
-  return [nOpenBraces, nOpenParen]
+  return [nOpenBraces, nOpenParen, nOpenComments]
 }

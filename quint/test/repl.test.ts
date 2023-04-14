@@ -6,6 +6,7 @@ import chalk from 'chalk'
 
 import { quintRepl } from '../src/repl'
 import { dedent } from './textUtils'
+import { version } from '../src/version'
 
 // A simple implementation of Writable to a string:
 // After: https://bensmithgall.com/blog/jest-mock-trick
@@ -63,7 +64,7 @@ const withIO = async(inputText: string): Promise<string> => {
 
 // the standard banner, which gets repeated
 const banner =
-`Quint REPL v0.0.3
+`Quint REPL ${version}
 Type ".exit" to exit, or ".help" for more information`
 
 async function assertRepl(input: string, output: string) {
@@ -535,6 +536,11 @@ describe('repl ok', () => {
       |
       |>>> Set(2 + 3)
       |Set(5)
+      |   // a multiline comment
+      | /// a doc comment
+      | /* a multiline
+      |    comment
+      |  */
       |`
     )
     const output = dedent(
@@ -551,7 +557,12 @@ describe('repl ok', () => {
       |>>> >>> Set(2 + 3)
       |... Set(5)
       |Set(5)
-      |>>> `
+      |>>>    // a multiline comment
+      |>>>  /// a doc comment
+      |>>>  /* a multiline
+      |...     comment
+      |...   */
+      |... `
     )
     await assertRepl(input, output)
   })

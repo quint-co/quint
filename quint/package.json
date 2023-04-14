@@ -90,7 +90,7 @@
     "yargs": "^17.2.1"
   },
   "scripts": {
-    "compile": "tsc && copyfiles -u 1 ./src/builtin.qnt ./dist/src/",
+    "compile": "genversion -e src/version.ts && tsc && copyfiles -u 1 ./src/builtin.qnt ./dist/src/",
     "prepare": "rm -rf ./dist && npm run compile && chmod +x ./dist/src/cli.js",
     "test": "mocha -r ts-node/register test/*.test.ts test/**/*.test.ts",
     "coverage": "nyc npm run test",
@@ -122,6 +122,7 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.1.1",
     "eslint-plugin-unused-imports": "^2.0.0",
+    "genversion": "^3.1.1",
     "mocha": "^10.0.0",
     "nyc": "^15.1.0",
     "ts-node": "^10.0.0",
