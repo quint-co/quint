@@ -251,7 +251,6 @@ module erc20Tests {
 
     // a helper action that assigns to state, provided that there are no errors
     action fromResult(result: Erc20Result): bool = all {
-        result.returnedTrue,
         result.error == "",
         erc20State' = result.state,
     }
@@ -318,7 +317,7 @@ module erc20Tests {
             val nb = newState.balanceOf
             all {
                 assert(or {
-                    // if we started in an invalid state, not guarantees
+                    // if we started in an invalid state, no guarantees
                     not(isValid(erc20State)),
                     // if there were errors or transfer returned false, no guarantees
                     not(result.returnedTrue),
@@ -352,9 +351,10 @@ module mempool {
     // We are using this module to test the contract,
     // so we fix the set of addresses right away.
     pure val ADDR = Set("alice", "bob", "eve", "0")
-    pure val AMOUNTS = 0.to(MAX_UINT)
     // import all definitions from erc20 for the fixed addresses
     import erc20(AllAddresses = ADDR).*
+
+    pure val AMOUNTS = 0.to(MAX_UINT)
 
     // What kind of transaction could be submitted to the mempool.
     // Currently, we are using a record to represent all kinds of transactions.
@@ -400,7 +400,7 @@ module mempool {
     var lastTx: Transaction
 
     action init = all {
-        nondet sender = oneOf(ADDR)
+        nondet sender = oneOf(ADDR.exclude(Set(ZERO_ADDRESS)))
         nondet initialSupply = oneOf(AMOUNTS)
         erc20State' = newErc20(sender, initialSupply),
         mempool' = Set(),
@@ -417,7 +417,7 @@ module mempool {
 
     // an auxilliary action that assigns variables from a method execution result
     action fromResult(tx: Transaction, r: Erc20Result): bool = all {
-        val status = if (r.returnedTrue and r.error != "") r.error else "success"
+        val status = if (r.error != "") r.error else "success"
         lastTx' = tx.with("status", status),
         erc20State' = r.state,
     }
