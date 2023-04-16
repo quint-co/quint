@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - suppress comments in REPL (#806)
 - `quint repl` is printing the same version number as returned by `quint --version` (#804)
 - add the command `.seed` in REPL (#812)
+- fix `quint run` to output compile errors again (#812)
 
 ### Changed
 
