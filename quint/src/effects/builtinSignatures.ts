@@ -131,7 +131,6 @@ const setOperators = [
   { name: 'forall', effect: propagationWithLambda(['read', 'temporal'])(2) },
   { name: 'in', effect: standardPropagation(2) },
   { name: 'contains', effect: standardPropagation(2) },
-  { name: 'notin', effect: standardPropagation(2) },
   { name: 'union', effect: standardPropagation(2) },
   { name: 'intersect', effect: standardPropagation(2) },
   { name: 'exclude', effect: standardPropagation(2) },

@@ -95,7 +95,7 @@ module ClockSync3 {
     action receiveMsg(p) = {
         nondet newMsg = oneOf(msgs) 
         all {
-            newMsg.notin(rcvd.get(p)),
+            not(newMsg.in(rcvd.get(p))),
             // the message cannot be received earlier than after t_min
             hc.get(newMsg.src) >= newMsg.ts + t_min,
             rcvd'  = rcvd.set(p, rcvd.get(p).add(newMsg)),

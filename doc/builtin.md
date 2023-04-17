@@ -124,19 +124,6 @@ assert(Set(1, 2, 3).contains(1))
 assert(not(Set(1, 2, 3).contains(4)))
 ```
 
-## `pure def notin: (a, Set[a]) => bool`
-
-`e.notin(s)` is true when the element `e` is not in the set `s`.
-
-See also: `in`
-
-### Examples
-
-```
-assert(4.notin(Set(1, 2, 3)))
-assert(not(1.notin(Set(1, 2, 3))))
-```
-
 ## `pure def union: (Set[a], Set[a]) => Set[a]`
 
 `s1.union(s2)` is the set of elements that are in `s1` or in `s2`.

@@ -1135,9 +1135,6 @@ e.in(S)
 in(e, S)
 S.contains(e)
 contains(S, e)
-// set non-membership: e \notin S
-e.notin(S)
-notin(e, S)
 // union: S \union T
 S.union(T)
 union(S, T)

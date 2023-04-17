@@ -44,7 +44,6 @@ const setOperators = [
   { name: 'forall', type: '(Set[a], (a) => bool) => bool' },
   { name: 'in', type: '(a, Set[a]) => bool' },
   { name: 'contains', type: '(Set[a], a) => bool' },
-  { name: 'notin', type: '(a, Set[a]) => bool' },
   { name: 'union', type: '(Set[a], Set[a]) => Set[a]' },
   { name: 'intersect', type: '(Set[a], Set[a]) => Set[a]' },
   { name: 'exclude', type: '(Set[a], Set[a]) => Set[a]' },
