@@ -3,10 +3,10 @@
 /**
  * A specification of simple ERC20 that should be easy to use in other specs.
  *
- * The module erc20 closely follows the interface of IERC20 by OpenZeppelin.
+ * The module erc20 closely follows the implementation of ERC20 by OpenZeppelin.
  * However, since Quint is not Solidity, we have to adapt to the features of Quint.
  *
- * https://docs.openzeppelin.com/contracts/4.x/api/token/erc20#IERC20
+ * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol
  *
  * Igor Konnov, Informal Systems, 2023
  */
