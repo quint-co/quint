@@ -71,7 +71,7 @@ desirable that they can be applied to state variables (i.e. `+` in `x + 1` if
 
 We have decided to implement option 2 for all modes. According to this option, a
 definition is considered pure if it does not add any read effect on top of the
-effects that the parameters may carry. A definition is considered `def` if it
+effects that the parameters may carry. A definition is considered `pure` if it
 introduces a new `Read` effect, but does not introduce any `Update` or
 `Temporal` effects. The same principle applies to other types of definitions.
 
