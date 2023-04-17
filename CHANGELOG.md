@@ -23,6 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 ### Removed
+
+- `notin` is no longer a builtin operator (#814)
+
 ### Fixed
 
 - Proper errors are now reported when a lambda returns an operator (#811)
