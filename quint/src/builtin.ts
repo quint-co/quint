@@ -15,7 +15,7 @@
 import { DocumentationEntry, produceDocs } from "./docs"
 import { resolve } from 'path'
 import { readFileSync } from "fs"
-import { ErrorMessage, parsePhase1 } from "./quintParserFrontend"
+import { ErrorMessage, parsePhase1fromText } from "./quintParserFrontend"
 import { Either } from "@sweet-monads/either"
 import { lf } from "eol"
 
@@ -32,7 +32,7 @@ export function builtinDocs(gen: IdGenerator):
   // Read file and remove windows line endings (\r) using `lf`
   const sourceCode = lf(readFileSync(path, 'utf8'))
 
-  return parsePhase1(gen, sourceCode, path)
+  return parsePhase1fromText(gen, sourceCode, path)
     .map(phase1Data => produceDocs(phase1Data.modules[0]))
 }
 

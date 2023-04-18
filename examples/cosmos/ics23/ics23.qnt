@@ -208,8 +208,8 @@ module ics23 {
     // actualPrefix = len(inner.prefix) - 33
     length(inner.prefix) >= ChildSize,
     // getPosition(0) returns 0
-    val from = length(inner.prefix) - ChildSize
-    inner.prefix.slice(from, from + ChildSize) == EmptyChild
+    val fromIndex = length(inner.prefix) - ChildSize
+    inner.prefix.slice(fromIndex, fromIndex + ChildSize) == EmptyChild
   }
 
   /// IsLeftMost returns true if this is the left-most path in the tree,

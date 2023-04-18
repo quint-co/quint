@@ -46,7 +46,7 @@ syn keyword quintBoolValue false true
 syn keyword quintCond if else
 
 " declarations
-syn keyword quintDecl module import export const var val def pure nondet action temporal assume run
+syn keyword quintDecl module import from export const var val def pure nondet action temporal assume run
 
 " standard operators
 syn keyword quintStd Set List Map Rec Tup

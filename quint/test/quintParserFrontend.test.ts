@@ -3,11 +3,12 @@ import { assert } from 'chai'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import JSONbig from 'json-bigint'
-import { compactSourceMap, parsePhase1, parsePhase2 } from '../src/quintParserFrontend'
+import { compactSourceMap, parsePhase1fromText, parsePhase2sourceResolution, parsePhase3importAndNameResolution } from '../src/quintParserFrontend'
 import { lf } from 'eol'
 import { right } from '@sweet-monads/either'
 import { newIdGenerator } from '../src/idGenerator'
 import { collectIds } from './util'
+import { fileSourceResolver } from '../src/sourceResolver'
 
 // read a Quint file from the test data directory
 function readQuint(name: string): string {
@@ -25,9 +26,17 @@ function readJson(name: string): any {
 // read the Quint file and the expected JSON, parse and compare the results
 function parseAndCompare(artifact: string): void {
   // read the input from the data directory and parse it
+  const gen = newIdGenerator()
+  const basepath = resolve(__dirname, '../testFixture')
+  const resolver = fileSourceResolver((path: string) => {
+    // replace the absolute path with a generic mocked path,
+    // so the same fixtures work accross different setups
+    return path.replace(basepath, 'mocked_path/testFixture')
+  })
+  const mainPath = resolver.lookupPath(basepath, `${artifact}.qnt`)
   const phase1Result =
-    parsePhase1(newIdGenerator(), readQuint(artifact),
-                `mocked_path/testFixture/${artifact}.qnt`)
+    parsePhase1fromText(gen, readQuint(artifact), mainPath.toSourceName())
+    .chain(res => parsePhase2sourceResolution(gen, resolver, mainPath, res))
   // read the expected result as JSON
   const expected = readJson(artifact)
   let outputToCompare
@@ -53,7 +62,7 @@ function parseAndCompare(artifact: string): void {
     assert.deepEqual(sourceMapResult,
       expectedSourceMap, 'expected source maps to be equal')
 
-    const phase2Result = parsePhase2(phase1Result.value)
+    const phase2Result = parsePhase3importAndNameResolution(phase1Result.value)
 
     if (phase2Result.isLeft()) {
       // An error occurred at phase 2, check if it is the expected result
@@ -80,7 +89,7 @@ function parseAndCompare(artifact: string): void {
 describe('parsing', () => {
   it('parses empty module', () => {
     const result =
-      parsePhase1(newIdGenerator(),
+      parsePhase1fromText(newIdGenerator(),
                   readQuint('_0001emptyModule'),
                   'mocked_path/testFixture/_0001emptyModule.qnt')
     const module = { id: 1n, name: 'empty', defs: [] }
@@ -89,7 +98,7 @@ describe('parsing', () => {
 
   it('parses SuperSpec', () => {
     const result =
-      parsePhase1(newIdGenerator(),
+      parsePhase1fromText(newIdGenerator(),
                   readQuint('SuperSpec'),
                   'mocked_path/testFixture/SuperSpec.qnt')
     assert(result.isRight())
@@ -143,6 +152,26 @@ describe('parse errors', () => {
 
   it('error on conflicting names', () => {
     parseAndCompare('_1014conflictingNames')
+  })
+
+  it('parses single import from ', () => {
+    parseAndCompare('_1021importee1')
+  })
+
+  it('parses import from transtively', () => {
+    parseAndCompare('_1020importFrom')
+  })
+
+  it('errors on incorrect import', () => {
+    parseAndCompare('_1023importFromUnresolved')
+  })
+
+  it('errors on an import that contains syntax errors', () => {
+    parseAndCompare('_1024importFromSyntaxError')
+  })
+
+  it('errors on cyclic imports', () => {
+    parseAndCompare('_1026importCycleA')
   })
 
   // The test below needs a fix, see:

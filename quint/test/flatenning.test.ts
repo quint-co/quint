@@ -11,7 +11,7 @@ import { quintErrorToString } from '../src/quintError'
 import { treeFromModule } from '../src/scoping'
 import { collectIds } from './util'
 import JSONbig from 'json-bigint'
-import { parsePhase1 } from '../src/quintParserFrontend'
+import { parsePhase1fromText } from '../src/quintParserFrontend'
 
 describe('flatten', () => {
   function assertFlatennedDefs(baseDefs: string[], defs: string[], expectedDefs: string[]): void {
@@ -19,7 +19,7 @@ describe('flatten', () => {
 
     const quintModules: string = `module A { ${baseDefs.join('\n')} } module wrapper { ${defs.join('\n')} }`
 
-    const result = parsePhase1(idGenerator, quintModules, 'mocked_path')
+    const result = parsePhase1fromText(idGenerator, quintModules, 'mocked_path')
     if (result.isLeft()) {
       assert.fail(`Couldn't parse mocked expression. Result - ${JSONbig.stringify(result)}`)
     }

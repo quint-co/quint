@@ -248,6 +248,11 @@ Temporarily disabled.
 <!-- !test check ics20 bank - Syntax/Types & Effects/Unit tests -->
     quint test ../examples/cosmos/ics20/bank.qnt
     
+### OK on test importFrom
+
+<!-- !test check importFrom - Syntax/Types & Effects/Unit tests -->
+    quint test ../examples/language-features/importFrom.qnt
+
 ### OK on run prisoners
 
 <!-- !test check prisoners - Syntax/Types & Effects/Invariants -->

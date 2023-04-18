@@ -13,6 +13,7 @@ import { dedent } from '../textUtils'
 import { newIdGenerator } from '../../src/idGenerator'
 import { builtinContext } from '../../src/runtime/impl/compilerImpl'
 import { newRng } from '../../src/rng'
+import { stringSourceResolver } from '../../src/sourceResolver'
 
 // Use a global id generator, limited to this test suite.
 const idGen = newIdGenerator()
@@ -21,9 +22,10 @@ const idGen = newIdGenerator()
 // compare the result. This is the easiest path to test the results.
 function assertResultAsString(input: string, expected: string | undefined) {
   const moduleText = `module __runtime { val q::input = ${input} }`
+  const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
   const context =
     compileFromCode(idGen,
-      moduleText, '__runtime', noExecutionListener, newRng().next)
+      moduleText, '__runtime', mockLookupPath, noExecutionListener, newRng().next)
 
   assert.isEmpty(context.syntaxErrors, `Syntax errors: ${context.syntaxErrors.map(e => e.explanation).join(', ')}`)
   assert.isEmpty(context.compileErrors, `Compile errors: ${context.compileErrors.map(e => e.explanation).join(', ')}`)
@@ -45,9 +47,10 @@ function assertResultAsString(input: string, expected: string | undefined) {
 // Compile an input and evaluate a callback in the context
 function evalInContext<T>(input: string, callable: (ctx: CompilationContext) => Either<string, T>) {
   const moduleText = `module __runtime { ${input} }`
+  const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
   const context =
     compileFromCode(idGen,
-      moduleText, '__runtime', noExecutionListener, newRng().next)
+      moduleText, '__runtime', mockLookupPath, noExecutionListener, newRng().next)
   return callable(context)
 }
 

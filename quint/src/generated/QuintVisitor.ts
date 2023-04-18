@@ -65,6 +65,7 @@ import { InstanceModContext } from "./QuintParser";
 import { ModuleNameContext } from "./QuintParser";
 import { NameContext } from "./QuintParser";
 import { QualifiedNameContext } from "./QuintParser";
+import { FromSourceContext } from "./QuintParser";
 import { TypeContext } from "./QuintParser";
 import { TypeUnionRecOneContext } from "./QuintParser";
 import { RowContext } from "./QuintParser";
@@ -572,6 +573,13 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitQualifiedName?: (ctx: QualifiedNameContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.fromSource`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitFromSource?: (ctx: FromSourceContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.type`.

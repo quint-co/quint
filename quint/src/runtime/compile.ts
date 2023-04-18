@@ -8,9 +8,14 @@
  * See License.txt in the project root for license information.
  */
 
+import { basename, dirname } from 'path'
+
 import { Either, left, right } from '@sweet-monads/either'
 import {
-  ErrorMessage, Loc, fromIrErrorMessage, parsePhase1, parsePhase2
+  ErrorMessage, Loc, fromIrErrorMessage,
+  parsePhase1fromText,
+  parsePhase2sourceResolution,
+  parsePhase3importAndNameResolution
 } from '../quintParserFrontend'
 import { Computable, ComputableKind, kindName } from './runtime'
 import { ExecutionListener } from './trace'
@@ -23,6 +28,7 @@ import { QuintAnalyzer } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
 import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { flatten } from '../flattening'
+import { SourceLookupPath, fileSourceResolver } from '../sourceResolver'
 
 /**
  * The name of the shadow variable that stores the last found trace.
@@ -135,24 +141,26 @@ export function compile(
   let latestTable = lookupTable
 
   const flattenedModules = modules.map(m => {
-    const flatenned = flatten(m, latestTable, modulesByName, idGenerator, sourceMap)
+    const flattened = flatten(m, latestTable, modulesByName, idGenerator, sourceMap)
 
-    modulesByName.set(m.name, flatenned)
+    modulesByName.set(m.name, flattened)
 
     // The lookup table has to be updated for every new module that is flattened
     // Since the flattened modules have new ids for both the name expressions
     // and their definitions, and the next iteration might depend on an updated
     // lookup table
-    const newEntries = parsePhase2({ modules: [flatenned], sourceMap }).mapLeft(errors => {
+    const newEntries =
+      parsePhase3importAndNameResolution({ modules: [flattened], sourceMap })
+        .mapLeft(errors => {
       // This should not happen, as the flattening should not introduce any
-      // errors, since parsePhase2 analysis of the original modules has already
+      // errors, since parsePhase3 analysis of the original modules has already
       // assured all names are correct.
       throw new Error(`Error on resolving names for flattened modules: ${errors.map(e => e.explanation)}`)
     }).unwrap().table
 
     latestTable = new Map([...latestTable.entries(), ...newEntries.entries()])
 
-    return flatenned
+    return flattened
   })
 
   const main = flattenedModules.find(m => m.name === mainName)
@@ -203,21 +211,24 @@ export function compileFromCode(
   idGen: IdGenerator,
   code: string,
   mainName: string,
+  mainPath: SourceLookupPath,
   execListener: ExecutionListener,
   rand: (bound: bigint) => bigint): CompilationContext {
   // parse the module text
-  return parsePhase1(idGen, code, '<input>')
+  return parsePhase1fromText(idGen, code, '<input>')
+    .chain(phase1Data => {
+      const resolver = fileSourceResolver()
+      return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
+    })
     // On errors, we'll produce the computational context up to this point
     .mapLeft(errorContext)
-    .chain(d => parsePhase2(d)
+    .chain(d => parsePhase3importAndNameResolution(d)
       // On errors, we'll produce the computational context up to this point
       .mapLeft(errorContext))
     .chain(parseData => {
       const { modules, table, sourceMap } = parseData
       const analyzer = new QuintAnalyzer(table)
       modules.forEach(module => analyzer.analyze(module))
-      // since the type checker and effects checker are incomplete,
-      // collect the errors, but do not stop immediately on error
       const [analysisErrors, analysisResult] = analyzer.getResult()
       const ctx =
         compile(modules, sourceMap, table,

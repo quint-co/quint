@@ -262,10 +262,14 @@ export class ToIrListener implements QuintListener {
   }
 
   // import Foo, import Foo as F, import Foo.x, import Foo.*
+  // import Foo from "./foo.qnt", import Foo as F from "./foo.qnt",
+  // import Foo.x from "./foo.qnt", import Foo.* from "./foo.qnt"
   exitImportMod(ctx: p.ImportModContext) {
     const defName = ctx.identOrStar() ? this.identOrStarStack.pop()! : undefined
     const protoName = ctx.name()[0].text
     const qualifier = ctx.name().length > 1 ? ctx.name()[1].text : undefined
+    // slice <path> from the quoted string "<path>", if the path is present
+    const fromSource = ctx.fromSource() ? ctx.fromSource()!.text.slice(1, -1) : undefined
     const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     const importDef: QuintDef = {
@@ -274,6 +278,7 @@ export class ToIrListener implements QuintListener {
       defName: defName,
       protoName: protoName,
       qualifiedName: qualifier,
+      fromSource,
     }
     this.definitionStack.push(importDef)
   }

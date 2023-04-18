@@ -26,11 +26,16 @@ import {
 
 import {
   DocumentUri,
-  TextDocument
+  TextDocument,
 } from 'vscode-languageserver-textdocument'
 
-import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase2, QuintAnalyzer, QuintError, QuintErrorData, builtinDocs, effectSchemeToString, newIdGenerator, parsePhase1, parsePhase2, produceDocs, typeSchemeToString } from '@informalsystems/quint'
+import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase3, QuintAnalyzer, QuintError, QuintErrorData, builtinDocs, effectSchemeToString, newIdGenerator,
+  parsePhase1fromText, parsePhase2sourceResolution, parsePhase3importAndNameResolution,
+  produceDocs, typeSchemeToString } from '@informalsystems/quint'
 import { assembleDiagnostic, diagnosticsFromErrors, findBestMatchingResult, findName, locToRange } from './reporting'
+import { fileSourceResolver } from '@informalsystems/quint/dist/src/sourceResolver'
+import { URI, Utils } from 'vscode-uri'
+import { basename, dirname } from 'path'
 
 // Create one generator of unique identifiers
 const idGenerator = newIdGenerator()
@@ -43,7 +48,7 @@ const connection = createConnection(ProposedFeatures.all)
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument)
 
 // Store auxiliary information by document
-const parsedDataByDocument: Map<DocumentUri, ParserPhase2> = new Map<DocumentUri, ParserPhase2>()
+const parsedDataByDocument: Map<DocumentUri, ParserPhase3> = new Map<DocumentUri, ParserPhase3>()
 const analysisOutputByDocument: Map<DocumentUri, AnalyzisOutput> = new Map<DocumentUri, AnalyzisOutput>()
 // Documentation entries by name, by module, by document
 const docsByDocument: Map<DocumentUri, Map<string, Map<string, DocumentationEntry>>> =
@@ -298,11 +303,26 @@ connection.onCodeAction((params: CodeActionParams): HandlerResult<CodeAction[], 
   }, [] as CodeAction[])
 })
 
-async function parseDocument(textDocument: TextDocument): Promise<ParserPhase2> {
+async function parseDocument(textDocument: TextDocument): Promise<ParserPhase3> {
   const text = textDocument.getText()
 
-  const result = parsePhase1(idGenerator, text, textDocument.uri)
-    .chain(phase1Data => parsePhase2(phase1Data))
+  // parse the URI to resolve imports
+  const parsedUri = URI.parse(textDocument.uri)
+  // currently, we only support the 'file://' scheme
+  if (parsedUri.scheme !== 'file') {
+    // see https://github.com/informalsystems/quint/issues/831
+    return new Promise((_resolve, reject) =>
+      reject(`Support imports from file, found: ${parsedUri.scheme}`))
+  }
+
+  const result = parsePhase1fromText(idGenerator, text, textDocument.uri)
+    .chain(phase1Data => {
+      const resolver = fileSourceResolver()
+      const mainPath =
+        resolver.lookupPath(dirname(parsedUri.fsPath), basename(parsedUri.fsPath))
+      return parsePhase2sourceResolution(idGenerator, resolver, mainPath, phase1Data)
+    })
+    .chain(phase2Data => parsePhase3importAndNameResolution(phase2Data))
     .mapLeft(messages => messages.flatMap(msg => {
       // TODO: Parse errors should be QuintErrors
       const error: QuintError = { code: 'QNT000', message: msg.explanation, data: {} }

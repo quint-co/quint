@@ -222,6 +222,12 @@ export interface QuintImport extends WithId {
   defName?: string,
   /** a qualifier, e.g. F in import Foo as F */
   qualifiedName?: string,
+  /**
+   * An optional string that specifies the source of the import, e.g., a filename.
+   * If the source is not specified, then the definitions are imported from the same
+   * source, where the 'import' definition is met.
+   */
+  fromSource?: string,
 }
 
 export interface QuintExport extends WithId {

@@ -20,6 +20,7 @@ import {
   ExecutionFrame, newTraceRecorder} from './runtime/trace'
 import { IdGenerator } from './idGenerator'
 import { Rng } from './rng'
+import { SourceLookupPath } from './sourceResolver'
 
 /**
  * Various settings that have to be passed to the simulator to run.
@@ -67,6 +68,7 @@ function errSimulationResult(status: SimulatorResultStatus,
  * @param idGen a unique generator of identifiers
  * @param code the source code of the modules
  * @param mainName the module that should be used as a state machine
+ * @param mainPath the lookup path that was used to retrieve the main module
  * @param options simulator settings
  * @returns either error messages (left),
     or the trace as an expression (right)
@@ -75,6 +77,7 @@ export function
 compileAndRun(idGen: IdGenerator,
               code: string,
               mainName: string,
+              mainPath: SourceLookupPath,
               options: SimulatorOptions): SimulatorResult {
   // Once we have 'import from ...' implemented, we should pass
   // a filename instead of the source code (see #8)
@@ -101,7 +104,7 @@ module __run__ {
 
   const recorder = newTraceRecorder(options.verbosity, options.rng)
   const ctx = compileFromCode(idGen,
-    wrappedCode, '__run__', recorder, options.rng.next)
+    wrappedCode, '__run__', mainPath, recorder, options.rng.next)
 
   if (ctx.compileErrors.length > 0
       || ctx.syntaxErrors.length > 0
