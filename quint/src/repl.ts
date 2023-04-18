@@ -511,7 +511,7 @@ ${textToAdd}
     const moduleText = prepareParserInput(`  action q::input =\n${newInput}`)
     // compile the expression or definition and evaluate it
     const recorder = newTraceRecorder(state.verbosityLevel, rng)
-    const mainPath = fileSourceResolver().lookupPath(cwd(), './repl')
+    const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
     const context =
       compileFromCode(state.idGen,
         moduleText, '__repl__', mainPath, recorder, rng.next)
@@ -584,7 +584,7 @@ ${textToAdd}
     // embed expression text into a module at the top level
     const moduleText = prepareParserInput(newInput)
     // compile the module and add it to history if everything worked
-    const mainPath = fileSourceResolver().lookupPath(__dirname, 'repl')
+    const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
     const context =
       compileFromCode(state.idGen,
         moduleText, '__repl__', mainPath, noExecutionListener, rng.next)
