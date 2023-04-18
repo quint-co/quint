@@ -37,7 +37,6 @@ export function defaultValueDefinitions(): ValueDefinition[] {
     { kind: 'def', identifier: 'exists' },
     { kind: 'def', identifier: 'forall' },
     { kind: 'def', identifier: 'in' },
-    { kind: 'def', identifier: 'notin' },
     { kind: 'def', identifier: 'union' },
     { kind: 'def', identifier: 'contains' },
     { kind: 'def', identifier: 'fold' },

@@ -50,12 +50,25 @@ EXITCODE: OK
 ## Can check `../examples/language-features/lists.qnt`
 
 <!-- !test in can check lists.qnt -->
-``` 
+```
 quint typecheck --out _build/lists.qnt.json ../examples/language-features/lists.qnt
 apalache-mc check _build/lists.qnt.json | grep -o "EXITCODE: OK"
 ```
 
 <!-- !test out can check lists.qnt -->
+```
+EXITCODE: OK
+```
+
+## Can check `../examples/language-features/maps.qnt`
+
+<!-- !test in can check maps.qnt -->
+```
+quint typecheck --out _build/maps.qnt.json ../examples/language-features/maps.qnt
+apalache-mc check _build/maps.qnt.json | grep -o "EXITCODE: OK"
+```
+
+<!-- !test out can check maps.qnt -->
 ```
 EXITCODE: OK
 ```

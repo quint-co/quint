@@ -75,7 +75,7 @@ export const newRng = (initialState?: bigint): Rng => {
     },
 
     setState: (s: bigint): void => {
-      state = BigInt(s) % U64
+      state = BigInt(s >= 0 ? s : -s) % U64
     },
 
     next: (bound: bigint): bigint => {

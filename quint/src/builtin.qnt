@@ -111,18 +111,6 @@ module builtin {
   /// ```
   pure def contains(a, s): (Set[a], a) => bool
 
-  /// `e.notin(s)` is true when the element `e` is not in the set `s`.
-  ///
-  /// See also: `in`
-  ///
-  /// ### Examples
-  ///
-  /// ```
-  /// assert(4.notin(Set(1, 2, 3)))
-  /// assert(not(1.notin(Set(1, 2, 3))))
-  /// ```
-  pure def notin(a, s): (a, Set[a]) => bool
-
   /// `s1.union(s2)` is the set of elements that are in `s1` or in `s2`.
   ///
   /// This is the set union operator.

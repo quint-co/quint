@@ -194,7 +194,6 @@ module withConsts {
 
   // Bultin set operators
   val in_2_empty = 2.in(Set())
-  val notin_2_empty = 2.notin(Set())
   val subseteq_empty = Set().subseteq(Set())
   val powersets = Set(1).in(powerset(Set(1,2,3)))
 

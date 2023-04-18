@@ -466,8 +466,7 @@ export class ToIrListener implements QuintListener {
         this.pushApplication(ctx, 'item', [callee!, idx])
       } else {
         // accessing a record field or a name in a module
-        if (name === 'in' || name === 'notin' ||
-          name === 'and' || name === 'or' ||
+        if (name === 'in' || name === 'and' || name === 'or' ||
           name === 'iff' || name === 'implies' || name === 'subseteq') {
           const msg =
             'QNT006: no keywords allowed as record fields in record.field'

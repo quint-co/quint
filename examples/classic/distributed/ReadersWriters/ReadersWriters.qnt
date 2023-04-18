@@ -31,12 +31,12 @@ module ReadersWriters {
   (***********/
   
   action TryRead(actor) = all {
-      actor.notin(WaitingToRead),
+      not(actor.in(WaitingToRead)),
       waiting' = waiting.append(("read", actor)),
   }
   
   action TryWrite(actor) = all {
-      actor.notin(WaitingToWrite),
+      not(actor.in(WaitingToWrite)),
       waiting' = waiting.append(("write", actor)),
   }
   
@@ -144,7 +144,7 @@ module ReadersWriters {
   temporal Liveness = and {
       Actors.forall(actor => always(eventually(actor.in(readers)))),
       Actors.forall(actor => always(eventually(actor.in(writers)))),
-      Actors.forall(actor => always(eventually(actor.notin(readers)))),
-      Actors.forall(actor => always(eventually(actor.notin(writers)))),
+      Actors.forall(actor => always(eventually(not(actor.in(readers))))),
+      Actors.forall(actor => always(eventually(not(actor.in(writers))))),
   }
 }

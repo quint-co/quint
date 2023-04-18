@@ -16,7 +16,6 @@ import { Maybe, just, none } from '@sweet-monads/maybe'
 import { left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
 
-import { version } from './version'
 import { QuintEx } from './quintIr'
 import {
   CompilationContext, compileFromCode, contextNameLookup, lastTraceName
@@ -31,6 +30,7 @@ import { IdGenerator, newIdGenerator } from './idGenerator'
 import { chalkQuintEx, printExecutionFrameRec } from './graphics'
 import { verbosity } from './verbosity'
 import { newRng } from './rng'
+import { version } from './version'
 
 // tunable settings
 export const settings = {
@@ -56,6 +56,8 @@ interface ReplState {
   shadowVars: Map<string, EvalResult>,
   // filename and module name that were loaded with .load filename module
   lastLoadedFileAndModule: [string?, string?],
+  // an optional seed to use when making non-deterministic choices
+  seed?: bigint,
   // verbosity level
   verbosityLevel: number
 }
@@ -224,6 +226,7 @@ export function quintRepl(input: Readable,
             out('     \t^ a productivity hack')
             out(`${r('.save')} <filename>\tSave the accumulated definitions to a file`)
             out(`${r('.verbosity')}=[0-5]\tSet the output level (0 = quiet, 5 = very detailed).`)
+            out(`${r('.seed')}[=<number>]\tSet or get the random seed.`)
             out('\nType an expression and press Enter to evaluate it.')
             out('When the REPL switches to multiline mode "...", finish it with an empty line.')
             out('\nPress Ctrl+C to abort current expression, Ctrl+D to exit the REPL')
@@ -281,6 +284,24 @@ export function quintRepl(input: Readable,
                 out(g(`.verbosity=${state.verbosityLevel}`))
               }
               rl.setPrompt(prompt(settings.prompt))
+            }
+          }
+          break
+
+          case 'seed': {
+            // accept: .seed n, .seed=n, .seed = n
+            const m = line.match(/^\.seed\s*=?\s*((0x[0-9a-f]+|[0-9]*))$/)
+            if (m === null) {
+              out(r('.seed requires an integer, or no argument'))
+            } else {
+              if (m[1].trim() === '') {
+                out(g(`.seed=${state.seed}`))
+              } else {
+                state.seed = BigInt(m[1])
+                if (verbosity.hasReplPrompt(state.verbosityLevel)) {
+                  out(g(`.seed=${state.seed}`))
+                }
+              }
             }
           }
           break
@@ -480,7 +501,7 @@ ${textToAdd}
     return true
   }
   // create a random number generator
-  const rng = newRng()
+  const rng = newRng(state.seed)
   // evaluate the input, depending on its type
   if (probeResult.kind === 'expr') {
     // embed expression text into a value definition inside a module
@@ -550,6 +571,8 @@ ${textToAdd}
         out(chalk.red(msg))
         out('') // be nice to external programs
       })
+
+    state.seed = rng.getState()
 
     return result.isRight()
   }
