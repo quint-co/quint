@@ -67,6 +67,21 @@ module denomTrace {
       { path: [hopDestination].concat(denomTrace.path), baseDenom: denomTrace.baseDenom }
     }
   }
+
+  /// `isProperChannelSetup` is true iff channel names are unique by chain
+  pure def isProperChannelSetup(setup: str -> str -> str): bool =
+    pure val chainNames = Set("A", "B", "C") // should be setup.keys(), but that's breaking the effect checker somehow (see issue #808)
+    and {
+      // Check the domain for the second level of chains
+      chainNames.forall(chain => setup.get(chain).keys() == chainNames),
+      tuples(chainNames, chainNames).forall((fromChain, toChain) =>
+        fromChain != toChain implies // we dont care about channels from chain to itself
+          chainNames.forall((thirdChain) =>
+            thirdChain != toChain implies
+              setup.get(fromChain).get(toChain) != setup.get(fromChain).get(thirdChain)
+          )
+      )
+    }
 }
 
 // Tests for denom trace manipulation
@@ -171,6 +186,87 @@ module denomTraceTest {
     assert(trace.path == []),
     trace' = trace,
   }))
+}
+
+module denomTraceSimulation {
+  import denomTrace.*
+
+  pure val chains = Set("A", "B", "C")
+  pure val transferSequence = List(
+    ("A", "B"),
+    ("B", "C"),
+    ("C", "A"),
+    ("A", "C"),
+    ("C", "B"),
+    ("B", "A")
+  )
+
+  const channelPredicate: (str -> str -> str) => bool
+
+  pure val channelNames = Set("channel-1", "channel-2", "channel-3")
+
+  /// All possible combination of channels by chain satisfying `channelPredicate`
+  pure val possibleChannelSetups = chains.setOfMaps(chains.setOfMaps(channelNames)).filter(channelPredicate)
+
+  var trace: DenomTrace
+  var channelSetup: str -> str -> str
+  var counter: int
+
+  def getChannelsForTransfer(transfer: (str, str)): { sourceChannel: str, destChannel: str } =
+    ({
+      sourceChannel: channelSetup.get(transfer._1).get(transfer._2),
+      // The destination channel would be the source channel in the opposite
+      // direction, so we only need to reverse the order of the chains
+      destChannel: channelSetup.get(transfer._2).get(transfer._1),
+    })
+
+  action init =
+    nondet someMap = possibleChannelSetups.oneOf()
+    all {
+      trace' = {
+        path: [],
+        baseDenom: "denom",
+      },
+      channelSetup' = someMap,
+      counter' = 0,
+    }
+
+  action step =
+    val channels = getChannelsForTransfer(transferSequence[counter])
+    all {
+      trace' = updateTrace(trace, "transfer", channels.sourceChannel, "transfer", channels.destChannel),
+      counter' = counter + 1,
+      channelSetup' = channelSetup,
+    }
+
+  action unchanged = all {
+    trace' = trace,
+    counter' = counter,
+    channelSetup' = channelSetup,
+  }
+
+  run simulationTest = init.then(step.repeated(6)).then((all {
+    def show(a) = true { show(channelSetup) },
+    assert(trace.path == []),
+    unchanged,
+  }))
+}
+
+// Fails because the channel setup is not proper
+// The aim is to show that it is, in fact, necessary to enforce `isProperChannelSetup`
+module randomChannelsTests {
+  import denomTraceSimulation(
+    channelPredicate = (_) => true
+  ) as S
+}
+
+// Passes because the channel setup is proper
+module properChannelsTests {
+  import denomTrace.isProperChannelSetup
+
+  import denomTraceSimulation(
+    channelPredicate = isProperChannelSetup
+  ) as S
 }
 
 // For now, this module is just a setup to show how `denomTrace` can be used in the IBC context.
