@@ -70,7 +70,7 @@ module denomTrace {
 
   /// `isProperChannelSetup` is true iff channel names are unique by chain
   pure def isProperChannelSetup(setup: str -> str -> str): bool =
-    pure val chainNames = Set("A", "B", "C") // should be channelSetup.keys(), but that's breaking the effect checker somehow (see issue #808)
+    pure val chainNames = Set("A", "B", "C") // should be setup.keys(), but that's breaking the effect checker somehow (see issue #808)
     and {
       // Check the domain for the second level of chains
       chainNames.forall(chain => setup.get(chain).keys() == chainNames),
@@ -254,14 +254,14 @@ module denomTraceSimulation {
 
 // Fails because the channel setup is not proper
 // The aim is to show that it is, in fact, necessary to enforce `isProperChannelSetup`
-module randomChannelsPBT {
+module randomChannelsTests {
   import denomTraceSimulation(
     channelPredicate = (_) => true
   ) as S
 }
 
 // Passes because the channel setup is proper
-module properChannelsPBT {
+module properChannelsTests {
   import denomTrace.isProperChannelSetup
 
   import denomTraceSimulation(
