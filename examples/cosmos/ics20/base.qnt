@@ -23,4 +23,8 @@ module base {
   }
 
   type UINT256 = int
+
+  pure def toDenom(baseDenom: str): DenomTrace = {
+    { baseDenom: baseDenom, path: [] }
+  }
 }

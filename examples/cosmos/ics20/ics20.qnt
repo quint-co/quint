@@ -19,7 +19,7 @@ module ics20 {
     errorMessage: str
   }
 
-  type FungibleTokenPacket = {
+  type FungibleTokenData = {
     denom: DenomTrace,
     amount: UINT256,
     sender: Address,
@@ -28,7 +28,7 @@ module ics20 {
   }
 
   type Packet = {
-    data: FungibleTokenPacket,
+    data: FungibleTokenData,
     sourcePort: str,
     sourceChannel: Channel,
     destPort: str,
@@ -39,15 +39,19 @@ module ics20 {
   type ModuleState = {
     bank: Accounts,
     channelEscrowAddresses: Channel -> Address,
-    inFlightPackets: Set[FungibleTokenPacket]
   }
 
-  pure def sendFungibleTokens(moduleState: ModuleState,
+  type SendFungibleTokensResult = {
+    moduleState: ModuleState,
+    inFlightPackets: Set[Packet]
+  }
+
+  pure def sendFungibleTokens(moduleState: ModuleState, inFlightPackets: Set[Packet], // this could be an `sendPacket` operator when higher-order operators are supported
                               denomination: DenomTrace, amount: UINT256,
                               sender: Address, receiver: Address,
                               sourcePort: str, sourceChannel: Channel,
                               timeoutHeight: Height,
-                              timeoutTimestamp: uint64): ModuleState = {
+                              timeoutTimestamp: uint64): SendFungibleTokensResult = {
     val bankResult = if (movingBackAlongTrace({port: sourcePort, channel: sourceChannel}, denomination)) {
       // burn vouchers
       (moduleState.bank).BurnCoins(sender, denomination, amount)
@@ -58,12 +62,21 @@ module ics20 {
     }
 
     if (bankResult.success) {
-      val packet = { denom: denomination, amount: amount, sender: sender, receiver: receiver, memo: "" }
+      val data = { denom: denomination, amount: amount, sender: sender, receiver: receiver, memo: "" }
 
       // handler.sendPacket
-      moduleState.with("inFlightPackets", moduleState.inFlightPackets.union(Set(packet)))
+      val packet = {
+        data: data,
+        sourcePort: sourcePort,
+        sourceChannel: sourceChannel,
+        destPort: "transfer",
+        destChannel: "A1"
+      }
+
+      { moduleState: moduleState.with("bank", bankResult.accounts),
+        inFlightPackets: inFlightPackets.union(Set(packet)) }
     } else {
-      moduleState
+      { moduleState: moduleState, inFlightPackets: inFlightPackets }
     }
   }
 
@@ -105,6 +118,57 @@ module ics20 {
       }
 
       { moduleState: newModuleState, acknowledgement: ack }
+    }
+  }
+}
+
+module ics20Test {
+  import base.* from "./base"
+  import ics20.*
+
+  val modules = Set("A", "B", "C")
+  val addresses = Set("alice", "bob", "charlie")
+
+  var moduleStates: str -> ModuleState
+  var inFlightPackets: Set[Packet]
+
+  pure def channelsForModule(mod: str): Set[Channel] = {
+    Set("A1", "A2", "A3")
+  }
+
+  action init = all {
+    moduleStates' = modules.mapBy(_ => {
+      bank: addresses.mapBy(_ => Map()).set("alice", Map(toDenom("denomA") -> 100, toDenom("denomB") -> 100)),
+      channelEscrowAddresses: Map(),
+    }),
+    inFlightPackets' = Set()
+  }
+
+  action sendSomeTransfer(mod) = {
+    nondet amount = Int.oneOf()
+    nondet sender = addresses.oneOf()
+    // Some denom that the sender has
+    nondet denom = moduleStates.get(mod).bank.get(sender).keys().oneOf()
+    nondet receiver = addresses.oneOf()
+    pure val sourcePort = "transfer"
+    nondet sourceChannel = channelsForModule(mod).oneOf()
+    val result = sendFungibleTokens(moduleStates.get(mod), inFlightPackets, denom, amount, sender, receiver, sourcePort, sourceChannel, 0, 0)
+    all {
+      moduleStates' = moduleStates.set(mod, result.moduleState),
+      inFlightPackets' = result.inFlightPackets
+    }
+  }
+
+  action step = {
+    nondet mod = modules.oneOf()
+    any {
+      nondet packet = inFlightPackets.filter(p => p.destPort == "transfer" and p.destChannel.in(channelsForModule(mod))).oneOf()
+      val result = onRecvPacket(moduleStates.get(mod), packet)
+      all {
+        moduleStates' = moduleStates.set(mod, result.moduleState),
+        inFlightPackets' = inFlightPackets.exclude(Set(packet))
+      },
+      sendSomeTransfer(mod),
     }
   }
 }

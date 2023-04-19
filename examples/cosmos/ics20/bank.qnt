@@ -67,7 +67,7 @@ module bank {
 
   /* Return `accounts`, where `address` is updated to hold
    * `currentAmount + amount` tokens of denomination `denom`.
-   * 
+   *
    * `currentAmount` refers to the number of tokens of denomination `denom` held
    * by `address` in `accounts`.
    *
@@ -126,10 +126,6 @@ module bank {
     } else {
       { success: false, accounts: accounts}
     }
-  }
-
-  pure def toDenom(baseDenom: str): Denomination = {
-    { baseDenom: baseDenom, path: [] }
   }
 
   /* ***************************************************************************
