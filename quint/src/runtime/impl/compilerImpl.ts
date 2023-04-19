@@ -167,6 +167,20 @@ export class CompilerVisitor implements IRVisitor {
       }
     }
 
+    if (opdef.qualifier === 'pureval') {
+      // a pure value may be cached, once evaluated
+      const originalEval = boundValue.eval
+      let cache: Maybe<EvalResult> | undefined = undefined
+      boundValue.eval = (): Maybe<EvalResult> => {
+        if (cache !== undefined) {
+          return cache
+        } else {
+          cache = originalEval()
+          return cache
+        }
+      }
+    }
+
     const kname = kindName('callable', opdef.id)
     // bind the callable from the stack
     this.context.set(kname, boundValue)
