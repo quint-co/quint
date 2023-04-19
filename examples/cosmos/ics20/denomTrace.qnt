@@ -66,7 +66,7 @@ module denomTrace {
 // Tests for denom trace manipulation
 module denomTraceTest {
   import base.* from "./base"
-  import denomTrace.*
+  import denomTrace.updateTrace
 
   // For testing, imagine the following channels in these chains setups
   // PS: There should be similar channels between A and C, those are ommited in the diagram for simplicity

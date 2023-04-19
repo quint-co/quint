@@ -51,7 +51,7 @@ module ics20 {
     val bankResult = if (movingBackAlongTrace({port: sourcePort, channel: sourceChannel}, denomination)) {
       // burn vouchers
       (moduleState.bank).BurnCoins(sender, denomination, amount)
-    } else { 
+    } else {
       // escrow tokens
       val escrowAccount = moduleState.channelEscrowAddresses.get(sourceChannel)
       moduleState.bank.TransferCoins(sender, escrowAccount, denomination, amount)
@@ -67,8 +67,13 @@ module ics20 {
     }
   }
 
+  type ReceiveTokenPacketResult = {
+    moduleState: ModuleState,
+    acknowledgement: FungibleTokenPacketAcknowledgement
+  }
+
   pure def onRecvPacket(moduleState: ModuleState,
-                        packet: Packet): FungibleTokenPacketAcknowledgement = {
+                        packet: Packet): ReceiveTokenPacketResult = {
     val data = packet.data
     if (movingBackAlongTrace({port: packet.sourcePort, channel: packet.sourceChannel}, data.denom)) {
       // unescrow tokens to receiver
@@ -77,11 +82,14 @@ module ics20 {
 
       val bankResult = moduleState.bank.TransferCoins(escrowAccount, data.receiver, receiverDenom, data.amount)
 
-      if (bankResult.success) {
+      val newModuleState = moduleState.with("bank", bankResult.accounts)
+      val ack = if (bankResult.success) {
         { success: true, errorMessage: "" }
       } else {
-        { success: true, errorMessage: "transfer coins failed" }
+        { success: false, errorMessage: "transfer coins failed" }
       }
+
+      { moduleState: newModuleState, acknowledgement: ack }
     } else {
       // mint vouchers to receiver
       val prefix = [packet.destPort, packet.destChannel]
@@ -89,11 +97,14 @@ module ics20 {
 
       val bankResult = moduleState.bank.MintCoins(data.receiver, newDenom, data.amount)
 
-      if (bankResult.success) {
+      val newModuleState = moduleState.with("bank", bankResult.accounts)
+      val ack = if (bankResult.success) {
         { success: true, errorMessage: "" }
       } else {
         { success: false, errorMessage: "mint coins failed" }
       }
+
+      { moduleState: newModuleState, acknowledgement: ack }
     }
   }
 }
