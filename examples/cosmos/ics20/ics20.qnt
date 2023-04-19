@@ -46,7 +46,17 @@ module ics20 {
     inFlightPackets: Set[Packet]
   }
 
-  pure def sendFungibleTokens(moduleState: ModuleState, inFlightPackets: Set[Packet], // this could be an `sendPacket` operator when higher-order operators are supported
+  pure def getCounterparty(moduleName: str, sourceChannel: Channel): Channel = {
+    pure val channels = Map(
+      "A" -> "channelToA",
+      "B" -> "channelToB",
+      "C" -> "channelToC"
+    )
+
+    channels.get(moduleName)
+  }
+
+  pure def sendFungibleTokens(moduleName: str, moduleState: ModuleState, packets: Set[Packet], // this could be an `sendPacket` operator when higher-order operators are supported
                               denomination: DenomTrace, amount: UINT256,
                               sender: Address, receiver: Address,
                               sourcePort: str, sourceChannel: Channel,
@@ -70,13 +80,13 @@ module ics20 {
         sourcePort: sourcePort,
         sourceChannel: sourceChannel,
         destPort: "transfer",
-        destChannel: "A1"
+        destChannel: getCounterparty(moduleName, sourceChannel)
       }
 
       { moduleState: moduleState.with("bank", bankResult.accounts),
-        inFlightPackets: inFlightPackets.union(Set(packet)) }
+        inFlightPackets: packets.union(Set(packet)) }
     } else {
-      { moduleState: moduleState, inFlightPackets: inFlightPackets }
+      { moduleState: moduleState, inFlightPackets: packets }
     }
   }
 
@@ -133,42 +143,142 @@ module ics20Test {
   var inFlightPackets: Set[Packet]
 
   pure def channelsForModule(mod: str): Set[Channel] = {
-    Set("A1", "A2", "A3")
+    pure val channels = Map(
+      "A" -> Set("channelToB", "channelToC"),
+      "B" -> Set("channelToA", "channelToC"),
+      "C" -> Set("channelToA", "channelToB")
+    )
+
+    channels.get(mod)
   }
 
   action init = all {
     moduleStates' = modules.mapBy(_ => {
-      bank: addresses.mapBy(_ => Map()).set("alice", Map(toDenom("denomA") -> 100, toDenom("denomB") -> 100)),
-      channelEscrowAddresses: Map(),
-    }),
+      bank: Map(),
+      channelEscrowAddresses: Set("channelToA", "channelToB", "channelToC").mapBy(_ => "escrow_account"),
+    }).setBy("A", st => st.with("bank", Map("alice" -> Map(toDenom("atom") -> 100)))),
     inFlightPackets' = Set()
   }
 
-  action sendSomeTransfer(mod) = {
-    nondet amount = Int.oneOf()
-    nondet sender = addresses.oneOf()
-    // Some denom that the sender has
-    nondet denom = moduleStates.get(mod).bank.get(sender).keys().oneOf()
-    nondet receiver = addresses.oneOf()
+  val bankEntriesAsRecords = modules.map(m =>
+    moduleStates.get(m).bank.keys().map(acc =>
+      moduleStates.get(m).bank.get(acc).keys().map(denom =>
+        val amount = moduleStates.get(m).bank.get(acc).get(denom)
+        { mod: m, account: acc, denom: denom, amount: amount }
+      )
+    ).flatten()
+  ).flatten().filter(r => r.amount > 0)
+
+  action sendSomeTransfer = {
+    // Find some existing ammount, sender and denom
+    // pure val modulesWithTokens = modules.filter(m =>
+    // moduleStates.get(mod).bank.keys().exists(k => ))
+    nondet bankEntry = bankEntriesAsRecords.oneOf()
     pure val sourcePort = "transfer"
-    nondet sourceChannel = channelsForModule(mod).oneOf()
-    val result = sendFungibleTokens(moduleStates.get(mod), inFlightPackets, denom, amount, sender, receiver, sourcePort, sourceChannel, 0, 0)
+    nondet receiver = addresses.oneOf()
+    nondet sourceChannel = channelsForModule(bankEntry.mod).oneOf()
+    val result = sendFungibleTokens(bankEntry.mod, moduleStates.get(bankEntry.mod), inFlightPackets, bankEntry.denom, bankEntry.amount,
+                                    bankEntry.account, receiver, sourcePort, sourceChannel, 0, 0)
     all {
-      moduleStates' = moduleStates.set(mod, result.moduleState),
+      moduleStates' = moduleStates.set(bankEntry.mod, result.moduleState),
       inFlightPackets' = result.inFlightPackets
     }
   }
 
-  action step = {
-    nondet mod = modules.oneOf()
-    any {
-      nondet packet = inFlightPackets.filter(p => p.destPort == "transfer" and p.destChannel.in(channelsForModule(mod))).oneOf()
-      val result = onRecvPacket(moduleStates.get(mod), packet)
-      all {
-        moduleStates' = moduleStates.set(mod, result.moduleState),
-        inFlightPackets' = inFlightPackets.exclude(Set(packet))
-      },
-      sendSomeTransfer(mod),
+  val packetsToReceiveAsRecords = inFlightPackets.filter(p => p.destPort == "transfer").map(p =>
+    modules.filter(mod => p.destChannel.in(channelsForModule(mod))).map(mod =>
+      { mod: mod, packet: p }
+    )
+  ).flatten()
+
+  action receivePacket = {
+    nondet packetEntry = packetsToReceiveAsRecords.oneOf()
+    val mod = packetEntry.mod
+    val packet = packetEntry.packet
+    val result = onRecvPacket(moduleStates.get(mod), packet)
+    all {
+      moduleStates' = moduleStates.set(mod, result.moduleState),
+      inFlightPackets' = inFlightPackets.exclude(Set(packet))
     }
   }
+
+  action step = {
+    any {
+      sendSomeTransfer,
+      receivePacket,
+    }
+  }
+
+  pure def getChannelsForTransfer(sourceChain: str, destChain: str): { sourceChannel: str, destChannel: str } =
+    pure val channels = Map(
+      "A" -> "channelToA",
+      "B" -> "channelToB",
+      "C" -> "channelToC"
+    )
+    ({
+      // If this is a transfer from A -> B, then the source channel is `channelToB`
+      sourceChannel: channels.get(destChain),
+      // If this is a transfer from A -> B, then the dest channel is `channelToA`
+      destChannel: channels.get(sourceChain),
+    })
+
+  def print(a) = true
+
+  run sendTransfer(denom: DenomTrace, sourceChain: str, destChain: str, sender: Address, receiver: Address): bool = (
+    pure val channels = getChannelsForTransfer(sourceChain, destChain)
+    val result = sendFungibleTokens(sourceChain, moduleStates.get(sourceChain), inFlightPackets, denom, 1, sender, receiver, "transfer", channels.sourceChannel, 0, 0)
+    all {
+      moduleStates' = moduleStates.set(sourceChain, result.moduleState),
+      inFlightPackets' = result.inFlightPackets
+    })
+    .then(all {
+      print(inFlightPackets),
+      receivePacket
+    }
+    )
+
+  run tTest = init.then(
+    sendTransfer(toDenom("atom"), "A", "B", "alice", "bob"))
+
+  run ABCACBATest = init.then(
+    sendTransfer(toDenom("atom"), "A", "B", "alice", "bob")
+  ).then(
+    pure val denom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
+    sendTransfer(denom, "B", "C", "bob", "charlie")
+  ).then(
+    pure val denom: DenomTrace = { baseDenom: "atom", path: [
+      { port: "transfer", channel: "channelToB" },
+      { port: "transfer", channel: "channelToA" }
+    ] }
+
+    sendTransfer(denom, "C", "A", "charlie", "alice")
+  ).then(
+    pure val denom: DenomTrace = { baseDenom: "atom", path: [
+      { port: "transfer", channel: "channelToC" },
+      { port: "transfer", channel: "channelToB" },
+      { port: "transfer", channel: "channelToA" }
+    ] }
+
+    sendTransfer(denom, "A", "C", "alice", "bob")
+  ).then(
+    pure val denom: DenomTrace = { baseDenom: "atom", path: [
+      { port: "transfer", channel: "channelToB" },
+      { port: "transfer", channel: "channelToA" }
+    ] }
+
+    sendTransfer(denom, "C", "B", "bob", "charlie")
+  ).then(
+    pure val denom: DenomTrace = { baseDenom: "atom", path: [
+      { port: "transfer", channel: "channelToA" }
+    ] }
+
+    sendTransfer(denom, "B", "A", "charlie", "darwin")
+  ).then(all {
+      assert(moduleStates.get("A").bank.get("alice").get(toDenom("atom")) == 99),
+      assert(moduleStates.get("A").bank.get("darwin").get(toDenom("atom")) == 1),
+
+      moduleStates' = moduleStates,
+      inFlightPackets' = inFlightPackets,
+    }
+  )
 }

@@ -20,7 +20,6 @@ module bank {
    * TYPES
    * **************************************************************************/
 
-  type Address = str
   type Amount = int
   type Denomination = DenomTrace
 
@@ -127,6 +126,11 @@ module bank {
       { success: false, accounts: accounts}
     }
   }
+}
+
+module bankTests {
+  import base.* from "./base"
+  import bank.*
 
   /* ***************************************************************************
    * STATE MACHINE
