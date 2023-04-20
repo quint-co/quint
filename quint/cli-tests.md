@@ -242,12 +242,16 @@ Temporarily disabled.
 
 <!-- !test check erc20::erc20Tests - Syntax/Types & Effects/Unit tests -->
     quint test --main=erc20Tests ../examples/solidity/ERC20/erc20.qnt
-    
+
 ### OK on test ics20 bank
 
 <!-- !test check ics20 bank - Syntax/Types & Effects/Unit tests -->
-    quint test ../examples/cosmos/ics20/bank.qnt
-    
+    quint test --main bankTests ../examples/cosmos/ics20/bank.qnt
+
+### OK on test ics20
+<!-- !test check ics20 - Syntax/Types & Effects/Unit tests -->
+    quint test --main ics20Test ../examples/cosmos/ics20/ics20.qnt
+
 ### OK on test importFrom
 
 <!-- !test check importFrom - Syntax/Types & Effects/Unit tests -->
