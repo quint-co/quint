@@ -838,6 +838,7 @@ describe('compiling specs to runtime values', () => {
 
     it('record equality', () => {
       assertResultAsString('{ a: 2 + 3, b: true } == { a: 5, b: true }', 'true')
+      assertResultAsString('{ a: 3, b: true } == { b: true, a: 3 }', 'true')
       assertResultAsString('{ a: 2 + 3, b: true } == { a: 1, b: false }', 'false')
     })
 

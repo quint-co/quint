@@ -135,7 +135,7 @@ export const rv = {
    * @return a new runtime value that carries the record
    */
   mkRecord: (elems: Iterable<[string, RuntimeValue]>): RuntimeValue => {
-    return new RuntimeValueRecord(OrderedMap(elems))
+    return new RuntimeValueRecord(OrderedMap(elems).sortBy((_v, k) => k))
   },
 
   /**
