@@ -186,7 +186,7 @@ module ics20Test {
   }
 
   val packetsToReceiveAsRecords = inFlightPackets.filter(p => p.destPort == "transfer").map(p =>
-    modules.filter(mod => p.destChannel.in(channelsForModule(mod))).map(mod =>
+    modules.filter(mod => p.sourceChannel == getCounterparty(mod, p.destChannel) and p.destChannel.in(channelsForModule(mod))).map(mod =>
       { mod: mod, packet: p }
     )
   ).flatten()
@@ -222,7 +222,6 @@ module ics20Test {
       destChannel: channels.get(sourceChain),
     })
 
-  def print(a) = true
 
   run sendTransfer(denom: DenomTrace, sourceChain: str, destChain: str, sender: Address, receiver: Address): bool = (
     pure val channels = getChannelsForTransfer(sourceChain, destChain)
@@ -230,15 +229,9 @@ module ics20Test {
     all {
       moduleStates' = moduleStates.set(sourceChain, result.moduleState),
       inFlightPackets' = result.inFlightPackets
-    })
-    .then(all {
-      print(inFlightPackets),
+    }).then(
       receivePacket
-    }
     )
-
-  run tTest = init.then(
-    sendTransfer(toDenom("atom"), "A", "B", "alice", "bob"))
 
   run ABCACBATest = init.then(
     sendTransfer(toDenom("atom"), "A", "B", "alice", "bob")
