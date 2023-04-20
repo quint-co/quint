@@ -307,7 +307,9 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
     const testOut =
       compileAndTest(testing.modules, main,
                      testing.sourceMap, testing.table, testing.types, options)
-    if (testOut.isRight()) {
+    if (testOut.isLeft()) {
+      return cliErr("Tests failed", { ...testing, errors: testOut.value })
+    } else if (testOut.isRight()) {
       const elapsedMs = Date.now() - startMs
       const results = testOut.unwrap()
       // output the status for every test
@@ -381,14 +383,14 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
           && !verbosity.hasActionTracking(options.verbosity)) {
         out(chalk.gray('\n  Use --verbosity=3 to show executions.'))
       }
-    } // else: we have handled the case of module not found already
+    }
 
     const errors = namedErrors.map(([_, e]) => e)
     const stage = { ...testing, passed, failed, ignored, errors }
     if (errors.length == 0 && failed.length == 0) {
       return right(stage)
     } else {
-      return left({msg: "Tests failed", stage})
+      return cliErr("Tests failed", stage)
     }
   }
 }

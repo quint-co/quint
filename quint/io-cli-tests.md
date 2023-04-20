@@ -665,3 +665,25 @@ true
 >>> 16
 >>> 
 ```
+
+### Fail on test with compile error
+
+<!-- !test in test compile error -->
+```
+output=$(quint test testFixture/_1040compileError.qnt 2>&1)
+exit_code=$?
+echo "$output" | sed -e 's#^.*_1040compileError.qnt#      HOME/_1040compileError.qnt#g'
+exit $exit_code
+```
+
+<!-- !test exit 1 -->
+<!-- !test out test compile error -->
+```
+
+  _1040compileError
+      HOME/_1040compileError.qnt:5:12 - error: Name n not found
+5:     assert(n > 0)
+              ^
+
+error: Tests failed
+```

@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Proper errors are now reported when a lambda returns an operator (#811)
 - Fix `quint run` to output compile errors again (#812)
 - Fix the record constructor, so the key order does not matter (#839)
+- `quint test` shows compile errors, if they occur (#841)
 
 ### Security
 

@@ -79,14 +79,22 @@ export function compileAndTest(
     sourceMap: Map<bigint, Loc>,
     lookupTable: LookupTable,
     types: Map<bigint, TypeScheme>,
-    options: TestOptions): Either<string, TestResult[]> {
+    options: TestOptions): Either<ErrorMessage[], TestResult[]> {
   const recorder = newTraceRecorder(options.verbosity, options.rng)
   const ctx =
     compile(modules, sourceMap, lookupTable,
             types, main.name, recorder, options.rng.next)
 
   if(!ctx.main) {
-    return left('Cannot find main module')
+    return left([ { explanation: 'Cannot find main module', locs: [] } ])
+  }
+
+  const ctxErrors =
+    ctx.syntaxErrors.concat(ctx.compileErrors).concat(ctx.analysisErrors)
+  if (ctxErrors.length > 0) {
+    // In principle, these errors should have been caught earlier.
+    // But if they did not, return immediately.
+    return left(ctxErrors)
   }
 
   const testDefs =
@@ -159,11 +167,12 @@ export function compileAndTest(
   }))
 }
 
-function getComputableForDef(ctx: CompilationContext, def: QuintOpDef): Either<string, Computable> {
+function getComputableForDef(ctx: CompilationContext, def: QuintOpDef):
+    Either<ErrorMessage[], Computable> {
   const comp = ctx.values.get(kindName('callable', def.id))
   if (comp) {
     return right(comp)
   } else {
-    return left(`Cannot find computable for ${def.name}`)
+    return left([ { explanation: `Cannot find computable for ${def.name}`, locs: [] } ])
   }
 }
