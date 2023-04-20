@@ -1,5 +1,10 @@
 // -*- mode: Bluespec; -*-
 
+/**
+ * A specification for the ICS20 fungible token transfer protocol.
+ *
+ * Gabriela Moreira and Thomas Pani, Informal Systems, 2023
+ */
 module ics20 {
   import base.* from "./base"
   import bank.* from "./bank"
