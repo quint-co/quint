@@ -2,8 +2,8 @@
 
 module ics20 {
   import base.* from "./base"
-  import denomTrace.* from "./denomTrace"
   import bank.* from "./bank"
+  import denomTrace.* from "./denomTrace"
 
   /* ***************************************************************************
    * TYPES
@@ -41,11 +41,9 @@ module ics20 {
     channelEscrowAddresses: Channel -> Address,
   }
 
-  type SendFungibleTokensResult = {
-    moduleState: ModuleState,
-    inFlightPackets: Set[Packet]
-  }
-
+  /// From a module `M` and one of its channels `C`, the counterparty for `C` is
+  /// the channel name for `C` in the chain it connects to. Handling channels
+  /// should be extracted to a new spec.
   pure def getCounterparty(moduleName: str, sourceChannel: Channel): Channel = {
     pure val channels = Map(
       "A" -> "channelToA",
@@ -54,6 +52,13 @@ module ics20 {
     )
 
     channels.get(moduleName)
+  }
+
+  /// `sendFugibleTokens` returns the updated module state and the updated set
+  /// of in flight packets. This is the type for its returned value.
+  type SendFungibleTokensResult = {
+    moduleState: ModuleState,
+    inFlightPackets: Set[Packet]
   }
 
   pure def sendFungibleTokens(moduleName: str, moduleState: ModuleState, packets: Set[Packet], // this could be an `sendPacket` operator when higher-order operators are supported
@@ -90,13 +95,15 @@ module ics20 {
     }
   }
 
+  /// `onRecvPacket` should return an acknowledgment, but it also has to update
+  /// the module state, so the return type is the updated value for the module
+  /// state and the acknowledgment
   type ReceiveTokenPacketResult = {
     moduleState: ModuleState,
     acknowledgement: FungibleTokenPacketAcknowledgement
   }
 
-  pure def onRecvPacket(moduleState: ModuleState,
-                        packet: Packet): ReceiveTokenPacketResult = {
+  pure def onRecvPacket(moduleState: ModuleState, packet: Packet): ReceiveTokenPacketResult = {
     val data = packet.data
     if (movingBackAlongTrace({port: packet.sourcePort, channel: packet.sourceChannel}, data.denom)) {
       // unescrow tokens to receiver
@@ -137,11 +144,15 @@ module ics20Test {
   import ics20.*
 
   val modules = Set("A", "B", "C")
+
+  /// Set o addresses for random simulation
   val addresses = Set("alice", "bob", "charlie")
 
   var moduleStates: str -> ModuleState
   var inFlightPackets: Set[Packet]
 
+  /// All channels available in a module. Should be extracted to a channels
+  /// quint module.
   pure def channelsForModule(mod: str): Set[Channel] = {
     pure val channels = Map(
       "A" -> Set("channelToB", "channelToC"),
@@ -152,6 +163,22 @@ module ics20Test {
     channels.get(mod)
   }
 
+  /// A channel for a transfer from one module to another. Should be extracted
+  /// to a channels quint module.
+  pure def getChannelsForTransfer(sourceModule: str, destModule: str): { sourceChannel: str, destChannel: str } =
+    pure val channels = Map(
+      "A" -> "channelToA",
+      "B" -> "channelToB",
+      "C" -> "channelToC"
+    )
+    ({
+      // If this is a transfer from A -> B, then the source channel is `channelToB`
+      sourceChannel: channels.get(destModule),
+      // If this is a transfer from A -> B, then the dest channel is `channelToA`
+      destChannel: channels.get(sourceModule),
+    })
+
+
   action init = all {
     moduleStates' = modules.mapBy(_ => {
       bank: Map(),
@@ -160,6 +187,11 @@ module ics20Test {
     inFlightPackets' = Set()
   }
 
+  /// A set of all possible combinations of module, account and denom with
+  /// ammount greater than 0, to be used to send a valid transfer. If we just
+  /// pick these values at random, it is most likely that the bank module will
+  /// refuse the transfer for lack of funds, and we won't be able to find a
+  // valid example in the random simulator.
   val bankEntriesAsRecords = modules.map(m =>
     moduleStates.get(m).bank.keys().map(acc =>
       moduleStates.get(m).bank.get(acc).keys().map(denom =>
@@ -169,10 +201,8 @@ module ics20Test {
     ).flatten()
   ).flatten().filter(r => r.amount > 0)
 
+  /// Sends random valid transfer. Used for simulation.
   action sendSomeTransfer = {
-    // Find some existing ammount, sender and denom
-    // pure val modulesWithTokens = modules.filter(m =>
-    // moduleStates.get(mod).bank.keys().exists(k => ))
     nondet bankEntry = bankEntriesAsRecords.oneOf()
     pure val sourcePort = "transfer"
     nondet receiver = addresses.oneOf()
@@ -185,12 +215,18 @@ module ics20Test {
     }
   }
 
+  /// A set of all possible combinations of module and packet such that the
+  /// packet is being sent to that module. This has to check for both
+  /// `sourceChannel` and `destChannel` of the packet since channel names are
+  /// not globally unique.
   val packetsToReceiveAsRecords = inFlightPackets.filter(p => p.destPort == "transfer").map(p =>
     modules.filter(mod => p.sourceChannel == getCounterparty(mod, p.destChannel) and p.destChannel.in(channelsForModule(mod))).map(mod =>
       { mod: mod, packet: p }
     )
   ).flatten()
 
+  /// Receives some packet from `inFlightPacket` in its proper module. This is
+  /// used for both simulation and tests.
   action receivePacket = {
     nondet packetEntry = packetsToReceiveAsRecords.oneOf()
     val mod = packetEntry.mod
@@ -209,30 +245,20 @@ module ics20Test {
     }
   }
 
-  pure def getChannelsForTransfer(sourceChain: str, destChain: str): { sourceChannel: str, destChannel: str } =
-    pure val channels = Map(
-      "A" -> "channelToA",
-      "B" -> "channelToB",
-      "C" -> "channelToC"
-    )
-    ({
-      // If this is a transfer from A -> B, then the source channel is `channelToB`
-      sourceChannel: channels.get(destChain),
-      // If this is a transfer from A -> B, then the dest channel is `channelToA`
-      destChannel: channels.get(sourceChain),
-    })
-
-
-  run sendTransfer(denom: DenomTrace, sourceChain: str, destChain: str, sender: Address, receiver: Address): bool = (
-    pure val channels = getChannelsForTransfer(sourceChain, destChain)
-    val result = sendFungibleTokens(sourceChain, moduleStates.get(sourceChain), inFlightPackets, denom, 1, sender, receiver, "transfer", channels.sourceChannel, 0, 0)
+  /// Sends 1 `denom` token from `sender` in `sourceModule` to `receiver` in
+  /// `destModule`. This is a composition of two actions: one that sends the
+  /// packet from `sourceModule` and other that receives the packet in `destModule`
+  run sendTransfer(denom: DenomTrace, sourceModule: str, destModule: str, sender: Address, receiver: Address): bool = (
+    pure val channels = getChannelsForTransfer(sourceModule, destModule)
+    val result = sendFungibleTokens(sourceModule, moduleStates.get(sourceModule), inFlightPackets, denom, 1, sender, receiver, "transfer", channels.sourceChannel, 0, 0)
     all {
-      moduleStates' = moduleStates.set(sourceChain, result.moduleState),
+      moduleStates' = moduleStates.set(sourceModule, result.moduleState),
       inFlightPackets' = result.inFlightPackets
     }).then(
       receivePacket
     )
 
+  // These steps of transfer occur: A -> B -> C -> A -> C -> B -> A
   run ABCACBATest = init.then(
     sendTransfer(toDenom("atom"), "A", "B", "alice", "bob")
   ).then(
