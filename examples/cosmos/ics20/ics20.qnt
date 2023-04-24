@@ -53,19 +53,9 @@ module ics20 {
     chainState.channels.get(sourceChannel)
   }
 
-  /// `sendFugibleTokens` returns the updated chain state and the updated set
-  /// of in flight packets. This is the type for its returned value.
-  type SendFungibleTokensResult = {
-    chainState: ChainState,
-    inFlightPackets: Set[Packet]
-  }
-
-  pure def sendFungibleTokens(chainState: ChainState, packets: Set[Packet], // this could be an `sendPacket` operator when higher-order operators are supported
-                              denomination: DenomTrace, amount: UINT256,
-                              sender: Address, receiver: Address,
-                              sourcePort: str, sourceChannel: Channel,
-                              timeoutHeight: Height,
-                              timeoutTimestamp: uint64): SendFungibleTokensResult = {
+  pure def sendFungibleTokens(chainState: ChainState, denomination: DenomTrace, amount: UINT256,
+                              sender: Address, receiver: Address, sourcePort: str, sourceChannel: Channel,
+                              timeoutHeight: Height, timeoutTimestamp: uint64): ChainState = {
     val bankResult = if (movingBackAlongTrace({port: sourcePort, channel: sourceChannel}, denomination)) {
       // burn vouchers
       (chainState.bank).BurnCoins(sender, denomination, amount)
@@ -87,10 +77,11 @@ module ics20 {
         destChannel: getCounterparty(chainState, sourceChannel)
       }
 
-      { chainState: chainState.with("bank", bankResult.accounts),
-        inFlightPackets: packets.union(Set(packet)) }
+      chainState
+        .with("bank", bankResult.accounts)
+        .with("outPackets", chainState.outPackets.union(Set(packet)))
     } else {
-      { chainState: chainState, inFlightPackets: packets }
+      chainState
     }
   }
 
@@ -149,7 +140,6 @@ module ics20Test {
 
   /// Map from chain identifiers to their state
   var chainStates: str -> ChainState
-  var inFlightPackets: Set[Packet]
 
   /// All channels available in a module. Should be extracted to a channels
   /// quint module.
@@ -178,7 +168,7 @@ module ics20Test {
     })
 
 
-  action init = all {
+  action init = {
     chainStates' = Map(
       "A" -> {
         bank: Map("alice" -> Map(toDenom("atom") -> 100)),
@@ -207,16 +197,18 @@ module ics20Test {
         channelEscrowAddresses: Set("channelToA", "channelToB").mapBy(_ => "escrow_account"),
         outPackets: Set()
       }
-    ),
-    inFlightPackets' = Set()
+    )
   }
 
-  /// Receives a packet in a specific chain
-  action receivePacket(chain: str, packet: Packet): bool = {
-    val result = onRecvPacket(chainStates.get(chain), packet)
+  /// Receives a packet sent from `sourceChain` to `destChain`
+  action receivePacket(sourceChain: str, destChain: str): bool = {
+    val sourceChainState = chainStates.get(sourceChain)
+    nondet packet = sourceChainState.outPackets.oneOf()
+    val result = onRecvPacket(chainStates.get(destChain), packet)
     all {
-      chainStates' = chainStates.set(chain, result.chainState),
-      inFlightPackets' = inFlightPackets.exclude(Set(packet))
+      chainStates' = chainStates
+        .set(destChain, result.chainState)
+        .set(sourceChain, sourceChainState.with("outPackets", sourceChainState.outPackets.exclude(Set(packet))))
     }
   }
 
@@ -224,13 +216,11 @@ module ics20Test {
   /// `destChain`. This is a composition of two actions: one that sends the
   /// packet from `sourceChain` and other that receives the packet in `destChain`
   run sendTransfer(denom: DenomTrace, sourceChain: str, destChain: str, sender: Address, receiver: Address): bool = (
-    val result = sendFungibleTokens(chainStates.get(sourceChain), inFlightPackets, denom, 1, sender, receiver, "transfer", getChannelsForTransfer(sourceChain, destChain).sourceChannel, 0, 0)
+    val result = sendFungibleTokens(chainStates.get(sourceChain), denom, 1, sender, receiver, "transfer", getChannelsForTransfer(sourceChain, destChain).sourceChannel, 0, 0)
     all {
-      chainStates' = chainStates.set(sourceChain, result.chainState),
-      inFlightPackets' = result.inFlightPackets
+      chainStates' = chainStates.set(sourceChain, result),
     }).then(
-      nondet packet = inFlightPackets.oneOf()
-      receivePacket(destChain, packet)
+      receivePacket(sourceChain, destChain)
     )
 
   // These steps of transfer occur: A -> B -> C -> A -> C -> B -> A
@@ -272,7 +262,6 @@ module ics20Test {
       assert(chainStates.get("A").bank.get("darwin").get(toDenom("atom")) == 1),
 
       chainStates' = chainStates,
-      inFlightPackets' = inFlightPackets,
     }
   )
 }
