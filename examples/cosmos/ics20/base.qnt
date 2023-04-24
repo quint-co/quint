@@ -25,6 +25,10 @@ module base {
   type UINT256 = int
   type Address = str
 
+  type Channel = str
+  /// Map from channel name in a chain to its counterparty on other chain
+  type Channels = Channel -> Channel
+
   pure def toDenom(baseDenom: str): DenomTrace = {
     { baseDenom: baseDenom, path: [] }
   }
