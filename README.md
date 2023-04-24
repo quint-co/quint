@@ -84,6 +84,7 @@ editor (currently, VSCode, Emacs and Vim are supported).
 
 - Join the chat in the [Quint zulip stream][] :telephone:
 - Join the [Quint discussions][] :bulb:
+- [Contribute your spell][] to the collection of Quint spells :scroll:
 - [Contribute](./CONTRIBUTING.md) to the development of Quint :construction_worker:
 
 ### Tools :space_invader:
@@ -202,6 +203,8 @@ completely implementing every pass.
 [Fairness]: ./doc/lang.md#fairness
 [Unbounded quantifiers]: ./doc/lang.md#unbounded-quantifiers
 [Modes]: ./doc/lang.md#modes
+[Spells]: ./examples/spells/README.md
+[Contribute your spell]: ./examples/spells/contribute-your-spell.md
 [539]: https://github.com/informalsystems/quint/issues/539
 [221]: https://github.com/informalsystems/quint/issues/221
 [235]: https://github.com/informalsystems/quint/issues/235

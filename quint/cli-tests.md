@@ -276,3 +276,18 @@ if [ "$UNAME" == "Linux" -o "$UNAME" == "Darwin" ]; then
 fi
 # else diff does not work as expected on windows
 ```
+
+### OK on test basicSpells
+
+<!-- !test check basicSpells - Syntax/Types & Effects/Unit tests -->
+    quint test ../examples/spells/basicSpells.qnt
+
+### OK on test commonSpells
+
+<!-- !test check commonSpells - Syntax/Types & Effects/Unit tests -->
+    quint test ../examples/spells/commonSpells.qnt
+
+### OK on test rareSpells
+
+<!-- !test check rareSpells - Syntax/Types & Effects/Unit tests -->
+    quint test ../examples/spells/rareSpells.qnt
