@@ -133,71 +133,40 @@ module ics20Test {
   import base.* from "./base"
   import ics20.*
 
-  val modules = Set("A", "B", "C")
-
-  /// Set of addresses for random simulation
-  val addresses = Set("alice", "bob", "charlie")
-
   /// Map from chain identifiers to their state
   var chainStates: str -> ChainState
 
-  /// All channels available in a module. Should be extracted to a channels
-  /// quint module.
-  pure def channelsForModule(mod: str): Set[Channel] = {
-    pure val channels = Map(
-      "A" -> Set("channelToB", "channelToC"),
-      "B" -> Set("channelToA", "channelToC"),
-      "C" -> Set("channelToA", "channelToB")
-    )
-
-    channels.get(mod)
-  }
-
-  /// A channel for a transfer from one chain to another
-  pure def getChannelsForTransfer(sourceChain: str, destChain: str): { sourceChannel: str, destChannel: str } =
-    pure val channels = Map(
-      "A" -> "channelToA",
+  pure val connections = Map(
+    "A" -> Map(
       "B" -> "channelToB",
       "C" -> "channelToC"
+    ),
+    "B" -> Map(
+      "A" -> "channelToA",
+      "C" -> "channelToC"
+    ),
+    "C" -> Map(
+      "A" -> "channelToA",
+      "B" -> "channelToB"
     )
-    ({
-      // If this is a transfer from A -> B, then the source channel is `channelToB`
-      sourceChannel: channels.get(destChain),
-      // If this is a transfer from A -> B, then the dest channel is `channelToA`
-      destChannel: channels.get(sourceChain),
-    })
+  )
 
+  pure val channelCounterparties = connections.keys().mapBy(chain => {
+    val connectedChains = connections.get(chain).keys()
+    connectedChains.map(counterpartyChain => {
+      val localIdentifier = connections.get(chain).get(counterpartyChain)
+      val counterpartyIdentifier = connections.get(counterpartyChain).get(chain)
+      (localIdentifier, counterpartyIdentifier)
+    }).setToMap()
+  })
 
   action init = {
-    chainStates' = Map(
-      "A" -> {
-        bank: Map("alice" -> Map(toDenom("atom") -> 100)),
-        channels: Map(
-          "channelToB" -> "channelToA",
-          "channelToC" -> "channelToA"
-        ),
-        channelEscrowAddresses: Set("channelToB", "channelToC").mapBy(_ => "escrow_account"),
-        outPackets: Set()
-      },
-      "B" -> {
-        bank: Map(),
-        channels: Map(
-          "channelToA" -> "channelToB",
-          "channelToC" -> "channelToB"
-        ),
-        channelEscrowAddresses: Set("channelToA", "channelToC").mapBy(_ => "escrow_account"),
-        outPackets: Set()
-      },
-      "C" -> {
-        bank: Map(),
-        channels: Map(
-          "channelToA" -> "channelToC",
-          "channelToB" -> "channelToC"
-        ),
-        channelEscrowAddresses: Set("channelToA", "channelToB").mapBy(_ => "escrow_account"),
-        outPackets: Set()
-      }
-    )
+    chainStates' = connections.keys().mapBy(chain => {
+      bank: if (chain == "A") Map("alice" -> Map(toDenom("atom") -> 100)) else Map(),
+      channels: channelCounterparties.get(chain),
+      channelEscrowAddresses: channelCounterparties.get(chain).keys().mapBy(_ => "escrow_account"),
+      outPackets: Set()
+    })
   }
 
   /// Receives a packet sent from `sourceChain` to `destChain`
@@ -216,7 +185,7 @@ module ics20Test {
   /// `destChain`. This is a composition of two actions: one that sends the
   /// packet from `sourceChain` and other that receives the packet in `destChain`
   run sendTransfer(denom: DenomTrace, sourceChain: str, destChain: str, sender: Address, receiver: Address): bool = (
-    val result = sendFungibleTokens(chainStates.get(sourceChain), denom, 1, sender, receiver, "transfer", getChannelsForTransfer(sourceChain, destChain).sourceChannel, 0, 0)
+    val result = sendFungibleTokens(chainStates.get(sourceChain), denom, 1, sender, receiver, "transfer", connections.get(sourceChain).get(destChain), 0, 0)
     all {
       chainStates' = chainStates.set(sourceChain, result),
     }).then(
