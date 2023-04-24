@@ -39,7 +39,7 @@ module ics20 {
     destChannel: Channel,
   }
 
-  // State of the IBC module in a chain
+  /// State of the IBC module in a chain
   type ChainState = {
     bank: Accounts,
     channels: Channels,
@@ -135,6 +135,9 @@ module ics20Test {
   /// Map from chain identifiers to their state
   var chainStates: str -> ChainState
 
+  /// Map from chain identifiers to their connections, which are maps from
+  /// counterparty chain identifiers to channel identifiers. For example, chain
+  /// A connects to chain B through channel "channelToB".
   pure val connections = Map(
     "A" -> Map(
       "B" -> "channelToB",
@@ -150,7 +153,10 @@ module ics20Test {
     )
   )
 
-  pure val channelCounterparties = connections.keys().mapBy(chain => {
+  /// For each chain, a map from channel to their channel counterparties,
+  /// derived from `connections`. For example, in chain A, channel "channelToB"
+  /// has the counterparty "channelToA".
+  pure val channelCounterparties: str -> Channel -> Channel = connections.keys().mapBy(chain => {
     val connectedChains = connections.get(chain).keys()
     connectedChains.map(counterpartyChain => {
       val localIdentifier = connections.get(chain).get(counterpartyChain)
@@ -161,6 +167,7 @@ module ics20Test {
 
   action init = {
     chainStates' = connections.keys().mapBy(chain => {
+      // All accounts are empty, except for Alice in chain A who has 100 atoms
       bank: if (chain == "A") Map("alice" -> Map(toDenom("atom") -> 100)) else Map(),
       channels: channelCounterparties.get(chain),
       channelEscrowAddresses: channelCounterparties.get(chain).keys().mapBy(_ => "escrow_account"),
@@ -184,8 +191,8 @@ module ics20Test {
   /// `destChain`. This is a composition of two actions: one that sends the
   /// packet from `sourceChain` and other that receives the packet in `destChain`
   run sendTransfer(denom: DenomTrace, sourceChain: str, destChain: str, sender: Address, receiver: Address): bool = (
-    val result = sendFungibleTokens(chainStates.get(sourceChain), denom, 1, sender, receiver, "transfer", connections.get(sourceChain).get(destChain), 0, 0)
     all {
+      val result = sendFungibleTokens(chainStates.get(sourceChain), denom, 1, sender, receiver, "transfer", connections.get(sourceChain).get(destChain), 0, 0)
       chainStates' = chainStates.set(sourceChain, result),
     }).then(
       receivePacket(sourceChain, destChain)
