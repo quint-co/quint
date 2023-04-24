@@ -47,6 +47,14 @@ module ics20 {
     channelEscrowAddresses: Channel -> Address,
   }
 
+  /// `onRecvPacket` should return an acknowledgment, but it also has to update
+  /// the chain state, so the return type is the updated value for the chain
+  /// state and the acknowledgment
+  type ReceiveTokenPacketResult = {
+    chainState: ChainState,
+    acknowledgement: FungibleTokenPacketAcknowledgement
+  }
+
   /// The counterparty for a channel `C` in a chain is the channel identifier of
   /// the channel `C` connects to, in the other chain.
   pure def getCounterparty(chainState: ChainState, sourceChannel: Channel): Channel = {
@@ -85,14 +93,6 @@ module ics20 {
     }
   }
 
-  /// `onRecvPacket` should return an acknowledgment, but it also has to update
-  /// the chain state, so the return type is the updated value for the chain
-  /// state and the acknowledgment
-  type ReceiveTokenPacketResult = {
-    chainState: ChainState,
-    acknowledgement: FungibleTokenPacketAcknowledgement
-  }
-
   pure def onRecvPacket(chainState: ChainState, packet: Packet): ReceiveTokenPacketResult = {
     val data = packet.data
     if (movingBackAlongTrace({port: packet.sourcePort, channel: packet.sourceChannel}, data.denom)) {
@@ -112,7 +112,6 @@ module ics20 {
       { chainState: newChainState, acknowledgement: ack }
     } else {
       // mint vouchers to receiver
-      val prefix = [packet.destPort, packet.destChannel]
       val newDenom = updateTrace(data.denom, packet.sourcePort, packet.sourceChannel, packet.destPort, packet.destChannel)
 
       val bankResult = chainState.bank.MintCoins(data.receiver, newDenom, data.amount)
