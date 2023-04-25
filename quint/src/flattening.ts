@@ -20,6 +20,7 @@ import { definitionToString } from "./IRprinting"
 import { QuintType, Row } from "./quintTypes"
 import { Loc } from "./quintParserFrontend"
 import { compact, uniqBy } from "lodash"
+import { TypeScheme } from "./types/base"
 
 type FlatDef = (
   QuintOpDef
@@ -34,6 +35,7 @@ interface FlatteningContext {
   table: LookupTable,
   currentModuleNames: Set<string>,
   sourceMap: Map<bigint, Loc>,
+  types: Map<bigint, TypeScheme>,
   importedModules: Map<string, QuintModule>,
 }
 
@@ -53,7 +55,8 @@ export function flatten(
   table: LookupTable,
   importedModules: Map<string, QuintModule>,
   idGenerator: IdGenerator,
-  sourceMap: Map<bigint, Loc>
+  sourceMap: Map<bigint, Loc>,
+  types: Map<bigint, TypeScheme>
 ): QuintModule {
   const currentModuleNames = new Set([
     // builtin names
@@ -62,7 +65,7 @@ export function flatten(
     ...compact(module.defs.map(d => isFlat(d) ? d.name : undefined)),
   ])
 
-  const context = { idGenerator, table, currentModuleNames, sourceMap, importedModules }
+  const context = { idGenerator, table, currentModuleNames, sourceMap, types, importedModules }
 
   const newDefs = module.defs.flatMap(def => {
     if (isFlat(def)) {
@@ -170,17 +173,17 @@ function addNamespaceToDef(ctx: FlatteningContext, name: string | undefined, def
         ...def,
         name: namespacedName(name, def.name),
         assumption: addNamespaceToExpr(ctx, name, def.assumption),
-        id: getNewIdWithSameLoc(ctx, def.id),
+        id: getNewIdWithSameData(ctx, def.id),
       }
     case 'const':
     case 'var':
-      return { ...def, name: namespacedName(name, def.name), id: getNewIdWithSameLoc(ctx, def.id) }
+      return { ...def, name: namespacedName(name, def.name), id: getNewIdWithSameData(ctx, def.id) }
     case 'typedef':
       return {
         ...def,
         name: namespacedName(name, def.name),
         type: def.type ? addNamespaceToType(ctx, name, def.type) : undefined,
-        id: getNewIdWithSameLoc(ctx, def.id),
+        id: getNewIdWithSameData(ctx, def.id),
       }
     case 'instance':
       throw new Error(`Instance in ${definitionToString(def)} should have been flatenned already`)
@@ -196,12 +199,12 @@ function addNamespaceToOpDef(ctx: FlatteningContext, name: string | undefined, o
     ...opdef,
     name: namespacedName(name, opdef.name),
     expr: addNamespaceToExpr(ctx, name, opdef.expr),
-    id: getNewIdWithSameLoc(ctx, opdef.id),
+    id: getNewIdWithSameData(ctx, opdef.id),
   }
 }
 
 function addNamespaceToExpr(ctx: FlatteningContext, name: string | undefined, expr: QuintEx): QuintEx {
-  const id = getNewIdWithSameLoc(ctx, expr.id)
+  const id = getNewIdWithSameData(ctx, expr.id)
 
   switch (expr.kind) {
     case 'name':
@@ -235,7 +238,7 @@ function addNamespaceToExpr(ctx: FlatteningContext, name: string | undefined, ex
         ...expr,
         params: expr.params.map(param => ({
           name: namespacedName(name, param.name),
-          id: getNewIdWithSameLoc(ctx, param.id),
+          id: getNewIdWithSameData(ctx, param.id),
         })),
         expr: addNamespaceToExpr(ctx, name, expr.expr),
         id,
@@ -252,7 +255,7 @@ function addNamespaceToExpr(ctx: FlatteningContext, name: string | undefined, ex
 }
 
 function addNamespaceToType(ctx: FlatteningContext, name: string | undefined, type: QuintType): QuintType {
-  const id = type.id ? getNewIdWithSameLoc(ctx, type.id) : undefined
+  const id = type.id ? getNewIdWithSameData(ctx, type.id) : undefined
 
   switch (type.kind) {
     case 'bool':
@@ -336,8 +339,9 @@ function shouldAddNamespace(ctx: FlatteningContext, name: string): boolean {
   return true
 }
 
-function getNewIdWithSameLoc(ctx: FlatteningContext, id: bigint): bigint {
+function getNewIdWithSameData(ctx: FlatteningContext, id: bigint): bigint {
   const newId = ctx.idGenerator.nextId()
   ctx.sourceMap.set(newId, ctx.sourceMap.get(id)!)
+  ctx.types.set(newId, ctx.types.get(id)!)
   return newId
 }

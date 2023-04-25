@@ -12,6 +12,7 @@ import { treeFromModule } from '../src/scoping'
 import { collectIds } from './util'
 import JSONbig from 'json-bigint'
 import { parsePhase1fromText } from '../src/quintParserFrontend'
+import { toScheme } from '../src/types/base'
 
 describe('flatten', () => {
   function assertFlatennedDefs(baseDefs: string[], defs: string[], expectedDefs: string[]): void {
@@ -44,10 +45,13 @@ describe('flatten', () => {
       ...resolveNames(module, tableWithImports, treeFromModule(module)).unwrap().entries(),
     ])
 
+    const originalIds = [...result.value.sourceMap.keys()]
+    const typesMap = new Map(originalIds.map(i => [i, toScheme({ kind: 'int' })]))
+
     const flattenedModule = flatten(module, lookupTable, new Map([
       ['A', moduleA],
       ['wrapper', module],
-    ]), idGenerator, result.value.sourceMap)
+    ]), idGenerator, result.value.sourceMap, typesMap)
 
     it('flattens instances', () => {
       assert.sameDeepMembers(flattenedModule.defs.map(def => definitionToString(def)), expectedDefs)
@@ -66,6 +70,10 @@ describe('flatten', () => {
     it('adds new entries to the source map', () => {
       const sourceMap = result.value.sourceMap
       assert.includeDeepMembers([...sourceMap.keys()], flattenedModule.defs.map(def => def.id))
+    })
+
+    it('adds new entries to the types map', () => {
+      assert.includeDeepMembers([...typesMap.keys()], flattenedModule.defs.map(def => def.id))
     })
   }
 
