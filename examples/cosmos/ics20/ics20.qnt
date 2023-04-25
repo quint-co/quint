@@ -135,9 +135,9 @@ module ics20Test {
   /// Map from chain identifiers to their state
   var chainStates: str -> ChainState
 
-  /// Map from chain identifiers to their connections, which are maps from
-  /// counterparty chain identifiers to channel identifiers. For example, chain
-  /// A connects to chain B through channel "channelToB".
+  /// Map from chain identifiers to their connections.
+  /// A connection is a map from counterparty chain identifiers to the local chain's channel identifier.
+  /// For example, chain A connects to chain B through channel "channelToB".
   pure val connections = Map(
     "A" -> Map(
       "B" -> "channelToB",
@@ -159,9 +159,9 @@ module ics20Test {
   pure val channelCounterparties: str -> Channel -> Channel = connections.keys().mapBy(chain => {
     pure val connectedChains = connections.get(chain).keys()
     connectedChains.map(counterpartyChain => {
-      pure val localIdentifier = connections.get(chain).get(counterpartyChain)
-      pure val counterpartyIdentifier = connections.get(counterpartyChain).get(chain)
-      (localIdentifier, counterpartyIdentifier)
+      pure val localChannel = connections.get(chain).get(counterpartyChain)
+      pure val counterpartyChannel = connections.get(counterpartyChain).get(chain)
+      (localChannel, counterpartyChannel)
     }).setToMap()
   })
 
