@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `quint run` to output compile errors again (#812)
 - Fix the record constructor, so the key order does not matter (#839)
 - `quint test` shows compile errors, if they occur (#841)
+- Fix the bug that occurred when caching `pure val` (#844)
 
 ### Security
 
