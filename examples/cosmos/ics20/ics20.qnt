@@ -47,14 +47,6 @@ module ics20 {
     channelEscrowAddresses: Channel -> Address,
   }
 
-  /// `onRecvPacket` should return an acknowledgment, but it also has to update
-  /// the chain state, so the return type is the updated value for the chain
-  /// state and the acknowledgment
-  type ReceiveTokenPacketResult = {
-    chainState: ChainState,
-    acknowledgement: FungibleTokenPacketAcknowledgement
-  }
-
   /// The counterparty for a channel `C` in a chain is the channel identifier of
   /// the channel `C` connects to, in the other chain.
   pure def getCounterparty(chainState: ChainState, sourceChannel: Channel): Channel = {
@@ -93,38 +85,33 @@ module ics20 {
     }
   }
 
-  pure def onRecvPacket(chainState: ChainState, packet: Packet): ReceiveTokenPacketResult = {
+  /// `onRecvPacket` should return an acknowledgment, but it also has to update
+  /// the chain state, so the return type is the updated value for the chain
+  /// state and the acknowledgment
+  pure def onRecvPacket(chainState: ChainState, packet: Packet): (ChainState, FungibleTokenPacketAcknowledgement) = {
     pure val data = packet.data
-    if (movingBackAlongTrace({port: packet.sourcePort, channel: packet.sourceChannel}, data.denom)) {
+    pure val result = if (movingBackAlongTrace({port: packet.sourcePort, channel: packet.sourceChannel}, data.denom)) {
       // unescrow tokens to receiver
       pure val escrowAccount = chainState.channelEscrowAddresses.get(packet.destChannel)
       pure val receiverDenom = updateTrace(data.denom, packet.sourcePort, packet.sourceChannel, packet.destPort, packet.destChannel)
-
+      
       pure val bankResult = chainState.bank.TransferCoins(escrowAccount, data.receiver, receiverDenom, data.amount)
-
-      pure val newChainState = chainState.with("bank", bankResult.accounts)
-      pure val ack = if (bankResult.success) {
-        { success: true, errorMessage: "" }
-      } else {
-        { success: false, errorMessage: "transfer coins failed" }
-      }
-
-      { chainState: newChainState, acknowledgement: ack }
+      (bankResult, "transfer coins failed")
     } else {
       // mint vouchers to receiver
       pure val newDenom = updateTrace(data.denom, packet.sourcePort, packet.sourceChannel, packet.destPort, packet.destChannel)
 
       pure val bankResult = chainState.bank.MintCoins(data.receiver, newDenom, data.amount)
-
-      pure val newChainState = chainState.with("bank", bankResult.accounts)
-      pure val ack = if (bankResult.success) {
-        { success: true, errorMessage: "" }
-      } else {
-        { success: false, errorMessage: "mint coins failed" }
-      }
-
-      { chainState: newChainState, acknowledgement: ack }
+      (bankResult, "mint coins failed")
     }
+    pure val newChainState = chainState.with("bank", result._1.accounts)
+    pure val ack = if (result._1.success) {
+      { success: true, errorMessage: "" }
+    } else {
+      { success: false, errorMessage: result._2 }
+    }
+
+    (newChainState, ack)
   }
 }
 
@@ -135,10 +122,10 @@ module ics20Test {
   /// Map from chain identifiers to their state
   var chainStates: str -> ChainState
 
-  /// Map from chain identifiers to their connections.
-  /// A connection is a map from counterparty chain identifiers to the local chain's channel identifier.
-  /// For example, chain A connects to chain B through channel "channelToB".
-  pure val connections = Map(
+  /// Map from chain identifiers to a map of the chain identifiers it can
+  /// communicate with and the channel to be used to send packets. For example,
+  /// chain A connects to chain B through channel "channelToB".
+  pure val channelTopology = Map(
     "A" -> Map(
       "B" -> "channelToB",
       "C" -> "channelToC"
@@ -154,19 +141,19 @@ module ics20Test {
   )
 
   /// For each chain, a map from channel to their channel counterparties,
-  /// derived from `connections`. For example, in chain A, channel "channelToB"
+  /// derived from `channelTopology`. For example, in chain A, channel "channelToB"
   /// has the counterparty "channelToA".
-  pure val channelCounterparties: str -> Channel -> Channel = connections.keys().mapBy(chain => {
-    pure val connectedChains = connections.get(chain).keys()
+  pure val channelCounterparties: str -> Channel -> Channel = channelTopology.keys().mapBy(chain => {
+    pure val connectedChains = channelTopology.get(chain).keys()
     connectedChains.map(counterpartyChain => {
-      pure val localChannel = connections.get(chain).get(counterpartyChain)
-      pure val counterpartyChannel = connections.get(counterpartyChain).get(chain)
+      pure val localChannel = channelTopology.get(chain).get(counterpartyChain)
+      pure val counterpartyChannel = channelTopology.get(counterpartyChain).get(chain)
       (localChannel, counterpartyChannel)
     }).setToMap()
   })
 
   action init = {
-    chainStates' = connections.keys().mapBy(chain => {
+    chainStates' = channelTopology.keys().mapBy(chain => {
       // All accounts are empty, except for Alice in chain A who has 100 atoms
       bank: if (chain == "A") Map("alice" -> Map(toDenom("atom") -> 100)) else Map(),
       channels: channelCounterparties.get(chain),
@@ -182,7 +169,7 @@ module ics20Test {
     val result = onRecvPacket(chainStates.get(destChain), packet)
     all {
       chainStates' = chainStates
-        .set(destChain, result.chainState)
+        .set(destChain, result._1)
         .set(sourceChain, sourceChainState.with("outPackets", sourceChainState.outPackets.exclude(Set(packet))))
     }
   }
@@ -192,7 +179,7 @@ module ics20Test {
   /// packet from `sourceChain` and other that receives the packet in `destChain`
   run sendTransfer(denom: DenomTrace, sourceChain: str, destChain: str, sender: Address, receiver: Address): bool = (
     all {
-      val result = sendFungibleTokens(chainStates.get(sourceChain), denom, 1, sender, receiver, "transfer", connections.get(sourceChain).get(destChain), 0, 0)
+      val result = sendFungibleTokens(chainStates.get(sourceChain), denom, 1, sender, receiver, "transfer", channelTopology.get(sourceChain).get(destChain), 0, 0)
       chainStates' = chainStates.set(sourceChain, result),
     }).then(
       receivePacket(sourceChain, destChain)
