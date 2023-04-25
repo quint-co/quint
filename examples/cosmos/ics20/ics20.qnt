@@ -64,20 +64,20 @@ module ics20 {
   pure def sendFungibleTokens(chainState: ChainState, denomination: DenomTrace, amount: UINT256,
                               sender: Address, receiver: Address, sourcePort: str, sourceChannel: Channel,
                               timeoutHeight: Height, timeoutTimestamp: uint64): ChainState = {
-    val bankResult = if (movingBackAlongTrace({port: sourcePort, channel: sourceChannel}, denomination)) {
+    pure val bankResult = if (movingBackAlongTrace({port: sourcePort, channel: sourceChannel}, denomination)) {
       // burn vouchers
       (chainState.bank).BurnCoins(sender, denomination, amount)
     } else {
       // escrow tokens
-      val escrowAccount = chainState.channelEscrowAddresses.get(sourceChannel)
+      pure val escrowAccount = chainState.channelEscrowAddresses.get(sourceChannel)
       chainState.bank.TransferCoins(sender, escrowAccount, denomination, amount)
     }
 
     if (bankResult.success) {
-      val data = { denom: denomination, amount: amount, sender: sender, receiver: receiver, memo: "" }
+      pure val data = { denom: denomination, amount: amount, sender: sender, receiver: receiver, memo: "" }
 
       // handler.sendPacket
-      val packet = {
+      pure val packet = {
         data: data,
         sourcePort: sourcePort,
         sourceChannel: sourceChannel,
@@ -94,16 +94,16 @@ module ics20 {
   }
 
   pure def onRecvPacket(chainState: ChainState, packet: Packet): ReceiveTokenPacketResult = {
-    val data = packet.data
+    pure val data = packet.data
     if (movingBackAlongTrace({port: packet.sourcePort, channel: packet.sourceChannel}, data.denom)) {
       // unescrow tokens to receiver
-      val escrowAccount = chainState.channelEscrowAddresses.get(packet.destChannel)
-      val receiverDenom = updateTrace(data.denom, packet.sourcePort, packet.sourceChannel, packet.destPort, packet.destChannel)
+      pure val escrowAccount = chainState.channelEscrowAddresses.get(packet.destChannel)
+      pure val receiverDenom = updateTrace(data.denom, packet.sourcePort, packet.sourceChannel, packet.destPort, packet.destChannel)
 
-      val bankResult = chainState.bank.TransferCoins(escrowAccount, data.receiver, receiverDenom, data.amount)
+      pure val bankResult = chainState.bank.TransferCoins(escrowAccount, data.receiver, receiverDenom, data.amount)
 
-      val newChainState = chainState.with("bank", bankResult.accounts)
-      val ack = if (bankResult.success) {
+      pure val newChainState = chainState.with("bank", bankResult.accounts)
+      pure val ack = if (bankResult.success) {
         { success: true, errorMessage: "" }
       } else {
         { success: false, errorMessage: "transfer coins failed" }
@@ -112,12 +112,12 @@ module ics20 {
       { chainState: newChainState, acknowledgement: ack }
     } else {
       // mint vouchers to receiver
-      val newDenom = updateTrace(data.denom, packet.sourcePort, packet.sourceChannel, packet.destPort, packet.destChannel)
+      pure val newDenom = updateTrace(data.denom, packet.sourcePort, packet.sourceChannel, packet.destPort, packet.destChannel)
 
-      val bankResult = chainState.bank.MintCoins(data.receiver, newDenom, data.amount)
+      pure val bankResult = chainState.bank.MintCoins(data.receiver, newDenom, data.amount)
 
-      val newChainState = chainState.with("bank", bankResult.accounts)
-      val ack = if (bankResult.success) {
+      pure val newChainState = chainState.with("bank", bankResult.accounts)
+      pure val ack = if (bankResult.success) {
         { success: true, errorMessage: "" }
       } else {
         { success: false, errorMessage: "mint coins failed" }
@@ -157,10 +157,10 @@ module ics20Test {
   /// derived from `connections`. For example, in chain A, channel "channelToB"
   /// has the counterparty "channelToA".
   pure val channelCounterparties: str -> Channel -> Channel = connections.keys().mapBy(chain => {
-    val connectedChains = connections.get(chain).keys()
+    pure val connectedChains = connections.get(chain).keys()
     connectedChains.map(counterpartyChain => {
-      val localIdentifier = connections.get(chain).get(counterpartyChain)
-      val counterpartyIdentifier = connections.get(counterpartyChain).get(chain)
+      pure val localIdentifier = connections.get(chain).get(counterpartyChain)
+      pure val counterpartyIdentifier = connections.get(counterpartyChain).get(chain)
       (localIdentifier, counterpartyIdentifier)
     }).setToMap()
   })
