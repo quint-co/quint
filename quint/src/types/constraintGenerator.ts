@@ -19,7 +19,7 @@ import { expressionToString, rowToString, typeToString } from '../IRprinting'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
 import { getSignatures } from './builtinSignatures'
-import { Constraint, Signature, TypeScheme } from './base'
+import { Constraint, Signature, TypeScheme, toScheme } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 import { LookupTable } from '../lookupTable'
 import { specialConstraints } from './specialConstraints'
@@ -282,10 +282,6 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     const subs = compose(this.table, typeSubs, rowSubs)
     return applySubstitution(this.table, subs, t.type)
   }
-}
-
-function toScheme(type: QuintType): TypeScheme {
-  return { typeVariables: new Set([]), rowVariables: new Set([]), type }
 }
 
 function checkAnnotationGenerality(

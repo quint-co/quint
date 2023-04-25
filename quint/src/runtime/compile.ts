@@ -8,7 +8,6 @@
  * See License.txt in the project root for license information.
  */
 
-import { basename, dirname } from 'path'
 
 import { Either, left, right } from '@sweet-monads/either'
 import {
@@ -141,7 +140,7 @@ export function compile(
   let latestTable = lookupTable
 
   const flattenedModules = modules.map(m => {
-    const flattened = flatten(m, latestTable, modulesByName, idGenerator, sourceMap)
+    const flattened = flatten(m, latestTable, modulesByName, idGenerator, sourceMap, types)
 
     modulesByName.set(m.name, flattened)
 
