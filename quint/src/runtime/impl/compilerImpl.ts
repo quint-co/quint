@@ -58,8 +58,6 @@ export function builtinContext() {
 export class CompilerVisitor implements IRVisitor {
   // the lookup table to use for the module
   private lookupTable: LookupTable
-  // the scope tree to be used with the lookup table
-  private scopeTree: ScopeTree = { value: 0n, children: [] }
   // types assigned to expressions and definitions
   private types: Map<bigint, TypeScheme>
   // the stack of computable values
@@ -85,6 +83,8 @@ export class CompilerVisitor implements IRVisitor {
   private rand
   // execution listener
   private execListener: ExecutionListener
+  // the current depth of operator definitions: top-level defs are depth 0
+  private definitionDepth: number = 0
 
   constructor(lookupTable: LookupTable, types: Map<bigint, TypeScheme>,
       rand: (bound: bigint) => bigint, listener: ExecutionListener) {
@@ -142,7 +142,12 @@ export class CompilerVisitor implements IRVisitor {
     this.runtimeErrors.push({ explanation: msg, refs: [id] })
   }
 
+  enterOpDef(opdef: ir.QuintOpDef) {
+    this.definitionDepth++
+  }
+
   exitOpDef(opdef: ir.QuintOpDef) {
+    this.definitionDepth--
     // Either a runtime value, or a def, action, etc.
     // All of them are compiled to callables, which may have zero parameters.
     const boundValue = this.compStack.pop()
@@ -167,7 +172,7 @@ export class CompilerVisitor implements IRVisitor {
       }
     }
 
-    if (opdef.qualifier === 'pureval') {
+    if (this.definitionDepth === 0 && opdef.qualifier === 'pureval') {
       // a pure value may be cached, once evaluated
       const originalEval = boundValue.eval
       let cache: Maybe<EvalResult> | undefined = undefined
