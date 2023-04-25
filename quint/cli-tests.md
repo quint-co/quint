@@ -291,3 +291,8 @@ fi
 
 <!-- !test check rareSpells - Syntax/Types & Effects/Unit tests -->
     quint test ../examples/spells/rareSpells.qnt
+
+### OK on test bug843pureValCache
+
+<!-- !test check bug843pureValCache - Syntax/Types & Effects/Unit tests -->
+    quint test ./testFixture/bug843pureValCache.qnt
