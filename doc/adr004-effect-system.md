@@ -190,46 +190,43 @@ The effect `Read['x', 'y'] & Update[v]` would be represented as:
 }
 ```
 
-Effect signatures for operators may depend on its parameters. For that purpose,
+The effect signature of an operator may depend on its parameters. For that reason,
 we also define arrow effects, which carry a list of effects for the respective
-parameters of an operator and the resulting effect.
+parameters of an operator and the effect resulting from the operator's application.
 
 ```typescript
 /* Arrow effects for expressions with effects depending on parameters */
 export interface ArrowEffect { kind: 'arrow', params: Effect[], result: Effect }
 ```
 
-Just like with entities, an effect can also be a variable, which can be
-substituted with another effect during inferrence. Those are the most general
-kinds of effects, and will be used when no effect information for a given
-expression is available, i.e. `def foo(x) = x` will have a `(e) => e` effect
-signature, where `e` is an effect variable, since there are no constraints on
-the effect of `x`. An effect variable is equivalent to `Read[v1] & Update[v2] &
-Temporal[v3]`, where `v1`, `v2` and `v3` are entity variables.
+These is a separate class of variables that range over effects, which can be
+substituted with another effect during inference. Those are the most general
+When no effect information for a given expression is available, the effect is left
+undetermined, as indicated by an effect variable. I.e. `def foo(x) = x` will have be inferred to have the effect signature `(e) => e`, where `e` is an effect variable, since there are no constraints on the effect of `x`. An **effect variable** `e` is equivalent to the effect `Read[v1] & Update[v2] & Temporal[v3]`, where `v1`, `v2` and `v3` are _entity variables_.
 
 ```typescript
-/* A variable representing some effect */
+/* A variable standing for an unknown effect */
 export interface EffectVariable { kind: 'variable', name: string }
 ```
 
 ### Effect Schemes
 
 Both effects and entities can be universally quantified, and we need to keep
-track of which of them are. Effect schemes are responsible to keep track of that
+track of which of them are. Effect schemes are responsible for keeping track of that
 information.
 
 ```typescript
 /*
- * An effect scheme, listing which effect variables (names referring to effects)
- * and entity variables (names refering to entities) are universally quantified
+ * An effect scheme, listing which effect variables (represented by the names of effect variables)
+ * and entity variables (represented by the names of entity variables) are universally quantified
  * in the effect
  */
 export type EffectScheme = {
   /* The effect */
   effect: Effect,
-  /* Universally quantified names refering to Effects */
+  /* The names of universally quantified Effect variables */
   effectVariables: Set<string>,
-  /* Universally quantified names refering to Entities */
+  /* The names of universally quantified Entity variables */
   entityVariables: Set<string>,
 }
 ```
@@ -256,16 +253,16 @@ Unification is pretty standard. It recursively looks at effect variables and
 entity variables to bind. The most complicated part must be the unification of
 unions of variables, which requires unifying sets. Since that is too complicated
 to implement, we use some workarounds to avoid having to do that in the few
-cases where we would need to. Those workarounds revolve on reasoning about one
+cases where we would need to. Those workarounds rely on reasoning about one
 of the unions as a single new variable, which is done by introducing a new
 hashed variable, which is then binded to the other union. A hashed variable for
-the union `r1, r2, r3` is `r1#r2#r3`. These hashing procedure is also used to
+the union `r1, r2, r3` is `r1#r2#r3`. This hashing procedure is also used to
 unpack tuples into lambdas that take more than one argument.
 
 ### Inference rules
 
 Inferring names: variables have effect `Read[<variable_name>]` (unless they are
-used in as targets of assignment, where their resulting effect will be inferred
+used as targets of assignment, where their resulting effect will be inferred
 correctly as `Update[<variable_name>]`).
 
 ```
