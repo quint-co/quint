@@ -71,18 +71,22 @@ error: parsing failed
 
 ## Use of the `--out` flag
 
-### Module AST is written to `--out` with parse command
+### Module AST and lookup table is written to `--out` with parse command
 
 <!-- !test in module AST is output -->
 ```
 quint parse --out parse-out-example.json ../examples/language-features/tuples.qnt
-cat parse-out-example.json | jq '.modules[0].name'
+jq '.modules[0].name, .table."7".reference' < parse-out-example.json
 rm parse-out-example.json
 ```
+
+`"Tuples"` is the name of the module given in the IR and 5 is the reference for
+in the lookup table for the expression with ID 7:
 
 <!-- !test out module AST is output -->
 ```
 "Tuples"
+5
 ```
 
 ### Type and effect maps are output to `--out` with typecheck command
@@ -100,6 +104,7 @@ rm typecheck-out-example.json
 first type: "tup"
 first effect: "concrete"
 ```
+
 
 ### No error output on stdout when typechecking fails with `--out`
 
