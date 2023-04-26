@@ -92,7 +92,7 @@
   "scripts": {
     "compile": "genversion -e src/version.ts && tsc && copyfiles -u 1 ./src/builtin.qnt ./dist/src/",
     "prepare": "rm -rf ./dist && npm run compile && chmod +x ./dist/src/cli.js",
-    "test": "mocha -r ts-node/register test/*.test.ts test/**/*.test.ts",
+    "test": "mocha --reporter-option maxDiffSize=0 -r ts-node/register test/*.test.ts test/**/*.test.ts",
     "coverage": "nyc npm run test",
     "integration": "txm cli-tests.md && txm io-cli-tests.md",
     "apalache-integration": "make -C .. apalache && txm apalache-tests.md",
