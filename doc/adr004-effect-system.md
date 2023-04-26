@@ -71,19 +71,23 @@ desirable that they can be applied to state variables (i.e. `+` in `x + 1` if
 
 We have decided to implement option 2 for all modes. According to this option, a
 definition is considered pure if it does not add any read effect on top of the
-effects that the parameters may carry. A definition is considered `pure` if it
+effects that the parameters may carry. A definition is considered (impure) `def` if it
 introduces a new `Read` effect, but does not introduce any `Update` or
 `Temporal` effects. The same principle applies to other types of definitions.
 
 ### Notation
 
 ```
-Identifiers v, c, op
-Effects E, Ei ::= e | Read[entity] | Update[entity] | Temporal[entity] | Pure | E & E | (E0, ..., EN) => E
-Entities V ::= v | 'x' | v1, ..., vn
-Expressions e, ei ::= any Quint expression
-Contexts Γ ::= lookup tables and previously inferred effects
-Substitutions S, Si ::= {e ↦ E} | {v ↦ V} | S ∪ S
+StateVariable 'x', 'y', 'z'
+ConstantExpression c
+Operator op
+EntityVariable v
+Entities V, Vi ::= v | 'x' | V1, ..., Vn
+EffectVariable e
+Effect E, Ei ::= e | Read[V] | Update[V] | Temporal[V] | Pure | E & E | (E0, ..., EN) => E
+Expression expr, expri ::= any Quint expression
+Context Γ ::= lookup tables and previously inferred effects
+Substitution S, Si ::= {e ↦ E} | {v ↦ V} | S ∪ S
 ```
 
 ### Representation
@@ -93,7 +97,7 @@ this is not straightforward.
 
 ### Entities
 
-Effects act upon entities, which are typically lists of state variables.
+Effects act upon `Entities`, which are typically lists of state variables.
 However, we also need to represent entities as a variable that can later be
 replaced with the actual state variables and combinations (unions) of those.
 This is necessary for defining effect signatures for operators.
@@ -110,14 +114,14 @@ Here, `r1`, `r2`, `t1` and `t2` are entity variables, which can be substituted
 with the actual state variables during inference.
 
 A concrete entity with no state variables and an union of zero entities are both
-considered empty entities, and we say them nullify the effect actin upon them.
+considered empty entities, and we say they nullify the effect acting upon them.
 For example, replacing `r` with an empty entity in `Read[r]` results in `Read[]`
 which is equivalent to `Pure`.
 
 ```typescript
 /*
- * The Entity an effect acts upon. Either a list of state variables, a
- * variable or a combination of other entities.
+ * The Entity an effect acts upon. Either a list of state variables, an
+ * entity variable or a combination of other entities.
  */
 export type Entity =
   /* A list of state variables */
@@ -129,7 +133,7 @@ export type Entity =
 ```
 
 A state variable is just a name that is exactly the name of a state variable in
-the spec. It also carries an optional reference to the expression on which the
+the spec. It also carries an optional reference to the expression in which the
 state variable occurred, which is used for error reporting.
 
 ```typescript
@@ -137,7 +141,7 @@ state variable occurred, which is used for error reporting.
 export interface StateVariable {
   /* The variable name */
   name: string,
-  /* The id of the expression on which the state variable ocurred */
+  /* The id of the expression un which the state variable occurred */
   reference: bigint
 }
 ```
