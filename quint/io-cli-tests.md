@@ -101,25 +101,6 @@ first type: "tup"
 first effect: "concrete"
 ```
 
-### typecheck failure exits with 1 and prints type errors
-
-<!-- !test exit 1 -->
-<!-- !test in typecheck failure gives non-zero exit -->
-```
-quint typecheck ./testFixture/TrivialTypeError.qnt 2> >(sed "s:$(pwd):.:" >&2)
-```
-
-<!-- !test err typecheck failure gives non-zero exit -->
-```
-./testFixture/TrivialTypeError.qnt:2:3 - error: [QNT000] Couldn't unify str and int
-Trying to unify str and int
-
-2:   val x : int = "not an int"
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-error: typechecking failed
-```
-
 ### No error output on stdout when typechecking fails with `--out`
 
 We expect NO output on stderr or stdout when the command is run with the `--out` flag.
@@ -142,7 +123,27 @@ quint typecheck --out test-out.json ./testFixture/TrivialTypeError.qnt ; ret=$?;
 ```
 ```
 
-### typecheck finds error on incorrect instance overrides
+## typecheck failure exits with 1 and prints type errors
+
+<!-- !test exit 1 -->
+<!-- !test in typecheck failure gives non-zero exit -->
+```
+quint typecheck ./testFixture/TrivialTypeError.qnt 2> >(sed "s:$(pwd):.:" >&2)
+```
+
+<!-- !test err typecheck failure gives non-zero exit -->
+```
+./testFixture/TrivialTypeError.qnt:2:3 - error: [QNT000] Couldn't unify str and int
+Trying to unify str and int
+
+2:   val x : int = "not an int"
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: typechecking failed
+```
+
+
+## typecheck finds error on incorrect instance overrides
 
 <!-- !test exit 1 -->
 <!-- !test in typecheck failure on override -->
