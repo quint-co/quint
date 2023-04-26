@@ -28,7 +28,7 @@
 // >>> _test(1000, 10, "Init", "Next", "TestNonMem")
 //
 // If REPL displays 'false', it has found an example,
-// which can be inspected with _lastTrace.
+// which can be inspected with q::lastTrace.
 //
 // 3. To execute advanced PBT-like tests for 1000 runs in REPL,
 // type the following:
@@ -39,7 +39,7 @@
 // >>> _test(1000, 1, "Init", "Next", "MemInv")
 //
 // If REPL displays 'false', it has found an example,
-// which can be inspected with _lastTrace. We expect these tests to
+// which can be inspected with q::lastTrace. We expect these tests to
 // always return 'true'. Otherwise, this indicates an invariant violation.
 //
 // Igor Konnov, Informal Systems, 2022
@@ -208,8 +208,8 @@ module ics23 {
     // actualPrefix = len(inner.prefix) - 33
     length(inner.prefix) >= ChildSize,
     // getPosition(0) returns 0
-    val from = length(inner.prefix) - ChildSize
-    inner.prefix.slice(from, from + ChildSize) == EmptyChild
+    val fromIndex = length(inner.prefix) - ChildSize
+    inner.prefix.slice(fromIndex, fromIndex + ChildSize) == EmptyChild
   }
 
   /// IsLeftMost returns true if this is the left-most path in the tree,
@@ -650,9 +650,12 @@ module trees {
       hashMap.put(key, h)
     }
     // go over the nodes from max to min
-    1.range(2^height + 1)
-      .foldr(Map(),
-        (key, m) => if (isNode(t, key)) putNodeHash(m, key) else m)
+    val maxNode = 2^height
+    0.range(2^height)
+      .foldl(Map(),
+        (m, key) =>
+          if (isNode(t, maxNode - key)) putNodeHash(m, maxNode - key) else m
+    )
   }
 
   /// It's very easy to produce binary trees by picking an arbitrary graph and

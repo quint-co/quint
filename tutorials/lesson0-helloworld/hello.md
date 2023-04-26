@@ -1,7 +1,7 @@
 # Lesson 0 - Hello, world!
 ## 1. Introduction
 
-*10 more steps to the finish line*
+*Progress:*  0%
 
 This lesson introduces the standard "Hello, world!" example.
 Since Quint is designed for distributed protocols, we introduce
@@ -18,16 +18,19 @@ that we have to describe two importants aspects of the protocol:
  - What constitutes a state of the state machine.
  - What kinds of transitions can be made by the state machine.
 
+          
+          
+
 If you would like to see the complete code before diving into
 the details, check [hello.qnt](./hello.qnt).
-        
+          
 ## 2. Declare a module
 
-*9 more steps to the finish line*
+*Progress:*  10%
 
 **Code snippet:**
 
-```scala
+```bluespec
 module hello {
 ```
 
@@ -36,11 +39,11 @@ As a first necessary step, we declare a top-level module for our protocol.
         
 ## 3. Introduce state variables
 
-*8 more steps to the finish line*
+*Progress:*  20%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // the state variable to keep the output by the computer
     var consoleOutput: str
@@ -59,11 +62,11 @@ All state variables require a type. We use `str`, that is, the string type.
         
 ## 4. Introduce state variables
 
-*7 more steps to the finish line*
+*Progress:*  30%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // the state variable to keep the out read by the user
     var readByUser: str
@@ -76,11 +79,11 @@ by the user. This state variable has the string type too.
         
 ## 5. Introduce an initializer
 
-*6 more steps to the finish line*
+*Progress:*  40%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // initialize the state machine that captures the protocol
     action init = all {
@@ -125,11 +128,11 @@ read the next step.
         
 ## 6. Introduce an action by the computer
 
-*5 more steps to the finish line*
+*Progress:*  50%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // write "Hello, world!" in consoleOutput of the state machine,
     // if the console output is clean
@@ -183,11 +186,11 @@ it has to explicitely assign values to all of the state variables.
         
 ## 7. Introduce an action by the user
 
-*4 more steps to the finish line*
+*Progress:*  60%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // read the message from `consoleOutput` into `readByUser`,
     // if the console output is not clean
@@ -207,11 +210,11 @@ how we did it for `write`.
         
 ## 8. Describe a single step
 
-*3 more steps to the finish line*
+*Progress:*  70%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // execute a single step of the state machine:
     // it may be `read` or `write`, whatever is available
@@ -245,15 +248,15 @@ that `any { ... }` chooses one of the actions *non-deterministically*.
         
 ## 9. Introduce a simple test
 
-*2 more steps to the finish line*
+*Progress:*  80%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // a simple test that demonstrates an interaction between
     // the computer and the user
-    run test1 = init.then(write).then(read)
+    run writeReadTest = init.then(write).then(read)
 ```
 
 
@@ -265,7 +268,7 @@ Since we are specifying a distributed protocol, there may be many ways to
 execute actions in different orders. In general, it is not even always clear,
 whether our protocol has terminated or not. Luckily, our protocol is quite simple.
 
-To test our protocol, we fix one particular execution sequence in `test1`:
+To test our protocol, we fix one particular execution sequence in `writeReadTest`:
 
  1. Execute the initialization action `init`.
  2. Execute the action `write`.
@@ -279,27 +282,25 @@ diagrams. For example:
 The unfortunate fact about UML sequence diagrams and state charts is that they
 are given as figures, which have to be executed in the reader's brain.
 
-In Quint, running `test1` is as simple as evaluating an expression. To try it
+In Quint, running `writeReadTest` is as simple as evaluating an expression. To try it
 out, run the command `quint`, which starts a REPL session, and execute the
 following commands (written after the REPL prompt `>>> `):
 
 ```sh
-$ quint
+$ quint -r hello.qnt
 Quint REPL v0.0.3
 Type ".exit" to exit, or ".help" for more information
->>> .load hello.qnt
-true
 >>> import hello.*
 
->>> test1
+>>> writeReadTest
 true
 ```
 
 In the above session, we load the module `hello` from the file `hello.qnt`,
-import all definitions from the module `hello` and execute the run `test1`. As
-indicated with the result `true`, the run was executed successfully. We can
-also evaluate the state variables `consoleOutput` and `readByUser` in the
-state produced by `test1`:
+import all definitions from the module `hello` and execute the run
+`writeReadTest`. As indicated with the result `true`, the run was executed
+successfully. We can also evaluate the state variables `consoleOutput` and
+`readByUser` in the state produced by `writeReadTest`:
 
 ```sh
 >>> consoleOutput
@@ -308,20 +309,29 @@ state produced by `test1`:
 "Hello, world!"
 ```
 
+Running tests by hand in REPL may quickly become tedious. To automate that,
+use the `test` command:
+
+            
+
+```sh
+quint test hello.qnt
+```
+
+
 **Exercise:** Carefully read the code of `read` and `write` again. Explain,
 whether it is possible to execute `read` and `write` in the same state.
 
 **Exercise:** Explain, whether it is possible to execute `read` or `write`
-after executing the run called `test1`.
-
-        
+after executing the run called `writeReadTest`.
+            
 ## 10. Suming it up
 
-*1 more step to the finish line*
+*Progress:*  90%
 
 We have covered all the aspects of our "Hello, world!" example.
 Actually, we could have written a much shorter example, but it would not
-demonstrate the distinctive features of Quint. If you look at the 
+demonstrate the distinctive features of Quint. If you look at the
 source code of [hello.qnt](./hello.qnt), it is not scary long.
 
 We are experimenting with different kinds of tutorials.

@@ -13,6 +13,7 @@
  * @module
  */
 
+import { compact } from "lodash";
 import { definitionToString } from "./IRprinting";
 import { QuintModule } from "./quintIr";
 
@@ -34,6 +35,10 @@ export interface DocumentationEntry {
  */
 export function produceDocs(quintModule: QuintModule): Map<string, DocumentationEntry> {
   const entries = quintModule.defs.map((def) => {
+    if (def.kind === 'instance' || def.kind === 'import' || def.kind === 'export') {
+      return undefined
+    }
+
     const entry: [string, DocumentationEntry] = [def.name, {
       label: definitionToString(def, false),
       documentation: def.doc,
@@ -42,7 +47,7 @@ export function produceDocs(quintModule: QuintModule): Map<string, Documentation
     return entry
   })
 
-  return new Map<string, DocumentationEntry>(entries)
+  return new Map<string, DocumentationEntry>(compact(entries))
 }
 
 /**
@@ -52,5 +57,5 @@ export function produceDocs(quintModule: QuintModule): Map<string, Documentation
  * @returns a string with the entry's label as header and documentation as body
  */
 export function toMarkdown(entry: DocumentationEntry): string {
-    return `## \`${entry.label}\`\n\n${entry.documentation || ''}`
+  return `## \`${entry.label}\`\n\n${entry.documentation || ''}`
 }

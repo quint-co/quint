@@ -14,7 +14,7 @@
 
 import { Either, left, right } from '@sweet-monads/either';
 import isEqual from 'lodash.isequal'
-import { LookupTable, ValueDefinition } from './lookupTable'
+import { DefinitionsByName, ValueDefinition } from './definitionsByName'
 import { ScopeTree, scopesForId } from './scoping'
 
 /**
@@ -52,7 +52,7 @@ export type DefinitionsConflictResult = Either<Conflict[], void>
  *
  * @returns a successful result in case there are no conflicts, or an aggregation of conflicts otherwise
  */
-export function scanConflicts(table: LookupTable, tree: ScopeTree): DefinitionsConflictResult {
+export function scanConflicts(table: DefinitionsByName, tree: ScopeTree): DefinitionsConflictResult {
   const conflicts: Conflict[] = []
   table.valueDefinitions.forEach((defs, identifier) => {
     // Value definition conflicts depend on scope

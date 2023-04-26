@@ -2,7 +2,18 @@
 
 | Revision | Date       | Author           |
 | -------: | :--------: | :--------------- |
-| 3        | 13.12.2022 | Igor Konnov      |
+| 4        | 07.03.2022 | Igor Konnov      |
+
+<!-- 
+This ADR is written as a literate programming document, preprocessed by:
+
+https://github.com/driusan/lmt
+
+As a result, this document produces two checkable artifacts:
+
+ 1. ./repl/kettle.qnt is the specification that we construct.
+ 2. ./repl/replTest.txt is the replayable REPL session.
+-->
 
 A [REPL][] is a read-eval-print loop. A REPL is usually a good way to start
 learning a language.
@@ -10,7 +21,7 @@ learning a language.
 Most likely, you have seen a REPL before. If you had not, here is a simple
 state machine that describes how it works from the user's point of view:
 
-![REPL machine](./img/repl-machine.png)
+![REPL machine](../img/repl-machine.png)
 
 # Table of contents
 
@@ -25,9 +36,7 @@ state machine that describes how it works from the user's point of view:
     + [5.4. Introducing control non-determinism](#54-introducing-control-non-determinism)
     + [5.5. Introducing data non-determinism](#55-introducing-data-non-determinism)
   * [6. Saving and loading the REPL session](#6-saving-and-loading-the-repl-session)
-  * [7. Executing runs](#7-executing-runs)
-  * [8. Testing invariants and random walking](#8-testing-invariants-and-random-walking)
-  * [9. Further reading](#9-further-reading)
+  * [7. Further reading](#7-further-reading)
 
 ## 1. Installation
 
@@ -51,22 +60,76 @@ Type ".exit" to exit, or ".help" for more information
 
 You can type `.help` and then press `<ENTER>` for supported REPL commands.
 
-## 3. Evaluating expressions
+## 3. Preloading definitions
+
+In this tutorial, we are interactively constructing the module
+[kettle.qnt](./kettle.qnt). You can load this file in the [VSCode Plugin][] and
+read it, if you would like to have a better overview of the module that we are
+constructing. You can also load this file into REPL, if you only want to
+evaluate expressions without copying the definitions by hand:
+
+```sh
+$ quint -r kettle.qnt::kettle
+```
+
+When you load `kettle.qnt` this way, REPL prints `true` indicating that the
+module has been loaded successfully:
+
+```bluespec ./repl/replTest.txt +=
+true
+
+```
+
+If you check the source of this markdown file, then you will see that it is
+written by following the principles of [Literate programming][], using the tool
+[lmt][]. As a result, all definitions and the REPL session of this tutorial are
+automatically extracted from this file and checked with continuous integration.
+This approach may be useful to you, if you are writing your own protocol
+specifications in Markdown and like to connect it to Quint specifications.
+
+## 4. Evaluating expressions
 
 The core interaction with a REPL is to enter an expression and get back the
 result of its evaluation. Like this:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> 1 + 3
 4
 ```
 
 Or like this:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> Set(1, 2, 3).map(i => i * 2)
 Set(2, 4, 6)
 ```
+
+## 5. Writing definitions
+
+In this tutorial, we are interactively constructing the module
+[kettle.qnt](./kettle.qnt) that has the following structure:
+
+```bluespec ./repl/kettle.qnt +=
+// -*- mode: Bluespec; -*-
+// The example from the REPL tutorial
+module kettle {
+<<<definitions>>>
+}
+```
+
+We do not introduce this module in REPL, as REPL internally introduces an
+implicit module.
+
+Whenever we write four leading spaces `    ` instead of `>>> ` and `... `, we
+append the contents to the file [kettle.qnt](./kettle.qnt). For example:
+
+```bluespec "definitions" +=
+    // an example of a definition
+    val isThisMyFirstDefinition = true
+```
+
+*Do not forget to copy the definitions in REPL, if you want to reproduce
+the full REPL session without loading `kettle.qnt`.*
 
 ## 4. Introducing values and definitions
 
@@ -74,37 +137,56 @@ Typing everything in a single expression can become tedious very quickly. To
 avoid that, you can introduce top-level definitions, which will be saved in the
 REPL context. For instance:
 
-Let's declare two immutable values
+Let's declare two immutable values:
 
-```sh
->>> val boilingTemperature = 100
+```bluespec "definitions" +=
+    // a constant value that always returns 100
+    val boilingTemperature = 100
 
->>> val freezingTemperature = 0
+    // a constant value that always returns 0
+    val freezingTemperature = 0
+
 ```
 
-
 And we'll also define an operation to derive temperature in fahrenheit given a
-temperature in Celsius
+temperature in Celsius:
 
-```sh
->>> def fahrenheit(celsius) = celsius * 9 / 5 + 32
+```bluespec "definitions" +=
+    // conversion from Celsius to Fahrenheit
+    def fahrenheit(celsius) = celsius * 9 / 5 + 32
+
 ```
 
 We can use the values and definitions in later expressions and declarations:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> fahrenheit(freezingTemperature)
 32
 >>> fahrenheit(boilingTemperature)
 212
 >>> 0.to(100).exists(celsius => fahrenheit(celsius) == celsius)
 false
->>> -100.to(100).exists(celsius => fahrenheit(celsius) == celsius)
+>>> (-100).to(100).exists(celsius => fahrenheit(celsius) == celsius)
 true
->>> val veryCold = fahrenheit(-40)
+```
+
+We can also write new definitions by referring to the previously defined
+operators:
+
+```bluespec "definitions" +=
+    // the low range of a thermometer (fixed)
+    val veryCold = fahrenheit(-40)
+
+    // the high range of a thermometer (fixed)
+    val veryHot = fahrenheit(40)
+
+```
+
+This is how REPL evaluates the expressions that use the above definitions:
+
+```bluespec ./repl/replTest.txt +=
 >>> veryCold
 -40
->>> val veryHot = fahrenheit(40)
 >>> veryHot
 104
 ```
@@ -122,12 +204,12 @@ great tool for learning the language. But REPL can do more for you: It can
 simulate a state machine. In this section, we interactively specify a model of
 an electric kettle:
 
-![An electric kettle](./img/kettle-drawing.png)
+![An electric kettle](../img/kettle-drawing.png)
 
 Informally, we can describe the most basic operation of a kettle like the one
 above with the following [state machine][]:
 
-![State chart](./img/kettle-state1.svg)
+![State chart](../img/kettle-state1.svg)
 
 If you think, "this diagram is not very realistic", you are right. We will extend
 it later.
@@ -137,24 +219,29 @@ it later.
 
 In addition to definitions and values, we also declare state variables:
 
-```sh
->>> var temperature: int
+```bluespec "definitions" +=
+    // the current temperature in the kettle
+    var temperature: int
 
->>> var heatingOn: bool
+    // is the kettle currently heating?
+    var heatingOn: bool
 
->>> var beeping: bool
+    // is the kettle currently beeping?
+    var beeping: bool
+
 ```
 
 By default, a state variable is not assigned any value and a reference to
 a declared but unassigned state variable will produce a runtime error:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> temperature
-runtime error: <input>:0:1 - error: Variable temperature is not set
-0: var temperature: int
-   ^^^^^^^^^^^^^^^^^^^^
+runtime error: error: Variable temperature is not set
+    var temperature: int
+    ^^^^^^^^^^^^^^^^^^^^
 
-<result undefined>
+<undefined value>
+
 ```
 
 ### 5.2. Initializing state variables
@@ -163,19 +250,20 @@ Undefined state variables are not very useful. Hence, we have to introduce an
 action to initialize the state machine and move it forward. For instance, here
 is how we initialize our kettle:
 
-```sh
->>> action init = all {
-...   temperature' = 20,
-...   heatingOn' = false,
-...   beeping' = false,
-... }
-...
+```bluespec "definitions" +=
+    // a state initializer
+    action init = all {
+      temperature' = 20,
+      heatingOn' = false,
+      beeping' = false,
+    }
+
 ```
 
 The action `init` is just an action definition, which can be applied later. To
 apply it, we simply type `init`:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> init
 true
 ```
@@ -187,7 +275,7 @@ prevented the action from being applied; more on that later.
 Now we can check that `init` has indeed initialized the state variables as
 expected:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> temperature
 20
 >>> heatingOn
@@ -197,11 +285,22 @@ false
 To make it easier to see how our state evolves, let's also declare a value that
 collects all of our state variables in a single record:
 
-```scala
->>> val kettleState = { heatingOn: heatingOn, beeping: beeping, temperature: temperature }
+```bluespec "definitions" +=
+    // a handy definition that captures the state in a record
+    val kettleState = {
+      heatingOn: heatingOn,
+      beeping: beeping,
+      temperature: temperature
+    }
 
+```
+
+If we evaluate `kettleState` in the current state, we should get the following
+output:
+
+```bluespec ./repl/replTest.txt +=
 >>> kettleState
-{ heatingOn: false, beeping: false, temperature: 20 }
+{ beeping: false, heatingOn: false, temperature: 20 }
 ```
 
 ### 5.3. Updating state variables with actions
@@ -209,29 +308,30 @@ collects all of our state variables in a single record:
 Similar to how we introduced `init`, we introduce the action `pressButton`,
 which turns on the heating element of our kettle.
 
-```sh
->>> action pressButton = all {
-...   not(heatingOn),
-...   heatingOn' = true,
-...   beeping' = false,
-...   temperature' = temperature,
-... }
-...
+```bluespec "definitions" +=
+    // turn on the heating element
+    action pressButton = all {
+      not(heatingOn),
+      heatingOn' = true,
+      beeping' = false,
+      temperature' = temperature,
+    }
+
 ```
 
 Again, we have just defined the action `pressButton`, but that action
 is not applied automatically. To apply it, we simply type its name:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> pressButton
 true
 ```
 
 We can check our state variables to make sure that the action indeed took place:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> kettleState
-{ heatingOn: true, beeping: false, temperature: 20 }
+{ beeping: false, heatingOn: true, temperature: 20 }
 ```
 
 The heat is on now!
@@ -239,7 +339,7 @@ The heat is on now!
 Interestingly, if we try to apply `pressButton` once again, it would not
 work, as indicated by the `false` result:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> pressButton
 false
 ```
@@ -253,27 +353,28 @@ Similar to `pressButton`, we can define the `failover` action that turns off
 the kettle when the temperature reaches 100. If the value 100 makes you
 puzzled, call `fahrenheit(100)` in REPL ;-)
 
-```sh
->>> action failover = all {
-...   heatingOn,
-...   temperature >= 100,
-...   heatingOn' = false,
-...   beeping' = true,
-...   temperature' = temperature,
-... }
-...
+```bluespec "definitions" +=
+    // turn off the kettle when the temperature is too high
+    action failover = all {
+      heatingOn,
+      temperature >= 100,
+      heatingOn' = false,
+      beeping' = true,
+      temperature' = temperature,
+    }
+
 ```
 
 If we apply `failover` to the current state, it will not execute:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> failover
 false
 ```
 
 Indeed, `temperature` is equal to 20 in the current state of REPL:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> temperature
 20
 ```
@@ -282,7 +383,7 @@ To properly test `failover`, we should probably define the action `heat`
 in our spec. But since we are in REPL, we can also take a shortcut, by
 simply setting the state variables to the state we need:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> all { temperature' = 100, heatingOn' = true, beeping' = false }
 true
 ```
@@ -296,7 +397,7 @@ values of `heatingOn` and `beeping` would have become undefined.
 
 Now we can apply `failover`:
 
-```
+```bluespec ./repl/replTest.txt +=
 >>> failover
 true
 >>> heatingOn
@@ -311,31 +412,32 @@ To reset the state to the previous one, we can simply evaluate `init` and
 `pressButton` again (there is a better way to do that, which we will show
 later):
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> init
 true
 >>> pressButton
 true
 >>> kettleState
-{ heatingOn: true, beeping: false, temperature: 20 }
+{ beeping: false, heatingOn: true, temperature: 20 }
 ```
 
 Now it is time to specify the action `heat`:
 
-```sh
->>> action heat = all {
-...   heatingOn,
-...   temperature < 100,
-...   temperature' = temperature + 1,
-...   heatingOn' = true,
-...   beeping' = false,
-... }
-...
+```bluespec "definitions" +=
+    // heat up the water by 1C
+    action heat = all {
+      heatingOn,
+      temperature < 100,
+      temperature' = temperature + 1,
+      heatingOn' = true,
+      beeping' = false,
+    }
+
 ```
 
 By applying `heat` several times, we can see that it heats up the kettle a bit:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> heat
 true
 >>> temperature
@@ -358,24 +460,25 @@ heating element off, namely, the `failover` action. Normally, a kettle can be
 turned off without waiting until it boils to 100C. Hence, we add one more
 action `depressButton` in our diagram:
 
-![State chart 2](./img/kettle-state2.svg)
+![State chart 2](../img/kettle-state2.svg)
 
 This action should be easy to define:
 
-```sh
->>> action depressButton = all {
-...   heatingOn,
-...   heatingOn' = false,
-...   temperature' = temperature,
-...   beeping' = false,
-... }
-...
+```bluespec "definitions" +=
+    // turn off the heating element
+    action depressButton = all {
+      heatingOn,
+      heatingOn' = false,
+      temperature' = temperature,
+      beeping' = false,
+    }
+
 ```
 
 Now we can execute four actions and observe that we managed to heat the kettle
 by 1 degree and turn it off:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> init
 true
 >>> pressButton
@@ -385,25 +488,25 @@ true
 >>> depressButton
 true
 >>> kettleState
-{ heatingOn: false, beeping: false, temperature: 21 }
+{ beeping: false, heatingOn: false, temperature: 21 }
 ```
 
 Notice that our specification allows for a new interesting behavior. Evaluate
 the following expressions:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> all { heatingOn' = true, temperature' = 100, beeping' = false }
 true
 >>> depressButton
 true
 >>> kettleState
-{ heatingOn: false, beeping: false, temperature: 100 }
+{ beeping: false, heatingOn: false, temperature: 100 }
 >>> all { heatingOn' = true, temperature' = 100, beeping' = false }
 true
 >>> failover
 true
 >>> kettleState
-{ heatingOn: false, beeping: true, temperature: 100 }
+{ beeping: true, heatingOn: false, temperature: 100 }
 ```
 
 As we can see, both `depressButton` and `failover` can apply when the
@@ -425,14 +528,14 @@ How do we describe in the specification that one of the actions may apply,
 whichever happens first, and we do not control which one? Quint has the operator
 `any` to do exactly this:
 
-```sh
->> all { heatingOn' = true, temperature' = 100, beeping' = false }
+```bluespec ./repl/replTest.txt +=
+>>> all { heatingOn' = true, temperature' = 100, beeping' = false }
 true
 >>> any {
 ...   depressButton,
 ...   failover,
 ... }
-...
+... 
 true
 ```
 
@@ -446,19 +549,21 @@ actions behaves like a deterministic program. We will introduce
 
 Now it is time to define all possible transitions of the kettle in one place:
 
-```scala
-action step = any {
-  pressButton,
-  heat,
-  depressButton,
-  failover,
-}
+```bluespec "definitions" +=
+    // one step of the state machine
+    action step = any {
+      pressButton,
+      heat,
+      depressButton,
+      failover,
+    }
+
 ```
 
 Having defined `step`, we can conveniently execute steps without specifying
 the action that should be executed next:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> init
 true
 >>> step
@@ -469,9 +574,21 @@ true
 true
 >>> step
 true
+```
+
+If we print the current state after executing four steps, we will see
+that the state is different from the initial one:
+
+<!-- do not save this session in replTest.txt,
+     as outputs may differ due to randomness -->
+
+```bluespec
 >>> kettleState
 { heatingOn: true, beeping: false, temperature: 21 }
 ```
+
+**Note:** your REPL session may end up in a different state, due to randomness
+of `nondet` in REPL.
 
 **Exercise**. Figure out how REPL ended up in the above state.
 
@@ -486,7 +603,7 @@ temperature is always set to 20 (Celsius). Most likely, you are using your
 kettle under different temperatures too. Let's update the state diagram,
 to reflect the reality a bit better:
 
-![State chart 3](./img/kettle-state3.svg)
+![State chart 3](../img/kettle-state3.svg)
 
 I never tried to melt ice with an electric kettle, but it should probably work
 as expected?
@@ -495,23 +612,38 @@ It looks like we have to describe multiple possible initial states that differ
 in temperature. This is how we can do that in Quint, specifying that the
 temperature should be somewhere in the range of -40 to 40 degrees:
 
-```sh
->>> action initNondet = all {
-...   heatingOn' = false,
-...   nondet temp = oneOf(-40.to(40))
-...   temperature' = temp,
-...   beeping' = false,
-... }
-...
+```bluespec "definitions" +=
+    // initialize the state machine with non-determinism
+    action initNondet = all {
+      heatingOn' = false,
+      nondet temp = oneOf((-40).to(40))
+      temperature' = temp,
+      beeping' = false,
+    }
+
 ```
 
-Let's see how it works:
+Let's see how it works. Execute `initNondet` for the first time:
 
-```sh
+```bluespec ./repl/replTest.txt +=
 >>> initNondet
 true
+```
+
+Here is an example of a state that we may get into:
+
+<!-- do not save this session to replTest.txt, due to randomness -->
+
+```bluespec
 >>> kettleState
 { heatingOn: false, beeping: false, temperature: -27 }
+```
+
+If we execute `initNondet` more, we obtain different states. Try it:
+
+<!-- do not save this session to replTest.txt, due to randomness -->
+
+```bluespec
 >>> initNondet
 true
 >>> kettleState
@@ -527,9 +659,9 @@ temperature from the interval `[-40, 40]` and sets `heatingOn` and
 `beeping` to `false`. The magic is done by the special syntax form of Quint
 that looks like follows:
 
-```
-nondet myElem = mySet.oneOf()
-expr
+```bluespec
+    nondet myElem = mySet.oneOf()
+    expr
 ```
 
 REPL randomly picks one of the elements from the set `mySet` and binds the name
@@ -547,16 +679,20 @@ close the REPL.
 
 You can save the REPL session with the builtin command `.save`:
 
-```sh
-.save kettle.qnt
+```bluespec ./repl/replTest.txt +=
+>>> .save kettle.qnt
+Session saved to: kettle.qnt
+
 ```
 
 This command saves all definitions and evaluated expressions in a file.
 You can edit this file in your editor of choice and load it back to REPL:
 
-```sh
-.clear
-.load kettle.qnt
+<!-- don't add this to replTest.txt, as .load prints all values again -->
+
+```bluespec
+>>> .clear
+>>> .load kettle.qnt
 ```
 
 Note that if you start with a non-empty session, it's better to clear it with
@@ -576,21 +712,17 @@ In the current version, the expressions are saved inside comments, e.g.:
 So if you do not want REPL to execute the previously typed expressions, you can
 just remove them from the file. As a note, the format may change in the future.
 
-<a id="runs"></a>
-## 7. Executing runs
+## 7. Further reading
 
-TODO
-
-<a id="testing"></a>
-## 8. Testing invariants and random walking
-
-TODO
-
-## 9. Further reading
-
-TODO
+We have not covered all REPL features in this tutorial. For example, you can
+execute concrete and randomized runs, as well as randomized tests. To see these
+features, check [Tutorial 3][].
 
 [quint repository]: https://github.com/informalsystems/quint
 [ts-node]: https://github.com/TypeStrong/ts-node
 [REPL]: https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop
 [state machine]: https://en.wikipedia.org/wiki/UML_state_machine
+[VSCode Plugin]: https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode
+[Literate programming]: https://en.wikipedia.org/wiki/Literate_programming
+[lmt]: https://github.com/driusan/lmt
+[Tutorial 3]: ../lesson3-anatomy/coin.md

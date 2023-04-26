@@ -16,6 +16,10 @@ import {
   docs, load, outputResult, parse, runRepl, runSimulator, runTests, typecheck
 } from './cliCommands'
 
+import { verbosity } from './verbosity'
+
+import { version } from './version'
+
 // construct parsing commands with yargs
 const parseCmd = {
   command: 'parse <input>',
@@ -40,7 +44,7 @@ const parseCmd = {
 // construct typecheck commands with yargs
 const typecheckCmd = {
   command: 'typecheck <input>',
-  desc: 'check types (TBD) and effects of a Quint specification',
+  desc: 'check types and effects of a Quint specification',
   builder: (yargs: any) =>
     yargs
       .option('out', {
@@ -60,7 +64,18 @@ const replCmd = {
         desc: 'filename[::module]. Preload the file and, optionally, import the module',
         alias: 'r',
         type: 'string',
-      }),
+      })
+      .option('quiet', {
+        desc: 'Disable banners and prompts, to simplify scripting (alias for --verbosity=0)',
+        alias: 'q',
+        type: 'boolean',
+      })
+      .default('quiet', false)
+      .option('verbosity', {
+        desc: 'control how much output is produced (0 to 5)',
+        type: 'number',
+      })
+      .default('verbosity', verbosity.defaultLevel),
   handler: runRepl,
 }
 
@@ -78,10 +93,20 @@ const testCmd = {
         desc: 'output file (suppresses all console output)',
         type: 'string',
       })
+      .option('max-samples', {
+        desc: 'the maximum number of successful runs to try for every randomized test',
+        type: 'number',
+      })
+      .default('max-samples', 10000)
       .option('seed', {
         desc: 'random seed to use for non-deterministic choice',
         type: 'string',
       })
+      .option('verbosity', {
+        desc: 'control how much output is produced (0 to 5)',
+        type: 'number',
+      })
+      .default('verbosity', verbosity.defaultLevel)
 // Timeouts are postponed for:
 // https://github.com/informalsystems/quint/issues/633
 //
@@ -100,7 +125,7 @@ const testCmd = {
 // construct run commands with yargs
 const runCmd = {
   command: 'run <input>',
-  desc: 'Simulate a Quint specification and (optionally) check invariants',
+  desc: 'Simulate a Quint specification and check invariants',
   builder: (yargs: any) =>
     yargs
       .option('main', {
@@ -109,6 +134,10 @@ const runCmd = {
       })
       .option('out', {
         desc: 'output file (suppresses all console output)',
+        type: 'string',
+      })
+      .option('out-itf', {
+        desc: 'output the trace in the Informal Trace Format to file (supresses all console output)',
         type: 'string',
       })
       .option('max-samples', {
@@ -139,7 +168,12 @@ const runCmd = {
       .option('seed', {
         desc: 'random seed to use for non-deterministic choice',
         type: 'string',
-      }),
+      })
+      .option('verbosity', {
+        desc: 'control how much output is produced (0 to 5)',
+        type: 'number',
+      })
+      .default('verbosity', verbosity.defaultLevel),
 // Timeouts are postponed for:
 // https://github.com/informalsystems/quint/issues/633
 //
@@ -172,5 +206,6 @@ yargs(process.argv.slice(2))
   .command(testCmd)
   .command(docsCmd)
   .demandCommand(1)
+  .version(version)
   .strict()
   .parse()

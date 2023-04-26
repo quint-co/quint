@@ -8,9 +8,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Modules and definitions can now be exported (#771)
+- Non-deterministic tests are run multiple times similar to {Quick,Scala}check (#786)
+- `quint run` returns a non-zero exit code on invariant violation and errors (#793)
+- Support for imports from files: `import ... from <filename>` (#800)
+- suppress comments in REPL (#806)
+- `quint repl` is printing the same version number as returned by `quint --version` (#804)
+- add the command `.seed` in REPL (#812)
+- fix `quint run` to output compile errors again (#812)
+- add the precursor of the standard library in the form of spells (#827)
+- cache top-level `pure val` (#837)
+- support for higher-order operators in REPL/simulator (#845)
+
+### Changed
+
+- The ITF export adds output similar to Apalache (#780)
+
+### Deprecated
+### Removed
+
+- `notin` is no longer a builtin operator (#814)
+
+### Fixed
+
+- Proper errors are now reported when a lambda returns an operator (#811)
+- Fix `quint run` to output compile errors again (#812)
+- Fix the record constructor, so the key order does not matter (#839)
+- `quint test` shows compile errors, if they occur (#841)
+- Fix the bug that occurred when caching `pure val` (#844)
+
+### Security
+
+## v0.9.1 -- 2023-04-04
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- `test` command now exits with non-zero code on test failures (#772)
+
+### Security
+
+## v0.9.0 -- 2023-04-03
+
+### Added
+
+- detailed run output on `run --verbosity=3` (#748)
+- detailed run output on `test --verbosity=3` (#755)
+- detailed run output in REPL on `.verbosity=3` (#764)
+
+### Changed
+
+- using a controllable pRNG (#767)
+
+### Deprecated
+### Removed
+
+- remove `foldr` (#760)
+
+### Fixed
+
+- effects no longer break when applying constant operators (#759)
+- number highlighting in vim (#765)
+- the simulator supports really big numbers, e.g., 256-bit (#767)
+
+### Security
+
+## v0.8.0 -- 2023-03-24
+
+### Added
+
+- short-circuiting for `implies` (#717)
+- improve the summary output of `run` (#719)
+- support for tuple unpacking in the simulator (#720)
+- instances are now fully supported (#725)
+- save the run results to ITF (#727)
+- imports can now be qualified (#742)
+
+### Changed
+
+- The syntax for instances is now similar to imports (#739)
+
+### Deprecated
+### Removed
+### Fixed
+
+- Heisenbugs in `nondet x = oneOf(S)` should not happen (#712)
+- REPL doesn't show unecessary namespaces for variable names anymore (#739)
+
+### Security
+
+## v0.7.0 -- 2023-03-09
+
+### Added
 ### Changed
 
 - Inferred effects are now properly quantified (#658)
+- Lambda parameters were promoted so they can now have their own errors, types and effects (#689)
 
 ### Deprecated
 ### Removed
@@ -22,6 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modes for nested definitions are now properly checked (#661)
 - All basic operators can now be used with temporal formulas (#646)
 - Effect checking performance for large specs is massively improved (#669)
+- A module can no longer import or instance itself (#676)
 
 ### Security
 

@@ -131,7 +131,7 @@ module prisoners {
 
 // An instance of prisoners for the set of size 3
 module prisoners3 {
-    module P = prisoners(allPrisoners = Set("A", "B", "C"), counter = "A")
+    import prisoners(allPrisoners = Set("A", "B", "C"), counter = "A") as P
     
-    import P.*
+    export P.*
 }

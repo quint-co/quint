@@ -1,40 +1,47 @@
 /*
  * A compiler to the runtime environment.
  *
- * Igor Konnov, 2022-2023
+ * Igor Konnov, Informal Systems, 2022-2023
  *
  * Copyright (c) Informal Systems 2022-2023. All rights reserved.
  * Licensed under the Apache 2.0.
  * See License.txt in the project root for license information.
  */
 
-import { Either, left, right } from '@sweet-monads/either'
 
+import { Either, left, right } from '@sweet-monads/either'
 import {
-  ErrorMessage, Loc, fromIrErrorMessage,parsePhase1, parsePhase2
+  ErrorMessage, Loc, fromIrErrorMessage,
+  parsePhase1fromText,
+  parsePhase2sourceResolution,
+  parsePhase3importAndNameResolution
 } from '../quintParserFrontend'
 import { Computable, ComputableKind, kindName } from './runtime'
+import { ExecutionListener } from './trace'
 import { QuintModule } from '../quintIr'
 import { CompilerVisitor } from './impl/compilerImpl'
 import { walkDefinition } from '../IRVisitor'
-import { treeFromModule } from '../scoping'
-import { LookupTableByModule } from '../lookupTable'
+import { LookupTable } from '../lookupTable'
 import { TypeScheme } from '../types/base'
 import { QuintAnalyzer } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
-import { IdGenerator } from '../idGenerator'
+import { IdGenerator, newIdGenerator } from '../idGenerator'
+import { flatten } from '../flattening'
+import { SourceLookupPath, fileSourceResolver } from '../sourceResolver'
 
 /**
  * The name of the shadow variable that stores the last found trace.
  */
-export const lastTraceName = '_lastTrace'
+export const lastTraceName = 'q::lastTrace'
 
 /**
  * A compilation context returned by 'compile'.
  */
 export interface CompilationContext {
+  // The main module, when present
+  main?: QuintModule,
   // the lookup table to query for values and definitions
-  lookupTable: LookupTableByModule,
+  lookupTable: LookupTable,
   // names of the variables and definition identifiers mapped to computables
   values: Map<string, Computable>,
   // names of the variables
@@ -71,32 +78,34 @@ function errorContext(errors: ErrorMessage[]): CompilationContext {
  * Extract a compiled value of a specific kind via the module name and kind.
  *
  * @param ctx compilation context
- * @param moduleName module name to lookup at
- * @param defName definition name
+ * @param defId the definition id to lookup
  * @param kind definition kind
  * @returns the associated compiled value, if it uniquely defined, or undefined
  */
-export function
-  contextLookup(ctx: CompilationContext,
-                moduleName: string,
-                defName: string,
-                kind: ComputableKind): Either<string, Computable> {
-  const moduleTable = ctx.lookupTable.get(moduleName)
-  if (!moduleTable) {
-    return left(`Module ${moduleName} not found`)
-  }
-  const defs = moduleTable.valueDefinitions.get(defName)
-  if (!defs) {
-    return left(`Definition ${moduleName}::${defName} not found`)
-  }
-  if (defs.length !== 1) {
-    return left(`Multiple definitions (${defs.length}) of ${moduleName}::${defName} found`)
+export function contextLookup(
+  ctx: CompilationContext, defId: bigint, kind: ComputableKind
+): Either<string, Computable> {
+  const def = ctx.lookupTable.get(defId)
+  if (!def) {
+    return left(`Definition for id ${defId} not found`)
   }
 
-  const value = ctx.values.get(kindName(kind, defs[0].reference!))
+  const value = ctx.values.get(kindName(kind, def.reference!))
   if (!value) {
-    console.log(`key = ${kindName(kind, defs[0].reference!)}`)
-    return left(`No value for definition ${moduleName}::${defName}`)
+    console.log(`key = ${kindName(kind, def.reference!)}`)
+    return left(`No value for definition ${defId}}`)
+  } else {
+    return right(value)
+  }
+}
+
+export function contextNameLookup(
+  ctx: CompilationContext, defName: string, kind: ComputableKind
+): Either<string, Computable> {
+  const value = ctx.values.get(kindName(kind, defName))
+  if (!value) {
+    console.log(`key = ${kindName(kind, defName)}`)
+    return left(`No value for definition ${defName}}`)
   } else {
     return right(value)
   }
@@ -113,31 +122,51 @@ export function
  * @param lookupTable lookup table as produced by the parser
  * @param types type table as produced by the type checker
  * @param mainName the name of the module that may contain state varibles
+ * @param execListener execution listener
  * @param rand the random number generator
  * @returns the compilation context
  */
-export function
-  compile(modules: QuintModule[],
-          sourceMap: Map<bigint, Loc>,
-          lookupTable: LookupTableByModule,
-          types: Map<bigint, TypeScheme>,
-          mainName: string,
-          rand: () => number): CompilationContext {
-  // Push back the main module to the end:
-  // The compiler exposes the state variables of the last module only.
-  const main = modules.find(m => m.name === mainName)
-  const visitor = new CompilerVisitor(types, rand)
+export function compile(
+  modules: QuintModule[],
+  sourceMap: Map<bigint, Loc>,
+  lookupTable: LookupTable,
+  types: Map<bigint, TypeScheme>,
+  mainName: string,
+  execListener: ExecutionListener,
+  rand: (bound: bigint) => bigint): CompilationContext {
+  const modulesByName = new Map(modules.map(m => [m.name, m]))
+  const lastId = modules.map(m => m.id).sort((a, b) => Number(a - b))[modules.length - 1]
+  const idGenerator = newIdGenerator(lastId)
+  let latestTable = lookupTable
+
+  const flattenedModules = modules.map(m => {
+    const flattened = flatten(m, latestTable, modulesByName, idGenerator, sourceMap, types)
+
+    modulesByName.set(m.name, flattened)
+
+    // The lookup table has to be updated for every new module that is flattened
+    // Since the flattened modules have new ids for both the name expressions
+    // and their definitions, and the next iteration might depend on an updated
+    // lookup table
+    const newEntries =
+      parsePhase3importAndNameResolution({ modules: [flattened], sourceMap })
+        .mapLeft(errors => {
+      // This should not happen, as the flattening should not introduce any
+      // errors, since parsePhase3 analysis of the original modules has already
+      // assured all names are correct.
+      throw new Error(`Error on resolving names for flattened modules: ${errors.map(e => e.explanation)}`)
+    }).unwrap().table
+
+    latestTable = new Map([...latestTable.entries(), ...newEntries.entries()])
+
+    return flattened
+  })
+
+  const main = flattenedModules.find(m => m.name === mainName)
+
+  const visitor = new CompilerVisitor(latestTable, types, rand, execListener)
   if (main) {
-    const reorderedModules =
-      modules.filter(m => m.name !== mainName).concat(main ? [main] : [])
-    // Compile all modules
-    reorderedModules.forEach(module => {
-      visitor.switchModule(module.id,
-                           module.name,
-                           lookupTable.get(module.name)!,
-                           treeFromModule(module))
-      module.defs.forEach(def => walkDefinition(visitor, def))
-    })
+    main.defs.forEach(def => walkDefinition(visitor, def))
   }
   // when the main module is not found, we will report an error
   const mainNotFoundError =
@@ -146,7 +175,8 @@ export function
       refs: [],
     }]
   return {
-    lookupTable: lookupTable,
+    main: main,
+    lookupTable: latestTable,
     values: visitor.getContext(),
     vars: visitor.getVars(),
     shadowVars: visitor.getShadowVars(),
@@ -154,7 +184,7 @@ export function
     analysisErrors: [],
     compileErrors:
       visitor.getCompileErrors().concat(mainNotFoundError)
-      .map(fromIrErrorMessage(sourceMap)),
+        .map(fromIrErrorMessage(sourceMap)),
     getRuntimeErrors: () => {
       return visitor.getRuntimeErrors()
         .splice(0)
@@ -172,37 +202,42 @@ export function
  * @param code text that stores one or several Quint modules,
  *        which should be parseable without any context
  * @param mainName the name of the module that may contain state varibles
+ * @param execListener execution listener
  * @param rand the random number generator
  * @returns the compilation context
  */
-export function
-  compileFromCode(idGen: IdGenerator,
-                  code: string,
-                  mainName: string,
-                  rand: () => number): CompilationContext {
+export function compileFromCode(
+  idGen: IdGenerator,
+  code: string,
+  mainName: string,
+  mainPath: SourceLookupPath,
+  execListener: ExecutionListener,
+  rand: (bound: bigint) => bigint): CompilationContext {
   // parse the module text
-  return parsePhase1(idGen, code, '<input>')
+  return parsePhase1fromText(idGen, code, '<input>')
+    .chain(phase1Data => {
+      const resolver = fileSourceResolver()
+      return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
+    })
     // On errors, we'll produce the computational context up to this point
     .mapLeft(errorContext)
-    .chain(d => parsePhase2(d)
+    .chain(d => parsePhase3importAndNameResolution(d)
       // On errors, we'll produce the computational context up to this point
       .mapLeft(errorContext))
     .chain(parseData => {
       const { modules, table, sourceMap } = parseData
       const analyzer = new QuintAnalyzer(table)
       modules.forEach(module => analyzer.analyze(module))
-      // since the type checker and effects checker are incomplete,
-      // collect the errors, but do not stop immediately on error
       const [analysisErrors, analysisResult] = analyzer.getResult()
       const ctx =
-        compile(modules,
-                sourceMap, table, analysisResult.types, mainName, rand)
+        compile(modules, sourceMap, table,
+                analysisResult.types, mainName, execListener, rand)
       const errorLocator = mkErrorMessage(sourceMap)
       return right({
         ...ctx,
         analysisErrors: Array.from(analysisErrors, errorLocator),
       })
     }
-  // we produce CompilationContext in any case
-  ).value
+      // we produce CompilationContext in any case
+    ).value
 }

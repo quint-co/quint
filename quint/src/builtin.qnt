@@ -111,18 +111,6 @@ module builtin {
   /// ```
   pure def contains(a, s): (Set[a], a) => bool
 
-  /// `e.notin(s)` is true when the element `e` is not in the set `s`.
-  ///
-  /// See also: `in`
-  ///
-  /// ### Examples
-  ///
-  /// ```
-  /// assert(4.notin(Set(1, 2, 3)))
-  /// assert(not(1.notin(Set(1, 2, 3))))
-  /// ```
-  pure def notin(a, s): (a, Set[a]) => bool
-
   /// `s1.union(s2)` is the set of elements that are in `s1` or in `s2`.
   ///
   /// This is the set union operator.
@@ -336,7 +324,7 @@ module builtin {
   /// ```
   pure def setOfMaps(s1, s2): (Set[a], Set[b]) => Set[a -> b]
 
-  /// `m.set(k, v)` is the map `m` but with the key `k` mapped `v` if `k.in(keys(m))`
+  /// `m.set(k, v)` is the map `m` but with the key `k` mapped to `v` if `k.in(keys(m))`
   ///
   /// If `k` is not a key in `m`, this operator has undefined behavior.
   ///
@@ -364,17 +352,17 @@ module builtin {
   /// ```
   pure def setBy(m, k, v): (a -> b, a, (b) => b) => a -> b
 
-  /// `m.put(k, v)` map `m` extended with the key `k` set to `v`.
-  ///
-  /// If `k` is present in `m`, this operator has undefined behavior.
+  /// `m.put(k, v)` is the map `m` but with the key `k` mapped to `v`.
   ///
   /// ### Examples
   ///
   /// ```
   /// pure val m = Map(1 -> true, 2 -> false)
-  /// pure val m2 = m.put(3, true)
+  /// pure val m2 = m.put(2, true)
+  /// pure val m3 = m.put(3, true)
   /// assert(m == Map(1 -> true, 2 -> false))
-  /// assert(m2 == Map(1 -> true, 2 -> false, 3 -> true))
+  /// assert(m2 == Map(1 -> true, 2 -> true))
+  /// assert(m3 == Map(1 -> true, 2 -> false, 3 -> true))
   /// ```
   pure def put(m, k, v): (a -> b, a, b) => a -> b
 
@@ -513,21 +501,6 @@ module builtin {
   /// assert(l == List(1, 2, 3, 4))
   /// ```
   pure def foldl(l, z, f): (List[a], b, (b, a) => b) => b
-
-  /// `l.foldr(z, f)` reduces the elements in `s` using `f`,
-  /// starting with `z` from the right.
-  ///
-  /// I.e., `f(x0, f(x1, ... f(xn, z))`.
-  ///
-  /// ### Examples
-  ///
-  /// ```
-  /// pure val sum = List(1, 2, 3, 4).foldr(0, (x, y) => x + y)
-  /// assert(sum == 10)
-  /// pure val l = List(1, 2, 3, 4).foldr(List(), (e, l) => l.append(e))
-  /// assert(l == List(4, 3, 2, 1))
-  /// ```
-  pure def foldr(l, z, f): (List[a], b, (a, b) => b) => b
 
   /// `a.iadd(b)` is the integer addition of `a` and `b`.
   ///

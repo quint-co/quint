@@ -4,23 +4,22 @@
  * See the description at:
  * https://github.com/informalsystems/quint/blob/main/doc/quint.md
  *
- * @author Igor Konnov, Gabriela Moreira, Shon Feder, Informal Systems, 2021-2022
+ * @author Igor Konnov, Gabriela Moreira, Shon Feder, Informal Systems, 2021-2023
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import JSONbig from 'json-bigint'
-import { basename, resolve } from 'path'
+import { dirname, basename, resolve } from 'path'
 import { cwd } from 'process'
 import chalk from 'chalk'
-import seedrandom from 'seedrandom'
 
 import {
-  ErrorMessage, Loc, compactSourceMap, parsePhase1, parsePhase2
+  ErrorMessage, Loc, compactSourceMap, parsePhase1fromText, parsePhase2sourceResolution, parsePhase3importAndNameResolution
 } from './quintParserFrontend'
 
 import { Either, left, right } from '@sweet-monads/either'
 import { EffectScheme } from './effects/base'
-import { LookupTableByModule } from './lookupTable'
+import { LookupTable } from './lookupTable'
 import { ReplOptions, quintRepl } from './repl'
 import { OpQualifier, QuintEx, QuintModule } from './quintIr'
 import { TypeScheme } from './types/base'
@@ -29,9 +28,14 @@ import { formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintAnalyzer } from './quintAnalyzer'
 import { QuintError, quintErrorToString } from './quintError'
-import { compileAndTest } from './runtime/testing'
+import { TestOptions, TestResult, compileAndTest } from './runtime/testing'
 import { newIdGenerator } from './idGenerator'
-import { SimulatorOptions, compileAndRun, printTrace } from './simulation'
+import { SimulatorOptions, compileAndRun } from './simulation'
+import { toItf } from './itf'
+import { printTrace, printExecutionFrameRec } from './graphics'
+import { verbosity } from './verbosity'
+import { Rng, newRng } from './rng'
+import { fileSourceResolver } from './sourceResolver'
 
 export type stage =
   'loading' | 'parsing' | 'typechecking' |
@@ -42,7 +46,7 @@ interface OutputStage {
   stage: stage,
   // the modules and the lookup table produced by 'parse'
   modules?: QuintModule[],
-  table?: LookupTableByModule,
+  table?: LookupTable,
   // the tables produced by 'typecheck'
   types?: Map<bigint, TypeScheme>,
   effects?: Map<bigint, EffectScheme>,
@@ -52,8 +56,8 @@ interface OutputStage {
   failed?: string[],
   ignored?: string[],
   // Test names output produced by 'run'
-  status?: 'ok' | 'violation',
-  trace?: QuintEx,
+  status?: 'ok' | 'violation' | 'failure',
+  trace?: QuintEx[],
   /* Docstrings by defintion name by module name */
   documentation?: Map<string, Map<string, DocumentationEntry>>,
   errors?: ErrorMessage[],
@@ -105,7 +109,7 @@ interface LoadedStage extends ProcedureStage {
 interface ParsedStage extends LoadedStage {
   modules: QuintModule[],
   sourceMap: Map<bigint, Loc>,
-  table: LookupTableByModule,
+  table: LookupTable,
 }
 
 interface TypecheckedStage extends ParsedStage {
@@ -124,8 +128,8 @@ interface TestedStage extends LoadedStage {
 }
 
 interface SimulatorStage extends LoadedStage {
-  status: 'ok' | 'violation',
-  trace?: QuintEx,
+  status: 'ok' | 'violation' | 'failure',
+  trace?: QuintEx[],
 }
 
 interface DocumentationStage extends LoadedStage {
@@ -179,7 +183,13 @@ export function load(args: any): CLIProcedure<LoadedStage> {
 export function parse(loaded: LoadedStage): CLIProcedure<ParsedStage> {
   const { args, sourceCode, path } = loaded
   const parsing = { ...loaded, stage: 'parsing' as stage }
-  return parsePhase1(newIdGenerator(), sourceCode, path)
+  const idgen = newIdGenerator()
+  return parsePhase1fromText(idgen, sourceCode, path)
+    .chain(phase1Data => {
+      const resolver = fileSourceResolver()
+      const mainPath = resolver.lookupPath(dirname(path), basename(path))
+      return parsePhase2sourceResolution(idgen, resolver, mainPath, phase1Data)
+    })
     .mapLeft(newErrs => {
       const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
       return { msg: "parsing failed", stage: { ...parsing, errors } }
@@ -189,7 +199,7 @@ export function parse(loaded: LoadedStage): CLIProcedure<ParsedStage> {
         // Write source map to the specified file
         writeToJson(args.sourceMap, compactSourceMap(phase1Data.sourceMap))
       }
-      return parsePhase2(phase1Data)
+      return parsePhase3importAndNameResolution(phase1Data)
         .mapLeft(newErrs => {
           const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
           return { msg: "parsing failed", stage: { ...parsing, errors } }
@@ -246,6 +256,7 @@ export function runRepl(_argv: any) {
   const options: ReplOptions = {
     preloadFilename: filename,
     importModule: moduleName,
+    verbosity: _argv.quiet ? 0 : _argv.verbosity,
   }
   quintRepl(process.stdin, process.stdout, options)
 }
@@ -256,13 +267,8 @@ export function runRepl(_argv: any) {
  * @param typedStage the procedure stage produced by `typecheck`
  */
 export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
-  // output to the console, unless the json output is enabled
-  const isConsole = !prev.args.out
-  function out(text: string): void {
-    if (isConsole) {
-      console.log(text)
-    }
-  }
+  const verbosityLevel = !prev.args.out ? prev.args.verbosity : 0
+  const out = console.log
 
   const testing = { ...prev, stage: 'testing' as stage }
   const mainArg = prev.args.main
@@ -274,77 +280,118 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
       stage: { ...prev, errors: [] },
     })
   } else {
+    const rngOrError = mkRng(prev.args.seed)
+    if (rngOrError.isLeft()) {
+      return cliErr(rngOrError.value, { ...testing, errors: [] })
+    }
+    const rng = rngOrError.unwrap()
+
     let passed: string[] = []
     let failed: string[] = []
     let ignored: string[] = []
-    let namedErrors: [string, ErrorMessage][] = []
+    let namedErrors: [string, ErrorMessage, TestResult][] = []
 
     const startMs = Date.now()
-    out(`\n  ${mainName}`)
+    if (verbosity.hasResults(verbosityLevel)) {
+      out(`\n  ${mainName}`)
+    }
 
     const matchFun =
-      (n: string): boolean => isMatchingTest(prev.args.match, n)
-
+      (n: string): boolean => isMatchingTest(testing.args.match, n)
+    const options: TestOptions = {
+      testMatch: matchFun,
+      maxSamples: testing.args.maxSamples,
+      rng,
+      verbosity: verbosityLevel,
+    }
     const testOut =
-      compileAndTest(prev.modules, main, prev.sourceMap,
-                     prev.table, prev.types, matchFun, mkRng(prev.args.seed))
-    if (testOut.isRight()) {
+      compileAndTest(testing.modules, main,
+                     testing.sourceMap, testing.table, testing.types, options)
+    if (testOut.isLeft()) {
+      return cliErr("Tests failed", { ...testing, errors: testOut.value })
+    } else if (testOut.isRight()) {
       const elapsedMs = Date.now() - startMs
       const results = testOut.unwrap()
       // output the status for every test
-      results.forEach(res => {
-        if (res.status === 'passed') {
-          out('    ' + chalk.green('ok ') + res.name)
-        }
-        if (res.status === 'failed') {
-          const errNo = namedErrors.length + 1
-          out('    ' + chalk.red(`${errNo}) `)  + res.name)
+      if (verbosity.hasResults(verbosityLevel)) {
+        results.forEach(res => {
+          if (res.status === 'passed') {
+            out(`    ${chalk.green('ok')} ${res.name} passed ${res.nsamples} test(s)`)
+          }
+          if (res.status === 'failed') {
+            const errNo = chalk.red(namedErrors.length + 1)
+            out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
 
-          res.errors.forEach(e => namedErrors.push([res.name, e]))
-        }
-      })
+            res.errors.forEach(e => namedErrors.push([res.name, e, res]))
+          }
+        })
+      }
+
+      passed = results.filter(r => r.status === 'passed').map(r => r.name)
+      failed = results.filter(r => r.status === 'failed').map(r => r.name)
+      ignored = results.filter(r => r.status === 'ignored').map(r => r.name)
 
       // output the statistics banner
-      const passed = results.filter(r => r.status === 'passed').map(r => r.name)
-      const failed = results.filter(r => r.status === 'failed').map(r => r.name)
-      const ignored = results.filter(r => r.status === 'ignored').map(r => r.name)
-      out('')
-      if (passed.length > 0) {
-        out(chalk.green(`  ${passed.length} passing`) +
-                    chalk.gray(` (${elapsedMs}ms)`))
-      }
-      if (failed.length > 0) {
-        out(chalk.red(`  ${failed.length} failed`))
-      }
-      if (ignored.length > 0) {
-        out(chalk.gray(`  ${ignored.length} ignored`))
+      if (verbosity.hasResults(verbosityLevel)) {
+        out('')
+        if (passed.length > 0) {
+          out(chalk.green(`  ${passed.length} passing`) +
+                      chalk.gray(` (${elapsedMs}ms)`))
+        }
+        if (failed.length > 0) {
+          out(chalk.red(`  ${failed.length} failed`))
+        }
+        if (ignored.length > 0) {
+          out(chalk.gray(`  ${ignored.length} ignored`))
+        }
       }
 
       // output errors, if there are any
-      if (isConsole && namedErrors.length > 0) {
+      if (verbosity.hasTestDetails(verbosityLevel) && namedErrors.length > 0) {
         const code = prev.sourceCode!
         const finder = lineColumn(code)
         out('')
-        namedErrors.forEach(([name, err], index) => {
+        namedErrors.forEach(([name, err, testResult], index) => {
           const details = formatError(code, finder, err)
           // output the header
           out(`  ${index + 1}) ${name}:`)
           const lines = details.split('\n')
-          // output the first line in red
-          if (lines.length > 0) {
-            out(chalk.red('      ' + lines[0]))
+          // output the first two lines in red
+          lines.slice(0, 2).forEach(l =>
+            out(chalk.red('      ' + l))
+          )
+
+          if (verbosity.hasActionTracking(verbosityLevel)) {
+            out('')
+            testResult.frames.forEach((f, index) => {
+              out(`    [Frame ${index}]`)
+              printExecutionFrameRec(l => out('    ' + l), f, [])
+              out('')
+            })
+
+            if (testResult.frames.length == 0) {
+              out('    [No execution]')
+            }
           }
-          // and the rest in gray
-          lines.slice(1).forEach(line => {
-            out(chalk.gray('      ' + line))
-          })
+          // output the seed
+          out(chalk.gray(`    Use --seed=0x${testResult.seed.toString(16)} --match=${testResult.name} to repeat.`))
         })
         out('')
       }
-    } // else: we have handled the case of module not found already
+
+      if (failed.length > 0 && verbosity.hasHints(options.verbosity)
+          && !verbosity.hasActionTracking(options.verbosity)) {
+        out(chalk.gray('\n  Use --verbosity=3 to show executions.'))
+      }
+    }
 
     const errors = namedErrors.map(([_, e]) => e)
-    return right({ ...testing, passed, failed, ignored, errors })
+    const stage = { ...testing, passed, failed, ignored, errors }
+    if (errors.length == 0 && failed.length == 0) {
+      return right(stage)
+    } else {
+      return cliErr("Tests failed", stage)
+    }
   }
 }
 
@@ -355,46 +402,111 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
  */
 export function runSimulator(prev: TypecheckedStage):
   CLIProcedure<SimulatorStage> {
+  const simulator = { ...prev, stage: 'running' as stage }
   const mainArg = prev.args.main
   const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
+  const verbosityLevel =
+    (!prev.args.out && !prev.args.outItf) ? prev.args.verbosity : 0
+  const rngOrError = mkRng(prev.args.seed)
+  if (rngOrError.isLeft()) {
+    return cliErr(rngOrError.value, { ...simulator, errors: [] })
+  }
+  const rng = rngOrError.unwrap()
   const options: SimulatorOptions = {
     init: prev.args.init,
     step: prev.args.step,
     invariant: prev.args.invariant,
     maxSamples: prev.args.maxSamples,
     maxSteps: prev.args.maxSteps,
-    rand: mkRng(prev.args.seed),
+    rng,
+    verbosity: verbosityLevel,
   }
   const startMs = Date.now()
-  const simulator = { ...prev, stage: 'running' as stage }
-  return compileAndRun(newIdGenerator(), prev.sourceCode, mainName, options)
-    .map(result => {
-      const isConsole = !prev.args.out
-      if (isConsole) {
+  
+  const mainPath =
+    fileSourceResolver().lookupPath(dirname(prev.args.input), basename(prev.args.input))
+  const result =
+    compileAndRun(newIdGenerator(), prev.sourceCode, mainName, mainPath, options)
+  
+  if (result.status === 'error') {
+      const errors =
+        prev.errors ? prev.errors.concat(result.errors) : result.errors
+      return cliErr('run failed', { ...simulator, errors })
+  } else {
+      if (verbosity.hasResults(verbosityLevel)) {
         const elapsedMs = Date.now() - startMs
-        console.log(result.status === 'ok'
-          ? chalk.green('[ok]')
-            + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).\n`)
-            + chalk.gray(' You may increase --max-samples and --max-steps.\n')
-            + '\nSee the example:'
-          : chalk.red('[violation]') + chalk.gray(` (${elapsedMs}ms).`)
-            + chalk.gray(' See the example:'))
-        console.log('---------------------------------------------')
-        printTrace(console.log, result.trace)
-        console.log('---------------------------------------------')
+        if (verbosity.hasStateOutput(options.verbosity)) {
+          console.log(chalk.gray('An example execution:\n'))
+          printTrace(console.log, result.states, result.frames)
+        }
+        if (result.status === 'ok') {
+          console.log(chalk.green('[ok]')
+            + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
+          if (verbosity.hasHints(options.verbosity)) {
+            console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
+            console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
+          }
+        } else {
+          console.log(chalk.red(`[${result.status}]`)
+            + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
+          console.log(chalk.gray(`Use --seed=0x${result.seed.toString(16)} to reproduce.`))
+
+          if (verbosity.hasHints(options.verbosity)) {
+            console.log(chalk.gray('Use --verbosity=3 to show executions.'))
+          }
+        }
       }
 
-      return {
-        ...simulator,
-        status: result.status,
-        trace: result.trace,
+      if (prev.args.outItf) {
+        const trace = toItf(result.vars, result.states)
+        if (trace.isRight()) {
+          const jsonObj = {
+            '#meta': {
+              'format': 'ITF',
+              'format-description': 'https://apalache.informal.systems/docs/adr/015adr-trace.html',
+              'source': prev.args.input,
+              'status': result.status,
+              'description': 'Created by Quint on ' + new Date(),
+              'timestamp': Date.now(),
+            },
+            ...trace.value,
+          }
+          writeToJson(prev.args.outItf, jsonObj)
+        } else {
+          const newStage = { ...simulator, errors: result.errors }
+          return cliErr(`ITF conversion failed: ${trace.value}`, newStage)
+        }
       }
-    })
-    .mapLeft(newErrs => {
-      const errors = prev.errors ? prev.errors.concat(newErrs) : newErrs
-      const newStage = { ...simulator, errors }
-      return { msg: 'run failed', stage: newStage }
-    })
+
+      // If nothing found, return a success. Otherwise, return an error.
+      let msg
+      switch (result.status) {
+        case 'ok':
+          return right({
+              ...simulator,
+              status: result.status,
+              trace: result.states,
+          })
+
+        case 'violation':
+          msg = 'Invariant violated'
+          break
+
+        case 'failure':
+          msg = 'Runtime error'
+          break
+
+        default:
+          msg = 'Unknown error'
+      }
+
+      return cliErr(msg, {
+            ...simulator,
+            status: result.status,
+            trace: result.states,
+            errors: result.errors,
+          })
+    }
 }
 
 /**
@@ -405,7 +517,7 @@ export function runSimulator(prev: TypecheckedStage):
 export function docs(loaded: LoadedStage): CLIProcedure<DocumentationStage> {
   const { sourceCode, path } = loaded
   const parsing = { ...loaded, stage: 'documentation' as stage }
-  return parsePhase1(newIdGenerator(), sourceCode, path)
+  return parsePhase1fromText(newIdGenerator(), sourceCode, path)
     .mapLeft(newErrs => {
       const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
       return { msg: "parsing failed", stage: { ...parsing, errors } }
@@ -470,12 +582,19 @@ function replacer(_key: String, value: any): any {
  * Produce a random-number generator: Either a predictable one using a seed,
  * or a reasonably unpredictable one.
  */
-function mkRng(seed: string | undefined): () => number {
-  if (seed) {
-    return seedrandom(seed)
-  } else {
-    return seedrandom()
+function mkRng(seedText?: string): Either<string, Rng> {
+  let seed
+  if (seedText !== undefined) {
+      // since yargs does not has a type for big integers,
+      // we do it with a fallback
+    try {
+      seed = BigInt(seedText)
+    } catch (SyntaxError) {
+      return left(`--seed must be a big integer, found: ${seedText}`)
+    }
   }
+
+  return right(seed ? newRng(seed) : newRng())
 }
 
 /**

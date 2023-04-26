@@ -45,6 +45,8 @@ export interface IRVisitor {
   exitTypeDef?: (_def: ir.QuintTypeDef) => void
   enterImport?: (_def: ir.QuintImport) => void
   exitImport?: (_def: ir.QuintImport) => void
+  enterExport?: (_def: ir.QuintExport) => void
+  exitExport?: (_def: ir.QuintExport) => void
   enterInstance?: (_def: ir.QuintInstance) => void
   exitInstance?: (_def: ir.QuintInstance) => void
 
@@ -296,7 +298,7 @@ export function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
       if (visitor.enterInstance) {
         visitor.enterInstance(def)
       }
-      def.overrides.forEach(e => walkExpression(visitor, e[1]))
+      def.overrides.forEach(([_, e]) => walkExpression(visitor, e))
       if (visitor.exitInstance) {
         visitor.exitInstance(def)
       }
@@ -307,6 +309,14 @@ export function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
       }
       if (visitor.exitImport) {
         visitor.exitImport(def)
+      }
+      break
+    case 'export':
+      if (visitor.enterExport) {
+        visitor.enterExport(def)
+      }
+      if (visitor.exitExport) {
+        visitor.exitExport(def)
       }
       break
     case 'assume':

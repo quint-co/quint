@@ -13,55 +13,42 @@
  */
 
 import { IRVisitor } from '../IRVisitor'
-import { QuintApp, QuintBool, QuintConst, QuintDef, QuintEx, QuintInstance, QuintInt, QuintLambda, QuintLet, QuintModule, QuintName, QuintOpDef, QuintStr, QuintVar } from '../quintIr'
+import { QuintApp, QuintBool, QuintConst, QuintDef, QuintEx, QuintInstance, QuintInt, QuintLambda, QuintLet, QuintName, QuintOpDef, QuintStr, QuintVar } from '../quintIr'
 import { QuintType, typeNames } from '../quintTypes'
 import { expressionToString, rowToString, typeToString } from '../IRprinting'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
+import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
 import { getSignatures } from './builtinSignatures'
-import { Constraint, Signature, TypeScheme } from './base'
+import { Constraint, Signature, TypeScheme, toScheme } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
-import { ScopeTree, treeFromModule } from '../scoping'
-import { LookupTable, LookupTableByModule, lookupValue, newTable } from '../lookupTable'
+import { LookupTable } from '../lookupTable'
 import { specialConstraints } from './specialConstraints'
 import { FreshVarGenerator } from "../FreshVarGenerator"
 
-type solvingFunctionType = (_table: LookupTable, _constraint: Constraint)
+export type SolvingFunctionType = (_table: LookupTable, _constraint: Constraint)
   => Either<Map<bigint, ErrorTree>, Substitutions>
 
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
-  constructor(solvingFunction: solvingFunctionType, tables: LookupTableByModule) {
+  constructor(solvingFunction: SolvingFunctionType, table: LookupTable) {
     this.solvingFunction = solvingFunction
-    this.tables = tables
+    this.table = table
     this.freshVarGenerator = new FreshVarGenerator()
   }
 
   types: Map<bigint, TypeScheme> = new Map<bigint, TypeScheme>()
   errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
 
-  private solvingFunction: solvingFunctionType
+  private solvingFunction: SolvingFunctionType
   private constraints: Constraint[] = []
 
   private builtinSignatures: Map<string, Signature> = getSignatures()
-  private tables: LookupTableByModule
+  private table: LookupTable
   private freshVarGenerator: FreshVarGenerator
 
   // Track location descriptions for error tree traces
   private location: string = ''
-
-  private currentTable: LookupTable = newTable({})
-  private currentScopeTree: ScopeTree = { value: 0n, children: [] }
-
-  enterModule(module: QuintModule): void {
-    this.currentScopeTree = treeFromModule(module)
-    this.currentTable = this.tables.get(module.name) ?? newTable({})
-  }
-
-  exitModule(module: QuintModule): void {
-    this.tables.set(module.name, this.currentTable)
-  }
 
   enterExpr(e: QuintEx) {
     this.location = `Generating constraints for ${expressionToString(e)}`
@@ -89,10 +76,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     // For each override, ensure that the the type for the name and the type of
     // the value are the same
     def.overrides.forEach(([name, ex]) => {
-      const namespacedName = `${def.name}::${name}`
-      this.fetchSignature(namespacedName, def.id, 0).chain(typeForName => {
-        return this.fetchResult(ex.id).map(typeForValue => {
-          this.constraints.push({ kind: 'eq', types: [typeForName, typeForValue.type], sourceId: ex.id })
+      this.addToResults(name.id, this.typeForName(name.name, name.id, 2).map(toScheme))
+
+      this.fetchResult(name.id).chain(originalType => {
+        return this.fetchResult(ex.id).map(expressionType => {
+          this.constraints.push({ kind: 'eq', types: [originalType.type, expressionType.type], sourceId: ex.id })
         })
       })
     })
@@ -105,7 +93,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     if (this.errors.size !== 0) {
       return
     }
-    this.addToResults(e.id, this.fetchSignature(e.name, e.id, 2).map(toScheme))
+    this.addToResults(e.id, this.typeForName(e.name, e.id, 2).map(toScheme))
   }
 
   // Literals have always the same type and the empty constraint
@@ -126,7 +114,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     }))
 
     const result = argsResult.chain((results): Either<Error, TypeScheme> => {
-      const signature = this.fetchSignature(e.opcode, e.id, e.args.length)
+      const signature = this.typeForName(e.opcode, e.id, e.args.length)
       const a: QuintType = { kind: 'var', name: this.freshVarGenerator.freshVar('t') }
       const special = specialConstraints(e.opcode, e.id, results, a)
 
@@ -154,6 +142,13 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     this.addToResults(e.id, result)
   }
 
+  enterLambda(expr: QuintLambda) {
+    expr.params.forEach(p => {
+      const varName = p.name === '_' ? this.freshVarGenerator.freshVar('t') : `t_${p.name}_${p.id}`
+      this.addToResults(p.id, right(toScheme({ kind: 'var', name: varName })))
+    })
+  }
+
   //    Γ ∪ {p0: t0, ..., pn: tn} ⊢ e: (te, c)    t0, ..., tn are fresh
   // ---------------------------------------------------------------------- (LAMBDA)
   //            Γ ⊢ (p0, ..., pn) => e: ((t0, ..., tn) => te, c)
@@ -163,12 +158,12 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     }
     const result = this.fetchResult(e.expr.id)
       .chain(resultType => {
-        const paramTypes = mergeInMany(e.params.map(p => this.fetchSignature(p, e.expr.id, 2)))
+        const paramTypes = mergeInMany(e.params.map(p => this.fetchResult(p.id).map(e => this.newInstance(e))))
         return paramTypes.map((ts): TypeScheme => {
           const newType: QuintType = { kind: 'oper', args: ts, res: resultType.type }
           return { ...typeNames(newType), type: newType }
         }).mapLeft(e => {
-          throw new Error(`This should be impossible: Lambda variables not found: ${e.join(', ')}`)
+          throw new Error(`This should be impossible: Lambda variables not found: ${e.map(errorTreeToString)}`)
         })
       })
 
@@ -229,13 +224,15 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     // Remove solved constraints
     this.constraints = []
 
-    return this.solvingFunction(this.currentTable, constraint)
+    return this.solvingFunction(this.table, constraint)
       .mapLeft(errors => errors.forEach((err, id) => this.errors.set(id, err)))
       .map((subs) => {
         // Apply substitution to environment
+        // FIXME: We have to figure out the scope of the constraints/substitutions
+        // https://github.com/informalsystems/quint/issues/690
         this.types = new Map<bigint, TypeScheme>(
           [...this.types.entries()].map(([id, te]) => {
-            const newType = applySubstitution(this.currentTable, subs, te.type)
+            const newType = applySubstitution(this.table, subs, te.type)
             const scheme: TypeScheme = { ...typeNames(newType), type: newType }
             return [id, scheme]
           })
@@ -245,30 +242,25 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       })
   }
 
-  private fetchSignature(opcode: string, scope: bigint, arity: number): Either<ErrorTree, QuintType> {
+  private typeForName(name: string, nameId: bigint, arity: number): Either<ErrorTree, QuintType> {
     // Assumes a valid number of arguments
-    if (opcode === '_') {
-      return right({ kind: 'var', name: this.freshVarGenerator.freshVar('t') })
-    }
 
-    if (this.builtinSignatures.has(opcode)) {
-      const signatureFunction = this.builtinSignatures.get(opcode)!
+    if (this.builtinSignatures.has(name)) {
+      const signatureFunction = this.builtinSignatures.get(name)!
       const signature = signatureFunction(arity)
       return right(this.newInstance(signature))
     } else {
-      const def = lookupValue(this.currentTable, this.currentScopeTree, opcode, scope)
+      const def = this.table.get(nameId)
 
+      // FIXME: We have to check if the annotation is too general for var and consts as well
+      // https://github.com/informalsystems/quint/issues/691
       if (def?.typeAnnotation) {
         return right(def.typeAnnotation)
       }
 
       const id = def?.reference
       if (!def || !id) {
-        return left(buildErrorLeaf(this.location, `Signature not found for name: ${opcode}`))
-      }
-
-      if (def.kind === 'param') {
-        return right({ kind: 'var', name: `t_${opcode}_${id}` })
+        return left(buildErrorLeaf(this.location, `Signature not found for name: ${name}`))
       }
 
       return this.fetchResult(id).map(t => this.newInstance(t))
@@ -287,13 +279,9 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       return { kind: 'row', name: name, value: { kind: 'var', name: this.freshVarGenerator.freshVar('t') } }
     })
 
-    const subs = compose(this.currentTable, typeSubs, rowSubs)
-    return applySubstitution(this.currentTable, subs, t.type)
+    const subs = compose(this.table, typeSubs, rowSubs)
+    return applySubstitution(this.table, subs, t.type)
   }
-}
-
-function toScheme(type: QuintType): TypeScheme {
-  return { typeVariables: new Set([]), rowVariables: new Set([]), type }
 }
 
 function checkAnnotationGenerality(

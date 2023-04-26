@@ -78,13 +78,13 @@ export class ModeChecker implements IRVisitor {
 
       const [mode, explanation] = modeForEffect(effect)
 
-      if (mode === 'pureval') {
+      if (mode === 'pureval' || mode === 'puredef') {
         return
       }
 
       this.errors.set(ex.id, {
         code: 'QNT201',
-        message: `Instance overrides must be pure values, but the value for ${name} ${explanation}`,
+        message: `Instance overrides must be pure, but the value for ${name.name} ${explanation}`,
         data: {},
       })
     })
@@ -155,7 +155,7 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
     case 'arrow': {
       const r = effect.result
       if (r.kind === 'arrow') {
-        throw new Error(`Unexpected arrow found in operator result: ${effectToString(r)}`)
+        throw new Error(`Unexpected arrow found in operator result: ${effectToString(effect)}`)
       }
 
       if (r.kind === 'variable') {

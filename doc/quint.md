@@ -51,6 +51,8 @@ Options:
       --version  Show version number                                   [boolean]
   -r, --require  filename[::module]. Preload the file and, optionally, import
                  the module                                             [string]
+      --verbosity  control how much output is produced (0 to 5)
+                                                           [number] [default: 2]
 ```
 
 ```sh
@@ -59,6 +61,9 @@ quint repl
 
 The REPL is especially useful for learning the language. See the
 [repl](./repl.md) documentation for more details.
+
+The verbosity levels 3 and 4 are used to show execution details. They are
+especially useful for debugging complex specifications.
 
 ## Command `parse`
 
@@ -169,6 +174,8 @@ Options:
   --main         name of the main module (by default, computed from filename)
                                                                         [string]
   --out          output file (suppresses all console output)            [string]
+  --out-itf      output the trace in the Informal Trace Format to file
+                 (supresses all console output)                         [string]
   --max-samples  the maximum on the number of traces to try
                                                        [number] [default: 10000]
   --max-steps    the maximum on the number of steps in every trace
@@ -180,10 +187,15 @@ Options:
   --seed         random seed to use for non-deterministic choice        [string]
 ```
 
- - If there are no critical errors (e.g., in parsing, typechecking, etc.),
-   the trace is currently written as a serialized Quint expression.
-   In the future, the trace will be written in the [Informal Trace Format][].
-   See the [issue #277](https://github.com/informalsystems/quint/issues/277).
+ - If there are no critical errors (e.g., in parsing, typechecking, etc.), the
+ simulator tries to find the shortest trace that violates the invariant.  If it
+ finds one, it prints the trace on the standard output.  If it does not find a
+ violating trace, it prints the longest sample trace that the simulator has
+ found during the execution. When the parameter `--out` is supplied, the trace
+ is written as a JSON representation of Quint IR in the output file. When the
+ parameter `--out-itf` is supplied, the trace is written in the [Informal Trace
+ Format][]. This output can be conviently displayed with the [ITF Trace
+ Viewer][], or just with [jq][].
 
  - If the specification cannot be run (e.g., due to a parsing error), the file
    contains an error message in JSON:
@@ -206,13 +218,16 @@ quint test <input>
 Run tests against a Quint specification
 
 Options:
-  --help     Show help                                                 [boolean]
-  --version  Show version number                                       [boolean]
-  --main     name of the main module (by default, computed from filename)
+  --help       Show help                                               [boolean]
+  --version    Show version number                                     [boolean]
+  --main       name of the main module (by default, computed from filename)
                                                                         [string]
-  --out      output file (suppresses all console output)                [string]
-  --seed     random seed to use for non-deterministic choice            [string]
-  --match    a string or regex that selects names to use as tests       [string]
+  --out        output file (suppresses all console output)              [string]
+  --max-samples  the maximum number of successful runs to try for every
+                 randomized test                       [number] [default: 10000]
+  --seed       random seed to use for non-deterministic choice          [string]
+  --verbosity  control how much output is produced (0 to 5)[number] [default: 2]
+  --match      a string or regex that selects names to use as tests     [string]
 ```
 
  - If there are no critical errors (e.g., in parsing, typechecking, etc.), the
@@ -306,3 +321,5 @@ exact format is to be specified in the future.
 [Quint IR]: https://github.com/informalsystems/quint/blob/main/quint/src/quintIr.ts
 [REPL]: https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop
 [Informal Trace Format]: https://apalache.informal.systems/docs/adr/015adr-trace.html
+[ITF Trace Viewer]: https://marketplace.visualstudio.com/items?itemName=informal.itf-trace-viewer
+[jq]: https://stedolan.github.io/jq/

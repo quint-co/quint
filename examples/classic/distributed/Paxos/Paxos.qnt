@@ -1,5 +1,10 @@
+// -*- mode: Bluespec; -*-
 // Temp fix for integration tests: mock voting definitions while files are not imported
 module Voting {
+  const Value: Set[int]       // The set of choosable values.
+  const Acceptor: Set[str]    // A set of processes that will choose a value.
+  const Quorum: Set[Set[str]] // The set of "quorums", where a quorum" is a
+
   def ShowsSafeAt(Q, b, v) = true
   val Inv = true
 }
@@ -239,7 +244,7 @@ module Paxos {
   (***************************************************************************/
 
 
-  module V = Voting(*)
+  import Voting(Value = Value, Acceptor = Acceptor, Quorum = Quorum) as V
 
   // Like theorems? Then you should definitely go straight for TLA+
   // THEOREM Spec => V!Spec

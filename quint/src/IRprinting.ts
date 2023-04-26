@@ -35,7 +35,7 @@ export function moduleToString(quintModule: QuintModule): string {
  *
  * @returns a string with the pretty printed definition
  */
-export function definitionToString(def: QuintDef, includeBody:boolean=true): string {
+export function definitionToString(def: QuintDef, includeBody: boolean = true): string {
   const typeAnnotation =
     isAnnotatedDef(def) ? `: ${typeToString(def.typeAnnotation)}` : ''
   switch (def.kind) {
@@ -55,11 +55,29 @@ export function definitionToString(def: QuintDef, includeBody:boolean=true): str
       } else {
         return `type ${def.name}`
       }
-    case 'import':
-      return `import ${def.path}.${def.name}`
+    case 'import': {
+      let text = `import ${def.protoName}`
+      if (def.defName) {
+        text += `.${def.defName}`
+      }
+      if (def.qualifiedName) {
+        text += ` as ${def.qualifiedName}`
+      }
+      return text
+    }
+    case 'export': {
+      let text = `export ${def.protoName}`
+      if (def.defName) {
+        text += `.${def.defName}`
+      }
+      if (def.qualifiedName) {
+        text += ` as ${def.qualifiedName}`
+      }
+      return text
+    }
     case 'instance': {
-      const overrides = def.overrides.map(o => `${o[0]} = ${expressionToString(o[1])}`).join(', ')
-      return `module ${def.name} = ${def.protoName}(${overrides})`
+      const overrides = def.overrides.map(o => `${o[0].name} = ${expressionToString(o[1])}`).join(', ')
+      return `import ${def.protoName}(${overrides}) as ${def.qualifiedName}`
     }
   }
 }
@@ -83,7 +101,7 @@ export function expressionToString(expr: QuintEx): string {
     case 'app':
       return `${expr.opcode}(${expr.args.map(expressionToString).join(', ')})`
     case 'lambda':
-      return `(${expr.params.join(', ')} => ${expressionToString(expr.expr)})`
+      return `(${expr.params.map(p => p.name).join(', ')} => ${expressionToString(expr.expr)})`
     case 'let':
       return `${definitionToString(expr.opdef)} { ${expressionToString(expr.expr)} }`
   }
@@ -149,14 +167,14 @@ export function rowToString(r: Row): string {
  * @returns a string with the pretty printed qualifier
  */
 export function qualifierToString(qualifier: OpQualifier): string {
-  switch(qualifier) {
+  switch (qualifier) {
     case 'puredef': return 'pure def'
     case 'pureval': return 'pure val'
     default: return qualifier
   }
 }
 
-function rowFieldsToString(r: Row, showFieldName=true): string {
+function rowFieldsToString(r: Row, showFieldName = true): string {
   switch (r.kind) {
     case 'empty':
       return ''

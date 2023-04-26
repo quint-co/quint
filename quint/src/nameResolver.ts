@@ -15,12 +15,13 @@
  * @module
  */
 
-import { QuintApp, QuintDef, QuintModule, QuintName } from './quintIr'
+import { QuintApp, QuintDef, QuintInstance, QuintModule, QuintName } from './quintIr'
 import { QuintConstType } from './quintTypes'
 import { ScopeTree } from './scoping'
-import { LookupTable, lookupType, lookupValue } from './lookupTable'
+import { LookupTable } from './lookupTable'
 import { IRVisitor, walkModule } from './IRVisitor'
 import { Either, left, right } from '@sweet-monads/either'
+import { DefinitionsByName, lookupType, lookupValue } from './definitionsByName'
 
 /**
  * A single name resolution error
@@ -41,7 +42,7 @@ export interface NameError {
 /**
  * The result of name resolution for a Quint Module.
  */
-export type NameResolutionResult = Either<NameError[], void>
+export type NameResolutionResult = Either<NameError[], LookupTable>
 
 /**
  * Explore the IR checking all name expressions for undefined names
@@ -52,24 +53,25 @@ export type NameResolutionResult = Either<NameError[], void>
  * @returns a successful result in case all names are resolved, or an aggregation of errors otherwise
  */
 export function resolveNames(
-  quintModule: QuintModule, table: LookupTable, scopeTree: ScopeTree
+  quintModule: QuintModule, table: DefinitionsByName, scopeTree: ScopeTree
 ): NameResolutionResult {
   const visitor = new NameResolverVisitor(table, scopeTree)
   walkModule(visitor, quintModule)
   const errors: NameError[] = visitor.errors
-  return errors.length > 0 ? left(errors) : right(undefined)
+  return errors.length > 0 ? left(errors) : right(visitor.table)
 }
 
 class NameResolverVisitor implements IRVisitor {
-  constructor(table: LookupTable, scopeTree: ScopeTree) {
-    this.table = table
+  constructor(definitionsByName: DefinitionsByName, scopeTree: ScopeTree) {
+    this.definitionsByName = definitionsByName
     this.scopeTree = scopeTree
   }
 
   errors: NameError[] = []
+  table: LookupTable = new Map()
 
   private scopeTree: ScopeTree
-  private table: LookupTable
+  private definitionsByName: DefinitionsByName
   private lastDefName: string = ''
 
   private currentModuleName: string = ''
@@ -81,7 +83,9 @@ class NameResolverVisitor implements IRVisitor {
   enterDef(def: QuintDef): void {
     // Keep the last visited definition name
     // so it can be showen in the reported error
-    this.lastDefName = def.name
+    if (def.kind !== 'instance' && def.kind !== 'import' && def.kind !== 'export') {
+      this.lastDefName = def.name
+    }
   }
 
   enterName(nameExpr: QuintName): void {
@@ -98,16 +102,34 @@ class NameResolverVisitor implements IRVisitor {
 
   enterConstType(type: QuintConstType): void {
     // Type is a name, check that it is defined
-    if (!lookupType(this.table, type.name)) {
+    const def = lookupType(this.definitionsByName, type.name)
+    if (!def) {
       this.recordError('type', type.name, type.id)
+      return
     }
+
+    if (def.reference) {
+      this.table.set(type.id!, { kind: 'type', reference: def.reference, typeAnnotation: def.type })
+    }
+  }
+
+  enterInstance(def: QuintInstance): void {
+    def.overrides.forEach(([name, _]) => {
+      const qualifiedName = def.qualifiedName ? `${def.qualifiedName}::${name.name}` : name.name
+      this.checkScopedName(qualifiedName, name.id)
+    })
   }
 
   // Check that there is a value definition for `name` under scope `id`
   private checkScopedName(name: string, id: bigint) {
-    const def = lookupValue(this.table, this.scopeTree, name, id)
+    const def = lookupValue(this.definitionsByName, this.scopeTree, name, id)
     if (!def) {
       this.recordError('value', name, id)
+      return
+    }
+
+    if (def.reference) {
+      this.table.set(id, { kind: def.kind, reference: def.reference, typeAnnotation: def.typeAnnotation })
     }
   }
 

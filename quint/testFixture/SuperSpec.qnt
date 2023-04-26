@@ -152,10 +152,6 @@ module withConsts {
   // Pass a lambda operator as a second argument of filter.
   // Here we are using the dot notation.
   val oper_app_dot1 = S.filter(x => x > 10)
-  // Wrap lambda in '(...)'
-  val oper_app_dot2 = S.filter(x => x > 10)
-  // Wrap lambda in '{...}'
-  action oper_app_dot3 = S.guess(x => x > 10)
   // Use unknown
   action oper_nondet = {
     nondet x = oneOf(S)
@@ -198,7 +194,6 @@ module withConsts {
 
   // Bultin set operators
   val in_2_empty = 2.in(Set())
-  val notin_2_empty = 2.notin(Set())
   val subseteq_empty = Set().subseteq(Set())
   val powersets = Set(1).in(powerset(Set(1,2,3)))
 
@@ -221,11 +216,13 @@ module withConsts {
   // Instances
 
   // create an instance of Proto by associating constants and variables
-  // FIXME: How to resolve names for N and x in this scenario?
-  // module Inst1 = Proto(N = N, x = x)
+  // import Proto(N = N, x = x) as Inst1
+
+  // variables are not supported yet, define only constants for now:
+  import Proto(N = N) as Inst1
 
   // create an instance of Proto by using '*'
-  module Inst2 = Proto(*)
+  // import Proto(*) as Inst2
 
   // Match
   type ENTRY_TYPE =

@@ -6,6 +6,7 @@ import chalk from 'chalk'
 
 import { quintRepl } from '../src/repl'
 import { dedent } from './textUtils'
+import { version } from '../src/version'
 
 // A simple implementation of Writable to a string:
 // After: https://bensmithgall.com/blog/jest-mock-trick
@@ -38,7 +39,7 @@ const withIO = async(inputText: string): Promise<string> => {
   // whatever is written on the input goes to the output
   input.pipe(output)
 
-  const rl = quintRepl(input, output, {}, () => {})
+  const rl = quintRepl(input, output, { verbosity: 2 }, () => {})
 
   // Emit the input line-by-line, as nodejs is printing prompts.
   // TODO: is it a potential source of race conditions in unit tests?
@@ -63,7 +64,7 @@ const withIO = async(inputText: string): Promise<string> => {
 
 // the standard banner, which gets repeated
 const banner =
-`Quint REPL v0.0.3
+`Quint REPL ${version}
 Type ".exit" to exit, or ".help" for more information`
 
 async function assertRepl(input: string, output: string) {
@@ -143,12 +144,12 @@ describe('repl ok', () => {
     )
     const output = dedent(
       `>>> 1 + false
-      |static analysis error: <input>:1:1 - error: [QNT000] Couldn't unify int and bool
+      |static analysis error: error: [QNT000] Couldn't unify int and bool
       |Trying to unify int and bool
-      |Trying to unify (int, int) => int and (int, bool) => t8
+      |Trying to unify (int, int) => int and (int, bool) => t2
       |
-      |1: 1 + false
-      |   ^^^^^^^^^
+      |1 + false
+      |^^^^^^^^^
       |
       |
       |1
@@ -213,15 +214,58 @@ describe('repl ok', () => {
       |>>> .clear
       |
       |>>> n * n
-      |syntax error: <input>:1:1 - error: Failed to resolve name n in definition for __input, in module __repl__
-      |1: n * n
-      |   ^
+      |syntax error: error: Failed to resolve name n in definition for q::input, in module __repl__
+      |n * n
+      |^
       |
-      |syntax error: <input>:1:5 - error: Failed to resolve name n in definition for __input, in module __repl__
-      |1: n * n
-      |       ^
+      |syntax error: error: Failed to resolve name n in definition for q::input, in module __repl__
+      |n * n
+      |    ^
       |
       |
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('change verbosity and track executions', async() => {
+    const input = dedent(
+      `pure def plus(x, y) = x + y
+      |.verbosity=4
+      |plus(2, 3)
+      |`
+    )
+    const output = dedent(
+      `>>> pure def plus(x, y) = x + y
+      |
+      |>>> .verbosity=4
+      |.verbosity=4
+      |>>> plus(2, 3)
+      |5
+      |
+      | [Frame 0]
+      | q::input() => 5
+      | └─ plus(2, 3) => 5
+      |
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('set and get the seed', async() => {
+    const input = dedent(
+      `.seed=4
+      |.seed
+      |.seed=0x1abc
+      |`
+    )
+    const output = dedent(
+      `>>> .seed=4
+      |.seed=4
+      |>>> .seed
+      |.seed=4
+      |>>> .seed=0x1abc
+      |.seed=6844
       |>>> `
     )
     await assertRepl(input, output)
@@ -234,9 +278,9 @@ describe('repl ok', () => {
     )
     const output = dedent(
       `>>> Set(Int)
-      |runtime error: <input>:1:1 - error: Infinite set Int is non-enumerable
-      |1: Set(Int)
-      |   ^^^^^^^^
+      |runtime error: error: Infinite set Int is non-enumerable
+      |Set(Int)
+      |^^^^^^^^
       |
       |<undefined value>
       |
@@ -457,19 +501,19 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('run _test, _testOnce, and _lastTrace', async() => {
+  it('run q::test, q::testOnce, and q::lastTrace', async() => {
     const input = dedent(
       `
       |var n: int
       |action Init = n' = 0
       |action Next = n' = n + 1
       |val Inv = n < 10
-      |_testOnce(5, "Init", "Next", "Inv")
-      |_testOnce(10, "Init", "Next", "Inv")
-      |_test(5, 5, "Init", "Next", "Inv")
-      |_test(5, 10, "Init", "Next", "Inv")
-      |_lastTrace.length()
-      |_lastTrace.nth(_lastTrace.length() - 1)
+      |q::testOnce(5, Init, Next, Inv)
+      |q::testOnce(10, Init, Next, Inv)
+      |q::test(5, 5, Init, Next, Inv)
+      |q::test(5, 10, Init, Next, Inv)
+      |q::lastTrace.length()
+      |q::lastTrace.nth(q::lastTrace.length() - 1)
       |`
     )
     const output = dedent(
@@ -482,18 +526,18 @@ describe('repl ok', () => {
       |
       |>>> val Inv = n < 10
       |
-      |>>> _testOnce(5, "Init", "Next", "Inv")
+      |>>> q::testOnce(5, Init, Next, Inv)
       |true
-      |>>> _testOnce(10, "Init", "Next", "Inv")
+      |>>> q::testOnce(10, Init, Next, Inv)
       |false
-      |>>> _test(5, 5, "Init", "Next", "Inv")
+      |>>> q::test(5, 5, Init, Next, Inv)
       |true
-      |>>> _test(5, 10, "Init", "Next", "Inv")
+      |>>> q::test(5, 10, Init, Next, Inv)
       |false
-      |>>> _lastTrace.length()
+      |>>> q::lastTrace.length()
       |11
-      |>>> _lastTrace.nth(_lastTrace.length() - 1)
-      |{ __repl__::n: 10 }
+      |>>> q::lastTrace.nth(q::lastTrace.length() - 1)
+      |{ n: 10 }
       |>>> `
     )
     await assertRepl(input, output)
@@ -511,6 +555,11 @@ describe('repl ok', () => {
       |
       |>>> Set(2 + 3)
       |Set(5)
+      |   // a multiline comment
+      | /// a doc comment
+      | /* a multiline
+      |    comment
+      |  */
       |`
     )
     const output = dedent(
@@ -527,7 +576,12 @@ describe('repl ok', () => {
       |>>> >>> Set(2 + 3)
       |... Set(5)
       |Set(5)
-      |>>> `
+      |>>>    // a multiline comment
+      |>>>  /// a doc comment
+      |>>>  /* a multiline
+      |...     comment
+      |...   */
+      |... `
     )
     await assertRepl(input, output)
   })

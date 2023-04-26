@@ -14,6 +14,8 @@
  * @module
  */
 
+import { Maybe, just } from '@sweet-monads/maybe'
+
 import { ErrorMessage } from './quintParserFrontend'
 
 /** Generate a string with formatted error reporting for a given error message
@@ -21,21 +23,28 @@ import { ErrorMessage } from './quintParserFrontend'
  * @param text the string read from the source file for which the messages' location info points to
  * @param finder a line-column lib finder object created from text, used as a cached map of indexes
  * @param message the error message to be reported
- * @param lineOffset a number to add to line numbers in error messages,
- *        the default value is 1
+ * @param lineOffset a maybe number to add to line numbers in error messages,
+ *        the default value is `just(1)`.
+ *        No source info is printed if `lineOffset == none()`.
  *
  * @returns a formatted string with error information
  * */
-export function formatError(text: string, finder: any, message: ErrorMessage, lineOffset: number = 1):
+export function formatError(text: string,
+                            finder: any, message: ErrorMessage,
+                            lineOffset: Maybe<number> = just(1)):
   string {
   if (message.locs.length === 0) {
     return `error: ${message.explanation}`
   }
 
   return message.locs.reduce((output, loc) => {
+    // If lineOffset is a number, print the source location.
+    // If lineOfsset is undefined, omit the source location (e.g., in REPL).
     const locString =
-      `${loc.source}:${loc.start.line + lineOffset}:${loc.start.col + 1}`
-    output += `${locString} - error: ${message.explanation}\n`
+      lineOffset.isJust()
+        ? `${loc.source}:${loc.start.line + lineOffset.value}:${loc.start.col + 1} - `
+        : ''
+    output += `${locString}error: ${message.explanation}\n`
 
     const endLine = loc.end ? loc.end.line : loc.start.line
     const endCol = loc.end ? loc.end.col : loc.start.col
@@ -47,15 +56,19 @@ export function formatError(text: string, finder: any, message: ErrorMessage, li
       const lineStartCol = i === loc.start.line ? loc.start.col : 0
       const lineEndCol = i === endLine ? endCol : line.length - 1
 
-      output += formatLine(lineOffset + i, lineStartCol, lineEndCol, line)
+      const lineIndex = lineOffset.map(offs => offs + i)
+      output += formatLine(lineIndex, lineStartCol, lineEndCol, line)
     }
     return output
   }, '')
 }
 
-function formatLine(lineIndex: number, startCol: number, endCol: number, line: string): string {
+function formatLine(lineIndex: Maybe<number>,
+                    startCol: number,
+                    endCol: number,
+                    line: string): string {
   let output = ''
-  const lineNumberIndicator = `${lineIndex}: `
+  const lineNumberIndicator = lineIndex.isJust() ? `${lineIndex.value}: ` : ''
   output += `${lineNumberIndicator}${line}\n`
   // Add margin according to how much space the indicator takes
   output += ' '.repeat(lineNumberIndicator.length)

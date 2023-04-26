@@ -7,16 +7,15 @@ import { substitutionsToString } from '../../src/types/printing'
 import { Substitutions } from '../../src/types/substitutions'
 import { Row } from '../../src/quintTypes'
 import { errorTreeToString } from '../../src/errorTree'
-import { LookupTable, newTable } from '../../src/lookupTable'
-import { defaultValueDefinitions } from '../../src'
+import { LookupTable } from '../../src/lookupTable'
 
-const table: LookupTable = newTable({
-  valueDefinitions: defaultValueDefinitions(),
-  typeDefinitions: [
-    { identifier: 'MY_ALIAS', type: { kind: 'int' } },
-    { identifier: 'MY_UNINTERPRETED' },
-  ],
-})
+const table: LookupTable = new Map([
+  // A type alias (ref 1n)
+  [3n, { kind: 'type', typeAnnotation: { kind: 'int' }, reference: 1n }],
+  // An uniterpreted type (ref 2n)
+  [4n, { kind: 'type', reference: 2n }],
+  [5n, { kind: 'type', reference: 2n }],
+])
 
 describe('solveConstraint', () => {
   it('solves simple equality', () => {
@@ -152,8 +151,8 @@ describe('unify', () => {
   it('returns empty substitution for equal types with alias', () => {
     const result = unify(
       table,
-      parseTypeOrThrow('(Set[b]) => MY_ALIAS'),
-      parseTypeOrThrow('(Set[b]) => int')
+      { kind: 'const', name: 'MY_ALIAS', id: 3n },
+      { kind: 'int' }
     )
 
     assert.isTrue(result.isRight())
@@ -164,8 +163,8 @@ describe('unify', () => {
   it('returns empty substitution for equal uninterpreted types', () => {
     const result = unify(
       table,
-      parseTypeOrThrow('(Set[b]) => MY_UNINTERPRETED'),
-      parseTypeOrThrow('(Set[b]) => MY_UNINTERPRETED')
+      { kind: 'const', name: 'MY_UNINTERPRETED', id: 4n },
+      { kind: 'const', name: 'MY_UNINTERPRETED', id: 5n }
     )
 
     assert.isTrue(result.isRight())
@@ -175,8 +174,8 @@ describe('unify', () => {
   it('returns error when uninterpreted type is unified with other type', () => {
     const result = unify(
       table,
-      parseTypeOrThrow('MY_UNINTERPRETED'),
-      parseTypeOrThrow('int')
+      { kind: 'const', name: 'MY_UNINTERPRETED', id: 4n },
+      { kind: 'int' }
     )
 
     assert.isTrue(result.isLeft())
@@ -190,8 +189,8 @@ describe('unify', () => {
   it('returns error when type alias is not found', () => {
     const result = unify(
       table,
-      parseTypeOrThrow('UNEXISTING_ALIAS'),
-      parseTypeOrThrow('int')
+      { kind: 'const', name: 'UNEXISTING_ALIAS', id: 999n },
+      { kind: 'int' }
     )
 
     assert.isTrue(result.isLeft())

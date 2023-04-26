@@ -1,7 +1,7 @@
 # Lesson 3 - Basic anatomy of a protocol in Quint
 ## 1. Introduction
 
-*23 more steps to the finish line*
+*Progress:*  0%
 
 In this tutorial, we explain the standard structure of a Quint protocol.
 Although Quint does not impose a very rigid structure on protocol designers,
@@ -52,11 +52,11 @@ the details, check [coin.qnt](./coin.qnt).
         
 ## 2. Declare a single module
 
-*22 more steps to the finish line*
+*Progress:*  4%
 
 **Code snippet:**
 
-```scala
+```bluespec
 module coin {
 ```
 
@@ -71,11 +71,11 @@ reuse various parts of your protocol.
         
 ## 3. Declare types
 
-*21 more steps to the finish line*
+*Progress:*  8%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // TYPE DEFINITIONS
 
@@ -112,11 +112,11 @@ different kinds of "integers", when they are referred to via different type alia
         
 ## 4. Declare pure functions
 
-*20 more steps to the finish line*
+*Progress:*  13%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // FUNCTIONAL LAYER:
     // Values and functions that are state-independent
@@ -144,7 +144,7 @@ The main property of pure values is that they always return the same value.
 Pure definitions always return the same value, if they are supplied with the
 same arguments.
 
-To see that no state is needed, evaluate these definitions in the REPL
+To see that no state is needed, evaluate these definitions in REPL
 (read-evaluate-print-loop):
 
             
@@ -180,11 +180,11 @@ annotations will help you in figuring out the issue.
             
 ## 5. Declare the protocol parameters
 
-*19 more steps to the finish line*
+*Progress:*  17%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // STATE MACHINE:
     // State-dependent definitions and actions
@@ -215,7 +215,9 @@ still make sense. The typical parameters are:
 
 For this purpose, Quint offers `const` declarations. You can see one of them
 in the commented out section of the code above. You may be wondering, what is
-the difference between `const` and `pure val`. Both declare a value that stays the same throughout the execution of a computation, but the time at which they are bound to values differs:
+the difference between `const` and `pure val`. They mean to express the same
+concept: A value that stays the same for all computations. However, they differ
+in the time when they are bound to a value:
 
  - The `pure val` values are immediately defined via an expression in the
    right-hand side.
@@ -223,7 +225,7 @@ the difference between `const` and `pure val`. Both declare a value that stays t
  - The `const` values are first declared and later they are substituted
    with actual values via an `instance` declaration.
 
-**Note:** Constant declarations are not fully supported yet. They will be available
+Constant declarations are not fully supported yet. They will be available
 as soon as the issue [#528](https://github.com/informalsystems/quint/issues/528)
 is closed.
 
@@ -232,11 +234,11 @@ in order to be able to iterate on the protocol specification quickly.
         
 ## 6. Declare the protocol state
 
-*18 more steps to the finish line*
+*Progress:*  21%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // the minter's address
     var minter: Addr
@@ -256,7 +258,8 @@ a state of the protocol. In the above code, we introduce two such variables:
    The type of this variable is `Addr -> UInt`, which means a map from
    values of type `Addr` to values of type `UInt`.
 
-Variable definitions always require a type.
+Variable definitions always require type. Otherwise, it may be too hard
+for the type checker to infer the types of the state variables.
 
 If you compare the above variable definitions to the relevant variable
 declarations in the Solidity contract, you should see that our variable
@@ -272,11 +275,11 @@ of Solidity:
         
 ## 7. Declare operators over states
 
-*17 more steps to the finish line*
+*Progress:*  26%
 
 **Code snippet:**
 
-```scala
+```bluespec
     // a handy definition to query the whole state in REPL at once
     val state = { minter: minter, balances: balances }
 ```
@@ -287,8 +290,8 @@ It is often convenient to define a few helper operators.
 
 We start with the definition of `state` that represents the entire
 state as a record. This is what we do in the above code with the definition of
-`state`. Notice that the definition of `state` is prefixed with `val`, not `pure val`:
-since `state` accesses state variables, is it impure.
+`state`. Notice that the definition of `state` is prefixed with `val`, not `pure val`.
+Since `state` accesses state variables is it impure.
 
 You can try to evaluate the definition of `state` in REPL right away:
 
@@ -306,11 +309,11 @@ do that a few steps later.
             
 ## 8. Declare `require` and `totalSupply`
 
-*16 more steps to the finish line*
+*Progress:*  30%
 
 **Code snippet:**
 
-```scala
+```bluespec
     
     // a helper function to make preconditions similar to Solidity
     def require(cond: bool): bool = cond
@@ -355,11 +358,11 @@ pieces:
         
 ## 9. Declare an initializer `init`
 
-*15 more steps to the finish line*
+*Progress:*  34%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // state initialization
     action init: bool = {
@@ -414,11 +417,11 @@ in the reference manual.
         
 ## 10. Assign initial values to the state variables
 
-*14 more steps to the finish line*
+*Progress:*  39%
 
 **Code snippet:**
 
-```scala
+```bluespec
         all {
             minter' = sender,
             balances' = ADDR.mapBy(a => 0)
@@ -457,11 +460,11 @@ Hint: use `if (cond) value1 else value2`.
             
 ## 11. Defining the action `send`
 
-*13 more steps to the finish line*
+*Progress:*  43%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // Sends an amount of newly created coins to an address.
     // Can only be called by the minter, that is, the contract creator.
@@ -522,11 +525,11 @@ Do you understand what happened in this case?
             
 ## 12. Defining the action `send`
 
-*12 more steps to the finish line*
+*Progress:*  47%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // Sends an amount of existing coins from any caller (sender)
     // to a receiver's address.
@@ -570,11 +573,11 @@ echo 'init\n mint(minter, "bob", 2023)\n send("bob", "eve", 1024)\n state' | qui
 
 ## 13. Defining a protocol step
 
-*11 more steps to the finish line*
+*Progress:*  52%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // All possible behaviors of the protocol in one action.
     action step: bool = {
@@ -613,11 +616,11 @@ not to stop here! In the next steps, we show you the real magic of Quint.
         
 ## 14. Expected properties
 
-*10 more steps to the finish line*
+*Progress:*  56%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // INVARIANTS AND TEMPORAL PROPERTIES
 ```
@@ -631,11 +634,11 @@ protocol invariants and temporal properties.
         
 ## 15. Defining the most basic invariant
 
-*9 more steps to the finish line*
+*Progress:*  60%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // One of the simplest properties is that all balances are within the uint range.
     // While it is automatically guaranteed by Solidity, our specification is using
@@ -671,11 +674,11 @@ whereas the latter are actually called *invariants*.
             
 ## 16. Defining the total supply invariant
 
-*8 more steps to the finish line*
+*Progress:*  65%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // It is desirable that the total supply of tokens fits into UInt.
     // Otherwise, a blockchain implementation or the user interface
@@ -697,11 +700,11 @@ initialize it with 0 and increase it in `mint` with the `amount` passed to `mint
         
 ## 17. Temporal properties
 
-*7 more steps to the finish line*
+*Progress:*  69%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // The temporal property that says the following:
     // Assume that we want to check the temporal property `NoSupplyOverflow`
@@ -724,11 +727,11 @@ with the qualifier `temporal`.
         
 ## 18. Tests
 
-*6 more steps to the finish line*
+*Progress:*  73%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // TESTS
 
@@ -771,11 +774,11 @@ prior minting. What is this value?
             
 ## 19. A single data point test
 
-*5 more steps to the finish line*
+*Progress:*  78%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // `mint`, then `send`
     run mintSendTest = {
@@ -813,18 +816,18 @@ see the next step.
             
 ## 20. Testing with non-deterministic inputs
 
-*4 more steps to the finish line*
+*Progress:*  82%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // Mint some coins for Eve and Bob.
     // Test that Eve can always send coins to Bob,
     // if she has enough on her balance.
     // This test may fail sometimes. Do you see why?
     // If not, execute it multiple times in REPL, until it fails.
-    run mintTwiceThenSendTest = {
+    run mintTwiceThenSendError = {
         // non-deterministically pick some amounts to mint and send
         nondet mintEve = 0.to(MAX_UINT).oneOf()
         nondet mintBob = 0.to(MAX_UINT).oneOf()
@@ -849,7 +852,7 @@ see the next step.
 Instead of testing a sequence of transactions for a carefully crafted
 single input, we could fix a sequence of transactions and let the computer
 find the inputs that fail the test. This is exactly what we are doing in
-the above test `mintTwiceThenSendTest`. The test non-deterministically
+the above test `mintTwiceThenSendError`. The test non-deterministically
 chooses the amounts of coins to mint and send and then executes the actions
 `mint`, `mint`, and `send`. As the values are chosen non-deterministically,
 we know that some of the inputs should fail `send`. Our hypothesis is that
@@ -861,7 +864,7 @@ Let's run this test:
             
 
 ```sh
-echo 'mintTwiceThenSendTest' | quint -r coin.qnt::coin
+echo 'mintTwiceThenSendError' | quint -r coin.qnt::coin
 ```
 
 
@@ -870,31 +873,42 @@ If you lucky, it fails right away. If it does not fail, run it multiple times,
 until it fails. To see why it failed, evaluate `state` after executing
 the test. Do you understand why our hypothesis was wrong?
 
-**Exercise:** Fix the condition in `mintTwiceThenSendTest`,
+**Exercise:** Fix the condition in `mintTwiceThenSendError`,
 so that the test never fails.
 
-If you carefully look at `mintTwiceThenSendTest`, you will see that it is still
+If you carefully look at `mintTwiceThenSendError`, you will see that it is still
 a single data point test, though the data point (the inputs) are chosen
 non-deterministically every time we run the test. In fact, REPL implements
 non-determinism via random choice.
 
 If you do not want to sit the whole day and run the test, you could integrate
 it into continuous integration, so it runs from time to time for different
-inputs. Also, we had to fix the sequence of actions in our test. We can do
+inputs. Quint comes with the command `test` that is designed for exactly this
+purpose. Try the command below. Most likely, it would find a violation
+after just a few tests.
+          
+
+```sh
+quint test --match mintTwiceThenSendError coin.qnt
+```
+
+
+Also, we had to fix the sequence of actions in our test. We can do
 better with Quint.
 
             
 ## 21. Testing with non-deterministic inputs and control
 
-*3 more steps to the finish line*
+*Progress:*  86%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // to run the random simulator for 10000 executions, each up to 10 actions,
-    // execute the following in REPL:
-    // _test(10000, 10, "init", "step", "totalSupplyDoesNotOverflowInv")
+    // execute the following in the command line:
+    //
+    // $ quint run --invariant totalSupplyDoesNotOverflowInv coin.qnt
 ```
 
 
@@ -910,26 +924,28 @@ future. You can try it right away:
             
 
 ```sh
-echo '_test(10000, 10, "init", "step", "totalSupplyDoesNotOverflowInv")' | quint -r coin.qnt::coin
+quint run --invariant totalSupplyDoesNotOverflowInv coin.qnt
 ```
 
 
 
-The above command in REPL randomly produces sequences, starting with `init`
-and continuing with `step`, up to 10 actions. It checks the invariant
-`totalSupplyDoesNotOverflowInv` after every step. If the invariant is violated,
-the random search stops and returns `false`. If no invariant violaion is found,
-the search returns `true` after enumerating the specified number of runs,
-which is 10000 in our example.
-
-In our example, the search often finds an error. If it did not find an error,
-run the search again. Once `_test` returned `false`, you can print the trace
-leading to the bad state by evaluating `_lastTrace` in REPL.
+The above command in REPL randomly produces sequences of steps,
+starting with `init` and continuing with `step`, up to 20 steps. It checks the
+invariant `totalSupplyDoesNotOverflowInv` after every step. If the invariant is
+violated, the random search stops and returns `false`. If no invariant violaion
+is found, the search returns `true` after enumerating the specified number of runs,
+which is 10000 in our example. The search parameters such as the number of
+runs and steps can be tuned. Check the options of `run`:
 
             
+
+```sh
+quint run --help
+```
+
 ## 22. Does random testing always find bugs?
 
-*2 more steps to the finish line*
+*Progress:*  91%
 
 
 To be honest, our example is relatively simple, and we were quite lucky
@@ -949,7 +965,7 @@ Although the above tricks may help you in detecting some bugs, it is well
 known that there is always a probability of missing a bug with random search.
 
 If you are looking for better guarantees of correctness, Quint will be soon
-integrate with the
+integrated with the
 [Apalache model checker](https://github.com/informalsystems/apalache).
 The model checker looks for counterexamples more exhaustively, by solving
 equations. In some cases, it may even give you a guarantee that there is no bug,
@@ -958,7 +974,7 @@ if it has not found any.
         
 ## 23. Suming it up
 
-*1 more step to the finish line*
+*Progress:*  95%
 
 
 This was a long tutorial. We have specified the whole protocol,

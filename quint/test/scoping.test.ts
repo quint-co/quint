@@ -28,14 +28,14 @@ describe('treeFromModule', () => {
     'type MY_TYPE = int',
     'assume _ = N > 1',
     'import M.*',
-    'module A1 = A(x = 33)',
+    'import A(x = 33) as A1',
     'val f = S.filter(x => x + 1)',
     'def l = val x = 2 { x }',
   ])
 
   it('builds a scope tree', () => {
     assert.deepEqual(treeFromModule(quintModule), {
-      value: 26n,
+      value: 28n,
       children: [
         { value: 2n, children: [] },
         { value: 4n, children: [] },
@@ -53,22 +53,28 @@ describe('treeFromModule', () => {
           ],
         },
         { value: 11n, children: [] },
-        { value: 13n, children: [{ value: 12n, children: [] }] },
         {
-          value: 20n,
+          value: 14n, children: [
+            { value: 13n, children: [] },
+            { value: 12n, children: [] },
+          ],
+        },
+        {
+          value: 22n,
           children: [
             {
-              value: 19n,
+              value: 21n,
               children: [
-                { value: 14n, children: [] },
+                { value: 15n, children: [] },
                 {
-                  value: 18n,
+                  value: 20n,
                   children: [
+                    { value: 16n, children: [] },
                     {
-                      value: 17n,
+                      value: 19n,
                       children: [
-                        { value: 15n, children: [] },
-                        { value: 16n, children: [] },
+                        { value: 17n, children: [] },
+                        { value: 18n, children: [] },
                       ],
                     },
                   ],
@@ -78,18 +84,18 @@ describe('treeFromModule', () => {
           ],
         },
         {
-          value: 25n,
+          value: 27n,
           children: [
             {
-              value: 24n,
+              value: 26n,
               children: [
                 {
-                  value: 22n,
+                  value: 24n,
                   children: [
-                    { value: 21n, children: [] },
+                    { value: 23n, children: [] },
                   ],
                 },
-                { value: 23n, children: [] },
+                { value: 25n, children: [] },
               ],
             },
           ],

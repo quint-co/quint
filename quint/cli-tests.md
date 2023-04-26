@@ -70,12 +70,17 @@ Temporarily disabled.
 ### OK on parse Tendermint
 
 <!-- !test check Tendermint -->
-    quint parse ../examples/cosmos/tendermint/TendermintAcc_004.qnt
+    quint parse ../examples/cosmos/tendermint/TendermintAcc005.qnt
 
 ### OK on typecheck Tendermint
 
 <!-- !test check Tendermint - Types & Effects -->
-    quint typecheck ../examples/cosmos/tendermint/TendermintAcc_004.qnt
+    quint typecheck ../examples/cosmos/tendermint/TendermintAcc005.qnt
+
+### OK on test Tendermint
+
+<!-- !test check Tendermint - Test -->
+    quint test --max-samples=100 --main InstanceTests ../examples/cosmos/tendermint/TendermintAcc005.qnt
 
 ### OK on parse imports
 
@@ -126,6 +131,16 @@ Temporarily disabled.
 
 <!-- !test check TicTacToe - Types & Effects -->
     quint typecheck ../examples/puzzles/tictactoe/tictactoe.qnt
+
+### OK on parse ics20 bank
+
+<!-- !test check ics20 bank -->
+    quint parse ../examples/cosmos/ics20/bank.qnt
+
+### OK on typecheck ics20 bank
+
+<!-- !test check ics20 bank - Types & Effects -->
+    quint typecheck ../examples/cosmos/ics20/bank.qnt
 
 ### OK on parse ics23
 
@@ -202,12 +217,86 @@ Temporarily disabled.
 <!-- !test check coin - Types & Effects-->
     quint typecheck ../examples/solidity/Coin/coin.qnt
 
-### OK on typecheck SimpleAuctionNonComposable.qnt
+### OK on test SimpleAuctionNonComposable.qnt
 
-<!-- !test check SimpleAuctionNonComposable - Types & Effects-->
-    quint typecheck ../examples/solidity/SimpleAuction/SimpleAuctionNonComposable.qnt
+<!-- !test check SimpleAuctionNonComposable - Syntax/Types & Effects/Unit tests -->
+    quint test --main=SimpleAuction ../examples/solidity/SimpleAuction/SimpleAuctionNonComposable.qnt
+
+### OK on test nondet.qnt
+
+<!-- !test check nondet - Syntax/Types & Effects/Unit tests -->
+    quint test --main=nondetEx ../examples/language-features/nondet.qnt
+
+### OK on test lottery.qnt
+
+<!-- TODO: Spec test is erroneous https://github.com/informalsystems/quint/issues/775 -->
+<!-- check lottery - Syntax/Types & Effects/Unit tests -->
+<!--     quint test --main=lotteryTests ../examples/solidity/icse23-fig7/lottery.qnt -->
+
+### OK on test erc20.qnt::mempool
+
+<!-- !test check erc20::mempool - Syntax/Types & Effects/Unit tests -->
+    quint test --main=mempool ../examples/solidity/ERC20/erc20.qnt
+
+### OK on test erc20.qnt::erc20Tests
+
+<!-- !test check erc20::erc20Tests - Syntax/Types & Effects/Unit tests -->
+    quint test --main=erc20Tests ../examples/solidity/ERC20/erc20.qnt
+
+### OK on test ics20 bank
+
+<!-- !test check ics20 bank - Syntax/Types & Effects/Unit tests -->
+    quint test --main bankTests ../examples/cosmos/ics20/bank.qnt
+
+### OK on test ics20
+<!-- !test check ics20 - Syntax/Types & Effects/Unit tests -->
+    quint test --main ics20Test ../examples/cosmos/ics20/ics20.qnt
+
+### OK on test importFrom
+
+<!-- !test check importFrom - Syntax/Types & Effects/Unit tests -->
+    quint test ../examples/language-features/importFrom.qnt
+
+### OK on run prisoners
+
+<!-- !test check prisoners - Syntax/Types & Effects/Invariants -->
+    quint run --main=prisoners3 --invariant='countInv and safetyInv' \
+    ../examples/puzzles/prisoners/prisoners.qnt
 
 ### OK on typecheck SuperSpec.qnt
 
 <!-- !test check SuperSpec - Types & Effects-->
     quint typecheck testFixture/SuperSpec.qnt
+
+### OK REPL tutorial
+
+The REPL tutorial is reproducible in REPL.
+
+<!-- !test check REPL tutorial -->
+```
+if [ "$UNAME" == "Linux" -o "$UNAME" == "Darwin" ]; then
+  quint -q -r ../tutorials/repl/kettle.qnt::kettle <../tutorials/repl/replTestIn.txt \
+    | diff - ../tutorials/repl/replTestOut.txt
+fi
+# else diff does not work as expected on windows
+```
+
+### OK on test basicSpells
+
+<!-- !test check basicSpells - Syntax/Types & Effects/Unit tests -->
+    quint test ../examples/spells/basicSpells.qnt
+
+### OK on test commonSpells
+
+<!-- !test check commonSpells - Syntax/Types & Effects/Unit tests -->
+    quint test ../examples/spells/commonSpells.qnt
+
+### OK on test rareSpells
+
+<!-- !test check rareSpells - Syntax/Types & Effects/Unit tests -->
+    quint test ../examples/spells/rareSpells.qnt
+
+### OK on test bug843pureValCache
+
+<!-- !test check bug843pureValCache - Syntax/Types & Effects/Unit tests -->
+    quint test ./testFixture/bug843pureValCache.qnt

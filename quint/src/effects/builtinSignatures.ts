@@ -115,7 +115,7 @@ function propagationWithLambda(kinds: ComponentKind[]): ((arity: number) => Effe
   }
 }
 
-const standardPropagation = propagateComponents(['read', 'temporal'])
+export const standardPropagation = propagateComponents(['read', 'temporal'])
 
 const literals = ['Nat', 'Int', 'Bool'].map(name => ({ name, effect: toScheme({ kind: 'concrete', components: [] }) }))
 const booleanOperators = [
@@ -127,15 +127,10 @@ const booleanOperators = [
 ]
 
 const setOperators = [
-  {
-    name: 'guess',
-    effect: parseAndQuantify('(Read[r1], (Read[r1]) => Read[r2] & Update[u]) => Read[r1, r2] & Update[u]'),
-  },
   { name: 'exists', effect: propagationWithLambda(['read', 'temporal'])(2) },
   { name: 'forall', effect: propagationWithLambda(['read', 'temporal'])(2) },
   { name: 'in', effect: standardPropagation(2) },
   { name: 'contains', effect: standardPropagation(2) },
-  { name: 'notin', effect: standardPropagation(2) },
   { name: 'union', effect: standardPropagation(2) },
   { name: 'intersect', effect: standardPropagation(2) },
   { name: 'exclude', effect: standardPropagation(2) },

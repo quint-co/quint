@@ -12,7 +12,7 @@
  * @module
  */
 
-import { LookupTableByModule } from "./lookupTable"
+import { LookupTable } from "./lookupTable"
 import { OpQualifier, QuintModule } from "./quintIr"
 import { TypeScheme } from "./types/base"
 import { TypeInferrer } from "./types/inferrer"
@@ -51,7 +51,7 @@ export class QuintAnalyzer {
   private errors: [bigint, QuintError][] = []
   private output: AnalyzisOutput = { types: new Map(), effects: new Map(), modes: new Map() }
 
-  constructor(lookupTable: LookupTableByModule) {
+  constructor(lookupTable: LookupTable) {
     this.typeInferrer = new TypeInferrer(lookupTable)
     this.effectInferrer = new EffectInferrer(lookupTable)
     this.multipleUpdatesChecker = new MultipleUpdatesChecker()

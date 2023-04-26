@@ -7,10 +7,6 @@ module Math {
 }
 
 module A {
-  // we cannot access sqr here, as we have not imported it yet
-  // val test_sqr_before = sqr(3) == 9
-  //                       ^^^ error: sqr is not found
-
   // import all names from Math, namely, sqr and pow
   import Math.*
 
@@ -23,21 +19,23 @@ module B {
 
   // Import introduces names in the module lookup table,
   // but it is not transitive. Hence, we cannot access sqr here.
-  // val test_sqr = sqr(2) == 4
-  //                ^^^ error: sqr is not available
+  // val test_test_sqr = sqr(2) == 4
+  //                     ^^^^^^ error: Failed to resolve name sqr in definition for test_test_sqr, in module B
 
   // however, we can access test_sqr
   val test_test_sqr = test_sqr
+
+  // To enable transitivity, we need to export the names that we want to make
+  // available when importing the current module
+  export A.*
 }
 
-// module C is stateful, it cannot be imported
 module C {
-  var n: int
-}
+  import B.*
 
-module D {
-  // import C.*
-  //        ^ error: C is stateful
+  // Now we can access all definitions from B, including the definitions from A
+  // (which were exported by B)
+  val test_exported = test_sqr
 }
 
 // demonstrate that the same module may be imported via different paths
@@ -61,4 +59,36 @@ module test {
   def quadShouldDoubleTwice = {
     Set(1, 2, 3).forall(i => quad(i) == double(i) + double(i))
   }
+}
+
+// Qualified imports and exports
+module E {
+  var x: int
+  action init = x' = 1
+
+  // Export Math as a qualified name
+  // to be accessed by E::Math
+  export Math
+}
+
+module F {
+  var y: int
+  action init = y' = 2
+
+  // Export basics qualified as ExportedBasics
+  // to be accessed by F::ExportedBasics
+  export basics as ExportedBasics
+}
+
+module G {
+  import E
+  import F as MyF
+
+  action init = all {
+    E::init,
+    MyF::init
+  }
+
+  val test_exported1 = E::Math::pow(2, 2) == 4
+  val test_exported2 = MyF::ExportedBasics::double(2) == 4
 }

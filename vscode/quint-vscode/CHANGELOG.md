@@ -14,6 +14,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## v0.3.0 -- 2023-04-03
+
+### Added
+### Changed
+
+- Update quint from `0.2.1` to `0.3.0`. See #768.
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.2.1 -- 2023-03-24
+
+### Added
+
+- Go to definition now works for parameters (#711)
+- Go to definition now works for type aliases (#726)
+
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.2.0 -- 2023-03-09
+
+### Added
+### Changed
+
+ - Updated compatible quint version, which includes breaking changes (#698).
+
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 ## v0.1.3 -- 2023-02-22
 
 ### Added

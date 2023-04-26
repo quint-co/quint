@@ -43,7 +43,7 @@ export type ErrorCode =
   | 'QNT007'
   /* QNT200: Mode error */
   | 'QNT200'
-  /* QNT201: Instance overrides must be pure values */
+  /* QNT201: Instance overrides must be pure */
   | 'QNT201'
   /* QNT202: Multiple updates of the same variable */
   | 'QNT202'
@@ -53,6 +53,8 @@ export type ErrorCode =
   | 'QNT405'
   /* QNT406: Instantiation error */
   | 'QNT406'
+  /* QNT407: Cannot import self */
+  | 'QNT407'
 
 /* Additional data for a Quint error */
 export interface QuintErrorData {

@@ -1,7 +1,7 @@
 # Lesson 2 - Integers
 ## 1. Introduction
 
-*9 more steps to the finish line*
+*Progress:*  0%
 
 This lesson teaches you the basics of operations over integers.
 If you have programming experience, you know most of these operators. 
@@ -10,11 +10,11 @@ Do not skip this lesson, as some of the operators may still surprise you.
         
 ## 2. Integer literals
 
-*8 more steps to the finish line*
+*Progress:*  11%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // 0 is an integer literal
     pure val int0 = 0
@@ -41,11 +41,11 @@ the tutorial on sets.
         
 ## 3. Integer exponentiation
 
-*7 more steps to the finish line*
+*Progress:*  22%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // i^j is the integer exponentiation, that is,
     // `i` multiplied by itself `j - 1` times
@@ -120,11 +120,11 @@ echo "0^(-2)" | quint
 
 ## 4. Integer addition
 
-*6 more steps to the finish line*
+*Progress:*  33%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // i + j is the integer addition
     pure def myAdd(i, j) = i + j 
@@ -162,11 +162,11 @@ echo "(11 + 17) + 19 == 11 + (17 + 19)" | quint
 
 ## 5. Integer subtraction
 
-*5 more steps to the finish line*
+*Progress:*  44%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // i - j is the integer subtraction
     pure def mySub(i, j) = i - j 
@@ -201,11 +201,11 @@ echo "11 + 13 - 17" | quint
           
 ## 6. Integer multiplication
 
-*4 more steps to the finish line*
+*Progress:*  55%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // i * j is the integer multiplication
     pure def myMul(i, j) = i * j 
@@ -241,11 +241,11 @@ echo "(11 * 17) * 19 == 11 * (17 * 19)" | quint
 
 ## 7. Integer division and remainder
 
-*3 more steps to the finish line*
+*Progress:*  66%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // i / j is the integer division
     pure def myDiv(i, j) = i / j
@@ -296,11 +296,11 @@ echo "(2^64 - 123) % 2^63" | quint
           
 ## 8. Integer comparison
 
-*2 more steps to the finish line*
+*Progress:*  77%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // `i > j` is true if and only if `i` is greater than `j`
     pure def myGreaterThan(i, j) = i > j
@@ -408,11 +408,11 @@ echo "10 != 11" | quint
 
 ## 9. Integer negation
 
-*1 more step to the finish line*
+*Progress:*  88%
 
 **Code snippet:**
 
-```scala
+```bluespec
 
     // -i is the integer negation
     pure def myUnaryMinus(i) = -i

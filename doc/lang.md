@@ -1135,9 +1135,6 @@ e.in(S)
 in(e, S)
 S.contains(e)
 contains(S, e)
-// set non-membership: e \notin S
-e.notin(S)
-notin(e, S)
 // union: S \union T
 S.union(T)
 union(S, T)
@@ -1500,12 +1497,8 @@ select(l, Test)
 l.select(e => P)
 // Left fold. There is no standard operator for that in TLA+,
 // but you can define it with a recursive operator.
-l.foldl(init, (i, v => e))
-foldl(l, init, (i, v => e))
-// Right fold. There is no standard operator for that in TLA+,
-// but you can define it with a recursive operator.
-l.foldr(init, (i, v => e))
-foldr(l, init, (i, v => e))
+l.foldl(init, ((accumulator, v) => e))
+foldl(l, init, ((accumulator, v) => e))
 ```
 
 *Mode:* Stateless, State. Other modes are not allowed.

@@ -16,3 +16,7 @@ export interface TypeScheme {
 }
 
 export type Signature = (_arity: number) => TypeScheme
+
+export function toScheme(type: QuintType): TypeScheme {
+  return { typeVariables: new Set([]), rowVariables: new Set([]), type }
+}

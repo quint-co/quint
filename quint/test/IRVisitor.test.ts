@@ -13,7 +13,7 @@ describe('walkModule', () => {
     'type MY_TYPE = int',
     'assume _ = N > 1',
     'import M.*',
-    'module A1 = A(x = "rainbow")',
+    'import A(x = "rainbow") as A1',
     'val f = S.filter(x => x + 1)',
     'def l = val x = false { x }',
   ])
@@ -90,7 +90,7 @@ describe('walkModule', () => {
       'type MY_TYPE = int',
       'assume _ = igt(N, 1)',
       'import M.*',
-      'module A1 = A(x = "rainbow")',
+      'import A(x = "rainbow") as A1',
       'val f = filter(S, (x => iadd(x, 1)))',
       'def l = val x = false { x }',
       'val x = false', // From the let definition
@@ -102,7 +102,7 @@ describe('walkModule', () => {
       'type MY_TYPE = int',
       'assume _ = igt(N, 1)',
       'import M.*',
-      'module A1 = A(x = "rainbow")',
+      'import A(x = "rainbow") as A1',
       'val f = filter(S, (x => iadd(x, 1)))',
       'val x = false', // From the let definition
       'def l = val x = false { x }',
@@ -320,7 +320,7 @@ describe('walkModule', () => {
       }
 
       const enteredDefinitions = [
-        'module A1 = A(x = "rainbow")',
+        'import A(x = "rainbow") as A1',
       ]
 
       const exitedDefinitions = enteredDefinitions
@@ -352,7 +352,7 @@ describe('walkModule', () => {
   type MY_TYPE = int
   assume _ = igt(N, 1)
   import M.*
-  module A1 = A(x = "rainbow")
+  import A(x = "rainbow") as A1
   val f = filter(S, (x => iadd(x, 1)))
   def l = val x = false { x }
 }`,

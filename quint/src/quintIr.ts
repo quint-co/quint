@@ -43,7 +43,7 @@ interface WithTypeAnnotation {
   typeAnnotation: QuintType
 }
 
-interface WithOptionalDoc {
+export interface WithOptionalDoc {
   /** optionally, docstrings for the operator */
   doc?: string,
 }
@@ -118,11 +118,16 @@ export interface QuintApp extends WithId {
   args: QuintEx[],
 }
 
+export interface QuintLambdaParameter extends WithId {
+  /** The name of the formal parameter */
+  name: string,
+}
+
 export interface QuintLambda extends WithId {
   /** Expressions kind ('lambda' -- operator abstraction) */
   kind: 'lambda',
-  /** Identifiers for the formal parameters */
-  params: string[],
+  /** The formal parameters */
+  params: QuintLambdaParameter[],
   /** The qualifier for the defined operator */
   qualifier: OpQualifier,
   /** The definition body */
@@ -211,21 +216,40 @@ export function isTypeAlias(def: any): def is QuintTypeAlias {
 export interface QuintImport extends WithId {
   /** definition kind ('import') */
   kind: 'import',
-  /** name to import, or '*' to denote all */
-  name: string,
-  /** path to the module, e.g., Foo.Bar */
-  path: string
+  /** path to the module, e.g., Foo in import Foo.* */
+  protoName: string
+  /** name to import, or '*' to denote all. Undefined when a qualifier is present. */
+  defName?: string,
+  /** a qualifier, e.g. F in import Foo as F */
+  qualifiedName?: string,
+  /**
+   * An optional string that specifies the source of the import, e.g., a filename.
+   * If the source is not specified, then the definitions are imported from the same
+   * source, where the 'import' definition is met.
+   */
+  fromSource?: string,
+}
+
+export interface QuintExport extends WithId {
+  /** definition kind ('export') */
+  kind: 'export',
+  /** path to the module, e.g., Foo in import Foo.* */
+  protoName: string
+  /** name to import, or '*' to denote all. Undefined when a qualifier is present. */
+  defName?: string,
+  /** a qualifier, e.g. F in import Foo as F */
+  qualifiedName?: string,
 }
 
 export interface QuintInstance extends WithId {
   /** definition kind ('instance') */
   kind: 'instance',
   /** instance name */
-  name: string,
+  qualifiedName?: string,
   /** the name of the module to instantiate */
   protoName: string,
   /** how to override constants and variables */
-  overrides: [string, QuintEx][],
+  overrides: [QuintLambdaParameter, QuintEx][],
   /** whether to use identity substitution on missing names */
   identityOverride: boolean
 }
@@ -240,6 +264,7 @@ export type QuintDef = (
   | QuintAssume
   | QuintTypeDef
   | QuintImport
+  | QuintExport
   | QuintInstance
 ) & WithOptionalDoc
 

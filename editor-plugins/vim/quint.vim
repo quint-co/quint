@@ -29,7 +29,7 @@ syn region quintComment start="/\*" end="\*/" fold
 syn match quintIdent "[a-zA-Z_][a-zA-Z0-9_]*"
 
 " numbers and strings
-syn match quintNumber '-\?\(0x[0-9a-fA-F]\([0-9a-fA-F]\|_[0-9a-fA-F]\)*\|0\|[1-9]([0-9]\|_[0-9])*\)'
+syn match quintNumber '-\?\(0x[0-9a-fA-F]\([0-9a-fA-F]\|_[0-9a-fA-F]\)*\|0\|[1-9]\([0-9]\|_[0-9]\)*\)'
 syn region quintString start='"' end='"'
 
 " types
@@ -46,11 +46,11 @@ syn keyword quintBoolValue false true
 syn keyword quintCond if else
 
 " declarations
-syn keyword quintDecl module import const var val def pure nondet action temporal assume run
+syn keyword quintDecl module import from export const var val def pure nondet action temporal assume run
 
 " standard operators
 syn keyword quintStd Set List Map Rec Tup
-syn keyword quintStd not and or iff implies all any
+syn keyword quintStd not and or iff implies all any as
 
 " curly braces
 syn region quintBlock start="{" end="}" fold transparent contains=ALLBUT,quintCurlyError
