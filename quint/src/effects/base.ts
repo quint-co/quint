@@ -31,7 +31,7 @@ export interface ConcreteEffect { kind: 'concrete', components: EffectComponent[
 /* Arrow effects for expressions with effects depending on parameters */
 export interface ArrowEffect { kind: 'arrow', params: Effect[], result: Effect }
 
-/* A variable representing some effect */
+/* A variable standing for an unknown effect */
 export interface EffectVariable { kind: 'variable', name: string }
 
 /*
@@ -44,16 +44,16 @@ export type Effect =
   | EffectVariable
 
 /*
- * An effect scheme, listing which effect variables (names referring to effects)
- * and entity variables (names refering to entities) are universally quantified
+ * An effect scheme, listing which effect variables (represented by the names of effect variables)
+ * and entity variables (represented by the names of entity variables) are universally quantified
  * in the effect
  */
 export type EffectScheme = {
   /* The effect */
   effect: Effect,
-  /* Universally quantified names refering to Effects */
+  /* The names of universally quantified Effect variables */
   effectVariables: Set<string>,
-  /* Universally quantified names refering to Entities */
+  /* The names of universally quantified Entity variables */
   entityVariables: Set<string>,
 }
 
@@ -61,13 +61,13 @@ export type EffectScheme = {
 export interface StateVariable {
   /* The variable name */
   name: string,
-  /* The id of the expression on which the state variable ocurred */
+  /* The id of the expression in which the state variable occurred */
   reference: bigint
 }
 
 /*
- * The Entity an effect acts upon. Either a list of state variables, a
- * variable or a combination of other entities.
+ * The Entity an effect acts upon. Either a list of state variables, an
+ * entity variable or a combination of other entities.
  */
 export type Entity =
   /* A list of state variables */

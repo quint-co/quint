@@ -69,26 +69,29 @@ export class EffectInferrer implements IRVisitor {
     this.location = `Inferring effect for ${expressionToString(e)}`
   }
 
-  /* { kind: 'const', identifier: c } ∈ Γ
-   * ------------------------------------- (NAME-CONST)
-   *       Γ ⊢ c: Pure
-   */
+
   exitConst(def: QuintConst) {
     const pureEffect: Effect = { kind: 'concrete', components: [] }
 
     if (def.typeAnnotation.kind === 'oper') {
       // Operators need to have arrow effects of proper arity
+
+      // type annotation for c is oper with n args
+      // --------------------------------------------------------(CONST - OPER)
+      // Γ ⊢ const c: propagateComponents(['read', 'temporal'])(n)
       this.addToResults(def.id, right(standardPropagation(def.typeAnnotation.args.length)))
       return
     }
 
+    //   type annotation for c is not oper
+    // ------------------------------------- (CONST-VAL)
+    //       Γ ⊢ const c: Pure
     this.addToResults(def.id, right(toScheme(pureEffect)))
   }
 
-  /*  { kind: 'var', identifier: v } ∈ Γ
-   * ------------------------------------ (NAME-VAR)
-   *          Γ ⊢ v: Read[v]
-   */
+
+  // -------------------------------------- (VAR)
+  //       Γ ⊢ var name: Read[name]
   exitVar(def: QuintVar) {
     const effect: Effect = {
       kind: 'concrete', components: [{ kind: 'read', entity: { kind: 'concrete', stateVariables: [{ name: def.name, reference: def.id }] } }],
@@ -96,10 +99,9 @@ export class EffectInferrer implements IRVisitor {
     this.addToResults(def.id, right(toScheme(effect)))
   }
 
-  /* { identifier: op, effect: E } ∈ Γ
-   * -------------------------------------- (NAME-OP)
-   *           Γ ⊢ op: E
-   */
+  //   { identifier: name }: E ∈ Γ
+  // ----------------------------- (NAME)
+  //         Γ ⊢ name: E
   exitName(expr: QuintName): void {
     if (this.errors.size > 0) {
       // Don't try to infer application if there are errors with the args
@@ -108,11 +110,10 @@ export class EffectInferrer implements IRVisitor {
     this.addToResults(expr.id, this.effectForName(expr.name, expr.id, 2).map(toScheme))
   }
 
-  /* { identifier: op, effect: E } ∈ Γ    Γ ⊢ p0:E0 ... Γ ⊢ pn:EN
-   * Eres <- freshVar   S = unify(E, (E0, ...,  EN) => Eres)
-   * ------------------------------------------------------ (APP)
-   *           Γ ⊢ op(p0, ..., pn): S(Eres)
-   */
+  // { identifier: op, effect: E } ∈ Γ    Γ ⊢ p0:E0 ... Γ ⊢ pn:EN
+  // Eres <- freshVar   S = unify(newInstance(E), (E0, ...,  EN) => Eres)
+  // ------------------------------------------------------------------- (APP)
+  //           Γ ⊢ op(p0, ..., pn): S(Eres)
   exitApp(expr: QuintApp): void {
     if (this.errors.size > 0) {
       // Don't try to infer application if there are errors with the args
@@ -176,10 +177,9 @@ export class EffectInferrer implements IRVisitor {
     })))
   }
 
-  /*                        Γ ⊢ e: E
-   * ------------------------------------------------------------- (OPDEF)
-   * Γ ∪ { identifier: op, effect: E } ⊢ (def op(params) = e): Pure
-   */
+  //           Γ ⊢ expr: E
+  // ---------------------------------- (OPDEF)
+  //  Γ ⊢ (def op(params) = expr): E
   exitOpDef(def: QuintOpDef): void {
     if (this.errors.size > 0) {
       // Don't try to infer let if there are errors with the defined expression
@@ -191,10 +191,10 @@ export class EffectInferrer implements IRVisitor {
     this.addToResults(def.id, result)
   }
 
-  /*     Γ ⊢ e: E
-   * ----------------------- (LET)
-   * Γ ⊢ <opdef> { e }: E
-   */
+
+  //     Γ ⊢ expr: E
+  // ------------------------- (LET)
+  //   Γ ⊢ <opdef> { expr }: E
   exitLet(expr: QuintLet): void {
     if (this.errors.size > 0) {
       // Don't try to infer let if there are errors with the defined expression
@@ -205,6 +205,14 @@ export class EffectInferrer implements IRVisitor {
     this.addToResults(expr.id, e)
   }
 
+  //  { kind: 'param', identifier: p, reference: ref } ∈ Γ
+  // ------------------------------------------------------- (LAMBDA-PARAM)
+  //                Γ ⊢ p: e_p_ref
+  //
+  //    { kind: 'param', identifier: '_', reference: ref } ∈ Γ
+  //                 e < - freshVar
+  // ------------------------------------------------------- (UNDERSCORE)
+  //                   Γ ⊢ '_': e
   enterLambda(expr: QuintLambda): void {
     expr.params.forEach(p => {
       const varName = p.name === '_' ? this.freshVarGenerator.freshVar('e') : `e_${p.name}_${p.id}`
@@ -212,10 +220,9 @@ export class EffectInferrer implements IRVisitor {
     })
   }
 
-  /*                  Γ ⊢ e: E
-   * ---------------------------------------------- (LAMBDA)
-   * Γ ⊢ (p0, ..., pn) => e: (E0, ..., En) => E
-   */
+  //                  Γ ⊢ expr: E
+  // ------------------------------------------------------- (LAMBDA)
+  // Γ ⊢ (p0, ..., pn) => expr: quantify((E0, ..., En) => E)
   exitLambda(lambda: QuintLambda): void {
     if (this.errors.size > 0) {
       return
