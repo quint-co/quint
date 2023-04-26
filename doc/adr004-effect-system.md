@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author           |
 | :------- | :--------- | :--------------- |
-| 4        | 02.03.2023 | Gabriela Moreira |
+| 4        | 26.04.2023 | Gabriela Moreira |
 
 ## Summary
 
@@ -54,6 +54,11 @@ action A2 = x' = S(1) // Read['y'] & Update['x']
 In these examples, keywords `pure def`, `def` and `action` are providing effect
 information to be checked against the inferred effect. This information is not
 used for inference.
+
+Effects for operators can depend on the effect of their parameters. In the
+example for operator `P`, the effect defines that the parameter can have a Read
+and Temporal effect, and the result effect will be the same - for that, we
+capture the some values in quantified variables `r1` and `t1`.
 
 ### How restrictive should `pure` definitions be?
 
