@@ -81,7 +81,6 @@ Options:
   --version      Show version number                                   [boolean]
   --out          output file                                            [string]
   --source-map   name of the source map                                 [string]
-  --with-lookup  add the lookup table to the output file (see --out)   [boolean]
 ```
 
 This command reads a Quint specification from the file `<spec>.qnt`, parses the
