@@ -207,7 +207,7 @@ export interface ArrowEffect { kind: 'arrow', params: Effect[], result: Effect }
 There is a separate class of variables that range over effects, which can be
 substituted with another effect during inference. Effect variables are the most general kind of effects.
 When no effect information for a given expression is available, the effect is left
-undetermined, as indicated by an effect variable. I.e. `def foo(x) = x` will have be inferred to have the effect signature `(e) => e`, where `e` is an effect variable, since there are no constraints on the effect of `x`. An **effect variable** `e` is equivalent to the effect `Read[v1] & Update[v2] & Temporal[v3]`, where `v1`, `v2` and `v3` are _entity variables_.
+undetermined, as indicated by an effect variable. I.e. `def foo(x) = x` is inferred to have the effect signature `(e) => e`, where `e` is an effect variable, since there are no constraints on the effect of `x`. An **effect variable** `e` is equivalent to the effect `Read[v1] & Update[v2] & Temporal[v3]`, where `v1`, `v2` and `v3` are _entity variables_.
 
 ```typescript
 /* A variable standing for an unknown effect */
