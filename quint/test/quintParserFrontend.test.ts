@@ -39,6 +39,8 @@ function parseAndCompare(artifact: string): void {
     .chain(res => parsePhase2sourceResolution(gen, resolver, mainPath, res))
   // read the expected result as JSON
   const expected = readJson(artifact)
+  // We're not interested in testing the contens of the table here
+  delete expected.table
   let outputToCompare
 
   if (phase1Result.isLeft()) {
@@ -62,11 +64,11 @@ function parseAndCompare(artifact: string): void {
     assert.deepEqual(sourceMapResult,
       expectedSourceMap, 'expected source maps to be equal')
 
-    const phase2Result = parsePhase3importAndNameResolution(phase1Result.value)
+    const phase3Result = parsePhase3importAndNameResolution(phase1Result.value)
 
-    if (phase2Result.isLeft()) {
+    if (phase3Result.isLeft()) {
       // An error occurred at phase 2, check if it is the expected result
-      phase2Result.mapLeft(err =>
+      phase3Result.mapLeft(err =>
         outputToCompare = {
           stage: 'parsing',
           errors: err,
@@ -83,7 +85,7 @@ function parseAndCompare(artifact: string): void {
   const reparsedResult = JSONbig.parse(JSONbig.stringify(outputToCompare))
   // compare the JSON trees
   assert.deepEqual(reparsedResult,
-    expected, 'expected source maps to be equal')
+    expected, 'expected --out data to be equal')
 }
 
 describe('parsing', () => {
