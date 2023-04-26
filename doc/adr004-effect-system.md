@@ -146,7 +146,7 @@ state variable occurred, which is used for error reporting.
 export interface StateVariable {
   /* The variable name */
   name: string,
-  /* The id of the expression un which the state variable occurred */
+  /* The id of the expression in which the state variable occurred */
   reference: bigint
 }
 ```
@@ -271,18 +271,26 @@ used as targets of assignment, where their resulting effect will be inferred
 correctly as `Update[<variable_name>]`).
 
 ```
-{ kind: 'var', identifier: name } ∈ Γ
--------------------------------------- (NAME-VAR)
-      Γ ⊢ name: Read[name]
+-------------------------------------- (VAR)
+      Γ ⊢ var name: Read[name]
 ```
 
-Constants are always pure.
+
+Constants values are always pure. Constants with arrow types have arrow effects
+with standard propagation of read and temporal effects
+```
+  type annotation for c is not oper
+------------------------------------- (CONST-VAL)
+      Γ ⊢ const c: Pure
+```
 
 ```
-{ kind: 'const', identifier: c } ∈ Γ
-------------------------------------- (NAME-CONST)
-      Γ ⊢ c: Pure
+     type annotation for c is oper with n args
+-------------------------------------------------------- (CONST-OPER)
+Γ ⊢ const c: propagateComponents(['read', 'temporal'])(n)
 ```
+
+PS: See the definition for `propagateComponents` in the next section.
 
 Lambda parameters have an effect variable with a name built from the parameter
 name and its reference, which can always be found in the context. This way, we
@@ -290,25 +298,27 @@ ensure that the effect is the same for all ocurrences of that parameter.
 
 ```
  { kind: 'param', identifier: p, reference: ref } ∈ Γ
-------------------------------------------------------- (NAME-PARAM)
+------------------------------------------------------- (LAMBDA-PARAM)
                Γ ⊢ p: e_p_ref
 ```
 
-Names of operators resolve to the effect of their respective bodies.
+There is also a special rule for the underscore parameter, which is always a fresh
+effect variable:
 
 ```
-{ kind: 'def', identifier: op, body: e } ∈ Γ   Γ ⊢ e : E
------------------------------------------------------------ (NAME-OP)
-                      Γ ⊢ op: E
+ { kind: 'param', identifier: '_', reference: ref } ∈ Γ
+                e <- freshVar
+------------------------------------------------------- (UNDERSCORE)
+               Γ ⊢ '_': e
 ```
 
-If the operator is a built-in, we just return its signature (as built-in
-operators do not have bodies).
 
+Name expressions are simply looked up in the context. If the operator is a built-in,
+it's signature must already be on the context, since there is no body to infer it from.
 ```
-    built-in signature of op is E
---------------------------------------- (NAME-OP-BUILTIN)
-              Γ ⊢ op: E
+{ identifier: name }: E ∈ Γ
+-----------------------------(NAME)
+      Γ ⊢ name: E
 ```
 
 Inferring operator application: find its signature and try to unify with the
@@ -325,27 +335,26 @@ Eres <- freshVar   S = unify(newInstance(E), (E0, ...,  EN) => Eres)
           Γ ⊢ op(p0, ..., pn): S(Eres)
 ```
 
-Operator definitions (top-level or inside let-in's): infer signature and add it
-to context
+Operator definitions (top-level or inside let-in's) carry the effect of their bodies.
 
 ```
-                       Γ ⊢ e: E
-------------------------------------------------------------- (OPDEF)
-Γ ∪ { identifier: op, effect: E } ⊢ (def op(params) = e): Pure
+            Γ ⊢ expr: E
+---------------------------------- (OPDEF)
+   Γ ⊢ (def op(params) = expr): E
 ```
 
 Lambda parameters can have any shape since we allow high order operators.
 ```
-                 Γ ⊢ e: E
----------------------------------------------------- (LAMBDA)
-Γ ⊢ (p0, ..., pn) => e: quantify((E0, ..., En) => E)
+                 Γ ⊢ expr: E
+------------------------------------------------------- (LAMBDA)
+Γ ⊢ (p0, ..., pn) => expr: quantify((E0, ..., En) => E)
 ```
 
 Let-in expressions assume the effect of the expression in its body.
 ```
-        Γ ⊢ e: E
------------------------ (LET)
-  Γ ⊢ <opdef> { e }: E
+    Γ ⊢ expr: E
+------------------------- (LET)
+  Γ ⊢ <opdef> { expr }: E
 ```
 
 Literals are always `Pure`.
