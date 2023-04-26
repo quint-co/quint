@@ -741,9 +741,8 @@ export class CompilerVisitor implements IRVisitor {
           const normalKey = key.normalForm()
           const asMap = map.toMap()
           if (asMap.has(normalKey)) {
-            (fun as Callable).registers[0].registerValue =
-              just(asMap.get(normalKey))
-            return fun.eval().map((newValue) => {
+            return fun.eval([just(asMap.get(normalKey))])
+                .map((newValue) => {
               const newMap = asMap.set(normalKey, newValue as RuntimeValue)
               return rv.fromMap(newMap)
             })
@@ -903,62 +902,98 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   private applyUserDefined(app: ir.QuintApp) {
-    const callable =
-      this.contextLookup(app.id, ['callable', 'arg']) as Callable
-    if (callable === undefined || callable.registers === undefined) {
-      this.addCompileError(app.id, `Called unknown operator ${app.opcode}`)
-      this.compStack.push(fail)
-    } else {
-      const nparams = callable.registers.length
-      // nparams === nargs, unless a tuple is passed to an n-ary operator.
-      // The type checker should have checked the types before.
-      const nargs = (app.args.length === 1 && nparams > 1) ? 1 : nparams
-
-      const nactual = this.compStack.length
-      if (nactual < nargs) {
-        this.addCompileError(app.id,
-          `Expected ${nargs} arguments for ${app.opcode}, found: ${nactual}`)
+    const onError = (sourceId: bigint, msg: string): void => {
+        this.addCompileError(sourceId, msg)
         this.compStack.push(fail)
-      } else {
-        // pop nargs elements of the compStack
-        const args = this.compStack.splice(-nargs, nargs)
-        // Produce the new computable value.
-        // This code is similar to applyFun, but it calls the listener before
-        const comp = {
-          eval: (): Maybe<RuntimeValue> => {
-            this.execListener.onUserOperatorCall(app)
-            // compute the values of the arguments at this point
-            const merged = merge(args.map(a => a.eval()))
-            if (merged.isNone()) {
-              this.execListener.onUserOperatorReturn(app, [], none())
-              return none()
-            }
-            return merged.map(values => {
-              // if they are all defined, check whether unpacking is needed
-              let actualArgs: RuntimeValue[] = values as RuntimeValue[]
-              if (nparams > nargs && nargs === 1) {
-                // unpack the tuple
-                actualArgs = [...actualArgs[0]]
-              }
-              for (let i = 0; i < nparams; i++) {
-                callable.registers[i].registerValue = just(actualArgs[i])
-              }
-              const result = callable.eval() as Maybe<RuntimeValue>
-              this.execListener.onUserOperatorReturn(app, actualArgs, result)
-              return result
-            })
-            .join()
-          },
-        }
-        this.compStack.push(comp)
+    }
+
+    // look up for the operator to see, whether it's just an operator, or a parameter
+    const lookupEntry = this.lookupTable.get(app.id)
+    if (lookupEntry === undefined) {
+      return onError(app.id, `Called unknown operator ${app.opcode}`)
+    }
+
+    // retrieve the operator type to see, whether tuples should be unpacked
+    const operScheme = this.types.get(lookupEntry.reference)
+    if (operScheme === undefined) {
+      return onError(app.id, `No type for ${app.opcode}`)
+    }
+
+    if (operScheme.type.kind !== 'oper') {
+      return onError(app.id, `Expected ${app.opcode} to be an operator`)
+    }
+
+    // this function gives us access to the compiled operator later
+    let callableRef: () => Maybe<Callable>
+
+    if (lookupEntry === undefined || lookupEntry.kind !== 'param') {
+      // The common case: the operator has been defined elsewhere.
+      // We simply look up for the operator and return it via callableRef.
+      const callable = this.contextLookup(app.id, ['callable']) as Callable
+      if (callable === undefined || callable.nparams === undefined) {
+        return onError(app.id, `Called unknown operator ${app.opcode}`)
       }
+      callableRef = () => just(callable)
+    } else {
+      // The operator is a parameter of another operator.
+      // We do not have access to the operator yet.
+      let register = this.contextLookup(app.id, ['arg']) as Register
+      if (register === undefined) {
+        return onError(app.id, `Parameter ${app.opcode} is not found`)
+      }
+      // every time we need a Callable, we retrieve it from the register
+      callableRef = () => {
+        return register.registerValue.map(v => v as Callable)
+     }
+    }
+    // nparams === nargs, unless a tuple is passed to an n-ary operator.
+    const nparams = operScheme.type.args.length
+    const nargs = app.args.length
+
+    const nactual = this.compStack.length
+    if (nactual < nargs) {
+      return onError(app.id,
+        `Expected ${nargs} arguments for ${app.opcode}, found: ${nactual}`)
+    } else {
+      // pop nargs elements of the compStack
+      const args = this.compStack.splice(-nargs, nargs)
+      // Produce the new computable value.
+      // This code is similar to applyFun, but it calls the listener before
+      const comp = {
+        eval: (): Maybe<RuntimeValue> => {
+          this.execListener.onUserOperatorCall(app)
+          // compute the values of the arguments at this point
+          const merged = merge(args.map(a => a.eval()))
+          const callable = callableRef()
+          if (merged.isNone() || callable.isNone()) {
+            this.execListener.onUserOperatorReturn(app, [], none())
+            return none()
+          }
+          return merged.map(values => {
+            // if they are all defined, check whether unpacking is needed
+            let actualArgs: RuntimeValue[] = values as RuntimeValue[]
+            if (nparams > nargs && nargs === 1) {
+              // unpack the tuple
+              actualArgs = [...actualArgs[0]]
+            }
+
+            const result =
+              callable.value.eval(actualArgs.map(just)) as Maybe<RuntimeValue>
+            this.execListener.onUserOperatorReturn(app, actualArgs, result)
+            return result
+          })
+          .join()
+        },
+      }
+      this.compStack.push(comp)
     }
   }
 
   enterLambda(lam: ir.QuintLambda) {
     // introduce a register for every parameter
     lam.params.forEach(p => {
-      const register = mkRegister('arg', p.name, none(), () => `Parameter ${p} is not set`)
+      const register = mkRegister('arg',
+        p.name, none(), () => `Parameter ${p} is not set`)
       this.context.set(kindName('arg', p.id), register)
 
       if (specialNames.includes(p.name)) {
@@ -1050,27 +1085,23 @@ export class CompilerVisitor implements IRVisitor {
     }
     // lambda translated to Callable
     const callable = this.compStack.pop() as Callable
-    const nargs = callable.registers.length
     // apply the lambda to a single element of the set
     const evaluateElem = function(elem: RuntimeValue):
       Maybe<[RuntimeValue, RuntimeValue]> {
-      if (nargs === 1) {
+      let actualArgs: RuntimeValue[]
+      if (callable.nparams === 1) {
         // store the set element in the register
-        callable.registers[0].registerValue = just(elem)
+        actualArgs = [ elem ]
       } else {
         // unpack a tuple and store its elements in the registers
-        const tupleElems = [...elem]
-        if (tupleElems.length !== nargs) {
+        actualArgs = [...elem]
+        if (actualArgs.length !== callable.nparams) {
           return none()
         }
-        for (let i = 0; i < nargs; i++) {
-          callable.registers[i].registerValue = just(tupleElems[i])
-        }
-      }
-      // evaluate the predicate using the register
-      // (cast the result to RuntimeValue, as we use runtime values)
-      const result = callable.eval().map(e => e as RuntimeValue)
-      return result.map(result => [result, elem])
+     }
+      // evaluate the predicate against the actual arguments.
+      const result = callable.eval(actualArgs.map(just))
+      return result.map(result => [result as RuntimeValue, elem])
     }
     this.applyFun(sourceId,
       1,
@@ -1090,20 +1121,21 @@ export class CompilerVisitor implements IRVisitor {
     // extract two arguments from the call stack and keep the set
     const callable = this.compStack.pop() as Callable
     // this method supports only 2-argument callables
-    assert(callable.registers.length === 2)
+    assert(callable.nparams === 2)
     // compile the computation of the initial value
     const initialComp = this.compStack.pop() ?? fail
     // the register number depends on the traversal order
     const accumIndex = (order == 'fwd') ? 0 : 1
+    // keep the iteration values in args
+    const args: Maybe<EvalResult>[] = [ none(), none() ]
     // apply the lambda to a single element of the set
     const evaluateElem = function(elem: RuntimeValue): Maybe<EvalResult> {
       // The accumulator should have been set in the previous iteration.
       // Set the other register to the element.
-
-      callable.registers[1 - accumIndex].registerValue = just(elem)
-      const result = callable.eval()
+      args[1 - accumIndex] = just(elem)
+      const result = callable.eval(args)
       // save the result for the next iteration
-      callable.registers[accumIndex].registerValue = result
+      args[accumIndex] = result
       return result
     }
     // iterate over the iterable (a set or a list)
@@ -1112,7 +1144,7 @@ export class CompilerVisitor implements IRVisitor {
       (iterable: Iterable<RuntimeValue>): Maybe<any> => {
         return initialComp.eval().map(initialValue => {
           // save the initial value
-          callable.registers[accumIndex].registerValue = just(initialValue)
+          args[accumIndex] = just(initialValue)
           // fold the iterable
           return flatForEach(order, iterable, just(initialValue), evaluateElem)
         }).join()

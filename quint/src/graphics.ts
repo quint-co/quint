@@ -76,6 +76,11 @@ export function chalkQuintEx(ex: QuintEx): string {
           return chalk.red(`unsupported operator: ${ex.opcode}(...)`)
       }
 
+    case 'lambda': {
+      const params = ex.params.map(p => p.name).join(', ')
+      return `{ (${params}) => ... }`
+    }
+
     default:
       return chalk.red(`unsupported operator: ${ex.kind}`)
   }

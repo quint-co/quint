@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix `quint run` to output compile errors again (#812)
 - add the precursor of the standard library in the form of spells (#827)
 - cache top-level `pure val` (#837)
+- support for higher-order operators in REPL/simulator (#845)
 
 ### Changed
 

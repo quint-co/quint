@@ -68,7 +68,7 @@ import { Maybe, just, merge, none } from '@sweet-monads/maybe'
 import { IdGenerator } from '../../idGenerator'
 import { expressionToString } from '../../IRprinting'
 
-import { EvalResult } from '../runtime'
+import { EvalResult, Callable, Register } from '../runtime'
 import { QuintEx } from '../../quintIr'
 
 /** The default entry point of this module */
@@ -234,6 +234,18 @@ export const rv = {
   mkPowerset: (baseSet: RuntimeValue): RuntimeValue => {
     return new RuntimeValuePowerset(baseSet)
   },
+
+  /**
+   * Make a runtime value that represents a lambda.
+   *
+   * @param nparams the number of lambda parameters
+   * @param callable a callable that evaluates the lambda
+   * @returns a runtime value of lambda
+   */
+  mkLambda: (nparams: number,
+             callable: Callable) => {
+    return new RuntimeValueLambda(nparams, callable)
+  }
 }
 
 /**
@@ -1392,6 +1404,46 @@ class RuntimeValueInfSet extends RuntimeValueBase implements RuntimeValue {
       id: gen.nextId(),
       kind: 'name',
       name: this.kind,
+    }
+  }
+}
+
+/**
+ * A lambda operator as a runtime value. Technically, it should not be a value
+ * in Quint/TLA+. However, we have to carry lambdas when evaluating higher-order
+ * operators.
+ * 
+ * RuntimeValueLambda cannot be compared with other values.
+ */
+class RuntimeValueLambda extends RuntimeValueBase implements RuntimeValue, Callable {
+  nparams: number
+  callable: Callable
+
+  constructor(nparams: number, callable: Callable) {
+    super(false)
+    this.nparams = nparams
+    this.callable = callable
+  }
+
+  eval(args?: any[]) {
+    return this.callable.eval(args)
+  }
+
+  toQuintEx(gen: IdGenerator): QuintEx {
+    // We produce a mock Quint expression.
+    // It is not going to be used,
+    // as the lambdas are passed only inside the simulator.
+    return {
+      id: gen.nextId(),
+      kind: 'lambda',
+      params: Array.from(Array(this.nparams).keys())
+        .map(i => { return { id: gen.nextId(), name: `_a${i}` } }),
+      qualifier: 'def',
+      expr: {
+        kind: 'str',
+        value: `lambda_${this.nparams}_params`,
+        id: gen.nextId(),
+      },
     }
   }
 }

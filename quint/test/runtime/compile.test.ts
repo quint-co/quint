@@ -311,6 +311,29 @@ describe('compiling specs to runtime values', () => {
          (-3).to(3).filter(positive)`
       assertResultAsString(input, 'Set(1, 2, 3)')
     })
+
+    it('compile higher-order operators', () => {
+      const input =
+        `def ho(lo, n) = lo(n)
+         def loImpl(x) = x * 2
+         ho(loImpl, 3)`
+      assertResultAsString(input, '6')
+    })
+
+    it('compile higher-order operators with lambda', () => {
+      const input =
+        `def ho(lo, n) = lo(n)
+         ho(x => x * 2, 3)`
+      assertResultAsString(input, '6')
+    })
+
+    it('higher-order operators in folds', () => {
+      const input =
+        `def plus(i, j) = i + j
+         2.to(6).fold(0, plus)`
+      assertResultAsString(input, '20')
+    })
+
   })
 
   describe('compile variables', () => {
