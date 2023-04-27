@@ -167,6 +167,15 @@ module denomTraceTest {
   }))
 }
 
+// This simulation model defines a simulation scenario where a token hops from A
+// -> B -> C -> A -> C -> B -> A. At the end, the denom trace should have an empty
+// path, as it is back in its original chain. This module is parametrized over the
+// channel topology, with the intention of testing which properties of channel topology
+// are important for the denom trace algorithm to work.
+// There are two modules instantiating this simulation. `properChannelsTest` should pass:
+//   quint test --main=properChannelsTests denomTrace.qnt
+// and `randomChannelsTest` should fail:
+//   quint test --main=randomChannelsTests denomTrace.qnt
 module denomTraceSimulation {
   import base.* from "./base"
   import denomTrace.*
