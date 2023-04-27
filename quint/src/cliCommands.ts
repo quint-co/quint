@@ -114,6 +114,11 @@ interface SimulatorStage extends LoadedStage {
   trace?: QuintEx[],
 }
 
+interface VerifierStage extends LoadedStage {
+  status: 'ok' | 'violation' | 'failure',
+  trace?: QuintEx[],
+}
+
 interface DocumentationStage extends LoadedStage {
   documentation?: Map<string, Map<string, DocumentationEntry>>,
 }
@@ -489,6 +494,20 @@ export function runSimulator(prev: TypecheckedStage):
             errors: result.errors,
           })
     }
+}
+
+/**
+ * Verify a spec via Apalache.
+ *
+ * @param prev the procedure stage produced by `typecheck`
+ */
+export function verifySpec(prev: TypecheckedStage):
+  CLIProcedure<VerifierStage> {
+  const verifier = { ...prev, stage: 'verifying' as stage }
+  const _mainArg = prev.args.main
+  const _mainName = _mainArg ? _mainArg : basename(prev.args.input, '.qnt')
+
+  return cliErr('not implemented yet',  { ...verifier, errors: [] })
 }
 
 /**

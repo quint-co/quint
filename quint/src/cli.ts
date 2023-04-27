@@ -19,7 +19,8 @@ import {
   runRepl,
   runSimulator,
   runTests,
-  typecheck
+  typecheck,
+  verifySpec
 } from './cliCommands'
 
 import { verbosity } from './verbosity'
@@ -180,6 +181,56 @@ const runCmd = {
     outputResult(load(args).chain(parse).chain(typecheck).chain(runSimulator)),
 }
 
+// construct verify commands with yargs
+const verifyCmd = {
+  command: 'verify <input>',
+  desc: '[not implemented] Verify a Quint specification via Apalache',
+  builder: (yargs: any) =>
+    yargs
+      .option('out', {
+        desc: 'output file (suppresses all console output)',
+        type: 'string',
+      })
+      .option('out-itf', {
+        desc:
+          'output the trace in the Informal Trace Format to file (supresses all console output)',
+        type: 'string',
+      })
+      .option('max-steps', {
+        desc: 'the maximum number of steps in every trace',
+        type: 'number',
+        default: 10,
+      })
+      .option('init', {
+        desc: 'name of the initializer action',
+        type: 'string',
+        default: 'init',
+      })
+      .option('step', {
+        desc: 'name of the step action',
+        type: 'string',
+        default: 'step',
+      })
+      .option('invariant', {
+        desc: 'invariant to check: a definition name or an expression',
+        type: 'string',
+      })
+      .option('apalache-config', {
+        desc:
+          'Filename of the additional Apalache configuration (in the HOCON format, a superset of JSON)',
+        type: 'string',
+      }),
+  // Timeouts are postponed for:
+  // https://github.com/informalsystems/quint/issues/633
+  //
+  //      .option('timeout', {
+  //        desc: 'timeout in seconds',
+  //        type: 'number',
+  //      })
+  handler: (args: any) =>
+    outputResult(load(args).chain(parse).chain(typecheck).chain(verifySpec)),
+}
+
 // construct documenting commands with yargs
 const docsCmd = {
   command: 'docs <input>',
@@ -195,6 +246,7 @@ yargs(process.argv.slice(2))
   .command(replCmd)
   .command(runCmd)
   .command(testCmd)
+  .command(verifyCmd)
   .command(docsCmd)
   .demandCommand(1)
   .version(version)
