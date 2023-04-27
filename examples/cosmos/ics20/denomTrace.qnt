@@ -24,17 +24,15 @@ module denomTrace {
   /// as the source zone. When the token is sent back to the chain it previously
   /// received from, the prefix is removed. This is a backwards movement in the
   /// token's timeline and the sender chain is acting as the sink zone."
-  pure def movingBackAlongTrace(hopSource: HopElement, denomTrace: DenomTrace): bool =
+  pure def movingBackAlongTrace(denomTrace: DenomTrace, hopSource: HopElement): bool =
     denomTrace.path.length() >= 1 and
     denomTrace.path.head() == hopSource
 
   /// `updateTrace` updates a denomTrace's path either by removing or adding a
   /// hop. It removes a hop if the token is moving backwards along the trace,
   /// and adds a hop if the token is moving somewhere else.
-  pure def updateTrace(denomTrace: DenomTrace, sourcePort: str, sourceChannel: str, destPort: str, destChannel: str): DenomTrace = {
-    val hopSource = { port: sourcePort, channel: sourceChannel }
-    val hopDestination = { port: destPort, channel: destChannel }
-    if (movingBackAlongTrace(hopSource, denomTrace)) {
+  pure def updateTrace(movingBack: bool, denomTrace: DenomTrace, hopDestination: HopElement): DenomTrace = {
+    if (movingBack) {
       // Sender is sink (receiver is source). Token is moving back in timeline.
       // Remove prefix from trace, since we already used that information to
       // find that the token just undid a previous hop.
@@ -47,17 +45,17 @@ module denomTrace {
     }
   }
 
-  /// `isProperChannelSetup` is true iff channel names are unique by chain
-  pure def isProperChannelSetup(setup: str -> str -> str): bool =
-    pure val chainNames = Set("A", "B", "C") // should be setup.keys(), but that's breaking the effect checker somehow (see issue #808)
+  /// `isProperChannelTopology` is true iff channel names are unique by chain
+  pure def isProperChannelTopology(topology: ChannelTopology): bool =
+    pure val chainNames = Set("A", "B", "C") // should be topology.keys(), but that's breaking the effect checker somehow (see issue #808)
     and {
       // Check the domain for the second level of chains
-      chainNames.forall(chain => setup.get(chain).keys() == chainNames),
+      chainNames.forall(chain => topology.get(chain).keys() == chainNames),
       tuples(chainNames, chainNames).forall((fromChain, toChain) =>
         fromChain != toChain implies // we dont care about channels from chain to itself
           chainNames.forall((thirdChain) =>
             thirdChain != toChain implies
-              setup.get(fromChain).get(toChain) != setup.get(fromChain).get(thirdChain)
+              topology.get(fromChain).get(toChain) != topology.get(fromChain).get(thirdChain)
           )
       )
     }
@@ -68,7 +66,7 @@ module denomTraceTest {
   import base.* from "./base"
   import denomTrace.*
 
-  // For testing, imagine the following channels in these chains setups
+  // For testing, imagine the following topology between channels in chains A, B and C.
   // PS: There should be similar channels between A and C, those are ommited in the diagram for simplicity
   // ┌───────────────────┐           ┌────────────────────────────────────┐         ┌───────────────────┐
   // │      Chain A      │           │               Chain B              │         │      Chain C      │
@@ -88,20 +86,27 @@ module denomTraceTest {
     path: [],
   }
 
-  /// Finds the correct channels for a transfer according to the chain setup
-  /// described above
-  pure def getChannelsForTransfer(sourceChain: str, destChain: str): { sourceChannel: str, destChannel: str } =
-    pure val channels = Map(
-      "A" -> "channelToA",
+  /// Map from chain identifiers to their stored channels, which are maps from
+  /// counterparty chain identifiers to channel identifiers. For example, chain
+  /// A connects to chain B through channel "channelToB".
+  pure val channelTopology = Map(
+    "A" -> Map(
       "B" -> "channelToB",
       "C" -> "channelToC"
+    ),
+    "B" -> Map(
+      "A" -> "channelToA",
+      "C" -> "channelToC"
+    ),
+    "C" -> Map(
+      "A" -> "channelToA",
+      "B" -> "channelToB"
     )
-    ({
-      // If this is a transfer from A -> B, then the source channel is `channelToB`
-      sourceChannel: channels.get(destChain),
-      // If this is a transfer from A -> B, then the dest channel is `channelToA`
-      destChannel: channels.get(sourceChain),
-    })
+  )
+
+  action Transfer(sourceChain, destChain) =
+    val movingBack = movingBackAlongTrace(trace, { port: "transfer", channel: channelTopology.get(sourceChain).get(destChain) })
+    trace' = updateTrace(movingBack, trace, { port: "transfer", channel: channelTopology.get(destChain).get(sourceChain) })
 
   // Example from https://github.com/cosmos/ibc-go/blob/457095517b7832c42ecf13571fee1e550fec02d0/modules/apps/transfer/keeper/relay.go#L18-L49
   // These steps of transfer occur: A -> B -> C -> A -> C -> B -> A
@@ -121,23 +126,20 @@ module denomTraceTest {
   run transferTest = init.then((all {
     assert(trace.path == []),
 
-    pure val channels = getChannelsForTransfer("A", "B")
-    trace' = updateTrace(trace, "transfer", channels.sourceChannel, "transfer", channels.destChannel),
+    Transfer("A", "B")
   })).then((all {
     assert(trace.path == [
       { port: "transfer", channel: "channelToA" }
     ]),
 
-    pure val channels = getChannelsForTransfer("B", "C")
-    trace' = updateTrace(trace, "transfer", channels.sourceChannel, "transfer", channels.destChannel),
+    Transfer("B", "C")
   })).then((all {
     assert(trace.path == [
       { port: "transfer", channel: "channelToB" },
       { port: "transfer", channel: "channelToA" }
     ]),
 
-    pure val channels = getChannelsForTransfer("C", "A")
-    trace' = updateTrace(trace, "transfer", channels.sourceChannel, "transfer", channels.destChannel),
+    Transfer("C", "A")
   })).then((all {
     assert(trace.path == [
       { port: "transfer", channel: "channelToC" },
@@ -145,23 +147,20 @@ module denomTraceTest {
       { port: "transfer", channel: "channelToA" }
     ]),
 
-    pure val channels = getChannelsForTransfer("A", "C")
-    trace' = updateTrace(trace, "transfer", channels.sourceChannel, "transfer", channels.destChannel),
+    Transfer("A", "C")
   })).then((all {
     assert(trace.path == [
       { port: "transfer", channel: "channelToB" },
       { port: "transfer", channel: "channelToA" }
     ]),
 
-    pure val channels = getChannelsForTransfer("C", "B")
-    trace' = updateTrace(trace, "transfer", channels.sourceChannel, "transfer", channels.destChannel),
+    Transfer("C", "B")
   })).then((all {
     assert(trace.path == [
       { port: "transfer", channel: "channelToA" }
     ]),
 
-    pure val channels = getChannelsForTransfer("B", "A")
-    trace' = updateTrace(trace, "transfer", channels.sourceChannel, "transfer", channels.destChannel),
+    Transfer("B", "A")
   })).then((all {
     assert(trace.path == []),
     trace' = trace,
@@ -182,70 +181,75 @@ module denomTraceSimulation {
     ("B", "A")
   )
 
-  const channelPredicate: (str -> str -> str) => bool
+  pure val channelNames = Set("channel-1", "channel-2", "channel-3", "channel-4")
 
-  pure val channelNames = Set("channel-1", "channel-2", "channel-3")
-
-  /// All possible combination of channels by chain satisfying `channelPredicate`
-  pure val possibleChannelSetups = chains.setOfMaps(chains.setOfMaps(channelNames)).filter(channelPredicate)
+  // The parametrization of this module should be over a predicate, but operator
+  // constants are broken (see #851)
+  // const channelTopologyPredicate: (str -> str -> Channel) => bool
+  //
+  /// All possible combination of channels by chain satisfying `channelTopologyPredicate`
+  // pure val possibleChannelTopologies = chains.setOfMaps(chains.setOfMaps(channelNames)).filter(channelTopologyPredicate)
+  // Instead, we make the parametrization over the set of all possible channel topologies
+  const possibleChannelTopologies: Set[ChannelTopology]
 
   var trace: DenomTrace
-  var channelSetup: str -> str -> str
+  var channelTopology: ChannelTopology
   var counter: int
 
-  def getChannelsForTransfer(transfer: (str, str)): { sourceChannel: str, destChannel: str } =
-    ({
-      sourceChannel: channelSetup.get(transfer._1).get(transfer._2),
-      // The destination channel would be the source channel in the opposite
-      // direction, so we only need to reverse the order of the chains
-      destChannel: channelSetup.get(transfer._2).get(transfer._1),
-    })
-
   action init =
-    nondet someMap = possibleChannelSetups.oneOf()
+    nondet someMap = possibleChannelTopologies.oneOf()
     all {
       trace' = {
         baseDenom: "denom",
         path: [],
       },
-      channelSetup' = someMap,
+      channelTopology' = someMap,
       counter' = 0,
     }
 
   action step =
-    val channels = getChannelsForTransfer(transferSequence[counter])
+    val sourceChain = transferSequence[counter]._1
+    val destChain = transferSequence[counter]._2
+    val movingBack = movingBackAlongTrace(trace, { port: "transfer", channel: channelTopology.get(sourceChain).get(destChain) })
     all {
-      trace' = updateTrace(trace, "transfer", channels.sourceChannel, "transfer", channels.destChannel),
+      trace' = updateTrace(movingBack, trace, { port: "transfer", channel: channelTopology.get(destChain).get(sourceChain) }),
       counter' = counter + 1,
-      channelSetup' = channelSetup,
+      channelTopology' = channelTopology,
     }
 
   action unchanged = all {
     trace' = trace,
     counter' = counter,
-    channelSetup' = channelSetup,
+    channelTopology' = channelTopology,
   }
 
   run simulationTest = init.then(step.repeated(6)).then((all {
-    def show(a) = true { show(channelSetup) },
+    def show(a) = true { show(channelTopology) },
     assert(trace.path == []),
     unchanged,
   }))
 }
 
-// Fails because the channel setup is not proper
-// The aim is to show that it is, in fact, necessary to enforce `isProperChannelSetup`
+// Fails because the channel topology is not proper
+// The aim is to show that it is, in fact, necessary to enforce `isProperChannelTopology`
 module randomChannelsTests {
+  pure val chains = Set("A", "B", "C")
+  pure val channelNames = Set("channelToA", "channelToB", "channelToC")
+
   import denomTraceSimulation(
-    channelPredicate = (_) => true
+    possibleChannelTopologies = chains.setOfMaps(chains.setOfMaps(channelNames))
   ) as S
 }
 
-// Passes because the channel setup is proper
+// Passes because the channel topology is proper
 module properChannelsTests {
-  import denomTrace.isProperChannelSetup
+  pure val chains = Set("A", "B", "C")
+  pure val channelNames = Set("channelToA", "channelToB", "channelToC")
+
+  import base.* from "./base"
+  import denomTrace.isProperChannelTopology
 
   import denomTraceSimulation(
-    channelPredicate = isProperChannelSetup
+    possibleChannelTopologies = chains.setOfMaps(chains.setOfMaps(channelNames)).filter(isProperChannelTopology)
   ) as S
 }

@@ -27,7 +27,10 @@ module base {
 
   type Channel = str
   /// Map from channel name in a chain to its counterparty on other chain
-  type Channels = Channel -> Channel
+  type ChannelCounterparties = Channel -> Channel
+  /// Map from a chain to other chains and the channel used to send packets from
+  /// the first chain to the second
+  type ChannelTopology = str -> str -> Channel
 
   pure def toDenom(baseDenom: str): DenomTrace = {
     { baseDenom: baseDenom, path: [] }

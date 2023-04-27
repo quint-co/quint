@@ -42,7 +42,7 @@ module ics20 {
   /// State of the IBC module in a chain
   type ChainState = {
     bank: Accounts,
-    channels: Channels,
+    channels: ChannelCounterparties,
     outPackets: Set[Packet],
     channelEscrowAddresses: Channel -> Address,
   }
@@ -56,7 +56,7 @@ module ics20 {
   pure def sendFungibleTokens(chainState: ChainState, denomination: DenomTrace, amount: UINT256,
                               sender: Address, receiver: Address, sourcePort: str, sourceChannel: Channel,
                               timeoutHeight: Height, timeoutTimestamp: uint64): ChainState = {
-    pure val bankResult = if (movingBackAlongTrace({port: sourcePort, channel: sourceChannel}, denomination)) {
+    pure val bankResult = if (movingBackAlongTrace(denomination, { port: sourcePort, channel: sourceChannel })) {
       // burn vouchers
       (chainState.bank).BurnCoins(sender, denomination, amount)
     } else {
@@ -90,20 +90,22 @@ module ics20 {
   /// state and the acknowledgment
   pure def onRecvPacket(chainState: ChainState, packet: Packet): (ChainState, FungibleTokenPacketAcknowledgement) = {
     pure val data = packet.data
-    pure val result = if (movingBackAlongTrace({port: packet.sourcePort, channel: packet.sourceChannel}, data.denom)) {
+    pure val movingBack = movingBackAlongTrace(data.denom, { port: packet.sourcePort, channel: packet.sourceChannel })
+    pure val newDenom = updateTrace(movingBack, data.denom, { port: packet.destPort, channel: packet.destChannel })
+
+    pure val result = if (movingBack) {
       // unescrow tokens to receiver
       pure val escrowAccount = chainState.channelEscrowAddresses.get(packet.destChannel)
-      pure val receiverDenom = updateTrace(data.denom, packet.sourcePort, packet.sourceChannel, packet.destPort, packet.destChannel)
-      
-      pure val bankResult = chainState.bank.TransferCoins(escrowAccount, data.receiver, receiverDenom, data.amount)
+      pure val bankResult = chainState.bank.TransferCoins(escrowAccount, data.receiver, newDenom, data.amount)
+
       (bankResult, "transfer coins failed")
     } else {
       // mint vouchers to receiver
-      pure val newDenom = updateTrace(data.denom, packet.sourcePort, packet.sourceChannel, packet.destPort, packet.destChannel)
-
       pure val bankResult = chainState.bank.MintCoins(data.receiver, newDenom, data.amount)
+
       (bankResult, "mint coins failed")
     }
+
     pure val newChainState = chainState.with("bank", result._1.accounts)
     pure val ack = if (result._1.success) {
       { success: true, errorMessage: "" }
