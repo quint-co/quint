@@ -60,10 +60,6 @@ module bank {
     if (balances.keys().contains(denom)) balances.get(denom) else 0
   }
 
-  /****************************/
-  /*     public interface     */
-  /****************************/
-
   /* Return `accounts`, where `address` is updated to hold
    * `currentAmount + amount` tokens of denomination `denom`.
    *
@@ -79,6 +75,10 @@ module bank {
     val newCoins = accountCoins.put(denom, accountCoins.getBalance(denom) + amount)
     accounts.put(address, newCoins)
   }
+
+  /****************************/
+  /*     public interface     */
+  /****************************/
 
   /* Return `accounts`, where `amount`-many tokens of denomination `denom`
    * vanished out of `sender`'s account into thin air.
