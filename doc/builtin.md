@@ -862,7 +862,9 @@ run test = (x' = 1).then(x' = 2).then(x' = 3).then(assert(x == 3))
 
 ## `action repeated: (bool, int) => bool`
 
-`a.repeated(b)` is the action `a` repeated `n` times.
+**Deprecated**: use `n.reps(A)` instead.
+
+`a.repeated(n)` is the action `a` repeated `n` times.
 
 The semantics of this operator is as follows:
 
@@ -883,6 +885,27 @@ a.repeated(i).then((a.orKeep(vars)).repeated(j - i))
 ```
 var x: int
 run test = (x' = 0).then((x' = x + 1).repeated(3)).then(assert(x == 3))
+```
+
+## `action reps: (int, (int) => bool) => bool`
+
+`n.reps(i => A(i))` or `n.reps(A)` the action `A`, `n` times.
+The iteration number, starting with 0, is passed as an argument of `A`.
+As actions are usually not parameterized by the iteration number,
+the most common form looks like: `n.reps(i => A)`.
+
+The semantics of this operator is as follows:
+
+- When `n <= 0`, this operator does not change the state.
+- When `n = 1`, `n.reps(A)` is equivalent to `A(0)`.
+- When `n > 1`, `n.reps(A)`, is equivalent to
+  `A(0).then((n - 1).reps(i => A(1 + i)))`.
+
+### Examples
+
+```
+var x: int
+run test = (x' = 0).then(3.reps(i => x' = x + 1)).then(assert(x == 3))
 ```
 
 ## `action fail: (bool) => bool`

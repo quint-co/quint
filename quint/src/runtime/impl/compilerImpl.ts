@@ -859,6 +859,10 @@ export class CompilerVisitor implements IRVisitor {
         this.translateRepeated(app)
         break
 
+      case 'reps':
+        this.translateReps(app)
+        break
+
       case 'q::test':
         // the special operator that runs random simulation
         this.test(app.id)
@@ -1250,6 +1254,8 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   // translate A.repeated(i)
+  //
+  // TODO: Soon to be removed: https://github.com/informalsystems/quint/issues/848
   private translateRepeated(app: ir.QuintApp): void {
     if (this.compStack.length < 2) {
       this.addCompileError(app.id,
@@ -1268,6 +1274,35 @@ export class CompilerVisitor implements IRVisitor {
 
     this.compStack.push(mkFunComputable(lazyCompute))
   }
+
+  // translate n.reps(A)
+  private translateReps(app: ir.QuintApp): void {
+    if (this.compStack.length < 2) {
+      this.addCompileError(app.id,
+        `Not enough arguments on stack for "${app.opcode}"`)
+      return
+    }
+    const [niterations, action] = this.compStack.splice(-2)
+
+    const lazyCompute = () => {
+      // compute the number of iterations and repeat 'action' that many times
+      return niterations.eval().map(num => {
+        const n = Number((num as RuntimeValue).toInt())
+        const indices = [...Array(n).keys()]
+        const actions = indices.map(i => {
+          return {
+            eval: () => {
+              return action.eval([just(rv.mkInt(BigInt(i)))])
+            }
+          }
+        })
+        return this.chainAllOrThen(actions, 'then')
+      }).join()
+    }
+
+    this.compStack.push(mkFunComputable(lazyCompute))
+  }
+
 
   // translate one of the Boolean operators with short-circuiting:
   //  - or  { A, ..., C }

@@ -8,77 +8,81 @@ This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
-**Table of Contents**
+<!-- Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc.go) -->
+Table of Contents
+=================
 
-- [Summary of Quint](#summary-of-quint)
-  - [Identifiers and strings](#identifiers-and-strings)
-  - [Comments](#comments)
-  - [Types](#types)
-    - [Type System 1.2](#type-system-12)
-  - [Modes](#modes)
-  - [Module-level constructs](#module-level-constructs)
-    - [Module definition](#module-definition)
-    - [Constant declarations](#constant-declarations)
-    - [Assumptions](#assumptions)
-    - [Variable definitions](#variable-definitions)
-    - [Operator definitions](#operator-definitions)
-    - [No recursive functions and operators](#no-recursive-functions-and-operators)
-    - [Module instances](#module-instances)
-    - [Type aliases](#type-aliases)
-    - [Theorems](#theorems)
-    - [Imports](#imports)
-  - [Namespaces and imports](#namespaces-and-imports)
-    - [Stateless and stateful modules](#stateless-and-stateful-modules)
-    - [Namespaces](#namespaces)
-    - [Imports](#imports-1)
-  - [Quint expression syntax](#quint-expression-syntax)
-    - [Literals](#literals)
-    - [Names](#names)
-    - [Braces and parentheses](#braces-and-parentheses)
-    - [Lambdas (aka Anonymous Operators)](#lambdas-aka-anonymous-operators)
-    - [Two forms of operator application](#two-forms-of-operator-application)
-    - [Boolean operators and equality](#boolean-operators-and-equality)
-    - [Block disjunctions](#block-disjunctions)
-    - [Block conjunctions](#block-conjunctions)
-    - [Flow operators](#flow-operators)
-      - [Condition](#condition)
-      - [Cases (removed)](#cases-removed)
-    - [Sets](#sets)
-      - [Set constructor](#set-constructor)
-      - [Non-deterministic choice](#non-deterministic-choice)
-      - [Other set operators](#other-set-operators)
-    - [Maps (aka Functions)](#maps-aka-functions)
-    - [Records](#records)
-    - [Discriminated unions](#discriminated-unions)
-    - [Tuples](#tuples)
-    - [Lists (aka Sequences)](#lists-aka-sequences)
-    - [Integers](#integers)
-    - [Nested operator definitions](#nested-operator-definitions)
-    - [Operators on actions](#operators-on-actions)
-      - [Delayed assignment](#delayed-assignment)
-      - [Non-deterministic choice](#non-deterministic-choice-1)
-      - [Assert](#assert)
-    - [Runs](#runs)
-      - [Then](#then)
-      - [Repeated](#repeated)
-      - [Fail](#fail)
-    - [Temporal operators](#temporal-operators)
-      - [Always](#always)
-      - [Eventually](#eventually)
-      - [Next](#next)
-      - [Unchanged (removed)](#unchanged-removed)
-      - [OrKeep](#orkeep)
-      - [MustChange](#mustchange)
-      - [Enabled](#enabled)
-      - [Fairness](#fairness)
-      - [Other temporal operators](#other-temporal-operators)
-    - [Unbounded quantifiers](#unbounded-quantifiers)
-  - [Instances](#instances)
-    - [Common case 1](#common-case-1)
-    - [Common case 2](#common-case-2)
-    - [The general case](#the-general-case)
-    - [No anonymous instances](#no-anonymous-instances)
-    - [Discussion](#discussion)
+* [Summary of Quint](#summary-of-quint)
+  * [Identifiers and strings](#identifiers-and-strings)
+  * [Comments](#comments)
+  * [Types](#types)
+    * [Type System 1\.2](#type-system-12)
+  * [Modes](#modes)
+  * [Module\-level constructs](#module-level-constructs)
+    * [Module definition](#module-definition)
+    * [Constant declarations](#constant-declarations)
+    * [Assumptions](#assumptions)
+    * [Variable definitions](#variable-definitions)
+    * [Operator definitions](#operator-definitions)
+    * [No recursive functions and operators](#no-recursive-functions-and-operators)
+    * [Module instances](#module-instances)
+    * [Type aliases](#type-aliases)
+    * [Theorems](#theorems)
+    * [Imports](#imports)
+  * [Namespaces and imports](#namespaces-and-imports)
+    * [Stateless and stateful modules](#stateless-and-stateful-modules)
+    * [Namespaces](#namespaces)
+    * [Imports](#imports-1)
+  * [Quint expression syntax](#quint-expression-syntax)
+    * [Literals](#literals)
+    * [Names](#names)
+    * [Braces and parentheses](#braces-and-parentheses)
+    * [Lambdas (aka Anonymous Operators)](#lambdas-aka-anonymous-operators)
+    * [Two forms of operator application](#two-forms-of-operator-application)
+    * [Boolean operators and equality](#boolean-operators-and-equality)
+    * [Block disjunctions](#block-disjunctions)
+    * [Block conjunctions](#block-conjunctions)
+    * [Flow operators](#flow-operators)
+      * [Condition](#condition)
+      * [Cases (removed)](#cases-removed)
+    * [Sets](#sets)
+      * [Set constructor](#set-constructor)
+      * [Non\-deterministic choice](#non-deterministic-choice)
+      * [Other set operators](#other-set-operators)
+    * [Maps (aka Functions)](#maps-aka-functions)
+    * [Records](#records)
+    * [Discriminated unions](#discriminated-unions)
+    * [Tuples](#tuples)
+    * [Lists (aka Sequences)](#lists-aka-sequences)
+    * [Integers](#integers)
+    * [Nested operator definitions](#nested-operator-definitions)
+    * [Operators on actions](#operators-on-actions)
+      * [Delayed assignment](#delayed-assignment)
+      * [Non\-deterministic choice](#non-deterministic-choice-1)
+      * [Assert](#assert)
+    * [Runs](#runs)
+      * [Then](#then)
+      * [Reps](#reps)
+        * [Example](#example)
+      * [Repeated](#repeated)
+      * [Fail](#fail)
+    * [Temporal operators](#temporal-operators)
+      * [Always](#always)
+      * [Eventually](#eventually)
+      * [Next](#next)
+      * [Unchanged (removed)](#unchanged-removed)
+      * [OrKeep](#orkeep)
+      * [MustChange](#mustchange)
+      * [Enabled](#enabled)
+      * [Fairness](#fairness)
+      * [Other temporal operators](#other-temporal-operators)
+    * [Unbounded quantifiers](#unbounded-quantifiers)
+  * [Instances](#instances)
+    * [Common case 1](#common-case-1)
+    * [Common case 2](#common-case-2)
+    * [The general case](#the-general-case)
+    * [No anonymous instances](#no-anonymous-instances)
+    * [Discussion](#discussion)
 
 <!-- markdown-toc end -->
 
@@ -1781,7 +1785,35 @@ that start with `Init` and evaluate `Next` four times in a row.
 
 *Mode:* Run.
 
+#### Reps
+
+The expressions `n.reps(i => A(i))` or `n.reps(A)` repeats an action `A`, `n` times.
+The iteration number, `i`, starts with 0 and is passed as an argument of `A`.
+As actions are usually not parameterized by the iteration number,
+the most common form looks like: `n.reps(_ => A)`.
+
+The semantics of this operator is as follows:
+
+ - When `n <= 0`, this operator does not change the state.
+ - When `n = 1`, `n.reps(A)` is equivalent to `A(0)`.
+ - When `n > 1`, `n.reps(A)`, is equivalent to
+   `A(0).then((n - 1).reps(i => A(1 + i)))`.
+
+##### Example
+  
+```bluespec
+var x: int
+run test = (x' = 0).then(3.reps(_ => x' = x + 1)).then(assert(x == 3))
+```
+
+*Mode:* Run.
+
 #### Repeated
+
+**Deprecated:** This operator has [usability
+*issues](https://github.com/informalsystems/quint/issues/788).
+Migrate to `reps`, as `repeated` is going [to be
+removed](https://github.com/informalsystems/quint/issues/848).
 
 The operator `repeated` has the following syntax:
 

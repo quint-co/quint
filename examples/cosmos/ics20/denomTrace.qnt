@@ -226,7 +226,7 @@ module denomTraceSimulation {
     channelSetup' = channelSetup,
   }
 
-  run simulationTest = init.then(step.repeated(6)).then((all {
+  run simulationTest = init.then(6.reps(_ => step)).then((all {
     def show(a) = true { show(channelSetup) },
     assert(trace.path == []),
     unchanged,

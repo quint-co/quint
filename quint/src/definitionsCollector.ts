@@ -82,6 +82,7 @@ export function defaultValueDefinitions(): ValueDefinition[] {
     { kind: 'def', identifier: 'next' },
     { kind: 'def', identifier: 'then' },
     { kind: 'def', identifier: 'repeated' },
+    { kind: 'def', identifier: 'reps' },
     { kind: 'def', identifier: 'fail' },
     { kind: 'def', identifier: 'assert' },
     { kind: 'def', identifier: 'orKeep' },

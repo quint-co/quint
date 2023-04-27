@@ -267,8 +267,8 @@ exit $exit_code
   1 ignored
 
   1) failingTest:
-      HOME/counters.qnt:86:9 - error: Assertion failed
-      86:         assert(n == 0),
+      HOME/counters.qnt:83:9 - error: Assertion failed
+      83:         assert(n == 0),
     Use --seed=0x1109d --match=failingTest to repeat.
 
 
@@ -301,8 +301,8 @@ exit $exit_code
   1 ignored
 
   1) failingTest:
-      HOME/counters.qnt:86:9 - error: Assertion failed
-      86:         assert(n == 0),
+      HOME/counters.qnt:83:9 - error: Assertion failed
+      83:         assert(n == 0),
 
     [Frame 0]
     Init() => true
