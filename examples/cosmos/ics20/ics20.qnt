@@ -120,6 +120,50 @@ module ics20 {
 
     (newChainState, ack)
   }
+
+  /// Refund tokens from a token transfer initiated by `packet`.
+  ///
+  /// Should be called if the token transfer fails on the receiver chain
+  /// (due to a packet acknowledgement indicating failure, or due to a timeout).
+  ///
+  /// In particular, `refundTokens` is called by both `onAcknowledgePacket` (on
+  /// failure) and by `onTimeoutPacket`, to refund burnt or escrowed tokens to
+  /// the original sender.
+  ///
+  /// `packet`: The packet (originally sent from the local chain) that initiated the token transfer.
+  ///           Packet `packet` should have resulted in a failed acknowledgement or timeout.
+  pure def refundTokens(chainState: ChainState, packet: Packet): ChainState = {
+    pure val data: FungibleTokenData = packet.data
+    pure val source: HopElement = { port: packet.sourcePort, channel: packet.sourceChannel }
+    pure val bankResult =
+      if (movingBackAlongTrace(source, data.denom)) {
+        // The (failed) transfer attempt was moving the token back along its denom trace.
+        // For this, we originally burnt vouchers in `sendFungibleTokens`, so mint them back.
+        chainState.bank.MintCoins(data.sender, data.denom, data.amount)
+      } else {
+        // The (failed) transfer attempt was moving the token further along its denom trace.
+        // For this, we originally escrowed tokens in `sendFungibleTokens`, so unescrow them back.
+        pure val escrowAccount = chainState.channelEscrowAddresses.get(packet.srcChannel)
+        chainState.bank.TransferCoins(escrowAccount, data.sender, data.denom, data.amount)
+      }
+    if (bankResult.success) {
+      chainState.with("bank", bankResult.accounts)
+    } else {
+      // TODO: ICS 20 does not specify what happens if the bank modules return an error.
+      //       We treat bank failure as a noop.
+      chainState
+    }
+  }
+
+  /// Called by the routing module when a packet sent by this module has been acknowledged.
+  pure def onAcknowledgePacket(chainState: ChainState, packet: Packet,
+                               acknowledgement: FungibleTokenPacketAcknowledgement) : ChainState = {
+    if (acknowledgement.success) {
+      chainState  // transfer successful, nothing to do
+    } else {
+      refundTokens(chainState, packet)
+    }
+  }
 }
 
 module ics20Test {
@@ -172,16 +216,31 @@ module ics20Test {
     })
   }
 
-  /// Receives a packet sent from `sourceChain` to `destChain`
-  action receivePacket(sourceChain: str, destChain: str): bool = {
+  /// Receives a packet sent from `sourceChain` to `destChain`, and delivers
+  /// the acknowledgement back to `sourceChain`.
+  action receiveAndAckPacket(sourceChain: str, destChain: str): bool = all {
+    // (1) Pre-condition:
+    // ICS 4: "a channel is a pipeline for exactly-once packet delivery between specific modules on **separate** blockchains"
+    sourceChain != destChain,
+
+    // (2) Compute updated chain states:
     val sourceChainState = chainStates.get(sourceChain)
+    // non-deterministically pick a packet from `sourceChain` to receive on `destChain`
     nondet packet = sourceChainState.outPackets.oneOf()
-    val result = onRecvPacket(chainStates.get(destChain), packet)
-    all {
-      chainStates' = chainStates
-        .set(destChain, result._1)
-        .set(sourceChain, sourceChainState.with("outPackets", sourceChainState.outPackets.exclude(Set(packet))))
-    }
+    // call the `onRecvPacket` callback
+    val recvResult = onRecvPacket(chainStates.get(destChain), packet)
+    val newDestChainState = recvResult._1
+    val acknowledgement   = recvResult._2
+    // deliver the acknowledgement on `sourceChain`, clean up the sent packet
+    // TODO(thpani): split this into a separate action
+    val newSourceChainPackets = sourceChainState.outPackets.exclude(Set(packet))
+    val newSourceChainState   = onAcknowledgePacket(sourceChainState, packet, acknowledgement)
+                                      .with("outPackets", newSourceChainPackets)
+
+    // (3) Quint state transition:
+    chainStates' = chainStates
+                      .set(destChain, newDestChainState)
+                      .set(sourceChain, newSourceChainState)
   }
 
   /// Send `amount`-many `denom` tokens from `sender` in `sourceChain` to
@@ -195,7 +254,7 @@ module ics20Test {
       val result = sendFungibleTokens(chainStates.get(sourceChain), denom, amount, sender, receiver, "transfer", channelTopology.get(sourceChain).get(destChain), 0, 0)
       chainStates' = chainStates.set(sourceChain, result),
     }).then(
-      receivePacket(sourceChain, destChain)
+      receiveAndAckPacket(sourceChain, destChain)
     )
 
   // Transfer a single token across these chains: A -> B -> C -> A -> C -> B -> A
