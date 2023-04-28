@@ -1,7 +1,8 @@
 // -*- mode: Bluespec; -*-
 
 /**
- * A specification for the ICS20 fungible token transfer protocol.
+ * A specification for the ICS20 fungible token transfer protocol:
+ * https://github.com/cosmos/ibc/tree/main/spec/app/ics-020-fungible-token-transfer
  *
  * Gabriela Moreira and Thomas Pani, Informal Systems, 2023
  */
