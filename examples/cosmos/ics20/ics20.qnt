@@ -168,6 +168,8 @@ module ics20 {
 
 module ics20Test {
   import base.* from "./base"
+  import bank.getBalance from "./bank"
+  import bank.getBalances from "./bank"
   import ics20.*
 
   /// Map from chain identifiers to their state
@@ -300,4 +302,55 @@ module ics20Test {
       chainStates' = chainStates,
     }
   )
+
+  // Test producing a failed acknowledgement:
+  //
+  // 1. Transfer 50 tokens from Alice on chain A to Bob on chain B.
+  // 2. Manipulate the escrow account on chain A, to contain less than 50 tokens.
+  // 3. Transfer the 50 tokens back from Bob to Alice.
+  //    3.1 First, this burns Bob's 50 vouchers on chain B, and sends a packet to chain A.
+  //    3.2 Receipt of the packet on chain A calls the `onRecvPacket` callback.
+  //    3.3 `onRecvPacket` calls the bank module's `TransferCoins` to unescrow 50 tokens to Alice.
+  //    3.4 `TransferCoins` returns an error, because -- after manipulating it in (2) -- the escrow account has insufficient funds.
+  //    3.5 The bank module error causes `onRecvPacket` to return a failed acknowledgement.
+  //    3.6 `onAcknowledgePacket` on chain "B" re-mints the burned vouchers to Bob.
+  run FailedAckTest = init.then(all {
+    assert(chainStates.get("A").bank.getBalances("alice").getBalance(ATOM) == 100),
+    assert(chainStates.get("A").bank.getBalances(ESCROW_ACCOUNT).getBalance(ATOM) == 0),
+    assert(chainStates.get("B").bank.getBalances("bob").getBalance(ATOM) == 0),
+
+    // 1. Transfer 50 tokens from Alice on chain A to Bob on chain B.
+    sendTransfer(ATOM, 50, "A", "B", "alice", "bob")
+  }).then(
+    pure val voucherDenom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
+    all {
+      assert(chainStates.get("A").bank.getBalances("alice").getBalance(ATOM) == 50),
+      assert(chainStates.get("A").bank.getBalances(ESCROW_ACCOUNT).getBalance(ATOM) == 50),
+      assert(chainStates.get("B").bank.getBalances("bob").getBalance(voucherDenom) == 50),
+
+      // 2. Manipulate the escrow account on chain A, to contain less than 50 tokens.
+      val chainState = chainStates.get("A")
+      val manipulatedEscrowAccount = chainState.bank.get(ESCROW_ACCOUNT).set(ATOM, 49)
+      val manipulatedBank = chainState.bank.set(ESCROW_ACCOUNT, manipulatedEscrowAccount)
+      chainStates' = chainStates.set("A", chainState.with("bank", manipulatedBank))
+  }).then(
+    pure val voucherDenom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
+    all {
+      assert(chainStates.get("A").bank.getBalances("alice").getBalance(ATOM) == 50),
+      assert(chainStates.get("A").bank.getBalances(ESCROW_ACCOUNT).getBalance(ATOM) == 49),
+      assert(chainStates.get("B").bank.getBalances("bob").getBalance(voucherDenom) == 50),
+
+      // 3. Transfer the 50 tokens back from Bob to Alice.
+      sendTransfer(voucherDenom, 50, "B", "A", "bob", "alice")
+  }).then(
+    pure val voucherDenom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
+    all {
+      // Assert that the vouchers have been minted back
+      assert(chainStates.get("A").bank.getBalances("alice").getBalance(ATOM) == 50),
+      assert(chainStates.get("A").bank.getBalances(ESCROW_ACCOUNT).getBalance(ATOM) == 49),
+      assert(chainStates.get("B").bank.getBalances("bob").getBalance(voucherDenom) == 50),
+
+      // noop
+      chainStates' = chainStates
+  })
 }
