@@ -140,7 +140,11 @@ module bankTests {
   var error: bool  // true iff a previous bank operation has been unsuccessful
 
   pure val Addresses : Set[Address] = Set("alice", "bob", "charlie")
-  pure val Denoms : Set[Denomination] = Set(toDenom("atom"), toDenom("eth"), toDenom("osmo"))
+
+  pure val ATOM = toDenom("atom")
+  pure val ETH  = toDenom("eth")
+  pure val OSMO = toDenom("osmo")
+  pure val Denoms : Set[Denomination] = Set(ATOM, ETH, OSMO)
 
   // Trivial action defs for the bank module operations
   action burn(sender: Address, denom: Denomination, amount: Amount): bool =
@@ -170,7 +174,7 @@ module bankTests {
    * Alice, Bob and Charlie initially hold 10 ATOMs, and no other coins.
    */
   action init = all {
-    state' = Addresses.mapBy(_ => Map(toDenom("atom") -> 10)),
+    state' = Addresses.mapBy(_ => Map(ATOM -> 10)),
     error' = false
   }
 
@@ -199,16 +203,16 @@ module bankTests {
     // last operation successful
     assert(not(error)),
     // everybody holds 10 ATOM
-    assert(state.getBalances("alice").getBalance(toDenom("atom")) == 10),
-    assert(state.getBalances("bob").getBalance(toDenom("atom")) == 10),
-    assert(state.getBalances("charlie").getBalance(toDenom("atom")) == 10),
+    assert(state.getBalances("alice").getBalance(ATOM) == 10),
+    assert(state.getBalances("bob").getBalance(ATOM) == 10),
+    assert(state.getBalances("charlie").getBalance(ATOM) == 10),
     // nobody holds ETH
-    assert(state.getBalances("alice").getBalance(toDenom("eth")) == 0),
-    assert(state.getBalances("bob").getBalance(toDenom("eth")) == 0),
-    assert(state.getBalances("charlie").getBalance(toDenom("eth")) == 0),
+    assert(state.getBalances("alice").getBalance(ETH) == 0),
+    assert(state.getBalances("bob").getBalance(ETH) == 0),
+    assert(state.getBalances("charlie").getBalance(ETH) == 0),
     // "noAccount" holds nothing
-    assert(state.getBalances("noAccount").getBalance(toDenom("atom")) == 0),
-    assert(state.getBalances("noAccount").getBalance(toDenom("eth")) == 0),
+    assert(state.getBalances("noAccount").getBalance(ATOM) == 0),
+    assert(state.getBalances("noAccount").getBalance(ETH) == 0),
   }
 
   // Do some mint, burn, transfer steps and check that account balances are correct.
@@ -217,76 +221,76 @@ module bankTests {
       .then(all {
         initialState,
         // now mint alice 15 ATOMs
-        mint("alice", toDenom("atom"), 15)
+        mint("alice", ATOM, 15)
       })
       .then(all {
         // last operation successful
         assert(not(error)),
         // alice received her 15 ATOM
-        assert(state.getBalances("alice").getBalance(toDenom("atom")) == 25),
-        assert(state.getBalances("bob").getBalance(toDenom("atom")) == 10),
-        assert(state.getBalances("charlie").getBalance(toDenom("atom")) == 10),
+        assert(state.getBalances("alice").getBalance(ATOM) == 25),
+        assert(state.getBalances("bob").getBalance(ATOM) == 10),
+        assert(state.getBalances("charlie").getBalance(ATOM) == 10),
         // still nobody holds ETH
-        assert(state.getBalances("alice").getBalance(toDenom("eth")) == 0),
-        assert(state.getBalances("bob").getBalance(toDenom("eth")) == 0),
-        assert(state.getBalances("charlie").getBalance(toDenom("eth")) == 0),
+        assert(state.getBalances("alice").getBalance(ETH) == 0),
+        assert(state.getBalances("bob").getBalance(ETH) == 0),
+        assert(state.getBalances("charlie").getBalance(ETH) == 0),
         // "noAccount" holds nothing
-        assert(state.getBalances("noAccount").getBalance(toDenom("atom")) == 0),
-        assert(state.getBalances("noAccount").getBalance(toDenom("eth")) == 0),
+        assert(state.getBalances("noAccount").getBalance(ATOM) == 0),
+        assert(state.getBalances("noAccount").getBalance(ETH) == 0),
 
         // now burn bob 6 ATOMs
-        burn("bob", toDenom("atom"), 6)
+        burn("bob", ATOM, 6)
       })
       .then(all {
         // last operation successful
         assert(not(error)),
         // bob lost 42 ATOM
-        assert(state.getBalances("alice").getBalance(toDenom("atom")) == 25),
-        assert(state.getBalances("bob").getBalance(toDenom("atom")) == 4),
-        assert(state.getBalances("charlie").getBalance(toDenom("atom")) == 10),
+        assert(state.getBalances("alice").getBalance(ATOM) == 25),
+        assert(state.getBalances("bob").getBalance(ATOM) == 4),
+        assert(state.getBalances("charlie").getBalance(ATOM) == 10),
         // still nobody holds ETH
-        assert(state.getBalances("alice").getBalance(toDenom("eth")) == 0),
-        assert(state.getBalances("bob").getBalance(toDenom("eth")) == 0),
-        assert(state.getBalances("charlie").getBalance(toDenom("eth")) == 0),
+        assert(state.getBalances("alice").getBalance(ETH) == 0),
+        assert(state.getBalances("bob").getBalance(ETH) == 0),
+        assert(state.getBalances("charlie").getBalance(ETH) == 0),
         // "noAccount" holds nothing
-        assert(state.getBalances("noAccount").getBalance(toDenom("atom")) == 0),
-        assert(state.getBalances("noAccount").getBalance(toDenom("eth")) == 0),
+        assert(state.getBalances("noAccount").getBalance(ATOM) == 0),
+        assert(state.getBalances("noAccount").getBalance(ETH) == 0),
 
         // now mint charlie 6 ETH
-        mint("charlie", toDenom("eth"), 6)
+        mint("charlie", ETH, 6)
       })
       .then(all {
         // last operation successful
         assert(not(error)),
         // ATOM balances remain the same
-        assert(state.getBalances("alice").getBalance(toDenom("atom")) == 25),
-        assert(state.getBalances("bob").getBalance(toDenom("atom")) == 4),
-        assert(state.getBalances("charlie").getBalance(toDenom("atom")) == 10),
+        assert(state.getBalances("alice").getBalance(ATOM) == 25),
+        assert(state.getBalances("bob").getBalance(ATOM) == 4),
+        assert(state.getBalances("charlie").getBalance(ATOM) == 10),
         // now charlie holds 6 ETH
-        assert(state.getBalances("alice").getBalance(toDenom("eth")) == 0),
-        assert(state.getBalances("bob").getBalance(toDenom("eth")) == 0),
-        assert(state.getBalances("charlie").getBalance(toDenom("eth")) == 6),
+        assert(state.getBalances("alice").getBalance(ETH) == 0),
+        assert(state.getBalances("bob").getBalance(ETH) == 0),
+        assert(state.getBalances("charlie").getBalance(ETH) == 6),
         // "noAccount" holds nothing
-        assert(state.getBalances("noAccount").getBalance(toDenom("atom")) == 0),
-        assert(state.getBalances("noAccount").getBalance(toDenom("eth")) == 0),
+        assert(state.getBalances("noAccount").getBalance(ATOM) == 0),
+        assert(state.getBalances("noAccount").getBalance(ETH) == 0),
 
         // now transfer 4 of charlie's ETH to bob
-        transfer("charlie", "bob", toDenom("eth"), 4)
+        transfer("charlie", "bob", ETH, 4)
       })
       .then(all {
         // last operation successful
         assert(not(error)),
         // ATOM balances remain the same
-        assert(state.getBalances("alice").getBalance(toDenom("atom")) == 25),
-        assert(state.getBalances("bob").getBalance(toDenom("atom")) == 4),
-        assert(state.getBalances("charlie").getBalance(toDenom("atom")) == 10),
+        assert(state.getBalances("alice").getBalance(ATOM) == 25),
+        assert(state.getBalances("bob").getBalance(ATOM) == 4),
+        assert(state.getBalances("charlie").getBalance(ATOM) == 10),
         // bob got 4 of charlie's ETH
-        assert(state.getBalances("alice").getBalance(toDenom("eth")) == 0),
-        assert(state.getBalances("bob").getBalance(toDenom("eth")) == 4),
-        assert(state.getBalances("charlie").getBalance(toDenom("eth")) == 2),
+        assert(state.getBalances("alice").getBalance(ETH) == 0),
+        assert(state.getBalances("bob").getBalance(ETH) == 4),
+        assert(state.getBalances("charlie").getBalance(ETH) == 2),
         // "noAccount" holds nothing
-        assert(state.getBalances("noAccount").getBalance(toDenom("atom")) == 0),
-        assert(state.getBalances("noAccount").getBalance(toDenom("eth")) == 0),
+        assert(state.getBalances("noAccount").getBalance(ATOM) == 0),
+        assert(state.getBalances("noAccount").getBalance(ETH) == 0),
 
         // nothing changes
         state' = state,
@@ -301,18 +305,18 @@ module bankTests {
         initialState,
 
         // now burn alice 10 ATOMs
-        burn("alice", toDenom("atom"), 10)
+        burn("alice", ATOM, 10)
       })
       .then(all {
         // last operation successful
         assert(not(error)),
         // alice lost 10 ATOM
-        assert(state.getBalances("alice").getBalance(toDenom("atom")) == 0),
-        assert(state.getBalances("bob").getBalance(toDenom("atom")) == 10),
-        assert(state.getBalances("charlie").getBalance(toDenom("atom")) == 10),
+        assert(state.getBalances("alice").getBalance(ATOM) == 0),
+        assert(state.getBalances("bob").getBalance(ATOM) == 10),
+        assert(state.getBalances("charlie").getBalance(ATOM) == 10),
 
         // now burn bob 11 ATOMs
-        burn("bob", toDenom("atom"), 11)
+        burn("bob", ATOM, 11)
       })
       .then(all{
         // burning over balance failed
@@ -331,18 +335,18 @@ module bankTests {
         initialState,
 
         // now transfer 10 ATOMs from alice to bob
-        transfer("alice", "bob", toDenom("atom"), 10)
+        transfer("alice", "bob", ATOM, 10)
       })
       .then(all {
         // last operation successful
         assert(not(error)),
         // alice -- 10 ATOM --> bob
-        assert(state.getBalances("alice").getBalance(toDenom("atom")) == 0),
-        assert(state.getBalances("bob").getBalance(toDenom("atom")) == 20),
-        assert(state.getBalances("charlie").getBalance(toDenom("atom")) == 10),
+        assert(state.getBalances("alice").getBalance(ATOM) == 0),
+        assert(state.getBalances("bob").getBalance(ATOM) == 20),
+        assert(state.getBalances("charlie").getBalance(ATOM) == 10),
 
         // now transfer 21 ATOMs from bob to charlie
-        transfer("bob", "charlie", toDenom("atom"), 21)
+        transfer("bob", "charlie", ATOM, 21)
       })
       .then(all{
         // transfer over balance failed
@@ -361,18 +365,18 @@ module bankTests {
         initialState,
 
         // now mint alice 0 ATOMs
-        mint("alice", toDenom("atom"), 0)
+        mint("alice", ATOM, 0)
       })
       .then(all {
         // last operation successful
         assert(not(error)),
         // balances remain
-        assert(state.getBalances("alice").getBalance(toDenom("atom")) == 10),
-        assert(state.getBalances("bob").getBalance(toDenom("atom")) == 10),
-        assert(state.getBalances("charlie").getBalance(toDenom("atom")) == 10),
+        assert(state.getBalances("alice").getBalance(ATOM) == 10),
+        assert(state.getBalances("bob").getBalance(ATOM) == 10),
+        assert(state.getBalances("charlie").getBalance(ATOM) == 10),
 
         // now mint alice -1 ATOMs
-        mint("alice", toDenom("atom"), -1)
+        mint("alice", ATOM, -1)
       })
       .then(all{
         // negative minting failed

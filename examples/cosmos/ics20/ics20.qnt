@@ -146,6 +146,9 @@ module ics20Test {
     )
   )
 
+  pure val ATOM = toDenom("atom")
+  pure val ESCROW_ACCOUNT = "escrow_account"
+
   /// For each chain, a map from channel to their channel counterparties,
   /// derived from `channelTopology`. For example, in chain A, channel "channelToB"
   /// has the counterparty "channelToA".
@@ -161,9 +164,9 @@ module ics20Test {
   action init = {
     chainStates' = channelTopology.keys().mapBy(chain => {
       // All accounts are empty, except for Alice in chain A who has 100 atoms
-      bank: if (chain == "A") Map("alice" -> Map(toDenom("atom") -> 100)) else Map(),
+      bank: if (chain == "A") Map("alice" -> Map(ATOM -> 100)) else Map(),
       channels: channelCounterparties.get(chain),
-      channelEscrowAddresses: channelCounterparties.get(chain).keys().mapBy(_ => "escrow_account"),
+      channelEscrowAddresses: channelCounterparties.get(chain).keys().mapBy(_ => ESCROW_ACCOUNT),
       outPackets: Set()
     })
   }
@@ -193,7 +196,7 @@ module ics20Test {
 
   // These steps of transfer occur: A -> B -> C -> A -> C -> B -> A
   run ABCACBATest = init.then(
-    sendTransfer(toDenom("atom"), "A", "B", "alice", "bob")
+    sendTransfer(ATOM, "A", "B", "alice", "bob")
   ).then(
     pure val denom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
     sendTransfer(denom, "B", "C", "bob", "charlie")
@@ -226,8 +229,8 @@ module ics20Test {
 
     sendTransfer(denom, "B", "A", "charlie", "darwin")
   ).then(all {
-      assert(chainStates.get("A").bank.get("alice").get(toDenom("atom")) == 99),
-      assert(chainStates.get("A").bank.get("darwin").get(toDenom("atom")) == 1),
+      assert(chainStates.get("A").bank.get("alice").get(ATOM) == 99),
+      assert(chainStates.get("A").bank.get("darwin").get(ATOM) == 1),
 
       chainStates' = chainStates,
     }
