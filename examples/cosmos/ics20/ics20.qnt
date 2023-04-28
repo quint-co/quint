@@ -164,6 +164,13 @@ module ics20 {
       refundTokens(chainState, packet)
     }
   }
+
+  /// Called by the routing module when a packet sent by this module has timed out
+  /// (such that it will not be received on the destination chain).
+  pure def onTimeoutPacket(chainState: ChainState, packet: Packet): ChainState = {
+    // the packet timed out, so refund the tokens
+    refundTokens(chainState, packet)
+  }
 }
 
 module ics20Test {
@@ -353,4 +360,6 @@ module ics20Test {
       // noop
       chainStates' = chainStates
   })
+
+  // TODO(thpani): add a test for packet timeout
 }
