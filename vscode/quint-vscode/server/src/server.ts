@@ -7,15 +7,16 @@ import {
   CodeAction,
   CodeActionKind,
   CodeActionParams,
+  DefinitionLink,
   DefinitionParams,
   HandlerResult,
   Hover,
   HoverParams,
   InitializeParams,
   InitializeResult,
-  Location,
   MarkupContent,
   MarkupKind,
+  Position,
   ProposedFeatures,
   SignatureHelp,
   SignatureHelpParams,
@@ -26,15 +27,16 @@ import {
 
 import {
   DocumentUri,
-  TextDocument,
+  TextDocument
 } from 'vscode-languageserver-textdocument'
 
-import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase3, QuintAnalyzer, QuintError, QuintErrorData, builtinDocs, effectSchemeToString, newIdGenerator,
-  parsePhase1fromText, parsePhase2sourceResolution, parsePhase3importAndNameResolution,
-  produceDocs, typeSchemeToString } from '@informalsystems/quint'
+import {
+  AnalyzisOutput, DocumentationEntry, Loc, ParserPhase3, QuintAnalyzer, QuintError, QuintErrorData, builtinDocs, effectSchemeToString, newIdGenerator,
+  parsePhase1fromText, parsePhase2sourceResolution, parsePhase3importAndNameResolution, produceDocsById, typeSchemeToString
+} from '@informalsystems/quint'
 import { assembleDiagnostic, diagnosticsFromErrors, findBestMatchingResult, findName, locToRange } from './reporting'
 import { fileSourceResolver } from '@informalsystems/quint/dist/src/sourceResolver'
-import { URI, Utils } from 'vscode-uri'
+import { URI } from 'vscode-uri'
 import { basename, dirname } from 'path'
 
 // Create one generator of unique identifiers
@@ -48,11 +50,10 @@ const connection = createConnection(ProposedFeatures.all)
 const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument)
 
 // Store auxiliary information by document
-const parsedDataByDocument: Map<DocumentUri, ParserPhase3> = new Map<DocumentUri, ParserPhase3>()
-const analysisOutputByDocument: Map<DocumentUri, AnalyzisOutput> = new Map<DocumentUri, AnalyzisOutput>()
-// Documentation entries by name, by module, by document
-const docsByDocument: Map<DocumentUri, Map<string, Map<string, DocumentationEntry>>> =
-  new Map<DocumentUri, Map<string, Map<string, DocumentationEntry>>>()
+const parsedDataByDocument: Map<DocumentUri, ParserPhase3> = new Map()
+const analysisOutputByDocument: Map<DocumentUri, AnalyzisOutput> = new Map()
+// Documentation entries by id, by document
+const docsByDocument: Map<DocumentUri, Map<bigint, DocumentationEntry>> = new Map()
 
 const ds = builtinDocs(idGenerator)
 const loadedBuiltInDocs = ds.isRight() ? ds.value : undefined
@@ -86,7 +87,7 @@ documents.onDidChangeContent(change => {
 
   parseDocument(change.document).then((result) => {
     parsedDataByDocument.set(change.document.uri, result)
-    docsByDocument.set(change.document.uri, new Map(result.modules.map(m => [m.name, produceDocs(m)])))
+    docsByDocument.set(change.document.uri, new Map(result.modules.flatMap(m => [...produceDocsById(m).entries()])))
 
     const analyzer = new QuintAnalyzer(result.table)
     result.modules.forEach(module => analyzer.analyze(module))
@@ -108,12 +109,13 @@ connection.onHover((params: HoverParams): Hover | undefined => {
     if (!parsedData || !analysisOutput) {
       return []
     }
+    const source = URI.parse(params.textDocument.uri).path
 
     const typeResult = findBestMatchingResult(
-      parsedData.sourceMap, [...analysisOutput.types.entries()], params.position
+      parsedData.sourceMap, [...analysisOutput.types.entries()], params.position, source
     )
     const effectResult = findBestMatchingResult(
-      parsedData.sourceMap, [...analysisOutput.effects.entries()], params.position
+      parsedData.sourceMap, [...analysisOutput.effects.entries()], params.position, source
     )
 
     // There are cases where we have types but not effects, but not the other way around
@@ -146,15 +148,15 @@ connection.onHover((params: HoverParams): Hover | undefined => {
       return []
     }
 
-    const { modules, sourceMap } = parsedData
-    const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-    const [module, name, _id] = findName(modules, results, params.position) ?? [undefined, undefined, undefined]
-    if (!name) {
+    const link = findDefinition(parsedData, params.textDocument.uri, params.position)
+    if (!link) {
       return []
     }
 
-    const signature = docsByDocument.get(params.textDocument.uri)?.get(module.name)?.get(name)
-      ?? loadedBuiltInDocs?.get(name)!
+    const signature = link.definitionId
+      ? docsByDocument.get(params.textDocument.uri)?.get(link.definitionId)
+      : loadedBuiltInDocs?.get(link.name)
+
     if (!signature) {
       return []
     }
@@ -191,16 +193,20 @@ connection.onSignatureHelp((params: SignatureHelpParams): HandlerResult<Signatur
     return emptySignatures
   }
 
-  // Find name under cursor
-  const { modules, sourceMap } = parsedData
-  const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-  const [module, name, _scope] = findName(modules, results, params.position) ?? [undefined, undefined, undefined]
-  if (!name) {
+  const link = findDefinition(parsedData, params.textDocument.uri, params.position)
+  if (!link) {
     return emptySignatures
   }
 
-  const signature = docsByDocument.get(params.textDocument.uri)?.get(module.name)?.get(name)
-    ?? loadedBuiltInDocs?.get(name)!
+  const signature = link.definitionId
+    ? docsByDocument.get(params.textDocument.uri)?.get(link.definitionId)
+    : loadedBuiltInDocs?.get(link.name)
+
+  console.log(signature)
+  if (!signature) {
+    return emptySignatures
+  }
+
   const signatureWithMarkupKind = signature?.documentation
     ? { ...signature, documentation: { kind: 'markdown', value: signature.documentation } as MarkupContent }
     : signature
@@ -212,42 +218,75 @@ connection.onSignatureHelp((params: SignatureHelpParams): HandlerResult<Signatur
   }
 })
 
-connection.onDefinition((params: DefinitionParams): HandlerResult<Location[], void> => {
-  const parsedData = parsedDataByDocument.get(params.textDocument.uri)
-  if (!parsedData) {
-    return []
-  }
+interface QuintDefinitionLink {
+  nameId: bigint,
+  name: string,
+  definitionId?: bigint,
+}
 
-  // Find name under cursor
+function findDefinition(parsedData: ParserPhase3, uri: string, position: Position): QuintDefinitionLink | undefined {
+  // Find name under position
   const { modules, sourceMap, table } = parsedData
   const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-  const [_module, name, id] = findName(modules, results, params.position) ?? [undefined, undefined, undefined]
+  const source = URI.parse(uri).path
+  const [_module, name, id] = findName(modules, results, position, source) ?? [undefined, undefined, undefined]
   if (!name) {
-    return []
+    return undefined
   }
 
   // Find definition of name
   const def = table.get(id)
   if (!def || !def.reference) {
+    return { nameId: id, name }
+  }
+
+  return {
+    nameId: id,
+    name,
+    definitionId: def?.reference,
+  }
+}
+
+connection.onDefinition((params: DefinitionParams): HandlerResult<DefinitionLink[], void> => {
+  const parsedData = parsedDataByDocument.get(params.textDocument.uri)
+  if (!parsedData) {
     return []
   }
 
-  const loc = sourceMap.get(def.reference)
+  const link = findDefinition(parsedData, params.textDocument.uri, params.position)
+  if (!link) {
+    return []
+  }
+
+  const { nameId, name, definitionId } = link
+  if (!definitionId) {
+    return []
+  }
+
+  const loc = parsedData.sourceMap.get(definitionId)
   if (!loc) {
     return []
   }
 
   const range = locToRange(loc)
+  const uri = URI.parse(loc.source).toString()
 
-  // Definitions start with a qualifier
-  // This finds where the definition name actually starts
-  // and corrects the range
-  const text = documents.get(params.textDocument.uri)!.getText(range)
+  // Definitions start with a qualifier. This finds where the definition name
+  // actually starts and corrects the range. If the file is not opened in the
+  // editor yet, we just use the original range. In the future, we should find
+  // another way of positioning the cursor in the editor, or read the file from
+  // disk.
+  const text = documents.get(uri)?.getText(range) ?? name
   const unqualifiedName = name.split('::').pop()!
   const start = text.search(new RegExp(unqualifiedName))
   return [{
-    uri: params.textDocument.uri,
-    range: { ...range, start: { ...range.start, character: range.start.character + start } },
+    // The range for the name being hover over
+    originSelectionRange: locToRange(parsedData.sourceMap.get(nameId)!),
+    targetUri: uri,
+    // The range for the entire definition (including the qualifier and body)
+    targetRange: range,
+    // The range for the definition's name
+    targetSelectionRange: { ...range, start: { ...range.start, character: range.start.character + start } },
   }]
 })
 
@@ -315,7 +354,7 @@ async function parseDocument(textDocument: TextDocument): Promise<ParserPhase3> 
       reject(`Support imports from file, found: ${parsedUri.scheme}`))
   }
 
-  const result = parsePhase1fromText(idGenerator, text, textDocument.uri)
+  const result = parsePhase1fromText(idGenerator, text, parsedUri.path)
     .chain(phase1Data => {
       const resolver = fileSourceResolver()
       const mainPath =
@@ -328,6 +367,8 @@ async function parseDocument(textDocument: TextDocument): Promise<ParserPhase3> 
       const error: QuintError = { code: 'QNT000', message: msg.explanation, data: {} }
       return msg.locs.map(loc => assembleDiagnostic(error, loc))
     }))
+
+  // result.map(data => console.log('parsed', data.modules.map(m => m.name)))
 
   if (result.isRight()) {
     return new Promise((resolve, _reject) => resolve(result.value))

@@ -66,9 +66,9 @@ export function assembleDiagnostic(error: QuintError, loc: Loc): Diagnostic {
  * the position is not under a name expression or an operator application
  */
 export function findName(
-  modules: QuintModule[], sources: [Loc, bigint][], position: Position
+  modules: QuintModule[], sources: [Loc, bigint][], position: Position, sourceFile: string
 ): [QuintModule, string, bigint] | undefined {
-  const ids = resultsOnPosition(sources, position)
+  const ids = resultsOnPosition(sources, position, sourceFile)
   const names = ids.flatMap(([_loc, id]) => {
     return modules.filter(module => module.id > id).map((module): ([QuintModule, string, bigint] | undefined) => {
       const expr = findExpressionWithId(module, id)
@@ -103,10 +103,10 @@ export function findName(
  * matches the position, or undefined if none is found
  */
 export function findBestMatchingResult<T>(
-  sourceMap: Map<bigint, Loc>, results: [bigint, T][], position: Position
+  sourceMap: Map<bigint, Loc>, results: [bigint, T][], position: Position, sourceFile: string
 ): [Loc, T] {
   const resultsByLoc: [Loc, T][] = results.map(([id, result]) => [sourceMap.get(id)!, result])
-  return resultsOnPosition(resultsByLoc, position)[0]
+  return resultsOnPosition(resultsByLoc, position, sourceFile)[0]
 }
 
 /**
@@ -126,10 +126,11 @@ export function locToRange(loc: Loc): Range {
   }
 }
 
-function resultsOnPosition<T>(results: [Loc, T][], position: Position): [Loc, T][] {
+function resultsOnPosition<T>(results: [Loc, T][], position: Position, sourceFile: string): [Loc, T][] {
   const filteredResults = results.filter(([loc, _result]) => {
     // Position is part of effect's expression range
-    return (position.line >= loc.start.line && (!loc.end || position.line <= loc.end.line) &&
+    return (loc && loc.source === sourceFile &&
+      position.line >= loc.start.line && (!loc.end || position.line <= loc.end.line) &&
       position.character >= loc.start.col && (!loc.end || position.character <= loc.end.col))
   })
 
