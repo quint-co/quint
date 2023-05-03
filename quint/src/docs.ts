@@ -13,9 +13,9 @@
  * @module
  */
 
-import { compact } from "lodash";
-import { definitionToString } from "./IRprinting";
-import { QuintModule } from "./quintIr";
+import { compact } from 'lodash'
+import { definitionToString } from './IRprinting'
+import { QuintModule } from './quintIr'
 
 /**
  * A documentation entry for a definition, compatible with LSP responses for signature help
@@ -48,6 +48,29 @@ export function produceDocs(quintModule: QuintModule): Map<string, Documentation
   })
 
   return new Map<string, DocumentationEntry>(compact(entries))
+}
+
+/**
+ * Produces a documentation map for the modules' definitions
+ *
+ * @param quintModule the module for which documentation should be produced
+ * @returns a map of definition ids to their documentation
+ */
+export function produceDocsById(quintModule: QuintModule): Map<bigint, DocumentationEntry> {
+  const entries = quintModule.defs.map((def) => {
+    if (def.kind === 'instance' || def.kind === 'import' || def.kind === 'export') {
+      return undefined
+    }
+
+    const entry: [bigint, DocumentationEntry] = [def.id, {
+      label: definitionToString(def, false),
+      documentation: def.doc,
+    }]
+
+    return entry
+  })
+
+  return new Map(compact(entries))
 }
 
 /**
