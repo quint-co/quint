@@ -11,9 +11,9 @@ module ics20 {
   import bank.* from "./bank"
   import denomTrace.* from "./denomTrace"
 
-  /* ***************************************************************************
+  /****************************************************************************
    * TYPES
-   * **************************************************************************/
+   ***************************************************************************/
 
   // Fundamental types
   type Height = int
@@ -48,11 +48,23 @@ module ics20 {
     channelEscrowAddresses: Channel -> Address,
   }
 
+  /****************************************************************************
+   * FUNCTIONAL LAYER
+   ***************************************************************************/
+
+  /****************************/
+  /*     helper functions     */
+  /****************************/
+
   /// The counterparty for a channel `C` in a chain is the channel identifier of
   /// the channel `C` connects to, in the other chain.
   pure def getCounterparty(chainState: ChainState, sourceChannel: Channel): Channel = {
     chainState.channels.get(sourceChannel)
   }
+
+  /****************************/
+  /*     public interface     */
+  /****************************/
 
   pure def sendFungibleTokens(chainState: ChainState, denomination: DenomTrace, amount: UINT256,
                               sender: Address, receiver: Address, sourcePort: str, sourceChannel: Channel,
@@ -179,6 +191,10 @@ module ics20Test {
   import bank.getBalances from "./bank"
   import ics20.*
 
+  /****************************************************************************
+   * STATE MACHINE
+   ***************************************************************************/
+
   /// Map from chain identifiers to their state
   var chainStates: str -> ChainState
 
@@ -284,6 +300,10 @@ module ics20Test {
     }).then(
       receiveAndAckPacket(sourceChain, destChain)
     )
+
+  /****************************************************************************
+   * TESTS
+   ***************************************************************************/
 
   // Transfer a single token across these chains: A -> B -> C -> A -> C -> B -> A
   // All transfers are acknowledged as successful.
