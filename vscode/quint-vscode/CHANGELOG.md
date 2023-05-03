@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Add support for multiple files (#859)
+- Improved responsiveness on large files/chains of files (#859)
+
 ### Changed
 ### Deprecated
 ### Removed
