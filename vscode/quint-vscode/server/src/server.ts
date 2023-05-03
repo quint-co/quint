@@ -16,8 +16,6 @@ import {
   InitializeParams,
   InitializeResult,
   MarkupContent,
-  MarkupKind,
-  Position,
   ProposedFeatures,
   SignatureHelp,
   SignatureHelpParams,
@@ -32,14 +30,20 @@ import {
 } from 'vscode-languageserver-textdocument'
 
 import {
-  AnalyzisOutput, DocumentationEntry, Loc, ParserPhase3, QuintAnalyzer, QuintError, QuintErrorData, builtinDocs, effectSchemeToString, newIdGenerator,
-  parsePhase1fromText, parsePhase2sourceResolution, parsePhase3importAndNameResolution, produceDocsById, typeSchemeToString
+  AnalyzisOutput,
+  DocumentationEntry,
+  ParserPhase3,
+  QuintAnalyzer,
+  QuintErrorData,
+  builtinDocs,
+  newIdGenerator,
+  produceDocsById
 } from '@informalsystems/quint'
-import { assembleDiagnostic, diagnosticsFromErrors, findBestMatchingResult, findName, locToRange } from './reporting'
-import { fileSourceResolver } from '@informalsystems/quint/dist/src/sourceResolver'
+import { diagnosticsFromErrors, locToRange } from './reporting'
 import { URI } from 'vscode-uri'
-import { basename, dirname } from 'path'
-import { IdGenerator } from '@informalsystems/quint/dist/src/idGenerator'
+import { hover } from './hover'
+import { findDefinition } from './definitions'
+import { parseDocument } from './parsing'
 
 export class QuintLanguageServer {
   // Create one generator of unique identifiers
@@ -48,16 +52,18 @@ export class QuintLanguageServer {
   // Store auxiliary information by document
   private parsedDataByDocument: Map<DocumentUri, ParserPhase3> = new Map()
   private analysisOutputByDocument: Map<DocumentUri, AnalyzisOutput> = new Map()
+
   // Documentation entries by id, by document
   private docsByDocument: Map<DocumentUri, Map<bigint, DocumentationEntry>> = new Map()
+
+  // A timeout to store scheduled analysis
   private analysisTimeout: NodeJS.Timeout = setTimeout(() => { }, 0)
 
   constructor(
     private readonly connection: Connection,
     private readonly documents: TextDocuments<TextDocument>
   ) {
-    const ds = builtinDocs(this.idGenerator)
-    const loadedBuiltInDocs = ds.isRight() ? ds.value : undefined
+    const loadedBuiltInDocs = builtinDocs(this.idGenerator).unwrap()
 
     connection.onInitialize((_params: InitializeParams) => {
       const result: InitializeResult = {
@@ -91,92 +97,19 @@ export class QuintLanguageServer {
 
     connection.onHover((params: HoverParams): Hover | undefined => {
       const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
+      if (!parsedData) {
+        return
+      }
+
       const analysisOutput = this.analysisOutputByDocument.get(params.textDocument.uri)
       const docs = this.docsByDocument.get(params.textDocument.uri)
+      const source = URI.parse(params.textDocument.uri).path
+      const document = documents.get(params.textDocument.uri)!
 
-      function inferredDataHover(): string[] {
-        if (!parsedData || !analysisOutput) {
-          return []
-        }
-        const source = URI.parse(params.textDocument.uri).path
-
-        const typeResult = findBestMatchingResult(
-          parsedData.sourceMap, [...analysisOutput.types.entries()], params.position, source
-        )
-        const effectResult = findBestMatchingResult(
-          parsedData.sourceMap, [...analysisOutput.effects.entries()], params.position, source
-        )
-
-        // There are cases where we have types but not effects, but not the other way around
-        // Therefore, we only check for typeResult here and handle missing effects later
-        // As if there are no types, there are no effects either
-        if (!typeResult) {
-          return []
-        }
-
-        const [loc, type] = typeResult
-
-        const document = documents.get(params.textDocument.uri)!
-        const text = document.getText(locToRange(loc))
-
-        let hoverText = ["```qnt", text, "```", '']
-
-        hoverText.push(`**type**: \`${typeSchemeToString(type)}\`\n`)
-
-        if (effectResult) {
-          const [, effect] = effectResult
-          hoverText.push(`**effect**: \`${effectSchemeToString(effect)}\`\n`)
-        }
-
-        return hoverText
-      }
-
-      function documentationHover(): string[] {
-        if (!parsedData) {
-          return []
-        }
-
-        const link = findDefinition(parsedData, params.textDocument.uri, params.position)
-        if (!link) {
-          return []
-        }
-
-        const signature = link.definitionId
-          ? docs?.get(link.definitionId)
-          : loadedBuiltInDocs?.get(link.name)
-
-        if (!signature) {
-          return []
-        }
-
-        let hoverText = ["```qnt", signature.label, "```", '']
-        if (signature.documentation) {
-          hoverText.push(signature.documentation)
-        }
-        return hoverText
-      }
-
-      const hoverText = [inferredDataHover(), documentationHover()]
-        .filter(s => s.length > 0)
-        .map(s => s.join('\n'))
-        .join('\n-----\n')
-
-      if (hoverText === '') {
-        return undefined
-      }
-
-      return {
-        contents: {
-          kind: MarkupKind.Markdown,
-          value: hoverText,
-        },
-      }
+      return hover(parsedData, analysisOutput, docs, source, params.position, document, loadedBuiltInDocs)
     })
 
     connection.onSignatureHelp((params: SignatureHelpParams): HandlerResult<SignatureHelp, void> => {
-      // First of all, we should check if the text under cursor is a builtin. We
-      // shouldn't require previously parsed information for that case.
-
       const emptySignatures = { signatures: [], activeSignature: 0, activeParameter: 0 }
 
       const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
@@ -346,70 +279,6 @@ export class QuintLanguageServer {
 
     const diagnostics = diagnosticsFromErrors(errors, sourceMap)
     this.connection.sendDiagnostics({ uri: document.uri, diagnostics })
-  }
-}
-
-interface QuintDefinitionLink {
-  nameId: bigint,
-  name: string,
-  definitionId?: bigint,
-}
-
-function findDefinition(parsedData: ParserPhase3, uri: string, position: Position): QuintDefinitionLink | undefined {
-  // Find name under position
-  const { modules, sourceMap, table } = parsedData
-  const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-  const source = URI.parse(uri).path
-  const [_module, name, id] = findName(modules, results, position, source) ?? [undefined, undefined, undefined]
-  if (!name) {
-    return undefined
-  }
-
-  // Find definition of name
-  const def = table.get(id)
-  if (!def || !def.reference) {
-    return { nameId: id, name }
-  }
-
-  return {
-    nameId: id,
-    name,
-    definitionId: def?.reference,
-  }
-}
-
-
-async function parseDocument(idGenerator: IdGenerator, textDocument: TextDocument): Promise<ParserPhase3> {
-  const text = textDocument.getText()
-
-  // parse the URI to resolve imports
-  const parsedUri = URI.parse(textDocument.uri)
-  // currently, we only support the 'file://' scheme
-  if (parsedUri.scheme !== 'file') {
-    // see https://github.com/informalsystems/quint/issues/831
-    return new Promise((_resolve, reject) =>
-      reject(`Support imports from file, found: ${parsedUri.scheme}`))
-  }
-
-  const result = parsePhase1fromText(idGenerator, text, parsedUri.path)
-    .chain(phase1Data => {
-      const resolver = fileSourceResolver()
-      const mainPath =
-        resolver.lookupPath(dirname(parsedUri.fsPath), basename(parsedUri.fsPath))
-      return parsePhase2sourceResolution(idGenerator, resolver, mainPath, phase1Data)
-    })
-    .chain(phase2Data => parsePhase3importAndNameResolution(phase2Data))
-    .mapLeft(messages => messages.flatMap(msg => {
-      // TODO: Parse errors should be QuintErrors
-      const error: QuintError = { code: 'QNT000', message: msg.explanation, data: {} }
-      return msg.locs.map(loc => assembleDiagnostic(error, loc))
-    }))
-
-
-  if (result.isRight()) {
-    return new Promise((resolve, _reject) => resolve(result.value))
-  } else {
-    return new Promise((_resolve, reject) => reject(result.value))
   }
 }
 
