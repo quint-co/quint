@@ -225,6 +225,26 @@ module ics20Test {
     })
   }
 
+  /// Send a packet from `sourceChain` to `destChain`, indicating a transfer
+  /// of `amount`-many tokens of `denom` from `sender` to `receiver`.
+  action sendPacket(sourceChain: str, destChain: str,
+                    denom: DenomTrace, amount: UINT256,
+                    sender: Address, receiver: Address): bool = all {
+    // (1) Pre-condition:
+    // ICS 4: "a channel is a pipeline [...] between specific modules on **separate** blockchains"
+    sourceChain != destChain,
+
+    // (2) Send the packet using `sendFungibleTokens`:
+    val sourceChainState = chainStates.get(sourceChain)
+    val newSourceChainState = sendFungibleTokens(sourceChainState, denom, amount,
+                                                 sender, receiver,
+                                                 "transfer", channelTopology.get(sourceChain).get(destChain),
+                                                 0, 0)
+
+    // (3) Quint state transition:
+    chainStates' = chainStates.set(sourceChain, newSourceChainState)
+  }
+
   /// Receives a packet sent from `sourceChain` to `destChain`, and delivers
   /// the acknowledgement back to `sourceChain`.
   action receiveAndAckPacket(sourceChain: str, destChain: str): bool = all {
@@ -260,8 +280,7 @@ module ics20Test {
   /// returns an acknowldgement to `sourceChain`.
   run sendTransfer(denom: DenomTrace, amount: UINT256, sourceChain: str, destChain: str, sender: Address, receiver: Address): bool = (
     all {
-      val result = sendFungibleTokens(chainStates.get(sourceChain), denom, amount, sender, receiver, "transfer", channelTopology.get(sourceChain).get(destChain), 0, 0)
-      chainStates' = chainStates.set(sourceChain, result),
+      sendPacket(sourceChain, destChain, denom, amount, sender, receiver)
     }).then(
       receiveAndAckPacket(sourceChain, destChain)
     )
