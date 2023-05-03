@@ -19,11 +19,6 @@ module ics20 {
   type Height = int
 
   // IBC packet types
-  type FungibleTokenPacketAcknowledgement = {
-    success: bool,
-    errorMessage: str
-  }
-
   type FungibleTokenData = {
     denom: DenomTrace,
     amount: UINT256,
@@ -40,11 +35,19 @@ module ics20 {
     destChannel: Channel,
   }
 
+  type FungibleTokenPacketAcknowledgement = {
+    success: bool,
+    errorMessage: str,
+    packet: Packet  // the acknowledged packet
+  }
+
   /// State of the IBC module in a chain
   type ChainState = {
     bank: Accounts,
     channels: ChannelCounterparties,
     outPackets: Set[Packet],
+    receivedButUnacknowledgedPackets: Set[Packet],
+    inAcknowledgements: Set[FungibleTokenPacketAcknowledgement],
     channelEscrowAddresses: Channel -> Address,
   }
 
@@ -125,9 +128,9 @@ module ics20 {
 
     pure val newChainState = chainState.with("bank", bankResult.accounts)
     pure val ack = if (bankResult.success) {
-      { success: true, errorMessage: "" }
+      { success: true, errorMessage: "", packet: packet }
     } else {
-      { success: false, errorMessage: errorMessage }
+      { success: false, errorMessage: errorMessage, packet: packet }
     }
 
     (newChainState, ack)
@@ -148,7 +151,7 @@ module ics20 {
     pure val data: FungibleTokenData = packet.data
     pure val source: HopElement = { port: packet.sourcePort, channel: packet.sourceChannel }
     pure val bankResult =
-      if (movingBackAlongTrace(source, data.denom)) {
+      if (movingBackAlongTrace(data.denom, source)) {
         // The (failed) transfer attempt was moving the token back along its denom trace.
         // For this, we originally burnt vouchers in `sendFungibleTokens`, so mint them back.
         chainState.bank.MintCoins(data.sender, data.denom, data.amount)
@@ -237,7 +240,9 @@ module ics20Test {
       bank: if (chain == "A") Map("alice" -> Map(ATOM -> 100)) else Map(),
       channels: channelCounterparties.get(chain),
       channelEscrowAddresses: channelCounterparties.get(chain).keys().mapBy(_ => ESCROW_ACCOUNT),
-      outPackets: Set()
+      outPackets: Set(),
+      receivedButUnacknowledgedPackets: Set(),
+      inAcknowledgements: Set()
     })
   }
 
@@ -261,44 +266,78 @@ module ics20Test {
     chainStates' = chainStates.set(sourceChain, newSourceChainState)
   }
 
-  /// Receives a packet sent from `sourceChain` to `destChain`, and delivers
-  /// the acknowledgement back to `sourceChain`.
-  action receiveAndAckPacket(sourceChain: str, destChain: str): bool = all {
+  /// Receive a packet sent from `sourceChain` to `destChain`:
+  /// - Pick an arbitrary, previously unreceived packet sent from `sourceChain`
+  ///   to `destChain`.
+  /// - Call the `onRecvPacket` callback on it.
+  /// - Update the chain states to record the packet as received.
+  /// - Record (but not receive) the acknowledgement produced by `onRecvPacket`
+  ///   on `destChain`.
+  action receivePacket(sourceChain: str, destChain: str): bool = all {
     // (1) Pre-condition:
-    // ICS 4: "a channel is a pipeline for exactly-once packet delivery between specific modules on **separate** blockchains"
+    // ICS 4: "a channel is a pipeline [...] between specific modules on **separate** blockchains"
     sourceChain != destChain,
 
-    // (2) Compute updated chain states:
+    // (2) Non-deterministically pick a packet from `sourceChain` to receive on `destChain`:
     val sourceChainState = chainStates.get(sourceChain)
-    // non-deterministically pick a packet from `sourceChain` to receive on `destChain`
     nondet packet = sourceChainState.outPackets.oneOf()
-    // call the `onRecvPacket` callback
+
+    // (3) Compute updated destination chain state: call `onRecvPacket` callback:
     val recvResult = onRecvPacket(chainStates.get(destChain), packet)
     val newDestChainState = recvResult._1
     val acknowledgement   = recvResult._2
-    // deliver the acknowledgement on `sourceChain`, clean up the sent packet
-    // TODO(thpani): split this into a separate action
-    val newSourceChainPackets = sourceChainState.outPackets.exclude(Set(packet))
-    val newSourceChainState   = onAcknowledgePacket(sourceChainState, packet, acknowledgement)
-                                      .with("outPackets", newSourceChainPackets)
 
-    // (3) Quint state transition:
+    // (4) Compute updated source chain state:
+    // Update packet sets, moving `packet` from `outPackets` to `receivedButUnacknowledgedPackets`
+    // (this simulates ICS 4 exactly-once packet delivery)
+    val newSourceChainOutPackets = sourceChainState.outPackets.exclude(Set(packet))
+    val newSourceChainUnackPackets = sourceChainState.receivedButUnacknowledgedPackets.union(Set(packet))
+    // Update set `inAcknowledgements` to include the sent but (yet) unprocessed `acknowledgement`
+    val newSourceChainInAcknowledgements = sourceChainState.inAcknowledgements.union(Set(acknowledgement))
+    // Update source chain state with new packet/acknowledgement sets
+    val newSourceChainState   = sourceChainState
+                                      .with("outPackets", newSourceChainOutPackets)
+                                      .with("receivedButUnacknowledgedPackets", newSourceChainUnackPackets)
+                                      .with("inAcknowledgements", newSourceChainInAcknowledgements)
+
+    // (5) Quint state transition:
     chainStates' = chainStates
                       .set(destChain, newDestChainState)
                       .set(sourceChain, newSourceChainState)
   }
 
-  /// Send `amount`-many `denom` tokens from `sender` in `sourceChain` to
-  /// `receiver` in `destChain`.
+  /// Receive an acknowledgement for `packet` on `chain`:
+  /// - Pick an arbitrary, previously unreceived acknowledgement on `chain`.
+  /// - Call the `onAcknowledgePacket` callback on it.
+  /// - Update the chain state to record the acknowledgement as received.
+  action receiveAck(chain: str): bool = all {
+    // (1) Compute updated chain state:
+    // non-deterministically pick an acknowledgement
+    val chainState = chainStates.get(chain)
+    nondet acknowledgement = chainState.inAcknowledgements.oneOf()
+    // call the `onAcknowledgePacket` callback and
+    val ackedChainState = onAcknowledgePacket(chainState, acknowledgement.packet, acknowledgement)
+    // remove `ack` from incoming acknowledgements
+    val newInAcknowledgements = chainState.inAcknowledgements.exclude(Set(acknowledgement))
+    val newChainState = ackedChainState.with("inAcknowledgements", newInAcknowledgements)
+
+    // (2) Quint state transition:
+    chainStates' = chainStates.set(chain, newChainState)
+  }
+
+  /// Send `amount`-many `denom` tokens from `sender` on `sourceChain` to
+  /// `receiver` on `destChain`.
   ///
-  /// This is a composition of two actions: one that sends the packet from
-  /// `sourceChain` and another that receives the packet in `destChain` and
-  /// returns an acknowldgement to `sourceChain`.
+  /// This is a composition of three actions:
+  /// 1. sends the packet from `sourceChain` to `destChain`,
+  /// 2. receives the packet on `destChain` and produces an acknowledgement, and
+  /// 3. receives and processes the acknowledgement on `sourceChain`.
   run sendTransfer(denom: DenomTrace, amount: UINT256, sourceChain: str, destChain: str, sender: Address, receiver: Address): bool = (
-    all {
       sendPacket(sourceChain, destChain, denom, amount, sender, receiver)
-    }).then(
-      receiveAndAckPacket(sourceChain, destChain)
+    ).then(
+      receivePacket(sourceChain, destChain)
+    ).then(
+      receiveAck(sourceChain)
     )
 
   /****************************************************************************
@@ -353,7 +392,8 @@ module ics20Test {
   //
   // 1. Transfer 50 tokens from Alice on chain A to Bob on chain B.
   // 2. Manipulate the escrow account on chain A, to contain less than 50 tokens.
-  // 3. Transfer the 50 tokens back from Bob to Alice.
+  //    This will provoke the transfer below to produce a failed acknowledgement.
+  // 3. Try to transfer the 50 tokens back from Bob to Alice.
   //    3.1 First, this burns Bob's 50 vouchers on chain B, and sends a packet to chain A.
   //    3.2 Receipt of the packet on chain A calls the `onRecvPacket` callback.
   //    3.3 `onRecvPacket` calls the bank module's `TransferCoins` to unescrow 50 tokens to Alice.
@@ -386,12 +426,29 @@ module ics20Test {
       assert(chainStates.get("A").bank.getBalances(ESCROW_ACCOUNT).getBalance(ATOM) == 49),
       assert(chainStates.get("B").bank.getBalances("bob").getBalance(voucherDenom) == 50),
 
-      // 3. Transfer the 50 tokens back from Bob to Alice.
-      sendTransfer(voucherDenom, 50, "B", "A", "bob", "alice")
+      // 3. Try to transfer the 50 tokens back from Bob to Alice.
+      // Send and receive the ICS 20 packet; this triggers steps 3.1–3.5 above.
+      sendPacket("B", "A", voucherDenom, 50, "bob", "alice").then(receivePacket("B", "A"))
   }).then(
     pure val voucherDenom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
     all {
-      // Assert that the vouchers have been minted back
+      // Check that bob's vouchers were burned – nothing changed on chain A
+      assert(chainStates.get("A").bank.getBalances("alice").getBalance(ATOM) == 50),
+      assert(chainStates.get("A").bank.getBalances(ESCROW_ACCOUNT).getBalance(ATOM) == 49),
+      assert(chainStates.get("B").bank.getBalances("bob").getBalance(voucherDenom) == 0),
+
+      // Check that there is a single incoming acknowledgement on chain A,
+      // that indicates failure.
+      assert(chainStates.get("B").inAcknowledgements.size() == 1),
+      val ack = chainStates.get("B").inAcknowledgements.oneOf()
+      assert(ack.success == false and ack.errorMessage == "transfer coins failed"),
+
+      // Process the acknowledgement on chain A; this triggers step 3.6 above.
+      receiveAck("B")
+  }).then(
+    pure val voucherDenom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
+    all {
+      // Check that bob's vouchers were minted back – nothing changed on chain A
       assert(chainStates.get("A").bank.getBalances("alice").getBalance(ATOM) == 50),
       assert(chainStates.get("A").bank.getBalances(ESCROW_ACCOUNT).getBalance(ATOM) == 49),
       assert(chainStates.get("B").bank.getBalances("bob").getBalance(voucherDenom) == 50),
