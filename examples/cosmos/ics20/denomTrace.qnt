@@ -232,7 +232,7 @@ module denomTraceSimulation {
     channelTopology' = channelTopology,
   }
 
-  run simulationTest = init.then(step.repeated(6)).then((all {
+  run simulationTest = init.then(6.reps(_ => step)).then((all {
     def show(a) = true { show(channelTopology) },
     assert(trace.path == []),
     unchanged,

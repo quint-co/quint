@@ -71,18 +71,22 @@ error: parsing failed
 
 ## Use of the `--out` flag
 
-### Module AST is written to `--out` with parse command
+### Module AST and lookup table is written to `--out` with parse command
 
 <!-- !test in module AST is output -->
 ```
 quint parse --out parse-out-example.json ../examples/language-features/tuples.qnt
-cat parse-out-example.json | jq '.modules[0].name'
+jq '.modules[0].name, .table."7".reference' < parse-out-example.json
 rm parse-out-example.json
 ```
+
+`"Tuples"` is the name of the module given in the IR and 5 is the reference for
+in the lookup table for the expression with ID 7:
 
 <!-- !test out module AST is output -->
 ```
 "Tuples"
+5
 ```
 
 ### Type and effect maps are output to `--out` with typecheck command
@@ -101,24 +105,6 @@ first type: "tup"
 first effect: "concrete"
 ```
 
-### typecheck failure exits with 1 and prints type errors
-
-<!-- !test exit 1 -->
-<!-- !test in typecheck failure gives non-zero exit -->
-```
-quint typecheck ./testFixture/TrivialTypeError.qnt 2> >(sed "s:$(pwd):.:" >&2)
-```
-
-<!-- !test err typecheck failure gives non-zero exit -->
-```
-./testFixture/TrivialTypeError.qnt:2:3 - error: [QNT000] Couldn't unify str and int
-Trying to unify str and int
-
-2:   val x : int = "not an int"
-     ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-error: typechecking failed
-```
 
 ### No error output on stdout when typechecking fails with `--out`
 
@@ -142,7 +128,27 @@ quint typecheck --out test-out.json ./testFixture/TrivialTypeError.qnt ; ret=$?;
 ```
 ```
 
-### typecheck finds error on incorrect instance overrides
+## typecheck failure exits with 1 and prints type errors
+
+<!-- !test exit 1 -->
+<!-- !test in typecheck failure gives non-zero exit -->
+```
+quint typecheck ./testFixture/TrivialTypeError.qnt 2> >(sed "s:$(pwd):.:" >&2)
+```
+
+<!-- !test err typecheck failure gives non-zero exit -->
+```
+./testFixture/TrivialTypeError.qnt:2:3 - error: [QNT000] Couldn't unify str and int
+Trying to unify str and int
+
+2:   val x : int = "not an int"
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: typechecking failed
+```
+
+
+## typecheck finds error on incorrect instance overrides
 
 <!-- !test exit 1 -->
 <!-- !test in typecheck failure on override -->
@@ -261,8 +267,8 @@ exit $exit_code
   1 ignored
 
   1) failingTest:
-      HOME/counters.qnt:86:9 - error: Assertion failed
-      86:         assert(n == 0),
+      HOME/counters.qnt:83:9 - error: Assertion failed
+      83:         assert(n == 0),
     Use --seed=0x1109d --match=failingTest to repeat.
 
 
@@ -295,8 +301,8 @@ exit $exit_code
   1 ignored
 
   1) failingTest:
-      HOME/counters.qnt:86:9 - error: Assertion failed
-      86:         assert(n == 0),
+      HOME/counters.qnt:83:9 - error: Assertion failed
+      83:         assert(n == 0),
 
     [Frame 0]
     Init() => true

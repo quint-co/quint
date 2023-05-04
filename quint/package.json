@@ -92,7 +92,7 @@
   "scripts": {
     "compile": "genversion -e src/version.ts && tsc && copyfiles -u 1 ./src/builtin.qnt ./dist/src/",
     "prepare": "rm -rf ./dist && npm run compile && chmod +x ./dist/src/cli.js",
-    "test": "mocha -r ts-node/register test/*.test.ts test/**/*.test.ts",
+    "test": "mocha --reporter-option maxDiffSize=0 -r ts-node/register test/*.test.ts test/**/*.test.ts",
     "coverage": "nyc npm run test",
     "integration": "txm cli-tests.md && txm io-cli-tests.md",
     "apalache-integration": "make -C .. apalache && txm apalache-tests.md",
@@ -115,7 +115,7 @@
     "antlr4ts-cli": "^0.5.0-alpha.4",
     "chai": "^4.3.4",
     "copyfiles": "^2.4.1",
-    "eslint": "^8.27.0",
+    "eslint": "^8.39.0",
     "eslint-config-recommended": "^4.1.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-json": "^3.1.0",

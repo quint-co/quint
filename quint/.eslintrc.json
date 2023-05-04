@@ -26,6 +26,8 @@
         "ignoreRegExpLiterals": true
       }
     ],
+    "quotes": [2, "single"],
+    "semi": [2, "never"],
     "space-before-function-paren": ["error", "never"],
     "comma-dangle": [
       "error",

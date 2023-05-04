@@ -35,7 +35,7 @@ tutorials:
 
 # Generate the docs
 docs:
-	$(MAKE) -C docs
+	$(MAKE) -C doc
 
 BUILD_DIR := quint/_build
 quint/_build:

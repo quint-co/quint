@@ -67,34 +67,16 @@ interface OutputStage {
 
 // Extract just the parts of a ProcedureStage that we use for the output
 // See https://stackoverflow.com/a/39333479/1187277
-function pickOutputStage(o: ProcedureStage): OutputStage {
-  const picker = ({
+const pickOutputStage = ({
+  stage, warnings, modules, table, types, effects, errors, documentation,
+  passed, failed, ignored, status, trace,
+}: ProcedureStage) => {
+  return {
     stage, warnings, modules, table, types, effects, errors, documentation,
     passed, failed, ignored, status, trace,
-  }: ProcedureStage) => {
-    switch (o.stage) {
-      case 'parsing':
-        if (o.args.withLookup) {
-          return { stage, warnings, modules, table, errors }
-        } else {
-          return { stage, warnings, modules, errors }
-        }
-
-      case 'testing':
-        return { stage, errors, passed, failed, ignored }
-
-      case 'running':
-        return { stage, errors, status, trace }
-
-      default:
-        return {
-          stage, warnings, modules, types, effects, errors,
-          passed, failed, ignored, documentation,
-        }
-    }
   }
-  return picker(o)
 }
+
 
 interface ProcedureStage extends OutputStage {
   args: any,
@@ -128,6 +110,11 @@ interface TestedStage extends LoadedStage {
 }
 
 interface SimulatorStage extends LoadedStage {
+  status: 'ok' | 'violation' | 'failure',
+  trace?: QuintEx[],
+}
+
+interface VerifierStage extends LoadedStage {
   status: 'ok' | 'violation' | 'failure',
   trace?: QuintEx[],
 }
@@ -507,6 +494,20 @@ export function runSimulator(prev: TypecheckedStage):
             errors: result.errors,
           })
     }
+}
+
+/**
+ * Verify a spec via Apalache.
+ *
+ * @param prev the procedure stage produced by `typecheck`
+ */
+export function verifySpec(prev: TypecheckedStage):
+  CLIProcedure<VerifierStage> {
+  const verifier = { ...prev, stage: 'verifying' as stage }
+  const _mainArg = prev.args.main
+  const _mainName = _mainArg ? _mainArg : basename(prev.args.input, '.qnt')
+
+  return cliErr('not implemented yet',  { ...verifier, errors: [] })
 }
 
 /**
