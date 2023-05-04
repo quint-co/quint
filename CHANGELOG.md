@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.10.0 -- 2023-05-04
+
+### Added
 
 - Modules and definitions can now be exported (#771)
 - Non-deterministic tests are run multiple times similar to {Quick,Scala}check (#786)
