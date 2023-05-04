@@ -86,7 +86,7 @@ module denomTraceTest {
     path: [],
   }
 
-  /// Map from chain identifiers to their stored channels, which are maps from
+  /// Map from chain identifiers to their IBC channels, which are maps from
   /// counterparty chain identifiers to channel identifiers. For example, chain
   /// A connects to chain B through channel "channelToB".
   pure val channelTopology = Map(
