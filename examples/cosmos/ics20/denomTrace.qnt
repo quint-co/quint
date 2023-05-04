@@ -12,7 +12,11 @@ module denomTrace {
   /// `movingBackAlongTrace` is true for a hop iff that hop is the reverse of the
   /// last hop done by the token. That is, if the source of this hop is equal to
   /// the destination of the last hop (which is saved in the trace). We only
-  /// have to check those sides of the hop because channels are unique per chain.
+  /// have to check those sides of the hop because channels are unique per
+  /// chain.
+  ///
+  /// The `hopSource` is the identifier for channel end in the source chain for
+  /// a hop.
   ///
   /// Nomeclature from the english spec/reference implementation: This is called
   /// `receiverIsSource`. A chain can act as either a source or a sink: "A way of
@@ -45,8 +49,8 @@ module denomTrace {
     }
   }
 
-  /// `isProperChannelTopology` is true iff channel names are unique by chain
-  pure def isProperChannelTopology(topology: ChannelTopology): bool =
+  /// `channelNamesUniquePerChain` is true iff channel names are unique by chain
+  pure def channelNamesUniquePerChain(topology: ChannelTopology): bool =
     pure val chainNames = Set("A", "B", "C") // should be topology.keys(), but that's breaking the effect checker somehow (see issue #808)
     and {
       // Check the domain for the second level of chains
@@ -240,7 +244,7 @@ module denomTraceSimulation {
 }
 
 // Fails because the channel topology is not proper
-// The aim is to show that it is, in fact, necessary to enforce `isProperChannelTopology`
+// The aim is to show that it is, in fact, necessary to enforce `channelNamesUniquePerChain`
 module randomChannelsTests {
   pure val chains = Set("A", "B", "C")
   pure val channelNames = Set("channelToA", "channelToB", "channelToC")
@@ -256,9 +260,9 @@ module properChannelsTests {
   pure val channelNames = Set("channelToA", "channelToB", "channelToC")
 
   import base.* from "./base"
-  import denomTrace.isProperChannelTopology
+  import denomTrace.channelNamesUniquePerChain
 
   import denomTraceSimulation(
-    possibleChannelTopologies = chains.setOfMaps(chains.setOfMaps(channelNames)).filter(isProperChannelTopology)
+    possibleChannelTopologies = chains.setOfMaps(chains.setOfMaps(channelNames)).filter(channelNamesUniquePerChain)
   ) as S
 }
