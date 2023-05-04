@@ -248,6 +248,10 @@ Temporarily disabled.
 <!-- !test check ics20 bank - Syntax/Types & Effects/Unit tests -->
     quint test --main bankTests ../examples/cosmos/ics20/bank.qnt
 
+### OK on test ics20 denomTrace
+<!-- !test check ics20 denomTrace - Syntax/Types & Effects/Unit tests -->
+    quint test --main=properChannelsTests ../examples/cosmos/ics20/denomTrace.qnt
+
 ### OK on test ics20
 <!-- !test check ics20 - Syntax/Types & Effects/Unit tests -->
     quint test --main ics20Test ../examples/cosmos/ics20/ics20.qnt
