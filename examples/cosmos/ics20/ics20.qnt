@@ -93,6 +93,7 @@ module ics20 {
     pure val movingBack = movingBackAlongTrace(data.denom, { port: packet.sourcePort, channel: packet.sourceChannel })
     pure val newDenom = updateTrace(movingBack, data.denom, { port: packet.destPort, channel: packet.destChannel })
 
+    // result is a pair of 1. a BankResult and 2. an error message that is used in case BankResult.success = false 
     pure val result = if (movingBack) {
       // unescrow tokens to receiver
       pure val escrowAccount = chainState.channelEscrowAddresses.get(packet.destChannel)
