@@ -204,7 +204,7 @@ module ics20Test {
   /// Map from chain identifiers to a map of the chain identifiers it can
   /// communicate with and the channel to be used to send packets. For example,
   /// chain A connects to chain B through channel "channelToB".
-  pure val channelTopology = Map(
+  pure val CHANNEL_TOPOLOGY = Map(
     "A" -> Map(
       "B" -> "channelToB",
       "C" -> "channelToC"
@@ -223,19 +223,19 @@ module ics20Test {
   pure val ESCROW_ACCOUNT = "escrow_account"
 
   /// For each chain, a map from channel to their channel counterparties,
-  /// derived from `channelTopology`. For example, in chain A, channel "channelToB"
+  /// derived from `CHANNEL_TOPOLOGY`. For example, in chain A, channel "channelToB"
   /// has the counterparty "channelToA".
-  pure val channelCounterparties: str -> Channel -> Channel = channelTopology.keys().mapBy(chain => {
-    pure val connectedChains = channelTopology.get(chain).keys()
+  pure val channelCounterparties: str -> Channel -> Channel = CHANNEL_TOPOLOGY.keys().mapBy(chain => {
+    pure val connectedChains = CHANNEL_TOPOLOGY.get(chain).keys()
     connectedChains.map(counterpartyChain => {
-      pure val localChannel = channelTopology.get(chain).get(counterpartyChain)
-      pure val counterpartyChannel = channelTopology.get(counterpartyChain).get(chain)
+      pure val localChannel = CHANNEL_TOPOLOGY.get(chain).get(counterpartyChain)
+      pure val counterpartyChannel = CHANNEL_TOPOLOGY.get(counterpartyChain).get(chain)
       (localChannel, counterpartyChannel)
     }).setToMap()
   })
 
   action init = {
-    chainStates' = channelTopology.keys().mapBy(chain => {
+    chainStates' = CHANNEL_TOPOLOGY.keys().mapBy(chain => {
       // All accounts are empty, except for Alice in chain A who has 100 atoms
       bank: if (chain == "A") Map("alice" -> Map(ATOM -> 100)) else Map(),
       channels: channelCounterparties.get(chain),
@@ -259,7 +259,7 @@ module ics20Test {
     val sourceChainState = chainStates.get(sourceChain)
     val newSourceChainState = sendFungibleTokens(sourceChainState, denom, amount,
                                                  sender, receiver,
-                                                 "transfer", channelTopology.get(sourceChain).get(destChain),
+                                                 "transfer", CHANNEL_TOPOLOGY.get(sourceChain).get(destChain),
                                                  0, 0)
 
     // (3) Quint state transition:
