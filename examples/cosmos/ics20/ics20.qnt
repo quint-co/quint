@@ -332,7 +332,7 @@ module ics20Test {
   /// 1. sends the packet from `sourceChain` to `destChain`,
   /// 2. receives the packet on `destChain` and produces an acknowledgement, and
   /// 3. receives and processes the acknowledgement on `sourceChain`.
-  run sendTransfer(denom: DenomTrace, amount: UINT256, sourceChain: str, destChain: str, sender: Address, receiver: Address): bool = (
+  run sendTransfer(sourceChain: str, destChain: str, denom: DenomTrace, amount: UINT256, sender: Address, receiver: Address): bool = (
       sendPacket(sourceChain, destChain, denom, amount, sender, receiver)
     ).then(
       receivePacket(sourceChain, destChain)
@@ -348,17 +348,17 @@ module ics20Test {
   // All transfers are acknowledged as successful.
   run ABCACBATest = init.then(all {
     assert(chainStates.get("A").bank.get("alice").get(ATOM) == 100),
-    sendTransfer(ATOM, 1, "A", "B", "alice", "bob")
+    sendTransfer("A", "B", ATOM, 1, "alice", "bob")
   }).then(
     pure val denom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
-    sendTransfer(denom, 1,  "B", "C", "bob", "charlie")
+    sendTransfer("B", "C", denom, 1, "bob", "charlie")
   ).then(
     pure val denom: DenomTrace = { baseDenom: "atom", path: [
       { port: "transfer", channel: "channelToB" },
       { port: "transfer", channel: "channelToA" }
     ] }
 
-    sendTransfer(denom, 1, "C", "A", "charlie", "alice")
+    sendTransfer("C", "A", denom, 1, "charlie", "alice")
   ).then(
     pure val denom: DenomTrace = { baseDenom: "atom", path: [
       { port: "transfer", channel: "channelToC" },
@@ -366,20 +366,20 @@ module ics20Test {
       { port: "transfer", channel: "channelToA" }
     ] }
 
-    sendTransfer(denom, 1, "A", "C", "alice", "bob")
+    sendTransfer("A", "C", denom, 1, "alice", "bob")
   ).then(
     pure val denom: DenomTrace = { baseDenom: "atom", path: [
       { port: "transfer", channel: "channelToB" },
       { port: "transfer", channel: "channelToA" }
     ] }
 
-    sendTransfer(denom, 1, "C", "B", "bob", "charlie")
+    sendTransfer("C", "B", denom, 1, "bob", "charlie")
   ).then(
     pure val denom: DenomTrace = { baseDenom: "atom", path: [
       { port: "transfer", channel: "channelToA" }
     ] }
 
-    sendTransfer(denom, 1, "B", "A", "charlie", "darwin")
+    sendTransfer("B", "A", denom, 1, "charlie", "darwin")
   ).then(all {
       assert(chainStates.get("A").bank.get("alice").get(ATOM) == 99),
       assert(chainStates.get("A").bank.get("darwin").get(ATOM) == 1),
@@ -406,7 +406,7 @@ module ics20Test {
     assert(chainStates.get("B").bank.getBalances("bob").getBalance(ATOM) == 0),
 
     // 1. Transfer 50 tokens from Alice on chain A to Bob on chain B.
-    sendTransfer(ATOM, 50, "A", "B", "alice", "bob")
+    sendTransfer("A", "B", ATOM, 50, "alice", "bob")
   }).then(
     pure val voucherDenom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
     all {
