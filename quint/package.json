@@ -41,13 +41,15 @@
     "test/**/*.ts"
   ],
   "engines": {
-    "node": "*"
+    "node": ">=18"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/informalsystems/quint"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.8.14",
+    "@grpc/proto-loader": "^0.7.7",
     "@sweet-monads/either": "^3.0.1",
     "@sweet-monads/maybe": "^3.1.0",
     "@types/line-column": "^1.0.0",
@@ -61,6 +63,7 @@
     "lodash": "^4.17.21",
     "lodash.isequal": "^4.5.0",
     "seedrandom": "^3.0.5",
+    "tar": "^6.1.14",
     "yargs": "^17.2.1"
   },
   "scripts": {

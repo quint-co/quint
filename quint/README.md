@@ -5,7 +5,7 @@ with [the Quint specification language](https://github.com/informalsystems/quint
 
 ## Dependencies
 
-- Node.js >= 14
+- Node.js >= 18
 
 ## Installation
 
