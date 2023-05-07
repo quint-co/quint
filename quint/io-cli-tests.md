@@ -796,3 +796,20 @@ exit $exit_code
 
 error: Tests failed
 ```
+
+## The `verify` command
+
+### Loading the Apalache proto file
+
+Setting a Non-existent `APALACHE_HOME` produces an error
+
+<!-- !test in invalid APALACHE_HOME -->
+```
+APALACHE_DIST=/does/not/exist quint verify ../examples/language-features/booleans.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err invalid APALACHE_HOME -->
+```
+error: Verification error: Specified APALACHE_DIST /does/not/exist does not exist
+```

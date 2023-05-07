@@ -41,6 +41,7 @@ import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
 import { fileSourceResolver } from './sourceResolver'
+import { verify } from './quintVerifier'
 
 export type stage = 'loading' | 'parsing' | 'typechecking' | 'testing' | 'running' | 'documentation'
 
@@ -138,7 +139,7 @@ interface SimulatorStage extends LoadedStage {
   trace?: QuintEx[]
 }
 
-interface VerifierStage extends LoadedStage {
+interface VerifiedStage extends LoadedStage {
   status: 'ok' | 'violation' | 'failure'
   trace?: QuintEx[]
 }
@@ -528,12 +529,38 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
  *
  * @param prev the procedure stage produced by `typecheck`
  */
-export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<VerifierStage>> {
-  const verifier = { ...prev, stage: 'verifying' as stage }
-  const _mainArg = prev.args.main
-  const _mainName = _mainArg ? _mainArg : basename(prev.args.input, '.qnt')
-
-  return cliErr('not implemented yet', { ...verifier, errors: [] })
+export function verifySpec(prev: TypecheckedStage): CLIProcedure<VerifiedStage> {
+  const verifying = { ...prev, stage: 'verifying' as stage }
+  const args = verifying.args
+  // TODO error handing for file reads and deserde
+  const loadedConfig = args.apalacheConfig ? JSON.parse(readFileSync(args.apalacheConfig, 'utf-8')) : {}
+  const parsedSpec = jsonStringOfOutputStage(pickOutputStage(prev))
+  // We need to insert the data form CLI args into thier appropriate locations
+  // in the Apalache config
+  const config = {
+    ...loadedConfig,
+    input: {
+      ...(loadedConfig.input ?? {}),
+      source: {
+        type: 'string',
+        format: 'qnt',
+        content: parsedSpec,
+      },
+    },
+    checker: {
+      ...(loadedConfig.checker ?? {}),
+      length: args.maxSteps,
+      init: args.init,
+      next: args.step,
+      inv: args.invariant,
+    },
+  }
+  return verify(config)
+    .map(_ => ({ ...verifying, status: 'ok', errors: [] } as VerifiedStage))
+    .mapLeft(err => ({
+      msg: `Verification error: ${err.explanation}`,
+      stage: { ...verifying, status: 'failure', errors: err.errors },
+    }))
 }
 
 /**
@@ -589,22 +616,6 @@ export function outputResult(result: CLIProcedure<ProcedureStage>) {
     })
 }
 
-// Preprocess troublesome types so they are represented in JSON.
-//
-// We need it particularly because, by default, serialization of Map
-// objects just produces an empty object
-// (see https://stackoverflow.com/questions/46634449/json-stringify-of-object-of-map-return-empty)
-//
-// The approach here follows https://stackoverflow.com/a/56150320/1187277
-function replacer(_key: String, value: any): any {
-  if (value instanceof Map) {
-    // Represent Maps as JSON objects
-    return Object.fromEntries(value)
-  } else {
-    return value
-  }
-}
-
 /**
  * Produce a random-number generator: Either a predictable one using a seed,
  * or a reasonably unpredictable one.
@@ -638,6 +649,26 @@ function addItfHeader(source: string, status: string, traceInJson: any): any {
   }
 }
 
+// Preprocess troublesome types so they are represented in JSON.
+//
+// We need it particularly because, by default, serialization of Map
+// objects just produces an empty object
+// (see https://stackoverflow.com/questions/46634449/json-stringify-of-object-of-map-return-empty)
+//
+// The approach here follows https://stackoverflow.com/a/56150320/1187277
+function replacer(_key: String, value: any): any {
+  if (value instanceof Map) {
+    // Represent Maps as JSON objects
+    return Object.fromEntries(value)
+  } else {
+    return value
+  }
+}
+
+function jsonStringOfOutputStage(json: any): string {
+  return JSONbig.stringify(json, replacer)
+}
+
 /**
  * Write json to a file.
  *
@@ -646,7 +677,7 @@ function addItfHeader(source: string, status: string, traceInJson: any): any {
  */
 function writeToJson(filename: string, json: any) {
   const path = resolve(cwd(), filename)
-  writeFileSync(path, JSONbig.stringify(json, replacer))
+  writeFileSync(path, jsonStringOfOutputStage(json))
 }
 
 /**
