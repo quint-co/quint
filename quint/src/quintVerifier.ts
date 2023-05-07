@@ -63,11 +63,13 @@ function findDist(): VerifyResult<ApalacheDist> {
   }
   // TODO: fetch release if APALACHE_DIST is not configured
 
-  return distResult.map(dist => {
-    return {
-      jar: path.join(dist, 'lib', 'apalache.jar'),
-      exe: path.join(dist, 'bin', 'apalache-mc'),
-    }
+  return distResult.chain(dist => {
+    const jar = path.join(dist, 'lib', 'apalache.jar')
+    const exe = path.join(dist, 'bin', 'apalache-mc')
+    return ((fs.existsSync(jar) && fs.existsSync(exe))
+      ? right({ jar, exe })
+      : err(`Apalache distribution is corrupted. Cannot find ${jar} or ${exe}.`)
+    )
   })
 }
 

@@ -803,13 +803,27 @@ error: Tests failed
 
 Setting a Non-existent `APALACHE_HOME` produces an error
 
-<!-- !test in invalid APALACHE_HOME -->
+<!-- !test in invalid APALACHE_DIST -->
 ```
 APALACHE_DIST=/does/not/exist quint verify ../examples/language-features/booleans.qnt
 ```
 
 <!-- !test exit 1 -->
-<!-- !test err invalid APALACHE_HOME -->
+<!-- !test err invalid APALACHE_DIST -->
 ```
 error: Verification error: Specified APALACHE_DIST /does/not/exist does not exist
+```
+
+Setting a corrupted `APALACHE_DIST` produces an error. The `_build` dir exists,
+but doesn't have the expected structure of the Apalache distribution.
+
+<!-- !test in corrupted APALACHE_DIST -->
+```
+APALACHE_DIST=_build quint verify ../examples/language-features/booleans.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err corrupted APALACHE_DIST -->
+```
+error: Verification error: Apalache distribution is corrupted. Cannot find _build/lib/apalache.jar or _build/bin/apalache-mc.
 ```
