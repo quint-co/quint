@@ -41,23 +41,6 @@
         "ignoreRegExpLiterals": true
       }
     ],
-    "quotes": [2, "single"],
-    "semi": [2, "never"],
-    "space-before-function-paren": ["error", {
-        "anonymous": "always",
-        "named": "never",
-        "asyncArrow": "always"
-    }],
-    "comma-dangle": [
-      "error",
-      {
-        "arrays": "always-multiline",
-        "objects": "always-multiline",
-        "imports": "never",
-        "exports": "never",
-        "functions": "never"
-      }
-    ],
     "no-use-before-define": "off",
     "array-callback-return": "off",
     "no-return-assign": "off",
