@@ -12,6 +12,7 @@
 import yargs from 'yargs/yargs'
 
 import {
+  CLIProcedure,
   docs,
   load,
   outputResult,
@@ -33,6 +34,21 @@ const defaultOpts = (yargs: any) =>
     type: 'string',
   })
 
+// Chain async CLIProcedures
+//
+// This saves us having to manually thread the result argument like
+//
+// `prevCmd.then(prevResult => prevResult.asyncChain(nextCmd))`
+//
+// Instaed writing:
+//
+// `prevCmd.then(chainCmd(nextCmd))`
+function chainCmd<S, T>(
+  nextCmd: (data: S) => Promise<CLIProcedure<T>>
+): (prev: CLIProcedure<S>) => Promise<CLIProcedure<T>> {
+  return (prevResult: CLIProcedure<S>) => prevResult.asyncChain(nextCmd)
+}
+
 // construct parsing commands with yargs
 const parseCmd = {
   command: 'parse <input>',
@@ -42,7 +58,10 @@ const parseCmd = {
       desc: 'name of the source map',
       type: 'string',
     }),
-  handler: (args: any) => outputResult(load(args).chain(parse)),
+  handler: async (args: any) =>
+    load(args)
+      .then(chainCmd(parse))
+      .then(outputResult),
 }
 
 // construct typecheck commands with yargs
@@ -51,7 +70,10 @@ const typecheckCmd = {
   desc: 'check types and effects of a Quint specification',
   builder: defaultOpts,
   handler: (args: any) =>
-    outputResult(load(args).chain(parse).chain(typecheck)),
+    load(args)
+      .then(chainCmd(parse))
+      .then(chainCmd(typecheck))
+      .then(outputResult),
 }
 
 // construct repl commands with yargs
@@ -118,7 +140,11 @@ const testCmd = {
         type: 'string',
       }),
   handler: (args: any) =>
-    outputResult(load(args).chain(parse).chain(typecheck).chain(runTests)),
+    load(args)
+      .then(chainCmd(parse))
+      .then(chainCmd(typecheck))
+      .then(chainCmd(runTests))
+      .then(outputResult),
 }
 
 // construct run commands with yargs
@@ -178,7 +204,11 @@ const runCmd = {
   //        type: 'number',
   //      })
   handler: (args: any) =>
-    outputResult(load(args).chain(parse).chain(typecheck).chain(runSimulator)),
+    load(args)
+      .then(chainCmd(parse))
+      .then(chainCmd(typecheck))
+      .then(chainCmd(runSimulator))
+      .then(outputResult),
 }
 
 // construct verify commands with yargs
@@ -228,7 +258,11 @@ const verifyCmd = {
   //        type: 'number',
   //      })
   handler: (args: any) =>
-    outputResult(load(args).chain(parse).chain(typecheck).chain(verifySpec)),
+    load(args)
+      .then(chainCmd(parse))
+      .then(chainCmd(typecheck))
+      .then(chainCmd(verifySpec))
+      .then(outputResult),
 }
 
 // construct documenting commands with yargs
@@ -236,19 +270,26 @@ const docsCmd = {
   command: 'docs <input>',
   desc: 'produces documentation from docstrings in a Quint specification',
   builder: defaultOpts,
-  handler: (args: any) => outputResult(load(args).chain(docs)),
+  handler: (args: any) =>
+    load(args)
+      .then(chainCmd(docs))
+      .then(outputResult),
 }
 
-// parse the command-line arguments and execute the handlers
-yargs(process.argv.slice(2))
-  .command(parseCmd)
-  .command(typecheckCmd)
-  .command(replCmd)
-  .command(runCmd)
-  .command(testCmd)
-  .command(verifyCmd)
-  .command(docsCmd)
-  .demandCommand(1)
-  .version(version)
-  .strict()
-  .parse()
+async function main() {
+  // parse the command-line arguments and execute the handlers
+  await yargs(process.argv.slice(2))
+    .command(parseCmd)
+    .command(typecheckCmd)
+    .command(replCmd)
+    .command(runCmd)
+    .command(testCmd)
+    .command(verifyCmd)
+    .command(docsCmd)
+    .demandCommand(1)
+    .version(version)
+    .strict()
+    .parse()
+}
+
+main()

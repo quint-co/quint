@@ -140,7 +140,7 @@ export type CLIProcedure<Stage> = Either<ErrResult, Stage>
 /** Load a file into a string
  *
  * @param args the CLI arguments parsed by yargs */
-export function load(args: any): CLIProcedure<LoadedStage> {
+export async function load(args: any): Promise<CLIProcedure<LoadedStage>> {
   const stage: ProcedureStage = { stage: 'loading', args }
   if (existsSync(args.input)) {
     try {
@@ -167,7 +167,7 @@ export function load(args: any): CLIProcedure<LoadedStage> {
  *
  * @param loaded the procedure stage produced by `load`
  */
-export function parse(loaded: LoadedStage): CLIProcedure<ParsedStage> {
+export async function parse(loaded: LoadedStage): Promise<CLIProcedure<ParsedStage>> {
   const { args, sourceCode, path } = loaded
   const parsing = { ...loaded, stage: 'parsing' as stage }
   const idgen = newIdGenerator()
@@ -209,7 +209,7 @@ export function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: [bigint, QuintE
  *
  * @param parsed the procedure stage produced by `parse`
  */
-export function typecheck(parsed: ParsedStage): CLIProcedure<TypecheckedStage> {
+export async function typecheck(parsed: ParsedStage): Promise<CLIProcedure<TypecheckedStage>> {
   const { table, modules, sourceMap } = parsed
   const typechecking = { ...parsed, stage: 'typechecking' as stage }
 
@@ -231,7 +231,7 @@ export function typecheck(parsed: ParsedStage): CLIProcedure<TypecheckedStage> {
  *
  * @param _argv parameters as provided by yargs
  */
-export function runRepl(_argv: any) {
+export async function runRepl(_argv: any) {
   let filename: string | undefined = undefined
   let moduleName: string | undefined = undefined
   if (_argv.require) {
@@ -253,7 +253,7 @@ export function runRepl(_argv: any) {
  *
  * @param typedStage the procedure stage produced by `typecheck`
  */
-export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
+export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<TestedStage>> {
   const verbosityLevel = !prev.args.out ? prev.args.verbosity : 0
   const out = console.log
   const columns = !prev.args.out ? terminalWidth() : 80
@@ -392,8 +392,8 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
  *
  * @param prev the procedure stage produced by `typecheck`
  */
-export function runSimulator(prev: TypecheckedStage):
-  CLIProcedure<SimulatorStage> {
+export async function runSimulator(prev: TypecheckedStage):
+  Promise<CLIProcedure<SimulatorStage>> {
   const simulator = { ...prev, stage: 'running' as stage }
   const mainArg = prev.args.main
   const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
@@ -510,8 +510,8 @@ export function runSimulator(prev: TypecheckedStage):
  *
  * @param prev the procedure stage produced by `typecheck`
  */
-export function verifySpec(prev: TypecheckedStage):
-  CLIProcedure<VerifierStage> {
+export async function verifySpec(prev: TypecheckedStage):
+  Promise<CLIProcedure<VerifierStage>> {
   const verifier = { ...prev, stage: 'verifying' as stage }
   const _mainArg = prev.args.main
   const _mainName = _mainArg ? _mainArg : basename(prev.args.input, '.qnt')
@@ -524,7 +524,7 @@ export function verifySpec(prev: TypecheckedStage):
  *
  * @param loaded the procedure stage produced by `load`
  */
-export function docs(loaded: LoadedStage): CLIProcedure<DocumentationStage> {
+export async function docs(loaded: LoadedStage): Promise<CLIProcedure<DocumentationStage>> {
   const { sourceCode, path } = loaded
   const parsing = { ...loaded, stage: 'documentation' as stage }
   return parsePhase1fromText(newIdGenerator(), sourceCode, path)
