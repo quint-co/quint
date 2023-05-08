@@ -329,7 +329,7 @@ module ics20Test {
       }
     }
 
-  /// Receive an acknowledgement for `packet` on `chain`:
+  /// Receive a pending acknowledgement on `chain`:
   /// - Pick an arbitrary, previously unreceived acknowledgement on `chain`.
   /// - Call the `onAcknowledgePacket` callback on it.
   /// - Update the chain state to record the acknowledgement as received.
