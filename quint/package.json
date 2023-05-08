@@ -74,7 +74,8 @@
     "antlr": "antlr4ts -visitor ./src/generated/Quint.g4 && antlr4ts -visitor ./src/generated/Effect.g4",
     "api-docs": "quint docs ./src/builtin.qnt > ../doc/builtin.md",
     "update-fixtures": "./scripts/update-fixtures.sh",
-    "format": "eslint --fix '**/*.ts'",
+    "format-check": "npx eslint '**/*.ts'",
+    "format": "npx eslint --fix '**/*.ts'",
     "debug": "npx ts-node ./src/cli.ts"
   },
   "devDependencies": {
