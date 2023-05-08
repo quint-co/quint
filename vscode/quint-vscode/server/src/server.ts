@@ -10,6 +10,8 @@ import {
   Connection,
   DefinitionLink,
   DefinitionParams,
+  DocumentSymbol,
+  DocumentSymbolParams,
   HandlerResult,
   Hover,
   HoverParams,
@@ -44,6 +46,7 @@ import { URI } from 'vscode-uri'
 import { hover } from './hover'
 import { findDefinition } from './definitions'
 import { parseDocument } from './parsing'
+import { getDocumentSymbols } from './documentSymbols'
 
 export class QuintLanguageServer {
   // Create one generator of unique identifiers
@@ -75,6 +78,7 @@ export class QuintLanguageServer {
           },
           definitionProvider: true,
           codeActionProvider: true,
+          documentSymbolProvider: true,
         },
       }
       return result
@@ -234,6 +238,25 @@ export class QuintLanguageServer {
 
         return actions
       }, [] as CodeAction[])
+    })
+
+    connection.onDocumentSymbol((params: DocumentSymbolParams): HandlerResult<DocumentSymbol[], void> => {
+      const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
+      if (!parsedData) {
+        return []
+      }
+
+      // filter for modules defined in the requested textDocument
+      const localModules = parsedData.modules.filter((module) => {
+        const loc = parsedData.sourceMap.get(module.id)
+        if (!loc) {
+          return false
+        }
+        const moduleUri = URI.parse(loc.source).toString()
+        return moduleUri == params.textDocument.uri
+      })
+
+      return getDocumentSymbols(localModules, parsedData.sourceMap)
     })
 
     // Make the text document manager listen on the connection
