@@ -317,7 +317,7 @@ module ics20Test {
     nondet acknowledgement = chainState.inAcknowledgements.oneOf()
     // call the `onAcknowledgePacket` callback and
     val ackedChainState = onAcknowledgePacket(chainState, acknowledgement.packet, acknowledgement)
-    // remove `ack` from incoming acknowledgements
+    // remove `acknowledgement` from incoming acknowledgements
     val newInAcknowledgements = chainState.inAcknowledgements.exclude(Set(acknowledgement))
     val newChainState = ackedChainState.with("inAcknowledgements", newInAcknowledgements)
 
