@@ -234,6 +234,17 @@ module ics20Test {
     }).setToMap()
   })
 
+  /// Return true iff there is a channel from `sourceChain` to `destChain` defined in `CHANNEL_TOPOLOGY`
+  /// that corresponds to the channel endpoints of `packet`.
+  pure def isTravelingBetween(packet: Packet, sourceChain: str, destChain: str): bool = all {
+    // there is a channel between `sourceChain` and `destChain`
+    CHANNEL_TOPOLOGY.keys().contains(sourceChain),
+    CHANNEL_TOPOLOGY.get(sourceChain).keys().contains(destChain),
+    // packet endpoints correspond to channel ends
+    channelCounterparties.get(sourceChain).keys().contains(packet.sourceChannel),
+    channelCounterparties.get(sourceChain).get(packet.sourceChannel) == packet.destChannel
+  }
+
   action init = {
     chainStates' = CHANNEL_TOPOLOGY.keys().mapBy(chain => {
       // All accounts are empty, except for Alice in chain A who has 100 atoms
@@ -276,38 +287,47 @@ module ics20Test {
   /// - Update the chain states to record the packet as received.
   /// - Record (but not receive) the acknowledgement produced by `onRecvPacket`
   ///   on `destChain`.
-  action receivePacket(sourceChain: str, destChain: str): bool = all {
-    // (1) Pre-condition:
-    // ICS 4: "a channel is a pipeline [...] between specific modules on **separate** blockchains"
-    sourceChain != destChain,
-
-    // (2) Non-deterministically pick a packet from `sourceChain` to receive on `destChain`:
+  action receivePacket(sourceChain: str, destChain: str): bool =
     val sourceChainState = chainStates.get(sourceChain)
-    nondet packet = sourceChainState.outPackets.oneOf()
+    all {
+      // (1) Pre-condition:
+      // ICS 4: "a channel is a pipeline [...] between specific modules on **separate** blockchains"
+      sourceChain != destChain,
+      // there is a channel between `sourceChain` and `destChain`
+      CHANNEL_TOPOLOGY.keys().contains(sourceChain),
+      CHANNEL_TOPOLOGY.get(sourceChain).keys().contains(destChain),
+      // there is an unreceived packet traveling from `sourceChain` to `destChain`
+      sourceChainState.outPackets.exists(packet => packet.isTravelingBetween(sourceChain, destChain)),
 
-    // (3) Compute updated destination chain state: call `onRecvPacket` callback:
-    val recvResult = onRecvPacket(chainStates.get(destChain), packet)
-    val newDestChainState = recvResult._1
-    val acknowledgement   = recvResult._2
+      // (2) Non-deterministically pick a packet from `sourceChain` to receive on `destChain`:
+      nondet packet = sourceChainState.outPackets.oneOf()
+      all {
+        packet.isTravelingBetween(sourceChain, destChain),
 
-    // (4) Compute updated source chain state:
-    // Update packet sets, moving `packet` from `outPackets` to `receivedButUnacknowledgedPackets`
-    // (this simulates ICS 4 exactly-once packet delivery)
-    val newSourceChainOutPackets = sourceChainState.outPackets.exclude(Set(packet))
-    val newSourceChainUnackPackets = sourceChainState.receivedButUnacknowledgedPackets.union(Set(packet))
-    // Update set `inAcknowledgements` to include the sent but (yet) unprocessed `acknowledgement`
-    val newSourceChainInAcknowledgements = sourceChainState.inAcknowledgements.union(Set(acknowledgement))
-    // Update source chain state with new packet/acknowledgement sets
-    val newSourceChainState   = sourceChainState
-                                      .with("outPackets", newSourceChainOutPackets)
-                                      .with("receivedButUnacknowledgedPackets", newSourceChainUnackPackets)
-                                      .with("inAcknowledgements", newSourceChainInAcknowledgements)
+        // (3) Compute updated destination chain state: call `onRecvPacket` callback:
+        val recvResult = onRecvPacket(chainStates.get(destChain), packet)
+        val newDestChainState = recvResult._1
+        val acknowledgement   = recvResult._2
 
-    // (5) Quint state transition:
-    chainStates' = chainStates
-                      .set(destChain, newDestChainState)
-                      .set(sourceChain, newSourceChainState)
-  }
+        // (4) Compute updated source chain state:
+        // Update packet sets, moving `packet` from `outPackets` to `receivedButUnacknowledgedPackets`
+        // (this simulates ICS 4 exactly-once packet delivery)
+        val newSourceChainOutPackets = sourceChainState.outPackets.exclude(Set(packet))
+        val newSourceChainUnackPackets = sourceChainState.receivedButUnacknowledgedPackets.union(Set(packet))
+        // Update set `inAcknowledgements` to include the sent but (yet) unprocessed `acknowledgement`
+        val newSourceChainInAcknowledgements = sourceChainState.inAcknowledgements.union(Set(acknowledgement))
+        // Update source chain state with new packet/acknowledgement sets
+        val newSourceChainState   = sourceChainState
+                                          .with("outPackets", newSourceChainOutPackets)
+                                          .with("receivedButUnacknowledgedPackets", newSourceChainUnackPackets)
+                                          .with("inAcknowledgements", newSourceChainInAcknowledgements)
+
+        // (5) Quint state transition:
+        chainStates' = chainStates
+                          .set(destChain, newDestChainState)
+                          .set(sourceChain, newSourceChainState)
+      }
+    }
 
   /// Receive an acknowledgement for `packet` on `chain`:
   /// - Pick an arbitrary, previously unreceived acknowledgement on `chain`.
