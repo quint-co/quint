@@ -254,6 +254,9 @@ module ics20Test {
     // (1) Pre-condition:
     // ICS 4: "a channel is a pipeline [...] between specific modules on **separate** blockchains"
     sourceChain != destChain,
+    // there is a channel between `sourceChain` and `destChain`
+    CHANNEL_TOPOLOGY.keys().contains(sourceChain),
+    CHANNEL_TOPOLOGY.get(sourceChain).keys().contains(destChain),
 
     // (2) Send the packet using `sendFungibleTokens`:
     val sourceChainState = chainStates.get(sourceChain)
