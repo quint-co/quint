@@ -14,11 +14,11 @@
 
 import { Either, left, right } from '@sweet-monads/either'
 import { ErrorMessage } from './quintParserFrontend'
-import { execSync, spawnSync } from 'child_process'
+import { spawnSync } from 'child_process'
 import path from 'path'
 import fs from 'fs'
-import grpc from '@grpc/grpc-js'
-import proto from '@grpc/proto-loader'
+import * as grpc from '@grpc/grpc-js'
+import * as proto from '@grpc/proto-loader'
 
 // TODO const APALACHE_VERSION = "0.30.8"
 // TODO const DEFAULT_HOME = path.join(__dirname, 'apalache')
@@ -47,13 +47,11 @@ interface Apalache {
   stop: () => VerifyResult<null>
 }
 
-// TODO work around for lacking types from grpc lib
-type ApalacheGrpc = {
-  run: (req: { cmd: string, config: string }, callback: todo) => todo
-}
 
 function findDist(): VerifyResult<ApalacheDist> {
-  const configuredDist = process.env.APALACHE_DIST
+  const configuredDist = process.env.APALACHE_DIST && path.isAbsolute(process.env.APALACHE_DIST)
+    ? process.env.APALACHE_DIST
+    : path.join(process.cwd(), process.env.APALACHE_DIST!)
   let distResult: VerifyResult<string> = err(
     'Unable to find the apalache distribution. Ensure the APALACHE_DIST enviroment variable is set.')
   if (configuredDist && !fs.existsSync(configuredDist)) {
@@ -81,10 +79,12 @@ const confirmJarUtilInstalled = (): VerifyResult<null> =>
 const unpackProtoFile = (jar: string): () => VerifyResult<string> => {
   const protoFileName = 'cmdExecutor.proto'
   const tmpDir = fs.mkdtempSync('apalache-proto-')
-  return () =>
-    (spawnSync('jar', ['xf', jar, protoFileName], { cwd: tmpDir }).status === 0)
+  return () => {
+    const ret = spawnSync('jar', ['xf', jar, protoFileName], { cwd: tmpDir })
+    return (ret.status === 0)
       ? right(path.join(tmpDir, protoFileName))
-      : err('Apalache distribution is corrupted. Could not extract proto file from apalache.jar')
+      : err(`Apalache distribution is corrupted. Could not extract proto file from apalache.jar: ${ret.stderr}`)
+  }
 }
 
 
@@ -97,19 +97,68 @@ const grpcStubOptions = {
   oneofs: true,
 }
 
+// TODO work around for lacking types from grpc lib
+type ApalacheGrpc = {
+  run: (req: { cmd: string, config: string }, callback: todo) => todo,
+  ping: (o: {}, c: any, cb: todo) => todo,
+}
+
+// Since we dynamically load the protobuf file, we lose its typing info.
+// We therefore record the essential structer here.
+interface ShaiPkg {
+  cmdExecutor: {
+    // Constructs a new client service
+    CmdExecutor: {
+      new(url: string, creds: any): ApalacheGrpc
+    }
+  }
+}
+
+function getMethods(obj: any): any {
+  const methods = [];
+  do {
+    for (const prop of Object.getOwnPropertyNames(obj)) {
+      if (obj[prop] instanceof Function) methods.push(prop);
+    }
+    obj = Object.getPrototypeOf(obj);
+  } while (obj !== null)
+
+  return methods;
+}
+
 const grpcClient = (dist: ApalacheDist): VerifyResult<ApalacheGrpc> =>
   confirmJarUtilInstalled()
     .chain(unpackProtoFile(dist.jar))
     .chain(protoFile => {
-      const pkg = proto.loadSync(protoFile, grpcStubOptions)
-      const protoDescriptor = grpc.loadPackageDefinition(pkg)
-      // The protoDescriptor object has the full package hierarchy
-      const routeguide = protoDescriptor.routeguide as any // gRPCs typing gets intractable here
-      return right(new routeguide.RouteGuide(APALACHE_SERVER_URI, grpc.credentials.createInsecure()))
+      const protoDef = proto.loadSync(protoFile, grpcStubOptions)
+      const protoDescriptor = grpc.loadPackageDefinition(protoDef)
+      const pkg = protoDescriptor.shai as unknown as ShaiPkg
+      // const pkg = protoDescriptor.shai as any
+      const stub = new pkg.cmdExecutor.CmdExecutor(APALACHE_SERVER_URI, grpc.credentials.createInsecure())
+      console.log(`..... ${stub.ping.toString()}`)
+      return right(stub)
     })
 
+const deadline = (t: number) => new Date().setSeconds(new Date().getSeconds() + t)
+
+function wait(ms: number) {
+    var start = Date.now(),
+        now = start;
+    while (now - start < ms) {
+      now = Date.now();
+    }
+}
+
 function connect(stubAndDist: [ApalacheDist, ApalacheGrpc]): VerifyResult<Apalache> {
-  const [_TODO, _stub] = stubAndDist
+  const [_TODO, stub] = stubAndDist
+  stub.ping({}, {deadline: deadline(2)}, (err: any, _: any) => {
+    if (err) {
+      console.log(`ERrR: ${err}`)
+    } else {
+      console.log('connected')
+    }
+  })
+  wait(50000)
   // TODO confirm server is running or else start it
   // if started, ensure to kill it when done
   // return right({

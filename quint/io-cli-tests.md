@@ -844,3 +844,14 @@ APALACHE_DIST=_build/corrupt-dist-test quint verify ../examples/language-feature
 ```
 error: Verification error: Apalache distribution is corrupted. Could not extract proto file from apalache.jar
 ```
+
+### Can verify `booleans.qnt`
+
+<!-- !test in verify booleans.qnt -->
+```
+APALACHE_DIST=_build/apalache quint verify ../examples/language-features/booleans.qnt
+```
+
+<!-- !test out verify booleans.qnt -->
+```
+```

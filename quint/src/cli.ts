@@ -9,7 +9,7 @@
  * @author Igor Konnov, Gabriela Moreira, Shon Feder, Informal Systems, 2021-2023
  */
 
-import yargs from 'yargs/yargs'
+import yargs from "yargs/yargs";
 
 import {
   CLIProcedure,
@@ -24,15 +24,15 @@ import {
   verifySpec,
 } from './cliCommands'
 
-import { verbosity } from './verbosity'
+import { verbosity } from "./verbosity";
 
-import { version } from './version'
+import { version } from "./version";
 
 const defaultOpts = (yargs: any) =>
-  yargs.option('out', {
-    desc: 'output file (suppresses all console output)',
-    type: 'string',
-  })
+  yargs.option("out", {
+    desc: "output file (suppresses all console output)",
+    type: "string",
+  });
 
 // Chain async CLIProcedures
 //
@@ -51,28 +51,28 @@ function chainCmd<S, T>(
 
 // construct parsing commands with yargs
 const parseCmd = {
-  command: 'parse <input>',
-  desc: 'parse a Quint specification',
+  command: "parse <input>",
+  desc: "parse a Quint specification",
   builder: (yargs: any) =>
-    defaultOpts(yargs).option('source-map', {
-      desc: 'name of the source map',
-      type: 'string',
+    defaultOpts(yargs).option("source-map", {
+      desc: "name of the source map",
+      type: "string",
     }),
   handler: async (args: any) => load(args).then(chainCmd(parse)).then(outputResult),
 }
 
 // construct typecheck commands with yargs
 const typecheckCmd = {
-  command: 'typecheck <input>',
-  desc: 'check types and effects of a Quint specification',
+  command: "typecheck <input>",
+  desc: "check types and effects of a Quint specification",
   builder: defaultOpts,
   handler: (args: any) => load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(outputResult),
 }
 
 // construct repl commands with yargs
 const replCmd = {
-  command: ['repl', '*'],
-  desc: 'run an interactive Read-Evaluate-Print-Loop',
+  command: ["repl", "*"],
+  desc: "run an interactive Read-Evaluate-Print-Loop",
   builder: (yargs: any) =>
     yargs
       .option('require', {
@@ -85,24 +85,24 @@ const replCmd = {
         alias: 'q',
         type: 'boolean',
       })
-      .default('quiet', false)
-      .option('verbosity', {
-        desc: 'control how much output is produced (0 to 5)',
-        type: 'number',
+      .default("quiet", false)
+      .option("verbosity", {
+        desc: "control how much output is produced (0 to 5)",
+        type: "number",
       })
-      .default('verbosity', verbosity.defaultLevel),
+      .default("verbosity", verbosity.defaultLevel),
   handler: runRepl,
-}
+};
 
 // construct test commands with yargs
 const testCmd = {
-  command: 'test <input>',
-  desc: 'Run tests against a Quint specification',
+  command: "test <input>",
+  desc: "Run tests against a Quint specification",
   builder: (yargs: any) =>
     defaultOpts(yargs)
-      .option('main', {
-        desc: 'name of the main module (by default, computed from filename)',
-        type: 'string',
+      .option("main", {
+        desc: "name of the main module (by default, computed from filename)",
+        type: "string",
       })
       .option('output', {
         desc: `write a trace for every test, e.g., out{#}{}.itf.json
@@ -113,16 +113,16 @@ const testCmd = {
         desc: 'the maximum number of successful runs to try for every randomized test',
         type: 'number',
       })
-      .default('max-samples', 10000)
-      .option('seed', {
-        desc: 'random seed to use for non-deterministic choice',
-        type: 'string',
+      .default("max-samples", 10000)
+      .option("seed", {
+        desc: "random seed to use for non-deterministic choice",
+        type: "string",
       })
-      .option('verbosity', {
-        desc: 'control how much output is produced (0 to 5)',
-        type: 'number',
+      .option("verbosity", {
+        desc: "control how much output is produced (0 to 5)",
+        type: "number",
       })
-      .default('verbosity', verbosity.defaultLevel)
+      .default("verbosity", verbosity.defaultLevel)
       // Timeouts are postponed for:
       // https://github.com/informalsystems/quint/issues/633
       //
@@ -130,9 +130,9 @@ const testCmd = {
       //        desc: 'timeout in seconds',
       //        type: 'number',
       //      })
-      .option('match', {
-        desc: 'a string or regex that selects names to use as tests',
-        type: 'string',
+      .option("match", {
+        desc: "a string or regex that selects names to use as tests",
+        type: "string",
       }),
   handler: (args: any) =>
     load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(runTests)).then(outputResult),
@@ -140,52 +140,52 @@ const testCmd = {
 
 // construct run commands with yargs
 const runCmd = {
-  command: 'run <input>',
-  desc: 'Simulate a Quint specification and check invariants',
+  command: "run <input>",
+  desc: "Simulate a Quint specification and check invariants",
   builder: (yargs: any) =>
     defaultOpts(yargs)
-      .option('main', {
-        desc: 'name of the main module (by default, computed from filename)',
-        type: 'string',
+      .option("main", {
+        desc: "name of the main module (by default, computed from filename)",
+        type: "string",
       })
       .option('out-itf', {
         desc: 'output the trace in the Informal Trace Format to file (supresses all console output)',
         type: 'string',
       })
-      .option('max-samples', {
-        desc: 'the maximum on the number of traces to try',
-        type: 'number',
+      .option("max-samples", {
+        desc: "the maximum on the number of traces to try",
+        type: "number",
       })
-      .default('max-samples', 10000)
-      .option('max-steps', {
-        desc: 'the maximum on the number of steps in every trace',
-        type: 'number',
+      .default("max-samples", 10000)
+      .option("max-steps", {
+        desc: "the maximum on the number of steps in every trace",
+        type: "number",
       })
-      .default('max-steps', 20)
-      .option('init', {
-        desc: 'name of the initializer action',
-        type: 'string',
+      .default("max-steps", 20)
+      .option("init", {
+        desc: "name of the initializer action",
+        type: "string",
       })
-      .default('init', 'init')
-      .option('step', {
-        desc: 'name of the step action',
-        type: 'string',
+      .default("init", "init")
+      .option("step", {
+        desc: "name of the step action",
+        type: "string",
       })
-      .default('step', 'step')
-      .option('invariant', {
-        desc: 'invariant to check: a definition name or an expression',
-        type: 'string',
+      .default("step", "step")
+      .option("invariant", {
+        desc: "invariant to check: a definition name or an expression",
+        type: "string",
       })
-      .default('invariant', ['true'])
-      .option('seed', {
-        desc: 'random seed to use for non-deterministic choice',
-        type: 'string',
+      .default("invariant", ["true"])
+      .option("seed", {
+        desc: "random seed to use for non-deterministic choice",
+        type: "string",
       })
-      .option('verbosity', {
-        desc: 'control how much output is produced (0 to 5)',
-        type: 'number',
+      .option("verbosity", {
+        desc: "control how much output is produced (0 to 5)",
+        type: "number",
       })
-      .default('verbosity', verbosity.defaultLevel),
+      .default("verbosity", verbosity.defaultLevel),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633
   //
@@ -199,36 +199,36 @@ const runCmd = {
 
 // construct verify commands with yargs
 const verifyCmd = {
-  command: 'verify <input>',
-  desc: '[not implemented] Verify a Quint specification via Apalache',
+  command: "verify <input>",
+  desc: "[not implemented] Verify a Quint specification via Apalache",
   builder: (yargs: any) =>
     yargs
-      .option('out', {
-        desc: 'output file (suppresses all console output)',
-        type: 'string',
+      .option("out", {
+        desc: "output file (suppresses all console output)",
+        type: "string",
       })
       .option('out-itf', {
         desc: 'output the trace in the Informal Trace Format to file (supresses all console output)',
         type: 'string',
       })
-      .option('max-steps', {
-        desc: 'the maximum number of steps in every trace',
-        type: 'number',
+      .option("max-steps", {
+        desc: "the maximum number of steps in every trace",
+        type: "number",
         default: 10,
       })
-      .option('init', {
-        desc: 'name of the initializer action',
-        type: 'string',
-        default: 'init',
+      .option("init", {
+        desc: "name of the initializer action",
+        type: "string",
+        default: "init",
       })
-      .option('step', {
-        desc: 'name of the step action',
-        type: 'string',
-        default: 'step',
+      .option("step", {
+        desc: "name of the step action",
+        type: "string",
+        default: "step",
       })
-      .option('invariant', {
-        desc: 'invariant to check: a definition name or an expression',
-        type: 'string',
+      .option("invariant", {
+        desc: "invariant to check: a definition name or an expression",
+        type: "string",
       })
       .option('apalache-config', {
         desc: 'Filename of the additional Apalache configuration (in the HOCON format, a superset of JSON)',
@@ -247,8 +247,8 @@ const verifyCmd = {
 
 // construct documenting commands with yargs
 const docsCmd = {
-  command: 'docs <input>',
-  desc: 'produces documentation from docstrings in a Quint specification',
+  command: "docs <input>",
+  desc: "produces documentation from docstrings in a Quint specification",
   builder: defaultOpts,
   handler: (args: any) => load(args).then(chainCmd(docs)).then(outputResult),
 }
