@@ -1,7 +1,10 @@
 {
   "env": {
-    "browser": true,
-    "es2021": true
+    "browser": false,
+    "es2021": true,
+    "commonjs": true,
+    "es2021": true,
+    "mocha": true
   },
   "extends": ["eslint:recommended"],
   "parser": "@typescript-eslint/parser",
@@ -9,7 +12,15 @@
     "ecmaVersion": "latest",
     "sourceType": "module"
   },
-  "plugins": ["@typescript-eslint", "unused-imports"],
+  "plugins": [
+    "@typescript-eslint",
+    "eslint-plugin-json",
+    "eslint-plugin-import",
+    "eslint-plugin-node"
+  ],
+  "ignorePatterns": [
+    "src/generated/*"
+  ],
   "globals": {
     "NodeJS": true,
     "process": true,
