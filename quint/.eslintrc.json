@@ -16,7 +16,8 @@
     "@typescript-eslint",
     "eslint-plugin-json",
     "eslint-plugin-import",
-    "eslint-plugin-node"
+    "eslint-plugin-node",
+    "unused-imports"
   ],
   "ignorePatterns": [
     "src/generated/*"
