@@ -482,5 +482,59 @@ module ics20Test {
       chainStates' = chainStates
   })
 
-  // TODO(thpani): add a test for packet timeout
+  // From
+  // https://github.com/cosmos/ibc-go/blob/a25f0d421c32b3a2b7e8168c9f030849797ff2e8/modules/apps/transfer/transfer_test.go#L44
+  run TransferTest = {
+    pure val amount = 9223372036854775808
+
+    // NOTE: fungible token is prefixed with the full trace in order to verify the packet commitment
+    pure val denomInA = ATOM
+    pure val denomSentFromAToB = denomInA.with("path", [{ port: "transfer", channel: "channelToA" }].concat(denomInA.path))
+    pure val denomSentFromBToC = denomSentFromAToB.with("path", [{ port: "transfer", channel: "channelToB" }].concat(denomSentFromAToB.path))
+    init.then(
+      // Make sure that Alice has enough tokens on chain A. I did not understand
+      // how this is done in the go test.
+      chainStates' = chainStates.setBy("A", state => state.with("bank", state.bank.setBy("alice", balances => balances.set(ATOM, amount))))
+    ).then(
+      sendTransfer("A", "B", ATOM, amount, "alice", "bob")
+    ).then(all {
+      // check that voucher exists on chain B
+      val balanceB = chainStates.get("B").bank.getBalances("bob").getBalance(denomSentFromAToB)
+      assert(balanceB == amount),
+
+      sendTransfer("B", "C", denomSentFromAToB, amount, "bob", "charlie")
+    }).then(
+      all {
+        // check that the balance is updated on chainC
+        val balanceC = chainStates.get("C").bank.getBalances("charlie").getBalance(denomSentFromBToC)
+        assert(balanceC == amount),
+
+        // check that balance on chain B is empty
+        val balanceB = chainStates.get("B").bank.getBalances("bob").getBalance(denomSentFromBToC)
+        assert(balanceB == 0),
+
+        // send from chainC back to chainB
+        sendTransfer("C", "B", denomSentFromBToC, amount, "charlie", "bob")
+      }
+    ).then(all {
+      // check that the balance on chainA is zero
+      val balanceA = chainStates.get("A").bank.getBalances("alice").getBalance(denomInA)
+      assert(balanceA == 0),
+
+      // check that balance on chain B has the transfered amount
+      val balanceB = chainStates.get("B").bank.getBalances("bob").getBalance(denomSentFromAToB)
+      assert(balanceB == amount),
+
+      // check that module account escrow address is empty
+      val balanceEscrow = chainStates.get("B").bank.getBalances(ESCROW_ACCOUNT).getBalance(denomSentFromAToB)
+      assert(balanceEscrow == 0),
+
+      // check that balance on chain C is empty
+      val balanceC = chainStates.get("C").bank.getBalances("charlie").getBalance(denomSentFromBToC)
+      assert(balanceC == 0),
+
+      // noop
+      chainStates' = chainStates
+    })
+  }
 }
