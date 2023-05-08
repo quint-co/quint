@@ -799,9 +799,7 @@ error: Tests failed
 
 ## The `verify` command
 
-### Loading the Apalache proto file
-
-Setting a Non-existent `APALACHE_HOME` produces an error
+### Setting a Non-existent `APALACHE_HOME` produces an error
 
 <!-- !test in invalid APALACHE_DIST -->
 ```
@@ -814,8 +812,10 @@ APALACHE_DIST=/does/not/exist quint verify ../examples/language-features/boolean
 error: Verification error: Specified APALACHE_DIST /does/not/exist does not exist
 ```
 
-Setting a corrupted `APALACHE_DIST` produces an error. The `_build` dir exists,
-but doesn't have the expected structure of the Apalache distribution.
+### Setting a corrupted `APALACHE_DIST` produces an error
+
+(The `_build` dir exists, but doesn't have the expected structure of the
+Apalache distribution.)
 
 <!-- !test in corrupted APALACHE_DIST -->
 ```
@@ -826,4 +826,21 @@ APALACHE_DIST=_build quint verify ../examples/language-features/booleans.qnt
 <!-- !test err corrupted APALACHE_DIST -->
 ```
 error: Verification error: Apalache distribution is corrupted. Cannot find _build/lib/apalache.jar or _build/bin/apalache-mc.
+```
+
+### Extracting the proto file from a corrupted jar file produces an error
+
+We set up a valid looking distribution, but with an invalid jar file.
+
+<!-- !test in corrupted apalache.jar -->
+```
+mkdir -p _build/corrupt-dist-test/bin && touch _build/corrupt-dist-test/lib/apalache.jar
+mkdir -p _build/corrupt-dist-test/lib && touch _build/corrupt-dist-test/bin/apalache-mc
+APALACHE_DIST=_build/corrupt-dist-test quint verify ../examples/language-features/booleans.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err corrupted apalache.jar -->
+```
+error: Verification error: Apalache distribution is corrupted. Could not extract proto file from apalache.jar
 ```
