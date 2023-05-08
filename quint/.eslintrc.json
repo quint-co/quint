@@ -28,7 +28,11 @@
     ],
     "quotes": [2, "single"],
     "semi": [2, "never"],
-    "space-before-function-paren": ["error", "never"],
+    "space-before-function-paren": ["error", {
+        "anonymous": "always",
+        "named": "never",
+        "asyncArrow": "always"
+    }],
     "comma-dangle": [
       "error",
       {
