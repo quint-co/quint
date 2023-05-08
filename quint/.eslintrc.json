@@ -1,6 +1,6 @@
 {
   "env": {
-    "browser": false,
+    "browser": true,
     "es2021": true,
     "commonjs": true,
     "es2021": true,
