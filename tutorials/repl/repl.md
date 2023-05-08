@@ -241,7 +241,6 @@ runtime error: error: Variable temperature is not set
     ^^^^^^^^^^^^^^^^^^^^
 
 <undefined value>
-
 ```
 
 ### 5.2. Initializing state variables

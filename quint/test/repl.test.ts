@@ -243,9 +243,9 @@ describe('repl ok', () => {
       |>>> plus(2, 3)
       |5
       |
-      | [Frame 0]
-      | q::input() => 5
-      | └─ plus(2, 3) => 5
+      |[Frame 0]
+      |q::input() => 5
+      |└─ plus(2, 3) => 5
       |
       |>>> `
     )
@@ -283,7 +283,6 @@ describe('repl ok', () => {
       |^^^^^^^^
       |
       |<undefined value>
-      |
       |>>> `
     )
     await assertRepl(input, output)

@@ -16,6 +16,7 @@ import lineColumn from 'line-column'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
+import { format } from './prettierimp'
 
 import { QuintEx } from './quintIr'
 import {
@@ -28,12 +29,11 @@ import {
 import { noExecutionListener, newTraceRecorder } from './runtime/trace'
 import { ErrorMessage, probeParse } from './quintParserFrontend'
 import { IdGenerator, newIdGenerator } from './idGenerator'
-import { chalkQuintEx, printExecutionFrameRec } from './graphics'
+import { prettyQuintEx, printExecutionFrameRec, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { newRng } from './rng'
 import { version } from './version'
 import { fileSourceResolver } from './sourceResolver'
-import { dirname } from 'path'
 
 // tunable settings
 export const settings = {
@@ -85,15 +85,14 @@ export function quintRepl(input: Readable,
                             verbosity: verbosity.defaultLevel
                           },
                           exit: () => void = defaultExit) {
-  function out(text: string) {
-    output.write(text + '\n')
-  }
-  function prompt(text: string) {
+  // output a line of text, no line feed is introduced
+  const out = (text: string) => output.write(text)
+  const prompt = (text: string) => {
     return verbosity.hasReplPrompt(options.verbosity) ? text : ""
   }
   if (verbosity.hasReplBanners(options.verbosity)) {
-    out(chalk.gray(`Quint REPL ${version}`))
-    out(chalk.gray('Type ".exit" to exit, or ".help" for more information'))
+    out(chalk.gray(`Quint REPL ${version}\n`))
+    out(chalk.gray('Type ".exit" to exit, or ".help" for more information\n'))
   }
   // create a readline interface
   const rl = readline.createInterface({
@@ -131,7 +130,7 @@ export function quintRepl(input: Readable,
     nOpenParen = 0
     nOpenComments = 0
     rl.setPrompt(prompt(settings.prompt))
-    out(chalk.yellow(' <cancelled>'))
+    out(chalk.yellow(' <cancelled>\n'))
     // clear the line and show the prompt
     rl.write(null, { ctrl: true, name: 'u' })
     rl.prompt()
@@ -197,7 +196,7 @@ export function quintRepl(input: Readable,
         if (tryEval(out, state, `import ${moduleName}.*`)) {
           state.lastLoadedFileAndModule[1] = moduleName
         } else {
-          out(chalk.yellow("Pick the right module name and import it (the file has been loaded)"))
+          out(chalk.yellow("Pick the right module name and import it (the file has been loaded)\n"))
         }
       }
     }
@@ -214,25 +213,25 @@ export function quintRepl(input: Readable,
       // a special command to REPL, extract the command name
       const m = line.match(/^\s*\.(\w+)/)
       if (m === null) {
-        out(r(`Unexpected command: ${line}`))
-        out(g(`Type .help to see the list of commands`))
+        out(r(`Unexpected command: ${line}\n`))
+        out(g(`Type .help to see the list of commands\n`))
       } else {
         switch (m[1]) {
           case 'help':
-            out(`${r('.clear')}\tClear the history`)
-            out(`${r('.exit')}\tExit the REPL`)
-            out(`${r('.help')}\tPrint this help message`)
-            out(`${r('.load')} <filename> ${g('[<module>]')}\tClear the history,`)
-            out('     \tload the code from a file into the REPL session')
-            out('     \tand optionally import all definitions from <module>')
-            out(`${r('.reload')}\tClear the history, load and (optionally) import the last loaded file.`)
-            out('     \t^ a productivity hack')
-            out(`${r('.save')} <filename>\tSave the accumulated definitions to a file`)
-            out(`${r('.verbosity')}=[0-5]\tSet the output level (0 = quiet, 5 = very detailed).`)
-            out(`${r('.seed')}[=<number>]\tSet or get the random seed.`)
-            out('\nType an expression and press Enter to evaluate it.')
-            out('When the REPL switches to multiline mode "...", finish it with an empty line.')
-            out('\nPress Ctrl+C to abort current expression, Ctrl+D to exit the REPL')
+            out(`${r('.clear')}\tClear the history\n`)
+            out(`${r('.exit')}\tExit the REPL\n`)
+            out(`${r('.help')}\tPrint this help message\n`)
+            out(`${r('.load')} <filename> ${g('[<module>]')}\tClear the history,\n`)
+            out('     \tload the code from a file into the REPL session\n')
+            out('     \tand optionally import all definitions from <module>\n')
+            out(`${r('.reload')}\tClear the history, load and (optionally) import the last loaded file.\n`)
+            out('     \t^ a productivity hack\n')
+            out(`${r('.save')} <filename>\tSave the accumulated definitions to a file\n`)
+            out(`${r('.verbosity')}=[0-5]\tSet the output level (0 = quiet, 5 = very detailed).\n`)
+            out(`${r('.seed')}[=<number>]\tSet or get the random seed.\n`)
+            out('\nType an expression and press Enter to evaluate it.\n')
+            out('When the REPL switches to multiline mode "...", finish it with an empty line.\n')
+            out('\nPress Ctrl+C to abort current expression, Ctrl+D to exit the REPL\n')
             break
 
           case 'exit':
@@ -240,7 +239,7 @@ export function quintRepl(input: Readable,
             break
 
           case 'clear':
-            out('') // be nice to external programs
+            out('\n') // be nice to external programs
             clearHistory()
             break
 
@@ -248,7 +247,7 @@ export function quintRepl(input: Readable,
             const args = line.trim().split(/\s+/)
             const [filename, moduleName] = [args[1], args[2]]
             if (!filename) {
-              out(r('.load requires a filename'))
+              out(r('.load requires a filename\n'))
             } else {
               load(filename, moduleName)
             }
@@ -261,14 +260,14 @@ export function quintRepl(input: Readable,
             if (state.lastLoadedFileAndModule[0] !== undefined) {
               load(state.lastLoadedFileAndModule[0], state.lastLoadedFileAndModule[1])
             } else {
-              out(r('Nothing to reload. Use: .load filename [moduleName].'))
+              out(r('Nothing to reload. Use: .load filename [moduleName].\n'))
             }
             break
 
           case 'save': {
             const args = line.trim().split(/\s+/)
             if (!args[1]) {
-              out(r('.save requires a filename'))
+              out(r('.save requires a filename\n'))
             } else {
               saveToFile(out, state, args[1])
             }
@@ -280,11 +279,11 @@ export function quintRepl(input: Readable,
             // similar to yargs, accept: .verbosity n, .verbosity=n, .verbosity = n
             const m = line.match(/^\.verbosity\s*=?\s*([0-5])$/)
             if (m === null) {
-              out(r('.verbosity requires a level from 0 to 5'))
+              out(r('.verbosity requires a level from 0 to 5\n'))
             } else {
               state.verbosityLevel = Number(m[1])
               if (verbosity.hasReplPrompt(state.verbosityLevel)) {
-                out(g(`.verbosity=${state.verbosityLevel}`))
+                out(g(`.verbosity=${state.verbosityLevel}\n`))
               }
               rl.setPrompt(prompt(settings.prompt))
             }
@@ -295,14 +294,14 @@ export function quintRepl(input: Readable,
             // accept: .seed n, .seed=n, .seed = n
             const m = line.match(/^\.seed\s*=?\s*((0x[0-9a-f]+|[0-9]*))$/)
             if (m === null) {
-              out(r('.seed requires an integer, or no argument'))
+              out(r('.seed requires an integer, or no argument\n'))
             } else {
               if (m[1].trim() === '') {
-                out(g(`.seed=${state.seed}`))
+                out(g(`.seed=${state.seed}\n`))
               } else {
                 state.seed = BigInt(m[1])
                 if (verbosity.hasReplPrompt(state.verbosityLevel)) {
-                  out(g(`.seed=${state.seed}`))
+                  out(g(`.seed=${state.seed}\n`))
                 }
               }
             }
@@ -310,15 +309,15 @@ export function quintRepl(input: Readable,
           break
 
           default:
-            out(r(`Unexpected command: ${line}`))
-            out(g(`Type .help to see the list of commands`))
+            out(r(`Unexpected command: ${line}\n`))
+            out(g(`Type .help to see the list of commands\n`))
             break
         }
       }
     }
     rl.prompt()
   }).on('close', () => {
-    out('')
+    out('\n')
     exit()
   })
 
@@ -348,9 +347,10 @@ ${state.defsHist}
 ${replEnd}\n` +
       state.exprHist.map(s => `/*! ${s} !*/\n`).join('\n')
     writeFileSync(filename, text)
-    out(`Session saved to: ${filename}`)
+    out(`Session saved to: ${filename}\n`)
   } catch (error) {
     out(chalk.red(error))
+    out('\n')
   }
 }
 
@@ -401,6 +401,7 @@ function loadFromFile(out: writer, state: ReplState, filename: string): boolean 
     return !isError
   } catch (error) {
     out(chalk.red(error))
+    out('\n')
     return false
   }
 }
@@ -479,7 +480,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
       'static analysis error', moduleText, context.analysisErrors, chalk.yellow)
     printErrorMessages(out,
       'compile error', moduleText, context.compileErrors)
-    out('') // be nice to external programs
+    out('\n') // be nice to external programs
   }
 
   // Compose the input to the parser.
@@ -496,7 +497,7 @@ ${textToAdd}
   const probeResult = probeParse(newInput, '<input>')
   if (probeResult.kind === 'error') {
     printErrorMessages(out, 'syntax error', newInput, probeResult.messages)
-    out('') // be nice to external programs
+    out('\n') // be nice to external programs
     return false
   }
   if (probeResult.kind === 'none') {
@@ -526,6 +527,7 @@ ${textToAdd}
     loadVars(state, context)
     loadShadowVars(state, context)
     const computable = contextNameLookup(context, 'q::input', 'callable')
+    const columns = terminalWidth()
     const result =
       computable
       .mapRight(comp => {
@@ -533,16 +535,17 @@ ${textToAdd}
           .eval()
           .map(value => {
             const ex = value.toQuintEx(state.idGen)
-            out(chalkQuintEx(ex))
+            out(format(columns, 0, prettyQuintEx(ex)))
+            out('\n')
 
             if (verbosity.hasUserOpTracking(state.verbosityLevel)) {
               const trace = recorder.getBestTrace()
               if (trace.subframes.length > 0) {
-                out('')
+                out('\n')
                 trace.subframes.forEach((f, i) => {
-                  out(` [Frame ${i}]`)
-                  printExecutionFrameRec(l => out(' ' + l), f, [])
-                  out('')
+                  out(`[Frame ${i}]\n`)
+                  printExecutionFrameRec({ width: columns, out }, f, [])
+                  out('\n')
                 })
               }
             }
@@ -553,7 +556,7 @@ ${textToAdd}
               saveVars(state, context).map(missing => {
                 if (missing.length > 0) {
                   out(chalk.yellow('[warning] some variables are undefined: '
-                                   + missing.join(', ')))
+                                   + missing.join(', ') + '\n'))
                 }
               })
             }
@@ -573,7 +576,7 @@ ${textToAdd}
           'runtime error', moduleText, context.getRuntimeErrors())
         // print the error message produced by the lookup
         out(chalk.red(msg))
-        out('') // be nice to external programs
+        out('\n') // be nice to external programs
       })
 
     state.seed = rng.getState()
@@ -593,7 +596,7 @@ ${textToAdd}
       printErrors(moduleText, context)
       return false
     } else {
-      out('') // be nice to external programs
+      out('\n') // be nice to external programs
       state.defsHist = state.defsHist + '\n' + newInput // update the history
     }
   }
@@ -609,7 +612,7 @@ function printErrorMessages(out: writer,
   const finder = lineColumn(text)
   messages.forEach(e => {
     const msg = formatError(text, finder, e, none())
-    out(color(`${kind}: ${msg}`))
+    out(color(`${kind}: ${msg}\n`))
   })
 }
 

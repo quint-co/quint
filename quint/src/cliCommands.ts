@@ -32,7 +32,7 @@ import { TestOptions, TestResult, compileAndTest } from './runtime/testing'
 import { newIdGenerator } from './idGenerator'
 import { SimulatorOptions, compileAndRun } from './simulation'
 import { toItf } from './itf'
-import { printTrace, printExecutionFrameRec } from './graphics'
+import { printTrace, printExecutionFrameRec, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
 import { fileSourceResolver } from './sourceResolver'
@@ -256,6 +256,7 @@ export function runRepl(_argv: any) {
 export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
   const verbosityLevel = !prev.args.out ? prev.args.verbosity : 0
   const out = console.log
+  const columns = !prev.args.out ? terminalWidth() : 80
 
   const testing = { ...prev, stage: 'testing' as stage }
   const mainArg = prev.args.main
@@ -351,8 +352,12 @@ export function runTests(prev: TypecheckedStage): CLIProcedure<TestedStage> {
           if (verbosity.hasActionTracking(verbosityLevel)) {
             out('')
             testResult.frames.forEach((f, index) => {
-              out(`    [Frame ${index}]`)
-              printExecutionFrameRec(l => out('    ' + l), f, [])
+              out(`[${chalk.bold('Frame ' + index)}]`)
+              const console = {
+                width: columns,
+                out: (s: string) => process.stdout.write(s)
+              }
+              printExecutionFrameRec(console, f, [])
               out('')
             })
 
@@ -394,6 +399,7 @@ export function runSimulator(prev: TypecheckedStage):
   const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
   const verbosityLevel =
     (!prev.args.out && !prev.args.outItf) ? prev.args.verbosity : 0
+  const columns = !prev.args.out ? terminalWidth() : 80
   const rngOrError = mkRng(prev.args.seed)
   if (rngOrError.isLeft()) {
     return cliErr(rngOrError.value, { ...simulator, errors: [] })
@@ -424,7 +430,10 @@ export function runSimulator(prev: TypecheckedStage):
         const elapsedMs = Date.now() - startMs
         if (verbosity.hasStateOutput(options.verbosity)) {
           console.log(chalk.gray('An example execution:\n'))
-          printTrace(console.log, result.states, result.frames)
+          const myConsole = {
+            width: columns, out: (s: string) => process.stdout.write(s)
+          }
+          printTrace(myConsole, result.states, result.frames)
         }
         if (result.status === 'ok') {
           console.log(chalk.green('[ok]')

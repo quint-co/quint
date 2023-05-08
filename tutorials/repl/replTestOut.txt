@@ -13,7 +13,6 @@ runtime error: error: Variable temperature is not set
     ^^^^^^^^^^^^^^^^^^^^
 
 <undefined value>
-
 true
 20
 false
