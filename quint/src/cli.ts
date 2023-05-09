@@ -40,7 +40,7 @@ const defaultOpts = (yargs: any) =>
 //
 // `prevCmd.then(prevResult => prevResult.asyncChain(nextCmd))`
 //
-// Instaed writing:
+// Instead writing:
 //
 // `prevCmd.then(chainCmd(nextCmd))`
 function chainCmd<S, T>(
