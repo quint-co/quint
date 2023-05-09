@@ -25,9 +25,7 @@ import { substitutionsToString } from './printing'
  */
 export type Substitutions = Substitution[]
 
-type Substitution =
-  | { kind: 'type', name: string, value: QuintType }
-  | { kind: 'row', name: string, value: Row }
+type Substitution = { kind: 'type'; name: string; value: QuintType } | { kind: 'row'; name: string; value: Row }
 
 /*
  * Compose two substitutions by applying the first one to the second one's values
@@ -75,7 +73,10 @@ export function applySubstitution(table: LookupTable, subs: Substitutions, t: Qu
     }
     case 'fun': {
       result = {
-        kind: t.kind, arg: applySubstitution(table, subs, t.arg), res: applySubstitution(table, subs, t.res), id: t.id,
+        kind: t.kind,
+        arg: applySubstitution(table, subs, t.arg),
+        res: applySubstitution(table, subs, t.res),
+        id: t.id,
       }
       break
     }
@@ -129,7 +130,8 @@ export function applySubstitutionToConstraint(table: LookupTable, subs: Substitu
       ]
       return { kind: c.kind, types: ts, sourceId: c.sourceId }
     }
-    case 'empty': return c
+    case 'empty':
+      return c
     case 'conjunction': {
       const cs = c.constraints.map(con => applySubstitutionToConstraint(table, subs, con))
       return { kind: 'conjunction', constraints: cs, sourceId: c.sourceId }
@@ -147,7 +149,9 @@ function applySubstitutionsToSubstitutions(table: LookupTable, s1: Substitutions
       } else if (sub.kind === 'row' && s.kind === 'row') {
         result = unifyRows(table, s.value, sub.value)
       } else {
-        throw new Error(`Substitutions with same name (${s.name}) but incompatible kinds: ${substitutionsToString([sub, s])}`)
+        throw new Error(
+          `Substitutions with same name (${s.name}) but incompatible kinds: ${substitutionsToString([sub, s])}`
+        )
       }
 
       if (result.isLeft()) {
@@ -158,8 +162,10 @@ function applySubstitutionsToSubstitutions(table: LookupTable, s1: Substitutions
     }
 
     switch (s.kind) {
-      case 'type': return [{ kind: s.kind, name: s.name, value: applySubstitution(table, s1, s.value) }]
-      case 'row': return [{ kind: s.kind, name: s.name, value: applySubstitutionToRow(table, s1, s.value) }]
+      case 'type':
+        return [{ kind: s.kind, name: s.name, value: applySubstitution(table, s1, s.value) }]
+      case 'row':
+        return [{ kind: s.kind, name: s.name, value: applySubstitutionToRow(table, s1, s.value) }]
     }
   })
 }

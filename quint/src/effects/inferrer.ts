@@ -17,7 +17,20 @@ import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { LookupTable } from '../lookupTable'
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
-import { QuintApp, QuintBool, QuintConst, QuintEx, QuintInt, QuintLambda, QuintLet, QuintModule, QuintName, QuintOpDef, QuintStr, QuintVar } from '../quintIr'
+import {
+  QuintApp,
+  QuintBool,
+  QuintConst,
+  QuintEx,
+  QuintInt,
+  QuintLambda,
+  QuintLet,
+  QuintModule,
+  QuintName,
+  QuintOpDef,
+  QuintStr,
+  QuintVar,
+} from '../quintIr'
 import { Effect, EffectScheme, Signature, effectNames, toScheme, unify } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
@@ -69,7 +82,6 @@ export class EffectInferrer implements IRVisitor {
     this.location = `Inferring effect for ${expressionToString(e)}`
   }
 
-
   exitConst(def: QuintConst) {
     const pureEffect: Effect = { kind: 'concrete', components: [] }
 
@@ -89,12 +101,14 @@ export class EffectInferrer implements IRVisitor {
     this.addToResults(def.id, right(toScheme(pureEffect)))
   }
 
-
   // -------------------------------------- (VAR)
   //       Γ ⊢ var name: Read[name]
   exitVar(def: QuintVar) {
     const effect: Effect = {
-      kind: 'concrete', components: [{ kind: 'read', entity: { kind: 'concrete', stateVariables: [{ name: def.name, reference: def.id }] } }],
+      kind: 'concrete',
+      components: [
+        { kind: 'read', entity: { kind: 'concrete', stateVariables: [{ name: def.name, reference: def.id }] } },
+      ],
     }
     this.addToResults(def.id, right(toScheme(effect)))
   }
@@ -121,9 +135,11 @@ export class EffectInferrer implements IRVisitor {
     }
 
     this.location = `Trying to infer effect for operator application in ${expressionToString(expr)}`
-    const paramsResult = mergeInMany(expr.args.map((a: QuintEx) => {
-      return this.fetchResult(a.id).map(e => this.newInstance(e))
-    }))
+    const paramsResult = mergeInMany(
+      expr.args.map((a: QuintEx) => {
+        return this.fetchResult(a.id).map(e => this.newInstance(e))
+      })
+    )
 
     const resultEffect: Effect = { kind: 'variable', name: this.freshVarGenerator.freshVar('e') }
     const arrowEffect = paramsResult.map(params => {
@@ -147,7 +163,10 @@ export class EffectInferrer implements IRVisitor {
             this.substitutions = s
 
             paramsResult.map(effects =>
-              zip(effects, expr.args.map(a => a.id)).forEach(([effect, id]) => {
+              zip(
+                effects,
+                expr.args.map(a => a.id)
+              ).forEach(([effect, id]) => {
                 if (!effect || !id) {
                   // Impossible: effects and expr.args are the same length
                   throw new Error(`Expected ${expr.args.length} effects, but got ${effects.length}`)
@@ -162,19 +181,26 @@ export class EffectInferrer implements IRVisitor {
           })
 
         return resultEffectWithSubs
-      }).map(effect => {
+      })
+      .map(effect => {
         this.addToResults(expr.id, right(toScheme(effect)))
-      }).mapLeft(err => {
+      })
+      .mapLeft(err => {
         this.addToResults(expr.id, left(err))
       })
-
   }
 
   // Literals are always Pure
   exitLiteral(expr: QuintBool | QuintInt | QuintStr): void {
-    this.addToResults(expr.id, right(toScheme({
-      kind: 'concrete', components: [],
-    })))
+    this.addToResults(
+      expr.id,
+      right(
+        toScheme({
+          kind: 'concrete',
+          components: [],
+        })
+      )
+    )
   }
 
   //           Γ ⊢ expr: E
@@ -190,7 +216,6 @@ export class EffectInferrer implements IRVisitor {
     // Set the expression effect as the definition effect for it to be available at the result
     this.addToResults(def.id, result)
   }
-
 
   //     Γ ⊢ expr: E
   // ------------------------- (LET)
@@ -228,14 +253,16 @@ export class EffectInferrer implements IRVisitor {
       return
     }
     const exprResult = this.fetchResult(lambda.expr.id)
-    const params = mergeInMany(lambda.params.map(p => {
-      const result = this.fetchResult(p.id)
-        .map(e => this.newInstance(e))
-        .chain(e => applySubstitution(this.substitutions, e))
+    const params = mergeInMany(
+      lambda.params.map(p => {
+        const result = this.fetchResult(p.id)
+          .map(e => this.newInstance(e))
+          .chain(e => applySubstitution(this.substitutions, e))
 
-      this.addToResults(p.id, result.map(toScheme))
-      return result
-    }))
+        this.addToResults(p.id, result.map(toScheme))
+        return result
+      })
+    )
 
     const result = exprResult
       .chain(resultEffect => {
@@ -258,13 +285,16 @@ export class EffectInferrer implements IRVisitor {
           this.addToResults(lambda.expr.id, left(error))
         }
 
-        const nonFreeNames = effect.params.reduce((names, p) => {
-          const { effectVariables: effectVariables, entityVariables: entityVariables } = effectNames(p)
-          return {
-            effectVariables: new Set([...names.effectVariables, ...effectVariables]),
-            entityVariables: new Set([...names.entityVariables, ...entityVariables]),
-          }
-        }, { effectVariables: new Set<string>(), entityVariables: new Set<string>() })
+        const nonFreeNames = effect.params.reduce(
+          (names, p) => {
+            const { effectVariables: effectVariables, entityVariables: entityVariables } = effectNames(p)
+            return {
+              effectVariables: new Set([...names.effectVariables, ...effectVariables]),
+              entityVariables: new Set([...names.entityVariables, ...entityVariables]),
+            }
+          },
+          { effectVariables: new Set<string>(), entityVariables: new Set<string>() }
+        )
 
         return { ...nonFreeNames, effect }
       })

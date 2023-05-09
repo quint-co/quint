@@ -22,9 +22,9 @@ import { QuintModule } from './quintIr'
  */
 export interface DocumentationEntry {
   /* The mode and type signature of the definition */
-  label: string;
+  label: string
   /* The documentation string in markdown for the definition, if present */
-  documentation?: string;
+  documentation?: string
 }
 
 /**
@@ -34,15 +34,18 @@ export interface DocumentationEntry {
  * @returns a map of definition names to their documentation
  */
 export function produceDocs(quintModule: QuintModule): Map<string, DocumentationEntry> {
-  const entries = quintModule.defs.map((def) => {
+  const entries = quintModule.defs.map(def => {
     if (def.kind === 'instance' || def.kind === 'import' || def.kind === 'export') {
       return undefined
     }
 
-    const entry: [string, DocumentationEntry] = [def.name, {
-      label: definitionToString(def, false),
-      documentation: def.doc,
-    }]
+    const entry: [string, DocumentationEntry] = [
+      def.name,
+      {
+        label: definitionToString(def, false),
+        documentation: def.doc,
+      },
+    ]
 
     return entry
   })
@@ -57,15 +60,18 @@ export function produceDocs(quintModule: QuintModule): Map<string, Documentation
  * @returns a map of definition ids to their documentation
  */
 export function produceDocsById(quintModule: QuintModule): Map<bigint, DocumentationEntry> {
-  const entries = quintModule.defs.map((def) => {
+  const entries = quintModule.defs.map(def => {
     if (def.kind === 'instance' || def.kind === 'import' || def.kind === 'export') {
       return undefined
     }
 
-    const entry: [bigint, DocumentationEntry] = [def.id, {
-      label: definitionToString(def, false),
-      documentation: def.doc,
-    }]
+    const entry: [bigint, DocumentationEntry] = [
+      def.id,
+      {
+        label: definitionToString(def, false),
+        documentation: def.doc,
+      },
+    ]
 
     return entry
   })

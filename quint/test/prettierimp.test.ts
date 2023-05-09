@@ -8,30 +8,19 @@ const br = line('\n', ' ')
 
 describe('prettierimp', () => {
   it('page 2 tests', () => {
-    const doc = [
-      text('[begin'), br,
-      group([
-        text('[stmt;'), br,
-        text('stmt;'), br,
-        text('stmt;]'),
-      ]),
-      br,
-      text('end]'),
-    ]
+    const doc = [text('[begin'), br, group([text('[stmt;'), br, text('stmt;'), br, text('stmt;]')]), br, text('end]')]
 
     const result1 = format(60, 0, doc)
     expect(result1).to.equal('[begin [stmt; stmt; stmt;] end]')
 
     const result2 = format(30, 0, doc)
-    const expected2 =
-`[begin
+    const expected2 = `[begin
 [stmt; stmt; stmt;]
 end]`
     expect(result2).to.equal(expected2)
 
     const result3 = format(10, 0, doc)
-    const expected3 =
-`[begin
+    const expected3 = `[begin
 [stmt;
 stmt;
 stmt;]
@@ -42,18 +31,7 @@ end]`
   it('page 3 tests', () => {
     const doc = [
       text('[begin'),
-      nest('   ',
-        [
-          br,
-          group([
-            text('[stmt;'),
-            br,
-            text('stmt;'),
-            br,
-            text('stmt;]'),
-          ]),
-        ]
-      ),
+      nest('   ', [br, group([text('[stmt;'), br, text('stmt;'), br, text('stmt;]')])]),
       br,
       text('end]'),
     ]
@@ -62,40 +40,34 @@ end]`
     expect(result1).to.equal('[begin [stmt; stmt; stmt;] end]')
 
     const result2 = format(30, 0, doc)
-    const expected2 =
-`[begin
+    const expected2 = `[begin
    [stmt; stmt; stmt;]
 end]`
-     expect(result2).to.equal(expected2)
+    expect(result2).to.equal(expected2)
 
     const result3 = format(10, 0, doc)
-    const expected3 =
-`[begin
+    const expected3 = `[begin
    [stmt;
    stmt;
    stmt;]
 end]`
-     expect(result3).to.equal(expected3)
+    expect(result3).to.equal(expected3)
   })
 
   it('page 6 tests', () => {
     const binop = (left: string, op: string, right: string) => {
-      return group(nest('  ', [
-        group([ text(left), br, text(op) ]),
-        br,
-        text(right)
-      ]))
+      return group(nest('  ', [group([text(left), br, text(op)]), br, text(right)]))
     }
     const cond = binop('a', '==', 'b')
     const expr1 = binop('a', '<<', '2')
     const expr2 = binop('a', '+', 'b')
     const ifthen = (c: Doc, e1: Doc, e2: Doc) => {
       return group([
-        group(nest('  ', [ text('if'), br, c ])),
+        group(nest('  ', [text('if'), br, c])),
         br,
-        group(nest('  ', [ text('then'), br, e1 ])),
+        group(nest('  ', [text('then'), br, e1])),
         br,
-        group(nest('  ', [ text('else'), br, e2 ])),
+        group(nest('  ', [text('else'), br, e2])),
       ])
     }
 
@@ -105,33 +77,29 @@ end]`
     expect(result32).to.equal('if a == b then a << 2 else a + b')
 
     const result15 = format(15, 0, doc)
-    const expected15 =
-`if a == b
+    const expected15 = `if a == b
 then a << 2
 else a + b`
-     expect(result15).to.equal(expected15)
+    expect(result15).to.equal(expected15)
 
     const result10 = format(10, 0, doc)
-    const expected10 =
-`if a == b
+    const expected10 = `if a == b
 then
   a << 2
 else a + b`
-     expect(result10).to.equal(expected10)
+    expect(result10).to.equal(expected10)
 
     const result8 = format(8, 0, doc)
-    const expected8 =
-`if
+    const expected8 = `if
   a == b
 then
   a << 2
 else
   a + b`
-     expect(result8).to.equal(expected8)
+    expect(result8).to.equal(expected8)
 
     const result7 = format(7, 0, doc)
-    const expected7 =
-`if
+    const expected7 = `if
   a ==
     b
 then
@@ -139,11 +107,10 @@ then
     2
 else
   a + b`
-     expect(result7).to.equal(expected7)
+    expect(result7).to.equal(expected7)
 
     const result6 = format(6, 0, doc)
-    const expected6 =
-`if
+    const expected6 = `if
   a ==
     b
 then
@@ -152,8 +119,8 @@ then
 else
   a +
     b`
-     expect(result6).to.equal(expected6)
-   })
+    expect(result6).to.equal(expected6)
+  })
 
   it('page 2 tests with colors', () => {
     // check that the color codes do not affect the string length
@@ -161,31 +128,25 @@ else
     const y = chalk.yellow
     const b = chalk.bold
     const doc = [
-      richtext(y, '[begin'), br,
-      group([
-        text('[stmt;'), br,
-        richtext(b, 'stmt;'), br,
-        text('stmt;]'),
-      ]),
+      richtext(y, '[begin'),
+      br,
+      group([text('[stmt;'), br, richtext(b, 'stmt;'), br, text('stmt;]')]),
       br,
       richtext(y, 'end]'),
     ]
 
     const result1 = format(60, 0, doc)
-    const expected1 =
-      `${y('[begin')} [stmt; ${b('stmt;')} stmt;] ${y('end]')}`
+    const expected1 = `${y('[begin')} [stmt; ${b('stmt;')} stmt;] ${y('end]')}`
     expect(result1).to.equal(expected1)
 
     const result2 = format(30, 0, doc)
-    const expected2 =
-`${y('[begin')}
+    const expected2 = `${y('[begin')}
 [stmt; ${b('stmt;')} stmt;]
 ${y('end]')}`
     expect(result2).to.equal(expected2)
 
     const result3 = format(10, 0, doc)
-    const expected3 =
-`${y('[begin')}
+    const expected3 = `${y('[begin')}
 [stmt;
 ${b('stmt;')}
 stmt;]
@@ -194,9 +155,7 @@ ${y('end]')}`
   })
 
   it('parentheses, braces, brackets', () => {
-    const doc = [
-      parens(braces(brackets([line(), text('abc'), line()]))),
-    ]
+    const doc = [parens(braces(brackets([line(), text('abc'), line()])))]
 
     const result60 = format(60, 0, doc)
     expect(result60).to.equal('({[ abc ]})')

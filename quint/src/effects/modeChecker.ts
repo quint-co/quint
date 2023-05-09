@@ -18,7 +18,7 @@ import { qualifierToString } from '../IRprinting'
 import { IRVisitor, walkModule } from '../IRVisitor'
 import { QuintError } from '../quintError'
 import { OpQualifier, QuintInstance, QuintModule, QuintOpDef } from '../quintIr'
-import { ArrowEffect, ComponentKind, EffectScheme, Entity, entityNames, stateVariables} from './base'
+import { ArrowEffect, ComponentKind, EffectScheme, Entity, entityNames, stateVariables } from './base'
 import { effectToString, entityToString } from './printing'
 
 export type ModeCheckingResult = [Map<bigint, QuintError>, Map<bigint, OpQualifier>]
@@ -60,8 +60,12 @@ export class ModeChecker implements IRVisitor {
     if (isMoreGeneral(mode, def.qualifier)) {
       this.errors.set(def.id, {
         code: 'QNT200',
-        message: `${qualifierToString(def.qualifier)} operators ${modeConstraint(def.qualifier)}, but operator \`${def.name}\` ${explanation}. Use ${qualifierToString(mode)} instead.`,
-        data: { fix: { kind: 'replace', original: qualifierToString(def.qualifier), replacement: qualifierToString(mode) } },
+        message: `${qualifierToString(def.qualifier)} operators ${modeConstraint(def.qualifier)}, but operator \`${
+          def.name
+        }\` ${explanation}. Use ${qualifierToString(mode)} instead.`,
+        data: {
+          fix: { kind: 'replace', original: qualifierToString(def.qualifier), replacement: qualifierToString(mode) },
+        },
       })
     } else {
       this.suggestions.set(def.id, mode)
@@ -137,9 +141,9 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
           if (c.kind !== kind) {
             return false
           }
-          const nonFreeEntities = entityNames(c.entity).filter(v => nonFreeVars.has(v)).concat(
-            stateVariables(c.entity).map(v => v.name)
-          )
+          const nonFreeEntities = entityNames(c.entity)
+            .filter(v => nonFreeVars.has(v))
+            .concat(stateVariables(c.entity).map(v => v.name))
 
           return nonFreeEntities && nonFreeEntities.length > 0
         })
@@ -150,7 +154,10 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
       }
 
       const components = effect.components.filter(c => c.kind === kind)
-      return [modesForConcrete.get(kind)!, `${componentDescription.get(kind)} variables ${components.map(c => entityToString(c.entity))}`]
+      return [
+        modesForConcrete.get(kind)!,
+        `${componentDescription.get(kind)} variables ${components.map(c => entityToString(c.entity))}`,
+      ]
     }
     case 'arrow': {
       const r = effect.result
@@ -173,9 +180,9 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
       const kind = componentKindPriority.find(kind => {
         const entities = addedEntitiesByComponentKind.get(kind)
         const nonFreeEntities = entities?.flatMap(vs => {
-          return entityNames(vs).filter(v => nonFreeVars.has(v)).concat(
-            stateVariables(vs).map(v => v.name)
-          )
+          return entityNames(vs)
+            .filter(v => nonFreeVars.has(v))
+            .concat(stateVariables(vs).map(v => v.name))
         })
         return nonFreeEntities && nonFreeEntities.length > 0
       })
@@ -184,7 +191,10 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
         return ['puredef', "doesn't read or update any state variable"]
       }
 
-      return [modesForArrow.get(kind)!, `${componentDescription.get(kind)} variables ${addedEntitiesByComponentKind.get(kind)!.map(entityToString)}`]
+      return [
+        modesForArrow.get(kind)!,
+        `${componentDescription.get(kind)} variables ${addedEntitiesByComponentKind.get(kind)!.map(entityToString)}`,
+      ]
     }
     case 'variable': {
       return ['pureval', "doesn't read or update any state variable"]
@@ -248,8 +258,7 @@ function paramEntitiesByEffect(effect: ArrowEffect): Map<ComponentKind, Entity[]
   return entitiesByComponentKind
 }
 
-const modeOrder =
-  ['pureval', 'puredef', 'val', 'def', 'nondet', 'action', 'temporal', 'run']
+const modeOrder = ['pureval', 'puredef', 'val', 'def', 'nondet', 'action', 'temporal', 'run']
 
 function isMoreGeneral(m1: OpQualifier, m2: OpQualifier): boolean {
   const p1 = modeOrder.findIndex(elem => elem === m1)

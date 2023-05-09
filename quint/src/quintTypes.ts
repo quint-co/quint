@@ -33,53 +33,53 @@ export interface QuintStrType extends WithOptionalId {
 }
 
 export interface QuintConstType extends WithOptionalId {
-  kind: 'const',
-  name: string,
+  kind: 'const'
+  name: string
 }
 
 export interface QuintVarType extends WithOptionalId {
-  kind: 'var',
-  name: string,
+  kind: 'var'
+  name: string
 }
 
 export interface QuintSetType extends WithOptionalId {
-  kind: 'set',
-  elem: QuintType,
+  kind: 'set'
+  elem: QuintType
 }
 
 export interface QuintSeqType extends WithOptionalId {
-  kind: 'list',
-  elem: QuintType,
+  kind: 'list'
+  elem: QuintType
 }
 
 export interface QuintFunType extends WithOptionalId {
-  kind: 'fun',
-  arg: QuintType,
-  res: QuintType,
+  kind: 'fun'
+  arg: QuintType
+  res: QuintType
 }
 
 export interface QuintOperType extends WithOptionalId {
-  kind: 'oper',
-  args: QuintType[],
-  res: QuintType,
+  kind: 'oper'
+  args: QuintType[]
+  res: QuintType
 }
 
 export interface QuintTupleType extends WithOptionalId {
-  kind: 'tup',
-  fields: Row,
+  kind: 'tup'
+  fields: Row
 }
 
 export interface QuintRecordType extends WithOptionalId {
-  kind: 'rec',
-  fields: Row,
+  kind: 'rec'
+  fields: Row
 }
 
 export interface QuintUnionType extends WithOptionalId {
-  kind: 'union',
-  tag: string,
+  kind: 'union'
+  tag: string
   records: {
-    tagValue: string,
-    fields: Row,
+    tagValue: string
+    fields: Row
   }[]
 }
 
@@ -103,8 +103,8 @@ export type QuintType =
 /**
  * Row types, used to express tuples and records.
  */
-export type ConcreteRow = { kind: 'row', fields: { fieldName: string, fieldType: QuintType }[], other: Row }
-export type VarRow = { kind: 'var', name: string }
+export type ConcreteRow = { kind: 'row'; fields: { fieldName: string; fieldType: QuintType }[]; other: Row }
+export type VarRow = { kind: 'var'; name: string }
 export type EmptyRow = { kind: 'empty' }
 
 export type Row = ConcreteRow | VarRow | EmptyRow
@@ -116,7 +116,7 @@ export type Row = ConcreteRow | VarRow | EmptyRow
  *
  * @returns the set of type variables and the set of row variables
  */
-export function typeNames(t: QuintType): { typeVariables: Set<string>, rowVariables: Set<string> } {
+export function typeNames(t: QuintType): { typeVariables: Set<string>; rowVariables: Set<string> } {
   const collector = new TypeNamesCollector()
   walkType(collector, t)
   return { typeVariables: collector.typeNames, rowVariables: collector.rowNames }

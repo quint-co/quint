@@ -4,10 +4,7 @@ import { buildDef, buildExpression, buildModuleWithDefs, buildType } from './bui
 import { definitionToString, expressionToString, moduleToString, typeToString } from '../src/IRprinting'
 
 describe('moduleToString', () => {
-  const quintModule = buildModuleWithDefs([
-    'var S: Set[int]',
-    'val f = S.filter(x => x + 1)',
-  ])
+  const quintModule = buildModuleWithDefs(['var S: Set[int]', 'val f = S.filter(x => x + 1)'])
 
   it('pretty prints the module', () => {
     const expectedModule = `module wrapper {

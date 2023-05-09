@@ -9,12 +9,17 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'fs'
 import JSONbig from 'json-bigint'
-import { dirname, basename, resolve } from 'path'
+import { basename, dirname, resolve } from 'path'
 import { cwd } from 'process'
 import chalk from 'chalk'
 
 import {
-  ErrorMessage, Loc, compactSourceMap, parsePhase1fromText, parsePhase2sourceResolution, parsePhase3importAndNameResolution
+  ErrorMessage,
+  Loc,
+  compactSourceMap,
+  parsePhase1fromText,
+  parsePhase2sourceResolution,
+  parsePhase3importAndNameResolution,
 } from './quintParserFrontend'
 
 import { Either, left, right } from '@sweet-monads/either'
@@ -32,104 +37,123 @@ import { TestOptions, TestResult, compileAndTest } from './runtime/testing'
 import { newIdGenerator } from './idGenerator'
 import { SimulatorOptions, compileAndRun } from './simulation'
 import { toItf } from './itf'
-import { printTrace, printExecutionFrameRec, terminalWidth } from './graphics'
+import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
 import { fileSourceResolver } from './sourceResolver'
 
-export type stage =
-  'loading' | 'parsing' | 'typechecking' |
-  'testing' | 'running' | 'documentation'
+export type stage = 'loading' | 'parsing' | 'typechecking' | 'testing' | 'running' | 'documentation'
 
 /** The data from a ProcedureStage that may be output to --out */
 interface OutputStage {
-  stage: stage,
+  stage: stage
   // the modules and the lookup table produced by 'parse'
-  modules?: QuintModule[],
-  table?: LookupTable,
+  modules?: QuintModule[]
+  table?: LookupTable
   // the tables produced by 'typecheck'
-  types?: Map<bigint, TypeScheme>,
-  effects?: Map<bigint, EffectScheme>,
-  modes?: Map<bigint, OpQualifier>,
+  types?: Map<bigint, TypeScheme>
+  effects?: Map<bigint, EffectScheme>
+  modes?: Map<bigint, OpQualifier>
   // Test names output produced by 'test'
-  passed?: string[],
-  failed?: string[],
-  ignored?: string[],
+  passed?: string[]
+  failed?: string[]
+  ignored?: string[]
   // Test names output produced by 'run'
-  status?: 'ok' | 'violation' | 'failure',
-  trace?: QuintEx[],
+  status?: 'ok' | 'violation' | 'failure'
+  trace?: QuintEx[]
   /* Docstrings by defintion name by module name */
-  documentation?: Map<string, Map<string, DocumentationEntry>>,
-  errors?: ErrorMessage[],
-  warnings?: any[], // TODO it doesn't look like this is being used for anything. Should we remove it?
-  sourceCode?: string, // Should not printed, only used in formatting errors
+  documentation?: Map<string, Map<string, DocumentationEntry>>
+  errors?: ErrorMessage[]
+  warnings?: any[] // TODO it doesn't look like this is being used for anything. Should we remove it?
+  sourceCode?: string // Should not printed, only used in formatting errors
 }
 
 // Extract just the parts of a ProcedureStage that we use for the output
 // See https://stackoverflow.com/a/39333479/1187277
 const pickOutputStage = ({
-  stage, warnings, modules, table, types, effects, errors, documentation,
-  passed, failed, ignored, status, trace,
+  stage,
+  warnings,
+  modules,
+  table,
+  types,
+  effects,
+  errors,
+  documentation,
+  passed,
+  failed,
+  ignored,
+  status,
+  trace,
 }: ProcedureStage) => {
   return {
-    stage, warnings, modules, table, types, effects, errors, documentation,
-    passed, failed, ignored, status, trace,
+    stage,
+    warnings,
+    modules,
+    table,
+    types,
+    effects,
+    errors,
+    documentation,
+    passed,
+    failed,
+    ignored,
+    status,
+    trace,
   }
 }
 
-
 interface ProcedureStage extends OutputStage {
-  args: any,
+  args: any
 }
 
 interface LoadedStage extends ProcedureStage {
   // Path to the source file
-  path: string,
+  path: string
   sourceCode: string
 }
 
 interface ParsedStage extends LoadedStage {
-  modules: QuintModule[],
-  sourceMap: Map<bigint, Loc>,
-  table: LookupTable,
+  modules: QuintModule[]
+  sourceMap: Map<bigint, Loc>
+  table: LookupTable
 }
 
 interface TypecheckedStage extends ParsedStage {
-  types: Map<bigint, TypeScheme>,
-  effects: Map<bigint, EffectScheme>,
-  modes: Map<bigint, OpQualifier>,
+  types: Map<bigint, TypeScheme>
+  effects: Map<bigint, EffectScheme>
+  modes: Map<bigint, OpQualifier>
 }
 
 interface TestedStage extends LoadedStage {
   // the names of the passed tests
-  passed: string[],
+  passed: string[]
   // the names of the failed tests
-  failed: string[],
+  failed: string[]
   // the names of the ignored tests
-  ignored: string[],
+  ignored: string[]
 }
 
 interface SimulatorStage extends LoadedStage {
-  status: 'ok' | 'violation' | 'failure',
-  trace?: QuintEx[],
+  status: 'ok' | 'violation' | 'failure'
+  trace?: QuintEx[]
 }
 
 interface VerifierStage extends LoadedStage {
-  status: 'ok' | 'violation' | 'failure',
-  trace?: QuintEx[],
+  status: 'ok' | 'violation' | 'failure'
+  trace?: QuintEx[]
 }
 
 interface DocumentationStage extends LoadedStage {
-  documentation?: Map<string, Map<string, DocumentationEntry>>,
+  documentation?: Map<string, Map<string, DocumentationEntry>>
 }
 
 // A procedure stage which is guaranteed to have `errors` and `sourceCode`
 interface ErrorData extends ProcedureStage {
-  errors: ErrorMessage[],
+  errors: ErrorMessage[]
   sourceCode: string
 }
 
-type ErrResult = { msg: String, stage: ErrorData }
+type ErrResult = { msg: String; stage: ErrorData }
 
 function cliErr<Stage>(msg: String, stage: ErrorData): Either<ErrResult, Stage> {
   return left({ msg, stage })
@@ -161,7 +185,6 @@ export async function load(args: any): Promise<CLIProcedure<LoadedStage>> {
   }
 }
 
-
 /**
  * Parse a Quint specification.
  *
@@ -179,18 +202,17 @@ export async function parse(loaded: LoadedStage): Promise<CLIProcedure<ParsedSta
     })
     .mapLeft(newErrs => {
       const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
-      return { msg: "parsing failed", stage: { ...parsing, errors } }
+      return { msg: 'parsing failed', stage: { ...parsing, errors } }
     })
     .chain(phase1Data => {
       if (args.sourceMap) {
         // Write source map to the specified file
         writeToJson(args.sourceMap, compactSourceMap(phase1Data.sourceMap))
       }
-      return parsePhase3importAndNameResolution(phase1Data)
-        .mapLeft(newErrs => {
-          const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
-          return { msg: "parsing failed", stage: { ...parsing, errors } }
-        })
+      return parsePhase3importAndNameResolution(phase1Data).mapLeft(newErrs => {
+        const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
+        return { msg: 'parsing failed', stage: { ...parsing, errors } }
+      })
     })
     .map(phase2Data => ({ ...parsing, ...phase2Data }))
 }
@@ -222,7 +244,7 @@ export async function typecheck(parsed: ParsedStage): Promise<CLIProcedure<Typec
   } else {
     const errorLocator = mkErrorMessage(sourceMap)
     const errors = Array.from(errorMap, errorLocator)
-    return cliErr("typechecking failed", { ...typechecking, errors })
+    return cliErr('typechecking failed', { ...typechecking, errors })
   }
 }
 
@@ -237,7 +259,7 @@ export async function runRepl(_argv: any) {
   if (_argv.require) {
     const m = /^(.*?)(?:|::([a-zA-Z_]\w*))$/.exec(_argv.require)
     if (m) {
-      [ filename, moduleName ] = m.slice(1, 3)
+      ;[filename, moduleName] = m.slice(1, 3)
     }
   }
   const options: ReplOptions = {
@@ -284,19 +306,16 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
       out(`\n  ${mainName}`)
     }
 
-    const matchFun =
-      (n: string): boolean => isMatchingTest(testing.args.match, n)
+    const matchFun = (n: string): boolean => isMatchingTest(testing.args.match, n)
     const options: TestOptions = {
       testMatch: matchFun,
       maxSamples: testing.args.maxSamples,
       rng,
       verbosity: verbosityLevel,
     }
-    const testOut =
-      compileAndTest(testing.modules, main,
-                     testing.sourceMap, testing.table, testing.types, options)
+    const testOut = compileAndTest(testing.modules, main, testing.sourceMap, testing.table, testing.types, options)
     if (testOut.isLeft()) {
-      return cliErr("Tests failed", { ...testing, errors: testOut.value })
+      return cliErr('Tests failed', { ...testing, errors: testOut.value })
     } else if (testOut.isRight()) {
       const elapsedMs = Date.now() - startMs
       const results = testOut.unwrap()
@@ -323,8 +342,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
       if (verbosity.hasResults(verbosityLevel)) {
         out('')
         if (passed.length > 0) {
-          out(chalk.green(`  ${passed.length} passing`) +
-                      chalk.gray(` (${elapsedMs}ms)`))
+          out(chalk.green(`  ${passed.length} passing`) + chalk.gray(` (${elapsedMs}ms)`))
         }
         if (failed.length > 0) {
           out(chalk.red(`  ${failed.length} failed`))
@@ -345,9 +363,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
           out(`  ${index + 1}) ${name}:`)
           const lines = details.split('\n')
           // output the first two lines in red
-          lines.slice(0, 2).forEach(l =>
-            out(chalk.red('      ' + l))
-          )
+          lines.slice(0, 2).forEach(l => out(chalk.red('      ' + l)))
 
           if (verbosity.hasActionTracking(verbosityLevel)) {
             out('')
@@ -355,7 +371,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
               out(`[${chalk.bold('Frame ' + index)}]`)
               const console = {
                 width: columns,
-                out: (s: string) => process.stdout.write(s)
+                out: (s: string) => process.stdout.write(s),
               }
               printExecutionFrameRec(console, f, [])
               out('')
@@ -371,8 +387,11 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
         out('')
       }
 
-      if (failed.length > 0 && verbosity.hasHints(options.verbosity)
-          && !verbosity.hasActionTracking(options.verbosity)) {
+      if (
+        failed.length > 0 &&
+        verbosity.hasHints(options.verbosity) &&
+        !verbosity.hasActionTracking(options.verbosity)
+      ) {
         out(chalk.gray('\n  Use --verbosity=3 to show executions.'))
       }
     }
@@ -382,7 +401,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     if (errors.length == 0 && failed.length == 0) {
       return right(stage)
     } else {
-      return cliErr("Tests failed", stage)
+      return cliErr('Tests failed', stage)
     }
   }
 }
@@ -392,13 +411,11 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
  *
  * @param prev the procedure stage produced by `typecheck`
  */
-export async function runSimulator(prev: TypecheckedStage):
-  Promise<CLIProcedure<SimulatorStage>> {
+export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure<SimulatorStage>> {
   const simulator = { ...prev, stage: 'running' as stage }
   const mainArg = prev.args.main
   const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
-  const verbosityLevel =
-    (!prev.args.out && !prev.args.outItf) ? prev.args.verbosity : 0
+  const verbosityLevel = !prev.args.out && !prev.args.outItf ? prev.args.verbosity : 0
   const columns = !prev.args.out ? terminalWidth() : 80
   const rngOrError = mkRng(prev.args.seed)
   if (rngOrError.isLeft()) {
@@ -415,94 +432,90 @@ export async function runSimulator(prev: TypecheckedStage):
     verbosity: verbosityLevel,
   }
   const startMs = Date.now()
-  
-  const mainPath =
-    fileSourceResolver().lookupPath(dirname(prev.args.input), basename(prev.args.input))
-  const result =
-    compileAndRun(newIdGenerator(), prev.sourceCode, mainName, mainPath, options)
-  
+
+  const mainPath = fileSourceResolver().lookupPath(dirname(prev.args.input), basename(prev.args.input))
+  const result = compileAndRun(newIdGenerator(), prev.sourceCode, mainName, mainPath, options)
+
   if (result.status === 'error') {
-      const errors =
-        prev.errors ? prev.errors.concat(result.errors) : result.errors
-      return cliErr('run failed', { ...simulator, errors })
+    const errors = prev.errors ? prev.errors.concat(result.errors) : result.errors
+    return cliErr('run failed', { ...simulator, errors })
   } else {
-      if (verbosity.hasResults(verbosityLevel)) {
-        const elapsedMs = Date.now() - startMs
-        if (verbosity.hasStateOutput(options.verbosity)) {
-          console.log(chalk.gray('An example execution:\n'))
-          const myConsole = {
-            width: columns, out: (s: string) => process.stdout.write(s)
-          }
-          printTrace(myConsole, result.states, result.frames)
+    if (verbosity.hasResults(verbosityLevel)) {
+      const elapsedMs = Date.now() - startMs
+      if (verbosity.hasStateOutput(options.verbosity)) {
+        console.log(chalk.gray('An example execution:\n'))
+        const myConsole = {
+          width: columns,
+          out: (s: string) => process.stdout.write(s),
         }
-        if (result.status === 'ok') {
-          console.log(chalk.green('[ok]')
-            + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
-          if (verbosity.hasHints(options.verbosity)) {
-            console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
-            console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
-          }
-        } else {
-          console.log(chalk.red(`[${result.status}]`)
-            + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
-          console.log(chalk.gray(`Use --seed=0x${result.seed.toString(16)} to reproduce.`))
+        printTrace(myConsole, result.states, result.frames)
+      }
+      if (result.status === 'ok') {
+        console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
+        if (verbosity.hasHints(options.verbosity)) {
+          console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
+          console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
+        }
+      } else {
+        console.log(chalk.red(`[${result.status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
+        console.log(chalk.gray(`Use --seed=0x${result.seed.toString(16)} to reproduce.`))
 
-          if (verbosity.hasHints(options.verbosity)) {
-            console.log(chalk.gray('Use --verbosity=3 to show executions.'))
-          }
+        if (verbosity.hasHints(options.verbosity)) {
+          console.log(chalk.gray('Use --verbosity=3 to show executions.'))
         }
       }
-
-      if (prev.args.outItf) {
-        const trace = toItf(result.vars, result.states)
-        if (trace.isRight()) {
-          const jsonObj = {
-            '#meta': {
-              'format': 'ITF',
-              'format-description': 'https://apalache.informal.systems/docs/adr/015adr-trace.html',
-              'source': prev.args.input,
-              'status': result.status,
-              'description': 'Created by Quint on ' + new Date(),
-              'timestamp': Date.now(),
-            },
-            ...trace.value,
-          }
-          writeToJson(prev.args.outItf, jsonObj)
-        } else {
-          const newStage = { ...simulator, errors: result.errors }
-          return cliErr(`ITF conversion failed: ${trace.value}`, newStage)
-        }
-      }
-
-      // If nothing found, return a success. Otherwise, return an error.
-      let msg
-      switch (result.status) {
-        case 'ok':
-          return right({
-              ...simulator,
-              status: result.status,
-              trace: result.states,
-          })
-
-        case 'violation':
-          msg = 'Invariant violated'
-          break
-
-        case 'failure':
-          msg = 'Runtime error'
-          break
-
-        default:
-          msg = 'Unknown error'
-      }
-
-      return cliErr(msg, {
-            ...simulator,
-            status: result.status,
-            trace: result.states,
-            errors: result.errors,
-          })
     }
+
+    if (prev.args.outItf) {
+      const trace = toItf(result.vars, result.states)
+      if (trace.isRight()) {
+        const jsonObj = {
+          '#meta': {
+            format: 'ITF',
+            'format-description': 'https://apalache.informal.systems/docs/adr/015adr-trace.html',
+            source: prev.args.input,
+            status: result.status,
+            description: 'Created by Quint on ' + new Date(),
+            timestamp: Date.now(),
+          },
+          ...trace.value,
+        }
+        writeToJson(prev.args.outItf, jsonObj)
+      } else {
+        const newStage = { ...simulator, errors: result.errors }
+        return cliErr(`ITF conversion failed: ${trace.value}`, newStage)
+      }
+    }
+
+    // If nothing found, return a success. Otherwise, return an error.
+    let msg
+    switch (result.status) {
+      case 'ok':
+        return right({
+          ...simulator,
+          status: result.status,
+          trace: result.states,
+        })
+
+      case 'violation':
+        msg = 'Invariant violated'
+        break
+
+      case 'failure':
+        msg = 'Runtime error'
+        break
+
+      default:
+        msg = 'Unknown error'
+    }
+
+    return cliErr(msg, {
+      ...simulator,
+      status: result.status,
+      trace: result.states,
+      errors: result.errors,
+    })
+  }
 }
 
 /**
@@ -510,13 +523,12 @@ export async function runSimulator(prev: TypecheckedStage):
  *
  * @param prev the procedure stage produced by `typecheck`
  */
-export async function verifySpec(prev: TypecheckedStage):
-  Promise<CLIProcedure<VerifierStage>> {
+export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<VerifierStage>> {
   const verifier = { ...prev, stage: 'verifying' as stage }
   const _mainArg = prev.args.main
   const _mainName = _mainArg ? _mainArg : basename(prev.args.input, '.qnt')
 
-  return cliErr('not implemented yet',  { ...verifier, errors: [] })
+  return cliErr('not implemented yet', { ...verifier, errors: [] })
 }
 
 /**
@@ -530,7 +542,7 @@ export async function docs(loaded: LoadedStage): Promise<CLIProcedure<Documentat
   return parsePhase1fromText(newIdGenerator(), sourceCode, path)
     .mapLeft(newErrs => {
       const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
-      return { msg: "parsing failed", stage: { ...parsing, errors } }
+      return { msg: 'parsing failed', stage: { ...parsing, errors } }
     })
     .map(phase1Data => {
       const allEntries: [string, Map<string, DocumentationEntry>][] = phase1Data.modules.map(module => {
@@ -595,8 +607,8 @@ function replacer(_key: String, value: any): any {
 function mkRng(seedText?: string): Either<string, Rng> {
   let seed
   if (seedText !== undefined) {
-      // since yargs does not has a type for big integers,
-      // we do it with a fallback
+    // since yargs does not has a type for big integers,
+    // we do it with a fallback
     try {
       seed = BigInt(seedText)
     } catch (SyntaxError) {

@@ -20,7 +20,8 @@ describe('builtInDocs', () => {
           `The set of all booleans
           |
           |That is, Set(false, true)`
-      )})
+        ),
+      })
     })
   })
 })

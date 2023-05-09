@@ -14,11 +14,7 @@ import { treeFromModule } from '../../src/scoping'
 import JSONbig from 'json-bigint'
 
 describe('ConstraintGeneratorVisitor', () => {
-  const baseDefs = ([
-    'var s: str',
-    'var y: int',
-    'const N: int',
-  ])
+  const baseDefs = ['var s: str', 'var y: int', 'const N: int']
 
   function visitModuleWithDefs(defs: string[], solvingFunction: SolvingFunctionType): ConstraintGeneratorVisitor {
     const module = buildModuleWithDefs(baseDefs.concat(defs))
@@ -35,9 +31,7 @@ describe('ConstraintGeneratorVisitor', () => {
   }
 
   it('collects constraints from expressions', () => {
-    const defs = ([
-      'def d(S) = S.map(x => x + 10)',
-    ])
+    const defs = ['def d(S) = S.map(x => x + 10)']
 
     const expectedConstraint =
       '(int, int) => int ~ (t_x_9, int) => t0 /\\ (Set[t1], (t1) => t2) => Set[t2] ~ (t_S_7, (t_x_9) => t0) => t3'
@@ -51,9 +45,7 @@ describe('ConstraintGeneratorVisitor', () => {
   })
 
   it('handles underscore', () => {
-    const defs = ([
-      'def d(S) = S.map(_ => 10)',
-    ])
+    const defs = ['def d(S) = S.map(_ => 10)']
 
     const expectedConstraint = '(Set[t1], (t1) => t2) => Set[t2] ~ (t_S_7, (t0) => int) => t3'
 
@@ -62,30 +54,27 @@ describe('ConstraintGeneratorVisitor', () => {
       return right([])
     }
 
-
     visitModuleWithDefs(defs, solvingFunction)
   })
 
   it('collects types from variable and constant definitions', () => {
-    const defs = ([
-      'def a = s',
-      'def b = N',
-    ])
+    const defs = ['def a = s', 'def b = N']
 
     const solvingFunction = (_: LookupTable, _c: Constraint) => right([])
 
     const visitor = visitModuleWithDefs(defs, solvingFunction)
 
-    assert.includeDeepMembers([...visitor.types.entries()], [
-      [7n , { typeVariables: new Set([]), rowVariables: new Set([]), type: { kind: 'str', id: 1n } }],
-      [9n, { typeVariables: new Set([]), rowVariables: new Set([]), type: { kind: 'int', id: 5n } }],
-    ])
+    assert.includeDeepMembers(
+      [...visitor.types.entries()],
+      [
+        [7n, { typeVariables: new Set([]), rowVariables: new Set([]), type: { kind: 'str', id: 1n } }],
+        [9n, { typeVariables: new Set([]), rowVariables: new Set([]), type: { kind: 'int', id: 5n } }],
+      ]
+    )
   })
 
   it('collects solving errors', () => {
-    const defs = ([
-      'def a = 1 + true',
-    ])
+    const defs = ['def a = 1 + true']
 
     const error: ErrorTree = {
       location: 'Mocked location',
@@ -103,27 +92,27 @@ describe('ConstraintGeneratorVisitor', () => {
   })
 
   it('collects internal errors', () => {
-    const defs = ([
+    const defs = [
       'val a: t = 1',
       // Everything after the error is ignored. This behavior should be improved
       // after https://github.com/informalsystems/quint/issues/177
       'def b(x) = a',
       'def c = b(1)',
       'def d = val m = 1 { a }',
+    ]
 
-    ])
-
-    const solvingFunction: SolvingFunctionType = (_: LookupTable, _c: Constraint) => right([
-      { kind: 'type', name: 't', value: { kind: 'int', id: 6n } },
-    ])
+    const solvingFunction: SolvingFunctionType = (_: LookupTable, _c: Constraint) =>
+      right([{ kind: 'type', name: 't', value: { kind: 'int', id: 6n } }])
 
     const error: ErrorTree = {
       location: 'Checking type annotation t',
-      children: [{
-        location: 'Checking variable t',
-        message: 'Type annotation is too general: t should be int',
-        children: [],
-      }],
+      children: [
+        {
+          location: 'Checking variable t',
+          message: 'Type annotation is too general: t should be int',
+          children: [],
+        },
+      ],
     }
 
     const visitor = visitModuleWithDefs(defs, solvingFunction)

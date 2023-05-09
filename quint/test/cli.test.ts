@@ -10,25 +10,22 @@ module exModule {
 }
 `
 
-const loaded  = {
+const loaded = {
   args: {},
-  path: "mocked/path",
+  path: 'mocked/path',
   sourceCode: exModule,
-  stage: ('loading' as stage),
+  stage: 'loading' as stage,
   warnings: [],
 }
 
 describe('the parse CLI routine', () =>
   it('succeeds with "parsed" status', () => {
-    parse(loaded)
-      .then(res => res.map(s => assert.equal(s.stage, 'parsing')))
-  })
-)
+    parse(loaded).then(res => res.map(s => assert.equal(s.stage, 'parsing')))
+  }))
 
 describe('the typecheck CLI routine', () =>
   it('succeeds with "typechecked" status', () => {
     parse(loaded)
       .then(parsed => parsed.asyncChain(typecheck))
       .then(res => res.map(s => assert.equal(s.stage, 'typechecking')))
-  })
-)
+  }))

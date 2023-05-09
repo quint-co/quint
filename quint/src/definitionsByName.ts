@@ -1,5 +1,5 @@
-import { QuintType } from "./quintTypes"
-import { ScopeTree, filterScope, scopesForId } from "./scoping"
+import { QuintType } from './quintTypes'
+import { ScopeTree, filterScope, scopesForId } from './scoping'
 
 /**
  * Possible kinds for value definitions
@@ -49,7 +49,6 @@ export interface DefinitionsByName {
   typeDefinitions: Map<string, TypeDefinition[]>
 }
 
-
 /**
  * Definitions tables for each module
  */
@@ -63,12 +62,13 @@ export type DefinitionsByModule = Map<string, DefinitionsByName>
  *
  * @returns a new definitions table with the given definitions
  */
-export function newTable(
-  {
-    valueDefinitions = [],
-    typeDefinitions = [],
-  }: { valueDefinitions?: ValueDefinition[], typeDefinitions?: TypeDefinition[] }
-): DefinitionsByName {
+export function newTable({
+  valueDefinitions = [],
+  typeDefinitions = [],
+}: {
+  valueDefinitions?: ValueDefinition[]
+  typeDefinitions?: TypeDefinition[]
+}): DefinitionsByName {
   const table: DefinitionsByName = {
     valueDefinitions: new Map<string, ValueDefinition[]>(),
     typeDefinitions: new Map<string, TypeDefinition[]>(),
@@ -133,7 +133,10 @@ export function addTypeToTable(def: TypeDefinition, table: DefinitionsByName) {
  * @returns the value definition, if found under the scope. Otherwise, undefined
  */
 export function lookupValue(
-  table: DefinitionsByName, scopeTree: ScopeTree, name: string, scope: bigint
+  table: DefinitionsByName,
+  scopeTree: ScopeTree,
+  name: string,
+  scope: bigint
 ): ValueDefinition | undefined {
   if (!table.valueDefinitions.has(name)) {
     return undefined
@@ -175,7 +178,9 @@ export function copyNames(originTable: DefinitionsByName, namespace?: string, sc
     const name = namespace ? [namespace, identifier].join('::') : identifier
 
     // Copy only unscoped and non-default (referenced) names
-    const valueDefs = defs.filter(d => (!d.scope || d.kind === 'const') && d.reference).map(d => ({ ...d, identifier: name, scope }))
+    const valueDefs = defs
+      .filter(d => (!d.scope || d.kind === 'const') && d.reference)
+      .map(d => ({ ...d, identifier: name, scope }))
 
     if (valueDefs.length > 0) {
       table.valueDefinitions.set(name, valueDefs)

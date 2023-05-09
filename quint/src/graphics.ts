@@ -11,8 +11,19 @@
 import chalk from 'chalk'
 import { strict as assert } from 'assert'
 import {
-  Doc, braces, brackets, docJoin, format, group, line, linebreak,
-  nest, parens, richtext, text, textify
+  Doc,
+  braces,
+  brackets,
+  docJoin,
+  format,
+  group,
+  line,
+  linebreak,
+  nest,
+  parens,
+  richtext,
+  text,
+  textify,
 } from './prettierimp'
 
 import { QuintEx } from './quintIr'
@@ -23,7 +34,7 @@ import { zerog } from './idGenerator'
  * An abstraction of a Console of bounded text width.
  */
 export interface ConsoleBox {
-  width: number,
+  width: number
   out: (s: string) => void
 }
 
@@ -34,17 +45,14 @@ export interface ConsoleBox {
  */
 export const terminalWidth = () => {
   const cols = process.stdout.columns
-  return (cols !== undefined && cols > 0) ? cols : 80
+  return cols !== undefined && cols > 0 ? cols : 80
 }
 
 // convert a Quint expression to a colored pretty-printed doc, tuned for REPL
 export function prettyQuintEx(ex: QuintEx): Doc {
   // a helper function to produce specific indentation
   const nary = (left: Doc, args: Doc[], right: Doc, padding: Doc = linebreak): Doc => {
-    const as = group([
-      nest('  ', [ padding, docJoin([ text(','), line() ], args) ]),
-      padding
-    ])
+    const as = group([nest('  ', [padding, docJoin([text(','), line()], args)]), padding])
     return group([left, as, right])
   }
 
@@ -61,21 +69,13 @@ export function prettyQuintEx(ex: QuintEx): Doc {
     case 'app':
       switch (ex.opcode) {
         case 'Set':
-          return group([
-            richtext(chalk.green, 'Set'),
-            nary(text('('), ex.args.map(prettyQuintEx), text(')'))
-          ])
+          return group([richtext(chalk.green, 'Set'), nary(text('('), ex.args.map(prettyQuintEx), text(')'))])
 
         case 'Map': {
           const ps: Doc[] = ex.args.map(tup => {
-            if (tup.kind === 'app' &&
-                   tup.opcode === 'Tup' && tup.args.length === 2) {
+            if (tup.kind === 'app' && tup.opcode === 'Tup' && tup.args.length === 2) {
               const [k, v] = tup.args
-              return group([
-                prettyQuintEx(k),
-                richtext(chalk.gray, ' ->'),
-                nest('  ', [line(), prettyQuintEx(v)])
-              ])
+              return group([prettyQuintEx(k), richtext(chalk.gray, ' ->'), nest('  ', [line(), prettyQuintEx(v)])])
             } else {
               return text('<expected-pair>')
             }
@@ -96,11 +96,7 @@ export function prettyQuintEx(ex: QuintEx): Doc {
             const key = ex.args[2 * i]
             if (key && key.kind === 'str') {
               const value = prettyQuintEx(ex.args[2 * i + 1])
-              kvs.push(group([
-                text(key.value),
-                richtext(chalk.gray, ':'),
-                nest('  ', [line(), value]),
-              ]))
+              kvs.push(group([text(key.value), richtext(chalk.gray, ':'), nest('  ', [line(), value])]))
             }
           }
           return nary(text('{'), kvs, text('}'), line())
@@ -112,10 +108,14 @@ export function prettyQuintEx(ex: QuintEx): Doc {
       }
 
     case 'lambda': {
-      const params = 
-        parens(docJoin([text(','), line()], ex.params.map(p => text(p.name))))
+      const params = parens(
+        docJoin(
+          [text(','), line()],
+          ex.params.map(p => text(p.name))
+        )
+      )
 
-      return braces(group(textify([ params, line(), '=>', line(), '...' ])))
+      return braces(group(textify([params, line(), '=>', line(), '...'])))
     }
 
     default:
@@ -127,68 +127,62 @@ export function prettyQuintEx(ex: QuintEx): Doc {
  * Print an execution frame and its children recursively.
  * Since this function is printing a tree, we need precise text alignment.
  * Using a tree here with an optional line break would produce incorrect output.
- * 
+ *
  * @param box the box to print in
  * @param frame the frame to print
  * @param isLast the array of booleans, one per ancestor, that indicates whether
  *       an ancestor does not have siblings to the right, the last index
  *       corresponds to the direct parent.
  */
-export function
-printExecutionFrameRec(box: ConsoleBox,
-    frame: ExecutionFrame, isLast: boolean[]): void {
+export function printExecutionFrameRec(box: ConsoleBox, frame: ExecutionFrame, isLast: boolean[]): void {
   // convert the arguments and the result to strings
   const args = docJoin(
-    [ text(','), line() ],
+    [text(','), line()],
     frame.args.map(a => prettyQuintEx(a.toQuintEx(zerog)))
   )
-  const r =
-    frame.result.isNone()
-      ? text('none')
-      : prettyQuintEx(frame.result.value.toQuintEx(zerog))
+  const r = frame.result.isNone() ? text('none') : prettyQuintEx(frame.result.value.toQuintEx(zerog))
   const depth = isLast.length
   // generate the tree ASCII graphics for this frame
-  let treeArt = isLast.map((il, i) =>
-    (i < depth - 1)
-      // continue the ancestor's branch, unless it's the last one
-      ? il ? '   ' : '│  '
-      // close or close & continue the leaf branch,
-      // depending on whether this frame is the last one
-      : il ? '└─ ' : '├─ '
-  ).join('')
+  let treeArt = isLast
+    .map((il, i) =>
+      i < depth - 1
+        ? // continue the ancestor's branch, unless it's the last one
+          il
+          ? '   '
+          : '│  '
+        : // close or close & continue the leaf branch,
+        // depending on whether this frame is the last one
+        il
+        ? '└─ '
+        : '├─ '
+    )
+    .join('')
   box.out(treeArt)
 
   // format the call with its arguments and place it right after the tree art
-  const argsDoc =
-    group(textify(['(', nest('  ', [linebreak, group(args)]), linebreak, ')']))
+  const argsDoc = group(textify(['(', nest('  ', [linebreak, group(args)]), linebreak, ')']))
   // draw proper branches in the indentation
-  const indentTreeArt = isLast.map(il => il ? '   ' : '│  ').join('')
+  const indentTreeArt = isLast.map(il => (il ? '   ' : '│  ')).join('')
   // pretty print the arguments and the result
   const callDoc = group(
-    nest(indentTreeArt, [
-      text(frame.app.opcode),
-      group([ argsDoc, nest('  ', group([text(' =>'), line(), r])) ]),
-    ]))
+    nest(indentTreeArt, [text(frame.app.opcode), group([argsDoc, nest('  ', group([text(' =>'), line(), r]))])])
+  )
 
   box.out(format(box.width, treeArt.length, callDoc))
   box.out('\n')
   const n = frame.subframes.length
   // visualize the children
-  frame.subframes.forEach((f, i) =>
-    printExecutionFrameRec(box, f, isLast.concat([i === n - 1]))
-  )
+  frame.subframes.forEach((f, i) => printExecutionFrameRec(box, f, isLast.concat([i === n - 1])))
 }
 
 /**
  * Print a trace with chalk.
  */
-export function printTrace(console: ConsoleBox, states: QuintEx[],
-                           frames: ExecutionFrame[]): void {
+export function printTrace(console: ConsoleBox, states: QuintEx[], frames: ExecutionFrame[]): void {
   const b = chalk.bold
 
   states.forEach((state, index) => {
-    assert(state.kind === 'app'
-           && state.opcode === 'Rec' && state.args.length % 2 === 0)
+    assert(state.kind === 'app' && state.opcode === 'Rec' && state.args.length % 2 === 0)
 
     if (index < frames.length) {
       // be lenient to broken input
@@ -197,10 +191,7 @@ export function printTrace(console: ConsoleBox, states: QuintEx[],
       console.out('\n')
     }
 
-    const stateDoc: Doc = [
-      group([brackets(richtext(b, `State ${index}`)), line()]),
-      prettyQuintEx(state)
-    ]
+    const stateDoc: Doc = [group([brackets(richtext(b, `State ${index}`)), line()]), prettyQuintEx(state)]
     console.out(format(console.width, 0, stateDoc))
     console.out('\n\n')
   })

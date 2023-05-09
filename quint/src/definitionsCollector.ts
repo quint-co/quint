@@ -16,10 +16,23 @@
 
 import { IRVisitor, walkModule } from './IRVisitor'
 import {
-  DefinitionsByName, ValueDefinition, ValueDefinitionKind,
-  addTypeToTable, addValueToTable, newTable
+  DefinitionsByName,
+  ValueDefinition,
+  ValueDefinitionKind,
+  addTypeToTable,
+  addValueToTable,
+  newTable,
 } from './definitionsByName'
-import { QuintAssume, QuintConst, QuintLambda, QuintLet, QuintModule, QuintOpDef, QuintTypeDef, QuintVar } from './quintIr'
+import {
+  QuintAssume,
+  QuintConst,
+  QuintLambda,
+  QuintLet,
+  QuintModule,
+  QuintOpDef,
+  QuintTypeDef,
+  QuintVar,
+} from './quintIr'
 import { QuintType } from './quintTypes'
 
 /**
@@ -188,7 +201,11 @@ class DefinitionsCollectorVisitor implements IRVisitor {
   }
 
   private collectValueDefinition(
-    kind: ValueDefinitionKind, identifier: string, reference?: bigint, scope?: bigint, typeAnnotation?: QuintType
+    kind: ValueDefinitionKind,
+    identifier: string,
+    reference?: bigint,
+    scope?: bigint,
+    typeAnnotation?: QuintType
   ): void {
     if (identifier === '_') {
       // Don't collect underscores, as they are special identifiers that allow no usage

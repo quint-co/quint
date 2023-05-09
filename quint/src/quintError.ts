@@ -12,14 +12,14 @@
  * @module
  */
 
-import { ErrorTree } from "./errorTree"
+import { ErrorTree } from './errorTree'
 
 /* General representation of a Quint error */
 export interface QuintError {
   /* The error code in the form QNTnnn */
-  code: ErrorCode,
+  code: ErrorCode
   /* The error explanation */
-  message: string,
+  message: string
   /* Additional data for the error */
   data: QuintErrorData
 }
@@ -59,7 +59,7 @@ export type ErrorCode =
 /* Additional data for a Quint error */
 export interface QuintErrorData {
   /* Information on how to fix the error, when possible */
-  fix?: QuintErrorFix,
+  fix?: QuintErrorFix
   /* A more detailed description of how the error was found */
   trace?: ErrorTree
 }
@@ -67,7 +67,7 @@ export interface QuintErrorData {
 /* Information on how to fix a quint error */
 export type QuintErrorFix =
   /* Replace a string with another */
-  | { kind: 'replace', original: string, replacement: string }
+  { kind: 'replace'; original: string; replacement: string }
 
 /** Formats a Quint error as a string
  *

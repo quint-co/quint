@@ -11,9 +11,12 @@ import { Substitutions, applySubstitution, compose } from './substitutions'
  */
 export function constraintToString(c: Constraint): string {
   switch (c.kind) {
-    case 'eq': return `${typeToString(c.types[0])} ~ ${typeToString(c.types[1])}`
-    case 'conjunction': return c.constraints.map(constraintToString).join(' /\\ ')
-    case 'empty': return 'true'
+    case 'eq':
+      return `${typeToString(c.types[0])} ~ ${typeToString(c.types[1])}`
+    case 'conjunction':
+      return c.constraints.map(constraintToString).join(' /\\ ')
+    case 'empty':
+      return 'true'
   }
 }
 

@@ -23,25 +23,35 @@ import isEqual from 'lodash.isequal'
 export type ComponentKind = 'read' | 'update' | 'temporal'
 
 /* A concrete effect component, specifying a kind and the entity it acts upon */
-export interface EffectComponent { kind: ComponentKind, entity: Entity }
+export interface EffectComponent {
+  kind: ComponentKind
+  entity: Entity
+}
 
 /* Concrete atomic effects specifying which kinds of effects act upon which entities */
-export interface ConcreteEffect { kind: 'concrete', components: EffectComponent[] }
+export interface ConcreteEffect {
+  kind: 'concrete'
+  components: EffectComponent[]
+}
 
 /* Arrow effects for expressions with effects depending on parameters */
-export interface ArrowEffect { kind: 'arrow', params: Effect[], result: Effect }
+export interface ArrowEffect {
+  kind: 'arrow'
+  params: Effect[]
+  result: Effect
+}
 
 /* A variable standing for an unknown effect */
-export interface EffectVariable { kind: 'variable', name: string }
+export interface EffectVariable {
+  kind: 'variable'
+  name: string
+}
 
 /*
  * The effect of a Quint expression, regarding which state entities are read
  * and/or updated
  */
-export type Effect =
-  | ConcreteEffect
-  | ArrowEffect
-  | EffectVariable
+export type Effect = ConcreteEffect | ArrowEffect | EffectVariable
 
 /*
  * An effect scheme, listing which effect variables (represented by the names of effect variables)
@@ -50,17 +60,17 @@ export type Effect =
  */
 export type EffectScheme = {
   /* The effect */
-  effect: Effect,
+  effect: Effect
   /* The names of universally quantified Effect variables */
-  effectVariables: Set<string>,
+  effectVariables: Set<string>
   /* The names of universally quantified Entity variables */
-  entityVariables: Set<string>,
+  entityVariables: Set<string>
 }
 
 /* A state variable */
 export interface StateVariable {
   /* The variable name */
-  name: string,
+  name: string
   /* The id of the expression in which the state variable occurred */
   reference: bigint
 }
@@ -71,11 +81,11 @@ export interface StateVariable {
  */
 export type Entity =
   /* A list of state variables */
-  | { kind: 'concrete', stateVariables: StateVariable[] }
+  | { kind: 'concrete'; stateVariables: StateVariable[] }
   /* A variable representing some entity */
-  | { kind: 'variable', name: string, reference?: bigint }
+  | { kind: 'variable'; name: string; reference?: bigint }
   /* A combination of entities */
-  | { kind: 'union', entities: Entity[] }
+  | { kind: 'union'; entities: Entity[] }
 
 /*
  * An effect signature, which can vary according to the number of arguments.
@@ -102,11 +112,9 @@ export function unify(ea: Effect, eb: Effect): Either<ErrorTree, Substitutions> 
   } else if (e1.kind === 'concrete' && e2.kind === 'concrete') {
     return unifyConcrete(location, e1, e2).mapLeft(err => buildErrorTree(location, err))
   } else if (e1.kind === 'variable') {
-    return bindEffect(e1.name, e2)
-      .mapLeft(msg => buildErrorLeaf(location, msg))
+    return bindEffect(e1.name, e2).mapLeft(msg => buildErrorLeaf(location, msg))
   } else if (e2.kind === 'variable') {
-    return bindEffect(e2.name, e1)
-      .mapLeft(msg => buildErrorLeaf(location, msg))
+    return bindEffect(e2.name, e1).mapLeft(msg => buildErrorLeaf(location, msg))
   } else {
     return left({
       location,
@@ -123,7 +131,7 @@ export function unify(ea: Effect, eb: Effect): Either<ErrorTree, Substitutions> 
  *
  * @returns the set of effect variables and the set of entity variables
  */
-export function effectNames(effect: Effect): { effectVariables: Set<string>, entityVariables: Set<string> } {
+export function effectNames(effect: Effect): { effectVariables: Set<string>; entityVariables: Set<string> } {
   switch (effect.kind) {
     case 'concrete':
       return {
@@ -132,12 +140,16 @@ export function effectNames(effect: Effect): { effectVariables: Set<string>, ent
       }
     case 'arrow': {
       const nested = effect.params.concat(effect.result).flatMap(effectNames)
-      return nested.reduce((acc, { effectVariables: effectVariables, entityVariables: entityVariables }) => ({
-        effectVariables: new Set([...acc.effectVariables, ...effectVariables]),
-        entityVariables: new Set([...acc.entityVariables, ...entityVariables]),
-      }), { effectVariables: new Set(), entityVariables: new Set() })
+      return nested.reduce(
+        (acc, { effectVariables: effectVariables, entityVariables: entityVariables }) => ({
+          effectVariables: new Set([...acc.effectVariables, ...effectVariables]),
+          entityVariables: new Set([...acc.entityVariables, ...entityVariables]),
+        }),
+        { effectVariables: new Set(), entityVariables: new Set() }
+      )
     }
-    case 'variable': return { effectVariables: new Set([effect.name]), entityVariables: new Set() }
+    case 'variable':
+      return { effectVariables: new Set([effect.name]), entityVariables: new Set() }
   }
 }
 
@@ -181,9 +193,12 @@ function bindEntity(name: string, entity: Entity): Either<string, Substitutions>
  */
 export function entityNames(entity: Entity): string[] {
   switch (entity.kind) {
-    case 'concrete': return []
-    case 'variable': return [entity.name]
-    case 'union': return entity.entities.flatMap(entityNames)
+    case 'concrete':
+      return []
+    case 'variable':
+      return [entity.name]
+    case 'union':
+      return entity.entities.flatMap(entityNames)
   }
 }
 
@@ -218,20 +233,25 @@ function unifyArrows(location: string, e1: ArrowEffect, e2: ArrowEffect): Either
     .chain(([p1, p2, unpackingSubs]) => {
       const e1r = applySubstitution(unpackingSubs, e1.result)
       const e2r = applySubstitution(unpackingSubs, e2.result)
-      return mergeInMany([e1r, e2r]).chain(([e1result, e2result]) => {
-        const [arrow1, subs1] = simplifyArrowEffect(p1, e1result)
-        const [arrow2, subs2] = simplifyArrowEffect(p2, e2result)
-        const subs = compose(subs1, subs2).chain(s => compose(s, unpackingSubs))
-        return arrow1.params.reduce((result: Either<Error, Substitutions>, e, i) => {
-          return result.chain(subs => applySubstitutionsAndUnify(subs, e, arrow2.params[i]))
-        }, subs)
-          .chain(subs => applySubstitutionsAndUnify(subs, arrow1.result, arrow2.result))
-      })
-      .mapLeft(err => buildErrorTree(location, err))
+      return mergeInMany([e1r, e2r])
+        .chain(([e1result, e2result]) => {
+          const [arrow1, subs1] = simplifyArrowEffect(p1, e1result)
+          const [arrow2, subs2] = simplifyArrowEffect(p2, e2result)
+          const subs = compose(subs1, subs2).chain(s => compose(s, unpackingSubs))
+          return arrow1.params
+            .reduce((result: Either<Error, Substitutions>, e, i) => {
+              return result.chain(subs => applySubstitutionsAndUnify(subs, e, arrow2.params[i]))
+            }, subs)
+            .chain(subs => applySubstitutionsAndUnify(subs, arrow1.result, arrow2.result))
+        })
+        .mapLeft(err => buildErrorTree(location, err))
     })
 }
 
-const compatibleComponentKinds = [['read', 'update'], ['read', 'temporal']]
+const compatibleComponentKinds = [
+  ['read', 'update'],
+  ['read', 'temporal'],
+]
 
 function canCoexist(c1: EffectComponent, c2: EffectComponent): boolean {
   return compatibleComponentKinds.some(kinds => kinds.includes(c1.kind) && kinds.includes(c2.kind))
@@ -244,30 +264,34 @@ function isDominant(c1: EffectComponent, c2: EffectComponent): boolean {
 function unifyConcrete(location: string, e1: ConcreteEffect, e2: ConcreteEffect): Either<Error, Substitutions> {
   const generalResult = e1.components.reduce((result: Either<Error, Substitutions>, ca) => {
     return e2.components.reduce((innerResult: Either<Error, Substitutions>, cb) => {
-      return innerResult.chain(subs => {
-        const c1: EffectComponent = { ...ca, entity: applySubstitutionToEntity(subs, ca.entity) }
-        const c2: EffectComponent = { ...cb, entity: applySubstitutionToEntity(subs, cb.entity) }
+      return innerResult
+        .chain(subs => {
+          const c1: EffectComponent = { ...ca, entity: applySubstitutionToEntity(subs, ca.entity) }
+          const c2: EffectComponent = { ...cb, entity: applySubstitutionToEntity(subs, cb.entity) }
 
-        if (c1.kind === c2.kind) {
-          return unifyEntities(c1.entity, c2.entity)
-        } else if (canCoexist(c1, c2)) {
-          return right([] as Substitutions)
-        } else if (isDominant(c1, c2)) {
-          // The dominated component has to be nullified
-          return unifyEntities({ kind: 'concrete', stateVariables: [] }, c2.entity)
-        } else if (isDominant(c2, c1)) {
-          // The dominated component has to be nullified
-          return unifyEntities(c1.entity, { kind: 'concrete', stateVariables: [] })
-        } else {
-          // We should never reach this. Instead, one of the kinds should
-          // dominate the other, and then we nullify the dominated component
-          return left({
-            location,
-            message: `Can't unify ${c1.kind} ${effectComponentToString(c1)} and ${c2.kind} ${effectComponentToString(c2)}`,
-            children: [],
-          })
-        }
-      }).chain(s => innerResult.chain(s2 => compose(s2, s)))
+          if (c1.kind === c2.kind) {
+            return unifyEntities(c1.entity, c2.entity)
+          } else if (canCoexist(c1, c2)) {
+            return right([] as Substitutions)
+          } else if (isDominant(c1, c2)) {
+            // The dominated component has to be nullified
+            return unifyEntities({ kind: 'concrete', stateVariables: [] }, c2.entity)
+          } else if (isDominant(c2, c1)) {
+            // The dominated component has to be nullified
+            return unifyEntities(c1.entity, { kind: 'concrete', stateVariables: [] })
+          } else {
+            // We should never reach this. Instead, one of the kinds should
+            // dominate the other, and then we nullify the dominated component
+            return left({
+              location,
+              message: `Can't unify ${c1.kind} ${effectComponentToString(c1)} and ${c2.kind} ${effectComponentToString(
+                c2
+              )}`,
+              children: [],
+            })
+          }
+        })
+        .chain(s => innerResult.chain(s2 => compose(s2, s)))
     }, result)
   }, right([]))
 
@@ -287,18 +311,18 @@ export function unifyEntities(va: Entity, vb: Entity): Either<ErrorTree, Substit
     } else {
       return left({
         location,
-        message: `Expected [${v1.stateVariables.map(v => v.name)}] and [${v2.stateVariables.map(v => v.name)}] to be the same`,
+        message: `Expected [${v1.stateVariables.map(v => v.name)}] and [${v2.stateVariables.map(
+          v => v.name
+        )}] to be the same`,
         children: [],
       })
     }
   } else if (v1.kind === 'variable' && v2.kind === 'variable' && v1.name === v2.name) {
     return right([])
   } else if (v1.kind === 'variable') {
-    return bindEntity(v1.name, v2)
-      .mapLeft(msg => buildErrorLeaf(location, msg))
+    return bindEntity(v1.name, v2).mapLeft(msg => buildErrorLeaf(location, msg))
   } else if (v2.kind === 'variable') {
-    return bindEntity(v2.name, v1)
-      .mapLeft(msg => buildErrorLeaf(location, msg))
+    return bindEntity(v2.name, v1).mapLeft(msg => buildErrorLeaf(location, msg))
   } else {
     if (isEqual(v1, v2)) {
       return right([])
@@ -329,7 +353,8 @@ export function unifyEntities(va: Entity, vb: Entity): Either<ErrorTree, Substit
  * If so, they have to be nullified
  */
 function nullifyUnmatchedComponents(
-  components1: EffectComponent[], components2: EffectComponent[]
+  components1: EffectComponent[],
+  components2: EffectComponent[]
 ): Either<Error, Substitutions> {
   return components1.reduce((result: Either<Error, Substitutions>, c2) => {
     return result.chain(subs => {
@@ -344,16 +369,15 @@ function nullifyUnmatchedComponents(
 }
 
 function applySubstitutionsAndUnify(subs: Substitutions, e1: Effect, e2: Effect): Either<Error, Substitutions> {
-  return mergeInMany([
-    applySubstitution(subs, e1),
-    applySubstitution(subs, e2),
-  ])
+  return mergeInMany([applySubstitution(subs, e1), applySubstitution(subs, e2)])
     .chain(effectsWithSubstitutions => unify(...effectsWithSubstitutions))
     .chain(newSubstitutions => compose(newSubstitutions, subs))
 }
 
 function tryToUnpack(
-  location: string, effects1: Effect[], effects2: Effect[]
+  location: string,
+  effects1: Effect[],
+  effects2: Effect[]
 ): Either<ErrorTree, [Effect[], Effect[], Substitutions]> {
   // Ensure that effects1 is always the smallest
   if (effects2.length < effects1.length) {
@@ -397,14 +421,14 @@ function tryToUnpack(
   // single variable effect called e0#...#en. See simplifyArrowEffect for a
   // similar process description
   if (effects2.every(e => e.kind === 'variable')) {
-    const names = effects2.map(e => e.kind === 'variable' ? e.name : '')
+    const names = effects2.map(e => (e.kind === 'variable' ? e.name : ''))
 
     const unpacked: Effect = {
       kind: 'variable',
       name: names.join('#'),
     }
 
-    const subs: Substitutions = names.map((name) => ({
+    const subs: Substitutions = names.map(name => ({
       kind: 'effect',
       name,
       value: unpacked,
@@ -414,10 +438,12 @@ function tryToUnpack(
     return right([effects1, [result], subs])
   }
 
-  return left(buildErrorLeaf(
-    `Trying to unpack effects: ${effects1.map(effectToString)} and ${effects2.map(effectToString)}`,
-    'Can only unpack effects if they are all concrete or all variable'
-  ))
+  return left(
+    buildErrorLeaf(
+      `Trying to unpack effects: ${effects1.map(effectToString)} and ${effects2.map(effectToString)}`,
+      'Can only unpack effects if they are all concrete or all variable'
+    )
+  )
 }
 
 /**
@@ -454,20 +480,25 @@ function simplifyArrowEffect(params: Effect[], result: Effect): [ArrowEffect, Su
 
 function hashEntity(va: Entity): Entity {
   switch (va.kind) {
-    case 'concrete': return va
-    case 'variable': return va
+    case 'concrete':
+      return va
+    case 'variable':
+      return va
     case 'union': {
       const nested = va.entities.map(hashEntity)
 
       // Separate variables from the rest
-      const [name, entities] = nested.reduce(([name, entities]: [string[], Entity[]], v) => {
-        if (v.kind === 'variable') {
-          name.push(v.name)
-        } else {
-          entities.push(v)
-        }
-        return [name, entities]
-      }, [[], []])
+      const [name, entities] = nested.reduce(
+        ([name, entities]: [string[], Entity[]], v) => {
+          if (v.kind === 'variable') {
+            name.push(v.name)
+          } else {
+            entities.push(v)
+          }
+          return [name, entities]
+        },
+        [[], []]
+      )
 
       // Consider all cases of name and entities being empty or not
       if (name.length === 0) {

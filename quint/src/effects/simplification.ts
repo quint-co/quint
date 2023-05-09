@@ -36,8 +36,10 @@ function simplifyConcreteEffect(e: ConcreteEffect): Effect {
 
 export function simplify(e: Effect): Effect {
   switch (e.kind) {
-    case 'concrete': return simplifyConcreteEffect(e)
-    case 'variable': return e
+    case 'concrete':
+      return simplifyConcreteEffect(e)
+    case 'variable':
+      return e
     case 'arrow': {
       const params = e.params.map(simplify)
       const result = simplify(e.result)
@@ -75,7 +77,8 @@ export function flattenUnions(entity: Entity): Entity {
       })
 
       if (unionEntities.length > 0) {
-        const entities = vars.length > 0 ? unionEntities.concat({ kind: 'concrete', stateVariables: vars }) : unionEntities
+        const entities =
+          vars.length > 0 ? unionEntities.concat({ kind: 'concrete', stateVariables: vars }) : unionEntities
         return entities.length > 1 ? { kind: 'union', entities: entities } : entities[0]
       } else {
         return { kind: 'concrete', stateVariables: vars }

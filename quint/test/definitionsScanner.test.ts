@@ -33,11 +33,10 @@ describe('scanConflicts', () => {
     ]
 
     result
-      .mapLeft(conflicts => assert.deepEqual(conflicts, [
-        { kind: 'value', identifier: 'conflicting_name', sources: expectedSources },
-      ]))
+      .mapLeft(conflicts =>
+        assert.deepEqual(conflicts, [{ kind: 'value', identifier: 'conflicting_name', sources: expectedSources }])
+      )
       .map(_ => assert.fail('Expected conflicts'))
-
   })
 
   it('finds type alias conflicts', () => {
@@ -65,9 +64,9 @@ describe('scanConflicts', () => {
     ]
 
     result
-      .mapLeft(conflicts => assert.deepEqual(conflicts, [
-        { kind: 'type', identifier: 'MY_TYPE', sources: expectedSources },
-      ]))
+      .mapLeft(conflicts =>
+        assert.deepEqual(conflicts, [{ kind: 'type', identifier: 'MY_TYPE', sources: expectedSources }])
+      )
       .map(_ => assert.fail('Expected conflicts'))
   })
 
@@ -89,9 +88,9 @@ describe('scanConflicts', () => {
     ]
 
     result
-      .mapLeft(conflicts => assert.deepEqual(conflicts, [
-        { kind: 'value', identifier: 'conflicting_name', sources: expectedSources },
-      ]))
+      .mapLeft(conflicts =>
+        assert.deepEqual(conflicts, [{ kind: 'value', identifier: 'conflicting_name', sources: expectedSources }])
+      )
       .map(_ => assert.fail('Expected conflicts'))
   })
 
@@ -118,20 +117,16 @@ describe('scanConflicts', () => {
 
     const result = scanConflicts(table, tree)
 
-    const expectedSources: ConflictSource[] = [
-      { kind: 'builtin' },
-      { kind: 'user', reference: 2n },
-    ]
-    const expectedTypeSources: ConflictSource[] = [
-      { kind: 'builtin' },
-      { kind: 'user', reference: 1n },
-    ]
+    const expectedSources: ConflictSource[] = [{ kind: 'builtin' }, { kind: 'user', reference: 2n }]
+    const expectedTypeSources: ConflictSource[] = [{ kind: 'builtin' }, { kind: 'user', reference: 1n }]
 
     result
-      .mapLeft(conflicts => assert.deepEqual(conflicts, [
-        { kind: 'value', identifier: 'conflicting_name', sources: expectedSources },
-        { kind: 'type', identifier: 'MY_TYPE', sources: expectedTypeSources },
-      ]))
+      .mapLeft(conflicts =>
+        assert.deepEqual(conflicts, [
+          { kind: 'value', identifier: 'conflicting_name', sources: expectedSources },
+          { kind: 'type', identifier: 'MY_TYPE', sources: expectedTypeSources },
+        ])
+      )
       .map(_ => assert.fail('Expected conflicts'))
   })
 
@@ -141,9 +136,7 @@ describe('scanConflicts', () => {
       { kind: 'val', identifier: 'conflicting_name', reference: 3n, scope: 3n },
     ]
 
-    const typeDefinitions: TypeDefinition[] = [
-      { identifier: 'MY_TYPE', type: myType, reference: 4n },
-    ]
+    const typeDefinitions: TypeDefinition[] = [{ identifier: 'MY_TYPE', type: myType, reference: 4n }]
 
     const table = newTable({ valueDefinitions, typeDefinitions })
 

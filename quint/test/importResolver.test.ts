@@ -14,23 +14,19 @@ describe('resolveImports', () => {
       { kind: 'const', identifier: 'c1', reference: 6n },
       { kind: 'const', identifier: 'c2', reference: 7n },
     ],
-    typeDefinitions: [
-      { identifier: 'T', reference: 1n },
-      { identifier: 'R' },
-    ],
+    typeDefinitions: [{ identifier: 'T', reference: 1n }, { identifier: 'R' }],
   })
 
   function tables(): DefinitionsByModule {
     return new Map<string, DefinitionsByName>([
-      ['wrapper', newTable({})], ['test_module', table],
+      ['wrapper', newTable({})],
+      ['test_module', table],
     ])
   }
 
   describe('existing modules', () => {
     it('imports named definitions', () => {
-      const quintModule = buildModuleWithDefs([
-        'import test_module.a',
-      ])
+      const quintModule = buildModuleWithDefs(['import test_module.a'])
 
       const [errors, definitions] = resolveImports(quintModule, tables())
 
@@ -40,9 +36,7 @@ describe('resolveImports', () => {
     })
 
     it('imports all definitions', () => {
-      const quintModule = buildModuleWithDefs([
-        'import test_module.*',
-      ])
+      const quintModule = buildModuleWithDefs(['import test_module.*'])
 
       const [errors, definitions] = resolveImports(quintModule, tables())
 
@@ -52,43 +46,35 @@ describe('resolveImports', () => {
     })
 
     it('instantiates modules', () => {
-      const quintModule = buildModuleWithDefs([
-        'import test_module(c1 = 3, c2 = 4) as test_module_instance',
-      ])
+      const quintModule = buildModuleWithDefs(['import test_module(c1 = 3, c2 = 4) as test_module_instance'])
 
       const [errors, definitions] = resolveImports(quintModule, tables())
 
-
       assert.isEmpty(errors)
-      assert.includeDeepMembers([...definitions.valueDefinitions.keys()], [
-        'test_module_instance::c1',
-        'test_module_instance::c2',
-      ])
-      assert.includeDeepMembers([...definitions.typeDefinitions.keys()], [
-        'test_module_instance::T',
-      ])
+      assert.includeDeepMembers(
+        [...definitions.valueDefinitions.keys()],
+        ['test_module_instance::c1', 'test_module_instance::c2']
+      )
+      assert.includeDeepMembers([...definitions.typeDefinitions.keys()], ['test_module_instance::T'])
     })
 
     it('fails importing itself', () => {
-      const quintModule = buildModuleWithDefs([
-        'import wrapper.*',
-        'import wrapper(c1 = 1) as w',
-        'export wrapper.*',
-      ])
+      const quintModule = buildModuleWithDefs(['import wrapper.*', 'import wrapper(c1 = 1) as w', 'export wrapper.*'])
 
       const [errors, _definitions] = resolveImports(quintModule, tables())
 
-      assert.sameDeepMembers([...errors.entries()], [
-        [1n, { code: 'QNT407', message: 'Cannot import wrapper inside wrapper', data: {} }],
-        [4n, { code: 'QNT407', message: 'Cannot instantiate wrapper inside wrapper', data: {} }],
-        [5n, { code: 'QNT407', message: 'Cannot export wrapper inside wrapper', data: {} }],
-      ])
+      assert.sameDeepMembers(
+        [...errors.entries()],
+        [
+          [1n, { code: 'QNT407', message: 'Cannot import wrapper inside wrapper', data: {} }],
+          [4n, { code: 'QNT407', message: 'Cannot instantiate wrapper inside wrapper', data: {} }],
+          [5n, { code: 'QNT407', message: 'Cannot export wrapper inside wrapper', data: {} }],
+        ]
+      )
     })
 
     it('exports all definitions', () => {
-      const quintModule = buildModuleWithDefs([
-        'export test_module.*',
-      ])
+      const quintModule = buildModuleWithDefs(['export test_module.*'])
 
       const [errors, definitions] = resolveImports(quintModule, tables())
 
@@ -100,10 +86,7 @@ describe('resolveImports', () => {
     })
 
     it('exports previously imported definitions', () => {
-      const quintModule = buildModuleWithDefs([
-        'import test_module.*',
-        'export test_module.*',
-      ])
+      const quintModule = buildModuleWithDefs(['import test_module.*', 'export test_module.*'])
 
       const [errors, definitions] = resolveImports(quintModule, tables())
 
@@ -115,10 +98,7 @@ describe('resolveImports', () => {
     })
 
     it('exports specific definitions', () => {
-      const quintModule = buildModuleWithDefs([
-        'import test_module.*',
-        'export test_module.a',
-      ])
+      const quintModule = buildModuleWithDefs(['import test_module.*', 'export test_module.a'])
 
       const [errors, definitions] = resolveImports(quintModule, tables())
 
@@ -130,10 +110,7 @@ describe('resolveImports', () => {
     })
 
     it('exports definitions with qualifier', () => {
-      const quintModule = buildModuleWithDefs([
-        'import test_module.*',
-        'export test_module as my_export',
-      ])
+      const quintModule = buildModuleWithDefs(['import test_module.*', 'export test_module as my_export'])
 
       const [errors, definitions] = resolveImports(quintModule, tables())
 
@@ -149,39 +126,36 @@ describe('resolveImports', () => {
 
   describe('unexisting modules', () => {
     it('fails importing', () => {
-      const quintModule = buildModuleWithDefs([
-        'import unexisting_module.*',
-      ])
+      const quintModule = buildModuleWithDefs(['import unexisting_module.*'])
 
       const [errors, _definitions] = resolveImports(quintModule, tables())
 
-      assert.sameDeepMembers([...errors.entries()], [
-        [1n, { code: 'QNT404', message: 'Module unexisting_module not found', data: {} }],
-      ])
+      assert.sameDeepMembers(
+        [...errors.entries()],
+        [[1n, { code: 'QNT404', message: 'Module unexisting_module not found', data: {} }]]
+      )
     })
 
     it('fails instantiating', () => {
-      const quintModule = buildModuleWithDefs([
-        'import unexisting_module(c1 = c1, c2 = c2) as test_module_instanc',
-      ])
+      const quintModule = buildModuleWithDefs(['import unexisting_module(c1 = c1, c2 = c2) as test_module_instanc'])
 
       const [errors, _definitions] = resolveImports(quintModule, tables())
 
-      assert.sameDeepMembers([...errors.entries()], [
-        [5n, { code: 'QNT404', message: 'Module unexisting_module not found', data: {} }],
-      ])
+      assert.sameDeepMembers(
+        [...errors.entries()],
+        [[5n, { code: 'QNT404', message: 'Module unexisting_module not found', data: {} }]]
+      )
     })
 
     it('fails exporting', () => {
-      const quintModule = buildModuleWithDefs([
-        'export unexisting_module.*',
-      ])
+      const quintModule = buildModuleWithDefs(['export unexisting_module.*'])
 
       const [errors, _definitions] = resolveImports(quintModule, tables())
 
-      assert.sameDeepMembers([...errors.entries()], [
-        [1n, { code: 'QNT404', message: 'Module unexisting_module not found', data: {} }],
-      ])
+      assert.sameDeepMembers(
+        [...errors.entries()],
+        [[1n, { code: 'QNT404', message: 'Module unexisting_module not found', data: {} }]]
+      )
     })
   })
 })

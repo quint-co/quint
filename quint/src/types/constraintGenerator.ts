@@ -13,7 +13,21 @@
  */
 
 import { IRVisitor } from '../IRVisitor'
-import { QuintApp, QuintBool, QuintConst, QuintDef, QuintEx, QuintInstance, QuintInt, QuintLambda, QuintLet, QuintName, QuintOpDef, QuintStr, QuintVar } from '../quintIr'
+import {
+  QuintApp,
+  QuintBool,
+  QuintConst,
+  QuintDef,
+  QuintEx,
+  QuintInstance,
+  QuintInt,
+  QuintLambda,
+  QuintLet,
+  QuintName,
+  QuintOpDef,
+  QuintStr,
+  QuintVar,
+} from '../quintIr'
 import { QuintType, typeNames } from '../quintTypes'
 import { expressionToString, rowToString, typeToString } from '../IRprinting'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
@@ -23,10 +37,12 @@ import { Constraint, Signature, TypeScheme, toScheme } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 import { LookupTable } from '../lookupTable'
 import { specialConstraints } from './specialConstraints'
-import { FreshVarGenerator } from "../FreshVarGenerator"
+import { FreshVarGenerator } from '../FreshVarGenerator'
 
-export type SolvingFunctionType = (_table: LookupTable, _constraint: Constraint)
-  => Either<Map<bigint, ErrorTree>, Substitutions>
+export type SolvingFunctionType = (
+  _table: LookupTable,
+  _constraint: Constraint
+) => Either<Map<bigint, ErrorTree>, Substitutions>
 
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
@@ -109,9 +125,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       return
     }
 
-    const argsResult: Either<Error, [QuintEx, QuintType][]> = mergeInMany(e.args.map(e => {
-      return this.fetchResult(e.id).map(r => [e, r.type])
-    }))
+    const argsResult: Either<Error, [QuintEx, QuintType][]> = mergeInMany(
+      e.args.map(e => {
+        return this.fetchResult(e.id).map(r => [e, r.type])
+      })
+    )
 
     const result = argsResult.chain((results): Either<Error, TypeScheme> => {
       const signature = this.typeForName(e.opcode, e.id, e.args.length)
@@ -156,16 +174,17 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     if (this.errors.size !== 0) {
       return
     }
-    const result = this.fetchResult(e.expr.id)
-      .chain(resultType => {
-        const paramTypes = mergeInMany(e.params.map(p => this.fetchResult(p.id).map(e => this.newInstance(e))))
-        return paramTypes.map((ts): TypeScheme => {
+    const result = this.fetchResult(e.expr.id).chain(resultType => {
+      const paramTypes = mergeInMany(e.params.map(p => this.fetchResult(p.id).map(e => this.newInstance(e))))
+      return paramTypes
+        .map((ts): TypeScheme => {
           const newType: QuintType = { kind: 'oper', args: ts, res: resultType.type }
           return { ...typeNames(newType), type: newType }
-        }).mapLeft(e => {
+        })
+        .mapLeft(e => {
           throw new Error(`This should be impossible: Lambda variables not found: ${e.map(errorTreeToString)}`)
         })
-      })
+    })
 
     this.addToResults(e.id, result)
   }
@@ -188,16 +207,18 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       return
     }
 
-    this.fetchResult(e.expr.id)
-      .map(t => {
-        this.addToResults(e.id, right({ ...typeNames(t.type), type: t.type }))
-        if (e.typeAnnotation) {
-          this.constraints.push({ kind: 'eq', types: [t.type, e.typeAnnotation], sourceId: e.id })
-        }
+    this.fetchResult(e.expr.id).map(t => {
+      this.addToResults(e.id, right({ ...typeNames(t.type), type: t.type }))
+      if (e.typeAnnotation) {
+        this.constraints.push({ kind: 'eq', types: [t.type, e.typeAnnotation], sourceId: e.id })
+      }
 
-        this.solveConstraints().chain(subs => checkAnnotationGenerality(subs, e.typeAnnotation)
-          .mapLeft(err => this.errors.set(e.typeAnnotation?.id ?? e.id, err)))
-      })
+      this.solveConstraints().chain(subs =>
+        checkAnnotationGenerality(subs, e.typeAnnotation).mapLeft(err =>
+          this.errors.set(e.typeAnnotation?.id ?? e.id, err)
+        )
+      )
+    })
   }
 
   private addToResults(exprId: bigint, result: Either<Error, TypeScheme>) {
@@ -226,7 +247,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
     return this.solvingFunction(this.table, constraint)
       .mapLeft(errors => errors.forEach((err, id) => this.errors.set(id, err)))
-      .map((subs) => {
+      .map(subs => {
         // Apply substitution to environment
         // FIXME: We have to figure out the scope of the constraints/substitutions
         // https://github.com/informalsystems/quint/issues/690
@@ -271,11 +292,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     const typeNames = Array.from(t.typeVariables)
     const rowNames = Array.from(t.rowVariables)
 
-    const typeSubs: Substitutions = typeNames.map((name) => {
+    const typeSubs: Substitutions = typeNames.map(name => {
       return { kind: 'type', name: name, value: { kind: 'var', name: this.freshVarGenerator.freshVar('t') } }
     })
 
-    const rowSubs: Substitutions = rowNames.map((name) => {
+    const rowSubs: Substitutions = rowNames.map(name => {
       return { kind: 'row', name: name, value: { kind: 'var', name: this.freshVarGenerator.freshVar('t') } }
     })
 
@@ -285,7 +306,8 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 }
 
 function checkAnnotationGenerality(
-  subs: Substitutions, typeAnnotation: QuintType | undefined
+  subs: Substitutions,
+  typeAnnotation: QuintType | undefined
 ): Either<ErrorTree, Substitutions> {
   if (!typeAnnotation) {
     return right(subs)

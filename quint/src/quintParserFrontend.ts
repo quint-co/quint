@@ -12,7 +12,7 @@ import { QuintListener } from './generated/QuintListener'
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
 import { IrErrorMessage, QuintModule } from './quintIr'
-import { IdGenerator, newIdGenerator } from './idGenerator'
+import { IdGenerator } from './idGenerator'
 import { ToIrListener } from './ToIrListener'
 import { collectDefinitions } from './definitionsCollector'
 import { resolveNames } from './nameResolver'
@@ -26,9 +26,9 @@ import { DefinitionsByModule, DefinitionsByName } from './definitionsByName'
 import { SourceLookupPath, SourceResolver } from './sourceResolver'
 
 export interface Loc {
-  source: string;
-  start: { line: number; col: number; index: number; }
-  end?: { line: number; col: number; index: number; }
+  source: string
+  start: { line: number; col: number; index: number }
+  end?: { line: number; col: number; index: number }
 }
 
 // the default error location that usually indicates a bug in our code
@@ -41,14 +41,13 @@ const unknownLoc: Loc = {
  * An error message whose locations have been resolved.
  */
 export interface ErrorMessage {
-  explanation: string;
-  locs: Loc[];
+  explanation: string
+  locs: Loc[]
 }
 
 // an adapter from IrErrorMessage to ErrorMessage
-export function fromIrErrorMessage(sourceMap: Map<bigint, Loc>):
-  (err: IrErrorMessage) => ErrorMessage {
-  return (msg) => {
+export function fromIrErrorMessage(sourceMap: Map<bigint, Loc>): (err: IrErrorMessage) => ErrorMessage {
+  return msg => {
     return {
       explanation: msg.explanation,
       locs: msg.refs.map(id => sourceMap.get(id) ?? unknownLoc),
@@ -59,12 +58,11 @@ export function fromIrErrorMessage(sourceMap: Map<bigint, Loc>):
 export type ParseResult<T> = Either<ErrorMessage[], T>
 
 export interface ParserPhase1 {
-  modules: QuintModule[],
+  modules: QuintModule[]
   sourceMap: Map<bigint, Loc>
 }
 
-export interface ParserPhase2 extends ParserPhase1 {
-}
+export interface ParserPhase2 extends ParserPhase1 {}
 
 export interface ParserPhase3 extends ParserPhase2 {
   table: LookupTable
@@ -77,7 +75,7 @@ export type ParseProbeResult =
   | { kind: 'toplevel' }
   | { kind: 'expr' }
   | { kind: 'none' }
-  | { kind: 'error', messages: ErrorMessage[] }
+  | { kind: 'error'; messages: ErrorMessage[] }
 
 /**
  * Try parsing text as an expression or a top-level declaration.
@@ -86,8 +84,7 @@ export type ParseProbeResult =
  * @param sourceLocation a textual description of the source
  * @returns the result of probing
  */
-export function
-  probeParse(text: string, sourceLocation: string): ParseProbeResult {
+export function probeParse(text: string, sourceLocation: string): ParseProbeResult {
   const errorMessages: ErrorMessage[] = []
   const parser = setupParser(text, sourceLocation, errorMessages)
   const tree = parser.unitOrExpr()
@@ -136,10 +133,10 @@ export function parsePhase1fromText(
 /**
  * Phase 2 of the Quint parser. Go over each definition of the form
  * `import ... from '<path>'`, do the following:
- * 
+ *
  *  - parse the modules that are referenced by each path,
  *  - add the parsed modules.
- * 
+ *
  * Cyclic dependencies among different files are reported as errors.
  */
 export function parsePhase2sourceResolution(
@@ -155,13 +152,12 @@ export function parsePhase2sourceResolution(
   // of sources that led to this module.
   // The construction is similar to the worklist algorithm:
   // https://en.wikipedia.org/wiki/Reaching_definition#Worklist_algorithm
-  const worklist: [QuintModule, SourceLookupPath[]][] =
-    mainPhase1Result.modules.map(m => [ m, [mainPath] ])
+  const worklist: [QuintModule, SourceLookupPath[]][] = mainPhase1Result.modules.map(m => [m, [mainPath]])
   // Collect modules produced by every source.
- const sourceToModules = new Map<string, QuintModule[]>()
+  const sourceToModules = new Map<string, QuintModule[]>()
   // Assign a rank to every module. The higher the rank,
   // the earlier the module should appear in the list of modules.
-   sourceToModules.set(mainPath.normalizedPath, mainPhase1Result.modules)
+  sourceToModules.set(mainPath.normalizedPath, mainPhase1Result.modules)
   const moduleRank = new Map<string, number>()
   let maxModuleRank = 0
   mainPhase1Result.modules.reverse().forEach(m => moduleRank.set(m.name, maxModuleRank++))
@@ -175,8 +171,10 @@ export function parsePhase2sourceResolution(
         // check for import cycles
         if (pathTrail.find(p => p.normalizedPath === importeePath.normalizedPath)) {
           // found a cyclic dependency
-          const cycle =
-            (pathTrail.concat([importeePath])).map(p => `'${p.toSourceName()}'`).join(' imports ')
+          const cycle = pathTrail
+            .concat([importeePath])
+            .map(p => `'${p.toSourceName()}'`)
+            .join(' imports ')
           const err = fromIrErrorMessage(sourceMap)({
             explanation: `Cyclic imports: ${cycle}`,
             refs: [def.id],
@@ -186,9 +184,7 @@ export function parsePhase2sourceResolution(
         if (sourceToModules.has(importeePath.normalizedPath)) {
           // The source has been parsed already. Just push the module rank,
           // for the modules to appear earlier.
-          sourceToModules.get(importeePath.normalizedPath)?.forEach(m =>
-            moduleRank.set(m.name, maxModuleRank++)
-          )
+          sourceToModules.get(importeePath.normalizedPath)?.forEach(m => moduleRank.set(m.name, maxModuleRank++))
           continue
         }
         // try to load the source code
@@ -203,8 +199,7 @@ export function parsePhase2sourceResolution(
           return left([err])
         }
         // try to parse the source code
-        const parseResult =
-          parsePhase1fromText(idGen, errorOrText.value, importeePath.toSourceName())
+        const parseResult = parsePhase1fromText(idGen, errorOrText.value, importeePath.toSourceName())
         if (parseResult.isLeft()) {
           // failed to parse the code of the loaded file
           return parseResult
@@ -220,7 +215,7 @@ export function parsePhase2sourceResolution(
       }
     }
   }
-  
+
   // Get all the modules and sort them according to the rank (the higher, the earlier)
   let allModules: QuintModule[] = []
   for (const mods of sourceToModules.values()) {
@@ -240,8 +235,7 @@ export function parsePhase3importAndNameResolution(phase1Data: ParserPhase2): Pa
 
   const definitionsByModule: DefinitionsByModule = new Map()
 
-  const definitions = phase1Data.modules.reduce((result: Either<ErrorMessage[],
-  LookupTable>, module) => {
+  const definitions = phase1Data.modules.reduce((result: Either<ErrorMessage[], LookupTable>, module) => {
     const scopeTree = treeFromModule(module)
     const definitionsBeforeImport = collectDefinitions(module)
     definitionsByModule.set(module.name, definitionsBeforeImport)
@@ -249,14 +243,13 @@ export function parsePhase3importAndNameResolution(phase1Data: ParserPhase2): Pa
     const [errors, definitions] = resolveImports(module, definitionsByModule)
     const errorLocator = mkErrorMessage(sourceMap)
 
-    const importResult: Either<ErrorMessage[], DefinitionsByName> = errors.size > 0
-      ? left(Array.from(errors, errorLocator))
-      : right(definitions)
+    const importResult: Either<ErrorMessage[], DefinitionsByName> =
+      errors.size > 0 ? left(Array.from(errors, errorLocator)) : right(definitions)
 
     definitionsByModule.set(module.name, definitions)
 
-    const conflictResult: Either<ErrorMessage[], void> =
-      scanConflicts(definitions, scopeTree).mapLeft((conflicts): ErrorMessage[] => {
+    const conflictResult: Either<ErrorMessage[], void> = scanConflicts(definitions, scopeTree).mapLeft(
+      (conflicts): ErrorMessage[] => {
         return conflicts.map(conflict => {
           let msg, sources
           if (conflict.sources.some(source => source.kind === 'builtin')) {
@@ -280,13 +273,15 @@ export function parsePhase3importAndNameResolution(phase1Data: ParserPhase2): Pa
 
           return { explanation: msg, locs }
         })
-      })
+      }
+    )
 
-    const resolutionResult: Either<ErrorMessage[], LookupTable> =
-      resolveNames(module, definitions, scopeTree).mapLeft(errors => {
+    const resolutionResult: Either<ErrorMessage[], LookupTable> = resolveNames(module, definitions, scopeTree).mapLeft(
+      errors => {
         // Build error message with resolution explanation and the location obtained from sourceMap
         return errors.map(error => {
-          const msg = `Failed to resolve ` +
+          const msg =
+            `Failed to resolve ` +
             (error.kind === 'type' ? 'type alias' : 'name') +
             ` ${error.name} in definition for ${error.definitionName}, ` +
             `in module ${error.moduleName}`
@@ -302,7 +297,8 @@ export function parsePhase3importAndNameResolution(phase1Data: ParserPhase2): Pa
             return { explanation: msg, locs: [] }
           }
         })
-      })
+      }
+    )
 
     return mergeInMany([importResult, conflictResult, resolutionResult])
       .chain(([_, __, table]) => result.map(t => new Map<bigint, Definition>([...t.entries(), ...table.entries()])))
@@ -312,7 +308,7 @@ export function parsePhase3importAndNameResolution(phase1Data: ParserPhase2): Pa
   return definitions.map(table => ({ ...phase1Data, table }))
 }
 
-export function compactSourceMap(sourceMap: Map<bigint, Loc>): { sourceIndex: any, map: any } {
+export function compactSourceMap(sourceMap: Map<bigint, Loc>): { sourceIndex: any; map: any } {
   // Collect all sources in order to index them
   const sources: string[] = Array.from(sourceMap.values()).map(loc => loc.source)
 
@@ -326,7 +322,7 @@ export function compactSourceMap(sourceMap: Map<bigint, Loc>): { sourceIndex: an
   })
 
   // Build an index from ids to source
-  sources.forEach((source) => {
+  sources.forEach(source => {
     sourcesIndex.set(sources.indexOf(source), source)
   })
 
@@ -334,18 +330,11 @@ export function compactSourceMap(sourceMap: Map<bigint, Loc>): { sourceIndex: an
 }
 
 // setup a Quint parser, so it can be used to parse from various non-terminals
-function setupParser(text: string,
-  sourceLocation: string, errorMessages: ErrorMessage[]): p.QuintParser {
+function setupParser(text: string, sourceLocation: string, errorMessages: ErrorMessage[]): p.QuintParser {
   // error listener to report lexical and syntax errors
   const errorListener: any = {
-    syntaxError: (recognizer: any,
-      offendingSymbol: any,
-      line: number,
-      charPositionInLine: number,
-      msg: string) => {
-      const len = offendingSymbol
-        ? offendingSymbol.stopIndex - offendingSymbol.startIndex
-        : 0
+    syntaxError: (recognizer: any, offendingSymbol: any, line: number, charPositionInLine: number, msg: string) => {
+      const len = offendingSymbol ? offendingSymbol.stopIndex - offendingSymbol.startIndex : 0
       const index = offendingSymbol ? offendingSymbol.startIndex : 0
       const start = { line: line - 1, col: charPositionInLine, index }
       const end = { line: line - 1, col: charPositionInLine + len, index: index + len }
@@ -374,10 +363,12 @@ function setupParser(text: string,
 class ProbeListener implements QuintListener {
   result: ParseProbeResult = {
     kind: 'error',
-    messages: [{
-      explanation: 'unknown parse result',
-      locs: [],
-    }],
+    messages: [
+      {
+        explanation: 'unknown parse result',
+        locs: [],
+      },
+    ],
   }
 
   exitUnitOrExpr(ctx: p.UnitOrExprContext) {

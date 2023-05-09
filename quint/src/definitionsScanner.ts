@@ -12,7 +12,7 @@
  * @module
  */
 
-import { Either, left, right } from '@sweet-monads/either';
+import { Either, left, right } from '@sweet-monads/either'
 import isEqual from 'lodash.isequal'
 import { DefinitionsByName, ValueDefinition } from './definitionsByName'
 import { ScopeTree, scopesForId } from './scoping'
@@ -22,7 +22,7 @@ import { ScopeTree, scopesForId } from './scoping'
  */
 export type ConflictSource =
   /* A user definition, referencing its IR node id */
-  | { kind: 'user', reference: bigint }
+  | { kind: 'user'; reference: bigint }
   /* A built-in definition, no reference */
   | { kind: 'builtin' }
 
@@ -31,11 +31,11 @@ export type ConflictSource =
  */
 export interface Conflict {
   /* Either a 'type' or 'value' conflict */
-  kind: 'value' | 'type';
+  kind: 'value' | 'type'
   /* The name that has a conflict */
-  identifier: string;
+  identifier: string
   /* Sources of the occurrences of the conflicting name */
-  sources: ConflictSource[];
+  sources: ConflictSource[]
 }
 
 /**
@@ -56,9 +56,11 @@ export function scanConflicts(table: DefinitionsByName, tree: ScopeTree): Defini
   const conflicts: Conflict[] = []
   table.valueDefinitions.forEach((defs, identifier) => {
     // Value definition conflicts depend on scope
-    const conflictingDefinitions = defs.filter(def => defs.some(d => {
-      return !isEqual(d, def) && canConflict(tree, d, def)
-    }))
+    const conflictingDefinitions = defs.filter(def =>
+      defs.some(d => {
+        return !isEqual(d, def) && canConflict(tree, d, def)
+      })
+    )
 
     if (conflictingDefinitions.length > 0) {
       const sources: ConflictSource[] = conflictingDefinitions.map(d => {
@@ -88,8 +90,10 @@ export function scanConflicts(table: DefinitionsByName, tree: ScopeTree): Defini
 }
 
 function canConflict(tree: ScopeTree, d1: ValueDefinition, d2: ValueDefinition): Boolean {
-  return !d1.scope ||
+  return (
+    !d1.scope ||
     !d2.scope ||
     scopesForId(tree, d1.scope).includes(d2.scope) ||
     scopesForId(tree, d2.scope).includes(d1.scope)
+  )
 }

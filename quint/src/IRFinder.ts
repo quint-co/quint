@@ -12,9 +12,9 @@
  * @module
  */
 
-import { IRVisitor, walkModule } from "./IRVisitor";
-import { QuintEx, QuintModule } from "./quintIr";
-import { QuintType } from "./quintTypes";
+import { IRVisitor, walkModule } from './IRVisitor'
+import { QuintEx, QuintModule } from './quintIr'
+import { QuintType } from './quintTypes'
 
 /**
  * Finds a quint expression with a given id in a module

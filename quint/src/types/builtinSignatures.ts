@@ -139,16 +139,22 @@ const multipleAritySignatures: [string, Signature][] = [
   ['actionAll', uniformArgsWithResult('bool', 'bool')],
   ['or', uniformArgsWithResult('bool', 'bool')],
   ['actionAny', uniformArgsWithResult('bool', 'bool')],
-  ['unionMatch', (arity: number) => {
-    const args = times((arity - 1) / 2, () => 'str, (a) => b')
-    return parseAndQuantify(`(a, ${args.join(', ')}) => b`)
-  }],
-  ['tuples', (arity: number) => {
-    const ts = times(arity, i => `t${i}`)
-    const args = ts.map(t => `Set[${t}]`)
-    const tupleType = `(${ts.join(', ')})`
-    return parseAndQuantify(`(${args.join(', ')}) => Set[${tupleType}]`)
-  }],
+  [
+    'unionMatch',
+    (arity: number) => {
+      const args = times((arity - 1) / 2, () => 'str, (a) => b')
+      return parseAndQuantify(`(a, ${args.join(', ')}) => b`)
+    },
+  ],
+  [
+    'tuples',
+    (arity: number) => {
+      const ts = times(arity, i => `t${i}`)
+      const args = ts.map(t => `Set[${t}]`)
+      const tupleType = `(${ts.join(', ')})`
+      return parseAndQuantify(`(${args.join(', ')}) => Set[${tupleType}]`)
+    },
+  ],
 ]
 
 const fixedAritySignatures: [string, Signature][] = [
@@ -160,7 +166,9 @@ const fixedAritySignatures: [string, Signature][] = [
   integerOperators,
   temporalOperators,
   otherOperators,
-].flat().map(sig => [sig.name, (_: number) => parseAndQuantify(sig.type)])
+]
+  .flat()
+  .map(sig => [sig.name, (_: number) => parseAndQuantify(sig.type)])
 
 function parseAndQuantify(typeString: string): TypeScheme {
   const t = parseTypeOrThrow(typeString)

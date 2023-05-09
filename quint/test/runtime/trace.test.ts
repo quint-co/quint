@@ -2,8 +2,7 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { none } from '@sweet-monads/maybe'
 
-import { ExecutionFrame, newTraceRecorder } from '../../src/runtime/trace'
-import { zerog } from '../../src/idGenerator'
+import { newTraceRecorder } from '../../src/runtime/trace'
 import { QuintApp } from '../../src/quintIr'
 import { verbosity } from '../../src/verbosity'
 import { newRng } from '../../src/rng'
@@ -53,7 +52,10 @@ describe('newTraceRecorder', () => {
     const B: QuintApp = { id: 0n, kind: 'app', opcode: 'B', args: [] }
     const C: QuintApp = { id: 0n, kind: 'app', opcode: 'C', args: [] }
     const anyEx: QuintApp = {
-      id: 0n, kind: 'app', opcode: 'any', args: [ A, B, C ]
+      id: 0n,
+      kind: 'app',
+      opcode: 'any',
+      args: [A, B, C],
     }
     // A()
     rec.onUserOperatorCall(A)

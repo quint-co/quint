@@ -46,15 +46,11 @@ describe('collectDefinitions', () => {
     })
 
     it('collects instances and scoped variables inside parameters', () => {
-      const quintModule = buildModuleWithDefs([
-        'import test_module(a = val x = 10 {x}) as test_module_instance',
-      ])
+      const quintModule = buildModuleWithDefs(['import test_module(a = val x = 10 {x}) as test_module_instance'])
 
       const result = collectDefinitions(quintModule)
 
-      assert.includeDeepMembers([...result.valueDefinitions.keys()], [
-        'x',
-      ])
+      assert.includeDeepMembers([...result.valueDefinitions.keys()], ['x'])
     })
 
     it('collects assume definitions and scoped variables in body', () => {

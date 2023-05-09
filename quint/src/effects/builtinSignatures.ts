@@ -49,7 +49,7 @@ function nameForVariable(kind: ComponentKind, i: number) {
  * @param kinds the kinds of components to propagate
  * @returns an arrow function taking arity and returning the effect for that arity
  */
-function propagateComponents(kinds: ComponentKind[]): ((arity: number) => EffectScheme) {
+function propagateComponents(kinds: ComponentKind[]): (arity: number) => EffectScheme {
   return (arity: number) => {
     const params: Effect[] = times(arity, i => {
       const components: EffectComponent[] = kinds.map(kind => {
@@ -84,7 +84,7 @@ function propagateComponents(kinds: ComponentKind[]): ((arity: number) => Effect
  * @param kinds the kinds of components to propagate
  * @returns an arrow function taking arity and returning the effect for that arity
  */
-function propagationWithLambda(kinds: ComponentKind[]): ((arity: number) => EffectScheme) {
+function propagationWithLambda(kinds: ComponentKind[]): (arity: number) => EffectScheme {
   return (arity: number) => {
     const params: Effect[] = times(arity - 1, i => {
       const components: EffectComponent[] = kinds.map(kind => {
@@ -95,7 +95,8 @@ function propagationWithLambda(kinds: ComponentKind[]): ((arity: number) => Effe
     })
 
     const lambdaResult: Effect = {
-      kind: 'concrete', components: kinds.map(kind => {
+      kind: 'concrete',
+      components: kinds.map(kind => {
         return { kind: kind, entity: { kind: 'variable', name: nameForVariable(kind, arity) } }
       }),
     }
@@ -236,27 +237,36 @@ const multipleAritySignatures: [string, Signature][] = [
   ['tuples', standardPropagation],
   ['and', standardPropagation],
   ['or', standardPropagation],
-  ['unionMatch', (arity: number) => {
-    const readVars = times((arity - 1) / 2, i => `r${i}`)
-    const args = readVars.map(r => `Pure, (Pure) => Read[${r}]`)
-    return parseAndQuantify(`(Read[r], ${args.join(', ')}) => Read[${readVars.join(', ')}]`)
-  }],
-  ['actionAll', (arity: number) => {
-    const indexes = range(arity)
+  [
+    'unionMatch',
+    (arity: number) => {
+      const readVars = times((arity - 1) / 2, i => `r${i}`)
+      const args = readVars.map(r => `Pure, (Pure) => Read[${r}]`)
+      return parseAndQuantify(`(Read[r], ${args.join(', ')}) => Read[${readVars.join(', ')}]`)
+    },
+  ],
+  [
+    'actionAll',
+    (arity: number) => {
+      const indexes = range(arity)
 
-    const args = indexes.map(i => `Read[r${i}] & Update[u${i}]`)
-    const readVars = indexes.map(i => `r${i}`).join(', ')
-    const updateVars = indexes.map(i => `u${i}`).join(', ')
-    return parseAndQuantify(`(${args.join(', ')}) => Read[${readVars}] & Update[${updateVars}]`)
-  }],
+      const args = indexes.map(i => `Read[r${i}] & Update[u${i}]`)
+      const readVars = indexes.map(i => `r${i}`).join(', ')
+      const updateVars = indexes.map(i => `u${i}`).join(', ')
+      return parseAndQuantify(`(${args.join(', ')}) => Read[${readVars}] & Update[${updateVars}]`)
+    },
+  ],
   ['actionAll', propagateComponents(['read', 'update'])],
-  ['actionAny', (arity: number) => {
-    const indexes = range(arity)
+  [
+    'actionAny',
+    (arity: number) => {
+      const indexes = range(arity)
 
-    const args = indexes.map(i => `Read[r${i}] & Update[u]`)
-    const readVars = indexes.map(i => `r${i}`).join(', ')
-    return parseAndQuantify(`(${args.join(', ')}) => Read[${readVars}] & Update[u]`)
-  }],
+      const args = indexes.map(i => `Read[r${i}] & Update[u]`)
+      const readVars = indexes.map(i => `r${i}`).join(', ')
+      return parseAndQuantify(`(${args.join(', ')}) => Read[${readVars}] & Update[u]`)
+    },
+  ],
 ]
 
 const fixedAritySignatures: [string, Signature][] = [
@@ -270,6 +280,11 @@ const fixedAritySignatures: [string, Signature][] = [
   integerOperators,
   temporalOperators,
   otherOperators,
-].flat().map(sig => [sig.name, ((_: number) => {
-  return sig.effect
-})])
+]
+  .flat()
+  .map(sig => [
+    sig.name,
+    (_: number) => {
+      return sig.effect
+    },
+  ])

@@ -54,7 +54,8 @@ describe('treeFromModule', () => {
         },
         { value: 11n, children: [] },
         {
-          value: 14n, children: [
+          value: 14n,
+          children: [
             { value: 13n, children: [] },
             { value: 12n, children: [] },
           ],
@@ -91,9 +92,7 @@ describe('treeFromModule', () => {
               children: [
                 {
                   value: 24n,
-                  children: [
-                    { value: 23n, children: [] },
-                  ],
+                  children: [{ value: 23n, children: [] }],
                 },
                 { value: 25n, children: [] },
               ],

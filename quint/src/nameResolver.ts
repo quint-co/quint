@@ -28,15 +28,15 @@ import { DefinitionsByName, lookupType, lookupValue } from './definitionsByName'
  */
 export interface NameError {
   /* Either a 'type' or 'value' name error */
-  kind: 'type' | 'value';
+  kind: 'type' | 'value'
   /* The name that couldn't be resolved */
-  name: string;
+  name: string
   /* The module-level definition containing the error */
-  definitionName: string;
+  definitionName: string
   /* The name of the module containing the error */
-  moduleName: string;
+  moduleName: string
   /* The identifier of the IR node where the error occurs */
-  reference?: bigint;
+  reference?: bigint
 }
 
 /**
@@ -53,7 +53,9 @@ export type NameResolutionResult = Either<NameError[], LookupTable>
  * @returns a successful result in case all names are resolved, or an aggregation of errors otherwise
  */
 export function resolveNames(
-  quintModule: QuintModule, table: DefinitionsByName, scopeTree: ScopeTree
+  quintModule: QuintModule,
+  table: DefinitionsByName,
+  scopeTree: ScopeTree
 ): NameResolutionResult {
   const visitor = new NameResolverVisitor(table, scopeTree)
   walkModule(visitor, quintModule)

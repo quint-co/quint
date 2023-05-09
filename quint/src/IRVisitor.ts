@@ -109,7 +109,7 @@ export function walkModule(visitor: IRVisitor, quintModule: ir.QuintModule): voi
     visitor.enterModule(quintModule)
   }
 
-  quintModule.defs.forEach((def) => walkDefinition(visitor, def))
+  quintModule.defs.forEach(def => walkDefinition(visitor, def))
 
   if (visitor.exitModule) {
     visitor.exitModule(quintModule)

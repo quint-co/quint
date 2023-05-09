@@ -4,12 +4,11 @@ import { assert, expect } from 'chai'
 import { Rng, newRng } from '../src/rng'
 
 function testForRange(rng: Rng, bound: bigint, nsamples: number) {
-    for (let i = 0; i < nsamples; i++) {
-      const state = rng.getState()
-      const v = rng.next(bound)
-      assert(0n <= v && v < bound,
-             `${v} is not in the range [0, ${bound}), state = ${state}`)
-    }
+  for (let i = 0; i < nsamples; i++) {
+    const state = rng.getState()
+    const v = rng.next(bound)
+    assert(0n <= v && v < bound, `${v} is not in the range [0, ${bound}), state = ${state}`)
+  }
 }
 
 describe('rng', () => {
@@ -18,7 +17,9 @@ describe('rng', () => {
     expect(rng.next(1000n)).to.equal(314n)
     expect(rng.next(2000n)).to.equal(103n)
     expect(rng.next(3000n)).to.equal(1254n)
-    expect(rng.next(2n ** 256n)).to.equal(39968831094728793095337668312741798650168913551481632943502796831606193252535n)
+    expect(rng.next(2n ** 256n)).to.equal(
+      39968831094728793095337668312741798650168913551481632943502796831606193252535n
+    )
   })
 
   it('produces big integers in [0, 10000)', () => {

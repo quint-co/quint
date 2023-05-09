@@ -25,10 +25,10 @@ import { Rng } from '../rng'
  * Various settings to be passed to the testing framework.
  */
 export interface TestOptions {
-  testMatch: (n: string) => boolean,
-  maxSamples: number,
-  rng: Rng,
-  verbosity: number,
+  testMatch: (n: string) => boolean
+  maxSamples: number
+  rng: Rng
+  verbosity: number
 }
 
 /**
@@ -47,7 +47,7 @@ export interface TestResult {
   /**
    * The seed value to repeat the test.
    */
-  seed: bigint,
+  seed: bigint
   /**
    * When status === 'failed', errors contain the explanatory error messages.
    */
@@ -55,11 +55,11 @@ export interface TestResult {
   /**
    * If the trace was recorded, frames contains the history.
    */
-  frames: ExecutionFrame[],
+  frames: ExecutionFrame[]
   /**
    * The number of tried samples.
    */
-  nsamples: number,
+  nsamples: number
 }
 
 /**
@@ -74,40 +74,36 @@ export interface TestResult {
  * @returns the results of running the tests
  */
 export function compileAndTest(
-    modules: QuintModule[],
-    main: QuintModule,
-    sourceMap: Map<bigint, Loc>,
-    lookupTable: LookupTable,
-    types: Map<bigint, TypeScheme>,
-    options: TestOptions): Either<ErrorMessage[], TestResult[]> {
+  modules: QuintModule[],
+  main: QuintModule,
+  sourceMap: Map<bigint, Loc>,
+  lookupTable: LookupTable,
+  types: Map<bigint, TypeScheme>,
+  options: TestOptions
+): Either<ErrorMessage[], TestResult[]> {
   const recorder = newTraceRecorder(options.verbosity, options.rng)
-  const ctx =
-    compile(modules, sourceMap, lookupTable,
-            types, main.name, recorder, options.rng.next)
+  const ctx = compile(modules, sourceMap, lookupTable, types, main.name, recorder, options.rng.next)
 
-  if(!ctx.main) {
-    return left([ { explanation: 'Cannot find main module', locs: [] } ])
+  if (!ctx.main) {
+    return left([{ explanation: 'Cannot find main module', locs: [] }])
   }
 
-  const ctxErrors =
-    ctx.syntaxErrors.concat(ctx.compileErrors).concat(ctx.analysisErrors)
+  const ctxErrors = ctx.syntaxErrors.concat(ctx.compileErrors).concat(ctx.analysisErrors)
   if (ctxErrors.length > 0) {
     // In principle, these errors should have been caught earlier.
     // But if they did not, return immediately.
     return left(ctxErrors)
   }
 
-  const testDefs =
-    ctx.main.defs.filter(d =>
-      d.kind === 'def' && options.testMatch(d.name)) as QuintOpDef[]
+  const testDefs = ctx.main.defs.filter(d => d.kind === 'def' && options.testMatch(d.name)) as QuintOpDef[]
 
-  return merge(testDefs.map(def => {
-    return getComputableForDef(ctx, def)
-      .map(comp => {
+  return merge(
+    testDefs.map(def => {
+      return getComputableForDef(ctx, def).map(comp => {
         const name = def.name
         // save the initial seed
         let seed = options.rng.getState()
-        
+
         let nsamples = 1
         // run up to maxSamples, stop on the first failure
         for (; nsamples <= options.maxSamples; nsamples++) {
@@ -121,8 +117,12 @@ export function compileAndTest(
           if (result.isNone()) {
             // if the test failed, return immediately
             return {
-              name, status: 'failed', errors: ctx.getRuntimeErrors(),
-              seed, frames: recorder.getBestTrace().subframes, nsamples: nsamples,
+              name,
+              status: 'failed',
+              errors: ctx.getRuntimeErrors(),
+              seed,
+              frames: recorder.getBestTrace().subframes,
+              nsamples: nsamples,
             }
           }
 
@@ -132,7 +132,7 @@ export function compileAndTest(
             return { name, status: 'ignored', errors: [], seed: seed, frames: [], nsamples: nsamples }
           }
 
-          if (!(ex.value)) {
+          if (!ex.value) {
             // if the test returned false, return immediately
             const e = fromIrErrorMessage(sourceMap)({
               explanation: `${name} returns false`,
@@ -151,8 +151,12 @@ export function compileAndTest(
               // This successful test did not use non-determinism.
               // Running it one time is sufficient.
               return {
-                 name, status: 'passed', errors: [],
-                 seed: seed, frames: [], nsamples: nsamples
+                name,
+                status: 'passed',
+                errors: [],
+                seed: seed,
+                frames: [],
+                nsamples: nsamples,
               }
             }
           }
@@ -160,19 +164,23 @@ export function compileAndTest(
 
         // the test was run maxSamples times, and no errors were found
         return {
-          name, status: 'passed', errors: [],
-          seed: seed, frames: [], nsamples: nsamples - 1
+          name,
+          status: 'passed',
+          errors: [],
+          seed: seed,
+          frames: [],
+          nsamples: nsamples - 1,
         }
       })
-  }))
+    })
+  )
 }
 
-function getComputableForDef(ctx: CompilationContext, def: QuintOpDef):
-    Either<ErrorMessage[], Computable> {
+function getComputableForDef(ctx: CompilationContext, def: QuintOpDef): Either<ErrorMessage[], Computable> {
   const comp = ctx.values.get(kindName('callable', def.id))
   if (comp) {
     return right(comp)
   } else {
-    return left([ { explanation: `Cannot find computable for ${def.name}`, locs: [] } ])
+    return left([{ explanation: `Cannot find computable for ${def.name}`, locs: [] }])
   }
 }

@@ -31,32 +31,47 @@ import { chunk, times } from 'lodash'
  * @returns Either an error or a list of constraints
  */
 export function specialConstraints(
-  opcode: string, id: bigint, args: [QuintEx, QuintType][], resultTypeVar: QuintVarType
+  opcode: string,
+  id: bigint,
+  args: [QuintEx, QuintType][],
+  resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
   switch (opcode) {
     // Record operators
-    case 'Rec': return recordConstructorConstraints(id, args, resultTypeVar)
-    case 'field': return fieldConstraints(id, args, resultTypeVar)
-    case 'fieldNames': return fieldNamesConstraints(id, args, resultTypeVar)
-    case 'with': return withConstraints(id, args, resultTypeVar)
+    case 'Rec':
+      return recordConstructorConstraints(id, args, resultTypeVar)
+    case 'field':
+      return fieldConstraints(id, args, resultTypeVar)
+    case 'fieldNames':
+      return fieldNamesConstraints(id, args, resultTypeVar)
+    case 'with':
+      return withConstraints(id, args, resultTypeVar)
     // Tuple operators
-    case 'Tup': return tupleConstructorConstraints(id, args, resultTypeVar)
-    case 'item': return itemConstraints(id, args, resultTypeVar)
-    default: return right([])
+    case 'Tup':
+      return tupleConstructorConstraints(id, args, resultTypeVar)
+    case 'item':
+      return itemConstraints(id, args, resultTypeVar)
+    default:
+      return right([])
   }
 }
 
 function recordConstructorConstraints(
-  id: bigint, args: [QuintEx, QuintType][], resultTypeVar: QuintVarType
+  id: bigint,
+  args: [QuintEx, QuintType][],
+  resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
   const constraints: Constraint[] = []
   // A record constructor has the normal form Rec('field1', value1, 'field2', value2, ...)
   // So we iterate over the arguments in pairs (chunks of size 2)
   const fields = chunk(args, 2).map(([[key, keyType], [_value, valueType]]) => {
     if (key.kind !== 'str') {
-      return left(buildErrorLeaf(
-        `Generating record constraints for ${args.map(a => expressionToString(a[0]))}`,
-        `Record field name must be a name expression but is ${key.kind}: ${expressionToString(key)}`))
+      return left(
+        buildErrorLeaf(
+          `Generating record constraints for ${args.map(a => expressionToString(a[0]))}`,
+          `Record field name must be a name expression but is ${key.kind}: ${expressionToString(key)}`
+        )
+      )
     }
 
     const constraint: Constraint = { kind: 'eq', types: [keyType, { kind: 'str' }], sourceId: key.id }
@@ -74,14 +89,19 @@ function recordConstructorConstraints(
 }
 
 function fieldConstraints(
-  id: bigint, args: [QuintEx, QuintType][], resultTypeVar: QuintVarType
+  id: bigint,
+  args: [QuintEx, QuintType][],
+  resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
   const [[_rec, recType], [fieldName, fieldNameType]] = args
 
   if (fieldName.kind !== 'str') {
-    return left(buildErrorLeaf(
-            `Generating record constraints for ${args.map(a => expressionToString(a[0]))}`,
-            `Record field name must be a string expression but is ${fieldName.kind}: ${expressionToString(fieldName)}`))
+    return left(
+      buildErrorLeaf(
+        `Generating record constraints for ${args.map(a => expressionToString(a[0]))}`,
+        `Record field name must be a string expression but is ${fieldName.kind}: ${expressionToString(fieldName)}`
+      )
+    )
   }
 
   const generalRecType: QuintType = {
@@ -100,7 +120,9 @@ function fieldConstraints(
 }
 
 function fieldNamesConstraints(
-  id: bigint, args: [QuintEx, QuintType][], resultTypeVar: QuintVarType
+  id: bigint,
+  args: [QuintEx, QuintType][],
+  resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
   const [[_rec, recType]] = args
 
@@ -113,14 +135,19 @@ function fieldNamesConstraints(
 }
 
 function withConstraints(
-  id: bigint, args: [QuintEx, QuintType][], resultTypeVar: QuintVarType
+  id: bigint,
+  args: [QuintEx, QuintType][],
+  resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
   const [[_rec, recType], [fieldName, fieldNameType], [_value, valueType]] = args
 
   if (fieldName.kind !== 'str') {
-    return left(buildErrorLeaf(
-            `Generating record constraints for ${args.map(a => expressionToString(a[0]))}`,
-            `Record field name must be a string expression but is ${fieldName.kind}: ${expressionToString(fieldName)}`))
+    return left(
+      buildErrorLeaf(
+        `Generating record constraints for ${args.map(a => expressionToString(a[0]))}`,
+        `Record field name must be a string expression but is ${fieldName.kind}: ${expressionToString(fieldName)}`
+      )
+    )
   }
 
   const generalRecType: QuintType = {
@@ -140,7 +167,9 @@ function withConstraints(
 }
 
 function tupleConstructorConstraints(
-  id: bigint, args: [QuintEx, QuintType][], resultTypeVar: QuintVarType
+  id: bigint,
+  args: [QuintEx, QuintType][],
+  resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
   const fields = args.map(([_, type], i) => {
     return { fieldName: `${i}`, fieldType: type }
@@ -152,21 +181,26 @@ function tupleConstructorConstraints(
 }
 
 function itemConstraints(
-  id: bigint, args: [QuintEx, QuintType][], resultTypeVar: QuintVarType
+  id: bigint,
+  args: [QuintEx, QuintType][],
+  resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
   const [[_tup, tupType], [itemName, itemNameType]] = args
 
   const c1: Constraint = { kind: 'eq', types: [itemNameType, { kind: 'int' }], sourceId: itemName.id }
 
   if (itemName.kind !== 'int') {
-    return left(buildErrorLeaf(
-            `Generating record constraints for ${args.map(a => expressionToString(a[0]))}`,
-            `Tup field index must be an int expression but is ${itemName.kind}: ${expressionToString(itemName)}`))
+    return left(
+      buildErrorLeaf(
+        `Generating record constraints for ${args.map(a => expressionToString(a[0]))}`,
+        `Tup field index must be an int expression but is ${itemName.kind}: ${expressionToString(itemName)}`
+      )
+    )
   }
 
   // A tuple with item acess of N should have at least N fields
   // Fill previous fileds with type variables
-  const fields: { fieldName: string, fieldType: QuintType }[] = times(Number(itemName.value - 1n)).map(i => {
+  const fields: { fieldName: string; fieldType: QuintType }[] = times(Number(itemName.value - 1n)).map(i => {
     return { fieldName: `${i}`, fieldType: { kind: 'var', name: `tup_${resultTypeVar.name}_${i}` } }
   })
   fields.push({ fieldName: `${itemName.value - 1n}`, fieldType: resultTypeVar })

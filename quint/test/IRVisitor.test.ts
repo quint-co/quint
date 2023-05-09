@@ -110,8 +110,14 @@ describe('walkModule', () => {
 
     const visitor = new TestVisitor()
     walkModule(visitor, quintModule)
-    assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
-    assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
+    assert.deepEqual(
+      visitor.entered.map(d => definitionToString(d)),
+      enteredDefinitions
+    )
+    assert.deepEqual(
+      visitor.exited.map(d => definitionToString(d)),
+      exitedDefinitions
+    )
   })
 
   it('finds types', () => {
@@ -171,8 +177,14 @@ describe('walkModule', () => {
 
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
-      assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
+      assert.deepEqual(
+        visitor.entered.map(d => definitionToString(d)),
+        enteredDefinitions
+      )
+      assert.deepEqual(
+        visitor.exited.map(d => definitionToString(d)),
+        exitedDefinitions
+      )
     })
 
     it('finds constant definitions', () => {
@@ -189,16 +201,20 @@ describe('walkModule', () => {
         }
       }
 
-      const enteredDefinitions = [
-        'const B: int',
-      ]
+      const enteredDefinitions = ['const B: int']
 
       const exitedDefinitions = enteredDefinitions
 
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
-      assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
+      assert.deepEqual(
+        visitor.entered.map(d => definitionToString(d)),
+        enteredDefinitions
+      )
+      assert.deepEqual(
+        visitor.exited.map(d => definitionToString(d)),
+        exitedDefinitions
+      )
     })
 
     it('finds variable definitions', () => {
@@ -215,16 +231,20 @@ describe('walkModule', () => {
         }
       }
 
-      const enteredDefinitions = [
-        'var a: int',
-      ]
+      const enteredDefinitions = ['var a: int']
 
       const exitedDefinitions = enteredDefinitions
 
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
-      assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
+      assert.deepEqual(
+        visitor.entered.map(d => definitionToString(d)),
+        enteredDefinitions
+      )
+      assert.deepEqual(
+        visitor.exited.map(d => definitionToString(d)),
+        exitedDefinitions
+      )
     })
 
     it('finds assume definitions', () => {
@@ -241,16 +261,20 @@ describe('walkModule', () => {
         }
       }
 
-      const enteredDefinitions = [
-        'assume _ = igt(N, 1)',
-      ]
+      const enteredDefinitions = ['assume _ = igt(N, 1)']
 
       const exitedDefinitions = enteredDefinitions
 
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
-      assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
+      assert.deepEqual(
+        visitor.entered.map(d => definitionToString(d)),
+        enteredDefinitions
+      )
+      assert.deepEqual(
+        visitor.exited.map(d => definitionToString(d)),
+        exitedDefinitions
+      )
     })
 
     it('finds typedef definitions', () => {
@@ -267,16 +291,20 @@ describe('walkModule', () => {
         }
       }
 
-      const enteredDefinitions = [
-        'type MY_TYPE = int',
-      ]
+      const enteredDefinitions = ['type MY_TYPE = int']
 
       const exitedDefinitions = enteredDefinitions
 
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
-      assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
+      assert.deepEqual(
+        visitor.entered.map(d => definitionToString(d)),
+        enteredDefinitions
+      )
+      assert.deepEqual(
+        visitor.exited.map(d => definitionToString(d)),
+        exitedDefinitions
+      )
     })
 
     it('finds import definitions', () => {
@@ -293,16 +321,20 @@ describe('walkModule', () => {
         }
       }
 
-      const enteredDefinitions = [
-        'import M.*',
-      ]
+      const enteredDefinitions = ['import M.*']
 
       const exitedDefinitions = enteredDefinitions
 
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
-      assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
+      assert.deepEqual(
+        visitor.entered.map(d => definitionToString(d)),
+        enteredDefinitions
+      )
+      assert.deepEqual(
+        visitor.exited.map(d => definitionToString(d)),
+        exitedDefinitions
+      )
     })
 
     it('finds instance definitions', () => {
@@ -319,16 +351,20 @@ describe('walkModule', () => {
         }
       }
 
-      const enteredDefinitions = [
-        'import A(x = "rainbow") as A1',
-      ]
+      const enteredDefinitions = ['import A(x = "rainbow") as A1']
 
       const exitedDefinitions = enteredDefinitions
 
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
-      assert.deepEqual(visitor.entered.map(d => definitionToString(d)), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(d => definitionToString(d)), exitedDefinitions)
+      assert.deepEqual(
+        visitor.entered.map(d => definitionToString(d)),
+        enteredDefinitions
+      )
+      assert.deepEqual(
+        visitor.exited.map(d => definitionToString(d)),
+        exitedDefinitions
+      )
     })
 
     it('finds the module itself', () => {
@@ -362,8 +398,14 @@ describe('walkModule', () => {
 
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
-      assert.deepEqual(visitor.entered.map(m => moduleToString(m)), enteredDefinitions)
-      assert.deepEqual(visitor.exited.map(m => moduleToString(m)), exitedDefinitions)
+      assert.deepEqual(
+        visitor.entered.map(m => moduleToString(m)),
+        enteredDefinitions
+      )
+      assert.deepEqual(
+        visitor.exited.map(m => moduleToString(m)),
+        exitedDefinitions
+      )
     })
   })
 
@@ -382,12 +424,7 @@ describe('walkModule', () => {
         }
       }
 
-      const enteredExpressions = [
-        'N',
-        'S',
-        'x',
-        'x',
-      ]
+      const enteredExpressions = ['N', 'S', 'x', 'x']
 
       const exitedExpressions = enteredExpressions
 
@@ -411,12 +448,7 @@ describe('walkModule', () => {
         }
       }
 
-      const enteredExpressions = [
-        '1',
-        '"rainbow"',
-        '1',
-        'false',
-      ]
+      const enteredExpressions = ['1', '"rainbow"', '1', 'false']
 
       const exitedExpressions = enteredExpressions
 
@@ -440,17 +472,9 @@ describe('walkModule', () => {
         }
       }
 
-      const enteredExpressions = [
-        'igt(N, 1)',
-        'filter(S, (x => iadd(x, 1)))',
-        'iadd(x, 1)',
-      ]
+      const enteredExpressions = ['igt(N, 1)', 'filter(S, (x => iadd(x, 1)))', 'iadd(x, 1)']
 
-      const exitedExpressions = [
-        'igt(N, 1)',
-        'iadd(x, 1)',
-        'filter(S, (x => iadd(x, 1)))',
-      ]
+      const exitedExpressions = ['igt(N, 1)', 'iadd(x, 1)', 'filter(S, (x => iadd(x, 1)))']
 
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
@@ -472,9 +496,7 @@ describe('walkModule', () => {
         }
       }
 
-      const enteredExpressions = [
-        '(x => iadd(x, 1))',
-      ]
+      const enteredExpressions = ['(x => iadd(x, 1))']
 
       const exitedExpressions = enteredExpressions
 
@@ -498,9 +520,7 @@ describe('walkModule', () => {
         }
       }
 
-      const enteredExpressions = [
-        'val x = false { x }',
-      ]
+      const enteredExpressions = ['val x = false { x }']
 
       const exitedExpressions = enteredExpressions
 

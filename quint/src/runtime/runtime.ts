@@ -50,7 +50,7 @@ export interface Computable {
    * The simplest form of evaluation. Just compute the value.
    * This method may return none, if a computation error happens during
    * evaluation.
-   * 
+   *
    * @param args optional arguments to the computable
    */
   eval: (args?: Maybe<any>[]) => Maybe<EvalResult>
@@ -59,8 +59,7 @@ export interface Computable {
 /**
  * The kind of a computable.
  */
-export type ComputableKind =
-  'var' | 'nextvar' | 'arg' | 'callable' | 'shadow'
+export type ComputableKind = 'var' | 'nextvar' | 'arg' | 'callable' | 'shadow'
 
 /**
  * Create a key that encodes its name and kind. This is only useful for
@@ -86,7 +85,8 @@ export interface Register extends Computable {
 /**
  * Create an object that implements Register.
  */
-export function mkRegister(kind: ComputableKind,
+export function mkRegister(
+  kind: ComputableKind,
   registerName: string,
   initValue: Maybe<any>,
   onUndefined: () => void
@@ -96,7 +96,9 @@ export function mkRegister(kind: ComputableKind,
     kind,
     registerValue: initValue,
     // first, define a fruitless eval, as we cannot refer to registerValue yet
-    eval: () => { return none() },
+    eval: () => {
+      return none()
+    },
   }
   // override `eval`, as we can use `reg` now
   reg.eval = () => {
@@ -127,7 +129,7 @@ export interface Callable extends Computable {
 export function mkCallable(registers: Register[], body: Computable): Callable {
   const callable: Callable = {
     nparams: registers.length,
-    eval: (_args?: Maybe<any>[]): Maybe<EvalResult> => none()
+    eval: (_args?: Maybe<any>[]): Maybe<EvalResult> => none(),
   }
   callable.eval = (args?: Maybe<any>[]) => {
     if (registers.length === 0) {
@@ -136,7 +138,7 @@ export function mkCallable(registers: Register[], body: Computable): Callable {
     }
     if (args && args.length >= registers.length) {
       // All parameters are passed via `args`. Store them in the registers.
-      registers.forEach((r, i) => r.registerValue = args[i])
+      registers.forEach((r, i) => (r.registerValue = args[i]))
       // Evaluate the body under for the registers set to `args`.
       return body.eval()
     } else {
@@ -161,13 +163,12 @@ export const fail = {
  * An error produced during execution.
  */
 export interface ExecError {
-  msg: string,
-  sourceAndLoc: string | undefined,
+  msg: string
+  sourceAndLoc: string | undefined
 }
 
 /**
  * An error handler that is called on any kind of error that is happening
  * during execution.
  */
-export type ExecErrorHandler = (_error: ExecError) => void;
-
+export type ExecErrorHandler = (_error: ExecError) => void

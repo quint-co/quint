@@ -3,17 +3,17 @@
  * (originally, introduced by Philip Wadler for Haskell).
  *
  * Our implementation has two important features:
- *  
+ *
  *  - It is compatible with ANSI color codes. This is why we could not use
  *    prettier-printer from npm.
  *  - It is written in TypeScript.
  *
  * This implementation is following the non-lazy algorithm for OCaml by:
- * 
+ *
  * Christian Lindig. Strictly Pretty. March 6, 2000.
- * 
+ *
  * https://lindig.github.io/papers/strictly-pretty-2000.pdf
- * 
+ *
  * We further adopt the algorithm to TypeScript, by using
  * an immutable stack to simulate recursion.
  *
@@ -29,7 +29,7 @@ import { Stack } from 'immutable'
 /**
  * Layout a document. This is the end function that produces produces a string
  * for the best document layout.
- * 
+ *
  * @param maxWidth the maximum width
  * @param firstColumn the column to use as the starting position
  * @param doc the document to format
@@ -37,7 +37,10 @@ import { Stack } from 'immutable'
  */
 export const format = (maxWidth: number, firstColumn: number, doc: Doc): string => {
   const fits: FitsElem = {
-    indentText: [], indentLen: 0, mode: 'flat', doc: group(doc)
+    indentText: [],
+    indentLen: 0,
+    mode: 'flat',
+    doc: group(doc),
   }
   return formatInternal(maxWidth, firstColumn, fits).join('')
 }
@@ -47,22 +50,22 @@ export const format = (maxWidth: number, firstColumn: number, doc: Doc): string 
  * representation. Note that `length` and `toString().length` do not have to be
  * equal. For instance, this happens when the string representation contains
  * ANSI characters that encode text colors.
- * 
+ *
  * Note that strings, e.g., `"abc"`, implement the `StringLike` interface.
  */
 export interface StringLike {
   /**
    * The number of characters printed on the screen.
    */
-  length: number,
+  length: number
 
   /**
    * Get the string representation of the text to print, which may be longer
    * than `length`.
-   * 
+   *
    * @returns the string representation
    */
-  toString: () => string,
+  toString: () => string
 }
 
 /**
@@ -70,10 +73,10 @@ export interface StringLike {
  * This is input of the layout algorithm.
  */
 export type Doc =
-  | { kind: 'text', text: StringLike }
-  | { kind: 'line', linefeed: StringLike, space: StringLike }
-  | { kind: 'nest', indent: StringLike, child: Doc }
-  | { kind: 'group', child: Doc }
+  | { kind: 'text'; text: StringLike }
+  | { kind: 'line'; linefeed: StringLike; space: StringLike }
+  | { kind: 'nest'; indent: StringLike; child: Doc }
+  | { kind: 'group'; child: Doc }
   | Doc[]
 
 /**
@@ -83,7 +86,7 @@ export type Doc =
  */
 function isDocArray(d: Doc): d is Doc[] {
   return Array.isArray(d)
-}  
+}
 
 /**
  * Create a document that carries an indivisible piece of text
@@ -100,7 +103,7 @@ export const text = (text: StringLike): Doc => {
  * `decorator(s)` equals to the number of columns occupied by `s`.
  * For example, adding ANSI color does not affect the space, but it changes
  * string length.
- * 
+ *
  * @param decorator a function that decorates plain text
  * @param s the string to decorate
  * @returns a string-like object
@@ -108,19 +111,19 @@ export const text = (text: StringLike): Doc => {
 export const richtext = (decorator: (s: string) => string, s: string): Doc => {
   return text({
     length: s.length,
-    toString: () => decorator(s)
+    toString: () => decorator(s),
   })
 }
 
 /**
  * A convenience operator that wraps all strings with `text(...)` while keeping
  * all documents untouched.
- * 
+ *
  * @param ds an array of documents and strings
  * @returns an array of documents, in which all strings are wrapped with `text(...)`
  */
 export const textify = (ds: (Doc | string)[]): Doc[] => {
-  return ds.map(d => (typeof d === 'string') ? text(d) : d)
+  return ds.map(d => (typeof d === 'string' ? text(d) : d))
 }
 
 /**
@@ -172,7 +175,7 @@ export const group = (child: Doc): Doc => {
  */
 export const docJoin = (separator: Doc, docs: Doc[]): Doc => {
   const j = (l: Doc[], d: Doc): Doc[] => {
-    return (l.length === 0) ? [d] : l.concat([separator, d])
+    return l.length === 0 ? [d] : l.concat([separator, d])
   }
 
   return docs.reduce(j, [])
@@ -184,7 +187,7 @@ export const docJoin = (separator: Doc, docs: Doc[]): Doc => {
  * @returns the document `{doc}`
  */
 export const braces = (doc: Doc): Doc => {
-  return [ text('{'), doc, text('}') ]
+  return [text('{'), doc, text('}')]
 }
 
 /**
@@ -193,7 +196,7 @@ export const braces = (doc: Doc): Doc => {
  * @returns the document `(doc)`
  */
 export const parens = (doc: Doc): Doc => {
-  return [ text('('), doc, text(')') ]
+  return [text('('), doc, text(')')]
 }
 
 /**
@@ -202,24 +205,24 @@ export const parens = (doc: Doc): Doc => {
  * @returns the document `[doc]`
  */
 export const brackets = (doc: Doc): Doc => {
-  return [ text('['), doc, text(']') ]
+  return [text('['), doc, text(']')]
 }
 
 //-------------------- the implementation -------------------------------
 
 // an iteration element that is used in `fits` below
 type FitsElem = {
-  indentText: string[],
-  indentLen: number,
-  mode: 'flat' | 'break',
-  doc: Doc,
+  indentText: string[]
+  indentLen: number
+  mode: 'flat' | 'break'
+  doc: Doc
 }
 
 /**
  * Test whether documents fit into `width` columns.
  * We have to manually implement tail recursion via stack.
  * Otherwise, recursive calls may produce a stack overflow in JS.
- * 
+ *
  * @param width the number of columns to fit into
  * @param inputStack the elements to fit in, as a stack
  * @returns true if and only if `docs` fit into `w` columns
@@ -232,9 +235,11 @@ const fits = (width: number, inputStack: Stack<FitsElem>): boolean => {
     stack = stack.shift()
     if (isDocArray(elem.doc)) {
       // push the children on the stack with the same indentation and mode
-      stack = stack.unshiftAll(elem.doc.map(d => {
-        return { ...elem, doc: d }
-      }))
+      stack = stack.unshiftAll(
+        elem.doc.map(d => {
+          return { ...elem, doc: d }
+        })
+      )
     } else {
       switch (elem.doc.kind) {
         case 'text':
@@ -258,9 +263,9 @@ const fits = (width: number, inputStack: Stack<FitsElem>): boolean => {
           // increase the indentation level and check again (in the next iteration)
           stack = stack.unshift({
             ...elem,
-            indentText: elem.indentText.concat([ elem.doc.indent.toString() ]),
+            indentText: elem.indentText.concat([elem.doc.indent.toString()]),
             indentLen: elem.indentLen + elem.doc.indent.length,
-            doc: elem.doc.child
+            doc: elem.doc.child,
           })
           break
 
@@ -277,22 +282,21 @@ const fits = (width: number, inputStack: Stack<FitsElem>): boolean => {
   }
 
   return columnBudget >= 0
-}  
+}
 
 /**
  * A stack-based implementation of `format`. Since it is using FitsElem,
  * we do not expose this function to the user.
- * 
+ *
  * In the future, we should consider using generators, as this function
  * produces an array of strings in memory, whereas the documents could
  * be consumed by an output function directly.
- * 
+ *
  * @param maxWidth the intended width in columns
  * @param start the number of columns already consumed on the current line
  * @param elems the elements to format
  */
-const formatInternal =
-    (maxWidth: number, start: number, elem: FitsElem): string[] => {
+const formatInternal = (maxWidth: number, start: number, elem: FitsElem): string[] => {
   let columnBudget = maxWidth
   let consumedOnLine = start
   let output: string[] = []
@@ -301,9 +305,11 @@ const formatInternal =
     const elem = stack.first()!
     stack = stack.shift()
     if (isDocArray(elem.doc)) {
-      stack = stack.unshiftAll(elem.doc.map(d => {
-        return { ...elem, doc: d }
-      }))
+      stack = stack.unshiftAll(
+        elem.doc.map(d => {
+          return { ...elem, doc: d }
+        })
+      )
     } else {
       switch (elem.doc.kind) {
         case 'text':

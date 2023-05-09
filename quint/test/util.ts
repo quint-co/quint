@@ -1,6 +1,6 @@
-import { IRVisitor, walkModule } from "../src/IRVisitor"
-import { QuintDef, QuintEx, QuintInstance, QuintLambda, QuintModule, QuintTypeDef } from "../src/quintIr"
-import { QuintType } from "../src/quintTypes"
+import { IRVisitor, walkModule } from '../src/IRVisitor'
+import { QuintDef, QuintEx, QuintInstance, QuintLambda, QuintModule, QuintTypeDef } from '../src/quintIr'
+import { QuintType } from '../src/quintTypes'
 
 export function collectIds(module: QuintModule): bigint[] {
   const ids = new Set<bigint>()

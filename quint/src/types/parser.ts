@@ -35,14 +35,8 @@ export function parseType(typeString: string): Either<any[], QuintType> {
   const errorMessages: any[] = []
   // error listener to report lexical and syntax errors
   const errorListener: any = {
-    syntaxError: (_: any,
-      offendingSymbol: any,
-      line: number,
-      charPositionInLine: number,
-      msg: string) => {
-      const len = offendingSymbol
-        ? offendingSymbol.stopIndex - offendingSymbol.startIndex
-        : 0
+    syntaxError: (_: any, offendingSymbol: any, line: number, charPositionInLine: number, msg: string) => {
+      const len = offendingSymbol ? offendingSymbol.stopIndex - offendingSymbol.startIndex : 0
       const index = offendingSymbol ? offendingSymbol.startIndex : 0
       const start = { line: line - 1, col: charPositionInLine, index }
       const end = { line: line - 1, col: charPositionInLine + len, index: index + len }

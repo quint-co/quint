@@ -11,7 +11,7 @@
 import { Maybe, none } from '@sweet-monads/maybe'
 import { strict as assert } from 'assert'
 
-import { OpQualifier, QuintApp } from '../quintIr'
+import { QuintApp } from '../quintIr'
 import { EvalResult } from './runtime'
 import { verbosity } from './../verbosity'
 import { Rng } from './../rng'
@@ -23,21 +23,21 @@ import { Rng } from './../rng'
  */
 export interface ExecutionFrame {
   /**
-   * The operator that was applied in this frame. 
+   * The operator that was applied in this frame.
    */
-  app: QuintApp,
+  app: QuintApp
   /**
    * The actual runtime values that were used in the call.
    */
-  args: EvalResult[],
+  args: EvalResult[]
   /**
    * An optional result of the execution.
    */
-  result: Maybe<EvalResult>,
+  result: Maybe<EvalResult>
   /**
    * The frames of the operators that were called by this operator.
-   */ 
-  subframes: ExecutionFrame[],
+   */
+  subframes: ExecutionFrame[]
 }
 
 /**
@@ -75,8 +75,7 @@ export interface ExecutionListener {
    * @param args the actual arguments obtained in evaluation
    * @param result optional result of the evaluation
    */
-  onUserOperatorReturn(app: QuintApp,
-                       args: EvalResult[], result: Maybe<EvalResult>): void
+  onUserOperatorReturn(app: QuintApp, args: EvalResult[], result: Maybe<EvalResult>): void
 
   /**
    * This callback is called *before* one of the arguments of `any {...}`
@@ -132,8 +131,7 @@ export interface ExecutionListener {
  */
 export const noExecutionListener: ExecutionListener = {
   onUserOperatorCall: (_app: QuintApp) => {},
-  onUserOperatorReturn: (_app: QuintApp,
-                         _args: EvalResult[], _result: Maybe<EvalResult>) => {},
+  onUserOperatorReturn: (_app: QuintApp, _args: EvalResult[], _result: Maybe<EvalResult>) => {},
   onAnyOptionCall: (_anyExpr: QuintApp, _position: number) => {},
   onAnyOptionReturn: (_anyExpr: QuintApp, _position: number) => {},
   onAnyReturn: (_noptions: number, _choice: number) => {},
@@ -164,7 +162,7 @@ export const newTraceRecorder = (verbosityLevel: number, rng: Rng) => {
   // whenever a run is entered, we store its seed here
   let runSeed = bestTraceSeed
   // during simulation, a trace is built here
-  let frameStack: ExecutionFrame[] = [ bestTrace ]
+  let frameStack: ExecutionFrame[] = [bestTrace]
 
   return {
     getBestTrace: (): ExecutionFrame => {
@@ -184,13 +182,12 @@ export const newTraceRecorder = (verbosityLevel: number, rng: Rng) => {
           frameStack[frameStack.length - 1].subframes.push(newFrame)
           frameStack.push(newFrame)
         } else {
-          frameStack = [ newFrame ]
+          frameStack = [newFrame]
         }
       }
     },
 
-    onUserOperatorReturn: (app: QuintApp,
-                           args: EvalResult[], result: Maybe<EvalResult>) => {
+    onUserOperatorReturn: (app: QuintApp, args: EvalResult[], result: Maybe<EvalResult>) => {
       if (verbosity.hasUserOpTracking(verbosityLevel)) {
         const top = frameStack.pop()
         if (top) {
@@ -218,7 +215,7 @@ export const newTraceRecorder = (verbosityLevel: number, rng: Rng) => {
           frameStack[frameStack.length - 1].subframes.push(newFrame)
           frameStack.push(newFrame)
         } else {
-          frameStack = [ newFrame ]
+          frameStack = [newFrame]
         }
       }
     },
@@ -235,8 +232,7 @@ export const newTraceRecorder = (verbosityLevel: number, rng: Rng) => {
         const top = frameStack[frameStack.length - 1]
         const start = top.subframes.length - noptions
         // leave only the chosen frame as well as the older ones
-        top.subframes =
-          top.subframes.filter((_, i) => i < start || i == start + choice)
+        top.subframes = top.subframes.filter((_, i) => i < start || i == start + choice)
         if (choice >= 0) {
           // The top frame contains the frames of the chosen option that are
           // wrapped in anyExpr.args[position], see onAnyOptionCall.
@@ -251,7 +247,7 @@ export const newTraceRecorder = (verbosityLevel: number, rng: Rng) => {
 
     onRunCall: () => {
       // reset the stack
-      frameStack = [ bottomFrame() ]
+      frameStack = [bottomFrame()]
       runSeed = rng.getState()
     },
 
@@ -264,12 +260,11 @@ export const newTraceRecorder = (verbosityLevel: number, rng: Rng) => {
       let failureOrViolation = true
       if (outcome.isJust()) {
         const r = outcome.value.toQuintEx({ nextId: () => 0n })
-        failureOrViolation = (r.kind === 'bool') && !r.value
+        failureOrViolation = r.kind === 'bool' && !r.value
       }
 
       if (failureOrViolation) {
-        if (bestTrace.args.length === 0
-            || bestTrace.args.length >= bottom.args.length) {
+        if (bestTrace.args.length === 0 || bestTrace.args.length >= bottom.args.length) {
           bestTrace = bottom
           bestTraceSeed = runSeed
         }

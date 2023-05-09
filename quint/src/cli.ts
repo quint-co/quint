@@ -21,7 +21,7 @@ import {
   runSimulator,
   runTests,
   typecheck,
-  verifySpec
+  verifySpec,
 } from './cliCommands'
 
 import { verbosity } from './verbosity'
@@ -58,10 +58,7 @@ const parseCmd = {
       desc: 'name of the source map',
       type: 'string',
     }),
-  handler: async (args: any) =>
-    load(args)
-      .then(chainCmd(parse))
-      .then(outputResult),
+  handler: async (args: any) => load(args).then(chainCmd(parse)).then(outputResult),
 }
 
 // construct typecheck commands with yargs
@@ -69,11 +66,7 @@ const typecheckCmd = {
   command: 'typecheck <input>',
   desc: 'check types and effects of a Quint specification',
   builder: defaultOpts,
-  handler: (args: any) =>
-    load(args)
-      .then(chainCmd(parse))
-      .then(chainCmd(typecheck))
-      .then(outputResult),
+  handler: (args: any) => load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(outputResult),
 }
 
 // construct repl commands with yargs
@@ -83,14 +76,12 @@ const replCmd = {
   builder: (yargs: any) =>
     yargs
       .option('require', {
-        desc:
-          'filename[::module]. Preload the file and, optionally, import the module',
+        desc: 'filename[::module]. Preload the file and, optionally, import the module',
         alias: 'r',
         type: 'string',
       })
       .option('quiet', {
-        desc:
-          'Disable banners and prompts, to simplify scripting (alias for --verbosity=0)',
+        desc: 'Disable banners and prompts, to simplify scripting (alias for --verbosity=0)',
         alias: 'q',
         type: 'boolean',
       })
@@ -114,8 +105,7 @@ const testCmd = {
         type: 'string',
       })
       .option('max-samples', {
-        desc:
-          'the maximum number of successful runs to try for every randomized test',
+        desc: 'the maximum number of successful runs to try for every randomized test',
         type: 'number',
       })
       .default('max-samples', 10000)
@@ -140,11 +130,7 @@ const testCmd = {
         type: 'string',
       }),
   handler: (args: any) =>
-    load(args)
-      .then(chainCmd(parse))
-      .then(chainCmd(typecheck))
-      .then(chainCmd(runTests))
-      .then(outputResult),
+    load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(runTests)).then(outputResult),
 }
 
 // construct run commands with yargs
@@ -158,8 +144,7 @@ const runCmd = {
         type: 'string',
       })
       .option('out-itf', {
-        desc:
-          'output the trace in the Informal Trace Format to file (supresses all console output)',
+        desc: 'output the trace in the Informal Trace Format to file (supresses all console output)',
         type: 'string',
       })
       .option('max-samples', {
@@ -204,11 +189,7 @@ const runCmd = {
   //        type: 'number',
   //      })
   handler: (args: any) =>
-    load(args)
-      .then(chainCmd(parse))
-      .then(chainCmd(typecheck))
-      .then(chainCmd(runSimulator))
-      .then(outputResult),
+    load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(runSimulator)).then(outputResult),
 }
 
 // construct verify commands with yargs
@@ -222,8 +203,7 @@ const verifyCmd = {
         type: 'string',
       })
       .option('out-itf', {
-        desc:
-          'output the trace in the Informal Trace Format to file (supresses all console output)',
+        desc: 'output the trace in the Informal Trace Format to file (supresses all console output)',
         type: 'string',
       })
       .option('max-steps', {
@@ -246,8 +226,7 @@ const verifyCmd = {
         type: 'string',
       })
       .option('apalache-config', {
-        desc:
-          'Filename of the additional Apalache configuration (in the HOCON format, a superset of JSON)',
+        desc: 'Filename of the additional Apalache configuration (in the HOCON format, a superset of JSON)',
         type: 'string',
       }),
   // Timeouts are postponed for:
@@ -258,11 +237,7 @@ const verifyCmd = {
   //        type: 'number',
   //      })
   handler: (args: any) =>
-    load(args)
-      .then(chainCmd(parse))
-      .then(chainCmd(typecheck))
-      .then(chainCmd(verifySpec))
-      .then(outputResult),
+    load(args).then(chainCmd(parse)).then(chainCmd(typecheck)).then(chainCmd(verifySpec)).then(outputResult),
 }
 
 // construct documenting commands with yargs
@@ -270,10 +245,7 @@ const docsCmd = {
   command: 'docs <input>',
   desc: 'produces documentation from docstrings in a Quint specification',
   builder: defaultOpts,
-  handler: (args: any) =>
-    load(args)
-      .then(chainCmd(docs))
-      .then(outputResult),
+  handler: (args: any) => load(args).then(chainCmd(docs)).then(outputResult),
 }
 
 async function main() {

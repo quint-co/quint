@@ -58,7 +58,7 @@ export interface SourceResolver {
   /**
    * Load text from the source pointed by the path. The path must be relative to the
    * basepath.
-   * 
+   *
    * @param lookupPath a source lookup path created via `mkLookupPath`.
    * @returns either `left(errorMessage)` if the source cannot be loaded, or `right(text)`.
    */
@@ -81,8 +81,7 @@ export interface SourceResolver {
  * @returns A filesystem resolver. For each path, it returns
  *          either `left(errorMessage)`, or `right(fileContents)`.
  */
-export const fileSourceResolver =
-    (replacer: (path: string) => string = (path) => path): SourceResolver => {
+export const fileSourceResolver = (replacer: (path: string) => string = path => path): SourceResolver => {
   return {
     lookupPath: (basepath: string, importPath: string) => {
       return {
@@ -103,7 +102,7 @@ export const fileSourceResolver =
 
     stempath: (lookupPath: SourceLookupPath): string => {
       return dirname(lookupPath.normalizedPath)
-    }
+    },
   }
 }
 
@@ -112,7 +111,7 @@ export const fileSourceResolver =
  * useful for tests.
  * @param sources a map of paths mapped to text
  * @returns a static resolver that uses the map to read the contents.
-*/
+ */
 export const stringSourceResolver = (sources: Map<string, string>): SourceResolver => {
   return {
     lookupPath: (stempath: string, importPath: string) => {
@@ -129,13 +128,11 @@ export const stringSourceResolver = (sources: Map<string, string>): SourceResolv
       // If we have to decouple this resolver from nodejs in the future,
       // we would have to write our own version of join.
       const contents = sources.get(lookupPath.normalizedPath)
-      return contents
-        ? right(contents)
-        : left(`Source not found: '${lookupPath.normalizedPath}'`)
+      return contents ? right(contents) : left(`Source not found: '${lookupPath.normalizedPath}'`)
     },
 
     stempath: (lookupPath: SourceLookupPath): string => {
       return dirname(lookupPath.normalizedPath)
-    }
+    },
   }
 }

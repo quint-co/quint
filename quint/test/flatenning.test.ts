@@ -33,10 +33,13 @@ describe('flatten', () => {
     // This is the main module containing `defs`. It can import or instance module A.
     const module = result.value.modules[1]
     const table = collectDefinitions(module)
-    const [errors, tableWithImports] = resolveImports(module, new Map([
-      ['A', tableA],
-      ['wrapper', table],
-    ]))
+    const [errors, tableWithImports] = resolveImports(
+      module,
+      new Map([
+        ['A', tableA],
+        ['wrapper', table],
+      ])
+    )
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
 
@@ -48,13 +51,23 @@ describe('flatten', () => {
     const originalIds = [...result.value.sourceMap.keys()]
     const typesMap = new Map(originalIds.map(i => [i, toScheme({ kind: 'int' })]))
 
-    const flattenedModule = flatten(module, lookupTable, new Map([
-      ['A', moduleA],
-      ['wrapper', module],
-    ]), idGenerator, result.value.sourceMap, typesMap)
+    const flattenedModule = flatten(
+      module,
+      lookupTable,
+      new Map([
+        ['A', moduleA],
+        ['wrapper', module],
+      ]),
+      idGenerator,
+      result.value.sourceMap,
+      typesMap
+    )
 
     it('flattens instances', () => {
-      assert.sameDeepMembers(flattenedModule.defs.map(def => definitionToString(def)), expectedDefs)
+      assert.sameDeepMembers(
+        flattenedModule.defs.map(def => definitionToString(def)),
+        expectedDefs
+      )
     })
 
     it('does not repeat ids', () => {
@@ -69,24 +82,24 @@ describe('flatten', () => {
 
     it('adds new entries to the source map', () => {
       const sourceMap = result.value.sourceMap
-      assert.includeDeepMembers([...sourceMap.keys()], flattenedModule.defs.map(def => def.id))
+      assert.includeDeepMembers(
+        [...sourceMap.keys()],
+        flattenedModule.defs.map(def => def.id)
+      )
     })
 
     it('adds new entries to the types map', () => {
-      assert.includeDeepMembers([...typesMap.keys()], flattenedModule.defs.map(def => def.id))
+      assert.includeDeepMembers(
+        [...typesMap.keys()],
+        flattenedModule.defs.map(def => def.id)
+      )
     })
   }
 
   describe('multiple instances', () => {
-    const baseDefs = [
-      'const N: int',
-      'val x = N + 1',
-    ]
+    const baseDefs = ['const N: int', 'val x = N + 1']
 
-    const defs = [
-      'import A(N = 1) as A1',
-      'import A(N = 2) as A2',
-    ]
+    const defs = ['import A(N = 1) as A1', 'import A(N = 2) as A2']
 
     const expectedDefs = [
       'pure val A1::N: int = 1',
@@ -107,12 +120,9 @@ describe('flatten', () => {
       'assume T = N > 0',
       'def lam = val b = 1 { a => b + a }',
       'def lam2 = val b = 1 { a => b + a }',
-
     ]
 
-    const defs = [
-      'import A(N = 1) as A1',
-    ]
+    const defs = ['import A(N = 1) as A1']
 
     const expectedDefs = [
       'pure val A1::N: int = 1',
@@ -128,64 +138,39 @@ describe('flatten', () => {
   })
 
   describe('imports', () => {
-    const baseDefs = [
-      'val f(x) = x + 1',
-    ]
+    const baseDefs = ['val f(x) = x + 1']
 
-    const defs = [
-      'import A.*',
-    ]
+    const defs = ['import A.*']
 
-    const expectedDefs = [
-      'val f = (x => iadd(x, 1))',
-    ]
+    const expectedDefs = ['val f = (x => iadd(x, 1))']
 
     assertFlatennedDefs(baseDefs, defs, expectedDefs)
   })
 
   describe('export with previous import', () => {
-    const baseDefs = [
-      'val f(x) = x + 1',
-    ]
+    const baseDefs = ['val f(x) = x + 1']
 
-    const defs = [
-      'import A.*',
-      'export A.*',
-    ]
+    const defs = ['import A.*', 'export A.*']
 
-    const expectedDefs = [
-      'val f = (x => iadd(x, 1))',
-    ]
+    const expectedDefs = ['val f = (x => iadd(x, 1))']
 
     assertFlatennedDefs(baseDefs, defs, expectedDefs)
   })
 
   describe('export without previous import', () => {
-    const baseDefs = [
-      'val f(x) = x + 1',
-    ]
+    const baseDefs = ['val f(x) = x + 1']
 
-    const defs = [
-      'export A.*',
-    ]
+    const defs = ['export A.*']
 
-    const expectedDefs = [
-      'val f = (x => iadd(x, 1))',
-    ]
+    const expectedDefs = ['val f = (x => iadd(x, 1))']
 
     assertFlatennedDefs(baseDefs, defs, expectedDefs)
   })
 
   describe('export instance', () => {
-    const baseDefs = [
-      'const N: int',
-      'val x = N + 1',
-    ]
+    const baseDefs = ['const N: int', 'val x = N + 1']
 
-    const defs = [
-      'import A(N = 1) as A1',
-      'export A1.*',
-    ]
+    const defs = ['import A(N = 1) as A1', 'export A1.*']
 
     const expectedDefs = [
       // Namespaced defs, from the instance statement
@@ -200,16 +185,9 @@ describe('flatten', () => {
   })
 
   describe('export instance with qualifier', () => {
-    const baseDefs = [
-      'const N: int',
-      'val x = N + 1',
-    ]
+    const baseDefs = ['const N: int', 'val x = N + 1']
 
-    const defs = [
-      'val myN = 1',
-      'import A(N = myN) as A1',
-      'export A1 as B',
-    ]
+    const defs = ['val myN = 1', 'import A(N = myN) as A1', 'export A1 as B']
 
     const expectedDefs = [
       'val myN = 1',

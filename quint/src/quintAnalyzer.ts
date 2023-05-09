@@ -12,22 +12,22 @@
  * @module
  */
 
-import { LookupTable } from "./lookupTable"
-import { OpQualifier, QuintModule } from "./quintIr"
-import { TypeScheme } from "./types/base"
-import { TypeInferrer } from "./types/inferrer"
-import { EffectScheme } from "./effects/base"
-import { EffectInferrer } from "./effects/inferrer"
-import { ModeChecker } from "./effects/modeChecker"
-import { QuintError } from "./quintError"
-import { errorTreeToString } from "./errorTree"
-import { MultipleUpdatesChecker } from "./effects/MultipleUpdatesChecker"
+import { LookupTable } from './lookupTable'
+import { OpQualifier, QuintModule } from './quintIr'
+import { TypeScheme } from './types/base'
+import { TypeInferrer } from './types/inferrer'
+import { EffectScheme } from './effects/base'
+import { EffectInferrer } from './effects/inferrer'
+import { ModeChecker } from './effects/modeChecker'
+import { QuintError } from './quintError'
+import { errorTreeToString } from './errorTree'
+import { MultipleUpdatesChecker } from './effects/MultipleUpdatesChecker'
 
 /* Products from static analysis */
 export type AnalyzisOutput = {
-  types: Map<bigint, TypeScheme>,
-  effects: Map<bigint, EffectScheme>,
-  modes: Map<bigint, OpQualifier>,
+  types: Map<bigint, TypeScheme>
+  effects: Map<bigint, EffectScheme>
+  modes: Map<bigint, OpQualifier>
 }
 
 /* A tuple with a list of errors and the analysis output */
@@ -67,9 +67,11 @@ export class QuintAnalyzer {
     const errorTrees = [...typeErrMap, ...effectErrMap]
 
     // TODO: Type and effec checking should return QuintErrors instead of error trees
-    this.errors.push(...errorTrees.map(([id, err]): [bigint, QuintError] => {
-      return [id, { code: 'QNT000', message: errorTreeToString(err), data: { trace: err } }]
-    }))
+    this.errors.push(
+      ...errorTrees.map(([id, err]): [bigint, QuintError] => {
+        return [id, { code: 'QNT000', message: errorTreeToString(err), data: { trace: err } }]
+      })
+    )
 
     this.errors.push(...modeErrMap.entries(), ...updatesErrMap.entries())
 

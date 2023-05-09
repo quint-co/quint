@@ -3,7 +3,12 @@ import { assert } from 'chai'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import JSONbig from 'json-bigint'
-import { compactSourceMap, parsePhase1fromText, parsePhase2sourceResolution, parsePhase3importAndNameResolution } from '../src/quintParserFrontend'
+import {
+  compactSourceMap,
+  parsePhase1fromText,
+  parsePhase2sourceResolution,
+  parsePhase3importAndNameResolution,
+} from '../src/quintParserFrontend'
 import { lf } from 'eol'
 import { right } from '@sweet-monads/either'
 import { newIdGenerator } from '../src/idGenerator'
@@ -34,9 +39,9 @@ function parseAndCompare(artifact: string): void {
     return path.replace(basepath, 'mocked_path/testFixture')
   })
   const mainPath = resolver.lookupPath(basepath, `${artifact}.qnt`)
-  const phase1Result =
-    parsePhase1fromText(gen, readQuint(artifact), mainPath.toSourceName())
-    .chain(res => parsePhase2sourceResolution(gen, resolver, mainPath, res))
+  const phase1Result = parsePhase1fromText(gen, readQuint(artifact), mainPath.toSourceName()).chain(res =>
+    parsePhase2sourceResolution(gen, resolver, mainPath, res)
+  )
   // read the expected result as JSON
   const expected = readJson(artifact)
   // We're not interested in testing the contens of the table here
@@ -45,12 +50,13 @@ function parseAndCompare(artifact: string): void {
 
   if (phase1Result.isLeft()) {
     // An error occurred at phase 1, check if it is the expected result
-    phase1Result.mapLeft(err =>
-      outputToCompare = {
-        stage: 'parsing',
-        errors: err,
-        warnings: [],
-      }
+    phase1Result.mapLeft(
+      err =>
+        (outputToCompare = {
+          stage: 'parsing',
+          errors: err,
+          warnings: [],
+        })
     )
   } else if (phase1Result.isRight()) {
     const { modules, sourceMap } = phase1Result.value
@@ -61,19 +67,19 @@ function parseAndCompare(artifact: string): void {
     const expectedSourceMap = readJson(`${artifact}.map`)
     const sourceMapResult = JSONbig.parse(JSONbig.stringify(compactSourceMap(sourceMap)))
 
-    assert.deepEqual(sourceMapResult,
-      expectedSourceMap, 'expected source maps to be equal')
+    assert.deepEqual(sourceMapResult, expectedSourceMap, 'expected source maps to be equal')
 
     const phase3Result = parsePhase3importAndNameResolution(phase1Result.value)
 
     if (phase3Result.isLeft()) {
       // An error occurred at phase 2, check if it is the expected result
-      phase3Result.mapLeft(err =>
-        outputToCompare = {
-          stage: 'parsing',
-          errors: err,
-          warnings: [],
-        }
+      phase3Result.mapLeft(
+        err =>
+          (outputToCompare = {
+            stage: 'parsing',
+            errors: err,
+            warnings: [],
+          })
       )
     } else {
       // Both phases succeeded, check that the module is correclty outputed
@@ -84,25 +90,29 @@ function parseAndCompare(artifact: string): void {
   // run it through stringify-parse to obtain the same json (due to bigints)
   const reparsedResult = JSONbig.parse(JSONbig.stringify(outputToCompare))
   // compare the JSON trees
-  assert.deepEqual(reparsedResult,
-    expected, 'expected --out data to be equal')
+  assert.deepEqual(reparsedResult, expected, 'expected --out data to be equal')
 }
 
 describe('parsing', () => {
   it('parses empty module', () => {
-    const result =
-      parsePhase1fromText(newIdGenerator(),
-                  readQuint('_0001emptyModule'),
-                  'mocked_path/testFixture/_0001emptyModule.qnt')
+    const result = parsePhase1fromText(
+      newIdGenerator(),
+      readQuint('_0001emptyModule'),
+      'mocked_path/testFixture/_0001emptyModule.qnt'
+    )
     const module = { id: 1n, name: 'empty', defs: [] }
-    assert.deepEqual(result.map(r => r.modules[0]), right(module))
+    assert.deepEqual(
+      result.map(r => r.modules[0]),
+      right(module)
+    )
   })
 
   it('parses SuperSpec', () => {
-    const result =
-      parsePhase1fromText(newIdGenerator(),
-                  readQuint('SuperSpec'),
-                  'mocked_path/testFixture/SuperSpec.qnt')
+    const result = parsePhase1fromText(
+      newIdGenerator(),
+      readQuint('SuperSpec'),
+      'mocked_path/testFixture/SuperSpec.qnt'
+    )
     assert(result.isRight())
   })
 

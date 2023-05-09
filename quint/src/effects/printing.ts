@@ -33,7 +33,8 @@ export function effectToString(e: Effect): string {
         return 'Pure'
       }
     }
-    case 'variable': return e.name
+    case 'variable':
+      return e.name
     case 'arrow': {
       const params = e.params.map(effectToString)
       const result = effectToString(e.result)
@@ -76,9 +77,12 @@ export function effectSchemeToString(e: EffectScheme): string {
 
 export function effectComponentToString(c: EffectComponent): string {
   switch (c.kind) {
-    case 'read': return `Read[${entityToString(c.entity)}]`
-    case 'update': return `Update[${entityToString(c.entity)}]`
-    case 'temporal': return `Temporal[${entityToString(c.entity)}]`
+    case 'read':
+      return `Read[${entityToString(c.entity)}]`
+    case 'update':
+      return `Update[${entityToString(c.entity)}]`
+    case 'temporal':
+      return `Temporal[${entityToString(c.entity)}]`
   }
 }
 /**
@@ -90,9 +94,12 @@ export function effectComponentToString(c: EffectComponent): string {
  */
 export function entityToString(v: Entity): string {
   switch (v.kind) {
-    case 'concrete': return v.stateVariables.map(v => `'${v.name}'`).join(', ')
-    case 'variable': return v.name
-    case 'union': return v.entities.map(entityToString).join(', ')
+    case 'concrete':
+      return v.stateVariables.map(v => `'${v.name}'`).join(', ')
+    case 'variable':
+      return v.name
+    case 'union':
+      return v.entities.map(entityToString).join(', ')
   }
 }
 
@@ -106,8 +113,10 @@ export function entityToString(v: Entity): string {
 export function substitutionsToString(subs: Substitutions): string {
   const subsString = subs.map(s => {
     switch (s.kind) {
-      case 'effect': return `${s.name} |-> ${effectToString(s.value)}`
-      case 'entity': return `${s.name} |-> ${entityToString(s.value)}`
+      case 'effect':
+        return `${s.name} |-> ${effectToString(s.value)}`
+      case 'entity':
+        return `${s.name} |-> ${entityToString(s.value)}`
     }
   })
 

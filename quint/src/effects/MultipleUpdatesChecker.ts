@@ -12,11 +12,10 @@
  * @module
  */
 
-
-import { QuintError } from "../quintError";
-import { ConcreteEffect, EffectScheme, Entity, stateVariables } from "./base";
-import { EffectVisitor, walkEffect } from "./EffectVisitor";
-import { groupBy, pickBy, values } from "lodash";
+import { QuintError } from '../quintError'
+import { ConcreteEffect, EffectScheme, Entity, stateVariables } from './base'
+import { EffectVisitor, walkEffect } from './EffectVisitor'
+import { groupBy, pickBy, values } from 'lodash'
 
 /**
  * Checks effects for multiple updates of the same state variable.
@@ -38,15 +37,20 @@ export class MultipleUpdatesChecker implements EffectVisitor {
 
   exitConcrete(e: ConcreteEffect) {
     const updateEntities = e.components.reduce((updates: Entity[], c) => {
-      if (c.kind === "update") {
-        updates.push(c.entity);
+      if (c.kind === 'update') {
+        updates.push(c.entity)
       }
-      return updates;
+      return updates
     }, [])
 
     const vars = stateVariables({ kind: 'union', entities: updateEntities })
 
-    const repeated = values(pickBy(groupBy(vars, v => v.name), x => x.length > 1)).flat()
+    const repeated = values(
+      pickBy(
+        groupBy(vars, v => v.name),
+        x => x.length > 1
+      )
+    ).flat()
 
     if (repeated.length > 0) {
       repeated.forEach(v => {

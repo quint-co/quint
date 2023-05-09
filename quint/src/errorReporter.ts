@@ -29,10 +29,12 @@ import { ErrorMessage } from './quintParserFrontend'
  *
  * @returns a formatted string with error information
  * */
-export function formatError(text: string,
-                            finder: any, message: ErrorMessage,
-                            lineOffset: Maybe<number> = just(1)):
-  string {
+export function formatError(
+  text: string,
+  finder: any,
+  message: ErrorMessage,
+  lineOffset: Maybe<number> = just(1)
+): string {
   if (message.locs.length === 0) {
     return `error: ${message.explanation}`
   }
@@ -40,10 +42,9 @@ export function formatError(text: string,
   return message.locs.reduce((output, loc) => {
     // If lineOffset is a number, print the source location.
     // If lineOfsset is undefined, omit the source location (e.g., in REPL).
-    const locString =
-      lineOffset.isJust()
-        ? `${loc.source}:${loc.start.line + lineOffset.value}:${loc.start.col + 1} - `
-        : ''
+    const locString = lineOffset.isJust()
+      ? `${loc.source}:${loc.start.line + lineOffset.value}:${loc.start.col + 1} - `
+      : ''
     output += `${locString}error: ${message.explanation}\n`
 
     const endLine = loc.end ? loc.end.line : loc.start.line
@@ -63,10 +64,7 @@ export function formatError(text: string,
   }, '')
 }
 
-function formatLine(lineIndex: Maybe<number>,
-                    startCol: number,
-                    endCol: number,
-                    line: string): string {
+function formatLine(lineIndex: Maybe<number>, startCol: number, endCol: number, line: string): string {
   let output = ''
   const lineNumberIndicator = lineIndex.isJust() ? `${lineIndex.value}: ` : ''
   output += `${lineNumberIndicator}${line}\n`

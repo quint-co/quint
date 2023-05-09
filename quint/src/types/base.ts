@@ -5,14 +5,14 @@ import { QuintType } from '../quintTypes'
  * constraints or an empty constraint
  */
 export type Constraint =
-  | { kind: 'eq', types: [QuintType, QuintType], sourceId: bigint }
-  | { kind: 'conjunction', constraints: Constraint[], sourceId: bigint }
+  | { kind: 'eq'; types: [QuintType, QuintType]; sourceId: bigint }
+  | { kind: 'conjunction'; constraints: Constraint[]; sourceId: bigint }
   | { kind: 'empty' }
 
 export interface TypeScheme {
-  type: QuintType,
-  typeVariables: Set<string>,
-  rowVariables: Set<string>,
+  type: QuintType
+  typeVariables: Set<string>
+  rowVariables: Set<string>
 }
 
 export type Signature = (_arity: number) => TypeScheme

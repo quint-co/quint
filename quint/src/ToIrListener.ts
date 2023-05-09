@@ -2,9 +2,7 @@ import * as p from './generated/QuintParser'
 import { IdGenerator } from './idGenerator'
 import { ParserRuleContext } from 'antlr4ts/ParserRuleContext'
 import { QuintListener } from './generated/QuintListener'
-import {
-  OpQualifier, QuintDef, QuintEx, QuintLambdaParameter, QuintModule, QuintName, QuintOpDef
-} from './quintIr'
+import { OpQualifier, QuintDef, QuintEx, QuintLambdaParameter, QuintModule, QuintName, QuintOpDef } from './quintIr'
 import { QuintType, Row } from './quintTypes'
 import { strict as assert } from 'assert'
 import { ErrorMessage, Loc } from './quintParserFrontend'
@@ -140,10 +138,18 @@ export class ToIrListener implements QuintListener {
     this.sourceMap.set(id2, this.loc(ctx))
     if (rhs && nested) {
       const def = {
-        id: id2, kind: 'def', name, qualifier: 'nondet', expr: rhs, typeTag,
+        id: id2,
+        kind: 'def',
+        name,
+        qualifier: 'nondet',
+        expr: rhs,
+        typeTag,
       }
       const letExpr: QuintEx = {
-        id: id1, kind: 'let', opdef: def as QuintOpDef, expr: nested,
+        id: id1,
+        kind: 'let',
+        opdef: def as QuintOpDef,
+        expr: nested,
       }
       this.exprStack.push(letExpr)
     }
@@ -166,9 +172,15 @@ export class ToIrListener implements QuintListener {
     if (ctx.qualifier()) {
       const qtext = ctx.qualifier().text
       // case distinction to make the type checker happy
-      if (qtext === 'pureval' || qtext === 'puredef' ||
-        qtext === 'val' || qtext === 'def' ||
-        qtext === 'action' || qtext === 'run' || qtext === 'temporal') {
+      if (
+        qtext === 'pureval' ||
+        qtext === 'puredef' ||
+        qtext === 'val' ||
+        qtext === 'def' ||
+        qtext === 'action' ||
+        qtext === 'run' ||
+        qtext === 'temporal'
+      ) {
         qualifier = qtext
       } else {
         const ls = this.locStr(ctx)
@@ -207,8 +219,7 @@ export class ToIrListener implements QuintListener {
     } else {
       const ls = this.locStr(ctx)
       // istanbul ignore next
-      assert(false,
-        `exitOperDef: ${ls}: undefined expr or params in exitOperDef`)
+      assert(false, `exitOperDef: ${ls}: undefined expr or params in exitOperDef`)
     }
   }
 
@@ -305,8 +316,7 @@ export class ToIrListener implements QuintListener {
     const typeToAlias = this.popType()
 
     if (name[0].match('[a-z]')) {
-      const msg =
-        'QNT007: type names must start with an uppercase letter'
+      const msg = 'QNT007: type names must start with an uppercase letter'
       this.pushError(ctx, msg)
     }
 
@@ -366,7 +376,8 @@ export class ToIrListener implements QuintListener {
 
     const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
-    if (ident) { // identifier
+    if (ident) {
+      // identifier
       this.exprStack.push({
         id,
         kind: 'name',
@@ -374,7 +385,8 @@ export class ToIrListener implements QuintListener {
       })
     }
     const intNode = ctx.INT()
-    if (intNode) { // integer literal
+    if (intNode) {
+      // integer literal
       this.exprStack.push({
         id,
         kind: 'int',
@@ -382,15 +394,17 @@ export class ToIrListener implements QuintListener {
       })
     }
     const boolNode = ctx.BOOL()
-    if (boolNode) { // Boolean literal
+    if (boolNode) {
+      // Boolean literal
       this.exprStack.push({
         id,
         kind: 'bool',
-        value: (boolNode.text === 'true'),
+        value: boolNode.text === 'true',
       })
     }
     const strNode = ctx.STRING()
-    if (strNode) { // string, remove the quotes!
+    if (strNode) {
+      // string, remove the quotes!
       this.exprStack.push({
         id,
         kind: 'str',
@@ -439,14 +453,12 @@ export class ToIrListener implements QuintListener {
       let args: QuintEx[] = []
       if (wrappedArgs) {
         // n >= 2: there is at least one argument in parentheses
-        if (wrappedArgs.kind === 'app' &&
-          wrappedArgs.opcode === 'wrappedArgs') {
+        if (wrappedArgs.kind === 'app' && wrappedArgs.opcode === 'wrappedArgs') {
           args = [callee!].concat(wrappedArgs.args)
         } else {
           const ls = this.locStr(ctx)
           // istanbul ignore next
-          assert(false,
-            `exitDotCall: ${ls} expected wrappedArgs, found: ${wrappedArgs.kind}`)
+          assert(false, `exitDotCall: ${ls} expected wrappedArgs, found: ${wrappedArgs.kind}`)
         }
       } else {
         // no arguments, as in e.g., s.head()
@@ -471,10 +483,15 @@ export class ToIrListener implements QuintListener {
         this.pushApplication(ctx, 'item', [callee!, idx])
       } else {
         // accessing a record field or a name in a module
-        if (name === 'in' || name === 'and' || name === 'or' ||
-          name === 'iff' || name === 'implies' || name === 'subseteq') {
-          const msg =
-            'QNT006: no keywords allowed as record fields in record.field'
+        if (
+          name === 'in' ||
+          name === 'and' ||
+          name === 'or' ||
+          name === 'iff' ||
+          name === 'implies' ||
+          name === 'subseteq'
+        ) {
+          const msg = 'QNT006: no keywords allowed as record fields in record.field'
           this.pushError(ctx, msg)
         }
 
@@ -576,7 +593,7 @@ export class ToIrListener implements QuintListener {
 
   // record constructor, e.g., { name: "igor", year: 2021 }
   exitRecord(ctx: p.RecordContext) {
-    const names = ctx.IDENTIFIER().map((n) => n.text)
+    const names = ctx.IDENTIFIER().map(n => n.text)
     const elems: QuintEx[] = popMany(this.exprStack, ctx.expr().length)
 
     const namesAndValues = zipWith(names, elems, (name, elem) => {
@@ -591,7 +608,7 @@ export class ToIrListener implements QuintListener {
 
   // '+' or '-'
   exitPlusMinus(ctx: p.PlusMinusContext) {
-    const opcode = (ctx.PLUS() !== undefined) ? 'iadd' : 'isub'
+    const opcode = ctx.PLUS() !== undefined ? 'iadd' : 'isub'
     const args = popMany(this.exprStack, 2)
     this.pushApplication(ctx, opcode, args)
   }
@@ -602,9 +619,15 @@ export class ToIrListener implements QuintListener {
     if (op) {
       let opcode = ''
       switch (op.type) {
-        case p.QuintParser.MUL: opcode = 'imul'; break
-        case p.QuintParser.DIV: opcode = 'idiv'; break
-        case p.QuintParser.MOD: opcode = 'imod'; break
+        case p.QuintParser.MUL:
+          opcode = 'imul'
+          break
+        case p.QuintParser.DIV:
+          opcode = 'idiv'
+          break
+        case p.QuintParser.MOD:
+          opcode = 'imod'
+          break
       }
       const args = popMany(this.exprStack, 2)
       this.pushApplication(ctx, opcode, args)
@@ -645,12 +668,24 @@ export class ToIrListener implements QuintListener {
     if (op) {
       let opcode = ''
       switch (op.type) {
-        case p.QuintParser.GT: opcode = 'igt'; break
-        case p.QuintParser.GE: opcode = 'igte'; break
-        case p.QuintParser.LT: opcode = 'ilt'; break
-        case p.QuintParser.LE: opcode = 'ilte'; break
-        case p.QuintParser.EQ: opcode = 'eq'; break
-        case p.QuintParser.NE: opcode = 'neq'; break
+        case p.QuintParser.GT:
+          opcode = 'igt'
+          break
+        case p.QuintParser.GE:
+          opcode = 'igte'
+          break
+        case p.QuintParser.LT:
+          opcode = 'ilt'
+          break
+        case p.QuintParser.LE:
+          opcode = 'ilte'
+          break
+        case p.QuintParser.EQ:
+          opcode = 'eq'
+          break
+        case p.QuintParser.NE:
+          opcode = 'neq'
+          break
       }
       const args = popMany(this.exprStack, 2)
       this.pushApplication(ctx, opcode, args)
@@ -715,7 +750,7 @@ export class ToIrListener implements QuintListener {
   //   | "Cat": cat => cat.name != ""
   //   | "Dog": dog => dog.year > 0
   exitMatch(ctx: p.MatchContext) {
-    const options = ctx.STRING().map((opt) => opt.text.slice(1, -1))
+    const options = ctx.STRING().map(opt => opt.text.slice(1, -1))
     const noptions = options.length
     // expressions in the right-hand sides, e.g., dog.year > 0
     const rhsExprs = popMany(this.exprStack, noptions)
@@ -818,8 +853,7 @@ export class ToIrListener implements QuintListener {
     const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
 
-    const fields =
-      elemTypes.map((t, i) => ({ fieldName: `${i}`, fieldType: t }))
+    const fields = elemTypes.map((t, i) => ({ fieldName: `${i}`, fieldType: t }))
     this.typeStack.push({
       id: id,
       kind: 'tup',
@@ -828,16 +862,18 @@ export class ToIrListener implements QuintListener {
   }
 
   exitRow(ctx: p.RowContext) {
-    const names = ctx.IDENTIFIER().map((n) => n.text)
+    const names = ctx.IDENTIFIER().map(n => n.text)
     const elemTypes: QuintType[] = popMany(this.typeStack, ctx.type().length)
 
-    const fields = compact(zipWith(names, elemTypes, (name, elemType) => {
-      if (name !== undefined && elemType !== undefined) {
-        return { fieldName: name, fieldType: elemType }
-      } else {
-        return undefined
-      }
-    }))
+    const fields = compact(
+      zipWith(names, elemTypes, (name, elemType) => {
+        if (name !== undefined && elemType !== undefined) {
+          return { fieldName: name, fieldType: elemType }
+        } else {
+          return undefined
+        }
+      })
+    )
 
     let other: Row
     if (names.length > elemTypes.length) {
@@ -878,8 +914,7 @@ export class ToIrListener implements QuintListener {
             records = records.concat(one.records)
           } else {
             const tags = `${tag} and ${one.tag}`
-            const msg =
-              'QNT011: Records in disjoint union have different tag fields: '
+            const msg = 'QNT011: Records in disjoint union have different tag fields: '
             this.pushError(ctx, msg + tags)
           }
         } else {
@@ -904,7 +939,7 @@ export class ToIrListener implements QuintListener {
     // the first name is the tag name (according to the grammar)
     const tagName = ctx.IDENTIFIER().text
     const tagVal = ctx.STRING().toString().slice(1, -1)
-    let records: { tagValue: string, fields: Row }[] = []
+    let records: { tagValue: string; fields: Row }[] = []
     if (ctx.row()) {
       const row = this.popRow()
       records = [{ tagValue: tagVal, fields: row }]
@@ -954,9 +989,10 @@ export class ToIrListener implements QuintListener {
     if (ctx.stop) {
       // Try to use index. If not available, use column instead.
       // This is what works best with the information provided by the parser
-      const endCol = ctx.stop.stopIndex !== 0
-        ? ctx.start.charPositionInLine + (ctx.stop.stopIndex - ctx.start.startIndex)
-        : ctx.stop.charPositionInLine
+      const endCol =
+        ctx.stop.stopIndex !== 0
+          ? ctx.start.charPositionInLine + (ctx.stop.stopIndex - ctx.start.startIndex)
+          : ctx.stop.charPositionInLine
       return {
         source: this.sourceLocation,
         start: { line: ctx.start.line - 1, col: ctx.start.charPositionInLine, index: ctx.start.startIndex },
@@ -987,10 +1023,9 @@ export class ToIrListener implements QuintListener {
   private pushError(ctx: ParserRuleContext, message: string) {
     const start = { line: ctx.start.line - 1, col: ctx.start.charPositionInLine, index: ctx.start.startIndex }
     // istanbul ignore next
-    const end =
-      ctx.stop
-        ? { line: ctx.stop.line - 1, col: ctx.stop.charPositionInLine, index: ctx.stop.stopIndex }
-        : start
+    const end = ctx.stop
+      ? { line: ctx.stop.line - 1, col: ctx.stop.charPositionInLine, index: ctx.stop.stopIndex }
+      : start
     this.errors.push({ explanation: message, locs: [{ source: this.sourceLocation, start, end }] })
   }
 

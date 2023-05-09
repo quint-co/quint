@@ -12,31 +12,39 @@
  * @module
  */
 
-import { IdGenerator } from "./idGenerator"
-import { LookupTable } from "./lookupTable"
-import { QuintAssume, QuintConst, QuintDef, QuintEx, QuintExport, QuintImport, QuintInstance, QuintModule, QuintOpDef, QuintTypeDef, QuintVar, WithOptionalDoc, isAnnotatedDef } from "./quintIr"
-import { defaultValueDefinitions } from "./definitionsCollector"
-import { definitionToString } from "./IRprinting"
-import { QuintType, Row } from "./quintTypes"
-import { Loc } from "./quintParserFrontend"
-import { compact, uniqBy } from "lodash"
-import { TypeScheme } from "./types/base"
+import { IdGenerator } from './idGenerator'
+import { LookupTable } from './lookupTable'
+import {
+  QuintAssume,
+  QuintConst,
+  QuintDef,
+  QuintEx,
+  QuintExport,
+  QuintImport,
+  QuintInstance,
+  QuintModule,
+  QuintOpDef,
+  QuintTypeDef,
+  QuintVar,
+  WithOptionalDoc,
+  isAnnotatedDef,
+} from './quintIr'
+import { defaultValueDefinitions } from './definitionsCollector'
+import { definitionToString } from './IRprinting'
+import { QuintType, Row } from './quintTypes'
+import { Loc } from './quintParserFrontend'
+import { compact, uniqBy } from 'lodash'
+import { TypeScheme } from './types/base'
 
-type FlatDef = (
-  QuintOpDef
-  | QuintConst
-  | QuintVar
-  | QuintAssume
-  | QuintTypeDef
-) & WithOptionalDoc
+type FlatDef = (QuintOpDef | QuintConst | QuintVar | QuintAssume | QuintTypeDef) & WithOptionalDoc
 
 interface FlatteningContext {
-  idGenerator: IdGenerator,
-  table: LookupTable,
-  currentModuleNames: Set<string>,
-  sourceMap: Map<bigint, Loc>,
-  types: Map<bigint, TypeScheme>,
-  importedModules: Map<string, QuintModule>,
+  idGenerator: IdGenerator
+  table: LookupTable
+  currentModuleNames: Set<string>
+  sourceMap: Map<bigint, Loc>
+  types: Map<bigint, TypeScheme>
+  importedModules: Map<string, QuintModule>
 }
 
 /**
@@ -62,7 +70,7 @@ export function flatten(
     // builtin names
     ...defaultValueDefinitions().map(d => d.identifier),
     // names from the current module
-    ...compact(module.defs.map(d => isFlat(d) ? d.name : undefined)),
+    ...compact(module.defs.map(d => (isFlat(d) ? d.name : undefined))),
   ])
 
   const context = { idGenerator, table, currentModuleNames, sourceMap, types, importedModules }
@@ -78,7 +86,6 @@ export function flatten(
     }
 
     return flattenImportOrExport(context, def)
-
   })
 
   return { ...module, defs: uniqBy(newDefs, 'name') }
@@ -91,18 +98,23 @@ function isFlat(def: QuintDef): def is FlatDef {
 function flattenInstance(context: FlatteningContext, def: QuintInstance): FlatDef[] {
   // Build pure val definitions from overrides to replace the constants in the
   // instance. Index them by name to make it easier to replace the corresponding constants.
-  const overrides: Map<string, FlatDef> = new Map(def.overrides.map(([param, expr]) => {
-    const constDef = context.table.get(param.id)!
+  const overrides: Map<string, FlatDef> = new Map(
+    def.overrides.map(([param, expr]) => {
+      const constDef = context.table.get(param.id)!
 
-    return [param.name, {
-      kind: 'def',
-      qualifier: 'pureval',
-      name: param.name,
-      expr,
-      typeAnnotation: constDef.typeAnnotation,
-      id: param.id,
-    }]
-  }))
+      return [
+        param.name,
+        {
+          kind: 'def',
+          qualifier: 'pureval',
+          name: param.name,
+          expr,
+          typeAnnotation: constDef.typeAnnotation,
+          id: param.id,
+        },
+      ]
+    })
+  )
 
   const protoModule = context.importedModules.get(def.protoName)!
 
@@ -124,7 +136,7 @@ function flattenInstance(context: FlatteningContext, def: QuintInstance): FlatDe
 }
 
 function flattenImportOrExport(context: FlatteningContext, def: QuintImport | QuintExport): FlatDef[] {
-  const qualifiedName = def.defName ? undefined : (def.qualifiedName ?? def.protoName)
+  const qualifiedName = def.defName ? undefined : def.qualifiedName ?? def.protoName
 
   const protoModule = context.importedModules.get(def.protoName)!
 
@@ -309,7 +321,8 @@ function addNamespaceToRow(ctx: FlatteningContext, name: string | undefined, row
   }
 
   return {
-    ...row, fields: row.fields.map(field => {
+    ...row,
+    fields: row.fields.map(field => {
       return {
         ...field,
         fieldType: addNamespaceToType(ctx, name, field.fieldType),

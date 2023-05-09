@@ -17,7 +17,7 @@ import { QuintEx } from './quintIr'
 // The minimal value that can be reliably represented with number
 const minJsInt = -(2n ** 53n) + 1n
 // The maximal value that can be reliably represented with number
-const maxJsInt = (2n ** 53n) - 1n
+const maxJsInt = 2n ** 53n - 1n
 
 /**
  * Convert a typed Quint expression into an object that matches the JSON
@@ -50,12 +50,14 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, any> {
             return merge(ex.args.map(exprToItf))
 
           case 'Set':
-            return merge(ex.args.map(exprToItf))
-                  .mapRight(es => { return { '#set': es } })
+            return merge(ex.args.map(exprToItf)).mapRight(es => {
+              return { '#set': es }
+            })
 
           case 'Tup':
-            return merge(ex.args.map(exprToItf))
-                  .mapRight(es => { return { '#tup': es } })
+            return merge(ex.args.map(exprToItf)).mapRight(es => {
+              return { '#tup': es }
+            })
 
           case 'Rec': {
             if (ex.args.length % 2 !== 0) {
@@ -84,15 +86,16 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, any> {
     }
   }
 
-  return merge(states.map((e, i) =>
-    exprToItf(e).mapRight(obj => {
-      return { '#meta': { 'index': i } , ...obj }
-    }))
-  )
-  .mapRight(s => {
+  return merge(
+    states.map((e, i) =>
+      exprToItf(e).mapRight(obj => {
+        return { '#meta': { index: i }, ...obj }
+      })
+    )
+  ).mapRight(s => {
     return {
-      "vars": vars,
-      "states": s,
+      vars: vars,
+      states: s,
     }
   })
 }

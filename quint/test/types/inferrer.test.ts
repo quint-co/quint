@@ -71,10 +71,7 @@ describe('inferTypes', () => {
   })
 
   it('infers types for high-order operators', () => {
-    const quintModule = buildModuleWithDefs([
-      'def a(f, p) = f(p)',
-      'def b(g, q) = g(q) + g(not(q))',
-    ])
+    const quintModule = buildModuleWithDefs(['def a(f, p) = f(p)', 'def b(g, q) = g(q) + g(not(q))'])
 
     const [errors, types] = inferTypesForModule(quintModule)
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
@@ -138,9 +135,7 @@ describe('inferTypes', () => {
   })
 
   it('infers types for tuples', () => {
-    const quintModule = buildModuleWithDefs([
-      'def e(p, q) = (p._1, q._2)',
-    ])
+    const quintModule = buildModuleWithDefs(['def e(p, q) = (p._1, q._2)'])
 
     const [errors, types] = inferTypesForModule(quintModule)
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
@@ -161,9 +156,7 @@ describe('inferTypes', () => {
   })
 
   it('considers annotations', () => {
-    const quintModule = buildModuleWithDefs([
-      'def e(p): (int) => int = p',
-    ])
+    const quintModule = buildModuleWithDefs(['def e(p): (int) => int = p'])
 
     const [errors, types] = inferTypesForModule(quintModule)
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
@@ -177,39 +170,51 @@ describe('inferTypes', () => {
   })
 
   it('checks annotations', () => {
-    const quintModule = buildModuleWithDefs([
-      'def e(p): (t) => t = p + 1',
-    ])
+    const quintModule = buildModuleWithDefs(['def e(p): (t) => t = p + 1'])
 
     const [errors] = inferTypesForModule(quintModule)
-    assert.sameDeepMembers([...errors.entries()], [
-      [4n, {
-        location: 'Checking type annotation (t) => t',
-        children: [{
-          location: 'Checking variable t',
-          message: "Type annotation is too general: t should be int",
-          children: [],
-        }],
-      }],
-    ])
+    assert.sameDeepMembers(
+      [...errors.entries()],
+      [
+        [
+          4n,
+          {
+            location: 'Checking type annotation (t) => t',
+            children: [
+              {
+                location: 'Checking variable t',
+                message: 'Type annotation is too general: t should be int',
+                children: [],
+              },
+            ],
+          },
+        ],
+      ]
+    )
   })
 
   it('fails when types are not unifiable', () => {
-    const quintModule = buildModuleWithDefs([
-      'def a = 1.map(p => p + 10)',
-    ])
+    const quintModule = buildModuleWithDefs(['def a = 1.map(p => p + 10)'])
 
     const [errors] = inferTypesForModule(quintModule)
 
-    assert.sameDeepMembers([...errors.entries()], [
-      [7n, {
-        location: 'Trying to unify (Set[t1], (t1) => t2) => Set[t2] and (int, (int) => int) => t3',
-        children: [{
-          location: 'Trying to unify Set[t1] and int',
-          message: "Couldn't unify set and int",
-          children: [],
-        }],
-      }],
-    ])
+    assert.sameDeepMembers(
+      [...errors.entries()],
+      [
+        [
+          7n,
+          {
+            location: 'Trying to unify (Set[t1], (t1) => t2) => Set[t2] and (int, (int) => int) => t3',
+            children: [
+              {
+                location: 'Trying to unify Set[t1] and int',
+                message: "Couldn't unify set and int",
+                children: [],
+              },
+            ],
+          },
+        ],
+      ]
+    )
   })
 })

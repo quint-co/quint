@@ -10,14 +10,11 @@
 
 import { Either } from '@sweet-monads/either'
 
-import {
-  compileFromCode, contextNameLookup, lastTraceName
-} from './runtime/compile'
+import { compileFromCode, contextNameLookup, lastTraceName } from './runtime/compile'
 import { ErrorMessage } from './quintParserFrontend'
 import { QuintEx } from './quintIr'
 import { Computable } from './runtime/runtime'
-import {
-  ExecutionFrame, newTraceRecorder} from './runtime/trace'
+import { ExecutionFrame, newTraceRecorder } from './runtime/trace'
 import { IdGenerator } from './idGenerator'
 import { Rng } from './rng'
 import { SourceLookupPath } from './sourceResolver'
@@ -26,32 +23,30 @@ import { SourceLookupPath } from './sourceResolver'
  * Various settings that have to be passed to the simulator to run.
  */
 export interface SimulatorOptions {
-  init: string,
-  step: string,
-  invariant: string,
-  maxSamples: number,
-  maxSteps: number,
-  rng: Rng,
-  verbosity: number,
+  init: string
+  step: string
+  invariant: string
+  maxSamples: number
+  maxSteps: number
+  rng: Rng
+  verbosity: number
 }
 
-export type SimulatorResultStatus =
-  'ok' | 'violation' | 'failure' | 'error'
+export type SimulatorResultStatus = 'ok' | 'violation' | 'failure' | 'error'
 
 /**
  * A result returned by the simulator.
  */
 export interface SimulatorResult {
-  status: SimulatorResultStatus,
-  vars: string[],
-  states: QuintEx[],
-  frames: ExecutionFrame[],
-  errors: ErrorMessage[],
-  seed: bigint,
+  status: SimulatorResultStatus
+  vars: string[]
+  states: QuintEx[]
+  frames: ExecutionFrame[]
+  errors: ErrorMessage[]
+  seed: bigint
 }
 
-function errSimulationResult(status: SimulatorResultStatus,
-                             errors: ErrorMessage[]): SimulatorResult {
+function errSimulationResult(status: SimulatorResultStatus, errors: ErrorMessage[]): SimulatorResult {
   return {
     status: 'failure',
     vars: [],
@@ -73,12 +68,13 @@ function errSimulationResult(status: SimulatorResultStatus,
  * @returns either error messages (left),
     or the trace as an expression (right)
  */
-export function
-compileAndRun(idGen: IdGenerator,
-              code: string,
-              mainName: string,
-              mainPath: SourceLookupPath,
-              options: SimulatorOptions): SimulatorResult {
+export function compileAndRun(
+  idGen: IdGenerator,
+  code: string,
+  mainName: string,
+  mainPath: SourceLookupPath,
+  options: SimulatorOptions
+): SimulatorResult {
   // Once we have 'import from ...' implemented, we should pass
   // a filename instead of the source code (see #8)
 
@@ -86,8 +82,7 @@ compileAndRun(idGen: IdGenerator,
   // that are required by the runner.
   // This code should be revisited in #618.
   const o = options
-  const wrappedCode =
-`${code}
+  const wrappedCode = `${code}
 
 module __run__ {
   import ${mainName}.*
@@ -103,21 +98,14 @@ module __run__ {
 `
 
   const recorder = newTraceRecorder(options.verbosity, options.rng)
-  const ctx = compileFromCode(idGen,
-    wrappedCode, '__run__', mainPath, recorder, options.rng.next)
+  const ctx = compileFromCode(idGen, wrappedCode, '__run__', mainPath, recorder, options.rng.next)
 
-  if (ctx.compileErrors.length > 0
-      || ctx.syntaxErrors.length > 0
-      || ctx.analysisErrors.length > 0) {
-    const errors =
-      ctx.syntaxErrors
-        .concat(ctx.analysisErrors)
-        .concat(ctx.compileErrors)
+  if (ctx.compileErrors.length > 0 || ctx.syntaxErrors.length > 0 || ctx.analysisErrors.length > 0) {
+    const errors = ctx.syntaxErrors.concat(ctx.analysisErrors).concat(ctx.compileErrors)
     return errSimulationResult('error', errors)
   } else {
     // evaluate q::runResult, which triggers the simulator
-    const res: Either<string, Computable> =
-      contextNameLookup(ctx, 'q::runResult', 'callable')
+    const res: Either<string, Computable> = contextNameLookup(ctx, 'q::runResult', 'callable')
     if (res.isLeft()) {
       const errors = [{ explanation: res.value, locs: [] }] as ErrorMessage[]
       return errSimulationResult('error', errors)
@@ -144,4 +132,3 @@ module __run__ {
     }
   }
 }
-

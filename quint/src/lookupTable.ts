@@ -5,9 +5,9 @@ import { QuintType } from './quintTypes'
  * Information stored for each id in the lookup table
  */
 export interface Definition {
-  reference: bigint,
-  kind: ValueDefinitionKind | 'type',
-  typeAnnotation?: QuintType,
+  reference: bigint
+  kind: ValueDefinitionKind | 'type'
+  typeAnnotation?: QuintType
 }
 
 /**

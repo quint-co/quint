@@ -8,13 +8,14 @@
  * See License.txt in the project root for license information.
  */
 
-
 import { Either, left, right } from '@sweet-monads/either'
 import {
-  ErrorMessage, Loc, fromIrErrorMessage,
+  ErrorMessage,
+  Loc,
+  fromIrErrorMessage,
   parsePhase1fromText,
   parsePhase2sourceResolution,
-  parsePhase3importAndNameResolution
+  parsePhase3importAndNameResolution,
 } from '../quintParserFrontend'
 import { Computable, ComputableKind, kindName } from './runtime'
 import { ExecutionListener } from './trace'
@@ -39,25 +40,25 @@ export const lastTraceName = 'q::lastTrace'
  */
 export interface CompilationContext {
   // The main module, when present
-  main?: QuintModule,
+  main?: QuintModule
   // the lookup table to query for values and definitions
-  lookupTable: LookupTable,
+  lookupTable: LookupTable
   // names of the variables and definition identifiers mapped to computables
-  values: Map<string, Computable>,
+  values: Map<string, Computable>
   // names of the variables
-  vars: string[],
+  vars: string[]
   // names of the shadow variables, internal to the simulator
-  shadowVars: string[],
+  shadowVars: string[]
   // messages that are produced during parsing
-  syntaxErrors: ErrorMessage[],
+  syntaxErrors: ErrorMessage[]
   // messages that are produced by static analysis
-  analysisErrors: ErrorMessage[],
+  analysisErrors: ErrorMessage[]
   // messages that are produced during compilation
-  compileErrors: ErrorMessage[],
+  compileErrors: ErrorMessage[]
   // messages that get populated as the compiled code is executed
-  getRuntimeErrors: () => ErrorMessage[],
+  getRuntimeErrors: () => ErrorMessage[]
   // source mapping
-  sourceMap: Map<bigint, Loc>,
+  sourceMap: Map<bigint, Loc>
 }
 
 function errorContext(errors: ErrorMessage[]): CompilationContext {
@@ -83,7 +84,9 @@ function errorContext(errors: ErrorMessage[]): CompilationContext {
  * @returns the associated compiled value, if it uniquely defined, or undefined
  */
 export function contextLookup(
-  ctx: CompilationContext, defId: bigint, kind: ComputableKind
+  ctx: CompilationContext,
+  defId: bigint,
+  kind: ComputableKind
 ): Either<string, Computable> {
   const def = ctx.lookupTable.get(defId)
   if (!def) {
@@ -100,7 +103,9 @@ export function contextLookup(
 }
 
 export function contextNameLookup(
-  ctx: CompilationContext, defName: string, kind: ComputableKind
+  ctx: CompilationContext,
+  defName: string,
+  kind: ComputableKind
 ): Either<string, Computable> {
   const value = ctx.values.get(kindName(kind, defName))
   if (!value) {
@@ -133,7 +138,8 @@ export function compile(
   types: Map<bigint, TypeScheme>,
   mainName: string,
   execListener: ExecutionListener,
-  rand: (bound: bigint) => bigint): CompilationContext {
+  rand: (bound: bigint) => bigint
+): CompilationContext {
   const modulesByName = new Map(modules.map(m => [m.name, m]))
   const lastId = modules.map(m => m.id).sort((a, b) => Number(a - b))[modules.length - 1]
   const idGenerator = newIdGenerator(lastId)
@@ -148,14 +154,14 @@ export function compile(
     // Since the flattened modules have new ids for both the name expressions
     // and their definitions, and the next iteration might depend on an updated
     // lookup table
-    const newEntries =
-      parsePhase3importAndNameResolution({ modules: [flattened], sourceMap })
-        .mapLeft(errors => {
-      // This should not happen, as the flattening should not introduce any
-      // errors, since parsePhase3 analysis of the original modules has already
-      // assured all names are correct.
-      throw new Error(`Error on resolving names for flattened modules: ${errors.map(e => e.explanation)}`)
-    }).unwrap().table
+    const newEntries = parsePhase3importAndNameResolution({ modules: [flattened], sourceMap })
+      .mapLeft(errors => {
+        // This should not happen, as the flattening should not introduce any
+        // errors, since parsePhase3 analysis of the original modules has already
+        // assured all names are correct.
+        throw new Error(`Error on resolving names for flattened modules: ${errors.map(e => e.explanation)}`)
+      })
+      .unwrap().table
 
     latestTable = new Map([...latestTable.entries(), ...newEntries.entries()])
 
@@ -169,11 +175,14 @@ export function compile(
     main.defs.forEach(def => walkDefinition(visitor, def))
   }
   // when the main module is not found, we will report an error
-  const mainNotFoundError =
-    main ? [] : [{
-      explanation: `Main module ${mainName} not found`,
-      refs: [],
-    }]
+  const mainNotFoundError = main
+    ? []
+    : [
+        {
+          explanation: `Main module ${mainName} not found`,
+          refs: [],
+        },
+      ]
   return {
     main: main,
     lookupTable: latestTable,
@@ -182,13 +191,9 @@ export function compile(
     shadowVars: visitor.getShadowVars(),
     syntaxErrors: [],
     analysisErrors: [],
-    compileErrors:
-      visitor.getCompileErrors().concat(mainNotFoundError)
-        .map(fromIrErrorMessage(sourceMap)),
+    compileErrors: visitor.getCompileErrors().concat(mainNotFoundError).map(fromIrErrorMessage(sourceMap)),
     getRuntimeErrors: () => {
-      return visitor.getRuntimeErrors()
-        .splice(0)
-        .map(fromIrErrorMessage(sourceMap))
+      return visitor.getRuntimeErrors().splice(0).map(fromIrErrorMessage(sourceMap))
     },
     sourceMap: sourceMap,
   }
@@ -212,32 +217,36 @@ export function compileFromCode(
   mainName: string,
   mainPath: SourceLookupPath,
   execListener: ExecutionListener,
-  rand: (bound: bigint) => bigint): CompilationContext {
+  rand: (bound: bigint) => bigint
+): CompilationContext {
   // parse the module text
-  return parsePhase1fromText(idGen, code, '<input>')
-    .chain(phase1Data => {
-      const resolver = fileSourceResolver()
-      return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
-    })
-    // On errors, we'll produce the computational context up to this point
-    .mapLeft(errorContext)
-    .chain(d => parsePhase3importAndNameResolution(d)
-      // On errors, we'll produce the computational context up to this point
-      .mapLeft(errorContext))
-    .chain(parseData => {
-      const { modules, table, sourceMap } = parseData
-      const analyzer = new QuintAnalyzer(table)
-      modules.forEach(module => analyzer.analyze(module))
-      const [analysisErrors, analysisResult] = analyzer.getResult()
-      const ctx =
-        compile(modules, sourceMap, table,
-                analysisResult.types, mainName, execListener, rand)
-      const errorLocator = mkErrorMessage(sourceMap)
-      return right({
-        ...ctx,
-        analysisErrors: Array.from(analysisErrors, errorLocator),
+  return (
+    parsePhase1fromText(idGen, code, '<input>')
+      .chain(phase1Data => {
+        const resolver = fileSourceResolver()
+        return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
       })
-    }
-      // we produce CompilationContext in any case
-    ).value
+      // On errors, we'll produce the computational context up to this point
+      .mapLeft(errorContext)
+      .chain(d =>
+        parsePhase3importAndNameResolution(d)
+          // On errors, we'll produce the computational context up to this point
+          .mapLeft(errorContext)
+      )
+      .chain(
+        parseData => {
+          const { modules, table, sourceMap } = parseData
+          const analyzer = new QuintAnalyzer(table)
+          modules.forEach(module => analyzer.analyze(module))
+          const [analysisErrors, analysisResult] = analyzer.getResult()
+          const ctx = compile(modules, sourceMap, table, analysisResult.types, mainName, execListener, rand)
+          const errorLocator = mkErrorMessage(sourceMap)
+          return right({
+            ...ctx,
+            analysisErrors: Array.from(analysisErrors, errorLocator),
+          })
+        }
+        // we produce CompilationContext in any case
+      ).value
+  )
 }

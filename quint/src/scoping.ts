@@ -22,9 +22,9 @@ import { QuintDef, QuintEx, QuintInstance, QuintLambda, QuintModule } from './qu
  */
 export interface ScopeTree {
   /* Tree node, an IR id */
-  value: bigint;
+  value: bigint
   /* Tree children of the node */
-  children: ScopeTree[];
+  children: ScopeTree[]
 }
 
 /**

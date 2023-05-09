@@ -36,8 +36,7 @@ export function moduleToString(quintModule: QuintModule): string {
  * @returns a string with the pretty printed definition
  */
 export function definitionToString(def: QuintDef, includeBody: boolean = true): string {
-  const typeAnnotation =
-    isAnnotatedDef(def) ? `: ${typeToString(def.typeAnnotation)}` : ''
+  const typeAnnotation = isAnnotatedDef(def) ? `: ${typeToString(def.typeAnnotation)}` : ''
   switch (def.kind) {
     case 'def': {
       const header = `${qualifierToString(def.qualifier)} ${def.name}${typeAnnotation}`
@@ -168,9 +167,12 @@ export function rowToString(r: Row): string {
  */
 export function qualifierToString(qualifier: OpQualifier): string {
   switch (qualifier) {
-    case 'puredef': return 'pure def'
-    case 'pureval': return 'pure val'
-    default: return qualifier
+    case 'puredef':
+      return 'pure def'
+    case 'pureval':
+      return 'pure val'
+    default:
+      return qualifier
   }
 }
 

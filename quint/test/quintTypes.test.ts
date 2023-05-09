@@ -5,9 +5,7 @@ import { parseType, parseTypeOrThrow } from '../src/types/parser'
 
 describe('typeNames', () => {
   it('find names in types', () => {
-    const result = typeNames(
-      parseTypeOrThrow('(Set[a]) => List[b] -> { f1: c | r }')
-    )
+    const result = typeNames(parseTypeOrThrow('(Set[a]) => List[b] -> { f1: c | r }'))
 
     assert.sameDeepMembers(Array.from(result.typeVariables), ['a', 'b', 'c'])
     assert.sameDeepMembers(Array.from(result.rowVariables), ['r'])
@@ -22,8 +20,11 @@ describe('operator types', () => {
     assert(result.isRight())
     result.map(t => assert(t.kind === 'oper'))
     if (result.isRight() && result.value.kind === 'oper') {
-      assert.deepEqual(result.value.args.map(t => t.kind), ["int"])
-      assert.deepEqual(result.value.res.kind,  "str")
+      assert.deepEqual(
+        result.value.args.map(t => t.kind),
+        ['int']
+      )
+      assert.deepEqual(result.value.res.kind, 'str')
     }
   })
 })

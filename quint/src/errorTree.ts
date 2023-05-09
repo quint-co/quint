@@ -19,9 +19,9 @@
  */
 export interface ErrorTree {
   /* The error message, used for the terminal node where the error occurred */
-  message?: string,
+  message?: string
   /* A description of the context within which the current node is encountered */
-  location: string,
+  location: string
   /* The node's children */
   children: ErrorTree[]
 }

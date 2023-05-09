@@ -15,9 +15,7 @@ describe('nameResolver', () => {
       { kind: 'def', identifier: 'unscoped_def' },
       { kind: 'def', identifier: 'scoped_def', scope: 2n },
     ],
-    typeDefinitions: [
-      { identifier: 'MY_TYPE', type: { id: 100n, kind: 'int' } },
-    ],
+    typeDefinitions: [{ identifier: 'MY_TYPE', type: { id: 100n, kind: 'int' } }],
   })
 
   const moduleName = 'wrapper'
@@ -51,9 +49,11 @@ describe('nameResolver', () => {
       const result = resolveNames(quintModule, table, dummyScopeTree)
 
       result
-        .mapLeft(errors => assert.deepEqual(errors, [
-          { kind: 'value', name: 'scoped_def', definitionName: 'd1', moduleName, reference: 3n },
-        ]))
+        .mapLeft(errors =>
+          assert.deepEqual(errors, [
+            { kind: 'value', name: 'scoped_def', definitionName: 'd1', moduleName, reference: 3n },
+          ])
+        )
         .map(_ => assert.fail('Expected errors'))
     })
 
@@ -63,10 +63,12 @@ describe('nameResolver', () => {
       const result = resolveNames(quintModule, table, dummyScopeTree)
 
       result
-        .mapLeft(errors => assert.deepEqual(errors, [
-          { kind: 'value', name: 'x', definitionName: 'd0', moduleName, reference: 1n },
-          { kind: 'value', name: 'x', definitionName: 'd1', moduleName, reference: 5n },
-        ]))
+        .mapLeft(errors =>
+          assert.deepEqual(errors, [
+            { kind: 'value', name: 'x', definitionName: 'd0', moduleName, reference: 1n },
+            { kind: 'value', name: 'x', definitionName: 'd1', moduleName, reference: 5n },
+          ])
+        )
         .map(_ => assert.fail('Expected errors'))
     })
 
@@ -76,9 +78,9 @@ describe('nameResolver', () => {
       const result = resolveNames(quintModule, table, dummyScopeTree)
 
       result
-        .mapLeft(errors => assert.deepEqual(errors, [
-          { kind: 'value', name: 'x', definitionName: 'd0', moduleName, reference: 3n },
-        ]))
+        .mapLeft(errors =>
+          assert.deepEqual(errors, [{ kind: 'value', name: 'x', definitionName: 'd0', moduleName, reference: 3n }])
+        )
         .map(_ => assert.fail('Expected errors'))
     })
 
@@ -88,20 +90,19 @@ describe('nameResolver', () => {
       const result = resolveNames(quintModule, table, dummyScopeTree)
 
       result
-        .mapLeft(errors => assert.deepEqual(errors, [
-          { kind: 'value', name: 'x', definitionName: 'a', moduleName, reference: 1n },
-          { kind: 'value', name: 'x', definitionName: 'b', moduleName, reference: 8n },
-        ]))
+        .mapLeft(errors =>
+          assert.deepEqual(errors, [
+            { kind: 'value', name: 'x', definitionName: 'a', moduleName, reference: 1n },
+            { kind: 'value', name: 'x', definitionName: 'b', moduleName, reference: 8n },
+          ])
+        )
         .map(_ => assert.fail('Expected errors'))
     })
   })
 
   describe('type aliases', () => {
     it('resolves defined aliases', () => {
-      const quintModule = buildModuleWithDefs([
-        'const a: MY_TYPE',
-        'var b: a -> Set[a]',
-      ])
+      const quintModule = buildModuleWithDefs(['const a: MY_TYPE', 'var b: a -> Set[a]'])
       const result = resolveNames(quintModule, table, dummyScopeTree)
 
       assert.isTrue(result.isRight())
@@ -117,10 +118,12 @@ describe('nameResolver', () => {
       const result = resolveNames(quintModule, table, dummyScopeTree)
 
       result
-        .mapLeft(errors => assert.deepEqual(errors, [
-          { kind: 'type', name: 'UNKNOWN_TYPE_0', definitionName: 'a', moduleName, reference: 1n },
-          { kind: 'type', name: 'UNKNOWN_TYPE_1', definitionName: 'b', moduleName, reference: 3n },
-        ]))
+        .mapLeft(errors =>
+          assert.deepEqual(errors, [
+            { kind: 'type', name: 'UNKNOWN_TYPE_0', definitionName: 'a', moduleName, reference: 1n },
+            { kind: 'type', name: 'UNKNOWN_TYPE_1', definitionName: 'b', moduleName, reference: 3n },
+          ])
+        )
         .map(_ => assert.fail('Expected errors'))
     })
 
@@ -129,9 +132,11 @@ describe('nameResolver', () => {
       const result = resolveNames(quintModule, table, dummyScopeTree)
 
       result
-        .mapLeft(errors => assert.deepEqual(errors, [
-          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'y', moduleName, reference: 3n },
-        ]))
+        .mapLeft(errors =>
+          assert.deepEqual(errors, [
+            { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'y', moduleName, reference: 3n },
+          ])
+        )
         .map(_ => assert.fail('Expected errors'))
     })
 
@@ -140,9 +145,11 @@ describe('nameResolver', () => {
       const result = resolveNames(quintModule, table, dummyScopeTree)
 
       result
-        .mapLeft(errors => assert.deepEqual(errors, [
-          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 1n },
-        ]))
+        .mapLeft(errors =>
+          assert.deepEqual(errors, [
+            { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 1n },
+          ])
+        )
         .map(_ => assert.fail('Expected errors'))
     })
 
@@ -151,9 +158,11 @@ describe('nameResolver', () => {
       const result = resolveNames(quintModule, table, dummyScopeTree)
 
       result
-        .mapLeft(errors => assert.deepEqual(errors, [
-          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 1n },
-        ]))
+        .mapLeft(errors =>
+          assert.deepEqual(errors, [
+            { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 1n },
+          ])
+        )
         .map(_ => assert.fail('Expected errors'))
     })
 
@@ -162,22 +171,28 @@ describe('nameResolver', () => {
       const result = resolveNames(quintModule, table, dummyScopeTree)
 
       result
-        .mapLeft(errors => assert.deepEqual(errors, [
-          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 1n },
-          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 2n },
-        ]))
+        .mapLeft(errors =>
+          assert.deepEqual(errors, [
+            { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 1n },
+            { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 2n },
+          ])
+        )
         .map(_ => assert.fail('Expected errors'))
     })
 
     it('finds unresolved aliases under operators', () => {
-      const quintModule = buildModuleWithExpressions(['val f(x): (UNKNOWN_TYPE) => OTHER_UNKNOWN_TYPE = { unscoped_def } { 0 }'])
+      const quintModule = buildModuleWithExpressions([
+        'val f(x): (UNKNOWN_TYPE) => OTHER_UNKNOWN_TYPE = { unscoped_def } { 0 }',
+      ])
       const result = resolveNames(quintModule, table, dummyScopeTree)
 
       result
-        .mapLeft(errors => assert.deepEqual(errors, [
-          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'f', moduleName, reference: 2n },
-          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'f', moduleName, reference: 3n },
-        ]))
+        .mapLeft(errors =>
+          assert.deepEqual(errors, [
+            { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'f', moduleName, reference: 2n },
+            { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'f', moduleName, reference: 3n },
+          ])
+        )
         .map(_ => assert.fail('Expected errors'))
     })
 
@@ -186,22 +201,28 @@ describe('nameResolver', () => {
       const result = resolveNames(quintModule, table, dummyScopeTree)
 
       result
-        .mapLeft(errors => assert.deepEqual(errors, [
-          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 1n },
-          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 2n },
-        ]))
+        .mapLeft(errors =>
+          assert.deepEqual(errors, [
+            { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 1n },
+            { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 2n },
+          ])
+        )
         .map(_ => assert.fail('Expected errors'))
     })
 
     it('finds unresolved aliases under records', () => {
-      const quintModule = buildModuleWithExpressions(['val x: { a: UNKNOWN_TYPE, b: OTHER_UNKNOWN_TYPE } = { a: 1, b: 2 } { 0 }'])
+      const quintModule = buildModuleWithExpressions([
+        'val x: { a: UNKNOWN_TYPE, b: OTHER_UNKNOWN_TYPE } = { a: 1, b: 2 } { 0 }',
+      ])
       const result = resolveNames(quintModule, table, dummyScopeTree)
 
       result
-        .mapLeft(errors => assert.deepEqual(errors, [
-          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 1n },
-          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 2n },
-        ]))
+        .mapLeft(errors =>
+          assert.deepEqual(errors, [
+            { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 1n },
+            { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 2n },
+          ])
+        )
         .map(_ => assert.fail('Expected errors'))
     })
 
@@ -212,10 +233,12 @@ describe('nameResolver', () => {
       const result = resolveNames(quintModule, table, dummyScopeTree)
 
       result
-        .mapLeft(errors => assert.deepEqual(errors, [
-          { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 1n },
-          { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 2n },
-        ]))
+        .mapLeft(errors =>
+          assert.deepEqual(errors, [
+            { kind: 'type', name: 'UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 1n },
+            { kind: 'type', name: 'OTHER_UNKNOWN_TYPE', definitionName: 'x', moduleName, reference: 2n },
+          ])
+        )
         .map(_ => assert.fail('Expected errors'))
     })
   })
