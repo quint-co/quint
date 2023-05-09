@@ -337,7 +337,7 @@ const formatInternal = (maxWidth: number, start: number, elem: FitsElem): string
           }
           break
 
-        case 'group':
+        case 'group': {
           const first: FitsElem = { ...elem, mode: 'flat', doc: elem.doc.child }
           if (fits(columnBudget - consumedOnLine, stack.unshift(first))) {
             // the whole group can be printed without a break
@@ -347,6 +347,7 @@ const formatInternal = (maxWidth: number, start: number, elem: FitsElem): string
             stack = stack.unshift({ ...first, mode: 'break' })
           }
           break
+        }
       }
     }
   }

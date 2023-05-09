@@ -149,7 +149,7 @@ export class CompilerVisitor implements IRVisitor {
     this.runtimeErrors.push({ explanation: msg, refs: [id] })
   }
 
-  enterOpDef(opdef: ir.QuintOpDef) {
+  enterOpDef(_: ir.QuintOpDef) {
     this.definitionDepth++
   }
 
