@@ -75,7 +75,7 @@
     "api-docs": "quint docs ./src/builtin.qnt > ../doc/builtin.md",
     "update-fixtures": "./scripts/update-fixtures.sh",
     "format-check": "npx prettier --check '**/*.ts' && npx eslint '**/*.ts'",
-    "format": "npx eslint --fix '**/*.ts'",
+    "format": "npx prettier --write '**/*.ts' && npx eslint --fix '**/*.ts'",
     "debug": "npx ts-node ./src/cli.ts"
   },
   "devDependencies": {
