@@ -303,10 +303,10 @@ module ics20Test {
       sourceChainState.outPackets.exists(packet => packet.isTravelingBetween(sourceChain, destChain)),
 
       // (2) Non-deterministically pick a packet from `sourceChain` to receive on `destChain`:
-      nondet packet = sourceChainState.outPackets.oneOf()
+      nondet packet = sourceChainState.outPackets
+                                  .filter(p => p.isTravelingBetween(sourceChain, destChain))
+                                  .oneOf()
       all {
-        packet.isTravelingBetween(sourceChain, destChain),
-
         // (3) Compute updated destination chain state: call `onRecvPacket` callback:
         val recvResult = onRecvPacket(chainStates.get(destChain), packet)
         val newDestChainState = recvResult._1
