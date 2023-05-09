@@ -192,6 +192,7 @@ module ics20Test {
   import base.* from "./base"
   import bank.getBalance from "./bank"
   import bank.getBalances from "./bank"
+  import basicSpells.has from "../../spells/basicSpells"
   import ics20.*
 
   /****************************************************************************
@@ -238,10 +239,10 @@ module ics20Test {
   /// that corresponds to the channel endpoints of `packet`.
   pure def isTravelingBetween(packet: Packet, sourceChain: str, destChain: str): bool = all {
     // there is a channel between `sourceChain` and `destChain`
-    CHANNEL_TOPOLOGY.keys().contains(sourceChain),
-    CHANNEL_TOPOLOGY.get(sourceChain).keys().contains(destChain),
+    CHANNEL_TOPOLOGY.has(sourceChain),
+    CHANNEL_TOPOLOGY.get(sourceChain).has(destChain),
     // packet endpoints correspond to channel ends
-    channelCounterparties.get(sourceChain).keys().contains(packet.sourceChannel),
+    channelCounterparties.get(sourceChain).has(packet.sourceChannel),
     channelCounterparties.get(sourceChain).get(packet.sourceChannel) == packet.destChannel
   }
 
@@ -266,8 +267,8 @@ module ics20Test {
     // ICS 4: "a channel is a pipeline [...] between specific modules on **separate** blockchains"
     sourceChain != destChain,
     // there is a channel between `sourceChain` and `destChain`
-    CHANNEL_TOPOLOGY.keys().contains(sourceChain),
-    CHANNEL_TOPOLOGY.get(sourceChain).keys().contains(destChain),
+    CHANNEL_TOPOLOGY.has(sourceChain),
+    CHANNEL_TOPOLOGY.get(sourceChain).has(destChain),
 
     // (2) Send the packet using `sendFungibleTokens`:
     val sourceChainState = chainStates.get(sourceChain)
@@ -294,8 +295,8 @@ module ics20Test {
       // ICS 4: "a channel is a pipeline [...] between specific modules on **separate** blockchains"
       sourceChain != destChain,
       // there is a channel between `sourceChain` and `destChain`
-      CHANNEL_TOPOLOGY.keys().contains(sourceChain),
-      CHANNEL_TOPOLOGY.get(sourceChain).keys().contains(destChain),
+      CHANNEL_TOPOLOGY.has(sourceChain),
+      CHANNEL_TOPOLOGY.get(sourceChain).has(destChain),
       // there is an unreceived packet traveling from `sourceChain` to `destChain`
       sourceChainState.outPackets.exists(packet => packet.isTravelingBetween(sourceChain, destChain)),
 
