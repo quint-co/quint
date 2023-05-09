@@ -22,7 +22,7 @@ import { zerog } from './idGenerator'
 /**
  * An abstraction of a Console of bounded text width.
  */
-export interface Console {
+export interface ConsoleBox {
   width: number,
   out: (s: string) => void
 }
@@ -128,14 +128,14 @@ export function prettyQuintEx(ex: QuintEx): Doc {
  * Since this function is printing a tree, we need precise text alignment.
  * Using a tree here with an optional line break would produce incorrect output.
  * 
- * @param console the console to print in
+ * @param box the box to print in
  * @param frame the frame to print
  * @param isLast the array of booleans, one per ancestor, that indicates whether
  *       an ancestor does not have siblings to the right, the last index
  *       corresponds to the direct parent.
  */
 export function
-printExecutionFrameRec(console: Console,
+printExecutionFrameRec(box: ConsoleBox,
     frame: ExecutionFrame, isLast: boolean[]): void {
   // convert the arguments and the result to strings
   const args = docJoin(
@@ -156,7 +156,7 @@ printExecutionFrameRec(console: Console,
       // depending on whether this frame is the last one
       : il ? '└─ ' : '├─ '
   ).join('')
-  console.out(treeArt)
+  box.out(treeArt)
 
   // format the call with its arguments and place it right after the tree art
   const argsDoc =
@@ -170,19 +170,19 @@ printExecutionFrameRec(console: Console,
       group([ argsDoc, nest('  ', group([text(' =>'), line(), r])) ]),
     ]))
 
-  console.out(format(console.width, treeArt.length, callDoc))
-  console.out('\n')
+  box.out(format(box.width, treeArt.length, callDoc))
+  box.out('\n')
   const n = frame.subframes.length
   // visualize the children
   frame.subframes.forEach((f, i) =>
-    printExecutionFrameRec(console, f, isLast.concat([i === n - 1]))
+    printExecutionFrameRec(box, f, isLast.concat([i === n - 1]))
   )
 }
 
 /**
  * Print a trace with chalk.
  */
-export function printTrace(console: Console, states: QuintEx[],
+export function printTrace(console: ConsoleBox, states: QuintEx[],
                            frames: ExecutionFrame[]): void {
   const b = chalk.bold
 
