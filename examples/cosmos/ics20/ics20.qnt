@@ -235,12 +235,22 @@ module ics20Test {
     }).setToMap()
   })
 
+  /// Return true iff there is a channel from `sourceChain` to `destChain` defined in `CHANNEL_TOPOLOGY`.
+  ///
+  /// In particular, this returns false if `sourceChain == destChain`.
+  pure def hasChannelBetween(sourceChain: str, destChain: str): bool = all {
+    // ICS 4: "a channel is a pipeline [...] between specific modules on **separate** blockchains"
+    sourceChain != destChain,
+    // there is a channel between `sourceChain` and `destChain`
+    CHANNEL_TOPOLOGY.has(sourceChain),
+    CHANNEL_TOPOLOGY.get(sourceChain).has(destChain),
+  }
+
   /// Return true iff there is a channel from `sourceChain` to `destChain` defined in `CHANNEL_TOPOLOGY`
   /// that corresponds to the channel endpoints of `packet`.
   pure def isTravelingBetween(packet: Packet, sourceChain: str, destChain: str): bool = all {
     // there is a channel between `sourceChain` and `destChain`
-    CHANNEL_TOPOLOGY.has(sourceChain),
-    CHANNEL_TOPOLOGY.get(sourceChain).has(destChain),
+    hasChannelBetween(sourceChain, destChain),
     // packet endpoints correspond to channel ends
     channelCounterparties.get(sourceChain).has(packet.sourceChannel),
     channelCounterparties.get(sourceChain).get(packet.sourceChannel) == packet.destChannel
@@ -264,11 +274,8 @@ module ics20Test {
                     denom: DenomTrace, amount: UINT256,
                     sender: Address, receiver: Address): bool = all {
     // (1) Pre-condition:
-    // ICS 4: "a channel is a pipeline [...] between specific modules on **separate** blockchains"
-    sourceChain != destChain,
     // there is a channel between `sourceChain` and `destChain`
-    CHANNEL_TOPOLOGY.has(sourceChain),
-    CHANNEL_TOPOLOGY.get(sourceChain).has(destChain),
+    hasChannelBetween(sourceChain, destChain),
 
     // (2) Send the packet using `sendFungibleTokens`:
     val sourceChainState = chainStates.get(sourceChain)
@@ -282,21 +289,16 @@ module ics20Test {
   }
 
   /// Receive a packet sent from `sourceChain` to `destChain`:
-  /// - Pick an arbitrary, previously unreceived packet sent from `sourceChain`
-  ///   to `destChain`.
+  /// - Pick an arbitrary, previously unreceived packet sent from `sourceChain` to `destChain`.
   /// - Call the `onRecvPacket` callback on it.
   /// - Update the chain states to record the packet as received.
-  /// - Record (but not receive) the acknowledgement produced by `onRecvPacket`
-  ///   on `destChain`.
+  /// - Record (but not receive) the acknowledgement produced by `onRecvPacket` on `destChain`.
   action receivePacket(sourceChain: str, destChain: str): bool =
     val sourceChainState = chainStates.get(sourceChain)
     all {
       // (1) Pre-condition:
-      // ICS 4: "a channel is a pipeline [...] between specific modules on **separate** blockchains"
-      sourceChain != destChain,
       // there is a channel between `sourceChain` and `destChain`
-      CHANNEL_TOPOLOGY.has(sourceChain),
-      CHANNEL_TOPOLOGY.get(sourceChain).has(destChain),
+      hasChannelBetween(sourceChain, destChain),
       // there is an unreceived packet traveling from `sourceChain` to `destChain`
       sourceChainState.outPackets.exists(packet => packet.isTravelingBetween(sourceChain, destChain)),
 
