@@ -257,7 +257,7 @@ module ics20Test {
 
   /* Helper operators to manipulate bank state */
   /// Sets the balance of `account` in `chain` to `amount` of `denom`.
-  action SetBalanceIn(chain, account, denom, amount) = {
+  action setBalanceIn(chain, account, denom, amount) = {
     chainStates' = chainStates.setBy(chain, state =>
       state.with("bank", state.bank.setBy(account, balances => balances.set(denom, amount)))
     )
@@ -426,74 +426,6 @@ module ics20Test {
     }
   )
 
-  // Test producing a failed acknowledgement:
-  //
-  // 1. Transfer 50 tokens from Alice on chain A to Bob on chain B.
-  // 2. Manipulate the escrow account on chain A, to contain less than 50 tokens.
-  //    This will provoke the transfer below to produce a failed acknowledgement.
-  // 3. Try to transfer the 50 tokens back from Bob to Alice.
-  //    3.1 First, this burns Bob's 50 vouchers on chain B, and sends a packet to chain A.
-  //    3.2 Receipt of the packet on chain A calls the `onRecvPacket` callback.
-  //    3.3 `onRecvPacket` calls the bank module's `TransferCoins` to unescrow 50 tokens to Alice.
-  //    3.4 `TransferCoins` returns an error, because -- after manipulating it in (2) -- the escrow account has insufficient funds.
-  //    3.5 The bank module error causes `onRecvPacket` to return a failed acknowledgement.
-  //    3.6 `onAcknowledgePacket` on chain "B" re-mints the burned vouchers to Bob.
-  run FailedAckTest = init.then(all {
-    assert(getBalanceIn("A", "alice", ATOM) == 100),
-    assert(getBalanceIn("A", ESCROW_ACCOUNT, ATOM) == 0),
-    assert(getBalanceIn("B", "bob", ATOM) == 0),
-
-    // 1. Transfer 50 tokens from Alice on chain A to Bob on chain B.
-    sendTransfer("A", "B", ATOM, 50, "alice", "bob")
-  }).then(
-    pure val voucherDenom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
-    all {
-      assert(getBalanceIn("A", "alice", ATOM) == 50),
-      assert(getBalanceIn("A", ESCROW_ACCOUNT, ATOM) == 50),
-      assert(getBalanceIn("B", "bob", voucherDenom) == 50),
-
-      // 2. Manipulate the escrow account on chain A, to contain less than 50 tokens.
-      SetBalanceIn("A", ESCROW_ACCOUNT, ATOM, 49)
-  }).then(
-    pure val voucherDenom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
-    all {
-      assert(getBalanceIn("A", "alice", ATOM) == 50),
-      assert(getBalanceIn("A", ESCROW_ACCOUNT, ATOM) == 49),
-      assert(getBalanceIn("B", "bob", voucherDenom) == 50),
-
-      // 3. Try to transfer the 50 tokens back from Bob to Alice.
-      // Send and receive the ICS 20 packet; this triggers steps 3.1–3.5 above.
-      sendPacket("B", "A", voucherDenom, 50, "bob", "alice").then(receivePacket("B", "A"))
-  }).then(
-    pure val voucherDenom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
-    all {
-      // Check that bob's vouchers were burned – nothing changed on chain A
-      assert(getBalanceIn("A", "alice", ATOM) == 50),
-      assert(getBalanceIn("A", ESCROW_ACCOUNT, ATOM) == 49),
-      assert(getBalanceIn("B", "bob", voucherDenom) == 0),
-
-      // Check that there is a single incoming acknowledgement on chain A,
-      // that indicates failure.
-      assert(chainStates.get("B").inAcknowledgements.size() == 1),
-      val ack = chainStates.get("B").inAcknowledgements.oneOf()
-      assert(ack.success == false and ack.errorMessage == "transfer coins failed"),
-
-      // Process the acknowledgement on chain A; this triggers step 3.6 above.
-      receiveAck("B")
-  }).then(
-    pure val voucherDenom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
-    all {
-      // Check that bob's vouchers were minted back – nothing changed on chain A
-      assert(getBalanceIn("A", "alice", ATOM) == 50),
-      assert(getBalanceIn("A", ESCROW_ACCOUNT, ATOM) == 49),
-      assert(getBalanceIn("B", "bob", voucherDenom) == 50),
-
-      // noop
-      chainStates' = chainStates
-  })
-
-  // TODO(thpani): add a test for packet timeout
-
   // From
   // https://github.com/cosmos/ibc-go/blob/a25f0d421c32b3a2b7e8168c9f030849797ff2e8/modules/apps/transfer/transfer_test.go#L44
   run TransferTest = {
@@ -506,7 +438,7 @@ module ics20Test {
     init.then(
       // Make sure that Alice has enough tokens on chain A. In the go test, this
       // is implicitly done somewhere in the test environment setup.
-      SetBalanceIn("A", "alice", ATOM, amount)
+      setBalanceIn("A", "alice", ATOM, amount)
     ).then(
       sendTransfer("A", "B", ATOM, amount, "alice", "bob")
     ).then(all {
@@ -549,4 +481,72 @@ module ics20Test {
       chainStates' = chainStates
     })
   }
+
+  // Test producing a failed acknowledgement:
+  //
+  // 1. Transfer 50 tokens from Alice on chain A to Bob on chain B.
+  // 2. Manipulate the escrow account on chain A, to contain less than 50 tokens.
+  //    This will provoke the transfer below to produce a failed acknowledgement.
+  // 3. Try to transfer the 50 tokens back from Bob to Alice.
+  //    3.1 First, this burns Bob's 50 vouchers on chain B, and sends a packet to chain A.
+  //    3.2 Receipt of the packet on chain A calls the `onRecvPacket` callback.
+  //    3.3 `onRecvPacket` calls the bank module's `TransferCoins` to unescrow 50 tokens to Alice.
+  //    3.4 `TransferCoins` returns an error, because -- after manipulating it in (2) -- the escrow account has insufficient funds.
+  //    3.5 The bank module error causes `onRecvPacket` to return a failed acknowledgement.
+  //    3.6 `onAcknowledgePacket` on chain "B" re-mints the burned vouchers to Bob.
+  run FailedAckTest = init.then(all {
+    assert(getBalanceIn("A", "alice", ATOM) == 100),
+    assert(getBalanceIn("A", ESCROW_ACCOUNT, ATOM) == 0),
+    assert(getBalanceIn("B", "bob", ATOM) == 0),
+
+    // 1. Transfer 50 tokens from Alice on chain A to Bob on chain B.
+    sendTransfer("A", "B", ATOM, 50, "alice", "bob")
+  }).then(
+    pure val voucherDenom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
+    all {
+      assert(getBalanceIn("A", "alice", ATOM) == 50),
+      assert(getBalanceIn("A", ESCROW_ACCOUNT, ATOM) == 50),
+      assert(getBalanceIn("B", "bob", voucherDenom) == 50),
+
+      // 2. Manipulate the escrow account on chain A, to contain less than 50 tokens.
+      setBalanceIn("A", ESCROW_ACCOUNT, ATOM, 49)
+  }).then(
+    pure val voucherDenom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
+    all {
+      assert(getBalanceIn("A", "alice", ATOM) == 50),
+      assert(getBalanceIn("A", ESCROW_ACCOUNT, ATOM) == 49),
+      assert(getBalanceIn("B", "bob", voucherDenom) == 50),
+
+      // 3. Try to transfer the 50 tokens back from Bob to Alice.
+      // Send and receive the ICS 20 packet; this triggers steps 3.1–3.5 above.
+      sendPacket("B", "A", voucherDenom, 50, "bob", "alice").then(receivePacket("B", "A"))
+  }).then(
+    pure val voucherDenom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
+    all {
+      // Check that bob's vouchers were burned – nothing changed on chain A
+      assert(getBalanceIn("A", "alice", ATOM) == 50),
+      assert(getBalanceIn("A", ESCROW_ACCOUNT, ATOM) == 49),
+      assert(getBalanceIn("B", "bob", voucherDenom) == 0),
+
+      // Check that there is a single incoming acknowledgement on chain A,
+      // that indicates failure.
+      assert(chainStates.get("B").inAcknowledgements.size() == 1),
+      val ack = chainStates.get("B").inAcknowledgements.oneOf()
+      assert(ack.success == false and ack.errorMessage == "transfer coins failed"),
+
+      // Process the acknowledgement on chain A; this triggers step 3.6 above.
+      receiveAck("B")
+  }).then(
+    pure val voucherDenom: DenomTrace = { baseDenom: "atom", path: [{ port: "transfer", channel: "channelToA" }] }
+    all {
+      // Check that bob's vouchers were minted back – nothing changed on chain A
+      assert(getBalanceIn("A", "alice", ATOM) == 50),
+      assert(getBalanceIn("A", ESCROW_ACCOUNT, ATOM) == 49),
+      assert(getBalanceIn("B", "bob", voucherDenom) == 50),
+
+      // noop
+      chainStates' = chainStates
+  })
+
+  // TODO(thpani): add a test for packet timeout
 }
