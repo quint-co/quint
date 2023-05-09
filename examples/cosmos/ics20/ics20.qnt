@@ -192,7 +192,6 @@ module ics20Test {
   import base.* from "./base"
   import bank.getBalance from "./bank"
   import bank.getBalances from "./bank"
-  import basicSpells.has from "../../spells/basicSpells"
   import ics20.*
 
   /****************************************************************************
