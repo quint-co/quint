@@ -186,6 +186,10 @@ describe('parse errors', () => {
     parseAndCompare('_1026importCycleA')
   })
 
+  it('double spread should produce an error', () => {
+    parseAndCompare('_1029spreadError')
+  })
+
   // The test below needs a fix, see:
   //
   // https://github.com/informalsystems/quint/issues/378

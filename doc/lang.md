@@ -1260,8 +1260,10 @@ field(r, "fld") // r is an identifier, "fld" is a string literal
 r.fieldNames()
 fieldNames(r)
 // record update: [r EXCEPT !.f = e]
-r.with(f, e)
-with(r, f, e)
+r.with("f", e)
+with(r, "f", e)
+// special syntax for [r EXCEPT !.f1 = e1, !fN = eN], also works for n fields
+{ f1: e1, fN: eN, ...r }
 ```
 
 Note that we are using the syntax `{ name_1: value_1, ..., name_n: value_n }`

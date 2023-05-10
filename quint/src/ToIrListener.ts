@@ -2,7 +2,16 @@ import * as p from './generated/QuintParser'
 import { IdGenerator } from './idGenerator'
 import { ParserRuleContext } from 'antlr4ts/ParserRuleContext'
 import { QuintListener } from './generated/QuintListener'
-import { OpQualifier, QuintDef, QuintEx, QuintLambdaParameter, QuintModule, QuintName, QuintOpDef } from './quintIr'
+import {
+  OpQualifier,
+  QuintApp,
+  QuintDef,
+  QuintEx,
+  QuintLambdaParameter,
+  QuintModule,
+  QuintName,
+  QuintOpDef,
+} from './quintIr'
 import { QuintType, Row } from './quintTypes'
 import { strict as assert } from 'assert'
 import { ErrorMessage, Loc } from './quintParserFrontend'
@@ -591,19 +600,68 @@ export class ToIrListener implements QuintListener {
     this.pushApplication(ctx, 'List', args)
   }
 
-  // record constructor, e.g., { name: "igor", year: 2021 }
-  exitRecord(ctx: p.RecordContext) {
-    const names = ctx.IDENTIFIER().map(n => n.text)
-    const elems: QuintEx[] = popMany(this.exprStack, ctx.expr().length)
-
-    const namesAndValues = zipWith(names, elems, (name, elem) => {
+  // field: expr, or ...record
+  exitRecElem(ctx: p.RecElemContext) {
+    const expr = this.exprStack.pop()!
+    // Wrap a pair 'field: expr' or a singleton 'record' into a tuple,
+    // so we would be able to extract them in `exitRecord`.
+    // The tuple here is a temporary container and nothing else.
+    // Hence, we do not even need a unique id for it.
+    if (ctx.IDENTIFIER()) {
+      // field: expr
       const id = this.idGen.nextId()
       this.sourceMap.set(id, this.loc(ctx))
+      const nameEx: QuintEx = {
+        id,
+        kind: 'str',
+        value: ctx.IDENTIFIER()?.text!,
+      }
+      this.exprStack.push({
+        id: 0n,
+        kind: 'app',
+        opcode: 'Tup',
+        args: [nameEx, expr],
+      })
+    } else {
+      // ...expr
+      this.exprStack.push({
+        id: 0n,
+        kind: 'app',
+        opcode: 'Tup',
+        args: [expr],
+      })
+    }
+  }
 
-      const nameExpression: QuintEx = { id, kind: 'str', value: name }
-      return [nameExpression, elem]
-    })
-    this.pushApplication(ctx, 'Rec', namesAndValues.flat())
+  // record constructor, e.g., { name: "igor", year: 2021 }
+  exitRecord(ctx: p.RecordContext) {
+    const elems = popMany(this.exprStack, ctx.recElem().length)
+    const spreads = elems.filter(e => e.kind === 'app' && e.args.length === 1)
+    const pairs = elems.map(e => (e.kind === 'app' && e.args.length === 2 ? e.args : [])).filter(es => es.length > 0)
+
+    if (spreads.length === 0) {
+      // { field1: value1, field2: value2 }
+      this.pushApplication(ctx, 'Rec', pairs.flat())
+    } else if (spreads.length > 1) {
+      // error
+      const msg = 'QNT012: ... may be used once in { ...record, <fields> }'
+      this.pushError(ctx, msg)
+    } else {
+      // { ...record, field1: value1, field2: value2 }
+      // translate to record.with("field1", value1).with("field2", value2)
+      let record: QuintEx = (spreads[0] as QuintApp).args[0]
+      for (const p of pairs) {
+        const id = this.idGen.nextId()
+        record = {
+          id,
+          kind: 'app',
+          opcode: 'with',
+          args: [record, ...p],
+        }
+        this.sourceMap.set(id, this.loc(ctx))
+      }
+      this.exprStack.push(record)
+    }
   }
 
   // '+' or '-'

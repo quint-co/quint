@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Pretty-printing of expressions in REPL (#870)
+- Spread syntax for record updates (#880)
 
 ### Changed
 ### Deprecated

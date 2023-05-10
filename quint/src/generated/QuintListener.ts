@@ -76,6 +76,7 @@ import { IdentOrHoleContext } from "./QuintParser";
 import { ParameterContext } from "./QuintParser";
 import { IdentOrStarContext } from "./QuintParser";
 import { ArgListContext } from "./QuintParser";
+import { RecElemContext } from "./QuintParser";
 import { NormalCallNameContext } from "./QuintParser";
 import { NameAfterDotContext } from "./QuintParser";
 import { OperatorContext } from "./QuintParser";
@@ -989,6 +990,17 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitArgList?: (ctx: ArgListContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.recElem`.
+	 * @param ctx the parse tree
+	 */
+	enterRecElem?: (ctx: RecElemContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.recElem`.
+	 * @param ctx the parse tree
+	 */
+	exitRecElem?: (ctx: RecElemContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `QuintParser.normalCallName`.

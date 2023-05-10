@@ -135,7 +135,7 @@ expr:           // apply a built-in operator via the dot notation
         |       expr IFF expr                                       # iff
         |       expr IMPLIES expr                                   # implies
         |       expr MATCH
-                    ('|' STRING ':' parameter '=>' expr)+         # match
+                    ('|' STRING ':' parameter '=>' expr)+           # match
         |       'all' '{' expr (',' expr)* ','? '}'                 # actionAll
         |       'any' '{' expr (',' expr)* ','? '}'                 # actionAny
         |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
@@ -143,8 +143,7 @@ expr:           // apply a built-in operator via the dot notation
         |       '(' expr ',' expr (',' expr)* ','? ')'              # tuple
         //      short-hand syntax for pairs, mainly designed for maps
         |       expr '->' expr                                      # pair
-        |       '{' IDENTIFIER ':' expr
-                        (',' IDENTIFIER ':' expr)* ','? '}'         # record
+        |       '{' recElem (',' recElem)* ','? '}'                 # record
         //      a list constructor, the form list(...) is just an operator call
         |       '[' (expr (',' expr)*)? ','? ']'                    # list
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
@@ -179,6 +178,10 @@ identOrStar :   '*' | IDENTIFIER
         ;
 
 argList :      expr (',' expr)*
+        ;
+
+recElem : IDENTIFIER ':' expr
+        | '...' expr
         ;
 
 // operators in the normal call may use a few reserved names,

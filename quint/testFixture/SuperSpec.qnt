@@ -179,6 +179,7 @@ module withConsts {
   val test_list_nth = [2, 3, 4][2]
   val test_record = { name: "igor", year: 1981 }
   val test_record2 = Rec("name", "igor", "year", 1981)
+  val test_record3 = { name: "quint", year: 2023, ...test_record }
   val test_set = Set(1, 2, 3)
 
   // access a record via dot
