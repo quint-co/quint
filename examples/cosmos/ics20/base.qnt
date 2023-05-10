@@ -47,4 +47,12 @@ module base {
   pure def has(__map: a -> b, __key: a): bool = {
     __map.keys().contains(__key)
   }
+
+  /// Test whether a set is non-empty
+  ///
+  /// - @param __set a map to query
+  /// - @returns true if and only if __set is non-empty (.size() != 0)
+  pure def setNonEmpty(__set: Set[a]): bool = {
+    __set.size() != 0
+  }
 }

@@ -1,7 +1,7 @@
 // -*- mode: Bluespec; -*-
 
 /**
- * A specification for the ICS20 fungible token transfer protocol:
+ * A specification of the ICS20 fungible token transfer protocol:
  * https://github.com/cosmos/ibc/tree/main/spec/app/ics-020-fungible-token-transfer
  *
  * Gabriela Moreira and Thomas Pani, Informal Systems, 2023
@@ -45,10 +45,12 @@ module ics20 {
   type ChainState = {
     bank: Accounts,
     channels: ChannelCounterparties,
-    outPackets: Set[Packet],
-    receivedButUnacknowledgedPackets: Set[Packet],
-    inAcknowledgements: Set[FungibleTokenPacketAcknowledgement],
     channelEscrowAddresses: Channel -> Address,
+    // IBC packet handling:
+    outPackets: Set[Packet],                        // outgoing unreceived packets
+    receivedButUnacknowledgedPackets: Set[Packet],  // received but unacknowledged packets
+    inAcknowledgements: Set[FungibleTokenPacketAcknowledgement],  // incoming acknowledgements
+    inTimeouts: Set[Packet],                                      // incoming timeouts
   }
 
   /****************************************************************************
@@ -158,7 +160,7 @@ module ics20 {
       } else {
         // The (failed) transfer attempt was moving the token further along its denom trace.
         // For this, we originally escrowed tokens in `sendFungibleTokens`, so unescrow them back.
-        pure val escrowAccount = chainState.channelEscrowAddresses.get(packet.srcChannel)
+        pure val escrowAccount = chainState.channelEscrowAddresses.get(packet.sourceChannel)
         chainState.bank.TransferCoins(escrowAccount, data.sender, data.denom, data.amount)
       }
     if (bankResult.success) {
@@ -274,9 +276,11 @@ module ics20Test {
       bank: if (chain == "A") Map("alice" -> Map(ATOM -> 100)) else Map(),
       channels: channelCounterparties.get(chain),
       channelEscrowAddresses: channelCounterparties.get(chain).keys().mapBy(_ => ESCROW_ACCOUNT),
+      // Start without any unprocessed packets/acknowledgements/timeouts
       outPackets: Set(),
       receivedButUnacknowledgedPackets: Set(),
-      inAcknowledgements: Set()
+      inAcknowledgements: Set(),
+      inTimeouts: Set()
     })
   }
 
@@ -344,24 +348,81 @@ module ics20Test {
       }
     }
 
-  /// Receive a pending acknowledgement on `chain`:
+  /// Time out a packet sent from `sourceChain` to `destChain`.
+  action timeoutPacket(sourceChain: str, destChain: str): bool =
+    val sourceChainState = chainStates.get(sourceChain)
+    all {
+      // (1) Pre-condition:
+      // there is a channel between `sourceChain` and `destChain`
+      hasChannelBetween(sourceChain, destChain),
+      // there is an unreceived packet traveling from `sourceChain` to `destChain`
+      sourceChainState.outPackets.exists(packet => packet.isTravelingBetween(sourceChain, destChain)),
+
+      // (2) Non-deterministically pick a packet from `sourceChain` to `destChain` to time out:
+      nondet packet = sourceChainState.outPackets
+                                  .filter(p => p.isTravelingBetween(sourceChain, destChain))
+                                  .oneOf()
+
+      // (3) Compute updated source chain state:
+      // Update packet sets, moving `packet` from `outPackets` to `inTimeouts`
+      val newSourceChainOutPackets = sourceChainState.outPackets.exclude(Set(packet))
+      val newSourceChainInAcknowledgements = sourceChainState.inTimeouts.union(Set(packet))
+      // Update source chain state with new packet/acknowledgement sets
+      val newSourceChainState = sourceChainState
+                                      .with("outPackets", newSourceChainOutPackets)
+                                      .with("inTimeouts", newSourceChainInAcknowledgements)
+
+      // (4) Quint state transition:
+      chainStates' = chainStates.set(sourceChain, newSourceChainState)
+    }
+
+  /// Receive an acknowledgement on `chain`:
   /// - Pick an arbitrary, previously unreceived acknowledgement on `chain`.
   /// - Call the `onAcknowledgePacket` callback on it.
   /// - Update the chain state to record the acknowledgement as received.
-  action receiveAck(chain: str): bool = all {
-    // (1) Compute updated chain state:
-    // non-deterministically pick an acknowledgement
+  action receiveAck(chain: str): bool =
     val chainState = chainStates.get(chain)
-    nondet acknowledgement = chainState.inAcknowledgements.oneOf()
-    // call the `onAcknowledgePacket` callback and
-    val ackedChainState = onAcknowledgePacket(chainState, acknowledgement.packet, acknowledgement)
-    // remove `acknowledgement` from incoming acknowledgements
-    val newInAcknowledgements = chainState.inAcknowledgements.exclude(Set(acknowledgement))
-    val newChainState = ackedChainState.with("inAcknowledgements", newInAcknowledgements)
+    all {
+      // (1) Pre-condition:
+      // there is an incoming acknowledgement
+      chainState.inAcknowledgements.setNonEmpty(),
 
-    // (2) Quint state transition:
-    chainStates' = chainStates.set(chain, newChainState)
-  }
+      // (2) Compute updated chain state:
+      // non-deterministically pic an acknowledgement
+      nondet acknowledgement = chainState.inAcknowledgements.oneOf()
+      // call the `onAcknowledgePacket` callback
+      val ackedChainState = onAcknowledgePacket(chainState, acknowledgement.packet, acknowledgement)
+      // remove `acknowledgement` from incoming acknowledgements
+      val newInAcknowledgements = chainState.inAcknowledgements.exclude(Set(acknowledgement))
+      val newChainState = ackedChainState.with("inAcknowledgements", newInAcknowledgements)
+
+      // (3) Quint state transition:
+      chainStates' = chainStates.set(chain, newChainState)
+    }
+
+  /// Receive a timeout on `chain`:
+  /// - Pick an arbitrary, previously unreceived timeout on `chain`.
+  /// - Call the `onTimeoutPacket` callback on it.
+  /// - Update the chain state to record the timeout as received.
+  action receiveTimeout(chain: str): bool =
+    val chainState = chainStates.get(chain)
+    all {
+      // (1) Pre-condition:
+      // there is a timed out packet
+      chainState.inTimeouts.setNonEmpty(),
+
+      // (2) Compute updated chain state:
+      // non-deterministically pick a timed out packet
+      nondet timedoutPacket = chainState.inTimeouts.oneOf()
+      // call the `onTimeout` callback
+      val timedoutChainState = onTimeoutPacket(chainState, timedoutPacket)
+      // remove `timedoutPacket` from incoming timeouts
+      val newInTimeouts = chainState.inTimeouts.exclude(Set(timedoutPacket))
+      val newChainState = timedoutChainState.with("inTimeouts", newInTimeouts)
+
+      // (3) Quint state transition:
+      chainStates' = chainStates.set(chain, newChainState)
+    }
 
   /// Send `amount`-many `denom` tokens from `sender` on `sourceChain` to
   /// `receiver` on `destChain`.
@@ -548,5 +609,38 @@ module ics20Test {
       chainStates' = chainStates
   })
 
-  // TODO(thpani): add a test for packet timeout
+  // Test timeout handling:
+  //
+  // 1. Send a packet transferring 50 tokens from Alice on chain A to Bob on chain B.
+  //    This should move 50 tokens into the escrow account.
+  // 2. Timeout packet.
+  // 3. Handle timeout on chain A.
+  //    This should unescrow 50 tokens to Alice.
+  run TimeoutTest = init.then(all {
+    assert(chainStates.get("A").bank.getBalances("alice").getBalance(ATOM) == 100),
+    assert(chainStates.get("A").bank.getBalances(ESCROW_ACCOUNT).getBalance(ATOM) == 0),
+
+    // 1. Send packet transferring 50 tokens from Alice on chain A to Bob on chain B.
+    sendPacket("A", "B", ATOM, 50, "alice", "bob")
+  }).then(all {
+    //    This should've moved 50 tokens into the escrow account.
+    assert(chainStates.get("A").bank.getBalances("alice").getBalance(ATOM) == 50),
+    assert(chainStates.get("A").bank.getBalances(ESCROW_ACCOUNT).getBalance(ATOM) == 50),
+
+    // 2. Timeout packet.
+    timeoutPacket("A", "B")
+  }).then(all {
+    assert(chainStates.get("A").bank.getBalances("alice").getBalance(ATOM) == 50),
+    assert(chainStates.get("A").bank.getBalances(ESCROW_ACCOUNT).getBalance(ATOM) == 50),
+
+    // 3. Handle timeout on chain A.
+    receiveTimeout("A")
+  }).then(all {
+    //    This should've unescrowed 50 tokens to Alice.
+    assert(chainStates.get("A").bank.getBalances("alice").getBalance(ATOM) == 100),
+    assert(chainStates.get("A").bank.getBalances(ESCROW_ACCOUNT).getBalance(ATOM) == 0),
+
+    // noop
+    chainStates' = chainStates
+  })
 }
