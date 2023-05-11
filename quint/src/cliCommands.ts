@@ -529,7 +529,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
  *
  * @param prev the procedure stage produced by `typecheck`
  */
-export function verifySpec(prev: TypecheckedStage): CLIProcedure<VerifiedStage> {
+export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<VerifiedStage>> {
   const verifying = { ...prev, stage: 'verifying' as stage }
   const args = verifying.args
   // TODO error handing for file reads and deserde
@@ -555,12 +555,14 @@ export function verifySpec(prev: TypecheckedStage): CLIProcedure<VerifiedStage> 
       inv: args.invariant,
     },
   }
-  return verify(config)
-    .map(_ => ({ ...verifying, status: 'ok', errors: [] } as VerifiedStage))
-    .mapLeft(err => ({
-      msg: `Verification error: ${err.explanation}`,
-      stage: { ...verifying, status: 'failure', errors: err.errors },
-    }))
+  return verify(config).then(res =>
+    res
+      .map(_ => ({ ...verifying, status: 'ok', errors: [] } as VerifiedStage))
+      .mapLeft(err => ({
+        msg: err.explanation,
+        stage: { ...verifying, status: 'failure', errors: err.errors },
+      }))
+  )
 }
 
 /**
