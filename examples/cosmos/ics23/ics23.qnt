@@ -1,3 +1,4 @@
+// -*- mode: Bluespec; -*-
 // This is a protocol specification of ICS23, tuned towards the IAVL case.
 //
 // For details of ICS23, see:
