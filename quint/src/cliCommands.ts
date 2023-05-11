@@ -284,6 +284,9 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   const mainArg = prev.args.main
   const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
   const main = prev.modules.find(m => m.name === mainName)
+
+  const outputTemplate = testing.args.output
+
   if (!main) {
     return left({
       msg: `Module ${mainName} not found`,
@@ -312,6 +315,18 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
       maxSamples: testing.args.maxSamples,
       rng,
       verbosity: verbosityLevel,
+      onTrace: (index: number, name: string, status: string, vars: string[], states: QuintEx[]) => {
+        if (outputTemplate && outputTemplate.endsWith('.itf.json')) {
+          const filename = outputTemplate.replaceAll('{}', name).replaceAll('{#}', index)
+          const trace = toItf(vars, states)
+          if (trace.isRight()) {
+            const jsonObj = addItfHeader(prev.args.input, status, trace.value)
+            writeToJson(filename, jsonObj)
+          } else {
+            console.error(`ITF conversion failed on ${name}: ${trace.value}`)
+          }
+        }
+      },
     }
     const testOut = compileAndTest(testing.modules, main, testing.sourceMap, testing.table, testing.types, options)
     if (testOut.isLeft()) {
@@ -469,17 +484,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
     if (prev.args.outItf) {
       const trace = toItf(result.vars, result.states)
       if (trace.isRight()) {
-        const jsonObj = {
-          '#meta': {
-            format: 'ITF',
-            'format-description': 'https://apalache.informal.systems/docs/adr/015adr-trace.html',
-            source: prev.args.input,
-            status: result.status,
-            description: 'Created by Quint on ' + new Date(),
-            timestamp: Date.now(),
-          },
-          ...trace.value,
-        }
+        const jsonObj = addItfHeader(prev.args.input, result.status, trace.value)
         writeToJson(prev.args.outItf, jsonObj)
       } else {
         const newStage = { ...simulator, errors: result.errors }
@@ -617,6 +622,20 @@ function mkRng(seedText?: string): Either<string, Rng> {
   }
 
   return right(seed ? newRng(seed) : newRng())
+}
+
+function addItfHeader(source: string, status: string, traceInJson: any): any {
+  return {
+    '#meta': {
+      format: 'ITF',
+      'format-description': 'https://apalache.informal.systems/docs/adr/015adr-trace.html',
+      source,
+      status,
+      description: 'Created by Quint on ' + new Date(),
+      timestamp: Date.now(),
+    },
+    ...traceInJson,
+  }
 }
 
 /**

@@ -104,6 +104,11 @@ const testCmd = {
         desc: 'name of the main module (by default, computed from filename)',
         type: 'string',
       })
+      .option('output', {
+        desc: `write a trace for every test, e.g., out{#}{}.itf.json
+{} is the name of a test, {#} is the test sequence number`,
+        type: 'string',
+      })
       .option('max-samples', {
         desc: 'the maximum number of successful runs to try for every randomized test',
         type: 'number',
@@ -248,6 +253,20 @@ const docsCmd = {
   handler: (args: any) => load(args).then(chainCmd(docs)).then(outputResult),
 }
 
+const validate = (argv: any) => {
+  if (argv.output && typeof argv.output === 'string') {
+    const output = argv.output
+    if (!output.endsWith('.itf.json')) {
+      throw new Error(`Unexpected format in --output: ${output}`)
+    }
+    if (!output.includes('{}') && !output.includes('{#}')) {
+      throw new Error(`The output should contain at least one of variables: {}, {#}`)
+    }
+  }
+
+  return true
+}
+
 async function main() {
   // parse the command-line arguments and execute the handlers
   await yargs(process.argv.slice(2))
@@ -259,6 +278,7 @@ async function main() {
     .command(verifyCmd)
     .command(docsCmd)
     .demandCommand(1)
+    .check(validate)
     .version(version)
     .strict()
     .parse()

@@ -11,7 +11,7 @@
 import { Either, left, merge, right } from '@sweet-monads/either'
 
 import { ErrorMessage, Loc, fromIrErrorMessage } from '../quintParserFrontend'
-import { QuintModule, QuintOpDef } from '../quintIr'
+import { QuintEx, QuintModule, QuintOpDef } from '../quintIr'
 import { TypeScheme } from '../types/base'
 
 import { CompilationContext, compile } from './compile'
@@ -29,6 +29,7 @@ export interface TestOptions {
   maxSamples: number
   rng: Rng
   verbosity: number
+  onTrace(index: number, name: string, status: string, vars: string[], states: QuintEx[]): void
 }
 
 /**
@@ -84,6 +85,14 @@ export function compileAndTest(
   const recorder = newTraceRecorder(options.verbosity, options.rng)
   const ctx = compile(modules, sourceMap, lookupTable, types, main.name, recorder, options.rng.next)
 
+  const saveTrace = (index: number, name: string, status: string) => {
+    // Save the best traces are reported by the recorder:
+    // If a test is failing, it is the first failing trace.
+    // Otherwise, it is the shortest trace explored by the test.
+    const states = recorder.getBestTrace().args.map(e => e.toQuintEx(zerog))
+    options.onTrace(index, name, status, ctx.vars, states)
+  }
+
   if (!ctx.main) {
     return left([{ explanation: 'Cannot find main module', locs: [] }])
   }
@@ -98,7 +107,7 @@ export function compileAndTest(
   const testDefs = ctx.main.defs.filter(d => d.kind === 'def' && options.testMatch(d.name)) as QuintOpDef[]
 
   return merge(
-    testDefs.map(def => {
+    testDefs.map((def, index) => {
       return getComputableForDef(ctx, def).map(comp => {
         const name = def.name
         // save the initial seed
@@ -138,6 +147,7 @@ export function compileAndTest(
               explanation: `${name} returns false`,
               refs: [def.id],
             })
+            saveTrace(index, name, 'failed')
             return {
               name,
               status: 'failed',
@@ -150,6 +160,7 @@ export function compileAndTest(
             if (options.rng.getState() === seed) {
               // This successful test did not use non-determinism.
               // Running it one time is sufficient.
+              saveTrace(index, name, 'passed')
               return {
                 name,
                 status: 'passed',
@@ -163,6 +174,7 @@ export function compileAndTest(
         }
 
         // the test was run maxSamples times, and no errors were found
+        saveTrace(index, name, 'passed')
         return {
           name,
           status: 'passed',
