@@ -14,7 +14,7 @@ apalache-mc server
 This requirement will be removed with https://github.com/informalsystems/quint/issues/823
 
 <!-- !test program
-APALACHE_DIST=_build/apalache PATH=_build/apalache/bin:$PATH bash -
+APALACHE_DIST=_build/apalache bash -
 -->
 
 ## Configuration errors
