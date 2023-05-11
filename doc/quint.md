@@ -260,7 +260,7 @@ Options:
 ```sh
 $ quint verify <input>
 
-[not implemented] Verify a Quint specification via Apalache
+Verify a Quint specification via Apalache
 
 Options:
   --help             Show help                                         [boolean]
@@ -277,6 +277,14 @@ Options:
   --apalache-config  Filename of the additional Apalache configuration (in the
                      HOCON format, a superset of JSON)                  [string]
 ```
+
+<!-- TODO: Update after https://github.com/informalsystems/quint/issues/701 -->
+Use of this command has three prerequisites:
+
+1. You have installed a distribution of
+   [Apalache](https://apalache.informal.systems/docs/apalache/installation/jvm.html)
+2. You have set `APALACHE_DIST` as the path to the distribution.
+3. You have started the Apalache server `apalache-mc server` and it is running.
     
 Apalache uses bounded model checking. This technique checks *all runs* up to
 `--max-steps` steps via [z3][]. Apalache is highly configurable. See [Apalache

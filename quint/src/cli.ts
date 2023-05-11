@@ -200,7 +200,7 @@ const runCmd = {
 // construct verify commands with yargs
 const verifyCmd = {
   command: 'verify <input>',
-  desc: '[not implemented] Verify a Quint specification via Apalache',
+  desc: `Verify a Quint specification via Apalache`,
   builder: (yargs: any) =>
     yargs
       .option('out', {
