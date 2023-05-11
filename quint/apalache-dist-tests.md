@@ -60,8 +60,11 @@ error: Apalache distribution is corrupted. Could not extract proto file from apa
 
 ### Inability to connect to the server produces an errer
 
-Wen now assume a correctly configured installation of Apalache, but that the
-server it not running.
+We now assume a correctly configured installation of Apalache, but expect that the
+server it not already running.
+
+See https://github.com/informalsystems/quint/issues/823 for plans to manage the
+server, making this error case all but impossible.
 
 <!-- !test program
 APALACHE_DIST=_build/apalache PATH=_build/apalache/bin:$PATH bash -
