@@ -47,8 +47,8 @@ We set up a valid looking distribution, but with an invalid jar file.
 
 <!-- !test in corrupted apalache.jar -->
 ```
-mkdir -p _build/corrupt-dist-test/bin && touch _build/corrupt-dist-test/lib/apalache.jar
-mkdir -p _build/corrupt-dist-test/lib && touch _build/corrupt-dist-test/bin/apalache-mc
+mkdir -p _build/corrupt-dist-test/lib && touch _build/corrupt-dist-test/lib/apalache.jar
+mkdir -p _build/corrupt-dist-test/bin && touch _build/corrupt-dist-test/bin/apalache-mc
 APALACHE_DIST=_build/corrupt-dist-test quint verify ../examples/language-features/booleans.qnt 2> >(sed "s:$PWD/::g" >&2)
 ```
 
