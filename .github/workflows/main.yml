@@ -100,10 +100,10 @@ jobs:
       - name: Apalache integration tests
         run: |
           cd ./quint
-          # Run the "disintegration" tests
-          npm run apalache-dist
           # Fetch the latest apalache release
           make -C .. apalache
+          # Run the "disintegration" tests
+          npm run apalache-dist
           # Start the server
           _build/apalache/bin/apalache-mc server &
           # Run the integration tests
