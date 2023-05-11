@@ -1,74 +1,75 @@
 # Integration tests against Apalache
 
 
-All of the test inputs in the following test cases are commands executed by `bash`.
+All of the test inputs in the following test cases are commands executed by
+`bash`.
+
+We currently assume that the Apalache server has already been started. 
+So before running these tests, in a separate terminal session, run
+
+```
+apalache-mc server
+```
+
+This requirement will be removed with https://github.com/informalsystems/quint/issues/823
 
 <!-- !test program
-PATH=_build/apalache/bin:$PATH bash -
+APALACHE_DIST=_build/apalache PATH=_build/apalache/bin:$PATH bash -
 -->
 
+## Configuration errors
 
-## Can check `../examples/language-features/booleans.qnt`
+### Verifying spec with invalid init param produces an error
 
-<!-- !test in can check booleans.qnt -->
+<!-- !test in invalid init -->
 ```
-quint typecheck --out _build/booleans.qnt.json ../examples/language-features/booleans.qnt
-apalache-mc check _build/booleans.qnt.json | grep -o "EXITCODE: OK"
-```
-
-<!-- !test out can check booleans.qnt -->
-```
-EXITCODE: OK
+quint verify --init=invalidInit ../examples/language-features/booleans.qnt
 ```
 
-## Can check `../examples/language-features/integers.qnt`
-
-<!-- !test in can check integers.qnt -->
+<!-- !test exit 1 -->
+<!-- !test err invalid init -->
 ```
-quint typecheck --out _build/integers.qnt.json ../examples/language-features/integers.qnt
-apalache-mc check _build/integers.qnt.json | grep -o "EXITCODE: OK"
+error: Configuration error (see the manual): Operator invalidInit not found (used as the initialization predicate)
 ```
 
-<!-- !test out can check integers.qnt -->
+
+## Successful verification
+
+### Can verify `../examples/language-features/booleans.qnt`
+
+<!-- !test check can check booleans.qnt -->
 ```
-EXITCODE: OK
+quint verify --init Init --step Next ../examples/language-features/booleans.qnt
 ```
 
-## Can check `../examples/language-features/sets.qnt`
 
-<!-- !test in can check sets.qnt -->
-```
-quint typecheck --out _build/sets.qnt.json ../examples/language-features/sets.qnt
-apalache-mc check _build/sets.qnt.json | grep -o "EXITCODE: OK"
-```
+### Can verify `../examples/language-features/integers.qnt`
 
-<!-- !test out can check sets.qnt -->
+<!-- !test check can check integers.qnt -->
 ```
-EXITCODE: OK
+quint verify --init Init --step Next ../examples/language-features/integers.qnt
 ```
 
-## Can check `../examples/language-features/lists.qnt`
+### Can verify `../examples/language-features/sets.qnt`
 
-<!-- !test in can check lists.qnt -->
+<!-- !test check can check sets.qnt -->
 ```
-quint typecheck --out _build/lists.qnt.json ../examples/language-features/lists.qnt
-apalache-mc check _build/lists.qnt.json | grep -o "EXITCODE: OK"
-```
-
-<!-- !test out can check lists.qnt -->
-```
-EXITCODE: OK
+quint verify --init Init --step Next ../examples/language-features/sets.qnt
 ```
 
-## Can check `../examples/language-features/maps.qnt`
 
-<!-- !test in can check maps.qnt -->
+### Can verify `../examples/language-features/lists.qnt`
+
+<!-- !test check can check lists.qnt -->
 ```
-quint typecheck --out _build/maps.qnt.json ../examples/language-features/maps.qnt
-apalache-mc check _build/maps.qnt.json | grep -o "EXITCODE: OK"
+quint verify --init Init --step Next ../examples/language-features/lists.qnt
 ```
 
-<!-- !test out can check maps.qnt -->
+
+### Can verify `../examples/language-features/maps.qnt`
+
+<!-- !test check can check maps.qnt -->
 ```
-EXITCODE: OK
+quint verify --init Init --step Next ../examples/language-features/maps.qnt
 ```
+
