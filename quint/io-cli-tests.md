@@ -796,4 +796,3 @@ exit $exit_code
 
 error: Tests failed
 ```
-
