@@ -73,3 +73,37 @@ quint verify --init Init --step Next ../examples/language-features/lists.qnt
 quint verify --init Init --step Next ../examples/language-features/maps.qnt
 ```
 
+### Default `step` and `init` operators are found
+
+<!-- !test check can find default operator names -->
+```
+quint verify ../examples/verification/defaultOpNames.qnt
+```
+
+### Can verify with single invariant
+
+<!-- !test check can specify --invariant -->
+```
+quint verify --invariant inv ../examples/verification/defaultOpNames.qnt
+```
+
+### Can verify with two invariants
+
+<!-- !test check can specify multiple invariants -->
+```
+quint verify --invariant inv,inv2 ../examples/verification/defaultOpNames.qnt
+```
+
+## Violations
+
+### Variant violations are reported with traces
+
+<!-- !test in prints a trace on invariant violation -->
+```
+quint verify --invariant inv ./testFixture/apalache/violateOnFive.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err prints a trace on invariant violation -->
+```
+```

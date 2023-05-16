@@ -560,7 +560,7 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
       .map(_ => ({ ...verifying, status: 'ok', errors: [] } as VerifiedStage))
       .mapLeft(err => ({
         msg: err.explanation,
-        stage: { ...verifying, status: 'failure', errors: err.errors },
+        stage: { ...verifying, status: 'failure', errors: err.errors, trace: err.trace },
       }))
   )
 }
@@ -612,6 +612,9 @@ export function outputResult(result: CLIProcedure<ProcedureStage>) {
       } else {
         const finder = lineColumn(sourceCode!)
         errors.forEach(err => console.error(formatError(sourceCode, finder, err)))
+        if (stage.trace) {
+          console.error(stage.trace)
+        }
         console.error(`error: ${msg}`)
       }
       process.exit(1)

@@ -227,8 +227,9 @@ const verifyCmd = {
         default: 'step',
       })
       .option('invariant', {
-        desc: 'invariant to check: a definition name or an expression',
+        desc: 'the invariants to check, separated by a comma',
         type: 'string',
+        coerce: (s: string) => s.split(','),
       })
       .option('apalache-config', {
         desc: 'Filename of the additional Apalache configuration (in the HOCON format, a superset of JSON)',

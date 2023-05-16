@@ -56,24 +56,42 @@ type Apalache = {
   check: (c: ApalacheConfig) => Promise<VerifyResult<void>>
 }
 
+function handleVerificationFailure(failure: { pass_name: string; error_data: any }): VerifyError {
+  switch (failure.pass_name) {
+    case 'BoundedChecker':
+      if (failure.error_data.checking_result == 'Error') {
+        return { explanation: 'A counterexample was found', trace: failure.error_data.counterexamples, errors: [] }
+      } else {
+        // TODO
+        throw new Error(`internal error: unhandled verification error ${failure}`)
+      }
+    default:
+      throw new Error(`internal error: unhandled verification error ${failure}`)
+  }
+}
+
 // Construct the Apalache interface around the cmdExecutor
 function apalache(cmdExecutor: AsyncCmdExecutor): Apalache {
-  return {
-    check: async (c: ApalacheConfig) => {
-      const response = await cmdExecutor.run({ cmd: 'CHECK', config: JSON.stringify(c) })
-      if (response.result == 'success') {
-        return right(void 0)
-      } else {
-        if (response.failure.errorType == 'UNEXPECTED') {
+  const check = async (c: ApalacheConfig): Promise<VerifyResult<void>> => {
+    const response = await cmdExecutor.run({ cmd: 'CHECK', config: JSON.stringify(c) })
+    if (response.result == 'success') {
+      return right(void 0)
+    } else {
+      switch (response.failure.errorType) {
+        case 'UNEXPECTED': {
           const errData = JSON.parse(response.failure.data)
           return err(errData.msg)
-        } else {
+        }
+        case 'PASS_FAILURE':
+          return left(handleVerificationFailure(JSON.parse(response.failure.data)))
+        default:
           // TODO handle other error cases
           return err(`${response.failure.errorType}: ${response.failure.data}`)
-        }
       }
-    },
+    }
   }
+
+  return { check }
 }
 
 // Alias for an async callback for values of type T used to annotate
