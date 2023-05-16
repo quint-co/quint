@@ -10,6 +10,7 @@ import {
   Connection,
   DefinitionLink,
   DefinitionParams,
+  Diagnostic,
   DocumentSymbol,
   DocumentSymbolParams,
   HandlerResult,
@@ -92,11 +93,12 @@ export class QuintLanguageServer {
     documents.onDidChangeContent(async(change) => {
       parseDocument(this.idGenerator, change.document).then((result) => {
         this.parsedDataByDocument.set(change.document.uri, result)
+        this.scheduleAnalysis(change.document)
       }).catch(diagnostics => {
         this.connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
+        this.scheduleAnalysis(change.document, diagnostics)
       })
 
-      this.scheduleAnalysis(change.document)
     })
 
     connection.onHover((params: HoverParams): Hover | undefined => {
@@ -273,18 +275,18 @@ export class QuintLanguageServer {
     this.analysisOutputByDocument.delete(uri)
   }
 
-  private scheduleAnalysis(document: TextDocument) {
+  private scheduleAnalysis(document: TextDocument, previousDiagnostics: Diagnostic[] = []) {
     clearTimeout(this.analysisTimeout)
     const timeoutMillis = 1000
     this.connection.console.info(`Scheduling analysis in ${timeoutMillis} ms`)
     this.analysisTimeout = setTimeout(() => {
-      this.analyze(document).catch((err) =>
+      this.analyze(document, previousDiagnostics).catch((err) =>
         this.connection.console.error(`Failed to analyze: ${err.message}`)
       )
     }, timeoutMillis)
   }
 
-  private async analyze(document: TextDocument) {
+  private async analyze(document: TextDocument, previousDiagnostics: Diagnostic[] = []) {
     const parsedData = this.parsedDataByDocument.get(document.uri)
     if (!parsedData) {
       return
@@ -301,7 +303,7 @@ export class QuintLanguageServer {
     this.analysisOutputByDocument.set(document.uri, analysisOutput)
 
     const diagnostics = diagnosticsFromErrors(errors, sourceMap)
-    this.connection.sendDiagnostics({ uri: document.uri, diagnostics })
+    this.connection.sendDiagnostics({ uri: document.uri, diagnostics: previousDiagnostics.concat(diagnostics) })
   }
 }
 
