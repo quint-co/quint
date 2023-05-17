@@ -32,6 +32,8 @@ export type ItfState = {
   [index: string]: ItfValue
 }
 
+/** The type of IFT traces.
+ * See https://github.com/informalsystems/apalache/blob/main/docs/src/adr/015adr-trace.md */
 export type ItfTrace = {
   '#meta'?: any
   params?: string[]
