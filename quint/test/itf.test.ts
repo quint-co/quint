@@ -14,17 +14,17 @@ describe('itf', () => {
       states: [
         {
           '#meta': { index: 0 },
-          x: 2n,
+          x: 2,
           y: true,
         },
         {
           '#meta': { index: 1 },
-          x: 3n,
+          x: 3,
           y: false,
         },
       ],
     }
-    assert(itfTrace.isRight(), itfTrace.unwrap())
+    assert(itfTrace.isRight(), `invalid ITF trace: ${JSON.stringify(itfTrace.unwrap)}`)
     assert.deepEqual(itfTrace.unwrap(), expected)
   })
 
@@ -51,25 +51,25 @@ describe('itf', () => {
           '#meta': {
             index: 0,
           },
-          a: 2n,
+          a: 2,
           b: 'hello',
           c: { '#bigint': '1000000000000000000' },
-          d: { '#set': [5n, 6n] },
-          e: { foo: 3n, bar: true },
-          f: { '#tup': [7n, 'myStr'] },
+          d: { '#set': [5, 6] },
+          e: { foo: 3, bar: true },
+          f: { '#tup': [7, 'myStr'] },
           g: {
             '#map': [
-              [1n, 'a'],
-              [2n, 'b'],
-              [3n, 'c'],
+              [1, 'a'],
+              [2, 'b'],
+              [3, 'c'],
             ],
           },
           h: { '#map': [] },
-          i: { '#map': [[1n, 'a']] },
+          i: { '#map': [[1, 'a']] },
         },
       ],
     }
-    assert(itfTrace.isRight(), itfTrace.value)
+    assert(itfTrace.isRight(), `invalid ITF trace: ${JSON.stringify(itfTrace.unwrap)}`)
     assert.deepEqual(itfTrace.unwrap(), expected)
   })
 })

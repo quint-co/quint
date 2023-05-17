@@ -2,7 +2,7 @@
  * Support for the Informal Trace Format (ITF):
  * https://apalache.informal.systems/docs/adr/015adr-trace.html
  *
- * Igor Konnov, Informal Systems, 2023
+ * Igor Konnov, Shon Feder, Informal Systems, 2023
  *
  * Copyright (c) Informal Systems 2021. All rights reserved.
  * Licensed under the Apache 2.0.
@@ -14,13 +14,37 @@ import { chunk } from 'lodash'
 
 import { QuintEx } from './quintIr'
 
-// The minimal value that can be reliably represented with number
-const minJsInt = -(2n ** 53n) + 1n
-// The maximal value that can be reliably represented with number
-const maxJsInt = 2n ** 53n - 1n
+export type ItfValue =
+  | boolean
+  | string
+  | number
+  | ItfValue[] // Sequence
+  | { '#bigint': string }
+  | { '#tup': ItfValue[] }
+  | { '#set': ItfValue[] }
+  | { '#map': [ItfValue, ItfValue][] }
+  | { '#unserializable': string }
+  | { [index: string]: ItfValue } // Record
+
+export type ItfState = {
+  '#meta'?: any
+  // Mapping of State variables to their values in a state
+  [index: string]: ItfValue
+}
+
+export type ItfTrace = {
+  '#meta'?: any
+  params?: string[]
+  vars: string[]
+  states: ItfState[]
+  loop?: number
+}
+
+const minJsInt: bigint = BigInt(Number.MIN_SAFE_INTEGER)
+const maxJsInt: bigint = BigInt(Number.MAX_SAFE_INTEGER)
 
 /**
- * Convert a typed Quint expression into an object that matches the JSON
+ * Convert a list of Quint expressions into an object that matches the JSON
  * representation of the ITF trace. This function does not add metadata
  * to the trace. This should be done by the caller.
  *
@@ -28,13 +52,13 @@ const maxJsInt = 2n ** 53n - 1n
  * @param states an array of expressions that represent the states
  * @returns an object that represent the trace in the ITF format
  */
-export function toItf(vars: string[], states: QuintEx[]): Either<string, any> {
+export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrace> {
   const exprToItf = (ex: QuintEx): Either<string, any> => {
     switch (ex.kind) {
       case 'int':
         if (ex.value >= minJsInt && ex.value <= maxJsInt) {
-          // OK to convert to a number, when saving to JSON
-          return right(ex.value)
+          // We can represent safely as a JS number
+          return right(Number(ex.value))
         } else {
           // convert to a special structure, when saving to JSON
           return right({ '#bigint': `${ex.value}` })
@@ -99,3 +123,7 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, any> {
     }
   })
 }
+
+// export function ofItf(itf: any[]): Either<string, QuintEx[]> {
+//   const stateToExpr = (any: )
+// }
