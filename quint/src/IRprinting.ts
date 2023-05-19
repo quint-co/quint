@@ -13,7 +13,9 @@
  */
 
 import { OpQualifier, QuintDef, QuintEx, QuintModule, isAnnotatedDef } from './quintIr'
-import { QuintType, Row } from './quintTypes'
+import { EmptyRow, QuintType, Row, VarRow } from './quintTypes'
+import { TypeScheme } from './types/base'
+import { typeSchemeToString } from './types/printing'
 
 /**
  * Pretty prints a module
@@ -35,8 +37,10 @@ export function moduleToString(quintModule: QuintModule): string {
  *
  * @returns a string with the pretty printed definition
  */
-export function definitionToString(def: QuintDef, includeBody: boolean = true): string {
-  const typeAnnotation = isAnnotatedDef(def) ? `: ${typeToString(def.typeAnnotation)}` : ''
+export function definitionToString(
+  def: QuintDef, includeBody: boolean = true, type: TypeScheme | undefined = undefined
+): string {
+  const typeAnnotation = isAnnotatedDef(def) ? `: ${typeToString(def.typeAnnotation)}` : type ? `: ${typeSchemeToString(type)}` : ''
   switch (def.kind) {
     case 'def': {
       const header = `${qualifierToString(def.qualifier)} ${def.name}${typeAnnotation}`
@@ -197,6 +201,19 @@ function rowFieldsToString(r: Row, showFieldName = true): string {
         case 'empty':
           return `${fields.join(', ')}`
       }
+    }
+  }
+}
+
+export function flattenRow(r: Row): [{ fieldName: string, fieldType: QuintType }[], VarRow | EmptyRow] {
+  switch (r.kind) {
+    case 'empty':
+      return [[], r]
+    case 'var':
+      return [[], r]
+    case 'row': {
+      const [fields, other] = flattenRow(r.other)
+      return [[...r.fields, ...fields], other]
     }
   }
 }

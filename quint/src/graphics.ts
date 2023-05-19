@@ -26,9 +26,13 @@ import {
   textify,
 } from './prettierimp'
 
-import { QuintEx } from './quintIr'
+import { QuintDef, QuintEx, isAnnotatedDef } from './quintIr'
 import { ExecutionFrame } from './runtime/trace'
 import { zerog } from './idGenerator'
+import { QuintType, Row } from './quintTypes'
+import { TypeScheme } from './types/base'
+import { canonicalTypeScheme } from './types/printing'
+import { definitionToString, flattenRow, qualifierToString, rowToString } from './IRprinting'
 
 /**
  * An abstraction of a Console of bounded text width.
@@ -50,12 +54,6 @@ export const terminalWidth = () => {
 
 // convert a Quint expression to a colored pretty-printed doc, tuned for REPL
 export function prettyQuintEx(ex: QuintEx): Doc {
-  // a helper function to produce specific indentation
-  const nary = (left: Doc, args: Doc[], right: Doc, padding: Doc = linebreak): Doc => {
-    const as = group([nest('  ', [padding, docJoin([text(','), line()], args)]), padding])
-    return group([left, as, right])
-  }
-
   switch (ex.kind) {
     case 'bool':
       return richtext(chalk.yellow, ex.value.toString())
@@ -123,6 +121,88 @@ export function prettyQuintEx(ex: QuintEx): Doc {
   }
 }
 
+export function prettyQuintDef(
+  def: QuintDef, includeBody: boolean = true, type: TypeScheme | undefined = undefined
+): Doc {
+  const typeAnnotation = isAnnotatedDef(def) ? [text(': '), prettyQuintType(def.typeAnnotation)] : type ? [text(': '), prettyTypeScheme(type)] : []
+  switch (def.kind) {
+    case 'def': {
+      const header = group([
+        richtext(chalk.magenta, qualifierToString(def.qualifier)),
+        text(' '),
+        richtext(chalk.blue, def.name),
+        ...typeAnnotation
+      ])
+      return includeBody ? group([header, text(' = '), prettyQuintEx(def.expr)]) : header
+    }
+    default:
+      // TODO, not used for now
+      return text(definitionToString(def))
+  }
+}
+
+export function prettyTypeScheme(scheme: TypeScheme): Doc {
+  const [vars, type] = canonicalTypeScheme(scheme)
+  const varsDoc = vars.length > 0 ? group([text('∀'), docJoin([text(','), line()], vars.map(text)), text('.')]) : text('')
+  return group([varsDoc, prettyQuintType(type)])
+}
+
+export function prettyQuintType(type: QuintType): Doc {
+  switch (type.kind) {
+    case 'bool':
+    case 'int':
+    case 'str':
+      return richtext(chalk.yellow, type.kind)
+    case 'const':
+    case 'var':
+      return richtext(chalk.blue, type.name)
+    case 'set':
+      return group([richtext(chalk.green, 'Set'), text('('), prettyQuintType(type.elem), text(')')])
+    case 'list':
+      return group([richtext(chalk.green, 'List'), text('('), prettyQuintType(type.elem), text(')')])
+    case 'fun':
+      return group([prettyQuintType(type.arg), richtext(chalk.gray, ' -> '), prettyQuintType(type.res)])
+    case 'oper': {
+      const args = type.args.map(prettyQuintType)
+      return group([richtext(chalk.green, 'Set'), nary(text('('), args, text(')')), text(' => '), prettyQuintType(type.res)])
+    }
+    case 'tup':
+      return prettyRow(type.fields, false)
+    case 'rec': {
+      if (rowToString(type.fields) === '{}') {
+        return text('{}')
+      }
+      return group([text('{ '), prettyRow(type.fields), text('}')])
+    }
+    case 'union': {
+      const records = type.records.map(rec => {
+        return group([
+          richtext(chalk.magenta, '|'),
+          text('{ '),
+          richtext(chalk.blue, type.tag),
+          text(': '),
+          richtext(chalk.green, `"${rec.tagValue}"`),
+          prettyRow(rec.fields),
+          text('}'),
+        ])
+      })
+      return group(records)
+    }
+  }
+}
+
+function prettyRow(row: Row, showFieldName = true): Doc {
+  const [fields, other] = flattenRow(row)
+
+  const fieldsDocs = fields.map(f => {
+    const prefix = showFieldName ? `${f.fieldName}: ` : ''
+    return group([text(prefix), prettyQuintType(f.fieldType)])
+  })
+  const otherDoc = other.kind === 'var' ? [text(`| ${other.name}`)] : []
+
+  return group([nest('  ', [linebreak, docJoin([text(','), line()], fieldsDocs)]), ...otherDoc, linebreak,])
+}
+
 /**
  * Print an execution frame and its children recursively.
  * Since this function is printing a tree, we need precise text alignment.
@@ -147,14 +227,14 @@ export function printExecutionFrameRec(box: ConsoleBox, frame: ExecutionFrame, i
     .map((il, i) =>
       i < depth - 1
         ? // continue the ancestor's branch, unless it's the last one
-          il
+        il
           ? '   '
           : '│  '
         : // close or close & continue the leaf branch,
         // depending on whether this frame is the last one
         il
-        ? '└─ '
-        : '├─ '
+          ? '└─ '
+          : '├─ '
     )
     .join('')
   box.out(treeArt)
@@ -195,4 +275,10 @@ export function printTrace(console: ConsoleBox, states: QuintEx[], frames: Execu
     console.out(format(console.width, 0, stateDoc))
     console.out('\n\n')
   })
+}
+
+// a helper function to produce specific indentation
+function nary(left: Doc, args: Doc[], right: Doc, padding: Doc = linebreak): Doc {
+  const as = group([nest('  ', [padding, docJoin([text(','), line()], args)]), padding])
+  return group([left, as, right])
 }

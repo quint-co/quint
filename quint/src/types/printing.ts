@@ -1,4 +1,5 @@
 import { rowToString, typeToString } from '../IRprinting'
+import { QuintType } from '../quintTypes'
 import { Constraint, TypeScheme } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 
@@ -28,6 +29,13 @@ export function constraintToString(c: Constraint): string {
  * @returns a string with the formatted type scheme
  */
 export function typeSchemeToString(t: TypeScheme): string {
+  const [vars, type] = canonicalTypeScheme(t)
+
+  const varsString = vars.length > 0 ? `∀ ${vars.join(', ')} . ` : ''
+  return `${varsString}${typeToString(type)}`
+}
+
+export function canonicalTypeScheme(t: TypeScheme): [string[], QuintType] {
   const typeNames = Array.from(t.typeVariables)
   const rowNames = Array.from(t.rowVariables)
   const vars: string[] = []
@@ -45,8 +53,7 @@ export function typeSchemeToString(t: TypeScheme): string {
   const subs = compose(new Map(), typeSubs, rowSubs)
   const type = applySubstitution(new Map(), subs, t.type)
 
-  const varsString = vars.length > 0 ? `∀ ${vars.join(', ')} . ` : ''
-  return `${varsString}${typeToString(type)}`
+  return [vars, type]
 }
 
 /**
