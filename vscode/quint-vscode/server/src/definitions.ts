@@ -3,7 +3,7 @@ import { findName } from "./reporting"
 import { Position } from "vscode-languageserver/node"
 import { URI } from "vscode-uri"
 
-interface QuintDefinitionLink {
+export interface QuintDefinitionLink {
   nameId: bigint,
   name: string,
   definitionId?: bigint,
