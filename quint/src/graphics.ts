@@ -122,16 +122,22 @@ export function prettyQuintEx(ex: QuintEx): Doc {
 }
 
 export function prettyQuintDef(
-  def: QuintDef, includeBody: boolean = true, type: TypeScheme | undefined = undefined
+  def: QuintDef,
+  includeBody: boolean = true,
+  type: TypeScheme | undefined = undefined
 ): Doc {
-  const typeAnnotation = isAnnotatedDef(def) ? [text(': '), prettyQuintType(def.typeAnnotation)] : type ? [text(': '), prettyTypeScheme(type)] : []
+  const typeAnnotation = isAnnotatedDef(def)
+    ? [text(': '), prettyQuintType(def.typeAnnotation)]
+    : type
+    ? [text(': '), prettyTypeScheme(type)]
+    : []
   switch (def.kind) {
     case 'def': {
       const header = group([
         richtext(chalk.magenta, qualifierToString(def.qualifier)),
         text(' '),
         richtext(chalk.blue, def.name),
-        ...typeAnnotation
+        ...typeAnnotation,
       ])
       return includeBody ? group([header, text(' = '), prettyQuintEx(def.expr)]) : header
     }
@@ -143,7 +149,8 @@ export function prettyQuintDef(
 
 export function prettyTypeScheme(scheme: TypeScheme): Doc {
   const [vars, type] = canonicalTypeScheme(scheme)
-  const varsDoc = vars.length > 0 ? group([text('∀'), docJoin([text(','), line()], vars.map(text)), text('.')]) : text('')
+  const varsDoc =
+    vars.length > 0 ? group([text('∀'), docJoin([text(','), line()], vars.map(text)), text('.')]) : text('')
   return group([varsDoc, prettyQuintType(type)])
 }
 
@@ -164,7 +171,12 @@ export function prettyQuintType(type: QuintType): Doc {
       return group([prettyQuintType(type.arg), richtext(chalk.gray, ' -> '), prettyQuintType(type.res)])
     case 'oper': {
       const args = type.args.map(prettyQuintType)
-      return group([richtext(chalk.green, 'Set'), nary(text('('), args, text(')')), text(' => '), prettyQuintType(type.res)])
+      return group([
+        richtext(chalk.green, 'Set'),
+        nary(text('('), args, text(')')),
+        text(' => '),
+        prettyQuintType(type.res),
+      ])
     }
     case 'tup':
       return prettyRow(type.fields, false)
@@ -200,7 +212,7 @@ function prettyRow(row: Row, showFieldName = true): Doc {
   })
   const otherDoc = other.kind === 'var' ? [text(`| ${other.name}`)] : []
 
-  return group([nest('  ', [linebreak, docJoin([text(','), line()], fieldsDocs)]), ...otherDoc, linebreak,])
+  return group([nest('  ', [linebreak, docJoin([text(','), line()], fieldsDocs)]), ...otherDoc, linebreak])
 }
 
 /**
@@ -227,14 +239,14 @@ export function printExecutionFrameRec(box: ConsoleBox, frame: ExecutionFrame, i
     .map((il, i) =>
       i < depth - 1
         ? // continue the ancestor's branch, unless it's the last one
-        il
+          il
           ? '   '
           : '│  '
         : // close or close & continue the leaf branch,
         // depending on whether this frame is the last one
         il
-          ? '└─ '
-          : '├─ '
+        ? '└─ '
+        : '├─ '
     )
     .join('')
   box.out(treeArt)

@@ -38,9 +38,15 @@ export function moduleToString(quintModule: QuintModule): string {
  * @returns a string with the pretty printed definition
  */
 export function definitionToString(
-  def: QuintDef, includeBody: boolean = true, type: TypeScheme | undefined = undefined
+  def: QuintDef,
+  includeBody: boolean = true,
+  type: TypeScheme | undefined = undefined
 ): string {
-  const typeAnnotation = isAnnotatedDef(def) ? `: ${typeToString(def.typeAnnotation)}` : type ? `: ${typeSchemeToString(type)}` : ''
+  const typeAnnotation = isAnnotatedDef(def)
+    ? `: ${typeToString(def.typeAnnotation)}`
+    : type
+    ? `: ${typeSchemeToString(type)}`
+    : ''
   switch (def.kind) {
     case 'def': {
       const header = `${qualifierToString(def.qualifier)} ${def.name}${typeAnnotation}`
@@ -205,7 +211,7 @@ function rowFieldsToString(r: Row, showFieldName = true): string {
   }
 }
 
-export function flattenRow(r: Row): [{ fieldName: string, fieldType: QuintType }[], VarRow | EmptyRow] {
+export function flattenRow(r: Row): [{ fieldName: string; fieldType: QuintType }[], VarRow | EmptyRow] {
   switch (r.kind) {
     case 'empty':
       return [[], r]

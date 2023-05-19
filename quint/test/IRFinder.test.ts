@@ -44,7 +44,14 @@ describe('findDefinitionWithId', () => {
     const def = findDefinitionWithId(modules, 2n)
 
     assert.isDefined(def)
-    assert.deepEqual(def, { id: 2n, kind: 'def', qualifier: 'val', name: 'a', expr: { id: 1n, kind: 'int', value: 1n }, doc: undefined })
+    assert.deepEqual(def, {
+      id: 2n,
+      kind: 'def',
+      qualifier: 'val',
+      name: 'a',
+      expr: { id: 1n, kind: 'int', value: 1n },
+      doc: undefined,
+    })
   })
 
   it('returns undefined for inexisting id', () => {
