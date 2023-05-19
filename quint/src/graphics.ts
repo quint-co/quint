@@ -150,7 +150,7 @@ export function prettyQuintDef(
 export function prettyTypeScheme(scheme: TypeScheme): Doc {
   const [vars, type] = canonicalTypeScheme(scheme)
   const varsDoc =
-    vars.length > 0 ? group([text('∀'), docJoin([text(','), line()], vars.map(text)), text('.')]) : text('')
+    vars.length > 0 ? group([text('∀ '), docJoin([text(','), line()], vars.map(text)), text(' . ')]) : text('')
   return group([varsDoc, prettyQuintType(type)])
 }
 
