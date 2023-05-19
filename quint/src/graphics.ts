@@ -209,7 +209,7 @@ function prettyRow(row: Row, showFieldName = true): Doc {
     const prefix = showFieldName ? `${f.fieldName}: ` : ''
     return group([text(prefix), prettyQuintType(f.fieldType)])
   })
-  const otherDoc = other.kind === 'var' ? [text(`| ${other.name}`)] : []
+  const otherDoc = other.kind === 'var' ? [text(` | ${other.name}`)] : []
 
   return group([nest('  ', [linebreak, docJoin([text(','), line()], fieldsDocs)]), ...otherDoc, linebreak])
 }
