@@ -46,6 +46,8 @@ operDef : qualifier normalCallName
             ('=' expr)? ';'?
         ;
 
+nondetOperDef : 'nondet' IDENTIFIER (':' type)? '=' expr ';'?;
+
 qualifier : 'val'
           | 'def'
           | 'pure' 'val'
@@ -148,7 +150,7 @@ expr:           // apply a built-in operator via the dot notation
         |       '[' (expr (',' expr)*)? ','? ']'                    # list
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
         |       operDef expr                                        # letIn
-        |       'nondet' IDENTIFIER (':' type)? '=' expr ';'? expr  # nondet
+        |       nondetOperDef expr                                  # nondet
         |       '(' expr ')'                                        # paren
         |       '{' expr '}'                                        # braces
         ;
