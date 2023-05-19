@@ -172,7 +172,6 @@ export function prettyQuintType(type: QuintType): Doc {
     case 'oper': {
       const args = type.args.map(prettyQuintType)
       return group([
-        richtext(chalk.green, 'Set'),
         nary(text('('), args, text(')')),
         text(' => '),
         prettyQuintType(type.res),
