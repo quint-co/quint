@@ -9,17 +9,19 @@
  */
 
 import { Either, left, merge, right } from '@sweet-monads/either'
+import { just } from '@sweet-monads/maybe'
 
 import { ErrorMessage, Loc, fromIrErrorMessage } from '../quintParserFrontend'
 import { QuintEx, QuintModule, QuintOpDef } from '../quintIr'
 import { TypeScheme } from '../types/base'
 
-import { CompilationContext, compile } from './compile'
+import { CompilationContext, compile, lastTraceName } from './compile'
 import { zerog } from './../idGenerator'
 import { LookupTable } from '../lookupTable'
-import { Computable, kindName } from './runtime'
+import { Computable, Register, kindName } from './runtime'
 import { ExecutionFrame, newTraceRecorder } from './trace'
 import { Rng } from '../rng'
+import { RuntimeValue, rv } from './impl/runtimeValue'
 
 /**
  * Various settings to be passed to the testing framework.
@@ -86,9 +88,9 @@ export function compileAndTest(
   const ctx = compile(modules, sourceMap, lookupTable, types, main.name, recorder, options.rng.next)
 
   const saveTrace = (index: number, name: string, status: string) => {
-    // Save the best traces are reported by the recorder:
-    // If a test is failing, it is the first failing trace.
-    // Otherwise, it is the shortest trace explored by the test.
+    // Save the best traces that are reported by the recorder:
+    // If a test failed, it is the first failing trace.
+    // Otherwise, it is the longest trace explored by the test.
     const states = recorder.getBestTrace().args.map(e => e.toQuintEx(zerog))
     options.onTrace(index, name, status, ctx.vars, states)
   }
@@ -118,11 +120,24 @@ export function compileAndTest(
         for (; nsamples <= options.maxSamples; nsamples++) {
           // record the seed value
           seed = options.rng.getState()
-          // run the test
           recorder.onRunCall()
+          // reset the trace
+          const traceReg = ctx.values.get(kindName('shadow', lastTraceName)) as Register
+          traceReg.registerValue = just(rv.mkList([]))
+          // run the test
           const result = comp.eval()
-          recorder.onRunReturn(result, [] /* <= ignore the states */)
+          // extract the trace
+          const trace = traceReg.eval()
 
+          if (trace.isJust()) {
+            recorder.onRunReturn(result, [...(trace.value as RuntimeValue).toList()])
+          } else {
+            // Report a non-critical error
+            console.error('Missing a trace')
+            recorder.onRunReturn(result, [])
+          }
+
+          // evaluate the result
           if (result.isNone()) {
             // if the test failed, return immediately
             return {
@@ -138,7 +153,14 @@ export function compileAndTest(
           const ex = result.value.toQuintEx(zerog)
           if (ex.kind !== 'bool') {
             // if the test returned a malformed result, return immediately
-            return { name, status: 'ignored', errors: [], seed: seed, frames: [], nsamples: nsamples }
+            return {
+              name,
+              status: 'ignored',
+              errors: [],
+              seed: seed,
+              frames: recorder.getBestTrace().subframes,
+              nsamples: nsamples,
+            }
           }
 
           if (!ex.value) {
@@ -166,7 +188,7 @@ export function compileAndTest(
                 status: 'passed',
                 errors: [],
                 seed: seed,
-                frames: [],
+                frames: recorder.getBestTrace().subframes,
                 nsamples: nsamples,
               }
             }
@@ -180,7 +202,7 @@ export function compileAndTest(
           status: 'passed',
           errors: [],
           seed: seed,
-          frames: [],
+          frames: recorder.getBestTrace().subframes,
           nsamples: nsamples - 1,
         }
       })

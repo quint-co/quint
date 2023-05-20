@@ -254,8 +254,6 @@ export const newTraceRecorder = (verbosityLevel: number, rng: Rng) => {
     onRunReturn: (outcome: Maybe<EvalResult>, trace: EvalResult[]) => {
       assert(frameStack.length > 0)
       const bottom = frameStack[0]
-      bottom.result = outcome
-      bottom.args = trace
 
       let failureOrViolation = true
       if (outcome.isJust()) {
@@ -265,13 +263,19 @@ export const newTraceRecorder = (verbosityLevel: number, rng: Rng) => {
 
       if (failureOrViolation) {
         if (bestTrace.args.length === 0 || bestTrace.args.length >= bottom.args.length) {
+          // on error, prefer the shorter non-empty trace
           bestTrace = bottom
           bestTraceSeed = runSeed
+          bestTrace.result = outcome
+          bestTrace.args = trace
         }
       } else {
         if (bestTrace.args.length <= bottom.args.length) {
+          // on success, prefer the longer trace
           bestTrace = bottom
           bestTraceSeed = runSeed
+          bestTrace.result = outcome
+          bestTrace.args = trace
         }
       }
     },

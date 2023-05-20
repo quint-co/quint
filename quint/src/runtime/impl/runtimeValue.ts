@@ -62,6 +62,7 @@
 
 import { List, Map, OrderedMap, Set, ValueObject, hash, is as immutableIs } from 'immutable'
 import { Maybe, just, merge, none } from '@sweet-monads/maybe'
+import { strict as assert } from 'assert'
 
 import { IdGenerator } from '../../idGenerator'
 import { expressionToString } from '../../IRprinting'
@@ -242,6 +243,74 @@ export const rv = {
   mkLambda: (nparams: number, callable: Callable) => {
     return new RuntimeValueLambda(nparams, callable)
   },
+}
+
+/**
+ * Get a ground expression, that is, an expression
+ * that contains only literals and constructors, and
+ * convert it to a runtime value.
+ *
+ * @param ex the expression to convert
+ * @returns the runtime value that encodes the expression
+ */
+export function fromQuintEx(ex: QuintEx): Maybe<RuntimeValue> {
+  switch (ex.kind) {
+    case 'bool':
+      return just(rv.mkBool(ex.value))
+
+    case 'int':
+      return just(rv.mkInt(ex.value))
+
+    case 'str':
+      return just(rv.mkStr(ex.value))
+
+    case 'app':
+      switch (ex.opcode) {
+        case 'Set':
+          return merge(ex.args.map(fromQuintEx)).map(rv.mkSet)
+
+        case 'Map': {
+          const pairs: Maybe<[RuntimeValue, RuntimeValue][]> = merge(
+            ex.args.map(arg => {
+              assert(arg.kind === 'app', `Expected Tup(...), found: ${arg.kind}`)
+              assert(arg.opcode === 'Tup', `Expected Tup(...), found: ${arg.opcode}`)
+              assert(arg.args.length === 2, `Expected a 2-element Tup(...), found: ${arg.args.length} elements`)
+              return merge([fromQuintEx(arg.args[0]), fromQuintEx(arg.args[1])])
+            })
+          )
+          return pairs.map(rv.mkMap)
+        }
+
+        case 'Tup':
+          return merge(ex.args.map(fromQuintEx)).map(rv.mkTuple)
+
+        case 'List':
+          return merge(ex.args.map(fromQuintEx)).map(rv.mkList)
+
+        case 'Rec': {
+          const pairs: [string, RuntimeValue][] = []
+          for (let i = 0; i < ex.args.length / 2; i++) {
+            const keyEx = ex.args[2 * i]
+            const key: string = keyEx.kind === 'str' ? keyEx.value : ''
+            const v: Maybe<RuntimeValue> = fromQuintEx(ex.args[2 * i + 1])
+            if (v.isJust()) {
+              pairs.push([key, v.value])
+            } else {
+              return none()
+            }
+          }
+          return just(rv.mkRecord(pairs))
+        }
+
+        default:
+          // no other case should be possible
+          return none()
+      }
+
+    default:
+      // no other case should be possible
+      return none()
+  }
 }
 
 /**

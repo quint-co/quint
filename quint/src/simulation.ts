@@ -113,20 +113,23 @@ module __run__ {
       const _ = res.value.eval()
     }
 
-    const frame = recorder.getBestTrace()
+    const topFrame = recorder.getBestTrace()
     let status: SimulatorResultStatus = 'failure'
-    if (frame.result.isJust()) {
-      const ex = frame.result.unwrap().toQuintEx(idGen)
+    if (topFrame.result.isJust()) {
+      const ex = topFrame.result.unwrap().toQuintEx(idGen)
       if (ex.kind === 'bool') {
         status = ex.value ? 'ok' : 'violation'
       }
+    } else {
+      // This should not happen. But if it does, give a debugging hint.
+      console.error('No trace recorded')
     }
 
     return {
       status: status,
       vars: ctx.vars,
-      states: frame.args.map(e => e.toQuintEx(idGen)),
-      frames: frame.subframes,
+      states: topFrame.args.map(e => e.toQuintEx(idGen)),
+      frames: topFrame.subframes,
       errors: ctx.getRuntimeErrors(),
       seed: recorder.getBestTraceSeed(),
     }
