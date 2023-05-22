@@ -67,24 +67,22 @@ export function assembleDiagnostic(error: QuintError, loc: Loc): Diagnostic {
  */
 export function findName(
   modules: QuintModule[], sources: [Loc, bigint][], position: Position, sourceFile: string
-): [QuintModule, string, bigint] | undefined {
+): [string, bigint] | undefined {
   const ids = resultsOnPosition(sources, position, sourceFile)
-  const names = ids.flatMap(([_loc, id]) => {
-    return modules.filter(module => module.id > id).map((module): ([QuintModule, string, bigint] | undefined) => {
-      const expr = findExpressionWithId(module, id)
+  const names: ([string, bigint] | undefined)[] = ids.map(([_loc, id]) => {
+    const expr = findExpressionWithId(modules, id)
 
-      switch (expr?.kind) {
-        case 'name':
-          return [module, expr.name, expr.id]
-        case 'app':
-          return [module, expr.opcode, expr.id]
-      }
+    switch (expr?.kind) {
+      case 'name':
+        return [expr.name, expr.id]
+      case 'app':
+        return [expr.opcode, expr.id]
+    }
 
-      const type = findTypeWithId(module, id)
-      if (type?.kind === 'const' && type.id) {
-        return [module, type.name, type.id]
-      }
-    })
+    const type = findTypeWithId(modules, id)
+    if (type?.kind === 'const' && type.id) {
+      return [type.name, type.id]
+    }
   })
 
   return compact(names)[0]
