@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fix two problems that prevented docstrings to be parsed into the proper IR
+  component (#902)
+
 ### Security
 
 ## v0.10.0 -- 2023-05-04
