@@ -198,6 +198,10 @@ describe('parse errors', () => {
     parseAndCompare('_1031instance')
   })
 
+  it('docstrings', () => {
+    parseAndCompare('_1032docstrings')
+  })
+
   // The test below needs a fix, see:
   //
   // https://github.com/informalsystems/quint/issues/378

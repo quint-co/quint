@@ -13,8 +13,8 @@ grammar Quint;
 // entry point for the parser
 modules : module+ EOF;
 
-module : 'module' IDENTIFIER '{' (docLines unit)* '}';
-docLines : DOCCOMMENT*;
+module : 'module' IDENTIFIER '{' (documentedUnit)* '}';
+documentedUnit : DOCCOMMENT* unit;
 
 // a module unit
 unit :    'const' IDENTIFIER ':' type                     # const

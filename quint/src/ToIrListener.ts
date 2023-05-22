@@ -62,8 +62,6 @@ export class ToIrListener implements QuintListener {
   private identOrStarStack: string[] = []
   // the stack of rows for records and unions
   private rowStack: Row[] = []
-  // the stack of documentation lines before a definition
-  private docStack: string[] = []
   // an internal counter to assign unique numbers
   private idGen: IdGenerator
 
@@ -185,9 +183,6 @@ export class ToIrListener implements QuintListener {
     // get the definition body
     const expr = this.exprStack.pop()
 
-    const doc = this.docStack.length > 0 ? this.docStack.join('\n') : undefined
-    this.docStack = []
-
     // extract the qualifier
     let qualifier: OpQualifier = 'def'
     if (ctx.qualifier()) {
@@ -231,7 +226,6 @@ export class ToIrListener implements QuintListener {
         name,
         qualifier,
         expr: body,
-        doc,
       }
       if (typeTag.isJust()) {
         def.typeAnnotation = typeTag.value
@@ -1044,10 +1038,18 @@ export class ToIrListener implements QuintListener {
     })
   }
 
-  enterDocLines(ctx: p.DocLinesContext) {
+  exitDocumentedUnit(ctx: p.DocumentedUnitContext) {
     // The comment content is the text of the comment minus the `/// ` prefix
-    const doc = ctx.DOCCOMMENT().map(l => l.text.slice(4, -1))
-    this.docStack = doc
+    const doc = ctx
+      .DOCCOMMENT()
+      .map(l => l.text.slice(4, -1))
+      .join('\n')
+
+    if (doc !== '') {
+      // Pop last def and re-push it with the doc
+      const def = this.definitionStack.pop()!
+      this.definitionStack.push({ doc, ...def })
+    }
   }
 
   /*

@@ -99,7 +99,7 @@ export class QuintParser extends Parser {
 	public static readonly WS = 69;
 	public static readonly RULE_modules = 0;
 	public static readonly RULE_module = 1;
-	public static readonly RULE_docLines = 2;
+	public static readonly RULE_documentedUnit = 2;
 	public static readonly RULE_unit = 3;
 	public static readonly RULE_operDef = 4;
 	public static readonly RULE_nondetOperDef = 5;
@@ -128,11 +128,11 @@ export class QuintParser extends Parser {
 	public static readonly RULE_literal = 28;
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
-		"modules", "module", "docLines", "unit", "operDef", "nondetOperDef", "qualifier", 
-		"importMod", "exportMod", "instanceMod", "moduleName", "name", "qualifiedName", 
-		"fromSource", "type", "typeUnionRecOne", "row", "expr", "unitOrExpr", 
-		"lambda", "identOrHole", "parameter", "identOrStar", "argList", "recElem", 
-		"normalCallName", "nameAfterDot", "operator", "literal",
+		"modules", "module", "documentedUnit", "unit", "operDef", "nondetOperDef", 
+		"qualifier", "importMod", "exportMod", "instanceMod", "moduleName", "name", 
+		"qualifiedName", "fromSource", "type", "typeUnionRecOne", "row", "expr", 
+		"unitOrExpr", "lambda", "identOrHole", "parameter", "identOrStar", "argList", 
+		"recElem", "normalCallName", "nameAfterDot", "operator", "literal",
 	];
 
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
@@ -237,23 +237,21 @@ export class QuintParser extends Parser {
 			this.match(QuintParser.IDENTIFIER);
 			this.state = 67;
 			this.match(QuintParser.T__1);
-			this.state = 73;
+			this.state = 71;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & ((1 << QuintParser.T__3) | (1 << QuintParser.T__5) | (1 << QuintParser.T__6) | (1 << QuintParser.T__7) | (1 << QuintParser.T__11) | (1 << QuintParser.T__12) | (1 << QuintParser.T__13) | (1 << QuintParser.T__14) | (1 << QuintParser.T__15) | (1 << QuintParser.T__16) | (1 << QuintParser.T__17) | (1 << QuintParser.T__21))) !== 0) || _la === QuintParser.DOCCOMMENT) {
 				{
 				{
 				this.state = 68;
-				this.docLines();
-				this.state = 69;
-				this.unit();
+				this.documentedUnit();
 				}
 				}
-				this.state = 75;
+				this.state = 73;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
-			this.state = 76;
+			this.state = 74;
 			this.match(QuintParser.T__2);
 			}
 		}
@@ -272,27 +270,29 @@ export class QuintParser extends Parser {
 		return _localctx;
 	}
 	// @RuleVersion(0)
-	public docLines(): DocLinesContext {
-		let _localctx: DocLinesContext = new DocLinesContext(this._ctx, this.state);
-		this.enterRule(_localctx, 4, QuintParser.RULE_docLines);
+	public documentedUnit(): DocumentedUnitContext {
+		let _localctx: DocumentedUnitContext = new DocumentedUnitContext(this._ctx, this.state);
+		this.enterRule(_localctx, 4, QuintParser.RULE_documentedUnit);
 		let _la: number;
 		try {
 			this.enterOuterAlt(_localctx, 1);
 			{
-			this.state = 81;
+			this.state = 79;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			while (_la === QuintParser.DOCCOMMENT) {
 				{
 				{
-				this.state = 78;
+				this.state = 76;
 				this.match(QuintParser.DOCCOMMENT);
 				}
 				}
-				this.state = 83;
+				this.state = 81;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
+			this.state = 82;
+			this.unit();
 			}
 		}
 		catch (re) {
@@ -2984,9 +2984,9 @@ export class QuintParser extends Parser {
 		"\x13\t\x13\x04\x14\t\x14\x04\x15\t\x15\x04\x16\t\x16\x04\x17\t\x17\x04" +
 		"\x18\t\x18\x04\x19\t\x19\x04\x1A\t\x1A\x04\x1B\t\x1B\x04\x1C\t\x1C\x04" +
 		"\x1D\t\x1D\x04\x1E\t\x1E\x03\x02\x06\x02>\n\x02\r\x02\x0E\x02?\x03\x02" +
-		"\x03\x02\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x03\x07\x03J\n\x03" +
-		"\f\x03\x0E\x03M\v\x03\x03\x03\x03\x03\x03\x04\x07\x04R\n\x04\f\x04\x0E" +
-		"\x04U\v\x04\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03" +
+		"\x03\x02\x03\x03\x03\x03\x03\x03\x03\x03\x07\x03H\n\x03\f\x03\x0E\x03" +
+		"K\v\x03\x03\x03\x03\x03\x03\x04\x07\x04P\n\x04\f\x04\x0E\x04S\v\x04\x03" +
+		"\x04\x03\x04\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03" +
 		"\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03" +
 		"\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x03\x05\x05\x05n\n\x05\x03" +
 		"\x06\x03\x06\x03\x06\x03\x06\x03\x06\x03\x06\x07\x06v\n\x06\f\x06\x0E" +
@@ -3056,7 +3056,7 @@ export class QuintParser extends Parser {
 		"\x02(\x02*\x02,\x02.\x020\x022\x024\x026\x028\x02:\x02\x02\f\x04\x02)" +
 		"+BB\x03\x0268\x03\x0245\x03\x029>\x04\x02\'\'BB\x04\x0266BB\x03\x02,2" +
 		"\x03\x02,/\x05\x02!!,/4>\x03\x02)+\x02\u02ED\x02=\x03\x02\x02\x02\x04" +
-		"C\x03\x02\x02\x02\x06S\x03\x02\x02\x02\bm\x03\x02\x02\x02\no\x03\x02\x02" +
+		"C\x03\x02\x02\x02\x06Q\x03\x02\x02\x02\bm\x03\x02\x02\x02\no\x03\x02\x02" +
 		"\x02\f\x9E\x03\x02\x02\x02\x0E\xB2\x03\x02\x02\x02\x10\xC6\x03\x02\x02" +
 		"\x02\x12\xD3\x03\x02\x02\x02\x14\u0103\x03\x02\x02\x02\x16\u0105\x03\x02" +
 		"\x02\x02\x18\u0107\x03\x02\x02\x02\x1A\u0109\x03\x02\x02\x02\x1C\u010B" +
@@ -3067,12 +3067,12 @@ export class QuintParser extends Parser {
 		"\x03\x02\x02\x026\u028A\x03\x02\x02\x028\u028C\x03\x02\x02\x02:\u028E" +
 		"\x03\x02\x02\x02<>\x05\x04\x03\x02=<\x03\x02\x02\x02>?\x03\x02\x02\x02" +
 		"?=\x03\x02\x02\x02?@\x03\x02\x02\x02@A\x03\x02\x02\x02AB\x07\x02\x02\x03" +
-		"B\x03\x03\x02\x02\x02CD\x07\x03\x02\x02DE\x07B\x02\x02EK\x07\x04\x02\x02" +
-		"FG\x05\x06\x04\x02GH\x05\b\x05\x02HJ\x03\x02\x02\x02IF\x03\x02\x02\x02" +
-		"JM\x03\x02\x02\x02KI\x03\x02\x02\x02KL\x03\x02\x02\x02LN\x03\x02\x02\x02" +
-		"MK\x03\x02\x02\x02NO\x07\x05\x02\x02O\x05\x03\x02\x02\x02PR\x07D\x02\x02" +
-		"QP\x03\x02\x02\x02RU\x03\x02\x02\x02SQ\x03\x02\x02\x02ST\x03\x02\x02\x02" +
-		"T\x07\x03\x02\x02\x02US\x03\x02\x02\x02VW\x07\x06\x02\x02WX\x07B\x02\x02" +
+		"B\x03\x03\x02\x02\x02CD\x07\x03\x02\x02DE\x07B\x02\x02EI\x07\x04\x02\x02" +
+		"FH\x05\x06\x04\x02GF\x03\x02\x02\x02HK\x03\x02\x02\x02IG\x03\x02\x02\x02" +
+		"IJ\x03\x02\x02\x02JL\x03\x02\x02\x02KI\x03\x02\x02\x02LM\x07\x05\x02\x02" +
+		"M\x05\x03\x02\x02\x02NP\x07D\x02\x02ON\x03\x02\x02\x02PS\x03\x02\x02\x02" +
+		"QO\x03\x02\x02\x02QR\x03\x02\x02\x02RT\x03\x02\x02\x02SQ\x03\x02\x02\x02" +
+		"TU\x05\b\x05\x02U\x07\x03\x02\x02\x02VW\x07\x06\x02\x02WX\x07B\x02\x02" +
 		"XY\x07\x07\x02\x02Yn\x05\x1E\x10\x02Z[\x07\b\x02\x02[\\\x07B\x02\x02\\" +
 		"]\x07\x07\x02\x02]n\x05\x1E\x10\x02^_\x07\t\x02\x02_`\x05*\x16\x02`a\x07" +
 		"?\x02\x02ab\x05$\x13\x02bn\x03\x02\x02\x02cn\x05\x14\v\x02dn\x05\n\x06" +
@@ -3320,7 +3320,7 @@ export class QuintParser extends Parser {
 		"\u028B\x07B\x02\x02\u0289\u028B\t\t\x02\x02\u028A\u0288\x03\x02\x02\x02" +
 		"\u028A\u0289\x03\x02\x02\x02\u028B7\x03\x02\x02\x02\u028C\u028D\t\n\x02" +
 		"\x02\u028D9\x03\x02\x02\x02\u028E\u028F\t\v\x02\x02\u028F;\x03\x02\x02" +
-		"\x02G?KSmwz\x7F\x8E\x95\x99\x9C\xA2\xA7\xB2\xBA\xC0\xC4\xC6\xD1\xD3\xE2" +
+		"\x02G?IQmwz\x7F\x8E\x95\x99\x9C\xA2\xA7\xB2\xBA\xC0\xC4\xC6\xD1\xD3\xE2" +
 		"\xEA\xF9\u0101\u0103\u0114\u0117\u011A\u0131\u0135\u0140\u014A\u0152\u0154" +
 		"\u015E\u0161\u016D\u0177\u0179\u017D\u0184\u0195\u0199\u01A4\u01A8\u01B3" +
 		"\u01B7\u01C2\u01C6\u01D3\u01D7\u01E1\u01E5\u01EF\u01F2\u01F5\u020E\u0235" +
@@ -3384,22 +3384,13 @@ export class ModulesContext extends ParserRuleContext {
 
 export class ModuleContext extends ParserRuleContext {
 	public IDENTIFIER(): TerminalNode { return this.getToken(QuintParser.IDENTIFIER, 0); }
-	public docLines(): DocLinesContext[];
-	public docLines(i: number): DocLinesContext;
-	public docLines(i?: number): DocLinesContext | DocLinesContext[] {
+	public documentedUnit(): DocumentedUnitContext[];
+	public documentedUnit(i: number): DocumentedUnitContext;
+	public documentedUnit(i?: number): DocumentedUnitContext | DocumentedUnitContext[] {
 		if (i === undefined) {
-			return this.getRuleContexts(DocLinesContext);
+			return this.getRuleContexts(DocumentedUnitContext);
 		} else {
-			return this.getRuleContext(i, DocLinesContext);
-		}
-	}
-	public unit(): UnitContext[];
-	public unit(i: number): UnitContext;
-	public unit(i?: number): UnitContext | UnitContext[] {
-		if (i === undefined) {
-			return this.getRuleContexts(UnitContext);
-		} else {
-			return this.getRuleContext(i, UnitContext);
+			return this.getRuleContext(i, DocumentedUnitContext);
 		}
 	}
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
@@ -3430,7 +3421,10 @@ export class ModuleContext extends ParserRuleContext {
 }
 
 
-export class DocLinesContext extends ParserRuleContext {
+export class DocumentedUnitContext extends ParserRuleContext {
+	public unit(): UnitContext {
+		return this.getRuleContext(0, UnitContext);
+	}
 	public DOCCOMMENT(): TerminalNode[];
 	public DOCCOMMENT(i: number): TerminalNode;
 	public DOCCOMMENT(i?: number): TerminalNode | TerminalNode[] {
@@ -3444,23 +3438,23 @@ export class DocLinesContext extends ParserRuleContext {
 		super(parent, invokingState);
 	}
 	// @Override
-	public get ruleIndex(): number { return QuintParser.RULE_docLines; }
+	public get ruleIndex(): number { return QuintParser.RULE_documentedUnit; }
 	// @Override
 	public enterRule(listener: QuintListener): void {
-		if (listener.enterDocLines) {
-			listener.enterDocLines(this);
+		if (listener.enterDocumentedUnit) {
+			listener.enterDocumentedUnit(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: QuintListener): void {
-		if (listener.exitDocLines) {
-			listener.exitDocLines(this);
+		if (listener.exitDocumentedUnit) {
+			listener.exitDocumentedUnit(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: QuintVisitor<Result>): Result {
-		if (visitor.visitDocLines) {
-			return visitor.visitDocLines(this);
+		if (visitor.visitDocumentedUnit) {
+			return visitor.visitDocumentedUnit(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
