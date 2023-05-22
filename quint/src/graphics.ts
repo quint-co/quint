@@ -124,7 +124,7 @@ export function prettyQuintEx(ex: QuintEx): Doc {
 export function prettyQuintDef(
   def: QuintDef,
   includeBody: boolean = true,
-  type: TypeScheme | undefined = undefined
+  type?: TypeScheme
 ): Doc {
   const typeAnnotation = isAnnotatedDef(def)
     ? [text(': '), prettyQuintType(def.typeAnnotation)]
