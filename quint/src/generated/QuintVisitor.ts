@@ -58,6 +58,7 @@ import { ModuleContext } from "./QuintParser";
 import { DocLinesContext } from "./QuintParser";
 import { UnitContext } from "./QuintParser";
 import { OperDefContext } from "./QuintParser";
+import { NondetOperDefContext } from "./QuintParser";
 import { QualifierContext } from "./QuintParser";
 import { ImportModContext } from "./QuintParser";
 import { ExportModContext } from "./QuintParser";
@@ -525,6 +526,13 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitOperDef?: (ctx: OperDefContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.nondetOperDef`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitNondetOperDef?: (ctx: NondetOperDefContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.qualifier`.

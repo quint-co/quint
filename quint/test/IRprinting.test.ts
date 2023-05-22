@@ -2,6 +2,7 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { buildDef, buildExpression, buildModuleWithDefs, buildType } from './builders/ir'
 import { definitionToString, expressionToString, moduleToString, typeToString } from '../src/IRprinting'
+import { toScheme } from '../src/types/base'
 
 describe('moduleToString', () => {
   const quintModule = buildModuleWithDefs(['var S: Set[int]', 'val f = S.filter(x => x + 1)'])
@@ -68,6 +69,12 @@ describe('definitionToString', () => {
     const def = buildDef('import M(x = N + 1, y = 3) as A')
     const expectedDef = 'import M(x = iadd(N, 1), y = 3) as A'
     assert.deepEqual(definitionToString(def), expectedDef)
+  })
+
+  it('pretty prints definitions with given type', () => {
+    const def = buildDef('val f = 1')
+    const expectedDef = 'val f: int = 1'
+    assert.deepEqual(definitionToString(def, true, toScheme({ kind: 'int' })), expectedDef)
   })
 })
 

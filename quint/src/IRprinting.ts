@@ -13,7 +13,9 @@
  */
 
 import { OpQualifier, QuintDef, QuintEx, QuintModule, isAnnotatedDef } from './quintIr'
-import { QuintType, Row } from './quintTypes'
+import { EmptyRow, QuintType, Row, VarRow } from './quintTypes'
+import { TypeScheme } from './types/base'
+import { typeSchemeToString } from './types/printing'
 
 /**
  * Pretty prints a module
@@ -28,15 +30,24 @@ export function moduleToString(quintModule: QuintModule): string {
 }
 
 /**
- * Pretty prints a definition
+ * Pretty prints a definition. Includes a type annotation if the definition is
+ * annotated, or if a type is provided. The annotation is preferred over the
+ * type.
  *
  * @param def the Quint expression to be formatted
- * @param includeBody optional, whether to include the body of the definition, defaults to true
+ * @param includeBody optional, whether to include the body of the definition,
+ * defaults to true
+ * @param type optional, the type scheme of the definition, defaults to
+ * undefined
  *
- * @returns a string with the pretty printed definition
+ * @returns a string with the pretty printed definition.
  */
-export function definitionToString(def: QuintDef, includeBody: boolean = true): string {
-  const typeAnnotation = isAnnotatedDef(def) ? `: ${typeToString(def.typeAnnotation)}` : ''
+export function definitionToString(def: QuintDef, includeBody: boolean = true, type?: TypeScheme): string {
+  const typeAnnotation = isAnnotatedDef(def)
+    ? `: ${typeToString(def.typeAnnotation)}`
+    : type // If annotation is not present, but type is, use the type
+    ? `: ${typeSchemeToString(type)}`
+    : ''
   switch (def.kind) {
     case 'def': {
       const header = `${qualifierToString(def.qualifier)} ${def.name}${typeAnnotation}`
@@ -197,6 +208,19 @@ function rowFieldsToString(r: Row, showFieldName = true): string {
         case 'empty':
           return `${fields.join(', ')}`
       }
+    }
+  }
+}
+
+export function flattenRow(r: Row): [{ fieldName: string; fieldType: QuintType }[], VarRow | EmptyRow] {
+  switch (r.kind) {
+    case 'empty':
+      return [[], r]
+    case 'var':
+      return [[], r]
+    case 'row': {
+      const [fields, other] = flattenRow(r.other)
+      return [[...r.fields, ...fields], other]
     }
   }
 }

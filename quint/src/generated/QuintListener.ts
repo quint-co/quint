@@ -58,6 +58,7 @@ import { ModuleContext } from "./QuintParser";
 import { DocLinesContext } from "./QuintParser";
 import { UnitContext } from "./QuintParser";
 import { OperDefContext } from "./QuintParser";
+import { NondetOperDefContext } from "./QuintParser";
 import { QualifierContext } from "./QuintParser";
 import { ImportModContext } from "./QuintParser";
 import { ExportModContext } from "./QuintParser";
@@ -792,6 +793,17 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitOperDef?: (ctx: OperDefContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.nondetOperDef`.
+	 * @param ctx the parse tree
+	 */
+	enterNondetOperDef?: (ctx: NondetOperDefContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.nondetOperDef`.
+	 * @param ctx the parse tree
+	 */
+	exitNondetOperDef?: (ctx: NondetOperDefContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `QuintParser.qualifier`.

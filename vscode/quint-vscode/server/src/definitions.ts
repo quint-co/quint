@@ -17,7 +17,7 @@ export function findDefinition(
   const source = URI.parse(uri).path
 
   // Find name under position
-  const [_module, name, id] = findName(modules, results, position, source) ?? [undefined, undefined, undefined]
+  const [name, id] = findName(modules, results, position, source) ?? [undefined, undefined, undefined]
   if (!name) {
     return undefined
   }

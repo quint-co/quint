@@ -98,7 +98,7 @@ describe('findBestMatchingResult', () => {
     it('finds the name when position is under a name', () => {
       const position: Position = { line: 0, character: 55 }
 
-      const [_module, name, _id] = findName(modules, results, position, sourceFile) ?? [undefined, undefined]
+      const [name, _id] = findName(modules, results, position, sourceFile) ?? [undefined, undefined]
 
       assert.deepEqual(name, 'Nat')
     })
@@ -106,7 +106,7 @@ describe('findBestMatchingResult', () => {
     it('finds the name when position is under an application', () => {
       const position: Position = { line: 0, character: 58 }
 
-      const [_module, name, _id] = findName(modules, results, position, sourceFile) ?? [undefined, undefined]
+      const [name, _id] = findName(modules, results, position, sourceFile) ?? [undefined, undefined]
 
       assert.deepEqual(name, 'isFinite')
     })
@@ -114,7 +114,7 @@ describe('findBestMatchingResult', () => {
     it('finds the name when position is under a type alias', () => {
       const position: Position = { line: 0, character: 45 }
 
-      const [_module, name, _id] = findName(modules, results, position, sourceFile) ?? [undefined, undefined]
+      const [name, _id] = findName(modules, results, position, sourceFile) ?? [undefined, undefined]
 
       assert.deepEqual(name, 'MY_TYPE')
     })

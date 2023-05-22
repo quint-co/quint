@@ -128,36 +128,48 @@ export class ToIrListener implements QuintListener {
     }
   }
 
-  // special case for: nondet x = e1; e2
-  exitNondet(ctx: p.NondetContext) {
-    const [rhs, nested] = this.exprStack.splice(-2)
+  exitNondetOperDef(ctx: p.NondetOperDefContext) {
     const name = ctx.IDENTIFIER().text
-    let typeTag: QuintType | undefined
+    let typeAnnotation: QuintType | undefined
     if (ctx.type()) {
       const maybeType = this.popType()
       if (maybeType.isJust()) {
         // the operator is tagged with a type
-        typeTag = maybeType.value
+        typeAnnotation = maybeType.value
       }
     }
+    const expr = this.exprStack.pop()
+    if (!expr) {
+      return
+    }
 
-    const id1 = this.idGen.nextId()
-    const id2 = this.idGen.nextId()
-    this.sourceMap.set(id1, this.loc(ctx))
-    this.sourceMap.set(id2, this.loc(ctx))
-    if (rhs && nested) {
-      const def = {
-        id: id2,
-        kind: 'def',
-        name,
-        qualifier: 'nondet',
-        expr: rhs,
-        typeTag,
-      }
+    const id = this.idGen.nextId()
+    this.sourceMap.set(id, this.loc(ctx))
+
+    const def: QuintDef = {
+      id,
+      kind: 'def',
+      name,
+      qualifier: 'nondet',
+      expr,
+      typeAnnotation,
+    }
+
+    this.definitionStack.push(def)
+  }
+
+  // special case for: nondet x = e1; e2
+  exitNondet(ctx: p.NondetContext) {
+    const def = this.definitionStack.pop()
+    const nested = this.exprStack.pop()
+
+    const id = this.idGen.nextId()
+    this.sourceMap.set(id, this.loc(ctx))
+    if (nested && def?.kind === 'def') {
       const letExpr: QuintEx = {
-        id: id1,
+        id,
         kind: 'let',
-        opdef: def as QuintOpDef,
+        opdef: def,
         expr: nested,
       }
       this.exprStack.push(letExpr)
