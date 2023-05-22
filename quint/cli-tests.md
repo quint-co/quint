@@ -102,6 +102,16 @@ Temporarily disabled.
 <!-- !test check instances - Types & Effects -->
     quint typecheck ../examples/language-features/instances.qnt
 
+### OK on parse instancesFrom
+
+<!-- !test check instancesFrom -->
+    quint parse ../examples/language-features/instancesFrom.qnt
+
+### OK on typecheck instancesFrom
+
+<!-- !test check instancesFrom - Types & Effects -->
+    quint typecheck ../examples/language-features/instancesFrom.qnt
+
 ### OK on parse option
 
 <!-- !test check option -->

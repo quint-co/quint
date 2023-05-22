@@ -250,6 +250,12 @@ export interface QuintInstance extends WithId {
   overrides: [QuintLambdaParameter, QuintEx][]
   /** whether to use identity substitution on missing names */
   identityOverride: boolean
+  /**
+   * An optional string that specifies the source of the import, e.g., a filename.
+   * If the source is not specified, then the definitions are imported from the same
+   * source, where the 'import' definition is met.
+   */
+  fromSource?: string
 }
 
 /**

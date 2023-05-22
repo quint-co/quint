@@ -69,8 +69,10 @@ exportMod : 'export' name '.' identOrStar
 // which means that the missing parameters are identity, e.g., x = x, y = y
 instanceMod :   // creating an instance and importing all names introduced in the instance
                 'import' moduleName '(' (name '=' expr (',' name '=' expr)*) ')' '.' '*'
+                  ('from' fromSource)?
                 // creating an instance and importing all names with a prefix
             |   'import' moduleName '(' (name '=' expr (',' name '=' expr)*) ')' 'as' qualifiedName
+                  ('from' fromSource)?
         ;
 
 moduleName : IDENTIFIER;

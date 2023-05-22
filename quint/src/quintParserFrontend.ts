@@ -164,7 +164,7 @@ export function parsePhase2sourceResolution(
   while (worklist.length > 0) {
     const [importer, pathTrail] = worklist.splice(0, 1)[0]
     for (const def of importer.defs) {
-      if (def.kind === 'import' && def.fromSource) {
+      if ((def.kind === 'import' || def.kind === 'instance') && def.fromSource) {
         const importerPath = pathTrail[pathTrail.length - 1]
         const stemPath = sourceResolver.stempath(importerPath)
         const importeePath = sourceResolver.lookupPath(stemPath, def.fromSource + '.qnt')

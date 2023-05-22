@@ -99,7 +99,7 @@ export class CompilerVisitor implements IRVisitor {
     this.types = types
     this.rand = rand
     this.execListener = listener
-    const lastTrace = mkRegister('shadow', lastTraceName, none(), () =>
+    const lastTrace = mkRegister('shadow', lastTraceName, just(rv.mkList([])), () =>
       this.addRuntimeError(0n, 'q::lastTrace is not set')
     )
     this.shadowVars.push(lastTrace)
@@ -1109,6 +1109,7 @@ export class CompilerVisitor implements IRVisitor {
   private chainAllOrThen(actions: Computable[], kind: 'all' | 'then'): Maybe<EvalResult> {
     // save the values of the next variables, as actions may update them
     const savedValues = this.snapshotNextVars()
+    const savedTrace = this.trace()
     let result: Maybe<EvalResult> = just(rv.mkBool(true))
     // Evaluate arguments iteratively.
     // Stop as soon as one of the arguments returns false.
@@ -1123,12 +1124,14 @@ export class CompilerVisitor implements IRVisitor {
         // Restore the values of the next variables,
         // as evaluation was not successful.
         this.recoverNextVars(savedValues)
+        this.resetTrace(savedTrace.map(rv.mkList))
         break
       }
 
       // switch to the next frame, when implementing A.then(B)
       if (kind === 'then' && nactionsLeft > 0) {
         this.shiftVars()
+        this.extendTrace()
       }
     }
 
@@ -1350,24 +1353,12 @@ export class CompilerVisitor implements IRVisitor {
     next: Computable,
     inv: Computable
   ) {
-    // convert the current variable values to a record
-    const varsToRecord = () => {
-      const map: [string, RuntimeValue][] = this.vars
-        .filter(r => r.registerValue.isJust())
-        .map(r => [r.name, r.registerValue.value as RuntimeValue])
-      return rv.mkRecord(map)
-    }
-
     const doRun = (): Maybe<EvalResult> => {
       return merge([nrunsComp, nstepsComp].map(c => c.eval()))
         .map(([nrunsRes, nstepsRes]) => {
           const isTrue = (res: Maybe<EvalResult>) => {
             return !res.isNone() && (res.value as RuntimeValue).toBool() === true
           }
-          // the trace collected during the run
-          let trace: RuntimeValue[] = []
-          // the best found trace so far
-          let bestTrace: RuntimeValue[] = []
           // a failure flag for the case a runtime error is found
           let failure = false
           // the value to be returned in the end of evaluation
@@ -1379,7 +1370,7 @@ export class CompilerVisitor implements IRVisitor {
           const nruns = (nrunsRes as RuntimeValue).toInt()
           for (let runNo = 0; !errorFound && !failure && runNo < nruns; runNo++) {
             this.execListener.onRunCall()
-            trace = []
+            this.resetTrace()
             // check Init()
             const initApp: ir.QuintApp = { id: 0n, kind: 'app', opcode: 'q::initAndInvariant', args: [] }
             this.execListener.onUserOperatorCall(initApp)
@@ -1391,7 +1382,7 @@ export class CompilerVisitor implements IRVisitor {
               // The initial action evaluates to true.
               // Our guess of values was good.
               this.shiftVars()
-              trace.push(varsToRecord())
+              this.extendTrace()
               // check the invariant Inv
               const invResult = inv.eval()
               this.execListener.onUserOperatorReturn(initApp, [], initResult)
@@ -1413,7 +1404,7 @@ export class CompilerVisitor implements IRVisitor {
                   failure = nextResult.isNone() || failure
                   if (isTrue(nextResult)) {
                     this.shiftVars()
-                    trace.push(varsToRecord())
+                    this.extendTrace()
                     errorFound = !isTrue(inv.eval())
                     this.execListener.onUserOperatorReturn(nextApp, [], nextResult)
                   } else {
@@ -1425,30 +1416,19 @@ export class CompilerVisitor implements IRVisitor {
                     // drop the run. Otherwise, we would have a lot of false
                     // positives, which look like deadlocks but they are not.
                     this.execListener.onUserOperatorReturn(nextApp, [], nextResult)
+                    this.execListener.onRunReturn(just(rv.mkBool(true)), this.trace().or(just(rv.mkList([]))).value)
                     break
                   }
                 }
               }
             }
+            const outcome = !failure ? just(rv.mkBool(!errorFound)) : none()
+            this.execListener.onRunReturn(outcome, this.trace().or(just(rv.mkList([]))).value)
             // recover the state variables
             this.recoverVars(vars)
             this.recoverNextVars(nextVars)
-            // TODO: the trace selection should be done in the listener
-            // save the trace if it was better
-            if (this.isBetterTrace(errorFound, bestTrace.length, trace.length)) {
-              bestTrace = trace
-            }
-            const outcome = !failure ? just(rv.mkBool(!errorFound)) : none()
-            this.execListener.onRunReturn(outcome, trace)
           } // end of a single random run
 
-          // TODO: the trace selection should be done in the listener
-          // save the trace (there are a few shadow variables, hence, the loop)
-          this.shadowVars.forEach(r => {
-            if (r.name === lastTraceName) {
-              r.registerValue = just(rv.mkList(bestTrace))
-            }
-          })
           // finally, return true, if no error was found
           return !failure ? just(rv.mkBool(!errorFound)) : none()
         })
@@ -1457,10 +1437,32 @@ export class CompilerVisitor implements IRVisitor {
     this.compStack.push(mkFunComputable(doRun))
   }
 
-  // For examples, the longer trace is preferred.
-  // For counterexamples, the shorter trace is preferred.
-  private isBetterTrace(isErrorFound: boolean, oldLen: number, newLen: number): boolean {
-    return isErrorFound ? oldLen == 0 || oldLen >= newLen : oldLen <= newLen
+  private trace() {
+    let trace = this.shadowVars.find(r => r.name === lastTraceName)
+    return trace ? trace.registerValue.map(t => t.toList()) : none()
+  }
+
+  private resetTrace(value: Maybe<RuntimeValue> = just(rv.mkList([]))) {
+    let trace = this.shadowVars.find(r => r.name === lastTraceName)
+    if (trace) {
+      trace.registerValue = value
+    }
+  }
+
+  private extendTrace() {
+    let trace = this.shadowVars.find(r => r.name === lastTraceName)
+    if (trace) {
+      const extended = this.trace().map(t => rv.mkList(t.push(this.varsToRecord())))
+      trace.registerValue = extended
+    }
+  }
+
+  // convert the current variable values to a record
+  private varsToRecord() {
+    const map: [string, RuntimeValue][] = this.vars
+      .filter(r => r.registerValue.isJust())
+      .map(r => [r.name, r.registerValue.value as RuntimeValue])
+    return rv.mkRecord(map)
   }
 
   private shiftVars() {

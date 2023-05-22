@@ -190,6 +190,14 @@ describe('parse errors', () => {
     parseAndCompare('_1029spreadError')
   })
 
+  it('a module with a constant', () => {
+    parseAndCompare('_1030const')
+  })
+
+  it('an instance', () => {
+    parseAndCompare('_1031instance')
+  })
+
   // The test below needs a fix, see:
   //
   // https://github.com/informalsystems/quint/issues/378
