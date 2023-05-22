@@ -30,21 +30,22 @@ export function moduleToString(quintModule: QuintModule): string {
 }
 
 /**
- * Pretty prints a definition
+ * Pretty prints a definition. Includes a type annotation if the definition is
+ * annotated, or if a type is provided. The annotation is preferred over the
+ * type.
  *
  * @param def the Quint expression to be formatted
- * @param includeBody optional, whether to include the body of the definition, defaults to true
+ * @param includeBody optional, whether to include the body of the definition,
+ * defaults to true
+ * @param type optional, the type scheme of the definition, defaults to
+ * undefined
  *
- * @returns a string with the pretty printed definition
+ * @returns a string with the pretty printed definition.
  */
-export function definitionToString(
-  def: QuintDef,
-  includeBody: boolean = true,
-  type: TypeScheme | undefined = undefined
-): string {
+export function definitionToString(def: QuintDef, includeBody: boolean = true, type?: TypeScheme): string {
   const typeAnnotation = isAnnotatedDef(def)
     ? `: ${typeToString(def.typeAnnotation)}`
-    : type
+    : type // If annotation is not present, but type is, use the type
     ? `: ${typeSchemeToString(type)}`
     : ''
   switch (def.kind) {

@@ -121,14 +121,10 @@ export function prettyQuintEx(ex: QuintEx): Doc {
   }
 }
 
-export function prettyQuintDef(
-  def: QuintDef,
-  includeBody: boolean = true,
-  type?: TypeScheme
-): Doc {
+export function prettyQuintDef(def: QuintDef, includeBody: boolean = true, type?: TypeScheme): Doc {
   const typeAnnotation = isAnnotatedDef(def)
     ? [text(': '), prettyQuintType(def.typeAnnotation)]
-    : type
+    : type // If annotation is not present, but type is, use the type
     ? [text(': '), prettyTypeScheme(type)]
     : []
   switch (def.kind) {
@@ -171,11 +167,7 @@ export function prettyQuintType(type: QuintType): Doc {
       return group([prettyQuintType(type.arg), richtext(chalk.gray, ' -> '), prettyQuintType(type.res)])
     case 'oper': {
       const args = type.args.map(prettyQuintType)
-      return group([
-        nary(text('('), args, text(')')),
-        text(' => '),
-        prettyQuintType(type.res),
-      ])
+      return group([nary(text('('), args, text(')')), text(' => '), prettyQuintType(type.res)])
     }
     case 'tup':
       return prettyRow(type.fields, false)
