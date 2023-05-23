@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add support for outline view (#864)
 
 ### Changed
+
+- Hovers are significantly improved (#904)
+
 ### Deprecated
 ### Removed
 ### Fixed
