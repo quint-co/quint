@@ -40,7 +40,7 @@ the end of file.
     quint parse ./testFixture/modulesAndJunk.qnt 2>&1 | sed 's#.*quint/\(testFixture\)#Q/\1#g'
 
 <!-- !test out junk -->
-    Q/testFixture/modulesAndJunk.qnt:9:1 - error: extraneous input 'the' expecting {<EOF>, 'module'}
+    Q/testFixture/modulesAndJunk.qnt:9:1 - error: extraneous input 'the' expecting {<EOF>, 'module', DOCCOMMENT}
     9: the parser
        ^^^
 
