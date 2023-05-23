@@ -127,6 +127,7 @@ export function prettyQuintDef(def: QuintDef, includeBody: boolean = true, type?
     : type // If annotation is not present, but type is, use the type
     ? [text(': '), prettyTypeScheme(type)]
     : []
+
   switch (def.kind) {
     case 'def': {
       const header = group([
@@ -136,6 +137,13 @@ export function prettyQuintDef(def: QuintDef, includeBody: boolean = true, type?
         ...typeAnnotation,
       ])
       return includeBody ? group([header, text(' = '), prettyQuintEx(def.expr)]) : header
+    }
+    case 'typedef': {
+      const header = group([text('type '), richtext(chalk.blue, def.name)])
+      if (def.type) {
+        return group([header, text(' = '), prettyQuintType(def.type)])
+      }
+      return header
     }
     default:
       // TODO, not used for now
@@ -160,9 +168,9 @@ export function prettyQuintType(type: QuintType): Doc {
     case 'var':
       return richtext(chalk.blue, type.name)
     case 'set':
-      return group([richtext(chalk.green, 'Set'), text('('), prettyQuintType(type.elem), text(')')])
+      return group([richtext(chalk.green, 'Set'), text('['), prettyQuintType(type.elem), text(']')])
     case 'list':
-      return group([richtext(chalk.green, 'List'), text('('), prettyQuintType(type.elem), text(')')])
+      return group([richtext(chalk.green, 'List'), text('['), prettyQuintType(type.elem), text(']')])
     case 'fun':
       return group([prettyQuintType(type.arg), richtext(chalk.gray, ' -> '), prettyQuintType(type.res)])
     case 'oper': {
