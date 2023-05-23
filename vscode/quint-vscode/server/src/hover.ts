@@ -4,6 +4,9 @@ import { findBestMatchingResult, locToRange } from "./reporting"
 import { TextDocument } from "vscode-languageserver-textdocument"
 import { QuintDefinitionLink, findDefinition } from "./definitions"
 
+// Line length for pretty printing
+const lineLength = 120
+
 export function hover(
   parsedData: ParserPhase3,
   analysisOutput: AnalyzisOutput | undefined,
@@ -69,7 +72,7 @@ function inferredDataHover(
   }
 
   const text = def
-    ? format(120, 0, prettyQuintDef(def, false, result))
+    ? format(lineLength, 0, prettyQuintDef(def, false, result))
     : expressionToShow(expr!, parsedData.modules, link, document, loc, result)
 
   if (!text) {
@@ -90,37 +93,43 @@ function inferredDataHover(
 }
 
 function expressionToShow(
-  expr: QuintEx, modules: QuintModule[], link: QuintDefinitionLink | undefined,
-  document: TextDocument, loc: Loc, type: TypeScheme
+  expr: QuintEx,
+  modules: QuintModule[],
+  link: QuintDefinitionLink | undefined,
+  document: TextDocument,
+  loc: Loc,
+  type: TypeScheme
 ): string | undefined {
-  if (expr && expr.kind !== 'name' && expr.kind !== 'lambda' && expr.kind !== 'app') {
+  if (expr.kind !== 'name' && expr.kind !== 'lambda' && expr.kind !== 'app') {
     // Only show hover for names, lambdas and (some) apps
-    return
+    return undefined
   }
 
   if (expr.kind === 'app') {
-    if (expr.opcode === 'field') {
-      const fieldName = expr.args[1]
-      if (fieldName.kind !== 'str') {
-        return ''
-      }
-
-      return `(field) ${fieldName.value}: ${prettyPrintTypeScheme(type)}`
+    // For applications, only show hovers for record field access.
+    if (expr.opcode === 'field' && expr.args[1].kind === 'str') {
+      const fieldName = expr.args[1].value
+      const fieldType = prettyPrintTypeScheme(type)
+      return `(field) ${fieldName}: ${fieldType}`
     }
 
-    return
+    return undefined
   }
 
-  if(expr.kind === 'name' && link?.definitionId) {
+  if (expr.kind === 'name' && link?.definitionId) {
     const def = findDefinitionWithId(modules, link.definitionId)
-    const qual = def ? qualifier(def) : '(parameter)'
-    return `${qual} ${link.name}: ${prettyPrintTypeScheme(type)}`
+    const qualifier = def ? defQualifier(def) : '(parameter)'
+    const name = link.name
+    const typeString = prettyPrintTypeScheme(type)
+    return `${qualifier} ${name}: ${typeString}`
   }
 
-  return `${document.getText(locToRange(loc))}: ${prettyPrintTypeScheme(type)}`
+  const text = document.getText(locToRange(loc))
+  const typeString = prettyPrintTypeScheme(type)
+  return `${text}: ${typeString}`
 }
 
-function qualifier(def: QuintDef): string {
+function defQualifier(def: QuintDef): string {
   switch (def.kind) {
     case 'def':
       return qualifierToString(def.qualifier)
@@ -154,5 +163,5 @@ function documentationHover(
 }
 
 function prettyPrintTypeScheme(type: TypeScheme): string {
-  return format(120, 0, prettyTypeScheme(type))
+  return format(lineLength, 0, prettyTypeScheme(type))
 }
