@@ -1,3 +1,4 @@
+/// Docstring for module
 module docstrings {
   /// Top level docstring
   val nestedVals =

@@ -13,7 +13,7 @@ grammar Quint;
 // entry point for the parser
 modules : module+ EOF;
 
-module : 'module' IDENTIFIER '{' (documentedUnit)* '}';
+module : DOCCOMMENT* 'module' IDENTIFIER '{' documentedUnit* '}';
 documentedUnit : DOCCOMMENT* unit;
 
 // a module unit

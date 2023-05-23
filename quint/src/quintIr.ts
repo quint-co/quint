@@ -281,6 +281,10 @@ export function isAnnotatedDef(def: any): def is WithTypeAnnotation {
  * Module definition.
  */
 export interface QuintModule extends WithId {
+  /** The name of the module. */
   name: string
+  /** The definitions in the module. */
   defs: QuintDef[]
+  /** Optional documentation for the module. */
+  doc?: string
 }
