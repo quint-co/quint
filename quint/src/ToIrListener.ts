@@ -17,6 +17,7 @@ import { strict as assert } from 'assert'
 import { ErrorMessage, Loc } from './quintParserFrontend'
 import { compact, zipWith } from 'lodash'
 import { Maybe, just, none } from '@sweet-monads/maybe'
+import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
 
 /**
  * An ANTLR4 listener that constructs QuintIr objects out of the abstract
@@ -62,8 +63,6 @@ export class ToIrListener implements QuintListener {
   private identOrStarStack: string[] = []
   // the stack of rows for records and unions
   private rowStack: Row[] = []
-  // the stack of documentation lines before a definition
-  private docStack: string[] = []
   // an internal counter to assign unique numbers
   private idGen: IdGenerator
 
@@ -75,6 +74,7 @@ export class ToIrListener implements QuintListener {
 
     const moduleId = this.idGen.nextId()
     this.sourceMap.set(moduleId, this.loc(ctx))
+
     const module: QuintModule = {
       id: moduleId,
       name: ctx.IDENTIFIER().text,
@@ -82,6 +82,13 @@ export class ToIrListener implements QuintListener {
     }
 
     this.definitionStack = []
+
+    const doc = getDocText(ctx.DOCCOMMENT())
+
+    if (doc) {
+      this.modules.push({ ...module, doc })
+      return
+    }
 
     this.modules.push(module)
   }
@@ -185,9 +192,6 @@ export class ToIrListener implements QuintListener {
     // get the definition body
     const expr = this.exprStack.pop()
 
-    const doc = this.docStack.length > 0 ? this.docStack.join('\n') : undefined
-    this.docStack = []
-
     // extract the qualifier
     let qualifier: OpQualifier = 'def'
     if (ctx.qualifier()) {
@@ -231,7 +235,6 @@ export class ToIrListener implements QuintListener {
         name,
         qualifier,
         expr: body,
-        doc,
       }
       if (typeTag.isJust()) {
         def.typeAnnotation = typeTag.value
@@ -1044,10 +1047,14 @@ export class ToIrListener implements QuintListener {
     })
   }
 
-  enterDocLines(ctx: p.DocLinesContext) {
-    // The comment content is the text of the comment minus the `/// ` prefix
-    const doc = ctx.DOCCOMMENT().map(l => l.text.slice(4, -1))
-    this.docStack = doc
+  exitDocumentedUnit(ctx: p.DocumentedUnitContext) {
+    const doc = getDocText(ctx.DOCCOMMENT())
+
+    if (doc) {
+      // Pop last def and re-push it with the doc
+      const def = this.definitionStack.pop()!
+      this.definitionStack.push({ doc, ...def })
+    }
   }
 
   /*
@@ -1132,4 +1139,9 @@ function popMany<T>(stack: T[], n: number): T[] {
   assert(stack.length >= n, 'popMany: too few elements in stack')
 
   return stack.splice(-n)
+}
+
+/* The comment content is the text of the comment minus the `/// ` prefix */
+function getDocText(doc: TerminalNode[]): string {
+  return doc.map(l => l.text.slice(4, -1)).join('\n')
 }
