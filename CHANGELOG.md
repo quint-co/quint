@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Save ITF traces in `quint test` (#884, #890)
 - Initial integration with the Apalache server (#871)
 - Support `import... from` for instances (#899)
+- Modules can now have docstrings (#902)
 
 ### Changed
 ### Deprecated
