@@ -69,7 +69,7 @@ export function findName(
   modules: QuintModule[], sources: [Loc, bigint][], position: Position, sourceFile: string
 ): [string, bigint] | undefined {
   const ids = resultsOnPosition(sources, position, sourceFile)
-  const names: ([string, bigint] | undefined)[] = ids.map(([_loc, id]) => {
+  const names: ([string, bigint] | undefined)[] = ids.map(id => {
     const expr = findExpressionWithId(modules, id)
 
     switch (expr?.kind) {
@@ -102,9 +102,17 @@ export function findName(
  */
 export function findBestMatchingResult<T>(
   sourceMap: Map<bigint, Loc>, results: [bigint, T][], position: Position, sourceFile: string
-): [Loc, T] {
-  const resultsByLoc: [Loc, T][] = results.map(([id, result]) => [sourceMap.get(id)!, result])
-  return resultsOnPosition(resultsByLoc, position, sourceFile)[0]
+): { id: bigint, loc: Loc, result: T } | undefined {
+  const resultsByLoc: [Loc, { id: bigint, result: T }][] =
+    results.map(([id, result]) => [sourceMap.get(id)!, { id, result }])
+
+  const matchingResults = resultsOnPosition(resultsByLoc, position, sourceFile)
+  if (matchingResults.length === 0) {
+    return undefined
+  }
+
+  const { id, result } = matchingResults[0]
+  return { id, loc: sourceMap.get(id)!, result }
 }
 
 /**
@@ -124,7 +132,7 @@ export function locToRange(loc: Loc): Range {
   }
 }
 
-function resultsOnPosition<T>(results: [Loc, T][], position: Position, sourceFile: string): [Loc, T][] {
+function resultsOnPosition<T>(results: [Loc, T][], position: Position, sourceFile: string): T[] {
   const filteredResults = results.filter(([loc, _result]) => {
     // Position is part of effect's expression range
     return (loc && loc.source === sourceFile &&
@@ -145,5 +153,5 @@ function resultsOnPosition<T>(results: [Loc, T][], position: Position, sourceFil
     }
   })
 
-  return sortedResults
+  return sortedResults.map(([_loc, result]) => result)
 }

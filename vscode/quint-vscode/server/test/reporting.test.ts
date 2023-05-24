@@ -69,25 +69,25 @@ describe('findBestMatchingResult', () => {
   it('finds the result with best matching loc to the position - 1', () => {
     const position: Position = { line: 1, character: 1 }
 
-    const [_loc, result] = findBestMatchingResult(sourceMap, results, position, sourceFile)
+    const matched = findBestMatchingResult(sourceMap, results, position, sourceFile)
 
-    assert.deepEqual(result, 'result 1')
+    assert.deepEqual(matched?.result, 'result 1')
   })
 
   it('finds the result with best matching loc to the position - 2', () => {
     const position: Position = { line: 1, character: 8 }
 
-    const [_loc, result] = findBestMatchingResult(sourceMap, results, position, sourceFile)
+    const matched = findBestMatchingResult(sourceMap, results, position, sourceFile)
 
-    assert.deepEqual(result, 'result 2')
+    assert.deepEqual(matched?.result, 'result 2')
   })
 
   it('finds the result with best matching loc to the position - 3', () => {
     const position: Position = { line: 2, character: 1 }
 
-    const [_loc, result] = findBestMatchingResult(sourceMap, results, position, sourceFile)
+    const matched = findBestMatchingResult(sourceMap, results, position, sourceFile)
 
-    assert.deepEqual(result, 'result 3')
+    assert.deepEqual(matched?.result, 'result 3')
   })
 
   describe('findName', () => {
