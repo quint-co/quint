@@ -50,7 +50,6 @@ describe('findDefinitionWithId', () => {
       qualifier: 'val',
       name: 'a',
       expr: { id: 1n, kind: 'int', value: 1n },
-      doc: undefined,
     })
   })
 
