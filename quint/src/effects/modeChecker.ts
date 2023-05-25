@@ -53,8 +53,8 @@ export class ModeChecker implements IRVisitor {
     return [this.errors, this.suggestions]
   }
 
-  private errors: Map<bigint, QuintError> = new Map<bigint, QuintError>()
-  private suggestions: Map<bigint, OpQualifier> = new Map<bigint, OpQualifier>()
+  errors: Map<bigint, QuintError> = new Map<bigint, QuintError>()
+  suggestions: Map<bigint, OpQualifier> = new Map<bigint, OpQualifier>()
 
   private effects: Map<bigint, EffectScheme> = new Map<bigint, EffectScheme>()
 

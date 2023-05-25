@@ -18,18 +18,19 @@ import { left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
 import { format } from './prettierimp'
 
-import { QuintEx } from './quintIr'
-import { CompilationContext, compileFromCode, contextNameLookup, lastTraceName } from './runtime/compile'
+import { QuintDef, QuintEx, QuintModule } from './quintIr'
+import { CompilationContext, compile, compileFromCode, contextNameLookup, lastTraceName } from './runtime/compile'
 import { formatError } from './errorReporter'
 import { ComputableKind, EvalResult, Register, kindName } from './runtime/runtime'
 import { newTraceRecorder, noExecutionListener } from './runtime/trace'
-import { ErrorMessage, probeParse } from './quintParserFrontend'
+import { ErrorMessage, Loc, parseExpressionOrUnit, parsePhase3importAndNameResolution } from './quintParserFrontend'
 import { IdGenerator, newIdGenerator } from './idGenerator'
 import { prettyQuintEx, printExecutionFrameRec, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { newRng } from './rng'
 import { version } from './version'
 import { fileSourceResolver } from './sourceResolver'
+import { AnalysisOutput, QuintAnalyzer } from './quintAnalyzer'
 
 // tunable settings
 export const settings = {
@@ -59,6 +60,11 @@ interface ReplState {
   seed?: bigint
   // verbosity level
   verbosityLevel: number
+  // Quint analyzer (for incremental static analysis)
+  analyzer: QuintAnalyzer
+  modules: QuintModule[]
+  sourceMap: Map<bigint, Loc>
+  analysisOutput?: AnalysisOutput
 }
 
 // The default exit terminates the process.
@@ -109,6 +115,9 @@ export function quintRepl(
     shadowVars: new Map<string, EvalResult>(),
     lastLoadedFileAndModule: [undefined, undefined],
     verbosityLevel: options.verbosity,
+    analyzer: new QuintAnalyzer(new Map()),
+    modules: [],
+    sourceMap: new Map(),
   }
   // we let the user type a multiline string, which is collected here:
   let multilineText = ''
@@ -387,6 +396,7 @@ function loadFromFile(out: writer, state: ReplState, filename: string): boolean 
     }
 
     if (!isError && newState.exprHist.length === 0) {
+      // FIXME: This will not work with incremental compilation.
       // nothing was replayed, evaluate 'true', to trigger compilation
       isError = !tryEval(out, newState, 'true')
       if (!isError) {
@@ -474,6 +484,7 @@ def q::testOnce(q::nsteps, q::init, q::next, q::inv) = false;
 
 // try to evaluate the expression in a string and print it, if successful
 function tryEval(out: writer, state: ReplState, newInput: string): boolean {
+  const start = new Date().getTime();
   // output errors to the console in red
   function printErrors(moduleText: string, context: CompilationContext) {
     printErrorMessages(out, 'syntax error', moduleText, context.syntaxErrors)
@@ -493,26 +504,59 @@ ${textToAdd}
 }`
   }
 
-  const probeResult = probeParse(newInput, '<input>')
-  if (probeResult.kind === 'error') {
-    printErrorMessages(out, 'syntax error', newInput, probeResult.messages)
+  const parseResult = parseExpressionOrUnit(newInput, '<input>', state.idGen, state.sourceMap)
+  if (parseResult.kind === 'error') {
+    printErrorMessages(out, 'syntax error', newInput, parseResult.messages)
     out('\n') // be nice to external programs
     return false
   }
-  if (probeResult.kind === 'none') {
+  if (parseResult.kind === 'none') {
     // a comment or whitespaces
     return true
   }
   // create a random number generator
   const rng = newRng(state.seed)
   // evaluate the input, depending on its type
-  if (probeResult.kind === 'expr') {
-    // embed expression text into a value definition inside a module
-    const moduleText = prepareParserInput(`  action q::input =\n${newInput}`)
-    // compile the expression or definition and evaluate it
+  if (parseResult.kind === 'expr') {
+    // Create a definition to encapsulate the parsed expression.
+    const def: QuintDef = { kind: 'def', qualifier: 'action', name: 'q::input', expr: parseResult.expr, id: state.idGen.nextId() }
+
+    // Include the definition in the last module. Don't worry, we will pop it
+    // from there at the end of this code block.
+    state.modules[state.modules.length - 1].defs.push(def)
+
+    // We need to resolve names for this new definition. Incremental name
+    // resolution is not our focus now, so just resolve everything again.
+    const lookupTable = parsePhase3importAndNameResolution({ modules: state.modules, sourceMap: state.sourceMap })
+      .mapLeft(errors => {
+        // TODO: Properly report these errors
+        throw new Error(`Error on resolving names: ${errors.map(e => e.explanation)}`)
+      })
+      .unwrap().table
+
+    // The next lines set the analyzer state to match the state of the REPL,
+    // with the latest lookup table and analysis information.
+    if (state.analysisOutput) {
+      state.analyzer.setState(state.analysisOutput)
+    }
+    state.analyzer.setTable(lookupTable)
+
+    // Only the single def is analyzed.
+    state.analyzer.analyzeDef(def)
+    const [analysisErrors, analysisResult] = state.analyzer.getResult()
+
+    // TODO: Properly report these errors.
+    if (analysisErrors.length > 0) {
+      console.log(analysisErrors)
+    }
+
     const recorder = newTraceRecorder(state.verbosityLevel, rng)
-    const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
-    const context = compileFromCode(state.idGen, moduleText, '__repl__', mainPath, recorder, rng.next)
+    const context = compile(state.modules, state.sourceMap, lookupTable, analysisResult, '__repl__', recorder, rng.next)
+
+    // Next line is just for backward compatibility, as I don't want to fix all
+    // output formatting in this prototype. `moduleText` is only used for printing.
+    const moduleText = prepareParserInput(newInput)
+
     if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
       printErrors(moduleText, context)
       if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
@@ -572,25 +616,42 @@ ${textToAdd}
         out('\n') // be nice to external programs
       })
 
+    // We don't want to keep the definition, as that would result in duplicates
+    // of `q::input` in the module.
+    state.modules[state.modules.length - 1].defs.pop()
     state.seed = rng.getState()
 
+    let elapsed = new Date().getTime() - start;
+    console.log('Time taken for expr evaluation: ' + elapsed + 'ms')
     return result.isRight()
   }
-  if (probeResult.kind === 'toplevel') {
+  if (parseResult.kind === 'toplevel') {
     // embed expression text into a module at the top level
     const moduleText = prepareParserInput(newInput)
     // compile the module and add it to history if everything worked
     const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
-    const context = compileFromCode(state.idGen, moduleText, '__repl__', mainPath, noExecutionListener, rng.next)
+
+    // For toplevel definitions, we start from scratch. This should be made
+    // incremental as well.
+    state.idGen = newIdGenerator()
+    state.analyzer = new QuintAnalyzer(new Map())
+    const context = compileFromCode(state.idGen, moduleText, '__repl__', mainPath, noExecutionListener, rng.next, state.analyzer)
     if (context.values.size === 0 || context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
       printErrors(moduleText, context)
       return false
     } else {
       out('\n') // be nice to external programs
       state.defsHist = state.defsHist + '\n' + newInput // update the history
+
+      // Save output to state
+      state.modules = context.flattenedModules!
+      state.sourceMap = context.sourceMap
+      state.analysisOutput = context.analysisOutput
     }
   }
 
+  let elapsed = new Date().getTime() - start;
+  console.log('Time taken for toplevel evaluation: ' + elapsed + 'ms')
   return true
 }
 

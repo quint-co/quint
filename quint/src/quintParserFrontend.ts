@@ -11,7 +11,7 @@ import * as p from './generated/QuintParser'
 import { QuintListener } from './generated/QuintListener'
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
-import { IrErrorMessage, QuintModule } from './quintIr'
+import { IrErrorMessage, QuintDef, QuintEx, QuintModule } from './quintIr'
 import { IdGenerator } from './idGenerator'
 import { ToIrListener } from './ToIrListener'
 import { collectDefinitions } from './definitionsCollector'
@@ -62,18 +62,18 @@ export interface ParserPhase1 {
   sourceMap: Map<bigint, Loc>
 }
 
-export interface ParserPhase2 extends ParserPhase1 {}
+export interface ParserPhase2 extends ParserPhase1 { }
 
 export interface ParserPhase3 extends ParserPhase2 {
   table: LookupTable
 }
 
 /**
- * The result of probing.
+ * The result of parsing an expression or unit.
  */
-export type ParseProbeResult =
-  | { kind: 'toplevel' }
-  | { kind: 'expr' }
+export type ExpressionOrUnitParseResult =
+  | { kind: 'toplevel', def: QuintDef }
+  | { kind: 'expr', expr: QuintEx }
   | { kind: 'none' }
   | { kind: 'error'; messages: ErrorMessage[] }
 
@@ -82,16 +82,22 @@ export type ParseProbeResult =
  *
  * @param text input text
  * @param sourceLocation a textual description of the source
- * @returns the result of probing
+ * @returns the parsing result
  */
-export function probeParse(text: string, sourceLocation: string): ParseProbeResult {
+export function parseExpressionOrUnit(
+  text: string, sourceLocation: string, idGenerator: IdGenerator, sourceMap: Map<bigint, Loc>
+): ExpressionOrUnitParseResult {
   const errorMessages: ErrorMessage[] = []
   const parser = setupParser(text, sourceLocation, errorMessages)
   const tree = parser.unitOrExpr()
   if (errorMessages.length > 0) {
     return { kind: 'error', messages: errorMessages }
   } else {
-    const listener = new ProbeListener()
+    const listener = new ExpressionOrUnitListener(sourceLocation, idGenerator)
+
+    // Use an existing source map as a starting point.
+    listener.sourceMap = sourceMap
+
     ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
     return listener.result
   }
@@ -359,9 +365,9 @@ function setupParser(text: string, sourceLocation: string, errorMessages: ErrorM
   return parser
 }
 
-// a simple listener to figure out what has been parsed
-class ProbeListener implements QuintListener {
-  result: ParseProbeResult = {
+// A simple listener to parse a unit or expression
+class ExpressionOrUnitListener extends ToIrListener {
+  result: ExpressionOrUnitParseResult = {
     kind: 'error',
     messages: [
       {
@@ -373,9 +379,11 @@ class ProbeListener implements QuintListener {
 
   exitUnitOrExpr(ctx: p.UnitOrExprContext) {
     if (ctx.unit()) {
-      this.result = { kind: 'toplevel' }
+      const def = this.definitionStack[this.definitionStack.length - 1]
+      this.result = { kind: 'toplevel', def }
     } else if (ctx.expr()) {
-      this.result = { kind: 'expr' }
+      const expr = this.exprStack[this.exprStack.length - 1]
+      this.result = { kind: 'expr', expr }
     } else {
       this.result = { kind: 'none' }
     }

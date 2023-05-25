@@ -52,19 +52,19 @@ export class ToIrListener implements QuintListener {
   private sourceLocation: string = ''
 
   // the stack of definitions
-  private definitionStack: QuintDef[] = []
+  protected definitionStack: QuintDef[] = []
   // the stack of expressions
-  private exprStack: QuintEx[] = []
+  protected exprStack: QuintEx[] = []
   // the stack of parameter lists
-  private paramStack: QuintLambdaParameter[] = []
+  protected paramStack: QuintLambdaParameter[] = []
   // stack of names used as parameters and assumptions
-  private identOrHoleStack: string[] = []
+  protected identOrHoleStack: string[] = []
   // the stack for imported names
-  private identOrStarStack: string[] = []
+  protected identOrStarStack: string[] = []
   // the stack of rows for records and unions
-  private rowStack: Row[] = []
+  protected rowStack: Row[] = []
   // an internal counter to assign unique numbers
-  private idGen: IdGenerator
+  protected idGen: IdGenerator
 
   // translate: module <name> { ... }
   exitModule(ctx: p.ModuleContext) {

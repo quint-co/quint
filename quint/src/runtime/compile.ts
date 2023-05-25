@@ -57,7 +57,9 @@ export interface CompilationContext {
   // messages that get populated as the compiled code is executed
   getRuntimeErrors: () => ErrorMessage[]
   // source mapping
-  sourceMap: Map<bigint, Loc>
+  sourceMap: Map<bigint, Loc>,
+  flattenedModules?: QuintModule[],
+  analysisOutput?: AnalysisOutput,
 }
 
 function errorContext(errors: ErrorMessage[]): CompilationContext {
@@ -137,7 +139,7 @@ export function compile(
   analysisOutput: AnalysisOutput,
   mainName: string,
   execListener: ExecutionListener,
-  rand: (bound: bigint) => bigint
+  rand: (bound: bigint) => bigint,
 ): CompilationContext {
   const main = modules.find(m => m.name === mainName)
 
@@ -149,11 +151,11 @@ export function compile(
   const mainNotFoundError = main
     ? []
     : [
-        {
-          explanation: `Main module ${mainName} not found`,
-          refs: [],
-        },
-      ]
+      {
+        explanation: `Main module ${mainName} not found`,
+        refs: [],
+      },
+    ]
   return {
     main: main,
     lookupTable,
@@ -167,6 +169,10 @@ export function compile(
       return visitor.getRuntimeErrors().splice(0).map(fromIrErrorMessage(sourceMap))
     },
     sourceMap: sourceMap,
+    // The analysis output will be used in subsequent compilations.
+    // It might seem like the object was not changed by this function, but it was, since
+    // flattening updates the internal maps.
+    analysisOutput: analysisOutput,
   }
 }
 
@@ -188,7 +194,8 @@ export function compileFromCode(
   mainName: string,
   mainPath: SourceLookupPath,
   execListener: ExecutionListener,
-  rand: (bound: bigint) => bigint
+  rand: (bound: bigint) => bigint,
+  quintAnalyzer?: QuintAnalyzer,
 ): CompilationContext {
   // parse the module text
   return (
