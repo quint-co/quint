@@ -1,10 +1,11 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
+import { quintExAreEqual, zip } from './util'
 
 import { buildExpression } from './builders/ir'
-import { toItf } from '../src/itf'
+import { ofItf, toItf } from '../src/itf'
 
-describe('itf', () => {
+describe('toItf', () => {
   it('converts two states', () => {
     const trace = ['{ x: 2, y: true }', '{ x: 3, y: false }'].map(buildExpression)
 
@@ -26,6 +27,12 @@ describe('itf', () => {
     }
     assert(itfTrace.isRight(), `invalid ITF trace: ${JSON.stringify(itfTrace.unwrap)}`)
     assert.deepEqual(itfTrace.unwrap(), expected)
+
+    const roundTripTrace = ofItf(itfTrace.unwrap())
+    assert(
+      zip(roundTripTrace, trace).every(([a, b]) => quintExAreEqual(a, b)),
+      `round trip conversion of trace failed`
+    )
   })
 
   it('converts all kinds', () => {
@@ -71,5 +78,11 @@ describe('itf', () => {
     }
     assert(itfTrace.isRight(), `invalid ITF trace: ${JSON.stringify(itfTrace.unwrap)}`)
     assert.deepEqual(itfTrace.unwrap(), expected)
+
+    const roundTripTrace = ofItf(itfTrace.unwrap())
+    assert(
+      zip(roundTripTrace, trace).every(([a, b]) => quintExAreEqual(a, b)),
+      `round trip conversion of trace failed`
+    )
   })
 })
