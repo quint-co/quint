@@ -173,7 +173,7 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrac
   })
 }
 
-export function ofItf(itf: ItfTrace): Either<string, QuintEx[]> {
+export function ofItf(itf: ItfTrace): QuintEx[] {
   // Benign state to synthesize ids for the Quint expressions
   var nextId = 0n
   // Produce the next ID in sequence
@@ -183,68 +183,51 @@ export function ofItf(itf: ItfTrace): Either<string, QuintEx[]> {
     return id
   }
 
-  const ofItfValue = (value: ItfValue): Either<string, QuintEx> => {
+  const ofItfValue = (value: ItfValue): QuintEx => {
     const withId = { id: getId() }
     if (typeof value === 'boolean') {
-      return right({ ...withId, kind: 'bool', value })
+      return { ...withId, kind: 'bool', value }
     } else if (typeof value === 'string') {
-      return right({ ...withId, kind: 'str', value })
+      return { ...withId, kind: 'str', value }
     } else if (typeof value === 'number') {
-      return right({ ...withId, kind: 'int', value: BigInt(value) })
+      return { ...withId, kind: 'int', value: BigInt(value) }
     } else if (Array.isArray(value)) {
-      return merge(value.map(ofItfValue)).map(args => ({ ...withId, kind: 'app', opcode: 'List', args }))
+      return { ...withId, kind: 'app', opcode: 'List', args: value.map(ofItfValue) }
     } else if (isBigint(value)) {
-      return right({ ...withId, kind: 'int', value: BigInt(value['#bigint']) })
+      return { ...withId, kind: 'int', value: BigInt(value['#bigint']) }
     } else if (isTup(value)) {
-      return merge(value['#tup'].map(ofItfValue)).map(args => ({ ...withId, kind: 'app', opcode: 'Tup', args }))
+      return { ...withId, kind: 'app', opcode: 'Tup', args: value['#tup'].map(ofItfValue) }
     } else if (isSet(value)) {
-      return merge(value['#set'].map(ofItfValue)).map(args => ({ ...withId, kind: 'app', opcode: 'Set', args }))
+      return { ...withId, kind: 'app', opcode: 'Set', args: value['#set'].map(ofItfValue) }
     } else if (isUnserializable(value)) {
-      return right({ ...withId, kind: 'name', name: value['#unserializable'] })
+      return { ...withId, kind: 'name', name: value['#unserializable'] }
     } else if (isMap(value)) {
-      return (
-        merge(
-          value['#map'].map(([key, value]) =>
-            // Convert the key
-            ofItfValue(key)
-              // and if it goes well...
-              .chain(k =>
-                // Convert the value
-                ofItfValue(value)
-                  // and if that goes well...
-                  .map(
-                    v =>
-                      // Form a quint tuple of the converted key-value pair
-                      ({ id: getId(), kind: 'app', opcode: 'Tup', args: [k, v] } as QuintApp)
-                  )
-              )
-          )
-        )
-          // and if all that went well, make the quint Map.
-          .map(args => ({
-            ...withId,
-            kind: 'app',
-            opcode: 'Map',
-            args,
-          }))
-      )
+      const args = value['#map'].map(([key, value]) => {
+        const k = ofItfValue(key)
+        const v = ofItfValue(value)
+        return { id: getId(), kind: 'app', opcode: 'Tup', args: [k, v] } as QuintApp
+      })
+      return {
+        ...withId,
+        kind: 'app',
+        opcode: 'Map',
+        args,
+      }
     } else if (typeof value === 'object') {
       // Any other object must represent a record
-      return merge(
-        // For each key/value pair in the object, form the quint expressions representing
-        // the record field and value
-        Object.keys(value)
-          .filter(key => key !== '#meta') // Has to be removed from top-level ojects representing states
-          .map(f => ofItfValue(value[f]).map(v => [{ id: getId(), kind: 'str', value: f }, v] as [QuintStr, QuintEx]))
-      ).map(fields =>
-        // flatten the converted pairs of fields into a single array to form the record
-        ({ ...withId, kind: 'app', opcode: 'Rec', args: fields.flat() })
-      )
+      // For each key/value pair in the object, form the quint expressions representing
+      // the record field and value
+      const args = Object.keys(value)
+        .filter(key => key !== '#meta') // Must be removed from top-level ojects representing states
+        .map(f => [{ id: getId(), kind: 'str', value: f }, ofItfValue(value[f])] as [QuintStr, QuintEx])
+        .flat()
+      // flatten the converted pairs of fields into a single array to form the record
+      return { ...withId, kind: 'app', opcode: 'Rec', args }
     } else {
       // This should be impossible, but TypeScript can't tell we've handled all cases
       throw new Error(`internal error: unhandled ITF value ${value}`)
     }
   }
 
-  return merge(itf.states.map(ofItfValue))
+  return itf.states.map(ofItfValue)
 }

@@ -29,9 +29,8 @@ describe('toItf', () => {
     assert.deepEqual(itfTrace.unwrap(), expected)
 
     const roundTripTrace = ofItf(itfTrace.unwrap())
-    assert(roundTripTrace.isRight(), `failed to convert ITF back to Quint: ${roundTripTrace.value}`)
     assert(
-      zip(roundTripTrace.unwrap(), trace).every(([a, b]) => quintExAreEqual(a, b)),
+      zip(roundTripTrace, trace).every(([a, b]) => quintExAreEqual(a, b)),
       `round trip conversion of trace failed`
     )
   })
@@ -81,9 +80,8 @@ describe('toItf', () => {
     assert.deepEqual(itfTrace.unwrap(), expected)
 
     const roundTripTrace = ofItf(itfTrace.unwrap())
-    assert(roundTripTrace.isRight(), `failed to convert ITF back to Quint: ${roundTripTrace.value}`)
     assert(
-      zip(roundTripTrace.unwrap(), trace).every(([a, b]) => quintExAreEqual(a, b)),
+      zip(roundTripTrace, trace).every(([a, b]) => quintExAreEqual(a, b)),
       `round trip conversion of trace failed`
     )
   })
