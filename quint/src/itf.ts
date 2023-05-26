@@ -220,8 +220,7 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
       const args = Object.keys(value)
         .filter(key => key !== '#meta') // Must be removed from top-level ojects representing states
         .map(f => [{ id: getId(), kind: 'str', value: f }, ofItfValue(value[f])] as [QuintStr, QuintEx])
-        .flat()
-      // flatten the converted pairs of fields into a single array to form the record
+        .flat() // flatten the converted pairs of fields into a single array
       return { ...withId, kind: 'app', opcode: 'Rec', args }
     } else {
       // This should be impossible, but TypeScript can't tell we've handled all cases
