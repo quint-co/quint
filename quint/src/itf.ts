@@ -175,7 +175,7 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrac
 
 export function ofItf(itf: ItfTrace): QuintEx[] {
   // Benign state to synthesize ids for the Quint expressions
-  var nextId = 0n
+  let nextId = 0n
   // Produce the next ID in sequence
   const getId = (): bigint => {
     const id = nextId
@@ -184,23 +184,23 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
   }
 
   const ofItfValue = (value: ItfValue): QuintEx => {
-    const withId = { id: getId() }
+    const id = getId()
     if (typeof value === 'boolean') {
-      return { ...withId, kind: 'bool', value }
+      return { id, kind: 'bool', value }
     } else if (typeof value === 'string') {
-      return { ...withId, kind: 'str', value }
+      return { id, kind: 'str', value }
     } else if (typeof value === 'number') {
-      return { ...withId, kind: 'int', value: BigInt(value) }
+      return { id, kind: 'int', value: BigInt(value) }
     } else if (Array.isArray(value)) {
-      return { ...withId, kind: 'app', opcode: 'List', args: value.map(ofItfValue) }
+      return { id, kind: 'app', opcode: 'List', args: value.map(ofItfValue) }
     } else if (isBigint(value)) {
-      return { ...withId, kind: 'int', value: BigInt(value['#bigint']) }
+      return { id, kind: 'int', value: BigInt(value['#bigint']) }
     } else if (isTup(value)) {
-      return { ...withId, kind: 'app', opcode: 'Tup', args: value['#tup'].map(ofItfValue) }
+      return { id, kind: 'app', opcode: 'Tup', args: value['#tup'].map(ofItfValue) }
     } else if (isSet(value)) {
-      return { ...withId, kind: 'app', opcode: 'Set', args: value['#set'].map(ofItfValue) }
+      return { id, kind: 'app', opcode: 'Set', args: value['#set'].map(ofItfValue) }
     } else if (isUnserializable(value)) {
-      return { ...withId, kind: 'name', name: value['#unserializable'] }
+      return { id, kind: 'name', name: value['#unserializable'] }
     } else if (isMap(value)) {
       const args = value['#map'].map(([key, value]) => {
         const k = ofItfValue(key)
@@ -208,7 +208,7 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
         return { id: getId(), kind: 'app', opcode: 'Tup', args: [k, v] } as QuintApp
       })
       return {
-        ...withId,
+        id,
         kind: 'app',
         opcode: 'Map',
         args,
@@ -221,7 +221,7 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
         .filter(key => key !== '#meta') // Must be removed from top-level ojects representing states
         .map(f => [{ id: getId(), kind: 'str', value: f }, ofItfValue(value[f])] as [QuintStr, QuintEx])
         .flat() // flatten the converted pairs of fields into a single array
-      return { ...withId, kind: 'app', opcode: 'Rec', args }
+      return { id, kind: 'app', opcode: 'Rec', args }
     } else {
       // This should be impossible, but TypeScript can't tell we've handled all cases
       throw new Error(`internal error: unhandled ITF value ${value}`)
