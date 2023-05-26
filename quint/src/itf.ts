@@ -11,26 +11,9 @@
 
 import { Either, left, merge, right } from '@sweet-monads/either'
 import { chunk } from 'lodash'
+import { QuintApp, QuintStr } from './quintIr'
 
 import { QuintEx } from './quintIr'
-
-export type ItfValue =
-  | boolean
-  | string
-  | number
-  | ItfValue[] // Sequence
-  | { '#bigint': string }
-  | { '#tup': ItfValue[] }
-  | { '#set': ItfValue[] }
-  | { '#map': [ItfValue, ItfValue][] }
-  | { '#unserializable': string }
-  | { [index: string]: ItfValue } // Record
-
-export type ItfState = {
-  '#meta'?: any
-  // Mapping of State variables to their values in a state
-  [index: string]: ItfValue
-}
 
 /** The type of IFT traces.
  * See https://github.com/informalsystems/apalache/blob/main/docs/src/adr/015adr-trace.md */
@@ -40,6 +23,52 @@ export type ItfTrace = {
   vars: string[]
   states: ItfState[]
   loop?: number
+}
+
+export type ItfState = {
+  '#meta'?: any
+  // Mapping of state variables to their values in a state
+  [index: string]: ItfValue
+}
+
+export type ItfValue =
+  | boolean
+  | string
+  | number
+  | ItfValue[] // Sequence
+  | ItfBigint
+  | ItfTup
+  | ItfSet
+  | ItfMap
+  | ItfUnserializable
+  | ItfRecord
+
+type ItfBigint = { '#bigint': string }
+type ItfTup = { '#tup': ItfValue[] }
+type ItfSet = { '#set': ItfValue[] }
+type ItfMap = { '#map': [ItfValue, ItfValue][] }
+type ItfUnserializable = { '#unserializable': string }
+type ItfRecord = { [index: string]: ItfValue }
+
+// Type predicates to help with type narrowing
+function isBigint(v: ItfValue): v is ItfBigint {
+  return (v as ItfBigint)['#bigint'] !== undefined
+}
+
+function isTup(v: ItfValue): v is ItfTup {
+  return (v as ItfTup)['#tup'] !== undefined
+}
+
+function isSet(v: ItfValue): v is ItfSet {
+  return (v as ItfSet)['#set'] !== undefined
+}
+
+function isMap(v: ItfValue): v is ItfMap {
+  return (v as ItfMap)['#map'] !== undefined
+}
+
+function isUnserializable(v: ItfValue): v is ItfUnserializable {
+  return (v as ItfUnserializable)['#unserializable'] !== undefined
 }
 
 const minJsInt: bigint = BigInt(Number.MIN_SAFE_INTEGER)
@@ -55,7 +84,7 @@ const maxJsInt: bigint = BigInt(Number.MAX_SAFE_INTEGER)
  * @returns an object that represent the trace in the ITF format
  */
 export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrace> {
-  const exprToItf = (ex: QuintEx): Either<string, any> => {
+  const exprToItf = (ex: QuintEx): Either<string, ItfValue> => {
     switch (ex.kind) {
       case 'int':
         if (ex.value >= minJsInt && ex.value <= maxJsInt) {
@@ -90,18 +119,34 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrac
               return left('record: expected an even number of arguments, found:' + ex.args.length)
             }
             return merge(ex.args.map(exprToItf)).mapRight(kvs => {
-              let obj: any = {}
+              let obj: ItfRecord = {}
               chunk(kvs, 2).forEach(([k, v]) => {
-                obj[k] = v
+                if (typeof k === 'string') {
+                  obj[k] = v
+                } else {
+                  left(`Invalid record field: ${ex}`)
+                }
               })
               return obj
             })
           }
 
           case 'Map':
-            return merge(ex.args.map(exprToItf)).mapRight(pairs => {
-              return { '#map': pairs.map(p => p['#tup']) }
-            })
+            return merge(
+              // Convert all the entries of the map
+              ex.args.map(exprToItf)
+            ).chain(pairs =>
+              merge(
+                // Quint represents map entries as tuples, but in ITF they are 2 element arrays,
+                // so we unpack all the ITF tuples into arrays
+                pairs.map(p => (isTup(p) ? right(p['#tup']) : left(`Invalid value in quint Map ${p}`)))
+              ).map(entries =>
+                // Finally, we can form the ITF representation of a map
+                ({
+                  '#map': entries,
+                })
+              )
+            )
 
           default:
             return left(`Unexpected operator type: ${ex.opcode}`)
@@ -114,9 +159,11 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrac
 
   return merge(
     states.map((e, i) =>
-      exprToItf(e).mapRight(obj => {
-        return { '#meta': { index: i }, ...obj }
-      })
+      exprToItf(e).chain(obj =>
+        typeof obj === 'object'
+          ? right({ '#meta': { index: i }, ...obj } as ItfState)
+          : left(`Expected a valid ITF state, but found ${obj}`)
+      )
     )
   ).mapRight(s => {
     return {
@@ -126,6 +173,78 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrac
   })
 }
 
-// export function ofItf(itf: any[]): Either<string, QuintEx[]> {
-//   const stateToExpr = (any: )
-// }
+export function ofItf(itf: ItfTrace): Either<string, QuintEx[]> {
+  // Benign state to synthesize ids for the Quint expressions
+  var nextId = 0n
+  // Produce the next ID in sequence
+  const getId = (): bigint => {
+    const id = nextId
+    nextId = nextId + 1n
+    return id
+  }
+
+  const ofItfValue = (value: ItfValue): Either<string, QuintEx> => {
+    const withId = { id: getId() }
+    if (typeof value === 'boolean') {
+      return right({ ...withId, kind: 'bool', value })
+    } else if (typeof value === 'string') {
+      return right({ ...withId, kind: 'str', value })
+    } else if (typeof value === 'number') {
+      return right({ ...withId, kind: 'int', value: BigInt(value) })
+    } else if (Array.isArray(value)) {
+      return merge(value.map(ofItfValue)).map(args => ({ ...withId, kind: 'app', opcode: 'List', args }))
+    } else if (isBigint(value)) {
+      return right({ ...withId, kind: 'int', value: BigInt(value['#bigint']) })
+    } else if (isTup(value)) {
+      return merge(value['#tup'].map(ofItfValue)).map(args => ({ ...withId, kind: 'app', opcode: 'Tup', args }))
+    } else if (isSet(value)) {
+      return merge(value['#set'].map(ofItfValue)).map(args => ({ ...withId, kind: 'app', opcode: 'Set', args }))
+    } else if (isUnserializable(value)) {
+      return right({ ...withId, kind: 'name', name: value['#unserializable'] })
+    } else if (isMap(value)) {
+      return (
+        merge(
+          value['#map'].map(([key, value]) =>
+            // Convert the key
+            ofItfValue(key)
+              // and if it goes well...
+              .chain(k =>
+                // Convert the value
+                ofItfValue(value)
+                  // and if that goes well...
+                  .map(
+                    v =>
+                      // Form a quint tuple of the converted key-value pair
+                      ({ id: getId(), kind: 'app', opcode: 'Tup', args: [k, v] } as QuintApp)
+                  )
+              )
+          )
+        )
+          // and if all that went well, make the quint Map.
+          .map(args => ({
+            ...withId,
+            kind: 'app',
+            opcode: 'Map',
+            args,
+          }))
+      )
+    } else if (typeof value === 'object') {
+      // Any other object must represent a record
+      return merge(
+        // For each key/value pair in the object, form the quint expressions representing
+        // the record field and value
+        Object.keys(value)
+          .filter(key => key !== '#meta') // Has to be removed from top-level ojects representing states
+          .map(f => ofItfValue(value[f]).map(v => [{ id: getId(), kind: 'str', value: f }, v] as [QuintStr, QuintEx]))
+      ).map(fields =>
+        // flatten the converted pairs of fields into a single array to form the record
+        ({ ...withId, kind: 'app', opcode: 'Rec', args: fields.flat() })
+      )
+    } else {
+      // This should be impossible, but TypeScript can't tell we've handled all cases
+      throw new Error(`internal error: unhandled ITF value ${value}`)
+    }
+  }
+
+  return merge(itf.states.map(ofItfValue))
+}
