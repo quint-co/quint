@@ -3,10 +3,10 @@ import {
   QuintBool,
   QuintDef,
   QuintEx,
-  QuintLambda,
-  QuintModule,
   QuintInstance,
   QuintInt,
+  QuintLambda,
+  QuintModule,
   QuintStr,
   QuintTypeDef,
 } from '../src/quintIr'
