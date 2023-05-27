@@ -432,7 +432,6 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const mainArg = prev.args.main
   const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
   const verbosityLevel = !prev.args.out && !prev.args.outItf ? prev.args.verbosity : 0
-  const columns = !prev.args.out ? terminalWidth() : 80
   const rngOrError = mkRng(prev.args.seed)
   if (rngOrError.isLeft()) {
     return cliErr(rngOrError.value, { ...simulator, errors: [] })
@@ -461,7 +460,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       if (verbosity.hasStateOutput(options.verbosity)) {
         console.log(chalk.gray('An example execution:\n'))
         const myConsole = {
-          width: columns,
+          width: terminalWidth(),
           out: (s: string) => process.stdout.write(s),
         }
         printTrace(myConsole, result.states, result.frames)
