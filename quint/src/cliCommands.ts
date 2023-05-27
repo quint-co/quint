@@ -36,12 +36,13 @@ import { QuintError, quintErrorToString } from './quintError'
 import { TestOptions, TestResult, compileAndTest } from './runtime/testing'
 import { newIdGenerator } from './idGenerator'
 import { SimulatorOptions, compileAndRun } from './simulation'
-import { toItf } from './itf'
+import { ofItf, toItf } from './itf'
 import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
 import { fileSourceResolver } from './sourceResolver'
 import { verify } from './quintVerifier'
+import { ExecutionFrame } from './runtime/trace'
 
 export type stage = 'loading' | 'parsing' | 'typechecking' | 'testing' | 'running' | 'documentation'
 
@@ -422,6 +423,18 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   }
 }
 
+// Print a counterexample if the appropriate verbosity is set
+function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], frames: ExecutionFrame[] = []) {
+  if (verbosity.hasStateOutput(verbosityLevel)) {
+    console.log(chalk.gray('An example execution:\n'))
+    const myConsole = {
+      width: terminalWidth(),
+      out: (s: string) => process.stdout.write(s),
+    }
+    printTrace(myConsole, states, frames)
+  }
+}
+
 /**
  * Run the simulator.
  *
@@ -457,14 +470,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   } else {
     if (verbosity.hasResults(verbosityLevel)) {
       const elapsedMs = Date.now() - startMs
-      if (verbosity.hasStateOutput(options.verbosity)) {
-        console.log(chalk.gray('An example execution:\n'))
-        const myConsole = {
-          width: terminalWidth(),
-          out: (s: string) => process.stdout.write(s),
-        }
-        printTrace(myConsole, result.states, result.frames)
-      }
+      maybePrintCounterExample(verbosityLevel, result.states, result.frames)
       if (result.status === 'ok') {
         console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
         if (verbosity.hasHints(options.verbosity)) {
@@ -557,10 +563,22 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
   return verify(config).then(res =>
     res
       .map(_ => ({ ...verifying, status: 'ok', errors: [] } as VerifiedStage))
-      .mapLeft(err => ({
-        msg: err.explanation,
-        stage: { ...verifying, status: 'failure', errors: err.errors, trace: err.trace },
-      }))
+      .mapLeft(err => {
+        const trace: QuintEx[] | undefined = err.traces ? ofItf(err.traces[0]) : undefined
+        if (trace !== undefined) {
+          // Always print the conterexample, unless the output is being directed to one of the outfiles
+          const verbosityLevel = prev.args.out || prev.args.outItf ? 0 : 2
+          maybePrintCounterExample(verbosityLevel, trace)
+
+          if (prev.args.outItf) {
+            writeToJson(prev.args.outItf, err.traces)
+          }
+        }
+        return {
+          msg: err.explanation,
+          stage: { ...verifying, status: 'failure', errors: err.errors, trace },
+        }
+      })
   )
 }
 
@@ -611,9 +629,9 @@ export function outputResult(result: CLIProcedure<ProcedureStage>) {
       } else {
         const finder = lineColumn(sourceCode!)
         errors.forEach(err => console.error(formatError(sourceCode, finder, err)))
-        if (stage.trace) {
-          console.error(stage.trace)
-        }
+        // if (stage.trace) {
+        //   console.error(stage.trace)
+        // }
         console.error(`error: ${msg}`)
       }
       process.exit(1)

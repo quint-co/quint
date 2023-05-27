@@ -24,6 +24,7 @@ import * as grpc from '@grpc/grpc-js'
 import * as proto from '@grpc/proto-loader'
 import { setTimeout } from 'timers/promises'
 import { promisify } from 'util'
+import { ItfTrace } from './itf'
 
 const APALACHE_SERVER_URI = 'localhost:8822'
 // These will be addressed as we work out the packaging for apalche
@@ -31,13 +32,11 @@ const APALACHE_SERVER_URI = 'localhost:8822'
 // TODO const APALACHE_VERSION = "0.30.8"
 // TODO const DEFAULT_HOME = path.join(__dirname, 'apalache')
 
-type ItfTrace = any
-
 // The structure used to report errors
 type VerifyError = {
   explanation: string
   errors: ErrorMessage[]
-  trace?: ItfTrace
+  traces?: ItfTrace[]
 }
 
 export type VerifyResult<T> = Either<VerifyError, T>
@@ -60,7 +59,7 @@ function handleVerificationFailure(failure: { pass_name: string; error_data: any
   switch (failure.pass_name) {
     case 'BoundedChecker':
       if (failure.error_data.checking_result == 'Error') {
-        return { explanation: 'A counterexample was found', trace: failure.error_data.counterexamples, errors: [] }
+        return { explanation: 'A counterexample was found', traces: failure.error_data.counterexamples, errors: [] }
       } else {
         // TODO
         throw new Error(`internal error: unhandled verification error ${failure}`)
@@ -136,8 +135,8 @@ type ShaiPkg = {
 }
 
 // Helper to construct errors results
-function err<A>(explanation: string, errors: ErrorMessage[] = [], trace?: ItfTrace): VerifyResult<A> {
-  return left({ explanation, errors, trace })
+function err<A>(explanation: string, errors: ErrorMessage[] = [], traces?: ItfTrace[]): VerifyResult<A> {
+  return left({ explanation, errors, traces })
 }
 
 function findApalacheDistribution(): VerifyResult<ApalacheDist> {

@@ -106,4 +106,40 @@ quint verify --invariant inv ./testFixture/apalache/violateOnFive.qnt
 <!-- !test exit 1 -->
 <!-- !test err prints a trace on invariant violation -->
 ```
+error: A counterexample was found
+```
+
+<!-- !test out prints a trace on invariant violation -->
+```
+An example execution:
+
+[State 0] { n: 1 }
+
+[State 1] { n: 2 }
+
+[State 2] { n: 3 }
+
+[State 3] { n: 4 }
+
+[State 4] { n: 5 }
+
+```
+
+### Variant violations write ITF to file when `--out-itf` is specified
+
+<!-- !test in writes an ITF trace to file -->
+```
+quint verify --out-itf violateOnFive.itf.json --invariant inv ./testFixture/apalache/violateOnFive.qnt
+jq '.[0]."#meta".format' violateOnFive.itf.json
+rm ./violateOnFive.itf.json
+```
+
+<!-- !test err writes an ITF trace to file -->
+```
+error: A counterexample was found
+```
+
+<!-- !test out writes an ITF trace to file -->
+```
+"ITF"
 ```
