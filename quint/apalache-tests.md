@@ -106,7 +106,7 @@ quint verify --invariant inv ./testFixture/apalache/violateOnFive.qnt
 <!-- !test exit 1 -->
 <!-- !test err prints a trace on invariant violation -->
 ```
-error: A counterexample was found
+error: found a counterexample
 ```
 
 <!-- !test out prints a trace on invariant violation -->
@@ -136,10 +136,40 @@ rm ./violateOnFive.itf.json
 
 <!-- !test err writes an ITF trace to file -->
 ```
-error: A counterexample was found
+error: found a counterexample
 ```
 
 <!-- !test out writes an ITF trace to file -->
 ```
 "ITF"
+```
+
+## Deadlocks
+
+
+<!-- !test in reports deadlock -->
+```
+quint verify ./testFixture/apalache/deadlock.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err reports deadlock -->
+```
+error: reached a deadlock
+```
+
+<!-- !test out reports deadlock -->
+```
+An example execution:
+
+[State 0] { n: 1 }
+
+[State 1] { n: 2 }
+
+[State 2] { n: 3 }
+
+[State 3] { n: 4 }
+
+[State 4] { n: 5 }
+
 ```

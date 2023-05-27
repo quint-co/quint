@@ -58,14 +58,16 @@ type Apalache = {
 function handleVerificationFailure(failure: { pass_name: string; error_data: any }): VerifyError {
   switch (failure.pass_name) {
     case 'BoundedChecker':
-      if (failure.error_data.checking_result == 'Error') {
-        return { explanation: 'A counterexample was found', traces: failure.error_data.counterexamples, errors: [] }
-      } else {
-        // TODO
-        throw new Error(`internal error: unhandled verification error ${failure}`)
+      switch (failure.error_data.checking_result) {
+        case 'Error':
+          return { explanation: 'found a counterexample', traces: failure.error_data.counterexamples, errors: [] }
+        case 'Deadlock':
+          return { explanation: 'reached a deadlock', traces: failure.error_data.counterexamples, errors: [] }
+        default:
+          throw new Error(`internal error: unhandled verification error ${failure.error_data.checking_result}`)
       }
     default:
-      throw new Error(`internal error: unhandled verification error ${failure}`)
+      throw new Error(`internal error: unhandled verification error at pass ${failure.pass_name}`)
   }
 }
 
