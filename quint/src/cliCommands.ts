@@ -629,9 +629,6 @@ export function outputResult(result: CLIProcedure<ProcedureStage>) {
       } else {
         const finder = lineColumn(sourceCode!)
         errors.forEach(err => console.error(formatError(sourceCode, finder, err)))
-        // if (stage.trace) {
-        //   console.error(stage.trace)
-        // }
         console.error(`error: ${msg}`)
       }
       process.exit(1)
