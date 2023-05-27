@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- The `verify` command prints counterexamples on deadlocks and invariant
+  violations (#914)
+
 ### Changed
 ### Deprecated
 ### Removed
