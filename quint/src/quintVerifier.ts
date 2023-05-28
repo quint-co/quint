@@ -24,6 +24,7 @@ import * as grpc from '@grpc/grpc-js'
 import * as proto from '@grpc/proto-loader'
 import { setTimeout } from 'timers/promises'
 import { promisify } from 'util'
+import { ItfTrace } from './itf'
 
 const APALACHE_SERVER_URI = 'localhost:8822'
 // These will be addressed as we work out the packaging for apalche
@@ -31,13 +32,11 @@ const APALACHE_SERVER_URI = 'localhost:8822'
 // TODO const APALACHE_VERSION = "0.30.8"
 // TODO const DEFAULT_HOME = path.join(__dirname, 'apalache')
 
-type ItfTrace = any
-
 // The structure used to report errors
 type VerifyError = {
   explanation: string
   errors: ErrorMessage[]
-  trace?: ItfTrace
+  traces?: ItfTrace[]
 }
 
 export type VerifyResult<T> = Either<VerifyError, T>
@@ -56,24 +55,44 @@ type Apalache = {
   check: (c: ApalacheConfig) => Promise<VerifyResult<void>>
 }
 
+function handleVerificationFailure(failure: { pass_name: string; error_data: any }): VerifyError {
+  switch (failure.pass_name) {
+    case 'BoundedChecker':
+      switch (failure.error_data.checking_result) {
+        case 'Error':
+          return { explanation: 'found a counterexample', traces: failure.error_data.counterexamples, errors: [] }
+        case 'Deadlock':
+          return { explanation: 'reached a deadlock', traces: failure.error_data.counterexamples, errors: [] }
+        default:
+          throw new Error(`internal error: unhandled verification error ${failure.error_data.checking_result}`)
+      }
+    default:
+      throw new Error(`internal error: unhandled verification error at pass ${failure.pass_name}`)
+  }
+}
+
 // Construct the Apalache interface around the cmdExecutor
 function apalache(cmdExecutor: AsyncCmdExecutor): Apalache {
-  return {
-    check: async (c: ApalacheConfig) => {
-      const response = await cmdExecutor.run({ cmd: 'CHECK', config: JSON.stringify(c) })
-      if (response.result == 'success') {
-        return right(void 0)
-      } else {
-        if (response.failure.errorType == 'UNEXPECTED') {
+  const check = async (c: ApalacheConfig): Promise<VerifyResult<void>> => {
+    const response = await cmdExecutor.run({ cmd: 'CHECK', config: JSON.stringify(c) })
+    if (response.result == 'success') {
+      return right(void 0)
+    } else {
+      switch (response.failure.errorType) {
+        case 'UNEXPECTED': {
           const errData = JSON.parse(response.failure.data)
           return err(errData.msg)
-        } else {
+        }
+        case 'PASS_FAILURE':
+          return left(handleVerificationFailure(JSON.parse(response.failure.data)))
+        default:
           // TODO handle other error cases
           return err(`${response.failure.errorType}: ${response.failure.data}`)
-        }
       }
-    },
+    }
   }
+
+  return { check }
 }
 
 // Alias for an async callback for values of type T used to annotate
@@ -118,8 +137,8 @@ type ShaiPkg = {
 }
 
 // Helper to construct errors results
-function err<A>(explanation: string, errors: ErrorMessage[] = [], trace?: ItfTrace): VerifyResult<A> {
-  return left({ explanation, errors, trace })
+function err<A>(explanation: string, errors: ErrorMessage[] = [], traces?: ItfTrace[]): VerifyResult<A> {
+  return left({ explanation, errors, traces })
 }
 
 function findApalacheDistribution(): VerifyResult<ApalacheDist> {
