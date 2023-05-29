@@ -57,6 +57,11 @@ type Apalache = {
 
 function handleVerificationFailure(failure: { pass_name: string; error_data: any }): VerifyError {
   switch (failure.pass_name) {
+    case 'SanyParser':
+      return {
+        explanation: `internal error: ${failure.error_data}\nPlease report an issue: https://github.com/informalsystems/quint/issues/new`,
+        errors: [],
+      }
     case 'BoundedChecker':
       switch (failure.error_data.checking_result) {
         case 'Error':
