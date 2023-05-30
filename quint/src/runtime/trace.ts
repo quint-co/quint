@@ -8,13 +8,14 @@
  * See License.txt in the project root for license information.
  */
 
-import { Maybe, none } from '@sweet-monads/maybe'
+import { Maybe, just, none } from '@sweet-monads/maybe'
 import { strict as assert } from 'assert'
 
 import { QuintApp } from '../quintIr'
 import { EvalResult } from './runtime'
 import { verbosity } from './../verbosity'
 import { Rng } from './../rng'
+import { rv } from './impl/runtimeValue'
 
 /**
  * A snapshot of how a single operator (e.g., an action) was executed.
@@ -149,7 +150,7 @@ export const newTraceRecorder = (verbosityLevel: number, rng: Rng) => {
       // we will store the sequence of states here
       args: [],
       // the result of the trace evaluation
-      result: none(),
+      result: just(rv.mkBool(true)),
       // and here we store the subframes for the top-level actions
       subframes: [],
     }
@@ -255,28 +256,31 @@ export const newTraceRecorder = (verbosityLevel: number, rng: Rng) => {
       assert(frameStack.length > 0)
       const bottom = frameStack[0]
 
-      let failureOrViolation = true
-      if (outcome.isJust()) {
-        const r = outcome.value.toQuintEx({ nextId: () => 0n })
-        failureOrViolation = r.kind === 'bool' && !r.value
+      const fromResult = (r: Maybe<EvalResult>) => {
+        if (r.isNone()) {
+          return true
+        } else {
+          const rex = r.value.toQuintEx({ nextId: () => 0n })
+          return rex.kind === 'bool' && !rex.value
+        }
       }
 
-      if (failureOrViolation) {
-        if (bestTrace.args.length === 0 || bestTrace.args.length >= bottom.args.length) {
-          // on error, prefer the shorter non-empty trace
-          bestTrace = bottom
-          bestTraceSeed = runSeed
-          bestTrace.result = outcome
-          bestTrace.args = trace
-        }
-      } else {
-        if (bestTrace.args.length <= bottom.args.length) {
-          // on success, prefer the longer trace
-          bestTrace = bottom
-          bestTraceSeed = runSeed
-          bestTrace.result = outcome
-          bestTrace.args = trace
-        }
+      const notOk = fromResult(outcome)
+      const prevNotOk = fromResult(bestTrace.result)
+
+      // Prefer short traces for error, and longer traces for non error.
+      // Therefore, override the best trace only if:
+      //  - there is an error, the new trace is shorter, or the old trace is non-error;
+      //  - there is no error, the new trace is longer, and there was no error before.
+      const override = notOk
+        ? bestTrace.args.length === 0 || !prevNotOk || bestTrace.args.length >= bottom.args.length
+        : !prevNotOk && bestTrace.args.length <= bottom.args.length
+
+      if (override) {
+        bestTrace = bottom
+        bestTraceSeed = runSeed
+        bestTrace.result = outcome
+        bestTrace.args = trace
       }
     },
   }

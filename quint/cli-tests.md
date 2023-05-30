@@ -314,3 +314,11 @@ fi
 
 <!-- !test check bug843pureValCache - Syntax/Types & Effects/Unit tests -->
     quint test ./testFixture/bug843pureValCache.qnt
+
+### OK on run lottery
+
+<!-- !test exit 1 -->
+<!-- !test check lottery - Run -->
+    quint run --max-samples=10000 --max-steps=10 --seed=0x29f8e8021fae9 \
+      --invariant=noBuyInDrawingInv --main=lotteryMempool \
+      ../examples/solidity/icse23-fig7/lottery.qnt
