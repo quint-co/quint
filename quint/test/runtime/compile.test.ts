@@ -1017,6 +1017,6 @@ describe('compileExpr', () => {
     const expr = parsed.kind === 'expr' ? parsed.expr : undefined
     const context = compileExpr(state, rng, recorder, expr!)
 
-    assert.deepEqual(context.analysisOutput?.types.get(expr!.id)?.type, { kind: 'int', id: 3n })
+    assert.deepEqual(context.compilationState.analysisOutput.types.get(expr!.id)?.type, { kind: 'int', id: 3n })
   })
 })

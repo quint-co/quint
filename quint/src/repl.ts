@@ -19,19 +19,17 @@ import chalk from 'chalk'
 import { format } from './prettierimp'
 
 import { QuintEx } from './quintIr'
-import { CompilationContext, CompilationState, compile, compileExpr, contextNameLookup, errorContextFromMessage, lastTraceName } from './runtime/compile'
+import { CompilationContext, CompilationState, compileExpr, compileFromCode, contextNameLookup, lastTraceName, newCompilationState } from './runtime/compile'
 import { formatError } from './errorReporter'
 import { ComputableKind, EvalResult, Register, kindName } from './runtime/runtime'
 import { TraceRecorder, newTraceRecorder, noExecutionListener } from './runtime/trace'
-import { ErrorMessage, parse, parseExpressionOrUnit } from './quintParserFrontend'
-import { newIdGenerator } from './idGenerator'
+import { ErrorMessage, parseExpressionOrUnit } from './quintParserFrontend'
 import { prettyQuintEx, printExecutionFrameRec, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { newRng } from './rng'
 import { version } from './version'
 import { fileSourceResolver } from './sourceResolver'
-import { analyzeModules } from './quintAnalyzer'
-import { flattenModules } from './flattening'
+import { newIdGenerator } from './idGenerator'
 
 // tunable settings
 export const settings = {
@@ -75,14 +73,6 @@ export interface ReplOptions {
   verbosity: number
 }
 
-function newCompilationState(): CompilationState {
-  return {
-    idGen: newIdGenerator(),
-    modules: [],
-    sourceMap: new Map(),
-  }
-}
-
 // the entry point to the REPL
 export function quintRepl(
   input: Readable,
@@ -117,7 +107,11 @@ export function quintRepl(
     shadowVars: new Map<string, EvalResult>(),
     lastLoadedFileAndModule: [undefined, undefined],
     verbosityLevel: options.verbosity,
-    compilationState: newCompilationState(),
+    compilationState: replInitialCompilationState(),
+  }
+
+  function replInitialCompilationState(): CompilationState {
+    return { ...newCompilationState(), modules: [{ name: '__repl__', defs: [], id: 0n }] }
   }
   // we let the user type a multiline string, which is collected here:
   let multilineText = ''
@@ -190,6 +184,7 @@ export function quintRepl(
     state.moduleHist = ''
     state.defsHist = ''
     state.exprHist = []
+    state.compilationState = replInitialCompilationState()
   }
 
   // load the code from a filename and optionally import a module
@@ -485,7 +480,6 @@ def q::testOnce(q::nsteps, q::init, q::next, q::inv) = false;
 // try to evaluate the expression in a string and print it, if successful
 function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   const start = new Date().getTime();
-  console.log(newInput)
   // output errors to the console in red
   function printErrors(moduleText: string, context: CompilationContext) {
     printErrorMessages(out, 'syntax error', moduleText, context.syntaxErrors)
@@ -545,44 +539,23 @@ ${newInput}
 
     // For toplevel definitions, we start from scratch. This should be made
     // incremental as well.
-    state.compilationState = newCompilationState()
-    const context = parse(state.compilationState.idGen, '<input>', mainPath, moduleText)
-      // On errors, we'll produce the computational context up to this point
-      .mapLeft(errorContextFromMessage)
-      .map(
-        parseData => {
-          const { modules, table, sourceMap } = parseData
-          const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
-          if (analysisErrors.length > 0) {
-            console.log('Analysis errors')
-          }
-          const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
-            modules, table, state.compilationState.idGen, sourceMap, analysisOutput
-          )
-          const context = compile(flattenedModules, sourceMap, flattenedTable, flattenedAnalysis, '__repl__', noExecutionListener, rng.next)
-
-          return context
-        }).value
+    const context = compileFromCode(newIdGenerator(), moduleText, '__repl__', mainPath, noExecutionListener, rng.next)
 
     if (context.values.size === 0 || context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
       printErrors(moduleText, context)
       return false
-    } else {
-      out('\n') // be nice to external programs
-      state.defsHist = state.defsHist + '\n' + newInput // update the history
-
-      // Save output to state
-      state.compilationState.modules = context.flattenedModules!
-      state.compilationState.sourceMap = context.sourceMap
-      state.compilationState.analysisOutput = context.analysisOutput
     }
 
-    if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
+    if (context.analysisErrors.length > 0) {
       printErrors(moduleText, context)
-      if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
-        return false
-      } // else: provisionally, continue on type & effects errors
+      // provisionally, continue on type & effects errors
     }
+
+    out('\n') // be nice to external programs
+    state.defsHist = state.defsHist + '\n' + newInput // update the history
+
+    // Save compilation state
+    state.compilationState = context.compilationState
   }
 
 
