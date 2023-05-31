@@ -23,7 +23,7 @@ import { Definition, LookupTable } from './lookupTable'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { mkErrorMessage } from './cliCommands'
 import { DefinitionsByModule, DefinitionsByName } from './definitionsByName'
-import { SourceLookupPath, SourceResolver } from './sourceResolver'
+import { SourceLookupPath, SourceResolver, fileSourceResolver } from './sourceResolver'
 
 export interface Loc {
   source: string
@@ -333,6 +333,17 @@ export function compactSourceMap(sourceMap: Map<bigint, Loc>): { sourceIndex: an
   })
 
   return { sourceIndex: Object.fromEntries(sourcesIndex), map: Object.fromEntries(compactedSourceMap) }
+}
+
+export function parse(idGen: IdGenerator, sourceLocation: string, mainPath: SourceLookupPath, code: string): ParseResult<ParserPhase3> {
+  return parsePhase1fromText(idGen, code, sourceLocation)
+    .chain(phase1Data => {
+      const resolver = fileSourceResolver()
+      return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
+    })
+    .chain(phase2Data =>
+      parsePhase3importAndNameResolution(phase2Data)
+    )
 }
 
 // setup a Quint parser, so it can be used to parse from various non-terminals

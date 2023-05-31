@@ -5,12 +5,13 @@ import { just } from '@sweet-monads/maybe'
 import { expressionToString } from '../../src/IRprinting'
 import { ComputableKind, fail, kindName } from '../../src/runtime/runtime'
 import { noExecutionListener } from '../../src/runtime/trace'
-import { CompilationContext, compileFromCode, contextNameLookup } from '../../src/runtime/compile'
+import { CompilationContext, CompilationState, compileExpr, compileFromCode, contextNameLookup } from '../../src/runtime/compile'
 import { RuntimeValue } from '../../src/runtime/impl/runtimeValue'
 import { dedent } from '../textUtils'
 import { newIdGenerator } from '../../src/idGenerator'
-import { newRng } from '../../src/rng'
+import { Rng, newRng } from '../../src/rng'
 import { stringSourceResolver } from '../../src/sourceResolver'
+import { analyzeModules, parse, parseExpressionOrUnit } from '../../src'
 
 // Use a global id generator, limited to this test suite.
 const idGen = newIdGenerator()
@@ -975,5 +976,47 @@ describe('compiling specs to runtime values', () => {
 
       assertResultAsString('strongFair(true, [])', undefined)
     })
+  })
+})
+
+import { SourceLookupPath } from '../../src/sourceResolver';
+
+function compileModules(text: string): CompilationState {
+  const idGen = newIdGenerator()
+  const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
+  const parseResult = parse(idGen, 'fake_location', fake_path, text)
+  if (parseResult.isLeft()) {
+    assert.fail('Failed to parse mocked up module')
+  }
+  const { modules, table, sourceMap } = parseResult.unwrap()
+
+  const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
+  assert.isEmpty(analysisErrors)
+
+  const state: CompilationState = {
+    idGen,
+    modules,
+    sourceMap,
+    analysisOutput,
+  };
+
+  return state;
+}
+
+describe('compileExpr', () => {
+  it('should compile a Quint expression', () => {
+    const state = compileModules('module m { pure val x = 1 }')
+
+    const rng: Rng = {
+      getState: () => 0n,
+      setState: (_: bigint) => { },
+      next: () => 0n,
+    }
+    const recorder = {};
+    const parsed = parseExpressionOrUnit('x + 2', 'test.qnt', state.idGen, state.sourceMap)
+    const expr = parsed.kind === 'expr' ? parsed.expr : undefined
+    const context = compileExpr(state, rng, recorder, expr!)
+
+    assert.deepEqual(context.analysisOutput?.types.get(expr!.id)?.type, { kind: 'int', id: 3n })
   })
 })

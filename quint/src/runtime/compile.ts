@@ -13,21 +13,21 @@ import {
   ErrorMessage,
   Loc,
   fromIrErrorMessage,
-  parsePhase1fromText,
-  parsePhase2sourceResolution,
+  parse,
   parsePhase3importAndNameResolution,
 } from '../quintParserFrontend'
 import { Computable, ComputableKind, kindName } from './runtime'
 import { ExecutionListener } from './trace'
-import { QuintModule } from '../quintIr'
+import { QuintDef, QuintEx, QuintModule } from '../quintIr'
 import { CompilerVisitor } from './impl/compilerImpl'
 import { walkDefinition } from '../IRVisitor'
 import { LookupTable } from '../lookupTable'
-import { AnalysisOutput, analyzeModules } from '../quintAnalyzer'
+import { AnalysisOutput, analyzeInc, analyzeModules } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
 import { IdGenerator } from '../idGenerator'
-import { SourceLookupPath, fileSourceResolver } from '../sourceResolver'
+import { SourceLookupPath } from '../sourceResolver'
 import { flattenModules } from '../flattening'
+import { Rng } from '../rng'
 
 /**
  * The name of the shadow variable that stores the last found trace.
@@ -62,7 +62,16 @@ export interface CompilationContext {
   analysisOutput?: AnalysisOutput,
 }
 
-function errorContext(errors: ErrorMessage[]): CompilationContext {
+export interface CompilationState {
+  // generator of unique identifiers
+  idGen: IdGenerator
+  // Quint analyzer (for incremental static analysis)
+  modules: QuintModule[]
+  sourceMap: Map<bigint, Loc>
+  analysisOutput?: AnalysisOutput
+}
+
+export function errorContextFromMessage(errors: ErrorMessage[]): CompilationContext {
   return {
     lookupTable: new Map(),
     values: new Map(),
@@ -157,7 +166,7 @@ export function compile(
       },
     ]
   return {
-    main: main,
+    main,
     lookupTable,
     values: visitor.getContext(),
     vars: visitor.getVars(),
@@ -174,6 +183,42 @@ export function compile(
     // flattening updates the internal maps.
     analysisOutput: analysisOutput,
   }
+}
+
+export function compileExpr(state: CompilationState, rng: Rng, recorder: any, expr: QuintEx): CompilationContext {
+  // Create a definition to encapsulate the parsed expression.
+  const def: QuintDef = { kind: 'def', qualifier: 'action', name: 'q::input', expr, id: state.idGen.nextId() }
+
+  // Define a new module list with the new definition in the last module,
+  // ensuring the original object is not modified
+  const modules = [...state.modules]
+  const lastModule = modules.pop()
+  if (lastModule) {
+    modules.push({ ...lastModule, defs: [...lastModule.defs, def] })
+  }
+
+  // We need to resolve names for this new definition. Incremental name
+  // resolution is not our focus now, so just resolve everything again.
+  const lookupTable = parsePhase3importAndNameResolution({ modules, sourceMap: state.sourceMap })
+    .mapLeft(errors => {
+      // TODO: Properly report these errors
+      throw new Error(`Error on resolving names: ${errors.map(e => e.explanation)}`)
+    })
+    .unwrap().table
+
+  if (!state.analysisOutput) {
+    throw new Error('No analysis output in state')
+  }
+
+  const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, lookupTable, def)
+
+  // TODO: Properly report these errors.
+  if (analysisErrors.length > 0) {
+    console.log(analysisErrors)
+    throw new Error(`Error on analysis: ${analysisErrors.map(([_, e]) => e.message)}`)
+  }
+
+  return compile(modules, state.sourceMap, lookupTable, analysisOutput, '__repl__', recorder, rng.next)
 }
 
 /**
@@ -195,22 +240,12 @@ export function compileFromCode(
   mainPath: SourceLookupPath,
   execListener: ExecutionListener,
   rand: (bound: bigint) => bigint,
-  quintAnalyzer?: QuintAnalyzer,
 ): CompilationContext {
   // parse the module text
   return (
-    parsePhase1fromText(idGen, code, '<input>')
-      .chain(phase1Data => {
-        const resolver = fileSourceResolver()
-        return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
-      })
+    parse(idGen, '<input>', mainPath, code)
       // On errors, we'll produce the computational context up to this point
-      .mapLeft(errorContext)
-      .chain(d =>
-        parsePhase3importAndNameResolution(d)
-          // On errors, we'll produce the computational context up to this point
-          .mapLeft(errorContext)
-      )
+      .mapLeft(errorContextFromMessage)
       .chain(
         parseData => {
           const { modules, table, sourceMap } = parseData

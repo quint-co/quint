@@ -18,19 +18,20 @@ import { left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
 import { format } from './prettierimp'
 
-import { QuintDef, QuintEx, QuintModule } from './quintIr'
-import { CompilationContext, compile, compileFromCode, contextNameLookup, lastTraceName } from './runtime/compile'
+import { QuintEx } from './quintIr'
+import { CompilationContext, CompilationState, compile, compileExpr, contextNameLookup, errorContextFromMessage, lastTraceName } from './runtime/compile'
 import { formatError } from './errorReporter'
 import { ComputableKind, EvalResult, Register, kindName } from './runtime/runtime'
-import { newTraceRecorder, noExecutionListener } from './runtime/trace'
-import { ErrorMessage, Loc, parseExpressionOrUnit, parsePhase3importAndNameResolution } from './quintParserFrontend'
-import { IdGenerator, newIdGenerator } from './idGenerator'
+import { TraceRecorder, newTraceRecorder, noExecutionListener } from './runtime/trace'
+import { ErrorMessage, parse, parseExpressionOrUnit } from './quintParserFrontend'
+import { newIdGenerator } from './idGenerator'
 import { prettyQuintEx, printExecutionFrameRec, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { newRng } from './rng'
 import { version } from './version'
 import { fileSourceResolver } from './sourceResolver'
-import { AnalysisOutput, QuintAnalyzer } from './quintAnalyzer'
+import { analyzeModules } from './quintAnalyzer'
+import { flattenModules } from './flattening'
 
 // tunable settings
 export const settings = {
@@ -42,8 +43,6 @@ type writer = (_text: string) => void
 
 // the internal state of the REPL
 interface ReplState {
-  // generator of unique identifiers
-  idGen: IdGenerator
   // the history of module definitions loaded from external sources
   moduleHist: string
   // definitions history
@@ -60,11 +59,7 @@ interface ReplState {
   seed?: bigint
   // verbosity level
   verbosityLevel: number
-  // Quint analyzer (for incremental static analysis)
-  analyzer: QuintAnalyzer
-  modules: QuintModule[]
-  sourceMap: Map<bigint, Loc>
-  analysisOutput?: AnalysisOutput
+  compilationState: CompilationState
 }
 
 // The default exit terminates the process.
@@ -78,6 +73,14 @@ export interface ReplOptions {
   preloadFilename?: string
   importModule?: string
   verbosity: number
+}
+
+function newCompilationState(): CompilationState {
+  return {
+    idGen: newIdGenerator(),
+    modules: [],
+    sourceMap: new Map(),
+  }
 }
 
 // the entry point to the REPL
@@ -107,7 +110,6 @@ export function quintRepl(
 
   // the state
   const state: ReplState = {
-    idGen: newIdGenerator(),
     moduleHist: '',
     defsHist: '',
     exprHist: [],
@@ -115,9 +117,7 @@ export function quintRepl(
     shadowVars: new Map<string, EvalResult>(),
     lastLoadedFileAndModule: [undefined, undefined],
     verbosityLevel: options.verbosity,
-    analyzer: new QuintAnalyzer(new Map()),
-    modules: [],
-    sourceMap: new Map(),
+    compilationState: newCompilationState(),
   }
   // we let the user type a multiline string, which is collected here:
   let multilineText = ''
@@ -398,7 +398,7 @@ function loadFromFile(out: writer, state: ReplState, filename: string): boolean 
     if (!isError && newState.exprHist.length === 0) {
       // FIXME: This will not work with incremental compilation.
       // nothing was replayed, evaluate 'true', to trigger compilation
-      isError = !tryEval(out, newState, 'true')
+      isError = !tryEval(out, newState, '')
       if (!isError) {
         // remove 'true' from the expression history
         newState.exprHist.pop()
@@ -485,6 +485,7 @@ def q::testOnce(q::nsteps, q::init, q::next, q::inv) = false;
 // try to evaluate the expression in a string and print it, if successful
 function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   const start = new Date().getTime();
+  console.log(newInput)
   // output errors to the console in red
   function printErrors(moduleText: string, context: CompilationContext) {
     printErrorMessages(out, 'syntax error', moduleText, context.syntaxErrors)
@@ -493,18 +494,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     out('\n') // be nice to external programs
   }
 
-  // Compose the input to the parser.
-  // TODO: REPL should work incrementally:
-  // https://github.com/informalsystems/quint/issues/618
-  function prepareParserInput(textToAdd: string): string {
-    return `${state.moduleHist}
-module __repl__ { ${simulatorBuiltins}
-${state.defsHist}
-${textToAdd}
-}`
-  }
-
-  const parseResult = parseExpressionOrUnit(newInput, '<input>', state.idGen, state.sourceMap)
+  const parseResult = parseExpressionOrUnit(newInput, '<input>', state.compilationState.idGen, state.compilationState.sourceMap)
   if (parseResult.kind === 'error') {
     printErrorMessages(out, 'syntax error', newInput, parseResult.messages)
     out('\n') // be nice to external programs
@@ -518,44 +508,12 @@ ${textToAdd}
   const rng = newRng(state.seed)
   // evaluate the input, depending on its type
   if (parseResult.kind === 'expr') {
-    // Create a definition to encapsulate the parsed expression.
-    const def: QuintDef = { kind: 'def', qualifier: 'action', name: 'q::input', expr: parseResult.expr, id: state.idGen.nextId() }
-
-    // Include the definition in the last module. Don't worry, we will pop it
-    // from there at the end of this code block.
-    state.modules[state.modules.length - 1].defs.push(def)
-
-    // We need to resolve names for this new definition. Incremental name
-    // resolution is not our focus now, so just resolve everything again.
-    const lookupTable = parsePhase3importAndNameResolution({ modules: state.modules, sourceMap: state.sourceMap })
-      .mapLeft(errors => {
-        // TODO: Properly report these errors
-        throw new Error(`Error on resolving names: ${errors.map(e => e.explanation)}`)
-      })
-      .unwrap().table
-
-    // The next lines set the analyzer state to match the state of the REPL,
-    // with the latest lookup table and analysis information.
-    if (state.analysisOutput) {
-      state.analyzer.setState(state.analysisOutput)
-    }
-    state.analyzer.setTable(lookupTable)
-
-    // Only the single def is analyzed.
-    state.analyzer.analyzeDef(def)
-    const [analysisErrors, analysisResult] = state.analyzer.getResult()
-
-    // TODO: Properly report these errors.
-    if (analysisErrors.length > 0) {
-      console.log(analysisErrors)
-    }
-
     const recorder = newTraceRecorder(state.verbosityLevel, rng)
-    const context = compile(state.modules, state.sourceMap, lookupTable, analysisResult, '__repl__', recorder, rng.next)
+    const context = compileExpr(state.compilationState, rng, recorder, parseResult.expr)
 
     // Next line is just for backward compatibility, as I don't want to fix all
     // output formatting in this prototype. `moduleText` is only used for printing.
-    const moduleText = prepareParserInput(newInput)
+    const moduleText = ''
 
     if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
       printErrors(moduleText, context)
@@ -564,78 +522,48 @@ ${textToAdd}
       } // else: provisionally, continue on type & effects errors
     }
 
-    loadVars(state, context)
-    loadShadowVars(state, context)
-    const computable = contextNameLookup(context, 'q::input', 'callable')
-    const columns = terminalWidth()
-    const result = computable
-      .mapRight(comp => {
-        return comp
-          .eval()
-          .map(value => {
-            const ex = value.toQuintEx(state.idGen)
-            out(format(columns, 0, prettyQuintEx(ex)))
-            out('\n')
-
-            if (verbosity.hasUserOpTracking(state.verbosityLevel)) {
-              const trace = recorder.getBestTrace()
-              if (trace.subframes.length > 0) {
-                out('\n')
-                trace.subframes.forEach((f, i) => {
-                  out(`[Frame ${i}]\n`)
-                  printExecutionFrameRec({ width: columns, out }, f, [])
-                  out('\n')
-                })
-              }
-            }
-
-            if (ex.kind === 'bool' && ex.value) {
-              // A Boolean expression may be an action or a run.
-              // Save the state, if there were any updates to variables.
-              saveVars(state, context).map(missing => {
-                if (missing.length > 0) {
-                  out(chalk.yellow('[warning] some variables are undefined: ' + missing.join(', ') + '\n'))
-                }
-              })
-            }
-            // save shadow vars in any case, e.g., the example trace
-            saveShadowVars(state, context)
-            state.exprHist.push(newInput.trim())
-
-            return right<string, QuintEx>(ex)
-          })
-          .or(just(left<string, QuintEx>('<undefined value>')))
-          .unwrap()
-      })
-      .join()
-      .mapLeft(msg => {
-        // when #618 is implemented, we should remove this
-        printErrorMessages(out, 'runtime error', moduleText, context.getRuntimeErrors())
-        // print the error message produced by the lookup
-        out(chalk.red(msg))
-        out('\n') // be nice to external programs
-      })
-
-    // We don't want to keep the definition, as that would result in duplicates
-    // of `q::input` in the module.
-    state.modules[state.modules.length - 1].defs.pop()
+    state.exprHist.push(newInput.trim())
     state.seed = rng.getState()
 
     let elapsed = new Date().getTime() - start;
-    console.log('Time taken for expr evaluation: ' + elapsed + 'ms')
-    return result.isRight()
+    console.log('Time taken for expr compilation: ' + elapsed + 'ms')
+
+    return evalExpr(state, context, recorder, out)
   }
   if (parseResult.kind === 'toplevel') {
+    // Compose the input to the parser.
+    // TODO: REPL should work incrementally:
+    // https://github.com/informalsystems/quint/issues/618
     // embed expression text into a module at the top level
-    const moduleText = prepareParserInput(newInput)
+    const moduleText = `${state.moduleHist}
+module __repl__ { ${simulatorBuiltins}
+${state.defsHist}
+${newInput}
+}`
     // compile the module and add it to history if everything worked
     const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
 
     // For toplevel definitions, we start from scratch. This should be made
     // incremental as well.
-    state.idGen = newIdGenerator()
-    state.analyzer = new QuintAnalyzer(new Map())
-    const context = compileFromCode(state.idGen, moduleText, '__repl__', mainPath, noExecutionListener, rng.next, state.analyzer)
+    state.compilationState = newCompilationState()
+    const context = parse(state.compilationState.idGen, '<input>', mainPath, moduleText)
+      // On errors, we'll produce the computational context up to this point
+      .mapLeft(errorContextFromMessage)
+      .map(
+        parseData => {
+          const { modules, table, sourceMap } = parseData
+          const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
+          if (analysisErrors.length > 0) {
+            console.log('Analysis errors')
+          }
+          const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
+            modules, table, state.compilationState.idGen, sourceMap, analysisOutput
+          )
+          const context = compile(flattenedModules, sourceMap, flattenedTable, flattenedAnalysis, '__repl__', noExecutionListener, rng.next)
+
+          return context
+        }).value
+
     if (context.values.size === 0 || context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
       printErrors(moduleText, context)
       return false
@@ -644,14 +572,20 @@ ${textToAdd}
       state.defsHist = state.defsHist + '\n' + newInput // update the history
 
       // Save output to state
-      state.modules = context.flattenedModules!
-      state.sourceMap = context.sourceMap
-      state.analysisOutput = context.analysisOutput
+      state.compilationState.modules = context.flattenedModules!
+      state.compilationState.sourceMap = context.sourceMap
+      state.compilationState.analysisOutput = context.analysisOutput
+    }
+
+    if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
+      printErrors(moduleText, context)
+      if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
+        return false
+      } // else: provisionally, continue on type & effects errors
     }
   }
 
-  let elapsed = new Date().getTime() - start;
-  console.log('Time taken for toplevel evaluation: ' + elapsed + 'ms')
+
   return true
 }
 
@@ -728,4 +662,59 @@ function countBraces(str: string): [number, number, number] {
   }
 
   return [nOpenBraces, nOpenParen, nOpenComments]
+}
+
+function evalExpr(state: ReplState, context: CompilationContext, recorder: TraceRecorder, out: writer): boolean {
+  loadVars(state, context)
+  loadShadowVars(state, context)
+  const computable = contextNameLookup(context, 'q::input', 'callable')
+  const columns = terminalWidth()
+  const result = computable
+    .mapRight(comp => {
+      return comp
+        .eval()
+        .map(value => {
+          const ex = value.toQuintEx(state.compilationState.idGen)
+          out(format(columns, 0, prettyQuintEx(ex)))
+          out('\n')
+
+          if (verbosity.hasUserOpTracking(state.verbosityLevel)) {
+            const trace = recorder.getBestTrace()
+            if (trace.subframes.length > 0) {
+              out('\n')
+              trace.subframes.forEach((f, i) => {
+                out(`[Frame ${i}]\n`)
+                printExecutionFrameRec({ width: columns, out }, f, [])
+                out('\n')
+              })
+            }
+          }
+
+          if (ex.kind === 'bool' && ex.value) {
+            // A Boolean expression may be an action or a run.
+            // Save the state, if there were any updates to variables.
+            saveVars(state, context).map(missing => {
+              if (missing.length > 0) {
+                out(chalk.yellow('[warning] some variables are undefined: ' + missing.join(', ') + '\n'))
+              }
+            })
+          }
+          // save shadow vars in any case, e.g., the example trace
+          saveShadowVars(state, context)
+
+          return right<string, QuintEx>(ex)
+        })
+        .or(just(left<string, QuintEx>('<undefined value>')))
+        .unwrap()
+    })
+    .join()
+    .mapLeft(msg => {
+      // when #618 is implemented, we should remove this
+      printErrorMessages(out, 'runtime error', '', context.getRuntimeErrors())
+      // print the error message produced by the lookup
+      out(chalk.red(msg))
+      out('\n') // be nice to external programs
+    })
+
+  return result.isRight()
 }

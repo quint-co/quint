@@ -140,6 +140,11 @@ export const noExecutionListener: ExecutionListener = {
   onRunReturn: (_outcome: Maybe<EvalResult>, _trace: EvalResult[]) => {},
 }
 
+export interface TraceRecorder extends ExecutionListener {
+  getBestTrace: () => ExecutionFrame,
+  getBestTraceSeed: () => bigint,
+}
+
 // a trace recording listener
 export const newTraceRecorder = (verbosityLevel: number, rng: Rng) => {
   // the bottom frame encodes the whole trace
