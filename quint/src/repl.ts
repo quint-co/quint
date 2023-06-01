@@ -366,7 +366,6 @@ function loadFromFile(out: writer, state: ReplState, filename: string): boolean 
     const newState = { ...state }
     const modulesAndRepl = data.split(replBegin)
     // whether an error occurred at some step
-    let isError = false
     newState.moduleHist = modulesAndRepl[0]
     if (modulesAndRepl.length > 1) {
       // found a REPL session
@@ -374,37 +373,34 @@ function loadFromFile(out: writer, state: ReplState, filename: string): boolean 
 
       // save the definition history
       newState.defsHist = defsAndExprs[0]
+
+      const isError = !tryEval(out, newState, 'val __loaded = true')
+      if (isError) {
+        return false
+      }
+
+      // remove 'val __loaded = true' from the definiton history
+      newState.defsHist = defsAndExprs[0]
+
       if (defsAndExprs.length > 1) {
         // unwrap the expressions from the specially crafted comments
         const exprs = (defsAndExprs[1] ?? '').matchAll(/\/\*! (.*?) !\*\//gms) ?? []
         // and replay them one by one
-        // TODO: every call to tryEval makes a full cycle
-        // from the parser to the compiler. Make this incremental!
-        // https://github.com/informalsystems/quint/issues/618
+
         for (const groups of exprs) {
           if (!tryEval(out, newState, groups[1])) {
-            isError = true
-            break
+            return false
           }
         }
       }
     }
 
-    if (!isError && newState.exprHist.length === 0) {
-      // FIXME: This will not work with incremental compilation.
-      // nothing was replayed, evaluate 'true', to trigger compilation
-      isError = !tryEval(out, newState, '')
-      if (!isError) {
-        // remove 'true' from the expression history
-        newState.exprHist.pop()
-      }
-    }
-    if (!isError) {
-      state.moduleHist = newState.moduleHist
-      state.defsHist = newState.defsHist
-      state.exprHist = newState.exprHist
-    }
-    return !isError
+    state.moduleHist = newState.moduleHist
+    state.defsHist = newState.defsHist
+    state.exprHist = newState.exprHist
+    state.compilationState = newState.compilationState
+
+    return true
   } catch (error) {
     out(chalk.red(error))
     out('\n')
