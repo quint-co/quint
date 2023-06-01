@@ -16,16 +16,16 @@
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { LookupTable } from '../lookupTable'
 import { expressionToString } from '../IRprinting'
-import { IRVisitor, walkModule } from '../IRVisitor'
+import { IRVisitor, walkDefinition } from '../IRVisitor'
 import {
   QuintApp,
   QuintBool,
   QuintConst,
+  QuintDef,
   QuintEx,
   QuintInt,
   QuintLambda,
   QuintLet,
-  QuintModule,
   QuintName,
   QuintOpDef,
   QuintStr,
@@ -46,26 +46,30 @@ export type EffectInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, EffectS
  * expressions. Errors are written to the errors attribute.
  */
 export class EffectInferrer implements IRVisitor {
-  constructor(lookupTable: LookupTable) {
+  constructor(lookupTable: LookupTable, effects?: Map<bigint, EffectScheme>) {
     this.lookupTable = lookupTable
     this.freshVarGenerator = new FreshVarGenerator()
+    if (effects) {
+      this.effects = effects
+    }
   }
 
   /**
    * Infers an effect for every expression in a module based on
    * the definitions table for that module
    *
-   * @param module: the Quint module to infer effects for
+   * @param defs: the list of Quint definitions to infer effects for
    *
    * @returns a map from expression ids to their effects and a map from expression
    *          ids to the corresponding error for any problematic expressions.
    */
-  inferEffects(module: QuintModule): EffectInferenceResult {
-    walkModule(this, module)
+  inferEffects(defs: QuintDef[]): EffectInferenceResult {
+    defs.forEach(def => {
+      walkDefinition(this, def)
+    })
     return [this.errors, this.effects]
   }
 
-  // Public values with results by expression ID
   private effects: Map<bigint, EffectScheme> = new Map<bigint, EffectScheme>()
   private errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
 

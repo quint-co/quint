@@ -28,12 +28,12 @@ describe('checkModes', () => {
     }
 
     const inferrer = new EffectInferrer(lookupTable.value)
-    const [errors, effects] = inferrer.inferEffects(module)
+    const [errors, effects] = inferrer.inferEffects(module.defs)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const modeChecker = new ModeChecker()
-    return modeChecker.checkModes(module, effects)
+    return modeChecker.checkModes(module.defs, effects)
   }
 
   it('finds mode errors between action and def', () => {

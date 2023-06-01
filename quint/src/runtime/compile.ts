@@ -23,12 +23,11 @@ import { QuintModule } from '../quintIr'
 import { CompilerVisitor } from './impl/compilerImpl'
 import { walkDefinition } from '../IRVisitor'
 import { LookupTable } from '../lookupTable'
-import { TypeScheme } from '../types/base'
-import { QuintAnalyzer } from '../quintAnalyzer'
+import { AnalysisOutput, analyzeModules } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
-import { IdGenerator, newIdGenerator } from '../idGenerator'
-import { flatten } from '../flattening'
+import { IdGenerator } from '../idGenerator'
 import { SourceLookupPath, fileSourceResolver } from '../sourceResolver'
+import { flattenModules } from '../flattening'
 
 /**
  * The name of the shadow variable that stores the last found trace.
@@ -125,7 +124,7 @@ export function contextNameLookup(
  * @param modules Quint modules in the intermediate representation
  * @param sourceMap source map as produced by the parser
  * @param lookupTable lookup table as produced by the parser
- * @param types type table as produced by the type checker
+ * @param analysisOutput the maps produced by the static analysis
  * @param mainName the name of the module that may contain state varibles
  * @param execListener execution listener
  * @param rand the random number generator
@@ -135,42 +134,14 @@ export function compile(
   modules: QuintModule[],
   sourceMap: Map<bigint, Loc>,
   lookupTable: LookupTable,
-  types: Map<bigint, TypeScheme>,
+  analysisOutput: AnalysisOutput,
   mainName: string,
   execListener: ExecutionListener,
   rand: (bound: bigint) => bigint
 ): CompilationContext {
-  const modulesByName = new Map(modules.map(m => [m.name, m]))
-  const lastId = modules.map(m => m.id).sort((a, b) => Number(a - b))[modules.length - 1]
-  const idGenerator = newIdGenerator(lastId)
-  let latestTable = lookupTable
+  const main = modules.find(m => m.name === mainName)
 
-  const flattenedModules = modules.map(m => {
-    const flattened = flatten(m, latestTable, modulesByName, idGenerator, sourceMap, types)
-
-    modulesByName.set(m.name, flattened)
-
-    // The lookup table has to be updated for every new module that is flattened
-    // Since the flattened modules have new ids for both the name expressions
-    // and their definitions, and the next iteration might depend on an updated
-    // lookup table
-    const newEntries = parsePhase3importAndNameResolution({ modules: [flattened], sourceMap })
-      .mapLeft(errors => {
-        // This should not happen, as the flattening should not introduce any
-        // errors, since parsePhase3 analysis of the original modules has already
-        // assured all names are correct.
-        throw new Error(`Error on resolving names for flattened modules: ${errors.map(e => e.explanation)}`)
-      })
-      .unwrap().table
-
-    latestTable = new Map([...latestTable.entries(), ...newEntries.entries()])
-
-    return flattened
-  })
-
-  const main = flattenedModules.find(m => m.name === mainName)
-
-  const visitor = new CompilerVisitor(latestTable, types, rand, execListener)
+  const visitor = new CompilerVisitor(lookupTable, analysisOutput.types, rand, execListener)
   if (main) {
     main.defs.forEach(def => walkDefinition(visitor, def))
   }
@@ -185,7 +156,7 @@ export function compile(
       ]
   return {
     main: main,
-    lookupTable: latestTable,
+    lookupTable,
     values: visitor.getContext(),
     vars: visitor.getVars(),
     shadowVars: visitor.getShadowVars(),
@@ -236,10 +207,25 @@ export function compileFromCode(
       .chain(
         parseData => {
           const { modules, table, sourceMap } = parseData
-          const analyzer = new QuintAnalyzer(table)
-          modules.forEach(module => analyzer.analyze(module))
-          const [analysisErrors, analysisResult] = analyzer.getResult()
-          const ctx = compile(modules, sourceMap, table, analysisResult.types, mainName, execListener, rand)
+          const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
+
+          const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
+            modules,
+            table,
+            idGen,
+            sourceMap,
+            analysisOutput
+          )
+
+          const ctx = compile(
+            flattenedModules,
+            sourceMap,
+            flattenedTable,
+            flattenedAnalysis,
+            mainName,
+            execListener,
+            rand
+          )
           const errorLocator = mkErrorMessage(sourceMap)
           return right({
             ...ctx,

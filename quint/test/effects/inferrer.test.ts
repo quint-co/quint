@@ -21,7 +21,7 @@ describe('inferEffects', () => {
     }
 
     const inferrer = new EffectInferrer(lookupTable.value)
-    return inferrer.inferEffects(module)
+    return inferrer.inferEffects(module.defs)
   }
 
   function effectForDef(defs: string[], effects: Map<bigint, EffectScheme>, defName: string) {
