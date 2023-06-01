@@ -14,7 +14,7 @@ import { readFileSync, writeFileSync } from 'fs'
 import { cwd } from 'process'
 import lineColumn from 'line-column'
 import { Maybe, just, none } from '@sweet-monads/maybe'
-import { left, right } from '@sweet-monads/either'
+import { Either, left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
 import { format } from './prettierimp'
 
@@ -488,6 +488,17 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     out('\n') // be nice to external programs
   }
 
+  // Compose the input to the parser.
+  // TODO: REPL should work incrementally:
+  // https://github.com/informalsystems/quint/issues/618
+  function prepareParserInput(textToAdd: string): string {
+    return `${state.moduleHist}
+module __repl__ { ${simulatorBuiltins}
+${state.defsHist}
+${textToAdd}
+}`
+  }
+
   const parseResult = parseExpressionOrUnit(newInput, '<input>', state.compilationState.idGen, state.compilationState.sourceMap)
   if (parseResult.kind === 'error') {
     printErrorMessages(out, 'syntax error', newInput, parseResult.messages)
@@ -505,12 +516,8 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     const recorder = newTraceRecorder(state.verbosityLevel, rng)
     const context = compileExpr(state.compilationState, rng, recorder, parseResult.expr)
 
-    // Next line is just for backward compatibility, as I don't want to fix all
-    // output formatting in this prototype. `moduleText` is only used for printing.
-    const moduleText = ''
-
     if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
-      printErrors(moduleText, context)
+      printErrors(newInput, context)
       if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
         return false
       } // else: provisionally, continue on type & effects errors
@@ -522,18 +529,18 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     let elapsed = new Date().getTime() - start;
     console.log('Time taken for expr compilation: ' + elapsed + 'ms')
 
-    return evalExpr(state, context, recorder, out)
+    return evalExpr(state, context, recorder, out).mapLeft(msg => {
+      // when #618 is implemented, we should remove this
+      printErrorMessages(out, 'runtime error', newInput, context.getRuntimeErrors())
+      // print the error message produced by the lookup
+      out(chalk.red(msg))
+      out('\n') // be nice to external programs
+    }).isRight()
   }
   if (parseResult.kind === 'toplevel') {
     // Compose the input to the parser.
-    // TODO: REPL should work incrementally:
-    // https://github.com/informalsystems/quint/issues/618
-    // embed expression text into a module at the top level
-    const moduleText = `${state.moduleHist}
-module __repl__ { ${simulatorBuiltins}
-${state.defsHist}
-${newInput}
-}`
+    const moduleText = prepareParserInput(newInput)
+
     // compile the module and add it to history if everything worked
     const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
 
@@ -637,12 +644,14 @@ function countBraces(str: string): [number, number, number] {
   return [nOpenBraces, nOpenParen, nOpenComments]
 }
 
-function evalExpr(state: ReplState, context: CompilationContext, recorder: TraceRecorder, out: writer): boolean {
+function evalExpr(
+  state: ReplState, context: CompilationContext, recorder: TraceRecorder, out: writer
+): Either<string, QuintEx> {
   loadVars(state, context)
   loadShadowVars(state, context)
   const computable = contextNameLookup(context, 'q::input', 'callable')
   const columns = terminalWidth()
-  const result = computable
+  return computable
     .mapRight(comp => {
       return comp
         .eval()
@@ -681,13 +690,4 @@ function evalExpr(state: ReplState, context: CompilationContext, recorder: Trace
         .unwrap()
     })
     .join()
-    .mapLeft(msg => {
-      // when #618 is implemented, we should remove this
-      printErrorMessages(out, 'runtime error', '', context.getRuntimeErrors())
-      // print the error message produced by the lookup
-      out(chalk.red(msg))
-      out('\n') // be nice to external programs
-    })
-
-  return result.isRight()
 }

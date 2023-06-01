@@ -206,32 +206,20 @@ export function compileExpr(state: CompilationState, rng: Rng, recorder: any, ex
 
   // We need to resolve names for this new definition. Incremental name
   // resolution is not our focus now, so just resolve everything again.
-  const lookupTable = parsePhase3importAndNameResolution({ modules, sourceMap: state.sourceMap })
-    .mapLeft(errors => {
-      // TODO: Properly report these errors
-      throw new Error(`Error on resolving names: ${errors.map(e => e.explanation)}`)
-    })
-    .unwrap().table
+  return parsePhase3importAndNameResolution({ modules, sourceMap: state.sourceMap })
+    .mapLeft(errorContextFromMessage)
+    .map(({ table }) => {
+      const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, def)
 
-  if (!state.analysisOutput) {
-    throw new Error('No analysis output in state')
-  }
+      const temporaryState = { ...state, analysisOutput, modules }
+      const ctx = compile(temporaryState, table, lastModule?.name, recorder, rng.next)
 
-  const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, lookupTable, def)
-
-  // TODO: Properly report these errors.
-  if (analysisErrors.length > 0) {
-    console.log(analysisErrors)
-    throw new Error(`Error on analysis: ${analysisErrors.map(([_, e]) => e.message)}`)
-  }
-
-  const temporaryState = {
-    ...state,
-    analysisOutput,
-    modules
-  }
-
-  return compile(temporaryState, lookupTable, lastModule?.name, recorder, rng.next)
+      const errorLocator = mkErrorMessage(state.sourceMap)
+      return {
+        ...ctx,
+        analysisErrors: Array.from(analysisErrors, errorLocator),
+      }
+    }).value // We produce a compilation context in any case
 }
 
 /**

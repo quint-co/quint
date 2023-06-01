@@ -142,7 +142,7 @@ describe('repl ok', () => {
       `>>> 1 + false
       |static analysis error: error: [QNT000] Couldn't unify int and bool
       |Trying to unify int and bool
-      |Trying to unify (int, int) => int and (int, bool) => t2
+      |Trying to unify (int, int) => int and (int, bool) => t0
       |
       |1 + false
       |^^^^^^^^^
