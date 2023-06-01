@@ -182,7 +182,6 @@ echo "import counters.*" | quint -r ../examples/language-features/counters.qnt 2
 
 <!-- !test out repl loads a file -->
 ```
-true
 >>> 
 >>> 
 ```
@@ -196,7 +195,6 @@ echo "Init" | quint -r ../examples/language-features/counters.qnt::counters 2>&1
 
 <!-- !test out repl loads a file and a module -->
 ```
-true
 
 >>> true
 >>> 
@@ -212,8 +210,7 @@ echo ".load ../examples/language-features/counters.qnt counters" \
 
 <!-- !test out repl loads a file with .load -->
 ```
->>> true
-
+>>> 
 >>> >>> 
 ```
 
@@ -233,11 +230,10 @@ rm tmp-counters.qnt
 
 <!-- !test out repl saves a file with .save and loads it back -->
 ```
-true
 
 >>> Session saved to: tmp-counters.qnt
 >>> >>> 
-true
+
 >>> true
 >>> 
 ```
@@ -391,7 +387,6 @@ EOF
 
 <!-- !test out repl evaluates coin -->
 ```
-true
 
 >>> true
 >>> Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0)
@@ -768,7 +763,6 @@ echo "init" | quint -r ../examples/language-features/imports.qnt::G 2>&1 | tail 
 
 <!-- !test out compile imports -->
 ```
-true
 
 >>> true
 >>> 
@@ -783,7 +777,6 @@ echo -e "A1::f(1)\nA2::f(1)" | quint -r ../examples/language-features/instances.
 
 <!-- !test out compile instances -->
 ```
-true
 
 >>> 34
 >>> 16

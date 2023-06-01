@@ -18,7 +18,7 @@ import {
 } from '../quintParserFrontend'
 import { Computable, ComputableKind, kindName } from './runtime'
 import { ExecutionListener } from './trace'
-import { QuintDef, QuintEx, QuintModule } from '../quintIr'
+import { FlattenedModule, QuintDef, QuintEx, QuintModule } from '../quintIr'
 import { CompilerVisitor } from './impl/compilerImpl'
 import { walkDefinition } from '../IRVisitor'
 import { LookupTable } from '../lookupTable'
@@ -61,7 +61,7 @@ export interface CompilationContext {
 
 export interface CompilationState {
   idGen: IdGenerator
-  modules: QuintModule[]
+  modules: FlattenedModule[]
   sourceMap: Map<bigint, Loc>
   analysisOutput: AnalysisOutput
 }
@@ -244,7 +244,7 @@ export function compileFromCode(
 ): CompilationContext {
   // parse the module text
   return (
-    parse(idGen, '<input>', mainPath, code)
+    parse(idGen, '<module_input>', mainPath, code)
       // On errors, we'll produce the computational context up to this point
       .mapLeft(errorContextFromMessage)
       .chain(

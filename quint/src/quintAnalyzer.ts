@@ -33,19 +33,6 @@ export type AnalysisOutput = {
 /* A tuple with a list of errors and the analysis output */
 export type AnalysisResult = [[bigint, QuintError][], AnalysisOutput]
 
-export function analyzeModules(lookupTable: LookupTable, quintModules: QuintModule[]): AnalysisResult {
-  const analyzer = new QuintAnalyzer(lookupTable)
-  quintModules.map(m => analyzer.analyze(m))
-  return analyzer.getResult()
-}
-
-export function analyzeInc(analysisOutput: AnalysisOutput, lookupTable: LookupTable, def: QuintDef): AnalysisResult {
-  const analyzer = new QuintAnalyzer(lookupTable)
-  analyzer.setState(analysisOutput)
-  analyzer.analyzeDef(def)
-  return analyzer.getResult()
-}
-
 /**
  * Analyzes multiple Quint modules and returns the analysis result.
  *

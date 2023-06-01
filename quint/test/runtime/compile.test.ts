@@ -980,6 +980,7 @@ describe('compiling specs to runtime values', () => {
 })
 
 import { SourceLookupPath } from '../../src/sourceResolver';
+import { flattenModules } from '../../src/flattening'
 
 function compileModules(text: string): CompilationState {
   const idGen = newIdGenerator()
@@ -993,11 +994,15 @@ function compileModules(text: string): CompilationState {
   const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
   assert.isEmpty(analysisErrors)
 
+  const { flattenedModules, flattenedAnalysis } = flattenModules(
+    modules, table, idGen, sourceMap, analysisOutput
+  )
+
   const state: CompilationState = {
     idGen,
-    modules,
+    modules: flattenedModules,
     sourceMap,
-    analysisOutput,
+    analysisOutput: flattenedAnalysis,
   };
 
   return state;

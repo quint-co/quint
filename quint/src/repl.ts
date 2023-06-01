@@ -475,12 +475,11 @@ def q::testOnce(q::nsteps, q::init, q::next, q::inv) = false;
 
 // try to evaluate the expression in a string and print it, if successful
 function tryEval(out: writer, state: ReplState, newInput: string): boolean {
-  const start = new Date().getTime();
   // output errors to the console in red
   function printErrors(moduleText: string, context: CompilationContext) {
-    printErrorMessages(out, 'syntax error', moduleText, context.syntaxErrors)
-    printErrorMessages(out, 'static analysis error', moduleText, context.analysisErrors, chalk.yellow)
-    printErrorMessages(out, 'compile error', moduleText, context.compileErrors)
+    printErrorMessages(out, 'syntax error', newInput, moduleText, context.syntaxErrors)
+    printErrorMessages(out, 'static analysis error', newInput, moduleText, context.analysisErrors, chalk.yellow)
+    printErrorMessages(out, 'compile error', moduleText, newInput, context.compileErrors)
     out('\n') // be nice to external programs
   }
 
@@ -496,8 +495,9 @@ ${textToAdd}
   }
 
   const parseResult = parseExpressionOrUnit(newInput, '<input>', state.compilationState.idGen, state.compilationState.sourceMap)
+  const moduleText = prepareParserInput(newInput)
   if (parseResult.kind === 'error') {
-    printErrorMessages(out, 'syntax error', newInput, parseResult.messages)
+    printErrorMessages(out, 'syntax error', newInput, moduleText, parseResult.messages)
     out('\n') // be nice to external programs
     return false
   }
@@ -522,21 +522,15 @@ ${textToAdd}
     state.exprHist.push(newInput.trim())
     state.seed = rng.getState()
 
-    let elapsed = new Date().getTime() - start;
-    console.log('Time taken for expr compilation: ' + elapsed + 'ms')
-
     return evalExpr(state, context, recorder, out).mapLeft(msg => {
       // when #618 is implemented, we should remove this
-      printErrorMessages(out, 'runtime error', newInput, context.getRuntimeErrors())
+      printErrorMessages(out, 'runtime error', newInput, moduleText, context.getRuntimeErrors())
       // print the error message produced by the lookup
       out(chalk.red(msg))
       out('\n') // be nice to external programs
     }).isRight()
   }
   if (parseResult.kind === 'toplevel') {
-    // Compose the input to the parser.
-    const moduleText = prepareParserInput(newInput)
-
     // compile the module and add it to history if everything worked
     const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
 
@@ -561,7 +555,6 @@ ${textToAdd}
     state.compilationState = context.compilationState
   }
 
-
   return true
 }
 
@@ -569,13 +562,15 @@ ${textToAdd}
 function printErrorMessages(
   out: writer,
   kind: string,
-  text: string,
+  inputText: string,
+  moduleText: string,
   messages: ErrorMessage[],
   color: (_text: string) => string = chalk.red
 ) {
   // display the error messages and highlight the error places
-  const finder = lineColumn(text)
   messages.forEach(e => {
+    const text = e.locs[0].source === '<input>' ? inputText : moduleText
+    const finder = lineColumn(text)
     const msg = formatError(text, finder, e, none())
     out(color(`${kind}: ${msg}\n`))
   })
