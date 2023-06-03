@@ -41,6 +41,5 @@ syntax of TLA+, check [ERC20 in TLA+][].
 
 [erc20.qnt]: ./erc20.qnt
 [ERC20 token]: https://docs.openzeppelin.com/contracts/4.x/api/token/erc20#IERC20
-[this one]: https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-[issue #20]: https://github.com/ethereum/EIPs/issues/20#issuecomment-26352472
+[issue #20]: https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
 [ERC20 in TLA+]: https://github.com/informalsystems/tla-apalache-workshop/tree/main/examples/erc20
