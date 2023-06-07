@@ -18,7 +18,7 @@ import {
 } from '../quintParserFrontend'
 import { Computable, ComputableKind, kindName } from './runtime'
 import { ExecutionListener } from './trace'
-import { FlattenedModule, QuintDef, QuintEx, QuintModule } from '../quintIr'
+import { FlatModule, QuintDef, QuintEx, QuintModule } from '../quintIr'
 import { CompilerVisitor } from './impl/compilerImpl'
 import { walkDefinition } from '../IRVisitor'
 import { LookupTable } from '../lookupTable'
@@ -61,7 +61,7 @@ export interface CompilationContext {
 
 export interface CompilationState {
   idGen: IdGenerator
-  modules: FlattenedModule[]
+  modules: FlatModule[]
   sourceMap: Map<bigint, Loc>
   analysisOutput: AnalysisOutput
 }
