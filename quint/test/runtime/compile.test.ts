@@ -16,8 +16,9 @@ import { RuntimeValue } from '../../src/runtime/impl/runtimeValue'
 import { dedent } from '../textUtils'
 import { newIdGenerator } from '../../src/idGenerator'
 import { Rng, newRng } from '../../src/rng'
-import { stringSourceResolver } from '../../src/sourceResolver'
+import { SourceLookupPath, stringSourceResolver } from '../../src/sourceResolver'
 import { analyzeModules, parse, parseExpressionOrUnit } from '../../src'
+import { flattenModules } from '../../src/flattening'
 
 // Use a global id generator, limited to this test suite.
 const idGen = newIdGenerator()
@@ -32,6 +33,10 @@ function assertResultAsString(input: string, expected: string | undefined) {
   assert.isEmpty(context.syntaxErrors, `Syntax errors: ${context.syntaxErrors.map(e => e.explanation).join(', ')}`)
   assert.isEmpty(context.compileErrors, `Compile errors: ${context.compileErrors.map(e => e.explanation).join(', ')}`)
 
+  assertInputFromContext(context, expected)
+}
+
+function assertInputFromContext(context: CompilationContext, expected: string | undefined) {
   contextNameLookup(context, 'q::input', 'callable')
     .mapLeft(msg => assert(false, `Unexpected error: ${msg}`))
     .mapRight(value => {
@@ -985,47 +990,48 @@ describe('compiling specs to runtime values', () => {
   })
 })
 
-import { SourceLookupPath } from '../../src/sourceResolver'
-import { flattenModules } from '../../src/flattening'
-
-function compileModules(text: string): CompilationState {
-  const idGen = newIdGenerator()
-  const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
-  const parseResult = parse(idGen, 'fake_location', fake_path, text)
-  if (parseResult.isLeft()) {
-    assert.fail('Failed to parse mocked up module')
-  }
-  const { modules, table, sourceMap } = parseResult.unwrap()
-
-  const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
-  assert.isEmpty(analysisErrors)
-
-  const { flattenedModules, flattenedAnalysis } = flattenModules(modules, table, idGen, sourceMap, analysisOutput)
-
-  const state: CompilationState = {
-    idGen,
-    modules: flattenedModules,
-    sourceMap,
-    analysisOutput: flattenedAnalysis,
-  }
-
-  return state
-}
-
-describe('compileExpr', () => {
-  it('should compile a Quint expression', () => {
-    const state = compileModules('module m { pure val x = 1 }')
-
-    const rng: Rng = {
-      getState: () => 0n,
-      setState: (_: bigint) => {},
-      next: () => 0n,
+describe('incremental compilation', () => {
+  /* Adds some quint code to the compilation state */
+  function compileModules(text: string): CompilationState {
+    const idGen = newIdGenerator()
+    const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
+    const parseResult = parse(idGen, 'fake_location', fake_path, text)
+    if (parseResult.isLeft()) {
+      assert.fail('Failed to parse mocked up module')
     }
-    const recorder = {}
-    const parsed = parseExpressionOrUnit('x + 2', 'test.qnt', state.idGen, state.sourceMap)
-    const expr = parsed.kind === 'expr' ? parsed.expr : undefined
-    const context = compileExpr(state, rng, recorder, expr!)
+    const { modules, table, sourceMap } = parseResult.unwrap()
 
-    assert.deepEqual(context.compilationState.analysisOutput.types.get(expr!.id)?.type, { kind: 'int', id: 3n })
+    const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
+    assert.isEmpty(analysisErrors)
+
+    const { flattenedModules, flattenedAnalysis } = flattenModules(modules, table, idGen, sourceMap, analysisOutput)
+
+    const state: CompilationState = {
+      idGen,
+      modules: flattenedModules,
+      sourceMap,
+      analysisOutput: flattenedAnalysis,
+    }
+
+    return state
+  }
+
+  describe('compileExpr', () => {
+    it('should compile a Quint expression', () => {
+      const state = compileModules('module m { pure val x = 1 }')
+
+      const rng: Rng = {
+        getState: () => 0n,
+        setState: (_: bigint) => { },
+        next: () => 0n,
+      }
+      const parsed = parseExpressionOrUnit('x + 2', 'test.qnt', state.idGen, state.sourceMap)
+      const expr = parsed.kind === 'expr' ? parsed.expr : undefined
+      const context = compileExpr(state, rng, noExecutionListener, expr!)
+
+      assert.deepEqual(context.compilationState.analysisOutput.types.get(expr!.id)?.type, { kind: 'int', id: 3n })
+
+      assertInputFromContext(context, '3')
+    })
   })
 })
