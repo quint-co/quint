@@ -87,36 +87,18 @@ class QuintAnalyzer {
   }
 
   analyze(module: QuintModule): void {
-    const [typeErrMap, types] = this.typeInferrer.inferTypes(module.defs)
-    const [effectErrMap, effects] = this.effectInferrer.inferEffects(module.defs)
-    const updatesErrMap = this.multipleUpdatesChecker.checkEffects([...effects.values()])
-    const [modeErrMap, modes] = this.modeChecker.checkModes(module.defs, effects)
-
-    const errorTrees = [...typeErrMap, ...effectErrMap]
-
-    // TODO: Type and effect checking should return QuintErrors instead of error trees
-    this.errors.push(
-      ...errorTrees.map(([id, err]): [bigint, QuintError] => {
-        return [id, { code: 'QNT000', message: errorTreeToString(err), data: { trace: err } }]
-      })
-    )
-
-    this.errors.push(...modeErrMap.entries(), ...updatesErrMap.entries())
-
-    // We assume that ids are unique across modules, and map merging can be done
-    // without collision checks
-    this.output = {
-      types: new Map([...this.output.types, ...types]),
-      effects: new Map([...this.output.effects, ...effects]),
-      modes: new Map([...this.output.modes, ...modes]),
-    }
+    this.analyzeDefs(module.defs)
   }
 
   analyzeDef(def: QuintDef): void {
-    const [typeErrMap, types] = this.typeInferrer.inferTypes([def])
-    const [effectErrMap, effects] = this.effectInferrer.inferEffects([def])
+    this.analyzeDefs([def])
+  }
+
+  private analyzeDefs(defs: QuintDef[]): void {
+    const [typeErrMap, types] = this.typeInferrer.inferTypes(defs)
+    const [effectErrMap, effects] = this.effectInferrer.inferEffects(defs)
     const updatesErrMap = this.multipleUpdatesChecker.checkEffects([...effects.values()])
-    const [modeErrMap, modes] = this.modeChecker.checkModes([def], effects)
+    const [modeErrMap, modes] = this.modeChecker.checkModes(defs, effects)
 
     const errorTrees = [...typeErrMap, ...effectErrMap]
 
