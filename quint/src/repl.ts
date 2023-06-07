@@ -19,7 +19,15 @@ import chalk from 'chalk'
 import { format } from './prettierimp'
 
 import { QuintEx } from './quintIr'
-import { CompilationContext, CompilationState, compileExpr, compileFromCode, contextNameLookup, lastTraceName, newCompilationState } from './runtime/compile'
+import {
+  CompilationContext,
+  CompilationState,
+  compileExpr,
+  compileFromCode,
+  contextNameLookup,
+  lastTraceName,
+  newCompilationState,
+} from './runtime/compile'
 import { formatError } from './errorReporter'
 import { ComputableKind, EvalResult, Register, kindName } from './runtime/runtime'
 import { TraceRecorder, newTraceRecorder, noExecutionListener } from './runtime/trace'
@@ -111,6 +119,8 @@ export function quintRepl(
   }
 
   function replInitialCompilationState(): CompilationState {
+    // Introduce the __repl__ module to the compilation state so new expressions
+    // are pushed to it.
     return { ...newCompilationState(), modules: [{ name: '__repl__', defs: [], id: 0n }] }
   }
   // we let the user type a multiline string, which is collected here:
@@ -494,7 +504,12 @@ ${textToAdd}
 }`
   }
 
-  const parseResult = parseExpressionOrUnit(newInput, '<input>', state.compilationState.idGen, state.compilationState.sourceMap)
+  const parseResult = parseExpressionOrUnit(
+    newInput,
+    '<input>',
+    state.compilationState.idGen,
+    state.compilationState.sourceMap
+  )
   const moduleText = prepareParserInput(newInput)
   if (parseResult.kind === 'error') {
     printErrorMessages(out, 'syntax error', newInput, moduleText, parseResult.messages)
@@ -522,13 +537,15 @@ ${textToAdd}
     state.exprHist.push(newInput.trim())
     state.seed = rng.getState()
 
-    return evalExpr(state, context, recorder, out).mapLeft(msg => {
-      // when #618 is implemented, we should remove this
-      printErrorMessages(out, 'runtime error', newInput, moduleText, context.getRuntimeErrors())
-      // print the error message produced by the lookup
-      out(chalk.red(msg))
-      out('\n') // be nice to external programs
-    }).isRight()
+    return evalExpr(state, context, recorder, out)
+      .mapLeft(msg => {
+        // when #618 is implemented, we should remove this
+        printErrorMessages(out, 'runtime error', newInput, moduleText, context.getRuntimeErrors())
+        // print the error message produced by the lookup
+        out(chalk.red(msg))
+        out('\n') // be nice to external programs
+      })
+      .isRight()
   }
   if (parseResult.kind === 'toplevel') {
     // compile the module and add it to history if everything worked
@@ -636,7 +653,10 @@ function countBraces(str: string): [number, number, number] {
 }
 
 function evalExpr(
-  state: ReplState, context: CompilationContext, recorder: TraceRecorder, out: writer
+  state: ReplState,
+  context: CompilationContext,
+  recorder: TraceRecorder,
+  out: writer
 ): Either<string, QuintEx> {
   loadVars(state, context)
   loadShadowVars(state, context)

@@ -59,13 +59,21 @@ export interface CompilationContext {
   compilationState: CompilationState
 }
 
+/**
+ * A data structure that holds the state of the compilation process.
+ */
 export interface CompilationState {
+  // The ID generator used during compilation.
   idGen: IdGenerator
+  // A list of flattened modules.
   modules: FlatModule[]
+  // The source map for the compiled code.
   sourceMap: Map<bigint, Loc>
+  // The output of the Quint analyzer.
   analysisOutput: AnalysisOutput
 }
 
+/* An empty initial compilation state */
 export function newCompilationState(): CompilationState {
   return {
     idGen: newIdGenerator(),
@@ -75,7 +83,7 @@ export function newCompilationState(): CompilationState {
       types: new Map(),
       effects: new Map(),
       modes: new Map(),
-    }
+    },
   }
 }
 
@@ -154,7 +162,7 @@ export function compile(
   lookupTable: LookupTable,
   mainName: string,
   execListener: ExecutionListener,
-  rand: (bound: bigint) => bigint,
+  rand: (bound: bigint) => bigint
 ): CompilationContext {
   const { modules, sourceMap, analysisOutput } = compilationState
   const main = modules.find(m => m.name === mainName)
@@ -167,11 +175,11 @@ export function compile(
   const mainNotFoundError = main
     ? []
     : [
-      {
-        explanation: `Main module ${mainName} not found`,
-        refs: [],
-      },
-    ]
+        {
+          explanation: `Main module ${mainName} not found`,
+          refs: [],
+        },
+      ]
   return {
     main,
     lookupTable,
@@ -184,10 +192,7 @@ export function compile(
     getRuntimeErrors: () => {
       return visitor.getRuntimeErrors().splice(0).map(fromIrErrorMessage(sourceMap))
     },
-    // The compilation state will be used in subsequent compilations.
-    // It might seem like the object was not changed by this function, but it was, since
-    // flattening updates the internal maps.
-    compilationState
+    compilationState,
   }
 }
 
@@ -240,7 +245,7 @@ export function compileFromCode(
   mainName: string,
   mainPath: SourceLookupPath,
   execListener: ExecutionListener,
-  rand: (bound: bigint) => bigint,
+  rand: (bound: bigint) => bigint
 ): CompilationContext {
   // parse the module text
   return (
@@ -253,7 +258,11 @@ export function compileFromCode(
           const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
 
           const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
-            modules, table, idGen, sourceMap, analysisOutput
+            modules,
+            table,
+            idGen,
+            sourceMap,
+            analysisOutput
           )
           const compilationState = {
             modules: flattenedModules,

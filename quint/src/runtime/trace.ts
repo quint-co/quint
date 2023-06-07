@@ -141,8 +141,8 @@ export const noExecutionListener: ExecutionListener = {
 }
 
 export interface TraceRecorder extends ExecutionListener {
-  getBestTrace: () => ExecutionFrame,
-  getBestTraceSeed: () => bigint,
+  getBestTrace: () => ExecutionFrame
+  getBestTraceSeed: () => bigint
 }
 
 // a trace recording listener

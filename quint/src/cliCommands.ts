@@ -332,13 +332,17 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     }
     const analysisOutput = { types: testing.types, effects: testing.effects, modes: testing.modes }
     const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
-      testing.modules, testing.table, testing.idGen, testing.sourceMap, analysisOutput
+      testing.modules,
+      testing.table,
+      testing.idGen,
+      testing.sourceMap,
+      analysisOutput
     )
     const compilationState = {
       modules: flattenedModules,
       sourceMap: testing.sourceMap,
       analysisOutput: flattenedAnalysis,
-      idGen: testing.idGen
+      idGen: testing.idGen,
     }
     const testOut = compileAndTest(compilationState, main, flattenedTable, options)
 

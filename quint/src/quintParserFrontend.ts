@@ -62,7 +62,7 @@ export interface ParserPhase1 {
   sourceMap: Map<bigint, Loc>
 }
 
-export interface ParserPhase2 extends ParserPhase1 { }
+export interface ParserPhase2 extends ParserPhase1 {}
 
 export interface ParserPhase3 extends ParserPhase2 {
   table: LookupTable
@@ -72,8 +72,8 @@ export interface ParserPhase3 extends ParserPhase2 {
  * The result of parsing an expression or unit.
  */
 export type ExpressionOrUnitParseResult =
-  | { kind: 'toplevel', def: QuintDef }
-  | { kind: 'expr', expr: QuintEx }
+  | { kind: 'toplevel'; def: QuintDef }
+  | { kind: 'expr'; expr: QuintEx }
   | { kind: 'none' }
   | { kind: 'error'; messages: ErrorMessage[] }
 
@@ -85,7 +85,10 @@ export type ExpressionOrUnitParseResult =
  * @returns the parsing result
  */
 export function parseExpressionOrUnit(
-  text: string, sourceLocation: string, idGenerator: IdGenerator, sourceMap: Map<bigint, Loc>
+  text: string,
+  sourceLocation: string,
+  idGenerator: IdGenerator,
+  sourceMap: Map<bigint, Loc>
 ): ExpressionOrUnitParseResult {
   const errorMessages: ErrorMessage[] = []
   const parser = setupParser(text, sourceLocation, errorMessages)
@@ -335,15 +338,18 @@ export function compactSourceMap(sourceMap: Map<bigint, Loc>): { sourceIndex: an
   return { sourceIndex: Object.fromEntries(sourcesIndex), map: Object.fromEntries(compactedSourceMap) }
 }
 
-export function parse(idGen: IdGenerator, sourceLocation: string, mainPath: SourceLookupPath, code: string): ParseResult<ParserPhase3> {
+export function parse(
+  idGen: IdGenerator,
+  sourceLocation: string,
+  mainPath: SourceLookupPath,
+  code: string
+): ParseResult<ParserPhase3> {
   return parsePhase1fromText(idGen, code, sourceLocation)
     .chain(phase1Data => {
       const resolver = fileSourceResolver()
       return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
     })
-    .chain(phase2Data =>
-      parsePhase3importAndNameResolution(phase2Data)
-    )
+    .chain(phase2Data => parsePhase3importAndNameResolution(phase2Data))
 }
 
 // setup a Quint parser, so it can be used to parse from various non-terminals

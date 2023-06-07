@@ -82,10 +82,6 @@ export class EffectInferrer implements IRVisitor {
   // Track location descriptions for error tree traces
   private location: string = ''
 
-  setTable(table: LookupTable) {
-    this.lookupTable = table
-  }
-
   enterExpr(e: QuintEx) {
     this.location = `Inferring effect for ${expressionToString(e)}`
   }

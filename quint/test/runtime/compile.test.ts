@@ -5,7 +5,13 @@ import { just } from '@sweet-monads/maybe'
 import { expressionToString } from '../../src/IRprinting'
 import { ComputableKind, fail, kindName } from '../../src/runtime/runtime'
 import { noExecutionListener } from '../../src/runtime/trace'
-import { CompilationContext, CompilationState, compileExpr, compileFromCode, contextNameLookup } from '../../src/runtime/compile'
+import {
+  CompilationContext,
+  CompilationState,
+  compileExpr,
+  compileFromCode,
+  contextNameLookup,
+} from '../../src/runtime/compile'
 import { RuntimeValue } from '../../src/runtime/impl/runtimeValue'
 import { dedent } from '../textUtils'
 import { newIdGenerator } from '../../src/idGenerator'
@@ -979,7 +985,7 @@ describe('compiling specs to runtime values', () => {
   })
 })
 
-import { SourceLookupPath } from '../../src/sourceResolver';
+import { SourceLookupPath } from '../../src/sourceResolver'
 import { flattenModules } from '../../src/flattening'
 
 function compileModules(text: string): CompilationState {
@@ -994,18 +1000,16 @@ function compileModules(text: string): CompilationState {
   const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
   assert.isEmpty(analysisErrors)
 
-  const { flattenedModules, flattenedAnalysis } = flattenModules(
-    modules, table, idGen, sourceMap, analysisOutput
-  )
+  const { flattenedModules, flattenedAnalysis } = flattenModules(modules, table, idGen, sourceMap, analysisOutput)
 
   const state: CompilationState = {
     idGen,
     modules: flattenedModules,
     sourceMap,
     analysisOutput: flattenedAnalysis,
-  };
+  }
 
-  return state;
+  return state
 }
 
 describe('compileExpr', () => {
@@ -1014,10 +1018,10 @@ describe('compileExpr', () => {
 
     const rng: Rng = {
       getState: () => 0n,
-      setState: (_: bigint) => { },
+      setState: (_: bigint) => {},
       next: () => 0n,
     }
-    const recorder = {};
+    const recorder = {}
     const parsed = parseExpressionOrUnit('x + 2', 'test.qnt', state.idGen, state.sourceMap)
     const expr = parsed.kind === 'expr' ? parsed.expr : undefined
     const context = compileExpr(state, rng, recorder, expr!)
