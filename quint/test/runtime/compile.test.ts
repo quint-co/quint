@@ -1022,7 +1022,7 @@ describe('incremental compilation', () => {
 
       const rng: Rng = {
         getState: () => 0n,
-        setState: (_: bigint) => { },
+        setState: (_: bigint) => {},
         next: () => 0n,
       }
       const parsed = parseExpressionOrUnit('x + 2', 'test.qnt', state.idGen, state.sourceMap)
