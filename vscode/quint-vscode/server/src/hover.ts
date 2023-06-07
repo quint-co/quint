@@ -1,4 +1,4 @@
-import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase3, QuintDef, QuintEx, QuintModule, TypeScheme, effectSchemeToString, findDefinitionWithId, findExpressionWithId, format, prettyQuintDef, prettyTypeScheme, qualifierToString } from "@informalsystems/quint"
+import { AnalysisOutput, DocumentationEntry, Loc, ParserPhase3, QuintDef, QuintEx, QuintModule, TypeScheme, effectSchemeToString, findDefinitionWithId, findExpressionWithId, format, prettyQuintDef, prettyTypeScheme, qualifierToString } from "@informalsystems/quint"
 import { Hover, MarkupKind, Position } from "vscode-languageserver/node"
 import { findBestMatchingResult, locToRange } from "./reporting"
 import { TextDocument } from "vscode-languageserver-textdocument"
@@ -9,7 +9,7 @@ const lineLength = 120
 
 export function hover(
   parsedData: ParserPhase3,
-  analysisOutput: AnalyzisOutput | undefined,
+  analysisOutput: AnalysisOutput | undefined,
   docs: Map<bigint, DocumentationEntry> | undefined,
   sourceFile: string,
   position: Position,
@@ -40,7 +40,7 @@ export function hover(
 function inferredDataHover(
   link: QuintDefinitionLink | undefined,
   parsedData: ParserPhase3,
-  analysisOutput: AnalyzisOutput | undefined,
+  analysisOutput: AnalysisOutput | undefined,
   sourceFile: string,
   position: Position,
   document: TextDocument
