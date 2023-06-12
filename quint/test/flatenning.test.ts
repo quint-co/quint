@@ -2,7 +2,7 @@ import { assert } from 'chai'
 import { describe, it } from 'mocha'
 import { collectDefinitions } from '../src/definitionsCollector'
 import { scanConflicts } from '../src/definitionsScanner'
-import { flatten } from '../src/flattening'
+import { flattenModules } from '../src/flattening'
 import { newIdGenerator } from '../src/idGenerator'
 import { resolveImports } from '../src/importResolver'
 import { definitionToString } from '../src/IRprinting'
@@ -51,17 +51,15 @@ describe('flatten', () => {
     const originalIds = [...result.value.sourceMap.keys()]
     const typesMap = new Map(originalIds.map(i => [i, toScheme({ kind: 'int' })]))
 
-    const flattenedModule = flatten(
-      module,
+    const { flattenedModules, flattenedAnalysis } = flattenModules(
+      [moduleA, module],
       lookupTable,
-      new Map([
-        ['A', moduleA],
-        ['wrapper', module],
-      ]),
       idGenerator,
       result.value.sourceMap,
-      typesMap
+      { types: typesMap, effects: new Map(), modes: new Map() }
     )
+
+    const [_, flattenedModule] = flattenedModules
 
     it('flattens instances', () => {
       assert.sameDeepMembers(
@@ -90,7 +88,7 @@ describe('flatten', () => {
 
     it('adds new entries to the types map', () => {
       assert.includeDeepMembers(
-        [...typesMap.keys()],
+        [...flattenedAnalysis.types.keys()],
         flattenedModule.defs.map(def => def.id)
       )
     })

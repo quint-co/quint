@@ -15,8 +15,8 @@
 import { IdGenerator } from './idGenerator'
 import { LookupTable } from './lookupTable'
 import {
-  QuintAssume,
-  QuintConst,
+  FlatDef,
+  FlatModule,
   QuintDef,
   QuintEx,
   QuintExport,
@@ -24,48 +24,91 @@ import {
   QuintInstance,
   QuintModule,
   QuintOpDef,
-  QuintTypeDef,
-  QuintVar,
-  WithOptionalDoc,
   isAnnotatedDef,
 } from './quintIr'
 import { defaultValueDefinitions } from './definitionsCollector'
 import { definitionToString } from './IRprinting'
 import { QuintType, Row } from './quintTypes'
-import { Loc } from './quintParserFrontend'
+import { Loc, parsePhase3importAndNameResolution } from './quintParserFrontend'
 import { compact, uniqBy } from 'lodash'
-import { TypeScheme } from './types/base'
-
-type FlatDef = (QuintOpDef | QuintConst | QuintVar | QuintAssume | QuintTypeDef) & WithOptionalDoc
+import { AnalysisOutput } from './quintAnalyzer'
 
 interface FlatteningContext {
   idGenerator: IdGenerator
   table: LookupTable
   currentModuleNames: Set<string>
   sourceMap: Map<bigint, Loc>
-  types: Map<bigint, TypeScheme>
+  analysisOutput: AnalysisOutput
   importedModules: Map<string, QuintModule>
 }
 
 /**
- * Flatten a module, replacing instances, imports and exports with their definitions.
+ * Flatten an array of modules, replacing instances, imports and exports with their definitions.
  *
- * @param module The module to flatten
- * @param table The lookup table to for all refered names
- * @param importedModules The map of all refered modules
+ * @param modules The modules to flatten
+ * @param table The lookup table to for all referred names
  * @param idGenerator The id generator to use for new definitions
  * @param sourceMap The source map for all modules involved
+ * @param analysisOutput The analysis output for all modules involved
  *
- * @returns The flattened module
+ * @returns An object containing the flattened modules, flattened lookup table and flattened analysis output
  */
-export function flatten(
+export function flattenModules(
+  modules: QuintModule[],
+  table: LookupTable,
+  idGenerator: IdGenerator,
+  sourceMap: Map<bigint, Loc>,
+  analysisOutput: AnalysisOutput
+): { flattenedModules: FlatModule[]; flattenedTable: LookupTable; flattenedAnalysis: AnalysisOutput } {
+  const importedModules = new Map(modules.map(m => [m.name, m]))
+
+  // FIXME: use copies of parameters so the original objects are not mutated.
+  // This is not a problem atm, but might be in the future.
+
+  // Reduce the array of modules to a single object containing the flattened
+  // modules, flattened lookup table and flattened analysis output
+  return modules.reduce(
+    (acc, module) => {
+      const { flattenedModules, flattenedTable, flattenedAnalysis } = acc
+
+      // Flatten the current module
+      const flattened = flatten(module, flattenedTable, importedModules, idGenerator, sourceMap, flattenedAnalysis)
+
+      // Add the flattened module to the imported modules map
+      importedModules.set(module.name, flattened)
+
+      // The lookup table has to be updated for every new module that is flattened
+      // Since the flattened modules have new ids for both the name expressions
+      // and their definitions, and the next iteration might depend on an updated
+      // lookup table
+      const newEntries = parsePhase3importAndNameResolution({ modules: [flattened], sourceMap })
+        .mapLeft(errors => {
+          // This should not happen, as the flattening should not introduce any
+          // errors, since parsePhase3 analysis of the original modules has already
+          // assured all names are correct.
+          throw new Error(`Error on resolving names for flattened modules: ${errors.map(e => e.explanation)}`)
+        })
+        .unwrap().table
+
+      // Return the updated flattened modules, flattened lookup table and flattened analysis output
+      return {
+        flattenedModules: [...flattenedModules, flattened],
+        flattenedTable: new Map([...flattenedTable.entries(), ...newEntries.entries()]),
+        flattenedAnalysis: flattenedAnalysis,
+      }
+    },
+    { flattenedModules: [] as FlatModule[], flattenedTable: table, flattenedAnalysis: analysisOutput }
+  )
+}
+
+function flatten(
   module: QuintModule,
   table: LookupTable,
   importedModules: Map<string, QuintModule>,
   idGenerator: IdGenerator,
   sourceMap: Map<bigint, Loc>,
-  types: Map<bigint, TypeScheme>
-): QuintModule {
+  analysisOutput: AnalysisOutput
+): FlatModule {
   const currentModuleNames = new Set([
     // builtin names
     ...defaultValueDefinitions().map(d => d.identifier),
@@ -73,7 +116,7 @@ export function flatten(
     ...compact(module.defs.map(d => (isFlat(d) ? d.name : undefined))),
   ])
 
-  const context = { idGenerator, table, currentModuleNames, sourceMap, types, importedModules }
+  const context = { idGenerator, table, currentModuleNames, sourceMap, analysisOutput, importedModules }
 
   const newDefs = module.defs.flatMap(def => {
     if (isFlat(def)) {
@@ -354,7 +397,24 @@ function shouldAddNamespace(ctx: FlatteningContext, name: string): boolean {
 
 function getNewIdWithSameData(ctx: FlatteningContext, id: bigint): bigint {
   const newId = ctx.idGenerator.nextId()
-  ctx.sourceMap.set(newId, ctx.sourceMap.get(id)!)
-  ctx.types.set(newId, ctx.types.get(id)!)
+
+  const type = ctx.analysisOutput.types.get(id)
+  const effect = ctx.analysisOutput.effects.get(id)
+  const mode = ctx.analysisOutput.modes.get(id)
+  const source = ctx.sourceMap.get(id)
+
+  if (type) {
+    ctx.analysisOutput.types.set(newId, type)
+  }
+  if (effect) {
+    ctx.analysisOutput.effects.set(newId, effect)
+  }
+  if (mode) {
+    ctx.analysisOutput.modes.set(newId, mode)
+  }
+  if (source) {
+    ctx.sourceMap.set(newId, source)
+  }
+
   return newId
 }

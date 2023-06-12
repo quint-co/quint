@@ -47,14 +47,17 @@ export type SolvingFunctionType = (
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
-  constructor(solvingFunction: SolvingFunctionType, table: LookupTable) {
+  constructor(solvingFunction: SolvingFunctionType, table: LookupTable, types?: Map<bigint, TypeScheme>) {
     this.solvingFunction = solvingFunction
     this.table = table
     this.freshVarGenerator = new FreshVarGenerator()
+    if (types) {
+      this.types = types
+    }
   }
 
-  types: Map<bigint, TypeScheme> = new Map<bigint, TypeScheme>()
-  errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
+  protected types: Map<bigint, TypeScheme> = new Map<bigint, TypeScheme>()
+  protected errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
 
   private solvingFunction: SolvingFunctionType
   private constraints: Constraint[] = []
@@ -65,6 +68,10 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
   // Track location descriptions for error tree traces
   private location: string = ''
+
+  getResult(): [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>] {
+    return [this.errors, this.types]
+  }
 
   enterExpr(e: QuintEx) {
     this.location = `Generating constraints for ${expressionToString(e)}`

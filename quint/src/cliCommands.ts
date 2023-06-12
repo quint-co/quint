@@ -31,10 +31,9 @@ import { TypeScheme } from './types/base'
 import lineColumn from 'line-column'
 import { formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
-import { QuintAnalyzer } from './quintAnalyzer'
 import { QuintError, quintErrorToString } from './quintError'
 import { TestOptions, TestResult, compileAndTest } from './runtime/testing'
-import { newIdGenerator } from './idGenerator'
+import { IdGenerator, newIdGenerator } from './idGenerator'
 import { SimulatorOptions, compileAndRun } from './simulation'
 import { ofItf, toItf } from './itf'
 import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
@@ -42,6 +41,8 @@ import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
 import { fileSourceResolver } from './sourceResolver'
 import { verify } from './quintVerifier'
+import { flattenModules } from './flattening'
+import { analyzeModules } from './quintAnalyzer'
 import { ExecutionFrame } from './runtime/trace'
 
 export type stage = 'loading' | 'parsing' | 'typechecking' | 'testing' | 'running' | 'documentation'
@@ -118,6 +119,7 @@ interface ParsedStage extends LoadedStage {
   modules: QuintModule[]
   sourceMap: Map<bigint, Loc>
   table: LookupTable
+  idGen: IdGenerator
 }
 
 interface TypecheckedStage extends ParsedStage {
@@ -195,12 +197,12 @@ export async function load(args: any): Promise<CLIProcedure<LoadedStage>> {
 export async function parse(loaded: LoadedStage): Promise<CLIProcedure<ParsedStage>> {
   const { args, sourceCode, path } = loaded
   const parsing = { ...loaded, stage: 'parsing' as stage }
-  const idgen = newIdGenerator()
-  return parsePhase1fromText(idgen, sourceCode, path)
+  const idGen = newIdGenerator()
+  return parsePhase1fromText(idGen, sourceCode, path)
     .chain(phase1Data => {
       const resolver = fileSourceResolver()
       const mainPath = resolver.lookupPath(dirname(path), basename(path))
-      return parsePhase2sourceResolution(idgen, resolver, mainPath, phase1Data)
+      return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
     })
     .mapLeft(newErrs => {
       const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
@@ -216,7 +218,7 @@ export async function parse(loaded: LoadedStage): Promise<CLIProcedure<ParsedSta
         return { msg: 'parsing failed', stage: { ...parsing, errors } }
       })
     })
-    .map(phase2Data => ({ ...parsing, ...phase2Data }))
+    .map(phase2Data => ({ ...parsing, ...phase2Data, idGen }))
 }
 
 export function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: [bigint, QuintError]) => ErrorMessage {
@@ -237,9 +239,7 @@ export async function typecheck(parsed: ParsedStage): Promise<CLIProcedure<Typec
   const { table, modules, sourceMap } = parsed
   const typechecking = { ...parsed, stage: 'typechecking' as stage }
 
-  const analyzer = new QuintAnalyzer(table)
-  modules.forEach(module => analyzer.analyze(module))
-  const [errorMap, result] = analyzer.getResult()
+  const [errorMap, result] = analyzeModules(table, modules)
 
   if (errorMap.length === 0) {
     return right({ ...typechecking, ...result })
@@ -330,7 +330,22 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
         }
       },
     }
-    const testOut = compileAndTest(testing.modules, main, testing.sourceMap, testing.table, testing.types, options)
+    const analysisOutput = { types: testing.types, effects: testing.effects, modes: testing.modes }
+    const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
+      testing.modules,
+      testing.table,
+      testing.idGen,
+      testing.sourceMap,
+      analysisOutput
+    )
+    const testOut = compileAndTest(
+      flattenedModules,
+      main,
+      testing.sourceMap,
+      flattenedTable,
+      flattenedAnalysis,
+      options
+    )
     if (testOut.isLeft()) {
       return cliErr('Tests failed', { ...testing, errors: testOut.value })
     } else if (testOut.isRight()) {

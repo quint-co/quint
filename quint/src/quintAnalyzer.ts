@@ -13,7 +13,7 @@
  */
 
 import { LookupTable } from './lookupTable'
-import { OpQualifier, QuintModule } from './quintIr'
+import { OpQualifier, QuintDef, QuintModule } from './quintIr'
 import { TypeScheme } from './types/base'
 import { TypeInferrer } from './types/inferrer'
 import { EffectScheme } from './effects/base'
@@ -24,14 +24,41 @@ import { errorTreeToString } from './errorTree'
 import { MultipleUpdatesChecker } from './effects/MultipleUpdatesChecker'
 
 /* Products from static analysis */
-export type AnalyzisOutput = {
+export type AnalysisOutput = {
   types: Map<bigint, TypeScheme>
   effects: Map<bigint, EffectScheme>
   modes: Map<bigint, OpQualifier>
 }
 
 /* A tuple with a list of errors and the analysis output */
-export type AnalysisResult = [[bigint, QuintError][], AnalyzisOutput]
+export type AnalysisResult = [[bigint, QuintError][], AnalysisOutput]
+
+/**
+ * Analyzes multiple Quint modules and returns the analysis result.
+ *
+ * @param lookupTable - The lookup tables for the modules.
+ * @param quintModules - The Quint modules to be analyzed.
+ * @returns A tuple with a list of errors and the analysis output.
+ */
+export function analyzeModules(lookupTable: LookupTable, quintModules: QuintModule[]): AnalysisResult {
+  const analyzer = new QuintAnalyzer(lookupTable)
+  quintModules.map(m => analyzer.analyze(m))
+  return analyzer.getResult()
+}
+
+/**
+ * Analyzes a single Quint definition incrementally and returns the analysis result.
+ *
+ * @param analysisOutput - The previous analysis output to be used as a starting point.
+ * @param lookupTable - The lookup tables for the modules.
+ * @param def - The Quint definition to be analyzed.
+ * @returns A tuple with a list of errors and the analysis output.
+ */
+export function analyzeInc(analysisOutput: AnalysisOutput, lookupTable: LookupTable, def: QuintDef): AnalysisResult {
+  const analyzer = new QuintAnalyzer(lookupTable, analysisOutput)
+  analyzer.analyzeDef(def)
+  return analyzer.getResult()
+}
 
 /**
  * Statically analyzes a Quint specification.
@@ -41,28 +68,37 @@ export type AnalysisResult = [[bigint, QuintError][], AnalyzisOutput]
  * getResult method to get the analysis result.
  *
  * @param lookupTable - The lookup tables for the modules.
+ * @param previousOutput - The previous analysis output to be used as a starting point.
  */
-export class QuintAnalyzer {
+class QuintAnalyzer {
   private effectInferrer: EffectInferrer
   private typeInferrer: TypeInferrer
   private modeChecker: ModeChecker
   private multipleUpdatesChecker: MultipleUpdatesChecker
 
   private errors: [bigint, QuintError][] = []
-  private output: AnalyzisOutput = { types: new Map(), effects: new Map(), modes: new Map() }
+  private output: AnalysisOutput = { types: new Map(), effects: new Map(), modes: new Map() }
 
-  constructor(lookupTable: LookupTable) {
-    this.typeInferrer = new TypeInferrer(lookupTable)
-    this.effectInferrer = new EffectInferrer(lookupTable)
+  constructor(lookupTable: LookupTable, previousOutput?: AnalysisOutput) {
+    this.typeInferrer = new TypeInferrer(lookupTable, previousOutput?.types)
+    this.effectInferrer = new EffectInferrer(lookupTable, previousOutput?.effects)
     this.multipleUpdatesChecker = new MultipleUpdatesChecker()
-    this.modeChecker = new ModeChecker()
+    this.modeChecker = new ModeChecker(previousOutput?.modes)
   }
 
   analyze(module: QuintModule): void {
-    const [typeErrMap, types] = this.typeInferrer.inferTypes(module)
-    const [effectErrMap, effects] = this.effectInferrer.inferEffects(module)
+    this.analyzeDefs(module.defs)
+  }
+
+  analyzeDef(def: QuintDef): void {
+    this.analyzeDefs([def])
+  }
+
+  private analyzeDefs(defs: QuintDef[]): void {
+    const [typeErrMap, types] = this.typeInferrer.inferTypes(defs)
+    const [effectErrMap, effects] = this.effectInferrer.inferEffects(defs)
     const updatesErrMap = this.multipleUpdatesChecker.checkEffects([...effects.values()])
-    const [modeErrMap, modes] = this.modeChecker.checkModes(module, effects)
+    const [modeErrMap, modes] = this.modeChecker.checkModes(defs, effects)
 
     const errorTrees = [...typeErrMap, ...effectErrMap]
 

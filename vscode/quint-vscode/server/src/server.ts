@@ -33,11 +33,11 @@ import {
 } from 'vscode-languageserver-textdocument'
 
 import {
-  AnalyzisOutput,
+  AnalysisOutput,
   DocumentationEntry,
   ParserPhase3,
-  QuintAnalyzer,
   QuintErrorData,
+  analyzeModules,
   builtinDocs,
   newIdGenerator,
   produceDocsById
@@ -55,7 +55,7 @@ export class QuintLanguageServer {
 
   // Store auxiliary information by document
   private parsedDataByDocument: Map<DocumentUri, ParserPhase3> = new Map()
-  private analysisOutputByDocument: Map<DocumentUri, AnalyzisOutput> = new Map()
+  private analysisOutputByDocument: Map<DocumentUri, AnalysisOutput> = new Map()
 
   // Documentation entries by id, by document
   private docsByDocument: Map<DocumentUri, Map<bigint, DocumentationEntry>> = new Map()
@@ -296,9 +296,7 @@ export class QuintLanguageServer {
 
     this.docsByDocument.set(document.uri, new Map(modules.flatMap(m => [...produceDocsById(m).entries()])))
 
-    const analyzer = new QuintAnalyzer(table)
-    modules.forEach(module => analyzer.analyze(module))
-    const [errors, analysisOutput] = analyzer.getResult()
+    const [errors, analysisOutput] = analyzeModules(table, modules)
 
     this.analysisOutputByDocument.set(document.uri, analysisOutput)
 

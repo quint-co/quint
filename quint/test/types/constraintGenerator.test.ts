@@ -63,9 +63,11 @@ describe('ConstraintGeneratorVisitor', () => {
     const solvingFunction = (_: LookupTable, _c: Constraint) => right([])
 
     const visitor = visitModuleWithDefs(defs, solvingFunction)
+    const [errors, types] = visitor.getResult()
 
+    assert.isEmpty(errors)
     assert.includeDeepMembers(
-      [...visitor.types.entries()],
+      [...types.entries()],
       [
         [7n, { typeVariables: new Set([]), rowVariables: new Set([]), type: { kind: 'str', id: 1n } }],
         [9n, { typeVariables: new Set([]), rowVariables: new Set([]), type: { kind: 'int', id: 5n } }],
@@ -82,13 +84,14 @@ describe('ConstraintGeneratorVisitor', () => {
       children: [],
     }
 
-    const errors = new Map<bigint, ErrorTree>([[1n, error]])
+    const solvingErrors = new Map<bigint, ErrorTree>([[1n, error]])
 
-    const solvingFunction = (_: LookupTable, _c: Constraint) => left(errors)
+    const solvingFunction = (_: LookupTable, _c: Constraint) => left(solvingErrors)
 
     const visitor = visitModuleWithDefs(defs, solvingFunction)
+    const [errors, _types] = visitor.getResult()
 
-    assert.sameDeepMembers(Array.from(visitor.errors.entries()), Array.from(errors.entries()))
+    assert.sameDeepMembers(Array.from(errors.entries()), Array.from(solvingErrors.entries()))
   })
 
   it('collects internal errors', () => {
@@ -116,7 +119,8 @@ describe('ConstraintGeneratorVisitor', () => {
     }
 
     const visitor = visitModuleWithDefs(defs, solvingFunction)
+    const [errors, _types] = visitor.getResult()
 
-    assert.sameDeepMembers(Array.from(visitor.errors.values()), [error])
+    assert.sameDeepMembers(Array.from(errors.values()), [error])
   })
 })

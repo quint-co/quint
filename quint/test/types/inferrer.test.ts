@@ -27,7 +27,7 @@ describe('inferTypes', () => {
     }
 
     const inferrer = new TypeInferrer(lookupTable.value)
-    return inferrer.inferTypes(quintModule)
+    return inferrer.inferTypes(quintModule.defs)
   }
 
   it('infers types for basic expressions', () => {

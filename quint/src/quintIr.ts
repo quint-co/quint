@@ -261,17 +261,7 @@ export interface QuintInstance extends WithId {
 /**
  * Definition: constant, state variable, operator definition, assumption, instance, module.
  */
-export type QuintDef = (
-  | QuintOpDef
-  | QuintConst
-  | QuintVar
-  | QuintAssume
-  | QuintTypeDef
-  | QuintImport
-  | QuintExport
-  | QuintInstance
-) &
-  WithOptionalDoc
+export type QuintDef = (FlatDef | QuintImport | QuintExport | QuintInstance) & WithOptionalDoc
 
 export function isAnnotatedDef(def: any): def is WithTypeAnnotation {
   return def.typeAnnotation !== undefined
@@ -285,6 +275,24 @@ export interface QuintModule extends WithId {
   name: string
   /** The definitions in the module. */
   defs: QuintDef[]
+  /** Optional documentation for the module. */
+  doc?: string
+}
+
+/**
+ * A FlatDef is a sub-type of QuintDef which represents a flat definition.
+ * A flat definition can be a constant, state variable, operator definition, assumption, or type definition.
+ */
+export type FlatDef = (QuintOpDef | QuintConst | QuintVar | QuintAssume | QuintTypeDef) & WithOptionalDoc
+
+/**
+ * A FlatModule represents a module with flat definitions.
+ */
+export interface FlatModule extends WithId {
+  /** The name of the module. */
+  name: string
+  /** The definitions in the module. */
+  defs: FlatDef[]
   /** Optional documentation for the module. */
   doc?: string
 }
