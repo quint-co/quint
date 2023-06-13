@@ -322,3 +322,19 @@ fi
     quint run --max-samples=10000 --max-steps=10 --seed=0x29f8e8021fae9 \
       --invariant=noBuyInDrawingInv --main=lotteryMempool \
       ../examples/solidity/icse23-fig7/lottery.qnt
+
+### OK on run BinSearch10
+
+<!-- !test exit 1 -->
+<!-- !test check BinSearch - Run -->
+    quint run --max-samples=10000 --max-steps=10 --seed=0x29f8e8021fae9 \
+      --invariant=Postcondition --init=Init --next=Next \
+      ../examples/classic/sequential/BinSearch10.qnt
+
+### OK on run simplePonzi
+
+<!-- !test exit 0 -->
+<!-- !test check simplePonzi - Run -->
+    quint run --max-samples=10000 \
+      --invariant=noNegativeInv --main=simplePonziTest \
+      ../examples/solidity/SimplePonzi/simplePonzi.qnt

@@ -10,7 +10,7 @@ describe('moduleToString', () => {
   it('pretty prints the module', () => {
     const expectedModule = `module wrapper {
   var S: Set[int]
-  val f = filter(S, (x => iadd(x, 1)))
+  val f = filter(S, ((x) => iadd(x, 1)))
 }`
     assert.deepEqual(moduleToString(quintModule), expectedModule)
   })
@@ -19,13 +19,13 @@ describe('moduleToString', () => {
 describe('definitionToString', () => {
   it('pretty prints op definitions', () => {
     const def = buildDef('val f = S.filter(x => x + 1)')
-    const expectedDef = 'val f = filter(S, (x => iadd(x, 1)))'
+    const expectedDef = 'val f = filter(S, ((x) => iadd(x, 1)))'
     assert.deepEqual(definitionToString(def), expectedDef)
   })
 
   it('pretty prints typed op definitions', () => {
     const def = buildDef('val f: Set[int] = S.filter(x => x + 1)')
-    const expectedDef = 'val f: Set[int] = filter(S, (x => iadd(x, 1)))'
+    const expectedDef = 'val f: Set[int] = filter(S, ((x) => iadd(x, 1)))'
     assert.deepEqual(definitionToString(def), expectedDef)
   })
 
@@ -111,13 +111,13 @@ describe('expressionToString', () => {
 
   it('pretty prints lambda expressions', () => {
     const expr = buildExpression('S.map(x => f(x))')
-    const expectedExpr = 'map(S, (x => f(x)))'
+    const expectedExpr = 'map(S, ((x) => f(x)))'
     assert.deepEqual(expressionToString(expr), expectedExpr)
   })
 
   it('multi argument lambdas retain correct semantics', () => {
     const expr = buildExpression('foo((f, b) => f(b), 1, 2)')
-    const expectedExpr = 'foo((f, b => f(b)), 1, 2)'
+    const expectedExpr = 'foo(((f, b) => f(b)), 1, 2)'
     assert.deepEqual(expressionToString(expr), expectedExpr)
   })
 

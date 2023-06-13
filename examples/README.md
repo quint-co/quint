@@ -43,6 +43,7 @@ Quint-Apalache pipeline.
 | [SimpleAuction][]|:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
 | [icse23-fig7][]  |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
 | [ERC20][]        |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
+| [simplePonzi][]  |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
 |                    **Cosmos**                                                           |
 | [ICS23][]        |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
 | [Tendermint][]   |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
@@ -52,7 +53,7 @@ Quint-Apalache pipeline.
 | [Paxos][]        |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
 | [ReadersWriters][]|:white_check_mark:|:white_check_mark:|:x:              | :x:         |
 | [EWD840][]       |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
-| [BinSearch][]    |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
+| [BinSearch][]    |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
 |                    **Puzzles**                                                          |
 | [Prisoners][]    |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
 | [tictactoe][]    |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
@@ -80,3 +81,4 @@ Quint-Apalache pipeline.
 [tictactoe]: ./puzzles/tictactoe/tictactoe.qnt
 [booleans]: ./language-features/booleans.qnt
 [icse23-fig7]: ./solidity/icse23-fig7/lottery.qnt
+[simplePonzi]: ./solidity/SimplePonzi/simplePonzi.qnt

@@ -37,9 +37,9 @@ describe('walkModule', () => {
       'N',
       '1',
       '"rainbow"',
-      'filter(S, (x => iadd(x, 1)))',
+      'filter(S, ((x) => iadd(x, 1)))',
       'S',
-      '(x => iadd(x, 1))',
+      '((x) => iadd(x, 1))',
       'iadd(x, 1)',
       'x',
       '1',
@@ -57,8 +57,8 @@ describe('walkModule', () => {
       'x',
       '1',
       'iadd(x, 1)',
-      '(x => iadd(x, 1))',
-      'filter(S, (x => iadd(x, 1)))',
+      '((x) => iadd(x, 1))',
+      'filter(S, ((x) => iadd(x, 1)))',
       'false',
       'x',
       'val x = false { x }',
@@ -91,7 +91,7 @@ describe('walkModule', () => {
       'assume _ = igt(N, 1)',
       'import M.*',
       'import A(x = "rainbow") as A1',
-      'val f = filter(S, (x => iadd(x, 1)))',
+      'val f = filter(S, ((x) => iadd(x, 1)))',
       'def l = val x = false { x }',
       'val x = false', // From the let definition
     ]
@@ -103,7 +103,7 @@ describe('walkModule', () => {
       'assume _ = igt(N, 1)',
       'import M.*',
       'import A(x = "rainbow") as A1',
-      'val f = filter(S, (x => iadd(x, 1)))',
+      'val f = filter(S, ((x) => iadd(x, 1)))',
       'val x = false', // From the let definition
       'def l = val x = false { x }',
     ]
@@ -164,13 +164,13 @@ describe('walkModule', () => {
       }
 
       const enteredDefinitions = [
-        'val f = filter(S, (x => iadd(x, 1)))',
+        'val f = filter(S, ((x) => iadd(x, 1)))',
         'def l = val x = false { x }',
         'val x = false', // From the let definition
       ]
 
       const exitedDefinitions = [
-        'val f = filter(S, (x => iadd(x, 1)))',
+        'val f = filter(S, ((x) => iadd(x, 1)))',
         'val x = false', // From the let definition
         'def l = val x = false { x }',
       ]
@@ -389,7 +389,7 @@ describe('walkModule', () => {
   assume _ = igt(N, 1)
   import M.*
   import A(x = "rainbow") as A1
-  val f = filter(S, (x => iadd(x, 1)))
+  val f = filter(S, ((x) => iadd(x, 1)))
   def l = val x = false { x }
 }`,
       ]
@@ -472,9 +472,9 @@ describe('walkModule', () => {
         }
       }
 
-      const enteredExpressions = ['igt(N, 1)', 'filter(S, (x => iadd(x, 1)))', 'iadd(x, 1)']
+      const enteredExpressions = ['igt(N, 1)', 'filter(S, ((x) => iadd(x, 1)))', 'iadd(x, 1)']
 
-      const exitedExpressions = ['igt(N, 1)', 'iadd(x, 1)', 'filter(S, (x => iadd(x, 1)))']
+      const exitedExpressions = ['igt(N, 1)', 'iadd(x, 1)', 'filter(S, ((x) => iadd(x, 1)))']
 
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
@@ -496,7 +496,7 @@ describe('walkModule', () => {
         }
       }
 
-      const enteredExpressions = ['(x => iadd(x, 1))']
+      const enteredExpressions = ['((x) => iadd(x, 1))']
 
       const exitedExpressions = enteredExpressions
 
