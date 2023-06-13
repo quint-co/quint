@@ -111,7 +111,7 @@ export function expressionToString(expr: QuintEx): string {
     case 'app':
       return `${expr.opcode}(${expr.args.map(expressionToString).join(', ')})`
     case 'lambda':
-      return `(${expr.params.map(p => p.name).join(', ')} => ${expressionToString(expr.expr)})`
+      return `((${expr.params.map(p => p.name).join(', ')}) => ${expressionToString(expr.expr)})`
     case 'let':
       return `${definitionToString(expr.opdef)} { ${expressionToString(expr.expr)} }`
   }
