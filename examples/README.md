@@ -52,7 +52,7 @@ Quint-Apalache pipeline.
 | [Paxos][]        |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
 | [ReadersWriters][]|:white_check_mark:|:white_check_mark:|:x:              | :x:         |
 | [EWD840][]       |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
-| [BinSearch][]    |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
+| [BinSearch][]    |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
 |                    **Puzzles**                                                          |
 | [Prisoners][]    |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
 | [tictactoe][]    |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
