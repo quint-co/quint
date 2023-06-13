@@ -11,17 +11,17 @@
 import * as readline from 'readline'
 import { Readable, Writable } from 'stream'
 import { readFileSync, writeFileSync } from 'fs'
-import { cwd } from 'process'
 import lineColumn from 'line-column'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { Either, left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
 import { format } from './prettierimp'
 
-import { QuintEx } from './quintIr'
+import { FlatDef, QuintEx, isFlat } from './quintIr'
 import {
   CompilationContext,
   CompilationState,
+  compileDef,
   compileExpr,
   compileFromCode,
   contextNameLookup,
@@ -37,7 +37,9 @@ import { verbosity } from './verbosity'
 import { newRng } from './rng'
 import { version } from './version'
 import { fileSourceResolver } from './sourceResolver'
+import { cwd } from 'process'
 import { newIdGenerator } from './idGenerator'
+import { definitionToString } from './IRprinting'
 
 // tunable settings
 export const settings = {
@@ -121,8 +123,10 @@ export function quintRepl(
   function replInitialCompilationState(): CompilationState {
     // Introduce the __repl__ module to the compilation state so new expressions
     // are pushed to it.
-    return { ...newCompilationState(), modules: [{ name: '__repl__', defs: [], id: 0n }] }
+    const state = newCompilationState()
+    return { ...state, modules: [{ name: '__repl__', defs: simulatorBuiltins(state), id: 0n }] }
   }
+  tryEvalHistory(out, state)
   // we let the user type a multiline string, which is collected here:
   let multilineText = ''
   // when recyclingOwnOutput is true, REPL is receiving its older output
@@ -383,14 +387,10 @@ function loadFromFile(out: writer, state: ReplState, filename: string): boolean 
 
       // save the definition history
       newState.defsHist = defsAndExprs[0]
-
-      const isError = !tryEval(out, newState, 'val __loaded = true')
+      const isError = !tryEvalHistory(out, newState)
       if (isError) {
         return false
       }
-
-      // remove 'val __loaded = true' from the definiton history
-      newState.defsHist = defsAndExprs[0]
 
       if (defsAndExprs.length > 1) {
         // unwrap the expressions from the specially crafted comments
@@ -402,6 +402,11 @@ function loadFromFile(out: writer, state: ReplState, filename: string): boolean 
             return false
           }
         }
+      }
+    } else {
+      const isError = !tryEvalHistory(out, newState)
+      if (isError) {
+        return false
       }
     }
 
@@ -478,39 +483,78 @@ function loadShadowVars(state: ReplState, context: CompilationContext): void {
 
 // Declarations that are overloaded by the simulator.
 // In the future, we will declare them in a separate module.
-const simulatorBuiltins = `val ${lastTraceName} = [];
-def q::test(q::nruns, q::nsteps, q::init, q::next, q::inv) = false;
-def q::testOnce(q::nsteps, q::init, q::next, q::inv) = false;
-`
+function simulatorBuiltins(compilationState: CompilationState): FlatDef[] {
+  return [
+    parseDefOrThrow(compilationState, `val ${lastTraceName} = []`),
+    parseDefOrThrow(compilationState, `def q::test(q::nruns, q::nsteps, q::init, q::next, q::inv) = false`),
+    parseDefOrThrow(compilationState, `def q::testOnce(q::nsteps, q::init, q::next, q::inv) = false`),
+  ]
+}
 
-// try to evaluate the expression in a string and print it, if successful
-function tryEval(out: writer, state: ReplState, newInput: string): boolean {
-  // output errors to the console in red
-  function printErrors(moduleText: string, context: CompilationContext) {
-    printErrorMessages(out, 'syntax error', newInput, moduleText, context.syntaxErrors)
-    printErrorMessages(out, 'static analysis error', newInput, moduleText, context.analysisErrors, chalk.yellow)
-    printErrorMessages(out, 'compile error', moduleText, newInput, context.compileErrors)
-    out('\n') // be nice to external programs
+function parseDefOrThrow(compilationState: CompilationState, text: string): FlatDef {
+  const result = parseExpressionOrUnit(text, '<builtins>', compilationState.idGen, compilationState.sourceMap)
+  if (result.kind === 'toplevel' && isFlat(result.def)) {
+    return result.def
+  } else {
+    throw new Error(`Expected a flat definition, got ${result.kind}, parsing ${text}`)
   }
+}
 
-  // Compose the input to the parser.
-  // TODO: REPL should work incrementally:
-  // https://github.com/informalsystems/quint/issues/618
-  function prepareParserInput(textToAdd: string): string {
-    return `${state.moduleHist}
-module __repl__ { ${simulatorBuiltins}
+// Compose the input to the parser.
+// TODO: REPL should work incrementally:
+// https://github.com/informalsystems/quint/issues/618
+function prepareParserInput(state: ReplState, textToAdd: string): string {
+  return `${state.moduleHist}
+module __repl__ {
+${simulatorBuiltins(state.compilationState)
+  .map(def => definitionToString(def))
+  .join('\n')}
 ${state.defsHist}
 ${textToAdd}
 }`
+}
+
+// output errors to the console in red
+function printErrors(out: writer, moduleText: string, context: CompilationContext, newInput: string = '') {
+  printErrorMessages(out, 'syntax error', newInput, moduleText, context.syntaxErrors)
+  printErrorMessages(out, 'static analysis error', newInput, moduleText, context.analysisErrors, chalk.yellow)
+  printErrorMessages(out, 'compile error', moduleText, newInput, context.compileErrors)
+  out('\n') // be nice to external programs
+}
+
+function tryEvalHistory(out: writer, state: ReplState): boolean {
+  const moduleText = prepareParserInput(state, '')
+  const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
+  const rng = newRng(state.seed)
+
+  const context = compileFromCode(newIdGenerator(), moduleText, '__repl__', mainPath, noExecutionListener, rng.next)
+  if (context.values.size === 0 || context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
+    printErrors(out, moduleText, context)
+    return false
   }
 
+  if (context.analysisErrors.length > 0) {
+    printErrors(out, moduleText, context)
+    // provisionally, continue on type & effects errors
+  }
+
+  // out('\n') // be nice to external programs
+
+  // Save compilation state
+  state.compilationState = context.compilationState
+
+  return true
+}
+
+// try to evaluate the expression in a string and print it, if successful
+function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   const parseResult = parseExpressionOrUnit(
     newInput,
     '<input>',
     state.compilationState.idGen,
     state.compilationState.sourceMap
   )
-  const moduleText = prepareParserInput(newInput)
+  const moduleText = prepareParserInput(state, newInput)
   if (parseResult.kind === 'error') {
     printErrorMessages(out, 'syntax error', newInput, moduleText, parseResult.messages)
     out('\n') // be nice to external programs
@@ -528,7 +572,7 @@ ${textToAdd}
     const context = compileExpr(state.compilationState, rng, recorder, parseResult.expr)
 
     if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
-      printErrors(newInput, context)
+      printErrors(out, newInput, context, newInput)
       if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
         return false
       } // else: provisionally, continue on type & effects errors
@@ -549,19 +593,16 @@ ${textToAdd}
   }
   if (parseResult.kind === 'toplevel') {
     // compile the module and add it to history if everything worked
-    const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
 
-    // For toplevel definitions, we start from scratch. This should be made
-    // incremental as well.
-    const context = compileFromCode(newIdGenerator(), moduleText, '__repl__', mainPath, noExecutionListener, rng.next)
+    const context = compileDef(state.compilationState, rng, noExecutionListener, parseResult.def)
 
     if (context.values.size === 0 || context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
-      printErrors(moduleText, context)
+      printErrors(out, moduleText, context, newInput)
       return false
     }
 
     if (context.analysisErrors.length > 0) {
-      printErrors(moduleText, context)
+      printErrors(out, moduleText, context, newInput)
       // provisionally, continue on type & effects errors
     }
 

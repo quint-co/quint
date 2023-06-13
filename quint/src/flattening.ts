@@ -25,6 +25,7 @@ import {
   QuintModule,
   QuintOpDef,
   isAnnotatedDef,
+  isFlat,
 } from './quintIr'
 import { defaultValueDefinitions } from './definitionsCollector'
 import { definitionToString } from './IRprinting'
@@ -101,6 +102,37 @@ export function flattenModules(
   )
 }
 
+export function flattenDef(context: FlatteningContext, def: QuintDef): FlatDef[] {
+  if (isFlat(def)) {
+    // Not an instance, import or export, keep the same def
+    return [def]
+  }
+
+  if (def.kind === 'instance') {
+    return flattenInstance(context, def)
+  }
+
+  return flattenImportOrExport(context, def)
+}
+
+export function buildFlatteningContext(
+  module: QuintModule,
+  table: LookupTable,
+  importedModules: Map<string, QuintModule>,
+  idGenerator: IdGenerator,
+  sourceMap: Map<bigint, Loc>,
+  analysisOutput: AnalysisOutput
+): FlatteningContext {
+  const currentModuleNames = new Set([
+    // builtin names
+    ...defaultValueDefinitions().map(d => d.identifier),
+    // names from the current module
+    ...compact(module.defs.map(d => (isFlat(d) ? d.name : undefined))),
+  ])
+
+  return { idGenerator, table, currentModuleNames, sourceMap, analysisOutput, importedModules }
+}
+
 function flatten(
   module: QuintModule,
   table: LookupTable,
@@ -109,33 +141,10 @@ function flatten(
   sourceMap: Map<bigint, Loc>,
   analysisOutput: AnalysisOutput
 ): FlatModule {
-  const currentModuleNames = new Set([
-    // builtin names
-    ...defaultValueDefinitions().map(d => d.identifier),
-    // names from the current module
-    ...compact(module.defs.map(d => (isFlat(d) ? d.name : undefined))),
-  ])
-
-  const context = { idGenerator, table, currentModuleNames, sourceMap, analysisOutput, importedModules }
-
-  const newDefs = module.defs.flatMap(def => {
-    if (isFlat(def)) {
-      // Not an instance, import or export, keep the same def
-      return [def]
-    }
-
-    if (def.kind === 'instance') {
-      return flattenInstance(context, def)
-    }
-
-    return flattenImportOrExport(context, def)
-  })
+  const context = buildFlatteningContext(module, table, importedModules, idGenerator, sourceMap, analysisOutput)
+  const newDefs = module.defs.flatMap(def => flattenDef(context, def))
 
   return { ...module, defs: uniqBy(newDefs, 'name') }
-}
-
-function isFlat(def: QuintDef): def is FlatDef {
-  return def.kind !== 'instance' && def.kind !== 'import' && def.kind !== 'export'
 }
 
 function flattenInstance(context: FlatteningContext, def: QuintInstance): FlatDef[] {
@@ -175,7 +184,7 @@ function flattenInstance(context: FlatteningContext, def: QuintInstance): FlatDe
     context.importedModules.set(def.qualifiedName, { ...protoModule, defs: newProtoDefs })
   }
 
-  return newProtoDefs.map(protoDef => flattenDef(context, protoDef, def.qualifiedName))
+  return newProtoDefs.map(protoDef => copyDef(context, protoDef, def.qualifiedName))
 }
 
 function flattenImportOrExport(context: FlatteningContext, def: QuintImport | QuintExport): FlatDef[] {
@@ -190,7 +199,7 @@ function flattenImportOrExport(context: FlatteningContext, def: QuintImport | Qu
 
   const defsToFlatten = filterDefs(protoModule.defs, def.defName)
 
-  return defsToFlatten.map(protoDef => flattenDef(context, protoDef, qualifiedName))
+  return defsToFlatten.map(protoDef => copyDef(context, protoDef, qualifiedName))
 }
 
 function filterDefs(defs: QuintDef[], name: string | undefined): QuintDef[] {
@@ -201,7 +210,7 @@ function filterDefs(defs: QuintDef[], name: string | undefined): QuintDef[] {
   return defs.filter(def => isFlat(def) && def.name === name)
 }
 
-function flattenDef(ctx: FlatteningContext, def: QuintDef, qualifier: string | undefined): FlatDef {
+function copyDef(ctx: FlatteningContext, def: QuintDef, qualifier: string | undefined): FlatDef {
   if (!isFlat(def)) {
     throw new Error(`Impossible: ${definitionToString(def)} should have been flattened already`)
   }

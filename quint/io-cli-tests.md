@@ -233,7 +233,6 @@ rm tmp-counters.qnt
 
 >>> Session saved to: tmp-counters.qnt
 >>> >>> 
-
 >>> true
 >>> 
 ```
