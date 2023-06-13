@@ -213,7 +213,7 @@ describe('inferEffects', () => {
               "Trying to unify (Read[v3] & Temporal[v4], (Read[v3] & Temporal[v4]) => Read[v5] & Temporal[v6]) => Read[v3, v5] & Temporal[v4, v6] and (Pure, (Read[v2]) => Read[v2] & Update['x']) => e1",
           },
         ],
-        location: 'Trying to infer effect for operator application in map(S, (p => assign(x, p)))',
+        location: 'Trying to infer effect for operator application in map(S, ((p) => assign(x, p)))',
       })
     )
   })
