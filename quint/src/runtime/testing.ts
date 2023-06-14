@@ -11,17 +11,16 @@
 import { Either, left, merge, right } from '@sweet-monads/either'
 import { just } from '@sweet-monads/maybe'
 
-import { ErrorMessage, Loc, fromIrErrorMessage } from '../quintParserFrontend'
+import { ErrorMessage, fromIrErrorMessage } from '../quintParserFrontend'
 import { QuintEx, QuintModule, QuintOpDef } from '../quintIr'
 
-import { CompilationContext, compile, lastTraceName } from './compile'
+import { CompilationContext, CompilationState, compile, lastTraceName } from './compile'
 import { zerog } from './../idGenerator'
 import { LookupTable } from '../lookupTable'
 import { Computable, Register, kindName } from './runtime'
 import { ExecutionFrame, newTraceRecorder } from './trace'
 import { Rng } from '../rng'
 import { RuntimeValue, rv } from './impl/runtimeValue'
-import { AnalysisOutput } from '../quintAnalyzer'
 
 /**
  * Various settings to be passed to the testing framework.
@@ -77,15 +76,13 @@ export interface TestResult {
  * @returns the results of running the tests
  */
 export function compileAndTest(
-  modules: QuintModule[],
+  compilationState: CompilationState,
   main: QuintModule,
-  sourceMap: Map<bigint, Loc>,
   lookupTable: LookupTable,
-  analysisOutput: AnalysisOutput,
   options: TestOptions
 ): Either<ErrorMessage[], TestResult[]> {
   const recorder = newTraceRecorder(options.verbosity, options.rng)
-  const ctx = compile(modules, sourceMap, lookupTable, analysisOutput, main.name, recorder, options.rng.next)
+  const ctx = compile(compilationState, lookupTable, main.name, recorder, options.rng.next)
 
   const saveTrace = (index: number, name: string, status: string) => {
     // Save the best traces that are reported by the recorder:
@@ -165,7 +162,7 @@ export function compileAndTest(
 
           if (!ex.value) {
             // if the test returned false, return immediately
-            const e = fromIrErrorMessage(sourceMap)({
+            const e = fromIrErrorMessage(compilationState.sourceMap)({
               explanation: `${name} returns false`,
               refs: [def.id],
             })

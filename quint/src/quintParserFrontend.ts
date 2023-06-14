@@ -11,7 +11,7 @@ import * as p from './generated/QuintParser'
 import { QuintListener } from './generated/QuintListener'
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
-import { IrErrorMessage, QuintModule } from './quintIr'
+import { IrErrorMessage, QuintDef, QuintEx, QuintModule } from './quintIr'
 import { IdGenerator } from './idGenerator'
 import { ToIrListener } from './ToIrListener'
 import { collectDefinitions } from './definitionsCollector'
@@ -23,7 +23,7 @@ import { Definition, LookupTable } from './lookupTable'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { mkErrorMessage } from './cliCommands'
 import { DefinitionsByModule, DefinitionsByName } from './definitionsByName'
-import { SourceLookupPath, SourceResolver } from './sourceResolver'
+import { SourceLookupPath, SourceResolver, fileSourceResolver } from './sourceResolver'
 
 export interface Loc {
   source: string
@@ -69,11 +69,11 @@ export interface ParserPhase3 extends ParserPhase2 {
 }
 
 /**
- * The result of probing.
+ * The result of parsing an expression or unit.
  */
-export type ParseProbeResult =
-  | { kind: 'toplevel' }
-  | { kind: 'expr' }
+export type ExpressionOrUnitParseResult =
+  | { kind: 'toplevel'; def: QuintDef }
+  | { kind: 'expr'; expr: QuintEx }
   | { kind: 'none' }
   | { kind: 'error'; messages: ErrorMessage[] }
 
@@ -82,16 +82,25 @@ export type ParseProbeResult =
  *
  * @param text input text
  * @param sourceLocation a textual description of the source
- * @returns the result of probing
+ * @returns the parsing result
  */
-export function probeParse(text: string, sourceLocation: string): ParseProbeResult {
+export function parseExpressionOrUnit(
+  text: string,
+  sourceLocation: string,
+  idGenerator: IdGenerator,
+  sourceMap: Map<bigint, Loc>
+): ExpressionOrUnitParseResult {
   const errorMessages: ErrorMessage[] = []
   const parser = setupParser(text, sourceLocation, errorMessages)
   const tree = parser.unitOrExpr()
   if (errorMessages.length > 0) {
     return { kind: 'error', messages: errorMessages }
   } else {
-    const listener = new ProbeListener()
+    const listener = new ExpressionOrUnitListener(sourceLocation, idGenerator)
+
+    // Use an existing source map as a starting point.
+    listener.sourceMap = sourceMap
+
     ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
     return listener.result
   }
@@ -329,6 +338,20 @@ export function compactSourceMap(sourceMap: Map<bigint, Loc>): { sourceIndex: an
   return { sourceIndex: Object.fromEntries(sourcesIndex), map: Object.fromEntries(compactedSourceMap) }
 }
 
+export function parse(
+  idGen: IdGenerator,
+  sourceLocation: string,
+  mainPath: SourceLookupPath,
+  code: string
+): ParseResult<ParserPhase3> {
+  return parsePhase1fromText(idGen, code, sourceLocation)
+    .chain(phase1Data => {
+      const resolver = fileSourceResolver()
+      return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
+    })
+    .chain(phase2Data => parsePhase3importAndNameResolution(phase2Data))
+}
+
 // setup a Quint parser, so it can be used to parse from various non-terminals
 function setupParser(text: string, sourceLocation: string, errorMessages: ErrorMessage[]): p.QuintParser {
   // error listener to report lexical and syntax errors
@@ -359,9 +382,9 @@ function setupParser(text: string, sourceLocation: string, errorMessages: ErrorM
   return parser
 }
 
-// a simple listener to figure out what has been parsed
-class ProbeListener implements QuintListener {
-  result: ParseProbeResult = {
+// A simple listener to parse a unit or expression
+class ExpressionOrUnitListener extends ToIrListener {
+  result: ExpressionOrUnitParseResult = {
     kind: 'error',
     messages: [
       {
@@ -373,9 +396,11 @@ class ProbeListener implements QuintListener {
 
   exitUnitOrExpr(ctx: p.UnitOrExprContext) {
     if (ctx.unit()) {
-      this.result = { kind: 'toplevel' }
+      const def = this.definitionStack[this.definitionStack.length - 1]
+      this.result = { kind: 'toplevel', def }
     } else if (ctx.expr()) {
-      this.result = { kind: 'expr' }
+      const expr = this.exprStack[this.exprStack.length - 1]
+      this.result = { kind: 'expr', expr }
     } else {
       this.result = { kind: 'none' }
     }

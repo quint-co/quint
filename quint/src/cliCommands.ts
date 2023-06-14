@@ -338,14 +338,14 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
       testing.sourceMap,
       analysisOutput
     )
-    const testOut = compileAndTest(
-      flattenedModules,
-      main,
-      testing.sourceMap,
-      flattenedTable,
-      flattenedAnalysis,
-      options
-    )
+    const compilationState = {
+      modules: flattenedModules,
+      sourceMap: testing.sourceMap,
+      analysisOutput: flattenedAnalysis,
+      idGen: testing.idGen,
+    }
+    const testOut = compileAndTest(compilationState, main, flattenedTable, options)
+
     if (testOut.isLeft()) {
       return cliErr('Tests failed', { ...testing, errors: testOut.value })
     } else if (testOut.isRight()) {
