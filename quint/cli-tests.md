@@ -315,7 +315,7 @@ fi
 <!-- !test check bug843pureValCache - Syntax/Types & Effects/Unit tests -->
     quint test ./testFixture/bug843pureValCache.qnt
 
-### OK on run lottery
+### FAIL on run lottery
 
 <!-- !test exit 1 -->
 <!-- !test check lottery - Run -->
@@ -323,7 +323,7 @@ fi
       --invariant=noBuyInDrawingInv --main=lotteryMempool \
       ../examples/solidity/icse23-fig7/lottery.qnt
 
-### OK on run BinSearch10
+### FAIL on run BinSearch10
 
 <!-- !test exit 1 -->
 <!-- !test check BinSearch - Run -->
@@ -331,10 +331,19 @@ fi
       --invariant=Postcondition --init=Init --next=Next \
       ../examples/classic/sequential/BinSearch10.qnt
 
-### OK on run simplePonzi
+### OK on run simplePonzi::noNegativeInv
 
 <!-- !test exit 0 -->
-<!-- !test check simplePonzi - Run -->
+<!-- !test check simplePonzi - Run noNegativeInv -->
     quint run --max-samples=10000 \
       --invariant=noNegativeInv --main=simplePonziTest \
+      ../examples/solidity/SimplePonzi/simplePonzi.qnt
+
+### FAIL on run simplePonzi::progressInv
+
+<!-- !test exit 1 -->
+<!-- !test check simplePonzi - Run progressInv -->
+    quint run \
+      --invariant=progressInv --main=simplePonziTest \
+      --seed=0x1f035d45bceacb \
       ../examples/solidity/SimplePonzi/simplePonzi.qnt
