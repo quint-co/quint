@@ -14,22 +14,30 @@ import { readFileSync, writeFileSync } from 'fs'
 import { cwd } from 'process'
 import lineColumn from 'line-column'
 import { Maybe, just, none } from '@sweet-monads/maybe'
-import { left, right } from '@sweet-monads/either'
+import { Either, left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
 import { format } from './prettierimp'
 
 import { QuintEx } from './quintIr'
-import { CompilationContext, compileFromCode, contextNameLookup, lastTraceName } from './runtime/compile'
+import {
+  CompilationContext,
+  CompilationState,
+  compileExpr,
+  compileFromCode,
+  contextNameLookup,
+  lastTraceName,
+  newCompilationState,
+} from './runtime/compile'
 import { formatError } from './errorReporter'
 import { ComputableKind, EvalResult, Register, kindName } from './runtime/runtime'
-import { newTraceRecorder, noExecutionListener } from './runtime/trace'
-import { ErrorMessage, probeParse } from './quintParserFrontend'
-import { IdGenerator, newIdGenerator } from './idGenerator'
+import { TraceRecorder, newTraceRecorder, noExecutionListener } from './runtime/trace'
+import { ErrorMessage, parseExpressionOrUnit } from './quintParserFrontend'
 import { prettyQuintEx, printExecutionFrameRec, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { newRng } from './rng'
 import { version } from './version'
 import { fileSourceResolver } from './sourceResolver'
+import { newIdGenerator } from './idGenerator'
 
 // tunable settings
 export const settings = {
@@ -41,8 +49,6 @@ type writer = (_text: string) => void
 
 // the internal state of the REPL
 interface ReplState {
-  // generator of unique identifiers
-  idGen: IdGenerator
   // the history of module definitions loaded from external sources
   moduleHist: string
   // definitions history
@@ -59,6 +65,7 @@ interface ReplState {
   seed?: bigint
   // verbosity level
   verbosityLevel: number
+  compilationState: CompilationState
 }
 
 // The default exit terminates the process.
@@ -101,7 +108,6 @@ export function quintRepl(
 
   // the state
   const state: ReplState = {
-    idGen: newIdGenerator(),
     moduleHist: '',
     defsHist: '',
     exprHist: [],
@@ -109,6 +115,13 @@ export function quintRepl(
     shadowVars: new Map<string, EvalResult>(),
     lastLoadedFileAndModule: [undefined, undefined],
     verbosityLevel: options.verbosity,
+    compilationState: replInitialCompilationState(),
+  }
+
+  function replInitialCompilationState(): CompilationState {
+    // Introduce the __repl__ module to the compilation state so new expressions
+    // are pushed to it.
+    return { ...newCompilationState(), modules: [{ name: '__repl__', defs: [], id: 0n }] }
   }
   // we let the user type a multiline string, which is collected here:
   let multilineText = ''
@@ -181,6 +194,7 @@ export function quintRepl(
     state.moduleHist = ''
     state.defsHist = ''
     state.exprHist = []
+    state.compilationState = replInitialCompilationState()
   }
 
   // load the code from a filename and optionally import a module
@@ -362,7 +376,6 @@ function loadFromFile(out: writer, state: ReplState, filename: string): boolean 
     const newState = { ...state }
     const modulesAndRepl = data.split(replBegin)
     // whether an error occurred at some step
-    let isError = false
     newState.moduleHist = modulesAndRepl[0]
     if (modulesAndRepl.length > 1) {
       // found a REPL session
@@ -370,36 +383,34 @@ function loadFromFile(out: writer, state: ReplState, filename: string): boolean 
 
       // save the definition history
       newState.defsHist = defsAndExprs[0]
+
+      const isError = !tryEval(out, newState, 'val __loaded = true')
+      if (isError) {
+        return false
+      }
+
+      // reset the definiton history to the one loaded from the file
+      newState.defsHist = defsAndExprs[0]
+
       if (defsAndExprs.length > 1) {
         // unwrap the expressions from the specially crafted comments
         const exprs = (defsAndExprs[1] ?? '').matchAll(/\/\*! (.*?) !\*\//gms) ?? []
         // and replay them one by one
-        // TODO: every call to tryEval makes a full cycle
-        // from the parser to the compiler. Make this incremental!
-        // https://github.com/informalsystems/quint/issues/618
+
         for (const groups of exprs) {
           if (!tryEval(out, newState, groups[1])) {
-            isError = true
-            break
+            return false
           }
         }
       }
     }
 
-    if (!isError && newState.exprHist.length === 0) {
-      // nothing was replayed, evaluate 'true', to trigger compilation
-      isError = !tryEval(out, newState, 'true')
-      if (!isError) {
-        // remove 'true' from the expression history
-        newState.exprHist.pop()
-      }
-    }
-    if (!isError) {
-      state.moduleHist = newState.moduleHist
-      state.defsHist = newState.defsHist
-      state.exprHist = newState.exprHist
-    }
-    return !isError
+    state.moduleHist = newState.moduleHist
+    state.defsHist = newState.defsHist
+    state.exprHist = newState.exprHist
+    state.compilationState = newState.compilationState
+
+    return true
   } catch (error) {
     out(chalk.red(error))
     out('\n')
@@ -476,9 +487,9 @@ def q::testOnce(q::nsteps, q::init, q::next, q::inv) = false;
 function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   // output errors to the console in red
   function printErrors(moduleText: string, context: CompilationContext) {
-    printErrorMessages(out, 'syntax error', moduleText, context.syntaxErrors)
-    printErrorMessages(out, 'static analysis error', moduleText, context.analysisErrors, chalk.yellow)
-    printErrorMessages(out, 'compile error', moduleText, context.compileErrors)
+    printErrorMessages(out, 'syntax error', newInput, moduleText, context.syntaxErrors)
+    printErrorMessages(out, 'static analysis error', newInput, moduleText, context.analysisErrors, chalk.yellow)
+    printErrorMessages(out, 'compile error', moduleText, newInput, context.compileErrors)
     out('\n') // be nice to external programs
   }
 
@@ -493,102 +504,72 @@ ${textToAdd}
 }`
   }
 
-  const probeResult = probeParse(newInput, '<input>')
-  if (probeResult.kind === 'error') {
-    printErrorMessages(out, 'syntax error', newInput, probeResult.messages)
+  const parseResult = parseExpressionOrUnit(
+    newInput,
+    '<input>',
+    state.compilationState.idGen,
+    state.compilationState.sourceMap
+  )
+  const moduleText = prepareParserInput(newInput)
+  if (parseResult.kind === 'error') {
+    printErrorMessages(out, 'syntax error', newInput, moduleText, parseResult.messages)
     out('\n') // be nice to external programs
     return false
   }
-  if (probeResult.kind === 'none') {
+  if (parseResult.kind === 'none') {
     // a comment or whitespaces
     return true
   }
   // create a random number generator
   const rng = newRng(state.seed)
   // evaluate the input, depending on its type
-  if (probeResult.kind === 'expr') {
-    // embed expression text into a value definition inside a module
-    const moduleText = prepareParserInput(`  action q::input =\n${newInput}`)
-    // compile the expression or definition and evaluate it
+  if (parseResult.kind === 'expr') {
     const recorder = newTraceRecorder(state.verbosityLevel, rng)
-    const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
-    const context = compileFromCode(state.idGen, moduleText, '__repl__', mainPath, recorder, rng.next)
+    const context = compileExpr(state.compilationState, rng, recorder, parseResult.expr)
+
     if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
-      printErrors(moduleText, context)
+      printErrors(newInput, context)
       if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
         return false
       } // else: provisionally, continue on type & effects errors
     }
 
-    loadVars(state, context)
-    loadShadowVars(state, context)
-    const computable = contextNameLookup(context, 'q::input', 'callable')
-    const columns = terminalWidth()
-    const result = computable
-      .mapRight(comp => {
-        return comp
-          .eval()
-          .map(value => {
-            const ex = value.toQuintEx(state.idGen)
-            out(format(columns, 0, prettyQuintEx(ex)))
-            out('\n')
+    state.exprHist.push(newInput.trim())
+    state.seed = rng.getState()
 
-            if (verbosity.hasUserOpTracking(state.verbosityLevel)) {
-              const trace = recorder.getBestTrace()
-              if (trace.subframes.length > 0) {
-                out('\n')
-                trace.subframes.forEach((f, i) => {
-                  out(`[Frame ${i}]\n`)
-                  printExecutionFrameRec({ width: columns, out }, f, [])
-                  out('\n')
-                })
-              }
-            }
-
-            if (ex.kind === 'bool' && ex.value) {
-              // A Boolean expression may be an action or a run.
-              // Save the state, if there were any updates to variables.
-              saveVars(state, context).map(missing => {
-                if (missing.length > 0) {
-                  out(chalk.yellow('[warning] some variables are undefined: ' + missing.join(', ') + '\n'))
-                }
-              })
-            }
-            // save shadow vars in any case, e.g., the example trace
-            saveShadowVars(state, context)
-            state.exprHist.push(newInput.trim())
-
-            return right<string, QuintEx>(ex)
-          })
-          .or(just(left<string, QuintEx>('<undefined value>')))
-          .unwrap()
-      })
-      .join()
+    return evalExpr(state, context, recorder, out)
       .mapLeft(msg => {
         // when #618 is implemented, we should remove this
-        printErrorMessages(out, 'runtime error', moduleText, context.getRuntimeErrors())
+        printErrorMessages(out, 'runtime error', newInput, moduleText, context.getRuntimeErrors())
         // print the error message produced by the lookup
         out(chalk.red(msg))
         out('\n') // be nice to external programs
       })
-
-    state.seed = rng.getState()
-
-    return result.isRight()
+      .isRight()
   }
-  if (probeResult.kind === 'toplevel') {
-    // embed expression text into a module at the top level
-    const moduleText = prepareParserInput(newInput)
+  if (parseResult.kind === 'toplevel') {
     // compile the module and add it to history if everything worked
     const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
-    const context = compileFromCode(state.idGen, moduleText, '__repl__', mainPath, noExecutionListener, rng.next)
+
+    // For toplevel definitions, we start from scratch. This should be made
+    // incremental as well.
+    const context = compileFromCode(newIdGenerator(), moduleText, '__repl__', mainPath, noExecutionListener, rng.next)
+
     if (context.values.size === 0 || context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
       printErrors(moduleText, context)
       return false
-    } else {
-      out('\n') // be nice to external programs
-      state.defsHist = state.defsHist + '\n' + newInput // update the history
     }
+
+    if (context.analysisErrors.length > 0) {
+      printErrors(moduleText, context)
+      // provisionally, continue on type & effects errors
+    }
+
+    out('\n') // be nice to external programs
+    state.defsHist = state.defsHist + '\n' + newInput // update the history
+
+    // Save compilation state
+    state.compilationState = context.compilationState
   }
 
   return true
@@ -598,13 +579,15 @@ ${textToAdd}
 function printErrorMessages(
   out: writer,
   kind: string,
-  text: string,
+  inputText: string,
+  moduleText: string,
   messages: ErrorMessage[],
   color: (_text: string) => string = chalk.red
 ) {
   // display the error messages and highlight the error places
-  const finder = lineColumn(text)
   messages.forEach(e => {
+    const text = e.locs[0].source === '<input>' ? inputText : moduleText
+    const finder = lineColumn(text)
     const msg = formatError(text, finder, e, none())
     out(color(`${kind}: ${msg}\n`))
   })
@@ -667,4 +650,55 @@ function countBraces(str: string): [number, number, number] {
   }
 
   return [nOpenBraces, nOpenParen, nOpenComments]
+}
+
+function evalExpr(
+  state: ReplState,
+  context: CompilationContext,
+  recorder: TraceRecorder,
+  out: writer
+): Either<string, QuintEx> {
+  loadVars(state, context)
+  loadShadowVars(state, context)
+  const computable = contextNameLookup(context, 'q::input', 'callable')
+  const columns = terminalWidth()
+  return computable
+    .mapRight(comp => {
+      return comp
+        .eval()
+        .map(value => {
+          const ex = value.toQuintEx(state.compilationState.idGen)
+          out(format(columns, 0, prettyQuintEx(ex)))
+          out('\n')
+
+          if (verbosity.hasUserOpTracking(state.verbosityLevel)) {
+            const trace = recorder.getBestTrace()
+            if (trace.subframes.length > 0) {
+              out('\n')
+              trace.subframes.forEach((f, i) => {
+                out(`[Frame ${i}]\n`)
+                printExecutionFrameRec({ width: columns, out }, f, [])
+                out('\n')
+              })
+            }
+          }
+
+          if (ex.kind === 'bool' && ex.value) {
+            // A Boolean expression may be an action or a run.
+            // Save the state, if there were any updates to variables.
+            saveVars(state, context).map(missing => {
+              if (missing.length > 0) {
+                out(chalk.yellow('[warning] some variables are undefined: ' + missing.join(', ') + '\n'))
+              }
+            })
+          }
+          // save shadow vars in any case, e.g., the example trace
+          saveShadowVars(state, context)
+
+          return right<string, QuintEx>(ex)
+        })
+        .or(just(left<string, QuintEx>('<undefined value>')))
+        .unwrap()
+    })
+    .join()
 }

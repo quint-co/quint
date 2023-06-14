@@ -13,21 +13,21 @@ import {
   ErrorMessage,
   Loc,
   fromIrErrorMessage,
-  parsePhase1fromText,
-  parsePhase2sourceResolution,
+  parse,
   parsePhase3importAndNameResolution,
 } from '../quintParserFrontend'
 import { Computable, ComputableKind, kindName } from './runtime'
 import { ExecutionListener } from './trace'
-import { QuintModule } from '../quintIr'
+import { FlatModule, QuintDef, QuintEx, QuintModule } from '../quintIr'
 import { CompilerVisitor } from './impl/compilerImpl'
 import { walkDefinition } from '../IRVisitor'
 import { LookupTable } from '../lookupTable'
-import { AnalysisOutput, analyzeModules } from '../quintAnalyzer'
+import { AnalysisOutput, analyzeInc, analyzeModules } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
-import { IdGenerator } from '../idGenerator'
-import { SourceLookupPath, fileSourceResolver } from '../sourceResolver'
+import { IdGenerator, newIdGenerator } from '../idGenerator'
+import { SourceLookupPath } from '../sourceResolver'
 import { flattenModules } from '../flattening'
+import { Rng } from '../rng'
 
 /**
  * The name of the shadow variable that stores the last found trace.
@@ -56,11 +56,38 @@ export interface CompilationContext {
   compileErrors: ErrorMessage[]
   // messages that get populated as the compiled code is executed
   getRuntimeErrors: () => ErrorMessage[]
-  // source mapping
-  sourceMap: Map<bigint, Loc>
+  compilationState: CompilationState
 }
 
-function errorContext(errors: ErrorMessage[]): CompilationContext {
+/**
+ * A data structure that holds the state of the compilation process.
+ */
+export interface CompilationState {
+  // The ID generator used during compilation.
+  idGen: IdGenerator
+  // A list of flattened modules.
+  modules: FlatModule[]
+  // The source map for the compiled code.
+  sourceMap: Map<bigint, Loc>
+  // The output of the Quint analyzer.
+  analysisOutput: AnalysisOutput
+}
+
+/* An empty initial compilation state */
+export function newCompilationState(): CompilationState {
+  return {
+    idGen: newIdGenerator(),
+    modules: [],
+    sourceMap: new Map(),
+    analysisOutput: {
+      types: new Map(),
+      effects: new Map(),
+      modes: new Map(),
+    },
+  }
+}
+
+export function errorContextFromMessage(errors: ErrorMessage[]): CompilationContext {
   return {
     lookupTable: new Map(),
     values: new Map(),
@@ -70,7 +97,7 @@ function errorContext(errors: ErrorMessage[]): CompilationContext {
     analysisErrors: [],
     compileErrors: [],
     getRuntimeErrors: () => [],
-    sourceMap: new Map(),
+    compilationState: newCompilationState(),
   }
 }
 
@@ -131,14 +158,13 @@ export function contextNameLookup(
  * @returns the compilation context
  */
 export function compile(
-  modules: QuintModule[],
-  sourceMap: Map<bigint, Loc>,
+  compilationState: CompilationState,
   lookupTable: LookupTable,
-  analysisOutput: AnalysisOutput,
   mainName: string,
   execListener: ExecutionListener,
   rand: (bound: bigint) => bigint
 ): CompilationContext {
+  const { modules, sourceMap, analysisOutput } = compilationState
   const main = modules.find(m => m.name === mainName)
 
   const visitor = new CompilerVisitor(lookupTable, analysisOutput.types, rand, execListener)
@@ -155,7 +181,7 @@ export function compile(
         },
       ]
   return {
-    main: main,
+    main,
     lookupTable,
     values: visitor.getContext(),
     vars: visitor.getVars(),
@@ -166,8 +192,39 @@ export function compile(
     getRuntimeErrors: () => {
       return visitor.getRuntimeErrors().splice(0).map(fromIrErrorMessage(sourceMap))
     },
-    sourceMap: sourceMap,
+    compilationState,
   }
+}
+
+export function compileExpr(state: CompilationState, rng: Rng, recorder: any, expr: QuintEx): CompilationContext {
+  // Create a definition to encapsulate the parsed expression.
+  const def: QuintDef = { kind: 'def', qualifier: 'action', name: 'q::input', expr, id: state.idGen.nextId() }
+
+  // Define a new module list with the new definition in the last module,
+  // ensuring the original object is not modified
+  const modules = [...state.modules]
+  const lastModule = modules.pop()
+  if (!lastModule) {
+    throw new Error('No modules in state')
+  }
+  modules.push({ ...lastModule, defs: [...lastModule.defs, def] })
+
+  // We need to resolve names for this new definition. Incremental name
+  // resolution is not our focus now, so just resolve everything again.
+  return parsePhase3importAndNameResolution({ modules, sourceMap: state.sourceMap })
+    .mapLeft(errorContextFromMessage)
+    .map(({ table }) => {
+      const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, def)
+
+      const temporaryState = { ...state, analysisOutput, modules }
+      const ctx = compile(temporaryState, table, lastModule?.name, recorder, rng.next)
+
+      const errorLocator = mkErrorMessage(state.sourceMap)
+      return {
+        ...ctx,
+        analysisErrors: Array.from(analysisErrors, errorLocator),
+      }
+    }).value // We produce a compilation context in any case
 }
 
 /**
@@ -192,18 +249,9 @@ export function compileFromCode(
 ): CompilationContext {
   // parse the module text
   return (
-    parsePhase1fromText(idGen, code, '<input>')
-      .chain(phase1Data => {
-        const resolver = fileSourceResolver()
-        return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
-      })
+    parse(idGen, '<module_input>', mainPath, code)
       // On errors, we'll produce the computational context up to this point
-      .mapLeft(errorContext)
-      .chain(d =>
-        parsePhase3importAndNameResolution(d)
-          // On errors, we'll produce the computational context up to this point
-          .mapLeft(errorContext)
-      )
+      .mapLeft(errorContextFromMessage)
       .chain(
         parseData => {
           const { modules, table, sourceMap } = parseData
@@ -216,16 +264,15 @@ export function compileFromCode(
             sourceMap,
             analysisOutput
           )
-
-          const ctx = compile(
-            flattenedModules,
+          const compilationState = {
+            modules: flattenedModules,
             sourceMap,
-            flattenedTable,
-            flattenedAnalysis,
-            mainName,
-            execListener,
-            rand
-          )
+            analysisOutput: flattenedAnalysis,
+            idGen,
+          }
+
+          const ctx = compile(compilationState, flattenedTable, mainName, execListener, rand)
+
           const errorLocator = mkErrorMessage(sourceMap)
           return right({
             ...ctx,
