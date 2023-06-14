@@ -26,7 +26,7 @@ import { AnalysisOutput, analyzeInc, analyzeModules } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
 import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { SourceLookupPath } from '../sourceResolver'
-import { buildFlatteningContext, flattenDef, flattenModules } from '../flattening'
+import { addDefToFlatModule, flattenModules } from '../flattening'
 import { Rng } from '../rng'
 
 /**
@@ -220,41 +220,27 @@ export function compileDef(state: CompilationState, rng: Rng, recorder: any, def
     .map(({ table }) => {
       const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, def)
 
-      const flatteningContext = buildFlatteningContext(
+      const { flattenedModule, flattenedTable, flattenedAnalysis } = addDefToFlatModule(
         lastModule,
         table,
         new Map(modules.map(m => [m.name, m])),
         state.idGen,
         state.sourceMap,
-        analysisOutput
+        analysisOutput,
+        def
       )
-      const flatDefs = flattenDef(flatteningContext, def)
-      const lastModuleFlat: FlatModule = { ...lastModule, defs: [...lastModule.defs, ...flatDefs] }
 
       const flatModules: FlatModule[] = [...state.modules]
       flatModules.pop()
-      flatModules.push(lastModuleFlat)
+      flatModules.push(flattenedModule)
 
-      // The lookup table has to be updated for every new module that is flattened
-      // Since the flattened modules have new ids for both the name expressions
-      // and their definitions, and the next iteration might depend on an updated
-      // lookup table
-      const newEntries = parsePhase3importAndNameResolution({ modules: [lastModuleFlat], sourceMap: state.sourceMap })
-        .mapLeft(errors => {
-          // This should not happen, as the flattening should not introduce any
-          // errors, since parsePhase3 analysis of the original modules has already
-          // assured all names are correct.
-          throw new Error(`Error on resolving names for flattened modules: ${errors.map(e => e.explanation)}`)
-        })
-        .unwrap().table
-
-      const newTable = new Map([...table.entries(), ...newEntries.entries()])
-      const temporaryState = { ...state, analysisOutput, modules: flatModules }
-      const ctx = compile(temporaryState, newTable, lastModule?.name, recorder, rng.next)
+      const newState = { ...state, analysisOutput: flattenedAnalysis, modules: flatModules }
+      const ctx = compile(newState, flattenedTable, lastModule?.name, recorder, rng.next)
 
       const errorLocator = mkErrorMessage(state.sourceMap)
       return {
         ...ctx,
+        compilationState: newState,
         analysisErrors: Array.from(analysisErrors, errorLocator),
       }
     }).value // We produce a compilation context in any case
