@@ -389,7 +389,7 @@ function loadFromFile(out: writer, state: ReplState, filename: string): boolean 
         return false
       }
 
-      // remove 'val __loaded = true' from the definiton history
+      // reset the definiton history to the one loaded from the file
       newState.defsHist = defsAndExprs[0]
 
       if (defsAndExprs.length > 1) {
