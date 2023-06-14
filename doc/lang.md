@@ -1252,7 +1252,7 @@ put(f, k, v)
 Rec(f_1, e_1, ..., f_n, e_n)
 // Set of records: [ f_1: S_1, ..., f_n: S_n ].
 // No operator for it. Use a set comprehension:
-tuples(S_1, ..., S_n).map(a_1, ..., a_n => { f_1: a_1, ..., f_n: a_n })
+tuples(S_1, ..., S_n).map((a_1, ..., a_n) => { f_1: a_1, ..., f_n: a_n })
 // access a record field: r.fld
 r.fld           // both r and fld are identifiers
 field(r, "fld") // r is an identifier, "fld" is a string literal
