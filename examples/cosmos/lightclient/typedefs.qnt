@@ -1,19 +1,16 @@
 module typedefs {
 
-    // uninterpreted type literals aren't supported, so we use int for now.
-    type NODE = int
-
     type BlockHeader = {
         height: int,
         time: int,
-        lastCommit: Set[NODE],
-        VS: Set[NODE],
-        NextVS: Set[NODE]
+        lastCommit: Set[str],
+        VS: Set[str],
+        NextVS: Set[str]
     }
 
     type LightBlock = {
         header: BlockHeader,
-        Commits: Set[NODE]
+        Commits: Set[str]
     }
 
     type Blockchain = int -> blockHeader

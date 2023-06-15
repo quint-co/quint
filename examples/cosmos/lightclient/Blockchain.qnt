@@ -12,7 +12,7 @@ module Blockchain {
     import typedefs.* from "./typedefs"
 
     // a set of all nodes that can act as validators (correct and faulty)
-    const AllNodes: Set[NODE]
+    const AllNodes: Set[str]
     // the maximal height that can be ever reached (modelling artifact)
     const ULTIMATE_HEIGHT: int
     // the period within which the validators are trusted
@@ -24,37 +24,6 @@ module Blockchain {
     // A commit is just a set of nodes who have committed the block
     pure def Commits = powerset(AllNodes)
 
-    // The set of all block headers that can be on the blockchain.
-    // This is a simplified version of the Block data structure in the
-    // actual implementation.
-    pure def BlockHeaders = 
-        tuples(Heights, Int, Commits, powerset(AllNodes), powerset(AllNodes)).map((
-            // the block height
-            height,
-            // the block timestamp in some integer units
-            time,
-            // the nodes who have voted on the previous block, the set itself
-            // instead of a hash in the implementation, only the hashes of
-            // V and NextV are stored in a block, as V and NextV are stored
-            // in the application state
-            lastCommit,
-            // the validators of this bloc. We store the validators instead of the hash
-            VS,
-            // the validators of the next block.
-            // We store the next validators instead of the hash.
-            NextVS) => { 
-                height: height, 
-                time: time,
-                lastCommit: lastCommit,
-                VS: VS,
-                NextVS: NextVS
-            }
-        )
-
-    // A signed header is just a header together with a set of commits 
-    pure def LightBlocks = tuples(BlockHeaders, Commits).map((header, commits) => {header: header, Commits: commits})
-
-
     // Current global time in integer units as perceived by the reference chain
     var refClock: int
     // A function of heights to BlockHeaders,
@@ -63,7 +32,7 @@ module Blockchain {
     // A set of faulty nodes, which can act as validators.
     // We assume that the set of faulty processes is non-decreasing.
     // If a process has recovered, it should connect using a different id.
-    var Faulty: Set[NODE]
+    var Faulty: Set[str]
 
 
     // The set of all correct nodes in a state
@@ -75,10 +44,9 @@ module Blockchain {
     // the header is still within the trusting period
     def InTrustingPeriod(header: BlockHeader): bool = refClock < header.time + TRUSTING_PERIOD
     
-    //  Given a function pVotingPower \in D -> Powers for some D \subseteq AllNodes
-    //  and pNodes \subseteq D, test whether the set pNodes \subseteq AllNodes has
-    //  more than 2/3 of voting power among the nodes in D.
-    pure def TwoThirds(pVS: Set[NODE], pNodes: Set[NODE]): bool = {
+    //  Test whether the set pNodes, a subset of AllNodes, has
+    //  more than 2/3 of voting power among the nodes.
+    pure def TwoThirds(pVS: Set[str], pNodes: Set[str]): bool = {
         val TP = size(pVS)
         val SP = size(pVS.intersect(pNodes))
         // when thinking in real numbers, not integers: SP > 2.0 / 3.0 * TP 
@@ -92,7 +60,7 @@ module Blockchain {
     //    - pVS is a set of all validators, maybe including Faulty, intersecting with it, etc.
     //    - pMaxFaultRatio is a pair (a, b) that limits the ratio a / b of the faulty
     //      validators from above (exclusive)
-    pure def FaultyValidatorsFewerThan(pFaultyNodes: Set[NODE], pVS: Set[NODE], maxRatio: (int, int)): bool = {
+    pure def FaultyValidatorsFewerThan(pFaultyNodes: Set[str], pVS: Set[str], maxRatio: (int, int)): bool = {
         val FN = pFaultyNodes.intersect(pVS)    // faulty nodes in pNodes
         val CN = pVS.exclude(pFaultyNodes)      // correct nodes in pNodes
         val CP = size(CN)                       // power of the correct nodes
