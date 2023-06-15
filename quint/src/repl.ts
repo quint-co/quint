@@ -572,7 +572,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     const context = compileExpr(state.compilationState, rng, recorder, parseResult.expr)
 
     if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
-      printErrors(out, newInput, context, newInput)
+      printErrors(out, moduleText, context, newInput)
       if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
         return false
       } // else: provisionally, continue on type & effects errors
