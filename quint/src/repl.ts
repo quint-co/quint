@@ -486,8 +486,8 @@ function loadShadowVars(state: ReplState, context: CompilationContext): void {
 function simulatorBuiltins(compilationState: CompilationState): FlatDef[] {
   return [
     parseDefOrThrow(compilationState, `val ${lastTraceName} = []`),
-    parseDefOrThrow(compilationState, `def q::test(q::nruns, q::nsteps, q::init, q::next, q::inv) = false`),
-    parseDefOrThrow(compilationState, `def q::testOnce(q::nsteps, q::init, q::next, q::inv) = false`),
+    parseDefOrThrow(compilationState, `def q::test = (q::nruns, q::nsteps, q::init, q::next, q::inv) => false`),
+    parseDefOrThrow(compilationState, `def q::testOnce = (q::nsteps, q::init, q::next, q::inv) => false`),
   ]
 }
 
@@ -500,45 +500,36 @@ function parseDefOrThrow(compilationState: CompilationState, text: string): Flat
   }
 }
 
-// Compose the input to the parser.
-// TODO: REPL should work incrementally:
-// https://github.com/informalsystems/quint/issues/618
-function prepareParserInput(state: ReplState, textToAdd: string): string {
+// Compose the text input. This is not evaluated, it's only used to
+// report errors, as the error locs are relative to the input.
+function prepareModulesText(state: ReplState, textToAdd: string): string {
   return `${state.moduleHist}
 module __repl__ {
-${simulatorBuiltins(state.compilationState)
-  .map(def => definitionToString(def))
-  .join('\n')}
 ${state.defsHist}
 ${textToAdd}
 }`
 }
 
-// output errors to the console in red
-function printErrors(out: writer, moduleText: string, context: CompilationContext, newInput: string = '') {
-  printErrorMessages(out, 'syntax error', newInput, moduleText, context.syntaxErrors)
-  printErrorMessages(out, 'static analysis error', newInput, moduleText, context.analysisErrors, chalk.yellow)
-  printErrorMessages(out, 'compile error', moduleText, newInput, context.compileErrors)
-  out('\n') // be nice to external programs
-}
-
 function tryEvalHistory(out: writer, state: ReplState): boolean {
-  const moduleText = prepareParserInput(state, '')
+  if (state.defsHist === '') {
+    state.defsHist = simulatorBuiltins(state.compilationState)
+      .map(def => definitionToString(def))
+      .join('\n')
+  }
+  const modulesText = prepareModulesText(state, '')
   const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
   const rng = newRng(state.seed)
 
-  const context = compileFromCode(newIdGenerator(), moduleText, '__repl__', mainPath, noExecutionListener, rng.next)
+  const context = compileFromCode(newIdGenerator(), modulesText, '__repl__', mainPath, noExecutionListener, rng.next)
   if (context.values.size === 0 || context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
-    printErrors(out, moduleText, context)
+    printErrors(out, state, context)
     return false
   }
 
   if (context.analysisErrors.length > 0) {
-    printErrors(out, moduleText, context)
+    printErrors(out, state, context)
     // provisionally, continue on type & effects errors
   }
-
-  // out('\n') // be nice to external programs
 
   // Save compilation state
   state.compilationState = context.compilationState
@@ -554,9 +545,8 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     state.compilationState.idGen,
     state.compilationState.sourceMap
   )
-  const moduleText = prepareParserInput(state, newInput)
   if (parseResult.kind === 'error') {
-    printErrorMessages(out, 'syntax error', newInput, moduleText, parseResult.messages)
+    printErrorMessages(out, state, 'syntax error', newInput, parseResult.messages)
     out('\n') // be nice to external programs
     return false
   }
@@ -572,7 +562,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     const context = compileExpr(state.compilationState, rng, recorder, parseResult.expr)
 
     if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
-      printErrors(out, moduleText, context, newInput)
+      printErrors(out, state, context, newInput)
       if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0) {
         return false
       } // else: provisionally, continue on type & effects errors
@@ -584,7 +574,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     return evalExpr(state, context, recorder, out)
       .mapLeft(msg => {
         // when #618 is implemented, we should remove this
-        printErrorMessages(out, 'runtime error', newInput, moduleText, context.getRuntimeErrors())
+        printErrorMessages(out, state, 'runtime error', newInput, context.getRuntimeErrors())
         // print the error message produced by the lookup
         out(chalk.red(msg))
         out('\n') // be nice to external programs
@@ -597,12 +587,12 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     const context = compileDef(state.compilationState, rng, noExecutionListener, parseResult.def)
 
     if (context.values.size === 0 || context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
-      printErrors(out, moduleText, context, newInput)
+      printErrors(out, state, context, newInput)
       return false
     }
 
     if (context.analysisErrors.length > 0) {
-      printErrors(out, moduleText, context, newInput)
+      printErrors(out, state, context, newInput)
       // provisionally, continue on type & effects errors
     }
 
@@ -616,18 +606,27 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   return true
 }
 
+// output errors to the console in red
+function printErrors(out: writer, state: ReplState, context: CompilationContext, newInput: string = '') {
+  printErrorMessages(out, state, 'syntax error', newInput, context.syntaxErrors)
+  printErrorMessages(out, state, 'static analysis error', newInput, context.analysisErrors, chalk.yellow)
+  printErrorMessages(out, state, 'compile error', newInput, context.compileErrors)
+  out('\n') // be nice to external programs
+}
+
 // print error messages with proper colors
 function printErrorMessages(
   out: writer,
+  state: ReplState,
   kind: string,
   inputText: string,
-  moduleText: string,
   messages: ErrorMessage[],
   color: (_text: string) => string = chalk.red
 ) {
+  const modulesText = prepareModulesText(state, inputText)
   // display the error messages and highlight the error places
   messages.forEach(e => {
-    const text = e.locs[0].source === '<input>' ? inputText : moduleText
+    const text = e.locs[0].source === '<input>' ? inputText : modulesText
     const finder = lineColumn(text)
     const msg = formatError(text, finder, e, none())
     out(color(`${kind}: ${msg}\n`))
