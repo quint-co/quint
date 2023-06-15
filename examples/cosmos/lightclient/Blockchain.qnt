@@ -1,3 +1,4 @@
+// -*- mode: Bluespec; -*-
 //   This is a high-level specification of Tendermint blockchain
 //   that is designed specifically for the light client.
 //   Validators have the voting power of one. If you like to model various
@@ -54,7 +55,6 @@ module Blockchain {
     pure def LightBlocks = tuples(BlockHeaders, Commits).map((header, commits) => {header: header, Commits: commits})
 
 
-    // VARIABLES
     // Current global time in integer units as perceived by the reference chain
     var refClock: int
     // A function of heights to BlockHeaders,
@@ -90,7 +90,7 @@ module Blockchain {
     //  Parameters:
     //    - pFaultyNodes is a set of nodes that are considered faulty
     //    - pVS is a set of all validators, maybe including Faulty, intersecting with it, etc.
-    //    - pMaxFaultRatio is a pair <<a, b>> that limits the ratio a / b of the faulty
+    //    - pMaxFaultRatio is a pair (a, b) that limits the ratio a / b of the faulty
     //      validators from above (exclusive)
     pure def FaultyValidatorsFewerThan(pFaultyNodes: Set[NODE], pVS: Set[NODE], maxRatio: (int, int)): bool = {
         val FN = pFaultyNodes.intersect(pVS)    // faulty nodes in pNodes
@@ -115,7 +115,7 @@ module Blockchain {
     //  Initialize the blockchain to the ultimate height right in the initial states.
     //  We pick the faulty validators statically, but that should not affect the light client.
     //  Parameters:
-    //     - pMaxFaultyRatioExclusive is a pair <<a, b>> that bound the number of
+    //     - pMaxFaultyRatioExclusive is a pair (a, b) that bound the number of
     //         faulty validators in each block by the ratio a / b (exclusive)
     action InitToHeight(pMaxFaultyRatioExclusive: (int, int)): bool = {
         // some nodes may fail
