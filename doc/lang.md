@@ -2097,7 +2097,7 @@ module Bar {
 module Foo {
   import Bar(c = 0) as FooBar
   
-  // reexport all constants from `FooBar` as if they belonged to `Foo`
+  // reexport all definitions from `FooBar` as if they belonged to `Foo`
   export FooBar.*
 }
 ```
