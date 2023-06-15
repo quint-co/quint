@@ -94,6 +94,7 @@ module Blockchain {
         nondet timestamp = oneOf(setOfMaps(Heights, Int))
         nondet refClockInit = oneOf(Int)
         all {
+            Faulty' = initFaulty,
             // refClock is at least as early as the timestamp in the last block 
             refClockInit >= timestamp.get(ULTIMATE_HEIGHT),
             refClock' = refClockInit,
@@ -105,7 +106,7 @@ module Blockchain {
                 lastCommit.get(h).subseteq(vs.get(h-1)), // the non-validators cannot commit 
                 TwoThirds(vs.get(h - 1), lastCommit.get(h)), // the commit has >2/3 of validator votes
                 // the faulty validators have the power below the threshold
-                FaultyValidatorsFewerThan(Faulty, vs.get(h), pMaxFaultyRatioExclusive),
+                FaultyValidatorsFewerThan(initFaulty, vs.get(h), pMaxFaultyRatioExclusive),
                 timestamp.get(h) > timestamp.get(h-1),                  // the time grows monotonically
                 timestamp.get(h) < timestamp.get(h-1) + TRUSTING_PERIOD // but not too fast
             }),
