@@ -240,17 +240,9 @@ This is intentional: We do not want to mix actions with temporal formulas.
 A module definition is introduced like follows:
 
 ```
+// module definition
 module Foo {
-  // module definitions
-
-  module Bar {
-    // definitions of the nested module
-
-    module Baz {
-      // Yet another level of nesting.
-      // More definitions.
-    }
-  }
+  // declarations
 }
 ```
 
@@ -262,18 +254,15 @@ module Foo {
 "}"
 ```
 
-A single file *should* contain one top-level module, though there is no limit
-on the number of nested modules and their depth of nesting. To ease module
-lookup, the name of the top-level module *should* match the file name. For
-example, a file `Orange.tla` should contain `module Orange { ... }`. This is
-not a strict requirement. You have to follow it only, if you are using multiple
-files.
+A single file *should* contain one top-level module, though there is no limit on
+the number of top-level modules that can be included in a file. Modules cannot
+be nested.  To ease module lookup, the name of the top-level module *should*
+match the file name. For example, a file `Orange.tla` should contain `module
+Orange { ... }`.  This is not a strict requirement. You have to follow it only,
+if you are using multiple modules in a file.
 
-There is another way to define a module, see [Instances](#instances).
-
-**WARNING:** We are redesigning nested modules,
-see [#496](https://github.com/informalsystems/quint/discussions/496). If you are
-starting with the language, wait a bit before using nested modules.
+There is a way to instantiate modules with different parameters, see
+[Instances](#instances).
 
 ### Constant declarations
 
@@ -2046,144 +2035,38 @@ operators quantify over the constants of the first-order universe.
 [#528](https://github.com/informalsystems/quint/issues/528) and
 [#237](https://github.com/informalsystems/quint/issues/237).
 
-Given a stateful module `M`, we can turn `M` into another module `I`
-by rewriting constants and variables of `M`. In this case, module `I` is called
-an instance of `M`.
+Given a stateful module `M`, we can turn `M` into another module `I` by
+rewriting constants `M` and generating new, namespaced variables. In this case,
+module `I` is called an instance of `M`.
 
-### Common case 1
+### Common case
 
 The most common example is shown below:
 
-```scala
-// in Voting.qnt
-  module Voting {
-    const Value: Set[int]
-    const Acceptor: Set[str]
-    const Quorum: Set[Set[str]]
-    // no const, no var below
-    // ...
-    val chosen = Value.filter(v => Ballot exists (b => ChosenAt(b, v)))
-    // ...
-  }
+```bluespec
+module Voting {
+  const Value: Set[int]
+  const Acceptor: Set[str]
+  const Quorum: Set[Set[str]]
+  // no const, no var below
+  // ...
+  val chosen = Value.filter(v => Ballot.exists(b => ChosenAt(b, v)))
+  // ...
+}
 
-// in MC.qnt
-  module MC {
-    val Acceptor = Set("p1", "p2", "p3")
-    val Quorum = MC_Acceptor.powerset.filter(Q => Q.size > 1)
+module MC {
+  val Acceptor = Set("p1", "p2", "p3")
+  val Quorum = Acceptor.powerset.filter(Q => Q.size > 1)
 
-    // an instance of Voting that has the name "V"
-    module V = Voting(Value = Set(0, 1), Acceptor = Acceptor, Quorum = Quorum)
-    // ...
-  }
+  // an new instance of Voting that has the name "V"
+  import Voting(Value = Set(0, 1), Acceptor = Acceptor, Quorum = Quorum) as V
+  // ...
+}
 ```
 
 In the above example, module `V` is produced from the module `Voting` by replacing
 every occurrence of `Value`, `Acceptor`, and `Quorum` with `Set(0, 1)`, `Acceptor`,
 and `Quorum`, respectively.
-
-We can shorten identity substitutions `Acceptor = Acceptor` and `Quorum =
-Quorum` by writing:
-
-```scala
-    module V = Voting(Value = Set(0, 1), *)
-```
-
-### Common case 2
-
-Another common example is to rename variables:
-
-```scala
-module root {
-  module XY {
-    var x: int
-    var y: int
-
-    action Init = all {
-      x' = 0,
-      y' = 0
-    }
-
-    action Next = all {
-      x' = x + 1,
-      y' = y + 2
-    }
-  }
-
-  var a: int
-  var b: int
-
-  module AB = XY(x = a, y = b)
-}
-```
-
-In this case, our substitution is a bijection: No two variables are mapped on
-the same variable. Hence, the module `AB` will look like follows:
-
-```scala
-  module AB = {
-    action Init = all {
-      a' = 0,
-      b' = 0
-    }
-
-    action Next = all {
-      a' = a + 1,
-      b' = b + 2
-    }
-  }
-```
-
-### The general case
-
-We may instantiate a module by substituting *state variables* with expressions
-over other variables. Consider the following example:
-
-```scala
-module root {
-  module Counters {
-    var x: int
-    var y: int
-
-    action Init = all {
-      x' = 1,
-      y' = 0
-    }
-
-    action Next = all {
-      x' = x + 1,
-      y' = x
-    }
-  }
-
-  module MyCounters {
-    var x: int
-
-    module C = Counters(x = x, y = x - 1)
-  }
-}
-```
-
-In the above example, we produce the stateless module `C` from the stateful
-module `Counters` by replacing `x` with `x` and `y` with `x - 1`. How is that
-even possible in the presence of updates? Here is how `module C` would look
-like after instantiation:
-
-```scala
-module C = {
-  temporal Init =
-    (x == 1) and (x - 1 == 0)
-
-  temporal Next =
-    (next(x) == x + 1) and (next(x - 1) == x)
-}
-```
-
-The trick here is that since an expression like `x - 1 = x` does not have
-meaningful semantics, we upgrade all actions to temporal formulas and use
-`next(e1) = e2` instead of `e1 = e2`. At this point, we are in the realm of
-expressions that look very much like TLA+ formulas, just using a slightly
-different syntax. Most likely, we just want to get `C` transpiled into TLA+ and
-write some proofs in TLAPS.
 
 ### No anonymous instances
 
@@ -2203,28 +2086,24 @@ INSTANCE Bar WITH x = z
 ```
 
 Quint does not provide syntax sugar for doing that. If you want to achieve
-something similar in Quint, then you can use `import` as follows:
+something similar in Quint, then you can use `export` as follows:
 
-```scala
-// Bar.qnt
+```bluespec
 module Bar {
-  var x: int
-  def A(y) = x + y
+  const c: int
+  def A(y) = c + y
 }
 
-// Foo.qnt
 module Foo {
-  var z: int
-
-  module _FooBar = Bar(x = z)
-  import _FooBar.*
+  import Bar(c = 0) as FooBar
+  
+  // reexport all constants from `FooBar` as if they belonged to `Foo`
+  export FooBar.*
 }
 ```
 
 Our solution is not exactly equivalent to the TLA+ specification: We had to
-explicitly introduce the name `_FooBar` for the module. By convention, other
-modules should not access names that start with underscore (`_`). Should this
-happen, a Quint parser may issue a warning.
+explicitly introduce the name `FooBar` for the module.
 
 ### Discussion
 
