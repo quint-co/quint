@@ -126,6 +126,10 @@ export function quintRepl(
     const state = newCompilationState()
     return { ...state, modules: [{ name: '__repl__', defs: simulatorBuiltins(state), id: 0n }] }
   }
+
+  // Add the builtins to the text history as well
+  state.defsHist = state.compilationState.modules[0].defs.map(def => definitionToString(def)).join('\n')
+
   tryEvalHistory(out, state)
   // we let the user type a multiline string, which is collected here:
   let multilineText = ''
@@ -511,11 +515,6 @@ ${textToAdd}
 }
 
 function tryEvalHistory(out: writer, state: ReplState): boolean {
-  if (state.defsHist === '') {
-    state.defsHist = simulatorBuiltins(state.compilationState)
-      .map(def => definitionToString(def))
-      .join('\n')
-  }
   const modulesText = prepareModulesText(state, '')
   const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
   const rng = newRng(state.seed)
