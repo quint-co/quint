@@ -221,12 +221,12 @@ export function compileDef(state: CompilationState, rng: Rng, recorder: any, def
       const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, def)
 
       const { flattenedModule, flattenedTable, flattenedAnalysis } = addDefToFlatModule(
-        lastModule,
+        modules,
         table,
-        new Map(modules.map(m => [m.name, m])),
         state.idGen,
         state.sourceMap,
         analysisOutput,
+        lastModule,
         def
       )
 

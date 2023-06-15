@@ -92,15 +92,33 @@ export function flattenModules(
   )
 }
 
+/**
+ * Adds a definition to a flat module, flattening any instances, imports and
+ * exports in the process. Note that the provided parameters should include
+ * information for the new definition already, i.e. the lookup table should
+ * already contain all the references for names in the definition.
+ *
+ * @param modules The modules possibly reffered by the definition
+ * @param table The lookup table to for all referred names
+ * @param idGenerator The id generator to use for new definitions
+ * @param sourceMap The source map for all modules involved
+ * @param analysisOutput The analysis output for all modules involved
+ * @param module The flat module to add the definition to
+ * @param def The definition to add
+ *
+ * @returns An object containing the flattened module, flattened lookup table
+ * and flattened analysis output
+ */
 export function addDefToFlatModule(
-  module: FlatModule,
+  modules: QuintModule[],
   table: LookupTable,
-  importedModules: Map<string, QuintModule>,
   idGenerator: IdGenerator,
   sourceMap: Map<bigint, Loc>,
   analysisOutput: AnalysisOutput,
+  module: FlatModule,
   def: QuintDef
 ): { flattenedModule: FlatModule; flattenedTable: LookupTable; flattenedAnalysis: AnalysisOutput } {
+  const importedModules = new Map(modules.map(m => [m.name, m]))
   const flattener = new Flatenner(idGenerator, table, sourceMap, analysisOutput, importedModules, module)
 
   const flattenedDefs = flattener.flattenDef(def)
