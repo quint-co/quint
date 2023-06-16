@@ -12,6 +12,10 @@ shopt -s globstar
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd "$SCRIPT_DIR"
 
+export APALACHE_DIST=../quint/_build/apalache
+# Start the apalache server
+"$APALACHE_DIST"/bin/apalache-mc server &> /dev/null &
+
 # We recursively glob all the .qnt files, and run ./run-example.sh on each.
 #
 # Since the output of each run is a row in the README.md table,

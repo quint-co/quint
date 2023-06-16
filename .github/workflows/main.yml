@@ -140,8 +140,6 @@ jobs:
           GH_TOKEN: ${{ github.token }}
       - name: Ensure the examples dashboard is up to date
         run: |
-          # Start the server
-          quint/_build/apalache/bin/apalache-mc server &
           # Update the examples dashboard
           make examples
           # Check that it is up to date
