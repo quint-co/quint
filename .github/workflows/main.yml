@@ -114,6 +114,38 @@ jobs:
         # See https://github.com/anko/txm/issues/10
         if: matrix.operating-system != 'windows-latest'
 
+  quint-examples-dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "17"
+      - run: cd ./quint && npm ci
+      - run: cd ./quint && npm run compile && npm link
+      - name: Ensure all dependencies are specified
+        # Since txm may install additional deps, we ensure that
+        # we can run quint based on its package manifest
+        run: quint --version
+      - run: npm install -g txm
+      - uses: actions/setup-java@v3
+        with:
+          distribution: "temurin" # See 'Supported distributions' for available options
+          java-version: "19"
+      - name: Set up apalache and run the server
+        run: |
+          # Fetch the latest apalache release
+          make apalache
+          # Start the server
+          quint/_build/apalache/bin/apalache-mc server &
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Ensure the examples dashboard is up to date
+        run: |
+          make examples
+          git diff --exit-code \
+            || ( echo ">>> ERROR: Examples dashboard is out of sync. Fix examples or run 'make examples'" &&  exit 1)
+
   quint-antlr-grammar:
     runs-on: ubuntu-latest
     steps:
