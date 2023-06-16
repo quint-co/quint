@@ -51,7 +51,7 @@ module denomTrace {
 
   /// `channelNamesUniquePerChain` is true iff channel names are unique by chain
   pure def channelNamesUniquePerChain(topology: ChannelTopology): bool =
-    pure val chainNames = Set("A", "B", "C") // should be topology.keys(), but that's breaking the effect checker somehow (see issue #808)
+    pure val chainNames = topology.keys()
     and {
       // Check the domain for the second level of chains
       chainNames.forall(chain => topology.get(chain).keys() == chainNames),

@@ -248,7 +248,7 @@ function paramEntitiesByEffect(effect: ArrowEffect): Map<ComponentKind, Entity[]
       case 'concrete': {
         p.components.forEach(c => {
           const existing = entitiesByComponentKind.get(c.kind) || []
-          entitiesByComponentKind.set(c.kind, existing.concat(c.entity))
+          entitiesByComponentKind.set(c.kind, concatEntity(existing, c.entity))
         })
         break
       }
@@ -256,12 +256,12 @@ function paramEntitiesByEffect(effect: ArrowEffect): Map<ComponentKind, Entity[]
         const nested = paramEntitiesByEffect(p)
         nested.forEach((entities, kind) => {
           const existing = entitiesByComponentKind.get(kind) || []
-          entitiesByComponentKind.set(kind, existing.concat(entities))
+          entitiesByComponentKind.set(kind, entities.reduce(concatEntity, existing))
         })
         if (p.result.kind === 'concrete') {
           p.result.components.forEach(c => {
             const existing = entitiesByComponentKind.get(c.kind) || []
-            entitiesByComponentKind.set(c.kind, existing.concat(c.entity))
+            entitiesByComponentKind.set(c.kind, concatEntity(existing, c.entity))
           })
         }
       }
@@ -269,6 +269,16 @@ function paramEntitiesByEffect(effect: ArrowEffect): Map<ComponentKind, Entity[]
   })
 
   return entitiesByComponentKind
+}
+
+function concatEntity(list: Entity[], entity: Entity): Entity[] {
+  switch (entity.kind) {
+    case 'union':
+      return entity.entities.reduce(concatEntity, list)
+    case 'concrete':
+    case 'variable':
+      return list.concat(entity)
+  }
 }
 
 const modeOrder = ['pureval', 'puredef', 'val', 'def', 'nondet', 'action', 'temporal', 'run']
