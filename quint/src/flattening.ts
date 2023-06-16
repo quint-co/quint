@@ -47,7 +47,7 @@ interface FlatteningContext {
  *
  * @param modules The modules to flatten
  * @param table The lookup table to for all referred names
- * @param idGenerator The id generator to use for new definitions
+ * @param idGenerator The id generator to use for new definitions; should be the same as used for parsing
  * @param sourceMap The source map for all modules involved
  * @param analysisOutput The analysis output for all modules involved
  *

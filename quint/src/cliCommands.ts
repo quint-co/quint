@@ -554,7 +554,28 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
   const args = verifying.args
   // TODO error handing for file reads and deserde
   const loadedConfig = args.apalacheConfig ? JSON.parse(readFileSync(args.apalacheConfig, 'utf-8')) : {}
-  const parsedSpec = jsonStringOfOutputStage(pickOutputStage(prev))
+
+  // Flatten modules, replacing instances, imports and exports with their definitions
+  const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
+    verifying.modules,
+    verifying.table,
+    verifying.idGen,
+    verifying.sourceMap,
+    verifying
+  )
+
+  // Pick main module, we only pass this on to Apalache
+  const mainArg = prev.args.main
+  const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
+  const main = flattenedModules.find(m => m.name === mainName)
+
+  if (!main) {
+    return cliErr(`module ${mainName} does not exist`, { ...verifying, errors: [], sourceCode: '' })
+  }
+
+  const veryfiyingFlat = { ...verifying, ...flattenedAnalysis, modules: [main], table: flattenedTable }
+  const parsedSpec = jsonStringOfOutputStage(pickOutputStage(veryfiyingFlat))
+
   // We need to insert the data form CLI args into thier appropriate locations
   // in the Apalache config
   const config = {
