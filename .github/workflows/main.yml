@@ -132,17 +132,19 @@ jobs:
         with:
           distribution: "temurin" # See 'Supported distributions' for available options
           java-version: "19"
-      - name: Set up apalache and run the server
+      - name: Set up apalache
         run: |
           # Fetch the latest apalache release
           make apalache
-          # Start the server
-          quint/_build/apalache/bin/apalache-mc server &
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Ensure the examples dashboard is up to date
         run: |
+          # Start the server
+          quint/_build/apalache/bin/apalache-mc server &
+          # Update the examples dashboard
           make examples
+          # Check that it is up to date
           git diff --exit-code \
             || ( echo ">>> ERROR: Examples dashboard is out of sync. Fix examples or run 'make examples'" &&  exit 1)
 
