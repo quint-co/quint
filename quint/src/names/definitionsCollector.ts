@@ -14,7 +14,7 @@
  * @module
  */
 
-import { IRVisitor, walkModule } from './IRVisitor'
+import { IRVisitor, walkModule } from '../IRVisitor'
 import {
   DefinitionsByName,
   ValueDefinition,
@@ -32,8 +32,8 @@ import {
   QuintOpDef,
   QuintTypeDef,
   QuintVar,
-} from './quintIr'
-import { QuintType } from './quintTypes'
+} from '../quintIr'
+import { QuintType } from '../quintTypes'
 
 /**
  * Built-in name definitions that are always included in definitions collection

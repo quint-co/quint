@@ -19,7 +19,7 @@ import { QuintConstType, QuintType, Row, rowNames, typeNames } from '../quintTyp
 import { Constraint } from './base'
 import { Substitutions, applySubstitution, applySubstitutionToConstraint, compose } from './substitutions'
 import { unzip } from 'lodash'
-import { LookupTable } from '../lookupTable'
+import { LookupTable } from '../names/lookupTable'
 
 /*
  * Try to solve a constraint by unifying all pairs of types in equality

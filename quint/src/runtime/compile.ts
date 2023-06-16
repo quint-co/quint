@@ -15,17 +15,17 @@ import {
   fromIrErrorMessage,
   parse,
   parsePhase3importAndNameResolution,
-} from '../quintParserFrontend'
+} from '../parsing/quintParserFrontend'
 import { Computable, ComputableKind, kindName } from './runtime'
 import { ExecutionListener } from './trace'
 import { FlatModule, QuintDef, QuintEx, QuintModule } from '../quintIr'
 import { CompilerVisitor } from './impl/compilerImpl'
 import { walkDefinition } from '../IRVisitor'
-import { LookupTable } from '../lookupTable'
+import { LookupTable } from '../names/lookupTable'
 import { AnalysisOutput, analyzeInc, analyzeModules } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
 import { IdGenerator, newIdGenerator } from '../idGenerator'
-import { SourceLookupPath } from '../sourceResolver'
+import { SourceLookupPath } from '../parsing/sourceResolver'
 import { addDefToFlatModule, flattenModules } from '../flattening'
 import { Rng } from '../rng'
 

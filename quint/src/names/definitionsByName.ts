@@ -1,4 +1,4 @@
-import { QuintType } from './quintTypes'
+import { QuintType } from '../quintTypes'
 import { ScopeTree, filterScope, scopesForId } from './scoping'
 
 /**

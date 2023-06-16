@@ -1,5 +1,5 @@
 import { ValueDefinitionKind } from './definitionsByName'
-import { QuintType } from './quintTypes'
+import { QuintType } from '../quintTypes'
 
 /**
  * Information stored for each id in the lookup table

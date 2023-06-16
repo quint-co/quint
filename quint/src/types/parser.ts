@@ -15,7 +15,7 @@
 import { QuintLexer } from '../generated/QuintLexer'
 import * as p from '../generated/QuintParser'
 import { QuintListener } from '../generated/QuintListener'
-import { ToIrListener } from '../ToIrListener'
+import { ToIrListener } from '../parsing/ToIrListener'
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 import { CharStreams, CommonTokenStream } from 'antlr4ts'
 import { QuintType, Row } from '../quintTypes'

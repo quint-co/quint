@@ -12,7 +12,7 @@
  * @module
  */
 
-import { LookupTable } from './lookupTable'
+import { LookupTable } from './names/lookupTable'
 import { OpQualifier, QuintDef, QuintModule } from './quintIr'
 import { TypeScheme } from './types/base'
 import { TypeInferrer } from './types/inferrer'

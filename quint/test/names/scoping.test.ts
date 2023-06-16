@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { buildModuleWithDefs } from './builders/ir'
-import { scopesForId, treeFromModule } from '../src/scoping'
+import { buildModuleWithDefs } from '../builders/ir'
+import { scopesForId, treeFromModule } from '../../src/names/scoping'
 
 describe('scopesForId', () => {
   const tree = {

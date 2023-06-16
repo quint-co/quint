@@ -1,9 +1,9 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { TypeDefinition, ValueDefinition, newTable } from '../src/definitionsByName'
-import { ConflictSource, scanConflicts } from '../src/definitionsScanner'
-import { ScopeTree } from '../src/scoping'
-import { QuintType } from '../src/quintTypes'
+import { TypeDefinition, ValueDefinition, newTable } from '../../src/names/definitionsByName'
+import { ConflictSource, scanConflicts } from '../../src/names/definitionsScanner'
+import { ScopeTree } from '../../src/names/scoping'
+import { QuintType } from '../../src/quintTypes'
 
 describe('scanConflicts', () => {
   const myType: QuintType = { id: 100n, kind: 'int' }

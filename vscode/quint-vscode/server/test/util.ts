@@ -15,9 +15,9 @@
 import {
   Loc, LookupTable, QuintModule, newIdGenerator, parsePhase1fromText,
   parsePhase2sourceResolution,
-  parsePhase3importAndNameResolution
+  parsePhase3importAndNameResolution,
+  stringSourceResolver
 } from "@informalsystems/quint"
-import { stringSourceResolver } from "@informalsystems/quint/dist/src/sourceResolver"
 
 /**
  * Parses a mocked module and returns the result of the parsing phases, or

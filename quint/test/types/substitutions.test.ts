@@ -5,7 +5,7 @@ import { Substitutions, applySubstitution, applySubstitutionToConstraint, compos
 import { Constraint } from '../../src/types/base'
 import { constraintToString } from '../../src/types/printing'
 import { Row } from '../../src'
-import { LookupTable } from '../../src/lookupTable'
+import { LookupTable } from '../../src/names/lookupTable'
 
 const table: LookupTable = new Map()
 

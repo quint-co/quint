@@ -11,13 +11,13 @@
 import { Either } from '@sweet-monads/either'
 
 import { compileFromCode, contextNameLookup, lastTraceName } from './runtime/compile'
-import { ErrorMessage } from './quintParserFrontend'
+import { ErrorMessage } from './parsing/quintParserFrontend'
 import { QuintEx } from './quintIr'
 import { Computable } from './runtime/runtime'
 import { ExecutionFrame, newTraceRecorder } from './runtime/trace'
 import { IdGenerator } from './idGenerator'
 import { Rng } from './rng'
-import { SourceLookupPath } from './sourceResolver'
+import { SourceLookupPath } from './parsing/sourceResolver'
 
 /**
  * Various settings that have to be passed to the simulator to run.

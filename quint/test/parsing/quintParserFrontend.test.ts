@@ -8,23 +8,23 @@ import {
   parsePhase1fromText,
   parsePhase2sourceResolution,
   parsePhase3importAndNameResolution,
-} from '../src/quintParserFrontend'
+} from '../../src/parsing/quintParserFrontend'
 import { lf } from 'eol'
 import { right } from '@sweet-monads/either'
-import { newIdGenerator } from '../src/idGenerator'
-import { collectIds } from './util'
-import { fileSourceResolver } from '../src/sourceResolver'
+import { newIdGenerator } from '../../src/idGenerator'
+import { collectIds } from '../util'
+import { fileSourceResolver } from '../../src/parsing/sourceResolver'
 
 // read a Quint file from the test data directory
 function readQuint(name: string): string {
-  const p = resolve(__dirname, '../testFixture', name + '.qnt')
+  const p = resolve(__dirname, '../../testFixture', name + '.qnt')
   const content = readFileSync(p).toString('utf8')
   return lf(content)
 }
 
 // read the expected JSON outcome from the test data directory
 function readJson(name: string): any {
-  const p = resolve(__dirname, '../testFixture', name + '.json')
+  const p = resolve(__dirname, '../../testFixture', name + '.json')
   return JSONbig.parse(readFileSync(p).toString('utf8'))
 }
 
@@ -32,7 +32,7 @@ function readJson(name: string): any {
 function parseAndCompare(artifact: string): void {
   // read the input from the data directory and parse it
   const gen = newIdGenerator()
-  const basepath = resolve(__dirname, '../testFixture')
+  const basepath = resolve(__dirname, '../../testFixture')
   const resolver = fileSourceResolver((path: string) => {
     // replace the absolute path with a generic mocked path,
     // so the same fixtures work accross different setups

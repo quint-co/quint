@@ -3,15 +3,15 @@ import { assert } from 'chai'
 import { left, right } from '@sweet-monads/either'
 import { resolve } from 'path'
 
-import { fileSourceResolver, stringSourceResolver } from '../src/sourceResolver'
+import { fileSourceResolver, stringSourceResolver } from '../../src/parsing/sourceResolver'
 import { readFileSync } from 'fs'
 import { lf } from 'eol'
 
-const basename = resolve(__dirname, '../testFixture')
+const basename = resolve(__dirname, '../../testFixture')
 
 // read a Quint file from the test data directory
 function readQuint(name: string): string {
-  const p = resolve(__dirname, '../testFixture', name + '.qnt')
+  const p = resolve(__dirname, '../../testFixture', name + '.qnt')
   const content = readFileSync(p).toString('utf8')
   return lf(content)
 }

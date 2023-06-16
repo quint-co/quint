@@ -2,13 +2,13 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { buildModuleWithDefs } from '../builders/ir'
 import { TypeInferenceResult, TypeInferrer } from '../../src/types/inferrer'
-import { DefinitionsByName, mergeTables, newTable } from '../../src/definitionsByName'
+import { DefinitionsByName, mergeTables, newTable } from '../../src/names/definitionsByName'
 import { typeSchemeToString } from '../../src/types/printing'
 import { errorTreeToString } from '../../src/errorTree'
-import { collectDefinitions } from '../../src/definitionsCollector'
+import { collectDefinitions } from '../../src/names/definitionsCollector'
 import { QuintModule } from '../../src/quintIr'
-import { resolveNames } from '../../src/nameResolver'
-import { treeFromModule } from '../../src/scoping'
+import { resolveNames } from '../../src/names/nameResolver'
+import { treeFromModule } from '../../src/names/scoping'
 
 describe('inferTypes', () => {
   const table: DefinitionsByName = newTable({

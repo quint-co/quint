@@ -1,4 +1,4 @@
-import { parsePhase1fromText } from '../../src/quintParserFrontend'
+import { parsePhase1fromText } from '../../src/parsing/quintParserFrontend'
 import { IdGenerator, newIdGenerator } from '../../src/idGenerator'
 import { QuintDef, QuintEx, QuintModule } from '../../src/quintIr'
 import JSONbig from 'json-bigint'
