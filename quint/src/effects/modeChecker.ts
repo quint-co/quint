@@ -226,7 +226,7 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
 function addedEntities(paramEntities: Entity[], resultEntity: Entity): Entity[] {
   switch (resultEntity.kind) {
     case 'union':
-      return resultEntity.entities.filter(v => !paramEntities.some(p => isEqual(p, v)))
+      return resultEntity.entities.flatMap(entity => addedEntities(paramEntities, entity))
     case 'concrete': {
       const vars = resultEntity.stateVariables.filter(v => !paramEntities.some(p => isEqual(p, v)))
       if (vars.length === 0) {
