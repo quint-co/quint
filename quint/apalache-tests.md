@@ -73,6 +73,15 @@ quint verify --init Init --step Next ../examples/language-features/lists.qnt
 quint verify --init Init --step Next ../examples/language-features/maps.qnt
 ```
 
+### Can verify `../examples/classic/sequential/BinSearch/BinSearch10.qnt`
+
+Contains an import + const instantiation.
+
+<!-- !test check can check BinSearch10.qnt -->
+```
+quint verify --init=Init --step=Next --invariant=Postcondition ../examples/classic/sequential/BinSearch/BinSearch10.qnt
+```
+
 ### Default `step` and `init` operators are found
 
 <!-- !test check can find default operator names -->
