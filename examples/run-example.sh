@@ -9,7 +9,7 @@
 #    ./run-example path/to/my/spec.qnt
 
 result () {
-    local cmd=
+    local cmd="$1"
     if ($cmd &> /dev/null)
     then
         printf ":white_check_mark:"
