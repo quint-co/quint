@@ -45,8 +45,8 @@ Quint-Apalache pipeline.
 | [classic/distributed/Paxos/Paxos.qnt](./classic/distributed/Paxos/Paxos.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
 | [classic/distributed/Paxos/Voting.qnt](./classic/distributed/Paxos/Voting.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
 | [classic/distributed/ReadersWriters/ReadersWriters.qnt](./classic/distributed/ReadersWriters/ReadersWriters.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
-| [classic/sequential/BinSearch/BinSearch10.qnt](./classic/sequential/BinSearch/BinSearch10.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
 | [classic/sequential/BinSearch/BinSearch.qnt](./classic/sequential/BinSearch/BinSearch.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [classic/sequential/BinSearch/BinSearch10.qnt](./classic/sequential/BinSearch/BinSearch10.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
 | [cosmos/ics20/bank.qnt](./cosmos/ics20/bank.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
 | [cosmos/ics20/base.qnt](./cosmos/ics20/base.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
 | [cosmos/ics20/denomTrace.qnt](./cosmos/ics20/denomTrace.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
@@ -59,8 +59,8 @@ Quint-Apalache pipeline.
 | [language-features/counters.qnt](./language-features/counters.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
 | [language-features/importFrom.qnt](./language-features/importFrom.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
 | [language-features/imports.qnt](./language-features/imports.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
-| [language-features/instancesFrom.qnt](./language-features/instancesFrom.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
 | [language-features/instances.qnt](./language-features/instances.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [language-features/instancesFrom.qnt](./language-features/instancesFrom.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
 | [language-features/integers.qnt](./language-features/integers.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
 | [language-features/lists.qnt](./language-features/lists.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
 | [language-features/maps.qnt](./language-features/maps.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |

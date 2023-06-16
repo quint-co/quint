@@ -21,4 +21,4 @@ export APALACHE_DIST=../quint/_build/apalache
 # Since the output of each run is a row in the README.md table,
 # sorting the outputs lexographically gets the results in the
 # right order.
-parallel ./run-example.sh ::: **/*.qnt | sort -f
+parallel ./run-example.sh ::: **/*.qnt | env LC_ALL=C sort --ignore-case
