@@ -8,6 +8,7 @@ import { noExecutionListener } from '../../src/runtime/trace'
 import {
   CompilationContext,
   CompilationState,
+  compile,
   compileExpr,
   compileFromCode,
   contextNameLookup,
@@ -80,10 +81,8 @@ function evalVarAfterCall(varName: string, callee: string, input: string): Eithe
   // whereas right(...) is used for non-errors in sweet monads.
   const callback = (ctx: CompilationContext): Either<string, string> => {
     let key = undefined
-    if (!ctx.main) {
-      return left('main module not found')
-    }
-    const def = ctx.main.defs.find(def => def.kind === 'def' && def.name === callee)
+    const lastModule = ctx.compilationState.modules[ctx.compilationState.modules.length - 1]
+    const def = lastModule.defs.find(def => def.kind === 'def' && def.name === callee)
     if (!def) {
       return left(`${callee} definition not found`)
     }
@@ -991,6 +990,11 @@ describe('compiling specs to runtime values', () => {
 })
 
 describe('incremental compilation', () => {
+  const dummyRng: Rng = {
+    getState: () => 0n,
+    setState: (_: bigint) => {},
+    next: () => 0n,
+  }
   /* Adds some quint code to the compilation state */
   function compileModules(text: string): CompilationState {
     const idGen = newIdGenerator()
@@ -1004,7 +1008,13 @@ describe('incremental compilation', () => {
     const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
     assert.isEmpty(analysisErrors)
 
-    const { flattenedModules, flattenedAnalysis } = flattenModules(modules, table, idGen, sourceMap, analysisOutput)
+    const { flattenedModules, flattenedAnalysis, flattenedTable } = flattenModules(
+      modules,
+      table,
+      idGen,
+      sourceMap,
+      analysisOutput
+    )
 
     const state: CompilationState = {
       idGen,
@@ -1013,6 +1023,11 @@ describe('incremental compilation', () => {
       analysisOutput: flattenedAnalysis,
     }
 
+    const moduleToCompile = flattenedModules[flattenedModules.length - 1]
+
+    // update the state with the compiler state
+    compile(state, flattenedTable, noExecutionListener, dummyRng.next, moduleToCompile.defs)
+
     return state
   }
 
@@ -1020,14 +1035,9 @@ describe('incremental compilation', () => {
     it('should compile a Quint expression', () => {
       const state = compileModules('module m { pure val x = 1 }')
 
-      const rng: Rng = {
-        getState: () => 0n,
-        setState: (_: bigint) => {},
-        next: () => 0n,
-      }
       const parsed = parseExpressionOrUnit('x + 2', 'test.qnt', state.idGen, state.sourceMap)
       const expr = parsed.kind === 'expr' ? parsed.expr : undefined
-      const context = compileExpr(state, rng, noExecutionListener, expr!)
+      const context = compileExpr(state, dummyRng, noExecutionListener, expr!)
 
       assert.deepEqual(context.compilationState.analysisOutput.types.get(expr!.id)?.type, { kind: 'int', id: 3n })
 
