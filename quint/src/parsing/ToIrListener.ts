@@ -1,7 +1,7 @@
-import * as p from './generated/QuintParser'
-import { IdGenerator } from './idGenerator'
+import * as p from '../generated/QuintParser'
+import { IdGenerator } from '../idGenerator'
 import { ParserRuleContext } from 'antlr4ts/ParserRuleContext'
-import { QuintListener } from './generated/QuintListener'
+import { QuintListener } from '../generated/QuintListener'
 import {
   OpQualifier,
   QuintApp,
@@ -11,8 +11,8 @@ import {
   QuintModule,
   QuintName,
   QuintOpDef,
-} from './quintIr'
-import { QuintType, Row } from './quintTypes'
+} from '../quintIr'
+import { QuintType, Row } from '../quintTypes'
 import { strict as assert } from 'assert'
 import { ErrorMessage, Loc } from './quintParserFrontend'
 import { compact, zipWith } from 'lodash'

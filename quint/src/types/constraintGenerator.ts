@@ -35,7 +35,7 @@ import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } f
 import { getSignatures } from './builtinSignatures'
 import { Constraint, Signature, TypeScheme, toScheme } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
-import { LookupTable } from '../lookupTable'
+import { LookupTable } from '../names/lookupTable'
 import { specialConstraints } from './specialConstraints'
 import { FreshVarGenerator } from '../FreshVarGenerator'
 

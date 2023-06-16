@@ -20,11 +20,11 @@ import {
   parsePhase1fromText,
   parsePhase2sourceResolution,
   parsePhase3importAndNameResolution,
-} from './quintParserFrontend'
+} from './parsing/quintParserFrontend'
 
 import { Either, left, right } from '@sweet-monads/either'
 import { EffectScheme } from './effects/base'
-import { LookupTable } from './lookupTable'
+import { LookupTable } from './names/lookupTable'
 import { ReplOptions, quintRepl } from './repl'
 import { OpQualifier, QuintEx, QuintModule } from './quintIr'
 import { TypeScheme } from './types/base'
@@ -39,7 +39,7 @@ import { ofItf, toItf } from './itf'
 import { printExecutionFrameRec, printTrace, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
-import { fileSourceResolver } from './sourceResolver'
+import { fileSourceResolver } from './parsing/sourceResolver'
 import { verify } from './quintVerifier'
 import { flattenModules } from './flattening'
 import { analyzeModules } from './quintAnalyzer'

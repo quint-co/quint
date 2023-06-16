@@ -11,12 +11,12 @@
 import { Either, left, merge, right } from '@sweet-monads/either'
 import { just } from '@sweet-monads/maybe'
 
-import { ErrorMessage, fromIrErrorMessage } from '../quintParserFrontend'
+import { ErrorMessage, fromIrErrorMessage } from '../parsing/quintParserFrontend'
 import { QuintEx, QuintModule, QuintOpDef } from '../quintIr'
 
 import { CompilationContext, CompilationState, compile, lastTraceName } from './compile'
 import { zerog } from './../idGenerator'
-import { LookupTable } from '../lookupTable'
+import { LookupTable } from '../names/lookupTable'
 import { Computable, Register, kindName } from './runtime'
 import { ExecutionFrame, newTraceRecorder } from './trace'
 import { Rng } from '../rng'

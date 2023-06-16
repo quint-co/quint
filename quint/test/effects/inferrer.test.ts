@@ -3,10 +3,10 @@ import { assert } from 'chai'
 import { buildModuleWithDefs } from '../builders/ir'
 import { effectSchemeToString } from '../../src/effects/printing'
 import { errorTreeToString } from '../../src/errorTree'
-import { collectDefinitions } from '../../src/definitionsCollector'
+import { collectDefinitions } from '../../src/names/definitionsCollector'
 import { EffectInferenceResult, EffectInferrer } from '../../src/effects/inferrer'
 import { EffectScheme, treeFromModule } from '../../src'
-import { resolveNames } from '../../src/nameResolver'
+import { resolveNames } from '../../src/names/nameResolver'
 import JSONbig from 'json-bigint'
 
 describe('inferEffects', () => {

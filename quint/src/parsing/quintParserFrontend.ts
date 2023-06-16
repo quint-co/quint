@@ -6,23 +6,23 @@
 
 import { CharStreams, CommonTokenStream } from 'antlr4ts'
 
-import { QuintLexer } from './generated/QuintLexer'
-import * as p from './generated/QuintParser'
-import { QuintListener } from './generated/QuintListener'
+import { QuintLexer } from '../generated/QuintLexer'
+import * as p from '../generated/QuintParser'
+import { QuintListener } from '../generated/QuintListener'
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
-import { IrErrorMessage, QuintDef, QuintEx, QuintModule } from './quintIr'
-import { IdGenerator } from './idGenerator'
+import { IrErrorMessage, QuintDef, QuintEx, QuintModule } from '../quintIr'
+import { IdGenerator } from '../idGenerator'
 import { ToIrListener } from './ToIrListener'
-import { collectDefinitions } from './definitionsCollector'
-import { resolveNames } from './nameResolver'
-import { resolveImports } from './importResolver'
-import { treeFromModule } from './scoping'
-import { scanConflicts } from './definitionsScanner'
-import { Definition, LookupTable } from './lookupTable'
+import { collectDefinitions } from '../names/definitionsCollector'
+import { resolveNames } from '../names/nameResolver'
+import { resolveImports } from '../names/importResolver'
+import { treeFromModule } from '../names/scoping'
+import { scanConflicts } from '../names/definitionsScanner'
+import { Definition, LookupTable } from '../names/lookupTable'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { mkErrorMessage } from './cliCommands'
-import { DefinitionsByModule, DefinitionsByName } from './definitionsByName'
+import { mkErrorMessage } from '../cliCommands'
+import { DefinitionsByModule, DefinitionsByName } from '../names/definitionsByName'
 import { SourceLookupPath, SourceResolver, fileSourceResolver } from './sourceResolver'
 
 export interface Loc {
@@ -338,6 +338,15 @@ export function compactSourceMap(sourceMap: Map<bigint, Loc>): { sourceIndex: an
   return { sourceIndex: Object.fromEntries(sourcesIndex), map: Object.fromEntries(compactedSourceMap) }
 }
 
+/**
+ * Parses a Quint code string and returns a `ParseResult` containing the result of all three parsing phases.
+ *
+ * @param idGen An `IdGenerator` instance to generate unique IDs for parsed elements.
+ * @param sourceLocation A string describing the source location of the code being parsed.
+ * @param mainPath The main source lookup path for resolving imports.
+ * @param code The Quint code string to parse.
+ * @returns A `ParseResult` containing the result of all three parsing phases.
+ */
 export function parse(
   idGen: IdGenerator,
   sourceLocation: string,

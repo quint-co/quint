@@ -4,10 +4,10 @@ import { addDefToFlatModule, flattenModules } from '../src/flattening'
 import { newIdGenerator } from '../src/idGenerator'
 import { definitionToString } from '../src/IRprinting'
 import { collectIds } from './util'
-import { parse } from '../src/quintParserFrontend'
+import { parse } from '../src/parsing/quintParserFrontend'
 import { toScheme } from '../src/types/base'
 import { FlatModule } from '../src'
-import { SourceLookupPath } from '../src/sourceResolver'
+import { SourceLookupPath } from '../src/parsing/sourceResolver'
 
 describe('flattenModules', () => {
   function assertFlatennedDefs(baseDefs: string[], defs: string[], expectedDefs: string[]): void {

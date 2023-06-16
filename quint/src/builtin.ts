@@ -15,7 +15,7 @@
 import { DocumentationEntry, produceDocs } from './docs'
 import { resolve } from 'path'
 import { readFileSync } from 'fs'
-import { ErrorMessage, parsePhase1fromText } from './quintParserFrontend'
+import { ErrorMessage, parsePhase1fromText } from './parsing/quintParserFrontend'
 import { Either } from '@sweet-monads/either'
 import { lf } from 'eol'
 

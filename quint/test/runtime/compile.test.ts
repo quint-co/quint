@@ -16,7 +16,7 @@ import { RuntimeValue } from '../../src/runtime/impl/runtimeValue'
 import { dedent } from '../textUtils'
 import { newIdGenerator } from '../../src/idGenerator'
 import { Rng, newRng } from '../../src/rng'
-import { SourceLookupPath, stringSourceResolver } from '../../src/sourceResolver'
+import { SourceLookupPath, stringSourceResolver } from '../../src/parsing/sourceResolver'
 import { analyzeModules, parse, parseExpressionOrUnit } from '../../src'
 import { flattenModules } from '../../src/flattening'
 

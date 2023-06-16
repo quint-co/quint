@@ -1,8 +1,8 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { DefinitionsByModule, DefinitionsByName, newTable } from '../src/definitionsByName'
-import { buildModuleWithDefs } from './builders/ir'
-import { resolveImports } from '../src/importResolver'
+import { DefinitionsByModule, DefinitionsByName, newTable } from '../../src/names/definitionsByName'
+import { buildModuleWithDefs } from '../builders/ir'
+import { resolveImports } from '../../src/names/importResolver'
 
 describe('resolveImports', () => {
   const table: DefinitionsByName = newTable({

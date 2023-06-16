@@ -22,9 +22,9 @@ import {
   mergeTables,
   newTable,
 } from './definitionsByName'
-import { QuintExport, QuintImport, QuintInstance, QuintModule } from './quintIr'
-import { IRVisitor, walkModule } from './IRVisitor'
-import { QuintError } from './quintError'
+import { QuintExport, QuintImport, QuintInstance, QuintModule } from '../quintIr'
+import { IRVisitor, walkModule } from '../IRVisitor'
+import { QuintError } from '../quintError'
 
 /**
  * A single import error

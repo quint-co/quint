@@ -13,7 +13,7 @@
  */
 
 import { IdGenerator } from './idGenerator'
-import { LookupTable } from './lookupTable'
+import { LookupTable } from './names/lookupTable'
 import {
   FlatDef,
   FlatModule,
@@ -27,10 +27,10 @@ import {
   isAnnotatedDef,
   isFlat,
 } from './quintIr'
-import { defaultValueDefinitions } from './definitionsCollector'
+import { defaultValueDefinitions } from './names/definitionsCollector'
 import { definitionToString } from './IRprinting'
 import { QuintType, Row } from './quintTypes'
-import { Loc, parsePhase3importAndNameResolution } from './quintParserFrontend'
+import { Loc, parsePhase3importAndNameResolution } from './parsing/quintParserFrontend'
 import { compact, uniqBy } from 'lodash'
 import { AnalysisOutput } from './quintAnalyzer'
 

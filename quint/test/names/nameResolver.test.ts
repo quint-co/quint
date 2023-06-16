@@ -1,11 +1,11 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { defaultValueDefinitions } from '../src/definitionsCollector'
-import { DefinitionsByName, newTable } from '../src/definitionsByName'
-import { resolveNames } from '../src/nameResolver'
+import { defaultValueDefinitions } from '../../src/names/definitionsCollector'
+import { DefinitionsByName, newTable } from '../../src/names/definitionsByName'
+import { resolveNames } from '../../src/names/nameResolver'
 
-import { buildModuleWithDefs, buildModuleWithExpressions } from './builders/ir'
-import { ScopeTree } from '../src/scoping'
+import { buildModuleWithDefs, buildModuleWithExpressions } from '../builders/ir'
+import { ScopeTree } from '../../src/names/scoping'
 
 describe('nameResolver', () => {
   const table: DefinitionsByName = newTable({

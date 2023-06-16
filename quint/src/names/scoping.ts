@@ -13,9 +13,9 @@
  * @module
  */
 
-import { IRVisitor, walkModule } from './IRVisitor'
+import { IRVisitor, walkModule } from '../IRVisitor'
 import { ValueDefinition } from './definitionsByName'
-import { QuintDef, QuintEx, QuintInstance, QuintLambda, QuintModule } from './quintIr'
+import { QuintDef, QuintEx, QuintInstance, QuintLambda, QuintModule } from '../quintIr'
 
 /**
  * A tree structure where nodes are IR ids

@@ -15,7 +15,7 @@
  */
 
 import { Either, left, right } from '@sweet-monads/either'
-import { ErrorMessage } from './quintParserFrontend'
+import { ErrorMessage } from './parsing/quintParserFrontend'
 import { spawnSync } from 'child_process'
 import path from 'path'
 import fs from 'fs'
