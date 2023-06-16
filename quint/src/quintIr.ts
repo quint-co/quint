@@ -296,3 +296,16 @@ export interface FlatModule extends WithId {
   /** Optional documentation for the module. */
   doc?: string
 }
+
+/**
+ * Checks if a QuintDef is a FlatDef.
+ * A FlatDef is a sub-type of QuintDef which represents a flat definition.
+ * A flat definition can be a constant, state variable, operator definition, assumption, or type definition.
+ *
+ * @param def The QuintDef to check.
+ *
+ * @returns True if the QuintDef is a FlatDef, false otherwise.
+ */
+export function isFlat(def: QuintDef): def is FlatDef {
+  return def.kind !== 'instance' && def.kind !== 'import' && def.kind !== 'export'
+}

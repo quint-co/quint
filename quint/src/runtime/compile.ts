@@ -26,7 +26,7 @@ import { AnalysisOutput, analyzeInc, analyzeModules } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
 import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { SourceLookupPath } from '../sourceResolver'
-import { flattenModules } from '../flattening'
+import { addDefToFlatModule, flattenModules } from '../flattening'
 import { Rng } from '../rng'
 
 /**
@@ -195,33 +195,52 @@ export function compile(
     compilationState,
   }
 }
-
 export function compileExpr(state: CompilationState, rng: Rng, recorder: any, expr: QuintEx): CompilationContext {
   // Create a definition to encapsulate the parsed expression.
   const def: QuintDef = { kind: 'def', qualifier: 'action', name: 'q::input', expr, id: state.idGen.nextId() }
 
+  return compileDef(state, rng, recorder, def)
+}
+
+export function compileDef(state: CompilationState, rng: Rng, recorder: any, def: QuintDef): CompilationContext {
   // Define a new module list with the new definition in the last module,
   // ensuring the original object is not modified
-  const modules = [...state.modules]
-  const lastModule = modules.pop()
+  const modules: QuintModule[] = [...state.modules] // Those are flat, but introducing `def` might make them non-flat
+  const lastModule: FlatModule = state.modules[state.modules.length - 1] //This is not modules.pop() to ensure flatness
   if (!lastModule) {
     throw new Error('No modules in state')
   }
+  modules.pop()
   modules.push({ ...lastModule, defs: [...lastModule.defs, def] })
 
   // We need to resolve names for this new definition. Incremental name
   // resolution is not our focus now, so just resolve everything again.
-  return parsePhase3importAndNameResolution({ modules, sourceMap: state.sourceMap })
+  return parsePhase3importAndNameResolution({ modules: modules, sourceMap: state.sourceMap })
     .mapLeft(errorContextFromMessage)
     .map(({ table }) => {
       const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, def)
 
-      const temporaryState = { ...state, analysisOutput, modules }
-      const ctx = compile(temporaryState, table, lastModule?.name, recorder, rng.next)
+      const { flattenedModule, flattenedTable, flattenedAnalysis } = addDefToFlatModule(
+        modules,
+        table,
+        state.idGen,
+        state.sourceMap,
+        analysisOutput,
+        lastModule,
+        def
+      )
+
+      const flatModules: FlatModule[] = [...state.modules]
+      flatModules.pop()
+      flatModules.push(flattenedModule)
+
+      const newState = { ...state, analysisOutput: flattenedAnalysis, modules: flatModules }
+      const ctx = compile(newState, flattenedTable, lastModule?.name, recorder, rng.next)
 
       const errorLocator = mkErrorMessage(state.sourceMap)
       return {
         ...ctx,
+        compilationState: newState,
         analysisErrors: Array.from(analysisErrors, errorLocator),
       }
     }).value // We produce a compilation context in any case

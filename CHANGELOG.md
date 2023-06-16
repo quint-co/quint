@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- New definitions typed in the REPL are now incrementally analyzed, improving
+  performance significantly (#952)
+
 ### Deprecated
 ### Removed
 ### Fixed
