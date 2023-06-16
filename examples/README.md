@@ -44,6 +44,7 @@ Quint-Apalache pipeline.
 | [icse23-fig7][]  |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
 | [ERC20][]        |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
 | [simplePonzi][]  |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
+| [gradualPonzi][] |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
 |                    **Cosmos**                                                           |
 | [ICS23][]        |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
 | [Tendermint][]   |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
@@ -82,3 +83,4 @@ Quint-Apalache pipeline.
 [booleans]: ./language-features/booleans.qnt
 [icse23-fig7]: ./solidity/icse23-fig7/lottery.qnt
 [simplePonzi]: ./solidity/SimplePonzi/simplePonzi.qnt
+[gradualPonzi]: ./solidity/GradualPonzi/gradualPonzi.qnt

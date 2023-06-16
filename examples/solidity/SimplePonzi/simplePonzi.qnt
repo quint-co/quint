@@ -72,7 +72,6 @@ module simplePonzi {
 // In this module, we wire our system and test a state machine.
 module simplePonziTest {
   pure val addr = Set("alice", "bob", "charlie", "eve")
-  pure val genesis_coins = addr.mapBy(a => if (a == "alice") 10000 else 0)
 
   import simplePonzi(ADDR = addr) as I
 
