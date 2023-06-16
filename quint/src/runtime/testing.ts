@@ -12,7 +12,7 @@ import { Either, left, merge, right } from '@sweet-monads/either'
 import { just } from '@sweet-monads/maybe'
 
 import { ErrorMessage, fromIrErrorMessage } from '../parsing/quintParserFrontend'
-import { QuintEx, QuintModule, QuintOpDef } from '../quintIr'
+import { QuintEx, QuintOpDef } from '../quintIr'
 
 import { CompilationContext, CompilationState, compile, lastTraceName } from './compile'
 import { zerog } from './../idGenerator'
@@ -77,12 +77,17 @@ export interface TestResult {
  */
 export function compileAndTest(
   compilationState: CompilationState,
-  main: QuintModule,
+  mainName: string,
   lookupTable: LookupTable,
   options: TestOptions
 ): Either<ErrorMessage[], TestResult[]> {
   const recorder = newTraceRecorder(options.verbosity, options.rng)
-  const ctx = compile(compilationState, lookupTable, main.name, recorder, options.rng.next)
+  const main = compilationState.modules.find(m => m.name === mainName)
+  if (!main) {
+    return left([{ explanation: 'Cannot find main module', locs: [] }])
+  }
+
+  const ctx = compile(compilationState, lookupTable, recorder, options.rng.next, main.defs)
 
   const saveTrace = (index: number, name: string, status: string) => {
     // Save the best traces that are reported by the recorder:
@@ -92,10 +97,6 @@ export function compileAndTest(
     options.onTrace(index, name, status, ctx.vars, states)
   }
 
-  if (!ctx.main) {
-    return left([{ explanation: 'Cannot find main module', locs: [] }])
-  }
-
   const ctxErrors = ctx.syntaxErrors.concat(ctx.compileErrors).concat(ctx.analysisErrors)
   if (ctxErrors.length > 0) {
     // In principle, these errors should have been caught earlier.
@@ -103,7 +104,7 @@ export function compileAndTest(
     return left(ctxErrors)
   }
 
-  const testDefs = ctx.main.defs.filter(d => d.kind === 'def' && options.testMatch(d.name)) as QuintOpDef[]
+  const testDefs = main.defs.filter(d => d.kind === 'def' && options.testMatch(d.name)) as QuintOpDef[]
 
   return merge(
     testDefs.map((def, index) => {

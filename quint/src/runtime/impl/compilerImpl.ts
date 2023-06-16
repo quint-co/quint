@@ -46,6 +46,13 @@ export function builtinContext() {
   ])
 }
 
+export interface CompilerState {
+  context: Map<string, Computable>
+  vars: Register[]
+  nextVars: Register[]
+  shadowVars: Register[]
+}
+
 /**
  * Compiler visitor turns Quint definitions and expressions into Computable
  * objects, essentially, lazy JavaScript objects. Importantly, it does not do
@@ -93,17 +100,39 @@ export class CompilerVisitor implements IRVisitor {
     lookupTable: LookupTable,
     types: Map<bigint, TypeScheme>,
     rand: (bound: bigint) => bigint,
-    listener: ExecutionListener
+    listener: ExecutionListener,
+    compilerState?: CompilerState
   ) {
     this.lookupTable = lookupTable
     this.types = types
     this.rand = rand
     this.execListener = listener
-    const lastTrace = mkRegister('shadow', lastTraceName, just(rv.mkList([])), () =>
-      this.addRuntimeError(0n, 'q::lastTrace is not set')
-    )
-    this.shadowVars.push(lastTrace)
-    this.context.set(kindName(lastTrace.kind, lastTrace.name), lastTrace)
+
+    if (compilerState) {
+      this.context = compilerState.context
+      this.vars = compilerState.vars
+      this.nextVars = compilerState.nextVars
+      this.shadowVars = compilerState.shadowVars
+    } else {
+      // Initialize compiler state
+      const lastTrace = mkRegister('shadow', lastTraceName, just(rv.mkList([])), () =>
+        this.addRuntimeError(0n, 'q::lastTrace is not set')
+      )
+      this.shadowVars.push(lastTrace)
+      this.context.set(kindName(lastTrace.kind, lastTrace.name), lastTrace)
+    }
+  }
+
+  /**
+   * Get the compiler state.
+   */
+  getCompilerState(): CompilerState {
+    return {
+      context: this.context,
+      vars: this.vars,
+      nextVars: this.nextVars,
+      shadowVars: this.shadowVars,
+    }
   }
 
   /**

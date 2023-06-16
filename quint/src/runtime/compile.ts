@@ -18,8 +18,8 @@ import {
 } from '../parsing/quintParserFrontend'
 import { Computable, ComputableKind, kindName } from './runtime'
 import { ExecutionListener } from './trace'
-import { FlatModule, QuintDef, QuintEx, QuintModule } from '../quintIr'
-import { CompilerVisitor } from './impl/compilerImpl'
+import { FlatDef, FlatModule, IrErrorMessage, QuintDef, QuintEx, QuintModule } from '../quintIr'
+import { CompilerState, CompilerVisitor } from './impl/compilerImpl'
 import { walkDefinition } from '../IRVisitor'
 import { LookupTable } from '../names/lookupTable'
 import { AnalysisOutput, analyzeInc, analyzeModules } from '../quintAnalyzer'
@@ -38,8 +38,6 @@ export const lastTraceName = 'q::lastTrace'
  * A compilation context returned by 'compile'.
  */
 export interface CompilationContext {
-  // The main module, when present
-  main?: QuintModule
   // the lookup table to query for values and definitions
   lookupTable: LookupTable
   // names of the variables and definition identifiers mapped to computables
@@ -71,6 +69,8 @@ export interface CompilationState {
   sourceMap: Map<bigint, Loc>
   // The output of the Quint analyzer.
   analysisOutput: AnalysisOutput
+  // The state of the compiler visitor.
+  compilerState?: CompilerState
 }
 
 /* An empty initial compilation state */
@@ -160,35 +160,32 @@ export function contextNameLookup(
 export function compile(
   compilationState: CompilationState,
   lookupTable: LookupTable,
-  mainName: string,
   execListener: ExecutionListener,
-  rand: (bound: bigint) => bigint
+  rand: (bound: bigint) => bigint,
+  defs: FlatDef[]
 ): CompilationContext {
-  const { modules, sourceMap, analysisOutput } = compilationState
-  const main = modules.find(m => m.name === mainName)
+  const { sourceMap, analysisOutput } = compilationState
 
-  const visitor = new CompilerVisitor(lookupTable, analysisOutput.types, rand, execListener)
-  if (main) {
-    main.defs.forEach(def => walkDefinition(visitor, def))
-  }
-  // when the main module is not found, we will report an error
-  const mainNotFoundError = main
-    ? []
-    : [
-        {
-          explanation: `Main module ${mainName} not found`,
-          refs: [],
-        },
-      ]
+  const visitor = new CompilerVisitor(
+    lookupTable,
+    analysisOutput.types,
+    rand,
+    execListener,
+    compilationState.compilerState
+  )
+
+  defs.forEach(def => walkDefinition(visitor, def))
+
+  compilationState.compilerState = visitor.getCompilerState()
+
   return {
-    main,
     lookupTable,
     values: visitor.getContext(),
     vars: visitor.getVars(),
     shadowVars: visitor.getShadowVars(),
     syntaxErrors: [],
     analysisErrors: [],
-    compileErrors: visitor.getCompileErrors().concat(mainNotFoundError).map(fromIrErrorMessage(sourceMap)),
+    compileErrors: visitor.getCompileErrors().map(fromIrErrorMessage(sourceMap)),
     getRuntimeErrors: () => {
       return visitor.getRuntimeErrors().splice(0).map(fromIrErrorMessage(sourceMap))
     },
@@ -220,7 +217,7 @@ export function compileDef(state: CompilationState, rng: Rng, recorder: any, def
     .map(({ table }) => {
       const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, def)
 
-      const { flattenedModule, flattenedTable, flattenedAnalysis } = addDefToFlatModule(
+      const { flattenedModule, flattenedDefs, flattenedTable, flattenedAnalysis } = addDefToFlatModule(
         modules,
         table,
         state.idGen,
@@ -235,7 +232,7 @@ export function compileDef(state: CompilationState, rng: Rng, recorder: any, def
       flatModules.push(flattenedModule)
 
       const newState = { ...state, analysisOutput: flattenedAnalysis, modules: flatModules }
-      const ctx = compile(newState, flattenedTable, lastModule?.name, recorder, rng.next)
+      const ctx = compile(newState, flattenedTable, recorder, rng.next, flattenedDefs)
 
       const errorLocator = mkErrorMessage(state.sourceMap)
       return {
@@ -290,11 +287,23 @@ export function compileFromCode(
             idGen,
           }
 
-          const ctx = compile(compilationState, flattenedTable, mainName, execListener, rand)
+          const main = flattenedModules.find(m => m.name === mainName)
+          // when the main module is not found, we will report an error
+          const mainNotFoundError: IrErrorMessage[] = main
+            ? []
+            : [
+                {
+                  explanation: `Main module ${mainName} not found`,
+                  refs: [],
+                },
+              ]
+          const defsToCompile = main ? main.defs : []
+          const ctx = compile(compilationState, flattenedTable, execListener, rand, defsToCompile)
 
           const errorLocator = mkErrorMessage(sourceMap)
           return right({
             ...ctx,
+            compileErrors: ctx.compileErrors.concat(mainNotFoundError.map(fromIrErrorMessage(sourceMap))),
             analysisErrors: Array.from(analysisErrors, errorLocator),
           })
         }
