@@ -106,7 +106,8 @@ module BinSearch {
     }
 
     // Computation step (lines 5-16)
-    action step = any {LoopIteration,
+    action step = any {
+        LoopIteration,
         LoopExit,
         StutterOnTermination,
     }
