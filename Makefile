@@ -4,7 +4,7 @@
 # @file
 # @version 0.1
 
-.PHONY: vscode quint local tutorials docs all apalache
+.PHONY: vscode quint local tutorials docs all apalache examples
 
 all: vscode
 
@@ -47,5 +47,20 @@ apalache: | $(BUILD_DIR)
 	rm -f $(BUILD_DIR)/apalache.tgz
 	gh release download --repo informalsystems/apalache --pattern apalache.tgz --dir $(BUILD_DIR)
 	tar -xvzf $(BUILD_DIR)/apalache.tgz --directory $(BUILD_DIR) > /dev/null
+
+# Alias to update examples readme
+examples: ./examples/README.md
+
+EX_SCRIPTS:=./examples/.scripts
+# The scripts for updating the ./examples/README.md and all the quint files needed
+EXAMPLES_DEPS:=$(EX_SCRIPTS)/run-example.sh $(EX_SCRIPTS)/run-examples.sh $(shell find examples/ -type f -name "*.qnt")
+
+./examples/README.md: $(EX_SCRIPTS)/README-text.md $(EXAMPLES_DEPS)
+    # Add a header
+	echo "<!-- DO NOT EDIT: THIS FILE IS GENERATED FROM $< VIA 'make examples' -->" > $@
+    # Append the human written README.md.txt
+	cat $< >> $@
+    # Generate the dashboard and append it
+	$(EX_SCRIPTS)/run-examples.sh >> $@
 
 # end
