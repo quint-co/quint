@@ -51,15 +51,16 @@ apalache: | $(BUILD_DIR)
 # Alias to update examples readme
 examples: ./examples/README.md
 
-# The scripts for updating the readme and all the quint files needed
-EXAMPLES_DEPS:=./examples/run-example.sh ./examples/run-examples.sh $(shell find examples/ -type f -name "*.qnt")
+EX_SCRIPTS:=./examples/.scripts
+# The scripts for updating the ./examples/README.md and all the quint files needed
+EXAMPLES_DEPS:=$(EX_SCRIPTS)/run-example.sh $(EX_SCRIPTS)/run-examples.sh $(shell find examples/ -type f -name "*.qnt")
 
-./examples/README.md: ./examples/README-text.md $(EXAMPLES_DEPS)
+./examples/README.md: $(EX_SCRIPTS)/README-text.md $(EXAMPLES_DEPS)
     # Add a header
 	echo "<!-- DO NOT EDIT: THIS FILE IS GENERATED FROM $< VIA 'make examples' -->" > $@
     # Append the human written README.md.txt
 	cat $< >> $@
     # Generate the dashboard and append it
-	./examples/run-examples.sh >> $@
+	$(EX_SCRIPTS)/run-examples.sh >> $@
 
 # end
