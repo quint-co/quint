@@ -2,12 +2,12 @@ module maps {
   var n: int
   var m: int -> int
 
-  action Init = all {
+  action init = all {
     n' = 0,
     m' = Map((0, 1)),
   }
 
-  action Next = {
+  action step = {
     val nextN = m.get(n)
     val mKeys = m.keys()
     all {

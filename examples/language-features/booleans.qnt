@@ -2,11 +2,11 @@
 module booleans {
   var b: bool
 
-  action Init = {
+  action init = {
     b' = true
   }
 
-  action Next = all {
+  action step = all {
     b.or(true),
     not(b.and(false)),
     b.implies(b),

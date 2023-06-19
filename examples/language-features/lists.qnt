@@ -2,14 +2,14 @@ module lists {
   var n: int
   var l: List[int]
 
-  action Init = all {
+  action init = all {
     n' = 0,
     l' = List(0),
   }
 
   def test(x) = x < 1
 
-  action Next = all {
+  action step = all {
     n' = n + 1,
     l' = l.append(n + 1),
     List(1, 2, 3).length() + l.length() == List(1, 2, 3).concat(l).length(),
