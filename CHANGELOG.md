@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed a bug where sometimes static analysis would flag a mode error where
+  there isn't one (#960)
+
 ### Security
 
 ## v0.11.2 -- 2023-06-15
