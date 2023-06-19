@@ -120,7 +120,9 @@ export function compileAndTest(
           seed = options.rng.getState()
           recorder.onRunCall()
           // reset the trace
-          const traceReg = ctx.values.get(kindName('shadow', lastTraceName)) as Register
+          const traceReg = ctx.compilationState.evaluationState?.context.get(
+            kindName('shadow', lastTraceName)
+          ) as Register
           traceReg.registerValue = just(rv.mkList([]))
           // run the test
           const result = comp.eval()
@@ -209,7 +211,7 @@ export function compileAndTest(
 }
 
 function getComputableForDef(ctx: CompilationContext, def: QuintOpDef): Either<ErrorMessage[], Computable> {
-  const comp = ctx.values.get(kindName('callable', def.id))
+  const comp = ctx.compilationState.evaluationState?.context.get(kindName('callable', def.id))
   if (comp) {
     return right(comp)
   } else {

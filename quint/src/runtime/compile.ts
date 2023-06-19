@@ -19,7 +19,7 @@ import {
 import { Computable, ComputableKind, kindName } from './runtime'
 import { ExecutionListener } from './trace'
 import { FlatDef, FlatModule, IrErrorMessage, QuintDef, QuintEx, QuintModule } from '../quintIr'
-import { CompilerState, CompilerVisitor } from './impl/compilerImpl'
+import { CompilerVisitor, EvaluationState } from './impl/compilerImpl'
 import { walkDefinition } from '../IRVisitor'
 import { LookupTable } from '../names/lookupTable'
 import { AnalysisOutput, analyzeInc, analyzeModules } from '../quintAnalyzer'
@@ -40,8 +40,6 @@ export const lastTraceName = 'q::lastTrace'
 export interface CompilationContext {
   // the lookup table to query for values and definitions
   lookupTable: LookupTable
-  // names of the variables and definition identifiers mapped to computables
-  values: Map<string, Computable>
   // names of the variables
   vars: string[]
   // names of the shadow variables, internal to the simulator
@@ -70,7 +68,7 @@ export interface CompilationState {
   // The output of the Quint analyzer.
   analysisOutput: AnalysisOutput
   // The state of the compiler visitor.
-  compilerState?: CompilerState
+  evaluationState?: EvaluationState
 }
 
 /* An empty initial compilation state */
@@ -90,7 +88,6 @@ export function newCompilationState(): CompilationState {
 export function errorContextFromMessage(errors: ErrorMessage[]): CompilationContext {
   return {
     lookupTable: new Map(),
-    values: new Map(),
     vars: [],
     shadowVars: [],
     syntaxErrors: errors,
@@ -101,42 +98,15 @@ export function errorContextFromMessage(errors: ErrorMessage[]): CompilationCont
   }
 }
 
-/**
- * Extract a compiled value of a specific kind via the module name and kind.
- *
- * @param ctx compilation context
- * @param defId the definition id to lookup
- * @param kind definition kind
- * @returns the associated compiled value, if it uniquely defined, or undefined
- */
-export function contextLookup(
-  ctx: CompilationContext,
-  defId: bigint,
-  kind: ComputableKind
-): Either<string, Computable> {
-  const def = ctx.lookupTable.get(defId)
-  if (!def) {
-    return left(`Definition for id ${defId} not found`)
-  }
-
-  const value = ctx.values.get(kindName(kind, def.reference!))
-  if (!value) {
-    console.log(`key = ${kindName(kind, def.reference!)}`)
-    return left(`No value for definition ${defId}}`)
-  } else {
-    return right(value)
-  }
-}
-
 export function contextNameLookup(
   ctx: CompilationContext,
   defName: string,
   kind: ComputableKind
 ): Either<string, Computable> {
-  const value = ctx.values.get(kindName(kind, defName))
+  const value = ctx.compilationState.evaluationState?.context.get(kindName(kind, defName))
   if (!value) {
     console.log(`key = ${kindName(kind, defName)}`)
-    return left(`No value for definition ${defName}}`)
+    return left(`No value for definition ${defName}`)
   } else {
     return right(value)
   }
@@ -171,16 +141,13 @@ export function compile(
     analysisOutput.types,
     rand,
     execListener,
-    compilationState.compilerState
+    compilationState.evaluationState
   )
 
   defs.forEach(def => walkDefinition(visitor, def))
 
-  compilationState.compilerState = visitor.getCompilerState()
-
   return {
     lookupTable,
-    values: visitor.getContext(),
     vars: visitor.getVars(),
     shadowVars: visitor.getShadowVars(),
     syntaxErrors: [],
@@ -189,7 +156,7 @@ export function compile(
     getRuntimeErrors: () => {
       return visitor.getRuntimeErrors().splice(0).map(fromIrErrorMessage(sourceMap))
     },
-    compilationState,
+    compilationState: { ...compilationState, evaluationState: visitor.getEvaluationState() },
   }
 }
 export function compileExpr(state: CompilationState, rng: Rng, recorder: any, expr: QuintEx): CompilationContext {
@@ -203,7 +170,7 @@ export function compileDef(state: CompilationState, rng: Rng, recorder: any, def
   // Define a new module list with the new definition in the last module,
   // ensuring the original object is not modified
   const modules: QuintModule[] = [...state.modules] // Those are flat, but introducing `def` might make them non-flat
-  const lastModule: FlatModule = state.modules[state.modules.length - 1] //This is not modules.pop() to ensure flatness
+  const lastModule: FlatModule = state.modules[state.modules.length - 1] // This is not modules.pop() to ensure flatness
   if (!lastModule) {
     throw new Error('No modules in state')
   }
@@ -237,7 +204,6 @@ export function compileDef(state: CompilationState, rng: Rng, recorder: any, def
       const errorLocator = mkErrorMessage(state.sourceMap)
       return {
         ...ctx,
-        compilationState: newState,
         analysisErrors: Array.from(analysisErrors, errorLocator),
       }
     }).value // We produce a compilation context in any case
@@ -280,7 +246,7 @@ export function compileFromCode(
             sourceMap,
             analysisOutput
           )
-          const compilationState = {
+          const compilationState: CompilationState = {
             modules: flattenedModules,
             sourceMap,
             analysisOutput: flattenedAnalysis,

@@ -3,12 +3,13 @@ import { assert } from 'chai'
 import { Either, left, right } from '@sweet-monads/either'
 import { just } from '@sweet-monads/maybe'
 import { expressionToString } from '../../src/IRprinting'
-import { ComputableKind, fail, kindName } from '../../src/runtime/runtime'
+import { Computable, ComputableKind, fail, kindName } from '../../src/runtime/runtime'
 import { noExecutionListener } from '../../src/runtime/trace'
 import {
   CompilationContext,
   CompilationState,
   compile,
+  compileDef,
   compileExpr,
   compileFromCode,
   contextNameLookup,
@@ -40,17 +41,18 @@ function assertResultAsString(input: string, expected: string | undefined) {
 function assertInputFromContext(context: CompilationContext, expected: string | undefined) {
   contextNameLookup(context, 'q::input', 'callable')
     .mapLeft(msg => assert(false, `Unexpected error: ${msg}`))
-    .mapRight(value => {
-      const result = value
-        .eval()
-        .map(r => r.toQuintEx(idGen))
-        .map(expressionToString)
-        .map(s => assert(s === expected, `Expected ${expected}, found ${s}`))
-      if (result.isNone()) {
-        assert(expected === undefined, `Expected ${expected}, found undefined`)
-      }
-      return result
-    })
+    .mapRight(value => assertComputableAsString(value, expected))
+}
+
+function assertComputableAsString(computable: Computable, expected: string | undefined) {
+  const result = computable
+    .eval()
+    .map(r => r.toQuintEx(idGen))
+    .map(expressionToString)
+    .map(s => assert(s === expected, `Expected ${expected}, found ${s}`))
+  if (result.isNone()) {
+    assert(expected === undefined, `Expected ${expected}, found undefined`)
+  }
 }
 
 // Compile an input and evaluate a callback in the context
@@ -90,7 +92,7 @@ function evalVarAfterCall(varName: string, callee: string, input: string): Eithe
     if (!key) {
       return left(`${callee} not found`)
     }
-    const run = ctx.values.get(key)
+    const run = ctx.compilationState.evaluationState?.context.get(key)
     if (!run) {
       return left(`${callee} not found via ${key}`)
     }
@@ -100,7 +102,9 @@ function evalVarAfterCall(varName: string, callee: string, input: string): Eithe
       .map(res => {
         if ((res as RuntimeValue).toBool() === true) {
           // extract the value of the state variable
-          const nextVal = (ctx.values.get(kindName('nextvar', varName)) ?? fail).eval()
+          const nextVal = (
+            ctx.compilationState.evaluationState?.context.get(kindName('nextvar', varName)) ?? fail
+          ).eval()
           // using if-else, as map-or-unwrap confuses the compiler a lot
           if (nextVal.isNone()) {
             return left(`Value of the variable ${varName} is undefined`)
@@ -1025,10 +1029,9 @@ describe('incremental compilation', () => {
 
     const moduleToCompile = flattenedModules[flattenedModules.length - 1]
 
-    // update the state with the compiler state
-    compile(state, flattenedTable, noExecutionListener, dummyRng.next, moduleToCompile.defs)
+    const ctx = compile(state, flattenedTable, noExecutionListener, dummyRng.next, moduleToCompile.defs)
 
-    return state
+    return ctx.compilationState
   }
 
   describe('compileExpr', () => {
@@ -1042,6 +1045,21 @@ describe('incremental compilation', () => {
       assert.deepEqual(context.compilationState.analysisOutput.types.get(expr!.id)?.type, { kind: 'int', id: 3n })
 
       assertInputFromContext(context, '3')
+    })
+  })
+
+  describe('compileDef', () => {
+    it('should compile a Quint definition', () => {
+      const state = compileModules('module m { pure val x = 1 }')
+
+      const parsed = parseExpressionOrUnit('val y = x + 2', 'test.qnt', state.idGen, state.sourceMap)
+      const def = parsed.kind === 'toplevel' ? parsed.def : undefined
+      const context = compileDef(state, dummyRng, noExecutionListener, def!)
+
+      assert.deepEqual(context.compilationState.analysisOutput.types.get(def!.id)?.type, { kind: 'int', id: 3n })
+
+      const computable = context.compilationState.evaluationState?.context.get(kindName('callable', def!.id))!
+      assertComputableAsString(computable, '3')
     })
   })
 })

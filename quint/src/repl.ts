@@ -29,7 +29,7 @@ import {
   newCompilationState,
 } from './runtime/compile'
 import { formatError } from './errorReporter'
-import { ComputableKind, EvalResult, Register, kindName } from './runtime/runtime'
+import { Computable, ComputableKind, EvalResult, Register, kindName } from './runtime/runtime'
 import { TraceRecorder, newTraceRecorder, noExecutionListener } from './runtime/trace'
 import { ErrorMessage, parseExpressionOrUnit } from './parsing/quintParserFrontend'
 import { prettyQuintEx, printExecutionFrameRec, terminalWidth } from './graphics'
@@ -430,12 +430,12 @@ function loadFromFile(out: writer, state: ReplState, filename: string): boolean 
 function evalAndSaveRegisters(
   kind: ComputableKind,
   names: string[],
-  context: CompilationContext,
+  context: Map<string, Computable>,
   targetMap: Map<string, EvalResult>
 ) {
   targetMap.clear()
   for (const v of names) {
-    const computable = context.values.get(kindName(kind, v))
+    const computable = context.get(kindName(kind, v))
     if (computable) {
       computable.eval().map(result => {
         targetMap.set(v, result)
@@ -446,7 +446,7 @@ function evalAndSaveRegisters(
 
 function saveVars(state: ReplState, context: CompilationContext): Maybe<string[]> {
   function isNextSet(name: string) {
-    const register = context.values.get(kindName('nextvar', name)) as Register
+    const register = context.compilationState.evaluationState?.context.get(kindName('nextvar', name)) as Register
     if (register) {
       return register.registerValue.isJust()
     } else {
@@ -455,7 +455,7 @@ function saveVars(state: ReplState, context: CompilationContext): Maybe<string[]
   }
   const isAction = [...context.vars].some(name => isNextSet(name))
   if (isAction) {
-    evalAndSaveRegisters('nextvar', context.vars, context, state.vars)
+    evalAndSaveRegisters('nextvar', context.vars, context.compilationState.evaluationState!.context, state.vars)
 
     // return the names of the variables that have not been updated
     return just([...context.vars].filter(name => !isNextSet(name)))
@@ -465,12 +465,17 @@ function saveVars(state: ReplState, context: CompilationContext): Maybe<string[]
 }
 
 function saveShadowVars(state: ReplState, context: CompilationContext): void {
-  evalAndSaveRegisters('shadow', context.shadowVars, context, state.shadowVars)
+  evalAndSaveRegisters(
+    'shadow',
+    context.shadowVars,
+    context.compilationState.evaluationState!.context,
+    state.shadowVars
+  )
 }
 
 function loadRegisters(kind: ComputableKind, vars: Map<string, EvalResult>, context: CompilationContext): void {
   vars.forEach((value, name) => {
-    const register = context.values.get(kindName(kind, name)) as Register
+    const register = context.compilationState.evaluationState!.context.get(kindName(kind, name)) as Register
     if (register) {
       register.registerValue = just(value)
     }
@@ -520,7 +525,11 @@ function tryEvalHistory(out: writer, state: ReplState): boolean {
   const rng = newRng(state.seed)
 
   const context = compileFromCode(newIdGenerator(), modulesText, '__repl__', mainPath, noExecutionListener, rng.next)
-  if (context.values.size === 0 || context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
+  if (
+    context.compilationState.evaluationState?.context.size === 0 ||
+    context.compileErrors.length > 0 ||
+    context.syntaxErrors.length > 0
+  ) {
     printErrors(out, state, context)
     return false
   }
@@ -569,6 +578,8 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
 
     state.exprHist.push(newInput.trim())
     state.seed = rng.getState()
+    // Save the compiler state only, as state vars changes should persist
+    state.compilationState.evaluationState = context.compilationState.evaluationState
 
     return evalExpr(state, context, recorder, out)
       .mapLeft(msg => {
@@ -585,7 +596,11 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
 
     const context = compileDef(state.compilationState, rng, noExecutionListener, parseResult.def)
 
-    if (context.values.size === 0 || context.compileErrors.length > 0 || context.syntaxErrors.length > 0) {
+    if (
+      context.compilationState.evaluationState?.context.size === 0 ||
+      context.compileErrors.length > 0 ||
+      context.syntaxErrors.length > 0
+    ) {
       printErrors(out, state, context, newInput)
       return false
     }
