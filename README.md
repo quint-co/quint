@@ -10,6 +10,9 @@ distributed systems and blockchain protocols. It combines the robust theoretical
 basis of the [Temporal Logic of Actions][TLA] (TLA) with state-of-the-art static
 analysis and development tooling.
 
+If you are impatient, here is a [15 minute intro to Quint][] at Gateway to
+Cosmos 2023.
+
 This is how typical Quint code looks:
 
 ```scala
@@ -220,3 +223,4 @@ completely implementing every pass.
 [Quint discussions]: https://github.com/informalsystems/quint/discussions
 [ITF traces]: https://apalache.informal.systems/docs/adr/015adr-trace.html
 [ITF Trace Viewer]: https://marketplace.visualstudio.com/items?itemName=informal.itf-trace-viewer
+[15 minute intro to Quint]: https://youtu.be/OZIX8rs-kOA
