@@ -33,8 +33,9 @@ yet. To set your expectations right, check the dashboard below first.
 
 # Dashboard
 
-This dashboard shows, how far we have checked the examples in the
-Quint-Apalache pipeline.
+This dashboard shows, how far we have checked the examples in the Quint-Apalache
+pipeline. The reported status reflects running the noted subcommand on the
+listed without any additional command line arguments.
 
-| Example          | Syntax           | Types            | Unit tests       | Apalache    |
-| ---------------- |:----------------:|:----------------:|:----------------:|:-----------:|
+| Example | Syntax (`parse`) | Types (`typecheck`) | Unit tests (`test`) | Apalache (`verify`) |
+|---------|:----------------:|:-------------------:|:-------------------:|:-------------------:|
