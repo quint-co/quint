@@ -265,6 +265,8 @@ Verify a Quint specification via Apalache
 Options:
   --help             Show help                                         [boolean]
   --version          Show version number                               [boolean]
+  --main             name of the main module (by default, computed from
+                     filename)                                          [string]
   --out              output file (suppresses all console output)        [string]
   --out-itf          output the trace in the Informal Trace Format to file
                      (supresses all console output)                     [string]
