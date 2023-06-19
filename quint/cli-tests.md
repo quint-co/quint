@@ -207,11 +207,6 @@ Temporarily disabled.
 <!-- !test check tuples - Types & Effects-->
     quint typecheck ../examples/language-features/tuples.qnt
 
-### OK on typecheck clockSync3
-
-<!-- !test check typecheck clockSync3.qnt -->
-    quint typecheck ../examples/classic/distributed/ClockSync/clockSync3.qnt
-
 ### OK on typecheck counters
 
 <!-- !test check counters - Types & Effects-->
