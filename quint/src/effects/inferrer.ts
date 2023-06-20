@@ -82,6 +82,9 @@ export class EffectInferrer implements IRVisitor {
   // Track location descriptions for error tree traces
   private location: string = ''
 
+  // the current depth of operator definitions: top-level defs are depth 0
+  private definitionDepth: number = 0
+
   enterExpr(e: QuintEx) {
     this.location = `Inferring effect for ${expressionToString(e)}`
   }
@@ -207,6 +210,10 @@ export class EffectInferrer implements IRVisitor {
     )
   }
 
+  enterOpDef(_def: QuintOpDef): void {
+    this.definitionDepth++
+  }
+
   //           Γ ⊢ expr: E
   // ---------------------------------- (OPDEF)
   //  Γ ⊢ (def op(params) = expr): E
@@ -219,6 +226,12 @@ export class EffectInferrer implements IRVisitor {
 
     // Set the expression effect as the definition effect for it to be available at the result
     this.addToResults(def.id, result)
+
+    this.definitionDepth--
+    // When exiting top-level definitions, clear the substitutions
+    if (this.definitionDepth === 0) {
+      this.substitutions = []
+    }
   }
 
   //     Γ ⊢ expr: E
