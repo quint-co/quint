@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - New definitions typed in the REPL are now incrementally analyzed, improving
   performance significantly (#952)
+- New expressions and definitions typed in the REPL are now incrementally
+  compiled, improving performance (#968)
 
 ### Deprecated
 ### Removed
