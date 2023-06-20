@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fix pretty-printing bug where types for tuples didn't have parenthesis around them (#969).
+
 ### Security
 
 ## v0.5.1 -- 2023-06-15
