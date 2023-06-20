@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - New definitions typed in the REPL are now incrementally analyzed, improving
   performance significantly (#952)
+- Static analysis performance is significantly improved for large specs (#970)
 
 ### Deprecated
 ### Removed
