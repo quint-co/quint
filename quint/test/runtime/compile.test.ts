@@ -21,6 +21,7 @@ import { Rng, newRng } from '../../src/rng'
 import { SourceLookupPath, stringSourceResolver } from '../../src/parsing/sourceResolver'
 import { analyzeModules, parse, parseExpressionOrUnit } from '../../src'
 import { flattenModules } from '../../src/flattening'
+import { newEvaluationState } from '../../src/runtime/impl/compilerImpl'
 
 // Use a global id generator, limited to this test suite.
 const idGen = newIdGenerator()
@@ -39,7 +40,7 @@ function assertResultAsString(input: string, expected: string | undefined) {
 }
 
 function assertInputFromContext(context: CompilationContext, expected: string | undefined) {
-  contextNameLookup(context, 'q::input', 'callable')
+  contextNameLookup(context.evaluationState!.context, 'q::input', 'callable')
     .mapLeft(msg => assert(false, `Unexpected error: ${msg}`))
     .mapRight(value => assertComputableAsString(value, expected))
 }
@@ -66,7 +67,7 @@ function evalInContext<T>(input: string, callable: (ctx: CompilationContext) => 
 // Compile a variable definition and check that the compiled value is defined.
 function assertVarExists(kind: ComputableKind, name: string, input: string) {
   const callback = (ctx: CompilationContext) => {
-    return contextNameLookup(ctx, `${name}`, kind)
+    return contextNameLookup(ctx.evaluationState!.context, `${name}`, kind)
       .mapRight(_ => true)
       .mapLeft(msg => `Expected a definition for ${name}, found ${msg}, compiled from: ${input}`)
   }
@@ -92,7 +93,7 @@ function evalVarAfterCall(varName: string, callee: string, input: string): Eithe
     if (!key) {
       return left(`${callee} not found`)
     }
-    const run = ctx.compilationState.evaluationState?.context.get(key)
+    const run = ctx.evaluationState?.context.get(key)
     if (!run) {
       return left(`${callee} not found via ${key}`)
     }
@@ -102,9 +103,7 @@ function evalVarAfterCall(varName: string, callee: string, input: string): Eithe
       .map(res => {
         if ((res as RuntimeValue).toBool() === true) {
           // extract the value of the state variable
-          const nextVal = (
-            ctx.compilationState.evaluationState?.context.get(kindName('nextvar', varName)) ?? fail
-          ).eval()
+          const nextVal = (ctx.evaluationState?.context.get(kindName('nextvar', varName)) ?? fail).eval()
           // using if-else, as map-or-unwrap confuses the compiler a lot
           if (nextVal.isNone()) {
             return left(`Value of the variable ${varName} is undefined`)
@@ -999,8 +998,8 @@ describe('incremental compilation', () => {
     setState: (_: bigint) => {},
     next: () => 0n,
   }
-  /* Adds some quint code to the compilation state */
-  function compileModules(text: string): CompilationState {
+  /* Adds some quint code to the compilation and evaluation state */
+  function compileModules(text: string): CompilationContext {
     const idGen = newIdGenerator()
     const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
     const parseResult = parse(idGen, 'fake_location', fake_path, text)
@@ -1029,18 +1028,23 @@ describe('incremental compilation', () => {
 
     const moduleToCompile = flattenedModules[flattenedModules.length - 1]
 
-    const ctx = compile(state, flattenedTable, noExecutionListener, dummyRng.next, moduleToCompile.defs)
-
-    return ctx.compilationState
+    return compile(
+      state,
+      newEvaluationState(),
+      flattenedTable,
+      noExecutionListener,
+      dummyRng.next,
+      moduleToCompile.defs
+    )
   }
 
   describe('compileExpr', () => {
     it('should compile a Quint expression', () => {
-      const state = compileModules('module m { pure val x = 1 }')
+      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }')
 
-      const parsed = parseExpressionOrUnit('x + 2', 'test.qnt', state.idGen, state.sourceMap)
+      const parsed = parseExpressionOrUnit('x + 2', 'test.qnt', compilationState.idGen, compilationState.sourceMap)
       const expr = parsed.kind === 'expr' ? parsed.expr : undefined
-      const context = compileExpr(state, dummyRng, noExecutionListener, expr!)
+      const context = compileExpr(compilationState, evaluationState, dummyRng, noExecutionListener, expr!)
 
       assert.deepEqual(context.compilationState.analysisOutput.types.get(expr!.id)?.type, { kind: 'int', id: 3n })
 
@@ -1050,15 +1054,20 @@ describe('incremental compilation', () => {
 
   describe('compileDef', () => {
     it('should compile a Quint definition', () => {
-      const state = compileModules('module m { pure val x = 1 }')
+      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }')
 
-      const parsed = parseExpressionOrUnit('val y = x + 2', 'test.qnt', state.idGen, state.sourceMap)
+      const parsed = parseExpressionOrUnit(
+        'val y = x + 2',
+        'test.qnt',
+        compilationState.idGen,
+        compilationState.sourceMap
+      )
       const def = parsed.kind === 'toplevel' ? parsed.def : undefined
-      const context = compileDef(state, dummyRng, noExecutionListener, def!)
+      const context = compileDef(compilationState, evaluationState, dummyRng, noExecutionListener, def!)
 
       assert.deepEqual(context.compilationState.analysisOutput.types.get(def!.id)?.type, { kind: 'int', id: 3n })
 
-      const computable = context.compilationState.evaluationState?.context.get(kindName('callable', def!.id))!
+      const computable = context.evaluationState?.context.get(kindName('callable', def!.id))!
       assertComputableAsString(computable, '3')
     })
   })

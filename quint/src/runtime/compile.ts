@@ -19,7 +19,7 @@ import {
 import { Computable, ComputableKind, kindName } from './runtime'
 import { ExecutionListener } from './trace'
 import { FlatDef, FlatModule, IrErrorMessage, QuintDef, QuintEx, QuintModule } from '../quintIr'
-import { CompilerVisitor, EvaluationState } from './impl/compilerImpl'
+import { CompilerVisitor, EvaluationState, newEvaluationState } from './impl/compilerImpl'
 import { walkDefinition } from '../IRVisitor'
 import { LookupTable } from '../names/lookupTable'
 import { AnalysisOutput, analyzeInc, analyzeModules } from '../quintAnalyzer'
@@ -40,10 +40,6 @@ export const lastTraceName = 'q::lastTrace'
 export interface CompilationContext {
   // the lookup table to query for values and definitions
   lookupTable: LookupTable
-  // names of the variables
-  vars: string[]
-  // names of the shadow variables, internal to the simulator
-  shadowVars: string[]
   // messages that are produced during parsing
   syntaxErrors: ErrorMessage[]
   // messages that are produced by static analysis
@@ -52,7 +48,10 @@ export interface CompilationContext {
   compileErrors: ErrorMessage[]
   // messages that get populated as the compiled code is executed
   getRuntimeErrors: () => ErrorMessage[]
+  // The state of pre-compilation phases.
   compilationState: CompilationState
+  // The state of the compiler visitor.
+  evaluationState: EvaluationState
 }
 
 /**
@@ -67,8 +66,6 @@ export interface CompilationState {
   sourceMap: Map<bigint, Loc>
   // The output of the Quint analyzer.
   analysisOutput: AnalysisOutput
-  // The state of the compiler visitor.
-  evaluationState?: EvaluationState
 }
 
 /* An empty initial compilation state */
@@ -88,22 +85,21 @@ export function newCompilationState(): CompilationState {
 export function errorContextFromMessage(errors: ErrorMessage[]): CompilationContext {
   return {
     lookupTable: new Map(),
-    vars: [],
-    shadowVars: [],
     syntaxErrors: errors,
     analysisErrors: [],
     compileErrors: [],
     getRuntimeErrors: () => [],
     compilationState: newCompilationState(),
+    evaluationState: newEvaluationState(),
   }
 }
 
 export function contextNameLookup(
-  ctx: CompilationContext,
+  context: Map<string, Computable>,
   defName: string,
   kind: ComputableKind
 ): Either<string, Computable> {
-  const value = ctx.compilationState.evaluationState?.context.get(kindName(kind, defName))
+  const value = context.get(kindName(kind, defName))
   if (!value) {
     console.log(`key = ${kindName(kind, defName)}`)
     return left(`No value for definition ${defName}`)
@@ -129,6 +125,7 @@ export function contextNameLookup(
  */
 export function compile(
   compilationState: CompilationState,
+  evaluationState: EvaluationState,
   lookupTable: LookupTable,
   execListener: ExecutionListener,
   rand: (bound: bigint) => bigint,
@@ -136,37 +133,42 @@ export function compile(
 ): CompilationContext {
   const { sourceMap, analysisOutput } = compilationState
 
-  const visitor = new CompilerVisitor(
-    lookupTable,
-    analysisOutput.types,
-    rand,
-    execListener,
-    compilationState.evaluationState
-  )
+  const visitor = new CompilerVisitor(lookupTable, analysisOutput.types, rand, execListener, evaluationState)
 
   defs.forEach(def => walkDefinition(visitor, def))
 
   return {
     lookupTable,
-    vars: visitor.getVars(),
-    shadowVars: visitor.getShadowVars(),
     syntaxErrors: [],
     analysisErrors: [],
     compileErrors: visitor.getCompileErrors().map(fromIrErrorMessage(sourceMap)),
     getRuntimeErrors: () => {
       return visitor.getRuntimeErrors().splice(0).map(fromIrErrorMessage(sourceMap))
     },
-    compilationState: { ...compilationState, evaluationState: visitor.getEvaluationState() },
+    compilationState,
+    evaluationState: visitor.getEvaluationState(),
   }
 }
-export function compileExpr(state: CompilationState, rng: Rng, recorder: any, expr: QuintEx): CompilationContext {
+export function compileExpr(
+  state: CompilationState,
+  evaluationState: EvaluationState,
+  rng: Rng,
+  recorder: any,
+  expr: QuintEx
+): CompilationContext {
   // Create a definition to encapsulate the parsed expression.
   const def: QuintDef = { kind: 'def', qualifier: 'action', name: 'q::input', expr, id: state.idGen.nextId() }
 
-  return compileDef(state, rng, recorder, def)
+  return compileDef(state, evaluationState, rng, recorder, def)
 }
 
-export function compileDef(state: CompilationState, rng: Rng, recorder: any, def: QuintDef): CompilationContext {
+export function compileDef(
+  state: CompilationState,
+  evaluationState: EvaluationState,
+  rng: Rng,
+  recorder: any,
+  def: QuintDef
+): CompilationContext {
   // Define a new module list with the new definition in the last module,
   // ensuring the original object is not modified
   const modules: QuintModule[] = [...state.modules] // Those are flat, but introducing `def` might make them non-flat
@@ -199,7 +201,7 @@ export function compileDef(state: CompilationState, rng: Rng, recorder: any, def
       flatModules.push(flattenedModule)
 
       const newState = { ...state, analysisOutput: flattenedAnalysis, modules: flatModules }
-      const ctx = compile(newState, flattenedTable, recorder, rng.next, flattenedDefs)
+      const ctx = compile(newState, evaluationState, flattenedTable, recorder, rng.next, flattenedDefs)
 
       const errorLocator = mkErrorMessage(state.sourceMap)
       return {
@@ -264,7 +266,7 @@ export function compileFromCode(
                 },
               ]
           const defsToCompile = main ? main.defs : []
-          const ctx = compile(compilationState, flattenedTable, execListener, rand, defsToCompile)
+          const ctx = compile(compilationState, newEvaluationState(), flattenedTable, execListener, rand, defsToCompile)
 
           const errorLocator = mkErrorMessage(sourceMap)
           return right({

@@ -38,6 +38,12 @@ import { lastTraceName } from '../compile'
 
 const specialNames = ['q::input', 'q::runResult', 'q::nruns', 'q::nsteps', 'q::init', 'q::next', 'q::inv']
 
+/**
+ * Returns a Map containing the built-in Computable objects for the Quint language.
+ * These include the callable objects for Bool, Int, and Nat.
+ *
+ * @returns a Map containing the built-in Computable objects.
+ */
 export function builtinContext() {
   return new Map<string, Computable>([
     [kindName('callable', 'Bool'), mkCallable([], mkConstComputable(rv.mkSet([rv.mkBool(false), rv.mkBool(true)])))],
@@ -46,14 +52,27 @@ export function builtinContext() {
   ])
 }
 
+/**
+ * Represents the state of evaluation of Quint code.
+ */
 export interface EvaluationState {
+  // The context of the evaluation, containing the Computable objects.
   context: Map<string, Computable>
+  // The list of variables in the current state.
   vars: Register[]
+  // The list of variables in the next state.
   nextVars: Register[]
+  // The list of shadow variables.
   shadowVars: Register[]
+  // The error tracker for the evaluation to store errors on callbacks.
   errorTracker: CompilerErrorTracker
 }
 
+/**
+ * Creates a new EvaluationState object.
+ *
+ * @returns a new EvaluationState object.
+ */
 export class CompilerErrorTracker {
   // messages that are produced during compilation
   compileErrors: ir.IrErrorMessage[] = []
@@ -67,6 +86,30 @@ export class CompilerErrorTracker {
   addRuntimeError(id: bigint, msg: string) {
     this.runtimeErrors.push({ explanation: msg, refs: [id] })
   }
+}
+
+/**
+ * Creates a new EvaluationState object with the initial state of the evaluation.
+ *
+ * @returns a new EvaluationState object with the lastTrace shadow variable register
+ */
+export function newEvaluationState(): EvaluationState {
+  const state: EvaluationState = {
+    context: builtinContext(),
+    vars: [],
+    nextVars: [],
+    shadowVars: [],
+    errorTracker: new CompilerErrorTracker(),
+  }
+
+  // Initialize compiler state
+  const lastTrace = mkRegister('shadow', lastTraceName, just(rv.mkList([])), () =>
+    state.errorTracker.addRuntimeError(0n, 'q::lastTrace is not set')
+  )
+  state.shadowVars.push(lastTrace)
+  state.context.set(kindName(lastTrace.kind, lastTrace.name), lastTrace)
+
+  return state
 }
 
 /**
@@ -93,16 +136,16 @@ export class CompilerVisitor implements IRVisitor {
   //  - an instance of Register
   //  - an instance of Callable.
   // The keys should be constructed via `kindName`.
-  private context: Map<string, Computable> = builtinContext()
+  private context: Map<string, Computable>
 
   // all variables declared during compilation
-  private vars: Register[] = []
+  private vars: Register[]
   // the registers allocated for the next-state values of vars
-  private nextVars: Register[] = []
+  private nextVars: Register[]
   // shadow variables that are used by the simulator
-  private shadowVars: Register[] = []
+  private shadowVars: Register[]
   // keeps errors in a state
-  private errorTracker: CompilerErrorTracker = new CompilerErrorTracker()
+  private errorTracker: CompilerErrorTracker
   // pre-initialized random number generator
   private rand
   // execution listener
@@ -115,27 +158,18 @@ export class CompilerVisitor implements IRVisitor {
     types: Map<bigint, TypeScheme>,
     rand: (bound: bigint) => bigint,
     listener: ExecutionListener,
-    evaluationState?: EvaluationState
+    evaluationState: EvaluationState
   ) {
     this.lookupTable = lookupTable
     this.types = types
     this.rand = rand
     this.execListener = listener
 
-    if (evaluationState) {
-      this.context = evaluationState.context
-      this.vars = evaluationState.vars
-      this.nextVars = evaluationState.nextVars
-      this.shadowVars = evaluationState.shadowVars
-      this.errorTracker = evaluationState.errorTracker
-    } else {
-      // Initialize compiler state
-      const lastTrace = mkRegister('shadow', lastTraceName, just(rv.mkList([])), () =>
-        this.errorTracker.addRuntimeError(0n, 'q::lastTrace is not set')
-      )
-      this.shadowVars.push(lastTrace)
-      this.context.set(kindName(lastTrace.kind, lastTrace.name), lastTrace)
-    }
+    this.context = evaluationState.context
+    this.vars = evaluationState.vars
+    this.nextVars = evaluationState.nextVars
+    this.shadowVars = evaluationState.shadowVars
+    this.errorTracker = evaluationState.errorTracker
   }
 
   /**

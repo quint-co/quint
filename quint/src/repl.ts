@@ -29,7 +29,7 @@ import {
   newCompilationState,
 } from './runtime/compile'
 import { formatError } from './errorReporter'
-import { Computable, ComputableKind, EvalResult, Register, kindName } from './runtime/runtime'
+import { Register } from './runtime/runtime'
 import { TraceRecorder, newTraceRecorder, noExecutionListener } from './runtime/trace'
 import { ErrorMessage, parseExpressionOrUnit } from './parsing/quintParserFrontend'
 import { prettyQuintEx, printExecutionFrameRec, terminalWidth } from './graphics'
@@ -40,6 +40,7 @@ import { fileSourceResolver } from './parsing/sourceResolver'
 import { cwd } from 'process'
 import { newIdGenerator } from './idGenerator'
 import { definitionToString } from './IRprinting'
+import { EvaluationState, newEvaluationState } from './runtime/impl/compilerImpl'
 
 // tunable settings
 export const settings = {
@@ -57,17 +58,16 @@ interface ReplState {
   defsHist: string
   // expressions history (for saving and loading)
   exprHist: string[]
-  // state variables
-  vars: Map<string, EvalResult>
-  // variables internal to the simulator and REPL
-  shadowVars: Map<string, EvalResult>
   // filename and module name that were loaded with .load filename module
   lastLoadedFileAndModule: [string?, string?]
   // an optional seed to use when making non-deterministic choices
   seed?: bigint
   // verbosity level
   verbosityLevel: number
+  // The state of pre-compilation phases.
   compilationState: CompilationState
+  // The state of the compiler visitor.
+  evaluationState: EvaluationState
 }
 
 // The default exit terminates the process.
@@ -113,11 +113,10 @@ export function quintRepl(
     moduleHist: '',
     defsHist: '',
     exprHist: [],
-    vars: new Map<string, EvalResult>(),
-    shadowVars: new Map<string, EvalResult>(),
     lastLoadedFileAndModule: [undefined, undefined],
     verbosityLevel: options.verbosity,
     compilationState: replInitialCompilationState(),
+    evaluationState: newEvaluationState(),
   }
 
   function replInitialCompilationState(): CompilationState {
@@ -203,6 +202,7 @@ export function quintRepl(
     state.defsHist = ''
     state.exprHist = []
     state.compilationState = replInitialCompilationState()
+    state.evaluationState = newEvaluationState()
   }
 
   // load the code from a filename and optionally import a module
@@ -418,6 +418,7 @@ function loadFromFile(out: writer, state: ReplState, filename: string): boolean 
     state.defsHist = newState.defsHist
     state.exprHist = newState.exprHist
     state.compilationState = newState.compilationState
+    state.evaluationState = newState.evaluationState
 
     return true
   } catch (error) {
@@ -427,67 +428,36 @@ function loadFromFile(out: writer, state: ReplState, filename: string): boolean 
   }
 }
 
-function evalAndSaveRegisters(
-  kind: ComputableKind,
-  names: string[],
-  context: Map<string, Computable>,
-  targetMap: Map<string, EvalResult>
-) {
-  targetMap.clear()
-  for (const v of names) {
-    const computable = context.get(kindName(kind, v))
-    if (computable) {
-      computable.eval().map(result => {
-        targetMap.set(v, result)
-      })
-    }
-  }
-}
+/**
+ * Moves the nextvars register values into the vars, and clears the nextvars.
+ * Returns an array of variable names that were not updated.
+ * @param vars An array of Register objects representing the current state of the variables.
+ * @param nextvars An array of Register objects representing the next state of the variables.
+ * @returns An array of variable names that were not updated, or none if all variables were updated.
+ */
+function saveVars(vars: Register[], nextvars: Register[]): Maybe<string[]> {
+  let isAction = false
 
-function saveVars(state: ReplState, context: CompilationContext): Maybe<string[]> {
-  function isNextSet(name: string) {
-    const register = context.compilationState.evaluationState?.context.get(kindName('nextvar', name)) as Register
-    if (register) {
-      return register.registerValue.isJust()
+  const nonUpdated = vars.reduce((acc, varRegister) => {
+    const nextVarRegister = nextvars.find(v => v.name === varRegister.name)
+    if (nextVarRegister && nextVarRegister.registerValue.isJust()) {
+      varRegister.registerValue = nextVarRegister.registerValue
+      nextVarRegister.registerValue = none()
+      isAction = true
     } else {
-      return false
+      // No nextvar for this variable, so it was not updated
+      acc.push(varRegister.name)
     }
-  }
-  const isAction = [...context.vars].some(name => isNextSet(name))
-  if (isAction) {
-    evalAndSaveRegisters('nextvar', context.vars, context.compilationState.evaluationState!.context, state.vars)
 
+    return acc
+  }, [] as string[])
+
+  if (isAction) {
     // return the names of the variables that have not been updated
-    return just([...context.vars].filter(name => !isNextSet(name)))
+    return just(nonUpdated)
   } else {
     return none()
   }
-}
-
-function saveShadowVars(state: ReplState, context: CompilationContext): void {
-  evalAndSaveRegisters(
-    'shadow',
-    context.shadowVars,
-    context.compilationState.evaluationState!.context,
-    state.shadowVars
-  )
-}
-
-function loadRegisters(kind: ComputableKind, vars: Map<string, EvalResult>, context: CompilationContext): void {
-  vars.forEach((value, name) => {
-    const register = context.compilationState.evaluationState!.context.get(kindName(kind, name)) as Register
-    if (register) {
-      register.registerValue = just(value)
-    }
-  })
-}
-
-function loadVars(state: ReplState, context: CompilationContext): void {
-  loadRegisters('var', state.vars, context)
-}
-
-function loadShadowVars(state: ReplState, context: CompilationContext): void {
-  loadRegisters('shadow', state.shadowVars, context)
 }
 
 // Declarations that are overloaded by the simulator.
@@ -526,7 +496,7 @@ function tryEvalHistory(out: writer, state: ReplState): boolean {
 
   const context = compileFromCode(newIdGenerator(), modulesText, '__repl__', mainPath, noExecutionListener, rng.next)
   if (
-    context.compilationState.evaluationState?.context.size === 0 ||
+    context.evaluationState?.context.size === 0 ||
     context.compileErrors.length > 0 ||
     context.syntaxErrors.length > 0
   ) {
@@ -541,6 +511,7 @@ function tryEvalHistory(out: writer, state: ReplState): boolean {
 
   // Save compilation state
   state.compilationState = context.compilationState
+  state.evaluationState = context.evaluationState
 
   return true
 }
@@ -567,7 +538,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   // evaluate the input, depending on its type
   if (parseResult.kind === 'expr') {
     const recorder = newTraceRecorder(state.verbosityLevel, rng)
-    const context = compileExpr(state.compilationState, rng, recorder, parseResult.expr)
+    const context = compileExpr(state.compilationState, state.evaluationState, rng, recorder, parseResult.expr)
 
     if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
       printErrors(out, state, context, newInput)
@@ -578,10 +549,10 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
 
     state.exprHist.push(newInput.trim())
     state.seed = rng.getState()
-    // Save the compiler state only, as state vars changes should persist
-    state.compilationState.evaluationState = context.compilationState.evaluationState
+    // Save the evaluation state only, as state vars changes should persist
+    state.evaluationState = context.evaluationState
 
-    return evalExpr(state, context, recorder, out)
+    return evalExpr(state, recorder, out)
       .mapLeft(msg => {
         // when #618 is implemented, we should remove this
         printErrorMessages(out, state, 'runtime error', newInput, context.getRuntimeErrors())
@@ -593,11 +564,10 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   }
   if (parseResult.kind === 'toplevel') {
     // compile the module and add it to history if everything worked
-
-    const context = compileDef(state.compilationState, rng, noExecutionListener, parseResult.def)
+    const context = compileDef(state.compilationState, state.evaluationState, rng, noExecutionListener, parseResult.def)
 
     if (
-      context.compilationState.evaluationState?.context.size === 0 ||
+      context.evaluationState.context.size === 0 ||
       context.compileErrors.length > 0 ||
       context.syntaxErrors.length > 0
     ) {
@@ -615,6 +585,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
 
     // Save compilation state
     state.compilationState = context.compilationState
+    state.evaluationState = context.evaluationState
   }
 
   return true
@@ -706,15 +677,8 @@ function countBraces(str: string): [number, number, number] {
   return [nOpenBraces, nOpenParen, nOpenComments]
 }
 
-function evalExpr(
-  state: ReplState,
-  context: CompilationContext,
-  recorder: TraceRecorder,
-  out: writer
-): Either<string, QuintEx> {
-  loadVars(state, context)
-  loadShadowVars(state, context)
-  const computable = contextNameLookup(context, 'q::input', 'callable')
+function evalExpr(state: ReplState, recorder: TraceRecorder, out: writer): Either<string, QuintEx> {
+  const computable = contextNameLookup(state.evaluationState.context, 'q::input', 'callable')
   const columns = terminalWidth()
   return computable
     .mapRight(comp => {
@@ -740,15 +704,12 @@ function evalExpr(
           if (ex.kind === 'bool' && ex.value) {
             // A Boolean expression may be an action or a run.
             // Save the state, if there were any updates to variables.
-            saveVars(state, context).map(missing => {
+            saveVars(state.evaluationState.vars, state.evaluationState.nextVars).map(missing => {
               if (missing.length > 0) {
                 out(chalk.yellow('[warning] some variables are undefined: ' + missing.join(', ') + '\n'))
               }
             })
           }
-          // save shadow vars in any case, e.g., the example trace
-          saveShadowVars(state, context)
-
           return right<string, QuintEx>(ex)
         })
         .or(just(left<string, QuintEx>('<undefined value>')))
