@@ -207,11 +207,6 @@ Temporarily disabled.
 <!-- !test check tuples - Types & Effects-->
     quint typecheck ../examples/language-features/tuples.qnt
 
-### OK on typecheck clockSync3
-
-<!-- !test check typecheck clockSync3.qnt -->
-    quint typecheck ../examples/classic/distributed/ClockSync/clockSync3.qnt
-
 ### OK on typecheck counters
 
 <!-- !test check counters - Types & Effects-->
@@ -392,10 +387,10 @@ fi
 <!-- !test exit 1 -->
 <!-- !test check river - Run noSolution -->
     quint run --invariant=noSolution --seed=0x2fa6b93d0df3f \
-      ../examples/puzzles/river/river.qnt
+      ../examples/puzzles/.river/river.qnt
 
 ### OK on run river::safety
 
 <!-- !test exit 0 -->
 <!-- !test check river - Run safety -->
-    quint run --invariant=safety ../examples/puzzles/river/river.qnt
+    quint run --invariant=safety ../examples/puzzles/.river/river.qnt

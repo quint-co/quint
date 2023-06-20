@@ -1,11 +1,11 @@
 module integers {
   var n: int
 
-  action Init = {
+  action init = {
     n' = 0
   }
 
-  action Next = all {
+  action step = all {
     n' = n + 1,
     n == n - 0,
     n == n * 1,

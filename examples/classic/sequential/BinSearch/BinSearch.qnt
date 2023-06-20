@@ -44,7 +44,7 @@ module BinSearch {
               -(MAX_UINT - wrapped)
 
     // Initialization step (lines 2-3)
-    action Init = all {
+    action init = all {
         low' = 0,
         high' = length(INPUT_SEQ) - 1,
         isTerminated' = false,
@@ -106,7 +106,7 @@ module BinSearch {
     }
 
     // Computation step (lines 5-16)
-    action Next = any {
+    action step = any {
         LoopIteration,
         LoopExit,
         StutterOnTermination,

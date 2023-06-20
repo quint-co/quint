@@ -3,7 +3,7 @@ module sets {
   var n: int
   var s: Set[int]
 
-  action Init = all {
+  action init = all {
     n' = 0,
     s' = Set(0)
   }
@@ -12,7 +12,7 @@ module sets {
   def gte0(x) = x >= 0
   def eqn(x) = x == n
 
-  action Next = all {
+  action step = all {
     n' = n + 1,
     s' = s.union(Set(n + 1)),
     s.exists(x => x == n),
