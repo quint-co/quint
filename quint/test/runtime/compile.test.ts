@@ -40,7 +40,7 @@ function assertResultAsString(input: string, expected: string | undefined) {
 }
 
 function assertInputFromContext(context: CompilationContext, expected: string | undefined) {
-  contextNameLookup(context.evaluationState!.context, 'q::input', 'callable')
+  contextNameLookup(context.evaluationState.context, 'q::input', 'callable')
     .mapLeft(msg => assert(false, `Unexpected error: ${msg}`))
     .mapRight(value => assertComputableAsString(value, expected))
 }
@@ -67,7 +67,7 @@ function evalInContext<T>(input: string, callable: (ctx: CompilationContext) => 
 // Compile a variable definition and check that the compiled value is defined.
 function assertVarExists(kind: ComputableKind, name: string, input: string) {
   const callback = (ctx: CompilationContext) => {
-    return contextNameLookup(ctx.evaluationState!.context, `${name}`, kind)
+    return contextNameLookup(ctx.evaluationState.context, `${name}`, kind)
       .mapRight(_ => true)
       .mapLeft(msg => `Expected a definition for ${name}, found ${msg}, compiled from: ${input}`)
   }
@@ -93,7 +93,7 @@ function evalVarAfterCall(varName: string, callee: string, input: string): Eithe
     if (!key) {
       return left(`${callee} not found`)
     }
-    const run = ctx.evaluationState?.context.get(key)
+    const run = ctx.evaluationState.context.get(key)
     if (!run) {
       return left(`${callee} not found via ${key}`)
     }
@@ -103,7 +103,7 @@ function evalVarAfterCall(varName: string, callee: string, input: string): Eithe
       .map(res => {
         if ((res as RuntimeValue).toBool() === true) {
           // extract the value of the state variable
-          const nextVal = (ctx.evaluationState?.context.get(kindName('nextvar', varName)) ?? fail).eval()
+          const nextVal = (ctx.evaluationState.context.get(kindName('nextvar', varName)) ?? fail).eval()
           // using if-else, as map-or-unwrap confuses the compiler a lot
           if (nextVal.isNone()) {
             return left(`Value of the variable ${varName} is undefined`)
