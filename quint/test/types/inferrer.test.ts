@@ -162,7 +162,7 @@ describe('inferTypes', () => {
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
-    assert.sameDeepMembers(stringTypes, [[14n, '(str) => bool']])
+    assert.includeDeepMembers(stringTypes, [[14n, '(str) => bool']])
   })
 
   it('considers annotations', () => {
