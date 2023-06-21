@@ -178,7 +178,7 @@ export function prettyQuintType(type: QuintType): Doc {
       return group([nary(text('('), args, text(')')), text(' => '), prettyQuintType(type.res)])
     }
     case 'tup':
-      return prettyRow(type.fields, false)
+      return group([text('('), prettyRow(type.fields, false), text(')')])
     case 'rec': {
       if (rowToString(type.fields) === '{}') {
         return text('{}')
