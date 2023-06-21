@@ -70,9 +70,8 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   // Track location descriptions for error tree traces
   private location: string = ''
 
-  // the current depth of operator definitions: top-level defs are depth 0
-  private definitionDepth: number = 0
-
+  // A stack of free type variables and row variables for lambda expressions.
+  // Nested lambdas add new entries to the stack, and pop them when exiting.
   private freeNames: { typeVariables: Set<string>; rowVariables: Set<string> }[] = []
 
   getResult(): [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>] {
@@ -83,12 +82,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     this.location = `Generating constraints for ${expressionToString(e)}`
   }
 
-  enterDef(_def: QuintDef) {
-    this.definitionDepth++
-  }
-
   exitDef(def: QuintDef) {
-    this.definitionDepth--
     if (this.constraints.length > 0) {
       this.solveConstraints().map(subs => {
         if (!isAnnotatedDef(def)) {
@@ -227,7 +221,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
 
   //   Γ ⊢ e1: (t1, c1)  s = solve(c1)     s(Γ ∪ {n: t1}) ⊢ e2: (t2, c2)
   // ------------------------------------------------------------------------ (LET-OPDEF)
-  //               Γ ⊢ val n = e1 { e2 }: (t2, c1 ∧ c2)
+  //               Γ ⊢ val n = e1 { e2 }: (quantify(t2), c1 ∧ c2)
   exitLet(e: QuintLet) {
     if (this.errors.size !== 0) {
       return
@@ -283,9 +277,6 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         // https://github.com/informalsystems/quint/issues/690
         this.types = new Map<bigint, TypeScheme>(
           [...this.types.entries()].map(([id, te]) => {
-            // console.log(substitutionsToString(subs))
-            // console.log(typeSchemeToString(te))
-            // console.log(typeToString(te.type))
             const newType = applySubstitution(this.table, subs, te.type)
             const scheme: TypeScheme = this.quantify(newType)
             return [id, scheme]
@@ -349,12 +340,8 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   private quantify(type: QuintType): TypeScheme {
     const freeNames = this.currentFreeNames()
     const nonFreeNames = {
-      typeVariables: new Set<string>(
-        [...typeNames(type).typeVariables].filter(name => !freeNames.typeVariables.has(name))
-      ),
-      rowVariables: new Set<string>(
-        [...typeNames(type).rowVariables].filter(name => !freeNames.rowVariables.has(name))
-      ),
+      typeVariables: new Set([...typeNames(type).typeVariables].filter(name => !freeNames.typeVariables.has(name))),
+      rowVariables: new Set([...typeNames(type).rowVariables].filter(name => !freeNames.rowVariables.has(name))),
     }
     return { ...nonFreeNames, type }
   }
