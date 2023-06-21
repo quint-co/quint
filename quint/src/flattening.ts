@@ -117,7 +117,12 @@ export function addDefToFlatModule(
   analysisOutput: AnalysisOutput,
   module: FlatModule,
   def: QuintDef
-): { flattenedModule: FlatModule; flattenedTable: LookupTable; flattenedAnalysis: AnalysisOutput } {
+): {
+  flattenedModule: FlatModule
+  flattenedDefs: FlatDef[]
+  flattenedTable: LookupTable
+  flattenedAnalysis: AnalysisOutput
+} {
   const importedModules = new Map(modules.map(m => [m.name, m]))
   const flattener = new Flatenner(idGenerator, table, sourceMap, analysisOutput, importedModules, module)
 
@@ -126,6 +131,7 @@ export function addDefToFlatModule(
 
   return {
     flattenedModule,
+    flattenedDefs,
     flattenedTable: resolveNamesOrThrow(table, sourceMap, flattenedModule),
     flattenedAnalysis: analysisOutput,
   }

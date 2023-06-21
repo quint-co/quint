@@ -38,12 +38,78 @@ import { lastTraceName } from '../compile'
 
 const specialNames = ['q::input', 'q::runResult', 'q::nruns', 'q::nsteps', 'q::init', 'q::next', 'q::inv']
 
+/**
+ * Returns a Map containing the built-in Computable objects for the Quint language.
+ * These include the callable objects for Bool, Int, and Nat.
+ *
+ * @returns a Map containing the built-in Computable objects.
+ */
 export function builtinContext() {
   return new Map<string, Computable>([
     [kindName('callable', 'Bool'), mkCallable([], mkConstComputable(rv.mkSet([rv.mkBool(false), rv.mkBool(true)])))],
     [kindName('callable', 'Int'), mkCallable([], mkConstComputable(rv.mkInfSet('Int')))],
     [kindName('callable', 'Nat'), mkCallable([], mkConstComputable(rv.mkInfSet('Nat')))],
   ])
+}
+
+/**
+ * Represents the state of evaluation of Quint code.
+ */
+export interface EvaluationState {
+  // The context of the evaluation, containing the Computable objects.
+  context: Map<string, Computable>
+  // The list of variables in the current state.
+  vars: Register[]
+  // The list of variables in the next state.
+  nextVars: Register[]
+  // The list of shadow variables.
+  shadowVars: Register[]
+  // The error tracker for the evaluation to store errors on callbacks.
+  errorTracker: CompilerErrorTracker
+}
+
+/**
+ * Creates a new EvaluationState object.
+ *
+ * @returns a new EvaluationState object.
+ */
+export class CompilerErrorTracker {
+  // messages that are produced during compilation
+  compileErrors: ir.IrErrorMessage[] = []
+  // messages that get populated as the compiled code is executed
+  runtimeErrors: ir.IrErrorMessage[] = []
+
+  addCompileError(id: bigint, msg: string) {
+    this.compileErrors.push({ explanation: msg, refs: [id] })
+  }
+
+  addRuntimeError(id: bigint, msg: string) {
+    this.runtimeErrors.push({ explanation: msg, refs: [id] })
+  }
+}
+
+/**
+ * Creates a new EvaluationState object with the initial state of the evaluation.
+ *
+ * @returns a new EvaluationState object with the lastTrace shadow variable register
+ */
+export function newEvaluationState(): EvaluationState {
+  const state: EvaluationState = {
+    context: builtinContext(),
+    vars: [],
+    nextVars: [],
+    shadowVars: [],
+    errorTracker: new CompilerErrorTracker(),
+  }
+
+  // Initialize compiler state
+  const lastTrace = mkRegister('shadow', lastTraceName, just(rv.mkList([])), () =>
+    state.errorTracker.addRuntimeError(0n, 'q::lastTrace is not set')
+  )
+  state.shadowVars.push(lastTrace)
+  state.context.set(kindName(lastTrace.kind, lastTrace.name), lastTrace)
+
+  return state
 }
 
 /**
@@ -70,18 +136,16 @@ export class CompilerVisitor implements IRVisitor {
   //  - an instance of Register
   //  - an instance of Callable.
   // The keys should be constructed via `kindName`.
-  private context: Map<string, Computable> = builtinContext()
+  private context: Map<string, Computable>
 
   // all variables declared during compilation
-  private vars: Register[] = []
+  private vars: Register[]
   // the registers allocated for the next-state values of vars
-  private nextVars: Register[] = []
+  private nextVars: Register[]
   // shadow variables that are used by the simulator
-  private shadowVars: Register[] = []
-  // messages that are produced during compilation
-  private compileErrors: ir.IrErrorMessage[] = []
-  // messages that get populated as the compiled code is executed
-  private runtimeErrors: ir.IrErrorMessage[] = []
+  private shadowVars: Register[]
+  // keeps errors in a state
+  private errorTracker: CompilerErrorTracker
   // pre-initialized random number generator
   private rand
   // execution listener
@@ -93,17 +157,32 @@ export class CompilerVisitor implements IRVisitor {
     lookupTable: LookupTable,
     types: Map<bigint, TypeScheme>,
     rand: (bound: bigint) => bigint,
-    listener: ExecutionListener
+    listener: ExecutionListener,
+    evaluationState: EvaluationState
   ) {
     this.lookupTable = lookupTable
     this.types = types
     this.rand = rand
     this.execListener = listener
-    const lastTrace = mkRegister('shadow', lastTraceName, just(rv.mkList([])), () =>
-      this.addRuntimeError(0n, 'q::lastTrace is not set')
-    )
-    this.shadowVars.push(lastTrace)
-    this.context.set(kindName(lastTrace.kind, lastTrace.name), lastTrace)
+
+    this.context = evaluationState.context
+    this.vars = evaluationState.vars
+    this.nextVars = evaluationState.nextVars
+    this.shadowVars = evaluationState.shadowVars
+    this.errorTracker = evaluationState.errorTracker
+  }
+
+  /**
+   * Get the compiler state.
+   */
+  getEvaluationState(): EvaluationState {
+    return {
+      context: this.context,
+      vars: this.vars,
+      nextVars: this.nextVars,
+      shadowVars: this.shadowVars,
+      errorTracker: this.errorTracker,
+    }
   }
 
   /**
@@ -131,22 +210,14 @@ export class CompilerVisitor implements IRVisitor {
    * Get the array of compile errors, which changes as the code gets executed.
    */
   getCompileErrors(): ir.IrErrorMessage[] {
-    return this.compileErrors
+    return this.errorTracker.compileErrors
   }
 
   /**
    * Get the array of runtime errors, which changes as the code gets executed.
    */
   getRuntimeErrors(): ir.IrErrorMessage[] {
-    return this.runtimeErrors
-  }
-
-  private addCompileError(id: bigint, msg: string) {
-    this.compileErrors.push({ explanation: msg, refs: [id] })
-  }
-
-  private addRuntimeError(id: bigint, msg: string) {
-    this.runtimeErrors.push({ explanation: msg, refs: [id] })
+    return this.errorTracker.runtimeErrors
   }
 
   enterOpDef(_: ir.QuintOpDef) {
@@ -159,7 +230,7 @@ export class CompilerVisitor implements IRVisitor {
     // All of them are compiled to callables, which may have zero parameters.
     const boundValue = this.compStack.pop()
     if (boundValue === undefined) {
-      this.addCompileError(opdef.id, `No expression for ${opdef.name} on compStack`)
+      this.errorTracker.addCompileError(opdef.id, `No expression for ${opdef.name} on compStack`)
       return
     }
 
@@ -216,7 +287,7 @@ export class CompilerVisitor implements IRVisitor {
     // get the expression that is evaluated in the context of let.
     const exprUnderLet = this.compStack.slice(-1).pop()
     if (exprUnderLet === undefined) {
-      this.addCompileError(letDef.opdef.id, `No expression for ${letDef.opdef.name} on compStack`)
+      this.errorTracker.addCompileError(letDef.opdef.id, `No expression for ${letDef.opdef.name} on compStack`)
       return
     }
 
@@ -246,14 +317,14 @@ export class CompilerVisitor implements IRVisitor {
     //  one for the variable, and
     //  one for its next-state version
     const prevRegister = mkRegister('var', varName, none(), () =>
-      this.addRuntimeError(vardef.id, `Variable ${varName} is not set`)
+      this.errorTracker.addRuntimeError(vardef.id, `Variable ${varName} is not set`)
     )
     this.vars.push(prevRegister)
     // at the moment, we have to refer to variables both via id and name
     this.context.set(kindName('var', varName), prevRegister)
     this.context.set(kindName('var', vardef.id), prevRegister)
     const nextRegister = mkRegister('nextvar', varName, none(), () =>
-      this.addRuntimeError(vardef.id, `${varName}' is not set`)
+      this.errorTracker.addRuntimeError(vardef.id, `${varName}' is not set`)
     )
     this.nextVars.push(nextRegister)
     // at the moment, we have to refer to variables both via id and name
@@ -290,7 +361,7 @@ export class CompilerVisitor implements IRVisitor {
       this.compStack.push(comp)
     } else {
       // this should not happen, due to the name resolver
-      this.addCompileError(name.id, `Name ${name.name} not found`)
+      this.errorTracker.addCompileError(name.id, `Name ${name.name} not found`)
       this.compStack.push(fail)
     }
   }
@@ -304,7 +375,7 @@ export class CompilerVisitor implements IRVisitor {
           const nextvar = this.contextGet(name, ['nextvar'])
           this.compStack.push(nextvar ?? fail)
         } else {
-          this.addCompileError(app.id, 'Operator next(...) needs one argument')
+          this.errorTracker.addCompileError(app.id, 'Operator next(...) needs one argument')
           this.compStack.push(fail)
         }
         break
@@ -381,7 +452,7 @@ export class CompilerVisitor implements IRVisitor {
           if (q.toInt() !== 0n) {
             return just(rv.mkInt(p.toInt() / q.toInt()))
           } else {
-            this.addRuntimeError(app.id, 'Division by zero')
+            this.errorTracker.addRuntimeError(app.id, 'Division by zero')
             return none()
           }
         })
@@ -394,9 +465,9 @@ export class CompilerVisitor implements IRVisitor {
       case 'ipow':
         this.applyFun(app.id, 2, (p, q) => {
           if (q.toInt() == 0n && p.toInt() == 0n) {
-            this.addRuntimeError(app.id, '0^0 is undefined')
+            this.errorTracker.addRuntimeError(app.id, '0^0 is undefined')
           } else if (q.toInt() < 0n) {
-            this.addRuntimeError(app.id, 'i^j is undefined for j < 0')
+            this.errorTracker.addRuntimeError(app.id, 'i^j is undefined for j < 0')
           } else {
             return just(rv.mkInt(p.toInt() ** q.toInt()))
           }
@@ -450,7 +521,7 @@ export class CompilerVisitor implements IRVisitor {
             }
             return just(rv.mkList(arr))
           } else {
-            this.addRuntimeError(app.id, `range(${s}, ${e}) is out of bounds`)
+            this.errorTracker.addRuntimeError(app.id, `range(${s}, ${e}) is out of bounds`)
             return none()
           }
         })
@@ -477,7 +548,7 @@ export class CompilerVisitor implements IRVisitor {
           if (l.size > 0) {
             return this.sliceList(app.id, l, 1, l.size)
           } else {
-            this.addRuntimeError(app.id, 'Applied tail to an empty list')
+            this.errorTracker.addRuntimeError(app.id, 'Applied tail to an empty list')
             return none()
           }
         })
@@ -489,7 +560,7 @@ export class CompilerVisitor implements IRVisitor {
           if (s >= 0 && s <= l.size && e <= l.size && e >= s) {
             return this.sliceList(app.id, l, s, e)
           } else {
-            this.addRuntimeError(app.id, `slice(..., ${s}, ${e}) applied to a list of size ${l.size}`)
+            this.errorTracker.addRuntimeError(app.id, `slice(..., ${s}, ${e}) applied to a list of size ${l.size}`)
             return none()
           }
         })
@@ -531,7 +602,7 @@ export class CompilerVisitor implements IRVisitor {
           if (fieldValue) {
             return just(fieldValue)
           } else {
-            this.addRuntimeError(app.id, `Accessing a missing record field ${name}`)
+            this.errorTracker.addRuntimeError(app.id, `Accessing a missing record field ${name}`)
             return none()
           }
         })
@@ -556,7 +627,7 @@ export class CompilerVisitor implements IRVisitor {
             const newMap = rec.toOrderedMap().set(key, fieldValue)
             return just(rv.mkRecord(newMap))
           } else {
-            this.addRuntimeError(app.id, `Called 'with' with a non-existent key ${key}`)
+            this.errorTracker.addRuntimeError(app.id, `Called 'with' with a non-existent key ${key}`)
             return none()
           }
         })
@@ -637,7 +708,7 @@ export class CompilerVisitor implements IRVisitor {
             return just(value)
           } else {
             // Should we print the key? It may be a complex expression.
-            this.addRuntimeError(app.id, "Called 'get' with a non-existing key")
+            this.errorTracker.addRuntimeError(app.id, "Called 'get' with a non-existing key")
             return none()
           }
         })
@@ -652,7 +723,7 @@ export class CompilerVisitor implements IRVisitor {
             const newMap = asMap.set(normalKey, newValue)
             return just(rv.fromMap(newMap))
           } else {
-            this.addRuntimeError(app.id, "Called 'set' with a non-existing key")
+            this.errorTracker.addRuntimeError(app.id, "Called 'set' with a non-existing key")
             return none()
           }
         })
@@ -680,7 +751,7 @@ export class CompilerVisitor implements IRVisitor {
               return rv.fromMap(newMap)
             })
           } else {
-            this.addRuntimeError(app.id, "Called 'setBy' with a non-existing key")
+            this.errorTracker.addRuntimeError(app.id, "Called 'setBy' with a non-existing key")
             return none()
           }
         })
@@ -758,7 +829,7 @@ export class CompilerVisitor implements IRVisitor {
       case 'assert':
         this.applyFun(app.id, 1, cond => {
           if (!cond.toBool()) {
-            this.addRuntimeError(app.id, 'Assertion failed')
+            this.errorTracker.addRuntimeError(app.id, 'Assertion failed')
             return none()
           }
           return just(cond)
@@ -790,7 +861,7 @@ export class CompilerVisitor implements IRVisitor {
       case 'eventually':
       case 'enabled':
         this.applyFun(app.id, 1, _ => {
-          this.addRuntimeError(app.id, `Runtime does not support the built-in operator '${app.opcode}'`)
+          this.errorTracker.addRuntimeError(app.id, `Runtime does not support the built-in operator '${app.opcode}'`)
           return none()
         })
         break
@@ -801,7 +872,7 @@ export class CompilerVisitor implements IRVisitor {
       case 'weakFair':
       case 'strongFair':
         this.applyFun(app.id, 2, _ => {
-          this.addRuntimeError(app.id, `Runtime does not support the built-in operator '${app.opcode}'`)
+          this.errorTracker.addRuntimeError(app.id, `Runtime does not support the built-in operator '${app.opcode}'`)
           return none()
         })
         break
@@ -814,7 +885,7 @@ export class CompilerVisitor implements IRVisitor {
 
   private applyUserDefined(app: ir.QuintApp) {
     const onError = (sourceId: bigint, msg: string): void => {
-      this.addCompileError(sourceId, msg)
+      this.errorTracker.addCompileError(sourceId, msg)
       this.compStack.push(fail)
     }
 
@@ -928,7 +999,7 @@ export class CompilerVisitor implements IRVisitor {
         this.context.delete(key)
         registers.push(register)
       } else {
-        this.addCompileError(p.id, `Parameter ${p.name} not found`)
+        this.errorTracker.addCompileError(p.id, `Parameter ${p.name} not found`)
       }
     })
 
@@ -936,19 +1007,19 @@ export class CompilerVisitor implements IRVisitor {
     if (lambdaBody) {
       this.compStack.push(mkCallable(registers, lambdaBody))
     } else {
-      this.addCompileError(lam.id, 'Compilation of lambda failed')
+      this.errorTracker.addCompileError(lam.id, 'Compilation of lambda failed')
     }
   }
 
   private translateAssign(sourceId: bigint): void {
     if (this.compStack.length < 2) {
-      this.addCompileError(sourceId, `Assignment '=' needs two arguments`)
+      this.errorTracker.addCompileError(sourceId, `Assignment '=' needs two arguments`)
       return
     }
     const [register, rhs] = this.compStack.splice(-2)
     const name = (register as Register).name
     if (name === undefined) {
-      this.addCompileError(sourceId, `Assignment '=' applied to a non-variable`)
+      this.errorTracker.addCompileError(sourceId, `Assignment '=' applied to a non-variable`)
       this.compStack.push(fail)
       return
     }
@@ -961,7 +1032,7 @@ export class CompilerVisitor implements IRVisitor {
         return just(rv.mkBool(true))
       })
     } else {
-      this.addCompileError(sourceId, `Undefined next variable in ${name} = ...`)
+      this.errorTracker.addCompileError(sourceId, `Undefined next variable in ${name} = ...`)
       this.compStack.push(fail)
     }
   }
@@ -987,7 +1058,7 @@ export class CompilerVisitor implements IRVisitor {
     mapResultAndElems: (_array: Array<[RuntimeValue, RuntimeValue]>) => RuntimeValue
   ): void {
     if (this.compStack.length < 2) {
-      this.addCompileError(sourceId, 'Not enough arguments')
+      this.errorTracker.addCompileError(sourceId, 'Not enough arguments')
       return
     }
     // lambda translated to Callable
@@ -1019,7 +1090,7 @@ export class CompilerVisitor implements IRVisitor {
    */
   private applyFold(sourceId: bigint, order: 'fwd' | 'rev'): void {
     if (this.compStack.length < 3) {
-      this.addCompileError(sourceId, 'Not enough arguments for fold')
+      this.errorTracker.addCompileError(sourceId, 'Not enough arguments for fold')
       return
     }
     // extract two arguments from the call stack and keep the set
@@ -1060,7 +1131,7 @@ export class CompilerVisitor implements IRVisitor {
   // push the combined computable value on the stack
   private applyFun(sourceId: bigint, nargs: number, fun: (..._args: RuntimeValue[]) => Maybe<RuntimeValue>) {
     if (this.compStack.length < nargs) {
-      this.addCompileError(sourceId, 'Not enough arguments')
+      this.errorTracker.addCompileError(sourceId, 'Not enough arguments')
     } else {
       // pop nargs elements of the compStack
       const args = this.compStack.splice(-nargs, nargs)
@@ -1076,7 +1147,7 @@ export class CompilerVisitor implements IRVisitor {
               .join()
           } catch (error) {
             const msg = error instanceof Error ? error.message : 'unknown error'
-            this.addRuntimeError(sourceId, msg)
+            this.errorTracker.addRuntimeError(sourceId, msg)
             return none()
           }
         },
@@ -1089,7 +1160,7 @@ export class CompilerVisitor implements IRVisitor {
   // as it should not evaluate both arms
   private translateIfThenElse(sourceId: bigint) {
     if (this.compStack.length < 3) {
-      this.addCompileError(sourceId, 'Not enough arguments')
+      this.errorTracker.addCompileError(sourceId, 'Not enough arguments')
     } else {
       // pop 3 elements of the compStack
       const [cond, thenArm, elseArm] = this.compStack.splice(-3, 3)
@@ -1141,7 +1212,7 @@ export class CompilerVisitor implements IRVisitor {
   // translate all { A, ..., C } or A.then(B)
   private translateAllOrThen(app: ir.QuintApp): void {
     if (this.compStack.length < app.args.length) {
-      this.addCompileError(app.id, `Not enough arguments on stack for "${app.opcode}"`)
+      this.errorTracker.addCompileError(app.id, `Not enough arguments on stack for "${app.opcode}"`)
       return
     }
     const args = this.compStack.splice(-app.args.length)
@@ -1157,7 +1228,7 @@ export class CompilerVisitor implements IRVisitor {
   // TODO: Soon to be removed: https://github.com/informalsystems/quint/issues/848
   private translateRepeated(app: ir.QuintApp): void {
     if (this.compStack.length < 2) {
-      this.addCompileError(app.id, `Not enough arguments on stack for "${app.opcode}"`)
+      this.errorTracker.addCompileError(app.id, `Not enough arguments on stack for "${app.opcode}"`)
       return
     }
     const [action, niterations] = this.compStack.splice(-2)
@@ -1179,7 +1250,7 @@ export class CompilerVisitor implements IRVisitor {
   // translate n.reps(A)
   private translateReps(app: ir.QuintApp): void {
     if (this.compStack.length < 2) {
-      this.addCompileError(app.id, `Not enough arguments on stack for "${app.opcode}"`)
+      this.errorTracker.addCompileError(app.id, `Not enough arguments on stack for "${app.opcode}"`)
       return
     }
     const [niterations, action] = this.compStack.splice(-2)
@@ -1216,7 +1287,7 @@ export class CompilerVisitor implements IRVisitor {
     shortCircuit: (no: number, r: boolean) => Maybe<EvalResult>
   ): void {
     if (this.compStack.length < app.args.length) {
-      this.addCompileError(app.id, `Not enough arguments on stack for "${app.opcode}"`)
+      this.errorTracker.addCompileError(app.id, `Not enough arguments on stack for "${app.opcode}"`)
       return
     }
     const args = this.compStack.splice(-app.args.length)
@@ -1250,7 +1321,7 @@ export class CompilerVisitor implements IRVisitor {
   // translate any { A, ..., C }
   private translateOrAction(app: ir.QuintApp): void {
     if (this.compStack.length < app.args.length) {
-      this.addCompileError(app.id, 'Not enough arguments on stack for "any"')
+      this.errorTracker.addCompileError(app.id, 'Not enough arguments on stack for "any"')
       return
     }
     const args = this.compStack.splice(-app.args.length)
@@ -1310,7 +1381,7 @@ export class CompilerVisitor implements IRVisitor {
       const sizeOrNone = set.cardinality()
       if (sizeOrNone.isJust()) {
         if (sizeOrNone.value === 0n) {
-          this.addRuntimeError(sourceId, `Applied oneOf to an empty set`)
+          this.errorTracker.addRuntimeError(sourceId, `Applied oneOf to an empty set`)
           return none()
         }
         return set.pick(this.rand(sizeOrNone.value))
@@ -1322,7 +1393,7 @@ export class CompilerVisitor implements IRVisitor {
 
   private test(sourceId: bigint) {
     if (this.compStack.length < 5) {
-      this.addCompileError(sourceId, 'Not enough arguments on stack for "q::test"')
+      this.errorTracker.addCompileError(sourceId, 'Not enough arguments on stack for "q::test"')
       return
     }
 
@@ -1332,7 +1403,7 @@ export class CompilerVisitor implements IRVisitor {
 
   private testOnce(sourceId: bigint) {
     if (this.compStack.length < 4) {
-      this.addCompileError(sourceId, 'Not enough arguments on stack for "q::testOnce"')
+      this.errorTracker.addCompileError(sourceId, 'Not enough arguments on stack for "q::testOnce"')
       return
     }
 
@@ -1522,7 +1593,7 @@ export class CompilerVisitor implements IRVisitor {
       const elem = list.get(Number(idx))
       return elem ? just(elem) : none()
     } else {
-      this.addRuntimeError(sourceId, `Out of bounds, nth(${idx})`)
+      this.errorTracker.addRuntimeError(sourceId, `Out of bounds, nth(${idx})`)
       return none()
     }
   }
@@ -1532,7 +1603,7 @@ export class CompilerVisitor implements IRVisitor {
     if (idx >= 0n && idx < list.size) {
       return just(rv.mkList(list.set(Number(idx), value)))
     } else {
-      this.addRuntimeError(sourceId, `Out of bounds, replaceAt(..., ${idx}, ...)`)
+      this.errorTracker.addRuntimeError(sourceId, `Out of bounds, replaceAt(..., ${idx}, ...)`)
       return none()
     }
   }

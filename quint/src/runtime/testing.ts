@@ -12,7 +12,7 @@ import { Either, left, merge, right } from '@sweet-monads/either'
 import { just } from '@sweet-monads/maybe'
 
 import { ErrorMessage, fromIrErrorMessage } from '../parsing/quintParserFrontend'
-import { QuintEx, QuintModule, QuintOpDef } from '../quintIr'
+import { QuintEx, QuintOpDef } from '../quintIr'
 
 import { CompilationContext, CompilationState, compile, lastTraceName } from './compile'
 import { zerog } from './../idGenerator'
@@ -21,6 +21,7 @@ import { Computable, Register, kindName } from './runtime'
 import { ExecutionFrame, newTraceRecorder } from './trace'
 import { Rng } from '../rng'
 import { RuntimeValue, rv } from './impl/runtimeValue'
+import { newEvaluationState } from './impl/compilerImpl'
 
 /**
  * Various settings to be passed to the testing framework.
@@ -77,23 +78,30 @@ export interface TestResult {
  */
 export function compileAndTest(
   compilationState: CompilationState,
-  main: QuintModule,
+  mainName: string,
   lookupTable: LookupTable,
   options: TestOptions
 ): Either<ErrorMessage[], TestResult[]> {
   const recorder = newTraceRecorder(options.verbosity, options.rng)
-  const ctx = compile(compilationState, lookupTable, main.name, recorder, options.rng.next)
+  const main = compilationState.modules.find(m => m.name === mainName)
+  if (!main) {
+    return left([{ explanation: 'Cannot find main module', locs: [] }])
+  }
+
+  const ctx = compile(compilationState, newEvaluationState(), lookupTable, recorder, options.rng.next, main.defs)
 
   const saveTrace = (index: number, name: string, status: string) => {
     // Save the best traces that are reported by the recorder:
     // If a test failed, it is the first failing trace.
     // Otherwise, it is the longest trace explored by the test.
     const states = recorder.getBestTrace().args.map(e => e.toQuintEx(zerog))
-    options.onTrace(index, name, status, ctx.vars, states)
-  }
-
-  if (!ctx.main) {
-    return left([{ explanation: 'Cannot find main module', locs: [] }])
+    options.onTrace(
+      index,
+      name,
+      status,
+      ctx.evaluationState.vars.map(v => v.name),
+      states
+    )
   }
 
   const ctxErrors = ctx.syntaxErrors.concat(ctx.compileErrors).concat(ctx.analysisErrors)
@@ -103,7 +111,7 @@ export function compileAndTest(
     return left(ctxErrors)
   }
 
-  const testDefs = ctx.main.defs.filter(d => d.kind === 'def' && options.testMatch(d.name)) as QuintOpDef[]
+  const testDefs = main.defs.filter(d => d.kind === 'def' && options.testMatch(d.name)) as QuintOpDef[]
 
   return merge(
     testDefs.map((def, index) => {
@@ -119,7 +127,7 @@ export function compileAndTest(
           seed = options.rng.getState()
           recorder.onRunCall()
           // reset the trace
-          const traceReg = ctx.values.get(kindName('shadow', lastTraceName)) as Register
+          const traceReg = ctx.evaluationState.context.get(kindName('shadow', lastTraceName)) as Register
           traceReg.registerValue = just(rv.mkList([]))
           // run the test
           const result = comp.eval()
@@ -208,7 +216,7 @@ export function compileAndTest(
 }
 
 function getComputableForDef(ctx: CompilationContext, def: QuintOpDef): Either<ErrorMessage[], Computable> {
-  const comp = ctx.values.get(kindName('callable', def.id))
+  const comp = ctx.evaluationState.context.get(kindName('callable', def.id))
   if (comp) {
     return right(comp)
   } else {

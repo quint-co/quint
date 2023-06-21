@@ -285,156 +285,144 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   const testing = { ...prev, stage: 'testing' as stage }
   const mainArg = prev.args.main
   const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
-  const main = prev.modules.find(m => m.name === mainName)
 
   const outputTemplate = testing.args.output
 
-  if (!main) {
-    return left({
-      msg: `Module ${mainName} not found`,
-      stage: { ...prev, errors: [] },
-    })
-  } else {
-    const rngOrError = mkRng(prev.args.seed)
-    if (rngOrError.isLeft()) {
-      return cliErr(rngOrError.value, { ...testing, errors: [] })
-    }
-    const rng = rngOrError.unwrap()
+  const rngOrError = mkRng(prev.args.seed)
+  if (rngOrError.isLeft()) {
+    return cliErr(rngOrError.value, { ...testing, errors: [] })
+  }
+  const rng = rngOrError.unwrap()
 
-    let passed: string[] = []
-    let failed: string[] = []
-    let ignored: string[] = []
-    let namedErrors: [string, ErrorMessage, TestResult][] = []
+  let passed: string[] = []
+  let failed: string[] = []
+  let ignored: string[] = []
+  let namedErrors: [string, ErrorMessage, TestResult][] = []
 
-    const startMs = Date.now()
+  const startMs = Date.now()
+  if (verbosity.hasResults(verbosityLevel)) {
+    out(`\n  ${mainName}`)
+  }
+
+  const matchFun = (n: string): boolean => isMatchingTest(testing.args.match, n)
+  const options: TestOptions = {
+    testMatch: matchFun,
+    maxSamples: testing.args.maxSamples,
+    rng,
+    verbosity: verbosityLevel,
+    onTrace: (index: number, name: string, status: string, vars: string[], states: QuintEx[]) => {
+      if (outputTemplate && outputTemplate.endsWith('.itf.json')) {
+        const filename = outputTemplate.replaceAll('{}', name).replaceAll('{#}', index)
+        const trace = toItf(vars, states)
+        if (trace.isRight()) {
+          const jsonObj = addItfHeader(prev.args.input, status, trace.value)
+          writeToJson(filename, jsonObj)
+        } else {
+          console.error(`ITF conversion failed on ${name}: ${trace.value}`)
+        }
+      }
+    },
+  }
+  const analysisOutput = { types: testing.types, effects: testing.effects, modes: testing.modes }
+  const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
+    testing.modules,
+    testing.table,
+    testing.idGen,
+    testing.sourceMap,
+    analysisOutput
+  )
+  const compilationState = {
+    modules: flattenedModules,
+    sourceMap: testing.sourceMap,
+    analysisOutput: flattenedAnalysis,
+    idGen: testing.idGen,
+  }
+  const testOut = compileAndTest(compilationState, mainName, flattenedTable, options)
+
+  if (testOut.isLeft()) {
+    return cliErr('Tests failed', { ...testing, errors: testOut.value })
+  } else if (testOut.isRight()) {
+    const elapsedMs = Date.now() - startMs
+    const results = testOut.unwrap()
+    // output the status for every test
     if (verbosity.hasResults(verbosityLevel)) {
-      out(`\n  ${mainName}`)
-    }
-
-    const matchFun = (n: string): boolean => isMatchingTest(testing.args.match, n)
-    const options: TestOptions = {
-      testMatch: matchFun,
-      maxSamples: testing.args.maxSamples,
-      rng,
-      verbosity: verbosityLevel,
-      onTrace: (index: number, name: string, status: string, vars: string[], states: QuintEx[]) => {
-        if (outputTemplate && outputTemplate.endsWith('.itf.json')) {
-          const filename = outputTemplate.replaceAll('{}', name).replaceAll('{#}', index)
-          const trace = toItf(vars, states)
-          if (trace.isRight()) {
-            const jsonObj = addItfHeader(prev.args.input, status, trace.value)
-            writeToJson(filename, jsonObj)
-          } else {
-            console.error(`ITF conversion failed on ${name}: ${trace.value}`)
-          }
+      results.forEach(res => {
+        if (res.status === 'passed') {
+          out(`    ${chalk.green('ok')} ${res.name} passed ${res.nsamples} test(s)`)
         }
-      },
-    }
-    const analysisOutput = { types: testing.types, effects: testing.effects, modes: testing.modes }
-    const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
-      testing.modules,
-      testing.table,
-      testing.idGen,
-      testing.sourceMap,
-      analysisOutput
-    )
-    const compilationState = {
-      modules: flattenedModules,
-      sourceMap: testing.sourceMap,
-      analysisOutput: flattenedAnalysis,
-      idGen: testing.idGen,
-    }
-    const testOut = compileAndTest(compilationState, main, flattenedTable, options)
+        if (res.status === 'failed') {
+          const errNo = chalk.red(namedErrors.length + 1)
+          out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
 
-    if (testOut.isLeft()) {
-      return cliErr('Tests failed', { ...testing, errors: testOut.value })
-    } else if (testOut.isRight()) {
-      const elapsedMs = Date.now() - startMs
-      const results = testOut.unwrap()
-      // output the status for every test
-      if (verbosity.hasResults(verbosityLevel)) {
-        results.forEach(res => {
-          if (res.status === 'passed') {
-            out(`    ${chalk.green('ok')} ${res.name} passed ${res.nsamples} test(s)`)
-          }
-          if (res.status === 'failed') {
-            const errNo = chalk.red(namedErrors.length + 1)
-            out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
+          res.errors.forEach(e => namedErrors.push([res.name, e, res]))
+        }
+      })
+    }
 
-            res.errors.forEach(e => namedErrors.push([res.name, e, res]))
-          }
-        })
+    passed = results.filter(r => r.status === 'passed').map(r => r.name)
+    failed = results.filter(r => r.status === 'failed').map(r => r.name)
+    ignored = results.filter(r => r.status === 'ignored').map(r => r.name)
+
+    // output the statistics banner
+    if (verbosity.hasResults(verbosityLevel)) {
+      out('')
+      if (passed.length > 0) {
+        out(chalk.green(`  ${passed.length} passing`) + chalk.gray(` (${elapsedMs}ms)`))
       }
-
-      passed = results.filter(r => r.status === 'passed').map(r => r.name)
-      failed = results.filter(r => r.status === 'failed').map(r => r.name)
-      ignored = results.filter(r => r.status === 'ignored').map(r => r.name)
-
-      // output the statistics banner
-      if (verbosity.hasResults(verbosityLevel)) {
-        out('')
-        if (passed.length > 0) {
-          out(chalk.green(`  ${passed.length} passing`) + chalk.gray(` (${elapsedMs}ms)`))
-        }
-        if (failed.length > 0) {
-          out(chalk.red(`  ${failed.length} failed`))
-        }
-        if (ignored.length > 0) {
-          out(chalk.gray(`  ${ignored.length} ignored`))
-        }
+      if (failed.length > 0) {
+        out(chalk.red(`  ${failed.length} failed`))
       }
+      if (ignored.length > 0) {
+        out(chalk.gray(`  ${ignored.length} ignored`))
+      }
+    }
 
-      // output errors, if there are any
-      if (verbosity.hasTestDetails(verbosityLevel) && namedErrors.length > 0) {
-        const code = prev.sourceCode!
-        const finder = lineColumn(code)
-        out('')
-        namedErrors.forEach(([name, err, testResult], index) => {
-          const details = formatError(code, finder, err)
-          // output the header
-          out(`  ${index + 1}) ${name}:`)
-          const lines = details.split('\n')
-          // output the first two lines in red
-          lines.slice(0, 2).forEach(l => out(chalk.red('      ' + l)))
+    // output errors, if there are any
+    if (verbosity.hasTestDetails(verbosityLevel) && namedErrors.length > 0) {
+      const code = prev.sourceCode!
+      const finder = lineColumn(code)
+      out('')
+      namedErrors.forEach(([name, err, testResult], index) => {
+        const details = formatError(code, finder, err)
+        // output the header
+        out(`  ${index + 1}) ${name}:`)
+        const lines = details.split('\n')
+        // output the first two lines in red
+        lines.slice(0, 2).forEach(l => out(chalk.red('      ' + l)))
 
-          if (verbosity.hasActionTracking(verbosityLevel)) {
-            out('')
-            testResult.frames.forEach((f, index) => {
-              out(`[${chalk.bold('Frame ' + index)}]`)
-              const console = {
-                width: columns,
-                out: (s: string) => process.stdout.write(s),
-              }
-              printExecutionFrameRec(console, f, [])
-              out('')
-            })
-
-            if (testResult.frames.length == 0) {
-              out('    [No execution]')
+        if (verbosity.hasActionTracking(verbosityLevel)) {
+          out('')
+          testResult.frames.forEach((f, index) => {
+            out(`[${chalk.bold('Frame ' + index)}]`)
+            const console = {
+              width: columns,
+              out: (s: string) => process.stdout.write(s),
             }
+            printExecutionFrameRec(console, f, [])
+            out('')
+          })
+
+          if (testResult.frames.length == 0) {
+            out('    [No execution]')
           }
-          // output the seed
-          out(chalk.gray(`    Use --seed=0x${testResult.seed.toString(16)} --match=${testResult.name} to repeat.`))
-        })
-        out('')
-      }
-
-      if (
-        failed.length > 0 &&
-        verbosity.hasHints(options.verbosity) &&
-        !verbosity.hasActionTracking(options.verbosity)
-      ) {
-        out(chalk.gray('\n  Use --verbosity=3 to show executions.'))
-      }
+        }
+        // output the seed
+        out(chalk.gray(`    Use --seed=0x${testResult.seed.toString(16)} --match=${testResult.name} to repeat.`))
+      })
+      out('')
     }
 
-    const errors = namedErrors.map(([_, e]) => e)
-    const stage = { ...testing, passed, failed, ignored, errors }
-    if (errors.length == 0 && failed.length == 0) {
-      return right(stage)
-    } else {
-      return cliErr('Tests failed', stage)
+    if (failed.length > 0 && verbosity.hasHints(options.verbosity) && !verbosity.hasActionTracking(options.verbosity)) {
+      out(chalk.gray('\n  Use --verbosity=3 to show executions.'))
     }
+  }
+
+  const errors = namedErrors.map(([_, e]) => e)
+  const stage = { ...testing, passed, failed, ignored, errors }
+  if (errors.length == 0 && failed.length == 0) {
+    return right(stage)
+  } else {
+    return cliErr('Tests failed', stage)
   }
 }
 

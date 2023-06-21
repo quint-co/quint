@@ -105,7 +105,8 @@ module __run__ {
     return errSimulationResult('error', errors)
   } else {
     // evaluate q::runResult, which triggers the simulator
-    const res: Either<string, Computable> = contextNameLookup(ctx, 'q::runResult', 'callable')
+    const evaluationState = ctx.evaluationState
+    const res: Either<string, Computable> = contextNameLookup(evaluationState.context, 'q::runResult', 'callable')
     if (res.isLeft()) {
       const errors = [{ explanation: res.value, locs: [] }] as ErrorMessage[]
       return errSimulationResult('error', errors)
@@ -127,7 +128,7 @@ module __run__ {
 
     return {
       status: status,
-      vars: ctx.vars,
+      vars: evaluationState.vars.map(v => v.name),
       states: topFrame.args.map(e => e.toQuintEx(idGen)),
       frames: topFrame.subframes,
       errors: ctx.getRuntimeErrors(),
