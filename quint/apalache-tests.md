@@ -35,43 +35,6 @@ error: Configuration error (see the manual): Operator invalidInit not found (use
 
 ## Successful verification
 
-### Can verify `../examples/language-features/booleans.qnt`
-
-<!-- !test check can check booleans.qnt -->
-```
-quint verify --init Init --step Next ../examples/language-features/booleans.qnt
-```
-
-
-### Can verify `../examples/language-features/integers.qnt`
-
-<!-- !test check can check integers.qnt -->
-```
-quint verify --init Init --step Next ../examples/language-features/integers.qnt
-```
-
-### Can verify `../examples/language-features/sets.qnt`
-
-<!-- !test check can check sets.qnt -->
-```
-quint verify --init Init --step Next ../examples/language-features/sets.qnt
-```
-
-
-### Can verify `../examples/language-features/lists.qnt`
-
-<!-- !test check can check lists.qnt -->
-```
-quint verify --init Init --step Next ../examples/language-features/lists.qnt
-```
-
-
-### Can verify `../examples/language-features/maps.qnt`
-
-<!-- !test check can check maps.qnt -->
-```
-quint verify --init Init --step Next ../examples/language-features/maps.qnt
-```
 
 ### Can verify `../examples/classic/sequential/BinSearch/BinSearch10.qnt`
 
@@ -79,7 +42,7 @@ Contains an import + const instantiation.
 
 <!-- !test check can check BinSearch10.qnt -->
 ```
-quint verify --init=Init --step=Next --invariant=Postcondition ../examples/classic/sequential/BinSearch/BinSearch10.qnt
+quint verify --invariant=Postcondition ../examples/classic/sequential/BinSearch/BinSearch10.qnt
 ```
 
 ### Default `step` and `init` operators are found

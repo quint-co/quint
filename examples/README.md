@@ -1,3 +1,4 @@
+<!-- DO NOT EDIT: THIS FILE IS GENERATED FROM examples/.scripts/README-text.md VIA 'make examples' -->
 This directory contains examples of protocol specifications written in Quint.
 
 Note that some examples were written long time ago. All of our examples pass
@@ -33,54 +34,51 @@ yet. To set your expectations right, check the dashboard below first.
 
 # Dashboard
 
-This dashboard shows, how far we have checked the examples in the
-Quint-Apalache pipeline.
+This dashboard shows, how far we have checked the examples in the Quint-Apalache
+pipeline. The reported status reflects running the noted subcommand on the
+listed without any additional command line arguments.
 
-| Example          | Syntax           | Types            | Unit tests       | Apalache    |
-| ---------------- |:----------------:|:----------------:|:----------------:|:-----------:|
-|                    **Solidity**                                                         |
-| [Coin][]         |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
-| [SimpleAuction][]|:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
-| [icse23-fig7][]  |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
-| [ERC20][]        |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
-| [simplePonzi][]  |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
-| [gradualPonzi][] |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
-|                    **Cosmos**                                                           |
-| [ICS23][]        |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
-| [Tendermint][]   |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
-|                    **Classic**                                                          |
-| [ClockSync][]    |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
-| [LamportMutex][] |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
-| [Paxos][]        |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
-| [ReadersWriters][]|:white_check_mark:|:white_check_mark:|:x:              | :x:         |
-| [EWD840][]       |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
-| [BinSearch][]    |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
-|                    **Puzzles**                                                          |
-| [Prisoners][]    |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
-| [tictactoe][]    |:white_check_mark:|:white_check_mark:|:x:               | :x:         |
-|                    **Language features**                                                |
-| [booleans][]     |:white_check_mark:|:white_check_mark:|:white_check_mark:|:white_check_mark:|
-| [counters][]     |:white_check_mark:|:white_check_mark:|:white_check_mark:| :x:         |
-| TBD                                                                                     |
-
-
-[Cosmos ecosystem]: https://cosmos.network
-[TLA+ examples]: https://github.com/tlaplus/Examples/
-[Coin]: ./examples/solidity/Coin
-[counters]: ./language-features/counters.qnt
-[SimpleAuction]: ./solidity/SimpleAuction/SimpleAuctionNonComposable.qnt
-[ERC20]: ./solidity/ERC20/erc20.qnt
-[ICS23]: ./cosmos/ics23/ics23.qnt
-[Tendermint]: ./cosmos/tendermint/TendermintAcc_004.qnt
-[ClockSync]: ./classic/distributed/ClockSync/clockSync3.qnt
-[LamportMutex]: ./classic/distributed/LamportMutex/LamportMutex.qnt
-[Paxos]: ./classic/distributed/Paxos/Paxos.qnt
-[ReadersWriters]: ./classic/distributed/ReadersWriters/ReadersWriters.qnt
-[EWD840]: ./classic/distributed/ewd840/ewd840.qnt
-[BinSearch]: ./classic/sequential/BinSearch/BinSearch.qnt
-[Prisoners]: ./puzzles/prisoners/prisoners.qnt
-[tictactoe]: ./puzzles/tictactoe/tictactoe.qnt
-[booleans]: ./language-features/booleans.qnt
-[icse23-fig7]: ./solidity/icse23-fig7/lottery.qnt
-[simplePonzi]: ./solidity/SimplePonzi/simplePonzi.qnt
-[gradualPonzi]: ./solidity/GradualPonzi/gradualPonzi.qnt
+| Example | Syntax (`parse`) | Types (`typecheck`) | Unit tests (`test`) | Apalache (`verify`) |
+|---------|:----------------:|:-------------------:|:-------------------:|:-------------------:|
+| [classic/distributed/ClockSync/clockSync3.qnt](./classic/distributed/ClockSync/clockSync3.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [classic/distributed/ewd840/ewd840.qnt](./classic/distributed/ewd840/ewd840.qnt) | :white_check_mark: | :x: | :x: | :x: |
+| [classic/distributed/LamportMutex/LamportMutex.qnt](./classic/distributed/LamportMutex/LamportMutex.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [classic/distributed/Paxos/Paxos.qnt](./classic/distributed/Paxos/Paxos.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [classic/distributed/Paxos/Voting.qnt](./classic/distributed/Paxos/Voting.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [classic/distributed/ReadersWriters/ReadersWriters.qnt](./classic/distributed/ReadersWriters/ReadersWriters.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [classic/sequential/BinSearch/BinSearch.qnt](./classic/sequential/BinSearch/BinSearch.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [classic/sequential/BinSearch/BinSearch10.qnt](./classic/sequential/BinSearch/BinSearch10.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [cosmos/ics20/bank.qnt](./cosmos/ics20/bank.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [cosmos/ics20/base.qnt](./cosmos/ics20/base.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [cosmos/ics20/denomTrace.qnt](./cosmos/ics20/denomTrace.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [cosmos/ics20/ics20.qnt](./cosmos/ics20/ics20.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [cosmos/ics23/ics23.qnt](./cosmos/ics23/ics23.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [cosmos/lightclient/Blockchain.qnt](./cosmos/lightclient/Blockchain.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [cosmos/lightclient/typedefs.qnt](./cosmos/lightclient/typedefs.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [cosmos/tendermint/TendermintAcc005.qnt](./cosmos/tendermint/TendermintAcc005.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [language-features/booleans.qnt](./language-features/booleans.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [language-features/counters.qnt](./language-features/counters.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [language-features/importFrom.qnt](./language-features/importFrom.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [language-features/imports.qnt](./language-features/imports.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [language-features/instances.qnt](./language-features/instances.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [language-features/instancesFrom.qnt](./language-features/instancesFrom.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [language-features/integers.qnt](./language-features/integers.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [language-features/lists.qnt](./language-features/lists.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [language-features/maps.qnt](./language-features/maps.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [language-features/nondet.qnt](./language-features/nondet.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [language-features/option.qnt](./language-features/option.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [language-features/records.qnt](./language-features/records.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [language-features/sets.qnt](./language-features/sets.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [language-features/tuples.qnt](./language-features/tuples.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [puzzles/prisoners/prisoners.qnt](./puzzles/prisoners/prisoners.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [puzzles/tictactoe/tictactoe.qnt](./puzzles/tictactoe/tictactoe.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [solidity/Coin/coin.qnt](./solidity/Coin/coin.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [solidity/ERC20/erc20.qnt](./solidity/ERC20/erc20.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [solidity/GradualPonzi/gradualPonzi.qnt](./solidity/GradualPonzi/gradualPonzi.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [solidity/icse23-fig7/lottery.qnt](./solidity/icse23-fig7/lottery.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [solidity/SimpleAuction/SimpleAuctionNonComposable.qnt](./solidity/SimpleAuction/SimpleAuctionNonComposable.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [solidity/SimplePonzi/simplePonzi.qnt](./solidity/SimplePonzi/simplePonzi.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [spells/basicSpells.qnt](./spells/basicSpells.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [spells/commonSpells.qnt](./spells/commonSpells.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [spells/rareSpells.qnt](./spells/rareSpells.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
+| [verification/defaultOpNames.qnt](./verification/defaultOpNames.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |

@@ -14,10 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   performance significantly (#952)
 - New expressions and definitions typed in the REPL are now incrementally
   compiled, improving performance (#968)
+- Static analysis performance is significantly improved for large specs (#970)
 
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed a bug where sometimes static analysis would flag a mode error where
+  there isn't one (#960)
+
+- Fixed the behavior of `slice` for the case `l.slice(length(l), length(l))` (#971)
+
 ### Security
 
 ## v0.11.2 -- 2023-06-15

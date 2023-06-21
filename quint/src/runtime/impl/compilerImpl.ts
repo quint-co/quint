@@ -557,7 +557,7 @@ export class CompilerVisitor implements IRVisitor {
       case 'slice':
         this.applyFun(app.id, 3, (list, start, end) => {
           const [l, s, e] = [list.toList(), Number(start.toInt()), Number(end.toInt())]
-          if (s >= 0 && s < l.size && e <= l.size && e >= s) {
+          if (s >= 0 && s <= l.size && e <= l.size && e >= s) {
             return this.sliceList(app.id, l, s, e)
           } else {
             this.errorTracker.addRuntimeError(app.id, `slice(..., ${s}, ${e}) applied to a list of size ${l.size}`)
