@@ -142,30 +142,35 @@ function err<A>(explanation: string, errors: ErrorMessage[] = [], traces?: ItfTr
 }
 
 function findApalacheDistribution(): VerifyResult<ApalacheDist> {
-  const configuredDist =
-    process.env.APALACHE_DIST && path.isAbsolute(process.env.APALACHE_DIST)
-      ? process.env.APALACHE_DIST
-      : path.join(process.cwd(), process.env.APALACHE_DIST!)
-
-  // TODO: fetch release if APALACHE_DIST is not configured
-  // See https://github.com/informalsystems/quint/issues/701
-  let distResult: VerifyResult<string> = err(
-    'Unable to find the apalache distribution. Ensure the APALACHE_DIST enviroment variable is set.'
-  )
-
-  if (configuredDist && !fs.existsSync(configuredDist)) {
-    distResult = err(`Specified APALACHE_DIST ${configuredDist} does not exist`)
-  } else if (configuredDist) {
-    distResult = right(configuredDist)
+  if (!process.env.APALACHE_DIST) {
+    // TODO: fetch release if APALACHE_DIST is not configured
+    // See https://github.com/informalsystems/quint/issues/701
+    return err('APALACHE_DIST enviroment variable is not set.')
   }
 
-  return distResult.chain(dist => {
-    const jar = path.join(dist, 'lib', 'apalache.jar')
-    const exe = path.join(dist, 'bin', 'apalache-mc')
-    return fs.existsSync(jar) && fs.existsSync(exe)
-      ? right({ jar, exe })
-      : err(`Apalache distribution is corrupted. Cannot find ${jar} or ${exe}.`)
-  })
+  const dist = path.isAbsolute(process.env.APALACHE_DIST)
+    ? process.env.APALACHE_DIST
+    : path.join(process.cwd(), process.env.APALACHE_DIST!)
+
+  if (!fs.existsSync(dist)) {
+    return err(`Specified APALACHE_DIST ${dist} does not exist.`)
+  }
+
+  const jar = path.join(dist, 'lib', 'apalache.jar')
+  const exe = path.join(dist, 'bin', 'apalache-mc')
+
+  if (!fs.existsSync(jar)) {
+    return err(
+      `Apalache distribution is corrupted: cannot find ${jar}. Ensure the APALACHE_DIST environment variable points to the right directory.`
+    )
+  }
+  if (!fs.existsSync(exe)) {
+    return err(
+      `Apalache distribution is corrupted: cannot find ${exe}. Ensure the APALACHE_DIST environment variable points to the right directory.`
+    )
+  }
+
+  return right({ jar, exe })
 }
 
 // See https://grpc.io/docs/languages/node/basics/#example-code-and-setup
