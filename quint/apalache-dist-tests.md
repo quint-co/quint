@@ -22,7 +22,7 @@ APALACHE_DIST=/does/not/exist quint verify ../examples/language-features/boolean
 <!-- !test exit 1 -->
 <!-- !test err invalid APALACHE_DIST -->
 ```
-error: Specified APALACHE_DIST /does/not/exist does not exist
+error: Specified APALACHE_DIST /does/not/exist does not exist.
 ```
 
 #### Setting a corrupted `APALACHE_DIST` produces an error
@@ -38,7 +38,7 @@ APALACHE_DIST=_build quint verify ../examples/language-features/booleans.qnt 2> 
 <!-- !test exit 1 -->
 <!-- !test err corrupted APALACHE_DIST -->
 ```
-error: Apalache distribution is corrupted. Cannot find _build/lib/apalache.jar or _build/bin/apalache-mc.
+error: Apalache distribution is corrupted: cannot find _build/lib/apalache.jar. Ensure the APALACHE_DIST environment variable points to the right directory.
 ```
 
 #### Extracting the proto file from a corrupted jar file produces an error
