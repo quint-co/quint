@@ -33,6 +33,7 @@ import { QuintType, Row } from './quintTypes'
 import { Loc, parsePhase3importAndNameResolution } from './parsing/quintParserFrontend'
 import { compact, uniqBy } from 'lodash'
 import { AnalysisOutput } from './quintAnalyzer'
+import { inlineAliases } from './types/aliasInliner'
 
 /**
  * Flatten an array of modules, replacing instances, imports and exports with their definitions.
@@ -63,6 +64,9 @@ export function flattenModules(
     (acc, module) => {
       const { flattenedModules, flattenedTable, flattenedAnalysis } = acc
 
+      // Inline type aliases
+      const inlined = inlineAliases(flattenedTable, module)
+
       // Flatten the current module
       const flattener = new Flatenner(
         idGenerator,
@@ -70,7 +74,7 @@ export function flattenModules(
         sourceMap,
         flattenedAnalysis,
         importedModules,
-        module
+        inlined
       )
       const flattened = flattener.flattenModule()
 

@@ -166,6 +166,14 @@ describe('flattenModules', () => {
 
     assertFlatennedDefs(baseDefs, defs, expectedDefs)
   })
+
+  describe('inlines aliases', () => {
+    const defs = ['type MY_ALIAS = int', 'var x: MY_ALIAS']
+
+    const expectedDefs = ['var x: int']
+
+    assertFlatennedDefs([], defs, expectedDefs)
+  })
 })
 
 describe('addDefToFlatModule', () => {
