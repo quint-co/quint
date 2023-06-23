@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.11.3 -- 2023-06-23
+
+### Added
+### Changed
 
 - New definitions typed in the REPL are now incrementally analyzed, improving
   performance significantly (#952)
