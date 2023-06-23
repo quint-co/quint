@@ -304,7 +304,7 @@ export class EffectInferrer implements IRVisitor {
 
         const nonFreeNames = effect.params.reduce(
           (names, p) => {
-            const { effectVariables: effectVariables, entityVariables: entityVariables } = effectNames(p)
+            const { effectVariables, entityVariables } = effectNames(p)
             return {
               effectVariables: new Set([...names.effectVariables, ...effectVariables]),
               entityVariables: new Set([...names.entityVariables, ...entityVariables]),

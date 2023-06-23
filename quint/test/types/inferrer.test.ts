@@ -155,6 +155,16 @@ describe('inferTypes', () => {
     ])
   })
 
+  it('keeps track of free variables in nested scopes (#966)', () => {
+    const quintModule = buildModuleWithDefs(['def f(a) = a == "x"', 'def g(b) = val nested = (1,2) { f(b) }'])
+
+    const [errors, types] = inferTypesForModule(quintModule)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+
+    const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    assert.includeDeepMembers(stringTypes, [[14n, '(str) => bool']])
+  })
+
   it('considers annotations', () => {
     const quintModule = buildModuleWithDefs(['def e(p): (int) => int = p'])
 
