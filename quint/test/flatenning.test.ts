@@ -179,11 +179,18 @@ describe('flattenModules', () => {
 })
 
 describe('addDefToFlatModule', () => {
-  function assertAddedDefs(baseDefs: string[], defToAdd: string, expectedDefs: string[]): void {
+  function assertAddedDefs(
+    baseDefs: string[],
+    currentModuleDefs: string[],
+    defToAdd: string,
+    expectedDefs: string[]
+  ): void {
     const idGenerator = newIdGenerator()
     const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
 
-    const quintModules: string = `module A { ${baseDefs.join('\n')} } module wrapper { ${defToAdd} }`
+    const quintModules: string = `module A { ${baseDefs.join('\n')} } module wrapper { ${currentModuleDefs
+      .concat(defToAdd)
+      .join('\n')} }`
 
     const parseResult = parse(idGenerator, 'fake_location', fake_path, quintModules)
     if (parseResult.isLeft()) {
@@ -195,7 +202,7 @@ describe('addDefToFlatModule', () => {
     const originalIds = [...sourceMap.keys()]
     const typesMap = new Map(originalIds.map(i => [i, toScheme({ kind: 'int' })]))
 
-    const def = module.defs[0]
+    const def = module.defs[module.defs.length - 1]
     const moduleWithoutDef: FlatModule = { ...module, defs: [] }
     const { flattenedModule, flattenedAnalysis } = addDefToFlatModule(
       modules,
@@ -258,7 +265,7 @@ describe('addDefToFlatModule', () => {
       'def A1::lam2 = val A1::b = 1 { ((A1::a) => iadd(A1::b, A1::a)) }',
     ]
 
-    assertAddedDefs(baseDefs, defToAdd, expectedDefs)
+    assertAddedDefs(baseDefs, [], defToAdd, expectedDefs)
   })
 
   describe('imports', () => {
@@ -268,6 +275,16 @@ describe('addDefToFlatModule', () => {
 
     const expectedDefs = ['val f = ((x) => iadd(x, 1))']
 
-    assertAddedDefs(baseDefs, defToAdd, expectedDefs)
+    assertAddedDefs(baseDefs, [], defToAdd, expectedDefs)
+  })
+
+  describe('type aliases', () => {
+    const currentModuleDefs = ['type MY_ALIAS = int']
+
+    const defToAdd = 'const N: MY_ALIAS'
+
+    const expectedDefs = ['const N: int']
+
+    assertAddedDefs([], currentModuleDefs, defToAdd, expectedDefs)
   })
 })

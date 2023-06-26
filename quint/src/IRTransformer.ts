@@ -265,7 +265,7 @@ export function transformType(transformer: IRTransformer, type: t.QuintType): t.
  *
  * @returns the transformed Quint definition
  */
-function transformDefinition(transformer: IRTransformer, def: ir.QuintDef): ir.QuintDef {
+export function transformDefinition(transformer: IRTransformer, def: ir.QuintDef): ir.QuintDef {
   let newDef = { ...def }
   if (transformer.enterDef) {
     newDef = transformer.enterDef(newDef)
