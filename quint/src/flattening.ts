@@ -36,7 +36,8 @@ import { AnalysisOutput } from './quintAnalyzer'
 import { inlineAliases, inlineAliasesInType } from './types/aliasInliner'
 
 /**
- * Flatten an array of modules, replacing instances, imports and exports with their definitions.
+ * Flatten an array of modules, replacing instances, imports and exports with
+ * their definitions and inlining type aliases.
  *
  * @param modules The modules to flatten
  * @param table The lookup table to for all referred names
