@@ -129,7 +129,7 @@ export function transformModule(transformer: IRTransformer, quintModule: ir.Quin
  *
  * @returns the transformed Quint type
  */
-function transformType(transformer: IRTransformer, type: t.QuintType): t.QuintType {
+export function transformType(transformer: IRTransformer, type: t.QuintType): t.QuintType {
   let newType = { ...type }
   if (transformer.enterType) {
     newType = transformer.enterType(newType)

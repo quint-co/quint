@@ -33,7 +33,7 @@ import { QuintType, Row } from './quintTypes'
 import { Loc, parsePhase3importAndNameResolution } from './parsing/quintParserFrontend'
 import { compact, uniqBy } from 'lodash'
 import { AnalysisOutput } from './quintAnalyzer'
-import { inlineAliases } from './types/aliasInliner'
+import { inlineAliases, inlineAliasesInType } from './types/aliasInliner'
 
 /**
  * Flatten an array of modules, replacing instances, imports and exports with their definitions.
@@ -53,19 +53,31 @@ export function flattenModules(
   sourceMap: Map<bigint, Loc>,
   analysisOutput: AnalysisOutput
 ): { flattenedModules: FlatModule[]; flattenedTable: LookupTable; flattenedAnalysis: AnalysisOutput } {
-  const importedModules = new Map(modules.map(m => [m.name, m]))
-
   // FIXME: use copies of parameters so the original objects are not mutated.
   // This is not a problem atm, but might be in the future.
 
+  // Inline type aliases
+  const modulesWithInlinedAliases = modules.map(m => inlineAliases(table, m))
+  const tableWithInlinedAliases = new Map(
+    [...table.entries()].map(([id, def]) => {
+      if (!def.typeAnnotation) {
+        return [id, def]
+      }
+
+      const inlinedType = inlineAliasesInType(table, def.typeAnnotation)
+      return [id, { ...def, typeAnnotation: inlinedType }]
+    })
+  )
+
+  // Create a map of imported modules, to be used when flattening
+  // instances/imports/exports. This is updated as the modules are flattened.
+  const importedModules = new Map(modulesWithInlinedAliases.map(m => [m.name, m]))
+
   // Reduce the array of modules to a single object containing the flattened
   // modules, flattened lookup table and flattened analysis output
-  return modules.reduce(
+  return modulesWithInlinedAliases.reduce(
     (acc, module) => {
       const { flattenedModules, flattenedTable, flattenedAnalysis } = acc
-
-      // Inline type aliases
-      const inlined = inlineAliases(flattenedTable, module)
 
       // Flatten the current module
       const flattener = new Flatenner(
@@ -74,7 +86,7 @@ export function flattenModules(
         sourceMap,
         flattenedAnalysis,
         importedModules,
-        inlined
+        module
       )
       const flattened = flattener.flattenModule()
 
@@ -92,7 +104,7 @@ export function flattenModules(
         flattenedAnalysis: flattenedAnalysis,
       }
     },
-    { flattenedModules: [] as FlatModule[], flattenedTable: table, flattenedAnalysis: analysisOutput }
+    { flattenedModules: [] as FlatModule[], flattenedTable: tableWithInlinedAliases, flattenedAnalysis: analysisOutput }
   )
 }
 

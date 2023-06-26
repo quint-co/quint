@@ -13,7 +13,7 @@
  * @module
  */
 
-import { IRTransformer, transformModule } from '../IRTransformer'
+import { IRTransformer, transformModule, transformType } from '../IRTransformer'
 import { LookupTable } from '../names/lookupTable'
 import { QuintModule } from '../quintIr'
 import { QuintType } from '../quintTypes'
@@ -33,6 +33,21 @@ import { QuintType } from '../quintTypes'
 export function inlineAliases(lookupTable: LookupTable, quintModule: QuintModule): QuintModule {
   const inliner = new AliasInliner(lookupTable)
   return transformModule(inliner, quintModule)
+}
+
+/**
+ * Inlines type aliases in a QuintType using the provided LookupTable.
+ *
+ * @param lookupTable - The LookupTable containing the type aliases to be
+ * resolved.
+ * @param type - The QuintType to transform.
+ *
+ * @returns The transformed QuintType with all type aliases replaced with
+ * their resolved types.
+ */
+export function inlineAliasesInType(lookupTable: LookupTable, type: QuintType): QuintType {
+  const inliner = new AliasInliner(lookupTable)
+  return transformType(inliner, type)
 }
 
 class AliasInliner implements IRTransformer {

@@ -168,11 +168,13 @@ describe('flattenModules', () => {
   })
 
   describe('inlines aliases', () => {
-    const defs = ['type MY_ALIAS = int', 'var x: MY_ALIAS']
+    const baseDefs = ['type MY_ALIAS = int', 'const N: MY_ALIAS']
 
-    const expectedDefs = ['var x: int']
+    const defs = ['import A(N = 1) as A1']
 
-    assertFlatennedDefs([], defs, expectedDefs)
+    const expectedDefs = ['pure val A1::N: int = 1']
+
+    assertFlatennedDefs(baseDefs, defs, expectedDefs)
   })
 })
 
