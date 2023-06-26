@@ -29,6 +29,7 @@ describe('inlineAliases', () => {
     const result = inlineModule(quintModule)
 
     const expectedModule = dedent(`module A {
+                                  |  type MY_ALIAS = int
                                   |  var x: int
                                   |}`)
 
@@ -44,6 +45,8 @@ describe('inlineAliases', () => {
 
     const result = inlineModule(quintModule)
     const expectedModule = dedent(`module A {
+                                  |  type MY_ALIAS = int
+                                  |  type MY_OTHER_ALIAS = int
                                   |  var x: int
                                   |}`)
 

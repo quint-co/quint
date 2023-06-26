@@ -20,8 +20,7 @@ import { QuintType } from '../quintTypes'
 
 /**
  * Replaces all type aliases in a QuintModule with their resolved types, using
- * the provided LookupTable. Type alias definitions are removed from the module.
- * Uninterpreted types are left unchanged.
+ * the provided LookupTable. Uninterpreted types are left unchanged.
  *
  * @param lookupTable - The LookupTable containing the type aliases to be
  * resolved.
@@ -55,10 +54,6 @@ class AliasInliner implements IRTransformer {
 
   constructor(lookupTable: LookupTable) {
     this.lookupTable = lookupTable
-  }
-
-  enterModule(quintModule: QuintModule): QuintModule {
-    return { ...quintModule, defs: quintModule.defs.filter(def => def.kind !== 'typedef') }
   }
 
   enterType(type: QuintType): QuintType {

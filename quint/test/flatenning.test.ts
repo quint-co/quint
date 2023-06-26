@@ -172,7 +172,7 @@ describe('flattenModules', () => {
 
     const defs = ['import A(N = 1) as A1']
 
-    const expectedDefs = ['pure val A1::N: int = 1']
+    const expectedDefs = ['type A1::MY_ALIAS = int', 'pure val A1::N: int = 1']
 
     assertFlatennedDefs(baseDefs, defs, expectedDefs)
   })
