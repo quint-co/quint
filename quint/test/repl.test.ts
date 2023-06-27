@@ -249,6 +249,40 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
+  it('update the seed between evaluations', async () => {
+    // A regression test.
+    // Test that two consecutive steps produce two different integers.
+    // If this test fails, it is almost certainly because of the seed
+    // not being updated between two consecutive calls of `step`.
+    // There is a neglible probability of 1/2^1024 of this test failing,
+    // since we are using randomization.
+    const input = dedent(
+      `var S: Set[int]
+      |S' = Set()
+      |action step = { nondet y = 1.to(2^512).oneOf(); S' = Set(y).union(S) }
+      |step
+      |step
+      |size(S)
+      |`
+    )
+    const output = dedent(
+      `>>> var S: Set[int]
+      |
+      |>>> S' = Set()
+      |true
+      |>>> action step = { nondet y = 1.to(2^512).oneOf(); S' = Set(y).union(S) }
+      |
+      |>>> step
+      |true
+      |>>> step
+      |true
+      |>>> size(S)
+      |2
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
   it('set and get the seed', async () => {
     const input = dedent(
       `.seed=4

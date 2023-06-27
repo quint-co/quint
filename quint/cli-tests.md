@@ -387,10 +387,10 @@ fi
 <!-- !test exit 1 -->
 <!-- !test check river - Run noSolution -->
     quint run --invariant=noSolution --seed=0x2fa6b93d0df3f \
-      ../examples/puzzles/.river/river.qnt
+      ../examples/puzzles/river/river.qnt
 
 ### OK on run river::safety
 
 <!-- !test exit 0 -->
 <!-- !test check river - Run safety -->
-    quint run --invariant=safety ../examples/puzzles/.river/river.qnt
+    quint run --invariant=safety ../examples/puzzles/river/river.qnt
