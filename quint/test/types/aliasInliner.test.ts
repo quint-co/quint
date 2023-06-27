@@ -7,9 +7,9 @@ import { inlineTypeAliases } from '../../src/types/aliasInliner'
 import { QuintModule } from '../../src/quintIr'
 import { LookupTable } from '../../src/names/lookupTable'
 import { moduleToString } from '../../src/IRprinting'
-import { analyzeModules } from '../../src/quintAnalyzer'
+import { AnalysisOutput, analyzeModules } from '../../src/quintAnalyzer'
 
-function inlineModule(text: string): { modules: QuintModule[]; table: LookupTable } {
+function inlineModule(text: string): { modules: QuintModule[]; table: LookupTable; analysisOutput: AnalysisOutput } {
   const idGen = newIdGenerator()
   const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
   const parseResult = parse(idGen, 'fake_location', fake_path, text)
@@ -32,7 +32,7 @@ describe('inlineAliases', () => {
       val a = x
     }`
 
-    const { modules, table } = inlineModule(quintModule)
+    const { modules, table, analysisOutput } = inlineModule(quintModule)
 
     const expectedModule = dedent(`module A {
                                   |  type MY_ALIAS = int
@@ -42,6 +42,7 @@ describe('inlineAliases', () => {
 
     assert.deepEqual(moduleToString(modules[0]), expectedModule)
     assert.deepEqual(table.get(5n)?.typeAnnotation?.kind, 'int')
+    assert.deepEqual(analysisOutput.types.get(4n)?.type.kind, 'int')
   })
 
   it('should handle nested aliases', () => {
