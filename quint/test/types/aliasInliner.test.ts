@@ -7,6 +7,7 @@ import { inlineTypeAliases } from '../../src/types/aliasInliner'
 import { QuintModule } from '../../src/quintIr'
 import { LookupTable } from '../../src/names/lookupTable'
 import { moduleToString } from '../../src/IRprinting'
+import { analyzeModules } from '../../src/quintAnalyzer'
 
 function inlineModule(text: string): { modules: QuintModule[]; table: LookupTable } {
   const idGen = newIdGenerator()
@@ -17,7 +18,10 @@ function inlineModule(text: string): { modules: QuintModule[]; table: LookupTabl
   }
   const { modules, table } = parseResult.unwrap()
 
-  return inlineTypeAliases(modules, table)
+  const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
+  assert.isEmpty(analysisErrors)
+
+  return inlineTypeAliases(modules, table, analysisOutput)
 }
 
 describe('inlineAliases', () => {

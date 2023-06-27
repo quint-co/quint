@@ -15,13 +15,15 @@
 
 import { IRTransformer, transformDefinition, transformModule, transformType } from '../IRTransformer'
 import { LookupTable } from '../names/lookupTable'
+import { AnalysisOutput } from '../quintAnalyzer'
 import { QuintDef, QuintModule } from '../quintIr'
 import { QuintType } from '../quintTypes'
 
 export function inlineTypeAliases(
   modules: QuintModule[],
-  table: LookupTable
-): { modules: QuintModule[]; table: LookupTable } {
+  table: LookupTable,
+  analysisOutput: AnalysisOutput
+): { modules: QuintModule[]; table: LookupTable; analysisOutput: AnalysisOutput } {
   const modulesWithInlinedAliases = modules.map(m => inlineAliasesInModule(m, table))
   const tableWithInlinedAliases = new Map(
     [...table.entries()].map(([id, def]) => {
@@ -34,7 +36,26 @@ export function inlineTypeAliases(
     })
   )
 
-  return { modules: modulesWithInlinedAliases, table: tableWithInlinedAliases }
+  return {
+    modules: modulesWithInlinedAliases,
+    table: tableWithInlinedAliases,
+    analysisOutput: inlineAnalysisOutput(analysisOutput, table),
+  }
+}
+
+export function inlineAnalysisOutput(analysisOutput: AnalysisOutput, table: LookupTable): AnalysisOutput {
+  const typesWithInlinedAliases = new Map(
+    [...analysisOutput.types.entries()].map(([id, typeScheme]) => {
+      const inlinedType = inlineAliasesInType(typeScheme.type, table)
+      return [id, { ...typeScheme, type: inlinedType }]
+    })
+  )
+  const analysisOutputWithInlinedAliases: AnalysisOutput = {
+    ...analysisOutput,
+    types: typesWithInlinedAliases,
+  }
+
+  return analysisOutputWithInlinedAliases
 }
 
 /**
