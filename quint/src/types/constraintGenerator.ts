@@ -15,6 +15,7 @@
 import { IRVisitor } from '../IRVisitor'
 import {
   QuintApp,
+  QuintAssume,
   QuintBool,
   QuintConst,
   QuintDef,
@@ -242,6 +243,17 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       if (e.typeAnnotation) {
         this.constraints.push({ kind: 'eq', types: [t.type, e.typeAnnotation], sourceId: e.id })
       }
+    })
+  }
+
+  exitAssume(e: QuintAssume) {
+    if (this.errors.size !== 0) {
+      return
+    }
+
+    this.fetchResult(e.assumption.id).map(t => {
+      this.addToResults(e.id, right(this.quantify(t.type)))
+      this.constraints.push({ kind: 'eq', types: [t.type, { kind: 'bool' }], sourceId: e.id })
     })
   }
 
