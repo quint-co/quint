@@ -24,6 +24,36 @@ module Blockchain {
     // A commit is just a set of nodes who have committed the block
     pure def Commits = powerset(AllNodes)
 
+    // The set of all block headers that can be on the blockchain.
+    // This is a simplified version of the Block data structure in the
+    // actual implementation.
+    pure def BlockHeaders = 
+        tuples(Heights, Int, Commits, powerset(AllNodes), powerset(AllNodes)).map((
+            // the block height
+            height,
+            // the block timestamp in some integer units
+            time,
+            // the nodes who have voted on the previous block, the set itself
+            // instead of a hash in the implementation, only the hashes of
+            // V and NextV are stored in a block, as V and NextV are stored
+            // in the application state
+            lastCommit,
+            // the validators of this bloc. We store the validators instead of the hash
+            VS,
+            // the validators of the next block.
+            // We store the next validators instead of the hash.
+            NextVS) => { 
+                height: height, 
+                time: time,
+                lastCommit: lastCommit,
+                VS: VS,
+                NextVS: NextVS
+            }
+        )
+
+    // A signed header is just a header together with a set of commits 
+    pure def LightBlocks = tuples(BlockHeaders, Commits).map((header, commits) => {header: header, Commits: commits})
+
     // Current global time in integer units as perceived by the reference chain
     var refClock: int
     // A function of heights to BlockHeaders,
