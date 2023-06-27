@@ -29,7 +29,7 @@ import { QuintType } from '../quintTypes'
  * @returns The transformed QuintModule with all type aliases replaced with
  * their resolved types.
  */
-export function inlineAliases(lookupTable: LookupTable, quintModule: QuintModule): QuintModule {
+export function inlineAliases(quintModule: QuintModule, lookupTable: LookupTable): QuintModule {
   const inliner = new AliasInliner(lookupTable)
   return transformModule(inliner, quintModule)
 }
@@ -44,7 +44,7 @@ export function inlineAliases(lookupTable: LookupTable, quintModule: QuintModule
  * @returns The transformed QuintType with all type aliases replaced with
  * their resolved types.
  */
-export function inlineAliasesInType(lookupTable: LookupTable, type: QuintType): QuintType {
+export function inlineAliasesInType(type: QuintType, lookupTable: LookupTable): QuintType {
   const inliner = new AliasInliner(lookupTable)
   return transformType(inliner, type)
 }
@@ -59,7 +59,7 @@ export function inlineAliasesInType(lookupTable: LookupTable, type: QuintType): 
  * @returns The transformed QuintDef with all type aliases replaced with
  * their resolved types.
  */
-export function inlineAliasesInDef(lookupTable: LookupTable, def: QuintDef): QuintDef {
+export function inlineAliasesInDef(def: QuintDef, lookupTable: LookupTable): QuintDef {
   const inliner = new AliasInliner(lookupTable)
   return transformDefinition(inliner, def)
 }
@@ -77,8 +77,8 @@ class AliasInliner implements IRTransformer {
 }
 
 function resolveAlias(lookupTable: LookupTable, type: QuintType): QuintType {
-  if (type.kind === 'const') {
-    const aliasValue = type.id ? lookupTable.get(type.id) : undefined
+  if (type.kind === 'const' && type.id) {
+    const aliasValue = lookupTable.get(type.id)
     if (aliasValue && aliasValue.typeAnnotation) {
       return resolveAlias(lookupTable, aliasValue.typeAnnotation)
     }
