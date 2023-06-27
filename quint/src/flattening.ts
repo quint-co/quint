@@ -33,7 +33,7 @@ import { QuintType, Row } from './quintTypes'
 import { Loc, parsePhase3importAndNameResolution } from './parsing/quintParserFrontend'
 import { compact, uniqBy } from 'lodash'
 import { AnalysisOutput } from './quintAnalyzer'
-import { inlineAliases, inlineAliasesInDef, inlineAliasesInType } from './types/aliasInliner'
+import { inlineAliasesInDef, inlineTypeAliases } from './types/aliasInliner'
 
 /**
  * Flatten an array of modules, replacing instances, imports and exports with
@@ -135,7 +135,7 @@ export function addDefToFlatModule(
   const flattenedDefs = flattener
     .flattenDef(def)
     // Inline type aliases in new defs
-    .map(d => inlineAliasesInDef(table, d) as FlatDef)
+    .map(d => inlineAliasesInDef(d, table) as FlatDef)
   const flattenedModule: FlatModule = { ...module, defs: [...module.defs, ...flattenedDefs] }
 
   return {
@@ -466,22 +466,6 @@ class Flatenner {
 
     return newId
   }
-}
-
-function inlineTypeAliases(modules: QuintModule[], table: LookupTable): { modules: QuintModule[]; table: LookupTable } {
-  const modulesWithInlinedAliases = modules.map(m => inlineAliases(table, m))
-  const tableWithInlinedAliases = new Map(
-    [...table.entries()].map(([id, def]) => {
-      if (!def.typeAnnotation) {
-        return [id, def]
-      }
-
-      const inlinedType = inlineAliasesInType(table, def.typeAnnotation)
-      return [id, { ...def, typeAnnotation: inlinedType }]
-    })
-  )
-
-  return { modules: modulesWithInlinedAliases, table: tableWithInlinedAliases }
 }
 
 function filterDefs(defs: QuintDef[], name: string | undefined): QuintDef[] {

@@ -1,13 +1,14 @@
 import { assert } from 'chai'
-import { QuintModule } from '../../src/quintIr'
-import { inlineAliases } from '../../src/types/aliasInliner'
 import { newIdGenerator } from '../../src/idGenerator'
 import { SourceLookupPath } from '../../src/parsing/sourceResolver'
 import { parse } from '../../src/parsing/quintParserFrontend'
-import { moduleToString } from '../../src'
 import { dedent } from '../textUtils'
+import { inlineTypeAliases } from '../../src/types/aliasInliner'
+import { QuintModule } from '../../src/quintIr'
+import { LookupTable } from '../../src/names/lookupTable'
+import { moduleToString } from '../../src/IRprinting'
 
-function inlineModule(text: string): QuintModule {
+function inlineModule(text: string): { modules: QuintModule[]; table: LookupTable } {
   const idGen = newIdGenerator()
   const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
   const parseResult = parse(idGen, 'fake_location', fake_path, text)
@@ -16,7 +17,7 @@ function inlineModule(text: string): QuintModule {
   }
   const { modules, table } = parseResult.unwrap()
 
-  return inlineAliases(table, modules[0])
+  return inlineTypeAliases(modules, table)
 }
 
 describe('inlineAliases', () => {
@@ -24,16 +25,19 @@ describe('inlineAliases', () => {
     const quintModule = `module A {
       type MY_ALIAS = int
       var x: MY_ALIAS
+      val a = x
     }`
 
-    const result = inlineModule(quintModule)
+    const { modules, table } = inlineModule(quintModule)
 
     const expectedModule = dedent(`module A {
                                   |  type MY_ALIAS = int
                                   |  var x: int
+                                  |  val a = x
                                   |}`)
 
-    assert.deepEqual(moduleToString(result), expectedModule)
+    assert.deepEqual(moduleToString(modules[0]), expectedModule)
+    assert.deepEqual(table.get(5n)?.typeAnnotation?.kind, 'int')
   })
 
   it('should handle nested aliases', () => {
@@ -43,13 +47,14 @@ describe('inlineAliases', () => {
       var x: MY_OTHER_ALIAS
     }`
 
-    const result = inlineModule(quintModule)
+    const { modules } = inlineModule(quintModule)
+
     const expectedModule = dedent(`module A {
                                   |  type MY_ALIAS = int
                                   |  type MY_OTHER_ALIAS = int
                                   |  var x: int
                                   |}`)
 
-    assert.deepEqual(moduleToString(result), expectedModule)
+    assert.deepEqual(moduleToString(modules[0]), expectedModule)
   })
 })

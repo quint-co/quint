@@ -18,35 +18,23 @@ import { LookupTable } from '../names/lookupTable'
 import { QuintDef, QuintModule } from '../quintIr'
 import { QuintType } from '../quintTypes'
 
-/**
- * Replaces all type aliases in a QuintModule with their resolved types, using
- * the provided LookupTable. Uninterpreted types are left unchanged.
- *
- * @param lookupTable - The LookupTable containing the type aliases to be
- * resolved.
- * @param quintModule - The QuintModule to transform.
- *
- * @returns The transformed QuintModule with all type aliases replaced with
- * their resolved types.
- */
-export function inlineAliases(quintModule: QuintModule, lookupTable: LookupTable): QuintModule {
-  const inliner = new AliasInliner(lookupTable)
-  return transformModule(inliner, quintModule)
-}
+export function inlineTypeAliases(
+  modules: QuintModule[],
+  table: LookupTable
+): { modules: QuintModule[]; table: LookupTable } {
+  const modulesWithInlinedAliases = modules.map(m => inlineAliasesInModule(m, table))
+  const tableWithInlinedAliases = new Map(
+    [...table.entries()].map(([id, def]) => {
+      if (!def.typeAnnotation) {
+        return [id, def]
+      }
 
-/**
- * Inlines type aliases in a QuintType using the provided LookupTable.
- *
- * @param lookupTable - The LookupTable containing the type aliases to be
- * resolved.
- * @param type - The QuintType to transform.
- *
- * @returns The transformed QuintType with all type aliases replaced with
- * their resolved types.
- */
-export function inlineAliasesInType(type: QuintType, lookupTable: LookupTable): QuintType {
-  const inliner = new AliasInliner(lookupTable)
-  return transformType(inliner, type)
+      const inlinedType = inlineAliasesInType(def.typeAnnotation, table)
+      return [id, { ...def, typeAnnotation: inlinedType }]
+    })
+  )
+
+  return { modules: modulesWithInlinedAliases, table: tableWithInlinedAliases }
 }
 
 /**
@@ -62,6 +50,37 @@ export function inlineAliasesInType(type: QuintType, lookupTable: LookupTable): 
 export function inlineAliasesInDef(def: QuintDef, lookupTable: LookupTable): QuintDef {
   const inliner = new AliasInliner(lookupTable)
   return transformDefinition(inliner, def)
+}
+
+/**
+ * Replaces all type aliases in a QuintModule with their resolved types, using
+ * the provided LookupTable. Uninterpreted types are left unchanged.
+ *
+ * @param lookupTable - The LookupTable containing the type aliases to be
+ * resolved.
+ * @param quintModule - The QuintModule to transform.
+ *
+ * @returns The transformed QuintModule with all type aliases replaced with
+ * their resolved types.
+ */
+function inlineAliasesInModule(quintModule: QuintModule, lookupTable: LookupTable): QuintModule {
+  const inliner = new AliasInliner(lookupTable)
+  return transformModule(inliner, quintModule)
+}
+
+/**
+ * Inlines type aliases in a QuintType using the provided LookupTable.
+ *
+ * @param lookupTable - The LookupTable containing the type aliases to be
+ * resolved.
+ * @param type - The QuintType to transform.
+ *
+ * @returns The transformed QuintType with all type aliases replaced with
+ * their resolved types.
+ */
+function inlineAliasesInType(type: QuintType, lookupTable: LookupTable): QuintType {
+  const inliner = new AliasInliner(lookupTable)
+  return transformType(inliner, type)
 }
 
 class AliasInliner implements IRTransformer {
