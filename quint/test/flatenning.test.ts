@@ -5,8 +5,7 @@ import { newIdGenerator } from '../src/idGenerator'
 import { definitionToString } from '../src/IRprinting'
 import { collectIds } from './util'
 import { parse } from '../src/parsing/quintParserFrontend'
-import { toScheme } from '../src/types/base'
-import { FlatModule } from '../src'
+import { FlatModule, analyzeModules } from '../src'
 import { SourceLookupPath } from '../src/parsing/sourceResolver'
 
 describe('flattenModules', () => {
@@ -23,14 +22,16 @@ describe('flattenModules', () => {
     const { modules, table, sourceMap } = parseResult.unwrap()
     const [moduleA, _module] = modules
 
-    const originalIds = [...sourceMap.keys()]
-    const typesMap = new Map(originalIds.map(i => [i, toScheme({ kind: 'int' })]))
+    const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
+    assert.isEmpty(analysisErrors)
 
-    const { flattenedModules, flattenedAnalysis } = flattenModules(modules, table, idGenerator, sourceMap, {
-      types: typesMap,
-      effects: new Map(),
-      modes: new Map(),
-    })
+    const { flattenedModules, flattenedAnalysis } = flattenModules(
+      modules,
+      table,
+      idGenerator,
+      sourceMap,
+      analysisOutput
+    )
     const [_, flattenedModule] = flattenedModules
 
     it('has all expected defs', () => {
@@ -56,7 +57,14 @@ describe('flattenModules', () => {
     it('adds new entries to the types map', () => {
       assert.includeDeepMembers(
         [...flattenedAnalysis.types.keys()],
-        flattenedModule.defs.map(def => def.id)
+        flattenedModule.defs.filter(def => def.kind !== 'typedef').map(def => def.id)
+      )
+    })
+
+    it('has no aliases in the types map', () => {
+      assert.notIncludeMembers(
+        [...flattenedAnalysis.types.values()].map(t => t.type.kind),
+        ['const']
       )
     })
   }
@@ -166,14 +174,31 @@ describe('flattenModules', () => {
 
     assertFlatennedDefs(baseDefs, defs, expectedDefs)
   })
+
+  describe('inlines aliases', () => {
+    const baseDefs = ['type MY_ALIAS = int', 'const N: MY_ALIAS']
+
+    const defs = ['import A(N = 1) as A1', 'var t: A1::MY_ALIAS']
+
+    const expectedDefs = ['type A1::MY_ALIAS = int', 'pure val A1::N: int = 1', 'var t: int']
+
+    assertFlatennedDefs(baseDefs, defs, expectedDefs)
+  })
 })
 
 describe('addDefToFlatModule', () => {
-  function assertAddedDefs(baseDefs: string[], defToAdd: string, expectedDefs: string[]): void {
+  function assertAddedDefs(
+    baseDefs: string[],
+    currentModuleDefs: string[],
+    defToAdd: string,
+    expectedDefs: string[]
+  ): void {
     const idGenerator = newIdGenerator()
     const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
 
-    const quintModules: string = `module A { ${baseDefs.join('\n')} } module wrapper { ${defToAdd} }`
+    const quintModules: string = `module A { ${baseDefs.join('\n')} } module wrapper { ${currentModuleDefs
+      .concat(defToAdd)
+      .join('\n')} }`
 
     const parseResult = parse(idGenerator, 'fake_location', fake_path, quintModules)
     if (parseResult.isLeft()) {
@@ -182,17 +207,17 @@ describe('addDefToFlatModule', () => {
     const { modules, table, sourceMap } = parseResult.unwrap()
     const [moduleA, module] = modules
 
-    const originalIds = [...sourceMap.keys()]
-    const typesMap = new Map(originalIds.map(i => [i, toScheme({ kind: 'int' })]))
+    const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
+    assert.isEmpty(analysisErrors)
 
-    const def = module.defs[0]
+    const def = module.defs[module.defs.length - 1]
     const moduleWithoutDef: FlatModule = { ...module, defs: [] }
     const { flattenedModule, flattenedAnalysis } = addDefToFlatModule(
       modules,
       table,
       idGenerator,
       sourceMap,
-      { types: typesMap, effects: new Map(), modes: new Map() },
+      analysisOutput,
       moduleWithoutDef,
       def
     )
@@ -220,7 +245,14 @@ describe('addDefToFlatModule', () => {
     it('adds new entries to the types map', () => {
       assert.includeDeepMembers(
         [...flattenedAnalysis.types.keys()],
-        flattenedModule.defs.map(def => def.id)
+        flattenedModule.defs.filter(def => def.kind !== 'typedef').map(def => def.id)
+      )
+    })
+
+    it('has no aliases in the types map', () => {
+      assert.notIncludeMembers(
+        [...flattenedAnalysis.types.values()].map(t => t.type.kind),
+        ['const']
       )
     })
   }
@@ -248,7 +280,7 @@ describe('addDefToFlatModule', () => {
       'def A1::lam2 = val A1::b = 1 { ((A1::a) => iadd(A1::b, A1::a)) }',
     ]
 
-    assertAddedDefs(baseDefs, defToAdd, expectedDefs)
+    assertAddedDefs(baseDefs, [], defToAdd, expectedDefs)
   })
 
   describe('imports', () => {
@@ -258,6 +290,16 @@ describe('addDefToFlatModule', () => {
 
     const expectedDefs = ['val f = ((x) => iadd(x, 1))']
 
-    assertAddedDefs(baseDefs, defToAdd, expectedDefs)
+    assertAddedDefs(baseDefs, [], defToAdd, expectedDefs)
+  })
+
+  describe('type aliases', () => {
+    const currentModuleDefs = ['type MY_ALIAS = int']
+
+    const defToAdd = 'var N: MY_ALIAS'
+
+    const expectedDefs = ['var N: int']
+
+    assertAddedDefs([], currentModuleDefs, defToAdd, expectedDefs)
   })
 })
