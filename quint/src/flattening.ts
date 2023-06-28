@@ -33,7 +33,7 @@ import { QuintType, Row } from './quintTypes'
 import { Loc, parsePhase3importAndNameResolution } from './parsing/quintParserFrontend'
 import { compact, uniqBy } from 'lodash'
 import { AnalysisOutput } from './quintAnalyzer'
-import { inlineAliasesInDef, inlineTypeAliases } from './types/aliasInliner'
+import { inlineAliasesInDef, inlineAnalysisOutput, inlineTypeAliases } from './types/aliasInliner'
 
 /**
  * Flatten an array of modules, replacing instances, imports and exports with
@@ -58,7 +58,7 @@ export function flattenModules(
   // This is not a problem atm, but might be in the future.
 
   // Inline type aliases
-  const inlined = inlineTypeAliases(modules, table)
+  const inlined = inlineTypeAliases(modules, table, analysisOutput)
   // Create a map of imported modules, to be used when flattening
   // instances/imports/exports. This is updated as the modules are flattened.
   const importedModules = new Map(inlined.modules.map(m => [m.name, m]))
@@ -94,7 +94,7 @@ export function flattenModules(
         flattenedAnalysis: flattenedAnalysis,
       }
     },
-    { flattenedModules: [] as FlatModule[], flattenedTable: inlined.table, flattenedAnalysis: analysisOutput }
+    { flattenedModules: [] as FlatModule[], flattenedTable: inlined.table, flattenedAnalysis: inlined.analysisOutput }
   )
 }
 
@@ -142,7 +142,7 @@ export function addDefToFlatModule(
     flattenedModule,
     flattenedDefs,
     flattenedTable: resolveNamesOrThrow(table, sourceMap, flattenedModule),
-    flattenedAnalysis: analysisOutput,
+    flattenedAnalysis: inlineAnalysisOutput(analysisOutput, table),
   }
 }
 

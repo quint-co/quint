@@ -26,7 +26,7 @@ yet. To set your expectations right, check the dashboard below first.
    writing easier. We collect them here. One day some of them will become the
    standard library. If you think you have invented a nice spell that would
    help others, [contribute your spell](./spells/contribute-your-spell.md).
- 
+
  - [language-features](./language-features). These are examples that
    demonstrate some language features in isolation. They are mostly used for
    testing the tool.

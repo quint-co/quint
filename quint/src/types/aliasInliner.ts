@@ -15,13 +15,24 @@
 
 import { IRTransformer, transformDefinition, transformModule, transformType } from '../IRTransformer'
 import { LookupTable } from '../names/lookupTable'
+import { AnalysisOutput } from '../quintAnalyzer'
 import { QuintDef, QuintModule } from '../quintIr'
 import { QuintType } from '../quintTypes'
 
+/**
+ * Inlines all type aliases in a set of QuintModules, LookupTable and AnalysisOutput.
+ *
+ * @param modules - The array of QuintModules to transform.
+ * @param table - The LookupTable containing the type aliases to be resolved.
+ * @param analysisOutput - The AnalysisOutput to transform.
+ *
+ * @returns An object containing the transformed QuintModules, LookupTable and AnalysisOutput.
+ */
 export function inlineTypeAliases(
   modules: QuintModule[],
-  table: LookupTable
-): { modules: QuintModule[]; table: LookupTable } {
+  table: LookupTable,
+  analysisOutput: AnalysisOutput
+): { modules: QuintModule[]; table: LookupTable; analysisOutput: AnalysisOutput } {
   const modulesWithInlinedAliases = modules.map(m => inlineAliasesInModule(m, table))
   const tableWithInlinedAliases = new Map(
     [...table.entries()].map(([id, def]) => {
@@ -34,7 +45,34 @@ export function inlineTypeAliases(
     })
   )
 
-  return { modules: modulesWithInlinedAliases, table: tableWithInlinedAliases }
+  return {
+    modules: modulesWithInlinedAliases,
+    table: tableWithInlinedAliases,
+    analysisOutput: inlineAnalysisOutput(analysisOutput, table),
+  }
+}
+
+/**
+ * Inlines all type aliases in the AnalysisOutput using the provided LookupTable.
+ *
+ * @param analysisOutput - The AnalysisOutput to transform.
+ * @param table - The LookupTable containing the type aliases to be resolved.
+ *
+ * @returns The transformed AnalysisOutput with all type aliases replaced with their resolved types.
+ */
+export function inlineAnalysisOutput(analysisOutput: AnalysisOutput, table: LookupTable): AnalysisOutput {
+  const typesWithInlinedAliases = new Map(
+    [...analysisOutput.types.entries()].map(([id, typeScheme]) => {
+      const inlinedType = inlineAliasesInType(typeScheme.type, table)
+      return [id, { ...typeScheme, type: inlinedType }]
+    })
+  )
+  const analysisOutputWithInlinedAliases: AnalysisOutput = {
+    ...analysisOutput,
+    types: typesWithInlinedAliases,
+  }
+
+  return analysisOutputWithInlinedAliases
 }
 
 /**
