@@ -88,7 +88,7 @@ export function compileAndTest(
     return left([{ explanation: 'Cannot find main module', locs: [] }])
   }
 
-  const ctx = compile(compilationState, newEvaluationState(), lookupTable, recorder, options.rng.next, main.defs)
+  const ctx = compile(compilationState, newEvaluationState(recorder), lookupTable, options.rng.next, main.defs)
 
   const saveTrace = (index: number, name: string, status: string) => {
     // Save the best traces that are reported by the recorder:

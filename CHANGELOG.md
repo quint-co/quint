@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed a bug in the verbose trace output of REPL (#993)
+
 ### Security
 
 ## v0.11.3 -- 2023-06-23
