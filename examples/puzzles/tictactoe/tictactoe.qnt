@@ -45,7 +45,7 @@ module tictactoe {
 
   val boardFull = not(tuples(1.to(3), 1.to(3)).exists(isEmpty))
   val stalemate = boardFull and not(won("X")) and not(won("O"))
-  val gameOver = won("X") or won("O") or stalemate
+  val gameOver = won("X") or won("O") or boardFull
 
   def canWinWithPattern(pattern) = and {
     pattern.filter(coordinate => coordinate.hasValue("X")).size() == 2,
