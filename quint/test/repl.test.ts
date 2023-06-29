@@ -249,6 +249,58 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
+  it('caching nullary definitions', async () => {
+    const input = dedent(
+      `var x: int
+      |.verbosity=4
+      |x' = 0
+      |action step = x' = x + 1
+      |action input1 = step
+      |action input2 = step
+      |input1
+      |input2
+      |`
+    )
+    const output = dedent(
+      // a regression test for the behavior uncovered in:
+      // https://github.com/informalsystems/quint/issues/982
+      `>>> var x: int
+      |
+      |>>> .verbosity=4
+      |.verbosity=4
+      |>>> x' = 0
+      |true
+      |
+      |[Frame 0]
+      |q::input() => true
+      |
+      |>>> action step = x' = x + 1
+      |
+      |>>> action input1 = step
+      |
+      |>>> action input2 = step
+      |
+      |>>> input1
+      |true
+      |
+      |[Frame 0]
+      |q::input() => true
+      |└─ input1() => true
+      |   └─ step() => true
+      |
+      |>>> input2
+      |true
+      |
+      |[Frame 0]
+      |q::input() => true
+      |└─ input2() => true
+      |   └─ step() => true
+      |
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
   it('update the seed between evaluations', async () => {
     // A regression test.
     // Test that two consecutive steps produce two different integers.

@@ -140,15 +140,191 @@ export const noExecutionListener: ExecutionListener = {
   onRunReturn: (_outcome: Maybe<EvalResult>, _trace: EvalResult[]) => {},
 }
 
+/**
+ * The interface of a trace recorder that records the best trace.
+ */
 export interface TraceRecorder extends ExecutionListener {
+  /**
+   * The verbosity level used by the recorder (mutable).
+   */
+  verbosityLevel: number
+  /**
+   * The random number generator used by the recorder (mutable).
+   */
+  rng: Rng
+
+  /**
+   * Clear the recorded trace
+   */
+  clear: () => void
+
+  /**
+   * Get the best recorded trace.
+   * @returns the best recorded trace.
+   */
   getBestTrace: () => ExecutionFrame
+
+  /**
+   * Get the seed of the best recorded trace.
+   * @returns the seed that was used to generate the best trace.
+   */
   getBestTraceSeed: () => bigint
 }
 
 // a trace recording listener
-export const newTraceRecorder = (verbosityLevel: number, rng: Rng) => {
-  // the bottom frame encodes the whole trace
-  const bottomFrame = (): ExecutionFrame => {
+export const newTraceRecorder = (verbosityLevel: number, rng: Rng): TraceRecorder => {
+  return new TraceRecorderImpl(verbosityLevel, rng)
+}
+
+// a private implementation of a trace recorder
+class TraceRecorderImpl implements TraceRecorder {
+  verbosityLevel: number
+  rng: Rng
+  // the best trace is stored here
+  private bestTrace: ExecutionFrame
+  // the seed value for the best trace is stored here
+  private bestTraceSeed: bigint
+  // whenever a run is entered, we store its seed here
+  private runSeed: bigint
+  // during simulation, a trace is built here
+  private frameStack: ExecutionFrame[]
+
+  constructor(verbosityLevel: number, rng: Rng) {
+    this.verbosityLevel = verbosityLevel
+    this.rng = rng
+    const bottom = this.newBottomFrame()
+    this.bestTrace = bottom
+    this.bestTraceSeed = rng.getState()
+    this.runSeed = this.bestTraceSeed
+    this.frameStack = [bottom]
+  }
+
+  clear() {
+    const bottom = this.newBottomFrame()
+    this.bestTrace = bottom
+    this.frameStack = [bottom]
+  }
+
+  getBestTrace(): ExecutionFrame {
+    return this.bestTrace
+  }
+
+  getBestTraceSeed(): bigint {
+    return this.bestTraceSeed
+  }
+
+  onUserOperatorCall(app: QuintApp) {
+    // For now, we cannot tell apart actions from other user definitions.
+    // https://github.com/informalsystems/quint/issues/747
+    if (verbosity.hasUserOpTracking(this.verbosityLevel)) {
+      const newFrame = { app: app, args: [], result: none(), subframes: [] }
+      if (this.frameStack.length > 0) {
+        this.frameStack[this.frameStack.length - 1].subframes.push(newFrame)
+        this.frameStack.push(newFrame)
+      } else {
+        this.frameStack = [newFrame]
+      }
+    }
+  }
+
+  onUserOperatorReturn(app: QuintApp, args: EvalResult[], result: Maybe<EvalResult>) {
+    if (verbosity.hasUserOpTracking(this.verbosityLevel)) {
+      const top = this.frameStack.pop()
+      if (top) {
+        // since this frame is connected via the parent frame,
+        // the result will not disappear
+        top.args = args
+        top.result = result
+      }
+    }
+  }
+
+  onAnyOptionCall(anyExpr: QuintApp, _position: number) {
+    if (verbosity.hasActionTracking(this.verbosityLevel)) {
+      // the option has to be hidden under its own frame,
+      // so it can be popped as a single frame later
+      const newFrame = {
+        app: anyExpr,
+        args: [],
+        result: none(),
+        subframes: [],
+      }
+      if (this.frameStack.length > 0) {
+        // add the option directly to the stack of the current expression
+        // that contains `any { ... }`.
+        this.frameStack[this.frameStack.length - 1].subframes.push(newFrame)
+        this.frameStack.push(newFrame)
+      } else {
+        this.frameStack = [newFrame]
+      }
+    }
+  }
+
+  onAnyOptionReturn(_anyExpr: QuintApp, _position: number) {
+    if (verbosity.hasActionTracking(this.verbosityLevel)) {
+      this.frameStack.pop()
+    }
+  }
+
+  onAnyReturn(noptions: number, choice: number) {
+    if (verbosity.hasActionTracking(this.verbosityLevel)) {
+      assert(this.frameStack.length > 0)
+      const top = this.frameStack[this.frameStack.length - 1]
+      const start = top.subframes.length - noptions
+      // leave only the chosen frame as well as the older ones
+      top.subframes = top.subframes.filter((_, i) => i < start || i == start + choice)
+      if (choice >= 0) {
+        // The top frame contains the frames of the chosen option that are
+        // wrapped in anyExpr.args[position], see onAnyOptionCall.
+        // Unwrap the option, as we do not need it any longer.
+        const optionFrame = top.subframes.pop()
+        if (optionFrame) {
+          top.subframes = top.subframes.concat(optionFrame.subframes)
+        }
+      }
+    }
+  }
+
+  onRunCall() {
+    // reset the stack
+    this.frameStack = [this.newBottomFrame()]
+    this.runSeed = this.rng.getState()
+  }
+
+  onRunReturn(outcome: Maybe<EvalResult>, trace: EvalResult[]) {
+    assert(this.frameStack.length > 0)
+    const bottom = this.frameStack[0]
+
+    const fromResult = (r: Maybe<EvalResult>) => {
+      if (r.isNone()) {
+        return true
+      } else {
+        const rex = r.value.toQuintEx({ nextId: () => 0n })
+        return rex.kind === 'bool' && !rex.value
+      }
+    }
+
+    const notOk = fromResult(outcome)
+    const prevNotOk = fromResult(this.bestTrace.result)
+
+    // Prefer short traces for error, and longer traces for non error.
+    // Therefore, override the best trace only if:
+    //  - there is an error, the new trace is shorter, or the old trace is non-error;
+    //  - there is no error, the new trace is longer, and there was no error before.
+    const override = notOk
+      ? this.bestTrace.args.length === 0 || !prevNotOk || this.bestTrace.args.length >= bottom.args.length
+      : !prevNotOk && this.bestTrace.args.length <= bottom.args.length
+
+    if (override) {
+      this.bestTrace = bottom
+      this.bestTraceSeed = this.runSeed
+      this.bestTrace.result = outcome
+      this.bestTrace.args = trace
+    }
+  }
+
+  // create a bottom frame, which encodes the whole trace
+  private newBottomFrame(): ExecutionFrame {
     return {
       // this is just a dummy operator application
       app: { id: 0n, kind: 'app', opcode: 'Rec', args: [] },
@@ -159,134 +335,5 @@ export const newTraceRecorder = (verbosityLevel: number, rng: Rng) => {
       // and here we store the subframes for the top-level actions
       subframes: [],
     }
-  }
-
-  // the best trace is stored here
-  let bestTrace = bottomFrame()
-  // the seed value for the best trace is stored here
-  let bestTraceSeed = rng.getState()
-  // whenever a run is entered, we store its seed here
-  let runSeed = bestTraceSeed
-  // during simulation, a trace is built here
-  let frameStack: ExecutionFrame[] = [bestTrace]
-
-  return {
-    getBestTrace: (): ExecutionFrame => {
-      return bestTrace
-    },
-
-    getBestTraceSeed: (): bigint => {
-      return bestTraceSeed
-    },
-
-    onUserOperatorCall: (app: QuintApp) => {
-      // For now, we cannot tell apart actions from other user definitions.
-      // https://github.com/informalsystems/quint/issues/747
-      if (verbosity.hasUserOpTracking(verbosityLevel)) {
-        const newFrame = { app: app, args: [], result: none(), subframes: [] }
-        if (frameStack.length > 0) {
-          frameStack[frameStack.length - 1].subframes.push(newFrame)
-          frameStack.push(newFrame)
-        } else {
-          frameStack = [newFrame]
-        }
-      }
-    },
-
-    onUserOperatorReturn: (app: QuintApp, args: EvalResult[], result: Maybe<EvalResult>) => {
-      if (verbosity.hasUserOpTracking(verbosityLevel)) {
-        const top = frameStack.pop()
-        if (top) {
-          // since this frame is connected via the parent frame,
-          // the result will not disappear
-          top.args = args
-          top.result = result
-        }
-      }
-    },
-
-    onAnyOptionCall: (anyExpr: QuintApp, _position: number) => {
-      if (verbosity.hasActionTracking(verbosityLevel)) {
-        // the option has to be hidden under its own frame,
-        // so it can be popped as a single frame later
-        const newFrame = {
-          app: anyExpr,
-          args: [],
-          result: none(),
-          subframes: [],
-        }
-        if (frameStack.length > 0) {
-          // add the option directly to the stack of the current expression
-          // that contains `any { ... }`.
-          frameStack[frameStack.length - 1].subframes.push(newFrame)
-          frameStack.push(newFrame)
-        } else {
-          frameStack = [newFrame]
-        }
-      }
-    },
-
-    onAnyOptionReturn: (_anyExpr: QuintApp, _position: number) => {
-      if (verbosity.hasActionTracking(verbosityLevel)) {
-        frameStack.pop()
-      }
-    },
-
-    onAnyReturn: (noptions: number, choice: number) => {
-      if (verbosity.hasActionTracking(verbosityLevel)) {
-        assert(frameStack.length > 0)
-        const top = frameStack[frameStack.length - 1]
-        const start = top.subframes.length - noptions
-        // leave only the chosen frame as well as the older ones
-        top.subframes = top.subframes.filter((_, i) => i < start || i == start + choice)
-        if (choice >= 0) {
-          // The top frame contains the frames of the chosen option that are
-          // wrapped in anyExpr.args[position], see onAnyOptionCall.
-          // Unwrap the option, as we do not need it any longer.
-          const optionFrame = top.subframes.pop()
-          if (optionFrame) {
-            top.subframes = top.subframes.concat(optionFrame.subframes)
-          }
-        }
-      }
-    },
-
-    onRunCall: () => {
-      // reset the stack
-      frameStack = [bottomFrame()]
-      runSeed = rng.getState()
-    },
-
-    onRunReturn: (outcome: Maybe<EvalResult>, trace: EvalResult[]) => {
-      assert(frameStack.length > 0)
-      const bottom = frameStack[0]
-
-      const fromResult = (r: Maybe<EvalResult>) => {
-        if (r.isNone()) {
-          return true
-        } else {
-          const rex = r.value.toQuintEx({ nextId: () => 0n })
-          return rex.kind === 'bool' && !rex.value
-        }
-      }
-
-      const notOk = fromResult(outcome)
-      const prevNotOk = fromResult(bestTrace.result)
-
-      // Prefer short traces for error, and longer traces for non error.
-      // Therefore, override the best trace only if:
-      //  - there is an error, the new trace is shorter, or the old trace is non-error;
-      //  - there is no error, the new trace is longer, and there was no error before.
-      const override = notOk
-        ? bestTrace.args.length === 0 || !prevNotOk || bestTrace.args.length >= bottom.args.length
-        : !prevNotOk && bestTrace.args.length <= bottom.args.length
-
-      if (override) {
-        bestTrace = bottom
-        bestTraceSeed = runSeed
-        bestTrace.result = outcome
-        bestTrace.args = trace
-      }
-    },
   }
 }

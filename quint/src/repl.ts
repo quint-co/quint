@@ -1,7 +1,7 @@
 /*
  * REPL for quint.
  *
- * Igor Konnov, 2022-2023.
+ * Igor Konnov, Gabriela Moreira, 2022-2023.
  *
  * Copyright (c) Informal Systems 2022-2023. All rights reserved.
  * Licensed under the Apache 2.0.
@@ -30,11 +30,11 @@ import {
 } from './runtime/compile'
 import { formatError } from './errorReporter'
 import { Register } from './runtime/runtime'
-import { TraceRecorder, newTraceRecorder, noExecutionListener } from './runtime/trace'
+import { TraceRecorder, newTraceRecorder } from './runtime/trace'
 import { ErrorMessage, parseExpressionOrUnit } from './parsing/quintParserFrontend'
 import { prettyQuintEx, printExecutionFrameRec, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
-import { newRng } from './rng'
+import { Rng, newRng } from './rng'
 import { version } from './version'
 import { fileSourceResolver } from './parsing/sourceResolver'
 import { cwd } from 'process'
@@ -50,8 +50,10 @@ export const settings = {
 
 type writer = (_text: string) => void
 
-// the internal state of the REPL
-interface ReplState {
+/**
+ * The internal state of the REPL.
+ */
+class ReplState {
   // the history of module definitions loaded from external sources
   moduleHist: string
   // definitions history
@@ -60,14 +62,69 @@ interface ReplState {
   exprHist: string[]
   // filename and module name that were loaded with .load filename module
   lastLoadedFileAndModule: [string?, string?]
-  // an optional seed to use when making non-deterministic choices
-  seed?: bigint
-  // verbosity level
-  verbosityLevel: number
-  // The state of pre-compilation phases.
+  // The state of pre-compilation phases
   compilationState: CompilationState
-  // The state of the compiler visitor.
+  // The state of the compiler visitor
   evaluationState: EvaluationState
+
+  constructor(verbosityLevel: number, rng: Rng) {
+    this.moduleHist = ''
+    this.defsHist = ''
+    this.exprHist = []
+    this.lastLoadedFileAndModule = [undefined, undefined]
+    this.compilationState = this.newCompilationState()
+    this.evaluationState = newEvaluationState(newTraceRecorder(verbosityLevel, rng))
+  }
+
+  clone() {
+    const copy = new ReplState(this.verbosity, newRng(this.rng.getState()))
+    copy.moduleHist = this.moduleHist
+    copy.defsHist = this.defsHist
+    copy.exprHist = this.exprHist
+    copy.lastLoadedFileAndModule = this.lastLoadedFileAndModule
+    copy.compilationState = this.compilationState
+    return copy
+  }
+
+  clear() {
+    this.moduleHist = ''
+    this.defsHist = ''
+    this.exprHist = []
+    this.compilationState = this.newCompilationState()
+    this.evaluationState = newEvaluationState(newTraceRecorder(this.verbosity, this.rng))
+  }
+
+  get recorder(): TraceRecorder {
+    // ReplState always passes TraceRecorder in the evaluation state
+    return this.evaluationState.listener as TraceRecorder
+  }
+
+  get rng(): Rng {
+    return this.recorder.rng
+  }
+
+  get verbosity(): number {
+    return this.recorder.verbosityLevel
+  }
+
+  set verbosity(level: number) {
+    this.recorder.verbosityLevel = level
+  }
+
+  get seed(): bigint {
+    return this.rng.getState()
+  }
+
+  set seed(newSeed: bigint) {
+    this.rng.setState(newSeed)
+  }
+
+  private newCompilationState(): CompilationState {
+    // Introduce the __repl__ module to the compilation state so new expressions
+    // are pushed to it.
+    const state = newCompilationState()
+    return { ...state, modules: [{ name: '__repl__', defs: simulatorBuiltins(state), id: 0n }] }
+  }
 }
 
 // The default exit terminates the process.
@@ -109,22 +166,7 @@ export function quintRepl(
   })
 
   // the state
-  const state: ReplState = {
-    moduleHist: '',
-    defsHist: '',
-    exprHist: [],
-    lastLoadedFileAndModule: [undefined, undefined],
-    verbosityLevel: options.verbosity,
-    compilationState: replInitialCompilationState(),
-    evaluationState: newEvaluationState(),
-  }
-
-  function replInitialCompilationState(): CompilationState {
-    // Introduce the __repl__ module to the compilation state so new expressions
-    // are pushed to it.
-    const state = newCompilationState()
-    return { ...state, modules: [{ name: '__repl__', defs: simulatorBuiltins(state), id: 0n }] }
-  }
+  const state: ReplState = new ReplState(options.verbosity, newRng())
 
   // Add the builtins to the text history as well
   state.defsHist = state.compilationState.modules[0].defs.map(def => definitionToString(def)).join('\n')
@@ -172,7 +214,9 @@ export function quintRepl(
         multilineText = trimReplDecorations(line)
         rl.setPrompt(prompt(settings.continuePrompt))
       } else {
-        line.trim() === '' || tryEval(out, state, line + '\n')
+        if (line.trim() !== '') {
+          tryEvalAndClearRecorder(out, state, line + '\n')
+        }
       }
     } else {
       const trimmedLine = line.trim()
@@ -184,7 +228,7 @@ export function quintRepl(
         // End the multiline mode.
         // If recycle own output, then the current line is, most likely,
         // older input. Ignore it.
-        tryEval(out, state, multilineText)
+        tryEvalAndClearRecorder(out, state, multilineText)
         multilineText = ''
         recyclingOwnOutput = false
         rl.setPrompt(prompt(settings.prompt))
@@ -197,21 +241,13 @@ export function quintRepl(
     }
   }
 
-  function clearHistory() {
-    state.moduleHist = ''
-    state.defsHist = ''
-    state.exprHist = []
-    state.compilationState = replInitialCompilationState()
-    state.evaluationState = newEvaluationState()
-  }
-
   // load the code from a filename and optionally import a module
   function load(filename: string, moduleName: string | undefined) {
-    clearHistory()
+    state.clear()
     if (loadFromFile(out, state, filename)) {
       state.lastLoadedFileAndModule[0] = filename
       if (moduleName !== undefined) {
-        if (tryEval(out, state, `import ${moduleName}.*`)) {
+        if (tryEvalAndClearRecorder(out, state, `import ${moduleName}.*`)) {
           state.lastLoadedFileAndModule[1] = moduleName
         } else {
           out(chalk.yellow('Pick the right module name and import it (the file has been loaded)\n'))
@@ -262,7 +298,7 @@ export function quintRepl(
 
           case 'clear':
             out('\n') // be nice to external programs
-            clearHistory()
+            state.clear()
             break
 
           case 'load':
@@ -305,9 +341,9 @@ export function quintRepl(
               if (m === null) {
                 out(r('.verbosity requires a level from 0 to 5\n'))
               } else {
-                state.verbosityLevel = Number(m[1])
-                if (verbosity.hasReplPrompt(state.verbosityLevel)) {
-                  out(g(`.verbosity=${state.verbosityLevel}\n`))
+                state.verbosity = Number(m[1])
+                if (verbosity.hasReplPrompt(state.verbosity)) {
+                  out(g(`.verbosity=${state.verbosity}\n`))
                 }
                 rl.setPrompt(prompt(settings.prompt))
               }
@@ -325,7 +361,7 @@ export function quintRepl(
                   out(g(`.seed=${state.seed}\n`))
                 } else {
                   state.seed = BigInt(m[1])
-                  if (verbosity.hasReplPrompt(state.verbosityLevel)) {
+                  if (verbosity.hasReplPrompt(state.verbosity)) {
                     out(g(`.seed=${state.seed}\n`))
                   }
                 }
@@ -381,7 +417,7 @@ ${replEnd}\n` + state.exprHist.map(s => `/*! ${s} !*/\n`).join('\n')
 function loadFromFile(out: writer, state: ReplState, filename: string): boolean {
   try {
     const data = readFileSync(filename, 'utf8')
-    const newState = { ...state }
+    const newState: ReplState = state.clone()
     const modulesAndRepl = data.split(replBegin)
     // whether an error occurred at some step
     newState.moduleHist = modulesAndRepl[0]
@@ -402,7 +438,7 @@ function loadFromFile(out: writer, state: ReplState, filename: string): boolean 
         // and replay them one by one
 
         for (const groups of exprs) {
-          if (!tryEval(out, newState, groups[1])) {
+          if (!tryEvalAndClearRecorder(out, newState, groups[1])) {
             return false
           }
         }
@@ -492,9 +528,15 @@ ${textToAdd}
 function tryEvalHistory(out: writer, state: ReplState): boolean {
   const modulesText = prepareModulesText(state, '')
   const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
-  const rng = newRng(state.seed)
 
-  const context = compileFromCode(newIdGenerator(), modulesText, '__repl__', mainPath, noExecutionListener, rng.next)
+  const context = compileFromCode(
+    newIdGenerator(),
+    modulesText,
+    '__repl__',
+    mainPath,
+    state.evaluationState.listener,
+    state.rng.next
+  )
   if (
     context.evaluationState?.context.size === 0 ||
     context.compileErrors.length > 0 ||
@@ -516,6 +558,14 @@ function tryEvalHistory(out: writer, state: ReplState): boolean {
   return true
 }
 
+// Try to evaluate the expression in a string and print it, if successful.
+// After that, clear the recorded stack.
+function tryEvalAndClearRecorder(out: writer, state: ReplState, newInput: string): boolean {
+  const result = tryEval(out, state, newInput)
+  state.recorder.clear()
+  return result
+}
+
 // try to evaluate the expression in a string and print it, if successful
 function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   const parseResult = parseExpressionOrUnit(
@@ -533,12 +583,9 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     // a comment or whitespaces
     return true
   }
-  // create a random number generator
-  const rng = newRng(state.seed)
   // evaluate the input, depending on its type
   if (parseResult.kind === 'expr') {
-    const recorder = newTraceRecorder(state.verbosityLevel, rng)
-    const context = compileExpr(state.compilationState, state.evaluationState, rng, recorder, parseResult.expr)
+    const context = compileExpr(state.compilationState, state.evaluationState, state.rng, parseResult.expr)
 
     if (context.syntaxErrors.length > 0 || context.compileErrors.length > 0 || context.analysisErrors.length > 0) {
       printErrors(out, state, context, newInput)
@@ -548,11 +595,10 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     }
 
     state.exprHist.push(newInput.trim())
-    state.seed = rng.getState()
     // Save the evaluation state only, as state vars changes should persist
     state.evaluationState = context.evaluationState
 
-    return evalExpr(state, recorder, out)
+    return evalExpr(state, out)
       .mapLeft(msg => {
         // when #618 is implemented, we should remove this
         printErrorMessages(out, state, 'runtime error', newInput, context.getRuntimeErrors())
@@ -564,7 +610,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   }
   if (parseResult.kind === 'toplevel') {
     // compile the module and add it to history if everything worked
-    const context = compileDef(state.compilationState, state.evaluationState, rng, noExecutionListener, parseResult.def)
+    const context = compileDef(state.compilationState, state.evaluationState, state.rng, parseResult.def)
 
     if (
       context.evaluationState.context.size === 0 ||
@@ -677,7 +723,7 @@ function countBraces(str: string): [number, number, number] {
   return [nOpenBraces, nOpenParen, nOpenComments]
 }
 
-function evalExpr(state: ReplState, recorder: TraceRecorder, out: writer): Either<string, QuintEx> {
+function evalExpr(state: ReplState, out: writer): Either<string, QuintEx> {
   const computable = contextNameLookup(state.evaluationState.context, 'q::input', 'callable')
   const columns = terminalWidth()
   return computable
@@ -689,8 +735,8 @@ function evalExpr(state: ReplState, recorder: TraceRecorder, out: writer): Eithe
           out(format(columns, 0, prettyQuintEx(ex)))
           out('\n')
 
-          if (verbosity.hasUserOpTracking(state.verbosityLevel)) {
-            const trace = recorder.getBestTrace()
+          if (verbosity.hasUserOpTracking(state.verbosity)) {
+            const trace = state.recorder.getBestTrace()
             if (trace.subframes.length > 0) {
               out('\n')
               trace.subframes.forEach((f, i) => {

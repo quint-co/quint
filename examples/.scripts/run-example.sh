@@ -22,6 +22,6 @@ file="$1"
 syntax="$(result "quint parse ${file}")"
 types="$(result "quint typecheck ${file}")"
 tests="$(result "quint test ${file}")"
-verify="$(result "quint verify ${file}")"
+verify="$(result "quint verify --max-steps=5 ${file}")"
 
 echo "| [${file}](./${file}) | ${syntax} | ${types} | ${tests} | ${verify} |"
