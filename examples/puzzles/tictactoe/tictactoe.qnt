@@ -3,15 +3,23 @@
  * A simple definition of the tictactoe game based on [1]. Player X will
  * always play the best move while Player O will play a random valid move.
  *
+ * Usability hack: if you run this in a sufficiently narrow terminal window,
+ * each row of the board is printed in a new line and it looks like a board.
+ * This is useful while quint doesn't support custom views for traces.
+ *
  * [1]: https://elliotswart.github.io/pragmaticformalmodeling/
  *
  * Gabriela Moreira, Informal Systems, 2022-2023
  */
 module tictactoe {
-  var board: int -> (int -> str) // board[1..3][1..3] A 3x3 tic-tac-toe board
-  var nextTurn: str // who goes next
+  /// A 3x3 tic-tac-toe board
+  var board: int -> (int -> str)
+  /// Who goes next
+  var nextTurn: str
 
-  val winningPatterns = Set(
+  pure val boardCoordinates = tuples(1.to(3), 1.to(3))
+
+  pure val winningPatterns = Set(
     // Horizonal wins
     Set((1,1), (1,2), (1,3)),
     Set((2,1), (2,2), (2,3)),
@@ -25,7 +33,7 @@ module tictactoe {
     Set((3,1), (2,2), (1,3))
   )
 
-  val corners = Set(
+  pure val corners = Set(
     (1,1),
     (3,1),
     (1,3),
@@ -37,13 +45,13 @@ module tictactoe {
 
   def isEmpty(coordinate) = hasValue(coordinate, "_")
 
-  val boardEmpty = tuples(1.to(3), 1.to(3)).forall(isEmpty)
+  val boardEmpty = boardCoordinates.forall(isEmpty)
 
   def won(player) = winningPatterns.exists(pattern =>
     pattern.forall(coordinate => hasValue(coordinate, player))
   )
 
-  val boardFull = not(tuples(1.to(3), 1.to(3)).exists(isEmpty))
+  val boardFull = not(boardCoordinates.exists(isEmpty))
   val stalemate = boardFull and not(won("X")) and not(won("O"))
   val gameOver = won("X") or won("O") or boardFull
 
@@ -69,9 +77,9 @@ module tictactoe {
 
   action Move(player, coordinate) = all {
     isEmpty(coordinate),
-    board' = board.set(
+    board' = board.setBy(
       coordinate._1,
-      board.get(coordinate._1).set(coordinate._2, player)
+      row => row.set(coordinate._2, player)
     ),
   }
 
@@ -89,7 +97,7 @@ module tictactoe {
     Move("X", coordinate),
   }
 
-  action TakeCenter = Move("X", (2,2))
+  action TakeCenter = Move("X", (2, 2))
 
   action SetupWin = all {
     nondet pattern = winningPatterns.filter(canSetupWinWithPattern).oneOf()
@@ -98,7 +106,7 @@ module tictactoe {
   }
 
   action MoveToEmpty(player) =
-    nondet coordinate = tuples(1.to(3), 1.to(3)).filter(isEmpty).oneOf()
+    nondet coordinate = boardCoordinates.filter(isEmpty).oneOf()
     Move(player, coordinate)
 
   action StartInCorner =
