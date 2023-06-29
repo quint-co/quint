@@ -47,6 +47,20 @@ module basicSpells {
     assert(max(-5, -3) == -3),
   }
 
+  /// Compute the absolute value of an integer
+  ///
+  /// - @param __i : an integer whose absolute value we are interested in
+  /// - @returns |__i|, the absolute value of __i
+  pure def abs(__i: int): int = {
+    if (__i < 0) -__i else __i
+  }
+
+  run absTest = all {
+    assert(abs(3) == 3),
+    assert(abs(-3) == 3),
+    assert(abs(0) == 0),
+  }
+
   /// Remove a set element.
   ///
   /// - @param __set a set to remove an element from

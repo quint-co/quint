@@ -2,7 +2,7 @@
  * Compiler of Quint expressions and definitions to Computable values
  * that can be evaluated in the runtime.
  *
- * Igor Konnov, 2022-2023
+ * Igor Konnov, Gabriela Moreira, 2022-2023
  *
  * Copyright (c) Informal Systems 2022-2023. All rights reserved.
  * Licensed under the Apache 2.0.
@@ -54,6 +54,7 @@ export function builtinContext() {
 
 /**
  * Represents the state of evaluation of Quint code.
+ * All the fields are mutated by CompilerVisitor, either directly, or via calls.
  */
 export interface EvaluationState {
   // The context of the evaluation, containing the Computable objects.
@@ -66,6 +67,8 @@ export interface EvaluationState {
   shadowVars: Register[]
   // The error tracker for the evaluation to store errors on callbacks.
   errorTracker: CompilerErrorTracker
+  // The execution listener that the compiled code uses to report execution info.
+  listener: ExecutionListener
 }
 
 /**
@@ -93,13 +96,14 @@ export class CompilerErrorTracker {
  *
  * @returns a new EvaluationState object with the lastTrace shadow variable register
  */
-export function newEvaluationState(): EvaluationState {
+export function newEvaluationState(listener: ExecutionListener): EvaluationState {
   const state: EvaluationState = {
     context: builtinContext(),
     vars: [],
     nextVars: [],
     shadowVars: [],
     errorTracker: new CompilerErrorTracker(),
+    listener: listener,
   }
 
   // Initialize compiler state
@@ -157,19 +161,18 @@ export class CompilerVisitor implements IRVisitor {
     lookupTable: LookupTable,
     types: Map<bigint, TypeScheme>,
     rand: (bound: bigint) => bigint,
-    listener: ExecutionListener,
     evaluationState: EvaluationState
   ) {
     this.lookupTable = lookupTable
     this.types = types
     this.rand = rand
-    this.execListener = listener
 
     this.context = evaluationState.context
     this.vars = evaluationState.vars
     this.nextVars = evaluationState.nextVars
     this.shadowVars = evaluationState.shadowVars
     this.errorTracker = evaluationState.errorTracker
+    this.execListener = evaluationState.listener
   }
 
   /**
@@ -182,6 +185,7 @@ export class CompilerVisitor implements IRVisitor {
       nextVars: this.nextVars,
       shadowVars: this.shadowVars,
       errorTracker: this.errorTracker,
+      listener: this.execListener,
     }
   }
 
@@ -228,7 +232,7 @@ export class CompilerVisitor implements IRVisitor {
     this.definitionDepth--
     // Either a runtime value, or a def, action, etc.
     // All of them are compiled to callables, which may have zero parameters.
-    const boundValue = this.compStack.pop()
+    let boundValue = this.compStack.pop()
     if (boundValue === undefined) {
       this.errorTracker.addCompileError(opdef.id, `No expression for ${opdef.name} on compStack`)
       return
@@ -237,14 +241,22 @@ export class CompilerVisitor implements IRVisitor {
     if (opdef.qualifier === 'action' && opdef.expr.kind !== 'lambda') {
       // A nullary action like `init` or `step`.
       // It is not handled via applyUserDefined.
-      // Wrap its evaluation with the listener calls.
-      const unwrappedEval = boundValue.eval
+      // Wrap this value with the listener calls.
+      // Importantly, we do not touch the original boundValue, but decorate it.
+      // Consider the following definitions:
+      //   action input1 = step
+      //   action input2 = step
+      //
+      // Both input1 and input2 wrap step, but in their individual computables.
+      const unwrappedValue = boundValue
       const app: ir.QuintApp = { id: opdef.id, kind: 'app', opcode: opdef.name, args: [] }
-      boundValue.eval = () => {
-        this.execListener.onUserOperatorCall(app)
-        const r = unwrappedEval()
-        this.execListener.onUserOperatorReturn(app, [], r)
-        return r
+      boundValue = {
+        eval: () => {
+          this.execListener.onUserOperatorCall(app)
+          const r = unwrappedValue.eval()
+          this.execListener.onUserOperatorReturn(app, [], r)
+          return r
+        },
       }
     }
 
