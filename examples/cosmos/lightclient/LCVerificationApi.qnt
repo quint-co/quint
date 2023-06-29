@@ -161,7 +161,7 @@ module LCVerificationApi {
     //
     // @type: ($blockchain, Bool, $lightBlockMap, $lightBlockStatus, Int, Int, Str) => Bool;
     //
-    def verifyToTargetPost(blockchain: Blockchain, isPeerCorrect: bool,
+    def VerifyToTargetPost(blockchain: Blockchain, isPeerCorrect: bool,
                        fetchedLightBlocks: LightBlockMap, lightBlockStatus: LightBlockStatus,
                        trustedHeight: int, targetHeight: int, finalState: str): bool = {
                     
