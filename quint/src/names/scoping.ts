@@ -28,21 +28,26 @@ export interface ScopeTree {
 }
 
 /**
- * Recursively search for a node in the scope tree and return a list with
- * all of its parents until the root of the tree
+ * Recursively search for a node in the scope tree and return a list with all of
+ * its parents until the root of the tree
  *
- * @param treeNode the tree to search from
- * @param id the id to be searched
+ * @param treeNode - The tree to search from.
+ * @param id - The id to be searched.
+ * @param cache - An optional cache to store previously computed results.
  *
- * @returns a list of ids, including the given id, for scopes this id belongs to,
- *          ordered from the node itself to the module root
+ * @returns A list of ids, including the given id, for scopes this id belongs
+ *          to, ordered from the node itself to the module root.
  */
-export function scopesForId(treeNode: ScopeTree, id: bigint): bigint[] {
+export function scopesForId(treeNode: ScopeTree, id: bigint, cache?: Map<bigint, bigint[]>): bigint[] {
   if (treeNode.value === id) {
     return [treeNode.value]
   }
 
-  return treeNode.children.flatMap(child => {
+  if (cache && cache.has(id)) {
+    return cache.get(id)!
+  }
+
+  const result = treeNode.children.flatMap(child => {
     const childScopes = scopesForId(child, id)
     // if it's under some of the node's children scope, then it is under the node's scope
     if (childScopes.length > 0) {
@@ -51,6 +56,12 @@ export function scopesForId(treeNode: ScopeTree, id: bigint): bigint[] {
 
     return []
   })
+
+  if (cache) {
+    cache.set(id, result)
+  }
+
+  return result
 }
 
 /**

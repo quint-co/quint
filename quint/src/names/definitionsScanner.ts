@@ -54,11 +54,12 @@ export type DefinitionsConflictResult = Either<Conflict[], void>
  */
 export function scanConflicts(table: DefinitionsByName, tree: ScopeTree): DefinitionsConflictResult {
   const conflicts: Conflict[] = []
+  const cache: Map<bigint, bigint[]> = new Map()
   table.valueDefinitions.forEach((defs, identifier) => {
     // Value definition conflicts depend on scope
     const conflictingDefinitions = defs.filter(def =>
       defs.some(d => {
-        return !isEqual(d, def) && canConflict(tree, d, def)
+        return !isEqual(d, def) && canConflict(d, def, tree, cache)
       })
     )
 
@@ -89,11 +90,11 @@ export function scanConflicts(table: DefinitionsByName, tree: ScopeTree): Defini
   }
 }
 
-function canConflict(tree: ScopeTree, d1: ValueDefinition, d2: ValueDefinition): Boolean {
+function canConflict(d1: ValueDefinition, d2: ValueDefinition, tree: ScopeTree, cache: Map<bigint, bigint[]>): Boolean {
   return (
     !d1.scope ||
     !d2.scope ||
-    scopesForId(tree, d1.scope).includes(d2.scope) ||
-    scopesForId(tree, d2.scope).includes(d1.scope)
+    scopesForId(tree, d1.scope, cache).includes(d2.scope) ||
+    scopesForId(tree, d2.scope, cache).includes(d1.scope)
   )
 }

@@ -73,6 +73,7 @@ class NameResolverVisitor implements IRVisitor {
   table: LookupTable = new Map()
 
   private scopeTree: ScopeTree
+  private cache: Map<bigint, bigint[]> = new Map()
   private definitionsByName: DefinitionsByName
   private lastDefName: string = ''
 
@@ -124,7 +125,7 @@ class NameResolverVisitor implements IRVisitor {
 
   // Check that there is a value definition for `name` under scope `id`
   private checkScopedName(name: string, id: bigint) {
-    const def = lookupValue(this.definitionsByName, this.scopeTree, name, id)
+    const def = lookupValue(this.definitionsByName, this.scopeTree, name, id, this.cache)
     if (!def) {
       this.recordError('value', name, id)
       return
