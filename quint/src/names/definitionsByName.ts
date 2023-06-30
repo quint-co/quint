@@ -125,24 +125,26 @@ export function addTypeToTable(def: TypeDefinition, table: DefinitionsByName) {
 /**
  * Lookup a name in the value definitions in a definitions table
  *
- * @param table the definitions table to be scanned
- * @param scopeTree the scope tree for the module where the name occurs
- * @param name the name of the definition to be found
- * @param scope the expression id where the name occurs
+ * @param table - The definitions table to be scanned.
+ * @param scopeTree - The scope tree for the module where the name occurs.
+ * @param name - The name of the definition to be found.
+ * @param scope - The expression id where the name occurs.
+ * @param cache - A map of cached scope ids.
  *
- * @returns the value definition, if found under the scope. Otherwise, undefined
+ * @returns The value definition, if found under the scope. Otherwise, undefined.
  */
 export function lookupValue(
   table: DefinitionsByName,
   scopeTree: ScopeTree,
   name: string,
-  scope: bigint
+  scope: bigint,
+  cache: Map<bigint, bigint[]>
 ): ValueDefinition | undefined {
   if (!table.valueDefinitions.has(name)) {
     return undefined
   }
 
-  return filterScope(table.valueDefinitions.get(name)!, scopesForId(scopeTree, scope))[0]
+  return filterScope(table.valueDefinitions.get(name)!, scopesForId(scopeTree, scope, cache))[0]
 }
 
 /**
