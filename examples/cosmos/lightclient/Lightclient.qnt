@@ -21,15 +21,12 @@ module Lightclient {
     // the actual clock drift, which under normal circumstances should not
     // be larger than CLOCK_DRIFT (otherwise, there will be a bug)
     const REAL_CLOCK_DRIFT: int
-    // is primary correct?
+    // Flag taht determines whether primary is correct. Modifies the behavior of FetchLightBlockInto, and invariants.
     const IS_PRIMARY_CORRECT: bool
     // a pair (a, b) that limits that ratio of faulty validator in the blockchain
     // from above (exclusive). Tendermint security model prescribes 1 / 3.
     const FAULTY_RATIO: (int, int)
 
-
-    // the local clock of the light client
-    // var localClock: int
     // the current state of the light client
     var state: str
     // the next height to explore by the light client
@@ -63,22 +60,12 @@ module Lightclient {
 
     /******************* Blockchain instance ***********************************/
 
-    // the parameters that are propagated into Blockchain
     // A set of all nodes that can act as validators (correct and faulty)
     const AllNodes: Set[str]
 
-
-    // // the state variables of Blockchain, see Blockchain.tla for the details
-    // var refClock: int
-    // var blockchain: Blockchain
-    // var Faulty: Set[str]
-
-    /* Create an instance of Blockchain.
-    We could write EXTENDS Blockchain, but then all the constants and state variables
-    would be hidden inside the Blockchain module.
-    */ 
     pure def ULTIMATE_HEIGHT = TARGET_HEIGHT + 1 
- 
+
+    /* Create an instance of Blockchain. */ 
     import Blockchain(
         AllNodes = AllNodes, 
         ULTIMATE_HEIGHT = ULTIMATE_HEIGHT, 
@@ -157,20 +144,14 @@ module Lightclient {
     // add a block into the light store    
     //
     // [LCV-FUNC-UPDATE.1::TLA.1]
-    pure def LightStoreUpdateBlocks(lightBlocks: LightBlockMap, block: LightBlock): LightBlockMap = {
-        val ht = block.header.height
-        lightBlocks.keys().union(Set(ht)).mapBy( h =>
-            if (h == ht) block else lightBlocks.get(h)
-        )
-    }
+    pure def LightStoreUpdateBlocks(lightBlocks: LightBlockMap, block: LightBlock): LightBlockMap = 
+        lightBlocks.put(block.header.height, block)
 
     // update the state of a light block      
     //
     // [LCV-FUNC-UPDATE.1::TLA.1]
     pure def LightStoreUpdateStates(statuses: LightBlockStatus, ht: int, blockState: str): LightBlockStatus =
-        statuses.keys().union(Set(ht)).mapBy( h =>
-            if (h == ht) blockState else statuses.get(h)
-        )      
+        statuses.put(ht, blockState)
 
     // Check, whether newHeight is a possible next height for the light client.
     //
@@ -295,7 +276,7 @@ module Lightclient {
         nondet refClockTm = oneOf(Int)
         nondet tm = oneOf(Int)
         all {
-            BC::AdvanceTime(refClockTm),
+            BC::AdvanceTimeTo(refClockTm),
             tm >= 0,
             // if you want the clock to always grow monotonically, uncomment the next line:
             // tm > localClock,
