@@ -46,9 +46,6 @@ module clockSync3Spec {
     /// Hardware clock of a process
     var hc: PROC -> int
 
-    /// Clock adjustment of a process
-    var adj: PROC -> int
-
     /// Messages sent by the processes
     var msgs: MSGS
 
@@ -76,7 +73,6 @@ module clockSync3Spec {
         { nondet hc0 = oneOf(setOfMaps(Procs, Nat))
           hc' = hc0 },
         msgs'  = Set(),
-        adj'   = Procs.mapBy(_ => 0),
         state' = Procs.mapBy(_ => "init"),
         rcvd'  = Procs.mapBy(_ => Set()),
     }
