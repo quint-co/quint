@@ -14,7 +14,7 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 import { IrErrorMessage, QuintDef, QuintEx, QuintModule } from '../quintIr'
 import { IdGenerator } from '../idGenerator'
 import { ToIrListener } from './ToIrListener'
-import { Definition, LookupTable } from '../names/lookupTable'
+import { LookupTable } from '../names/lookupTable'
 import { Either, left, right } from '@sweet-monads/either'
 import { SourceLookupPath, SourceResolver, fileSourceResolver } from './sourceResolver'
 import { resolveNames } from '../names/onePassNameResolver'
@@ -236,57 +236,55 @@ export function parsePhase2sourceResolution(
 export function parsePhase3importAndNameResolution(phase1Data: ParserPhase2): ParseResult<ParserPhase3> {
   const sourceMap: Map<bigint, Loc> = phase1Data.sourceMap
 
-  const nameResolutionResult = phase1Data.modules.reduce((result: Either<ErrorMessage[], LookupTable>, module) => {
-    return resolveNames(module)
-      .mapLeft(([conflicts, errors]) => {
-        const conflictMessages = conflicts.map(conflict => {
-          let msg, sources
-          if (conflict.sources.some(source => source.kind === 'builtin')) {
-            msg = `Built-in name ${conflict.identifier} is redefined in module ${module.name}`
-            sources = conflict.sources.filter(source => source.kind === 'user')
+  const nameResolutionResult = resolveNames(phase1Data.modules)
+    .mapLeft(([conflicts, errors, importErrors]): ErrorMessage[] => {
+      console.log(importErrors)
+      const conflictMessages = conflicts.map(conflict => {
+        let msg, sources
+        if (conflict.sources.some(source => source.kind === 'builtin')) {
+          msg = `Built-in name ${conflict.identifier} is redefined in module` // module name
+          sources = conflict.sources.filter(source => source.kind === 'user')
+        } else {
+          msg = `[${conflict.kind}] Conflicting definitions found for name ${conflict.identifier} in module` // module name
+          sources = conflict.sources
+        }
+
+        const locs = sources.map(source => {
+          const id = source.kind === 'user' ? source.reference : 0n // Impossible case, but TS requires the check
+          let sourceLoc = sourceMap.get(id)
+          if (!sourceLoc) {
+            console.error(`No source location found for ${id}. Please report a bug.`)
+            return unknownLoc
           } else {
-            msg = `Conflicting definitions found for name ${conflict.identifier} in module ${module.name}`
-            sources = conflict.sources
-          }
-
-          const locs = sources.map(source => {
-            const id = source.kind === 'user' ? source.reference : 0n // Impossible case, but TS requires the check
-            let sourceLoc = sourceMap.get(id)
-            if (!sourceLoc) {
-              console.error(`No source location found for ${id}. Please report a bug.`)
-              return unknownLoc
-            } else {
-              return sourceLoc
-            }
-          })
-
-          return { explanation: msg, locs }
-        })
-
-        const errorMessages = errors.map(error => {
-          const msg =
-            `Failed to resolve ` +
-            (error.kind === 'type' ? 'type alias' : 'name') +
-            ` ${error.name} in definition for ${error.definitionName}, ` +
-            `in module ${error.moduleName}`
-          const id = error.reference
-          if (id) {
-            const sourceLoc = sourceMap.get(id)
-            if (!sourceLoc) {
-              console.error(`No source location found for ${id}. Please report a bug.`)
-            }
-            const loc = sourceLoc ?? unknownLoc
-            return { explanation: msg, locs: [loc] }
-          } else {
-            return { explanation: msg, locs: [] }
+            return sourceLoc
           }
         })
 
-        return conflictMessages.concat(errorMessages)
+        return { explanation: msg, locs }
       })
-      .chain(table => result.map(t => new Map<bigint, Definition>([...t.entries(), ...table.entries()])))
-      .mapLeft(errors => errors.flat())
-  }, right(new Map<bigint, Definition>()))
+
+      const errorMessages = errors.map(error => {
+        const msg =
+          `Failed to resolve ` +
+          (error.kind === 'type' ? 'type alias' : 'name') +
+          ` ${error.name} in definition for ${error.definitionName}, ` +
+          `in module ${error.moduleName}`
+        const id = error.reference
+        if (id) {
+          const sourceLoc = sourceMap.get(id)
+          if (!sourceLoc) {
+            console.error(`No source location found for ${id}. Please report a bug.`)
+          }
+          const loc = sourceLoc ?? unknownLoc
+          return { explanation: msg, locs: [loc] }
+        } else {
+          return { explanation: msg, locs: [] }
+        }
+      })
+
+      return conflictMessages.concat(errorMessages)
+    })
+    .mapLeft(errors => errors.flat())
 
   return nameResolutionResult.map(table => ({ ...phase1Data, table }))
 }
