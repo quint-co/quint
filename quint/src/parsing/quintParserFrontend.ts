@@ -14,16 +14,10 @@ import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 import { IrErrorMessage, QuintDef, QuintEx, QuintModule } from '../quintIr'
 import { IdGenerator } from '../idGenerator'
 import { ToIrListener } from './ToIrListener'
-import { collectDefinitions } from '../names/definitionsCollector'
-import { resolveNames } from '../names/nameResolver'
-import { resolveImports } from '../names/importResolver'
-import { treeFromModule } from '../names/scoping'
-import { scanConflicts } from '../names/definitionsScanner'
 import { Definition, LookupTable } from '../names/lookupTable'
-import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { mkErrorMessage } from '../cliCommands'
-import { DefinitionsByModule, DefinitionsByName } from '../names/definitionsByName'
+import { Either, left, right } from '@sweet-monads/either'
 import { SourceLookupPath, SourceResolver, fileSourceResolver } from './sourceResolver'
+import { resolveNames } from '../names/onePassNameResolver'
 
 export interface Loc {
   source: string
@@ -242,24 +236,10 @@ export function parsePhase2sourceResolution(
 export function parsePhase3importAndNameResolution(phase1Data: ParserPhase2): ParseResult<ParserPhase3> {
   const sourceMap: Map<bigint, Loc> = phase1Data.sourceMap
 
-  const definitionsByModule: DefinitionsByModule = new Map()
-
-  const definitions = phase1Data.modules.reduce((result: Either<ErrorMessage[], LookupTable>, module) => {
-    const scopeTree = treeFromModule(module)
-    const definitionsBeforeImport = collectDefinitions(module)
-    definitionsByModule.set(module.name, definitionsBeforeImport)
-
-    const [errors, definitions] = resolveImports(module, definitionsByModule)
-    const errorLocator = mkErrorMessage(sourceMap)
-
-    const importResult: Either<ErrorMessage[], DefinitionsByName> =
-      errors.size > 0 ? left(Array.from(errors, errorLocator)) : right(definitions)
-
-    definitionsByModule.set(module.name, definitions)
-
-    const conflictResult: Either<ErrorMessage[], void> = scanConflicts(definitions, scopeTree).mapLeft(
-      (conflicts): ErrorMessage[] => {
-        return conflicts.map(conflict => {
+  const nameResolutionResult = phase1Data.modules.reduce((result: Either<ErrorMessage[], LookupTable>, module) => {
+    return resolveNames(module)
+      .mapLeft(([conflicts, errors]) => {
+        const conflictMessages = conflicts.map(conflict => {
           let msg, sources
           if (conflict.sources.some(source => source.kind === 'builtin')) {
             msg = `Built-in name ${conflict.identifier} is redefined in module ${module.name}`
@@ -282,13 +262,8 @@ export function parsePhase3importAndNameResolution(phase1Data: ParserPhase2): Pa
 
           return { explanation: msg, locs }
         })
-      }
-    )
 
-    const resolutionResult: Either<ErrorMessage[], LookupTable> = resolveNames(module, definitions, scopeTree).mapLeft(
-      errors => {
-        // Build error message with resolution explanation and the location obtained from sourceMap
-        return errors.map(error => {
+        const errorMessages = errors.map(error => {
           const msg =
             `Failed to resolve ` +
             (error.kind === 'type' ? 'type alias' : 'name') +
@@ -306,15 +281,14 @@ export function parsePhase3importAndNameResolution(phase1Data: ParserPhase2): Pa
             return { explanation: msg, locs: [] }
           }
         })
-      }
-    )
 
-    return mergeInMany([importResult, conflictResult, resolutionResult])
-      .chain(([_, __, table]) => result.map(t => new Map<bigint, Definition>([...t.entries(), ...table.entries()])))
+        return conflictMessages.concat(errorMessages)
+      })
+      .chain(table => result.map(t => new Map<bigint, Definition>([...t.entries(), ...table.entries()])))
       .mapLeft(errors => errors.flat())
-  }, right(new Map()))
+  }, right(new Map<bigint, Definition>()))
 
-  return definitions.map(table => ({ ...phase1Data, table }))
+  return nameResolutionResult.map(table => ({ ...phase1Data, table }))
 }
 
 export function compactSourceMap(sourceMap: Map<bigint, Loc>): { sourceIndex: any; map: any } {
