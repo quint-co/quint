@@ -1,39 +1,86 @@
-/* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
- * --------------------------------------------------------------------------------- */
+import { QuintType } from '../quintTypes'
 
 /**
- * Find and collect definitions from a Quint module, along with a default list for built-in
- * definitions. Collect both operator and type alias definitions. For scoped operators,
- * collect scope information.
- *
- * @author Gabriela Moreira
- *
- * @module
+ * Possible kinds for value definitions
  */
+export type ValueDefinitionKind = 'module' | 'def' | 'val' | 'assumption' | 'param' | 'var' | 'const'
 
-import { IRVisitor, walkModule } from '../IRVisitor'
-import {
-  DefinitionsByName,
-  ValueDefinition,
-  ValueDefinitionKind,
-  addTypeToTable,
-  addValueToTable,
-  newTable,
-} from './definitionsByName'
-import {
-  QuintAssume,
-  QuintConst,
-  QuintLambda,
-  QuintLet,
-  QuintModule,
-  QuintOpDef,
-  QuintTypeDef,
-  QuintVar,
-} from '../quintIr'
-import { QuintType } from '../quintTypes'
+/**
+ * A named operator definition. Can be scoped or module-wide (unscoped).
+ */
+export interface ValueDefinition {
+  /* Same as QuintDef kinds */
+  kind: ValueDefinitionKind
+  /* The name given to the defined operator */
+  identifier: string
+  /* Expression or definition id from where the name was collected */
+  reference?: bigint
+  /* Optional scope, an id pointing to the QuintIr node that introduces the name */
+  scoped?: boolean
+  /* Optional type annotation */
+  typeAnnotation?: QuintType
+}
+
+/**
+ * A type alias definition
+ */
+export interface TypeDefinition {
+  kind: 'type'
+  /* The alias given to the type */
+  identifier: string
+  /* The type that is aliased (none for uninterpreted type) */
+  type?: QuintType
+  /* Expression or definition id from where the type was collected */
+  reference?: bigint
+  /* Optional scope, an id pointing to the QuintIr node that introduces the name */
+  scoped?: bigint
+}
+
+export type DefinitionsByName = Map<string, ValueDefinition | TypeDefinition>
+/**
+ * Definitions tables for each module
+ */
+export type DefinitionsByModule = Map<string, DefinitionsByName>
+
+/**
+ * The source of a conflict occurrences
+ */
+export type ConflictSource =
+  /* A user definition, referencing its IR node id */
+  | { kind: 'user'; reference: bigint }
+  /* A built-in definition, no reference */
+  | { kind: 'builtin' }
+
+/**
+ * Error report for a found name conflict
+ */
+export interface Conflict {
+  /* The name that has a conflict */
+  identifier: string
+  /* Sources of the occurrences of the conflicting name */
+  sources: ConflictSource[]
+}
+/**
+ * Information stored for each id in the lookup table
+ */
+export interface Definition {
+  reference: bigint
+  kind: ValueDefinitionKind | 'type'
+  typeAnnotation?: QuintType
+}
+
+/**
+ * A lookup table from IR component ids to their definitions.
+ * Should have an entry for every IR component with a name
+ * That is:
+ * - Name expressions
+ * - App expressions (opcode is a name)
+ * - Override parameters in instance definitions
+ * - Constant types (which are references to type aliases or uninterpreted types)
+ *
+ * This should be created by `resolveNames` from `nameResolver.ts`
+ */
+export type LookupTable = Map<bigint, Definition>
 
 /**
  * Built-in name definitions that are always included in definitions collection
@@ -141,95 +188,4 @@ export function defaultValueDefinitions(): ValueDefinition[] {
     { kind: 'def', identifier: 'cross' },
     { kind: 'def', identifier: 'difference' },
   ]
-}
-
-/**
- * Recursively iterate over a module's definition collecting all names and type aliases
- * into a definition table. Also includes all default definitions for built-in names.
- *
- * @param quintModule the Quint module to have definitions collected from
- *
- * @returns a lookup table with all defined values for the module
- */
-export function collectDefinitions(quintModule: QuintModule): DefinitionsByName {
-  const visitor = new DefinitionsCollectorVisitor()
-  walkModule(visitor, quintModule)
-  return visitor.table
-}
-
-class DefinitionsCollectorVisitor implements IRVisitor {
-  table: DefinitionsByName = newTable({ valueDefinitions: defaultValueDefinitions() })
-  private scopeStack: bigint[] = []
-
-  enterVar(def: QuintVar): void {
-    this.collectValueDefinition(def.kind, def.name, def.id, undefined, def.typeAnnotation)
-  }
-
-  enterConst(def: QuintConst): void {
-    this.collectValueDefinition(def.kind, def.name, def.id, undefined, def.typeAnnotation)
-  }
-
-  enterOpDef(def: QuintOpDef): void {
-    if (this.scopeStack.length > 0) {
-      const scope = this.scopeStack[this.scopeStack.length - 1]
-      this.collectValueDefinition(def.kind, def.name, def.id, scope, def.typeAnnotation)
-    } else {
-      this.collectValueDefinition(def.kind, def.name, def.id)
-    }
-  }
-
-  enterTypeDef(def: QuintTypeDef): void {
-    this.collectTypeDefinition(def.name, def.type, def.id)
-  }
-
-  enterAssume(def: QuintAssume): void {
-    this.collectValueDefinition('assumption', def.name, def.id)
-  }
-
-  enterLambda(expr: QuintLambda): void {
-    expr.params.forEach(p => {
-      this.collectValueDefinition('param', p.name, p.id, expr.id)
-    })
-  }
-
-  enterLet(def: QuintLet): void {
-    this.scopeStack.push(def.id)
-  }
-
-  exitLet(_: QuintLet): void {
-    this.scopeStack.pop()
-  }
-
-  private collectValueDefinition(
-    kind: ValueDefinitionKind,
-    identifier: string,
-    reference?: bigint,
-    scope?: bigint,
-    typeAnnotation?: QuintType
-  ): void {
-    if (identifier === '_') {
-      // Don't collect underscores, as they are special identifiers that allow no usage
-      return
-    }
-
-    const def: ValueDefinition = {
-      kind,
-      identifier,
-      reference,
-      scope,
-      typeAnnotation,
-    }
-
-    addValueToTable(def, this.table)
-  }
-
-  private collectTypeDefinition(identifier: string, type?: QuintType, reference?: bigint): void {
-    const def = {
-      identifier,
-      type,
-      reference,
-    }
-
-    addTypeToTable(def, this.table)
-  }
 }

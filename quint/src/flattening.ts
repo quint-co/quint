@@ -13,7 +13,7 @@
  */
 
 import { IdGenerator } from './idGenerator'
-import { LookupTable } from './names/lookupTable'
+import { LookupTable, defaultValueDefinitions } from './names/base'
 import {
   FlatDef,
   FlatModule,
@@ -27,7 +27,6 @@ import {
   isAnnotatedDef,
   isFlat,
 } from './quintIr'
-import { defaultValueDefinitions } from './names/definitionsCollector'
 import { definitionToString } from './IRprinting'
 import { QuintType, Row } from './quintTypes'
 import { Loc, parsePhase3importAndNameResolution } from './parsing/quintParserFrontend'

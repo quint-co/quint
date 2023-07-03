@@ -1,44 +1,23 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { buildModuleWithDefs } from '../builders/ir'
 import { TypeInferenceResult, TypeInferrer } from '../../src/types/inferrer'
-import { DefinitionsByName, mergeTables, newTable } from '../../src/names/definitionsByName'
 import { typeSchemeToString } from '../../src/types/printing'
 import { errorTreeToString } from '../../src/errorTree'
-import { collectDefinitions } from '../../src/names/definitionsCollector'
-import { QuintModule } from '../../src/quintIr'
-import { resolveNames } from '../../src/names/nameResolver'
-import { treeFromModule } from '../../src/names/scoping'
+import { parseMockedModule } from '../util'
 
 describe('inferTypes', () => {
-  const table: DefinitionsByName = newTable({
-    valueDefinitions: [
-      { kind: 'const', identifier: 'N', reference: 3n },
-      { kind: 'var', identifier: 'x', reference: 3n },
-      { kind: 'var', identifier: 'y', reference: 5n },
-    ],
-  })
+  function inferTypesForDefs(defs: string[]): TypeInferenceResult {
+    const text = `module wrapper { ${defs.join('\n')} }`
+    const { modules, table } = parseMockedModule(text)
 
-  function inferTypesForModule(quintModule: QuintModule): TypeInferenceResult {
-    const mergedTable = mergeTables(collectDefinitions(quintModule), table)
-    const lookupTable = resolveNames(quintModule, mergedTable, treeFromModule(quintModule))
-    if (lookupTable.isLeft()) {
-      throw new Error('Failed to resolve names in mocked up module')
-    }
-
-    const inferrer = new TypeInferrer(lookupTable.value)
-    return inferrer.inferTypes(quintModule.defs)
+    const inferrer = new TypeInferrer(table)
+    return inferrer.inferTypes(modules[0].defs)
   }
 
   it('infers types for basic expressions', () => {
-    const quintModule = buildModuleWithDefs([
-      'def a = 1 + 2',
-      'def b(p, q) = p + q',
-      'val c = val m = 2 { m }',
-      'def d(S) = S.map(p => p + 10)',
-    ])
+    const defs = ['def a = 1 + 2', 'def b(p, q) = p + q', 'val c = val m = 2 { m }', 'def d(S) = S.map(p => p + 10)']
 
-    const [errors, types] = inferTypesForModule(quintModule)
+    const [errors, types] = inferTypesForDefs(defs)
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
@@ -71,9 +50,9 @@ describe('inferTypes', () => {
   })
 
   it('infers types for high-order operators', () => {
-    const quintModule = buildModuleWithDefs(['def a(f, p) = f(p)', 'def b(g, q) = g(q) + g(not(q))'])
+    const defs = ['def a(f, p) = f(p)', 'def b(g, q) = g(q) + g(not(q))']
 
-    const [errors, types] = inferTypesForModule(quintModule)
+    const [errors, types] = inferTypesForDefs(defs)
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
@@ -96,14 +75,14 @@ describe('inferTypes', () => {
   })
 
   it('infers types for records', () => {
-    const quintModule = buildModuleWithDefs([
+    const defs = [
       'var x: { f1: int, f2: bool }',
       'val m = Set(x, { f1: 1, f2: true })',
       'def e(p) = x.with("f1", p.f1)',
       'val a = e({ f1: 2 }).fieldNames()',
-    ])
+    ]
 
-    const [errors, types] = inferTypesForModule(quintModule)
+    const [errors, types] = inferTypesForDefs(defs)
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
@@ -135,9 +114,9 @@ describe('inferTypes', () => {
   })
 
   it('infers types for tuples', () => {
-    const quintModule = buildModuleWithDefs(['def e(p, q) = (p._1, q._2)'])
+    const defs = ['def e(p, q) = (p._1, q._2)']
 
-    const [errors, types] = inferTypesForModule(quintModule)
+    const [errors, types] = inferTypesForDefs(defs)
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
@@ -156,9 +135,9 @@ describe('inferTypes', () => {
   })
 
   it('keeps track of free variables in nested scopes (#966)', () => {
-    const quintModule = buildModuleWithDefs(['def f(a) = a == "x"', 'def g(b) = val nested = (1,2) { f(b) }'])
+    const defs = ['def f(a) = a == "x"', 'def g(b) = val nested = (1,2) { f(b) }']
 
-    const [errors, types] = inferTypesForModule(quintModule)
+    const [errors, types] = inferTypesForDefs(defs)
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
@@ -166,9 +145,9 @@ describe('inferTypes', () => {
   })
 
   it('considers annotations', () => {
-    const quintModule = buildModuleWithDefs(['def e(p): (int) => int = p'])
+    const defs = ['def e(p): (int) => int = p']
 
-    const [errors, types] = inferTypesForModule(quintModule)
+    const [errors, types] = inferTypesForDefs(defs)
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
@@ -180,9 +159,9 @@ describe('inferTypes', () => {
   })
 
   it('checks annotations', () => {
-    const quintModule = buildModuleWithDefs(['def e(p): (t) => t = p + 1'])
+    const defs = ['def e(p): (t) => t = p + 1']
 
-    const [errors] = inferTypesForModule(quintModule)
+    const [errors] = inferTypesForDefs(defs)
     assert.sameDeepMembers(
       [...errors.entries()],
       [
@@ -204,9 +183,9 @@ describe('inferTypes', () => {
   })
 
   it('fails when types are not unifiable', () => {
-    const quintModule = buildModuleWithDefs(['def a = 1.map(p => p + 10)'])
+    const defs = ['def a = 1.map(p => p + 10)']
 
-    const [errors] = inferTypesForModule(quintModule)
+    const [errors] = inferTypesForDefs(defs)
 
     assert.sameDeepMembers(
       [...errors.entries()],

@@ -14,7 +14,7 @@
  */
 
 import { IRTransformer, transformDefinition, transformModule, transformType } from '../IRTransformer'
-import { LookupTable } from '../names/lookupTable'
+import { LookupTable } from '../names/base'
 import { AnalysisOutput } from '../quintAnalyzer'
 import { QuintDef, QuintModule } from '../quintIr'
 import { QuintType } from '../quintTypes'

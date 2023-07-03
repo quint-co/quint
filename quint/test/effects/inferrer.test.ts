@@ -3,25 +3,19 @@ import { assert } from 'chai'
 import { buildModuleWithDefs } from '../builders/ir'
 import { effectSchemeToString } from '../../src/effects/printing'
 import { errorTreeToString } from '../../src/errorTree'
-import { collectDefinitions } from '../../src/names/definitionsCollector'
 import { EffectInferenceResult, EffectInferrer } from '../../src/effects/inferrer'
-import { EffectScheme, treeFromModule } from '../../src'
-import { resolveNames } from '../../src/names/nameResolver'
-import JSONbig from 'json-bigint'
+import { parseMockedModule } from '../util'
+import { EffectScheme } from '../../src/effects/base'
 
 describe('inferEffects', () => {
   const baseDefs = ['const N: int', 'const S: Set[int]', 'var x: int']
 
   function inferEffectsForDefs(defs: string[]): EffectInferenceResult {
-    const module = buildModuleWithDefs(baseDefs.concat(defs))
-    const table = collectDefinitions(module)
-    const lookupTable = resolveNames(module, table, treeFromModule(module))
-    if (lookupTable.isLeft()) {
-      throw new Error(`Failed to resolve names in mocked up module: ${JSONbig.stringify(lookupTable.value)}`)
-    }
+    const text = `module wrapper { ${baseDefs.concat(defs).join('\n')} }`
+    const { modules, table } = parseMockedModule(text)
 
-    const inferrer = new EffectInferrer(lookupTable.value)
-    return inferrer.inferEffects(module.defs)
+    const inferrer = new EffectInferrer(table)
+    return inferrer.inferEffects(modules[0].defs)
   }
 
   function effectForDef(defs: string[], effects: Map<bigint, EffectScheme>, defName: string) {
@@ -219,7 +213,7 @@ describe('inferEffects', () => {
   })
 
   it('returns error when lambda returns an operator', () => {
-    const defs = ['pure def f(x) = x', 'pure def myOp = (_) => f']
+    const defs = ['pure def f(p) = p', 'pure def myOp = (_) => f']
 
     const [errors] = inferEffectsForDefs(defs)
 

@@ -4,28 +4,20 @@ import { Constraint } from '../../src/types/base'
 import { ConstraintGeneratorVisitor, SolvingFunctionType } from '../../src/types/constraintGenerator'
 import { left, right } from '@sweet-monads/either'
 import { walkModule } from '../../src/IRVisitor'
-import { buildModuleWithDefs } from '../builders/ir'
 import { constraintToString } from '../../src/types/printing'
 import { ErrorTree } from '../../src/errorTree'
-import { collectDefinitions } from '../../src/names/definitionsCollector'
-import { LookupTable } from '../../src/names/lookupTable'
-import { resolveNames } from '../../src/names/nameResolver'
-import { treeFromModule } from '../../src/names/scoping'
-import JSONbig from 'json-bigint'
+import { LookupTable } from '../../src/names/base'
+import { parseMockedModule } from '../util'
 
 describe('ConstraintGeneratorVisitor', () => {
   const baseDefs = ['var s: str', 'var y: int', 'const N: int']
 
   function visitModuleWithDefs(defs: string[], solvingFunction: SolvingFunctionType): ConstraintGeneratorVisitor {
-    const module = buildModuleWithDefs(baseDefs.concat(defs))
-    const table = collectDefinitions(module)
-    const lookupTable = resolveNames(module, table, treeFromModule(module))
-    if (lookupTable.isLeft()) {
-      throw new Error(`Failed to resolve names in mocked up module: ${JSONbig.stringify(lookupTable.value)}`)
-    }
+    const text = `module wrapper { ${baseDefs.concat(defs).join('\n')} }`
+    const { modules, table } = parseMockedModule(text)
 
-    const visitor = new ConstraintGeneratorVisitor(solvingFunction, lookupTable.value)
-    walkModule(visitor, module)
+    const visitor = new ConstraintGeneratorVisitor(solvingFunction, table)
+    walkModule(visitor, modules[0])
 
     return visitor
   }

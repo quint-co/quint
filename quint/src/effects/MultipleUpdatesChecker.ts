@@ -57,6 +57,7 @@ export class MultipleUpdatesChecker implements EffectVisitor {
         this.errors.set(v.reference, {
           code: 'QNT202',
           message: `Multiple updates of variable ${v.name}`,
+          reference: v.reference,
           data: {},
         })
       })

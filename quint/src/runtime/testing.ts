@@ -16,7 +16,7 @@ import { QuintEx, QuintOpDef } from '../quintIr'
 
 import { CompilationContext, CompilationState, compile, lastTraceName } from './compile'
 import { zerog } from './../idGenerator'
-import { LookupTable } from '../names/lookupTable'
+import { LookupTable } from '../names/base'
 import { Computable, Register, kindName } from './runtime'
 import { ExecutionFrame, newTraceRecorder } from './trace'
 import { Rng } from '../rng'

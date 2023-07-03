@@ -1,74 +1,74 @@
-import { describe, it } from 'mocha'
-import { assert } from 'chai'
-import { collectDefinitions } from '../../src/names/definitionsCollector'
-import { buildModuleWithDefs } from '../builders/ir'
+// import { describe, it } from 'mocha'
+// import { assert } from 'chai'
+// import { collectDefinitions } from '../../src/names/definitionsCollector'
+// import { buildModuleWithDefs } from '../builders/ir'
 
-describe('collectDefinitions', () => {
-  describe('collecting operator names', () => {
-    it('collects constant definitions', () => {
-      const quintModule = buildModuleWithDefs(['const TEST_CONSTANT: int'])
+// describe('collectDefinitions', () => {
+//   describe('collecting operator names', () => {
+//     it('collects constant definitions', () => {
+//       const quintModule = buildModuleWithDefs(['const TEST_CONSTANT: int'])
 
-      const result = collectDefinitions(quintModule)
+//       const result = collectDefinitions(quintModule)
 
-      assert.deepInclude([...result!.valueDefinitions.keys()], 'TEST_CONSTANT')
-    })
+//       assert.deepInclude([...result!.valueDefinitions.keys()], 'TEST_CONSTANT')
+//     })
 
-    it('collects variable definitions', () => {
-      const quintModule = buildModuleWithDefs(['var test_variable: int'])
+//     it('collects variable definitions', () => {
+//       const quintModule = buildModuleWithDefs(['var test_variable: int'])
 
-      const result = collectDefinitions(quintModule)
+//       const result = collectDefinitions(quintModule)
 
-      assert.deepInclude([...result!.valueDefinitions.keys()], 'test_variable')
-    })
+//       assert.deepInclude([...result!.valueDefinitions.keys()], 'test_variable')
+//     })
 
-    it('collects operator definitions and its parameters including a scope', () => {
-      const quintModule = buildModuleWithDefs(['def test_operator(x) = x + 1'])
+//     it('collects operator definitions and its parameters including a scope', () => {
+//       const quintModule = buildModuleWithDefs(['def test_operator(x) = x + 1'])
 
-      const result = collectDefinitions(quintModule)
+//       const result = collectDefinitions(quintModule)
 
-      assert.includeDeepMembers([...result!.valueDefinitions.keys()], ['test_operator', 'x'])
-    })
+//       assert.includeDeepMembers([...result!.valueDefinitions.keys()], ['test_operator', 'x'])
+//     })
 
-    it('collects names from application inside definition body', () => {
-      const quintModule = buildModuleWithDefs(['def test_operator = S.filter(x => x > 0)'])
+//     it('collects names from application inside definition body', () => {
+//       const quintModule = buildModuleWithDefs(['def test_operator = S.filter(x => x > 0)'])
 
-      const result = collectDefinitions(quintModule)
+//       const result = collectDefinitions(quintModule)
 
-      assert.includeDeepMembers([...result!.valueDefinitions.keys()], ['test_operator', 'x'])
-    })
+//       assert.includeDeepMembers([...result!.valueDefinitions.keys()], ['test_operator', 'x'])
+//     })
 
-    it('collects names from let inside definition body', () => {
-      const quintModule = buildModuleWithDefs(['def test_operator = val x = 10 { x > 0 }'])
+//     it('collects names from let inside definition body', () => {
+//       const quintModule = buildModuleWithDefs(['def test_operator = val x = 10 { x > 0 }'])
 
-      const result = collectDefinitions(quintModule)
+//       const result = collectDefinitions(quintModule)
 
-      assert.includeDeepMembers([...result!.valueDefinitions.keys()], ['test_operator', 'x'])
-    })
+//       assert.includeDeepMembers([...result!.valueDefinitions.keys()], ['test_operator', 'x'])
+//     })
 
-    it('collects instances and scoped variables inside parameters', () => {
-      const quintModule = buildModuleWithDefs(['import test_module(a = val x = 10 {x}) as test_module_instance'])
+//     it('collects instances and scoped variables inside parameters', () => {
+//       const quintModule = buildModuleWithDefs(['import test_module(a = val x = 10 {x}) as test_module_instance'])
 
-      const result = collectDefinitions(quintModule)
+//       const result = collectDefinitions(quintModule)
 
-      assert.includeDeepMembers([...result.valueDefinitions.keys()], ['x'])
-    })
+//       assert.includeDeepMembers([...result.valueDefinitions.keys()], ['x'])
+//     })
 
-    it('collects assume definitions and scoped variables in body', () => {
-      const quintModule = buildModuleWithDefs(['assume test_assumption = N > val x = 2 { x }'])
+//     it('collects assume definitions and scoped variables in body', () => {
+//       const quintModule = buildModuleWithDefs(['assume test_assumption = N > val x = 2 { x }'])
 
-      const result = collectDefinitions(quintModule)
+//       const result = collectDefinitions(quintModule)
 
-      assert.includeDeepMembers([...result!.valueDefinitions.keys()], ['test_assumption', 'x'])
-    })
-  })
+//       assert.includeDeepMembers([...result!.valueDefinitions.keys()], ['test_assumption', 'x'])
+//     })
+//   })
 
-  describe('collecting type aliases', () => {
-    it('collects aliases from typedefs', () => {
-      const quintModule = buildModuleWithDefs(['type TEST_TYPE = int'])
+//   describe('collecting type aliases', () => {
+//     it('collects aliases from typedefs', () => {
+//       const quintModule = buildModuleWithDefs(['type TEST_TYPE = int'])
 
-      const result = collectDefinitions(quintModule)
+//       const result = collectDefinitions(quintModule)
 
-      assert.deepInclude([...result!.typeDefinitions.keys()], 'TEST_TYPE')
-    })
-  })
-})
+//       assert.deepInclude([...result!.typeDefinitions.keys()], 'TEST_TYPE')
+//     })
+//   })
+// })

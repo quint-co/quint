@@ -1,39 +1,26 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { buildModuleWithDefs } from '../builders/ir'
 import { OpQualifier } from '../../src/quintIr'
 import { EffectInferrer } from '../../src/effects/inferrer'
 import { ModeChecker } from '../../src/effects/modeChecker'
 import { QuintError, quintErrorToString } from '../../src/quintError'
-import { resolveNames } from '../../src/names/nameResolver'
-import JSONbig from 'json-bigint'
-import { collectDefinitions } from '../../src/names/definitionsCollector'
-import { treeFromModule } from '../../src/names/scoping'
-import { moduleToString } from '../../src/IRprinting'
 import { errorTreeToString } from '../../src/errorTree'
+import { parseMockedModule } from '../util'
 
 describe('checkModes', () => {
   const baseDefs = ['var x: int', 'var y: bool']
 
   function checkMockedDefs(defs: string[]): [Map<bigint, QuintError>, Map<bigint, OpQualifier>] {
-    const module = buildModuleWithDefs(baseDefs.concat(defs))
-    const table = collectDefinitions(module)
-    const lookupTable = resolveNames(module, table, treeFromModule(module))
-    if (lookupTable.isLeft()) {
-      throw new Error(
-        `Failed to resolve names in mocked up module: ${JSONbig.stringify(
-          lookupTable.value
-        )}\n Module: ${moduleToString(module)}`
-      )
-    }
+    const text = `module A { const c: int }` + `module wrapper { ${baseDefs.concat(defs).join('\n')} }`
+    const { modules, table } = parseMockedModule(text)
 
-    const inferrer = new EffectInferrer(lookupTable.value)
-    const [errors, effects] = inferrer.inferEffects(module.defs)
+    const inferrer = new EffectInferrer(table)
+    const [errors, effects] = inferrer.inferEffects(modules[1].defs)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const modeChecker = new ModeChecker()
-    return modeChecker.checkModes(module.defs, effects)
+    return modeChecker.checkModes(modules[1].defs, effects)
   }
 
   it('finds mode errors between action and def', () => {
@@ -45,11 +32,12 @@ describe('checkModes', () => {
       [...errors.entries()],
       [
         [
-          9n,
+          12n,
           {
             message:
               "def operators may only read state variables, but operator `a` updates variables 'x'. Use action instead.",
             code: 'QNT200',
+            reference: 12n,
             data: { fix: { kind: 'replace', original: 'def', replacement: 'action' } },
           },
         ],
@@ -81,7 +69,7 @@ describe('checkModes', () => {
     const [errors, suggestions] = checkMockedDefs(defs)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
-    assert.sameDeepMembers([...suggestions.entries()], [[9n, 'def']])
+    assert.sameDeepMembers([...suggestions.entries()], [[12n, 'def']])
   })
 
   it('finds mode errors between pureval and val', () => {
@@ -93,11 +81,12 @@ describe('checkModes', () => {
       [...errors.entries()],
       [
         [
-          8n,
+          11n,
           {
             message:
               "pure val operators may not interact with state variables, but operator `v` reads variables 'x'. Use val instead.",
             code: 'QNT200',
+            reference: 11n,
             data: { fix: { kind: 'replace', original: 'pure val', replacement: 'val' } },
           },
         ],
@@ -111,7 +100,7 @@ describe('checkModes', () => {
     const [errors, suggestions] = checkMockedDefs(defs)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
-    assert.sameDeepMembers([...suggestions.entries()], [[6n, 'pureval']])
+    assert.sameDeepMembers([...suggestions.entries()], [[9n, 'pureval']])
   })
 
   it('finds mode errors between puredef and def', () => {
@@ -123,11 +112,12 @@ describe('checkModes', () => {
       [...errors.entries()],
       [
         [
-          8n,
+          11n,
           {
             message:
               "pure def operators may not interact with state variables, but operator `f` reads variables 'y'. Use def instead.",
             code: 'QNT200',
+            reference: 11n,
             data: { fix: { kind: 'replace', original: 'pure def', replacement: 'def' } },
           },
         ],
@@ -141,7 +131,7 @@ describe('checkModes', () => {
     const [errors, suggestions] = checkMockedDefs(defs)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
-    assert.sameDeepMembers([...suggestions.entries()], [[7n, 'puredef']])
+    assert.sameDeepMembers([...suggestions.entries()], [[10n, 'puredef']])
   })
 
   it('finds mode errors between val and temporal', () => {
@@ -153,11 +143,12 @@ describe('checkModes', () => {
       [...errors.entries()],
       [
         [
-          9n,
+          12n,
           {
             message:
               "pure val operators may not interact with state variables, but operator `v` performs temporal operations over variables 'x'. Use temporal instead.",
             code: 'QNT200',
+            reference: 12n,
             data: { fix: { kind: 'replace', original: 'pure val', replacement: 'temporal' } },
           },
         ],
@@ -166,10 +157,7 @@ describe('checkModes', () => {
   })
 
   it('finds errors when an instance override is not pure', () => {
-    const defs = [
-      'const A1::c : int', // avoid having to simulate imports in this test
-      'import A(c = x) as A1',
-    ]
+    const defs = ['import A(c = x) as A1']
 
     const [errors, _suggestions] = checkMockedDefs(defs)
 
@@ -177,10 +165,11 @@ describe('checkModes', () => {
       [...errors.entries()],
       [
         [
-          7n,
+          8n,
           {
             message: "Instance overrides must be pure, but the value for c reads variables 'x'",
             code: 'QNT201',
+            reference: 8n,
             data: {},
           },
         ],
@@ -189,11 +178,7 @@ describe('checkModes', () => {
   })
 
   it('allows operators as override values', () => {
-    const defs = [
-      'const A1::c : (int) => int', // avoid having to simulate imports in this test
-      'def f(p) = p + 1',
-      'import A(c = f) as A1',
-    ]
+    const defs = ['def f(p) = p + 1', 'import A(c = f) as A1']
 
     const [errors, _suggestions] = checkMockedDefs(defs)
 
@@ -209,11 +194,12 @@ describe('checkModes', () => {
       [...errors.entries()],
       [
         [
-          11n,
+          14n,
           {
             message:
               "pure val operators may not interact with state variables, but operator `a` reads variables 'x'. Use val instead.",
             code: 'QNT200',
+            reference: 14n,
             data: { fix: { kind: 'replace', original: 'pure val', replacement: 'val' } },
           },
         ],

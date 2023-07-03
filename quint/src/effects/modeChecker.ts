@@ -76,6 +76,7 @@ export class ModeChecker implements IRVisitor {
         message: `${qualifierToString(def.qualifier)} operators ${modeConstraint(def.qualifier)}, but operator \`${
           def.name
         }\` ${explanation}. Use ${qualifierToString(mode)} instead.`,
+        reference: def.id,
         data: {
           fix: { kind: 'replace', original: qualifierToString(def.qualifier), replacement: qualifierToString(mode) },
         },
@@ -102,6 +103,7 @@ export class ModeChecker implements IRVisitor {
       this.errors.set(ex.id, {
         code: 'QNT201',
         message: `Instance overrides must be pure, but the value for ${name.name} ${explanation}`,
+        reference: ex.id,
         data: {},
       })
     })

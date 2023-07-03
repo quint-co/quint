@@ -14,7 +14,7 @@
 
 import { Either } from '@sweet-monads/either'
 import { ErrorTree, errorTreeToString } from '../errorTree'
-import { LookupTable } from '../names/lookupTable'
+import { LookupTable } from '../names/base'
 import { QuintType, Row } from '../quintTypes'
 import { Constraint } from './base'
 import { unify, unifyRows } from './constraintSolver'

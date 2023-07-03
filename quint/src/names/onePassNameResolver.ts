@@ -17,94 +17,36 @@ import {
   QuintVar,
 } from '../quintIr'
 import { QuintConstType, QuintType } from '../quintTypes'
-import { ValueDefinitionKind } from './definitionsByName'
-import { LookupTable } from './lookupTable'
-import { NameError } from './nameResolver'
-import { defaultValueDefinitions } from './definitionsCollector'
+import {
+  Conflict,
+  ConflictSource,
+  DefinitionsByModule,
+  DefinitionsByName,
+  LookupTable,
+  TypeDefinition,
+  ValueDefinition,
+  ValueDefinitionKind,
+  defaultValueDefinitions,
+} from './base'
 import { QuintError } from '../quintError'
-
-/**
- * A named operator definition. Can be scoped or module-wide (unscoped).
- */
-export interface ValueDefinition {
-  /* Same as QuintDef kinds */
-  kind: ValueDefinitionKind
-  /* The name given to the defined operator */
-  identifier: string
-  /* Expression or definition id from where the name was collected */
-  reference?: bigint
-  /* Optional scope, an id pointing to the QuintIr node that introduces the name */
-  scoped?: boolean
-  /* Optional type annotation */
-  typeAnnotation?: QuintType
-}
-
-/**
- * A type alias definition
- */
-export interface TypeDefinition {
-  kind: 'type'
-  /* The alias given to the type */
-  identifier: string
-  /* The type that is aliased (none for uninterpreted type) */
-  type?: QuintType
-  /* Expression or definition id from where the type was collected */
-  reference?: bigint
-  /* Optional scope, an id pointing to the QuintIr node that introduces the name */
-  scoped?: bigint
-}
-type DefinitionsByName = Map<string, ValueDefinition | TypeDefinition>
-/**
- * Definitions tables for each module
- */
-export type DefinitionsByModule = Map<string, DefinitionsByName>
-
-/**
- * The source of a conflict occurrences
- */
-export type ConflictSource =
-  /* A user definition, referencing its IR node id */
-  | { kind: 'user'; reference: bigint }
-  /* A built-in definition, no reference */
-  | { kind: 'builtin' }
-
-/**
- * Error report for a found name conflict
- */
-export interface Conflict {
-  /* Either a 'type' or 'value' conflict */
-  kind: string
-  /* The name that has a conflict */
-  identifier: string
-  /* Sources of the occurrences of the conflicting name */
-  sources: ConflictSource[]
-}
 
 /**
  * The result of name resolution for a Quint Module.
  */
-export type NameResolutionResult = Either<[Conflict[], NameError[], QuintError[]], LookupTable>
+export type NameResolutionResult = Either<QuintError[], LookupTable>
 
 export function resolveNames(quintModules: QuintModule[]): NameResolutionResult {
   const visitor = new NameResolver()
   quintModules.forEach(module => {
     walkModule(visitor, module)
   })
-  const errors: [Conflict[], NameError[], QuintError[]] = [
-    visitor.conflicts,
-    visitor.errors,
-    [...visitor.importErrors.values()],
-  ]
-  // FIXME: return flat QuintError[]
-  return errors[0].length > 0 || errors[1].length > 0 || errors[2].length > 0 ? left(errors) : right(visitor.table)
+  return visitor.errors.length > 0 ? left(visitor.errors) : right(visitor.table)
 }
 
 export class NameResolver implements IRVisitor {
   definitionsByName: DefinitionsByName = new Map(defaultValueDefinitions().map(def => [def.identifier, def]))
   definitionsByModule: DefinitionsByModule = new Map()
-  conflicts: Conflict[] = []
-  errors: NameError[] = []
-  importErrors: Map<bigint, QuintError> = new Map()
+  errors: QuintError[] = []
   table: LookupTable = new Map()
   private definitionDepth: number = 0
 
@@ -178,8 +120,7 @@ export class NameResolver implements IRVisitor {
     }
 
     if (this.definitionsByName.has(identifier)) {
-      this.conflicts.push({
-        kind: 'value',
+      this.recordConflict({
         identifier,
         sources: [sourceFrom(reference), sourceFrom(this.definitionsByName.get(identifier)!.reference)],
       })
@@ -199,8 +140,7 @@ export class NameResolver implements IRVisitor {
     }
 
     if (this.definitionsByName.has(identifier)) {
-      this.conflicts.push({
-        kind: 'type',
+      this.recordConflict({
         identifier,
         sources: [sourceFrom(reference), sourceFrom(this.definitionsByName.get(identifier)!.reference)],
       })
@@ -248,7 +188,7 @@ export class NameResolver implements IRVisitor {
     // Type is a name, check that it is defined
     const def = this.definitionsByName.get(type.name)
     if (!def || def.kind !== 'type') {
-      this.recordError('type', type.name, type.id)
+      this.recordNameError(type.name, type.id!)
       return
     }
 
@@ -261,9 +201,10 @@ export class NameResolver implements IRVisitor {
     // Copy defs from the module being instantiated
     if (def.protoName === this.currentModuleName) {
       // Importing current module
-      this.importErrors.set(def.id, {
+      this.errors.push({
         code: 'QNT407',
         message: `Cannot instantiate ${def.protoName} inside ${def.protoName}`,
+        reference: def.id,
         data: {},
       })
       return
@@ -273,9 +214,10 @@ export class NameResolver implements IRVisitor {
 
     if (!moduleTable) {
       // Instantiating a non-existing module
-      this.importErrors.set(def.id, {
+      this.errors.push({
         code: 'QNT404',
         message: `Module ${def.protoName} not found`,
+        reference: def.id,
         data: {},
       })
       return
@@ -291,18 +233,20 @@ export class NameResolver implements IRVisitor {
       const constDef = instanceTable.get(name.name)
 
       if (!constDef) {
-        this.importErrors.set(def.id, {
+        this.errors.push({
           code: 'QNT406',
           message: `Instantiation error: ${name.name} not found in ${def.protoName}`,
+          reference: def.id,
           data: {},
         })
         return
       }
 
       if (constDef.kind !== 'const') {
-        this.importErrors.set(def.id, {
+        this.errors.push({
           code: 'QNT406',
           message: `Instantiation error: ${name.name} is not a constant`,
+          reference: def.id,
           data: {},
         })
         return
@@ -325,9 +269,10 @@ export class NameResolver implements IRVisitor {
   enterImport(def: QuintImport): void {
     if (def.protoName === this.currentModuleName) {
       // Importing current module
-      this.importErrors.set(def.id, {
+      this.errors.push({
         code: 'QNT407',
         message: `Cannot import ${def.protoName} inside ${def.protoName}`,
+        reference: def.id,
         data: {},
       })
       return
@@ -336,9 +281,10 @@ export class NameResolver implements IRVisitor {
     const moduleTable = this.definitionsByModule.get(def.protoName)
     if (!moduleTable) {
       // Importing unexisting module
-      this.importErrors.set(def.id, {
+      this.errors.push({
         code: 'QNT404',
         message: `Module ${def.protoName} not found`,
+        reference: def.id,
         data: {},
       })
       return
@@ -353,16 +299,16 @@ export class NameResolver implements IRVisitor {
       // Tries to find a specific definition, reporting an error if not found
       const newDef = importableDefinitions.get(def.defName)
       if (!newDef) {
-        this.importErrors.set(def.id, {
+        this.errors.push({
           code: 'QNT405',
           message: `Name ${def.protoName}::${def.defName} not found`,
+          reference: def.id,
           data: {},
         })
         return
       }
       if (this.definitionsByName.has(def.defName)) {
-        this.conflicts.push({
-          kind: 'importing',
+        this.recordConflict({
           identifier: def.defName,
           sources: [sourceFrom(def.id), sourceFrom(this.definitionsByName.get(def.defName)!.reference)],
         })
@@ -381,9 +327,10 @@ export class NameResolver implements IRVisitor {
   enterExport(def: QuintExport) {
     if (def.protoName === this.currentModuleName) {
       // Exporting current module
-      this.importErrors.set(def.id, {
+      this.errors.push({
         code: 'QNT407',
         message: `Cannot export ${def.protoName} inside ${def.protoName}`,
+        reference: def.id,
         data: {},
       })
       return
@@ -392,9 +339,10 @@ export class NameResolver implements IRVisitor {
     const moduleTable = this.definitionsByModule.get(def.protoName)
     if (!moduleTable) {
       // Exporting unexisting module
-      this.importErrors.set(def.id, {
+      this.errors.push({
         code: 'QNT404',
         message: `Module ${def.protoName} not found`,
+        reference: def.id,
         data: {},
       })
       return
@@ -411,17 +359,17 @@ export class NameResolver implements IRVisitor {
       const newDef = exportableDefinitions.get(def.defName)
 
       if (!newDef || newDef.scoped) {
-        this.importErrors.set(def.id, {
+        this.errors.push({
           code: 'QNT405',
           message: `Name ${def.protoName}::${def.defName} not found`,
+          reference: def.id,
           data: {},
         })
         return
       }
 
       if (this.definitionsByName.has(def.defName)) {
-        this.conflicts.push({
-          kind: 'exporting',
+        this.recordConflict({
           identifier: def.defName,
           sources: [sourceFrom(def.id), sourceFrom(this.definitionsByName.get(def.defName)!.reference)],
         })
@@ -437,23 +385,13 @@ export class NameResolver implements IRVisitor {
   private checkScopedName(name: string, id: bigint) {
     const def = this.definitionsByName.get(name)
     if (!def || def.kind === 'type') {
-      this.recordError('value', name, id)
+      this.recordNameError(name, id)
       return
     }
 
     if (def.reference) {
       this.table.set(id, { kind: def.kind, reference: def.reference, typeAnnotation: def.typeAnnotation })
     }
-  }
-
-  private recordError(kind: 'type' | 'value', name: string, id?: bigint) {
-    this.errors.push({
-      kind,
-      name,
-      definitionName: this.lastDefName,
-      moduleName: this.currentModuleName,
-      reference: id,
-    })
   }
 
   /**
@@ -467,8 +405,7 @@ export class NameResolver implements IRVisitor {
   private mergeTables(t1: DefinitionsByName, t2: DefinitionsByName): DefinitionsByName {
     t2.forEach((def, identifier) => {
       if (t1.has(identifier) && t1.get(identifier)!.reference !== def.reference) {
-        this.conflicts.push({
-          kind: 'merging',
+        this.recordConflict({
           identifier,
           sources: [sourceFrom(t1.get(identifier)!.reference), sourceFrom(def.reference)],
         })
@@ -476,6 +413,35 @@ export class NameResolver implements IRVisitor {
     })
 
     return new Map([...t1.entries(), ...t2.entries()])
+  }
+
+  private recordNameError(name: string, id: bigint) {
+    this.errors.push({
+      code: 'QNT404',
+      message: `Name '${name}' not found`,
+      reference: id,
+      data: {},
+    })
+  }
+
+  private recordConflict(conflict: Conflict): void {
+    let msg: string, sources
+    if (conflict.sources.some(source => source.kind === 'builtin')) {
+      msg = `Built-in name '${conflict.identifier}' is redefined in module '${this.currentModuleName}'`
+      sources = conflict.sources.filter(source => source.kind === 'user')
+    } else {
+      msg = `Conflicting definitions found for name '${conflict.identifier}' in module '${this.currentModuleName}'`
+      sources = conflict.sources
+    }
+
+    sources.map(source => {
+      this.errors.push({
+        code: 'QNT101',
+        message: msg,
+        reference: source.kind === 'user' ? source.reference : 0n, // Impossible case, but TS requires the check
+        data: {},
+      })
+    })
   }
 }
 
