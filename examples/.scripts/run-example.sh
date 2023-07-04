@@ -18,10 +18,20 @@ result () {
     fi
 }
 
+get_main () {
+  local file="$1"
+  local main=""
+  if [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ]] ; then
+    main="--main=LamportMutex_3_10"
+  fi
+  echo "${main}"
+}
+
 file="$1"
 syntax="$(result "quint parse ${file}")"
 types="$(result "quint typecheck ${file}")"
-tests="$(result "quint test ${file}")"
-verify="$(result "quint verify --max-steps=5 ${file}")"
+main="$(get_main "${file}")"
+tests="$(result "quint test ${main} ${file}")"
+verify="$(result "quint verify --max-steps=5 ${main} ${file}")"
 
 echo "| [${file}](./${file}) | ${syntax} | ${types} | ${tests} | ${verify} |"
