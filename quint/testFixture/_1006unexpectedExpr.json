@@ -1,1 +1,1 @@
-{"stage":"parsing","warnings":[],"errors":[{"explanation":"Failed to resolve name name in definition for access, in module unexpectedExpr","locs":[{"source":"mocked_path/testFixture/_1006unexpectedExpr.qnt","start":{"line":2,"col":21,"index":84},"end":{"line":2,"col":24,"index":87}}]}]}
+{"stage":"parsing","warnings":[],"errors":[{"explanation":"[QNT404] Name 'name' not found","locs":[{"source":"mocked_path/testFixture/_1006unexpectedExpr.qnt","start":{"line":2,"col":21,"index":84},"end":{"line":2,"col":24,"index":87}}]}]}

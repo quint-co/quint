@@ -216,7 +216,7 @@ export class NameResolver implements IRVisitor {
       // Instantiating a non-existing module
       this.errors.push({
         code: 'QNT404',
-        message: `Module ${def.protoName} not found`,
+        message: `Module '${def.protoName}' not found`,
         reference: def.id,
         data: {},
       })
@@ -235,7 +235,7 @@ export class NameResolver implements IRVisitor {
       if (!constDef) {
         this.errors.push({
           code: 'QNT406',
-          message: `Instantiation error: ${name.name} not found in ${def.protoName}`,
+          message: `Instantiation error: '${name.name}' not found in '${def.protoName}'`,
           reference: def.id,
           data: {},
         })
@@ -245,7 +245,7 @@ export class NameResolver implements IRVisitor {
       if (constDef.kind !== 'const') {
         this.errors.push({
           code: 'QNT406',
-          message: `Instantiation error: ${name.name} is not a constant`,
+          message: `Instantiation error: '${name.name}' is not a constant`,
           reference: def.id,
           data: {},
         })
@@ -283,7 +283,7 @@ export class NameResolver implements IRVisitor {
       // Importing unexisting module
       this.errors.push({
         code: 'QNT404',
-        message: `Module ${def.protoName} not found`,
+        message: `Module '${def.protoName}' not found`,
         reference: def.id,
         data: {},
       })
@@ -301,7 +301,7 @@ export class NameResolver implements IRVisitor {
       if (!newDef) {
         this.errors.push({
           code: 'QNT405',
-          message: `Name ${def.protoName}::${def.defName} not found`,
+          message: `Name '${def.protoName}::${def.defName}' not found`,
           reference: def.id,
           data: {},
         })
@@ -341,7 +341,7 @@ export class NameResolver implements IRVisitor {
       // Exporting unexisting module
       this.errors.push({
         code: 'QNT404',
-        message: `Module ${def.protoName} not found`,
+        message: `Module '${def.protoName}' not found`,
         reference: def.id,
         data: {},
       })
@@ -361,7 +361,7 @@ export class NameResolver implements IRVisitor {
       if (!newDef || newDef.scoped) {
         this.errors.push({
           code: 'QNT405',
-          message: `Name ${def.protoName}::${def.defName} not found`,
+          message: `Name '${def.protoName}::${def.defName}' not found`,
           reference: def.id,
           data: {},
         })
