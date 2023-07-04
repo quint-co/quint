@@ -78,7 +78,7 @@ export class NameResolver implements IRVisitor {
     // Type is a name, check that it is defined
     const def = this.collector.getDefinition(type.name)
     if (!def || def.kind !== 'type') {
-      this.recordNameError(type.name, type.id!)
+      this.recordNameError('type', type.name, type.id!)
       return
     }
 
@@ -100,17 +100,18 @@ export class NameResolver implements IRVisitor {
 
     const def = this.collector.getDefinition(name)
     if (!def || def.kind === 'type') {
-      this.recordNameError(name, id)
+      this.recordNameError('name', name, id)
       return
     }
 
     this.table.set(id, { kind: def.kind, reference: def.reference, typeAnnotation: def.typeAnnotation })
   }
 
-  private recordNameError(name: string, id: bigint) {
+  private recordNameError(kind: 'name' | 'type', name: string, id: bigint) {
+    const description = kind === 'name' ? 'Name' : 'Type alias'
     this.errors.push({
       code: 'QNT404',
-      message: `Name '${name}' not found`,
+      message: `${description} '${name}' not found`,
       reference: id,
       data: {},
     })

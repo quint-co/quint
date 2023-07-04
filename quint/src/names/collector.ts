@@ -198,7 +198,7 @@ export class NameCollector implements IRVisitor {
       return
     }
 
-    if (this.definitionsByName.has(identifier)) {
+    if (this.definitionsByName.has(identifier) && this.definitionsByName.get(identifier)!.reference != def.reference) {
       // Conflict with a previous definition
       this.recordConflict(identifier, this.definitionsByName.get(identifier)!.reference, source ?? def.reference)
       return

@@ -49,7 +49,7 @@ export function copyNames(originTable: DefinitionsByName, namespace?: string, hi
   originTable.forEach((def, identifier) => {
     const name = namespace ? [namespace, identifier].join('::') : identifier
     if (!def.hidden || def.kind === 'const') {
-      table.set(name, { ...def, identifier: name, hidden })
+      table.set(name, hidden ? { ...def, hidden } : def)
     }
   })
 

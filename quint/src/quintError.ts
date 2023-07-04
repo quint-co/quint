@@ -51,9 +51,9 @@ export type ErrorCode =
   | 'QNT201'
   /* QNT202: Multiple updates of the same variable */
   | 'QNT202'
-  /* QNT404: Module <name> not found */
+  /* QNT404: Name '<name>' not found */
   | 'QNT404'
-  /* QNT405: Name <name> not found */
+  /* QNT405: Module '<name>' not found */
   | 'QNT405'
   /* QNT406: Instantiation error */
   | 'QNT406'
