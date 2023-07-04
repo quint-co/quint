@@ -21,25 +21,6 @@ export type DefinitionsByName = Map<string, Definition & { scoped?: boolean }>
 export type DefinitionsByModule = Map<string, DefinitionsByName>
 
 /**
- * The source of a conflict occurrences
- */
-export type ConflictSource =
-  /* A user definition, referencing its IR node id */
-  | { kind: 'user'; reference: bigint }
-  /* A built-in definition, no reference */
-  | { kind: 'builtin' }
-
-/**
- * Error report for a found name conflict
- */
-export interface Conflict {
-  /* The name that has a conflict */
-  identifier: string
-  /* Sources of the occurrences of the conflicting name */
-  sources: ConflictSource[]
-}
-
-/**
  * A lookup table from IR component ids to their definitions.
  * Should have an entry for every IR component with a name
  * That is:
@@ -51,6 +32,29 @@ export interface Conflict {
  * This should be created by `resolveNames` from `nameResolver.ts`
  */
 export type LookupTable = Map<bigint, Definition>
+
+/**
+ * Copy the names of a definitions table to a new one, ignoring scoped
+ * definitions, and optionally adding a namespace.
+ *
+ * @param originTable the definitions table to copy from
+ * @param namespace optional namespace to be added to copied names
+ * @param scope whether to the copied definitions are scoped
+ *
+ * @returns a definitions table with the filtered and namespaced names
+ */
+export function copyNames(originTable: DefinitionsByName, namespace?: string, scoped?: boolean): DefinitionsByName {
+  const table = new Map()
+
+  originTable.forEach((def, identifier) => {
+    const name = namespace ? [namespace, identifier].join('::') : identifier
+    if (!def.scoped || def.kind === 'const') {
+      table.set(name, { ...def, identifier: name, scoped })
+    }
+  })
+
+  return table
+}
 
 /**
  * Built-in name definitions that are always included in definitions collection

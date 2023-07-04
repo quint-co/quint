@@ -16,16 +16,15 @@ import {
   QuintVar,
 } from '../quintIr'
 import { QuintConstType } from '../quintTypes'
-import {
-  Conflict,
-  ConflictSource,
-  Definition,
-  DefinitionsByModule,
-  DefinitionsByName,
-  LookupTable,
-  builtinNames,
-} from './base'
+import { Definition, DefinitionsByModule, DefinitionsByName, LookupTable, builtinNames, copyNames } from './base'
 import { QuintError } from '../quintError'
+import {
+  moduleNotFoundError,
+  nameNotFoundError,
+  paramIsNotAConstantError,
+  paramNotFoundError,
+  selfReferenceError,
+} from './importErrors'
 
 export function resolveNames(quintModules: QuintModule[]): Either<QuintError[], LookupTable> {
   const visitor = new NameResolver()
@@ -90,35 +89,6 @@ export class NameResolver implements IRVisitor {
     })
   }
 
-  private collectDefinition(identifier: string, def: Definition, source?: bigint): void {
-    if (identifier === '_') {
-      // Don't collect underscores, as they are special identifiers that allow no usage
-      return
-    }
-
-    if (builtinNames.includes(identifier)) {
-      // Conflict with a built-in name
-      this.recordConflict({
-        identifier,
-        sources: [{ kind: 'builtin' }, sourceFrom(source ?? def.reference)],
-      })
-
-      return
-    }
-
-    if (this.definitionsByName.has(identifier)) {
-      // Conflict with a previous definition
-      this.recordConflict({
-        identifier,
-        sources: [sourceFrom(this.definitionsByName.get(identifier)!.reference), sourceFrom(source ?? def.reference)],
-      })
-
-      return
-    }
-
-    this.definitionsByName.set(identifier, def)
-  }
-
   enterName(nameExpr: QuintName): void {
     // This is a name expression, the name must be defined
     // either globally or under a scope that contains the expression
@@ -146,12 +116,7 @@ export class NameResolver implements IRVisitor {
     // Copy defs from the module being instantiated
     if (def.protoName === this.currentModuleName) {
       // Importing current module
-      this.errors.push({
-        code: 'QNT407',
-        message: `Cannot instantiate ${def.protoName} inside ${def.protoName}`,
-        reference: def.id,
-        data: {},
-      })
+      this.errors.push(selfReferenceError(def))
       return
     }
 
@@ -159,14 +124,10 @@ export class NameResolver implements IRVisitor {
 
     if (!moduleTable) {
       // Instantiating a non-existing module
-      this.errors.push({
-        code: 'QNT404',
-        message: `Module '${def.protoName}' not found`,
-        reference: def.id,
-        data: {},
-      })
+      this.errors.push(moduleNotFoundError(def))
       return
     }
+
     const instanceTable = new Map([...moduleTable.entries()])
     if (def.qualifiedName) {
       this.definitionsByModule.set(def.qualifiedName, instanceTable)
@@ -174,87 +135,67 @@ export class NameResolver implements IRVisitor {
 
     // For each override, check if the name exists in the instantiated module and is a constant.
     // If so, update the value definition to point to the expression being overriden
-    def.overrides.forEach(([name, ex]) => {
-      const constDef = instanceTable.get(name.name)
+    def.overrides.forEach(([param, ex]) => {
+      const constDef = instanceTable.get(param.name)
 
       if (!constDef) {
-        this.errors.push({
-          code: 'QNT406',
-          message: `Instantiation error: '${name.name}' not found in '${def.protoName}'`,
-          reference: def.id,
-          data: {},
-        })
+        this.errors.push(paramNotFoundError(def, param))
         return
       }
 
       if (constDef.kind !== 'const') {
-        this.errors.push({
-          code: 'QNT406',
-          message: `Instantiation error: '${name.name}' is not a constant`,
-          reference: def.id,
-          data: {},
-        })
+        this.errors.push(paramIsNotAConstantError(def, param))
         return
       }
-      instanceTable.set(name.name, { ...constDef, reference: ex.id })
+
+      // Update the definition to point to the expression being overriden
+      instanceTable.set(param.name, { ...constDef, reference: ex.id })
     })
 
     // All names from the instanced module should be acessible with the instance namespace
     // So, copy them to the current module's lookup table
-    const newEntries = copyNames(instanceTable, def.qualifiedName, true)
-    this.definitionsByName = this.mergeTables(this.definitionsByName, newEntries)
+    const newDefs = copyNames(instanceTable, def.qualifiedName, true)
+    this.collectDefinitions(newDefs)
 
-    // Resolve names for overrides
-    def.overrides.forEach(([name, _]) => {
-      const qualifiedName = def.qualifiedName ? `${def.qualifiedName}::${name.name}` : name.name
-      this.resolveName(qualifiedName, name.id)
+    // Resolve param names in the current module
+    def.overrides.forEach(([param, _]) => {
+      const qualifiedName = def.qualifiedName ? `${def.qualifiedName}::${param.name}` : param.name
+      this.resolveName(qualifiedName, param.id)
     })
   }
 
   enterImport(def: QuintImport): void {
     if (def.protoName === this.currentModuleName) {
       // Importing current module
-      this.errors.push({
-        code: 'QNT407',
-        message: `Cannot import ${def.protoName} inside ${def.protoName}`,
-        reference: def.id,
-        data: {},
-      })
+      this.errors.push(selfReferenceError(def))
       return
     }
 
     const moduleTable = this.definitionsByModule.get(def.protoName)
+
     if (!moduleTable) {
       // Importing unexisting module
-      this.errors.push({
-        code: 'QNT404',
-        message: `Module '${def.protoName}' not found`,
-        reference: def.id,
-        data: {},
-      })
+      this.errors.push(moduleNotFoundError(def))
       return
     }
 
     const qualifier = def.defName ? undefined : def.qualifiedName ?? def.protoName
     const importableDefinitions = copyNames(moduleTable, qualifier, true)
+
     if (!def.defName || def.defName === '*') {
       // Imports all definitions
-      this.definitionsByName = this.mergeTables(this.definitionsByName, importableDefinitions)
-    } else {
-      // Tries to find a specific definition, reporting an error if not found
-      const newDef = importableDefinitions.get(def.defName)
-      if (!newDef) {
-        this.errors.push({
-          code: 'QNT405',
-          message: `Name '${def.protoName}::${def.defName}' not found`,
-          reference: def.id,
-          data: {},
-        })
-        return
-      }
-
-      this.collectDefinition(def.defName, newDef, def.id)
+      this.collectDefinitions(importableDefinitions)
+      return
     }
+
+    // Tries to find a specific definition, reporting an error if not found
+    const newDef = importableDefinitions.get(def.defName)
+    if (!newDef) {
+      this.errors.push(nameNotFoundError(def))
+      return
+    }
+
+    this.collectDefinition(def.defName, newDef, def.id)
   }
 
   // Imported names are copied with a scope since imports are not transitive by
@@ -264,24 +205,14 @@ export class NameResolver implements IRVisitor {
   enterExport(def: QuintExport) {
     if (def.protoName === this.currentModuleName) {
       // Exporting current module
-      this.errors.push({
-        code: 'QNT407',
-        message: `Cannot export ${def.protoName} inside ${def.protoName}`,
-        reference: def.id,
-        data: {},
-      })
+      this.errors.push(selfReferenceError(def))
       return
     }
 
     const moduleTable = this.definitionsByModule.get(def.protoName)
     if (!moduleTable) {
       // Exporting unexisting module
-      this.errors.push({
-        code: 'QNT404',
-        message: `Module '${def.protoName}' not found`,
-        reference: def.id,
-        data: {},
-      })
+      this.errors.push(moduleNotFoundError(def))
       return
     }
 
@@ -290,26 +221,53 @@ export class NameResolver implements IRVisitor {
 
     if (!def.defName || def.defName === '*') {
       // Export all definitions
-      this.definitionsByName = this.mergeTables(this.definitionsByName, exportableDefinitions)
-    } else {
-      // Tries to find a specific definition, reporting an error if not found
-      const newDef = exportableDefinitions.get(def.defName)
-
-      if (!newDef) {
-        this.errors.push({
-          code: 'QNT405',
-          message: `Name '${def.protoName}::${def.defName}' not found`,
-          reference: def.id,
-          data: {},
-        })
-        return
-      }
-
-      this.collectDefinition(def.defName, newDef, def.id)
+      this.collectDefinitions(exportableDefinitions)
+      return
     }
+
+    // Tries to find a specific definition, reporting an error if not found
+    const newDef = exportableDefinitions.get(def.defName)
+
+    if (!newDef) {
+      this.errors.push(nameNotFoundError(def))
+      return
+    }
+
+    this.collectDefinition(def.defName, newDef, def.id)
   }
 
-  // Check that there is a value definition for `name` under scope `id`
+  private collectDefinition(identifier: string, def: Definition, source?: bigint): void {
+    if (identifier === '_') {
+      // Don't collect underscores, as they are special identifiers that allow no usage
+      return
+    }
+
+    if (builtinNames.includes(identifier)) {
+      // Conflict with a built-in name
+      this.recordConflict(identifier, undefined, source ?? def.reference)
+      return
+    }
+
+    if (this.definitionsByName.has(identifier)) {
+      // Conflict with a previous definition
+      this.recordConflict(identifier, this.definitionsByName.get(identifier)!.reference, source ?? def.reference)
+      return
+    }
+
+    this.definitionsByName.set(identifier, def)
+  }
+
+  private collectDefinitions(newDefs: DefinitionsByName): void {
+    newDefs.forEach((def, identifier) => {
+      const existingEntry = this.definitionsByName.get(identifier)
+      if (existingEntry && existingEntry.reference !== def.reference) {
+        this.recordConflict(identifier, existingEntry.reference, def.reference)
+      }
+    })
+
+    this.definitionsByName = new Map([...this.definitionsByName.entries(), ...newDefs.entries()])
+  }
+
   private resolveName(name: string, id: bigint) {
     if (builtinNames.includes(name)) {
       return
@@ -324,19 +282,6 @@ export class NameResolver implements IRVisitor {
     this.table.set(id, { kind: def.kind, reference: def.reference, typeAnnotation: def.typeAnnotation })
   }
 
-  private mergeTables(t1: DefinitionsByName, t2: DefinitionsByName): DefinitionsByName {
-    t2.forEach((def, identifier) => {
-      if (t1.has(identifier) && t1.get(identifier)!.reference !== def.reference) {
-        this.recordConflict({
-          identifier,
-          sources: [sourceFrom(t1.get(identifier)!.reference), sourceFrom(def.reference)],
-        })
-      }
-    })
-
-    return new Map([...t1.entries(), ...t2.entries()])
-  }
-
   private recordNameError(name: string, id: bigint) {
     this.errors.push({
       code: 'QNT404',
@@ -346,46 +291,16 @@ export class NameResolver implements IRVisitor {
     })
   }
 
-  private recordConflict(conflict: Conflict): void {
-    const message = conflict.sources.some(source => source.kind === 'builtin')
-      ? `Built-in name '${conflict.identifier}' is redefined in module '${this.currentModuleName}'`
-      : `Conflicting definitions found for name '${conflict.identifier}' in module '${this.currentModuleName}'`
+  private recordConflict(identifier: string, exisitingSource: bigint | undefined, newSource: bigint): void {
+    // exisitingSource is undefined when the conflict is with a built-in name
+    const message = exisitingSource
+      ? `Conflicting definitions found for name '${identifier}' in module '${this.currentModuleName}'`
+      : `Built-in name '${identifier}' is redefined in module '${this.currentModuleName}'`
 
-    conflict.sources.forEach(source => {
-      // The built-in source is not a real definition, so it should not be
-      // reported as a conflict
-      if (source.kind === 'builtin') {
-        return
-      }
-
-      this.errors.push({ code: 'QNT101', message, reference: source.reference, data: {} })
-    })
-  }
-}
-
-function sourceFrom(reference: bigint): ConflictSource {
-  return { kind: 'user', reference }
-}
-
-/**
- * Copy the names of a definitions table to a new one, ignoring scoped and default
- * definitions, and optionally adding a namespace.
- *
- * @param originTable the definitions table to copy from
- * @param namespace optional namespace to be added to copied names
- * @param scope whether to the copied definitions are scoped
- *
- * @returns a definitions table with the filtered and namespaced names
- */
-export function copyNames(originTable: DefinitionsByName, namespace?: string, scoped?: boolean): DefinitionsByName {
-  const table = new Map()
-
-  originTable.forEach((def, identifier) => {
-    const name = namespace ? [namespace, identifier].join('::') : identifier
-    if (!def.scoped) {
-      table.set(name, { ...def, identifier: name, scoped })
+    if (exisitingSource) {
+      this.errors.push({ code: 'QNT101', message, reference: exisitingSource, data: {} })
     }
-  })
 
-  return table
+    this.errors.push({ code: 'QNT101', message, reference: newSource, data: {} })
+  }
 }
