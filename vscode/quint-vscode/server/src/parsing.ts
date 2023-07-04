@@ -26,7 +26,7 @@ export async function parseDocument(idGenerator: IdGenerator, textDocument: Text
     .chain(phase2Data => parsePhase3importAndNameResolution(phase2Data))
     .mapLeft(messages => messages.flatMap(msg => {
       // TODO: Parse errors should be QuintErrors
-      const error: QuintError = { code: 'QNT000', message: msg.explanation, data: {} }
+      const error: QuintError = { code: 'QNT000', message: msg.explanation, reference: 0n, data: {} }
       return msg.locs.map(loc => assembleDiagnostic(error, loc))
     }))
 
