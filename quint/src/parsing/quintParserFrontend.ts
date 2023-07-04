@@ -17,7 +17,7 @@ import { ToIrListener } from './ToIrListener'
 import { LookupTable } from '../names/base'
 import { Either, left, right } from '@sweet-monads/either'
 import { SourceLookupPath, SourceResolver, fileSourceResolver } from './sourceResolver'
-import { resolveNames } from '../names/onePassNameResolver'
+import { resolveNames } from '../names/nameResolver'
 import { QuintError, quintErrorToString } from '../quintError'
 
 export interface Loc {
