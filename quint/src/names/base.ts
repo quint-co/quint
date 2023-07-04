@@ -13,7 +13,7 @@ export interface Definition {
   typeAnnotation?: QuintType
 }
 
-export type DefinitionsByName = Map<string, Definition & { scoped?: boolean }>
+export type DefinitionsByName = Map<string, Definition & { hidden?: boolean }>
 
 /**
  * Definitions tables for each module
@@ -34,22 +34,22 @@ export type DefinitionsByModule = Map<string, DefinitionsByName>
 export type LookupTable = Map<bigint, Definition>
 
 /**
- * Copy the names of a definitions table to a new one, ignoring scoped
+ * Copy the names of a definitions table to a new one, ignoring hidden
  * definitions, and optionally adding a namespace.
  *
  * @param originTable the definitions table to copy from
  * @param namespace optional namespace to be added to copied names
- * @param scope whether to the copied definitions are scoped
+ * @param scope whether to the copied definitions are hidden
  *
  * @returns a definitions table with the filtered and namespaced names
  */
-export function copyNames(originTable: DefinitionsByName, namespace?: string, scoped?: boolean): DefinitionsByName {
+export function copyNames(originTable: DefinitionsByName, namespace?: string, hidden?: boolean): DefinitionsByName {
   const table = new Map()
 
   originTable.forEach((def, identifier) => {
     const name = namespace ? [namespace, identifier].join('::') : identifier
-    if (!def.scoped || def.kind === 'const') {
-      table.set(name, { ...def, identifier: name, scoped })
+    if (!def.hidden || def.kind === 'const') {
+      table.set(name, { ...def, identifier: name, hidden })
     }
   })
 

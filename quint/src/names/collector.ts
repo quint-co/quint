@@ -1,23 +1,17 @@
-import { Either, left, right } from '@sweet-monads/either'
-import { IRVisitor, walkModule } from '../IRVisitor'
+import { IRVisitor } from '../IRVisitor'
+import { QuintError } from '../quintError'
 import {
-  QuintApp,
   QuintAssume,
   QuintConst,
   QuintExport,
   QuintImport,
   QuintInstance,
-  QuintLambda,
-  QuintLet,
   QuintModule,
-  QuintName,
   QuintOpDef,
   QuintTypeDef,
   QuintVar,
 } from '../quintIr'
-import { QuintConstType } from '../quintTypes'
 import { Definition, DefinitionsByModule, DefinitionsByName, LookupTable, builtinNames, copyNames } from './base'
-import { QuintError } from '../quintError'
 import {
   moduleNotFoundError,
   nameNotFoundError,
@@ -26,28 +20,21 @@ import {
   selfReferenceError,
 } from './importErrors'
 
-export function resolveNames(quintModules: QuintModule[]): Either<QuintError[], LookupTable> {
-  const visitor = new NameResolver()
-  quintModules.forEach(module => {
-    walkModule(visitor, module)
-  })
-  return visitor.errors.length > 0 ? left(visitor.errors) : right(visitor.table)
-}
-
-export class NameResolver implements IRVisitor {
+export class NameCollector implements IRVisitor {
   definitionsByName: DefinitionsByName = new Map()
   definitionsByModule: DefinitionsByModule = new Map()
   errors: QuintError[] = []
   table: LookupTable = new Map()
   private currentModuleName: string = ''
+  private definitionDepth: number = 0
 
   enterModule(module: QuintModule): void {
     this.currentModuleName = module.name
+    this.definitionsByName = new Map()
   }
 
   exitModule(module: QuintModule): void {
     this.definitionsByModule.set(module.name, this.definitionsByName)
-    this.definitionsByName = new Map()
   }
 
   enterVar(def: QuintVar): void {
@@ -59,14 +46,18 @@ export class NameResolver implements IRVisitor {
   }
 
   enterOpDef(def: QuintOpDef): void {
-    // FIXME: we used to collect type annotations only for top-level opdefs. If
-    // we collect them for all defs, something breaks in the type checker. We
-    // should fix that and then ensure that we collect type annotations here.
-    this.collectDefinition(def.name, { kind: def.kind, reference: def.id })
+    // FIXME: This should collect the type annotation, but something breaks in
+    // the type checker if we do. We should fix that and then ensure that we
+    // collect type annotations here.
+    if (this.definitionDepth === 0) {
+      this.collectDefinition(def.name, { kind: def.kind, reference: def.id })
+    }
+
+    this.definitionDepth++
   }
 
-  exitLet(expr: QuintLet): void {
-    this.definitionsByName.delete(expr.opdef.name)
+  exitOpDef(_def: QuintOpDef): void {
+    this.definitionDepth--
   }
 
   enterTypeDef(def: QuintTypeDef): void {
@@ -75,41 +66,6 @@ export class NameResolver implements IRVisitor {
 
   enterAssume(def: QuintAssume): void {
     this.collectDefinition(def.name, { kind: 'assumption', reference: def.id })
-  }
-
-  enterLambda(expr: QuintLambda): void {
-    expr.params.forEach(p => {
-      this.collectDefinition(p.name, { kind: 'param', reference: p.id })
-    })
-  }
-
-  exitLambda(expr: QuintLambda): void {
-    expr.params.forEach(p => {
-      this.definitionsByName.delete(p.name)
-    })
-  }
-
-  enterName(nameExpr: QuintName): void {
-    // This is a name expression, the name must be defined
-    // either globally or under a scope that contains the expression
-    // The list of scopes containing the expression is accumulated in param scopes
-    this.resolveName(nameExpr.name, nameExpr.id)
-  }
-
-  enterApp(appExpr: QuintApp): void {
-    // Application, check that the operator being applied is defined
-    this.resolveName(appExpr.opcode, appExpr.id)
-  }
-
-  enterConstType(type: QuintConstType): void {
-    // Type is a name, check that it is defined
-    const def = this.definitionsByName.get(type.name)
-    if (!def || def.kind !== 'type') {
-      this.recordNameError(type.name, type.id!)
-      return
-    }
-
-    this.table.set(type.id!, def)
   }
 
   enterInstance(def: QuintInstance): void {
@@ -156,12 +112,6 @@ export class NameResolver implements IRVisitor {
     // So, copy them to the current module's lookup table
     const newDefs = copyNames(instanceTable, def.qualifiedName, true)
     this.collectDefinitions(newDefs)
-
-    // Resolve param names in the current module
-    def.overrides.forEach(([param, _]) => {
-      const qualifiedName = def.qualifiedName ? `${def.qualifiedName}::${param.name}` : param.name
-      this.resolveName(qualifiedName, param.id)
-    })
   }
 
   enterImport(def: QuintImport): void {
@@ -199,7 +149,7 @@ export class NameResolver implements IRVisitor {
   }
 
   // Imported names are copied with a scope since imports are not transitive by
-  // default. Exporting needs to turn those names into unscoped ones so, when
+  // default. Exporting needs to turn those names into unhidden ones so, when
   // the current module is imported, the names are accessible. Note that it is
   // also possible to export names that were not previously imported via `import`.
   enterExport(def: QuintExport) {
@@ -236,7 +186,7 @@ export class NameResolver implements IRVisitor {
     this.collectDefinition(def.defName, newDef, def.id)
   }
 
-  private collectDefinition(identifier: string, def: Definition, source?: bigint): void {
+  collectDefinition(identifier: string, def: Definition, source?: bigint): void {
     if (identifier === '_') {
       // Don't collect underscores, as they are special identifiers that allow no usage
       return
@@ -257,6 +207,14 @@ export class NameResolver implements IRVisitor {
     this.definitionsByName.set(identifier, def)
   }
 
+  deleteDefinition(identifier: string): void {
+    this.definitionsByName.delete(identifier)
+  }
+
+  getDefinition(identifier: string): Definition | undefined {
+    return this.definitionsByName.get(identifier)
+  }
+
   private collectDefinitions(newDefs: DefinitionsByName): void {
     newDefs.forEach((def, identifier) => {
       const existingEntry = this.definitionsByName.get(identifier)
@@ -266,29 +224,6 @@ export class NameResolver implements IRVisitor {
     })
 
     this.definitionsByName = new Map([...this.definitionsByName.entries(), ...newDefs.entries()])
-  }
-
-  private resolveName(name: string, id: bigint) {
-    if (builtinNames.includes(name)) {
-      return
-    }
-
-    const def = this.definitionsByName.get(name)
-    if (!def || def.kind === 'type') {
-      this.recordNameError(name, id)
-      return
-    }
-
-    this.table.set(id, { kind: def.kind, reference: def.reference, typeAnnotation: def.typeAnnotation })
-  }
-
-  private recordNameError(name: string, id: bigint) {
-    this.errors.push({
-      code: 'QNT404',
-      message: `Name '${name}' not found`,
-      reference: id,
-      data: {},
-    })
   }
 
   private recordConflict(identifier: string, exisitingSource: bigint | undefined, newSource: bigint): void {
