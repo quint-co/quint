@@ -13,7 +13,7 @@
  */
 
 import { IdGenerator } from './idGenerator'
-import { LookupTable, defaultValueDefinitions } from './names/base'
+import { LookupTable, builtinNames } from './names/base'
 import {
   FlatDef,
   FlatModule,
@@ -166,7 +166,7 @@ class Flatenner {
     this.table = table
     this.currentModuleNames = new Set([
       // builtin names
-      ...defaultValueDefinitions().map(d => d.identifier),
+      ...builtinNames,
       // names from the current module
       ...compact(module.defs.map(d => (isFlat(d) ? d.name : undefined))),
     ])

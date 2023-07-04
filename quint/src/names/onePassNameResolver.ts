@@ -4,7 +4,6 @@ import {
   QuintApp,
   QuintAssume,
   QuintConst,
-  QuintDef,
   QuintExport,
   QuintImport,
   QuintInstance,
@@ -16,26 +15,19 @@ import {
   QuintTypeDef,
   QuintVar,
 } from '../quintIr'
-import { QuintConstType, QuintType } from '../quintTypes'
+import { QuintConstType } from '../quintTypes'
 import {
   Conflict,
   ConflictSource,
+  Definition,
   DefinitionsByModule,
   DefinitionsByName,
   LookupTable,
-  TypeDefinition,
-  ValueDefinition,
-  ValueDefinitionKind,
-  defaultValueDefinitions,
+  builtinNames,
 } from './base'
 import { QuintError } from '../quintError'
 
-/**
- * The result of name resolution for a Quint Module.
- */
-export type NameResolutionResult = Either<QuintError[], LookupTable>
-
-export function resolveNames(quintModules: QuintModule[]): NameResolutionResult {
+export function resolveNames(quintModules: QuintModule[]): Either<QuintError[], LookupTable> {
   const visitor = new NameResolver()
   quintModules.forEach(module => {
     walkModule(visitor, module)
@@ -44,34 +36,34 @@ export function resolveNames(quintModules: QuintModule[]): NameResolutionResult 
 }
 
 export class NameResolver implements IRVisitor {
-  definitionsByName: DefinitionsByName = new Map(defaultValueDefinitions().map(def => [def.identifier, def]))
+  definitionsByName: DefinitionsByName = new Map()
   definitionsByModule: DefinitionsByModule = new Map()
   errors: QuintError[] = []
   table: LookupTable = new Map()
-  private definitionDepth: number = 0
+  private currentModuleName: string = ''
+
+  enterModule(module: QuintModule): void {
+    this.currentModuleName = module.name
+  }
+
+  exitModule(module: QuintModule): void {
+    this.definitionsByModule.set(module.name, this.definitionsByName)
+    this.definitionsByName = new Map()
+  }
 
   enterVar(def: QuintVar): void {
-    this.collectValueDefinition(def.kind, def.name, def.id, undefined, def.typeAnnotation)
+    this.collectDefinition(def.name, { kind: def.kind, reference: def.id, typeAnnotation: def.typeAnnotation })
   }
 
   enterConst(def: QuintConst): void {
-    this.collectValueDefinition(def.kind, def.name, def.id, undefined, def.typeAnnotation)
+    this.collectDefinition(def.name, { kind: def.kind, reference: def.id, typeAnnotation: def.typeAnnotation })
   }
 
   enterOpDef(def: QuintOpDef): void {
-    if (this.definitionDepth > 0) {
-      // scoped
-      this.collectValueDefinition(def.kind, def.name, def.id, true, def.typeAnnotation)
-    } else {
-      // unscoped
-      this.collectValueDefinition(def.kind, def.name, def.id)
-    }
-
-    this.definitionDepth++
-  }
-
-  exitOpDef(_def: QuintOpDef): void {
-    this.definitionDepth--
+    // FIXME: we used to collect type annotations only for top-level opdefs. If
+    // we collect them for all defs, something breaks in the type checker. We
+    // should fix that and then ensure that we collect type annotations here.
+    this.collectDefinition(def.name, { kind: def.kind, reference: def.id })
   }
 
   exitLet(expr: QuintLet): void {
@@ -79,16 +71,16 @@ export class NameResolver implements IRVisitor {
   }
 
   enterTypeDef(def: QuintTypeDef): void {
-    this.collectTypeDefinition(def.name, def.type, def.id)
+    this.collectDefinition(def.name, { kind: 'type', reference: def.id, typeAnnotation: def.type })
   }
 
   enterAssume(def: QuintAssume): void {
-    this.collectValueDefinition('assumption', def.name, def.id)
+    this.collectDefinition(def.name, { kind: 'assumption', reference: def.id })
   }
 
   enterLambda(expr: QuintLambda): void {
     expr.params.forEach(p => {
-      this.collectValueDefinition('param', p.name, p.id, true)
+      this.collectDefinition(p.name, { kind: 'param', reference: p.id })
     })
   }
 
@@ -98,90 +90,45 @@ export class NameResolver implements IRVisitor {
     })
   }
 
-  private collectValueDefinition(
-    kind: ValueDefinitionKind,
-    identifier: string,
-    reference?: bigint,
-    // FIXME: I think I won't need this
-    scoped?: boolean,
-    typeAnnotation?: QuintType
-  ): void {
+  private collectDefinition(identifier: string, def: Definition, source?: bigint): void {
     if (identifier === '_') {
       // Don't collect underscores, as they are special identifiers that allow no usage
       return
     }
 
-    const def: ValueDefinition = {
-      kind,
-      identifier,
-      reference,
-      scoped: scoped ?? false,
-      typeAnnotation,
+    if (builtinNames.includes(identifier)) {
+      // Conflict with a built-in name
+      this.recordConflict({
+        identifier,
+        sources: [{ kind: 'builtin' }, sourceFrom(source ?? def.reference)],
+      })
+
+      return
     }
 
     if (this.definitionsByName.has(identifier)) {
+      // Conflict with a previous definition
       this.recordConflict({
         identifier,
-        sources: [sourceFrom(reference), sourceFrom(this.definitionsByName.get(identifier)!.reference)],
+        sources: [sourceFrom(this.definitionsByName.get(identifier)!.reference), sourceFrom(source ?? def.reference)],
       })
 
       return
     }
 
     this.definitionsByName.set(identifier, def)
-  }
-
-  private collectTypeDefinition(identifier: string, type?: QuintType, reference?: bigint): void {
-    const def: TypeDefinition = {
-      kind: 'type',
-      identifier,
-      type,
-      reference,
-    }
-
-    if (this.definitionsByName.has(identifier)) {
-      this.recordConflict({
-        identifier,
-        sources: [sourceFrom(reference), sourceFrom(this.definitionsByName.get(identifier)!.reference)],
-      })
-
-      return
-    }
-
-    this.definitionsByName.set(identifier, def)
-  }
-
-  private lastDefName: string = ''
-
-  private currentModuleName: string = ''
-
-  enterModule(module: QuintModule): void {
-    this.currentModuleName = module.name
-  }
-
-  exitModule(module: QuintModule): void {
-    this.definitionsByModule.set(module.name, this.definitionsByName)
-    this.definitionsByName = new Map(defaultValueDefinitions().map(def => [def.identifier, def]))
-  }
-
-  enterDef(def: QuintDef): void {
-    // Keep the last visited definition name
-    // so it can be showen in the reported error
-    if (def.kind !== 'instance' && def.kind !== 'import' && def.kind !== 'export') {
-      this.lastDefName = def.name
-    }
   }
 
   enterName(nameExpr: QuintName): void {
     // This is a name expression, the name must be defined
     // either globally or under a scope that contains the expression
     // The list of scopes containing the expression is accumulated in param scopes
-    this.checkScopedName(nameExpr.name, nameExpr.id)
+    this.resolveName(nameExpr.name, nameExpr.id)
   }
 
   enterApp(appExpr: QuintApp): void {
     // Application, check that the operator being applied is defined
-    this.checkScopedName(appExpr.opcode, appExpr.id)
+    this.resolveName(appExpr.opcode, appExpr.id)
   }
 
   enterConstType(type: QuintConstType): void {
@@ -192,9 +139,7 @@ export class NameResolver implements IRVisitor {
       return
     }
 
-    if (def.reference) {
-      this.table.set(type.id!, { kind: 'type', reference: def.reference, typeAnnotation: def.type })
-    }
+    this.table.set(type.id!, def)
   }
 
   enterInstance(def: QuintInstance): void {
@@ -262,7 +207,7 @@ export class NameResolver implements IRVisitor {
     // Resolve names for overrides
     def.overrides.forEach(([name, _]) => {
       const qualifiedName = def.qualifiedName ? `${def.qualifiedName}::${name.name}` : name.name
-      this.checkScopedName(qualifiedName, name.id)
+      this.resolveName(qualifiedName, name.id)
     })
   }
 
@@ -307,16 +252,8 @@ export class NameResolver implements IRVisitor {
         })
         return
       }
-      if (this.definitionsByName.has(def.defName)) {
-        this.recordConflict({
-          identifier: def.defName,
-          sources: [sourceFrom(def.id), sourceFrom(this.definitionsByName.get(def.defName)!.reference)],
-        })
 
-        return
-      }
-
-      this.definitionsByName.set(def.defName, newDef)
+      this.collectDefinition(def.defName, newDef, def.id)
     }
   }
 
@@ -358,7 +295,7 @@ export class NameResolver implements IRVisitor {
       // Tries to find a specific definition, reporting an error if not found
       const newDef = exportableDefinitions.get(def.defName)
 
-      if (!newDef || newDef.scoped) {
+      if (!newDef) {
         this.errors.push({
           code: 'QNT405',
           message: `Name '${def.protoName}::${def.defName}' not found`,
@@ -368,30 +305,23 @@ export class NameResolver implements IRVisitor {
         return
       }
 
-      if (this.definitionsByName.has(def.defName)) {
-        this.recordConflict({
-          identifier: def.defName,
-          sources: [sourceFrom(def.id), sourceFrom(this.definitionsByName.get(def.defName)!.reference)],
-        })
-
-        return
-      }
-
-      this.definitionsByName.set(def.defName, newDef)
+      this.collectDefinition(def.defName, newDef, def.id)
     }
   }
 
   // Check that there is a value definition for `name` under scope `id`
-  private checkScopedName(name: string, id: bigint) {
+  private resolveName(name: string, id: bigint) {
+    if (builtinNames.includes(name)) {
+      return
+    }
+
     const def = this.definitionsByName.get(name)
     if (!def || def.kind === 'type') {
       this.recordNameError(name, id)
       return
     }
 
-    if (def.reference) {
-      this.table.set(id, { kind: def.kind, reference: def.reference, typeAnnotation: def.typeAnnotation })
-    }
+    this.table.set(id, { kind: def.kind, reference: def.reference, typeAnnotation: def.typeAnnotation })
   }
 
   /**
@@ -445,8 +375,8 @@ export class NameResolver implements IRVisitor {
   }
 }
 
-function sourceFrom(reference?: bigint): ConflictSource {
-  return reference ? { kind: 'user', reference } : { kind: 'builtin' }
+function sourceFrom(reference: bigint): ConflictSource {
+  return { kind: 'user', reference }
 }
 
 /**
@@ -465,10 +395,7 @@ export function copyNames(originTable: DefinitionsByName, namespace?: string, sc
   originTable.forEach((def, identifier) => {
     const name = namespace ? [namespace, identifier].join('::') : identifier
 
-    // Copy only unscoped and non-default (referenced) names
-    if ((def.kind === 'const' || !def.scoped) && def.reference) {
-      table.set(name, { ...def, identifier: name, scoped })
-    }
+    table.set(name, { ...def, identifier: name, scoped })
   })
 
   return table
