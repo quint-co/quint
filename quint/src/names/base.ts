@@ -13,7 +13,7 @@ export interface Definition {
   typeAnnotation?: QuintType
 }
 
-export type DefinitionsByName = Map<string, Definition>
+export type DefinitionsByName = Map<string, Definition & { scoped?: boolean }>
 
 /**
  * Definitions tables for each module

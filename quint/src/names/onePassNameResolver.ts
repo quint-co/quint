@@ -324,14 +324,6 @@ export class NameResolver implements IRVisitor {
     this.table.set(id, { kind: def.kind, reference: def.reference, typeAnnotation: def.typeAnnotation })
   }
 
-  /**
-   * Merges two definitions tables together in a new one.
-   *
-   * @param t1 a definitions table to be merged
-   * @param t2 a definitions table to be merged
-   *
-   * @returns the merged definitions table
-   */
   private mergeTables(t1: DefinitionsByName, t2: DefinitionsByName): DefinitionsByName {
     t2.forEach((def, identifier) => {
       if (t1.has(identifier) && t1.get(identifier)!.reference !== def.reference) {
@@ -355,22 +347,18 @@ export class NameResolver implements IRVisitor {
   }
 
   private recordConflict(conflict: Conflict): void {
-    let msg: string, sources
-    if (conflict.sources.some(source => source.kind === 'builtin')) {
-      msg = `Built-in name '${conflict.identifier}' is redefined in module '${this.currentModuleName}'`
-      sources = conflict.sources.filter(source => source.kind === 'user')
-    } else {
-      msg = `Conflicting definitions found for name '${conflict.identifier}' in module '${this.currentModuleName}'`
-      sources = conflict.sources
-    }
+    const message = conflict.sources.some(source => source.kind === 'builtin')
+      ? `Built-in name '${conflict.identifier}' is redefined in module '${this.currentModuleName}'`
+      : `Conflicting definitions found for name '${conflict.identifier}' in module '${this.currentModuleName}'`
 
-    sources.map(source => {
-      this.errors.push({
-        code: 'QNT101',
-        message: msg,
-        reference: source.kind === 'user' ? source.reference : 0n, // Impossible case, but TS requires the check
-        data: {},
-      })
+    conflict.sources.forEach(source => {
+      // The built-in source is not a real definition, so it should not be
+      // reported as a conflict
+      if (source.kind === 'builtin') {
+        return
+      }
+
+      this.errors.push({ code: 'QNT101', message, reference: source.reference, data: {} })
     })
   }
 }
@@ -385,7 +373,7 @@ function sourceFrom(reference: bigint): ConflictSource {
  *
  * @param originTable the definitions table to copy from
  * @param namespace optional namespace to be added to copied names
- * @param scope optional scope to be added to copied definitions
+ * @param scope whether to the copied definitions are scoped
  *
  * @returns a definitions table with the filtered and namespaced names
  */
@@ -394,8 +382,9 @@ export function copyNames(originTable: DefinitionsByName, namespace?: string, sc
 
   originTable.forEach((def, identifier) => {
     const name = namespace ? [namespace, identifier].join('::') : identifier
-
-    table.set(name, { ...def, identifier: name, scoped })
+    if (!def.scoped) {
+      table.set(name, { ...def, identifier: name, scoped })
+    }
   })
 
   return table
