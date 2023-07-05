@@ -265,3 +265,11 @@ module Paxos {
      V::Inv,
   }
 }
+
+module Paxos_val2_accept3_quorum2 {
+  import Paxos(
+    Value = Set(0, 1),
+    Acceptor = Set("a1", "a2", "a3"),
+    Quorum = Set(Set("a1", "a2"))
+  ).*
+}
