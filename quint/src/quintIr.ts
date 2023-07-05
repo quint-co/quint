@@ -3,9 +3,9 @@
  * which assumes that module instances are flattened. Quint extends the Apalache IR
  * by supporting hierarchical modules and instances.
  *
- * Igor Konnov, 2021
+ * Igor Konnov, Gabriela Moreira, Shon Feder, 2021-2023
  *
- * Copyright (c) Informal Systems 2021. All rights reserved.
+ * Copyright (c) Informal Systems 2021-2023. All rights reserved.
  * Licensed under the Apache 2.0.
  * See License.txt in the project root for license information.
  */

@@ -240,7 +240,11 @@ class Flatenner {
   private flattenImportOrExport(def: QuintImport | QuintExport): FlatDef[] {
     const qualifiedName = def.defName ? undefined : def.qualifiedName ?? def.protoName
 
-    const protoModule = this.importedModules.get(def.protoName)!
+    const protoModule = this.importedModules.get(def.protoName)
+    if (!protoModule) {
+      // Something went really wrong. Topological sort should prevent this from happening.
+      throw new Error(`Imported module ${def.protoName} not found. Please report a bug.`)
+    }
 
     // Add the new defs to the modules table under the qualified name
     if (qualifiedName) {
@@ -251,6 +255,7 @@ class Flatenner {
 
     return defsToFlatten.map(protoDef => this.copyDef(protoDef, qualifiedName))
   }
+
   private copyDef(def: QuintDef, qualifier: string | undefined): FlatDef {
     if (!isFlat(def)) {
       throw new Error(`Impossible: ${definitionToString(def)} should have been flattened already`)
