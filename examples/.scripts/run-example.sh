@@ -23,6 +23,8 @@ get_main () {
   local main=""
   if [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ]] ; then
     main="--main=LamportMutex_3_10"
+  elif [[ "$file" == "classic/distributed/ReadersWriters/ReadersWriters.qnt" ]] ; then
+    main="--main=ReadersWriters_5"
   fi
   echo "${main}"
 }
@@ -31,6 +33,8 @@ get_verify_args () {
   local file="$1"
   local args=""
   if [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ]] ; then
+    args="--init=Init --step=Next"
+  elif [[ "$file" == "classic/distributed/ReadersWriters/ReadersWriters.qnt" ]] ; then
     args="--init=Init --step=Next"
   fi
   echo "${args}"
