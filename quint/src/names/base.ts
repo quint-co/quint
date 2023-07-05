@@ -1,11 +1,27 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2022-2023. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Type definitions and utilities for Quint name resolution.
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { QuintType } from '../quintTypes'
 
 /**
  * Possible kinds for definitions
  */
 export type DefinitionKind = 'module' | 'def' | 'val' | 'assumption' | 'param' | 'var' | 'const' | 'type'
+
 /**
- * Information stored for each id in the lookup table
+ * A minimal representation of a QuintDef, to be stored in `LookupTable` and
+ * `DefinitionsByName`.
  */
 export interface Definition {
   kind: DefinitionKind
@@ -13,10 +29,17 @@ export interface Definition {
   typeAnnotation?: QuintType
 }
 
+/**
+ * A module's definitions, indexed by name.
+ *
+ * A definition, in this type, can be hidden, meaning it won't be copied over to
+ * a module when an import/intance/export statement is resolved. `hidden` can be
+ * removed with `export` statements for the hidden definitions.
+ */
 export type DefinitionsByName = Map<string, Definition & { hidden?: boolean }>
 
 /**
- * Definitions tables for each module
+ * Definitions for each module
  */
 export type DefinitionsByModule = Map<string, DefinitionsByName>
 
@@ -29,7 +52,7 @@ export type DefinitionsByModule = Map<string, DefinitionsByName>
  * - Override parameters in instance definitions
  * - Constant types (which are references to type aliases or uninterpreted types)
  *
- * This should be created by `resolveNames` from `nameResolver.ts`
+ * This should be created by `resolveNames` from `resolver.ts`
  */
 export type LookupTable = Map<bigint, Definition>
 
@@ -37,9 +60,9 @@ export type LookupTable = Map<bigint, Definition>
  * Copy the names of a definitions table to a new one, ignoring hidden
  * definitions, and optionally adding a namespace.
  *
- * @param originTable the definitions table to copy from
- * @param namespace optional namespace to be added to copied names
- * @param scope whether to the copied definitions are hidden
+ * @param originTable - The definitions table to copy from
+ * @param namespace - Optional namespace to be added to copied names
+ * @param hidden - Optional, true iff the copied definitions should be hidden
  *
  * @returns a definitions table with the filtered and namespaced names
  */
@@ -57,9 +80,7 @@ export function copyNames(originTable: DefinitionsByName, namespace?: string, hi
 }
 
 /**
- * Built-in name definitions that are always included in definitions collection
- * This is a function instead of a constant to ensure a new instance is generated
- * every call
+ * Built-in name definitions that are always resolved and generate conflicts if collected.
  */
 export const builtinNames = [
   'not',

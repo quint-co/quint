@@ -1,3 +1,17 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2022-2023. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Error messages for Quint imports, instances and exports resolution.
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { QuintError } from '../quintError'
 import { QuintExport, QuintImport, QuintInstance, QuintLambdaParameter } from '../quintIr'
 

@@ -1,3 +1,17 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2022-2023. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Name collection for Quint name resolution.
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { IRVisitor } from '../IRVisitor'
 import { QuintError } from '../quintError'
 import {
@@ -20,6 +34,11 @@ import {
   selfReferenceError,
 } from './importErrors'
 
+/**
+ * Collects all top-level definitions in Quint modules. Used internally by
+ * `NameResolver`. Also handles imports, instances and exports, collecting
+ * definitions from those statements and managing their level of visibility.
+ */
 export class NameCollector implements IRVisitor {
   definitionsByName: DefinitionsByName = new Map()
   definitionsByModule: DefinitionsByModule = new Map()
@@ -50,6 +69,7 @@ export class NameCollector implements IRVisitor {
     // the type checker if we do. We should fix that and then ensure that we
     // collect type annotations here.
     if (this.definitionDepth === 0) {
+      // collect only top-level definitions
       this.collectDefinition(def.name, { kind: def.kind, reference: def.id })
     }
 
@@ -186,6 +206,19 @@ export class NameCollector implements IRVisitor {
     this.collectDefinition(def.defName, newDef, def.id)
   }
 
+  /** Public interface to manipulate the collected definitions. Used by
+   * `NameResolver` to add and remove scoped definitions */
+
+  /**
+   * Collects a definition with the given identifier and definition object. If the
+   * identifier is an underscore or a built-in name, the definition is not collected.
+   * If the identifier conflicts with a previous definition, a conflict is recorded.
+   *
+   * @param identifier - The identifier of the definition to collect.
+   * @param def - The definition object to collect.
+   * @param source - An optional source identifier for the definition, if the
+   * source is different than `def.id` (i.e. in import-like statements).
+   */
   collectDefinition(identifier: string, def: Definition, source?: bigint): void {
     if (identifier === '_') {
       // Don't collect underscores, as they are special identifiers that allow no usage
@@ -207,10 +240,23 @@ export class NameCollector implements IRVisitor {
     this.definitionsByName.set(identifier, def)
   }
 
+  /**
+   * Deletes the definition with the given identifier from the collected definitions.
+   *
+   * @param identifier - The identifier of the definition to delete.
+   */
   deleteDefinition(identifier: string): void {
     this.definitionsByName.delete(identifier)
   }
 
+  /**
+   * Obtains a collected definition.
+   *
+   * @param identifier - The identifier of the definition to retrieve.
+   *
+   * @returns The definition object for the given identifier, or undefined if a
+   * definitions with that identifier was never collected.
+   */
   getDefinition(identifier: string): Definition | undefined {
     return this.definitionsByName.get(identifier)
   }
