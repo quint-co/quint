@@ -62,7 +62,7 @@ export type LookupTable = Map<bigint, Definition>
  *
  * @param originTable - The definitions table to copy from
  * @param namespace - Optional namespace to be added to copied names
- * @param hidden - Optional, true iff the copied definitions should be hidden
+ * @param copyAsHidden - Optional, true iff the copied definitions should be tagged as 'hidden'
  *
  * @returns a definitions table with the filtered and namespaced names
  */
