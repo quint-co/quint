@@ -59,6 +59,8 @@ export type ErrorCode =
   | 'QNT406'
   /* QNT407: Cannot import self */
   | 'QNT407'
+  /* QNT099: Found cyclic definitions */
+  | 'QNT099'
 
 /* Additional data for a Quint error */
 export interface QuintErrorData {

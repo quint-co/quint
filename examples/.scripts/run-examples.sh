@@ -9,7 +9,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 EXAMPLES_DIR="${SCRIPT_DIR}/.."
 cd "$EXAMPLES_DIR"
 
-export APALACHE_DIST=../quint/_build/apalache
+export APALACHE_DIST=${APALACHE_DIST:-../quint/_build/apalache}
 # Start the apalache server
 "$APALACHE_DIST"/bin/apalache-mc server &> /dev/null &
 

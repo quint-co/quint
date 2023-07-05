@@ -226,7 +226,7 @@ describe('NameCollector', () => {
         {
           code: 'QNT101',
           message: "Conflicting definitions found for name 'a' in module 'wrapper'",
-          reference: 3n,
+          reference: 0n,
           data: {},
         },
       ])

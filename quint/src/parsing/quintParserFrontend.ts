@@ -1,24 +1,33 @@
-/* ----------------------------------------------------------------------------------
+/*
+ * The frontend to the Quint parser, which is generated with Antlr4.
+ *
+ * Igor Konnov, Gabriela Moreira, Shon Feder, 2021-2023
+ *
  * Copyright (c) Informal Systems 2021-2023. All rights reserved.
  * Licensed under the Apache 2.0.
  * See License.txt in the project root for license information.
- * --------------------------------------------------------------------------------- */
+ */
 
 import { CharStreams, CommonTokenStream } from 'antlr4ts'
+import { Either, left, merge, right } from '@sweet-monads/either'
+import { Set } from 'immutable'
+import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
 import { QuintLexer } from '../generated/QuintLexer'
 import * as p from '../generated/QuintParser'
 import { QuintListener } from '../generated/QuintListener'
-import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
 import { IrErrorMessage, QuintDef, QuintEx, QuintModule } from '../quintIr'
 import { IdGenerator } from '../idGenerator'
 import { ToIrListener } from './ToIrListener'
 import { LookupTable } from '../names/base'
-import { Either, left, right } from '@sweet-monads/either'
-import { SourceLookupPath, SourceResolver, fileSourceResolver } from './sourceResolver'
 import { resolveNames } from '../names/resolver'
 import { QuintError, quintErrorToString } from '../quintError'
+import { SourceLookupPath, SourceResolver, fileSourceResolver } from './sourceResolver'
+import { CallGraphVisitor, mkCallGraphContext } from '../static/callgraph'
+import { walkModule } from '../IRVisitor'
+import { toposort } from '../static/toposort'
+import { ErrorCode } from '../quintError'
 
 export interface Loc {
   source: string
@@ -40,8 +49,29 @@ export interface ErrorMessage {
   locs: Loc[]
 }
 
+/**
+ * A source map that is constructed by the parser phases.
+ */
+export type SourceMap = Map<bigint, Loc>
+
+/**
+ * Map an identifier to the corresponding location in the source map, if possible.
+ * @param sourceMap the source map
+ * @param id the identifier to map
+ * @returns the location, if found in the map, or the unknown location
+ */
+export function sourceIdToLoc(sourceMap: SourceMap, id: bigint): Loc {
+  let sourceLoc = sourceMap.get(id)
+  if (!sourceLoc) {
+    console.error(`No source location found for ${id}. Please report a bug.`)
+    return unknownLoc
+  } else {
+    return sourceLoc
+  }
+}
+
 // an adapter from IrErrorMessage to ErrorMessage
-export function fromIrErrorMessage(sourceMap: Map<bigint, Loc>): (err: IrErrorMessage) => ErrorMessage {
+export function fromIrErrorMessage(sourceMap: SourceMap): (err: IrErrorMessage) => ErrorMessage {
   return msg => {
     return {
       explanation: msg.explanation,
@@ -60,18 +90,35 @@ export function fromQuintError(sourceMap: Map<bigint, Loc>): (_: QuintError) => 
   }
 }
 
+/**
+ * The result of parsing, T is specialized to a phase, see below.
+ */
 export type ParseResult<T> = Either<ErrorMessage[], T>
 
+/**
+ * Phase 1: Parsing a string of characters into intermediate representation.
+ */
 export interface ParserPhase1 {
   modules: QuintModule[]
-  sourceMap: Map<bigint, Loc>
+  sourceMap: SourceMap
 }
 
+/**
+ * Phase 2: Import resolution and detection of cyclic imports.
+ */
 export interface ParserPhase2 extends ParserPhase1 {}
 
+/**
+ * Phase 3: Name resolution.
+ */
 export interface ParserPhase3 extends ParserPhase2 {
   table: LookupTable
 }
+
+/**
+ * Phase 4: Topological sort of definitions and cycle detection.
+ */
+export interface ParserPhase4 extends ParserPhase3 {}
 
 /**
  * The result of parsing an expression or unit.
@@ -93,7 +140,7 @@ export function parseExpressionOrUnit(
   text: string,
   sourceLocation: string,
   idGenerator: IdGenerator,
-  sourceMap: Map<bigint, Loc>
+  sourceMap: SourceMap
 ): ExpressionOrUnitParseResult {
   const errorMessages: ErrorMessage[] = []
   const parser = setupParser(text, sourceLocation, errorMessages)
@@ -244,13 +291,47 @@ export function parsePhase2sourceResolution(
  * resolve imports and names. Read the IR and check that all names are defined.
  * Note that the IR may be ill-typed.
  */
-export function parsePhase3importAndNameResolution(phase1Data: ParserPhase2): ParseResult<ParserPhase3> {
-  return resolveNames(phase1Data.modules)
-    .mapLeft(errors => errors.map(fromQuintError(phase1Data.sourceMap)))
-    .map(table => ({ ...phase1Data, table }))
+export function parsePhase3importAndNameResolution(phase2Data: ParserPhase2): ParseResult<ParserPhase3> {
+  return resolveNames(phase2Data.modules)
+    .mapLeft(errors => errors.map(fromQuintError(phase2Data.sourceMap)))
+    .map(table => ({ ...phase2Data, table }))
 }
 
-export function compactSourceMap(sourceMap: Map<bigint, Loc>): { sourceIndex: any; map: any } {
+/**
+ * Phase 4 of the Quint parser. Sort all definitions in the topologocal order,
+ * that is, every name should be defined before it is used.
+ */
+export function parsePhase4toposort(phase3Data: ParserPhase3): ParseResult<ParserPhase4> {
+  // topologically sort all definitions in each module
+  const context = mkCallGraphContext(phase3Data.modules)
+  const cycleOrModules: Either<Set<bigint>, QuintModule[]> = merge(
+    phase3Data.modules.map(mod => {
+      const visitor = new CallGraphVisitor(phase3Data.table, context)
+      walkModule(visitor, mod)
+      return toposort(visitor.graph, mod.defs).mapRight(defs => {
+        return { ...mod, defs } as QuintModule
+      })
+    })
+  )
+
+  return cycleOrModules
+    .mapLeft(cycleIds => {
+      // found a cycle, report it
+      const errorCode: ErrorCode = 'QNT099'
+      return [
+        {
+          locs: cycleIds.toArray().map(id => sourceIdToLoc(phase3Data.sourceMap, id)),
+          explanation: `${errorCode}: Found cyclic definitions. Use fold and foldl instead of recursion`,
+        },
+      ] as ErrorMessage[]
+    })
+    .mapRight(modules => {
+      // reordered the definitions
+      return { ...phase3Data, modules }
+    })
+}
+
+export function compactSourceMap(sourceMap: SourceMap): { sourceIndex: any; map: any } {
   // Collect all sources in order to index them
   const sources: string[] = Array.from(sourceMap.values()).map(loc => loc.source)
 
@@ -285,13 +366,14 @@ export function parse(
   sourceLocation: string,
   mainPath: SourceLookupPath,
   code: string
-): ParseResult<ParserPhase3> {
+): ParseResult<ParserPhase4> {
   return parsePhase1fromText(idGen, code, sourceLocation)
     .chain(phase1Data => {
       const resolver = fileSourceResolver()
       return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
     })
     .chain(phase2Data => parsePhase3importAndNameResolution(phase2Data))
+    .chain(phase3Data => parsePhase4toposort(phase3Data))
 }
 
 // setup a Quint parser, so it can be used to parse from various non-terminals

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - One internal cache was added to the name resolution step, improving
   performance for large specs (#1001)
+- Support out of order definitions (#1008)
 
 ### Changed
 ### Deprecated
