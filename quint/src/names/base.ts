@@ -66,13 +66,17 @@ export type LookupTable = Map<bigint, Definition>
  *
  * @returns a definitions table with the filtered and namespaced names
  */
-export function copyNames(originTable: DefinitionsByName, namespace?: string, hidden?: boolean): DefinitionsByName {
+export function copyNames(
+  originTable: DefinitionsByName,
+  namespace?: string,
+  copyAsHidden?: boolean
+): DefinitionsByName {
   const table = new Map()
 
   originTable.forEach((def, identifier) => {
     const name = namespace ? [namespace, identifier].join('::') : identifier
     if (!def.hidden || def.kind === 'const') {
-      table.set(name, hidden ? { ...def, hidden } : def)
+      table.set(name, copyAsHidden ? { ...def, hidden: copyAsHidden } : def)
     }
   })
 
