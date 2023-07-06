@@ -23,6 +23,10 @@ get_main () {
   local main=""
   if [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ]] ; then
     main="--main=LamportMutex_3_10"
+  elif [[ "$file" == "solidity/SimplePonzi/simplePonzi.qnt" ]] ; then
+    main="--main=simplePonziTest"
+  elif [[ "$file" == "solidity/GradualPonzi/gradualPonzi.qnt" ]] ; then
+    main="--main=gradualPonziTest"
   fi
   echo "${main}"
 }
