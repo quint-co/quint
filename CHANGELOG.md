@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- An error is now reported when multiple modules are declared with the same name (#1020)
+
 ### Security
 
 ## v0.11.4 -- 2023-06-28
