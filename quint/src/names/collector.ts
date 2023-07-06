@@ -144,7 +144,7 @@ export class NameCollector implements IRVisitor {
     const moduleTable = this.definitionsByModule.get(def.protoName)
 
     if (!moduleTable) {
-      // Importing unexisting module
+      // Importing non-existing module
       this.errors.push(moduleNotFoundError(def))
       return
     }
@@ -181,7 +181,7 @@ export class NameCollector implements IRVisitor {
 
     const moduleTable = this.definitionsByModule.get(def.protoName)
     if (!moduleTable) {
-      // Exporting unexisting module
+      // Exporting non-existing module
       this.errors.push(moduleNotFoundError(def))
       return
     }
