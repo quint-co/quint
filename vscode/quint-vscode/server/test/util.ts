@@ -13,11 +13,15 @@
  */
 
 import {
-  Loc, LookupTable, QuintModule, newIdGenerator, parsePhase1fromText,
+  Loc,
+  LookupTable,
+  QuintModule,
+  newIdGenerator,
+  parsePhase1fromText,
   parsePhase2sourceResolution,
   parsePhase3importAndNameResolution,
   stringSourceResolver
-} from "@informalsystems/quint"
+} from '@informalsystems/quint'
 
 /**
  * Parses a mocked module and returns the result of the parsing phases, or
@@ -28,7 +32,7 @@ import {
  * @throws Error if the parsing fails
  *
  * @returns A triple with the combined result of the parsing phases
-*/
+ */
 export function parseOrThrow(moduleText: string): [QuintModule[], Map<bigint, Loc>, LookupTable] {
   const idgen = newIdGenerator()
   const result1 = parsePhase1fromText(idgen, moduleText, 'mocked_path')

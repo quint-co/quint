@@ -1,14 +1,18 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { Loc, QuintError } from '@informalsystems/quint'
-import { assembleDiagnostic, diagnosticsFromErrors, findBestMatchingResult, findName, locToRange } from '../src/reporting'
+import {
+  assembleDiagnostic,
+  diagnosticsFromErrors,
+  findBestMatchingResult,
+  findName,
+  locToRange
+} from '../src/reporting'
 import { Position } from 'vscode-languageserver'
 import { parseOrThrow } from './util'
 
 describe('diagnosticsFromErrorMap', () => {
-  const errors: [bigint, QuintError][] = [
-    [1n, { code: 'QNT000', message: 'Message', reference: 0n, data: {} }],
-  ]
+  const errors: [bigint, QuintError][] = [[1n, { code: 'QNT000', message: 'Message', reference: 0n, data: {} }]]
 
   const sourceMap = new Map<bigint, Loc>([
     [1n, { start: { col: 1, index: 1, line: 1 }, end: { col: 1, index: 1, line: 1 }, source: 'mocked_path' }],
@@ -91,7 +95,9 @@ describe('findBestMatchingResult', () => {
   })
 
   describe('findName', () => {
-    const [modules, sourceMap, _table] = parseOrThrow('module test { type MY_TYPE = bool val foo: MY_TYPE = Nat.isFinite() }')
+    const [modules, sourceMap, _table] = parseOrThrow(
+      'module test { type MY_TYPE = bool val foo: MY_TYPE = Nat.isFinite() }'
+    )
     const sourceFile = 'mocked_path'
     const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
 

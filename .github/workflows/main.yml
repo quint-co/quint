@@ -29,6 +29,21 @@ jobs:
       - run: npm install
       - run: npm run format-check || (echo "Run 'npm run format'" && exit 1)
 
+  quint-vscode-linting:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./vscode/quint-vscode
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "17"
+      - run: npm install
+      - run: npm run format-check || (echo "Run 'npm run format'" && exit 1)
+
   quint-unit-tests:
     runs-on: ${{ matrix.operating-system }}
     defaults:
