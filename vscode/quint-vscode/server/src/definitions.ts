@@ -1,16 +1,18 @@
-import { Loc, ParserPhase3 } from "@informalsystems/quint"
-import { findName } from "./reporting"
-import { Position } from "vscode-languageserver/node"
-import { URI } from "vscode-uri"
+import { Loc, ParserPhase3 } from '@informalsystems/quint'
+import { findName } from './reporting'
+import { Position } from 'vscode-languageserver/node'
+import { URI } from 'vscode-uri'
 
 export interface QuintDefinitionLink {
-  nameId: bigint,
-  name: string,
-  definitionId?: bigint,
+  nameId: bigint
+  name: string
+  definitionId?: bigint
 }
 
 export function findDefinition(
-  parsedData: ParserPhase3, uri: string, position: Position
+  parsedData: ParserPhase3,
+  uri: string,
+  position: Position
 ): QuintDefinitionLink | undefined {
   const { modules, sourceMap, table } = parsedData
   const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
