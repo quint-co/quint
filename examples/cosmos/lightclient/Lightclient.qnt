@@ -2,7 +2,7 @@
  * A state-machine specification of the lite client verification,
  * following the English spec:
  *
- * https://github.com/informalsystems/tendermint-rs/blob/master/docs/spec/lightclient/verification.md
+ * https://github.com/cometbft/cometbft/blob/main/spec/light-client/verification/verification_003_draft.md
  */ 
 module Lightclient {
 
