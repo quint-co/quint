@@ -346,7 +346,7 @@ export class EffectInferrer implements IRVisitor {
       return right(this.newInstance(signature))
     } else {
       const def = this.lookupTable.get(nameId)
-      const id = def?.reference
+      const id = def?.id
       if (!def || !id) {
         return left(buildErrorLeaf(this.location, `Signature not found for name: ${name}`))
       }

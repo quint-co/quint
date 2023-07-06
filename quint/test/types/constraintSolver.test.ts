@@ -11,10 +11,10 @@ import { LookupTable } from '../../src/names/base'
 
 const table: LookupTable = new Map([
   // A type alias (ref 1n)
-  [3n, { kind: 'type', typeAnnotation: { kind: 'int' }, reference: 1n }],
+  [3n, { kind: 'type', typeAnnotation: { kind: 'int' }, id: 1n }],
   // An uniterpreted type (ref 2n)
-  [4n, { kind: 'type', reference: 2n }],
-  [5n, { kind: 'type', reference: 2n }],
+  [4n, { kind: 'type', id: 2n }],
+  [5n, { kind: 'type', id: 2n }],
 ])
 
 describe('solveConstraint', () => {

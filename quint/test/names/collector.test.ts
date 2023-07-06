@@ -47,7 +47,7 @@ describe('NameCollector', () => {
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.deepEqual(definitions.get('test_module::a'), { kind: 'def', reference: 0n, hidden: true })
+      assert.deepEqual(definitions.get('test_module::a'), { kind: 'def', id: 0n, hidden: true })
     })
 
     it('imports definitions with qualifier', () => {
@@ -56,7 +56,7 @@ describe('NameCollector', () => {
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.deepEqual(definitions.get('my_import::a'), { kind: 'def', reference: 0n, hidden: true })
+      assert.deepEqual(definitions.get('my_import::a'), { kind: 'def', id: 0n, hidden: true })
     })
 
     it('instantiates modules', () => {
@@ -133,8 +133,8 @@ describe('NameCollector', () => {
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.deepEqual(definitions.get('a'), { kind: 'def', reference: 0n })
-      assert.deepEqual(definitions.get('T'), { kind: 'type', reference: 0n, typeAnnotation: { kind: 'int', id: 0n } })
+      assert.deepEqual(definitions.get('a'), { kind: 'def', id: 0n })
+      assert.deepEqual(definitions.get('T'), { kind: 'type', id: 0n, typeAnnotation: { kind: 'int', id: 0n } })
     })
 
     it('exports previously imported definitions', () => {
@@ -143,8 +143,8 @@ describe('NameCollector', () => {
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.deepEqual(definitions.get('a'), { kind: 'def', reference: 0n })
-      assert.deepEqual(definitions.get('T'), { kind: 'type', reference: 0n, typeAnnotation: { kind: 'int', id: 0n } })
+      assert.deepEqual(definitions.get('a'), { kind: 'def', id: 0n })
+      assert.deepEqual(definitions.get('T'), { kind: 'type', id: 0n, typeAnnotation: { kind: 'int', id: 0n } })
     })
 
     it('exports specific definitions', () => {
@@ -154,11 +154,11 @@ describe('NameCollector', () => {
 
       assert.isEmpty(errors)
       // a is not hidden anymore
-      assert.deepEqual(definitions.get('a'), { kind: 'def', reference: 0n })
+      assert.deepEqual(definitions.get('a'), { kind: 'def', id: 0n })
       // T is still hidden
       assert.deepEqual(definitions.get('T'), {
         kind: 'type',
-        reference: 0n,
+        id: 0n,
         typeAnnotation: { kind: 'int', id: 0n },
         hidden: true,
       })
@@ -174,8 +174,8 @@ describe('NameCollector', () => {
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.deepEqual(definitions.get('a'), { kind: 'def', reference: 0n, hidden: true })
-      assert.deepEqual(definitions.get('my_export::a'), { kind: 'def', reference: 0n })
+      assert.deepEqual(definitions.get('a'), { kind: 'def', id: 0n, hidden: true })
+      assert.deepEqual(definitions.get('my_export::a'), { kind: 'def', id: 0n })
     })
 
     it('exports definitions with namespace', () => {
@@ -184,8 +184,8 @@ describe('NameCollector', () => {
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.deepEqual(definitions.get('a'), { kind: 'def', reference: 0n, hidden: true })
-      assert.deepEqual(definitions.get('test_module::a'), { kind: 'def', reference: 0n })
+      assert.deepEqual(definitions.get('a'), { kind: 'def', id: 0n, hidden: true })
+      assert.deepEqual(definitions.get('test_module::a'), { kind: 'def', id: 0n })
     })
 
     it('fails exporting unexisting definition', () => {

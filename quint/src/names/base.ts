@@ -25,7 +25,7 @@ export type DefinitionKind = 'module' | 'def' | 'val' | 'assumption' | 'param' |
  */
 export interface Definition {
   kind: DefinitionKind
-  reference: bigint
+  id: bigint
   typeAnnotation?: QuintType
 }
 

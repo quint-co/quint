@@ -192,8 +192,8 @@ export class CallGraphVisitor implements IRVisitor {
   exitApp(app: QuintApp) {
     const lookupDef = this.lookupTable.get(app.id)
     if (lookupDef) {
-      this.graphAddOne(lookupDef.reference)
-      this.graphAddImports(lookupDef.reference)
+      this.graphAddOne(lookupDef.id)
+      this.graphAddImports(lookupDef.id)
     }
   }
 
@@ -201,8 +201,8 @@ export class CallGraphVisitor implements IRVisitor {
   exitName(name: QuintName) {
     const lookupDef = this.lookupTable.get(name.id)
     if (lookupDef) {
-      this.graphAddOne(lookupDef.reference)
-      this.graphAddImports(lookupDef.reference)
+      this.graphAddOne(lookupDef.id)
+      this.graphAddImports(lookupDef.id)
     }
   }
 
@@ -211,8 +211,8 @@ export class CallGraphVisitor implements IRVisitor {
     if (tp.id) {
       const lookupDef = this.lookupTable.get(tp.id)
       if (lookupDef) {
-        this.graphAddOne(lookupDef.reference)
-        this.graphAddImports(lookupDef.reference)
+        this.graphAddOne(lookupDef.id)
+        this.graphAddImports(lookupDef.id)
       }
     }
   }

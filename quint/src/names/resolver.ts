@@ -63,7 +63,7 @@ class NameResolver implements IRVisitor {
     if (this.definitionDepth > 0) {
       this.collector.collectDefinition(def.name, {
         kind: def.kind,
-        reference: def.id,
+        id: def.id,
         typeAnnotation: def.typeAnnotation,
       })
     }
@@ -84,7 +84,7 @@ class NameResolver implements IRVisitor {
   enterLambda(expr: QuintLambda): void {
     // Lambda parameters are scoped, so they are collected here
     expr.params.forEach(p => {
-      this.collector.collectDefinition(p.name, { kind: 'param', reference: p.id })
+      this.collector.collectDefinition(p.name, { kind: 'param', id: p.id })
     })
   }
 
@@ -136,7 +136,7 @@ class NameResolver implements IRVisitor {
       return
     }
 
-    this.table.set(id, { kind: def.kind, reference: def.reference, typeAnnotation: def.typeAnnotation })
+    this.table.set(id, { kind: def.kind, id: def.id, typeAnnotation: def.typeAnnotation })
   }
 
   private recordNameError(kind: 'name' | 'type', name: string, id: bigint) {

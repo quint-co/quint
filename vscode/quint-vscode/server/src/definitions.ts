@@ -24,13 +24,13 @@ export function findDefinition(
 
   // Find definition of name
   const def = table.get(id)
-  if (!def || !def.reference) {
+  if (!def || !def.id) {
     return { nameId: id, name }
   }
 
   return {
     nameId: id,
     name,
-    definitionId: def?.reference,
+    definitionId: def?.id,
   }
 }
