@@ -50,6 +50,11 @@ export class NameCollector implements IRVisitor {
   enterModule(module: QuintModule): void {
     this.currentModuleName = module.name
     this.definitionsByName = new Map()
+
+    if (this.definitionsByModule.has(module.name)) {
+      const message = `Module with name '${module.name}' was already defined`
+      this.errors.push({ code: 'QNT102', message, reference: module.id, data: {} })
+    }
   }
 
   exitModule(module: QuintModule): void {
