@@ -23,6 +23,8 @@ get_main () {
   local main=""
   if [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ]] ; then
     main="--main=LamportMutex_3_10"
+  elif [[ "$file" == "solidity/ERC20/erc20.qnt" ]] ; then
+    main="--main=erc20Tests"
   fi
   echo "${main}"
 }
