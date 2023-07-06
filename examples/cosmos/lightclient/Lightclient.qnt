@@ -21,7 +21,7 @@ module Lightclient {
     // the actual clock drift, which under normal circumstances should not
     // be larger than CLOCK_DRIFT (otherwise, there will be a bug)
     const REAL_CLOCK_DRIFT: int
-    // Flag taht determines whether primary is correct. Modifies the behavior of FetchLightBlockInto, and invariants.
+    // Flag that determines whether primary is correct. Modifies the behavior of FetchLightBlockInto, and invariants.
     const IS_PRIMARY_CORRECT: bool
     // a pair (a, b) that limits that ratio of faulty validator in the blockchain
     // from above (exclusive). Tendermint security model prescribes 1 / 3.
@@ -50,7 +50,7 @@ module Lightclient {
     var prevVerdict: str
 
 
-    // Unlike the TLA file, we can use the same syntax for InitMonitor and NextMonitor
+    // This can be used both as initialization, and as a generic action
     action MonitorTransition(verified: LightBlock, current: LightBlock, pLocalClock: int, verdict: str): bool = all {
         prevVerified' = verified,
         prevCurrent' = current,
@@ -94,29 +94,25 @@ module Lightclient {
     Initially, only the trusted light block is present.
     */
     action LCInit: bool = all {
-        {
-            nondet tm = oneOf(Int)
-            all {
-                tm >= 0,
-                API::IsLocalClockWithinDrift(tm, BC::refClock),
-                API::SetLocalClock(tm)
-            }
+        nondet tm = oneOf(Nat)
+        all {
+            tm >= 0,
+            API::IsLocalClockWithinDrift(tm, BC::refClock),
+            API::SetLocalClock(tm)
         },
         state' = "working",
         nextHeight' = TARGET_HEIGHT,
         nprobes' = 0, // no tests have been done so far
-        {
-            val trustedBlock = BC::blockchain.get(TRUSTED_HEIGHT)
-            val trustedLightBlock = {header: trustedBlock, Commits: AllNodes}
-            all {
-                // initially, fetchedLightBlocks is a function of one element, i.e., TRUSTED_HEIGHT
-                fetchedLightBlocks' = Map(TRUSTED_HEIGHT -> trustedLightBlock),
-                // initially, lightBlockStatus is a function of one element, i.e., TRUSTED_HEIGHT
-                lightBlockStatus' = Map(TRUSTED_HEIGHT -> "StateVerified"),
-                // the latest verified block the the trusted block
-                latestVerified' = trustedLightBlock,
-                MonitorTransition(trustedLightBlock, trustedLightBlock, API::localClock, "SUCCESS")
-            }
+        val trustedBlock = BC::blockchain.get(TRUSTED_HEIGHT)
+        val trustedLightBlock = {header: trustedBlock, Commits: AllNodes}
+        all {
+            // initially, fetchedLightBlocks is a function of one element, i.e., TRUSTED_HEIGHT
+            fetchedLightBlocks' = Map(TRUSTED_HEIGHT -> trustedLightBlock),
+            // initially, lightBlockStatus is a function of one element, i.e., TRUSTED_HEIGHT
+            lightBlockStatus' = Map(TRUSTED_HEIGHT -> "StateVerified"),
+            // the latest verified block the the trusted block
+            latestVerified' = trustedLightBlock,
+            MonitorTransition(trustedLightBlock, trustedLightBlock, API::localClock, "SUCCESS")
         }
     }
 
@@ -128,13 +124,14 @@ module Lightclient {
         val ref = BC::blockchain.get(height)
         val lastCommit = 
             if(height < ULTIMATE_HEIGHT) BC::blockchain.get(height + 1).lastCommit 
-            // for the ultimate block, which we never use, as ULTIMATE_HEIGHT = TARGET_HEIGHT + 1
+            // for the ultimate block, which we never use, since ULTIMATE_HEIGHT = TARGET_HEIGHT + 1
             else  BC::blockchain.get(height).VS 
         block == {header: ref, Commits: lastCommit}
     }   
 
-    // Either the primary is correct and the block comes from the reference chain,
-    // or the block is produced by a faulty primary.
+    // If the primary is correct, the block comes from the reference chain.
+    // If the primary is faulty, then the only constraint on block is enforced 
+    // via IsLightBlockAllowedByDigitalSignatures
     //
     // [LCV-FUNC-FETCH.1::TLA.1]
     def FetchLightBlockInto(block: LightBlock, height: int): bool =
@@ -273,8 +270,8 @@ module Lightclient {
     of [refClock - REAL_CLOCK_DRIFT, refClock + REAL_CLOCK_DRIFT].
     */
     action AdvanceClocks: bool = {
-        nondet refClockTm = oneOf(Int)
-        nondet tm = oneOf(Int)
+        nondet refClockTm = oneOf(Nat)
+        nondet tm = oneOf(Nat)
         all {
             BC::AdvanceTimeTo(refClockTm),
             tm >= 0,
