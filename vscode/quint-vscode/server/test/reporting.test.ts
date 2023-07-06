@@ -6,7 +6,7 @@ import {
   diagnosticsFromErrors,
   findBestMatchingResult,
   findName,
-  locToRange
+  locToRange,
 } from '../src/reporting'
 import { Position } from 'vscode-languageserver'
 import { parseOrThrow } from './util'

@@ -20,7 +20,7 @@ import {
   parsePhase1fromText,
   parsePhase2sourceResolution,
   parsePhase3importAndNameResolution,
-  stringSourceResolver
+  stringSourceResolver,
 } from '@informalsystems/quint'
 
 /**

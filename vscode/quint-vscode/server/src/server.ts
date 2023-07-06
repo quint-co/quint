@@ -24,7 +24,7 @@ import {
   SignatureHelpParams,
   TextDocumentSyncKind,
   TextDocuments,
-  createConnection
+  createConnection,
 } from 'vscode-languageserver/node'
 
 import { DocumentUri, TextDocument } from 'vscode-languageserver-textdocument'
@@ -37,7 +37,7 @@ import {
   analyzeModules,
   builtinDocs,
   newIdGenerator,
-  produceDocsById
+  produceDocsById,
 } from '@informalsystems/quint'
 import { diagnosticsFromErrors, locToRange } from './reporting'
 import { URI } from 'vscode-uri'

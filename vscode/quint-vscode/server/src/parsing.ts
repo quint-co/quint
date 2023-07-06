@@ -6,7 +6,7 @@ import {
   parsePhase1fromText,
   parsePhase2sourceResolution,
   parsePhase3importAndNameResolution,
-  parsePhase4toposort
+  parsePhase4toposort,
 } from '@informalsystems/quint'
 import { basename, dirname } from 'path'
 import { URI } from 'vscode-uri'

@@ -13,7 +13,7 @@ import {
   format,
   prettyQuintDef,
   prettyTypeScheme,
-  qualifierToString
+  qualifierToString,
 } from '@informalsystems/quint'
 import { Hover, MarkupKind, Position } from 'vscode-languageserver/node'
 import { findBestMatchingResult, locToRange } from './reporting'
