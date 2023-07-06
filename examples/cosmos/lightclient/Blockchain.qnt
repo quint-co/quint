@@ -153,15 +153,12 @@ module Blockchain {
     }
 
     // (********************* BLOCKCHAIN ACTIONS ********************************)
-    // Advance the clock by zero or more time units.
-    action AdvanceTime = {
-        nondet tm = oneOf(Int)
-        all {
-            tm >= refClock,
-            refClock' = tm,
-            blockchain' = blockchain,
-            Faulty' = Faulty
-        }
+    // Advance the `refClock` to `tm`. May not decrease refClock.
+    action AdvanceTimeTo(tm: int): bool = all {
+        tm >= refClock,
+        refClock' = tm,
+        blockchain' = blockchain,
+        Faulty' = Faulty
     }
-
-    }
+    
+}
