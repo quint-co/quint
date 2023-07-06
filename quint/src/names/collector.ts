@@ -57,11 +57,11 @@ export class NameCollector implements IRVisitor {
   }
 
   enterVar(def: QuintVar): void {
-    this.collectDefinition(def.name, { kind: def.kind, id: def.id, typeAnnotation: def.typeAnnotation })
+    this.collectDefinition(def.name, { kind: def.kind, reference: def.id, typeAnnotation: def.typeAnnotation })
   }
 
   enterConst(def: QuintConst): void {
-    this.collectDefinition(def.name, { kind: def.kind, id: def.id, typeAnnotation: def.typeAnnotation })
+    this.collectDefinition(def.name, { kind: def.kind, reference: def.id, typeAnnotation: def.typeAnnotation })
   }
 
   enterOpDef(def: QuintOpDef): void {
@@ -70,7 +70,7 @@ export class NameCollector implements IRVisitor {
     // that we collect type annotations here.
     if (this.definitionDepth === 0) {
       // collect only top-level definitions
-      this.collectDefinition(def.name, { kind: def.kind, id: def.id })
+      this.collectDefinition(def.name, { kind: def.kind, reference: def.id })
     }
 
     this.definitionDepth++
@@ -81,11 +81,11 @@ export class NameCollector implements IRVisitor {
   }
 
   enterTypeDef(def: QuintTypeDef): void {
-    this.collectDefinition(def.name, { kind: 'type', id: def.id, typeAnnotation: def.type })
+    this.collectDefinition(def.name, { kind: 'type', reference: def.id, typeAnnotation: def.type })
   }
 
   enterAssume(def: QuintAssume): void {
-    this.collectDefinition(def.name, { kind: 'assumption', id: def.id })
+    this.collectDefinition(def.name, { kind: 'assumption', reference: def.id })
   }
 
   enterInstance(def: QuintInstance): void {
@@ -125,7 +125,7 @@ export class NameCollector implements IRVisitor {
       }
 
       // Update the definition to point to the expression being overriden
-      instanceTable.set(param.name, { ...constDef, id: ex.id })
+      instanceTable.set(param.name, { ...constDef, reference: ex.id })
     })
 
     // All names from the instanced module should be acessible with the instance namespace
@@ -227,13 +227,13 @@ export class NameCollector implements IRVisitor {
 
     if (builtinNames.includes(identifier)) {
       // Conflict with a built-in name
-      this.recordConflict(identifier, undefined, source ?? def.id)
+      this.recordConflict(identifier, undefined, source ?? def.reference)
       return
     }
 
-    if (this.definitionsByName.has(identifier) && this.definitionsByName.get(identifier)!.id != def.id) {
+    if (this.definitionsByName.has(identifier) && this.definitionsByName.get(identifier)!.reference != def.reference) {
       // Conflict with a previous definition
-      this.recordConflict(identifier, this.definitionsByName.get(identifier)!.id, source ?? def.id)
+      this.recordConflict(identifier, this.definitionsByName.get(identifier)!.reference, source ?? def.reference)
       return
     }
 
@@ -264,8 +264,8 @@ export class NameCollector implements IRVisitor {
   private collectDefinitions(newDefs: DefinitionsByName): void {
     newDefs.forEach((def, identifier) => {
       const existingEntry = this.definitionsByName.get(identifier)
-      if (existingEntry && existingEntry.id !== def.id) {
-        this.recordConflict(identifier, existingEntry.id, def.id)
+      if (existingEntry && existingEntry.reference !== def.reference) {
+        this.recordConflict(identifier, existingEntry.reference, def.reference)
       }
     })
 

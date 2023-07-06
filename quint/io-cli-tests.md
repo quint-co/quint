@@ -76,7 +76,7 @@ error: parsing failed
 <!-- !test in module AST is output -->
 ```
 quint parse --out parse-out-example.json ../examples/language-features/tuples.qnt
-jq '.modules[0].name, .table."7".id' < parse-out-example.json
+jq '.modules[0].name, .table."7".reference' < parse-out-example.json
 rm parse-out-example.json
 ```
 

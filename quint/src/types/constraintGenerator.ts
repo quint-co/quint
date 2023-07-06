@@ -315,7 +315,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         return right(def.typeAnnotation)
       }
 
-      const id = def?.id
+      const id = def?.reference
       if (!def || !id) {
         return left(buildErrorLeaf(this.location, `Signature not found for name: ${name}`))
       }
