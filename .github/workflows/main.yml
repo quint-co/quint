@@ -142,6 +142,11 @@ jobs:
           make apalache
         env:
           GH_TOKEN: ${{ github.token }}
+      - if: matrix.operating-system == 'macos-latest'
+        # TODO(#1004): Workaround for GNU parallel not being available on macOS
+        # We should find a better way of managing dev dependencies.
+        name: Install GNU parallel
+        run: brew install parallel
       - name: Ensure the examples dashboard is up to date
         run: |
           # Update the examples dashboard

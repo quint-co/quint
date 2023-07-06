@@ -20,6 +20,7 @@ import {
   parsePhase1fromText,
   parsePhase2sourceResolution,
   parsePhase3importAndNameResolution,
+  parsePhase4toposort,
 } from './parsing/quintParserFrontend'
 
 import { Either, left, right } from '@sweet-monads/either'
@@ -208,17 +209,23 @@ export async function parse(loaded: LoadedStage): Promise<CLIProcedure<ParsedSta
       const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
       return { msg: 'parsing failed', stage: { ...parsing, errors } }
     })
-    .chain(phase1Data => {
+    .chain(phase2Data => {
       if (args.sourceMap) {
         // Write source map to the specified file
-        writeToJson(args.sourceMap, compactSourceMap(phase1Data.sourceMap))
+        writeToJson(args.sourceMap, compactSourceMap(phase2Data.sourceMap))
       }
-      return parsePhase3importAndNameResolution(phase1Data).mapLeft(newErrs => {
+      return parsePhase3importAndNameResolution(phase2Data).mapLeft(newErrs => {
         const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
         return { msg: 'parsing failed', stage: { ...parsing, errors } }
       })
     })
-    .map(phase2Data => ({ ...parsing, ...phase2Data, idGen }))
+    .chain(phase3Data => {
+      return parsePhase4toposort(phase3Data).mapLeft(newErrs => {
+        const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
+        return { msg: 'parsing failed', stage: { ...parsing, errors } }
+      })
+    })
+    .map(phase4Data => ({ ...parsing, ...phase4Data, idGen }))
 }
 
 export function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: [bigint, QuintError]) => ErrorMessage {

@@ -203,6 +203,10 @@ const verifyCmd = {
   desc: `Verify a Quint specification via Apalache`,
   builder: (yargs: any) =>
     yargs
+      .option('main', {
+        desc: 'name of the main module (by default, computed from filename)',
+        type: 'string',
+      })
       .option('out', {
         desc: 'output file (suppresses all console output)',
         type: 'string',

@@ -175,3 +175,10 @@ module LamportMutex {
   // The main safety property of mutual exclusion.
   val Mutex = crit.forall(p => crit.forall(q => p == q))
 }
+
+module LamportMutex_3_10 {
+  import LamportMutex(
+    N = 3,
+    maxClock = 10
+  ).*
+}

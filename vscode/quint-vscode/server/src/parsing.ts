@@ -1,4 +1,4 @@
-import { IdGenerator, ParserPhase3, QuintError, fileSourceResolver, parsePhase1fromText, parsePhase2sourceResolution, parsePhase3importAndNameResolution } from "@informalsystems/quint"
+import { IdGenerator, ParserPhase3, QuintError, fileSourceResolver, parsePhase1fromText, parsePhase2sourceResolution, parsePhase3importAndNameResolution, parsePhase4toposort } from "@informalsystems/quint"
 import { basename, dirname } from "path"
 import { URI } from "vscode-uri"
 import { assembleDiagnostic } from "./reporting"
@@ -24,6 +24,7 @@ export async function parseDocument(idGenerator: IdGenerator, textDocument: Text
       return parsePhase2sourceResolution(idGenerator, resolver, mainPath, phase1Data)
     })
     .chain(phase2Data => parsePhase3importAndNameResolution(phase2Data))
+    .chain(phase3Data => parsePhase4toposort(phase3Data))
     .mapLeft(messages => messages.flatMap(msg => {
       // TODO: Parse errors should be QuintErrors
       const error: QuintError = { code: 'QNT000', message: msg.explanation, data: {} }

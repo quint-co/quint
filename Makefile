@@ -4,7 +4,7 @@
 # @file
 # @version 0.1
 
-.PHONY: vscode quint local tutorials docs all apalache examples
+.PHONY: vscode quint local tutorials docs all apalache examples ./examples/README.md
 
 all: vscode
 
