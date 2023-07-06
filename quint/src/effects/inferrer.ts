@@ -14,7 +14,7 @@
  */
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { LookupTable } from '../names/lookupTable'
+import { LookupTable } from '../names/base'
 import { expressionToString } from '../IRprinting'
 import { IRVisitor, walkDefinition } from '../IRVisitor'
 import {

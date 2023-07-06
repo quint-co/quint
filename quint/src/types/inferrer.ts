@@ -15,7 +15,7 @@
 
 import { ErrorTree } from '../errorTree'
 import { walkDefinition } from '../IRVisitor'
-import { LookupTable } from '../names/lookupTable'
+import { LookupTable } from '../names/base'
 import { QuintDef } from '../quintIr'
 import { TypeScheme } from './base'
 import { ConstraintGeneratorVisitor } from './constraintGenerator'

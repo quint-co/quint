@@ -7,7 +7,7 @@ import { parseOrThrow } from './util'
 
 describe('diagnosticsFromErrorMap', () => {
   const errors: [bigint, QuintError][] = [
-    [1n, { code: 'QNT000', message: 'Message', data: {} }],
+    [1n, { code: 'QNT000', message: 'Message', reference: 0n, data: {} }],
   ]
 
   const sourceMap = new Map<bigint, Loc>([
@@ -37,7 +37,7 @@ describe('assembleDiagnostic', () => {
   const loc: Loc = { start: { col: 1, index: 1, line: 1 }, end: { col: 1, index: 1, line: 1 }, source: 'mocked_path' }
 
   it('assembles a single diagnostict', () => {
-    const diagnostic = assembleDiagnostic({ code: 'QNT000', message: 'Message', data: {} }, loc)
+    const diagnostic = assembleDiagnostic({ code: 'QNT000', message: 'Message', reference: 0n, data: {} }, loc)
 
     assert.deepEqual(diagnostic, {
       message: 'Message',

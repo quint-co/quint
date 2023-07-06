@@ -25,7 +25,7 @@ import {
 
 import { Either, left, right } from '@sweet-monads/either'
 import { EffectScheme } from './effects/base'
-import { LookupTable } from './names/lookupTable'
+import { LookupTable } from './names/base'
 import { ReplOptions, quintRepl } from './repl'
 import { OpQualifier, QuintEx, QuintModule } from './quintIr'
 import { TypeScheme } from './types/base'

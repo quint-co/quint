@@ -7,7 +7,7 @@ import { substitutionsToString } from '../../src/types/printing'
 import { Substitutions } from '../../src/types/substitutions'
 import { Row } from '../../src/quintTypes'
 import { errorTreeToString } from '../../src/errorTree'
-import { LookupTable } from '../../src/names/lookupTable'
+import { LookupTable } from '../../src/names/base'
 
 const table: LookupTable = new Map([
   // A type alias (ref 1n)

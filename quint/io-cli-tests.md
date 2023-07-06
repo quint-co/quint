@@ -62,7 +62,7 @@ redirects allow us to filter stderr instead of stdout.
 <!-- !test exit 1 -->
 <!-- !test err parsing invalid file -->
 ```
-./testFixture/_1011nameOutOfScope.qnt:5:11 - error: Failed to resolve name x in definition for A, in module nameOutOfScope
+./testFixture/_1011nameOutOfScope.qnt:5:11 - error: [QNT404] Name 'x' not found
 5:   val A = x + 1
              ^
 

@@ -13,7 +13,7 @@ import { strict as assert } from 'assert'
 import { Maybe, just, merge, none } from '@sweet-monads/maybe'
 import { List, OrderedMap, Set } from 'immutable'
 
-import { LookupTable } from '../../names/lookupTable'
+import { LookupTable } from '../../names/base'
 import { IRVisitor } from '../../IRVisitor'
 import { TypeScheme } from '../../types/base'
 import {

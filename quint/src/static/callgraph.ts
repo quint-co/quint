@@ -13,7 +13,7 @@ import { Map, Record, Set } from 'immutable'
 import type { RecordOf } from 'immutable'
 
 import { IRVisitor } from '../IRVisitor'
-import { LookupTable } from '../names/lookupTable'
+import { LookupTable } from '../names/base'
 import { QuintApp, QuintDef, QuintExport, QuintImport, QuintInstance, QuintModule, QuintName } from '../quintIr'
 import { QuintConstType } from '../quintTypes'
 

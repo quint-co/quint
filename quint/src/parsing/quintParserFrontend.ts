@@ -9,7 +9,7 @@
  */
 
 import { CharStreams, CommonTokenStream } from 'antlr4ts'
-import { Either, left, merge, mergeInMany, right } from '@sweet-monads/either'
+import { Either, left, merge, right } from '@sweet-monads/either'
 import { Set } from 'immutable'
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
@@ -20,14 +20,9 @@ import { QuintListener } from '../generated/QuintListener'
 import { IrErrorMessage, QuintDef, QuintEx, QuintModule } from '../quintIr'
 import { IdGenerator } from '../idGenerator'
 import { ToIrListener } from './ToIrListener'
-import { collectDefinitions } from '../names/definitionsCollector'
-import { resolveNames } from '../names/nameResolver'
-import { resolveImports } from '../names/importResolver'
-import { treeFromModule } from '../names/scoping'
-import { scanConflicts } from '../names/definitionsScanner'
-import { Definition, LookupTable } from '../names/lookupTable'
-import { mkErrorMessage } from '../cliCommands'
-import { DefinitionsByModule, DefinitionsByName } from '../names/definitionsByName'
+import { LookupTable } from '../names/base'
+import { resolveNames } from '../names/resolver'
+import { QuintError, quintErrorToString } from '../quintError'
 import { SourceLookupPath, SourceResolver, fileSourceResolver } from './sourceResolver'
 import { CallGraphVisitor, mkCallGraphContext } from '../static/callgraph'
 import { walkModule } from '../IRVisitor'
@@ -81,6 +76,16 @@ export function fromIrErrorMessage(sourceMap: SourceMap): (err: IrErrorMessage) 
     return {
       explanation: msg.explanation,
       locs: msg.refs.map(id => sourceMap.get(id) ?? unknownLoc),
+    }
+  }
+}
+
+export function fromQuintError(sourceMap: Map<bigint, Loc>): (_: QuintError) => ErrorMessage {
+  return error => {
+    const loc = sourceMap.get(error.reference) ?? unknownLoc
+    return {
+      explanation: quintErrorToString(error),
+      locs: [loc],
     }
   }
 }
@@ -287,75 +292,9 @@ export function parsePhase2sourceResolution(
  * Note that the IR may be ill-typed.
  */
 export function parsePhase3importAndNameResolution(phase2Data: ParserPhase2): ParseResult<ParserPhase3> {
-  const sourceMap: SourceMap = phase2Data.sourceMap
-
-  const definitionsByModule: DefinitionsByModule = new Map()
-
-  const definitions = phase2Data.modules.reduce((result: Either<ErrorMessage[], LookupTable>, module) => {
-    const scopeTree = treeFromModule(module)
-    const definitionsBeforeImport = collectDefinitions(module)
-    definitionsByModule.set(module.name, definitionsBeforeImport)
-
-    const [errors, definitions] = resolveImports(module, definitionsByModule)
-    const errorLocator = mkErrorMessage(sourceMap)
-
-    const importResult: Either<ErrorMessage[], DefinitionsByName> =
-      errors.size > 0 ? left(Array.from(errors, errorLocator)) : right(definitions)
-
-    definitionsByModule.set(module.name, definitions)
-
-    const conflictResult: Either<ErrorMessage[], void> = scanConflicts(definitions, scopeTree).mapLeft(
-      (conflicts): ErrorMessage[] => {
-        return conflicts.map(conflict => {
-          let msg, sources
-          if (conflict.sources.some(source => source.kind === 'builtin')) {
-            msg = `Built-in name ${conflict.identifier} is redefined in module ${module.name}`
-            sources = conflict.sources.filter(source => source.kind === 'user')
-          } else {
-            msg = `Conflicting definitions found for name ${conflict.identifier} in module ${module.name}`
-            sources = conflict.sources
-          }
-
-          const locs = sources.map(source => {
-            const id = source.kind === 'user' ? source.reference : 0n // Impossible case, but TS requires the check
-            return sourceIdToLoc(sourceMap, id)
-          })
-
-          return { explanation: msg, locs }
-        })
-      }
-    )
-
-    const resolutionResult: Either<ErrorMessage[], LookupTable> = resolveNames(module, definitions, scopeTree).mapLeft(
-      errors => {
-        // Build error message with resolution explanation and the location obtained from sourceMap
-        return errors.map(error => {
-          const msg =
-            `Failed to resolve ` +
-            (error.kind === 'type' ? 'type alias' : 'name') +
-            ` ${error.name} in definition for ${error.definitionName}, ` +
-            `in module ${error.moduleName}`
-          const id = error.reference
-          if (id) {
-            const sourceLoc = sourceMap.get(id)
-            if (!sourceLoc) {
-              console.error(`No source location found for ${id}. Please report a bug.`)
-            }
-            const loc = sourceLoc ?? unknownLoc
-            return { explanation: msg, locs: [loc] }
-          } else {
-            return { explanation: msg, locs: [] }
-          }
-        })
-      }
-    )
-
-    return mergeInMany([importResult, conflictResult, resolutionResult])
-      .chain(([_, __, table]) => result.map(t => new Map<bigint, Definition>([...t.entries(), ...table.entries()])))
-      .mapLeft(errors => errors.flat())
-  }, right(new Map()))
-
-  return definitions.map(table => ({ ...phase2Data, table }))
+  return resolveNames(phase2Data.modules)
+    .mapLeft(errors => errors.map(fromQuintError(phase2Data.sourceMap)))
+    .map(table => ({ ...phase2Data, table }))
 }
 
 /**

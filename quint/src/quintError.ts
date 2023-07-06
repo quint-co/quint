@@ -20,6 +20,8 @@ export interface QuintError {
   code: ErrorCode
   /* The error explanation */
   message: string
+  /* The id of the component that caused the error */
+  reference: bigint
   /* Additional data for the error */
   data: QuintErrorData
 }
@@ -41,15 +43,17 @@ export type ErrorCode =
   | 'QNT006'
   /* QNT007: Type names must start with an uppercase letter */
   | 'QNT007'
+  /* QNT101: Conflicting definitions for <name> */
+  | 'QNT101'
   /* QNT200: Mode error */
   | 'QNT200'
   /* QNT201: Instance overrides must be pure */
   | 'QNT201'
   /* QNT202: Multiple updates of the same variable */
   | 'QNT202'
-  /* QNT404: Module <name> not found */
+  /* QNT404: Name '<name>' not found */
   | 'QNT404'
-  /* QNT405: Name <name> not found */
+  /* QNT405: Module '<name>' not found */
   | 'QNT405'
   /* QNT406: Instantiation error */
   | 'QNT406'

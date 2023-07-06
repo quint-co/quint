@@ -12,7 +12,7 @@
  * @module
  */
 
-import { LookupTable } from './names/lookupTable'
+import { LookupTable } from './names/base'
 import { OpQualifier, QuintDef, QuintModule } from './quintIr'
 import { TypeScheme } from './types/base'
 import { TypeInferrer } from './types/inferrer'
@@ -102,10 +102,10 @@ class QuintAnalyzer {
 
     const errorTrees = [...typeErrMap, ...effectErrMap]
 
-    // TODO: Type and effec checking should return QuintErrors instead of error trees
+    // TODO: Type and effect checking should return QuintErrors instead of error trees
     this.errors.push(
       ...errorTrees.map(([id, err]): [bigint, QuintError] => {
-        return [id, { code: 'QNT000', message: errorTreeToString(err), data: { trace: err } }]
+        return [id, { code: 'QNT000', message: errorTreeToString(err), reference: id, data: { trace: err } }]
       })
     )
 

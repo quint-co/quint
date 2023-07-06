@@ -5,8 +5,7 @@ import JSONbig from 'json-bigint'
 import { QuintType } from '../../src/quintTypes'
 
 export function buildModuleWithExpressions(expressions: string[]): QuintModule {
-  const defs = expressions.map((expr, index) => `def d${index} = ${expr}`)
-  return buildModuleWithDefs(defs)
+  return buildModule([], expressions)
 }
 
 export function buildModuleWithDefs(defs: string[], name?: string, idGenerator?: IdGenerator): QuintModule {
@@ -19,6 +18,16 @@ export function buildModuleWithDefs(defs: string[], name?: string, idGenerator?:
   }
 
   throw new Error(`Couldn't parse mocked expression. Result - ${JSONbig.stringify(result)}`)
+}
+
+export function buildModule(
+  defs: string[],
+  expressions: string[],
+  name?: string,
+  idGenerator?: IdGenerator
+): QuintModule {
+  const defsFromExprs = expressions.map((expr, index) => `def d${index} = ${expr}`)
+  return buildModuleWithDefs(defs.concat(defsFromExprs), name, idGenerator)
 }
 
 export function buildDef(def: string): QuintDef {

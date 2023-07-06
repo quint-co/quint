@@ -1,3 +1,4 @@
+import { assert } from 'chai'
 import { IRVisitor, walkModule } from '../src/IRVisitor'
 import {
   QuintBool,
@@ -12,6 +13,9 @@ import {
 } from '../src/quintIr'
 import { QuintType } from '../src/quintTypes'
 import lodash from 'lodash'
+import { ParserPhase3, parse } from '../src/parsing/quintParserFrontend'
+import { SourceLookupPath } from '../src/parsing/sourceResolver'
+import { newIdGenerator } from '../src/idGenerator'
 
 export function collectIds(module: QuintModule): bigint[] {
   const ids = new Set<bigint>()
@@ -93,4 +97,14 @@ export function quintExAreEqual(a: QuintEx, b: QuintEx): boolean {
   } else {
     throw new Error(`internal error: case not handeled for quintExAreEqual over ${a.kind}`)
   }
+}
+
+export function parseMockedModule(text: string): ParserPhase3 {
+  const idGen = newIdGenerator()
+  const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
+  const parseResult = parse(idGen, 'fake_location', fake_path, text)
+  if (parseResult.isLeft()) {
+    assert.fail('Failed to parse mocked up module')
+  }
+  return parseResult.unwrap()
 }

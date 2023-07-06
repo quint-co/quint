@@ -211,11 +211,11 @@ describe('repl ok', () => {
       |>>> .clear
       |
       |>>> n * n
-      |syntax error: error: Failed to resolve name n in definition for q::input, in module __repl__
+      |syntax error: error: [QNT404] Name 'n' not found
       |n * n
       |^
       |
-      |syntax error: error: Failed to resolve name n in definition for q::input, in module __repl__
+      |syntax error: error: [QNT404] Name 'n' not found
       |n * n
       |    ^
       |

@@ -13,7 +13,7 @@
  */
 
 import { IdGenerator } from './idGenerator'
-import { LookupTable } from './names/lookupTable'
+import { LookupTable, builtinNames } from './names/base'
 import {
   FlatDef,
   FlatModule,
@@ -27,7 +27,6 @@ import {
   isAnnotatedDef,
   isFlat,
 } from './quintIr'
-import { defaultValueDefinitions } from './names/definitionsCollector'
 import { definitionToString } from './IRprinting'
 import { QuintType, Row } from './quintTypes'
 import { Loc, parsePhase3importAndNameResolution } from './parsing/quintParserFrontend'
@@ -167,7 +166,7 @@ class Flatenner {
     this.table = table
     this.currentModuleNames = new Set([
       // builtin names
-      ...defaultValueDefinitions().map(d => d.identifier),
+      ...builtinNames,
       // names from the current module
       ...compact(module.defs.map(d => (isFlat(d) ? d.name : undefined))),
     ])

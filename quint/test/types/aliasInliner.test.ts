@@ -5,7 +5,7 @@ import { parse } from '../../src/parsing/quintParserFrontend'
 import { dedent } from '../textUtils'
 import { inlineTypeAliases } from '../../src/types/aliasInliner'
 import { QuintModule } from '../../src/quintIr'
-import { LookupTable } from '../../src/names/lookupTable'
+import { LookupTable } from '../../src/names/base'
 import { moduleToString } from '../../src/IRprinting'
 import { AnalysisOutput, analyzeModules } from '../../src/quintAnalyzer'
 
