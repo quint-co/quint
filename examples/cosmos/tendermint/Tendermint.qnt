@@ -1,5 +1,5 @@
 // -*- mode: Bluespec; -*-
-module TendermintAcc {
+module Tendermint {
   /*
    A Quint specification of a simplified Tendermint consensus, tuned for
    fork accountability. The simplifications are as follows:

@@ -13,7 +13,7 @@ module TendermintModels {
 
   export n4_f1
 
-  import TendermintAcc(
+  import TendermintTest(
     Corr = Set("p1", "p2", "p3"),
     Faulty = Set("p3", "p4"),
     N = 4,
@@ -26,7 +26,7 @@ module TendermintModels {
 
   export n4_f2
 
-  import TendermintAcc(
+  import TendermintTest(
     Corr = Set("p1", "p2", "p3"),
     Faulty = Set("p4", "p5"),
     N = 5,
