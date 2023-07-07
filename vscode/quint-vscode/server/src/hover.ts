@@ -1,8 +1,24 @@
-import { AnalysisOutput, DocumentationEntry, Loc, ParserPhase3, QuintDef, QuintEx, QuintModule, TypeScheme, effectSchemeToString, findDefinitionWithId, findExpressionWithId, format, prettyQuintDef, prettyTypeScheme, qualifierToString } from "@informalsystems/quint"
-import { Hover, MarkupKind, Position } from "vscode-languageserver/node"
-import { findBestMatchingResult, locToRange } from "./reporting"
-import { TextDocument } from "vscode-languageserver-textdocument"
-import { QuintDefinitionLink, findDefinition } from "./definitions"
+import {
+  AnalysisOutput,
+  DocumentationEntry,
+  Loc,
+  ParserPhase3,
+  QuintDef,
+  QuintEx,
+  QuintModule,
+  TypeScheme,
+  effectSchemeToString,
+  findDefinitionWithId,
+  findExpressionWithId,
+  format,
+  prettyQuintDef,
+  prettyTypeScheme,
+  qualifierToString,
+} from '@informalsystems/quint'
+import { Hover, MarkupKind, Position } from 'vscode-languageserver/node'
+import { findBestMatchingResult, locToRange } from './reporting'
+import { TextDocument } from 'vscode-languageserver-textdocument'
+import { QuintDefinitionLink, findDefinition } from './definitions'
 
 // Line length for pretty printing
 const lineLength = 120
@@ -21,7 +37,8 @@ export function hover(
   const hoverText = [
     inferredDataHover(link, parsedData, analysisOutput, sourceFile, position, document),
     documentationHover(link, docs, builtInDocs),
-  ].filter(s => s.length > 0)
+  ]
+    .filter(s => s.length > 0)
     .map(s => s.join('\n'))
     .join('\n-----\n')
 
@@ -50,7 +67,10 @@ function inferredDataHover(
   }
 
   const typeResult = findBestMatchingResult(
-    parsedData.sourceMap, [...analysisOutput.types.entries()], position, sourceFile
+    parsedData.sourceMap,
+    [...analysisOutput.types.entries()],
+    position,
+    sourceFile
   )
   // There are cases where we have types but not effects, but not the other way around
   // Therefore, we only check for typeResult here and handle missing effects later
@@ -79,10 +99,13 @@ function inferredDataHover(
     return []
   }
 
-  let hoverText = ["```quint", text, "```", '']
+  let hoverText = ['```quint', text, '```', '']
 
   const effectResult = findBestMatchingResult(
-    parsedData.sourceMap, [...analysisOutput.effects.entries()], position, sourceFile
+    parsedData.sourceMap,
+    [...analysisOutput.effects.entries()],
+    position,
+    sourceFile
   )
 
   if (effectResult) {
@@ -147,15 +170,13 @@ function documentationHover(
     return []
   }
 
-  const signature = link.definitionId
-    ? docs?.get(link.definitionId)
-    : builtInDocs?.get(link.name)
+  const signature = link.definitionId ? docs?.get(link.definitionId) : builtInDocs?.get(link.name)
 
   if (!signature) {
     return []
   }
 
-  let hoverText = ["```quint", signature.label, "```", '']
+  let hoverText = ['```quint', signature.label, '```', '']
   if (signature.documentation) {
     hoverText.push(signature.documentation)
   }

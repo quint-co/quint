@@ -89,8 +89,9 @@ module gradualPonzi {
 
   // an invester may withdraw their rewards
   pure def withdraw(evm: EvmState, ponzi: PonziState, sender: Addr): Result = {
-    pure val reward = ponzi.rewards.get(sender)
-    pure val newBalances =
+    // FIXME(#693): type annotation below is a workaround, inferred type is too general
+    pure val reward: int = ponzi.rewards.get(sender)
+    pure val newBalances: Addr -> int =
       evm.balances
         .setBy(sender, old => old + reward)
         .setBy(ponzi.contract, old => old - reward)

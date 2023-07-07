@@ -221,7 +221,9 @@ export function parsePhase2sourceResolution(
   sourceToModules.set(mainPath.normalizedPath, mainPhase1Result.modules)
   const moduleRank = new Map<string, number>()
   let maxModuleRank = 0
-  mainPhase1Result.modules.reverse().forEach(m => moduleRank.set(m.name, maxModuleRank++))
+  Array.from(mainPhase1Result.modules)
+    .reverse()
+    .forEach(m => moduleRank.set(m.name, maxModuleRank++))
   while (worklist.length > 0) {
     const [importer, pathTrail] = worklist.splice(0, 1)[0]
     for (const def of importer.defs) {
@@ -266,7 +268,7 @@ export function parsePhase2sourceResolution(
           return parseResult
         }
         // all good: add the new modules to the worklist, and update the source map
-        const newModules = parseResult.value.modules.reverse()
+        const newModules = Array.from(parseResult.value.modules).reverse()
         newModules.forEach(m => {
           worklist.push([m, pathTrail.concat([importeePath])])
         })

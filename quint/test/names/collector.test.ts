@@ -231,6 +231,22 @@ describe('NameCollector', () => {
         },
       ])
     })
+
+    it('reports conflicts with module names', () => {
+      // Setup already defines a module named 'test_module', see `baseDefs`
+      const quintModule = buildModuleWithDefs(['def a = 10'], 'test_module')
+
+      const [errors, _definitions] = collect(quintModule)
+
+      assert.sameDeepMembers(errors, [
+        {
+          code: 'QNT102',
+          message: "Module with name 'test_module' was already defined",
+          reference: 3n,
+          data: {},
+        },
+      ])
+    })
   })
 
   describe('unexisting modules', () => {
