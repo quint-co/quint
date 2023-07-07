@@ -139,7 +139,6 @@ export const builtinNames = [
   'eventually',
   'next',
   'then',
-  'repeated',
   'reps',
   'fail',
   'assert',

@@ -860,33 +860,6 @@ var x: int
 run test = (x' = 1).then(x' = 2).then(x' = 3).then(assert(x == 3))
 ```
 
-## `action repeated: (bool, int) => bool`
-
-**Deprecated**: use `n.reps(A)` instead.
-
-`a.repeated(n)` is the action `a` repeated `n` times.
-
-The semantics of this operator is as follows:
-
-- When `n <= 0`, this operator is equivalent to `unchanged`.
-- When `n = 1`, `a.repeated(n)` is equivalent to `a`.
-- When `n > 1`, `a.repeated(a)`, is equivalent to `a.then(a.repeated(n - 1))`.
-
-Note that the operator `a.repeated(n)` applies `a` exactly `n` times (when `n` is
-non-negative). If you want to repeat `a` from `i` to `j` times, you can combine
-it with `orKeep`:
-
-```
-a.repeated(i).then((a.orKeep(vars)).repeated(j - i))
-```
-
-### Examples
-
-```
-var x: int
-run test = (x' = 0).then((x' = x + 1).repeated(3)).then(assert(x == 3))
-```
-
 ## `action reps: (int, (int) => bool) => bool`
 
 `n.reps(i => A(i))` or `n.reps(A)` the action `A`, `n` times.

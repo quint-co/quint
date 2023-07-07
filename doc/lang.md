@@ -64,7 +64,6 @@ Table of Contents
       * [Then](#then)
       * [Reps](#reps)
         * [Example](#example)
-      * [Repeated](#repeated)
       * [Fail](#fail)
     * [Temporal operators](#temporal-operators)
       * [Always](#always)
@@ -1796,38 +1795,6 @@ The semantics of this operator is as follows:
 var x: int
 run test = (x' = 0).then(3.reps(_ => x' = x + 1)).then(assert(x == 3))
 ```
-
-*Mode:* Run.
-
-#### Repeated
-
-**Deprecated:** This operator has [usability
-*issues](https://github.com/informalsystems/quint/issues/788).
-Migrate to `reps`, as `repeated` is going [to be
-removed](https://github.com/informalsystems/quint/issues/848).
-
-The operator `repeated` has the following syntax:
-
-```scala
-A.repeated(n)
-repeated(A, n)
-```
-
-The semantics of this operator is as follows:
-
- - When `n <= 0`, this operator is equivalent to `unchanged`.
- - When `n = 1`, `a.repeated(n)` is equivalent to `a`.
- - When `n > 1`, `a.repeated(a)`, is equivalent to `a.then(a.repeated(n - 1))`.
-
-Note that the operator `A.repeated(n)` applies `A` exactly `n` times (when `n` is
-non-negative). If you want to repeat `A` from `i` to `j` times, you can combine
-it with `orKeep` as follows:
-
-```scala
-a.repeated(i).then((a.orKeep(vars)).repeated(j - i))
-```
-
-See the description of [orKeep](#OrKeep) below.
 
 *Mode:* Run.
 

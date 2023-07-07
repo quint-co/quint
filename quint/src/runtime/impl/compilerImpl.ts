@@ -848,10 +848,6 @@ export class CompilerVisitor implements IRVisitor {
         })
         break
 
-      case 'repeated':
-        this.translateRepeated(app)
-        break
-
       case 'reps':
         this.translateReps(app)
         break
