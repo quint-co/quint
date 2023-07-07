@@ -2,7 +2,7 @@
 	"name": "quint-vscode",
 	"displayName": "Quint",
 	"description": "Language support for Quint specifications",
-	"version": "0.5.5",
+	"version": "0.6.0",
 	"publisher": "informal",
 	"engines": {
 		"vscode": "^1.52.0"
@@ -49,7 +49,8 @@
 		"watch": "tsc -b -w",
 		"postinstall": "cd server && npm install && cd ..",
 		"test": "cd server && npm test",
-		"format": "eslint --fix '**/*.ts'"
+		"format-check": "npx prettier --check '**/*.ts' && npx eslint '**/*.ts'",
+    "format": "npx prettier --write '**/*.ts' && npx eslint --fix '**/*.ts'"
 	},
 	"devDependencies": {
 		"@types/mocha": "^8.2.2",
@@ -57,6 +58,7 @@
 		"@typescript-eslint/eslint-plugin": "^5.30.6",
 		"@typescript-eslint/parser": "^5.30.6",
 		"eslint": "^8.27.0",
+    "eslint-config-prettier": "^8.8.0",
 		"eslint-config-recommended": "^4.1.0",
 		"eslint-plugin-import": "^2.26.0",
 		"eslint-plugin-json": "^3.1.0",
@@ -64,6 +66,7 @@
 		"eslint-plugin-promise": "^6.1.1",
 		"eslint-plugin-unused-imports": "^2.0.0",
 		"mocha": "^8.3.2",
+    "prettier": "2.8.8",
 		"typescript": "^4.2.3",
 		"@types/vscode": "^1.52.0",
 		"vscode-test": "^1.3.0"

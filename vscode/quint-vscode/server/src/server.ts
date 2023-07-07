@@ -24,13 +24,10 @@ import {
   SignatureHelpParams,
   TextDocumentSyncKind,
   TextDocuments,
-  createConnection
+  createConnection,
 } from 'vscode-languageserver/node'
 
-import {
-  DocumentUri,
-  TextDocument
-} from 'vscode-languageserver-textdocument'
+import { DocumentUri, TextDocument } from 'vscode-languageserver-textdocument'
 
 import {
   AnalysisOutput,
@@ -40,7 +37,7 @@ import {
   analyzeModules,
   builtinDocs,
   newIdGenerator,
-  produceDocsById
+  produceDocsById,
 } from '@informalsystems/quint'
 import { diagnosticsFromErrors, locToRange } from './reporting'
 import { URI } from 'vscode-uri'
@@ -61,12 +58,9 @@ export class QuintLanguageServer {
   private docsByDocument: Map<DocumentUri, Map<bigint, DocumentationEntry>> = new Map()
 
   // A timeout to store scheduled analysis
-  private analysisTimeout: NodeJS.Timeout = setTimeout(() => { }, 0)
+  private analysisTimeout: NodeJS.Timeout = setTimeout(() => {}, 0)
 
-  constructor(
-    private readonly connection: Connection,
-    private readonly documents: TextDocuments<TextDocument>
-  ) {
+  constructor(private readonly connection: Connection, private readonly documents: TextDocuments<TextDocument>) {
     const loadedBuiltInDocs = builtinDocs(this.idGenerator).unwrap()
 
     connection.onInitialize((_params: InitializeParams) => {
@@ -90,15 +84,16 @@ export class QuintLanguageServer {
 
     // The content of a text document has changed. This event is emitted
     // when the text document first opened or when its content has changed.
-    documents.onDidChangeContent(async(change) => {
-      parseDocument(this.idGenerator, change.document).then((result) => {
-        this.parsedDataByDocument.set(change.document.uri, result)
-        this.scheduleAnalysis(change.document)
-      }).catch(diagnostics => {
-        this.connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
-        this.scheduleAnalysis(change.document, diagnostics)
-      })
-
+    documents.onDidChangeContent(async change => {
+      parseDocument(this.idGenerator, change.document)
+        .then(result => {
+          this.parsedDataByDocument.set(change.document.uri, result)
+          this.scheduleAnalysis(change.document)
+        })
+        .catch(diagnostics => {
+          this.connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
+          this.scheduleAnalysis(change.document, diagnostics)
+        })
     })
 
     connection.onHover((params: HoverParams): Hover | undefined => {
@@ -179,15 +174,17 @@ export class QuintLanguageServer {
       const text = documents.get(uri)?.getText(range) ?? name
       const unqualifiedName = name.split('::').pop()!
       const start = text.search(new RegExp(unqualifiedName))
-      return [{
-        // The range for the name being hover over
-        originSelectionRange: locToRange(parsedData.sourceMap.get(nameId)!),
-        targetUri: uri,
-        // The range for the entire definition (including the qualifier and body)
-        targetRange: range,
-        // The range for the definition's name
-        targetSelectionRange: { ...range, start: { ...range.start, character: range.start.character + start } },
-      }]
+      return [
+        {
+          // The range for the name being hover over
+          originSelectionRange: locToRange(parsedData.sourceMap.get(nameId)!),
+          targetUri: uri,
+          // The range for the entire definition (including the qualifier and body)
+          targetRange: range,
+          // The range for the definition's name
+          targetSelectionRange: { ...range, start: { ...range.start, character: range.start.character + start } },
+        },
+      ]
     })
 
     connection.onCodeAction((params: CodeActionParams): HandlerResult<CodeAction[], void> => {
@@ -226,10 +223,12 @@ export class QuintLanguageServer {
               diagnostics: [diagnostic],
               edit: {
                 changes: {
-                  [params.textDocument.uri]: [{
-                    range: editRange,
-                    newText: fix.replacement,
-                  }],
+                  [params.textDocument.uri]: [
+                    {
+                      range: editRange,
+                      newText: fix.replacement,
+                    },
+                  ],
                 },
               },
             }
@@ -249,7 +248,7 @@ export class QuintLanguageServer {
       }
 
       // filter for modules defined in the requested textDocument
-      const localModules = parsedData.modules.filter((module) => {
+      const localModules = parsedData.modules.filter(module => {
         const loc = parsedData.sourceMap.get(module.id)
         if (!loc) {
           return false
@@ -280,7 +279,7 @@ export class QuintLanguageServer {
     const timeoutMillis = 1000
     this.connection.console.info(`Scheduling analysis in ${timeoutMillis} ms`)
     this.analysisTimeout = setTimeout(() => {
-      this.analyze(document, previousDiagnostics).catch((err) =>
+      this.analyze(document, previousDiagnostics).catch(err =>
         this.connection.console.error(`Failed to analyze: ${err.message}`)
       )
     }, timeoutMillis)

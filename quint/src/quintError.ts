@@ -43,8 +43,10 @@ export type ErrorCode =
   | 'QNT006'
   /* QNT007: Type names must start with an uppercase letter */
   | 'QNT007'
-  /* QNT101: Conflicting definitions for <name> */
+  /* QNT101: Conflicting definitions for '<name>' */
   | 'QNT101'
+  /* QNT102: Module with name '<name>' was already defined */
+  | 'QNT102'
   /* QNT200: Mode error */
   | 'QNT200'
   /* QNT201: Instance overrides must be pure */

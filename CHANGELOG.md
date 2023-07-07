@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.12.0 -- 2023-07-06
+
+### Added
 
 - Support out of order definitions (#1008)
 - Restructure of name resolution, improving performance significantly for large
@@ -17,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- An error is now reported when multiple modules are declared with the same name (#1020)
+
 ### Security
 
 ## v0.11.4 -- 2023-06-28
