@@ -7,20 +7,13 @@
 import * as path from 'path'
 import { ExtensionContext, workspace } from 'vscode'
 
-import {
-  LanguageClient,
-  LanguageClientOptions,
-  ServerOptions,
-  TransportKind
-} from 'vscode-languageclient/node'
+import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from 'vscode-languageclient/node'
 
 let client: LanguageClient
 
 export function activate(context: ExtensionContext) {
   // The server is implemented in node
-  const serverModule = context.asAbsolutePath(
-    path.join('server', 'out', 'src', 'server.js')
-  )
+  const serverModule = context.asAbsolutePath(path.join('server', 'out', 'src', 'server.js'))
   // The debug options for the server
   // --inspect=6009: runs the server in Node's Inspector mode
   // so VS Code can attach to the server for debugging
@@ -48,12 +41,7 @@ export function activate(context: ExtensionContext) {
   }
 
   // Create the language client and start the client.
-  client = new LanguageClient(
-    'quintLspClient',
-    'Quint Language Server',
-    serverOptions,
-    clientOptions
-  )
+  client = new LanguageClient('quintLspClient', 'Quint Language Server', serverOptions, clientOptions)
 
   // Start the client. This will also launch the server
   client.start()

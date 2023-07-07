@@ -12,9 +12,9 @@
  * @module
  */
 
-import { Loc, QuintError, QuintModule, findExpressionWithId, findTypeWithId } from "@informalsystems/quint"
-import { Diagnostic, DiagnosticSeverity, Position, Range } from "vscode-languageserver"
-import { compact } from "lodash"
+import { Loc, QuintError, QuintModule, findExpressionWithId, findTypeWithId } from '@informalsystems/quint'
+import { Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-languageserver'
+import { compact } from 'lodash'
 
 /**
  * Assembles a list of diagnostics from pairs of expression ids and their errors
@@ -66,7 +66,10 @@ export function assembleDiagnostic(error: QuintError, loc: Loc): Diagnostic {
  * the position is not under a name expression or an operator application
  */
 export function findName(
-  modules: QuintModule[], sources: [Loc, bigint][], position: Position, sourceFile: string
+  modules: QuintModule[],
+  sources: [Loc, bigint][],
+  position: Position,
+  sourceFile: string
 ): [string, bigint] | undefined {
   const ids = resultsOnPosition(sources, position, sourceFile)
   const names: ([string, bigint] | undefined)[] = ids.map(id => {
@@ -101,10 +104,15 @@ export function findName(
  * matches the position, or undefined if none is found
  */
 export function findBestMatchingResult<T>(
-  sourceMap: Map<bigint, Loc>, results: [bigint, T][], position: Position, sourceFile: string
-): { id: bigint, loc: Loc, result: T } | undefined {
-  const resultsByLoc: [Loc, { id: bigint, result: T }][] =
-    results.map(([id, result]) => [sourceMap.get(id)!, { id, result }])
+  sourceMap: Map<bigint, Loc>,
+  results: [bigint, T][],
+  position: Position,
+  sourceFile: string
+): { id: bigint; loc: Loc; result: T } | undefined {
+  const resultsByLoc: [Loc, { id: bigint; result: T }][] = results.map(([id, result]) => [
+    sourceMap.get(id)!,
+    { id, result },
+  ])
 
   const matchingResults = resultsOnPosition(resultsByLoc, position, sourceFile)
   if (matchingResults.length === 0) {
@@ -135,9 +143,14 @@ export function locToRange(loc: Loc): Range {
 function resultsOnPosition<T>(results: [Loc, T][], position: Position, sourceFile: string): T[] {
   const filteredResults = results.filter(([loc, _result]) => {
     // Position is part of effect's expression range
-    return (loc && loc.source === sourceFile &&
-      position.line >= loc.start.line && (!loc.end || position.line <= loc.end.line) &&
-      position.character >= loc.start.col && (!loc.end || position.character <= loc.end.col))
+    return (
+      loc &&
+      loc.source === sourceFile &&
+      position.line >= loc.start.line &&
+      (!loc.end || position.line <= loc.end.line) &&
+      position.character >= loc.start.col &&
+      (!loc.end || position.character <= loc.end.col)
+    )
   })
 
   // Sort effects by range size. We want to show the most specific effect for the position.
