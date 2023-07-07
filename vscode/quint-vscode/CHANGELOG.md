@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Better icons in VSCode outline view (#1024).
+
 ### Changed
 ### Deprecated
 ### Removed

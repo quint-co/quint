@@ -13,6 +13,19 @@ export function getDocumentSymbols(modules: QuintModule[], sourceMap: Map<bigint
 function symbolKind(def: QuintOpDef | QuintConst | QuintVar): SymbolKind {
   switch (def.kind) {
     case 'def':
+      switch (def.qualifier) {
+        case 'def':
+          return SymbolKind.Method
+        case 'puredef':
+          return SymbolKind.Function
+        case 'val':
+        case 'pureval':
+          return SymbolKind.Field
+        case 'action':
+          return SymbolKind.Event
+        case 'run':
+          return SymbolKind.Property
+      }
       return SymbolKind.Function
     case 'const':
       return SymbolKind.Constant
