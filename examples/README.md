@@ -15,6 +15,10 @@ yet. To set your expectations right, check the dashboard below first.
    most excited about. They may be a bit harder to understand though, as we
    have not polished them yet.
 
+ - [cosmwasm](./cosmwasm). Example specifications of [CosmWasm][] smart
+   contracts, another good start for beginners. You may also be interested in
+   our [solidity](./solidity) examples.
+
  - [classic](./classic). These are examples of sequential and distributed
    algorithms, which stem from the [TLA+ examples][]. These are probably the
    oldest examples in the repository, so they may use outdated features.
@@ -31,6 +35,10 @@ yet. To set your expectations right, check the dashboard below first.
  - [language-features](./language-features). These are examples that
    demonstrate some language features in isolation. They are mostly used for
    testing the tool.
+
+[Cosmos ecosystem]: https://cosmos.network
+[CosmWasm]: https://cosmwasm.com/
+[TLA+ examples]: https://github.com/tlaplus/Examples/
 
 # Dashboard
 
@@ -58,6 +66,7 @@ listed without any additional command line arguments.
 | [cosmos/lightclient/Lightclient.qnt](./cosmos/lightclient/Lightclient.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
 | [cosmos/lightclient/typedefs.qnt](./cosmos/lightclient/typedefs.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
 | [cosmos/tendermint/TendermintAcc005.qnt](./cosmos/tendermint/TendermintAcc005.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [cosmwasm/zero-to-hero/vote.qnt](./cosmwasm/zero-to-hero/vote.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
 | [language-features/booleans.qnt](./language-features/booleans.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [language-features/counters.qnt](./language-features/counters.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
 | [language-features/importFrom.qnt](./language-features/importFrom.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
