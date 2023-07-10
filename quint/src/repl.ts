@@ -88,10 +88,10 @@ class ReplState {
 
   clear() {
     this.moduleHist = ''
-    this.defsHist = ''
     this.exprHist = []
     this.compilationState = this.newCompilationState()
     this.evaluationState = newEvaluationState(newTraceRecorder(this.verbosity, this.rng))
+    this.defsHist = this.compilationState.modules[0].defs.map(def => definitionToString(def)).join('\n')
   }
 
   get recorder(): TraceRecorder {
@@ -123,7 +123,8 @@ class ReplState {
     // Introduce the __repl__ module to the compilation state so new expressions
     // are pushed to it.
     const state = newCompilationState()
-    return { ...state, modules: [{ name: '__repl__', defs: simulatorBuiltins(state), id: 0n }] }
+    const modules = [{ name: '__repl__', defs: simulatorBuiltins(state), id: 0n }]
+    return { ...state, modules: modules, originalModules: modules }
   }
 }
 
@@ -426,7 +427,7 @@ function loadFromFile(out: writer, state: ReplState, filename: string): boolean 
       const defsAndExprs = modulesAndRepl[1].split(replEnd)
 
       // save the definition history
-      newState.defsHist = defsAndExprs[0]
+      newState.defsHist += defsAndExprs[0]
       const isError = !tryEvalHistory(out, newState)
       if (isError) {
         return false

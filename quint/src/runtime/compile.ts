@@ -60,6 +60,7 @@ export interface CompilationContext {
 export interface CompilationState {
   // The ID generator used during compilation.
   idGen: IdGenerator
+  originalModules: QuintModule[]
   // A list of flattened modules.
   modules: FlatModule[]
   // The source map for the compiled code.
@@ -72,6 +73,7 @@ export interface CompilationState {
 export function newCompilationState(): CompilationState {
   return {
     idGen: newIdGenerator(),
+    originalModules: [],
     modules: [],
     sourceMap: new Map(),
     analysisOutput: {
@@ -175,8 +177,17 @@ export function compileDef(
 ): CompilationContext {
   // Define a new module list with the new definition in the last module,
   // ensuring the original object is not modified
-  const modules: QuintModule[] = [...state.modules] // Those are flat, but introducing `def` might make them non-flat
-  const lastModule: FlatModule = state.modules[state.modules.length - 1] // This is not modules.pop() to ensure flatness
+  const originalModules = [...state.originalModules]
+  const originalLastModule = originalModules.pop()
+  if (!originalLastModule) {
+    throw new Error('No original modules in state')
+  }
+  originalModules.push({ ...originalLastModule, defs: [...originalLastModule.defs, def] })
+
+  // Same for the flattened module list, but that requires extra care with types
+  const modules: QuintModule[] = [...state.modules]
+  // This is not modules.pop() to ensure flatness
+  const lastModule: FlatModule = state.modules[state.modules.length - 1]
   if (!lastModule) {
     throw new Error('No modules in state')
   }
@@ -185,7 +196,7 @@ export function compileDef(
 
   // We need to resolve names for this new definition. Incremental name
   // resolution is not our focus now, so just resolve everything again.
-  return parsePhase3importAndNameResolution({ modules: modules, sourceMap: state.sourceMap })
+  return parsePhase3importAndNameResolution({ modules: originalModules, sourceMap: state.sourceMap })
     .mapLeft(errorContextFromMessage(evaluationState.listener))
     .map(({ table }) => {
       const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, def)
@@ -204,7 +215,12 @@ export function compileDef(
       flatModules.pop()
       flatModules.push(flattenedModule)
 
-      const newState = { ...state, analysisOutput: flattenedAnalysis, modules: flatModules }
+      const newState = {
+        ...state,
+        analysisOutput: flattenedAnalysis,
+        modules: flatModules,
+        originalModules: originalModules,
+      }
       const ctx = compile(newState, evaluationState, flattenedTable, rng.next, flattenedDefs)
 
       const errorLocator = mkErrorMessage(state.sourceMap)
@@ -253,6 +269,7 @@ export function compileFromCode(
             analysisOutput
           )
           const compilationState: CompilationState = {
+            originalModules: modules,
             modules: flattenedModules,
             sourceMap,
             analysisOutput: flattenedAnalysis,
