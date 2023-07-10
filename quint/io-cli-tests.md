@@ -750,7 +750,7 @@ error: --seed must be a big integer, found: NotANumber
 
 <!-- !test in compile imports -->
 ```
-echo "init" | quint -r ../examples/language-features/imports.qnt::G 2>&1 | tail -n +3
+echo "init" | quint -r ../examples/language-features/imports.qnt::imports 2>&1 | tail -n +3
 ```
 
 <!-- !test out compile imports -->

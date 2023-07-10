@@ -80,13 +80,18 @@ module F {
   export basics as ExportedBasics
 }
 
-module G {
+module imports {
   import E
   import F as MyF
 
   action init = all {
     E::init,
     MyF::init
+  }
+
+  action step = all {
+    E::x' = E::x,
+    MyF::y' = MyF::y,
   }
 
   val test_exported1 = E::Math::pow(2, 2) == 4
