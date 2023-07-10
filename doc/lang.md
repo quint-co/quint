@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author                                                  |
 |:---------|:-----------|:--------------------------------------------------------|
-| 32       | 19.01.2023 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
+| 33       | 07.07.2023 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -126,7 +126,7 @@ Multi-line comments:
  */
 ```
 
-<a name="types"/>
+<a name="types"></a>
 
 ## Types
 
@@ -167,7 +167,7 @@ A type is one of the following:
  - Operator: `(T_1, ..., T_n) => R` for `n >= 0` argument types `T_1, ..., T_n`
    and result type `R`.
 
- - Discriminated union:
+ - **Work in progress:** Discriminated union:
     ```
        | { tag: string_1, <ident>: T_1_1, ..., <ident>: T_1_n_1}
        ...
@@ -181,15 +181,13 @@ A type is one of the following:
 It is often convenient to declare a type alias. You can use `type` to define
 an alias inside a module definition. For instance:
 
-```
-type STR_OPTION =
-    | { tag: "none" }
-    | { tag: "some", value: str }
+```bluespec
+type Temperature = int
 ```
 
 A type identifier can also introduce an uninterpreted type by defining a type without any constructors for values of that type:
 
-```
+```bluespec
 type MY_TYPE
 ```
 
@@ -256,7 +254,7 @@ module Foo {
 A single file *should* contain one top-level module, though there is no limit on
 the number of top-level modules that can be included in a file. Modules cannot
 be nested.  To ease module lookup, the name of the top-level module *should*
-match the file name. For example, a file `Orange.tla` should contain `module
+match the file name. For example, a file `Orange.qnt` should contain `module
 Orange { ... }`.  This is not a strict requirement. You have to follow it only,
 if you are using multiple modules in a file.
 
@@ -337,25 +335,25 @@ The operator names should not clash with the names of other definitions in the
 module scope. Importantly, there are **no recursive operators** (though you can
 fold over a list or a set, see below).
 
-```
+```bluespec
 // a static constant value, which is not changing over time
 pure val Nodes: Set[int] = 1 to 10
 
 // a two-argument operator that returns its first argument, independent of state
-pure def fst(x, y): ((a, b) => a) =
+pure def fst(x: a, y: b): a =
     x
 
 // the maximum operator
-pure def max(x, y): (int, int) => int =
+pure def max(x: int, y: int): int =
     if (x > y) x else y
 
 // A definition over `x` that returns a Boolean result.
 // In logic, such definition is usually called a predicate.
-pure def isPositive(x): int => bool =
+pure def isPositive(x: int): bool =
     x > 0
 
 // a higher-order operator that accepts another operator as its first argument
-pure def F(G, x): ((a => b, a) => b) = G(x)
+pure def F(G: a => b, x: a): b = G(x)
 
 // introduce a variable to define stateful definitions
 var timer: int
@@ -387,7 +385,7 @@ temporal neverNegative =
 
 ```bnf
 ("val" | "def" | "pure" "val" | "pure" "def" | "action" | "temporal")
-    <identifier>["(" <identifier> ("," ..."," <identifier>)* ")"] [":" <type>]
+    <identifier>["(" <identifier> [":" <type>] ("," ..."," <identifier> [":" <type>])* ")"] [":" <type>]
       "=" <expr> [";"]
 ```
 
@@ -404,7 +402,7 @@ The following table defines this precisely.
 ### No recursive functions and operators
 
 We've decided against having recursive operators and functions in the language.
-The practical use cases can be expressed with `map`, `filter`, and `fold`.
+The practical use cases can be expressed with `map`, `filter`, `fold`, and `foldl`.
 
 ### Module instances
 
@@ -413,18 +411,20 @@ Similar to `INSTANCE` in TLA+, we can define module instances.
 *Example:*
 
 ```scala
-// an instance of Voting that has the name "V"
-module V = Voting(Value = Set(0, 1))
+// An instance of Voting:
+//  - It copies all definitions of Voting into a new namespace V
+//  - It replaces Value with Set(0, 1)
+import Voting(Value = Set(0, 1)) as V
 
-// the names of V are accessed via "."
-val MyValues = V.Value
+// the names of V are accessed via "::"
+val MyValues = V::Value
 ```
 
 *Grammar*:
 ```bnf
-"module" <identifier> "="
+"import"
   <identifier> "("
-    [<identifier> "=" <identifier> ("," <identifier> "=" <identifier>)*] ["," "*"]
+    [<identifier> "=" <identifier> ("," <identifier> "=" <identifier>)*] ["," "*"] ["as" <identifier>] ["from" <string>]
   ")"
 ```
 
@@ -455,25 +455,17 @@ There are no theorems. You can write them in TLA+ and prove them with TLAPS.
 
 See [Namespaces and imports](#namespaces).
 
-<a name="namespaces"/>
+<a name="namespaces"></a>
 
 ## Namespaces and imports
 
 The topic of modules, namespaces, and instances is extremely obfuscated in
-TLA+, for no obvious reason. In Quint, we follow a simple approach that would not
+TLA+, for no obvious reason. In Quint, we follow a simple approach that should not
 surprise anyone, who knows modern programming languages.
 
 We are using Quint expressions in the examples in this section. It is probably a
 good idea to skip this section on the first read and read about [Quint expression
 syntax](#expressions) first.
-
-### Stateless and stateful modules
-
-We distinguish between stateless and stateful modules. A stateful module has at
-least one constant or variable declaration.  All other modules are stateless.
-This is an important distinction.  Definitions of stateless modules may be
-accessed via the dot-notation and imported, whereas stateful modules must be
-instantiated before they can be accessed.
 
 ### Namespaces
 
@@ -495,59 +487,49 @@ module Foo {
 In our example, module `Foo` has four names in its namespace: `N`, `x`,
 `Init`, and `Next`.
 
-A nested module defines its own namespace, which extends the namespace of the
-outer module:
+Quint does not allow for nested modules. However, you can mimick nested
+namespaces by using `::`. For example:
 
-```scala
-module Outer {
+```bluespec
+module Top {
   var x: int
 
   def xPlus(z) = x + z
 
-  module Inner {
-    val x2 = x + x
-  }
+  val Inner::x2 = x + x
 
-  val inv =
-    (Inner.x2 - x == x)
+  val inv = (Inner::x2 - x == x)
 }
 ```
 
-In the above example, the module `Outer` has the following names in its name
-space: `x`, `xPlus`, `inv`, and `Inner`, whereas the module `Inner` contains
-the names `x2` and the names defined in its parent modules: `x`, `xPlus`, and
-`inv`. The module `Inner` is *stateless*, so the module `Outer` may access the
-definitions of `Inner` via the dot-notation, e.g., `Inner.x2`.
+Note that in the above example, `Inner::x2` is treated as a qualified identifier, that is, it consists of the prefix `Inner` and the name `x2`.
 
-**WARNING:** We are redesigning nested modules,
-see [#496](https://github.com/informalsystems/quint/discussions/496). If you are
-starting with the language, wait a bit before using nested modules.
+*No collisions.* There must be no name collisions between names.  Shadowing of a name is not allowed. For example:
 
-*No collisions.* There must be no name collisions between child modules and parent
-modules.  Shadowing of a name is not allowed. For example:
-
-```scala
+```bluespec
 module OS {
   var clock: int
 
-  module Process {
-    var clock: int
-    //  ^^^^^ error: 'clock' is already defined in 'OS'
-  }
+  def increase(clock: int) = clock + 1
 }
 ```
 
-One solution to the above problem is to define both modules `OS` and `Process`
-at the same level, either in separate files, or inside another module.
+The Quint parser produces the following error message:
+
+```
+error: [QNT101] Conflicting definitions found for name 'clock' in module 'OS'
+4:   def increase(clock) = clock + 1
+                  ^^^^^
+```
 
 *No order.* In contrast to TLA+, namespaces are not ordered. It is perfectly
 fine to write out-of-order definitions, like in many programming languages:
 
-```scala
+```bluespec
 module outOfOrder {
   def positive(x) = max(x, 0)
 
-  def max(x, y) = x > y ? x : y
+  def max(x, y) = if (x > y) x else y
 }
 ```
 
@@ -557,16 +539,15 @@ Quint is not Fashion Police.
 
 ### Imports
 
-As it may be tedious to access definitions via the dot-notation, Quint supports
-name imports:
+Similar to mainstream programming languages, Quint supports name imports:
 
-```scala
+```bluespec
+module Math {
+  def sqr(x) = x * x
+  def pow(x, y) = x^y
+}
+
 module Imports {
-  module Math {
-    def sqr(x) = x * x
-    def pow(x, y) = x^y
-  }
-
   // import 'pow' from Math
   import Math.pow
 
@@ -575,19 +556,18 @@ module Imports {
 ```
 
 In the above example, the name `pow` is imported in the scope of the module
-`Imports`. As a result, definitions in `Imports` may refer to `pow`, which is
-just a short-hand for `Math.pow`. As you would expect, imports are not allowed
-to introduce name collisions.
+`Imports`. As a result, definitions in `Imports` may refer to `pow`. As you
+would expect, imports are not allowed to introduce name collisions.
 
 To avoid writing too many import statements, you can use `*`. For example:
 
-```scala
-module ImportAll {
-  module Math {
-    def sqr(x) = x * x
-    def pow(x, y) = x^y
-  }
+```bluespec
+module Math {
+  def sqr(x) = x * x
+  def pow(x, y) = x^y
+}
 
+module ImportAll {
   // import all names from Math
   import Math.*
 
@@ -596,27 +576,55 @@ module ImportAll {
 }
 ```
 
-*No export.* It is important to know that `import` does not introduce any
-definitions in the module that uses `import`. Hence, the following example
-produces a lookup error:
+*No re-export by default.* It is important to know that `import` does not automatically introduce any definitions in the module that uses `import`. Hence, the following example produces a lookup error:
 
-```scala
-module NoExport {
-  module MiddleMan {
-    module English {
-      val greeting = "hello"
-    }
+```bluespec
+module A {
+  pure val greeting = "hello"
+}
 
-    import English.*
-  }
+module B {
+  import A.*
+}
 
-  def greet(name) = [ MiddleMan.greeting, name ]
-  //                  ^^^^^^^^^^^^^^^^^^ error: 'MiddleMan.greeting' not found in 'NoExport'
+module C {
+  import B.*
+
+  def greet(name) = [ greeting, name ]
 }
 ```
 
-Hence, `import English.*` is working similar to `LOCAL INSTANCE English` of
-TLA+.
+Quint reports an error on the above specification:
+
+```
+error: [QNT404] Name 'greeting' not found
+12:   def greet(name) = [ greeting, name ]
+                          ^^^^^^^^
+```
+
+Hence, `import A.*` in the module `B` is working similar to `LOCAL INSTANCE
+English` of TLA+.
+
+*Re-export.* Similar to TypeScript, we can re-export imported definitions via `export`. Here is the way to fix the above example:
+
+```bluespec
+module A {
+  pure val greeting = "hello"
+}
+
+module B {
+  import A.*
+  export A.*
+  // in the future, we will simply write:
+  // export *
+}
+
+module C {
+  import B.*
+
+  def greet(name) = [ greeting, name ]
+}
+```
 
 *No hiding.* TLA allows the user to add `LOCAL` in front of an operator
 definition or an instance. Here is a TLA+ example:
@@ -629,28 +637,36 @@ G(x) == { F(x) }
 ==========================
 ```
 
-In the above example, the definition `F` is auxiliary to `G`. In Quint, we do not
-hide definitions. If you want to indicate to the users of your module, if there
-are any, that they should not access some private definitions, you may hide those
-definitions in a nested module that start with the underscore:
+In the above example, the definition `F` is auxiliary to `G`. In Quint, we do
+not hide definitions. However, if you really want to do that, `import ` allows
+you to model this behavior via a proxy module:
 
-```scala
-module Local {
-  var y: int
-  def G(x) = Set(_local.F(x))
+```bluespec
+module A::Impl {
+  pure val secretNum = 123
+}
 
-  module _local {
-    def F(x) = Set(x, y)
-  }
+module A {
+  import A::Impl.*
+
+  pure val publicNum = secretNum * secretNum + 1
+}
+
+module C {
+  import A.*
+
+  def compute(n) = publicNum * 2
+
+  // the definition below would not work
+  // def error(n) = secretNum * 2
 }
 ```
 
-By convention, a module should not access a submodule of another module, if the
-name of the submodule starts with an underscore. This is only a convention. If
-you do that, a Quint parser may issue a warning, but it will not crash.
+As a specification writer, you can always import `secretNum` from `A::Impl`. The
+only purpose of this pattern is to avoid copying unnecessary definitions, not to
+keep secrets.
 
-
-<a name="expressions"/>
+<a name="expressions"></a>
 
 ## Quint expression syntax
 
@@ -727,7 +743,7 @@ Here is the list of names that are normally used in expressions:
  - Names of state variables, e.g., `clock` in the definitions of `distance`,
    `init`, and `next`.
 
-<a name="braceAndParen"/>
+<a name="braceAndParen"></a>
 
 ### Braces and parentheses
 
@@ -1056,7 +1072,7 @@ notation would not distract you too much.
 **Discussion.** The earlier versions contained an alternative syntax `'{ e_1,
 ..., e_n }`. After receiving the feedback, we have left just one constructor.
 
-<a name="nondeterministic"/>
+<a name="nondeterministic"></a>
 
 #### Non-deterministic choice
 
@@ -1262,11 +1278,11 @@ with discriminated unions.
 
 *Mode:* Stateless, State. Other modes are not allowed.
 
-### Discriminated unions
+### Discriminated unions (work-in-progress)
 
-**WARNING:** We are redesigning discriminated unions, see
-[#539](https://github.com/informalsystems/quint/issues/539). As they are not
-fully implemented, please avoid using discriminated unions for now.
+**WARNING:** *We are redesigning discriminated unions*, see
+[#539](https://github.com/informalsystems/quint/issues/539). *As they are not
+fully implemented, please avoid using discriminated unions for now*.
 
 Quint has provides the user with special syntax for constructing and destructing
 discriminated unions.  For the type syntax of discriminated unions, see
@@ -1994,13 +2010,9 @@ operators quantify over the constants of the first-order universe.
 
 *Mode:* Stateless, State, Temporal. No Action mode.
 
-<a name="instances"/>
+<a name="instances"></a>
 
 ## Instances
-
-**WARNING:** Instances are not supported yet. See
-[#528](https://github.com/informalsystems/quint/issues/528) and
-[#237](https://github.com/informalsystems/quint/issues/237).
 
 Given a stateful module `M`, we can turn `M` into another module `I` by
 rewriting constants `M` and generating new, namespaced variables. In this case,
@@ -2035,7 +2047,7 @@ In the above example, module `V` is produced from the module `Voting` by replaci
 every occurrence of `Value`, `Acceptor`, and `Quorum` with `Set(0, 1)`, `Acceptor`,
 and `Quorum`, respectively.
 
-### No anonymous instances
+### Anonymous instances
 
 TLA+ allows one to instantiate a module and inject its definitions directly in
 the namespace of another module, e.g.:
@@ -2052,8 +2064,7 @@ INSTANCE Bar WITH x = z
 =========================
 ```
 
-Quint does not provide syntax sugar for doing that. If you want to achieve
-something similar in Quint, then you can use `export` as follows:
+Quint has similar syntax sugar for doing that:
 
 ```bluespec
 module Bar {
@@ -2062,15 +2073,14 @@ module Bar {
 }
 
 module Foo {
-  import Bar(c = 0) as FooBar
+  import Bar(c = 0).*
   
-  // reexport all definitions from `FooBar` as if they belonged to `Foo`
-  export FooBar.*
+  // In the future, we would be able to
+  // re-export all definitions from `FooBar` as if they belonged to `Foo`
+  //
+  // export *
 }
 ```
-
-Our solution is not exactly equivalent to the TLA+ specification: We had to
-explicitly introduce the name `FooBar` for the module.
 
 ### Discussion
 
