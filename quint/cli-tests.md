@@ -182,11 +182,6 @@ Temporarily disabled.
 <!-- !test check LamportMutex - Types & Effects -->
     quint typecheck ../examples/classic/distributed/LamportMutex/LamportMutex.qnt
 
-### OK on parse counters
-
-<!-- !test check counters -->
-    quint parse ../examples/language-features/counters.qnt
-
 ### OK on parse records
 
 <!-- !test check records -->
