@@ -154,6 +154,11 @@ export class NameCollector implements IRVisitor {
       return
     }
 
+    if (def.qualifiedName) {
+      const newTable = new Map([...moduleTable.entries()])
+      this.definitionsByModule.set(def.qualifiedName, newTable)
+    }
+
     const qualifier = def.defName ? undefined : def.qualifiedName ?? def.protoName
     const importableDefinitions = copyNames(moduleTable, qualifier, true)
 
