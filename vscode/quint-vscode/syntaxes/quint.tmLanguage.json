@@ -18,9 +18,6 @@
 			"include": "#constants"
 		},
 		{
-			"include": "#numbers"
-		},
-		{
 			"include": "#operators"
 		},
 		{
@@ -28,6 +25,9 @@
 		},
 		{
 			"include": "#strings"
+		},
+		{
+			"include": "#numbers"
 		}
 	],
 	"repository": {
