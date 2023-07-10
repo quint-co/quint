@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Operator `repeated` (#1026)
 
 ### Fixed
+
+- Fix bug where `export` for a qualified import would not work (#1030)
+
 ### Security
 
 ## v0.12.0 -- 2023-07-06
