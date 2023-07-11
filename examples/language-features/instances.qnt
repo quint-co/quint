@@ -7,7 +7,7 @@ module A {
   pure def g(b) = not(b)
 }
 
-module Instances {
+module instances {
   pure val MyY = true
   pure val z = "world"
 
@@ -26,4 +26,7 @@ module Instances {
 
   export A1
   export A2
+
+  action init = true
+  action step = true
 }
