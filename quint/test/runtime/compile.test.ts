@@ -1055,7 +1055,7 @@ describe('incremental compilation', () => {
       assertComputableAsString(computable, '3')
     })
 
-    it('uses the original modules to resolve names', () => {
+    it('non-exported imports are not visible in subsequent importing modules', () => {
       const { compilationState, evaluationState } = compileModules(
         'module m1 { pure val x1 = 1 }' + 'module m2 { import m1.* pure val x2 = x1 }' + 'module m3 { import m2.* }' // m1 shouldn't be acessible inside m3
       )

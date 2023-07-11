@@ -60,6 +60,7 @@ export interface CompilationContext {
 export interface CompilationState {
   // The ID generator used during compilation.
   idGen: IdGenerator
+  // A list of modules as they are constructed, without flattening.
   originalModules: QuintModule[]
   // A list of flattened modules.
   modules: FlatModule[]
@@ -155,6 +156,18 @@ export function compile(
   }
 }
 
+/**
+ * Compile a single Quint expression, given a non-empty compilation and
+ * evaluation state. That is, those states should have the results of the
+ * compilation of at least one module.
+ *
+ * @param state - The current compilation state
+ * @param evaluationState - The current evaluation state
+ * @param rng - The random number generator
+ * @param expr - The Quint exporession to be compiled
+ *
+ * @returns A compilation context with the compiled expression or its errors
+ */
 export function compileExpr(
   state: CompilationState,
   evaluationState: EvaluationState,
@@ -169,28 +182,38 @@ export function compileExpr(
   return compileDef(state, evaluationState, rng, def)
 }
 
+/**
+ * Compile a single Quint definition, given a non-empty compilation and
+ * evaluation state. That is, those states should have the results of the
+ * compilation of at least one module.
+ *
+ * @param state - The current compilation state
+ * @param evaluationState - The current evaluation state
+ * @param rng - The random number generator
+ * @param def - The Quint definition to be compiled
+ *
+ * @returns A compilation context with the compiled definition or its errors
+ */
 export function compileDef(
   state: CompilationState,
   evaluationState: EvaluationState,
   rng: Rng,
   def: QuintDef
 ): CompilationContext {
+  if (state.originalModules.length === 0 || state.modules.length === 0) {
+    throw new Error('No modules in state')
+  }
+
   // Define a new module list with the new definition in the last module,
   // ensuring the original object is not modified
   const originalModules = [...state.originalModules]
-  const originalLastModule = originalModules.pop()
-  if (!originalLastModule) {
-    throw new Error('No original modules in state')
-  }
+  const originalLastModule = originalModules.pop()!
   originalModules.push({ ...originalLastModule, defs: [...originalLastModule.defs, def] })
 
   // Same for the flattened module list, but that requires extra care with types
   const modules: QuintModule[] = [...state.modules]
   // This is not modules.pop() to ensure flatness
   const lastModule: FlatModule = state.modules[state.modules.length - 1]
-  if (!lastModule) {
-    throw new Error('No modules in state')
-  }
   modules.pop()
   modules.push({ ...lastModule, defs: [...lastModule.defs, def] })
 
