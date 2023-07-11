@@ -234,6 +234,23 @@ rm tmp-counters.qnt
 >>> 
 ```
 
+### Repl loads a module directly without wrapping it in a new module
+
+` MyF::ExportedBasics::double(2)` should be available only in the `G` module. If `G` is imported in a
+`__repl__` module, this wouldn't work.
+
+<!-- !test in repl loads a module directly -->
+```
+echo -e "init\nMyF::ExportedBasics::double(2)" | quint -r ../examples/language-features/imports.qnt::G 2>&1 | tail -n +3
+```
+
+<!-- !test out repl loads a module directly -->
+```
+>>> true
+>>> 4
+>>> 
+```
+
 ### Tests works as expected
 
 The command `test` finds failing tests and prints error messages.
