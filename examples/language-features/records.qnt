@@ -1,4 +1,4 @@
-module Records {
+module records {
     var rec1: { f1: int, f2: str | r1 }
     var rec2: { f2: str, f3: bool | r2 }
     var rec3: { f1: int }
@@ -13,13 +13,13 @@ module Records {
 
     def updateF1(r) = r.with("f1", 1) 
 
-    action Init = all {
+    action init = all {
         rec1' = { f1: 1, f2: "hello" },
         rec2' = { f2: "world", f3: true },
         rec3' = { f1: 2 },
     }
 
-    action Next = all {
+    action step = all {
         rec1' = updateF1(rec1),
         rec2' = rec2.with("f3", true),
         rec3' = updateF1(rec3),
