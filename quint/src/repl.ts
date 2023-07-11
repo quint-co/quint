@@ -427,7 +427,7 @@ function loadFromFile(out: writer, state: ReplState, filename: string): boolean 
       const defsAndExprs = modulesAndRepl[1].split(replEnd)
 
       // save the definition history
-      newState.defsHist += defsAndExprs[0]
+      newState.defsHist = defsAndExprs[0]
       const isError = !tryEvalHistory(out, newState)
       if (isError) {
         return false
