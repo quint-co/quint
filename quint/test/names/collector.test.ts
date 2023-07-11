@@ -147,7 +147,7 @@ describe('NameCollector', () => {
       assert.deepEqual(definitions.get('T'), { kind: 'type', reference: 0n, typeAnnotation: { kind: 'int', id: 0n } })
     })
 
-    it('exports previously imported qualified definitions', () => {
+    it('exports imported definitions that were previously qualified', () => {
       const quintModule = buildModuleWithDefs(['import test_module as T1', 'export T1.*'], undefined, zerog)
 
       const [errors, definitions] = collect(quintModule)
