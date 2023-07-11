@@ -538,6 +538,7 @@ function tryEvalAndClearRecorder(out: writer, state: ReplState, newInput: string
 function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   if (state.compilationState.modules.length === 0) {
     state.addReplModule()
+    tryEvalModule(out, state, '__repl__')
   }
 
   const parseResult = parseExpressionOrUnit(
