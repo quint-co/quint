@@ -111,6 +111,9 @@ export class NameCollector implements IRVisitor {
 
     const instanceTable = new Map([...moduleTable.entries()])
     if (def.qualifiedName) {
+      // Add the qualifier to `definitionsMyModule` map with a copy of the
+      // definitions, so if there is an export of that qualifier, we know which
+      // definitions to export
       this.definitionsByModule.set(def.qualifiedName, instanceTable)
     }
 
@@ -155,6 +158,9 @@ export class NameCollector implements IRVisitor {
     }
 
     if (def.qualifiedName) {
+      // Add the qualifier to `definitionsMyModule` map with a copy of the
+      // definitions, so if there is an export of that qualifier, we know which
+      // definitions to export
       const newTable = new Map([...moduleTable.entries()])
       this.definitionsByModule.set(def.qualifiedName, newTable)
     }
