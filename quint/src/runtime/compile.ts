@@ -60,7 +60,7 @@ export interface CompilationContext {
 export interface CompilationState {
   // The ID generator used during compilation.
   idGen: IdGenerator
-  // A list of modules as they are constructed, without flattening.
+  // A list of modules as they are constructed, without flattening. This is needed to derive correct name resolution during incremental compilation in a flattened context. 
   originalModules: QuintModule[]
   // A list of flattened modules.
   modules: FlatModule[]
