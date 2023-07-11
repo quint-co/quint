@@ -76,6 +76,12 @@ module vote {
   type QueryPoll = { poll_id: str }
   type QueryVote = { poll_id: str, address: Addr }
 
+  // 13 - Query
+
+  type AllPollsResponse = { polls: List[Poll] }
+  type PollResponse = { poll: List[Poll] }
+  type VoteResponse = { vote: List[Ballot] }
+
   /*** Functional layer ***/
 
   // 06 - Instantiate
@@ -154,23 +160,27 @@ module vote {
   // 13 - Query
   // https://github.com/Callum-A/cosmwasm-zero-to-hero/tree/main/13%20-%20Query
 
-  def query_all_polls(cs: ContractState): List[Poll] = {
-    cs.polls.keys().fold([], (res, poll_id) => res.append(cs.polls.get(poll_id)))
+  def query_all_polls(cs: ContractState): AllPollsResponse = {
+    val polls = cs.polls.keys().fold([], (res, poll_id) =>
+                                    res.append(cs.polls.get(poll_id)))
+    { polls: polls }
   }
 
-  def query_poll(cs: ContractState, poll_id: UUID): List[Poll] = {
-    cs.polls.keys().fold([], (res, pid) => {
+  def query_poll(cs: ContractState, poll_id: UUID): PollResponse = {
+    val poll = cs.polls.keys().fold([], (res, pid) => {
       if (pid == poll_id) res.append(cs.polls.get(poll_id)) else res
     })
+    { poll: poll }
   }
 
-  def query_vote(cs: ContractState, address: Addr, poll_id: UUID): List[Ballot] = {
+  def query_vote(cs: ContractState, address: Addr, poll_id: UUID): VoteResponse = {
     val _key = (address, poll_id)
-    if (cs.ballots.keys().contains(_key)) {
+    val vote = if (cs.ballots.keys().contains(_key)) {
       [ cs.ballots.get(_key) ]
     } else {
       []
     }
+    { vote: vote }
   }
 }
 
@@ -179,7 +189,7 @@ module vote {
 module tests {
   import vote.*
 
-  // 17 - Instantiate Test
+  // 07 - Instantiate Test
   // https://github.com/Callum-A/cosmwasm-zero-to-hero/tree/main/07%20-%20Instantiate%20Test
 
   val ADDR1: Addr = "addr1"
@@ -201,6 +211,7 @@ module tests {
   run test_execute_create_poll_valid = {
     val _cs_init = { config: { admin: "__UNINIT__" }, polls: Map(), ballots: Map() }
     val info = { sender: ADDR1 }
+    // Instantiate the contract
     val msg_inst = { admin: None }
     val _res_inst = instantiate(_cs_init, info, msg_inst)
 
@@ -219,6 +230,7 @@ module tests {
   run test_execute_create_poll_invalid = {
     val _cs_init = { config: { admin: "__UNINIT__" }, polls: Map(), ballots: Map() }
     val info = { sender: ADDR1 }
+    // Instantiate the contract
     val msg_inst = { admin: None }
     val _res_inst = instantiate(_cs_init, info, msg_inst)
 
@@ -235,6 +247,7 @@ module tests {
   run test_execute_vote_valid = {
     val _cs_init = { config: { admin: "__UNINIT__" }, polls: Map(), ballots: Map() }
     val info = { sender: ADDR1 }
+    // Instantiate the contract
     val msg_inst = { admin: None }
     val _res_inst = instantiate(_cs_init, info, msg_inst)
 
@@ -264,6 +277,7 @@ module tests {
   run test_execute_vote_invalid = {
     val _cs_init = { config: { admin: "__UNINIT__" }, polls: Map(), ballots: Map() }
     val info = { sender: ADDR1 }
+    // Instantiate the contract
     val msg_inst = { admin: None }
     val _res_inst = instantiate(_cs_init, info, msg_inst)
 
@@ -281,5 +295,105 @@ module tests {
     val msg = { poll_id: "some_id", vote: "DVPN" }
     val _res = execute_vote(_res_create.cs, info, msg.poll_id, msg.vote)
     assert(_res.error != "")
+  }
+
+  // 14 - Query Tests
+  // https://github.com/Callum-A/cosmwasm-zero-to-hero/tree/main/14%20-%20Query%20Tests
+
+  run test_query_all_polls = {
+    val _cs_init = { config: { admin: "__UNINIT__" }, polls: Map(), ballots: Map() }
+    val info = { sender: ADDR1 }
+    // Instantiate the contract
+    val msg_inst = { admin: None }
+    val _res_inst = instantiate(_cs_init, info, msg_inst)
+
+    // Create a poll
+    val msg_create = {
+        poll_id: "some_id_1",
+        question: "What's your favourite Cosmos coin?",
+        options: [ "Cosmos Hub", "Juno", "Osmosis" ]
+    }
+    val _res_create = execute_create_poll(_res_inst, info, msg_create.poll_id,
+                                          msg_create.question, msg_create.options)
+
+    // Create a second poll
+    val msg_create2 = {
+      poll_id: "some_id_2",
+      question: "What's your colour?",
+      options: [ "Red", "Green", "Blue" ]
+    }
+    val _res_create2 = execute_create_poll(_res_create.cs, info, msg_create2.poll_id,
+                                           msg_create2.question, msg_create2.options)
+
+    // Query
+    val res = query_all_polls(_res_create2.cs)
+    assert(res.polls.length() == 2)
+  }
+
+  run test_query_poll = {
+    val _cs_init = { config: { admin: "__UNINIT__" }, polls: Map(), ballots: Map() }
+    val info = { sender: ADDR1 }
+    // Instantiate the contract
+    val msg_inst = { admin: None }
+    val _res_inst = instantiate(_cs_init, info, msg_inst)
+
+    // Create a poll
+    val msg_create = {
+        poll_id: "some_id_1",
+        question: "What's your favourite Cosmos coin?",
+        options: [ "Cosmos Hub", "Juno", "Osmosis" ]
+    }
+    val _res_create = execute_create_poll(_res_inst, info, msg_create.poll_id,
+                                          msg_create.question, msg_create.options)
+
+    // Query for the poll that exists
+    val msg1 = { poll_id: "some_id_1" }
+    val res1 = query_poll(_res_create.cs, msg1.poll_id)
+
+    // Query for the poll that does not exists
+    val msg2 = { poll_id: "some_id_not_exist" }
+    val res2 = query_poll(_res_create.cs, msg2.poll_id)
+
+    all {
+      // Expect a poll
+      assert(res1.poll.length() == 1),
+      // Expect none
+      assert(res2.poll.length() == 0)
+    }
+  }
+
+  run test_query_vote = {
+    val _cs_init = { config: { admin: "__UNINIT__" }, polls: Map(), ballots: Map() }
+    val info = { sender: ADDR1 }
+    val msg_inst = { admin: None }
+    val _res_inst = instantiate(_cs_init, info, msg_inst)
+
+    // Create a poll
+    val msg_create = {
+        poll_id: "some_id_1",
+        question: "What's your favourite Cosmos coin?",
+        options: [ "Cosmos Hub", "Juno", "Osmosis" ]
+    }
+    val _res_create = execute_create_poll(_res_inst, info, msg_create.poll_id,
+                                          msg_create.question, msg_create.options)
+
+    // Create a vote, first time voting
+    val msg_vote = { poll_id: "some_id_1", vote: "Juno" }
+    val _res_vote = execute_vote(_res_create.cs, info, msg_vote.poll_id, msg_vote.vote)
+
+    // Query for a vote that exists
+    val msg1 = { poll_id: "some_id_1", address: ADDR1 }
+    val res1 = query_vote(_res_vote.cs, msg1.address, msg1.poll_id)
+
+    // Query for a vote that does not exists
+    val msg2 = { poll_id: "some_id_2", address: ADDR2 }
+    val res2 = query_vote(_res_vote.cs, msg2.address, msg2.poll_id)
+
+    all {
+      // Expect the vote to exist
+      assert(res1.vote.length() == 1),
+      // Expect the vote to not exist
+      assert(res2.vote.length() == 0)
+    }
   }
 }
