@@ -39,7 +39,7 @@ import { version } from './version'
 import { fileSourceResolver } from './parsing/sourceResolver'
 import { cwd } from 'process'
 import { newIdGenerator } from './idGenerator'
-import { definitionToString } from './IRprinting'
+import { moduleToString } from './IRprinting'
 import { EvaluationState, newEvaluationState } from './runtime/impl/compilerImpl'
 
 // tunable settings
@@ -56,8 +56,6 @@ type writer = (_text: string) => void
 class ReplState {
   // the history of module definitions loaded from external sources
   moduleHist: string
-  // definitions history
-  defsHist: string
   // expressions history (for saving and loading)
   exprHist: string[]
   // filename and module name that were loaded with .load filename module
@@ -69,29 +67,33 @@ class ReplState {
 
   constructor(verbosityLevel: number, rng: Rng) {
     this.moduleHist = ''
-    this.defsHist = ''
     this.exprHist = []
     this.lastLoadedFileAndModule = [undefined, undefined]
-    this.compilationState = this.newCompilationState()
+    this.compilationState = newCompilationState()
     this.evaluationState = newEvaluationState(newTraceRecorder(verbosityLevel, rng))
   }
 
   clone() {
     const copy = new ReplState(this.verbosity, newRng(this.rng.getState()))
     copy.moduleHist = this.moduleHist
-    copy.defsHist = this.defsHist
     copy.exprHist = this.exprHist
     copy.lastLoadedFileAndModule = this.lastLoadedFileAndModule
     copy.compilationState = this.compilationState
     return copy
   }
 
+  addReplModule() {
+    const replModule = { name: '__repl__', defs: simulatorBuiltins(this.compilationState), id: 0n }
+    this.compilationState.modules.push(replModule)
+    this.compilationState.originalModules.push(replModule)
+    this.moduleHist += moduleToString(replModule)
+  }
+
   clear() {
     this.moduleHist = ''
     this.exprHist = []
-    this.compilationState = this.newCompilationState()
+    this.compilationState = newCompilationState()
     this.evaluationState = newEvaluationState(newTraceRecorder(this.verbosity, this.rng))
-    this.defsHist = this.compilationState.modules[0].defs.map(def => definitionToString(def)).join('\n')
   }
 
   get recorder(): TraceRecorder {
@@ -117,14 +119,6 @@ class ReplState {
 
   set seed(newSeed: bigint) {
     this.rng.setState(newSeed)
-  }
-
-  private newCompilationState(): CompilationState {
-    // Introduce the __repl__ module to the compilation state so new expressions
-    // are pushed to it.
-    const state = newCompilationState()
-    const modules = [{ name: '__repl__', defs: simulatorBuiltins(state), id: 0n }]
-    return { ...state, modules: modules, originalModules: modules }
   }
 }
 
@@ -169,10 +163,6 @@ export function quintRepl(
   // the state
   const state: ReplState = new ReplState(options.verbosity, newRng())
 
-  // Add the builtins to the text history as well
-  state.defsHist = state.compilationState.modules[0].defs.map(def => definitionToString(def)).join('\n')
-
-  tryEvalHistory(out, state)
   // we let the user type a multiline string, which is collected here:
   let multilineText = ''
   // when recyclingOwnOutput is true, REPL is receiving its older output
@@ -245,16 +235,37 @@ export function quintRepl(
   // load the code from a filename and optionally import a module
   function load(filename: string, moduleName: string | undefined) {
     state.clear()
-    if (loadFromFile(out, state, filename)) {
-      state.lastLoadedFileAndModule[0] = filename
-      if (moduleName !== undefined) {
-        if (tryEvalAndClearRecorder(out, state, `import ${moduleName}.*`)) {
-          state.lastLoadedFileAndModule[1] = moduleName
-        } else {
-          out(chalk.yellow('Pick the right module name and import it (the file has been loaded)\n'))
-        }
-      }
+
+    const newState = loadFromFile(out, state, filename)
+    if (!newState) {
+      return state
     }
+
+    state.lastLoadedFileAndModule[0] = filename
+
+    const moduleNameToLoad = moduleName ?? getMainModuleAnnotation(newState.moduleHist) ?? '__repl__'
+    if (moduleNameToLoad === '__repl__') {
+      // No module to load, introduce the __repl__ module
+      newState.addReplModule()
+    }
+
+    if (tryEvalModule(out, newState, moduleNameToLoad)) {
+      state.lastLoadedFileAndModule[1] = moduleNameToLoad
+    } else {
+      out(chalk.yellow('Pick the right module name and import it (the file has been loaded)\n'))
+      return newState
+    }
+
+    if (newState.exprHist) {
+      newState.exprHist.forEach(expr => {
+        tryEvalAndClearRecorder(out, newState, expr)
+      })
+    }
+
+    state.moduleHist = newState.moduleHist
+    state.exprHist = newState.exprHist
+    state.compilationState = newState.compilationState
+    state.evaluationState = newState.evaluationState
   }
 
   // the read-eval-print loop
@@ -393,20 +404,16 @@ export function quintRepl(
   return rl
 }
 
-// private definitions
-const replBegin = 'module __repl__ {'
-const replEnd = '} //-- __repl__'
-
 function saveToFile(out: writer, state: ReplState, filename: string) {
   // 1. Write the previously loaded modules.
   // 2. Write the definitions in the special module called __repl__.
   // 3. Wrap expressions into special comments.
   try {
     const text =
-      `${state.moduleHist}
-${replBegin}
-${state.defsHist}
-${replEnd}\n` + state.exprHist.map(s => `/*! ${s} !*/\n`).join('\n')
+      `// @mainModule ${state.lastLoadedFileAndModule[1]}\n` +
+      `${state.moduleHist}` +
+      state.exprHist.map(s => `/*! ${s} !*/\n`).join('\n')
+
     writeFileSync(filename, text)
     out(`Session saved to: ${filename}\n`)
   } catch (error) {
@@ -415,53 +422,23 @@ ${replEnd}\n` + state.exprHist.map(s => `/*! ${s} !*/\n`).join('\n')
   }
 }
 
-function loadFromFile(out: writer, state: ReplState, filename: string): boolean {
+function loadFromFile(out: writer, state: ReplState, filename: string): ReplState | undefined {
   try {
-    const data = readFileSync(filename, 'utf8')
+    const modules = readFileSync(filename, 'utf8')
     const newState: ReplState = state.clone()
-    const modulesAndRepl = data.split(replBegin)
-    // whether an error occurred at some step
-    newState.moduleHist = modulesAndRepl[0]
-    if (modulesAndRepl.length > 1) {
-      // found a REPL session
-      const defsAndExprs = modulesAndRepl[1].split(replEnd)
+    newState.moduleHist = modules + newState.moduleHist
 
-      // save the definition history
-      newState.defsHist = defsAndExprs[0]
-      const isError = !tryEvalHistory(out, newState)
-      if (isError) {
-        return false
-      }
+    // unwrap the expressions from the specially crafted comments
+    const exprs = Array.from((modules ?? '').matchAll(/\/\*! (.*?) !\*\//gms) ?? []).map(groups => groups[1])
+    // and replay them one by one
 
-      if (defsAndExprs.length > 1) {
-        // unwrap the expressions from the specially crafted comments
-        const exprs = (defsAndExprs[1] ?? '').matchAll(/\/\*! (.*?) !\*\//gms) ?? []
-        // and replay them one by one
+    newState.exprHist = exprs
 
-        for (const groups of exprs) {
-          if (!tryEvalAndClearRecorder(out, newState, groups[1])) {
-            return false
-          }
-        }
-      }
-    } else {
-      const isError = !tryEvalHistory(out, newState)
-      if (isError) {
-        return false
-      }
-    }
-
-    state.moduleHist = newState.moduleHist
-    state.defsHist = newState.defsHist
-    state.exprHist = newState.exprHist
-    state.compilationState = newState.compilationState
-    state.evaluationState = newState.evaluationState
-
-    return true
+    return newState
   } catch (error) {
     out(chalk.red(error))
     out('\n')
-    return false
+    return
   }
 }
 
@@ -516,24 +493,14 @@ function parseDefOrThrow(compilationState: CompilationState, text: string): Flat
   }
 }
 
-// Compose the text input. This is not evaluated, it's only used to
-// report errors, as the error locs are relative to the input.
-function prepareModulesText(state: ReplState, textToAdd: string): string {
-  return `${state.moduleHist}
-module __repl__ {
-${state.defsHist}
-${textToAdd}
-}`
-}
-
-function tryEvalHistory(out: writer, state: ReplState): boolean {
-  const modulesText = prepareModulesText(state, '')
+function tryEvalModule(out: writer, state: ReplState, mainName: string): boolean {
+  const modulesText = state.moduleHist
   const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
 
   const context = compileFromCode(
     newIdGenerator(),
     modulesText,
-    '__repl__',
+    mainName,
     mainPath,
     state.evaluationState.listener,
     state.rng.next
@@ -569,6 +536,10 @@ function tryEvalAndClearRecorder(out: writer, state: ReplState, newInput: string
 
 // try to evaluate the expression in a string and print it, if successful
 function tryEval(out: writer, state: ReplState, newInput: string): boolean {
+  if (state.compilationState.modules.length === 0) {
+    state.addReplModule()
+  }
+
   const parseResult = parseExpressionOrUnit(
     newInput,
     '<input>',
@@ -628,7 +599,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     }
 
     out('\n') // be nice to external programs
-    state.defsHist = state.defsHist + '\n' + newInput // update the history
+    state.moduleHist = state.moduleHist.slice(0, state.moduleHist.length - 1) + newInput + '\n}' // update the history
 
     // Save compilation state
     state.compilationState = context.compilationState
@@ -655,10 +626,10 @@ function printErrorMessages(
   messages: ErrorMessage[],
   color: (_text: string) => string = chalk.red
 ) {
-  const modulesText = prepareModulesText(state, inputText)
+  const modulesText = state.moduleHist + inputText
   // display the error messages and highlight the error places
   messages.forEach(e => {
-    const text = e.locs[0].source === '<input>' ? inputText : modulesText
+    const text = e.locs[0]?.source === '<input>' ? inputText : modulesText
     const finder = lineColumn(text)
     const msg = formatError(text, finder, e, none())
     out(color(`${kind}: ${msg}\n`))
@@ -763,4 +734,9 @@ function evalExpr(state: ReplState, out: writer): Either<string, QuintEx> {
         .unwrap()
     })
     .join()
+}
+
+function getMainModuleAnnotation(moduleHist: string): string | undefined {
+  const moduleName = moduleHist.match(/^\/\/ @mainModule\s+(\w+)\n/)
+  return moduleName?.at(1)
 }
