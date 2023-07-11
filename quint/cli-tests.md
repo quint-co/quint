@@ -222,11 +222,6 @@ Temporarily disabled.
 <!-- !test check SimpleAuctionNonComposable - Syntax/Types & Effects/Unit tests -->
     quint test --main=SimpleAuction ../examples/solidity/SimpleAuction/SimpleAuctionNonComposable.qnt
 
-### OK on test nondet.qnt
-
-<!-- !test check nondet - Syntax/Types & Effects/Unit tests -->
-    quint test --main=nondetEx ../examples/language-features/nondet.qnt
-
 ### OK on test lottery.qnt
 
 <!-- TODO: Spec test is erroneous https://github.com/informalsystems/quint/issues/775 -->
