@@ -84,6 +84,9 @@ module imports {
   import E
   import F as MyF
 
+  val test_exported1 = E::Math::pow(2, 2) == 4
+  val test_exported2 = MyF::ExportedBasics::double(2) == 4
+
   action init = all {
     E::init,
     MyF::init
@@ -93,7 +96,4 @@ module imports {
     E::x' = E::x,
     MyF::y' = MyF::y,
   }
-
-  val test_exported1 = E::Math::pow(2, 2) == 4
-  val test_exported2 = MyF::ExportedBasics::double(2) == 4
 }
