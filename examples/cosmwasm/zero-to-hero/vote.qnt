@@ -14,7 +14,7 @@ module vote {
   type UUID = str
   type Uint64 = int  // FIXME: account for under/overflows
 
-  val None: Addr = ""
+  pure val None: Addr = ""
 
   type Config = {
     admin: Addr,
@@ -87,7 +87,7 @@ module vote {
   // 06 - Instantiate
   // https://github.com/Callum-A/cosmwasm-zero-to-hero/tree/main/06%20-%20Instantiate
 
-  def instantiate(cs: ContractState, info: MessageInfo,
+  pure def instantiate(cs: ContractState, info: MessageInfo,
                   msg: InstantiateMsg): ContractState = {
     val admin = if (msg.admin != None) msg.admin else info.sender
     // TODO: deps.api.addr_validate(&admin)?
@@ -97,7 +97,7 @@ module vote {
   // 09 - Execute 1
   // https://github.com/Callum-A/cosmwasm-zero-to-hero/tree/main/09%20-%20Execute%201
 
-  def execute_create_poll(cs: ContractState, info: MessageInfo, poll_id: UUID,
+  pure def execute_create_poll(cs: ContractState, info: MessageInfo, poll_id: UUID,
                           question: str, options: List[str]): Result = {
     if (options.length() > 10) {
       { cs: cs, error: "TooManyOptions" }
@@ -118,7 +118,7 @@ module vote {
   // 10 - Execute 2
   // https://github.com/Callum-A/cosmwasm-zero-to-hero/tree/main/10%20-%20Execute%202
 
-  def execute_vote(cs: ContractState, info: MessageInfo, poll_id: UUID,
+  pure def execute_vote(cs: ContractState, info: MessageInfo, poll_id: UUID,
                    vote: str): Result = {
     // CosmWasm: POLLS.may_load(deps.storage, poll_id.clone())?;
     if (not(cs.polls.keys().contains(poll_id))) {
@@ -160,20 +160,20 @@ module vote {
   // 13 - Query
   // https://github.com/Callum-A/cosmwasm-zero-to-hero/tree/main/13%20-%20Query
 
-  def query_all_polls(cs: ContractState): AllPollsResponse = {
+  pure def query_all_polls(cs: ContractState): AllPollsResponse = {
     val polls = cs.polls.keys().fold([], (res, poll_id) =>
                                     res.append(cs.polls.get(poll_id)))
     { polls: polls }
   }
 
-  def query_poll(cs: ContractState, poll_id: UUID): PollResponse = {
+  pure def query_poll(cs: ContractState, poll_id: UUID): PollResponse = {
     val poll = cs.polls.keys().fold([], (res, pid) => {
       if (pid == poll_id) res.append(cs.polls.get(poll_id)) else res
     })
     { poll: poll }
   }
 
-  def query_vote(cs: ContractState, address: Addr, poll_id: UUID): VoteResponse = {
+  pure def query_vote(cs: ContractState, address: Addr, poll_id: UUID): VoteResponse = {
     val _key = (address, poll_id)
     val vote = if (cs.ballots.keys().contains(_key)) {
       [ cs.ballots.get(_key) ]
@@ -192,8 +192,8 @@ module tests {
   // 07 - Instantiate Test
   // https://github.com/Callum-A/cosmwasm-zero-to-hero/tree/main/07%20-%20Instantiate%20Test
 
-  val ADDR1: Addr = "addr1"
-  val ADDR2: Addr = "addr2"
+  pure val ADDR1: Addr = "addr1"
+  pure val ADDR2: Addr = "addr2"
 
   // To run:
   // quint test --main=tests --match=test_ vote.qnt
