@@ -241,7 +241,7 @@ rm tmp-counters.qnt
 
 <!-- !test in repl loads a module directly -->
 ```
-echo -e "init\nMyF::ExportedBasics::double(2)" | quint -r ../examples/language-features/imports.qnt::G 2>&1 | tail -n +3
+echo -e "init\nMyF::ExportedBasics::double(2)" | quint -r ../examples/language-features/imports.qnt::imports 2>&1 | tail -n +3
 ```
 
 <!-- !test out repl loads a module directly -->
