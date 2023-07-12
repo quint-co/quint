@@ -182,41 +182,6 @@ Temporarily disabled.
 <!-- !test check LamportMutex - Types & Effects -->
     quint typecheck ../examples/classic/distributed/LamportMutex/LamportMutex.qnt
 
-### OK on parse counters
-
-<!-- !test check counters -->
-    quint parse ../examples/language-features/counters.qnt
-
-### OK on parse records
-
-<!-- !test check records -->
-    quint parse ../examples/language-features/records.qnt
-
-### OK on typecheck records
-
-<!-- !test check records - Types & Effects-->
-    quint typecheck ../examples/language-features/records.qnt
-
-### OK on parse tuples
-
-<!-- !test check tuples -->
-    quint parse ../examples/language-features/tuples.qnt
-
-### OK on typecheck tuples
-
-<!-- !test check tuples - Types & Effects-->
-    quint typecheck ../examples/language-features/tuples.qnt
-
-### OK on typecheck counters
-
-<!-- !test check counters - Types & Effects-->
-    quint typecheck ../examples/language-features/counters.qnt
-
-### OK on typecheck booleans
-
-<!-- !test check booleans - Types & Effects-->
-    quint typecheck ../examples/language-features/booleans.qnt
-
 ### OK on typecheck coin
 
 <!-- !test check coin - Types & Effects-->
@@ -226,11 +191,6 @@ Temporarily disabled.
 
 <!-- !test check SimpleAuctionNonComposable - Syntax/Types & Effects/Unit tests -->
     quint test --main=SimpleAuction ../examples/solidity/SimpleAuction/SimpleAuctionNonComposable.qnt
-
-### OK on test nondet.qnt
-
-<!-- !test check nondet - Syntax/Types & Effects/Unit tests -->
-    quint test --main=nondetEx ../examples/language-features/nondet.qnt
 
 ### OK on test lottery.qnt
 
