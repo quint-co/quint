@@ -3,7 +3,7 @@ module counters {
   var n: int
 
   // initialize the state machine
-  action Init = {
+  action init = {
     n' = 1
   }
 
@@ -31,7 +31,7 @@ module counters {
   //  - increment n, when n is positive
   //
   // Note that the three actions are not mutually exclusive.
-  action Next = any {
+  action step = any {
     OnEven,
     OnDivByThree,
     OnPositive
@@ -46,43 +46,45 @@ module counters {
       .then(n' = 3)
   }
 
-  // the run that initialized with Init and
+  // the run that initialized with init and
   // executes OnPositive twice, OnDivByThree, and OnEven
   run run2 = {
-    Init
+    init
       .then(OnPositive)
       .then(OnPositive)
       .then(OnDivByThree)
       .then(OnEven)
   }
 
-  // execute Init and then Next four times
+  // execute init and then step four times
   run run3 = {
-    Init.then(4.reps(_ => Next))
+    init.then(4.reps(_ => step))
   }
 
-  // execute Init and then Next ten times, while asserting n < 5
+  // execute init and then step ten times, while asserting n < 5
   run run4 = {
-    Init.then(10.reps(_ => all {
+    init.then(10.reps(_ => all {
       assert(n < 5),
-      Next,
+      step,
     }))
   }
 
   // this test should not fail
   run passingTest = {
-    Init.then(10.reps(_ => all {
+    init.then(10.reps(_ => all {
         assert(n > 0),
-        Next,
+        step,
     }))
   }
 
-  // this test should fail
+  // this tests for a failing condition
   run failingTest = {
-    Init.then(10.reps(_ => all {
-        assert(n == 0),
-        Next,
-    }))
+    init
+      .then(10.reps(_ => all {
+         n == 0,
+         step,
+       }))
+      .fail()
   }
 
   // this is just a value, and it should be ignored as a test
