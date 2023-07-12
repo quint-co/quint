@@ -339,6 +339,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     analysisOutput
   )
   const compilationState = {
+    originalModules: testing.modules,
     modules: flattenedModules,
     sourceMap: testing.sourceMap,
     analysisOutput: flattenedAnalysis,
