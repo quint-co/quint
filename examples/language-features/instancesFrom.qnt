@@ -1,4 +1,4 @@
-module InstancesFrom {
+module instancesFrom {
   pure val MyY = true
   pure val z = "world"
 
@@ -17,4 +17,7 @@ module InstancesFrom {
 
   export A1
   export A2
+
+  action init = true
+  action step = true
 }

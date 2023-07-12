@@ -190,7 +190,7 @@ echo "import counters.*" | quint -r ../examples/language-features/counters.qnt 2
 
 <!-- !test in repl loads a file and a module -->
 ```
-echo "Init" | quint -r ../examples/language-features/counters.qnt::counters 2>&1 | tail -n +3
+echo "init" | quint -r ../examples/language-features/counters.qnt::counters 2>&1 | tail -n +3
 ```
 
 <!-- !test out repl loads a file and a module -->
@@ -222,7 +222,7 @@ echo ".save tmp-counters.qnt" \
   | quint -r ../examples/language-features/counters.qnt::counters 2>&1 \
   | tail -n +3
 # do not auto-import counters, as it is imported already
-echo "Init" \
+echo "init" \
   | quint -r tmp-counters.qnt 2>&1 \
   | tail -n +3
 rm tmp-counters.qnt
@@ -244,27 +244,24 @@ The command `test` finds failing tests and prints error messages.
 <!-- !test exit 1 -->
 <!-- !test in test runs -->
 ```
-output=$(quint test --main counters --seed 1 ../examples/language-features/counters.qnt)
+output=$(quint test --main failingTestCounters --seed 1 ./testFixture/simulator/failingTestCounters.qnt)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*failingTestCounters.qnt#      HOME/failingTestCounters.qnt#g'
 exit $exit_code
 ```
 
 <!-- !test out test runs -->
 ```
 
-  counters
-    ok passingTest passed 10000 test(s)
+  failingTestCounters
     1) failingTest failed after 1 test(s)
 
-  1 passing (duration)
   1 failed
-  1 ignored
 
   1) failingTest:
-      HOME/counters.qnt:83:9 - error: Assertion failed
-      83:         assert(n == 0),
-    Use --seed=0x1109d --match=failingTest to repeat.
+      HOME/failingTestCounters.qnt:45:10 - error: Assertion failed
+      45:          assert(n == 0),
+    Use --seed=0x1 --match=failingTest to repeat.
 
 
   Use --verbosity=3 to show executions.
@@ -278,31 +275,28 @@ recorded yet.
 <!-- !test exit 1 -->
 <!-- !test in test empty trace -->
 ```
-output=$(quint test --seed 1 --verbosity=3 ../examples/language-features/counters.qnt)
+output=$(quint test --seed 1 --verbosity=3 ./testFixture/simulator/failingTestCounters.qnt)
 exit_code=$?
-echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*failingTestCounters.qnt#      HOME/failingTestCounters.qnt#g'
 exit $exit_code
 ```
 
 <!-- !test out test empty trace -->
 ```
 
-  counters
-    ok passingTest passed 10000 test(s)
+  failingTestCounters
     1) failingTest failed after 1 test(s)
 
-  1 passing (duration)
   1 failed
-  1 ignored
 
   1) failingTest:
-      HOME/counters.qnt:83:9 - error: Assertion failed
-      83:         assert(n == 0),
+      HOME/failingTestCounters.qnt:45:10 - error: Assertion failed
+      45:          assert(n == 0),
 
 [Frame 0]
-Init() => true
+init() => true
 
-    Use --seed=0x1109d --match=failingTest to repeat.
+    Use --seed=0x1 --match=failingTest to repeat.
 ```
 
 ### Run finds an invariant violation
@@ -311,7 +305,7 @@ The command `run` finds an invariant violation.
 
 <!-- !test in run finds violation -->
 ```
-output=$(quint run --init=Init --step=Next --seed=0x308623f2a48e7 --max-steps=4 \
+output=$(quint run --seed=0x308623f2a48e7 --max-steps=4 \
   --invariant='n < 10' ../examples/language-features/counters.qnt 2>&1)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*counters.qnt#      HOME/counters.qnt#g'
@@ -345,8 +339,7 @@ The command `run` finds an example.
 
 <!-- !test in run finds example -->
 ```
-quint run --init=Init --step=Next --seed=17 --max-steps=4 \
-  --invariant='n < 100' ../examples/language-features/counters.qnt 2>&1 | \
+quint run --seed=17 --max-steps=4 --invariant='n < 100' ../examples/language-features/counters.qnt 2>&1 | \
   sed 's/([0-9]*ms)/(duration)/g' | \
   sed 's#^.*counters.qnt#      HOME/counters.qnt#g'
 ```
@@ -757,7 +750,7 @@ error: --seed must be a big integer, found: NotANumber
 
 <!-- !test in compile imports -->
 ```
-echo "init" | quint -r ../examples/language-features/imports.qnt::G 2>&1 | tail -n +3
+echo "init" | quint -r ../examples/language-features/imports.qnt::imports 2>&1 | tail -n +3
 ```
 
 <!-- !test out compile imports -->
@@ -771,7 +764,7 @@ echo "init" | quint -r ../examples/language-features/imports.qnt::G 2>&1 | tail 
 
 <!-- !test in compile instances -->
 ```
-echo -e "A1::f(1)\nA2::f(1)" | quint -r ../examples/language-features/instances.qnt::Instances 2>&1 | tail -n +3
+echo -e "A1::f(1)\nA2::f(1)" | quint -r ../examples/language-features/instances.qnt::instances 2>&1 | tail -n +3
 ```
 
 <!-- !test out compile instances -->
