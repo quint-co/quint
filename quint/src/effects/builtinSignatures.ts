@@ -218,7 +218,6 @@ const temporalOperators = [
 const otherOperators = [
   { name: 'assign', effect: parseAndQuantify('(Read[r1], Read[r2]) => Read[r2] & Update[r1]') },
   { name: 'then', effect: parseAndQuantify('(Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r] & Update[u]') },
-  { name: 'repeated', effect: parseAndQuantify('(Read[r] & Update[u], Pure) => Read[r] & Update[u]') },
   { name: 'reps', effect: parseAndQuantify('(Pure, (Read[r1]) => Read[r2] & Update[u]) => Read[r1, r2] & Update[u]') },
   { name: 'fail', effect: propagateComponents(['read', 'update'])(1) },
   { name: 'assert', effect: propagateComponents(['read'])(1) },

@@ -60,6 +60,10 @@ export interface CompilationContext {
 export interface CompilationState {
   // The ID generator used during compilation.
   idGen: IdGenerator
+  // A list of modules as they are constructed, without flattening. This is
+  // needed to derive correct name resolution during incremental compilation in
+  // a flattened context.
+  originalModules: QuintModule[]
   // A list of flattened modules.
   modules: FlatModule[]
   // The source map for the compiled code.
@@ -72,6 +76,7 @@ export interface CompilationState {
 export function newCompilationState(): CompilationState {
   return {
     idGen: newIdGenerator(),
+    originalModules: [],
     modules: [],
     sourceMap: new Map(),
     analysisOutput: {
@@ -153,6 +158,18 @@ export function compile(
   }
 }
 
+/**
+ * Compile a single Quint expression, given a non-empty compilation and
+ * evaluation state. That is, those states should have the results of the
+ * compilation of at least one module.
+ *
+ * @param state - The current compilation state
+ * @param evaluationState - The current evaluation state
+ * @param rng - The random number generator
+ * @param expr - The Quint exporession to be compiled
+ *
+ * @returns A compilation context with the compiled expression or its errors
+ */
 export function compileExpr(
   state: CompilationState,
   evaluationState: EvaluationState,
@@ -167,25 +184,44 @@ export function compileExpr(
   return compileDef(state, evaluationState, rng, def)
 }
 
+/**
+ * Compile a single Quint definition, given a non-empty compilation and
+ * evaluation state. That is, those states should have the results of the
+ * compilation of at least one module.
+ *
+ * @param state - The current compilation state
+ * @param evaluationState - The current evaluation state
+ * @param rng - The random number generator
+ * @param def - The Quint definition to be compiled
+ *
+ * @returns A compilation context with the compiled definition or its errors
+ */
 export function compileDef(
   state: CompilationState,
   evaluationState: EvaluationState,
   rng: Rng,
   def: QuintDef
 ): CompilationContext {
-  // Define a new module list with the new definition in the last module,
-  // ensuring the original object is not modified
-  const modules: QuintModule[] = [...state.modules] // Those are flat, but introducing `def` might make them non-flat
-  const lastModule: FlatModule = state.modules[state.modules.length - 1] // This is not modules.pop() to ensure flatness
-  if (!lastModule) {
+  if (state.originalModules.length === 0 || state.modules.length === 0) {
     throw new Error('No modules in state')
   }
+
+  // Define a new module list with the new definition in the last module,
+  // ensuring the original object is not modified
+  const originalModules = [...state.originalModules]
+  const originalLastModule = originalModules.pop()!
+  originalModules.push({ ...originalLastModule, defs: [...originalLastModule.defs, def] })
+
+  // Same for the flattened module list, but that requires extra care with types
+  const modules: QuintModule[] = [...state.modules]
+  // This is not modules.pop() to ensure flatness
+  const lastModule: FlatModule = state.modules[state.modules.length - 1]
   modules.pop()
   modules.push({ ...lastModule, defs: [...lastModule.defs, def] })
 
   // We need to resolve names for this new definition. Incremental name
   // resolution is not our focus now, so just resolve everything again.
-  return parsePhase3importAndNameResolution({ modules: modules, sourceMap: state.sourceMap })
+  return parsePhase3importAndNameResolution({ modules: originalModules, sourceMap: state.sourceMap })
     .mapLeft(errorContextFromMessage(evaluationState.listener))
     .map(({ table }) => {
       const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, def)
@@ -204,7 +240,12 @@ export function compileDef(
       flatModules.pop()
       flatModules.push(flattenedModule)
 
-      const newState = { ...state, analysisOutput: flattenedAnalysis, modules: flatModules }
+      const newState = {
+        ...state,
+        analysisOutput: flattenedAnalysis,
+        modules: flatModules,
+        originalModules: originalModules,
+      }
       const ctx = compile(newState, evaluationState, flattenedTable, rng.next, flattenedDefs)
 
       const errorLocator = mkErrorMessage(state.sourceMap)
@@ -253,6 +294,7 @@ export function compileFromCode(
             analysisOutput
           )
           const compilationState: CompilationState = {
+            originalModules: modules,
             modules: flattenedModules,
             sourceMap,
             analysisOutput: flattenedAnalysis,

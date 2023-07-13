@@ -148,3 +148,7 @@ module ReadersWriters {
       Actors.forall(actor => always(eventually(not(actor.in(writers))))),
   }
 }
+
+module ReadersWriters_5 {
+  import ReadersWriters(NumActors = 5).*
+}

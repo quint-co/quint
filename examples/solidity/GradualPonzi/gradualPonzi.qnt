@@ -197,7 +197,7 @@ module gradualPonziTest {
 
   // Check this invariant to make sure that no account goes negative:
   //
-  // $ quint run --invariant=noNegativeInv --main=simplePonziTest simplePonzi.qnt
+  // $ quint run --invariant=noNegativeInv --main=gradualPonziTest gradualPonzi.qnt
   //
   // By looking at the code, do you think noNegativeInv holds true?
   val noNegativeInv = {

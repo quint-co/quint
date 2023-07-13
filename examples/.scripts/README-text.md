@@ -14,6 +14,10 @@ yet. To set your expectations right, check the dashboard below first.
    most excited about. They may be a bit harder to understand though, as we
    have not polished them yet.
 
+ - [cosmwasm](./cosmwasm). Example specifications of [CosmWasm][] smart
+   contracts, another good start for beginners. You may also be interested in
+   our [solidity](./solidity) examples.
+
  - [classic](./classic). These are examples of sequential and distributed
    algorithms, which stem from the [TLA+ examples][]. These are probably the
    oldest examples in the repository, so they may use outdated features.
@@ -30,6 +34,10 @@ yet. To set your expectations right, check the dashboard below first.
  - [language-features](./language-features). These are examples that
    demonstrate some language features in isolation. They are mostly used for
    testing the tool.
+
+[Cosmos ecosystem]: https://cosmos.network
+[CosmWasm]: https://cosmwasm.com/
+[TLA+ examples]: https://github.com/tlaplus/Examples/
 
 # Dashboard
 

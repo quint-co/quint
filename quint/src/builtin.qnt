@@ -790,32 +790,6 @@ module builtin {
   /// ```
   action then(a, b): (bool, bool) => bool
 
-  /// **Deprecated**: use `n.reps(A)` instead.
-  ///
-  /// `a.repeated(n)` is the action `a` repeated `n` times.
-  ///
-  /// The semantics of this operator is as follows:
-  ///
-  /// - When `n <= 0`, this operator is equivalent to `unchanged`.
-  /// - When `n = 1`, `a.repeated(n)` is equivalent to `a`.
-  /// - When `n > 1`, `a.repeated(a)`, is equivalent to `a.then(a.repeated(n - 1))`.
-  ///
-  /// Note that the operator `a.repeated(n)` applies `a` exactly `n` times (when `n` is
-  /// non-negative). If you want to repeat `a` from `i` to `j` times, you can combine
-  /// it with `orKeep`:
-  ///
-  /// ```
-  /// a.repeated(i).then((a.orKeep(vars)).repeated(j - i))
-  /// ```
-  ///
-  /// ### Examples
-  ///
-  /// ```
-  /// var x: int
-  /// run test = (x' = 0).then((x' = x + 1).repeated(3)).then(assert(x == 3))
-  /// ```
-  action repeated(a, n): (bool, int) => bool
-
   /// `n.reps(i => A(i))` or `n.reps(A)` the action `A`, `n` times.
   /// The iteration number, starting with 0, is passed as an argument of `A`.
   /// As actions are usually not parameterized by the iteration number,

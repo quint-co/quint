@@ -23,6 +23,10 @@ get_main () {
   local main=""
   if [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ]] ; then
     main="--main=LamportMutex_3_10"
+  elif [[ "$file" == "classic/distributed/ReadersWriters/ReadersWriters.qnt" ]] ; then
+    main="--main=ReadersWriters_5"
+  elif [[ "$file" == "solidity/ERC20/erc20.qnt" ]] ; then
+    main="--main=erc20Tests"
   elif [[ "$file" == "solidity/SimplePonzi/simplePonzi.qnt" ]] ; then
     main="--main=simplePonziTest"
   elif [[ "$file" == "solidity/GradualPonzi/gradualPonzi.qnt" ]] ; then
@@ -35,6 +39,8 @@ get_verify_args () {
   local file="$1"
   local args=""
   if [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ]] ; then
+    args="--init=Init --step=Next"
+  elif [[ "$file" == "classic/distributed/ReadersWriters/ReadersWriters.qnt" ]] ; then
     args="--init=Init --step=Next"
   fi
   echo "${args}"

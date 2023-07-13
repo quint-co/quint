@@ -7,4 +7,7 @@ module importFrom {
   run importTest = {
     assert(pow(5, 2) == sqr(5))
   }
+
+  action init = true
+  action step = true
 }

@@ -925,16 +925,6 @@ describe('compiling specs to runtime values', () => {
       assertVarAfterCall('n', '12', 'run1', input)
     })
 
-    it('repeated', () => {
-      const input = dedent(
-        `var n: int
-        |run run1 = (n' = 1).then((n' = n + 1).repeated(3))
-        `
-      )
-
-      assertVarAfterCall('n', '4', 'run1', input)
-    })
-
     it('reps', () => {
       const input = dedent(
         `var n: int
@@ -1020,6 +1010,7 @@ describe('incremental compilation', () => {
     )
 
     const state: CompilationState = {
+      originalModules: modules,
       idGen,
       modules: flattenedModules,
       sourceMap,
@@ -1062,6 +1053,34 @@ describe('incremental compilation', () => {
 
       const computable = context.evaluationState?.context.get(kindName('callable', def!.id))!
       assertComputableAsString(computable, '3')
+    })
+
+    it('non-exported imports are not visible in subsequent importing modules', () => {
+      const { compilationState, evaluationState } = compileModules(
+        'module m1 { pure val x1 = 1 }' + 'module m2 { import m1.* pure val x2 = x1 }' + 'module m3 { import m2.* }' // m1 shouldn't be acessible inside m3
+      )
+
+      const parsed = parseExpressionOrUnit(
+        'def x3 = x1',
+        'test.qnt',
+        compilationState.idGen,
+        compilationState.sourceMap
+      )
+      const def = parsed.kind === 'toplevel' ? parsed.def : undefined
+      const context = compileDef(compilationState, evaluationState, dummyRng, def!)
+
+      assert.sameDeepMembers(context.syntaxErrors, [
+        {
+          explanation: "[QNT404] Name 'x1' not found",
+          locs: [
+            {
+              source: 'test.qnt',
+              start: { line: 0, col: 9, index: 9 },
+              end: { line: 0, col: 10, index: 10 },
+            },
+          ],
+        },
+      ])
     })
   })
 })
