@@ -1,5 +1,5 @@
 /// A Quint specification following Callum-A's cosmwasm-zero-to-hero tutorial:
-/// https://github.com/Callum-A/cosmwasm-zero-to-hero
+/// https://github.com/Callum-A/cosmwasm-zero-to-hero/tree/03e33968f588b192c04fadb984ae853b7dc5e64e
 ///
 /// We refer to the relevant tutorial chapters in comments below.
 
