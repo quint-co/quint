@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix bug where `export` for a qualified import would not work (#1030)
 - Fix a problem where name resolution would fail to flag name errors for
   non-exported names in incremetal evaluation in REPL (#1031)
+- Fix a problem where some definitions would have to be exported from the
+  main module in order for the REPL and the simulator to load them (#1039 and #1051)
 
 ### Security
 
