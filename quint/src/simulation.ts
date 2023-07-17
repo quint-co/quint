@@ -62,7 +62,7 @@ function errSimulationResult(status: SimulatorResultStatus, errors: ErrorMessage
  * Execute a run.
  *
  * @param idGen a unique generator of identifiers
- * @param code the source code of the modules
+ * @param modules the list of modules
  * @param mainName the module that should be used as a state machine
  * @param mainPath the lookup path that was used to retrieve the main module
  * @param options simulator settings
