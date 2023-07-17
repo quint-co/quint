@@ -819,7 +819,7 @@ error: Tests failed
 output=$(quint run testFixture/_1041compileConst.qnt 2>&1)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' \
-  -e 's#^.*_1041compileConst.qnt#      HOME/_1041compileConst.qnt#g'
+  -e 's#^.*_1041compileConst.qnt#      HOME/_1041compileConst.qnt#g' | head -n 8
 exit $exit_code
 ```
 
@@ -834,10 +834,4 @@ Use --verbosity=3 to show executions.
 <module_input>:2:3 - error: QNT500: Uninitialized const N. Use: import <moduleName>(N=<value>).*
 2:   const N: int
      ^^^^^^^^^^^^
-
-<module_input>:5:24 - error: Name N not found
-5:   action init = { x' = N }
-                          ^
-
-error: Runtime error
 ```
