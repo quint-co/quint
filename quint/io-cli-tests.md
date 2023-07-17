@@ -801,9 +801,43 @@ exit $exit_code
 ```
 
   _1040compileError
+      HOME/_1040compileError.qnt:2:3 - error: QNT500: Uninitialized const n. Use: import <moduleName>(n=<value>).*
+2:   const n: int
+     ^^^^^^^^^^^^
+
       HOME/_1040compileError.qnt:5:12 - error: Name n not found
 5:     assert(n > 0)
               ^
 
 error: Tests failed
+```
+
+### Fail on run with uninitialized constants
+
+<!-- !test in run uninitialized -->
+```
+output=$(quint run testFixture/_1041compileConst.qnt 2>&1)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' \
+  -e 's#^.*_1041compileConst.qnt#      HOME/_1041compileConst.qnt#g'
+exit $exit_code
+```
+
+<!-- !test exit 1 -->
+<!-- !test out run uninitialized -->
+```
+An example execution:
+
+[failure] Found an issue (duration).
+Use --seed=0x0 to reproduce.
+Use --verbosity=3 to show executions.
+<module_input>:2:3 - error: QNT500: Uninitialized const N. Use: import <moduleName>(N=<value>).*
+2:   const N: int
+     ^^^^^^^^^^^^
+
+<module_input>:5:24 - error: Name N not found
+5:   action init = { x' = N }
+                          ^
+
+error: Runtime error
 ```

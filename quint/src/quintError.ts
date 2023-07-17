@@ -43,6 +43,8 @@ export type ErrorCode =
   | 'QNT006'
   /* QNT007: Type names must start with an uppercase letter */
   | 'QNT007'
+  /* QNT099: Found cyclic definitions */
+  | 'QNT099'
   /* QNT101: Conflicting definitions for '<name>' */
   | 'QNT101'
   /* QNT102: Module with name '<name>' was already defined */
@@ -61,8 +63,8 @@ export type ErrorCode =
   | 'QNT406'
   /* QNT407: Cannot import self */
   | 'QNT407'
-  /* QNT099: Found cyclic definitions */
-  | 'QNT099'
+  /* QNT500: Unitialized constant */
+  | 'QNT500'
 
 /* Additional data for a Quint error */
 export interface QuintErrorData {

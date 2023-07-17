@@ -33,6 +33,7 @@ import { ExecutionListener } from '../trace'
 import * as ir from '../../quintIr'
 
 import { RuntimeValue, rv } from './runtimeValue'
+import { ErrorCode } from '../../quintError'
 
 import { lastTraceName } from '../compile'
 
@@ -321,6 +322,13 @@ export class CompilerVisitor implements IRVisitor {
       boundValue.eval = boundValueEval
       return result
     }
+  }
+
+  exitConst(cdef: ir.QuintConst) {
+    // all constants should be instantiated before running the simulator
+    const code: ErrorCode = 'QNT500'
+    const msg = `${code}: Uninitialized const ${cdef.name}. Use: import <moduleName>(${cdef.name}=<value>).*`
+    this.errorTracker.addCompileError(cdef.id, msg)
   }
 
   exitVar(vardef: ir.QuintVar) {
