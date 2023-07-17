@@ -80,7 +80,8 @@ module SimpleAuction {
     // No gas fees are taken into account.
     pure def evmSend(es: EvmState,
                      fromAddr: Addr, toAddr: Addr, value: int): EvmState = {
-        val bs = es.balances
+        // FIXME(#693): type annotation below is a workaround, inferred type is too general
+        val bs: Addr -> UInt = es.balances
         val fromBal = bs.get(fromAddr) - value
         val toBal = bs.get(toAddr) + value
         // compute the balances after `evmSend`
