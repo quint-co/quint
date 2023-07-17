@@ -65,9 +65,57 @@ describe('definitionToString', () => {
     assert.deepEqual(definitionToString(def), expectedDef)
   })
 
+  it('pretty prints import definitions with qualifier', () => {
+    const def = buildDef('import M as M1')
+    const expectedDef = 'import M as M1'
+    assert.deepEqual(definitionToString(def), expectedDef)
+  })
+
+  it('pretty prints import definitions with the module name as qualifier', () => {
+    const def = buildDef('import M')
+    const expectedDef = 'import M'
+    assert.deepEqual(definitionToString(def), expectedDef)
+  })
+
+  it('pretty prints import definitions with from statement', () => {
+    const def = buildDef('import M.* from "./file"')
+    const expectedDef = 'import M.* from "./file"'
+    assert.deepEqual(definitionToString(def), expectedDef)
+  })
+
   it('pretty prints instance definitions', () => {
+    const def = buildDef('import M(x = N + 1, y = 3).*')
+    const expectedDef = 'import M(x = iadd(N, 1), y = 3).*'
+    assert.deepEqual(definitionToString(def), expectedDef)
+  })
+
+  it('pretty prints instance definitions with qualifier', () => {
     const def = buildDef('import M(x = N + 1, y = 3) as A')
     const expectedDef = 'import M(x = iadd(N, 1), y = 3) as A'
+    assert.deepEqual(definitionToString(def), expectedDef)
+  })
+
+  it('pretty prints instance definitions with from statement', () => {
+    const def = buildDef('import M(x = N + 1, y = 3) as A from "./file"')
+    const expectedDef = 'import M(x = iadd(N, 1), y = 3) as A from "./file"'
+    assert.deepEqual(definitionToString(def), expectedDef)
+  })
+
+  it('pretty prints export definitions', () => {
+    const def = buildDef('export M.*')
+    const expectedDef = 'export M.*'
+    assert.deepEqual(definitionToString(def), expectedDef)
+  })
+
+  it('pretty prints export definitions with qualifier', () => {
+    const def = buildDef('export M as M1')
+    const expectedDef = 'export M as M1'
+    assert.deepEqual(definitionToString(def), expectedDef)
+  })
+
+  it('pretty prints export definitions with the module name as qualifier', () => {
+    const def = buildDef('export M')
+    const expectedDef = 'export M'
     assert.deepEqual(definitionToString(def), expectedDef)
   })
 

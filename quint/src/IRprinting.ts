@@ -73,6 +73,9 @@ export function definitionToString(def: QuintDef, includeBody: boolean = true, t
       if (def.qualifiedName) {
         text += ` as ${def.qualifiedName}`
       }
+      if (def.fromSource) {
+        text += ` from "${def.fromSource}"`
+      }
       return text
     }
     case 'export': {
@@ -87,7 +90,16 @@ export function definitionToString(def: QuintDef, includeBody: boolean = true, t
     }
     case 'instance': {
       const overrides = def.overrides.map(o => `${o[0].name} = ${expressionToString(o[1])}`).join(', ')
-      return `import ${def.protoName}(${overrides}) as ${def.qualifiedName}`
+      let text = `import ${def.protoName}(${overrides})`
+      if (def.qualifiedName) {
+        text += ` as ${def.qualifiedName}`
+      } else {
+        text += `.*`
+      }
+      if (def.fromSource) {
+        text += ` from "${def.fromSource}"`
+      }
+      return text
     }
   }
 }

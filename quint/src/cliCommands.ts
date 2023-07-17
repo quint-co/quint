@@ -473,7 +473,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const startMs = Date.now()
 
   const mainPath = fileSourceResolver().lookupPath(dirname(prev.args.input), basename(prev.args.input))
-  const result = compileAndRun(newIdGenerator(), prev.sourceCode, mainName, mainPath, options)
+  const result = compileAndRun(newIdGenerator(), prev.modules, mainName, mainPath, options)
 
   if (result.status === 'error') {
     const errors = prev.errors ? prev.errors.concat(result.errors) : result.errors

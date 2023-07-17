@@ -12,12 +12,13 @@ import { Either } from '@sweet-monads/either'
 
 import { compileFromCode, contextNameLookup, lastTraceName } from './runtime/compile'
 import { ErrorMessage } from './parsing/quintParserFrontend'
-import { QuintEx } from './quintIr'
+import { QuintEx, QuintModule } from './quintIr'
 import { Computable } from './runtime/runtime'
 import { ExecutionFrame, newTraceRecorder } from './runtime/trace'
 import { IdGenerator } from './idGenerator'
 import { Rng } from './rng'
 import { SourceLookupPath } from './parsing/sourceResolver'
+import { definitionToString, moduleToString } from './IRprinting'
 
 /**
  * Various settings that have to be passed to the simulator to run.
@@ -70,7 +71,7 @@ function errSimulationResult(status: SimulatorResultStatus, errors: ErrorMessage
  */
 export function compileAndRun(
   idGen: IdGenerator,
-  code: string,
+  modules: QuintModule[],
   mainName: string,
   mainPath: SourceLookupPath,
   options: SimulatorOptions
@@ -82,23 +83,31 @@ export function compileAndRun(
   // that are required by the runner.
   // This code should be revisited in #618.
   const o = options
-  const wrappedCode = `${code}
+  // Defs required by the simulator, to be added to the main module before compilation
+  const extraDefs = [
+    `val ${lastTraceName} = [];`,
+    `def q::test(q::nrunsArg, q::nstepsArg, q::initArg, q::nextArg, q::invArg) = false`,
+    `action q::init = { ${o.init} }`,
+    `action q::step = { ${o.step} }`,
+    `val q::inv = { ${o.invariant} }`,
+    `val q::runResult = q::test(${o.maxSamples}, ${o.maxSteps}, q::init, q::step, q::inv)`,
+  ]
 
-module __run__ {
-  import ${mainName}.*
-
-  val ${lastTraceName} = [];
-  def q::test(q::nrunsArg, q::nstepsArg, q::initArg, q::nextArg, q::invArg) = false;
-  action q::init = { ${o.init} }
-  action q::step = { ${o.step} }
-  val q::inv = { ${o.invariant} }
-  val q::runResult =
-    q::test(${o.maxSamples}, ${o.maxSteps}, q::init, q::step, q::inv)
-}
-`
+  // Construct the modules' code, adding the extra definitions to the main module
+  // FIXME: Ideally, this shouldn't involve the pretty printer
+  const code = modules
+    .map(m => {
+      if (m.name !== mainName) {
+        // Not the main module, return it as is
+        return moduleToString(m)
+      }
+      const defs = m.defs.map(d => definitionToString(d)).concat(extraDefs)
+      return `module ${m.name} {\n  ${defs.join('\n')}\n}`
+    })
+    .join('\n')
 
   const recorder = newTraceRecorder(options.verbosity, options.rng)
-  const ctx = compileFromCode(idGen, wrappedCode, '__run__', mainPath, recorder, options.rng.next)
+  const ctx = compileFromCode(idGen, code, mainName, mainPath, recorder, options.rng.next)
 
   if (ctx.compileErrors.length > 0 || ctx.syntaxErrors.length > 0 || ctx.analysisErrors.length > 0) {
     const errors = ctx.syntaxErrors.concat(ctx.analysisErrors).concat(ctx.compileErrors)
