@@ -249,6 +249,34 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
+  it('change verbosity and show execution on failure', async () => {
+    const input = dedent(
+      `pure def div(x, y) = x / y
+      |.verbosity=4
+      |div(2, 0)
+      |`
+    )
+    const output = dedent(
+      `>>> pure def div(x, y) = x / y
+      |
+      |>>> .verbosity=4
+      |.verbosity=4
+      |>>> div(2, 0)
+      |
+      |[Frame 0]
+      |q::input() => none
+      |└─ div(2, 0) => none
+      |
+      |runtime error: error: Division by zero
+      |div(2, 0)
+      |                     ^^^^^
+      |
+      |<undefined value>
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
   it('caching nullary definitions', async () => {
     const input = dedent(
       `var x: int

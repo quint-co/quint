@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- `quint repl` produces an evaluation trace on errors too (#1056)
+
 ### Changed
 
 - `quint run` produces a friendlier message when it meets a `const` (#1050)

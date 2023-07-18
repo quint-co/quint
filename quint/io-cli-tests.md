@@ -279,6 +279,7 @@ exit $exit_code
 
 
   Use --verbosity=3 to show executions.
+      HOME/failingTestCounters.qnt
 ```
 
 ### test counters produces no execution

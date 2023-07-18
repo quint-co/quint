@@ -421,7 +421,8 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     }
 
     if (failed.length > 0 && verbosity.hasHints(options.verbosity) && !verbosity.hasActionTracking(options.verbosity)) {
-      out(chalk.gray('\n  Use --verbosity=3 to show executions.'))
+      out(chalk.gray(`\n  Use --verbosity=3 to show executions.`))
+      out(chalk.gray(`  Further debug with: quint --verbosity=3 ${prev.args.input}`))
     }
   }
 
