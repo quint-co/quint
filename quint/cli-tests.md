@@ -187,10 +187,10 @@ Temporarily disabled.
 <!-- !test check coin - Types & Effects-->
     quint typecheck ../examples/solidity/Coin/coin.qnt
 
-### OK on test SimpleAuctionNonComposable.qnt
+### OK on test SimpleAuction.qnt
 
-<!-- !test check SimpleAuctionNonComposable - Syntax/Types & Effects/Unit tests -->
-    quint test --main=SimpleAuction ../examples/solidity/SimpleAuction/SimpleAuctionNonComposable.qnt
+<!-- !test check SimpleAuction - Syntax/Types & Effects/Unit tests -->
+    quint test ../examples/solidity/SimpleAuction/SimpleAuction.qnt
 
 ### OK on test lottery.qnt
 
