@@ -168,8 +168,8 @@ operators](#drop-the-exotic-operators). See the discussion in
 
 $$
 \frac
-{ \Gamma \vdash e \colon (t, c) \quad \Gamma \vdash `l` \colon str \quad fresh(s) }
-{ \Gamma \vdash \ `l` \cdot e \ \colon (s, c \land s \sim \{ \ l \colon t | tail\_s \ \}) }
+{ \Gamma \vdash e \colon (t, c) \quad \Gamma \vdash \`l\` \colon str \quad fresh(s) }
+{ \Gamma \vdash \ \`l\` \cdot e \ \colon (s, c \land s \sim \\{ \ l \colon t | tail\_s \ \\}) }
 $$
 
 #### Elimination
@@ -271,7 +271,7 @@ with each $t_k$-typed field indexed by label $i_k$ for $1 \le k \le n$ and the
 free row variable $v$, then
 
 $$
-\{i_1 : t_1 \ , \ldots \ , i_n : i_n | v\}
+\\{i_1 : t_1 \ , \ldots \ , i_n : i_n | v\\}
 $$
 
 is an open record conjoining the fields, and 
@@ -340,7 +340,7 @@ given as
 
 $$
 \frac
-{ \Gamma \vdash e \colon \{ i_1 \hookrightarrow \tau_1, \ \ldots, \ i_n \hookrightarrow \tau_n \} \quad (1 \le k \le n)}
+{ \Gamma \vdash e \colon \\{ i_1 \hookrightarrow \tau_1, \ \ldots, \ i_n \hookrightarrow \tau_n \\} \quad (1 \le k \le n)}
 { \Gamma \vdash e.i_k \colon \tau_k }
 $$
 
@@ -359,8 +359,8 @@ In our current system, typechecking the projection of a value out of a record
 
 $$
 \frac
-{ \Gamma \vdash e \colon (r, c) \quad \Gamma \vdash `l` \colon str \quad fresh(t) }
-{ \Gamma \vdash \ field(e, `l`) \ \colon (t, c \land r \sim \{ \ l \colon t | tail\_t \ \}) }
+{ \Gamma \vdash e \colon (r, c) \quad \Gamma \vdash \`l\` \colon str \quad fresh(t) }
+{ \Gamma \vdash \ field(e, \`l\`) \ \colon (t, c \land r \sim \\{ \ l \colon t | tail\_t \ \\}) }
 $$
 
 where
@@ -369,13 +369,13 @@ where
   $\Gamma \vdash e : (t, c)$ means that, in the typing context $\Gamma$,
   expression $e$ can be derived with type $t$ under constraints $c$,
 - $fresh(t)$ is a side condition requiring the type variable $t$ to be fresh in $\Gamma$,
-- $`l`$ is a string literal with the internal representation $l$,
+- $\`l\`$ is a string literal with the internal representation $l$,
 - $c$ are the constraints derived for the type $r$,
 - $tail\_t$ is a free row-variable constructed by prefixing the fresh variable $t$
   with "tail",
-- $\{ \ l \colon t | tail\_t \ \}$ is the open row-based record type with field,
+- $\\{ \ l \colon t | tail\_t \ \\}$ is the open row-based record type with field,
   $l$ assigned type $t$ and free row- left as a free variable,
-- and $r \sim \{ \ l \colon t | tail\_t \ \}$ is a unification constraint.
+- and $r \sim \\{ \ l \colon t | tail\_t \ \\}$ is a unification constraint.
 
 Comparing the textbook rule with the rule in our system helps make the
 particular qualities and idiosyncrasies of our system very clear.
@@ -384,7 +384,7 @@ The most critical difference w/r/t to the complexity of the typing rules derives
 form the fact that our system subordinates construction and elimination of
 records to the language level operator application rather than implementing it
 via a special constructs that work with product indexes (labels) directly. This
-is what necessitates the consideration of the string literal $`l`$ in our
+is what necessitates the consideration of the string literal $\`l\`$ in our
 premise. In our rule for type checking record projections we "lift" quint
 expressions (string literals for records and ints for products) into product
 indexes.
@@ -438,8 +438,8 @@ projection out from a product:
 
 $$
 \frac
-{ \Gamma \vdash e \colon (t, c) \quad \Gamma \vdash `l` \colon str \quad fresh(s) }
-{ \Gamma \vdash \ inj(`l`, e) \ \colon (s, c \land s \sim \{ \ l \colon t | tail\_s \ \}) }
+{ \Gamma \vdash e \colon (t, c) \quad \Gamma \vdash \`l\` \colon str \quad fresh(s) }
+{ \Gamma \vdash \ inj(\`l\`, e) \ \colon (s, c \land s \sim \\{ \ l \colon t | tail\_s \ \\}) }
 $$
 
 I here retain our current practice of using quint string literals along with an
@@ -472,14 +472,14 @@ A textbook introduction rule for finite products is given as
 $$ 
 \frac
 { \Gamma \vdash e_1 \colon \tau_1 \quad \ldots \quad \Gamma \vdash e_n \colon \tau_n }
-{ \Gamma \vdash \{ i_1 \hookrightarrow e_1, \ldots, i_n \hookrightarrow e_n \} \colon \{ i_1 \hookrightarrow \tau_1, \ldots, i_n \hookrightarrow \tau_n \} }
+{ \Gamma \vdash \\{ i_1 \hookrightarrow e_1, \ldots, i_n \hookrightarrow e_n \\} \colon \\{ i_1 \hookrightarrow \tau_1, \ldots, i_n \hookrightarrow \tau_n \\} }
 $$
 
 This tells us that for any expressions $e_1 : \tau_1, \ldots, e_n : \tau_n$
 derivable from our context we can form a product that indexes those
 $n$ expressions by $i_1, \ldots, i_n$ distinct labels, and packages all data
-together in an expression of type $\{ i_1 \hookrightarrow \tau_1, \ldots,
-i_n \hookrightarrow \tau_n \}$. If we're given all the things of the needed
+together in an expression of type $\\{ i_1 \hookrightarrow \tau_1, \ldots,
+i_n \hookrightarrow \tau_n \\}$. If we're given all the things of the needed
 types, we can conjoint them all together into one compound package.
 
 The following rule describes our current implementation:
@@ -487,7 +487,7 @@ The following rule describes our current implementation:
 $$
 \frac
 { \Gamma \vdash (`i_1`, e_1 \colon (t_1, c_1)) \quad \ldots \quad \Gamma \vdash (`i_1`, e_n \colon (t_n, c_n)) \quad fresh(s) } 
-{ \Gamma \vdash Rec(`i_1`, e_1, \ldots, `i_n`, e_n) \ \colon \ (s, c_1 \land \ldots \land c_n \land s \sim \{ i_1 \colon t_1, \ldots, i_n \colon t_n \} }
+{ \Gamma \vdash Rec(`i_1`, e_1, \ldots, `i_n`, e_n) \ \colon \ (s, c_1 \land \ldots \land c_n \land s \sim \\{ i_1 \colon t_1, \ldots, i_n \colon t_n \\} }
 $$
 
 The requirement that our labels show up in the premise as quint strings paired
@@ -525,7 +525,7 @@ i_n \hookrightarrow e_n \rangle
 \quad 
 \Gamma, x_n \vdash e_n \colon \tau
 }
-{ \Gamma \vdash \ case \ e \ \{ i_1 \cdot x_1 \hookrightarrow e_1 | \ldots | i_n \cdot x_n \hookrightarrow e_n \}}
+{ \Gamma \vdash \ case \ e \ \\{ i_1 \cdot x_1 \hookrightarrow e_1 | \ldots | i_n \cdot x_n \hookrightarrow e_n \\}}
 $$
 
 
@@ -670,7 +670,7 @@ NOTE: Loss of consistency in declaration vs. construction/elimination.
   As is, I think these are not worth the complexity and overhead.
 
 Compare our rule with the projection operation from "Extensible
-Records with Scoped Labels", which does not receive the label `l` as a string,
+Records with Scoped Labels", which does not receive the label \`l\` as a string,
 instead treating it as a special piece of syntax:
 
 ```
@@ -698,7 +698,7 @@ a rule like the following for record projection:
 $$
 \frac
 { \Gamma \vdash e \colon (r, c) \quad fresh(t) }
-{ \Gamma \vdash \ e.l \ \colon (t, c \land r \sim \{ \ l \colon t | tail\_t \ \}) }
+{ \Gamma \vdash \ e.l \ \colon (t, c \land r \sim \\{ \ l \colon t | tail\_t \ \\}) }
 $$
 
 This would allow removing the checks for string literals, instead leaving that
@@ -706,7 +706,7 @@ to the outer-level, syntactic level, of our static analysis. A similar
 simplification would be follow for record construction: the rule for `Rec` would
 not need to validate that it had received an even number of arguments of
 alternating string literals and values, since this would be statically
-guaranteed by the parsing rules for the $\{ l_1 : v_1, \ldots, l_n : v_n \}$
+guaranteed by the parsing rules for the $\\{ l_1 : v_1, \ldots, l_n : v_n \\}$
 syntax. This would be a case of opting for the ["Parse, don't validate"][parse]
 strategy.
 
