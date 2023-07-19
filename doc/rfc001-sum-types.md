@@ -168,8 +168,8 @@ operators](#drop-the-exotic-operators). See the discussion in
 
 $$
 \frac
-{ \Gamma \vdash e \colon (t, c) \quad \Gamma \vdash \`l\` \colon str \quad fresh(s) }
-{ \Gamma \vdash \ \`l\` \cdot e \ \colon (s, c \land s \sim \\{ \ l \colon t | tail\_s \ \\}) }
+{ \Gamma \vdash e \colon (t, c) \quad \Gamma \vdash 'l' \colon str \quad fresh(s) }
+{ \Gamma \vdash \ 'l' \cdot e \ \colon (s, c \land s \sim \\{ \ l \colon t | tail\_s \ \\}) }
 $$
 
 #### Elimination
@@ -486,8 +486,8 @@ The following rule describes our current implementation:
 
 $$
 \frac
-{ \Gamma \vdash (`i_1`, e_1 \colon (t_1, c_1)) \quad \ldots \quad \Gamma \vdash (`i_1`, e_n \colon (t_n, c_n)) \quad fresh(s) } 
-{ \Gamma \vdash Rec(`i_1`, e_1, \ldots, `i_n`, e_n) \ \colon \ (s, c_1 \land \ldots \land c_n \land s \sim \\{ i_1 \colon t_1, \ldots, i_n \colon t_n \\} }
+{ \Gamma \vdash (\`i_1\`, e_1 \colon (t_1, c_1)) \quad \ldots \quad \Gamma \vdash (\`i_1\`, e_n \colon (t_n, c_n)) \quad fresh(s) } 
+{ \Gamma \vdash Rec(\`i_1\`, e_1, \ldots, \`i_n\`, e_n) \ \colon \ (s, c_1 \land \ldots \land c_n \land s \sim \\{ i_1 \colon t_1, \ldots, i_n \colon t_n \\} }
 $$
 
 The requirement that our labels show up in the premise as quint strings paired
