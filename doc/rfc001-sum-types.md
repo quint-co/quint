@@ -168,8 +168,8 @@ operators](#drop-the-exotic-operators). See the discussion in
 
 $$
 \frac
-{ \Gamma \vdash e \colon (t, c) \quad \Gamma \vdash 'l' \colon str \quad fresh(s) }
-{ \Gamma \vdash \ 'l' \cdot e \ \colon (s, c \land s \sim \\{ \ l \colon t | tail\_s \ \\}) }
+{ \Gamma \vdash e \colon (t, c) \quad \Gamma \vdash \`l\` \colon str \quad fresh(s) }
+{ \Gamma \vdash \ \`l\` \cdot e \ \colon (s, c \land s \sim \\{ \ l \colon t | tail\_s \ \\}) }
 $$
 
 #### Elimination
