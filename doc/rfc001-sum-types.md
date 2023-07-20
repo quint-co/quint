@@ -64,7 +64,7 @@ module names, type aliases, and variant constructors.
 
 This is the only way I can think of to preserve a Rust-like syntax for sum type
 injectors and also support the anonymous sum types that available via
-row-ploymorphic sum types. If we instead require all variant types to be defined
+row-polymorphic sum types. If we instead require all variant types to be defined
 in advance.
 
 In any case, I think there is a gain in readability and parseability in ensuring
