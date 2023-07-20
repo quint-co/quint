@@ -59,13 +59,13 @@ val a : T = A(1)
 val b : AdHocVariant(int) | v = AdHocVariant(1)
 ```
 
+Identifiers starting with a capital letter would them be available only for
+module names, type aliases, and variant constructors.
+
 This is the only way I can think of to preserve a Rust-like syntax for sum type
 injectors and also support the anonymous sum types that available via
-row-ploymorphic sum types.
-
-If we instead require all variant types to be defined in advance, then we could
-instead generate constructors, but this would interfere with type narrowing
-(discussed bellow).
+row-ploymorphic sum types. If we instead require all variant types to be defined
+in advance.
 
 In any case, I think there is a gain in readability and parseability in ensuring
 we reason about code purely locally to determine whether a normal operator is
@@ -783,11 +783,6 @@ NOTE: Loss of consistency in declaration vs. construction/elimination.
 
 - Pattern matching
 - User defined parametric type constructors
-- To solve injector problem for anonymous sum-types using rust-like syntax: Reserve utter case for
-  - Type aliases
-  - Data constructors
-  - Modules
-  
 
 ### Drop the exotic operators
 
