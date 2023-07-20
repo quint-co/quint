@@ -416,10 +416,24 @@ export interface RuntimeValue extends EvalResult, ValueObject, Iterable<RuntimeV
 
   /**
    * If this runtime value is set-like, pick one of its elements using the
-   * position argument as the input. The position is an index
-   * of the element under some stable ordering.
+   * position as returned by the `positions` iterator. Importantly,
+   * `pick` may use the iterator for picking from element sets,
+   * e.g., think of `Set(Set(2, 3, 4))`. Hence, the iterator is modified
+   * by pick in place. Also, see #bounds().
    */
-  pick(_position: bigint): Maybe<RuntimeValue>
+  pick(positions: Iterator<bigint>): Maybe<RuntimeValue>
+
+  /**
+   * If this runtime value is set-line, compute the bounds for all subsets,
+   * as a flat array. A none() value indicates infinity, whereas
+   * just(n) indicates set cardinality. For example:
+   *
+   *  - bounds for Set(1, 2) is [just(2)],
+   *  - bounds for Int is [none()]
+   *  - bounds for 1.to(3).setOfMaps(3.to(6)) is [just(4), just(4), just(4)],
+   *  - bounds for 1.to(3).setOfMaps(Int) is [none(), none(), none()].
+   */
+  bounds(): Maybe<bigint>[]
 
   /**
    * If this runtime value is set-like, return the number of its elements,
@@ -616,8 +630,12 @@ abstract class RuntimeValueBase implements RuntimeValue {
     return 0
   }
 
-  pick(_position: bigint): Maybe<RuntimeValue> {
+  pick(_positions: Iterator<bigint>): Maybe<RuntimeValue> {
     return none()
+  }
+
+  bounds(): Maybe<bigint>[] {
+    return []
   }
 
   cardinality() {
@@ -876,9 +894,10 @@ class RuntimeValueSet extends RuntimeValueBase implements RuntimeValue {
     return this.set.includes(elem.normalForm())
   }
 
-  pick(position: bigint): Maybe<RuntimeValue> {
-    // compute the element index based on the position
-    let index = positionToIndex(position, just(BigInt(this.set.size)))
+  pick(positions: Iterator<bigint>): Maybe<RuntimeValue> {
+    const next = positions.next()
+    assert(!next.done, 'Internal error: too few positions. Report a bug.')
+    let index = next.value
     // Iterate over the set elements,
     // since the set is not indexed, find the first element that goes over
     // the index number. This is probably the most efficient way of doing it
@@ -891,6 +910,10 @@ class RuntimeValueSet extends RuntimeValueBase implements RuntimeValue {
     }
 
     return none()
+  }
+
+  bounds(): Maybe<bigint>[] {
+    return [this.cardinality()]
   }
 
   cardinality() {
@@ -980,14 +1003,23 @@ class RuntimeValueInterval extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  pick(position: bigint): Maybe<RuntimeValue> {
+  pick(positions: Iterator<bigint>): Maybe<RuntimeValue> {
+    const next = positions.next()
+    assert(!next.done, 'Internal error: too few positions. Report a bug.')
+    const index = next.value
+    assert(
+      index >= 0 || index <= this.last - this.first,
+      `Internal error: index ${index} is out of bounds [${this.first}, ${this.last}]. Report a bug.`
+    )
     if (this.last < this.first) {
       return none()
     } else {
-      const size = BigInt(this.last - this.first) + 1n
-      const index = positionToIndex(position, just(size))
       return just(new RuntimeValueInt(this.first + BigInt(index)))
     }
+  }
+
+  bounds(): Maybe<bigint>[] {
+    return [this.cardinality()]
   }
 
   cardinality() {
@@ -1119,25 +1151,14 @@ class RuntimeValueCrossProd extends RuntimeValueBase implements RuntimeValue {
     return merge(this.sets.map(s => s.cardinality())).map(cards => cards.reduce((n, card) => n * card, 1n))
   }
 
-  pick(position: bigint): Maybe<RuntimeValue> {
-    let index = positionToIndex(position, this.cardinality())
-    const elems: RuntimeValue[] = []
-    for (const set of this.sets) {
-      const cardOrNone = set.cardinality()
-      if (cardOrNone.isNone()) {
-        return none()
-      }
-      const card = cardOrNone.value
-      const elemOrNone = set.pick(index % card)
-      if (elemOrNone.isNone()) {
-        return none()
-      } else {
-        index = index / card
-      }
-      elems.push(elemOrNone.value)
-    }
+  pick(positions: Iterator<bigint>): Maybe<RuntimeValue> {
+    const elems: Maybe<RuntimeValue[]> = merge(this.sets.map(elemSet => elemSet.pick(positions)))
 
-    return just(new RuntimeValueTupleOrList('Tup', List.of(...elems)))
+    return elems.map(es => new RuntimeValueTupleOrList('Tup', List.of(...es)))
+  }
+
+  bounds(): Maybe<bigint>[] {
+    return this.sets.map(elemSet => elemSet.cardinality())
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
@@ -1215,8 +1236,14 @@ class RuntimeValuePowerset extends RuntimeValueBase implements RuntimeValue {
     return this.baseSet.cardinality().map(c => 2n ** c)
   }
 
-  pick(position: bigint): Maybe<RuntimeValue> {
-    return this.cardinality().map(card => this.fromIndex(positionToIndex(position, just(card))))
+  pick(positions: Iterator<bigint>): Maybe<RuntimeValue> {
+    const next = positions.next()
+    assert(!next.done, 'Internal error: too few positions. Report a bug.')
+    return this.cardinality().map(_ => this.fromIndex(next.value))
+  }
+
+  bounds(): Maybe<bigint>[] {
+    return [this.cardinality()]
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
@@ -1327,33 +1354,41 @@ class RuntimeValueMapSet extends RuntimeValueBase implements RuntimeValue {
     return merge([this.rangeSet.cardinality(), this.domainSet.cardinality()]).map(([rc, dc]) => rc ** dc)
   }
 
-  pick(position: bigint): Maybe<RuntimeValue> {
-    let index = positionToIndex(position, this.cardinality())
-    const keyValues: [RuntimeValue, RuntimeValue][] = []
+  pick(positions: Iterator<bigint>): Maybe<RuntimeValue> {
     const domainSizeOrNone = this.domainSet.cardinality()
     const rangeSizeOrNone = this.rangeSet.cardinality()
-    if (domainSizeOrNone.isNone() || rangeSizeOrNone.isNone()) {
+    if (domainSizeOrNone.isNone()) {
+      // we cannot generate maps over infinite domains
       return none()
     }
+
     const domainSize = domainSizeOrNone.value
-    const rangeSize = rangeSizeOrNone.value
-
-    if (domainSize === 0n || rangeSize === 0n) {
+    if (domainSize === 0n || (rangeSizeOrNone.isJust() && rangeSizeOrNone.value === 0n)) {
+      // the set of maps is empty, no way to pick a value
       return none()
     }
 
-    for (let i = 0n; i < domainSize; i++) {
-      const keyOrNone = this.domainSet.pick(i)
-      const valueOrNone = this.rangeSet.pick(index % rangeSize)
-      index = index / rangeSize
-      if (keyOrNone.isJust() && valueOrNone.isJust()) {
-        keyValues.push([keyOrNone.value, valueOrNone.value])
+    const keyValues: [RuntimeValue, RuntimeValue][] = []
+    for (const key of this.domainSet) {
+      const valueOrNone = this.rangeSet.pick(positions)
+      if (valueOrNone.isJust()) {
+        keyValues.push([key, valueOrNone.value])
       } else {
         return none()
       }
     }
 
     return just(rv.mkMap(keyValues))
+  }
+
+  bounds(): Maybe<bigint>[] {
+    const domainSizeOrNone = this.domainSet.cardinality()
+    assert(
+      domainSizeOrNone.isJust() && domainSizeOrNone.value <= Number.MAX_SAFE_INTEGER,
+      `Domain size is over ${Number.MAX_SAFE_INTEGER}`
+    )
+    const sz = Number(domainSizeOrNone.value)
+    return Array(sz).fill(this.rangeSet.cardinality())
   }
 
   toQuintEx(gen: IdGenerator): QuintEx {
@@ -1370,14 +1405,6 @@ class RuntimeValueMapSet extends RuntimeValueBase implements RuntimeValue {
       args: elems,
     }
   }
-}
-
-// convert a position in [0, 1) to the index in a collection of `size` elements
-function positionToIndex(position: bigint, maybeSize: Maybe<bigint>): bigint {
-  return maybeSize
-    .map(size => (position < 0n || position >= size ? 0n : position))
-    .or(just(0n))
-    .unwrap()
 }
 
 /**
@@ -1422,16 +1449,24 @@ class RuntimeValueInfSet extends RuntimeValueBase implements RuntimeValue {
     }
   }
 
-  pick(position: bigint): Maybe<RuntimeValue> {
+  pick(positions: Iterator<bigint>): Maybe<RuntimeValue> {
     // Simply return the position. The actual range is up to the caller,
     // as Int and Nat do not really care about the ranges.
+    const next = positions.next()
+    assert(!next.done, 'Internal error: too few positions. Report a bug.')
     if (this.kind === 'Int') {
       // Simply return the position. It's up to the caller to pick the position.
-      return just(rv.mkInt(position))
+      return just(rv.mkInt(next.value))
     } else {
       // Nat: return the absolute value of the position.
-      return just(rv.mkInt(position >= 0n ? position : -position))
+      const p = next.value
+      return just(rv.mkInt(p >= 0n ? p : -p))
     }
+  }
+
+  bounds(): Maybe<bigint>[] {
+    // it's an infinite set, so we return none() to indicate an infinite set
+    return [none()]
   }
 
   cardinality(): Maybe<bigint> {

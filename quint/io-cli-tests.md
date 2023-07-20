@@ -405,7 +405,7 @@ The command `run` finds an overflow in Coin.
 
 <!-- !test in run finds overflow -->
 ```
-output=$(quint run --max-steps=5 --seed=0x1e352e160fec18 --invariant=totalSupplyDoesNotOverflowInv \
+output=$(quint run --max-steps=5 --seed=0x1e352e160ffa12 --invariant=totalSupplyDoesNotOverflowInv \
   ../examples/solidity/Coin/coin.qnt 2>&1)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
@@ -421,7 +421,7 @@ An example execution:
 {
   balances:
     Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0),
-  minter: "eve"
+  minter: "alice"
 }
 
 [State 1]
@@ -429,13 +429,13 @@ An example execution:
   balances:
     Map(
       "alice" -> 0,
-      "bob" ->
-        42072507376163960643920738270336159490043987977674145501118528050792554254667,
-      "charlie" -> 0,
+      "bob" -> 0,
+      "charlie" ->
+        44102953916667308628507282398473780107575312859495896164716387801811669677303,
       "eve" -> 0,
       "null" -> 0
     ),
-  minter: "eve"
+  minter: "alice"
 }
 
 [State 2]
@@ -443,33 +443,18 @@ An example execution:
   balances:
     Map(
       "alice" -> 0,
-      "bob" ->
-        42072507376163960643920738270336159490043987977674145501118528050792554254667,
-      "charlie" -> 0,
+      "bob" -> 0,
+      "charlie" ->
+        44102953916667308628507282398473780107575312859495896164716387801811669677303,
       "eve" -> 0,
       "null" ->
-        16521711849181237202636451043914108610889109974959974963671010185510852394179
+        106908608291568456374887716989928730685737039774957994870160634616776887554850
     ),
-  minter: "eve"
-}
-
-[State 3]
-{
-  balances:
-    Map(
-      "alice" -> 0,
-      "bob" ->
-        42072507376163960643920738270336159490043987977674145501118528050792554254667,
-      "charlie" -> 0,
-      "eve" -> 0,
-      "null" ->
-        91875600531977772563185819847316161578729924588376815416915532887911288012318
-    ),
-  minter: "eve"
+  minter: "alice"
 }
 
 [violation] Found an issue (duration).
-Use --seed=0x1e352e160fec18 to reproduce.
+Use --seed=0x1e352e160ffa12 to reproduce.
 Use --verbosity=3 to show executions.
 error: Invariant violated
 ```
@@ -480,7 +465,7 @@ The command `run` finds an overflow in Coin and shows the operator calls.
 
 <!-- !test in run shows calls -->
 ```
-output=$(quint run --max-steps=5 --seed=0x1786e678d45ef0 \
+output=$(quint run --max-steps=5 --seed=0x1786e678d45fe0 \
   --invariant=totalSupplyDoesNotOverflowInv \
   --verbosity=3 \
   ../examples/solidity/Coin/coin.qnt 2>&1)
@@ -504,7 +489,7 @@ q::initAndInvariant() => true
 {
   balances:
     Map("alice" -> 0, "bob" -> 0, "charlie" -> 0, "eve" -> 0, "null" -> 0),
-  minter: "null"
+  minter: "bob"
 }
 
 [Frame 1]
@@ -512,68 +497,106 @@ q::stepAndInvariant() => true
 ├─ q::step() => true
 │  └─ step() => true
 │     └─ mint(
+│          "bob",
 │          "null",
-│          "alice",
-│          97210836887067662390949112128222467294168903789083016866293633957660645688905
+│          65338262739825284111745959589547129900185534924167607765304796328491174113858
 │        ) => true
 │        ├─ require(true) => true
 │        └─ require(true) => true
 │           └─ isUInt(
-│                97210836887067662390949112128222467294168903789083016866293633957660645688905
+│                65338262739825284111745959589547129900185534924167607765304796328491174113858
 │              ) => true
 └─ isUInt(
-     97210836887067662390949112128222467294168903789083016866293633957660645688905
+     65338262739825284111745959589547129900185534924167607765304796328491174113858
    ) => true
 
 [State 1]
 {
   balances:
     Map(
-      "alice" ->
-        97210836887067662390949112128222467294168903789083016866293633957660645688905,
+      "alice" -> 0,
       "bob" -> 0,
       "charlie" -> 0,
       "eve" -> 0,
-      "null" -> 0
+      "null" ->
+        65338262739825284111745959589547129900185534924167607765304796328491174113858
     ),
-  minter: "null"
+  minter: "bob"
 }
 
 [Frame 2]
 q::stepAndInvariant() => true
 ├─ q::step() => true
 │  └─ step() => true
-│     └─ mint(
+│     └─ send(
 │          "null",
 │          "charlie",
-│          71367179983756460176106538680495310778684729363601314720341430729464281514430
+│          27846403266649766800055905337678576473819522457314621838114493230792952096574
 │        ) => true
 │        ├─ require(true) => true
+│        ├─ require(true) => true
+│        │  └─ isUInt(
+│        │       37491859473175517311690054251868553426366012466852985927190303097698222017284
+│        │     ) => true
 │        └─ require(true) => true
 │           └─ isUInt(
-│                71367179983756460176106538680495310778684729363601314720341430729464281514430
+│                27846403266649766800055905337678576473819522457314621838114493230792952096574
 │              ) => true
 └─ isUInt(
-     168578016870824122567055650808717778072853633152684331586635064687124927203335
-   ) => false
+     65338262739825284111745959589547129900185534924167607765304796328491174113858
+   ) => true
 
 [State 2]
 {
   balances:
     Map(
-      "alice" ->
-        97210836887067662390949112128222467294168903789083016866293633957660645688905,
+      "alice" -> 0,
       "bob" -> 0,
       "charlie" ->
-        71367179983756460176106538680495310778684729363601314720341430729464281514430,
+        27846403266649766800055905337678576473819522457314621838114493230792952096574,
       "eve" -> 0,
-      "null" -> 0
+      "null" ->
+        37491859473175517311690054251868553426366012466852985927190303097698222017284
     ),
-  minter: "null"
+  minter: "bob"
+}
+
+[Frame 3]
+q::stepAndInvariant() => true
+├─ q::step() => true
+│  └─ step() => true
+│     └─ mint(
+│          "bob",
+│          "bob",
+│          78309058398957644239556030729021834730669174305685174769880015395650570612692
+│        ) => true
+│        ├─ require(true) => true
+│        └─ require(true) => true
+│           └─ isUInt(
+│                78309058398957644239556030729021834730669174305685174769880015395650570612692
+│              ) => true
+└─ isUInt(
+     143647321138782928351301990318568964630854709229852782535184811724141744726550
+   ) => false
+
+[State 3]
+{
+  balances:
+    Map(
+      "alice" -> 0,
+      "bob" ->
+        78309058398957644239556030729021834730669174305685174769880015395650570612692,
+      "charlie" ->
+        27846403266649766800055905337678576473819522457314621838114493230792952096574,
+      "eve" -> 0,
+      "null" ->
+        37491859473175517311690054251868553426366012466852985927190303097698222017284
+    ),
+  minter: "bob"
 }
 
 [violation] Found an issue (duration).
-Use --seed=0x1786e678d45ef0 to reproduce.
+Use --seed=0x1786e678d45fe0 to reproduce.
 Use --verbosity=3 to show executions.
 error: Invariant violated
 ```
@@ -663,7 +686,7 @@ quint -q -r \
 <!-- !test exit 1 -->
 <!-- !test in verbose test -->
 ```
-output=$(quint test --seed=0x1cce84523050d3 --match=mintTwiceThenSendError \
+output=$(quint test --seed=0x1cce8452305113 --match=mintTwiceThenSendError \
   --verbosity=3 ../examples/solidity/Coin/coin.qnt)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' -e 's#^.*coin.qnt#      HOME/coin.qnt#g'
@@ -687,45 +710,45 @@ init() => true
 
 [Frame 1]
 mint(
-  "null",
   "eve",
-  103029211857619067979094014873050396590165055745102811782792764124238098725560
+  "eve",
+  73435308175381280179895447726690458129319530672748326532002365461395069401291
 ) => true
 ├─ require(true) => true
 └─ require(true) => true
    └─ isUInt(
-        103029211857619067979094014873050396590165055745102811782792764124238098725560
+        73435308175381280179895447726690458129319530672748326532002365461395069401291
       ) => true
 
 [Frame 2]
 mint(
-  "null",
+  "eve",
   "bob",
-  74954963967956643540192626027362289940259131330198081495537975192140612510728
+  99734648034668586428235027805035599638068011144525474004474309631475456844332
 ) => true
 ├─ require(true) => true
 └─ require(true) => true
    └─ isUInt(
-        74954963967956643540192626027362289940259131330198081495537975192140612510728
+        99734648034668586428235027805035599638068011144525474004474309631475456844332
       ) => true
 
 [Frame 3]
 send(
   "eve",
   "bob",
-  71008610450989699006949547967735399863437575268953760685900857232369100930415
+  31114836464924134533662521748469381767604427020159348918484988427058728862690
 ) => false
 ├─ require(true) => true
 ├─ require(true) => true
 │  └─ isUInt(
-│       32020601406629368972144466905314996726727480476149051096891906891868997795145
+│       42320471710457145646232925978221076361715103652588977613517377034336340538601
 │     ) => true
 └─ require(false) => false
    └─ isUInt(
-        145963574418946342547142173995097689803696706599151842181438832424509713441143
+        130849484499592720961897549553504981405672438164684822922959298058534185707022
       ) => false
 
-    Use --seed=0x1cce84523050d3 --match=mintTwiceThenSendError to repeat.
+    Use --seed=0x1cce8452305113 --match=mintTwiceThenSendError to repeat.
 ```
 
 ### test fails on invalid seed

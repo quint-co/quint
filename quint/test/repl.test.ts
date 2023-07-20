@@ -573,6 +573,8 @@ describe('repl ok', () => {
       |x >= 0
       |nondet i = oneOf(Int); x' = i
       |Int.contains(x)
+      |nondet m = 1.to(5).setOfMaps(Int).oneOf(); x' = m.get(3)
+      |x.in(Int)
       |`
     )
     const output = dedent(
@@ -605,6 +607,29 @@ describe('repl ok', () => {
       |>>> nondet i = oneOf(Int); x' = i
       |true
       |>>> Int.contains(x)
+      |true
+      |>>> nondet m = 1.to(5).setOfMaps(Int).oneOf(); x' = m.get(3)
+      |true
+      |>>> x.in(Int)
+      |true
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('nondet and oneOf over sets of sets', async () => {
+    const input = dedent(
+      `var S: Set[int]
+      |nondet y = oneOf(powerset(1.to(3))); S' = y
+      |S.subseteq(1.to(3))
+      |`
+    )
+    const output = dedent(
+      `>>> var S: Set[int]
+      |
+      |>>> nondet y = oneOf(powerset(1.to(3))); S' = y
+      |true
+      |>>> S.subseteq(1.to(3))
       |true
       |>>> `
     )
