@@ -22,8 +22,6 @@ Here I illustrate two attractive alternatives for each critical construct. See
 
 #### Declaration
 
-**Option 1**
-
 This group of alternatives is closer to Rust, but with significant variation for
 reasons discussed in [Syntax](#syntax).
 
@@ -33,36 +31,47 @@ type T =
   | B(str)
 ```
 
-**Option 2**
-
-This group of alternatives follows [Leijen05][ERLS]: 
+Variants labels with no associated expression type are allowed, but these are only
+sugar for a label typed with the unit (i.e., the empty record):
 
 ```quint
-type T =
-  < A : int
-  , B : str
-  >
+type S = C
 ```
 
-The case of labels initial letters could vary in either option.
+Is normalized as
+
+```quint
+type S = C({})
+```
+
 
 #### Injection
 
-**Option 1**
-
-Declaration of a sum type will generate injection operators:
+I propose introducing a lexical rule to syntactically differentiate data
+constructor of sum types from operator application: any identifiers starting
+with an uppercase letter that is occurs in the syntactic position of operator
+application is parsed as a sum type constructor: 
 
 ```quint
-// Generated during compilation
-def A(x:int): T = ...
-
+// Constructoin of a previously declared sum type
 val a : T = A(1)
+// Construction of a polymorphic variant of an anonymous type
+val b : AdHocVariant(int) | v = AdHocVariant(1)
 ```
 
-These must be generated since they are syntactically indistinguishable from
-user-defined operator applications.
+This is the only way I can think of to preserve a Rust-like syntax for sum type
+injectors and also support the anonymous sum types that available via
+row-ploymorphic sum types.
 
-We could have a normal form for injection called `inj` or `variant`.  If we
+If we instead require all variant types to be defined in advance, then we could
+instead generate constructors, but this would interfere with type narrowing
+(discussed bellow).
+
+In any case, I think there is a gain in readability and parseability in ensuring
+we reason about code purely locally to determine whether a normal operator is
+being applied or
+
+We could also have a normal form for injection called `inj` or `variant`.  If we
 follow our current convention of exotic operators that lift quint strings into
 labels, this would look like:
 
@@ -72,49 +81,6 @@ val a : T = inj("A", 1)
 
 Or if we take my recommendation below, we'd have `inj(A, 1)`.
 
-**Option 2**
-
-```quint
-val a : T = <A:1>
-```
-
-Since option 2 suggests a syntactically unambiguous representation of variant
-formation, we could avoid generating the injectors and/or this could be the
-normal form for injection.
-
-
-#### Annotation with anonymous 
-
-An open, anonymous sum type extended with a new variant:
-
-**Option 1**
-
-```quint 
-def f(n: int): C(int) | D(str) | s =
-  if (n >= 0) inj(A, n) else inj(D, "negative")
-```
-
-Note that, using this option, we would have no way of injecting a value into an
-anonymous sum type other than using `inj`, since the injectors would not be
-generated in absent a declaration.
-
-This depends on using the case of the first letter to identify the `s` as a row
-variable, but this already matches our treatment of type vars.
-
-**Option 2**
-
-```quint
-def f(n: int): <C:int, D:str | s> =
-  if (n >= 0) <A:n> else <D:"negative">
-```
-
-Compare with the corresponding annotation for a record type:
-
-```quint
-def f(n: int): {C:int, D:str | s} =
-  if (n >= 0) {C:n, D:"positive"} else {C:n, B:"negative"}
-```
-
 
 #### Case analyses
 
@@ -122,24 +88,17 @@ def f(n: int): {C:int, D:str | s} =
 
 ```quint
 match e {
-  A(a) => ...,
-  B(b) => ...
+  | A(a) => ...
+  | B(b) => ...
 }
 ```
 
-**Option 2**
+`|` can be swapped for `,`, but IMO it is valuable and clarifying to keep the
+syntactic connection with disjunction and with the type syntax. 
 
-```quint
-match e {
-  A : a => ...,
-  B : b => ...
-}
-```
+The normal form can be `match(e, {...})` to match our current conventions. 
 
-In either case, the normal form can be `match(e, {...})` to match our current
-conventions.  `,` can be swapped for `|` in either alternative.
-
-##### As anonymous operator
+##### As an anonymous operator
 
 We could also consider a case analysis `{ A : a => e1 | B : b => e2 }` -- where
 `e1, e2 : S` -- as syntax sugar for an anonymous operator of type `T => S`.
@@ -148,13 +107,13 @@ Scala's case blocks or OCaml's `function` keyword and would allow idioms such
 as:
 
 ```quint
-setOfTs.map({ A : a => e1, B : b => e2 })
+setOfTs.map({ A(a) => e1 | B(b) => e2 })
 ```
 
 instead of requiring
 
 ```quint
-setOfTs.map(x => match x { A : a => e1, B : b => e2 })
+setOfTs.map(x => match x { A(a) => e1 | B(b) => e2 })
 ```
 
 ### Statics
@@ -166,21 +125,72 @@ operators](#drop-the-exotic-operators). See the discussion in
 
 #### Injection
 
+The typing rule for constructing a variant of a sum type:
+
 $$
 \frac
 { \Gamma \vdash e \colon (t, c) \quad \Gamma \vdash \`l\` \colon str \quad fresh(s) }
-{ \Gamma \vdash \ \`l\` \cdot e \ \colon (s, c \land s \sim \\{ \ l \colon t | tail\_s \ \\}) }
+{ \Gamma \vdash \ inj(\`l\`, e) \ \colon (s, c \land s \sim \\{ \ l \colon t | tail\_s \ \\}) }
 $$
+
+This gives the rule in our system equivalent to [Leijen05][ERLS]'s 
+
+```haskell
+<l = i> :: ∀αr . α → <l :: α | r > -- injection
+```
+
 
 #### Elimination
 
+The typing rule for eliminating a variant of a sum type via case analysis:
+
 $$
-TODO
+\frac{
+\Gamma \vdash e : (s, c) \quad
+\Gamma, x_1 \vdash e_1 : (t, c_1) \quad \ldots \quad \Gamma, x_n \vdash e_n : (t, c_n) \quad
+\Gamma, \langle v \rangle \vdash e_{n+1} : (t, c_{n+1}) \quad
+fresh(v)
+}{
+\Gamma \vdash \ match \ e \ \\{ i_1 : x_1 \Rightarrow e_1, \ldots, i_n : x_n \Rightarrow e_n \\} : (t, 
+c \land c_1 \land \ldots \land c_n \land c_{n+1} \land
+s \sim \langle i_1 : t_1, \ldots, i_n : t_n | v \rangle)
+}
 $$
+
+This gives the rule in our system that is sufficient to capture [Leijen05][ERLS]'s 
+
+```haskell
+(l ∈ _ ? _ : _) :: ∀αβr . <l :: α | r> → (α → β) → (<r> → β) → β -- decomposition
+```
+
+
+since we can define decomposition for any label `L` via
+
+```quint
+def decomposeL(e: (L(a) | r), f: a => b, default : r => b) = 
+  match e { 
+    | L(x) => f(x) 
+    | r    => default(r) 
+  }
+```
+
+However we can define `match` as syntax sugar for the decompose primitive if
+we prefer.
 
 ### Dynamics
 
-TODO
+The dynamics in the simulator should be straightforward and is not discussed
+here. Translation to Apalache for symbolic execution in the model checker is
+also expected to be relatively straight forward, since Apalache has a very
+similar form of row-based sum typing. 
+
+The general rules for eager evaluation can be found in [PFPL][], section 11.2. 
+Additional design work for this will be prepared if needed.
+
+---
+
+This concludes the tl;dr overview of the proposal. The remaining is an indepth
+(still v. rough in places, discussion).
 
 ## Motivation
 
@@ -215,8 +225,8 @@ specified as
 
 ```quint
 type Shape =
-  | Rect : rectangle
-  | Tri  : triangle
+  | Rect(rectangle)
+  | Tri(triangle)
 ```
 
 Having both product types and sum types (co-product types) gives us a simple and
@@ -406,7 +416,7 @@ variant of the proposed syntax:
 
 ```quint
 val n : int = 1
-val ex : <a:int> = <a:1>
+val ex : A(int) | r = A(1)
 ```
 
 A textbook rule for eliminating an expression belonging to a finite product type
@@ -487,7 +497,7 @@ The following rule describes our current implementation:
 $$
 \frac
 { \Gamma \vdash (\`i_1\`, e_1 \colon (t_1, c_1)) \quad \ldots \quad \Gamma \vdash (\`i_1\`, e_n \colon (t_n, c_n)) \quad fresh(s) } 
-{ \Gamma \vdash Rec(\`i_1\`, e_1, \ldots, \`i_n\`, e_n) \ \colon \ (s, c_1 \land \ldots \land c_n \land s \sim \\{ i_1 \colon t_1, \ldots, i_n \colon t_n \\} }
+{ \Gamma \vdash Rec(\`i_1\`, e_1, \ldots, \`i_n\`, e_n) \ \colon \ (s, c_1 \land \ldots \land c_n \land s \sim \\{ i_1 \colon t_1, \ldots, i_n \colon t_n \\}) }
 $$
 
 The requirement that our labels show up in the premise as quint strings paired
@@ -513,37 +523,105 @@ val ex : str = match e {
 }
 ```
 
+A textbook rule for eliminating an expression that is a variant of a finite sum
+type can be given as
+
 $$ 
 \frac{
-\Gamma \vdash e \colon \langle i_1 \hookrightarrow e_1, 
-\ldots,
-i_n \hookrightarrow e_n \rangle 
+\Gamma \vdash e \colon 
+\langle i_1 \hookrightarrow \tau_1, \ldots, i_n \hookrightarrow \tau_n \rangle 
 \quad 
-\Gamma, x_1 \vdash e_1 \colon \tau
+\Gamma, x_1 : \tau_1 \vdash e_1 \colon \tau
 \quad 
 \ldots
 \quad 
-\Gamma, x_n \vdash e_n \colon \tau
+\Gamma, x_n : \tau_n \vdash e_n \colon \tau
 }
-{ \Gamma \vdash \ case \ e \ \\{ i_1 \cdot x_1 \hookrightarrow e_1 | \ldots | i_n \cdot x_n \hookrightarrow e_n \\}}
+{ \Gamma \vdash \ match \ e \ 
+\\{ i_1 \cdot x_1 \hookrightarrow e_1 | \ldots | i_n \cdot x_n \hookrightarrow e_n \\} : \tau }
 $$
 
+Note the complementary symmetry compared with the textbook rule for product
+construction: product construction requires `n` expressions to conclude with a
+single record-type expression combining them all; while sum type elimination
+requires a single sum-typed expression and `n` ways to convert each of the `n`
+alternatives of the sum type to conclude with a single expression of a type that
+does not need to appear in the sum type at all.
 
-- Propose the corresponding sum type elimination
-- Formalize our record elim rule
-- Propose the corresponding sum type intro
-The basic 
+The proposed rule for quint's type system is given without an attempt to
+reproduce our practice of using quint strings. This can be added in later if needed:
 
-### Elimination
+$$
+\frac{
+\Gamma \vdash e : (s, c) \quad
+\Gamma, x_1 \vdash e_1 : (t, c_1) \quad \ldots \quad \Gamma, x_n \vdash e_n : (t, c_n) \quad
+\Gamma, \langle v \rangle \vdash e_{n+1} : (t, c_{n+1}) \quad
+fresh(v)
+}{
+\Gamma \vdash \ match \ e \ \\{ i_1 : x_1 \Rightarrow e_1, \ldots, i_n : x_n \Rightarrow e_n \\} : (t, 
+c \land c_1 \land \ldots \land c_n \land c_{n+1} \land
+s \sim \langle i_1 : t_1, \ldots, i_n : t_n | v \rangle)
+}
+$$
 
-- Ex from product types
-- Proposal for sum-types
+Compared with quint's rule for product construction we see the same
+complementary symmetry. However, we also see a striking difference: there is no
+row variable occurring in the product construction, but the row variable plays
+an essential function in sum type elimination of row-based variants. Row types
+in records are useful for extension operations (i.e., which we don't support in
+quint currently) and for operators that work over some known fields but leave
+the rest of the record contents variable. But the core idea formalized in a
+product type is that the constructor _must_ package all the specified things
+together so that the recipient _can_ chose any thing; thus, when a record is
+constructed we must supply all the things and there is no room for variability
+in the row. For sum types, in contrast the constructor _can_ supply any one thing (of
+a valid alternate type), and requires the recipient _must_ be prepared to
+handle every possible alternative. 
 
-- We don't support the extension operation on records.
+In the presence of row-polymorphis, however, the responsibility of the recipient
+is relaxed: the recipient can just handle a subset of the possible alternatives,
+and if the expression falls under a label they are not prepared to handle, they
+can pass the remaining responsibility on to another handler.
+
+Here is a concrete example using the proposed syntax, note how we narrow the
+type of `T`:
+
+```quint
+type T = A | B;;
+def f(e) = match e {
+  | A => 1
+  | B => 2
+  | _ => 0
+}
+
+// f can be applied to a value of type T
+let a : T = A
+let ex : int = f(A)
+
+// but since it has a fallback for an open row, it can also handle any other variant
+let foo = Foo
+let ex_ : int = f(foo)
+```
+
+Here's the equivalent evaluated in OCaml as proof of concept:
+
+```ocaml
+utop # 
+type t = [`A | `B]
+let f = function
+  | `A -> 1
+  | `B -> 2
+  | _  -> 0
+let ex = f `A, f `Foo
+;;
+type t = [ `A | `B ]
+val f : [> `A | `B ] -> int = <fun>
+val ex : int * int = (1, 0)
+```
 
 ## Dynamics
 
-Case analysis is just application of an operator
+TODO
 
 
 ## Concrete Syntax 
@@ -556,13 +634,60 @@ Other languages with polymorphic variants:
 Considerations
 
 - Assuming we support anonymous variant types, we need a way of constructing
-  variants without pre-defined constructors. The potions are:
+  variants without pre-defined constructors. Potential approaches include:
   - A special syntax that (ideally) mirrors the syntax of the type 
   - A special lexical marker on the labels (what ReScrips and OCaml do), e.g., 
+  - Reserve uppercase letters for variant injectors
   
     ```
     `A(1)
     ```
+    
+### Sketch of an alternative syntax
+
+**Option 2**
+
+This group of alternatives follows [Leijen05][ERLS]: 
+
+```quint
+type T =
+  < A : int
+  , B : str
+  >
+```
+
+The case of labels initial letters could vary in either option.
+
+Injection using a syntax that is symmetrical with records and matches thy type syntax
+```quint
+val a : T = <A:1>
+```
+
+Since option 2 suggests a syntactically unambiguous representation of variant
+formation, we could avoid generating the injectors and/or this could be the
+normal form for injection.
+
+```quint
+def f(n: int): <C:int, D:str | s> =
+  if (n >= 0) <A:n> else <D:"negative">
+```
+
+Compare with the corresponding annotation for a record type:
+
+```quint
+def f(n: int): {C:int, D:str | s} =
+  if (n >= 0) {C:n, D:"positive"} else {C:n, B:"negative"}
+```
+
+**Option 2**
+
+```quint
+match e {
+  | A : a => ...,
+  | B : b => ...
+}
+```
+
   
 ### Declaration
 
@@ -704,7 +829,7 @@ $$
 This would allow removing the checks for string literals, instead leaving that
 to the outer-level, syntactic level, of our static analysis. A similar
 simplification would be follow for record construction: the rule for `Rec` would
-not need to validate that it had received an even number of arguments of
+not need to validate that it had received an even number of argument of
 alternating string literals and values, since this would be statically
 guaranteed by the parsing rules for the $\\{ l_1 : v_1, \ldots, l_n : v_n \\}$
 syntax. This would be a case of opting for the ["Parse, don't validate"][parse]
