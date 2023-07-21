@@ -22,100 +22,89 @@ Here I illustrate two attractive alternatives for each critical construct. See
 
 #### Declaration
 
-This group of alternatives is closer to Rust, but with significant variation for
-reasons discussed in [Syntax](#syntax).
+The proposed syntax follows fits with our existing syntax for records and takes
+inspiration from Rust.
 
 ```quint
-type T =
-  | A(int)
-  | B(str)
+type T = {
+  A(int),
+  B(str),
+  C,
+}
 ```
 
-Variants labels with no associated expression type are allowed, but these are only
-sugar for a label typed with the unit (i.e., the empty record):
+As indicated by `C`, labels with no associated expression type are allowed. These are
+sugar for a label typed with the unit (i.e., the empty record). The above will
+be normalized as
 
 ```quint
-type S = C
+type T = {
+  A(int),
+  B(str),
+  C({}),
+}
 ```
 
-Is normalized as
+
+#### Constructors
+
+Following our existing practice of maintaining exotic operators as the normal
+form of data constructors, we may add an operator `variant` similar to the
+"injection" operator from [Leijen05][ERLS]:
+
+```haskell
+<l = _> :: ∀αr . α → <l :: α | r > -- injection
+```
+
+This operation injects an expression of type `α` into a sum-type. However, if we
+don't want to expose the row-polymorphism to users, we'll need a more
+restrictive typing. This is discussed with the typing rules.
+
+When a sum type declaration is parsed, constructor operations for each variant will be
+generated internally. E.g., for the type `T` defined above, we will add to the
+context the following operators:
 
 ```quint
-type S = C({})
+pure def A(x:int): T = variant("A", x)
+pure def B(x:str): T = variant("B", x)
+pure def C(): T      = variant("C", {})
 ```
-
-
-#### Injection
-
-I propose introducing a lexical rule to syntactically differentiate data
-constructor of sum types from operator application: any identifiers starting
-with an uppercase letter that is occurs in the syntactic position of operator
-application is parsed as a sum type constructor: 
-
-```quint
-// Constructoin of a previously declared sum type
-val a : T = A(1)
-// Construction of a polymorphic variant of an anonymous type
-val b : AdHocVariant(int) | v = AdHocVariant(1)
-```
-
-Identifiers starting with a capital letter would them be available only for
-module names, type aliases, and variant constructors.
-
-This is the only way I can think of to preserve a Rust-like syntax for sum type
-injectors and also support the anonymous sum types that available via
-row-polymorphic sum types. If we instead require all variant types to be defined
-in advance.
-
-In any case, I think there is a gain in readability and parseability in ensuring
-we reason about code purely locally to determine whether a normal operator is
-being applied or
-
-We could also have a normal form for injection called `inj` or `variant`.  If we
-follow our current convention of exotic operators that lift quint strings into
-labels, this would look like:
-
-```quint
-val a : T = inj("A", 1)
-```
-
-Or if we take my recommendation below, we'd have `inj(A, 1)`.
 
 
 #### Case analyses
 
-**Option 1**
+Expressions of a sum type can be eliminated using a case analysis via `match`
+statements:
 
 ```quint
 match e {
-  | A(a) => ...
-  | B(b) => ...
+  A(a) => ...,
+  B(b) => ...,
+  C    => ...,
 }
 ```
 
-`|` can be swapped for `,`, but IMO it is valuable and clarifying to keep the
-syntactic connection with disjunction and with the type syntax. 
-
-The normal form can be `match(e, {...})` to match our current conventions. 
+This construct can either be a primitive or syntax sugar for a more primitive
+`decompose` operator, discussed below.
 
 ##### As an anonymous operator
 
-We could also consider a case analysis `{ A : a => e1 | B : b => e2 }` -- where
-`e1, e2 : S` -- as syntax sugar for an anonymous operator of type `T => S`.
+We could also consider a case analysis `{ A(a) => e1, B(b) => e2, C => e3 }` -- where
+`e1, e2, e3 : S` -- as syntax sugar for an anonymous operator of type `T => S`.
 `match` would then be syntax sugar for operator application. This follows
 Scala's case blocks or OCaml's `function` keyword and would allow idioms such
 as:
 
 ```quint
-setOfTs.map({ A(a) => e1 | B(b) => e2 })
+setOfTs.map({ A(a) => e1, B(b) => e2, C => e3 })
 ```
 
 instead of requiring
 
 ```quint
-setOfTs.map(x => match x { A(a) => e1 | B(b) => e2 })
+setOfTs.map(x => match x { A(a) => e1, B(b) => e2, C => e3 })
 ```
-
+  
 ### Statics
 
 These type rules assume we keep our current approach of using quint strings for
@@ -123,14 +112,14 @@ labels. But see my argument for simplifying our approach under [Drop the exotic
 operators](#drop-the-exotic-operators). See the discussion in
 [Statics](#statics-1) below for a detailed explanation and analysis.
 
-#### Injection
+#### Construction
 
 The typing rule for constructing a variant of a sum type:
 
 $$
 \frac
 { \Gamma \vdash e \colon (t, c) \quad \Gamma \vdash \`l\` \colon str \quad fresh(s) }
-{ \Gamma \vdash \ inj(\`l\`, e) \ \colon (s, c \land s \sim \\{ \ l \colon t | tail\_s \ \\}) }
+{ \Gamma \vdash \ variant(\`l\`, e) \ \colon (s, c \land s \sim \\{ \ l \colon t | tail\_s \ \\}) }
 $$
 
 This gives the rule in our system equivalent to [Leijen05][ERLS]'s 
@@ -443,14 +432,20 @@ it with the label $i_k$, giving an element of our sum type. If we're given a
 thing that has a type allowed by our alternatives, it can included among our
 alternatives.
 
-The proposed rule in our system has been formed by seeking the same symmetry w/r/t
-projection out from a product:
+If we were following the row-based approach outlined in [Leijen05][ERLS], then
+the proposed rule in our system, formed by seeking the same symmetry
+w/r/t projection out from a product, would be:
 
 $$
 \frac
 { \Gamma \vdash e \colon (t, c) \quad \Gamma \vdash \`l\` \colon str \quad fresh(s) }
-{ \Gamma \vdash \ inj(\`l\`, e) \ \colon (s, c \land s \sim \\{ \ l \colon t | tail\_s \ \\}) }
+{ \Gamma \vdash \ variant(\`l\`, e) \ \colon (s, c \land s \sim \\{ \ l \colon t | tail\_s \ \\}) }
 $$
+
+However, if we don't want to expose the row-polymorphism to the users, we need a
+more constrained rule that will ensure the free row variable is not surfaced.
+
+TODO
 
 I here retain our current practice of using quint string literals along with an
 exotic operator, tho in the final section I recommend we abandon this course.
