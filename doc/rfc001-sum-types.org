@@ -104,21 +104,23 @@ The typing rule for constructing a variant of a sum type:
 {
 \Gamma \vdash e \colon (t, c) \quad
 \Gamma \vdash `l' \colon str \quad
-fresh(s) \quad
-definedType(u)
+definedType(s) \quad
+free(v)
 }
 {
 \Gamma \vdash \ variant(`l', e) \ :
-(s, c \land s \sim \langle \ l \colon t | tail\_s \ \rangle \land s \sim u)
+(s, c \land s \sim \langle \ l \colon t | v \ \rangle)
 }
 \]
 
-This gives the rule in our system equivalent to
-[[https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/][Leijen05]]'s
+This rule is substantially different from [[https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/][Leijen05]]'s
 
 #+begin_src haskell
 <l = i> :: ∀αr . α → <l :: α | r > -- injection
 #+end_src
+
+because we have decided not to expose the underlying row-polymorphism for sum
+types at this point.
 
 *** Elimination
 The typing rule for eliminating a variant of a sum type via case
