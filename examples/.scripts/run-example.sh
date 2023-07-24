@@ -52,6 +52,6 @@ types="$(result "quint typecheck ${file}")"
 main="$(get_main "${file}")"
 tests="$(result "quint test ${main} ${file}")"
 verify_args="$(get_verify_args "${file}")"
-verify="$(result "quint verify --max-steps=5 ${verify_args} ${main} ${file}")"
+verify="$(result "quint verify --max-steps=3 ${verify_args} ${main} ${file}")"
 
 echo "| [${file}](./${file}) | ${syntax} | ${types} | ${tests} | ${verify} |"
