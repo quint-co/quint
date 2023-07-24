@@ -51,7 +51,8 @@ module denomTrace {
 
   /// `channelNamesUniquePerChain` is true iff channel names are unique by chain
   pure def channelNamesUniquePerChain(topology: ChannelTopology): bool =
-    pure val chainNames = topology.keys()
+    // FIXME(#693): type annotation below is a workaround, inferred type is too general
+    pure val chainNames: Set[str] = topology.keys()
     and {
       // Check the domain for the second level of chains
       chainNames.forall(chain => topology.get(chain).keys() == chainNames),
