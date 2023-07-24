@@ -220,14 +220,12 @@ module ics20Test {
       "B" -> "channelToB"
     )
   )
-
-  pure val ATOM = toDenom("atom")
-  pure val ESCROW_ACCOUNT = "escrow_account"
+  pure val CHAINS = CHANNEL_TOPOLOGY.keys()
 
   /// For each chain, a map from channel to their channel counterparties,
   /// derived from `CHANNEL_TOPOLOGY`. For example, in chain A, channel "channelToB"
   /// has the counterparty "channelToA".
-  pure val channelCounterparties: str -> Channel -> Channel = CHANNEL_TOPOLOGY.keys().mapBy(chain => {
+  pure val channelCounterparties: str -> Channel -> Channel = CHAINS.mapBy(chain => {
     pure val connectedChains = CHANNEL_TOPOLOGY.get(chain).keys()
     connectedChains.map(counterpartyChain => {
       pure val localChannel = CHANNEL_TOPOLOGY.get(chain).get(counterpartyChain)
@@ -268,20 +266,6 @@ module ics20Test {
   /// Gets the balance of `account` in `chain` of `denom`.
   def getBalanceIn(chain, account, denom) = {
     chainStates.get(chain).bank.getBalances(account).getBalance(denom)
-  }
-
-  action init = {
-    chainStates' = CHANNEL_TOPOLOGY.keys().mapBy(chain => {
-      // All accounts are empty, except for Alice in chain A who has 100 atoms
-      bank: if (chain == "A") Map("alice" -> Map(ATOM -> 100)) else Map(),
-      channels: channelCounterparties.get(chain),
-      channelEscrowAddresses: channelCounterparties.get(chain).keys().mapBy(_ => ESCROW_ACCOUNT),
-      // Start without any unprocessed packets/acknowledgements/timeouts
-      outPackets: Set(),
-      receivedButUnacknowledgedPackets: Set(),
-      inAcknowledgements: Set(),
-      inTimeouts: Set()
-    })
   }
 
   /// Send a packet from `sourceChain` to `destChain`, indicating a transfer
@@ -423,6 +407,41 @@ module ics20Test {
       // (3) Quint state transition:
       chainStates' = chainStates.set(chain, newChainState)
     }
+
+  pure val ATOM = toDenom("atom")
+  pure val USER_ACCOUNTS = Set("alice", "bob", "charlie")
+  pure val ESCROW_ACCOUNT = "escrow_account"
+
+  // Initialize the protocol
+  action init = {
+    chainStates' = CHAINS.mapBy(chain => {
+      // All accounts are empty, except for Alice in chain A who has 100 atoms
+      bank: if (chain == "A") Map("alice" -> Map(ATOM -> 100)) else Map(),
+      channels: channelCounterparties.get(chain),
+      channelEscrowAddresses: channelCounterparties.get(chain).keys().mapBy(_ => ESCROW_ACCOUNT),
+      // Start without any unprocessed packets/acknowledgements/timeouts
+      outPackets: Set(),
+      receivedButUnacknowledgedPackets: Set(),
+      inAcknowledgements: Set(),
+      inTimeouts: Set()
+    })
+  }
+
+  // Take a step in the protocol (non-deterministically chooses one action).
+  action step = {
+    nondet sourceChain = CHAINS.oneOf()
+    nondet destChain = CHAINS.exclude(Set(sourceChain)).oneOf()
+    any {
+      nondet amount = oneOf(1.to(10))
+      nondet sourceAddr = USER_ACCOUNTS.oneOf()
+      nondet destAddr = USER_ACCOUNTS.exclude(Set(sourceAddr)).oneOf()
+      sendPacket(sourceChain, destChain, ATOM, amount, sourceAddr, destAddr),
+      receivePacket(sourceChain, destChain),
+      timeoutPacket(sourceChain, destChain),
+      receiveAck(sourceChain),
+      receiveTimeout(sourceChain),
+    }
+  }
 
   /// Send `amount`-many `denom` tokens from `sender` on `sourceChain` to
   /// `receiver` on `destChain`.
@@ -643,4 +662,18 @@ module ics20Test {
     // noop
     chainStates' = chainStates
   })
+
+  /* ***************************************************************************
+   * INVARIANTS
+   * **************************************************************************/
+
+  // To check in random simulator:
+  // $ quint run --main=ics20Test --invariant=BalanceNonNegative ics20.qnt
+
+  // The balance of all denominations in all accounts is always non-negative.
+  val BalanceNonNegative = CHAINS.forall(chain =>
+      USER_ACCOUNTS.forall(addr =>
+        chainStates.get(chain).bank.getBalances(addr).getBalance(ATOM) >= 0
+    )
+  )
 }
