@@ -247,23 +247,23 @@ module denomTraceSimulation {
 // Fails because the channel topology is not proper
 // The aim is to show that it is, in fact, necessary to enforce `channelNamesUniquePerChain`
 module randomChannelsTests {
-  pure val chains = Set("A", "B", "C")
-  pure val channelNames = Set("channelToA", "channelToB", "channelToC")
+  pure val myChains = Set("A", "B", "C")
+  pure val myChannelNames = Set("channelToA", "channelToB", "channelToC")
 
   import denomTraceSimulation(
-    possibleChannelTopologies = chains.setOfMaps(chains.setOfMaps(channelNames))
-  ) as S
+    possibleChannelTopologies = myChains.setOfMaps(myChains.setOfMaps(myChannelNames))
+  ).*
 }
 
 // Passes because the channel topology is proper
 module properChannelsTests {
-  pure val chains = Set("A", "B", "C")
-  pure val channelNames = Set("channelToA", "channelToB", "channelToC")
+  pure val myChains = Set("A", "B", "C")
+  pure val myChannelNames = Set("channelToA", "channelToB", "channelToC")
 
   import base.* from "./base"
   import denomTrace.channelNamesUniquePerChain
 
   import denomTraceSimulation(
-    possibleChannelTopologies = chains.setOfMaps(chains.setOfMaps(channelNames)).filter(channelNamesUniquePerChain)
-  ) as S
+    possibleChannelTopologies = myChains.setOfMaps(myChains.setOfMaps(myChannelNames)).filter(channelNamesUniquePerChain)
+  ).*
 }
