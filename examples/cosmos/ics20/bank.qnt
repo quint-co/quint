@@ -198,6 +198,9 @@ module bankTests {
    * TESTS
    * **************************************************************************/
 
+  // To run tests in the random simulator:
+  // $ quint test --main=bankTests bank.qnt
+
   // A predicate that holds after `init`
   def initialState = all {
     // last operation successful
@@ -391,6 +394,13 @@ module bankTests {
   /* ***************************************************************************
    * INVARIANTS
    * **************************************************************************/
+
+  // To check in random simulator:
+  // $ quint run --main=bankTests --invariant=BalanceNonNegative bank.qnt
+  // $ quint run --main=bankTests --invariant=NonExistantAccountsOrCoinsAreZero bank.qnt
+  //
+  // To verify in model-checker:
+  // $ quint verify --max-steps=3 --main=bankTests --invariant=BalanceNonNegative,NonExistantAccountsOrCoinsAreZero bank.qnt
 
   // An invariant for `getBalances` and `getBalance`:
   //   - Unknown accounts report 0 tokens of each denomination.
