@@ -22,9 +22,13 @@ import fs from 'fs'
 import os from 'os'
 import * as grpc from '@grpc/grpc-js'
 import * as proto from '@grpc/proto-loader'
+import * as protobufDescriptor from 'protobufjs/ext/descriptor'
 import { setTimeout } from 'timers/promises'
 import { promisify } from 'util'
 import { ItfTrace } from './itf'
+
+import type { Buffer } from 'buffer'
+import type { PackageDefinition as ProtoPackageDefinition } from '@grpc/proto-loader'
 
 const APALACHE_SERVER_URI = 'localhost:8822'
 // These will be addressed as we work out the packaging for apalche
@@ -133,8 +137,6 @@ type CmdExecutor = {
 
 // The refined interface to the CmdExecutor we produce from the generated interface
 type AsyncCmdExecutor = {
-  // Reference to the distribution lets us start the server if needed
-  dist: ApalacheDist
   run: (req: RunRequest) => Promise<RunResponse>
   ping: () => Promise<void>
 }
@@ -152,14 +154,8 @@ function err<A>(explanation: string, errors: ErrorMessage[] = [], traces?: ItfTr
 }
 
 function findApalacheDistribution(): VerifyResult<ApalacheDist> {
-  if (!process.env.APALACHE_DIST) {
-    // TODO: fetch release if APALACHE_DIST is not configured
-    // See https://github.com/informalsystems/quint/issues/701
-    return err('APALACHE_DIST enviroment variable is not set.')
-  }
-
-  const dist = path.isAbsolute(process.env.APALACHE_DIST)
-    ? process.env.APALACHE_DIST
+  const dist = path.isAbsolute(process.env.APALACHE_DIST!)
+    ? process.env.APALACHE_DIST!
     : path.join(process.cwd(), process.env.APALACHE_DIST!)
 
   if (!fs.existsSync(dist)) {
@@ -192,7 +188,7 @@ const grpcStubOptions = {
   oneofs: true,
 }
 
-function loadGrpcClient(dist: ApalacheDist): VerifyResult<AsyncCmdExecutor> {
+function loadProtoDefViaDistribution(dist: ApalacheDist): VerifyResult<ProtoPackageDefinition> {
   const jarUtilitiyIsInstalled = spawnSync('jar', ['--version']).status === 0
   if (!jarUtilitiyIsInstalled) {
     return err('The `jar` utility must be installed')
@@ -213,13 +209,81 @@ function loadGrpcClient(dist: ApalacheDist): VerifyResult<AsyncCmdExecutor> {
   // We have the proto file loaded, so we can delete the tmp dir
   fs.rmSync(tmpDir, { recursive: true, force: true })
 
+  return right(protoDef)
+}
+
+async function loadProtoDefViaReflection(): Promise<VerifyResult<ProtoPackageDefinition>> {
+  type ServerReflectionRequest = { file_containing_symbol: string }
+  type ServerReflectionResponseSuccess = {
+    file_descriptor_response: {
+      file_descriptor_proto: Buffer[]
+    }
+  }
+  type ServerReflectionResponseFailure = {
+    error_response: {
+      error_code: number
+      error_message: string
+    }
+  }
+  type ServerReflectionResponse = ServerReflectionResponseSuccess | ServerReflectionResponseFailure
+  type ServerReflectionService = {
+    new (url: string, creds: grpc.ChannelCredentials): ServerReflectionService
+    ServerReflectionInfo: () => grpc.ClientDuplexStream<ServerReflectionRequest, ServerReflectionResponse>
+  }
+  type ServerReflectionPkg = {
+    grpc: { reflection: { v1alpha: { ServerReflection: ServerReflectionService } } }
+  }
+
+  // Obtain a reflection service client
+  // To load from HTTP:
+  // const protoJson = protobuf.parse(response.data, grpcStubOptions).root.toJSON()
+  // const packageDefinition = proto.fromJSON(protoJson, grpcStubOptions)
+  const protoPath = require.resolve('./reflection.proto')
+  const packageDefinition = proto.loadSync(protoPath, grpcStubOptions)
+  const reflectionProtoDescriptor = grpc.loadPackageDefinition(packageDefinition) as unknown as ServerReflectionPkg
+  const serverReflectionService = reflectionProtoDescriptor.grpc.reflection.v1alpha.ServerReflection
+  const reflectionClient = new serverReflectionService(APALACHE_SERVER_URI, grpc.credentials.createInsecure())
+
+  // Query reflection endpoint
+  const response: VerifyResult<ServerReflectionResponse> = await new Promise<ServerReflectionResponse>(
+    (resolve, reject) => {
+      const call = reflectionClient.ServerReflectionInfo()
+      call.on('data', (r: ServerReflectionResponse) => {
+        call.end()
+        resolve(r)
+      })
+      call.on('error', (e: grpc.StatusObject) => reject(e))
+
+      call.write({ file_containing_symbol: 'shai.cmdExecutor.CmdExecutor' })
+    }
+  )
+    .then(right)
+    .catch(e => err(`Apalache gRPC endpoint is corrupted. Error reading from streaming API: ${e.details}`))
+
+  return response.chain((protoDefResponse: ServerReflectionResponse) => {
+    if ('error_response' in protoDefResponse) {
+      return err(
+        `Apalache gRPC endpoint is corrupted. Could not extract proto file: ${protoDefResponse.error_response.error_message}`
+      )
+    }
+
+    // Decode reflection response to FileDescriptorProto
+    let fileDescriptorProtos = protoDefResponse.file_descriptor_response.file_descriptor_proto.map(
+      bytes => protobufDescriptor.FileDescriptorProto.decode(bytes) as protobufDescriptor.IFileDescriptorProto
+    )
+
+    // Use proto-loader to load the FileDescriptorProto wrapped in a FileDescriptorSet
+    return right(proto.loadFileDescriptorSetFromObject({ file: fileDescriptorProtos }, grpcStubOptions))
+  })
+}
+
+function loadGrpcClient(protoDef: ProtoPackageDefinition): VerifyResult<AsyncCmdExecutor> {
   const protoDescriptor = grpc.loadPackageDefinition(protoDef)
   // The cast thru `unkown` lets us convince the type system of anything
   // See https://basarat.gitbook.io/typescript/type-system/type-assertion#double-assertion
   const pkg = protoDescriptor.shai as unknown as ShaiPkg
   const stub = new pkg.cmdExecutor.CmdExecutor(APALACHE_SERVER_URI, grpc.credentials.createInsecure())
   const impl: AsyncCmdExecutor = {
-    dist,
     run: promisify((data: RunRequest, cb: AsyncCallBack<any>) => stub.run(data, cb)),
     ping: promisify((cb: AsyncCallBack<void>) => stub.ping({}, cb)),
   }
@@ -263,6 +327,12 @@ async function connect(cmdExecutor: AsyncCmdExecutor): Promise<VerifyResult<Apal
  * @returns right(void) if verification succeeds, or left(err) explaining the failure
  */
 export async function verify(config: any): Promise<VerifyResult<void>> {
-  const connectionResult = await findApalacheDistribution().chain(loadGrpcClient).asyncChain(connect)
+  // Attempt to load proto definition:
+  // - if APALACHE_DIST is set, from the Apalache distribution
+  // - otherwise, via gRPC reflection
+  const protoDefResult = process.env.APALACHE_DIST
+    ? findApalacheDistribution().chain(dist => loadProtoDefViaDistribution(dist))
+    : await loadProtoDefViaReflection()
+  const connectionResult = await protoDefResult.chain(loadGrpcClient).asyncChain(connect)
   return connectionResult.asyncChain(conn => conn.check(config))
 }
