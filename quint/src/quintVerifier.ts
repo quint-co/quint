@@ -59,7 +59,12 @@ function handleVerificationFailure(failure: { pass_name: string; error_data: any
   switch (failure.pass_name) {
     case 'SanyParser':
       return {
-        explanation: `internal error: ${failure.error_data}\nPlease report an issue: https://github.com/informalsystems/quint/issues/new`,
+        explanation: `internal error: while parsing in Apalache:\n'${failure.error_data}'\nPlease report an issue: https://github.com/informalsystems/quint/issues/new`,
+        errors: [],
+      }
+    case 'TypeCheckerSnowcat':
+      return {
+        explanation: `internal error: while type checking in Apalache:\n'${failure.error_data}'\nPlease report an issue: https://github.com/informalsystems/quint/issues/new`,
         errors: [],
       }
     case 'BoundedChecker':
