@@ -4,15 +4,23 @@
 
 * Overview
 This section gives a concise overview of the principle proposal. In
-depth discussion follows in the subsequent sections.
+depth discussion follows in [[Discussion][Discuisson]].
 
 ** Concrete syntax
-Here I illustrate the concrete syntax additions being proposed. See [[Concrete Syntax][the
-discussion of concrete syntax]] for consideration of motivations and trade offs.
+The concrete syntax falls into three categories, corresponding three aspects of
+the semantics:
+
+- Declaring that a type is allowed in a context.
+- Constructing an element of the declared type.
+- Eliminating an element of the declared type (to derive an element of some
+  other type).
+
+Here we merely state the proposed syntax. See [[Concrete Syntax][the discussion of concrete syntax]]
+for consideration of motivations and trade offs.
 
 *** Declaration
-The proposed syntax follows fits with our existing syntax for records
-and takes inspiration from Rust.
+The proposed syntax fits closely with our existing syntax for records
+and takes inspiration from Rust:
 
 #+begin_src quint
 type T = {
@@ -35,32 +43,31 @@ type T = {
 #+end_src
 
 *** Constructors
-Following our existing practice of maintaining exotic operators as the
-normal form of data constructors, we may add an operator =variant=
-similar to the "injection" operator from
-[[https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/][Leijen05]]:
+We need add an operator =variant= similar to the "injection" operator from [[https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/][Leijen05]]:
 
 #+begin_src haskell
 <l = _> :: ∀αr . α → <l :: α | r > -- injection
 #+end_src
 
-This operation injects an expression of type =α= into a sum-type.
+
+Either way, this operation injects an expression of type =α= into a sum-type.
 However, if we don't want to expose the row-polymorphism to users, we'll
 need a more restrictive typing. This is discussed with the typing rules.
 
-When a sum type declaration is parsed, constructor operations for each
-variant will be generated internally. E.g., for the type =T= defined
-above, we will add to the context the following operators:
+To aid usability, however, we can provide syntax sugar: when a sum type
+declaration is parsed, constructor operations for each variant will be generated
+internally. E.g., for the type =T= defined above, we will add to the context the
+following operators:
 
 #+begin_src quint
-pure def A(x:int): T = variant("A", x)
-pure def B(x:str): T = variant("B", x)
-pure def C(): T      = variant("C", {})
+pure def A(x:int): T = variant(A, x)
+pure def B(x:str): T = variant(B, x)
+pure def C(): T      = variant(C, {})
 #+end_src
 
 *** Case analyses
 Expressions of a sum type can be eliminated using a case analysis via
-=match= statements:
+a =match= statement. Following Rust's syntax, we write that as
 
 #+begin_src quint
 match e {
@@ -99,7 +106,8 @@ analysis.
 *** Construction
 The typing rule for constructing a variant of a sum type:
 
-\[
+#+CAPTION: SUM-INTRO
+$$
 \frac
 {
 \Gamma \vdash e \colon (t, c) \quad
@@ -111,7 +119,8 @@ free(v)
 \Gamma \vdash \ variant(`l', e) \ :
 (s, c \land s \sim \langle \ l \colon t | v \ \rangle)
 }
-\]
+$$
+
 
 This rule is substantially different from [[https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/][Leijen05]]'s
 
@@ -119,13 +128,18 @@ This rule is substantially different from [[https://www.microsoft.com/en-us/rese
 <l = i> :: ∀αr . α → <l :: α | r > -- injection
 #+end_src
 
+
 because we have decided not to expose the underlying row-polymorphism for sum
-types at this point.
+types at this point. This introduces the non-trivial complication of needing to
+introduce the typing context onto our judgments (this is what we gesture at with
+the side condition =definedType(s)=).
 
 *** Elimination
+
 The typing rule for eliminating a variant of a sum type via case
 analysis:
 
+#+CAPTION: SUM-ELIM
 \[
 \frac{
 \Gamma \vdash e : (s, c) \quad
@@ -139,7 +153,8 @@ s \sim \langle i_1 : t_1, \ldots, i_n : t_n | v \rangle)
 }
 \]
 
-This gives the rule in our system that is sufficient to capture [[https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/][Leijen05]]'s
+
+This gives a rule in our system that is sufficient to capture [[https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/][Leijen05]]'s
 
 #+begin_src haskell
 (l ∈ _ ? _ : _) :: ∀αβr . <l :: α | r> → (α → β) → (<r> → β) → β -- decomposition
@@ -230,20 +245,18 @@ define properties common to all shapes like
 
 ** Context
 *** Existing plans and previous work
-We have always planned to support co-products in quint: their utility is
-well known and widely appreciated by engineers with experience in modern
-programming languages. We introduced co-products to Apalache in
-[[https://github.com/informalsystems/apalache/milestone/60]] for the
-same reasons. The design and implementation of the latter was worked out
-by [cite/t:@konnov] based on the paper
-[[https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/]["Extensible
-Records with Scoped Labels"]]. At the core of this design is a simple
-use of row-polymorphism that enables both extensible variants and
-extensible records, giving us products and co-products in a one neat
+We have always planned to support co-products in quint: their utility is well
+known and widely appreciated by engineers with experience in modern programming
+languages. We introduced co-products to Apalache in
+[[https://github.com/informalsystems/apalache/milestone/60]] for the same reasons.
+The design and implementation of the latter was worked out by [cite/t:@konnov]
+based on the paper [[https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/]["Extensible Records with Scoped Labels"]]. At the core of this
+design is a simple use of row-polymorphism that enables both extensible variants
+and extensible records, giving us products and co-products in a one neat
 package. The quint type system was also developed using row-polymorphism
-following this design. As a result of this forethought, extension of
-quint's type system and addition of syntax to support sum-types is
-expected to be relatively straightforward.
+following this design. As a result of this forethought, extension of quint's
+type system and addition of syntax to support sum-types is expected to be
+relatively straightforward.
 
 *** The gist of extensible row-typed records and sum types
 The core concept in the row-based approach we've opted for is the
@@ -277,20 +290,16 @@ another (possibly open row). To represent a closed row, we omit the
 trailing \(| v\).
 
 *** Quint's current type system
-The
-[[https://github.com/informalsystems/quint/tree/main/doc/adr005-type-system.md][current
-type system supported by quint]] is based on a simplified version of the
-constraint-based system presented in
-[[https://www.microsoft.com/en-us/research/publication/complete-and-decidable-type-inference-for-gadts/]["Complete
-and Decidable Type Inference for GADTs"]] augmented with extensible
-(currently, just) records based on "Extensible Records with Scoped
-Labels". A wrinkle in this genealogy is that quint's type system
-includes neither GADTs nor scoped labels (and even the extensiblity
-supported for records is limited). Moreover, due to their respective
-foci, neither of the referenced papers includes a formalization the
-complete statics for product types or sum types, and while we have
-implemented support for product types in quint, we don't have our typing
-rules recorded.
+
+The [[https://github.com/informalsystems/quint/tree/main/doc/adr005-type-system.md][current type system supported by quint]] is based on a simplified version of
+the constraint-based system presented in [[https://www.microsoft.com/en-us/research/publication/complete-and-decidable-type-inference-for-gadts/]["Complete and Decidable Type Inference
+for GADTs"]] augmented with extensible (currently, just) records based on
+"Extensible Records with Scoped Labels". A wrinkle in this genealogy is that
+quint's type system includes neither GADTs nor scoped labels (and even the
+extensiblity supported for records is limited). Moreover, due to their
+respective foci, neither of the referenced papers includes a formalization the
+complete statics for product types or sum types, and while we have implemented
+support for product types in quint, we don't have our typing rules recorded.
 
 ** Statics
 This section discusses the typing judgements that will allow us to
@@ -472,6 +481,11 @@ free(v)
 \]
 
 
+Igor has voiced a strong preference that we do not allow anonymous or
+row-polymorphic sum types, which is why the last rule is proposed. It does
+complicate our typing rules, as it requires we draw from the typing context.
+
+
 *** Introducing products and eliminating sums
 Forming expressions of product types by backing them into records and
 eliminating expressions of sum types by case analysis exhibit the same
@@ -635,121 +649,109 @@ val f : [> `A | `B ] -> int = <fun>
 val ex : int * int = (1, 0)
 #+end_src
 
-** Dynamics
-TODO
+All the features just discussed that come from row-polymorphism will not be
+available since we are choosing to suppress the row-typing.
 
 ** Concrete Syntax
-Other languages with polymorphic variants:
 
-- ReScript:
-  https://rescript-lang.org/docs/manual/latest/polymorphic-variant
-- OCaml: https://v2.ocaml.org/manual/polyvariant.html
+Our sum type system is based on row-polymorphism. The only widely used language
+I've found that uses row-polymorphism for extensible sum types is OCaml (and the
+alternative surface syntax, ReScript/Reason). For examples of their syntax for
+this interesting construct, see
 
-Considerations
+- ReScript :: https://rescript-lang.org/docs/manual/latest/polymorphic-variant
+- OCaml :: https://v2.ocaml.org/manual/polyvariant.html
 
-- Assuming we support anonymous variant types, we need a way of
-  constructing variants without pre-defined constructors. Potential
-  approaches include:
-  - A special syntax that (ideally) mirrors the syntax of the type
+These very flexible sum types are powerful, but they introduce challenges to the
+syntax (and semantics) of programs. Fir example, supporting anonymous variant
+types requires way of constructing variants without pre-defined constructors.
+Potential approaches to address this include:
 
+  - A special syntax that (ideally) mirrors the syntax of the type.
   - A special lexical marker on the labels (what ReScrips and OCaml do),
-    e.g.,
+    e.g., =`A 1= or =#a 1= instead of =A(1)=.
 
-  - Reserve uppercase letters for variant injectors
-
-    #+begin_src
-    `A(1)
-    #+end_src
-
-*** Sketch of an alternative syntax
-*Option 2*
-
-This group of alternatives follows
-[[https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/][Leijen05]]:
-
-#+begin_src
-type T =
-  < A : int
-  , B : str
-  >
-#+end_src
-
-The case of labels initial letters could vary in either option.
-
-Injection using a syntax that is symmetrical with records and matches
-thy type syntax
-
-#+begin_src
-val a : T = <A:1>
-#+end_src
-
-Since option 2 suggests a syntactically unambiguous representation of
-variant formation, we could avoid generating the injectors and/or this
-could be the normal form for injection.
-
-#+begin_src
-def f(n: int): <C:int, D:str | s> =
-  if (n >= 0) <A:n> else <D:"negative">
-#+end_src
-
-Compare with the corresponding annotation for a record type:
-
-#+begin_src
-def f(n: int): {C:int, D:str | s} =
-  if (n >= 0) {C:n, D:"positive"} else {C:n, B:"negative"}
-#+end_src
-
-*Option 2*
-
-#+begin_src
-match e {
-  | A : a => ...,
-  | B : b => ...
-}
-#+end_src
+However, we have instead opted to hide the row-polymorphism, and not expose
+this.
 
 *** Declaration
-**** Copy rust exactly
-#+begin_src
+
+The currently proposed syntax for declaration is indexing pretty heavily on
+current popularity of rust. More than I would prefer, since I worry that the
+concrete syntax for declarations doesn't differentiate them enough from record
+declarations.
+
+This similarity is aggravated by the fact that we are currently planning to
+allow sum type labels to be upper or lower case, just as we do for records.
+Thus, we could end up with declarations like:
+
+```quint
+type T = {
+    a : int,
+    B : str,
+}
+
+type S = {
+    A(int),
+    b(str),
+}
+```
+
+I expect that the difference between =_:_= and =_(_)= will generally be enough
+to keep readers from confusing the two. But the chance of mistaking a record and
+sum type declaration is actually compounding a worse possibli confusion: The
+part enclosed in brackets is syntactically indistinguishable from a block of
+operators.
+
+Given that we tend to read data structures from the outside in, I'd feel more
+confident that we were going to avoid confusion if declarations used the =|= as
+an additional marker:
+
+```quint
+type T = {
+    a : int,
+    B : str,
+}
+
+type S =
+    | A(int)
+    | b(str)
+```
+
+The latter seems much clearer to me, and if we reflect this syntax also in
+=match=, it will give another foothold to help readers gather meaning when
+skimming the code.
+
+**** Could we just copy Rust exactly?
+
+In Rust, sum types are declared like this:
+
+#+begin_src rust
 enum T {
-  A(int),
-  B(int)
+  A(i64),
+  B(i64),
+  C
 }
 #+end_src
 
+If we just adopted this without also changing our syntax for records, we would
+introduce
+
 - Breaks with our current convention around type declarations and
-  keywords.
-
-- The part enclosed in prackets is syntactically indistinguishable from
-  a block of operators that we'd combine with =any= or =and=.
-
+  keywords, unless we also redesign the syntax for records.
 - May mislead users to try injecting values into the type via Rust's
   =T::A(x)= syntax, which clashes with our current module syntax.
-
-- Anonymous variant types would look really confusing
-
-  #+begin_src
-  def foo(x: int): {A(int), B(int) | t} = { if (and { C(x), D(x) }) A(x) else B(x) }
-  #+end_src
-
-- Closer to Rust but further from
-  [[https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-aliases][TypeScript]]
-  and [[https://rescript-lang.org/docs/manual/latest/variant][ReScript]]
-
-*** Annotation
-- OCaml
-- Rust
+- This would move us Closer to Rust but further from languages like [[https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-aliases][TypeScript]]
+  and [[https://rescript-lang.org/docs/manual/latest/variant][ReScript]].
 
 *** Case analysis
-sugar for case analysis and pattern matching
-
 Ergonomic support for sum types requires eliminators, ideally in the
 form if case analysis by pattern matching.
 
-[[https://doc.rust-lang.org/book/ch18-03-pattern-syntax.html#matching-literals][Rust's
-pattern syntax]] is not terribly far off from our syntax:
+The proposed syntax is very close to [[https://doc.rust-lang.org/book/ch18-03-pattern-syntax.html#matching-literals][Rust's pattern syntax]]. Here's some example
+Rust for comparison
 
-#+begin_src
+#+begin_src rust
     match x {
         A    => println!("a"),
         B    => println!("b"),
@@ -781,24 +783,75 @@ support to defined sum types and seeing where we are after that.
 
 Considerations
 
-Possible confusion around eliminator syntax in absence of full pattern
-matching. Alternative:
-
-#+begin_src
-    match x {
-        A : _ => println!("a"),
-        B : _ => println!("b"),
-        C : v => println!("cv"),
-        _ : _ => println!("anything"),
-    }
-#+end_src
-
-Alternatively we just flag a parsing error of the deconstructor arg is
-not a free variable, and inform the user that full pattern matching
-isn't yet supported.
+Until we have pattern matching untroduced, we flag a parsing error of the
+deconstructor arg is not a free variable, and inform the user that full pattern
+matching isn't yet supported.
 
 NOTE: Loss of consistency in declaration vs. construction/elimination.
 
+*** Sketch of an alternative syntax
+The syntax being proposed is chosen because it is familiar to Rust programmers,
+and is deemed sufficient so long as we don't need to expose the underlying row
+polymorphism. However, it has the down-sides of being very similar to the syntax
+for records, which might lead to confusion. I've also considered a more distinctive alternative which
+is also more consistently complementary to our records syntax. This group of alternatives follows [[https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/][Leijen05]]:
+
+**** Declaration
+
+Reflecting the fact that both records and sum types are based on rows, we
+use the same pairing (=:=) and enumerating (=,=) syntax, but signal to move from
+a conjunctive to a disjunctive meaning of the row by changing the brackets:
+
+#+begin_src quint
+type T =
+  < A : int
+  , B : str
+  >
+#+end_src
+
+**** Injection
+
+Injection uses a syntax that is dual with projection on records: =.= projects
+values out of products and injects them into co-products:
+
+#+begin_src
+val a : T = <A.1>
+#+end_src
+
+Since this option gives a syntactically unambiguous representation of
+variant formation, there is no need to generate special injector operator, and
+=<_._>= can be the normal form for injection.
+
+Annotation of anonymous sum types is clear and unambiguous:
+
+#+begin_src
+def f(n: int): <C:int, D:str | s> =
+  if (n >= 0) <C.n> else <D."negative">
+#+end_src
+
+Compare with the corresponding annotation for a record type:
+
+#+begin_src
+def f(n: int): {C:int, D:str | s} =
+  if (n >= 0) {C:n, D:"positive"} else {C:n, B:"negative"}
+#+end_src
+
+**** Elimination
+
+Finally, elimination uses a syntax that is dual to record construction,
+signaling the similarity thru use of the surrounding curly braces, and
+difference via the presence of the fat arrows (this syntax is similar to the
+one proposed):
+
+#+begin_src
+match e {
+  A : a => ...,
+  B : b => ...
+}
+#+end_src
+
+** Implementation plan
+TODO
 ** Additional consideration
 - Pattern matching
 - User defined parametric type constructors
