@@ -38,7 +38,14 @@ import { getSignatures } from './builtinSignatures'
 import { Constraint, Signature, TypeScheme, toScheme } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 import { LookupTable } from '../names/base'
-import { specialConstraints } from './specialConstraints'
+import {
+  recordConstructorConstraints,
+  fieldConstraints,
+  fieldNamesConstraints,
+  withConstraints,
+  tupleConstructorConstraints,
+  itemConstraints,
+} from './specialConstraints'
 import { FreshVarGenerator } from '../FreshVarGenerator'
 
 export type SolvingFunctionType = (
@@ -152,31 +159,38 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       })
     )
 
-    const result = argsResult.chain((results): Either<Error, TypeScheme> => {
-      const signature = this.typeForName(e.opcode, e.id, e.args.length)
-      const a: QuintType = { kind: 'var', name: this.freshVarGenerator.freshVar('t') }
-      const special = specialConstraints(e.opcode, e.id, results, a)
-
-      const constraints = special.chain(cs => {
-        // Check if there is a special case defined for the operator
-        if (cs.length > 0) {
-          // If yes, use the special constraints
-          return right(cs)
-        } else {
-          // Otherwise, define a constraint over the signature
-          return signature.map(t1 => {
-            const t2: QuintType = { kind: 'oper', args: results.map(r => r[1]), res: a }
-            const c: Constraint = { kind: 'eq', types: [t1, t2], sourceId: e.id }
-            return [c]
-          })
+    const definedSignature = this.typeForName(e.opcode, e.id, e.args.length)
+    const a: QuintType = { kind: 'var', name: this.freshVarGenerator.freshVar('t') }
+    const result = argsResult
+      .chain(results => {
+        switch (e.opcode) {
+          // Record operators
+          case 'Rec':
+            return recordConstructorConstraints(e.id, results, a)
+          case 'field':
+            return fieldConstraints(e.id, results, a)
+          case 'fieldNames':
+            return fieldNamesConstraints(e.id, results, a)
+          case 'with':
+            return withConstraints(e.id, results, a)
+          // Tuple operators
+          case 'Tup':
+            return tupleConstructorConstraints(e.id, results, a)
+          case 'item':
+            return itemConstraints(e.id, results, a)
+          // Otherwise it's a standard operator with a definition in the context
+          default:
+            return definedSignature.map(t1 => {
+              const t2: QuintType = { kind: 'oper', args: results.map(r => r[1]), res: a }
+              const c: Constraint = { kind: 'eq', types: [t1, t2], sourceId: e.id }
+              return [c]
+            })
         }
       })
-
-      return constraints.map(cs => {
+      .map(cs => {
         this.constraints.push(...cs)
         return toScheme(a)
       })
-    })
 
     this.addToResults(e.id, result)
   }
