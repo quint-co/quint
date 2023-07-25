@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix a problem where name resolution would fail to flag name errors for
   non-exported names in incremetal evaluation in REPL (#1031)
 - Do not fail on a bug in error formatting (#1063)
+- Fix unhandled error messages during parsing and typechecking on the Apalache
+  server (#1074)
 
 ### Security
 
