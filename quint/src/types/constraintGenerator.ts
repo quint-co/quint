@@ -39,12 +39,12 @@ import { Constraint, Signature, TypeScheme, toScheme } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 import { LookupTable } from '../names/base'
 import {
-  recordConstructorConstraints,
   fieldConstraints,
   fieldNamesConstraints,
-  withConstraints,
-  tupleConstructorConstraints,
   itemConstraints,
+  recordConstructorConstraints,
+  tupleConstructorConstraints,
+  withConstraints,
 } from './specialConstraints'
 import { FreshVarGenerator } from '../FreshVarGenerator'
 
