@@ -26,7 +26,6 @@ export function recordConstructorConstraints(
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
-  const constraints: Constraint[] = []
   // A record constructor has the normal form Rec('field1', value1, 'field2', value2, ...)
   // So we iterate over the arguments in pairs (chunks of size 2)
   //
@@ -47,9 +46,8 @@ export function recordConstructorConstraints(
 
   return mergeInMany(fields).map(fs => {
     const t: QuintType = { kind: 'rec', fields: { kind: 'row', fields: fs, other: { kind: 'empty' } } }
-    const c: Constraint = { kind: 'eq', types: [t, resultTypeVar], sourceId: id }
-    constraints.push(c)
-    return constraints
+    const constraint: Constraint = { kind: 'eq', types: [t, resultTypeVar], sourceId: id }
+    return [constraint]
   })
 }
 
