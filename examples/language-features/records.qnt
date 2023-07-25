@@ -1,6 +1,6 @@
 module records {
-    var rec1: { f1: int, f2: str | r1 }
-    var rec2: { f2: str, f3: bool | r2 }
+    var rec1: { f1: int, f2: str }
+    var rec2: { f2: str, f3: bool }
     var rec3: { f1: int }
 
     val rec1FieldNames = rec1.fieldNames()

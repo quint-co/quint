@@ -249,6 +249,34 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
+  it('change verbosity and show execution on failure', async () => {
+    const input = dedent(
+      `pure def div(x, y) = x / y
+      |.verbosity=4
+      |div(2, 0)
+      |`
+    )
+    const output = dedent(
+      `>>> pure def div(x, y) = x / y
+      |
+      |>>> .verbosity=4
+      |.verbosity=4
+      |>>> div(2, 0)
+      |
+      |[Frame 0]
+      |q::input() => none
+      |└─ div(2, 0) => none
+      |
+      |runtime error: error: Division by zero
+      |div(2, 0)
+      |                     ^^^^^
+      |
+      |<undefined value>
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
   it('caching nullary definitions', async () => {
     const input = dedent(
       `var x: int
@@ -545,6 +573,8 @@ describe('repl ok', () => {
       |x >= 0
       |nondet i = oneOf(Int); x' = i
       |Int.contains(x)
+      |nondet m = 1.to(5).setOfMaps(Int).oneOf(); x' = m.get(3)
+      |x.in(Int)
       |`
     )
     const output = dedent(
@@ -577,6 +607,29 @@ describe('repl ok', () => {
       |>>> nondet i = oneOf(Int); x' = i
       |true
       |>>> Int.contains(x)
+      |true
+      |>>> nondet m = 1.to(5).setOfMaps(Int).oneOf(); x' = m.get(3)
+      |true
+      |>>> x.in(Int)
+      |true
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('nondet and oneOf over sets of sets', async () => {
+    const input = dedent(
+      `var S: Set[int]
+      |nondet y = oneOf(powerset(1.to(3))); S' = y
+      |S.subseteq(1.to(3))
+      |`
+    )
+    const output = dedent(
+      `>>> var S: Set[int]
+      |
+      |>>> nondet y = oneOf(powerset(1.to(3))); S' = y
+      |true
+      |>>> S.subseteq(1.to(3))
       |true
       |>>> `
     )

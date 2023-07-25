@@ -5,4 +5,5 @@ module BinSearch10 {
     INPUT_KEY=7,
     INT_WIDTH=16
   ).* from "./BinSearch"
+  // quint run does not for at the moment, since it expects an export
 }

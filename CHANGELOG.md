@@ -8,8 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- `quint repl` produces an evaluation trace on errors too (#1056)
+- `S.setOfMaps(Int).oneOf()` is now supported (#1060)
+
 ### Changed
 
+- **Breaking**: the behavior of `oneOf` has changed, existing seed values for `quint test`
+  can exhibit different behavior than before (#1060)
 - `quint run` produces a friendlier message when it meets a `const` (#1050)
 
 ### Deprecated
@@ -22,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix bug where `export` for a qualified import would not work (#1030)
 - Fix a problem where name resolution would fail to flag name errors for
   non-exported names in incremetal evaluation in REPL (#1031)
+- Do not fail on a bug in error formatting (#1063)
+- Fix unhandled error messages during parsing and typechecking on the Apalache
+  server (#1074)
 - Fix a problem where some definitions would have to be exported from the
   main module in order for the REPL and the simulator to load them (#1039 and #1051)
 

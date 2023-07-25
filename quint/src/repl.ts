@@ -699,7 +699,7 @@ function countBraces(str: string): [number, number, number] {
 function evalExpr(state: ReplState, out: writer): Either<string, QuintEx> {
   const computable = contextNameLookup(state.evaluationState.context, 'q::input', 'callable')
   const columns = terminalWidth()
-  return computable
+  const result = computable
     .mapRight(comp => {
       return comp
         .eval()
@@ -707,18 +707,6 @@ function evalExpr(state: ReplState, out: writer): Either<string, QuintEx> {
           const ex = value.toQuintEx(state.compilationState.idGen)
           out(format(columns, 0, prettyQuintEx(ex)))
           out('\n')
-
-          if (verbosity.hasUserOpTracking(state.verbosity)) {
-            const trace = state.recorder.getBestTrace()
-            if (trace.subframes.length > 0) {
-              out('\n')
-              trace.subframes.forEach((f, i) => {
-                out(`[Frame ${i}]\n`)
-                printExecutionFrameRec({ width: columns, out }, f, [])
-                out('\n')
-              })
-            }
-          }
 
           if (ex.kind === 'bool' && ex.value) {
             // A Boolean expression may be an action or a run.
@@ -735,6 +723,20 @@ function evalExpr(state: ReplState, out: writer): Either<string, QuintEx> {
         .unwrap()
     })
     .join()
+
+  if (verbosity.hasUserOpTracking(state.verbosity)) {
+    const trace = state.recorder.getBestTrace()
+    if (trace.subframes.length > 0) {
+      out('\n')
+      trace.subframes.forEach((f, i) => {
+        out(`[Frame ${i}]\n`)
+        printExecutionFrameRec({ width: columns, out }, f, [])
+        out('\n')
+      })
+    }
+  }
+
+  return result
 }
 
 function getMainModuleAnnotation(moduleHist: string): string | undefined {

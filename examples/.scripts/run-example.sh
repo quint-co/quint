@@ -25,6 +25,12 @@ get_main () {
     main="--main=LamportMutex_3_10"
   elif [[ "$file" == "classic/distributed/ReadersWriters/ReadersWriters.qnt" ]] ; then
     main="--main=ReadersWriters_5"
+  elif [[ "$file" == "cosmos/ics20/bank.qnt" ]] ; then
+    main="--main=bankTests"
+  elif [[ "$file" == "cosmos/ics20/denomTrace.qnt" ]] ; then
+    main="--main=properChannelsTests"
+  elif [[ "$file" == "cosmos/ics20/ics20.qnt" ]] ; then
+    main="--main=ics20Test"
   elif [[ "$file" == "solidity/ERC20/erc20.qnt" ]] ; then
     main="--main=erc20Tests"
   elif [[ "$file" == "solidity/SimplePonzi/simplePonzi.qnt" ]] ; then
@@ -52,6 +58,6 @@ types="$(result "quint typecheck ${file}")"
 main="$(get_main "${file}")"
 tests="$(result "quint test ${main} ${file}")"
 verify_args="$(get_verify_args "${file}")"
-verify="$(result "quint verify --max-steps=5 ${verify_args} ${main} ${file}")"
+verify="$(result "quint verify --max-steps=3 ${verify_args} ${main} ${file}")"
 
 echo "| [${file}](./${file}) | ${syntax} | ${types} | ${tests} | ${verify} |"
