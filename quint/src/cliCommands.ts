@@ -473,7 +473,10 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const startMs = Date.now()
 
   const mainPath = fileSourceResolver().lookupPath(dirname(prev.args.input), basename(prev.args.input))
-  const result = compileAndRun(newIdGenerator(), prev.modules, mainName, mainPath, options)
+  const mainId = prev.modules.find(m => m.name === mainName)!.id
+  const mainStart = prev.sourceMap.get(mainId)!.start.index
+  const mainEnd = prev.sourceMap.get(mainId)!.end!.index
+  const result = compileAndRun(newIdGenerator(), prev.sourceCode, mainStart, mainEnd, mainName, mainPath, options)
 
   if (result.status === 'error') {
     const errors = prev.errors ? prev.errors.concat(result.errors) : result.errors
@@ -554,6 +557,7 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
   // Flatten modules, replacing instances, imports and exports with their definitions
   const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
     verifying.modules,
+    // verifying.definitionsByModule,
     verifying.table,
     verifying.idGen,
     verifying.sourceMap,

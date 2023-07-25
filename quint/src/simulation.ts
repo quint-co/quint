@@ -12,13 +12,12 @@ import { Either } from '@sweet-monads/either'
 
 import { compileFromCode, contextNameLookup, lastTraceName } from './runtime/compile'
 import { ErrorMessage } from './parsing/quintParserFrontend'
-import { QuintEx, QuintModule } from './quintIr'
+import { QuintEx } from './quintIr'
 import { Computable } from './runtime/runtime'
 import { ExecutionFrame, newTraceRecorder } from './runtime/trace'
 import { IdGenerator } from './idGenerator'
 import { Rng } from './rng'
 import { SourceLookupPath } from './parsing/sourceResolver'
-import { definitionToString, moduleToString } from './IRprinting'
 
 /**
  * Various settings that have to be passed to the simulator to run.
@@ -62,7 +61,9 @@ function errSimulationResult(status: SimulatorResultStatus, errors: ErrorMessage
  * Execute a run.
  *
  * @param idGen a unique generator of identifiers
- * @param modules the list of modules
+ * @param code the source code of the modules
+ * @param mainStart the start index of the main module in the code
+ * @param mainEnd the end index of the main module in the code
  * @param mainName the module that should be used as a state machine
  * @param mainPath the lookup path that was used to retrieve the main module
  * @param options simulator settings
@@ -71,7 +72,9 @@ function errSimulationResult(status: SimulatorResultStatus, errors: ErrorMessage
  */
 export function compileAndRun(
   idGen: IdGenerator,
-  modules: QuintModule[],
+  code: string,
+  mainStart: number,
+  mainEnd: number,
   mainName: string,
   mainPath: SourceLookupPath,
   options: SimulatorOptions
@@ -94,20 +97,11 @@ export function compileAndRun(
   ]
 
   // Construct the modules' code, adding the extra definitions to the main module
-  // FIXME: Ideally, this shouldn't involve the pretty printer
-  const code = modules
-    .map(m => {
-      if (m.name !== mainName) {
-        // Not the main module, return it as is
-        return moduleToString(m)
-      }
-      const defs = m.defs.map(d => definitionToString(d)).concat(extraDefs)
-      return `module ${m.name} {\n  ${defs.join('\n')}\n}`
-    })
-    .join('\n')
+  const newMainModuleCode = code.slice(mainStart, mainEnd - 1) + extraDefs.join('\n')
+  const codeWithExtraDefs = code.slice(0, mainStart) + newMainModuleCode + code.slice(mainEnd)
 
   const recorder = newTraceRecorder(options.verbosity, options.rng)
-  const ctx = compileFromCode(idGen, code, mainName, mainPath, recorder, options.rng.next)
+  const ctx = compileFromCode(idGen, codeWithExtraDefs, mainName, mainPath, recorder, options.rng.next)
 
   if (ctx.compileErrors.length > 0 || ctx.syntaxErrors.length > 0 || ctx.analysisErrors.length > 0) {
     const errors = ctx.syntaxErrors.concat(ctx.analysisErrors).concat(ctx.compileErrors)
