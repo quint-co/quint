@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Do not fail on a bug in error formatting (#1063)
 - Fix unhandled error messages during parsing and typechecking on the Apalache
   server (#1074)
+- Fix a problem where some definitions would have to be exported from the
+  main module in order for the REPL and the simulator to load them (#1039 and #1051)
 
 ### Security
 
