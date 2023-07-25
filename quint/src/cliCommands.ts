@@ -557,7 +557,6 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
   // Flatten modules, replacing instances, imports and exports with their definitions
   const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
     verifying.modules,
-    // verifying.definitionsByModule,
     verifying.table,
     verifying.idGen,
     verifying.sourceMap,
