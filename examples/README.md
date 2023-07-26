@@ -60,8 +60,8 @@ listed without any additional command line arguments.
 | [cosmos/ics20/denomTrace.qnt](./cosmos/ics20/denomTrace.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [cosmos/ics20/ics20.qnt](./cosmos/ics20/ics20.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:<sup>https://github.com/informalsystems/quint/issues/693</sup> |
 | [cosmos/ics23/ics23.qnt](./cosmos/ics23/ics23.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:<sup>https://github.com/informalsystems/quint/issues/693,</sup><sup>https://github.com/informalsystems/quint/pull/975</sup> |
-| [cosmos/lightclient/Blockchain.qnt](./cosmos/lightclient/Blockchain.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
-| [cosmos/lightclient/LCVerificationApi.qnt](./cosmos/lightclient/LCVerificationApi.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
+| [cosmos/lightclient/Blockchain.qnt](./cosmos/lightclient/Blockchain.qnt) | :white_check_mark: | :white_check_mark: | N/A[^parameterized] | N/A[^nostatemachine] |
+| [cosmos/lightclient/LCVerificationApi.qnt](./cosmos/lightclient/LCVerificationApi.qnt) | :white_check_mark: | :white_check_mark: | N/A[^parameterized] | N/A[^nostatemachine] |
 | [cosmos/lightclient/Lightclient.qnt](./cosmos/lightclient/Lightclient.qnt) | :white_check_mark: | :white_check_mark: | :x: | :x: |
 | [cosmos/lightclient/typedefs.qnt](./cosmos/lightclient/typedefs.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A[^nostatemachine] |
 | [cosmos/tendermint/TendermintAcc005.qnt](./cosmos/tendermint/TendermintAcc005.qnt) | :white_check_mark: | :white_check_mark: | :x:<sup>https://github.com/informalsystems/quint/pull/1023</sup> | :x:<sup>https://github.com/informalsystems/quint/pull/1023</sup> |
@@ -95,3 +95,4 @@ listed without any additional command line arguments.
 | [verification/defaultOpNames.qnt](./verification/defaultOpNames.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 
 [^nostatemachine]: This specification does not define a state machine.
+[^parameterized]: This specification is parameterized, and instantiated in another module.

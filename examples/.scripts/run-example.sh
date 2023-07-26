@@ -13,8 +13,16 @@ result () {
     local args="$2"
     local file="$3"
 
+    # Skip tests for parameterized modules
+    if [[ "$cmd" == "test" && (
+            "$file" == "cosmos/lightclient/Blockchain.qnt" ||
+            "$file" == "cosmos/lightclient/LCVerificationApi.qnt" ) ]] ; then
+      printf "N/A[^parameterized]"; return
+    fi
     # Skip verification for specs that do not define a state machine
     if [[ "$cmd" == "verify" && (
+            "$file" == "cosmos/lightclient/Blockchain.qnt" ||
+            "$file" == "cosmos/lightclient/LCVerificationApi.qnt" ||
             "$file" == "cosmos/lightclient/typedefs.qnt" ||
             "$file" =~ ^spells/ ||
             "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ||
