@@ -56,7 +56,7 @@ listed without any additional command line arguments.
 | [classic/distributed/ReadersWriters/ReadersWriters.qnt](./classic/distributed/ReadersWriters/ReadersWriters.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [classic/sequential/BinSearch/BinSearch.qnt](./classic/sequential/BinSearch/BinSearch.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [cosmos/ics20/bank.qnt](./cosmos/ics20/bank.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| [cosmos/ics20/base.qnt](./cosmos/ics20/base.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A |
+| [cosmos/ics20/base.qnt](./cosmos/ics20/base.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A[^nostatemachine] |
 | [cosmos/ics20/denomTrace.qnt](./cosmos/ics20/denomTrace.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [cosmos/ics20/ics20.qnt](./cosmos/ics20/ics20.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
 | [cosmos/ics23/ics23.qnt](./cosmos/ics23/ics23.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: |
@@ -87,9 +87,11 @@ listed without any additional command line arguments.
 | [solidity/ERC20/erc20.qnt](./solidity/ERC20/erc20.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [solidity/GradualPonzi/gradualPonzi.qnt](./solidity/GradualPonzi/gradualPonzi.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [solidity/icse23-fig7/lottery.qnt](./solidity/icse23-fig7/lottery.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:<sup>https://github.com/informalsystems/quint/issues/1019</sup> |
-| [solidity/SimpleAuction/SimpleAuction.qnt](./solidity/SimpleAuction/SimpleAuction.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A |
+| [solidity/SimpleAuction/SimpleAuction.qnt](./solidity/SimpleAuction/SimpleAuction.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A[^nostatemachine] |
 | [solidity/SimplePonzi/simplePonzi.qnt](./solidity/SimplePonzi/simplePonzi.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| [spells/basicSpells.qnt](./spells/basicSpells.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A |
-| [spells/commonSpells.qnt](./spells/commonSpells.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A |
-| [spells/rareSpells.qnt](./spells/rareSpells.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A |
+| [spells/basicSpells.qnt](./spells/basicSpells.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A[^nostatemachine] |
+| [spells/commonSpells.qnt](./spells/commonSpells.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A[^nostatemachine] |
+| [spells/rareSpells.qnt](./spells/rareSpells.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | N/A[^nostatemachine] |
 | [verification/defaultOpNames.qnt](./verification/defaultOpNames.qnt) | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+
+[^nostatemachine]: This specification does not define a state machine.

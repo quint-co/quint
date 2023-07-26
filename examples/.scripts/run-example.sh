@@ -18,7 +18,7 @@ result () {
             "$file" =~ ^spells/ ||
             "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ||
             "$file" == "cosmos/ics20/base.qnt" ) ]] ; then
-      printf "N/A"; return
+      printf "N/A[^nostatemachine]"; return
     fi
 
     # Run the command and record success / failure
