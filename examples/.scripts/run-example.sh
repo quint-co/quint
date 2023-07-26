@@ -15,6 +15,7 @@ result () {
 
     # Skip verification for specs that do not define a state machine
     if [[ "$cmd" == "verify" && (
+            "$file" == "cosmos/lightclient/typedefs.qnt" ||
             "$file" =~ ^spells/ ||
             "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ||
             "$file" == "cosmos/ics20/base.qnt" ) ]] ; then
