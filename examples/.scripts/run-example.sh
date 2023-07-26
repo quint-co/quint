@@ -33,6 +33,10 @@ result () {
     # Print additional explanations
     if [[ "$file" == "classic/distributed/ewd840/ewd840.qnt" && ( "$cmd" != "parse" ) ]] ; then
       printf "<sup>https://github.com/informalsystems/quint/issues/581</sup>"
+    elif [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" && ( "$cmd" == "test" || "$cmd" == "verify" )]] ; then
+      printf "<sup>https://github.com/informalsystems/quint/issues/244</sup>"
+    elif [[ "$file" == "classic/distributed/Paxos/Voting.qnt" && ( "$cmd" == "test" || "$cmd" == "verify" )]] ; then
+      printf "<sup>https://github.com/informalsystems/quint/issues/244</sup>"
     elif [[ "$file" == "cosmos/ics20/ics20.qnt" && "$cmd" == "verify" ]] ; then
       printf "<sup>https://github.com/informalsystems/quint/issues/693</sup>"
     elif [[ "$file" == "cosmos/ics23/ics23.qnt" && "$cmd" == "verify" ]] ; then
