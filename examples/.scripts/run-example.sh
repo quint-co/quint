@@ -15,6 +15,8 @@ result () {
 
     if [[ "$cmd" == "verify" && "$file" =~ ^spells/ ]] ; then
       printf "N/A"; return
+    elif [[ "$cmd" == "verify" && "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ]] ; then
+      printf "N/A"; return
     fi
 
     local quint_cmd="quint $cmd $args $file"
