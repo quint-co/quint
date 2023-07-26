@@ -13,18 +13,25 @@ result () {
     local args="$2"
     local file="$3"
 
+    # Skip verification for specs that do not define a state machine
     if [[ "$cmd" == "verify" && "$file" =~ ^spells/ ]] ; then
       printf "N/A"; return
     elif [[ "$cmd" == "verify" && "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ]] ; then
       printf "N/A"; return
     fi
 
+    # Run the command and record success / failure
     local quint_cmd="quint $cmd $args $file"
     if ($quint_cmd &> /dev/null)
     then
         printf ":white_check_mark:"
     else
         printf ":x:"
+    fi
+
+    # Print additional explanations
+    if [[ "$cmd" == "verify" && "$file" == "solidity/icse23-fig7/lottery.qnt" ]] ; then
+      printf "<sup>https://github.com/informalsystems/quint/issues/1019</sup>"
     fi
 }
 
