@@ -165,3 +165,12 @@ module BinSearch {
       { not(isTerminated) implies
           ((low <= high) implies INPUT_SEQ.indices().contains(mid + 1)) }
 }
+
+// an instance of binary search
+module BinSearch10 {
+  import BinSearch(
+    INPUT_SEQ=[ 1, 2, 3, 4, 5, 6, 8, 9, 10, 33 ],
+    INPUT_KEY=7,
+    INT_WIDTH=16
+  ).*
+}

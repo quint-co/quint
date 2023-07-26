@@ -278,13 +278,13 @@ fi
       --invariant=noBuyInDrawingInv --main=lotteryMempool \
       ../examples/solidity/icse23-fig7/lottery.qnt
 
-### OK on run BinSearch10
+### OK on run BinSearch
 
 <!-- !test exit 0 -->
 <!-- !test check BinSearch - Run -->
     quint run --max-samples=10000 --max-steps=10 \
-      --invariant=Postcondition \
-      ../examples/classic/sequential/BinSearch/BinSearch10.qnt
+      --invariant=Postcondition --main=BinSearch10 \
+      ../examples/classic/sequential/BinSearch/BinSearch.qnt
 
 ### OK on test simplePonzi
 

@@ -36,13 +36,13 @@ error: Configuration error (see the manual): Operator invalidInit not found (use
 ## Successful verification
 
 
-### Can verify `../examples/classic/sequential/BinSearch/BinSearch10.qnt`
+### Can verify `../examples/classic/sequential/BinSearch/BinSearch.qnt`
 
 Contains an import + const instantiation.
 
-<!-- !test check can check BinSearch10.qnt -->
+<!-- !test check can check BinSearch.qnt -->
 ```
-quint verify --invariant=Postcondition ../examples/classic/sequential/BinSearch/BinSearch10.qnt
+quint verify --invariant=Postcondition --main=BinSearch10 ../examples/classic/sequential/BinSearch/BinSearch.qnt
 ```
 
 ### Default `step` and `init` operators are found

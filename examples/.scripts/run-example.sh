@@ -48,6 +48,8 @@ get_main () {
     main="--main=LamportMutex_3_10"
   elif [[ "$file" == "classic/distributed/ReadersWriters/ReadersWriters.qnt" ]] ; then
     main="--main=ReadersWriters_5"
+  elif [[ "$file" == "classic/sequential/BinSearch/BinSearch.qnt" ]] ; then
+    main="--main=BinSearch10"
   elif [[ "$file" == "cosmos/ics20/bank.qnt" ]] ; then
     main="--main=bankTests"
   elif [[ "$file" == "cosmos/ics20/denomTrace.qnt" ]] ; then
