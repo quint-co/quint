@@ -10,7 +10,12 @@
 
 result () {
     local cmd="$1"
-    if ($cmd &> /dev/null)
+    local args="$2"
+    local file="$3"
+
+    local quint_cmd="quint $cmd $args $file"
+
+    if ($quint_cmd &> /dev/null)
     then
         printf ":white_check_mark:"
     else
@@ -55,11 +60,11 @@ get_verify_args () {
 }
 
 file="$1"
-syntax="$(result "quint parse ${file}")"
-types="$(result "quint typecheck ${file}")"
-main="$(get_main "${file}")"
-tests="$(result "quint test ${main} ${file}")"
-verify_args="$(get_verify_args "${file}")"
-verify="$(result "quint verify --max-steps=3 ${verify_args} ${main} ${file}")"
+syntax=$(result parse "" "$file")
+types=$(result typecheck "" "${file}")
+main=$(get_main "${file}")
+tests=$(result test "${main}" "${file}")
+verify_args=$(get_verify_args "${file}")
+verify=$(result verify "--max-steps=3 ${verify_args} ${main}" "${file}")
 
 echo "| [${file}](./${file}) | ${syntax} | ${types} | ${tests} | ${verify} |"
