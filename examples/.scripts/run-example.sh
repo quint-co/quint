@@ -14,9 +14,9 @@ result () {
     local file="$3"
 
     # Skip verification for specs that do not define a state machine
-    if [[ "$cmd" == "verify" && "$file" =~ ^spells/ ]] ; then
+    if [[ "$file" =~ ^spells/ && "$cmd" == "verify" ]] ; then
       printf "N/A"; return
-    elif [[ "$cmd" == "verify" && "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ]] ; then
+    elif [[ "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" && "$cmd" == "verify" ]] ; then
       printf "N/A"; return
     fi
 
@@ -30,7 +30,7 @@ result () {
     fi
 
     # Print additional explanations
-    if [[ "$cmd" == "verify" && "$file" == "solidity/icse23-fig7/lottery.qnt" ]] ; then
+    if [[ "$file" == "solidity/icse23-fig7/lottery.qnt" && "$cmd" == "verify" ]] ; then
       printf "<sup>https://github.com/informalsystems/quint/issues/1019</sup>"
     fi
 }
