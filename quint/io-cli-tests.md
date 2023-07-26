@@ -80,12 +80,12 @@ jq '.modules[0].name, .table."7".reference' < parse-out-example.json
 rm parse-out-example.json
 ```
 
-`"Tuples"` is the name of the module given in the IR and 5 is the reference for
+`"tuples"` is the name of the module given in the IR and 5 is the reference for
 in the lookup table for the expression with ID 7:
 
 <!-- !test out module AST is output -->
 ```
-"Tuples"
+"tuples"
 5
 ```
 

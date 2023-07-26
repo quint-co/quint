@@ -1,12 +1,12 @@
-module Tuples {
+module tuples {
   var myTup: (int, str)
 
   def combineTuples(t1, t2) = (t1._1, t2._2)
   val combined = combineTuples((true, 1, 2), (false, 2, 2))
 
-  action Init = myTup' = (0, "hello")
+  action init = myTup' = (0, "hello")
 
-  action Next = myTup' = combineTuples(myTup, (1, "world"))
+  action step = myTup' = combineTuples(myTup, (1, "world"))
 
   // Unpacking
   var x: int
