@@ -30,7 +30,9 @@ result () {
     fi
 
     # Print additional explanations
-    if [[ "$file" == "language-features/option.qnt" && ( "$cmd" == "test" || "$cmd" == "verify" ) ]] ; then
+    if [[ "$file" == "classic/distributed/ewd840/ewd840.qnt" && ( "$cmd" != "parse" ) ]] ; then
+      printf "<sup>https://github.com/informalsystems/quint/issues/581</sup>"
+    elif [[ "$file" == "language-features/option.qnt" && ( "$cmd" == "test" || "$cmd" == "verify" ) ]] ; then
       printf "<sup>https://github.com/informalsystems/quint/issues/244</sup>"
     elif [[ "$file" == "language-features/tuples.qnt" && "$cmd" == "verify" ]] ; then
       printf "<sup>https://github.com/informalsystems/apalache/issues/2670</sup>"
