@@ -14,9 +14,10 @@ result () {
     local file="$3"
 
     # Skip verification for specs that do not define a state machine
-    if [[ "$file" =~ ^spells/ && "$cmd" == "verify" ]] ; then
-      printf "N/A"; return
-    elif [[ "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" && "$cmd" == "verify" ]] ; then
+    if [[ "$cmd" == "verify" && (
+            "$file" =~ ^spells/ ||
+            "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ||
+            "$file" == "cosmos/ics20/base.qnt" ) ]] ; then
       printf "N/A"; return
     fi
 
