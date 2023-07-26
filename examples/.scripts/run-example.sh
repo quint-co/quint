@@ -51,6 +51,15 @@ get_main () {
   echo "${main}"
 }
 
+get_test_args () {
+  local file="$1"
+  local args=""
+  if [[ "$file" == "cosmos/ics20/ics20.qnt" ]] ; then
+    args="--max-samples=1000"  # default of 10000 takes too long
+  fi
+  echo "${args}"
+}
+
 get_verify_args () {
   local file="$1"
   local args=""
@@ -65,9 +74,10 @@ get_verify_args () {
 file="$1"
 syntax=$(result parse "" "$file")
 types=$(result typecheck "" "${file}")
-main=$(get_main "${file}")
-tests=$(result test "${main}" "${file}")
+main_flag=$(get_main "${file}")
+test_args=$(get_test_args "${file}")
+tests=$(result test "${test_args} ${main_flag}" "${file}")
 verify_args=$(get_verify_args "${file}")
-verify=$(result verify "--max-steps=3 ${verify_args} ${main}" "${file}")
+verify=$(result verify "--max-steps=3 ${verify_args} ${main_flag}" "${file}")
 
 echo "| [${file}](./${file}) | ${syntax} | ${types} | ${tests} | ${verify} |"
