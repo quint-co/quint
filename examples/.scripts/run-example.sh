@@ -13,8 +13,11 @@ result () {
     local args="$2"
     local file="$3"
 
-    local quint_cmd="quint $cmd $args $file"
+    if [[ "$cmd" == "verify" && "$file" =~ ^spells/ ]] ; then
+      printf "N/A"; return
+    fi
 
+    local quint_cmd="quint $cmd $args $file"
     if ($quint_cmd &> /dev/null)
     then
         printf ":white_check_mark:"
