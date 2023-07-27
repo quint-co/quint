@@ -1,4 +1,4 @@
-#+TITLE: RFC 001: Extend Quint with Row-Polymorphic Sum Types
+#+TITLE: RFC 001``: Extend Quint with Row-Polymorphic Sum Types
 #+AUTHOR: Shon Feder
 #+LATEX_COMPILER: xelatex
 
@@ -19,15 +19,14 @@ Here we merely state the proposed syntax. See [[Concrete Syntax][the discussion 
 for consideration of motivations and trade offs.
 
 *** Declaration
-The proposed syntax fits closely with our existing syntax for records
-and takes inspiration from Rust:
+The proposed syntax fits complements our syntax for records and follows the
+precedent of most languages that include support for general sum-types:
 
 #+begin_src quint
-type T = {
-  A(int),
-  B(str),
-  C,
-}
+type T =
+  | A(int)
+  | B(str)
+  | C
 #+end_src
 
 As indicated by =C=, labels with no associated expression type are
@@ -35,11 +34,10 @@ allowed. These are sugar for a label typed with the unit (i.e., the
 empty record). The above will be normalized as
 
 #+begin_src quint
-type T = {
-  A(int),
-  B(str),
-  C({}),
-}
+type T =
+  | A(int)
+  | B(str)
+  | C({})
 #+end_src
 
 *** Constructors
@@ -654,6 +652,7 @@ available since we are choosing to suppress the row-typing.
 
 ** Concrete Syntax
 
+*** Why not support "polymorphic variants"
 Our sum type system is based on row-polymorphism. The only widely used language
 I've found that uses row-polymorphism for extensible sum types is OCaml (and the
 alternative surface syntax, ReScript/Reason). For examples of their syntax for
@@ -662,9 +661,9 @@ this interesting construct, see
 - ReScript :: https://rescript-lang.org/docs/manual/latest/polymorphic-variant
 - OCaml :: https://v2.ocaml.org/manual/polyvariant.html
 
-These very flexible sum types are powerful, but they introduce challenges to the
-syntax (and semantics) of programs. Fir example, supporting anonymous variant
-types requires way of constructing variants without pre-defined constructors.
+These very flexible types are powerful, but they introduce challenges to the
+syntax (and semantics) of programs. For example, supporting anonymous variant
+types requires a way of constructing variants without pre-defined constructors.
 Potential approaches to address this include:
 
   - A special syntax that (ideally) mirrors the syntax of the type.
@@ -676,38 +675,57 @@ this.
 
 *** Declaration
 
-The currently proposed syntax for declaration is indexing pretty heavily on
-current popularity of rust. More than I would prefer, since I worry that the
-concrete syntax for declarations doesn't differentiate them enough from record
-declarations.
+**** Why use the =|= syntax to separate alternatives?
 
-This similarity is aggravated by the fact that we are currently planning to
-allow sum type labels to be upper or lower case, just as we do for records.
-Thus, we could end up with declarations like:
+- In programming =|= is [[https://en.wikipedia.org/wiki/Vertical_bar#Disjunction][widely used for disjunction]]:
+  - regex
+  - boolean "or"
+  - bitwise "or"
+  - alternatives in BNF
+  - parallel execution on the pi-calculus
+- Many modern languages with support for sum types (or the more general union
+  types) use =|=, including
+  - [[https://docs.python.org/3/library/typing.html#typing.Union][Python]]
+  - [[https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#union-types][TypeScript]]
+  - (of course) the MLs, Haskell, F#, Elm, OCaml, etc.
 
-```quint
+**** Why not use =,= to separate alternatives?
+
+We have discussed modeling our concrete syntax for sum type declarations on
+Rust. But without changes to other parts of our language, this would leave the
+concrete syntax for type declarations too similar to record type declarations.
+
+This similarity is aggravated by the fact that we currently don't enforce any
+case-based syntactic rules to differentiate identifiers used for  operator
+names, variables, or module names, and we are currently planning to extend this
+same flexibility to variant labels, just as we do for record field labels.
+Thus, we could end up with a pair of declarations like:
+
+#+begin_src quint
 type T = {
-    a : int,
-    B : str,
+    A : int,
+    b : str,
 }
 
 type S = {
     A(int),
     b(str),
 }
-```
+#+end_src
 
-I expect that the difference between =_:_= and =_(_)= will generally be enough
-to keep readers from confusing the two. But the chance of mistaking a record and
-sum type declaration is actually compounding a worse possibli confusion: The
-part enclosed in brackets is syntactically indistinguishable from a block of
-operators.
+We are not confident that the difference between =_:_= and =_(_)= will be enough
+to keep readers from confusing the two.
 
-Given that we tend to read data structures from the outside in, I'd feel more
-confident that we were going to avoid confusion if declarations used the =|= as
-an additional marker:
+But the chance of mistaking a record and sum type declaration is actually
+compounding a worse possible confusion: the part of a sum-type record enclosed
+in brackets is syntactically indistinguishable from a block of operators
+applications.
 
-```quint
+Given we tend to read data structures from the outside in, we feel confident
+that we were going to avoid confusion by requiring declarations to use =|= to
+demarcate alternatives:
+
+#+begin_src quint
 type T = {
     a : int,
     B : str,
@@ -716,11 +734,12 @@ type T = {
 type S =
     | A(int)
     | b(str)
-```
+#+end_src
 
-The latter seems much clearer to me, and if we reflect this syntax also in
+The latter seems much clearer to our team, and if we reflect this syntax also in
 =match=, it will give another foothold to help readers gather meaning when
 skimming the code.
+
 
 **** Could we just copy Rust exactly?
 
@@ -734,22 +753,184 @@ enum T {
 }
 #+end_src
 
-If we just adopted this without also changing our syntax for records, we would
-introduce
+If we just adopted this syntax directly without also changing our syntax for
+records, we would introduce
 
 - Breaks with our current convention around type declarations and
-  keywords, unless we also redesign the syntax for records.
+  use of keywords.
 - May mislead users to try injecting values into the type via Rust's
   =T::A(x)= syntax, which clashes with our current module syntax.
-- This would move us Closer to Rust but further from languages like [[https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-aliases][TypeScript]]
-  and [[https://rescript-lang.org/docs/manual/latest/variant][ReScript]].
+- This would move us closer to Rust but further from languages like [[https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-aliases][TypeScript]]
+  and Python.
+
+Rust't syntax makes pretty good sense _within the context of the rest of Rust's
+syntax_. Here is an overview:
+
+*declaration*
+
+#+begin_src rust
+struct Pair {
+    fst: u64,
+    snd: String
+}
+
+enum Either {
+    Left(u64),
+    Right(String)
+}
+#+end_src
+
+*construction*
+
+#+begin_src rust
+let s = Either::Left(4)
+let p = Pair{
+    fst: 4,
+    snd: "Two"
+}
+#+end_src
+
+*elimination*
+
+#+begin_src rust
+let two = p.snd
+let four = s match {
+    Either::Left(_) => 4,
+    Either::Right(_) => 4
+}
+#+end_src
+
+Note how the various syntactic elements work together to give consistent yet
+clearly differentiated forms of expression for dual constructs:
+
+- The prefix keyword for declarations consistently (=enum= vs. =struct=).
+- A unique constructor name is used consistently for forming a record or
+  variant.
+- Lexical rules add clear syntactic markers:
+  - Data constructors must begin with a capital letter
+  - Field names of a struct (and method names of a trait, and module names) must
+  begin with a lowercase letter.
+  - This ensures the syntax for module access and sum type construction are
+    unambiguous: =mymod::foo(x)= vs =MySumType::Foo(x)=.
+  - The caps/lower difference also helps reflect the duality between record
+    fields and sum type alternatives.
+
+Compare with the syntax proposed for quint this RFC:
+
+*declaration*
+
+#+begin_src quint
+type Pair = {
+  fst: int,
+  snd: str,
+}
+
+type Either =
+  | left(int),
+  | right(str)
+#+end_src
+
+*construction*
+
+#+begin_src quint
+let s = left(4)
+let p = {
+    fst: 4,
+    snd: "Two"
+}
+#+end_src
+
+*elimination*
+
+#+begin_src rust
+let two = p.snd
+let four = s match {
+    | left(_) => 4
+    | right(_) => 4
+}
+#+end_src
+
+Following the current quint syntax, we don't differentiate declaration with
+keywords or data construction with prefix use of type names. But we make up for
+this lost signal with the evident difference between =|= and =,=. This also
+compensates for the inability to differentiate based on capitalization.
+
+Finally, by adopting a syntax that if very similar to C++-like languages (like
+Rust), we risk presenting false friends. There are numerous subtle differences
+between quint and Rust, and if we lull users into thinking the syntax is
+roughly the same, they are likely to be disappointed when they discover that, e.g.,
+
+- Unlike Rust, conditions in =if= must be wrapped in =(...)=
+- Unlike Rust, conditions must have an =else= branch
+- Unlike Rust, =let= is not used for binding
+- Unlike Rust, type parameters are surrounded in =[...]= rather than =<...>=
+- Unlike Rust, operator are declared with =def=
+- Unlike Rust, type variables must begin with a lower-case letter
+
+In short, given how many ways we differ from Rust syntax already, adopting
+Rust's syntax for sum types would be confusing in the context of our current
+suntax and possibly lead to incorrect expectations.
+
+**** What if we want to be more Rust-like
+
+If we want to use a syntax for sum types that is closer to, or exactly the same
+as, Rust's, then we should make at least the following changes to the rest of
+our syntax to preserve harmony:
+
+- Require a prefix name relating to a type when constructing data, e.g., =Foo
+  {a: 1, b: 2}= for constructing a record of type =Foo=. (Note this would mean
+  dropping support for anonymous records types.)
+- Introduce a lexical distinction between capitalized identifiers, used for
+  data constructors (and type constants), and uncapitalized identifiers, used
+  for records field labels and operators.
+- Use keywords consistently for type declarations.
+
+Taking these changes into account, we could render the previous quint examples
+thus:
+
+*declaration*
+
+#+begin_src quint
+type Pair = struct {
+  fst: u64,
+  snd: String
+}
+
+type Either = enum {
+  Left(u64),
+  Right(String)
+}
+#+end_src
+
+*construction*
+
+#+begin_src quint
+let s = Left(4)
+let p = Pair {
+    fst: 4,
+    snd: "Two"
+}
+#+end_src
+
+*elimination*
+
+#+begin_src rust
+let two = p.snd
+let four = s match {
+    Left(_) => 4,
+    Right(_) => 4,
+}
+#+end_src
+
 
 *** Case analysis
 Ergonomic support for sum types requires eliminators, ideally in the
 form if case analysis by pattern matching.
 
-The proposed syntax is very close to [[https://doc.rust-lang.org/book/ch18-03-pattern-syntax.html#matching-literals][Rust's pattern syntax]]. Here's some example
-Rust for comparison
+The proposed syntax is close to [[https://doc.rust-lang.org/book/ch18-03-pattern-syntax.html#matching-literals][Rust's pattern syntax]], modulo swapping =|=
+for =,= to be consistent with the type declaration syntax.
+
+Here's some example Rust for comparison
 
 #+begin_src rust
     match x {
@@ -766,28 +947,19 @@ and anonymous operators. The comma separated alternatives enclosed in
 ={...}= follow the variadic boolean action operators, which seems
 fitting, since sum types are disjunction over data.
 
-One question if we adopt some form of pattern-based case analysis is how
-far we generalize the construct. Do we support pattern matching on
-scalar like ints and symbols? Do we support pattern matching to
-deconstruct compound data such as records and lists? What about sets? Do
-we allow pattern expressions to serve as anonymous operator (like
-Scala)?
+One question if we adopt some form of pattern-based case analysis is how far we
+generalize the construct. Do we support pattern matching on scalars like ints
+and symbols? Do we support pattern matching to deconstruct compound data such as
+records and lists? What about sets? Do we allow pattern expressions to serve as
+anonymous operator (like Scala)?
 
-My guess is that in most cases the gains in expressivity of specs would
-justify the investment, but it is probably best to start with limiting
-support to defined sum types and seeing where we are after that.
+My guess is that in most cases the gains in expressivity of specs would justify
+the investment, but it is probably best to start with limiting support to
+defined sum types and seeing where we are after that.
 
-- Examples of use in existing specs
-- Translation into sum types over rows (following our reference paper)
-- Mapping into TLA
-
-Considerations
-
-Until we have pattern matching untroduced, we flag a parsing error of the
-deconstructor arg is not a free variable, and inform the user that full pattern
+Until we have pattern matching introduced, we should flag a parsing error if the
+deconstructor argument is not a free variable, and inform the user that full pattern
 matching isn't yet supported.
-
-NOTE: Loss of consistency in declaration vs. construction/elimination.
 
 *** Sketch of an alternative syntax
 The syntax being proposed is chosen because it is familiar to Rust programmers,
@@ -850,11 +1022,24 @@ match e {
 }
 #+end_src
 
-** Implementation plan
-TODO
+** High-level implementation plan
+Using either feature flags or a protected branch to isolate on this feature
+while it is in progress:
+
+- Add parsing and extension of the IR for the syntax
+- Add generation of constructor operators
+- Add rules for type checking
+- Add support in the simulator
+- Add support for converting to Apalache
 ** Additional consideration
-- Pattern matching
-- User defined parametric type constructors
+*** Pattern matching
+TODO
+*** User defined parametric type constructors
+TODO
+*** Capitalization-based Lexical distinction
+- Used in almost all languages
+- Makes a lot of syntax highlighting easier
+- Remove ambiguities that already exist in language
 
 *** Drop the exotic operators
 - Remove the special product type operators =fieldNames=, =Rec=, =with=,
