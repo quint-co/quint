@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   server (#1074)
 - Fix a problem where some definitions would have to be exported from the
   main module in order for the REPL and the simulator to load them (#1039 and #1051)
+- Invalid arities when applying record and tuple operator no longer cause a crash (#1054)
 
 ### Security
 
