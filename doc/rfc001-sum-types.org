@@ -69,9 +69,9 @@ a =match= statement. Following Rust's syntax, we write that as
 
 #+begin_src quint
 match e {
-  A(a) => ...,
-  B(b) => ...,
-  C    => ...,
+  | A(a) => ...
+  | B(b) => ...
+  | C    => ...
 }
 #+end_src
 
@@ -85,13 +85,13 @@ Scala's case blocks or OCaml's =function= keyword and would allow idioms such
 as:
 
 #+begin_src quint
-setOfTs.map({ A(a) => e1, B(b) => e2, C => e3 })
+setOfTs.map({ A(a) => e1 | B(b) => e2 | C => e3 })
 #+end_src
 
 instead of requiring
 
 #+begin_src quint
-setOfTs.map(x => match x { A(a) => e1, B(b) => e2, C => e3 })
+setOfTs.map(x => match x { A(a) => e1| B(b) => e2| C => e3 })
 #+end_src
 
 ** Statics
@@ -160,7 +160,7 @@ This gives a rule in our system that is sufficient to capture [[https://www.micr
 
 since we can define decomposition for any label =L= via
 
-#+begin_src
+#+begin_src quint
 def decomposeL(e: (L(a) | r), f: a => b, default : r => b) = 
   match e { 
     | L(x) => f(x) 
@@ -197,7 +197,7 @@ together. E.g., we might define a rectangle by its length and width and
 a triangle by the lengths of its three sides. Using Quint's existing
 syntax for product types, we'd specify this as follows:
 
-#+begin_src
+#+begin_src quint
 type Rectangle = 
   { l : int
   , w : int }
@@ -218,7 +218,7 @@ we can work with collections that include both rectangles and triangles.
 Using one of the proposed syntax option that will be motivated in the
 following, this could be specified as
 
-#+begin_src
+#+begin_src quint
 type Shape =
   | Rect(rectangle)
   | Tri(triangle)
@@ -329,7 +329,7 @@ via injection are the simplest of the two pairs of rules.
 Here is a concrete example of projecting a value out of a record using
 our current syntax:
 
-#+begin_src
+#+begin_src quint
 val r : {a:int} = {a:1}
 val ex : int = r.a
 // Or, using our exotic field operator, which is currently the normal form
@@ -408,12 +408,11 @@ judgements is delegated to the unification rules for the row-types that
 carry our fields for product type and sum types alike.
 
 **** Injection
-Here is a concrete example of injecting a value into a sum type using
-one variant of the proposed syntax:
+Here is a concrete example of injecting a value into a sum type:
 
-#+begin_src
+#+begin_src quint
 val n : int = 1
-val ex : A(int) | r = A(1)
+val ex : A(int) = A(1)
 #+end_src
 
 A textbook rule for eliminating an expression belonging to a finite
@@ -492,7 +491,7 @@ duality, tho they are a bit more complex.
 **** Packing expressions into records
 Here is a concrete example of forming a record using our current syntax:
 
-#+begin_src
+#+begin_src quint
 val n : int = 1
 val s : str = "one"
 val ex : {a : int, b : str} = {a : n, b : s}
@@ -536,14 +535,14 @@ elements that will be packaged into the record.
 
 **** Performing case analysis
 Here is a concrete example of case analysis to eliminate an expression
-belonging to a sum type using one of the proposed syntax variants:
+belonging to a sum type using the proposed syntax variants:
 
-#+begin_src
-val e : <a:int, b:str> = <a:1>
+#+begin_src quint
+val e : T = A(1)
 def describeInt(n: int): str = if (n < 0) then "negative" else "positive"
 val ex : str = match e {
-  a : x => describeInt(x),
-  b : x => x,
+  | A(x) => describeInt(x)
+  | B(x) => x
 }
 #+end_src
 
@@ -614,7 +613,7 @@ on to another handler.
 Here is a concrete example using the proposed syntax, note how we narrow
 the type of =T=:
 
-#+begin_src
+#+begin_src quint
 type T = A | B;;
 def f(e) = match e {
   | A => 1
@@ -986,7 +985,7 @@ type T =
 Injection uses a syntax that is dual with projection on records: =.= projects
 values out of products and injects them into co-products:
 
-#+begin_src
+#+begin_src quint
 val a : T = <A.1>
 #+end_src
 
@@ -996,14 +995,14 @@ variant formation, there is no need to generate special injector operator, and
 
 Annotation of anonymous sum types is clear and unambiguous:
 
-#+begin_src
+#+begin_src quint
 def f(n: int): <C:int, D:str | s> =
   if (n >= 0) <C.n> else <D."negative">
 #+end_src
 
 Compare with the corresponding annotation for a record type:
 
-#+begin_src
+#+begin_src quint
 def f(n: int): {C:int, D:str | s} =
   if (n >= 0) {C:n, D:"positive"} else {C:n, B:"negative"}
 #+end_src
@@ -1015,7 +1014,7 @@ signaling the similarity thru use of the surrounding curly braces, and
 difference via the presence of the fat arrows (this syntax is similar to the
 one proposed):
 
-#+begin_src
+#+begin_src quint
 match e {
   A : a => ...,
   B : b => ...
@@ -1050,7 +1049,7 @@ Compare our rule with the projection operation from "Extensible Records
 with Scoped Labels", which does not receive the label `l' as a string,
 instead treating it as a special piece of syntax:
 
-#+begin_src
+#+begin_src haskell
 (_.l) :: ∀r α. (l|r) ⇒ {l :: α | r } → α`
 #+end_src
 
@@ -1059,13 +1058,13 @@ Another point of comparison is Haskell's
 with Field Labels"]], which generates a projection function for each
 label, so that defining the datatype
 
-#+begin_src
+#+begin_src haskell
 data S = S1 { a :: Int, b :: String }
 #+end_src
 
 will produce functions
 
-#+begin_src
+#+begin_src haskell
 a :: S -> Int
 b :: S -> String
 #+end_src
