@@ -140,7 +140,7 @@ The typing rule for eliminating a variant of a sum type via case
 analysis:
 
 #+CAPTION: SUM-ELIM
-\[
+$$
 \frac{
 \Gamma \vdash e : (s, c) \quad
 \Gamma, x_1 \vdash e_1 : (t, c_1) \quad \ldots \quad \Gamma, x_n \vdash e_n : (t, c_n) \quad
@@ -151,7 +151,7 @@ fresh(v)
 c \land c_1 \land \ldots \land c_n \land c_{n+1} \land
 s \sim \langle i_1 : t_1, \ldots, i_n : t_n | v \rangle)
 }
-\]
+$$
 
 
 This gives a rule in our system that is sufficient to capture [[https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/][Leijen05]]'s
@@ -267,22 +267,22 @@ us extend the products and sums using row variables.
 
 E.g., given the row
 
-\[
+$$
 i_1 : t_1 \ , \ldots \ , i_n : i_n | v
-\]
+$$
 
 with each \(t_k\)-typed field indexed by label \(i_k\) for
 \(1 \le k \le n\) and the free row variable \(v\), then
 
-\[
+$$
 \{i_1 : t_1 \ , \ldots \ , i_n : i_n | v\}
-\]
+$$
 
 is an open record conjoining the fields, and
 
-\[
+$$
 \langle i_1 : t_1 \ , \ldots \ , i_n : i_n | v \rangle
-\]
+$$
 
 is an open sum type presenting the fields as (mutually exclusive)
 alternatives. Both types are extensible by substituting \(v\) with
@@ -341,11 +341,11 @@ val ex_ : int = r.field("a")
 A textbook rule for eliminating an expression with a finite product
 types can be given as
 
-\[
+$$
 \frac
 { \Gamma \vdash e \colon \{ i_1 \hookrightarrow \tau_1, \ \ldots, \ i_n \hookrightarrow \tau_n \} \quad (1 \le k \le n)}
 { \Gamma \vdash e.i_k \colon \tau_k }
-\]
+$$
 
 Where \(i\) is drawn from a finite set of indexes used to label the
 components of the product (e.g., fields of a record or positions in a
@@ -361,11 +361,11 @@ stuff packaged together we can take out just the one part we want.
 In our current system, typechecking the projection of a value out of a record
 [[https://github.com/informalsystems/quint/blob/545b14fb8c19ac71d8f08fb8500ce9cc3cabf678/quint/src/types/specialConstraints.ts#L91-L120][implements]] the following rule
 
-\[
+$$
 \frac
 { \Gamma \vdash e \colon (r, c) \quad \Gamma \vdash `l' \colon str \quad fresh(t) }
 { \Gamma \vdash \ field(e, `l') \ \colon (t, c \land r \sim \{ \ l \colon t | tail\_t \ \}) }
-\]
+$$
 
 where
 
@@ -421,11 +421,11 @@ val ex : A(int) | r = A(1)
 A textbook rule for eliminating an expression belonging to a finite
 product type can be given as
 
-\[
+$$
 \frac
 { \Gamma \vdash e \colon \tau_k  \quad (1 \le k \le n)}
 { \Gamma \vdash i_k \cdot e \colon \langle i_1 \hookrightarrow \tau_1, \ \ldots, \ i_n \hookrightarrow \tau_n \rangle }
-\]
+$$
 
 Where \(i\) is drawn from a finite set of indexes used to label the
 possible alternatives of the co-product and
@@ -449,11 +449,11 @@ If we were following the row-based approach outlined in
 then the proposed rule in our system, formed by seeking the same
 symmetry w/r/t projection out from a product, would be:
 
-\[
+$$
 \frac
 { \Gamma \vdash e \colon (t, c) \quad \Gamma \vdash `l' \colon str \quad fresh(s) }
 { \Gamma \vdash \ variant(`l', e) \ \colon (s, c \land s \sim \{ \ l \colon t | tail\_s \ \}) }
-\]
+$$
 
 Comparing this with our current rule for projecting out of records, we
 see the same symmetry: the (now disjunctive) row type is synthesized
@@ -466,7 +466,7 @@ condition requiring that there it be defined, and in our constraint check that
 we can unify that defined type with a row that contains the given label with the
 expected type and is otherwise open.
 
-\[
+$$
 \frac
 {
 \Gamma \vdash e \colon (t, c) \quad
@@ -478,7 +478,7 @@ free(v)
 \Gamma \vdash \ variant(`l', e) \ :
 (s, c \land s \sim \langle \ l \colon t | v \ \rangle)
 }
-\]
+$$
 
 
 Igor has voiced a strong preference that we do not allow anonymous or
@@ -504,11 +504,11 @@ val ex_ : {a : int, b : str} = Rec("a", n, "b", s)
 
 A textbook introduction rule for finite products is given as
 
-\[ 
+$$
 \frac
 { \Gamma \vdash e_1 \colon \tau_1 \quad \ldots \quad \Gamma \vdash e_n \colon \tau_n }
 { \Gamma \vdash \{ i_1 \hookrightarrow e_1, \ldots, i_n \hookrightarrow e_n \} \colon \{ i_1 \hookrightarrow \tau_1, \ldots, i_n \hookrightarrow \tau_n \} }
-\]
+$$
 
 This tells us that for any expressions
 \(e_1 : \tau_1, \ldots, e_n : \tau_n\) derivable from our context we can
@@ -521,11 +521,11 @@ all together into one compound package.
 
 The following rule describes our current implementation:
 
-\[
+$$
 \frac
 { \Gamma \vdash (`i_1`, e_1 \colon (t_1, c_1)) \quad \ldots \quad \Gamma \vdash (`i_1`, e_n \colon (t_n, c_n)) \quad fresh(s) }
 { \Gamma \vdash Rec(`i_1`, e_1, \ldots, `i_n`, e_n) \ \colon \ (s, c_1 \land \ldots \land c_n \land s \sim \{ i_1 \colon t_1, \ldots, i_n \colon t_n \}) }
-\]
+$$
 
 The requirement that our labels show up in the premise as quint strings
 paired with each element of the appropriate type is, again, an artifact
@@ -552,7 +552,7 @@ val ex : str = match e {
 A textbook rule for eliminating an expression that is a variant of a
 finite sum type can be given as
 
-\[ 
+$$
 \frac{
 \Gamma \vdash e \colon 
 \langle i_1 \hookrightarrow \tau_1, \ldots, i_n \hookrightarrow \tau_n \rangle 
@@ -565,7 +565,7 @@ finite sum type can be given as
 }
 { \Gamma \vdash \ match \ e \ 
 \{ i_1 \cdot x_1 \hookrightarrow e_1 | \ldots | i_n \cdot x_n \hookrightarrow e_n \} : \tau }
-\]
+$$
 
 Note the complementary symmetry compared with the textbook rule for
 product construction: product construction requires =n= expressions to
@@ -579,7 +579,7 @@ The proposed rule for quint's type system is given without an attempt to
 reproduce our practice of using quint strings. This can be added in
 later if needed:
 
-\[
+$$
 \frac{
 \Gamma \vdash e : (s, c) \quad
 \Gamma, x_1 \vdash e_1 : (t, c_1) \quad \ldots \quad \Gamma, x_n \vdash e_n : (t, c_n) \quad
@@ -590,7 +590,7 @@ fresh(v)
 c \land c_1 \land \ldots \land c_n \land c_{n+1} \land
 s \sim \langle i_1 : t_1, \ldots, i_n : t_n | v \rangle)
 }
-\]
+$$
 
 Compared with quint's rule for product construction we see the same
 complementary symmetry. However, we also see a striking difference:
@@ -888,11 +888,11 @@ b :: S -> String
 Abandoning this subordination to normal operator application would leave
 us with a rule like the following for record projection:
 
-\[
+$$
 \frac
 { \Gamma \vdash e \colon (r, c) \quad fresh(t) }
 { \Gamma \vdash \ e.l \ \colon (t, c \land r \sim \{ \ l \colon t | tail\_t \ \}) }
-\]
+$$
 
 This would allow removing the checks for string literals, instead
 leaving that to the outer-level, syntactic level, of our static
