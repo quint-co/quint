@@ -134,7 +134,7 @@ describe('ConstraintGeneratorVisitor', () => {
     testArityError(
       'val x = Rec("a")',
       'Checking arity for application of Rec',
-      'Operator expects even number of arguments but given 1'
+      'Operator expects even number of arguments but was given 1'
     )
   })
 
@@ -142,7 +142,7 @@ describe('ConstraintGeneratorVisitor', () => {
     testArityError(
       'val x = Rec("a", 1).field()',
       'Checking arity for application of field',
-      'Operator expects 2 arguments but given 1'
+      'Operator expects 2 arguments but was given 1'
     )
   })
 
@@ -150,7 +150,7 @@ describe('ConstraintGeneratorVisitor', () => {
     testArityError(
       'val x = Rec("a", 1).fieldNames(1)',
       'Checking arity for application of fieldNames',
-      'Operator expects 1 arguments but given 2'
+      'Operator expects 1 arguments but was given 2'
     )
   })
 
@@ -158,7 +158,7 @@ describe('ConstraintGeneratorVisitor', () => {
     testArityError(
       'val x = Rec("a", 1).with("a", 1, 2)',
       'Checking arity for application of with',
-      'Operator expects 3 arguments but given 4'
+      'Operator expects 3 arguments but was given 4'
     )
   })
 
@@ -166,7 +166,15 @@ describe('ConstraintGeneratorVisitor', () => {
     testArityError(
       'val x = Tup()',
       'Checking arity for application of Tup',
-      'Operator expects at least one arguments but given 0'
+      'Operator expects at least one arguments but was given 0'
+    )
+  })
+
+  it('catches invalid arity on item operator', () => {
+    testArityError(
+      'val x = (0, 1).item()',
+      'Checking arity for application of item',
+      'Operator expects 2 arguments but was given 1'
     )
   })
 })
