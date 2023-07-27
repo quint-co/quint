@@ -116,8 +116,8 @@ describe('ConstraintGeneratorVisitor', () => {
     assert.sameDeepMembers(Array.from(errors.values()), [error])
   })
 
-  function testArityError(expr: string, location: string, message: string) {
-    const defs = [expr]
+  function testArityError(def: string, location: string, message: string) {
+    const defs = [def]
 
     const solvingFunction: SolvingFunctionType = (_: LookupTable, _c: Constraint) => right([])
 
