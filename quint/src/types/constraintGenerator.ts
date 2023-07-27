@@ -53,6 +53,24 @@ export type SolvingFunctionType = (
   _constraint: Constraint
 ) => Either<Map<bigint, ErrorTree>, Substitutions>
 
+function validateArity(
+  operator: string,
+  args: [QuintEx, QuintType][],
+  pred: (arity: number) => Boolean,
+  msg: String
+): Either<Error, null> {
+  if (!pred(args.length)) {
+    return left(
+      buildErrorLeaf(
+        `Checking arity for application of ${operator}`,
+        `Operator expects ${msg} arguments but given ${args.length}`
+      )
+    )
+  } else {
+    return right(null)
+  }
+}
+
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
   // Inject dependency to allow manipulation in unit tests
@@ -159,6 +177,9 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       })
     )
 
+    // We want `definedSignature` computed before the fresh variable `a` so that the
+    // numbering of ther fresh variables stays in order, with `a`, used for return types,
+    // bearing the highest number.
     const definedSignature = this.typeForName(e.opcode, e.id, e.args.length)
     const a: QuintType = { kind: 'var', name: this.freshVarGenerator.freshVar('t') }
     const result = argsResult
@@ -166,18 +187,24 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         switch (e.opcode) {
           // Record operators
           case 'Rec':
-            return recordConstructorConstraints(e.id, results, a)
+            return validateArity(e.opcode, results, l => l % 2 === 0, 'even number of').chain(() =>
+              recordConstructorConstraints(e.id, results, a)
+            )
           case 'field':
-            return fieldConstraints(e.id, results, a)
+            return validateArity(e.opcode, results, l => l === 2, '2').chain(() => fieldConstraints(e.id, results, a))
           case 'fieldNames':
-            return fieldNamesConstraints(e.id, results, a)
+            return validateArity(e.opcode, results, l => l === 1, '1').chain(() =>
+              fieldNamesConstraints(e.id, results, a)
+            )
           case 'with':
-            return withConstraints(e.id, results, a)
+            return validateArity(e.opcode, results, l => l === 3, '3').chain(() => withConstraints(e.id, results, a))
           // Tuple operators
           case 'Tup':
-            return tupleConstructorConstraints(e.id, results, a)
+            return validateArity(e.opcode, results, l => l > 0, 'at least one').chain(() =>
+              tupleConstructorConstraints(e.id, results, a)
+            )
           case 'item':
-            return itemConstraints(e.id, results, a)
+            return validateArity(e.opcode, results, l => l === 2, '2').chain(() => itemConstraints(e.id, results, a))
           // Otherwise it's a standard operator with a definition in the context
           default:
             return definedSignature.map(t1 => {
