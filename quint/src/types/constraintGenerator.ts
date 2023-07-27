@@ -53,8 +53,16 @@ export type SolvingFunctionType = (
   _constraint: Constraint
 ) => Either<Map<bigint, ErrorTree>, Substitutions>
 
+// Check if an application of operator `opcode` to arguments `args`
+// has correct arity. In particular, this returns `right(null)` if 
+// `pred(args.length)` holds, and a `left(ErrorTree)` otherwise.
+//
+// Use this for operators that cannot be typed in the Quint type.
+//
+// `msg` contains a textual description of the expected argument
+// length ("1", "2", "even number of", ...).
 function validateArity(
-  operator: string,
+  opcode: string,
   args: [QuintEx, QuintType][],
   pred: (arity: number) => Boolean,
   msg: String
