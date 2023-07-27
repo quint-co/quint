@@ -5,7 +5,8 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * Special constraint cases for Quint types, including record and tuple related operators
+ * Special constraint cases for Quint operators that we are not able to type in our system,
+ * including record and tuple related operators
  *
  * @author Gabriela Moreira
  *
@@ -20,48 +21,11 @@ import { QuintType, QuintVarType } from '../quintTypes'
 import { Constraint } from './base'
 import { chunk, times } from 'lodash'
 
-/*
- * Generate constraints for operators for which signatures cannot be expressed as normal signatures
- *
- * @param opcode The name of the operator
- * @param id The id of the component for which constraints are being generated
- * @param args The arguments to the operator and their respective types
- * @param resultTypeVar A fresh type variable for the result type
- *
- * @returns Either an error or a list of constraints
- */
-export function specialConstraints(
-  opcode: string,
+export function recordConstructorConstraints(
   id: bigint,
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
-  switch (opcode) {
-    // Record operators
-    case 'Rec':
-      return recordConstructorConstraints(id, args, resultTypeVar)
-    case 'field':
-      return fieldConstraints(id, args, resultTypeVar)
-    case 'fieldNames':
-      return fieldNamesConstraints(id, args, resultTypeVar)
-    case 'with':
-      return withConstraints(id, args, resultTypeVar)
-    // Tuple operators
-    case 'Tup':
-      return tupleConstructorConstraints(id, args, resultTypeVar)
-    case 'item':
-      return itemConstraints(id, args, resultTypeVar)
-    default:
-      return right([])
-  }
-}
-
-function recordConstructorConstraints(
-  id: bigint,
-  args: [QuintEx, QuintType][],
-  resultTypeVar: QuintVarType
-): Either<Error, Constraint[]> {
-  const constraints: Constraint[] = []
   // A record constructor has the normal form Rec('field1', value1, 'field2', value2, ...)
   // So we iterate over the arguments in pairs (chunks of size 2)
   //
@@ -82,13 +46,12 @@ function recordConstructorConstraints(
 
   return mergeInMany(fields).map(fs => {
     const t: QuintType = { kind: 'rec', fields: { kind: 'row', fields: fs, other: { kind: 'empty' } } }
-    const c: Constraint = { kind: 'eq', types: [t, resultTypeVar], sourceId: id }
-    constraints.push(c)
-    return constraints
+    const constraint: Constraint = { kind: 'eq', types: [t, resultTypeVar], sourceId: id }
+    return [constraint]
   })
 }
 
-function fieldConstraints(
+export function fieldConstraints(
   id: bigint,
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
@@ -119,7 +82,7 @@ function fieldConstraints(
   return right([constraint])
 }
 
-function fieldNamesConstraints(
+export function fieldNamesConstraints(
   id: bigint,
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
@@ -134,7 +97,7 @@ function fieldNamesConstraints(
   return right([c1, c2])
 }
 
-function withConstraints(
+export function withConstraints(
   id: bigint,
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
@@ -166,7 +129,7 @@ function withConstraints(
   return right([c1, c2])
 }
 
-function tupleConstructorConstraints(
+export function tupleConstructorConstraints(
   id: bigint,
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
@@ -180,7 +143,7 @@ function tupleConstructorConstraints(
   return right([c])
 }
 
-function itemConstraints(
+export function itemConstraints(
   id: bigint,
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType

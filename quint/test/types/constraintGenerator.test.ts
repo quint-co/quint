@@ -115,4 +115,66 @@ describe('ConstraintGeneratorVisitor', () => {
 
     assert.sameDeepMembers(Array.from(errors.values()), [error])
   })
+
+  function testArityError(def: string, location: string, message: string) {
+    const defs = [def]
+
+    const solvingFunction: SolvingFunctionType = (_: LookupTable, _c: Constraint) => right([])
+
+    const visitor = visitModuleWithDefs(defs, solvingFunction)
+    const [errors, _types] = visitor.getResult()
+
+    const [error] = Array.from(errors.values())[0].children
+
+    assert.equal(error.location, location, 'unexpected error location')
+    assert.equal(error.message, message, 'unexpected error message')
+  }
+
+  it('catches invalid arity on Rec operator', () => {
+    testArityError(
+      'val x = Rec("a")',
+      'Checking arity for application of Rec',
+      'Operator expects even number of arguments but was given 1'
+    )
+  })
+
+  it('catches invalid arity on field operator', () => {
+    testArityError(
+      'val x = Rec("a", 1).field()',
+      'Checking arity for application of field',
+      'Operator expects 2 arguments but was given 1'
+    )
+  })
+
+  it('catches invalid arity on fieldNames operator', () => {
+    testArityError(
+      'val x = Rec("a", 1).fieldNames(1)',
+      'Checking arity for application of fieldNames',
+      'Operator expects 1 arguments but was given 2'
+    )
+  })
+
+  it('catches invalid arity on with operator', () => {
+    testArityError(
+      'val x = Rec("a", 1).with("a", 1, 2)',
+      'Checking arity for application of with',
+      'Operator expects 3 arguments but was given 4'
+    )
+  })
+
+  it('catches invalid arity on Tup operator', () => {
+    testArityError(
+      'val x = Tup()',
+      'Checking arity for application of Tup',
+      'Operator expects at least one arguments but was given 0'
+    )
+  })
+
+  it('catches invalid arity on item operator', () => {
+    testArityError(
+      'val x = (0, 1).item()',
+      'Checking arity for application of item',
+      'Operator expects 2 arguments but was given 1'
+    )
+  })
 })
