@@ -71,7 +71,7 @@ function validateArity(
     return left(
       buildErrorLeaf(
         `Checking arity for application of ${operator}`,
-        `Operator expects ${msg} arguments but given ${args.length}`
+        `Operator expects ${msg} arguments but was given ${args.length}`
       )
     )
   } else {
