@@ -103,9 +103,9 @@ get_test_args () {
 get_verify_args () {
   local file="$1"
   local args=""
-  if [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ]] ; then
-    args="--init=Init --step=Next"
-  elif [[ "$file" == "classic/distributed/ReadersWriters/ReadersWriters.qnt" ]] ; then
+  if [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ||
+        "$file" == "classic/distributed/ReadersWriters/ReadersWriters.qnt" ||
+        "$file" == "cosmos/lightclient/Lightclient.qnt" ]] ; then
     args="--init=Init --step=Next"
   fi
   echo "${args}"
