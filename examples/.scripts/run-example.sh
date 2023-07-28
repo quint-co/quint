@@ -79,6 +79,8 @@ get_main () {
     main="--main=properChannelsTests"
   elif [[ "$file" == "cosmos/ics20/ics20.qnt" ]] ; then
     main="--main=ics20Test"
+  elif [[ "$file" == "cosmos/lightclient/Lightclient.qnt" ]] ; then
+    main="--main=Lightclient_4_3_correct"
   elif [[ "$file" == "puzzles/prisoners/prisoners.qnt" ]] ; then
     main="--main=prisoners3"
   elif [[ "$file" == "solidity/ERC20/erc20.qnt" ]] ; then
