@@ -18,6 +18,7 @@ import { ErrorMessage, Loc } from './quintParserFrontend'
 import { compact, zipWith } from 'lodash'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
+import { QuintTypeDef } from '../quintIr'
 
 /**
  * An ANTLR4 listener that constructs QuintIr objects out of the abstract
@@ -334,10 +335,9 @@ export class ToIrListener implements QuintListener {
     this.definitionStack.push(exportDef)
   }
 
-  // type ALIAS = set(int)
-  exitTypedef(ctx: p.TypedefContext) {
+  // type T
+  exitTypeAbstractDef(ctx: p.TypeAbstractDefContext) {
     const name = ctx.IDENTIFIER()!.text
-    const typeToAlias = this.popType()
 
     if (name[0].match('[a-z]')) {
       const msg = 'QNT007: type names must start with an uppercase letter'
@@ -347,14 +347,33 @@ export class ToIrListener implements QuintListener {
     const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
 
-    const def: QuintDef = {
+    const def: QuintTypeDef = {
       id,
       kind: 'typedef',
       name,
     }
 
-    if (typeToAlias.isJust()) {
-      def.type = typeToAlias.value
+    this.definitionStack.push(def)
+  }
+
+  // type Alias = set(int)
+  exitTypeAliasDef(ctx: p.TypeAliasDefContext) {
+    const name = ctx.IDENTIFIER()!.text
+    const type = this.popType().value
+
+    if (name[0].match('[a-z]')) {
+      const msg = 'QNT007: type names must start with an uppercase letter'
+      this.pushError(ctx, msg)
+    }
+
+    const id = this.idGen.nextId()
+    this.sourceMap.set(id, this.loc(ctx))
+
+    const def: QuintTypeDef = {
+      kind: 'typedef',
+      id,
+      name,
+      type,
     }
 
     this.definitionStack.push(def)
