@@ -13,8 +13,16 @@ result () {
     local args="$2"
     local file="$3"
 
+    # Skip tests for parameterized modules
+    if [[ "$cmd" == "test" && (
+            "$file" == "cosmos/lightclient/Blockchain.qnt" ||
+            "$file" == "cosmos/lightclient/LCVerificationApi.qnt" ) ]] ; then
+      printf "N/A[^parameterized]"; return
+    fi
     # Skip verification for specs that do not define a state machine
     if [[ "$cmd" == "verify" && (
+            "$file" == "cosmos/lightclient/Blockchain.qnt" ||
+            "$file" == "cosmos/lightclient/LCVerificationApi.qnt" ||
             "$file" == "cosmos/lightclient/typedefs.qnt" ||
             "$file" =~ ^spells/ ||
             "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ||
@@ -71,6 +79,8 @@ get_main () {
     main="--main=properChannelsTests"
   elif [[ "$file" == "cosmos/ics20/ics20.qnt" ]] ; then
     main="--main=ics20Test"
+  elif [[ "$file" == "cosmos/lightclient/Lightclient.qnt" ]] ; then
+    main="--main=Lightclient_4_3_correct"
   elif [[ "$file" == "puzzles/prisoners/prisoners.qnt" ]] ; then
     main="--main=prisoners3"
   elif [[ "$file" == "solidity/ERC20/erc20.qnt" ]] ; then
@@ -95,9 +105,9 @@ get_test_args () {
 get_verify_args () {
   local file="$1"
   local args=""
-  if [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ]] ; then
-    args="--init=Init --step=Next"
-  elif [[ "$file" == "classic/distributed/ReadersWriters/ReadersWriters.qnt" ]] ; then
+  if [[ "$file" == "classic/distributed/LamportMutex/LamportMutex.qnt" ||
+        "$file" == "classic/distributed/ReadersWriters/ReadersWriters.qnt" ||
+        "$file" == "cosmos/lightclient/Lightclient.qnt" ]] ; then
     args="--init=Init --step=Next"
   fi
   echo "${args}"
