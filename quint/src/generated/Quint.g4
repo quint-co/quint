@@ -22,8 +22,7 @@ unit :    'const' IDENTIFIER ':' type                     # const
         | 'assume' identOrHole '=' expr                   # assume
         | instanceMod                                     # instance
         | operDef                                         # oper
-        | 'type' IDENTIFIER                               # typedef
-        | 'type' IDENTIFIER '=' type                      # typedef
+        | typeDef                                         # typeDefs
         | importMod                                       # importDef
         | exportMod                                       # exportDef
         // https://github.com/informalsystems/quint/issues/378
@@ -45,6 +44,11 @@ operDef : qualifier normalCallName
             )?
             ('=' expr)? ';'?
         ;
+
+typeDef
+    : 'type' IDENTIFIER          # typeAbstractDef
+    | 'type' IDENTIFIER '=' type # typeAliasDef
+    ;
 
 nondetOperDef : 'nondet' IDENTIFIER (':' type)? '=' expr ';'?;
 
