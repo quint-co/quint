@@ -25,3 +25,4 @@ find . -name "*.qnt" | cut -c3- | parallel "${SCRIPT_DIR}/run-example.sh" | env 
 
 echo
 echo "[^nostatemachine]: This specification does not define a state machine."
+echo "[^parameterized]: This specification is parameterized, and instantiated in another module."

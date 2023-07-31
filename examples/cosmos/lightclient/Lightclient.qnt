@@ -545,3 +545,16 @@ module Lightclient {
     the algorithm has indeed terminated there.
     */
 }
+
+module Lightclient_4_3_correct {
+    import Lightclient(
+        AllNodes = Set("n1", "n2", "n3", "n4"),
+        TRUSTED_HEIGHT = 1,
+        TARGET_HEIGHT = 3,
+        TRUSTING_PERIOD = 1400,   // two weeks, one day is 100 time units :-)
+        CLOCK_DRIFT = 10,         // how much we assume the local clock is drifting
+        REAL_CLOCK_DRIFT = 3,     // how much the local clock is actually drifting
+        IS_PRIMARY_CORRECT = true,
+        FAULTY_RATIO = (1, 3)     // < 1/3 faulty validators
+    ).*
+}
