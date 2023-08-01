@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking**: the behavior of `oneOf` has changed, existing seed values for `quint test`
   can exhibit different behavior than before (#1060)
 - `quint run` produces a friendlier message when it meets a `const` (#1050)
+- `APALACHE_DIST` no longer needed to run `quint verify` (#1075)
 
 ### Deprecated
 ### Removed
