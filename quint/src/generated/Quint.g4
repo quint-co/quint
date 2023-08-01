@@ -23,12 +23,12 @@ documentedUnit : DOCCOMMENT* unit;
 // a module unit
 unit :    'const' qualId ':' type                     # const
         | 'var'   qualId ':' type                     # var
-        | 'assume' identOrHole '=' expr                   # assume
-        | instanceMod                                     # instance
-        | operDef                                         # oper
-        | typeDef                                         # typeDefs
-        | importMod                                       # importDef
-        | exportMod                                       # exportDef
+        | 'assume' identOrHole '=' expr               # assume
+        | instanceMod                                 # instance
+        | operDef                                     # oper
+        | typeDef                                     # typeDefs
+        | importMod                                   # importDef
+        | exportMod                                   # exportDef
         // https://github.com/informalsystems/quint/issues/378
         //| 'nondet' qualId (':' type)? '=' expr ';'? expr {
         //  const m = "QNT007: 'nondet' is only allowed inside actions"
@@ -100,7 +100,7 @@ type :          <assoc=right> type '->' type                    # typeFun
         |       'int'                                           # typeInt
         |       'str'                                           # typeStr
         |       'bool'                                          # typeBool
-        |       qualId                                      # typeConstOrVar
+        |       qualId                                          # typeConstOrVar
         |       '(' type ')'                                    # typeParen
         ;
 
@@ -153,7 +153,7 @@ expr:           // apply a built-in operator via the dot notation
                     ('|' STRING ':' parameter '=>' expr)+           # match
         |       'all' '{' expr (',' expr)* ','? '}'                 # actionAll
         |       'any' '{' expr (',' expr)* ','? '}'                 # actionAny
-        |       ( qualId | INT | BOOL | STRING)                 # literalOrId
+        |       ( qualId | INT | BOOL | STRING)                     # literalOrId
         //      a tuple constructor, the form tup(...) is just an operator call
         |       '(' expr ',' expr (',' expr)* ','? ')'              # tuple
         //      short-hand syntax for pairs, mainly designed for maps
