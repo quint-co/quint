@@ -77,7 +77,7 @@ export class ToIrListener implements QuintListener {
 
     const module: QuintModule = {
       id: moduleId,
-      name: ctx.IDENTIFIER().text,
+      name: ctx.qualId().text,
       defs: this.definitionStack,
     }
 
@@ -100,7 +100,7 @@ export class ToIrListener implements QuintListener {
     const id = this.getId(ctx)
     const constDef: QuintDef = {
       kind: 'const',
-      name: ctx.IDENTIFIER().text,
+      name: ctx.qualId().text,
       typeAnnotation: typeTag,
       id,
     }
@@ -114,7 +114,7 @@ export class ToIrListener implements QuintListener {
     const id = this.getId(ctx)
     const varDef: QuintDef = {
       kind: 'var',
-      name: ctx.IDENTIFIER().text,
+      name: ctx.qualId().text,
       typeAnnotation: typeTag,
       id,
     }
@@ -133,7 +133,7 @@ export class ToIrListener implements QuintListener {
   }
 
   exitNondetOperDef(ctx: p.NondetOperDefContext) {
-    const name = ctx.IDENTIFIER().text
+    const name = ctx.qualId().text
     let typeAnnotation: QuintType | undefined
     if (ctx.type()) {
       const maybeType = this.popType()
@@ -326,7 +326,7 @@ export class ToIrListener implements QuintListener {
 
   // type T
   exitTypeAbstractDef(ctx: p.TypeAbstractDefContext) {
-    const name = ctx.IDENTIFIER()!.text
+    const name = ctx.qualId()!.text
 
     if (name[0].match('[a-z]')) {
       const msg = 'QNT007: type names must start with an uppercase letter'
@@ -346,7 +346,7 @@ export class ToIrListener implements QuintListener {
 
   // type Alias = set(int)
   exitTypeAliasDef(ctx: p.TypeAliasDefContext) {
-    const name = ctx.IDENTIFIER()!.text
+    const name = ctx.qualId()!.text
     const type = this.popType().value
 
     if (name[0].match('[a-z]')) {
@@ -403,7 +403,7 @@ export class ToIrListener implements QuintListener {
 
   // an identifier or a literal, e.g., foo, 42, "hello", false
   exitLiteralOrId(ctx: p.LiteralOrIdContext) {
-    const ident = ctx.IDENTIFIER()
+    const ident = ctx.qualId()
 
     const id = this.getId(ctx)
     if (ident) {
@@ -576,7 +576,7 @@ export class ToIrListener implements QuintListener {
       this.identOrHoleStack.push('_')
     } else {
       // a variable name
-      this.identOrHoleStack.push(ctx.IDENTIFIER()!.text)
+      this.identOrHoleStack.push(ctx.qualId()!.text)
     }
   }
 
@@ -594,7 +594,7 @@ export class ToIrListener implements QuintListener {
       this.identOrStarStack.push('*')
     } else {
       // a variable name
-      this.identOrStarStack.push(ctx.IDENTIFIER()!.text)
+      this.identOrStarStack.push(ctx.qualId()!.text)
     }
   }
 
@@ -624,13 +624,13 @@ export class ToIrListener implements QuintListener {
     // so we would be able to extract them in `exitRecord`.
     // The tuple here is a temporary container and nothing else.
     // Hence, we do not even need a unique id for it.
-    if (ctx.IDENTIFIER()) {
+    if (ctx.simpleId()) {
       // field: expr
       const id = this.getId(ctx)
       const nameEx: QuintEx = {
         id,
         kind: 'str',
-        value: ctx.IDENTIFIER()?.text!,
+        value: ctx.simpleId()?.text!,
       }
       this.exprStack.push({
         id: 0n,
@@ -728,7 +728,7 @@ export class ToIrListener implements QuintListener {
     const lhs: QuintName = {
       id,
       kind: 'name',
-      name: ctx.IDENTIFIER().text,
+      name: ctx.qualId().text,
     }
     const [rhs] = popMany(this.exprStack, 1)
     this.pushApplication(ctx, 'assign', [lhs, rhs])
@@ -876,7 +876,7 @@ export class ToIrListener implements QuintListener {
 
   // a type variable, a type constant, or a reference to a type alias
   exitTypeConstOrVar(ctx: p.TypeConstOrVarContext) {
-    const name = ctx.IDENTIFIER().text
+    const name = ctx.qualId().text
     const id = this.getId(ctx)
     if (name[0].match('[a-z]')) {
       // a type variable from: a, b, ... z
@@ -924,7 +924,7 @@ export class ToIrListener implements QuintListener {
   }
 
   exitRow(ctx: p.RowContext) {
-    const names = ctx.IDENTIFIER().map(n => n.text)
+    const names = ctx.rowLabel().map(n => n.text)
     const elemTypes: QuintType[] = popMany(this.typeStack, ctx.type().length)
 
     const fields = compact(
@@ -937,12 +937,7 @@ export class ToIrListener implements QuintListener {
       })
     )
 
-    let other: Row
-    if (names.length > elemTypes.length) {
-      other = { kind: 'var', name: names[names.length - 1] }
-    } else {
-      other = { kind: 'empty' }
-    }
+    let other: Row = ctx._rowVar! ? { kind: 'var', name: ctx._rowVar!.text! } : { kind: 'empty' }
 
     const row: Row = { kind: 'row', fields, other }
     this.rowStack.push(row)
@@ -997,7 +992,7 @@ export class ToIrListener implements QuintListener {
   // The row stack contains the row with the types of the fields.
   exitTypeUnionRecOne(ctx: p.TypeUnionRecOneContext) {
     // the first name is the tag name (according to the grammar)
-    const tagName = ctx.IDENTIFIER().text
+    const tagName = ctx.qualId().text
     const tagVal = ctx.STRING().toString().slice(1, -1)
     let records: { tagValue: string; fields: Row }[] = []
     if (ctx.row()) {
