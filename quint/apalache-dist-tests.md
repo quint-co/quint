@@ -72,7 +72,7 @@ quint verify ../examples/language-features/booleans.qnt
 <!-- !test exit 1 -->
 <!-- !test err server not running -->
 ```
-error: Apalache gRPC endpoint is corrupted. Error reading from streaming API: No connection established
+error: Failed to obtain a connection to Apalache after 5 seconds.
 ```
 
 ### Inability to connect to the server produces an errer (`APALACHE_DIST` set)

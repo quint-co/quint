@@ -213,6 +213,7 @@ function loadProtoDefViaDistribution(dist: ApalacheDist): VerifyResult<ProtoPack
 }
 
 async function loadProtoDefViaReflection(): Promise<VerifyResult<ProtoPackageDefinition>> {
+  // Types of the gRPC interface.
   type ServerReflectionRequest = { file_containing_symbol: string }
   type ServerReflectionResponseSuccess = {
     file_descriptor_response: {
@@ -235,46 +236,43 @@ async function loadProtoDefViaReflection(): Promise<VerifyResult<ProtoPackageDef
   }
 
   // Obtain a reflection service client
-  // To load from HTTP:
-  // const protoJson = protobuf.parse(response.data, grpcStubOptions).root.toJSON()
-  // const packageDefinition = proto.fromJSON(protoJson, grpcStubOptions)
   const protoPath = require.resolve('./reflection.proto')
   const packageDefinition = proto.loadSync(protoPath, grpcStubOptions)
   const reflectionProtoDescriptor = grpc.loadPackageDefinition(packageDefinition) as unknown as ServerReflectionPkg
   const serverReflectionService = reflectionProtoDescriptor.grpc.reflection.v1alpha.ServerReflection
   const reflectionClient = new serverReflectionService(APALACHE_SERVER_URI, grpc.credentials.createInsecure())
 
-  // Query reflection endpoint
-  const response: VerifyResult<ServerReflectionResponse> = await new Promise<ServerReflectionResponse>(
-    (resolve, reject) => {
-      const call = reflectionClient.ServerReflectionInfo()
-      call.on('data', (r: ServerReflectionResponse) => {
-        call.end()
-        resolve(r)
+  // Query reflection endpoint (retry if server is unreachable)
+  return retryWithTimeout(
+    () =>
+      new Promise<ServerReflectionResponse>((resolve, reject) => {
+        const call = reflectionClient.ServerReflectionInfo()
+        call.on('data', (r: ServerReflectionResponse) => {
+          call.end()
+          resolve(r)
+        })
+        call.on('error', (e: grpc.StatusObject) => reject(e))
+
+        call.write({ file_containing_symbol: 'shai.cmdExecutor.CmdExecutor' })
       })
-      call.on('error', (e: grpc.StatusObject) => reject(e))
+  ).then(response =>
+    // Construct a proto definition of the reflection response.
+    response.chain((protoDefResponse: ServerReflectionResponse) => {
+      if ('error_response' in protoDefResponse) {
+        return err(
+          `Apalache gRPC endpoint is corrupted. Could not extract proto file: ${protoDefResponse.error_response.error_message}`
+        )
+      }
 
-      call.write({ file_containing_symbol: 'shai.cmdExecutor.CmdExecutor' })
-    }
-  )
-    .then(right)
-    .catch(e => err(`Apalache gRPC endpoint is corrupted. Error reading from streaming API: ${e.details}`))
-
-  return response.chain((protoDefResponse: ServerReflectionResponse) => {
-    if ('error_response' in protoDefResponse) {
-      return err(
-        `Apalache gRPC endpoint is corrupted. Could not extract proto file: ${protoDefResponse.error_response.error_message}`
+      // Decode reflection response to FileDescriptorProto
+      let fileDescriptorProtos = protoDefResponse.file_descriptor_response.file_descriptor_proto.map(
+        bytes => protobufDescriptor.FileDescriptorProto.decode(bytes) as protobufDescriptor.IFileDescriptorProto
       )
-    }
 
-    // Decode reflection response to FileDescriptorProto
-    let fileDescriptorProtos = protoDefResponse.file_descriptor_response.file_descriptor_proto.map(
-      bytes => protobufDescriptor.FileDescriptorProto.decode(bytes) as protobufDescriptor.IFileDescriptorProto
-    )
-
-    // Use proto-loader to load the FileDescriptorProto wrapped in a FileDescriptorSet
-    return right(proto.loadFileDescriptorSetFromObject({ file: fileDescriptorProtos }, grpcStubOptions))
-  })
+      // Use proto-loader to load the FileDescriptorProto wrapped in a FileDescriptorSet
+      return right(proto.loadFileDescriptorSetFromObject({ file: fileDescriptorProtos }, grpcStubOptions))
+    })
+  )
 }
 
 function loadGrpcClient(protoDef: ProtoPackageDefinition): VerifyResult<AsyncCmdExecutor> {
