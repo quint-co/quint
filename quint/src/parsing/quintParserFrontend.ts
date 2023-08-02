@@ -82,7 +82,7 @@ export function fromIrErrorMessage(sourceMap: SourceMap): (err: IrErrorMessage) 
 
 export function fromQuintError(sourceMap: Map<bigint, Loc>): (_: QuintError) => ErrorMessage {
   return error => {
-    const loc = sourceMap.get(error.reference) ?? unknownLoc
+    const loc = error.reference ? sourceMap.get(error.reference) ?? unknownLoc : unknownLoc
     return {
       explanation: quintErrorToString(error),
       locs: [loc],

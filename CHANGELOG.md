@@ -11,12 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `quint repl` produces an evaluation trace on errors too (#1056)
 - `S.setOfMaps(Int).oneOf()` is now supported (#1060)
+- `quint run` produces a friendlier message when it meets a `const` (#1050)
 
 ### Changed
 
-- **Breaking**: the behavior of `oneOf` has changed, existing seed values for `quint test`
+- The behavior of `oneOf` has changed, existing seed values for `quint test`
   can exhibit different behavior than before (#1060)
-- `quint run` produces a friendlier message when it meets a `const` (#1050)
+- Record field labels that include `::` are now illegal and raise a syntax error
+  (#1086)
 
 ### Deprecated
 ### Removed
