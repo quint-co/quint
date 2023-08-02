@@ -290,32 +290,34 @@ function loadGrpcClient(protoDef: ProtoPackageDefinition): VerifyResult<AsyncCmd
   return right(impl)
 }
 
-// Try to connect to the server repeatedly, in .5 second intervals
-async function tryToConnect(grpcApi: AsyncCmdExecutor): Promise<VerifyResult<void>> {
-  try {
-    return await grpcApi.ping().then(right)
-  } catch {
-    // Wait .5 secs before retry
-    await setTimeout(500)
-    return tryToConnect(grpcApi)
+// Retry a function repeatedly, in .5 second intervals, until it does not throw.
+async function retry<T>(f: () => Promise<T>): Promise<T> {
+  for (;;) {
+    // avoid linter error on while(true): https://github.com/eslint/eslint/issues/5477
+    try {
+      return await f()
+    } catch {
+      // Wait .5 secs before retry
+      await setTimeout(500)
+    }
   }
+}
+
+// Call `f` repeatedly until its promise resolves, in .5 second intervals, for up to 5 seconds.
+// Returns right(T) on success, or a left(VerifyError) on timeout.
+async function retryWithTimeout<T>(f: () => Promise<T>): Promise<VerifyResult<T>> {
+  const delayMS = 5000
+  return Promise.race([
+    retry(f).then(right),
+    setTimeout(delayMS, err<T>(`Failed to obtain a connection to Apalache after ${delayMS / 1000} seconds.`)),
+  ])
 }
 
 // Try to establish a connection to the Apalache server
 //
 // A successful connection procudes an `Apalache` object.
 async function connect(cmdExecutor: AsyncCmdExecutor): Promise<VerifyResult<Apalache>> {
-  // TODO Start server of it's not already running
-  // See https://github.com/informalsystems/quint/issues/823
-  const delayMS = 5000
-  const response = await Promise.race([
-    tryToConnect(cmdExecutor),
-    setTimeout(delayMS, err(`Failed to obtain a connection to Apalache after ${delayMS / 1000} seconds.`)),
-  ])
-  // We received a response in time, so we have a valid connection to the server
-  return response.map(_pong => {
-    return apalache(cmdExecutor)
-  })
+  return retryWithTimeout(() => cmdExecutor.ping()).then(response => response.map(_ => apalache(cmdExecutor)))
 }
 
 /**
