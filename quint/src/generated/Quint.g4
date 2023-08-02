@@ -11,8 +11,10 @@
 grammar Quint;
 
 @header {
-    // Used for forming errors
-    import { quintErrorToString } from '../quintError'
+
+// Used for forming errors
+import { quintErrorToString } from '../quintError'
+
 }
 // entry point for the parser
 modules : module+ EOF;

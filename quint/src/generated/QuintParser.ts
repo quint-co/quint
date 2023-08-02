@@ -1,8 +1,10 @@
 // Generated from ./src/generated/Quint.g4 by ANTLR 4.9.0-SNAPSHOT
 
 
-    // Used for forming errors
-    import { quintErrorToString } from '../quintError'
+
+// Used for forming errors
+import { quintErrorToString } from '../quintError'
+
 
 
 import { ATN } from "antlr4ts/atn/ATN";
