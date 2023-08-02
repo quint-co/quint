@@ -4,13 +4,44 @@
 | :------- | :--------- | :--------------- |
 | 1        | 2023-08-01 | Gabriela Moreira |
 
+## 1. Summary
+
+This document describes a new strategy for flattening modules, that is, replacing imports, instances and exports with the actual definitions. This is a necessary step for compilation and integration with apalache, since both the compiler and apalache cannnot handle imports, instances and exports.
+
+## 2. Context
+
+Our current strategy for flattening has intrinsic problems, and some issues that popped up cannot really be solved with the current approach. The first of those issues, and perhaps the one that better flags the problem in the current implementation, is [Flatenning breaks when importing by name a definition that depends on others #836](https://github.com/informalsystems/quint/issues/836).
+
+The existing flattener takes import/instance/export statements and replaces them with a copy of the definitions from that module, assigning new ids to those definitions and its inner IR components and adding namespaces when necessary. With this, there are two possible scenarios:
+
+1. All imports, instances and exports include all definitions (i.e. there is no `import A.foo`). In this case, we will end up with a module with all of the definitions from all used modules.
+2. There is some statement refering to a specific definition like `import A.foo`. In this case, the other definitions from `A` won't be copied, and if `foo` depends on something else, the flattened module won't be valid.
+
+Therefore, it is clear that we need some way of looking into the dependencies of definitions when copying them over, both to avoid (1) by copying only the necessary definitions, and to avoid (2) and ensure the flattened module has all the definitions it needs.
+
+In addition to that, even though this solution is an exaggeration that generates new ids for all definitions it copies, it still has problems with instances.
+
+See all known problems in [#1071](https://github.com/informalsystems/quint/issues/1071)
+
+## 3. Options
+
+I spent three weeks working on a proof of concept for a new flattener, which is described in this document. During this time, I tried a lot of different combinatiions of strategies, and none of them were sufficient to make our existing integration tests pass. The requirements I followed to pick solutions was something like these:
+
+1. We need to recurse over deifinitions being copied to the flattened module until we get all of its dependencies.
+2. We need to have different ids for definitions in different instances, so they can assume different values during evaluation.
+3. The final flattened module needs to have proper names (i.e. be name resolvable), so Apalache can work with it.
+
+So if there is something that is somehow viable outside of these requirements, I probably didn't consider it.
+
+## 4. Solution
+
 Imports, instances and exports are resolved by the name resolver. This is where any missing or conflicting name errors should be flagged. Flattening assumes all names are present and not conflicting.
 
-# Changes to name collection
+### Changes to name collection
 
 Although we don't need or want to change anything in the name resolution phase for flattening, we do collect some additional metadata in this phase to be used later in flattening
 
-## `LookupTable` with full quint definitions
+#### `LookupTable` with full quint definitions
 
 Our current lookup table only stores a projection of the quint definition: id (called reference), name and type annotation (if present). There is no strong reason for that, only a premature optimization and the fact that the lookup table values might also be lambda parameters, which are not quint definitions.
 
@@ -18,7 +49,8 @@ In flattening, we need to manipulate and reorganize definitions, and is much bet
 
 Therefore, we change the lookup table to have either a `QuintDef` or a `QuintLambdaParam` as its value, as long as two additional fields (`namespaces` and `importedFrom`) described below.
 
-## `namespaces`
+#### `namespaces`
+
 When collecting names from import/export/instance statements, we should be able to keep track of the namespaces to add to the definition in order to refer back to it uniquely in a flattened module. The following method describes which namespaces to add depending on `def`, returning a list of namespaces to be accumulated starting from the namespace closer to the actual name (i.e. namespaces `['a', 'b', 'c']` applied to name `foo` will result in `c::b::a::foo`).
 
 ```typescript
@@ -31,18 +63,21 @@ private namespaces(def: QuintImport | QuintInstance | QuintExport): string[] {
 }
 ```
 
-### Namespaces for imports
+##### Namespaces for imports
+
 Imports are the simplest scenario, since they only copy definitions, possibly adding a namespace to them:
 1. `import A.*`, `import A.foo` don't add namespaces
 2. `import A` adds `A::` namespace
 3. `import A as MyA` adds `MyA` namespace
 
-### Namespaces for instances
+##### Namespaces for instances
+
 For instances, we need to ensure uniqueness, since the same names in the instanced module can assume different values if the constants are different. Therefore, we add `this.currentModuleName` to the namespace, differentiating possible instances with the same name from different modules. For the following cases, suppose the statements are inside the `myModule` module.
 1. `import A(N=1).*`  adds a `myModule::A` namespace
 2. `import A(N=1) as A1` adds a `myModule::A1` namespace
 
-### Namespaces for exports
+##### Namespaces for exports
+
 Exports have a particularity: they can remove namespaces. Consider the example:
 ```bluespec
 module A {
@@ -75,11 +110,12 @@ module B {
 
 Currently, this prevents us from using `A1` without a namespace, since we can't write an export for `import A(N=1).*`. @konnov suggested the introduction of `export *` for this end, which is still in consideration.
 
-## `importedFrom`
+#### `importedFrom`
 
 This is a simple reference to the import/export/instance statement that created a definition, also gathered during name collection. Used in flattening to distinguish definitions that come from instances from definitions that come from imports/exports.
 
-# Instance Flattener
+### Instance Flattener
+
 The instance flattener gets rid of instances, which is the most complicated part of flattening. We cannot use the same id for the same definition of different instances, as they might assume different values[^1].
 
 Each instance statement is replaced with an import statement and generates a new module. The new module has the constants replaced with `pure val` definitions (from the overrides in the instance statement), and all its names are fully-qualified, constructed with the previously defined namespace algorithm. The new import statement, replacing the instance statement, is a unqualified import of the new module.
@@ -88,7 +124,7 @@ The names in the module containing the instance statement also have to be update
 
 All of this tinkering on names and the addition of a matching import statement makes it so the module outputted by the instance flattener can be name resolved. The name resolution of this module will produce a lookup table where the names referring to instances point to the new modules (produced for each instance), which are no longer instances. Therefore, after instance flattening, we have instance-less modules and their corresponding lookup table.
 
-## Example
+#### Example
 
 Take this module as example, where `A` is instanced twice with the same name:
 ```bluespec
@@ -158,10 +194,12 @@ graph BT
   8["(8) pure val C::A1::a = C::A1::N"] --> 7
 ```
 
-### Override expressions
+##### Override expressions
+
 In an instance statement like `import A(N=e).*`, `e` might depend on expressions defined in the current module. In this case, we need to ensure that the dependencies of `e` are copied to the new module created for the instance, otherwise `pure val myModule::A::N = e` won't resolve. To accomplish this, we use the actual `Flattener` (described below) to inspect only the expressions in the overrides and find any definitions they might depend on.
 
-# Flattener
+### Flattener
+
 The flattener adds missing definitions to a module by recursively fetching the lookup table and copying the referenced definition, then looking into that definition for any other names and doing the same.
 
 When adding a missing definition, if that definitions carries a namespace, we actually need to do a "deep" procedure to add that name to not only the definition name, but also to every other name appearing in it's body. This includes adding the namespace to lambda parameters and nested definitions (even though they cannot be referred), so flattening doesn't create name conflicts with them.
@@ -170,7 +208,8 @@ This deep namespace-adding procedure is already done in the current implementati
 
 Although the Instance Flattener requires imports and instances to be flattened, we can't flatten definitions that come from instances before running the instance flattener, since that would copy definitions that would potentially be replaced by new definitions in new modules created by the instance flattener. Therefore, we need to run the flattener twice: first not copying definitions that come from instances (checking the `importedFrom` field once again), and then, after the instance flattener, flattening anything that remains to be flattened.
 
-# Overall flattening process
+### Overall flattening process
+
 The flattening process is run completely for each module before proceeding to flatten the next module. The modules are assumed to be topologically sorted. The need for running this by module is that we do remove the import statements after we resolve all dependencies, but we can only ensure that all dependencies were flattened if the depending modules were completely flattened before.
 
 The whole flattening process is composed by the following steps:
@@ -184,7 +223,8 @@ The whole flattening process is composed by the following steps:
 7. Sort names topologically, since the added definitions might be out of order.
 	 - We might also avoid doing this if we add the new definitions in a proper order.
 
-# [Discussion] `FlatModule` and `FlatDef` types
+### [Discussion] `FlatModule` and `FlatDef` types
+
 I have not tried this in the proof of concept, but I believe we need to improve our nomenclature and types. This is what we currently use:
 - An IR definition (`QuintDef`) is any top level definition, including vars, consts, imports, etc.
 - A flat definition (`FlatDef`) is a definition that is not a import, instance or export. All flat definitions have a `.name` field.
@@ -198,17 +238,18 @@ I think we should do something like:
 - `QuintDef` should refer only to flat definitions, that is, everything but imports, instances and exports. Those will always have a `.name` field.
 - `FlatModule` has a list of `QuintDef`.
 
-# Implementation plan
+## Implementation plan
+
 1. Extract the deep namespace-adding procedure from the current flattener, adding an option to choose whether to generate new ids.
 2. Change the lookup table data structure to store the whole `QuintDef` or `QuintLambdaParameter` in its values.
 	- This will break integration with apalache. To avoid that, we should either:
 		1. Cleanup the produced lookup table in the JSON output so it contains a field called `reference` in the values
 		2. Release an apalache version that accepts a lookup table with `id` fields in the values.
 	- This also requires a simple update to the `typeAliasInliner`, which now has to operate over different values in the lookup table.
-1. Implement the new Flattener
-2. Implement the Instance Flattener
-3. Use the new flattening process to flatten modules before compiling
-4. Make the new flattening process to be done incrementally[^2]
+3. Implement the new Flattener
+4. Implement the Instance Flattener
+5. Use the new flattening process to flatten modules before compiling
+6. Make the new flattening process to be done incrementally[^2]
 
 [^1]: In theory, we could use the same id and save some computation for `pure` definitions that don't depend on constants, but that's "future work" :).
 [^2]: If it is not a performance issue right now, this is not a priority. It is not super obvious how to do that and it is not covered by the proof of concept.
