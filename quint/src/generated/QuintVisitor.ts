@@ -23,6 +23,7 @@ import { TypeConstOrVarContext } from "./QuintParser";
 import { TypeParenContext } from "./QuintParser";
 import { TypeAbstractDefContext } from "./QuintParser";
 import { TypeAliasDefContext } from "./QuintParser";
+import { TypeSumDefContext } from "./QuintParser";
 import { DotCallContext } from "./QuintParser";
 import { LambdaConsContext } from "./QuintParser";
 import { OperAppContext } from "./QuintParser";
@@ -67,6 +68,7 @@ import { DocumentedUnitContext } from "./QuintParser";
 import { UnitContext } from "./QuintParser";
 import { OperDefContext } from "./QuintParser";
 import { TypeDefContext } from "./QuintParser";
+import { TypeSumVariantContext } from "./QuintParser";
 import { NondetOperDefContext } from "./QuintParser";
 import { QualifierContext } from "./QuintParser";
 import { ImportModContext } from "./QuintParser";
@@ -215,6 +217,14 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitTypeAliasDef?: (ctx: TypeAliasDefContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `typeSumDef`
+	 * labeled alternative in `QuintParser.typeDef`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTypeSumDef?: (ctx: TypeSumDefContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `dotCall`
@@ -561,6 +571,13 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitTypeDef?: (ctx: TypeDefContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.typeSumVariant`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTypeSumVariant?: (ctx: TypeSumVariantContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.nondetOperDef`.

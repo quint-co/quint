@@ -29,7 +29,7 @@ import {
 import { QuintDef, QuintEx, isAnnotatedDef } from './quintIr'
 import { ExecutionFrame } from './runtime/trace'
 import { zerog } from './idGenerator'
-import { QuintType, Row } from './quintTypes'
+import { ConcreteFixedRow, QuintType, Row } from './quintTypes'
 import { TypeScheme } from './types/base'
 import { canonicalTypeScheme } from './types/printing'
 import { definitionToString, flattenRow, qualifierToString, rowToString } from './IRprinting'
@@ -185,6 +185,9 @@ export function prettyQuintType(type: QuintType): Doc {
       }
       return group([text('{ '), prettyRow(type.fields), text('}')])
     }
+    case 'sum': {
+      return group([text('{ '), prettySumRow(type.fields), text('}')])
+    }
     case 'union': {
       const records = type.records.map(rec => {
         return group([
@@ -214,6 +217,19 @@ function prettyRow(row: Row, showFieldName = true): Doc {
   return group([nest('  ', [linebreak, docJoin([text(','), line()], fieldsDocs)]), ...otherDoc, linebreak])
 }
 
+function prettySumRow(row: ConcreteFixedRow): Doc {
+  const [fields, other] = flattenRow(row)
+
+  const fieldsDocs = fields.map(f => {
+    if (other.kind === 'empty') {
+      return group(text(f.fieldName))
+    } else {
+      return group([text(`${f.fieldName}(`), prettyQuintType(f.fieldType), text(')')])
+    }
+  })
+
+  return group([nest('  ', [linebreak, docJoin([text(','), line()], fieldsDocs)]), linebreak])
+}
 /**
  * Print an execution frame and its children recursively.
  * Since this function is printing a tree, we need precise text alignment.

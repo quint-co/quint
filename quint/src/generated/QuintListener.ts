@@ -23,6 +23,7 @@ import { TypeConstOrVarContext } from "./QuintParser";
 import { TypeParenContext } from "./QuintParser";
 import { TypeAbstractDefContext } from "./QuintParser";
 import { TypeAliasDefContext } from "./QuintParser";
+import { TypeSumDefContext } from "./QuintParser";
 import { DotCallContext } from "./QuintParser";
 import { LambdaConsContext } from "./QuintParser";
 import { OperAppContext } from "./QuintParser";
@@ -67,6 +68,7 @@ import { DocumentedUnitContext } from "./QuintParser";
 import { UnitContext } from "./QuintParser";
 import { OperDefContext } from "./QuintParser";
 import { TypeDefContext } from "./QuintParser";
+import { TypeSumVariantContext } from "./QuintParser";
 import { NondetOperDefContext } from "./QuintParser";
 import { QualifierContext } from "./QuintParser";
 import { ImportModContext } from "./QuintParser";
@@ -282,6 +284,19 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitTypeAliasDef?: (ctx: TypeAliasDefContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `typeSumDef`
+	 * labeled alternative in `QuintParser.typeDef`.
+	 * @param ctx the parse tree
+	 */
+	enterTypeSumDef?: (ctx: TypeSumDefContext) => void;
+	/**
+	 * Exit a parse tree produced by the `typeSumDef`
+	 * labeled alternative in `QuintParser.typeDef`.
+	 * @param ctx the parse tree
+	 */
+	exitTypeSumDef?: (ctx: TypeSumDefContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `dotCall`
@@ -842,6 +857,17 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitTypeDef?: (ctx: TypeDefContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.typeSumVariant`.
+	 * @param ctx the parse tree
+	 */
+	enterTypeSumVariant?: (ctx: TypeSumVariantContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.typeSumVariant`.
+	 * @param ctx the parse tree
+	 */
+	exitTypeSumVariant?: (ctx: TypeSumVariantContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `QuintParser.nondetOperDef`.

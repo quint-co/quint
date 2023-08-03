@@ -12,7 +12,7 @@ import {
   QuintName,
   QuintOpDef,
 } from '../quintIr'
-import { QuintType, Row } from '../quintTypes'
+import { ConcreteFixedRow, QuintSumType, QuintType, Row, RowField, unitValue } from '../quintTypes'
 import { strict as assert } from 'assert'
 import { ErrorMessage, Loc } from './quintParserFrontend'
 import { compact, zipWith } from 'lodash'
@@ -64,6 +64,8 @@ export class ToIrListener implements QuintListener {
   protected identOrStarStack: string[] = []
   // the stack of rows for records and unions
   protected rowStack: Row[] = []
+  // the stack of variants for a sum
+  protected variantStack: RowField[] = []
   // an internal counter to assign unique numbers
   protected idGen: IdGenerator
 
@@ -357,13 +359,57 @@ export class ToIrListener implements QuintListener {
     const id = this.getId(ctx)
 
     const def: QuintTypeDef = {
-      kind: 'typedef',
       id,
+      kind: 'typedef',
       name,
       type,
     }
 
     this.definitionStack.push(def)
+  }
+
+  // type T = | A | B(t1) | C(t2)
+  exitTypeSumDef(ctx: p.TypeSumDefContext) {
+    const name = ctx._typeName!.text!
+    const defId = this.idGen.nextId()
+    this.sourceMap.set(defId, this.loc(ctx))
+
+    const typeId = this.idGen.nextId()
+    this.sourceMap.set(typeId, this.loc(ctx))
+
+    const fields: RowField[] = popMany(this.variantStack, this.variantStack.length)
+    const row: ConcreteFixedRow = { kind: 'row', fields, other: { kind: 'empty' } }
+    const type: QuintSumType = { id: defId, kind: 'sum', fields: row }
+
+    const def: QuintTypeDef = {
+      id: defId,
+      name,
+      kind: 'typedef',
+      type,
+    }
+
+    this.definitionStack.push(def)
+  }
+
+  exitTypeSumVariant(ctx: p.TypeSumVariantContext) {
+    const fieldName = ctx._sumLabel!.text!
+    const poppedType = this.popType().value
+
+    let fieldType: QuintType
+
+    // Check if we have an accompanying type, and if not, then synthesize the
+    // unit type.
+    //
+    // I.e., we interpert a variant `A` as `A({})`.
+    if (poppedType === undefined) {
+      const id = this.idGen.nextId()
+      this.sourceMap.set(id, this.loc(ctx))
+      fieldType = unitValue(id)
+    } else {
+      fieldType = poppedType
+    }
+
+    this.variantStack.push({ fieldName, fieldType })
   }
 
   // module Foo = Proto(x = a, y = b)

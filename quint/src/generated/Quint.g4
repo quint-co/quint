@@ -52,9 +52,15 @@ operDef : qualifier normalCallName
         ;
 
 typeDef
-    : 'type' qualId          # typeAbstractDef
-    | 'type' qualId '=' type # typeAliasDef
+    : 'type' qualId                                                         # typeAbstractDef
+    | 'type' qualId '=' type                                                # typeAliasDef
+    | 'type' typeName=qualId '=' '|'? typeSumVariant ('|' typeSumVariant)*  # typeSumDef
     ;
+
+// A single variant case in a sum type definition.
+//
+// E.g., `A(t)` or `A`.
+typeSumVariant : sumLabel=simpleId["variant label"] ('(' type ')')? ;
 
 nondetOperDef : 'nondet' qualId (':' type)? '=' expr ';'?;
 

@@ -3,6 +3,7 @@ import { assert } from 'chai'
 import { buildDef, buildExpression, buildModuleWithDefs, buildType } from './builders/ir'
 import { definitionToString, expressionToString, moduleToString, typeToString } from '../src/IRprinting'
 import { toScheme } from '../src/types/base'
+import { QuintSumType, unitValue } from '../src'
 
 describe('moduleToString', () => {
   const quintModule = buildModuleWithDefs(['var S: Set[int]', 'val f = S.filter(x => x + 1)'])
@@ -216,6 +217,22 @@ describe('typeToString', () => {
   it('pretty prints record types', () => {
     const type = buildType('{ name: str, fun: int -> bool, rec: { flag: bool } }')
     const expectedType = '{ name: str, fun: (int -> bool), rec: { flag: bool } }'
+    assert.deepEqual(typeToString(type), expectedType)
+  })
+
+  it('pretty prints sum types', () => {
+    const type: QuintSumType = {
+      kind: 'sum',
+      fields: {
+        kind: 'row',
+        fields: [
+          { fieldName: 'A', fieldType: { kind: 'int', id: 0n } },
+          { fieldName: 'B', fieldType: unitValue(0n) },
+        ],
+        other: { kind: 'empty' },
+      },
+    }
+    const expectedType = '| A(int)\n| B'
     assert.deepEqual(typeToString(type), expectedType)
   })
 

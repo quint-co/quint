@@ -13,7 +13,7 @@
  */
 
 import { OpQualifier, QuintDef, QuintEx, QuintModule, isAnnotatedDef } from './quintIr'
-import { EmptyRow, QuintType, Row, VarRow } from './quintTypes'
+import { EmptyRow, QuintSumType, QuintType, Row, RowField, VarRow, isTheUnit } from './quintTypes'
 import { TypeScheme } from './types/base'
 import { typeSchemeToString } from './types/printing'
 
@@ -160,6 +160,9 @@ export function typeToString(type: QuintType): string {
     case 'rec': {
       return rowToString(type.fields)
     }
+    case 'sum': {
+      return sumToString(type)
+    }
     case 'union': {
       const records = type.records.map(rec => {
         return `| { ${type.tag}: "${rec.tagValue}", ${rowFieldsToString(rec.fields)} }`
@@ -179,6 +182,25 @@ export function typeToString(type: QuintType): string {
 export function rowToString(r: Row): string {
   const fields = rowFieldsToString(r)
   return fields === '' ? '{}' : `{ ${fields} }`
+}
+
+/**
+ * Pretty prints a sum type. Standard sum printing used in error reporting
+ *
+ * @param r the sum type to be formatted
+ *
+ * @returns a string with the pretty printed sum
+ */
+export function sumToString(s: QuintSumType): string {
+  return s.fields.fields
+    .map((f: RowField) => {
+      if (isTheUnit(f.fieldType)) {
+        return `| ${f.fieldName}`
+      } else {
+        return `| ${f.fieldName}(${typeToString(f.fieldType)})`
+      }
+    })
+    .join('\n')
 }
 
 /**
