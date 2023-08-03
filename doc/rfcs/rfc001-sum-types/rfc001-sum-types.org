@@ -1,19 +1,7 @@
-#+TITLE: RFC 001``: Extend Quint with Row-Polymorphic Sum Types
+#+TITLE: RFC 001: Extend Quint with Row-Polymorphic Sum Types
 #+AUTHOR: Shon Feder
+#+DATE: <2023-08-03 Thu>
 #+LATEX_COMPILER: xelatex
-
-* Table of Contents :TOC:
-- [[#overview][Overview]]
-  - [[#concrete-syntax][Concrete syntax]]
-  - [[#statics][Statics]]
-  - [[#dynamics][Dynamics]]
-- [[#discussion][Discussion]]
-  - [[#motivation][Motivation]]
-  - [[#context][Context]]
-  - [[#statics-1][Statics]]
-  - [[#concrete-syntax-1][Concrete Syntax]]
-  - [[#high-level-implementation-plan][High-level implementation plan]]
-  - [[#additional-consideration][Additional consideration]]
 
 * Overview
 This section gives a concise overview of the principle proposal. In
