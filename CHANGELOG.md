@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.13.0 -- 2023-08-03
+
+### Added
 
 - `quint repl` produces an evaluation trace on errors too (#1056)
 - `S.setOfMaps(Int).oneOf()` is now supported (#1060)
