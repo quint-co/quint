@@ -2,6 +2,19 @@
 #+AUTHOR: Shon Feder
 #+LATEX_COMPILER: xelatex
 
+* Table of Contents :TOC:
+- [[#overview][Overview]]
+  - [[#concrete-syntax][Concrete syntax]]
+  - [[#statics][Statics]]
+  - [[#dynamics][Dynamics]]
+- [[#discussion][Discussion]]
+  - [[#motivation][Motivation]]
+  - [[#context][Context]]
+  - [[#statics-1][Statics]]
+  - [[#concrete-syntax-1][Concrete Syntax]]
+  - [[#high-level-implementation-plan][High-level implementation plan]]
+  - [[#additional-consideration][Additional consideration]]
+
 * Overview
 This section gives a concise overview of the principle proposal. In
 depth discussion follows in [[Discussion][Discuisson]].
@@ -29,9 +42,9 @@ type T =
   | C
 #+end_src
 
-As indicated by =C=, labels with no associated expression type are
-allowed. These are sugar for a label typed with the unit (i.e., the
-empty record). The above will be normalized as
+As indicated by =C=, labels with no associated expression type are allowed.
+These are sugar for a label associated with the unit type (i.e., the empty
+record). The above is therefore a representation of
 
 #+begin_src quint
 type T =
@@ -41,21 +54,23 @@ type T =
 #+end_src
 
 *** Constructors
-We need add an operator =variant= similar to the "injection" operator from [[https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/][Leijen05]]:
+
+Internally, we need to need add an operator =variant= similar to the "injection"
+operator from [[https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/][Leijen05]]:
 
 #+begin_src haskell
 <l = _> :: ∀αr . α → <l :: α | r > -- injection
 #+end_src
 
 
-Either way, this operation injects an expression of type =α= into a sum-type.
-However, if we don't want to expose the row-polymorphism to users, we'll
-need a more restrictive typing. This is discussed with the typing rules.
+This operation injects an expression of type =α= into a sum-type that includes a
+variant associating label =l= with type =α=.  However, if we don't want to
+expose the row-polymorphism to users, we'll need a more restrictive typing. This
+is discussed in the section on typing rules.
 
-To aid usability, however, we can provide syntax sugar: when a sum type
-declaration is parsed, constructor operations for each variant will be generated
-internally. E.g., for the type =T= defined above, we will add to the context the
-following operators:
+We provide syntax sugar for users: when a sum type declaration is parsed,
+constructor operations for each variant will be generated internally. E.g., for
+the type =T= defined above, we will add to the context the following operators:
 
 #+begin_src quint
 pure def A(x:int): T = variant(A, x)
