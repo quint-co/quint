@@ -1,6 +1,12 @@
 // Generated from ./src/generated/Quint.g4 by ANTLR 4.9.0-SNAPSHOT
 
 
+
+// Used for forming errors
+import { quintErrorToString } from '../quintError'
+
+
+
 import { ParseTreeVisitor } from "antlr4ts/tree/ParseTreeVisitor";
 
 import { TypeFunContext } from "./QuintParser";
@@ -73,6 +79,7 @@ import { FromSourceContext } from "./QuintParser";
 import { TypeContext } from "./QuintParser";
 import { TypeUnionRecOneContext } from "./QuintParser";
 import { RowContext } from "./QuintParser";
+import { RowLabelContext } from "./QuintParser";
 import { ExprContext } from "./QuintParser";
 import { UnitOrExprContext } from "./QuintParser";
 import { LambdaContext } from "./QuintParser";
@@ -85,6 +92,8 @@ import { NormalCallNameContext } from "./QuintParser";
 import { NameAfterDotContext } from "./QuintParser";
 import { OperatorContext } from "./QuintParser";
 import { LiteralContext } from "./QuintParser";
+import { QualIdContext } from "./QuintParser";
+import { SimpleIdContext } from "./QuintParser";
 
 
 /**
@@ -638,6 +647,13 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitRow?: (ctx: RowContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by `QuintParser.rowLabel`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitRowLabel?: (ctx: RowLabelContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by `QuintParser.expr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -720,5 +736,19 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitLiteral?: (ctx: LiteralContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.qualId`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitQualId?: (ctx: QualIdContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.simpleId`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitSimpleId?: (ctx: SimpleIdContext) => Result;
 }
 

@@ -229,4 +229,8 @@ describe('parse errors', () => {
   it('error on accidental recursion', () => {
     parseAndCompare('_0101noRecursion')
   })
+
+  it('errors on invalid record fields', () => {
+    parseAndCompare('_1042qualifiersInRecordsFieldsError')
+  })
 })
