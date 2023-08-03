@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The behavior of `oneOf` has changed, existing seed values for `quint test`
   can exhibit different behavior than before (#1060)
+- `APALACHE_DIST` no longer needed to run `quint verify` (#1075)
 - Record field labels that include `::` are now illegal and raise a syntax error
   (#1086)
 
