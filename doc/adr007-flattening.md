@@ -53,16 +53,6 @@ Therefore, we change the lookup table to have either a `QuintDef` or a `QuintLam
 
 When collecting names from import/export/instance statements, we should be able to keep track of the namespaces to add to the definition in order to refer back to it uniquely in a flattened module. The following method describes which namespaces to add depending on `def`, returning a list of namespaces to be accumulated starting with the innermost namespace and ending with the outermorst (i.e. namespaces `['a', 'b', 'c']` applied to name `foo` will result in `c::b::a::foo`).
 
-```typescript
-private namespaces(def: QuintImport | QuintInstance | QuintExport): string[] {
-  if (def.kind === 'instance') {
-    return compact([def.qualifiedName ?? def.protoName, this.currentModuleName])
-  }
-
-  return def.defName ? [] : [def.qualifiedName ?? def.protoName]
-}
-```
-
 ##### Namespaces for imports
 
 Imports are the simplest scenario, since they only copy definitions, possibly adding a namespace to them:
@@ -109,6 +99,20 @@ module B {
 ```
 
 Currently, this prevents us from using `A1` without a namespace, since we can't write an export for `import A(N=1).*`. @konnov suggested the introduction of `export *` for this end, which is still in consideration.
+
+##### General algorithm for obtaining namespaces
+
+From the scenarios described above, we define the following method to obtain the namespaces to add to definitions coming from a given `def`:
+
+```typescript
+private namespaces(def: QuintImport | QuintInstance | QuintExport): string[] {
+  if (def.kind === 'instance') {
+    return compact([def.qualifiedName ?? def.protoName, this.currentModuleName])
+  }
+
+  return def.defName ? [] : [def.qualifiedName ?? def.protoName]
+}
+```
 
 #### `importedFrom`
 
@@ -200,7 +204,7 @@ In an instance statement like `import A(N=e).*`, `e` might depend on expressions
 
 ### Flattener
 
-The flattener adds missing definitions to a module by recursively fetching the lookup table and copying the referenced definition, then looking into that definition for any other names and doing the same.
+The flattener adds missing definitions to a module by recursively fetching the lookup table and copying the referenced definition, then looking into that definition for any other names and doing the same. A missing definition is a definition that is referred to by a name in the module, but is not present in that module (because it comes from an import, instance or export statement).
 
 When adding a missing definition, if that definitions carries a namespace, we actually need to do a "deep" procedure to add that name to not only the definition name, but also to every other name appearing in it's body. This includes adding the namespace to lambda parameters and nested definitions (even though they cannot be referred), so flattening doesn't create name conflicts with them.
 
@@ -217,9 +221,10 @@ The whole flattening process consists of the following steps:
 2. Remove `import` and `export` statements
 3. Run the Instance Flattener
 4. Resolve names for the module and its dependencies, obtaining a new lookup table
+    - In theory, we should be able to manipulate the lookup table while flattening and avoid this step. However, I believe that would be significantly complex to write and maintain, while I see no outstanding drawbacks in running this step.
 5. With the new table and modules, run the Flattener again, this time for all definitions
 6. Resolve names again for all modules (using the flattened version for those that are already flattened, and the original version for those that are not). The resulting table is used as the starting point of flattening for the next module, or returned as the final table if this is the last one.
-	 - We might be able to manipulate the table inside the flattener so this is not necessary, but it is not obvious how to do that. The main problem seems to be that, since the Instance Flattener replaced instance statements with import statements, the `importFrom` and `namespaces` fields of certain definitions have to be updated.
+	 - We might be able to manipulate the table inside the flattener so this is not necessary, but it is not obvious how to do that. I believe that the only reason we have to run this now is to update the `importFrom` and `namespaces` fields of definitions coming from instances, since the Instance Flattener replaced instance statements with import statements, and the `importFrom` and `namespaces` fields of the related definitions have to be updated. I have not validated this hypothesis yet.
 7. Sort names topologically, since the added definitions might be out of order.
 	 - We might also avoid doing this if we add the new definitions in a proper order.
 
@@ -233,8 +238,8 @@ I have not tried this in the proof of concept, but I believe we need to improve 
 - Sometimes, we call `QuintDef` by 'unit' (in the parser and parsing functions such as `parseExprOrUnit`)
 
 I think we should do something like:
-- Call this high level definitions that encapsulate everything as 'statements' or 'declarations'.
-- `QuintModule` has a list of 'statements' or 'declarations'.
+- Call this high level definitions that encapsulate everything as 'declarations'.
+- `QuintModule` has a list of 'declarations'.
 - `QuintDef` should refer only to flat definitions, that is, everything but imports, instances and exports. Those will always have a `.name` field.
 - `FlatModule` has a list of `QuintDef`.
 
