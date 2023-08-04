@@ -216,6 +216,7 @@ const builtinOpCodes = [
   'to',
   'tuples',
   'union',
+  'unionMatch',
   'weakFair',
   'with',
 ] as const

@@ -891,7 +891,8 @@ export class CompilerVisitor implements IRVisitor {
           })
           break
 
-        // standard binary operators that are not handled by REPL
+        // builtin operators that are not handled by REPL
+        case 'unionMatch':
         case 'orKeep':
         case 'mustChange':
         case 'weakFair':
