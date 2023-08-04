@@ -25,9 +25,9 @@ See all known problems in [#1071](https://github.com/informalsystems/quint/issue
 
 ## 3. Options
 
-I spent three weeks working on a proof of concept for a new flattener, which is described in this document. During this time, I tried a lot of different combinatiions of strategies, and none of them were sufficient to make our existing integration tests pass. The requirements I followed to pick solutions was something like these:
+I spent three weeks working on a proof of concept for a new flattener, which is described in this document. During this time, I tried a lot of different combinations of strategies, and none of them were sufficient to make our existing integration tests pass. The requirements I followed to pick solutions was something like these:
 
-1. We need to recurse over deifinitions being copied to the flattened module until we get all of its dependencies.
+1. We need to recurse over definitions being copied to the flattened module until we get all of its dependencies.
 2. We need to have different ids for definitions in different instances, so they can assume different values during evaluation.
 3. The final flattened module needs to have proper names (i.e. be name resolvable), so Apalache can work with it.
 
@@ -45,13 +45,13 @@ Although we don't need or want to change anything in the name resolution phase f
 
 Our current lookup table only stores a projection of the quint definition: id (called reference), name and type annotation (if present). There is no strong reason for that, only a premature optimization and the fact that the lookup table values might also be lambda parameters, which are not quint definitions.
 
-In flattening, we need to manipulate and reorganize definitions, and is much better for performance and readability if the definitions are in the lookup table, as oppose to having to scan the modules for a definition.
+In flattening, we need to manipulate and reorganize definitions, and it is much better for performance and readability if the definitions are in the lookup table, as oppose to having to scan the modules for a definition.
 
-Therefore, we change the lookup table to have either a `QuintDef` or a `QuintLambdaParam` as its value, as long as two additional fields (`namespaces` and `importedFrom`) described below.
+Therefore, we change the lookup table to have either a `QuintDef` or a `QuintLambdaParam` as its value, as well as two additional fields (`namespaces` and `importedFrom`) described below.
 
 #### `namespaces`
 
-When collecting names from import/export/instance statements, we should be able to keep track of the namespaces to add to the definition in order to refer back to it uniquely in a flattened module. The following method describes which namespaces to add depending on `def`, returning a list of namespaces to be accumulated starting from the namespace closer to the actual name (i.e. namespaces `['a', 'b', 'c']` applied to name `foo` will result in `c::b::a::foo`).
+When collecting names from import/export/instance statements, we should be able to keep track of the namespaces to add to the definition in order to refer back to it uniquely in a flattened module. The following method describes which namespaces to add depending on `def`, returning a list of namespaces to be accumulated starting with the innermost namespace and ending with the outermorst (i.e. namespaces `['a', 'b', 'c']` applied to name `foo` will result in `c::b::a::foo`).
 
 ```typescript
 private namespaces(def: QuintImport | QuintInstance | QuintExport): string[] {
@@ -67,7 +67,7 @@ private namespaces(def: QuintImport | QuintInstance | QuintExport): string[] {
 
 Imports are the simplest scenario, since they only copy definitions, possibly adding a namespace to them:
 1. `import A.*`, `import A.foo` don't add namespaces
-2. `import A` adds `A::` namespace
+2. `import A` adds `A` namespace
 3. `import A as MyA` adds `MyA` namespace
 
 ##### Namespaces for instances
@@ -167,7 +167,7 @@ module B {
 }
 
 module C {
-  import C::A1.**
+  import C::A1.*
   val c = C::A1::a // id 4
 }
 ```
@@ -212,7 +212,7 @@ Although the Instance Flattener requires imports and instances to be flattened, 
 
 The flattening process is run completely for each module before proceeding to flatten the next module. The modules are assumed to be topologically sorted. The need for running this by module is that we do remove the import statements after we resolve all dependencies, but we can only ensure that all dependencies were flattened if the depending modules were completely flattened before.
 
-The whole flattening process is composed by the following steps:
+The whole flattening process consists of the following steps:
 1. Run the Flattener, ignoring definitions that come from instances
 2. Remove `import` and `export` statements
 3. Run the Instance Flattener
