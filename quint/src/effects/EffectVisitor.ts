@@ -13,6 +13,7 @@
  * @module
  */
 
+import { unreachable } from '../util'
 import { ArrowEffect, ConcreteEffect, Effect, EffectVariable } from './base'
 
 /**
@@ -58,17 +59,21 @@ export function walkEffect(visitor: EffectVisitor, effect: Effect): void {
       }
       break
     }
-    case 'arrow': {
-      if (visitor.enterArrow) {
-        visitor.enterArrow(effect)
-      }
+    case 'arrow':
+      {
+        if (visitor.enterArrow) {
+          visitor.enterArrow(effect)
+        }
 
-      effect.params.forEach(e => walkEffect(visitor, e))
-      walkEffect(visitor, effect.result)
+        effect.params.forEach(e => walkEffect(visitor, e))
+        walkEffect(visitor, effect.result)
 
-      if (visitor.exitArrow) {
-        visitor.exitArrow(effect)
+        if (visitor.exitArrow) {
+          visitor.exitArrow(effect)
+        }
       }
-    }
+      break
+    default:
+      unreachable(effect)
   }
 }

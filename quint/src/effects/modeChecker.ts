@@ -18,6 +18,7 @@ import { qualifierToString } from '../IRprinting'
 import { IRVisitor, walkDefinition } from '../IRVisitor'
 import { QuintError } from '../quintError'
 import { OpQualifier, QuintDef, QuintInstance, QuintOpDef } from '../quintIr'
+import { unreachable } from '../util'
 import { ArrowEffect, ComponentKind, EffectScheme, Entity, entityNames, stateVariables } from './base'
 import { effectToString, entityToString } from './printing'
 
@@ -247,26 +248,34 @@ function paramEntitiesByEffect(effect: ArrowEffect): Map<ComponentKind, Entity[]
 
   effect.params.forEach(p => {
     switch (p.kind) {
-      case 'concrete': {
-        p.components.forEach(c => {
-          const existing = entitiesByComponentKind.get(c.kind) || []
-          entitiesByComponentKind.set(c.kind, concatEntity(existing, c.entity))
-        })
-        break
-      }
-      case 'arrow': {
-        const nested = paramEntitiesByEffect(p)
-        nested.forEach((entities, kind) => {
-          const existing = entitiesByComponentKind.get(kind) || []
-          entitiesByComponentKind.set(kind, entities.reduce(concatEntity, existing))
-        })
-        if (p.result.kind === 'concrete') {
-          p.result.components.forEach(c => {
+      case 'concrete':
+        {
+          p.components.forEach(c => {
             const existing = entitiesByComponentKind.get(c.kind) || []
             entitiesByComponentKind.set(c.kind, concatEntity(existing, c.entity))
           })
         }
-      }
+        break
+      case 'arrow':
+        {
+          const nested = paramEntitiesByEffect(p)
+          nested.forEach((entities, kind) => {
+            const existing = entitiesByComponentKind.get(kind) || []
+            entitiesByComponentKind.set(kind, entities.reduce(concatEntity, existing))
+          })
+          if (p.result.kind === 'concrete') {
+            p.result.components.forEach(c => {
+              const existing = entitiesByComponentKind.get(c.kind) || []
+              entitiesByComponentKind.set(c.kind, concatEntity(existing, c.entity))
+            })
+          }
+        }
+        break
+      case 'variable':
+        // Nothing to gather
+        break
+      default:
+        unreachable(p)
     }
   })
 

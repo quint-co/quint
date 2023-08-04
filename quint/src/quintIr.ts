@@ -116,6 +116,112 @@ export interface QuintApp extends WithId {
   args: QuintEx[]
 }
 
+/** A subtype of `QuintApp` covering all quint builtin operators */
+export interface QuintBuiltinApp extends QuintApp {
+  /** The name of the builtin being applied */
+  opcode: QuintBuiltinOpcode
+}
+
+/** A type guard to narrow the type of a `QuintApp` to a `QuintBuiltinApp`
+ *
+ * See https://stackoverflow.com/a/61129291
+ */
+export function isQuintBuiltin(app: QuintApp): app is QuintBuiltinApp {
+  return builtinOpCodes.includes(app.opcode as QuintBuiltinOpcode)
+}
+
+// This should be the source of truth for all builtin opcodes
+const builtinOpCodes = [
+  'List',
+  'Map',
+  'Rec',
+  'Set',
+  'Tup',
+  'actionAll',
+  'actionAny',
+  'allLists',
+  'always',
+  'and',
+  'append',
+  'assert',
+  'assign',
+  'chooseSome',
+  'concat',
+  'contains',
+  'enabled',
+  'eq',
+  'eventually',
+  'exclude',
+  'exists',
+  'fail',
+  'field',
+  'fieldNames',
+  'filter',
+  'flatten',
+  'fold',
+  'foldl',
+  'foldr',
+  'forall',
+  'get',
+  'head',
+  'iadd',
+  'idiv',
+  'iff',
+  'igt',
+  'igte',
+  'ilt',
+  'ilte',
+  'imod',
+  'implies',
+  'imul',
+  'in',
+  'indices',
+  'intersect',
+  'ipow',
+  'isFinite',
+  'isub',
+  'ite',
+  'item',
+  'iuminus',
+  'keys',
+  'length',
+  'map',
+  'mapBy',
+  'mustChange',
+  'neq',
+  'next',
+  'not',
+  'nth',
+  'oneOf',
+  'or',
+  'orKeep',
+  'powerset',
+  'put',
+  'q::test',
+  'q::testOnce',
+  'range',
+  'replaceAt',
+  'reps',
+  'select',
+  'set',
+  'setBy',
+  'setOfMaps',
+  'setToMap',
+  'size',
+  'slice',
+  'strongFair',
+  'subseteq',
+  'tail',
+  'then',
+  'to',
+  'tuples',
+  'union',
+  'weakFair',
+  'with',
+] as const
+
+export type QuintBuiltinOpcode = (typeof builtinOpCodes)[number]
+
 export interface QuintLambdaParameter extends WithId {
   /** The name of the formal parameter */
   name: string
