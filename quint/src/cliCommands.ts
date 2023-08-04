@@ -45,7 +45,6 @@ import { verify } from './quintVerifier'
 import { flattenModules } from './flattening'
 import { analyzeModules } from './quintAnalyzer'
 import { ExecutionFrame } from './runtime/trace'
-import { unreachable } from './util'
 
 export type stage = 'loading' | 'parsing' | 'typechecking' | 'testing' | 'running' | 'documentation'
 
