@@ -34,26 +34,28 @@ module erc20 {
 
     // Example of a sum type representing a
     // NOTE: Once we support parametric sum-types we can generalize this alias and the map operators
-    type Erc20Result = {
-         Ok(Erc20State),
-         Error(str),
-    }
+    type Erc20Result =
+         | Ok(Erc20State)
+         | Error(str)
 
-    pure def mapState(r:Erc20Result, f:Erc20State => Erc20State): Erc20Result = r match {
-         Ok(s)    => Ok(f(s)),
-         Error(_) => r
-    }
+    pure def mapState(r:Erc20Result, f:Erc20State => Erc20State): Erc20Result =
+         match r {
+            | Ok(s)    => Ok(f(s))
+            | Error(_) => r
+        }
 
-    pure def flatMap(r:Erc20Result, f:Erc20State => Erc20Result): Erc20Result = r match {
-         Ok(s)    => f(s),
-         Error(_) => r
-    }
+    pure def flatMap(r:Erc20Result, f:Erc20State => Erc20Result): Erc20Result =
+         match r {
+            | Ok(s)    => f(s)
+            | Error(_) => r
+        }
 
     // An auxilliary definition similar to Solidity's require
-    pure def require(r: Erc20Result, cond: bool, msg: str): Erc20State = match r {
-        Error(_) => s,
-        Ok(s)    => if (cond) Ok(s) else Error(msg)
-    }
+    pure def require(r: Erc20Result, cond: bool, msg: str): Erc20Result =
+        match r {
+            | Error(_) => r
+            | _        => if (cond) r else Error(msg)
+        }
 
     // contract initialization
     pure def newErc20(sender: Address, initialSupply: Uint): Erc20State = {
