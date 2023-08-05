@@ -1,4 +1,4 @@
-% Created 2023-08-03 Thu 18:01
+% Created 2023-08-05 Sat 00:09
 % Intended LaTeX compiler: xelatex
 \documentclass[11pt]{article}
 \usepackage{graphicx}
@@ -27,12 +27,12 @@
 
 
 \section{Overview}
-\label{sec:org1baf532}
+\label{sec:orgabf3583}
 This section gives a concise overview of the principle proposal. In
-depth discussion follows in \hyperref[sec:org3b0e6b8]{Discuisson}.
+depth discussion follows in \hyperref[sec:org050246d]{Discuisson}.
 
 \subsection{Concrete syntax}
-\label{sec:org047ba8c}
+\label{sec:orga6e64d7}
 The concrete syntax falls into three categories, corresponding three aspects of
 the semantics:
 
@@ -43,11 +43,11 @@ the semantics:
 other type).
 \end{itemize}
 
-Here we merely state the proposed syntax. See \hyperref[sec:orgf128100]{the discussion of concrete syntax}
+Here we merely state the proposed syntax. See \hyperref[sec:orgb377490]{the discussion of concrete syntax}
 for consideration of motivations and trade offs.
 
 \subsubsection{Declaration}
-\label{sec:orgb260f62}
+\label{sec:orgf216e02}
 The proposed syntax fits complements our syntax for records and follows the
 precedent of most languages that include support for general sum-types:
 
@@ -70,7 +70,7 @@ type T =
 \end{verbatim}
 
 \subsubsection{Constructors}
-\label{sec:org0157e94}
+\label{sec:orgc7e9737}
 
 Internally, we need to need add an operator \texttt{variant} similar to the ``injection''
 operator from \href{https://www.microsoft.com/en-us/research/publication/extensible-records-with-scoped-labels/}{Leijen05}:
@@ -96,7 +96,7 @@ pure def C(): T      = variant(C, {})
 \end{verbatim}
 
 \subsubsection{Case analyses}
-\label{sec:org28b79fe}
+\label{sec:orgc4b162c}
 Expressions of a sum type can be eliminated using a case analysis via
 a \texttt{match} statement. Following Rust's syntax, we write that as
 
@@ -128,15 +128,15 @@ setOfTs.map(x => match x { A(a) => e1| B(b) => e2| C => e3 })
 \end{verbatim}
 
 \subsection{Statics}
-\label{sec:org248a521}
+\label{sec:org04cad71}
 These type rules assume we keep our current approach of using quint
 strings for labels. But see my argument for simplifying our approach
-under \hyperref[sec:org5370d96]{Drop the exotic operators}. See the
-discussion in \hyperref[sec:org01c8751]{Statics} below for a detailed explanation and
+under \hyperref[sec:orgd5aba72]{Drop the exotic operators}. See the
+discussion in \hyperref[sec:org6da5dcb]{Statics} below for a detailed explanation and
 analysis.
 
 \subsubsection{Construction}
-\label{sec:org7e71f1a}
+\label{sec:org23575b1}
 The typing rule for constructing a variant of a sum type:
 
 $$
@@ -167,7 +167,7 @@ introduce the typing context onto our judgments (this is what we gesture at with
 the side condition \texttt{definedType(s)}).
 
 \subsubsection{Elimination}
-\label{sec:orgc1190ae}
+\label{sec:orgf258cbd}
 
 The typing rule for eliminating a variant of a sum type via case
 analysis:
@@ -206,7 +206,7 @@ However we can define \texttt{match} as syntax sugar for the decompose
 primitive if we prefer.
 
 \subsection{Dynamics}
-\label{sec:orgb0ef3a2}
+\label{sec:orgd77d8b6}
 The dynamics in the simulator should be straightforward and is not
 discussed here. Translation to Apalache for symbolic execution in the
 model checker is also expected to be relatively straight forward, since
@@ -222,9 +222,9 @@ This concludes the tl;dr overview of the proposal. The remaining is an
 indepth (still v. rough in places, discussion).
 
 \section{Discussion}
-\label{sec:org3b0e6b8}
+\label{sec:org050246d}
 \subsection{Motivation}
-\label{sec:orga2ffa06}
+\label{sec:org2103e46}
 Quint's type system currently supports product types. Product types
 (i.e., records, with tuples as a special case where fields are indexed
 by an ordinal) let us specify \emph{conjunctions} of data types in a way that
@@ -284,9 +284,9 @@ treated as equal up-to ismorphism. See, e.g.,
 \url{https://codewords.recurse.com/issues/three/algebra-and-calculus-of-algebraic-data-types}}.
 
 \subsection{Context}
-\label{sec:org64d6776}
+\label{sec:orgea625f3}
 \subsubsection{Existing plans and previous work}
-\label{sec:org9c97e45}
+\label{sec:orgc77cf04}
 We have always planned to support co-products in quint: their utility is well
 known and widely appreciated by engineers with experience in modern programming
 languages. We introduced co-products to Apalache in
@@ -301,7 +301,7 @@ type system and addition of syntax to support sum-types is expected to be
 relatively straightforward.
 
 \subsubsection{The gist of extensible row-typed records and sum types}
-\label{sec:orga6c4138}
+\label{sec:org6428ac3}
 The core concept in the row-based approach we've opted for is the
 following: we can use the same construct, called a ``row'', to represent
 the \emph{conjoined} labeled fields of a product type and the \emph{alternative}
@@ -333,7 +333,7 @@ another (possibly open row). To represent a closed row, we omit the
 trailing \(| v\).
 
 \subsubsection{Quint's current type system}
-\label{sec:org9b1b714}
+\label{sec:org12dc16c}
 
 The \href{https://github.com/informalsystems/quint/tree/main/doc/adr005-type-system.md}{current type system supported by quint} is based on a simplified version of
 the constraint-based system presented in \href{https://www.microsoft.com/en-us/research/publication/complete-and-decidable-type-inference-for-gadts/}{``Complete and Decidable Type Inference
@@ -346,7 +346,7 @@ complete statics for product types or sum types, and while we have implemented
 support for product types in quint, we don't have our typing rules recorded.
 
 \subsection{Statics}
-\label{sec:org01c8751}
+\label{sec:org6da5dcb}
 This section discusses the typing judgements that will allow us to
 statically verify correct introduction and elimination of expressions
 that are variants of a sum type. The following considerations have
@@ -371,13 +371,13 @@ touchstone.
 \end{itemize}
 
 \subsubsection{Eliminating products and introducing sums}
-\label{sec:org2696367}
+\label{sec:org5178260}
 The elimination of products via projection and the introduction of sums
 via injection are the simplest of the two pairs of rules.
 
 \begin{enumerate}
 \item Projection
-\label{sec:orgc385f63}
+\label{sec:org6c8b9ea}
 Here is a concrete example of projecting a value out of a record using
 our current syntax:
 
@@ -462,7 +462,7 @@ judgements is delegated to the unification rules for the row-types that
 carry our fields for product type and sum types alike.
 
 \item Injection
-\label{sec:orgc9f05fe}
+\label{sec:orgc77f012}
 Here is a concrete example of injecting a value into a sum type:
 
 \begin{verbatim}
@@ -540,14 +540,14 @@ complicate our typing rules, as it requires we draw from the typing context.
 
 
 \subsubsection{Introducing products and eliminating sums}
-\label{sec:org73a7e20}
+\label{sec:org6a0635d}
 Forming expressions of product types by backing them into records and
 eliminating expressions of sum types by case analysis exhibit the same
 duality, tho they are a bit more complex.
 
 \begin{enumerate}
 \item Packing expressions into records
-\label{sec:org7612704}
+\label{sec:org254ef28}
 Here is a concrete example of forming a record using our current syntax:
 
 \begin{verbatim}
@@ -593,7 +593,7 @@ and we have to do some bookkeeping with the constraints from each of the
 elements that will be packaged into the record.
 
 \item Performing case analysis
-\label{sec:orge6937d0}
+\label{sec:org0e6979d}
 Here is a concrete example of case analysis to eliminate an expression
 belonging to a sum type using the proposed syntax variants:
 
@@ -711,10 +711,10 @@ available since we are choosing to suppress the row-typing.
 \end{enumerate}
 
 \subsection{Concrete Syntax}
-\label{sec:orgf128100}
+\label{sec:orgb377490}
 
 \subsubsection{Why not support ``polymorphic variants''}
-\label{sec:org7b76685}
+\label{sec:org4566b03}
 Our sum type system is based on row-polymorphism. The only widely used language
 I've found that uses row-polymorphism for extensible sum types is OCaml (and the
 alternative surface syntax, ReScript/Reason). For examples of their syntax for
@@ -740,11 +740,11 @@ However, we have instead opted to hide the row-polymorphism, and not expose
 this.
 
 \subsubsection{Declaration}
-\label{sec:org34f61c2}
+\label{sec:org9d13082}
 
 \begin{enumerate}
 \item Why use the \texttt{|} syntax to separate alternatives?
-\label{sec:org28bcecf}
+\label{sec:org2585d56}
 
 \begin{itemize}
 \item In programming \texttt{|} is \href{https://en.wikipedia.org/wiki/Vertical\_bar\#Disjunction}{widely used for disjunction}:
@@ -765,7 +765,7 @@ types) use \texttt{|}, including
 \end{itemize}
 
 \item Why not use \texttt{,} to separate alternatives?
-\label{sec:org2713c71}
+\label{sec:org36d828e}
 
 We have discussed modeling our concrete syntax for sum type declarations on
 Rust. But without changes to other parts of our language, this would leave the
@@ -818,7 +818,7 @@ skimming the code.
 
 
 \item Could we just copy Rust exactly?
-\label{sec:org04e0796}
+\label{sec:org9e9a2cd}
 
 In Rust, sum types are declared like this:
 
@@ -959,7 +959,7 @@ Rust's syntax for sum types would be confusing in the context of our current
 suntax and possibly lead to incorrect expectations.
 
 \item What if we want to be more Rust-like
-\label{sec:org68c6dca}
+\label{sec:org714fa9b}
 
 If we want to use a syntax for sum types that is closer to, or exactly the same
 as, Rust's, then we should make at least the following changes to the rest of
@@ -1015,7 +1015,7 @@ let four = s match {
 
 
 \subsubsection{Case analysis}
-\label{sec:org2363e85}
+\label{sec:org1404ef7}
 Ergonomic support for sum types requires eliminators, ideally in the
 form if case analysis by pattern matching.
 
@@ -1054,7 +1054,7 @@ deconstructor argument is not a free variable, and inform the user that full pat
 matching isn't yet supported.
 
 \subsubsection{Sketch of an alternative syntax}
-\label{sec:org8e41ae9}
+\label{sec:org726607c}
 The syntax being proposed is chosen because it is familiar to Rust programmers,
 and is deemed sufficient so long as we don't need to expose the underlying row
 polymorphism. However, it has the down-sides of being very similar to the syntax
@@ -1063,7 +1063,7 @@ is also more consistently complementary to our records syntax. This group of alt
 
 \begin{enumerate}
 \item Declaration
-\label{sec:org57bb208}
+\label{sec:org78427f0}
 
 Reflecting the fact that both records and sum types are based on rows, we
 use the same pairing (\texttt{:}) and enumerating (\texttt{,}) syntax, but signal to move from
@@ -1077,7 +1077,7 @@ type T =
 \end{verbatim}
 
 \item Injection
-\label{sec:orgc36a815}
+\label{sec:orgd20c363}
 
 Injection uses a syntax that is dual with projection on records: \texttt{.} projects
 values out of products and injects them into co-products:
@@ -1105,7 +1105,7 @@ def f(n: int): {C:int, D:str | s} =
 \end{verbatim}
 
 \item Elimination
-\label{sec:org18b634b}
+\label{sec:org84c35ee}
 
 Finally, elimination uses a syntax that is dual to record construction,
 signaling the similarity thru use of the surrounding curly braces, and
@@ -1121,35 +1121,34 @@ match e {
 \end{enumerate}
 
 \subsection{High-level implementation plan}
-\label{sec:org778f460}
-Using either feature flags or a protected branch to isolate on this feature
-while it is in progress:
+\label{sec:orgd09f6a5}
 
-\begin{itemize}
-\item Add parsing and extension of the IR for the syntax
-\item Add generation of constructor operators
-\item Add rules for type checking
-\item Add support in the simulator
-\item Add support for converting to Apalache
-\end{itemize}
+\begin{description}
+\item[{Add parsing and extension of the IR for the syntax}] \url{https://github.com/informalsystems/quint/pull/1092}
+\item[{Add generation of constructor operators}] \url{https://github.com/informalsystems/quint/pull/1093}
+\item[{Add rules for type checking}] \url{https://github.com/informalsystems/quint/issues/244}
+\item[{Add support in the simulator}] \url{https://github.com/informalsystems/quint/issues/1033}
+\item[{Add support for converting to Apalache}] \url{https://github.com/informalsystems/quint/issues/1034}
+\end{description}
+
 \subsection{Additional consideration}
-\label{sec:org54635ad}
+\label{sec:org0d2407a}
 \subsubsection{Pattern matching}
-\label{sec:orged8fa8c}
-TODO
+\label{sec:orgbddbca7}
+We may want to consider support for pattern matching at some point. I suspect
+the \texttt{match} construct will make users want this, but then again perhaps quint
+is simple enough that we can do without this complication. We'd also have to
+consider carefully how this would work with conversion to the Apalache IR.
+
 \subsubsection{User defined parametric type constructors}
-\label{sec:org3c04b65}
-TODO
-\subsubsection{Capitalization-based Lexical distinction}
-\label{sec:orga960d48}
-\begin{itemize}
-\item Used in almost all languages
-\item Makes a lot of syntax highlighting easier
-\item Remove ambiguities that already exist in language
-\end{itemize}
+\label{sec:org1a4beae}
+
+If we want to gain the most value from the addition of sum types we should allow
+users to define parametric types such as \texttt{Option} and \texttt{Either}. See
+\url{https://github.com/informalsystems/quint/issues/1073} .
 
 \subsubsection{Drop the exotic operators}
-\label{sec:org5370d96}
+\label{sec:orgd5aba72}
 \begin{itemize}
 \item Remove the special product type operators \texttt{fieldNames}, \texttt{Rec}, \texttt{with},
 \texttt{label}, and \texttt{index}, or add support for first-class labels As is, I
@@ -1180,6 +1179,13 @@ a :: S -> Int
 b :: S -> String
 \end{verbatim}
 
+\begin{enumerate}
+\item Benefits
+\label{sec:org36441ad}
+
+\begin{enumerate}
+\item Simplified typing rules
+\label{sec:org0e97219}
 Abandoning this subordination to normal operator application would leave
 us with a rule like the following for record projection:
 
@@ -1189,14 +1195,42 @@ $$
 { \Gamma \vdash \ e.l \ \colon (t, c \land r \sim \{ \ l \colon t | tail\_t \ \}) }
 $$
 
-This would allow removing the checks for string literals, instead
-leaving that to the outer-level, syntactic level, of our static
-analysis. A similar simplification would be follow for record
-construction: the rule for \texttt{Rec} would not need to validate that it had
-received an even number of argument of alternating string literals and
-values, since this would be statically guaranteed by the parsing rules
-for the \(\{ l_1 : v_1, \ldots, l_n : v_n \}\) syntax. This would be a
-case of opting for the
-\href{https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/}{``Parse,
-don't validate''} strategy.
+This would allow us to remove the checks for string literals, instead leaving that
+to the outermost, syntactic level of our static analysis. A similar
+simplification would follow for record construction: the rule for \texttt{Rec} would
+not need to validate that it had received an even number of argument of
+alternating string literals and values, since this would be statically
+guaranteed by the parsing rules for the \(\{ l_1 : v_1, \ldots, l_n : v_n \}\)
+syntax. This would be a case of opting for the \href{https://lexi-lambda.github.io/blog/2019/11/05/parse-don-t-validate/}{``Parse, don't validate''} strategy.
+
+\item Safer language
+\label{sec:org53a2258}
+
+The added surface area introduced by these operators have contributed to several
+bugs, including at least the ones discussed here:
+
+\begin{itemize}
+\item \url{https://github.com/informalsystems/quint/issues/169}
+\item \url{https://github.com/informalsystems/quint/issues/816}
+\item \url{https://github.com/informalsystems/quint/issues/1081}
+\end{itemize}
+
+\item More maintainable code base
+\label{sec:org03c9b45}
+
+We are losing structure in our internal representation of expressions, which
+means we get less value out of typescript type system, have to do more work
+when converting to the Apalache IR, and have to deal with more fussy details. By
+converting the rich structures of records into an internal representation
+\texttt{Rec(expr1, ..., expr1)}
+
+\begin{itemize}
+\item we lose the ability to ensure we are forming records correctly statically
+\item have to do manual arithmetic to ensure fields and values are paired up
+correctly
+\item essentially reduce ourselves to a ``stringly typed'' representation, relying
+entirely on detecting the \texttt{Rec} value in the \texttt{kind} field.
+\end{itemize}
+\end{enumerate}
+\end{enumerate}
 \end{document}
