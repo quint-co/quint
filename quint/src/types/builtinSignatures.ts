@@ -16,6 +16,7 @@ import { parseTypeOrThrow } from './parser'
 import { typeNames } from '../quintTypes'
 import { Signature, TypeScheme } from './base'
 import { times } from 'lodash'
+import { QuintBuiltinOpcode } from '../quintIr'
 
 export function getSignatures(): Map<string, Signature> {
   return new Map<string, Signature>(fixedAritySignatures.concat(multipleAritySignatures))
@@ -130,7 +131,7 @@ function uniformArgsWithResult(argsType: string, resultType: string): Signature 
 }
 
 // TODO: check arity conditions, see issue https://github.com/informalsystems/quint/issues/169
-const multipleAritySignatures: [string, Signature][] = [
+const multipleAritySignatures: [QuintBuiltinOpcode, Signature][] = [
   ['List', uniformArgsWithResult('a', 'List[a]')],
   ['Set', uniformArgsWithResult('a', 'Set[a]')],
   ['Map', uniformArgsWithResult('(a, b)', 'a -> b')],

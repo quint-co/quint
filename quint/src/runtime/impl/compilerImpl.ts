@@ -36,6 +36,7 @@ import { RuntimeValue, rv } from './runtimeValue'
 import { ErrorCode } from '../../quintError'
 
 import { lastTraceName } from '../compile'
+import { unreachable } from '../../util'
 
 const specialNames = ['q::input', 'q::runResult', 'q::nruns', 'q::nsteps', 'q::init', 'q::next', 'q::inv']
 
@@ -364,6 +365,10 @@ export class CompilerVisitor implements IRVisitor {
 
       case 'str':
         this.compStack.push(mkConstComputable(rv.mkStr(expr.value)))
+        break
+
+      default:
+        unreachable(expr)
     }
   }
 
@@ -387,514 +392,519 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   exitApp(app: ir.QuintApp) {
-    switch (app.opcode) {
-      case 'next': {
-        const register = this.compStack.pop()
-        if (register) {
-          const name = (register as Register).name
-          const nextvar = this.contextGet(name, ['nextvar'])
-          this.compStack.push(nextvar ?? fail)
-        } else {
-          this.errorTracker.addCompileError(app.id, 'Operator next(...) needs one argument')
-          this.compStack.push(fail)
-        }
-        break
-      }
-
-      case 'assign':
-        this.translateAssign(app.id)
-        break
-
-      case 'eq':
-        this.applyFun(app.id, 2, (x, y) => just(rv.mkBool(x.equals(y))))
-        break
-
-      case 'neq':
-        this.applyFun(app.id, 2, (x, y) => just(rv.mkBool(!x.equals(y))))
-        break
-
-      // conditional
-      case 'ite':
-        this.translateIfThenElse(app.id)
-        break
-
-      // Booleans
-      case 'not':
-        this.applyFun(app.id, 1, p => just(rv.mkBool(!p.toBool())))
-        break
-
-      case 'and':
-        // a conjunction over expressions is lazy
-        this.translateBoolOp(app, just(rv.mkBool(true)), (_, r) => (!r ? just(rv.mkBool(false)) : none()))
-        break
-
-      case 'actionAll':
-        this.translateAllOrThen(app)
-        break
-
-      case 'or':
-        // a disjunction over expressions is lazy
-        this.translateBoolOp(app, just(rv.mkBool(false)), (_, r) => (r ? just(rv.mkBool(true)) : none()))
-        break
-
-      case 'actionAny':
-        this.translateOrAction(app)
-        break
-
-      case 'implies':
-        // an implication is lazy
-        this.translateBoolOp(app, just(rv.mkBool(false)), (n, r) => (n == 0 && !r ? just(rv.mkBool(true)) : none()))
-        break
-
-      case 'iff':
-        this.applyFun(app.id, 2, (p, q) => just(rv.mkBool(p.toBool() === q.toBool())))
-        break
-
-      // integers
-      case 'iuminus':
-        this.applyFun(app.id, 1, n => just(rv.mkInt(-n.toInt())))
-        break
-
-      case 'iadd':
-        this.applyFun(app.id, 2, (p, q) => just(rv.mkInt(p.toInt() + q.toInt())))
-        break
-
-      case 'isub':
-        this.applyFun(app.id, 2, (p, q) => just(rv.mkInt(p.toInt() - q.toInt())))
-        break
-
-      case 'imul':
-        this.applyFun(app.id, 2, (p, q) => just(rv.mkInt(p.toInt() * q.toInt())))
-        break
-
-      case 'idiv':
-        this.applyFun(app.id, 2, (p, q) => {
-          if (q.toInt() !== 0n) {
-            return just(rv.mkInt(p.toInt() / q.toInt()))
-          } else {
-            this.errorTracker.addRuntimeError(app.id, 'Division by zero')
-            return none()
-          }
-        })
-        break
-
-      case 'imod':
-        this.applyFun(app.id, 2, (p, q) => just(rv.mkInt(p.toInt() % q.toInt())))
-        break
-
-      case 'ipow':
-        this.applyFun(app.id, 2, (p, q) => {
-          if (q.toInt() == 0n && p.toInt() == 0n) {
-            this.errorTracker.addRuntimeError(app.id, '0^0 is undefined')
-          } else if (q.toInt() < 0n) {
-            this.errorTracker.addRuntimeError(app.id, 'i^j is undefined for j < 0')
-          } else {
-            return just(rv.mkInt(p.toInt() ** q.toInt()))
-          }
-          return none()
-        })
-        break
-
-      case 'igt':
-        this.applyFun(app.id, 2, (p, q) => just(rv.mkBool(p.toInt() > q.toInt())))
-        break
-
-      case 'ilt':
-        this.applyFun(app.id, 2, (p, q) => just(rv.mkBool(p.toInt() < q.toInt())))
-        break
-
-      case 'igte':
-        this.applyFun(app.id, 2, (p, q) => just(rv.mkBool(p.toInt() >= q.toInt())))
-        break
-
-      case 'ilte':
-        this.applyFun(app.id, 2, (p, q) => just(rv.mkBool(p.toInt() <= q.toInt())))
-        break
-
-      case 'Tup':
-        // Construct a tuple from an array of values
-        this.applyFun(app.id, app.args.length, (...values: RuntimeValue[]) => just(rv.mkTuple(values)))
-        break
-
-      case 'item':
-        // Access a tuple: tuples are 1-indexed, that is, _1, _2, etc.
-        this.applyFun(app.id, 2, (tuple, idx) => this.getListElem(app.id, tuple.toList(), Number(idx.toInt()) - 1))
-        break
-
-      case 'tuples':
-        // Construct a cross product
-        this.applyFun(app.id, app.args.length, (...sets: RuntimeValue[]) => just(rv.mkCrossProd(sets)))
-        break
-
-      case 'List':
-        // Construct a list from an array of values
-        this.applyFun(app.id, app.args.length, (...values: RuntimeValue[]) => just(rv.mkList(values)))
-        break
-
-      case 'range':
-        this.applyFun(app.id, 2, (start, end) => {
-          const [s, e] = [Number(start.toInt()), Number(end.toInt())]
-          if (s <= e) {
-            const arr: RuntimeValue[] = []
-            for (let i = s; i < e; i++) {
-              arr.push(rv.mkInt(BigInt(i)))
+    if (!ir.isQuintBuiltin(app)) {
+      this.applyUserDefined(app)
+    } else {
+      switch (app.opcode) {
+        case 'next':
+          {
+            const register = this.compStack.pop()
+            if (register) {
+              const name = (register as Register).name
+              const nextvar = this.contextGet(name, ['nextvar'])
+              this.compStack.push(nextvar ?? fail)
+            } else {
+              this.errorTracker.addCompileError(app.id, 'Operator next(...) needs one argument')
+              this.compStack.push(fail)
             }
-            return just(rv.mkList(arr))
-          } else {
-            this.errorTracker.addRuntimeError(app.id, `range(${s}, ${e}) is out of bounds`)
-            return none()
           }
-        })
-        break
+          break
 
-      case 'nth':
-        // Access a list
-        this.applyFun(app.id, 2, (list, idx) => this.getListElem(app.id, list.toList(), Number(idx.toInt())))
-        break
+        case 'assign':
+          this.translateAssign(app.id)
+          break
 
-      case 'replaceAt':
-        this.applyFun(app.id, 3, (list, idx, value) =>
-          this.updateList(app.id, list.toList(), Number(idx.toInt()), value)
-        )
-        break
+        case 'eq':
+          this.applyFun(app.id, 2, (x, y) => just(rv.mkBool(x.equals(y))))
+          break
 
-      case 'head':
-        this.applyFun(app.id, 1, list => this.getListElem(app.id, list.toList(), 0))
-        break
+        case 'neq':
+          this.applyFun(app.id, 2, (x, y) => just(rv.mkBool(!x.equals(y))))
+          break
 
-      case 'tail':
-        this.applyFun(app.id, 1, list => {
-          const l = list.toList()
-          if (l.size > 0) {
-            return this.sliceList(app.id, l, 1, l.size)
-          } else {
-            this.errorTracker.addRuntimeError(app.id, 'Applied tail to an empty list')
+        // conditional
+        case 'ite':
+          this.translateIfThenElse(app.id)
+          break
+
+        // Booleans
+        case 'not':
+          this.applyFun(app.id, 1, p => just(rv.mkBool(!p.toBool())))
+          break
+
+        case 'and':
+          // a conjunction over expressions is lazy
+          this.translateBoolOp(app, just(rv.mkBool(true)), (_, r) => (!r ? just(rv.mkBool(false)) : none()))
+          break
+
+        case 'actionAll':
+          this.translateAllOrThen(app)
+          break
+
+        case 'or':
+          // a disjunction over expressions is lazy
+          this.translateBoolOp(app, just(rv.mkBool(false)), (_, r) => (r ? just(rv.mkBool(true)) : none()))
+          break
+
+        case 'actionAny':
+          this.translateOrAction(app)
+          break
+
+        case 'implies':
+          // an implication is lazy
+          this.translateBoolOp(app, just(rv.mkBool(false)), (n, r) => (n == 0 && !r ? just(rv.mkBool(true)) : none()))
+          break
+
+        case 'iff':
+          this.applyFun(app.id, 2, (p, q) => just(rv.mkBool(p.toBool() === q.toBool())))
+          break
+
+        // integers
+        case 'iuminus':
+          this.applyFun(app.id, 1, n => just(rv.mkInt(-n.toInt())))
+          break
+
+        case 'iadd':
+          this.applyFun(app.id, 2, (p, q) => just(rv.mkInt(p.toInt() + q.toInt())))
+          break
+
+        case 'isub':
+          this.applyFun(app.id, 2, (p, q) => just(rv.mkInt(p.toInt() - q.toInt())))
+          break
+
+        case 'imul':
+          this.applyFun(app.id, 2, (p, q) => just(rv.mkInt(p.toInt() * q.toInt())))
+          break
+
+        case 'idiv':
+          this.applyFun(app.id, 2, (p, q) => {
+            if (q.toInt() !== 0n) {
+              return just(rv.mkInt(p.toInt() / q.toInt()))
+            } else {
+              this.errorTracker.addRuntimeError(app.id, 'Division by zero')
+              return none()
+            }
+          })
+          break
+
+        case 'imod':
+          this.applyFun(app.id, 2, (p, q) => just(rv.mkInt(p.toInt() % q.toInt())))
+          break
+
+        case 'ipow':
+          this.applyFun(app.id, 2, (p, q) => {
+            if (q.toInt() == 0n && p.toInt() == 0n) {
+              this.errorTracker.addRuntimeError(app.id, '0^0 is undefined')
+            } else if (q.toInt() < 0n) {
+              this.errorTracker.addRuntimeError(app.id, 'i^j is undefined for j < 0')
+            } else {
+              return just(rv.mkInt(p.toInt() ** q.toInt()))
+            }
             return none()
-          }
-        })
-        break
+          })
+          break
 
-      case 'slice':
-        this.applyFun(app.id, 3, (list, start, end) => {
-          const [l, s, e] = [list.toList(), Number(start.toInt()), Number(end.toInt())]
-          if (s >= 0 && s <= l.size && e <= l.size && e >= s) {
-            return this.sliceList(app.id, l, s, e)
-          } else {
-            this.errorTracker.addRuntimeError(app.id, `slice(..., ${s}, ${e}) applied to a list of size ${l.size}`)
-            return none()
-          }
-        })
-        break
+        case 'igt':
+          this.applyFun(app.id, 2, (p, q) => just(rv.mkBool(p.toInt() > q.toInt())))
+          break
 
-      case 'length':
-        this.applyFun(app.id, 1, list => just(rv.mkInt(BigInt(list.toList().size))))
-        break
+        case 'ilt':
+          this.applyFun(app.id, 2, (p, q) => just(rv.mkBool(p.toInt() < q.toInt())))
+          break
 
-      case 'append':
-        this.applyFun(app.id, 2, (list, elem) => just(rv.mkList(list.toList().push(elem))))
-        break
+        case 'igte':
+          this.applyFun(app.id, 2, (p, q) => just(rv.mkBool(p.toInt() >= q.toInt())))
+          break
 
-      case 'concat':
-        this.applyFun(app.id, 2, (list1, list2) => just(rv.mkList(list1.toList().concat(list2.toList()))))
-        break
+        case 'ilte':
+          this.applyFun(app.id, 2, (p, q) => just(rv.mkBool(p.toInt() <= q.toInt())))
+          break
 
-      case 'indices':
-        this.applyFun(app.id, 1, list => just(rv.mkInterval(0n, BigInt(list.toList().size - 1))))
-        break
+        case 'Tup':
+          // Construct a tuple from an array of values
+          this.applyFun(app.id, app.args.length, (...values: RuntimeValue[]) => just(rv.mkTuple(values)))
+          break
 
-      case 'Rec':
-        // Construct a record
-        this.applyFun(app.id, app.args.length, (...values: RuntimeValue[]) => {
-          const keys = values.filter((e, i) => i % 2 === 0).map(k => k.toStr())
-          const map: OrderedMap<string, RuntimeValue> = keys.reduce((map, key, i) => {
-            const v = values[2 * i + 1]
-            return v ? map.set(key, v) : map
-          }, OrderedMap<string, RuntimeValue>())
-          return just(rv.mkRecord(map))
-        })
-        break
+        case 'item':
+          // Access a tuple: tuples are 1-indexed, that is, _1, _2, etc.
+          this.applyFun(app.id, 2, (tuple, idx) => this.getListElem(app.id, tuple.toList(), Number(idx.toInt()) - 1))
+          break
 
-      case 'field':
-        // Access a record via the field name
-        this.applyFun(app.id, 2, (rec, fieldName) => {
-          const name = fieldName.toStr()
-          const fieldValue = rec.toOrderedMap().get(name)
-          if (fieldValue) {
-            return just(fieldValue)
-          } else {
-            this.errorTracker.addRuntimeError(app.id, `Accessing a missing record field ${name}`)
-            return none()
-          }
-        })
-        break
+        case 'tuples':
+          // Construct a cross product
+          this.applyFun(app.id, app.args.length, (...sets: RuntimeValue[]) => just(rv.mkCrossProd(sets)))
+          break
 
-      case 'fieldNames':
-        this.applyFun(app.id, 1, rec => {
-          const keysAsRuntimeValues = rec
-            .toOrderedMap()
-            .keySeq()
-            .map(key => rv.mkStr(key))
-          return just(rv.mkSet(keysAsRuntimeValues))
-        })
-        break
+        case 'List':
+          // Construct a list from an array of values
+          this.applyFun(app.id, app.args.length, (...values: RuntimeValue[]) => just(rv.mkList(values)))
+          break
 
-      case 'with':
-        // update a record
-        this.applyFun(app.id, 3, (rec, fieldName, fieldValue) => {
-          const oldMap = rec.toOrderedMap()
-          const key = fieldName.toStr()
-          if (oldMap.has(key)) {
-            const newMap = rec.toOrderedMap().set(key, fieldValue)
-            return just(rv.mkRecord(newMap))
-          } else {
-            this.errorTracker.addRuntimeError(app.id, `Called 'with' with a non-existent key ${key}`)
-            return none()
-          }
-        })
-        break
+        case 'range':
+          this.applyFun(app.id, 2, (start, end) => {
+            const [s, e] = [Number(start.toInt()), Number(end.toInt())]
+            if (s <= e) {
+              const arr: RuntimeValue[] = []
+              for (let i = s; i < e; i++) {
+                arr.push(rv.mkInt(BigInt(i)))
+              }
+              return just(rv.mkList(arr))
+            } else {
+              this.errorTracker.addRuntimeError(app.id, `range(${s}, ${e}) is out of bounds`)
+              return none()
+            }
+          })
+          break
 
-      case 'Set':
-        // Construct a set from an array of values.
-        this.applyFun(app.id, app.args.length, (...values: RuntimeValue[]) => just(rv.mkSet(values)))
-        break
+        case 'nth':
+          // Access a list
+          this.applyFun(app.id, 2, (list, idx) => this.getListElem(app.id, list.toList(), Number(idx.toInt())))
+          break
 
-      case 'powerset':
-        this.applyFun(app.id, 1, (baseset: RuntimeValue) => just(rv.mkPowerset(baseset)))
-        break
+        case 'replaceAt':
+          this.applyFun(app.id, 3, (list, idx, value) =>
+            this.updateList(app.id, list.toList(), Number(idx.toInt()), value)
+          )
+          break
 
-      case 'contains':
-        this.applyFun(app.id, 2, (set, value) => just(rv.mkBool(set.contains(value))))
-        break
+        case 'head':
+          this.applyFun(app.id, 1, list => this.getListElem(app.id, list.toList(), 0))
+          break
 
-      case 'in':
-        this.applyFun(app.id, 2, (value, set) => just(rv.mkBool(set.contains(value))))
-        break
+        case 'tail':
+          this.applyFun(app.id, 1, list => {
+            const l = list.toList()
+            if (l.size > 0) {
+              return this.sliceList(app.id, l, 1, l.size)
+            } else {
+              this.errorTracker.addRuntimeError(app.id, 'Applied tail to an empty list')
+              return none()
+            }
+          })
+          break
 
-      case 'subseteq':
-        this.applyFun(app.id, 2, (l, r) => just(rv.mkBool(l.isSubset(r))))
-        break
+        case 'slice':
+          this.applyFun(app.id, 3, (list, start, end) => {
+            const [l, s, e] = [list.toList(), Number(start.toInt()), Number(end.toInt())]
+            if (s >= 0 && s <= l.size && e <= l.size && e >= s) {
+              return this.sliceList(app.id, l, s, e)
+            } else {
+              this.errorTracker.addRuntimeError(app.id, `slice(..., ${s}, ${e}) applied to a list of size ${l.size}`)
+              return none()
+            }
+          })
+          break
 
-      case 'union':
-        this.applyFun(app.id, 2, (l, r) => just(rv.mkSet(l.toSet().union(r.toSet()))))
-        break
+        case 'length':
+          this.applyFun(app.id, 1, list => just(rv.mkInt(BigInt(list.toList().size))))
+          break
 
-      case 'intersect':
-        this.applyFun(app.id, 2, (l, r) => just(rv.mkSet(l.toSet().intersect(r.toSet()))))
-        break
+        case 'append':
+          this.applyFun(app.id, 2, (list, elem) => just(rv.mkList(list.toList().push(elem))))
+          break
 
-      case 'exclude':
-        this.applyFun(app.id, 2, (l, r) => just(rv.mkSet(l.toSet().subtract(r.toSet()))))
-        break
+        case 'concat':
+          this.applyFun(app.id, 2, (list1, list2) => just(rv.mkList(list1.toList().concat(list2.toList()))))
+          break
 
-      case 'size':
-        this.applyFun(app.id, 1, set => set.cardinality().map(rv.mkInt))
-        break
+        case 'indices':
+          this.applyFun(app.id, 1, list => just(rv.mkInterval(0n, BigInt(list.toList().size - 1))))
+          break
 
-      case 'isFinite':
-        // at the moment, we support only finite sets, so just return true
-        this.applyFun(app.id, 1, _set => just(rv.mkBool(true)))
-        break
+        case 'Rec':
+          // Construct a record
+          this.applyFun(app.id, app.args.length, (...values: RuntimeValue[]) => {
+            const keys = values.filter((e, i) => i % 2 === 0).map(k => k.toStr())
+            const map: OrderedMap<string, RuntimeValue> = keys.reduce((map, key, i) => {
+              const v = values[2 * i + 1]
+              return v ? map.set(key, v) : map
+            }, OrderedMap<string, RuntimeValue>())
+            return just(rv.mkRecord(map))
+          })
+          break
 
-      case 'to':
-        this.applyFun(app.id, 2, (i, j) => just(rv.mkInterval(i.toInt(), j.toInt())))
-        break
+        case 'field':
+          // Access a record via the field name
+          this.applyFun(app.id, 2, (rec, fieldName) => {
+            const name = fieldName.toStr()
+            const fieldValue = rec.toOrderedMap().get(name)
+            if (fieldValue) {
+              return just(fieldValue)
+            } else {
+              this.errorTracker.addRuntimeError(app.id, `Accessing a missing record field ${name}`)
+              return none()
+            }
+          })
+          break
 
-      case 'fold':
-        this.applyFold(app.id, 'fwd')
-        break
+        case 'fieldNames':
+          this.applyFun(app.id, 1, rec => {
+            const keysAsRuntimeValues = rec
+              .toOrderedMap()
+              .keySeq()
+              .map(key => rv.mkStr(key))
+            return just(rv.mkSet(keysAsRuntimeValues))
+          })
+          break
 
-      case 'foldl':
-        this.applyFold(app.id, 'fwd')
-        break
+        case 'with':
+          // update a record
+          this.applyFun(app.id, 3, (rec, fieldName, fieldValue) => {
+            const oldMap = rec.toOrderedMap()
+            const key = fieldName.toStr()
+            if (oldMap.has(key)) {
+              const newMap = rec.toOrderedMap().set(key, fieldValue)
+              return just(rv.mkRecord(newMap))
+            } else {
+              this.errorTracker.addRuntimeError(app.id, `Called 'with' with a non-existent key ${key}`)
+              return none()
+            }
+          })
+          break
 
-      case 'foldr':
-        this.applyFold(app.id, 'rev')
-        break
+        case 'Set':
+          // Construct a set from an array of values.
+          this.applyFun(app.id, app.args.length, (...values: RuntimeValue[]) => just(rv.mkSet(values)))
+          break
 
-      case 'flatten':
-        this.applyFun(app.id, 1, set => {
-          // unpack the sets from runtime values
-          const setOfSets = set.toSet().map(e => e.toSet())
-          // and flatten the set of sets via immutable-js
-          return just(rv.mkSet(setOfSets.flatten(1) as Set<RuntimeValue>))
-        })
-        break
+        case 'powerset':
+          this.applyFun(app.id, 1, (baseset: RuntimeValue) => just(rv.mkPowerset(baseset)))
+          break
 
-      case 'get':
-        // Get a map value
-        this.applyFun(app.id, 2, (map, key) => {
-          const value = map.toMap().get(key.normalForm())
-          if (value) {
-            return just(value)
-          } else {
-            // Should we print the key? It may be a complex expression.
-            this.errorTracker.addRuntimeError(app.id, "Called 'get' with a non-existing key")
-            return none()
-          }
-        })
-        break
+        case 'contains':
+          this.applyFun(app.id, 2, (set, value) => just(rv.mkBool(set.contains(value))))
+          break
 
-      case 'set':
-        // Update a map value
-        this.applyFun(app.id, 3, (map, key, newValue) => {
-          const normalKey = key.normalForm()
-          const asMap = map.toMap()
-          if (asMap.has(normalKey)) {
+        case 'in':
+          this.applyFun(app.id, 2, (value, set) => just(rv.mkBool(set.contains(value))))
+          break
+
+        case 'subseteq':
+          this.applyFun(app.id, 2, (l, r) => just(rv.mkBool(l.isSubset(r))))
+          break
+
+        case 'union':
+          this.applyFun(app.id, 2, (l, r) => just(rv.mkSet(l.toSet().union(r.toSet()))))
+          break
+
+        case 'intersect':
+          this.applyFun(app.id, 2, (l, r) => just(rv.mkSet(l.toSet().intersect(r.toSet()))))
+          break
+
+        case 'exclude':
+          this.applyFun(app.id, 2, (l, r) => just(rv.mkSet(l.toSet().subtract(r.toSet()))))
+          break
+
+        case 'size':
+          this.applyFun(app.id, 1, set => set.cardinality().map(rv.mkInt))
+          break
+
+        case 'isFinite':
+          // at the moment, we support only finite sets, so just return true
+          this.applyFun(app.id, 1, _set => just(rv.mkBool(true)))
+          break
+
+        case 'to':
+          this.applyFun(app.id, 2, (i, j) => just(rv.mkInterval(i.toInt(), j.toInt())))
+          break
+
+        case 'fold':
+          this.applyFold(app.id, 'fwd')
+          break
+
+        case 'foldl':
+          this.applyFold(app.id, 'fwd')
+          break
+
+        case 'foldr':
+          this.applyFold(app.id, 'rev')
+          break
+
+        case 'flatten':
+          this.applyFun(app.id, 1, set => {
+            // unpack the sets from runtime values
+            const setOfSets = set.toSet().map(e => e.toSet())
+            // and flatten the set of sets via immutable-js
+            return just(rv.mkSet(setOfSets.flatten(1) as Set<RuntimeValue>))
+          })
+          break
+
+        case 'get':
+          // Get a map value
+          this.applyFun(app.id, 2, (map, key) => {
+            const value = map.toMap().get(key.normalForm())
+            if (value) {
+              return just(value)
+            } else {
+              // Should we print the key? It may be a complex expression.
+              this.errorTracker.addRuntimeError(app.id, "Called 'get' with a non-existing key")
+              return none()
+            }
+          })
+          break
+
+        case 'set':
+          // Update a map value
+          this.applyFun(app.id, 3, (map, key, newValue) => {
+            const normalKey = key.normalForm()
+            const asMap = map.toMap()
+            if (asMap.has(normalKey)) {
+              const newMap = asMap.set(normalKey, newValue)
+              return just(rv.fromMap(newMap))
+            } else {
+              this.errorTracker.addRuntimeError(app.id, "Called 'set' with a non-existing key")
+              return none()
+            }
+          })
+          break
+
+        case 'put':
+          // add a value to a map
+          this.applyFun(app.id, 3, (map, key, newValue) => {
+            const normalKey = key.normalForm()
+            const asMap = map.toMap()
             const newMap = asMap.set(normalKey, newValue)
             return just(rv.fromMap(newMap))
-          } else {
-            this.errorTracker.addRuntimeError(app.id, "Called 'set' with a non-existing key")
-            return none()
-          }
-        })
-        break
+          })
+          break
 
-      case 'put':
-        // add a value to a map
-        this.applyFun(app.id, 3, (map, key, newValue) => {
-          const normalKey = key.normalForm()
-          const asMap = map.toMap()
-          const newMap = asMap.set(normalKey, newValue)
-          return just(rv.fromMap(newMap))
-        })
-        break
-
-      case 'setBy': {
-        // Update a map value via a lambda
-        const fun = this.compStack.pop() ?? fail
-        this.applyFun(app.id, 2, (map, key) => {
-          const normalKey = key.normalForm()
-          const asMap = map.toMap()
-          if (asMap.has(normalKey)) {
-            return fun.eval([just(asMap.get(normalKey))]).map(newValue => {
-              const newMap = asMap.set(normalKey, newValue as RuntimeValue)
-              return rv.fromMap(newMap)
-            })
-          } else {
-            this.errorTracker.addRuntimeError(app.id, "Called 'setBy' with a non-existing key")
-            return none()
-          }
-        })
-        break
-      }
-
-      case 'keys':
-        // map keys as a set
-        this.applyFun(app.id, 1, map => {
-          return just(rv.mkSet(map.toMap().keys()))
-        })
-        break
-
-      case 'oneOf':
-        this.applyOneOf(app.id)
-        break
-
-      case 'exists':
-        this.mapLambdaThenReduce(app.id, set => rv.mkBool(set.find(([result, _]) => result.toBool()) !== undefined))
-        break
-
-      case 'forall':
-        this.mapLambdaThenReduce(app.id, set => rv.mkBool(set.find(([result, _]) => !result.toBool()) === undefined))
-        break
-
-      case 'map':
-        this.mapLambdaThenReduce(app.id, array => rv.mkSet(array.map(([result, _]) => result)))
-        break
-
-      case 'filter':
-        this.mapLambdaThenReduce(app.id, arr => rv.mkSet(arr.filter(([r, _]) => r.toBool()).map(([_, e]) => e)))
-        break
-
-      case 'select':
-        this.mapLambdaThenReduce(app.id, arr => rv.mkList(arr.filter(([r, _]) => r.toBool()).map(([_, e]) => e)))
-        break
-
-      case 'mapBy':
-        this.mapLambdaThenReduce(app.id, arr => rv.mkMap(arr.map(([v, k]) => [k, v])))
-        break
-
-      case 'Map':
-        this.applyFun(app.id, app.args.length, (...pairs: any[]) => just(rv.mkMap(pairs)))
-        break
-
-      case 'setToMap':
-        this.applyFun(app.id, 1, (set: RuntimeValue) =>
-          just(
-            rv.mkMap(
-              set.toSet().map(p => {
-                const arr = p.toList().toArray()
-                return [arr[0], arr[1]]
+        case 'setBy': {
+          // Update a map value via a lambda
+          const fun = this.compStack.pop() ?? fail
+          this.applyFun(app.id, 2, (map, key) => {
+            const normalKey = key.normalForm()
+            const asMap = map.toMap()
+            if (asMap.has(normalKey)) {
+              return fun.eval([just(asMap.get(normalKey))]).map(newValue => {
+                const newMap = asMap.set(normalKey, newValue as RuntimeValue)
+                return rv.fromMap(newMap)
               })
+            } else {
+              this.errorTracker.addRuntimeError(app.id, "Called 'setBy' with a non-existing key")
+              return none()
+            }
+          })
+          break
+        }
+
+        case 'keys':
+          // map keys as a set
+          this.applyFun(app.id, 1, map => {
+            return just(rv.mkSet(map.toMap().keys()))
+          })
+          break
+
+        case 'oneOf':
+          this.applyOneOf(app.id)
+          break
+
+        case 'exists':
+          this.mapLambdaThenReduce(app.id, set => rv.mkBool(set.find(([result, _]) => result.toBool()) !== undefined))
+          break
+
+        case 'forall':
+          this.mapLambdaThenReduce(app.id, set => rv.mkBool(set.find(([result, _]) => !result.toBool()) === undefined))
+          break
+
+        case 'map':
+          this.mapLambdaThenReduce(app.id, array => rv.mkSet(array.map(([result, _]) => result)))
+          break
+
+        case 'filter':
+          this.mapLambdaThenReduce(app.id, arr => rv.mkSet(arr.filter(([r, _]) => r.toBool()).map(([_, e]) => e)))
+          break
+
+        case 'select':
+          this.mapLambdaThenReduce(app.id, arr => rv.mkList(arr.filter(([r, _]) => r.toBool()).map(([_, e]) => e)))
+          break
+
+        case 'mapBy':
+          this.mapLambdaThenReduce(app.id, arr => rv.mkMap(arr.map(([v, k]) => [k, v])))
+          break
+
+        case 'Map':
+          this.applyFun(app.id, app.args.length, (...pairs: any[]) => just(rv.mkMap(pairs)))
+          break
+
+        case 'setToMap':
+          this.applyFun(app.id, 1, (set: RuntimeValue) =>
+            just(
+              rv.mkMap(
+                set.toSet().map(p => {
+                  const arr = p.toList().toArray()
+                  return [arr[0], arr[1]]
+                })
+              )
             )
           )
-        )
-        break
+          break
 
-      case 'setOfMaps':
-        this.applyFun(app.id, 2, (dom, rng) => {
-          return just(rv.mkMapSet(dom, rng))
-        })
-        break
+        case 'setOfMaps':
+          this.applyFun(app.id, 2, (dom, rng) => {
+            return just(rv.mkMapSet(dom, rng))
+          })
+          break
 
-      case 'then':
-        this.translateAllOrThen(app)
-        break
+        case 'then':
+          this.translateAllOrThen(app)
+          break
 
-      case 'fail':
-        this.applyFun(app.id, 1, result => {
-          return just(rv.mkBool(!result.toBool()))
-        })
-        break
+        case 'fail':
+          this.applyFun(app.id, 1, result => {
+            return just(rv.mkBool(!result.toBool()))
+          })
+          break
 
-      case 'assert':
-        this.applyFun(app.id, 1, cond => {
-          if (!cond.toBool()) {
-            this.errorTracker.addRuntimeError(app.id, 'Assertion failed')
+        case 'assert':
+          this.applyFun(app.id, 1, cond => {
+            if (!cond.toBool()) {
+              this.errorTracker.addRuntimeError(app.id, 'Assertion failed')
+              return none()
+            }
+            return just(cond)
+          })
+          break
+
+        case 'reps':
+          this.translateReps(app)
+          break
+
+        case 'q::test':
+          // the special operator that runs random simulation
+          this.test(app.id)
+          break
+
+        case 'q::testOnce':
+          // the special operator that runs random simulation
+          this.testOnce(app.id)
+          break
+
+        // standard unary operators that are not handled by REPL
+        case 'allLists':
+        case 'chooseSome':
+        case 'always':
+        case 'eventually':
+        case 'enabled':
+          this.applyFun(app.id, 1, _ => {
+            this.errorTracker.addRuntimeError(app.id, `Runtime does not support the built-in operator '${app.opcode}'`)
             return none()
-          }
-          return just(cond)
-        })
-        break
+          })
+          break
 
-      case 'reps':
-        this.translateReps(app)
-        break
+        // builtin operators that are not handled by REPL
+        case 'unionMatch':
+        case 'orKeep':
+        case 'mustChange':
+        case 'weakFair':
+        case 'strongFair':
+          this.applyFun(app.id, 2, _ => {
+            this.errorTracker.addRuntimeError(app.id, `Runtime does not support the built-in operator '${app.opcode}'`)
+            return none()
+          })
+          break
 
-      case 'q::test':
-        // the special operator that runs random simulation
-        this.test(app.id)
-        break
-
-      case 'q::testOnce':
-        // the special operator that runs random simulation
-        this.testOnce(app.id)
-        break
-
-      // standard unary operators that are not handled by REPL
-      case 'allLists':
-      case 'chooseSome':
-      case 'always':
-      case 'eventually':
-      case 'enabled':
-        this.applyFun(app.id, 1, _ => {
-          this.errorTracker.addRuntimeError(app.id, `Runtime does not support the built-in operator '${app.opcode}'`)
-          return none()
-        })
-        break
-
-      // standard binary operators that are not handled by REPL
-      case 'orKeep':
-      case 'mustChange':
-      case 'weakFair':
-      case 'strongFair':
-        this.applyFun(app.id, 2, _ => {
-          this.errorTracker.addRuntimeError(app.id, `Runtime does not support the built-in operator '${app.opcode}'`)
-          return none()
-        })
-        break
-
-      default: {
-        this.applyUserDefined(app)
+        default:
+          unreachable(app.opcode)
       }
     }
   }

@@ -15,6 +15,7 @@
 
 import * as ir from './quintIr'
 import * as t from './quintTypes'
+import { unreachable } from './util'
 
 export class IRTransformer {
   enterModule?: (module: ir.QuintModule) => ir.QuintModule
@@ -81,6 +82,8 @@ export class IRTransformer {
   exitTupleType?: (type: t.QuintTupleType) => t.QuintTupleType
   enterRecordType?: (type: t.QuintRecordType) => t.QuintRecordType
   exitRecordType?: (type: t.QuintRecordType) => t.QuintRecordType
+  enterSumType?: (type: t.QuintSumType) => t.QuintSumType
+  exitSumType?: (type: t.QuintSumType) => t.QuintSumType
   enterUnionType?: (type: t.QuintUnionType) => t.QuintUnionType
   exitUnionType?: (type: t.QuintUnionType) => t.QuintUnionType
 
@@ -247,6 +250,18 @@ export function transformType(transformer: IRTransformer, type: t.QuintType): t.
         newType = transformer.exitUnionType(newType)
       }
       break
+
+    case 'sum':
+      if (transformer.enterSumType) {
+        newType = transformer.enterSumType(newType)
+      }
+      if (transformer.exitSumType) {
+        newType = transformer.exitSumType(newType)
+      }
+      break
+
+    default:
+      unreachable(newType)
   }
 
   if (transformer.exitType) {
@@ -346,6 +361,8 @@ export function transformDefinition(transformer: IRTransformer, def: ir.QuintDef
         newDef = transformer.exitAssume(newDef)
       }
       break
+    default:
+      unreachable(newDef)
   }
   if (transformer.exitDef) {
     newDef = transformer.exitDef(newDef)
@@ -410,26 +427,30 @@ function transformExpression(transformer: IRTransformer, expr: ir.QuintEx): ir.Q
         newExpr = transformer.exitLambda(newExpr)
       }
       break
-    case 'let': {
-      if (transformer.enterLet) {
-        newExpr = transformer.enterLet(newExpr)
-      }
+    case 'let':
+      {
+        if (transformer.enterLet) {
+          newExpr = transformer.enterLet(newExpr)
+        }
 
-      const opdef = transformDefinition(transformer, newExpr.opdef)
-      if (opdef.kind !== 'def') {
-        // This should only happen if we write a bad transformer. Should never
-        // be a user facing issue.
-        throw new Error('Let operator definition transformed into non-operator definition')
-      }
+        const opdef = transformDefinition(transformer, newExpr.opdef)
+        if (opdef.kind !== 'def') {
+          // This should only happen if we write a bad transformer. Should never
+          // be a user facing issue.
+          throw new Error('Let operator definition transformed into non-operator definition')
+        }
 
-      newExpr.opdef = opdef
-      newExpr.expr = transformExpression(transformer, newExpr.expr)
+        newExpr.opdef = opdef
+        newExpr.expr = transformExpression(transformer, newExpr.expr)
 
-      if (transformer.exitLet) {
-        newExpr = transformer.exitLet(newExpr)
+        if (transformer.exitLet) {
+          newExpr = transformer.exitLet(newExpr)
+        }
       }
       break
-    }
+
+    default:
+      unreachable(newExpr)
   }
 
   if (transformer.exitExpr) {
