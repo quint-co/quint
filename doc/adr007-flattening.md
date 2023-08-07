@@ -35,23 +35,37 @@ So if there is something that is somehow viable outside of these requirements, I
 
 ## 4. Solution
 
-Imports, instances and exports are resolved by the name resolver. This is where any missing or conflicting name errors should be flagged. Flattening assumes all names are present and not conflicting.
+Our ideal scenario is the following: Imports, instances and exports are resolved by the name resolver. This is where any missing or conflicting name errors are flagged. Flattening assumes all names are present and not conflicting.
 
-### Changes to name collection
+To achieve this scenario, we propose:
 
-Although we don't need or want to change anything in the name resolution phase for flattening, we do collect some additional metadata in this phase to be used later in flattening
+1. Changes to name collection, during name resolution
+2. Introduction of an instance flattener
+
+We describe each change in detail in separate sections below.
+
+### 4.1 Changes to name collection
+
+This section explains the proposed changes to name collection. These changes do not affect name resolution itself, but collect additional metadata, to be used later in flattening:
+
+1. Keep full quint definitions in the lookup table
+2. Collect flattened namespaces from import/export/instance statements (adds `namespaces` field)
+3. Back-reference the import/export/instance statement that created a definition (adds `importedFrom` field)
+
+We explain each of the changes in detail in the following subsections.
 
 #### `LookupTable` with full quint definitions
 
 Our current lookup table only stores a projection of the quint definition: id (called reference), name and type annotation (if present). There is no strong reason for that, only a premature optimization and the fact that the lookup table values might also be lambda parameters, which are not quint definitions.
 
-In flattening, we need to manipulate and reorganize definitions, and it is much better for performance and readability if the definitions are in the lookup table, as oppose to having to scan the modules for a definition.
+In flattening, we need to manipulate and reorganize definitions, and it is much better for performance and readability if the full definitions are in the lookup table, as opposed to having to scan the modules for a definition.
 
 Therefore, we change the lookup table to have either a `QuintDef` or a `QuintLambdaParam` as its value, as well as two additional fields (`namespaces` and `importedFrom`) described below.
 
-#### `namespaces`
+#### Collect flattened namespaces from import/export/instance statements (`namespaces`)
 
-When collecting names from import/export/instance statements, we should be able to keep track of the namespaces to add to the definition in order to refer back to it uniquely in a flattened module. The following method describes which namespaces to add depending on `def`, returning a list of namespaces to be accumulated starting with the innermost namespace and ending with the outermorst (i.e. namespaces `['a', 'b', 'c']` applied to name `foo` will result in `c::b::a::foo`).
+When flattening a definition that originates from an import/export/instance statement, we may need to – _only during flattening_ – prefix it with a namespace in order to refer to it uniquely in the flattened module.
+This section describes how to accumulate this namespace information during name collection. It is stored in a fresh `namespaces` field, for each definition in the lookup table.
 
 ##### Namespaces for imports
 
@@ -114,11 +128,11 @@ private namespaces(def: QuintImport | QuintInstance | QuintExport): string[] {
 }
 ```
 
-#### `importedFrom`
+#### Back-reference the import/export/instance statement that created a definition (`importedFrom`)
 
-This is a simple reference to the import/export/instance statement that created a definition, also gathered during name collection. Used in flattening to distinguish definitions that come from instances from definitions that come from imports/exports.
+We add a reference to the import/export/instance statement that created a definition, also gathered during name collection, in the new `importedFrom` field. Used in flattening to distinguish definitions that come from instances from definitions that come from imports/exports.
 
-### Instance Flattener
+### 4.2 Instance Flattener
 
 The instance flattener gets rid of instances, which is the most complicated part of flattening. We cannot use the same id for the same definition of different instances, as they might assume different values[^1].
 
@@ -210,7 +224,15 @@ When adding a missing definition, if that definitions carries a namespace, we ac
 
 This deep namespace-adding procedure is already done in the current implementation of flattening (see [`addNamespaceToDef`](https://github.com/informalsystems/quint/blob/main/quint/src/flattening.ts#L276C4-L276C4)), with the only difference being that we don't want to generate new ids in this case (we only create new ids in the Instance Flattener).
 
-Although the Instance Flattener requires imports and instances to be flattened, we can't flatten definitions that come from instances before running the instance flattener, since that would copy definitions that would potentially be replaced by new definitions in new modules created by the instance flattener. Therefore, we need to run the flattener twice: first not copying definitions that come from instances (checking the `importedFrom` field once again), and then, after the instance flattener, flattening anything that remains to be flattened.
+### Flattening imports/exports and instances
+
+Our proposed architecture sandwiches one run of the instance flattener (to flatten instances) between two runs of the flattener (to flatten imports/exports):
+
+1. First round of flattening: flattens all imports and exports, leaving us with only instances.
+2. Instance Flattener: turns instance statements into imports (and adds a fresh module for each instance)
+3. Second round of flattening: flattens the remaining imports created by the Instance Flattener
+
+We use the `importedFrom` field, introduced above, to choose the appropriate step for each definition.
 
 ### Overall flattening process
 
