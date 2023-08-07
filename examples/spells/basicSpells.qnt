@@ -124,10 +124,10 @@ module basicSpells {
     assert(Map() == Map().mapRemove(3)),
   }
 
-  /// Removes a set of map entry.
+  /// Removes a set of map entries.
   ///
-  /// - @param __map a map to remove an entry from
-  /// - @param __keys a set of keys to remove from the map
+  /// - @param __map a map to remove entries from
+  /// - @param __keys a set of keys for entries to remove from the map
   /// - @returns a new map that contains all entries of __map
   ///          that do not have a key in __keys
   pure def mapRemoveAll(__map: a -> b, __keys: Set[a]): a -> b = {
