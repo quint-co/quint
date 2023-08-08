@@ -3,6 +3,7 @@ import { IdGenerator } from '../idGenerator'
 import { Loc } from '../parsing/quintParserFrontend'
 import { AnalysisOutput } from '../quintAnalyzer'
 import { QuintDef, QuintEx, QuintLambda } from './quintIr'
+import { QuintType } from './quintTypes'
 
 export function generateFreshIds(
   def: QuintDef,
@@ -40,6 +41,14 @@ class IdRefresher implements IRTransformer {
 
   enterExpr(expr: QuintEx): QuintEx {
     return { ...expr, id: this.getNewIdWithSameData(expr.id) }
+  }
+
+  enterType(type: QuintType): QuintType {
+    if (!type.id) {
+      return type
+    }
+
+    return { ...type, id: this.getNewIdWithSameData(type.id) }
   }
 
   private getNewIdWithSameData(id: bigint): bigint {
