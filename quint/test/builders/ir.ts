@@ -1,8 +1,8 @@
 import { parsePhase1fromText } from '../../src/parsing/quintParserFrontend'
 import { IdGenerator, newIdGenerator } from '../../src/idGenerator'
-import { QuintDef, QuintEx, QuintModule } from '../../src/quintIr'
+import { QuintDef, QuintEx, QuintModule } from '../../src/internal_representation/quintIr'
 import JSONbig from 'json-bigint'
-import { QuintType } from '../../src/quintTypes'
+import { QuintType } from '../../src/internal_representation/quintTypes'
 
 export function buildModuleWithExpressions(expressions: string[]): QuintModule {
   return buildModule([], expressions)

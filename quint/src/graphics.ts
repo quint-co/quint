@@ -26,13 +26,13 @@ import {
   textify,
 } from './prettierimp'
 
-import { QuintDef, QuintEx, isAnnotatedDef } from './quintIr'
+import { QuintDef, QuintEx, isAnnotatedDef } from './internal_representation/quintIr'
 import { ExecutionFrame } from './runtime/trace'
 import { zerog } from './idGenerator'
-import { ConcreteFixedRow, QuintType, Row } from './quintTypes'
+import { ConcreteFixedRow, QuintType, Row } from './internal_representation/quintTypes'
 import { TypeScheme } from './types/base'
 import { canonicalTypeScheme } from './types/printing'
-import { definitionToString, flattenRow, qualifierToString, rowToString } from './IRprinting'
+import { definitionToString, flattenRow, qualifierToString, rowToString } from './internal_representation/IRprinting'
 
 /**
  * An abstraction of a Console of bounded text width.

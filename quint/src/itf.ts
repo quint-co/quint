@@ -11,9 +11,9 @@
 
 import { Either, left, merge, right } from '@sweet-monads/either'
 import { chunk } from 'lodash'
-import { QuintApp, QuintStr } from './quintIr'
+import { QuintApp, QuintStr } from './internal_representation/quintIr'
 
-import { QuintEx } from './quintIr'
+import { QuintEx } from './internal_representation/quintIr'
 
 /** The type of IFT traces.
  * See https://github.com/informalsystems/apalache/blob/main/docs/src/adr/015adr-trace.md */

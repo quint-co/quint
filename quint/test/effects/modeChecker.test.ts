@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { OpQualifier } from '../../src/quintIr'
+import { OpQualifier } from '../../src/internal_representation/quintIr'
 import { EffectInferrer } from '../../src/effects/inferrer'
 import { ModeChecker } from '../../src/effects/modeChecker'
 import { QuintError, quintErrorToString } from '../../src/quintError'

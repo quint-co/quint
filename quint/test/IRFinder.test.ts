@@ -1,6 +1,6 @@
 import { assert } from 'chai'
 import { describe, it } from 'mocha'
-import { findDefinitionWithId, findExpressionWithId, findTypeWithId } from '../src/IRFinder'
+import { findDefinitionWithId, findExpressionWithId, findTypeWithId } from '../src/internal_representation/IRFinder'
 import { buildModuleWithDefs, buildModuleWithExpressions } from './builders/ir'
 
 describe('findExpressionWithId', () => {

@@ -12,7 +12,7 @@
  * @module
  */
 
-import { IRVisitor } from '../IRVisitor'
+import { IRVisitor } from '../internal_representation/IRVisitor'
 import {
   QuintApp,
   QuintAssume,
@@ -29,9 +29,9 @@ import {
   QuintStr,
   QuintVar,
   isAnnotatedDef,
-} from '../quintIr'
-import { QuintType, typeNames } from '../quintTypes'
-import { expressionToString, rowToString, typeToString } from '../IRprinting'
+} from '../internal_representation/quintIr'
+import { QuintType, typeNames } from '../internal_representation/quintTypes'
+import { expressionToString, rowToString, typeToString } from '../internal_representation/IRprinting'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
 import { getSignatures } from './builtinSignatures'

@@ -12,7 +12,7 @@
  * @module
  */
 
-import { IRVisitor } from '../IRVisitor'
+import { IRVisitor } from '../internal_representation/IRVisitor'
 import { QuintError } from '../quintError'
 import {
   QuintAssume,
@@ -24,7 +24,7 @@ import {
   QuintOpDef,
   QuintTypeDef,
   QuintVar,
-} from '../quintIr'
+} from '../internal_representation/quintIr'
 import { Definition, DefinitionsByModule, DefinitionsByName, LookupTable, builtinNames, copyNames } from './base'
 import {
   moduleNotFoundError,

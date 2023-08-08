@@ -19,7 +19,7 @@
 import { Either, left, right } from '@sweet-monads/either'
 import { Map } from 'immutable'
 import { Set } from 'immutable'
-import { WithId } from '../quintIr'
+import { WithId } from '../internal_representation/quintIr'
 
 // the type of edges
 type Edges = Map<bigint, Set<bigint>>

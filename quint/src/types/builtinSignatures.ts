@@ -13,7 +13,7 @@
  */
 
 import { parseTypeOrThrow } from './parser'
-import { typeNames } from '../quintTypes'
+import { typeNames } from '../internal_representation/quintTypes'
 import { Signature, TypeScheme } from './base'
 import { times } from 'lodash'
 

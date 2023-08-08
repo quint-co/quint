@@ -1,4 +1,4 @@
-import { QuintType } from '../quintTypes'
+import { QuintType } from '../internal_representation/quintTypes'
 
 /*
  * A type constraint can be either an equality of two types, a conjunction of

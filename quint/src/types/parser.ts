@@ -18,7 +18,7 @@ import { QuintListener } from '../generated/QuintListener'
 import { ToIrListener } from '../parsing/ToIrListener'
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 import { CharStreams, CommonTokenStream } from 'antlr4ts'
-import { QuintType, Row } from '../quintTypes'
+import { QuintType, Row } from '../internal_representation/quintTypes'
 import { newIdGenerator } from '../idGenerator'
 
 import { Either, left, right } from '@sweet-monads/either'

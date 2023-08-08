@@ -14,13 +14,23 @@
 
 import { IdGenerator } from './idGenerator'
 import { LookupTable, builtinNames } from './names/base'
-import { FlatDef, FlatModule, QuintDef, QuintExport, QuintImport, QuintInstance, QuintModule, isFlat } from './quintIr'
-import { definitionToString, moduleToString } from './IRprinting'
+import {
+  FlatDef,
+  FlatModule,
+  QuintDef,
+  QuintExport,
+  QuintImport,
+  QuintInstance,
+  QuintModule,
+  isFlat,
+} from './internal_representation/quintIr'
+import { definitionToString, moduleToString } from './internal_representation/IRprinting'
 import { Loc, parsePhase3importAndNameResolution } from './parsing/quintParserFrontend'
 import { compact, uniqBy } from 'lodash'
 import { AnalysisOutput } from './quintAnalyzer'
 import { inlineAliasesInDef, inlineAnalysisOutput, inlineTypeAliases } from './types/aliasInliner'
-import { NewIdGenerationConfig, updateDefinition } from './definitionsUpdater'
+import { addNamespaceToDefinition } from './internal_representation/namespacer'
+import { generateFreshIds } from './internal_representation/idRefresher'
 
 /**
  * Flatten an array of modules, replacing instances, imports and exports with
@@ -138,7 +148,10 @@ class Flatenner {
   private currentModuleNames: Set<string>
   private importedModules: Map<string, QuintModule>
   private module: QuintModule
-  private newIdGenerationConfig: NewIdGenerationConfig
+
+  private idGenerator: IdGenerator
+  private sourceMap: Map<bigint, Loc>
+  private analysisOutput: AnalysisOutput
 
   constructor(
     idGenerator: IdGenerator,
@@ -158,7 +171,9 @@ class Flatenner {
 
     this.importedModules = importedModules
     this.module = module
-    this.newIdGenerationConfig = { idGenerator, sourceMap, analysisOutput }
+    this.idGenerator = idGenerator
+    this.sourceMap = sourceMap
+    this.analysisOutput = analysisOutput
   }
 
   flattenDef(def: QuintDef): FlatDef[] {
@@ -244,20 +259,15 @@ class Flatenner {
       throw new Error(`Impossible: ${definitionToString(def)} should have been flattened already`)
     }
 
-    const newDef = updateDefinition(
-      def,
-      // Namespace to add, if there is a qualifier
-      qualifier ? { namespace: qualifier, namesToPreserve: this.currentModuleNames } : undefined,
-      // Always generate new ids
-      this.newIdGenerationConfig
-    )
+    const defWithQualifier = qualifier ? addNamespaceToDefinition(def, qualifier, this.currentModuleNames) : def
+    const defWithNewId = generateFreshIds(defWithQualifier, this.idGenerator, this.sourceMap, this.analysisOutput)
 
-    if (!isFlat(newDef)) {
+    if (!isFlat(defWithNewId)) {
       // safe cast
-      throw new Error(`Impossible: updating definitions cannot unflatten a def: ${definitionToString(newDef)}`)
+      throw new Error(`Impossible: updating definitions cannot unflatten a def: ${definitionToString(defWithNewId)}`)
     }
 
-    return newDef
+    return defWithNewId
   }
 }
 

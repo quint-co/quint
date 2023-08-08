@@ -12,7 +12,7 @@ import { Either, left, merge, right } from '@sweet-monads/either'
 import { just } from '@sweet-monads/maybe'
 
 import { ErrorMessage, fromIrErrorMessage } from '../parsing/quintParserFrontend'
-import { QuintEx, QuintOpDef } from '../quintIr'
+import { QuintEx, QuintOpDef } from '../internal_representation/quintIr'
 
 import { CompilationContext, CompilationState, compile, lastTraceName } from './compile'
 import { zerog } from './../idGenerator'

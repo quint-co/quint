@@ -14,8 +14,8 @@
 
 import { OpQualifier, QuintDef, QuintEx, QuintModule, isAnnotatedDef } from './quintIr'
 import { EmptyRow, QuintSumType, QuintType, Row, RowField, VarRow, isTheUnit } from './quintTypes'
-import { TypeScheme } from './types/base'
-import { typeSchemeToString } from './types/printing'
+import { TypeScheme } from '../types/base'
+import { typeSchemeToString } from '../types/printing'
 
 /**
  * Pretty prints a module
