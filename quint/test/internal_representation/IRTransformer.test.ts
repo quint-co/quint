@@ -1,10 +1,10 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { buildModuleWithDefs } from './builders/ir'
-import { QuintDef, QuintEx, isFlat } from '../src/internal_representation/quintIr'
-import { moduleToString } from '../src/internal_representation/IRprinting'
-import { IRTransformer, transformModule } from '../src/internal_representation/IRTransformer'
-import { ConcreteRow, QuintType } from '../src/internal_representation/quintTypes'
+import { buildModuleWithDefs } from '../builders/ir'
+import { QuintDef, QuintEx, isFlat } from '../../src/internal_representation/quintIr'
+import { moduleToString } from '../../src/internal_representation/IRprinting'
+import { IRTransformer, transformModule } from '../../src/internal_representation/IRTransformer'
+import { ConcreteRow, QuintType } from '../../src/internal_representation/quintTypes'
 
 const quintModule = buildModuleWithDefs([
   'var a: int',
