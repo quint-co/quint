@@ -13,7 +13,7 @@
  */
 
 import { LookupTable } from './names/base'
-import { OpQualifier, QuintDef, QuintModule } from './internal_representation/quintIr'
+import { OpQualifier, QuintDef, QuintModule } from './ir/quintIr'
 import { TypeScheme } from './types/base'
 import { TypeInferrer } from './types/inferrer'
 import { EffectScheme } from './effects/base'

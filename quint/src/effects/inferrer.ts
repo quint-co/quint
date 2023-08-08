@@ -15,8 +15,8 @@
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { LookupTable } from '../names/base'
-import { expressionToString } from '../internal_representation/IRprinting'
-import { IRVisitor, walkDefinition } from '../internal_representation/IRVisitor'
+import { expressionToString } from '../ir/IRprinting'
+import { IRVisitor, walkDefinition } from '../ir/IRVisitor'
 import {
   QuintApp,
   QuintBool,
@@ -30,7 +30,7 @@ import {
   QuintOpDef,
   QuintStr,
   QuintVar,
-} from '../internal_representation/quintIr'
+} from '../ir/quintIr'
 import { Effect, EffectScheme, Signature, effectNames, toScheme, unify } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'

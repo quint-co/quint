@@ -1,8 +1,8 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { buildDef } from '../builders/ir'
-import { definitionToString } from '../../src/internal_representation/IRprinting'
-import { addNamespaceToDefinition } from '../../src/internal_representation/namespacer'
+import { definitionToString } from '../../src/ir/IRprinting'
+import { addNamespaceToDefinition } from '../../src/ir/namespacer'
 import { builtinNames } from '../../src/names/base'
 
 describe('addNamespaceToDefinition', () => {

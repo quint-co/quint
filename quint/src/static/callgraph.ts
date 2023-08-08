@@ -12,18 +12,10 @@
 import { Map, Record, Set } from 'immutable'
 import type { RecordOf } from 'immutable'
 
-import { IRVisitor } from '../internal_representation/IRVisitor'
+import { IRVisitor } from '../ir/IRVisitor'
 import { LookupTable } from '../names/base'
-import {
-  QuintApp,
-  QuintDef,
-  QuintExport,
-  QuintImport,
-  QuintInstance,
-  QuintModule,
-  QuintName,
-} from '../internal_representation/quintIr'
-import { QuintConstType } from '../internal_representation/quintTypes'
+import { QuintApp, QuintDef, QuintExport, QuintImport, QuintInstance, QuintModule, QuintName } from '../ir/quintIr'
+import { QuintConstType } from '../ir/quintTypes'
 
 /**
  * The call graph is simply a mapping from the caller's id

@@ -1,12 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { buildDef, buildExpression, buildModuleWithDefs, buildType } from '../builders/ir'
-import {
-  definitionToString,
-  expressionToString,
-  moduleToString,
-  typeToString,
-} from '../../src/internal_representation/IRprinting'
+import { definitionToString, expressionToString, moduleToString, typeToString } from '../../src/ir/IRprinting'
 import { toScheme } from '../../src/types/base'
 import { QuintSumType, unitValue } from '../../src'
 

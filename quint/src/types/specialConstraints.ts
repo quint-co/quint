@@ -15,9 +15,9 @@
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { Error, buildErrorLeaf } from '../errorTree'
-import { expressionToString } from '../internal_representation/IRprinting'
-import { QuintEx } from '../internal_representation/quintIr'
-import { QuintType, QuintVarType } from '../internal_representation/quintTypes'
+import { expressionToString } from '../ir/IRprinting'
+import { QuintEx } from '../ir/quintIr'
+import { QuintType, QuintVarType } from '../ir/quintTypes'
 import { Constraint } from './base'
 import { chunk, times } from 'lodash'
 

@@ -16,7 +16,7 @@ import { Maybe, just, none } from '@sweet-monads/maybe'
 
 import { ValueObject } from 'immutable'
 
-import { QuintEx } from '../internal_representation/quintIr'
+import { QuintEx } from '../ir/quintIr'
 
 import { IdGenerator } from '../idGenerator'
 

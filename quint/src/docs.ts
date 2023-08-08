@@ -14,8 +14,8 @@
  */
 
 import { compact } from 'lodash'
-import { definitionToString } from './internal_representation/IRprinting'
-import { QuintModule } from './internal_representation/quintIr'
+import { definitionToString } from './ir/IRprinting'
+import { QuintModule } from './ir/quintIr'
 
 /**
  * A documentation entry for a definition, compatible with LSP responses for signature help

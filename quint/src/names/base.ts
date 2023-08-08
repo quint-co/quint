@@ -12,7 +12,7 @@
  * @module
  */
 
-import { QuintType } from '../internal_representation/quintTypes'
+import { QuintType } from '../ir/quintTypes'
 
 /**
  * Possible kinds for definitions

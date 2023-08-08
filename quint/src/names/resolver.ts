@@ -13,17 +13,9 @@
  */
 
 import { Either, left, right } from '@sweet-monads/either'
-import { IRVisitor, walkModule } from '../internal_representation/IRVisitor'
-import {
-  QuintApp,
-  QuintInstance,
-  QuintLambda,
-  QuintLet,
-  QuintModule,
-  QuintName,
-  QuintOpDef,
-} from '../internal_representation/quintIr'
-import { QuintConstType } from '../internal_representation/quintTypes'
+import { IRVisitor, walkModule } from '../ir/IRVisitor'
+import { QuintApp, QuintInstance, QuintLambda, QuintLet, QuintModule, QuintName, QuintOpDef } from '../ir/quintIr'
+import { QuintConstType } from '../ir/quintTypes'
 import { LookupTable, builtinNames } from './base'
 import { QuintError } from '../quintError'
 import { NameCollector } from './collector'

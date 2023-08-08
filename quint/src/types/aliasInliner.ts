@@ -13,16 +13,11 @@
  * @module
  */
 
-import {
-  IRTransformer,
-  transformDefinition,
-  transformModule,
-  transformType,
-} from '../internal_representation/IRTransformer'
+import { IRTransformer, transformDefinition, transformModule, transformType } from '../ir/IRTransformer'
 import { LookupTable } from '../names/base'
 import { AnalysisOutput } from '../quintAnalyzer'
-import { QuintDef, QuintModule } from '../internal_representation/quintIr'
-import { QuintType } from '../internal_representation/quintTypes'
+import { QuintDef, QuintModule } from '../ir/quintIr'
+import { QuintType } from '../ir/quintTypes'
 
 /**
  * Inlines all type aliases in a set of QuintModules, LookupTable and AnalysisOutput.

@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { newIdGenerator } from '../../src/idGenerator'
-import { generateFreshIds } from '../../src/internal_representation/idRefresher'
+import { generateFreshIds } from '../../src/ir/idRefresher'
 import { SourceLookupPath } from '../../src/parsing/sourceResolver'
 import { parse } from '../../src/parsing/quintParserFrontend'
 import { analyzeModules } from '../../src/quintAnalyzer'

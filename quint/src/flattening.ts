@@ -23,14 +23,14 @@ import {
   QuintInstance,
   QuintModule,
   isFlat,
-} from './internal_representation/quintIr'
-import { definitionToString, moduleToString } from './internal_representation/IRprinting'
+} from './ir/quintIr'
+import { definitionToString, moduleToString } from './ir/IRprinting'
 import { Loc, parsePhase3importAndNameResolution } from './parsing/quintParserFrontend'
 import { compact, uniqBy } from 'lodash'
 import { AnalysisOutput } from './quintAnalyzer'
 import { inlineAliasesInDef, inlineAnalysisOutput, inlineTypeAliases } from './types/aliasInliner'
-import { addNamespaceToDefinition } from './internal_representation/namespacer'
-import { generateFreshIds } from './internal_representation/idRefresher'
+import { addNamespaceToDefinition } from './ir/namespacer'
+import { generateFreshIds } from './ir/idRefresher'
 
 /**
  * Flatten an array of modules, replacing instances, imports and exports with

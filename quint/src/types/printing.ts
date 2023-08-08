@@ -1,5 +1,5 @@
-import { rowToString, typeToString } from '../internal_representation/IRprinting'
-import { QuintType } from '../internal_representation/quintTypes'
+import { rowToString, typeToString } from '../ir/IRprinting'
+import { QuintType } from '../ir/quintTypes'
 import { Constraint, TypeScheme } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 

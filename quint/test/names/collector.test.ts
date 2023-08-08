@@ -3,7 +3,7 @@ import { assert } from 'chai'
 import { buildModuleWithDefs } from '../builders/ir'
 import { QuintError, QuintModule } from '../../src'
 import { NameCollector } from '../../src/names/collector'
-import { walkModule } from '../../src/internal_representation/IRVisitor'
+import { walkModule } from '../../src/ir/IRVisitor'
 import { DefinitionsByName } from '../../src/names/base'
 import { zerog } from '../../src/idGenerator'
 

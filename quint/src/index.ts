@@ -2,9 +2,9 @@
 //
 // Igor Konnov, Informal Systems, 2021
 
-export * from './internal_representation/quintTypes'
-export * from './internal_representation/quintIr'
-export * from './internal_representation/IRprinting'
+export * from './ir/quintTypes'
+export * from './ir/quintIr'
+export * from './ir/IRprinting'
 export * from './parsing/quintParserFrontend'
 export * from './effects/base'
 export * from './effects/printing'
@@ -16,7 +16,7 @@ export { produceDocsById, DocumentationEntry } from './docs'
 export { builtinDocs } from './builtin'
 export * as Builder from '../test/builders/ir'
 export { TypeScheme } from './types/base'
-export { findExpressionWithId, findTypeWithId, findDefinitionWithId } from './internal_representation/IRFinder'
+export { findExpressionWithId, findTypeWithId, findDefinitionWithId } from './ir/IRFinder'
 export * from './quintAnalyzer'
 export * from './quintError'
 export { newIdGenerator, IdGenerator } from './idGenerator'

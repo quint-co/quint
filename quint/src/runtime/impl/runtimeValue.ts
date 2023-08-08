@@ -65,10 +65,10 @@ import { Maybe, just, merge, none } from '@sweet-monads/maybe'
 import { strict as assert } from 'assert'
 
 import { IdGenerator } from '../../idGenerator'
-import { expressionToString } from '../../internal_representation/IRprinting'
+import { expressionToString } from '../../ir/IRprinting'
 
 import { Callable, EvalResult } from '../runtime'
-import { QuintEx } from '../../internal_representation/quintIr'
+import { QuintEx } from '../../ir/quintIr'
 
 /** The default entry point of this module */
 export default rv

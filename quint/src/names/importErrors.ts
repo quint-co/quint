@@ -13,7 +13,7 @@
  */
 
 import { QuintError } from '../quintError'
-import { QuintExport, QuintImport, QuintInstance, QuintLambdaParameter } from '../internal_representation/quintIr'
+import { QuintExport, QuintImport, QuintInstance, QuintLambdaParameter } from '../ir/quintIr'
 
 export function selfReferenceError(def: QuintImport | QuintInstance | QuintExport): QuintError {
   const verb = def.kind === 'instance' ? 'instantiate' : def.kind

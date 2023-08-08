@@ -4,9 +4,9 @@ import { SourceLookupPath } from '../../src/parsing/sourceResolver'
 import { parse } from '../../src/parsing/quintParserFrontend'
 import { dedent } from '../textUtils'
 import { inlineTypeAliases } from '../../src/types/aliasInliner'
-import { QuintModule } from '../../src/internal_representation/quintIr'
+import { QuintModule } from '../../src/ir/quintIr'
 import { LookupTable } from '../../src/names/base'
-import { moduleToString } from '../../src/internal_representation/IRprinting'
+import { moduleToString } from '../../src/ir/IRprinting'
 import { AnalysisOutput, analyzeModules } from '../../src/quintAnalyzer'
 
 function inlineModule(text: string): { modules: QuintModule[]; table: LookupTable; analysisOutput: AnalysisOutput } {
