@@ -35,13 +35,15 @@ So if there is something that is somehow viable outside of these requirements, I
 
 ## 4. Solution
 
-Our ideal scenario is the following: Imports, instances and exports are resolved by the name resolver. This is where any missing or conflicting name errors are flagged. Flattening assumes all names are present and not conflicting.
-
-To achieve this scenario, we propose:
+The solution proposed here is a new flattening architecture, which is described in detail in the following sections. The main idea is to have a new flattener that is run twice, with an instance flattener in between. The new flattening procedures require additional information for each definition, so we also propose changes to the name collector in order to gather this information. Therefore, we propose:
 
 1. Changes to name collection, during name resolution
 2. Introduction of an instance flattener
+3. Changes to the flattener strategy
 
+One important thing to notice is that imports, instances and exports are resolved by the name resolver, and that is where any missing or conflicting name errors are flagged. Flattening assumes all names are present and not conflicting, and the solution proposes a lot of manipulations that rely on this assumption.
+
+To achieve this scenario, we propose:
 We describe each change in detail in separate sections below.
 
 ### 4.1 Changes to name collection
@@ -78,7 +80,11 @@ Imports are the simplest scenario, since they only copy definitions, possibly ad
 
 For instances, we need to ensure uniqueness, since the same names in the instanced module can assume different values if the constants are different. Therefore, we add `this.currentModuleName` to the namespace, differentiating possible instances with the same name from different modules. For the following cases, suppose the statements are inside the `myModule` module.
 1. `import A(N=1).*`  adds a `myModule::A` namespace
+  - `myModule` is added to differentiate definitions of this instance from definitions from a similar instance in another module (e.g. `module otherModule { import A(N=2).* }` would have namespace `otherModule::A`)
+  - `A` is added to keep consistency with the qualified instance scenario (next item), where the qualifier is necessary. In case of no qualifier (this item), we shouldn't need to add `A`, but having the definitions from `A` namespaced like `myModule::foo` can cause confusion (for us developers while testing and debugging). `myModule::A::foo` is clearer and more consistent with the qualified instance scenario.
 2. `import A(N=1) as A1` adds a `myModule::A1` namespace
+  - `myModule` is added for the same reason as in (1).
+  - `A1` is added to differentiate definitions of this instance from definitions from a similar instance in the same module (e.g. `import A(N=2) as A2` would have namespace `myModule::A2`)
 
 ##### Namespaces for exports
 
@@ -113,20 +119,6 @@ module B {
 ```
 
 Currently, this prevents us from using `A1` without a namespace, since we can't write an export for `import A(N=1).*`. @konnov suggested the introduction of `export *` for this end, which is still in consideration.
-
-##### General algorithm for obtaining namespaces
-
-From the scenarios described above, we define the following method to obtain the namespaces to add to definitions coming from a given `def`:
-
-```typescript
-private namespaces(def: QuintImport | QuintInstance | QuintExport): string[] {
-  if (def.kind === 'instance') {
-    return compact([def.qualifiedName ?? def.protoName, this.currentModuleName])
-  }
-
-  return def.defName ? [] : [def.qualifiedName ?? def.protoName]
-}
-```
 
 #### Back-reference the import/export/instance statement that created a definition (`importedFrom`)
 
@@ -211,6 +203,8 @@ graph BT
   7["(7) pure val C::A1::N = 0"]
   8["(8) pure val C::A1::a = C::A1::N"] --> 7
 ```
+
+This solution relies mostly in name manipulation: we change the names and let the name resolver restructure the lookup table. In theory, we could keep the original names for the definitions inside the new modules, as long as we properly manipulate the lookup table to have the names related to that instance pointing to the names inside that module. I time-boxed some time to try this and I couldn't do it. The name manipulation solution has a significant cognitive advantage: it is much easier to understand and debug names (which can be pretty-printed) than ids and pointers (that is, the lookup table). As this is already a complex solution, I believe that it makes sense to prioritize the reduction of cognitive load.
 
 ##### Override expressions
 
