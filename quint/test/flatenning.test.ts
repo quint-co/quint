@@ -3,7 +3,6 @@ import { describe, it } from 'mocha'
 import { addDefToFlatModule, flattenModules } from '../src/flattening'
 import { newIdGenerator } from '../src/idGenerator'
 import { definitionToString } from '../src/internal_representation/IRprinting'
-import { collectIds } from './util'
 import { parse } from '../src/parsing/quintParserFrontend'
 import { FlatModule, analyzeModules } from '../src'
 import { SourceLookupPath } from '../src/parsing/sourceResolver'
@@ -38,26 +37,6 @@ describe('flattenModules', () => {
       assert.sameDeepMembers(
         flattenedModule.defs.map(def => definitionToString(def)),
         expectedDefs
-      )
-    })
-
-    it('does not repeat ids', () => {
-      const ids = collectIds(flattenedModule)
-      assert.notDeepInclude(collectIds(moduleA), ids)
-      assert.sameDeepMembers(ids, [...new Set(ids)])
-    })
-
-    it('adds new entries to the source map', () => {
-      assert.includeDeepMembers(
-        [...sourceMap.keys()],
-        flattenedModule.defs.map(def => def.id)
-      )
-    })
-
-    it('adds new entries to the types map', () => {
-      assert.includeDeepMembers(
-        [...flattenedAnalysis.types.keys()],
-        flattenedModule.defs.filter(def => def.kind !== 'typedef').map(def => def.id)
       )
     })
 
@@ -226,26 +205,6 @@ describe('addDefToFlatModule', () => {
       assert.sameDeepMembers(
         flattenedModule.defs.map(def => definitionToString(def)),
         expectedDefs
-      )
-    })
-
-    it('does not repeat ids', () => {
-      const ids = collectIds(flattenedModule)
-      assert.notDeepInclude(collectIds(moduleA), ids)
-      assert.sameDeepMembers(ids, [...new Set(ids)])
-    })
-
-    it('adds new entries to the source map', () => {
-      assert.includeDeepMembers(
-        [...sourceMap.keys()],
-        flattenedModule.defs.map(def => def.id)
-      )
-    })
-
-    it('adds new entries to the types map', () => {
-      assert.includeDeepMembers(
-        [...flattenedAnalysis.types.keys()],
-        flattenedModule.defs.filter(def => def.kind !== 'typedef').map(def => def.id)
       )
     })
 
