@@ -1,3 +1,18 @@
+/* ----------------------------------------------------------------------------------
+ * Copyright (c) Informal Systems 2023. All rights reserved.
+ * Licensed under the Apache 2.0.
+ * See License.txt in the project root for license information.
+ * --------------------------------------------------------------------------------- */
+
+/**
+ * Generation of fresh ids for IR components. This is used to generate fresh ids for
+ * modules generate from instances, enabling them to assume different values in evaluation.
+ *
+ * @author Gabriela Moreira
+ *
+ * @module
+ */
+
 import { IRTransformer, transformDefinition } from './IRTransformer'
 import { IdGenerator } from '../idGenerator'
 import { Loc } from '../parsing/quintParserFrontend'
@@ -5,6 +20,20 @@ import { AnalysisOutput } from '../quintAnalyzer'
 import { QuintDef, QuintEx, QuintLambda } from './quintIr'
 import { QuintType } from './quintTypes'
 
+/**
+ * Given a QuintDef, generates fresh IDs for all its components using the
+ * provided IdGenerator. Returns a new QuintDef with the updated IDs. Also
+ * updates the provided source map and analysis output with copies of the values
+ * from the old ids to the new ids
+ *
+ * @param def - The QuintDef to update with fresh IDs.
+ * @param idGenerator - The IdGenerator to use for generating fresh IDs.
+ * @param sourceMap - A source map to be updated with sources for the new ids
+ *   (should contain entries for the existing ids)
+ * @param analysisOutput - An analysis output to be updated with analysis for the new ids
+ *   (should contain entries for the existing ids)
+ * @returns A new QuintDef with fresh IDs.
+ */
 export function generateFreshIds(
   def: QuintDef,
   idGenerator: IdGenerator,
