@@ -14,7 +14,7 @@ apalache-mc server
 This requirement will be removed with https://github.com/informalsystems/quint/issues/823
 
 <!-- !test program
-APALACHE_DIST=_build/apalache bash -
+bash -
 -->
 
 ## Configuration errors
@@ -43,6 +43,11 @@ Contains an import + const instantiation.
 <!-- !test check can check BinSearch.qnt -->
 ```
 quint verify --invariant=Postcondition --main=BinSearch10 ../examples/classic/sequential/BinSearch/BinSearch.qnt
+```
+
+<!-- !test check can check BinSearch10.qnt using APALACHE_DIST -->
+```
+APALACHE_DIST=_build/apalache quint verify --invariant=Postcondition --main=BinSearch10 ../examples/classic/sequential/BinSearch/BinSearch.qnt
 ```
 
 ### Default `step` and `init` operators are found

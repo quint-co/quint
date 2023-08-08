@@ -513,34 +513,21 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       }
     }
 
-    // If nothing found, return a success. Otherwise, return an error.
-    let msg
-    switch (result.status) {
-      case 'ok':
-        return right({
-          ...simulator,
-          status: result.status,
-          trace: result.states,
-        })
-
-      case 'violation':
-        msg = 'Invariant violated'
-        break
-
-      case 'failure':
-        msg = 'Runtime error'
-        break
-
-      default:
-        msg = 'Unknown error'
+    if (result.status === 'ok') {
+      return right({
+        ...simulator,
+        status: result.status,
+        trace: result.states,
+      })
+    } else {
+      const msg = result.status === 'violation' ? 'Invariant violated' : 'Runtime error'
+      return cliErr(msg, {
+        ...simulator,
+        status: result.status,
+        trace: result.states,
+        errors: result.errors,
+      })
     }
-
-    return cliErr(msg, {
-      ...simulator,
-      status: result.status,
-      trace: result.states,
-      errors: result.errors,
-    })
   }
 }
 

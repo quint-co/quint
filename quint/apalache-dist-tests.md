@@ -58,10 +58,27 @@ APALACHE_DIST=_build/corrupt-dist-test quint verify ../examples/language-feature
 error: Apalache distribution is corrupted. Could not extract proto file from apalache.jar.
 ```
 
-### Inability to connect to the server produces an errer
+### Inability to connect to the server produces an errer (`APALACHE_DIST` unset)
 
-We now assume a correctly configured installation of Apalache, but expect that the
-server it not already running.
+We now do not set `APALACHE_DIST`, which will try to load the proto file
+dynamically, using gRPC reflection, but expect that the server is not already
+running.
+
+<!-- !test in server not running -->
+```
+quint verify ../examples/language-features/booleans.qnt
+```
+
+<!-- !test exit 1 -->
+<!-- !test err server not running -->
+```
+error: Failed to obtain a connection to Apalache after 5 seconds.
+```
+
+### Inability to connect to the server produces an errer (`APALACHE_DIST` set)
+
+We now assume a correctly configured installation of Apalache in
+`APALACHE_DIST`, but expect that the server is not already running.
 
 See https://github.com/informalsystems/quint/issues/823 for plans to manage the
 server, making this error case all but impossible.

@@ -15,6 +15,7 @@
 
 import * as ir from './quintIr'
 import * as t from './quintTypes'
+import { unreachable } from './util'
 
 /**
  * Interface to be implemented by visitor classes.
@@ -81,6 +82,8 @@ export interface IRVisitor {
   exitTupleType?: (_type: t.QuintTupleType) => void
   enterRecordType?: (_type: t.QuintRecordType) => void
   exitRecordType?: (_type: t.QuintRecordType) => void
+  enterSumType?: (_type: t.QuintSumType) => void
+  exitSumType?: (_type: t.QuintSumType) => void
   enterUnionType?: (_type: t.QuintUnionType) => void
   exitUnionType?: (_type: t.QuintUnionType) => void
 
@@ -242,6 +245,14 @@ export function walkType(visitor: IRVisitor, type: t.QuintType): void {
         visitor.exitUnionType(type)
       }
       break
+
+    case 'sum':
+      visitor.enterSumType?.(type)
+      visitor.exitSumType?.(type)
+      break
+
+    default:
+      unreachable(type)
   }
 
   if (visitor.exitType) {
@@ -393,6 +404,8 @@ function walkExpression(visitor: IRVisitor, expr: ir.QuintEx): void {
         visitor.exitLet(expr)
       }
       break
+    default:
+      unreachable(expr)
   }
 
   if (visitor.exitExpr) {
@@ -432,6 +445,9 @@ function walkRow(visitor: IRVisitor, r: t.Row) {
       if (visitor.exitEmptyRow) {
         visitor.exitEmptyRow(r)
       }
+      break
+    default:
+      unreachable(r)
   }
   if (visitor.exitRow) {
     visitor.exitRow(r)

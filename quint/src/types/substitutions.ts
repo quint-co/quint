@@ -15,7 +15,7 @@
 import { Either } from '@sweet-monads/either'
 import { ErrorTree, errorTreeToString } from '../errorTree'
 import { LookupTable } from '../names/base'
-import { QuintType, Row } from '../quintTypes'
+import { ConcreteFixedRow, QuintType, Row } from '../quintTypes'
 import { Constraint } from './base'
 import { unify, unifyRows } from './constraintSolver'
 import { substitutionsToString } from './printing'
@@ -51,49 +51,44 @@ export function compose(table: LookupTable, s1: Substitutions, s2: Substitutions
  *          given type
  */
 export function applySubstitution(table: LookupTable, subs: Substitutions, t: QuintType): QuintType {
-  let result = t
   switch (t.kind) {
     case 'var': {
       const sub = subs.find(s => s.name === t.name)
       if (sub && sub.kind === 'type') {
-        result = sub.value
+        return sub.value
+      } else {
+        return t
       }
-      break
     }
     case 'oper': {
       const arrowParams = t.args.map(ef => applySubstitution(table, subs, ef))
       const arrowResult = applySubstitution(table, subs, t.res)
-      result = { kind: t.kind, args: arrowParams, res: arrowResult, id: t.id }
-      break
+      return { kind: t.kind, args: arrowParams, res: arrowResult, id: t.id }
     }
     case 'list':
     case 'set': {
-      result = { kind: t.kind, elem: applySubstitution(table, subs, t.elem), id: t.id }
-      break
+      return { kind: t.kind, elem: applySubstitution(table, subs, t.elem), id: t.id }
     }
     case 'fun': {
-      result = {
+      return {
         kind: t.kind,
         arg: applySubstitution(table, subs, t.arg),
         res: applySubstitution(table, subs, t.res),
         id: t.id,
       }
-      break
     }
     case 'tup': {
-      result = { kind: t.kind, fields: applySubstitutionToRow(table, subs, t.fields), id: t.id }
-      break
+      return { kind: t.kind, fields: applySubstitutionToRow(table, subs, t.fields), id: t.id }
     }
     case 'rec': {
-      result = {
+      return {
         kind: t.kind,
         fields: applySubstitutionToRow(table, subs, t.fields),
         id: t.id,
       }
-      break
     }
     case 'union': {
-      result = {
+      return {
         kind: t.kind,
         tag: t.tag,
         records: t.records.map(r => {
@@ -104,11 +99,22 @@ export function applySubstitution(table: LookupTable, subs: Substitutions, t: Qu
         }),
         id: t.id,
       }
-      break
     }
-  }
+    case 'sum':
+      return {
+        ...t,
+        // We know this has to end up as a concrete fixed row, since it must
+        // start as one, and applying substitions cannot result in a wider type
+        fields: applySubstitutionToRow(table, subs, t.fields) as ConcreteFixedRow,
+      }
 
-  return result
+    // The basic types have no variables, so cannot
+    case 'int':
+    case 'bool':
+    case 'str':
+    case 'const':
+      return t
+  }
 }
 
 /**

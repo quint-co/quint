@@ -15,6 +15,7 @@ import { right } from '@sweet-monads/either'
 import { newIdGenerator } from '../../src/idGenerator'
 import { collectIds } from '../util'
 import { fileSourceResolver } from '../../src/parsing/sourceResolver'
+import { isTheUnit } from '../../src'
 
 // read a Quint file from the test data directory
 function readQuint(name: string): string {
@@ -128,6 +129,27 @@ describe('parsing', () => {
   it('parses out of order definitions', () => {
     parseAndCompare('_0099unorderedDefs')
   })
+
+  it('parses sum types', () => {
+    const mod = `
+    module SumTypes {
+      type T =
+        | A
+        | B(int)
+    }
+    `
+    const result = parsePhase1fromText(newIdGenerator(), mod, 'test')
+    assert(result.isRight())
+    const typeDef = result.value.modules[0].defs[0]
+    assert(typeDef.kind === 'typedef')
+    const sumType = typeDef.type!
+    assert(sumType.kind === 'sum')
+    const [variantA, variantB] = sumType.fields.fields
+    assert(variantA.fieldName === 'A')
+    assert(isTheUnit(variantA.fieldType))
+    assert(variantB.fieldName === 'B')
+    assert(variantB.fieldType.kind === 'int')
+  })
 })
 
 describe('parse errors', () => {
@@ -228,5 +250,9 @@ describe('parse errors', () => {
 
   it('error on accidental recursion', () => {
     parseAndCompare('_0101noRecursion')
+  })
+
+  it('errors on invalid record fields', () => {
+    parseAndCompare('_1042qualifiersInRecordsFieldsError')
   })
 })

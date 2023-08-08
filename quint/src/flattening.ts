@@ -28,7 +28,7 @@ import {
   isFlat,
 } from './quintIr'
 import { definitionToString } from './IRprinting'
-import { QuintType, Row } from './quintTypes'
+import { ConcreteFixedRow, QuintType, Row } from './quintTypes'
 import { Loc, parsePhase3importAndNameResolution } from './parsing/quintParserFrontend'
 import { compact, uniqBy } from 'lodash'
 import { AnalysisOutput } from './quintAnalyzer'
@@ -398,6 +398,12 @@ class Flatenner {
           fields: this.addNamespaceToRow(name, type.fields),
           id,
         }
+      case 'sum':
+        return {
+          ...type,
+          fields: this.addNamespaceToSumRow(name, type.fields),
+          id,
+        }
       case 'union':
         return {
           ...type,
@@ -417,6 +423,18 @@ class Flatenner {
       return row
     }
 
+    return {
+      ...row,
+      fields: row.fields.map(field => {
+        return {
+          ...field,
+          fieldType: this.addNamespaceToType(name, field.fieldType),
+        }
+      }),
+    }
+  }
+
+  private addNamespaceToSumRow(name: string | undefined, row: ConcreteFixedRow): ConcreteFixedRow {
     return {
       ...row,
       fields: row.fields.map(field => {
