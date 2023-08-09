@@ -19,7 +19,6 @@ describe('flattenModules', () => {
       assert.fail('Failed to parse mocked up module')
     }
     const { modules, table, sourceMap } = parseResult.unwrap()
-    const [moduleA, _module] = modules
 
     const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
     assert.isEmpty(analysisErrors)
@@ -184,7 +183,7 @@ describe('addDefToFlatModule', () => {
       assert.fail('Failed to parse mocked up module')
     }
     const { modules, table, sourceMap } = parseResult.unwrap()
-    const [moduleA, module] = modules
+    const [_moduleA, module] = modules
 
     const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
     assert.isEmpty(analysisErrors)
