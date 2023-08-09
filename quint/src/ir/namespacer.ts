@@ -21,7 +21,7 @@ import { QuintConstType } from './quintTypes'
  *
  * @param def - The QuintDef to add the namespace to.
  * @param namespace - The namespace to add.
- * @param namesToPreserve - A set of names that should not receive the namespace (i.e. builtin names).
+ * @param namesToPreserve - A set of names that should not receive the namespace (e.g. builtin names).
  * @returns A new QuintDef with the namespace added to its name and all names inside it.
  */
 export function addNamespaceToDefinition(def: QuintDef, namespace: string, namesToPreserve: Set<string>): QuintDef {
