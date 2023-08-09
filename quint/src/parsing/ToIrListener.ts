@@ -11,14 +11,14 @@ import {
   QuintModule,
   QuintName,
   QuintOpDef,
-} from '../quintIr'
-import { ConcreteFixedRow, QuintSumType, QuintType, Row, RowField, unitValue } from '../quintTypes'
+} from '../ir/quintIr'
+import { ConcreteFixedRow, QuintSumType, QuintType, Row, RowField, unitValue } from '../ir/quintTypes'
 import { strict as assert } from 'assert'
 import { ErrorMessage, Loc } from './quintParserFrontend'
 import { compact, zipWith } from 'lodash'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
-import { QuintTypeDef } from '../quintIr'
+import { QuintTypeDef } from '../ir/quintIr'
 
 /**
  * An ANTLR4 listener that constructs QuintIr objects out of the abstract

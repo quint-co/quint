@@ -17,7 +17,7 @@ import { Either, left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
 import { format } from './prettierimp'
 
-import { FlatDef, QuintEx, isFlat } from './quintIr'
+import { FlatDef, QuintEx, isFlat } from './ir/quintIr'
 import {
   CompilationContext,
   CompilationState,
@@ -39,7 +39,7 @@ import { version } from './version'
 import { fileSourceResolver } from './parsing/sourceResolver'
 import { cwd } from 'process'
 import { newIdGenerator } from './idGenerator'
-import { moduleToString } from './IRprinting'
+import { moduleToString } from './ir/IRprinting'
 import { EvaluationState, newEvaluationState } from './runtime/impl/compilerImpl'
 
 // tunable settings

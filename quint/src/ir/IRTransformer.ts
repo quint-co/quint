@@ -15,7 +15,7 @@
 
 import * as ir from './quintIr'
 import * as t from './quintTypes'
-import { unreachable } from './util'
+import { unreachable } from '../util'
 
 export class IRTransformer {
   enterModule?: (module: ir.QuintModule) => ir.QuintModule

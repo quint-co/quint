@@ -14,8 +14,8 @@
 
 import { Either, left, right } from '@sweet-monads/either'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
-import { rowToString, typeToString } from '../IRprinting'
-import { QuintConstType, QuintType, Row, rowNames, typeNames } from '../quintTypes'
+import { rowToString, typeToString } from '../ir/IRprinting'
+import { QuintConstType, QuintType, Row, rowNames, typeNames } from '../ir/quintTypes'
 import { Constraint } from './base'
 import { Substitutions, applySubstitution, applySubstitutionToConstraint, compose } from './substitutions'
 import { unzip } from 'lodash'

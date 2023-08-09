@@ -13,10 +13,10 @@
  */
 
 import { parseTypeOrThrow } from './parser'
-import { typeNames } from '../quintTypes'
+import { typeNames } from '../ir/quintTypes'
 import { Signature, TypeScheme } from './base'
 import { times } from 'lodash'
-import { QuintBuiltinOpcode } from '../quintIr'
+import { QuintBuiltinOpcode } from '../ir/quintIr'
 
 export function getSignatures(): Map<string, Signature> {
   return new Map<string, Signature>(fixedAritySignatures.concat(multipleAritySignatures))

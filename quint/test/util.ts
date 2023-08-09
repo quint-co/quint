@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { IRVisitor, walkModule } from '../src/IRVisitor'
+import { IRVisitor, walkModule } from '../src/ir/IRVisitor'
 import {
   QuintBool,
   QuintDef,
@@ -10,8 +10,8 @@ import {
   QuintModule,
   QuintStr,
   QuintTypeDef,
-} from '../src/quintIr'
-import { QuintType } from '../src/quintTypes'
+} from '../src/ir/quintIr'
+import { QuintType } from '../src/ir/quintTypes'
 import lodash from 'lodash'
 import { ParserPhase3, parse } from '../src/parsing/quintParserFrontend'
 import { SourceLookupPath } from '../src/parsing/sourceResolver'

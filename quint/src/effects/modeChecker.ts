@@ -14,10 +14,10 @@
  */
 
 import isEqual from 'lodash.isequal'
-import { qualifierToString } from '../IRprinting'
-import { IRVisitor, walkDefinition } from '../IRVisitor'
+import { qualifierToString } from '../ir/IRprinting'
+import { IRVisitor, walkDefinition } from '../ir/IRVisitor'
 import { QuintError } from '../quintError'
-import { OpQualifier, QuintDef, QuintInstance, QuintOpDef } from '../quintIr'
+import { OpQualifier, QuintDef, QuintInstance, QuintOpDef } from '../ir/quintIr'
 import { unreachable } from '../util'
 import { ArrowEffect, ComponentKind, EffectScheme, Entity, entityNames, stateVariables } from './base'
 import { effectToString, entityToString } from './printing'

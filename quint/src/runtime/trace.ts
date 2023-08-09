@@ -11,7 +11,7 @@
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { strict as assert } from 'assert'
 
-import { QuintApp } from '../quintIr'
+import { QuintApp } from '../ir/quintIr'
 import { EvalResult } from './runtime'
 import { verbosity } from './../verbosity'
 import { Rng } from './../rng'

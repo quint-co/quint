@@ -1,9 +1,9 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { buildDef, buildExpression, buildModuleWithDefs, buildType } from './builders/ir'
-import { definitionToString, expressionToString, moduleToString, typeToString } from '../src/IRprinting'
-import { toScheme } from '../src/types/base'
-import { QuintSumType, unitValue } from '../src'
+import { buildDef, buildExpression, buildModuleWithDefs, buildType } from '../builders/ir'
+import { definitionToString, expressionToString, moduleToString, typeToString } from '../../src/ir/IRprinting'
+import { toScheme } from '../../src/types/base'
+import { QuintSumType, unitValue } from '../../src'
 
 describe('moduleToString', () => {
   const quintModule = buildModuleWithDefs(['var S: Set[int]', 'val f = S.filter(x => x + 1)'])

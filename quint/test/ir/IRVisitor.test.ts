@@ -1,10 +1,10 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { buildModuleWithDefs } from './builders/ir'
-import { IRVisitor, walkModule } from '../src/IRVisitor'
-import { QuintDef, QuintEx, QuintModule } from '../src/quintIr'
-import { definitionToString, expressionToString, moduleToString, typeToString } from '../src/IRprinting'
-import { QuintType } from '../src/quintTypes'
+import { buildModuleWithDefs } from '../builders/ir'
+import { IRVisitor, walkModule } from '../../src/ir/IRVisitor'
+import { QuintDef, QuintEx, QuintModule } from '../../src/ir/quintIr'
+import { definitionToString, expressionToString, moduleToString, typeToString } from '../../src/ir/IRprinting'
+import { QuintType } from '../../src/ir/quintTypes'
 
 describe('walkModule', () => {
   const quintModule = buildModuleWithDefs([

@@ -11,7 +11,7 @@ import {
 import { SourceLookupPath, fileSourceResolver } from '../../src/parsing/sourceResolver'
 import { LookupTable, QuintDef, QuintExport, QuintImport, QuintInstance, QuintModule } from '../../src'
 import { CallGraphVisitor, mkCallGraphContext } from '../../src/static/callgraph'
-import { walkModule } from '../../src/IRVisitor'
+import { walkModule } from '../../src/ir/IRVisitor'
 
 describe('compute call graph', () => {
   // Parse Quint code without, stopping after name resolution
