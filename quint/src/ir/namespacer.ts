@@ -5,7 +5,8 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * Recursive addition of namespaces into all names in IR components.
+ * Recursive addition of namespaces into all names in IR components. To be used in flattening
+ * to manipulate names of copied definitions.
  *
  * @author Gabriela Moreira
  *

@@ -24,7 +24,9 @@ import { QuintType } from './quintTypes'
  * Given a QuintDef, generates fresh IDs for all its components using the
  * provided IdGenerator. Returns a new QuintDef with the updated IDs. Also
  * updates the provided source map and analysis output with copies of the values
- * from the old ids to the new ids
+ * in each map (source map and the analysis output maps: types map, effects map
+ * and modes map) from the old ids to the new ids, so the value in the map for
+ * the new id is the same as it was for the old id.
  *
  * @param def - The QuintDef to update with fresh IDs.
  * @param idGenerator - The IdGenerator to use for generating fresh IDs.
