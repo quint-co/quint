@@ -40,7 +40,12 @@ class Namespacer implements IRTransformer {
   }
 
   exitDef(def: QuintDef): QuintDef {
-    if (isFlat(def) && !this.namesToPreserve.has(def.name)) {
+    // FIXME: The current flattener expects `namesToPreserve` to be ignored for def names.
+    // In the new flattener, we will need to consider it here as well.
+    // Also, considering it here makes the interface consistent.
+    // Uncomment the following line when the new flattener is in place:
+    // if (isFlat(def) && !this.namesToPreserve.has(def.name)) {
+    if (isFlat(def)) {
       return { ...def, name: namespacedName(this.namespace, def.name) }
     }
 
