@@ -366,13 +366,10 @@ export interface QuintInstance extends WithId {
 }
 
 /**
- * Definition: constant, state variable, operator definition, assumption, instance, module.
+ * A declaration is a top-level construct in a module, including definitions,
+ * imports, exports, and instances.
  */
 export type QuintDeclaration = (QuintDef | QuintImport | QuintExport | QuintInstance) & WithOptionalDoc
-
-export function isAnnotatedDef(def: any): def is WithTypeAnnotation {
-  return def.typeAnnotation !== undefined
-}
 
 /**
  * Module definition.
@@ -380,25 +377,37 @@ export function isAnnotatedDef(def: any): def is WithTypeAnnotation {
 export interface QuintModule extends WithId {
   /** The name of the module. */
   name: string
-  /** The definitions in the module. */
+  /** The declarations in the module. */
   declarations: QuintDeclaration[]
   /** Optional documentation for the module. */
   doc?: string
 }
 
 /**
- * A FlatDef is a sub-type of QuintDef which represents a flat definition.
- * A flat definition can be a constant, state variable, operator definition, assumption, or type definition.
+ * A QuintDef is a sub-type of QuintDeclaration which represents a definition.
+ * A definition can be a constant, state variable, operator definition, assumption, or type definition.
  */
 export type QuintDef = (QuintOpDef | QuintConst | QuintVar | QuintAssume | QuintTypeDef) & WithOptionalDoc
 
 /**
- * A FlatModule represents a module with flat definitions.
+ * Checks if a definition has a type annotation.
+ *
+ * @param def The definition to check.
+ *
+ * @returns True if the definition has a type annotation, false otherwise.
+ */
+export function isAnnotatedDef(def: any): def is WithTypeAnnotation {
+  return def.typeAnnotation !== undefined
+}
+
+/**
+ * A FlatModule represents a module with only definitions in its declarations.
+ * That is, no imports, exports or instances.
  */
 export interface FlatModule extends WithId {
   /** The name of the module. */
   name: string
-  /** The definitions in the module. */
+  /** The declarations in the module, which are always definitions. */
   declarations: QuintDef[]
   /** Optional documentation for the module. */
   doc?: string
