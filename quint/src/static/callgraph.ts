@@ -14,7 +14,15 @@ import type { RecordOf } from 'immutable'
 
 import { IRVisitor } from '../ir/IRVisitor'
 import { LookupTable } from '../names/base'
-import { QuintApp, QuintDef, QuintExport, QuintImport, QuintInstance, QuintModule, QuintName } from '../ir/quintIr'
+import {
+  QuintApp,
+  QuintDeclaration,
+  QuintExport,
+  QuintImport,
+  QuintInstance,
+  QuintModule,
+  QuintName,
+} from '../ir/quintIr'
 import { QuintConstType } from '../ir/quintTypes'
 
 /**
@@ -78,15 +86,15 @@ export function mkCallGraphContext(modules: QuintModule[]): CallGraphContext {
       return map.set(key, value.add(importId))
     }
     // add all imports and instances
-    return mod.defs.reduce((map, def) => {
-      if (def.kind === 'import' || def.kind === 'instance') {
+    return mod.declarations.reduce((map, decl) => {
+      if (decl.kind === 'import' || decl.kind === 'instance') {
         // import A
         // import B(N = 3)
-        let result = addImport(map, def.id, def.protoName)
-        if (def.qualifiedName) {
+        let result = addImport(map, decl.id, decl.protoName)
+        if (decl.qualifiedName) {
           // import A as A1
           // import B(N = 3) as B1
-          result = addImport(result, def.id, def.qualifiedName)
+          result = addImport(result, decl.id, decl.qualifiedName)
         }
         return result
       } else {
@@ -96,7 +104,7 @@ export function mkCallGraphContext(modules: QuintModule[]): CallGraphContext {
   }
 
   function collectDefinedAt(map: DefinedAtMap, mod: QuintModule): DefinedAtMap {
-    return mod.defs.reduce((map, def) => map.set(def.id, mod), map)
+    return mod.declarations.reduce((map, decl) => map.set(decl.id, mod), map)
   }
 
   const definedAt = modules.reduce(collectDefinedAt, Map())
@@ -113,7 +121,7 @@ export function mkCallGraphContext(modules: QuintModule[]): CallGraphContext {
 export class CallGraphVisitor implements IRVisitor {
   private lookupTable: LookupTable
   private context: CallGraphContext
-  private stack: QuintDef[]
+  private stack: QuintDeclaration[]
   private currentModuleId: bigint
   /**
    * The call graph computed by the visitor.
@@ -150,20 +158,20 @@ export class CallGraphVisitor implements IRVisitor {
     this.currentModuleId = module.id
   }
 
-  enterDef(def: QuintDef) {
-    this.stack.push(def)
-    const hostModule = this.context.definedAt.get(def.id)
+  enterDecl(decl: QuintDeclaration) {
+    this.stack.push(decl)
+    const hostModule = this.context.definedAt.get(decl.id)
     if (hostModule && hostModule.id !== this.currentModuleId) {
       // This definition A is imported from another module B.
       // Hence, the definition A should appear after the statements
       // import A... and import A(...)...
       const key = mkImportKey(this.currentModuleId, hostModule.name)
       const imports = this.context.importsByName.get(key) ?? Set()
-      this.graphAddAll(def.id, imports)
+      this.graphAddAll(decl.id, imports)
     }
   }
 
-  exitDef(_def: QuintDef) {
+  exitDecl(_decl: QuintDeclaration) {
     this.stack.pop()
   }
 
@@ -192,8 +200,8 @@ export class CallGraphVisitor implements IRVisitor {
   exitApp(app: QuintApp) {
     const lookupDef = this.lookupTable.get(app.id)
     if (lookupDef) {
-      this.graphAddOne(lookupDef.reference)
-      this.graphAddImports(lookupDef.reference)
+      this.graphAddOne(lookupDef.id)
+      this.graphAddImports(lookupDef.id)
     }
   }
 
@@ -201,8 +209,8 @@ export class CallGraphVisitor implements IRVisitor {
   exitName(name: QuintName) {
     const lookupDef = this.lookupTable.get(name.id)
     if (lookupDef) {
-      this.graphAddOne(lookupDef.reference)
-      this.graphAddImports(lookupDef.reference)
+      this.graphAddOne(lookupDef.id)
+      this.graphAddImports(lookupDef.id)
     }
   }
 
@@ -211,8 +219,8 @@ export class CallGraphVisitor implements IRVisitor {
     if (tp.id) {
       const lookupDef = this.lookupTable.get(tp.id)
       if (lookupDef) {
-        this.graphAddOne(lookupDef.reference)
-        this.graphAddImports(lookupDef.reference)
+        this.graphAddOne(lookupDef.id)
+        this.graphAddImports(lookupDef.id)
       }
     }
   }

@@ -12,6 +12,7 @@
  * @module
  */
 
+import { QuintDef, QuintExport, QuintImport, QuintInstance, QuintLambdaParameter } from '../ir/quintIr'
 import { QuintType } from '../ir/quintTypes'
 
 /**
@@ -20,21 +21,37 @@ import { QuintType } from '../ir/quintTypes'
 export type DefinitionKind = 'module' | 'def' | 'val' | 'assumption' | 'param' | 'var' | 'const' | 'type'
 
 /**
- * A minimal representation of a QuintDef, to be stored in `LookupTable` and
- * `DefinitionsByName`.
+ * A definition to be stored in `DefinitionsByName` and `LookupTable`. Either a `QuintDef`
+ * or a `QuintLambdaParameter`, with additional metadata fields
+ *
+ * A definition can be hidden, meaning it
+ *
+ * A definition can also have a list of `namespaces` and a `importedFrom` reference, to be used
+ * to track the origins of a definition. Namespaces are added to the definition's name when it
+ * is copied over to a module with a qualified name. `importedFrom` is a reference to the import/instance/export
+ * statement that originated the definition, when the definition was copied from another module.
  */
-export interface Definition {
-  kind: DefinitionKind
-  reference: bigint
+export type Definition = (QuintDef | ({ kind: 'param' } & QuintLambdaParameter)) & {
+  /* Hidden definitions won't be copied over to a module when an
+   * import/intance/export statement is resolved. `hidden` can be removed with
+   * `export` statements for the hidden definitions. */
+  hidden?: boolean
+  /* `namespaces` are names to add to the definition's name, when it
+   * is copied from one module to another with a qualified name. Ordered from
+   * innermost to the outtermost. */
+  namespaces?: string[]
+  /* importedFrom` is a reference to the import/instance/export statement that
+   * originated the definition, when the definition was copied from another
+   * module. */
+  importedFrom?: QuintImport | QuintInstance | QuintExport
+  /* `typeAnnotation` is the type annotation of the definition, if it has one.
+   * Some types in `QuintDef` already have a `typeAnnotation` field. This
+   * ensures that this field is always accessible */
   typeAnnotation?: QuintType
 }
 
 /**
  * A module's definitions, indexed by name.
- *
- * A definition, in this type, can be hidden, meaning it won't be copied over to
- * a module when an import/intance/export statement is resolved. `hidden` can be
- * removed with `export` statements for the hidden definitions.
  */
 export type DefinitionsByName = Map<string, Definition & { hidden?: boolean }>
 

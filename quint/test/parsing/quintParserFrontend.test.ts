@@ -106,7 +106,7 @@ describe('parsing', () => {
       readQuint('_0001emptyModule'),
       'mocked_path/testFixture/_0001emptyModule.qnt'
     )
-    const module = { id: 1n, name: 'empty', defs: [] }
+    const module = { id: 1n, name: 'empty', declarations: [] }
     assert.deepEqual(
       result.map(r => r.modules[0]),
       right(module)
@@ -140,7 +140,7 @@ describe('parsing', () => {
     `
     const result = parsePhase1fromText(newIdGenerator(), mod, 'test')
     assert(result.isRight())
-    const typeDef = result.value.modules[0].defs[0]
+    const typeDef = result.value.modules[0].declarations[0]
     assert(typeDef.kind === 'typedef')
     const sumType = typeDef.type!
     assert(sumType.kind === 'sum')

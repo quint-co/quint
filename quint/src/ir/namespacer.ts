@@ -14,7 +14,7 @@
  */
 
 import { IRTransformer, transformDefinition } from './IRTransformer'
-import { QuintApp, QuintDef, QuintLambda, QuintName, isFlat } from './quintIr'
+import { QuintApp, QuintDef, QuintLambda, QuintName } from './quintIr'
 import { QuintConstType } from './quintTypes'
 
 /**
@@ -44,12 +44,8 @@ class Namespacer implements IRTransformer {
     // In the new flattener, we will need to consider it here as well.
     // Also, considering it here makes the interface consistent.
     // Uncomment the following line when the new flattener is in place:
-    // if (isFlat(def) && !this.namesToPreserve.has(def.name)) {
-    if (isFlat(def)) {
-      return { ...def, name: namespacedName(this.namespace, def.name) }
-    }
-
-    return def
+    // if (!this.namesToPreserve.has(def.name)) {
+    return { ...def, name: namespacedName(this.namespace, def.name) }
   }
 
   exitLambda(expr: QuintLambda): QuintLambda {

@@ -17,7 +17,7 @@ import { QuintLexer } from '../generated/QuintLexer'
 import * as p from '../generated/QuintParser'
 import { QuintListener } from '../generated/QuintListener'
 
-import { IrErrorMessage, QuintDef, QuintEx, QuintModule } from '../ir/quintIr'
+import { IrErrorMessage, QuintDeclaration, QuintEx, QuintModule } from '../ir/quintIr'
 import { IdGenerator } from '../idGenerator'
 import { ToIrListener } from './ToIrListener'
 import { LookupTable } from '../names/base'
@@ -116,15 +116,15 @@ export interface ParserPhase3 extends ParserPhase2 {
 }
 
 /**
- * Phase 4: Topological sort of definitions and cycle detection.
+ * Phase 4: Topological sort of declarations and cycle detection.
  */
 export interface ParserPhase4 extends ParserPhase3 {}
 
 /**
  * The result of parsing an expression or unit.
  */
-export type ExpressionOrUnitParseResult =
-  | { kind: 'toplevel'; def: QuintDef }
+export type ExpressionOrDeclarationParseResult =
+  | { kind: 'declaration'; decl: QuintDeclaration }
   | { kind: 'expr'; expr: QuintEx }
   | { kind: 'none' }
   | { kind: 'error'; messages: ErrorMessage[] }
@@ -136,19 +136,19 @@ export type ExpressionOrUnitParseResult =
  * @param sourceLocation a textual description of the source
  * @returns the parsing result
  */
-export function parseExpressionOrUnit(
+export function parseExpressionOrDeclaration(
   text: string,
   sourceLocation: string,
   idGenerator: IdGenerator,
   sourceMap: SourceMap
-): ExpressionOrUnitParseResult {
+): ExpressionOrDeclarationParseResult {
   const errorMessages: ErrorMessage[] = []
   const parser = setupParser(text, sourceLocation, errorMessages)
-  const tree = parser.unitOrExpr()
+  const tree = parser.declarationOrExpr()
   if (errorMessages.length > 0) {
     return { kind: 'error', messages: errorMessages }
   } else {
-    const listener = new ExpressionOrUnitListener(sourceLocation, idGenerator)
+    const listener = new ExpressionOrDeclarationListener(sourceLocation, idGenerator)
 
     // Use an existing source map as a starting point.
     listener.sourceMap = sourceMap
@@ -192,7 +192,7 @@ export function parsePhase1fromText(
 }
 
 /**
- * Phase 2 of the Quint parser. Go over each definition of the form
+ * Phase 2 of the Quint parser. Go over each declaration of the form
  * `import ... from '<path>'`, do the following:
  *
  *  - parse the modules that are referenced by each path,
@@ -226,11 +226,11 @@ export function parsePhase2sourceResolution(
     .forEach(m => moduleRank.set(m.name, maxModuleRank++))
   while (worklist.length > 0) {
     const [importer, pathTrail] = worklist.splice(0, 1)[0]
-    for (const def of importer.defs) {
-      if ((def.kind === 'import' || def.kind === 'instance') && def.fromSource) {
+    for (const decl of importer.declarations) {
+      if ((decl.kind === 'import' || decl.kind === 'instance') && decl.fromSource) {
         const importerPath = pathTrail[pathTrail.length - 1]
         const stemPath = sourceResolver.stempath(importerPath)
-        const importeePath = sourceResolver.lookupPath(stemPath, def.fromSource + '.qnt')
+        const importeePath = sourceResolver.lookupPath(stemPath, decl.fromSource + '.qnt')
         // check for import cycles
         if (pathTrail.find(p => p.normalizedPath === importeePath.normalizedPath)) {
           // found a cyclic dependency
@@ -240,7 +240,7 @@ export function parsePhase2sourceResolution(
             .join(' imports ')
           const err = fromIrErrorMessage(sourceMap)({
             explanation: `Cyclic imports: ${cycle}`,
-            refs: [def.id],
+            refs: [decl.id],
           })
           return left([err])
         }
@@ -256,8 +256,8 @@ export function parsePhase2sourceResolution(
           // failed to load the imported source
           const err = fromIrErrorMessage(sourceMap)({
             // do not use the original message as it propagates absolute file names
-            explanation: `import ... from '${def.fromSource}': could not load`,
-            refs: [def.id],
+            explanation: `import ... from '${decl.fromSource}': could not load`,
+            refs: [decl.id],
           })
           return left([err])
         }
@@ -300,18 +300,18 @@ export function parsePhase3importAndNameResolution(phase2Data: ParserPhase2): Pa
 }
 
 /**
- * Phase 4 of the Quint parser. Sort all definitions in the topologocal order,
+ * Phase 4 of the Quint parser. Sort all declarations in the topologocal order,
  * that is, every name should be defined before it is used.
  */
 export function parsePhase4toposort(phase3Data: ParserPhase3): ParseResult<ParserPhase4> {
-  // topologically sort all definitions in each module
+  // topologically sort all declarations in each module
   const context = mkCallGraphContext(phase3Data.modules)
   const cycleOrModules: Either<Set<bigint>, QuintModule[]> = merge(
     phase3Data.modules.map(mod => {
       const visitor = new CallGraphVisitor(phase3Data.table, context)
       walkModule(visitor, mod)
-      return toposort(visitor.graph, mod.defs).mapRight(defs => {
-        return { ...mod, defs } as QuintModule
+      return toposort(visitor.graph, mod.declarations).mapRight(decls => {
+        return { ...mod, declarations: decls }
       })
     })
   )
@@ -323,12 +323,12 @@ export function parsePhase4toposort(phase3Data: ParserPhase3): ParseResult<Parse
       return [
         {
           locs: cycleIds.toArray().map(id => sourceIdToLoc(phase3Data.sourceMap, id)),
-          explanation: `${errorCode}: Found cyclic definitions. Use fold and foldl instead of recursion`,
+          explanation: `${errorCode}: Found cyclic declarations. Use fold and foldl instead of recursion`,
         },
       ] as ErrorMessage[]
     })
     .mapRight(modules => {
-      // reordered the definitions
+      // reordered the declarations
       return { ...phase3Data, modules }
     })
 }
@@ -408,9 +408,9 @@ function setupParser(text: string, sourceLocation: string, errorMessages: ErrorM
   return parser
 }
 
-// A simple listener to parse a unit or expression
-class ExpressionOrUnitListener extends ToIrListener {
-  result: ExpressionOrUnitParseResult = {
+// A simple listener to parse a declaration or expression
+class ExpressionOrDeclarationListener extends ToIrListener {
+  result: ExpressionOrDeclarationParseResult = {
     kind: 'error',
     messages: [
       {
@@ -420,10 +420,10 @@ class ExpressionOrUnitListener extends ToIrListener {
     ],
   }
 
-  exitUnitOrExpr(ctx: p.UnitOrExprContext) {
-    if (ctx.unit()) {
-      const def = this.definitionStack[this.definitionStack.length - 1]
-      this.result = { kind: 'toplevel', def }
+  exitDeclarationOrExpr(ctx: p.DeclarationOrExprContext) {
+    if (ctx.declaration()) {
+      const decl = this.declarationStack[this.declarationStack.length - 1]
+      this.result = { kind: 'declaration', decl }
     } else if (ctx.expr()) {
       const expr = this.exprStack[this.exprStack.length - 1]
       this.result = { kind: 'expr', expr }

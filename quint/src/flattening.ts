@@ -15,18 +15,18 @@
 import { IdGenerator } from './idGenerator'
 import { LookupTable, builtinNames } from './names/base'
 import {
-  FlatDef,
   FlatModule,
+  QuintDeclaration,
   QuintDef,
   QuintExport,
   QuintImport,
   QuintInstance,
   QuintModule,
-  isFlat,
+  isDef,
 } from './ir/quintIr'
-import { definitionToString, moduleToString } from './ir/IRprinting'
+import { moduleToString } from './ir/IRprinting'
 import { Loc, parsePhase3importAndNameResolution } from './parsing/quintParserFrontend'
-import { compact, uniqBy } from 'lodash'
+import { uniqBy } from 'lodash'
 import { AnalysisOutput } from './quintAnalyzer'
 import { inlineAliasesInDef, inlineAnalysisOutput, inlineTypeAliases } from './types/aliasInliner'
 import { addNamespaceToDefinition } from './ir/namespacer'
@@ -119,10 +119,10 @@ export function addDefToFlatModule(
   sourceMap: Map<bigint, Loc>,
   analysisOutput: AnalysisOutput,
   module: FlatModule,
-  def: QuintDef
+  def: QuintDeclaration
 ): {
   flattenedModule: FlatModule
-  flattenedDefs: FlatDef[]
+  flattenedDefs: QuintDef[]
   flattenedTable: LookupTable
   flattenedAnalysis: AnalysisOutput
 } {
@@ -132,8 +132,8 @@ export function addDefToFlatModule(
   const flattenedDefs = flattener
     .flattenDef(def)
     // Inline type aliases in new defs
-    .map(d => inlineAliasesInDef(d, table) as FlatDef)
-  const flattenedModule: FlatModule = { ...module, defs: [...module.defs, ...flattenedDefs] }
+    .map(d => inlineAliasesInDef(d, table))
+  const flattenedModule: FlatModule = { ...module, declarations: [...module.declarations, ...flattenedDefs] }
 
   return {
     flattenedModule,
@@ -166,7 +166,7 @@ class Flatenner {
       // builtin names
       ...builtinNames,
       // names from the current module
-      ...compact(module.defs.map(d => (isFlat(d) ? d.name : undefined))),
+      ...module.declarations.filter(isDef).map(d => d.name),
     ])
 
     this.importedModules = importedModules
@@ -176,8 +176,8 @@ class Flatenner {
     this.analysisOutput = analysisOutput
   }
 
-  flattenDef(def: QuintDef): FlatDef[] {
-    if (isFlat(def)) {
+  flattenDef(def: QuintDeclaration): QuintDef[] {
+    if (isDef(def)) {
       // Not an instance, import or export, keep the same def
       return [def]
     }
@@ -190,17 +190,20 @@ class Flatenner {
   }
 
   flattenModule(): FlatModule {
-    const newDefs = this.module.defs.flatMap(def => this.flattenDef(def))
+    const newDefs = this.module.declarations.flatMap(def => this.flattenDef(def))
 
-    return { ...this.module, defs: uniqBy(newDefs, 'name') }
+    return { ...this.module, declarations: uniqBy(newDefs, 'name') }
   }
 
-  private flattenInstance(def: QuintInstance): FlatDef[] {
+  private flattenInstance(def: QuintInstance): QuintDef[] {
     // Build pure val definitions from overrides to replace the constants in the
     // instance. Index them by name to make it easier to replace the corresponding constants.
-    const overrides: Map<string, FlatDef> = new Map(
+    const overrides: Map<string, QuintDef> = new Map(
       def.overrides.map(([param, expr]) => {
         const constDef = this.table.get(param.id)!
+        if (constDef.kind !== 'const') {
+          throw new Error(`Impossible: ${constDef} should be a const`)
+        }
 
         return [
           param.name,
@@ -219,8 +222,8 @@ class Flatenner {
     const protoModule = this.importedModules.get(def.protoName)!
 
     // Overrides replace the original constant definitions, in the same position as they appear originally
-    const newProtoDefs = protoModule.defs.map(d => {
-      if (isFlat(d) && overrides.has(d.name)) {
+    const newProtoDefs = protoModule.declarations.filter(isDef).map(d => {
+      if (overrides.has(d.name)) {
         return overrides.get(d.name)!
       }
 
@@ -229,13 +232,13 @@ class Flatenner {
 
     // Add the new defs to the modules table under the instance name
     if (def.qualifiedName) {
-      this.importedModules.set(def.qualifiedName, { ...protoModule, defs: newProtoDefs })
+      this.importedModules.set(def.qualifiedName, { ...protoModule, declarations: newProtoDefs })
     }
 
     return newProtoDefs.map(protoDef => this.copyDef(protoDef, def.qualifiedName))
   }
 
-  private flattenImportOrExport(def: QuintImport | QuintExport): FlatDef[] {
+  private flattenImportOrExport(def: QuintImport | QuintExport): QuintDef[] {
     const qualifiedName = def.defName ? undefined : def.qualifiedName ?? def.protoName
 
     const protoModule = this.importedModules.get(def.protoName)
@@ -249,23 +252,14 @@ class Flatenner {
       this.importedModules.set(qualifiedName, { ...protoModule, name: qualifiedName })
     }
 
-    const defsToFlatten = filterDefs(protoModule.defs, def.defName)
+    const defsToFlatten = filterDefs(protoModule.declarations.filter(isDef), def.defName)
 
     return defsToFlatten.map(protoDef => this.copyDef(protoDef, qualifiedName))
   }
 
-  private copyDef(def: QuintDef, qualifier: string | undefined): FlatDef {
-    if (!isFlat(def)) {
-      throw new Error(`Impossible: ${definitionToString(def)} should have been flattened already`)
-    }
-
-    const defWithQualifier = qualifier ? addNamespaceToDefinition(def, qualifier, this.currentModuleNames) : def
+  private copyDef(decl: QuintDef, qualifier: string | undefined): QuintDef {
+    const defWithQualifier = qualifier ? addNamespaceToDefinition(decl, qualifier, this.currentModuleNames) : decl
     const defWithNewId = generateFreshIds(defWithQualifier, this.idGenerator, this.sourceMap, this.analysisOutput)
-
-    if (!isFlat(defWithNewId)) {
-      // safe cast
-      throw new Error(`Impossible: updating definitions cannot unflatten a def: ${definitionToString(defWithNewId)}`)
-    }
 
     return defWithNewId
   }
@@ -276,7 +270,7 @@ function filterDefs(defs: QuintDef[], name: string | undefined): QuintDef[] {
     return defs
   }
 
-  return defs.filter(def => isFlat(def) && def.name === name)
+  return defs.filter(def => def.name === name)
 }
 
 function resolveNamesOrThrow(currentTable: LookupTable, sourceMap: Map<bigint, Loc>, module: QuintModule): LookupTable {

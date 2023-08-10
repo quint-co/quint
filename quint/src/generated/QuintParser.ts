@@ -105,8 +105,8 @@ export class QuintParser extends Parser {
 	public static readonly WS = 69;
 	public static readonly RULE_modules = 0;
 	public static readonly RULE_module = 1;
-	public static readonly RULE_documentedUnit = 2;
-	public static readonly RULE_unit = 3;
+	public static readonly RULE_documentedDeclaration = 2;
+	public static readonly RULE_declaration = 3;
 	public static readonly RULE_operDef = 4;
 	public static readonly RULE_typeDef = 5;
 	public static readonly RULE_typeSumVariant = 6;
@@ -124,7 +124,7 @@ export class QuintParser extends Parser {
 	public static readonly RULE_row = 18;
 	public static readonly RULE_rowLabel = 19;
 	public static readonly RULE_expr = 20;
-	public static readonly RULE_unitOrExpr = 21;
+	public static readonly RULE_declarationOrExpr = 21;
 	public static readonly RULE_lambda = 22;
 	public static readonly RULE_identOrHole = 23;
 	public static readonly RULE_parameter = 24;
@@ -139,12 +139,12 @@ export class QuintParser extends Parser {
 	public static readonly RULE_simpleId = 33;
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
-		"modules", "module", "documentedUnit", "unit", "operDef", "typeDef", "typeSumVariant", 
-		"nondetOperDef", "qualifier", "importMod", "exportMod", "instanceMod", 
-		"moduleName", "name", "qualifiedName", "fromSource", "type", "typeUnionRecOne", 
-		"row", "rowLabel", "expr", "unitOrExpr", "lambda", "identOrHole", "parameter", 
-		"identOrStar", "argList", "recElem", "normalCallName", "nameAfterDot", 
-		"operator", "literal", "qualId", "simpleId",
+		"modules", "module", "documentedDeclaration", "declaration", "operDef", 
+		"typeDef", "typeSumVariant", "nondetOperDef", "qualifier", "importMod", 
+		"exportMod", "instanceMod", "moduleName", "name", "qualifiedName", "fromSource", 
+		"type", "typeUnionRecOne", "row", "rowLabel", "expr", "declarationOrExpr", 
+		"lambda", "identOrHole", "parameter", "identOrStar", "argList", "recElem", 
+		"normalCallName", "nameAfterDot", "operator", "literal", "qualId", "simpleId",
 	];
 
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
@@ -270,7 +270,7 @@ export class QuintParser extends Parser {
 				{
 				{
 				this.state = 84;
-				this.documentedUnit();
+				this.documentedDeclaration();
 				}
 				}
 				this.state = 89;
@@ -296,9 +296,9 @@ export class QuintParser extends Parser {
 		return _localctx;
 	}
 	// @RuleVersion(0)
-	public documentedUnit(): DocumentedUnitContext {
-		let _localctx: DocumentedUnitContext = new DocumentedUnitContext(this._ctx, this.state);
-		this.enterRule(_localctx, 4, QuintParser.RULE_documentedUnit);
+	public documentedDeclaration(): DocumentedDeclarationContext {
+		let _localctx: DocumentedDeclarationContext = new DocumentedDeclarationContext(this._ctx, this.state);
+		this.enterRule(_localctx, 4, QuintParser.RULE_documentedDeclaration);
 		let _la: number;
 		try {
 			this.enterOuterAlt(_localctx, 1);
@@ -318,7 +318,7 @@ export class QuintParser extends Parser {
 				_la = this._input.LA(1);
 			}
 			this.state = 98;
-			this.unit();
+			this.declaration();
 			}
 		}
 		catch (re) {
@@ -336,9 +336,9 @@ export class QuintParser extends Parser {
 		return _localctx;
 	}
 	// @RuleVersion(0)
-	public unit(): UnitContext {
-		let _localctx: UnitContext = new UnitContext(this._ctx, this.state);
-		this.enterRule(_localctx, 6, QuintParser.RULE_unit);
+	public declaration(): DeclarationContext {
+		let _localctx: DeclarationContext = new DeclarationContext(this._ctx, this.state);
+		this.enterRule(_localctx, 6, QuintParser.RULE_declaration);
 		try {
 			this.state = 120;
 			this._errHandler.sync(this);
@@ -2589,9 +2589,9 @@ export class QuintParser extends Parser {
 		return _localctx;
 	}
 	// @RuleVersion(0)
-	public unitOrExpr(): UnitOrExprContext {
-		let _localctx: UnitOrExprContext = new UnitOrExprContext(this._ctx, this.state);
-		this.enterRule(_localctx, 42, QuintParser.RULE_unitOrExpr);
+	public declarationOrExpr(): DeclarationOrExprContext {
+		let _localctx: DeclarationOrExprContext = new DeclarationOrExprContext(this._ctx, this.state);
+		this.enterRule(_localctx, 42, QuintParser.RULE_declarationOrExpr);
 		try {
 			this.state = 650;
 			this._errHandler.sync(this);
@@ -2600,7 +2600,7 @@ export class QuintParser extends Parser {
 				this.enterOuterAlt(_localctx, 1);
 				{
 				this.state = 641;
-				this.unit();
+				this.declaration();
 				this.state = 642;
 				this.match(QuintParser.EOF);
 				}
@@ -3708,13 +3708,13 @@ export class ModuleContext extends ParserRuleContext {
 			return this.getToken(QuintParser.DOCCOMMENT, i);
 		}
 	}
-	public documentedUnit(): DocumentedUnitContext[];
-	public documentedUnit(i: number): DocumentedUnitContext;
-	public documentedUnit(i?: number): DocumentedUnitContext | DocumentedUnitContext[] {
+	public documentedDeclaration(): DocumentedDeclarationContext[];
+	public documentedDeclaration(i: number): DocumentedDeclarationContext;
+	public documentedDeclaration(i?: number): DocumentedDeclarationContext | DocumentedDeclarationContext[] {
 		if (i === undefined) {
-			return this.getRuleContexts(DocumentedUnitContext);
+			return this.getRuleContexts(DocumentedDeclarationContext);
 		} else {
-			return this.getRuleContext(i, DocumentedUnitContext);
+			return this.getRuleContext(i, DocumentedDeclarationContext);
 		}
 	}
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
@@ -3745,9 +3745,9 @@ export class ModuleContext extends ParserRuleContext {
 }
 
 
-export class DocumentedUnitContext extends ParserRuleContext {
-	public unit(): UnitContext {
-		return this.getRuleContext(0, UnitContext);
+export class DocumentedDeclarationContext extends ParserRuleContext {
+	public declaration(): DeclarationContext {
+		return this.getRuleContext(0, DeclarationContext);
 	}
 	public DOCCOMMENT(): TerminalNode[];
 	public DOCCOMMENT(i: number): TerminalNode;
@@ -3762,23 +3762,23 @@ export class DocumentedUnitContext extends ParserRuleContext {
 		super(parent, invokingState);
 	}
 	// @Override
-	public get ruleIndex(): number { return QuintParser.RULE_documentedUnit; }
+	public get ruleIndex(): number { return QuintParser.RULE_documentedDeclaration; }
 	// @Override
 	public enterRule(listener: QuintListener): void {
-		if (listener.enterDocumentedUnit) {
-			listener.enterDocumentedUnit(this);
+		if (listener.enterDocumentedDeclaration) {
+			listener.enterDocumentedDeclaration(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: QuintListener): void {
-		if (listener.exitDocumentedUnit) {
-			listener.exitDocumentedUnit(this);
+		if (listener.exitDocumentedDeclaration) {
+			listener.exitDocumentedDeclaration(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: QuintVisitor<Result>): Result {
-		if (visitor.visitDocumentedUnit) {
-			return visitor.visitDocumentedUnit(this);
+		if (visitor.visitDocumentedDeclaration) {
+			return visitor.visitDocumentedDeclaration(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
@@ -3786,24 +3786,24 @@ export class DocumentedUnitContext extends ParserRuleContext {
 }
 
 
-export class UnitContext extends ParserRuleContext {
+export class DeclarationContext extends ParserRuleContext {
 	constructor(parent: ParserRuleContext | undefined, invokingState: number) {
 		super(parent, invokingState);
 	}
 	// @Override
-	public get ruleIndex(): number { return QuintParser.RULE_unit; }
-	public copyFrom(ctx: UnitContext): void {
+	public get ruleIndex(): number { return QuintParser.RULE_declaration; }
+	public copyFrom(ctx: DeclarationContext): void {
 		super.copyFrom(ctx);
 	}
 }
-export class ConstContext extends UnitContext {
+export class ConstContext extends DeclarationContext {
 	public qualId(): QualIdContext {
 		return this.getRuleContext(0, QualIdContext);
 	}
 	public type(): TypeContext {
 		return this.getRuleContext(0, TypeContext);
 	}
-	constructor(ctx: UnitContext) {
+	constructor(ctx: DeclarationContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
 	}
@@ -3828,14 +3828,14 @@ export class ConstContext extends UnitContext {
 		}
 	}
 }
-export class VarContext extends UnitContext {
+export class VarContext extends DeclarationContext {
 	public qualId(): QualIdContext {
 		return this.getRuleContext(0, QualIdContext);
 	}
 	public type(): TypeContext {
 		return this.getRuleContext(0, TypeContext);
 	}
-	constructor(ctx: UnitContext) {
+	constructor(ctx: DeclarationContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
 	}
@@ -3860,7 +3860,7 @@ export class VarContext extends UnitContext {
 		}
 	}
 }
-export class AssumeContext extends UnitContext {
+export class AssumeContext extends DeclarationContext {
 	public identOrHole(): IdentOrHoleContext {
 		return this.getRuleContext(0, IdentOrHoleContext);
 	}
@@ -3868,7 +3868,7 @@ export class AssumeContext extends UnitContext {
 	public expr(): ExprContext {
 		return this.getRuleContext(0, ExprContext);
 	}
-	constructor(ctx: UnitContext) {
+	constructor(ctx: DeclarationContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
 	}
@@ -3893,11 +3893,11 @@ export class AssumeContext extends UnitContext {
 		}
 	}
 }
-export class InstanceContext extends UnitContext {
+export class InstanceContext extends DeclarationContext {
 	public instanceMod(): InstanceModContext {
 		return this.getRuleContext(0, InstanceModContext);
 	}
-	constructor(ctx: UnitContext) {
+	constructor(ctx: DeclarationContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
 	}
@@ -3922,11 +3922,11 @@ export class InstanceContext extends UnitContext {
 		}
 	}
 }
-export class OperContext extends UnitContext {
+export class OperContext extends DeclarationContext {
 	public operDef(): OperDefContext {
 		return this.getRuleContext(0, OperDefContext);
 	}
-	constructor(ctx: UnitContext) {
+	constructor(ctx: DeclarationContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
 	}
@@ -3951,11 +3951,11 @@ export class OperContext extends UnitContext {
 		}
 	}
 }
-export class TypeDefsContext extends UnitContext {
+export class TypeDefsContext extends DeclarationContext {
 	public typeDef(): TypeDefContext {
 		return this.getRuleContext(0, TypeDefContext);
 	}
-	constructor(ctx: UnitContext) {
+	constructor(ctx: DeclarationContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
 	}
@@ -3980,11 +3980,11 @@ export class TypeDefsContext extends UnitContext {
 		}
 	}
 }
-export class ImportDefContext extends UnitContext {
+export class ImportDefContext extends DeclarationContext {
 	public importMod(): ImportModContext {
 		return this.getRuleContext(0, ImportModContext);
 	}
-	constructor(ctx: UnitContext) {
+	constructor(ctx: DeclarationContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
 	}
@@ -4009,11 +4009,11 @@ export class ImportDefContext extends UnitContext {
 		}
 	}
 }
-export class ExportDefContext extends UnitContext {
+export class ExportDefContext extends DeclarationContext {
 	public exportMod(): ExportModContext {
 		return this.getRuleContext(0, ExportModContext);
 	}
-	constructor(ctx: UnitContext) {
+	constructor(ctx: DeclarationContext) {
 		super(ctx.parent, ctx.invokingState);
 		this.copyFrom(ctx);
 	}
@@ -6174,9 +6174,9 @@ export class BracesContext extends ExprContext {
 }
 
 
-export class UnitOrExprContext extends ParserRuleContext {
-	public unit(): UnitContext | undefined {
-		return this.tryGetRuleContext(0, UnitContext);
+export class DeclarationOrExprContext extends ParserRuleContext {
+	public declaration(): DeclarationContext | undefined {
+		return this.tryGetRuleContext(0, DeclarationContext);
 	}
 	public EOF(): TerminalNode { return this.getToken(QuintParser.EOF, 0); }
 	public expr(): ExprContext | undefined {
@@ -6187,23 +6187,23 @@ export class UnitOrExprContext extends ParserRuleContext {
 		super(parent, invokingState);
 	}
 	// @Override
-	public get ruleIndex(): number { return QuintParser.RULE_unitOrExpr; }
+	public get ruleIndex(): number { return QuintParser.RULE_declarationOrExpr; }
 	// @Override
 	public enterRule(listener: QuintListener): void {
-		if (listener.enterUnitOrExpr) {
-			listener.enterUnitOrExpr(this);
+		if (listener.enterDeclarationOrExpr) {
+			listener.enterDeclarationOrExpr(this);
 		}
 	}
 	// @Override
 	public exitRule(listener: QuintListener): void {
-		if (listener.exitUnitOrExpr) {
-			listener.exitUnitOrExpr(this);
+		if (listener.exitDeclarationOrExpr) {
+			listener.exitDeclarationOrExpr(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: QuintVisitor<Result>): Result {
-		if (visitor.visitUnitOrExpr) {
-			return visitor.visitUnitOrExpr(this);
+		if (visitor.visitDeclarationOrExpr) {
+			return visitor.visitDeclarationOrExpr(this);
 		} else {
 			return visitor.visitChildren(this);
 		}

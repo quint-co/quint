@@ -2,11 +2,12 @@ import { assert } from 'chai'
 import { IRVisitor, walkModule } from '../src/ir/IRVisitor'
 import {
   QuintBool,
-  QuintDef,
+  QuintDeclaration,
   QuintEx,
   QuintInstance,
   QuintInt,
   QuintLambda,
+  QuintLet,
   QuintModule,
   QuintStr,
   QuintTypeDef,
@@ -20,8 +21,8 @@ import { newIdGenerator } from '../src/idGenerator'
 export function collectIds(module: QuintModule): bigint[] {
   const ids = new Set<bigint>()
   const visitor: IRVisitor = {
-    exitDef: (def: QuintDef) => {
-      ids.add(def.id)
+    exitDecl: (decl: QuintDeclaration) => {
+      ids.add(decl.id)
     },
     exitExpr(e: QuintEx) {
       ids.add(e.id)
@@ -39,6 +40,9 @@ export function collectIds(module: QuintModule): bigint[] {
     },
     exitLambda(l: QuintLambda) {
       l.params.forEach(p => ids.add(p.id))
+    },
+    exitLet(l: QuintLet) {
+      ids.add(l.opdef.id)
     },
     exitInstance(i: QuintInstance) {
       i.overrides.forEach(([n, _]) => ids.add(n.id))

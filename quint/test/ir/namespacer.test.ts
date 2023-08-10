@@ -37,12 +37,4 @@ describe('addNamespaceToDefinition', () => {
 
     assert.deepEqual(definitionToString(result), 'val M::a = pure val M::b = Set(1, 2) { map(M::b, ((M::x) => M::x)) }')
   })
-
-  it('keeps imports as is', () => {
-    const def = buildDef('import A.*')
-
-    const result = addNamespaceToDefinition(def, 'M', new Set())
-
-    assert.deepEqual(definitionToString(result), 'import A.*')
-  })
 })

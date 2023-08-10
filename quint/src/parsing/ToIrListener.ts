@@ -5,6 +5,7 @@ import { QuintListener } from '../generated/QuintListener'
 import {
   OpQualifier,
   QuintApp,
+  QuintDeclaration,
   QuintDef,
   QuintEx,
   QuintLambdaParameter,
@@ -53,7 +54,7 @@ export class ToIrListener implements QuintListener {
   private sourceLocation: string = ''
 
   // the stack of definitions
-  protected definitionStack: QuintDef[] = []
+  protected declarationStack: QuintDeclaration[] = []
   // the stack of expressions
   protected exprStack: QuintEx[] = []
   // the stack of parameter lists
@@ -80,10 +81,10 @@ export class ToIrListener implements QuintListener {
     const module: QuintModule = {
       id: moduleId,
       name: ctx.qualId().text,
-      defs: this.definitionStack,
+      declarations: this.declarationStack,
     }
 
-    this.definitionStack = []
+    this.declarationStack = []
 
     const doc = getDocText(ctx.DOCCOMMENT())
 
@@ -106,7 +107,7 @@ export class ToIrListener implements QuintListener {
       typeAnnotation: typeTag,
       id,
     }
-    this.definitionStack.push(constDef)
+    this.declarationStack.push(constDef)
   }
 
   // translate: var x: type
@@ -120,11 +121,11 @@ export class ToIrListener implements QuintListener {
       typeAnnotation: typeTag,
       id,
     }
-    this.definitionStack.push(varDef)
+    this.declarationStack.push(varDef)
   }
 
   exitLetIn(ctx: p.LetInContext) {
-    const def = this.definitionStack.pop()
+    const def = this.declarationStack.pop()
     const expr = this.exprStack.pop()
 
     const id = this.getId(ctx)
@@ -160,12 +161,12 @@ export class ToIrListener implements QuintListener {
       typeAnnotation,
     }
 
-    this.definitionStack.push(def)
+    this.declarationStack.push(def)
   }
 
   // special case for: nondet x = e1; e2
   exitNondet(ctx: p.NondetContext) {
-    const def = this.definitionStack.pop()
+    const def = this.declarationStack.pop()
     const nested = this.exprStack.pop()
 
     const id = this.getId(ctx)
@@ -235,7 +236,7 @@ export class ToIrListener implements QuintListener {
       if (typeTag.isJust()) {
         def.typeAnnotation = typeTag.value
       }
-      this.definitionStack.push(def)
+      this.declarationStack.push(def)
     } else {
       const ls = this.locStr(ctx)
       // istanbul ignore next
@@ -245,7 +246,7 @@ export class ToIrListener implements QuintListener {
 
   // translate a top-level def
   exitOper(ctx: p.OperContext) {
-    const def = this.definitionStack[this.definitionStack.length - 1]
+    const def = this.declarationStack[this.declarationStack.length - 1]
     const ls = this.locStr(ctx)
     assert(def, `exitOper: ${ls}: undefined operDef in exitOper`)
   }
@@ -287,7 +288,7 @@ export class ToIrListener implements QuintListener {
       name: name,
       assumption: expr,
     }
-    this.definitionStack.push(assume)
+    this.declarationStack.push(assume)
   }
 
   // import Foo, import Foo as F, import Foo.x, import Foo.*
@@ -300,7 +301,7 @@ export class ToIrListener implements QuintListener {
     // slice <path> from the quoted string "<path>", if the path is present
     const fromSource = ctx.fromSource() ? ctx.fromSource()!.text.slice(1, -1) : undefined
     const id = this.getId(ctx)
-    const importDef: QuintDef = {
+    const importDecl: QuintDeclaration = {
       id,
       kind: 'import',
       defName: defName,
@@ -308,7 +309,7 @@ export class ToIrListener implements QuintListener {
       qualifiedName: qualifier,
       fromSource,
     }
-    this.definitionStack.push(importDef)
+    this.declarationStack.push(importDecl)
   }
 
   exitExportMod(ctx: p.ExportModContext) {
@@ -316,14 +317,14 @@ export class ToIrListener implements QuintListener {
     const protoName = ctx.name()[0].text
     const qualifier = ctx.name().length > 1 ? ctx.name()[1].text : undefined
     const id = this.getId(ctx)
-    const exportDef: QuintDef = {
+    const exportDecl: QuintDeclaration = {
       id,
       kind: 'export',
       defName: defName,
       protoName: protoName,
       qualifiedName: qualifier,
     }
-    this.definitionStack.push(exportDef)
+    this.declarationStack.push(exportDecl)
   }
 
   // type T
@@ -343,7 +344,7 @@ export class ToIrListener implements QuintListener {
       name,
     }
 
-    this.definitionStack.push(def)
+    this.declarationStack.push(def)
   }
 
   // type Alias = set(int)
@@ -365,7 +366,7 @@ export class ToIrListener implements QuintListener {
       type,
     }
 
-    this.definitionStack.push(def)
+    this.declarationStack.push(def)
   }
 
   // type T = | A | B(t1) | C(t2)
@@ -388,7 +389,7 @@ export class ToIrListener implements QuintListener {
       type,
     }
 
-    this.definitionStack.push(def)
+    this.declarationStack.push(def)
   }
 
   exitTypeSumVariant(ctx: p.TypeSumVariantContext) {
@@ -433,7 +434,7 @@ export class ToIrListener implements QuintListener {
     const identityOverride = ctx.MUL() !== undefined
 
     const id = this.getId(ctx)
-    const instance: QuintDef = {
+    const instance: QuintDeclaration = {
       id,
       kind: 'instance',
       qualifiedName: qualifiedName,
@@ -442,7 +443,7 @@ export class ToIrListener implements QuintListener {
       identityOverride,
       fromSource,
     }
-    this.definitionStack.push(instance)
+    this.declarationStack.push(instance)
   }
 
   /** ******************* translate expressions **************************/
@@ -1070,13 +1071,13 @@ export class ToIrListener implements QuintListener {
     })
   }
 
-  exitDocumentedUnit(ctx: p.DocumentedUnitContext) {
+  exitDocumentedDeclaration(ctx: p.DocumentedDeclarationContext) {
     const doc = getDocText(ctx.DOCCOMMENT())
 
     if (doc) {
-      // Pop last def and re-push it with the doc
-      const def = this.definitionStack.pop()!
-      this.definitionStack.push({ doc, ...def })
+      // Pop last declaration and re-push it with the doc
+      const decl = this.declarationStack.pop()!
+      this.declarationStack.push({ doc, ...decl })
     }
   }
 

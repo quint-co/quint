@@ -368,7 +368,7 @@ export interface QuintInstance extends WithId {
 /**
  * Definition: constant, state variable, operator definition, assumption, instance, module.
  */
-export type QuintDef = (FlatDef | QuintImport | QuintExport | QuintInstance) & WithOptionalDoc
+export type QuintDeclaration = (QuintDef | QuintImport | QuintExport | QuintInstance) & WithOptionalDoc
 
 export function isAnnotatedDef(def: any): def is WithTypeAnnotation {
   return def.typeAnnotation !== undefined
@@ -381,7 +381,7 @@ export interface QuintModule extends WithId {
   /** The name of the module. */
   name: string
   /** The definitions in the module. */
-  defs: QuintDef[]
+  declarations: QuintDeclaration[]
   /** Optional documentation for the module. */
   doc?: string
 }
@@ -390,7 +390,7 @@ export interface QuintModule extends WithId {
  * A FlatDef is a sub-type of QuintDef which represents a flat definition.
  * A flat definition can be a constant, state variable, operator definition, assumption, or type definition.
  */
-export type FlatDef = (QuintOpDef | QuintConst | QuintVar | QuintAssume | QuintTypeDef) & WithOptionalDoc
+export type QuintDef = (QuintOpDef | QuintConst | QuintVar | QuintAssume | QuintTypeDef) & WithOptionalDoc
 
 /**
  * A FlatModule represents a module with flat definitions.
@@ -399,20 +399,19 @@ export interface FlatModule extends WithId {
   /** The name of the module. */
   name: string
   /** The definitions in the module. */
-  defs: FlatDef[]
+  declarations: QuintDef[]
   /** Optional documentation for the module. */
   doc?: string
 }
 
 /**
- * Checks if a QuintDef is a FlatDef.
- * A FlatDef is a sub-type of QuintDef which represents a flat definition.
- * A flat definition can be a constant, state variable, operator definition, assumption, or type definition.
+ * Checks if a Declaration is a QuintDef, that is, it is not an import, an export, or an instance.
+ * Useful because all QuintDefs have a `name` field, so we can use this to narrow the type.
  *
- * @param def The QuintDef to check.
+ * @param decl The Declaration to check.
  *
- * @returns True if the QuintDef is a FlatDef, false otherwise.
+ * @returns True if the Declaration is a QuintDef, false otherwise.
  */
-export function isFlat(def: QuintDef): def is FlatDef {
-  return def.kind !== 'instance' && def.kind !== 'import' && def.kind !== 'export'
+export function isDef(decl: QuintDeclaration): decl is QuintDef {
+  return decl.kind !== 'instance' && decl.kind !== 'import' && decl.kind !== 'export'
 }
