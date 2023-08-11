@@ -23,4 +23,30 @@ module rareSpells {
     assert(2.to(5).mapBy(i => i * 2).mapValuesSum() == 28),
     assert(Map(2 -> -4, 4 -> 2).mapValuesSum() == -2),
   }
+
+  //// Returns a list of all elements of a set.
+  //// The ordering will be arbitrary.
+  ////
+  //// - @param __set a set
+  //// - @returns a list of all elements of __set
+  pure def toList(__set: Set[a]): List[a] = {
+      __set.fold(List(), (__l, __e) => __l.append(__e))
+  }
+
+  //// Returns a set of the elements in the list.
+  ////
+  //// - @param __list a list
+  //// - @returns a set of the elements in __list
+  pure def toSet(__list: List[a]): Set[a] = {
+      __list.foldl(Set(), (__s, __e) => __s.union(Set(__e)))
+  }
+
+  run toListAndSetTest =
+  all {
+      assert(Set(3, 2, 1).toList().toSet() == Set(1, 2, 3)),
+      assert(List(2,3,1).toSet() == Set(1, 2, 3)),
+      assert(List(2,3,1).toSet() == List(3,2,1).toSet()),
+      assert(toList(Set()) == List()),
+      assert(toSet(List()) == Set())
+  }
 }
