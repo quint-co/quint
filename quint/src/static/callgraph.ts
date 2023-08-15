@@ -17,6 +17,7 @@ import { LookupTable } from '../names/base'
 import {
   QuintApp,
   QuintDeclaration,
+  QuintDef,
   QuintExport,
   QuintImport,
   QuintInstance,
@@ -158,42 +159,49 @@ export class CallGraphVisitor implements IRVisitor {
     this.currentModuleId = module.id
   }
 
-  enterDecl(decl: QuintDeclaration) {
-    this.stack.push(decl)
-    const hostModule = this.context.definedAt.get(decl.id)
+  enterDef(def: QuintDef) {
+    this.stack.push(def)
+    const hostModule = this.context.definedAt.get(def.id)
     if (hostModule && hostModule.id !== this.currentModuleId) {
       // This definition A is imported from another module B.
       // Hence, the definition A should appear after the statements
       // import A... and import A(...)...
       const key = mkImportKey(this.currentModuleId, hostModule.name)
       const imports = this.context.importsByName.get(key) ?? Set()
-      this.graphAddAll(decl.id, imports)
+      this.graphAddAll(def.id, imports)
     }
   }
 
-  exitDecl(_decl: QuintDeclaration) {
+  exitDef(_def: QuintDef) {
     this.stack.pop()
   }
 
-  enterImport(def: QuintImport) {
-    const importedModule = this.context.modulesByName.get(def.protoName)
+  enterImport(decl: QuintImport) {
+    const importedModule = this.context.modulesByName.get(decl.protoName)
     if (importedModule) {
-      this.graphAddAll(def.id, Set([importedModule.id]))
+      this.graphAddAll(decl.id, Set([importedModule.id]))
     }
   }
 
-  enterInstance(def: QuintInstance) {
-    const importedModule = this.context.modulesByName.get(def.protoName)
+  enterInstance(decl: QuintInstance) {
+    // Instances are the only non-definition declarations that need to be added to the stack,
+    // because they may contain names in the overrides
+    this.stack.push(decl)
+    const importedModule = this.context.modulesByName.get(decl.protoName)
     if (importedModule) {
-      this.graphAddAll(def.id, Set([importedModule.id]))
+      this.graphAddAll(decl.id, Set([importedModule.id]))
     }
   }
 
-  enterExport(def: QuintExport) {
-    const key = mkImportKey(this.currentModuleId, def.protoName)
+  exitInstance(_decl: QuintInstance) {
+    this.stack.pop()
+  }
+
+  enterExport(decl: QuintExport) {
+    const key = mkImportKey(this.currentModuleId, decl.protoName)
     const imports = this.context.importsByName.get(key) ?? Set()
     // the imports and instance of the same module must precede the export
-    this.graphAddAll(def.id, imports)
+    this.graphAddAll(decl.id, imports)
   }
 
   // e.g., called for plus inside plus(x, y)
