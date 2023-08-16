@@ -75,7 +75,7 @@ export class NameCollector implements IRVisitor {
     // that we collect type annotations here.
     if (this.definitionDepth === 0) {
       // collect only top-level definitions
-      this.collectDefinition({ ...def, typeAnnotation: undefined })
+      this.collectDefinition({ ...def, typeAnnotation: undefined, depth: this.definitionDepth })
     }
 
     this.definitionDepth++
