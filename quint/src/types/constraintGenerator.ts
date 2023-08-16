@@ -24,7 +24,6 @@ import {
   QuintInt,
   QuintLambda,
   QuintLet,
-  QuintModule,
   QuintName,
   QuintOpDef,
   QuintStr,
