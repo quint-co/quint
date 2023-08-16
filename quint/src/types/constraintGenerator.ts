@@ -24,6 +24,7 @@ import {
   QuintInt,
   QuintLambda,
   QuintLet,
+  QuintModule,
   QuintName,
   QuintOpDef,
   QuintStr,
@@ -154,6 +155,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         })
       })
     })
+
+    // Solve constraints here since this won't go through `exitDef`
+    if (this.constraints.length > 0) {
+      this.solveConstraints()
+    }
   }
 
   //     n: t ∈ Γ
