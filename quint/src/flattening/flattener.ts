@@ -13,23 +13,18 @@
  */
 
 import { Definition, LookupTable, builtinNames } from '../names/base'
-import {
-  QuintApp,
-  QuintDef,
-  QuintExport,
-  QuintImport,
-  QuintInstance,
-  QuintModule,
-  QuintName,
-} from '../ir/quintIr'
+import { QuintApp, QuintDef, QuintExport, QuintImport, QuintInstance, QuintModule, QuintName } from '../ir/quintIr'
 
 import { IRVisitor, walkDefinition, walkModule } from '../ir/IRVisitor'
 import { addNamespaceToDefinition } from '../ir/namespacer'
-import { declarationToString } from '../ir/IRprinting'
 
-export function flattenModule(quintModule: QuintModule, modulesByName: Map<string, QuintModule>, lookupTable: LookupTable, flattenInstances: boolean = false): QuintModule {
+export function flattenModule(
+  quintModule: QuintModule,
+  modulesByName: Map<string, QuintModule>,
+  lookupTable: LookupTable
+): QuintModule {
   const moduleCopy: QuintModule = { ...quintModule, declarations: [...quintModule.declarations] }
-  const flattener = new Flatenner(modulesByName, lookupTable, flattenInstances)
+  const flattener = new Flatenner(modulesByName, lookupTable)
   walkModule(flattener, moduleCopy)
   return moduleCopy
 }
@@ -40,12 +35,10 @@ class Flatenner implements IRVisitor {
 
   private lookupTable: LookupTable
   private namespaceForNested?: string
-  private flattenInstances: boolean
 
-  constructor(modulesByName: Map<string, QuintModule>, lookupTable: LookupTable, flattenInstances: boolean = false) {
+  constructor(modulesByName: Map<string, QuintModule>, lookupTable: LookupTable) {
     this.modulesByName = modulesByName
     this.lookupTable = lookupTable
-    this.flattenInstances = flattenInstances
   }
 
   enterModule(_quintModule: QuintModule) {
@@ -62,15 +55,12 @@ class Flatenner implements IRVisitor {
     if (!def || def.kind === 'param' || (def.kind === 'def' && def.depth && def.depth > 0)) {
       return
     }
-
-    if (def.importedFrom?.kind === 'instance' && !this.flattenInstances) {
-      return
-    }
-
     const namespace = this.namespaceForNested ?? getNamespaceForDef(def)
 
     const newDef =
-      namespace && !def.name.startsWith(namespace) ? addNamespaceToDefinition(def, namespace, new Set(builtinNames)) : def
+      namespace && !def.name.startsWith(namespace)
+        ? addNamespaceToDefinition(def, namespace, new Set(builtinNames))
+        : def
 
     this.defsToAdd.set(newDef.name, newDef)
 
@@ -86,13 +76,11 @@ class Flatenner implements IRVisitor {
       return
     }
 
-    if (def.importedFrom?.kind === 'instance' && !this.flattenInstances) {
-      return
-    }
-
     const namespace = this.namespaceForNested ?? getNamespaceForDef(def)
     const newDef =
-      namespace && !def.name.startsWith(namespace) ? addNamespaceToDefinition(def, namespace, new Set(builtinNames)) : def
+      namespace && !def.name.startsWith(namespace)
+        ? addNamespaceToDefinition(def, namespace, new Set(builtinNames))
+        : def
     this.defsToAdd.set(newDef.name, newDef)
 
     const old = this.namespaceForNested
@@ -102,17 +90,17 @@ class Flatenner implements IRVisitor {
   }
 
   enterExport(decl: QuintExport) {
-    if (!this.modulesByName.has(decl.protoName)) {
-      // FIXME: this error is not reached anymore, find a proper way to report it
-      throw new Error(
-        `Export '${declarationToString(decl)}' does not have a matching import. This is not supported for now`
-      )
-    }
     const ids = this.modulesByName.get(decl.protoName)!.declarations.map(d => d.id)
-    const definitions: Definition[] = [...this.lookupTable.values()].filter(d => ids.includes(d.id))
+    const definitions = [...this.lookupTable.values()].filter(d => ids.includes(d.id))
 
     definitions.forEach(def => {
-      if (this.defsToAdd.has(def.name) || def.kind === 'param' || (def.kind === 'def' && def.depth && def.depth > 0)) {
+      if (def.kind === 'param') {
+        throw new Error(
+          `Impossible: instersection of top-level declarations with lookup table entries should never be a param. Found ${def}`
+        )
+      }
+
+      if (this.defsToAdd.has(def.name)) {
         return
       }
 
@@ -120,7 +108,9 @@ class Flatenner implements IRVisitor {
       const old = this.namespaceForNested
       this.namespaceForNested = namespace
       const newDef =
-        namespace && !def.name.startsWith(namespace) ? addNamespaceToDefinition(def, namespace, new Set(builtinNames)) : def
+        namespace && !def.name.startsWith(namespace)
+          ? addNamespaceToDefinition(def, namespace, new Set(builtinNames))
+          : def
       const newDefWithoutMetadata = { ...newDef, importedFrom: undefined, hidden: false, namespaces: [] }
       walkDefinition(this, newDefWithoutMetadata)
       this.defsToAdd.set(newDef.name, newDefWithoutMetadata)
@@ -132,18 +122,6 @@ class Flatenner implements IRVisitor {
     if (instance.qualifiedName) {
       this.modulesByName.set(instance.qualifiedName, this.modulesByName.get(instance.protoName)!)
     }
-
-    if (!this.flattenInstances) {
-      return
-    }
-
-    instance.overrides.forEach(([param, _]) => {
-      const def = this.lookupTable.get(param.id)
-      if (!def || def.kind === 'param') {
-        return
-      }
-      this.defsToAdd.set(def.name, def)
-    })
   }
 
   enterImport(decl: QuintImport) {
