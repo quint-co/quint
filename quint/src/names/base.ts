@@ -100,6 +100,19 @@ export function copyNames(
   return table
 }
 
+export function addNamespacesToDef(def: Definition, namespaces: string[]): Definition {
+  return namespaces.reduce((def, namespace) => {
+    if (
+      (def.namespaces && def.namespaces[def.namespaces?.length - 1] === namespace) ||
+      def.name.startsWith(namespace)
+    ) {
+      return def
+    }
+    const namespaces = namespace ? def.namespaces?.concat([namespace]) ?? [namespace] : []
+    return { ...def, namespaces }
+  }, def)
+}
+
 /**
  * Built-in name definitions that are always resolved and generate conflicts if collected.
  */
