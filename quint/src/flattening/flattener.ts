@@ -27,6 +27,15 @@ import {
 import { IRVisitor, walkDefinition, walkModule } from '../ir/IRVisitor'
 import { addNamespaceToDefinition } from '../ir/namespacer'
 
+/**
+ * Flatten a module, replacing instances, imports and exports with definitions refered by the module.
+ *
+ * @param quintModule - The module to be flattened
+ * @param modulesByName - A map of refered modules by name
+ * @param lookupTable - The lookup table for the module and all its references
+ *
+ * @returns The flattened module
+ */
 export function flattenModule(
   quintModule: QuintModule,
   modulesByName: Map<string, QuintModule>,
@@ -39,10 +48,12 @@ export function flattenModule(
 }
 
 class Flatenner implements IRVisitor {
-  defsToAdd: Map<string, QuintDef> = new Map()
   private modulesByName: Map<string, QuintModule>
-
   private lookupTable: LookupTable
+  // Buffer of definitions to add to the module. We can try to make this ordered in the future.
+  // For now, we rely on toposorting defs after flattening.
+  private defsToAdd: Map<string, QuintDef> = new Map()
+  // Store a namespace to use when recursing into nested definitions
   private namespaceForNested?: string
 
   constructor(modulesByName: Map<string, QuintModule>, lookupTable: LookupTable) {
@@ -83,6 +94,7 @@ class Flatenner implements IRVisitor {
       }
 
       if (this.defsToAdd.has(def.name)) {
+        // Already added
         return
       }
 
@@ -137,8 +149,8 @@ class Flatenner implements IRVisitor {
   }
 }
 
-function getNamespaceForDef(def?: Definition): string | undefined {
-  if (!def || !def.namespaces) {
+function getNamespaceForDef(def: Definition): string | undefined {
+  if (!def.namespaces) {
     return
   }
 
