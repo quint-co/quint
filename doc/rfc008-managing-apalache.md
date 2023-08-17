@@ -222,6 +222,9 @@ We want to maintain compatiblity between Quint and Apalache, therefore we need
 some mode of linking compatible versions of both tools. Both tools follow
 [semantic versioning][].
 
+The crux here is that both an upgrade and a downgrade of Apalache, relative to a
+specific Quint release, may maintain or break compatibility.
+
 Given that Quint calls Apalache, but not the other way around, it makes sense to
 maintain a list of compatible Apalache versions for a given Quint release.
 Broadly speaking, there's two options for maintaining such a list:
