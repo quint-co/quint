@@ -218,10 +218,78 @@ Cons:
 
 ### 3.3 Version dependencies between Quint and Apalache
 
-How do we manage version depenedencies between Quint and Apalache?
+We want to maintain compatiblity between Quint and Apalache, therefore we need
+some mode of linking compatible versions of both tools. Both tools follow
+[semantic versioning][].
 
-_TBD: this depends heavily on the solution to §3.1 and §3.2, and should be
-determined after we reach consensus on those points._
+Given that Quint calls Apalache, but not the other way around, it makes sense to
+maintain a list of compatible Apalache versions for a given Quint release.
+Broadly speaking, there's two options for maintaining such a list:
+
+1. Informally, as part of the release notes, or other documentation.
+2. Formally, inside the Quint codebase.
+
+Moreover, there's multiple options on how to specify compatible versions:
+
+#### 3.3.1 Use arbitrary Apalache release
+
+We don't expect a specific Apalache release from Quint.
+
+Pros:
+
+- No need to manage or communicate version dependencies.
+
+Cons:
+
+- Things break at runtime with incompatible versions, possibly in weird places
+  and with strange error messages or uncaught exceptions.
+
+#### 3.3.2 Use latest Apalache release
+
+Regardless of the Quint release, we expect the latest version of Apalache to be
+installed. We could use the Github REST API to check the latest Apalache release
+and abort if the installed version differs.
+
+Pros:
+
+- Easy management, no need to pin specific versions from Quint.
+
+Cons:
+
+- Prone to break if users have an outdated version of Quint.
+  - We could address this by also checking the latest release of Quint, and
+    alerting users to upgrade.
+- Prone to break if users downgrade their installation of Quint.
+
+#### 3.3.3 Pin a specific Apalache version
+
+Each Quint release pins a specific version of Apalache.
+
+Pros:
+
+- Enables user to downgrade Quint, while maintaining compatibility with Apalache.
+
+Cons:
+
+- Users don't receive Apalache bugfix releases, unless we cut another Quint
+  release that pins the updated dependency.
+
+#### 3.3.4 Pin a minor release branch
+
+Each Quint release pins an Apalache minor release, but allows patch-level
+updates. This would correspond to a [tilde range](https://docs.npmjs.com/cli/v6/using-npm/semver#tilde-ranges-123-12-1)
+`~major.minor.patch` in common package managers.
+
+Pros:
+
+- Users receive patch versions of Apalache while maintaining compatibility.
+- Enables user to downgrade Quint, while maintaining compatibility with Apalache.
+
+Cons:
+
+- There may be an Apalache minor version bump that does not break compatibility
+  Quint. We would need to cut another Quint release that pins the updated minor
+  release.
 
 ## 4. Proposed Solution
 
@@ -265,6 +333,7 @@ still providing a non-managed option:
 [transition explorer API]: https://github.com/informalsystems/apalache/blob/df7adb8b42b6487de9764162f338935121d07a3c/docs/src/adr/010rfc-transition-explorer.md
 [Github's REST API endpoint]: https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28#get-the-latest-release
 [`octokit/request.js`]: https://github.com/octokit/request.js
+[semantic versioning]: https://semver.org/
 
 [^1]: We should also consider launching a long-running Apalache server from the
       language server, at latest when we're able to run Quint from the VSCode
