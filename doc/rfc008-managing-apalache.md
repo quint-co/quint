@@ -238,7 +238,7 @@ still providing a non-managed option:
       executable in `$PATH` to [the `apalache-mc` runner script](https://github.com/informalsystems/apalache/blob/df7adb8b42b6487de9764162f338935121d07a3c/src/universal/bin/apalache-mc#L53).
       - This shall print instructions for obtaining a JRE, if none is detected.
 2. Quint launches an on-demand instance of this local installation by spawning
-   `apalache-mc server` in a separate process.
+   `apalache-mc server` in a separate process[^1].
    - Such a process is spawned for each invocation of the `verify` command, and
      torn down immediately after the RPC response.
      - This seems to be a reasonable tradeoff given Apalache's memory
@@ -265,3 +265,7 @@ still providing a non-managed option:
 [transition explorer API]: https://github.com/informalsystems/apalache/blob/df7adb8b42b6487de9764162f338935121d07a3c/docs/src/adr/010rfc-transition-explorer.md
 [Github's REST API endpoint]: https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28#get-the-latest-release
 [`octokit/request.js`]: https://github.com/octokit/request.js
+
+[^1]: We should also consider launching a long-running Apalache server from the
+      language server, at latest when we're able to run Quint from the VSCode
+      plugin.
