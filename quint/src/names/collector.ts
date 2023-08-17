@@ -24,6 +24,7 @@ import {
   QuintOpDef,
   QuintTypeDef,
   QuintVar,
+  qualifier,
 } from '../ir/quintIr'
 import {
   Definition,
@@ -174,8 +175,7 @@ export class NameCollector implements IRVisitor {
       this.definitionsByModule.set(decl.qualifiedName, newTable)
     }
 
-    const qualifier = decl.defName ? undefined : decl.qualifiedName ?? decl.protoName
-    const importableDefinitions = copyNames(moduleTable, qualifier, true)
+    const importableDefinitions = copyNames(moduleTable, qualifier(decl), true)
 
     if (!decl.defName || decl.defName === '*') {
       // Imports all definitions
@@ -211,8 +211,7 @@ export class NameCollector implements IRVisitor {
       return
     }
 
-    const qualifier = decl.defName ? undefined : decl.qualifiedName ?? decl.protoName
-    const exportableDefinitions = copyNames(moduleTable, qualifier)
+    const exportableDefinitions = copyNames(moduleTable, qualifier(decl))
 
     if (!decl.defName || decl.defName === '*') {
       // Export all definitions
@@ -295,7 +294,8 @@ export class NameCollector implements IRVisitor {
       return compact([decl.qualifiedName ?? decl.protoName, this.currentModuleName])
     }
 
-    return decl.defName ? [] : [decl.qualifiedName ?? decl.protoName]
+    const namespace = qualifier(decl)
+    return namespace ? [namespace] : []
   }
 
   private collectDefinitions(

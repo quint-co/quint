@@ -13,7 +13,16 @@
  */
 
 import { Definition, LookupTable, builtinNames } from '../names/base'
-import { QuintApp, QuintDef, QuintExport, QuintImport, QuintInstance, QuintModule, QuintName } from '../ir/quintIr'
+import {
+  QuintApp,
+  QuintDef,
+  QuintExport,
+  QuintImport,
+  QuintInstance,
+  QuintModule,
+  QuintName,
+  qualifier,
+} from '../ir/quintIr'
 
 import { IRVisitor, walkDefinition, walkModule } from '../ir/IRVisitor'
 import { addNamespaceToDefinition } from '../ir/namespacer'
@@ -42,54 +51,27 @@ class Flatenner implements IRVisitor {
   }
 
   enterModule(_quintModule: QuintModule) {
+    // Reset `defsToAdd`
     this.defsToAdd = new Map()
   }
 
   exitModule(quintModule: QuintModule) {
+    // Get rid of imports and exports, and add the definitions we collected
     quintModule.declarations = quintModule.declarations.filter(d => d.kind !== 'import' && d.kind !== 'export')
     quintModule.declarations.push(...this.defsToAdd.values())
   }
 
   enterName(name: QuintName) {
-    const def = this.lookupTable.get(name.id)
-    if (!def || def.kind === 'param' || (def.kind === 'def' && def.depth && def.depth > 0)) {
-      return
-    }
-    const namespace = this.namespaceForNested ?? getNamespaceForDef(def)
-
-    const newDef =
-      namespace && !def.name.startsWith(namespace)
-        ? addNamespaceToDefinition(def, namespace, new Set(builtinNames))
-        : def
-
-    this.defsToAdd.set(newDef.name, newDef)
-
-    const old = this.namespaceForNested
-    this.namespaceForNested = namespace
-    walkDefinition(this, newDef)
-    this.namespaceForNested = old
+    this.flattenName(name.id)
   }
 
-  enterApp(expr: QuintApp) {
-    const def = this.lookupTable.get(expr.id)
-    if (!def || def.kind === 'param' || (def.kind === 'def' && def.depth && def.depth > 0)) {
-      return
-    }
-
-    const namespace = this.namespaceForNested ?? getNamespaceForDef(def)
-    const newDef =
-      namespace && !def.name.startsWith(namespace)
-        ? addNamespaceToDefinition(def, namespace, new Set(builtinNames))
-        : def
-    this.defsToAdd.set(newDef.name, newDef)
-
-    const old = this.namespaceForNested
-    this.namespaceForNested = namespace
-    walkDefinition(this, newDef)
-    this.namespaceForNested = old
+  enterApp(app: QuintApp) {
+    this.flattenName(app.id)
   }
 
   enterExport(decl: QuintExport) {
+    // Find all top-level definitions in the exported module that are used somewhere
+    // (not necessarily in the module itself)
     const ids = this.modulesByName.get(decl.protoName)!.declarations.map(d => d.id)
     const definitions = [...this.lookupTable.values()].filter(d => ids.includes(d.id))
 
@@ -104,23 +86,20 @@ class Flatenner implements IRVisitor {
         return
       }
 
-      const namespace = this.namespaceForNested ?? decl.defName ? undefined : decl.qualifiedName ?? decl.protoName
-      const old = this.namespaceForNested
-      this.namespaceForNested = namespace
+      const namespace = this.namespaceForNested ?? qualifier(decl)
       const newDef =
         namespace && !def.name.startsWith(namespace)
           ? addNamespaceToDefinition(def, namespace, new Set(builtinNames))
           : def
-      const newDefWithoutMetadata = { ...newDef, importedFrom: undefined, hidden: false, namespaces: [] }
-      walkDefinition(this, newDefWithoutMetadata)
-      this.defsToAdd.set(newDef.name, newDefWithoutMetadata)
-      this.namespaceForNested = old
+
+      this.walkNested(namespace, newDef)
+      this.defsToAdd.set(newDef.name, newDef)
     })
   }
 
-  enterInstance(instance: QuintInstance) {
-    if (instance.qualifiedName) {
-      this.modulesByName.set(instance.qualifiedName, this.modulesByName.get(instance.protoName)!)
+  enterInstance(decl: QuintInstance) {
+    if (decl.qualifiedName) {
+      this.modulesByName.set(decl.qualifiedName, this.modulesByName.get(decl.protoName)!)
     }
   }
 
@@ -128,6 +107,33 @@ class Flatenner implements IRVisitor {
     if (decl.qualifiedName) {
       this.modulesByName.set(decl.qualifiedName, this.modulesByName.get(decl.protoName)!)
     }
+  }
+
+  private flattenName(id: bigint) {
+    const def = this.lookupTable.get(id)
+    if (!def || def.kind === 'param' || (def.kind === 'def' && def.depth && def.depth > 0)) {
+      return
+    }
+
+    const namespace = this.namespaceForNested ?? getNamespaceForDef(def)
+    const newDef =
+      namespace && !def.name.startsWith(namespace)
+        ? addNamespaceToDefinition(def, namespace, new Set(builtinNames))
+        : def
+
+    this.walkNested(namespace, newDef)
+    this.defsToAdd.set(newDef.name, newDef)
+  }
+
+  private walkNested(namespace: string | undefined, def: QuintDef) {
+    // Save previous value to be restored
+    const nestedBefore = this.namespaceForNested
+
+    this.namespaceForNested = namespace
+    walkDefinition(this, def)
+
+    // Restore previous value
+    this.namespaceForNested = nestedBefore
   }
 }
 

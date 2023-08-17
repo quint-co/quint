@@ -426,3 +426,11 @@ export interface FlatModule extends WithId {
 export function isDef(decl: QuintDeclaration): decl is QuintDef {
   return decl.kind !== 'instance' && decl.kind !== 'import' && decl.kind !== 'export'
 }
+
+export function qualifier(decl: QuintImport | QuintInstance | QuintExport): string | undefined {
+  if (decl.kind === 'instance') {
+    return decl.qualifiedName
+  }
+
+  return decl.defName ? undefined : decl.qualifiedName ?? decl.protoName
+}
