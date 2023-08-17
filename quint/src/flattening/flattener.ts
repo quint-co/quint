@@ -127,6 +127,11 @@ class Flatenner implements IRVisitor {
       return
     }
 
+    if (def.importedFrom?.kind === 'instance') {
+      // Don't do anything for definitions that come from instances. Those have to be instantiated first.
+      return
+    }
+
     const namespace = this.namespaceForNested ?? getNamespaceForDef(def)
     const newDef =
       namespace && !def.name.startsWith(namespace)

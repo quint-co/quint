@@ -103,42 +103,42 @@ export class NameCollector implements IRVisitor {
     this.collectDefinition(def)
   }
 
-  enterInstance(def: QuintInstance): void {
+  enterInstance(decl: QuintInstance): void {
     // Copy defs from the module being instantiated
-    if (def.protoName === this.currentModuleName) {
+    if (decl.protoName === this.currentModuleName) {
       // Importing current module
-      this.errors.push(selfReferenceError(def))
+      this.errors.push(selfReferenceError(decl))
       return
     }
 
-    const moduleTable = this.definitionsByModule.get(def.protoName)
+    const moduleTable = this.definitionsByModule.get(decl.protoName)
 
     if (!moduleTable) {
       // Instantiating a non-existing module
-      this.errors.push(moduleNotFoundError(def))
+      this.errors.push(moduleNotFoundError(decl))
       return
     }
 
     const instanceTable = new Map([...moduleTable.entries()])
-    if (def.qualifiedName) {
+    if (decl.qualifiedName) {
       // Add the qualifier to `definitionsMyModule` map with a copy of the
       // definitions, so if there is an export of that qualifier, we know which
       // definitions to export
-      this.definitionsByModule.set(def.qualifiedName, instanceTable)
+      this.definitionsByModule.set(decl.qualifiedName, instanceTable)
     }
 
     // For each override, check if the name exists in the instantiated module and is a constant.
     // If so, update the value definition to point to the expression being overriden
-    def.overrides.forEach(([param, ex]) => {
+    decl.overrides.forEach(([param, ex]) => {
       const constDef = instanceTable.get(param.name)
 
       if (!constDef) {
-        this.errors.push(paramNotFoundError(def, param))
+        this.errors.push(paramNotFoundError(decl, param))
         return
       }
 
       if (constDef.kind !== 'const') {
-        this.errors.push(paramIsNotAConstantError(def, param))
+        this.errors.push(paramIsNotAConstantError(decl, param))
         return
       }
 
@@ -148,8 +148,8 @@ export class NameCollector implements IRVisitor {
 
     // All names from the instanced module should be acessible with the instance namespace
     // So, copy them to the current module's lookup table
-    const newDefs = copyNames(instanceTable, def.qualifiedName, true)
-    this.collectDefinitions(newDefs)
+    const newDefs = copyNames(instanceTable, decl.qualifiedName, true)
+    this.collectDefinitions(newDefs, decl)
   }
 
   enterImport(decl: QuintImport): void {
@@ -215,7 +215,7 @@ export class NameCollector implements IRVisitor {
 
     if (!decl.defName || decl.defName === '*') {
       // Export all definitions
-      this.collectDefinitions(exportableDefinitions)
+      this.collectDefinitions(exportableDefinitions, decl)
       return
     }
 

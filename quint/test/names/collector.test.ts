@@ -30,6 +30,9 @@ describe('NameCollector', () => {
       assert.isEmpty(errors)
       assert.deepInclude([...definitions.keys()], 'a')
       assert.notDeepInclude([...definitions.keys()], 'b')
+
+      assert.deepEqual(definitions.get('a')?.importedFrom?.kind, 'import')
+      assert.deepEqual(definitions.get('a')?.namespaces ?? [], [])
     })
 
     it('imports all definitions', () => {
@@ -77,6 +80,12 @@ describe('NameCollector', () => {
       assert.isEmpty(errors)
       assert.includeDeepMembers([...definitions.keys()], ['test_module_instance::c1', 'test_module_instance::c2'])
       assert.includeDeepMembers([...definitions.keys()], ['test_module_instance::T'])
+
+      assert.deepEqual(definitions.get('test_module_instance::a')?.importedFrom?.kind, 'instance')
+      assert.deepEqual(definitions.get('test_module_instance::a')?.namespaces ?? [], [
+        'test_module_instance',
+        'wrapper',
+      ])
     })
 
     it('fails instantiating when a param does not exists', () => {
@@ -195,8 +204,15 @@ describe('NameCollector', () => {
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
+
       assert.isTrue(definitions.get('a')!.hidden)
       assert.isNotTrue(definitions.get('test_module::a')!.hidden)
+
+      assert.deepEqual(definitions.get('a')?.importedFrom?.kind, 'import')
+      assert.deepEqual(definitions.get('test_module::a')?.importedFrom?.kind, 'export')
+
+      assert.deepEqual(definitions.get('a')?.namespaces ?? [], [])
+      assert.deepEqual(definitions.get('test_module::a')?.namespaces ?? [], ['test_module'])
     })
 
     it('fails exporting unexisting definition', () => {

@@ -105,6 +105,17 @@ describe('flattenModule', () => {
     assert.sameDeepMembers(flattenedDecls, expectedDecls)
   })
 
+  it('does not flatten definitions that come from instance', () => {
+    const baseDecls = ['const N: int', 'def f(x) = x + 1']
+
+    const decls = ['import A(N = 1) as A1', 'val a = A1::f(1)']
+
+    const expectedDecls = decls
+
+    const flattenedDecls = getFlatennedDecls(baseDecls, decls, [])
+    assert.sameDeepMembers(flattenedDecls, expectedDecls)
+  })
+
   it('flattens export qualified module with no qualifier', () => {
     const baseDecls = ['def f(x) = x + 1']
 
