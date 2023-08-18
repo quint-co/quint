@@ -42,12 +42,12 @@ export function flattenModule(
   lookupTable: LookupTable
 ): QuintModule {
   const moduleCopy: QuintModule = { ...quintModule, declarations: [...quintModule.declarations] }
-  const flattener = new Flatenner(modulesByName, lookupTable)
+  const flattener = new Flattener(modulesByName, lookupTable)
   walkModule(flattener, moduleCopy)
   return moduleCopy
 }
 
-class Flatenner implements IRVisitor {
+class Flattener implements IRVisitor {
   private modulesByName: Map<string, QuintModule>
   private lookupTable: LookupTable
   // Buffer of definitions to add to the module. We can try to make this ordered in the future.
@@ -122,12 +122,19 @@ class Flatenner implements IRVisitor {
   }
 
   private flattenName(id: bigint) {
-    const def = this.lookupTable.get(id)
+    const def = this.lookupTable.get(id)!
+    if (!def) {
+      // skip bulit-in names
+      return
+    }
+
     if (def.kind === 'def' && def.depth && def.depth > 0) {
       // skip non-top level definitions
       return
     }
-    if (!def || def.kind === 'param') {
+
+    if (def.kind === 'param') {
+      // skip lambda parameters
       return
     }
 
