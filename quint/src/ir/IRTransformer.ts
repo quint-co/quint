@@ -274,7 +274,7 @@ export function transformType(transformer: IRTransformer, type: t.QuintType): t.
 }
 
 /**
- * Transforms a Quint declaration with a transformer, invoking the correspondent function for each
+ * Transforms a Quint declaration with a transformer, invoking the corresponding function for each
  * inner component.
  *
  * @param transformer: the IRTransformer instance with the functions to be invoked

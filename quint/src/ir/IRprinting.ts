@@ -31,8 +31,8 @@ export function moduleToString(quintModule: QuintModule): string {
 
 /**
  * Pretty prints a declaration. Includes a type annotation if the definition is
- * annotated, or if a type is provided. The annotation is preferred over the
- * type.
+ * annotated, or if a type is provided. A type annotation, if present, takes
+ * precedence over a type provided as argument to this function.
  *
  * @param decl the Quint declaration to be formatted
  * @param includeBody optional, whether to include the body of the declaration,

@@ -38,10 +38,10 @@ export type Definition = (QuintDef | ({ kind: 'param' } & QuintLambdaParameter))
   hidden?: boolean
   /* `namespaces` are names to add to the definition's name, when it
    * is copied from one module to another with a qualified name. Ordered from
-   * innermost to the outtermost. */
+   * innermost to the outermost namespace. */
   namespaces?: string[]
   /* importedFrom` is a reference to the import/instance/export statement that
-   * originated the definition, when the definition was copied from another
+   * originated the definition, if the definition was copied from another
    * module. */
   importedFrom?: QuintImport | QuintInstance | QuintExport
   /* `typeAnnotation` is the type annotation of the definition, if it has one.

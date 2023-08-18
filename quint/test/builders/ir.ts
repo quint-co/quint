@@ -39,7 +39,7 @@ export function buildDef(def: string): QuintDef {
   const quintModule = buildModuleWithDecls([def])
   const decl = quintModule.declarations[0]
   if (!isDef(decl)) {
-    throw new Error(`Error trying to build def from declaration that is not a def - ${JSONbig.stringify(decl)}`)
+    throw new Error(`Error trying to build def from declaration that is not a def: ${JSONbig.stringify(decl)}`)
   }
   return decl
 }
