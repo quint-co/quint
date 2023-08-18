@@ -48,6 +48,8 @@ export type Definition = (QuintDef | ({ kind: 'param' } & QuintLambdaParameter))
    * Some types in `QuintDef` already have a `typeAnnotation` field. This
    * ensures that this field is always accessible */
   typeAnnotation?: QuintType
+  /** optional depth of the definition, 0 if top-level. Only for `QuintOpDef`. */
+  depth?: number
 }
 
 /**
