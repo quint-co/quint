@@ -102,7 +102,7 @@ export function copyNames(
 
 /**
  * Add namespaces to a definition's `namespaces` field, if it doesn't already
- * have them on the latest position or in the beginning of its name.
+ * have them on the last position or in the beginning of its name.
  *
  * @param def - The definition to add the namespaces to
  * @param namespaces - The namespaces to be added

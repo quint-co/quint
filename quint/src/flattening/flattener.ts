@@ -31,7 +31,7 @@ import { addNamespaceToDefinition } from '../ir/namespacer'
  * Flatten a module, replacing instances, imports and exports with definitions refered by the module.
  *
  * @param quintModule - The module to be flattened
- * @param modulesByName - A map of refered modules by name
+ * @param modulesByName - A map of referred modules by name
  * @param lookupTable - The lookup table for the module and all its references
  *
  * @returns The flattened module
@@ -89,7 +89,7 @@ class Flatenner implements IRVisitor {
     definitions.forEach(def => {
       if (def.kind === 'param') {
         throw new Error(
-          `Impossible: instersection of top-level declarations with lookup table entries should never be a param. Found ${def}`
+          `Impossible: intersection of top-level declarations with lookup table entries should never be a param. Found ${def}`
         )
       }
 
@@ -123,7 +123,11 @@ class Flatenner implements IRVisitor {
 
   private flattenName(id: bigint) {
     const def = this.lookupTable.get(id)
-    if (!def || def.kind === 'param' || (def.kind === 'def' && def.depth && def.depth > 0)) {
+    if (def.kind === 'def' && def.depth && def.depth > 0) {
+      // skip non-top level definitions
+      return
+    }
+    if (!def || def.kind === 'param') {
       return
     }
 
