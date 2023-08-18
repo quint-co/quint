@@ -25,7 +25,7 @@ import {
   QuintTypeDef,
   QuintVar,
 } from '../ir/quintIr'
-import { Definition, DefinitionsByModule, DefinitionsByName, LookupTable, builtinNames, copyNames } from './base'
+import { LookupDefinition, DefinitionsByModule, DefinitionsByName, LookupTable, builtinNames, copyNames } from './base'
 import {
   moduleNotFoundError,
   nameNotFoundError,
@@ -236,7 +236,7 @@ export class NameCollector implements IRVisitor {
    * @param source - An optional source identifier for the definition, if the
    * source is different than `def.id` (i.e. in import-like statements).
    */
-  collectDefinition(def: Definition, name?: string, source?: bigint): void {
+  collectDefinition(def: LookupDefinition, name?: string, source?: bigint): void {
     const identifier = name ?? def.name
     if (identifier === '_') {
       // Don't collect underscores, as they are special identifiers that allow no usage
@@ -275,7 +275,7 @@ export class NameCollector implements IRVisitor {
    * @returns The definition object for the given identifier, or undefined if a
    * definitions with that identifier was never collected.
    */
-  getDefinition(identifier: string): Definition | undefined {
+  getDefinition(identifier: string): LookupDefinition | undefined {
     return this.definitionsByName.get(identifier)
   }
 
