@@ -24,8 +24,17 @@ import {
   QuintOpDef,
   QuintTypeDef,
   QuintVar,
+  qualifier,
 } from '../ir/quintIr'
-import { DefinitionsByModule, DefinitionsByName, LookupDefinition, LookupTable, builtinNames, copyNames } from './base'
+import {
+  DefinitionsByModule,
+  DefinitionsByName,
+  LookupDefinition,
+  LookupTable,
+  addNamespacesToDef,
+  builtinNames,
+  copyNames,
+} from './base'
 import {
   moduleNotFoundError,
   nameNotFoundError,
@@ -33,6 +42,7 @@ import {
   paramNotFoundError,
   selfReferenceError,
 } from './importErrors'
+import { compact } from 'lodash'
 
 /**
  * Collects all top-level definitions in Quint modules. Used internally by
@@ -75,7 +85,7 @@ export class NameCollector implements IRVisitor {
     // that we collect type annotations here.
     if (this.definitionDepth === 0) {
       // collect only top-level definitions
-      this.collectDefinition({ ...def, typeAnnotation: undefined })
+      this.collectDefinition({ ...def, typeAnnotation: undefined, depth: this.definitionDepth })
     }
 
     this.definitionDepth++
@@ -93,42 +103,42 @@ export class NameCollector implements IRVisitor {
     this.collectDefinition(def)
   }
 
-  enterInstance(def: QuintInstance): void {
+  enterInstance(decl: QuintInstance): void {
     // Copy defs from the module being instantiated
-    if (def.protoName === this.currentModuleName) {
+    if (decl.protoName === this.currentModuleName) {
       // Importing current module
-      this.errors.push(selfReferenceError(def))
+      this.errors.push(selfReferenceError(decl))
       return
     }
 
-    const moduleTable = this.definitionsByModule.get(def.protoName)
+    const moduleTable = this.definitionsByModule.get(decl.protoName)
 
     if (!moduleTable) {
       // Instantiating a non-existing module
-      this.errors.push(moduleNotFoundError(def))
+      this.errors.push(moduleNotFoundError(decl))
       return
     }
 
     const instanceTable = new Map([...moduleTable.entries()])
-    if (def.qualifiedName) {
+    if (decl.qualifiedName) {
       // Add the qualifier to `definitionsMyModule` map with a copy of the
       // definitions, so if there is an export of that qualifier, we know which
       // definitions to export
-      this.definitionsByModule.set(def.qualifiedName, instanceTable)
+      this.definitionsByModule.set(decl.qualifiedName, instanceTable)
     }
 
     // For each override, check if the name exists in the instantiated module and is a constant.
     // If so, update the value definition to point to the expression being overriden
-    def.overrides.forEach(([param, ex]) => {
+    decl.overrides.forEach(([param, ex]) => {
       const constDef = instanceTable.get(param.name)
 
       if (!constDef) {
-        this.errors.push(paramNotFoundError(def, param))
+        this.errors.push(paramNotFoundError(decl, param))
         return
       }
 
       if (constDef.kind !== 'const') {
-        this.errors.push(paramIsNotAConstantError(def, param))
+        this.errors.push(paramIsNotAConstantError(decl, param))
         return
       }
 
@@ -138,88 +148,86 @@ export class NameCollector implements IRVisitor {
 
     // All names from the instanced module should be acessible with the instance namespace
     // So, copy them to the current module's lookup table
-    const newDefs = copyNames(instanceTable, def.qualifiedName, true)
-    this.collectDefinitions(newDefs)
+    const newDefs = copyNames(instanceTable, decl.qualifiedName, true)
+    this.collectDefinitions(newDefs, decl)
   }
 
-  enterImport(def: QuintImport): void {
-    if (def.protoName === this.currentModuleName) {
+  enterImport(decl: QuintImport): void {
+    if (decl.protoName === this.currentModuleName) {
       // Importing current module
-      this.errors.push(selfReferenceError(def))
+      this.errors.push(selfReferenceError(decl))
       return
     }
 
-    const moduleTable = this.definitionsByModule.get(def.protoName)
+    const moduleTable = this.definitionsByModule.get(decl.protoName)
 
     if (!moduleTable) {
       // Importing non-existing module
-      this.errors.push(moduleNotFoundError(def))
+      this.errors.push(moduleNotFoundError(decl))
       return
     }
 
-    if (def.qualifiedName) {
+    if (decl.qualifiedName) {
       // Add the qualifier to `definitionsMyModule` map with a copy of the
       // definitions, so if there is an export of that qualifier, we know which
       // definitions to export
       const newTable = new Map([...moduleTable.entries()])
-      this.definitionsByModule.set(def.qualifiedName, newTable)
+      this.definitionsByModule.set(decl.qualifiedName, newTable)
     }
 
-    const qualifier = def.defName ? undefined : def.qualifiedName ?? def.protoName
-    const importableDefinitions = copyNames(moduleTable, qualifier, true)
+    const importableDefinitions = copyNames(moduleTable, qualifier(decl), true)
 
-    if (!def.defName || def.defName === '*') {
+    if (!decl.defName || decl.defName === '*') {
       // Imports all definitions
-      this.collectDefinitions(importableDefinitions)
+      this.collectDefinitions(importableDefinitions, decl)
       return
     }
 
     // Tries to find a specific definition, reporting an error if not found
-    const newDef = importableDefinitions.get(def.defName)
+    const newDef = importableDefinitions.get(decl.defName)
     if (!newDef) {
-      this.errors.push(nameNotFoundError(def))
+      this.errors.push(nameNotFoundError(decl))
       return
     }
 
-    this.collectDefinition(newDef, def.defName, def.id)
+    this.collectDefinition(newDef, decl)
   }
 
   // Imported names are copied with a scope since imports are not transitive by
   // default. Exporting needs to turn those names into unhidden ones so, when
   // the current module is imported, the names are accessible. Note that it is
   // also possible to export names that were not previously imported via `import`.
-  enterExport(def: QuintExport) {
-    if (def.protoName === this.currentModuleName) {
+  enterExport(decl: QuintExport) {
+    if (decl.protoName === this.currentModuleName) {
       // Exporting current module
-      this.errors.push(selfReferenceError(def))
+      this.errors.push(selfReferenceError(decl))
       return
     }
 
-    const moduleTable = this.definitionsByModule.get(def.protoName)
+    const moduleTable = this.definitionsByModule.get(decl.protoName)
     if (!moduleTable) {
       // Exporting non-existing module
-      this.errors.push(moduleNotFoundError(def))
+      this.errors.push(moduleNotFoundError(decl))
       return
     }
 
-    const qualifier = def.defName ? undefined : def.qualifiedName ?? def.protoName
-    const exportableDefinitions = copyNames(moduleTable, qualifier)
+    const exportableDefinitions = copyNames(moduleTable, qualifier(decl))
 
-    if (!def.defName || def.defName === '*') {
+    if (!decl.defName || decl.defName === '*') {
       // Export all definitions
-      this.collectDefinitions(exportableDefinitions)
+      this.collectDefinitions(exportableDefinitions, decl)
       return
     }
 
     // Tries to find a specific definition, reporting an error if not found
-    const newDef = exportableDefinitions.get(def.defName)
+    const newDef = exportableDefinitions.get(decl.defName)
 
     if (!newDef) {
-      this.errors.push(nameNotFoundError(def))
+      this.errors.push(nameNotFoundError(decl))
       return
     }
 
-    this.collectDefinition(newDef, def.defName, def.id)
+    this.collectDefinition(newDef, decl)
   }
 
   /** Public interface to manipulate the collected definitions. Used by
@@ -236,8 +244,9 @@ export class NameCollector implements IRVisitor {
    * @param source - An optional source identifier for the definition, if the
    * source is different than `def.id` (i.e. in import-like statements).
    */
-  collectDefinition(def: LookupDefinition, name?: string, source?: bigint): void {
-    const identifier = name ?? def.name
+  collectDefinition(def: LookupDefinition, importedFrom?: QuintImport | QuintExport | QuintInstance): void {
+    const identifier = (importedFrom as QuintImport)?.defName ?? def.name
+    const source = importedFrom?.id ?? def.id
     if (identifier === '_') {
       // Don't collect underscores, as they are special identifiers that allow no usage
       return
@@ -245,17 +254,18 @@ export class NameCollector implements IRVisitor {
 
     if (builtinNames.includes(identifier)) {
       // Conflict with a built-in name
-      this.recordConflict(identifier, undefined, source ?? def.id)
+      this.recordConflict(identifier, undefined, source)
       return
     }
 
     if (this.definitionsByName.has(identifier) && this.definitionsByName.get(identifier)!.id != def.id) {
       // Conflict with a previous definition
-      this.recordConflict(identifier, this.definitionsByName.get(identifier)!.id, source ?? def.id)
+      this.recordConflict(identifier, this.definitionsByName.get(identifier)!.id, source)
       return
     }
 
-    this.definitionsByName.set(identifier, def)
+    const namespaces = importedFrom ? this.namespaces(importedFrom) : []
+    this.definitionsByName.set(identifier, { ...addNamespacesToDef(def, namespaces), importedFrom })
   }
 
   /**
@@ -279,15 +289,29 @@ export class NameCollector implements IRVisitor {
     return this.definitionsByName.get(identifier)
   }
 
-  private collectDefinitions(newDefs: DefinitionsByName): void {
-    newDefs.forEach((def, identifier) => {
+  private namespaces(decl: QuintImport | QuintInstance | QuintExport): string[] {
+    if (decl.kind === 'instance') {
+      return compact([decl.qualifiedName ?? decl.protoName, this.currentModuleName])
+    }
+
+    const namespace = qualifier(decl)
+    return namespace ? [namespace] : []
+  }
+
+  private collectDefinitions(
+    newDefs: DefinitionsByName,
+    importedFrom?: QuintImport | QuintExport | QuintInstance
+  ): void {
+    const namespaces = importedFrom ? this.namespaces(importedFrom) : []
+    const newEntries: [string, LookupDefinition][] = [...newDefs.entries()].map(([identifier, def]) => {
       const existingEntry = this.definitionsByName.get(identifier)
       if (existingEntry && existingEntry.id !== def.id) {
         this.recordConflict(identifier, existingEntry.id, def.id)
       }
+      return [identifier, { ...addNamespacesToDef(def, namespaces), importedFrom }]
     })
 
-    this.definitionsByName = new Map([...this.definitionsByName.entries(), ...newDefs.entries()])
+    this.definitionsByName = new Map([...this.definitionsByName.entries(), ...newEntries])
   }
 
   private recordConflict(identifier: string, exisitingSource: bigint | undefined, newSource: bigint): void {

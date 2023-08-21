@@ -41,6 +41,8 @@ export type LookupDefinition = (QuintDef | ({ kind: 'param' } & QuintLambdaParam
    * Some types in `QuintDef` already have a `typeAnnotation` field. This
    * ensures that this field is always accessible */
   typeAnnotation?: QuintType
+  /** optional depth of the definition, 0 if top-level. Only for `QuintOpDef`. */
+  depth?: number
 }
 
 /**
@@ -91,6 +93,33 @@ export function copyNames(
   })
 
   return table
+}
+
+/**
+ * Add namespaces to a definition's `namespaces` field, if it doesn't already
+ * have them on the last position or in the beginning of its name.
+ *
+ * @param def - The definition to add the namespaces to
+ * @param namespaces - The namespaces to be added
+ *
+ * @returns The definition with the namespaces added
+ */
+export function addNamespacesToDef(def: LookupDefinition, namespaces: string[]): LookupDefinition {
+  // FIXME(#1111): This doesn't take care of some corner cases.
+  return namespaces.reduce((def, namespace) => {
+    if (def.namespaces && def.namespaces[def.namespaces?.length - 1] === namespace) {
+      // If this is already the last namespace, don't add it again
+      return def
+    }
+
+    if (def.name.startsWith(`${namespace}::`)) {
+      // If the namespace is already in the beginning of the name, don't add it again
+      return def
+    }
+
+    const namespaces = namespace ? def.namespaces?.concat([namespace]) ?? [namespace] : []
+    return { ...def, namespaces }
+  }, def)
 }
 
 /**
