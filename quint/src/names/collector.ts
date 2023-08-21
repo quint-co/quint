@@ -25,7 +25,7 @@ import {
   QuintTypeDef,
   QuintVar,
 } from '../ir/quintIr'
-import { LookupDefinition, DefinitionsByModule, DefinitionsByName, LookupTable, builtinNames, copyNames } from './base'
+import { DefinitionsByModule, DefinitionsByName, LookupDefinition, LookupTable, builtinNames, copyNames } from './base'
 import {
   moduleNotFoundError,
   nameNotFoundError,
