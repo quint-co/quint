@@ -27,9 +27,9 @@ import {
   qualifier,
 } from '../ir/quintIr'
 import {
-  LookupDefinition,
   DefinitionsByModule,
   DefinitionsByName,
+  LookupDefinition,
   LookupTable,
   addNamespacesToDef,
   builtinNames,
