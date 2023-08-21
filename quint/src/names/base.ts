@@ -119,7 +119,7 @@ export function addNamespacesToDef(def: Definition, namespaces: string[]): Defin
       return def
     }
 
-    if (def.name.startsWith(namespace)) {
+    if (def.name.startsWith(`${namespace}::`)) {
       // If the namespace is already in the beginning of the name, don't add it again
       return def
     }
