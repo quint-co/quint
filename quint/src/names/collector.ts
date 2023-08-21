@@ -27,7 +27,7 @@ import {
   qualifier,
 } from '../ir/quintIr'
 import {
-  Definition,
+  LookupDefinition,
   DefinitionsByModule,
   DefinitionsByName,
   LookupTable,
@@ -244,7 +244,7 @@ export class NameCollector implements IRVisitor {
    * @param source - An optional source identifier for the definition, if the
    * source is different than `def.id` (i.e. in import-like statements).
    */
-  collectDefinition(def: Definition, importedFrom?: QuintImport | QuintExport | QuintInstance): void {
+  collectDefinition(def: LookupDefinition, importedFrom?: QuintImport | QuintExport | QuintInstance): void {
     const identifier = (importedFrom as QuintImport)?.defName ?? def.name
     const source = importedFrom?.id ?? def.id
     if (identifier === '_') {
@@ -285,7 +285,7 @@ export class NameCollector implements IRVisitor {
    * @returns The definition object for the given identifier, or undefined if a
    * definitions with that identifier was never collected.
    */
-  getDefinition(identifier: string): Definition | undefined {
+  getDefinition(identifier: string): LookupDefinition | undefined {
     return this.definitionsByName.get(identifier)
   }
 
@@ -303,7 +303,7 @@ export class NameCollector implements IRVisitor {
     importedFrom?: QuintImport | QuintExport | QuintInstance
   ): void {
     const namespaces = importedFrom ? this.namespaces(importedFrom) : []
-    const newEntries: [string, Definition][] = [...newDefs.entries()].map(([identifier, def]) => {
+    const newEntries: [string, LookupDefinition][] = [...newDefs.entries()].map(([identifier, def]) => {
       const existingEntry = this.definitionsByName.get(identifier)
       if (existingEntry && existingEntry.id !== def.id) {
         this.recordConflict(identifier, existingEntry.id, def.id)

@@ -12,7 +12,7 @@
  * @module
  */
 
-import { Definition, LookupTable, builtinNames } from '../names/base'
+import { LookupDefinition, LookupTable, builtinNames } from '../names/base'
 import {
   QuintApp,
   QuintDef,
@@ -165,7 +165,7 @@ class Flattener implements IRVisitor {
   }
 }
 
-function getNamespaceForDef(def: Definition): string | undefined {
+function getNamespaceForDef(def: LookupDefinition): string | undefined {
   if (!def.namespaces) {
     return
   }

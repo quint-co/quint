@@ -257,8 +257,8 @@ class Flatenner {
     return defsToFlatten.map(protoDef => this.copyDef(protoDef, qualifiedName))
   }
 
-  private copyDef(decl: QuintDef, qualifier: string | undefined): QuintDef {
-    const defWithQualifier = qualifier ? addNamespaceToDefinition(decl, qualifier, this.currentModuleNames) : decl
+  private copyDef(def: QuintDef, qualifier: string | undefined): QuintDef {
+    const defWithQualifier = qualifier ? addNamespaceToDefinition(def, qualifier, this.currentModuleNames) : def
     const defWithNewId = generateFreshIds(defWithQualifier, this.idGenerator, this.sourceMap, this.analysisOutput)
 
     return defWithNewId

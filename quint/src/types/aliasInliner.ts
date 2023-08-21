@@ -14,7 +14,7 @@
  */
 
 import { IRTransformer, transformDefinition, transformModule, transformType } from '../ir/IRTransformer'
-import { Definition, LookupTable } from '../names/base'
+import { LookupDefinition, LookupTable } from '../names/base'
 import { AnalysisOutput } from '../quintAnalyzer'
 import { QuintDef, QuintModule } from '../ir/quintIr'
 import { QuintType } from '../ir/quintTypes'
@@ -35,7 +35,7 @@ export function inlineTypeAliases(
 ): { modules: QuintModule[]; table: LookupTable; analysisOutput: AnalysisOutput } {
   const modulesWithInlinedAliases = modules.map(m => inlineAliasesInModule(m, table))
   const tableWithInlinedAliases = new Map(
-    [...table.entries()].map(([id, def]): [bigint, Definition] => {
+    [...table.entries()].map(([id, def]): [bigint, LookupDefinition] => {
       if (def.kind === 'param') {
         const typeAnnotation = def.typeAnnotation ? inlineAliasesInType(def.typeAnnotation, table) : undefined
         return [id, { ...def, typeAnnotation }]
