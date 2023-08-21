@@ -112,13 +112,18 @@ export function copyNames(
  * @returns The definition with the namespaces added
  */
 export function addNamespacesToDef(def: Definition, namespaces: string[]): Definition {
+  // FIXME(#1111): This doesn't take care of some corner cases.
   return namespaces.reduce((def, namespace) => {
-    if (
-      (def.namespaces && def.namespaces[def.namespaces?.length - 1] === namespace) ||
-      def.name.startsWith(namespace)
-    ) {
+    if (def.namespaces && def.namespaces[def.namespaces?.length - 1] === namespace) {
+      // If this is already the last namespace, don't add it again
       return def
     }
+
+    if (def.name.startsWith(namespace)) {
+      // If the namespace is already in the beginning of the name, don't add it again
+      return def
+    }
+
     const namespaces = namespace ? def.namespaces?.concat([namespace]) ?? [namespace] : []
     return { ...def, namespaces }
   }, def)
