@@ -275,7 +275,7 @@ async function loadProtoDefViaReflection(): Promise<VerifyResult<ProtoPackageDef
   )
 }
 
-function loadGrpcClient(protoDef: ProtoPackageDefinition): VerifyResult<AsyncCmdExecutor> {
+function loadGrpcClient(protoDef: ProtoPackageDefinition): AsyncCmdExecutor {
   const protoDescriptor = grpc.loadPackageDefinition(protoDef)
   // The cast thru `unkown` lets us convince the type system of anything
   // See https://basarat.gitbook.io/typescript/type-system/type-assertion#double-assertion
@@ -285,7 +285,7 @@ function loadGrpcClient(protoDef: ProtoPackageDefinition): VerifyResult<AsyncCmd
     run: promisify((data: RunRequest, cb: AsyncCallBack<any>) => stub.run(data, cb)),
     ping: promisify((cb: AsyncCallBack<void>) => stub.ping({}, cb)),
   }
-  return right(impl)
+  return impl
 }
 
 // Retry a function repeatedly, in .5 second intervals, until it does not throw.
@@ -314,8 +314,20 @@ async function retryWithTimeout<T>(f: () => Promise<T>): Promise<VerifyResult<T>
 // Try to establish a connection to the Apalache server
 //
 // A successful connection procudes an `Apalache` object.
-async function connect(cmdExecutor: AsyncCmdExecutor): Promise<VerifyResult<Apalache>> {
-  return retryWithTimeout(() => cmdExecutor.ping()).then(response => response.map(_ => apalache(cmdExecutor)))
+async function connect(): Promise<VerifyResult<Apalache>> {
+  // Attempt to load proto definition:
+  // - if APALACHE_DIST is set, from the Apalache distribution
+  // - otherwise, via gRPC reflection
+  const protoDefResult: VerifyResult<proto.PackageDefinition> = process.env.APALACHE_DIST
+    ? findApalacheDistribution().chain(loadProtoDefViaDistribution)
+    : await loadProtoDefViaReflection()
+  // Load gRPC client
+  let maybeCmdExecutor = protoDefResult.map(loadGrpcClient)
+  await maybeCmdExecutor.asyncChain(cmdExecutor =>
+    // Try to ping the server, with a timeout
+    retryWithTimeout(() => cmdExecutor.ping())
+  )
+  return maybeCmdExecutor.map(apalache)
 }
 
 /**
@@ -327,12 +339,6 @@ async function connect(cmdExecutor: AsyncCmdExecutor): Promise<VerifyResult<Apal
  * @returns right(void) if verification succeeds, or left(err) explaining the failure
  */
 export async function verify(config: any): Promise<VerifyResult<void>> {
-  // Attempt to load proto definition:
-  // - if APALACHE_DIST is set, from the Apalache distribution
-  // - otherwise, via gRPC reflection
-  const protoDefResult = process.env.APALACHE_DIST
-    ? findApalacheDistribution().chain(dist => loadProtoDefViaDistribution(dist))
-    : await loadProtoDefViaReflection()
-  const connectionResult = await protoDefResult.chain(loadGrpcClient).asyncChain(connect)
+  const connectionResult = await connect()
   return connectionResult.asyncChain(conn => conn.check(config))
 }
