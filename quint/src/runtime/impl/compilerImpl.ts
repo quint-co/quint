@@ -922,7 +922,7 @@ export class CompilerVisitor implements IRVisitor {
     }
 
     // retrieve the operator type to see, whether tuples should be unpacked
-    const operScheme = this.types.get(lookupEntry.reference)
+    const operScheme = this.types.get(lookupEntry.id)
     if (operScheme === undefined) {
       return onError(app.id, `No type for ${app.opcode}`)
     }
@@ -1611,7 +1611,7 @@ export class CompilerVisitor implements IRVisitor {
   private contextLookup(id: bigint, kinds: ComputableKind[]) {
     const vdef = this.lookupTable.get(id)
     if (vdef) {
-      const refId = vdef.reference!
+      const refId = vdef.id!
       for (const k of kinds) {
         const value = this.context.get(kindName(k, refId))
         if (value) {

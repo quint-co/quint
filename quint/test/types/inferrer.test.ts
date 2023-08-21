@@ -11,7 +11,7 @@ describe('inferTypes', () => {
     const { modules, table } = parseMockedModule(text)
 
     const inferrer = new TypeInferrer(table)
-    return inferrer.inferTypes(modules[0].defs)
+    return inferrer.inferTypes(modules[0].declarations)
   }
 
   it('infers types for basic expressions', () => {

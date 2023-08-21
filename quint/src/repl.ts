@@ -17,11 +17,11 @@ import { Either, left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
 import { format } from './prettierimp'
 
-import { FlatDef, QuintEx, isFlat } from './ir/quintIr'
+import { FlatModule, QuintDef, QuintEx, isDef } from './ir/quintIr'
 import {
   CompilationContext,
   CompilationState,
-  compileDef,
+  compileDecl,
   compileExpr,
   compileFromCode,
   contextNameLookup,
@@ -31,7 +31,7 @@ import {
 import { formatError } from './errorReporter'
 import { Register } from './runtime/runtime'
 import { TraceRecorder, newTraceRecorder } from './runtime/trace'
-import { ErrorMessage, parseExpressionOrUnit } from './parsing/quintParserFrontend'
+import { ErrorMessage, parseExpressionOrDeclaration } from './parsing/quintParserFrontend'
 import { prettyQuintEx, printExecutionFrameRec, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
@@ -83,7 +83,7 @@ class ReplState {
   }
 
   addReplModule() {
-    const replModule = { name: '__repl__', defs: simulatorBuiltins(this.compilationState), id: 0n }
+    const replModule: FlatModule = { name: '__repl__', declarations: simulatorBuiltins(this.compilationState), id: 0n }
     this.compilationState.modules.push(replModule)
     this.compilationState.originalModules.push(replModule)
     this.moduleHist += moduleToString(replModule)
@@ -476,7 +476,7 @@ function saveVars(vars: Register[], nextvars: Register[]): Maybe<string[]> {
 
 // Declarations that are overloaded by the simulator.
 // In the future, we will declare them in a separate module.
-function simulatorBuiltins(compilationState: CompilationState): FlatDef[] {
+function simulatorBuiltins(compilationState: CompilationState): QuintDef[] {
   return [
     parseDefOrThrow(compilationState, `val ${lastTraceName} = []`),
     parseDefOrThrow(compilationState, `def q::test = (q::nruns, q::nsteps, q::init, q::next, q::inv) => false`),
@@ -484,12 +484,12 @@ function simulatorBuiltins(compilationState: CompilationState): FlatDef[] {
   ]
 }
 
-function parseDefOrThrow(compilationState: CompilationState, text: string): FlatDef {
-  const result = parseExpressionOrUnit(text, '<builtins>', compilationState.idGen, compilationState.sourceMap)
-  if (result.kind === 'toplevel' && isFlat(result.def)) {
-    return result.def
+function parseDefOrThrow(compilationState: CompilationState, text: string): QuintDef {
+  const result = parseExpressionOrDeclaration(text, '<builtins>', compilationState.idGen, compilationState.sourceMap)
+  if (result.kind === 'declaration' && isDef(result.decl)) {
+    return result.decl
   } else {
-    throw new Error(`Expected a flat definition, got ${result.kind}, parsing ${text}`)
+    throw new Error(`Expected a definition, got ${result.kind}, parsing ${text}`)
   }
 }
 
@@ -541,7 +541,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     tryEvalModule(out, state, '__repl__')
   }
 
-  const parseResult = parseExpressionOrUnit(
+  const parseResult = parseExpressionOrDeclaration(
     newInput,
     '<input>',
     state.compilationState.idGen,
@@ -581,9 +581,9 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
       })
       .isRight()
   }
-  if (parseResult.kind === 'toplevel') {
+  if (parseResult.kind === 'declaration') {
     // compile the module and add it to history if everything worked
-    const context = compileDef(state.compilationState, state.evaluationState, state.rng, parseResult.def)
+    const context = compileDecl(state.compilationState, state.evaluationState, state.rng, parseResult.decl)
 
     if (
       context.evaluationState.context.size === 0 ||

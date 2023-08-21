@@ -14,7 +14,7 @@
  */
 
 import { IRTransformer, transformDefinition, transformModule, transformType } from '../ir/IRTransformer'
-import { LookupTable } from '../names/base'
+import { LookupDefinition, LookupTable } from '../names/base'
 import { AnalysisOutput } from '../quintAnalyzer'
 import { QuintDef, QuintModule } from '../ir/quintIr'
 import { QuintType } from '../ir/quintTypes'
@@ -35,13 +35,13 @@ export function inlineTypeAliases(
 ): { modules: QuintModule[]; table: LookupTable; analysisOutput: AnalysisOutput } {
   const modulesWithInlinedAliases = modules.map(m => inlineAliasesInModule(m, table))
   const tableWithInlinedAliases = new Map(
-    [...table.entries()].map(([id, def]) => {
-      if (!def.typeAnnotation) {
-        return [id, def]
+    [...table.entries()].map(([id, def]): [bigint, LookupDefinition] => {
+      if (def.kind === 'param') {
+        const typeAnnotation = def.typeAnnotation ? inlineAliasesInType(def.typeAnnotation, table) : undefined
+        return [id, { ...def, typeAnnotation }]
       }
 
-      const inlinedType = inlineAliasesInType(def.typeAnnotation, table)
-      return [id, { ...def, typeAnnotation: inlinedType }]
+      return [id, inlineAliasesInDef(def, table)]
     })
   )
 
@@ -136,8 +136,8 @@ class AliasInliner implements IRTransformer {
 function resolveAlias(lookupTable: LookupTable, type: QuintType): QuintType {
   if (type.kind === 'const' && type.id) {
     const aliasValue = lookupTable.get(type.id)
-    if (aliasValue && aliasValue.typeAnnotation) {
-      return resolveAlias(lookupTable, aliasValue.typeAnnotation)
+    if (aliasValue && aliasValue.kind === 'typedef' && aliasValue.type) {
+      return resolveAlias(lookupTable, aliasValue.type)
     }
   }
   return type

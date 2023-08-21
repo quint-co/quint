@@ -61,11 +61,7 @@ class NameResolver implements IRVisitor {
     // Top-level definitions were already collected, so we only need to collect
     // scoped definitions.
     if (this.definitionDepth > 0) {
-      this.collector.collectDefinition(def.name, {
-        kind: def.kind,
-        reference: def.id,
-        typeAnnotation: def.typeAnnotation,
-      })
+      this.collector.collectDefinition(def)
     }
 
     this.definitionDepth++
@@ -84,7 +80,7 @@ class NameResolver implements IRVisitor {
   enterLambda(expr: QuintLambda): void {
     // Lambda parameters are scoped, so they are collected here
     expr.params.forEach(p => {
-      this.collector.collectDefinition(p.name, { kind: 'param', reference: p.id })
+      this.collector.collectDefinition({ ...p, kind: 'param' })
     })
   }
 
@@ -109,7 +105,7 @@ class NameResolver implements IRVisitor {
   enterConstType(type: QuintConstType): void {
     // Type is a name, check that it is defined
     const def = this.collector.getDefinition(type.name)
-    if (!def || def.kind !== 'type') {
+    if (!def || def.kind !== 'typedef') {
       this.recordNameError('type', type.name, type.id!)
       return
     }
@@ -131,12 +127,12 @@ class NameResolver implements IRVisitor {
     }
 
     const def = this.collector.getDefinition(name)
-    if (!def || def.kind === 'type') {
+    if (!def || def.kind === 'typedef') {
       this.recordNameError('name', name, id)
       return
     }
 
-    this.table.set(id, { kind: def.kind, reference: def.reference, typeAnnotation: def.typeAnnotation })
+    this.table.set(id, def)
   }
 
   private recordNameError(kind: 'name' | 'type', name: string, id: bigint) {

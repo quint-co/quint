@@ -26,6 +26,8 @@ export class IRTransformer {
   exitExpr?: (expr: ir.QuintEx) => ir.QuintEx
   enterDef?: (def: ir.QuintDef) => ir.QuintDef
   exitDef?: (def: ir.QuintDef) => ir.QuintDef
+  enterDecl?: (decl: ir.QuintDeclaration) => ir.QuintDeclaration
+  exitDecl?: (decl: ir.QuintDeclaration) => ir.QuintDeclaration
   enterType?: (type: t.QuintType) => t.QuintType
   exitType?: (type: t.QuintType) => t.QuintType
 
@@ -114,7 +116,7 @@ export function transformModule(transformer: IRTransformer, quintModule: ir.Quin
     newModule = transformer.enterModule(newModule)
   }
 
-  newModule.defs = newModule.defs.map(def => transformDefinition(transformer, def))
+  newModule.declarations = newModule.declarations.map(decl => transformDeclaration(transformer, decl))
 
   if (transformer.exitModule) {
     newModule = transformer.exitModule(newModule)
@@ -272,6 +274,64 @@ export function transformType(transformer: IRTransformer, type: t.QuintType): t.
 }
 
 /**
+ * Transforms a Quint declaration with a transformer, invoking the corresponding function for each
+ * inner component.
+ *
+ * @param transformer: the IRTransformer instance with the functions to be invoked
+ * @param decl: the Quint declaration to be transformed
+ *
+ * @returns the transformed Quint definition
+ */
+export function transformDeclaration(transformer: IRTransformer, decl: ir.QuintDeclaration): ir.QuintDeclaration {
+  let newDecl = { ...decl }
+  if (transformer.enterDecl) {
+    newDecl = transformer.enterDecl(newDecl)
+  }
+
+  switch (newDecl.kind) {
+    case 'instance':
+      if (transformer.enterInstance) {
+        newDecl = transformer.enterInstance(newDecl)
+      }
+      newDecl.overrides = newDecl.overrides.map(([i, e]) => [i, transformExpression(transformer, e)])
+      if (transformer.exitInstance) {
+        newDecl = transformer.exitInstance(newDecl)
+      }
+      break
+    case 'import':
+      if (transformer.enterImport) {
+        newDecl = transformer.enterImport(newDecl)
+      }
+      if (transformer.exitImport) {
+        newDecl = transformer.exitImport(newDecl)
+      }
+      break
+    case 'export':
+      if (transformer.enterExport) {
+        newDecl = transformer.enterExport(newDecl)
+      }
+      if (transformer.exitExport) {
+        newDecl = transformer.exitExport(newDecl)
+      }
+      break
+    case 'const':
+    case 'var':
+    case 'def':
+    case 'typedef':
+    case 'assume':
+      newDecl = transformDefinition(transformer, newDecl)
+      break
+    default:
+      unreachable(newDecl)
+  }
+  if (transformer.exitDecl) {
+    newDecl = transformer.exitDecl(newDecl)
+  }
+
+  return newDecl
+}
+
+/**
  * Transforms a Quint definition with a transformer, invoking the correspondent function for each
  * inner component.
  *
@@ -324,31 +384,6 @@ export function transformDefinition(transformer: IRTransformer, def: ir.QuintDef
       }
       if (transformer.exitTypeDef) {
         newDef = transformer.exitTypeDef(newDef)
-      }
-      break
-    case 'instance':
-      if (transformer.enterInstance) {
-        newDef = transformer.enterInstance(newDef)
-      }
-      newDef.overrides = newDef.overrides.map(([i, e]) => [i, transformExpression(transformer, e)])
-      if (transformer.exitInstance) {
-        newDef = transformer.exitInstance(newDef)
-      }
-      break
-    case 'import':
-      if (transformer.enterImport) {
-        newDef = transformer.enterImport(newDef)
-      }
-      if (transformer.exitImport) {
-        newDef = transformer.exitImport(newDef)
-      }
-      break
-    case 'export':
-      if (transformer.enterExport) {
-        newDef = transformer.enterExport(newDef)
-      }
-      if (transformer.exitExport) {
-        newDef = transformer.exitExport(newDef)
       }
       break
     case 'assume':

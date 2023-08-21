@@ -19,24 +19,24 @@ import { quintErrorToString } from '../quintError'
 // entry point for the parser
 modules : module+ EOF;
 
-module : DOCCOMMENT* 'module' qualId '{' documentedUnit* '}';
-documentedUnit : DOCCOMMENT* unit;
+module : DOCCOMMENT* 'module' qualId '{' documentedDeclaration* '}';
+documentedDeclaration : DOCCOMMENT* declaration;
 
-// a module unit
-unit :    'const' qualId ':' type                     # const
-        | 'var'   qualId ':' type                     # var
-        | 'assume' identOrHole '=' expr               # assume
-        | instanceMod                                 # instance
-        | operDef                                     # oper
-        | typeDef                                     # typeDefs
-        | importMod                                   # importDef
-        | exportMod                                   # exportDef
-        // https://github.com/informalsystems/quint/issues/378
-        //| 'nondet' qualId (':' type)? '=' expr ';'? expr {
-        //  const m = "QNT007: 'nondet' is only allowed inside actions"
-        //  this.notifyErrorListeners(m)
-        //}                                                 # nondetError
-        ;
+// a module declaration
+declaration : 'const' qualId ':' type                     # const
+            | 'var'   qualId ':' type                     # var
+            | 'assume' identOrHole '=' expr               # assume
+            | instanceMod                                 # instance
+            | operDef                                     # oper
+            | typeDef                                     # typeDefs
+            | importMod                                   # importDef
+            | exportMod                                   # exportDef
+            // https://github.com/informalsystems/quint/issues/378
+            //| 'nondet' qualId (':' type)? '=' expr ';'? expr {
+            //  const m = "QNT007: 'nondet' is only allowed inside actions"
+            //  this.notifyErrorListeners(m)
+            //}                                                 # nondetError
+            ;
 
 // An operator definition.
 // We embed two kinds of parameters right in this rule.
@@ -179,7 +179,7 @@ expr:           // apply a built-in operator via the dot notation
 // A probing rule for REPL.
 // Note that a top-level declaration has priority over an expression.
 // For example, see: https://github.com/informalsystems/quint/issues/394
-unitOrExpr :    unit EOF | expr EOF | DOCCOMMENT EOF | EOF;
+declarationOrExpr :    declaration EOF | expr EOF | DOCCOMMENT EOF | EOF;
 
 // This rule parses anonymous functions, e.g.:
 // 1. x => e

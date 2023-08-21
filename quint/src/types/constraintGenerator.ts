@@ -154,6 +154,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         })
       })
     })
+
+    // Solve constraints here since this won't go through `exitDef`
+    if (this.constraints.length > 0) {
+      this.solveConstraints()
+    }
   }
 
   //     n: t ∈ Γ
@@ -364,7 +369,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         return right(def.typeAnnotation)
       }
 
-      const id = def?.reference
+      const id = def?.id
       if (!def || !id) {
         return left(buildErrorLeaf(this.location, `Signature not found for name: ${name}`))
       }

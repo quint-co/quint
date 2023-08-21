@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { buildModuleWithDefs } from '../builders/ir'
+import { buildModuleWithDecls } from '../builders/ir'
 import { QuintError, QuintModule } from '../../src'
 import { NameCollector } from '../../src/names/collector'
 import { walkModule } from '../../src/ir/IRVisitor'
@@ -8,7 +8,7 @@ import { DefinitionsByName } from '../../src/names/base'
 import { zerog } from '../../src/idGenerator'
 
 describe('NameCollector', () => {
-  const baseModule = buildModuleWithDefs(
+  const baseModule = buildModuleWithDecls(
     ['def a = 1', 'def b = 2', 'def c = 3', 'const c1: int', 'const c2: int', 'type T = int', 'type R'],
     'test_module',
     zerog
@@ -23,7 +23,7 @@ describe('NameCollector', () => {
 
   describe('existing modules', () => {
     it('imports named definitions', () => {
-      const quintModule = buildModuleWithDefs(['import test_module.a'], undefined, zerog)
+      const quintModule = buildModuleWithDecls(['import test_module.a'], undefined, zerog)
 
       const [errors, definitions] = collect(quintModule)
 
@@ -33,7 +33,7 @@ describe('NameCollector', () => {
     })
 
     it('imports all definitions', () => {
-      const quintModule = buildModuleWithDefs(['import test_module.*'], undefined, zerog)
+      const quintModule = buildModuleWithDecls(['import test_module.*'], undefined, zerog)
 
       const [errors, definitions] = collect(quintModule)
 
@@ -42,25 +42,31 @@ describe('NameCollector', () => {
     })
 
     it('imports definitions with namespace', () => {
-      const quintModule = buildModuleWithDefs(['import test_module'], undefined, zerog)
+      const quintModule = buildModuleWithDecls(['import test_module'], undefined, zerog)
 
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.deepEqual(definitions.get('test_module::a'), { kind: 'def', reference: 0n, hidden: true })
+
+      const def = definitions.get('test_module::a')
+      assert.isTrue(def!.hidden)
+      assert.deepEqual(def?.kind, 'def')
     })
 
     it('imports definitions with qualifier', () => {
-      const quintModule = buildModuleWithDefs(['import test_module as my_import'], undefined, zerog)
+      const quintModule = buildModuleWithDecls(['import test_module as my_import'], undefined, zerog)
 
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.deepEqual(definitions.get('my_import::a'), { kind: 'def', reference: 0n, hidden: true })
+
+      const def = definitions.get('my_import::a')
+      assert.isTrue(def!.hidden)
+      assert.deepEqual(def?.kind, 'def')
     })
 
     it('instantiates modules', () => {
-      const quintModule = buildModuleWithDefs(
+      const quintModule = buildModuleWithDecls(
         ['import test_module(c1 = 3, c2 = 4) as test_module_instance'],
         undefined,
         zerog
@@ -74,7 +80,7 @@ describe('NameCollector', () => {
     })
 
     it('fails instantiating when a param does not exists', () => {
-      const quintModule = buildModuleWithDefs(
+      const quintModule = buildModuleWithDecls(
         ['import test_module(c1 = 3, c2 = 4, other = 5) as test_module_instance'],
         undefined,
         zerog
@@ -93,7 +99,7 @@ describe('NameCollector', () => {
     })
 
     it('fails instantiating when a param is not a constant', () => {
-      const quintModule = buildModuleWithDefs(
+      const quintModule = buildModuleWithDecls(
         ['import test_module(c1 = 3, c2 = 4, a = 5) as test_module_instance'],
         undefined,
         zerog
@@ -112,7 +118,7 @@ describe('NameCollector', () => {
     })
 
     it('fails importing itself', () => {
-      const quintModule = buildModuleWithDefs(
+      const quintModule = buildModuleWithDecls(
         ['import wrapper.*', 'import wrapper(c1 = 1) as w', 'export wrapper.*'],
         undefined,
         zerog
@@ -128,58 +134,49 @@ describe('NameCollector', () => {
     })
 
     it('exports all definitions', () => {
-      const quintModule = buildModuleWithDefs(['export test_module.*'], undefined, zerog)
+      const quintModule = buildModuleWithDecls(['export test_module.*'], undefined, zerog)
 
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.deepEqual(definitions.get('a'), { kind: 'def', reference: 0n })
-      assert.deepEqual(definitions.get('T'), { kind: 'type', reference: 0n, typeAnnotation: { kind: 'int', id: 0n } })
+      assert.isNotTrue(definitions.get('a')!.hidden)
+      assert.isNotTrue(definitions.get('T')!.hidden)
     })
 
     it('exports previously imported definitions', () => {
-      const quintModule = buildModuleWithDefs(['import test_module.*', 'export test_module.*'], undefined, zerog)
+      const quintModule = buildModuleWithDecls(['import test_module.*', 'export test_module.*'], undefined, zerog)
 
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.deepEqual(definitions.get('a'), { kind: 'def', reference: 0n })
-      assert.deepEqual(definitions.get('T'), { kind: 'type', reference: 0n, typeAnnotation: { kind: 'int', id: 0n } })
+      assert.isNotTrue(definitions.get('a')!.hidden)
+      assert.isNotTrue(definitions.get('T')!.hidden)
     })
 
     it('exports imported definitions that were previously qualified', () => {
-      const quintModule = buildModuleWithDefs(['import test_module as T1', 'export T1.*'], undefined, zerog)
+      const quintModule = buildModuleWithDecls(['import test_module as T1', 'export T1.*'], undefined, zerog)
 
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.deepEqual(definitions.get('a'), { kind: 'def', reference: 0n })
-      assert.deepEqual(definitions.get('T'), {
-        kind: 'type',
-        reference: 0n,
-        typeAnnotation: { kind: 'int', id: 0n },
-      })
+      assert.isNotTrue(definitions.get('a')!.hidden)
+      assert.isNotTrue(definitions.get('T')!.hidden)
     })
 
     it('exports specific definitions', () => {
-      const quintModule = buildModuleWithDefs(['import test_module.*', 'export test_module.a'], undefined, zerog)
+      const quintModule = buildModuleWithDecls(['import test_module.*', 'export test_module.a'], undefined, zerog)
 
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
       // a is not hidden anymore
-      assert.deepEqual(definitions.get('a'), { kind: 'def', reference: 0n })
+      assert.isNotTrue(definitions.get('a')!.hidden)
       // T is still hidden
-      assert.deepEqual(definitions.get('T'), {
-        kind: 'type',
-        reference: 0n,
-        typeAnnotation: { kind: 'int', id: 0n },
-        hidden: true,
-      })
+      assert.isTrue(definitions.get('T')!.hidden)
     })
 
     it('exports definitions with qualifier', () => {
-      const quintModule = buildModuleWithDefs(
+      const quintModule = buildModuleWithDecls(
         ['import test_module.*', 'export test_module as my_export'],
         undefined,
         zerog
@@ -188,22 +185,22 @@ describe('NameCollector', () => {
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.deepEqual(definitions.get('a'), { kind: 'def', reference: 0n, hidden: true })
-      assert.deepEqual(definitions.get('my_export::a'), { kind: 'def', reference: 0n })
+      assert.isTrue(definitions.get('a')!.hidden)
+      assert.isNotTrue(definitions.get('my_export::a')!.hidden)
     })
 
     it('exports definitions with namespace', () => {
-      const quintModule = buildModuleWithDefs(['import test_module.*', 'export test_module'], undefined, zerog)
+      const quintModule = buildModuleWithDecls(['import test_module.*', 'export test_module'], undefined, zerog)
 
       const [errors, definitions] = collect(quintModule)
 
       assert.isEmpty(errors)
-      assert.deepEqual(definitions.get('a'), { kind: 'def', reference: 0n, hidden: true })
-      assert.deepEqual(definitions.get('test_module::a'), { kind: 'def', reference: 0n })
+      assert.isTrue(definitions.get('a')!.hidden)
+      assert.isNotTrue(definitions.get('test_module::a')!.hidden)
     })
 
     it('fails exporting unexisting definition', () => {
-      const quintModule = buildModuleWithDefs(['import test_module.*', 'export test_module.other'], undefined, zerog)
+      const quintModule = buildModuleWithDecls(['import test_module.*', 'export test_module.other'], undefined, zerog)
 
       const [errors, _definitions] = collect(quintModule)
 
@@ -215,7 +212,7 @@ describe('NameCollector', () => {
 
   describe('conflicts', () => {
     it('reports conflicts with builtin names', () => {
-      const quintModule = buildModuleWithDefs(['def size(x) = 10'], undefined, zerog)
+      const quintModule = buildModuleWithDecls(['def size(x) = 10'], undefined, zerog)
 
       const [errors, _definitions] = collect(quintModule)
 
@@ -226,7 +223,7 @@ describe('NameCollector', () => {
 
     it('reports conflicts with user defined names', () => {
       // Use the real id generator to have different references for each def
-      const quintModule = buildModuleWithDefs(['def a = 10', 'import test_module.*'])
+      const quintModule = buildModuleWithDecls(['def a = 10', 'import test_module.*'])
 
       const [errors, _definitions] = collect(quintModule)
 
@@ -248,7 +245,7 @@ describe('NameCollector', () => {
 
     it('reports conflicts with module names', () => {
       // Setup already defines a module named 'test_module', see `baseDefs`
-      const quintModule = buildModuleWithDefs(['def a = 10'], 'test_module')
+      const quintModule = buildModuleWithDecls(['def a = 10'], 'test_module')
 
       const [errors, _definitions] = collect(quintModule)
 
@@ -265,7 +262,7 @@ describe('NameCollector', () => {
 
   describe('unexisting modules', () => {
     it('fails importing', () => {
-      const quintModule = buildModuleWithDefs(['import unexisting_module.*'], undefined, zerog)
+      const quintModule = buildModuleWithDecls(['import unexisting_module.*'], undefined, zerog)
 
       const [errors, _definitions] = collect(quintModule)
 
@@ -275,7 +272,7 @@ describe('NameCollector', () => {
     })
 
     it('fails instantiating', () => {
-      const quintModule = buildModuleWithDefs(
+      const quintModule = buildModuleWithDecls(
         ['import unexisting_module(c1 = c1, c2 = c2) as test_module_instance'],
         undefined,
         zerog
@@ -289,7 +286,7 @@ describe('NameCollector', () => {
     })
 
     it('fails exporting', () => {
-      const quintModule = buildModuleWithDefs(['export unexisting_module.*'], undefined, zerog)
+      const quintModule = buildModuleWithDecls(['export unexisting_module.*'], undefined, zerog)
 
       const [errors, _definitions] = collect(quintModule)
 

@@ -145,8 +145,8 @@ WS
 rule names:
 modules
 module
-documentedUnit
-unit
+documentedDeclaration
+declaration
 operDef
 typeDef
 typeSumVariant
@@ -164,7 +164,7 @@ typeUnionRecOne
 row
 rowLabel
 expr
-unitOrExpr
+declarationOrExpr
 lambda
 identOrHole
 parameter

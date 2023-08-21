@@ -189,13 +189,13 @@ export function unifyRows(table: LookupTable, r1: Row, r2: Row): Either<ErrorTre
 
 function unifyWithAlias(table: LookupTable, t1: QuintConstType, t2: QuintType) {
   const aliasValue = t1.id ? table.get(t1.id) : undefined
-  if (!aliasValue) {
+  if (aliasValue?.kind !== 'typedef') {
     return left(
       buildErrorLeaf(`Trying to unify ${t1.name} and ${typeToString(t2)}`, `Couldn't find type alias ${t1.name}`)
     )
   }
 
-  if (!aliasValue.typeAnnotation) {
+  if (!aliasValue.type) {
     return left(
       buildErrorLeaf(
         `Trying to unify ${t1.name} and ${typeToString(t2)}`,
@@ -204,7 +204,7 @@ function unifyWithAlias(table: LookupTable, t1: QuintConstType, t2: QuintType) {
     )
   }
 
-  return unify(table, aliasValue.typeAnnotation, t2)
+  return unify(table, aliasValue.type, t2)
 }
 
 function bindType(name: string, type: QuintType): Either<string, Substitutions> {

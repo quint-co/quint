@@ -1,11 +1,11 @@
 import { assert } from 'chai'
 import { describe, it } from 'mocha'
 import { produceDocs, toMarkdown } from '../src/docs'
-import { buildModuleWithDefs } from './builders/ir'
+import { buildModuleWithDecls } from './builders/ir'
 import { dedent } from './textUtils'
 
 describe('produceDocs', () => {
-  const module = buildModuleWithDefs([
+  const module = buildModuleWithDecls([
     dedent(
       `/// This is a docstring for foo
     |val foo = 1`

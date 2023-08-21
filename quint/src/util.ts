@@ -12,6 +12,8 @@
  * @module
  */
 
+import JSONbig from 'json-bigint'
+
 /** Add this at the end of a switch statement or if/then sequence to enforce exhaustiveness checking
  *
  * E.g.,
@@ -24,6 +26,6 @@
  * }
  * ```
  * See https://stackoverflow.com/a/39419171 */
-export function unreachable(_: never): never {
-  throw new Error('impossible: non-exhuastive check should fail during type checking')
+export function unreachable(object: never): never {
+  throw new Error(`impossible: non-exhuastive check should fail during type checking ${JSONbig.stringify(object)}`)
 }

@@ -15,9 +15,9 @@
 
 import isEqual from 'lodash.isequal'
 import { qualifierToString } from '../ir/IRprinting'
-import { IRVisitor, walkDefinition } from '../ir/IRVisitor'
+import { IRVisitor, walkDeclaration } from '../ir/IRVisitor'
 import { QuintError } from '../quintError'
-import { OpQualifier, QuintDef, QuintInstance, QuintOpDef } from '../ir/quintIr'
+import { OpQualifier, QuintDeclaration, QuintInstance, QuintOpDef } from '../ir/quintIr'
 import { unreachable } from '../util'
 import { ArrowEffect, ComponentKind, EffectScheme, Entity, entityNames, stateVariables } from './base'
 import { effectToString, entityToString } from './printing'
@@ -39,18 +39,18 @@ export class ModeChecker implements IRVisitor {
   }
 
   /**
-   * Matches annotated modes for each definition with its inferred effect. Returns
+   * Matches annotated modes for each declaration with its inferred effect. Returns
    * errors for incorrect annotations and suggestions for annotations that could
    * be more strict.
    *
-   * @param defs: the list of definitions to be checked
+   * @param decls: the list of declarations to be checked
    * @param effects: the map from expression ids to their inferred effects
    *
    * @returns The mode errors, if any is found. Otherwise, a map with potential suggestions.
    */
-  checkModes(defs: QuintDef[], effects: Map<bigint, EffectScheme>): ModeCheckingResult {
+  checkModes(decls: QuintDeclaration[], effects: Map<bigint, EffectScheme>): ModeCheckingResult {
     this.effects = effects
-    defs.forEach(def => walkDefinition(this, def))
+    decls.forEach(decl => walkDeclaration(this, decl))
     return [this.errors, this.suggestions]
   }
 

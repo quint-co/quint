@@ -26,13 +26,13 @@ import {
   textify,
 } from './prettierimp'
 
-import { QuintDef, QuintEx, isAnnotatedDef } from './ir/quintIr'
+import { QuintDeclaration, QuintEx, isAnnotatedDef } from './ir/quintIr'
 import { ExecutionFrame } from './runtime/trace'
 import { zerog } from './idGenerator'
 import { ConcreteFixedRow, QuintType, Row } from './ir/quintTypes'
 import { TypeScheme } from './types/base'
 import { canonicalTypeScheme } from './types/printing'
-import { definitionToString, flattenRow, qualifierToString, rowToString } from './ir/IRprinting'
+import { declarationToString, flattenRow, qualifierToString, rowToString } from './ir/IRprinting'
 
 /**
  * An abstraction of a Console of bounded text width.
@@ -121,33 +121,33 @@ export function prettyQuintEx(ex: QuintEx): Doc {
   }
 }
 
-export function prettyQuintDef(def: QuintDef, includeBody: boolean = true, type?: TypeScheme): Doc {
-  const typeAnnotation = isAnnotatedDef(def)
-    ? [text(': '), prettyQuintType(def.typeAnnotation)]
+export function prettyQuintDeclaration(decl: QuintDeclaration, includeBody: boolean = true, type?: TypeScheme): Doc {
+  const typeAnnotation = isAnnotatedDef(decl)
+    ? [text(': '), prettyQuintType(decl.typeAnnotation)]
     : type // If annotation is not present, but type is, use the type
     ? [text(': '), prettyTypeScheme(type)]
     : []
 
-  switch (def.kind) {
+  switch (decl.kind) {
     case 'def': {
       const header = group([
-        richtext(chalk.magenta, qualifierToString(def.qualifier)),
+        richtext(chalk.magenta, qualifierToString(decl.qualifier)),
         text(' '),
-        richtext(chalk.blue, def.name),
+        richtext(chalk.blue, decl.name),
         ...typeAnnotation,
       ])
-      return includeBody ? group([header, text(' = '), prettyQuintEx(def.expr)]) : header
+      return includeBody ? group([header, text(' = '), prettyQuintEx(decl.expr)]) : header
     }
     case 'typedef': {
-      const header = group([text('type '), richtext(chalk.blue, def.name)])
-      if (def.type) {
-        return group([header, text(' = '), prettyQuintType(def.type)])
+      const header = group([text('type '), richtext(chalk.blue, decl.name)])
+      if (decl.type) {
+        return group([header, text(' = '), prettyQuintType(decl.type)])
       }
       return header
     }
     default:
       // TODO, not used for now
-      return text(definitionToString(def))
+      return text(declarationToString(decl))
   }
 }
 

@@ -15,12 +15,12 @@ describe('checkModes', () => {
     const { modules, table } = parseMockedModule(text)
 
     const inferrer = new EffectInferrer(table)
-    const [errors, effects] = inferrer.inferEffects(modules[1].defs)
+    const [errors, effects] = inferrer.inferEffects(modules[1].declarations)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const modeChecker = new ModeChecker()
-    return modeChecker.checkModes(modules[1].defs, effects)
+    return modeChecker.checkModes(modules[1].declarations, effects)
   }
 
   it('finds mode errors between action and def', () => {

@@ -1,11 +1,12 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { buildModuleWithDefs } from '../builders/ir'
+import { buildModuleWithDecls } from '../builders/ir'
 import { effectSchemeToString } from '../../src/effects/printing'
 import { errorTreeToString } from '../../src/errorTree'
 import { EffectInferenceResult, EffectInferrer } from '../../src/effects/inferrer'
 import { parseMockedModule } from '../util'
 import { EffectScheme } from '../../src/effects/base'
+import { isDef } from '../../src/ir/quintIr'
 
 describe('inferEffects', () => {
   const baseDefs = ['const N: int', 'const S: Set[int]', 'var x: int']
@@ -15,14 +16,12 @@ describe('inferEffects', () => {
     const { modules, table } = parseMockedModule(text)
 
     const inferrer = new EffectInferrer(table)
-    return inferrer.inferEffects(modules[0].defs)
+    return inferrer.inferEffects(modules[0].declarations)
   }
 
   function effectForDef(defs: string[], effects: Map<bigint, EffectScheme>, defName: string) {
-    const module = buildModuleWithDefs(baseDefs.concat(defs))
-    const result = module.defs.find(
-      def => def.kind !== 'instance' && def.kind !== 'import' && def.kind != 'export' && def.name === defName
-    )
+    const module = buildModuleWithDecls(baseDefs.concat(defs))
+    const result = module.declarations.find(decl => isDef(decl) && decl.name === defName)
 
     if (!result) {
       throw new Error(`Could not find def with name ${defName}`)

@@ -2,7 +2,7 @@ import { assert } from 'chai'
 import { describe, it } from 'mocha'
 import { addDefToFlatModule, flattenModules } from '../src/flattening'
 import { newIdGenerator } from '../src/idGenerator'
-import { definitionToString } from '../src/ir/IRprinting'
+import { declarationToString } from '../src/ir/IRprinting'
 import { parse } from '../src/parsing/quintParserFrontend'
 import { FlatModule, analyzeModules } from '../src'
 import { SourceLookupPath } from '../src/parsing/sourceResolver'
@@ -32,9 +32,9 @@ describe('flattenModules', () => {
     )
     const [_, flattenedModule] = flattenedModules
 
-    it('has all expected defs', () => {
+    it('has all expected declarations', () => {
       assert.sameDeepMembers(
-        flattenedModule.defs.map(def => definitionToString(def)),
+        flattenedModule.declarations.map(decl => declarationToString(decl)),
         expectedDefs
       )
     })
@@ -188,8 +188,8 @@ describe('addDefToFlatModule', () => {
     const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
     assert.isEmpty(analysisErrors)
 
-    const def = module.defs[module.defs.length - 1]
-    const moduleWithoutDef: FlatModule = { ...module, defs: [] }
+    const def = module.declarations[module.declarations.length - 1]
+    const moduleWithoutDef: FlatModule = { ...module, declarations: [] }
     const { flattenedModule, flattenedAnalysis } = addDefToFlatModule(
       modules,
       table,
@@ -200,9 +200,9 @@ describe('addDefToFlatModule', () => {
       def
     )
 
-    it('has all expected defs', () => {
+    it('has all expected declarations', () => {
       assert.sameDeepMembers(
-        flattenedModule.defs.map(def => definitionToString(def)),
+        flattenedModule.declarations.map(decl => declarationToString(decl)),
         expectedDefs
       )
     })
