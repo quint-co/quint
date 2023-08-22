@@ -107,19 +107,19 @@ export function flattenModules(
  * @param sourceMap The source map for all modules involved
  * @param analysisOutput The analysis output for all modules involved
  * @param module The flat module to add the definition to
- * @param def The definition to add
+ * @param decl The definition to add
  *
  * @returns An object containing the flattened module, flattened lookup table
  * and flattened analysis output
  */
-export function addDefToFlatModule(
+export function addDeclarationToFlatModule(
   modules: QuintModule[],
   table: LookupTable,
   idGenerator: IdGenerator,
   sourceMap: Map<bigint, Loc>,
   analysisOutput: AnalysisOutput,
   module: FlatModule,
-  def: QuintDeclaration
+  decl: QuintDeclaration
 ): {
   flattenedModule: FlatModule
   flattenedDefs: QuintDef[]
@@ -130,7 +130,7 @@ export function addDefToFlatModule(
   const flattener = new Flatenner(idGenerator, table, sourceMap, analysisOutput, importedModules, module)
 
   const flattenedDefs = flattener
-    .flattenDef(def)
+    .flattenDef(decl)
     // Inline type aliases in new defs
     .map(d => inlineAliasesInDef(d, table))
   const flattenedModule: FlatModule = { ...module, declarations: [...module.declarations, ...flattenedDefs] }

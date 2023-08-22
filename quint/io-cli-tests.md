@@ -199,6 +199,20 @@ echo "init" | quint -r ../examples/language-features/counters.qnt::counters 2>&1
 >>> 
 ```
 
+### Repl loads a file and a module with -r when the module is not the last one
+
+<!-- !test in repl loads module that is not the last -->
+```
+echo "init" | quint -r ../examples/language-features/imports.qnt::E 2>&1 | tail -n +3
+```
+
+<!-- !test out repl loads module that is not the last -->
+```
+>>> true
+>>> 
+```
+
+
 ### Repl loads a file with .load
 
 <!-- !test in repl loads a file with .load -->
