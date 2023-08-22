@@ -86,6 +86,7 @@ class ReplState {
     const replModule: FlatModule = { name: '__repl__', declarations: simulatorBuiltins(this.compilationState), id: 0n }
     this.compilationState.modules.push(replModule)
     this.compilationState.originalModules.push(replModule)
+    this.compilationState.mainName = '__repl__'
     this.moduleHist += moduleToString(replModule)
   }
 

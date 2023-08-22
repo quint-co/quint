@@ -26,7 +26,7 @@ import { AnalysisOutput, analyzeInc, analyzeModules } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
 import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { SourceLookupPath } from '../parsing/sourceResolver'
-import { addDefToFlatModule as addDeclataionToFlatModule, flattenModules } from '../flattening'
+import { addDeclarationToFlatModule, flattenModules } from '../flattening'
 import { Rng } from '../rng'
 
 /**
@@ -66,6 +66,8 @@ export interface CompilationState {
   originalModules: QuintModule[]
   // A list of flattened modules.
   modules: FlatModule[]
+  // The name of the main module.
+  mainName?: string
   // The source map for the compiled code.
   sourceMap: Map<bigint, Loc>
   // The output of the Quint analyzer.
@@ -204,18 +206,22 @@ export function compileDecl(
     throw new Error('No modules in state')
   }
 
-  // Define a new module list with the new definition in the last module,
+  // Define a new module list with the new definition in the main module,
   // ensuring the original object is not modified
-  const originalModules = [...state.originalModules]
-  const originalLastModule = originalModules.pop()!
-  originalModules.push({ ...originalLastModule, declarations: [...originalLastModule.declarations, decl] })
+  const originalModules = state.originalModules.map(m => {
+    if (m.name === state.mainName) {
+      return { ...m, declarations: [...m.declarations, decl] }
+    }
+    return m
+  })
 
-  // Same for the flattened module list, but that requires extra care with types
-  const modules: QuintModule[] = [...state.modules]
-  // This is not modules.pop() to ensure flatness
-  const lastModule: FlatModule = state.modules[state.modules.length - 1]
-  modules.pop()
-  modules.push({ ...lastModule, declarations: [...lastModule.declarations, decl] })
+  const mainModule = state.modules.find(m => m.name === state.mainName)!
+  const modules = state.modules.map(m => {
+    if (m.name === state.mainName) {
+      return { ...m, declarations: [...m.declarations, decl] }
+    }
+    return m
+  })
 
   // We need to resolve names for this new definition. Incremental name
   // resolution is not our focus now, so just resolve everything again.
@@ -224,13 +230,14 @@ export function compileDecl(
     .map(({ table }) => {
       const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, decl)
 
-      const { flattenedModule, flattenedDefs, flattenedTable, flattenedAnalysis } = addDeclataionToFlatModule(
+      const { flattenedModule, flattenedDefs, flattenedTable, flattenedAnalysis } = addDeclarationToFlatModule(
         modules,
         table,
         state.idGen,
         state.sourceMap,
         analysisOutput,
-        lastModule,
+        // Make a copy of the main module, so that we don't modify the original
+        { ...mainModule, declarations: [...mainModule.declarations] },
         decl
       )
 
@@ -294,6 +301,7 @@ export function compileFromCode(
           const compilationState: CompilationState = {
             originalModules: modules,
             modules: flattenedModules,
+            mainName,
             sourceMap,
             analysisOutput: flattenedAnalysis,
             idGen,

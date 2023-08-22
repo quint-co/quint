@@ -1,6 +1,6 @@
 import { assert } from 'chai'
 import { describe, it } from 'mocha'
-import { addDefToFlatModule, flattenModules } from '../src/flattening'
+import { addDeclarationToFlatModule, flattenModules } from '../src/flattening'
 import { newIdGenerator } from '../src/idGenerator'
 import { declarationToString } from '../src/ir/IRprinting'
 import { parse } from '../src/parsing/quintParserFrontend'
@@ -190,7 +190,7 @@ describe('addDefToFlatModule', () => {
 
     const def = module.declarations[module.declarations.length - 1]
     const moduleWithoutDef: FlatModule = { ...module, declarations: [] }
-    const { flattenedModule, flattenedAnalysis } = addDefToFlatModule(
+    const { flattenedModule, flattenedAnalysis } = addDeclarationToFlatModule(
       modules,
       table,
       idGenerator,

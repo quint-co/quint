@@ -989,7 +989,7 @@ describe('incremental compilation', () => {
     next: () => 0n,
   }
   /* Adds some quint code to the compilation and evaluation state */
-  function compileModules(text: string): CompilationContext {
+  function compileModules(text: string, mainName: string): CompilationContext {
     const idGen = newIdGenerator()
     const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
     const parseResult = parse(idGen, 'fake_location', fake_path, text)
@@ -1013,6 +1013,7 @@ describe('incremental compilation', () => {
       originalModules: modules,
       idGen,
       modules: flattenedModules,
+      mainName,
       sourceMap,
       analysisOutput: flattenedAnalysis,
     }
@@ -1030,7 +1031,7 @@ describe('incremental compilation', () => {
 
   describe('compileExpr', () => {
     it('should compile a Quint expression', () => {
-      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }')
+      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }', 'm')
 
       const parsed = parseExpressionOrDeclaration(
         'x + 2',
@@ -1049,7 +1050,7 @@ describe('incremental compilation', () => {
 
   describe('compileDef', () => {
     it('should compile a Quint definition', () => {
-      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }')
+      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }', 'm')
 
       const parsed = parseExpressionOrDeclaration(
         'val y = x + 2',
@@ -1068,7 +1069,8 @@ describe('incremental compilation', () => {
 
     it('non-exported imports are not visible in subsequent importing modules', () => {
       const { compilationState, evaluationState } = compileModules(
-        'module m1 { pure val x1 = 1 }' + 'module m2 { import m1.* pure val x2 = x1 }' + 'module m3 { import m2.* }' // m1 shouldn't be acessible inside m3
+        'module m1 { pure val x1 = 1 }' + 'module m2 { import m1.* pure val x2 = x1 }' + 'module m3 { import m2.* }', // m1 shouldn't be acessible inside m3
+        'm3'
       )
 
       const parsed = parseExpressionOrDeclaration(
