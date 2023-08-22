@@ -312,11 +312,11 @@ export function compileFromCode(
           const mainNotFoundError: IrErrorMessage[] = main
             ? []
             : [
-              {
-                explanation: `Main module ${mainName} not found`,
-                refs: [],
-              },
-            ]
+                {
+                  explanation: `Main module ${mainName} not found`,
+                  refs: [],
+                },
+              ]
           const defsToCompile = main ? main.declarations : []
           const ctx = compile(compilationState, newEvaluationState(execListener), flattenedTable, rand, defsToCompile)
 
