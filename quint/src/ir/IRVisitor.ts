@@ -389,7 +389,7 @@ export function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
   }
 }
 
-function walkExpression(visitor: IRVisitor, expr: ir.QuintEx): void {
+export function walkExpression(visitor: IRVisitor, expr: ir.QuintEx): void {
   if (visitor.enterExpr) {
     visitor.enterExpr(expr)
   }
