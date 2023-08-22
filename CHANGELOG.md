@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed a problem where definitions were not properly loaded in the REPL when
+  the main module was provided in the CLI argument (#1112)
+
 ### Security
 
 ## v0.13.0 -- 2023-08-03
