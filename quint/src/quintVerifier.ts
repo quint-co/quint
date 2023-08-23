@@ -37,7 +37,7 @@ import type { Buffer } from 'buffer'
 import type { PackageDefinition as ProtoPackageDefinition } from '@grpc/proto-loader'
 
 const APALACHE_SERVER_URI = 'localhost:8822'
-const APALACHE_VERSION_TAG = '0.41.x'
+const APALACHE_VERSION_TAG = '0.42.x'
 const APALACHE_TGZ = 'apalache.tgz'
 
 // The structure used to report errors
