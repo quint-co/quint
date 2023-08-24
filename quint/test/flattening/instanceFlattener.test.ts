@@ -55,8 +55,8 @@ describe('flattenInstances', () => {
     const decls = ['pure val myVal = 1', 'import A(N=myVal).*', 'def g(x) = f(x)']
 
     const expectedModuleForInstance = `module B::A {
-  pure val B::A::myVal = 1
-  pure val B::A::N: int = B::A::myVal
+  pure val myVal = 1
+  pure val B::A::N: int = myVal
   def B::A::f = ((B::A::x) => iadd(B::A::x, B::A::N))
 }`
     const expectedDeclsInMain = ['pure val myVal = 1', 'import B::A.*', 'def g = ((x) => B::A::f(x))']
@@ -75,7 +75,8 @@ describe('flattenInstances', () => {
     const decls = ['pure val N = 1', 'import A(N=N) as A1', 'def g(x) = x + A1::a']
 
     const expectedModuleForInstance = `module B::A1 {
-  pure val B::A1::N = 1
+  pure val N = 1
+  pure val B::A1::N: int = N
   val B::A1::a = iadd(B::A1::N, 1)
 }`
     const expectedDeclsInMain = ['pure val N = 1', 'import B::A1.*', 'def g = ((x) => iadd(x, B::A1::a))']

@@ -118,33 +118,6 @@ class InstanceFlattener implements IRTransformer {
     // We are going to construct a new module.
     const newModuleDecls: QuintDeclaration[] = []
 
-    decl.overrides.forEach(([param, expr]) => {
-      // Find dependencies of `expr` and add those to the new module
-      newModuleDecls.push(...dependentDefinitions(expr, this.lookupTable))
-
-      if (expr.kind === 'name' && expr.name === param.name) {
-        // Special case for instances like `import A(x = x) ...`
-        // In this case, the definition for `x` would have already been added by the dependentDefinitions call above
-        // so there is no need to add a new definition for `x` here. In fact, that would introduce a conflict,
-        return
-      }
-
-      // Add a definition for the parameter, which replaces the constant in the proto module.
-      newModuleDecls.push({
-        kind: 'def',
-        qualifier: 'pureval',
-        expr: expr,
-        id: param.id,
-        name: param.name,
-        typeAnnotation: this.lookupTable.get(param.id)?.typeAnnotation,
-      })
-    })
-
-    newModuleDecls.push(
-      // Push everything but the constants, since we already introduce definitions to replace the constants
-      ...protoModule.declarations.filter(d => d.kind !== 'const')
-    )
-
     // A unique name for the new module. To ensure uniqueness, we add the source of the instance (the current module) to
     // the name, as well as the qualifier (or the proto name itself, if no qualifier is present)
     // If the current module is named "myModule":
@@ -152,7 +125,25 @@ class InstanceFlattener implements IRTransformer {
     // - The module for `import A as B.*` will be named `myModule::B`
     const newName = [this.currentModuleName!, decl.qualifiedName ?? protoModule.name].join('::')
 
-    const transformedDecls = newModuleDecls.map(decl => {
+    decl.overrides.forEach(([param, expr]) => {
+      // Find dependencies of `expr` and add those to the new module
+      newModuleDecls.push(...dependentDefinitions(expr, this.lookupTable))
+
+      // Add a definition for the parameter, which replaces the constant in the proto module.
+      newModuleDecls.push({
+        kind: 'def',
+        qualifier: 'pureval',
+        expr: expr,
+        id: param.id,
+        name: [newName, param.name].join('::'),
+        typeAnnotation: this.lookupTable.get(param.id)?.typeAnnotation,
+      })
+    })
+
+    // We will copy everything but the constants, since we already introduce definitions to replace the constants
+    const protoDeclarations = protoModule.declarations.filter(d => d.kind !== 'const')
+
+    const transformedDecls = protoDeclarations.map(decl => {
       if (!isDef(decl)) {
         // Keep imports/exports/instances as is
         // TODO: further test and explore scenarios where the proto module has imports/exports/instances
@@ -170,7 +161,9 @@ class InstanceFlattener implements IRTransformer {
       )(decl)
     })
 
-    this.newModules.push({ ...protoModule, declarations: transformedDecls, name: newName })
+    newModuleDecls.push(...transformedDecls)
+
+    this.newModules.push({ ...protoModule, declarations: newModuleDecls, name: newName })
 
     // Return the import statement for the new module, which replaces the instance declaration.
     return { kind: 'import', id: decl.id, protoName: newName, defName: '*' }
