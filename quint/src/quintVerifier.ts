@@ -22,9 +22,9 @@ import fs from 'fs'
 import os from 'os'
 import semver from 'semver'
 import fetch from 'node-fetch'
-import gunzip from 'gunzip-maybe'
+import { pipeline } from 'stream/promises'
 import child_process from 'child_process'
-import tar from 'tar-fs'
+import * as tar from 'tar'
 import * as grpc from '@grpc/grpc-js'
 import * as proto from '@grpc/proto-loader'
 import * as protobufDescriptor from 'protobufjs/ext/descriptor'
@@ -339,28 +339,6 @@ async function tryConnect(): Promise<VerifyResult<Apalache>> {
 }
 
 /**
- * Fetch the asset at `url` and pipe the response body through `gunzip` and `untar`.
- *
- * @returns A promise resolving to:
- *    - a `right<string>` equal to `unpackPath`, or
- *    - a `left<VerifyError>` indicating an error during fetching or unpacking.
- */
-async function fetchAndUnpack(url: string, unpackPath: string): Promise<VerifyResult<string>> {
-  fs.mkdirSync(unpackPath, { recursive: true })
-
-  return fetch(url).then(
-    res =>
-      new Promise((resolve, _) => {
-        const untar = tar.extract(unpackPath)
-        res.body.pipe(gunzip()).pipe(untar)
-        untar.on('close', () => resolve(right(unpackPath)))
-        untar.on('error', error => resolve(err(`Error unpacking .tgz: ${error}`)))
-      }),
-    error => err(`Error fetching ${url}: ${error}`)
-  )
-}
-
-/**
  * Fetch the latest Apalache release pinned by `APALACHE_VERSION_TAG` from Github.
  *
  * @returns A promise resolving to:
@@ -369,30 +347,39 @@ async function fetchAndUnpack(url: string, unpackPath: string): Promise<VerifyRe
  */
 async function fetchApalache(): Promise<VerifyResult<string>> {
   // Fetch Github releases
-  return octokitRequest('GET /repos/informalsystems/apalache/releases').then(
-    async resp => {
-      // Find latest that satisfies `APALACHE_VERSION_TAG`
-      const versions = resp.data.map((element: any) => element.tag_name)
-      const latestTaggedVersion = semver.maxSatisfying(versions, APALACHE_VERSION_TAG)
+  return octokitRequest('GET /repos/informalsystems/apalache/releases').then(async resp => {
+    // Find latest that satisfies `APALACHE_VERSION_TAG`
+    const versions = resp.data.map((element: any) => element.tag_name)
+    const latestTaggedVersion = semver.maxSatisfying(versions, APALACHE_VERSION_TAG)
+    // Check if we have already downloaded this release
+    const unpackPath = path.join(os.homedir(), '.quint', `apalache-dist-${latestTaggedVersion}`)
+    const apalacheBinary = path.join(unpackPath, 'apalache', 'bin', 'apalache-mc')
+    if (fs.existsSync(apalacheBinary)) {
+      // Use existing download
+      console.log(`Using existing Apalache distribution in ${unpackPath}`)
+      return right(unpackPath)
+    } else {
+      // No existing download, download Apalache dist
+      fs.mkdirSync(unpackPath, { recursive: true })
+
       // Filter release response to get dist archive asset URL
       const taggedRelease = resp.data.find((element: any) => element.tag_name == latestTaggedVersion)
       const tgzAsset = taggedRelease.assets.find((asset: any) => asset.name == APALACHE_TGZ)
       const downloadUrl = tgzAsset.browser_download_url
-      // Check if we have already downloaded this release
-      const unpackPath = path.join(os.homedir(), '.quint', `apalache-dist-${latestTaggedVersion}`)
-      const apalacheBinary = path.join(unpackPath, 'apalache', 'bin', 'apalache-mc')
-      if (fs.existsSync(apalacheBinary)) {
-        // Use existing download
-        console.log(`Using existing Apalache distribution in ${unpackPath}`)
-        return right(unpackPath)
-      } else {
-        // Download Apalache dist
-        console.log(`Downloading ${downloadUrl}`)
-        return await fetchAndUnpack(downloadUrl, unpackPath)
-      }
-    },
-    error => err(`Fetching Apalache releases failed: ${error}`)
-  )
+
+      console.log(`Downloading Apalache distribution from ${downloadUrl}...`)
+      return fetch(downloadUrl)
+        .then(
+          // unpack response body
+          res => pipeline(res.body, tar.extract({ cwd: unpackPath, strict: true })),
+          error => err(`Error fetching ${downloadUrl}: ${error}`)
+        )
+        .then(
+          _ => right(unpackPath),
+          error => err(`Error unpacking .tgz: ${error}`)
+        )
+    }
+  })
 }
 
 /**
