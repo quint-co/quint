@@ -68,4 +68,23 @@ describe('flattenInstances', () => {
       expectedDeclsInMain
     )
   })
+
+  it('flattens simple instance with N=N', () => {
+    const baseDecls = ['const N: int', 'val a = N + 1']
+
+    const decls = ['pure val N = 1', 'import A(N=N) as A1', 'def g(x) = x + A1::a']
+
+    const expectedModuleForInstance = `module B::A1 {
+  pure val B::A1::N = 1
+  val B::A1::a = iadd(B::A1::N, 1)
+}`
+    const expectedDeclsInMain = ['pure val N = 1', 'import B::A1.*', 'def g = ((x) => iadd(x, B::A1::a))']
+
+    const [moduleForInstance, module] = getFlattenedInstances(baseDecls, decls, [])
+    assert.deepEqual(moduleToString(moduleForInstance), expectedModuleForInstance)
+    assert.sameDeepMembers(
+      module.declarations.map(d => declarationToString(d)),
+      expectedDeclsInMain
+    )
+  })
 })

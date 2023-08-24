@@ -80,12 +80,14 @@ class InstanceFlattener implements IRTransformer {
     const module = this.modulesByName.get(decl.protoName)!
     const newDefs: QuintDef[] = []
     decl.overrides.forEach(([param, ex]) => {
-      if (ex.kind === 'name' && ex.name === param.name) {
-        // prevent cycles from defs like `import A(x = x) ...`
-        return
-      }
       const defsToAdd = dependentDefinitions(ex, this.modulesByName, this.lookupTable)
       newDefs.push(...defsToAdd)
+      if (ex.kind === 'name' && ex.name === param.name) {
+        // Special case for instances like `import A(x = x) ...`
+        // In this case, the definition for `x` would have already been added by the dependentDefinitions call above
+        // so there is no need to add a new definition for `x` here. In fact, that would introduce a conflict,
+        return
+      }
       newDefs.push({
         kind: 'def',
         qualifier: 'pureval',
