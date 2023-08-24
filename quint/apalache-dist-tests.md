@@ -4,96 +4,26 @@
 bash -
 -->
 
-These tests check for error handling around misconfiguration or corruption of
-the apalache distribution. They are in a separate file from `apalache-test.md`
-since they presuppose a broken environment, whereas the apalache integration
-tests assume a working environment.
+These tests check management of the Apalache server from Quint.
+They are in a separate file from `apalache-test.md` since they presuppose an
+environment in which Apalache server has not been started.
 
+### Inability to connect to the server downloads Apalache
 
-### Problems with the Apalache distribution
+There is no Apalache server running. This will try to load the proto file
+dynamically, using gRPC reflection, recognize that the server is not available,
+fetch a tagged Apalache release and spawn a server in the background.
 
-#### Setting a Non-existent `APALACHE_HOME` produces an error
-
-<!-- !test in invalid APALACHE_DIST -->
-```
-APALACHE_DIST=/does/not/exist quint verify ../examples/language-features/booleans.qnt
-```
-
-<!-- !test exit 1 -->
-<!-- !test err invalid APALACHE_DIST -->
-```
-error: Specified APALACHE_DIST /does/not/exist does not exist.
-```
-
-#### Setting a corrupted `APALACHE_DIST` produces an error
-
-(The `_build` dir exists, but doesn't have the expected structure of the
-Apalache distribution.)
-
-<!-- !test in corrupted APALACHE_DIST -->
-```
-APALACHE_DIST=_build quint verify ../examples/language-features/booleans.qnt 2> >(sed "s:$PWD/::g" >&2)
-```
-
-<!-- !test exit 1 -->
-<!-- !test err corrupted APALACHE_DIST -->
-```
-error: Apalache distribution is corrupted: cannot find _build/lib/apalache.jar. Ensure the APALACHE_DIST environment variable points to the right directory.
-```
-
-#### Extracting the proto file from a corrupted jar file produces an error
-
-We set up a valid looking distribution, but with an invalid jar file.
-
-<!-- !test in corrupted apalache.jar -->
-```
-mkdir -p _build/corrupt-dist-test/lib && touch _build/corrupt-dist-test/lib/apalache.jar
-mkdir -p _build/corrupt-dist-test/bin && touch _build/corrupt-dist-test/bin/apalache-mc
-APALACHE_DIST=_build/corrupt-dist-test quint verify ../examples/language-features/booleans.qnt 2> >(sed "s:$PWD/::g" >&2)
-```
-
-<!-- !test exit 1 -->
-<!-- !test err corrupted apalache.jar -->
-```
-error: Apalache distribution is corrupted. Could not extract proto file from apalache.jar.
-```
-
-### Inability to connect to the server produces an errer (`APALACHE_DIST` unset)
-
-We now do not set `APALACHE_DIST`, which will try to load the proto file
-dynamically, using gRPC reflection, but expect that the server is not already
-running.
 
 <!-- !test in server not running -->
 ```
 quint verify ../examples/language-features/booleans.qnt
 ```
 
-<!-- !test exit 1 -->
-<!-- !test err server not running -->
+<!-- !test out server not running -->
 ```
-error: Failed to obtain a connection to Apalache after 5 seconds.
-```
-
-### Inability to connect to the server produces an errer (`APALACHE_DIST` set)
-
-We now assume a correctly configured installation of Apalache in
-`APALACHE_DIST`, but expect that the server is not already running.
-
-See https://github.com/informalsystems/quint/issues/823 for plans to manage the
-server, making this error case all but impossible.
-
-<!-- !test program
-APALACHE_DIST=_build/apalache PATH=_build/apalache/bin:$PATH bash -
--->
-
-<!-- !test in sever errors and connections -->
-```
-quint verify ../examples/language-features/booleans.qnt
-```
-
-<!-- !test exit 1 -->
-<!-- !test err sever errors and connections  -->
-```
-error: Failed to obtain a connection to Apalache after 5 seconds.
+Couldn't connect to Apalache, downloading latest supported release
+...
+Launching Apalache server
+Shutting down Apalache server
 ```
