@@ -5,7 +5,7 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * Flattening for modules, replacing instances, imports and exports with definitions refered by the module.
+ * Flattening for modules, replacing imports and exports with definitions referred by the module.
  *
  * @author Gabriela Moreira
  *
