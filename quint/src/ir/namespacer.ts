@@ -81,5 +81,6 @@ class Namespacer implements IRTransformer {
 }
 
 function namespacedName(namespace: string | undefined, name: string): string {
-  return namespace ? `${namespace}::${name}` : name
+  // FIXME(#1111): We shouldn't need to verify `startsWith` if we find a good way to manage namespaces
+  return namespace && !name.startsWith(`${namespace}::`) ? `${namespace}::${name}` : name
 }

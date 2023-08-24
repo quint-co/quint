@@ -42,7 +42,7 @@ import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
 import { fileSourceResolver } from './parsing/sourceResolver'
 import { verify } from './quintVerifier'
-import { flattenModules } from './flattening'
+import { flattenModules } from './flattening/fullFlattener'
 import { analyzeModules } from './quintAnalyzer'
 import { ExecutionFrame } from './runtime/trace'
 
