@@ -1,6 +1,6 @@
 import { assert } from 'chai'
 import { describe, it } from 'mocha'
-import { QuintModule } from '../../src/ir/quintIr'
+import { QuintDef, QuintModule } from '../../src/ir/quintIr'
 import { declarationToString, moduleToString } from '../../src/ir/IRprinting'
 import { newIdGenerator } from '../../src/idGenerator'
 import { SourceLookupPath } from '../../src/parsing/sourceResolver'
@@ -86,5 +86,18 @@ describe('flattenInstances', () => {
       module.declarations.map(d => declarationToString(d)),
       expectedDeclsInMain
     )
+  })
+
+  it('generate different ids for different instances', () => {
+    const baseDecls = ['const N: int', 'val a = N + 1']
+
+    const decls = ['import A(N=1) as A1', 'import A(N=2) as A2', 'val b = A1::a + A2::a']
+
+    const [moduleForA1, moduleForA2, _module] = getFlattenedInstances(baseDecls, decls, [])
+
+    const a1 = moduleForA1.declarations.find(d => (d as QuintDef).name === 'B::A1::a')!
+    const a2 = moduleForA2.declarations.find(d => (d as QuintDef).name === 'B::A2::a')!
+
+    assert.notEqual(a1.id, a2.id)
   })
 })
