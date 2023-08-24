@@ -266,39 +266,42 @@ async function tryConnect(retry: boolean = false): Promise<VerifyResult<Apalache
  */
 async function fetchApalache(): Promise<VerifyResult<string>> {
   // Fetch Github releases
-  return octokitRequest('GET /repos/informalsystems/apalache/releases').then(async resp => {
-    // Find latest that satisfies `APALACHE_VERSION_TAG`
-    const versions = resp.data.map((element: any) => element.tag_name)
-    const latestTaggedVersion = semver.maxSatisfying(versions, APALACHE_VERSION_TAG)
-    // Check if we have already downloaded this release
-    const unpackPath = path.join(os.homedir(), '.quint', `apalache-dist-${latestTaggedVersion}`)
-    const apalacheBinary = path.join(unpackPath, 'apalache', 'bin', 'apalache-mc')
-    if (fs.existsSync(apalacheBinary)) {
-      // Use existing download
-      console.log(`Using existing Apalache distribution in ${unpackPath}`)
-      return right(unpackPath)
-    } else {
-      // No existing download, download Apalache dist
-      fs.mkdirSync(unpackPath, { recursive: true })
+  return octokitRequest('GET /repos/informalsystems/apalache/releases').then(
+    async resp => {
+      // Find latest that satisfies `APALACHE_VERSION_TAG`
+      const versions = resp.data.map((element: any) => element.tag_name)
+      const latestTaggedVersion = semver.maxSatisfying(versions, APALACHE_VERSION_TAG)
+      // Check if we have already downloaded this release
+      const unpackPath = path.join(os.homedir(), '.quint', `apalache-dist-${latestTaggedVersion}`)
+      const apalacheBinary = path.join(unpackPath, 'apalache', 'bin', 'apalache-mc')
+      if (fs.existsSync(apalacheBinary)) {
+        // Use existing download
+        console.log(`Using existing Apalache distribution in ${unpackPath}`)
+        return right(unpackPath)
+      } else {
+        // No existing download, download Apalache dist
+        fs.mkdirSync(unpackPath, { recursive: true })
 
-      // Filter release response to get dist archive asset URL
-      const taggedRelease = resp.data.find((element: any) => element.tag_name == latestTaggedVersion)
-      const tgzAsset = taggedRelease.assets.find((asset: any) => asset.name == APALACHE_TGZ)
-      const downloadUrl = tgzAsset.browser_download_url
+        // Filter release response to get dist archive asset URL
+        const taggedRelease = resp.data.find((element: any) => element.tag_name == latestTaggedVersion)
+        const tgzAsset = taggedRelease.assets.find((asset: any) => asset.name == APALACHE_TGZ)
+        const downloadUrl = tgzAsset.browser_download_url
 
-      console.log(`Downloading Apalache distribution from ${downloadUrl}...`)
-      return fetch(downloadUrl)
-        .then(
-          // unpack response body
-          res => pipeline(res.body, tar.extract({ cwd: unpackPath, strict: true })),
-          error => err(`Error fetching ${downloadUrl}: ${error}`)
-        )
-        .then(
-          _ => right(unpackPath),
-          error => err(`Error unpacking .tgz: ${error}`)
-        )
-    }
-  })
+        console.log(`Downloading Apalache distribution from ${downloadUrl}...`)
+        return fetch(downloadUrl)
+          .then(
+            // unpack response body
+            res => pipeline(res.body, tar.extract({ cwd: unpackPath, strict: true })),
+            error => err(`Error fetching ${downloadUrl}: ${error}`)
+          )
+          .then(
+            _ => right(unpackPath),
+            error => err(`Error unpacking .tgz: ${error}`)
+          )
+      }
+    },
+    error => err(`Error listing the Apalache releases: ${error}`)
+  )
 }
 
 /**
