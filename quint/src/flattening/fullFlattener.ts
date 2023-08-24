@@ -2,7 +2,13 @@ import { IdGenerator } from '../idGenerator'
 import { moduleToString } from '../ir/IRprinting'
 import { FlatModule, QuintModule } from '../ir/quintIr'
 import { LookupTable } from '../names/base'
-import { Loc, parsePhase3importAndNameResolution, parsePhase4toposort } from '../parsing/quintParserFrontend'
+import {
+  Loc,
+  ParserPhase3,
+  ParserPhase4,
+  parsePhase3importAndNameResolution,
+  parsePhase4toposort,
+} from '../parsing/quintParserFrontend'
 import { AnalysisOutput } from '../quintAnalyzer'
 import { inlineTypeAliases } from '../types/aliasInliner'
 import { flattenModule } from './flattener'
@@ -36,61 +42,61 @@ export function flattenModules(
   const modulesByName = new Map(inlined.modules.map(m => [m.name, m]))
   let flattenedModules: QuintModule[] = []
   let flattenedTable = inlined.table
+  const flattenedAnalysis = inlined.analysisOutput
   const modulesQueue = inlined.modules
 
   while (modulesQueue.length > 0) {
     const module = modulesQueue.shift()!
-    const module1 = flattenModule(module, modulesByName, flattenedTable)
+    const moduleAfterFirstFlattening = flattenModule(module, modulesByName, flattenedTable)
 
     const instancedModules = flattenInstances(
-      module1,
+      moduleAfterFirstFlattening,
       modulesByName,
       flattenedTable,
       idGenerator,
       sourceMap,
-      inlined.analysisOutput
+      flattenedAnalysis
     )
 
-    const modulesToFlatten = instancedModules
-
-    const result = parsePhase3importAndNameResolution({
-      modules: flattenedModules.concat(modulesToFlatten),
-      sourceMap,
-    })
-
-    if (result.isLeft()) {
-      flattenedModules.concat(modulesToFlatten).forEach(m => console.log(moduleToString(m)))
-      throw new Error('[1] Flattening failed: ' + result.value.map(e => e.explanation))
-    }
-
-    const { table: newTable } = result.unwrap()
-    flattenedTable = newTable
+    const intermediateTable = resolveNamesOrThrow(flattenedModules.concat(instancedModules), sourceMap).table
 
     const phase3 = instancedModules.map(m => {
-      const flat = flattenModule(m, modulesByName, newTable)
+      const flat = flattenModule(m, modulesByName, intermediateTable)
       modulesByName.set(m.name, flat)
       return flat
     })
 
     flattenedModules.push(...phase3)
-    const toResolve = flattenedModules.concat(modulesQueue)
-    const result3 = parsePhase3importAndNameResolution({
-      modules: toResolve,
-      sourceMap,
-    }).chain(parsePhase4toposort)
 
-    if (result3.isLeft()) {
-      toResolve.forEach(m => console.log(moduleToString(m)))
-      throw new Error('[2] Flattening failed: ' + result3.value.map(e => e.explanation))
-    }
+    const result = toposortOrThrow(flattenedModules.concat(modulesQueue), sourceMap)
 
-    flattenedModules = result3.unwrap().modules.slice(0, flattenedModules.length)
-    flattenedTable = result3.unwrap().table
+    flattenedModules = result.modules.slice(0, flattenedModules.length)
+    flattenedTable = result.table
   }
 
   return {
     flattenedModules: flattenedModules as FlatModule[],
     flattenedTable,
-    flattenedAnalysis: inlined.analysisOutput,
+    flattenedAnalysis,
   }
+}
+
+function resolveNamesOrThrow(modules: QuintModule[], sourceMap: Map<bigint, Loc>): ParserPhase3 {
+  const result = parsePhase3importAndNameResolution({ modules, sourceMap })
+  if (result.isLeft()) {
+    modules.forEach(m => console.log(moduleToString(m)))
+    throw new Error('Internal error while flattening' + result.value.map(e => e.explanation))
+  }
+
+  return result.unwrap()
+}
+
+function toposortOrThrow(modules: QuintModule[], sourceMap: Map<bigint, Loc>): ParserPhase4 {
+  const result = parsePhase3importAndNameResolution({ modules, sourceMap }).chain(parsePhase4toposort)
+  if (result.isLeft()) {
+    modules.forEach(m => console.log(moduleToString(m)))
+    throw new Error('Internal error while flattening' + result.value.map(e => e.explanation))
+  }
+
+  return result.unwrap()
 }
