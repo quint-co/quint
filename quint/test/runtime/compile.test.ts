@@ -20,7 +20,7 @@ import { newIdGenerator } from '../../src/idGenerator'
 import { Rng, newRng } from '../../src/rng'
 import { SourceLookupPath, stringSourceResolver } from '../../src/parsing/sourceResolver'
 import { analyzeModules, parse, parseExpressionOrDeclaration } from '../../src'
-import { flattenModules } from '../../src/flattening'
+import { flattenModules } from '../../src/flattening/fullFlattener'
 import { newEvaluationState } from '../../src/runtime/impl/compilerImpl'
 
 // Use a global id generator, limited to this test suite.
