@@ -368,17 +368,16 @@ async function fetchAndUnpack(url: string, unpackPath: string): Promise<VerifyRe
  *    - a `left<VerifyError>` indicating an error.
  */
 async function fetchApalache(): Promise<VerifyResult<string>> {
-  // Fetch Github releases, find latest that satisfies `APALACHE_VERSION_TAG`
+  // Fetch Github releases
   return octokitRequest('GET /repos/informalsystems/apalache/releases').then(
     async resp => {
-      const releases = resp.data.map((element: { tag_name: string }) => element.tag_name)
-      const latestTaggedVersion = semver.maxSatisfying(releases, APALACHE_VERSION_TAG)
+      // Find latest that satisfies `APALACHE_VERSION_TAG`
+      const versions = resp.data.map((element: any) => element.tag_name)
+      const latestTaggedVersion = semver.maxSatisfying(versions, APALACHE_VERSION_TAG)
       // Filter release response to get dist archive asset URL
-      const taggedReleases = resp.data.filter(
-        (element: { tag_name: string }) => element.tag_name == latestTaggedVersion
-      )
-      const tgzAssets = taggedReleases[0].assets.filter((asset: { name: string }) => asset.name == APALACHE_TGZ)
-      const downloadUrl = tgzAssets[0].browser_download_url
+      const taggedRelease = resp.data.find((element: any) => element.tag_name == latestTaggedVersion)
+      const tgzAsset = taggedRelease.assets.find((asset: any) => asset.name == APALACHE_TGZ)
+      const downloadUrl = tgzAsset.browser_download_url
       // Check if we have already downloaded this release
       const unpackPath = path.join(os.homedir(), '.quint', `apalache-dist-${latestTaggedVersion}`)
       const apalacheBinary = path.join(unpackPath, 'apalache', 'bin', 'apalache-mc')
