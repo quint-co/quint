@@ -48,12 +48,16 @@ export function flattenModule(
   return moduleCopy
 }
 
-export function dependentDefinitions(
-  expr: QuintEx,
-  modulesByName: Map<string, QuintModule>,
-  lookupTable: LookupTable
-): QuintDef[] {
-  const flattener = new Flattener(modulesByName, lookupTable)
+/**
+ * Find definitions used by a given expression, by flattening that expression.
+ *
+ * @param expr - The expression to for which to find definitions
+ * @param lookupTable - The lookup table with all related references
+ *
+ * @returns The definitions used by the expression and their dependencies
+ */
+export function dependentDefinitions(expr: QuintEx, lookupTable: LookupTable): QuintDef[] {
+  const flattener = new Flattener(new Map(), lookupTable)
   walkExpression(flattener, expr)
   return [...flattener.defsToAdd.values()]
 }

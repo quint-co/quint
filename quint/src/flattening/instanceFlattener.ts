@@ -120,7 +120,7 @@ class InstanceFlattener implements IRTransformer {
 
     decl.overrides.forEach(([param, expr]) => {
       // Find dependencies of `expr` and add those to the new module
-      newModuleDecls.push(...dependentDefinitions(expr, this.modulesByName, this.lookupTable))
+      newModuleDecls.push(...dependentDefinitions(expr, this.lookupTable))
 
       if (expr.kind === 'name' && expr.name === param.name) {
         // Special case for instances like `import A(x = x) ...`
