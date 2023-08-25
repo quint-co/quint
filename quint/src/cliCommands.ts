@@ -589,7 +589,8 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
   return verify(config).then(res => {
     const verbosityLevel = !prev.args.out && !prev.args.outItf ? prev.args.verbosity : 0
     const elapsedMs = Date.now() - startMs
-    return res.map(_ => {
+    return res
+      .map(_ => {
         if (verbosity.hasResults(verbosityLevel)) {
           console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
           if (verbosity.hasHints(verbosityLevel)) {
@@ -597,7 +598,7 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
             console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
           }
         }
-        return ({ ...verifying, status: 'ok', errors: [] } as VerifiedStage)
+        return { ...verifying, status: 'ok', errors: [] } as VerifiedStage
       })
       .mapLeft(err => {
         const trace: QuintEx[] | undefined = err.traces ? ofItf(err.traces[0]) : undefined
@@ -619,7 +620,7 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
           stage: { ...verifying, status, errors: err.errors, trace },
         }
       })
-    })
+  })
 }
 
 /**
