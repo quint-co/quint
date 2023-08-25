@@ -340,7 +340,17 @@ async function connect(): Promise<VerifyResult<Apalache>> {
           // Exit handler that kills Apalache if Quint exists
           function exitHandler() {
             console.log('Shutting down Apalache server')
-            process.kill(apalache.pid!)
+            try {
+              process.kill(apalache.pid!)
+            } catch (error: any) {
+              // ESRCH is raised if no process with `pid` exists, i.e.,
+              // if Apalache server exited on its own
+              if (error.code == 'ESRCH') {
+                console.log('Apalache already exited')
+              } else {
+                throw error
+              }
+            }
           }
 
           if (apalache.pid) {
