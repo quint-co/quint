@@ -15,6 +15,8 @@ result () {
 
     # Skip tests for parameterized modules
     if [[ "$cmd" == "test" && (
+            "$file" == "cosmos/tendermint/Tendermint.qnt" ||
+            "$file" == "cosmos/tendermint/TendermintTest.qnt" ||
             "$file" == "cosmos/lightclient/Blockchain.qnt" ||
             "$file" == "cosmos/lightclient/LCVerificationApi.qnt" ) ]] ; then
       printf "N/A[^parameterized]"; return
@@ -24,6 +26,8 @@ result () {
             "$file" == "cosmos/lightclient/Blockchain.qnt" ||
             "$file" == "cosmos/lightclient/LCVerificationApi.qnt" ||
             "$file" == "cosmos/lightclient/typedefs.qnt" ||
+            "$file" == "cosmos/tendermint/Tendermint.qnt" ||
+            "$file" == "cosmos/tendermint/TendermintTest.qnt" ||
             "$file" =~ ^spells/ ||
             "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ||
             "$file" == "cosmos/ics20/base.qnt" ) ]] ; then
@@ -51,8 +55,6 @@ result () {
     elif [[ "$file" == "cosmos/ics23/ics23.qnt" && "$cmd" == "verify" ]] ; then
       printf "<sup>https://github.com/informalsystems/quint/issues/693,</sup>"
       printf "<sup>https://github.com/informalsystems/quint/pull/975</sup>"
-    elif [[ "$file" == "cosmos/tendermint/TendermintAcc005.qnt" && ( "$cmd" == "test" || "$cmd" == "verify" ) ]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/pull/1023</sup>"
     elif [[ "$file" == "cosmwasm/zero-to-hero/vote.qnt" && "$cmd" == "verify" ]] ; then
       printf "<sup>https://github.com/informalsystems/quint/issues/693</sup>"
     elif [[ "$file" == "language-features/option.qnt" && "$cmd" == "verify"  ]] ; then
@@ -109,6 +111,8 @@ get_verify_args () {
         "$file" == "classic/distributed/ReadersWriters/ReadersWriters.qnt" ||
         "$file" == "cosmos/lightclient/Lightclient.qnt" ]] ; then
     args="--init=Init --step=Next"
+  elif [[ "$file" == "cosmos/tendermint/TendermintModels.qnt" ]] ; then
+    args="--init=n4_f1::Init --step=n4_f1::Next --invariant=n4_f1::Agreement"
   fi
   echo "${args}"
 }
