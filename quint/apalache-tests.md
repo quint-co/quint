@@ -29,7 +29,8 @@ quint verify --init=invalidInit ../examples/language-features/booleans.qnt
 <!-- !test exit 1 -->
 <!-- !test err invalid init -->
 ```
-error: Configuration error (see the manual): Operator invalidInit not found (used as the initialization predicate)
+error: [QNT404] Name 'invalidInit' not found
+error: name resolution failed
 ```
 
 

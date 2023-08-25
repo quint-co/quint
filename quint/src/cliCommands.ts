@@ -17,6 +17,7 @@ import {
   ErrorMessage,
   Loc,
   compactSourceMap,
+  parseDefOrThrow,
   parsePhase1fromText,
   parsePhase2sourceResolution,
   parsePhase3importAndNameResolution,
@@ -43,7 +44,7 @@ import { Rng, newRng } from './rng'
 import { fileSourceResolver } from './parsing/sourceResolver'
 import { verify } from './quintVerifier'
 import { flattenModules } from './flattening/fullFlattener'
-import { analyzeModules } from './quintAnalyzer'
+import { analyzeInc, analyzeModules } from './quintAnalyzer'
 import { ExecutionFrame } from './runtime/trace'
 
 export type stage = 'loading' | 'parsing' | 'typechecking' | 'testing' | 'running' | 'documentation'
@@ -542,6 +543,34 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
   // TODO error handing for file reads and deserde
   const loadedConfig = args.apalacheConfig ? JSON.parse(readFileSync(args.apalacheConfig, 'utf-8')) : {}
 
+  const mainArg = prev.args.main
+  const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
+  const main = verifying.modules.find(m => m.name === mainName)
+  if (!main) {
+    return cliErr(`module ${mainName} does not exist`, { ...verifying, errors: [], sourceCode: '' })
+  }
+
+  // Wrap init, step and invariant in other definitions, to make sure they are not considered unused in the main module
+  // and, therefore, ignored by the flattener
+  const extraDefsAsText = [`action q::init = ${args.init}`, `action q::step = ${args.step}`]
+  if (args.invariant) {
+    extraDefsAsText.push(`val q::inv = and(${args.invariant.join(',')})`)
+  }
+
+  const extraDefs = extraDefsAsText.map(d => parseDefOrThrow(d, verifying.idGen, new Map()))
+  main.declarations.push(...extraDefs)
+
+  // We have to update the lookup table and analysis result with the new definitions. This is not ideal, and the problem
+  // is that is hard to add this definitions in the proper stage, in our current setup. We should try to tackle this
+  // while solving #1052.
+  const resolutionResult = parsePhase3importAndNameResolution(prev)
+  if (resolutionResult.isLeft()) {
+    return cliErr('name resolution failed', { ...verifying, errors: resolutionResult.value })
+  }
+
+  verifying.table = resolutionResult.unwrap().table
+  extraDefs.forEach(def => analyzeInc(verifying, verifying.table, def))
+
   // Flatten modules, replacing instances, imports and exports with their definitions
   const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
     verifying.modules,
@@ -552,15 +581,9 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
   )
 
   // Pick main module, we only pass this on to Apalache
-  const mainArg = prev.args.main
-  const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
-  const main = flattenedModules.find(m => m.name === mainName)
+  const flatMain = flattenedModules.find(m => m.name === mainName)!
 
-  if (!main) {
-    return cliErr(`module ${mainName} does not exist`, { ...verifying, errors: [], sourceCode: '' })
-  }
-
-  const veryfiyingFlat = { ...verifying, ...flattenedAnalysis, modules: [main], table: flattenedTable }
+  const veryfiyingFlat = { ...verifying, ...flattenedAnalysis, modules: [flatMain], table: flattenedTable }
   const parsedSpec = jsonStringOfOutputStage(pickOutputStage(veryfiyingFlat))
 
   // We need to insert the data form CLI args into thier appropriate locations
@@ -578,11 +601,12 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
     checker: {
       ...(loadedConfig.checker ?? {}),
       length: args.maxSteps,
-      init: args.init,
-      next: args.step,
-      inv: args.invariant,
+      init: 'q::init',
+      next: 'q::step',
+      inv: args.invariant ? ['q::inv'] : undefined,
     },
   }
+
   return verify(config).then(res =>
     res
       .map(_ => ({ ...verifying, status: 'ok', errors: [] } as VerifiedStage))
