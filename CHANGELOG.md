@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.14.0 -- 2023-08-25
+
+### Added
 
 - The `verify` command now automatically acquires the Apalache distribution and
   starts the server, if the server is not already running (#1115)
