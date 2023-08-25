@@ -17,8 +17,8 @@ import { QuintLexer } from '../generated/QuintLexer'
 import * as p from '../generated/QuintParser'
 import { QuintListener } from '../generated/QuintListener'
 
-import { IrErrorMessage, QuintDeclaration, QuintEx, QuintModule } from '../ir/quintIr'
-import { IdGenerator } from '../idGenerator'
+import { IrErrorMessage, QuintDeclaration, QuintDef, QuintEx, QuintModule, isDef } from '../ir/quintIr'
+import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { ToIrListener } from './ToIrListener'
 import { LookupTable } from '../names/base'
 import { resolveNames } from '../names/resolver'
@@ -28,6 +28,7 @@ import { CallGraphVisitor, mkCallGraphContext } from '../static/callgraph'
 import { walkModule } from '../ir/IRVisitor'
 import { toposort } from '../static/toposort'
 import { ErrorCode } from '../quintError'
+import { compact } from 'lodash'
 
 export interface Loc {
   source: string
@@ -82,10 +83,10 @@ export function fromIrErrorMessage(sourceMap: SourceMap): (err: IrErrorMessage) 
 
 export function fromQuintError(sourceMap: Map<bigint, Loc>): (_: QuintError) => ErrorMessage {
   return error => {
-    const loc = error.reference ? sourceMap.get(error.reference) ?? unknownLoc : unknownLoc
+    const loc = error.reference ? sourceMap.get(error.reference) : undefined
     return {
       explanation: quintErrorToString(error),
-      locs: [loc],
+      locs: compact([loc]),
     }
   }
 }
@@ -376,6 +377,15 @@ export function parse(
     })
     .chain(phase2Data => parsePhase3importAndNameResolution(phase2Data))
     .chain(phase3Data => parsePhase4toposort(phase3Data))
+}
+
+export function parseDefOrThrow(text: string, idGen?: IdGenerator, sourceMap?: Map<bigint, Loc>): QuintDef {
+  const result = parseExpressionOrDeclaration(text, '<builtins>', idGen ?? newIdGenerator(), sourceMap ?? new Map())
+  if (result.kind === 'declaration' && isDef(result.decl)) {
+    return result.decl
+  } else {
+    throw new Error(`Expected a definition, got ${result.kind}, parsing ${text}`)
+  }
 }
 
 // setup a Quint parser, so it can be used to parse from various non-terminals

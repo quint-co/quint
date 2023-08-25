@@ -5,7 +5,7 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * Flattening for modules, replacing instances, imports and exports with definitions refered by the module.
+ * Flattening for modules, replacing imports and exports with definitions referred by the module.
  *
  * @author Gabriela Moreira
  *
@@ -22,6 +22,7 @@ import {
   QuintInstance,
   QuintModule,
   QuintName,
+  isDef,
   qualifier,
 } from '../ir/quintIr'
 
@@ -85,6 +86,14 @@ class Flattener implements IRVisitor {
   exitModule(quintModule: QuintModule) {
     // Get rid of imports and exports, and add the definitions we collected
     quintModule.declarations = quintModule.declarations.filter(d => d.kind !== 'import' && d.kind !== 'export')
+    // Delete repeated definitions from `defsToAdd`
+    quintModule.declarations.forEach(d => {
+      if (isDef(d)) {
+        this.defsToAdd.delete(d.name)
+      }
+    })
+
+    // Add the definitions to the module (mutating it)
     quintModule.declarations.push(...this.defsToAdd.values())
   }
 
@@ -115,13 +124,18 @@ class Flattener implements IRVisitor {
       }
 
       const namespace = this.namespaceForNested ?? qualifier(decl)
-      const newDef =
+      const newDef: QuintDef =
         namespace && !def.name.startsWith(namespace)
           ? addNamespaceToDefinition(def, namespace, new Set(builtinNames))
           : def
 
+      // Typescript still keeps `LookupDefinition` extra fields even if we say `newDef` is a `QuintDef`. We need to
+      // remove them manually, so when this is collected back into a `LookupTable`, this leftover values don't get
+      // propagated.
+      const newDefWithoutMetadata = { ...newDef, hidden: false, namespaces: [], importedFrom: undefined }
+
       this.walkNested(namespace, newDef)
-      this.defsToAdd.set(newDef.name, newDef)
+      this.defsToAdd.set(newDef.name, newDefWithoutMetadata)
     })
   }
 

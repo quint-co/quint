@@ -665,6 +665,7 @@ module TendermintAcc {
 // Tests that demonstrate typical behavior.
 module TendermintTest {
   import TendermintAcc.*
+  export TendermintAcc.*
 
   // Quint will automatically compute the unchanged block in the future
   action unchangedAll = all {

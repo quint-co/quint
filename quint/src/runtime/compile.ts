@@ -26,8 +26,8 @@ import { AnalysisOutput, analyzeInc, analyzeModules } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
 import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { SourceLookupPath } from '../parsing/sourceResolver'
-import { addDeclarationToFlatModule, flattenModules } from '../flattening'
 import { Rng } from '../rng'
+import { flattenModules } from '../flattening/fullFlattener'
 
 /**
  * The name of the shadow variable that stores the last found trace.
@@ -216,12 +216,6 @@ export function compileDecl(
   })
 
   const mainModule = state.modules.find(m => m.name === state.mainName)!
-  const modules = state.modules.map(m => {
-    if (m.name === state.mainName) {
-      return { ...m, declarations: [...m.declarations, decl] }
-    }
-    return m
-  })
 
   // We need to resolve names for this new definition. Incremental name
   // resolution is not our focus now, so just resolve everything again.
@@ -230,20 +224,11 @@ export function compileDecl(
     .map(({ table }) => {
       const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, decl)
 
-      const { flattenedModule, flattenedDefs, flattenedTable, flattenedAnalysis } = addDeclarationToFlatModule(
-        modules,
-        table,
-        state.idGen,
-        state.sourceMap,
-        analysisOutput,
-        // Make a copy of the main module, so that we don't modify the original
-        { ...mainModule, declarations: [...mainModule.declarations] },
-        decl
-      )
-
-      const flatModules: FlatModule[] = [...state.modules]
-      flatModules.pop()
-      flatModules.push(flattenedModule)
+      const {
+        flattenedModules: flatModules,
+        flattenedTable,
+        flattenedAnalysis,
+      } = flattenModules(originalModules, table, state.idGen, state.sourceMap, analysisOutput)
 
       const newState = {
         ...state,
@@ -251,7 +236,13 @@ export function compileDecl(
         modules: flatModules,
         originalModules: originalModules,
       }
-      const ctx = compile(newState, evaluationState, flattenedTable, rng.next, flattenedDefs)
+
+      const flatDefinitions = flatModules.find(m => m.name === state.mainName)!.declarations
+
+      // Filter definitions that were not compiled yet
+      const defsToCompile = flatDefinitions.filter(d => !mainModule.declarations.some(d2 => d2.id === d.id))
+
+      const ctx = compile(newState, evaluationState, flattenedTable, rng.next, defsToCompile)
 
       const errorLocator = mkErrorMessage(state.sourceMap)
       return {
