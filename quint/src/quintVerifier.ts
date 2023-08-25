@@ -193,16 +193,19 @@ async function loadProtoDefViaReflection(retry: boolean): Promise<VerifyResult<P
 
   // Wait for gRPC channel to come up, with 1sec pauses
   if (retry) {
-    await (async () => {
-      for (;;) {
-        const grpcChannelState = reflectionClient.getChannel().getConnectivityState(true)
-        if (grpcChannelState == grpc.connectivityState.READY) {
-          return
-        } else {
-          await setTimeout(1000)
-        }
+    for (;;) {
+      const grpcChannelState = reflectionClient.getChannel().getConnectivityState(true)
+      if (grpcChannelState == grpc.connectivityState.READY) {
+        break
+      } else {
+        /* I suspect that there is a race with async gRPC code that actually
+         * brings the connection up, so we need to yield control here. In
+         * particular, waiting for the channel to come up in a busy-waiting loop
+         * does NOT work.
+         */
+        await setTimeout(1000)
       }
-    })()
+    }
   }
 
   // Query reflection endpoint
