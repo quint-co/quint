@@ -320,9 +320,9 @@ module Tendermint {
     }
 
   // lines 34-35 + lines 61-64 (onTimeoutPrevote)
-  action UponQuorumOfPrevotesAny(p, Evidence) =
+  action UponQuorumOfPrevotesAny(p: str, Evidence: Set[{ id: Value_t, round: Round_t, src: Proc_t }]): bool =
     // find the unique voters in the evidence
-    val Voters = Evidence.map(m => m.src)
+    val Voters: Set[str] = Evidence.map(m => m.src)
     // compare the number of the unique voters against the threshold
     all {
       step.get(p) == "prevote", // line 34 and 61
@@ -380,9 +380,9 @@ module Tendermint {
     }
 
   // lines 47-48 + 65-67 (onTimeoutPrecommit)
-  action UponQuorumOfPrecommitsAny(p, Evidence) =
+  action UponQuorumOfPrecommitsAny(p: str, Evidence: Set[{ id: Value_t, round: Round_t, src: Proc_t }]): bool =
     // find the unique committers in the evidence
-    val Committers =  Evidence.map( m => m.src )
+    val Committers: Set[str] = Evidence.map( m => m.src )
     // compare the number of the unique committers against the threshold
     all {
       size(Committers) >= THRESHOLD2,  // line 47
@@ -531,23 +531,22 @@ module Tendermint {
     }
 
   //**************************** FORK SCENARIOS  ***************************
+  def EquivocationIn(p, S) =
+    tuples(S, S).exists((m1, m2) =>
+      and {
+        m1 != m2,
+        m1.src == p,
+        m2.src == p,
+        m1.round == m2.round,
+      }
+    )
 
   // equivocation by a process p
-  def EquivocationBy(p) =
-    def EquivocationIn(S) =
-      tuples(S, S).exists((m1, m2) =>
-        and {
-          m1 != m2,
-          m1.src == p,
-          m2.src == p,
-          m1.round == m2.round,
-        }
-      )
-
+  def EquivocationBy(p: str): bool =
     or {
-      EquivocationIn(evidencePropose),
-      EquivocationIn(evidencePrevote),
-      EquivocationIn(evidencePrecommit),
+      EquivocationIn(p, evidencePropose),
+      EquivocationIn(p, evidencePrevote),
+      EquivocationIn(p, evidencePrecommit),
     }
 
   // amnesic behavior by a process p
