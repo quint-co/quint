@@ -77,7 +77,10 @@ quint verify --invariant inv,inv2 ../examples/verification/defaultOpNames.qnt
 
 <!-- !test in prints a trace on invariant violation -->
 ```
-quint verify --invariant inv ./testFixture/apalache/violateOnFive.qnt
+output=$(quint verify --invariant inv ./testFixture/apalache/violateOnFive.qnt)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/'
+exit $exit_code
 ```
 
 <!-- !test exit 1 -->
@@ -100,6 +103,7 @@ An example execution:
 
 [State 4] { n: 5 }
 
+[violation] Found an issue (duration).
 ```
 
 ### Variant violations write ITF to file when `--out-itf` is specified
@@ -126,7 +130,10 @@ error: found a counterexample
 
 <!-- !test in reports deadlock -->
 ```
-quint verify ./testFixture/apalache/deadlock.qnt
+output=$(quint verify ./testFixture/apalache/deadlock.qnt)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/'
+exit $exit_code
 ```
 
 <!-- !test exit 1 -->
@@ -149,4 +156,5 @@ An example execution:
 
 [State 4] { n: 5 }
 
+[violation] Found an issue (duration).
 ```
