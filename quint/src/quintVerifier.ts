@@ -326,7 +326,7 @@ async function connect(): Promise<VerifyResult<Apalache>> {
   }
 
   // Connection or pinging failed, download Apalache
-  console.log("Couldn't connect to Apalache, downloading latest supported release")
+  console.log("Couldn't connect to Apalache, checking for latest supported release")
   const distDir = await fetchApalache()
   // Launch Apalache from download
   return distDir
