@@ -22,9 +22,11 @@ again.
 <!-- !test in server not running -->
 ```
 quint verify ../examples/language-features/booleans.qnt | \
-  sed 's!https://.*!(asseturl)!'
+  sed 's!https://.*!(asseturl)!' | \
+  sed -e 's/([0-9]*ms)/(duration)/'
 quint verify ../examples/language-features/booleans.qnt | \
-  sed 's!\(Using existing Apalache distribution in \).*!\1(distdir)!'
+  sed 's!\(Using existing Apalache distribution in \).*!\1(distdir)!' | \
+  sed -e 's/([0-9]*ms)/(duration)/'
 ```
 
 <!-- !test out server not running -->
@@ -32,9 +34,15 @@ quint verify ../examples/language-features/booleans.qnt | \
 Couldn't connect to Apalache, checking for latest supported release
 Downloading Apalache distribution from (asseturl)
 Launching Apalache server
+[ok] No violation found (duration).
+You may increase --max-steps.
+Use --verbosity to produce more (or less) output.
 Shutting down Apalache server
 Couldn't connect to Apalache, checking for latest supported release
 Using existing Apalache distribution in (distdir)
 Launching Apalache server
+[ok] No violation found (duration).
+You may increase --max-steps.
+Use --verbosity to produce more (or less) output.
 Shutting down Apalache server
 ```

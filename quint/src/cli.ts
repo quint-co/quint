@@ -238,7 +238,12 @@ const verifyCmd = {
       .option('apalache-config', {
         desc: 'Filename of the additional Apalache configuration (in the HOCON format, a superset of JSON)',
         type: 'string',
-      }),
+      })
+      .option('verbosity', {
+        desc: 'control how much output is produced (0 to 5)',
+        type: 'number',
+      })
+      .default('verbosity', verbosity.defaultLevel),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633
   //

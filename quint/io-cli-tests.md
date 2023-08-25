@@ -864,11 +864,6 @@ exit $exit_code
 <!-- !test exit 1 -->
 <!-- !test out run uninitialized -->
 ```
-An example execution:
-
-[failure] Found an issue (duration).
-Use --seed=0x0 to reproduce.
-Use --verbosity=3 to show executions.
 <module_input>:2:3 - error: QNT500: Uninitialized const N. Use: import <moduleName>(N=<value>).*
 2:   const N: int
      ^^^^^^^^^^^^
@@ -877,5 +872,5 @@ Use --verbosity=3 to show executions.
 5:   action init = { x' = N }
                           ^
 
-error: Runtime error
+error: run failed
 ```
