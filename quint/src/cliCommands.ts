@@ -607,15 +607,32 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
     },
   }
 
-  return verify(config).then(res =>
-    res
-      .map(_ => ({ ...verifying, status: 'ok', errors: [] } as VerifiedStage))
+  const startMs = Date.now()
+
+  return verify(config).then(res => {
+    const verbosityLevel = !prev.args.out && !prev.args.outItf ? prev.args.verbosity : 0
+    const elapsedMs = Date.now() - startMs
+    return res
+      .map(_ => {
+        if (verbosity.hasResults(verbosityLevel)) {
+          console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
+          if (verbosity.hasHints(verbosityLevel)) {
+            console.log(chalk.gray('You may increase --max-steps.'))
+            console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
+          }
+        }
+        return { ...verifying, status: 'ok', errors: [] } as VerifiedStage
+      })
       .mapLeft(err => {
         const trace: QuintEx[] | undefined = err.traces ? ofItf(err.traces[0]) : undefined
+        const status = trace !== undefined ? 'violation' : 'failure'
         if (trace !== undefined) {
           // Always print the conterexample, unless the output is being directed to one of the outfiles
-          const verbosityLevel = prev.args.out || prev.args.outItf ? 0 : 2
           maybePrintCounterExample(verbosityLevel, trace)
+
+          if (verbosity.hasResults(verbosityLevel)) {
+            console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
+          }
 
           if (prev.args.outItf) {
             writeToJson(prev.args.outItf, err.traces)
@@ -623,10 +640,10 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
         }
         return {
           msg: err.explanation,
-          stage: { ...verifying, status: 'failure', errors: err.errors, trace },
+          stage: { ...verifying, status, errors: err.errors, trace },
         }
       })
-  )
+  })
 }
 
 /**

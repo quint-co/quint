@@ -48,7 +48,7 @@ export interface SimulatorResult {
 
 function errSimulationResult(status: SimulatorResultStatus, errors: ErrorMessage[]): SimulatorResult {
   return {
-    status: 'failure',
+    status,
     vars: [],
     states: [],
     frames: [],
