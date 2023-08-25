@@ -273,6 +273,7 @@ async function tryConnect(retry: boolean = false): Promise<VerifyResult<Apalache
 
 function downloadAndUnpackApalache(): Promise<VerifyResult<null>> {
   const url = `https://github.com/informalsystems/apalache/releases/download/v${APALACHE_VERSION_TAG}/apalache.tgz`
+  console.log(`Downloading Apalache distribution from ${url}...`)
   return fetch(url)
     .then(
       // unpack response body
