@@ -17,7 +17,7 @@ import { Either, left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
 import { format } from './prettierimp'
 
-import { FlatModule, QuintDef, QuintEx, isDef } from './ir/quintIr'
+import { FlatModule, QuintDef, QuintEx } from './ir/quintIr'
 import {
   CompilationContext,
   CompilationState,
@@ -31,7 +31,7 @@ import {
 import { formatError } from './errorReporter'
 import { Register } from './runtime/runtime'
 import { TraceRecorder, newTraceRecorder } from './runtime/trace'
-import { ErrorMessage, parseExpressionOrDeclaration } from './parsing/quintParserFrontend'
+import { ErrorMessage, parseDefOrThrow, parseExpressionOrDeclaration } from './parsing/quintParserFrontend'
 import { prettyQuintEx, printExecutionFrameRec, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
@@ -477,21 +477,12 @@ function saveVars(vars: Register[], nextvars: Register[]): Maybe<string[]> {
 
 // Declarations that are overloaded by the simulator.
 // In the future, we will declare them in a separate module.
-function simulatorBuiltins(compilationState: CompilationState): QuintDef[] {
+function simulatorBuiltins(st: CompilationState): QuintDef[] {
   return [
-    parseDefOrThrow(compilationState, `val ${lastTraceName} = []`),
-    parseDefOrThrow(compilationState, `def q::test = (q::nruns, q::nsteps, q::init, q::next, q::inv) => false`),
-    parseDefOrThrow(compilationState, `def q::testOnce = (q::nsteps, q::init, q::next, q::inv) => false`),
+    parseDefOrThrow(`val ${lastTraceName} = []`, st.idGen, st.sourceMap),
+    parseDefOrThrow(`def q::test = (q::nruns, q::nsteps, q::init, q::next, q::inv) => false`, st.idGen, st.sourceMap),
+    parseDefOrThrow(`def q::testOnce = (q::nsteps, q::init, q::next, q::inv) => false`, st.idGen, st.sourceMap),
   ]
-}
-
-function parseDefOrThrow(compilationState: CompilationState, text: string): QuintDef {
-  const result = parseExpressionOrDeclaration(text, '<builtins>', compilationState.idGen, compilationState.sourceMap)
-  if (result.kind === 'declaration' && isDef(result.decl)) {
-    return result.decl
-  } else {
-    throw new Error(`Expected a definition, got ${result.kind}, parsing ${text}`)
-  }
 }
 
 function tryEvalModule(out: writer, state: ReplState, mainName: string): boolean {
