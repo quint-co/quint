@@ -51,7 +51,7 @@ export function flattenModule(
 /**
  * Find definitions used by a given expression, by flattening that expression.
  *
- * @param expr - The expression to for which to find definitions
+ * @param expr - The expression for which to find definitions
  * @param lookupTable - The lookup table with all related references
  *
  * @returns The definitions used by the expression and their dependencies
