@@ -16,6 +16,7 @@ import { LookupDefinition, LookupTable, builtinNames } from '../names/base'
 import {
   QuintApp,
   QuintDef,
+  QuintEx,
   QuintExport,
   QuintImport,
   QuintInstance,
@@ -24,7 +25,7 @@ import {
   qualifier,
 } from '../ir/quintIr'
 
-import { IRVisitor, walkDefinition, walkModule } from '../ir/IRVisitor'
+import { IRVisitor, walkDefinition, walkExpression, walkModule } from '../ir/IRVisitor'
 import { addNamespaceToDefinition } from '../ir/namespacer'
 
 /**
@@ -47,12 +48,27 @@ export function flattenModule(
   return moduleCopy
 }
 
+/**
+ * Find definitions used by a given expression, by flattening that expression.
+ *
+ * @param expr - The expression for which to find definitions
+ * @param lookupTable - The lookup table with all related references
+ *
+ * @returns The definitions used by the expression and their dependencies
+ */
+export function dependentDefinitions(expr: QuintEx, lookupTable: LookupTable): QuintDef[] {
+  const flattener = new Flattener(new Map(), lookupTable)
+  walkExpression(flattener, expr)
+  return [...flattener.defsToAdd.values()]
+}
+
 class Flattener implements IRVisitor {
-  private modulesByName: Map<string, QuintModule>
-  private lookupTable: LookupTable
   // Buffer of definitions to add to the module. We can try to make this ordered in the future.
   // For now, we rely on toposorting defs after flattening.
-  private defsToAdd: Map<string, QuintDef> = new Map()
+  defsToAdd: Map<string, QuintDef> = new Map()
+
+  private modulesByName: Map<string, QuintModule>
+  private lookupTable: LookupTable
   // Store a namespace to use when recursing into nested definitions
   private namespaceForNested?: string
 
@@ -165,7 +181,7 @@ class Flattener implements IRVisitor {
   }
 }
 
-function getNamespaceForDef(def: LookupDefinition): string | undefined {
+export function getNamespaceForDef(def: LookupDefinition): string | undefined {
   if (!def.namespaces) {
     return
   }
