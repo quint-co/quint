@@ -1,7 +1,7 @@
 // Tests that demonstrate typical behavior.
 module TendermintTest {
-  import Tendermint as TM from "./Tendermint"
-  export TM.*
+  import Tendermint.* from "./Tendermint"
+  export Tendermint.*
 
   // Quint will automatically compute the unchanged block in the future
   action unchangedAll = all {
