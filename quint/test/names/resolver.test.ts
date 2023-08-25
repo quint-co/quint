@@ -5,7 +5,7 @@ import { Either } from '@sweet-monads/either'
 import { QuintError } from '../../src/quintError'
 import { LookupTable } from '../../src/names/base'
 import { resolveNames } from '../../src/names/resolver'
-import { buildModule, buildModuleWithDefs } from '../builders/ir'
+import { buildModule, buildModuleWithDecls } from '../builders/ir'
 import { zerog } from '../../src/idGenerator'
 
 describe('resolveNames', () => {
@@ -22,7 +22,7 @@ describe('resolveNames', () => {
   }
 
   function resolveNamesForDefs(defs: string[]): Either<QuintError[], LookupTable> {
-    const module = buildModuleWithDefs(baseDefs.concat(defs), undefined, zerog)
+    const module = buildModuleWithDecls(baseDefs.concat(defs), undefined, zerog)
 
     return resolveNames([module])
   }

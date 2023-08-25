@@ -1,11 +1,18 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { buildDef, buildExpression, buildModuleWithDefs, buildType } from './builders/ir'
-import { definitionToString, expressionToString, moduleToString, typeToString } from '../src/IRprinting'
-import { toScheme } from '../src/types/base'
+import { buildDecl, buildDef, buildExpression, buildModuleWithDecls, buildType } from '../builders/ir'
+import {
+  declarationToString,
+  definitionToString,
+  expressionToString,
+  moduleToString,
+  typeToString,
+} from '../../src/ir/IRprinting'
+import { toScheme } from '../../src/types/base'
+import { QuintSumType, unitValue } from '../../src'
 
 describe('moduleToString', () => {
-  const quintModule = buildModuleWithDefs(['var S: Set[int]', 'val f = S.filter(x => x + 1)'])
+  const quintModule = buildModuleWithDecls(['var S: Set[int]', 'val f = S.filter(x => x + 1)'])
 
   it('pretty prints the module', () => {
     const expectedModule = `module wrapper {
@@ -13,6 +20,74 @@ describe('moduleToString', () => {
   val f = filter(S, ((x) => iadd(x, 1)))
 }`
     assert.deepEqual(moduleToString(quintModule), expectedModule)
+  })
+})
+
+describe('declarationToString', () => {
+  it('pretty prints import declarations', () => {
+    const decl = buildDecl('import M.*')
+    const expectedDecl = 'import M.*'
+    assert.deepEqual(declarationToString(decl), expectedDecl)
+  })
+
+  it('pretty prints import declarations with qualifier', () => {
+    const decl = buildDecl('import M as M1')
+    const expectedDecl = 'import M as M1'
+    assert.deepEqual(declarationToString(decl), expectedDecl)
+  })
+
+  it('pretty prints import declarations with the module name as qualifier', () => {
+    const decl = buildDecl('import M')
+    const expectedDecl = 'import M'
+    assert.deepEqual(declarationToString(decl), expectedDecl)
+  })
+
+  it('pretty prints import declarations with from statement', () => {
+    const decl = buildDecl('import M.* from "./file"')
+    const expectedDecl = 'import M.* from "./file"'
+    assert.deepEqual(declarationToString(decl), expectedDecl)
+  })
+
+  it('pretty prints instance declarations', () => {
+    const decl = buildDecl('import M(x = N + 1, y = 3).*')
+    const expectedDecl = 'import M(x = iadd(N, 1), y = 3).*'
+    assert.deepEqual(declarationToString(decl), expectedDecl)
+  })
+
+  it('pretty prints instance declarations with qualifier', () => {
+    const decl = buildDecl('import M(x = N + 1, y = 3) as A')
+    const expectedDecl = 'import M(x = iadd(N, 1), y = 3) as A'
+    assert.deepEqual(declarationToString(decl), expectedDecl)
+  })
+
+  it('pretty prints instance declarations with from statement', () => {
+    const decl = buildDecl('import M(x = N + 1, y = 3) as A from "./file"')
+    const expectedDecl = 'import M(x = iadd(N, 1), y = 3) as A from "./file"'
+    assert.deepEqual(declarationToString(decl), expectedDecl)
+  })
+
+  it('pretty prints export declarations', () => {
+    const decl = buildDecl('export M.*')
+    const expectedDecl = 'export M.*'
+    assert.deepEqual(declarationToString(decl), expectedDecl)
+  })
+
+  it('pretty prints export declarations with qualifier', () => {
+    const decl = buildDecl('export M as M1')
+    const expectedDecl = 'export M as M1'
+    assert.deepEqual(declarationToString(decl), expectedDecl)
+  })
+
+  it('pretty prints export declarations with the module name as qualifier', () => {
+    const decl = buildDecl('export M')
+    const expectedDecl = 'export M'
+    assert.deepEqual(declarationToString(decl), expectedDecl)
+  })
+
+  it('pretty prints op definitions', () => {
+    const decl = buildDecl('val f = S.filter(x => x + 1)')
+    const expectedDecl = 'val f = filter(S, ((x) => iadd(x, 1)))'
+    assert.deepEqual(declarationToString(decl), expectedDecl)
   })
 })
 
@@ -56,18 +131,6 @@ describe('definitionToString', () => {
   it('pretty prints uninterpreted type definitions', () => {
     const def = buildDef('type T')
     const expectedDef = 'type T'
-    assert.deepEqual(definitionToString(def), expectedDef)
-  })
-
-  it('pretty prints import definitions', () => {
-    const def = buildDef('import M.*')
-    const expectedDef = 'import M.*'
-    assert.deepEqual(definitionToString(def), expectedDef)
-  })
-
-  it('pretty prints instance definitions', () => {
-    const def = buildDef('import M(x = N + 1, y = 3) as A')
-    const expectedDef = 'import M(x = iadd(N, 1), y = 3) as A'
     assert.deepEqual(definitionToString(def), expectedDef)
   })
 
@@ -168,6 +231,22 @@ describe('typeToString', () => {
   it('pretty prints record types', () => {
     const type = buildType('{ name: str, fun: int -> bool, rec: { flag: bool } }')
     const expectedType = '{ name: str, fun: (int -> bool), rec: { flag: bool } }'
+    assert.deepEqual(typeToString(type), expectedType)
+  })
+
+  it('pretty prints sum types', () => {
+    const type: QuintSumType = {
+      kind: 'sum',
+      fields: {
+        kind: 'row',
+        fields: [
+          { fieldName: 'A', fieldType: { kind: 'int', id: 0n } },
+          { fieldName: 'B', fieldType: unitValue(0n) },
+        ],
+        other: { kind: 'empty' },
+      },
+    }
+    const expectedType = '| A(int)\n| B'
     assert.deepEqual(typeToString(type), expectedType)
   })
 

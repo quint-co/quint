@@ -2,14 +2,14 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { Either, left, right } from '@sweet-monads/either'
 import { just } from '@sweet-monads/maybe'
-import { expressionToString } from '../../src/IRprinting'
+import { expressionToString } from '../../src/ir/IRprinting'
 import { Computable, ComputableKind, fail, kindName } from '../../src/runtime/runtime'
 import { noExecutionListener } from '../../src/runtime/trace'
 import {
   CompilationContext,
   CompilationState,
   compile,
-  compileDef,
+  compileDecl,
   compileExpr,
   compileFromCode,
   contextNameLookup,
@@ -19,8 +19,8 @@ import { dedent } from '../textUtils'
 import { newIdGenerator } from '../../src/idGenerator'
 import { Rng, newRng } from '../../src/rng'
 import { SourceLookupPath, stringSourceResolver } from '../../src/parsing/sourceResolver'
-import { analyzeModules, parse, parseExpressionOrUnit } from '../../src'
-import { flattenModules } from '../../src/flattening'
+import { analyzeModules, parse, parseExpressionOrDeclaration } from '../../src'
+import { flattenModules } from '../../src/flattening/fullFlattener'
 import { newEvaluationState } from '../../src/runtime/impl/compilerImpl'
 
 // Use a global id generator, limited to this test suite.
@@ -85,7 +85,7 @@ function evalVarAfterCall(varName: string, callee: string, input: string): Eithe
   const callback = (ctx: CompilationContext): Either<string, string> => {
     let key = undefined
     const lastModule = ctx.compilationState.modules[ctx.compilationState.modules.length - 1]
-    const def = lastModule.defs.find(def => def.kind === 'def' && def.name === callee)
+    const def = lastModule.declarations.find(def => def.kind === 'def' && def.name === callee)
     if (!def) {
       return left(`${callee} definition not found`)
     }
@@ -989,7 +989,7 @@ describe('incremental compilation', () => {
     next: () => 0n,
   }
   /* Adds some quint code to the compilation and evaluation state */
-  function compileModules(text: string): CompilationContext {
+  function compileModules(text: string, mainName: string): CompilationContext {
     const idGen = newIdGenerator()
     const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
     const parseResult = parse(idGen, 'fake_location', fake_path, text)
@@ -1013,20 +1013,32 @@ describe('incremental compilation', () => {
       originalModules: modules,
       idGen,
       modules: flattenedModules,
+      mainName,
       sourceMap,
       analysisOutput: flattenedAnalysis,
     }
 
     const moduleToCompile = flattenedModules[flattenedModules.length - 1]
 
-    return compile(state, newEvaluationState(noExecutionListener), flattenedTable, dummyRng.next, moduleToCompile.defs)
+    return compile(
+      state,
+      newEvaluationState(noExecutionListener),
+      flattenedTable,
+      dummyRng.next,
+      moduleToCompile.declarations
+    )
   }
 
   describe('compileExpr', () => {
     it('should compile a Quint expression', () => {
-      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }')
+      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }', 'm')
 
-      const parsed = parseExpressionOrUnit('x + 2', 'test.qnt', compilationState.idGen, compilationState.sourceMap)
+      const parsed = parseExpressionOrDeclaration(
+        'x + 2',
+        'test.qnt',
+        compilationState.idGen,
+        compilationState.sourceMap
+      )
       const expr = parsed.kind === 'expr' ? parsed.expr : undefined
       const context = compileExpr(compilationState, evaluationState, dummyRng, expr!)
 
@@ -1038,16 +1050,16 @@ describe('incremental compilation', () => {
 
   describe('compileDef', () => {
     it('should compile a Quint definition', () => {
-      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }')
+      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }', 'm')
 
-      const parsed = parseExpressionOrUnit(
+      const parsed = parseExpressionOrDeclaration(
         'val y = x + 2',
         'test.qnt',
         compilationState.idGen,
         compilationState.sourceMap
       )
-      const def = parsed.kind === 'toplevel' ? parsed.def : undefined
-      const context = compileDef(compilationState, evaluationState, dummyRng, def!)
+      const def = parsed.kind === 'declaration' ? parsed.decl : undefined
+      const context = compileDecl(compilationState, evaluationState, dummyRng, def!)
 
       assert.deepEqual(context.compilationState.analysisOutput.types.get(def!.id)?.type, { kind: 'int', id: 3n })
 
@@ -1057,17 +1069,18 @@ describe('incremental compilation', () => {
 
     it('non-exported imports are not visible in subsequent importing modules', () => {
       const { compilationState, evaluationState } = compileModules(
-        'module m1 { pure val x1 = 1 }' + 'module m2 { import m1.* pure val x2 = x1 }' + 'module m3 { import m2.* }' // m1 shouldn't be acessible inside m3
+        'module m1 { pure val x1 = 1 }' + 'module m2 { import m1.* pure val x2 = x1 }' + 'module m3 { import m2.* }', // m1 shouldn't be acessible inside m3
+        'm3'
       )
 
-      const parsed = parseExpressionOrUnit(
+      const parsed = parseExpressionOrDeclaration(
         'def x3 = x1',
         'test.qnt',
         compilationState.idGen,
         compilationState.sourceMap
       )
-      const def = parsed.kind === 'toplevel' ? parsed.def : undefined
-      const context = compileDef(compilationState, evaluationState, dummyRng, def!)
+      const decl = parsed.kind === 'declaration' ? parsed.decl : undefined
+      const context = compileDecl(compilationState, evaluationState, dummyRng, decl!)
 
       assert.sameDeepMembers(context.syntaxErrors, [
         {

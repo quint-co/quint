@@ -15,6 +15,7 @@
 import { ComponentKind, Effect, EffectComponent, EffectScheme, Entity, Signature, effectNames, toScheme } from './base'
 import { parseEffectOrThrow } from './parser'
 import { range, times } from 'lodash'
+import { QuintBuiltinOpcode } from '../ir/quintIr'
 
 export function getSignatures(): Map<string, Signature> {
   return new Map<string, Signature>(fixedAritySignatures.concat(multipleAritySignatures))
@@ -227,7 +228,7 @@ const otherOperators = [
   },
 ]
 
-const multipleAritySignatures: [string, Signature][] = [
+const multipleAritySignatures: [QuintBuiltinOpcode, Signature][] = [
   ['List', standardPropagation],
   ['Set', standardPropagation],
   ['Map', standardPropagation],

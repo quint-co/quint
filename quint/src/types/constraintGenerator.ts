@@ -12,7 +12,7 @@
  * @module
  */
 
-import { IRVisitor } from '../IRVisitor'
+import { IRVisitor } from '../ir/IRVisitor'
 import {
   QuintApp,
   QuintAssume,
@@ -29,22 +29,55 @@ import {
   QuintStr,
   QuintVar,
   isAnnotatedDef,
-} from '../quintIr'
-import { QuintType, typeNames } from '../quintTypes'
-import { expressionToString, rowToString, typeToString } from '../IRprinting'
+} from '../ir/quintIr'
+import { QuintType, typeNames } from '../ir/quintTypes'
+import { expressionToString, rowToString, typeToString } from '../ir/IRprinting'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
 import { getSignatures } from './builtinSignatures'
 import { Constraint, Signature, TypeScheme, toScheme } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 import { LookupTable } from '../names/base'
-import { specialConstraints } from './specialConstraints'
+import {
+  fieldConstraints,
+  fieldNamesConstraints,
+  itemConstraints,
+  recordConstructorConstraints,
+  tupleConstructorConstraints,
+  withConstraints,
+} from './specialConstraints'
 import { FreshVarGenerator } from '../FreshVarGenerator'
 
 export type SolvingFunctionType = (
   _table: LookupTable,
   _constraint: Constraint
 ) => Either<Map<bigint, ErrorTree>, Substitutions>
+
+// `validateArity(opName, args, pred, msg)` is `right(null)` if
+// if `pred(args.length) === true`, and otherwise `left(err)`, where `err`
+// is constructed using the given `opName` and `msg`.
+//
+// `msg` should contain a textual description of the expected argument
+// length, e.g., ("1", "2", "even number of", ...).
+//
+// Use this for operators that cannot be typed in the Quint type system.
+function validateArity(
+  opcode: string,
+  args: [QuintEx, QuintType][],
+  pred: (arity: number) => Boolean,
+  msg: String
+): Either<Error, null> {
+  if (!pred(args.length)) {
+    return left(
+      buildErrorLeaf(
+        `Checking arity for application of ${opcode}`,
+        `Operator expects ${msg} arguments but was given ${args.length}`
+      )
+    )
+  } else {
+    return right(null)
+  }
+}
 
 // A visitor that collects types and constraints for a module's expressions
 export class ConstraintGeneratorVisitor implements IRVisitor {
@@ -121,6 +154,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         })
       })
     })
+
+    // Solve constraints here since this won't go through `exitDef`
+    if (this.constraints.length > 0) {
+      this.solveConstraints()
+    }
   }
 
   //     n: t ∈ Γ
@@ -152,31 +190,47 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       })
     )
 
-    const result = argsResult.chain((results): Either<Error, TypeScheme> => {
-      const signature = this.typeForName(e.opcode, e.id, e.args.length)
-      const a: QuintType = { kind: 'var', name: this.freshVarGenerator.freshVar('t') }
-      const special = specialConstraints(e.opcode, e.id, results, a)
-
-      const constraints = special.chain(cs => {
-        // Check if there is a special case defined for the operator
-        if (cs.length > 0) {
-          // If yes, use the special constraints
-          return right(cs)
-        } else {
-          // Otherwise, define a constraint over the signature
-          return signature.map(t1 => {
-            const t2: QuintType = { kind: 'oper', args: results.map(r => r[1]), res: a }
-            const c: Constraint = { kind: 'eq', types: [t1, t2], sourceId: e.id }
-            return [c]
-          })
+    // We want `definedSignature` computed before the fresh variable `a` so that the
+    // numbering of ther fresh variables stays in order, with `a`, used for return types,
+    // bearing the highest number.
+    const definedSignature = this.typeForName(e.opcode, e.id, e.args.length)
+    const a: QuintType = { kind: 'var', name: this.freshVarGenerator.freshVar('t') }
+    const result = argsResult
+      .chain(results => {
+        switch (e.opcode) {
+          // Record operators
+          case 'Rec':
+            return validateArity(e.opcode, results, l => l % 2 === 0, 'even number of').chain(() =>
+              recordConstructorConstraints(e.id, results, a)
+            )
+          case 'field':
+            return validateArity(e.opcode, results, l => l === 2, '2').chain(() => fieldConstraints(e.id, results, a))
+          case 'fieldNames':
+            return validateArity(e.opcode, results, l => l === 1, '1').chain(() =>
+              fieldNamesConstraints(e.id, results, a)
+            )
+          case 'with':
+            return validateArity(e.opcode, results, l => l === 3, '3').chain(() => withConstraints(e.id, results, a))
+          // Tuple operators
+          case 'Tup':
+            return validateArity(e.opcode, results, l => l > 0, 'at least one').chain(() =>
+              tupleConstructorConstraints(e.id, results, a)
+            )
+          case 'item':
+            return validateArity(e.opcode, results, l => l === 2, '2').chain(() => itemConstraints(e.id, results, a))
+          // Otherwise it's a standard operator with a definition in the context
+          default:
+            return definedSignature.map(t1 => {
+              const t2: QuintType = { kind: 'oper', args: results.map(r => r[1]), res: a }
+              const c: Constraint = { kind: 'eq', types: [t1, t2], sourceId: e.id }
+              return [c]
+            })
         }
       })
-
-      return constraints.map(cs => {
+      .map(cs => {
         this.constraints.push(...cs)
         return toScheme(a)
       })
-    })
 
     this.addToResults(e.id, result)
   }
@@ -315,7 +369,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         return right(def.typeAnnotation)
       }
 
-      const id = def?.reference
+      const id = def?.id
       if (!def || !id) {
         return left(buildErrorLeaf(this.location, `Signature not found for name: ${name}`))
       }

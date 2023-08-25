@@ -10,28 +10,33 @@
  */
 grammar Quint;
 
+@header {
+
+// Used for forming errors
+import { quintErrorToString } from '../quintError'
+
+}
 // entry point for the parser
 modules : module+ EOF;
 
-module : DOCCOMMENT* 'module' IDENTIFIER '{' documentedUnit* '}';
-documentedUnit : DOCCOMMENT* unit;
+module : DOCCOMMENT* 'module' qualId '{' documentedDeclaration* '}';
+documentedDeclaration : DOCCOMMENT* declaration;
 
-// a module unit
-unit :    'const' IDENTIFIER ':' type                     # const
-        | 'var'   IDENTIFIER ':' type                     # var
-        | 'assume' identOrHole '=' expr                   # assume
-        | instanceMod                                     # instance
-        | operDef                                         # oper
-        | 'type' IDENTIFIER                               # typedef
-        | 'type' IDENTIFIER '=' type                      # typedef
-        | importMod                                       # importDef
-        | exportMod                                       # exportDef
-        // https://github.com/informalsystems/quint/issues/378
-        //| 'nondet' IDENTIFIER (':' type)? '=' expr ';'? expr {
-        //  const m = "QNT007: 'nondet' is only allowed inside actions"
-        //  this.notifyErrorListeners(m)
-        //}                                                 # nondetError
-        ;
+// a module declaration
+declaration : 'const' qualId ':' type                     # const
+            | 'var'   qualId ':' type                     # var
+            | 'assume' identOrHole '=' expr               # assume
+            | instanceMod                                 # instance
+            | operDef                                     # oper
+            | typeDef                                     # typeDefs
+            | importMod                                   # importDef
+            | exportMod                                   # exportDef
+            // https://github.com/informalsystems/quint/issues/378
+            //| 'nondet' qualId (':' type)? '=' expr ';'? expr {
+            //  const m = "QNT007: 'nondet' is only allowed inside actions"
+            //  this.notifyErrorListeners(m)
+            //}                                                 # nondetError
+            ;
 
 // An operator definition.
 // We embed two kinds of parameters right in this rule.
@@ -46,7 +51,18 @@ operDef : qualifier normalCallName
             ('=' expr)? ';'?
         ;
 
-nondetOperDef : 'nondet' IDENTIFIER (':' type)? '=' expr ';'?;
+typeDef
+    : 'type' qualId                                                         # typeAbstractDef
+    | 'type' qualId '=' type                                                # typeAliasDef
+    | 'type' typeName=qualId '=' '|'? typeSumVariant ('|' typeSumVariant)*  # typeSumDef
+    ;
+
+// A single variant case in a sum type definition.
+//
+// E.g., `A(t)` or `A`.
+typeSumVariant : sumLabel=simpleId["variant label"] ('(' type ')')? ;
+
+nondetOperDef : 'nondet' qualId (':' type)? '=' expr ';'?;
 
 qualifier : 'val'
           | 'def'
@@ -75,9 +91,9 @@ instanceMod :   // creating an instance and importing all names introduced in th
                   ('from' fromSource)?
         ;
 
-moduleName : IDENTIFIER;
-name: IDENTIFIER;
-qualifiedName : IDENTIFIER;
+moduleName : qualId;
+name: qualId;
+qualifiedName : qualId;
 fromSource: STRING;
 
 // Types in Type System 1.2 of Apalache, which supports discriminated unions
@@ -92,16 +108,19 @@ type :          <assoc=right> type '->' type                    # typeFun
         |       'int'                                           # typeInt
         |       'str'                                           # typeStr
         |       'bool'                                          # typeBool
-        |       IDENTIFIER                                      # typeConstOrVar
+        |       qualId                                          # typeConstOrVar
         |       '(' type ')'                                    # typeParen
         ;
 
-typeUnionRecOne : '|' '{' IDENTIFIER ':' STRING (',' row)? ','? '}'
+typeUnionRecOne : '|' '{' qualId ':' STRING (',' row)? ','? '}'
                 ;
 
-row : | (IDENTIFIER ':' type ',')* ((IDENTIFIER ':' type) (',' | '|' (IDENTIFIER))?)?
-      | '|' (IDENTIFIER)
+row : (rowLabel ':' type ',')* ((rowLabel ':' type) (',' | '|' (rowVar=IDENTIFIER))?)?
+    | '|' (rowVar=IDENTIFIER)
     ;
+
+rowLabel : simpleId["record"] ;
+
 
 // A Quint expression. The order matters, it defines the priority.
 // Wherever possible, we keep the same order of operators as in TLA+.
@@ -125,7 +144,7 @@ expr:           // apply a built-in operator via the dot notation
         |       expr op=(PLUS | MINUS) expr                         # plusMinus
                 // standard relations
         |       expr op=(GT | LT | GE | LE | NE | EQ) expr          # relations
-        |       IDENTIFIER '\'' ASGN expr                           # asgn
+        |       qualId '\'' ASGN expr                               # asgn
         |       expr '=' expr {
                   const m = "QNT006: unexpected '=', did you mean '=='?"
                   this.notifyErrorListeners(m)
@@ -142,7 +161,7 @@ expr:           // apply a built-in operator via the dot notation
                     ('|' STRING ':' parameter '=>' expr)+           # match
         |       'all' '{' expr (',' expr)* ','? '}'                 # actionAll
         |       'any' '{' expr (',' expr)* ','? '}'                 # actionAny
-        |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
+        |       ( qualId | INT | BOOL | STRING)                     # literalOrId
         //      a tuple constructor, the form tup(...) is just an operator call
         |       '(' expr ',' expr (',' expr)* ','? ')'              # tuple
         //      short-hand syntax for pairs, mainly designed for maps
@@ -160,7 +179,7 @@ expr:           // apply a built-in operator via the dot notation
 // A probing rule for REPL.
 // Note that a top-level declaration has priority over an expression.
 // For example, see: https://github.com/informalsystems/quint/issues/394
-unitOrExpr :    unit EOF | expr EOF | DOCCOMMENT EOF | EOF;
+declarationOrExpr :    declaration EOF | expr EOF | DOCCOMMENT EOF | EOF;
 
 // This rule parses anonymous functions, e.g.:
 // 1. x => e
@@ -172,31 +191,31 @@ lambda:         parameter '=>' expr
 
 
 // an identifier or a hole '_'
-identOrHole :   '_' | IDENTIFIER
+identOrHole :   '_' | qualId
         ;
 
 parameter: identOrHole;
 
 // an identifier or a star '*'
-identOrStar :   '*' | IDENTIFIER
+identOrStar :   '*' | qualId
         ;
 
 argList :      expr (',' expr)*
         ;
 
-recElem : IDENTIFIER ':' expr
+recElem : simpleId["record"] ':' expr
         | '...' expr
         ;
 
 // operators in the normal call may use a few reserved names,
 // which are not recognized as identifiers.
-normalCallName :   IDENTIFIER
+normalCallName :   qualId
         |       op=(AND | OR | IFF | IMPLIES | SET | LIST | MAP)
         ;
 
 // A few infix operators may be called via lhs.oper(rhs),
 // without causing any ambiguity.
-nameAfterDot :  IDENTIFIER
+nameAfterDot :  qualId
         |       op=(AND | OR | IFF | IMPLIES)
         ;
 
@@ -209,6 +228,21 @@ operator: (AND | OR | IFF | IMPLIES |
 // literals
 literal: (STRING | BOOL | INT)
         ;
+
+// A (possibly) qualified identifier, like `Foo` or `Foo::bar`
+qualId : IDENTIFIER ('::' IDENTIFIER)* ;
+// An unqualified identifier that raises an error if a qualId is supplied
+simpleId[context: string]
+    : IDENTIFIER
+    | qualId {
+        const err = quintErrorToString(
+          { code: 'QNT008',
+            message: "Identifiers in a " + $context + " cannot be qualified with '::'. Found " + $qualId.text + "."
+          },
+        )
+        this.notifyErrorListeners(err)
+      }
+    ;
 
 // TOKENS
 
@@ -246,8 +280,7 @@ LPAREN          :   '(' ;
 RPAREN          :   ')' ;
 
 // other TLA+ identifiers
-IDENTIFIER             : SIMPLE_IDENTIFIER | SIMPLE_IDENTIFIER '::' IDENTIFIER ;
-SIMPLE_IDENTIFIER      : ([a-zA-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;
+IDENTIFIER      : ([a-zA-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;
 
 DOCCOMMENT : '///' .*? '\n';
 

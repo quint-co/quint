@@ -3,7 +3,7 @@ import { assert } from 'chai'
 import { none } from '@sweet-monads/maybe'
 
 import { newTraceRecorder } from '../../src/runtime/trace'
-import { QuintApp } from '../../src/quintIr'
+import { QuintApp } from '../../src/ir/quintIr'
 import { verbosity } from '../../src/verbosity'
 import { newRng } from '../../src/rng'
 

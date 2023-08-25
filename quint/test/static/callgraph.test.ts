@@ -9,9 +9,9 @@ import {
   parsePhase3importAndNameResolution,
 } from '../../src/parsing/quintParserFrontend'
 import { SourceLookupPath, fileSourceResolver } from '../../src/parsing/sourceResolver'
-import { LookupTable, QuintDef, QuintExport, QuintImport, QuintInstance, QuintModule } from '../../src'
+import { LookupTable, QuintDeclaration, QuintExport, QuintImport, QuintInstance, QuintModule } from '../../src'
 import { CallGraphVisitor, mkCallGraphContext } from '../../src/static/callgraph'
-import { walkModule } from '../../src/IRVisitor'
+import { walkModule } from '../../src/ir/IRVisitor'
 
 describe('compute call graph', () => {
   // Parse Quint code without, stopping after name resolution
@@ -37,28 +37,28 @@ describe('compute call graph', () => {
     return [modules, table]
   }
 
-  function findDef(module: QuintModule, name: string): QuintDef {
-    const d = module.defs.find(
+  function findDef(module: QuintModule, name: string): QuintDeclaration {
+    const d = module.declarations.find(
       d => (d.kind === 'def' || d.kind === 'const' || d.kind === 'var' || d.kind === 'typedef') && d.name === name
     )
     assert(d, `Definition ${name} not found`)
     return d
   }
 
-  function findImport(module: QuintModule, pred: (imp: QuintImport) => boolean): QuintDef {
-    const d = module.defs.find(d => d.kind === 'import' && pred(d))
+  function findImport(module: QuintModule, pred: (imp: QuintImport) => boolean): QuintDeclaration {
+    const d = module.declarations.find(d => d.kind === 'import' && pred(d))
     assert(d, `Import not found in ${module.name}`)
     return d
   }
 
-  function findInstance(module: QuintModule, pred: (imp: QuintInstance) => boolean): QuintDef {
-    const d = module.defs.find(d => d.kind === 'instance' && pred(d))
+  function findInstance(module: QuintModule, pred: (imp: QuintInstance) => boolean): QuintDeclaration {
+    const d = module.declarations.find(d => d.kind === 'instance' && pred(d))
     assert(d, `Instance not found in ${module.name}`)
     return d
   }
 
-  function findExport(module: QuintModule, pred: (imp: QuintExport) => boolean): QuintDef {
-    const d = module.defs.find(d => d.kind === 'export' && pred(d))
+  function findExport(module: QuintModule, pred: (imp: QuintExport) => boolean): QuintDeclaration {
+    const d = module.declarations.find(d => d.kind === 'export' && pred(d))
     assert(d, `Export not found in ${module.name}`)
     return d
   }

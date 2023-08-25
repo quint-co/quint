@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- The `verify` command now manages Apalache server, if no already running
+  instance is detected (#1115)
+
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed a problem where definitions were not properly loaded in the REPL when
+  the main module was provided in the CLI argument (#1112)
+
+### Security
+
+## v0.13.0 -- 2023-08-03
+
+### Added
+
+- `quint repl` produces an evaluation trace on errors too (#1056)
+- `S.setOfMaps(Int).oneOf()` is now supported (#1060)
+- `quint run` produces a friendlier message when it meets a `const` (#1050)
+
+### Changed
+
+- The behavior of `oneOf` has changed, existing seed values for `quint test`
+  can exhibit different behavior than before (#1060)
+- `APALACHE_DIST` no longer needed to run `quint verify` (#1075)
+- Record field labels that include `::` are now illegal and raise a syntax error
+  (#1086)
+
 ### Deprecated
 ### Removed
 
@@ -19,6 +48,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix bug where `export` for a qualified import would not work (#1030)
 - Fix a problem where name resolution would fail to flag name errors for
   non-exported names in incremetal evaluation in REPL (#1031)
+- Do not fail on a bug in error formatting (#1063)
+- Fix unhandled error messages during parsing and typechecking on the Apalache
+  server (#1074)
+- Fix a problem where some definitions would have to be exported from the
+  main module in order for the REPL and the simulator to load them (#1039 and #1051)
+- Invalid arities when applying record and tuple operator no longer cause a crash (#1054)
 
 ### Security
 

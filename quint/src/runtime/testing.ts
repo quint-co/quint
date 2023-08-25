@@ -12,7 +12,7 @@ import { Either, left, merge, right } from '@sweet-monads/either'
 import { just } from '@sweet-monads/maybe'
 
 import { ErrorMessage, fromIrErrorMessage } from '../parsing/quintParserFrontend'
-import { QuintEx, QuintOpDef } from '../quintIr'
+import { QuintEx, QuintOpDef } from '../ir/quintIr'
 
 import { CompilationContext, CompilationState, compile, lastTraceName } from './compile'
 import { zerog } from './../idGenerator'
@@ -88,7 +88,7 @@ export function compileAndTest(
     return left([{ explanation: 'Cannot find main module', locs: [] }])
   }
 
-  const ctx = compile(compilationState, newEvaluationState(recorder), lookupTable, options.rng.next, main.defs)
+  const ctx = compile(compilationState, newEvaluationState(recorder), lookupTable, options.rng.next, main.declarations)
 
   const saveTrace = (index: number, name: string, status: string) => {
     // Save the best traces that are reported by the recorder:
@@ -111,7 +111,7 @@ export function compileAndTest(
     return left(ctxErrors)
   }
 
-  const testDefs = main.defs.filter(d => d.kind === 'def' && options.testMatch(d.name)) as QuintOpDef[]
+  const testDefs = main.declarations.filter(d => d.kind === 'def' && options.testMatch(d.name)) as QuintOpDef[]
 
   return merge(
     testDefs.map((def, index) => {

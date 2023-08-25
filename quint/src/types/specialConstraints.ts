@@ -5,7 +5,8 @@
  * --------------------------------------------------------------------------------- */
 
 /**
- * Special constraint cases for Quint types, including record and tuple related operators
+ * Special constraint cases for Quint operators that we are not able to type in our system,
+ * including record and tuple related operators
  *
  * @author Gabriela Moreira
  *
@@ -14,57 +15,23 @@
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { Error, buildErrorLeaf } from '../errorTree'
-import { expressionToString } from '../IRprinting'
-import { QuintEx } from '../quintIr'
-import { QuintType, QuintVarType } from '../quintTypes'
+import { expressionToString } from '../ir/IRprinting'
+import { QuintEx } from '../ir/quintIr'
+import { QuintType, QuintVarType } from '../ir/quintTypes'
 import { Constraint } from './base'
 import { chunk, times } from 'lodash'
 
-/*
- * Generate constraints for operators for which signatures cannot be expressed as normal signatures
- *
- * @param opcode The name of the operator
- * @param id The id of the component for which constraints are being generated
- * @param args The arguments to the operator and their respective types
- * @param resultTypeVar A fresh type variable for the result type
- *
- * @returns Either an error or a list of constraints
- */
-export function specialConstraints(
-  opcode: string,
+export function recordConstructorConstraints(
   id: bigint,
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
-  switch (opcode) {
-    // Record operators
-    case 'Rec':
-      return recordConstructorConstraints(id, args, resultTypeVar)
-    case 'field':
-      return fieldConstraints(id, args, resultTypeVar)
-    case 'fieldNames':
-      return fieldNamesConstraints(id, args, resultTypeVar)
-    case 'with':
-      return withConstraints(id, args, resultTypeVar)
-    // Tuple operators
-    case 'Tup':
-      return tupleConstructorConstraints(id, args, resultTypeVar)
-    case 'item':
-      return itemConstraints(id, args, resultTypeVar)
-    default:
-      return right([])
-  }
-}
-
-function recordConstructorConstraints(
-  id: bigint,
-  args: [QuintEx, QuintType][],
-  resultTypeVar: QuintVarType
-): Either<Error, Constraint[]> {
-  const constraints: Constraint[] = []
   // A record constructor has the normal form Rec('field1', value1, 'field2', value2, ...)
   // So we iterate over the arguments in pairs (chunks of size 2)
-  const fields = chunk(args, 2).map(([[key, keyType], [_value, valueType]]) => {
+  //
+  // - We can ignore the _keyType because we are verifying here that every key is a string litteral
+  // - We can ignore the _value because we are only doing type checking
+  const fields = chunk(args, 2).map(([[key, _keyType], [_value, valueType]]) => {
     if (key.kind !== 'str') {
       return left(
         buildErrorLeaf(
@@ -74,26 +41,23 @@ function recordConstructorConstraints(
       )
     }
 
-    const constraint: Constraint = { kind: 'eq', types: [keyType, { kind: 'str' }], sourceId: key.id }
-    constraints.push(constraint)
-
     return right({ fieldName: key.value, fieldType: valueType })
   })
 
   return mergeInMany(fields).map(fs => {
     const t: QuintType = { kind: 'rec', fields: { kind: 'row', fields: fs, other: { kind: 'empty' } } }
-    const c: Constraint = { kind: 'eq', types: [t, resultTypeVar], sourceId: id }
-    constraints.push(c)
-    return constraints
+    const constraint: Constraint = { kind: 'eq', types: [t, resultTypeVar], sourceId: id }
+    return [constraint]
   })
 }
 
-function fieldConstraints(
+export function fieldConstraints(
   id: bigint,
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
-  const [[_rec, recType], [fieldName, fieldNameType]] = args
+  // We can ignore the _fieldNameType because we are verifying here that every key is a string litteral
+  const [[_rec, recType], [fieldName, _fieldNameType]] = args
 
   if (fieldName.kind !== 'str') {
     return left(
@@ -113,13 +77,12 @@ function fieldConstraints(
     },
   }
 
-  const c1: Constraint = { kind: 'eq', types: [fieldNameType, { kind: 'str' }], sourceId: fieldName.id }
-  const c2: Constraint = { kind: 'eq', types: [recType, generalRecType], sourceId: id }
+  const constraint: Constraint = { kind: 'eq', types: [recType, generalRecType], sourceId: id }
 
-  return right([c1, c2])
+  return right([constraint])
 }
 
-function fieldNamesConstraints(
+export function fieldNamesConstraints(
   id: bigint,
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
@@ -134,12 +97,13 @@ function fieldNamesConstraints(
   return right([c1, c2])
 }
 
-function withConstraints(
+export function withConstraints(
   id: bigint,
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
-  const [[_rec, recType], [fieldName, fieldNameType], [_value, valueType]] = args
+  // We can ignore the _fieldNameType because we are verifying here that every key is a string litteral
+  const [[_rec, recType], [fieldName, _fieldNameType], [_value, valueType]] = args
 
   if (fieldName.kind !== 'str') {
     return left(
@@ -159,14 +123,13 @@ function withConstraints(
     },
   }
 
-  const c1: Constraint = { kind: 'eq', types: [fieldNameType, { kind: 'str' }], sourceId: fieldName.id }
-  const c2: Constraint = { kind: 'eq', types: [recType, generalRecType], sourceId: id }
-  const c3: Constraint = { kind: 'eq', types: [resultTypeVar, generalRecType], sourceId: id }
+  const c1: Constraint = { kind: 'eq', types: [recType, generalRecType], sourceId: id }
+  const c2: Constraint = { kind: 'eq', types: [resultTypeVar, generalRecType], sourceId: id }
 
-  return right([c1, c2, c3])
+  return right([c1, c2])
 }
 
-function tupleConstructorConstraints(
+export function tupleConstructorConstraints(
   id: bigint,
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
@@ -180,14 +143,13 @@ function tupleConstructorConstraints(
   return right([c])
 }
 
-function itemConstraints(
+export function itemConstraints(
   id: bigint,
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
-  const [[_tup, tupType], [itemName, itemNameType]] = args
-
-  const c1: Constraint = { kind: 'eq', types: [itemNameType, { kind: 'int' }], sourceId: itemName.id }
+  // We can ignore the _itemNameType because we are verifying here that every key is a string litteral
+  const [[_tup, tupType], [itemName, _itemNameType]] = args
 
   if (itemName.kind !== 'int') {
     return left(
@@ -213,7 +175,7 @@ function itemConstraints(
       other: { kind: 'var', name: `tail_${resultTypeVar.name}` },
     },
   }
-  const c2: Constraint = { kind: 'eq', types: [tupType, generalTupType], sourceId: id }
+  const constraint: Constraint = { kind: 'eq', types: [tupType, generalTupType], sourceId: id }
 
-  return right([c1, c2])
+  return right([constraint])
 }

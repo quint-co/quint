@@ -14,23 +14,30 @@
  * @module
  */
 
-import { Either, left, right } from '@sweet-monads/either'
+import { Either, chain, left, right } from '@sweet-monads/either'
 import { ErrorMessage } from './parsing/quintParserFrontend'
-import { spawnSync } from 'child_process'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'
+import semver from 'semver'
+import fetch from 'node-fetch'
+import { pipeline } from 'stream/promises'
+import child_process from 'child_process'
+import * as tar from 'tar'
 import * as grpc from '@grpc/grpc-js'
 import * as proto from '@grpc/proto-loader'
+import * as protobufDescriptor from 'protobufjs/ext/descriptor'
 import { setTimeout } from 'timers/promises'
 import { promisify } from 'util'
 import { ItfTrace } from './itf'
+import { request as octokitRequest } from '@octokit/request'
+
+import type { Buffer } from 'buffer'
+import type { PackageDefinition as ProtoPackageDefinition } from '@grpc/proto-loader'
 
 const APALACHE_SERVER_URI = 'localhost:8822'
-// These will be addressed as we work out the packaging for apalche
-// See https://github.com/informalsystems/quint/issues/701
-// TODO const APALACHE_VERSION = "0.30.8"
-// TODO const DEFAULT_HOME = path.join(__dirname, 'apalache')
+const APALACHE_VERSION_TAG = '0.42.x'
+const APALACHE_TGZ = 'apalache.tgz'
 
 // The structure used to report errors
 type VerifyError = {
@@ -40,9 +47,6 @@ type VerifyError = {
 }
 
 export type VerifyResult<T> = Either<VerifyError, T>
-
-// Paths to the apalache distribution
-type ApalacheDist = { jar: string; exe: string }
 
 // An object representing the Apalache configuration
 // See https://github.com/informalsystems/apalache/blob/main/mod-infra/src/main/scala/at/forsyte/apalache/infra/passes/options.scala#L255
@@ -57,6 +61,16 @@ type Apalache = {
 
 function handleVerificationFailure(failure: { pass_name: string; error_data: any }): VerifyError {
   switch (failure.pass_name) {
+    case 'SanyParser':
+      return {
+        explanation: `internal error: while parsing in Apalache:\n'${failure.error_data}'\nPlease report an issue: https://github.com/informalsystems/quint/issues/new`,
+        errors: [],
+      }
+    case 'TypeCheckerSnowcat':
+      return {
+        explanation: `internal error: while type checking in Apalache:\n'${failure.error_data}'\nPlease report an issue: https://github.com/informalsystems/quint/issues/new`,
+        errors: [],
+      }
     case 'BoundedChecker':
       switch (failure.error_data.checking_result) {
         case 'Error':
@@ -118,15 +132,11 @@ type CmdExecutor = {
   // Constructs a new client service
   new (url: string, creds: any): CmdExecutor
   run: (req: RunRequest, cb: AsyncCallBack<any>) => void
-  ping: (o: {}, cb: AsyncCallBack<void>) => void
 }
 
 // The refined interface to the CmdExecutor we produce from the generated interface
 type AsyncCmdExecutor = {
-  // Reference to the distribution lets us start the server if needed
-  dist: ApalacheDist
   run: (req: RunRequest) => Promise<RunResponse>
-  ping: () => Promise<void>
 }
 
 // The interface for the Shai package
@@ -141,38 +151,6 @@ function err<A>(explanation: string, errors: ErrorMessage[] = [], traces?: ItfTr
   return left({ explanation, errors, traces })
 }
 
-function findApalacheDistribution(): VerifyResult<ApalacheDist> {
-  if (!process.env.APALACHE_DIST) {
-    // TODO: fetch release if APALACHE_DIST is not configured
-    // See https://github.com/informalsystems/quint/issues/701
-    return err('APALACHE_DIST enviroment variable is not set.')
-  }
-
-  const dist = path.isAbsolute(process.env.APALACHE_DIST)
-    ? process.env.APALACHE_DIST
-    : path.join(process.cwd(), process.env.APALACHE_DIST!)
-
-  if (!fs.existsSync(dist)) {
-    return err(`Specified APALACHE_DIST ${dist} does not exist.`)
-  }
-
-  const jar = path.join(dist, 'lib', 'apalache.jar')
-  const exe = path.join(dist, 'bin', 'apalache-mc')
-
-  if (!fs.existsSync(jar)) {
-    return err(
-      `Apalache distribution is corrupted: cannot find ${jar}. Ensure the APALACHE_DIST environment variable points to the right directory.`
-    )
-  }
-  if (!fs.existsSync(exe)) {
-    return err(
-      `Apalache distribution is corrupted: cannot find ${exe}. Ensure the APALACHE_DIST environment variable points to the right directory.`
-    )
-  }
-
-  return right({ jar, exe })
-}
-
 // See https://grpc.io/docs/languages/node/basics/#example-code-and-setup
 const grpcStubOptions = {
   keepCase: true,
@@ -182,66 +160,217 @@ const grpcStubOptions = {
   oneofs: true,
 }
 
-function loadGrpcClient(dist: ApalacheDist): VerifyResult<AsyncCmdExecutor> {
-  const jarUtilitiyIsInstalled = spawnSync('jar', ['--version']).status === 0
-  if (!jarUtilitiyIsInstalled) {
-    return err('The `jar` utility must be installed')
+async function loadProtoDefViaReflection(retry: boolean): Promise<VerifyResult<ProtoPackageDefinition>> {
+  // Types of the gRPC interface
+  type ServerReflectionRequest = { file_containing_symbol: string }
+  type ServerReflectionResponseSuccess = {
+    file_descriptor_response: {
+      file_descriptor_proto: Buffer[]
+    }
+  }
+  type ServerReflectionResponseFailure = {
+    error_response: {
+      error_code: number
+      error_message: string
+    }
+  }
+  type ServerReflectionResponse = ServerReflectionResponseSuccess | ServerReflectionResponseFailure
+  type ServerReflectionService = {
+    new (url: string, creds: grpc.ChannelCredentials): ServerReflectionService
+    ServerReflectionInfo: () => grpc.ClientDuplexStream<ServerReflectionRequest, ServerReflectionResponse>
+    getChannel: () => { getConnectivityState: (_: boolean) => grpc.connectivityState }
+  }
+  type ServerReflectionPkg = {
+    grpc: { reflection: { v1alpha: { ServerReflection: ServerReflectionService } } }
   }
 
-  // The proto file we extract from the apalache jar
-  const protoFileName = 'cmdExecutor.proto'
-  // Used as the target for the extracted proto file
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'apalache-proto-'))
-  const protoFile = path.join(tmpDir, protoFileName)
+  // Obtain a reflection service client
+  const protoPath = require.resolve('./reflection.proto')
+  const packageDefinition = proto.loadSync(protoPath, grpcStubOptions)
+  const reflectionProtoDescriptor = grpc.loadPackageDefinition(packageDefinition) as unknown as ServerReflectionPkg
+  const serverReflectionService = reflectionProtoDescriptor.grpc.reflection.v1alpha.ServerReflection
+  const reflectionClient = new serverReflectionService(APALACHE_SERVER_URI, grpc.credentials.createInsecure())
 
-  const protoIsFileExtracted = spawnSync('jar', ['xf', dist.jar, protoFileName], { cwd: tmpDir }).status === 0
-  if (!protoIsFileExtracted) {
-    return err(`Apalache distribution is corrupted. Could not extract proto file from apalache.jar.`)
+  // Wait for gRPC channel to come up, with 1sec pauses
+  if (retry) {
+    for (;;) {
+      const grpcChannelState = reflectionClient.getChannel().getConnectivityState(true)
+      if (grpcChannelState == grpc.connectivityState.READY) {
+        break
+      } else {
+        /* I suspect that there is a race with async gRPC code that actually
+         * brings the connection up, so we need to yield control here. In
+         * particular, waiting for the channel to come up in a busy-waiting loop
+         * does NOT work.
+         */
+        await setTimeout(1000)
+      }
+    }
   }
 
-  const protoDef = proto.loadSync(protoFile, grpcStubOptions)
-  // We have the proto file loaded, so we can delete the tmp dir
-  fs.rmSync(tmpDir, { recursive: true, force: true })
+  // Query reflection endpoint
+  return new Promise<VerifyResult<ServerReflectionResponse>>((resolve, _) => {
+    const call = reflectionClient.ServerReflectionInfo()
+    call.on('data', (r: ServerReflectionResponse) => {
+      call.end()
+      resolve(right(r))
+    })
+    call.on('error', (e: grpc.StatusObject) => resolve(err(`Error querying reflection endpoint: ${e}`)))
 
+    call.write({ file_containing_symbol: 'shai.cmdExecutor.CmdExecutor' })
+  }).then(protoDefResponse =>
+    protoDefResponse.chain(protoDefResponse => {
+      // Construct a proto definition of the reflection response.
+      if ('error_response' in protoDefResponse) {
+        return err(
+          `Apalache gRPC endpoint is corrupted. Could not extract proto file: ${protoDefResponse.error_response.error_message}`
+        )
+      }
+
+      // Decode reflection response to FileDescriptorProto
+      let fileDescriptorProtos = protoDefResponse.file_descriptor_response.file_descriptor_proto.map(
+        bytes => protobufDescriptor.FileDescriptorProto.decode(bytes) as protobufDescriptor.IFileDescriptorProto
+      )
+
+      // Use proto-loader to load the FileDescriptorProto wrapped in a FileDescriptorSet
+      return right(proto.loadFileDescriptorSetFromObject({ file: fileDescriptorProtos }, grpcStubOptions))
+    })
+  )
+}
+
+function loadGrpcClient(protoDef: ProtoPackageDefinition): AsyncCmdExecutor {
   const protoDescriptor = grpc.loadPackageDefinition(protoDef)
   // The cast thru `unkown` lets us convince the type system of anything
   // See https://basarat.gitbook.io/typescript/type-system/type-assertion#double-assertion
   const pkg = protoDescriptor.shai as unknown as ShaiPkg
-  const stub = new pkg.cmdExecutor.CmdExecutor(APALACHE_SERVER_URI, grpc.credentials.createInsecure())
-  const impl: AsyncCmdExecutor = {
-    dist,
+  const stub: any = new pkg.cmdExecutor.CmdExecutor(APALACHE_SERVER_URI, grpc.credentials.createInsecure())
+  return {
     run: promisify((data: RunRequest, cb: AsyncCallBack<any>) => stub.run(data, cb)),
-    ping: promisify((cb: AsyncCallBack<void>) => stub.ping({}, cb)),
-  }
-  return right(impl)
-}
-
-// Try to connect to the server repeatedly, in .5 second intervals
-async function tryToConnect(grpcApi: AsyncCmdExecutor): Promise<VerifyResult<void>> {
-  try {
-    return await grpcApi.ping().then(right)
-  } catch {
-    // Wait .5 secs before retry
-    await setTimeout(500)
-    return tryToConnect(grpcApi)
   }
 }
 
-// Try to establish a connection to the Apalache server
-//
-// A successful connection procudes an `Apalache` object.
-async function connect(cmdExecutor: AsyncCmdExecutor): Promise<VerifyResult<Apalache>> {
-  // TODO Start server of it's not already running
-  // See https://github.com/informalsystems/quint/issues/823
-  const delayMS = 5000
-  const response = await Promise.race([
-    tryToConnect(cmdExecutor),
-    setTimeout(delayMS, err(`Failed to obtain a connection to Apalache after ${delayMS / 1000} seconds.`)),
-  ])
-  // We received a response in time, so we have a valid connection to the server
-  return response.map(_pong => {
-    return apalache(cmdExecutor)
-  })
+/**
+ * Connect to the Apalache server, and verify that the gRPC channel is up.
+ *
+ * @param retry Wait for the gRPC connection to come up.
+ *
+ * @returns A promise resolving to a `right<Apalache>` if the connection is successful, or a `left<VerifyError>` if not.
+ */
+async function tryConnect(retry: boolean = false): Promise<VerifyResult<Apalache>> {
+  return (await loadProtoDefViaReflection(retry)).map(loadGrpcClient).map(apalache)
+}
+
+/**
+ * Fetch the latest Apalache release pinned by `APALACHE_VERSION_TAG` from Github.
+ *
+ * @returns A promise resolving to:
+ *    - a `right<string>` equal to the path the Apalache dist was unpacked to,
+ *    - a `left<VerifyError>` indicating an error.
+ */
+async function fetchApalache(): Promise<VerifyResult<string>> {
+  // Fetch Github releases
+  return octokitRequest('GET /repos/informalsystems/apalache/releases').then(
+    async resp => {
+      // Find latest that satisfies `APALACHE_VERSION_TAG`
+      const versions = resp.data.map((element: any) => element.tag_name)
+      const latestTaggedVersion = semver.maxSatisfying(versions, APALACHE_VERSION_TAG)
+      // Check if we have already downloaded this release
+      const unpackPath = path.join(os.homedir(), '.quint', `apalache-dist-${latestTaggedVersion}`)
+      const apalacheBinary = path.join(unpackPath, 'apalache', 'bin', 'apalache-mc')
+      if (fs.existsSync(apalacheBinary)) {
+        // Use existing download
+        console.log(`Using existing Apalache distribution in ${unpackPath}`)
+        return right(unpackPath)
+      } else {
+        // No existing download, download Apalache dist
+        fs.mkdirSync(unpackPath, { recursive: true })
+
+        // Filter release response to get dist archive asset URL
+        const taggedRelease = resp.data.find((element: any) => element.tag_name == latestTaggedVersion)
+        const tgzAsset = taggedRelease.assets.find((asset: any) => asset.name == APALACHE_TGZ)
+        const downloadUrl = tgzAsset.browser_download_url
+
+        console.log(`Downloading Apalache distribution from ${downloadUrl}...`)
+        return fetch(downloadUrl)
+          .then(
+            // unpack response body
+            res => pipeline(res.body, tar.extract({ cwd: unpackPath, strict: true })),
+            error => err(`Error fetching ${downloadUrl}: ${error}`)
+          )
+          .then(
+            _ => right(unpackPath),
+            error => err(`Error unpacking .tgz: ${error}`)
+          )
+      }
+    },
+    error => err(`Error listing the Apalache releases: ${error}`)
+  )
+}
+
+/**
+ * Connect to an already running Apalache server, or – if unsuccessful – fetch
+ * Apalache, spawn it, and connect to it.
+ *
+ * If an Apalache server is spawned, the child process exits when the parent process (i.e., this process) terminates.
+ *
+ * @returns A promise resolving to:
+ *    - a `right<Apalache>` equal to the path the Apalache dist was unpacked to,
+ *    - a `left<VerifyError>` indicating an error.
+ */
+async function connect(): Promise<VerifyResult<Apalache>> {
+  // Try to connect to Shai, and try to ping it
+  const connectionResult = await tryConnect()
+  // We managed to connect, simply return this connection
+  if (connectionResult.isRight()) {
+    return connectionResult
+  }
+
+  // Connection or pinging failed, download Apalache
+  console.log("Couldn't connect to Apalache, checking for latest supported release")
+  const distDir = await fetchApalache()
+  // Launch Apalache from download
+  return distDir
+    .asyncChain(
+      async distDir =>
+        new Promise<VerifyResult<void>>((resolve, _) => {
+          console.log('Launching Apalache server')
+          const apalacheBinary = path.join(distDir, 'apalache', 'bin', 'apalache-mc')
+          const apalache = child_process.spawn(apalacheBinary, ['server'])
+
+          // Exit handler that kills Apalache if Quint exists
+          function exitHandler() {
+            console.log('Shutting down Apalache server')
+            try {
+              process.kill(apalache.pid!)
+            } catch (error: any) {
+              // ESRCH is raised if no process with `pid` exists, i.e.,
+              // if Apalache server exited on its own
+              if (error.code == 'ESRCH') {
+                console.log('Apalache already exited')
+              } else {
+                throw error
+              }
+            }
+          }
+
+          if (apalache.pid) {
+            // Apalache launched successfully
+
+            // Install exit handler that kills Apalache if Quint exists
+            process.on('exit', exitHandler.bind(null))
+            process.on('SIGINT', exitHandler.bind(null))
+            process.on('SIGUSR1', exitHandler.bind(null))
+            process.on('SIGUSR2', exitHandler.bind(null))
+            process.on('uncaughtException', exitHandler.bind(null))
+
+            resolve(right(void 0))
+          }
+          // If Apalache fails to spawn, `apalache.pid` is undefined and 'error' is
+          // emitted.
+          apalache.on('error', error => resolve(err(`Failed to launch Apalache server: ${error.message}`)))
+        })
+    )
+    .then(chain(() => tryConnect(true)))
 }
 
 /**
@@ -253,6 +382,6 @@ async function connect(cmdExecutor: AsyncCmdExecutor): Promise<VerifyResult<Apal
  * @returns right(void) if verification succeeds, or left(err) explaining the failure
  */
 export async function verify(config: any): Promise<VerifyResult<void>> {
-  const connectionResult = await findApalacheDistribution().chain(loadGrpcClient).asyncChain(connect)
+  const connectionResult = await connect()
   return connectionResult.asyncChain(conn => conn.check(config))
 }

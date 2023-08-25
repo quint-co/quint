@@ -15,6 +15,7 @@
 
 import * as ir from './quintIr'
 import * as t from './quintTypes'
+import { unreachable } from '../util'
 
 /**
  * Interface to be implemented by visitor classes.
@@ -27,6 +28,8 @@ export interface IRVisitor {
   /** General components */
   enterExpr?: (_expr: ir.QuintEx) => void
   exitExpr?: (_expr: ir.QuintEx) => void
+  enterDecl?: (_def: ir.QuintDeclaration) => void
+  exitDecl?: (_def: ir.QuintDeclaration) => void
   enterDef?: (_def: ir.QuintDef) => void
   exitDef?: (_def: ir.QuintDef) => void
   enterType?: (_type: t.QuintType) => void
@@ -81,6 +84,8 @@ export interface IRVisitor {
   exitTupleType?: (_type: t.QuintTupleType) => void
   enterRecordType?: (_type: t.QuintRecordType) => void
   exitRecordType?: (_type: t.QuintRecordType) => void
+  enterSumType?: (_type: t.QuintSumType) => void
+  exitSumType?: (_type: t.QuintSumType) => void
   enterUnionType?: (_type: t.QuintUnionType) => void
   exitUnionType?: (_type: t.QuintUnionType) => void
 
@@ -109,7 +114,7 @@ export function walkModule(visitor: IRVisitor, quintModule: ir.QuintModule): voi
     visitor.enterModule(quintModule)
   }
 
-  quintModule.defs.forEach(def => walkDefinition(visitor, def))
+  quintModule.declarations.forEach(decl => walkDeclaration(visitor, decl))
 
   if (visitor.exitModule) {
     visitor.exitModule(quintModule)
@@ -242,6 +247,14 @@ export function walkType(visitor: IRVisitor, type: t.QuintType): void {
         visitor.exitUnionType(type)
       }
       break
+
+    case 'sum':
+      visitor.enterSumType?.(type)
+      visitor.exitSumType?.(type)
+      break
+
+    default:
+      unreachable(type)
   }
 
   if (visitor.exitType) {
@@ -249,6 +262,70 @@ export function walkType(visitor: IRVisitor, type: t.QuintType): void {
   }
 }
 
+/**
+ * Navigates a Quint declaration with a visitor, invoking the correspondent function for each
+ * inner component.
+ *
+ * @param visitor: the IRVisitor instance with the functions to be invoked
+ * @param decl: the Quint declaration to be navigated
+ *
+ * @returns nothing, any collected information has to be a state inside the IRVisitor instance.
+ */
+export function walkDeclaration(visitor: IRVisitor, decl: ir.QuintDeclaration): void {
+  if (visitor.enterDecl) {
+    visitor.enterDecl(decl)
+  }
+
+  switch (decl.kind) {
+    case 'const':
+    case 'var':
+    case 'def':
+    case 'typedef':
+    case 'assume':
+      walkDefinition(visitor, decl)
+      break
+    case 'instance':
+      if (visitor.enterInstance) {
+        visitor.enterInstance(decl)
+      }
+      decl.overrides.forEach(([_, e]) => walkExpression(visitor, e))
+      if (visitor.exitInstance) {
+        visitor.exitInstance(decl)
+      }
+      break
+    case 'import':
+      if (visitor.enterImport) {
+        visitor.enterImport(decl)
+      }
+      if (visitor.exitImport) {
+        visitor.exitImport(decl)
+      }
+      break
+    case 'export':
+      if (visitor.enterExport) {
+        visitor.enterExport(decl)
+      }
+      if (visitor.exitExport) {
+        visitor.exitExport(decl)
+      }
+      break
+    default:
+      unreachable(decl)
+  }
+  if (visitor.exitDecl) {
+    visitor.exitDecl(decl)
+  }
+}
+
+/**
+ * Navigates a Quint definition with a visitor, invoking the correspondent function for each
+ * inner component.
+ *
+ * @param visitor: the IRVisitor instance with the functions to be invoked
+ * @param def: the Quint definition to be navigated
+ *
+ * @returns nothing, any collected information has to be a state inside the IRVisitor instance.
+ */
 export function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
   if (visitor.enterDef) {
     visitor.enterDef(def)
@@ -294,31 +371,6 @@ export function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
         visitor.exitTypeDef(def)
       }
       break
-    case 'instance':
-      if (visitor.enterInstance) {
-        visitor.enterInstance(def)
-      }
-      def.overrides.forEach(([_, e]) => walkExpression(visitor, e))
-      if (visitor.exitInstance) {
-        visitor.exitInstance(def)
-      }
-      break
-    case 'import':
-      if (visitor.enterImport) {
-        visitor.enterImport(def)
-      }
-      if (visitor.exitImport) {
-        visitor.exitImport(def)
-      }
-      break
-    case 'export':
-      if (visitor.enterExport) {
-        visitor.enterExport(def)
-      }
-      if (visitor.exitExport) {
-        visitor.exitExport(def)
-      }
-      break
     case 'assume':
       if (visitor.enterAssume) {
         visitor.enterAssume(def)
@@ -329,13 +381,15 @@ export function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
         visitor.exitAssume(def)
       }
       break
+    default:
+      unreachable(def)
   }
   if (visitor.exitDef) {
     visitor.exitDef(def)
   }
 }
 
-function walkExpression(visitor: IRVisitor, expr: ir.QuintEx): void {
+export function walkExpression(visitor: IRVisitor, expr: ir.QuintEx): void {
   if (visitor.enterExpr) {
     visitor.enterExpr(expr)
   }
@@ -393,6 +447,8 @@ function walkExpression(visitor: IRVisitor, expr: ir.QuintEx): void {
         visitor.exitLet(expr)
       }
       break
+    default:
+      unreachable(expr)
   }
 
   if (visitor.exitExpr) {
@@ -432,6 +488,9 @@ function walkRow(visitor: IRVisitor, r: t.Row) {
       if (visitor.exitEmptyRow) {
         visitor.exitEmptyRow(r)
       }
+      break
+    default:
+      unreachable(r)
   }
   if (visitor.exitRow) {
     visitor.exitRow(r)

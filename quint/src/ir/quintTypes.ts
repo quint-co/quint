@@ -74,6 +74,24 @@ export interface QuintRecordType extends WithOptionalId {
   fields: Row
 }
 
+// A value of the unit type, i.e. an empty record
+export function unitValue(id: bigint): QuintRecordType {
+  return {
+    id,
+    kind: 'rec',
+    fields: { kind: 'row', fields: [], other: { kind: 'empty' } },
+  }
+}
+
+export function isTheUnit(r: QuintType): Boolean {
+  return r.kind === 'rec' && r.fields.kind === 'row' && r.fields.fields.length === 0 && r.fields.other.kind === 'empty'
+}
+
+export interface QuintSumType extends WithOptionalId {
+  kind: 'sum'
+  fields: ConcreteFixedRow
+}
+
 export interface QuintUnionType extends WithOptionalId {
   kind: 'union'
   tag: string
@@ -98,16 +116,27 @@ export type QuintType =
   | QuintOperType
   | QuintTupleType
   | QuintRecordType
+  | QuintSumType
   | QuintUnionType
 
 /**
  * Row types, used to express tuples and records.
  */
-export type ConcreteRow = { kind: 'row'; fields: { fieldName: string; fieldType: QuintType }[]; other: Row }
+export type RowField = { fieldName: string; fieldType: QuintType }
+export interface ConcreteRow {
+  kind: 'row'
+  fields: RowField[]
+  other: Row
+}
+export interface ConcreteFixedRow extends ConcreteRow {
+  kind: 'row'
+  fields: RowField[]
+  other: EmptyRow
+}
 export type VarRow = { kind: 'var'; name: string }
 export type EmptyRow = { kind: 'empty' }
 
-export type Row = ConcreteRow | VarRow | EmptyRow
+export type Row = ConcreteFixedRow | ConcreteRow | VarRow | EmptyRow
 
 /*
  * Collects all type and row variable names from a given type

@@ -14,7 +14,7 @@ apalache-mc server
 This requirement will be removed with https://github.com/informalsystems/quint/issues/823
 
 <!-- !test program
-APALACHE_DIST=_build/apalache bash -
+bash -
 -->
 
 ## Configuration errors
@@ -29,20 +29,26 @@ quint verify --init=invalidInit ../examples/language-features/booleans.qnt
 <!-- !test exit 1 -->
 <!-- !test err invalid init -->
 ```
-error: Configuration error (see the manual): Operator invalidInit not found (used as the initialization predicate)
+error: [QNT404] Name 'invalidInit' not found
+error: name resolution failed
 ```
 
 
 ## Successful verification
 
 
-### Can verify `../examples/classic/sequential/BinSearch/BinSearch10.qnt`
+### Can verify `../examples/classic/sequential/BinSearch/BinSearch.qnt`
 
 Contains an import + const instantiation.
 
-<!-- !test check can check BinSearch10.qnt -->
+<!-- !test check can check BinSearch.qnt -->
 ```
-quint verify --invariant=Postcondition ../examples/classic/sequential/BinSearch/BinSearch10.qnt
+quint verify --invariant=Postcondition --main=BinSearch10 ../examples/classic/sequential/BinSearch/BinSearch.qnt
+```
+
+<!-- !test check can check BinSearch10.qnt using APALACHE_DIST -->
+```
+APALACHE_DIST=_build/apalache quint verify --invariant=Postcondition --main=BinSearch10 ../examples/classic/sequential/BinSearch/BinSearch.qnt
 ```
 
 ### Default `step` and `init` operators are found
@@ -72,7 +78,10 @@ quint verify --invariant inv,inv2 ../examples/verification/defaultOpNames.qnt
 
 <!-- !test in prints a trace on invariant violation -->
 ```
-quint verify --invariant inv ./testFixture/apalache/violateOnFive.qnt
+output=$(quint verify --invariant inv ./testFixture/apalache/violateOnFive.qnt)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/'
+exit $exit_code
 ```
 
 <!-- !test exit 1 -->
@@ -95,6 +104,7 @@ An example execution:
 
 [State 4] { n: 5 }
 
+[violation] Found an issue (duration).
 ```
 
 ### Variant violations write ITF to file when `--out-itf` is specified
@@ -121,7 +131,10 @@ error: found a counterexample
 
 <!-- !test in reports deadlock -->
 ```
-quint verify ./testFixture/apalache/deadlock.qnt
+output=$(quint verify ./testFixture/apalache/deadlock.qnt)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/'
+exit $exit_code
 ```
 
 <!-- !test exit 1 -->
@@ -144,4 +157,5 @@ An example execution:
 
 [State 4] { n: 5 }
 
+[violation] Found an issue (duration).
 ```

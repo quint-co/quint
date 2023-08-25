@@ -14,9 +14,9 @@
  */
 
 import { ErrorTree } from '../errorTree'
-import { walkDefinition } from '../IRVisitor'
+import { walkDeclaration } from '../ir/IRVisitor'
 import { LookupTable } from '../names/base'
-import { QuintDef } from '../quintIr'
+import { QuintDeclaration } from '../ir/quintIr'
 import { TypeScheme } from './base'
 import { ConstraintGeneratorVisitor } from './constraintGenerator'
 import { solveConstraint } from './constraintSolver'
@@ -29,16 +29,16 @@ export class TypeInferrer extends ConstraintGeneratorVisitor {
   }
 
   /**
-   * Infers an type for each expression in a list of QuintDefs
+   * Infers an type for each expression in a list of QuintDeclarations
    *
-   * @param defs: the list of QuintDefs to infer types for
+   * @param declarations: the list of QuintDeclarations to infer types for
    *
    * @returns a map from expression ids to their types and a map from expression
    *          ids to the corresponding error for any problematic expressions.
    */
-  inferTypes(defs: QuintDef[]): TypeInferenceResult {
-    defs.forEach(quintDef => {
-      walkDefinition(this, quintDef)
+  inferTypes(declarations: QuintDeclaration[]): TypeInferenceResult {
+    declarations.forEach(decl => {
+      walkDeclaration(this, decl)
     })
     return [this.errors, this.types]
   }

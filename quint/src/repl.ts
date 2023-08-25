@@ -17,11 +17,11 @@ import { Either, left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
 import { format } from './prettierimp'
 
-import { FlatDef, QuintEx, isFlat } from './quintIr'
+import { FlatModule, QuintDef, QuintEx } from './ir/quintIr'
 import {
   CompilationContext,
   CompilationState,
-  compileDef,
+  compileDecl,
   compileExpr,
   compileFromCode,
   contextNameLookup,
@@ -31,7 +31,7 @@ import {
 import { formatError } from './errorReporter'
 import { Register } from './runtime/runtime'
 import { TraceRecorder, newTraceRecorder } from './runtime/trace'
-import { ErrorMessage, parseExpressionOrUnit } from './parsing/quintParserFrontend'
+import { ErrorMessage, parseDefOrThrow, parseExpressionOrDeclaration } from './parsing/quintParserFrontend'
 import { prettyQuintEx, printExecutionFrameRec, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
@@ -39,7 +39,7 @@ import { version } from './version'
 import { fileSourceResolver } from './parsing/sourceResolver'
 import { cwd } from 'process'
 import { newIdGenerator } from './idGenerator'
-import { moduleToString } from './IRprinting'
+import { moduleToString } from './ir/IRprinting'
 import { EvaluationState, newEvaluationState } from './runtime/impl/compilerImpl'
 
 // tunable settings
@@ -83,9 +83,10 @@ class ReplState {
   }
 
   addReplModule() {
-    const replModule = { name: '__repl__', defs: simulatorBuiltins(this.compilationState), id: 0n }
+    const replModule: FlatModule = { name: '__repl__', declarations: simulatorBuiltins(this.compilationState), id: 0n }
     this.compilationState.modules.push(replModule)
     this.compilationState.originalModules.push(replModule)
+    this.compilationState.mainName = '__repl__'
     this.moduleHist += moduleToString(replModule)
   }
 
@@ -476,21 +477,12 @@ function saveVars(vars: Register[], nextvars: Register[]): Maybe<string[]> {
 
 // Declarations that are overloaded by the simulator.
 // In the future, we will declare them in a separate module.
-function simulatorBuiltins(compilationState: CompilationState): FlatDef[] {
+function simulatorBuiltins(st: CompilationState): QuintDef[] {
   return [
-    parseDefOrThrow(compilationState, `val ${lastTraceName} = []`),
-    parseDefOrThrow(compilationState, `def q::test = (q::nruns, q::nsteps, q::init, q::next, q::inv) => false`),
-    parseDefOrThrow(compilationState, `def q::testOnce = (q::nsteps, q::init, q::next, q::inv) => false`),
+    parseDefOrThrow(`val ${lastTraceName} = []`, st.idGen, st.sourceMap),
+    parseDefOrThrow(`def q::test = (q::nruns, q::nsteps, q::init, q::next, q::inv) => false`, st.idGen, st.sourceMap),
+    parseDefOrThrow(`def q::testOnce = (q::nsteps, q::init, q::next, q::inv) => false`, st.idGen, st.sourceMap),
   ]
-}
-
-function parseDefOrThrow(compilationState: CompilationState, text: string): FlatDef {
-  const result = parseExpressionOrUnit(text, '<builtins>', compilationState.idGen, compilationState.sourceMap)
-  if (result.kind === 'toplevel' && isFlat(result.def)) {
-    return result.def
-  } else {
-    throw new Error(`Expected a flat definition, got ${result.kind}, parsing ${text}`)
-  }
 }
 
 function tryEvalModule(out: writer, state: ReplState, mainName: string): boolean {
@@ -541,7 +533,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     tryEvalModule(out, state, '__repl__')
   }
 
-  const parseResult = parseExpressionOrUnit(
+  const parseResult = parseExpressionOrDeclaration(
     newInput,
     '<input>',
     state.compilationState.idGen,
@@ -581,9 +573,9 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
       })
       .isRight()
   }
-  if (parseResult.kind === 'toplevel') {
+  if (parseResult.kind === 'declaration') {
     // compile the module and add it to history if everything worked
-    const context = compileDef(state.compilationState, state.evaluationState, state.rng, parseResult.def)
+    const context = compileDecl(state.compilationState, state.evaluationState, state.rng, parseResult.decl)
 
     if (
       context.evaluationState.context.size === 0 ||
@@ -699,7 +691,7 @@ function countBraces(str: string): [number, number, number] {
 function evalExpr(state: ReplState, out: writer): Either<string, QuintEx> {
   const computable = contextNameLookup(state.evaluationState.context, 'q::input', 'callable')
   const columns = terminalWidth()
-  return computable
+  const result = computable
     .mapRight(comp => {
       return comp
         .eval()
@@ -707,18 +699,6 @@ function evalExpr(state: ReplState, out: writer): Either<string, QuintEx> {
           const ex = value.toQuintEx(state.compilationState.idGen)
           out(format(columns, 0, prettyQuintEx(ex)))
           out('\n')
-
-          if (verbosity.hasUserOpTracking(state.verbosity)) {
-            const trace = state.recorder.getBestTrace()
-            if (trace.subframes.length > 0) {
-              out('\n')
-              trace.subframes.forEach((f, i) => {
-                out(`[Frame ${i}]\n`)
-                printExecutionFrameRec({ width: columns, out }, f, [])
-                out('\n')
-              })
-            }
-          }
 
           if (ex.kind === 'bool' && ex.value) {
             // A Boolean expression may be an action or a run.
@@ -735,6 +715,20 @@ function evalExpr(state: ReplState, out: writer): Either<string, QuintEx> {
         .unwrap()
     })
     .join()
+
+  if (verbosity.hasUserOpTracking(state.verbosity)) {
+    const trace = state.recorder.getBestTrace()
+    if (trace.subframes.length > 0) {
+      out('\n')
+      trace.subframes.forEach((f, i) => {
+        out(`[Frame ${i}]\n`)
+        printExecutionFrameRec({ width: columns, out }, f, [])
+        out('\n')
+      })
+    }
+  }
+
+  return result
 }
 
 function getMainModuleAnnotation(moduleHist: string): string | undefined {

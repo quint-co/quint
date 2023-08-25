@@ -22,3 +22,7 @@ export APALACHE_DIST=${APALACHE_DIST:-../quint/_build/apalache}
 # We `cut` the first 2 characters of find to remove the leading `./`, making
 # the output prettier.
 find . -name "*.qnt" | cut -c3- | parallel "${SCRIPT_DIR}/run-example.sh" | env LC_ALL=C sort --ignore-case
+
+echo
+echo "[^nostatemachine]: This specification does not define a state machine."
+echo "[^parameterized]: This specification is parameterized, and instantiated in another module."

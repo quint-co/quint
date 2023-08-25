@@ -17,6 +17,7 @@ import {
   ErrorMessage,
   Loc,
   compactSourceMap,
+  parseDefOrThrow,
   parsePhase1fromText,
   parsePhase2sourceResolution,
   parsePhase3importAndNameResolution,
@@ -27,7 +28,7 @@ import { Either, left, right } from '@sweet-monads/either'
 import { EffectScheme } from './effects/base'
 import { LookupTable } from './names/base'
 import { ReplOptions, quintRepl } from './repl'
-import { OpQualifier, QuintEx, QuintModule } from './quintIr'
+import { OpQualifier, QuintEx, QuintModule } from './ir/quintIr'
 import { TypeScheme } from './types/base'
 import lineColumn from 'line-column'
 import { formatError } from './errorReporter'
@@ -42,8 +43,8 @@ import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
 import { fileSourceResolver } from './parsing/sourceResolver'
 import { verify } from './quintVerifier'
-import { flattenModules } from './flattening'
-import { analyzeModules } from './quintAnalyzer'
+import { flattenModules } from './flattening/fullFlattener'
+import { analyzeInc, analyzeModules } from './quintAnalyzer'
 import { ExecutionFrame } from './runtime/trace'
 
 export type stage = 'loading' | 'parsing' | 'typechecking' | 'testing' | 'running' | 'documentation'
@@ -421,7 +422,8 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     }
 
     if (failed.length > 0 && verbosity.hasHints(options.verbosity) && !verbosity.hasActionTracking(options.verbosity)) {
-      out(chalk.gray('\n  Use --verbosity=3 to show executions.'))
+      out(chalk.gray(`\n  Use --verbosity=3 to show executions.`))
+      out(chalk.gray(`  Further debug with: quint --verbosity=3 ${prev.args.input}`))
     }
   }
 
@@ -473,7 +475,10 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const startMs = Date.now()
 
   const mainPath = fileSourceResolver().lookupPath(dirname(prev.args.input), basename(prev.args.input))
-  const result = compileAndRun(newIdGenerator(), prev.sourceCode, mainName, mainPath, options)
+  const mainId = prev.modules.find(m => m.name === mainName)!.id
+  const mainStart = prev.sourceMap.get(mainId)!.start.index
+  const mainEnd = prev.sourceMap.get(mainId)!.end!.index
+  const result = compileAndRun(newIdGenerator(), prev.sourceCode, mainStart, mainEnd, mainName, mainPath, options)
 
   if (result.status === 'error') {
     const errors = prev.errors ? prev.errors.concat(result.errors) : result.errors
@@ -509,34 +514,21 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       }
     }
 
-    // If nothing found, return a success. Otherwise, return an error.
-    let msg
-    switch (result.status) {
-      case 'ok':
-        return right({
-          ...simulator,
-          status: result.status,
-          trace: result.states,
-        })
-
-      case 'violation':
-        msg = 'Invariant violated'
-        break
-
-      case 'failure':
-        msg = 'Runtime error'
-        break
-
-      default:
-        msg = 'Unknown error'
+    if (result.status === 'ok') {
+      return right({
+        ...simulator,
+        status: result.status,
+        trace: result.states,
+      })
+    } else {
+      const msg = result.status === 'violation' ? 'Invariant violated' : 'Runtime error'
+      return cliErr(msg, {
+        ...simulator,
+        status: result.status,
+        trace: result.states,
+        errors: result.errors,
+      })
     }
-
-    return cliErr(msg, {
-      ...simulator,
-      status: result.status,
-      trace: result.states,
-      errors: result.errors,
-    })
   }
 }
 
@@ -551,6 +543,34 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
   // TODO error handing for file reads and deserde
   const loadedConfig = args.apalacheConfig ? JSON.parse(readFileSync(args.apalacheConfig, 'utf-8')) : {}
 
+  const mainArg = prev.args.main
+  const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
+  const main = verifying.modules.find(m => m.name === mainName)
+  if (!main) {
+    return cliErr(`module ${mainName} does not exist`, { ...verifying, errors: [], sourceCode: '' })
+  }
+
+  // Wrap init, step and invariant in other definitions, to make sure they are not considered unused in the main module
+  // and, therefore, ignored by the flattener
+  const extraDefsAsText = [`action q::init = ${args.init}`, `action q::step = ${args.step}`]
+  if (args.invariant) {
+    extraDefsAsText.push(`val q::inv = and(${args.invariant.join(',')})`)
+  }
+
+  const extraDefs = extraDefsAsText.map(d => parseDefOrThrow(d, verifying.idGen, new Map()))
+  main.declarations.push(...extraDefs)
+
+  // We have to update the lookup table and analysis result with the new definitions. This is not ideal, and the problem
+  // is that is hard to add this definitions in the proper stage, in our current setup. We should try to tackle this
+  // while solving #1052.
+  const resolutionResult = parsePhase3importAndNameResolution(prev)
+  if (resolutionResult.isLeft()) {
+    return cliErr('name resolution failed', { ...verifying, errors: resolutionResult.value })
+  }
+
+  verifying.table = resolutionResult.unwrap().table
+  extraDefs.forEach(def => analyzeInc(verifying, verifying.table, def))
+
   // Flatten modules, replacing instances, imports and exports with their definitions
   const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
     verifying.modules,
@@ -561,15 +581,9 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
   )
 
   // Pick main module, we only pass this on to Apalache
-  const mainArg = prev.args.main
-  const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
-  const main = flattenedModules.find(m => m.name === mainName)
+  const flatMain = flattenedModules.find(m => m.name === mainName)!
 
-  if (!main) {
-    return cliErr(`module ${mainName} does not exist`, { ...verifying, errors: [], sourceCode: '' })
-  }
-
-  const veryfiyingFlat = { ...verifying, ...flattenedAnalysis, modules: [main], table: flattenedTable }
+  const veryfiyingFlat = { ...verifying, ...flattenedAnalysis, modules: [flatMain], table: flattenedTable }
   const parsedSpec = jsonStringOfOutputStage(pickOutputStage(veryfiyingFlat))
 
   // We need to insert the data form CLI args into thier appropriate locations
@@ -587,20 +601,38 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
     checker: {
       ...(loadedConfig.checker ?? {}),
       length: args.maxSteps,
-      init: args.init,
-      next: args.step,
-      inv: args.invariant,
+      init: 'q::init',
+      next: 'q::step',
+      inv: args.invariant ? ['q::inv'] : undefined,
     },
   }
-  return verify(config).then(res =>
-    res
-      .map(_ => ({ ...verifying, status: 'ok', errors: [] } as VerifiedStage))
+
+  const startMs = Date.now()
+
+  return verify(config).then(res => {
+    const verbosityLevel = !prev.args.out && !prev.args.outItf ? prev.args.verbosity : 0
+    const elapsedMs = Date.now() - startMs
+    return res
+      .map(_ => {
+        if (verbosity.hasResults(verbosityLevel)) {
+          console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
+          if (verbosity.hasHints(verbosityLevel)) {
+            console.log(chalk.gray('You may increase --max-steps.'))
+            console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
+          }
+        }
+        return { ...verifying, status: 'ok', errors: [] } as VerifiedStage
+      })
       .mapLeft(err => {
         const trace: QuintEx[] | undefined = err.traces ? ofItf(err.traces[0]) : undefined
+        const status = trace !== undefined ? 'violation' : 'failure'
         if (trace !== undefined) {
           // Always print the conterexample, unless the output is being directed to one of the outfiles
-          const verbosityLevel = prev.args.out || prev.args.outItf ? 0 : 2
           maybePrintCounterExample(verbosityLevel, trace)
+
+          if (verbosity.hasResults(verbosityLevel)) {
+            console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
+          }
 
           if (prev.args.outItf) {
             writeToJson(prev.args.outItf, err.traces)
@@ -608,10 +640,10 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
         }
         return {
           msg: err.explanation,
-          stage: { ...verifying, status: 'failure', errors: err.errors, trace },
+          stage: { ...verifying, status, errors: err.errors, trace },
         }
       })
-  )
+  })
 }
 
 /**

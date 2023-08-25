@@ -15,6 +15,7 @@
 
 import * as ir from './quintIr'
 import * as t from './quintTypes'
+import { unreachable } from '../util'
 
 export class IRTransformer {
   enterModule?: (module: ir.QuintModule) => ir.QuintModule
@@ -25,6 +26,8 @@ export class IRTransformer {
   exitExpr?: (expr: ir.QuintEx) => ir.QuintEx
   enterDef?: (def: ir.QuintDef) => ir.QuintDef
   exitDef?: (def: ir.QuintDef) => ir.QuintDef
+  enterDecl?: (decl: ir.QuintDeclaration) => ir.QuintDeclaration
+  exitDecl?: (decl: ir.QuintDeclaration) => ir.QuintDeclaration
   enterType?: (type: t.QuintType) => t.QuintType
   exitType?: (type: t.QuintType) => t.QuintType
 
@@ -81,6 +84,8 @@ export class IRTransformer {
   exitTupleType?: (type: t.QuintTupleType) => t.QuintTupleType
   enterRecordType?: (type: t.QuintRecordType) => t.QuintRecordType
   exitRecordType?: (type: t.QuintRecordType) => t.QuintRecordType
+  enterSumType?: (type: t.QuintSumType) => t.QuintSumType
+  exitSumType?: (type: t.QuintSumType) => t.QuintSumType
   enterUnionType?: (type: t.QuintUnionType) => t.QuintUnionType
   exitUnionType?: (type: t.QuintUnionType) => t.QuintUnionType
 
@@ -111,7 +116,7 @@ export function transformModule(transformer: IRTransformer, quintModule: ir.Quin
     newModule = transformer.enterModule(newModule)
   }
 
-  newModule.defs = newModule.defs.map(def => transformDefinition(transformer, def))
+  newModule.declarations = newModule.declarations.map(decl => transformDeclaration(transformer, decl))
 
   if (transformer.exitModule) {
     newModule = transformer.exitModule(newModule)
@@ -247,6 +252,18 @@ export function transformType(transformer: IRTransformer, type: t.QuintType): t.
         newType = transformer.exitUnionType(newType)
       }
       break
+
+    case 'sum':
+      if (transformer.enterSumType) {
+        newType = transformer.enterSumType(newType)
+      }
+      if (transformer.exitSumType) {
+        newType = transformer.exitSumType(newType)
+      }
+      break
+
+    default:
+      unreachable(newType)
   }
 
   if (transformer.exitType) {
@@ -254,6 +271,64 @@ export function transformType(transformer: IRTransformer, type: t.QuintType): t.
   }
 
   return newType
+}
+
+/**
+ * Transforms a Quint declaration with a transformer, invoking the corresponding function for each
+ * inner component.
+ *
+ * @param transformer: the IRTransformer instance with the functions to be invoked
+ * @param decl: the Quint declaration to be transformed
+ *
+ * @returns the transformed Quint definition
+ */
+export function transformDeclaration(transformer: IRTransformer, decl: ir.QuintDeclaration): ir.QuintDeclaration {
+  let newDecl = { ...decl }
+  if (transformer.enterDecl) {
+    newDecl = transformer.enterDecl(newDecl)
+  }
+
+  switch (newDecl.kind) {
+    case 'instance':
+      if (transformer.enterInstance) {
+        newDecl = transformer.enterInstance(newDecl)
+      }
+      newDecl.overrides = newDecl.overrides.map(([i, e]) => [i, transformExpression(transformer, e)])
+      if (transformer.exitInstance) {
+        newDecl = transformer.exitInstance(newDecl)
+      }
+      break
+    case 'import':
+      if (transformer.enterImport) {
+        newDecl = transformer.enterImport(newDecl)
+      }
+      if (transformer.exitImport) {
+        newDecl = transformer.exitImport(newDecl)
+      }
+      break
+    case 'export':
+      if (transformer.enterExport) {
+        newDecl = transformer.enterExport(newDecl)
+      }
+      if (transformer.exitExport) {
+        newDecl = transformer.exitExport(newDecl)
+      }
+      break
+    case 'const':
+    case 'var':
+    case 'def':
+    case 'typedef':
+    case 'assume':
+      newDecl = transformDefinition(transformer, newDecl)
+      break
+    default:
+      unreachable(newDecl)
+  }
+  if (transformer.exitDecl) {
+    newDecl = transformer.exitDecl(newDecl)
+  }
+
+  return newDecl
 }
 
 /**
@@ -311,31 +386,6 @@ export function transformDefinition(transformer: IRTransformer, def: ir.QuintDef
         newDef = transformer.exitTypeDef(newDef)
       }
       break
-    case 'instance':
-      if (transformer.enterInstance) {
-        newDef = transformer.enterInstance(newDef)
-      }
-      newDef.overrides = newDef.overrides.map(([i, e]) => [i, transformExpression(transformer, e)])
-      if (transformer.exitInstance) {
-        newDef = transformer.exitInstance(newDef)
-      }
-      break
-    case 'import':
-      if (transformer.enterImport) {
-        newDef = transformer.enterImport(newDef)
-      }
-      if (transformer.exitImport) {
-        newDef = transformer.exitImport(newDef)
-      }
-      break
-    case 'export':
-      if (transformer.enterExport) {
-        newDef = transformer.enterExport(newDef)
-      }
-      if (transformer.exitExport) {
-        newDef = transformer.exitExport(newDef)
-      }
-      break
     case 'assume':
       if (transformer.enterAssume) {
         newDef = transformer.enterAssume(newDef)
@@ -346,6 +396,8 @@ export function transformDefinition(transformer: IRTransformer, def: ir.QuintDef
         newDef = transformer.exitAssume(newDef)
       }
       break
+    default:
+      unreachable(newDef)
   }
   if (transformer.exitDef) {
     newDef = transformer.exitDef(newDef)
@@ -410,26 +462,30 @@ function transformExpression(transformer: IRTransformer, expr: ir.QuintEx): ir.Q
         newExpr = transformer.exitLambda(newExpr)
       }
       break
-    case 'let': {
-      if (transformer.enterLet) {
-        newExpr = transformer.enterLet(newExpr)
-      }
+    case 'let':
+      {
+        if (transformer.enterLet) {
+          newExpr = transformer.enterLet(newExpr)
+        }
 
-      const opdef = transformDefinition(transformer, newExpr.opdef)
-      if (opdef.kind !== 'def') {
-        // This should only happen if we write a bad transformer. Should never
-        // be a user facing issue.
-        throw new Error('Let operator definition transformed into non-operator definition')
-      }
+        const opdef = transformDefinition(transformer, newExpr.opdef)
+        if (opdef.kind !== 'def') {
+          // This should only happen if we write a bad transformer. Should never
+          // be a user facing issue.
+          throw new Error('Let operator definition transformed into non-operator definition')
+        }
 
-      newExpr.opdef = opdef
-      newExpr.expr = transformExpression(transformer, newExpr.expr)
+        newExpr.opdef = opdef
+        newExpr.expr = transformExpression(transformer, newExpr.expr)
 
-      if (transformer.exitLet) {
-        newExpr = transformer.exitLet(newExpr)
+        if (transformer.exitLet) {
+          newExpr = transformer.exitLet(newExpr)
+        }
       }
       break
-    }
+
+    default:
+      unreachable(newExpr)
   }
 
   if (transformer.exitExpr) {

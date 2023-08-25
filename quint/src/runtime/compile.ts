@@ -18,16 +18,16 @@ import {
 } from '../parsing/quintParserFrontend'
 import { Computable, ComputableKind, kindName } from './runtime'
 import { ExecutionListener } from './trace'
-import { FlatDef, FlatModule, IrErrorMessage, QuintDef, QuintEx, QuintModule } from '../quintIr'
+import { FlatModule, IrErrorMessage, QuintDeclaration, QuintDef, QuintEx, QuintModule } from '../ir/quintIr'
 import { CompilerVisitor, EvaluationState, newEvaluationState } from './impl/compilerImpl'
-import { walkDefinition } from '../IRVisitor'
+import { walkDefinition } from '../ir/IRVisitor'
 import { LookupTable } from '../names/base'
 import { AnalysisOutput, analyzeInc, analyzeModules } from '../quintAnalyzer'
 import { mkErrorMessage } from '../cliCommands'
 import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { SourceLookupPath } from '../parsing/sourceResolver'
-import { addDefToFlatModule, flattenModules } from '../flattening'
 import { Rng } from '../rng'
+import { flattenModules } from '../flattening/fullFlattener'
 
 /**
  * The name of the shadow variable that stores the last found trace.
@@ -66,6 +66,8 @@ export interface CompilationState {
   originalModules: QuintModule[]
   // A list of flattened modules.
   modules: FlatModule[]
+  // The name of the main module.
+  mainName?: string
   // The source map for the compiled code.
   sourceMap: Map<bigint, Loc>
   // The output of the Quint analyzer.
@@ -118,18 +120,16 @@ export function contextNameLookup(
 }
 
 /**
- * Compile Quint modules to JS runtime objects from the parsed and type-checked
+ * Compile Quint defs to JS runtime objects from the parsed and type-checked
  * data structures. This is a user-facing function. In case of an error, the
  * error messages are passed to an error handler and the function returns
  * undefined.
  *
- * @param modules Quint modules in the intermediate representation
- * @param sourceMap source map as produced by the parser
+ * @param compilationState the state of the compilation process
+ * @param evaluationState the state of the compiler visitor
  * @param lookupTable lookup table as produced by the parser
- * @param analysisOutput the maps produced by the static analysis
- * @param mainName the name of the module that may contain state varibles
- * @param execListener execution listener
  * @param rand the random number generator
+ * @param defs the definitions to compile
  * @returns the compilation context
  */
 export function compile(
@@ -137,7 +137,7 @@ export function compile(
   evaluationState: EvaluationState,
   lookupTable: LookupTable,
   rand: (bound: bigint) => bigint,
-  defs: FlatDef[]
+  defs: QuintDef[]
 ): CompilationContext {
   const { sourceMap, analysisOutput } = compilationState
 
@@ -181,7 +181,7 @@ export function compileExpr(
   // Hence, we have to compile it via an auxilliary definition.
   const def: QuintDef = { kind: 'def', qualifier: 'action', name: 'q::input', expr, id: state.idGen.nextId() }
 
-  return compileDef(state, evaluationState, rng, def)
+  return compileDecl(state, evaluationState, rng, def)
 }
 
 /**
@@ -192,53 +192,43 @@ export function compileExpr(
  * @param state - The current compilation state
  * @param evaluationState - The current evaluation state
  * @param rng - The random number generator
- * @param def - The Quint definition to be compiled
+ * @param decl - The Quint declaration to be compiled
  *
  * @returns A compilation context with the compiled definition or its errors
  */
-export function compileDef(
+export function compileDecl(
   state: CompilationState,
   evaluationState: EvaluationState,
   rng: Rng,
-  def: QuintDef
+  decl: QuintDeclaration
 ): CompilationContext {
   if (state.originalModules.length === 0 || state.modules.length === 0) {
     throw new Error('No modules in state')
   }
 
-  // Define a new module list with the new definition in the last module,
+  // Define a new module list with the new definition in the main module,
   // ensuring the original object is not modified
-  const originalModules = [...state.originalModules]
-  const originalLastModule = originalModules.pop()!
-  originalModules.push({ ...originalLastModule, defs: [...originalLastModule.defs, def] })
+  const originalModules = state.originalModules.map(m => {
+    if (m.name === state.mainName) {
+      return { ...m, declarations: [...m.declarations, decl] }
+    }
+    return m
+  })
 
-  // Same for the flattened module list, but that requires extra care with types
-  const modules: QuintModule[] = [...state.modules]
-  // This is not modules.pop() to ensure flatness
-  const lastModule: FlatModule = state.modules[state.modules.length - 1]
-  modules.pop()
-  modules.push({ ...lastModule, defs: [...lastModule.defs, def] })
+  const mainModule = state.modules.find(m => m.name === state.mainName)!
 
   // We need to resolve names for this new definition. Incremental name
   // resolution is not our focus now, so just resolve everything again.
   return parsePhase3importAndNameResolution({ modules: originalModules, sourceMap: state.sourceMap })
     .mapLeft(errorContextFromMessage(evaluationState.listener))
     .map(({ table }) => {
-      const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, def)
+      const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, decl)
 
-      const { flattenedModule, flattenedDefs, flattenedTable, flattenedAnalysis } = addDefToFlatModule(
-        modules,
-        table,
-        state.idGen,
-        state.sourceMap,
-        analysisOutput,
-        lastModule,
-        def
-      )
-
-      const flatModules: FlatModule[] = [...state.modules]
-      flatModules.pop()
-      flatModules.push(flattenedModule)
+      const {
+        flattenedModules: flatModules,
+        flattenedTable,
+        flattenedAnalysis,
+      } = flattenModules(originalModules, table, state.idGen, state.sourceMap, analysisOutput)
 
       const newState = {
         ...state,
@@ -246,7 +236,13 @@ export function compileDef(
         modules: flatModules,
         originalModules: originalModules,
       }
-      const ctx = compile(newState, evaluationState, flattenedTable, rng.next, flattenedDefs)
+
+      const flatDefinitions = flatModules.find(m => m.name === state.mainName)!.declarations
+
+      // Filter definitions that were not compiled yet
+      const defsToCompile = flatDefinitions.filter(d => !mainModule.declarations.some(d2 => d2.id === d.id))
+
+      const ctx = compile(newState, evaluationState, flattenedTable, rng.next, defsToCompile)
 
       const errorLocator = mkErrorMessage(state.sourceMap)
       return {
@@ -296,6 +292,7 @@ export function compileFromCode(
           const compilationState: CompilationState = {
             originalModules: modules,
             modules: flattenedModules,
+            mainName,
             sourceMap,
             analysisOutput: flattenedAnalysis,
             idGen,
@@ -311,7 +308,7 @@ export function compileFromCode(
                   refs: [],
                 },
               ]
-          const defsToCompile = main ? main.defs : []
+          const defsToCompile = main ? main.declarations : []
           const ctx = compile(compilationState, newEvaluationState(execListener), flattenedTable, rand, defsToCompile)
 
           const errorLocator = mkErrorMessage(sourceMap)

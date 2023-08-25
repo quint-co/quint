@@ -15,13 +15,13 @@
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { LookupTable } from '../names/base'
-import { expressionToString } from '../IRprinting'
-import { IRVisitor, walkDefinition } from '../IRVisitor'
+import { expressionToString } from '../ir/IRprinting'
+import { IRVisitor, walkDeclaration } from '../ir/IRVisitor'
 import {
   QuintApp,
   QuintBool,
   QuintConst,
-  QuintDef,
+  QuintDeclaration,
   QuintEx,
   QuintInt,
   QuintLambda,
@@ -30,7 +30,7 @@ import {
   QuintOpDef,
   QuintStr,
   QuintVar,
-} from '../quintIr'
+} from '../ir/quintIr'
 import { Effect, EffectScheme, Signature, effectNames, toScheme, unify } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
@@ -58,14 +58,14 @@ export class EffectInferrer implements IRVisitor {
    * Infers an effect for every expression in a module based on
    * the definitions table for that module
    *
-   * @param defs: the list of Quint definitions to infer effects for
+   * @param declarations: the list of QuintDeclarations to infer effects for
    *
    * @returns a map from expression ids to their effects and a map from expression
    *          ids to the corresponding error for any problematic expressions.
    */
-  inferEffects(defs: QuintDef[]): EffectInferenceResult {
-    defs.forEach(def => {
-      walkDefinition(this, def)
+  inferEffects(declarations: QuintDeclaration[]): EffectInferenceResult {
+    declarations.forEach(decl => {
+      walkDeclaration(this, decl)
     })
     return [this.errors, this.effects]
   }
@@ -346,7 +346,7 @@ export class EffectInferrer implements IRVisitor {
       return right(this.newInstance(signature))
     } else {
       const def = this.lookupTable.get(nameId)
-      const id = def?.reference
+      const id = def?.id
       if (!def || !id) {
         return left(buildErrorLeaf(this.location, `Signature not found for name: ${name}`))
       }

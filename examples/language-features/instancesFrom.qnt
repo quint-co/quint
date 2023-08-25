@@ -15,9 +15,6 @@ module instancesFrom {
   // the above is equivalent to TLA+'s instance:
   // A2 == INSTANCE A WITH x <- 15, y <- MyY
 
-  export A1
-  export A2
-
   action init = true
   action step = true
 }

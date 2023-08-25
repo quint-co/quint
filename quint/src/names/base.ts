@@ -12,7 +12,8 @@
  * @module
  */
 
-import { QuintType } from '../quintTypes'
+import { QuintDef, QuintExport, QuintImport, QuintInstance, QuintLambdaParameter } from '../ir/quintIr'
+import { QuintType } from '../ir/quintTypes'
 
 /**
  * Possible kinds for definitions
@@ -20,23 +21,34 @@ import { QuintType } from '../quintTypes'
 export type DefinitionKind = 'module' | 'def' | 'val' | 'assumption' | 'param' | 'var' | 'const' | 'type'
 
 /**
- * A minimal representation of a QuintDef, to be stored in `LookupTable` and
- * `DefinitionsByName`.
+ * A definition to be stored in `DefinitionsByName` and `LookupTable`. Either a `QuintDef`
+ * or a `QuintLambdaParameter`, with additional metadata fields
  */
-export interface Definition {
-  kind: DefinitionKind
-  reference: bigint
+export type LookupDefinition = (QuintDef | ({ kind: 'param' } & QuintLambdaParameter)) & {
+  /* Hidden definitions won't be copied over to a module when an
+   * import/intance/export statement is resolved. `hidden` can be removed with
+   * `export` statements for the hidden definitions. */
+  hidden?: boolean
+  /* `namespaces` are names to add to the definition's name, when it
+   * is copied from one module to another with a qualified name. Ordered from
+   * innermost to the outermost namespace. */
+  namespaces?: string[]
+  /* importedFrom` is a reference to the import/instance/export statement that
+   * originated the definition, if the definition was copied from another
+   * module. */
+  importedFrom?: QuintImport | QuintInstance | QuintExport
+  /* `typeAnnotation` is the type annotation of the definition, if it has one.
+   * Some types in `QuintDef` already have a `typeAnnotation` field. This
+   * ensures that this field is always accessible */
   typeAnnotation?: QuintType
+  /** optional depth of the definition, 0 if top-level. Only for `QuintOpDef`. */
+  depth?: number
 }
 
 /**
  * A module's definitions, indexed by name.
- *
- * A definition, in this type, can be hidden, meaning it won't be copied over to
- * a module when an import/intance/export statement is resolved. `hidden` can be
- * removed with `export` statements for the hidden definitions.
  */
-export type DefinitionsByName = Map<string, Definition & { hidden?: boolean }>
+export type DefinitionsByName = Map<string, LookupDefinition & { hidden?: boolean }>
 
 /**
  * Definitions for each module
@@ -54,7 +66,7 @@ export type DefinitionsByModule = Map<string, DefinitionsByName>
  *
  * This should be created by `resolveNames` from `resolver.ts`
  */
-export type LookupTable = Map<bigint, Definition>
+export type LookupTable = Map<bigint, LookupDefinition>
 
 /**
  * Copy the names of a definitions table to a new one, ignoring hidden
@@ -81,6 +93,33 @@ export function copyNames(
   })
 
   return table
+}
+
+/**
+ * Add namespaces to a definition's `namespaces` field, if it doesn't already
+ * have them on the last position or in the beginning of its name.
+ *
+ * @param def - The definition to add the namespaces to
+ * @param namespaces - The namespaces to be added
+ *
+ * @returns The definition with the namespaces added
+ */
+export function addNamespacesToDef(def: LookupDefinition, namespaces: string[]): LookupDefinition {
+  // FIXME(#1111): This doesn't take care of some corner cases.
+  return namespaces.reduce((def, namespace) => {
+    if (def.namespaces && def.namespaces[def.namespaces?.length - 1] === namespace) {
+      // If this is already the last namespace, don't add it again
+      return def
+    }
+
+    if (def.name.startsWith(`${namespace}::`)) {
+      // If the namespace is already in the beginning of the name, don't add it again
+      return def
+    }
+
+    const namespaces = namespace ? def.namespaces?.concat([namespace]) ?? [namespace] : []
+    return { ...def, namespaces }
+  }, def)
 }
 
 /**
@@ -147,10 +186,6 @@ export const builtinNames = [
   'enabled',
   'weakFair',
   'strongFair',
-  'guarantees',
-  'existsConst',
-  'forallConst',
-  'chooseConst',
   'Bool',
   'Int',
   'Nat',

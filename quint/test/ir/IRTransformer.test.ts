@@ -1,12 +1,12 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { buildModuleWithDefs } from './builders/ir'
-import { QuintDef, QuintEx, isFlat } from '../src/quintIr'
-import { moduleToString } from '../src/IRprinting'
-import { IRTransformer, transformModule } from '../src/IRTransformer'
-import { ConcreteRow, QuintType } from '../src/quintTypes'
+import { buildModuleWithDecls } from '../builders/ir'
+import { QuintDeclaration, QuintDef, QuintEx, isDef } from '../../src/ir/quintIr'
+import { moduleToString } from '../../src/ir/IRprinting'
+import { IRTransformer, transformModule } from '../../src/ir/IRTransformer'
+import { ConcreteRow, QuintType } from '../../src/ir/quintTypes'
 
-const quintModule = buildModuleWithDefs([
+const quintModule = buildModuleWithDecls([
   'var a: int',
   'const B: int',
   'type MY_TYPE = int',
@@ -28,7 +28,7 @@ describe('enterExpr', () => {
     const transformer = new TestTransformer()
     const result = transformModule(transformer, quintModule)
 
-    const expectedModule = buildModuleWithDefs([
+    const expectedModule = buildModuleWithDecls([
       'var a: int',
       'const B: int',
       'type MY_TYPE = int',
@@ -43,22 +43,48 @@ describe('enterExpr', () => {
   })
 })
 
-describe('enterDef', () => {
-  it('transforms definitions', () => {
+describe('enterDecl', () => {
+  it('transforms declarations', () => {
     class TestTransformer implements IRTransformer {
-      enterDef(def: QuintDef): QuintDef {
-        if (isFlat(def)) {
-          return { ...def, name: 'NewName' }
+      enterDecl(decl: QuintDeclaration): QuintDeclaration {
+        if (isDef(decl)) {
+          return { ...decl, name: 'NewName' }
+        } else {
+          return { ...decl, protoName: 'NewModuleName' }
         }
-
-        return def
       }
     }
 
     const transformer = new TestTransformer()
     const result = transformModule(transformer, quintModule)
 
-    const expectedModule = buildModuleWithDefs([
+    const expectedModule = buildModuleWithDecls([
+      'var NewName: int',
+      'const NewName: int',
+      'type NewName = int',
+      'assume NewName = N > 1',
+      'import NewModuleName.*',
+      'import NewModuleName(x = "rainbow") as A1',
+      'val NewName = S.filter(x => x + 1)',
+      'def NewName = val x = false { x }',
+    ])
+
+    assert.deepEqual(moduleToString(result), moduleToString(expectedModule))
+  })
+})
+
+describe('enterDef', () => {
+  it('transforms definitions', () => {
+    class TestTransformer implements IRTransformer {
+      enterDef(def: QuintDef): QuintDef {
+        return { ...def, name: 'NewName' }
+      }
+    }
+
+    const transformer = new TestTransformer()
+    const result = transformModule(transformer, quintModule)
+
+    const expectedModule = buildModuleWithDecls([
       'var NewName: int',
       'const NewName: int',
       'type NewName = int',
@@ -84,7 +110,7 @@ describe('enterType', () => {
     const transformer = new TestTransformer()
     const result = transformModule(transformer, quintModule)
 
-    const expectedModule = buildModuleWithDefs([
+    const expectedModule = buildModuleWithDecls([
       'var a: bool',
       'const B: bool',
       'type MY_TYPE = bool',
@@ -107,12 +133,12 @@ describe('enterConcreteRow', () => {
       }
     }
 
-    const quintModuleWithRow = buildModuleWithDefs(['type T = { x: int, y: bool }'])
+    const quintModuleWithRow = buildModuleWithDecls(['type T = { x: int, y: bool }'])
 
     const transformer = new TestTransformer()
     const result = transformModule(transformer, quintModuleWithRow)
 
-    const expectedModule = buildModuleWithDefs(['type T = { newField: int }'])
+    const expectedModule = buildModuleWithDecls(['type T = { newField: int }'])
 
     assert.deepEqual(moduleToString(result), moduleToString(expectedModule))
   })
