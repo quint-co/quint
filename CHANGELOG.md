@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- The `verify` command now manages Apalache server, if no already running
+  instance is detected (#1115)
+
 ### Deprecated
 ### Removed
 ### Fixed
