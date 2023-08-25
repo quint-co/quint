@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: "17"
+          node-version: "18"
       - run: npm install
       - run: npm run format-check || (echo "Run 'npm run format'" && exit 1)
 
@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: "17"
+          node-version: "18"
       - run: npm install
       - run: npm run format-check || (echo "Run 'npm run format'" && exit 1)
 
@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: "17"
+          node-version: "18"
       - run: npm install
       - run: npm run compile
       - run: npm test
@@ -73,7 +73,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: "17"
+          node-version: "18"
       - run: npm install
       - name: Compile and update test fixtures
         run: npm run generate
@@ -92,7 +92,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: "17"
+          node-version: "18"
       - run: cd ./quint && npm ci
       - run: cd ./quint && npm run compile && npm link
       - name: Ensure all dependencies are specified
@@ -139,7 +139,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: "17"
+          node-version: "18"
       - run: cd ./quint && npm ci
       - run: cd ./quint && npm run compile && npm link
       - name: Ensure all dependencies are specified
@@ -176,7 +176,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: "17"
+          node-version: "18"
       - run: cd ./quint && npm install
       - run: cd ./quint && npm run antlr
 
@@ -190,7 +190,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: "17"
+          node-version: "18"
       - name: Install quint deps
         run: cd ./quint && npm install
       - name: Install yalc
