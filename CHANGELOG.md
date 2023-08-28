@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+### Security
+
+## v0.14.1 -- 2023-08-28
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
 
 - Fix problem with broken dependency by pinning versions (#1129)
 
