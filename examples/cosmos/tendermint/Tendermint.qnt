@@ -1,5 +1,5 @@
 // -*- mode: Bluespec; -*-
-module TendermintAcc {
+module Tendermint {
   /*
    A Quint specification of a simplified Tendermint consensus, tuned for
    fork accountability. The simplifications are as follows:
@@ -320,9 +320,9 @@ module TendermintAcc {
     }
 
   // lines 34-35 + lines 61-64 (onTimeoutPrevote)
-  action UponQuorumOfPrevotesAny(p, Evidence) =
+  action UponQuorumOfPrevotesAny(p: str, Evidence: Set[{ id: Value_t, round: Round_t, src: Proc_t }]): bool =
     // find the unique voters in the evidence
-    val Voters = Evidence.map(m => m.src)
+    val Voters: Set[str] = Evidence.map(m => m.src)
     // compare the number of the unique voters against the threshold
     all {
       step.get(p) == "prevote", // line 34 and 61
@@ -380,9 +380,9 @@ module TendermintAcc {
     }
 
   // lines 47-48 + 65-67 (onTimeoutPrecommit)
-  action UponQuorumOfPrecommitsAny(p, Evidence) =
+  action UponQuorumOfPrecommitsAny(p: str, Evidence: Set[{ id: Value_t, round: Round_t, src: Proc_t }]): bool =
     // find the unique committers in the evidence
-    val Committers =  Evidence.map( m => m.src )
+    val Committers: Set[str] = Evidence.map( m => m.src )
     // compare the number of the unique committers against the threshold
     all {
       size(Committers) >= THRESHOLD2,  // line 47
@@ -531,23 +531,22 @@ module TendermintAcc {
     }
 
   //**************************** FORK SCENARIOS  ***************************
+  def EquivocationIn(p, S) =
+    tuples(S, S).exists((m1, m2) =>
+      and {
+        m1 != m2,
+        m1.src == p,
+        m2.src == p,
+        m1.round == m2.round,
+      }
+    )
 
   // equivocation by a process p
-  def EquivocationBy(p) =
-    def EquivocationIn(S) =
-      tuples(S, S).exists((m1, m2) =>
-        and {
-          m1 != m2,
-          m1.src == p,
-          m2.src == p,
-          m1.round == m2.round,
-        }
-      )
-
+  def EquivocationBy(p: str): bool =
     or {
-      EquivocationIn(evidencePropose),
-      EquivocationIn(evidencePrevote),
-      EquivocationIn(evidencePrecommit),
+      EquivocationIn(p, evidencePropose),
+      EquivocationIn(p, evidencePrevote),
+      EquivocationIn(p, evidencePrecommit),
     }
 
   // amnesic behavior by a process p
@@ -660,123 +659,4 @@ module TendermintAcc {
       val AllDecided = Corr.forall(p => decision.get(p) != NilValue)
       AllInMax implies AllDecided
   )
-}
-
-// Tests that demonstrate typical behavior.
-module TendermintTest {
-  import TendermintAcc.*
-  export TendermintAcc.*
-
-  // Quint will automatically compute the unchanged block in the future
-  action unchangedAll = all {
-    step' = step,
-    fired_action' = fired_action,
-    round' = round,
-    validValue' = validValue,
-    validRound' = validRound,
-    msgsPrevote' = msgsPrevote,
-    msgsPropose' = msgsPropose,
-    msgsPrecommit' = msgsPrecommit,
-    decision' = decision,
-    lockedValue' = lockedValue,
-    lockedRound' = lockedRound,
-    evidencePropose' = evidencePropose,
-    evidencePrevote' = evidencePrevote,
-    evidencePrecommit' = evidencePrecommit,
-  }
-
-  // three correct processes behave and decide on the same value
-  run decisionTest = {
-    nondet v = oneOf(ValidValues)
-    val p1 = Proposer.get(0)
-    nondet p2 = Corr.exclude(Set(p1)).oneOf()
-    nondet p3 = Corr.exclude(Set(p1, p2)).oneOf()
-    Init.then(InsertProposal(p1, v))
-        .then(UponProposalInPropose(p1, v))
-        .then(UponProposalInPropose(p2, v))
-        .then(UponProposalInPropose(p3, v))
-        .then(UponProposalInPrevoteOrCommitAndPrevote(p1, v, NilRound))
-        .then(UponProposalInPrevoteOrCommitAndPrevote(p2, v, NilRound))
-        .then(UponProposalInPrevoteOrCommitAndPrevote(p3, v, NilRound))
-        .then(UponProposalInPrecommitNoDecision(p1, v, 0, NilRound))
-        .then(UponProposalInPrecommitNoDecision(p2, v, 0, NilRound))
-        .then(UponProposalInPrecommitNoDecision(p3, v, 0, NilRound))
-        .then(all {
-          assert(decision.get(p1) == v),
-          assert(decision.get(p2) == v),
-          assert(decision.get(p3) == v),
-          unchangedAll,
-        })
-  }
-
-  // a correct proposer cannot propose twice in the same round
-  run noProposeTwiceTest = {
-    val p1 = Proposer.get(0)
-    Init.then(InsertProposal(p1, "v0"))
-        .then(InsertProposal(p1, "v1"))
-        .fail()
-  }
-
-  // a correct proposer proposes but other processes timeout
-  run timeoutProposeTest = {
-    val p1 = Proposer.get(0)
-    nondet p2 = Corr.exclude(Set(p1)).oneOf()
-    nondet p3 = Corr.exclude(Set(p1, p2)).oneOf()
-    Init.then(InsertProposal(p1, "v0"))
-        .then(UponProposalInPropose(p1, "v0"))
-        .then(OnTimeoutPropose(p2))
-        .then(OnTimeoutPropose(p3))
-        .then(
-          val E = msgsPrevote.get(0).filter(m => m.src.in(Corr))
-          UponQuorumOfPrevotesAny(p1, E)
-            .then(UponQuorumOfPrevotesAny(p2, E))
-            .then(UponQuorumOfPrevotesAny(p3, E))
-        )
-        .then(
-          val E = msgsPrecommit.get(0).filter(m => m.src.in(Corr))
-          UponQuorumOfPrecommitsAny(p1, E)
-            .then(UponQuorumOfPrecommitsAny(p2, E))
-            .then(UponQuorumOfPrecommitsAny(p3, E))
-        )
-        .then(all {
-          // all correct processes switch to the next round
-          assert(Corr.forall(p => round.get(p) == 1)),
-          unchangedAll,
-        })
-  }
-}
-
-module InstanceTests {
-  import TendermintTest(
-    Corr = Set("p1", "p2", "p3"),
-    Faulty = Set("p4"),
-    N = 4,
-    T = 1,
-    ValidValues = Set("v0", "v1"),
-    InvalidValues = Set("v2"),
-    MaxRound = 4,
-    Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p4", 4 -> "p1")
-  ) as Tendermint_n4_f1
-
-  import TendermintTest(
-    Corr = Set("p1", "p2", "p3"),
-    Faulty = Set("p3", "p4"),
-    N = 4,
-    T = 1,
-    ValidValues = Set("v0", "v1"),
-    InvalidValues = Set("v2"),
-    MaxRound = 4,
-    Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p4", 4 -> "p1")
-  ) as Tendermint_n4_f2
-
-  import TendermintTest(
-    Corr = Set("p1", "p2", "p3"),
-    Faulty = Set("p4", "p5"),
-    N = 5,
-    T = 1,
-    ValidValues = Set("v0", "v1"),
-    InvalidValues = Set("v2"),
-    MaxRound = 4,
-    Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p4", 4 -> "p1")
-  ) as Tendermint_n5_f2
 }
