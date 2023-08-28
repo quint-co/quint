@@ -9,9 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
 
-- The `verify` command now manages Apalache server, if no already running
-  instance is detected (#1115)
+## v0.14.1 -- 2023-08-28
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- Fix problem with broken dependency by pinning versions (#1129)
+
+### Security
+
+## v0.14.0 -- 2023-08-25
+
+### Added
+
+- The `verify` command now automatically acquires the Apalache distribution and
+  starts the server, if the server is not already running (#1115)
+
+### Changed
+
+- Module management was rewritten, and instances should behave much better in
+  the simulator, REPL, and in integration with Apalache (#1119)
 
 ### Deprecated
 ### Removed

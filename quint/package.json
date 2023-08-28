@@ -1,6 +1,6 @@
 {
   "name": "@informalsystems/quint",
-  "version": "0.13.0",
+  "version": "0.14.1",
   "description": "Core tool for the Quint specification language",
   "keywords": [
     "temporal",
@@ -51,8 +51,8 @@
     "@grpc/grpc-js": "^1.8.14",
     "@grpc/proto-loader": "^0.7.7",
     "@octokit/request": "^8.1.1",
-    "@sweet-monads/either": "^3.0.1",
-    "@sweet-monads/maybe": "^3.1.0",
+    "@sweet-monads/either": "~3.2.0",
+    "@sweet-monads/maybe": "~3.2.0",
     "@types/line-column": "^1.0.0",
     "@types/seedrandom": "^3.0.4",
     "antlr4ts": "^0.5.0-alpha.4",

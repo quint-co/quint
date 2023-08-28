@@ -19,7 +19,8 @@ import { ErrorMessage } from './parsing/quintParserFrontend'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'
-import semver from 'semver'
+// TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
+// import semver from 'semver'
 import fetch from 'node-fetch'
 import { pipeline } from 'stream/promises'
 import child_process from 'child_process'
@@ -30,20 +31,30 @@ import * as protobufDescriptor from 'protobufjs/ext/descriptor'
 import { setTimeout } from 'timers/promises'
 import { promisify } from 'util'
 import { ItfTrace } from './itf'
-import { request as octokitRequest } from '@octokit/request'
+// TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
+// import { request as octokitRequest } from '@octokit/request'
 
 import type { Buffer } from 'buffer'
 import type { PackageDefinition as ProtoPackageDefinition } from '@grpc/proto-loader'
 
 const APALACHE_SERVER_URI = 'localhost:8822'
-const APALACHE_VERSION_TAG = '0.42.x'
-const APALACHE_TGZ = 'apalache.tgz'
+const APALACHE_VERSION_TAG = '0.42.0'
+// TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
+// const APALACHE_TGZ = 'apalache.tgz'
 
 // The structure used to report errors
 type VerifyError = {
   explanation: string
   errors: ErrorMessage[]
   traces?: ItfTrace[]
+}
+
+function quintConfigDir(): string {
+  return path.join(os.homedir(), '.quint')
+}
+
+function apalacheDistDir(): string {
+  return path.join(quintConfigDir(), `apalache-dist-${APALACHE_VERSION_TAG}`)
 }
 
 export type VerifyResult<T> = Either<VerifyError, T>
@@ -260,6 +271,21 @@ async function tryConnect(retry: boolean = false): Promise<VerifyResult<Apalache
   return (await loadProtoDefViaReflection(retry)).map(loadGrpcClient).map(apalache)
 }
 
+function downloadAndUnpackApalache(): Promise<VerifyResult<null>> {
+  const url = `https://github.com/informalsystems/apalache/releases/download/v${APALACHE_VERSION_TAG}/apalache.tgz`
+  console.log(`Downloading Apalache distribution from ${url}...`)
+  return fetch(url)
+    .then(
+      // unpack response body
+      res => pipeline(res.body, tar.extract({ cwd: apalacheDistDir(), strict: true })),
+      error => err(`Error fetching ${url}: ${error}`)
+    )
+    .then(
+      _ => right(null),
+      error => err(`Error unpacking .tgz: ${error}`)
+    )
+}
+
 /**
  * Fetch the latest Apalache release pinned by `APALACHE_VERSION_TAG` from Github.
  *
@@ -268,43 +294,59 @@ async function tryConnect(retry: boolean = false): Promise<VerifyResult<Apalache
  *    - a `left<VerifyError>` indicating an error.
  */
 async function fetchApalache(): Promise<VerifyResult<string>> {
+  const apalacheBinary = path.join(apalacheDistDir(), 'apalache', 'bin', 'apalache-mc')
+  if (fs.existsSync(apalacheBinary)) {
+    // Use existing download
+    console.log(`Using existing Apalache distribution in ${apalacheBinary}`)
+    return right(apalacheBinary)
+  } else {
+    fs.mkdirSync(apalacheDistDir(), { recursive: true })
+    const res = await downloadAndUnpackApalache()
+    return res.map(_ => apalacheBinary)
+  }
+
+  // TODO: This logic makes the CLI tool extremely sensitive to environment.
+  // See https://github.com/informalsystems/quint/issues/1124
   // Fetch Github releases
-  return octokitRequest('GET /repos/informalsystems/apalache/releases').then(
-    async resp => {
-      // Find latest that satisfies `APALACHE_VERSION_TAG`
-      const versions = resp.data.map((element: any) => element.tag_name)
-      const latestTaggedVersion = semver.maxSatisfying(versions, APALACHE_VERSION_TAG)
-      // Check if we have already downloaded this release
-      const unpackPath = path.join(os.homedir(), '.quint', `apalache-dist-${latestTaggedVersion}`)
-      const apalacheBinary = path.join(unpackPath, 'apalache', 'bin', 'apalache-mc')
-      if (fs.existsSync(apalacheBinary)) {
-        // Use existing download
-        console.log(`Using existing Apalache distribution in ${unpackPath}`)
-        return right(unpackPath)
-      } else {
-        // No existing download, download Apalache dist
-        fs.mkdirSync(unpackPath, { recursive: true })
+  // return octokitRequest('GET /repos/informalsystems/apalache/releases').then(
+  //   async resp => {
+  //     // Find latest that satisfies `APALACHE_VERSION_TAG`
+  //     const versions = resp.data.map((element: any) => element.tag_name)
+  //     const latestTaggedVersion = semver.parse(semver.maxSatisfying(versions, APALACHE_VERSION_TAG))
+  //     if (latestTaggedVersion === null) {
+  //       return err(`Failed to deteremine a valid semver version vesion from ${versions} and ${APALACHE_VERSION_TAG}`)
+  //     }
+  //     // Check if we have already downloaded this release
+  //     const unpackPath = apalacheDistDir()
+  //     const apalacheBinary = path.join(unpackPath, 'apalache', 'bin', 'apalache-mc')
+  //     if (fs.existsSync(apalacheBinary)) {
+  //       // Use existing download
+  //       console.log(`Using existing Apalache distribution in ${unpackPath}`)
+  //       return right(unpackPath)
+  //     } else {
+  //       // No existing download, download Apalache dist
+  //       fs.mkdirSync(unpackPath, { recursive: true })
 
-        // Filter release response to get dist archive asset URL
-        const taggedRelease = resp.data.find((element: any) => element.tag_name == latestTaggedVersion)
-        const tgzAsset = taggedRelease.assets.find((asset: any) => asset.name == APALACHE_TGZ)
-        const downloadUrl = tgzAsset.browser_download_url
+  //       // Filter release response to get dist archive asset URL
+  //       const taggedRelease = resp.data.find((element: any) => element.tag_name == latestTaggedVersion)
+  //       const tgzAsset = taggedRelease.assets.find((asset: any) => asset.name == APALACHE_TGZ)
+  //       const downloadUrl = tgzAsset.browser_download_url
 
-        console.log(`Downloading Apalache distribution from ${downloadUrl}...`)
-        return fetch(downloadUrl)
-          .then(
-            // unpack response body
-            res => pipeline(res.body, tar.extract({ cwd: unpackPath, strict: true })),
-            error => err(`Error fetching ${downloadUrl}: ${error}`)
-          )
-          .then(
-            _ => right(unpackPath),
-            error => err(`Error unpacking .tgz: ${error}`)
-          )
-      }
-    },
-    error => err(`Error listing the Apalache releases: ${error}`)
-  )
+  //       console.log(`Downloading Apalache distribution from ${downloadUrl}...`)
+  //       return fetch(downloadUrl)
+  //         .then(
+  //           // unpack response body
+  //           res => pipeline(res.body, tar.extract({ cwd: unpackPath, strict: true })),
+  //           error => err(`Error fetching ${downloadUrl}: ${error}`)
+  //         )
+  //         .then(
+  //           _ => right(unpackPath),
+  //           error => err(`Error unpacking .tgz: ${error}`)
+  //         )
+  //     }
+  //   },
+  //   error => err(`Error listing the Apalache releases: ${error}`)
+  // )
 }
 
 /**
@@ -327,15 +369,14 @@ async function connect(): Promise<VerifyResult<Apalache>> {
 
   // Connection or pinging failed, download Apalache
   console.log("Couldn't connect to Apalache, checking for latest supported release")
-  const distDir = await fetchApalache()
+  const exeResult = await fetchApalache()
   // Launch Apalache from download
-  return distDir
+  return exeResult
     .asyncChain(
-      async distDir =>
+      async exe =>
         new Promise<VerifyResult<void>>((resolve, _) => {
           console.log('Launching Apalache server')
-          const apalacheBinary = path.join(distDir, 'apalache', 'bin', 'apalache-mc')
-          const apalache = child_process.spawn(apalacheBinary, ['server'])
+          const apalache = child_process.spawn(exe, ['server'])
 
           // Exit handler that kills Apalache if Quint exists
           function exitHandler() {
