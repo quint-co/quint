@@ -100,7 +100,6 @@ export function flattenModules(
   // FIXME: Ideally we should do this via the type system
   assert(flattenedModules.every(m => m.declarations.every(isDef)))
 
-  flattenedModules.forEach(m => console.log(moduleToString(m)))
   return {
     flattenedModules: flattenedModules as FlatModule[],
     flattenedTable,
