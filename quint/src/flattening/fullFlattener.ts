@@ -17,13 +17,7 @@ import { IdGenerator } from '../idGenerator'
 import { moduleToString } from '../ir/IRprinting'
 import { FlatModule, QuintModule, isDef } from '../ir/quintIr'
 import { LookupTable } from '../names/base'
-import {
-  Loc,
-  ParserPhase3,
-  ParserPhase4,
-  parsePhase3importAndNameResolution,
-  parsePhase4toposort,
-} from '../parsing/quintParserFrontend'
+import { Loc, ParserPhase3, parsePhase3importAndNameResolution } from '../parsing/quintParserFrontend'
 import { AnalysisOutput } from '../quintAnalyzer'
 import { inlineTypeAliases } from '../types/aliasInliner'
 import { flattenModule } from './flattener'
@@ -97,7 +91,7 @@ export function flattenModules(
     // modules that were flattened so far, plus the modules that still have to be flattened (queue). We need to do this
     // for the modules in the queue as well since they might also refer to definitions that had their ids changed by the
     // instance flattener.
-    const result = toposortOrThrow(flattenedModules.concat(modulesQueue), sourceMap)
+    const result = resolveNamesOrThrow(flattenedModules.concat(modulesQueue), sourceMap)
 
     flattenedModules = result.modules.slice(0, flattenedModules.length)
     flattenedTable = result.table
@@ -106,6 +100,7 @@ export function flattenModules(
   // FIXME: Ideally we should do this via the type system
   assert(flattenedModules.every(m => m.declarations.every(isDef)))
 
+  flattenedModules.forEach(m => console.log(moduleToString(m)))
   return {
     flattenedModules: flattenedModules as FlatModule[],
     flattenedTable,
@@ -117,17 +112,7 @@ function resolveNamesOrThrow(modules: QuintModule[], sourceMap: Map<bigint, Loc>
   const result = parsePhase3importAndNameResolution({ modules, sourceMap })
   if (result.isLeft()) {
     modules.forEach(m => console.log(moduleToString(m)))
-    throw new Error('Internal error while flattening' + result.value.map(e => e.explanation))
-  }
-
-  return result.unwrap()
-}
-
-function toposortOrThrow(modules: QuintModule[], sourceMap: Map<bigint, Loc>): ParserPhase4 {
-  const result = parsePhase3importAndNameResolution({ modules, sourceMap }).chain(parsePhase4toposort)
-  if (result.isLeft()) {
-    modules.forEach(m => console.log(moduleToString(m)))
-    throw new Error('Internal error while flattening' + result.value.map(e => e.explanation))
+    throw new Error('Internal error while flattening ' + result.value.map(e => e.explanation))
   }
 
   return result.unwrap()

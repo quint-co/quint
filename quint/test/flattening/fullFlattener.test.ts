@@ -2,7 +2,7 @@ import { assert } from 'chai'
 import { describe, it } from 'mocha'
 import { flattenModules } from '../../src/flattening/fullFlattener'
 import { newIdGenerator } from '../../src/idGenerator'
-import { parse, parsePhase3importAndNameResolution, parsePhase4toposort } from '../../src/parsing/quintParserFrontend'
+import { parse, parsePhase3importAndNameResolution } from '../../src/parsing/quintParserFrontend'
 import { SourceLookupPath } from '../../src/parsing/sourceResolver'
 import { analyzeModules } from '../../src/quintAnalyzer'
 
@@ -31,10 +31,6 @@ describe('flattenModules', () => {
               [...table.entries()].map(([id, def]) => [id, def.id])
             )
           )
-
-          result.chain(parsePhase4toposort).map(({ modules }) => {
-            assert.deepEqual(modules, flattenedModules)
-          })
         })
 
         it('has proper analysis output in flattened modules', () => {
@@ -211,6 +207,25 @@ describe('flattenModules', () => {
     module C {
       import A(N=1) as A1
       val c = A1::a + 1
+    }`
+
+    assertFlattenedModule(text)
+  })
+
+  describe('can have definitions with same id but different name (#1141)', () => {
+    const text = `module A {
+      val a = 1
+    }
+
+    module B {
+      import A.*
+      val b = a
+    }
+
+    module C {
+      import A.*
+      import B as B
+      val c = a + B::b
     }`
 
     assertFlattenedModule(text)
