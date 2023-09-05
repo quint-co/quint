@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Added partial support for code completion and renaming (#1143)
+
 ### Changed
 ### Deprecated
 ### Removed
