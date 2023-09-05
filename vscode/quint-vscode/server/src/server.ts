@@ -7,6 +7,9 @@ import {
   CodeAction,
   CodeActionKind,
   CodeActionParams,
+  CompletionItem,
+  CompletionParams,
+  CompletionTriggerKind,
   Connection,
   DefinitionLink,
   DefinitionParams,
@@ -20,14 +23,17 @@ import {
   InitializeResult,
   MarkupContent,
   ProposedFeatures,
+  RenameParams,
   SignatureHelp,
   SignatureHelpParams,
   TextDocumentSyncKind,
   TextDocuments,
+  TextEdit,
+  WorkspaceEdit,
   createConnection,
 } from 'vscode-languageserver/node'
-
 import { DocumentUri, TextDocument } from 'vscode-languageserver-textdocument'
+import { URI } from 'vscode-uri'
 
 import {
   AnalysisOutput,
@@ -36,15 +42,18 @@ import {
   QuintErrorData,
   analyzeModules,
   builtinDocs,
+  findDefinitionWithId,
   newIdGenerator,
   produceDocsById,
 } from '@informalsystems/quint'
-import { diagnosticsFromErrors, locToRange } from './reporting'
-import { URI } from 'vscode-uri'
-import { hover } from './hover'
+
+import { completeIdentifier } from './complete'
 import { findDefinition } from './definitions'
-import { parseDocument } from './parsing'
 import { getDocumentSymbols } from './documentSymbols'
+import { hover } from './hover'
+import { parseDocument } from './parsing'
+import { diagnosticsFromErrors, findBestMatchingResult, locToRange } from './reporting'
+import { findParameterWithId } from '@informalsystems/quint/dist/src/ir/IRFinder'
 
 export class QuintLanguageServer {
   // Create one generator of unique identifiers
@@ -67,13 +76,17 @@ export class QuintLanguageServer {
       const result: InitializeResult = {
         capabilities: {
           textDocumentSync: TextDocumentSyncKind.Full,
+          definitionProvider: true,
+          documentSymbolProvider: true,
+          codeActionProvider: true,
+          completionProvider: {
+            triggerCharacters: ['.'],
+          },
           hoverProvider: true,
+          renameProvider: true,
           signatureHelpProvider: {
             triggerCharacters: ['('],
           },
-          definitionProvider: true,
-          codeActionProvider: true,
-          documentSymbolProvider: true,
         },
       }
       return result
@@ -241,6 +254,37 @@ export class QuintLanguageServer {
       }, [] as CodeAction[])
     })
 
+    connection.onCompletion((params: CompletionParams): CompletionItem[] => {
+      // Only complete on "."
+      // TODO: offer completion at arbitrary positions in the text
+      if (params.context?.triggerKind !== CompletionTriggerKind.TriggerCharacter) {
+        return []
+      }
+
+      const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
+      if (!parsedData) {
+        return []
+      }
+
+      // Parse the identifier that triggered completion
+      // TODO: offer completion for chained calls
+      //       (e.g., `tup._2.`, `rec.field.` or `set.powerset().`)
+      const triggeringLine = documents.get(params.textDocument.uri)?.getText({
+        start: { ...params.position, character: 0 },
+        end: params.position,
+      })
+
+      const match = triggeringLine?.trim().match(/([a-zA-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+)\.$/)
+      if (!match) {
+        return []
+      }
+      const triggeringIdentifier = match[1]
+
+      const sourceFile = URI.parse(params.textDocument.uri).path
+
+      return completeIdentifier(triggeringIdentifier, parsedData, sourceFile, params.position, loadedBuiltInDocs)
+    })
+
     connection.onDocumentSymbol((params: DocumentSymbolParams): HandlerResult<DocumentSymbol[], void> => {
       const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
       if (!parsedData) {
@@ -258,6 +302,77 @@ export class QuintLanguageServer {
       })
 
       return getDocumentSymbols(localModules, parsedData.sourceMap)
+    })
+
+    connection.onRenameRequest((params: RenameParams): WorkspaceEdit | null => {
+      const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
+      if (!parsedData) {
+        return null
+      }
+
+      // Find the name under the cursor.
+      const { modules, sourceMap, table } = parsedData
+      const results: [bigint, null][] = [...sourceMap.keys()].map(id => [id, null])
+      const sourceFile = URI.parse(params.textDocument.uri).path
+      const result = findBestMatchingResult(sourceMap, results, params.position, sourceFile)
+      if (!result) {
+        return null
+      }
+
+      // Look up where the name was declared.
+      const declToRename = table.get(result.id)?.id ?? result.id
+
+      // Find all references to `declToRename`.
+      const references = [...table.entries()].reduce((references, [key, value]) => {
+        if (value.id == declToRename) {
+          references.push(key)
+        }
+        return references
+      }, [] as bigint[])
+
+      // Construct a `TextEdit` for each reference.
+      const changes = references.reduce((changes, ref) => {
+        const loc = sourceMap.get(ref)
+        if (loc) {
+          changes.push({ range: locToRange(loc), newText: params.newName })
+        }
+        return changes
+      }, [] as TextEdit[])
+
+      // Construct a `TextEdit` for the decl itself.
+      const param = findParameterWithId(modules, declToRename)
+      if (param) {
+        // The simple case: the name is declared as a parameter.
+        // In this case, the source map gives us exactly the range of the symbol
+        // to replace.
+        const declLoc = sourceMap.get(param.id)
+        if (declLoc) {
+          changes.push({ range: locToRange(declLoc), newText: params.newName })
+        }
+      } else {
+        const decl = findDefinitionWithId(modules, declToRename)
+        if (decl) {
+          // The tricky case: the name is declared as a definition.
+          // In this case, the location pointed by the source map includes its
+          // entire body and quantifiers, while we're only looking to replace
+          // its name. We thus compute an offset, starting from the beginning
+          // of the range indicated through the source map, to take into account
+          // any preceeding qualifiers. The end of the replacement range is
+          // given by the length of the definition's name.
+          const sourceMapOffset = decl.kind.length + (decl.kind === 'def' && decl.qualifier.startsWith('pure') ? 5 : 0)
+          const declLoc = sourceMap.get(decl.id)
+          if (declLoc) {
+            const modificationLoc = {
+              ...declLoc,
+              start: { ...declLoc.start, col: declLoc.start.col + sourceMapOffset + 1 },
+              end: { ...declLoc.start, col: declLoc.start.col + sourceMapOffset + decl.name.length },
+            }
+            changes.push({ range: locToRange(modificationLoc), newText: params.newName })
+          }
+        }
+      }
+
+      return { changes: { [params.textDocument.uri]: changes } }
     })
 
     // Make the text document manager listen on the connection
