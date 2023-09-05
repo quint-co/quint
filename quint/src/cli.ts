@@ -235,6 +235,11 @@ const verifyCmd = {
         type: 'string',
         coerce: (s: string) => s.split(','),
       })
+      .option('temporal', {
+        desc: 'the temporal properties to check, separated by a comma',
+        type: 'string',
+        coerce: (s: string) => s.split(','),
+      })
       .option('apalache-config', {
         desc: 'Filename of the additional Apalache configuration (in the HOCON format, a superset of JSON)',
         type: 'string',
