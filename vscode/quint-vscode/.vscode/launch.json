@@ -1,0 +1,34 @@
+// A launch configuration that compiles the extension and then opens it inside a new window
+// https://github.com/microsoft/vscode-extension-samples/blob/ead2640188c31d12ad07ed4d3c0d47d5b54a23c8/lsp-web-extension-sample/.vscode/launch.json
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "extensionHost",
+			"request": "launch",
+			"name": "Launch Client",
+			"runtimeExecutable": "${execPath}",
+			"args": ["--extensionDevelopmentPath=${workspaceRoot}"],
+			"outFiles": ["${workspaceRoot}/client/out/**/*.js"],
+		},
+		{
+			"type": "node",
+			"request": "attach",
+			"name": "Attach to Server",
+			"port": 6009,
+			"restart": true,
+			"outFiles": [
+				"${workspaceRoot}/server/out/**/*.js"
+			]
+		}
+	],
+	"compounds": [
+		{
+			"name": "Client + Server",
+			"configurations": [
+				"Launch Client",
+				"Attach to Server"
+			]
+		}
+	]
+}
