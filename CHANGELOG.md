@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed a problem where importing the same definition under multiple different
+  names would cause a crash (#1142)
+
 ### Security
 
 ## v0.14.1 -- 2023-08-28
