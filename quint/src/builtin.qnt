@@ -487,7 +487,7 @@ module builtin {
   /// ```
   pure def select(l, p): (List[a], (a) => bool) => List[a]
 
-  /// `l.foldl(z, f)` reduces the elements in `s` using `f`,
+  /// `l.foldl(z, f)` reduces the elements in `l` using `f`,
   /// starting with `z` from the left.
   ///
   /// I.e., `f(f(f(z, x0), x1)..., xn)`.
