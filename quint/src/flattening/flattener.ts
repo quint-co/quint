@@ -15,6 +15,7 @@
 import { LookupDefinition, LookupTable, builtinNames } from '../names/base'
 import {
   QuintApp,
+  QuintDeclaration,
   QuintDef,
   QuintEx,
   QuintExport,
@@ -28,6 +29,8 @@ import {
 
 import { IRVisitor, walkDefinition, walkExpression, walkModule } from '../ir/IRVisitor'
 import { addNamespaceToDefinition } from '../ir/namespacer'
+import assert from 'assert'
+import { uniqBy } from 'lodash'
 
 /**
  * Flatten a module, replacing instances, imports and exports with definitions refered by the module.
@@ -60,13 +63,16 @@ export function flattenModule(
 export function dependentDefinitions(expr: QuintEx, lookupTable: LookupTable): QuintDef[] {
   const flattener = new Flattener(new Map(), lookupTable)
   walkExpression(flattener, expr)
-  return [...flattener.defsToAdd.values()]
+
+  // Walking an expression should never add a non-definition declaration. The following assertion is just to make sure.
+  assert(flattener.newDeclarations.every(d => isDef(d)))
+
+  return [...flattener.newDeclarations.values()] as QuintDef[]
 }
 
 class Flattener implements IRVisitor {
-  // Buffer of definitions to add to the module. We can try to make this ordered in the future.
-  // For now, we rely on toposorting defs after flattening.
-  defsToAdd: Map<string, QuintDef> = new Map()
+  // Buffer of declarations, topologically sorted
+  newDeclarations: QuintDeclaration[] = []
 
   private modulesByName: Map<string, QuintModule>
   private lookupTable: LookupTable
@@ -79,22 +85,22 @@ class Flattener implements IRVisitor {
   }
 
   enterModule(_quintModule: QuintModule) {
-    // Reset `defsToAdd`
-    this.defsToAdd = new Map()
+    // Reset `newDeclarations`
+    this.newDeclarations = []
   }
 
   exitModule(quintModule: QuintModule) {
     // Get rid of imports and exports, and add the definitions we collected
-    quintModule.declarations = quintModule.declarations.filter(d => d.kind !== 'import' && d.kind !== 'export')
-    // Delete repeated definitions from `defsToAdd`
-    quintModule.declarations.forEach(d => {
-      if (isDef(d)) {
-        this.defsToAdd.delete(d.name)
-      }
-    })
+    quintModule.declarations = uniqBy(
+      this.newDeclarations.filter(d => d.kind !== 'import' && d.kind !== 'export'),
+      d => (isDef(d) ? d.name : d.id)
+    )
+  }
 
-    // Add the definitions to the module (mutating it)
-    quintModule.declarations.push(...this.defsToAdd.values())
+  exitDecl(decl: QuintDeclaration) {
+    // Add declarations to the buffer as they are visited. This way, new declarations are addded in between, allowing us
+    // to keep the topological order.
+    this.newDeclarations.push(decl)
   }
 
   enterName(name: QuintName) {
@@ -118,16 +124,16 @@ class Flattener implements IRVisitor {
         )
       }
 
-      if (this.defsToAdd.has(def.name)) {
-        // Already added
-        return
-      }
-
       const namespace = this.namespaceForNested ?? qualifier(decl)
       const newDef: QuintDef =
         namespace && !def.name.startsWith(namespace)
           ? addNamespaceToDefinition(def, namespace, new Set(builtinNames))
           : def
+
+      if (this.newDeclarations.some(d => isDef(d) && d.name === newDef.name)) {
+        // Already added
+        return
+      }
 
       // Typescript still keeps `LookupDefinition` extra fields even if we say `newDef` is a `QuintDef`. We need to
       // remove them manually, so when this is collected back into a `LookupTable`, this leftover values don't get
@@ -135,7 +141,7 @@ class Flattener implements IRVisitor {
       const newDefWithoutMetadata = { ...newDef, hidden: false, namespaces: [], importedFrom: undefined }
 
       this.walkNested(namespace, newDef)
-      this.defsToAdd.set(newDef.name, newDefWithoutMetadata)
+      this.newDeclarations.push(newDefWithoutMetadata)
     })
   }
 
@@ -180,7 +186,12 @@ class Flattener implements IRVisitor {
         : def
 
     this.walkNested(namespace, newDef)
-    this.defsToAdd.set(newDef.name, newDef)
+    if (this.newDeclarations.some(d => isDef(d) && d.name === newDef.name)) {
+      // Already added
+      return
+    }
+
+    this.newDeclarations.push(newDef)
   }
 
   private walkNested(namespace: string | undefined, def: QuintDef) {
