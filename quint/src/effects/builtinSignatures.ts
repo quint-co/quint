@@ -120,7 +120,7 @@ function propagationWithLambda(kinds: ComponentKind[]): (arity: number) => Effec
 export const standardPropagation = propagateComponents(['read', 'temporal'])
 
 const literals = ['Nat', 'Int', 'Bool'].map(name => ({ name, effect: toScheme({ kind: 'concrete', components: [] }) }))
-const booleanOperators = [
+export const booleanOperators = [
   { name: 'eq', effect: standardPropagation(2) },
   { name: 'neq', effect: standardPropagation(2) },
   { name: 'not', effect: standardPropagation(1) },
@@ -128,7 +128,7 @@ const booleanOperators = [
   { name: 'implies', effect: standardPropagation(2) },
 ]
 
-const setOperators = [
+export const setOperators = [
   { name: 'exists', effect: propagationWithLambda(['read', 'temporal'])(2) },
   { name: 'forall', effect: propagationWithLambda(['read', 'temporal'])(2) },
   { name: 'in', effect: standardPropagation(2) },
@@ -149,7 +149,7 @@ const setOperators = [
   { name: 'size', effect: standardPropagation(1) },
 ]
 
-const mapOperators = [
+export const mapOperators = [
   { name: 'get', effect: standardPropagation(2) },
   { name: 'keys', effect: standardPropagation(1) },
   { name: 'mapBy', effect: propagationWithLambda(['read', 'temporal'])(2) },
@@ -160,19 +160,19 @@ const mapOperators = [
   { name: 'put', effect: standardPropagation(3) },
 ]
 
-const recordOperators = [
+export const recordOperators = [
   // Keys should be pure, as we don't allow dynamic key access.
   { name: 'field', effect: parseAndQuantify('(Read[r], Pure) => Read[r]') },
   { name: 'fieldNames', effect: parseAndQuantify('(Read[r]) => Read[r]') },
   { name: 'with', effect: parseAndQuantify('(Read[r1], Pure, Read[r2]) => Read[r1, r2]') },
 ]
 
-const tupleOperators = [
+export const tupleOperators = [
   // Indexes for tuples should be pure, as we don't allow dynamic tuple access.
   { name: 'item', effect: parseAndQuantify('(Read[r1], Pure) => Read[r1]') },
 ]
 
-const listOperators = [
+export const listOperators = [
   { name: 'append', effect: standardPropagation(2) },
   { name: 'concat', effect: standardPropagation(2) },
   { name: 'head', effect: standardPropagation(1) },
@@ -188,7 +188,7 @@ const listOperators = [
   { name: 'foldr', effect: propagationWithLambda(['read', 'temporal'])(3) },
 ]
 
-const integerOperators = [
+export const integerOperators = [
   { name: 'iadd', effect: standardPropagation(2) },
   { name: 'isub', effect: standardPropagation(2) },
   { name: 'iuminus', effect: standardPropagation(1) },
