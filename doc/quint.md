@@ -279,16 +279,20 @@ Options:
                                                                         [string]
   --apalache-config  Filename of the additional Apalache configuration (in the
                      HOCON format, a superset of JSON)                  [string]
+  --verbosity        control how much output is produced (0 to 5)
+                                                           [number] [default: 2]
 ```
 
 <!-- TODO: Update after https://github.com/informalsystems/quint/issues/701 -->
-Use of this command has three prerequisites:
+By default, this command will automatically obtain and run Apalache. The only
+prerequisite is a [compatible installation of OpenJDK](quint/README.md).
 
-1. You have installed a distribution of
-   [Apalache](https://apalache.informal.systems/docs/apalache/installation/jvm.html)
-2. You have set `APALACHE_DIST` as the path to the distribution.
-3. You have started the Apalache server `apalache-mc server` and it is running.
-    
+You may also manually obtain and run a distribution of Apalache, following these
+steps:
+
+1. Install a distribution of [Apalache](https://apalache.informal.systems/docs/apalache/installation/jvm.html).
+2. Start the Apalache server `apalache-mc server` and ensure that it is running.
+
 Apalache uses bounded model checking. This technique checks *all runs* up to
 `--max-steps` steps via [z3][]. Apalache is highly configurable. See [Apalache
 configuration](https://apalache.informal.systems/docs/apalache/config.html?highlight=configuration#apalache-configuration)
@@ -297,12 +301,11 @@ for guidance.
 - If there are no critical errors (e.g., in parsing, typechecking, etc.), this
 command sends the Quint specification to the [Apalache][] model checker, which
 will try to find an invariant violation. If it finds one, it prints the trace on
-the standard output. If it does not find a violating trace, it prints the
-longest sample trace that the simulator has found during the execution. When the
-parameter `--out` is supplied, the trace is written as a JSON representation of
-Quint IR in the output file. When the parameter `--out-itf` is supplied, the
-trace is written in the [Informal Trace Format][]. This output can be
-conveniently displayed with the [ITF Trace Viewer][], or just with [jq][].
+the standard output. When the parameter `--out` is supplied, the trace is
+written as a JSON representation of Quint IR in the output file. When the
+parameter `--out-itf` is supplied, the trace is written in the [Informal Trace
+Format][]. This output can be conveniently displayed with the [ITF Trace
+Viewer][], or just with [jq][].
 
 - If the specification cannot be run (e.g., due to a parsing error), the file
 contains an error message in JSON:
