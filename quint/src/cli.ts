@@ -184,7 +184,7 @@ const runCmd = {
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
-        verbosity: verbosity.defaultLevel,
+        default: verbosity.defaultLevel,
       }),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633
