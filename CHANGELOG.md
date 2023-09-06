@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed a problem where importing the same definition under multiple different
   names would cause a crash (#1142)
+- Fixed a problem where importing a module in the REPL would prevent state
+  variables from having their values persisted between evaluations (#1146)
 
 ### Security
 

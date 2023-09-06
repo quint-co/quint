@@ -177,12 +177,14 @@ error: typechecking failed
 
 <!-- !test in repl loads a file -->
 ```
-echo "import counters.*" | quint -r ../examples/language-features/counters.qnt 2>&1 | tail -n +3
+echo -e "import counters.* \n init \n n" | quint -r ../examples/language-features/counters.qnt 2>&1 | tail -n +3
 ```
 
 <!-- !test out repl loads a file -->
 ```
 >>> 
+>>> true
+>>> 1
 >>> 
 ```
 
