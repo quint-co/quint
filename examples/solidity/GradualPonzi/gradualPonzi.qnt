@@ -232,7 +232,7 @@ module gradualPonziTest {
   //
   // If quint has not reported a violation, try:
   //
-  // $ quint run --invariant=progressInv --main=gradualPonziTest --seed=0x8385bfe3a7497 gradualPonzi.qnt
+  // $ quint run --invariant=progressInv --main=gradualPonziTest --max-steps=50 --seed=0x8272b36d6a57f gradualPonzi.qnt
   //
   // It is quite hard for `quint run` to find a violation to this property.
   // In contrast, `quint verify` finds it in a few seconds.

@@ -319,17 +319,13 @@ fi
       --invariant=noNegativeInv --main=gradualPonziTest \
       ../examples/solidity/GradualPonzi/gradualPonzi.qnt
 
-### IGNORE on run gradualPonzi::progressInv
+### FAIL on run gradualPonzi::progressInv
 
-This test should fail. We know that from `quint verify`.
-However, `quint run` has hard time finding a counterexample.
-If you see this test failing, you are a lucky winner!
-Add the seed to the command below and change the exit code to 1.
-
-<!-- !test exit 0 -->
+<!-- !test exit 1 -->
 <!-- !test check gradualPonzi - Run progressInv -->
     quint run --invariant=progressInv --main=gradualPonziTest \
       --max-samples=1000 --max-steps=50 \
+      --seed=0x8272b36d6a57f \
       ../examples/solidity/GradualPonzi/gradualPonzi.qnt
 
 ### FAIL on run gradualPonzi::noLeftoversInv

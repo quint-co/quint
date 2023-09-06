@@ -8,7 +8,12 @@ import { SourceLookupPath } from '../../src/parsing/sourceResolver'
 import { parse } from '../../src/parsing/quintParserFrontend'
 
 describe('flattenModule', () => {
-  function getFlatennedDecls(baseDecls: string[], decls: string[], thirdModuleDecls: string[]): string[] {
+  function getFlatennedDecls(
+    baseDecls: string[],
+    decls: string[],
+    thirdModuleDecls: string[],
+    moduleToCheck: string = 'B'
+  ): string[] {
     const idGenerator = newIdGenerator()
     const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
 
@@ -27,7 +32,7 @@ describe('flattenModule', () => {
       const flattenedModule = flattenModule(m, modulesByName, table)
       modulesByName.set(m.name, flattenedModule)
     })
-    const flattenedModule = modulesByName.get('B')!
+    const flattenedModule = modulesByName.get(moduleToCheck)!
 
     return flattenedModule.declarations.map(decl => declarationToString(decl))
   }
@@ -40,7 +45,7 @@ describe('flattenModule', () => {
     const expectedDecls = ['def f = ((x) => iadd(x, 1))', 'def g = ((x) => f(x))']
 
     const flattenedDecls = getFlatennedDecls(baseDecls, decls, [])
-    assert.sameDeepMembers(flattenedDecls, expectedDecls)
+    assert.deepEqual(flattenedDecls, expectedDecls)
   })
 
   it('flattens import with qualifier', () => {
@@ -51,7 +56,7 @@ describe('flattenModule', () => {
     const expectedDecls = ['def MyA::f = ((MyA::x) => iadd(MyA::x, 1))', 'val a = MyA::f(1)']
 
     const flattenedDecls = getFlatennedDecls(baseDecls, decls, [])
-    assert.sameDeepMembers(flattenedDecls, expectedDecls)
+    assert.deepEqual(flattenedDecls, expectedDecls)
   })
 
   it('flattens import with self-qualifier', () => {
@@ -62,7 +67,7 @@ describe('flattenModule', () => {
     const expectedDecls = ['def A::f = ((A::x) => iadd(A::x, 1))', 'val a = A::f(1)']
 
     const flattenedDecls = getFlatennedDecls(baseDecls, decls, [])
-    assert.sameDeepMembers(flattenedDecls, expectedDecls)
+    assert.deepEqual(flattenedDecls, expectedDecls)
   })
 
   it('flattens export with previous import without definitions being used', () => {
@@ -76,7 +81,7 @@ describe('flattenModule', () => {
     const expectedDecls = ['def f = ((x) => iadd(x, 1))']
 
     const flattenedDecls = getFlatennedDecls(baseDecls, decls, thirdModuleDecls)
-    assert.sameDeepMembers(flattenedDecls, expectedDecls)
+    assert.deepEqual(flattenedDecls, expectedDecls)
   })
 
   it('flattens export with previous import with used definition', () => {
@@ -89,7 +94,7 @@ describe('flattenModule', () => {
     const expectedDecls = ['def f = ((x) => iadd(x, 1))', 'val a = f(2)']
 
     const flattenedDecls = getFlatennedDecls(baseDecls, decls, thirdModuleDecls)
-    assert.sameDeepMembers(flattenedDecls, expectedDecls)
+    assert.deepEqual(flattenedDecls, expectedDecls)
   })
 
   it('flattens export without previous import', () => {
@@ -102,7 +107,7 @@ describe('flattenModule', () => {
     const expectedDecls = ['def f = ((x) => iadd(x, 1))']
 
     const flattenedDecls = getFlatennedDecls(baseDecls, decls, thirdModuleDecls)
-    assert.sameDeepMembers(flattenedDecls, expectedDecls)
+    assert.deepEqual(flattenedDecls, expectedDecls)
   })
 
   it('does not flatten definitions that come from instance', () => {
@@ -113,7 +118,7 @@ describe('flattenModule', () => {
     const expectedDecls = decls
 
     const flattenedDecls = getFlatennedDecls(baseDecls, decls, [])
-    assert.sameDeepMembers(flattenedDecls, expectedDecls)
+    assert.deepEqual(flattenedDecls, expectedDecls)
   })
 
   it('flattens export qualified module with no qualifier', () => {
@@ -126,7 +131,7 @@ describe('flattenModule', () => {
     const expectedDecls = ['def f = ((x) => iadd(x, 1))']
 
     const flattenedDecls = getFlatennedDecls(baseDecls, decls, thirdModuleDecls)
-    assert.sameDeepMembers(flattenedDecls, expectedDecls)
+    assert.deepEqual(flattenedDecls, expectedDecls)
   })
 
   it('flattens export instance with no qualifier', () => {
@@ -142,7 +147,7 @@ describe('flattenModule', () => {
     const expectedDecls = ['import A(N = 1) as A1', 'def f = ((x) => iadd(x, 1))']
 
     const flattenedDecls = getFlatennedDecls(baseDecls, decls, thirdModuleDecls)
-    assert.sameDeepMembers(flattenedDecls, expectedDecls)
+    assert.deepEqual(flattenedDecls, expectedDecls)
   })
 
   it('imports definitions recursively when there are dependencies', () => {
@@ -153,7 +158,7 @@ describe('flattenModule', () => {
     const expectedDecls = ['val MyA::z = 3', 'def MyA::f = ((MyA::x) => iadd(MyA::x, MyA::z))', 'val a = MyA::f(1)']
 
     const flattenedDecls = getFlatennedDecls(baseDecls, decls, [])
-    assert.sameDeepMembers(flattenedDecls, expectedDecls)
+    assert.deepEqual(flattenedDecls, expectedDecls)
   })
 
   it('imports definitions recursively when there are dependencies in single def import', () => {
@@ -164,7 +169,7 @@ describe('flattenModule', () => {
     const expectedDecls = ['val z = 3', 'def f = ((x) => iadd(x, z))', 'val a = f(1)']
 
     const flattenedDecls = getFlatennedDecls(baseDecls, decls, [])
-    assert.sameDeepMembers(flattenedDecls, expectedDecls)
+    assert.deepEqual(flattenedDecls, expectedDecls)
   })
 
   it('does not create conflicts', () => {
@@ -177,11 +182,24 @@ describe('flattenModule', () => {
     const expectedDecls = [
       'val z = val x = 3 { x }',
       'def f = ((x) => iadd(x, z))',
-      'val a = def g = f { g(1) }',
       'val y = 1',
+      'val a = def g = f { g(1) }',
     ]
 
     const flattenedDecls = getFlatennedDecls(baseDecls, decls, thirdModuleDecls)
-    assert.sameDeepMembers(flattenedDecls, expectedDecls)
+    assert.deepEqual(flattenedDecls, expectedDecls)
+  })
+
+  it('can have definitions with same id but different name (#1141)', () => {
+    const baseDecls = ['val a = 1']
+
+    const decls = ['import A.*', 'val b = a']
+
+    const thirdModuleDecls = ['import A.*', 'import B', 'val c = a + B::b']
+
+    const expectedDecls = ['val a = 1', 'val B::a = 1', 'val B::b = B::a', 'val c = iadd(a, B::b)']
+
+    const flattenedDecls = getFlatennedDecls(baseDecls, decls, thirdModuleDecls, 'C')
+    assert.deepEqual(flattenedDecls, expectedDecls)
   })
 })
