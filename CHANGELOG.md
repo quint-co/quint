@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Added `--temporal` flag for `verify`, enabling temporal property verification
+  through Apalache (#1154)
+
 ### Changed
 ### Deprecated
 ### Removed
