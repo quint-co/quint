@@ -274,7 +274,8 @@ Options:
                                                           [number] [default: 10]
   --init             name of the initializer action   [string] [default: "init"]
   --step             name of the step action          [string] [default: "step"]
-  --invariant        invariant to check: a definition name or an expression
+  --invariant        the invariants to check, separated by a comma      [string]
+  --temporal         the temporal properties to check, separated by a comma
                                                                         [string]
   --apalache-config  Filename of the additional Apalache configuration (in the
                      HOCON format, a superset of JSON)                  [string]
