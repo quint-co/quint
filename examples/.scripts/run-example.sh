@@ -18,7 +18,8 @@ result () {
             "$file" == "cosmos/tendermint/Tendermint.qnt" ||
             "$file" == "cosmos/tendermint/TendermintTest.qnt" ||
             "$file" == "cosmos/lightclient/Blockchain.qnt" ||
-            "$file" == "cosmos/lightclient/LCVerificationApi.qnt" ) ]] ; then
+            "$file" == "cosmos/lightclient/LCVerificationApi.qnt" ||
+            "$file" == "cryptography/hashes.qnt" ) ]] ; then
       printf "N/A[^parameterized]"; return
     fi
     # Skip verification for specs that do not define a state machine
@@ -28,6 +29,7 @@ result () {
             "$file" == "cosmos/lightclient/typedefs.qnt" ||
             "$file" == "cosmos/tendermint/Tendermint.qnt" ||
             "$file" == "cosmos/tendermint/TendermintTest.qnt" ||
+            "$file" =~ ^cryptography/ ||
             "$file" =~ ^spells/ ||
             "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ||
             "$file" == "cosmos/ics20/base.qnt" ) ]] ; then
