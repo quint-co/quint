@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /* ----------------------------------------------------------------------------------
  * Copyright (c) Informal Systems 2021. All rights reserved.
  * Licensed under the Apache 2.0.

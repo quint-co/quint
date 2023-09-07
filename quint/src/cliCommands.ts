@@ -550,11 +550,15 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
     return cliErr(`module ${mainName} does not exist`, { ...verifying, errors: [], sourceCode: '' })
   }
 
-  // Wrap init, step and invariant in other definitions, to make sure they are not considered unused in the main module
-  // and, therefore, ignored by the flattener
+  // Wrap init, step, invariant and temporal properties in other definitions,
+  // to make sure they are not considered unused in the main module and,
+  // therefore, ignored by the flattener
   const extraDefsAsText = [`action q::init = ${args.init}`, `action q::step = ${args.step}`]
   if (args.invariant) {
     extraDefsAsText.push(`val q::inv = and(${args.invariant.join(',')})`)
+  }
+  if (args.temporal) {
+    extraDefsAsText.push(`temporal q::temporalProps = and(${args.temporal.join(',')})`)
   }
 
   const extraDefs = extraDefsAsText.map(d => parseDefOrThrow(d, verifying.idGen, new Map()))
@@ -604,6 +608,7 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
       init: 'q::init',
       next: 'q::step',
       inv: args.invariant ? ['q::inv'] : undefined,
+      'temporal-props': args.temporal ? ['q::temporalProps'] : undefined,
     },
   }
 
