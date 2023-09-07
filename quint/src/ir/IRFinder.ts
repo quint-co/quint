@@ -61,10 +61,10 @@ export function findDefinitionWithId(modules: QuintModule[], id: bigint): QuintD
 /**
  * Find a quint parameter with a given id in a list of modules
  *
- * @param modules the modules in which to search for the definition
+ * @param modules the modules in which to search for the parameter
  * @param id the id to be searched for
  *
- * @returns a quint lambda parameter with the given id, or undefined if no expression is found
+ * @returns a quint lambda parameter with the given id, or undefined if no parameter is found
  */
 export function findParameterWithId(modules: QuintModule[], id: bigint): QuintLambdaParameter | undefined {
   const visitor = new IRParameterFinder(id)

@@ -85,6 +85,7 @@ function findDeclByNameInDecl(name: string, decl: QuintDeclaration): bigint[] {
   walkDeclaration(visitor, decl)
   return visitor.namesFound
 }
+
 /**
  * Find a declaration of `name` by name inside `expr`.
  */
@@ -93,6 +94,7 @@ function findDeclByNameInExpr(name: string, expr: QuintEx): bigint[] {
   walkExpression(visitor, expr)
   return visitor.namesFound
 }
+
 class DeclOfNameFinder implements IRVisitor {
   nameToFind: string
   namesFound: bigint[]
