@@ -535,7 +535,7 @@ assert(List(1, 2, 3).select(x -> x % 2 == 0) == List(2))
 
 ## `pure def foldl: (List[a], b, (b, a) => b) => b`
 
-`l.foldl(z, f)` reduces the elements in `s` using `f`,
+`l.foldl(z, f)` reduces the elements in `l` using `f`,
 starting with `z` from the left.
 
 I.e., `f(f(f(z, x0), x1)..., xn)`.
