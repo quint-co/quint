@@ -84,13 +84,13 @@ const replCmd = {
         desc: 'Disable banners and prompts, to simplify scripting (alias for --verbosity=0)',
         alias: 'q',
         type: 'boolean',
+        default: false,
       })
-      .default('quiet', false)
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
-      })
-      .default('verbosity', verbosity.defaultLevel),
+        default: verbosity.defaultLevel,
+      }),
   handler: runRepl,
 }
 
@@ -112,8 +112,8 @@ const testCmd = {
       .option('max-samples', {
         desc: 'the maximum number of successful runs to try for every randomized test',
         type: 'number',
+        default: 10000,
       })
-      .default('max-samples', 10000)
       .option('seed', {
         desc: 'random seed to use for non-deterministic choice',
         type: 'string',
@@ -121,8 +121,8 @@ const testCmd = {
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
+        default: verbosity.defaultLevel,
       })
-      .default('verbosity', verbosity.defaultLevel)
       // Timeouts are postponed for:
       // https://github.com/informalsystems/quint/issues/633
       //
@@ -155,28 +155,28 @@ const runCmd = {
       .option('max-samples', {
         desc: 'the maximum on the number of traces to try',
         type: 'number',
+        default: 10000,
       })
-      .default('max-samples', 10000)
       .option('max-steps', {
         desc: 'the maximum on the number of steps in every trace',
         type: 'number',
+        default: 20,
       })
-      .default('max-steps', 20)
       .option('init', {
         desc: 'name of the initializer action',
         type: 'string',
+        default: 'init',
       })
-      .default('init', 'init')
       .option('step', {
         desc: 'name of the step action',
         type: 'string',
+        default: 'step',
       })
-      .default('step', 'step')
       .option('invariant', {
         desc: 'invariant to check: a definition name or an expression',
         type: 'string',
+        default: ['true'],
       })
-      .default('invariant', ['true'])
       .option('seed', {
         desc: 'random seed to use for non-deterministic choice',
         type: 'string',
@@ -184,8 +184,8 @@ const runCmd = {
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
-      })
-      .default('verbosity', verbosity.defaultLevel),
+        default: verbosity.defaultLevel,
+      }),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633
   //
@@ -235,6 +235,11 @@ const verifyCmd = {
         type: 'string',
         coerce: (s: string) => s.split(','),
       })
+      .option('temporal', {
+        desc: 'the temporal properties to check, separated by a comma',
+        type: 'string',
+        coerce: (s: string) => s.split(','),
+      })
       .option('apalache-config', {
         desc: 'Filename of the additional Apalache configuration (in the HOCON format, a superset of JSON)',
         type: 'string',
@@ -242,8 +247,8 @@ const verifyCmd = {
       .option('verbosity', {
         desc: 'control how much output is produced (0 to 5)',
         type: 'number',
-      })
-      .default('verbosity', verbosity.defaultLevel),
+        default: verbosity.defaultLevel,
+      }),
   // Timeouts are postponed for:
   // https://github.com/informalsystems/quint/issues/633
   //

@@ -170,8 +170,8 @@ completely implementing every pass.
 | Invariant checking                | -                  | -                  | -                  | -                  | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [Higher-order definitions][]      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
 | [Runs][]                          | :white_check_mark: | :white_check_mark: | :green_circle:     | :white_check_mark: | :white_check_mark: | *non-goal*         | :white_check_mark: |
-| [Temporal operators][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | *non-goal*         | :x:                | :x:                |
-| [Fairness][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | *non-goal*         | :x:                | :x:                |
+| [Temporal operators][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | *non-goal*         | :white_check_mark: | :x:                |
+| [Fairness][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | *non-goal*         | :white_check_mark: | :x:                |
 | [Unbounded quantifiers][]         | :white_check_mark: | :white_check_mark: | :x:                | :x:                | *non-goal*         | :x:                | :x:                |
 | [String literals][], see #118     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | ~~uninterpreted types~~, see #118 | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:                | :x:                |

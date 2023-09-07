@@ -128,7 +128,6 @@ error: found a counterexample
 
 ## Deadlocks
 
-
 <!-- !test in reports deadlock -->
 ```
 output=$(quint verify ./testFixture/apalache/deadlock.qnt)
@@ -158,4 +157,65 @@ An example execution:
 [State 4] { n: 5 }
 
 [violation] Found an issue (duration).
+```
+
+## Temporal properties
+
+### Can verify with single temporal property
+
+<!-- !test check can specify --temporal -->
+```
+quint verify --temporal eventuallyOne ./testFixture/apalache/temporalTest.qnt
+```
+
+### Can verify with two temporal properties
+
+<!-- !test check can specify multiple temporal props -->
+```
+quint verify --temporal eventuallyOne,eventuallyFive ./testFixture/apalache/temporalTest.qnt
+```
+
+### Temporal violations are reported with traces
+
+<!-- !test in prints a trace on temporal violation -->
+```
+output=$(quint verify --temporal eventuallyZero ./testFixture/apalache/temporalTest.qnt)
+exit_code=$?
+echo "$output" | egrep 'State|__InLoop:|n:'
+exit $exit_code
+```
+
+<!-- !test exit 1 -->
+<!-- !test err prints a trace on temporal violation -->
+```
+error: found a counterexample
+```
+
+<!-- !test out prints a trace on temporal violation -->
+```
+An example execution:
+[State 0]
+  __InLoop: false,
+  __saved_n: 1,
+  n: 1
+[State 1]
+  __InLoop: true,
+  __saved_n: 1,
+  n: 2
+[State 2]
+  __InLoop: true,
+  __saved_n: 1,
+  n: 3
+[State 3]
+  __InLoop: true,
+  __saved_n: 1,
+  n: 4
+[State 4]
+  __InLoop: true,
+  __saved_n: 1,
+  n: 5
+[State 5]
+  __InLoop: true,
+  __saved_n: 1,
+  n: 1
 ```
