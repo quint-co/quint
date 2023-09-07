@@ -54,6 +54,7 @@ import { findDefinition } from './definitions'
 import { getDocumentSymbols } from './documentSymbols'
 import { hover } from './hover'
 import { parseDocument } from './parsing'
+import { getDeclRegExp } from './rename'
 import { diagnosticsFromErrors, findBestMatchingResult, locToRange } from './reporting'
 import { findParameterWithId } from '@informalsystems/quint/dist/src/ir/IRFinder'
 
@@ -353,25 +354,36 @@ export class QuintLanguageServer {
         }
       } else {
         const decl = findDefinitionWithId(modules, declToRename)
-        if (decl) {
-          // The tricky case: the name is declared as a definition.
-          // In this case, the location pointed by the source map includes its
-          // entire body and quantifiers, while we're only looking to replace
-          // its name. We thus compute an offset, starting from the beginning
-          // of the range indicated through the source map, to take into account
-          // any preceeding qualifiers. The end of the replacement range is
-          // given by the length of the definition's name.
-          const sourceMapOffset = decl.kind.length + (decl.kind === 'def' && decl.qualifier.startsWith('pure') ? 5 : 0)
-          const declLoc = sourceMap.get(decl.id)
-          if (declLoc) {
-            const modificationLoc = {
-              ...declLoc,
-              start: { ...declLoc.start, col: declLoc.start.col + sourceMapOffset + 1 },
-              end: { ...declLoc.start, col: declLoc.start.col + sourceMapOffset + decl.name.length },
-            }
-            changes.push({ range: locToRange(modificationLoc), newText: params.newName })
-          }
+        if (!decl) {
+          return null
         }
+        // The tricky case: the name is declared as a definition.
+        // In this case, the location pointed by the source map includes its
+        // entire body and quantifiers, while we're only looking to replace
+        // its name. Thus, we try to parse the declaration using a regular
+        // expression, and extract offsets to account for offsets caused by
+        // preceeding qualifiers.
+
+        const declLoc = sourceMap.get(decl.id)
+        if (!declLoc) {
+          return null
+        }
+        const triggeringLine = documents.get(params.textDocument.uri)?.getText(locToRange(declLoc))
+        if (!triggeringLine) {
+          return null
+        }
+
+        const re = getDeclRegExp(decl)
+        const match = re.exec(triggeringLine)
+        if (!match) {
+          return null
+        }
+        const modificationLoc = {
+          ...declLoc,
+          start: { ...declLoc.start, col: declLoc.start.col + match[0].length - match[2].length },
+          end: { ...declLoc.start, col: declLoc.start.col + match[0].length - 1 },
+        }
+        changes.push({ range: locToRange(modificationLoc), newText: params.newName })
       }
 
       return { changes: { [params.textDocument.uri]: changes } }
