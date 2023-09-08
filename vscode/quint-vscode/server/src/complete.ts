@@ -162,9 +162,9 @@ function findDeclByNameAtPos(name: string, pos: Position, sourceFile: string, pa
   // Compute effects that contain the triggering position, from the smallest to the largest.
   const { modules, sourceMap } = parsedData
   const results: [bigint, null][] = [...sourceMap.keys()].map(id => [id, null])
-  const effectsContainingPosition = findMatchingResults(sourceMap, results, pos, sourceFile)
+  const scopesContainingPos = findMatchingResults(sourceMap, results, pos, sourceFile)
 
-  for (let { id } of effectsContainingPosition) {
+  for (let { id } of scopesContainingPos) {
     const names = findDeclByNameInsideScope(name, id, modules)
     if (names.length > 0) {
       return names
