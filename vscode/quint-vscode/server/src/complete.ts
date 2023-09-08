@@ -164,18 +164,13 @@ function findDeclByNameAtPos(name: string, pos: Position, sourceFile: string, pa
   const results: [bigint, null][] = [...sourceMap.keys()].map(id => [id, null])
   const effectsContainingPosition = findMatchingResults(sourceMap, results, pos, sourceFile)
 
-  // let result = [] as bigint[]
   for (let { id } of effectsContainingPosition) {
     const names = findDeclByNameInsideScope(name, id, modules)
-    // TODO(#693): Collect all names as a workaround for #693, as they may receive a too-general type.
-    //             When #693 is fixed, remove result and return a name as soon as one is found.
-    // result = result.concat(names)
     if (names.length > 0) {
       return names
     }
   }
   return []
-  // return result
 }
 
 // Return raw markdown string `s` as `MarkupContent`
