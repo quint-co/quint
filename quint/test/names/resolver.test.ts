@@ -18,13 +18,13 @@ describe('resolveNames', () => {
   function resolveNamesForExprs(exprs: string[]): Either<QuintError[], LookupTable> {
     const module = buildModule(baseDefs, exprs, undefined, zerog)
 
-    return resolveNames([module])
+    return resolveNames([module]).map(r => r.table)
   }
 
   function resolveNamesForDefs(defs: string[]): Either<QuintError[], LookupTable> {
     const module = buildModuleWithDecls(baseDefs.concat(defs), undefined, zerog)
 
-    return resolveNames([module])
+    return resolveNames([module]).map(r => r.table)
   }
 
   describe('operator definitions', () => {
