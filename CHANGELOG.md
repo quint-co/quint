@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed a problem where tests were ignored if they are not defined directly in
+  the main module - that is, they were imported (#1161)
+
 ### Security
 
 ## v0.14.2 -- 2023-09-06
