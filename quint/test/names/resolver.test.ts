@@ -39,6 +39,21 @@ describe('resolveNames', () => {
       assert.isTrue(result.isRight())
     })
 
+    it('finds unused definitions', () => {
+      const module = buildModule(baseDefs, ['1 + TEST_CONSTANT'], undefined, zerog)
+
+      const result = resolveNames([module]).map(r => r.unusedDefinitions)
+
+      result
+        .map(unused =>
+          assert.sameDeepMembers(
+            Array.from(unused('wrapper')).map(d => d.name),
+            ['unscoped_def', 'MY_TYPE', 'd0']
+          )
+        )
+        .mapLeft(_ => assert.fail('Expected no errors'))
+    })
+
     it('does not find scoped definitions outside of scope', () => {
       const result = resolveNamesForExprs(['TEST_CONSTANT', 'scoped_def'])
 

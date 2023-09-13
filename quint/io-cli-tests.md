@@ -298,6 +298,34 @@ exit $exit_code
       HOME/failingTestCounters.qnt
 ```
 
+### Tests are found even if they are imported in the main module
+
+<!-- !test exit 0 -->
+<!-- !test in tests are found -->
+```
+output=$(quint test --max-samples=10 --main TendermintModels ../examples/cosmos/tendermint/TendermintModels.qnt)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g'
+exit $exit_code
+```
+
+<!-- !test out tests are found -->
+```
+
+  TendermintModels
+    ok TendermintModels::n4_f1::decisionTest passed 10 test(s)
+    ok TendermintModels::n4_f1::noProposeTwiceTest passed 10 test(s)
+    ok TendermintModels::n4_f1::timeoutProposeTest passed 10 test(s)
+    ok TendermintModels::n4_f2::decisionTest passed 10 test(s)
+    ok TendermintModels::n4_f2::noProposeTwiceTest passed 10 test(s)
+    ok TendermintModels::n4_f2::timeoutProposeTest passed 10 test(s)
+    ok TendermintModels::n5_f2::decisionTest passed 10 test(s)
+    ok TendermintModels::n5_f2::noProposeTwiceTest passed 10 test(s)
+    ok TendermintModels::n5_f2::timeoutProposeTest passed 10 test(s)
+
+  9 passing (duration)
+```
+
 ### test counters produces no execution
 
 `test` should handle the special case of when an execution has not been
