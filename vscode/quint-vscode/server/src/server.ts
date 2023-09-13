@@ -269,10 +269,15 @@ export class QuintLanguageServer {
         return []
       }
 
+      const document = this.documents.get(params.textDocument.uri)
+      if (!document) {
+        return []
+      }
+
       // Parse the identifier that triggered completion
       // TODO: offer completion for chained calls
       //       (e.g., `tup._2.`, `rec.field.` or `set.powerset().`)
-      const triggeringLine = documents.get(params.textDocument.uri)?.getText({
+      const triggeringLine = document.getText({
         start: { ...params.position, character: 0 },
         end: params.position,
       })
@@ -285,7 +290,22 @@ export class QuintLanguageServer {
 
       const sourceFile = URI.parse(params.textDocument.uri).path
 
-      return completeIdentifier(triggeringIdentifier, parsedData, sourceFile, params.position, loadedBuiltInDocs)
+      // Run analysis synchronously to get the required information for completion
+      this.triggerAnalysis(document)
+
+      const analysisOutput = this.analysisOutputByDocument.get(params.textDocument.uri)
+      if (!analysisOutput) {
+        return []
+      }
+
+      return completeIdentifier(
+        triggeringIdentifier,
+        parsedData,
+        analysisOutput,
+        sourceFile,
+        params.position,
+        loadedBuiltInDocs
+      )
     })
 
     connection.onDocumentSymbol((params: DocumentSymbolParams): HandlerResult<DocumentSymbol[], void> => {
@@ -403,18 +423,22 @@ export class QuintLanguageServer {
     this.analysisOutputByDocument.delete(uri)
   }
 
+  private triggerAnalysis(document: TextDocument, previousDiagnostics: Diagnostic[] = []) {
+    clearTimeout(this.analysisTimeout)
+    this.connection.console.info(`Triggering analysis`)
+    this.analyze(document, previousDiagnostics)
+  }
+
   private scheduleAnalysis(document: TextDocument, previousDiagnostics: Diagnostic[] = []) {
     clearTimeout(this.analysisTimeout)
     const timeoutMillis = 1000
     this.connection.console.info(`Scheduling analysis in ${timeoutMillis} ms`)
     this.analysisTimeout = setTimeout(() => {
-      this.analyze(document, previousDiagnostics).catch(err =>
-        this.connection.console.error(`Failed to analyze: ${err.message}`)
-      )
+      this.analyze(document, previousDiagnostics)
     }, timeoutMillis)
   }
 
-  private async analyze(document: TextDocument, previousDiagnostics: Diagnostic[] = []) {
+  private analyze(document: TextDocument, previousDiagnostics: Diagnostic[] = []) {
     const parsedData = this.parsedDataByDocument.get(document.uri)
     if (!parsedData) {
       return

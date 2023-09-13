@@ -2,6 +2,7 @@ import { compact } from 'lodash'
 import { MarkupContent } from 'vscode-languageclient'
 import { CompletionItem, CompletionItemKind, MarkupKind, Position } from 'vscode-languageserver/node'
 import {
+  AnalysisOutput,
   DocumentationEntry,
   IRVisitor,
   ParserPhase3,
@@ -11,7 +12,6 @@ import {
   QuintLambda,
   QuintModule,
   QuintType,
-  analyzeModules,
   booleanOperators,
   findDefinitionWithId,
   findExpressionWithId,
@@ -30,22 +30,20 @@ import { findMatchingResults } from './reporting'
 export function completeIdentifier(
   identifier: string,
   parsedData: ParserPhase3,
+  analysisOutput: AnalysisOutput,
   sourceFile: string,
   position: Position,
   builtinDocs: Map<string, DocumentationEntry>
 ): CompletionItem[] {
-  const { modules, table } = parsedData
+  const { table } = parsedData
 
   // Until we have incremental parsing, try to lookup `triggeringIdentifier` by name
   const declIds = findDeclByNameAtPos(identifier, position, sourceFile, parsedData)
 
-  // FIXME: use analysisOutputByDocument
-  const [_, aop] = analyzeModules(table, modules)
-
   // Lookup types for the found declarations
   const types = declIds.map(declId => {
     const refId = table.get(declId)?.id ?? declId
-    return aop.types.get(refId)?.type
+    return analysisOutput.types.get(refId)?.type
   })
   const properTypes = compact(
     types.map(type => {
