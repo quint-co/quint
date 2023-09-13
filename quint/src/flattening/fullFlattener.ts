@@ -22,6 +22,7 @@ import { AnalysisOutput } from '../quintAnalyzer'
 import { inlineTypeAliases } from '../types/aliasInliner'
 import { flattenModule } from './flattener'
 import { flattenInstances } from './instanceFlattener'
+import { unshadowNames } from '../names/unshadower'
 
 /**
  * Flatten an array of modules, replacing instances, imports and exports with
@@ -45,8 +46,11 @@ export function flattenModules(
   // FIXME: use copies of parameters so the original objects are not mutated.
   // This is not a problem atm, but might be in the future.
 
+  // Use unique names when there is shadowing
+  const modulesWithUniqueNames = modules.map(m => unshadowNames(m, table))
+
   // Inline type aliases
-  const inlined = inlineTypeAliases(modules, table, analysisOutput)
+  const inlined = inlineTypeAliases(modulesWithUniqueNames, table, analysisOutput)
 
   const modulesByName = new Map(inlined.modules.map(m => [m.name, m]))
 
