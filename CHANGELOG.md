@@ -13,10 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   through Apalache (#1154)
 
 ### Changed
+
+- Introduce frames on actions in the verbose output. The verbose output has changed! (#1158)
+- The ITF traces always serialize integers as `{ '#bigint': 'num }`  (#1165)
+
 ### Deprecated
 ### Removed
 ### Fixed
 
+- Fixed a problem where an error was thrown when a name from an importing module
+  shadowed a nested name from the imported module (#802)
 - Fixed a problem where tests were ignored if they are not defined directly in
   the main module - that is, they were imported (#1161)
 

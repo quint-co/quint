@@ -3,24 +3,24 @@ import { assert } from 'chai'
 import { quintExAreEqual, zip } from './util'
 
 import { buildExpression } from './builders/ir'
-import { ofItf, toItf } from '../src/itf'
+import { ItfTrace, ofItf, toItf } from '../src/itf'
 
 describe('toItf', () => {
   it('converts two states', () => {
     const trace = ['{ x: 2, y: true }', '{ x: 3, y: false }'].map(buildExpression)
 
     const itfTrace = toItf(['x', 'y'], trace)
-    const expected = {
+    const expected: ItfTrace = {
       vars: ['x', 'y'],
       states: [
         {
           '#meta': { index: 0 },
-          x: 2,
+          x: { '#bigint': '2' },
           y: true,
         },
         {
           '#meta': { index: 1 },
-          x: 3,
+          x: { '#bigint': '3' },
           y: false,
         },
       ],
@@ -58,21 +58,21 @@ describe('toItf', () => {
           '#meta': {
             index: 0,
           },
-          a: 2,
+          a: { '#bigint': '2' },
           b: 'hello',
           c: { '#bigint': '1000000000000000000' },
-          d: { '#set': [5, 6] },
-          e: { foo: 3, bar: true },
-          f: { '#tup': [7, 'myStr'] },
+          d: { '#set': [{ '#bigint': '5' }, { '#bigint': '6' }] },
+          e: { foo: { '#bigint': '3' }, bar: true },
+          f: { '#tup': [{ '#bigint': '7' }, 'myStr'] },
           g: {
             '#map': [
-              [1, 'a'],
-              [2, 'b'],
-              [3, 'c'],
+              [{ '#bigint': '1' }, 'a'],
+              [{ '#bigint': '2' }, 'b'],
+              [{ '#bigint': '3' }, 'c'],
             ],
           },
           h: { '#map': [] },
-          i: { '#map': [[1, 'a']] },
+          i: { '#map': [[{ '#bigint': '1' }, 'a']] },
         },
       ],
     }
