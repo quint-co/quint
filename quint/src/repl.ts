@@ -25,6 +25,7 @@ import {
   compileExpr,
   compileFromCode,
   contextNameLookup,
+  inputDefName,
   lastTraceName,
   newCompilationState,
 } from './runtime/compile'
@@ -689,7 +690,7 @@ function countBraces(str: string): [number, number, number] {
 }
 
 function evalExpr(state: ReplState, out: writer): Either<string, QuintEx> {
-  const computable = contextNameLookup(state.evaluationState.context, 'q::input', 'callable')
+  const computable = contextNameLookup(state.evaluationState.context, inputDefName, 'callable')
   const columns = terminalWidth()
   const result = computable
     .mapRight(comp => {

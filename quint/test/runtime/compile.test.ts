@@ -13,6 +13,7 @@ import {
   compileExpr,
   compileFromCode,
   contextNameLookup,
+  inputDefName,
 } from '../../src/runtime/compile'
 import { RuntimeValue } from '../../src/runtime/impl/runtimeValue'
 import { dedent } from '../textUtils'
@@ -29,7 +30,7 @@ const idGen = newIdGenerator()
 // Compile an expression, evaluate it, convert to QuintEx, then to a string,
 // compare the result. This is the easiest path to test the results.
 function assertResultAsString(input: string, expected: string | undefined) {
-  const moduleText = `module __runtime { val q::input = ${input} }`
+  const moduleText = `module __runtime { val ${inputDefName} = ${input} }`
   const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
   const context = compileFromCode(idGen, moduleText, '__runtime', mockLookupPath, noExecutionListener, newRng().next)
 
@@ -40,7 +41,7 @@ function assertResultAsString(input: string, expected: string | undefined) {
 }
 
 function assertInputFromContext(context: CompilationContext, expected: string | undefined) {
-  contextNameLookup(context.evaluationState.context, 'q::input', 'callable')
+  contextNameLookup(context.evaluationState.context, inputDefName, 'callable')
     .mapLeft(msg => assert(false, `Unexpected error: ${msg}`))
     .mapRight(value => assertComputableAsString(value, expected))
 }

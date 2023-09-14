@@ -35,9 +35,12 @@ import * as ir from '../../ir/quintIr'
 import { RuntimeValue, rv } from './runtimeValue'
 import { ErrorCode } from '../../quintError'
 
-import { lastTraceName } from '../compile'
+import { inputDefName, lastTraceName } from '../compile'
 import { unreachable } from '../../util'
 
+// Internal names in the compiler, which have special treatment.
+// For some reason, if we replace 'q::input' with inputDefName, everything breaks.
+// What kind of JS magic is that?
 const specialNames = ['q::input', 'q::runResult', 'q::nruns', 'q::nsteps', 'q::init', 'q::next', 'q::inv']
 
 /**
@@ -252,10 +255,16 @@ export class CompilerVisitor implements IRVisitor {
       // Both input1 and input2 wrap step, but in their individual computables.
       const unwrappedValue = boundValue
       const app: ir.QuintApp = { id: opdef.id, kind: 'app', opcode: opdef.name, args: [] }
+      const evalApp: ir.QuintApp = { id: 0n, kind: 'app', opcode: '_', args: [app] }
       boundValue = {
         eval: () => {
-          this.execListener.onUserOperatorCall(app)
-          const r = unwrappedValue.eval()
+          if (app.opcode === inputDefName) {
+            this.execListener.onUserOperatorCall(evalApp)
+            // do not call onUserOperatorReturn on '_' later, as it may span over multiple frames
+          } else {
+            this.execListener.onUserOperatorCall(app)
+          }
+          const r: Maybe<EvalResult> = unwrappedValue.eval()
           this.execListener.onUserOperatorReturn(app, [], r)
           return r
         },
@@ -1227,14 +1236,17 @@ export class CompilerVisitor implements IRVisitor {
         // Restore the values of the next variables,
         // as evaluation was not successful.
         this.recoverNextVars(savedValues)
-        this.resetTrace(savedTrace.map(rv.mkList))
+        this.resetTrace(just(rv.mkList(savedTrace)))
         break
       }
 
       // switch to the next frame, when implementing A.then(B)
       if (kind === 'then' && nactionsLeft > 0) {
+        const oldState: RuntimeValue = this.varsToRecord()
         this.shiftVars()
         this.extendTrace()
+        const newState: RuntimeValue = this.varsToRecord()
+        this.execListener.onNextState(oldState, newState)
       }
     }
 
@@ -1251,30 +1263,6 @@ export class CompilerVisitor implements IRVisitor {
 
     const kind = app.opcode === 'then' ? 'then' : 'all'
     const lazyCompute = () => this.chainAllOrThen(args, kind)
-
-    this.compStack.push(mkFunComputable(lazyCompute))
-  }
-
-  // translate A.repeated(i)
-  //
-  // TODO: Soon to be removed: https://github.com/informalsystems/quint/issues/848
-  private translateRepeated(app: ir.QuintApp): void {
-    if (this.compStack.length < 2) {
-      this.errorTracker.addCompileError(app.id, `Not enough arguments on stack for "${app.opcode}"`)
-      return
-    }
-    const [action, niterations] = this.compStack.splice(-2)
-
-    const lazyCompute = () => {
-      // compute the number of iterations and repeat 'action' that many times
-      return niterations
-        .eval()
-        .map(num => {
-          const n = Number((num as RuntimeValue).toInt())
-          return this.chainAllOrThen(new Array(n).fill(action), 'then')
-        })
-        .join()
-    }
 
     this.compStack.push(mkFunComputable(lazyCompute))
   }
@@ -1529,14 +1517,14 @@ export class CompilerVisitor implements IRVisitor {
                     // drop the run. Otherwise, we would have a lot of false
                     // positives, which look like deadlocks but they are not.
                     this.execListener.onUserOperatorReturn(nextApp, [], nextResult)
-                    this.execListener.onRunReturn(just(rv.mkBool(true)), this.trace().or(just(rv.mkList([]))).value)
+                    this.execListener.onRunReturn(just(rv.mkBool(true)), this.trace().toArray())
                     break
                   }
                 }
               }
             }
             const outcome = !failure ? just(rv.mkBool(!errorFound)) : none()
-            this.execListener.onRunReturn(outcome, this.trace().or(just(rv.mkList([]))).value)
+            this.execListener.onRunReturn(outcome, this.trace().toArray())
             // recover the state variables
             this.recoverVars(vars)
             this.recoverNextVars(nextVars)
@@ -1550,9 +1538,13 @@ export class CompilerVisitor implements IRVisitor {
     this.compStack.push(mkFunComputable(doRun))
   }
 
-  private trace() {
+  private trace(): List<RuntimeValue> {
     let trace = this.shadowVars.find(r => r.name === lastTraceName)
-    return trace ? trace.registerValue.map(t => t.toList()) : none()
+    if (trace && trace.registerValue.isJust()) {
+      return trace.registerValue.value.toList()
+    } else {
+      return List<RuntimeValue>()
+    }
   }
 
   private resetTrace(value: Maybe<RuntimeValue> = just(rv.mkList([]))) {
@@ -1565,13 +1557,13 @@ export class CompilerVisitor implements IRVisitor {
   private extendTrace() {
     let trace = this.shadowVars.find(r => r.name === lastTraceName)
     if (trace) {
-      const extended = this.trace().map(t => rv.mkList(t.push(this.varsToRecord())))
-      trace.registerValue = extended
+      const extended = this.trace().push(this.varsToRecord())
+      trace.registerValue = just(rv.mkList(extended))
     }
   }
 
   // convert the current variable values to a record
-  private varsToRecord() {
+  private varsToRecord(): RuntimeValue {
     const map: [string, RuntimeValue][] = this.vars
       .filter(r => r.registerValue.isJust())
       .map(r => [r.name, r.registerValue.value as RuntimeValue])
