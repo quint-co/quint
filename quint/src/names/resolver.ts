@@ -16,22 +16,26 @@ import { Either, left, right } from '@sweet-monads/either'
 import { IRVisitor, walkModule } from '../ir/IRVisitor'
 import { QuintApp, QuintInstance, QuintLambda, QuintLet, QuintModule, QuintName, QuintOpDef } from '../ir/quintIr'
 import { QuintConstType } from '../ir/quintTypes'
-import { LookupTable, builtinNames } from './base'
+import { LookupDefinition, LookupTable, NameResolutionResult, UnusedDefinitions, builtinNames } from './base'
 import { QuintError } from '../quintError'
 import { NameCollector } from './collector'
+import { difference } from 'lodash'
 
 /**
  * Resolves all names in the given Quint modules and returns a lookup table of definitions.
  *
  * @param quintModules - The Quint modules to resolve names in.
- * @returns A lookup table of definitions if successful, otherwise a list of errors.
+ *
+ * @returns A lookup table of definitions and a mapping of unused definitions if successful, otherwise a list of errors.
  */
-export function resolveNames(quintModules: QuintModule[]): Either<QuintError[], LookupTable> {
+export function resolveNames(quintModules: QuintModule[]): Either<QuintError[], NameResolutionResult> {
   const visitor = new NameResolver()
   quintModules.forEach(module => {
     walkModule(visitor, module)
   })
-  return visitor.errors.length > 0 ? left(visitor.errors) : right(visitor.table)
+  return visitor.errors.length > 0
+    ? left(visitor.errors)
+    : right({ table: visitor.table, unusedDefinitions: visitor.unusedDefinitions })
 }
 
 /**
@@ -48,6 +52,15 @@ class NameResolver implements IRVisitor {
     this.collector = new NameCollector()
     // bind the errors so they are aggregated in the same array
     this.collector.errors = this.errors
+  }
+
+  unusedDefinitions: UnusedDefinitions = moduleName => {
+    const definitions: LookupDefinition[] = Array.from(
+      this.collector.definitionsByModule.get(moduleName)?.values() || []
+    )
+    const usedDefinitions = [...this.table.values()]
+
+    return new Set(difference(definitions, usedDefinitions))
   }
 
   enterModule(module: QuintModule): void {

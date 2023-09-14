@@ -69,6 +69,19 @@ export type DefinitionsByModule = Map<string, DefinitionsByName>
 export type LookupTable = Map<bigint, LookupDefinition>
 
 /**
+ * A lazy mapping from module names to the definitions that are available but not used in that module.
+ */
+export type UnusedDefinitions = (moduleName: string) => Set<LookupDefinition>
+
+/**
+ * The result of name resolution, when successful.
+ */
+export type NameResolutionResult = {
+  table: LookupTable
+  unusedDefinitions: UnusedDefinitions
+}
+
+/**
  * Copy the names of a definitions table to a new one, ignoring hidden
  * definitions, and optionally adding a namespace.
  *

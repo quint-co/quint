@@ -26,9 +26,9 @@ import {
 
 import { Either, left, right } from '@sweet-monads/either'
 import { EffectScheme } from './effects/base'
-import { LookupTable } from './names/base'
+import { LookupTable, UnusedDefinitions } from './names/base'
 import { ReplOptions, quintRepl } from './repl'
-import { OpQualifier, QuintEx, QuintModule } from './ir/quintIr'
+import { OpQualifier, QuintEx, QuintModule, QuintOpDef, qualifier } from './ir/quintIr'
 import { TypeScheme } from './types/base'
 import lineColumn from 'line-column'
 import { formatError } from './errorReporter'
@@ -55,6 +55,7 @@ interface OutputStage {
   // the modules and the lookup table produced by 'parse'
   modules?: QuintModule[]
   table?: LookupTable
+  unusedDefinitions?: UnusedDefinitions
   // the tables produced by 'typecheck'
   types?: Map<bigint, TypeScheme>
   effects?: Map<bigint, EffectScheme>
@@ -80,6 +81,7 @@ const pickOutputStage = ({
   warnings,
   modules,
   table,
+  unusedDefinitions,
   types,
   effects,
   errors,
@@ -95,6 +97,7 @@ const pickOutputStage = ({
     warnings,
     modules,
     table,
+    unusedDefinitions,
     types,
     effects,
     errors,
@@ -121,6 +124,7 @@ interface ParsedStage extends LoadedStage {
   modules: QuintModule[]
   sourceMap: Map<bigint, Loc>
   table: LookupTable
+  unusedDefinitions: UnusedDefinitions
   idGen: IdGenerator
 }
 
@@ -331,6 +335,37 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
       }
     },
   }
+
+  // Find tests that are not used in the main module. We need to add references to them in the main module so flattening
+  // doesn't drop the definitions.
+  const unusedTests = [...testing.unusedDefinitions(mainName)].filter(
+    d => d.kind === 'def' && options.testMatch(d.name)
+  )
+
+  // Define name expressions referencing each test that is not referenced elsewhere, adding the references to the lookup
+  // table
+  const args: QuintEx[] = unusedTests.map(defToAdd => {
+    const id = testing.idGen.nextId()
+    testing.table.set(id, defToAdd)
+    const namespace = defToAdd.importedFrom ? qualifier(defToAdd.importedFrom) : undefined
+    const name = namespace ? [namespace, defToAdd.name].join('::') : defToAdd.name
+
+    return { kind: 'name', id, name }
+  })
+
+  // Wrap all expressions in a single declaration
+  const testDeclaration: QuintOpDef = {
+    id: testing.idGen.nextId(),
+    name: 'q::unitTests',
+    kind: 'def',
+    qualifier: 'run',
+    expr: { kind: 'app', opcode: 'actionAll', args, id: testing.idGen.nextId() },
+  }
+
+  // Add the declaration to the main module
+  const main = testing.modules.find(m => m.name === mainName)
+  main?.declarations.push(testDeclaration)
+
   const analysisOutput = { types: testing.types, effects: testing.effects, modes: testing.modes }
   const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
     testing.modules,

@@ -20,7 +20,7 @@ import { QuintListener } from '../generated/QuintListener'
 import { IrErrorMessage, QuintDeclaration, QuintDef, QuintEx, QuintModule, isDef } from '../ir/quintIr'
 import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { ToIrListener } from './ToIrListener'
-import { LookupTable } from '../names/base'
+import { LookupTable, NameResolutionResult, UnusedDefinitions } from '../names/base'
 import { resolveNames } from '../names/resolver'
 import { QuintError, quintErrorToString } from '../quintError'
 import { SourceLookupPath, SourceResolver, fileSourceResolver } from './sourceResolver'
@@ -114,6 +114,7 @@ export interface ParserPhase2 extends ParserPhase1 {}
  */
 export interface ParserPhase3 extends ParserPhase2 {
   table: LookupTable
+  unusedDefinitions: UnusedDefinitions
 }
 
 /**
@@ -297,7 +298,7 @@ export function parsePhase2sourceResolution(
 export function parsePhase3importAndNameResolution(phase2Data: ParserPhase2): ParseResult<ParserPhase3> {
   return resolveNames(phase2Data.modules)
     .mapLeft(errors => errors.map(fromQuintError(phase2Data.sourceMap)))
-    .map(table => ({ ...phase2Data, table }))
+    .map((result: NameResolutionResult) => ({ ...phase2Data, ...result }))
 }
 
 /**
