@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
- - Introduce frames on actions in the verbose output. The verbose output has changed! (#1158)
+- Introduce frames on actions in the verbose output. The verbose output has changed! (#1158)
+- The ITF traces always serialize integers as `{ '#bigint': 'num }`  (#1165)
 
 ### Deprecated
 ### Removed
