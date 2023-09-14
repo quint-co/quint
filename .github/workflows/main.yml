@@ -31,9 +31,6 @@ jobs:
 
   quint-vscode-linting:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./vscode/quint-vscode
     strategy:
       fail-fast: false
     steps:
@@ -41,8 +38,14 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "18"
-      - run: npm install
-      - run: npm run format-check || (echo "Run 'npm run format'" && exit 1)
+      - name: Install quint deps
+        run: cd ./quint && npm install
+      - name: Install yalc
+        run: npm i yalc -g
+      - name: Compile quint vscode plugin
+        run: make local
+      - name: Run formatting for the plugin
+        run: cd ./vscode/quint-vscode && npm run format-check || (echo "Run 'npm run format'" && exit 1)
 
   quint-unit-tests:
     runs-on: ${{ matrix.operating-system }}
