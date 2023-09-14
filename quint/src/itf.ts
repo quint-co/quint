@@ -71,9 +71,6 @@ function isUnserializable(v: ItfValue): v is ItfUnserializable {
   return (v as ItfUnserializable)['#unserializable'] !== undefined
 }
 
-const minJsInt: bigint = BigInt(Number.MIN_SAFE_INTEGER)
-const maxJsInt: bigint = BigInt(Number.MAX_SAFE_INTEGER)
-
 /**
  * Convert a list of Quint expressions into an object that matches the JSON
  * representation of the ITF trace. This function does not add metadata
@@ -87,13 +84,8 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrac
   const exprToItf = (ex: QuintEx): Either<string, ItfValue> => {
     switch (ex.kind) {
       case 'int':
-        if (ex.value >= minJsInt && ex.value <= maxJsInt) {
-          // We can represent safely as a JS number
-          return right(Number(ex.value))
-        } else {
-          // convert to a special structure, when saving to JSON
-          return right({ '#bigint': `${ex.value}` })
-        }
+        // convert to a special structure, when saving to JSON
+        return right({ '#bigint': `${ex.value}` })
 
       case 'str':
       case 'bool':
@@ -189,12 +181,16 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
       return { id, kind: 'bool', value }
     } else if (typeof value === 'string') {
       return { id, kind: 'str', value }
+    } else if (isBigint(value)) {
+      // this is the standard way of encoding an integer in ITF.
+      return { id, kind: 'int', value: BigInt(value['#bigint']) }
     } else if (typeof value === 'number') {
+      // We never encode an integer as a JS number,
+      // but we consume it for backwards compatibility with older ITF traces.
+      // See: https://apalache.informal.systems/docs/adr/015adr-trace.html
       return { id, kind: 'int', value: BigInt(value) }
     } else if (Array.isArray(value)) {
       return { id, kind: 'app', opcode: 'List', args: value.map(ofItfValue) }
-    } else if (isBigint(value)) {
-      return { id, kind: 'int', value: BigInt(value['#bigint']) }
     } else if (isTup(value)) {
       return { id, kind: 'app', opcode: 'Tup', args: value['#tup'].map(ofItfValue) }
     } else if (isSet(value)) {

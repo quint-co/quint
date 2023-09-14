@@ -635,7 +635,9 @@ rm out-itf-example.itf.json
 ```
 [
   "alice",
-  0
+  {
+    "#bigint": "0"
+  }
 ]
 ```
 
@@ -668,23 +670,33 @@ exit $exit_code
 [
   [
     "alice",
-    0
+    {
+      "#bigint": "0"
+    }
   ],
   [
     "bob",
-    0
+    {
+      "#bigint": "0"
+    }
   ],
   [
     "charlie",
-    0
+    {
+      "#bigint": "0"
+    }
   ],
   [
     "eve",
-    0
+    {
+      "#bigint": "0"
+    }
   ],
   [
     "null",
-    0
+    {
+      "#bigint": "0"
+    }
   ]
 ]
 ```
