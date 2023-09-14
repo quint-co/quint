@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed a problem where an error was thrown when a name from an importing module
+  shadowed a nested name from the imported module (#802)
+
 ### Security
 
 ## v0.14.2 -- 2023-09-06
