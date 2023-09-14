@@ -230,4 +230,17 @@ describe('flattenModules', () => {
 
     assertFlattenedModule(text)
   })
+
+  describe('can have shadowing between different modules (#802)', () => {
+    const text = `module A {
+      def f(b) = b
+    }
+
+    module B {
+      import A.*
+      val b = f(1)
+    }`
+
+    assertFlattenedModule(text)
+  })
 })
