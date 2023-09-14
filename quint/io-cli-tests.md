@@ -325,7 +325,10 @@ exit $exit_code
       45:          assert(n == 0),
 
 [Frame 0]
-init() => true
+init => true
+
+[Frame 1]
+_ => none
 
     Use --seed=0x1 --match=failingTest to repeat.
 ```
@@ -496,9 +499,9 @@ exit $exit_code
 An example execution:
 
 [Frame 0]
-q::initAndInvariant() => true
-├─ q::init() => true
-│  └─ init() => true
+q::initAndInvariant => true
+├─ q::init => true
+│  └─ init => true
 └─ isUInt(0) => true
 
 [State 0]
@@ -509,9 +512,9 @@ q::initAndInvariant() => true
 }
 
 [Frame 1]
-q::stepAndInvariant() => true
-├─ q::step() => true
-│  └─ step() => true
+q::stepAndInvariant => true
+├─ q::step => true
+│  └─ step => true
 │     └─ mint(
 │          "bob",
 │          "null",
@@ -541,9 +544,9 @@ q::stepAndInvariant() => true
 }
 
 [Frame 2]
-q::stepAndInvariant() => true
-├─ q::step() => true
-│  └─ step() => true
+q::stepAndInvariant => true
+├─ q::step => true
+│  └─ step => true
 │     └─ send(
 │          "null",
 │          "charlie",
@@ -578,9 +581,9 @@ q::stepAndInvariant() => true
 }
 
 [Frame 3]
-q::stepAndInvariant() => true
-├─ q::step() => true
-│  └─ step() => true
+q::stepAndInvariant => true
+├─ q::step => true
+│  └─ step => true
 │     └─ mint(
 │          "bob",
 │          "bob",
@@ -686,6 +689,35 @@ exit $exit_code
 ]
 ```
 
+### Test does not skip assignments (#1133)
+
+See: https://github.com/informalsystems/quint/issues/1133
+
+FIXME: fix the traces found by the simulator once #1133 is resolved.
+
+<!-- !test in test1133 -->
+```
+output=$(quint test --match='(t1|t2)' --output='out_{#}_{}.itf.json' \
+  ./testFixture/simulator/lastActionInRun.qnt)
+exit_code=$?
+echo "BEGIN"
+# This test should have 3 states (FIXME: it does not!)
+cat out_0_t1.itf.json | jq '.states' | grep "s" | wc -l | grep 3
+rm out_0_t1.itf.json
+# This test should have 4 states (FIXME: it does not!)
+cat out_1_t2.itf.json | jq '.states' | grep "s" | wc -l | grep 4
+rm out_1_t2.itf.json
+echo "END"
+exit $exit_code
+```
+
+<!-- !test out test1133 -->
+```
+BEGIN
+END
+```
+FIX THE TEST ABOVE: it should have 3 and 4
+
 ### OK REPL tutorial
 
 The REPL tutorial is reproducible in REPL.
@@ -722,7 +754,7 @@ exit $exit_code
       176:     run mintTwiceThenSendError = {
 
 [Frame 0]
-init() => true
+init => true
 
 [Frame 1]
 mint(

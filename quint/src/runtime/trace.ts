@@ -21,6 +21,15 @@ import { rv } from './impl/runtimeValue'
  * A snapshot of how a single operator (e.g., an action) was executed.
  * In stack-based languages, this usually corresponds to a stack frame.
  * In Quint, it is simply the applied operator and the arguments.
+ *
+ * In addition to that, we use a top-level execution frame to represent
+ * the execution history:
+ *
+ *  - `subframes` stores the executed actions, e.g., `init` and `step`
+ *  - `result` stores the result of the overall computation:
+ *    just(false), just(true), or none().
+ *  - `args` stores the visited states. Note that |subframes| = |args|.
+ *  - `app` is a dummy operator, e.g., an empty record.
  */
 export interface ExecutionFrame {
   /**
@@ -39,20 +48,6 @@ export interface ExecutionFrame {
    * The frames of the operators that were called by this operator.
    */
   subframes: ExecutionFrame[]
-}
-
-/**
- * A trace that is recorded when evaluating an action or an expression.
- * Since we are following the operator hierarchy, this trace is not just
- * a list, but it is a tree with ordered children.
- */
-export interface ExecutionTree {
-  /**
-   * The top-level frames that were produced in an execution.
-   * Normally, frames is a single-element array. However, the simulator
-   * may produce multiple frames, when it executes several actions in a row.
-   */
-  frames: ExecutionFrame[]
 }
 
 /**
@@ -110,6 +105,14 @@ export interface ExecutionListener {
   onAnyReturn(noptions: number, choice: number): void
 
   /**
+   * This callback is called whenever an execution proceeds to the next state,
+   * e.g., once A has been evaluated in A.then(B).
+   * @param oldState the old state that is about to be discarded
+   * @param newState the new state, from which the execution continues
+   */
+  onNextState(oldState: EvalResult, newState: EvalResult): void
+
+  /**
    * This callback is called when a new run is executed,
    * e.g., when multiple runs are executed in the simulator.
    */
@@ -136,6 +139,7 @@ export const noExecutionListener: ExecutionListener = {
   onAnyOptionCall: (_anyExpr: QuintApp, _position: number) => {},
   onAnyOptionReturn: (_anyExpr: QuintApp, _position: number) => {},
   onAnyReturn: (_noptions: number, _choice: number) => {},
+  onNextState: (_oldState: EvalResult, _newState: EvalResult) => {},
   onRunCall: () => {},
   onRunReturn: (_outcome: Maybe<EvalResult>, _trace: EvalResult[]) => {},
 }
@@ -186,7 +190,11 @@ class TraceRecorderImpl implements TraceRecorder {
   private bestTraceSeed: bigint
   // whenever a run is entered, we store its seed here
   private runSeed: bigint
-  // during simulation, a trace is built here
+  // During simulation, a trace is built here.
+  // Similar to an execution with a stack machine,
+  // every call to a user-defined operator produces its own frame.
+  // Since execution frames store subframes, they effectively produce
+  // a tree of calls.
   private frameStack: ExecutionFrame[]
 
   constructor(verbosityLevel: number, rng: Rng) {
@@ -218,16 +226,28 @@ class TraceRecorderImpl implements TraceRecorder {
     // https://github.com/informalsystems/quint/issues/747
     if (verbosity.hasUserOpTracking(this.verbosityLevel)) {
       const newFrame = { app: app, args: [], result: none(), subframes: [] }
-      if (this.frameStack.length > 0) {
-        this.frameStack[this.frameStack.length - 1].subframes.push(newFrame)
-        this.frameStack.push(newFrame)
-      } else {
+      if (this.frameStack.length == 0) {
+        // this should not happen, as there is always bottomFrame,
+        // but we do not throw here, as trace collection is not the primary
+        // function of the simulator.
         this.frameStack = [newFrame]
+      } else if (this.frameStack.length === 2 && this.frameStack[1].app.opcode === '_') {
+        // A placeholder frame created from `q::input` or `then`. Modify in place.
+        const frame = this.frameStack[1]
+        frame.app = app
+        frame.args = []
+        frame.result = none()
+        frame.subframes = []
+      } else {
+        // connect the new frame to the previous frame
+        this.frameStack[this.frameStack.length - 1].subframes.push(newFrame)
+        // and push the new frame to be on top of the stack
+        this.frameStack.push(newFrame)
       }
     }
   }
 
-  onUserOperatorReturn(app: QuintApp, args: EvalResult[], result: Maybe<EvalResult>) {
+  onUserOperatorReturn(_app: QuintApp, args: EvalResult[], result: Maybe<EvalResult>) {
     if (verbosity.hasUserOpTracking(this.verbosityLevel)) {
       const top = this.frameStack.pop()
       if (top) {
@@ -282,6 +302,18 @@ class TraceRecorderImpl implements TraceRecorder {
           top.subframes = top.subframes.concat(optionFrame.subframes)
         }
       }
+    }
+  }
+
+  onNextState(_oldState: EvalResult, _newState: EvalResult) {
+    // introduce a new frame that is labelled with a dummy operator
+    if (verbosity.hasUserOpTracking(this.verbosityLevel)) {
+      const dummy: QuintApp = { id: 0n, kind: 'app', opcode: '_', args: [] }
+      const newFrame = { app: dummy, args: [], result: none(), subframes: [] }
+      // forget the frames, except the bottom one, and push the new one
+      this.frameStack = [this.frameStack[0], newFrame]
+      // connect the new frame to the topmost frame, which effects in a new step
+      this.frameStack[0].subframes.push(newFrame)
     }
   }
 
