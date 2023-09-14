@@ -18,13 +18,13 @@ describe('resolveNames', () => {
   function resolveNamesForExprs(exprs: string[]): Either<QuintError[], LookupTable> {
     const module = buildModule(baseDefs, exprs, undefined, zerog)
 
-    return resolveNames([module])
+    return resolveNames([module]).map(r => r.table)
   }
 
   function resolveNamesForDefs(defs: string[]): Either<QuintError[], LookupTable> {
     const module = buildModuleWithDecls(baseDefs.concat(defs), undefined, zerog)
 
-    return resolveNames([module])
+    return resolveNames([module]).map(r => r.table)
   }
 
   describe('operator definitions', () => {
@@ -37,6 +37,21 @@ describe('resolveNames', () => {
     it('finds scoped definitions inside of scope', () => {
       const result = resolveNamesForExprs(['TEST_CONSTANT.filter(a => a > 0)'])
       assert.isTrue(result.isRight())
+    })
+
+    it('finds unused definitions', () => {
+      const module = buildModule(baseDefs, ['1 + TEST_CONSTANT'], undefined, zerog)
+
+      const result = resolveNames([module]).map(r => r.unusedDefinitions)
+
+      result
+        .map(unused =>
+          assert.sameDeepMembers(
+            Array.from(unused('wrapper')).map(d => d.name),
+            ['unscoped_def', 'MY_TYPE', 'd0']
+          )
+        )
+        .mapLeft(_ => assert.fail('Expected no errors'))
     })
 
     it('does not find scoped definitions outside of scope', () => {
