@@ -98,8 +98,7 @@ module erc20 {
     // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/ca822213f2275a14c26167bd387ac3522da67fe9/contracts/token/ERC20/ERC20.sol#L222
     pure def _transfer(state: Erc20State,
             fromAddr: Address, toAddr: Address, amount: Uint): Erc20Result = {
-        // FIXME(#693): type annotation below is a workaround, inferred type is too general
-        val fromBalance: int = state.balanceOf.get(fromAddr)
+        val fromBalance = state.balanceOf.get(fromAddr)
         val err = require(fromAddr != ZERO_ADDRESS, "ERC20: transfer from the zero address")
             .andRequire(toAddr != ZERO_ADDRESS, "ERC20: transfer to the zero address")
             .andRequire(fromBalance >= amount, "ERC20: transfer amount exceeds balance")

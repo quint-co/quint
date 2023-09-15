@@ -30,7 +30,7 @@ import {
   QuintVar,
   isAnnotatedDef,
 } from '../ir/quintIr'
-import { QuintType, typeNames } from '../ir/quintTypes'
+import { QuintType, rowNames, typeNames } from '../ir/quintTypes'
 import { expressionToString, rowToString, typeToString } from '../ir/IRprinting'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
@@ -338,6 +338,27 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     return this.solvingFunction(this.table, constraint)
       .mapLeft(errors => errors.forEach((err, id) => this.errors.set(id, err)))
       .map(subs => {
+        // For every free name we are binding in the substitutions, the names occuring in the value of the substitution
+        // have to become free as well.
+        subs.forEach(s => {
+          switch (s.kind) {
+            case 'type':
+              this.freeNames
+                .filter(free => free.typeVariables.has(s.name))
+                .forEach(free => {
+                  const names = typeNames(s.value)
+                  names.typeVariables.forEach(v => free.typeVariables.add(v))
+                  names.rowVariables.forEach(v => free.rowVariables.add(v))
+                })
+              break
+            case 'row':
+              this.freeNames
+                .filter(free => free.rowVariables.has(s.name))
+                .forEach(free => rowNames(s.value).forEach(v => free.rowVariables.add(v)))
+              break
+          }
+        })
+
         // Apply substitution to environment
         // FIXME: We have to figure out the scope of the constraints/substitutions
         // https://github.com/informalsystems/quint/issues/690

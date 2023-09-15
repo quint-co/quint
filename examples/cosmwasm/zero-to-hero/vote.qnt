@@ -491,7 +491,8 @@ module state {
       val poll = state.polls.get(poll_id)
       poll.options.listForall(option =>
         val optionKey = option._1
-        val optionSum = option._2
+        // FIXME: Type annotation below is a workaround, inferred type is too general
+        val optionSum: int = option._2
         // `ballots` only contains entries if there are > 0 votes.
         optionSum > 0 implies and {
           summed_ballots.keys().contains(optionKey),
