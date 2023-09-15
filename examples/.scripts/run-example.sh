@@ -88,7 +88,7 @@ get_main () {
     main="--main=simplePonziTest"
   elif [[ "$file" == "solidity/GradualPonzi/gradualPonzi.qnt" ]] ; then
     main="--main=gradualPonziTest"
-  elif [[ "$file" == "cosmwasm/zero-to-hero/vote.qnt" && "$cmd" == "verify" ]] ; then
+  elif [[ "$file" == "cosmwasm/zero-to-hero/vote.qnt" ]] ; then
     main="--main=state"
   fi
   echo "${main}"
@@ -98,6 +98,8 @@ get_test_args () {
   local file="$1"
   local args=""
   if [[ "$file" == "cosmos/ics20/ics20.qnt" ]] ; then
+    args="--max-samples=1000"  # default of 10000 takes too long
+  elif [[ "$file" == "cosmos/tendermint/TendermintModels.qnt" ]] ; then
     args="--max-samples=1000"  # default of 10000 takes too long
   fi
   echo "${args}"
