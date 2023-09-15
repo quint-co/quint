@@ -20,6 +20,8 @@ import { QuintDeclaration } from '../ir/quintIr'
 import { TypeScheme } from './base'
 import { ConstraintGeneratorVisitor } from './constraintGenerator'
 import { solveConstraint } from './constraintSolver'
+import { IRTransformer, transformType } from '../ir/IRTransformer'
+import { ConcreteRow } from '../ir/quintTypes'
 
 export type TypeInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>]
 
@@ -40,6 +42,20 @@ export class TypeInferrer extends ConstraintGeneratorVisitor {
     declarations.forEach(decl => {
       walkDeclaration(this, decl)
     })
-    return [this.errors, this.types]
+    const simplifier = new RowSimplifier()
+    const simplifiedTypes = new Map<bigint, TypeScheme>(
+      [...this.types.entries()].map(([id, t]) => [id, { ...t, type: transformType(simplifier, t.type) }])
+    )
+    return [this.errors, simplifiedTypes]
+  }
+}
+
+class RowSimplifier implements IRTransformer {
+  exitConcreteRow(row: ConcreteRow): ConcreteRow {
+    if (row.other.kind !== 'row') {
+      return row
+    }
+
+    return { ...row, fields: row.fields.concat(row.other.fields), other: { kind: 'empty' } }
   }
 }
