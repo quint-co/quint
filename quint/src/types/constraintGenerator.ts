@@ -340,24 +340,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       .map(subs => {
         // For every free name we are binding in the substitutions, the names occuring in the value of the substitution
         // have to become free as well.
-        subs.forEach(s => {
-          switch (s.kind) {
-            case 'type':
-              this.freeNames
-                .filter(free => free.typeVariables.has(s.name))
-                .forEach(free => {
-                  const names = typeNames(s.value)
-                  names.typeVariables.forEach(v => free.typeVariables.add(v))
-                  names.rowVariables.forEach(v => free.rowVariables.add(v))
-                })
-              break
-            case 'row':
-              this.freeNames
-                .filter(free => free.rowVariables.has(s.name))
-                .forEach(free => rowNames(s.value).forEach(v => free.rowVariables.add(v)))
-              break
-          }
-        })
+        this.addBindingsToFreeNames(subs)
 
         // Apply substitution to environment
         // FIXME: We have to figure out the scope of the constraints/substitutions
@@ -431,6 +414,27 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       rowVariables: new Set([...typeNames(type).rowVariables].filter(name => !freeNames.rowVariables.has(name))),
     }
     return { ...nonFreeNames, type }
+  }
+
+  private addBindingsToFreeNames(substitutions: Substitutions) {
+    substitutions.forEach(s => {
+      switch (s.kind) {
+        case 'type':
+          this.freeNames
+            .filter(free => free.typeVariables.has(s.name))
+            .forEach(free => {
+              const names = typeNames(s.value)
+              names.typeVariables.forEach(v => free.typeVariables.add(v))
+              names.rowVariables.forEach(v => free.rowVariables.add(v))
+            })
+          return
+        case 'row':
+          this.freeNames
+            .filter(free => free.rowVariables.has(s.name))
+            .forEach(free => rowNames(s.value).forEach(v => free.rowVariables.add(v)))
+          return
+      }
+    })
   }
 }
 
