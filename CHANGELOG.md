@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   shadowed a nested name from the imported module (#802)
 - Fixed a problem where tests were ignored if they are not defined directly in
   the main module - that is, they were imported (#1161)
+- Fixed a type checker bug where the inferred type was to general for nested
+  definitions, which prevented running `verify` (#1166).
 
 ### Security
 
