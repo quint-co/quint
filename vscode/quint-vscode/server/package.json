@@ -1,7 +1,7 @@
 {
   "name": "@informalsystems/quint-language-server",
   "description": "Language Server for the Quint specification language",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "author": "Informal Systems",
   "contributors": [
     {
@@ -37,9 +37,13 @@
   "bin": {
     "quint-language-server": "./out/src/server.js"
   },
-  "files": ["README.md", "out/**/*", "test/**/*.ts"],
+  "files": [
+    "README.md",
+    "out/**/*",
+    "test/**/*.ts"
+  ],
   "dependencies": {
-    "@informalsystems/quint": "~0.14.1",
+    "@informalsystems/quint": "^0.14.3",
     "vscode-languageserver": "^7.0.0",
     "vscode-languageserver-textdocument": "^1.0.1",
     "vscode-uri": "^3.0.7"
