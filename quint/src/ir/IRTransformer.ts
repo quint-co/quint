@@ -504,7 +504,7 @@ function transformExpression(transformer: IRTransformer, expr: ir.QuintEx): ir.Q
  *
  * @returns the transformed Quint row
  */
-function transformRow(transformer: IRTransformer, row: t.Row): t.Row {
+export function transformRow(transformer: IRTransformer, row: t.Row): t.Row {
   let newRow = row
   if (transformer.enterRow) {
     newRow = transformer.enterRow(newRow)

@@ -32,7 +32,8 @@ import { zerog } from './idGenerator'
 import { ConcreteFixedRow, QuintType, Row } from './ir/quintTypes'
 import { TypeScheme } from './types/base'
 import { canonicalTypeScheme } from './types/printing'
-import { declarationToString, flattenRow, qualifierToString, rowToString } from './ir/IRprinting'
+import { declarationToString, qualifierToString, rowToString } from './ir/IRprinting'
+import { simplifyRow } from './types/simplification'
 
 /**
  * An abstraction of a Console of bounded text width.
@@ -205,23 +206,27 @@ export function prettyQuintType(type: QuintType): Doc {
   }
 }
 
-function prettyRow(row: Row, showFieldName = true): Doc {
-  const [fields, other] = flattenRow(row)
+function prettyRow(r: Row, showFieldName = true): Doc {
+  const row = simplifyRow(r)
+  const fields = row.kind === 'row' ? row.fields : []
+  const other = row.kind === 'row' ? row.other : undefined
 
   const fieldsDocs = fields.map(f => {
     const prefix = showFieldName ? `${f.fieldName}: ` : ''
     return group([text(prefix), prettyQuintType(f.fieldType)])
   })
-  const otherDoc = other.kind === 'var' ? [text(` | ${other.name}`)] : []
+  const otherDoc = other?.kind === 'var' ? [text(` | ${other.name}`)] : []
 
   return group([nest('  ', [linebreak, docJoin([text(','), line()], fieldsDocs)]), ...otherDoc, linebreak])
 }
 
-function prettySumRow(row: ConcreteFixedRow): Doc {
-  const [fields, other] = flattenRow(row)
+function prettySumRow(r: ConcreteFixedRow): Doc {
+  const row = simplifyRow(r)
+  const fields = row.kind === 'row' ? row.fields : []
+  const other = row.kind === 'row' ? row.other : undefined
 
   const fieldsDocs = fields.map(f => {
-    if (other.kind === 'empty') {
+    if (other?.kind === 'empty') {
       return group(text(f.fieldName))
     } else {
       return group([text(`${f.fieldName}(`), prettyQuintType(f.fieldType), text(')')])
@@ -230,6 +235,7 @@ function prettySumRow(row: ConcreteFixedRow): Doc {
 
   return group([nest('  ', [linebreak, docJoin([text(','), line()], fieldsDocs)]), linebreak])
 }
+
 /**
  * Print an execution frame and its children recursively.
  * Since this function is printing a tree, we need precise text alignment.
