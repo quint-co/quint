@@ -158,6 +158,24 @@ describe('inferTypes', () => {
     ])
   })
 
+  it('keeps track of free names properly (#693)', () => {
+    const defs = ['val b(x: int -> str): int = val c = x.keys() { 1 }']
+
+    const [errors, types] = inferTypesForDefs(defs)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+
+    const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    assert.sameDeepMembers(stringTypes, [
+      [1n, '(int -> str)'],
+      [6n, '(int -> str)'],
+      [7n, 'Set[int]'],
+      [8n, 'Set[int]'],
+      [9n, 'int'],
+      [10n, 'int'],
+      [12n, '((int -> str)) => int'],
+    ])
+  })
+
   it('checks annotations', () => {
     const defs = ['def e(p): (t) => t = p + 1']
 
