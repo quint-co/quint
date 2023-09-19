@@ -1,6 +1,6 @@
 import { assert } from 'chai'
 import { describe, it } from 'mocha'
-import { findDefinitionWithId, findExpressionWithId, findTypeWithId } from '../../src/ir/IRFinder'
+import { findDefinitionWithId, findExpressionWithId, findParameterWithId, findTypeWithId } from '../../src/ir/IRFinder'
 import { buildModuleWithDecls, buildModuleWithExpressions } from '../builders/ir'
 
 describe('findExpressionWithId', () => {
@@ -50,6 +50,26 @@ describe('findDefinitionWithId', () => {
       qualifier: 'val',
       name: 'a',
       expr: { id: 1n, kind: 'int', value: 1n },
+    })
+  })
+
+  it('returns undefined for inexisting id', () => {
+    const def = findDefinitionWithId(modules, 99n)
+
+    assert.isUndefined(def)
+  })
+})
+
+describe('findParameterWithId', () => {
+  const modules = [buildModuleWithDecls(['pure def x(a: int): int = a'])]
+
+  it('finds definition for existing id', () => {
+    const def = findParameterWithId(modules, 1n)
+
+    assert.isDefined(def)
+    assert.deepEqual(def, {
+      id: 1n,
+      name: 'a',
     })
   })
 
