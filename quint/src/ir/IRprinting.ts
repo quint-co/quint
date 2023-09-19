@@ -13,7 +13,7 @@
  */
 
 import { OpQualifier, QuintDeclaration, QuintDef, QuintEx, QuintModule, isAnnotatedDef } from './quintIr'
-import { EmptyRow, QuintSumType, QuintType, Row, RowField, VarRow, isTheUnit } from './quintTypes'
+import { QuintSumType, QuintType, Row, RowField, isTheUnit } from './quintTypes'
 import { TypeScheme } from '../types/base'
 import { typeSchemeToString } from '../types/printing'
 
@@ -266,19 +266,6 @@ function rowFieldsToString(r: Row, showFieldName = true): string {
         case 'empty':
           return `${fields.join(', ')}`
       }
-    }
-  }
-}
-
-export function flattenRow(r: Row): [{ fieldName: string; fieldType: QuintType }[], VarRow | EmptyRow] {
-  switch (r.kind) {
-    case 'empty':
-      return [[], r]
-    case 'var':
-      return [[], r]
-    case 'row': {
-      const [fields, other] = flattenRow(r.other)
-      return [[...r.fields, ...fields], other]
     }
   }
 }

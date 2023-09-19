@@ -20,6 +20,7 @@ import { QuintDeclaration } from '../ir/quintIr'
 import { TypeScheme } from './base'
 import { ConstraintGeneratorVisitor } from './constraintGenerator'
 import { solveConstraint } from './constraintSolver'
+import { simplify } from './simplification'
 
 export type TypeInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>]
 
@@ -40,6 +41,7 @@ export class TypeInferrer extends ConstraintGeneratorVisitor {
     declarations.forEach(decl => {
       walkDeclaration(this, decl)
     })
-    return [this.errors, this.types]
+    const simplifiedTypes = new Map([...this.types.entries()].map(([id, t]) => [id, simplify(t)]))
+    return [this.errors, simplifiedTypes]
   }
 }

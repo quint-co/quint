@@ -20,6 +20,7 @@ import { Constraint } from './base'
 import { Substitutions, applySubstitution, applySubstitutionToConstraint, compose } from './substitutions'
 import { unzip } from 'lodash'
 import { LookupTable } from '../names/base'
+import { simplifyRow } from './simplification'
 
 /*
  * Try to solve a constraint by unifying all pairs of types in equality
@@ -249,24 +250,6 @@ function chainUnifications(table: LookupTable, types1: QuintType[], types2: Quin
   return types1.reduce((result: Either<Error, Substitutions>, t, i) => {
     return result.chain(subs => applySubstitutionsAndUnify(table, subs, t, types2[i]))
   }, right([]))
-}
-
-function simplifyRow(r: Row): Row {
-  if (r.kind !== 'row') {
-    return r
-  }
-
-  let result = r
-  const otherSimplified = simplifyRow(r.other)
-  if (otherSimplified.kind === 'row') {
-    result = { kind: 'row', fields: r.fields.concat(otherSimplified.fields), other: otherSimplified.other }
-  }
-
-  if (result.fields.length > 0) {
-    return result
-  } else {
-    return otherSimplified
-  }
 }
 
 function tryToUnpack(
