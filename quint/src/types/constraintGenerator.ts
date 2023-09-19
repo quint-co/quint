@@ -417,6 +417,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
   }
 
   private addBindingsToFreeNames(substitutions: Substitutions) {
+    // Assumes substitutions are topologically sorted, i.e. [ t0 |-> (t1, t2), t1 |-> (t3, t4) ]
     substitutions.forEach(s => {
       switch (s.kind) {
         case 'type':
