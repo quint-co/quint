@@ -92,15 +92,15 @@ export function findName(
 }
 
 /**
- * Finds the result that better matches a given position. That is, the result
- * for which the loc is the smallest loc that contains the position.
+ * Finds the result that best matches a given position. That is, the result
+ * whose loc is the smallest loc that contains the position.
  *
  * @param sourceMap the source map with the locs for the results
  * @param results the list of tuples of ids from the source map and a result
  * computed for it
  * @param position the position for which to find the result
  *
- * @returns a tuple with the location and the result from the list that better
+ * @returns an object with the location and the result from the list that best
  * matches the position, or undefined if none is found
  */
 export function findBestMatchingResult<T>(
@@ -109,18 +109,40 @@ export function findBestMatchingResult<T>(
   position: Position,
   sourceFile: string
 ): { id: bigint; loc: Loc; result: T } | undefined {
-  const resultsByLoc: [Loc, { id: bigint; result: T }][] = results.map(([id, result]) => [
-    sourceMap.get(id)!,
-    { id, result },
-  ])
-
-  const matchingResults = resultsOnPosition(resultsByLoc, position, sourceFile)
+  const matchingResults = findMatchingResults(sourceMap, results, position, sourceFile)
   if (matchingResults.length === 0) {
     return undefined
   }
 
   const { id, result } = matchingResults[0]
   return { id, loc: sourceMap.get(id)!, result }
+}
+
+/**
+ * Finds all results that match a given position. That is, the results
+ * whose loc contains the position.
+ *
+ * @param sourceMap the source map with the locs for the results
+ * @param results the list of tuples of ids from the source map and a result
+ * computed for it
+ * @param position the position for which to find the result
+ *
+ * @returns an array of objects whose locations match the position, from the tightest to the loosest
+ */
+export function findMatchingResults<T>(
+  sourceMap: Map<bigint, Loc>,
+  results: [bigint, T][],
+  position: Position,
+  sourceFile: string
+): { id: bigint; loc: Loc; result: T }[] {
+  const resultsByLoc: [Loc, { id: bigint; result: T }][] = results.map(([id, result]) => [
+    sourceMap.get(id)!,
+    { id, result },
+  ])
+
+  const matchingResults = resultsOnPosition(resultsByLoc, position, sourceFile)
+
+  return matchingResults.map(({ id, result }) => ({ id, loc: sourceMap.get(id)!, result }))
 }
 
 /**
