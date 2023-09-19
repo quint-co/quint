@@ -52,13 +52,6 @@ result () {
       printf "<sup>https://github.com/informalsystems/quint/issues/244</sup>"
     elif [[ "$file" == "classic/distributed/Paxos/Voting.qnt" && ( "$cmd" == "test" || "$cmd" == "verify" )]] ; then
       printf "<sup>https://github.com/informalsystems/quint/issues/244</sup>"
-    elif [[ "$file" == "cosmos/ics20/ics20.qnt" && "$cmd" == "verify" ]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/issues/693</sup>"
-    elif [[ "$file" == "cosmos/ics23/ics23.qnt" && "$cmd" == "verify" ]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/issues/693,</sup>"
-      printf "<sup>https://github.com/informalsystems/quint/pull/975</sup>"
-    elif [[ "$file" == "cosmwasm/zero-to-hero/vote.qnt" && "$cmd" == "verify" ]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/issues/693</sup>"
     elif [[ "$file" == "language-features/option.qnt" && "$cmd" == "verify"  ]] ; then
       printf "<sup>https://github.com/informalsystems/quint/issues/244</sup>"
     elif [[ "$file" == "language-features/tuples.qnt" && "$cmd" == "verify" ]] ; then
@@ -83,6 +76,8 @@ get_main () {
     main="--main=properChannelsTests"
   elif [[ "$file" == "cosmos/ics20/ics20.qnt" ]] ; then
     main="--main=ics20Test"
+  elif [[ "$file" == "cosmos/ics23/ics23.qnt" ]] ; then
+    main="--main=trees"
   elif [[ "$file" == "cosmos/lightclient/Lightclient.qnt" ]] ; then
     main="--main=Lightclient_4_3_correct"
   elif [[ "$file" == "puzzles/prisoners/prisoners.qnt" ]] ; then
@@ -93,6 +88,8 @@ get_main () {
     main="--main=simplePonziTest"
   elif [[ "$file" == "solidity/GradualPonzi/gradualPonzi.qnt" ]] ; then
     main="--main=gradualPonziTest"
+  elif [[ "$file" == "cosmwasm/zero-to-hero/vote.qnt" ]] ; then
+    main="--main=state"
   fi
   echo "${main}"
 }
@@ -101,6 +98,8 @@ get_test_args () {
   local file="$1"
   local args=""
   if [[ "$file" == "cosmos/ics20/ics20.qnt" ]] ; then
+    args="--max-samples=1000"  # default of 10000 takes too long
+  elif [[ "$file" == "cosmos/tendermint/TendermintModels.qnt" ]] ; then
     args="--max-samples=1000"  # default of 10000 takes too long
   fi
   echo "${args}"
@@ -115,6 +114,8 @@ get_verify_args () {
     args="--init=Init --step=Next"
   elif [[ "$file" == "cosmos/tendermint/TendermintModels.qnt" ]] ; then
     args="--init=n4_f1::Init --step=n4_f1::Next --invariant=n4_f1::Agreement"
+  elif [[ "$file" == "cosmos/ics23/ics23.qnt" ]] ; then
+    args="--init=Init --step=Next"
   fi
   echo "${args}"
 }
