@@ -55,7 +55,7 @@ result () {
     elif [[ "$file" == "language-features/option.qnt" && "$cmd" == "verify"  ]] ; then
       printf "<sup>https://github.com/informalsystems/quint/issues/244</sup>"
     elif [[ "$file" == "language-features/tuples.qnt" && "$cmd" == "verify" ]] ; then
-      printf "<sup>https://github.com/informalsystems/apalache/issues/2670</sup>"
+      printf "<sup>https://github.com/informalsystems/quint/issues/1113</sup>"
     elif [[ "$file" == "solidity/icse23-fig7/lottery.qnt" && "$cmd" == "verify" ]] ; then
       printf "<sup>https://github.com/informalsystems/quint/issues/1019</sup>"
     fi
