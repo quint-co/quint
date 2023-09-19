@@ -22,7 +22,7 @@ import { TypeScheme } from './base'
  * A row like `{ a: int | { b: bool | r } }` becomes
  * `{ a: int, b: bool | r }`.
  *
- * @param typeScheme - The type scheme to me simplified
+ * @param typeScheme - The type scheme to be simplified
  *
  * @returns The simplified type scheme
  */
