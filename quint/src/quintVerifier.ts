@@ -31,6 +31,7 @@ import * as protobufDescriptor from 'protobufjs/ext/descriptor'
 import { setTimeout } from 'timers/promises'
 import { promisify } from 'util'
 import { ItfTrace } from './itf'
+import { verbosity } from './verbosity'
 // TODO: used by GitHub api approach: https://github.com/informalsystems/quint/issues/1124
 // import { request as octokitRequest } from '@octokit/request'
 
@@ -273,7 +274,6 @@ async function tryConnect(retry: boolean = false): Promise<VerifyResult<Apalache
 
 function downloadAndUnpackApalache(): Promise<VerifyResult<null>> {
   const url = `https://github.com/informalsystems/apalache/releases/download/v${APALACHE_VERSION_TAG}/apalache.tgz`
-  console.log(`Downloading Apalache distribution from ${url}...`)
   return fetch(url)
     .then(
       // unpack response body
@@ -293,15 +293,17 @@ function downloadAndUnpackApalache(): Promise<VerifyResult<null>> {
  *    - a `right<string>` equal to the path the Apalache dist was unpacked to,
  *    - a `left<VerifyError>` indicating an error.
  */
-async function fetchApalache(): Promise<VerifyResult<string>> {
+async function fetchApalache(verbosityLevel: number): Promise<VerifyResult<string>> {
   const apalacheBinary = path.join(apalacheDistDir(), 'apalache', 'bin', 'apalache-mc')
   if (fs.existsSync(apalacheBinary)) {
     // Use existing download
-    console.log(`Using existing Apalache distribution in ${apalacheBinary}`)
+    debugLog(verbosityLevel, `Using existing Apalache distribution in ${apalacheBinary}`)
     return right(apalacheBinary)
   } else {
     fs.mkdirSync(apalacheDistDir(), { recursive: true })
+    process.stdout.write('Downloading Apalache distribution...')
     const res = await downloadAndUnpackApalache()
+    process.stdout.write(' done.\n')
     return res.map(_ => apalacheBinary)
   }
 
@@ -359,7 +361,7 @@ async function fetchApalache(): Promise<VerifyResult<string>> {
  *    - a `right<Apalache>` equal to the path the Apalache dist was unpacked to,
  *    - a `left<VerifyError>` indicating an error.
  */
-async function connect(): Promise<VerifyResult<Apalache>> {
+async function connect(verbosityLevel: number): Promise<VerifyResult<Apalache>> {
   // Try to connect to Shai, and try to ping it
   const connectionResult = await tryConnect()
   // We managed to connect, simply return this connection
@@ -368,26 +370,26 @@ async function connect(): Promise<VerifyResult<Apalache>> {
   }
 
   // Connection or pinging failed, download Apalache
-  console.log("Couldn't connect to Apalache, checking for latest supported release")
-  const exeResult = await fetchApalache()
+  debugLog(verbosityLevel, 'No running Apalache server found, launching...')
+  const exeResult = await fetchApalache(verbosityLevel)
   // Launch Apalache from download
   return exeResult
     .asyncChain(
       async exe =>
         new Promise<VerifyResult<void>>((resolve, _) => {
-          console.log('Launching Apalache server')
+          debugLog(verbosityLevel, 'Launching Apalache server')
           const apalache = child_process.spawn(exe, ['server'])
 
           // Exit handler that kills Apalache if Quint exists
           function exitHandler() {
-            console.log('Shutting down Apalache server')
+            debugLog(verbosityLevel, 'Shutting down Apalache server')
             try {
               process.kill(apalache.pid!)
             } catch (error: any) {
               // ESRCH is raised if no process with `pid` exists, i.e.,
               // if Apalache server exited on its own
               if (error.code == 'ESRCH') {
-                console.log('Apalache already exited')
+                debugLog(verbosityLevel, 'Apalache already exited')
               } else {
                 throw error
               }
@@ -415,6 +417,18 @@ async function connect(): Promise<VerifyResult<Apalache>> {
 }
 
 /**
+ * Log `msg` to the console if `verbosityLevel` implies debug output.
+ *
+ * @param verbosityLevel  the current verbosity level (set with --verbosity)
+ * @param msg             the message to log
+ */
+function debugLog(verbosityLevel: number, msg: string) {
+  if (verbosity.hasDebugInfo(verbosityLevel)) {
+    console.log(msg)
+  }
+}
+
+/**
  * Verifies the configuration `config` by model checking it with the Apalache server
  *
  * @param config
@@ -422,7 +436,7 @@ async function connect(): Promise<VerifyResult<Apalache>> {
  *
  * @returns right(void) if verification succeeds, or left(err) explaining the failure
  */
-export async function verify(config: any): Promise<VerifyResult<void>> {
-  const connectionResult = await connect()
+export async function verify(config: any, verbosityLevel: number): Promise<VerifyResult<void>> {
+  const connectionResult = await connect(verbosityLevel)
   return connectionResult.asyncChain(conn => conn.check(config))
 }

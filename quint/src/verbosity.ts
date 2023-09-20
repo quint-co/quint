@@ -76,4 +76,11 @@ export const verbosity = {
   hasUserOpTracking: (level: number): boolean => {
     return level >= 3
   },
+
+  /**
+   * Shall the tool output debug info.
+   */
+  hasDebugInfo: (level: number): boolean => {
+    return level >= 4
+  },
 }

@@ -649,8 +649,8 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
 
   const startMs = Date.now()
 
-  return verify(config).then(res => {
-    const verbosityLevel = !prev.args.out && !prev.args.outItf ? prev.args.verbosity : 0
+  const verbosityLevel = !prev.args.out && !prev.args.outItf ? prev.args.verbosity : 0
+  return verify(config, verbosityLevel).then(res => {
     const elapsedMs = Date.now() - startMs
     return res
       .map(_ => {

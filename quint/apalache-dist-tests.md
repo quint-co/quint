@@ -31,18 +31,11 @@ quint verify ../examples/language-features/booleans.qnt | \
 
 <!-- !test out server not running -->
 ```
-Couldn't connect to Apalache, checking for latest supported release
-Downloading Apalache distribution from (asseturl)
-Launching Apalache server
+Downloading Apalache distribution... done.
 [ok] No violation found (duration).
 You may increase --max-steps.
 Use --verbosity to produce more (or less) output.
-Shutting down Apalache server
-Couldn't connect to Apalache, checking for latest supported release
-Using existing Apalache distribution in (distdir)
-Launching Apalache server
 [ok] No violation found (duration).
 You may increase --max-steps.
 Use --verbosity to produce more (or less) output.
-Shutting down Apalache server
 ```
