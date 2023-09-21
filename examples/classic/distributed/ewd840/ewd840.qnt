@@ -120,7 +120,7 @@ action step = any {
 
 val vars = (active, color, tpos, tcolor)
 
-// temporal Spec = Init and always(Next.orKeep(vars) and System.weakFair(vars))
+// temporal Spec = init and always(step.orKeep(vars) and System.weakFair(vars))
 
 //-----------------------------------------------------------------------------
 
@@ -154,13 +154,13 @@ temporal FalseLiveness =
 /// The following property says that eventually all nodes will terminate
 /// assuming that from some point onwards no messages are sent. It is not
 /// supposed to hold: any node may indefinitely perform local computations.
-/// However, this property is verified if the fairness condition WF_vars(Next)
+/// However, this property is verified if the fairness condition WF_vars(step)
 /// is used instead of only WF_vars(System) that requires fairness of the
 /// actions controlled by termination detection.
 ///
-/// Quint translation note: we cannot add `Init` to this property since, in quint,
+/// Quint translation note: we cannot add `init` to this property since, in quint,
 /// it is an action - not a predicate
-temporal SpecWFNext = always(step.orKeep(vars) and step.weakFair(vars)) // and Init
+temporal SpecWFstep = always(step.orKeep(vars) and step.weakFair(vars)) // and init
 
 // The following property is not expressible in quint (for now), as it negates an action
 // temporal AllNodesTerminateIfNoMessages = (
