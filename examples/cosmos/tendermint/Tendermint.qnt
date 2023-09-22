@@ -78,6 +78,9 @@ module Tendermint {
   // the proposer function from 0..NRounds to the set of processes
   const Proposer: Round_t -> Proc_t
 
+  assume Corr_and_faulty_are_disjoint =
+      (Corr.intersect(Faulty) == Set())
+
   assume Corr_and_faulty_make_N =
       N == size(Corr.union(Faulty))
 
