@@ -102,12 +102,17 @@ editor (currently, VSCode, Emacs and Vim are supported).
 
    - [REPL](./tutorials/repl/repl.md)
 
- - VSCode plugin:
+- Editor support:
 
-   We strongly encourage you to use the VSCode plugin for Quint. It provides
-   the quickest feedback loop for your specifications, reporting informative
-   errors as you type. Install the plugin from [Visual Studio Code
-   Marketplace][].
+  We strongly encourage you to configure your editor for Quint. Our language
+  server provides the quickest feedback loop for your specifications, reporting
+  informative errors as you type. These are instuctions for the currently
+  supported editors:
+
+  - VSCode: Install the plugin from [Visual Studio Code
+    Marketplace][].
+  - Emacs: Setup two custom packages from the [emacs folder](./editor-plugins/emacs).
+  - Vim/Neovim: Follow configuration instructions from the [vim folder](./editor-plugins/vim)
 
  - VSCode plugin for [ITF traces][] by @hvanz:
 
