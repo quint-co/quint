@@ -4,7 +4,8 @@ This guide will help you set up Vim for Quint, including syntax highlighting and
 
 ## Syntax Highlighting
 
-1. Copy the [quint.vim] file to `~/.vim/syntax/`
+1. If you are using vim, copy the [quint.vim] file to `~/.vim/syntax/`.
+1. If you are using neovim, copy the [quint.vim] file to `~/.config/nvim/syntax`.
 2. Choose one of the following options to enable syntax highlighting for Quint:
 
    - **Option A (Manual):** Open a Quint file in Vim and manually set the syntax with `:set syntax=quint`.
