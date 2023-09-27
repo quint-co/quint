@@ -342,13 +342,24 @@ export class CompilerVisitor implements IRVisitor {
   }
 
   exitVar(vardef: ir.QuintVar) {
+    const varName = vardef.name
+
     // In the process of incremental compilation, we might revisit the same var
-    // definition. Don't overwrite the register if that happens.
-    if (this.context.has(kindName('var', vardef.id))) {
+    // definition. Don't overwrite the register if that happens. In some cases
+    // (with instances), the variable can have a different ID, but the same
+    // name. In that case, we assign the register with that name for the new ID.
+    if (this.context.has(kindName('var', varName))) {
+      const register = this.context.get(kindName('var', varName))!
+      this.context.set(kindName('var', vardef.id), register)
+
+      if (this.context.has(kindName('nextvar', varName))) {
+        const register = this.context.get(kindName('nextvar', varName))!
+        this.context.set(kindName('nextvar', vardef.id), register)
+      }
+
       return
     }
 
-    const varName = vardef.name
     // simply introduce two registers:
     //  one for the variable, and
     //  one for its next-state version
