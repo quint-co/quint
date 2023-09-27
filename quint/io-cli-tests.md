@@ -948,3 +948,26 @@ exit $exit_code
 
 error: run failed
 ```
+
+### Repl keeps right track of variables from instances
+
+Incremental evaluation from the REPL interacting with instance flattening leads to state variables having different IDs on separate evaluations. This test ensures this case is well handled during evaluation.
+
+<!-- !test in repl with instance vars -->
+
+```
+cd ../examples/cosmos/tendermint/
+output=$(echo -e "n4_f1::Init\nn4_f1::round" | quint -r TendermintModels.qnt::TendermintModels 2>&1 | tail -n +3)
+exit_code=$?
+cd - > /dev/null
+echo "$output"
+exit $exit_code
+```
+
+<!-- !test out repl with instance vars -->
+
+```
+>>> true
+>>> Map("p1" -> 0, "p2" -> 0, "p3" -> 0)
+>>> 
+```
