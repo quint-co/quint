@@ -120,6 +120,11 @@ editor (currently, VSCode, Emacs and Vim are supported).
    [Apalache][]. Install the [ITF Trace Viewer][] from Visual Studio Code
    Marketplace.
 
+ - Writing [literate executable specifications](./doc/literate.md)
+
+   This is a technique for embedding formal quint formal specifications inside
+   of markdown files.
+
 ## Development
 
 ### Developer docs :guitar:
