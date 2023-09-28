@@ -9,14 +9,7 @@ import {
   parsePhase3importAndNameResolution,
 } from '../../src/parsing/quintParserFrontend'
 import { SourceLookupPath, fileSourceResolver } from '../../src/parsing/sourceResolver'
-import {
-  LookupTable,
-  QuintDeclaration,
-  QuintExport,
-  QuintImport,
-  QuintInstance,
-  QuintModule,
-} from '../../src'
+import { LookupTable, QuintDeclaration, QuintExport, QuintImport, QuintInstance, QuintModule } from '../../src'
 import { CallGraphVisitor, mkCallGraphContext } from '../../src/static/callgraph'
 import { walkModule } from '../../src/ir/IRVisitor'
 
