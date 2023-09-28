@@ -277,6 +277,8 @@ Options:
   --invariant        the invariants to check, separated by a comma      [string]
   --temporal         the temporal properties to check, separated by a comma
                                                                         [string]
+  --random-transitions  choose transitions at random (= use symbolic simulation)
+                                                      [boolean] [default: false]
   --apalache-config  Filename of the additional Apalache configuration (in the
                      HOCON format, a superset of JSON)                  [string]
   --verbosity        control how much output is produced (0 to 5)
