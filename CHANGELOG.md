@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed a problem where referencing constants from an instance could cause a crash (#1191)
+
 ### Security
 
 ## v0.14.3 -- 2023-09-19
