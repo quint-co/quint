@@ -9,7 +9,14 @@ import {
   parsePhase3importAndNameResolution,
 } from '../../src/parsing/quintParserFrontend'
 import { SourceLookupPath, fileSourceResolver } from '../../src/parsing/sourceResolver'
-import { LookupTable, QuintDeclaration, QuintExport, QuintImport, QuintInstance, QuintModule } from '../../src'
+import {
+  LookupTable,
+  QuintDeclaration,
+  QuintExport,
+  QuintImport,
+  QuintInstance,
+  QuintModule,
+} from '../../src'
 import { CallGraphVisitor, mkCallGraphContext } from '../../src/static/callgraph'
 import { walkModule } from '../../src/ir/IRVisitor'
 
@@ -129,6 +136,7 @@ describe('compute call graph', () => {
       |  pure val myM = sqr(3)
       |  import B(M = myM) as B1
       |  pure val quadM = 2 * B1::doubleM
+      |  pure val constRef = B1::M
       |  export B1.*
       |}`
     )
@@ -148,6 +156,7 @@ describe('compute call graph', () => {
     const importB = findInstance(main, imp => imp.protoName === 'B')
     const quadM = findDef(main, 'quadM')
     const doubleM = findDef(B, 'doubleM')
+    const constRef = findDef(main, 'constRef')
     const exportB1 = findExport(main, exp => exp.protoName === 'B1')
 
     expect(graph.get(importA.id)?.toArray()).eql([A.id])
@@ -155,5 +164,10 @@ describe('compute call graph', () => {
     expect(graph.get(importB.id)?.toArray()).to.eql([B.id, myM.id])
     expect(graph.get(quadM.id)?.toArray()).to.eql([doubleM.id, importB.id])
     expect(graph.get(exportB1.id)?.toArray()).to.eql([importB.id])
+
+    // Find the id for B1::M by checking the dependencies of constRef
+    // A regression for #1183, ensuring constants like B1::M depend on the instance statements
+    const B1Mid = graph.get(constRef.id)?.toArray()[0]!
+    expect(graph.get(B1Mid)?.toArray()).to.eql([importB.id])
   })
 })
