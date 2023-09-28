@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fix a problem where state variables from instances didn't work properly in the REPL (#1190)
+
 ### Security
 
 ## v0.14.3 -- 2023-09-19
