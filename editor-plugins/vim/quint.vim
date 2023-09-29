@@ -4,7 +4,7 @@
 " Latest Revision: 03 February 2023
 "
 " How to install:
-" 1. Copy this file to ~/.vim/syntax/
+" 1. Copy this file to ~/.vim/syntax/ (vim) or to ~/.config/nvim/syntax (neovim).
 " 2a. Either manually set syntax with :set syntax=quint
 " 2b. Or add the following in your ~/.vimrc
 "    au  BufNewFile,BufReadPost *.qnt runtime syntax/quint.vim

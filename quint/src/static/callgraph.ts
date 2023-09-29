@@ -190,6 +190,9 @@ export class CallGraphVisitor implements IRVisitor {
     const importedModule = this.context.modulesByName.get(decl.protoName)
     if (importedModule) {
       this.graphAddAll(decl.id, Set([importedModule.id]))
+      decl.overrides.forEach(([_param, expr]) => {
+        this.graphAddAll(expr.id, Set([decl.id]))
+      })
     }
   }
 

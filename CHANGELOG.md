@@ -8,12 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Added `--random-transitions` flag for `verify`, enabling symbolic simulation
+  through Apalache (#1188)
+
 ### Changed
 ### Deprecated
 ### Removed
 ### Fixed
 
-- Fix a problem where state variables from instances didn't work properly in the REPL (#1190)
+- Fixed a problem where state variables from instances didn't work properly in the REPL (#1190)
+- Fixed a problem where referencing constants from an instance could cause a crash (#1191)
 
 ### Security
 

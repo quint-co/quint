@@ -240,6 +240,11 @@ const verifyCmd = {
         type: 'string',
         coerce: (s: string) => s.split(','),
       })
+      .option('random-transitions', {
+        desc: 'choose transitions at random (= use symbolic simulation)',
+        type: 'boolean',
+        default: false,
+      })
       .option('apalache-config', {
         desc: 'Filename of the additional Apalache configuration (in the HOCON format, a superset of JSON)',
         type: 'string',
