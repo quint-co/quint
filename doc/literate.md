@@ -16,6 +16,8 @@ model based testing.
 - An installation of lmt via `go install github.com/driusan/lmt@latest` (or
   following the [lmt instructions to install from source](https://github.com/driusan/lmt#installing-lmt))
 
+If you use nix, you can use [this nix expression](../tutorials/default.nix).
+
 ## Writing a literate spec
 
 A literate quint spec is a markdown file that includes `quint` code blocks that
