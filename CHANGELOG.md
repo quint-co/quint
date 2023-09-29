@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
+- Fixed a problem where state variables from instances didn't work properly in the REPL (#1190)
 - Fixed a problem where referencing constants from an instance could cause a crash (#1191)
 
 ### Security
