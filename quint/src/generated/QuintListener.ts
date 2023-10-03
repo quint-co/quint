@@ -85,6 +85,8 @@ import { RowLabelContext } from "./QuintParser";
 import { ExprContext } from "./QuintParser";
 import { DeclarationOrExprContext } from "./QuintParser";
 import { LambdaContext } from "./QuintParser";
+import { LambdaUnsugaredContext } from "./QuintParser";
+import { LambdaTupleSugarContext } from "./QuintParser";
 import { IdentOrHoleContext } from "./QuintParser";
 import { ParameterContext } from "./QuintParser";
 import { IdentOrStarContext } from "./QuintParser";
@@ -1044,6 +1046,28 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitLambda?: (ctx: LambdaContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.lambdaUnsugared`.
+	 * @param ctx the parse tree
+	 */
+	enterLambdaUnsugared?: (ctx: LambdaUnsugaredContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.lambdaUnsugared`.
+	 * @param ctx the parse tree
+	 */
+	exitLambdaUnsugared?: (ctx: LambdaUnsugaredContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.lambdaTupleSugar`.
+	 * @param ctx the parse tree
+	 */
+	enterLambdaTupleSugar?: (ctx: LambdaTupleSugarContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.lambdaTupleSugar`.
+	 * @param ctx the parse tree
+	 */
+	exitLambdaTupleSugar?: (ctx: LambdaTupleSugarContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `QuintParser.identOrHole`.

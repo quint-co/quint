@@ -184,11 +184,16 @@ declarationOrExpr :    declaration EOF | expr EOF | DOCCOMMENT EOF | EOF;
 // This rule parses anonymous functions, e.g.:
 // 1. x => e
 // 2. (x) => e
-// 3. (x, y, z) => e
-lambda:         parameter '=>' expr
-        |       '(' parameter (',' parameter)* ')' '=>' expr
-        ;
-
+// 3. (x, y, z) => e            (arity 3)
+// 4. ((x, y, z)) => e          (syntax sugar: arity 1, unboxed into a 3-field tuple)
+lambda          : lambdaUnsugared
+                | lambdaTupleSugar ;
+lambdaUnsugared : parameter '=>' expr
+                | '(' parameter (',' parameter)* ')' '=>' expr
+                ;
+// A lambda operator over a single tuple parameter,
+// unpacked into named fields
+lambdaTupleSugar : '(' '(' parameter (',' parameter)+ ')' ')' '=>' expr;
 
 // an identifier or a hole '_'
 identOrHole :   '_' | qualId
