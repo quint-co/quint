@@ -18,6 +18,7 @@ import { Substitutions, applySubstitution, applySubstitutionToEntity, compose } 
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
 import { flattenUnions, simplify } from './simplification'
 import isEqual from 'lodash.isequal'
+import { differenceWith, intersectionWith } from 'lodash'
 
 /* Kinds for concrete effect components */
 export type ComponentKind = 'read' | 'update' | 'temporal'
@@ -323,19 +324,21 @@ export function unifyEntities(va: Entity, vb: Entity): Either<ErrorTree, Substit
     return bindEntity(v1.name, v2).mapLeft(msg => buildErrorLeaf(location, msg))
   } else if (v2.kind === 'variable') {
     return bindEntity(v2.name, v1).mapLeft(msg => buildErrorLeaf(location, msg))
-  } else {
-    if (isEqual(v1, v2)) {
-      return right([])
-    }
+  } else if (isEqual(v1, v2)) {
+    return right([])
+  } else if (v1.kind === 'union' && v2.kind === 'concrete') {
+    return mergeInMany(v1.entities.map(v => unifyEntities(v, v2)))
+      .map(subs => subs.flat())
+      .mapLeft(err => buildErrorTree(location, err))
+  } else if (v1.kind === 'concrete' && v2.kind === 'union') {
+    return unifyEntities(v2, v1)
+  } else if (v1.kind === 'union' && v2.kind === 'union') {
+    if (intersectionWith(v1.entities, v2.entities, isEqual).length > 0) {
+      const s1 = { ...v1, entities: differenceWith(v1.entities, v2.entities, isEqual) }
+      const s2 = { ...v2, entities: differenceWith(v2.entities, v1.entities, isEqual) }
 
-    if (v1.kind === 'union' && v2.kind === 'concrete') {
-      return mergeInMany(v1.entities.map(v => unifyEntities(v, v2)))
-        .map(subs => subs.flat())
-        .mapLeft(err => buildErrorTree(location, err))
-    }
-
-    if (v1.kind === 'concrete' && v2.kind === 'union') {
-      return unifyEntities(v2, v1)
+      // There was an intersection, try to unify the remaining entities
+      return unifyEntities(s1, s2)
     }
 
     // At least one of the entities is a union
@@ -346,6 +349,8 @@ export function unifyEntities(va: Entity, vb: Entity): Either<ErrorTree, Substit
       message: 'Unification for unions of entities is not implemented',
       children: [],
     })
+  } else {
+    throw new Error(`Impossible: all cases should be covered`)
   }
 }
 

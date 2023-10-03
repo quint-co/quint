@@ -403,6 +403,17 @@ describe('unify', () => {
       )
     })
 
+    it('simplifies unions of entities before giving up on unifying them', () => {
+      const e1 = parseEffectOrThrow("Read[r1, r2, 'x']")
+      const e2 = parseEffectOrThrow("Read[r1, 'x']")
+
+      const result = unify(e1, e2)
+      assert.isTrue(result.isRight())
+      result.map(r =>
+        assert.sameDeepMembers(r, [{ kind: 'entity', name: 'r2', value: { kind: 'concrete', stateVariables: [] } }])
+      )
+    })
+
     it('returns error with effect with incompatible entity variables', () => {
       const e1 = parseEffectOrThrow('(Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1, r2] & Update[u]')
       const e2 = parseEffectOrThrow("(Read['y'] & Update['x'], Read['z'] & Update['x']) => Read['y'] & Update[u]")
