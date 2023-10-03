@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   through Apalache (#1188)
 
 ### Changed
+
+- Changed syntax for unpacking tuples in lambda parameters (#1202)
+
 ### Deprecated
 ### Removed
 ### Fixed
