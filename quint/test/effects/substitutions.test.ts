@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { Substitutions, compose } from '../../src/effects/substitutions'
+import { Substitutions, applySubstitution, compose } from '../../src/effects/substitutions'
 import { parseEffectOrThrow } from '../../src/effects/parser'
 
 describe('compose', () => {
@@ -32,5 +32,20 @@ describe('compose', () => {
     )
 
     assert.isTrue(result.isRight())
+  })
+})
+
+describe('applySubstitution', () => {
+  it('substitutes with transitivity', () => {
+    const s: Substitutions = [
+      { kind: 'effect', name: 'e0', value: { kind: 'variable', name: 'e1' } },
+      { kind: 'effect', name: 'e1', value: { kind: 'variable', name: 'e2' } },
+    ]
+
+    const e = parseEffectOrThrow('e0')
+
+    const result = applySubstitution(s, e).unwrap()
+
+    assert.deepEqual(result, parseEffectOrThrow('e2'))
   })
 })
