@@ -597,7 +597,7 @@ export class ToIrListener implements QuintListener {
   }
 
   // a lambda operator over multiple parameters
-  exitLambda(ctx: p.LambdaContext) {
+  exitLambdaUnsugared(ctx: p.LambdaUnsugaredContext) {
     const expr = this.exprStack.pop()
     const params = popMany(this.paramStack, ctx.parameter().length)
     if (expr) {
@@ -609,6 +609,52 @@ export class ToIrListener implements QuintListener {
         qualifier: 'def',
         expr,
       })
+    } else {
+      const ls = this.locStr(ctx)
+      // istanbul ignore next
+      assert(false, `exitLambda: ${ls}: expected an expression`)
+    }
+  }
+
+  // a lambda operator over a single tuple parameter,
+  // unpacked into named fields
+  exitLambdaTupleSugar(ctx: p.LambdaTupleSugarContext) {
+    const expr = this.exprStack.pop()
+    const params = popMany(this.paramStack, ctx.parameter().length)
+
+    if (expr) {
+      const id = this.getId(ctx)
+      const lambdaParam = { id, name: `quintTupledLambdaParam${id}` }
+      const tupleBoundExpr: QuintEx = params.reduce((body, param, index) => {
+        return {
+          id: this.getId(ctx),
+          kind: 'let',
+          opdef: {
+            id: param.id,
+            kind: 'def',
+            name: param.name,
+            qualifier: 'pureval',
+            expr: {
+              id: this.getId(ctx),
+              kind: 'app',
+              opcode: 'item',
+              args: [
+                { id: this.getId(ctx), kind: 'name', name: lambdaParam.name },
+                { id: this.getId(ctx), kind: 'int', value: BigInt(index + 1) },
+              ],
+            },
+          },
+          expr: body,
+        }
+      }, expr)
+      const untupledLambda: QuintEx = {
+        id: this.getId(ctx),
+        kind: 'lambda',
+        params: [lambdaParam],
+        qualifier: 'def',
+        expr: tupleBoundExpr,
+      }
+      this.exprStack.push(untupledLambda)
     } else {
       const ls = this.locStr(ctx)
       // istanbul ignore next
