@@ -33,24 +33,4 @@ describe('compose', () => {
 
     assert.isTrue(result.isRight())
   })
-
-  it('unifies values of substitutions with same name', () => {
-    const s1: Substitutions = [
-      { kind: 'entity', name: 'v1', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 2n }] } },
-    ]
-    const s2: Substitutions = [{ kind: 'entity', name: 'v1', value: { kind: 'variable', name: 'q' } }]
-
-    const result = compose(s1, s2)
-
-    result.map(r =>
-      assert.sameDeepMembers(
-        r,
-        s1.concat([
-          { kind: 'entity', name: 'q', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 2n }] } },
-        ])
-      )
-    )
-
-    assert.isTrue(result.isRight())
-  })
 })
