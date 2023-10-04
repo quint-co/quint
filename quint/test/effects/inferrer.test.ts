@@ -146,17 +146,6 @@ describe('inferEffects', () => {
     assert.deepEqual(effectForDef(defs, effects, 'a'), expectedEffect)
   })
 
-  it('unpacks arguments as tuples', () => {
-    const defs = ['def a(tup) = Set(tup, (x, 4)).map((p, g) => p + g)']
-
-    const [errors, effects] = inferEffectsForDefs(defs)
-
-    const expectedEffect = "∀ v0, v1 . (Read[v0] & Temporal[v1]) => Read[v0, 'x'] & Temporal[v1]"
-
-    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
-    assert.deepEqual(effectForDef(defs, effects, 'a'), expectedEffect)
-  })
-
   it('keeps track of substitutions with nested defs', () => {
     const defs = [
       'pure def a(p) = and{' +

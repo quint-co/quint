@@ -226,7 +226,7 @@ describe('checkModes', () => {
   })
 
   it('finds correct equalities between entity unions (#808)', () => {
-    const defs = ['pure def foo(s: Set[int]): bool = { tuples(s, s).forall((a,b) => (a + b).in(s)) }']
+    const defs = ['pure def foo(s: Set[int]): bool = { tuples(s, s).forall( ((a,b)) => (a + b).in(s)) }']
 
     const [errors, suggestions] = checkMockedDefs(defs)
 

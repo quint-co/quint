@@ -152,6 +152,8 @@ module withConsts {
   // Pass a lambda operator as a second argument of filter.
   // Here we are using the dot notation.
   val oper_app_dot1 = S.filter(x => x > 10)
+  // Tuple unpackig in lambda
+  val tuple_sum = tuples(S, MySet).map( ((s, mys)) => s + mys )
   // Use unknown
   action oper_nondet = {
     nondet x = oneOf(S)

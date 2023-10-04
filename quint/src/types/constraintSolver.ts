@@ -240,7 +240,7 @@ function checkSameLength(
   types2: QuintType[]
 ): Either<Error, [QuintType[], QuintType[]]> {
   if (types1.length !== types2.length) {
-    return tryToUnpack(location, types1, types2)
+    return left(buildErrorLeaf(location, `Expected ${types1.length} arguments, got ${types2.length}`))
   }
 
   return right([types1, types2])
@@ -250,25 +250,4 @@ function chainUnifications(table: LookupTable, types1: QuintType[], types2: Quin
   return types1.reduce((result: Either<Error, Substitutions>, t, i) => {
     return result.chain(subs => applySubstitutionsAndUnify(table, subs, t, types2[i]))
   }, right([]))
-}
-
-function tryToUnpack(
-  location: string,
-  types1: QuintType[],
-  types2: QuintType[]
-): Either<ErrorTree, [QuintType[], QuintType[]]> {
-  // Ensure that types1 is always the smallest
-  if (types2.length < types1.length) {
-    return tryToUnpack(location, types2, types1)
-  }
-
-  // We only handle unpacking 1 tuple into N args
-  if (types1.length === 1 && types1[0].kind === 'tup') {
-    const row = types1[0].fields
-    if (row.kind === 'row' && row.fields.length === types2.length) {
-      return right([row.fields.map(f => f.fieldType), types2])
-    }
-  }
-
-  return left(buildErrorLeaf(location, `Expected ${types2.length} arguments, got ${types1.length}`))
 }

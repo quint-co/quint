@@ -980,10 +980,8 @@ export class CompilerVisitor implements IRVisitor {
         return register.registerValue.map(v => v as Callable)
       }
     }
-    // nparams === nargs, unless a tuple is passed to an n-ary operator.
-    const nparams = operScheme.type.args.length
-    const nargs = app.args.length
 
+    const nargs = app.args.length // === operScheme.type.args.length
     const nactual = this.compStack.length
     if (nactual < nargs) {
       return onError(app.id, `Expected ${nargs} arguments for ${app.opcode}, found: ${nactual}`)
@@ -1004,15 +1002,8 @@ export class CompilerVisitor implements IRVisitor {
           }
           return merged
             .map(values => {
-              // if they are all defined, check whether unpacking is needed
-              let actualArgs: RuntimeValue[] = values as RuntimeValue[]
-              if (nparams > nargs && nargs === 1) {
-                // unpack the tuple
-                actualArgs = [...actualArgs[0]]
-              }
-
-              const result = callable.value.eval(actualArgs.map(just)) as Maybe<RuntimeValue>
-              this.execListener.onUserOperatorReturn(app, actualArgs, result)
+              const result = callable.value.eval(values.map(just)) as Maybe<RuntimeValue>
+              this.execListener.onUserOperatorReturn(app, values, result)
               return result
             })
             .join()

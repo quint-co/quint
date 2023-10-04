@@ -9,11 +9,8 @@ module tuples {
   action step = myTup' = combineTuples(myTup, (1, "world"))
 
   // Unpacking
-  var x: int
-
-  def a(tup) = Set(tup, (x, 4)).map((p, g) => p + g)
-  def b(tup, f) = Set(tup, (x, 4)).map(f)
-  pure def c(tup, f) = Set(tup).map(f)
-  pure def func(p, g) = p
-  pure val test = c((1, 2), func)
+  pure val a = Set((1, 4), (2, 3)).map( ((p, g)) => p + g)
+  pure val s = Set(1, 2, 3)
+  pure val m = tuples(s, s).mapBy( ((j, k)) => j+k )
+  pure val n = tuples(s, s, s).mapBy( ((j, k, i)) => j+k+i )
 }

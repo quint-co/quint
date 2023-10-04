@@ -9,6 +9,7 @@ import {
   QuintDef,
   QuintEx,
   QuintLambdaParameter,
+  QuintLet,
   QuintModule,
   QuintName,
   QuintOpDef,
@@ -597,7 +598,7 @@ export class ToIrListener implements QuintListener {
   }
 
   // a lambda operator over multiple parameters
-  exitLambda(ctx: p.LambdaContext) {
+  exitLambdaUnsugared(ctx: p.LambdaUnsugaredContext) {
     const expr = this.exprStack.pop()
     const params = popMany(this.paramStack, ctx.parameter().length)
     if (expr) {
@@ -609,6 +610,32 @@ export class ToIrListener implements QuintListener {
         qualifier: 'def',
         expr,
       })
+    } else {
+      const ls = this.locStr(ctx)
+      // istanbul ignore next
+      assert(false, `exitLambda: ${ls}: expected an expression`)
+    }
+  }
+
+  // a lambda operator over a single tuple parameter,
+  // unpacked into named fields
+  exitLambdaTupleSugar(ctx: p.LambdaTupleSugarContext) {
+    const expr = this.exprStack.pop()
+    const params = popMany(this.paramStack, ctx.parameter().length)
+
+    if (expr) {
+      const id = this.getId(ctx)
+      // a fresh parameter to substitute for the tupled parameters
+      const freshLambdaParam = { id, name: `quintTupledLambdaParam${id}` }
+      const letBindingForTupleParams = params.reduce(this.letBindingForTupleParam(ctx, freshLambdaParam), expr)
+      const untupledLambda: QuintEx = {
+        id: this.getId(ctx),
+        kind: 'lambda',
+        params: [freshLambdaParam],
+        qualifier: 'def',
+        expr: letBindingForTupleParams,
+      }
+      this.exprStack.push(untupledLambda)
     } else {
       const ls = this.locStr(ctx)
       // istanbul ignore next
@@ -1157,6 +1184,43 @@ export class ToIrListener implements QuintListener {
   private undefinedDef(ctx: any): QuintEx {
     const id = this.getId(ctx)
     return { id, kind: 'name', name: 'undefined' }
+  }
+
+  /**
+   * Return a function that takes a QuintEx `body`, a QuintLambdaParameter `param`,
+   * and the parameter's `index` and returns a let-in definition of the form
+   * `let ${param.name} = ${freshParam.name}._${index} ; body`.
+   *
+   * Intended use: Reduce tupled Quint lambda parameters into an equivalent let-in
+   * form ("tuple unboxing"). For example, `((a, b)) => body` can be reduced to
+   * `freshParam => let a = freshParam._1; let b = freshParam._2; body`.
+   *
+   * @param ctx         parser context of the tuple-sugared lambda
+   * @param freshParam  a fresh QuintLambdaParameter to substitute for the tupled parameters
+   */
+  private letBindingForTupleParam(ctx: p.LambdaTupleSugarContext, freshParam: QuintLambdaParameter) {
+    return (body: QuintEx, param: QuintLambdaParameter, index: number): QuintLet => {
+      return {
+        id: this.getId(ctx),
+        kind: 'let',
+        opdef: {
+          id: param.id,
+          kind: 'def',
+          name: param.name,
+          qualifier: 'pureval',
+          expr: {
+            id: this.getId(ctx),
+            kind: 'app',
+            opcode: 'item',
+            args: [
+              { id: this.getId(ctx), kind: 'name', name: freshParam.name },
+              { id: this.getId(ctx), kind: 'int', value: BigInt(index + 1) },
+            ],
+          },
+        },
+        expr: body,
+      }
+    }
   }
 }
 
