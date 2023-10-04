@@ -439,21 +439,26 @@ export class QuintLanguageServer {
   }
 
   private analyze(document: TextDocument, previousDiagnostics: Diagnostic[] = []) {
-    const parsedData = this.parsedDataByDocument.get(document.uri)
-    if (!parsedData) {
-      return
+    try {
+      const parsedData = this.parsedDataByDocument.get(document.uri)
+      if (!parsedData) {
+        return
+      }
+
+      const { modules, sourceMap, table } = parsedData
+
+      this.docsByDocument.set(document.uri, new Map(modules.flatMap(m => [...produceDocsById(m).entries()])))
+
+      const [errors, analysisOutput] = analyzeModules(table, modules)
+
+      this.analysisOutputByDocument.set(document.uri, analysisOutput)
+
+      const diagnostics = diagnosticsFromErrors(errors, sourceMap)
+      this.connection.sendDiagnostics({ uri: document.uri, diagnostics: previousDiagnostics.concat(diagnostics) })
+    } catch (e) {
+      this.connection.console.error(`Error during analysis: ${e}`)
+      this.connection.sendDiagnostics({ uri: document.uri, diagnostics: previousDiagnostics })
     }
-
-    const { modules, sourceMap, table } = parsedData
-
-    this.docsByDocument.set(document.uri, new Map(modules.flatMap(m => [...produceDocsById(m).entries()])))
-
-    const [errors, analysisOutput] = analyzeModules(table, modules)
-
-    this.analysisOutputByDocument.set(document.uri, analysisOutput)
-
-    const diagnostics = diagnosticsFromErrors(errors, sourceMap)
-    this.connection.sendDiagnostics({ uri: document.uri, diagnostics: previousDiagnostics.concat(diagnostics) })
   }
 }
 

@@ -23,26 +23,29 @@ export async function parseDocument(idGenerator: IdGenerator, textDocument: Text
     // see https://github.com/informalsystems/quint/issues/831
     return new Promise((_resolve, reject) => reject(`Support imports from file, found: ${parsedUri.scheme}`))
   }
-
-  const result = parsePhase1fromText(idGenerator, text, parsedUri.path)
-    .chain(phase1Data => {
-      const resolver = fileSourceResolver()
-      const mainPath = resolver.lookupPath(dirname(parsedUri.fsPath), basename(parsedUri.fsPath))
-      return parsePhase2sourceResolution(idGenerator, resolver, mainPath, phase1Data)
-    })
-    .chain(phase2Data => parsePhase3importAndNameResolution(phase2Data))
-    .chain(phase3Data => parsePhase4toposort(phase3Data))
-    .mapLeft(messages =>
-      messages.flatMap(msg => {
-        // TODO: Parse errors should be QuintErrors
-        const error: QuintError = { code: 'QNT000', message: msg.explanation, reference: 0n, data: {} }
-        return msg.locs.map(loc => assembleDiagnostic(error, loc))
+  try {
+    const result = parsePhase1fromText(idGenerator, text, parsedUri.path)
+      .chain(phase1Data => {
+        const resolver = fileSourceResolver()
+        const mainPath = resolver.lookupPath(dirname(parsedUri.fsPath), basename(parsedUri.fsPath))
+        return parsePhase2sourceResolution(idGenerator, resolver, mainPath, phase1Data)
       })
-    )
+      .chain(phase2Data => parsePhase3importAndNameResolution(phase2Data))
+      .chain(phase3Data => parsePhase4toposort(phase3Data))
+      .mapLeft(messages =>
+        messages.flatMap(msg => {
+          // TODO: Parse errors should be QuintErrors
+          const error: QuintError = { code: 'QNT000', message: msg.explanation, reference: 0n, data: {} }
+          return msg.locs.map(loc => assembleDiagnostic(error, loc))
+        })
+      )
 
-  if (result.isRight()) {
-    return new Promise((resolve, _reject) => resolve(result.value))
-  } else {
-    return new Promise((_resolve, reject) => reject(result.value))
+    if (result.isRight()) {
+      return new Promise((resolve, _reject) => resolve(result.value))
+    } else {
+      return new Promise((_resolve, reject) => reject(result.value))
+    }
+  } catch (e) {
+    return new Promise((_resolve, reject) => reject(e))
   }
 }
