@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- The language server should no longer crash when there is a crash on quint
+  functions (#1205)
+
 ### Security
 
 ## v0.9.1 -- 2023-10-02
