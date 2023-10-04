@@ -19,6 +19,7 @@ import { ConcreteFixedRow, QuintType, Row } from '../ir/quintTypes'
 import { Constraint } from './base'
 import { unify, unifyRows } from './constraintSolver'
 import { substitutionsToString } from './printing'
+import { isEqual } from 'lodash'
 
 /*
  * Substitutions can be applied to Quint types, type variables with another type
@@ -51,69 +52,79 @@ export function compose(table: LookupTable, s1: Substitutions, s2: Substitutions
  *          given type
  */
 export function applySubstitution(table: LookupTable, subs: Substitutions, t: QuintType): QuintType {
-  switch (t.kind) {
-    case 'var': {
-      const sub = subs.find(s => s.name === t.name)
-      if (sub && sub.kind === 'type') {
-        return sub.value
-      } else {
-        return t
+  // We cannot assign the result of a switch to a value, so we use an arrow function instead
+  const singleApplication = () => {
+    switch (t.kind) {
+      case 'var': {
+        const sub = subs.find(s => s.name === t.name)
+        if (sub && sub.kind === 'type') {
+          return sub.value
+        } else {
+          return t
+        }
       }
-    }
-    case 'oper': {
-      const arrowParams = t.args.map(ef => applySubstitution(table, subs, ef))
-      const arrowResult = applySubstitution(table, subs, t.res)
-      return { kind: t.kind, args: arrowParams, res: arrowResult, id: t.id }
-    }
-    case 'list':
-    case 'set': {
-      return { kind: t.kind, elem: applySubstitution(table, subs, t.elem), id: t.id }
-    }
-    case 'fun': {
-      return {
-        kind: t.kind,
-        arg: applySubstitution(table, subs, t.arg),
-        res: applySubstitution(table, subs, t.res),
-        id: t.id,
+      case 'oper': {
+        const arrowParams = t.args.map(ef => applySubstitution(table, subs, ef))
+        const arrowResult = applySubstitution(table, subs, t.res)
+        return { kind: t.kind, args: arrowParams, res: arrowResult, id: t.id }
       }
-    }
-    case 'tup': {
-      return { kind: t.kind, fields: applySubstitutionToRow(table, subs, t.fields), id: t.id }
-    }
-    case 'rec': {
-      return {
-        kind: t.kind,
-        fields: applySubstitutionToRow(table, subs, t.fields),
-        id: t.id,
+      case 'list':
+      case 'set': {
+        return { kind: t.kind, elem: applySubstitution(table, subs, t.elem), id: t.id }
       }
-    }
-    case 'union': {
-      return {
-        kind: t.kind,
-        tag: t.tag,
-        records: t.records.map(r => {
-          return {
-            tagValue: r.tagValue,
-            fields: applySubstitutionToRow(table, subs, r.fields),
-          }
-        }),
-        id: t.id,
+      case 'fun': {
+        return {
+          kind: t.kind,
+          arg: applySubstitution(table, subs, t.arg),
+          res: applySubstitution(table, subs, t.res),
+          id: t.id,
+        }
       }
-    }
-    case 'sum':
-      return {
-        ...t,
-        // We know this has to end up as a concrete fixed row, since it must
-        // start as one, and applying substitions cannot result in a wider type
-        fields: applySubstitutionToRow(table, subs, t.fields) as ConcreteFixedRow,
+      case 'tup': {
+        return { kind: t.kind, fields: applySubstitutionToRow(table, subs, t.fields), id: t.id }
       }
+      case 'rec': {
+        return {
+          kind: t.kind,
+          fields: applySubstitutionToRow(table, subs, t.fields),
+          id: t.id,
+        }
+      }
+      case 'union': {
+        return {
+          kind: t.kind,
+          tag: t.tag,
+          records: t.records.map(r => {
+            return {
+              tagValue: r.tagValue,
+              fields: applySubstitutionToRow(table, subs, r.fields),
+            }
+          }),
+          id: t.id,
+        }
+      }
+      case 'sum':
+        return {
+          ...t,
+          // We know this has to end up as a concrete fixed row, since it must
+          // start as one, and applying substitions cannot result in a wider type
+          fields: applySubstitutionToRow(table, subs, t.fields) as ConcreteFixedRow,
+        }
 
-    // The basic types have no variables, so cannot
-    case 'int':
-    case 'bool':
-    case 'str':
-    case 'const':
-      return t
+      // The basic types have no variables, so cannot
+      case 'int':
+      case 'bool':
+      case 'str':
+      case 'const':
+        return t
+    }
+  }
+
+  const result = singleApplication()
+  if (isEqual(result, t)) {
+    return t
+  } else {
+    return applySubstitution(table, subs, result)
   }
 }
 
