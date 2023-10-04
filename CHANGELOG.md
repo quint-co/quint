@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed internal bugs in the effect checker that could cause an incorrect effect
+  to be inferred or error to be reported (#1203)
+
 ### Security
 
 ## v0.14.4 -- 2023-10-02

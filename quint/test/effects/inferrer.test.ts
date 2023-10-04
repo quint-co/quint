@@ -165,6 +165,48 @@ describe('inferEffects', () => {
     assert.deepEqual(effectForDef(defs, effects, 'a'), expectedEffect)
   })
 
+  it('keeps track of substitutions with lambdas and applications', () => {
+    const defs = [
+      `pure def MinBy(__set: Set[a], __f: a => int, __i: a): a = {
+        __set.fold(
+          __i,
+          (__m, __e) => if(__f(__m) < __f(__e)) {__m } else {__e}
+        )
+      }`,
+    ]
+
+    const [errors, effects] = inferEffectsForDefs(defs)
+
+    const expectedEffect = '∀ v0, v1 . (Read[v0], (Read[v0]) => Read[v1], Read[v0]) => Read[v0, v1]'
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectForDef(defs, effects, 'MinBy'), expectedEffect)
+  })
+
+  it('regression on #1091', () => {
+    const defs = [
+      'var channel: int',
+      `action CoolAction(boolean: bool): bool =
+         any {
+           all {
+             boolean,
+             channel' = channel
+           },
+           all {
+             not(boolean),
+             channel' = channel
+           }
+        }`,
+    ]
+
+    const [errors, effects] = inferEffectsForDefs(defs)
+
+    const expectedEffect = "∀ v0 . (Read[v0]) => Read[v0, 'channel'] & Update['channel']"
+
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+    assert.deepEqual(effectForDef(defs, effects, 'CoolAction'), expectedEffect)
+  })
+
   it('returns error when operator signature is not unifiable with args', () => {
     const defs = [`def a = S.map(p => x' = p)`]
 
@@ -185,14 +227,15 @@ describe('inferEffects', () => {
                         message: 'Expected [x] and [] to be the same',
                       },
                     ],
-                    location: "Trying to unify Read[v5] & Temporal[v6] and Update['x']",
+                    location: "Trying to unify Read[_v4] & Temporal[_v5] and Update['x']",
                   },
                 ],
-                location: "Trying to unify (Pure) => Read[v5] & Temporal[v6] and (Read[v2]) => Read[v2] & Update['x']",
+                location:
+                  "Trying to unify (Pure) => Read[_v4] & Temporal[_v5] and (Read[_v1]) => Read[_v1] & Update['x']",
               },
             ],
             location:
-              "Trying to unify (Read[v3] & Temporal[v4], (Read[v3] & Temporal[v4]) => Read[v5] & Temporal[v6]) => Read[v3, v5] & Temporal[v4, v6] and (Pure, (Read[v2]) => Read[v2] & Update['x']) => e1",
+              "Trying to unify (Read[_v2] & Temporal[_v3], (Read[_v2] & Temporal[_v3]) => Read[_v4] & Temporal[_v5]) => Read[_v2, _v4] & Temporal[_v3, _v5] and (Pure, (Read[_v1]) => Read[_v1] & Update['x']) => _e1",
           },
         ],
         location: 'Trying to infer effect for operator application in map(S, ((p) => assign(x, p)))',
