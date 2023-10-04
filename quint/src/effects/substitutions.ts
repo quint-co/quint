@@ -89,7 +89,7 @@ export function applySubstitution(subs: Substitutions, e: Effect): Either<ErrorT
 
   return result.map(simplify).chain(r => {
     if (!isEqual(r, e)) {
-      // Keep reaplying the substitutions until the effect is unchanged.
+      // Keep re-applying the substitutions until the effect is unchanged.
       // Useful when substitutions have a transitive pattern [ a |-> b, b |-> c ]
       return applySubstitution(subs, r)
     }
