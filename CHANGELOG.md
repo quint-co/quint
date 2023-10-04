@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.14.4 -- 2023-10-02
+
+### Added
 
 - Added `--random-transitions` flag for `verify`, enabling symbolic simulation
   through Apalache (#1188)
