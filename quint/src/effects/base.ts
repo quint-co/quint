@@ -333,9 +333,10 @@ export function unifyEntities(va: Entity, vb: Entity): Either<ErrorTree, Substit
   } else if (v1.kind === 'concrete' && v2.kind === 'union') {
     return unifyEntities(v2, v1)
   } else if (v1.kind === 'union' && v2.kind === 'union') {
-    if (intersectionWith(v1.entities, v2.entities, isEqual).length > 0) {
-      const s1 = { ...v1, entities: differenceWith(v1.entities, v2.entities, isEqual) }
-      const s2 = { ...v2, entities: differenceWith(v2.entities, v1.entities, isEqual) }
+    const intersection = intersectionWith(v1.entities, v2.entities, isEqual)
+    if (intersection.length > 0) {
+      const s1 = { ...v1, entities: differenceWith(v1.entities, intersection, isEqual) }
+      const s2 = { ...v2, entities: differenceWith(v2.entities, intersection, isEqual) }
 
       // There was an intersection, try to unify the remaining entities
       return unifyEntities(s1, s2)
