@@ -17,7 +17,7 @@ module Paxos {
 
   assume _ = and {
       Quorum.forall(Q => Q.subseteq(Acceptor)),
-      tuples(Quorum, Quorum).forall((Q1, Q2) => (Q1.intersect(Q2)) != Set())
+      tuples(Quorum, Quorum).forall( ((Q1, Q2)) => (Q1.intersect(Q2)) != Set())
   }
 
   val Ballot = Nat

@@ -310,13 +310,6 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString(input, '24')
     })
 
-    it('unpacks tuples', () => {
-      const input = `def mult(x, y) = (x * y)
-         val t = (3, 4)
-         mult(t)`
-      assertResultAsString(input, '12')
-    })
-
     it('uses named def instead of lambda', () => {
       const input = `def positive(x) = x > 0
          (-3).to(3).filter(positive)`

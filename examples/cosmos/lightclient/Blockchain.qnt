@@ -28,7 +28,7 @@ module Blockchain {
     // This is a simplified version of the Block data structure in the
     // actual implementation.
     pure def BlockHeaders = 
-        tuples(Heights, Int, Commits, powerset(AllNodes), powerset(AllNodes)).map((
+        tuples(Heights, Int, Commits, powerset(AllNodes), powerset(AllNodes)).map( ((
             // the block height
             height,
             // the block timestamp in some integer units
@@ -42,7 +42,7 @@ module Blockchain {
             VS,
             // the validators of the next block.
             // We store the next validators instead of the hash.
-            NextVS) => { 
+            NextVS)) => {
                 height: height, 
                 time: time,
                 lastCommit: lastCommit,
@@ -52,7 +52,7 @@ module Blockchain {
         )
 
     // A signed header is just a header together with a set of commits 
-    pure def LightBlocks = tuples(BlockHeaders, Commits).map((header, commits) => {header: header, Commits: commits})
+    pure def LightBlocks = tuples(BlockHeaders, Commits).map( ((header, commits)) => {header: header, Commits: commits})
 
     // Current global time in integer units as perceived by the reference chain
     var refClock: int
