@@ -211,10 +211,10 @@ describe('inferTypes', () => {
         [
           7n,
           {
-            location: 'Trying to unify (Set[t1], (t1) => t2) => Set[t2] and (int, (int) => int) => t3',
+            location: 'Trying to unify (Set[_t1], (_t1) => _t2) => Set[_t2] and (int, (int) => int) => _t3',
             children: [
               {
-                location: 'Trying to unify Set[t1] and int',
+                location: 'Trying to unify Set[_t1] and int',
                 message: "Couldn't unify set and int",
                 children: [],
               },
