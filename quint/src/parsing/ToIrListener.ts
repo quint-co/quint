@@ -24,7 +24,7 @@ import { compact, zipWith } from 'lodash'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
 import { QuintTypeDef } from '../ir/quintIr'
-import { zip } from '../../test/util'
+import { zip } from '../util'
 
 /**
  * An ANTLR4 listener that constructs QuintIr objects out of the abstract

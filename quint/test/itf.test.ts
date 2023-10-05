@@ -1,6 +1,7 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { quintExAreEqual, zip } from './util'
+import { quintExAreEqual } from './util'
+import { zip } from '../src/util'
 
 import { buildExpression } from './builders/ir'
 import { ItfTrace, ofItf, toItf } from '../src/itf'
