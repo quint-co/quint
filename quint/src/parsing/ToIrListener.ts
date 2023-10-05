@@ -934,43 +934,20 @@ export class ToIrListener implements QuintListener {
   // match(epxr, label1, (var1) => expr1, ..., labeln, (varn) => exprn, "_", (_) => exprm)
   exitMatchSumExpr(ctx: p.MatchSumExprContext) {
     const matchId = this.getId(ctx)
-    // We will have one expression for each match case, plus the
+
+    // We will have one expression for each match case, plus one for each case
     const exprs = popMany(this.exprStack, ctx._matchCase.length + 1)
+
     // The first expression is the one we are matching on
     // the syntax rules ensure that at least this expression is given
     const expr = exprs.shift()!
-    const gatherCase: (
-      acc: (QuintStr | QuintLambda)[],
-      matchCase: [QuintEx, p.MatchSumCaseContext]
-    ) => (QuintStr | QuintLambda)[] = (acc, [caseExpr, caseCtx]) => {
-      const caseId = this.getId(caseCtx)
-      let label: string
-      let params: QuintLambdaParameter[]
-      if (caseCtx._wildCardMatch) {
-        // a wildcard case: _ => expr
-        label = '_'
-        params = []
-      } else if (caseCtx._variantMatch) {
-        const variant = caseCtx._variantMatch
-        let name: string
-        if (variant._variantParam) {
-          name = variant._variantParam.text
-        } else {
-          // We either have a hole or no param specified, in which case our lambda only needs a hole
-          name = '_'
-        }
-        label = variant._variantLabel.text
-        params = [{ name, id: this.getId(variant) }]
-      } else {
-        throw new Error('impossible: either _wildCardMatch or _variantMatch must be present')
-      }
-      const labelStr: QuintStr = { id: caseId, kind: 'str', value: label }
-      const elim: QuintLambda = { id: caseId, kind: 'lambda', qualifier: 'def', expr: caseExpr, params }
-      return acc.concat([labelStr, elim])
-    }
 
-    // after  shifting off the match expr, the remaing exprs are in each case
-    const cases: (QuintStr | QuintLambda)[] = zip(exprs, ctx._matchCase).reduce(gatherCase, [])
+    // after shifting off the match expr, the remaing exprs are the cases of the match expression
+    const cases: (QuintStr | QuintLambda)[] = zip(exprs, ctx._matchCase).reduce(
+      (acc: (QuintStr | QuintLambda)[], matchCase: [QuintEx, p.MatchSumCaseContext]) =>
+        acc.concat(this.formMatchCase(matchCase)),
+      []
+    )
     const matchExpr: QuintBuiltinApp = {
       id: matchId,
       kind: 'app',
@@ -978,6 +955,40 @@ export class ToIrListener implements QuintListener {
       args: [expr].concat(cases),
     }
     this.exprStack.push(matchExpr)
+  }
+
+  // A helper for forming match expressions
+  //
+  // For a single case parsed `matchCase`, we form the pair of the variant label
+  // and the lambda that will eliminate the value wrapped carried in variant.
+  //
+  // E.g., `A(x) => <expr>` becomes `["A", (x) => <expr>]`
+  private formMatchCase([caseExpr, caseCtx]: [QuintEx, p.MatchSumCaseContext]): (QuintStr | QuintLambda)[] {
+    const caseId = this.getId(caseCtx)
+    let label: string
+    let params: QuintLambdaParameter[]
+    if (caseCtx._wildCardMatch) {
+      // a wildcard case: _ => expr
+      label = '_'
+      params = []
+    } else if (caseCtx._variantMatch) {
+      const variant = caseCtx._variantMatch
+      let name: string
+      if (variant._variantParam) {
+        name = variant._variantParam.text
+      } else {
+        // We either have a hole or no param specified, in which case our lambda only needs a hole
+        name = '_'
+      }
+      label = variant._variantLabel.text
+      params = [{ name, id: this.getId(variant) }]
+    } else {
+      throw new Error('impossible: either _wildCardMatch or _variantMatch must be present')
+    }
+    const labelStr: QuintStr = { id: caseId, kind: 'str', value: label }
+    const elim: QuintLambda = { id: caseId, kind: 'lambda', qualifier: 'def', expr: caseExpr, params }
+    return [labelStr, elim]
+    // return acc.concat([labelStr, elim])
   }
 
   /** ******************* translate types ********************************/
