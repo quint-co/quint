@@ -456,7 +456,7 @@ export class ToIrListener implements QuintListener {
     const poppedType = this.popType().value
     // Check if we have an accompanying type, and if not, then synthesize the
     // unit type.
-    //   const poppedType = this.popType().value
+    //
     // I.e., we interpret a variant `A` as `A({})`.
     const fieldType: QuintType = poppedType ? poppedType : unitType(this.getId(ctx))
     this.variantStack.push({ fieldName, fieldType })
@@ -1007,7 +1007,6 @@ export class ToIrListener implements QuintListener {
     const labelStr: QuintStr = { id: caseId, kind: 'str', value: label }
     const elim: QuintLambda = { id: caseId, kind: 'lambda', qualifier: 'def', expr: caseExpr, params }
     return [labelStr, elim]
-    // return acc.concat([labelStr, elim])
   }
 
   /** ******************* translate types ********************************/
