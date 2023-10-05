@@ -12,7 +12,7 @@
  * @module
  */
 
-import { QuintDef, QuintExport, QuintImport, QuintInstance, QuintLambdaParameter } from '../ir/quintIr'
+import { QuintDef, QuintExport, QuintImport, QuintInstance, QuintLambdaParameter, builtinOpCodes } from '../ir/quintIr'
 import { QuintType } from '../ir/quintTypes'
 
 /**
@@ -232,4 +232,6 @@ export const builtinNames = [
   'ite',
   'cross',
   'difference',
+  'match',
+  'variant',
 ]

@@ -75,7 +75,7 @@ export interface QuintRecordType extends WithOptionalId {
 }
 
 // A value of the unit type, i.e. an empty record
-export function unitValue(id: bigint): QuintRecordType {
+export function unitType(id: bigint): QuintRecordType {
   return {
     id,
     kind: 'rec',
@@ -83,7 +83,7 @@ export function unitValue(id: bigint): QuintRecordType {
   }
 }
 
-export function isTheUnit(r: QuintType): Boolean {
+export function isUnitType(r: QuintType): Boolean {
   return r.kind === 'rec' && r.fields.kind === 'row' && r.fields.fields.length === 0 && r.fields.other.kind === 'empty'
 }
 

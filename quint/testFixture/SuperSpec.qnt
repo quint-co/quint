@@ -226,14 +226,4 @@ module withConsts {
 
   // create an instance of Proto by using '*'
   // import Proto(*) as Inst2
-
-  // Match
-  type ENTRY_TYPE =
-      | { tag: "Cat", name: str, year: int }
-      | { tag: "Date", day: int, month: int, year: int }
-
-  def isValid(entry) =
-    entry match
-       | "Cat": cat => cat.name != ""
-       | "Date": date => date.year > 0
 }

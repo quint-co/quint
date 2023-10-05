@@ -919,6 +919,8 @@ export class CompilerVisitor implements IRVisitor {
 
         // builtin operators that are not handled by REPL
         case 'unionMatch':
+        case 'variant': // TODO: https://github.com/informalsystems/quint/issues/1033
+        case 'match': // TODO: https://github.com/informalsystems/quint/issues/1033
         case 'orKeep':
         case 'mustChange':
         case 'weakFair':
