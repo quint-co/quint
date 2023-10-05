@@ -250,6 +250,7 @@ export function walkType(visitor: IRVisitor, type: t.QuintType): void {
 
     case 'sum':
       visitor.enterSumType?.(type)
+      walkRow(visitor, type.fields)
       visitor.exitSumType?.(type)
       break
 

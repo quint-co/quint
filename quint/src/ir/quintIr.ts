@@ -131,7 +131,7 @@ export function isQuintBuiltin(app: QuintApp): app is QuintBuiltinApp {
 }
 
 // This should be the source of truth for all builtin opcodes
-const builtinOpCodes = [
+export const builtinOpCodes = [
   'List',
   'Map',
   'Rec',
@@ -187,6 +187,7 @@ const builtinOpCodes = [
   'length',
   'map',
   'mapBy',
+  'match',
   'mustChange',
   'neq',
   'next',
@@ -217,6 +218,7 @@ const builtinOpCodes = [
   'tuples',
   'union',
   'unionMatch',
+  'variant',
   'weakFair',
   'with',
 ] as const

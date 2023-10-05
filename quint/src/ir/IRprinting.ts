@@ -13,7 +13,7 @@
  */
 
 import { OpQualifier, QuintDeclaration, QuintDef, QuintEx, QuintModule, isAnnotatedDef } from './quintIr'
-import { QuintSumType, QuintType, Row, RowField, isTheUnit } from './quintTypes'
+import { QuintSumType, QuintType, Row, RowField, isUnitType } from './quintTypes'
 import { TypeScheme } from '../types/base'
 import { typeSchemeToString } from '../types/printing'
 
@@ -218,7 +218,7 @@ export function rowToString(r: Row): string {
 export function sumToString(s: QuintSumType): string {
   return s.fields.fields
     .map((f: RowField) => {
-      if (isTheUnit(f.fieldType)) {
+      if (isUnitType(f.fieldType)) {
         return `| ${f.fieldName}`
       } else {
         return `| ${f.fieldName}(${typeToString(f.fieldType)})`

@@ -187,7 +187,7 @@ export function prettyQuintType(type: QuintType): Doc {
       return group([text('{ '), prettyRow(type.fields), text('}')])
     }
     case 'sum': {
-      return group([text('{ '), prettySumRow(type.fields), text('}')])
+      return prettySumRow(type.fields)
     }
     case 'union': {
       const records = type.records.map(rec => {

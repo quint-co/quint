@@ -13,7 +13,7 @@ import {
   QuintTypeDef,
 } from '../src/ir/quintIr'
 import { QuintType } from '../src/ir/quintTypes'
-import lodash from 'lodash'
+import { zip } from '../src/util'
 import { ParserPhase3, parse } from '../src/parsing/quintParserFrontend'
 import { SourceLookupPath } from '../src/parsing/sourceResolver'
 import { newIdGenerator } from '../src/idGenerator'
@@ -51,20 +51,6 @@ export function collectIds(module: QuintModule): bigint[] {
 
   walkModule(visitor, module)
   return [...ids]
-}
-
-/**  A wrapper around lodash zip that ensures all zipped elements are defined
- *
- * Raises `Error` if the arrays are not the same length
- */
-export function zip<A, B>(a: A[], b: B[]): [A, B][] {
-  return lodash.zip(a, b).map(([x, y]) => {
-    if (x === undefined || y === undefined) {
-      throw new Error('Illegal arguments to zepWell: array lengths unequal')
-    } else {
-      return [x, y]
-    }
-  })
 }
 
 // Type predicate that tells us when a QuintEx is a scalar with a `value`

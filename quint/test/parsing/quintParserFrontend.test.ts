@@ -15,7 +15,6 @@ import { right } from '@sweet-monads/either'
 import { newIdGenerator } from '../../src/idGenerator'
 import { collectIds } from '../util'
 import { fileSourceResolver } from '../../src/parsing/sourceResolver'
-import { isTheUnit } from '../../src'
 
 // read a Quint file from the test data directory
 function readQuint(name: string): string {
@@ -65,7 +64,7 @@ function parseAndCompare(artifact: string): void {
     const { modules: modules2, sourceMap } = phase2Result.value
     const expectedIds = modules2.flatMap(m => collectIds(m)).sort()
     // Phase 1-2 succededed, check that the source map is correct
-    assert.sameDeepMembers(expectedIds, [...sourceMap.keys()].sort(), 'expected source map to contain all ids')
+    assert.sameDeepMembers([...sourceMap.keys()].sort(), expectedIds, 'expected source map to contain all ids')
 
     const expectedSourceMap = readJson(`${artifact}.map`)
     const sourceMapResult = JSONbig.parse(JSONbig.stringify(compactSourceMap(sourceMap)))
@@ -131,24 +130,11 @@ describe('parsing', () => {
   })
 
   it('parses sum types', () => {
-    const mod = `
-    module SumTypes {
-      type T =
-        | A
-        | B(int)
-    }
-    `
-    const result = parsePhase1fromText(newIdGenerator(), mod, 'test')
-    assert(result.isRight())
-    const typeDef = result.value.modules[0].declarations[0]
-    assert(typeDef.kind === 'typedef')
-    const sumType = typeDef.type!
-    assert(sumType.kind === 'sum')
-    const [variantA, variantB] = sumType.fields.fields
-    assert(variantA.fieldName === 'A')
-    assert(isTheUnit(variantA.fieldType))
-    assert(variantB.fieldName === 'B')
-    assert(variantB.fieldType.kind === 'int')
+    parseAndCompare('_1043sumTypeDecl')
+  })
+
+  it('parses match expressions', () => {
+    parseAndCompare('_1044matchExpression')
   })
 })
 
