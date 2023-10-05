@@ -954,7 +954,7 @@ export class ToIrListener implements QuintListener {
   exitMatchSumExpr(ctx: p.MatchSumExprContext) {
     const matchId = this.getId(ctx)
 
-    // We will have one expression for each match case, plus one for each case
+    // We will have one expression for the matched expression, plus one for each elimination case
     const exprs = popMany(this.exprStack, ctx._matchCase.length + 1)
 
     // The first expression is the one we are matching on
@@ -979,7 +979,7 @@ export class ToIrListener implements QuintListener {
   // A helper for forming match expressions
   //
   // For a single case parsed `matchCase`, we form the pair of the variant label
-  // and the lambda that will eliminate the value wrapped carried in variant.
+  // and the lambda that will eliminate the value carried by the variant.
   //
   // E.g., `A(x) => <expr>` becomes `["A", (x) => <expr>]`
   private formMatchCase([caseExpr, caseCtx]: [QuintEx, p.MatchSumCaseContext]): (QuintStr | QuintLambda)[] {
