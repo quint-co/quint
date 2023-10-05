@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- Error messages for `val` vs `def` and `pure val` vs `pure def` errors are clearer (#1208)
+
 ### Deprecated
 ### Removed
 ### Fixed
