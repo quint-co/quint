@@ -487,7 +487,7 @@ module ics23pbt {
   // including '32' for hash headers.
   val Byte = 0.to(3).union(Set(32))
 
-  val toWord(m) =
+  def toWord(m) =
     m.keys().fold([], (l, i) => l.append(m.get(i)))
 
   action genKey =
