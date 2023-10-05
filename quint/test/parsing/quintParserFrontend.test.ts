@@ -64,7 +64,7 @@ function parseAndCompare(artifact: string): void {
     const { modules: modules2, sourceMap } = phase2Result.value
     const expectedIds = modules2.flatMap(m => collectIds(m)).sort()
     // Phase 1-2 succededed, check that the source map is correct
-    assert.sameDeepMembers(expectedIds, [...sourceMap.keys()].sort(), 'expected source map to contain all ids')
+    assert.sameDeepMembers([...sourceMap.keys()].sort(), expectedIds, 'expected source map to contain all ids')
 
     const expectedSourceMap = readJson(`${artifact}.map`)
     const sourceMapResult = JSONbig.parse(JSONbig.stringify(compactSourceMap(sourceMap)))
