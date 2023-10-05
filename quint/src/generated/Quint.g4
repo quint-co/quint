@@ -174,7 +174,7 @@ expr:           // apply a built-in operator via the dot notation
         |       '{' expr '}'                                        # braces
         ;
 
-// match e { A(a) => e1 | B => e2 | C(_)}
+// match e { A(a) => e1 | B => e2 | C(_) => e3 | ... | _ => en }
 matchSumExpr: MATCH expr '{' '|'? matchCase+=matchSumCase ('|' matchCase+=matchSumCase)* '}' ;
 matchSumCase: (variantMatch=matchSumVariant | wildCardMatch='_') '=>' expr ;
 matchSumVariant
