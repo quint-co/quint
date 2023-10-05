@@ -390,9 +390,29 @@ export class ToIrListener implements QuintListener {
       type,
     }
 
-    // Generate all the variant constructors
-    // a variant constructor is an operator that injects an exprssion
+    // Generate all the variant constructors implied by a variant type definition
+    // a variant constructor is an operator that injects an expression
     // into the sum type by wrapping it in a label
+    //
+    // E.g., given the type definition
+    //
+    // ```
+    // type T = A(int) | B
+    // ```
+    //
+    // We will generate
+    //
+    // ```
+    // def A(__AParam) = variant("A", __AParam)
+    // val B = {}
+    // ```
+    //
+    // Allowing users to write:
+    //
+    // ```
+    // val a: T = A(42)
+    // val b: T = B
+    // ```
     const constructors: QuintOpDef[] = zip(fields, ctx.typeSumVariant()).map(
       ([{ fieldName, fieldType }, variantCtx]) => {
         // Mangle the parameter name to avoid clashes
@@ -404,15 +424,14 @@ export class ToIrListener implements QuintListener {
         let qualifier: OpQualifier
 
         if (isUnitType(fieldType)) {
-          // The nullary variant constructor is actual
-          // variant pairint a label with the unit.
+          // The nullary variant constructor is actualy
+          // a variant pairing a label with the unit.
           params = []
           expr = unitValue(this.getId(variantCtx._sumLabel))
           // Its a `val` cause it takes no arguments
           qualifier = 'val'
         } else {
-          // Oherwise we will build constructor that takes one parameter
-          // and wraps it in a `variaint`
+          // Otherwise we will build a constructor that takes one parameter
           params = [{ id: this.getId(variantCtx.type()!), name: paramName }]
           expr = { kind: 'name', name: paramName, id: this.getId(variantCtx._sumLabel) }
           qualifier = 'def'
