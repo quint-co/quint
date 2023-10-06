@@ -29,7 +29,7 @@ import {
 import { QuintDeclaration, QuintEx, isAnnotatedDef } from './ir/quintIr'
 import { ExecutionFrame } from './runtime/trace'
 import { zerog } from './idGenerator'
-import { ConcreteFixedRow, QuintType, Row } from './ir/quintTypes'
+import { ConcreteFixedRow, ConcreteRow, isUnitType, QuintType, Row } from './ir/quintTypes'
 import { TypeScheme } from './types/base'
 import { canonicalTypeScheme } from './types/printing'
 import { declarationToString, qualifierToString, rowToString } from './ir/IRprinting'
@@ -220,7 +220,7 @@ function prettyRow(r: Row, showFieldName = true): Doc {
   return group([nest('  ', [linebreak, docJoin([text(','), line()], fieldsDocs)]), ...otherDoc, linebreak])
 }
 
-function prettySumRow(r: ConcreteFixedRow): Doc {
+function prettySumRow(r: ConcreteRow): Doc {
   const row = simplifyRow(r)
   const fields = row.kind === 'row' ? row.fields : []
   const other = row.kind === 'row' ? row.other : undefined
@@ -228,12 +228,15 @@ function prettySumRow(r: ConcreteFixedRow): Doc {
   const fieldsDocs = fields.map(f => {
     if (other?.kind === 'empty') {
       return group(text(f.fieldName))
+    } else if (isUnitType(f.fieldType)) {
+      // Print the variant `Foo({})`
+      return group([text(`${f.fieldName}`)])
     } else {
       return group([text(`${f.fieldName}(`), prettyQuintType(f.fieldType), text(')')])
     }
   })
 
-  return group([nest('  ', [linebreak, docJoin([text(','), line()], fieldsDocs)]), linebreak])
+  return group([nest('  ', [linebreak, docJoin([text('|'), line()], fieldsDocs)]), linebreak])
 }
 
 /**
