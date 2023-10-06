@@ -14,6 +14,7 @@
 
 import JSONbig from 'json-bigint'
 import lodash from 'lodash'
+import { Maybe, just, none } from '@sweet-monads/maybe'
 
 /** Add this at the end of a switch statement or if/then sequence to enforce exhaustiveness checking
  *
@@ -43,4 +44,27 @@ export function zip<A, B>(a: A[], b: B[]): [A, B][] {
       return [x, y]
     }
   })
+}
+
+/** `findMap(xs)` is `just(y)` if there is an `x` in `xs` for which `f(x)` is `just(y)`
+ * otherwise, it is `none`
+ *
+ * This is like `Array.prototype.find`, except that it works on any iterable and
+ * enables trasforming the found value.
+ *
+ * Example:
+ *
+ * ```
+ * const result = findMap([1,2,3], (x) => x % 2 === 0 ? just(x) : none<int>())
+ * lodash.isEqual(result, just(2))
+ * ```
+ * */
+export function findMap<X, Y>(xs: Iterable<X>, f: (x: X) => Maybe<Y>): Maybe<Y> {
+  for (const x of xs) {
+    const maybeY = f(x)
+    if (maybeY.isJust()) {
+      return maybeY
+    }
+  }
+  return none<Y>()
 }
