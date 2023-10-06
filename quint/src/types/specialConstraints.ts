@@ -181,6 +181,15 @@ export function itemConstraints(
   return right([constraint])
 }
 
+// The rule for the `variant` operator:
+//
+//   Γ ⊢ e: (t, c)            Γ ⊢ 'l' : str                v is fresh
+// --------------------------------------------------------------------
+//    Γ ⊢ variant('l', e) : (s, c /\ s ~ < l : t | v > /\ isDefined(s))
+//
+// Where < ... > is a row-based variant.
+//
+// This rule is explained in /doc/rfcs/rfc001-sum-types/rfc001-sum-types.org
 export function variantConstraints(
   id: bigint,
   args: [QuintEx, QuintType][],
