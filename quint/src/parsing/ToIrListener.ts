@@ -17,7 +17,16 @@ import {
   QuintOpDef,
   QuintStr,
 } from '../ir/quintIr'
-import { ConcreteFixedRow, QuintSumType, QuintType, Row, RowField, isUnitType, unitType } from '../ir/quintTypes'
+import {
+  ConcreteFixedRow,
+  QuintSumType,
+  QuintType,
+  Row,
+  RowField,
+  isUnitType,
+  unitType,
+  QuintConstType,
+} from '../ir/quintTypes'
 import { strict as assert } from 'assert'
 import { SourceMap } from './quintParserFrontend'
 import { compact, zipWith } from 'lodash'
@@ -382,6 +391,7 @@ export class ToIrListener implements QuintListener {
     const fields: RowField[] = popMany(this.variantStack, this.variantStack.length)
     const row: ConcreteFixedRow = { kind: 'row', fields, other: { kind: 'empty' } }
     const type: QuintSumType = { id, kind: 'sum', fields: row }
+    const typeName: QuintConstType = { id, kind: 'const', name }
     const def: QuintTypeDef = {
       id: id,
       name,
@@ -418,32 +428,56 @@ export class ToIrListener implements QuintListener {
         // This shouldn't be visible to users
         const paramName = `__${fieldName}Param`
 
-        let params: QuintLambdaParameter[]
-        let expr: QuintEx
         let qualifier: OpQualifier
+        let expr: QuintEx
+        let typeAnnotation: QuintType
 
+        const label: QuintStr = { id: this.getId(variantCtx), kind: 'str', value: fieldName }
         if (isUnitType(fieldType)) {
+          // Its a `val` cause it has no parameters
+          //
+          // E.g., for B we will produce
+          //
+          // ```
+          // val B: T = variant("B", {})
+          // ```
+          qualifier = 'val'
+
           // The nullary variant constructor is actualy
           // a variant pairing a label with the unit.
-          params = []
-          expr = unitValue(this.getId(variantCtx._sumLabel))
-          // Its a `val` cause it takes no arguments
-          qualifier = 'val'
+          const wrappedExpr = unitValue(this.getId(variantCtx._sumLabel))
+
+          typeAnnotation = typeName
+          expr = {
+            id: this.getId(variantCtx),
+            kind: 'app',
+            opcode: 'variant',
+            args: [label, wrappedExpr],
+          }
         } else {
           // Otherwise we will build a constructor that takes one parameter
-          params = [{ id: this.getId(variantCtx.type()!), name: paramName }]
-          expr = { kind: 'name', name: paramName, id: this.getId(variantCtx._sumLabel) }
+          //
+          // E.g., for A(int) we will produce a
+          //
+          // ```
+          // def A(x:int): T = variant("A", x)
+          // ```
           qualifier = 'def'
+
+          const params = [{ id: this.getId(variantCtx.type()!), name: paramName }]
+          const wrappedExpr: QuintName = { kind: 'name', name: paramName, id: this.getId(variantCtx._sumLabel) }
+          const variant: QuintBuiltinApp = {
+            id: this.getId(variantCtx),
+            kind: 'app',
+            opcode: 'variant',
+            args: [label, wrappedExpr],
+          }
+
+          typeAnnotation = { kind: 'oper', args: [fieldType], res: typeName }
+          expr = { id: this.getId(variantCtx), kind: 'lambda', params, qualifier, expr: variant }
         }
-        const label: QuintStr = { id: this.getId(variantCtx), kind: 'str', value: fieldName }
-        const variant: QuintBuiltinApp = {
-          id: this.getId(variantCtx),
-          kind: 'app',
-          opcode: 'variant',
-          args: [label, expr],
-        }
-        const lam: QuintLambda = { id: this.getId(variantCtx), kind: 'lambda', params, qualifier, expr: variant }
-        return { id: this.getId(variantCtx), kind: 'def', name: fieldName, qualifier, expr: lam }
+
+        return { id: this.getId(variantCtx), kind: 'def', name: fieldName, qualifier, typeAnnotation, expr }
       }
     )
 
