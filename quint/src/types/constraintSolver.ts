@@ -60,6 +60,23 @@ export function solveConstraint(
           .chain(newSubs => result.map(s => compose(table, newSubs, s)))
       }, right([]))
     }
+    case 'isDefined': {
+      const definedType = [...table.values()].find(def => {
+        return def.kind === 'typedef' && def.type && unify(table, def.type, constraint.type).isRight()
+      })
+      if (definedType) {
+        return right([])
+      } else {
+        errors.set(
+          constraint.sourceId,
+          buildErrorLeaf(
+            `Looking for defined type unifying with ${typeToString(constraint.type)}`,
+            'Expected type is not defined'
+          )
+        )
+        return left(errors)
+      }
+    }
     case 'empty':
       return right([])
   }
@@ -103,7 +120,7 @@ export function unify(table: LookupTable, t1: QuintType, t2: QuintType): Either<
     return unifyWithAlias(table, t1, t2)
   } else if (t2.kind === 'const') {
     return unifyWithAlias(table, t2, t1)
-  } else if (t1.kind === 'rec' && t2.kind === 'rec') {
+  } else if ((t1.kind === 'rec' && t2.kind === 'rec') || (t1.kind === 'sum' && t2.kind === 'sum')) {
     return unifyRows(table, t1.fields, t2.fields).mapLeft(error => buildErrorTree(location, error))
   } else if ((t1.kind === 'union' && t2.kind === 'rec') || (t1.kind === 'rec' && t2.kind === 'union')) {
     // FIXME: Implement discriminated unions and remove this hack, see https://github.com/informalsystems/quint/issues/244
