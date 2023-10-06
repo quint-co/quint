@@ -5,7 +5,7 @@ import { parseRowOrThrow, parseTypeOrThrow } from '../../src/types/parser'
 import { Constraint } from '../../src/types/base'
 import { substitutionsToString } from '../../src/types/printing'
 import { Substitutions } from '../../src/types/substitutions'
-import { Row } from '../../src/ir/quintTypes'
+import { Row, sumType, unitType } from '../../src/ir/quintTypes'
 import { errorTreeToString } from '../../src/errorTree'
 import { LookupTable } from '../../src/names/base'
 
@@ -15,6 +15,18 @@ const table: LookupTable = new Map([
   // An uniterpreted type (id 2n)
   [4n, { kind: 'typedef', name: 'MY_UNINTERPRETED', id: 2n }],
   [5n, { kind: 'typedef', name: 'MY_UNINTERPRETED', id: 2n }],
+  [
+    6n,
+    {
+      kind: 'typedef',
+      name: 'SumType',
+      id: 7n,
+      type: sumType([
+        ['A', { kind: 'int' }],
+        ['B', { kind: 'str' }],
+      ]),
+    },
+  ],
 ])
 
 describe('solveConstraint', () => {
@@ -54,6 +66,36 @@ describe('solveConstraint', () => {
 
     assert.isTrue(result.isRight())
     result.map(subs => assert.deepEqual(substitutionsToString(subs), '[ a |-> int, b |-> int ]'))
+  })
+
+  it('solves isDefined constraint when unifiable type is defined', () => {
+    const constraint: Constraint = {
+      kind: 'isDefined',
+      type: sumType([['A', { kind: 'int' }]], 'a'),
+      sourceId: 1n,
+    }
+
+    const result = solveConstraint(table, constraint)
+
+    assert.isTrue(result.isRight())
+    result.map(subs => assert.deepEqual(substitutionsToString(subs), '[ a |-> { B: str } ]'))
+  })
+
+  it('isDefined constraint fails when type is not defined', () => {
+    const constraint: Constraint = {
+      kind: 'isDefined',
+      type: sumType([['NotDefined', { kind: 'int' }]], 'a'),
+      sourceId: 1n,
+    }
+
+    const result = solveConstraint(table, constraint)
+
+    assert.isTrue(result.isLeft())
+    result.mapLeft(errs => {
+      const err = errs.get(1n)
+      assert.deepEqual(err?.location, 'Looking for defined type unifying with (NotDefined(int))')
+      assert.deepEqual(err?.message, 'Expected type is not defined')
+    })
   })
 
   it('solves empty constraint', () => {
@@ -191,6 +233,33 @@ describe('unify', () => {
     assert.isTrue(result.isRight())
     result.map(subs => assert.deepEqual(substitutionsToString(subs), '[ a |-> int, b |-> bool ]'))
   })
+
+  it('unifies sum-type', () => {
+    // We do not provide
+    const result = unify(
+      table,
+      sumType([
+        ['A', { kind: 'var', name: 'a' }],
+        ['B', { kind: 'int' }],
+        ['C', unitType(0n)],
+      ]),
+      sumType([
+        ['C', unitType(0n)],
+        ['A', { kind: 'str' }],
+        ['B', { kind: 'var', name: 'b' }],
+      ])
+    )
+
+    assert.isTrue(result.isRight())
+    result.map(subs => assert.deepEqual(substitutionsToString(subs), '[ a |-> str, b |-> int ]'))
+  })
+
+  // it('unifies sum type with open row', () => {
+  //   const result = unify(table, parseTypeOrThrow('A(a)'), parseTypeOrThrow('A(int) | B(str)'))
+
+  //   assert.isTrue(result.isRight())
+  //   result.map(subs => assert.deepEqual(substitutionsToString(subs), '[]'))
+  // })
 
   it("returns error when variable occurs in the other type's body", () => {
     const result = unify(table, parseTypeOrThrow('a'), parseTypeOrThrow('Set[a]'))

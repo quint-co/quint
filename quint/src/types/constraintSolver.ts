@@ -61,21 +61,24 @@ export function solveConstraint(
       }, right([]))
     }
     case 'isDefined': {
-      const definedType = [...table.values()].find(def => {
-        return def.kind === 'typedef' && def.type && unify(table, def.type, constraint.type).isRight()
-      })
-      if (definedType) {
-        return right([])
-      } else {
-        errors.set(
-          constraint.sourceId,
-          buildErrorLeaf(
-            `Looking for defined type unifying with ${typeToString(constraint.type)}`,
-            'Expected type is not defined'
-          )
-        )
-        return left(errors)
+      for (const def of table.values()) {
+        if (def.kind === 'typedef' && def.type) {
+          const subst = unify(table, def.type, constraint.type)
+          if (subst.isRight()) {
+            // We found a defined type unifying with the given schema
+            // (unwrap the vaule since the left of `unify` doesn't match our needs and isn't relevent)
+            return right(subst.unwrap())
+          }
+        }
       }
+      errors.set(
+        constraint.sourceId,
+        buildErrorLeaf(
+          `Looking for defined type unifying with ${typeToString(constraint.type)}`,
+          'Expected type is not defined'
+        )
+      )
+      return left(errors)
     }
     case 'empty':
       return right([])

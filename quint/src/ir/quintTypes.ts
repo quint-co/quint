@@ -92,11 +92,7 @@ export interface QuintSumType extends WithOptionalId {
   fields: ConcreteRow
 }
 
-export function sumType(
-  labelTypePairs: [string, QuintType][],
-  rowVar: string | undefined,
-  id: bigint | undefined
-): QuintSumType {
+export function sumType(labelTypePairs: [string, QuintType][], rowVar?: string, id?: bigint): QuintSumType {
   const fields = labelTypePairs.map(([fieldName, fieldType]) => ({ fieldName, fieldType }))
   const other: Row = rowVar ? { kind: 'var', name: rowVar } : { kind: 'empty' }
   return { kind: 'sum', fields: { kind: 'row', fields, other }, id }
