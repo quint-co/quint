@@ -226,6 +226,10 @@ const otherOperators = [
     name: 'ite',
     effect: parseAndQuantify('(Read[r1], Read[r2] & Update[u], Read[r3] & Update[u]) => Read[r1, r2, r3] & Update[u]'),
   },
+  {
+    name: 'variant',
+    effect: parseAndQuantify('(Pure, Read[r] & Update[u]) => Read[r] & Update[u]'),
+  },
 ]
 
 const multipleAritySignatures: [QuintBuiltinOpcode, Signature][] = [
