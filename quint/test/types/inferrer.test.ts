@@ -4,7 +4,6 @@ import { TypeInferenceResult, TypeInferrer } from '../../src/types/inferrer'
 import { typeSchemeToString } from '../../src/types/printing'
 import { errorTreeToString } from '../../src/errorTree'
 import { parseMockedModule } from '../util'
-import { moduleToString } from '../../src'
 
 describe('inferTypes', () => {
   function inferTypesForDefs(defs: string[]): TypeInferenceResult {

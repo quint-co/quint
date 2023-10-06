@@ -14,7 +14,7 @@
 
 import JSONbig from 'json-bigint'
 import lodash from 'lodash'
-import { Maybe, just, none } from '@sweet-monads/maybe'
+import { Maybe, none } from '@sweet-monads/maybe'
 
 /** Add this at the end of a switch statement or if/then sequence to enforce exhaustiveness checking
  *

@@ -19,13 +19,13 @@ import {
 } from '../ir/quintIr'
 import {
   ConcreteFixedRow,
+  QuintConstType,
   QuintSumType,
   QuintType,
   Row,
   RowField,
   isUnitType,
   unitType,
-  QuintConstType,
 } from '../ir/quintTypes'
 import { strict as assert } from 'assert'
 import { SourceMap } from './quintParserFrontend'

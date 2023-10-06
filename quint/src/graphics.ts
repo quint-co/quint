@@ -29,7 +29,7 @@ import {
 import { QuintDeclaration, QuintEx, isAnnotatedDef } from './ir/quintIr'
 import { ExecutionFrame } from './runtime/trace'
 import { zerog } from './idGenerator'
-import { ConcreteFixedRow, ConcreteRow, isUnitType, QuintType, Row } from './ir/quintTypes'
+import { ConcreteRow, QuintType, Row, isUnitType } from './ir/quintTypes'
 import { TypeScheme } from './types/base'
 import { canonicalTypeScheme } from './types/printing'
 import { declarationToString, qualifierToString, rowToString } from './ir/IRprinting'

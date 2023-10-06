@@ -13,7 +13,7 @@
  */
 
 import { parseTypeOrThrow } from './parser'
-import { sumType, typeNames } from '../ir/quintTypes'
+import { typeNames } from '../ir/quintTypes'
 import { Signature, TypeScheme } from './base'
 import { times } from 'lodash'
 import { QuintBuiltinOpcode } from '../ir/quintIr'
