@@ -1024,26 +1024,4 @@ module builtin {
   // /// run test = (x' = 0).then(any { x' = 1, x' = 2 }).then(assert(or { x == 1, x == 2 }))
   // /// ```
   // pure def actionAny(a*): (bool*) => bool
-
-  // /// `unionMatch(m, (t0, e0), ..., (tn, en))` is the expression `ei` when `ti` is the tag of `m`.
-  // ///
-  // /// The behavior of this operator is undefined if the tag isn't one of the `ti`s.
-  // ///
-  // /// This is the pattern matching operator.
-  // ///
-  // /// Can also be written as `m match | t0: e0, ..., | tn: en }`.
-  // ///
-  // /// ### Examples
-  // ///
-  // /// ```
-  // /// pure val total(w) = w match
-  // ///   // this pattern binds some_w to the "some" version of w, if w.tag == "some"
-  // ///   | "some": some_w => some_w.value
-  // ///   // this pattern
-  // ///   | "none": _ => 0
-  // ///
-  // /// assert(total({ tag = "some", value = 1 }) == 1)
-  // /// assert(total({ tag = "none" }) == 0)
-  // /// ```
-  // pure def unionMatch(m, (t, e)*): (a, (b, ((b) => c))*) => c
 }

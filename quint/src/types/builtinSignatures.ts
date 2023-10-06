@@ -13,7 +13,7 @@
  */
 
 import { parseTypeOrThrow } from './parser'
-import { typeNames } from '../ir/quintTypes'
+import { sumType, typeNames } from '../ir/quintTypes'
 import { Signature, TypeScheme } from './base'
 import { times } from 'lodash'
 import { QuintBuiltinOpcode } from '../ir/quintIr'
@@ -22,9 +22,13 @@ export function getSignatures(): Map<string, Signature> {
   return new Map<string, Signature>(fixedAritySignatures.concat(multipleAritySignatures))
 }
 
-// Signatures for record and tuple related operators cannot be precisely
-// defined with this syntax. Their types are handled directly with constraints
-// in the specialConstraints.ts file
+// NOTE: Signatures operations over products (records and tuples) and sums
+// (unums/disjoint unions/variants) cannot be precisely defined with this
+// syntax, because they are "exotic", in the senes that relect basic language
+// constructions that cannot be represented  in the type system of the language
+// itself.
+//
+// Their types are handled directly with constraints in the specialConstraints.ts file.
 
 const literals = [
   { name: 'Nat', type: 'Set[int]' },
@@ -130,7 +134,6 @@ function uniformArgsWithResult(argsType: string, resultType: string): Signature 
   }
 }
 
-// TODO: check arity conditions, see issue https://github.com/informalsystems/quint/issues/169
 const multipleAritySignatures: [QuintBuiltinOpcode, Signature][] = [
   ['List', uniformArgsWithResult('a', 'List[a]')],
   ['Set', uniformArgsWithResult('a', 'Set[a]')],
@@ -140,7 +143,7 @@ const multipleAritySignatures: [QuintBuiltinOpcode, Signature][] = [
   ['or', uniformArgsWithResult('bool', 'bool')],
   ['actionAny', uniformArgsWithResult('bool', 'bool')],
   [
-    'unionMatch',
+    'match',
     (arity: number) => {
       const args = times((arity - 1) / 2, () => 'str, (a) => b')
       return parseAndQuantify(`(a, ${args.join(', ')}) => b`)
