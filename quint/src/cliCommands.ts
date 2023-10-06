@@ -210,35 +210,30 @@ export async function parse(loaded: LoadedStage): Promise<CLIProcedure<ParsedSta
       const mainPath = resolver.lookupPath(dirname(path), basename(path))
       return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
     })
-    .mapLeft(newErrs => {
-      const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
-      return { msg: 'parsing failed', stage: { ...parsing, errors } }
-    })
     .chain(phase2Data => {
       if (args.sourceMap) {
         // Write source map to the specified file
         writeToJson(args.sourceMap, compactSourceMap(phase2Data.sourceMap))
       }
-      return parsePhase3importAndNameResolution(phase2Data).mapLeft(newErrs => {
-        const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
-        return { msg: 'parsing failed', stage: { ...parsing, errors } }
-      })
+      return parsePhase3importAndNameResolution(phase2Data)
     })
     .chain(phase3Data => {
-      return parsePhase4toposort(phase3Data).mapLeft(newErrs => {
-        const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
-        return { msg: 'parsing failed', stage: { ...parsing, errors } }
-      })
+      return parsePhase4toposort(phase3Data)
     })
     .map(phase4Data => ({ ...parsing, ...phase4Data, idGen }))
+    .mapLeft(({ errors, sourceMap }) => {
+      const newErrorMessages = errors.map(mkErrorMessage(sourceMap))
+      const errorMessages = parsing.errors ? parsing.errors.concat(newErrorMessages) : newErrorMessages
+      return { msg: 'parsing failed', stage: { ...parsing, errors: errorMessages } }
+    })
 }
 
-export function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: [bigint, QuintError]) => ErrorMessage {
-  return ([key, value]) => {
-    const loc = sourceMap.get(key)!
+export function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: QuintError) => ErrorMessage {
+  return error => {
+    const loc = error.reference ? sourceMap.get(error.reference) : undefined
     return {
-      explanation: quintErrorToString(value),
-      locs: [loc],
+      explanation: quintErrorToString(error),
+      locs: loc ? [loc] : [],
     }
   }
 }
@@ -256,8 +251,7 @@ export async function typecheck(parsed: ParsedStage): Promise<CLIProcedure<Typec
   if (errorMap.length === 0) {
     return right({ ...typechecking, ...result })
   } else {
-    const errorLocator = mkErrorMessage(sourceMap)
-    const errors = Array.from(errorMap, errorLocator)
+    const errors = errorMap.map(([_, error]) => mkErrorMessage(sourceMap)(error))
     return cliErr('typechecking failed', { ...typechecking, errors })
   }
 }
@@ -604,7 +598,8 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
   // while solving #1052.
   const resolutionResult = parsePhase3importAndNameResolution(prev)
   if (resolutionResult.isLeft()) {
-    return cliErr('name resolution failed', { ...verifying, errors: resolutionResult.value })
+    const errors = resolutionResult.value.errors.map(mkErrorMessage(prev.sourceMap))
+    return cliErr('name resolution failed', { ...verifying, errors })
   }
 
   verifying.table = resolutionResult.unwrap().table
@@ -698,9 +693,10 @@ export async function docs(loaded: LoadedStage): Promise<CLIProcedure<Documentat
   const { sourceCode, path } = loaded
   const parsing = { ...loaded, stage: 'documentation' as stage }
   return parsePhase1fromText(newIdGenerator(), sourceCode, path)
-    .mapLeft(newErrs => {
-      const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
-      return { msg: 'parsing failed', stage: { ...parsing, errors } }
+    .mapLeft(({ errors, sourceMap }) => {
+      const newErrorMessages = errors.map(mkErrorMessage(sourceMap))
+      const errorMessages = parsing.errors ? parsing.errors.concat(newErrorMessages) : newErrorMessages
+      return { msg: 'parsing failed', stage: { ...parsing, errors: errorMessages } }
     })
     .map(phase1Data => {
       const allEntries: [string, Map<string, DocumentationEntry>][] = phase1Data.modules.map(module => {

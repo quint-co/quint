@@ -28,6 +28,8 @@ import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { SourceLookupPath } from '../parsing/sourceResolver'
 import { Rng } from '../rng'
 import { flattenModules } from '../flattening/fullFlattener'
+import { SourceMap } from 'module'
+import { QuintError } from '../quintError'
 
 /**
  * The name of the shadow variable that stores the last found trace.
@@ -46,13 +48,13 @@ export interface CompilationContext {
   // the lookup table to query for values and definitions
   lookupTable: LookupTable
   // messages that are produced during parsing
-  syntaxErrors: ErrorMessage[]
+  syntaxErrors: QuintError[]
   // messages that are produced by static analysis
-  analysisErrors: ErrorMessage[]
+  analysisErrors: QuintError[]
   // messages that are produced during compilation
-  compileErrors: ErrorMessage[]
+  compileErrors: QuintError[]
   // messages that get populated as the compiled code is executed
-  getRuntimeErrors: () => ErrorMessage[]
+  getRuntimeErrors: () => QuintError[]
   // The state of pre-compilation phases.
   compilationState: CompilationState
   // The state of the compiler visitor.
@@ -94,17 +96,18 @@ export function newCompilationState(): CompilationState {
   }
 }
 
-export function errorContextFromMessage(listener: ExecutionListener): (errors: ErrorMessage[]) => CompilationContext {
-  const compilationState = newCompilationState()
+export function errorContextFromMessage(
+  listener: ExecutionListener
+): (_: { errors: QuintError[]; sourceMap: SourceMap }) => CompilationContext {
   const evaluationState = newEvaluationState(listener)
-  return (errs: ErrorMessage[]) => {
+  return ({ errors, sourceMap }) => {
     return {
       lookupTable: new Map(),
-      syntaxErrors: errs,
+      syntaxErrors: errors,
       analysisErrors: [],
       compileErrors: [],
       getRuntimeErrors: () => [],
-      compilationState,
+      compilationState: { ...newCompilationState(), sourceMap },
       evaluationState,
     }
   }
@@ -154,9 +157,9 @@ export function compile(
     lookupTable,
     syntaxErrors: [],
     analysisErrors: [],
-    compileErrors: visitor.getCompileErrors().map(fromIrErrorMessage(sourceMap)),
+    compileErrors: visitor.getCompileErrors(),
     getRuntimeErrors: () => {
-      return visitor.getRuntimeErrors().splice(0).map(fromIrErrorMessage(sourceMap))
+      return visitor.getRuntimeErrors().splice(0)
     },
     compilationState,
     evaluationState: visitor.getEvaluationState(),
