@@ -1,7 +1,6 @@
 import {
   IdGenerator,
   ParserPhase3,
-  QuintError,
   fileSourceResolver,
   parsePhase1fromText,
   parsePhase2sourceResolution,
@@ -10,7 +9,7 @@ import {
 } from '@informalsystems/quint'
 import { basename, dirname } from 'path'
 import { URI } from 'vscode-uri'
-import { assembleDiagnostic } from './reporting'
+import { diagnosticsFromErrors } from './reporting'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 
 export async function parseDocument(idGenerator: IdGenerator, textDocument: TextDocument): Promise<ParserPhase3> {
@@ -32,13 +31,7 @@ export async function parseDocument(idGenerator: IdGenerator, textDocument: Text
       })
       .chain(phase2Data => parsePhase3importAndNameResolution(phase2Data))
       .chain(phase3Data => parsePhase4toposort(phase3Data))
-      .mapLeft(messages =>
-        messages.flatMap(msg => {
-          // TODO: Parse errors should be QuintErrors
-          const error: QuintError = { code: 'QNT000', message: msg.explanation, reference: 0n, data: {} }
-          return msg.locs.map(loc => assembleDiagnostic(error, loc))
-        })
-      )
+      .mapLeft(({ errors, sourceMap }) => diagnosticsFromErrors(errors, sourceMap))
 
     if (result.isRight()) {
       return new Promise((resolve, _reject) => resolve(result.value))
