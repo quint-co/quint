@@ -15,6 +15,7 @@
  */
 
 import { Either, chain, left, right } from '@sweet-monads/either'
+import { ErrorMessage } from './ErrorMessage'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'
@@ -36,7 +37,6 @@ import { verbosity } from './verbosity'
 
 import type { Buffer } from 'buffer'
 import type { PackageDefinition as ProtoPackageDefinition } from '@grpc/proto-loader'
-import { QuintError } from './quintError'
 
 const APALACHE_SERVER_URI = 'localhost:8822'
 const APALACHE_VERSION_TAG = '0.42.0'
@@ -46,7 +46,7 @@ const APALACHE_VERSION_TAG = '0.42.0'
 // The structure used to report errors
 type VerifyError = {
   explanation: string
-  errors: QuintError[]
+  errors: ErrorMessage[]
   traces?: ItfTrace[]
 }
 
@@ -159,7 +159,7 @@ type ShaiPkg = {
 }
 
 // Helper to construct errors results
-function err<A>(explanation: string, errors: QuintError[] = [], traces?: ItfTrace[]): VerifyResult<A> {
+function err<A>(explanation: string, errors: ErrorMessage[] = [], traces?: ItfTrace[]): VerifyResult<A> {
   return left({ explanation, errors, traces })
 }
 

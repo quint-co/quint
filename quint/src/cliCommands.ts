@@ -678,8 +678,8 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
           }
         }
         return {
-          msg: err.errors.map(quintErrorToString).join('\n'),
-          stage: { ...verifying, status, errors: err.errors.map(mkErrorMessage(prev.sourceMap)), trace },
+          msg: err.explanation,
+          stage: { ...verifying, status, errors: err.errors, trace },
         }
       })
   })
