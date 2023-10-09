@@ -265,7 +265,7 @@ describe('repl ok', () => {
       |[Frame 0]
       |div(2, 0) => none
       |
-      |runtime error: error: Division by zero
+      |runtime error: error: [QNT503] Division by zero
       |div(2, 0)
       |                     ^^^^^
       |
@@ -385,7 +385,7 @@ describe('repl ok', () => {
     )
     const output = dedent(
       `>>> Set(Int)
-      |runtime error: error: Infinite set Int is non-enumerable
+      |runtime error: error: [QNT501] Infinite set Int is non-enumerable
       |Set(Int)
       |^^^^^^^^
       |
