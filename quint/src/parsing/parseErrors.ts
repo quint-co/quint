@@ -5,8 +5,14 @@ export function undercaseTypeError(id: bigint, name: string): QuintError {
     code: 'QNT007',
     message: 'type names must start with an uppercase letter',
     reference: id,
-    data: name[0].match('[A-Z]')
-      ? { fix: { kind: 'replace', original: name[0], replacement: name[0].toUpperCase() } }
+    data: name[0].match('[a-z]')
+      ? {
+          fix: {
+            kind: 'replace',
+            original: `type ${name[0]}`,
+            replacement: `type ${name[0].toUpperCase()}`,
+          },
+        }
       : {},
   }
 }
