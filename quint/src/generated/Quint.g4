@@ -145,7 +145,7 @@ expr:           // apply a built-in operator via the dot notation
         |       expr op=(GT | LT | GE | LE | NE | EQ) expr          # relations
         |       qualId '\'' ASGN expr                               # asgn
         |       expr '=' expr {
-                  const m = "QNT006: unexpected '=', did you mean '=='?"
+                  const m = "[QNT006] unexpected '=', did you mean '=='?"
                   this.notifyErrorListeners(m)
                 }                                                   # errorEq
                 // Boolean operators. Note that not(e) is just a normal call

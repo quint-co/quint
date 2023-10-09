@@ -14,7 +14,7 @@ export function undercaseTypeError(id: bigint, name: string): QuintError {
 export function tooManySpreadsError(id: bigint): QuintError {
   return {
     code: 'QNT012',
-    message: ' ... may be used once in { ...record, <fields> ',
+    message: '... may be used once in { ...record, <fields> ',
     reference: id,
     data: {},
   }
@@ -23,7 +23,7 @@ export function tooManySpreadsError(id: bigint): QuintError {
 export function differentTagsError(id: bigint, tag: string, otherTag: string): QuintError {
   return {
     code: 'QNT011',
-    message: `QNT011: Records in disjoint union have different tag fields: ${tag} and ${otherTag}`,
+    message: `Records in disjoint union have different tag fields: ${tag} and ${otherTag}`,
     reference: id,
     data: {},
   }
