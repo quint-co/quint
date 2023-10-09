@@ -32,7 +32,7 @@ import {
 import { formatError } from './errorReporter'
 import { Register } from './runtime/runtime'
 import { TraceRecorder, newTraceRecorder } from './runtime/trace'
-import { ErrorMessage, parseDefOrThrow, parseExpressionOrDeclaration } from './parsing/quintParserFrontend'
+import { parseDefOrThrow, parseExpressionOrDeclaration } from './parsing/quintParserFrontend'
 import { prettyQuintEx, printExecutionFrameRec, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
@@ -42,6 +42,8 @@ import { cwd } from 'process'
 import { newIdGenerator } from './idGenerator'
 import { moduleToString } from './ir/IRprinting'
 import { EvaluationState, newEvaluationState } from './runtime/impl/compilerImpl'
+import { mkErrorMessage } from './cliCommands'
+import { QuintError } from './quintError'
 
 // tunable settings
 export const settings = {
@@ -541,7 +543,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     state.compilationState.sourceMap
   )
   if (parseResult.kind === 'error') {
-    printErrorMessages(out, state, 'syntax error', newInput, parseResult.messages)
+    printErrorMessages(out, state, 'syntax error', newInput, parseResult.errors)
     out('\n') // be nice to external programs
     return false
   }
@@ -617,10 +619,11 @@ function printErrorMessages(
   state: ReplState,
   kind: string,
   inputText: string,
-  messages: ErrorMessage[],
+  errors: QuintError[],
   color: (_text: string) => string = chalk.red
 ) {
   const modulesText = state.moduleHist + inputText
+  const messages = errors.map(mkErrorMessage(state.compilationState.sourceMap))
   // display the error messages and highlight the error places
   messages.forEach(e => {
     const text = e.locs[0]?.source === '<input>' ? inputText : modulesText

@@ -15,6 +15,7 @@ import { right } from '@sweet-monads/either'
 import { newIdGenerator } from '../../src/idGenerator'
 import { collectIds } from '../util'
 import { fileSourceResolver } from '../../src/parsing/sourceResolver'
+import { mkErrorMessage } from '../../src/cliCommands'
 
 // read a Quint file from the test data directory
 function readQuint(name: string): string {
@@ -56,7 +57,7 @@ function parseAndCompare(artifact: string): void {
       err =>
         (outputToCompare = {
           stage: 'parsing',
-          errors: err,
+          errors: err.errors.map(mkErrorMessage(err.sourceMap)),
           warnings: [],
         })
     )
@@ -81,7 +82,7 @@ function parseAndCompare(artifact: string): void {
         err =>
           (outputToCompare = {
             stage: 'parsing',
-            errors: err,
+            errors: err.errors.map(mkErrorMessage(sourceMap)),
             warnings: [],
           })
       )

@@ -4,7 +4,7 @@ import { newIdGenerator } from '../../src/idGenerator'
 import { SourceLookupPath } from '../../src/parsing/sourceResolver'
 import { parse } from '../../src/parsing/quintParserFrontend'
 import { unshadowNames } from '../../src/names/unshadower'
-import { moduleToString } from '../../src'
+import { moduleToString, quintErrorToString } from '../../src'
 import { dedent } from '../textUtils'
 
 describe('unshadowNames', () => {
@@ -14,7 +14,7 @@ describe('unshadowNames', () => {
 
     const result = parse(idGenerator, 'test_location', fake_path, text)
     if (result.isLeft()) {
-      assert.fail(`Expected no error, but got ${result.value.map(e => e.explanation)}`)
+      assert.fail(`Expected no error, but got ${result.value.errors.map(quintErrorToString)} `)
     }
 
     return result.unwrap()

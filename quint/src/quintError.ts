@@ -97,6 +97,10 @@ export type ErrorCode =
   | 'QNT509'
   /* QNT510: Array acces out of bounds */
   | 'QNT510'
+  /* QNT511: Test returned false */
+  | 'QNT511'
+  /* QNT512: Simulation failure */
+  | 'QNT512'
 
 /* Additional data for a Quint error */
 export interface QuintErrorData {

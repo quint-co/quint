@@ -9,7 +9,15 @@ import {
   parsePhase3importAndNameResolution,
 } from '../../src/parsing/quintParserFrontend'
 import { SourceLookupPath, fileSourceResolver } from '../../src/parsing/sourceResolver'
-import { LookupTable, QuintDeclaration, QuintExport, QuintImport, QuintInstance, QuintModule } from '../../src'
+import {
+  LookupTable,
+  QuintDeclaration,
+  QuintExport,
+  QuintImport,
+  QuintInstance,
+  QuintModule,
+  quintErrorToString,
+} from '../../src'
 import { CallGraphVisitor, mkCallGraphContext } from '../../src/static/callgraph'
 import { walkModule } from '../../src/ir/IRVisitor'
 
@@ -30,7 +38,7 @@ describe('compute call graph', () => {
       .chain(phase2Data => parsePhase3importAndNameResolution(phase2Data))
 
     if (parseResult.isLeft()) {
-      const msgs = parseResult.value.map(e => e.explanation).join('; ')
+      const msgs = parseResult.value.errors.map(quintErrorToString).join('; ')
       assert.fail(`Failed to parse a mock module: ${msgs}`)
     }
     const { modules, table } = parseResult.unwrap()

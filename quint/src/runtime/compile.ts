@@ -9,26 +9,18 @@
  */
 
 import { Either, left, right } from '@sweet-monads/either'
-import {
-  ErrorMessage,
-  Loc,
-  fromIrErrorMessage,
-  parse,
-  parsePhase3importAndNameResolution,
-} from '../parsing/quintParserFrontend'
+import { SourceMap, parse, parsePhase3importAndNameResolution } from '../parsing/quintParserFrontend'
 import { Computable, ComputableKind, kindName } from './runtime'
 import { ExecutionListener } from './trace'
-import { FlatModule, IrErrorMessage, QuintDeclaration, QuintDef, QuintEx, QuintModule } from '../ir/quintIr'
+import { FlatModule, QuintDeclaration, QuintDef, QuintEx, QuintModule } from '../ir/quintIr'
 import { CompilerVisitor, EvaluationState, newEvaluationState } from './impl/compilerImpl'
 import { walkDefinition } from '../ir/IRVisitor'
 import { LookupTable } from '../names/base'
 import { AnalysisOutput, analyzeInc, analyzeModules } from '../quintAnalyzer'
-import { mkErrorMessage } from '../cliCommands'
 import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { SourceLookupPath } from '../parsing/sourceResolver'
 import { Rng } from '../rng'
 import { flattenModules } from '../flattening/fullFlattener'
-import { SourceMap } from 'module'
 import { QuintError } from '../quintError'
 
 /**
@@ -76,7 +68,7 @@ export interface CompilationState {
   // The name of the main module.
   mainName?: string
   // The source map for the compiled code.
-  sourceMap: Map<bigint, Loc>
+  sourceMap: SourceMap
   // The output of the Quint analyzer.
   analysisOutput: AnalysisOutput
 }
@@ -147,7 +139,7 @@ export function compile(
   rand: (bound: bigint) => bigint,
   defs: QuintDef[]
 ): CompilationContext {
-  const { sourceMap, analysisOutput } = compilationState
+  const { analysisOutput } = compilationState
 
   const visitor = new CompilerVisitor(lookupTable, analysisOutput.types, rand, evaluationState)
 
@@ -252,11 +244,7 @@ export function compileDecl(
 
       const ctx = compile(newState, evaluationState, flattenedTable, rng.next, defsToCompile)
 
-      const errorLocator = mkErrorMessage(state.sourceMap)
-      return {
-        ...ctx,
-        analysisErrors: Array.from(analysisErrors, errorLocator),
-      }
+      return { ...ctx, analysisErrors }
     }).value // We produce a compilation context in any case
 }
 
@@ -308,22 +296,21 @@ export function compileFromCode(
 
           const main = flattenedModules.find(m => m.name === mainName)
           // when the main module is not found, we will report an error
-          const mainNotFoundError: IrErrorMessage[] = main
+          const mainNotFoundError: QuintError[] = main
             ? []
             : [
                 {
-                  explanation: `Main module ${mainName} not found`,
-                  refs: [],
+                  code: 'QNT405',
+                  message: `Main module ${mainName} not found`,
                 },
               ]
           const defsToCompile = main ? main.declarations : []
           const ctx = compile(compilationState, newEvaluationState(execListener), flattenedTable, rand, defsToCompile)
 
-          const errorLocator = mkErrorMessage(sourceMap)
           return right({
             ...ctx,
-            compileErrors: ctx.compileErrors.concat(mainNotFoundError.map(fromIrErrorMessage(sourceMap))),
-            analysisErrors: Array.from(analysisErrors, errorLocator),
+            compileErrors: ctx.compileErrors.concat(mainNotFoundError),
+            analysisErrors,
           })
         }
         // we produce CompilationContext in any case

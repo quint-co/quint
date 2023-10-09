@@ -17,79 +17,23 @@ import { QuintLexer } from '../generated/QuintLexer'
 import * as p from '../generated/QuintParser'
 import { QuintListener } from '../generated/QuintListener'
 
-import { IrErrorMessage, QuintDeclaration, QuintDef, QuintEx, QuintModule, isDef } from '../ir/quintIr'
+import { QuintDeclaration, QuintDef, QuintEx, QuintModule, isDef } from '../ir/quintIr'
 import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { ToIrListener } from './ToIrListener'
 import { LookupTable, NameResolutionResult, UnusedDefinitions } from '../names/base'
 import { resolveNames } from '../names/resolver'
-import { QuintError, quintErrorToString } from '../quintError'
+import { QuintError } from '../quintError'
 import { SourceLookupPath, SourceResolver, fileSourceResolver } from './sourceResolver'
 import { CallGraphVisitor, mkCallGraphContext } from '../static/callgraph'
 import { walkModule } from '../ir/IRVisitor'
 import { toposort } from '../static/toposort'
 import { ErrorCode } from '../quintError'
-import { compact } from 'lodash'
-
-export interface Loc {
-  source: string
-  start: { line: number; col: number; index: number }
-  end?: { line: number; col: number; index: number }
-}
-
-// the default error location that usually indicates a bug in our code
-const unknownLoc: Loc = {
-  source: '<unknown>',
-  start: { line: 0, col: 0, index: 0 },
-}
-
-/**
- * An error message whose locations have been resolved.
- */
-export interface ErrorMessage {
-  explanation: string
-  locs: Loc[]
-}
+import { Loc } from '../ErrorMessage'
 
 /**
  * A source map that is constructed by the parser phases.
  */
 export type SourceMap = Map<bigint, Loc>
-
-/**
- * Map an identifier to the corresponding location in the source map, if possible.
- * @param sourceMap the source map
- * @param id the identifier to map
- * @returns the location, if found in the map, or the unknown location
- */
-export function sourceIdToLoc(sourceMap: SourceMap, id: bigint): Loc {
-  let sourceLoc = sourceMap.get(id)
-  if (!sourceLoc) {
-    console.error(`No source location found for ${id}. Please report a bug.`)
-    return unknownLoc
-  } else {
-    return sourceLoc
-  }
-}
-
-// an adapter from IrErrorMessage to ErrorMessage
-export function fromIrErrorMessage(sourceMap: SourceMap): (err: IrErrorMessage) => ErrorMessage {
-  return msg => {
-    return {
-      explanation: msg.explanation,
-      locs: msg.refs.map(id => sourceMap.get(id) ?? unknownLoc),
-    }
-  }
-}
-
-export function fromQuintError(sourceMap: Map<bigint, Loc>): (_: QuintError) => ErrorMessage {
-  return error => {
-    const loc = error.reference ? sourceMap.get(error.reference) : undefined
-    return {
-      explanation: quintErrorToString(error),
-      locs: compact([loc]),
-    }
-  }
-}
 
 /**
  * The result of parsing, T is specialized to a phase, see below.
@@ -385,7 +329,7 @@ export function parse(
     .chain(phase3Data => parsePhase4toposort(phase3Data))
 }
 
-export function parseDefOrThrow(text: string, idGen?: IdGenerator, sourceMap?: Map<bigint, Loc>): QuintDef {
+export function parseDefOrThrow(text: string, idGen?: IdGenerator, sourceMap?: SourceMap): QuintDef {
   const result = parseExpressionOrDeclaration(text, '<builtins>', idGen ?? newIdGenerator(), sourceMap ?? new Map())
   if (result.kind === 'declaration' && isDef(result.decl)) {
     return result.decl
@@ -415,7 +359,7 @@ function setupParser(
 
       const code = (msg.match(/QNT\d\d\d/)?.[0] as ErrorCode) ?? 'QNT000'
 
-      errors.push({ code, message: msg, reference: id })
+      errors.push({ code, message: msg.replace(`[${code}] `, ''), reference: id })
     },
   }
 

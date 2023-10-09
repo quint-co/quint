@@ -14,8 +14,7 @@ import { cwd } from 'process'
 import chalk from 'chalk'
 
 import {
-  ErrorMessage,
-  Loc,
+  SourceMap,
   compactSourceMap,
   parseDefOrThrow,
   parsePhase1fromText,
@@ -23,6 +22,7 @@ import {
   parsePhase3importAndNameResolution,
   parsePhase4toposort,
 } from './parsing/quintParserFrontend'
+import { ErrorMessage } from './ErrorMessage'
 
 import { Either, left, right } from '@sweet-monads/either'
 import { EffectScheme } from './effects/base'
@@ -122,7 +122,7 @@ interface LoadedStage extends ProcedureStage {
 
 interface ParsedStage extends LoadedStage {
   modules: QuintModule[]
-  sourceMap: Map<bigint, Loc>
+  sourceMap: SourceMap
   table: LookupTable
   unusedDefinitions: UnusedDefinitions
   idGen: IdGenerator
@@ -163,9 +163,9 @@ interface ErrorData extends ProcedureStage {
   sourceCode: string
 }
 
-type ErrResult = { msg: String; stage: ErrorData }
+type ErrResult = { msg: string; stage: ErrorData }
 
-function cliErr<Stage>(msg: String, stage: ErrorData): Either<ErrResult, Stage> {
+function cliErr<Stage>(msg: string, stage: ErrorData): Either<ErrResult, Stage> {
   return left({ msg, stage })
 }
 
@@ -228,7 +228,7 @@ export async function parse(loaded: LoadedStage): Promise<CLIProcedure<ParsedSta
     })
 }
 
-export function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: QuintError) => ErrorMessage {
+export function mkErrorMessage(sourceMap: SourceMap): (_: QuintError) => ErrorMessage {
   return error => {
     const loc = error.reference ? sourceMap.get(error.reference) : undefined
     return {
@@ -251,7 +251,7 @@ export async function typecheck(parsed: ParsedStage): Promise<CLIProcedure<Typec
   if (errorMap.length === 0) {
     return right({ ...typechecking, ...result })
   } else {
-    const errors = errorMap.map(([_, error]) => mkErrorMessage(sourceMap)(error))
+    const errors = errorMap.map(mkErrorMessage(sourceMap))
     return cliErr('typechecking failed', { ...typechecking, errors })
   }
 }
@@ -378,7 +378,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   const testOut = compileAndTest(compilationState, mainName, flattenedTable, options)
 
   if (testOut.isLeft()) {
-    return cliErr('Tests failed', { ...testing, errors: testOut.value })
+    return cliErr('Tests failed', { ...testing, errors: testOut.value.map(mkErrorMessage(testing.sourceMap)) })
   } else if (testOut.isRight()) {
     const elapsedMs = Date.now() - startMs
     const results = testOut.unwrap()
@@ -392,7 +392,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
           const errNo = chalk.red(namedErrors.length + 1)
           out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
 
-          res.errors.forEach(e => namedErrors.push([res.name, e, res]))
+          res.errors.forEach(e => namedErrors.push([res.name, mkErrorMessage(testing.sourceMap)(e), res]))
         }
       })
     }
@@ -510,7 +510,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const result = compileAndRun(newIdGenerator(), prev.sourceCode, mainStart, mainEnd, mainName, mainPath, options)
 
   if (result.status === 'error') {
-    const errors = prev.errors ? prev.errors.concat(result.errors) : result.errors
+    const newErrors = result.errors.map(mkErrorMessage(prev.sourceMap))
+    const errors = prev.errors ? prev.errors.concat(newErrors) : newErrors
     return cliErr('run failed', { ...simulator, errors })
   } else {
     if (verbosity.hasResults(verbosityLevel)) {
@@ -538,7 +539,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         const jsonObj = addItfHeader(prev.args.input, result.status, trace.value)
         writeToJson(prev.args.outItf, jsonObj)
       } else {
-        const newStage = { ...simulator, errors: result.errors }
+        const newStage = { ...simulator, errors: result.errors.map(mkErrorMessage(prev.sourceMap)) }
         return cliErr(`ITF conversion failed: ${trace.value}`, newStage)
       }
     }
@@ -555,7 +556,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         ...simulator,
         status: result.status,
         trace: result.states,
-        errors: result.errors,
+        errors: result.errors.map(mkErrorMessage(prev.sourceMap)),
       })
     }
   }
@@ -677,8 +678,8 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
           }
         }
         return {
-          msg: err.explanation,
-          stage: { ...verifying, status, errors: err.errors, trace },
+          msg: err.errors.map(quintErrorToString).join('\n'),
+          stage: { ...verifying, status, errors: err.errors.map(mkErrorMessage(prev.sourceMap)), trace },
         }
       })
   })

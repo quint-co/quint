@@ -19,7 +19,7 @@ import {
 } from '../ir/quintIr'
 import { ConcreteFixedRow, QuintSumType, QuintType, Row, RowField, isUnitType, unitType } from '../ir/quintTypes'
 import { strict as assert } from 'assert'
-import { Loc } from './quintParserFrontend'
+import { SourceMap } from './quintParserFrontend'
 import { compact, zipWith } from 'lodash'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
@@ -27,6 +27,7 @@ import { QuintTypeDef } from '../ir/quintIr'
 import { zip } from '../util'
 import { QuintError } from '../quintError'
 import { differentTagsError, tooManySpreadsError, undercaseTypeError } from './parseErrors'
+import { Loc } from '../ErrorMessage'
 
 /**
  * An ANTLR4 listener that constructs QuintIr objects out of the abstract
@@ -51,7 +52,7 @@ export class ToIrListener implements QuintListener {
    */
   typeStack: QuintType[] = []
 
-  sourceMap: Map<bigint, Loc> = new Map<bigint, Loc>()
+  sourceMap: SourceMap = new Map()
 
   /**
    * If errors occur in the listener, this array contains explanations.

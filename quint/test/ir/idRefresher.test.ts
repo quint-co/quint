@@ -8,6 +8,7 @@ import { analyzeModules } from '../../src/quintAnalyzer'
 import { collectIds } from '../util'
 import { QuintModule, isDef } from '../../src/ir/quintIr'
 import JSONbig from 'json-bigint'
+import { quintErrorToString } from '../../src'
 
 describe('generateFreshIds', () => {
   // Generate ids starting from 100, so that we can easily distinguish them from
@@ -31,7 +32,9 @@ describe('generateFreshIds', () => {
   const parseResult = parse(idGenerator, 'fake_location', fake_path, quintModules)
   if (parseResult.isLeft()) {
     it('should parse the mocked up module', () => {
-      assert.fail(`Failed to parse mocked up module. Errors: ${parseResult.value.map(e => e.explanation).join('\n')}`)
+      assert.fail(
+        `Failed to parse mocked up module. Errors: ${parseResult.value.errors.map(quintErrorToString).join('\n')}`
+      )
     })
   }
   const { modules, table, sourceMap } = parseResult.unwrap()
