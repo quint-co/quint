@@ -26,7 +26,7 @@ import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
 import { QuintTypeDef } from '../ir/quintIr'
 import { zip } from '../util'
 import { QuintError } from '../quintError'
-import { differentTagsError, tooManySpreadsError, undercaseTypeError } from './parseErrors'
+import { differentTagsError, tooManySpreadsError, lowercaseTypeError } from './parseErrors'
 import { Loc } from '../ErrorMessage'
 
 /**
@@ -341,7 +341,7 @@ export class ToIrListener implements QuintListener {
     const id = this.getId(ctx)
 
     if (name[0].match('[a-z]')) {
-      this.errors.push(undercaseTypeError(id, name))
+      this.errors.push(lowercaseTypeError(id, name))
     }
 
     const def: QuintTypeDef = {
@@ -360,7 +360,7 @@ export class ToIrListener implements QuintListener {
     const id = this.getId(ctx)
 
     if (name[0].match('[a-z]')) {
-      this.errors.push(undercaseTypeError(id, name))
+      this.errors.push(lowercaseTypeError(id, name))
     }
 
     const def: QuintTypeDef = {
