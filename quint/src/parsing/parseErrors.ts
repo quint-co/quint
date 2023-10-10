@@ -1,6 +1,6 @@
 import { QuintError } from '../quintError'
 
-export function undercaseTypeError(id: bigint, name: string): QuintError {
+export function lowercaseTypeError(id: bigint, name: string): QuintError {
   return {
     code: 'QNT007',
     message: 'type names must start with an uppercase letter',
