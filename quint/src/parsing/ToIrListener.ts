@@ -26,7 +26,7 @@ import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
 import { QuintTypeDef } from '../ir/quintIr'
 import { zip } from '../util'
 import { QuintError } from '../quintError'
-import { differentTagsError, tooManySpreadsError, lowercaseTypeError } from './parseErrors'
+import { differentTagsError, lowercaseTypeError, tooManySpreadsError } from './parseErrors'
 import { Loc } from '../ErrorMessage'
 
 /**
