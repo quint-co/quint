@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed internal bugs in the effect checker that could cause an incorrect effect
   to be inferred or error to be reported (#1203)
+- Fixed propagation of `checker.tuning` Apalache config file key for `quint
+  verify` (#1216)
 
 ### Security
 

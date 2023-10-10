@@ -641,6 +641,7 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
       inv: args.invariant ? ['q::inv'] : undefined,
       'temporal-props': args.temporal ? ['q::temporalProps'] : undefined,
       tuning: {
+        ...(loadedConfig.checker?.tuning ?? {}),
         'search.simulation': args.randomTransitions ? 'true' : 'false',
       },
     },
