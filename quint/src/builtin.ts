@@ -15,8 +15,7 @@
 import { DocumentationEntry, produceDocs } from './docs'
 import { resolve } from 'path'
 import { readFileSync } from 'fs'
-import { ErrorMessage, parsePhase1fromText } from './parsing/quintParserFrontend'
-import { Either } from '@sweet-monads/either'
+import { ParseResult, parsePhase1fromText } from './parsing/quintParserFrontend'
 import { lf } from 'eol'
 
 import { IdGenerator } from './idGenerator'
@@ -26,7 +25,7 @@ import { IdGenerator } from './idGenerator'
  *
  * @returns a map of builtin definition names to their documentation
  */
-export function builtinDocs(gen: IdGenerator): Either<ErrorMessage[], Map<string, DocumentationEntry>> {
+export function builtinDocs(gen: IdGenerator): ParseResult<Map<string, DocumentationEntry>> {
   const path = resolve(__dirname, 'builtin.qnt')
   // Read file and remove windows line endings (\r) using `lf`
   const sourceCode = lf(readFileSync(path, 'utf8'))

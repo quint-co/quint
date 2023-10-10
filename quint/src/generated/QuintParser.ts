@@ -2405,7 +2405,7 @@ export class QuintParser extends Parser {
 						this.state = 601;
 						this.expr(21);
 
-						                            const m = "QNT006: unexpected '=', did you mean '=='?"
+						                            const m = "[QNT006] unexpected '=', did you mean '=='?"
 						                            this.notifyErrorListeners(m)
 						                          
 						}

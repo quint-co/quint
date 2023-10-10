@@ -15,7 +15,7 @@
  */
 
 import { Either, chain, left, right } from '@sweet-monads/either'
-import { ErrorMessage } from './parsing/quintParserFrontend'
+import { ErrorMessage } from './ErrorMessage'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'

@@ -20,7 +20,7 @@ import { dedent } from '../textUtils'
 import { newIdGenerator } from '../../src/idGenerator'
 import { Rng, newRng } from '../../src/rng'
 import { SourceLookupPath, stringSourceResolver } from '../../src/parsing/sourceResolver'
-import { analyzeModules, parse, parseExpressionOrDeclaration } from '../../src'
+import { analyzeModules, parse, parseExpressionOrDeclaration, quintErrorToString } from '../../src'
 import { flattenModules } from '../../src/flattening/fullFlattener'
 import { newEvaluationState } from '../../src/runtime/impl/compilerImpl'
 
@@ -34,8 +34,8 @@ function assertResultAsString(input: string, expected: string | undefined) {
   const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
   const context = compileFromCode(idGen, moduleText, '__runtime', mockLookupPath, noExecutionListener, newRng().next)
 
-  assert.isEmpty(context.syntaxErrors, `Syntax errors: ${context.syntaxErrors.map(e => e.explanation).join(', ')}`)
-  assert.isEmpty(context.compileErrors, `Compile errors: ${context.compileErrors.map(e => e.explanation).join(', ')}`)
+  assert.isEmpty(context.syntaxErrors, `Syntax errors: ${context.syntaxErrors.map(quintErrorToString).join(', ')}`)
+  assert.isEmpty(context.compileErrors, `Compile errors: ${context.compileErrors.map(quintErrorToString).join(', ')}`)
 
   assertInputFromContext(context, expected)
 }
@@ -1078,14 +1078,10 @@ describe('incremental compilation', () => {
 
       assert.sameDeepMembers(context.syntaxErrors, [
         {
-          explanation: "[QNT404] Name 'x1' not found",
-          locs: [
-            {
-              source: 'test.qnt',
-              start: { line: 0, col: 9, index: 9 },
-              end: { line: 0, col: 10, index: 10 },
-            },
-          ],
+          code: 'QNT404',
+          message: "Name 'x1' not found",
+          reference: 10n,
+          data: {},
         },
       ])
     })

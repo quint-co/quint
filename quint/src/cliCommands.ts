@@ -14,8 +14,7 @@ import { cwd } from 'process'
 import chalk from 'chalk'
 
 import {
-  ErrorMessage,
-  Loc,
+  SourceMap,
   compactSourceMap,
   parseDefOrThrow,
   parsePhase1fromText,
@@ -23,6 +22,7 @@ import {
   parsePhase3importAndNameResolution,
   parsePhase4toposort,
 } from './parsing/quintParserFrontend'
+import { ErrorMessage } from './ErrorMessage'
 
 import { Either, left, right } from '@sweet-monads/either'
 import { EffectScheme } from './effects/base'
@@ -122,7 +122,7 @@ interface LoadedStage extends ProcedureStage {
 
 interface ParsedStage extends LoadedStage {
   modules: QuintModule[]
-  sourceMap: Map<bigint, Loc>
+  sourceMap: SourceMap
   table: LookupTable
   unusedDefinitions: UnusedDefinitions
   idGen: IdGenerator
@@ -163,9 +163,9 @@ interface ErrorData extends ProcedureStage {
   sourceCode: string
 }
 
-type ErrResult = { msg: String; stage: ErrorData }
+type ErrResult = { msg: string; stage: ErrorData }
 
-function cliErr<Stage>(msg: String, stage: ErrorData): Either<ErrResult, Stage> {
+function cliErr<Stage>(msg: string, stage: ErrorData): Either<ErrResult, Stage> {
   return left({ msg, stage })
 }
 
@@ -210,35 +210,30 @@ export async function parse(loaded: LoadedStage): Promise<CLIProcedure<ParsedSta
       const mainPath = resolver.lookupPath(dirname(path), basename(path))
       return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
     })
-    .mapLeft(newErrs => {
-      const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
-      return { msg: 'parsing failed', stage: { ...parsing, errors } }
-    })
     .chain(phase2Data => {
       if (args.sourceMap) {
         // Write source map to the specified file
         writeToJson(args.sourceMap, compactSourceMap(phase2Data.sourceMap))
       }
-      return parsePhase3importAndNameResolution(phase2Data).mapLeft(newErrs => {
-        const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
-        return { msg: 'parsing failed', stage: { ...parsing, errors } }
-      })
+      return parsePhase3importAndNameResolution(phase2Data)
     })
     .chain(phase3Data => {
-      return parsePhase4toposort(phase3Data).mapLeft(newErrs => {
-        const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
-        return { msg: 'parsing failed', stage: { ...parsing, errors } }
-      })
+      return parsePhase4toposort(phase3Data)
     })
     .map(phase4Data => ({ ...parsing, ...phase4Data, idGen }))
+    .mapLeft(({ errors, sourceMap }) => {
+      const newErrorMessages = errors.map(mkErrorMessage(sourceMap))
+      const errorMessages = parsing.errors ? parsing.errors.concat(newErrorMessages) : newErrorMessages
+      return { msg: 'parsing failed', stage: { ...parsing, errors: errorMessages } }
+    })
 }
 
-export function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: [bigint, QuintError]) => ErrorMessage {
-  return ([key, value]) => {
-    const loc = sourceMap.get(key)!
+export function mkErrorMessage(sourceMap: SourceMap): (_: QuintError) => ErrorMessage {
+  return error => {
+    const loc = error.reference ? sourceMap.get(error.reference) : undefined
     return {
-      explanation: quintErrorToString(value),
-      locs: [loc],
+      explanation: quintErrorToString(error),
+      locs: loc ? [loc] : [],
     }
   }
 }
@@ -256,8 +251,7 @@ export async function typecheck(parsed: ParsedStage): Promise<CLIProcedure<Typec
   if (errorMap.length === 0) {
     return right({ ...typechecking, ...result })
   } else {
-    const errorLocator = mkErrorMessage(sourceMap)
-    const errors = Array.from(errorMap, errorLocator)
+    const errors = errorMap.map(mkErrorMessage(sourceMap))
     return cliErr('typechecking failed', { ...typechecking, errors })
   }
 }
@@ -384,7 +378,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   const testOut = compileAndTest(compilationState, mainName, flattenedTable, options)
 
   if (testOut.isLeft()) {
-    return cliErr('Tests failed', { ...testing, errors: testOut.value })
+    return cliErr('Tests failed', { ...testing, errors: testOut.value.map(mkErrorMessage(testing.sourceMap)) })
   } else if (testOut.isRight()) {
     const elapsedMs = Date.now() - startMs
     const results = testOut.unwrap()
@@ -398,7 +392,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
           const errNo = chalk.red(namedErrors.length + 1)
           out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
 
-          res.errors.forEach(e => namedErrors.push([res.name, e, res]))
+          res.errors.forEach(e => namedErrors.push([res.name, mkErrorMessage(testing.sourceMap)(e), res]))
         }
       })
     }
@@ -516,7 +510,8 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const result = compileAndRun(newIdGenerator(), prev.sourceCode, mainStart, mainEnd, mainName, mainPath, options)
 
   if (result.status === 'error') {
-    const errors = prev.errors ? prev.errors.concat(result.errors) : result.errors
+    const newErrors = result.errors.map(mkErrorMessage(prev.sourceMap))
+    const errors = prev.errors ? prev.errors.concat(newErrors) : newErrors
     return cliErr('run failed', { ...simulator, errors })
   } else {
     if (verbosity.hasResults(verbosityLevel)) {
@@ -544,7 +539,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         const jsonObj = addItfHeader(prev.args.input, result.status, trace.value)
         writeToJson(prev.args.outItf, jsonObj)
       } else {
-        const newStage = { ...simulator, errors: result.errors }
+        const newStage = { ...simulator, errors: result.errors.map(mkErrorMessage(prev.sourceMap)) }
         return cliErr(`ITF conversion failed: ${trace.value}`, newStage)
       }
     }
@@ -561,7 +556,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         ...simulator,
         status: result.status,
         trace: result.states,
-        errors: result.errors,
+        errors: result.errors.map(mkErrorMessage(prev.sourceMap)),
       })
     }
   }
@@ -604,7 +599,8 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
   // while solving #1052.
   const resolutionResult = parsePhase3importAndNameResolution(prev)
   if (resolutionResult.isLeft()) {
-    return cliErr('name resolution failed', { ...verifying, errors: resolutionResult.value })
+    const errors = resolutionResult.value.errors.map(mkErrorMessage(prev.sourceMap))
+    return cliErr('name resolution failed', { ...verifying, errors })
   }
 
   verifying.table = resolutionResult.unwrap().table
@@ -698,9 +694,10 @@ export async function docs(loaded: LoadedStage): Promise<CLIProcedure<Documentat
   const { sourceCode, path } = loaded
   const parsing = { ...loaded, stage: 'documentation' as stage }
   return parsePhase1fromText(newIdGenerator(), sourceCode, path)
-    .mapLeft(newErrs => {
-      const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
-      return { msg: 'parsing failed', stage: { ...parsing, errors } }
+    .mapLeft(({ errors, sourceMap }) => {
+      const newErrorMessages = errors.map(mkErrorMessage(sourceMap))
+      const errorMessages = parsing.errors ? parsing.errors.concat(newErrorMessages) : newErrorMessages
+      return { msg: 'parsing failed', stage: { ...parsing, errors: errorMessages } }
     })
     .map(phase1Data => {
       const allEntries: [string, Map<string, DocumentationEntry>][] = phase1Data.modules.map(module => {

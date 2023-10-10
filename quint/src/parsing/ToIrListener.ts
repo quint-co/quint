@@ -19,12 +19,15 @@ import {
 } from '../ir/quintIr'
 import { ConcreteFixedRow, QuintSumType, QuintType, Row, RowField, isUnitType, unitType } from '../ir/quintTypes'
 import { strict as assert } from 'assert'
-import { ErrorMessage, Loc } from './quintParserFrontend'
+import { SourceMap } from './quintParserFrontend'
 import { compact, zipWith } from 'lodash'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
 import { QuintTypeDef } from '../ir/quintIr'
 import { zip } from '../util'
+import { QuintError } from '../quintError'
+import { differentTagsError, lowercaseTypeError, tooManySpreadsError } from './parseErrors'
+import { Loc } from '../ErrorMessage'
 
 /**
  * An ANTLR4 listener that constructs QuintIr objects out of the abstract
@@ -49,12 +52,12 @@ export class ToIrListener implements QuintListener {
    */
   typeStack: QuintType[] = []
 
-  sourceMap: Map<bigint, Loc> = new Map<bigint, Loc>()
+  sourceMap: SourceMap = new Map()
 
   /**
    * If errors occur in the listener, this array contains explanations.
    */
-  errors: ErrorMessage[] = []
+  errors: QuintError[] = []
 
   private sourceLocation: string = ''
 
@@ -335,13 +338,11 @@ export class ToIrListener implements QuintListener {
   // type T
   exitTypeAbstractDef(ctx: p.TypeAbstractDefContext) {
     const name = ctx.qualId()!.text
+    const id = this.getId(ctx)
 
     if (name[0].match('[a-z]')) {
-      const msg = 'QNT007: type names must start with an uppercase letter'
-      this.pushError(ctx, msg)
+      this.errors.push(lowercaseTypeError(id, name))
     }
-
-    const id = this.getId(ctx)
 
     const def: QuintTypeDef = {
       id,
@@ -356,13 +357,11 @@ export class ToIrListener implements QuintListener {
   exitTypeAliasDef(ctx: p.TypeAliasDefContext) {
     const name = ctx.qualId()!.text
     const type = this.popType().value
+    const id = this.getId(ctx)
 
     if (name[0].match('[a-z]')) {
-      const msg = 'QNT007: type names must start with an uppercase letter'
-      this.pushError(ctx, msg)
+      this.errors.push(lowercaseTypeError(id, name))
     }
-
-    const id = this.getId(ctx)
 
     const def: QuintTypeDef = {
       id,
@@ -594,11 +593,10 @@ export class ToIrListener implements QuintListener {
       this.pushApplication(ctx, name, args)
     } else {
       // accessing a tuple element, a record field, or name in a module
+      const id = this.getId(ctx)
       const m = name.match(/^_([1-9][0-9]?)$/)
       if (m) {
         // accessing a tuple element via _1, _2, _3, etc.
-
-        const id = this.getId(ctx)
         const idx: QuintEx = {
           id,
           kind: 'int',
@@ -607,20 +605,6 @@ export class ToIrListener implements QuintListener {
 
         this.pushApplication(ctx, 'item', [callee!, idx])
       } else {
-        // accessing a record field or a name in a module
-        if (
-          name === 'in' ||
-          name === 'and' ||
-          name === 'or' ||
-          name === 'iff' ||
-          name === 'implies' ||
-          name === 'subseteq'
-        ) {
-          const msg = 'QNT006: no keywords allowed as record fields in record.field'
-          this.pushError(ctx, msg)
-        }
-
-        const id = this.getId(ctx)
         const field: QuintEx = {
           id,
           kind: 'str',
@@ -782,8 +766,8 @@ export class ToIrListener implements QuintListener {
       this.pushApplication(ctx, 'Rec', pairs.flat())
     } else if (spreads.length > 1) {
       // error
-      const msg = 'QNT012: ... may be used once in { ...record, <fields> }'
-      this.pushError(ctx, msg)
+      const id = this.getId(ctx)
+      this.errors.push(tooManySpreadsError(id))
     } else {
       // { ...record, field1: value1, field2: value2 }
       // translate to record.with("field1", value1).with("field2", value2)
@@ -1118,22 +1102,20 @@ export class ToIrListener implements QuintListener {
     if (singletonUnions && singletonUnions[0].kind === 'union') {
       const tag = singletonUnions[0].tag
       let records = singletonUnions[0].records
+      const id = this.getId(ctx)
       for (let i = 1; i < size; i++) {
         const one = singletonUnions[i]
         if (one.kind === 'union') {
           if (one.tag === tag) {
             records = records.concat(one.records)
           } else {
-            const tags = `${tag} and ${one.tag}`
-            const msg = 'QNT011: Records in disjoint union have different tag fields: '
-            this.pushError(ctx, msg + tags)
+            this.errors.push(differentTagsError(id, tag, one.tag))
           }
         } else {
           // istanbul ignore next
           assert(false, 'exitTypeUnionRec: no union in exitTypeUnionRec')
         }
       }
-      const id = this.getId(ctx)
       this.typeStack.push({ id, kind: 'union', tag, records })
     } else {
       const ls = this.locStr(ctx)
@@ -1236,16 +1218,6 @@ export class ToIrListener implements QuintListener {
       opcode: name,
       args,
     })
-  }
-
-  // push an error from the context
-  private pushError(ctx: ParserRuleContext, message: string) {
-    const start = { line: ctx.start.line - 1, col: ctx.start.charPositionInLine, index: ctx.start.startIndex }
-    // istanbul ignore next
-    const end = ctx.stop
-      ? { line: ctx.stop.line - 1, col: ctx.stop.charPositionInLine, index: ctx.stop.stopIndex }
-      : start
-    this.errors.push({ explanation: message, locs: [{ source: this.sourceLocation, start, end }] })
   }
 
   // pop a type

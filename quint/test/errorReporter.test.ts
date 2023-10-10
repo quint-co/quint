@@ -2,7 +2,7 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { formatError } from '../src/errorReporter'
 import lineColumn from 'line-column'
-import { ErrorMessage } from '../src'
+import { ErrorMessage } from '../src/ErrorMessage'
 
 describe('errorReporter', () => {
   const text = `module test {

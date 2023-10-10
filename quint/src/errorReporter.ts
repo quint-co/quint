@@ -16,7 +16,7 @@
 
 import { Maybe, just } from '@sweet-monads/maybe'
 
-import { ErrorMessage } from './parsing/quintParserFrontend'
+import { ErrorMessage } from './ErrorMessage'
 
 /** Generate a string with formatted error reporting for a given error message
  *

@@ -21,14 +21,6 @@ export interface WithId {
 }
 
 /**
- * An error message that needs a source map to resolve the actual sources.
- */
-export interface IrErrorMessage {
-  explanation: string
-  refs: bigint[]
-}
-
-/**
  * Quint expressions and declarations carry an optional type tag.
  * If a type tag is missing, it means that the type has not been computed yet.
  */

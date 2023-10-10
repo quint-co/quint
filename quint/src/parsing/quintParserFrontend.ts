@@ -17,38 +17,18 @@ import { QuintLexer } from '../generated/QuintLexer'
 import * as p from '../generated/QuintParser'
 import { QuintListener } from '../generated/QuintListener'
 
-import { IrErrorMessage, QuintDeclaration, QuintDef, QuintEx, QuintModule, isDef } from '../ir/quintIr'
+import { QuintDeclaration, QuintDef, QuintEx, QuintModule, isDef } from '../ir/quintIr'
 import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { ToIrListener } from './ToIrListener'
 import { LookupTable, NameResolutionResult, UnusedDefinitions } from '../names/base'
 import { resolveNames } from '../names/resolver'
-import { QuintError, quintErrorToString } from '../quintError'
+import { QuintError } from '../quintError'
 import { SourceLookupPath, SourceResolver, fileSourceResolver } from './sourceResolver'
 import { CallGraphVisitor, mkCallGraphContext } from '../static/callgraph'
 import { walkModule } from '../ir/IRVisitor'
 import { toposort } from '../static/toposort'
 import { ErrorCode } from '../quintError'
-import { compact } from 'lodash'
-
-export interface Loc {
-  source: string
-  start: { line: number; col: number; index: number }
-  end?: { line: number; col: number; index: number }
-}
-
-// the default error location that usually indicates a bug in our code
-const unknownLoc: Loc = {
-  source: '<unknown>',
-  start: { line: 0, col: 0, index: 0 },
-}
-
-/**
- * An error message whose locations have been resolved.
- */
-export interface ErrorMessage {
-  explanation: string
-  locs: Loc[]
-}
+import { Loc } from '../ErrorMessage'
 
 /**
  * A source map that is constructed by the parser phases.
@@ -56,45 +36,9 @@ export interface ErrorMessage {
 export type SourceMap = Map<bigint, Loc>
 
 /**
- * Map an identifier to the corresponding location in the source map, if possible.
- * @param sourceMap the source map
- * @param id the identifier to map
- * @returns the location, if found in the map, or the unknown location
- */
-export function sourceIdToLoc(sourceMap: SourceMap, id: bigint): Loc {
-  let sourceLoc = sourceMap.get(id)
-  if (!sourceLoc) {
-    console.error(`No source location found for ${id}. Please report a bug.`)
-    return unknownLoc
-  } else {
-    return sourceLoc
-  }
-}
-
-// an adapter from IrErrorMessage to ErrorMessage
-export function fromIrErrorMessage(sourceMap: SourceMap): (err: IrErrorMessage) => ErrorMessage {
-  return msg => {
-    return {
-      explanation: msg.explanation,
-      locs: msg.refs.map(id => sourceMap.get(id) ?? unknownLoc),
-    }
-  }
-}
-
-export function fromQuintError(sourceMap: Map<bigint, Loc>): (_: QuintError) => ErrorMessage {
-  return error => {
-    const loc = error.reference ? sourceMap.get(error.reference) : undefined
-    return {
-      explanation: quintErrorToString(error),
-      locs: compact([loc]),
-    }
-  }
-}
-
-/**
  * The result of parsing, T is specialized to a phase, see below.
  */
-export type ParseResult<T> = Either<ErrorMessage[], T>
+export type ParseResult<T> = Either<{ errors: QuintError[]; sourceMap: SourceMap }, T>
 
 /**
  * Phase 1: Parsing a string of characters into intermediate representation.
@@ -129,7 +73,7 @@ export type ExpressionOrDeclarationParseResult =
   | { kind: 'declaration'; decl: QuintDeclaration }
   | { kind: 'expr'; expr: QuintEx }
   | { kind: 'none' }
-  | { kind: 'error'; messages: ErrorMessage[] }
+  | { kind: 'error'; errors: QuintError[] }
 
 /**
  * Try parsing text as an expression or a top-level declaration.
@@ -144,11 +88,11 @@ export function parseExpressionOrDeclaration(
   idGenerator: IdGenerator,
   sourceMap: SourceMap
 ): ExpressionOrDeclarationParseResult {
-  const errorMessages: ErrorMessage[] = []
-  const parser = setupParser(text, sourceLocation, errorMessages)
+  const errors: QuintError[] = []
+  const parser = setupParser(text, sourceLocation, errors, sourceMap, idGenerator)
   const tree = parser.declarationOrExpr()
-  if (errorMessages.length > 0) {
-    return { kind: 'error', messages: errorMessages }
+  if (errors.length > 0) {
+    return { kind: 'error', errors: errors }
   } else {
     const listener = new ExpressionOrDeclarationListener(sourceLocation, idGenerator)
 
@@ -156,7 +100,7 @@ export function parseExpressionOrDeclaration(
     listener.sourceMap = sourceMap
 
     ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
-    return listener.result
+    return listener.result ?? { kind: 'error', errors: listener.errors }
   }
 }
 
@@ -170,20 +114,21 @@ export function parsePhase1fromText(
   text: string,
   sourceLocation: string
 ): ParseResult<ParserPhase1> {
-  const errorMessages: ErrorMessage[] = []
-  const parser = setupParser(text, sourceLocation, errorMessages)
+  const errors: QuintError[] = []
+  const sourceMap: SourceMap = new Map()
+  const parser = setupParser(text, sourceLocation, errors, sourceMap, idGen)
   // run the parser
   const tree = parser.modules()
-  if (errorMessages.length > 0) {
+  if (errors.length > 0) {
     // report the errors
-    return left(errorMessages)
+    return left({ errors: errors, sourceMap: sourceMap })
   } else {
     // walk through the AST and construct the IR
     const listener = new ToIrListener(sourceLocation, idGen)
     ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
 
     if (listener.errors.length > 0) {
-      return left(listener.errors)
+      return left({ errors: listener.errors, sourceMap: listener.sourceMap })
     } else if (listener.modules.length > 0) {
       return right({ modules: listener.modules, sourceMap: listener.sourceMap })
     } else {
@@ -240,11 +185,12 @@ export function parsePhase2sourceResolution(
             .concat([importeePath])
             .map(p => `'${p.toSourceName()}'`)
             .join(' imports ')
-          const err = fromIrErrorMessage(sourceMap)({
-            explanation: `Cyclic imports: ${cycle}`,
-            refs: [decl.id],
-          })
-          return left([err])
+          const err: QuintError = {
+            code: 'QNT098',
+            message: `Cyclic imports: ${cycle}`,
+            reference: decl.id,
+          }
+          return left({ errors: [err], sourceMap: sourceMap })
         }
         if (sourceToModules.has(importeePath.normalizedPath)) {
           // The source has been parsed already. Just push the module rank,
@@ -256,12 +202,12 @@ export function parsePhase2sourceResolution(
         const errorOrText = sourceResolver.load(importeePath)
         if (errorOrText.isLeft()) {
           // failed to load the imported source
-          const err = fromIrErrorMessage(sourceMap)({
-            // do not use the original message as it propagates absolute file names
-            explanation: `import ... from '${decl.fromSource}': could not load`,
-            refs: [decl.id],
-          })
-          return left([err])
+          const err: QuintError = {
+            code: 'QNT013',
+            message: `import ... from '${decl.fromSource}': could not load`,
+            reference: decl.id,
+          }
+          return left({ errors: [err], sourceMap: sourceMap })
         }
         // try to parse the source code
         const parseResult = parsePhase1fromText(idGen, errorOrText.value, importeePath.toSourceName())
@@ -297,7 +243,7 @@ export function parsePhase2sourceResolution(
  */
 export function parsePhase3importAndNameResolution(phase2Data: ParserPhase2): ParseResult<ParserPhase3> {
   return resolveNames(phase2Data.modules)
-    .mapLeft(errors => errors.map(fromQuintError(phase2Data.sourceMap)))
+    .mapLeft(errors => ({ errors, sourceMap: phase2Data.sourceMap }))
     .map((result: NameResolutionResult) => ({ ...phase2Data, ...result }))
 }
 
@@ -321,13 +267,16 @@ export function parsePhase4toposort(phase3Data: ParserPhase3): ParseResult<Parse
   return cycleOrModules
     .mapLeft(cycleIds => {
       // found a cycle, report it
-      const errorCode: ErrorCode = 'QNT099'
-      return [
-        {
-          locs: cycleIds.toArray().map(id => sourceIdToLoc(phase3Data.sourceMap, id)),
-          explanation: `${errorCode}: Found cyclic declarations. Use fold and foldl instead of recursion`,
-        },
-      ] as ErrorMessage[]
+      return {
+        errors: cycleIds.toArray().map((id): QuintError => {
+          return {
+            code: 'QNT099',
+            message: 'Found cyclic declarations. Use fold and foldl instead of recursion',
+            reference: id,
+          }
+        }),
+        sourceMap: phase3Data.sourceMap,
+      }
     })
     .mapRight(modules => {
       // reordered the declarations
@@ -380,7 +329,7 @@ export function parse(
     .chain(phase3Data => parsePhase4toposort(phase3Data))
 }
 
-export function parseDefOrThrow(text: string, idGen?: IdGenerator, sourceMap?: Map<bigint, Loc>): QuintDef {
+export function parseDefOrThrow(text: string, idGen?: IdGenerator, sourceMap?: SourceMap): QuintDef {
   const result = parseExpressionOrDeclaration(text, '<builtins>', idGen ?? newIdGenerator(), sourceMap ?? new Map())
   if (result.kind === 'declaration' && isDef(result.decl)) {
     return result.decl
@@ -390,15 +339,27 @@ export function parseDefOrThrow(text: string, idGen?: IdGenerator, sourceMap?: M
 }
 
 // setup a Quint parser, so it can be used to parse from various non-terminals
-function setupParser(text: string, sourceLocation: string, errorMessages: ErrorMessage[]): p.QuintParser {
+function setupParser(
+  text: string,
+  sourceLocation: string,
+  errors: QuintError[],
+  sourceMap: SourceMap,
+  idGen: IdGenerator
+): p.QuintParser {
   // error listener to report lexical and syntax errors
   const errorListener: any = {
-    syntaxError: (recognizer: any, offendingSymbol: any, line: number, charPositionInLine: number, msg: string) => {
+    syntaxError: (_recognizer: any, offendingSymbol: any, line: number, charPositionInLine: number, msg: string) => {
+      const id = idGen.nextId()
       const len = offendingSymbol ? offendingSymbol.stopIndex - offendingSymbol.startIndex : 0
       const index = offendingSymbol ? offendingSymbol.startIndex : 0
       const start = { line: line - 1, col: charPositionInLine, index }
       const end = { line: line - 1, col: charPositionInLine + len, index: index + len }
-      errorMessages.push({ explanation: msg, locs: [{ source: sourceLocation, start, end }] })
+      const loc: Loc = { source: sourceLocation, start, end }
+      sourceMap.set(id, loc)
+
+      const code = (msg.match(/QNT\d\d\d/)?.[0] as ErrorCode) ?? 'QNT000'
+
+      errors.push({ code, message: msg.replace(`[${code}] `, ''), reference: id })
     },
   }
 
@@ -421,15 +382,7 @@ function setupParser(text: string, sourceLocation: string, errorMessages: ErrorM
 
 // A simple listener to parse a declaration or expression
 class ExpressionOrDeclarationListener extends ToIrListener {
-  result: ExpressionOrDeclarationParseResult = {
-    kind: 'error',
-    messages: [
-      {
-        explanation: 'unknown parse result',
-        locs: [],
-      },
-    ],
-  }
+  result?: ExpressionOrDeclarationParseResult
 
   exitDeclarationOrExpr(ctx: p.DeclarationOrExprContext) {
     if (ctx.declaration()) {

@@ -5,6 +5,7 @@ import { newIdGenerator } from '../../src/idGenerator'
 import { parse, parsePhase3importAndNameResolution } from '../../src/parsing/quintParserFrontend'
 import { SourceLookupPath } from '../../src/parsing/sourceResolver'
 import { analyzeModules } from '../../src/quintAnalyzer'
+import { quintErrorToString } from '../../src'
 
 describe('flattenModules', () => {
   function assertFlattenedModule(text: string) {
@@ -39,7 +40,7 @@ describe('flattenModules', () => {
       })
       .mapLeft(err => {
         it('has no erros', () => {
-          assert.fail(`Expected no error, but got ${err.map(e => e.explanation)}`)
+          assert.fail(`Expected no error, but got ${err.errors.map(quintErrorToString)}`)
         })
       })
   }

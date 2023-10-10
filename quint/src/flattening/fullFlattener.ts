@@ -17,12 +17,13 @@ import { IdGenerator } from '../idGenerator'
 import { moduleToString } from '../ir/IRprinting'
 import { FlatModule, QuintModule, isDef } from '../ir/quintIr'
 import { LookupTable } from '../names/base'
-import { Loc, ParserPhase3, parsePhase3importAndNameResolution } from '../parsing/quintParserFrontend'
+import { ParserPhase3, SourceMap, parsePhase3importAndNameResolution } from '../parsing/quintParserFrontend'
 import { AnalysisOutput } from '../quintAnalyzer'
 import { inlineTypeAliases } from '../types/aliasInliner'
 import { flattenModule } from './flattener'
 import { flattenInstances } from './instanceFlattener'
 import { unshadowNames } from '../names/unshadower'
+import { quintErrorToString } from '../quintError'
 
 /**
  * Flatten an array of modules, replacing instances, imports and exports with
@@ -40,7 +41,7 @@ export function flattenModules(
   modules: QuintModule[],
   table: LookupTable,
   idGenerator: IdGenerator,
-  sourceMap: Map<bigint, Loc>,
+  sourceMap: SourceMap,
   analysisOutput: AnalysisOutput
 ): { flattenedModules: FlatModule[]; flattenedTable: LookupTable; flattenedAnalysis: AnalysisOutput } {
   // FIXME: use copies of parameters so the original objects are not mutated.
@@ -111,11 +112,11 @@ export function flattenModules(
   }
 }
 
-function resolveNamesOrThrow(modules: QuintModule[], sourceMap: Map<bigint, Loc>): ParserPhase3 {
+function resolveNamesOrThrow(modules: QuintModule[], sourceMap: SourceMap): ParserPhase3 {
   const result = parsePhase3importAndNameResolution({ modules, sourceMap })
   if (result.isLeft()) {
     modules.forEach(m => console.log(moduleToString(m)))
-    throw new Error('Internal error while flattening ' + result.value.map(e => e.explanation))
+    throw new Error('Internal error while flattening ' + result.value.errors.map(quintErrorToString))
   }
 
   return result.unwrap()
