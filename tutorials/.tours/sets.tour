@@ -71,19 +71,19 @@
     {
       "title": "Power to the folds!",
       "description": "\nWhen @KryptoCoffeeCat decided to learn a bit more about `fold`, they have found\nthat this operator is quite powerful. For instance, they could write their\nown versions of `exists`, `forall`, `filter`, `map`, and `flatten`.\nDoes it mean that they should use `fold` everywhere now? Better not.\nAlthough folds can express a lot of things, they should be used when really\nrequired. After all, `exists`, `forall`, `filter`, `map`, `flatten`\nare much easier to read.\n        ",
-      "line": 102,
+      "line": 99,
       "file": "lesson4-sets/sets.qnt"
     },
     {
       "title": "Computing cycles with powersets",
       "description": "\nOK, here is a real challenge for @KryptoCoffeeCat! Can they find four pairs\nthat could be swapped in some order, so the sequence of swaps starts with\none coin and ends with the same coin? Degens love swap cycles!\n\nTo do that, they first write `availableUnorderedPairs.powerset()`, which\nblasts `availableUnorderedPairs` into a huge set that contains all combinations\nof pairs. These sets have all possible sizes. @KryptoCoffeeCat filter out the\nsets that are not quadruples. How many quadruples are there? Let's see:\n\n            \n>> echo 'quads.size()' | quint -r ./lesson4-sets/sets.qnt::sets\n\n\n\nPhew. It will take @KryptoCoffeeCat hours to analyze all these pairs by hand.\nHow do we know that some pairs form a cycle? Let's have a look at an example:\n\n| Coin A   | Coin B  |\n| -------- | ------- |\n| JUNO     | ATOM    |\n| ATOM     | OSMO    |\n| OSMO     | EVMOS   |\n| EVMOS    | JUNO    |\n\nThere is an interesting property here. Every coin appears exactly twice in\nthe above set. By browsing [Wikipedia](https://en.wikipedia.org/wiki/Main_Page),\n@KryptoCoffeeCat found that a slightly more general observation was made by\nLeonard Euler about 300 years ago, when he analyzed\n[the bridges of K\u00f6nigsberg](https://en.wikipedia.org/wiki/Seven_Bridges_of_K%C3%B6nigsberg).\nNot bad, @KryptoCoffeeCat!\n\nAfter figuring out the cycles, @KryptoCoffeeCat write the predicate `isCycle`\nand finally the definition `cycles4`. Now they compute all these cycles in a\nsingle click:\n            \n>> echo 'cycles4' | quint -r ./lesson4-sets/sets.qnt::sets\n\n",
-      "line": 122,
+      "line": 119,
       "file": "lesson4-sets/sets.qnt"
     },
     {
       "title": "Conclusions",
       "description": "\n\n@KryptoCoffeeCat has learned a lot in this tutorial.\nBy looking at the\n[Quint cheatsheet](https://github.com/informalsystems/quint/blob/main/doc/quint-cheatsheet.pdf),\nthey have found that this tutorial did not cover two operators on sets.\nCan you find them too?\n\nIf you are writing code in programming languages such as JavaScript, Rust,\nGolang, Java, Python, and similar, sets may be not your everyday data\nstructure (such as arrays and lists), though there is a good chance that you\nhave used sets before. In Quint, it's the opposite. If there is a problem,\nthen sets are most likely there to solve it. If not, you can use maps or lists,\nwhich will be explained in follow up tutorials.\n\n        ",
-      "line": 123,
+      "line": 120,
       "file": "lesson4-sets/sets.qnt"
     }
   ]

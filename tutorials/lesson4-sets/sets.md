@@ -233,7 +233,7 @@ Yes, @KryptoCoffeeCat, this is the way!
 ```
 
 
-After having the moment of revelation, @KryptoCoffeeCat decide to redefine the
+After having the moment of revelation @KryptoCoffeeCat, decide to redefine the
 set `availablePairs`. This time the set should contain sets like
 `Set("ATOM", "JUNO")` instead of pairs like `("ATOM", "JUNO")`.
 @KryptoCoffeeCat does not want to write the whole table again. So they quickly
@@ -529,31 +529,28 @@ echo 'buyableNSwaps(Set("ATOM"), 5)' | quint -r sets.qnt::sets
 
 ```bluespec
 
-  // Higher-order operators do not work in REPL atm:
-  // https://github.com/informalsystems/quint/issues/221
-
   // inSet.exists(myFun) can be expressed via `fold`, when `inSet` is finite
-  //val myExists(inSet: Set[a], pred: a => bool): bool =
-  //  inSet.fold(false, (result, elem) => result or pred(elem))
+  val myExists(inSet: Set[a], pred: a => bool): bool =
+    inSet.fold(false, (result, elem) => result or pred(elem))
 
   // inSet.forall(myFun) can be expressed via `fold`, when `inSet` is finite
-  //val myForall(inSet: Set[a], pred: a => bool): bool =
-  //  inSet.fold(true, (result, elem) => result and pred(elem))
+  val myForall(inSet: Set[a], pred: a => bool): bool =
+    inSet.fold(true, (result, elem) => result and pred(elem))
 
   // inSet.filter(myFun) can be expressed via `fold`, when `inSet` is finite
-  //val myFilter(inSet: Set[a], pred: a => bool): Set[a] =
-  //  inSet.fold(Set(),
-  //    (result, elem) =>
-  //      if (pred(elem)) result.union(Set(elem)) else result)
+  val myFilter(inSet: Set[a], pred: a => bool): Set[a] =
+    inSet.fold(Set(),
+      (result, elem) =>
+        if (pred(elem)) result.union(Set(elem)) else result)
 
   // inSet.map(myFun) can be expressed via `fold`, when `inSet` is finite
-  //val myMap(inSet: Set[a], mapper: a => b): Set[b] =
-  //  inSet.fold(Set(),
-  //    (result, elem) => result.union(Set(mapper(elem))))
+  val myMap(inSet: Set[a], mapper: a => b): Set[b] =
+    inSet.fold(Set(),
+      (result, elem) => result.union(Set(mapper(elem))))
 
   // flatten(inSet) can be expressed via `fold`, when `inSet` is finite
-  //val myFlatten(inSet: Set[Set[a]]): Set[a] =
-  //  inSet.fold(Set(), (result, elem) => result.union(elem) )
+  val myFlatten(inSet: Set[Set[a]]): Set[a] =
+    inSet.fold(Set(), (result, elem) => result.union(elem) )
 ```
 
 

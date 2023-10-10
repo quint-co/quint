@@ -75,31 +75,28 @@ module sets {
     1.to(n).fold(someCoins,
                  (prevCoins, i) => buyableVia1Swap(prevCoins))
 
-  // Higher-order operators do not work in REPL atm:
-  // https://github.com/informalsystems/quint/issues/221
-
   // inSet.exists(myFun) can be expressed via `fold`, when `inSet` is finite
-  //val myExists(inSet: Set[a], pred: a => bool): bool =
-  //  inSet.fold(false, (result, elem) => result or pred(elem))
+  val myExists(inSet: Set[a], pred: a => bool): bool =
+    inSet.fold(false, (result, elem) => result or pred(elem))
 
   // inSet.forall(myFun) can be expressed via `fold`, when `inSet` is finite
-  //val myForall(inSet: Set[a], pred: a => bool): bool =
-  //  inSet.fold(true, (result, elem) => result and pred(elem))
+  val myForall(inSet: Set[a], pred: a => bool): bool =
+    inSet.fold(true, (result, elem) => result and pred(elem))
 
   // inSet.filter(myFun) can be expressed via `fold`, when `inSet` is finite
-  //val myFilter(inSet: Set[a], pred: a => bool): Set[a] =
-  //  inSet.fold(Set(),
-  //    (result, elem) =>
-  //      if (pred(elem)) result.union(Set(elem)) else result)
+  val myFilter(inSet: Set[a], pred: a => bool): Set[a] =
+    inSet.fold(Set(),
+      (result, elem) =>
+        if (pred(elem)) result.union(Set(elem)) else result)
 
   // inSet.map(myFun) can be expressed via `fold`, when `inSet` is finite
-  //val myMap(inSet: Set[a], mapper: a => b): Set[b] =
-  //  inSet.fold(Set(),
-  //    (result, elem) => result.union(Set(mapper(elem))))
+  val myMap(inSet: Set[a], mapper: a => b): Set[b] =
+    inSet.fold(Set(),
+      (result, elem) => result.union(Set(mapper(elem))))
 
   // flatten(inSet) can be expressed via `fold`, when `inSet` is finite
-  //val myFlatten(inSet: Set[Set[a]]): Set[a] =
-  //  inSet.fold(Set(), (result, elem) => result.union(elem) )
+  val myFlatten(inSet: Set[Set[a]]): Set[a] =
+    inSet.fold(Set(), (result, elem) => result.union(elem) )
 
   // all combinations of unordered pairs that have exactly 4 pairs
   pure val quads =
