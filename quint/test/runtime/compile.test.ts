@@ -986,11 +986,8 @@ describe('incremental compilation', () => {
   function compileModules(text: string, mainName: string): CompilationContext {
     const idGen = newIdGenerator()
     const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
-    const parseResult = parse(idGen, 'fake_location', fake_path, text)
-    if (parseResult.isLeft()) {
-      assert.fail('Failed to parse mocked up module')
-    }
-    const { modules, table, sourceMap } = parseResult.unwrap()
+    const { modules, table, sourceMap, errors } = parse(idGen, 'fake_location', fake_path, text)
+    assert.isEmpty(errors)
 
     const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
     assert.isEmpty(analysisErrors)

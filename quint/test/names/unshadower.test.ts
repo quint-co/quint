@@ -4,7 +4,7 @@ import { newIdGenerator } from '../../src/idGenerator'
 import { SourceLookupPath } from '../../src/parsing/sourceResolver'
 import { parse } from '../../src/parsing/quintParserFrontend'
 import { unshadowNames } from '../../src/names/unshadower'
-import { moduleToString, quintErrorToString } from '../../src'
+import { moduleToString } from '../../src'
 import { dedent } from '../textUtils'
 
 describe('unshadowNames', () => {
@@ -13,11 +13,9 @@ describe('unshadowNames', () => {
     const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
 
     const result = parse(idGenerator, 'test_location', fake_path, text)
-    if (result.isLeft()) {
-      assert.fail(`Expected no error, but got ${result.value.errors.map(quintErrorToString)} `)
-    }
+    assert.isEmpty(result.errors)
 
-    return result.unwrap()
+    return result
   }
 
   it('returns a module with no shadowed names', () => {

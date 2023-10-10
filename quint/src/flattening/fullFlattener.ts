@@ -113,11 +113,11 @@ export function flattenModules(
 }
 
 function resolveNamesOrThrow(modules: QuintModule[], sourceMap: SourceMap): ParserPhase3 {
-  const result = parsePhase3importAndNameResolution({ modules, sourceMap })
-  if (result.isLeft()) {
+  const result = parsePhase3importAndNameResolution({ modules, sourceMap, errors: [] })
+  if (result.errors.length > 0) {
     modules.forEach(m => console.log(moduleToString(m)))
-    throw new Error('Internal error while flattening ' + result.value.errors.map(quintErrorToString))
+    throw new Error('Internal error while flattening ' + result.errors.map(quintErrorToString))
   }
 
-  return result.unwrap()
+  return result
 }

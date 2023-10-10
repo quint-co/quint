@@ -11,7 +11,6 @@ import {
   parsePhase4toposort,
 } from '../../src/parsing/quintParserFrontend'
 import { lf } from 'eol'
-import { right } from '@sweet-monads/either'
 import { newIdGenerator } from '../../src/idGenerator'
 import { collectIds } from '../util'
 import { fileSourceResolver } from '../../src/parsing/sourceResolver'
@@ -47,22 +46,18 @@ function parseAndCompare(artifact: string): void {
     return path.replace(basepath, 'mocked_path/testFixture')
   })
   const mainPath = resolver.lookupPath(basepath, `${artifact}.qnt`)
-  const phase2Result = parsePhase1fromText(gen, readQuint(artifact), mainPath.toSourceName()).chain(res =>
-    parsePhase2sourceResolution(gen, resolver, mainPath, res)
-  )
+  const phase1Result = parsePhase1fromText(gen, readQuint(artifact), mainPath.toSourceName())
+  const phase2Result = parsePhase2sourceResolution(gen, resolver, mainPath, phase1Result)
 
-  if (phase2Result.isLeft()) {
+  if (phase2Result.errors.length > 0) {
     // An error occurred at phase 2, check if it is the expected result
-    phase2Result.mapLeft(
-      err =>
-        (outputToCompare = {
-          stage: 'parsing',
-          errors: err.errors.map(mkErrorMessage(err.sourceMap)),
-          warnings: [],
-        })
-    )
-  } else if (phase2Result.isRight()) {
-    const { modules: modules2, sourceMap } = phase2Result.value
+    outputToCompare = {
+      stage: 'parsing',
+      errors: phase2Result.errors.map(mkErrorMessage(phase2Result.sourceMap)),
+      warnings: [],
+    }
+  } else {
+    const { modules: modules2, sourceMap } = phase2Result
     const expectedIds = modules2.flatMap(m => collectIds(m)).sort()
     // Phase 1-2 succededed, check that the source map is correct
     assert.sameDeepMembers([...sourceMap.keys()].sort(), expectedIds, 'expected source map to contain all ids')
@@ -72,23 +67,19 @@ function parseAndCompare(artifact: string): void {
 
     assert.deepEqual(sourceMapResult, expectedSourceMap, 'expected source maps to be equal')
 
-    const phase4Result = parsePhase3importAndNameResolution(phase2Result.value).chain(phase3Data =>
-      parsePhase4toposort(phase3Data)
-    )
+    const phase3Result = parsePhase3importAndNameResolution(phase2Result)
+    const phase4Result = parsePhase4toposort(phase3Result)
 
-    if (phase4Result.isLeft()) {
+    if (phase4Result.errors.length > 0) {
       // An error occurred at phases 3-4, check if it is the expected result
-      phase4Result.mapLeft(
-        err =>
-          (outputToCompare = {
-            stage: 'parsing',
-            errors: err.errors.map(mkErrorMessage(sourceMap)),
-            warnings: [],
-          })
-      )
+      outputToCompare = {
+        stage: 'parsing',
+        errors: phase4Result.errors.map(mkErrorMessage(phase4Result.sourceMap)),
+        warnings: [],
+      }
     } else {
       // All phases succeeded, check that the module is correclty output
-      const modules4 = phase4Result.value.modules
+      const modules4 = phase4Result.modules
       outputToCompare = { stage: 'parsing', warnings: [], modules: modules4 }
     }
   }
@@ -107,10 +98,7 @@ describe('parsing', () => {
       'mocked_path/testFixture/_0001emptyModule.qnt'
     )
     const module = { id: 1n, name: 'empty', declarations: [] }
-    assert.deepEqual(
-      result.map(r => r.modules[0]),
-      right(module)
-    )
+    assert.deepEqual(result.modules[0], module)
   })
 
   it('parses SuperSpec', () => {
@@ -119,7 +107,7 @@ describe('parsing', () => {
       readQuint('SuperSpec'),
       'mocked_path/testFixture/SuperSpec.qnt'
     )
-    assert(result.isRight())
+    assert.isEmpty(result.errors)
   })
 
   it('parses SuperSpec correctly', () => {

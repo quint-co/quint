@@ -219,33 +219,40 @@ export function compileDecl(
 
   // We need to resolve names for this new definition. Incremental name
   // resolution is not our focus now, so just resolve everything again.
-  return parsePhase3importAndNameResolution({ modules: originalModules, sourceMap: state.sourceMap })
-    .mapLeft(errorContextFromMessage(evaluationState.listener))
-    .map(({ table }) => {
-      const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, decl)
+  const { table, errors } = parsePhase3importAndNameResolution({
+    modules: originalModules,
+    sourceMap: state.sourceMap,
+    errors: [],
+  })
 
-      const {
-        flattenedModules: flatModules,
-        flattenedTable,
-        flattenedAnalysis,
-      } = flattenModules(originalModules, table, state.idGen, state.sourceMap, analysisOutput)
+  if (errors.length > 0) {
+    // For now, don't try to run analysis and flattening if there are errors
+    return errorContextFromMessage(evaluationState.listener)({ errors, sourceMap: state.sourceMap })
+  }
 
-      const newState = {
-        ...state,
-        analysisOutput: flattenedAnalysis,
-        modules: flatModules,
-        originalModules: originalModules,
-      }
+  const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, decl)
 
-      const flatDefinitions = flatModules.find(m => m.name === state.mainName)!.declarations
+  const {
+    flattenedModules: flatModules,
+    flattenedTable,
+    flattenedAnalysis,
+  } = flattenModules(originalModules, table, state.idGen, state.sourceMap, analysisOutput)
 
-      // Filter definitions that were not compiled yet
-      const defsToCompile = flatDefinitions.filter(d => !mainModule.declarations.some(d2 => d2.id === d.id))
+  const newState = {
+    ...state,
+    analysisOutput: flattenedAnalysis,
+    modules: flatModules,
+    originalModules: originalModules,
+  }
 
-      const ctx = compile(newState, evaluationState, flattenedTable, rng.next, defsToCompile)
+  const flatDefinitions = flatModules.find(m => m.name === state.mainName)!.declarations
 
-      return { ...ctx, analysisErrors }
-    }).value // We produce a compilation context in any case
+  // Filter definitions that were not compiled yet
+  const defsToCompile = flatDefinitions.filter(d => !mainModule.declarations.some(d2 => d2.id === d.id))
+
+  const ctx = compile(newState, evaluationState, flattenedTable, rng.next, defsToCompile)
+
+  return { ...ctx, analysisErrors }
 }
 
 /**
@@ -269,51 +276,43 @@ export function compileFromCode(
   rand: (bound: bigint) => bigint
 ): CompilationContext {
   // parse the module text
-  return (
-    parse(idGen, '<module_input>', mainPath, code)
-      // On errors, we'll produce the computational context up to this point
-      .mapLeft(errorContextFromMessage(execListener))
-      .chain(
-        parseData => {
-          const { modules, table, sourceMap } = parseData
-          const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
+  const { modules, table, sourceMap, errors } = parse(idGen, '<module_input>', mainPath, code)
+  // On errors, we'll produce the computational context up to this point
+  const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
 
-          const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
-            modules,
-            table,
-            idGen,
-            sourceMap,
-            analysisOutput
-          )
-          const compilationState: CompilationState = {
-            originalModules: modules,
-            modules: flattenedModules,
-            mainName,
-            sourceMap,
-            analysisOutput: flattenedAnalysis,
-            idGen,
-          }
-
-          const main = flattenedModules.find(m => m.name === mainName)
-          // when the main module is not found, we will report an error
-          const mainNotFoundError: QuintError[] = main
-            ? []
-            : [
-                {
-                  code: 'QNT405',
-                  message: `Main module ${mainName} not found`,
-                },
-              ]
-          const defsToCompile = main ? main.declarations : []
-          const ctx = compile(compilationState, newEvaluationState(execListener), flattenedTable, rand, defsToCompile)
-
-          return right({
-            ...ctx,
-            compileErrors: ctx.compileErrors.concat(mainNotFoundError),
-            analysisErrors,
-          })
-        }
-        // we produce CompilationContext in any case
-      ).value
+  const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
+    modules,
+    table,
+    idGen,
+    sourceMap,
+    analysisOutput
   )
+  const compilationState: CompilationState = {
+    originalModules: modules,
+    modules: flattenedModules,
+    mainName,
+    sourceMap,
+    analysisOutput: flattenedAnalysis,
+    idGen,
+  }
+
+  const main = flattenedModules.find(m => m.name === mainName)
+  // when the main module is not found, we will report an error
+  const mainNotFoundError: QuintError[] = main
+    ? []
+    : [
+        {
+          code: 'QNT405',
+          message: `Main module ${mainName} not found`,
+        },
+      ]
+  const defsToCompile = main ? main.declarations : []
+  const ctx = compile(compilationState, newEvaluationState(execListener), flattenedTable, rand, defsToCompile)
+
+  return {
+    ...ctx,
+    compileErrors: ctx.compileErrors.concat(mainNotFoundError),
+    analysisErrors,
+    syntaxErrors: errors,
+  }
 }

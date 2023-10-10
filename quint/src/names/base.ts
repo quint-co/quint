@@ -14,6 +14,7 @@
 
 import { QuintDef, QuintExport, QuintImport, QuintInstance, QuintLambdaParameter } from '../ir/quintIr'
 import { QuintType } from '../ir/quintTypes'
+import { QuintError } from '../quintError'
 
 /**
  * Possible kinds for definitions
@@ -79,6 +80,7 @@ export type UnusedDefinitions = (moduleName: string) => Set<LookupDefinition>
 export type NameResolutionResult = {
   table: LookupTable
   unusedDefinitions: UnusedDefinitions
+  errors: QuintError[]
 }
 
 /**

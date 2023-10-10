@@ -16,7 +16,6 @@
  * information.
  */
 
-import { Either, left, right } from '@sweet-monads/either'
 import { Map } from 'immutable'
 import { Set } from 'immutable'
 import { WithId } from '../ir/quintIr'
@@ -38,7 +37,7 @@ type Edges = Map<bigint, Set<bigint>>
  * @returns either `Right(sorted)` that contains the correctly sorted nodes,
  *   or `Left(nodes)` that contains a subgraph with a cycle inside.
  */
-export function toposort<T extends WithId>(inEdges: Edges, unsorted: T[]): Either<Set<bigint>, T[]> {
+export function toposort<T extends WithId>(inEdges: Edges, unsorted: T[]): { cycles: Set<bigint>; sorted: T[] } {
   // map sorted ids to nodes
   const idToNode: Map<bigint, T> = unsorted.reduce((map, node) => map.set(node.id, node), Map<bigint, T>())
 
@@ -83,13 +82,11 @@ export function toposort<T extends WithId>(inEdges: Edges, unsorted: T[]): Eithe
     updateSinksAndEdges()
   }
 
-  if (!edges.isEmpty()) {
-    // we have found a cycle, report an error
-    return left(Set(edges.keys()))
-  } else {
-    if (sorted.length != unsorted.length) {
-      console.error(`sorted.length == ${sorted.length}, whereas unsorted.length == ${unsorted.length}`)
-    }
-    return right(sorted.map(id => idToNode.get(id)!))
+  if (sorted.length != unsorted.length) {
+    console.error(`sorted.length == ${sorted.length}, whereas unsorted.length == ${unsorted.length}`)
+  }
+  return {
+    sorted: sorted.map(id => idToNode.get(id)!),
+    cycles: Set(edges.keys()),
   }
 }
