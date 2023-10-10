@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author                                                  |
 |:---------|:-----------|:--------------------------------------------------------|
-| 33       | 07.07.2023 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
+| 34       | 09.10.2023 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -236,7 +236,7 @@ This is intentional: We do not want to mix actions with temporal formulas.
 
 A module definition is introduced like follows:
 
-```
+```bluespec
 // module definition
 module Foo {
   // declarations
@@ -789,6 +789,23 @@ _ => e
 
 Note that lambdas can be only passed as arguments to other operators. They
 cannot be freely assigned to values or returned as a result of an operator.
+
+**Note:** There is a difference between a lambda expression of the form
+`(x, y) => e1` and a lambda expression of the form `((x, y)) => e2`.
+The former is a two-argument lambda operator, whereas the latter is a
+single-argument lambda operator that accepts a pair as its first argument.
+The latter form `((x, y)) => e2` is equivalent to:
+
+```bluespec
+(t =>
+  val x = t._1
+  val y = t._2
+  e2
+)
+```
+
+As a result, the form `((x_1, ..., x_n)) => e_n` is syntax sugar for tuple
+unpacking, as shown in the above example.
 
 ### Two forms of operator application
 

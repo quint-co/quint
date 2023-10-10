@@ -965,16 +965,6 @@ export class CompilerVisitor implements IRVisitor {
       return onError(app.id, `Called unknown operator ${app.opcode}`)
     }
 
-    // retrieve the operator type to see, whether tuples should be unpacked
-    const operScheme = this.types.get(lookupEntry.id)
-    if (operScheme === undefined) {
-      return onError(app.id, `No type for ${app.opcode}`)
-    }
-
-    if (operScheme.type.kind !== 'oper') {
-      return onError(app.id, `Expected ${app.opcode} to be an operator`)
-    }
-
     // this function gives us access to the compiled operator later
     let callableRef: () => Maybe<Callable>
 
@@ -1126,19 +1116,8 @@ export class CompilerVisitor implements IRVisitor {
     const callable = this.compStack.pop() as Callable
     // apply the lambda to a single element of the set
     const evaluateElem = function (elem: RuntimeValue): Maybe<[RuntimeValue, RuntimeValue]> {
-      let actualArgs: RuntimeValue[]
-      if (callable.nparams === 1) {
-        // store the set element in the register
-        actualArgs = [elem]
-      } else {
-        // unpack a tuple and store its elements in the registers
-        actualArgs = [...elem]
-        if (actualArgs.length !== callable.nparams) {
-          return none()
-        }
-      }
-      // evaluate the predicate against the actual arguments.
-      const result = callable.eval(actualArgs.map(just))
+      // evaluate the predicate against the actual arguments
+      const result = callable.eval([just(elem)])
       return result.map(result => [result as RuntimeValue, elem])
     }
     this.applyFun(sourceId, 1, (iterable: Iterable<RuntimeValue>): Maybe<RuntimeValue> => {

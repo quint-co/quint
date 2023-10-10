@@ -106,9 +106,9 @@ module withConsts {
   val test_or = false or true
   val test_implies = false implies true
   def F(x) = x
-  val G(x) = F(x) and not(x)
-  val test_and_arg(x) = F(x) and not(x)
-  val test_or_arg(x) = F(x) or not(x)
+  def G(x) = F(x) and not(x)
+  def test_and_arg(x) = F(x) and not(x)
+  def test_or_arg(x) = F(x) or not(x)
 
   val test_block_and = and {
       false,
