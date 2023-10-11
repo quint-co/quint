@@ -870,6 +870,12 @@ export class ToIrListener implements QuintListener {
     }
   }
 
+  exitErrorEq(ctx: p.ErrorEqContext) {
+    // An error was already reported. We push a valid expression to recover from the error
+    const args = popMany(this.exprStack, 2)
+    this.pushApplication(ctx, 'eq', args)
+  }
+
   // p and q
   exitAnd(ctx: any) {
     const args = popMany(this.exprStack, 2)

@@ -49,39 +49,27 @@ function parseAndCompare(artifact: string): void {
   const phase1Result = parsePhase1fromText(gen, readQuint(artifact), mainPath.toSourceName())
   const phase2Result = parsePhase2sourceResolution(gen, resolver, mainPath, phase1Result)
 
-  if (phase2Result.errors.length > 0) {
-    // An error occurred at phase 2, check if it is the expected result
-    outputToCompare = {
-      stage: 'parsing',
-      errors: phase2Result.errors.map(mkErrorMessage(phase2Result.sourceMap)),
-      warnings: [],
-    }
-  } else {
-    const { modules: modules2, sourceMap } = phase2Result
-    const expectedIds = modules2.flatMap(m => collectIds(m)).sort()
-    // Phase 1-2 succededed, check that the source map is correct
-    assert.sameDeepMembers([...sourceMap.keys()].sort(), expectedIds, 'expected source map to contain all ids')
+  // const { modules: modules2, sourceMap } = phase2Result
 
+  const phase3Result = parsePhase3importAndNameResolution(phase2Result)
+  const { modules, sourceMap, errors } = parsePhase4toposort(phase3Result)
+
+  if (errors.length === 0) {
+    // Only check source map if there are no errors. Otherwise, ids generated for error nodes might be missing from the
+    // actual modules
+    const expectedIds = modules.flatMap(m => collectIds(m)).sort()
+    assert.sameDeepMembers([...sourceMap.keys()].sort(), expectedIds, 'expected source map to contain all ids')
     const expectedSourceMap = readJson(`${artifact}.map`)
     const sourceMapResult = JSONbig.parse(JSONbig.stringify(compactSourceMap(sourceMap)))
 
     assert.deepEqual(sourceMapResult, expectedSourceMap, 'expected source maps to be equal')
-
-    const phase3Result = parsePhase3importAndNameResolution(phase2Result)
-    const phase4Result = parsePhase4toposort(phase3Result)
-
-    if (phase4Result.errors.length > 0) {
-      // An error occurred at phases 3-4, check if it is the expected result
-      outputToCompare = {
-        stage: 'parsing',
-        errors: phase4Result.errors.map(mkErrorMessage(phase4Result.sourceMap)),
-        warnings: [],
-      }
-    } else {
-      // All phases succeeded, check that the module is correclty output
-      const modules4 = phase4Result.modules
-      outputToCompare = { stage: 'parsing', warnings: [], modules: modules4 }
-    }
+  }
+  // All phases succeeded, check that the module is correclty output
+  outputToCompare = {
+    stage: 'parsing',
+    warnings: [],
+    modules: modules,
+    errors: errors.map(mkErrorMessage(sourceMap)),
   }
 
   // run it through stringify-parse to obtain the same json (due to bigints)

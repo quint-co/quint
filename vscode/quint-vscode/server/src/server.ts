@@ -213,6 +213,10 @@ export class QuintLanguageServer {
     connection.onCodeAction((params: CodeActionParams): HandlerResult<CodeAction[], void> => {
       return params.context.diagnostics.reduce((actions, diagnostic) => {
         const data = diagnostic.data as QuintErrorData
+        if (!data) {
+          return actions
+        }
+
         const fix = data.fix
 
         switch (fix?.kind) {
