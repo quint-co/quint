@@ -246,7 +246,7 @@ const verifyCmd = {
         default: false,
       })
       .option('apalache-config', {
-        desc: 'Filename of the additional Apalache configuration (in the HOCON format, a superset of JSON)',
+        desc: 'path to an additional Apalache configuration file (in JSON)',
         type: 'string',
       })
       .option('verbosity', {
