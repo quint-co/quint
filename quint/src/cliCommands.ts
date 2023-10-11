@@ -570,8 +570,14 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<VerifiedStage>> {
   const verifying = { ...prev, stage: 'verifying' as stage }
   const args = verifying.args
-  // TODO error handing for file reads and deserde
-  const loadedConfig = args.apalacheConfig ? JSON.parse(readFileSync(args.apalacheConfig, 'utf-8')) : {}
+  let loadedConfig: any = {}
+  try {
+    if (args.apalacheConfig) {
+      loadedConfig = JSON.parse(readFileSync(args.apalacheConfig, 'utf-8'))
+    }
+  } catch (err: any) {
+    return cliErr(`failed to read Apalache config: ${err.message}`, { ...verifying, errors: [], sourceCode: '' })
+  }
 
   const mainArg = prev.args.main
   const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
