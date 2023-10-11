@@ -110,12 +110,11 @@ export class QuintLanguageServer {
 
           if (diagnostics.length === 0) {
             // For now, only run analysis if there are no parsing errors
-            this.scheduleAnalysis(change.document, diagnostics)
+            this.scheduleAnalysis(change.document)
           }
         })
-        .catch(diagnostics => {
-          this.connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
-          this.scheduleAnalysis(change.document, diagnostics)
+        .catch(err => {
+          this.connection.console.error(`Error during parsing: ${err}`)
         })
     })
 
