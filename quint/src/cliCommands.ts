@@ -524,6 +524,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       maybePrintCounterExample(verbosityLevel, result.states, result.frames)
       if (result.status === 'ok') {
         console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
+        console.log(chalk.gray(`Use --seed=0x${result.seed.toString(16)} to reproduce.`))
         if (verbosity.hasHints(options.verbosity)) {
           console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
           console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
@@ -575,8 +576,14 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<VerifiedStage>> {
   const verifying = { ...prev, stage: 'verifying' as stage }
   const args = verifying.args
-  // TODO error handing for file reads and deserde
-  const loadedConfig = args.apalacheConfig ? JSON.parse(readFileSync(args.apalacheConfig, 'utf-8')) : {}
+  let loadedConfig: any = {}
+  try {
+    if (args.apalacheConfig) {
+      loadedConfig = JSON.parse(readFileSync(args.apalacheConfig, 'utf-8'))
+    }
+  } catch (err: any) {
+    return cliErr(`failed to read Apalache config: ${err.message}`, { ...verifying, errors: [], sourceCode: '' })
+  }
 
   const mainArg = prev.args.main
   const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
@@ -646,6 +653,7 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
       inv: args.invariant ? ['q::inv'] : undefined,
       'temporal-props': args.temporal ? ['q::temporalProps'] : undefined,
       tuning: {
+        ...(loadedConfig.checker?.tuning ?? {}),
         'search.simulation': args.randomTransitions ? 'true' : 'false',
       },
     },

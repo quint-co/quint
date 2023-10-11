@@ -279,8 +279,8 @@ Options:
                                                                         [string]
   --random-transitions  choose transitions at random (= use symbolic simulation)
                                                       [boolean] [default: false]
-  --apalache-config  Filename of the additional Apalache configuration (in the
-                     HOCON format, a superset of JSON)                  [string]
+  --apalache-config     path to an additional Apalache configuration file (in
+                        JSON)                                           [string]
   --verbosity        control how much output is produced (0 to 5)
                                                            [number] [default: 2]
 ```
