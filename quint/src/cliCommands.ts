@@ -519,6 +519,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       maybePrintCounterExample(verbosityLevel, result.states, result.frames)
       if (result.status === 'ok') {
         console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
+        console.log(chalk.gray(`Use --seed=0x${result.seed.toString(16)} to reproduce.`))
         if (verbosity.hasHints(options.verbosity)) {
           console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
           console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))

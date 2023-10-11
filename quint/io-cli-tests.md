@@ -421,6 +421,7 @@ An example execution:
 [State 4] { n: 12 }
 
 [ok] No violation found (duration).
+Use --seed=0x11 to reproduce.
 You may increase --max-samples and --max-steps.
 Use --verbosity to produce more (or less) output.
 ```

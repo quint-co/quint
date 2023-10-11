@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Error messages for `val` vs `def` and `pure val` vs `pure def` errors are clearer (#1208)
+- `quint run` prints the random seed even if no bug was found (#1213)
 
 ### Deprecated
 ### Removed
