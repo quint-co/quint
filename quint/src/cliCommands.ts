@@ -603,6 +603,10 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
   // is that is hard to add this definitions in the proper stage, in our current setup. We should try to tackle this
   // while solving #1052.
   const resolutionResult = parsePhase3importAndNameResolution({ ...prev, errors: [] })
+  if (resolutionResult.errors.length > 0) {
+    const errors = resolutionResult.errors.map(mkErrorMessage(prev.sourceMap))
+    return cliErr('name resolution failed', { ...verifying, errors })
+  }
 
   verifying.table = resolutionResult.table
   extraDefs.forEach(def => analyzeInc(verifying, verifying.table, def))
@@ -704,7 +708,7 @@ export async function docs(loaded: LoadedStage): Promise<CLIProcedure<Documentat
     return [module.name, documentationEntries]
   })
 
-  if (phase1Data.errors.length === 0) {
+  if (phase1Data.errors.length > 0) {
     const newErrorMessages = phase1Data.errors.map(mkErrorMessage(phase1Data.sourceMap))
     const errorMessages = parsing.errors ? parsing.errors.concat(newErrorMessages) : newErrorMessages
     return left({ msg: 'parsing failed', stage: { ...parsing, errors: errorMessages } })
