@@ -40,7 +40,7 @@ import { URI } from 'vscode-uri'
 import {
   AnalysisOutput,
   DocumentationEntry,
-  ParserPhase3,
+  ParserPhase4,
   QuintErrorData,
   analyzeModules,
   builtinDocs,
@@ -63,7 +63,7 @@ export class QuintLanguageServer {
   private idGenerator = newIdGenerator()
 
   // Store auxiliary information by document
-  private parsedDataByDocument: Map<DocumentUri, ParserPhase3> = new Map()
+  private parsedDataByDocument: Map<DocumentUri, ParserPhase4> = new Map()
   private analysisOutputByDocument: Map<DocumentUri, AnalysisOutput> = new Map()
 
   // Documentation entries by id, by document
@@ -73,7 +73,7 @@ export class QuintLanguageServer {
   private analysisTimeout: NodeJS.Timeout = setTimeout(() => {}, 0)
 
   constructor(private readonly connection: Connection, private readonly documents: TextDocuments<TextDocument>) {
-    const loadedBuiltInDocs = builtinDocs(this.idGenerator).unwrap()
+    const loadedBuiltInDocs = builtinDocs(this.idGenerator)
 
     connection.onInitialize((_params: InitializeParams) => {
       const result: InitializeResult = {
@@ -104,7 +104,14 @@ export class QuintLanguageServer {
       parseDocument(this.idGenerator, change.document)
         .then(result => {
           this.parsedDataByDocument.set(change.document.uri, result)
-          this.scheduleAnalysis(change.document)
+
+          const diagnostics = diagnosticsFromErrors(result.errors, result.sourceMap)
+          this.connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
+
+          if (diagnostics.length === 0) {
+            // For now, only run analysis if there are no parsing errors
+            this.scheduleAnalysis(change.document, diagnostics)
+          }
         })
         .catch(diagnostics => {
           this.connection.sendDiagnostics({ uri: change.document.uri, diagnostics })

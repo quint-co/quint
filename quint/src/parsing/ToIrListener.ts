@@ -1236,7 +1236,7 @@ export class ToIrListener implements QuintListener {
 
   private undefinedDef(ctx: any): QuintEx {
     const id = this.getId(ctx)
-    return { id, kind: 'name', name: 'undefined' }
+    return { id, kind: 'bool', value: true }
   }
 
   /**

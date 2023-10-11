@@ -91,17 +91,13 @@ export function parseExpressionOrDeclaration(
   const errors: QuintError[] = []
   const parser = setupParser(text, sourceLocation, errors, sourceMap, idGenerator)
   const tree = parser.declarationOrExpr()
-  if (errors.length > 0) {
-    return { kind: 'error', errors: errors }
-  } else {
-    const listener = new ExpressionOrDeclarationListener(sourceLocation, idGenerator)
+  const listener = new ExpressionOrDeclarationListener(sourceLocation, idGenerator)
 
-    // Use an existing source map as a starting point.
-    listener.sourceMap = sourceMap
+  // Use an existing source map as a starting point.
+  listener.sourceMap = sourceMap
 
-    ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
-    return listener.result ?? { kind: 'error', errors: listener.errors }
-  }
+  ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
+  return listener.result ?? { kind: 'error', errors: listener.errors }
 }
 
 /**
@@ -115,27 +111,15 @@ export function parsePhase1fromText(
   sourceLocation: string
 ): ParseResult<ParserPhase1> {
   const errors: QuintError[] = []
-  const sourceMap: SourceMap = new Map()
-  const parser = setupParser(text, sourceLocation, errors, sourceMap, idGen)
+  const listener = new ToIrListener(sourceLocation, idGen)
+  const parser = setupParser(text, sourceLocation, errors, listener.sourceMap, idGen)
   // run the parser
   const tree = parser.modules()
-  if (errors.length > 0) {
-    // report the errors
-    return { errors: errors, modules: [], sourceMap: sourceMap }
-  } else {
-    // walk through the AST and construct the IR
-    const listener = new ToIrListener(sourceLocation, idGen)
-    ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
 
-    if (listener.errors.length > 0) {
-      return { errors: listener.errors, modules: listener.modules, sourceMap: listener.sourceMap }
-    } else if (listener.modules.length > 0) {
-      return { errors: [], modules: listener.modules, sourceMap: listener.sourceMap }
-    } else {
-      // istanbul ignore next
-      throw new Error('Illegal state: root module is undefined. Please report a bug.')
-    }
-  }
+  // walk through the AST and construct the IR
+  ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
+
+  return { errors: errors.concat(listener.errors), modules: listener.modules, sourceMap: listener.sourceMap }
 }
 
 /**

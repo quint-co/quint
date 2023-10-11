@@ -82,9 +82,6 @@ export function toposort<T extends WithId>(inEdges: Edges, unsorted: T[]): { cyc
     updateSinksAndEdges()
   }
 
-  if (sorted.length != unsorted.length) {
-    console.error(`sorted.length == ${sorted.length}, whereas unsorted.length == ${unsorted.length}`)
-  }
   return {
     sorted: sorted.map(id => idToNode.get(id)!),
     cycles: Set(edges.keys()),
