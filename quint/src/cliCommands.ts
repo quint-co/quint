@@ -219,7 +219,7 @@ export async function parse(loaded: LoadedStage): Promise<CLIProcedure<ParsedSta
       }
       return parsePhase3importAndNameResolution(phase2Data)
     },
-    parsePhase4toposort,
+    phase3Data => parsePhase4toposort(phase3Data),
     phase4Data => ({ ...parsing, ...phase4Data, idGen }),
     result => {
       if (result.errors.length > 0) {
