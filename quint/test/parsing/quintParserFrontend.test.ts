@@ -49,7 +49,6 @@ function parseAndCompare(artifact: string): void {
   const phase1Result = parsePhase1fromText(gen, readQuint(artifact), mainPath.toSourceName())
   const phase2Result = parsePhase2sourceResolution(gen, resolver, mainPath, phase1Result)
 
-
   const phase3Result = parsePhase3importAndNameResolution(phase2Result)
   const { modules, sourceMap, errors } = parsePhase4toposort(phase3Result)
 
