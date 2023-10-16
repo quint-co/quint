@@ -9,8 +9,6 @@
  */
 
 import { CharStreams, CommonTokenStream } from 'antlr4ts'
-import { Either, left, merge, right } from '@sweet-monads/either'
-import { Set } from 'immutable'
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
 
 import { QuintLexer } from '../generated/QuintLexer'
@@ -20,7 +18,7 @@ import { QuintListener } from '../generated/QuintListener'
 import { QuintDeclaration, QuintDef, QuintEx, QuintModule, isDef } from '../ir/quintIr'
 import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { ToIrListener } from './ToIrListener'
-import { LookupTable, NameResolutionResult, UnusedDefinitions } from '../names/base'
+import { LookupTable, UnusedDefinitions } from '../names/base'
 import { resolveNames } from '../names/resolver'
 import { QuintError } from '../quintError'
 import { SourceLookupPath, SourceResolver, fileSourceResolver } from './sourceResolver'
@@ -29,6 +27,7 @@ import { walkModule } from '../ir/IRVisitor'
 import { toposort } from '../static/toposort'
 import { ErrorCode } from '../quintError'
 import { Loc } from '../ErrorMessage'
+import { flow } from 'lodash'
 
 /**
  * A source map that is constructed by the parser phases.
@@ -38,7 +37,7 @@ export type SourceMap = Map<bigint, Loc>
 /**
  * The result of parsing, T is specialized to a phase, see below.
  */
-export type ParseResult<T> = Either<{ errors: QuintError[]; sourceMap: SourceMap }, T>
+export type ParseResult<T> = T
 
 /**
  * Phase 1: Parsing a string of characters into intermediate representation.
@@ -46,6 +45,7 @@ export type ParseResult<T> = Either<{ errors: QuintError[]; sourceMap: SourceMap
 export interface ParserPhase1 {
   modules: QuintModule[]
   sourceMap: SourceMap
+  errors: QuintError[]
 }
 
 /**
@@ -91,17 +91,13 @@ export function parseExpressionOrDeclaration(
   const errors: QuintError[] = []
   const parser = setupParser(text, sourceLocation, errors, sourceMap, idGenerator)
   const tree = parser.declarationOrExpr()
-  if (errors.length > 0) {
-    return { kind: 'error', errors: errors }
-  } else {
-    const listener = new ExpressionOrDeclarationListener(sourceLocation, idGenerator)
+  const listener = new ExpressionOrDeclarationListener(sourceLocation, idGenerator)
 
-    // Use an existing source map as a starting point.
-    listener.sourceMap = sourceMap
+  // Use an existing source map as a starting point.
+  listener.sourceMap = sourceMap
 
-    ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
-    return listener.result ?? { kind: 'error', errors: listener.errors }
-  }
+  ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
+  return listener.result ?? { kind: 'error', errors: listener.errors }
 }
 
 /**
@@ -115,27 +111,15 @@ export function parsePhase1fromText(
   sourceLocation: string
 ): ParseResult<ParserPhase1> {
   const errors: QuintError[] = []
-  const sourceMap: SourceMap = new Map()
-  const parser = setupParser(text, sourceLocation, errors, sourceMap, idGen)
+  const listener = new ToIrListener(sourceLocation, idGen)
+  const parser = setupParser(text, sourceLocation, errors, listener.sourceMap, idGen)
   // run the parser
   const tree = parser.modules()
-  if (errors.length > 0) {
-    // report the errors
-    return left({ errors: errors, sourceMap: sourceMap })
-  } else {
-    // walk through the AST and construct the IR
-    const listener = new ToIrListener(sourceLocation, idGen)
-    ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
 
-    if (listener.errors.length > 0) {
-      return left({ errors: listener.errors, sourceMap: listener.sourceMap })
-    } else if (listener.modules.length > 0) {
-      return right({ modules: listener.modules, sourceMap: listener.sourceMap })
-    } else {
-      // istanbul ignore next
-      throw new Error('Illegal state: root module is undefined. Please report a bug.')
-    }
-  }
+  // walk through the AST and construct the IR
+  ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
+
+  return { errors: errors.concat(listener.errors), modules: listener.modules, sourceMap: listener.sourceMap }
 }
 
 /**
@@ -190,7 +174,7 @@ export function parsePhase2sourceResolution(
             message: `Cyclic imports: ${cycle}`,
             reference: decl.id,
           }
-          return left({ errors: [err], sourceMap: sourceMap })
+          return { ...mainPhase1Result, errors: mainPhase1Result.errors.concat([err]), sourceMap }
         }
         if (sourceToModules.has(importeePath.normalizedPath)) {
           // The source has been parsed already. Just push the module rank,
@@ -207,22 +191,18 @@ export function parsePhase2sourceResolution(
             message: `import ... from '${decl.fromSource}': could not load`,
             reference: decl.id,
           }
-          return left({ errors: [err], sourceMap: sourceMap })
+          return { ...mainPhase1Result, errors: mainPhase1Result.errors.concat([err]), sourceMap }
         }
         // try to parse the source code
         const parseResult = parsePhase1fromText(idGen, errorOrText.value, importeePath.toSourceName())
-        if (parseResult.isLeft()) {
-          // failed to parse the code of the loaded file
-          return parseResult
-        }
         // all good: add the new modules to the worklist, and update the source map
-        const newModules = Array.from(parseResult.value.modules).reverse()
+        const newModules = Array.from(parseResult.modules).reverse()
         newModules.forEach(m => {
           worklist.push([m, pathTrail.concat([importeePath])])
         })
         sourceToModules.set(importeePath.normalizedPath, newModules)
         newModules.forEach(m => moduleRank.set(m.name, maxModuleRank++))
-        sourceMap = new Map([...sourceMap, ...parseResult.value.sourceMap])
+        sourceMap = new Map([...sourceMap, ...parseResult.sourceMap])
       }
     }
   }
@@ -233,7 +213,7 @@ export function parsePhase2sourceResolution(
     allModules = allModules.concat(mods)
   }
   allModules.sort((m1, m2) => moduleRank.get(m2.name)! - moduleRank.get(m1.name)!)
-  return right({ modules: allModules, sourceMap: sourceMap })
+  return { ...mainPhase1Result, modules: allModules, sourceMap }
 }
 
 /**
@@ -242,9 +222,8 @@ export function parsePhase2sourceResolution(
  * Note that the IR may be ill-typed.
  */
 export function parsePhase3importAndNameResolution(phase2Data: ParserPhase2): ParseResult<ParserPhase3> {
-  return resolveNames(phase2Data.modules)
-    .mapLeft(errors => ({ errors, sourceMap: phase2Data.sourceMap }))
-    .map((result: NameResolutionResult) => ({ ...phase2Data, ...result }))
+  const result = resolveNames(phase2Data.modules)
+  return { ...phase2Data, ...result, errors: phase2Data.errors.concat(result.errors) }
 }
 
 /**
@@ -254,34 +233,26 @@ export function parsePhase3importAndNameResolution(phase2Data: ParserPhase2): Pa
 export function parsePhase4toposort(phase3Data: ParserPhase3): ParseResult<ParserPhase4> {
   // topologically sort all declarations in each module
   const context = mkCallGraphContext(phase3Data.modules)
-  const cycleOrModules: Either<Set<bigint>, QuintModule[]> = merge(
-    phase3Data.modules.map(mod => {
-      const visitor = new CallGraphVisitor(phase3Data.table, context)
-      walkModule(visitor, mod)
-      return toposort(visitor.graph, mod.declarations).mapRight(decls => {
-        return { ...mod, declarations: decls }
-      })
-    })
-  )
+  const errors = phase3Data.errors
+  const modules = phase3Data.modules.map(mod => {
+    const visitor = new CallGraphVisitor(phase3Data.table, context)
+    walkModule(visitor, mod)
+    const result = toposort(visitor.graph, mod.declarations)
 
-  return cycleOrModules
-    .mapLeft(cycleIds => {
-      // found a cycle, report it
-      return {
-        errors: cycleIds.toArray().map((id): QuintError => {
-          return {
-            code: 'QNT099',
-            message: 'Found cyclic declarations. Use fold and foldl instead of recursion',
-            reference: id,
-          }
-        }),
-        sourceMap: phase3Data.sourceMap,
-      }
-    })
-    .mapRight(modules => {
-      // reordered the declarations
-      return { ...phase3Data, modules }
-    })
+    errors.push(
+      ...result.cycles.toArray().map((id): QuintError => {
+        return {
+          code: 'QNT099',
+          message: 'Found cyclic declarations. Use fold and foldl instead of recursion',
+          reference: id,
+        }
+      })
+    )
+
+    return { ...mod, declarations: result.sorted }
+  })
+
+  return { ...phase3Data, modules, errors }
 }
 
 export function compactSourceMap(sourceMap: SourceMap): { sourceIndex: any; map: any } {
@@ -320,13 +291,15 @@ export function parse(
   mainPath: SourceLookupPath,
   code: string
 ): ParseResult<ParserPhase4> {
-  return parsePhase1fromText(idGen, code, sourceLocation)
-    .chain(phase1Data => {
+  return flow([
+    () => parsePhase1fromText(idGen, code, sourceLocation),
+    phase1Data => {
       const resolver = fileSourceResolver()
       return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
-    })
-    .chain(phase2Data => parsePhase3importAndNameResolution(phase2Data))
-    .chain(phase3Data => parsePhase4toposort(phase3Data))
+    },
+    parsePhase3importAndNameResolution,
+    parsePhase4toposort,
+  ])()
 }
 
 export function parseDefOrThrow(text: string, idGen?: IdGenerator, sourceMap?: SourceMap): QuintDef {

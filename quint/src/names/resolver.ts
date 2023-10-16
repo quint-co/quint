@@ -12,7 +12,6 @@
  * @module
  */
 
-import { Either, left, right } from '@sweet-monads/either'
 import { IRVisitor, walkModule } from '../ir/IRVisitor'
 import { QuintApp, QuintInstance, QuintLambda, QuintLet, QuintModule, QuintName, QuintOpDef } from '../ir/quintIr'
 import { QuintConstType } from '../ir/quintTypes'
@@ -28,14 +27,12 @@ import { difference } from 'lodash'
  *
  * @returns A lookup table of definitions and a mapping of unused definitions if successful, otherwise a list of errors.
  */
-export function resolveNames(quintModules: QuintModule[]): Either<QuintError[], NameResolutionResult> {
+export function resolveNames(quintModules: QuintModule[]): NameResolutionResult {
   const visitor = new NameResolver()
   quintModules.forEach(module => {
     walkModule(visitor, module)
   })
-  return visitor.errors.length > 0
-    ? left(visitor.errors)
-    : right({ table: visitor.table, unusedDefinitions: visitor.unusedDefinitions })
+  return { table: visitor.table, unusedDefinitions: visitor.unusedDefinitions, errors: visitor.errors }
 }
 
 /**

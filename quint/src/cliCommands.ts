@@ -46,6 +46,7 @@ import { verify } from './quintVerifier'
 import { flattenModules } from './flattening/fullFlattener'
 import { analyzeInc, analyzeModules } from './quintAnalyzer'
 import { ExecutionFrame } from './runtime/trace'
+import { flow } from 'lodash'
 
 export type stage = 'loading' | 'parsing' | 'typechecking' | 'testing' | 'running' | 'documentation'
 
@@ -204,28 +205,32 @@ export async function parse(loaded: LoadedStage): Promise<CLIProcedure<ParsedSta
   const { args, sourceCode, path } = loaded
   const parsing = { ...loaded, stage: 'parsing' as stage }
   const idGen = newIdGenerator()
-  return parsePhase1fromText(idGen, sourceCode, path)
-    .chain(phase1Data => {
+  return flow([
+    () => parsePhase1fromText(idGen, sourceCode, path),
+    phase1Data => {
       const resolver = fileSourceResolver()
       const mainPath = resolver.lookupPath(dirname(path), basename(path))
       return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
-    })
-    .chain(phase2Data => {
+    },
+    phase2Data => {
       if (args.sourceMap) {
         // Write source map to the specified file
         writeToJson(args.sourceMap, compactSourceMap(phase2Data.sourceMap))
       }
       return parsePhase3importAndNameResolution(phase2Data)
-    })
-    .chain(phase3Data => {
-      return parsePhase4toposort(phase3Data)
-    })
-    .map(phase4Data => ({ ...parsing, ...phase4Data, idGen }))
-    .mapLeft(({ errors, sourceMap }) => {
-      const newErrorMessages = errors.map(mkErrorMessage(sourceMap))
-      const errorMessages = parsing.errors ? parsing.errors.concat(newErrorMessages) : newErrorMessages
-      return { msg: 'parsing failed', stage: { ...parsing, errors: errorMessages } }
-    })
+    },
+    phase3Data => parsePhase4toposort(phase3Data),
+    phase4Data => ({ ...parsing, ...phase4Data, idGen }),
+    result => {
+      if (result.errors.length > 0) {
+        const newErrorMessages = result.errors.map(mkErrorMessage(result.sourceMap))
+        const errorMessages = parsing.errors ? parsing.errors.concat(newErrorMessages) : newErrorMessages
+        return left({ msg: 'parsing failed', stage: { ...result, errors: errorMessages } })
+      }
+
+      return right(result)
+    },
+  ])()
 }
 
 export function mkErrorMessage(sourceMap: SourceMap): (_: QuintError) => ErrorMessage {
@@ -604,13 +609,13 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
   // We have to update the lookup table and analysis result with the new definitions. This is not ideal, and the problem
   // is that is hard to add this definitions in the proper stage, in our current setup. We should try to tackle this
   // while solving #1052.
-  const resolutionResult = parsePhase3importAndNameResolution(prev)
-  if (resolutionResult.isLeft()) {
-    const errors = resolutionResult.value.errors.map(mkErrorMessage(prev.sourceMap))
+  const resolutionResult = parsePhase3importAndNameResolution({ ...prev, errors: [] })
+  if (resolutionResult.errors.length > 0) {
+    const errors = resolutionResult.errors.map(mkErrorMessage(prev.sourceMap))
     return cliErr('name resolution failed', { ...verifying, errors })
   }
 
-  verifying.table = resolutionResult.unwrap().table
+  verifying.table = resolutionResult.table
   extraDefs.forEach(def => analyzeInc(verifying, verifying.table, def))
 
   // Flatten modules, replacing instances, imports and exports with their definitions
@@ -701,23 +706,23 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
 export async function docs(loaded: LoadedStage): Promise<CLIProcedure<DocumentationStage>> {
   const { sourceCode, path } = loaded
   const parsing = { ...loaded, stage: 'documentation' as stage }
-  return parsePhase1fromText(newIdGenerator(), sourceCode, path)
-    .mapLeft(({ errors, sourceMap }) => {
-      const newErrorMessages = errors.map(mkErrorMessage(sourceMap))
-      const errorMessages = parsing.errors ? parsing.errors.concat(newErrorMessages) : newErrorMessages
-      return { msg: 'parsing failed', stage: { ...parsing, errors: errorMessages } }
-    })
-    .map(phase1Data => {
-      const allEntries: [string, Map<string, DocumentationEntry>][] = phase1Data.modules.map(module => {
-        const documentationEntries = produceDocs(module)
-        const title = `# Documentation for ${module.name}\n\n`
-        const markdown = title + [...documentationEntries.values()].map(toMarkdown).join('\n\n')
-        console.log(markdown)
+  const phase1Data = parsePhase1fromText(newIdGenerator(), sourceCode, path)
+  const allEntries: [string, Map<string, DocumentationEntry>][] = phase1Data.modules.map(module => {
+    const documentationEntries = produceDocs(module)
+    const title = `# Documentation for ${module.name}\n\n`
+    const markdown = title + [...documentationEntries.values()].map(toMarkdown).join('\n\n')
+    console.log(markdown)
 
-        return [module.name, documentationEntries]
-      })
-      return { ...parsing, documentation: new Map(allEntries) }
-    })
+    return [module.name, documentationEntries]
+  })
+
+  if (phase1Data.errors.length > 0) {
+    const newErrorMessages = phase1Data.errors.map(mkErrorMessage(phase1Data.sourceMap))
+    const errorMessages = parsing.errors ? parsing.errors.concat(newErrorMessages) : newErrorMessages
+    return left({ msg: 'parsing failed', stage: { ...parsing, errors: errorMessages } })
+  }
+
+  return right({ ...parsing, documentation: new Map(allEntries) })
 }
 
 /** Write the OutputStage of the procedureStage as JSON, if --out is set

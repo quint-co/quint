@@ -17,11 +17,8 @@ describe('flattenInstances', () => {
       '\n'
     )} } module C { ${thirdModuleDecls.join('\n')} }`
 
-    const parseResult = parse(idGenerator, 'fake_location', fake_path, quintModules)
-    if (parseResult.isLeft()) {
-      assert.fail('Failed to parse mocked up module')
-    }
-    const { modules, table, sourceMap } = parseResult.unwrap()
+    const { modules, table, sourceMap, errors } = parse(idGenerator, 'fake_location', fake_path, quintModules)
+    assert.isEmpty(errors, 'Failed to parse mocked up module')
 
     const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
     assert.isEmpty(analysisErrors)

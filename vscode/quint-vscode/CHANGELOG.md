@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- Error reporting was changed to show more errors at a time, instead of having a lot of phases (#1220)
+
 ### Deprecated
 ### Removed
 ### Fixed
