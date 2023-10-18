@@ -97,7 +97,8 @@ export function parseExpressionOrDeclaration(
   listener.sourceMap = sourceMap
 
   ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
-  return listener.result ?? { kind: 'error', errors: listener.errors }
+  errors.push(...listener.errors)
+  return errors.length > 0 ? { kind: 'error', errors: errors } : listener.result!
 }
 
 /**
@@ -307,7 +308,8 @@ export function parseDefOrThrow(text: string, idGen?: IdGenerator, sourceMap?: S
   if (result.kind === 'declaration' && isDef(result.decl)) {
     return result.decl
   } else {
-    throw new Error(`Expected a definition, got ${result.kind}, parsing ${text}`)
+    const msg = result.kind === 'error' ? result.errors.join('\n') : `Expected a definition, got ${result.kind}`
+    throw new Error(`${msg}, parsing ${text}`)
   }
 }
 
