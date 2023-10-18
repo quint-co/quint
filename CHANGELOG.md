@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to be inferred or error to be reported (#1203)
 - Fixed propagation of `checker.tuning` Apalache config file key for `quint
   verify` (#1216)
+- Fixed a problem where some errors were not being reported in the REPL (#1223)
 
 ### Security
 
