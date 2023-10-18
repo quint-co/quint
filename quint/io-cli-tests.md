@@ -267,6 +267,24 @@ echo -e "init\nMyF::ExportedBasics::double(2)" | quint -r ../examples/language-f
 >>> 
 ```
 
+### Repl reports proper errors for malformed expressions 
+
+<!-- !test in repl malformed expressions -->
+```
+echo -e "1 +" | quint | tail -n +3
+```
+
+<!-- !test out repl malformed expressions -->
+```
+>>> syntax error: error: [QNT000] mismatched input '<EOF>' expecting {'{', 'nondet', 'val', 'def', 'pure', 'action', 'run', 'temporal', '[', 'all', 'any', 'if', '_', STRING, BOOL, INT, 'and', 'or', 'iff', 'implies', 'Set', 'List', 'Map', 'match', '-', '(', IDENTIFIER}
+
+
+
+
+>>> 
+```
+
+
 ### Tests works as expected
 
 The command `test` finds failing tests and prints error messages.
