@@ -30,8 +30,7 @@ import { LookupTable, UnusedDefinitions } from './names/base'
 import { ReplOptions, quintRepl } from './repl'
 import { OpQualifier, QuintEx, QuintModule, QuintOpDef, qualifier } from './ir/quintIr'
 import { TypeScheme } from './types/base'
-import lineColumn from 'line-column'
-import { formatError } from './errorReporter'
+import { createFinders, formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintError, quintErrorToString } from './quintError'
 import { TestOptions, TestResult, compileAndTest } from './runtime/testing'
@@ -72,7 +71,7 @@ interface OutputStage {
   documentation?: Map<string, Map<string, DocumentationEntry>>
   errors?: ErrorMessage[]
   warnings?: any[] // TODO it doesn't look like this is being used for anything. Should we remove it?
-  sourceCode?: Map<string, string> // Should not printed, only used in formatting errors
+  sourceCode?: Map<string, string> // Should not be printed, only used in formatting errors
 }
 
 // Extract just the parts of a ProcedureStage that we use for the output
@@ -839,8 +838,4 @@ function isMatchingTest(match: string | undefined, name: string) {
   } else {
     return name.endsWith('Test')
   }
-}
-
-export function createFinders(sourceCode: Map<string, string>): Map<string, any> {
-  return new Map([...sourceCode.entries()].map(([path, code]) => [path, lineColumn(code)]))
 }

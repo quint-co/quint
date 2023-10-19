@@ -28,7 +28,7 @@ import {
   lastTraceName,
   newCompilationState,
 } from './runtime/compile'
-import { formatError } from './errorReporter'
+import { createFinders, formatError } from './errorReporter'
 import { Register } from './runtime/runtime'
 import { TraceRecorder, newTraceRecorder } from './runtime/trace'
 import { parseDefOrThrow, parseExpressionOrDeclaration } from './parsing/quintParserFrontend'
@@ -41,7 +41,7 @@ import { cwd } from 'process'
 import { newIdGenerator } from './idGenerator'
 import { moduleToString } from './ir/IRprinting'
 import { EvaluationState, newEvaluationState } from './runtime/impl/compilerImpl'
-import { createFinders, mkErrorMessage } from './cliCommands'
+import { mkErrorMessage } from './cliCommands'
 import { QuintError } from './quintError'
 import { ErrorMessage } from './ErrorMessage'
 
@@ -507,6 +507,7 @@ function tryEvalModule(out: writer, state: ReplState, mainName: string): boolean
     context.syntaxErrors.length > 0
   ) {
     const tempState = state.clone()
+    // The compilation state has updated source code maps, to be used in error reporting
     tempState.compilationState = context.compilationState
     printErrors(out, tempState, context)
     return false

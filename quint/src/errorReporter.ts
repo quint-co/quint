@@ -18,11 +18,13 @@ import { Maybe, just } from '@sweet-monads/maybe'
 import JSONbig from 'json-bigint'
 
 import { ErrorMessage } from './ErrorMessage'
+import lineColumn from 'line-column'
 
 /** Generate a string with formatted error reporting for a given error message
  *
- * @param text the string read from the source file for which the messages' location info points to
- * @param finder a line-column lib finder object created from text, used as a cached map of indexes
+ * @param code a map from all possible loc sources to their file contents
+ * @param finders a map of from all possible loc sources to a line-column lib
+ *   finder object created from the text for that source, used as cached maps of indexes
  * @param message the error message to be reported
  * @param lineOffset a maybe number to add to line numbers in error messages,
  *        the default value is `just(1)`.
@@ -79,6 +81,17 @@ export function formatError(
     // return the bare bones error message
     return `error: ${message.explanation}`
   }
+}
+
+/**
+ * Create line column finders (from the line-column lib) for each file in a map.
+ *
+ * @param sourceCode - a map of file names to their contents
+ *
+ * @returns a map of file names to their finders
+ */
+export function createFinders(sourceCode: Map<string, string>): Map<string, any> {
+  return new Map([...sourceCode.entries()].map(([path, code]) => [path, lineColumn(code)]))
 }
 
 function formatLine(lineIndex: Maybe<number>, startCol: number, endCol: number, line: string): string {

@@ -23,7 +23,7 @@ import { compact } from 'lodash'
  * @param errors the errors to be transformed
  * @param sourceMap the source map for the document in which the errors occured
  *
- * @returns a list of diagnostics with the proper error messages and locations
+ * @returns a map with a list of diagnostics grouped by file
  */
 export function diagnosticsFromErrors(errors: QuintError[], sourceMap: SourceMap): Map<string, Diagnostic[]> {
   const diagnostics = new Map()

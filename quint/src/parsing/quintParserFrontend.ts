@@ -283,6 +283,7 @@ export function compactSourceMap(sourceMap: SourceMap): { sourceIndex: any; map:
  * @param sourceLocation A string describing the source location of the code being parsed.
  * @param mainPath The main source lookup path for resolving imports.
  * @param code The Quint code string to parse.
+ * @param sourceCode Optionally a map of previously parsed files, to be updated by this function
  * @returns A `ParseResult` containing the result of all three parsing phases.
  */
 export function parse(

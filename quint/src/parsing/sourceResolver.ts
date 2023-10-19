@@ -76,6 +76,8 @@ export interface SourceResolver {
 
 /**
  * Read the source code in UTF-8 from the filesystem via NodeJS API.
+ * @param sourceCode an optional map of paths to source code,
+ *        to be updated when reading new files
  * @param replacer an optional path replacement function,
  *        which is used to produce a source name
  * @returns A filesystem resolver. For each path, it returns
