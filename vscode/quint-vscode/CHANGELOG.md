@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The language server should no longer crash when there is a crash on quint
   functions (#1205)
+- Fixed a problem where errors in one file were being reported in other files
+  related to it (#1224).
 
 ### Security
 
