@@ -35,7 +35,7 @@ export function diagnosticsFromErrors(errors: QuintError[], sourceMap: SourceMap
     } else {
       const diagnostic = assembleDiagnostic(error, loc)
       const previous = diagnostics.get(loc.source) ?? []
-      diagnostics.set(loc.source, [ ...previous, diagnostic])
+      diagnostics.set(loc.source, [...previous, diagnostic])
     }
   })
 
