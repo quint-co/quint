@@ -81,7 +81,10 @@ export interface SourceResolver {
  * @returns A filesystem resolver. For each path, it returns
  *          either `left(errorMessage)`, or `right(fileContents)`.
  */
-export const fileSourceResolver = (replacer: (path: string) => string = path => path): SourceResolver => {
+export function fileSourceResolver(
+  sourceCode: Map<string, string> = new Map(),
+  replacer: (path: string) => string = path => path
+): SourceResolver {
   return {
     lookupPath: (basepath: string, importPath: string) => {
       return {
@@ -94,7 +97,9 @@ export const fileSourceResolver = (replacer: (path: string) => string = path => 
 
     load: (lookupPath: SourceLookupPath): Either<string, string> => {
       try {
-        return right(lf(readFileSync(lookupPath.normalizedPath, 'utf8')))
+        const code = lf(readFileSync(lookupPath.normalizedPath, 'utf8'))
+        sourceCode.set(lookupPath.normalizedPath, code)
+        return right(code)
       } catch (err: any) {
         return left(err.message)
       }

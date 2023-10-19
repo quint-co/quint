@@ -985,8 +985,9 @@ describe('incremental compilation', () => {
   /* Adds some quint code to the compilation and evaluation state */
   function compileModules(text: string, mainName: string): CompilationContext {
     const idGen = newIdGenerator()
+    const sourceCode: Map<string, string> = new Map()
     const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
-    const { modules, table, sourceMap, errors } = parse(idGen, 'fake_location', fake_path, text)
+    const { modules, table, sourceMap, errors } = parse(idGen, 'fake_path', fake_path, text, sourceCode)
     assert.isEmpty(errors)
 
     const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
@@ -1007,6 +1008,7 @@ describe('incremental compilation', () => {
       mainName,
       sourceMap,
       analysisOutput: flattenedAnalysis,
+      sourceCode,
     }
 
     const moduleToCompile = flattenedModules[flattenedModules.length - 1]

@@ -11,7 +11,6 @@
 import * as readline from 'readline'
 import { Readable, Writable } from 'stream'
 import { readFileSync, writeFileSync } from 'fs'
-import lineColumn from 'line-column'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { Either, left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
@@ -42,8 +41,9 @@ import { cwd } from 'process'
 import { newIdGenerator } from './idGenerator'
 import { moduleToString } from './ir/IRprinting'
 import { EvaluationState, newEvaluationState } from './runtime/impl/compilerImpl'
-import { mkErrorMessage } from './cliCommands'
+import { createFinders, mkErrorMessage } from './cliCommands'
 import { QuintError } from './quintError'
+import { ErrorMessage } from './ErrorMessage'
 
 // tunable settings
 export const settings = {
@@ -490,7 +490,8 @@ function simulatorBuiltins(st: CompilationState): QuintDef[] {
 
 function tryEvalModule(out: writer, state: ReplState, mainName: string): boolean {
   const modulesText = state.moduleHist
-  const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
+  const mainPath = fileSourceResolver(state.compilationState.sourceCode).lookupPath(cwd(), 'repl.ts')
+  state.compilationState.sourceCode.set(mainPath.toSourceName(), modulesText)
 
   const context = compileFromCode(
     newIdGenerator(),
@@ -505,7 +506,9 @@ function tryEvalModule(out: writer, state: ReplState, mainName: string): boolean
     context.compileErrors.length > 0 ||
     context.syntaxErrors.length > 0
   ) {
-    printErrors(out, state, context)
+    const tempState = state.clone()
+    tempState.compilationState = context.compilationState
+    printErrors(out, tempState, context)
     return false
   }
 
@@ -625,10 +628,21 @@ function printErrorMessages(
   const modulesText = state.moduleHist + inputText
   const messages = errors.map(mkErrorMessage(state.compilationState.sourceMap))
   // display the error messages and highlight the error places
+  // FIXME: moudulesText can come from multiple files, but `compileFromCode` ignores that.
+  // We use a fallback here to '<modules>'
+  const sourceCode = new Map([
+    ['<input>', inputText],
+    ['<modules>', modulesText],
+    ...state.compilationState.sourceCode.entries(),
+  ])
+  const finders = createFinders(sourceCode)
+
   messages.forEach(e => {
-    const text = e.locs[0]?.source === '<input>' ? inputText : modulesText
-    const finder = lineColumn(text)
-    const msg = formatError(text, finder, e, none())
+    const error: ErrorMessage = {
+      ...e,
+      locs: e.locs.map(loc => ({ ...loc, source: finders.has(loc.source) ? loc.source : '<modules>' })),
+    }
+    const msg = formatError(sourceCode, finders, error, none())
     out(color(`${kind}: ${msg}\n`))
   })
 }

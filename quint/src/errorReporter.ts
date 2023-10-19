@@ -15,6 +15,7 @@
  */
 
 import { Maybe, just } from '@sweet-monads/maybe'
+import JSONbig from 'json-bigint'
 
 import { ErrorMessage } from './ErrorMessage'
 
@@ -30,8 +31,8 @@ import { ErrorMessage } from './ErrorMessage'
  * @returns a formatted string with error information
  * */
 export function formatError(
-  text: string,
-  finder: any,
+  code: Map<string, string>,
+  finders: Map<string, any>,
   message: ErrorMessage,
   lineOffset: Maybe<number> = just(1)
 ): string {
@@ -42,6 +43,8 @@ export function formatError(
   try {
     // try to extract the location of the error
     return message.locs.reduce((output, loc) => {
+      const text = code.get(loc.source)!
+      const finder = finders.get(loc.source)!
       // If lineOffset is a number, print the source location.
       // If lineOfsset is undefined, omit the source location (e.g., in REPL).
       const locString = lineOffset.isJust()
@@ -70,6 +73,7 @@ export function formatError(
     console.error('\nSomething unexpected happened during error reconstruction. Please report a bug.\n')
     console.error('Include this in the bug report: {')
     console.trace(error.message)
+    console.log('Trying to format', JSONbig.stringify(message.locs))
     console.error('} // end of the bug report\n')
 
     // return the bare bones error message

@@ -289,12 +289,13 @@ export function parse(
   idGen: IdGenerator,
   sourceLocation: string,
   mainPath: SourceLookupPath,
-  code: string
+  code: string,
+  sourceCode: Map<string, string> = new Map()
 ): ParseResult<ParserPhase4> {
   return flow([
     () => parsePhase1fromText(idGen, code, sourceLocation),
     phase1Data => {
-      const resolver = fileSourceResolver()
+      const resolver = fileSourceResolver(sourceCode)
       return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
     },
     parsePhase3importAndNameResolution,

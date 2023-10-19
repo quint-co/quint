@@ -21,7 +21,7 @@ describe('diagnosticsFromErrorMap', () => {
   it('assembles diagnosticts from error maps', () => {
     const diagnostics = diagnosticsFromErrors(errors, sourceMap)
 
-    assert.sameDeepMembers(diagnostics, [
+    assert.sameDeepMembers(diagnostics.get('mocked_path')!, [
       {
         message: 'Message',
         range: {

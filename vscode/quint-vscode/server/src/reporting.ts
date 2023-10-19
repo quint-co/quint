@@ -25,17 +25,21 @@ import { compact } from 'lodash'
  *
  * @returns a list of diagnostics with the proper error messages and locations
  */
-export function diagnosticsFromErrors(errors: QuintError[], sourceMap: SourceMap): Diagnostic[] {
-  const diagnostics = errors.map(error => {
+export function diagnosticsFromErrors(errors: QuintError[], sourceMap: SourceMap): Map<string, Diagnostic[]> {
+  const diagnostics = new Map()
+
+  errors.forEach(error => {
     const loc = sourceMap.get(error.reference!)!
     if (!loc) {
       console.log(`loc for ${error} not found in source map`)
     } else {
-      return assembleDiagnostic(error, loc)
+      const diagnostic = assembleDiagnostic(error, loc)
+      const previous = diagnostics.get(loc.source) ?? []
+      diagnostics.set(loc.source, [ ...previous, diagnostic])
     }
   })
 
-  return compact(diagnostics)
+  return diagnostics
 }
 
 /**

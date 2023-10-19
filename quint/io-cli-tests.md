@@ -972,3 +972,24 @@ exit $exit_code
 >>> Map("p1" -> 0, "p2" -> 0, "p3" -> 0)
 >>> 
 ```
+
+### Errors are reported in the right file
+
+File `ImportFileWithError.qnt` has no error, but it imports a module from file `FileWithError.qnt` that has a type error. The type should be reported only in `FileWithError.qnt`.
+
+<!-- !test in error for file -->
+```
+quint typecheck ./testFixture/typechecking/ImportFileWithError.qnt 2>&1 | sed 's#.*quint/\(testFixture\)#HOME/\1#g'
+```
+
+<!-- !test out error for file -->
+```
+HOME/testFixture/typechecking/FileWithError.qnt:2:3 - error: [QNT000] Couldn't unify bool and int
+Trying to unify bool and int
+
+2:   val a: int = true
+     ^^^^^^^^^^^^^^^^^
+
+error: typechecking failed
+```
+
