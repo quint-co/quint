@@ -34,6 +34,12 @@ import { Loc } from '../ErrorMessage'
  * into IR. All semantic checks and type checking must be done at later
  * phases, as the IR may be constructed by other means.
  *
+ * The listener should be able to execute on top of malformed ASTs. It produces
+ * undefined/default components to fill in the gaps. The issues found while
+ * producing an AST should be reported, but should not prevent an IR to be
+ * constructed. This allow us to gather additional static analysis information
+ * to report before aborting.
+ *
  * @author Igor Konnov, Gabriela Moreira
  */
 export class ToIrListener implements QuintListener {
@@ -79,6 +85,20 @@ export class ToIrListener implements QuintListener {
 
   // translate: module <name> { ... }
   exitModule(ctx: p.ModuleContext) {
+    if (
+      this.exprStack.length > 0 ||
+      this.identOrStarStack.length > 0 ||
+      this.rowStack.length > 0 ||
+      this.variantStack.length > 0
+    ) {
+      // This used to be an assumption, but I'm not sure if it still holds after #1220.
+      // However, we don't want components leaking from one module to another, so it's better not to hide this completely
+      // We should turn this back into `assert`s after we feel more confident about it.
+      console.log(
+        'ATTENTION: There is some component(s) left on the stack(s) after parsing a module, please report a bug'
+      )
+    }
+
     const moduleId = this.getId(ctx)
 
     const module: QuintModule = {
@@ -167,16 +187,19 @@ export class ToIrListener implements QuintListener {
     const def = this.declarationStack.pop() ?? this.undefinedDeclaration(ctx)()
     const nested = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
 
-    const id = this.getId(ctx)
-    if (nested && def?.kind === 'def') {
-      const letExpr: QuintEx = {
-        id,
-        kind: 'let',
-        opdef: def,
-        expr: nested,
-      }
-      this.exprStack.push(letExpr)
+    if (def.kind !== 'def') {
+      // only `QuintDef` is allowed in `nondet` expressions
+      return
     }
+
+    const id = this.getId(ctx)
+    const letExpr: QuintEx = {
+      id,
+      kind: 'let',
+      opdef: def,
+      expr: nested,
+    }
+    this.exprStack.push(letExpr)
   }
 
   /** **************** translate operator definititons **********************/
@@ -206,32 +229,30 @@ export class ToIrListener implements QuintListener {
       }
     }
 
-    if (params) {
-      // if the definition has parameters, introduce a lambda
-      let body = expr ?? this.undefinedExpr(ctx)()
-      const id = this.getId(ctx)
+    let body = expr ?? this.undefinedExpr(ctx)()
+    const id = this.getId(ctx)
 
-      if (params.length > 0) {
-        body = {
-          id,
-          kind: 'lambda',
-          params,
-          qualifier,
-          expr: expr ?? this.undefinedExpr(ctx)(),
-        }
-      }
-      const def: QuintOpDef = {
+    if (params.length > 0) {
+      // if the definition has parameters, introduce a lambda
+      body = {
         id,
-        kind: 'def',
-        name,
+        kind: 'lambda',
+        params,
         qualifier,
-        expr: body,
+        expr: expr ?? this.undefinedExpr(ctx)(),
       }
-      if (typeTag.isJust()) {
-        def.typeAnnotation = typeTag.value
-      }
-      this.declarationStack.push(def)
     }
+    const def: QuintOpDef = {
+      id,
+      kind: 'def',
+      name,
+      qualifier,
+      expr: body,
+    }
+    if (typeTag.isJust()) {
+      def.typeAnnotation = typeTag.value
+    }
+    this.declarationStack.push(def)
   }
 
   // The definition parameters may be of two kinds: C-like and ML-like.
@@ -524,10 +545,15 @@ export class ToIrListener implements QuintListener {
     let args: QuintEx[] = []
     if (ctx.argList()) {
       // this operator has at least one argument
-      const wrappedArgs = this.exprStack.pop()
-      if (wrappedArgs && wrappedArgs.kind === 'app') {
-        args = wrappedArgs.args
+      const wrappedArgs = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
+
+      if (wrappedArgs.kind !== 'app' || wrappedArgs.opcode !== 'wrappedArgs') {
+        // the wrapped arguments should be an application
+        // see exitArgList()
+        return
       }
+
+      args = wrappedArgs.args
     } // else no arguments, e.g., set(), list()
 
     this.pushApplication(ctx, name, args)
@@ -536,7 +562,7 @@ export class ToIrListener implements QuintListener {
   // operator application via dot, e.g., S.union(T)
   exitDotCall(ctx: p.DotCallContext) {
     // pop: the first argument, operator name, the rest of arguments (wrapped)
-    const wrappedArgs = ctx.argList() ? this.exprStack.pop() : undefined
+    const wrappedArgs = ctx.argList() ? this.exprStack.pop() ?? this.undefinedExpr(ctx)() : undefined
     const name = ctx.nameAfterDot().text
     const callee = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
     const hasParen = ctx.LPAREN()
@@ -545,9 +571,13 @@ export class ToIrListener implements QuintListener {
       let args: QuintEx[] = []
       if (wrappedArgs) {
         // n >= 2: there is at least one argument in parentheses
-        if (wrappedArgs.kind === 'app' && wrappedArgs.opcode === 'wrappedArgs') {
-          args = [callee!].concat(wrappedArgs.args)
+        if (wrappedArgs.kind !== 'app' || wrappedArgs.opcode !== 'wrappedArgs') {
+          // the wrapped arguments should be an application
+          // see exitArgList()
+          return
         }
+
+        args = [callee!].concat(wrappedArgs.args)
       } else {
         // no arguments, as in e.g., s.head()
         args = [callee!]
@@ -594,40 +624,36 @@ export class ToIrListener implements QuintListener {
 
   // a lambda operator over multiple parameters
   exitLambdaUnsugared(ctx: p.LambdaUnsugaredContext) {
-    const expr = this.exprStack.pop()
+    const expr = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
     const params = popMany(this.paramStack, ctx.parameter().length, this.undefinedParam(ctx))
-    if (expr) {
-      const id = this.getId(ctx)
-      this.exprStack.push({
-        id,
-        kind: 'lambda',
-        params: params,
-        qualifier: 'def',
-        expr,
-      })
-    }
+    const id = this.getId(ctx)
+    this.exprStack.push({
+      id,
+      kind: 'lambda',
+      params: params,
+      qualifier: 'def',
+      expr,
+    })
   }
 
   // a lambda operator over a single tuple parameter,
   // unpacked into named fields
   exitLambdaTupleSugar(ctx: p.LambdaTupleSugarContext) {
-    const expr = this.exprStack.pop()
+    const expr = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
     const params = popMany(this.paramStack, ctx.parameter().length, this.undefinedParam(ctx))
 
-    if (expr) {
-      const id = this.getId(ctx)
-      // a fresh parameter to substitute for the tupled parameters
-      const freshLambdaParam = { id, name: `quintTupledLambdaParam${id}` }
-      const letBindingForTupleParams = params.reduce(this.letBindingForTupleParam(ctx, freshLambdaParam), expr)
-      const untupledLambda: QuintEx = {
-        id: this.getId(ctx),
-        kind: 'lambda',
-        params: [freshLambdaParam],
-        qualifier: 'def',
-        expr: letBindingForTupleParams,
-      }
-      this.exprStack.push(untupledLambda)
+    const id = this.getId(ctx)
+    // a fresh parameter to substitute for the tupled parameters
+    const freshLambdaParam = { id, name: `quintTupledLambdaParam${id}` }
+    const letBindingForTupleParams = params.reduce(this.letBindingForTupleParam(ctx, freshLambdaParam), expr)
+    const untupledLambda: QuintEx = {
+      id: this.getId(ctx),
+      kind: 'lambda',
+      params: [freshLambdaParam],
+      qualifier: 'def',
+      expr: letBindingForTupleParams,
     }
+    this.exprStack.push(untupledLambda)
   }
 
   // a single parameter in a lambda expression: an identifier or '_'
@@ -1058,22 +1084,29 @@ export class ToIrListener implements QuintListener {
   exitTypeUnionRec(ctx: p.TypeUnionRecContext) {
     const size = ctx.typeUnionRecOne().length
     const singletonUnions: QuintType[] = popMany(this.typeStack, size, this.undefinedType(ctx))
-    if (singletonUnions && singletonUnions[0].kind === 'union') {
-      const tag = singletonUnions[0].tag
-      let records = singletonUnions[0].records
-      const id = this.getId(ctx)
-      for (let i = 1; i < size; i++) {
-        const one = singletonUnions[i]
-        if (one.kind === 'union') {
-          if (one.tag === tag) {
-            records = records.concat(one.records)
-          } else {
-            this.errors.push(differentTagsError(id, tag, one.tag))
-          }
-        }
-      }
-      this.typeStack.push({ id, kind: 'union', tag, records })
+
+    if (singletonUnions[0].kind !== 'union') {
+      // Elements should be of union kind, see exitTypeUnionRecOne()
+      return
     }
+
+    const tag = singletonUnions[0].tag
+    let records = singletonUnions[0].records
+    const id = this.getId(ctx)
+    for (let i = 1; i < size; i++) {
+      const one = singletonUnions[i]
+      if (one.kind !== 'union') {
+        // Elements should be of union kind, see exitTypeUnionRecOne()
+        return
+      }
+
+      if (one.tag === tag) {
+        records = records.concat(one.records)
+      } else {
+        this.errors.push(differentTagsError(id, tag, one.tag))
+      }
+    }
+    this.typeStack.push({ id, kind: 'union', tag, records })
   }
 
   // One option of a disjoint union, e.g.,
@@ -1252,6 +1285,7 @@ function popMany<T>(stack: T[], n: number, defaultGen: () => T): T[] {
     return []
   }
   if (stack.length < n) {
+    // Not enough elements in the stack, push default ones.
     times(n - stack.length, () => stack.push(defaultGen()))
   }
 
