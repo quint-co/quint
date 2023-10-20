@@ -177,4 +177,12 @@ describe('ConstraintGeneratorVisitor', () => {
       'Operator expects 2 arguments but was given 1'
     )
   })
+
+  it('catches invalid arity on variant operator', () => {
+    testArityError(
+      'val x = variant("foo")',
+      'Checking arity for application of variant',
+      'Operator expects 2 arguments but was given 1'
+    )
+  })
 })

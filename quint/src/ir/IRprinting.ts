@@ -216,15 +216,19 @@ export function rowToString(r: Row): string {
  * @returns a string with the pretty printed sum
  */
 export function sumToString(s: QuintSumType): string {
-  return s.fields.fields
-    .map((f: RowField) => {
-      if (isUnitType(f.fieldType)) {
-        return `| ${f.fieldName}`
-      } else {
-        return `| ${f.fieldName}(${typeToString(f.fieldType)})`
-      }
-    })
-    .join('\n')
+  return (
+    '(' +
+    s.fields.fields
+      .map((f: RowField) => {
+        if (isUnitType(f.fieldType)) {
+          return `${f.fieldName}`
+        } else {
+          return `${f.fieldName}(${typeToString(f.fieldType)})`
+        }
+      })
+      .join(' | ') +
+    ')'
+  )
 }
 
 /**

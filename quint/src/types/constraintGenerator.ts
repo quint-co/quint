@@ -44,6 +44,7 @@ import {
   itemConstraints,
   recordConstructorConstraints,
   tupleConstructorConstraints,
+  variantConstraints,
   withConstraints,
 } from './specialConstraints'
 import { FreshVarGenerator } from '../FreshVarGenerator'
@@ -218,6 +219,9 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
             )
           case 'item':
             return validateArity(e.opcode, results, l => l === 2, '2').chain(() => itemConstraints(e.id, results, a))
+          // Sum type operators
+          case 'variant':
+            return validateArity(e.opcode, results, l => l === 2, '2').chain(() => variantConstraints(e.id, results, a))
           // Otherwise it's a standard operator with a definition in the context
           default:
             return definedSignature.map(t1 => {

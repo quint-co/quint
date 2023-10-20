@@ -3,5 +3,5 @@ module SumTypes {
     | A
     | B(int)
 
-  val canConstructVariants = List(A, B(2))
+  val canConstructVariants : List[T] = List(A, B(2))
 }
