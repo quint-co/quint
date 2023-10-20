@@ -206,12 +206,10 @@ export function variantConstraints(
       )
     )
   }
-  // We now know the label must be a quint string
-  const labelStr = labelExpr as QuintStr
 
   // A tuple with item acess of N should have at least N fields
   // Fill previous fileds with type variables
-  const variantField: RowField = { fieldName: labelStr.value, fieldType: valueType }
+  const variantField: RowField = { fieldName: labelExpr.value, fieldType: valueType }
 
   const generalVarType: QuintType = {
     kind: 'sum',

@@ -235,7 +235,6 @@ describe('unify', () => {
   })
 
   it('unifies sum-type', () => {
-    // We do not provide
     const result = unify(
       table,
       sumType([
@@ -253,13 +252,6 @@ describe('unify', () => {
     assert.isTrue(result.isRight())
     result.map(subs => assert.deepEqual(substitutionsToString(subs), '[ a |-> str, b |-> int ]'))
   })
-
-  // it('unifies sum type with open row', () => {
-  //   const result = unify(table, parseTypeOrThrow('A(a)'), parseTypeOrThrow('A(int) | B(str)'))
-
-  //   assert.isTrue(result.isRight())
-  //   result.map(subs => assert.deepEqual(substitutionsToString(subs), '[]'))
-  // })
 
   it("returns error when variable occurs in the other type's body", () => {
     const result = unify(table, parseTypeOrThrow('a'), parseTypeOrThrow('Set[a]'))
