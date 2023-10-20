@@ -279,7 +279,7 @@ export function compileFromCode(
   rand: (bound: bigint) => bigint
 ): CompilationContext {
   // parse the module text
-  // FIXME: We should build a proper sourceCode map from the files we previously loaded
+  // FIXME(#1052): We should build a proper sourceCode map from the files we previously loaded
   const sourceCode: Map<string, string> = new Map()
   const { modules, table, sourceMap, errors } = parse(idGen, mainPath.toSourceName(), mainPath, code, sourceCode)
   // On errors, we'll produce the computational context up to this point

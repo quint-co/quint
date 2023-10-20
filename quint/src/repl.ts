@@ -629,7 +629,7 @@ function printErrorMessages(
   const modulesText = state.moduleHist + inputText
   const messages = errors.map(mkErrorMessage(state.compilationState.sourceMap))
   // display the error messages and highlight the error places
-  // FIXME: moudulesText can come from multiple files, but `compileFromCode` ignores that.
+  // FIXME(#1052): moudulesText can come from multiple files, but `compileFromCode` ignores that.
   // We use a fallback here to '<modules>'
   const sourceCode = new Map([
     ['<input>', inputText],
