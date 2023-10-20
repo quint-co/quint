@@ -1,14 +1,14 @@
-# Quint
+# Quint Lang
 
 [![build
 badge](https://github.com/informalsystems/quint/actions/workflows/main.yml/badge.svg)](https://github.com/informalsystems/quint/actions)
 [![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/informal.quint-vscode?color=10b0f2&label=VSCode)](https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode)
 [![npm (scoped)](https://img.shields.io/npm/v/@informalsystems/quint)](https://www.npmjs.com/package/@informalsystems/quint)
 
-Quint is a modern specification language that is a particularly good fit for
-distributed systems and blockchain protocols. It combines the robust theoretical
-basis of the [Temporal Logic of Actions][TLA] (TLA) with state-of-the-art static
-analysis and development tooling.
+Quint Lang (or just Quint) is a modern specification language that is a
+particularly good fit for distributed systems and blockchain protocols. It
+combines the robust theoretical basis of the [Temporal Logic of Actions][TLA]
+(TLA) with state-of-the-art static analysis and development tooling.
 
 If you are impatient, here is a [15 minute intro to Quint][] at Gateway to
 Cosmos 2023.
