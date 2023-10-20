@@ -13,7 +13,7 @@ module exModule {
 const loaded = {
   args: {},
   path: 'mocked/path',
-  sourceCode: exModule,
+  sourceCode: new Map([['mocked/path', exModule]]),
   stage: 'loading' as stage,
   warnings: [],
 }

@@ -30,8 +30,7 @@ import { LookupTable, UnusedDefinitions } from './names/base'
 import { ReplOptions, quintRepl } from './repl'
 import { OpQualifier, QuintEx, QuintModule, QuintOpDef, qualifier } from './ir/quintIr'
 import { TypeScheme } from './types/base'
-import lineColumn from 'line-column'
-import { formatError } from './errorReporter'
+import { createFinders, formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintError, quintErrorToString } from './quintError'
 import { TestOptions, TestResult, compileAndTest } from './runtime/testing'
@@ -46,7 +45,7 @@ import { verify } from './quintVerifier'
 import { flattenModules } from './flattening/fullFlattener'
 import { analyzeInc, analyzeModules } from './quintAnalyzer'
 import { ExecutionFrame } from './runtime/trace'
-import { flow } from 'lodash'
+import { flow, isEqual, uniqWith } from 'lodash'
 
 export type stage = 'loading' | 'parsing' | 'typechecking' | 'testing' | 'running' | 'documentation'
 
@@ -72,7 +71,7 @@ interface OutputStage {
   documentation?: Map<string, Map<string, DocumentationEntry>>
   errors?: ErrorMessage[]
   warnings?: any[] // TODO it doesn't look like this is being used for anything. Should we remove it?
-  sourceCode?: string // Should not printed, only used in formatting errors
+  sourceCode?: Map<string, string> // Should not be printed, only used in formatting errors
 }
 
 // Extract just the parts of a ProcedureStage that we use for the output
@@ -118,7 +117,7 @@ interface ProcedureStage extends OutputStage {
 interface LoadedStage extends ProcedureStage {
   // Path to the source file
   path: string
-  sourceCode: string
+  sourceCode: Map<string, string>
 }
 
 interface ParsedStage extends LoadedStage {
@@ -161,7 +160,7 @@ interface DocumentationStage extends LoadedStage {
 // A procedure stage which is guaranteed to have `errors` and `sourceCode`
 interface ErrorData extends ProcedureStage {
   errors: ErrorMessage[]
-  sourceCode: string
+  sourceCode: Map<string, string>
 }
 
 type ErrResult = { msg: string; stage: ErrorData }
@@ -185,14 +184,18 @@ export async function load(args: any): Promise<CLIProcedure<LoadedStage>> {
         ...stage,
         args,
         path,
-        sourceCode,
+        sourceCode: new Map([[path, sourceCode]]),
         warnings: [],
       })
     } catch (err: unknown) {
-      return cliErr(`file ${args.input} could not be opened due to ${err}`, { ...stage, errors: [], sourceCode: '' })
+      return cliErr(`file ${args.input} could not be opened due to ${err}`, {
+        ...stage,
+        errors: [],
+        sourceCode: new Map(),
+      })
     }
   } else {
-    return cliErr(`file ${args.input} does not exist`, { ...stage, errors: [], sourceCode: '' })
+    return cliErr(`file ${args.input} does not exist`, { ...stage, errors: [], sourceCode: new Map() })
   }
 }
 
@@ -203,12 +206,13 @@ export async function load(args: any): Promise<CLIProcedure<LoadedStage>> {
  */
 export async function parse(loaded: LoadedStage): Promise<CLIProcedure<ParsedStage>> {
   const { args, sourceCode, path } = loaded
+  const text = sourceCode.get(path)!
   const parsing = { ...loaded, stage: 'parsing' as stage }
   const idGen = newIdGenerator()
   return flow([
-    () => parsePhase1fromText(idGen, sourceCode, path),
+    () => parsePhase1fromText(idGen, text, path),
     phase1Data => {
-      const resolver = fileSourceResolver()
+      const resolver = fileSourceResolver(sourceCode)
       const mainPath = resolver.lookupPath(dirname(path), basename(path))
       return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
     },
@@ -379,6 +383,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     sourceMap: testing.sourceMap,
     analysisOutput: flattenedAnalysis,
     idGen: testing.idGen,
+    sourceCode: testing.sourceCode,
   }
   const testOut = compileAndTest(compilationState, mainName, flattenedTable, options)
 
@@ -423,10 +428,10 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     // output errors, if there are any
     if (verbosity.hasTestDetails(verbosityLevel) && namedErrors.length > 0) {
       const code = prev.sourceCode!
-      const finder = lineColumn(code)
+      const finders = createFinders(code)
       out('')
       namedErrors.forEach(([name, err, testResult], index) => {
-        const details = formatError(code, finder, err)
+        const details = formatError(code, finders, err)
         // output the header
         out(`  ${index + 1}) ${name}:`)
         const lines = details.split('\n')
@@ -508,11 +513,12 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   }
   const startMs = Date.now()
 
-  const mainPath = fileSourceResolver().lookupPath(dirname(prev.args.input), basename(prev.args.input))
+  const mainText = prev.sourceCode.get(prev.path)!
+  const mainPath = fileSourceResolver(prev.sourceCode).lookupPath(dirname(prev.args.input), basename(prev.args.input))
   const mainId = prev.modules.find(m => m.name === mainName)!.id
   const mainStart = prev.sourceMap.get(mainId)!.start.index
   const mainEnd = prev.sourceMap.get(mainId)!.end!.index
-  const result = compileAndRun(newIdGenerator(), prev.sourceCode, mainStart, mainEnd, mainName, mainPath, options)
+  const result = compileAndRun(newIdGenerator(), mainText, mainStart, mainEnd, mainName, mainPath, options)
 
   if (result.status === 'error') {
     const newErrors = result.errors.map(mkErrorMessage(prev.sourceMap))
@@ -582,14 +588,14 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
       loadedConfig = JSON.parse(readFileSync(args.apalacheConfig, 'utf-8'))
     }
   } catch (err: any) {
-    return cliErr(`failed to read Apalache config: ${err.message}`, { ...verifying, errors: [], sourceCode: '' })
+    return cliErr(`failed to read Apalache config: ${err.message}`, { ...verifying, errors: [], sourceCode: new Map() })
   }
 
   const mainArg = prev.args.main
   const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
   const main = verifying.modules.find(m => m.name === mainName)
   if (!main) {
-    return cliErr(`module ${mainName} does not exist`, { ...verifying, errors: [], sourceCode: '' })
+    return cliErr(`module ${mainName} does not exist`, { ...verifying, errors: [], sourceCode: new Map() })
   }
 
   // Wrap init, step, invariant and temporal properties in other definitions,
@@ -705,8 +711,9 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
  */
 export async function docs(loaded: LoadedStage): Promise<CLIProcedure<DocumentationStage>> {
   const { sourceCode, path } = loaded
+  const text = sourceCode.get(path)!
   const parsing = { ...loaded, stage: 'documentation' as stage }
-  const phase1Data = parsePhase1fromText(newIdGenerator(), sourceCode, path)
+  const phase1Data = parsePhase1fromText(newIdGenerator(), text, path)
   const allEntries: [string, Map<string, DocumentationEntry>][] = phase1Data.modules.map(module => {
     const documentationEntries = produceDocs(module)
     const title = `# Documentation for ${module.name}\n\n`
@@ -744,8 +751,8 @@ export function outputResult(result: CLIProcedure<ProcedureStage>) {
       if (args.out) {
         writeToJson(args.out, outputData)
       } else {
-        const finder = lineColumn(sourceCode!)
-        errors.forEach(err => console.error(formatError(sourceCode, finder, err)))
+        const finders = createFinders(sourceCode!)
+        uniqWith(errors, isEqual).forEach(err => console.error(formatError(sourceCode, finders, err)))
         console.error(`error: ${msg}`)
       }
       process.exit(1)

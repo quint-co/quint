@@ -59,6 +59,8 @@ export interface CompilationContext {
 export interface CompilationState {
   // The ID generator used during compilation.
   idGen: IdGenerator
+  // File content loaded for each source, used to report errors
+  sourceCode: Map<string, string>
   // A list of modules as they are constructed, without flattening. This is
   // needed to derive correct name resolution during incremental compilation in
   // a flattened context.
@@ -77,6 +79,7 @@ export interface CompilationState {
 export function newCompilationState(): CompilationState {
   return {
     idGen: newIdGenerator(),
+    sourceCode: new Map(),
     originalModules: [],
     modules: [],
     sourceMap: new Map(),
@@ -276,7 +279,9 @@ export function compileFromCode(
   rand: (bound: bigint) => bigint
 ): CompilationContext {
   // parse the module text
-  const { modules, table, sourceMap, errors } = parse(idGen, '<module_input>', mainPath, code)
+  // FIXME(#1052): We should build a proper sourceCode map from the files we previously loaded
+  const sourceCode: Map<string, string> = new Map()
+  const { modules, table, sourceMap, errors } = parse(idGen, mainPath.toSourceName(), mainPath, code, sourceCode)
   // On errors, we'll produce the computational context up to this point
   const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
 
@@ -294,6 +299,7 @@ export function compileFromCode(
     sourceMap,
     analysisOutput: flattenedAnalysis,
     idGen,
+    sourceCode,
   }
 
   const main = flattenedModules.find(m => m.name === mainName)

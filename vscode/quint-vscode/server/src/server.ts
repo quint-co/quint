@@ -105,10 +105,12 @@ export class QuintLanguageServer {
         .then(result => {
           this.parsedDataByDocument.set(change.document.uri, result)
 
-          const diagnostics = diagnosticsFromErrors(result.errors, result.sourceMap)
-          this.connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
+          const diagnosticsByFile = diagnosticsFromErrors(result.errors, result.sourceMap)
+          diagnosticsByFile.forEach((diagnostics, file) => {
+            this.connection.sendDiagnostics({ uri: file, diagnostics })
+          })
 
-          if (diagnostics.length === 0) {
+          if (diagnosticsByFile.size === 0) {
             // For now, only run analysis if there are no parsing errors
             this.scheduleAnalysis(change.document)
           }
@@ -433,13 +435,13 @@ export class QuintLanguageServer {
     this.analysisOutputByDocument.delete(uri)
   }
 
-  private triggerAnalysis(document: TextDocument, previousDiagnostics: Diagnostic[] = []) {
+  private triggerAnalysis(document: TextDocument, previousDiagnostics: Map<string, Diagnostic[]> = new Map()) {
     clearTimeout(this.analysisTimeout)
     this.connection.console.info(`Triggering analysis`)
     this.analyze(document, previousDiagnostics)
   }
 
-  private scheduleAnalysis(document: TextDocument, previousDiagnostics: Diagnostic[] = []) {
+  private scheduleAnalysis(document: TextDocument, previousDiagnostics: Map<string, Diagnostic[]> = new Map()) {
     clearTimeout(this.analysisTimeout)
     const timeoutMillis = 1000
     this.connection.console.info(`Scheduling analysis in ${timeoutMillis} ms`)
@@ -448,7 +450,7 @@ export class QuintLanguageServer {
     }, timeoutMillis)
   }
 
-  private analyze(document: TextDocument, previousDiagnostics: Diagnostic[] = []) {
+  private analyze(document: TextDocument, previousDiagnostics: Map<string, Diagnostic[]> = new Map()) {
     try {
       const parsedData = this.parsedDataByDocument.get(document.uri)
       if (!parsedData) {
@@ -463,11 +465,18 @@ export class QuintLanguageServer {
 
       this.analysisOutputByDocument.set(document.uri, analysisOutput)
 
-      const diagnostics = diagnosticsFromErrors(errors, sourceMap)
-      this.connection.sendDiagnostics({ uri: document.uri, diagnostics: previousDiagnostics.concat(diagnostics) })
+      const diagnosticsByFile = diagnosticsFromErrors(errors, sourceMap)
+      diagnosticsByFile.forEach((diagnostics, file) => {
+        const previous = previousDiagnostics.get(file) ?? []
+        this.connection.sendDiagnostics({ uri: file, diagnostics: previous.concat(diagnostics) })
+      })
     } catch (e) {
       this.connection.console.error(`Error during analysis: ${e}`)
-      this.connection.sendDiagnostics({ uri: document.uri, diagnostics: previousDiagnostics })
+      previousDiagnostics.forEach((diagnostics, file) => {
+        this.connection.sendDiagnostics({ uri: file, diagnostics })
+      })
+
+      // this.connection.sendDiagnostics({ uri: document.uri, diagnostics: previousDiagnostics })
     }
   }
 }
