@@ -2,149 +2,281 @@ module BoundedUInt {
   /// The size of this integer type in bits.
   const BITS: int
 
-  pure val MAX = (2^BITS) - 1
+  /// The smallest value that can be represented by this integer type.
   pure val MIN = 0
 
+  /// The largest value that can be represented by this integer type.
+  pure val MAX = (2^BITS) - 1
+  
+  /// Record-representation of an unsigned bounded integer.
+  /// If the `error` field is nonempty, the record represents an exception of some
+  /// sort happening during computation, such as an overflow.
+  /// Otherwise, the record represents the integer `v`, such that `MIN <= v <= MAX`. 
   type T = { v: int, error: str }
 
+  /// Constructs a bounded unsigned integer from a mathematical integer. 
+  /// If the mathematical integer lies outside the `[MIN, MAX]` interval, 
+  /// the error field will be nonempty.
   pure def UInt(x: int): T = {v: x, 
     error: 
       if (MIN <= x and x <= MAX) ""
       else "out of range"}
 
+  /// Given a record representation of a bounded unsigned integer, returns
+  /// true iff the record value lies in the `[MIN, MAX]` interval.
   pure def isInRange(x: T): bool = and {
     x.v >= MIN,
     x.v <= MAX
   }
+
+  /// Given a record representation of a bounded unsigned integer, returns
+  /// true iff the record value lies in the `[MIN, MAX]` interval, and the error field is empty.
   pure def isValid(x: T): bool = and {
     x.error == "",
     isInRange(x)
   }
 
-  pure def wrapErrorBin(lhs: T, rhs: T, op: (T, T) => T): T = {
-    if (not(isValid(lhs))) {
-      lhs
-    } else if (not(isValid(rhs))) {
-      rhs
-    } else {
-      op(lhs, rhs)
-    }
-  }
+  /// Given a (T,T) => T operation `op`, which assumes its inputs are valid (w.r.t. `isValid`),
+  /// and two T-typed values, l and r, returns op(l,r) iff l and r are both valid. Otheriwse,
+  /// it returns some arbitrary invalid value.
+  pure def wrapErrorBin(lhs: T, rhs: T, op: (T, T) => T): T =
+    if (not(isValid(lhs))) lhs
+    else if (not(isValid(rhs))) rhs
+    else op(lhs, rhs)
 
-  pure def checkedAddUnsafe(lhs: T, rhs: T): T = {
-    val res = lhs.v + rhs.v
-    if (res > MAX) {
-      { v: res, error: "overflow" }
-    } else {
-      { v: res, error: "" }
-    }
-  }
-  pure def checkedAdd(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, checkedAddUnsafe)
-
-  pure def checkedSubUnsafe(lhs: T, rhs: T): T = {
-    val res = lhs.v - rhs.v
-    if (res < MIN) {
-      { v: res, error: "underflow" }
-    } else {
-      { v: res, error: "" }
-    }
-  }
-  pure def checkedSub(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, checkedSubUnsafe)
-
-  pure def checkedMulUnsafe(lhs: T, rhs: T): T = {
-    val res = lhs.v * rhs.v
-    if (res > MAX) {
-      { v: res, error: "overflow" }
-    } else {
-      { v: res, error: "" }
-    }
-  }
-  pure def checkedMul(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, checkedMulUnsafe)
-
-  pure def checkedDivUnsafe(lhs: T, rhs: T): T = {
-    if (rhs.v == 0) {
-      { v: 0, error: "division by zero" }
-    } else {
-      { v: lhs.v / rhs.v, error: "" }
-    }
-  }
-  pure def checkedDiv(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, checkedDivUnsafe)
-
-
-  pure def checkedRemUnsafe(lhs: T, rhs: T): T = {
-    if (rhs.v == 0) {
-      { v: 0, error: "division by zero" }
-    } else {
-      { v: lhs.v % rhs.v, error: "" }
-    }
-  }
-  pure def checkedRem(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, checkedRemUnsafe)
-
-  pure def checkedPowUnsafe(lhs: T, rhs: T): T = {
-    val res = lhs.v ^ rhs.v
-    if (res > MAX) {
-      { v: res, error: "overflow" }
-    } else {
-      { v: res, error: "" }
-    }
-  }
-  pure def checkedPow(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, checkedPowUnsafe)
-
-  pure def saturatingAddUnsafe(lhs: T, rhs: T): T = {
-    val res = lhs.v + rhs.v
-    { v: if (res < MAX) res else MAX, error: "" }
-  }
-  pure def saturatingAdd(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, saturatingAddUnsafe)
-
-  pure def saturatingSubUnsafe(lhs: T, rhs: T): T = {
-    val res = lhs.v - rhs.v
-    { v: if (res > MIN) res else MIN, error: "" }
-  }
-  pure def saturatingSub(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, saturatingSubUnsafe)
-
-  pure def saturatingMulUnsafe(lhs: T, rhs: T): T = {
-    val res = lhs.v * rhs.v
-    { v: if (res < MAX) res else MAX, error: "" }
-  }
-  pure def saturatingMul(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, saturatingMulUnsafe)
-
-  pure def saturatingPowUnsafe(lhs: T, rhs: T): T = {
-    val res = lhs.v ^ rhs.v
-    { v: if (res < MAX) res else MAX, error: "" }
-  }
-  pure def saturatingPow(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, saturatingPowUnsafe)
-
-
-  pure def wrappingAddUnsafe(lhs: T, rhs: T): T = {
-    { v: (lhs.v + rhs.v) % (MAX + 1), error: "" }
-  }
-  pure def wrappingAdd(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, wrappingAddUnsafe)
-
-  pure def wrappingSubUnsafe(lhs: T, rhs: T): T = {
-    val res = lhs.v - rhs.v
-    val adj_res = if (res < MIN) res + (MAX + 1) else res
-    { v: adj_res % (MAX + 1), error: "" }
-  }
-  pure def wrappingSub(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, wrappingSubUnsafe)
-
-  pure def wrappingMulUnsafe(lhs: T, rhs: T): T = {
-    { v: (lhs.v * rhs.v) % (MAX + 1), error: "" }
-  }
-  pure def wrappingMul(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, wrappingMulUnsafe)
-
-  pure def wrappingDiv(lhs: T, rhs: T): T = checkedDiv(lhs, rhs)
-  pure def wrappingRem(lhs: T, rhs: T): T = checkedRem(lhs, rhs)
-
-  pure def wrappingPowUnsafe(lhs: T, rhs: T): T = {
-    { v: (lhs.v ^ rhs.v) % (MAX + 1), error: "" }
-  }
-  pure def wrappingPow(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, wrappingPowUnsafe)
-
+  /// Computes the absolute difference between lhs and rhs.
+  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
   pure def absDiffUnsafe(lhs: T, rhs: T): T = {
     val res = lhs.v - rhs.v
-    { v: if (res < 0) -res else res, error: "" }
+    { 
+      v: if (res < 0) -res else res, 
+      error: "" 
+    }
   }
+
+  /// Computes the absolute difference between lhs and rhs.
   pure def absDiff(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, absDiffUnsafe)
+  
+    ////////////////////////
+   // CHECKED OPERATIONS //
+  ////////////////////////
+
+  /// Unsafe checked integer addition. 
+  /// Computes `lhs + rhs`, setting the error field to "overflow" if overflow occurred.
+  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
+  pure def checkedAddUnsafe(lhs: T, rhs: T): T = {
+    val res = lhs.v + rhs.v
+    { 
+      v: res,
+      error: if (res > MAX) "overflow" else ""
+    }
+  }
+
+  /// Checked integer addition. 
+  /// Computes `lhs + rhs`, setting the error field to "overflow" if overflow occurred.
+  pure def checkedAdd(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, checkedAddUnsafe)
+
+  /// Unsafe checked integer subtraction. 
+  /// Computes `lhs - rhs`, setting the error field to "underflow" if underflow occurred.
+  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
+  pure def checkedSubUnsafe(lhs: T, rhs: T): T = {
+    val res = lhs.v - rhs.v
+    {
+      v: res,
+      error: if (res < MIN) "underflow" else ""
+    }
+  }
+
+  /// Checked integer subtraction. 
+  /// Computes `lhs - rhs`, setting the error field to "underflow" if underflow occurred.
+  pure def checkedSub(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, checkedSubUnsafe)
+
+  /// Unsafe checked integer multiplication. 
+  /// Computes `lhs * rhs`, setting the error field to "overflow" if overflow occurred.
+  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
+  pure def checkedMulUnsafe(lhs: T, rhs: T): T = {
+    val res = lhs.v * rhs.v
+    {
+      v: res,
+      error: if (res > MAX) "overflow" else ""
+    }
+  }
+
+  /// Checked integer multiplication. 
+  /// Computes `lhs * rhs`, setting the error field to "overflow" if overflow occurred.
+  pure def checkedMul(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, checkedMulUnsafe)
+
+  /// Unsafe checked integer division. 
+  /// Computes `lhs / rhs`. If `rhs.v == 0` the error field is set to "division by zero" and the value is arbitrary.
+  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
+  pure def checkedDivUnsafe(lhs: T, rhs: T): T = 
+    if (rhs.v == 0) { v: 0,             error: "division by zero" }
+    else            { v: lhs.v / rhs.v, error: ""                 }
+  
+  /// Checked integer division. 
+  /// Computes `lhs / rhs`, setting the error field to "division by zero" if `rhs.v == 0`.
+  pure def checkedDiv(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, checkedDivUnsafe)
+
+  /// Unsafe checked integer remainder. 
+  /// Computes `lhs % rhs`. If `rhs.v == 0` the error field is set to "division by zero" and the value is arbitrary.
+  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
+  pure def checkedRemUnsafe(lhs: T, rhs: T): T = 
+    if (rhs.v == 0) { v: 0,             error: "division by zero" }
+    else            { v: lhs.v % rhs.v, error: ""                 }
+
+  /// Checked integer remainder. 
+  /// Computes `lhs % rhs`. If `rhs.v == 0` the error field is set to "division by zero" and the value is arbitrary.
+  pure def checkedRem(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, checkedRemUnsafe)
+
+  /// Unsafe checked exponentiation. 
+  /// Computes `lhs ^ rhs`, setting the error field to "overflow" if overflow occurred.
+  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
+  pure def checkedPowUnsafe(lhs: T, rhs: T): T = {
+    val res = lhs.v ^ rhs.v
+    {
+      v: res,
+      error: if (res > MAX) "overflow" else ""
+    }
+  }
+
+  /// Checked exponentiation. 
+  /// Computes `lhs ^ rhs`, setting the error field to "overflow" if overflow occurred.
+  pure def checkedPow(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, checkedPowUnsafe)
+
+    ///////////////////////////
+   // SATURATING OPERATIONS //
+  ///////////////////////////
+
+  /// Unsafe saturating integer addition. 
+  /// Computes `lhs + rhs`, saturating at the numeric bounds instead of overflowing.
+  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
+  pure def saturatingAddUnsafe(lhs: T, rhs: T): T = {
+    val res = lhs.v + rhs.v
+    { 
+      v: if (res < MAX) res else MAX, 
+      error: "" 
+    }
+  }
+
+  /// Saturating integer addition. 
+  /// Computes `lhs + rhs`, saturating at the numeric bounds instead of overflowing.
+  pure def saturatingAdd(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, saturatingAddUnsafe)
+
+  /// Unsafe saturating integer subtraction. 
+  /// Computes `lhs - rhs`, saturating at the numeric bounds instead of overflowing.
+  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
+  pure def saturatingSubUnsafe(lhs: T, rhs: T): T = {
+    val res = lhs.v - rhs.v
+    { 
+      v: if (res > MIN) res else MIN, 
+      error: "" 
+    }
+  }
+
+  /// Saturating integer subtraction. 
+  /// Computes `lhs - rhs`, saturating at the numeric bounds instead of overflowing.
+  pure def saturatingSub(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, saturatingSubUnsafe)
+
+  /// Unsafe saturating integer multiplication. 
+  /// Computes `lhs * rhs`, saturating at the numeric bounds instead of overflowing.
+  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
+  pure def saturatingMulUnsafe(lhs: T, rhs: T): T = {
+    val res = lhs.v * rhs.v
+    { 
+      v: if (res < MAX) res else MAX, 
+      error: "" 
+    }
+  }
+
+  /// Saturating integer subtraction. 
+  /// Computes `lhs * rhs`, saturating at the numeric bounds instead of overflowing.
+  pure def saturatingMul(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, saturatingMulUnsafe)
+
+  /// Unsafe saturating exponentiation. 
+  /// Computes `lhs ^ rhs`, saturating at the numeric bounds instead of overflowing.
+  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
+  pure def saturatingPowUnsafe(lhs: T, rhs: T): T = {
+    val res = lhs.v ^ rhs.v
+    { 
+      v: if (res < MAX) res else MAX, 
+      error: "" 
+    }
+  }
+
+  /// Saturating exponentiation. 
+  /// Computes `lhs ^ rhs`, saturating at the numeric bounds instead of overflowing.
+  pure def saturatingPow(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, saturatingPowUnsafe)
+
+    /////////////////////////
+   // WRAPPING OPERATIONS //
+  /////////////////////////
+
+  /// Unsafe wrapping integer addition.
+  /// Computes `lhs + rhs`, wrapping around at the boundary of the type.
+  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
+  pure def wrappingAddUnsafe(lhs: T, rhs: T): T = 
+    { 
+      v: (lhs.v + rhs.v) % (MAX + 1), 
+      error: "" 
+    }
+
+  /// Wrapping integer addition.
+  /// Computes `lhs + rhs`, wrapping around at the boundary of the type.
+  pure def wrappingAdd(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, wrappingAddUnsafe)
+
+  /// Unsafe wrapping integer subtraction.
+  /// Computes `lhs - rhs`, wrapping around at the boundary of the type.
+  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
+  pure def wrappingSubUnsafe(lhs: T, rhs: T): T = {
+    val res = lhs.v - rhs.v
+    val adjusted = if (res < MIN) res + (MAX + 1) else res
+    { 
+      v: adjusted % (MAX + 1), 
+      error: "" 
+    }
+  }
+
+  /// Wrapping integer subtraction.
+  /// Computes `lhs - rhs`, wrapping around at the boundary of the type.
+  pure def wrappingSub(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, wrappingSubUnsafe)
+
+  /// Unsafe wrapping integer multiplication.
+  /// Computes `lhs * rhs`, wrapping around at the boundary of the type.
+  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
+  pure def wrappingMulUnsafe(lhs: T, rhs: T): T = 
+    { 
+      v: (lhs.v * rhs.v) % (MAX + 1), 
+      error: "" 
+    }
+  
+  /// Wrapping integer multiplication.
+  /// Computes `lhs * rhs`, wrapping around at the boundary of the type.
+  pure def wrappingMul(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, wrappingMulUnsafe)
+
+  /// Wrapping integer division.
+  /// Computes `lhs / rhs`. Wrapped division on unsigned types is just normal division. 
+  /// There’s no way wrapping could ever happen. 
+  /// This operator exists, so that all operations are accounted for in the wrapping operations.
+  pure def wrappingDiv(lhs: T, rhs: T): T = checkedDiv(lhs, rhs)
+
+  /// Wrapping integer remainder.
+  /// Computes `lhs % rhs`. Wrapped remainder on unsigned types is just normal remainder. 
+  /// There’s no way wrapping could ever happen. 
+  /// This operator exists, so that all operations are accounted for in the wrapping operations.
+  pure def wrappingRem(lhs: T, rhs: T): T = checkedRem(lhs, rhs)
+
+  /// Unsafe wrapping exponentiation.
+  /// Computes `lhs ^ rhs`, wrapping around at the boundary of the type.
+  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
+  pure def wrappingPowUnsafe(lhs: T, rhs: T): T = 
+    { 
+      v: (lhs.v ^ rhs.v) % (MAX + 1), 
+      error: "" 
+    }
+  
+  /// Wrapping exponentiation.
+  /// Computes `lhs ^ rhs`, wrapping around at the boundary of the type.
+  pure def wrappingPow(lhs: T, rhs: T): T = wrapErrorBin(lhs, rhs, wrappingPowUnsafe)
 }
 
 module BoundedUInt_Test {
