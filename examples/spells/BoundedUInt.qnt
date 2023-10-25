@@ -605,11 +605,3 @@ module BoundedUInt_Test {
 module BoundedUint8Test {
   import BoundedUInt_Test(BITS = 8).*
 }
-
-module BoundedUint32Test {
-  import BoundedUInt_Test(BITS = 32).*
-}
-
-module BoundedUint64Test {
-  import BoundedUInt_Test(BITS = 64).*
-}
