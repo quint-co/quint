@@ -263,7 +263,7 @@ fi
 ### OK on test BoundedUint8
 
 <!-- !test check BoundedUint8 - Syntax/Types & Effects/Unit tests -->
-    quint test --main=BoundedUint8Test ../examples/spells/BoundedUint.qnt
+    quint test --main=BoundedUInt8Test ../examples/spells/BoundedUInt.qnt
 
 ### OK on test bug843pureValCache
 
