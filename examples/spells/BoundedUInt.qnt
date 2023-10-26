@@ -602,6 +602,6 @@ module BoundedUInt_Test {
 
 }
 
-module BoundedUint8Test {
+module BoundedUInt8Test {
   import BoundedUInt_Test(BITS = 8).*
 }
