@@ -233,6 +233,6 @@ export const builtinNames = [
   'ite',
   'cross',
   'difference',
-  'match',
+  'matchVariant',
   'variant',
 ]

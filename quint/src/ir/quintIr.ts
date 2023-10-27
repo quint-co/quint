@@ -179,7 +179,7 @@ export const builtinOpCodes = [
   'length',
   'map',
   'mapBy',
-  'match',
+  'matchVariant',
   'mustChange',
   'neq',
   'next',

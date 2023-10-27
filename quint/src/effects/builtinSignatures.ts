@@ -242,7 +242,7 @@ const multipleAritySignatures: [QuintBuiltinOpcode, Signature][] = [
   ['and', standardPropagation],
   ['or', standardPropagation],
   [
-    'match',
+    'matchVariant',
     (arity: number) => {
       const readVars = times((arity - 1) / 2, i => `r${i}`)
       const args = readVars.map(r => `Pure, (Pure) => Read[${r}]`)

@@ -994,7 +994,7 @@ export class ToIrListener implements QuintListener {
     const matchExpr: QuintBuiltinApp = {
       id: matchId,
       kind: 'app',
-      opcode: 'match',
+      opcode: 'matchVariant',
       args: [expr].concat(cases),
     }
     this.exprStack.push(matchExpr)
