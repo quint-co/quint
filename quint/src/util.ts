@@ -68,3 +68,13 @@ export function findMap<X, Y>(xs: Iterable<X>, f: (x: X) => Maybe<Y>): Maybe<Y> 
   }
   return none<Y>()
 }
+
+/** `setDifference(a, b)` is the set of elements in `a` that are not in `b`
+ *
+ *  See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set#implementing_basic_set_operations
+ */
+export function setDifference<A>(a: Set<A>, b: Set<A>): Set<A> {
+  const diff = new Set(a)
+  for (const elem of b) diff.delete(elem)
+  return diff
+}
