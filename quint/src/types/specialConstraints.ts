@@ -14,13 +14,14 @@
  */
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { Error, buildErrorLeaf } from '../errorTree'
+import { Error, buildErrorLeaf, ErrorTree } from '../errorTree'
 import { expressionToString } from '../ir/IRprinting'
 import { QuintEx } from '../ir/quintIr'
-import { QuintType, QuintVarType } from '../ir/quintTypes'
+import { QuintOperType, QuintType, QuintVarType, rowFieldNames, sumType } from '../ir/quintTypes'
 import { Constraint } from './base'
 import { chunk, times } from 'lodash'
 import { RowField } from '../ir/quintTypes'
+import { setDifference } from '../util'
 
 export function recordConstructorConstraints(
   id: bigint,
@@ -195,7 +196,7 @@ export function variantConstraints(
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
-  // `_valuEx : valueType` is checked already via the constaintGenerato
+  // `_valuEx : valueType` is checked already via the constaintGenerator
   const [[labelExpr, labelType], [_valueEx, valueType]] = args
 
   if (labelExpr.kind !== 'str') {
@@ -208,7 +209,7 @@ export function variantConstraints(
   }
 
   // A tuple with item acess of N should have at least N fields
-  // Fill previous fileds with type variables
+  // Fill previous fields with type variables
   const variantField: RowField = { fieldName: labelExpr.value, fieldType: valueType }
 
   const generalVarType: QuintType = {
@@ -223,4 +224,140 @@ export function variantConstraints(
   const propagateResultConstraint: Constraint = { kind: 'eq', types: [resultTypeVar, generalVarType], sourceId: id }
 
   return right([isDefinedConstraint, propagateResultConstraint])
+}
+
+// The rule for the `match` operator:
+//
+// TODO Work out correct rule here
+//
+//  Γ ⊢ e:(s, c)                       Γ, x1:(t1, c1') ⊢ e1:(t, c1) ... Γ, xn:(tn, cn') ⊢ en:(t, cn)                          v is fresh
+// ----------------------------------------------------------------------------------------------------------------------------------------
+//  Γ ⊢ match e {i1 : x1 => e1, ..., in : xn => en} : (t, c /\ c1 /\ c1' /\ ... /\ cn /\ cn' /\ cn+1 /\ s ~ < i1 : t1, ..., in : tn > )
+//
+// Where
+//
+// - < ... > is a row-based variant.
+// - {l1 : x1 => e1, ..., ln : xn => en } coordinates label `li` with an eliminator `xi => ei`
+//   for each label label in sum-type `s`.
+//
+// This rule is explained in /doc/rfcs/rfc001-sum-types/rfc001-sum-types.org
+export function matchConstraints(
+  id: bigint,
+  args: [QuintEx, QuintType][],
+  resultTypeVar: QuintVarType
+): Either<Error, Constraint[]> {
+  // for each argument, `valuEx : valueType` is checked already via the constaintGenerato
+  const [[variantExpr, variantType], ...labelsAndcases] = args
+
+  if (variantType.kind !== 'sum') {
+    return left(
+      buildErrorLeaf(
+        `Generating match constraints for ${args.map(a => expressionToString(a[0]))}`,
+        `Matched expression must be a variant of a sum type but it is a ${variantType.kind}: ${expressionToString(
+          variantExpr
+        )}`
+      )
+    )
+  }
+
+  const labelAndElimPairs = chunk(labelsAndcases, 2)
+  const eliminatorOps = labelAndElimPairs.map(([_, op]) => op)
+
+  // A match eliminator has the normal form `match(expr, 'field1', elim1,..., 'fieldn', elimn)`.
+  // We have already separtated the expression into the `variantExpr` above, and what is
+  // left in labelsAndCases are the pairs of labels and eliminators.
+  //
+  // So we iterate over the labelsAndCases in chunks of size 2 to confirm that each label is
+  // a string and each eliminator is a unary operator. This is a well-formedness check prioir to
+  // checking that the eliminator fits the `sumType`.
+  //
+  // - We can ignore the `_keyType` because we are verifying here that every key is a string litteral
+  //   (a mere string-valued type is not enough, since we are promoting string litterals into labels
+  //    here)
+  // - We can ignore the `_elimExpr` because we are only doing type checking
+  const validatedFields: Either<ErrorTree, [string, QuintType]>[] = labelAndElimPairs.map(
+    ([[labelExpr, _labelType], [elimExpr, elimType]]) =>
+      labelExpr.kind !== 'str'
+        ? left(
+            buildErrorLeaf(
+              `Generating match constraints for ${labelsAndcases.map(a => expressionToString(a[0]))}`,
+              `Match variant name must be a string literal but it is a ${labelExpr.kind}: ${expressionToString(
+                labelExpr
+              )}`
+            )
+          )
+        : elimType.kind !== 'oper'
+        ? left(
+            buildErrorLeaf(
+              `Generating match constraints for ${labelsAndcases.map(a => expressionToString(a[0]))}`,
+              `Match case name must be a string literal but it is a ${elimType.kind}: ${expressionToString(elimExpr)}`
+            )
+          )
+        : elimType.args.length !== 1
+        ? left(
+            buildErrorLeaf(
+              `Generating match constraints for ${labelsAndcases.map(a => expressionToString(a[0]))}`,
+              `Match case eliminator must be a unary operator but it is an operator of ${
+                elimType.args.length
+              } arguments: ${expressionToString(elimExpr)}`
+            )
+          )
+        : right([labelExpr.value, elimType.args[0]])
+  )
+
+  return mergeInMany(validatedFields)
+    .chain((fields: [string, QuintType][]) => {
+      const matchCaseLabels = new Set(fields.map(([label, _]) => label))
+      const sumTypeLabels = new Set(rowFieldNames(variantType.fields))
+      const variantLabelsWithoutCases = setDifference(sumTypeLabels, matchCaseLabels)
+      const casesWithoutVariantLabels = setDifference(matchCaseLabels, sumTypeLabels)
+      return variantLabelsWithoutCases.size > 0
+        ? left(
+            buildErrorLeaf(
+              `Checking exhaustiveness for match on variant expression ${expressionToString(variantExpr)}`,
+              `Match cases are missing for variants ${[...variantLabelsWithoutCases].join(', ')}`
+            )
+          )
+        : casesWithoutVariantLabels.size > 0
+        ? left(
+            buildErrorLeaf(
+              `Checking exhaustiveness for match on variant expression ${expressionToString(variantExpr)}`,
+              `Match has cases which do not apply to variant: ${[...casesWithoutVariantLabels].join(', ')}`
+            )
+          )
+        : // Otherwise the two sets must be equal
+          right(fields)
+    })
+    .map((fields: [string, QuintType][]): Constraint[] => {
+      const matchCaseType = sumType(fields)
+      const variantTypeIsMatchCaseType: Constraint = { kind: 'eq', types: [variantType, matchCaseType], sourceId: id }
+      const resultTypeAreEqual: Constraint[] = eliminatorOps
+        .map(([_, type]) => (type as QuintOperType).res) // We've ensured all types are operators in the previous
+        .reduce(
+          (acc: [QuintType, Constraint[]], thisType: QuintType): [QuintType, Constraint[]] => {
+            const [prevType, constraints] = acc
+            return [thisType, [...constraints, { kind: 'eq', types: [prevType, thisType], sourceId: id }]]
+          },
+          [resultTypeVar, []]
+        )[1]
+
+      return [variantTypeIsMatchCaseType, ...resultTypeAreEqual]
+    })
+
+  // // A tuple with item acess of N should have at least N fields
+  // // Fill previous fileds with type variables
+  // const variantField: RowField = { fieldName: labelExpr.value, fieldType: valueType }
+
+  // const generalVarType: QuintType = {
+  //   kind: 'sum',
+  //   fields: {
+  //     kind: 'row',
+  //     fields: [variantField],
+  //     other: { kind: 'var', name: `tail_${resultTypeVar.name}` },
+  //   },
+  // }
+  // const isDefinedConstraint: Constraint = { kind: 'isDefined', type: generalVarType, sourceId: id }
+  // const propagateResultConstraint: Constraint = { kind: 'eq', types: [resultTypeVar, generalVarType], sourceId: id }
+
+  // return right([isDefinedConstraint, propagateResultConstraint])
 }
