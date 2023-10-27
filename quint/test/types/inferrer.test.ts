@@ -208,14 +208,14 @@ describe('inferTypes', () => {
   })
 
   it('reports a type error for match expressions on non-variant expressions', () => {
-    const defs = ['val invalid = match "Not a Variant" { A(n) => n * n | B => 9 }']
+    const defs = [
+      'val notAVariant = "this is not a variant"',
+      'val invalid = match notAVariant { A(n) => n * n | B => 9 }',
+    ]
 
     const [errors, _] = inferTypesForDefs(defs)
     assert.isNotEmpty(errors)
-    assert.match(
-      [...errors.values()].map(errorTreeToString)[0],
-      RegExp('Matched expression must be a variant of a sum type but it is a str: "Not a Variant"')
-    )
+    assert.match([...errors.values()].map(errorTreeToString)[0], RegExp(`Couldn't unify str and sum`))
   })
 
   it('reports a type error for matchVariant operator with non-label arguments', () => {
@@ -238,10 +238,7 @@ describe('inferTypes', () => {
 
     const [errors, _] = inferTypesForDefs(defs)
     assert.isNotEmpty(errors)
-    assert.match(
-      [...errors.values()].map(errorTreeToString)[0],
-      RegExp('Match has cases which do not apply to variant: NotAVariant')
-    )
+    assert.match([...errors.values()].map(errorTreeToString)[0], RegExp(`Couldn't unify empty and row`))
   })
 
   it('reports a type error for non-exhaustive match', () => {
@@ -253,7 +250,7 @@ describe('inferTypes', () => {
 
     const [errors, _] = inferTypesForDefs(defs)
     assert.isNotEmpty(errors)
-    assert.match([...errors.values()].map(errorTreeToString)[0], RegExp('Match cases are missing for variants A, B'))
+    assert.match([...errors.values()].map(errorTreeToString)[0], RegExp('Incompatible tails for rows'))
   })
 
   it('keeps track of free variables in nested scopes (#966)', () => {

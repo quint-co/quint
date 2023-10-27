@@ -248,18 +248,6 @@ export function matchConstraints(
 ): Either<Error, Constraint[]> {
   // for each argument, `valuEx : valueType` is checked already via the constaintGenerato
   const [[variantExpr, variantType], ...labelsAndcases] = args
-
-  if (variantType.kind !== 'sum') {
-    return left(
-      buildErrorLeaf(
-        `Generating match constraints for ${args.map(a => expressionToString(a[0]))}`,
-        `Matched expression must be a variant of a sum type but it is a ${variantType.kind}: ${expressionToString(
-          variantExpr
-        )}`
-      )
-    )
-  }
-
   const labelAndElimPairs = chunk(labelsAndcases, 2)
   const eliminatorOps = labelAndElimPairs.map(([_, op]) => op)
 
@@ -305,44 +293,49 @@ export function matchConstraints(
         : right([labelExpr.value, elimType.args[0]])
   )
 
-  return mergeInMany(validatedFields)
-    .chain((fields: [string, QuintType][]) => {
-      const matchCaseLabels = new Set(fields.map(([label, _]) => label))
-      const sumTypeLabels = new Set(rowFieldNames(variantType.fields))
-      const variantLabelsWithoutCases = setDifference(sumTypeLabels, matchCaseLabels)
-      const casesWithoutVariantLabels = setDifference(matchCaseLabels, sumTypeLabels)
-      return variantLabelsWithoutCases.size > 0
-        ? left(
-            buildErrorLeaf(
-              `Checking exhaustiveness for match on variant expression ${expressionToString(variantExpr)}`,
-              `Match cases are missing for variants ${[...variantLabelsWithoutCases].join(', ')}`
-            )
-          )
-        : casesWithoutVariantLabels.size > 0
-        ? left(
-            buildErrorLeaf(
-              `Checking exhaustiveness for match on variant expression ${expressionToString(variantExpr)}`,
-              `Match has cases which do not apply to variant: ${[...casesWithoutVariantLabels].join(', ')}`
-            )
-          )
-        : // Otherwise the two sets must be equal
-          right(fields)
-    })
-    .map((fields: [string, QuintType][]): Constraint[] => {
-      const matchCaseType = sumType(fields)
-      const variantTypeIsMatchCaseType: Constraint = { kind: 'eq', types: [variantType, matchCaseType], sourceId: id }
-      const resultTypeAreEqual: Constraint[] = eliminatorOps
-        .map(([_, type]) => (type as QuintOperType).res) // We've ensured all types are operators in the previous
-        .reduce(
-          (acc: [QuintType, Constraint[]], thisType: QuintType): [QuintType, Constraint[]] => {
-            const [prevType, constraints] = acc
-            return [thisType, [...constraints, { kind: 'eq', types: [prevType, thisType], sourceId: id }]]
-          },
-          [resultTypeVar, []]
-        )[1]
+  return (
+    mergeInMany(validatedFields)
+      // TODO: Support more expressive and informative type errors
+      //       will require tying into the constraint checking system.
+      //       See https://github.com/informalsystems/quint/issues/1231
+      // .chain((fields: [string, QuintType][]) => {
+      //   const matchCaseLabels = new Set(fields.map(([label, _]) => label))
+      //   const sumTypeLabels = new Set(rowFieldNames(variantType.fields))
+      //   const variantLabelsWithoutCases = setDifference(sumTypeLabels, matchCaseLabels)
+      //   const casesWithoutVariantLabels = setDifference(matchCaseLabels, sumTypeLabels)
+      //   return variantLabelsWithoutCases.size > 0
+      //     ? left(
+      //         buildErrorLeaf(
+      //           `Checking exhaustiveness for match on variant expression ${expressionToString(variantExpr)}`,
+      //           `Match cases are missing for variants ${[...variantLabelsWithoutCases].join(', ')}`
+      //         )
+      //       )
+      //     : casesWithoutVariantLabels.size > 0
+      //     ? left(
+      //         buildErrorLeaf(
+      //           `Checking exhaustiveness for match on variant expression ${expressionToString(variantExpr)}`,
+      //           `Match has cases which do not apply to variant: ${[...casesWithoutVariantLabels].join(', ')}`
+      //         )
+      //       )
+      //     : // Otherwise the two sets must be equal
+      //       right(fields)
+      // })
+      .map((fields: [string, QuintType][]): Constraint[] => {
+        const matchCaseType = sumType(fields)
+        const variantTypeIsMatchCaseType: Constraint = { kind: 'eq', types: [variantType, matchCaseType], sourceId: id }
+        const resultTypeAreEqual: Constraint[] = eliminatorOps
+          .map(([_, type]) => (type as QuintOperType).res) // We've ensured all types are operators in the previous
+          .reduce(
+            (acc: [QuintType, Constraint[]], thisType: QuintType): [QuintType, Constraint[]] => {
+              const [prevType, constraints] = acc
+              return [thisType, [...constraints, { kind: 'eq', types: [prevType, thisType], sourceId: id }]]
+            },
+            [resultTypeVar, []]
+          )[1]
 
-      return [variantTypeIsMatchCaseType, ...resultTypeAreEqual]
-    })
+        return [variantTypeIsMatchCaseType, ...resultTypeAreEqual]
+      })
+  )
 
   // // A tuple with item acess of N should have at least N fields
   // // Fill previous fileds with type variables
