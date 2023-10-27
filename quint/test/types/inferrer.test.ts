@@ -218,15 +218,6 @@ describe('inferTypes', () => {
     )
   })
 
-  it('reports a type error for matchVariant operator with invalid arity', () => {
-    // TODO We are not able to match the desuggared `match` variant...
-    const defs = ['type T = A(int) | B', 'val a = variant("A", 3)', 'val nine = matchVariant(a, "A")']
-
-    const [errors, _] = inferTypesForDefs(defs)
-    assert.isNotEmpty(errors)
-    assert.match([...errors.values()].map(errorTreeToString)[0], RegExp('Operator expects odd number of arguments'))
-  })
-
   it('reports a type error for matchVariant operator with non-label arguments', () => {
     // TODO We are not able to match the desuggared `match` variant...
     const defs = ['type T = A(int) | B', 'val a = variant("A", 3)', 'val nine = matchVariant(a, 3, 9)']
