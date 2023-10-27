@@ -145,6 +145,19 @@ export type EmptyRow = { kind: 'empty' }
 export type Row = ConcreteFixedRow | ConcreteRow | VarRow | EmptyRow
 
 /*
+ * Gives all of a row's field names
+ */
+export function rowFieldNames(r: Row): string[] {
+  switch (r.kind) {
+    case 'row':
+      return r.fields.map(f => f.fieldName).concat(rowFieldNames(r.other))
+    case 'var':
+    case 'empty':
+      return []
+  }
+}
+
+/*
  * Collects all type and row variable names from a given type
  *
  * @param t the type to have its names collected
