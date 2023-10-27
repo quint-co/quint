@@ -219,7 +219,6 @@ describe('inferTypes', () => {
   })
 
   it('reports a type error for matchVariant operator with non-label arguments', () => {
-    // TODO We are not able to match the desuggared `match` variant...
     const defs = ['type T = A(int) | B', 'val a = variant("A", 3)', 'val nine = matchVariant(a, 3, 9)']
 
     const [errors, _] = inferTypesForDefs(defs)
@@ -231,7 +230,6 @@ describe('inferTypes', () => {
   })
 
   it('reports a type error for a non-applicable case', () => {
-    // TODO We are not able to match the desuggared `match` variant...
     const defs = [
       'type T = A(int) | B',
       'val a = variant("A", 3)',
