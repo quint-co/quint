@@ -50,7 +50,7 @@ module erc20 {
             | Error(_) => r
         }
 
-    // An auxilliary definition similar to Solidity's require
+    // An auxiliary definition similar to Solidity's require
     pure def require(r: Erc20Result, cond: bool, msg: str): Erc20Result =
         match r {
             | Error(_) => r
