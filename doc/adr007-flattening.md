@@ -6,7 +6,7 @@
 
 ## 1. Summary
 
-This document describes a new strategy for flattening modules, that is, replacing imports, instances and exports with the actual definitions. This is a necessary step for compilation and integration with apalache, since both the compiler and apalache cannnot handle imports, instances and exports.
+This document describes a new strategy for flattening modules, that is, replacing imports, instances and exports with the actual definitions. This is a necessary step for compilation and integration with apalache, since both the compiler and apalache cannot handle imports, instances and exports.
 
 ## 2. Context
 
@@ -15,7 +15,7 @@ Our current strategy for flattening has intrinsic problems, and some issues that
 The existing flattener takes import/instance/export statements and replaces them with a copy of the definitions from that module, assigning new ids to those definitions and its inner IR components and adding namespaces when necessary. With this, there are two possible scenarios:
 
 1. All imports, instances and exports include all definitions (i.e. there is no `import A.foo`). In this case, we will end up with a module with all of the definitions from all used modules.
-2. There is some statement refering to a specific definition like `import A.foo`. In this case, the other definitions from `A` won't be copied, and if `foo` depends on something else, the flattened module won't be valid.
+2. There is some statement referring to a specific definition like `import A.foo`. In this case, the other definitions from `A` won't be copied, and if `foo` depends on something else, the flattened module won't be valid.
 
 Therefore, it is clear that we need some way of looking into the dependencies of definitions when copying them over, both to avoid (1) by copying only the necessary definitions, and to avoid (2) and ensure the flattened module has all the definitions it needs.
 
