@@ -209,7 +209,6 @@ export const builtinOpCodes = [
   'to',
   'tuples',
   'union',
-  'unionMatch',
   'variant',
   'weakFair',
   'with',

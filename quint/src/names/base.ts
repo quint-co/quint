@@ -226,7 +226,6 @@ export const builtinNames = [
   'field',
   'fieldNames',
   'item',
-  'unionMatch',
   'assign',
   'of',
   'eq',

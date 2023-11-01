@@ -149,7 +149,7 @@ const runCmd = {
         type: 'string',
       })
       .option('out-itf', {
-        desc: 'output the trace in the Informal Trace Format to file (supresses all console output)',
+        desc: 'output the trace in the Informal Trace Format to file (suppresses all console output)',
         type: 'string',
       })
       .option('max-samples', {
@@ -212,7 +212,7 @@ const verifyCmd = {
         type: 'string',
       })
       .option('out-itf', {
-        desc: 'output the trace in the Informal Trace Format to file (supresses all console output)',
+        desc: 'output the trace in the Informal Trace Format to file (suppresses all console output)',
         type: 'string',
       })
       .option('max-steps', {

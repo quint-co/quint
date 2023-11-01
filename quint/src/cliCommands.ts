@@ -67,7 +67,7 @@ interface OutputStage {
   // Test names output produced by 'run'
   status?: 'ok' | 'violation' | 'failure'
   trace?: QuintEx[]
-  /* Docstrings by defintion name by module name */
+  /* Docstrings by definition name by module name */
   documentation?: Map<string, Map<string, DocumentationEntry>>
   errors?: ErrorMessage[]
   warnings?: any[] // TODO it doesn't look like this is being used for anything. Should we remove it?
@@ -639,7 +639,7 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
   const veryfiyingFlat = { ...verifying, ...flattenedAnalysis, modules: [flatMain], table: flattenedTable }
   const parsedSpec = jsonStringOfOutputStage(pickOutputStage(veryfiyingFlat))
 
-  // We need to insert the data form CLI args into thier appropriate locations
+  // We need to insert the data form CLI args into their appropriate locations
   // in the Apalache config
   const config = {
     ...loadedConfig,

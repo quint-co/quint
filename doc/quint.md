@@ -174,7 +174,7 @@ Options:
                                                                         [string]
   --out          output file (suppresses all console output)            [string]
   --out-itf      output the trace in the Informal Trace Format to file
-                 (supresses all console output)                         [string]
+                 (suppresses all console output)                         [string]
   --max-samples  the maximum on the number of traces to try
                                                        [number] [default: 10000]
   --max-steps    the maximum on the number of steps in every trace
@@ -269,7 +269,7 @@ Options:
                      filename)                                          [string]
   --out              output file (suppresses all console output)        [string]
   --out-itf          output the trace in the Informal Trace Format to file
-                     (supresses all console output)                     [string]
+                     (suppresses all console output)                     [string]
   --max-steps        the maximum number of steps in every trace
                                                           [number] [default: 10]
   --init             name of the initializer action   [string] [default: "init"]
