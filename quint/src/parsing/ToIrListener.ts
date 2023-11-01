@@ -91,9 +91,10 @@ export class ToIrListener implements QuintListener {
       this.rowStack.length > 0 ||
       this.variantStack.length > 0
     ) {
-      // This used to be an assumption, but I'm not sure if it still holds after #1220.
-      // However, we don't want components leaking from one module to another, so it's better not to hide this completely
-      // We should turn this back into `assert`s after we feel more confident about it.
+      // This used to be an assumption, but I'm not sure if it still holds after
+      // #1220. However, we don't want components leaking from one module to
+      // another, so it's better not to hide this completely. We should turn this
+      // back into `assert`s after we feel more confident about it.
       console.log(
         'ATTENTION: There is some component(s) left on the stack(s) after parsing a module, please report a bug'
       )

@@ -117,8 +117,17 @@ export function parsePhase1fromText(
   // run the parser
   const tree = parser.modules()
 
-  // walk through the AST and construct the IR
-  ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
+  // wrap this in a try catch, since we are running the parser even if there are
+  // errors after the previous command.
+  try {
+    // walk through the AST and construct the IR
+    ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
+  } catch (e) {
+    if (errors.length === 0) {
+      throw e
+    }
+    // ignore the exception, we already have errors to report
+  }
 
   return { errors: errors.concat(listener.errors), modules: listener.modules, sourceMap: listener.sourceMap }
 }

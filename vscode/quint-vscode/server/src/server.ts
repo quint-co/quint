@@ -15,7 +15,6 @@ import {
   Connection,
   DefinitionLink,
   DefinitionParams,
-  Diagnostic,
   DocumentSymbol,
   DocumentSymbolParams,
   HandlerResult,
