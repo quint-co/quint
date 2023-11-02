@@ -14,14 +14,13 @@
  */
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { Error, buildErrorLeaf, ErrorTree } from '../errorTree'
+import { Error, ErrorTree, buildErrorLeaf } from '../errorTree'
 import { expressionToString } from '../ir/IRprinting'
 import { QuintEx } from '../ir/quintIr'
-import { QuintOperType, QuintType, QuintVarType, rowFieldNames, sumType } from '../ir/quintTypes'
+import { QuintOperType, QuintType, QuintVarType, sumType } from '../ir/quintTypes'
 import { Constraint } from './base'
 import { chunk, times } from 'lodash'
 import { RowField } from '../ir/quintTypes'
-import { setDifference } from '../util'
 
 export function recordConstructorConstraints(
   id: bigint,
@@ -230,9 +229,12 @@ export function variantConstraints(
 //
 // TODO Work out correct rule here
 //
-//  Γ ⊢ e:(s, c)                       Γ, x1:(t1, c1') ⊢ e1:(t, c1) ... Γ, xn:(tn, cn') ⊢ en:(t, cn)                          v is fresh
-// ----------------------------------------------------------------------------------------------------------------------------------------
-//  Γ ⊢ match e {i1 : x1 => e1, ..., in : xn => en} : (t, c /\ c1 /\ c1' /\ ... /\ cn /\ cn' /\ cn+1 /\ s ~ < i1 : t1, ..., in : tn > )
+// Γ ⊢ e:(s, c)
+// Γ, x1:(t1, c1') ⊢ e1:(t, c1) ... Γ, xn:(tn, cn') ⊢ en:(t, cn)
+// v is fresh
+// ------------------------------------------------------------------------------
+//  Γ ⊢ match e { i1 : x1 => e1, ..., in : xn => en } : (t, c /\
+//    c1 /\ c1' /\ ... /\ cn /\ cn' /\ cn+1 /\ s ~ < i1 : t1, ..., in : tn > )
 //
 // Where
 //
@@ -246,23 +248,18 @@ export function matchConstraints(
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
-  // for each argument, `valuEx : valueType` is checked already via the constaintGenerato
-  const [[variantExpr, variantType], ...labelsAndcases] = args
+  // A match eliminator has the normal form `match(expr, 'field1', elim1,..., 'fieldn', elimn)`.
+  // We separate the `expr` we are matching against into the `_variantExpr` and the
+  // `labelsAndCases`, which holds the pairs of field labels and eliminators.
+  const [[_variantExpr, variantType], ...labelsAndcases] = args
+  // We group the `labelsAndCases` in chunks of size 2 fur subsequent analysis.
   const labelAndElimPairs = chunk(labelsAndcases, 2)
+  // And we extract just the eliminators, which we'll use for
   const eliminatorOps = labelAndElimPairs.map(([_, op]) => op)
 
-  // A match eliminator has the normal form `match(expr, 'field1', elim1,..., 'fieldn', elimn)`.
-  // We have already separtated the expression into the `variantExpr` above, and what is
-  // left in labelsAndCases are the pairs of labels and eliminators.
-  //
-  // So we iterate over the labelsAndCases in chunks of size 2 to confirm that each label is
-  // a string and each eliminator is a unary operator. This is a well-formedness check prioir to
-  // checking that the eliminator fits the `sumType`.
-  //
-  // - We can ignore the `_keyType` because we are verifying here that every key is a string litteral
-  //   (a mere string-valued type is not enough, since we are promoting string litterals into labels
-  //    here)
-  // - We can ignore the `_elimExpr` because we are only doing type checking
+  // Now we verify that each label is a string literal and each eliminator is a unary operator.
+  // This is a well-formedness check prioir to checking that the match expression fits the
+  // `sumType` of the value we are matching on.
   const validatedFields: Either<ErrorTree, [string, QuintType]>[] = labelAndElimPairs.map(
     ([[labelExpr, _labelType], [elimExpr, elimType]]) =>
       labelExpr.kind !== 'str'
