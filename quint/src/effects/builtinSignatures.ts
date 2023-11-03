@@ -246,11 +246,8 @@ const multipleAritySignatures: [QuintBuiltinOpcode, Signature][] = [
     'matchVariant',
     (arity: number) => {
       const eliminatorIdxs = range((arity - 1) / 2)
-      const vars = eliminatorIdxs.map(i => `Read[r${i}] & Update[u${i}]`)
-      const args = vars.map(vs => `Pure, (${vs}) => ${vs}`)
-      const readVars = ['r', ...eliminatorIdxs.map(i => `r${i}`)].join(', ')
-      const updateVars = ['u', ...eliminatorIdxs.map(i => `r${i}`)].join(', ')
-      return parseAndQuantify(`(Read[r] & Update[u], ${args.join(', ')}) => Read[${readVars}] & Update[${updateVars}]`)
+      const args = eliminatorIdxs.map(_ => `Pure, (a) => b`)
+      return parseAndQuantify(`(a, ${args.join(', ')}) => b`)
     },
   ],
   [
