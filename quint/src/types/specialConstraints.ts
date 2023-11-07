@@ -195,7 +195,7 @@ export function variantConstraints(
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
-  // `_valuEx : valueType` is checked already via the constaintGenerator
+  // `_valuEx : valueType` is checked already via the constraintGenerator
   const [[labelExpr, labelType], [_valueEx, valueType]] = args
 
   if (labelExpr.kind !== 'str') {
@@ -229,7 +229,6 @@ export function variantConstraints(
 //
 // Γ ⊢ e:(s, c)
 // Γ, x1:(t1, c1') ⊢ e1:(t, c1) ... Γ, xn:(tn, cn') ⊢ en:(t, cn)
-// v is fresh
 // ------------------------------------------------------------------------------
 //  Γ ⊢ match e { i1 : x1 => e1, ..., in : xn => en } : (t, c /\
 //    c1 /\ c1' /\ ... /\ cn /\ cn' /\ cn+1 /\
@@ -247,7 +246,7 @@ export function matchConstraints(
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
-  // A match eliminator has the normal form `match(expr, 'field1', elim1,..., 'fieldn', elimn)`.
+  // A match eliminator has the normal form `matchVariant(expr, 'field1', elim1,..., 'fieldn', elimn)`.
   // We separate the `expr` we are matching against into the `_variantExpr` and the
   // `labelsAndCases`, which holds the pairs of field labels and eliminators.
   const [[_variantExpr, variantType], ...labelsAndcases] = args
@@ -290,11 +289,14 @@ export function matchConstraints(
   return mergeInMany(validatedFields).map((fields: [string, QuintType][]): Constraint[] => {
     // Form a constraint ensuring that the match expression fits the sum-type it is applied to:
     const matchCaseType = sumType(fields) // The sum-type implied by the match elimination cases.
+    // s ~ < i1 : t1, ..., in : tn > )
     const variantTypeIsMatchCaseType: Constraint = { kind: 'eq', types: [variantType, matchCaseType], sourceId: id }
 
     // Form a set of constraints ensuring that all the result types of the match cases are the same:
     // We extract just the types of the eliminator operators, which we've ensured are operators during field validation.
     const eliminatorOpResultTypes = labelAndElimPairs.map(([_, elim]) => (elim[1] as QuintOperType).res)
+    // These equality constraints implement the fact that all return values of cases, and the value of
+    // the match expression as a whole, are of the same type, `t`
     const resultTypesAreEqual: Constraint[] = []
     for (const resultType of eliminatorOpResultTypes) {
       resultTypesAreEqual.push({ kind: 'eq', types: [resultTypeVar, resultType], sourceId: id })
