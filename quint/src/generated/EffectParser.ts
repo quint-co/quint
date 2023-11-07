@@ -55,7 +55,7 @@ export class EffectParser extends Parser {
 	];
 
 	private static readonly _LITERAL_NAMES: Array<string | undefined> = [
-		undefined, "'('", "', '", "')'", "'=>'", "'Read'", "'['", "']'", "'Update'", 
+		undefined, "'('", "','", "')'", "'=>'", "'Read'", "'['", "']'", "'Update'", 
 		"'Temporal'", "'&'", "'Pure'", "'''",
 	];
 	private static readonly _SYMBOLIC_NAMES: Array<string | undefined> = [

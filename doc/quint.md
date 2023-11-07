@@ -287,7 +287,7 @@ Options:
 
 <!-- TODO: Update after https://github.com/informalsystems/quint/issues/701 -->
 By default, this command will automatically obtain and run Apalache. The only
-prerequisite is a [compatible installation of OpenJDK](quint/README.md).
+prerequisite is a [compatible installation of OpenJDK](../quint/README.md).
 
 You may also manually obtain and run a distribution of Apalache, following these
 steps:

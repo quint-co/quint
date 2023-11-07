@@ -954,9 +954,9 @@ export class ToIrListener implements QuintListener {
   //    | _ => exprm              // A wildcard match, acting as a catchall
   // }
   //
-  // The above is represented in the UFC using an exotic `match` operator of the form
+  // The above is represented in the UFC using an exotic `matchVariant` operator of the form
   //
-  // match(epxr, label1, (var1) => expr1, ..., labeln, (varn) => exprn, "_", (_) => exprm)
+  // matchVariant(epxr, label1, (var1) => expr1, ..., labeln, (varn) => exprn, "_", (_) => exprm)
   exitMatchSumExpr(ctx: p.MatchSumExprContext) {
     const matchId = this.getId(ctx)
 
@@ -976,7 +976,7 @@ export class ToIrListener implements QuintListener {
     const matchExpr: QuintBuiltinApp = {
       id: matchId,
       kind: 'app',
-      opcode: 'match',
+      opcode: 'matchVariant',
       args: [expr].concat(cases),
     }
     this.exprStack.push(matchExpr)
@@ -989,7 +989,8 @@ export class ToIrListener implements QuintListener {
   //
   // E.g., `A(x) => <expr>` becomes `["A", (x) => <expr>]`
   private formMatchCase([caseExpr, caseCtx]: [QuintEx, p.MatchSumCaseContext]): (QuintStr | QuintLambda)[] {
-    const caseId = this.getId(caseCtx)
+    const labelId = this.getId(caseCtx)
+    const elimId = this.getId(caseCtx)
     let label: string
     let params: QuintLambdaParameter[]
     if (caseCtx._wildCardMatch) {
@@ -1010,8 +1011,8 @@ export class ToIrListener implements QuintListener {
     } else {
       throw new Error('impossible: either _wildCardMatch or _variantMatch must be present')
     }
-    const labelStr: QuintStr = { id: caseId, kind: 'str', value: label }
-    const elim: QuintLambda = { id: caseId, kind: 'lambda', qualifier: 'def', expr: caseExpr, params }
+    const labelStr: QuintStr = { id: labelId, kind: 'str', value: label }
+    const elim: QuintLambda = { id: elimId, kind: 'lambda', qualifier: 'def', expr: caseExpr, params }
     return [labelStr, elim]
   }
 
