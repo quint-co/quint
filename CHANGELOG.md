@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   verify` (#1216)
 - Fixed a problem where errors in one file were being reported in another file
   that imported it (#1224).
+- Fixed a problem where some errors were not being reported in the REPL (#1223)
 
 ### Security
 

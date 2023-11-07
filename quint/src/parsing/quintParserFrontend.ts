@@ -97,7 +97,8 @@ export function parseExpressionOrDeclaration(
   listener.sourceMap = sourceMap
 
   ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
-  return listener.result ?? { kind: 'error', errors: listener.errors }
+  errors.push(...listener.errors)
+  return errors.length > 0 ? { kind: 'error', errors: errors } : listener.result!
 }
 
 /**
@@ -116,8 +117,28 @@ export function parsePhase1fromText(
   // run the parser
   const tree = parser.modules()
 
-  // walk through the AST and construct the IR
-  ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
+  // wrap this in a try catch, since we are running the parser even if there are
+  // errors after the previous command.
+  try {
+    // walk through the AST and construct the IR
+    ParseTreeWalker.DEFAULT.walk(listener as QuintListener, tree)
+  } catch (e) {
+    if (errors.length === 0) {
+      throw e
+    }
+    console.debug(`[DEBUG] ignoring listener exception in favor of parse errors. Exception: ${e}`)
+    // ignore the exception, we already have errors to report.
+    //
+    // This happens in a situation where the first part of parsing (constructing
+    // the AST) has finished with errors, but we still want to try and build an
+    // IR out of it in order to collect as many errors as we can (from this and subsequent
+    // phases). So, we try to proceed, but it's fine if it doesn't work out.
+    //
+    // It is safe to ignore errors here because, normally, we wouldn't even run
+    // this code after parse failures. However, if we want to run subsequent
+    // phases on top of the generated IR, it is important to consider that it is
+    // only a partial result and might have undefined components or be incomplete.
+  }
 
   return { errors: errors.concat(listener.errors), modules: listener.modules, sourceMap: listener.sourceMap }
 }
@@ -309,7 +330,8 @@ export function parseDefOrThrow(text: string, idGen?: IdGenerator, sourceMap?: S
   if (result.kind === 'declaration' && isDef(result.decl)) {
     return result.decl
   } else {
-    throw new Error(`Expected a definition, got ${result.kind}, parsing ${text}`)
+    const msg = result.kind === 'error' ? result.errors.join('\n') : `Expected a definition, got ${result.kind}`
+    throw new Error(`${msg}, parsing ${text}`)
   }
 }
 

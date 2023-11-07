@@ -15,7 +15,6 @@ import {
   Connection,
   DefinitionLink,
   DefinitionParams,
-  Diagnostic,
   DocumentSymbol,
   DocumentSymbolParams,
   HandlerResult,
@@ -106,9 +105,10 @@ export class QuintLanguageServer {
           this.parsedDataByDocument.set(change.document.uri, result)
 
           const diagnosticsByFile = diagnosticsFromErrors(result.errors, result.sourceMap)
-          diagnosticsByFile.forEach((diagnostics, file) => {
-            this.connection.sendDiagnostics({ uri: file, diagnostics })
-          })
+
+          const sourceFile = URI.parse(change.document.uri).path
+          const diagnostics = diagnosticsByFile.get(sourceFile) ?? []
+          this.connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
 
           if (diagnosticsByFile.size === 0) {
             // For now, only run analysis if there are no parsing errors
@@ -435,22 +435,22 @@ export class QuintLanguageServer {
     this.analysisOutputByDocument.delete(uri)
   }
 
-  private triggerAnalysis(document: TextDocument, previousDiagnostics: Map<string, Diagnostic[]> = new Map()) {
+  private triggerAnalysis(document: TextDocument) {
     clearTimeout(this.analysisTimeout)
     this.connection.console.info(`Triggering analysis`)
-    this.analyze(document, previousDiagnostics)
+    this.analyze(document)
   }
 
-  private scheduleAnalysis(document: TextDocument, previousDiagnostics: Map<string, Diagnostic[]> = new Map()) {
+  private scheduleAnalysis(document: TextDocument) {
     clearTimeout(this.analysisTimeout)
     const timeoutMillis = 1000
     this.connection.console.info(`Scheduling analysis in ${timeoutMillis} ms`)
     this.analysisTimeout = setTimeout(() => {
-      this.analyze(document, previousDiagnostics)
+      this.analyze(document)
     }, timeoutMillis)
   }
 
-  private analyze(document: TextDocument, previousDiagnostics: Map<string, Diagnostic[]> = new Map()) {
+  private analyze(document: TextDocument) {
     try {
       const parsedData = this.parsedDataByDocument.get(document.uri)
       if (!parsedData) {
@@ -465,18 +465,12 @@ export class QuintLanguageServer {
 
       this.analysisOutputByDocument.set(document.uri, analysisOutput)
 
+      const sourceFile = URI.parse(document.uri).path
       const diagnosticsByFile = diagnosticsFromErrors(errors, sourceMap)
-      diagnosticsByFile.forEach((diagnostics, file) => {
-        const previous = previousDiagnostics.get(file) ?? []
-        this.connection.sendDiagnostics({ uri: file, diagnostics: previous.concat(diagnostics) })
-      })
+      const diagnostics = diagnosticsByFile.get(sourceFile) ?? []
+      this.connection.sendDiagnostics({ uri: document.uri, diagnostics })
     } catch (e) {
       this.connection.console.error(`Error during analysis: ${e}`)
-      previousDiagnostics.forEach((diagnostics, file) => {
-        this.connection.sendDiagnostics({ uri: file, diagnostics })
-      })
-
-      // this.connection.sendDiagnostics({ uri: document.uri, diagnostics: previousDiagnostics })
     }
   }
 }
