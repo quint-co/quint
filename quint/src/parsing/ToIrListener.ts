@@ -220,7 +220,11 @@ export class ToIrListener implements QuintListener {
     const name = ctx.normalCallName().text
     const [params, typeTag] = this.processOpDefParams(ctx)
     // get the definition body
-    const expr = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
+    const expr: QuintEx = ctx.expr()
+      ? this.exprStack.pop() ?? this.undefinedExpr(ctx)()
+      : // This is only a definition header, use a default body since the IR
+        // does not have a representation for this at the moment
+        { id: this.getId(ctx), kind: 'bool', value: true }
 
     // extract the qualifier
     let qualifier: OpQualifier = 'def'
