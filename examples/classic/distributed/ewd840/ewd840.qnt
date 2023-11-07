@@ -120,6 +120,8 @@ action step = any {
 
 val vars = (active, color, tpos, tcolor)
 
+// FIXME(#1236): we cannot add `init` to this property since, in quint, it is an
+// action - not a predicate
 // temporal Spec = init and always(step.orKeep(vars) and System.weakFair(vars))
 
 //-----------------------------------------------------------------------------
@@ -151,18 +153,18 @@ temporal FalseLiveness =
   always(Nodes.forall(i => always(eventually(not(active.get(i)))))
          implies eventually(terminationDetected))
 
-/// The following property says that eventually all nodes will terminate
-/// assuming that from some point onwards no messages are sent. It is not
-/// supposed to hold: any node may indefinitely perform local computations.
-/// However, this property is verified if the fairness condition WF_vars(step)
-/// is used instead of only WF_vars(System) that requires fairness of the
-/// actions controlled by termination detection.
-///
-/// Quint translation note: we cannot add `init` to this property since, in quint,
-/// it is an action - not a predicate
-temporal SpecWFstep = always(step.orKeep(vars) and step.weakFair(vars)) // and init
+// The property `AllNodesTerminateIfNoMessages` says that eventually all nodes
+// will terminate assuming that from some point onwards no messages are sent.
+// It is not supposed to hold: any node may indefinitely perform local
+// computations. However, this property is verified if the fairness condition
+// WF_vars(step) is used instead of only WF_vars(System) that requires fairness
+// of the actions controlled by termination detection.
+//
+// FIXME(#1236): we cannot add `init` to this property since, in quint, it is an
+// action - not a predicate
+// temporal SpecWFstep = always(step.orKeep(vars) and step.weakFair(vars)) and init
 
-// The following property is not expressible in quint (for now), as it negates an action
+// Not expressible in quint (for now), as it negates an action
 // temporal AllNodesTerminateIfNoMessages = (
 //   eventually(always(
 //       Node.forall(i => not(SendMsg(i))).orKeep(vars)
