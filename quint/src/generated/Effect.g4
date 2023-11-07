@@ -1,4 +1,4 @@
-/*,*
+/**
  * A grammar of Quint Effects
  *
  * @author: Gabriela Moreira, Informal Systems, 2022
