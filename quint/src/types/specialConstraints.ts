@@ -227,20 +227,19 @@ export function variantConstraints(
 
 // The rule for the `match` operator:
 //
-// TODO Work out correct rule here
-//
 // Γ ⊢ e:(s, c)
 // Γ, x1:(t1, c1') ⊢ e1:(t, c1) ... Γ, xn:(tn, cn') ⊢ en:(t, cn)
 // v is fresh
 // ------------------------------------------------------------------------------
 //  Γ ⊢ match e { i1 : x1 => e1, ..., in : xn => en } : (t, c /\
-//    c1 /\ c1' /\ ... /\ cn /\ cn' /\ cn+1 /\ s ~ < i1 : t1, ..., in : tn > )
+//    c1 /\ c1' /\ ... /\ cn /\ cn' /\ cn+1 /\
+//    s ~ < i1 : t1, ..., in : tn > )
 //
 // Where
 //
 // - < ... > is a row-based variant.
 // - {l1 : x1 => e1, ..., ln : xn => en } coordinates label `li` with an eliminator `xi => ei`
-//   for each label label in sum-type `s`.
+//   for each label in sum-type `s`.
 //
 // This rule is explained in /doc/rfcs/rfc001-sum-types/rfc001-sum-types.org
 export function matchConstraints(
@@ -254,100 +253,53 @@ export function matchConstraints(
   const [[_variantExpr, variantType], ...labelsAndcases] = args
   // We group the `labelsAndCases` in chunks of size 2 fur subsequent analysis.
   const labelAndElimPairs = chunk(labelsAndcases, 2)
-  // And we extract just the eliminators, which we'll use for
-  const eliminatorOps = labelAndElimPairs.map(([_, op]) => op)
 
   // Now we verify that each label is a string literal and each eliminator is a unary operator.
-  // This is a well-formedness check prioir to checking that the match expression fits the
+  // This is a well-formedness check prior to checking that the match expression fits the
   // `sumType` of the value we are matching on.
+  const fieldValidationError: (msg: string) => Either<ErrorTree, [string, QuintType]> = msg =>
+    left(buildErrorLeaf(`Generating match constraints for ${labelsAndcases.map(a => expressionToString(a[0]))}`, msg))
+
   const validatedFields: Either<ErrorTree, [string, QuintType]>[] = labelAndElimPairs.map(
-    ([[labelExpr, _labelType], [elimExpr, elimType]]) =>
-      labelExpr.kind !== 'str'
-        ? left(
-            buildErrorLeaf(
-              `Generating match constraints for ${labelsAndcases.map(a => expressionToString(a[0]))}`,
-              `Match variant name must be a string literal but it is a ${labelExpr.kind}: ${expressionToString(
-                labelExpr
-              )}`
-            )
+    ([[labelExpr, _labelType], [elimExpr, elimType]]) => {
+      return labelExpr.kind !== 'str'
+        ? fieldValidationError(
+            `Match variant name must be a string literal but it is a ${labelExpr.kind}: ${expressionToString(
+              labelExpr
+            )}`
           )
         : elimType.kind !== 'oper'
-        ? left(
-            buildErrorLeaf(
-              `Generating match constraints for ${labelsAndcases.map(a => expressionToString(a[0]))}`,
-              `Match case name must be a string literal but it is a ${elimType.kind}: ${expressionToString(elimExpr)}`
-            )
+        ? fieldValidationError(
+            `Match case eliminator must be an operator expression but it is a ${elimType.kind}: ${expressionToString(
+              elimExpr
+            )}`
           )
         : elimType.args.length !== 1
-        ? left(
-            buildErrorLeaf(
-              `Generating match constraints for ${labelsAndcases.map(a => expressionToString(a[0]))}`,
-              `Match case eliminator must be a unary operator but it is an operator of ${
-                elimType.args.length
-              } arguments: ${expressionToString(elimExpr)}`
-            )
+        ? fieldValidationError(
+            `Match case eliminator must be a unary operator but it is an operator of ${
+              elimType.args.length
+            } arguments: ${expressionToString(elimExpr)}`
           )
-        : right([labelExpr.value, elimType.args[0]])
+        : right([labelExpr.value, elimType.args[0]]) // The label and associated type of a varaint case
+    }
   )
 
-  return (
-    mergeInMany(validatedFields)
-      // TODO: Support more expressive and informative type errors
-      //       will require tying into the constraint checking system.
-      //       See https://github.com/informalsystems/quint/issues/1231
-      // .chain((fields: [string, QuintType][]) => {
-      //   const matchCaseLabels = new Set(fields.map(([label, _]) => label))
-      //   const sumTypeLabels = new Set(rowFieldNames(variantType.fields))
-      //   const variantLabelsWithoutCases = setDifference(sumTypeLabels, matchCaseLabels)
-      //   const casesWithoutVariantLabels = setDifference(matchCaseLabels, sumTypeLabels)
-      //   return variantLabelsWithoutCases.size > 0
-      //     ? left(
-      //         buildErrorLeaf(
-      //           `Checking exhaustiveness for match on variant expression ${expressionToString(variantExpr)}`,
-      //           `Match cases are missing for variants ${[...variantLabelsWithoutCases].join(', ')}`
-      //         )
-      //       )
-      //     : casesWithoutVariantLabels.size > 0
-      //     ? left(
-      //         buildErrorLeaf(
-      //           `Checking exhaustiveness for match on variant expression ${expressionToString(variantExpr)}`,
-      //           `Match has cases which do not apply to variant: ${[...casesWithoutVariantLabels].join(', ')}`
-      //         )
-      //       )
-      //     : // Otherwise the two sets must be equal
-      //       right(fields)
-      // })
-      .map((fields: [string, QuintType][]): Constraint[] => {
-        const matchCaseType = sumType(fields)
-        const variantTypeIsMatchCaseType: Constraint = { kind: 'eq', types: [variantType, matchCaseType], sourceId: id }
-        const resultTypeAreEqual: Constraint[] = eliminatorOps
-          .map(([_, type]) => (type as QuintOperType).res) // We've ensured all types are operators in the previous
-          .reduce(
-            (acc: [QuintType, Constraint[]], thisType: QuintType): [QuintType, Constraint[]] => {
-              const [prevType, constraints] = acc
-              return [thisType, [...constraints, { kind: 'eq', types: [prevType, thisType], sourceId: id }]]
-            },
-            [resultTypeVar, []]
-          )[1]
+  // TODO: Support more expressive and informative type errors.
+  //       This will require tying into the constraint checking system.
+  //       See https://github.com/informalsystems/quint/issues/1231
+  return mergeInMany(validatedFields).map((fields: [string, QuintType][]): Constraint[] => {
+    // Form a constraint ensuring that the match expression fits the sum-type it is applied to:
+    const matchCaseType = sumType(fields) // The sum-type implied by the match elimination cases.
+    const variantTypeIsMatchCaseType: Constraint = { kind: 'eq', types: [variantType, matchCaseType], sourceId: id }
 
-        return [variantTypeIsMatchCaseType, ...resultTypeAreEqual]
-      })
-  )
+    // Form a set of constraints ensuring that all the result types of the match cases are the same:
+    // We extract just the types of the eliminator operators, which we've ensured are operators during field validation.
+    const eliminatorOpResultTypes = labelAndElimPairs.map(([_, elim]) => (elim[1] as QuintOperType).res)
+    const resultTypesAreEqual: Constraint[] = []
+    for (const resultType of eliminatorOpResultTypes) {
+      resultTypesAreEqual.push({ kind: 'eq', types: [resultTypeVar, resultType], sourceId: id })
+    }
 
-  // // A tuple with item acess of N should have at least N fields
-  // // Fill previous fileds with type variables
-  // const variantField: RowField = { fieldName: labelExpr.value, fieldType: valueType }
-
-  // const generalVarType: QuintType = {
-  //   kind: 'sum',
-  //   fields: {
-  //     kind: 'row',
-  //     fields: [variantField],
-  //     other: { kind: 'var', name: `tail_${resultTypeVar.name}` },
-  //   },
-  // }
-  // const isDefinedConstraint: Constraint = { kind: 'isDefined', type: generalVarType, sourceId: id }
-  // const propagateResultConstraint: Constraint = { kind: 'eq', types: [resultTypeVar, generalVarType], sourceId: id }
-
-  // return right([isDefinedConstraint, propagateResultConstraint])
+    return [variantTypeIsMatchCaseType, ...resultTypesAreEqual]
+  })
 }
