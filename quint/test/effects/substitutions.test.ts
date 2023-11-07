@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { Substitutions, compose } from '../../src/effects/substitutions'
+import { Substitutions, applySubstitution, compose } from '../../src/effects/substitutions'
 import { parseEffectOrThrow } from '../../src/effects/parser'
 
 describe('compose', () => {
@@ -33,24 +33,19 @@ describe('compose', () => {
 
     assert.isTrue(result.isRight())
   })
+})
 
-  it('unifies values of substitutions with same name', () => {
-    const s1: Substitutions = [
-      { kind: 'entity', name: 'v1', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 2n }] } },
+describe('applySubstitution', () => {
+  it('substitutes with transitivity', () => {
+    const s: Substitutions = [
+      { kind: 'effect', name: 'e0', value: { kind: 'variable', name: 'e1' } },
+      { kind: 'effect', name: 'e1', value: { kind: 'variable', name: 'e2' } },
     ]
-    const s2: Substitutions = [{ kind: 'entity', name: 'v1', value: { kind: 'variable', name: 'q' } }]
 
-    const result = compose(s1, s2)
+    const e = parseEffectOrThrow('e0')
 
-    result.map(r =>
-      assert.sameDeepMembers(
-        r,
-        s1.concat([
-          { kind: 'entity', name: 'q', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 2n }] } },
-        ])
-      )
-    )
+    const result = applySubstitution(s, e).unwrap()
 
-    assert.isTrue(result.isRight())
+    assert.deepEqual(result, parseEffectOrThrow('e2'))
   })
 })

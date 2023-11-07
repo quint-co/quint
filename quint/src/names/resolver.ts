@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022-2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022-2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -12,7 +12,6 @@
  * @module
  */
 
-import { Either, left, right } from '@sweet-monads/either'
 import { IRVisitor, walkModule } from '../ir/IRVisitor'
 import { QuintApp, QuintInstance, QuintLambda, QuintLet, QuintModule, QuintName, QuintOpDef } from '../ir/quintIr'
 import { QuintConstType } from '../ir/quintTypes'
@@ -28,14 +27,12 @@ import { difference } from 'lodash'
  *
  * @returns A lookup table of definitions and a mapping of unused definitions if successful, otherwise a list of errors.
  */
-export function resolveNames(quintModules: QuintModule[]): Either<QuintError[], NameResolutionResult> {
+export function resolveNames(quintModules: QuintModule[]): NameResolutionResult {
   const visitor = new NameResolver()
   quintModules.forEach(module => {
     walkModule(visitor, module)
   })
-  return visitor.errors.length > 0
-    ? left(visitor.errors)
-    : right({ table: visitor.table, unusedDefinitions: visitor.unusedDefinitions })
+  return { table: visitor.table, unusedDefinitions: visitor.unusedDefinitions, errors: visitor.errors }
 }
 
 /**

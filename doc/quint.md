@@ -174,7 +174,7 @@ Options:
                                                                         [string]
   --out          output file (suppresses all console output)            [string]
   --out-itf      output the trace in the Informal Trace Format to file
-                 (supresses all console output)                         [string]
+                 (suppresses all console output)                         [string]
   --max-samples  the maximum on the number of traces to try
                                                        [number] [default: 10000]
   --max-steps    the maximum on the number of steps in every trace
@@ -269,7 +269,7 @@ Options:
                      filename)                                          [string]
   --out              output file (suppresses all console output)        [string]
   --out-itf          output the trace in the Informal Trace Format to file
-                     (supresses all console output)                     [string]
+                     (suppresses all console output)                     [string]
   --max-steps        the maximum number of steps in every trace
                                                           [number] [default: 10]
   --init             name of the initializer action   [string] [default: "init"]
@@ -277,15 +277,17 @@ Options:
   --invariant        the invariants to check, separated by a comma      [string]
   --temporal         the temporal properties to check, separated by a comma
                                                                         [string]
-  --apalache-config  Filename of the additional Apalache configuration (in the
-                     HOCON format, a superset of JSON)                  [string]
+  --random-transitions  choose transitions at random (= use symbolic simulation)
+                                                      [boolean] [default: false]
+  --apalache-config     path to an additional Apalache configuration file (in
+                        JSON)                                           [string]
   --verbosity        control how much output is produced (0 to 5)
                                                            [number] [default: 2]
 ```
 
 <!-- TODO: Update after https://github.com/informalsystems/quint/issues/701 -->
 By default, this command will automatically obtain and run Apalache. The only
-prerequisite is a [compatible installation of OpenJDK](quint/README.md).
+prerequisite is a [compatible installation of OpenJDK](../quint/README.md).
 
 You may also manually obtain and run a distribution of Apalache, following these
 steps:

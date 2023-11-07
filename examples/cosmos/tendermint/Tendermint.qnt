@@ -78,6 +78,9 @@ module Tendermint {
   // the proposer function from 0..NRounds to the set of processes
   const Proposer: Round_t -> Proc_t
 
+  assume Corr_and_faulty_are_disjoint =
+      (Corr.intersect(Faulty) == Set())
+
   assume Corr_and_faulty_make_N =
       N == size(Corr.union(Faulty))
 
@@ -157,7 +160,7 @@ module Tendermint {
   //********************* PROTOCOL INITIALIZATION ******************************
   def FaultyProposals(r) =
       tuples(Faulty, Values, RoundsOrNil)
-        .map((p, v, vr) =>
+        .map( ((p, v, vr)) =>
           { src: p, round: r, proposal: v, validRound: vr })
 
   val AllFaultyProposals =
@@ -166,7 +169,7 @@ module Tendermint {
 
   def FaultyPrevotes(r) =
       tuples(Faulty, Values)
-        .map((p, v) => { src: p, round: r, id: v })
+        .map( ((p, v)) => { src: p, round: r, id: v })
 
   val AllFaultyPrevotes =
       Rounds.map(r => FaultyPrevotes(r))
@@ -174,7 +177,7 @@ module Tendermint {
 
   def FaultyPrecommits(r) =
       tuples(Faulty, Values)
-        .map((p, v) => { src: p, round: r, id: v })
+        .map( ((p, v)) => { src: p, round: r, id: v })
 
   val AllFaultyPrecommits =
       Rounds.map(r => FaultyPrecommits(r))
@@ -532,7 +535,7 @@ module Tendermint {
 
   //**************************** FORK SCENARIOS  ***************************
   def EquivocationIn(p, S) =
-    tuples(S, S).exists((m1, m2) =>
+    tuples(S, S).exists( ((m1, m2)) =>
       and {
         m1 != m2,
         m1.src == p,
@@ -551,7 +554,7 @@ module Tendermint {
 
   // amnesic behavior by a process p
   def AmnesiaBy(p) =
-      tuples(Rounds, Rounds).exists((r1, r2) =>
+      tuples(Rounds, Rounds).exists( ((r1, r2)) =>
           and {
             r1 < r2,
             tuples(ValidValues, ValidValues).exists(vs =>
@@ -582,7 +585,7 @@ module Tendermint {
 
   // the safety property -- agreement
   val Agreement =
-    tuples(Corr, Corr).forall((p, q) =>
+    tuples(Corr, Corr).forall( ((p, q)) =>
       or {
         decision.get(p) == NilValue,
         decision.get(q) == NilValue,
@@ -623,7 +626,7 @@ module Tendermint {
   // It is not exactly ~Agreement, as we do not want to see the states where
   // decision.get(p) = NilValue
   val NoAgreement =
-    tuples(Corr, Corr).forall((p, q) =>
+    tuples(Corr, Corr).forall( ((p, q)) =>
       and {
         p != q,
         decision.get(p) != NilValue,

@@ -3,9 +3,9 @@
  *
  * Igor Konnov, 2023
  *
- * Copyright (c) Informal Systems 2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  */
 
 import chalk from 'chalk'
@@ -29,7 +29,7 @@ import {
 import { QuintDeclaration, QuintEx, isAnnotatedDef } from './ir/quintIr'
 import { ExecutionFrame } from './runtime/trace'
 import { zerog } from './idGenerator'
-import { ConcreteFixedRow, QuintType, Row } from './ir/quintTypes'
+import { ConcreteRow, QuintType, Row, isUnitType } from './ir/quintTypes'
 import { TypeScheme } from './types/base'
 import { canonicalTypeScheme } from './types/printing'
 import { declarationToString, qualifierToString, rowToString } from './ir/IRprinting'
@@ -187,7 +187,7 @@ export function prettyQuintType(type: QuintType): Doc {
       return group([text('{ '), prettyRow(type.fields), text('}')])
     }
     case 'sum': {
-      return group([text('{ '), prettySumRow(type.fields), text('}')])
+      return prettySumRow(type.fields)
     }
     case 'union': {
       const records = type.records.map(rec => {
@@ -220,7 +220,7 @@ function prettyRow(r: Row, showFieldName = true): Doc {
   return group([nest('  ', [linebreak, docJoin([text(','), line()], fieldsDocs)]), ...otherDoc, linebreak])
 }
 
-function prettySumRow(r: ConcreteFixedRow): Doc {
+function prettySumRow(r: ConcreteRow): Doc {
   const row = simplifyRow(r)
   const fields = row.kind === 'row' ? row.fields : []
   const other = row.kind === 'row' ? row.other : undefined
@@ -228,12 +228,15 @@ function prettySumRow(r: ConcreteFixedRow): Doc {
   const fieldsDocs = fields.map(f => {
     if (other?.kind === 'empty') {
       return group(text(f.fieldName))
+    } else if (isUnitType(f.fieldType)) {
+      // Print the variant `Foo({})`
+      return group([text(`${f.fieldName}`)])
     } else {
       return group([text(`${f.fieldName}(`), prettyQuintType(f.fieldType), text(')')])
     }
   })
 
-  return group([nest('  ', [linebreak, docJoin([text(','), line()], fieldsDocs)]), linebreak])
+  return group([nest('  ', [linebreak, docJoin([text('|'), line()], fieldsDocs)]), linebreak])
 }
 
 /**

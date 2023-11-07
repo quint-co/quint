@@ -6,7 +6,7 @@ false
 true
 -40
 104
-runtime error: error: Variable temperature is not set
+runtime error: error: [QNT502] Variable temperature is not set
     var temperature: int
     ^^^^^^^^^^^^^^^^^^^^
 

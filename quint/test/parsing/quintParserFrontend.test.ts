@@ -11,11 +11,10 @@ import {
   parsePhase4toposort,
 } from '../../src/parsing/quintParserFrontend'
 import { lf } from 'eol'
-import { right } from '@sweet-monads/either'
 import { newIdGenerator } from '../../src/idGenerator'
 import { collectIds } from '../util'
 import { fileSourceResolver } from '../../src/parsing/sourceResolver'
-import { isTheUnit } from '../../src'
+import { mkErrorMessage } from '../../src/cliCommands'
 
 // read a Quint file from the test data directory
 function readQuint(name: string): string {
@@ -41,56 +40,34 @@ function parseAndCompare(artifact: string): void {
   // read the input from the data directory and parse it
   const gen = newIdGenerator()
   const basepath = resolve(__dirname, '../../testFixture')
-  const resolver = fileSourceResolver((path: string) => {
+  const resolver = fileSourceResolver(new Map(), (path: string) => {
     // replace the absolute path with a generic mocked path,
     // so the same fixtures work accross different setups
     return path.replace(basepath, 'mocked_path/testFixture')
   })
   const mainPath = resolver.lookupPath(basepath, `${artifact}.qnt`)
-  const phase2Result = parsePhase1fromText(gen, readQuint(artifact), mainPath.toSourceName()).chain(res =>
-    parsePhase2sourceResolution(gen, resolver, mainPath, res)
-  )
+  const phase1Result = parsePhase1fromText(gen, readQuint(artifact), mainPath.toSourceName())
+  const phase2Result = parsePhase2sourceResolution(gen, resolver, mainPath, phase1Result)
 
-  if (phase2Result.isLeft()) {
-    // An error occurred at phase 2, check if it is the expected result
-    phase2Result.mapLeft(
-      err =>
-        (outputToCompare = {
-          stage: 'parsing',
-          errors: err,
-          warnings: [],
-        })
-    )
-  } else if (phase2Result.isRight()) {
-    const { modules: modules2, sourceMap } = phase2Result.value
-    const expectedIds = modules2.flatMap(m => collectIds(m)).sort()
-    // Phase 1-2 succededed, check that the source map is correct
-    assert.sameDeepMembers(expectedIds, [...sourceMap.keys()].sort(), 'expected source map to contain all ids')
+  const phase3Result = parsePhase3importAndNameResolution(phase2Result)
+  const { modules, sourceMap, errors } = parsePhase4toposort(phase3Result)
 
+  if (errors.length === 0) {
+    // Only check source map if there are no errors. Otherwise, ids generated for error nodes might be missing from the
+    // actual modules
+    const expectedIds = modules.flatMap(m => collectIds(m)).sort()
+    assert.sameDeepMembers([...sourceMap.keys()].sort(), expectedIds, 'expected source map to contain all ids')
     const expectedSourceMap = readJson(`${artifact}.map`)
     const sourceMapResult = JSONbig.parse(JSONbig.stringify(compactSourceMap(sourceMap)))
 
     assert.deepEqual(sourceMapResult, expectedSourceMap, 'expected source maps to be equal')
-
-    const phase4Result = parsePhase3importAndNameResolution(phase2Result.value).chain(phase3Data =>
-      parsePhase4toposort(phase3Data)
-    )
-
-    if (phase4Result.isLeft()) {
-      // An error occurred at phases 3-4, check if it is the expected result
-      phase4Result.mapLeft(
-        err =>
-          (outputToCompare = {
-            stage: 'parsing',
-            errors: err,
-            warnings: [],
-          })
-      )
-    } else {
-      // All phases succeeded, check that the module is correclty output
-      const modules4 = phase4Result.value.modules
-      outputToCompare = { stage: 'parsing', warnings: [], modules: modules4 }
-    }
+  }
+  // All phases succeeded, check that the module is correclty output
+  outputToCompare = {
+    stage: 'parsing',
+    warnings: [],
+    modules: modules,
+    errors: errors.map(mkErrorMessage(sourceMap)),
   }
 
   // run it through stringify-parse to obtain the same json (due to bigints)
@@ -107,10 +84,7 @@ describe('parsing', () => {
       'mocked_path/testFixture/_0001emptyModule.qnt'
     )
     const module = { id: 1n, name: 'empty', declarations: [] }
-    assert.deepEqual(
-      result.map(r => r.modules[0]),
-      right(module)
-    )
+    assert.deepEqual(result.modules[0], module)
   })
 
   it('parses SuperSpec', () => {
@@ -119,7 +93,7 @@ describe('parsing', () => {
       readQuint('SuperSpec'),
       'mocked_path/testFixture/SuperSpec.qnt'
     )
-    assert(result.isRight())
+    assert.isEmpty(result.errors)
   })
 
   it('parses SuperSpec correctly', () => {
@@ -131,24 +105,11 @@ describe('parsing', () => {
   })
 
   it('parses sum types', () => {
-    const mod = `
-    module SumTypes {
-      type T =
-        | A
-        | B(int)
-    }
-    `
-    const result = parsePhase1fromText(newIdGenerator(), mod, 'test')
-    assert(result.isRight())
-    const typeDef = result.value.modules[0].declarations[0]
-    assert(typeDef.kind === 'typedef')
-    const sumType = typeDef.type!
-    assert(sumType.kind === 'sum')
-    const [variantA, variantB] = sumType.fields.fields
-    assert(variantA.fieldName === 'A')
-    assert(isTheUnit(variantA.fieldType))
-    assert(variantB.fieldName === 'B')
-    assert(variantB.fieldType.kind === 'int')
+    parseAndCompare('_1043sumTypeDecl')
+  })
+
+  it('parses match expressions', () => {
+    parseAndCompare('_1044matchExpression')
   })
 })
 

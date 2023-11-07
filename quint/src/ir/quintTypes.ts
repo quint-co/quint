@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2021-2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2021-2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 import { IRVisitor, walkType } from './IRVisitor'
@@ -75,7 +75,7 @@ export interface QuintRecordType extends WithOptionalId {
 }
 
 // A value of the unit type, i.e. an empty record
-export function unitValue(id: bigint): QuintRecordType {
+export function unitType(id: bigint): QuintRecordType {
   return {
     id,
     kind: 'rec',
@@ -83,13 +83,19 @@ export function unitValue(id: bigint): QuintRecordType {
   }
 }
 
-export function isTheUnit(r: QuintType): Boolean {
+export function isUnitType(r: QuintType): Boolean {
   return r.kind === 'rec' && r.fields.kind === 'row' && r.fields.fields.length === 0 && r.fields.other.kind === 'empty'
 }
 
 export interface QuintSumType extends WithOptionalId {
   kind: 'sum'
-  fields: ConcreteFixedRow
+  fields: ConcreteRow
+}
+
+export function sumType(labelTypePairs: [string, QuintType][], rowVar?: string, id?: bigint): QuintSumType {
+  const fields = labelTypePairs.map(([fieldName, fieldType]) => ({ fieldName, fieldType }))
+  const other: Row = rowVar ? { kind: 'var', name: rowVar } : { kind: 'empty' }
+  return { kind: 'sum', fields: { kind: 'row', fields, other }, id }
 }
 
 export interface QuintUnionType extends WithOptionalId {

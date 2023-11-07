@@ -134,6 +134,31 @@ describe('inferTypes', () => {
     ])
   })
 
+  it('infers types for variants', () => {
+    const defs = ['type T = A(int) | B', 'val a = variant("A", 3)']
+
+    const [errors, types] = inferTypesForDefs(defs)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+
+    const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    assert.sameDeepMembers(stringTypes, [
+      [14n, 'str'],
+      [15n, 'int'],
+      [16n, '(A(int))'],
+      [17n, '(A(int))'],
+      [10n, 'str'],
+      [11n, '{}'],
+      [12n, '(B({}))'],
+      [13n, '(B({}))'],
+      [5n, 'int'],
+      [4n, 'str'],
+      [6n, 'int'],
+      [7n, '(A(int))'],
+      [8n, '(int) => (A(int))'],
+      [9n, '(int) => (A(int))'],
+    ])
+  })
+
   it('keeps track of free variables in nested scopes (#966)', () => {
     const defs = ['def f(a) = a == "x"', 'def g(b) = val nested = (1,2) { f(b) }']
 
@@ -211,10 +236,10 @@ describe('inferTypes', () => {
         [
           7n,
           {
-            location: 'Trying to unify (Set[t1], (t1) => t2) => Set[t2] and (int, (int) => int) => t3',
+            location: 'Trying to unify (Set[_t1], (_t1) => _t2) => Set[_t2] and (int, (int) => int) => _t3',
             children: [
               {
-                location: 'Trying to unify Set[t1] and int',
+                location: 'Trying to unify Set[_t1] and int',
                 message: "Couldn't unify set and int",
                 children: [],
               },

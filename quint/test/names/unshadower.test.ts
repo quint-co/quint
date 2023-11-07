@@ -13,11 +13,9 @@ describe('unshadowNames', () => {
     const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
 
     const result = parse(idGenerator, 'test_location', fake_path, text)
-    if (result.isLeft()) {
-      assert.fail(`Expected no error, but got ${result.value.map(e => e.explanation)}`)
-    }
+    assert.isEmpty(result.errors)
 
-    return result.unwrap()
+    return result
   }
 
   it('returns a module with no shadowed names', () => {

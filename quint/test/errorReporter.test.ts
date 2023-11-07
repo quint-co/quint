@@ -2,14 +2,14 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { formatError } from '../src/errorReporter'
 import lineColumn from 'line-column'
-import { ErrorMessage } from '../src'
+import { ErrorMessage } from '../src/ErrorMessage'
 
 describe('errorReporter', () => {
   const text = `module test {
   def op = "value"
 }`
-
-  const finder = lineColumn(text)
+  const sourceCode: Map<string, string> = new Map([['file', text]])
+  const finder: Map<string, any> = new Map([['file', lineColumn(text)]])
 
   it('highlights the middle line', () => {
     const message: ErrorMessage = {
@@ -27,7 +27,7 @@ describe('errorReporter', () => {
 2:   def op = "value"
        ^^^^`
 
-    const error = formatError(text, finder, message).trim()
+    const error = formatError(sourceCode, finder, message).trim()
     assert.equal(error, expectedError)
   })
 
@@ -49,7 +49,7 @@ describe('errorReporter', () => {
 2:   def op = "value"
    ^^^^^^^^`
 
-    const error = formatError(text, finder, message).trim()
+    const error = formatError(sourceCode, finder, message).trim()
     assert.equal(error, expectedError)
   })
 
@@ -68,7 +68,7 @@ describe('errorReporter', () => {
 2:   def op = "value"
        ^`
 
-    const error = formatError(text, finder, message).trim()
+    const error = formatError(sourceCode, finder, message).trim()
     assert.equal(error, expectedError)
   })
 
@@ -88,7 +88,7 @@ describe('errorReporter', () => {
 2:   def op = "value"
        ^^^^`
 
-    const error = formatError(text, finder, message).trim()
+    const error = formatError(sourceCode, finder, message).trim()
     assert.equal(error, expectedError)
   })
 
@@ -100,7 +100,7 @@ describe('errorReporter', () => {
 
     const expectedError = 'error: error explanation'
 
-    const error = formatError(text, finder, message).trim()
+    const error = formatError(sourceCode, finder, message).trim()
     assert.equal(error, expectedError)
   })
 })

@@ -142,7 +142,7 @@ describe('repl ok', () => {
       `>>> 1 + false
       |static analysis error: error: [QNT000] Couldn't unify int and bool
       |Trying to unify int and bool
-      |Trying to unify (int, int) => int and (int, bool) => t0
+      |Trying to unify (int, int) => int and (int, bool) => _t0
       |
       |1 + false
       |^^^^^^^^^
@@ -265,7 +265,7 @@ describe('repl ok', () => {
       |[Frame 0]
       |div(2, 0) => none
       |
-      |runtime error: error: Division by zero
+      |runtime error: error: [QNT503] Division by zero
       |div(2, 0)
       |                     ^^^^^
       |
@@ -385,7 +385,7 @@ describe('repl ok', () => {
     )
     const output = dedent(
       `>>> Set(Int)
-      |runtime error: error: Infinite set Int is non-enumerable
+      |runtime error: error: [QNT501] Infinite set Int is non-enumerable
       |Set(Int)
       |^^^^^^^^
       |

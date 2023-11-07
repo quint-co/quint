@@ -3,6 +3,7 @@ import { IdGenerator, newIdGenerator } from '../../src/idGenerator'
 import { QuintDeclaration, QuintDef, QuintEx, QuintModule, isDef } from '../../src/ir/quintIr'
 import JSONbig from 'json-bigint'
 import { QuintType } from '../../src/ir/quintTypes'
+import { quintErrorToString } from '../../src'
 
 export function buildModuleWithExpressions(expressions: string[]): QuintModule {
   return buildModule([], expressions)
@@ -13,11 +14,11 @@ export function buildModuleWithDecls(decls: string[], name?: string, idGenerator
 
   const result = parsePhase1fromText(idGenerator ?? newIdGenerator(), quintModule, 'mocked_path')
 
-  if (result.isRight()) {
-    return result.value.modules[0]
+  if (result.errors.length > 0) {
+    throw new Error(`Couldn't parse mocked expression. ${result.errors.map(quintErrorToString)}`)
   }
 
-  throw new Error(`Couldn't parse mocked expression. Result - ${JSONbig.stringify(result)}`)
+  return result.modules[0]
 }
 
 export function buildModule(

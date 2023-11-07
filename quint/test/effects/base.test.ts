@@ -2,7 +2,6 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { Effect, unify } from '../../src/effects/base'
 import { parseEffectOrThrow } from '../../src/effects/parser'
-import { errorTreeToString } from '../../src/errorTree'
 import { substitutionsToString } from '../../src'
 
 describe('unify', () => {
@@ -153,72 +152,6 @@ describe('unify', () => {
       )
     })
 
-    it('unpacks arguments as tuples', () => {
-      const e1 = parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1, r2]')
-      const e2 = parseEffectOrThrow('(Pure) => E')
-
-      const result = unify(e1, e2)
-
-      result
-        .map(r =>
-          assert.sameDeepMembers(r, [
-            { kind: 'entity', name: 'r1', value: { kind: 'concrete', stateVariables: [] } },
-            { kind: 'entity', name: 'r2', value: { kind: 'concrete', stateVariables: [] } },
-            { kind: 'effect', name: 'E', value: parseEffectOrThrow('Pure') },
-          ])
-        )
-        .mapLeft(err => assert.fail(`Should find no errros, found ${errorTreeToString(err)}`))
-    })
-
-    it('unpacks arguments as tuples with read and temporal effect', () => {
-      const e1 = parseEffectOrThrow(
-        '(Read[r1] & Temporal[t1], Read[r2] & Temporal[t2]) => Read[r1, r2] & Temporal[t1, t2]'
-      )
-      const e2 = parseEffectOrThrow("(Read['x'] & Temporal['t']) => E")
-
-      const result = unify(e1, e2)
-
-      result
-        .map(r =>
-          assert.sameDeepMembers(r, [
-            { kind: 'entity', name: 'r1', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
-            { kind: 'entity', name: 'r2', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
-            { kind: 'entity', name: 't1', value: { kind: 'concrete', stateVariables: [{ name: 't', reference: 2n }] } },
-            { kind: 'entity', name: 't2', value: { kind: 'concrete', stateVariables: [{ name: 't', reference: 2n }] } },
-            {
-              kind: 'effect',
-              name: 'E',
-              value: {
-                kind: 'concrete',
-                components: [
-                  { kind: 'read', entity: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
-                  { kind: 'temporal', entity: { kind: 'concrete', stateVariables: [{ name: 't', reference: 2n }] } },
-                ],
-              },
-            },
-          ])
-        )
-        .mapLeft(err => assert.fail(`Should find no errros, found ${errorTreeToString(err)}`))
-    })
-
-    it('unpacks arguments as tuples with variable effects', () => {
-      const e1 = parseEffectOrThrow('(e0, e1) => e1')
-      const e2 = parseEffectOrThrow('(Pure) => E')
-
-      const result = unify(e1, e2)
-
-      result
-        .map(r =>
-          assert.sameDeepMembers(r, [
-            { kind: 'effect', name: 'e0', value: { kind: 'concrete', components: [] } },
-            { kind: 'effect', name: 'e1', value: { kind: 'concrete', components: [] } },
-            { kind: 'effect', name: 'e0#e1', value: { kind: 'concrete', components: [] } },
-            { kind: 'effect', name: 'E', value: parseEffectOrThrow('Pure') },
-          ])
-        )
-        .mapLeft(err => assert.fail(`Should find no errros, found ${errorTreeToString(err)}`))
-    })
-
     it('results in the same effect regardless of unpacked projection', () => {
       const e1 = parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1]')
       const e2 = parseEffectOrThrow("(Read['x', 'y']) => E")
@@ -230,58 +163,6 @@ describe('unify', () => {
       const result2 = unify(e3, e4)
 
       result1.map(r1 => result2.map(r2 => assert.deepEqual(substitutionsToString(r1), substitutionsToString(r2))))
-    })
-
-    it('returns error when unpacked values cannot unify', () => {
-      const e1 = parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1, r2]')
-      const e2 = parseEffectOrThrow("(Temporal['x']) => E")
-
-      const result = unify(e1, e2)
-
-      assert.isTrue(result.isLeft())
-      result.mapLeft(r =>
-        assert.deepEqual(r, {
-          location: "Trying to unify (Read[r1], Read[r2]) => Read[r1, r2] and (Temporal['x']) => E",
-          children: [
-            {
-              location: "Trying to unify Temporal['x'] and Read[r1, r2]",
-              children: [
-                {
-                  location: "Trying to unify entities ['x'] and []",
-                  message: 'Expected [x] and [] to be the same',
-                  children: [],
-                },
-              ],
-            },
-          ],
-        })
-      )
-    })
-
-    it('returns error when cannot unify entities', () => {
-      const e1 = parseEffectOrThrow('(Read[v]) => Update[v]')
-      const e2 = parseEffectOrThrow("(Read['x']) => Update['y']")
-
-      const result = unify(e1, e2)
-
-      assert.isTrue(result.isLeft())
-      result.mapLeft(r =>
-        assert.deepEqual(r, {
-          location: "Trying to unify (Read[v]) => Update[v] and (Read['x']) => Update['y']",
-          children: [
-            {
-              location: "Trying to unify Update['x'] and Update['y']",
-              children: [
-                {
-                  location: "Trying to unify entities ['x'] and ['y']",
-                  message: 'Expected [x] and [y] to be the same',
-                  children: [],
-                },
-              ],
-            },
-          ],
-        })
-      )
     })
 
     it('returns error when there are not enough parameters', () => {
@@ -400,6 +281,17 @@ describe('unify', () => {
           { kind: 'entity', name: 'r2', value: { kind: 'concrete', stateVariables: [{ name: 'y', reference: 2n }] } },
           { kind: 'entity', name: 'u', value: { kind: 'variable', name: 'v' } },
         ])
+      )
+    })
+
+    it('simplifies unions of entities before giving up on unifying them', () => {
+      const e1 = parseEffectOrThrow("Read[r1, r2, 'x']")
+      const e2 = parseEffectOrThrow("Read[r1, 'x']")
+
+      const result = unify(e1, e2)
+      assert.isTrue(result.isRight())
+      result.map(r =>
+        assert.sameDeepMembers(r, [{ kind: 'entity', name: 'r2', value: { kind: 'concrete', stateVariables: [] } }])
       )
     })
 

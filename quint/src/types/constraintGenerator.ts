@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -44,6 +44,7 @@ import {
   itemConstraints,
   recordConstructorConstraints,
   tupleConstructorConstraints,
+  variantConstraints,
   withConstraints,
 } from './specialConstraints'
 import { FreshVarGenerator } from '../FreshVarGenerator'
@@ -194,7 +195,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     // numbering of ther fresh variables stays in order, with `a`, used for return types,
     // bearing the highest number.
     const definedSignature = this.typeForName(e.opcode, e.id, e.args.length)
-    const a: QuintType = { kind: 'var', name: this.freshVarGenerator.freshVar('t') }
+    const a: QuintType = { kind: 'var', name: this.freshVarGenerator.freshVar('_t') }
     const result = argsResult
       .chain(results => {
         switch (e.opcode) {
@@ -218,6 +219,9 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
             )
           case 'item':
             return validateArity(e.opcode, results, l => l === 2, '2').chain(() => itemConstraints(e.id, results, a))
+          // Sum type operators
+          case 'variant':
+            return validateArity(e.opcode, results, l => l === 2, '2').chain(() => variantConstraints(e.id, results, a))
           // Otherwise it's a standard operator with a definition in the context
           default:
             return definedSignature.map(t1 => {
@@ -242,7 +246,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       rowVariables: new Set(lastParamNames.rowVariables),
     }
     expr.params.forEach(p => {
-      const varName = p.name === '_' ? this.freshVarGenerator.freshVar('t') : `t_${p.name}_${p.id}`
+      const varName = p.name === '_' ? this.freshVarGenerator.freshVar('_t') : `t_${p.name}_${p.id}`
       paramNames.typeVariables.add(varName)
       this.addToResults(p.id, right(toScheme({ kind: 'var', name: varName })))
     })
@@ -387,11 +391,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     const rowNames = Array.from(t.rowVariables)
 
     const typeSubs: Substitutions = typeNames.map(name => {
-      return { kind: 'type', name: name, value: { kind: 'var', name: this.freshVarGenerator.freshVar('t') } }
+      return { kind: 'type', name: name, value: { kind: 'var', name: this.freshVarGenerator.freshVar('_t') } }
     })
 
     const rowSubs: Substitutions = rowNames.map(name => {
-      return { kind: 'row', name: name, value: { kind: 'var', name: this.freshVarGenerator.freshVar('t') } }
+      return { kind: 'row', name: name, value: { kind: 'var', name: this.freshVarGenerator.freshVar('_t') } }
     })
 
     const subs = compose(this.table, typeSubs, rowSubs)

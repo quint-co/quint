@@ -116,7 +116,7 @@ module LCVerificationApi {
     // Plugin bug: see issue #808. action -> pure def once resloved
     pure def LightStoreInv(fetchedLightBlocks: LightBlockMap, lightBlockStatus: LightBlockStatus): bool = {
         val domain = fetchedLightBlocks.keys()
-        tuples(domain, domain).forall((lh, rh) => or {
+        tuples(domain, domain).forall( ((lh, rh)) => or {
             // for every pair of stored headers that have been verified
             lh >= rh,
             lightBlockStatus.get(lh) != "StateVerified",

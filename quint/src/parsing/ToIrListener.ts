@@ -5,21 +5,38 @@ import { QuintListener } from '../generated/QuintListener'
 import {
   OpQualifier,
   QuintApp,
+  QuintBuiltinApp,
   QuintDeclaration,
   QuintDef,
   QuintEx,
+  QuintLambda,
   QuintLambdaParameter,
+  QuintLet,
   QuintModule,
   QuintName,
   QuintOpDef,
+  QuintStr,
 } from '../ir/quintIr'
-import { ConcreteFixedRow, QuintSumType, QuintType, Row, RowField, unitValue } from '../ir/quintTypes'
+import {
+  ConcreteFixedRow,
+  QuintConstType,
+  QuintSumType,
+  QuintType,
+  Row,
+  RowField,
+  isUnitType,
+  unitType,
+} from '../ir/quintTypes'
 import { strict as assert } from 'assert'
-import { ErrorMessage, Loc } from './quintParserFrontend'
+import { SourceMap } from './quintParserFrontend'
 import { compact, zipWith } from 'lodash'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
 import { QuintTypeDef } from '../ir/quintIr'
+import { zip } from '../util'
+import { QuintError } from '../quintError'
+import { differentTagsError, lowercaseTypeError, tooManySpreadsError } from './parseErrors'
+import { Loc } from '../ErrorMessage'
 
 /**
  * An ANTLR4 listener that constructs QuintIr objects out of the abstract
@@ -44,12 +61,12 @@ export class ToIrListener implements QuintListener {
    */
   typeStack: QuintType[] = []
 
-  sourceMap: Map<bigint, Loc> = new Map<bigint, Loc>()
+  sourceMap: SourceMap = new Map()
 
   /**
    * If errors occur in the listener, this array contains explanations.
    */
-  errors: ErrorMessage[] = []
+  errors: QuintError[] = []
 
   private sourceLocation: string = ''
 
@@ -330,13 +347,11 @@ export class ToIrListener implements QuintListener {
   // type T
   exitTypeAbstractDef(ctx: p.TypeAbstractDefContext) {
     const name = ctx.qualId()!.text
+    const id = this.getId(ctx)
 
     if (name[0].match('[a-z]')) {
-      const msg = 'QNT007: type names must start with an uppercase letter'
-      this.pushError(ctx, msg)
+      this.errors.push(lowercaseTypeError(id, name))
     }
-
-    const id = this.getId(ctx)
 
     const def: QuintTypeDef = {
       id,
@@ -351,13 +366,11 @@ export class ToIrListener implements QuintListener {
   exitTypeAliasDef(ctx: p.TypeAliasDefContext) {
     const name = ctx.qualId()!.text
     const type = this.popType().value
+    const id = this.getId(ctx)
 
     if (name[0].match('[a-z]')) {
-      const msg = 'QNT007: type names must start with an uppercase letter'
-      this.pushError(ctx, msg)
+      this.errors.push(lowercaseTypeError(id, name))
     }
-
-    const id = this.getId(ctx)
 
     const def: QuintTypeDef = {
       id,
@@ -372,44 +385,113 @@ export class ToIrListener implements QuintListener {
   // type T = | A | B(t1) | C(t2)
   exitTypeSumDef(ctx: p.TypeSumDefContext) {
     const name = ctx._typeName!.text!
-    const defId = this.idGen.nextId()
-    this.sourceMap.set(defId, this.loc(ctx))
+    const id = this.getId(ctx)
 
-    const typeId = this.idGen.nextId()
-    this.sourceMap.set(typeId, this.loc(ctx))
-
+    // Build the type declaraion
     const fields: RowField[] = popMany(this.variantStack, this.variantStack.length)
     const row: ConcreteFixedRow = { kind: 'row', fields, other: { kind: 'empty' } }
-    const type: QuintSumType = { id: defId, kind: 'sum', fields: row }
-
+    const type: QuintSumType = { id, kind: 'sum', fields: row }
+    const typeName: QuintConstType = { id, kind: 'const', name }
     const def: QuintTypeDef = {
-      id: defId,
+      id: id,
       name,
       kind: 'typedef',
       type,
     }
 
-    this.declarationStack.push(def)
+    // Generate all the variant constructors implied by a variant type definition
+    // a variant constructor is an operator that injects an expression
+    // into the sum type by wrapping it in a label
+    //
+    // E.g., given the type definition
+    //
+    // ```
+    // type T = A(int) | B
+    // ```
+    //
+    // We will generate
+    //
+    // ```
+    // def A(__AParam) = variant("A", __AParam)
+    // val B = {}
+    // ```
+    //
+    // Allowing users to write:
+    //
+    // ```
+    // val a: T = A(42)
+    // val b: T = B
+    // ```
+    const constructors: QuintOpDef[] = zip(fields, ctx.typeSumVariant()).map(
+      ([{ fieldName, fieldType }, variantCtx]) => {
+        // Mangle the parameter name to avoid clashes
+        // This shouldn't be visible to users
+        const paramName = `__${fieldName}Param`
+
+        let qualifier: OpQualifier
+        let expr: QuintEx
+        let typeAnnotation: QuintType
+
+        const label: QuintStr = { id: this.getId(variantCtx), kind: 'str', value: fieldName }
+        if (isUnitType(fieldType)) {
+          // Its a `val` cause it has no parameters
+          //
+          // E.g., for B we will produce
+          //
+          // ```
+          // val B: T = variant("B", {})
+          // ```
+          qualifier = 'val'
+
+          // The nullary variant constructor is actualy
+          // a variant pairing a label with the unit.
+          const wrappedExpr = unitValue(this.getId(variantCtx._sumLabel))
+
+          typeAnnotation = typeName
+          expr = {
+            id: this.getId(variantCtx),
+            kind: 'app',
+            opcode: 'variant',
+            args: [label, wrappedExpr],
+          }
+        } else {
+          // Otherwise we will build a constructor that takes one parameter
+          //
+          // E.g., for A(int) we will produce a
+          //
+          // ```
+          // def A(x:int): T = variant("A", x)
+          // ```
+          qualifier = 'def'
+
+          const params = [{ id: this.getId(variantCtx.type()!), name: paramName }]
+          const wrappedExpr: QuintName = { kind: 'name', name: paramName, id: this.getId(variantCtx._sumLabel) }
+          const variant: QuintBuiltinApp = {
+            id: this.getId(variantCtx),
+            kind: 'app',
+            opcode: 'variant',
+            args: [label, wrappedExpr],
+          }
+
+          typeAnnotation = { kind: 'oper', args: [fieldType], res: typeName }
+          expr = { id: this.getId(variantCtx), kind: 'lambda', params, qualifier, expr: variant }
+        }
+
+        return { id: this.getId(variantCtx), kind: 'def', name: fieldName, qualifier, typeAnnotation, expr }
+      }
+    )
+
+    this.declarationStack.push(def, ...constructors)
   }
 
   exitTypeSumVariant(ctx: p.TypeSumVariantContext) {
     const fieldName = ctx._sumLabel!.text!
     const poppedType = this.popType().value
-
-    let fieldType: QuintType
-
     // Check if we have an accompanying type, and if not, then synthesize the
     // unit type.
     //
-    // I.e., we interpert a variant `A` as `A({})`.
-    if (poppedType === undefined) {
-      const id = this.idGen.nextId()
-      this.sourceMap.set(id, this.loc(ctx))
-      fieldType = unitValue(id)
-    } else {
-      fieldType = poppedType
-    }
-
+    // I.e., we interpret a variant `A` as `A({})`.
+    const fieldType: QuintType = poppedType ? poppedType : unitType(this.getId(ctx))
     this.variantStack.push({ fieldName, fieldType })
   }
 
@@ -545,11 +627,10 @@ export class ToIrListener implements QuintListener {
       this.pushApplication(ctx, name, args)
     } else {
       // accessing a tuple element, a record field, or name in a module
+      const id = this.getId(ctx)
       const m = name.match(/^_([1-9][0-9]?)$/)
       if (m) {
         // accessing a tuple element via _1, _2, _3, etc.
-
-        const id = this.getId(ctx)
         const idx: QuintEx = {
           id,
           kind: 'int',
@@ -558,20 +639,6 @@ export class ToIrListener implements QuintListener {
 
         this.pushApplication(ctx, 'item', [callee!, idx])
       } else {
-        // accessing a record field or a name in a module
-        if (
-          name === 'in' ||
-          name === 'and' ||
-          name === 'or' ||
-          name === 'iff' ||
-          name === 'implies' ||
-          name === 'subseteq'
-        ) {
-          const msg = 'QNT006: no keywords allowed as record fields in record.field'
-          this.pushError(ctx, msg)
-        }
-
-        const id = this.getId(ctx)
         const field: QuintEx = {
           id,
           kind: 'str',
@@ -597,7 +664,7 @@ export class ToIrListener implements QuintListener {
   }
 
   // a lambda operator over multiple parameters
-  exitLambda(ctx: p.LambdaContext) {
+  exitLambdaUnsugared(ctx: p.LambdaUnsugaredContext) {
     const expr = this.exprStack.pop()
     const params = popMany(this.paramStack, ctx.parameter().length)
     if (expr) {
@@ -609,6 +676,32 @@ export class ToIrListener implements QuintListener {
         qualifier: 'def',
         expr,
       })
+    } else {
+      const ls = this.locStr(ctx)
+      // istanbul ignore next
+      assert(false, `exitLambda: ${ls}: expected an expression`)
+    }
+  }
+
+  // a lambda operator over a single tuple parameter,
+  // unpacked into named fields
+  exitLambdaTupleSugar(ctx: p.LambdaTupleSugarContext) {
+    const expr = this.exprStack.pop()
+    const params = popMany(this.paramStack, ctx.parameter().length)
+
+    if (expr) {
+      const id = this.getId(ctx)
+      // a fresh parameter to substitute for the tupled parameters
+      const freshLambdaParam = { id, name: `quintTupledLambdaParam${id}` }
+      const letBindingForTupleParams = params.reduce(this.letBindingForTupleParam(ctx, freshLambdaParam), expr)
+      const untupledLambda: QuintEx = {
+        id: this.getId(ctx),
+        kind: 'lambda',
+        params: [freshLambdaParam],
+        qualifier: 'def',
+        expr: letBindingForTupleParams,
+      }
+      this.exprStack.push(untupledLambda)
     } else {
       const ls = this.locStr(ctx)
       // istanbul ignore next
@@ -707,8 +800,8 @@ export class ToIrListener implements QuintListener {
       this.pushApplication(ctx, 'Rec', pairs.flat())
     } else if (spreads.length > 1) {
       // error
-      const msg = 'QNT012: ... may be used once in { ...record, <fields> }'
-      this.pushError(ctx, msg)
+      const id = this.getId(ctx)
+      this.errors.push(tooManySpreadsError(id))
     } else {
       // { ...record, field1: value1, field2: value2 }
       // translate to record.with("field1", value1).with("field2", value2)
@@ -811,6 +904,12 @@ export class ToIrListener implements QuintListener {
     }
   }
 
+  exitErrorEq(ctx: p.ErrorEqContext) {
+    // An error was already reported. We push a valid expression to recover from the error
+    const args = popMany(this.exprStack, 2)
+    this.pushApplication(ctx, 'eq', args)
+  }
+
   // p and q
   exitAnd(ctx: any) {
     const args = popMany(this.exprStack, 2)
@@ -860,45 +959,78 @@ export class ToIrListener implements QuintListener {
   }
 
   // if (p) e1 else e2
-  exitIfElse(ctx: any) {
+  exitIfElse(ctx: p.IfElseContext) {
     const args = popMany(this.exprStack, 3)
     this.pushApplication(ctx, 'ite', args)
   }
 
-  // entry match
-  //   | "Cat": cat => cat.name != ""
-  //   | "Dog": dog => dog.year > 0
-  exitMatch(ctx: p.MatchContext) {
-    const options = ctx.STRING().map(opt => opt.text.slice(1, -1))
-    const noptions = options.length
-    // expressions in the right-hand sides, e.g., dog.year > 0
-    const rhsExprs = popMany(this.exprStack, noptions)
-    // parameters in the right-hand side
-    const params = popMany(this.paramStack, noptions)
-    // matched expressionm e.g., entry
-    const exprToMatch = popMany(this.exprStack, 1)![0]
-    const matchArgs: QuintEx[] = [exprToMatch]
-    // push the tag value and the corresponding lambda in matchArgs
-    for (let i = 0; i < noptions; i++) {
-      const tagId = this.getId(ctx)
-      const tag: QuintEx = {
-        id: tagId,
-        kind: 'str',
-        value: options[i],
-      }
-      const lamId = this.getId(ctx)
-      const lam: QuintEx = {
-        id: lamId,
-        kind: 'lambda',
-        params: [params[i]],
-        qualifier: 'def',
-        expr: rhsExprs[i],
-      }
-      matchArgs.push(tag)
-      matchArgs.push(lam)
+  // match expr {
+  //    | Variant1(var1) => expr1
+  //    | Variantk(_) => exprk    // a hole in the payload
+  //    | ...
+  //    | Variantn(varn) => exprn
+  //    | _ => exprm              // A wildcard match, acting as a catchall
+  // }
+  //
+  // The above is represented in the UFC using an exotic `match` operator of the form
+  //
+  // match(epxr, label1, (var1) => expr1, ..., labeln, (varn) => exprn, "_", (_) => exprm)
+  exitMatchSumExpr(ctx: p.MatchSumExprContext) {
+    const matchId = this.getId(ctx)
+
+    // We will have one expression for the matched expression, plus one for each elimination case
+    const exprs = popMany(this.exprStack, ctx._matchCase.length + 1)
+
+    // The first expression is the one we are matching on
+    // the syntax rules ensure that at least this expression is given
+    const expr = exprs.shift()!
+
+    // after shifting off the match expr, the remaing exprs are the cases of the match expression
+    const cases: (QuintStr | QuintLambda)[] = zip(exprs, ctx._matchCase).reduce(
+      (acc: (QuintStr | QuintLambda)[], matchCase: [QuintEx, p.MatchSumCaseContext]) =>
+        acc.concat(this.formMatchCase(matchCase)),
+      []
+    )
+    const matchExpr: QuintBuiltinApp = {
+      id: matchId,
+      kind: 'app',
+      opcode: 'match',
+      args: [expr].concat(cases),
     }
-    // construct the match expression and push it in exprStack
-    this.pushApplication(ctx, 'unionMatch', matchArgs)
+    this.exprStack.push(matchExpr)
+  }
+
+  // A helper for forming match expressions
+  //
+  // For a single case parsed `matchCase`, we form the pair of the variant label
+  // and the lambda that will eliminate the value carried by the variant.
+  //
+  // E.g., `A(x) => <expr>` becomes `["A", (x) => <expr>]`
+  private formMatchCase([caseExpr, caseCtx]: [QuintEx, p.MatchSumCaseContext]): (QuintStr | QuintLambda)[] {
+    const caseId = this.getId(caseCtx)
+    let label: string
+    let params: QuintLambdaParameter[]
+    if (caseCtx._wildCardMatch) {
+      // a wildcard case: _ => expr
+      label = '_'
+      params = []
+    } else if (caseCtx._variantMatch) {
+      const variant = caseCtx._variantMatch
+      let name: string
+      if (variant._variantParam) {
+        name = variant._variantParam.text
+      } else {
+        // We either have a hole or no param specified, in which case our lambda only needs a hole
+        name = '_'
+      }
+      label = variant._variantLabel.text
+      params = [{ name, id: this.getId(variant) }]
+    } else {
+      throw new Error('impossible: either _wildCardMatch or _variantMatch must be present')
+    }
+    const labelStr: QuintStr = { id: caseId, kind: 'str', value: label }
+    const elim: QuintLambda = { id: caseId, kind: 'lambda', qualifier: 'def', expr: caseExpr, params }
+    return [labelStr, elim]
   }
 
   /** ******************* translate types ********************************/
@@ -1010,22 +1142,20 @@ export class ToIrListener implements QuintListener {
     if (singletonUnions && singletonUnions[0].kind === 'union') {
       const tag = singletonUnions[0].tag
       let records = singletonUnions[0].records
+      const id = this.getId(ctx)
       for (let i = 1; i < size; i++) {
         const one = singletonUnions[i]
         if (one.kind === 'union') {
           if (one.tag === tag) {
             records = records.concat(one.records)
           } else {
-            const tags = `${tag} and ${one.tag}`
-            const msg = 'QNT011: Records in disjoint union have different tag fields: '
-            this.pushError(ctx, msg + tags)
+            this.errors.push(differentTagsError(id, tag, one.tag))
           }
         } else {
           // istanbul ignore next
           assert(false, 'exitTypeUnionRec: no union in exitTypeUnionRec')
         }
       }
-      const id = this.getId(ctx)
       this.typeStack.push({ id, kind: 'union', tag, records })
     } else {
       const ls = this.locStr(ctx)
@@ -1130,16 +1260,6 @@ export class ToIrListener implements QuintListener {
     })
   }
 
-  // push an error from the context
-  private pushError(ctx: ParserRuleContext, message: string) {
-    const start = { line: ctx.start.line - 1, col: ctx.start.charPositionInLine, index: ctx.start.startIndex }
-    // istanbul ignore next
-    const end = ctx.stop
-      ? { line: ctx.stop.line - 1, col: ctx.stop.charPositionInLine, index: ctx.stop.stopIndex }
-      : start
-    this.errors.push({ explanation: message, locs: [{ source: this.sourceLocation, start, end }] })
-  }
-
   // pop a type
   private popType(): Maybe<QuintType> {
     // the user has specified a type
@@ -1156,7 +1276,44 @@ export class ToIrListener implements QuintListener {
 
   private undefinedDef(ctx: any): QuintEx {
     const id = this.getId(ctx)
-    return { id, kind: 'name', name: 'undefined' }
+    return { id, kind: 'bool', value: true }
+  }
+
+  /**
+   * Return a function that takes a QuintEx `body`, a QuintLambdaParameter `param`,
+   * and the parameter's `index` and returns a let-in definition of the form
+   * `let ${param.name} = ${freshParam.name}._${index} ; body`.
+   *
+   * Intended use: Reduce tupled Quint lambda parameters into an equivalent let-in
+   * form ("tuple unboxing"). For example, `((a, b)) => body` can be reduced to
+   * `freshParam => let a = freshParam._1; let b = freshParam._2; body`.
+   *
+   * @param ctx         parser context of the tuple-sugared lambda
+   * @param freshParam  a fresh QuintLambdaParameter to substitute for the tupled parameters
+   */
+  private letBindingForTupleParam(ctx: p.LambdaTupleSugarContext, freshParam: QuintLambdaParameter) {
+    return (body: QuintEx, param: QuintLambdaParameter, index: number): QuintLet => {
+      return {
+        id: this.getId(ctx),
+        kind: 'let',
+        opdef: {
+          id: param.id,
+          kind: 'def',
+          name: param.name,
+          qualifier: 'pureval',
+          expr: {
+            id: this.getId(ctx),
+            kind: 'app',
+            opcode: 'item',
+            args: [
+              { id: this.getId(ctx), kind: 'name', name: freshParam.name },
+              { id: this.getId(ctx), kind: 'int', value: BigInt(index + 1) },
+            ],
+          },
+        },
+        expr: body,
+      }
+    }
   }
 }
 
@@ -1173,4 +1330,14 @@ function popMany<T>(stack: T[], n: number): T[] {
 /* The comment content is the text of the comment minus the `/// ` prefix */
 function getDocText(doc: TerminalNode[]): string {
   return doc.map(l => l.text.slice(4, -1)).join('\n')
+}
+
+// Helper to construct an empty record (the unit value)
+function unitValue(id: bigint): QuintBuiltinApp {
+  return {
+    id,
+    kind: 'app',
+    opcode: 'Rec',
+    args: [],
+  }
 }

@@ -9,9 +9,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- Error messages for `val` vs `def` and `pure val` vs `pure def` errors are clearer (#1208)
+- `quint run` prints the random seed even if no bug was found (#1213)
+- Error reporting was changed to show more errors at a time, instead of having a lot of phases (#1220)
+
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed internal bugs in the effect checker that could cause an incorrect effect
+  to be inferred or error to be reported (#1203)
+- Fixed propagation of `checker.tuning` Apalache config file key for `quint
+  verify` (#1216)
+- Fixed a problem where errors in one file were being reported in another file
+  that imported it (#1224).
+
+### Security
+
+## v0.14.4 -- 2023-10-02
+
+### Added
+
+- Added `--random-transitions` flag for `verify`, enabling symbolic simulation
+  through Apalache (#1188)
+
+### Changed
+
+- Changed syntax for unpacking tuples in lambda parameters (#1202)
+
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed a problem where state variables from instances didn't work properly in the REPL (#1190)
+- Fixed a problem where referencing constants from an instance could cause a crash (#1191)
+
 ### Security
 
 ## v0.14.3 -- 2023-09-19

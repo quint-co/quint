@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -20,6 +20,7 @@ import { QuintEx } from '../ir/quintIr'
 import { QuintType, QuintVarType } from '../ir/quintTypes'
 import { Constraint } from './base'
 import { chunk, times } from 'lodash'
+import { RowField } from '../ir/quintTypes'
 
 export function recordConstructorConstraints(
   id: bigint,
@@ -162,7 +163,7 @@ export function itemConstraints(
 
   // A tuple with item acess of N should have at least N fields
   // Fill previous fileds with type variables
-  const fields: { fieldName: string; fieldType: QuintType }[] = times(Number(itemName.value - 1n)).map(i => {
+  const fields: RowField[] = times(Number(itemName.value - 1n)).map(i => {
     return { fieldName: `${i}`, fieldType: { kind: 'var', name: `tup_${resultTypeVar.name}_${i}` } }
   })
   fields.push({ fieldName: `${itemName.value - 1n}`, fieldType: resultTypeVar })
@@ -178,4 +179,48 @@ export function itemConstraints(
   const constraint: Constraint = { kind: 'eq', types: [tupType, generalTupType], sourceId: id }
 
   return right([constraint])
+}
+
+// The rule for the `variant` operator:
+//
+//   Γ ⊢ e: (t, c)            Γ ⊢ 'l' : str                v is fresh
+// --------------------------------------------------------------------
+//    Γ ⊢ variant('l', e) : (s, c /\ s ~ < l : t | v > /\ isDefined(s))
+//
+// Where < ... > is a row-based variant.
+//
+// This rule is explained in /doc/rfcs/rfc001-sum-types/rfc001-sum-types.org
+export function variantConstraints(
+  id: bigint,
+  args: [QuintEx, QuintType][],
+  resultTypeVar: QuintVarType
+): Either<Error, Constraint[]> {
+  // `_valuEx : valueType` is checked already via the constaintGenerato
+  const [[labelExpr, labelType], [_valueEx, valueType]] = args
+
+  if (labelExpr.kind !== 'str') {
+    return left(
+      buildErrorLeaf(
+        `Generating variant constraints for ${args.map(a => expressionToString(a[0]))}`,
+        `Variant label must be a string expression but is ${labelType.kind}: ${expressionToString(labelExpr)}`
+      )
+    )
+  }
+
+  // A tuple with item acess of N should have at least N fields
+  // Fill previous fileds with type variables
+  const variantField: RowField = { fieldName: labelExpr.value, fieldType: valueType }
+
+  const generalVarType: QuintType = {
+    kind: 'sum',
+    fields: {
+      kind: 'row',
+      fields: [variantField],
+      other: { kind: 'var', name: `tail_${resultTypeVar.name}` },
+    },
+  }
+  const isDefinedConstraint: Constraint = { kind: 'isDefined', type: generalVarType, sourceId: id }
+  const propagateResultConstraint: Constraint = { kind: 'eq', types: [resultTypeVar, generalVarType], sourceId: id }
+
+  return right([isDefinedConstraint, propagateResultConstraint])
 }

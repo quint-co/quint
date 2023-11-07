@@ -28,13 +28,8 @@ describe('generateFreshIds', () => {
 
   const quintModules: string = `module A { ${defs.join('\n')} }`
 
-  const parseResult = parse(idGenerator, 'fake_location', fake_path, quintModules)
-  if (parseResult.isLeft()) {
-    it('should parse the mocked up module', () => {
-      assert.fail(`Failed to parse mocked up module. Errors: ${parseResult.value.map(e => e.explanation).join('\n')}`)
-    })
-  }
-  const { modules, table, sourceMap } = parseResult.unwrap()
+  const { modules, table, sourceMap, errors } = parse(idGenerator, 'fake_location', fake_path, quintModules)
+  assert.isEmpty(errors, 'Failed to parse mocked up module')
   const [module] = modules
 
   const [analysisErrors, analysisOutput] = analyzeModules(table, modules)

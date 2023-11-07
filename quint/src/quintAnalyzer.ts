@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -31,7 +31,7 @@ export type AnalysisOutput = {
 }
 
 /* A tuple with a list of errors and the analysis output */
-export type AnalysisResult = [[bigint, QuintError][], AnalysisOutput]
+export type AnalysisResult = [QuintError[], AnalysisOutput]
 
 /**
  * Analyzes multiple Quint modules and returns the analysis result.
@@ -80,7 +80,7 @@ class QuintAnalyzer {
   private modeChecker: ModeChecker
   private multipleUpdatesChecker: MultipleUpdatesChecker
 
-  private errors: [bigint, QuintError][] = []
+  private errors: QuintError[] = []
   private output: AnalysisOutput = { types: new Map(), effects: new Map(), modes: new Map() }
 
   constructor(lookupTable: LookupTable, previousOutput?: AnalysisOutput) {
@@ -108,12 +108,12 @@ class QuintAnalyzer {
 
     // TODO: Type and effect checking should return QuintErrors instead of error trees
     this.errors.push(
-      ...errorTrees.map(([id, err]): [bigint, QuintError] => {
-        return [id, { code: 'QNT000', message: errorTreeToString(err), reference: id, data: { trace: err } }]
+      ...errorTrees.map(([id, err]): QuintError => {
+        return { code: 'QNT000', message: errorTreeToString(err), reference: id, data: { trace: err } }
       })
     )
 
-    this.errors.push(...modeErrMap.entries(), ...updatesErrMap.entries())
+    this.errors.push(...modeErrMap.values(), ...updatesErrMap.values())
 
     // We assume that ids are unique across modules, and map merging can be done
     // without collision checks

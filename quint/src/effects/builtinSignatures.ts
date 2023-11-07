@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -226,6 +226,10 @@ const otherOperators = [
     name: 'ite',
     effect: parseAndQuantify('(Read[r1], Read[r2] & Update[u], Read[r3] & Update[u]) => Read[r1, r2, r3] & Update[u]'),
   },
+  {
+    name: 'variant',
+    effect: parseAndQuantify('(Pure, Read[r] & Update[u]) => Read[r] & Update[u]'),
+  },
 ]
 
 const multipleAritySignatures: [QuintBuiltinOpcode, Signature][] = [
@@ -238,7 +242,7 @@ const multipleAritySignatures: [QuintBuiltinOpcode, Signature][] = [
   ['and', standardPropagation],
   ['or', standardPropagation],
   [
-    'unionMatch',
+    'match',
     (arity: number) => {
       const readVars = times((arity - 1) / 2, i => `r${i}`)
       const args = readVars.map(r => `Pure, (Pure) => Read[${r}]`)

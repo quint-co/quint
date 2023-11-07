@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -12,7 +12,7 @@
  * @module
  */
 
-import { Loc, QuintError, QuintModule, findExpressionWithId, findTypeWithId } from '@informalsystems/quint'
+import { Loc, QuintError, QuintModule, SourceMap, findExpressionWithId, findTypeWithId } from '@informalsystems/quint'
 import { Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-languageserver'
 import { compact } from 'lodash'
 
@@ -23,19 +23,23 @@ import { compact } from 'lodash'
  * @param errors the errors to be transformed
  * @param sourceMap the source map for the document in which the errors occured
  *
- * @returns a list of diagnostics with the proper error messages and locations
+ * @returns a map with a list of diagnostics grouped by file
  */
-export function diagnosticsFromErrors(errors: [bigint, QuintError][], sourceMap: Map<bigint, Loc>): Diagnostic[] {
-  const diagnostics = errors.map(([id, error]) => {
-    const loc = sourceMap.get(id)!
+export function diagnosticsFromErrors(errors: QuintError[], sourceMap: SourceMap): Map<string, Diagnostic[]> {
+  const diagnostics = new Map()
+
+  errors.forEach(error => {
+    const loc = sourceMap.get(error.reference!)!
     if (!loc) {
-      console.log(`loc for ${id} not found in source map`)
+      console.log(`loc for ${error} not found in source map`)
     } else {
-      return assembleDiagnostic(error, loc)
+      const diagnostic = assembleDiagnostic(error, loc)
+      const previous = diagnostics.get(loc.source) ?? []
+      diagnostics.set(loc.source, [...previous, diagnostic])
     }
   })
 
-  return compact(diagnostics)
+  return diagnostics
 }
 
 /**

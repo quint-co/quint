@@ -9,7 +9,7 @@ import {
   typeToString,
 } from '../../src/ir/IRprinting'
 import { toScheme } from '../../src/types/base'
-import { QuintSumType, unitValue } from '../../src'
+import { QuintSumType, unitType } from '../../src'
 
 describe('moduleToString', () => {
   const quintModule = buildModuleWithDecls(['var S: Set[int]', 'val f = S.filter(x => x + 1)'])
@@ -241,12 +241,12 @@ describe('typeToString', () => {
         kind: 'row',
         fields: [
           { fieldName: 'A', fieldType: { kind: 'int', id: 0n } },
-          { fieldName: 'B', fieldType: unitValue(0n) },
+          { fieldName: 'B', fieldType: unitType(0n) },
         ],
         other: { kind: 'empty' },
       },
     }
-    const expectedType = '| A(int)\n| B'
+    const expectedType = '(A(int) | B)'
     assert.deepEqual(typeToString(type), expectedType)
   })
 

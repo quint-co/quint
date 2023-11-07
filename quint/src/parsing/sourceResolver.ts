@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -76,12 +76,17 @@ export interface SourceResolver {
 
 /**
  * Read the source code in UTF-8 from the filesystem via NodeJS API.
+ * @param sourceCode an optional map of paths to source code,
+ *        to be updated when reading new files
  * @param replacer an optional path replacement function,
  *        which is used to produce a source name
  * @returns A filesystem resolver. For each path, it returns
  *          either `left(errorMessage)`, or `right(fileContents)`.
  */
-export const fileSourceResolver = (replacer: (path: string) => string = path => path): SourceResolver => {
+export function fileSourceResolver(
+  sourceCode: Map<string, string> = new Map(),
+  replacer: (path: string) => string = path => path
+): SourceResolver {
   return {
     lookupPath: (basepath: string, importPath: string) => {
       return {
@@ -94,7 +99,9 @@ export const fileSourceResolver = (replacer: (path: string) => string = path => 
 
     load: (lookupPath: SourceLookupPath): Either<string, string> => {
       try {
-        return right(lf(readFileSync(lookupPath.normalizedPath, 'utf8')))
+        const code = lf(readFileSync(lookupPath.normalizedPath, 'utf8'))
+        sourceCode.set(lookupPath.normalizedPath, code)
+        return right(code)
       } catch (err: any) {
         return left(err.message)
       }

@@ -3,15 +3,14 @@
  *
  * Igor Konnov, Gabriela Moreira, 2022-2023.
  *
- * Copyright (c) Informal Systems 2022-2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022-2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  */
 
 import * as readline from 'readline'
 import { Readable, Writable } from 'stream'
 import { readFileSync, writeFileSync } from 'fs'
-import lineColumn from 'line-column'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { Either, left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
@@ -29,10 +28,10 @@ import {
   lastTraceName,
   newCompilationState,
 } from './runtime/compile'
-import { formatError } from './errorReporter'
+import { createFinders, formatError } from './errorReporter'
 import { Register } from './runtime/runtime'
 import { TraceRecorder, newTraceRecorder } from './runtime/trace'
-import { ErrorMessage, parseDefOrThrow, parseExpressionOrDeclaration } from './parsing/quintParserFrontend'
+import { parseDefOrThrow, parseExpressionOrDeclaration } from './parsing/quintParserFrontend'
 import { prettyQuintEx, printExecutionFrameRec, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
@@ -42,6 +41,9 @@ import { cwd } from 'process'
 import { newIdGenerator } from './idGenerator'
 import { moduleToString } from './ir/IRprinting'
 import { EvaluationState, newEvaluationState } from './runtime/impl/compilerImpl'
+import { mkErrorMessage } from './cliCommands'
+import { QuintError } from './quintError'
+import { ErrorMessage } from './ErrorMessage'
 
 // tunable settings
 export const settings = {
@@ -488,7 +490,8 @@ function simulatorBuiltins(st: CompilationState): QuintDef[] {
 
 function tryEvalModule(out: writer, state: ReplState, mainName: string): boolean {
   const modulesText = state.moduleHist
-  const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
+  const mainPath = fileSourceResolver(state.compilationState.sourceCode).lookupPath(cwd(), 'repl.ts')
+  state.compilationState.sourceCode.set(mainPath.toSourceName(), modulesText)
 
   const context = compileFromCode(
     newIdGenerator(),
@@ -503,7 +506,10 @@ function tryEvalModule(out: writer, state: ReplState, mainName: string): boolean
     context.compileErrors.length > 0 ||
     context.syntaxErrors.length > 0
   ) {
-    printErrors(out, state, context)
+    const tempState = state.clone()
+    // The compilation state has updated source code maps, to be used in error reporting
+    tempState.compilationState = context.compilationState
+    printErrors(out, tempState, context)
     return false
   }
 
@@ -541,7 +547,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     state.compilationState.sourceMap
   )
   if (parseResult.kind === 'error') {
-    printErrorMessages(out, state, 'syntax error', newInput, parseResult.messages)
+    printErrorMessages(out, state, 'syntax error', newInput, parseResult.errors)
     out('\n') // be nice to external programs
     return false
   }
@@ -617,15 +623,27 @@ function printErrorMessages(
   state: ReplState,
   kind: string,
   inputText: string,
-  messages: ErrorMessage[],
+  errors: QuintError[],
   color: (_text: string) => string = chalk.red
 ) {
   const modulesText = state.moduleHist + inputText
+  const messages = errors.map(mkErrorMessage(state.compilationState.sourceMap))
   // display the error messages and highlight the error places
+  // FIXME(#1052): moudulesText can come from multiple files, but `compileFromCode` ignores that.
+  // We use a fallback here to '<modules>'
+  const sourceCode = new Map([
+    ['<input>', inputText],
+    ['<modules>', modulesText],
+    ...state.compilationState.sourceCode.entries(),
+  ])
+  const finders = createFinders(sourceCode)
+
   messages.forEach(e => {
-    const text = e.locs[0]?.source === '<input>' ? inputText : modulesText
-    const finder = lineColumn(text)
-    const msg = formatError(text, finder, e, none())
+    const error: ErrorMessage = {
+      ...e,
+      locs: e.locs.map(loc => ({ ...loc, source: finders.has(loc.source) ? loc.source : '<modules>' })),
+    }
+    const msg = formatError(sourceCode, finders, error, none())
     out(color(`${kind}: ${msg}\n`))
   })
 }

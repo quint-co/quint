@@ -114,11 +114,6 @@ This example was pointing to Paxos. Now it does not typecheck.
 <!-- !test check option -->
     quint parse ../examples/language-features/option.qnt
 
-### OK on typecheck option
-
-<!-- !test check option - Types & Effects -->
-    quint typecheck ../examples/language-features/option.qnt
-
 ### OK on parse BinSearch
 
 <!-- !test check BinSearch -->

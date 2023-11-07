@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -13,7 +13,7 @@
  */
 
 import { OpQualifier, QuintDeclaration, QuintDef, QuintEx, QuintModule, isAnnotatedDef } from './quintIr'
-import { QuintSumType, QuintType, Row, RowField, isTheUnit } from './quintTypes'
+import { QuintSumType, QuintType, Row, RowField, isUnitType } from './quintTypes'
 import { TypeScheme } from '../types/base'
 import { typeSchemeToString } from '../types/printing'
 
@@ -216,15 +216,19 @@ export function rowToString(r: Row): string {
  * @returns a string with the pretty printed sum
  */
 export function sumToString(s: QuintSumType): string {
-  return s.fields.fields
-    .map((f: RowField) => {
-      if (isTheUnit(f.fieldType)) {
-        return `| ${f.fieldName}`
-      } else {
-        return `| ${f.fieldName}(${typeToString(f.fieldType)})`
-      }
-    })
-    .join('\n')
+  return (
+    '(' +
+    s.fields.fields
+      .map((f: RowField) => {
+        if (isUnitType(f.fieldType)) {
+          return `${f.fieldName}`
+        } else {
+          return `${f.fieldName}(${typeToString(f.fieldType)})`
+        }
+      })
+      .join(' | ') +
+    ')'
+  )
 }
 
 /**

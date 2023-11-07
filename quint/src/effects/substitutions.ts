@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -14,9 +14,10 @@
 
 import { Either, mergeInMany, right } from '@sweet-monads/either'
 import { ErrorTree, buildErrorTree } from '../errorTree'
-import { Effect, Entity, unify, unifyEntities } from './base'
+import { Effect, Entity } from './base'
 import { effectToString, substitutionsToString } from './printing'
 import { simplify } from './simplification'
+import { isEqual } from 'lodash'
 
 /*
  * Substitutions can be applied to both effects and entities, replacing
@@ -37,7 +38,7 @@ type Substitution = { kind: 'entity'; name: string; value: Entity } | { kind: 'e
  */
 export function compose(s1: Substitutions, s2: Substitutions): Either<ErrorTree, Substitutions> {
   return applySubstitutionsToSubstitutions(s1, s2)
-    .chain(sa => applySubstitutionsToSubstitutions(sa, s1).map((sb: Substitutions) => sb.concat(sa)))
+    .map((sb: Substitutions) => sb.concat(s1))
     .mapLeft(error =>
       buildErrorTree(`Composing substitutions ${substitutionsToString(s1)} and ${substitutionsToString(s2)}`, error)
     )
@@ -86,7 +87,14 @@ export function applySubstitution(subs: Substitutions, e: Effect): Either<ErrorT
     }
   }
 
-  return result.map(simplify)
+  return result.map(simplify).chain(r => {
+    if (!isEqual(r, e)) {
+      // Keep re-applying the substitutions until the effect is unchanged.
+      // Useful when substitutions have a transitive pattern [ a |-> b, b |-> c ]
+      return applySubstitution(subs, r)
+    }
+    return right(r)
+  })
 }
 
 /**
@@ -130,23 +138,6 @@ function emptyEntity(entity: Entity): boolean {
 function applySubstitutionsToSubstitutions(s1: Substitutions, s2: Substitutions): Either<ErrorTree[], Substitutions> {
   return mergeInMany(
     s2.map((s: Substitution): Either<ErrorTree, Substitutions> => {
-      const sub = s1.find(sub => s.name === sub.name)
-      if (sub) {
-        if (sub.kind === 'effect' && s.kind === 'effect') {
-          return unify(s.value, sub.value).mapLeft(err =>
-            buildErrorTree(`Unifying substitutions with same name: ${s.name}`, err)
-          )
-        } else if (sub.kind === 'entity' && s.kind === 'entity') {
-          return unifyEntities(s.value, sub.value).mapLeft(err =>
-            buildErrorTree(`Unifying substitutions with same name: ${s.name}`, err)
-          )
-        } else {
-          throw new Error(
-            `Substitutions with same name (${s.name}) but incompatible kinds: ${substitutionsToString([sub, s])}`
-          )
-        }
-      }
-
       switch (s.kind) {
         case 'effect':
           return applySubstitution(s1, s.value).map(v => [{ kind: s.kind, name: s.name, value: v }])

@@ -3,31 +3,25 @@
  *
  * Igor Konnov, Informal Systems, 2022-2023
  *
- * Copyright (c) Informal Systems 2022-2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022-2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  */
 
 import { Either, left, right } from '@sweet-monads/either'
-import {
-  ErrorMessage,
-  Loc,
-  fromIrErrorMessage,
-  parse,
-  parsePhase3importAndNameResolution,
-} from '../parsing/quintParserFrontend'
+import { SourceMap, parse, parsePhase3importAndNameResolution } from '../parsing/quintParserFrontend'
 import { Computable, ComputableKind, kindName } from './runtime'
 import { ExecutionListener } from './trace'
-import { FlatModule, IrErrorMessage, QuintDeclaration, QuintDef, QuintEx, QuintModule } from '../ir/quintIr'
+import { FlatModule, QuintDeclaration, QuintDef, QuintEx, QuintModule } from '../ir/quintIr'
 import { CompilerVisitor, EvaluationState, newEvaluationState } from './impl/compilerImpl'
 import { walkDefinition } from '../ir/IRVisitor'
 import { LookupTable } from '../names/base'
 import { AnalysisOutput, analyzeInc, analyzeModules } from '../quintAnalyzer'
-import { mkErrorMessage } from '../cliCommands'
 import { IdGenerator, newIdGenerator } from '../idGenerator'
 import { SourceLookupPath } from '../parsing/sourceResolver'
 import { Rng } from '../rng'
 import { flattenModules } from '../flattening/fullFlattener'
+import { QuintError } from '../quintError'
 
 /**
  * The name of the shadow variable that stores the last found trace.
@@ -46,13 +40,13 @@ export interface CompilationContext {
   // the lookup table to query for values and definitions
   lookupTable: LookupTable
   // messages that are produced during parsing
-  syntaxErrors: ErrorMessage[]
+  syntaxErrors: QuintError[]
   // messages that are produced by static analysis
-  analysisErrors: ErrorMessage[]
+  analysisErrors: QuintError[]
   // messages that are produced during compilation
-  compileErrors: ErrorMessage[]
+  compileErrors: QuintError[]
   // messages that get populated as the compiled code is executed
-  getRuntimeErrors: () => ErrorMessage[]
+  getRuntimeErrors: () => QuintError[]
   // The state of pre-compilation phases.
   compilationState: CompilationState
   // The state of the compiler visitor.
@@ -65,6 +59,8 @@ export interface CompilationContext {
 export interface CompilationState {
   // The ID generator used during compilation.
   idGen: IdGenerator
+  // File content loaded for each source, used to report errors
+  sourceCode: Map<string, string>
   // A list of modules as they are constructed, without flattening. This is
   // needed to derive correct name resolution during incremental compilation in
   // a flattened context.
@@ -74,7 +70,7 @@ export interface CompilationState {
   // The name of the main module.
   mainName?: string
   // The source map for the compiled code.
-  sourceMap: Map<bigint, Loc>
+  sourceMap: SourceMap
   // The output of the Quint analyzer.
   analysisOutput: AnalysisOutput
 }
@@ -83,6 +79,7 @@ export interface CompilationState {
 export function newCompilationState(): CompilationState {
   return {
     idGen: newIdGenerator(),
+    sourceCode: new Map(),
     originalModules: [],
     modules: [],
     sourceMap: new Map(),
@@ -94,17 +91,18 @@ export function newCompilationState(): CompilationState {
   }
 }
 
-export function errorContextFromMessage(listener: ExecutionListener): (errors: ErrorMessage[]) => CompilationContext {
-  const compilationState = newCompilationState()
+export function errorContextFromMessage(
+  listener: ExecutionListener
+): (_: { errors: QuintError[]; sourceMap: SourceMap }) => CompilationContext {
   const evaluationState = newEvaluationState(listener)
-  return (errs: ErrorMessage[]) => {
+  return ({ errors, sourceMap }) => {
     return {
       lookupTable: new Map(),
-      syntaxErrors: errs,
+      syntaxErrors: errors,
       analysisErrors: [],
       compileErrors: [],
       getRuntimeErrors: () => [],
-      compilationState,
+      compilationState: { ...newCompilationState(), sourceMap },
       evaluationState,
     }
   }
@@ -144,7 +142,7 @@ export function compile(
   rand: (bound: bigint) => bigint,
   defs: QuintDef[]
 ): CompilationContext {
-  const { sourceMap, analysisOutput } = compilationState
+  const { analysisOutput } = compilationState
 
   const visitor = new CompilerVisitor(lookupTable, analysisOutput.types, rand, evaluationState)
 
@@ -154,9 +152,9 @@ export function compile(
     lookupTable,
     syntaxErrors: [],
     analysisErrors: [],
-    compileErrors: visitor.getCompileErrors().map(fromIrErrorMessage(sourceMap)),
+    compileErrors: visitor.getCompileErrors(),
     getRuntimeErrors: () => {
-      return visitor.getRuntimeErrors().splice(0).map(fromIrErrorMessage(sourceMap))
+      return visitor.getRuntimeErrors().splice(0)
     },
     compilationState,
     evaluationState: visitor.getEvaluationState(),
@@ -224,37 +222,40 @@ export function compileDecl(
 
   // We need to resolve names for this new definition. Incremental name
   // resolution is not our focus now, so just resolve everything again.
-  return parsePhase3importAndNameResolution({ modules: originalModules, sourceMap: state.sourceMap })
-    .mapLeft(errorContextFromMessage(evaluationState.listener))
-    .map(({ table }) => {
-      const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, decl)
+  const { table, errors } = parsePhase3importAndNameResolution({
+    modules: originalModules,
+    sourceMap: state.sourceMap,
+    errors: [],
+  })
 
-      const {
-        flattenedModules: flatModules,
-        flattenedTable,
-        flattenedAnalysis,
-      } = flattenModules(originalModules, table, state.idGen, state.sourceMap, analysisOutput)
+  if (errors.length > 0) {
+    // For now, don't try to run analysis and flattening if there are errors
+    return errorContextFromMessage(evaluationState.listener)({ errors, sourceMap: state.sourceMap })
+  }
 
-      const newState = {
-        ...state,
-        analysisOutput: flattenedAnalysis,
-        modules: flatModules,
-        originalModules: originalModules,
-      }
+  const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, decl)
 
-      const flatDefinitions = flatModules.find(m => m.name === state.mainName)!.declarations
+  const {
+    flattenedModules: flatModules,
+    flattenedTable,
+    flattenedAnalysis,
+  } = flattenModules(originalModules, table, state.idGen, state.sourceMap, analysisOutput)
 
-      // Filter definitions that were not compiled yet
-      const defsToCompile = flatDefinitions.filter(d => !mainModule.declarations.some(d2 => d2.id === d.id))
+  const newState = {
+    ...state,
+    analysisOutput: flattenedAnalysis,
+    modules: flatModules,
+    originalModules: originalModules,
+  }
 
-      const ctx = compile(newState, evaluationState, flattenedTable, rng.next, defsToCompile)
+  const flatDefinitions = flatModules.find(m => m.name === state.mainName)!.declarations
 
-      const errorLocator = mkErrorMessage(state.sourceMap)
-      return {
-        ...ctx,
-        analysisErrors: Array.from(analysisErrors, errorLocator),
-      }
-    }).value // We produce a compilation context in any case
+  // Filter definitions that were not compiled yet
+  const defsToCompile = flatDefinitions.filter(d => !mainModule.declarations.some(d2 => d2.id === d.id))
+
+  const ctx = compile(newState, evaluationState, flattenedTable, rng.next, defsToCompile)
+
+  return { ...ctx, analysisErrors }
 }
 
 /**
@@ -278,52 +279,46 @@ export function compileFromCode(
   rand: (bound: bigint) => bigint
 ): CompilationContext {
   // parse the module text
-  return (
-    parse(idGen, '<module_input>', mainPath, code)
-      // On errors, we'll produce the computational context up to this point
-      .mapLeft(errorContextFromMessage(execListener))
-      .chain(
-        parseData => {
-          const { modules, table, sourceMap } = parseData
-          const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
+  // FIXME(#1052): We should build a proper sourceCode map from the files we previously loaded
+  const sourceCode: Map<string, string> = new Map()
+  const { modules, table, sourceMap, errors } = parse(idGen, mainPath.toSourceName(), mainPath, code, sourceCode)
+  // On errors, we'll produce the computational context up to this point
+  const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
 
-          const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
-            modules,
-            table,
-            idGen,
-            sourceMap,
-            analysisOutput
-          )
-          const compilationState: CompilationState = {
-            originalModules: modules,
-            modules: flattenedModules,
-            mainName,
-            sourceMap,
-            analysisOutput: flattenedAnalysis,
-            idGen,
-          }
-
-          const main = flattenedModules.find(m => m.name === mainName)
-          // when the main module is not found, we will report an error
-          const mainNotFoundError: IrErrorMessage[] = main
-            ? []
-            : [
-                {
-                  explanation: `Main module ${mainName} not found`,
-                  refs: [],
-                },
-              ]
-          const defsToCompile = main ? main.declarations : []
-          const ctx = compile(compilationState, newEvaluationState(execListener), flattenedTable, rand, defsToCompile)
-
-          const errorLocator = mkErrorMessage(sourceMap)
-          return right({
-            ...ctx,
-            compileErrors: ctx.compileErrors.concat(mainNotFoundError.map(fromIrErrorMessage(sourceMap))),
-            analysisErrors: Array.from(analysisErrors, errorLocator),
-          })
-        }
-        // we produce CompilationContext in any case
-      ).value
+  const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
+    modules,
+    table,
+    idGen,
+    sourceMap,
+    analysisOutput
   )
+  const compilationState: CompilationState = {
+    originalModules: modules,
+    modules: flattenedModules,
+    mainName,
+    sourceMap,
+    analysisOutput: flattenedAnalysis,
+    idGen,
+    sourceCode,
+  }
+
+  const main = flattenedModules.find(m => m.name === mainName)
+  // when the main module is not found, we will report an error
+  const mainNotFoundError: QuintError[] = main
+    ? []
+    : [
+        {
+          code: 'QNT405',
+          message: `Main module ${mainName} not found`,
+        },
+      ]
+  const defsToCompile = main ? main.declarations : []
+  const ctx = compile(compilationState, newEvaluationState(execListener), flattenedTable, rand, defsToCompile)
+
+  return {
+    ...ctx,
+    compileErrors: ctx.compileErrors.concat(mainNotFoundError),
+    analysisErrors,
+    syntaxErrors: errors,
+  }
 }

@@ -226,11 +226,76 @@ describe('checkModes', () => {
   })
 
   it('finds correct equalities between entity unions (#808)', () => {
-    const defs = ['pure def foo(s: Set[int]): bool = { tuples(s, s).forall((a,b) => (a + b).in(s)) }']
+    const defs = ['pure def foo(s: Set[int]): bool = { tuples(s, s).forall( ((a,b)) => (a + b).in(s)) }']
 
     const [errors, suggestions] = checkMockedDefs(defs)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
     assert.deepEqual(suggestions.size, 0)
+  })
+
+  it('complains about parameters on pure val vs pure def', () => {
+    const defs = ['pure val foo(p) = p + 1']
+
+    const [errors, _suggestions] = checkMockedDefs(defs)
+
+    assert.sameDeepMembers(
+      [...errors.entries()],
+      [
+        [
+          12n,
+          {
+            message:
+              'pure val operators may not have parameters, but operator `foo` has 1 parameter. Use pure def instead.',
+            code: 'QNT200',
+            reference: 12n,
+            data: { fix: { kind: 'replace', original: 'pure val', replacement: 'pure def' } },
+          },
+        ],
+      ]
+    )
+  })
+
+  it('complains about parameters on val vs def', () => {
+    const defs = ['val foo(p) = p + 1']
+
+    const [errors, _suggestions] = checkMockedDefs(defs)
+
+    assert.sameDeepMembers(
+      [...errors.entries()],
+      [
+        [
+          12n,
+          {
+            message: 'val operators may not have parameters, but operator `foo` has 1 parameter. Use def instead.',
+            code: 'QNT200',
+            reference: 12n,
+            data: { fix: { kind: 'replace', original: 'val', replacement: 'def' } },
+          },
+        ],
+      ]
+    )
+  })
+
+  it('prioritizes messages about effects over parameters', () => {
+    const defs = ['pure val foo(p) = p + x']
+
+    const [errors, _suggestions] = checkMockedDefs(defs)
+
+    assert.sameDeepMembers(
+      [...errors.entries()],
+      [
+        [
+          12n,
+          {
+            message:
+              "pure val operators may not interact with state variables, but operator `foo` reads variables 'x'. Use def instead.",
+            code: 'QNT200',
+            reference: 12n,
+            data: { fix: { kind: 'replace', original: 'pure val', replacement: 'def' } },
+          },
+        ],
+      ]
+    )
   })
 })

@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -18,7 +18,7 @@ import { IRTransformer, transformModule } from '../ir/IRTransformer'
 import { addNamespaceToDefinition } from '../ir/namespacer'
 import { QuintApp, QuintDeclaration, QuintModule, QuintName, isDef } from '../ir/quintIr'
 import { LookupTable, builtinNames } from '../names/base'
-import { Loc } from '../parsing/quintParserFrontend'
+import { SourceMap } from '../parsing/quintParserFrontend'
 import { AnalysisOutput } from '../quintAnalyzer'
 import { dependentDefinitions, getNamespaceForDef } from './flattener'
 import { generateFreshIds } from '../ir/idRefresher'
@@ -42,7 +42,7 @@ export function flattenInstances(
   modulesByName: Map<string, QuintModule>,
   lookupTable: LookupTable,
   idGenerator: IdGenerator,
-  sourceMap: Map<bigint, Loc>,
+  sourceMap: SourceMap,
   analysisOutput: AnalysisOutput
 ): QuintModule[] {
   const flattener = new InstanceFlattener(modulesByName, lookupTable, idGenerator, sourceMap, analysisOutput)
@@ -61,14 +61,14 @@ class InstanceFlattener implements IRTransformer {
 
   /* Parameters for `generateFreshIds` */
   private idGenerator: IdGenerator
-  private sourceMap: Map<bigint, Loc>
+  private sourceMap: SourceMap
   private analysisOutput: AnalysisOutput
 
   constructor(
     modulesByName: Map<string, QuintModule>,
     lookupTable: LookupTable,
     idGenerator: IdGenerator,
-    sourceMap: Map<bigint, Loc>,
+    sourceMap: SourceMap,
     analysisOutput: AnalysisOutput
   ) {
     this.modulesByName = modulesByName

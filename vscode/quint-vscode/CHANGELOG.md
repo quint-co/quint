@@ -9,6 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 ### Changed
+
+- Error reporting was changed to show more errors at a time, instead of having a lot of phases (#1220)
+
+### Deprecated
+### Removed
+### Fixed
+
+- The language server should no longer crash when there is a crash on quint
+  functions (#1205)
+- Fixed a problem where errors in one file were being reported in other files
+  related to it (#1224).
+
+### Security
+
+## v0.9.1 -- 2023-10-02
+
+### Added
+### Changed
 ### Deprecated
 ### Removed
 ### Fixed

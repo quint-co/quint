@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -65,7 +65,7 @@ export class ModeChecker implements IRVisitor {
       return
     }
 
-    const [mode, explanation] = modeForEffect(effect)
+    const [mode, explanation] = modeForEffect(effect, def.qualifier)
 
     if (mode === def.qualifier) {
       return
@@ -74,9 +74,10 @@ export class ModeChecker implements IRVisitor {
     if (isMoreGeneral(mode, def.qualifier)) {
       this.errors.set(def.id, {
         code: 'QNT200',
-        message: `${qualifierToString(def.qualifier)} operators ${modeConstraint(def.qualifier)}, but operator \`${
-          def.name
-        }\` ${explanation}. Use ${qualifierToString(mode)} instead.`,
+        message: `${qualifierToString(def.qualifier)} operators ${modeConstraint(
+          def.qualifier,
+          mode
+        )}, but operator \`${def.name}\` ${explanation}. Use ${qualifierToString(mode)} instead.`,
         reference: def.id,
         data: {
           fix: { kind: 'replace', original: qualifierToString(def.qualifier), replacement: qualifierToString(mode) },
@@ -95,7 +96,7 @@ export class ModeChecker implements IRVisitor {
         return
       }
 
-      const [mode, explanation] = modeForEffect(effect)
+      const [mode, explanation] = modeForEffect(effect, 'puredef')
 
       if (mode === 'pureval' || mode === 'puredef') {
         return
@@ -111,12 +112,22 @@ export class ModeChecker implements IRVisitor {
   }
 }
 
-function modeConstraint(mode: OpQualifier): string {
+function modeConstraint(mode: OpQualifier, expectedMode: OpQualifier): string {
   switch (mode) {
     case 'pureval':
+      if (expectedMode === 'puredef') {
+        return 'may not have parameters'
+      } else {
+        return 'may not interact with state variables'
+      }
     case 'puredef':
       return 'may not interact with state variables'
     case 'val':
+      if (expectedMode === 'def') {
+        return 'may not have parameters'
+      } else {
+        return 'may only read state variables'
+      }
     case 'def':
       return 'may only read state variables'
     case 'action':
@@ -146,7 +157,7 @@ const modesForConcrete = new Map<ComponentKind, OpQualifier>([
   ['read', 'val'],
 ])
 
-function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
+function modeForEffect(scheme: EffectScheme, annotatedMode: OpQualifier): [OpQualifier, string] {
   const effect = scheme.effect
   const nonFreeVars = scheme.entityVariables
 
@@ -181,8 +192,10 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
         throw new Error(`Unexpected arrow found in operator result: ${effectToString(effect)}`)
       }
 
+      const parametersMessage = `has ${effect.params.length} parameter${effect.params.length > 1 ? 's' : ''}`
+
       if (r.kind === 'variable') {
-        return ['puredef', "doesn't read or update any state variable"]
+        return ['puredef', parametersMessage]
       }
 
       const entitiesByComponentKind = paramEntitiesByEffect(effect)
@@ -203,8 +216,12 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
         return nonFreeEntities && nonFreeEntities.length > 0
       })
 
+      if (annotatedMode === 'val' && (!kind || kind === 'read')) {
+        return ['def', parametersMessage]
+      }
+
       if (!kind) {
-        return ['puredef', "doesn't read or update any state variable"]
+        return ['puredef', parametersMessage]
       }
 
       return [
@@ -292,7 +309,7 @@ function concatEntity(list: Entity[], entity: Entity): Entity[] {
   }
 }
 
-const modeOrder = ['pureval', 'puredef', 'val', 'def', 'nondet', 'action', 'temporal', 'run']
+const modeOrder = ['pureval', 'val', 'puredef', 'def', 'nondet', 'action', 'temporal', 'run']
 
 function isMoreGeneral(m1: OpQualifier, m2: OpQualifier): boolean {
   const p1 = modeOrder.findIndex(elem => elem === m1)

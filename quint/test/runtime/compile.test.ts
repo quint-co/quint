@@ -20,7 +20,7 @@ import { dedent } from '../textUtils'
 import { newIdGenerator } from '../../src/idGenerator'
 import { Rng, newRng } from '../../src/rng'
 import { SourceLookupPath, stringSourceResolver } from '../../src/parsing/sourceResolver'
-import { analyzeModules, parse, parseExpressionOrDeclaration } from '../../src'
+import { analyzeModules, parse, parseExpressionOrDeclaration, quintErrorToString } from '../../src'
 import { flattenModules } from '../../src/flattening/fullFlattener'
 import { newEvaluationState } from '../../src/runtime/impl/compilerImpl'
 
@@ -34,8 +34,8 @@ function assertResultAsString(input: string, expected: string | undefined) {
   const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
   const context = compileFromCode(idGen, moduleText, '__runtime', mockLookupPath, noExecutionListener, newRng().next)
 
-  assert.isEmpty(context.syntaxErrors, `Syntax errors: ${context.syntaxErrors.map(e => e.explanation).join(', ')}`)
-  assert.isEmpty(context.compileErrors, `Compile errors: ${context.compileErrors.map(e => e.explanation).join(', ')}`)
+  assert.isEmpty(context.syntaxErrors, `Syntax errors: ${context.syntaxErrors.map(quintErrorToString).join(', ')}`)
+  assert.isEmpty(context.compileErrors, `Compile errors: ${context.compileErrors.map(quintErrorToString).join(', ')}`)
 
   assertInputFromContext(context, expected)
 }
@@ -310,13 +310,6 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString(input, '24')
     })
 
-    it('unpacks tuples', () => {
-      const input = `def mult(x, y) = (x * y)
-         val t = (3, 4)
-         mult(t)`
-      assertResultAsString(input, '12')
-    })
-
     it('uses named def instead of lambda', () => {
       const input = `def positive(x) = x > 0
          (-3).to(3).filter(positive)`
@@ -514,7 +507,7 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('unpacks tuples in exists', () => {
-      assertResultAsString('tuples(1.to(3), 4.to(6)).exists((x, y) => x + y == 7)', 'true')
+      assertResultAsString('tuples(1.to(3), 4.to(6)).exists(((x, y)) => x + y == 7)', 'true')
     })
 
     it('computes exists over intervals', () => {
@@ -532,7 +525,7 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('unpacks tuples in forall', () => {
-      assertResultAsString('tuples(1.to(3), 4.to(6)).forall((x, y) => x + y <= 9)', 'true')
+      assertResultAsString('tuples(1.to(3), 4.to(6)).forall(((x, y)) => x + y <= 9)', 'true')
     })
 
     it('computes forall over nested sets', () => {
@@ -555,7 +548,7 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('unpacks tuples in map', () => {
-      assertResultAsString('tuples(1.to(3), 4.to(6)).map((x, y) => x + y)', 'Set(5, 6, 7, 8, 9)')
+      assertResultAsString('tuples(1.to(3), 4.to(6)).map(((x, y)) => x + y)', 'Set(5, 6, 7, 8, 9)')
     })
 
     it('computes map over intervals', () => {
@@ -572,7 +565,7 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('unpacks tuples in filter', () => {
-      assertResultAsString('tuples(1.to(5), 2.to(3)).filter((x, y) => x < y)', 'Set(Tup(1, 2), Tup(1, 3), Tup(2, 3))')
+      assertResultAsString('tuples(1.to(5), 2.to(3)).filter(((x, y)) => x < y)', 'Set(Tup(1, 2), Tup(1, 3), Tup(2, 3))')
     })
 
     it('computes filter over intervals', () => {
@@ -992,12 +985,10 @@ describe('incremental compilation', () => {
   /* Adds some quint code to the compilation and evaluation state */
   function compileModules(text: string, mainName: string): CompilationContext {
     const idGen = newIdGenerator()
+    const sourceCode: Map<string, string> = new Map()
     const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
-    const parseResult = parse(idGen, 'fake_location', fake_path, text)
-    if (parseResult.isLeft()) {
-      assert.fail('Failed to parse mocked up module')
-    }
-    const { modules, table, sourceMap } = parseResult.unwrap()
+    const { modules, table, sourceMap, errors } = parse(idGen, 'fake_path', fake_path, text, sourceCode)
+    assert.isEmpty(errors)
 
     const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
     assert.isEmpty(analysisErrors)
@@ -1017,6 +1008,7 @@ describe('incremental compilation', () => {
       mainName,
       sourceMap,
       analysisOutput: flattenedAnalysis,
+      sourceCode,
     }
 
     const moduleToCompile = flattenedModules[flattenedModules.length - 1]
@@ -1085,14 +1077,10 @@ describe('incremental compilation', () => {
 
       assert.sameDeepMembers(context.syntaxErrors, [
         {
-          explanation: "[QNT404] Name 'x1' not found",
-          locs: [
-            {
-              source: 'test.qnt',
-              start: { line: 0, col: 9, index: 9 },
-              end: { line: 0, col: 10, index: 10 },
-            },
-          ],
+          code: 'QNT404',
+          message: "Name 'x1' not found",
+          reference: 10n,
+          data: {},
         },
       ])
     })

@@ -83,8 +83,13 @@ import { TypeUnionRecOneContext } from "./QuintParser";
 import { RowContext } from "./QuintParser";
 import { RowLabelContext } from "./QuintParser";
 import { ExprContext } from "./QuintParser";
+import { MatchSumExprContext } from "./QuintParser";
+import { MatchSumCaseContext } from "./QuintParser";
+import { MatchSumVariantContext } from "./QuintParser";
 import { DeclarationOrExprContext } from "./QuintParser";
 import { LambdaContext } from "./QuintParser";
+import { LambdaUnsugaredContext } from "./QuintParser";
+import { LambdaTupleSugarContext } from "./QuintParser";
 import { IdentOrHoleContext } from "./QuintParser";
 import { ParameterContext } from "./QuintParser";
 import { IdentOrStarContext } from "./QuintParser";
@@ -678,6 +683,27 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitExpr?: (ctx: ExprContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by `QuintParser.matchSumExpr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitMatchSumExpr?: (ctx: MatchSumExprContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.matchSumCase`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitMatchSumCase?: (ctx: MatchSumCaseContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.matchSumVariant`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitMatchSumVariant?: (ctx: MatchSumVariantContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by `QuintParser.declarationOrExpr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -690,6 +716,20 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitLambda?: (ctx: LambdaContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.lambdaUnsugared`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitLambdaUnsugared?: (ctx: LambdaUnsugaredContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.lambdaTupleSugar`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitLambdaTupleSugar?: (ctx: LambdaTupleSugarContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.identOrHole`.

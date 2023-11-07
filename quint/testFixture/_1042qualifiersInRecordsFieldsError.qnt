@@ -1,4 +1,4 @@
 module qualifiersInRecordFields {
-  type t = { invalid::decl::label: int }
+  type T = { invalid::decl::label: int }
   val r = { invalid::record::label : 1 }
 }

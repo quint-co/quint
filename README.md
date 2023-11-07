@@ -1,14 +1,14 @@
-# Quint
+# Quint Lang
 
 [![build
 badge](https://github.com/informalsystems/quint/actions/workflows/main.yml/badge.svg)](https://github.com/informalsystems/quint/actions)
 [![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/informal.quint-vscode?color=10b0f2&label=VSCode)](https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode)
 [![npm (scoped)](https://img.shields.io/npm/v/@informalsystems/quint)](https://www.npmjs.com/package/@informalsystems/quint)
 
-Quint is a modern specification language that is a particularly good fit for
-distributed systems and blockchain protocols. It combines the robust theoretical
-basis of the [Temporal Logic of Actions][TLA] (TLA) with state-of-the-art static
-analysis and development tooling.
+Quint Lang (or just Quint) is a modern specification language that is a
+particularly good fit for distributed systems and blockchain protocols. It
+combines the robust theoretical basis of the [Temporal Logic of Actions][TLA]
+(TLA) with state-of-the-art static analysis and development tooling.
 
 If you are impatient, here is a [15 minute intro to Quint][] at Gateway to
 Cosmos 2023.
@@ -102,18 +102,28 @@ editor (currently, VSCode, Emacs and Vim are supported).
 
    - [REPL](./tutorials/repl/repl.md)
 
- - VSCode plugin:
+- Editor support:
 
-   We strongly encourage you to use the VSCode plugin for Quint. It provides
-   the quickest feedback loop for your specifications, reporting informative
-   errors as you type. Install the plugin from [Visual Studio Code
-   Marketplace][].
+  We strongly encourage you to configure your editor for Quint. Our language
+  server provides the quickest feedback loop for your specifications, reporting
+  informative errors as you type. These are instuctions for the currently
+  supported editors:
+
+  - VSCode: Install the plugin from [Visual Studio Code
+    Marketplace][].
+  - Emacs: Setup two custom packages from the [emacs folder](./editor-plugins/emacs).
+  - Vim/Neovim: Follow configuration instructions from the [vim folder](./editor-plugins/vim)
 
  - VSCode plugin for [ITF traces][] by @hvanz:
 
    This a plugin that visualizes traces that are produced by Quint and
    [Apalache][]. Install the [ITF Trace Viewer][] from Visual Studio Code
    Marketplace.
+
+ - Writing [literate executable specifications](./doc/literate.md)
+
+   This is a technique for embedding formal quint formal specifications inside
+   of markdown files.
 
 ## Development
 
@@ -155,7 +165,7 @@ completely implementing every pass.
 | [Lists][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
 | [Records][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
 | [Discriminated unions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [244][]        | :x: [539][]        | :x:                | :x:                |
-| [Tuples][]                        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :green_circle:     | :white_check_mark: |
+| [Tuples][]                        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [Imports][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [Module definitions][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [Module instances][]              | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
@@ -176,6 +186,11 @@ completely implementing every pass.
 | [String literals][], see #118     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | ~~uninterpreted types~~, see #118 | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:                | :x:                |
 
+---
+
+Quint is developed at [Informal Systems](https://informal.systems/).
+
+With additional funding from<br />[<img alt="the Vienna Business Agency" src="./Wirtschaftsagentur_Wien_logo.jpg" width="200">](https://viennabusinessagency.at/).
 
 [Design Principles]: ./doc/design-principles.md
 [Apalache]: https://github.com/informalsystems/apalache

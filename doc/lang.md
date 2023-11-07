@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author                                                  |
 |:---------|:-----------|:--------------------------------------------------------|
-| 33       | 07.07.2023 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
+| 34       | 09.10.2023 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -236,7 +236,7 @@ This is intentional: We do not want to mix actions with temporal formulas.
 
 A module definition is introduced like follows:
 
-```
+```bluespec
 // module definition
 module Foo {
   // declarations
@@ -790,6 +790,23 @@ _ => e
 Note that lambdas can be only passed as arguments to other operators. They
 cannot be freely assigned to values or returned as a result of an operator.
 
+**Note:** There is a difference between a lambda expression of the form
+`(x, y) => e1` and a lambda expression of the form `((x, y)) => e2`.
+The former is a two-argument lambda operator, whereas the latter is a
+single-argument lambda operator that accepts a pair as its first argument.
+The latter form `((x, y)) => e2` is equivalent to:
+
+```bluespec
+(t =>
+  val x = t._1
+  val y = t._2
+  e2
+)
+```
+
+As a result, the form `((x_1, ..., x_n)) => e_n` is syntax sugar for tuple
+unpacking, as shown in the above example.
+
 ### Two forms of operator application
 
 Quint is flexible with respect to operator applications. It supports two call
@@ -1277,131 +1294,6 @@ sets of records: (1) It often confuses beginners, (2) It can be expressed with
 with discriminated unions.
 
 *Mode:* Stateless, State. Other modes are not allowed.
-
-### Discriminated unions (work-in-progress)
-
-**WARNING:** *We are redesigning discriminated unions*, see
-[#539](https://github.com/informalsystems/quint/issues/539). *As they are not
-fully implemented, please avoid using discriminated unions for now*.
-
-Quint has provides the user with special syntax for constructing and destructing
-discriminated unions.  For the type syntax of discriminated unions, see
-[Types](#types).
-
-**Constructors.** Construct a tagged record by using the record syntax, e.g.:
-
-```scala
-  { tag: "Cat", name: "Ours", year: 2019 }
-```
-
-Note that the above record has the field `tag`. Hence, this record is assigned
-a union type of one element:
-
-```scala
-type CAT_TYPE =
-  | { tag: "Cat", name: str, year: int }
-```
-
-Records of different union types may be mixed in a single set. For example:
-
-```scala
-val Entries =
-  Set(
-    { tag: "Cat", name: "Ours", year: 2019  },
-    { tag: "Cat", name: "Murka", year: 1950 },
-    { tag: "Date", day: 16, month: 11, year: 2021 }
-  )
-```
-
-In the above example, the set elements have the following union type:
-
-```scala
-type ENTRY_TYPE =
-  | { tag: "Cat", name: str, year: int }
-  | { tag: "Date", day: int, month: int, year: int }
-```
-
-When we construct the individual records, they still have singleton union
-types.  For instance, the entry  `{ tag: "Date", day: 16, month: 11, year: 2021
-}` has the type:
-
-```scala
-type DATE_TYPE =
-  { tag: "Date", day: int, month: int, year: int }
-```
-
-**Set filters.** The most common pattern over discriminated union is to filter
-set elements by their tag. Using the above definition of `Entries`, we can
-filter it as follows:
-
-```scala
-Entries.filter(e => e.tag == "Cat")
-```
-
-As expected from the semantics of `filter`, the above set is equal to:
-
-```
-Set(
-  { tag: "Cat", name: "Ours", year: 2019  },
-  { tag: "Cat", name: "Murka", year: 1950 }
-)
-```
-
-Importantly, its elements have the type:
-
-```scala
-type CAT_TYPE =
-  | { tag: "Cat", name: str, year: int }
-```
-
-**Destructors.** Sometimes, we have a value of a union type that is not stored
-in a set. For this case, Quint has the union destructor syntax.  For example,
-given an entry from `Entries`, we can compute the predicate `isValid` by case
-distinction over tags:
-
-```scala
-pure def isValid(entry): ENTRY_TYPE => bool =
-  entry match
-     | "Cat": cat =>
-       name != "" and cat.year > 0
-     | "Date": date =>
-       date.day.in(1 to 31) and date.month.in(1.to(12)) and date.year > 0
-```
-
-In the above example, the names `cat` and `date` have the singleton union types
-of `CAT_TYPE` and `DATE_TYPE`, respectively. Note that the expressions after
-the tag name (e.g., `"Cat":` and `"Date":`) follow the syntax of
-single-argument lambda expressions. As a result, we can use `_` as a name,
-which means that the name is omitted.
-
-Match expressions require all possible values of `tag` to be enumerated. This is
-ensured by the type checker.
-
-We do not introduce parentheses in the syntax of `match`. If you feel uncomfortable
-about it, wrap the whole match-expression with `(...)`.
-
-*Grammar*:
-
-```bnf
-  expr "match" ("|" string ":" (identifier | "_") "=>" expr)+
-```
-
-*Normal form*: Consider the match operator:
-
-```scala
-  ex match
-    | tag_1: x_1 => ex_1
-    ...
-    | tag_n: x_n => ex_n
-```
-
-Its normal form is `unionMatch(ex, tag_1, (x_1 => ex_1), ..., (x_n => ex_n))`.
-
-*Mode:* Stateless, State. Other modes are not allowed.
-
-**Discussion.** In TLA+, there is no separation between discriminated unions
-and records. It is common to use tagged records to distinguish between different
-cases of records. Quint makes this pattern explicit.
 
 ### Tuples
 

@@ -12,7 +12,7 @@ module TendermintModels {
   ) as n4_f1 from "./TendermintTest"
 
   import TendermintTest(
-    Corr = Set("p1", "p2", "p3"),
+    Corr = Set("p1", "p2"),
     Faulty = Set("p3", "p4"),
     N = 4,
     T = 1,

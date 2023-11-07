@@ -3,21 +3,21 @@
  *
  * Igor Konnov, 2023
  *
- * Copyright (c) Informal Systems 2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  */
 
 import { Either } from '@sweet-monads/either'
 
 import { compileFromCode, contextNameLookup, lastTraceName } from './runtime/compile'
-import { ErrorMessage } from './parsing/quintParserFrontend'
 import { QuintEx } from './ir/quintIr'
 import { Computable } from './runtime/runtime'
 import { ExecutionFrame, newTraceRecorder } from './runtime/trace'
 import { IdGenerator } from './idGenerator'
 import { Rng } from './rng'
 import { SourceLookupPath } from './parsing/sourceResolver'
+import { QuintError } from './quintError'
 
 /**
  * Various settings that have to be passed to the simulator to run.
@@ -42,11 +42,11 @@ export interface SimulatorResult {
   vars: string[]
   states: QuintEx[]
   frames: ExecutionFrame[]
-  errors: ErrorMessage[]
+  errors: QuintError[]
   seed: bigint
 }
 
-function errSimulationResult(status: SimulatorResultStatus, errors: ErrorMessage[]): SimulatorResult {
+function errSimulationResult(status: SimulatorResultStatus, errors: QuintError[]): SimulatorResult {
   return {
     status,
     vars: [],
@@ -111,7 +111,7 @@ export function compileAndRun(
     const evaluationState = ctx.evaluationState
     const res: Either<string, Computable> = contextNameLookup(evaluationState.context, 'q::runResult', 'callable')
     if (res.isLeft()) {
-      const errors = [{ explanation: res.value, locs: [] }] as ErrorMessage[]
+      const errors = [{ code: 'QNT512', message: res.value }] as QuintError[]
       return errSimulationResult('error', errors)
     } else {
       const _ = res.value.eval()

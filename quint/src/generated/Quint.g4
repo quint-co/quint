@@ -57,8 +57,7 @@ typeDef
     | 'type' typeName=qualId '=' '|'? typeSumVariant ('|' typeSumVariant)*  # typeSumDef
     ;
 
-// A single variant case in a sum type definition.
-//
+// A single variant case in a sum type definition or match statement.
 // E.g., `A(t)` or `A`.
 typeSumVariant : sumLabel=simpleId["variant label"] ('(' type ')')? ;
 
@@ -146,7 +145,7 @@ expr:           // apply a built-in operator via the dot notation
         |       expr op=(GT | LT | GE | LE | NE | EQ) expr          # relations
         |       qualId '\'' ASGN expr                               # asgn
         |       expr '=' expr {
-                  const m = "QNT006: unexpected '=', did you mean '=='?"
+                  const m = "[QNT006] unexpected '=', did you mean '=='?"
                   this.notifyErrorListeners(m)
                 }                                                   # errorEq
                 // Boolean operators. Note that not(e) is just a normal call
@@ -157,8 +156,7 @@ expr:           // apply a built-in operator via the dot notation
         |       expr OR expr                                        # or
         |       expr IFF expr                                       # iff
         |       expr IMPLIES expr                                   # implies
-        |       expr MATCH
-                    ('|' STRING ':' parameter '=>' expr)+           # match
+        |       matchSumExpr                                        # match
         |       'all' '{' expr (',' expr)* ','? '}'                 # actionAll
         |       'any' '{' expr (',' expr)* ','? '}'                 # actionAny
         |       ( qualId | INT | BOOL | STRING)                     # literalOrId
@@ -176,6 +174,12 @@ expr:           // apply a built-in operator via the dot notation
         |       '{' expr '}'                                        # braces
         ;
 
+// match e { A(a) => e1 | B => e2 | C(_) => e3 | ... | _ => en }
+matchSumExpr: MATCH expr '{' '|'? matchCase+=matchSumCase ('|' matchCase+=matchSumCase)* '}' ;
+matchSumCase: (variantMatch=matchSumVariant | wildCardMatch='_') '=>' expr ;
+matchSumVariant
+    : (variantLabel=simpleId["variant label"]) ('(' (variantParam=simpleId["match case parameter"] | '_') ')')? ;
+
 // A probing rule for REPL.
 // Note that a top-level declaration has priority over an expression.
 // For example, see: https://github.com/informalsystems/quint/issues/394
@@ -184,11 +188,16 @@ declarationOrExpr :    declaration EOF | expr EOF | DOCCOMMENT EOF | EOF;
 // This rule parses anonymous functions, e.g.:
 // 1. x => e
 // 2. (x) => e
-// 3. (x, y, z) => e
-lambda:         parameter '=>' expr
-        |       '(' parameter (',' parameter)* ')' '=>' expr
-        ;
-
+// 3. (x, y, z) => e            (arity 3)
+// 4. ((x, y, z)) => e          (syntax sugar: arity 1, unboxed into a 3-field tuple)
+lambda          : lambdaUnsugared
+                | lambdaTupleSugar ;
+lambdaUnsugared : parameter '=>' expr
+                | '(' parameter (',' parameter)* ')' '=>' expr
+                ;
+// A lambda operator over a single tuple parameter,
+// unpacked into named fields
+lambdaTupleSugar : '(' '(' parameter (',' parameter)+ ')' ')' '=>' expr;
 
 // an identifier or a hole '_'
 identOrHole :   '_' | qualId

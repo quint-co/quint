@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -31,7 +31,7 @@ import {
   QuintStr,
   QuintVar,
 } from '../ir/quintIr'
-import { Effect, EffectScheme, Signature, effectNames, toScheme, unify } from './base'
+import { Effect, EffectScheme, Signature, effectNames, entityNames, toScheme, unify } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
 import { getSignatures, standardPropagation } from './builtinSignatures'
@@ -81,6 +81,10 @@ export class EffectInferrer implements IRVisitor {
 
   // Track location descriptions for error tree traces
   private location: string = ''
+
+  // A stack of free effect variables and entity variables for lambda expressions.
+  // Nested lambdas add new entries to the stack, and pop them when exiting.
+  private freeNames: { effectVariables: Set<string>; entityVariables: Set<string> }[] = []
 
   // the current depth of operator definitions: top-level defs are depth 0
   private definitionDepth: number = 0
@@ -148,21 +152,25 @@ export class EffectInferrer implements IRVisitor {
       })
     )
 
-    const resultEffect: Effect = { kind: 'variable', name: this.freshVarGenerator.freshVar('e') }
-    const arrowEffect = paramsResult.map(params => {
-      const effect: Effect = {
-        kind: 'arrow',
-        params,
-        result: resultEffect,
-      }
+    const resultEffect: Effect = { kind: 'variable', name: this.freshVarGenerator.freshVar('_e') }
+    const arrowEffect = paramsResult
+      .map(params => {
+        const effect: Effect = {
+          kind: 'arrow',
+          params,
+          result: resultEffect,
+        }
 
-      return effect
-    })
+        return effect
+      })
+      .chain(e => applySubstitution(this.substitutions, e))
 
     this.effectForName(expr.opcode, expr.id, expr.args.length)
       .mapLeft(err => buildErrorTree(this.location, err))
       .chain(signature => {
-        const substitution = arrowEffect.chain(effect => unify(signature, effect))
+        const substitution = arrowEffect.chain(effect =>
+          applySubstitution(this.substitutions, signature).chain(s => unify(s, effect))
+        )
 
         const resultEffectWithSubs = substitution
           .chain(s => compose(this.substitutions, s))
@@ -183,6 +191,9 @@ export class EffectInferrer implements IRVisitor {
                 this.addToResults(id, r)
               })
             )
+            // For every free name we are binding in the substitutions, the names occuring in the value of the
+            // substitution have to become free as well.
+            this.addBindingsToFreeNames(s)
 
             return applySubstitution(s, resultEffect)
           })
@@ -222,10 +233,10 @@ export class EffectInferrer implements IRVisitor {
       // Don't try to infer let if there are errors with the defined expression
       return
     }
-    const result = this.fetchResult(def.expr.id)
 
-    // Set the expression effect as the definition effect for it to be available at the result
-    this.addToResults(def.id, result)
+    this.fetchResult(def.expr.id).map(e => {
+      this.addToResults(def.id, right(this.quantify(e.effect)))
+    })
 
     this.definitionDepth--
     // When exiting top-level definitions, clear the substitutions
@@ -256,10 +267,19 @@ export class EffectInferrer implements IRVisitor {
   // ------------------------------------------------------- (UNDERSCORE)
   //                   Γ ⊢ '_': e
   enterLambda(expr: QuintLambda): void {
+    const lastParamNames = this.currentFreeNames()
+    const paramNames = {
+      effectVariables: new Set(lastParamNames.effectVariables),
+      entityVariables: new Set(lastParamNames.entityVariables),
+    }
+
     expr.params.forEach(p => {
-      const varName = p.name === '_' ? this.freshVarGenerator.freshVar('e') : `e_${p.name}_${p.id}`
+      const varName = p.name === '_' ? this.freshVarGenerator.freshVar('_e') : `e_${p.name}_${p.id}`
+      paramNames.effectVariables.add(varName)
       this.addToResults(p.id, right(toScheme({ kind: 'variable', name: varName })))
     })
+
+    this.freeNames.push(paramNames)
   }
 
   //                  Γ ⊢ expr: E
@@ -269,6 +289,10 @@ export class EffectInferrer implements IRVisitor {
     if (this.errors.size > 0) {
       return
     }
+    // For every free name we are binding in the substitutions, the names occuring in the value of the substitution
+    // have to become free as well.
+    this.addBindingsToFreeNames(this.substitutions)
+
     const exprResult = this.fetchResult(lambda.expr.id)
     const params = mergeInMany(
       lambda.params.map(p => {
@@ -302,21 +326,11 @@ export class EffectInferrer implements IRVisitor {
           this.addToResults(lambda.expr.id, left(error))
         }
 
-        const nonFreeNames = effect.params.reduce(
-          (names, p) => {
-            const { effectVariables, entityVariables } = effectNames(p)
-            return {
-              effectVariables: new Set([...names.effectVariables, ...effectVariables]),
-              entityVariables: new Set([...names.entityVariables, ...entityVariables]),
-            }
-          },
-          { effectVariables: new Set<string>(), entityVariables: new Set<string>() }
-        )
-
-        return { ...nonFreeNames, effect }
+        return toScheme(effect)
       })
 
     this.addToResults(lambda.id, result)
+    this.freeNames.pop()
   }
 
   private addToResults(exprId: bigint, result: Either<Error, EffectScheme>) {
@@ -359,10 +373,10 @@ export class EffectInferrer implements IRVisitor {
 
   private newInstance(effect: EffectScheme): Effect {
     const effectSubs: Substitutions = [...effect.effectVariables].map(name => {
-      return { kind: 'effect', name: name, value: { kind: 'variable', name: this.freshVarGenerator.freshVar('e') } }
+      return { kind: 'effect', name: name, value: { kind: 'variable', name: this.freshVarGenerator.freshVar('_e') } }
     })
     const entitySubs: Substitutions = [...effect.entityVariables].map(name => {
-      return { kind: 'entity', name: name, value: { kind: 'variable', name: this.freshVarGenerator.freshVar('v') } }
+      return { kind: 'entity', name: name, value: { kind: 'variable', name: this.freshVarGenerator.freshVar('_v') } }
     })
 
     const result = compose(effectSubs, entitySubs).chain(s => applySubstitution(s, effect.effect))
@@ -372,5 +386,49 @@ export class EffectInferrer implements IRVisitor {
     } else {
       return result.value
     }
+  }
+
+  private currentFreeNames(): { effectVariables: Set<string>; entityVariables: Set<string> } {
+    return (
+      this.freeNames[this.freeNames.length - 1] ?? {
+        effectVariables: new Set(),
+        entityVariables: new Set(),
+      }
+    )
+  }
+
+  private quantify(effect: Effect): EffectScheme {
+    const freeNames = this.currentFreeNames()
+    const nonFreeNames = {
+      effectVariables: new Set(
+        [...effectNames(effect).effectVariables].filter(name => !freeNames.effectVariables.has(name))
+      ),
+      entityVariables: new Set(
+        [...effectNames(effect).entityVariables].filter(name => !freeNames.entityVariables.has(name))
+      ),
+    }
+    return { ...nonFreeNames, effect: effect }
+  }
+
+  private addBindingsToFreeNames(substitutions: Substitutions) {
+    // Assumes substitutions are topologically sorted, i.e. [ t0 |-> (t1, t2), t1 |-> (t3, t4) ]
+    substitutions.forEach(s => {
+      switch (s.kind) {
+        case 'effect':
+          this.freeNames
+            .filter(free => free.effectVariables.has(s.name))
+            .forEach(free => {
+              const names = effectNames(s.value)
+              names.effectVariables.forEach(v => free.effectVariables.add(v))
+              names.entityVariables.forEach(v => free.entityVariables.add(v))
+            })
+          return
+        case 'entity':
+          this.freeNames
+            .filter(free => free.entityVariables.has(s.name))
+            .forEach(free => entityNames(s.value).forEach(v => free.entityVariables.add(v)))
+          return
+      }
+    })
   }
 }

@@ -55,7 +55,7 @@ module denomTrace {
     and {
       // Check the domain for the second level of chains
       chainNames.forall(chain => topology.get(chain).keys() == chainNames),
-      tuples(chainNames, chainNames).forall((fromChain, toChain) =>
+      tuples(chainNames, chainNames).forall( ((fromChain, toChain)) =>
         fromChain != toChain implies // we dont care about channels from chain to itself
           chainNames.forall((thirdChain) =>
             thirdChain != toChain implies

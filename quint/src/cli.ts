@@ -149,7 +149,7 @@ const runCmd = {
         type: 'string',
       })
       .option('out-itf', {
-        desc: 'output the trace in the Informal Trace Format to file (supresses all console output)',
+        desc: 'output the trace in the Informal Trace Format to file (suppresses all console output)',
         type: 'string',
       })
       .option('max-samples', {
@@ -212,7 +212,7 @@ const verifyCmd = {
         type: 'string',
       })
       .option('out-itf', {
-        desc: 'output the trace in the Informal Trace Format to file (supresses all console output)',
+        desc: 'output the trace in the Informal Trace Format to file (suppresses all console output)',
         type: 'string',
       })
       .option('max-steps', {
@@ -240,8 +240,13 @@ const verifyCmd = {
         type: 'string',
         coerce: (s: string) => s.split(','),
       })
+      .option('random-transitions', {
+        desc: 'choose transitions at random (= use symbolic simulation)',
+        type: 'boolean',
+        default: false,
+      })
       .option('apalache-config', {
-        desc: 'Filename of the additional Apalache configuration (in the HOCON format, a superset of JSON)',
+        desc: 'path to an additional Apalache configuration file (in JSON)',
         type: 'string',
       })
       .option('verbosity', {

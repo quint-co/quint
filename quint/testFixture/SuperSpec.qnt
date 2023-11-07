@@ -106,9 +106,9 @@ module withConsts {
   val test_or = false or true
   val test_implies = false implies true
   def F(x) = x
-  val G(x) = F(x) and not(x)
-  val test_and_arg(x) = F(x) and not(x)
-  val test_or_arg(x) = F(x) or not(x)
+  def G(x) = F(x) and not(x)
+  def test_and_arg(x) = F(x) and not(x)
+  def test_or_arg(x) = F(x) or not(x)
 
   val test_block_and = and {
       false,
@@ -152,6 +152,8 @@ module withConsts {
   // Pass a lambda operator as a second argument of filter.
   // Here we are using the dot notation.
   val oper_app_dot1 = S.filter(x => x > 10)
+  // Tuple unpackig in lambda
+  val tuple_sum = tuples(S, MySet).map( ((s, mys)) => s + mys )
   // Use unknown
   action oper_nondet = {
     nondet x = oneOf(S)
@@ -224,14 +226,4 @@ module withConsts {
 
   // create an instance of Proto by using '*'
   // import Proto(*) as Inst2
-
-  // Match
-  type ENTRY_TYPE =
-      | { tag: "Cat", name: str, year: int }
-      | { tag: "Date", day: int, month: int, year: int }
-
-  def isValid(entry) =
-    entry match
-       | "Cat": cat => cat.name != ""
-       | "Date": date => date.year > 0
 }

@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -15,7 +15,7 @@
 
 import { IRTransformer, transformDefinition } from './IRTransformer'
 import { IdGenerator } from '../idGenerator'
-import { Loc } from '../parsing/quintParserFrontend'
+import { SourceMap } from '../parsing/quintParserFrontend'
 import { AnalysisOutput } from '../quintAnalyzer'
 import { QuintDef, QuintEx, QuintLambda } from './quintIr'
 import { QuintType } from './quintTypes'
@@ -37,7 +37,7 @@ import { QuintType } from './quintTypes'
 export function generateFreshIds(
   def: QuintDef,
   idGenerator: IdGenerator,
-  sourceMap: Map<bigint, Loc>,
+  sourceMap: SourceMap,
   analysisOutput: AnalysisOutput
 ): QuintDef {
   const transformer = new IdRefresher(idGenerator, sourceMap, analysisOutput)
@@ -46,10 +46,10 @@ export function generateFreshIds(
 
 class IdRefresher implements IRTransformer {
   private idGenerator: IdGenerator
-  private sourceMap: Map<bigint, Loc>
+  private sourceMap: SourceMap
   private analysisOutput: AnalysisOutput
 
-  constructor(idGenerator: IdGenerator, sourceMap: Map<bigint, Loc>, analysisOutput: AnalysisOutput) {
+  constructor(idGenerator: IdGenerator, sourceMap: SourceMap, analysisOutput: AnalysisOutput) {
     this.idGenerator = idGenerator
     this.sourceMap = sourceMap
     this.analysisOutput = analysisOutput

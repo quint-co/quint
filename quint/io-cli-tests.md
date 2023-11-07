@@ -40,7 +40,7 @@ the end of file.
     quint parse ./testFixture/modulesAndJunk.qnt 2>&1 | sed 's#.*quint/\(testFixture\)#Q/\1#g'
 
 <!-- !test out junk -->
-    Q/testFixture/modulesAndJunk.qnt:9:1 - error: extraneous input 'the' expecting {<EOF>, 'module', DOCCOMMENT}
+    Q/testFixture/modulesAndJunk.qnt:9:1 - error: [QNT000] extraneous input 'the' expecting {<EOF>, 'module', DOCCOMMENT}
     9: the parser
        ^^^
 
@@ -289,7 +289,7 @@ exit $exit_code
   1 failed
 
   1) failingTest:
-      HOME/failingTestCounters.qnt:45:10 - error: Assertion failed
+      HOME/failingTestCounters.qnt:45:10 - error: [QNT508] Assertion failed
       45:          assert(n == 0),
     Use --seed=0x1 --match=failingTest to repeat.
 
@@ -349,7 +349,7 @@ exit $exit_code
   1 failed
 
   1) failingTest:
-      HOME/failingTestCounters.qnt:45:10 - error: Assertion failed
+      HOME/failingTestCounters.qnt:45:10 - error: [QNT508] Assertion failed
       45:          assert(n == 0),
 
 [Frame 0]
@@ -421,6 +421,7 @@ An example execution:
 [State 4] { n: 12 }
 
 [ok] No violation found (duration).
+Use --seed=0x11 to reproduce.
 You may increase --max-samples and --max-steps.
 Use --verbosity to produce more (or less) output.
 ```
@@ -790,7 +791,7 @@ exit $exit_code
   1 failed
 
   1) mintTwiceThenSendError:
-      HOME/coin.qnt:176:5 - error: mintTwiceThenSendError returns false
+      HOME/coin.qnt:176:5 - error: [QNT511] Test mintTwiceThenSendError returned false
       176:     run mintTwiceThenSendError = {
 
 [Frame 0]
@@ -913,11 +914,11 @@ exit $exit_code
 ```
 
   _1040compileError
-      HOME/_1040compileError.qnt:2:3 - error: QNT500: Uninitialized const n. Use: import <moduleName>(n=<value>).*
+      HOME/_1040compileError.qnt:2:3 - error: [QNT500] Uninitialized const n. Use: import <moduleName>(n=<value>).*
 2:   const n: int
      ^^^^^^^^^^^^
 
-      HOME/_1040compileError.qnt:5:12 - error: Name n not found
+      HOME/_1040compileError.qnt:5:12 - error: [QNT502] Name n not found
 5:     assert(n > 0)
               ^
 
@@ -931,20 +932,64 @@ error: Tests failed
 output=$(quint run testFixture/_1041compileConst.qnt 2>&1)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' \
-  -e 's#^.*_1041compileConst.qnt#      HOME/_1041compileConst.qnt#g'
+  -e 's#^.*_1041compileConst.qnt#HOME/_1041compileConst.qnt#g'
 exit $exit_code
 ```
 
 <!-- !test exit 1 -->
 <!-- !test out run uninitialized -->
 ```
-<module_input>:2:3 - error: QNT500: Uninitialized const N. Use: import <moduleName>(N=<value>).*
+HOME/_1041compileConst.qnt:2:3 - error: [QNT500] Uninitialized const N. Use: import <moduleName>(N=<value>).*
 2:   const N: int
      ^^^^^^^^^^^^
 
-<module_input>:5:24 - error: Name N not found
+HOME/_1041compileConst.qnt:5:24 - error: [QNT502] Name N not found
 5:   action init = { x' = N }
                           ^
 
 error: run failed
 ```
+
+### Repl keeps right track of variables from instances
+
+Incremental evaluation from the REPL interacting with instance flattening leads to state variables having different IDs on separate evaluations. This test ensures this case is well handled during evaluation.
+
+<!-- !test in repl with instance vars -->
+
+```
+cd ../examples/cosmos/tendermint/
+output=$(echo -e "n4_f1::Init\nn4_f1::round" | quint -r TendermintModels.qnt::TendermintModels 2>&1 | tail -n +3)
+exit_code=$?
+cd - > /dev/null
+echo "$output"
+exit $exit_code
+```
+
+<!-- !test out repl with instance vars -->
+
+```
+>>> true
+>>> Map("p1" -> 0, "p2" -> 0, "p3" -> 0)
+>>> 
+```
+
+### Errors are reported in the right file
+
+File `ImportFileWithError.qnt` has no error, but it imports a module from file `FileWithError.qnt`, which has a type error. The error should be reported only in `FileWithError.qnt`.
+
+<!-- !test in error for file -->
+```
+quint typecheck ./testFixture/typechecking/ImportFileWithError.qnt 2>&1 | sed 's#.*quint/\(testFixture\)#HOME/\1#g'
+```
+
+<!-- !test out error for file -->
+```
+HOME/testFixture/typechecking/FileWithError.qnt:2:3 - error: [QNT000] Couldn't unify bool and int
+Trying to unify bool and int
+
+2:   val a: int = true
+     ^^^^^^^^^^^^^^^^^
+
+error: typechecking failed
+```
+

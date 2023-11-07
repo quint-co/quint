@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022-2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022-2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -14,6 +14,7 @@
 
 import { QuintDef, QuintExport, QuintImport, QuintInstance, QuintLambdaParameter } from '../ir/quintIr'
 import { QuintType } from '../ir/quintTypes'
+import { QuintError } from '../quintError'
 
 /**
  * Possible kinds for definitions
@@ -79,6 +80,7 @@ export type UnusedDefinitions = (moduleName: string) => Set<LookupDefinition>
 export type NameResolutionResult = {
   table: LookupTable
   unusedDefinitions: UnusedDefinitions
+  errors: QuintError[]
 }
 
 /**
@@ -224,7 +226,6 @@ export const builtinNames = [
   'field',
   'fieldNames',
   'item',
-  'unionMatch',
   'assign',
   'of',
   'eq',
@@ -232,4 +233,6 @@ export const builtinNames = [
   'ite',
   'cross',
   'difference',
+  'match',
+  'variant',
 ]

@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -13,7 +13,7 @@
  */
 
 import { Effect, EffectComponent, EffectScheme, Entity } from './base'
-import { Substitutions, applySubstitution, compose } from './substitutions'
+import { Substitutions, applySubstitution } from './substitutions'
 
 /**
  * Formats the string representation of  an effect
@@ -65,8 +65,8 @@ export function effectSchemeToString(e: EffectScheme): string {
     return { kind: 'entity', name: name, value: { kind: 'variable', name: `v${i}` } }
   })
 
-  const subs = compose(effectSubs, entitySubs)
-  const effect = subs.chain(s => applySubstitution(s, e.effect))
+  const subs = effectSubs.concat(entitySubs)
+  const effect = applySubstitution(subs, e.effect)
   if (effect.isLeft()) {
     throw new Error('Unexpected error while formatting effect scheme')
   } else {

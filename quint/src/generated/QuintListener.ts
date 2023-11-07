@@ -83,8 +83,13 @@ import { TypeUnionRecOneContext } from "./QuintParser";
 import { RowContext } from "./QuintParser";
 import { RowLabelContext } from "./QuintParser";
 import { ExprContext } from "./QuintParser";
+import { MatchSumExprContext } from "./QuintParser";
+import { MatchSumCaseContext } from "./QuintParser";
+import { MatchSumVariantContext } from "./QuintParser";
 import { DeclarationOrExprContext } from "./QuintParser";
 import { LambdaContext } from "./QuintParser";
+import { LambdaUnsugaredContext } from "./QuintParser";
+import { LambdaTupleSugarContext } from "./QuintParser";
 import { IdentOrHoleContext } from "./QuintParser";
 import { ParameterContext } from "./QuintParser";
 import { IdentOrStarContext } from "./QuintParser";
@@ -1024,6 +1029,39 @@ export interface QuintListener extends ParseTreeListener {
 	exitExpr?: (ctx: ExprContext) => void;
 
 	/**
+	 * Enter a parse tree produced by `QuintParser.matchSumExpr`.
+	 * @param ctx the parse tree
+	 */
+	enterMatchSumExpr?: (ctx: MatchSumExprContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.matchSumExpr`.
+	 * @param ctx the parse tree
+	 */
+	exitMatchSumExpr?: (ctx: MatchSumExprContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.matchSumCase`.
+	 * @param ctx the parse tree
+	 */
+	enterMatchSumCase?: (ctx: MatchSumCaseContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.matchSumCase`.
+	 * @param ctx the parse tree
+	 */
+	exitMatchSumCase?: (ctx: MatchSumCaseContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.matchSumVariant`.
+	 * @param ctx the parse tree
+	 */
+	enterMatchSumVariant?: (ctx: MatchSumVariantContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.matchSumVariant`.
+	 * @param ctx the parse tree
+	 */
+	exitMatchSumVariant?: (ctx: MatchSumVariantContext) => void;
+
+	/**
 	 * Enter a parse tree produced by `QuintParser.declarationOrExpr`.
 	 * @param ctx the parse tree
 	 */
@@ -1044,6 +1082,28 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitLambda?: (ctx: LambdaContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.lambdaUnsugared`.
+	 * @param ctx the parse tree
+	 */
+	enterLambdaUnsugared?: (ctx: LambdaUnsugaredContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.lambdaUnsugared`.
+	 * @param ctx the parse tree
+	 */
+	exitLambdaUnsugared?: (ctx: LambdaUnsugaredContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.lambdaTupleSugar`.
+	 * @param ctx the parse tree
+	 */
+	enterLambdaTupleSugar?: (ctx: LambdaTupleSugarContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.lambdaTupleSugar`.
+	 * @param ctx the parse tree
+	 */
+	exitLambdaTupleSugar?: (ctx: LambdaTupleSugarContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `QuintParser.identOrHole`.

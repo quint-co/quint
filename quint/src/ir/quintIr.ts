@@ -5,9 +5,9 @@
  *
  * Igor Konnov, Gabriela Moreira, Shon Feder, 2021-2023
  *
- * Copyright (c) Informal Systems 2021-2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2021-2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  */
 
 import { QuintType } from './quintTypes'
@@ -18,14 +18,6 @@ import { QuintType } from './quintTypes'
  */
 export interface WithId {
   id: bigint
-}
-
-/**
- * An error message that needs a source map to resolve the actual sources.
- */
-export interface IrErrorMessage {
-  explanation: string
-  refs: bigint[]
 }
 
 /**
@@ -131,7 +123,7 @@ export function isQuintBuiltin(app: QuintApp): app is QuintBuiltinApp {
 }
 
 // This should be the source of truth for all builtin opcodes
-const builtinOpCodes = [
+export const builtinOpCodes = [
   'List',
   'Map',
   'Rec',
@@ -187,6 +179,7 @@ const builtinOpCodes = [
   'length',
   'map',
   'mapBy',
+  'match',
   'mustChange',
   'neq',
   'next',
@@ -216,7 +209,7 @@ const builtinOpCodes = [
   'to',
   'tuples',
   'union',
-  'unionMatch',
+  'variant',
   'weakFair',
   'with',
 ] as const
