@@ -1,4 +1,4 @@
-/**
+/*,*
  * A grammar of Quint Effects
  *
  * @author: Gabriela Moreira, Informal Systems, 2022
@@ -6,7 +6,7 @@
 grammar Effect;
 
 effect:   concrete                                           # concreteEffect
-        | '(' (effect (', ' effect)*)? ')' '=>' effect       # arrowEffect
+        | '(' (effect (',' effect)*)? ')' '=>' effect       # arrowEffect
         | IDENTIFIER                                         # variableEffect
         ;
 
@@ -22,7 +22,7 @@ concrete:   read                                        # readOnly
           | 'Pure'                                      # pure
           ;
 
-entity : ((stateVarRef | IDENTIFIER) (', ' (stateVarRef | IDENTIFIER))*)? ;
+entity : ((stateVarRef | IDENTIFIER) (',' (stateVarRef | IDENTIFIER))*)? ;
 
 stateVarRef : '\'' IDENTIFIER '\'' ;
 
