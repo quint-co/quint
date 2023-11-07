@@ -23,10 +23,10 @@ export function getSignatures(): Map<string, Signature> {
 }
 
 // NOTE: Signatures operations over products (records and tuples) and sums
-// (unums/disjoint unions/variants) cannot be precisely defined with this
-// syntax, because they are "exotic", in the senes that represent basic language
-// constructions that cannot be represented in the type system of the language
-// itself.
+// (enums/disjoint unions/variants) cannot be precisely defined with this
+// syntax, because they are "exotic", in the sense that they represent basic
+// language constructions that cannot be represented in the type system of the
+// language itself.
 //
 // Their types are handled directly with constraints in specialConstraints.ts.
 
