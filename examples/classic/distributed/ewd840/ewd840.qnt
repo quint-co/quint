@@ -118,6 +118,7 @@ action step = any {
   Environment,
 }
 
+// FIXME(#630): OrKeep takes an arbitrary type for now
 val vars = (active, color, tpos, tcolor)
 
 // FIXME(#1236): we cannot add `init` to this property since, in quint, it is an
