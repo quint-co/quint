@@ -104,7 +104,7 @@ export class ToIrListener implements QuintListener {
       // #1220. However, we don't want components leaking from one module to
       // another, so it's better not to hide this completely. We should turn this
       // back into `assert`s after we feel more confident about it.
-      console.log(
+      console.error(
         'ATTENTION: There is some component(s) left on the stack(s) after parsing a module, please report a bug'
       )
     }
@@ -199,6 +199,7 @@ export class ToIrListener implements QuintListener {
 
     if (def.kind !== 'def') {
       // only `QuintDef` is allowed in `nondet` expressions
+      console.debug(`[DEBUG] non-def found in nondet definition: ${ctx.text}`)
       return
     }
 
@@ -219,7 +220,7 @@ export class ToIrListener implements QuintListener {
     const name = ctx.normalCallName().text
     const [params, typeTag] = this.processOpDefParams(ctx)
     // get the definition body
-    const expr = this.exprStack.pop()
+    const expr = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
 
     // extract the qualifier
     let qualifier: OpQualifier = 'def'
@@ -239,7 +240,7 @@ export class ToIrListener implements QuintListener {
       }
     }
 
-    let body = expr ?? this.undefinedExpr(ctx)()
+    let body = expr
     const id = this.getId(ctx)
 
     if (params.length > 0) {
@@ -249,7 +250,7 @@ export class ToIrListener implements QuintListener {
         kind: 'lambda',
         params,
         qualifier,
-        expr: expr ?? this.undefinedExpr(ctx)(),
+        expr,
       }
     }
     const def: QuintOpDef = {
@@ -585,6 +586,7 @@ export class ToIrListener implements QuintListener {
       if (wrappedArgs.kind !== 'app' || wrappedArgs.opcode !== 'wrappedArgs') {
         // the wrapped arguments should be an application
         // see exitArgList()
+        console.debug(`[DEBUG] unexpected arguments found in arg list from: ${ctx.text}`)
         return
       }
 
@@ -609,6 +611,7 @@ export class ToIrListener implements QuintListener {
         if (wrappedArgs.kind !== 'app' || wrappedArgs.opcode !== 'wrappedArgs') {
           // the wrapped arguments should be an application
           // see exitArgList()
+          console.debug(`[DEBUG] unexpected arguments found in arg list from: ${ctx.text}`)
           return
         }
 
@@ -1123,6 +1126,7 @@ export class ToIrListener implements QuintListener {
 
     if (singletonUnions[0].kind !== 'union') {
       // Elements should be of union kind, see exitTypeUnionRecOne()
+      console.debug(`[DEBUG] unexpected kind found in singleton unions: ${ctx.text}`)
       return
     }
 
@@ -1247,34 +1251,56 @@ export class ToIrListener implements QuintListener {
 
   private undefinedExpr(ctx: any): () => QuintEx {
     return () => {
-      const id = this.getId(ctx)
-      return { id, kind: 'bool', value: true }
+      console.debug(`[DEBUG] generating undefined expr to fill hole in: ${ctx.text}`)
+      const name = '__undefinedExprGenerated'
+
+      // This is our undefined expr:
+      // val __undefinedExprGenerated = true; __undefinedExprGenerated }
+      // It doesn't cause any name resolution issues while still being easy to spot while debugging
+      return {
+        id: this.getId(ctx),
+        kind: 'let',
+        opdef: {
+          id: this.getId(ctx),
+          kind: 'def',
+          qualifier: 'val',
+          name,
+          expr: { id: this.getId(ctx), kind: 'bool', value: true },
+        },
+        expr: { id: this.getId(ctx), kind: 'name', name },
+      }
     }
   }
 
   private undefinedDeclaration(ctx: any): () => QuintDeclaration {
     return () => {
+      console.debug(`[DEBUG] generating undefined declaration to fill hole in: ${ctx.text}`)
       const id = this.getId(ctx)
-      return { id, kind: 'assume', name: '_', assumption: this.undefinedExpr(ctx)() }
+      return { id, kind: 'assume', name: `_undefinedDeclaration${id}`, assumption: this.undefinedExpr(ctx)() }
     }
   }
 
   private undefinedParam(ctx: any): () => QuintLambdaParameter {
     return () => {
+      console.debug(`[DEBUG] generating undefined parameter to fill hole in: ${ctx.text}`)
       const id = this.getId(ctx)
-      return { id, name: `u_${id}` }
+      return { id, name: `__undefinedParam${id}` }
     }
   }
 
   private undefinedType(ctx: any): () => QuintType {
     return () => {
+      console.debug(`[DEBUG] generating undefined type to fill hole in: ${ctx.text}`)
       const id = this.getId(ctx)
-      return { id, kind: 'bool' }
+      return { id, kind: 'var', name: 'undefinedType' }
     }
   }
 
   private undefinedVariant(ctx: any): () => RowField {
-    return () => ({ fieldName: '_', fieldType: this.undefinedType(ctx)() })
+    return () => {
+      console.debug(`[DEBUG] generating undefined variant to fill hole in: ${ctx.text}`)
+      return { fieldName: `__undefinedField`, fieldType: this.undefinedType(ctx)() }
+    }
   }
 
   /**

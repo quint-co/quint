@@ -276,7 +276,8 @@ echo -e "1 +" | quint | tail -n +3
 
 <!-- !test out repl malformed expressions -->
 ```
->>> syntax error: error: [QNT000] mismatched input '<EOF>' expecting {'{', 'nondet', 'val', 'def', 'pure', 'action', 'run', 'temporal', '[', 'all', 'any', 'if', '_', STRING, BOOL, INT, 'and', 'or', 'iff', 'implies', 'Set', 'List', 'Map', 'match', '-', '(', IDENTIFIER}
+>>> [DEBUG] generating undefined expr to fill hole in: 1+
+syntax error: error: [QNT000] mismatched input '<EOF>' expecting {'{', 'nondet', 'val', 'def', 'pure', 'action', 'run', 'temporal', '[', 'all', 'any', 'if', '_', STRING, BOOL, INT, 'and', 'or', 'iff', 'implies', 'Set', 'List', 'Map', 'match', '-', '(', IDENTIFIER}
 
 
 

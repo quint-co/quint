@@ -126,7 +126,18 @@ export function parsePhase1fromText(
     if (errors.length === 0) {
       throw e
     }
-    // ignore the exception, we already have errors to report
+    console.debug(`[DEBUG] ignoring listener exception in favor of parse errors. Exception: ${e}`)
+    // ignore the exception, we already have errors to report.
+    //
+    // This happens in a situation where the first part of parsing (constructing
+    // the AST) has finished with errors, but we still want to try and build an
+    // IR out of it in order to collect as many errors as we can (from this and subsequent
+    // phases). So, we try to proceed, but it's fine if it doesn't work out.
+    //
+    // It is safe to ignore errors here because, normally, we wouldn't even run
+    // this code after parse failures. However, if we want to run subsequent
+    // phases on top of the generated IR, it is important to consider that it is
+    // only a partial result and might have undefined components or be incomplete.
   }
 
   return { errors: errors.concat(listener.errors), modules: listener.modules, sourceMap: listener.sourceMap }
