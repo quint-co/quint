@@ -60,11 +60,8 @@ bash -
 ### OK on typecheck EWD840
 
 This example was pointing to Paxos. Now it does not typecheck.
-See [#581](https://github.com/informalsystems/quint/issues/581).
 
-Temporarily disabled.
-
-<!-- test check EWD840 - Types & Effects -->
+<!-- !test check EWD840 - Types & Effects -->
     quint typecheck ../examples/classic/distributed/ewd840/ewd840.qnt
 
 ### OK on parse Tendermint
@@ -259,6 +256,11 @@ fi
 
 <!-- !test check rareSpells - Syntax/Types & Effects/Unit tests -->
     quint test ../examples/spells/rareSpells.qnt
+
+### OK on test BoundedUint8
+
+<!-- !test check BoundedUint8 - Syntax/Types & Effects/Unit tests -->
+    quint test --main=BoundedUInt8Test ../examples/spells/BoundedUInt.qnt
 
 ### OK on test bug843pureValCache
 
