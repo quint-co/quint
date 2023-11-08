@@ -88,6 +88,8 @@ get_main () {
     main="--main=gradualPonziTest"
   elif [[ "$file" == "cosmwasm/zero-to-hero/vote.qnt" ]] ; then
     main="--main=state"
+  elif [[ "$file" == "spells/BoundedUInt.qnt" ]] ; then
+    main="--main=BoundedUInt8Test"
   fi
   echo "${main}"
 }

@@ -257,6 +257,11 @@ fi
 <!-- !test check rareSpells - Syntax/Types & Effects/Unit tests -->
     quint test ../examples/spells/rareSpells.qnt
 
+### OK on test BoundedUint8
+
+<!-- !test check BoundedUint8 - Syntax/Types & Effects/Unit tests -->
+    quint test --main=BoundedUInt8Test ../examples/spells/BoundedUInt.qnt
+
 ### OK on test bug843pureValCache
 
 <!-- !test check bug843pureValCache - Syntax/Types & Effects/Unit tests -->
