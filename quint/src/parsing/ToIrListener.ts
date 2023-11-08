@@ -27,9 +27,8 @@ import {
   isUnitType,
   unitType,
 } from '../ir/quintTypes'
-import { strict as assert } from 'assert'
 import { SourceMap } from './quintParserFrontend'
-import { compact, zipWith } from 'lodash'
+import { compact, times, zipWith } from 'lodash'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
 import { QuintTypeDef } from '../ir/quintIr'
@@ -43,6 +42,12 @@ import { Loc } from '../ErrorMessage'
  * syntax tree. This listener does the minimal work of translating the AST
  * into IR. All semantic checks and type checking must be done at later
  * phases, as the IR may be constructed by other means.
+ *
+ * The listener should be able to execute on top of malformed ASTs. It produces
+ * undefined/default components to fill in the gaps. The issues found while
+ * producing an AST should be reported, but should not prevent an IR to be
+ * constructed. This allow us to gather additional static analysis information
+ * to report before aborting.
  *
  * @author Igor Konnov, Gabriela Moreira
  */
@@ -89,9 +94,20 @@ export class ToIrListener implements QuintListener {
 
   // translate: module <name> { ... }
   exitModule(ctx: p.ModuleContext) {
-    assert(this.typeStack.length === 0, 'type stack must be empty')
-    assert(this.exprStack.length === 0, 'expression stack must be empty')
-    assert(this.identOrHoleStack.length === 0, 'parameter stack must be empty')
+    if (
+      this.exprStack.length > 0 ||
+      this.identOrStarStack.length > 0 ||
+      this.rowStack.length > 0 ||
+      this.variantStack.length > 0
+    ) {
+      // This used to be an assumption, but I'm not sure if it still holds after
+      // #1220. However, we don't want components leaking from one module to
+      // another, so it's better not to hide this completely. We should turn this
+      // back into `assert`s after we feel more confident about it.
+      console.error(
+        'ATTENTION: There is some component(s) left on the stack(s) after parsing a module, please report a bug'
+      )
+    }
 
     const moduleId = this.getId(ctx)
 
@@ -142,14 +158,12 @@ export class ToIrListener implements QuintListener {
   }
 
   exitLetIn(ctx: p.LetInContext) {
-    const def = this.declarationStack.pop()
-    const expr = this.exprStack.pop()
+    const def = this.declarationStack.pop() ?? this.undefinedDeclaration(ctx)()
+    const expr = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
 
     const id = this.getId(ctx)
-    if (def && expr) {
-      const letExpr: QuintEx = { id, kind: 'let', opdef: def as QuintOpDef, expr }
-      this.exprStack.push(letExpr)
-    }
+    const letExpr: QuintEx = { id, kind: 'let', opdef: def as QuintOpDef, expr }
+    this.exprStack.push(letExpr)
   }
 
   exitNondetOperDef(ctx: p.NondetOperDefContext) {
@@ -162,10 +176,7 @@ export class ToIrListener implements QuintListener {
         typeAnnotation = maybeType.value
       }
     }
-    const expr = this.exprStack.pop()
-    if (!expr) {
-      return
-    }
+    const expr = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
 
     const id = this.getId(ctx)
 
@@ -183,19 +194,23 @@ export class ToIrListener implements QuintListener {
 
   // special case for: nondet x = e1; e2
   exitNondet(ctx: p.NondetContext) {
-    const def = this.declarationStack.pop()
-    const nested = this.exprStack.pop()
+    const def = this.declarationStack.pop() ?? this.undefinedDeclaration(ctx)()
+    const nested = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
+
+    if (def.kind !== 'def') {
+      // only `QuintDef` is allowed in `nondet` expressions
+      console.debug(`[DEBUG] non-def found in nondet definition: ${ctx.text}`)
+      return
+    }
 
     const id = this.getId(ctx)
-    if (nested && def?.kind === 'def') {
-      const letExpr: QuintEx = {
-        id,
-        kind: 'let',
-        opdef: def,
-        expr: nested,
-      }
-      this.exprStack.push(letExpr)
+    const letExpr: QuintEx = {
+      id,
+      kind: 'let',
+      opdef: def,
+      expr: nested,
     }
+    this.exprStack.push(letExpr)
   }
 
   /** **************** translate operator definititons **********************/
@@ -205,7 +220,11 @@ export class ToIrListener implements QuintListener {
     const name = ctx.normalCallName().text
     const [params, typeTag] = this.processOpDefParams(ctx)
     // get the definition body
-    const expr = this.exprStack.pop()
+    const expr: QuintEx = ctx.expr()
+      ? this.exprStack.pop() ?? this.undefinedExpr(ctx)()
+      : // This is only a definition header, use a default body since the IR
+        // does not have a representation for this at the moment
+        { id: this.getId(ctx), kind: 'bool', value: true }
 
     // extract the qualifier
     let qualifier: OpQualifier = 'def'
@@ -222,63 +241,46 @@ export class ToIrListener implements QuintListener {
         qtext === 'temporal'
       ) {
         qualifier = qtext
-      } else {
-        const ls = this.locStr(ctx)
-        // istanbul ignore next
-        assert(false, `exitOperDef: ${ls}: Unexpected qualifier: ${qtext}`)
       }
     }
 
-    if (params) {
+    let body = expr
+    const id = this.getId(ctx)
+
+    if (params.length > 0) {
       // if the definition has parameters, introduce a lambda
-      let body = expr ?? this.undefinedDef(ctx)
-      const id = this.getId(ctx)
-
-      if (params.length > 0) {
-        body = {
-          id,
-          kind: 'lambda',
-          params,
-          qualifier,
-          expr: expr ?? this.undefinedDef(ctx),
-        }
-      }
-      const def: QuintOpDef = {
+      body = {
         id,
-        kind: 'def',
-        name,
+        kind: 'lambda',
+        params,
         qualifier,
-        expr: body,
+        expr,
       }
-      if (typeTag.isJust()) {
-        def.typeAnnotation = typeTag.value
-      }
-      this.declarationStack.push(def)
-    } else {
-      const ls = this.locStr(ctx)
-      // istanbul ignore next
-      assert(false, `exitOperDef: ${ls}: undefined expr or params in exitOperDef`)
     }
-  }
-
-  // translate a top-level def
-  exitOper(ctx: p.OperContext) {
-    const def = this.declarationStack[this.declarationStack.length - 1]
-    const ls = this.locStr(ctx)
-    assert(def, `exitOper: ${ls}: undefined operDef in exitOper`)
+    const def: QuintOpDef = {
+      id,
+      kind: 'def',
+      name,
+      qualifier,
+      expr: body,
+    }
+    if (typeTag.isJust()) {
+      def.typeAnnotation = typeTag.value
+    }
+    this.declarationStack.push(def)
   }
 
   // The definition parameters may be of two kinds: C-like and ML-like.
   // Handle them here.
   processOpDefParams(ctx: p.OperDefContext): [QuintLambdaParameter[], Maybe<QuintType>] {
-    const params = popMany(this.paramStack, ctx.parameter().length)
+    const params = popMany(this.paramStack, ctx.parameter().length, this.undefinedParam(ctx))
     // types of the parameters and of the result
     const ntypes = ctx.type().length
     if (ntypes === 0) {
       return [params, none()]
     } else if (ntypes > 1) {
       // a C-like signature, combine it into an operator type
-      const types = popMany(this.typeStack, ntypes)
+      const types = popMany(this.typeStack, ntypes, this.undefinedType(ctx))
       const id = this.getId(ctx)
       const fullType: Maybe<QuintType> = just({
         id,
@@ -388,7 +390,7 @@ export class ToIrListener implements QuintListener {
     const id = this.getId(ctx)
 
     // Build the type declaraion
-    const fields: RowField[] = popMany(this.variantStack, this.variantStack.length)
+    const fields: RowField[] = popMany(this.variantStack, this.variantStack.length, this.undefinedVariant(ctx))
     const row: ConcreteFixedRow = { kind: 'row', fields, other: { kind: 'empty' } }
     const type: QuintSumType = { id, kind: 'sum', fields: row }
     const typeName: QuintConstType = { id, kind: 'const', name }
@@ -506,7 +508,7 @@ export class ToIrListener implements QuintListener {
     // slice <path> from the quoted string "<path>", if the path is present
     const fromSource = ctx.fromSource() ? ctx.fromSource()!.text.slice(1, -1) : undefined
     if (nexprs > 0) {
-      const exprs = popMany(this.exprStack, nexprs)
+      const exprs = popMany(this.exprStack, nexprs, this.undefinedExpr(ctx))
       for (let i = 0; i < nexprs; i++) {
         const id = this.getId(names[i])
         const name = names[i].text
@@ -574,7 +576,7 @@ export class ToIrListener implements QuintListener {
 
   // list access, e.g., f[10]
   exitListApp(ctx: any) {
-    this.pushApplication(ctx, 'nth', popMany(this.exprStack, 2))
+    this.pushApplication(ctx, 'nth', popMany(this.exprStack, 2, this.undefinedExpr(ctx)))
   }
 
   // operator application in the normal form, e.g., MyOper("foo", 42)
@@ -583,14 +585,16 @@ export class ToIrListener implements QuintListener {
     let args: QuintEx[] = []
     if (ctx.argList()) {
       // this operator has at least one argument
-      const wrappedArgs = this.exprStack.pop()
-      if (wrappedArgs && wrappedArgs.kind === 'app') {
-        args = wrappedArgs.args
-      } else {
-        const ls = this.locStr(ctx)
-        // istanbul ignore next
-        assert(false, `exitOperApp: ${ls}: expected wrapped arguments`)
+      const wrappedArgs = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
+
+      if (wrappedArgs.kind !== 'app' || wrappedArgs.opcode !== 'wrappedArgs') {
+        // the wrapped arguments should be an application
+        // see exitArgList()
+        console.debug(`[DEBUG] unexpected arguments found in arg list from: ${ctx.text}`)
+        return
       }
+
+      args = wrappedArgs.args
     } // else no arguments, e.g., set(), list()
 
     this.pushApplication(ctx, name, args)
@@ -599,26 +603,23 @@ export class ToIrListener implements QuintListener {
   // operator application via dot, e.g., S.union(T)
   exitDotCall(ctx: p.DotCallContext) {
     // pop: the first argument, operator name, the rest of arguments (wrapped)
-    const wrappedArgs = ctx.argList() ? this.exprStack.pop() : undefined
+    const wrappedArgs = ctx.argList() ? this.exprStack.pop() ?? this.undefinedExpr(ctx)() : undefined
     const name = ctx.nameAfterDot().text
-    const callee = this.exprStack.pop()
-    if (callee === undefined) {
-      const ls = this.locStr(ctx)
-      assert(false, `exitDotCall: ${ls} callee not found`)
-    }
+    const callee = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
     const hasParen = ctx.LPAREN()
     if (hasParen) {
       // the UFCS form e_1.f(e_2, ..., e_n)
       let args: QuintEx[] = []
       if (wrappedArgs) {
         // n >= 2: there is at least one argument in parentheses
-        if (wrappedArgs.kind === 'app' && wrappedArgs.opcode === 'wrappedArgs') {
-          args = [callee!].concat(wrappedArgs.args)
-        } else {
-          const ls = this.locStr(ctx)
-          // istanbul ignore next
-          assert(false, `exitDotCall: ${ls} expected wrappedArgs, found: ${wrappedArgs.kind}`)
+        if (wrappedArgs.kind !== 'app' || wrappedArgs.opcode !== 'wrappedArgs') {
+          // the wrapped arguments should be an application
+          // see exitArgList()
+          console.debug(`[DEBUG] unexpected arguments found in arg list from: ${ctx.text}`)
+          return
         }
+
+        args = [callee!].concat(wrappedArgs.args)
       } else {
         // no arguments, as in e.g., s.head()
         args = [callee!]
@@ -652,7 +653,7 @@ export class ToIrListener implements QuintListener {
   // a list of arguments
   exitArgList(ctx: p.ArgListContext) {
     const nargs = ctx.expr().length
-    const args = popMany(this.exprStack, nargs)
+    const args = popMany(this.exprStack, nargs, this.undefinedExpr(ctx))
     // wrap the arguments with a temporary operator,
     // to be unwrapped later
     this.exprStack.push({
@@ -665,48 +666,36 @@ export class ToIrListener implements QuintListener {
 
   // a lambda operator over multiple parameters
   exitLambdaUnsugared(ctx: p.LambdaUnsugaredContext) {
-    const expr = this.exprStack.pop()
-    const params = popMany(this.paramStack, ctx.parameter().length)
-    if (expr) {
-      const id = this.getId(ctx)
-      this.exprStack.push({
-        id,
-        kind: 'lambda',
-        params: params,
-        qualifier: 'def',
-        expr,
-      })
-    } else {
-      const ls = this.locStr(ctx)
-      // istanbul ignore next
-      assert(false, `exitLambda: ${ls}: expected an expression`)
-    }
+    const expr = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
+    const params = popMany(this.paramStack, ctx.parameter().length, this.undefinedParam(ctx))
+    const id = this.getId(ctx)
+    this.exprStack.push({
+      id,
+      kind: 'lambda',
+      params: params,
+      qualifier: 'def',
+      expr,
+    })
   }
 
   // a lambda operator over a single tuple parameter,
   // unpacked into named fields
   exitLambdaTupleSugar(ctx: p.LambdaTupleSugarContext) {
-    const expr = this.exprStack.pop()
-    const params = popMany(this.paramStack, ctx.parameter().length)
+    const expr = this.exprStack.pop() ?? this.undefinedExpr(ctx)()
+    const params = popMany(this.paramStack, ctx.parameter().length, this.undefinedParam(ctx))
 
-    if (expr) {
-      const id = this.getId(ctx)
-      // a fresh parameter to substitute for the tupled parameters
-      const freshLambdaParam = { id, name: `quintTupledLambdaParam${id}` }
-      const letBindingForTupleParams = params.reduce(this.letBindingForTupleParam(ctx, freshLambdaParam), expr)
-      const untupledLambda: QuintEx = {
-        id: this.getId(ctx),
-        kind: 'lambda',
-        params: [freshLambdaParam],
-        qualifier: 'def',
-        expr: letBindingForTupleParams,
-      }
-      this.exprStack.push(untupledLambda)
-    } else {
-      const ls = this.locStr(ctx)
-      // istanbul ignore next
-      assert(false, `exitLambda: ${ls}: expected an expression`)
+    const id = this.getId(ctx)
+    // a fresh parameter to substitute for the tupled parameters
+    const freshLambdaParam = { id, name: `quintTupledLambdaParam${id}` }
+    const letBindingForTupleParams = params.reduce(this.letBindingForTupleParam(ctx, freshLambdaParam), expr)
+    const untupledLambda: QuintEx = {
+      id: this.getId(ctx),
+      kind: 'lambda',
+      params: [freshLambdaParam],
+      qualifier: 'def',
+      expr: letBindingForTupleParams,
     }
+    this.exprStack.push(untupledLambda)
   }
 
   // a single parameter in a lambda expression: an identifier or '_'
@@ -721,7 +710,7 @@ export class ToIrListener implements QuintListener {
   }
 
   exitParameter(ctx: p.ParameterContext) {
-    const name = popMany(this.identOrHoleStack, 1)[0]
+    const name = popMany(this.identOrHoleStack, 1, () => '_')[0]
 
     const id = this.getId(ctx)
     this.paramStack.push({ id, name })
@@ -740,20 +729,20 @@ export class ToIrListener implements QuintListener {
 
   // tuple constructor, e.g., (1, 2, 3)
   exitTuple(ctx: p.TupleContext) {
-    const args = popMany(this.exprStack, ctx.expr().length)
+    const args = popMany(this.exprStack, ctx.expr().length, this.undefinedExpr(ctx))
 
     this.pushApplication(ctx, 'Tup', args)
   }
 
   // pair constructor, e.g., 2 -> 3
   exitPair(ctx: p.PairContext) {
-    const args = popMany(this.exprStack, ctx.expr().length)
+    const args = popMany(this.exprStack, ctx.expr().length, this.undefinedExpr(ctx))
     this.pushApplication(ctx, 'Tup', args)
   }
 
   // list constructor, e.g., [1, 2, 3]
   exitList(ctx: p.ListContext) {
-    const args = popMany(this.exprStack, ctx.expr().length)
+    const args = popMany(this.exprStack, ctx.expr().length, this.undefinedExpr(ctx))
     this.pushApplication(ctx, 'List', args)
   }
 
@@ -791,7 +780,7 @@ export class ToIrListener implements QuintListener {
 
   // record constructor, e.g., { name: "igor", year: 2021 }
   exitRecord(ctx: p.RecordContext) {
-    const elems = popMany(this.exprStack, ctx.recElem().length)
+    const elems = popMany(this.exprStack, ctx.recElem().length, this.undefinedExpr(ctx))
     const spreads = elems.filter(e => e.kind === 'app' && e.args.length === 1)
     const pairs = elems.map(e => (e.kind === 'app' && e.args.length === 2 ? e.args : [])).filter(es => es.length > 0)
 
@@ -822,7 +811,7 @@ export class ToIrListener implements QuintListener {
   // '+' or '-'
   exitPlusMinus(ctx: p.PlusMinusContext) {
     const opcode = ctx.PLUS() !== undefined ? 'iadd' : 'isub'
-    const args = popMany(this.exprStack, 2)
+    const args = popMany(this.exprStack, 2, this.undefinedExpr(ctx))
     this.pushApplication(ctx, opcode, args)
   }
 
@@ -842,14 +831,14 @@ export class ToIrListener implements QuintListener {
           opcode = 'imod'
           break
       }
-      const args = popMany(this.exprStack, 2)
+      const args = popMany(this.exprStack, 2, this.undefinedExpr(ctx))
       this.pushApplication(ctx, opcode, args)
     }
   }
 
   // integer power, e.g., x^y
   exitPow(ctx: any) {
-    const args = popMany(this.exprStack, 2)
+    const args = popMany(this.exprStack, 2, this.undefinedExpr(ctx))
     this.pushApplication(ctx, 'ipow', args)
   }
 
@@ -870,7 +859,7 @@ export class ToIrListener implements QuintListener {
       kind: 'name',
       name: ctx.qualId().text,
     }
-    const [rhs] = popMany(this.exprStack, 1)
+    const [rhs] = popMany(this.exprStack, 1, this.undefinedExpr(ctx))
     this.pushApplication(ctx, 'assign', [lhs, rhs])
   }
 
@@ -899,68 +888,68 @@ export class ToIrListener implements QuintListener {
           opcode = 'neq'
           break
       }
-      const args = popMany(this.exprStack, 2)
+      const args = popMany(this.exprStack, 2, this.undefinedExpr(ctx))
       this.pushApplication(ctx, opcode, args)
     }
   }
 
   exitErrorEq(ctx: p.ErrorEqContext) {
     // An error was already reported. We push a valid expression to recover from the error
-    const args = popMany(this.exprStack, 2)
+    const args = popMany(this.exprStack, 2, this.undefinedExpr(ctx))
     this.pushApplication(ctx, 'eq', args)
   }
 
   // p and q
   exitAnd(ctx: any) {
-    const args = popMany(this.exprStack, 2)
+    const args = popMany(this.exprStack, 2, this.undefinedExpr(ctx))
     this.pushApplication(ctx, 'and', args)
   }
 
   // p or q
   exitOr(ctx: any) {
-    const args = popMany(this.exprStack, 2)
+    const args = popMany(this.exprStack, 2, this.undefinedExpr(ctx))
     this.pushApplication(ctx, 'or', args)
   }
 
   // p implies q
   exitImplies(ctx: any) {
-    const args = popMany(this.exprStack, 2)
+    const args = popMany(this.exprStack, 2, this.undefinedExpr(ctx))
     this.pushApplication(ctx, 'implies', args)
   }
 
   // p iff q
   exitIff(ctx: any) {
-    const args = popMany(this.exprStack, 2)
+    const args = popMany(this.exprStack, 2, this.undefinedExpr(ctx))
     this.pushApplication(ctx, 'iff', args)
   }
 
   // and { p, q, r }
   exitAndExpr(ctx: p.AndExprContext) {
-    const args = popMany(this.exprStack, ctx.expr().length)
+    const args = popMany(this.exprStack, ctx.expr().length, this.undefinedExpr(ctx))
     this.pushApplication(ctx, 'and', args)
   }
 
   // or { p, q, r }
   exitOrExpr(ctx: p.OrExprContext) {
-    const args = popMany(this.exprStack, ctx.expr().length)
+    const args = popMany(this.exprStack, ctx.expr().length, this.undefinedExpr(ctx))
     this.pushApplication(ctx, 'or', args)
   }
 
   // all { p, q, r }
   exitActionAll(ctx: p.ActionAllContext) {
-    const args = popMany(this.exprStack, ctx.expr().length)
+    const args = popMany(this.exprStack, ctx.expr().length, this.undefinedExpr(ctx))
     this.pushApplication(ctx, 'actionAll', args)
   }
 
   // any { p, q, r }
   exitActionAny(ctx: p.ActionAnyContext) {
-    const args = popMany(this.exprStack, ctx.expr().length)
+    const args = popMany(this.exprStack, ctx.expr().length, this.undefinedExpr(ctx))
     this.pushApplication(ctx, 'actionAny', args)
   }
 
   // if (p) e1 else e2
   exitIfElse(ctx: p.IfElseContext) {
-    const args = popMany(this.exprStack, 3)
+    const args = popMany(this.exprStack, 3, this.undefinedExpr(ctx))
     this.pushApplication(ctx, 'ite', args)
   }
 
@@ -972,14 +961,14 @@ export class ToIrListener implements QuintListener {
   //    | _ => exprm              // A wildcard match, acting as a catchall
   // }
   //
-  // The above is represented in the UFC using an exotic `match` operator of the form
+  // The above is represented in the UFC using an exotic `matchVariant` operator of the form
   //
-  // match(epxr, label1, (var1) => expr1, ..., labeln, (varn) => exprn, "_", (_) => exprm)
+  // matchVariant(epxr, label1, (var1) => expr1, ..., labeln, (varn) => exprn, "_", (_) => exprm)
   exitMatchSumExpr(ctx: p.MatchSumExprContext) {
     const matchId = this.getId(ctx)
 
     // We will have one expression for the matched expression, plus one for each elimination case
-    const exprs = popMany(this.exprStack, ctx._matchCase.length + 1)
+    const exprs = popMany(this.exprStack, ctx._matchCase.length + 1, this.undefinedExpr(ctx))
 
     // The first expression is the one we are matching on
     // the syntax rules ensure that at least this expression is given
@@ -994,7 +983,7 @@ export class ToIrListener implements QuintListener {
     const matchExpr: QuintBuiltinApp = {
       id: matchId,
       kind: 'app',
-      opcode: 'match',
+      opcode: 'matchVariant',
       args: [expr].concat(cases),
     }
     this.exprStack.push(matchExpr)
@@ -1007,7 +996,8 @@ export class ToIrListener implements QuintListener {
   //
   // E.g., `A(x) => <expr>` becomes `["A", (x) => <expr>]`
   private formMatchCase([caseExpr, caseCtx]: [QuintEx, p.MatchSumCaseContext]): (QuintStr | QuintLambda)[] {
-    const caseId = this.getId(caseCtx)
+    const labelId = this.getId(caseCtx)
+    const elimId = this.getId(caseCtx)
     let label: string
     let params: QuintLambdaParameter[]
     if (caseCtx._wildCardMatch) {
@@ -1028,8 +1018,8 @@ export class ToIrListener implements QuintListener {
     } else {
       throw new Error('impossible: either _wildCardMatch or _variantMatch must be present')
     }
-    const labelStr: QuintStr = { id: caseId, kind: 'str', value: label }
-    const elim: QuintLambda = { id: caseId, kind: 'lambda', qualifier: 'def', expr: caseExpr, params }
+    const labelStr: QuintStr = { id: labelId, kind: 'str', value: label }
+    const elim: QuintLambda = { id: elimId, kind: 'lambda', qualifier: 'def', expr: caseExpr, params }
     return [labelStr, elim]
   }
 
@@ -1091,7 +1081,7 @@ export class ToIrListener implements QuintListener {
   // A tuple type, e.g., (int, bool)
   // the type stack contains the types of the elements
   exitTypeTuple(ctx: p.TypeTupleContext) {
-    const elemTypes: QuintType[] = popMany(this.typeStack, ctx.type().length)
+    const elemTypes: QuintType[] = popMany(this.typeStack, ctx.type().length, this.undefinedType(ctx))
     const id = this.getId(ctx)
 
     const fields = elemTypes.map((t, i) => ({ fieldName: `${i}`, fieldType: t }))
@@ -1104,7 +1094,7 @@ export class ToIrListener implements QuintListener {
 
   exitRow(ctx: p.RowContext) {
     const names = ctx.rowLabel().map(n => n.text)
-    const elemTypes: QuintType[] = popMany(this.typeStack, ctx.type().length)
+    const elemTypes: QuintType[] = popMany(this.typeStack, ctx.type().length, this.undefinedType(ctx))
 
     const fields = compact(
       zipWith(names, elemTypes, (name, elemType) => {
@@ -1136,32 +1126,31 @@ export class ToIrListener implements QuintListener {
   //   | { type: "syn", to: address }
   exitTypeUnionRec(ctx: p.TypeUnionRecContext) {
     const size = ctx.typeUnionRecOne().length
-    const ls = this.locStr(ctx)
-    assert(size > 0, `exitTypeUnionRec: ${ls}: size == 0`)
-    const singletonUnions: QuintType[] = popMany(this.typeStack, size)
-    if (singletonUnions && singletonUnions[0].kind === 'union') {
-      const tag = singletonUnions[0].tag
-      let records = singletonUnions[0].records
-      const id = this.getId(ctx)
-      for (let i = 1; i < size; i++) {
-        const one = singletonUnions[i]
-        if (one.kind === 'union') {
-          if (one.tag === tag) {
-            records = records.concat(one.records)
-          } else {
-            this.errors.push(differentTagsError(id, tag, one.tag))
-          }
-        } else {
-          // istanbul ignore next
-          assert(false, 'exitTypeUnionRec: no union in exitTypeUnionRec')
-        }
-      }
-      this.typeStack.push({ id, kind: 'union', tag, records })
-    } else {
-      const ls = this.locStr(ctx)
-      // istanbul ignore next
-      assert(false, `exitTypeUnionRec: ${ls} no union in exitTypeUnionRec`)
+    const singletonUnions: QuintType[] = popMany(this.typeStack, size, this.undefinedType(ctx))
+
+    if (singletonUnions[0].kind !== 'union') {
+      // Elements should be of union kind, see exitTypeUnionRecOne()
+      console.debug(`[DEBUG] unexpected kind found in singleton unions: ${ctx.text}`)
+      return
     }
+
+    const tag = singletonUnions[0].tag
+    let records = singletonUnions[0].records
+    const id = this.getId(ctx)
+    for (let i = 1; i < size; i++) {
+      const one = singletonUnions[i]
+      if (one.kind !== 'union') {
+        // Elements should be of union kind, see exitTypeUnionRecOne()
+        return
+      }
+
+      if (one.tag === tag) {
+        records = records.concat(one.records)
+      } else {
+        this.errors.push(differentTagsError(id, tag, one.tag))
+      }
+    }
+    this.typeStack.push({ id, kind: 'union', tag, records })
   }
 
   // One option of a disjoint union, e.g.,
@@ -1191,7 +1180,7 @@ export class ToIrListener implements QuintListener {
   exitTypeOper(ctx: p.TypeOperContext) {
     const resType = this.popType().unwrap()
     const nargs = ctx.type().length - 1
-    const argTypes: QuintType[] = popMany(this.typeStack, nargs)
+    const argTypes: QuintType[] = popMany(this.typeStack, nargs, this.undefinedType(ctx))
     const id = this.getId(ctx)
     this.typeStack.push({
       id,
@@ -1216,15 +1205,6 @@ export class ToIrListener implements QuintListener {
     const id = this.idGen.nextId()
     this.sourceMap.set(id, this.loc(ctx))
     return id
-  }
-
-  /*
-   * Produce a human-readable location string.
-   */
-  private locStr(ctx: ParserRuleContext) {
-    const line = ctx.start.line
-    const col = ctx.start.charPositionInLine
-    return `${line}:${col}`
   }
 
   private loc(ctx: ParserRuleContext): Loc {
@@ -1270,13 +1250,61 @@ export class ToIrListener implements QuintListener {
   // pop a row
   private popRow(): Row {
     // the user has specified a row
-    const tp = this.rowStack.pop()
-    return tp!
+    return this.rowStack.pop() ?? { kind: 'empty' }
   }
 
-  private undefinedDef(ctx: any): QuintEx {
-    const id = this.getId(ctx)
-    return { id, kind: 'bool', value: true }
+  private undefinedExpr(ctx: any): () => QuintEx {
+    return () => {
+      console.debug(`[DEBUG] generating undefined expr to fill hole in: ${ctx.text}`)
+      const name = '__undefinedExprGenerated'
+
+      // This is our undefined expr:
+      // val __undefinedExprGenerated = true; __undefinedExprGenerated }
+      // It doesn't cause any name resolution issues while still being easy to spot while debugging
+      return {
+        id: this.getId(ctx),
+        kind: 'let',
+        opdef: {
+          id: this.getId(ctx),
+          kind: 'def',
+          qualifier: 'val',
+          name,
+          expr: { id: this.getId(ctx), kind: 'bool', value: true },
+        },
+        expr: { id: this.getId(ctx), kind: 'name', name },
+      }
+    }
+  }
+
+  private undefinedDeclaration(ctx: any): () => QuintDeclaration {
+    return () => {
+      console.debug(`[DEBUG] generating undefined declaration to fill hole in: ${ctx.text}`)
+      const id = this.getId(ctx)
+      return { id, kind: 'assume', name: `_undefinedDeclaration${id}`, assumption: this.undefinedExpr(ctx)() }
+    }
+  }
+
+  private undefinedParam(ctx: any): () => QuintLambdaParameter {
+    return () => {
+      console.debug(`[DEBUG] generating undefined parameter to fill hole in: ${ctx.text}`)
+      const id = this.getId(ctx)
+      return { id, name: `__undefinedParam${id}` }
+    }
+  }
+
+  private undefinedType(ctx: any): () => QuintType {
+    return () => {
+      console.debug(`[DEBUG] generating undefined type to fill hole in: ${ctx.text}`)
+      const id = this.getId(ctx)
+      return { id, kind: 'var', name: 'undefinedType' }
+    }
+  }
+
+  private undefinedVariant(ctx: any): () => RowField {
+    return () => {
+      console.debug(`[DEBUG] generating undefined variant to fill hole in: ${ctx.text}`)
+      return { fieldName: `__undefinedField`, fieldType: this.undefinedType(ctx)() }
+    }
   }
 
   /**
@@ -1317,12 +1345,15 @@ export class ToIrListener implements QuintListener {
   }
 }
 
-function popMany<T>(stack: T[], n: number): T[] {
+function popMany<T>(stack: T[], n: number, defaultGen: () => T): T[] {
   if (n === 0) {
     // Special case since splice(-0) returns the whole array
     return []
   }
-  assert(stack.length >= n, 'popMany: too few elements in stack')
+  if (stack.length < n) {
+    // Not enough elements in the stack, push default ones.
+    times(n - stack.length, () => stack.push(defaultGen()))
+  }
 
   return stack.splice(-n)
 }

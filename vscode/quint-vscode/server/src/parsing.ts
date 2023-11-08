@@ -32,7 +32,6 @@ export async function parseDocument(idGenerator: IdGenerator, textDocument: Text
       },
       parsePhase3importAndNameResolution,
       parsePhase4toposort,
-      // r => ({ ...r, errors: diagnosticsFromErrors(r.errors, r.sourceMap) })
     ])()
 
     return new Promise((resolve, _reject) => resolve(result))
@@ -40,7 +39,3 @@ export async function parseDocument(idGenerator: IdGenerator, textDocument: Text
     return new Promise((_resolve, reject) => reject(e))
   }
 }
-
-// export function nameResolution(idGenerator: IdGenerator, phase2Data: ParserPhase2): ParserPhase3 {
-//   return parsePhase3importAndNameResolution(phase2Data).chain(phase3Data => parsePhase4toposort(phase3Data))
-// }

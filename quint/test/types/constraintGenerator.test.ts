@@ -185,4 +185,12 @@ describe('ConstraintGeneratorVisitor', () => {
       'Operator expects 2 arguments but was given 1'
     )
   })
+
+  it('catches invalid arity on matchVariant operator', () => {
+    testArityError(
+      'val x = matchVariant("foo", "A")',
+      'Checking arity for application of matchVariant',
+      'Operator expects odd number of arguments but was given 2'
+    )
+  })
 })

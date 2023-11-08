@@ -14,10 +14,10 @@
  */
 
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
-import { Error, buildErrorLeaf } from '../errorTree'
+import { Error, ErrorTree, buildErrorLeaf } from '../errorTree'
 import { expressionToString } from '../ir/IRprinting'
 import { QuintEx } from '../ir/quintIr'
-import { QuintType, QuintVarType } from '../ir/quintTypes'
+import { QuintOperType, QuintType, QuintVarType, sumType } from '../ir/quintTypes'
 import { Constraint } from './base'
 import { chunk, times } from 'lodash'
 import { RowField } from '../ir/quintTypes'
@@ -195,7 +195,7 @@ export function variantConstraints(
   args: [QuintEx, QuintType][],
   resultTypeVar: QuintVarType
 ): Either<Error, Constraint[]> {
-  // `_valuEx : valueType` is checked already via the constaintGenerato
+  // `_valuEx : valueType` is checked already via the constraintGenerator
   const [[labelExpr, labelType], [_valueEx, valueType]] = args
 
   if (labelExpr.kind !== 'str') {
@@ -208,7 +208,7 @@ export function variantConstraints(
   }
 
   // A tuple with item acess of N should have at least N fields
-  // Fill previous fileds with type variables
+  // Fill previous fields with type variables
   const variantField: RowField = { fieldName: labelExpr.value, fieldType: valueType }
 
   const generalVarType: QuintType = {
@@ -223,4 +223,85 @@ export function variantConstraints(
   const propagateResultConstraint: Constraint = { kind: 'eq', types: [resultTypeVar, generalVarType], sourceId: id }
 
   return right([isDefinedConstraint, propagateResultConstraint])
+}
+
+// The rule for the `match` operator:
+//
+// Γ ⊢ e:(s, c)
+// Γ, x1:(t1, c1') ⊢ e1:(t, c1) ... Γ, xn:(tn, cn') ⊢ en:(t, cn)
+// ------------------------------------------------------------------------------
+//  Γ ⊢ match e { i1 : x1 => e1, ..., in : xn => en } : (t, c /\
+//    c1 /\ c1' /\ ... /\ cn /\ cn' /\
+//    s ~ < i1 : t1, ..., in : tn > )
+//
+// Where
+//
+// - < ... > is a row-based variant.
+// - {l1 : x1 => e1, ..., ln : xn => en } coordinates label `li` with an eliminator `xi => ei`
+//   for each label in sum-type `s`.
+//
+// This rule is explained in /doc/rfcs/rfc001-sum-types/rfc001-sum-types.org
+export function matchConstraints(
+  id: bigint,
+  args: [QuintEx, QuintType][],
+  resultTypeVar: QuintVarType
+): Either<Error, Constraint[]> {
+  // A match eliminator has the normal form `matchVariant(expr, 'field1', elim1,..., 'fieldn', elimn)`.
+  // We separate the `expr` we are matching against into the `_variantExpr` and the
+  // `labelsAndCases`, which holds the pairs of field labels and eliminators.
+  const [[_variantExpr, variantType], ...labelsAndcases] = args
+  // We group the `labelsAndCases` in chunks of size 2 fur subsequent analysis.
+  const labelAndElimPairs = chunk(labelsAndcases, 2)
+
+  // Now we verify that each label is a string literal and each eliminator is a unary operator.
+  // This is a well-formedness check prior to checking that the match expression fits the
+  // `sumType` of the value we are matching on.
+  const fieldValidationError: (msg: string) => Either<ErrorTree, [string, QuintType]> = msg =>
+    left(buildErrorLeaf(`Generating match constraints for ${labelsAndcases.map(a => expressionToString(a[0]))}`, msg))
+
+  const validatedFields: Either<ErrorTree, [string, QuintType]>[] = labelAndElimPairs.map(
+    ([[labelExpr, _labelType], [elimExpr, elimType]]) => {
+      return labelExpr.kind !== 'str'
+        ? fieldValidationError(
+            `Match variant name must be a string literal but it is a ${labelExpr.kind}: ${expressionToString(
+              labelExpr
+            )}`
+          )
+        : elimType.kind !== 'oper'
+        ? fieldValidationError(
+            `Match case eliminator must be an operator expression but it is a ${elimType.kind}: ${expressionToString(
+              elimExpr
+            )}`
+          )
+        : elimType.args.length !== 1
+        ? fieldValidationError(
+            `Match case eliminator must be a unary operator but it is an operator of ${
+              elimType.args.length
+            } arguments: ${expressionToString(elimExpr)}`
+          )
+        : right([labelExpr.value, elimType.args[0]]) // The label and associated type of a varaint case
+    }
+  )
+
+  // TODO: Support more expressive and informative type errors.
+  //       This will require tying into the constraint checking system.
+  //       See https://github.com/informalsystems/quint/issues/1231
+  return mergeInMany(validatedFields).map((fields: [string, QuintType][]): Constraint[] => {
+    // Form a constraint ensuring that the match expression fits the sum-type it is applied to:
+    const matchCaseType = sumType(fields) // The sum-type implied by the match elimination cases.
+    // s ~ < i1 : t1, ..., in : tn > )
+    const variantTypeIsMatchCaseType: Constraint = { kind: 'eq', types: [variantType, matchCaseType], sourceId: id }
+
+    // Form a set of constraints ensuring that all the result types of the match cases are the same:
+    // We extract just the types of the eliminator operators, which we've ensured are operators during field validation.
+    const eliminatorOpResultTypes = labelAndElimPairs.map(([_, elim]) => (elim[1] as QuintOperType).res)
+    // These equality constraints implement the fact that all return values of cases, and the value of
+    // the match expression as a whole, are of the same type, `t`
+    const resultTypesAreEqual: Constraint[] = []
+    for (const resultType of eliminatorOpResultTypes) {
+      resultTypesAreEqual.push({ kind: 'eq', types: [resultTypeVar, resultType], sourceId: id })
+    }
+
+    return [variantTypeIsMatchCaseType, ...resultTypesAreEqual]
+  })
 }

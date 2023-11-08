@@ -42,6 +42,7 @@ import {
   fieldConstraints,
   fieldNamesConstraints,
   itemConstraints,
+  matchConstraints,
   recordConstructorConstraints,
   tupleConstructorConstraints,
   variantConstraints,
@@ -222,6 +223,10 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
           // Sum type operators
           case 'variant':
             return validateArity(e.opcode, results, l => l === 2, '2').chain(() => variantConstraints(e.id, results, a))
+          case 'matchVariant':
+            return validateArity(e.opcode, results, l => l % 2 !== 0, 'odd number of').chain(() =>
+              matchConstraints(e.id, results, a)
+            )
           // Otherwise it's a standard operator with a definition in the context
           default:
             return definedSignature.map(t1 => {
