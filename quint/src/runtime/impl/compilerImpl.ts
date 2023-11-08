@@ -696,6 +696,14 @@ export class CompilerVisitor implements IRVisitor {
           })
           break
 
+        case 'variant':
+          // Construct a variant of a sum type.
+          this.applyFun(app.id, 2, (labelName, value) => just(rv.mkVariant(labelName.toStr(), value)))
+          break
+
+        case 'matchVariant':
+          assert(false, 'TODO: https://github.com/informalsystems/quint/issues/1033')
+
         case 'Set':
           // Construct a set from an array of values.
           this.applyFun(app.id, app.args.length, (...values: RuntimeValue[]) => just(rv.mkSet(values)))
@@ -930,8 +938,6 @@ export class CompilerVisitor implements IRVisitor {
           break
 
         // builtin operators that are not handled by REPL
-        case 'variant': // TODO: https://github.com/informalsystems/quint/issues/1033
-        case 'matchVariant': // TODO: https://github.com/informalsystems/quint/issues/1033
         case 'orKeep':
         case 'mustChange':
         case 'weakFair':
