@@ -20,7 +20,7 @@ export function lowercaseTypeError(id: bigint, name: string): QuintError {
 export function tooManySpreadsError(id: bigint): QuintError {
   return {
     code: 'QNT012',
-    message: '... may be used once in { ...record, <fields> ',
+    message: '... may be used once in { ...record, <fields> }',
     reference: id,
     data: {},
   }
