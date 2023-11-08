@@ -46,9 +46,7 @@ result () {
     fi
 
     # Print additional explanations
-    if [[ "$file" == "classic/distributed/ewd840/ewd840.qnt" && ( "$cmd" != "parse" ) ]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/issues/581</sup>"
-    elif [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" && ( "$cmd" == "test" || "$cmd" == "verify" )]] ; then
+    if [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" && ( "$cmd" == "test" || "$cmd" == "verify" )]] ; then
       printf "<sup>https://github.com/informalsystems/quint/issues/244</sup>"
     elif [[ "$file" == "classic/distributed/Paxos/Voting.qnt" && ( "$cmd" == "test" || "$cmd" == "verify" )]] ; then
       printf "<sup>https://github.com/informalsystems/quint/issues/244</sup>"
@@ -66,6 +64,8 @@ get_main () {
     main="--main=LamportMutex_3_10"
   elif [[ "$file" == "classic/distributed/ReadersWriters/ReadersWriters.qnt" ]] ; then
     main="--main=ReadersWriters_5"
+  elif [[ "$file" == "classic/distributed/ewd840/ewd840.qnt" ]] ; then
+    main="--main=ewd840_3"
   elif [[ "$file" == "classic/sequential/BinSearch/BinSearch.qnt" ]] ; then
     main="--main=BinSearch10"
   elif [[ "$file" == "cosmos/ics20/bank.qnt" ]] ; then
