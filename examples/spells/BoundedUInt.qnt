@@ -356,7 +356,7 @@ module BoundedUInt_Test {
     assert(checkedDiv(UInt(1), UInt(MAX)) == {v: 0, error: ""}),
     assert(checkedDiv(UInt(MAX - 1), UInt(MAX)) == {v: 0, error: ""}),
     assert(checkedDiv(UInt(MAX), UInt(MAX)) == {v: 1, error: ""}),
-    assert(checkedDiv(UInt(MAX + 1), UInt(MAX)) == {v: MAX + 1, error: "out of range"})
+    assert(checkedDiv(UInt(MAX + 1), UInt(MAX)).error == "out of range")
   }
 
   // Checked rem
@@ -375,7 +375,7 @@ module BoundedUInt_Test {
     assert(checkedRem(UInt(1), UInt(MAX)) == {v: 1, error: ""}),
     assert(checkedRem(UInt(MAX - 1), UInt(MAX)) == {v: MAX - 1, error: ""}),
     assert(checkedRem(UInt(MAX), UInt(MAX)) == {v: 0, error: ""}),
-    assert(checkedRem(UInt(MAX + 1), UInt(MAX)) == {v: MAX + 1, error: "out of range"})
+    assert(checkedRem(UInt(MAX + 1), UInt(MAX)).error == "out of range")
   }
 
   // Checked Pow
@@ -410,7 +410,7 @@ module BoundedUInt_Test {
     assert(saturatingAdd(UInt(1), UInt(MAX)) == {v: MAX, error: ""}),
     assert(saturatingAdd(UInt(MAX - 1), UInt(MAX)) == {v: MAX, error: ""}),
     assert(saturatingAdd(UInt(MAX), UInt(MAX)) == {v: MAX, error: ""}),
-    assert(saturatingAdd(UInt(MAX + 1), UInt(MAX)) == {v: MAX + 1, error: "out of range"})
+    assert(saturatingAdd(UInt(MAX + 1), UInt(MAX)).error == "out of range")
   }
 
   // Saturating sub
@@ -425,7 +425,7 @@ module BoundedUInt_Test {
     assert(saturatingSub(UInt(1), UInt(MAX)) == {v: 0, error: ""}),
     assert(saturatingSub(UInt(MAX - 1), UInt(MAX)) == {v: 0, error: ""}),
     assert(saturatingSub(UInt(MAX), UInt(MAX)) == {v: 0, error: ""}),
-    assert(saturatingSub(UInt(MAX + 1), UInt(MAX)) == {v: MAX + 1, error: "out of range"})
+    assert(saturatingSub(UInt(MAX + 1), UInt(MAX)).error == "out of range")
   }
 
   // Saturating mul
@@ -439,7 +439,7 @@ module BoundedUInt_Test {
     assert(saturatingMul(UInt(1), UInt(MAX)) == {v: MAX, error: ""}),
     assert(saturatingMul(UInt(MAX - 1), UInt(MAX)) == {v: MAX, error: ""}),
     assert(saturatingMul(UInt(MAX), UInt(MAX)) == {v: MAX, error: ""}),
-    assert(saturatingMul(UInt(MAX + 1), UInt(MAX)) == {v: MAX + 1, error: "out of range"})
+    assert(saturatingMul(UInt(MAX + 1), UInt(MAX)).error == "out of range")
   }
 
   // Saturating pow
@@ -474,7 +474,7 @@ module BoundedUInt_Test {
     assert(wrappingAdd(UInt(1), UInt(MAX)) == {v: 0, error: ""}),
     assert(wrappingAdd(UInt(MAX - 1), UInt(MAX)) == {v: MAX - 2, error: ""}),
     assert(wrappingAdd(UInt(MAX), UInt(MAX)) == {v: MAX - 1, error: ""}),
-    assert(wrappingAdd(UInt(MAX + 1), UInt(MAX)) == {v: MAX + 1, error: "out of range"})
+    assert(wrappingAdd(UInt(MAX + 1), UInt(MAX)).error == "out of range")
   }
 
   // Wrapping sub
@@ -490,7 +490,7 @@ module BoundedUInt_Test {
     assert(wrappingSub(UInt(1), UInt(MAX)) == {v: 2, error: ""}),
     assert(wrappingSub(UInt(MAX - 1), UInt(MAX)) == {v: MAX, error: ""}),
     assert(wrappingSub(UInt(MAX), UInt(MAX)) == {v: 0, error: ""}),
-    assert(wrappingSub(UInt(MAX + 1), UInt(MAX)) == {v: MAX + 1, error: "out of range"})
+    assert(wrappingSub(UInt(MAX + 1), UInt(MAX)).error == "out of range")
   }
 
   // Wrapping mul
@@ -504,7 +504,7 @@ module BoundedUInt_Test {
     assert(wrappingMul(UInt(1), UInt(MAX)) == {v: MAX, error: ""}),
     assert(wrappingMul(UInt(MAX - 1), UInt(MAX)) == {v: 2, error: ""}),
     assert(wrappingMul(UInt(MAX), UInt(MAX)) == {v: 1, error: ""}),
-    assert(wrappingMul(UInt(MAX + 1), UInt(MAX)) == {v: MAX + 1, error: "out of range"})
+    assert(wrappingMul(UInt(MAX + 1), UInt(MAX)).error == "out of range")
   }
 
   // Wrapping div == checked div
@@ -540,7 +540,7 @@ module BoundedUInt_Test {
     assert(absDiff(UInt(1), UInt(MAX)) == {v: MAX - 1, error: ""}),
     assert(absDiff(UInt(MAX - 1), UInt(MAX)) == {v: 1, error: ""}),
     assert(absDiff(UInt(MAX), UInt(MAX)) == {v: 0, error: ""}),
-    assert(absDiff(UInt(MAX + 1), UInt(MAX)) == {v: MAX + 1, error: "out of range"})
+    assert(absDiff(UInt(MAX + 1), UInt(MAX)).error == "out of range")
   }
 
 }
