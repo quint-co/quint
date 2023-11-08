@@ -4,7 +4,7 @@ import { Either, left, right } from '@sweet-monads/either'
 import { just } from '@sweet-monads/maybe'
 import { expressionToString } from '../../src/ir/IRprinting'
 import { Computable, ComputableKind, fail, kindName } from '../../src/runtime/runtime'
-import { noExecutionListener } from '../../src/runtime/trace'
+import { newTraceRecorder, noExecutionListener } from '../../src/runtime/trace'
 import {
   CompilationContext,
   CompilationState,
@@ -14,6 +14,7 @@ import {
   compileFromCode,
   contextNameLookup,
   inputDefName,
+  newCompilationState,
 } from '../../src/runtime/compile'
 import { RuntimeValue } from '../../src/runtime/impl/runtimeValue'
 import { dedent } from '../textUtils'
@@ -1051,12 +1052,12 @@ describe('incremental compilation', () => {
         compilationState.idGen,
         compilationState.sourceMap
       )
-      const def = parsed.kind === 'declaration' ? parsed.decl : undefined
-      const context = compileDecl(compilationState, evaluationState, dummyRng, def!)
+      const defs = parsed.kind === 'declaration' ? parsed.decls : undefined
+      const context = compileDecl(compilationState, evaluationState, dummyRng, defs!)
 
-      assert.deepEqual(context.compilationState.analysisOutput.types.get(def!.id)?.type, { kind: 'int', id: 3n })
+      assert.deepEqual(context.compilationState.analysisOutput.types.get(defs![0].id)?.type, { kind: 'int', id: 3n })
 
-      const computable = context.evaluationState?.context.get(kindName('callable', def!.id))!
+      const computable = context.evaluationState?.context.get(kindName('callable', defs![0].id))!
       assertComputableAsString(computable, '3')
     })
 
@@ -1072,8 +1073,8 @@ describe('incremental compilation', () => {
         compilationState.idGen,
         compilationState.sourceMap
       )
-      const decl = parsed.kind === 'declaration' ? parsed.decl : undefined
-      const context = compileDecl(compilationState, evaluationState, dummyRng, decl!)
+      const decls = parsed.kind === 'declaration' ? parsed.decls : []
+      const context = compileDecl(compilationState, evaluationState, dummyRng, decls)
 
       assert.sameDeepMembers(context.syntaxErrors, [
         {
@@ -1083,6 +1084,46 @@ describe('incremental compilation', () => {
           data: {},
         },
       ])
+    })
+
+    it('can complile type alias declarations', () => {
+      const { compilationState, evaluationState } = compileModules('module m {}', 'm')
+      const parsed = parseExpressionOrDeclaration(
+        'type T = int',
+        'test.qnt',
+        compilationState.idGen,
+        compilationState.sourceMap
+      )
+      const decls = parsed.kind === 'declaration' ? parsed.decls : []
+      const context = compileDecl(compilationState, evaluationState, dummyRng, decls)
+
+      const typeDecl = decls[0]
+      assert(typeDecl.kind === 'typedef')
+      assert(typeDecl.name === 'T')
+      assert(typeDecl.type!.kind === 'int')
+
+      assert.sameDeepMembers(context.syntaxErrors, [])
+    })
+
+    it('can compile sum type declarations', () => {
+      const { compilationState, evaluationState } = compileModules('module m {}', 'm')
+      const parsed = parseExpressionOrDeclaration(
+        'type T = A(int) | B(str) | C',
+        'test.qnt',
+        compilationState.idGen,
+        compilationState.sourceMap
+      )
+      const decls = parsed.kind === 'declaration' ? parsed.decls : []
+      const context = compileDecl(compilationState, evaluationState, dummyRng, decls)
+
+      assert(decls.find(t => t.kind === 'typedef' && t.name === 'T'))
+      // Sum type declarations are expanded to add an
+      // operator declaration for each constructor:
+      assert(decls.find(t => t.kind === 'def' && t.name === 'A'))
+      assert(decls.find(t => t.kind === 'def' && t.name === 'B'))
+      assert(decls.find(t => t.kind === 'def' && t.name === 'C'))
+
+      assert.sameDeepMembers(context.syntaxErrors, [])
     })
   })
 })

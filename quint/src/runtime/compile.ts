@@ -184,7 +184,7 @@ export function compileExpr(
   // Hence, we have to compile it via an auxilliary definition.
   const def: QuintDef = { kind: 'def', qualifier: 'action', name: inputDefName, expr, id: state.idGen.nextId() }
 
-  return compileDecl(state, evaluationState, rng, def)
+  return compileDecl(state, evaluationState, rng, [def])
 }
 
 /**
@@ -195,7 +195,7 @@ export function compileExpr(
  * @param state - The current compilation state
  * @param evaluationState - The current evaluation state
  * @param rng - The random number generator
- * @param decl - The Quint declaration to be compiled
+ * @param decls - The Quint declarations to be compiled
  *
  * @returns A compilation context with the compiled definition or its errors
  */
@@ -203,7 +203,7 @@ export function compileDecl(
   state: CompilationState,
   evaluationState: EvaluationState,
   rng: Rng,
-  decl: QuintDeclaration
+  decls: QuintDeclaration[]
 ): CompilationContext {
   if (state.originalModules.length === 0 || state.modules.length === 0) {
     throw new Error('No modules in state')
@@ -213,7 +213,7 @@ export function compileDecl(
   // ensuring the original object is not modified
   const originalModules = state.originalModules.map(m => {
     if (m.name === state.mainName) {
-      return { ...m, declarations: [...m.declarations, decl] }
+      return { ...m, declarations: [...m.declarations, ...decls] }
     }
     return m
   })
@@ -233,7 +233,7 @@ export function compileDecl(
     return errorContextFromMessage(evaluationState.listener)({ errors, sourceMap: state.sourceMap })
   }
 
-  const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, decl)
+  const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, decls)
 
   const {
     flattenedModules: flatModules,

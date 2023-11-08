@@ -582,7 +582,7 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
   }
   if (parseResult.kind === 'declaration') {
     // compile the module and add it to history if everything worked
-    const context = compileDecl(state.compilationState, state.evaluationState, state.rng, parseResult.decl)
+    const context = compileDecl(state.compilationState, state.evaluationState, state.rng, parseResult.decls)
 
     if (
       context.evaluationState.context.size === 0 ||

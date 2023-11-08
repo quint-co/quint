@@ -57,10 +57,10 @@ export function analyzeModules(lookupTable: LookupTable, quintModules: QuintModu
 export function analyzeInc(
   analysisOutput: AnalysisOutput,
   lookupTable: LookupTable,
-  declaration: QuintDeclaration
+  declarations: QuintDeclaration[]
 ): AnalysisResult {
   const analyzer = new QuintAnalyzer(lookupTable, analysisOutput)
-  analyzer.analyzeDeclaration(declaration)
+  analyzer.analyzeDeclaration(declarations)
   return analyzer.getResult()
 }
 
@@ -94,8 +94,8 @@ class QuintAnalyzer {
     this.analyzeDeclarations(module.declarations)
   }
 
-  analyzeDeclaration(decl: QuintDeclaration): void {
-    this.analyzeDeclarations([decl])
+  analyzeDeclaration(decl: QuintDeclaration[]): void {
+    this.analyzeDeclarations(decl)
   }
 
   private analyzeDeclarations(decls: QuintDeclaration[]): void {

@@ -67,10 +67,10 @@ export interface ParserPhase3 extends ParserPhase2 {
 export interface ParserPhase4 extends ParserPhase3 {}
 
 /**
- * The result of parsing an expression or unit.
+ * The result of parsing an expression or collection of declarations.
  */
 export type ExpressionOrDeclarationParseResult =
-  | { kind: 'declaration'; decl: QuintDeclaration }
+  | { kind: 'declaration'; decls: QuintDeclaration[] }
   | { kind: 'expr'; expr: QuintEx }
   | { kind: 'none' }
   | { kind: 'error'; errors: QuintError[] }
@@ -327,8 +327,8 @@ export function parse(
 
 export function parseDefOrThrow(text: string, idGen?: IdGenerator, sourceMap?: SourceMap): QuintDef {
   const result = parseExpressionOrDeclaration(text, '<builtins>', idGen ?? newIdGenerator(), sourceMap ?? new Map())
-  if (result.kind === 'declaration' && isDef(result.decl)) {
-    return result.decl
+  if (result.kind === 'declaration' && isDef(result.decls[0])) {
+    return result.decls[0]
   } else {
     const msg = result.kind === 'error' ? result.errors.join('\n') : `Expected a definition, got ${result.kind}`
     throw new Error(`${msg}, parsing ${text}`)
@@ -383,8 +383,9 @@ class ExpressionOrDeclarationListener extends ToIrListener {
 
   exitDeclarationOrExpr(ctx: p.DeclarationOrExprContext) {
     if (ctx.declaration()) {
-      const decl = this.declarationStack[this.declarationStack.length - 1]
-      this.result = { kind: 'declaration', decl }
+      const prevDecls = this.result?.kind === 'declaration' ? this.result.decls : []
+      const decls = this.declarationStack
+      this.result = { kind: 'declaration', decls: [...prevDecls, ...decls] }
     } else if (ctx.expr()) {
       const expr = this.exprStack[this.exprStack.length - 1]
       this.result = { kind: 'expr', expr }

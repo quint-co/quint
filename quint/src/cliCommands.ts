@@ -622,7 +622,7 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
   }
 
   verifying.table = resolutionResult.table
-  extraDefs.forEach(def => analyzeInc(verifying, verifying.table, def))
+  analyzeInc(verifying, verifying.table, extraDefs)
 
   // Flatten modules, replacing instances, imports and exports with their definitions
   const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
