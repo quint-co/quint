@@ -30,8 +30,12 @@ const idGen = newIdGenerator()
 
 // Compile an expression, evaluate it, convert to QuintEx, then to a string,
 // compare the result. This is the easiest path to test the results.
-function assertResultAsString(input: string, expected: string | undefined) {
-  const moduleText = `module __runtime { val ${inputDefName} = ${input} }`
+//
+// @param evalContext optional textual representation of context that may hold definitions which
+//        `input` depends on. This content will be wrapped in a module and imported unqualified
+//        before the input is evaluated. If not supplied, the context is empty.
+function assertResultAsString(input: string, expected: string | undefined, evalContext: string = '') {
+  const moduleText = `module contextM { ${evalContext} } module __runtime { import contextM.*\n val ${inputDefName} = ${input} }`
   const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
   const context = compileFromCode(idGen, moduleText, '__runtime', mockLookupPath, noExecutionListener, newRng().next)
 
@@ -835,6 +839,14 @@ describe('compiling specs to runtime values', () => {
       // The following query should not be possible, due to the type checker.
       // Just in case, we check that the simulator returns 'undefined'.
       assertResultAsString('{ a: 2, b: true }.with("c", 3)', undefined)
+    })
+  })
+
+  describe('compile over sum types', () => {
+    it('can compile construction of sum type variants', () => {
+      const context = 'type T = Some(int) | None'
+      assertResultAsString('Some(40 + 2)', 'variant("Some", 42)', context)
+      assertResultAsString('None', 'variant("None", Rec())', context)
     })
   })
 
