@@ -101,6 +101,20 @@ export function prettyQuintEx(ex: QuintEx): Doc {
           return nary(text('{'), kvs, text('}'), line())
         }
 
+        case 'variant': {
+          const labelExpr = ex.args[0]
+          assert(labelExpr.kind === 'str', 'malformed variant operator')
+          const label = richtext(chalk.green, labelExpr.value)
+
+          const valueExpr = ex.args[1]
+          const value =
+            valueExpr.kind === 'app' && valueExpr.opcode === 'Rec' && valueExpr.args.length === 0
+              ? [] // A payload with the empty record is shown as a bare label
+              : [text('('), prettyQuintEx(valueExpr), text(')')]
+
+          return group([label, ...value])
+        }
+
         default:
           // instead of throwing, show it in red
           return richtext(chalk.red, `unsupported operator: ${ex.opcode}(...)`)

@@ -9,7 +9,7 @@ import {
   CompilationContext,
   CompilationState,
   compile,
-  compileDecl,
+  compileDecls,
   compileExpr,
   compileFromCode,
   contextNameLookup,
@@ -29,8 +29,12 @@ const idGen = newIdGenerator()
 
 // Compile an expression, evaluate it, convert to QuintEx, then to a string,
 // compare the result. This is the easiest path to test the results.
-function assertResultAsString(input: string, expected: string | undefined) {
-  const moduleText = `module __runtime { val ${inputDefName} = ${input} }`
+//
+// @param evalContext optional textual representation of context that may hold definitions which
+//        `input` depends on. This content will be wrapped in a module and imported unqualified
+//        before the input is evaluated. If not supplied, the context is empty.
+function assertResultAsString(input: string, expected: string | undefined, evalContext: string = '') {
+  const moduleText = `module contextM { ${evalContext} } module __runtime { import contextM.*\n val ${inputDefName} = ${input} }`
   const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
   const context = compileFromCode(idGen, moduleText, '__runtime', mockLookupPath, noExecutionListener, newRng().next)
 
@@ -837,6 +841,26 @@ describe('compiling specs to runtime values', () => {
     })
   })
 
+  describe('compile over sum types', () => {
+    it('can compile construction of sum type variants', () => {
+      const context = 'type T = Some(int) | None'
+      assertResultAsString('Some(40 + 2)', 'variant("Some", 42)', context)
+      assertResultAsString('None', 'variant("None", Rec())', context)
+    })
+
+    it('can compile elimination of sum type variants via match', () => {
+      const context = 'type T = Some(int) | None'
+      assertResultAsString('match Some(40 + 2) { Some(x) => x | None => 0 }', '42', context)
+      assertResultAsString('match None { Some(x) => x | None => 0 }', '0', context)
+    })
+
+    it('can compile elimination of sum type variants via match using default', () => {
+      const context = 'type T = Some(int) | None'
+      // We can hit the fallback case
+      assertResultAsString('match None { Some(x) => x | _ => 3 }', '3', context)
+    })
+  })
+
   describe('compile over maps', () => {
     it('mapBy constructor', () => {
       assertResultAsString('3.to(5).mapBy(i => 2 * i)', 'Map(Tup(3, 6), Tup(4, 8), Tup(5, 10))')
@@ -1051,12 +1075,12 @@ describe('incremental compilation', () => {
         compilationState.idGen,
         compilationState.sourceMap
       )
-      const def = parsed.kind === 'declaration' ? parsed.decl : undefined
-      const context = compileDecl(compilationState, evaluationState, dummyRng, def!)
+      const defs = parsed.kind === 'declaration' ? parsed.decls : undefined
+      const context = compileDecls(compilationState, evaluationState, dummyRng, defs!)
 
-      assert.deepEqual(context.compilationState.analysisOutput.types.get(def!.id)?.type, { kind: 'int', id: 3n })
+      assert.deepEqual(context.compilationState.analysisOutput.types.get(defs![0].id)?.type, { kind: 'int', id: 3n })
 
-      const computable = context.evaluationState?.context.get(kindName('callable', def!.id))!
+      const computable = context.evaluationState?.context.get(kindName('callable', defs![0].id))!
       assertComputableAsString(computable, '3')
     })
 
@@ -1072,8 +1096,8 @@ describe('incremental compilation', () => {
         compilationState.idGen,
         compilationState.sourceMap
       )
-      const decl = parsed.kind === 'declaration' ? parsed.decl : undefined
-      const context = compileDecl(compilationState, evaluationState, dummyRng, decl!)
+      const decls = parsed.kind === 'declaration' ? parsed.decls : []
+      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
 
       assert.sameDeepMembers(context.syntaxErrors, [
         {
@@ -1083,6 +1107,46 @@ describe('incremental compilation', () => {
           data: {},
         },
       ])
+    })
+
+    it('can complile type alias declarations', () => {
+      const { compilationState, evaluationState } = compileModules('module m {}', 'm')
+      const parsed = parseExpressionOrDeclaration(
+        'type T = int',
+        'test.qnt',
+        compilationState.idGen,
+        compilationState.sourceMap
+      )
+      const decls = parsed.kind === 'declaration' ? parsed.decls : []
+      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
+
+      const typeDecl = decls[0]
+      assert(typeDecl.kind === 'typedef')
+      assert(typeDecl.name === 'T')
+      assert(typeDecl.type!.kind === 'int')
+
+      assert.sameDeepMembers(context.syntaxErrors, [])
+    })
+
+    it('can compile sum type declarations', () => {
+      const { compilationState, evaluationState } = compileModules('module m {}', 'm')
+      const parsed = parseExpressionOrDeclaration(
+        'type T = A(int) | B(str) | C',
+        'test.qnt',
+        compilationState.idGen,
+        compilationState.sourceMap
+      )
+      const decls = parsed.kind === 'declaration' ? parsed.decls : []
+      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
+
+      assert(decls.find(t => t.kind === 'typedef' && t.name === 'T'))
+      // Sum type declarations are expanded to add an
+      // operator declaration for each constructor:
+      assert(decls.find(t => t.kind === 'def' && t.name === 'A'))
+      assert(decls.find(t => t.kind === 'def' && t.name === 'B'))
+      assert(decls.find(t => t.kind === 'def' && t.name === 'C'))
+
+      assert.sameDeepMembers(context.syntaxErrors, [])
     })
   })
 })

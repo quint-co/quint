@@ -1,8 +1,7 @@
 module option {
-  // a demonstration of discriminated unions, specifying an option type.
+  // A demonstration of sum types, specifying an option type.
 
   // An option type for values.
-  // This type declaration is not required. It only defines an alias.
   type Vote_option =
     | None
     | Some(int)
