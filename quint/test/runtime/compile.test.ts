@@ -4,7 +4,7 @@ import { Either, left, right } from '@sweet-monads/either'
 import { just } from '@sweet-monads/maybe'
 import { expressionToString } from '../../src/ir/IRprinting'
 import { Computable, ComputableKind, fail, kindName } from '../../src/runtime/runtime'
-import { newTraceRecorder, noExecutionListener } from '../../src/runtime/trace'
+import { noExecutionListener } from '../../src/runtime/trace'
 import {
   CompilationContext,
   CompilationState,
@@ -14,7 +14,6 @@ import {
   compileFromCode,
   contextNameLookup,
   inputDefName,
-  newCompilationState,
 } from '../../src/runtime/compile'
 import { RuntimeValue } from '../../src/runtime/impl/runtimeValue'
 import { dedent } from '../textUtils'

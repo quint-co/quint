@@ -38,9 +38,6 @@ import { ErrorCode, QuintError } from '../../quintError'
 import { inputDefName, lastTraceName } from '../compile'
 import { unreachable } from '../../util'
 import { chunk } from 'lodash'
-import { prettyQuintEx } from '../../graphics'
-import { expressionToString } from '../../ir/IRprinting'
-import { newIdGenerator } from '../../idGenerator'
 
 // Internal names in the compiler, which have special treatment.
 // For some reason, if we replace 'q::input' with inputDefName, everything breaks.
