@@ -9,7 +9,7 @@ import {
   CompilationContext,
   CompilationState,
   compile,
-  compileDecl,
+  compileDecls,
   compileExpr,
   compileFromCode,
   contextNameLookup,
@@ -1076,7 +1076,7 @@ describe('incremental compilation', () => {
         compilationState.sourceMap
       )
       const defs = parsed.kind === 'declaration' ? parsed.decls : undefined
-      const context = compileDecl(compilationState, evaluationState, dummyRng, defs!)
+      const context = compileDecls(compilationState, evaluationState, dummyRng, defs!)
 
       assert.deepEqual(context.compilationState.analysisOutput.types.get(defs![0].id)?.type, { kind: 'int', id: 3n })
 
@@ -1097,7 +1097,7 @@ describe('incremental compilation', () => {
         compilationState.sourceMap
       )
       const decls = parsed.kind === 'declaration' ? parsed.decls : []
-      const context = compileDecl(compilationState, evaluationState, dummyRng, decls)
+      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
 
       assert.sameDeepMembers(context.syntaxErrors, [
         {
@@ -1118,7 +1118,7 @@ describe('incremental compilation', () => {
         compilationState.sourceMap
       )
       const decls = parsed.kind === 'declaration' ? parsed.decls : []
-      const context = compileDecl(compilationState, evaluationState, dummyRng, decls)
+      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
 
       const typeDecl = decls[0]
       assert(typeDecl.kind === 'typedef')
@@ -1137,7 +1137,7 @@ describe('incremental compilation', () => {
         compilationState.sourceMap
       )
       const decls = parsed.kind === 'declaration' ? parsed.decls : []
-      const context = compileDecl(compilationState, evaluationState, dummyRng, decls)
+      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
 
       assert(decls.find(t => t.kind === 'typedef' && t.name === 'T'))
       // Sum type declarations are expanded to add an

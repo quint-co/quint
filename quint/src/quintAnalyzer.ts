@@ -60,7 +60,7 @@ export function analyzeInc(
   declarations: QuintDeclaration[]
 ): AnalysisResult {
   const analyzer = new QuintAnalyzer(lookupTable, analysisOutput)
-  analyzer.analyzeDeclaration(declarations)
+  analyzer.analyzeDeclarations(declarations)
   return analyzer.getResult()
 }
 
@@ -94,11 +94,7 @@ class QuintAnalyzer {
     this.analyzeDeclarations(module.declarations)
   }
 
-  analyzeDeclaration(decl: QuintDeclaration[]): void {
-    this.analyzeDeclarations(decl)
-  }
-
-  private analyzeDeclarations(decls: QuintDeclaration[]): void {
+  analyzeDeclarations(decls: QuintDeclaration[]): void {
     const [typeErrMap, types] = this.typeInferrer.inferTypes(decls)
     const [effectErrMap, effects] = this.effectInferrer.inferEffects(decls)
     const updatesErrMap = this.multipleUpdatesChecker.checkEffects([...effects.values()])

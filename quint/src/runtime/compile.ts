@@ -184,7 +184,7 @@ export function compileExpr(
   // Hence, we have to compile it via an auxilliary definition.
   const def: QuintDef = { kind: 'def', qualifier: 'action', name: inputDefName, expr, id: state.idGen.nextId() }
 
-  return compileDecl(state, evaluationState, rng, [def])
+  return compileDecls(state, evaluationState, rng, [def])
 }
 
 /**
@@ -199,7 +199,7 @@ export function compileExpr(
  *
  * @returns A compilation context with the compiled definition or its errors
  */
-export function compileDecl(
+export function compileDecls(
   state: CompilationState,
   evaluationState: EvaluationState,
   rng: Rng,
