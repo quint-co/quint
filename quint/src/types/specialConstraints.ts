@@ -256,39 +256,46 @@ export function matchConstraints(
   // Now we verify that each label is a string literal and each eliminator is a unary operator.
   // This is a well-formedness check prior to checking that the match expression fits the
   // `sumType` of the value we are matching on.
-  const fieldValidationError: (msg: string) => Either<ErrorTree, [string, QuintType]> = msg =>
-    left(buildErrorLeaf(`Generating match constraints for ${labelsAndcases.map(a => expressionToString(a[0]))}`, msg))
-
-  const validatedFields: Either<ErrorTree, [string, QuintType]>[] = labelAndElimPairs.map(
-    ([[labelExpr, _labelType], [elimExpr, elimType]]) => {
-      return labelExpr.kind !== 'str'
-        ? fieldValidationError(
-            `Match variant name must be a string literal but it is a ${labelExpr.kind}: ${expressionToString(
-              labelExpr
-            )}`
-          )
-        : elimType.kind !== 'oper'
-        ? fieldValidationError(
-            `Match case eliminator must be an operator expression but it is a ${elimType.kind}: ${expressionToString(
-              elimExpr
-            )}`
-          )
-        : elimType.args.length !== 1
-        ? fieldValidationError(
-            `Match case eliminator must be a unary operator but it is an operator of ${
-              elimType.args.length
-            } arguments: ${expressionToString(elimExpr)}`
-          )
-        : right([labelExpr.value, elimType.args[0]]) // The label and associated type of a varaint case
-    }
-  )
+  const validatedFields: Either<ErrorTree, [string, QuintType]>[] = []
+  const fieldValidationError = (msg: string) =>
+    validatedFields.push(
+      left(buildErrorLeaf(`Generating match constraints for ${labelsAndcases.map(a => expressionToString(a[0]))}`, msg))
+    )
+  let wildCardMatch = false
+  for (const [[labelExpr, _labelType], [elimExpr, elimType]] of labelAndElimPairs) {
+    labelExpr.kind !== 'str'
+      ? fieldValidationError(
+          `Match variant name must be a string literal but it is a ${labelExpr.kind}: ${expressionToString(labelExpr)}`
+        )
+      : elimType.kind !== 'oper'
+      ? fieldValidationError(
+          `Match case eliminator must be an operator expression but it is a ${elimType.kind}: ${expressionToString(
+            elimExpr
+          )}`
+        )
+      : elimType.args.length !== 1
+      ? fieldValidationError(
+          `Match case eliminator must be a unary operator but it is an operator of ${
+            elimType.args.length
+          } arguments: ${expressionToString(elimExpr)}`
+        )
+      : !wildCardMatch && labelExpr.value === '_'
+      ? (wildCardMatch = true) // The wildcard case, `_ => foo`, means we can match anything else
+      : wildCardMatch // There should only ever be 1 wilcard match, and it should be the last case
+      ? fieldValidationError(
+          `Invalid wildcard match ('_') in match expression: ${expressionToString(
+            elimExpr
+          )}. Only one wildcard can appear and it must be the final case of a match.`
+        )
+      : validatedFields.push(right([labelExpr.value, elimType.args[0]])) // The label and associated type of a variant case
+  }
 
   // TODO: Support more expressive and informative type errors.
   //       This will require tying into the constraint checking system.
   //       See https://github.com/informalsystems/quint/issues/1231
   return mergeInMany(validatedFields).map((fields: [string, QuintType][]): Constraint[] => {
     // Form a constraint ensuring that the match expression fits the sum-type it is applied to:
-    const matchCaseType = sumType(fields) // The sum-type implied by the match elimination cases.
+    const matchCaseType = wildCardMatch ? sumType(fields, `${resultTypeVar.name}_wildcard`) : sumType(fields) // The sum-type implied by the match elimination cases.
     // s ~ < i1 : t1, ..., in : tn > )
     const variantTypeIsMatchCaseType: Constraint = { kind: 'eq', types: [variantType, matchCaseType], sourceId: id }
 

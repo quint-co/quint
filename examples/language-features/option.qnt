@@ -37,4 +37,9 @@ module option {
     },
     outcome' = SumVotes
   }
+
+  run matchWithDefaultTest = {
+    val expected = match Some(42) { _ => "default" }
+    assert(expected == "default")
+  }
 }
