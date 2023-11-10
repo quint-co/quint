@@ -197,6 +197,13 @@ describe('inferTypes', () => {
     ])
   })
 
+  it('infers types for match expression with wildcard case', () => {
+    const defs = ['type T = A(int) | B', 'val nine : int = match B { _ => 9 }']
+
+    const [errors, _] = inferTypesForDefs(defs)
+    assert.isEmpty(errors)
+  })
+
   it('reports a type error for match expressions that return inconsitent types in cases', () => {
     const defs = [
       'type T = A(int) | B',
@@ -207,6 +214,30 @@ describe('inferTypes', () => {
     const [errors, _] = inferTypesForDefs(defs)
     assert.isNotEmpty(errors)
     assert.match([...errors.values()].map(errorTreeToString)[0], RegExp("Couldn't unify int and str"))
+  })
+
+  it('reports a type error for match expressions with multiple wildcard cases', () => {
+    const defs = [
+      'type T = A(int) | B | C',
+      'val a = variant("A", 3)',
+      'val nine = match B { A(n) => "OK" | _ => "first wilcard" | _ => "second, invalid wildcard" }',
+    ]
+
+    const [errors, _] = inferTypesForDefs(defs)
+    assert.isNotEmpty(errors)
+    assert.match([...errors.values()].map(errorTreeToString)[0], RegExp('Invalid wildcard match'))
+  })
+
+  it('reports a type error for match expressions with non-final wildcard case', () => {
+    const defs = [
+      'type T = A(int) | B | C',
+      'val a = variant("A", 3)',
+      'val nine = match B { A(n) => "OK" | _ => "invalid, non-final wilcard" | C => "OK" }',
+    ]
+
+    const [errors, _] = inferTypesForDefs(defs)
+    assert.isNotEmpty(errors)
+    assert.match([...errors.values()].map(errorTreeToString)[0], RegExp('Invalid wildcard match'))
   })
 
   it('reports a type error for match expressions on non-variant expressions', () => {
@@ -221,7 +252,7 @@ describe('inferTypes', () => {
   })
 
   it('reports a type error for matchVariant operator with non-label arguments', () => {
-    const defs = ['type T = A(int) | B', 'val a = variant("A", 3)', 'val nine = matchVariant(a, 3, 9)']
+    const defs = ['type T = A(int) | B', 'val a = variant("A", 3)', 'val nine = matchVariant(a, 3, (_ => 9))']
 
     const [errors, _] = inferTypesForDefs(defs)
     assert.isNotEmpty(errors)
