@@ -273,13 +273,13 @@ export function matchConstraints(
             elimExpr
           )}`
         )
-      : elimType.args.length > 1
+      : elimType.args.length !== 1
       ? fieldValidationError(
-          `Match case eliminator must be a nullary or unary operator but it is an operator of ${
+          `Match case eliminator must be a unary operator but it is an operator of ${
             elimType.args.length
           } arguments: ${expressionToString(elimExpr)}`
         )
-      : !wildCardMatch && elimType.args.length === 0 && labelExpr.value === '_'
+      : !wildCardMatch && labelExpr.value === '_'
       ? (wildCardMatch = true) // The wildcard case, `_ => foo`, means we can match anything else
       : wildCardMatch // There should only ever be 1 wilcard match, and it should be the last case
       ? fieldValidationError(
@@ -287,9 +287,7 @@ export function matchConstraints(
             elimExpr
           )}. Only one wildcard can appear and it must be the final case of a match.`
         )
-      : elimType.args.length === 1
-      ? validatedFields.push(right([labelExpr.value, elimType.args[0]])) // The label and associated type of a variant case
-      : fieldValidationError(`Invalid match expression: ${expressionToString(elimExpr)}`) // Unknown invalid case
+      : validatedFields.push(right([labelExpr.value, elimType.args[0]])) // The label and associated type of a variant case
   }
 
   // TODO: Support more expressive and informative type errors.

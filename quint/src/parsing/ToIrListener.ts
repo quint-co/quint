@@ -998,27 +998,16 @@ export class ToIrListener implements QuintListener {
   private formMatchCase([caseExpr, caseCtx]: [QuintEx, p.MatchSumCaseContext]): (QuintStr | QuintLambda)[] {
     const labelId = this.getId(caseCtx)
     const elimId = this.getId(caseCtx)
-    let label: string
-    let params: QuintLambdaParameter[]
-    if (caseCtx._wildCardMatch) {
-      // a wildcard case: _ => expr
-      label = '_'
-      params = []
-    } else if (caseCtx._variantMatch) {
-      const variant = caseCtx._variantMatch
-      let name: string
-      if (variant._variantParam) {
-        name = variant._variantParam.text
-      } else {
-        // We either have a hole or no param specified, in which case our lambda only needs a hole
-        name = '_'
-      }
-      label = variant._variantLabel.text
-      params = [{ name, id: this.getId(variant) }]
-    } else {
-      throw new Error('impossible: either _wildCardMatch or _variantMatch must be present')
-    }
+    const variantMatch = caseCtx._variantMatch
+
+    // If there is not a variant param, then we have a wildcard case, `_ => foo`, or a hole in the paramater position, `Foo(_) => bar`
+    const name = variantMatch && variantMatch._variantParam ? variantMatch._variantParam.text : '_'
+    const params = [{ name, id: this.getId(caseCtx) }]
+
+    // If there is not a variant label, then we have a wildcard case
+    const label = variantMatch ? variantMatch._variantLabel.text : '_'
     const labelStr: QuintStr = { id: labelId, kind: 'str', value: label }
+
     const elim: QuintLambda = { id: elimId, kind: 'lambda', qualifier: 'def', expr: caseExpr, params }
     return [labelStr, elim]
   }

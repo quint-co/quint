@@ -713,12 +713,7 @@ export class CompilerVisitor implements IRVisitor {
             let result: Maybe<RuntimeValue> | undefined
             for (const [caseLabel, caseElim] of chunk(cases, 2)) {
               const caseLabelStr = caseLabel.toStr()
-              if (caseLabelStr === '_') {
-                // The wilcard case ignores the value.
-                // NOTE: This SHOULD be a nullary lambda, but by this point the compiler
-                // has already converted it into a value. Confusing!
-                result = just(caseElim as RuntimeValueLambda)
-              } else if (caseLabelStr === label) {
+              if (caseLabelStr === '_' || caseLabelStr === label) {
                 // Type checking ensures the second item of each case is a lambda
                 const eliminator = caseElim as RuntimeValueLambda
                 result = eliminator.eval([just(value)]).map(r => r as RuntimeValue)
