@@ -32,11 +32,15 @@ import { ExecutionListener } from '../trace'
 
 import * as ir from '../../ir/quintIr'
 
-import { RuntimeValue, rv } from './runtimeValue'
+import { RuntimeValue, RuntimeValueLambda, RuntimeValueVariant, rv } from './runtimeValue'
 import { ErrorCode, QuintError } from '../../quintError'
 
 import { inputDefName, lastTraceName } from '../compile'
 import { unreachable } from '../../util'
+import { chunk } from 'lodash'
+import { prettyQuintEx } from '../../graphics'
+import { expressionToString } from '../../ir/IRprinting'
+import { newIdGenerator } from '../../idGenerator'
 
 // Internal names in the compiler, which have special treatment.
 // For some reason, if we replace 'q::input' with inputDefName, everything breaks.
@@ -702,7 +706,34 @@ export class CompilerVisitor implements IRVisitor {
           break
 
         case 'matchVariant':
-          assert(false, 'TODO: https://github.com/informalsystems/quint/issues/1033')
+          this.applyFun(app.id, app.args.length, (variantExpr, ...cases) => {
+            // Type checking ensures that this is a variant expression
+            assert(variantExpr instanceof RuntimeValueVariant, 'invalid value in match expression')
+            const label = variantExpr.label
+            const value = variantExpr.value
+
+            // Find the eliminator marked with the variant's label
+            let result: Maybe<RuntimeValue> | undefined
+            for (const [caseLabel, caseElim] of chunk(cases, 2)) {
+              const caseLabelStr = caseLabel.toStr()
+              if (caseLabelStr === '_') {
+                // The wilcard case ignores the value.
+                // NOTE: This SHOULD be a nullary lambda, but by this point the compiler
+                // has already converted it into a value. Confusing!
+                result = just(caseElim as RuntimeValueLambda)
+              } else if (caseLabelStr === label) {
+                // Type checking ensures the second item of each case is a lambda
+                const eliminator = caseElim as RuntimeValueLambda
+                result = eliminator.eval([just(value)]).map(r => r as RuntimeValue)
+                break
+              }
+            }
+            // Type checking ensures we have cases for every possible variant of a sum type.
+            assert(result, 'non-exhaustive match expression')
+
+            return result
+          })
+          break
 
         case 'Set':
           // Construct a set from an array of values.

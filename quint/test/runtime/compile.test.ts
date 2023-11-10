@@ -848,6 +848,18 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('Some(40 + 2)', 'variant("Some", 42)', context)
       assertResultAsString('None', 'variant("None", Rec())', context)
     })
+
+    it('can compile elimination of sum type variants via match', () => {
+      const context = 'type T = Some(int) | None'
+      assertResultAsString('match Some(40 + 2) { Some(x) => x | None => 0 }', '42', context)
+      assertResultAsString('match None { Some(x) => x | None => 0 }', '0', context)
+    })
+
+    it('can compile elimination of sum type variants via match using default', () => {
+      const context = 'type T = Some(int) | None'
+      // We can hit the fallback case
+      assertResultAsString('match None { Some(x) => x | _ => 3 }', '3', context)
+    })
   })
 
   describe('compile over maps', () => {

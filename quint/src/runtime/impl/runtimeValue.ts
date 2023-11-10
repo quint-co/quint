@@ -825,7 +825,7 @@ class RuntimeValueRecord extends RuntimeValueBase implements RuntimeValue {
   }
 }
 
-class RuntimeValueVariant extends RuntimeValueBase implements RuntimeValue {
+export class RuntimeValueVariant extends RuntimeValueBase implements RuntimeValue {
   label: string
   value: RuntimeValue
 
@@ -1527,7 +1527,7 @@ class RuntimeValueInfSet extends RuntimeValueBase implements RuntimeValue {
  *
  * RuntimeValueLambda cannot be compared with other values.
  */
-class RuntimeValueLambda extends RuntimeValueBase implements RuntimeValue, Callable {
+export class RuntimeValueLambda extends RuntimeValueBase implements RuntimeValue, Callable {
   nparams: number
   callable: Callable
 
