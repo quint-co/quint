@@ -256,7 +256,7 @@ specific Quint release, may maintain or break compatibility.
 
 Given that Quint calls Apalache, but not the other way around, it makes sense to
 maintain a list of compatible Apalache versions for a given Quint release.
-Broadly speaking, there's two options for maintaining such a list:
+Broadly speaking, there are two options for maintaining such a list:
 
 1. Informally, as part of the release notes, or other documentation.
 2. Formally, inside the Quint codebase.
