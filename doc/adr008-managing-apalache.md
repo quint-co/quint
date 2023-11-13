@@ -1,8 +1,8 @@
-# RFC008: Obtaining and Launching Apalache from Quint
+# ADR008: Obtaining and Launching Apalache from Quint
 
 | Revision | Date       | Author           |
 | :------- | :--------- | :--------------- |
-| 1        | 2023-08-09 | Thomas Pani      |
+| 1        | 2023-11-13 | Thomas Pani      |
 
 ## 1. Summary
 
