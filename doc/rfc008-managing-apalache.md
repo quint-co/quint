@@ -181,23 +181,52 @@ extension [fetches the metals server](https://github.com/scalameta/metals-vscode
 
 Sub-options include:
 
-- Invoking the system-level package manager from Quint (see §3.2.1)
-- Invoking an ecosystem package manager from Quint (see §3.2.2)
-- Pull the Apalache distribution from Github (see §3.2.3), e.g. using
-  [Github's REST API endpoint][] and/or [`octokit/request.js`][]
+1. Invoking the system-level package manager from Quint (see §3.2.1)
+2. Invoking an ecosystem package manager from Quint (see §3.2.2)
+3. Pull the Apalache distribution from Github (see §3.2.3)
+
+##### 1. Invoking the system-level package manager from Quint
+
+Invoking a system-level package manager from Quint seems infeasible; we would
+have to include logic for various platforms within Quint.
+
+##### 2. Invoking an ecosystem package manager from Quint
+
+Here, we would invoke `npm` or `coursier` from Quint.
 
 Pros:
 
 - Completely transparent to the user.
 - Allows managing the required Apalache version from within Quint.
+- No system-level dependency like above.
 
 Cons:
 
-- Only pushes the boundary: e.g., this would assume that npm, coursier, or the
-  JRE are installed on the local system. `vscode-metals` includes a
-  `coursier` binary in its distribution to counter this.
+- Assumes that a package manager (npm, coursier, ...) and the JRE are installed on the local system.
+  - To work around this, we could distribute the package manager with Quint
+    (for example, `vscode-metals` includes a `coursier` binary in its
+    distribution).
 - Spawning a package manager increases complexity by running a process whose
   behavior is outside of our control.
+
+##### 3. Pulling the Apalache distribution from Github
+
+We either hardcode a fixed Apalache release (and its artifact URL) in Quint, or
+use [Github's REST API endpoint][] and/or [`octokit/request.js`][] to look up
+a matching release and download the JAR distribution directly.
+
+Pros:
+
+- Completely transparent to the user.
+- Allows managing the required Apalache version from within Quint.
+- No package manager dependency like above.
+
+Cons:
+
+- Assumes that the JRE is installed on the local system.
+
+*Note: We did a prototype implementation querying the GitHub REST API in [#1115](https://github.com/informalsystems/quint/issues/1115).
+However, we observed CI issues due to the Github API's rate limiting as described in [#1124](https://github.com/informalsystems/quint/issues/1124). In pratice, the same issues can affect users (e.g., behind a shared IP) and may segnificantly impact UX of the `verify` command. As a countermeasure, we reverted to a hardcoded Quint version in [`4ceb7d8`](https://github.com/informalsystems/quint/commit/4ceb7d8be824ddc0a2c2a14e105baff446f71e72).*
 
 #### 3.2.5 Apalache as cloud-hosted SaaS
 
@@ -299,16 +328,23 @@ Cons:
 We choose managed options for obtaining and launching Apalache from Quint, while
 still providing a non-managed option:
 
-1. Primarily, Quint uses a Quint-managed, on-demand instance of Shai:
-   1. If not present, Quint fetches a compatible Apalache release from Github,
-      using [Github's REST API endpoint][] and/or [`octokit/request.js`][] and
-      unpacks it into a local installation directory.
+1. To give the user more control over their system, or as a development setup,
+   Quint tries to connect to an already running instance of Shai.
+   - This enables launching Shai by the OS (§3.1.1), the user (§3.1.2), or – if we include a flag to point to a remote Shai instance – enables use of a remote SaaS endpoint (§3.2.5).
+   - If using this option, the user is left in charge of maintaining compatible
+     versions of Quint and Apalache on their system.
+   - If connection fails, we fall back to the fully-managed option below.
+2. If no already-running Apalache server is detected, we use a Quint-managed, on-demand instance of Shai:
+   1. If not present on disk, Quint fetches a compatible Apalache release from
+      Github and unpacks it into a local installation directory.  The Apalache
+      version has been hardcoded in the Quint source code.
       - This can be scripted etirely from NodeJS, foregoing the need to wrap a
         third-party package manager binary.
+      - Hardcoding the Apalache version is a tradeoff wrt the Github API rate limiting (see §3.2.4) – in principle, we would prefer to pin a minor release (§3.3.4) and use [Github's REST API endpoint][] and/or [`octokit/request.js`][] to determine the appropriate version.
    2. Apalache's JRE dependency is taken care of by adding a check for a `java`
       executable in `$PATH` to [the `apalache-mc` runner script](https://github.com/informalsystems/apalache/blob/df7adb8b42b6487de9764162f338935121d07a3c/src/universal/bin/apalache-mc#L53).
       - This shall print instructions for obtaining a JRE, if none is detected.
-2. Quint launches an on-demand instance of this local installation by spawning
+3. Quint launches an on-demand instance of this local installation by spawning
    `apalache-mc server` in a separate process[^1].
    - Such a process is spawned for each invocation of the `verify` command, and
      torn down immediately after the RPC response.
@@ -317,19 +353,6 @@ still providing a non-managed option:
      - We can later change this to a long-lived server, if we use a more
        stateful approach of interacting with Shai (e.g., via the [transition
        explorer API][]).
-3. To give the user more control over their system, or as a development setup,
-   we provide a CLI flag and/or config file option, pointing Quint to a socket
-   exposing Shai (e.g., `--shai='my.shai.server:4242'`).
-   - If this flag or option is set, Quint skips the managed approach above and
-     instead connects to the provided socket and uses this instance of Apalache to
-     dispatch verification commands.
-   - This enables launching Shai by the OS (§3.1.1), the user (§3.1.2), or to
-     enable a remote SaaS endpoint (§3.2.5).
-   - If using this option, the user is left in charge of maintaining compatible
-     versions of Quint and Apalache on their system.
-   - Instead of using a flag or option, we could expose this path via fall-back
-     behavior (i.e., try to connect to a socket first, and if that fails proceed
-     to the managed approach above).
 
 [Apalache]: https://github.com/informalsystems/apalache
 [Shai]: https://github.com/informalsystems/apalache/tree/main/shai
