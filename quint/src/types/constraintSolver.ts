@@ -125,9 +125,6 @@ export function unify(table: LookupTable, t1: QuintType, t2: QuintType): Either<
     return unifyWithAlias(table, t2, t1)
   } else if ((t1.kind === 'rec' && t2.kind === 'rec') || (t1.kind === 'sum' && t2.kind === 'sum')) {
     return unifyRows(table, t1.fields, t2.fields).mapLeft(error => buildErrorTree(location, error))
-  } else if ((t1.kind === 'union' && t2.kind === 'rec') || (t1.kind === 'rec' && t2.kind === 'union')) {
-    // FIXME: Implement discriminated unions and remove this hack, see https://github.com/informalsystems/quint/issues/244
-    return right([])
   } else {
     return left(buildErrorLeaf(location, `Couldn't unify ${t1.kind} and ${t2.kind}`))
   }

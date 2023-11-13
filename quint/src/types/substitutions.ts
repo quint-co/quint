@@ -90,19 +90,6 @@ export function applySubstitution(table: LookupTable, subs: Substitutions, t: Qu
           id: t.id,
         }
       }
-      case 'union': {
-        return {
-          kind: t.kind,
-          tag: t.tag,
-          records: t.records.map(r => {
-            return {
-              tagValue: r.tagValue,
-              fields: applySubstitutionToRow(table, subs, r.fields),
-            }
-          }),
-          id: t.id,
-        }
-      }
       case 'sum':
         return {
           ...t,

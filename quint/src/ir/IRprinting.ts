@@ -187,12 +187,6 @@ export function typeToString(type: QuintType): string {
     case 'sum': {
       return sumToString(type)
     }
-    case 'union': {
-      const records = type.records.map(rec => {
-        return `| { ${type.tag}: "${rec.tagValue}", ${rowFieldsToString(rec.fields)} }`
-      })
-      return records.join('\n')
-    }
   }
 }
 
