@@ -6,7 +6,7 @@
 
 ## 1. Summary
 
-This RFC presents options on how to obtain and manage Apalache for use with
+This ADR presents options on how to obtain and manage Apalache for use with
 the Quint `verify` command.
 
 ## 2. Context
@@ -22,7 +22,8 @@ There's three outstanding questions concerning this integration:
 3. How are version dependencies between Quint and Apalache managed?
 
 Obviously, a decision on each of these questions impacts the other ones. We use
-this document to survey options, and to list advantages and disadvantages.
+this document to survey options, and to list advantages and disadvantages, and to
+document the proposed solution.
 
 ## 3. Options
 
@@ -96,8 +97,8 @@ active. bazel and vscode-metals employ a hybrid approach, where a long-lived
 server is launched on-demand and torn down after an inactivity timeout. This
 decision should take into consideration the memory-overhead of a long-lived
 server vs. JVM startup time for an on-demand approach; at the time of writing,
-a freshly launched `apalache-mc server` takes ~125MB of memory, while JVM
-startup time is negligable (< 2sec).
+a freshly launched `apalache-mc server` takes ~125MB of memory, and JVM
+startup time is below 2 seconds.
 
 Pros:
 
@@ -226,7 +227,7 @@ Cons:
 - Assumes that the JRE is installed on the local system.
 
 *Note: We did a prototype implementation querying the GitHub REST API in [#1115](https://github.com/informalsystems/quint/issues/1115).
-However, we observed CI issues due to the Github API's rate limiting as described in [#1124](https://github.com/informalsystems/quint/issues/1124). In pratice, the same issues can affect users (e.g., behind a shared IP) and may segnificantly impact UX of the `verify` command. As a countermeasure, we reverted to a hardcoded Quint version in [`4ceb7d8`](https://github.com/informalsystems/quint/commit/4ceb7d8be824ddc0a2c2a14e105baff446f71e72).*
+However, we observed CI issues due to the Github API's rate limiting as described in [#1124](https://github.com/informalsystems/quint/issues/1124). In pratice, the same issues can affect users (e.g., behind a shared IP) and may segnificantly impact UX of the `verify` command. As a countermeasure, we reverted to a hardcoded Apalache version in [`4ceb7d8`](https://github.com/informalsystems/quint/commit/4ceb7d8be824ddc0a2c2a14e105baff446f71e72).*
 
 #### 3.2.5 Apalache as cloud-hosted SaaS
 
