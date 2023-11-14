@@ -201,7 +201,7 @@ module Paxos {
     nondet m = msgs.filterMsg2a().oneOf()
     all {
       m.bal >= maxBal.get(a),
-      Send(Msg2b({acc: a, bal: m.bal, value: m.value })),
+      Send(Msg2b({ acc: a, bal: m.bal, value: m.value })),
       maxBal'  = maxBal.set(a, m.bal),
       maxVBal' = maxVBal.set(a, m.bal),
       maxVal'  = maxVal.set(a, m.value),
