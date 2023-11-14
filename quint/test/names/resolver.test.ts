@@ -162,16 +162,5 @@ describe('resolveNames', () => {
         { code: 'QNT404', message: "Type alias 'OTHER_UNKNOWN_TYPE' not found", reference: 0n, data: {} },
       ])
     })
-
-    it('finds unresolved aliases under union', () => {
-      const result = resolveNamesForExprs([
-        'val x: | { tag: "a", a: UNKNOWN_TYPE } | { tag: "b", b: OTHER_UNKNOWN_TYPE } = { tag: "a", a: 1 } { 0 }',
-      ])
-
-      assert.deepEqual(result.errors, [
-        { code: 'QNT404', message: "Type alias 'UNKNOWN_TYPE' not found", reference: 0n, data: {} },
-        { code: 'QNT404', message: "Type alias 'OTHER_UNKNOWN_TYPE' not found", reference: 0n, data: {} },
-      ])
-    })
   })
 })

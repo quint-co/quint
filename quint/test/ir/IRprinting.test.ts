@@ -249,10 +249,4 @@ describe('typeToString', () => {
     const expectedType = '(A(int) | B)'
     assert.deepEqual(typeToString(type), expectedType)
   })
-
-  it('pretty prints union types', () => {
-    const type = buildType('| { tag: "A", a: int } | { tag: "B", b: str }')
-    const expectedType = '| { tag: "A", a: int }\n| { tag: "B", b: str }'
-    assert.deepEqual(typeToString(type), expectedType)
-  })
 })

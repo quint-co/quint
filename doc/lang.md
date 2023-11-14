@@ -51,8 +51,8 @@ Table of Contents
       * [Other set operators](#other-set-operators)
     * [Maps (aka Functions)](#maps-aka-functions)
     * [Records](#records)
-    * [Discriminated unions](#discriminated-unions)
     * [Tuples](#tuples)
+    * [Sum Types](#sum-types)
     * [Lists (aka Sequences)](#lists-aka-sequences)
     * [Integers](#integers)
     * [Nested operator definitions](#nested-operator-definitions)
@@ -142,8 +142,7 @@ expressions).
 
 ### Type System 1.2
 
-This is the same type system as in Apalache, except we have added discriminated
-unions:
+This is the same type system as in Apalache:
 
 A type is one of the following:
 
@@ -167,13 +166,8 @@ A type is one of the following:
  - Operator: `(T_1, ..., T_n) => R` for `n >= 0` argument types `T_1, ..., T_n`
    and result type `R`.
 
- - **Work in progress:** Discriminated union:
-    ```
-       | { tag: string_1, <ident>: T_1_1, ..., <ident>: T_1_n_1}
-       ...
-       | { tag: string_k, <ident>: T_k_1, ..., <ident>: T_k_n_k}
-    ```
-    for `n >= 1` types `T_1_1`, ..., `T_k_n_k`.
+ - Sum Types: `type T = L_1(T_1) | ... | L_n(T_n) ` for `n >= 1`, argument types
+   `T_1`, ..., `T_n`, and a type alais `T`.
 
  - Type in parentheses: `(T)` for a type `T`.
 
@@ -1290,8 +1284,7 @@ with(r, "f", e)
 Note that we are using the syntax `{ name_1: value_1, ..., name_n: value_n }`
 for records, similar to Python and JavaScript. We have removed the syntax for
 sets of records: (1) It often confuses beginners, (2) It can be expressed with
-`map` and a record constructor. Moreover, sets of records do not combine well
-with discriminated unions.
+`map` and a record constructor.
 
 *Mode:* Stateless, State. Other modes are not allowed.
 
@@ -1325,6 +1318,46 @@ the new field. It is not likely that you will have tuples that have a lot
 of items.
 
 *Mode:* Stateless, State. Other modes are not allowed.
+
+### Sum Types
+
+Exclusive disjunction of different possible data types is expressed via sum
+types, also known as tagged unions, discriminated unions, or variants. TLA+,
+being untyped, doesn't have a strict correlate, but it is common to use records
+with a discriminator field for this purpose.
+
+```scala
+// Declaration
+type T = L_1(T_1) | ... | L_n(T_n)
+// variant constructor
+// where
+//  - 1 =< k <= n for the declared sum type's variants L_1(T_1) | ... | L_n(T_n)
+//  - x : T_k
+L_k(x)
+variant("L_k", x)
+// variant eliminator: "match expression"
+// where 
+//  - x_1 : T_1, ..., x_n : T_n
+//  - e_1 : S, ..., e_n : S, and S will be the resulting type of the expression
+match L_k(x) {
+  | L_1(x_1) => e_1
+  | ...
+  | L_n(x_n) => e_n
+}
+matchVariant(L_k(x), "L_1", (x_1) => e_1, ..., (x_n) => e_n)
+```
+
+E.g., to form and operate on a heterogeneous set containing both integer and
+string values, you might find:
+
+```scala
+type Elem = S(str) | I(int)
+val mySet: Set[Elem] =  Set(S("Foo"), I(1), S("Bar"), I(2))
+val transformMySet: Set[Str] = mySet.map(e => match e { S(s) => s | I(_) => "An int"})
+```
+
+*Mode:* Stateless, State. Other modes are not allowed.
+
 
 ### Lists (aka Sequences)
 

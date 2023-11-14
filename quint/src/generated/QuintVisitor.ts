@@ -15,7 +15,6 @@ import { TypeSetContext } from "./QuintParser";
 import { TypeListContext } from "./QuintParser";
 import { TypeTupleContext } from "./QuintParser";
 import { TypeRecContext } from "./QuintParser";
-import { TypeUnionRecContext } from "./QuintParser";
 import { TypeIntContext } from "./QuintParser";
 import { TypeStrContext } from "./QuintParser";
 import { TypeBoolContext } from "./QuintParser";
@@ -79,7 +78,6 @@ import { NameContext } from "./QuintParser";
 import { QualifiedNameContext } from "./QuintParser";
 import { FromSourceContext } from "./QuintParser";
 import { TypeContext } from "./QuintParser";
-import { TypeUnionRecOneContext } from "./QuintParser";
 import { RowContext } from "./QuintParser";
 import { RowLabelContext } from "./QuintParser";
 import { ExprContext } from "./QuintParser";
@@ -158,14 +156,6 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitTypeRec?: (ctx: TypeRecContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `typeUnionRec`
-	 * labeled alternative in `QuintParser.type`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitTypeUnionRec?: (ctx: TypeUnionRecContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `typeInt`
@@ -653,13 +643,6 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitType?: (ctx: TypeContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `QuintParser.typeUnionRecOne`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitTypeUnionRecOne?: (ctx: TypeUnionRecOneContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.row`.

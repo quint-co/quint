@@ -47,8 +47,6 @@ export type ErrorCode =
   | 'QNT008'
   /* QNT009: Missing arguments or parameters. You should omit the parentheses */
   | 'QNT009'
-  /* QNT011: Records in disjoint union have different tag fields: <tag> and <otherTag> */
-  | 'QNT011'
   /* QNT012: '...' may be used once in '{ ...record, <fields> }' */
   | 'QNT012'
   /* QNT013: import ... from <source>: could not load */

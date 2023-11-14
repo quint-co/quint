@@ -95,7 +95,7 @@ name: qualId;
 qualifiedName : qualId;
 fromSource: STRING;
 
-// Types in Type System 1.2 of Apalache, which supports discriminated unions
+// Types in Type System 1.2 of Apalache
 type :          <assoc=right> type '->' type                    # typeFun
         |       <assoc=right> type '=>' type                    # typeOper
         |       '(' (type (',' type)*)? ','? ')' '=>' type      # typeOper
@@ -103,16 +103,12 @@ type :          <assoc=right> type '->' type                    # typeFun
         |       LIST '[' type ']'                               # typeList
         |       '(' type ',' type (',' type)* ','? ')'          # typeTuple
         |       '{' row '}'                                     # typeRec
-        |       typeUnionRecOne+                                # typeUnionRec
         |       'int'                                           # typeInt
         |       'str'                                           # typeStr
         |       'bool'                                          # typeBool
         |       qualId                                          # typeConstOrVar
         |       '(' type ')'                                    # typeParen
         ;
-
-typeUnionRecOne : '|' '{' qualId ':' STRING (',' row)? ','? '}'
-                ;
 
 row : (rowLabel ':' type ',')* ((rowLabel ':' type) (',' | '|' (rowVar=IDENTIFIER))?)?
     | '|' (rowVar=IDENTIFIER)

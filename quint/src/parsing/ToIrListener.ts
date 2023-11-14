@@ -34,7 +34,7 @@ import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
 import { QuintTypeDef } from '../ir/quintIr'
 import { zip } from '../util'
 import { QuintError } from '../quintError'
-import { differentTagsError, lowercaseTypeError, tooManySpreadsError } from './parseErrors'
+import { lowercaseTypeError, tooManySpreadsError } from './parseErrors'
 import { Loc } from '../ErrorMessage'
 
 /**
@@ -85,7 +85,7 @@ export class ToIrListener implements QuintListener {
   protected identOrHoleStack: string[] = []
   // the stack for imported names
   protected identOrStarStack: string[] = []
-  // the stack of rows for records and unions
+  // the stack of rows for records
   protected rowStack: Row[] = []
   // the stack of variants for a sum
   protected variantStack: RowField[] = []
@@ -1101,68 +1101,13 @@ export class ToIrListener implements QuintListener {
     this.rowStack.push(row)
   }
 
-  // A record type that is not a disjoint union, e.g.,
+  // A record type, e.g.,
   // { name: str, year: int }
   // The row stack contains the row with the types of the fields.
   exitTypeRec(ctx: p.TypeRecContext) {
     const row = this.popRow()
     const id = this.getId(ctx)
     this.typeStack.push({ id, kind: 'rec', fields: row })
-  }
-
-  // A disjoint union type, e.g.,
-  //   | { type: "ack", from: address }
-  //   | { type: "syn", to: address }
-  exitTypeUnionRec(ctx: p.TypeUnionRecContext) {
-    const size = ctx.typeUnionRecOne().length
-    const singletonUnions: QuintType[] = popMany(this.typeStack, size, this.undefinedType(ctx))
-
-    if (singletonUnions[0].kind !== 'union') {
-      // Elements should be of union kind, see exitTypeUnionRecOne()
-      console.debug(`[DEBUG] unexpected kind found in singleton unions: ${ctx.text}`)
-      return
-    }
-
-    const tag = singletonUnions[0].tag
-    let records = singletonUnions[0].records
-    const id = this.getId(ctx)
-    for (let i = 1; i < size; i++) {
-      const one = singletonUnions[i]
-      if (one.kind !== 'union') {
-        // Elements should be of union kind, see exitTypeUnionRecOne()
-        return
-      }
-
-      if (one.tag === tag) {
-        records = records.concat(one.records)
-      } else {
-        this.errors.push(differentTagsError(id, tag, one.tag))
-      }
-    }
-    this.typeStack.push({ id, kind: 'union', tag, records })
-  }
-
-  // One option of a disjoint union, e.g.,
-  //   | { type: "ack", from: address }
-  // The row stack contains the row with the types of the fields.
-  exitTypeUnionRecOne(ctx: p.TypeUnionRecOneContext) {
-    // the first name is the tag name (according to the grammar)
-    const tagName = ctx.qualId().text
-    const tagVal = ctx.STRING().toString().slice(1, -1)
-    let records: { tagValue: string; fields: Row }[] = []
-    if (ctx.row()) {
-      const row = this.popRow()
-      records = [{ tagValue: tagVal, fields: row }]
-    }
-    // construct a singleton disjoint union, which should be assembled above
-    const singleton: QuintType = {
-      id: 0n, // This ID will be discarded in assembly.
-      kind: 'union',
-      tag: tagName,
-      records,
-    }
-
-    this.typeStack.push(singleton)
   }
 
   // an operator type, e.g., (int, str) => bool

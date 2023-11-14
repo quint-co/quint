@@ -203,20 +203,6 @@ export function prettyQuintType(type: QuintType): Doc {
     case 'sum': {
       return prettySumRow(type.fields)
     }
-    case 'union': {
-      const records = type.records.map(rec => {
-        return group([
-          richtext(chalk.magenta, '|'),
-          text('{ '),
-          richtext(chalk.blue, type.tag),
-          text(': '),
-          richtext(chalk.green, `"${rec.tagValue}"`),
-          prettyRow(rec.fields),
-          text('}'),
-        ])
-      })
-      return group(records)
-    }
   }
 }
 

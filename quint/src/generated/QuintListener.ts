@@ -15,7 +15,6 @@ import { TypeSetContext } from "./QuintParser";
 import { TypeListContext } from "./QuintParser";
 import { TypeTupleContext } from "./QuintParser";
 import { TypeRecContext } from "./QuintParser";
-import { TypeUnionRecContext } from "./QuintParser";
 import { TypeIntContext } from "./QuintParser";
 import { TypeStrContext } from "./QuintParser";
 import { TypeBoolContext } from "./QuintParser";
@@ -79,7 +78,6 @@ import { NameContext } from "./QuintParser";
 import { QualifiedNameContext } from "./QuintParser";
 import { FromSourceContext } from "./QuintParser";
 import { TypeContext } from "./QuintParser";
-import { TypeUnionRecOneContext } from "./QuintParser";
 import { RowContext } from "./QuintParser";
 import { RowLabelContext } from "./QuintParser";
 import { ExprContext } from "./QuintParser";
@@ -185,19 +183,6 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitTypeRec?: (ctx: TypeRecContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `typeUnionRec`
-	 * labeled alternative in `QuintParser.type`.
-	 * @param ctx the parse tree
-	 */
-	enterTypeUnionRec?: (ctx: TypeUnionRecContext) => void;
-	/**
-	 * Exit a parse tree produced by the `typeUnionRec`
-	 * labeled alternative in `QuintParser.type`.
-	 * @param ctx the parse tree
-	 */
-	exitTypeUnionRec?: (ctx: TypeUnionRecContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `typeInt`
@@ -983,17 +968,6 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitType?: (ctx: TypeContext) => void;
-
-	/**
-	 * Enter a parse tree produced by `QuintParser.typeUnionRecOne`.
-	 * @param ctx the parse tree
-	 */
-	enterTypeUnionRecOne?: (ctx: TypeUnionRecOneContext) => void;
-	/**
-	 * Exit a parse tree produced by `QuintParser.typeUnionRecOne`.
-	 * @param ctx the parse tree
-	 */
-	exitTypeUnionRecOne?: (ctx: TypeUnionRecOneContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `QuintParser.row`.

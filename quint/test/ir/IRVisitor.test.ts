@@ -594,7 +594,6 @@ describe('walkModule', () => {
       'def i: (int, a) => bool = false',
       'var j: (int, List[bool], MY_CONST_TYPE)',
       'var k: { name: str, age: int }',
-      'var l: | { tag: "a", a: int } | { tag: "b", b: bool }',
     ])
 
     it('finds literal types', () => {
@@ -626,8 +625,6 @@ describe('walkModule', () => {
         'bool', // var j: (int, List[bool], MY_CONST_TYPE)
         'str', // var k: { name: str, age: int }
         'int', // var k: { name: str, age: int }
-        'int', // var l: | { tag: "a", a: int } | { tag: "b", b: bool }
-        'bool', // var l: | { tag: "a", a: int } | { tag: "b", b: bool }
       ]
 
       const exitedTypes = enteredTypes
@@ -849,32 +846,6 @@ describe('walkModule', () => {
 
       const enteredTypes = [
         '{ name: str, age: int }', // var k: { name: str, age: int }
-      ]
-
-      const exitedTypes = enteredTypes
-
-      const visitor = new TestVisitor()
-      walkModule(visitor, quintModule)
-      assert.deepEqual(visitor.entered.map(typeToString), enteredTypes)
-      assert.deepEqual(visitor.exited.map(typeToString), exitedTypes)
-    })
-
-    it('finds union types', () => {
-      class TestVisitor implements IRVisitor {
-        entered: QuintType[] = []
-        exited: QuintType[] = []
-
-        enterUnionType(type: QuintType): void {
-          this.entered.push(type)
-        }
-
-        exitUnionType(type: QuintType): void {
-          this.exited.push(type)
-        }
-      }
-
-      const enteredTypes = [
-        '| { tag: "a", a: int }\n| { tag: "b", b: bool }', // var l: | { tag: "a", a: int } | { tag: "b", b: bool }
       ]
 
       const exitedTypes = enteredTypes
