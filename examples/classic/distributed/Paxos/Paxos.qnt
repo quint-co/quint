@@ -124,7 +124,7 @@ module Paxos {
   (* m with m.type = "1a") that begins ballot b.                             *)
   (***************************************************************************/
   action Phase1a(b) = all {
-      Send(Msg1a({bal: b })),
+      Send(Msg1a({ bal: b })),
       maxVBal' = maxVBal,
       maxVal'  = maxVal,
   }
