@@ -25,12 +25,3 @@ export function tooManySpreadsError(id: bigint): QuintError {
     data: {},
   }
 }
-
-export function differentTagsError(id: bigint, tag: string, otherTag: string): QuintError {
-  return {
-    code: 'QNT011',
-    message: `Records in disjoint union have different tag fields: ${tag} and ${otherTag}`,
-    reference: id,
-    data: {},
-  }
-}

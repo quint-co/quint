@@ -86,8 +86,6 @@ export interface IRVisitor {
   exitRecordType?: (_type: t.QuintRecordType) => void
   enterSumType?: (_type: t.QuintSumType) => void
   exitSumType?: (_type: t.QuintSumType) => void
-  enterUnionType?: (_type: t.QuintUnionType) => void
-  exitUnionType?: (_type: t.QuintUnionType) => void
 
   /** Row types */
   enterRow?: (_row: t.Row) => void
@@ -231,20 +229,6 @@ export function walkType(visitor: IRVisitor, type: t.QuintType): void {
 
       if (visitor.exitRecordType) {
         visitor.exitRecordType(type)
-      }
-      break
-
-    case 'union':
-      if (visitor.enterUnionType) {
-        visitor.enterUnionType(type)
-      }
-      // Variants, walk all fields for all records
-      type.records.forEach(record => {
-        walkRow(visitor, record.fields)
-      })
-
-      if (visitor.exitUnionType) {
-        visitor.exitUnionType(type)
       }
       break
 

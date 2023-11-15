@@ -86,8 +86,6 @@ export class IRTransformer {
   exitRecordType?: (type: t.QuintRecordType) => t.QuintRecordType
   enterSumType?: (type: t.QuintSumType) => t.QuintSumType
   exitSumType?: (type: t.QuintSumType) => t.QuintSumType
-  enterUnionType?: (type: t.QuintUnionType) => t.QuintUnionType
-  exitUnionType?: (type: t.QuintUnionType) => t.QuintUnionType
 
   /** Row types */
   enterRow?: (row: t.Row) => t.Row
@@ -236,20 +234,6 @@ export function transformType(transformer: IRTransformer, type: t.QuintType): t.
 
       if (transformer.exitRecordType) {
         newType = transformer.exitRecordType(newType)
-      }
-      break
-
-    case 'union':
-      if (transformer.enterUnionType) {
-        newType = transformer.enterUnionType(newType)
-      }
-      // Variants, transform all fields for all records
-      newType.records = newType.records.map(record => {
-        return { ...record, fields: transformRow(transformer, record.fields) }
-      })
-
-      if (transformer.exitUnionType) {
-        newType = transformer.exitUnionType(newType)
       }
       break
 

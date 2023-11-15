@@ -117,19 +117,6 @@ describe('applySubstitution', () => {
     assert.deepEqual(result, parseTypeOrThrow('{ a: int, b: bool }'))
   })
 
-  it('substitutes variables in union type', () => {
-    const s: Substitutions = [
-      { kind: 'type', name: 'a', value: { kind: 'int', id: 1n } },
-      { kind: 'type', name: 'b', value: { kind: 'bool', id: 2n } },
-    ]
-
-    const t = parseTypeOrThrow('| { tag: "a", a: a }\n| { tag: "b", b: b }')
-
-    const result = applySubstitution(table, s, t)
-
-    assert.deepEqual(result, parseTypeOrThrow('| { tag: "a", a: int }\n| { tag: "b", b: bool }'))
-  })
-
   it('substitutes with transitivity', () => {
     const s: Substitutions = [
       { kind: 'type', name: 'a', value: { kind: 'var', id: 1n, name: 'b' } },

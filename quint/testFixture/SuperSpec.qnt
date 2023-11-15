@@ -28,16 +28,13 @@ module withConsts {
   // just a normal record, without any variation in the fields
   const MyRecord: { i: int, b: bool, s: str }
   const MyRecordWithComma: { i: int, b: bool, s: str, }
-  // a disjoint union is a common pattern in TLA+
-  const MyUnion:
-      | { tag: "circle", radius: int }
-      | { tag: "rectangle", width: int, height: int }
-      | { tag: "dog", name: str }
 
-  const MyUnionWithComma:
-      | { tag: "circle", radius: int, }
-      | { tag: "rectangle", width: int, height: int, }
-      | { tag: "dog", name: str, }
+  // a disjoint union is a common pattern in TLA+
+  type MyUnionType =
+      | Circle(int)
+      | Rectangle({width: int, height: int })
+      | Dog(str)
+  const MyUnion: MyUnionType
 
   // Vars
   // We don't do extensive testing of types,

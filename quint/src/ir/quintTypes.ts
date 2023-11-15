@@ -98,15 +98,6 @@ export function sumType(labelTypePairs: [string, QuintType][], rowVar?: string, 
   return { kind: 'sum', fields: { kind: 'row', fields, other }, id }
 }
 
-export interface QuintUnionType extends WithOptionalId {
-  kind: 'union'
-  tag: string
-  records: {
-    tagValue: string
-    fields: Row
-  }[]
-}
-
 /**
  * A type in Type System 1.2.
  */
@@ -123,7 +114,6 @@ export type QuintType =
   | QuintTupleType
   | QuintRecordType
   | QuintSumType
-  | QuintUnionType
 
 /**
  * Row types, used to express tuples and records.

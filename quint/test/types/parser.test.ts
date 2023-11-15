@@ -85,37 +85,6 @@ describe('parseType', () => {
     )
   })
 
-  it('parses discriminated unions', () => {
-    const type = parseType('| { tag: "a", a: int }\n| { tag: "b", b: bool }')
-
-    assert.isTrue(type.isRight())
-    type.map(value =>
-      assert.deepEqual(value, {
-        kind: 'union',
-        tag: 'tag',
-        records: [
-          {
-            tagValue: 'a',
-            fields: {
-              kind: 'row',
-              fields: [{ fieldName: 'a', fieldType: { kind: 'int', id: 1n } }],
-              other: { kind: 'empty' },
-            },
-          },
-          {
-            tagValue: 'b',
-            fields: {
-              kind: 'row',
-              fields: [{ fieldName: 'b', fieldType: { kind: 'bool', id: 2n } }],
-              other: { kind: 'empty' },
-            },
-          },
-        ],
-        id: 3n,
-      })
-    )
-  })
-
   it('throws error when type is invalid', () => {
     const type = parseType('Set[bool, int]')
 
