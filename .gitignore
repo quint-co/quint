@@ -6,3 +6,4 @@ client/server
 .yalc
 *.vsix
 _build
+.DS_Store
