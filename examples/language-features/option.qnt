@@ -1,7 +1,8 @@
 module option {
   // A demonstration of sum types, specifying an option type.
 
-  // An option type for values.
+  // An option type for int values.
+  // Polymorphic sum types are not yet supported: https://github.com/informalsystems/quint/issues/1073
   type Vote_option =
     | None
     | Some(int)
