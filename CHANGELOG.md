@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Support for sum types in type checking and simulation (#244).
+
 ### Changed
 ### Deprecated
 ### Removed
