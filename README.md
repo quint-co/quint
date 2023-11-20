@@ -165,8 +165,8 @@ completely implementing every pass.
 | [Maps][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
 | [Lists][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
 | [Records][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
-| [Discriminated unions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [244][]        | :x: [539][]        | :x:                | :x:                |
 | [Tuples][]                        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [Sum types][]                     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [1034][]       | :x:                |
 | [Imports][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [Module definitions][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [Module instances][]              | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
@@ -214,8 +214,8 @@ With additional funding from<br />[<img alt="the Vienna Business Agency" src="./
 [nondet]: ./doc/lang.md#existential-quantifier-and-non-deterministic-choice
 [Maps]: ./doc/lang.md#maps-aka-functions
 [Records]: ./doc/lang.md#records
-[Discriminated unions]: ./doc/lang.md#discriminated-unions
 [Tuples]: ./doc/lang.md#tuples
+[Sum types]: ./doc/lang.md#sum-types
 [Delayed assignment]: ./doc/lang.md#delayed-assignment
 [Runs]: ./doc/lang.md#runs
 [Temporal operators]: ./doc/lang.md#temporal-operators
@@ -228,7 +228,7 @@ With additional funding from<br />[<img alt="the Vienna Business Agency" src="./
 [221]: https://github.com/informalsystems/quint/issues/221
 [235]: https://github.com/informalsystems/quint/issues/235
 [8]: https://github.com/informalsystems/quint/issues/8
-[244]: https://github.com/informalsystems/quint/issues/244
+[1034]: https://github.com/informalsystems/quint/issues/1034
 [Higher-order definitions]: https://github.com/informalsystems/quint/blob/main/doc/lang.md#operator-definitions
 [String literals]: https://github.com/informalsystems/quint/blob/main/doc/lang.md#identifiers-and-strings
 [TLA+]: https://lamport.azurewebsites.net/tla/tla.html
