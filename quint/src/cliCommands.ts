@@ -46,6 +46,7 @@ import { flattenModules } from './flattening/fullFlattener'
 import { analyzeInc, analyzeModules } from './quintAnalyzer'
 import { ExecutionFrame } from './runtime/trace'
 import { flow, isEqual, uniqWith } from 'lodash'
+import { Maybe, just, none } from '@sweet-monads/maybe'
 
 export type stage = 'loading' | 'parsing' | 'typechecking' | 'testing' | 'running' | 'documentation'
 
@@ -122,6 +123,7 @@ interface LoadedStage extends ProcedureStage {
 
 interface ParsedStage extends LoadedStage {
   modules: QuintModule[]
+  defaultModuleName: Maybe<string>
   sourceMap: SourceMap
   table: LookupTable
   unusedDefinitions: UnusedDefinitions
@@ -210,7 +212,12 @@ export async function parse(loaded: LoadedStage): Promise<CLIProcedure<ParsedSta
   const parsing = { ...loaded, stage: 'parsing' as stage }
   const idGen = newIdGenerator()
   return flow([
-    () => parsePhase1fromText(idGen, text, path),
+    () => {
+      const phase1Data = parsePhase1fromText(idGen, text, path)
+      // if there is exactly one module in the original text, make it the main one
+      const defaultModuleName = phase1Data.modules.length === 1 ? just(phase1Data.modules[0].name) : none()
+      return { ...phase1Data, defaultModuleName }
+    },
     phase1Data => {
       const resolver = fileSourceResolver(sourceCode)
       const mainPath = resolver.lookupPath(dirname(path), basename(path))
@@ -274,6 +281,7 @@ export async function runRepl(_argv: any) {
   let filename: string | undefined = undefined
   let moduleName: string | undefined = undefined
   if (_argv.require) {
+    // quint -r FILE.qnt or quint -r FILE.qnt::MODULE
     const m = /^(.*?)(?:|::([a-zA-Z_]\w*))$/.exec(_argv.require)
     if (m) {
       ;[filename, moduleName] = m.slice(1, 3)
@@ -298,8 +306,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   const columns = !prev.args.out ? terminalWidth() : 80
 
   const testing = { ...prev, stage: 'testing' as stage }
-  const mainArg = prev.args.main
-  const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
+  const mainName = guessMainModule(prev)
 
   const outputTemplate = testing.args.output
 
@@ -494,8 +501,7 @@ function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], fra
  */
 export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure<SimulatorStage>> {
   const simulator = { ...prev, stage: 'running' as stage }
-  const mainArg = prev.args.main
-  const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
+  const mainName = guessMainModule(prev)
   const verbosityLevel = !prev.args.out && !prev.args.outItf ? prev.args.verbosity : 0
   const rngOrError = mkRng(prev.args.seed)
   if (rngOrError.isLeft()) {
@@ -515,7 +521,11 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 
   const mainText = prev.sourceCode.get(prev.path)!
   const mainPath = fileSourceResolver(prev.sourceCode).lookupPath(dirname(prev.args.input), basename(prev.args.input))
-  const mainId = prev.modules.find(m => m.name === mainName)!.id
+  const mainModule = prev.modules.find(m => m.name === mainName)
+  if (mainModule === undefined) {
+    return cliErr(`Main module ${mainName} not found`, { ...simulator, errors: [] })
+  }
+  const mainId = mainModule.id
   const mainStart = prev.sourceMap.get(mainId)!.start.index
   const mainEnd = prev.sourceMap.get(mainId)!.end!.index
   const result = compileAndRun(newIdGenerator(), mainText, mainStart, mainEnd, mainName, mainPath, options)
@@ -757,6 +767,19 @@ export function outputResult(result: CLIProcedure<ProcedureStage>) {
       }
       process.exit(1)
     })
+}
+
+function guessMainModule(stage: TypecheckedStage): string {
+  if (stage.args.main) {
+    // the main module is specified via --main
+    return stage.args.main
+  }
+  if (stage.defaultModuleName.isJust()) {
+    // there is only one module in the source file, make it main
+    return stage.defaultModuleName.unwrap()
+  }
+  // guess the name from the filename
+  return basename(stage.args.input, '.qnt')
 }
 
 /**

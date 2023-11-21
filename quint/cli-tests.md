@@ -353,3 +353,19 @@ fi
 <!-- !test exit 0 -->
 <!-- !test check river - Run safety -->
     quint run --invariant=safety ../examples/puzzles/river/river.qnt
+
+### OK on run with the default module
+
+See [#1195](https://github.com/informalsystems/quint/issues/1195).
+
+<!-- !test exit 0 -->
+<!-- !test check run the default module -->
+    quint run ./testFixture/_1050diffName.qnt
+
+### OK on test with the default module
+
+See [#1195](https://github.com/informalsystems/quint/issues/1195).
+
+<!-- !test exit 0 -->
+<!-- !test check test the default module -->
+    quint test ./testFixture/_1050diffName.qnt
