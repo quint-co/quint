@@ -304,6 +304,6 @@ executable and the VSCode plugin.
     - Navigate to
       https://marketplace.visualstudio.com/manage/publishers/informal, and click
       the `...` visible when hovering over `Quint` to upload the archive.
-- `cd` into the `server folder` and run `npm publish` for publication of the
-  `@informalsystems/quint-language-server` package (used in Emacs and Neovim
-  integrations).
+- `cd` into the `server` folder and run `npm publish` for publication of the
+  [@informalsystems/quint-language-server](https://www.npmjs.com/package/@informalsystems/quint-language-server)
+  package (used in Emacs and Vim integrations).
