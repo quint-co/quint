@@ -287,7 +287,7 @@ export function matchConstraints(
             elimExpr
           )}. Only one wildcard can appear and it must be the final case of a match.`
         )
-      : validatedFields.push(right([labelExpr.value, elimType.args[0]])) // The label and associated type of a variant case
+      : validatedFields.push(right([labelExpr.value, elimType.args[0]])) // label and associated type of a variant case
   }
 
   // TODO: Support more expressive and informative type errors.

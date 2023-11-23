@@ -1000,7 +1000,10 @@ export class ToIrListener implements QuintListener {
     const elimId = this.getId(caseCtx)
     const variantMatch = caseCtx._variantMatch
 
-    // If there is not a variant param, then we have a wildcard case, `_ => foo`, or a hole in the paramater position, `Foo(_) => bar`
+    // If there is not a variant param, then we have one of two things
+    //
+    // - a wildcard case, `_ => foo`
+    // - a hole in the paramater position, `Foo(_) => bar`
     const name = variantMatch && variantMatch._variantParam ? variantMatch._variantParam.text : '_'
     const params = [{ name, id: this.getId(caseCtx) }]
 
