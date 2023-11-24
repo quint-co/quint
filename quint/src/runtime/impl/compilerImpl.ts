@@ -918,10 +918,10 @@ export class CompilerVisitor implements IRVisitor {
           break
 
         case 'debug':
-          this.applyFun(app.id, 2, (header, value) => {
+          this.applyFun(app.id, 2, (msg, value) => {
             let columns = terminalWidth()
             let valuePretty = format(columns, 0, prettyQuintEx(value.toQuintEx(zerog)))
-            console.log('>', header.toStr(), valuePretty.toString())
+            console.log('>', msg.toStr(), valuePretty.toString())
             return just(value)
           })
           break
