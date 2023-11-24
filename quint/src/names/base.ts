@@ -196,6 +196,7 @@ export const builtinNames = [
   'reps',
   'fail',
   'assert',
+  'debug',
   'orKeep',
   'mustChange',
   'enabled',

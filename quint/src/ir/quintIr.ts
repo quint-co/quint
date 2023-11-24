@@ -140,6 +140,7 @@ export const builtinOpCodes = [
   'chooseSome',
   'concat',
   'contains',
+  'debug',
   'enabled',
   'eq',
   'eventually',

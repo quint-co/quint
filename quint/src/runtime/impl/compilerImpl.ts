@@ -36,7 +36,10 @@ import { RuntimeValue, RuntimeValueLambda, RuntimeValueVariant, rv } from './run
 import { ErrorCode, QuintError } from '../../quintError'
 
 import { inputDefName, lastTraceName } from '../compile'
+import { prettyQuintEx, terminalWidth } from '../../graphics'
+import { format } from '../../prettierimp'
 import { unreachable } from '../../util'
+import { zerog } from '../../idGenerator'
 import { chunk } from 'lodash'
 
 // Internal names in the compiler, which have special treatment.
@@ -912,6 +915,15 @@ export class CompilerVisitor implements IRVisitor {
 
         case 'then':
           this.translateAllOrThen(app)
+          break
+
+        case 'debug':
+          this.applyFun(app.id, 2, (header, value) => {
+            let columns = terminalWidth()
+            let valuePretty = format(columns, 0, prettyQuintEx(value.toQuintEx(zerog)))
+            console.log('>', header.toStr(), valuePretty.toString())
+            return just(value)
+          })
           break
 
         case 'fail':
