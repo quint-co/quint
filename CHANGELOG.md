@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- When an input file only one module, it will be inferred as the main module  (#1260)
+- When an input file only one module, it will be inferred as the main module (#1260)
+- Add a `debug` built-in function for printing values to stdout (#1266)
 
 ### Changed
 ### Deprecated
