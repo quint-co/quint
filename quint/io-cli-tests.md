@@ -1038,3 +1038,20 @@ quint test --main=invalid ./testFixture/_1050diffName.qnt
 error: [QNT405] Main module invalid not found
 error: Tests failed
 ```
+
+### Multiple tests output different json
+
+See [#1264](https://github.com/informalsystems/quint/pull/1264).
+
+<!-- !test in multiple jsons -->
+```
+quint test --output {}.itf.json ./testFixture/_1051manyTests.qnt >/dev/null
+cat firstTest.itf.json secondTest.itf.json | jq -c .states
+rm firstTest.itf.json secondTest.itf.json
+```
+
+<!-- !test out multiple jsons -->
+```
+[{"#meta":{"index":0},"x":{"#bigint":"0"}},{"#meta":{"index":1},"x":{"#bigint":"1"}}]
+[{"#meta":{"index":0},"x":{"#bigint":"0"}},{"#meta":{"index":1},"x":{"#bigint":"2"}}]
+```

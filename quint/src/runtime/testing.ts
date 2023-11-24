@@ -116,6 +116,7 @@ export function compileAndTest(
   return mergeInMany(
     testDefs.map((def, index) => {
       return getComputableForDef(ctx, def).map(comp => {
+        recorder.clear()
         const name = def.name
         // save the initial seed
         let seed = options.rng.getState()
