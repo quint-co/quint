@@ -12,10 +12,14 @@
  * Gabriela Moreira, Informal Systems, 2022-2023
  */
 module tictactoe {
+  type Player = X | O
+  type Square = Occupied(Player) | Empty
+
   /// A 3x3 tic-tac-toe board
-  var board: int -> (int -> str)
+  var board: int -> (int -> Square)
+
   /// Who goes next
-  var nextTurn: str
+  var nextTurn: Player
 
   pure val boardCoordinates = tuples(1.to(3), 1.to(3))
 
@@ -40,33 +44,41 @@ module tictactoe {
     (3,3)
   )
 
-  def hasValue(coordinate, player) =
-    board.get(coordinate._1).get(coordinate._2) == player
+  def square(coordinate: (int, int)): Square =
+    board.get(coordinate._1).get(coordinate._2)
 
-  def isEmpty(coordinate) = hasValue(coordinate, "_")
+  def hasPlayer(coordinate, player) = match square(coordinate) {
+    | Empty   => false
+    | Occupied(p) => player == p
+  }
+
+  def isEmpty(coordinate) = match square(coordinate) {
+    | Empty       => true
+    | Occupied(_) => false
+  }
 
   val boardEmpty = boardCoordinates.forall(isEmpty)
 
   def won(player) = winningPatterns.exists(pattern =>
-    pattern.forall(coordinate => hasValue(coordinate, player))
+    pattern.forall(coordinate => hasPlayer(coordinate, player))
   )
 
   val boardFull = not(boardCoordinates.exists(isEmpty))
-  val stalemate = boardFull and not(won("X")) and not(won("O"))
-  val gameOver = won("X") or won("O") or boardFull
+  val stalemate = boardFull and not(won(X)) and not(won(O))
+  val gameOver = won(X) or won(O) or boardFull
 
   def canWinWithPattern(pattern) = and {
-    pattern.filter(coordinate => coordinate.hasValue("X")).size() == 2,
+    pattern.filter(coordinate => coordinate.hasPlayer(X)).size() == 2,
     pattern.filter(coordinate => coordinate.isEmpty()).size() == 1,
   }
 
   def canBlockWithPattern(pattern) = and {
-    pattern.filter(coordinate => coordinate.hasValue("O")).size() == 2,
+    pattern.filter(coordinate => coordinate.hasPlayer(O)).size() == 2,
     pattern.filter(coordinate => coordinate.isEmpty()).size() == 1,
   }
 
   def canSetupWinWithPattern(pattern) = and {
-    pattern.filter(coordinate => coordinate.hasValue("X")).size() == 1,
+    pattern.filter(coordinate => coordinate.hasPlayer(X)).size() == 1,
     pattern.filter(coordinate => coordinate.isEmpty()).size() == 2,
   }
 
@@ -79,7 +91,7 @@ module tictactoe {
     isEmpty(coordinate),
     board' = board.setBy(
       coordinate._1,
-      row => row.set(coordinate._2, player)
+      row => row.set(coordinate._2, Occupied(player))
     ),
   }
 
@@ -87,22 +99,22 @@ module tictactoe {
     canWin,
     nondet pattern = winningPatterns.filter(canWinWithPattern).oneOf()
     nondet coordinate = pattern.filter(isEmpty).oneOf()
-    Move("X", coordinate),
+    Move(X, coordinate),
   }
 
   action Block = all {
     canBlock,
     nondet pattern = winningPatterns.filter(canBlockWithPattern).oneOf()
     nondet coordinate = pattern.filter(isEmpty).oneOf()
-    Move("X", coordinate),
+    Move(X, coordinate),
   }
 
-  action TakeCenter = Move("X", (2, 2))
+  action TakeCenter = Move(X, (2, 2))
 
   action SetupWin = all {
     nondet pattern = winningPatterns.filter(canSetupWinWithPattern).oneOf()
     nondet coordinate = pattern.filter(isEmpty).oneOf()
-    Move("X", coordinate),
+    Move(X, coordinate),
   }
 
   action MoveToEmpty(player) =
@@ -111,32 +123,32 @@ module tictactoe {
 
   action StartInCorner =
     nondet corner = oneOf(corners)
-    Move("X", corner)
+    Move(X, corner)
 
   action MoveX = all {
-    nextTurn == "X",
-    not(won("O")),
+    nextTurn == X,
+    not(won(O)),
     if (boardEmpty) StartInCorner else
     if (canWin) Win else
     if (canBlock) Block else
     if (canTakeCenter) TakeCenter else
     if (canSetupWin) SetupWin else
-    MoveToEmpty("X"),
-    nextTurn' = "O",
+    MoveToEmpty(X),
+    nextTurn' = O,
   }
 
   action MoveO = all {
-    nextTurn == "O",
-    not(won("X")),
-    MoveToEmpty("O"),
-    nextTurn' = "X",
+    nextTurn == O,
+    not(won(X)),
+    MoveToEmpty(O),
+    nextTurn' = X,
   }
 
   action init = all {
     // X always goes first
-    nextTurn' = "X",
+    nextTurn' = X,
     // Every space in the board starts blank
-    board' = 1.to(3).mapBy(_ => 1.to(3).mapBy(_ => "_")),
+    board' = 1.to(3).mapBy(_ => 1.to(3).mapBy(_ => Empty)),
   }
 
   /// Either X or O will make a move, depending on the value of `nextTurn`
@@ -150,10 +162,10 @@ module tictactoe {
   /* Invariants */
 
   /// X has not won. This does not hold, as X wins most of the times.
-  val XHasNotWon = not(won("X"))
+  val XHasNotWon = not(won(X))
 
   /// O has not won. This should hold, as O can only achieve a draw.
-  val OHasNotWon = not(won("O"))
+  val OHasNotWon = not(won(O))
 
   /// It's not a stalemate if one player has won or the board is not filled
   /// Check with `quint run --invariant=NotStalemate tictactoe.qnt`
@@ -166,5 +178,5 @@ module tictactoe {
 
   /// This is not always true, as if O picks the right moves, the game will
   /// result in a stalemate.
-  temporal XMustEventuallyWin = eventually(won("X"))
+  temporal XMustEventuallyWin = eventually(won(X))
 }
