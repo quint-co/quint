@@ -1,23 +1,25 @@
 module two_phase_commit {
-  /// "working", "prepared", "committed" or "aborted"
-  type ResourceManagerState = str
+  type ResourceManagerState = Working | Prepared | Committed | Aborted
   var resourceManagerStates: str -> ResourceManagerState
 
-  /// "init" or "done"
-  type TransactionManagerState = str
+  type TransactionManagerState = Init | Done
   var transactionManagerState: TransactionManagerState
 
   var preparedResourceManagers: Set[str]
 
-  /// kind "commit", "abort" or "prepared"
-  type Message = { kind: str, resourceManager: str }
+  type Message =
+    | Abort
+    | Commit
+    | RMPrepared(str)
+    | RMCommitted(str)
+
   var messages: Set[Message]
 
   const resourceManagers: Set[str]
 
   action init = all {
-    resourceManagerStates' = resourceManagers.mapBy(r => "working"),
-    transactionManagerState' = "init",
+    resourceManagerStates' = resourceManagers.mapBy(r => Working),
+    transactionManagerState' = Init,
     preparedResourceManagers' = Set(),
     messages' = Set(),
   }
@@ -25,48 +27,48 @@ module two_phase_commit {
   /* Transaction Manager actions */
 
   action addPreparedResourceManager(resourceManager: str): bool = all {
-    transactionManagerState == "init",
-    messages.contains({ kind: "prepared", resourceManager: resourceManager }),
+    transactionManagerState == Init,
+    messages.contains(RMPrepared(resourceManager)),
     preparedResourceManagers' = preparedResourceManagers.union(Set(resourceManager))
   }
 
   action decideOnCommit = all {
-    transactionManagerState == "init",
+    transactionManagerState == Init,
     preparedResourceManagers == resourceManagers,
-    transactionManagerState' = "done",
-    messages' = messages.union(Set({ kind: "commit", resourceManager: "" }))
+    transactionManagerState' = Done,
+    messages' = messages.union(Set(Commit))
   }
 
   action decideOnAbort = all {
-    transactionManagerState == "init",
-    transactionManagerState' = "done",
-    messages' = messages.union(Set({ kind: "abort", resourceManager: "" }))
+    transactionManagerState == Init,
+    transactionManagerState' = Done,
+    messages' = messages.union(Set(Abort))
   }
 
   /* Resource Manager actions */
 
   action prepare(resourceManager: str): bool = all {
-    resourceManagerStates.get(resourceManager) == "working",
-    resourceManagerStates' = resourceManagerStates.set(resourceManager, "prepared"),
-    messages' = messages.union(Set({ kind: "prepared", resourceManager: resourceManager }))
+    resourceManagerStates.get(resourceManager) == Working,
+    resourceManagerStates' = resourceManagerStates.set(resourceManager, Prepared),
+    messages' = messages.union(Set(RMPrepared(resourceManager)))
   }
 
   action abort(resourceManager: str): bool = all {
     or {
       // Resource manager chooses to abort
-      resourceManagerStates.get(resourceManager) == "working",
+      resourceManagerStates.get(resourceManager) == Working,
       // Resource manager receives an abort message from the transaction manager
-      messages.contains({ kind: "abort", resourceManager: "" }),
+      messages.contains(Abort),
     },
-    resourceManagerStates' = resourceManagerStates.set(resourceManager, "aborted"),
+    resourceManagerStates' = resourceManagerStates.set(resourceManager, Aborted),
     // There is no need to let others know that this resource manager aborted
     messages' = messages
   }
 
   action commit(resourceManager: str): bool = all {
-    messages.contains({ kind: "commit", resourceManager: "" }),
-    resourceManagerStates' = resourceManagerStates.set(resourceManager, "commited"),
-    messages' = messages.union(Set({ kind: "commited", resourceManager: resourceManager }))
+    messages.contains(Commit),
+    resourceManagerStates' = resourceManagerStates.set(resourceManager, Committed),
+    messages' = messages.union(Set(RMCommitted(resourceManager)))
   }
 
   action step = any {
@@ -91,7 +93,7 @@ module two_phase_commit {
   }
 
   action consistencyInv = tuples(resourceManagers, resourceManagers).forall(((r1, r2)) =>
-    not(resourceManagerStates.get(r1) == "commited" and resourceManagerStates.get(r2) == "aborted")
+    not(resourceManagerStates.get(r1) == Committed and resourceManagerStates.get(r2) == Aborted)
   )
 }
 
