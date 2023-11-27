@@ -10,6 +10,7 @@
 
 import { CharStreams, CommonTokenStream } from 'antlr4ts'
 import { ParseTreeWalker } from 'antlr4ts/tree/ParseTreeWalker'
+import { Map as ImmutMap, Set as ImmutSet } from 'immutable'
 
 import { QuintLexer } from '../generated/QuintLexer'
 import * as p from '../generated/QuintParser'
@@ -171,11 +172,6 @@ export function parsePhase2sourceResolution(
   // Assign a rank to every module. The higher the rank,
   // the earlier the module should appear in the list of modules.
   sourceToModules.set(mainPath.normalizedPath, mainPhase1Result.modules)
-  const moduleRank = new Map<string, number>()
-  let maxModuleRank = 0
-  Array.from(mainPhase1Result.modules)
-    .reverse()
-    .forEach(m => moduleRank.set(m.name, maxModuleRank++))
   while (worklist.length > 0) {
     const [importer, pathTrail] = worklist.splice(0, 1)[0]
     for (const decl of importer.declarations) {
@@ -183,24 +179,8 @@ export function parsePhase2sourceResolution(
         const importerPath = pathTrail[pathTrail.length - 1]
         const stemPath = sourceResolver.stempath(importerPath)
         const importeePath = sourceResolver.lookupPath(stemPath, decl.fromSource + '.qnt')
-        // check for import cycles
-        if (pathTrail.find(p => p.normalizedPath === importeePath.normalizedPath)) {
-          // found a cyclic dependency
-          const cycle = pathTrail
-            .concat([importeePath])
-            .map(p => `'${p.toSourceName()}'`)
-            .join(' imports ')
-          const err: QuintError = {
-            code: 'QNT098',
-            message: `Cyclic imports: ${cycle}`,
-            reference: decl.id,
-          }
-          return { ...mainPhase1Result, errors: mainPhase1Result.errors.concat([err]), sourceMap }
-        }
         if (sourceToModules.has(importeePath.normalizedPath)) {
-          // The source has been parsed already. Just push the module rank,
-          // for the modules to appear earlier.
-          sourceToModules.get(importeePath.normalizedPath)?.forEach(m => moduleRank.set(m.name, maxModuleRank++))
+          // The source has been parsed already.
           continue
         }
         // try to load the source code
@@ -222,7 +202,6 @@ export function parsePhase2sourceResolution(
           worklist.push([m, pathTrail.concat([importeePath])])
         })
         sourceToModules.set(importeePath.normalizedPath, newModules)
-        newModules.forEach(m => moduleRank.set(m.name, maxModuleRank++))
         sourceMap = new Map([...sourceMap, ...parseResult.sourceMap])
       }
     }
@@ -233,8 +212,86 @@ export function parsePhase2sourceResolution(
   for (const mods of sourceToModules.values()) {
     allModules = allModules.concat(mods)
   }
-  allModules.sort((m1, m2) => moduleRank.get(m2.name)! - moduleRank.get(m1.name)!)
-  return { ...mainPhase1Result, modules: allModules, sourceMap }
+  // sort the modules
+  const sortingResult = sortModules(allModules)
+
+  return {
+    ...mainPhase1Result,
+    errors: mainPhase1Result.errors.concat(sortingResult.errors),
+    modules: sortingResult.modules,
+    sourceMap,
+  }
+}
+
+/**
+ * Sort modules according to their imports, that is, importees should appear before importers.
+ * @param modules the modules to sort
+ * @return a structure that contains errors (if any were found) and the modules (sorted if no errors)
+ */
+function sortModules(modules: QuintModule[]): { errors: QuintError[]; modules: QuintModule[] } {
+  // iterate over the modules to construct:
+  //  - the map from module identifiers to modules
+  //  - the map from module names to modules
+  //  - the set of modules with duplicate names, if there are any
+  const [idToModule, nameToModule, duplicates] = modules.reduce(
+    ([idMap, namesMap, dups], mod) => {
+      const newIdMap = idMap.set(mod.id, mod)
+      const newNamesMap = namesMap.set(mod.name, mod)
+      const newDups = namesMap.has(mod.name) ? dups.add(mod) : dups
+      return [newIdMap, newNamesMap, newDups]
+    },
+    [ImmutMap<bigint, QuintModule>(), ImmutMap<string, QuintModule>(), ImmutSet<QuintModule>()]
+  )
+
+  if (!duplicates.isEmpty()) {
+    const errors: QuintError[] = duplicates.toArray().map(mod => {
+      return {
+        code: 'QNT101',
+        message: `Multiple modules conflict on the same name: ${mod.name}`,
+        reference: mod.id,
+      }
+    })
+    return { errors, modules }
+  }
+
+  // create the import graph
+  let edges = ImmutMap<bigint, ImmutSet<bigint>>()
+  for (const mod of modules) {
+    let imports = ImmutSet<bigint>()
+    for (const decl of mod.declarations) {
+      // We only keep track of imports and instances, but not of the exports:
+      //  - Exports flow in the opposite direction of imports.
+      //  - An export cannot be used without a corresponding import.
+      if (decl.kind === 'import' || decl.kind === 'instance') {
+        if (!nameToModule.has(decl.protoName)) {
+          const err: QuintError = {
+            code: 'QNT405',
+            message: `Module ${mod.name} imports an unknown module ${decl.protoName}`,
+            reference: decl.id,
+          }
+          return { errors: [err], modules }
+        }
+        imports = imports.add(nameToModule.get(decl.protoName)!.id)
+      }
+      // add all imports as the edges from mod
+      edges = edges.set(mod.id, imports)
+    }
+  }
+  // sort the modules with toposort
+  const result = toposort(edges, modules)
+  if (result.cycles.isEmpty()) {
+    return { errors: [], modules: result.sorted }
+  } else {
+    // note that the modules in the cycle are not always sorted according to the imports
+    const cycle = result.cycles.map(id => idToModule.get(id)?.name).join(', ')
+    const err: QuintError = {
+      code: 'QNT098',
+      message: `Cyclic imports among: ${cycle}`,
+      reference: result.cycles.first(),
+    }
+
+    return { errors: [err], modules }
+  }
 }
 
 /**

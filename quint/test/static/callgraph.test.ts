@@ -136,8 +136,8 @@ describe('compute call graph', () => {
     )
 
     const [modules, table] = parse3phases(code)
-
-    const [A, B, main] = modules
+    const findModule = (name: string) => modules.find(m => m.name === name)!
+    const [A, B, main] = ['A', 'B', 'main'].map(findModule)
     const visitor = new CallGraphVisitor(table, mkCallGraphContext(modules))
     walkModule(visitor, main)
     const graph = visitor.graph

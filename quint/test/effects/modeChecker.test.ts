@@ -11,16 +11,18 @@ describe('checkModes', () => {
   const baseDefs = ['var x: int', 'var y: bool']
 
   function checkMockedDefs(defs: string[]): [Map<bigint, QuintError>, Map<bigint, OpQualifier>] {
-    const text = `module A { const c: int }` + `module wrapper { ${baseDefs.concat(defs).join('\n')} }`
+    const text = `module A { const c: int } module wrapper { ${baseDefs.concat(defs).join('\n')} }`
     const { modules, table } = parseMockedModule(text)
+    const wrapper = modules.find(m => m.name === 'wrapper')!
 
     const inferrer = new EffectInferrer(table)
-    const [errors, effects] = inferrer.inferEffects(modules[1].declarations)
+    const [errors, effects] = inferrer.inferEffects(wrapper.declarations)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const modeChecker = new ModeChecker()
-    return modeChecker.checkModes(modules[1].declarations, effects)
+
+    return modeChecker.checkModes(wrapper.declarations, effects)
   }
 
   it('finds mode errors between action and def', () => {
