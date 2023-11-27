@@ -92,7 +92,7 @@ module two_phase_commit {
     }
   }
 
-  action consistencyInv = tuples(resourceManagers, resourceManagers).forall(((r1, r2)) =>
+  val consistencyInv = tuples(resourceManagers, resourceManagers).forall(((r1, r2)) =>
     not(resourceManagerStates.get(r1) == Committed and resourceManagerStates.get(r2) == Aborted)
   )
 }
