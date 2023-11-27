@@ -3,12 +3,21 @@
 This directory contains the `quint` CLI providing powerful tools for working
 with [the Quint specification language](https://github.com/informalsystems/quint).
 
+## Prerequisites
+
+- Node.js >= 18: Use your package manager or download [nodejs](https://nodejs.org/en/download).
+
+- Java Development Kit >= 17, if you are going to use `quint verify`.  We
+  recommend version 17 of the [Eclipse Temurin](https://adoptium.net/) or
+  [Zulu](https://www.azul.com/downloads/?version=java-17-lts&package=jdk#download-openjdk)
+  builds of OpenJDK.
+
 ## Installation
 
 Install the [latest published version from npm](https://www.npmjs.com/package/@informalsystems/quint):
 
 ``` sh
-npm i @informalsystems/quint
+npm i @informalsystems/quint -g
 ```
 
 ## How to run

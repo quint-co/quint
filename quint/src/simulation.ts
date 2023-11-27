@@ -3,95 +3,82 @@
  *
  * Igor Konnov, 2023
  *
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  */
 
-import { Either, left, right } from '@sweet-monads/either'
-import { strict as assert } from 'assert'
-import { range } from 'lodash'
-import chalk from 'chalk'
+import { Either } from '@sweet-monads/either'
 
-import {
-  compileFromCode, contextLookup, lastTraceName
-} from './runtime/compile'
-import { ErrorMessage } from './quintParserFrontend'
-import { QuintEx } from './quintIr'
-import { fail, kindName } from './runtime/runtime'
-import { chalkQuintEx } from './repl'
+import { compileFromCode, contextNameLookup, lastTraceName } from './runtime/compile'
+import { QuintEx } from './ir/quintIr'
+import { Computable } from './runtime/runtime'
+import { ExecutionFrame, newTraceRecorder } from './runtime/trace'
 import { IdGenerator } from './idGenerator'
+import { Rng } from './rng'
+import { SourceLookupPath } from './parsing/sourceResolver'
+import { QuintError } from './quintError'
 
 /**
  * Various settings that have to be passed to the simulator to run.
  */
 export interface SimulatorOptions {
-  init: string,
-  step: string,
-  invariant: string,
-  maxSamples: number,
-  maxSteps: number,
-  rand: () => number,
+  init: string
+  step: string
+  invariant: string
+  maxSamples: number
+  maxSteps: number
+  rng: Rng
+  verbosity: number
 }
+
+export type SimulatorResultStatus = 'ok' | 'violation' | 'failure' | 'error'
 
 /**
  * A result returned by the simulator.
  */
 export interface SimulatorResult {
-  status: 'ok' | 'violation',
-  trace: QuintEx
+  status: SimulatorResultStatus
+  vars: string[]
+  states: QuintEx[]
+  frames: ExecutionFrame[]
+  errors: QuintError[]
+  seed: bigint
+}
+
+function errSimulationResult(status: SimulatorResultStatus, errors: QuintError[]): SimulatorResult {
+  return {
+    status,
+    vars: [],
+    states: [],
+    frames: [],
+    errors: errors,
+    seed: 0n,
+  }
 }
 
 /**
- * Print a trace with chalk.
- */
-export function printTrace(out: (line: string) => void, trace: QuintEx) {
-  assert(trace.kind === 'app' && trace.opcode === 'List')
-  const kw = (s: string) => chalk.green(s)
-  const lp = chalk.gray('{')
-  const rp = chalk.gray('}')
-  const eq = chalk.gray('=')
-  const comma = chalk.gray(',')
-  trace.args.forEach((state, index) => {
-    assert(state.kind === 'app'
-           && state.opcode === 'Rec' && state.args.length % 2 === 0)
-
-    out(`${kw('action')} step${index} ${eq} ${kw('all')} ` + lp)
-    range(0, Math.trunc(state.args.length / 2))
-      .forEach(i => {
-        const key = state.args[2 * i]
-        assert(key.kind === 'str')
-        const valueText = chalkQuintEx(state.args[2 * i + 1])
-        out(`  ${key.value}' ${eq} ${valueText}` + comma)
-      })
-    out(rp + '\n')
-  })
-
-  out(`${kw('run')} test ${eq} ` + lp)
-  const testText =
-    range(0, trace.args.length)
-      .map(i => `step${i}`)
-      .reduce((left, name) => `${left}.then(${name})`)
-  out('  ' + testText)
-  out(rp)
-}
-
-/**
- * Run a test suite of a single module.
+ * Execute a run.
  *
  * @param idGen a unique generator of identifiers
  * @param code the source code of the modules
+ * @param mainStart the start index of the main module in the code
+ * @param mainEnd the end index of the main module in the code
  * @param mainName the module that should be used as a state machine
+ * @param mainPath the lookup path that was used to retrieve the main module
  * @param options simulator settings
  * @returns either error messages (left),
     or the trace as an expression (right)
  */
-export function
-compileAndRun(idGen: IdGenerator,
-              code: string,
-              mainName: string,
-              options: SimulatorOptions):
-                Either<ErrorMessage[], SimulatorResult> {
+export function compileAndRun(
+  idGen: IdGenerator,
+  code: string,
+  mainStart: number,
+  mainEnd: number,
+  mainName: string,
+  mainPath: SourceLookupPath,
+  options: SimulatorOptions
+): SimulatorResult {
   // Once we have 'import from ...' implemented, we should pass
   // a filename instead of the source code (see #8)
 
@@ -99,76 +86,56 @@ compileAndRun(idGen: IdGenerator,
   // that are required by the runner.
   // This code should be revisited in #618.
   const o = options
-  const wrappedCode =
-`${code}
+  // Defs required by the simulator, to be added to the main module before compilation
+  const extraDefs = [
+    `val ${lastTraceName} = [];`,
+    `def q::test(q::nrunsArg, q::nstepsArg, q::initArg, q::nextArg, q::invArg) = false`,
+    `action q::init = { ${o.init} }`,
+    `action q::step = { ${o.step} }`,
+    `val q::inv = { ${o.invariant} }`,
+    `val q::runResult = q::test(${o.maxSamples}, ${o.maxSteps}, q::init, q::step, q::inv)`,
+  ]
 
-module __run__ {
-  import ${mainName}.*
+  // Construct the modules' code, adding the extra definitions to the main module
+  const newMainModuleCode = code.slice(mainStart, mainEnd - 1) + extraDefs.join('\n')
+  const codeWithExtraDefs = code.slice(0, mainStart) + newMainModuleCode + code.slice(mainEnd)
 
-  val ${lastTraceName} = [];
-  def _test(__nrunsArg, __nstepsArg, __initArg, __nextArg, __invArg) = false;
-  action __init = { ${o.init} }
-  action __step = { ${o.step} }
-  val __inv = { ${o.invariant} }
-  val __runResult =
-    _test(${o.maxSamples}, ${o.maxSteps}, "__init", "__step", "__inv")
-}
-`
- 
-  const ctx = compileFromCode(idGen, wrappedCode, '__run__', options.rand)
+  const recorder = newTraceRecorder(options.verbosity, options.rng)
+  const ctx = compileFromCode(idGen, codeWithExtraDefs, mainName, mainPath, recorder, options.rng.next)
 
-  if (ctx.compileErrors.length > 0
-      || ctx.syntaxErrors.length > 0
-      || ctx.analysisErrors.length > 0) {
-    return left(ctx.syntaxErrors
-                .concat(ctx.analysisErrors)
-                .concat(ctx.compileErrors))
+  if (ctx.compileErrors.length > 0 || ctx.syntaxErrors.length > 0 || ctx.analysisErrors.length > 0) {
+    const errors = ctx.syntaxErrors.concat(ctx.analysisErrors).concat(ctx.compileErrors)
+    return errSimulationResult('error', errors)
   } else {
-    // evaluate __runResult
-    const res: Either<ErrorMessage[], boolean> =
-      contextLookup(ctx, '__run__', '__runResult', 'callable')
-        .mapLeft(msg => [{ explanation: msg, locs: [] }] as ErrorMessage[])
-        .map(comp => {
-          const result = comp.eval()
-          if (result.isNone()) {
-            return left(ctx.getRuntimeErrors())
-          }
+    // evaluate q::runResult, which triggers the simulator
+    const evaluationState = ctx.evaluationState
+    const res: Either<string, Computable> = contextNameLookup(evaluationState.context, 'q::runResult', 'callable')
+    if (res.isLeft()) {
+      const errors = [{ code: 'QNT512', message: res.value }] as QuintError[]
+      return errSimulationResult('error', errors)
+    } else {
+      const _ = res.value.eval()
+    }
 
-          const ex = result.unwrap().toQuintEx(idGen)
-          if (ex.kind !== 'bool') {
-            return left([{
-              explanation: 'Expected a Boolean result',
-              locs: [],
-            }])
-          } else {
-            return right(ex.value)
-          }
-        })
-        .join()
+    const topFrame = recorder.getBestTrace()
+    let status: SimulatorResultStatus = 'failure'
+    if (topFrame.result.isJust()) {
+      const ex = topFrame.result.unwrap().toQuintEx(idGen)
+      if (ex.kind === 'bool') {
+        status = ex.value ? 'ok' : 'violation'
+      }
+    } else {
+      // This should not happen. But if it does, give a debugging hint.
+      console.error('No trace recorded')
+    }
 
-    return res.map(noViolation => {
-        // evaluate _lastTrace
-        const lastTrace =
-          ctx.values.get(kindName('shadow', lastTraceName)) ?? fail
-        const result = lastTrace.eval()
-        const runtimeErrors = ctx.getRuntimeErrors()
-        if (result.isNone() || runtimeErrors.length > 0) {
-          if (runtimeErrors.length > 0) {
-            return left(runtimeErrors)
-          } else {
-            return left([ {
-              explanation: `${lastTraceName} not found`,
-              locs: [],
-            } ])
-          }
-        } else {
-          return right({
-            status: noViolation ? 'ok' : 'violation',
-            trace: result.unwrap().toQuintEx(idGen),
-          } as SimulatorResult)
-        }
-      })
-      .join()
+    return {
+      status: status,
+      vars: evaluationState.vars.map(v => v.name),
+      states: topFrame.args.map(e => e.toQuintEx(idGen)),
+      frames: topFrame.subframes,
+      errors: ctx.getRuntimeErrors(),
+      seed: recorder.getBestTraceSeed(),
+    }
   }
 }
-

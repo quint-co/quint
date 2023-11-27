@@ -14,6 +14,202 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## v0.11.0 -- 2023-11-20
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.10.0 -- 2023-11-08
+
+### Added
+### Changed
+
+- Error reporting was changed to show more errors at a time, instead of having a lot of phases (#1220)
+
+### Deprecated
+### Removed
+### Fixed
+
+- The language server should no longer crash when there is a crash on quint
+  functions (#1205)
+- Fixed a problem where errors in one file were being reported in other files
+  related to it (#1224).
+
+### Security
+
+## v0.9.1 -- 2023-10-02
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.9.0 -- 2023-09-19
+
+### Added
+
+- Added partial support for code completion and renaming (#1143)
+
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.8.0 -- 2023-08-25
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.7.0 -- 2023-08-06
+
+### Added
+
+- Better icons in VSCode outline view (#1024).
+
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- VSCode plugin: Highlighting of identifiers that contain numbers (#1028)
+
+### Security
+
+## v0.6.0 -- 2023-07-06
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.5.5 -- 2023-06-28
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.5.4 -- 2023-06-28
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.5.3 -- 2023-06-28
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.5.2 -- 2023-06-23
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- Fix pretty-printing bug where types for tuples didn't have parenthesis around them (#969).
+
+### Security
+
+## v0.5.1 -- 2023-06-15
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.5.0 -- 2023-05-24
+
+### Added
+
+- Add support for outline view (#864)
+
+### Changed
+
+- Hovers are significantly improved (#904)
+
+### Deprecated
+### Removed
+### Fixed
+
+- Fix bug where errors would disappear (#893)
+
+### Security
+
+## v0.4.0 -- 2023-05-04
+
+### Added
+
+- Add support for multiple files (#859)
+- Improved responsiveness on large files/chains of files (#859)
+
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.3.0 -- 2023-04-03
+
+### Added
+### Changed
+
+- Update quint from `0.2.1` to `0.3.0`. See #768.
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.2.1 -- 2023-03-24
+
+### Added
+
+- Go to definition now works for parameters (#711)
+- Go to definition now works for type aliases (#726)
+
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.2.0 -- 2023-03-09
+
+### Added
+### Changed
+
+ - Updated compatible quint version, which includes breaking changes (#698).
+
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 ## v0.1.3 -- 2023-02-22
 
 ### Added

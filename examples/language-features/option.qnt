@@ -1,15 +1,11 @@
 module option {
-  // a demonstration of discriminated unions, specifying an option type.
+  // A demonstration of sum types, specifying an option type.
 
-  // An option type for values.
-  // This type declaration is not required. It only defines an alias.
+  // An option type for int values.
+  // Polymorphic sum types are not yet supported: https://github.com/informalsystems/quint/issues/1073
   type Vote_option =
-    | { tag: "none" }
-    | { tag: "some", value: int }
-
-  def Some(v) = { tag: "some", value: v }
-
-  val None = { tag: "none" }
+    | None
+    | Some(int)
 
   var votes: List[Vote_option]
   var outcome: int
@@ -29,24 +25,11 @@ module option {
   }
 
   val SumVotes =
-    def sum_one(sum, w): (int, Vote_option) => int =
-      // deconstruct a discriminate union.
-      w match
-        // this pattern binds some_w to the "some" version of w, if w.tag == "some"
-        | "some": some_w =>  sum + some_w.value
-        // this pattern
-        | "none": _ =>       sum
-
-      /* // this is how you would do that in typescript
-      if (w.tag == "some") {
-        // w has the type { tag: "some", value: int }
-        sum + w.value
-      } else {
-        sum
+    votes.foldl(0, (sum, vote) => match vote {
+        | Some(v) => sum + v
+        | None    => sum
       }
-      */
-
-    votes.foldl(0, sum_one)
+    )
 
   action Next = all {
     any {
@@ -54,5 +37,10 @@ module option {
       nondet i = oneOf(votes.indices()); Unvote(i),
     },
     outcome' = SumVotes
+  }
+
+  run matchWithDefaultTest = {
+    val expected = match Some(42) { _ => "default" }
+    assert(expected == "default")
   }
 }

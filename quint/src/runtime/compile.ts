@@ -1,167 +1,261 @@
 /*
  * A compiler to the runtime environment.
  *
- * Igor Konnov, 2022-2023
+ * Igor Konnov, Informal Systems, 2022-2023
  *
- * Copyright (c) Informal Systems 2022-2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022-2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  */
 
 import { Either, left, right } from '@sweet-monads/either'
-
-import {
-  ErrorMessage, Loc, fromIrErrorMessage,parsePhase1, parsePhase2
-} from '../quintParserFrontend'
+import { SourceMap, parse, parsePhase3importAndNameResolution } from '../parsing/quintParserFrontend'
 import { Computable, ComputableKind, kindName } from './runtime'
-import { QuintModule } from '../quintIr'
-import { CompilerVisitor } from './impl/compilerImpl'
-import { walkDefinition } from '../IRVisitor'
-import { treeFromModule } from '../scoping'
-import { LookupTableByModule } from '../lookupTable'
-import { TypeScheme } from '../types/base'
-import { QuintAnalyzer } from '../quintAnalyzer'
-import { mkErrorMessage } from '../cliCommands'
-import { IdGenerator } from '../idGenerator'
+import { ExecutionListener } from './trace'
+import { FlatModule, QuintDeclaration, QuintDef, QuintEx, QuintModule } from '../ir/quintIr'
+import { CompilerVisitor, EvaluationState, newEvaluationState } from './impl/compilerImpl'
+import { walkDefinition } from '../ir/IRVisitor'
+import { LookupTable } from '../names/base'
+import { AnalysisOutput, analyzeInc, analyzeModules } from '../quintAnalyzer'
+import { IdGenerator, newIdGenerator } from '../idGenerator'
+import { SourceLookupPath } from '../parsing/sourceResolver'
+import { Rng } from '../rng'
+import { flattenModules } from '../flattening/fullFlattener'
+import { QuintError } from '../quintError'
 
 /**
  * The name of the shadow variable that stores the last found trace.
  */
-export const lastTraceName = '_lastTrace'
+export const lastTraceName = 'q::lastTrace'
+
+/**
+ * The name of a definition that wraps the user input, e.g., in REPL.
+ */
+export const inputDefName: string = 'q::input'
 
 /**
  * A compilation context returned by 'compile'.
  */
 export interface CompilationContext {
   // the lookup table to query for values and definitions
-  lookupTable: LookupTableByModule,
-  // names of the variables and definition identifiers mapped to computables
-  values: Map<string, Computable>,
-  // names of the variables
-  vars: string[],
-  // names of the shadow variables, internal to the simulator
-  shadowVars: string[],
+  lookupTable: LookupTable
   // messages that are produced during parsing
-  syntaxErrors: ErrorMessage[],
+  syntaxErrors: QuintError[]
   // messages that are produced by static analysis
-  analysisErrors: ErrorMessage[],
+  analysisErrors: QuintError[]
   // messages that are produced during compilation
-  compileErrors: ErrorMessage[],
+  compileErrors: QuintError[]
   // messages that get populated as the compiled code is executed
-  getRuntimeErrors: () => ErrorMessage[],
-  // source mapping
-  sourceMap: Map<bigint, Loc>,
-}
-
-function errorContext(errors: ErrorMessage[]): CompilationContext {
-  return {
-    lookupTable: new Map(),
-    values: new Map(),
-    vars: [],
-    shadowVars: [],
-    syntaxErrors: errors,
-    analysisErrors: [],
-    compileErrors: [],
-    getRuntimeErrors: () => [],
-    sourceMap: new Map(),
-  }
+  getRuntimeErrors: () => QuintError[]
+  // The state of pre-compilation phases.
+  compilationState: CompilationState
+  // The state of the compiler visitor.
+  evaluationState: EvaluationState
 }
 
 /**
- * Extract a compiled value of a specific kind via the module name and kind.
- *
- * @param ctx compilation context
- * @param moduleName module name to lookup at
- * @param defName definition name
- * @param kind definition kind
- * @returns the associated compiled value, if it uniquely defined, or undefined
+ * A data structure that holds the state of the compilation process.
  */
-export function
-  contextLookup(ctx: CompilationContext,
-                moduleName: string,
-                defName: string,
-                kind: ComputableKind): Either<string, Computable> {
-  const moduleTable = ctx.lookupTable.get(moduleName)
-  if (!moduleTable) {
-    return left(`Module ${moduleName} not found`)
-  }
-  const defs = moduleTable.valueDefinitions.get(defName)
-  if (!defs) {
-    return left(`Definition ${moduleName}::${defName} not found`)
-  }
-  if (defs.length !== 1) {
-    return left(`Multiple definitions (${defs.length}) of ${moduleName}::${defName} found`)
-  }
+export interface CompilationState {
+  // The ID generator used during compilation.
+  idGen: IdGenerator
+  // File content loaded for each source, used to report errors
+  sourceCode: Map<string, string>
+  // A list of modules as they are constructed, without flattening. This is
+  // needed to derive correct name resolution during incremental compilation in
+  // a flattened context.
+  originalModules: QuintModule[]
+  // A list of flattened modules.
+  modules: FlatModule[]
+  // The name of the main module.
+  mainName?: string
+  // The source map for the compiled code.
+  sourceMap: SourceMap
+  // The output of the Quint analyzer.
+  analysisOutput: AnalysisOutput
+}
 
-  const value = ctx.values.get(kindName(kind, defs[0].reference!))
+/* An empty initial compilation state */
+export function newCompilationState(): CompilationState {
+  return {
+    idGen: newIdGenerator(),
+    sourceCode: new Map(),
+    originalModules: [],
+    modules: [],
+    sourceMap: new Map(),
+    analysisOutput: {
+      types: new Map(),
+      effects: new Map(),
+      modes: new Map(),
+    },
+  }
+}
+
+export function errorContextFromMessage(
+  listener: ExecutionListener
+): (_: { errors: QuintError[]; sourceMap: SourceMap }) => CompilationContext {
+  const evaluationState = newEvaluationState(listener)
+  return ({ errors, sourceMap }) => {
+    return {
+      lookupTable: new Map(),
+      syntaxErrors: errors,
+      analysisErrors: [],
+      compileErrors: [],
+      getRuntimeErrors: () => [],
+      compilationState: { ...newCompilationState(), sourceMap },
+      evaluationState,
+    }
+  }
+}
+
+export function contextNameLookup(
+  context: Map<string, Computable>,
+  defName: string,
+  kind: ComputableKind
+): Either<string, Computable> {
+  const value = context.get(kindName(kind, defName))
   if (!value) {
-    console.log(`key = ${kindName(kind, defs[0].reference!)}`)
-    return left(`No value for definition ${moduleName}::${defName}`)
+    console.log(`key = ${kindName(kind, defName)}`)
+    return left(`No value for definition ${defName}`)
   } else {
     return right(value)
   }
 }
 
 /**
- * Compile Quint modules to JS runtime objects from the parsed and type-checked
+ * Compile Quint defs to JS runtime objects from the parsed and type-checked
  * data structures. This is a user-facing function. In case of an error, the
  * error messages are passed to an error handler and the function returns
  * undefined.
  *
- * @param modules Quint modules in the intermediate representation
- * @param sourceMap source map as produced by the parser
+ * @param compilationState the state of the compilation process
+ * @param evaluationState the state of the compiler visitor
  * @param lookupTable lookup table as produced by the parser
- * @param types type table as produced by the type checker
- * @param mainName the name of the module that may contain state varibles
  * @param rand the random number generator
+ * @param defs the definitions to compile
  * @returns the compilation context
  */
-export function
-  compile(modules: QuintModule[],
-          sourceMap: Map<bigint, Loc>,
-          lookupTable: LookupTableByModule,
-          types: Map<bigint, TypeScheme>,
-          mainName: string,
-          rand: () => number): CompilationContext {
-  // Push back the main module to the end:
-  // The compiler exposes the state variables of the last module only.
-  const main = modules.find(m => m.name === mainName)
-  const visitor = new CompilerVisitor(types, rand)
-  if (main) {
-    const reorderedModules =
-      modules.filter(m => m.name !== mainName).concat(main ? [main] : [])
-    // Compile all modules
-    reorderedModules.forEach(module => {
-      visitor.switchModule(module.id,
-                           module.name,
-                           lookupTable.get(module.name)!,
-                           treeFromModule(module))
-      module.defs.forEach(def => walkDefinition(visitor, def))
-    })
-  }
-  // when the main module is not found, we will report an error
-  const mainNotFoundError =
-    main ? [] : [{
-      explanation: `Main module ${mainName} not found`,
-      refs: [],
-    }]
+export function compile(
+  compilationState: CompilationState,
+  evaluationState: EvaluationState,
+  lookupTable: LookupTable,
+  rand: (bound: bigint) => bigint,
+  defs: QuintDef[]
+): CompilationContext {
+  const { analysisOutput } = compilationState
+
+  const visitor = new CompilerVisitor(lookupTable, analysisOutput.types, rand, evaluationState)
+
+  defs.forEach(def => walkDefinition(visitor, def))
+
   return {
-    lookupTable: lookupTable,
-    values: visitor.getContext(),
-    vars: visitor.getVars(),
-    shadowVars: visitor.getShadowVars(),
+    lookupTable,
     syntaxErrors: [],
     analysisErrors: [],
-    compileErrors:
-      visitor.getCompileErrors().concat(mainNotFoundError)
-      .map(fromIrErrorMessage(sourceMap)),
+    compileErrors: visitor.getCompileErrors(),
     getRuntimeErrors: () => {
-      return visitor.getRuntimeErrors()
-        .splice(0)
-        .map(fromIrErrorMessage(sourceMap))
+      return visitor.getRuntimeErrors().splice(0)
     },
-    sourceMap: sourceMap,
+    compilationState,
+    evaluationState: visitor.getEvaluationState(),
   }
+}
+
+/**
+ * Compile a single Quint expression, given a non-empty compilation and
+ * evaluation state. That is, those states should have the results of the
+ * compilation of at least one module.
+ *
+ * @param state - The current compilation state
+ * @param evaluationState - The current evaluation state
+ * @param rng - The random number generator
+ * @param expr - The Quint exporession to be compiled
+ *
+ * @returns A compilation context with the compiled expression or its errors
+ */
+export function compileExpr(
+  state: CompilationState,
+  evaluationState: EvaluationState,
+  rng: Rng,
+  expr: QuintEx
+): CompilationContext {
+  // Create a definition to encapsulate the parsed expression.
+  // Note that the expression may contain nested definitions.
+  // Hence, we have to compile it via an auxilliary definition.
+  const def: QuintDef = { kind: 'def', qualifier: 'action', name: inputDefName, expr, id: state.idGen.nextId() }
+
+  return compileDecls(state, evaluationState, rng, [def])
+}
+
+/**
+ * Compile a single Quint definition, given a non-empty compilation and
+ * evaluation state. That is, those states should have the results of the
+ * compilation of at least one module.
+ *
+ * @param state - The current compilation state
+ * @param evaluationState - The current evaluation state
+ * @param rng - The random number generator
+ * @param decls - The Quint declarations to be compiled
+ *
+ * @returns A compilation context with the compiled definition or its errors
+ */
+export function compileDecls(
+  state: CompilationState,
+  evaluationState: EvaluationState,
+  rng: Rng,
+  decls: QuintDeclaration[]
+): CompilationContext {
+  if (state.originalModules.length === 0 || state.modules.length === 0) {
+    throw new Error('No modules in state')
+  }
+
+  // Define a new module list with the new definition in the main module,
+  // ensuring the original object is not modified
+  const originalModules = state.originalModules.map(m => {
+    if (m.name === state.mainName) {
+      return { ...m, declarations: [...m.declarations, ...decls] }
+    }
+    return m
+  })
+
+  const mainModule = state.modules.find(m => m.name === state.mainName)!
+
+  // We need to resolve names for this new definition. Incremental name
+  // resolution is not our focus now, so just resolve everything again.
+  const { table, errors } = parsePhase3importAndNameResolution({
+    modules: originalModules,
+    sourceMap: state.sourceMap,
+    errors: [],
+  })
+
+  if (errors.length > 0) {
+    // For now, don't try to run analysis and flattening if there are errors
+    return errorContextFromMessage(evaluationState.listener)({ errors, sourceMap: state.sourceMap })
+  }
+
+  const [analysisErrors, analysisOutput] = analyzeInc(state.analysisOutput, table, decls)
+
+  const {
+    flattenedModules: flatModules,
+    flattenedTable,
+    flattenedAnalysis,
+  } = flattenModules(originalModules, table, state.idGen, state.sourceMap, analysisOutput)
+
+  const newState = {
+    ...state,
+    analysisOutput: flattenedAnalysis,
+    modules: flatModules,
+    originalModules: originalModules,
+  }
+
+  const flatDefinitions = flatModules.find(m => m.name === state.mainName)!.declarations
+
+  // Filter definitions that were not compiled yet
+  const defsToCompile = flatDefinitions.filter(d => !mainModule.declarations.some(d2 => d2.id === d.id))
+
+  const ctx = compile(newState, evaluationState, flattenedTable, rng.next, defsToCompile)
+
+  return { ...ctx, analysisErrors }
 }
 
 /**
@@ -172,37 +266,59 @@ export function
  * @param code text that stores one or several Quint modules,
  *        which should be parseable without any context
  * @param mainName the name of the module that may contain state varibles
+ * @param execListener execution listener
  * @param rand the random number generator
  * @returns the compilation context
  */
-export function
-  compileFromCode(idGen: IdGenerator,
-                  code: string,
-                  mainName: string,
-                  rand: () => number): CompilationContext {
+export function compileFromCode(
+  idGen: IdGenerator,
+  code: string,
+  mainName: string,
+  mainPath: SourceLookupPath,
+  execListener: ExecutionListener,
+  rand: (bound: bigint) => bigint
+): CompilationContext {
   // parse the module text
-  return parsePhase1(idGen, code, '<input>')
-    // On errors, we'll produce the computational context up to this point
-    .mapLeft(errorContext)
-    .chain(d => parsePhase2(d)
-      // On errors, we'll produce the computational context up to this point
-      .mapLeft(errorContext))
-    .chain(parseData => {
-      const { modules, table, sourceMap } = parseData
-      const analyzer = new QuintAnalyzer(table)
-      modules.forEach(module => analyzer.analyze(module))
-      // since the type checker and effects checker are incomplete,
-      // collect the errors, but do not stop immediately on error
-      const [analysisErrors, analysisResult] = analyzer.getResult()
-      const ctx =
-        compile(modules,
-                sourceMap, table, analysisResult.types, mainName, rand)
-      const errorLocator = mkErrorMessage(sourceMap)
-      return right({
-        ...ctx,
-        analysisErrors: Array.from(analysisErrors, errorLocator),
-      })
-    }
-  // we produce CompilationContext in any case
-  ).value
+  // FIXME(#1052): We should build a proper sourceCode map from the files we previously loaded
+  const sourceCode: Map<string, string> = new Map()
+  const { modules, table, sourceMap, errors } = parse(idGen, mainPath.toSourceName(), mainPath, code, sourceCode)
+  // On errors, we'll produce the computational context up to this point
+  const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
+
+  const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
+    modules,
+    table,
+    idGen,
+    sourceMap,
+    analysisOutput
+  )
+  const compilationState: CompilationState = {
+    originalModules: modules,
+    modules: flattenedModules,
+    mainName,
+    sourceMap,
+    analysisOutput: flattenedAnalysis,
+    idGen,
+    sourceCode,
+  }
+
+  const main = flattenedModules.find(m => m.name === mainName)
+  // when the main module is not found, we will report an error
+  const mainNotFoundError: QuintError[] = main
+    ? []
+    : [
+        {
+          code: 'QNT405',
+          message: `Main module ${mainName} not found`,
+        },
+      ]
+  const defsToCompile = main ? main.declarations : []
+  const ctx = compile(compilationState, newEvaluationState(execListener), flattenedTable, rand, defsToCompile)
+
+  return {
+    ...ctx,
+    compileErrors: ctx.compileErrors.concat(mainNotFoundError),
+    analysisErrors,
+    syntaxErrors: errors,
+  }
 }

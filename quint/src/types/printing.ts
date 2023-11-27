@@ -1,5 +1,5 @@
-import { rowToString, typeToString } from '../IRprinting'
-import { newTable } from '../lookupTable'
+import { rowToString, typeToString } from '../ir/IRprinting'
+import { QuintType } from '../ir/quintTypes'
 import { Constraint, TypeScheme } from './base'
 import { Substitutions, applySubstitution, compose } from './substitutions'
 
@@ -12,9 +12,14 @@ import { Substitutions, applySubstitution, compose } from './substitutions'
  */
 export function constraintToString(c: Constraint): string {
   switch (c.kind) {
-    case 'eq': return `${typeToString(c.types[0])} ~ ${typeToString(c.types[1])}`
-    case 'conjunction': return c.constraints.map(constraintToString).join(' /\\ ')
-    case 'empty': return 'true'
+    case 'eq':
+      return `${typeToString(c.types[0])} ~ ${typeToString(c.types[1])}`
+    case 'conjunction':
+      return c.constraints.map(constraintToString).join(' /\\ ')
+    case 'isDefined':
+      return `${typeToString(c.type)} is defined`
+    case 'empty':
+      return 'true'
   }
 }
 
@@ -26,6 +31,13 @@ export function constraintToString(c: Constraint): string {
  * @returns a string with the formatted type scheme
  */
 export function typeSchemeToString(t: TypeScheme): string {
+  const [vars, type] = canonicalTypeScheme(t)
+
+  const varsString = vars.length > 0 ? `∀ ${vars.join(', ')} . ` : ''
+  return `${varsString}${typeToString(type)}`
+}
+
+export function canonicalTypeScheme(t: TypeScheme): [string[], QuintType] {
   const typeNames = Array.from(t.typeVariables)
   const rowNames = Array.from(t.rowVariables)
   const vars: string[] = []
@@ -34,17 +46,16 @@ export function typeSchemeToString(t: TypeScheme): string {
     vars.push(`t${i}`)
     return { kind: 'type', name, value: { kind: 'var', name: `t${i}` } }
   })
-  
+
   const rowSubs: Substitutions = rowNames.map((name, i) => {
     vars.push(`r${i}`)
     return { kind: 'row', name: name, value: { kind: 'var', name: `r${i}` } }
   })
 
-  const subs = compose(newTable({}), typeSubs, rowSubs)
-  const type = applySubstitution(newTable({}), subs, t.type)
+  const subs = compose(new Map(), typeSubs, rowSubs)
+  const type = applySubstitution(new Map(), subs, t.type)
 
-  const varsString = vars.length > 0 ? `∀ ${vars.join(', ')} . ` : ''
-  return `${varsString}${typeToString(type)}`
+  return [vars, type]
 }
 
 /**

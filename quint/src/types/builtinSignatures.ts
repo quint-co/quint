@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -13,17 +13,22 @@
  */
 
 import { parseTypeOrThrow } from './parser'
-import { typeNames } from '../quintTypes'
+import { typeNames } from '../ir/quintTypes'
 import { Signature, TypeScheme } from './base'
 import { times } from 'lodash'
+import { QuintBuiltinOpcode } from '../ir/quintIr'
 
 export function getSignatures(): Map<string, Signature> {
   return new Map<string, Signature>(fixedAritySignatures.concat(multipleAritySignatures))
 }
 
-// Signatures for record and tuple related operators cannot be precisely
-// defined with this syntax. Their types are handled directly with constraints
-// in the specialConstraints.ts file
+// NOTE: Signatures operations over products (records and tuples) and sums
+// (enums/disjoint unions/variants) cannot be precisely defined with this
+// syntax, because they are "exotic", in the sense that they represent basic
+// language constructions that cannot be represented in the type system of the
+// language itself.
+//
+// Their types are handled directly with constraints in specialConstraints.ts.
 
 const literals = [
   { name: 'Nat', type: 'Set[int]' },
@@ -44,7 +49,6 @@ const setOperators = [
   { name: 'forall', type: '(Set[a], (a) => bool) => bool' },
   { name: 'in', type: '(a, Set[a]) => bool' },
   { name: 'contains', type: '(Set[a], a) => bool' },
-  { name: 'notin', type: '(a, Set[a]) => bool' },
   { name: 'union', type: '(Set[a], Set[a]) => Set[a]' },
   { name: 'intersect', type: '(Set[a], Set[a]) => Set[a]' },
   { name: 'exclude', type: '(Set[a], Set[a]) => Set[a]' },
@@ -118,7 +122,7 @@ const otherOperators = [
   { name: 'assign', type: '(a, a) => bool' },
   { name: 'ite', type: '(bool, a, a) => a' },
   { name: 'then', type: '(bool, bool) => bool' },
-  { name: 'repeated', type: '(bool, int) => bool' },
+  { name: 'reps', type: '(int, int => bool) => bool' },
   { name: 'fail', type: '(bool) => bool' },
   { name: 'assert', type: '(bool) => bool' },
 ]
@@ -130,8 +134,7 @@ function uniformArgsWithResult(argsType: string, resultType: string): Signature 
   }
 }
 
-// TODO: check arity conditions, see issue https://github.com/informalsystems/quint/issues/169
-const multipleAritySignatures: [string, Signature][] = [
+const multipleAritySignatures: [QuintBuiltinOpcode, Signature][] = [
   ['List', uniformArgsWithResult('a', 'List[a]')],
   ['Set', uniformArgsWithResult('a', 'Set[a]')],
   ['Map', uniformArgsWithResult('(a, b)', 'a -> b')],
@@ -139,16 +142,22 @@ const multipleAritySignatures: [string, Signature][] = [
   ['actionAll', uniformArgsWithResult('bool', 'bool')],
   ['or', uniformArgsWithResult('bool', 'bool')],
   ['actionAny', uniformArgsWithResult('bool', 'bool')],
-  ['unionMatch', (arity: number) => {
-    const args = times((arity - 1) / 2, () => 'str, (a) => b')
-    return parseAndQuantify(`(a, ${args.join(', ')}) => b`)
-  }],
-  ['tuples', (arity: number) => {
-    const ts = times(arity, i => `t${i}`)
-    const args = ts.map(t => `Set[${t}]`)
-    const tupleType = `(${ts.join(', ')})`
-    return parseAndQuantify(`(${args.join(', ')}) => Set[${tupleType}]`)
-  }],
+  [
+    'matchVariant',
+    (arity: number) => {
+      const args = times((arity - 1) / 2, () => 'str, (a) => b')
+      return parseAndQuantify(`(a, ${args.join(', ')}) => b`)
+    },
+  ],
+  [
+    'tuples',
+    (arity: number) => {
+      const ts = times(arity, i => `t${i}`)
+      const args = ts.map(t => `Set[${t}]`)
+      const tupleType = `(${ts.join(', ')})`
+      return parseAndQuantify(`(${args.join(', ')}) => Set[${tupleType}]`)
+    },
+  ],
 ]
 
 const fixedAritySignatures: [string, Signature][] = [
@@ -160,7 +169,9 @@ const fixedAritySignatures: [string, Signature][] = [
   integerOperators,
   temporalOperators,
   otherOperators,
-].flat().map(sig => [sig.name, (_: number) => parseAndQuantify(sig.type)])
+]
+  .flat()
+  .map(sig => [sig.name, (_: number) => parseAndQuantify(sig.type)])
 
 function parseAndQuantify(typeString: string): TypeScheme {
   const t = parseTypeOrThrow(typeString)

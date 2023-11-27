@@ -150,10 +150,12 @@ AllNodesTerminateIfNoMessages ==
 (***************************************************************************)
 (* Dijkstra's inductive invariant                                          *)
 (***************************************************************************)
-Inv == 
+Inv ==
   \/ P0:: \A i \in Node : tpos < i => ~ active[i]
-  \/ P1:: \E j \in 0 .. tpos : color[j] = "black"
+  \/ P1:: \E j \in Node: (0 <= j /\ j <= tpos) => color[j] = "black"
   \/ P2:: tcolor = "black"
+
+  (*\/ P1:: \E j \in 0 .. tpos : color[j] = "black"*)
 
 (***************************************************************************)
 (* Use the following specification to let TLC check that the predicate     *)

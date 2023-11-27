@@ -57,5 +57,5 @@
 - *Quint is CLI-first*:
 
    - The users should be able to parse and transpile Quint in the command-line.
-   - The intermediate transpiler outputs are avaiable in JSON.
-   - IDE support (such as a VSCode plugin) is a beatiful opt-in, not a requirement.
+   - The intermediate transpiler outputs are available in JSON.
+   - IDE support (such as a VSCode plugin) is a beautiful opt-in, not a requirement.

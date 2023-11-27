@@ -19,23 +19,11 @@ describe('getSignatures', () => {
 
     const result = listSignature(3)
 
-    assert.deepEqual(result, expectedSignature,
-      `expected ${typeSchemeToString(expectedSignature)}, got ${typeSchemeToString(result)}`)
-  })
-
-  it('contains quantified signatures for match', () => {
-    const matchSignature = signatures.get('unionMatch')!
-
-    const expectedSignature: TypeScheme = {
-      type: parseTypeOrThrow('(a, str, (a) => b, str, (a) => b) => b'),
-      typeVariables: new Set(['a', 'b']),
-      rowVariables: new Set([]),
-    }
-
-    const result = matchSignature(5)
-
-    assert.deepEqual(result, expectedSignature,
-      `expected ${typeSchemeToString(expectedSignature)}, got ${typeSchemeToString(result)}`)
+    assert.deepEqual(
+      result,
+      expectedSignature,
+      `expected ${typeSchemeToString(expectedSignature)}, got ${typeSchemeToString(result)}`
+    )
   })
 
   it('contains quantified signatures for tuples', () => {
@@ -49,7 +37,10 @@ describe('getSignatures', () => {
 
     const result = tuplesSignature(3)
 
-    assert.deepEqual(result, expectedSignature,
-      `expected ${typeSchemeToString(expectedSignature)}, got ${typeSchemeToString(result)}`)
+    assert.deepEqual(
+      result,
+      expectedSignature,
+      `expected ${typeSchemeToString(expectedSignature)}, got ${typeSchemeToString(result)}`
+    )
   })
 })

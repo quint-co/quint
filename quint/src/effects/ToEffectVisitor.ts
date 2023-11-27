@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -62,7 +62,10 @@ export class ToEffectVisitor implements EffectListener {
 
     const effect: Effect = {
       kind: 'concrete',
-      components: [{ kind: 'read', entity: read }, { kind: 'update', entity: update }],
+      components: [
+        { kind: 'read', entity: read },
+        { kind: 'update', entity: update },
+      ],
     }
     this.pushEffect(effect)
   }
@@ -73,7 +76,10 @@ export class ToEffectVisitor implements EffectListener {
 
     const effect: Effect = {
       kind: 'concrete',
-      components: [{ kind: 'read', entity: read }, { kind: 'temporal', entity: temporal }],
+      components: [
+        { kind: 'read', entity: read },
+        { kind: 'temporal', entity: temporal },
+      ],
     }
     this.pushEffect(effect)
   }
@@ -104,7 +110,10 @@ export class ToEffectVisitor implements EffectListener {
     const names: string[] = ctx.IDENTIFIER().map(i => i.text)
     const entityUnion: Entity[] = names.map(name => ({ kind: 'variable', name }))
     if (this.stateVars.length > 0) {
-      entityUnion.push({ kind: 'concrete', stateVariables: this.stateVars.map(v => ({ name: v, reference: this.nextId() })) })
+      entityUnion.push({
+        kind: 'concrete',
+        stateVariables: this.stateVars.map(v => ({ name: v, reference: this.nextId() })),
+      })
     }
 
     if (entityUnion.length === 0) {

@@ -124,19 +124,6 @@ assert(Set(1, 2, 3).contains(1))
 assert(not(Set(1, 2, 3).contains(4)))
 ```
 
-## `pure def notin: (a, Set[a]) => bool`
-
-`e.notin(s)` is true when the element `e` is not in the set `s`.
-
-See also: `in`
-
-### Examples
-
-```
-assert(4.notin(Set(1, 2, 3)))
-assert(not(1.notin(Set(1, 2, 3))))
-```
-
 ## `pure def union: (Set[a], Set[a]) => Set[a]`
 
 `s1.union(s2)` is the set of elements that are in `s1` or in `s2`.
@@ -371,7 +358,7 @@ assert(s == Set(
 
 ## `pure def set: ((a -> b), a, b) => (a -> b)`
 
-`m.set(k, v)` is the map `m` but with the key `k` mapped `v` if `k.in(keys(m))`
+`m.set(k, v)` is the map `m` but with the key `k` mapped to `v` if `k.in(keys(m))`
 
 If `k` is not a key in `m`, this operator has undefined behavior.
 
@@ -401,17 +388,17 @@ assert(m2 == Map(1 -> true, 2 -> true))
 
 ## `pure def put: ((a -> b), a, b) => (a -> b)`
 
-`m.put(k, v)` map `m` extended with the key `k` set to `v`.
-
-If `k` is present in `m`, this operator has undefined behavior.
+`m.put(k, v)` is the map `m` but with the key `k` mapped to `v`.
 
 ### Examples
 
 ```
 pure val m = Map(1 -> true, 2 -> false)
-pure val m2 = m.put(3, true)
+pure val m2 = m.put(2, true)
+pure val m3 = m.put(3, true)
 assert(m == Map(1 -> true, 2 -> false))
-assert(m2 == Map(1 -> true, 2 -> false, 3 -> true))
+assert(m2 == Map(1 -> true, 2 -> true))
+assert(m3 == Map(1 -> true, 2 -> false, 3 -> true))
 ```
 
 ## `pure def append: (List[a], a) => List[a]`
@@ -548,7 +535,7 @@ assert(List(1, 2, 3).select(x -> x % 2 == 0) == List(2))
 
 ## `pure def foldl: (List[a], b, (b, a) => b) => b`
 
-`l.foldl(z, f)` reduces the elements in `s` using `f`,
+`l.foldl(z, f)` reduces the elements in `l` using `f`,
 starting with `z` from the left.
 
 I.e., `f(f(f(z, x0), x1)..., xn)`.
@@ -560,22 +547,6 @@ pure val sum = List(1, 2, 3, 4).foldl(0, (x, y) => x + y)
 assert(sum == 10)
 pure val l = List(1, 2, 3, 4).foldl(List(), (l, e) => l.append(e))
 assert(l == List(1, 2, 3, 4))
-```
-
-## `pure def foldr: (List[a], b, (a, b) => b) => b`
-
-`l.foldr(z, f)` reduces the elements in `s` using `f`,
-starting with `z` from the right.
-
-I.e., `f(x0, f(x1, ... f(xn, z))`.
-
-### Examples
-
-```
-pure val sum = List(1, 2, 3, 4).foldr(0, (x, y) => x + y)
-assert(sum == 10)
-pure val l = List(1, 2, 3, 4).foldr(List(), (e, l) => l.append(e))
-assert(l == List(4, 3, 2, 1))
 ```
 
 ## `pure def iadd: (int, int) => int`
@@ -889,29 +860,25 @@ var x: int
 run test = (x' = 1).then(x' = 2).then(x' = 3).then(assert(x == 3))
 ```
 
-## `action repeated: (bool, int) => bool`
+## `action reps: (int, (int) => bool) => bool`
 
-`a.repeated(b)` is the action `a` repeated `n` times.
+`n.reps(i => A(i))` or `n.reps(A)` the action `A`, `n` times.
+The iteration number, starting with 0, is passed as an argument of `A`.
+As actions are usually not parameterized by the iteration number,
+the most common form looks like: `n.reps(i => A)`.
 
 The semantics of this operator is as follows:
 
-- When `n <= 0`, this operator is equivalent to `unchanged`.
-- When `n = 1`, `a.repeated(n)` is equivalent to `a`.
-- When `n > 1`, `a.repeated(a)`, is equivalent to `a.then(a.repeated(n - 1))`.
-
-Note that the operator `a.repeated(n)` applies `a` exactly `n` times (when `n` is
-non-negative). If you want to repeat `a` from `i` to `j` times, you can combine
-it with `orKeep`:
-
-```
-a.repeated(i).then((a.orKeep(vars)).repeated(j - i))
-```
+- When `n <= 0`, this operator does not change the state.
+- When `n = 1`, `n.reps(A)` is equivalent to `A(0)`.
+- When `n > 1`, `n.reps(A)`, is equivalent to
+  `A(0).then((n - 1).reps(i => A(1 + i)))`.
 
 ### Examples
 
 ```
 var x: int
-run test = (x' = 0).then((x' = x + 1).repeated(3)).then(assert(x == 3))
+run test = (x' = 0).then(3.reps(i => x' = x + 1)).then(assert(x == 3))
 ```
 
 ## `action fail: (bool) => bool`

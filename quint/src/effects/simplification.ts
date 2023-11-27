@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -13,6 +13,7 @@
  */
 
 import isEqual from 'lodash.isequal'
+import { unreachable } from '../util'
 import { ConcreteEffect, Effect, Entity, StateVariable } from './base'
 
 /**
@@ -36,8 +37,10 @@ function simplifyConcreteEffect(e: ConcreteEffect): Effect {
 
 export function simplify(e: Effect): Effect {
   switch (e.kind) {
-    case 'concrete': return simplifyConcreteEffect(e)
-    case 'variable': return e
+    case 'concrete':
+      return simplifyConcreteEffect(e)
+    case 'variable':
+      return e
     case 'arrow': {
       const params = e.params.map(simplify)
       const result = simplify(e.result)
@@ -55,34 +58,35 @@ export function simplify(e: Effect): Effect {
  *          Otherwise, the entity without change.
  */
 export function flattenUnions(entity: Entity): Entity {
-  switch (entity.kind) {
-    case 'union': {
-      const unionEntities: Entity[] = []
-      const vars: StateVariable[] = []
-      const flattenEntities = entity.entities.map(v => flattenUnions(v))
-      flattenEntities.forEach(v => {
-        switch (v.kind) {
-          case 'variable':
-            unionEntities.push(v)
-            break
-          case 'concrete':
-            vars.push(...v.stateVariables)
-            break
-          case 'union':
-            unionEntities.push(...v.entities)
-            break
-        }
-      })
-
-      if (unionEntities.length > 0) {
-        const entities = vars.length > 0 ? unionEntities.concat({ kind: 'concrete', stateVariables: vars }) : unionEntities
-        return entities.length > 1 ? { kind: 'union', entities: entities } : entities[0]
-      } else {
-        return { kind: 'concrete', stateVariables: vars }
+  if (entity.kind == 'union') {
+    const unionEntities: Entity[] = []
+    const vars: StateVariable[] = []
+    const flattenEntities = entity.entities.map(v => flattenUnions(v))
+    flattenEntities.map(v => {
+      switch (v.kind) {
+        case 'variable':
+          unionEntities.push(v)
+          break
+        case 'concrete':
+          vars.push(...v.stateVariables)
+          break
+        case 'union':
+          unionEntities.push(...v.entities)
+          break
+        default:
+          unreachable(v)
       }
+    })
+
+    if (unionEntities.length > 0) {
+      const entities =
+        vars.length > 0 ? unionEntities.concat({ kind: 'concrete', stateVariables: vars }) : unionEntities
+      return entities.length > 1 ? { kind: 'union', entities: entities } : entities[0]
+    } else {
+      return { kind: 'concrete', stateVariables: vars }
     }
-    default:
-      return entity
+  } else {
+    return entity
   }
 }
 

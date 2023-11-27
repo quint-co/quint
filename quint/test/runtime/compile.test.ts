@@ -2,50 +2,77 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { Either, left, right } from '@sweet-monads/either'
 import { just } from '@sweet-monads/maybe'
-import { expressionToString } from '../../src/IRprinting'
-import { ComputableKind, fail, kindName } from '../../src/runtime/runtime'
+import { expressionToString } from '../../src/ir/IRprinting'
+import { Computable, ComputableKind, fail, kindName } from '../../src/runtime/runtime'
+import { noExecutionListener } from '../../src/runtime/trace'
 import {
-  CompilationContext, compileFromCode, contextLookup
+  CompilationContext,
+  CompilationState,
+  compile,
+  compileDecls,
+  compileExpr,
+  compileFromCode,
+  contextNameLookup,
+  inputDefName,
 } from '../../src/runtime/compile'
 import { RuntimeValue } from '../../src/runtime/impl/runtimeValue'
 import { dedent } from '../textUtils'
 import { newIdGenerator } from '../../src/idGenerator'
+import { Rng, newRng } from '../../src/rng'
+import { SourceLookupPath, stringSourceResolver } from '../../src/parsing/sourceResolver'
+import { analyzeModules, parse, parseExpressionOrDeclaration, quintErrorToString } from '../../src'
+import { flattenModules } from '../../src/flattening/fullFlattener'
+import { newEvaluationState } from '../../src/runtime/impl/compilerImpl'
 
 // Use a global id generator, limited to this test suite.
 const idGen = newIdGenerator()
 
 // Compile an expression, evaluate it, convert to QuintEx, then to a string,
 // compare the result. This is the easiest path to test the results.
-function assertResultAsString(input: string, expected: string | undefined) {
-  const moduleText = `module __runtime { val __expr = ${input} }`
-  const context =
-    compileFromCode(idGen, moduleText, '__runtime', () => Math.random())
-  contextLookup(context, '__runtime', '__expr', 'callable')
-    .mapLeft(msg => assert(false, msg))
-    .mapRight(value => {
-      const result = value.eval()
-        .map(r => r.toQuintEx(idGen))
-        .map(expressionToString)
-        .map(s => assert(s === expected, `Expected ${expected}, found ${s}`))
-      if (result.isNone()) {
-        assert(expected === undefined, `Expected ${expected}, found undefined`)
-      }
-      return result
-    })
+//
+// @param evalContext optional textual representation of context that may hold definitions which
+//        `input` depends on. This content will be wrapped in a module and imported unqualified
+//        before the input is evaluated. If not supplied, the context is empty.
+function assertResultAsString(input: string, expected: string | undefined, evalContext: string = '') {
+  const moduleText = `module contextM { ${evalContext} } module __runtime { import contextM.*\n val ${inputDefName} = ${input} }`
+  const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
+  const context = compileFromCode(idGen, moduleText, '__runtime', mockLookupPath, noExecutionListener, newRng().next)
+
+  assert.isEmpty(context.syntaxErrors, `Syntax errors: ${context.syntaxErrors.map(quintErrorToString).join(', ')}`)
+  assert.isEmpty(context.compileErrors, `Compile errors: ${context.compileErrors.map(quintErrorToString).join(', ')}`)
+
+  assertInputFromContext(context, expected)
+}
+
+function assertInputFromContext(context: CompilationContext, expected: string | undefined) {
+  contextNameLookup(context.evaluationState.context, inputDefName, 'callable')
+    .mapLeft(msg => assert(false, `Unexpected error: ${msg}`))
+    .mapRight(value => assertComputableAsString(value, expected))
+}
+
+function assertComputableAsString(computable: Computable, expected: string | undefined) {
+  const result = computable
+    .eval()
+    .map(r => r.toQuintEx(idGen))
+    .map(expressionToString)
+    .map(s => assert(s === expected, `Expected ${expected}, found ${s}`))
+  if (result.isNone()) {
+    assert(expected === undefined, `Expected ${expected}, found undefined`)
+  }
 }
 
 // Compile an input and evaluate a callback in the context
 function evalInContext<T>(input: string, callable: (ctx: CompilationContext) => Either<string, T>) {
   const moduleText = `module __runtime { ${input} }`
-  const context =
-    compileFromCode(idGen, moduleText, '__runtime', () => Math.random())
+  const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
+  const context = compileFromCode(idGen, moduleText, '__runtime', mockLookupPath, noExecutionListener, newRng().next)
   return callable(context)
 }
 
-// Compile a definition and check that the compiled value is defined.
-function assertDef(kind: ComputableKind, name: string, input: string) {
+// Compile a variable definition and check that the compiled value is defined.
+function assertVarExists(kind: ComputableKind, name: string, input: string) {
   const callback = (ctx: CompilationContext) => {
-    return contextLookup(ctx, '__runtime', name, kind)
+    return contextNameLookup(ctx.evaluationState.context, `${name}`, kind)
       .mapRight(_ => true)
       .mapLeft(msg => `Expected a definition for ${name}, found ${msg}, compiled from: ${input}`)
   }
@@ -53,51 +80,58 @@ function assertDef(kind: ComputableKind, name: string, input: string) {
   res.mapLeft(m => assert.fail(m))
 }
 
-function evalVarAfterRun(runName: string,
-                         varName: string,
-                         input: string): Either<string, string> {
+// Scan the context for a callable. If found, evaluate it and return the value of the given var.
+// Assumes the input has a single callable
+// `callee` is used for error reporting.
+function evalVarAfterCall(varName: string, callee: string, input: string): Either<string, string> {
   // use a combination of Maybe and Either.
   // Recall that left(...) is used for errors,
   // whereas right(...) is used for non-errors in sweet monads.
   const callback = (ctx: CompilationContext): Either<string, string> => {
-    return contextLookup(ctx, '__runtime', runName, 'callable')
-      .mapLeft(msg => `Run ${runName} not found: ${msg}`)
-      .mapRight(run =>
-        run
-          .eval()
-          .map(res => {
-            if ((res as RuntimeValue).toBool() === true) {
-              // extract the value of the state variable
-              const nextVal =
-                (ctx.values.get(kindName('nextvar', varName)) ?? fail).eval()
-              // using if-else, as map-or-unwrap confuses the compiler a lot
-              if (nextVal.isNone()) {
-                return left(`Value of the variable ${varName} is undefined`)
-              } else {
-                return right(expressionToString(nextVal.value.toQuintEx(idGen)))
-              }
-            } else {
-              const s = expressionToString(res.toQuintEx(idGen))
-              const m =
-                `Run ${runName} was expected to evaluate to true, found: ${s}`
-              return left<string, string>(m)
-            }
-          })
-          .or(just(left(`Value of the run ${runName} is undefined`)))
-          .unwrap()
-      )
-      .join()
+    let key = undefined
+    const lastModule = ctx.compilationState.modules[ctx.compilationState.modules.length - 1]
+    const def = lastModule.declarations.find(def => def.kind === 'def' && def.name === callee)
+    if (!def) {
+      return left(`${callee} definition not found`)
+    }
+    key = kindName('callable', def.id)
+    if (!key) {
+      return left(`${callee} not found`)
+    }
+    const run = ctx.evaluationState.context.get(key)
+    if (!run) {
+      return left(`${callee} not found via ${key}`)
+    }
+
+    return run
+      .eval()
+      .map(res => {
+        if ((res as RuntimeValue).toBool() === true) {
+          // extract the value of the state variable
+          const nextVal = (ctx.evaluationState.context.get(kindName('nextvar', varName)) ?? fail).eval()
+          // using if-else, as map-or-unwrap confuses the compiler a lot
+          if (nextVal.isNone()) {
+            return left(`Value of the variable ${varName} is undefined`)
+          } else {
+            return right(expressionToString(nextVal.value.toQuintEx(idGen)))
+          }
+        } else {
+          const s = expressionToString(res.toQuintEx(idGen))
+          const m = `Callable ${callee} was expected to evaluate to true, found: ${s}`
+          return left<string, string>(m)
+        }
+      })
+      .or(just(left(`Value of ${callee} is undefined`)))
+      .unwrap()
   }
 
   return evalInContext(input, callback)
 }
 
-function assertVarAfterRun(runName: string, varName: string, expected: string, input: string) {
-  evalVarAfterRun(runName, varName, input)
+function assertVarAfterCall(varName: string, expected: string, callee: string, input: string) {
+  evalVarAfterCall(varName, callee, input)
     .mapLeft(m => assert.fail(m))
-    .mapRight(output =>
-      assert(expected === output,
-        `Expected ${varName} == ${expected}, found ${output}`))
+    .mapRight(output => assert(expected === output, `Expected ${varName} == ${expected}, found ${output}`))
 }
 
 describe('compiling specs to runtime values', () => {
@@ -200,6 +234,11 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('and(true, true, true)', 'true')
     })
 
+    it('computes "and" via short-circuit or fails', () => {
+      assertResultAsString('false and (1/0 == 0)', 'false')
+      assertResultAsString('true and (1/0 == 0)', undefined)
+    })
+
     it('computes or', () => {
       assertResultAsString('false or false', 'false')
       assertResultAsString('false or true', 'true')
@@ -210,11 +249,21 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('or(false, false, false)', 'false')
     })
 
-    it('computes implies', () => {
+    it('computes "or" via short-circuit or fails', () => {
+      assertResultAsString('false or (1/0 == 0)', undefined)
+      assertResultAsString('true or (1/0 == 0)', 'true')
+    })
+
+    it('computes "implies"', () => {
       assertResultAsString('false implies false', 'true')
       assertResultAsString('false implies true', 'true')
       assertResultAsString('true implies false', 'false')
       assertResultAsString('true implies true', 'true')
+    })
+
+    it('computes "implies" via short-circuit or fails', () => {
+      assertResultAsString('false implies (1/0 == 0)', 'true')
+      assertResultAsString('true implies (1/0 == 0)', undefined)
     })
 
     it('computes iff', () => {
@@ -253,32 +302,48 @@ describe('compiling specs to runtime values', () => {
 
   describe('compile over definitions', () => {
     it('computes value definitions', () => {
-      const input =
-        `val x = 3 + 4
+      const input = `val x = 3 + 4
          val y = 2 * x
          y - x`
       assertResultAsString(input, '7')
     })
 
     it('computes multi-arg definitions', () => {
-      const input =
-        `def mult(x, y) = (x * y)
+      const input = `def mult(x, y) = (x * y)
          mult(2, mult(3, 4))`
       assertResultAsString(input, '24')
     })
 
     it('uses named def instead of lambda', () => {
-      const input =
-        `def positive(x) = x > 0
+      const input = `def positive(x) = x > 0
          (-3).to(3).filter(positive)`
       assertResultAsString(input, 'Set(1, 2, 3)')
+    })
+
+    it('compile higher-order operators', () => {
+      const input = `def ho(lo, n) = lo(n)
+         def loImpl(x) = x * 2
+         ho(loImpl, 3)`
+      assertResultAsString(input, '6')
+    })
+
+    it('compile higher-order operators with lambda', () => {
+      const input = `def ho(lo, n) = lo(n)
+         ho(x => x * 2, 3)`
+      assertResultAsString(input, '6')
+    })
+
+    it('higher-order operators in folds', () => {
+      const input = `def plus(i, j) = i + j
+         2.to(6).fold(0, plus)`
+      assertResultAsString(input, '20')
     })
   })
 
   describe('compile variables', () => {
     it('variable definitions', () => {
       const input = 'var x: int'
-      assertDef('var', 'x', input)
+      assertVarExists('var', 'x', input)
     })
   })
 
@@ -428,10 +493,7 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('computes flatten', () => {
-      assertResultAsString(
-        'Set(Set(1, 2), Set(2, 3), Set(3, 4)).flatten()',
-        'Set(1, 2, 3, 4)'
-      )
+      assertResultAsString('Set(Set(1, 2), Set(2, 3), Set(3, 4)).flatten()', 'Set(1, 2, 3, 4)')
     })
 
     it('computes flatten on nested sets', () => {
@@ -448,6 +510,10 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('Set(1, 2, 3).exists(x => x >= 5)', 'false')
     })
 
+    it('unpacks tuples in exists', () => {
+      assertResultAsString('tuples(1.to(3), 4.to(6)).exists(((x, y)) => x + y == 7)', 'true')
+    })
+
     it('computes exists over intervals', () => {
       assertResultAsString('1.to(3).exists(x => true)', 'true')
       assertResultAsString('1.to(3).exists(x => false)', 'false')
@@ -462,9 +528,12 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('Set(1, 2, 3).forall(x => x >= 0)', 'true')
     })
 
+    it('unpacks tuples in forall', () => {
+      assertResultAsString('tuples(1.to(3), 4.to(6)).forall(((x, y)) => x + y <= 9)', 'true')
+    })
+
     it('computes forall over nested sets', () => {
-      const input =
-        'Set(Set(1, 2), Set(2, 3)).forall(s => 2.in(s))'
+      const input = 'Set(Set(1, 2), Set(2, 3)).forall(s => 2.in(s))'
       assertResultAsString(input, 'true')
     })
 
@@ -482,6 +551,10 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('Set(1, 2, 3).map(x => x / 2)', 'Set(0, 1)')
     })
 
+    it('unpacks tuples in map', () => {
+      assertResultAsString('tuples(1.to(3), 4.to(6)).map(((x, y)) => x + y)', 'Set(5, 6, 7, 8, 9)')
+    })
+
     it('computes map over intervals', () => {
       // a bijection
       assertResultAsString('1.to(3).map(x => 2 * x)', 'Set(2, 4, 6)')
@@ -495,6 +568,10 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('Set(1, 2, 3, 4).filter(x => x % 2 == 0)', 'Set(2, 4)')
     })
 
+    it('unpacks tuples in filter', () => {
+      assertResultAsString('tuples(1.to(5), 2.to(3)).filter(((x, y)) => x < y)', 'Set(Tup(1, 2), Tup(1, 3), Tup(2, 3))')
+    })
+
     it('computes filter over intervals', () => {
       assertResultAsString('1.to(4).filter(x => false)', 'Set()')
       assertResultAsString('1.to(4).filter(x => true)', 'Set(1, 2, 3, 4)')
@@ -502,10 +579,8 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('computes filter over sets of intervals', () => {
-      assertResultAsString('Set(1.to(4), 2.to(3)).filter(S => S.contains(1))',
-        'Set(Set(1, 2, 3, 4))')
-      assertResultAsString('Set(1.to(4), 2.to(3)).filter(S => S.contains(0))',
-        'Set()')
+      assertResultAsString('Set(1.to(4), 2.to(3)).filter(S => S.contains(1))', 'Set(Set(1, 2, 3, 4))')
+      assertResultAsString('Set(1.to(4), 2.to(3)).filter(S => S.contains(0))', 'Set()')
     })
 
     it('computes fold', () => {
@@ -537,18 +612,9 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('powerset equality', () => {
-      assertResultAsString(
-        '2.to(3).powerset() == Set(Set(), Set(2), Set(3), Set(2, 3))',
-        'true'
-      )
-      assertResultAsString(
-        '2.to(3).powerset() == Set(2, 3).powerset()',
-        'true'
-      )
-      assertResultAsString(
-        '2.to(4).powerset() == Set(2, 3).powerset()',
-        'false'
-      )
+      assertResultAsString('2.to(3).powerset() == Set(Set(), Set(2), Set(3), Set(2, 3))', 'true')
+      assertResultAsString('2.to(3).powerset() == Set(2, 3).powerset()', 'true')
+      assertResultAsString('2.to(4).powerset() == Set(2, 3).powerset()', 'false')
     })
 
     it('powerset contains', () => {
@@ -557,10 +623,7 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('powerset subseteq', () => {
-      assertResultAsString(
-        '2.to(4).powerset().subseteq(1.to(5).powerset())',
-        'true'
-      )
+      assertResultAsString('2.to(4).powerset().subseteq(1.to(5).powerset())', 'true')
     })
 
     it('powerset cardinality', () => {
@@ -633,28 +696,13 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('tuples(Set(), Set(), Set())', 'Set()')
       assertResultAsString('tuples(Set(), 2.to(3))', 'Set()')
       assertResultAsString('tuples(2.to(3), Set(), 3.to(5))', 'Set()')
-      assertResultAsString('tuples(1.to(2), 2.to(3))',
-        'Set(Tup(1, 2), Tup(2, 2), Tup(1, 3), Tup(2, 3))')
-      assertResultAsString('tuples(1.to(1), 1.to(1), 1.to(1))',
-        'Set(Tup(1, 1, 1))')
-      assertResultAsString(
-        'tuples(1.to(3), 2.to(4)) == tuples(1.to(3), 2.to(5 - 1))',
-        'true'
-      )
-      assertResultAsString(
-        'tuples(1.to(3), 2.to(4)) == tuples(1.to(3), 2.to(5 + 1))',
-        'false'
-      )
-      assertResultAsString(
-        'tuples(1.to(3), 2.to(4)).subseteq(tuples(1.to(3), 2.to(5 + 1)))',
-        'true'
-      )
-      assertResultAsString(
-        'tuples(1.to(4), 2.to(4)).subseteq(tuples(1.to(3), 2.to(5)))',
-        'false'
-      )
-      assertResultAsString('Set(tuples(1.to(2), 2.to(3)))',
-        'Set(Set(Tup(1, 2), Tup(1, 3), Tup(2, 2), Tup(2, 3)))')
+      assertResultAsString('tuples(1.to(2), 2.to(3))', 'Set(Tup(1, 2), Tup(2, 2), Tup(1, 3), Tup(2, 3))')
+      assertResultAsString('tuples(1.to(1), 1.to(1), 1.to(1))', 'Set(Tup(1, 1, 1))')
+      assertResultAsString('tuples(1.to(3), 2.to(4)) == tuples(1.to(3), 2.to(5 - 1))', 'true')
+      assertResultAsString('tuples(1.to(3), 2.to(4)) == tuples(1.to(3), 2.to(5 + 1))', 'false')
+      assertResultAsString('tuples(1.to(3), 2.to(4)).subseteq(tuples(1.to(3), 2.to(5 + 1)))', 'true')
+      assertResultAsString('tuples(1.to(4), 2.to(4)).subseteq(tuples(1.to(3), 2.to(5)))', 'false')
+      assertResultAsString('Set(tuples(1.to(2), 2.to(3)))', 'Set(Set(Tup(1, 2), Tup(1, 3), Tup(2, 2), Tup(2, 3)))')
     })
 
     it('cardinality of cross products', () => {
@@ -730,9 +778,9 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString('[4, 5, 6, 7].slice(-1, 3)', undefined)
       assertResultAsString('[1, 2].slice(1, 2)', 'List(2)')
       assertResultAsString('[1, 2].slice(1, 1)', 'List()')
-      assertResultAsString('[1, 2].slice(2, 2)', undefined)
+      assertResultAsString('[1, 2].slice(2, 2)', 'List()')
       assertResultAsString('[1, 2].slice(2, 1)', undefined)
-      assertResultAsString('[].slice(0, 0)', undefined)
+      assertResultAsString('[].slice(0, 0)', 'List()')
       assertResultAsString('[].slice(1, 0)', undefined)
       assertResultAsString('[].slice(1, 1)', undefined)
       assertResultAsString('[].slice(0, -1)', undefined)
@@ -748,15 +796,13 @@ describe('compiling specs to runtime values', () => {
     it('list foldl', () => {
       assertResultAsString('[].foldl(3, (i, e) => i + e)', '3')
       assertResultAsString('[4, 5, 6, 7].foldl(1, (i, e) => i + e)', '23')
-      assertResultAsString('[4, 5, 6, 7].foldl([], (l, e) => l.append(e))',
-        'List(4, 5, 6, 7)')
+      assertResultAsString('[4, 5, 6, 7].foldl([], (l, e) => l.append(e))', 'List(4, 5, 6, 7)')
     })
 
     it('list foldr', () => {
       assertResultAsString('[].foldr(3, (e, i) => e + i)', '3')
       assertResultAsString('[4, 5, 6, 7].foldr(1, (e, i) => e + i)', '23')
-      assertResultAsString('[4, 5, 6, 7].foldr([], (e, l) => l.append(e))',
-        'List(7, 6, 5, 4)')
+      assertResultAsString('[4, 5, 6, 7].foldr([], (e, l) => l.append(e))', 'List(7, 6, 5, 4)')
     })
 
     it('list select', () => {
@@ -774,6 +820,7 @@ describe('compiling specs to runtime values', () => {
 
     it('record equality', () => {
       assertResultAsString('{ a: 2 + 3, b: true } == { a: 5, b: true }', 'true')
+      assertResultAsString('{ a: 3, b: true } == { b: true, a: 3 }', 'true')
       assertResultAsString('{ a: 2 + 3, b: true } == { a: 1, b: false }', 'false')
     })
 
@@ -794,41 +841,48 @@ describe('compiling specs to runtime values', () => {
     })
   })
 
+  describe('compile over sum types', () => {
+    it('can compile construction of sum type variants', () => {
+      const context = 'type T = Some(int) | None'
+      assertResultAsString('Some(40 + 2)', 'variant("Some", 42)', context)
+      assertResultAsString('None', 'variant("None", Rec())', context)
+    })
+
+    it('can compile elimination of sum type variants via match', () => {
+      const context = 'type T = Some(int) | None'
+      assertResultAsString('match Some(40 + 2) { Some(x) => x | None => 0 }', '42', context)
+      assertResultAsString('match None { Some(x) => x | None => 0 }', '0', context)
+    })
+
+    it('can compile elimination of sum type variants via match using default', () => {
+      const context = 'type T = Some(int) | None'
+      // We can hit the fallback case
+      assertResultAsString('match None { Some(x) => x | _ => 3 }', '3', context)
+    })
+  })
+
   describe('compile over maps', () => {
     it('mapBy constructor', () => {
-      assertResultAsString('3.to(5).mapBy(i => 2 * i)',
-        'Map(Tup(3, 6), Tup(4, 8), Tup(5, 10))')
-      assertResultAsString('Set(2.to(4)).mapBy(s => s.size())',
-        'Map(Tup(Set(2, 3, 4), 3))')
+      assertResultAsString('3.to(5).mapBy(i => 2 * i)', 'Map(Tup(3, 6), Tup(4, 8), Tup(5, 10))')
+      assertResultAsString('Set(2.to(4)).mapBy(s => s.size())', 'Map(Tup(Set(2, 3, 4), 3))')
     })
 
     it('setToMap constructor', () => {
-      assertResultAsString('setToMap(Set((3, 6), (4, 10 - 2), (5, 10)))',
-        'Map(Tup(3, 6), Tup(4, 8), Tup(5, 10))')
+      assertResultAsString('setToMap(Set((3, 6), (4, 10 - 2), (5, 10)))', 'Map(Tup(3, 6), Tup(4, 8), Tup(5, 10))')
     })
 
     it('mapOf constructor', () => {
-      assertResultAsString('Map(3 -> 6, 4 -> 10 - 2, 5 -> 10)',
-        'Map(Tup(3, 6), Tup(4, 8), Tup(5, 10))')
+      assertResultAsString('Map(3 -> 6, 4 -> 10 - 2, 5 -> 10)', 'Map(Tup(3, 6), Tup(4, 8), Tup(5, 10))')
     })
 
     it('map get', () => {
       assertResultAsString('3.to(5).mapBy(i => 2 * i).get(4)', '8')
-      assertResultAsString(
-        'Set(2.to(4)).mapBy(s => s.size()).get(Set(2, 3, 4))',
-        '3'
-      )
+      assertResultAsString('Set(2.to(4)).mapBy(s => s.size()).get(Set(2, 3, 4))', '3')
     })
 
     it('map update', () => {
-      assertResultAsString(
-        '3.to(5).mapBy(i => 2 * i).set(4, 20)',
-        'Map(Tup(3, 6), Tup(4, 20), Tup(5, 10))'
-      )
-      assertResultAsString(
-        '3.to(5).mapBy(i => 2 * i).set(7, 20)',
-        undefined
-      )
+      assertResultAsString('3.to(5).mapBy(i => 2 * i).set(4, 20)', 'Map(Tup(3, 6), Tup(4, 20), Tup(5, 10))')
+      assertResultAsString('3.to(5).mapBy(i => 2 * i).set(7, 20)', undefined)
     })
 
     it('map setBy', () => {
@@ -836,10 +890,7 @@ describe('compiling specs to runtime values', () => {
         '3.to(5).mapBy(i => 2 * i).setBy(4, old => old + 1)',
         'Map(Tup(3, 6), Tup(4, 9), Tup(5, 10))'
       )
-      assertResultAsString(
-        '3.to(5).mapBy(i => 2 * i).setBy(7, old => old + 1)',
-        undefined
-      )
+      assertResultAsString('3.to(5).mapBy(i => 2 * i).setBy(7, old => old + 1)', undefined)
     })
 
     it('map put', () => {
@@ -850,21 +901,12 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('map keys', () => {
-      assertResultAsString(
-        'Set(3, 5, 7).mapBy(i => 2 * i).keys()',
-        'Set(3, 5, 7)'
-      )
+      assertResultAsString('Set(3, 5, 7).mapBy(i => 2 * i).keys()', 'Set(3, 5, 7)')
     })
 
     it('map equality', () => {
-      assertResultAsString(
-        '3.to(5).mapBy(i => 2 * i) == 3.to(5).mapBy(i => 3 * i - i)',
-        'true'
-      )
-      assertResultAsString(
-        '3.to(5).mapBy(i => 2 * i) == 3.to(6).mapBy(i => 2 * i)',
-        'false'
-      )
+      assertResultAsString('3.to(5).mapBy(i => 2 * i) == 3.to(5).mapBy(i => 3 * i - i)', 'true')
+      assertResultAsString('3.to(5).mapBy(i => 2 * i) == 3.to(6).mapBy(i => 2 * i)', 'false')
     })
 
     it('map setOfMaps', () => {
@@ -880,34 +922,13 @@ describe('compiling specs to runtime values', () => {
               Map(2 -> 6, 3 -> 6))`,
         'true'
       )
-      assertResultAsString(
-        'Set(2).setOfMaps(5.to(6))',
-        'Set(Map(Tup(2, 5)), Map(Tup(2, 6)))'
-      )
-      assertResultAsString(
-        '2.to(3).setOfMaps(Set(5))',
-        'Set(Map(Tup(2, 5), Tup(3, 5)))'
-      )
-      assertResultAsString(
-        '2.to(4).setOfMaps(5.to(8)).size()',
-        '64'
-      )
-      assertResultAsString(
-        '2.to(4).setOfMaps(5.to(7)).subseteq(2.to(4).setOfMaps(4.to(8)))',
-        'true'
-      )
-      assertResultAsString(
-        '2.to(4).setOfMaps(5.to(10)).subseteq(2.to(4).setOfMaps(4.to(8)))',
-        'false'
-      )
-      assertResultAsString(
-        '2.to(3).setOfMaps(5.to(6)).contains(Map(2 -> 5, 3 -> 5))',
-        'true'
-      )
-      assertResultAsString(
-        '2.to(3).setOfMaps(5.to(6)) == 2.to(4 - 1).setOfMaps(5.to(7 - 1))',
-        'true'
-      )
+      assertResultAsString('Set(2).setOfMaps(5.to(6))', 'Set(Map(Tup(2, 5)), Map(Tup(2, 6)))')
+      assertResultAsString('2.to(3).setOfMaps(Set(5))', 'Set(Map(Tup(2, 5), Tup(3, 5)))')
+      assertResultAsString('2.to(4).setOfMaps(5.to(8)).size()', '64')
+      assertResultAsString('2.to(4).setOfMaps(5.to(7)).subseteq(2.to(4).setOfMaps(4.to(8)))', 'true')
+      assertResultAsString('2.to(4).setOfMaps(5.to(10)).subseteq(2.to(4).setOfMaps(4.to(8)))', 'false')
+      assertResultAsString('2.to(3).setOfMaps(5.to(6)).contains(Map(2 -> 5, 3 -> 5))', 'true')
+      assertResultAsString('2.to(3).setOfMaps(5.to(6)) == 2.to(4 - 1).setOfMaps(5.to(7 - 1))', 'true')
     })
   })
 
@@ -916,85 +937,216 @@ describe('compiling specs to runtime values', () => {
       const input = dedent(
         `var n: int
         |run run1 = (n' = 1).then(n' = n + 2).then(n' = n * 4)
-        `)
+        `
+      )
 
-      assertVarAfterRun('run1', '__runtime::n', '12', input)
+      assertVarAfterCall('n', '12', 'run1', input)
     })
 
-    it('repeated', () => {
+    it('reps', () => {
       const input = dedent(
         `var n: int
-        |run run1 = (n' = 1).then((n' = n + 1).repeated(3))
-        `)
+        |var hist: List[int]
+        |run run1 = (all { n' = 1, hist' = [] })
+        |           .then(3.reps(_ => all { n' = n + 1, hist' = hist.append(n) }))
+        |run run2 = (all { n' = 1, hist' = [] })
+        |           .then(3.reps(i => all { n' = i, hist' = hist.append(i) }))
+        `
+      )
 
-      assertVarAfterRun('run1', '__runtime::n', '4', input)
+      assertVarAfterCall('hist', 'List(1, 2, 3)', 'run1', input)
+      assertVarAfterCall('hist', 'List(0, 1, 2)', 'run2', input)
     })
 
     it('fail', () => {
       const input = dedent(
         `var n: int
         |run run1 = (n' = 1).fail()
-        `)
+        `
+      )
 
-      evalVarAfterRun('run1', 'n', input)
-        .mapRight(m => assert.fail(`Expected the run to fail, found: ${m}`))
+      evalVarAfterCall('n', 'run1', input).mapRight(m => assert.fail(`Expected the run to fail, found: ${m}`))
     })
 
     it('assert', () => {
       const input = dedent(
         `var n: int
         |run run1 = (n' = 3).then(and { assert(n < 3), n' = n })
-        `)
+        `
+      )
 
-      evalVarAfterRun('run1', 'n', input)
-        .mapRight(m => assert.fail(`Expected an error, found: ${m}`))
+      evalVarAfterCall('n', 'run1', input).mapRight(m => assert.fail(`Expected an error, found: ${m}`))
     })
 
     it('unsupported operators', () => {
-      assertResultAsString(
-        'allLists(1.to(3))',
-        undefined
+      assertResultAsString('allLists(1.to(3))', undefined)
+
+      assertResultAsString('chooseSome(1.to(3))', undefined)
+
+      assertResultAsString('always(true)', undefined)
+
+      assertResultAsString('eventually(true)', undefined)
+
+      assertResultAsString('enabled(true)', undefined)
+
+      assertResultAsString('orKeep(true, [])', undefined)
+
+      assertResultAsString('mustChange(true, [])', undefined)
+
+      assertResultAsString('weakFair(true, [])', undefined)
+
+      assertResultAsString('strongFair(true, [])', undefined)
+    })
+  })
+})
+
+describe('incremental compilation', () => {
+  const dummyRng: Rng = {
+    getState: () => 0n,
+    setState: (_: bigint) => {},
+    next: () => 0n,
+  }
+  /* Adds some quint code to the compilation and evaluation state */
+  function compileModules(text: string, mainName: string): CompilationContext {
+    const idGen = newIdGenerator()
+    const sourceCode: Map<string, string> = new Map()
+    const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
+    const { modules, table, sourceMap, errors } = parse(idGen, 'fake_path', fake_path, text, sourceCode)
+    assert.isEmpty(errors)
+
+    const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
+    assert.isEmpty(analysisErrors)
+
+    const { flattenedModules, flattenedAnalysis, flattenedTable } = flattenModules(
+      modules,
+      table,
+      idGen,
+      sourceMap,
+      analysisOutput
+    )
+
+    const state: CompilationState = {
+      originalModules: modules,
+      idGen,
+      modules: flattenedModules,
+      mainName,
+      sourceMap,
+      analysisOutput: flattenedAnalysis,
+      sourceCode,
+    }
+
+    const moduleToCompile = flattenedModules[flattenedModules.length - 1]
+
+    return compile(
+      state,
+      newEvaluationState(noExecutionListener),
+      flattenedTable,
+      dummyRng.next,
+      moduleToCompile.declarations
+    )
+  }
+
+  describe('compileExpr', () => {
+    it('should compile a Quint expression', () => {
+      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }', 'm')
+
+      const parsed = parseExpressionOrDeclaration(
+        'x + 2',
+        'test.qnt',
+        compilationState.idGen,
+        compilationState.sourceMap
+      )
+      const expr = parsed.kind === 'expr' ? parsed.expr : undefined
+      const context = compileExpr(compilationState, evaluationState, dummyRng, expr!)
+
+      assert.deepEqual(context.compilationState.analysisOutput.types.get(expr!.id)?.type, { kind: 'int', id: 3n })
+
+      assertInputFromContext(context, '3')
+    })
+  })
+
+  describe('compileDef', () => {
+    it('should compile a Quint definition', () => {
+      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }', 'm')
+
+      const parsed = parseExpressionOrDeclaration(
+        'val y = x + 2',
+        'test.qnt',
+        compilationState.idGen,
+        compilationState.sourceMap
+      )
+      const defs = parsed.kind === 'declaration' ? parsed.decls : undefined
+      const context = compileDecls(compilationState, evaluationState, dummyRng, defs!)
+
+      assert.deepEqual(context.compilationState.analysisOutput.types.get(defs![0].id)?.type, { kind: 'int', id: 3n })
+
+      const computable = context.evaluationState?.context.get(kindName('callable', defs![0].id))!
+      assertComputableAsString(computable, '3')
+    })
+
+    it('non-exported imports are not visible in subsequent importing modules', () => {
+      const { compilationState, evaluationState } = compileModules(
+        'module m1 { pure val x1 = 1 }' + 'module m2 { import m1.* pure val x2 = x1 }' + 'module m3 { import m2.* }', // m1 shouldn't be acessible inside m3
+        'm3'
       )
 
-      assertResultAsString(
-        'chooseSome(1.to(3))',
-        undefined
+      const parsed = parseExpressionOrDeclaration(
+        'def x3 = x1',
+        'test.qnt',
+        compilationState.idGen,
+        compilationState.sourceMap
       )
+      const decls = parsed.kind === 'declaration' ? parsed.decls : []
+      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
 
-      assertResultAsString(
-        'always(true)',
-        undefined
-      )
+      assert.sameDeepMembers(context.syntaxErrors, [
+        {
+          code: 'QNT404',
+          message: "Name 'x1' not found",
+          reference: 10n,
+          data: {},
+        },
+      ])
+    })
 
-      assertResultAsString(
-        'eventually(true)',
-        undefined
+    it('can complile type alias declarations', () => {
+      const { compilationState, evaluationState } = compileModules('module m {}', 'm')
+      const parsed = parseExpressionOrDeclaration(
+        'type T = int',
+        'test.qnt',
+        compilationState.idGen,
+        compilationState.sourceMap
       )
+      const decls = parsed.kind === 'declaration' ? parsed.decls : []
+      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
 
-      assertResultAsString(
-        'enabled(true)',
-        undefined
-      )
+      const typeDecl = decls[0]
+      assert(typeDecl.kind === 'typedef')
+      assert(typeDecl.name === 'T')
+      assert(typeDecl.type!.kind === 'int')
 
-      assertResultAsString(
-        'orKeep(true, [])',
-        undefined
-      )
+      assert.sameDeepMembers(context.syntaxErrors, [])
+    })
 
-      assertResultAsString(
-        'mustChange(true, [])',
-        undefined
+    it('can compile sum type declarations', () => {
+      const { compilationState, evaluationState } = compileModules('module m {}', 'm')
+      const parsed = parseExpressionOrDeclaration(
+        'type T = A(int) | B(str) | C',
+        'test.qnt',
+        compilationState.idGen,
+        compilationState.sourceMap
       )
+      const decls = parsed.kind === 'declaration' ? parsed.decls : []
+      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
 
-      assertResultAsString(
-        'weakFair(true, [])',
-        undefined
-      )
+      assert(decls.find(t => t.kind === 'typedef' && t.name === 'T'))
+      // Sum type declarations are expanded to add an
+      // operator declaration for each constructor:
+      assert(decls.find(t => t.kind === 'def' && t.name === 'A'))
+      assert(decls.find(t => t.kind === 'def' && t.name === 'B'))
+      assert(decls.find(t => t.kind === 'def' && t.name === 'C'))
 
-      assertResultAsString(
-        'strongFair(true, [])',
-        undefined
-      )
+      assert.sameDeepMembers(context.syntaxErrors, [])
     })
   })
 })

@@ -4,5 +4,5 @@ module A {
 }
 
 module nonConstOverride {
-  module A1 = A(c = 1, a = false)
+  import A(c = 1, a = false) as A1
 }

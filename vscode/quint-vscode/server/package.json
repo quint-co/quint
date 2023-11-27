@@ -1,42 +1,75 @@
 {
-	"name": "quint-lsp-server",
-	"description": "LSP server for Quint in node.",
-	"version": "0.1.3",
-	"author": "Informal Systems",
-	"license": "Apache 2.0",
-	"engines": {
-		"node": "*"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/informalsystems/quint"
-	},
-	"dependencies": {
-		"@informalsystems/quint": "^0.6.0",
-		"vscode-languageserver": "^7.0.0",
-		"vscode-languageserver-textdocument": "^1.0.1"
-	},
-	"scripts": {
-		"compile": "tsc -b",
-		"test": "mocha -r ts-node/register test/*.test.ts test/**/*.test.ts"
-	},
-	"devDependencies": {
-		"@types/chai": "^4.2.18",
-		"@types/lodash": "^4.14.191",
-		"@types/mocha": "^8.2.2",
-		"@types/node": "^12.12.0",
-		"@typescript-eslint/eslint-plugin": "^5.30.6",
-		"@typescript-eslint/parser": "^5.30.6",
-		"chai": "^4.3.4",
-		"eslint": "^8.27.0",
-		"eslint-config-recommended": "^4.1.0",
-		"eslint-plugin-import": "^2.26.0",
-		"eslint-plugin-json": "^3.1.0",
-		"eslint-plugin-node": "^11.1.0",
-		"eslint-plugin-promise": "^6.1.1",
-		"eslint-plugin-unused-imports": "^2.0.0",
-		"mocha": "^8.4.0",
-		"ts-node": "^10.0.0",
-		"typescript": "^4.2.3"
-	}
+  "name": "@informalsystems/quint-language-server",
+  "description": "Language Server for the Quint specification language",
+  "version": "0.11.0",
+  "author": "Informal Systems",
+  "contributors": [
+    {
+      "name": "Gabriela Moreira",
+      "email": "gabriela@informal.systems"
+    },
+    {
+      "name": "Igor Konnov",
+      "email": "igor@informal.systems"
+    },
+    {
+      "name": "Shon Feder",
+      "email": "shon@informal.systems"
+    },
+    {
+      "name": "Thomas Pani",
+      "email": "thomas@informal.systems"
+    }
+  ],
+  "license": "Apache 2.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/informalsystems/quint"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "out/src/server.js",
+  "typings": "out/src/server",
+  "bin": {
+    "quint-language-server": "./out/src/server.js"
+  },
+  "files": [
+    "README.md",
+    "out/**/*",
+    "test/**/*.ts"
+  ],
+  "dependencies": {
+    "@informalsystems/quint": "^0.16.0",
+    "vscode-languageserver": "^7.0.0",
+    "vscode-languageserver-textdocument": "^1.0.1",
+    "vscode-uri": "^3.0.7"
+  },
+  "scripts": {
+    "compile": "tsc -b",
+    "prepare": "rm -rf ./out && npm run compile && chmod +x ./out/src/server.js",
+    "test": "mocha -r ts-node/register test/*.test.ts test/**/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.18",
+    "@types/lodash": "^4.14.191",
+    "@types/mocha": "^8.2.2",
+    "@types/node": "^12.12.0",
+    "@typescript-eslint/eslint-plugin": "^5.30.6",
+    "@typescript-eslint/parser": "^5.30.6",
+    "chai": "^4.3.4",
+    "eslint": "^8.27.0",
+    "eslint-config-recommended": "^4.1.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-json": "^3.1.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-unused-imports": "^2.0.0",
+    "mocha": "^8.4.0",
+    "ts-node": "^10.0.0",
+    "typescript": "^4.2.3"
+  }
 }

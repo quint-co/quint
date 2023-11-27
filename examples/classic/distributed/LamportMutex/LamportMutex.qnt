@@ -1,3 +1,4 @@
+// -*- mode: Bluespec; -*-
 module LamportMutex {
   // This is a typed version of LamportMutex, which can be found at:
   // https://github.com/tlaplus/Examples/blob/master/specifications/lamport_mutex/LamportMutex.tla
@@ -173,4 +174,11 @@ module LamportMutex {
 
   // The main safety property of mutual exclusion.
   val Mutex = crit.forall(p => crit.forall(q => p == q))
+}
+
+module LamportMutex_3_10 {
+  import LamportMutex(
+    N = 3,
+    maxClock = 10
+  ).*
 }

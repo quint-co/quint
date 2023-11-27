@@ -4,13 +4,13 @@
 " Latest Revision: 03 February 2023
 "
 " How to install:
-" 1. Copy this file to ~/.vim/syntax/
+" 1. Copy this file to ~/.vim/syntax/ (vim) or to ~/.config/nvim/syntax (neovim).
 " 2a. Either manually set syntax with :set syntax=quint
 " 2b. Or add the following in your ~/.vimrc
-"    augroup syntax
-"    au! BufNewFile,BufReadPost *.qnt
-"    au  BufNewFile,BufReadPost *.qnt so ~/vim/syntax/quint.vim
-"    augroup END
+"    au  BufNewFile,BufReadPost *.qnt runtime syntax/quint.vim
+" 2c. Use modelines, which should be enabled Vim (they are disabled
+"     by default in Mac OS), by adding at end of the Quint file:
+"    // vim: syntax=quint
 
 if exists("b:current_syntax")
   finish
@@ -29,7 +29,7 @@ syn region quintComment start="/\*" end="\*/" fold
 syn match quintIdent "[a-zA-Z_][a-zA-Z0-9_]*"
 
 " numbers and strings
-syn match quintNumber '-\?\(0x[0-9a-fA-F]\([0-9a-fA-F]\|_[0-9a-fA-F]\)*\|0\|[1-9]([0-9]\|_[0-9])*\)'
+syn match quintNumber '-\?\(0x[0-9a-fA-F]\([0-9a-fA-F]\|_[0-9a-fA-F]\)*\|0\|[1-9]\([0-9]\|_[0-9]\)*\)'
 syn region quintString start='"' end='"'
 
 " types
@@ -46,11 +46,11 @@ syn keyword quintBoolValue false true
 syn keyword quintCond if else
 
 " declarations
-syn keyword quintDecl module import const var val def pure nondet action temporal assume run
+syn keyword quintDecl module import from export const var val def pure nondet action temporal assume run
 
 " standard operators
 syn keyword quintStd Set List Map Rec Tup
-syn keyword quintStd not and or iff implies all any
+syn keyword quintStd not and or iff implies all any as
 
 " curly braces
 syn region quintBlock start="{" end="}" fold transparent contains=ALLBUT,quintCurlyError

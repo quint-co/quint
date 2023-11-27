@@ -1,6 +1,12 @@
 // Generated from ./src/generated/Quint.g4 by ANTLR 4.9.0-SNAPSHOT
 
 
+
+// Used for forming errors
+import { quintErrorToString } from '../quintError'
+
+
+
 import { ParseTreeVisitor } from "antlr4ts/tree/ParseTreeVisitor";
 
 import { TypeFunContext } from "./QuintParser";
@@ -9,19 +15,14 @@ import { TypeSetContext } from "./QuintParser";
 import { TypeListContext } from "./QuintParser";
 import { TypeTupleContext } from "./QuintParser";
 import { TypeRecContext } from "./QuintParser";
-import { TypeUnionRecContext } from "./QuintParser";
 import { TypeIntContext } from "./QuintParser";
 import { TypeStrContext } from "./QuintParser";
 import { TypeBoolContext } from "./QuintParser";
 import { TypeConstOrVarContext } from "./QuintParser";
 import { TypeParenContext } from "./QuintParser";
-import { ConstContext } from "./QuintParser";
-import { VarContext } from "./QuintParser";
-import { AssumeContext } from "./QuintParser";
-import { OperContext } from "./QuintParser";
-import { InstanceContext } from "./QuintParser";
-import { TypedefContext } from "./QuintParser";
-import { ImportDefContext } from "./QuintParser";
+import { TypeAbstractDefContext } from "./QuintParser";
+import { TypeAliasDefContext } from "./QuintParser";
+import { TypeSumDefContext } from "./QuintParser";
 import { DotCallContext } from "./QuintParser";
 import { LambdaConsContext } from "./QuintParser";
 import { OperAppContext } from "./QuintParser";
@@ -52,27 +53,52 @@ import { LetInContext } from "./QuintParser";
 import { NondetContext } from "./QuintParser";
 import { ParenContext } from "./QuintParser";
 import { BracesContext } from "./QuintParser";
+import { ConstContext } from "./QuintParser";
+import { VarContext } from "./QuintParser";
+import { AssumeContext } from "./QuintParser";
+import { InstanceContext } from "./QuintParser";
+import { OperContext } from "./QuintParser";
+import { TypeDefsContext } from "./QuintParser";
+import { ImportDefContext } from "./QuintParser";
+import { ExportDefContext } from "./QuintParser";
 import { ModulesContext } from "./QuintParser";
 import { ModuleContext } from "./QuintParser";
-import { DocLinesContext } from "./QuintParser";
-import { UnitContext } from "./QuintParser";
+import { DocumentedDeclarationContext } from "./QuintParser";
+import { DeclarationContext } from "./QuintParser";
 import { OperDefContext } from "./QuintParser";
+import { TypeDefContext } from "./QuintParser";
+import { TypeSumVariantContext } from "./QuintParser";
+import { NondetOperDefContext } from "./QuintParser";
 import { QualifierContext } from "./QuintParser";
+import { ImportModContext } from "./QuintParser";
+import { ExportModContext } from "./QuintParser";
 import { InstanceModContext } from "./QuintParser";
+import { ModuleNameContext } from "./QuintParser";
+import { NameContext } from "./QuintParser";
+import { QualifiedNameContext } from "./QuintParser";
+import { FromSourceContext } from "./QuintParser";
 import { TypeContext } from "./QuintParser";
-import { TypeUnionRecOneContext } from "./QuintParser";
 import { RowContext } from "./QuintParser";
+import { RowLabelContext } from "./QuintParser";
 import { ExprContext } from "./QuintParser";
-import { UnitOrExprContext } from "./QuintParser";
+import { MatchSumExprContext } from "./QuintParser";
+import { MatchSumCaseContext } from "./QuintParser";
+import { MatchSumVariantContext } from "./QuintParser";
+import { DeclarationOrExprContext } from "./QuintParser";
 import { LambdaContext } from "./QuintParser";
+import { LambdaUnsugaredContext } from "./QuintParser";
+import { LambdaTupleSugarContext } from "./QuintParser";
 import { IdentOrHoleContext } from "./QuintParser";
+import { ParameterContext } from "./QuintParser";
 import { IdentOrStarContext } from "./QuintParser";
-import { PathContext } from "./QuintParser";
 import { ArgListContext } from "./QuintParser";
+import { RecElemContext } from "./QuintParser";
 import { NormalCallNameContext } from "./QuintParser";
 import { NameAfterDotContext } from "./QuintParser";
 import { OperatorContext } from "./QuintParser";
 import { LiteralContext } from "./QuintParser";
+import { QualIdContext } from "./QuintParser";
+import { SimpleIdContext } from "./QuintParser";
 
 
 /**
@@ -132,14 +158,6 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitTypeRec?: (ctx: TypeRecContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `typeUnionRec`
-	 * labeled alternative in `QuintParser.type`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitTypeUnionRec?: (ctx: TypeUnionRecContext) => Result;
-
-	/**
 	 * Visit a parse tree produced by the `typeInt`
 	 * labeled alternative in `QuintParser.type`.
 	 * @param ctx the parse tree
@@ -180,60 +198,28 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitTypeParen?: (ctx: TypeParenContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `const`
-	 * labeled alternative in `QuintParser.unit`.
+	 * Visit a parse tree produced by the `typeAbstractDef`
+	 * labeled alternative in `QuintParser.typeDef`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitConst?: (ctx: ConstContext) => Result;
+	visitTypeAbstractDef?: (ctx: TypeAbstractDefContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `var`
-	 * labeled alternative in `QuintParser.unit`.
+	 * Visit a parse tree produced by the `typeAliasDef`
+	 * labeled alternative in `QuintParser.typeDef`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitVar?: (ctx: VarContext) => Result;
+	visitTypeAliasDef?: (ctx: TypeAliasDefContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by the `assume`
-	 * labeled alternative in `QuintParser.unit`.
+	 * Visit a parse tree produced by the `typeSumDef`
+	 * labeled alternative in `QuintParser.typeDef`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitAssume?: (ctx: AssumeContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `oper`
-	 * labeled alternative in `QuintParser.unit`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitOper?: (ctx: OperContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `instance`
-	 * labeled alternative in `QuintParser.unit`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitInstance?: (ctx: InstanceContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `typedef`
-	 * labeled alternative in `QuintParser.unit`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitTypedef?: (ctx: TypedefContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by the `importDef`
-	 * labeled alternative in `QuintParser.unit`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitImportDef?: (ctx: ImportDefContext) => Result;
+	visitTypeSumDef?: (ctx: TypeSumDefContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by the `dotCall`
@@ -476,6 +462,70 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitBraces?: (ctx: BracesContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by the `const`
+	 * labeled alternative in `QuintParser.declaration`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitConst?: (ctx: ConstContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `var`
+	 * labeled alternative in `QuintParser.declaration`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitVar?: (ctx: VarContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `assume`
+	 * labeled alternative in `QuintParser.declaration`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitAssume?: (ctx: AssumeContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `instance`
+	 * labeled alternative in `QuintParser.declaration`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitInstance?: (ctx: InstanceContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `oper`
+	 * labeled alternative in `QuintParser.declaration`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitOper?: (ctx: OperContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `typeDefs`
+	 * labeled alternative in `QuintParser.declaration`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTypeDefs?: (ctx: TypeDefsContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `importDef`
+	 * labeled alternative in `QuintParser.declaration`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitImportDef?: (ctx: ImportDefContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by the `exportDef`
+	 * labeled alternative in `QuintParser.declaration`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitExportDef?: (ctx: ExportDefContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by `QuintParser.modules`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -490,18 +540,18 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitModule?: (ctx: ModuleContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `QuintParser.docLines`.
+	 * Visit a parse tree produced by `QuintParser.documentedDeclaration`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitDocLines?: (ctx: DocLinesContext) => Result;
+	visitDocumentedDeclaration?: (ctx: DocumentedDeclarationContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `QuintParser.unit`.
+	 * Visit a parse tree produced by `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitUnit?: (ctx: UnitContext) => Result;
+	visitDeclaration?: (ctx: DeclarationContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.operDef`.
@@ -511,11 +561,46 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitOperDef?: (ctx: OperDefContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by `QuintParser.typeDef`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTypeDef?: (ctx: TypeDefContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.typeSumVariant`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitTypeSumVariant?: (ctx: TypeSumVariantContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.nondetOperDef`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitNondetOperDef?: (ctx: NondetOperDefContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by `QuintParser.qualifier`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	visitQualifier?: (ctx: QualifierContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.importMod`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitImportMod?: (ctx: ImportModContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.exportMod`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitExportMod?: (ctx: ExportModContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.instanceMod`.
@@ -525,18 +610,39 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitInstanceMod?: (ctx: InstanceModContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by `QuintParser.moduleName`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitModuleName?: (ctx: ModuleNameContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.name`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitName?: (ctx: NameContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.qualifiedName`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitQualifiedName?: (ctx: QualifiedNameContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.fromSource`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitFromSource?: (ctx: FromSourceContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by `QuintParser.type`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	visitType?: (ctx: TypeContext) => Result;
-
-	/**
-	 * Visit a parse tree produced by `QuintParser.typeUnionRecOne`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitTypeUnionRecOne?: (ctx: TypeUnionRecOneContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.row`.
@@ -546,6 +652,13 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitRow?: (ctx: RowContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by `QuintParser.rowLabel`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitRowLabel?: (ctx: RowLabelContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by `QuintParser.expr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -553,11 +666,32 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitExpr?: (ctx: ExprContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `QuintParser.unitOrExpr`.
+	 * Visit a parse tree produced by `QuintParser.matchSumExpr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitUnitOrExpr?: (ctx: UnitOrExprContext) => Result;
+	visitMatchSumExpr?: (ctx: MatchSumExprContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.matchSumCase`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitMatchSumCase?: (ctx: MatchSumCaseContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.matchSumVariant`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitMatchSumVariant?: (ctx: MatchSumVariantContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.declarationOrExpr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitDeclarationOrExpr?: (ctx: DeclarationOrExprContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.lambda`.
@@ -567,11 +701,32 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitLambda?: (ctx: LambdaContext) => Result;
 
 	/**
+	 * Visit a parse tree produced by `QuintParser.lambdaUnsugared`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitLambdaUnsugared?: (ctx: LambdaUnsugaredContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.lambdaTupleSugar`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitLambdaTupleSugar?: (ctx: LambdaTupleSugarContext) => Result;
+
+	/**
 	 * Visit a parse tree produced by `QuintParser.identOrHole`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	visitIdentOrHole?: (ctx: IdentOrHoleContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.parameter`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitParameter?: (ctx: ParameterContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.identOrStar`.
@@ -581,18 +736,18 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	visitIdentOrStar?: (ctx: IdentOrStarContext) => Result;
 
 	/**
-	 * Visit a parse tree produced by `QuintParser.path`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitPath?: (ctx: PathContext) => Result;
-
-	/**
 	 * Visit a parse tree produced by `QuintParser.argList`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	visitArgList?: (ctx: ArgListContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.recElem`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitRecElem?: (ctx: RecElemContext) => Result;
 
 	/**
 	 * Visit a parse tree produced by `QuintParser.normalCallName`.
@@ -621,5 +776,19 @@ export interface QuintVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitLiteral?: (ctx: LiteralContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.qualId`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitQualId?: (ctx: QualIdContext) => Result;
+
+	/**
+	 * Visit a parse tree produced by `QuintParser.simpleId`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitSimpleId?: (ctx: SimpleIdContext) => Result;
 }
 

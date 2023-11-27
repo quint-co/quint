@@ -1,6 +1,6 @@
 {
   "name": "@informalsystems/quint",
-  "version": "0.6.0",
+  "version": "0.16.0",
   "description": "Core tool for the Quint specification language",
   "keywords": [
     "temporal",
@@ -35,94 +35,81 @@
   "bin": {
     "quint": "dist/src/cli.js"
   },
-  "eslintConfig": {
-    "env": {
-      "browser": false,
-      "node": true,
-      "commonjs": true,
-      "es2021": true,
-      "mocha": true
-    },
-    "extends": [
-      "standard"
-    ],
-    "parser": "@typescript-eslint/parser",
-    "parserOptions": {
-      "ecmaVersion": 2021,
-      "sourceType": "module"
-    },
-    "ignorePatterns": [
-      "src/generated/*"
-    ],
-    "plugins": [
-      "@typescript-eslint",
-      "eslint-plugin-json",
-      "eslint-plugin-import",
-      "eslint-plugin-node"
-    ]
-  },
   "files": [
     "README.md",
     "dist/**/*",
     "test/**/*.ts"
   ],
   "engines": {
-    "node": "*"
+    "node": ">=18"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/informalsystems/quint"
   },
   "dependencies": {
-    "@sweet-monads/either": "^3.0.1",
-    "@sweet-monads/maybe": "^3.1.0",
+    "@grpc/grpc-js": "^1.8.14",
+    "@grpc/proto-loader": "^0.7.7",
+    "@octokit/request": "^8.1.1",
+    "@sweet-monads/either": "~3.2.0",
+    "@sweet-monads/maybe": "~3.2.0",
     "@types/line-column": "^1.0.0",
     "@types/seedrandom": "^3.0.4",
     "antlr4ts": "^0.5.0-alpha.4",
     "chalk": "^4.1.2",
     "eol": "^0.9.1",
-    "immutable": "^4.1.0",
+    "immutable": "^4.3.0",
     "json-bigint": "^1.0.0",
     "line-column": "^1.0.2",
     "lodash": "^4.17.21",
     "lodash.isequal": "^4.5.0",
+    "node-fetch": "^2.6.13",
     "seedrandom": "^3.0.5",
+    "tar": "^6.1.14",
     "yargs": "^17.2.1"
   },
   "scripts": {
-    "compile": "tsc && copyfiles -u 1 ./src/builtin.qnt ./dist/src/",
+    "compile": "genversion -e src/version.ts && tsc && copyfiles -u 1 ./src/reflection.proto ./src/builtin.qnt ./dist/src/",
     "prepare": "rm -rf ./dist && npm run compile && chmod +x ./dist/src/cli.js",
-    "test": "mocha -r ts-node/register test/*.test.ts test/**/*.test.ts",
+    "test": "mocha --reporter-option maxDiffSize=0 -r ts-node/register test/*.test.ts test/**/*.test.ts",
     "coverage": "nyc npm run test",
     "integration": "txm cli-tests.md && txm io-cli-tests.md",
-    "apalache-integration": "make -C .. apalache && txm apalache-tests.md",
-    "generate": "npm run compile && npm link && npm run antlr && npm run api-docs && npm run update-fixtures",
+    "apalache-integration": "txm apalache-tests.md",
+    "apalache-dist": "txm apalache-dist-tests.md",
+    "generate": "npm run antlr && npm run compile && npm link && npm run api-docs && npm run update-fixtures",
     "antlr": "antlr4ts -visitor ./src/generated/Quint.g4 && antlr4ts -visitor ./src/generated/Effect.g4",
     "api-docs": "quint docs ./src/builtin.qnt > ../doc/builtin.md",
     "update-fixtures": "./scripts/update-fixtures.sh",
-    "format": "eslint --fix '**/*.ts'"
+    "format-check": "npx prettier --check '**/*.ts' && npx eslint '**/*.ts'",
+    "format": "npx prettier --write '**/*.ts' && npx eslint --fix '**/*.ts'",
+    "debug": "npx ts-node ./src/cli.ts"
   },
   "devDependencies": {
     "@types/chai": "^4.2.18",
     "@types/json-bigint": "^1.0.1",
     "@types/lodash.isequal": "^4.5.6",
     "@types/mocha": "^8.2.3",
-    "@types/node": "^12.12.0",
+    "@types/node": "^18.16.0",
+    "@types/node-fetch": "^2.6.4",
+    "@types/tar": "^6.1.5",
     "@types/yargs": "^17.0.5",
     "@typescript-eslint/eslint-plugin": "^5.12.0",
     "@typescript-eslint/parser": "^5.12.0",
     "antlr4ts-cli": "^0.5.0-alpha.4",
     "chai": "^4.3.4",
     "copyfiles": "^2.4.1",
-    "eslint": "^8.27.0",
+    "eslint": "^8.39.0",
+    "eslint-config-prettier": "^8.8.0",
     "eslint-config-recommended": "^4.1.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-json": "^3.1.0",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^6.1.1",
     "eslint-plugin-unused-imports": "^2.0.0",
+    "genversion": "^3.1.1",
     "mocha": "^10.0.0",
     "nyc": "^15.1.0",
+    "prettier": "2.8.8",
     "ts-node": "^10.0.0",
     "txm": "^8.0.2",
     "typescript": "^4.8.2"

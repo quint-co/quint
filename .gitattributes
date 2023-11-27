@@ -1,0 +1,5 @@
+# Track (large) video files via git-lfs
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+
+# Treat .qnt files as bluespec (similar to vim modeline)
+*.qnt linguist-language=Bluespec

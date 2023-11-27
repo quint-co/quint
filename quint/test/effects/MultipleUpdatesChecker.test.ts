@@ -27,12 +27,15 @@ describe('checkEffects', () => {
 
     const errors = checker.checkEffects(effects)
 
-    assert.sameDeepMembers([...errors.entries()], [
-      [1n, { code: 'QNT202', message: 'Multiple updates of variable z', data: {} }],
-      [2n, { code: 'QNT202', message: 'Multiple updates of variable z', data: {} }],
-      [3n, { code: 'QNT202', message: 'Multiple updates of variable z', data: {} }],
-      [4n, { code: 'QNT202', message: 'Multiple updates of variable y', data: {} }],
-      [5n, { code: 'QNT202', message: 'Multiple updates of variable y', data: {} }],
-    ])
+    assert.sameDeepMembers(
+      [...errors.entries()],
+      [
+        [1n, { code: 'QNT202', message: 'Multiple updates of variable z', reference: 1n, data: {} }],
+        [2n, { code: 'QNT202', message: 'Multiple updates of variable z', reference: 2n, data: {} }],
+        [3n, { code: 'QNT202', message: 'Multiple updates of variable z', reference: 3n, data: {} }],
+        [4n, { code: 'QNT202', message: 'Multiple updates of variable y', reference: 4n, data: {} }],
+        [5n, { code: 'QNT202', message: 'Multiple updates of variable y', reference: 5n, data: {} }],
+      ]
+    )
   })
 })

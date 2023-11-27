@@ -1,324 +1,478 @@
+#!/usr/bin/env node
+
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2021. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2021 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 import {
   CodeAction,
   CodeActionKind,
   CodeActionParams,
+  CompletionItem,
+  CompletionParams,
+  CompletionTriggerKind,
+  Connection,
+  DefinitionLink,
   DefinitionParams,
+  DocumentSymbol,
+  DocumentSymbolParams,
   HandlerResult,
   Hover,
   HoverParams,
   InitializeParams,
   InitializeResult,
-  Location,
   MarkupContent,
-  MarkupKind,
   ProposedFeatures,
+  RenameParams,
   SignatureHelp,
   SignatureHelpParams,
   TextDocumentSyncKind,
   TextDocuments,
-  createConnection
+  TextEdit,
+  WorkspaceEdit,
+  createConnection,
 } from 'vscode-languageserver/node'
+import { DocumentUri, TextDocument } from 'vscode-languageserver-textdocument'
+import { URI } from 'vscode-uri'
 
 import {
-  DocumentUri,
-  TextDocument
-} from 'vscode-languageserver-textdocument'
+  AnalysisOutput,
+  DocumentationEntry,
+  ParserPhase4,
+  QuintErrorData,
+  analyzeModules,
+  builtinDocs,
+  findDefinitionWithId,
+  newIdGenerator,
+  produceDocsById,
+} from '@informalsystems/quint'
 
-import { AnalyzisOutput, DocumentationEntry, Loc, ParserPhase2, QuintAnalyzer, QuintError, QuintErrorData, builtinDocs, effectSchemeToString, lookupValue, parsePhase1, parsePhase2, produceDocs, treeFromModule, typeSchemeToString, newIdGenerator } from '@informalsystems/quint'
-import { assembleDiagnostic, diagnosticsFromErrors, findBestMatchingResult, findName, locToRange } from './reporting'
+import { completeIdentifier } from './complete'
+import { findDefinition } from './definitions'
+import { getDocumentSymbols } from './documentSymbols'
+import { hover } from './hover'
+import { parseDocument } from './parsing'
+import { getDeclRegExp } from './rename'
+import { diagnosticsFromErrors, findBestMatchingResult, locToRange } from './reporting'
+import { findParameterWithId } from '@informalsystems/quint/dist/src/ir/IRFinder'
 
-// Create one generator of unique identifiers
-const idGenerator = newIdGenerator()
+export class QuintLanguageServer {
+  // Create one generator of unique identifiers
+  private idGenerator = newIdGenerator()
 
-// Create a connection for the server, using Node's IPC as a transport.
-// Also include all preview / proposed LSP features.
-const connection = createConnection(ProposedFeatures.all)
+  // Store auxiliary information by document
+  private parsedDataByDocument: Map<DocumentUri, ParserPhase4> = new Map()
+  private analysisOutputByDocument: Map<DocumentUri, AnalysisOutput> = new Map()
 
-// Create a simple text document manager.
-const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument)
+  // Documentation entries by id, by document
+  private docsByDocument: Map<DocumentUri, Map<bigint, DocumentationEntry>> = new Map()
 
-// Store auxiliary information by document
-const parsedDataByDocument: Map<DocumentUri, ParserPhase2> = new Map<DocumentUri, ParserPhase2>()
-const analysisOutputByDocument: Map<DocumentUri, AnalyzisOutput> = new Map<DocumentUri, AnalyzisOutput>()
-// Documentation entries by name, by module, by document
-const docsByDocument: Map<DocumentUri, Map<string, Map<string, DocumentationEntry>>> =
-  new Map<DocumentUri, Map<string, Map<string, DocumentationEntry>>>()
+  // A timeout to store scheduled analysis
+  private analysisTimeout: NodeJS.Timeout = setTimeout(() => {}, 0)
 
-const ds = builtinDocs(idGenerator)
-const loadedBuiltInDocs = ds.isRight() ? ds.value : undefined
+  constructor(private readonly connection: Connection, private readonly documents: TextDocuments<TextDocument>) {
+    const loadedBuiltInDocs = builtinDocs(this.idGenerator)
 
-connection.onInitialize((_params: InitializeParams) => {
-  const result: InitializeResult = {
-    capabilities: {
-      textDocumentSync: TextDocumentSyncKind.Incremental,
-      hoverProvider: true,
-      signatureHelpProvider: {
-        triggerCharacters: ['('],
-      },
-      definitionProvider: true,
-      codeActionProvider: true,
-    },
-  }
-  return result
-})
+    connection.onInitialize((_params: InitializeParams) => {
+      const result: InitializeResult = {
+        capabilities: {
+          textDocumentSync: TextDocumentSyncKind.Full,
+          definitionProvider: true,
+          documentSymbolProvider: true,
+          codeActionProvider: true,
+          completionProvider: {
+            triggerCharacters: ['.'],
+          },
+          hoverProvider: true,
+          renameProvider: true,
+          signatureHelpProvider: {
+            triggerCharacters: ['('],
+          },
+        },
+      }
+      return result
+    })
 
-// Only keep information for open documents
-documents.onDidClose(e => {
-  parsedDataByDocument.delete(e.document.uri)
-  docsByDocument.delete(e.document.uri)
-  analysisOutputByDocument.delete(e.document.uri)
-})
+    // Only keep information for open documents
+    documents.onDidClose(e => this.deleteData(e.document.uri))
 
-// The content of a text document has changed. This event is emitted
-// when the text document first opened or when its content has changed.
-documents.onDidChangeContent(change => {
-  console.log('File content changed, checking types and effects again')
+    // The content of a text document has changed. This event is emitted
+    // when the text document first opened or when its content has changed.
+    documents.onDidChangeContent(async change => {
+      parseDocument(this.idGenerator, change.document)
+        .then(result => {
+          this.parsedDataByDocument.set(change.document.uri, result)
 
-  parseDocument(change.document).then((result) => {
-    parsedDataByDocument.set(change.document.uri, result)
-    docsByDocument.set(change.document.uri, new Map(result.modules.map(m => [m.name, produceDocs(m)])))
+          const diagnosticsByFile = diagnosticsFromErrors(result.errors, result.sourceMap)
 
-    const analyzer = new QuintAnalyzer(result.table)
-    result.modules.forEach(module => analyzer.analyze(module))
-    const [errors, analysisOutput] = analyzer.getResult()
+          const sourceFile = URI.parse(change.document.uri).path
+          const diagnostics = diagnosticsByFile.get(sourceFile) ?? []
+          this.connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
 
-    analysisOutputByDocument.set(change.document.uri, analysisOutput)
-
-    const diagnostics = diagnosticsFromErrors(errors, result.sourceMap)
-    connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
-  }).catch(diagnostics => {
-    connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
-  })
-})
-
-connection.onHover((params: HoverParams): Hover | undefined => {
-  function inferredDataHover(): string[] {
-    const parsedData = parsedDataByDocument.get(params.textDocument.uri)
-    const analysisOutput = analysisOutputByDocument.get(params.textDocument.uri)
-    if (!parsedData || !analysisOutput) {
-      return []
-    }
-
-    const typeResult = findBestMatchingResult(
-      parsedData.sourceMap, [...analysisOutput.types.entries()], params.position
-    )
-    const effectResult = findBestMatchingResult(
-      parsedData.sourceMap, [...analysisOutput.effects.entries()], params.position
-    )
-
-    // There are cases where we have types but not effects, but not the other way around
-    // Therefore, we only check for typeResult here and handle missing effects later
-    // As if there are no types, there are no effects either
-    if (!typeResult) {
-      return []
-    }
-
-    const [loc, type] = typeResult
-
-    const document = documents.get(params.textDocument.uri)!
-    const text = document.getText(locToRange(loc))
-
-    let hoverText = ["```qnt", text, "```", '']
-
-    hoverText.push(`**type**: \`${typeSchemeToString(type)}\`\n`)
-
-    if (effectResult) {
-      const [, effect] = effectResult
-      hoverText.push(`**effect**: \`${effectSchemeToString(effect)}\`\n`)
-    }
-
-    return hoverText
-  }
-
-  function documentationHover(): string[] {
-    const parsedData = parsedDataByDocument.get(params.textDocument.uri)
-    if (!parsedData) {
-      return []
-    }
-
-    const { modules, sourceMap } = parsedData
-    const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-    const [module, name, _id] = findName(modules, results, params.position) ?? [undefined, undefined, undefined]
-    if (!name) {
-      return []
-    }
-
-    const signature = docsByDocument.get(params.textDocument.uri)?.get(module.name)?.get(name)
-      ?? loadedBuiltInDocs?.get(name)!
-    if (!signature) {
-      return []
-    }
-
-    let hoverText = ["```qnt", signature.label, "```", '']
-    if (signature.documentation) {
-      hoverText.push(signature.documentation)
-    }
-    return hoverText
-  }
-
-  const hoverText = [inferredDataHover(), documentationHover()]
-    .filter(s => s.length > 0)
-    .map(s => s.join('\n'))
-    .join('\n-----\n')
-
-  if (hoverText === '') {
-    return undefined
-  }
-
-  return {
-    contents: {
-      kind: MarkupKind.Markdown,
-      value: hoverText,
-    },
-  }
-})
-
-connection.onSignatureHelp((params: SignatureHelpParams): HandlerResult<SignatureHelp, void> => {
-  const emptySignatures = { signatures: [], activeSignature: 0, activeParameter: 0 }
-
-  const parsedData = parsedDataByDocument.get(params.textDocument.uri)
-  if (!parsedData) {
-    return emptySignatures
-  }
-
-  // Find name under cursor
-  const { modules, sourceMap } = parsedData
-  const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-  const [module, name, _scope] = findName(modules, results, params.position) ?? [undefined, undefined, undefined]
-  if (!name) {
-    return emptySignatures
-  }
-
-  const signature = docsByDocument.get(params.textDocument.uri)?.get(module.name)?.get(name)
-    ?? loadedBuiltInDocs?.get(name)!
-  const signatureWithMarkupKind = signature?.documentation
-    ? { ...signature, documentation: { kind: 'markdown', value: signature.documentation } as MarkupContent }
-    : signature
-
-  return {
-    signatures: [signatureWithMarkupKind],
-    activeSignature: 0,
-    activeParameter: 0,
-  }
-})
-
-connection.onDefinition((params: DefinitionParams): HandlerResult<Location[], void> => {
-  const parsedData = parsedDataByDocument.get(params.textDocument.uri)
-  if (!parsedData) {
-    return []
-  }
-
-  // Find name under cursor
-  const { modules, sourceMap, table } = parsedData
-  const results: [Loc, bigint][] = [...sourceMap.entries()].map(([id, loc]) => [loc, id])
-  const [module, name, scope] = findName(modules, results, params.position) ?? [undefined, undefined, undefined]
-  if (!name) {
-    return []
-  }
-
-  // Find definition of name
-  const scopeTree = treeFromModule(module)
-  const def = lookupValue(table.get(module.name)!, scopeTree, name, scope)
-  if (!def || !def.reference) {
-    return []
-  }
-
-  const loc = sourceMap.get(def.reference)
-  if (!loc) {
-    return []
-  }
-
-  const range = locToRange(loc)
-
-  // Definitions start with a qualifier
-  // This finds where the definition name actually starts
-  // and corrects the range
-  const text = documents.get(params.textDocument.uri)!.getText(range)
-  const start = text.search(new RegExp(name))
-  return [{
-    uri: params.textDocument.uri,
-    range: { ...range, start: { ...range.start, character: range.start.character + start } },
-  }]
-})
-
-connection.onCodeAction((params: CodeActionParams): HandlerResult<CodeAction[], void> => {
-  return params.context.diagnostics.reduce((actions, diagnostic) => {
-    const data = diagnostic.data as QuintErrorData
-    const fix = data.fix
-
-    switch (fix?.kind) {
-      case 'replace': {
-        const document = documents.get(params.textDocument.uri)!
-        // For now, we try to apply the fix only for the first line in the range
-        // which should be the most common case
-        const lineNum = params.range.start.line
-        const line = document.getText({
-          start: { line: lineNum, character: 0 },
-          end: { line: lineNum + 1, character: 0 },
+          if (diagnosticsByFile.size === 0) {
+            // For now, only run analysis if there are no parsing errors
+            this.scheduleAnalysis(change.document)
+          }
         })
+        .catch(err => {
+          this.connection.console.error(`Error during parsing: ${err}`)
+        })
+    })
 
-        const matchResult = line.match(new RegExp(fix.original))
-        if (!matchResult) {
+    connection.onHover((params: HoverParams): Hover | undefined => {
+      const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
+      if (!parsedData) {
+        return
+      }
+
+      const analysisOutput = this.analysisOutputByDocument.get(params.textDocument.uri)
+      const docs = this.docsByDocument.get(params.textDocument.uri)
+      const source = URI.parse(params.textDocument.uri).path
+      const document = documents.get(params.textDocument.uri)!
+
+      return hover(parsedData, analysisOutput, docs, source, params.position, document, loadedBuiltInDocs)
+    })
+
+    connection.onSignatureHelp((params: SignatureHelpParams): HandlerResult<SignatureHelp, void> => {
+      const emptySignatures = { signatures: [], activeSignature: 0, activeParameter: 0 }
+
+      const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
+      if (!parsedData) {
+        return emptySignatures
+      }
+
+      const link = findDefinition(parsedData, params.textDocument.uri, params.position)
+      if (!link) {
+        return emptySignatures
+      }
+
+      const signature = link.definitionId
+        ? this.docsByDocument.get(params.textDocument.uri)?.get(link.definitionId)
+        : loadedBuiltInDocs?.get(link.name)
+
+      if (!signature) {
+        return emptySignatures
+      }
+
+      const signatureWithMarkupKind = signature?.documentation
+        ? { ...signature, documentation: { kind: 'markdown', value: signature.documentation } as MarkupContent }
+        : signature
+
+      return {
+        signatures: [signatureWithMarkupKind],
+        activeSignature: 0,
+        activeParameter: 0,
+      }
+    })
+
+    connection.onDefinition((params: DefinitionParams): HandlerResult<DefinitionLink[], void> => {
+      const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
+      if (!parsedData) {
+        return []
+      }
+
+      const link = findDefinition(parsedData, params.textDocument.uri, params.position)
+      if (!link) {
+        return []
+      }
+
+      const { nameId, name, definitionId } = link
+      if (!definitionId) {
+        return []
+      }
+
+      const loc = parsedData.sourceMap.get(definitionId)
+      if (!loc) {
+        return []
+      }
+
+      const range = locToRange(loc)
+      const uri = URI.parse(loc.source).toString()
+
+      // Definitions start with a qualifier. This finds where the definition name
+      // actually starts and corrects the range. If the file is not opened in the
+      // editor yet, we just use the original range. In the future, we should find
+      // another way of positioning the cursor in the editor, or read the file from
+      // disk.
+      const text = documents.get(uri)?.getText(range) ?? name
+      const unqualifiedName = name.split('::').pop()!
+      const start = text.search(new RegExp(unqualifiedName))
+      return [
+        {
+          // The range for the name being hover over
+          originSelectionRange: locToRange(parsedData.sourceMap.get(nameId)!),
+          targetUri: uri,
+          // The range for the entire definition (including the qualifier and body)
+          targetRange: range,
+          // The range for the definition's name
+          targetSelectionRange: { ...range, start: { ...range.start, character: range.start.character + start } },
+        },
+      ]
+    })
+
+    connection.onCodeAction((params: CodeActionParams): HandlerResult<CodeAction[], void> => {
+      return params.context.diagnostics.reduce((actions, diagnostic) => {
+        const data = diagnostic.data as QuintErrorData
+        if (!data) {
           return actions
         }
 
-        const editRange = {
-          ...diagnostic.range,
-          end: {
-            line: diagnostic.range.start.line,
-            character: diagnostic.range.start.character + matchResult![0].length,
-          },
+        const fix = data.fix
+
+        switch (fix?.kind) {
+          case 'replace': {
+            const document = documents.get(params.textDocument.uri)!
+            // For now, we try to apply the fix only for the first line in the range
+            // which should be the most common case
+            const lineNum = params.range.start.line
+            const line = document.getText({
+              start: { line: lineNum, character: 0 },
+              end: { line: lineNum + 1, character: 0 },
+            })
+
+            const matchResult = line.match(new RegExp(fix.original))
+            if (!matchResult) {
+              return actions
+            }
+
+            const editRange = {
+              ...diagnostic.range,
+              end: {
+                line: diagnostic.range.start.line,
+                character: diagnostic.range.start.character + matchResult![0].length,
+              },
+            }
+
+            const action: CodeAction = {
+              title: `Replace ${fix.original} with ${fix.replacement}`,
+              kind: CodeActionKind.QuickFix,
+              isPreferred: true,
+              diagnostics: [diagnostic],
+              edit: {
+                changes: {
+                  [params.textDocument.uri]: [
+                    {
+                      range: editRange,
+                      newText: fix.replacement,
+                    },
+                  ],
+                },
+              },
+            }
+
+            actions.push(action)
+          }
         }
 
-        const action: CodeAction = {
-          title: `Replace ${fix.original} with ${fix.replacement}`,
-          kind: CodeActionKind.QuickFix,
-          isPreferred: true,
-          diagnostics: [diagnostic],
-          edit: {
-            changes: {
-              [params.textDocument.uri]: [{
-                range: editRange,
-                newText: fix.replacement,
-              }],
-            },
-          },
-        }
+        return actions
+      }, [] as CodeAction[])
+    })
 
-        actions.push(action)
+    connection.onCompletion((params: CompletionParams): CompletionItem[] => {
+      // Only complete on "."
+      // TODO: offer completion at arbitrary positions in the text
+      if (params.context?.triggerKind !== CompletionTriggerKind.TriggerCharacter) {
+        return []
       }
+
+      const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
+      if (!parsedData) {
+        return []
+      }
+
+      const document = this.documents.get(params.textDocument.uri)
+      if (!document) {
+        return []
+      }
+
+      // Parse the identifier that triggered completion
+      // TODO: offer completion for chained calls
+      //       (e.g., `tup._2.`, `rec.field.` or `set.powerset().`)
+      const triggeringLine = document.getText({
+        start: { ...params.position, character: 0 },
+        end: params.position,
+      })
+
+      const match = triggeringLine?.trim().match(/([a-zA-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+)\.$/)
+      if (!match) {
+        return []
+      }
+      const triggeringIdentifier = match[1]
+
+      const sourceFile = URI.parse(params.textDocument.uri).path
+
+      // Run analysis synchronously to get the required information for completion
+      this.triggerAnalysis(document)
+
+      const analysisOutput = this.analysisOutputByDocument.get(params.textDocument.uri)
+      if (!analysisOutput) {
+        return []
+      }
+
+      return completeIdentifier(
+        triggeringIdentifier,
+        parsedData,
+        analysisOutput,
+        sourceFile,
+        params.position,
+        loadedBuiltInDocs
+      )
+    })
+
+    connection.onDocumentSymbol((params: DocumentSymbolParams): HandlerResult<DocumentSymbol[], void> => {
+      const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
+      if (!parsedData) {
+        return []
+      }
+
+      // filter for modules defined in the requested textDocument
+      const localModules = parsedData.modules.filter(module => {
+        const loc = parsedData.sourceMap.get(module.id)
+        if (!loc) {
+          return false
+        }
+        const moduleUri = URI.parse(loc.source).toString()
+        return moduleUri == params.textDocument.uri
+      })
+
+      return getDocumentSymbols(localModules, parsedData.sourceMap)
+    })
+
+    connection.onRenameRequest((params: RenameParams): WorkspaceEdit | null => {
+      const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
+      if (!parsedData) {
+        return null
+      }
+
+      // Find the name under the cursor.
+      const { modules, sourceMap, table } = parsedData
+      const results: [bigint, null][] = [...sourceMap.keys()].map(id => [id, null])
+      const sourceFile = URI.parse(params.textDocument.uri).path
+      const result = findBestMatchingResult(sourceMap, results, params.position, sourceFile)
+      if (!result) {
+        return null
+      }
+
+      // Look up where the name was declared.
+      const declToRename = table.get(result.id)?.id ?? result.id
+
+      // Find all references to `declToRename`.
+      const references = [...table.entries()].reduce((references, [key, value]) => {
+        if (value.id == declToRename) {
+          references.push(key)
+        }
+        return references
+      }, [] as bigint[])
+
+      // Construct a `TextEdit` for each reference.
+      const changes = references.reduce((changes, ref) => {
+        const loc = sourceMap.get(ref)
+        if (loc) {
+          changes.push({ range: locToRange(loc), newText: params.newName })
+        }
+        return changes
+      }, [] as TextEdit[])
+
+      // Construct a `TextEdit` for the decl itself.
+      const param = findParameterWithId(modules, declToRename)
+      if (param) {
+        // The simple case: the name is declared as a parameter.
+        // In this case, the source map gives us exactly the range of the symbol
+        // to replace.
+        const declLoc = sourceMap.get(param.id)
+        if (declLoc) {
+          changes.push({ range: locToRange(declLoc), newText: params.newName })
+        }
+      } else {
+        const decl = findDefinitionWithId(modules, declToRename)
+        if (!decl) {
+          return null
+        }
+        // The tricky case: the name is declared as a definition.
+        // In this case, the location pointed by the source map includes its
+        // entire body and quantifiers, while we're only looking to replace
+        // its name. Thus, we try to parse the declaration using a regular
+        // expression, and extract offsets to account for offsets caused by
+        // preceeding qualifiers.
+
+        const declLoc = sourceMap.get(decl.id)
+        if (!declLoc) {
+          return null
+        }
+        const triggeringLine = documents.get(params.textDocument.uri)?.getText(locToRange(declLoc))
+        if (!triggeringLine) {
+          return null
+        }
+
+        const re = getDeclRegExp(decl)
+        const match = re.exec(triggeringLine)
+        if (!match) {
+          return null
+        }
+        const modificationLoc = {
+          ...declLoc,
+          start: { ...declLoc.start, col: declLoc.start.col + match[0].length - match[2].length },
+          end: { ...declLoc.start, col: declLoc.start.col + match[0].length - 1 },
+        }
+        changes.push({ range: locToRange(modificationLoc), newText: params.newName })
+      }
+
+      return { changes: { [params.textDocument.uri]: changes } }
+    })
+
+    // Make the text document manager listen on the connection
+    // for open, change and close text document events
+    documents.listen(connection)
+
+    // Listen on the connection
+    connection.listen()
+  }
+
+  private deleteData(uri: string) {
+    this.parsedDataByDocument.delete(uri)
+    this.docsByDocument.delete(uri)
+    this.analysisOutputByDocument.delete(uri)
+  }
+
+  private triggerAnalysis(document: TextDocument) {
+    clearTimeout(this.analysisTimeout)
+    this.connection.console.info(`Triggering analysis`)
+    this.analyze(document)
+  }
+
+  private scheduleAnalysis(document: TextDocument) {
+    clearTimeout(this.analysisTimeout)
+    const timeoutMillis = 1000
+    this.connection.console.info(`Scheduling analysis in ${timeoutMillis} ms`)
+    this.analysisTimeout = setTimeout(() => {
+      this.analyze(document)
+    }, timeoutMillis)
+  }
+
+  private analyze(document: TextDocument) {
+    try {
+      const parsedData = this.parsedDataByDocument.get(document.uri)
+      if (!parsedData) {
+        return
+      }
+
+      const { modules, sourceMap, table } = parsedData
+
+      this.docsByDocument.set(document.uri, new Map(modules.flatMap(m => [...produceDocsById(m).entries()])))
+
+      const [errors, analysisOutput] = analyzeModules(table, modules)
+
+      this.analysisOutputByDocument.set(document.uri, analysisOutput)
+
+      const sourceFile = URI.parse(document.uri).path
+      const diagnosticsByFile = diagnosticsFromErrors(errors, sourceMap)
+      const diagnostics = diagnosticsByFile.get(sourceFile) ?? []
+      this.connection.sendDiagnostics({ uri: document.uri, diagnostics })
+    } catch (e) {
+      this.connection.console.error(`Error during analysis: ${e}`)
     }
-
-    return actions
-  }, [] as CodeAction[])
-})
-
-async function parseDocument(textDocument: TextDocument): Promise<ParserPhase2> {
-  const text = textDocument.getText()
-
-  const result = parsePhase1(idGenerator, text, textDocument.uri)
-    .chain(phase1Data => parsePhase2(phase1Data))
-    .mapLeft(messages => messages.flatMap(msg => {
-      // TODO: Parse errors should be QuintErrors
-      const error: QuintError = { code: 'QNT000', message: msg.explanation, data: {} }
-      return msg.locs.map(loc => assembleDiagnostic(error, loc))
-    }))
-
-  if (result.isRight()) {
-    return new Promise((resolve, _reject) => resolve(result.value))
-  } else {
-    return new Promise((_resolve, reject) => reject(result.value))
   }
 }
 
-// Make the text document manager listen on the connection
-// for open, change and close text document events
-documents.listen(connection)
-
-// Listen on the connection
-connection.listen()
+new QuintLanguageServer(createConnection(ProposedFeatures.all), new TextDocuments(TextDocument))

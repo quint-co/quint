@@ -306,20 +306,20 @@ themselves.
   pure def someCoinsExample = Set("ATOM", "ETH", "USDT")
 
   // which coins can be bought by swapping a coin from `someCoins` once?
-  val buyableVia1Swap(someCoins) =
+  pure def buyableVia1Swap(someCoins) =
     availableUnorderedPairs
       .filter(p => p.intersect(someCoins).size() == 1)
       .flatten()
       .exclude(someCoins)
 
   // which coins can be bought by swapping a coin from `someCoins` exactly twice?
-  val buyableVia2Swaps(someCoins) =
+  pure def buyableVia2Swaps(someCoins) =
     someCoins
       .buyableVia1Swap()
       .buyableVia1Swap()
 
   // which coins can be bought by swapping a coin from `someCoins` twice?
-  val buyableVia1or2Swaps(someCoins) =
+  pure def buyableVia1or2Swaps(someCoins) =
     buyableVia1Swap(someCoins)
       .union(buyableVia2Swaps(someCoins))
     /*!
@@ -395,7 +395,7 @@ Also easy: Just take the set union of what is possible in one or two swaps:
     !*/
 
   // which coins can we buy via n swaps when starting from `someCoins`
-  val buyableNSwaps(someCoins, n) =
+  pure def buyableNSwaps(someCoins, n) =
     1.to(n).fold(someCoins,
                  (prevCoins, i) => buyableVia1Swap(prevCoins))
     /*!
@@ -464,31 +464,28 @@ Now @KryptoCoffeeCat can compute what they can buy via various numbers of swaps:
       </step>
     !*/
 
-  // Higher-order operators do not work in REPL atm:
-  // https://github.com/informalsystems/quint/issues/221
-
   // inSet.exists(myFun) can be expressed via `fold`, when `inSet` is finite
-  //val myExists(inSet: Set[a], pred: a => bool): bool =
-  //  inSet.fold(false, (result, elem) => result or pred(elem))
+  pure def myExists(inSet: Set[a], pred: a => bool): bool =
+    inSet.fold(false, (result, elem) => result or pred(elem))
 
   // inSet.forall(myFun) can be expressed via `fold`, when `inSet` is finite
-  //val myForall(inSet: Set[a], pred: a => bool): bool =
-  //  inSet.fold(true, (result, elem) => result and pred(elem))
+  pure def myForall(inSet: Set[a], pred: a => bool): bool =
+    inSet.fold(true, (result, elem) => result and pred(elem))
 
   // inSet.filter(myFun) can be expressed via `fold`, when `inSet` is finite
-  //val myFilter(inSet: Set[a], pred: a => bool): Set[a] =
-  //  inSet.fold(Set(),
-  //    (result, elem) =>
-  //      if (pred(elem)) result.union(Set(elem)) else result)
+  pure def myFilter(inSet: Set[a], pred: a => bool): Set[a] =
+    inSet.fold(Set(),
+      (result, elem) =>
+        if (pred(elem)) result.union(Set(elem)) else result)
 
   // inSet.map(myFun) can be expressed via `fold`, when `inSet` is finite
-  //val myMap(inSet: Set[a], mapper: a => b): Set[b] =
-  //  inSet.fold(Set(),
-  //    (result, elem) => result.union(Set(mapper(elem))))
+  pure def myMap(inSet: Set[a], mapper: a => b): Set[b] =
+    inSet.fold(Set(),
+      (result, elem) => result.union(Set(mapper(elem))))
 
   // flatten(inSet) can be expressed via `fold`, when `inSet` is finite
-  //val myFlatten(inSet: Set[Set[a]]): Set[a] =
-  //  inSet.fold(Set(), (result, elem) => result.union(elem) )
+  pure def myFlatten(inSet: Set[Set[a]]): Set[a] =
+    inSet.fold(Set(), (result, elem) => result.union(elem) )
     /*!
       <step>
         <title>Power to the folds!</title>

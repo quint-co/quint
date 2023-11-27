@@ -111,18 +111,6 @@ module builtin {
   /// ```
   pure def contains(a, s): (Set[a], a) => bool
 
-  /// `e.notin(s)` is true when the element `e` is not in the set `s`.
-  ///
-  /// See also: `in`
-  ///
-  /// ### Examples
-  ///
-  /// ```
-  /// assert(4.notin(Set(1, 2, 3)))
-  /// assert(not(1.notin(Set(1, 2, 3))))
-  /// ```
-  pure def notin(a, s): (a, Set[a]) => bool
-
   /// `s1.union(s2)` is the set of elements that are in `s1` or in `s2`.
   ///
   /// This is the set union operator.
@@ -336,7 +324,7 @@ module builtin {
   /// ```
   pure def setOfMaps(s1, s2): (Set[a], Set[b]) => Set[a -> b]
 
-  /// `m.set(k, v)` is the map `m` but with the key `k` mapped `v` if `k.in(keys(m))`
+  /// `m.set(k, v)` is the map `m` but with the key `k` mapped to `v` if `k.in(keys(m))`
   ///
   /// If `k` is not a key in `m`, this operator has undefined behavior.
   ///
@@ -364,17 +352,17 @@ module builtin {
   /// ```
   pure def setBy(m, k, v): (a -> b, a, (b) => b) => a -> b
 
-  /// `m.put(k, v)` map `m` extended with the key `k` set to `v`.
-  ///
-  /// If `k` is present in `m`, this operator has undefined behavior.
+  /// `m.put(k, v)` is the map `m` but with the key `k` mapped to `v`.
   ///
   /// ### Examples
   ///
   /// ```
   /// pure val m = Map(1 -> true, 2 -> false)
-  /// pure val m2 = m.put(3, true)
+  /// pure val m2 = m.put(2, true)
+  /// pure val m3 = m.put(3, true)
   /// assert(m == Map(1 -> true, 2 -> false))
-  /// assert(m2 == Map(1 -> true, 2 -> false, 3 -> true))
+  /// assert(m2 == Map(1 -> true, 2 -> true))
+  /// assert(m3 == Map(1 -> true, 2 -> false, 3 -> true))
   /// ```
   pure def put(m, k, v): (a -> b, a, b) => a -> b
 
@@ -499,7 +487,7 @@ module builtin {
   /// ```
   pure def select(l, p): (List[a], (a) => bool) => List[a]
 
-  /// `l.foldl(z, f)` reduces the elements in `s` using `f`,
+  /// `l.foldl(z, f)` reduces the elements in `l` using `f`,
   /// starting with `z` from the left.
   ///
   /// I.e., `f(f(f(z, x0), x1)..., xn)`.
@@ -513,21 +501,6 @@ module builtin {
   /// assert(l == List(1, 2, 3, 4))
   /// ```
   pure def foldl(l, z, f): (List[a], b, (b, a) => b) => b
-
-  /// `l.foldr(z, f)` reduces the elements in `s` using `f`,
-  /// starting with `z` from the right.
-  ///
-  /// I.e., `f(x0, f(x1, ... f(xn, z))`.
-  ///
-  /// ### Examples
-  ///
-  /// ```
-  /// pure val sum = List(1, 2, 3, 4).foldr(0, (x, y) => x + y)
-  /// assert(sum == 10)
-  /// pure val l = List(1, 2, 3, 4).foldr(List(), (e, l) => l.append(e))
-  /// assert(l == List(4, 3, 2, 1))
-  /// ```
-  pure def foldr(l, z, f): (List[a], b, (a, b) => b) => b
 
   /// `a.iadd(b)` is the integer addition of `a` and `b`.
   ///
@@ -817,29 +790,25 @@ module builtin {
   /// ```
   action then(a, b): (bool, bool) => bool
 
-  /// `a.repeated(b)` is the action `a` repeated `n` times.
+  /// `n.reps(i => A(i))` or `n.reps(A)` the action `A`, `n` times.
+  /// The iteration number, starting with 0, is passed as an argument of `A`.
+  /// As actions are usually not parameterized by the iteration number,
+  /// the most common form looks like: `n.reps(i => A)`.
   ///
   /// The semantics of this operator is as follows:
   ///
-  /// - When `n <= 0`, this operator is equivalent to `unchanged`.
-  /// - When `n = 1`, `a.repeated(n)` is equivalent to `a`.
-  /// - When `n > 1`, `a.repeated(a)`, is equivalent to `a.then(a.repeated(n - 1))`.
-  ///
-  /// Note that the operator `a.repeated(n)` applies `a` exactly `n` times (when `n` is
-  /// non-negative). If you want to repeat `a` from `i` to `j` times, you can combine
-  /// it with `orKeep`:
-  ///
-  /// ```
-  /// a.repeated(i).then((a.orKeep(vars)).repeated(j - i))
-  /// ```
+  /// - When `n <= 0`, this operator does not change the state.
+  /// - When `n = 1`, `n.reps(A)` is equivalent to `A(0)`.
+  /// - When `n > 1`, `n.reps(A)`, is equivalent to
+  ///   `A(0).then((n - 1).reps(i => A(1 + i)))`.
   ///
   /// ### Examples
   ///
   /// ```
   /// var x: int
-  /// run test = (x' = 0).then((x' = x + 1).repeated(3)).then(assert(x == 3))
+  /// run test = (x' = 0).then(3.reps(i => x' = x + 1)).then(assert(x == 3))
   /// ```
-  action repeated(a, n): (bool, int) => bool
+   action reps(n, A): (int, int => bool) => bool
 
   /// `a.fail()` evaluates to `true` if and only if action `a` evaluates to `false`.
   ///
@@ -995,8 +964,52 @@ module builtin {
   // /// pure val s = tuples(Set(1, 2), Set(3, 4))
   // /// assert(s == Set((1, 3), (1, 4), (2, 3), (2, 4)))
   // /// ```
-
   // pure def tuples(a*): (Set[a0], ..., Set[an]) => Set[(a0, ..., an)]
+
+  // /// `variant("Label", expr)` is a value of type `T` when
+  // ///
+  // /// - `T` is a predifined sum type
+  // /// - `T` has a data constructor `Label`, paired with type `E`
+  // /// - `expr` has type `E`
+  // ///
+  // /// ### Examples
+  // ///
+  // /// ```
+  // /// type T = A(int) | B | C(str)
+  // /// assert(variant("A", 42) == A(42))
+  // /// assert(variant("B", Rec()) == B)
+  // /// assert(variant("C", "foo") == C("foo"))
+  // /// ```
+  // ///
+  // /// Note that this is an internal built-in and users should prefer the generated
+  // /// data constructor matching the label of a variant. E.g., in our example above,
+  // /// users should prefer the equivalent form on the right hand side of the `==`.
+  // def variant(label, x): (str, E) => T
+
+  // /// `matchVariant(expr, l1, (x1) => e1, ..., ln, (xn) => en)` is `ei`, where
+  // ///
+  // /// - `expr` a variant labeled with `li` of a sum type with fields `l1`, ..., `ln`,
+  // ///    supporting types `t1`, ..., `tn`
+  // /// - `xi : ti`
+  // /// - `e1`, ... `en` are of the same type
+  // /// - `ei` is `f(v)`, where `v` is the expression carried by the `expr` and `f`
+  // ///    is the eliminator lambda labeled with `li`.
+  // ///
+  // /// for 1 <= i <= n.
+  // ///
+  // /// ### Examples
+  // ///
+  // /// ```
+  // /// type T = A(int) | B | C(str)
+  // /// val result = matchVariant(A(42), "A", (x) => x, "B", (_) => 0, "C", (_) => 1)
+  // /// assert(result == 42)
+  // /// assert(result == match A(42) { A(x) => x | B => 0 | C(_) => 1 })
+  // /// ```
+  // ///
+  // /// Note that this is an internal built-in and users should prefer the
+  // /// `match` syntax on the right hand side of the `==` above.
+  // def matchVariant(expr, l1, elim1, ..., ln, elimn): (ti, str, t1 => r, ..., tn, tn => r) => r
+
   // /// `and(a0, ..., an)` is true when all `ai` are true.
   // ///
   // /// This is the conjunction operator.
@@ -1055,26 +1068,4 @@ module builtin {
   // /// run test = (x' = 0).then(any { x' = 1, x' = 2 }).then(assert(or { x == 1, x == 2 }))
   // /// ```
   // pure def actionAny(a*): (bool*) => bool
-
-  // /// `unionMatch(m, (t0, e0), ..., (tn, en))` is the expression `ei` when `ti` is the tag of `m`.
-  // ///
-  // /// The behavior of this operator is undefined if the tag isn't one of the `ti`s.
-  // ///
-  // /// This is the pattern matching operator.
-  // ///
-  // /// Can also be written as `m match | t0: e0, ..., | tn: en }`.
-  // ///
-  // /// ### Examples
-  // ///
-  // /// ```
-  // /// pure val total(w) = w match
-  // ///   // this pattern binds some_w to the "some" version of w, if w.tag == "some"
-  // ///   | "some": some_w => some_w.value
-  // ///   // this pattern
-  // ///   | "none": _ => 0
-  // ///
-  // /// assert(total({ tag = "some", value = 1 }) == 1)
-  // /// assert(total({ tag = "none" }) == 0)
-  // /// ```
-  // pure def unionMatch(m, (t, e)*): (a, (b, ((b) => c))*) => c
 }

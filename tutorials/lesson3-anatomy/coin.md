@@ -827,7 +827,7 @@ see the next step.
     // if she has enough on her balance.
     // This test may fail sometimes. Do you see why?
     // If not, execute it multiple times in REPL, until it fails.
-    run mintTwiceThenSendTest = {
+    run mintTwiceThenSendError = {
         // non-deterministically pick some amounts to mint and send
         nondet mintEve = 0.to(MAX_UINT).oneOf()
         nondet mintBob = 0.to(MAX_UINT).oneOf()
@@ -852,7 +852,7 @@ see the next step.
 Instead of testing a sequence of transactions for a carefully crafted
 single input, we could fix a sequence of transactions and let the computer
 find the inputs that fail the test. This is exactly what we are doing in
-the above test `mintTwiceThenSendTest`. The test non-deterministically
+the above test `mintTwiceThenSendError`. The test non-deterministically
 chooses the amounts of coins to mint and send and then executes the actions
 `mint`, `mint`, and `send`. As the values are chosen non-deterministically,
 we know that some of the inputs should fail `send`. Our hypothesis is that
@@ -864,7 +864,7 @@ Let's run this test:
             
 
 ```sh
-echo 'mintTwiceThenSendTest' | quint -r coin.qnt::coin
+echo 'mintTwiceThenSendError' | quint -r coin.qnt::coin
 ```
 
 
@@ -873,17 +873,27 @@ If you lucky, it fails right away. If it does not fail, run it multiple times,
 until it fails. To see why it failed, evaluate `state` after executing
 the test. Do you understand why our hypothesis was wrong?
 
-**Exercise:** Fix the condition in `mintTwiceThenSendTest`,
+**Exercise:** Fix the condition in `mintTwiceThenSendError`,
 so that the test never fails.
 
-If you carefully look at `mintTwiceThenSendTest`, you will see that it is still
+If you carefully look at `mintTwiceThenSendError`, you will see that it is still
 a single data point test, though the data point (the inputs) are chosen
 non-deterministically every time we run the test. In fact, REPL implements
 non-determinism via random choice.
 
 If you do not want to sit the whole day and run the test, you could integrate
 it into continuous integration, so it runs from time to time for different
-inputs. Also, we had to fix the sequence of actions in our test. We can do
+inputs. Quint comes with the command `test` that is designed for exactly this
+purpose. Try the command below. Most likely, it would find a violation
+after just a few tests.
+          
+
+```sh
+quint test --match mintTwiceThenSendError coin.qnt
+```
+
+
+Also, we had to fix the sequence of actions in our test. We can do
 better with Quint.
 
             
@@ -896,8 +906,9 @@ better with Quint.
 ```bluespec
 
     // to run the random simulator for 10000 executions, each up to 10 actions,
-    // execute the following in REPL:
-    // _test(10000, 10, "init", "step", "totalSupplyDoesNotOverflowInv")
+    // execute the following in the command line:
+    //
+    // $ quint run --invariant totalSupplyDoesNotOverflowInv coin.qnt
 ```
 
 
@@ -913,23 +924,25 @@ future. You can try it right away:
             
 
 ```sh
-echo '_test(10000, 10, "init", "step", "totalSupplyDoesNotOverflowInv")' | quint -r coin.qnt::coin
+quint run --invariant totalSupplyDoesNotOverflowInv coin.qnt
 ```
 
 
 
-The above command in REPL randomly produces sequences, starting with `init`
-and continuing with `step`, up to 10 actions. It checks the invariant
-`totalSupplyDoesNotOverflowInv` after every step. If the invariant is violated,
-the random search stops and returns `false`. If no invariant violaion is found,
-the search returns `true` after enumerating the specified number of runs,
-which is 10000 in our example.
-
-In our example, the search often finds an error. If it did not find an error,
-run the search again. Once `_test` returned `false`, you can print the trace
-leading to the bad state by evaluating `_lastTrace` in REPL.
+The above command in REPL randomly produces sequences of steps,
+starting with `init` and continuing with `step`, up to 20 steps. It checks the
+invariant `totalSupplyDoesNotOverflowInv` after every step. If the invariant is
+violated, the random search stops and returns `false`. If no invariant violaion
+is found, the search returns `true` after enumerating the specified number of runs,
+which is 10000 in our example. The search parameters such as the number of
+runs and steps can be tuned. Check the options of `run`:
 
             
+
+```sh
+quint run --help
+```
+
 ## 22. Does random testing always find bugs?
 
 *Progress:*  91%
@@ -952,7 +965,7 @@ Although the above tricks may help you in detecting some bugs, it is well
 known that there is always a probability of missing a bug with random search.
 
 If you are looking for better guarantees of correctness, Quint will be soon
-integrate with the
+integrated with the
 [Apalache model checker](https://github.com/informalsystems/apalache).
 The model checker looks for counterexamples more exhaustively, by solving
 equations. In some cases, it may even give you a guarantee that there is no bug,

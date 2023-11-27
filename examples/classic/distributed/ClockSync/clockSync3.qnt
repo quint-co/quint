@@ -1,5 +1,6 @@
+// -*- mode: Bluespec; -*-
 // A translation of https://github.com/informalsystems/tla-apalache-workshop/blob/main/examples/clock-sync/ClockSync3.tla
-module ClockSync3 {
+module clockSync3Spec {
     //// HELPERS
 
     /// `S.add(e)` is `S.union(Set(e))`, i.e., the set derived by adding `e` to `S`
@@ -45,9 +46,6 @@ module ClockSync3 {
     /// Hardware clock of a process
     var hc: PROC -> int
 
-    /// Clock adjustment of a process
-    var adj: PROC -> int
-
     /// Messages sent by the processes
     var msgs: MSGS
 
@@ -69,13 +67,12 @@ module ClockSync3 {
 
     //// INITIALIZATION
 
-    action Init = all {
+    action init = all {
         { nondet time0 = oneOf(Nat)
           time' = time0 },
         { nondet hc0 = oneOf(setOfMaps(Procs, Nat))
           hc' = hc0 },
         msgs'  = Set(),
-        adj'   = Procs.mapBy(_ => 0),
         state' = Procs.mapBy(_ => "init"),
         rcvd'  = Procs.mapBy(_ => Set()),
     }
@@ -94,7 +91,7 @@ module ClockSync3 {
     action receiveMsg(p) = {
         nondet newMsg = oneOf(msgs) 
         all {
-            newMsg.notin(rcvd.get(p)),
+            not(newMsg.in(rcvd.get(p))),
             // the message cannot be received earlier than after t_min
             hc.get(newMsg.src) >= newMsg.ts + t_min,
             rcvd'  = rcvd.set(p, rcvd.get(p).add(newMsg)),
@@ -118,7 +115,7 @@ module ClockSync3 {
 
     //// TRANSITIONS
 
-    action Next = any {
+    action step = any {
         all {
             msgs'  = msgs,
             state' = state,
@@ -137,4 +134,12 @@ module ClockSync3 {
             }
         }
     }
+}
+
+// The default instance of the clockSync spec
+//
+// Here we set the constant values allowing us to ensure that the spec can be
+// tested and verified using the default commands.
+module clockSync3 {
+  import clockSync3Spec(t_min = 0, t_max = 5).*
 }

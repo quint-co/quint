@@ -11,6 +11,7 @@ gh auth status || gh auth login
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ROOT_DIR="$SCRIPT_DIR"/../..
 CHANGELOG="${ROOT_DIR}/CHANGELOG.md"
+VERSION_FILE="${ROOT_DIR}/quint/src/version.ts"
 cd "$SCRIPT_DIR"/..
 
 if [[ -z "${1-}" ]]
@@ -52,8 +53,11 @@ ${version_heading}/" "$CHANGELOG"
 # It's saved to a temp file for later use.
 sed -n "/## v$version/,/## v/p" "$CHANGELOG" | head -n -1 > "$TMP_CHANGES"
 
+# Update the version in the code
+npx genversion -e "$VERSION_FILE"
+
 pr_title="Release v$version"
-git add package*.json "$CHANGELOG"
+git add package*.json "$CHANGELOG" "$VERSION_FILE"
 git commit -S -m "$pr_title"
 git push origin "$release_branch"
 

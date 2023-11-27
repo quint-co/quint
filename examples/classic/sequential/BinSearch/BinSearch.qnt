@@ -1,7 +1,8 @@
+// -*- mode: Bluespec; -*-
 /**
  * A tutorial version of binary search. The original TLA+ specification:
  *
- * https://github.com/informalsystems/apalache/blob/unstable/test/tla/bin-search/BinSearch10.tla
+ * https://github.com/informalsystems/apalache/blob/main/test/tla/bin-search/BinSearch10.tla
  */
 module BinSearch {
     // the input sequence
@@ -43,7 +44,7 @@ module BinSearch {
               -(MAX_UINT - wrapped)
 
     // Initialization step (lines 2-3)
-    action Init = all {
+    action init = all {
         low' = 0,
         high' = length(INPUT_SEQ) - 1,
         isTerminated' = false,
@@ -105,7 +106,7 @@ module BinSearch {
     }
 
     // Computation step (lines 5-16)
-    action Next = any {
+    action step = any {
         LoopIteration,
         LoopExit,
         StutterOnTermination,
@@ -163,4 +164,13 @@ module BinSearch {
       // collect the conditions of IF-THEN-ELSE
       { not(isTerminated) implies
           ((low <= high) implies INPUT_SEQ.indices().contains(mid + 1)) }
+}
+
+// an instance of binary search
+module BinSearch10 {
+  import BinSearch(
+    INPUT_SEQ=[ 1, 2, 3, 4, 5, 6, 8, 9, 10, 33 ],
+    INPUT_KEY=7,
+    INT_WIDTH=16
+  ).*
 }

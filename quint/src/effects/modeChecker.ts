@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -14,29 +14,43 @@
  */
 
 import isEqual from 'lodash.isequal'
-import { qualifierToString } from '../IRprinting'
-import { IRVisitor, walkModule } from '../IRVisitor'
+import { qualifierToString } from '../ir/IRprinting'
+import { IRVisitor, walkDeclaration } from '../ir/IRVisitor'
 import { QuintError } from '../quintError'
-import { OpQualifier, QuintInstance, QuintModule, QuintOpDef } from '../quintIr'
-import { ArrowEffect, ComponentKind, EffectScheme, Entity, entityNames, stateVariables} from './base'
+import { OpQualifier, QuintDeclaration, QuintInstance, QuintOpDef } from '../ir/quintIr'
+import { unreachable } from '../util'
+import { ArrowEffect, ComponentKind, EffectScheme, Entity, entityNames, stateVariables } from './base'
 import { effectToString, entityToString } from './printing'
 
 export type ModeCheckingResult = [Map<bigint, QuintError>, Map<bigint, OpQualifier>]
 
 export class ModeChecker implements IRVisitor {
   /**
-   * Matches annotated modes for each definition with its inferred effect. Returns
+   * Constructs a new instance of ModeChecker with optional suggestions.
+   *
+   * @constructor
+   * @param suggestions - Optional map of suggestions for annotations that could
+   * be more strict. To be used as a starting point
+   */
+  constructor(suggestions?: Map<bigint, OpQualifier>) {
+    if (suggestions) {
+      this.suggestions = suggestions
+    }
+  }
+
+  /**
+   * Matches annotated modes for each declaration with its inferred effect. Returns
    * errors for incorrect annotations and suggestions for annotations that could
    * be more strict.
    *
-   * @param quintModule: the module to be checked
+   * @param decls: the list of declarations to be checked
    * @param effects: the map from expression ids to their inferred effects
    *
    * @returns The mode errors, if any is found. Otherwise, a map with potential suggestions.
    */
-  checkModes(quintModule: QuintModule, effects: Map<bigint, EffectScheme>): ModeCheckingResult {
+  checkModes(decls: QuintDeclaration[], effects: Map<bigint, EffectScheme>): ModeCheckingResult {
     this.effects = effects
-    walkModule(this, quintModule)
+    decls.forEach(decl => walkDeclaration(this, decl))
     return [this.errors, this.suggestions]
   }
 
@@ -51,7 +65,7 @@ export class ModeChecker implements IRVisitor {
       return
     }
 
-    const [mode, explanation] = modeForEffect(effect)
+    const [mode, explanation] = modeForEffect(effect, def.qualifier)
 
     if (mode === def.qualifier) {
       return
@@ -60,8 +74,14 @@ export class ModeChecker implements IRVisitor {
     if (isMoreGeneral(mode, def.qualifier)) {
       this.errors.set(def.id, {
         code: 'QNT200',
-        message: `${qualifierToString(def.qualifier)} operators ${modeConstraint(def.qualifier)}, but operator \`${def.name}\` ${explanation}. Use ${qualifierToString(mode)} instead.`,
-        data: { fix: { kind: 'replace', original: qualifierToString(def.qualifier), replacement: qualifierToString(mode) } },
+        message: `${qualifierToString(def.qualifier)} operators ${modeConstraint(
+          def.qualifier,
+          mode
+        )}, but operator \`${def.name}\` ${explanation}. Use ${qualifierToString(mode)} instead.`,
+        reference: def.id,
+        data: {
+          fix: { kind: 'replace', original: qualifierToString(def.qualifier), replacement: qualifierToString(mode) },
+        },
       })
     } else {
       this.suggestions.set(def.id, mode)
@@ -76,27 +96,38 @@ export class ModeChecker implements IRVisitor {
         return
       }
 
-      const [mode, explanation] = modeForEffect(effect)
+      const [mode, explanation] = modeForEffect(effect, 'puredef')
 
-      if (mode === 'pureval') {
+      if (mode === 'pureval' || mode === 'puredef') {
         return
       }
 
       this.errors.set(ex.id, {
         code: 'QNT201',
-        message: `Instance overrides must be pure values, but the value for ${name} ${explanation}`,
+        message: `Instance overrides must be pure, but the value for ${name.name} ${explanation}`,
+        reference: ex.id,
         data: {},
       })
     })
   }
 }
 
-function modeConstraint(mode: OpQualifier): string {
+function modeConstraint(mode: OpQualifier, expectedMode: OpQualifier): string {
   switch (mode) {
     case 'pureval':
+      if (expectedMode === 'puredef') {
+        return 'may not have parameters'
+      } else {
+        return 'may not interact with state variables'
+      }
     case 'puredef':
       return 'may not interact with state variables'
     case 'val':
+      if (expectedMode === 'def') {
+        return 'may not have parameters'
+      } else {
+        return 'may only read state variables'
+      }
     case 'def':
       return 'may only read state variables'
     case 'action':
@@ -126,7 +157,7 @@ const modesForConcrete = new Map<ComponentKind, OpQualifier>([
   ['read', 'val'],
 ])
 
-function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
+function modeForEffect(scheme: EffectScheme, annotatedMode: OpQualifier): [OpQualifier, string] {
   const effect = scheme.effect
   const nonFreeVars = scheme.entityVariables
 
@@ -137,9 +168,9 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
           if (c.kind !== kind) {
             return false
           }
-          const nonFreeEntities = entityNames(c.entity).filter(v => nonFreeVars.has(v)).concat(
-            stateVariables(c.entity).map(v => v.name)
-          )
+          const nonFreeEntities = entityNames(c.entity)
+            .filter(v => nonFreeVars.has(v))
+            .concat(stateVariables(c.entity).map(v => v.name))
 
           return nonFreeEntities && nonFreeEntities.length > 0
         })
@@ -150,16 +181,21 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
       }
 
       const components = effect.components.filter(c => c.kind === kind)
-      return [modesForConcrete.get(kind)!, `${componentDescription.get(kind)} variables ${components.map(c => entityToString(c.entity))}`]
+      return [
+        modesForConcrete.get(kind)!,
+        `${componentDescription.get(kind)} variables ${components.map(c => entityToString(c.entity))}`,
+      ]
     }
     case 'arrow': {
       const r = effect.result
       if (r.kind === 'arrow') {
-        throw new Error(`Unexpected arrow found in operator result: ${effectToString(r)}`)
+        throw new Error(`Unexpected arrow found in operator result: ${effectToString(effect)}`)
       }
 
+      const parametersMessage = `has ${effect.params.length} parameter${effect.params.length > 1 ? 's' : ''}`
+
       if (r.kind === 'variable') {
-        return ['puredef', "doesn't read or update any state variable"]
+        return ['puredef', parametersMessage]
       }
 
       const entitiesByComponentKind = paramEntitiesByEffect(effect)
@@ -173,18 +209,25 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
       const kind = componentKindPriority.find(kind => {
         const entities = addedEntitiesByComponentKind.get(kind)
         const nonFreeEntities = entities?.flatMap(vs => {
-          return entityNames(vs).filter(v => nonFreeVars.has(v)).concat(
-            stateVariables(vs).map(v => v.name)
-          )
+          return entityNames(vs)
+            .filter(v => nonFreeVars.has(v))
+            .concat(stateVariables(vs).map(v => v.name))
         })
         return nonFreeEntities && nonFreeEntities.length > 0
       })
 
-      if (!kind) {
-        return ['puredef', "doesn't read or update any state variable"]
+      if (annotatedMode === 'val' && (!kind || kind === 'read')) {
+        return ['def', parametersMessage]
       }
 
-      return [modesForArrow.get(kind)!, `${componentDescription.get(kind)} variables ${addedEntitiesByComponentKind.get(kind)!.map(entityToString)}`]
+      if (!kind) {
+        return ['puredef', parametersMessage]
+      }
+
+      return [
+        modesForArrow.get(kind)!,
+        `${componentDescription.get(kind)} variables ${addedEntitiesByComponentKind.get(kind)!.map(entityToString)}`,
+      ]
     }
     case 'variable': {
       return ['pureval', "doesn't read or update any state variable"]
@@ -203,7 +246,7 @@ function modeForEffect(scheme: EffectScheme): [OpQualifier, string] {
 function addedEntities(paramEntities: Entity[], resultEntity: Entity): Entity[] {
   switch (resultEntity.kind) {
     case 'union':
-      return resultEntity.entities.filter(v => !paramEntities.some(p => isEqual(p, v)))
+      return resultEntity.entities.flatMap(entity => addedEntities(paramEntities, entity))
     case 'concrete': {
       const vars = resultEntity.stateVariables.filter(v => !paramEntities.some(p => isEqual(p, v)))
       if (vars.length === 0) {
@@ -222,34 +265,51 @@ function paramEntitiesByEffect(effect: ArrowEffect): Map<ComponentKind, Entity[]
 
   effect.params.forEach(p => {
     switch (p.kind) {
-      case 'concrete': {
-        p.components.forEach(c => {
-          const existing = entitiesByComponentKind.get(c.kind) || []
-          entitiesByComponentKind.set(c.kind, existing.concat(c.entity))
-        })
-        break
-      }
-      case 'arrow': {
-        const nested = paramEntitiesByEffect(p)
-        nested.forEach((entities, kind) => {
-          const existing = entitiesByComponentKind.get(kind) || []
-          entitiesByComponentKind.set(kind, existing.concat(entities))
-        })
-        if (p.result.kind === 'concrete') {
-          p.result.components.forEach(c => {
+      case 'concrete':
+        {
+          p.components.forEach(c => {
             const existing = entitiesByComponentKind.get(c.kind) || []
-            entitiesByComponentKind.set(c.kind, existing.concat(c.entity))
+            entitiesByComponentKind.set(c.kind, concatEntity(existing, c.entity))
           })
         }
-      }
+        break
+      case 'arrow':
+        {
+          const nested = paramEntitiesByEffect(p)
+          nested.forEach((entities, kind) => {
+            const existing = entitiesByComponentKind.get(kind) || []
+            entitiesByComponentKind.set(kind, entities.reduce(concatEntity, existing))
+          })
+          if (p.result.kind === 'concrete') {
+            p.result.components.forEach(c => {
+              const existing = entitiesByComponentKind.get(c.kind) || []
+              entitiesByComponentKind.set(c.kind, concatEntity(existing, c.entity))
+            })
+          }
+        }
+        break
+      case 'variable':
+        // Nothing to gather
+        break
+      default:
+        unreachable(p)
     }
   })
 
   return entitiesByComponentKind
 }
 
-const modeOrder =
-  ['pureval', 'puredef', 'val', 'def', 'nondet', 'action', 'temporal', 'run']
+function concatEntity(list: Entity[], entity: Entity): Entity[] {
+  switch (entity.kind) {
+    case 'union':
+      return entity.entities.reduce(concatEntity, list)
+    case 'concrete':
+    case 'variable':
+      return list.concat(entity)
+  }
+}
+
+const modeOrder = ['pureval', 'val', 'puredef', 'def', 'nondet', 'action', 'temporal', 'run']
 
 function isMoreGeneral(m1: OpQualifier, m2: OpQualifier): boolean {
   const p1 = modeOrder.findIndex(elem => elem === m1)

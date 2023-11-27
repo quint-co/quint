@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author           |
 | :------- | :--------- | :--------------- |
-| 2        | 03.03.2023 | Igor Konnov      |
+| 3        | 2023-03-20 | Igor Konnov      |
 
 <!-- 
 This ADR is written as a literate programming document, preprocessed by:
@@ -516,7 +516,7 @@ module fixed {
   // the instance general(N = 3)
 
   // this is how `import fun.*` is transformed
-  import fun.* as I3
+  import fun as I3
 
   val I3::N = 3
   var I3::x: int
@@ -539,7 +539,7 @@ module fixed {
 }
 ```
 
-Note that the syntax `import fun.* as I3` is not supported yet. However,
+Note that the syntax `import fun as I3` is not supported yet. However,
 it does not seem too be hard to implement, if it's needed at all.
 
 ### 4.3. Addressing the issue D4
@@ -547,7 +547,10 @@ it does not seem too be hard to implement, if it's needed at all.
 We propose the new syntax for declaring an instance:
 
 ```antlr4
-  'include' name '(' [name = expr (',' name = expr)*] ')' 'as' name
+  // creating an instance and importing all names introduced in the instance
+  'import' name '(' [name = expr (',' name = expr)*] ')' '.' '*'
+  // creating an instance and importing all names with a prefix 
+  'import' name '(' [name = expr (',' name = expr)*] ')' 'as' name
 ```
 
 The last name may be replaced with `_` to indicate that no prefix is required.
@@ -556,24 +559,37 @@ Using this syntax, our example looks like follows:
 
 ```bluespec
 module fixed {
-  include general(N = 3) as I3
-  include general(N = 5) as I5
-  
+  import general(N = 3).*
+  import general(N = 5) as I5
+  import statelessModule as M
   ...
 }
 ```
 
 We believe that this syntax better reflects the nature of instances in Quint:
 
+ - If a module does not have parameters, then there is no obvious need for
+   creating a new instance. In this case, the syntax goes back to the standard
+   import.
+
+ - In the case one wants to create two identical copies of the same state machine,
+   they can introduce a fake parameter such as the name of an instance.
+
  - All names of an instance are included into the namespace of the containing
-   module, possibly with a prefix, e.g., with `I3` or `I5`.
+   module, possibly with a prefix, e.g., `I5`.
 
  - Some names replaced with expressions, e.g., `N`.
 
- - The behavior is different from `import`.
-
-Interestingly, it is hard to find a direct analogy of `include` in the modern
+Interestingly, it is hard to find a direct analogy of this construct in the modern
 programming languages. In TLA<sup>+</sup>, `INSTANCE` behaves as a safer
 version of `C++` namespaces combined with `#include`, providing semantic tests
-for action operators. Although the word `include` is not as nice as `instance`,
-the word `include` reflects the behavior of this construct better.
+for action operators.
+
+One potential problem with the approach of using import-like behavior is that
+the names that are introduced via this construct are not automatically
+exported. We can imagine that sometimes automatic export would be useful.
+Actually, the same occurs in programming languages, e.g., in TypeScript.  This
+is why TypeScript has the [export import][] combo. If we see a need for such
+behavior, we may add it in the future.
+
+[export import]: https://stackoverflow.com/questions/30712638/typescript-export-imported-interface

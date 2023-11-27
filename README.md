@@ -1,14 +1,17 @@
-# Quint
+# Quint Lang
 
 [![build
 badge](https://github.com/informalsystems/quint/actions/workflows/main.yml/badge.svg)](https://github.com/informalsystems/quint/actions)
 [![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/informal.quint-vscode?color=10b0f2&label=VSCode)](https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode)
 [![npm (scoped)](https://img.shields.io/npm/v/@informalsystems/quint)](https://www.npmjs.com/package/@informalsystems/quint)
 
-Quint is a modern specification language that is a particularly good fit for
-distributed systems and blockchain protocols. It combines the robust theoretical
-basis of the [Temporal Logic of Actions][TLA] (TLA) with state-of-the-art static
-analysis and development tooling.
+Quint Lang (or just Quint) is a modern specification language that is a
+particularly good fit for distributed systems and blockchain protocols. It
+combines the robust theoretical basis of the [Temporal Logic of Actions][TLA]
+(TLA) with state-of-the-art static analysis and development tooling.
+
+If you are impatient, here is a [15 minute intro to Quint][] at Gateway to
+Cosmos 2023.
 
 This is how typical Quint code looks:
 
@@ -32,6 +35,9 @@ validateBalance(ctx, addr) ==
        coins[denom] > 0
 ```
 
+Want a preview of the tools before reading any further? Check [Quick
+previews](./doc/previews.md).
+
 Quint is inspired by [TLA+][] but provides an alternative surface syntax for
 specifying systems in TLA. The most important feature of our syntax is that it
 is minimal and regular, making Quint an easy target for advanced developer
@@ -45,7 +51,7 @@ The syntax also aims to be familiar to engineers:
 - At the semantic level, Quint extends the standard programming paradigm with
   non-determinism and temporal formulas, which allow designers to specify
   protocol environments such as networks, faults, and time concisely and
-  clearly. 
+  clearly.
 
 Notably, Quint comes with formal semantics built-in, thanks to its foundation in
 TLA and it is aligned with TLA+: it will soon be supported in the [Apalache][]
@@ -62,13 +68,14 @@ become referenced artifacts.
 
 ### Tutorials :teacher:
 
-We are preparing language and tools tutorials. Visit the [Tutorials][] page.
+Visit the [Tutorials][] page.
 
 ### Syntax :abcd:
 
 - [Cheatsheet](./doc/quint-cheatsheet.pdf)
-- [Reference API documentation for built-in operators](./doc/builtin.md).
+- [Reference API documentation for built-in operators](./doc/builtin.md)
 - [Syntax documentation](./doc/lang.md)
+- [Frequently asked questions](./doc/faq.md)
 
 ### Examples :musical_score:
 
@@ -77,7 +84,16 @@ Some of them accompany a TLA+ version for comparison and learning purposes.
 To simplify reading, use [syntax highlighting](./editor-plugins) for your
 editor (currently, VSCode, Emacs and Vim are supported).
 
-### User manuals :blue_book:
+## Community and help
+
+- Join the chat in the [Quint zulip stream][] :telephone:
+- Join the [Quint discussions][] :bulb:
+- [Contribute your spell][] to the collection of Quint spells :scroll:
+- [Contribute](./CONTRIBUTING.md) to the development of Quint :construction_worker:
+
+### Tools :space_invader:
+
+[Quick previews](./doc/previews.md) of the tools.
 
  - Quint's core tool `quint`:
 
@@ -85,14 +101,30 @@ editor (currently, VSCode, Emacs and Vim are supported).
 
    - [Manual](./doc/quint.md)
 
-   - [REPL](./doc/repl.md)
+   - [REPL](./tutorials/repl/repl.md)
 
- - VSCode plugin:
+- Editor support:
 
-   We strongly encourage you to use the VSCode plugin for Quint. It provides
-   the quickest feedback loop for your specifications, reporting informative
-   errors as you type. Install the plugin from [Visual Studio Code
-   Marketplace][].
+  We strongly encourage you to configure your editor for Quint. Our language
+  server provides the quickest feedback loop for your specifications, reporting
+  informative errors as you type. These are instuctions for the currently
+  supported editors:
+
+  - VSCode: Install the plugin from [Visual Studio Code
+    Marketplace][].
+  - Emacs: Setup two custom packages from the [emacs folder](./editor-plugins/emacs).
+  - Vim/Neovim: Follow configuration instructions from the [vim folder](./editor-plugins/vim)
+
+ - VSCode plugin for [ITF traces][] by @hvanz:
+
+   This a plugin that visualizes traces that are produced by Quint and
+   [Apalache][]. Install the [ITF Trace Viewer][] from Visual Studio Code
+   Marketplace.
+
+ - Writing [literate executable specifications](./doc/literate.md)
+
+   This is a technique for embedding formal quint formal specifications inside
+   of markdown files.
 
 ## Development
 
@@ -104,6 +136,7 @@ editor (currently, VSCode, Emacs and Vim are supported).
    components](./doc/adr003-visiting-ir-components.md)
  - [ADR004: An Effect System for Quint](./doc/adr004-effect-system.md)
  - [ADR005: A Type System for Quint](./doc/adr005-type-system.md)
+ - [ADR006: Design of modules and lookup tables](./doc/adr006-modules.lit.md)
 
 ### Source code :hash:
 
@@ -116,40 +149,49 @@ In the spirit of [Lessons from Writing a Compiler][], we have a roadmap, where
 we are implementing various transpiler passes feature-by-feature, instead of
 completely implementing every pass.
 
-| Language feature                  | Parser             | Name resolution    | Effects            | Type checker       | Simulator                      | To-Apalache | Tutorials |
-| :---------------                  | :----:             | :-------------:    | :-----:            | :----------:       | :-------:                      | :---------: | :-------: |
-| [Booleans][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
-| [Integers][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
-| [if-then-else][]                  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
-| [Operator definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
-| [Modes][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [234][]                    | :x:         | :white_check_mark:       |
-| [Sets][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:/:x: [238][] | :x:         | :x:       |
-| [nondet][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
-| [Maps][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
-| [Lists][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
-| [Records][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
-| [Discriminated unions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [244][]        | :x: [233][]                    | :x:         | :x:       |
-| [Tuples][]                        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
-| [Imports][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :question:                     | :x:         | :x:       |
-| [Module definitions][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
-| [Module instances][]              | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [237][]                    | :x:         | :x:       |
-| [Multiple files][]                | :x: [8][]          | :x:                | :x:                | :x:                | :x:                            | :x:         | :x:       |
-| [Constant declarations][]         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [236][]                    | :x:         | :x:       |
-| [Variable definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
-| [Assumptions][]                   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x: [235][]                    | :x:         | :x:       |
-| [Lambdas][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
-| [Multiline disjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :x:       |
-| [Multiline conjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
-| [Delayed assignment][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
-| Invariant checking                | -                  | -                  |                    |                    | :white_check_mark:             | :x:         | :white_check_mark:       |
-| [Higher-order definitions][]      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [221][]                    | :x:         | :x:       |
-| [Runs][]                          | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :white_check_mark:             | :x:         | :white_check_mark:       |
-| [Temporal operators][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | *non-goal*                     | :x:         | :x:       |
-| [Fairness][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | *non-goal*                     | :x:         | :x:       |
-| [Unbounded quantifiers][]         | :white_check_mark: | :white_check_mark: | :x:                | :x:                | *non-goal*                     | :x:         | :x:       |
-| [String literals][], see #118     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:             | :x:         | :white_check_mark:       |
-| ~~uninterpreted types~~, see #118 | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                            | :x:         | :x:       |
+- :white_check_mark: Completed
+- :green_circle: Won't get in your way, but there's still work to be done
+- :x: Not implemented yet
 
+| Language feature                  | Parser             | Name resolution    | Effects            | Type checker       | Simulator          | To-Apalache        | Tutorials          |
+|:----------------------------------|:------------------:|:------------------:|:------------------:|:------------------:|:------------------:|:------------------:|:------------------:|
+| [Booleans][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [Integers][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [if-then-else][]                  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [Operator definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [Modes][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [Sets][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [nondet][]                        | :white_check_mark: | :white_check_mark: | :green_circle:     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [Maps][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
+| [Lists][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
+| [Records][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
+| [Tuples][]                        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [Sum types][]                     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [1034][]       | :x:                |
+| [Imports][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [Module definitions][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [Module instances][]              | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
+| [Multiple files][]                | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [Constant declarations][]         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
+| [Variable definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [Assumptions][]                   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [235][]        | :white_check_mark: | :x:                |
+| [Lambdas][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [Multiline disjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [Multiline conjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [Delayed assignment][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| Invariant checking                | -                  | -                  | -                  | -                  | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [Higher-order definitions][]      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
+| [Runs][]                          | :white_check_mark: | :white_check_mark: | :green_circle:     | :white_check_mark: | :white_check_mark: | *non-goal*         | :white_check_mark: |
+| [Temporal operators][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | *non-goal*         | :white_check_mark: | :x:                |
+| [Fairness][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | *non-goal*         | :white_check_mark: | :x:                |
+| [Unbounded quantifiers][]         | :white_check_mark: | :white_check_mark: | :x:                | :x:                | *non-goal*         | :x:                | :x:                |
+| [String literals][], see #118     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| ~~uninterpreted types~~, see #118 | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:                | :x:                |
+
+---
+
+Quint is developed at [Informal Systems](https://informal.systems/).
+
+With additional funding from<br />[<img alt="the Vienna Business Agency" src="./Wirtschaftsagentur_Wien_logo.jpg" width="200">](https://viennabusinessagency.at/).
 
 [Design Principles]: ./doc/design-principles.md
 [Apalache]: https://github.com/informalsystems/apalache
@@ -172,31 +214,29 @@ completely implementing every pass.
 [nondet]: ./doc/lang.md#existential-quantifier-and-non-deterministic-choice
 [Maps]: ./doc/lang.md#maps-aka-functions
 [Records]: ./doc/lang.md#records
-[Discriminated unions]: ./doc/lang.md#discriminated-unions
 [Tuples]: ./doc/lang.md#tuples
+[Sum types]: ./doc/lang.md#sum-types
 [Delayed assignment]: ./doc/lang.md#delayed-assignment
 [Runs]: ./doc/lang.md#runs
 [Temporal operators]: ./doc/lang.md#temporal-operators
 [Fairness]: ./doc/lang.md#fairness
 [Unbounded quantifiers]: ./doc/lang.md#unbounded-quantifiers
 [Modes]: ./doc/lang.md#modes
-[232]: https://github.com/informalsystems/quint/issues/232
-[231]: https://github.com/informalsystems/quint/issues/231
-[233]: https://github.com/informalsystems/quint/issues/233
+[Spells]: ./examples/spells/README.md
+[Contribute your spell]: ./examples/spells/contribute-your-spell.md
+[539]: https://github.com/informalsystems/quint/issues/539
 [221]: https://github.com/informalsystems/quint/issues/221
-[234]: https://github.com/informalsystems/quint/issues/234
 [235]: https://github.com/informalsystems/quint/issues/235
 [8]: https://github.com/informalsystems/quint/issues/8
-[237]: https://github.com/informalsystems/quint/issues/237
-[236]: https://github.com/informalsystems/quint/issues/236
-[238]: https://github.com/informalsystems/quint/issues/238
-[242]: https://github.com/informalsystems/quint/issues/242
-[243]: https://github.com/informalsystems/quint/issues/243
-[244]: https://github.com/informalsystems/quint/issues/244
-[245]: https://github.com/informalsystems/quint/issues/245
+[1034]: https://github.com/informalsystems/quint/issues/1034
 [Higher-order definitions]: https://github.com/informalsystems/quint/blob/main/doc/lang.md#operator-definitions
 [String literals]: https://github.com/informalsystems/quint/blob/main/doc/lang.md#identifiers-and-strings
 [TLA+]: https://lamport.azurewebsites.net/tla/tla.html
 [TLA]: https://en.wikipedia.org/wiki/Temporal_logic_of_actions
 [Visual Studio Code Marketplace]: https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode
 [Tutorials]: ./tutorials/README.md
+[Quint zulip stream]: https://informal-systems.zulipchat.com/#narrow/stream/378959-quint
+[Quint discussions]: https://github.com/informalsystems/quint/discussions
+[ITF traces]: https://apalache.informal.systems/docs/adr/015adr-trace.html
+[ITF Trace Viewer]: https://marketplace.visualstudio.com/items?itemName=informal.itf-trace-viewer
+[15 minute intro to Quint]: https://youtu.be/OZIX8rs-kOA

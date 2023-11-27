@@ -6,15 +6,14 @@ import chalk from 'chalk'
 
 import { quintRepl } from '../src/repl'
 import { dedent } from './textUtils'
+import { version } from '../src/version'
 
 // A simple implementation of Writable to a string:
 // After: https://bensmithgall.com/blog/jest-mock-trick
 class ToStringWritable extends Writable {
   buffer: string = ''
 
-  _write(chunk: string,
-    encoding: string,
-    next: (_error?: Error | null) => void): void {
+  _write(chunk: string, encoding: string, next: (_error?: Error | null) => void): void {
     this.buffer += chunk
     next()
   }
@@ -25,7 +24,7 @@ class ToStringWritable extends Writable {
 }
 
 // run a test with mocked input/output and return the input + output
-const withIO = async(inputText: string): Promise<string> => {
+const withIO = async (inputText: string): Promise<string> => {
   // save the current chalk level and reset chalk to no color
   const savedChalkLevel = chalk.level
   chalk.level = 0
@@ -38,7 +37,7 @@ const withIO = async(inputText: string): Promise<string> => {
   // whatever is written on the input goes to the output
   input.pipe(output)
 
-  const rl = quintRepl(input, output, {}, () => {})
+  const rl = quintRepl(input, output, { verbosity: 2 }, () => {})
 
   // Emit the input line-by-line, as nodejs is printing prompts.
   // TODO: is it a potential source of race conditions in unit tests?
@@ -62,13 +61,11 @@ const withIO = async(inputText: string): Promise<string> => {
 }
 
 // the standard banner, which gets repeated
-const banner =
-`Quint REPL v0.0.3
+const banner = `Quint REPL ${version}
 Type ".exit" to exit, or ".help" for more information`
 
 async function assertRepl(input: string, output: string) {
-  const expected =
-`${banner}
+  const expected = `${banner}
 ${output}
 `
 
@@ -78,11 +75,11 @@ ${output}
 }
 
 describe('repl ok', () => {
-  it('empty input', async() => {
+  it('empty input', async () => {
     await assertRepl('', '>>> ')
   })
 
-  it('Set(2 + 3)', async() => {
+  it('Set(2 + 3)', async () => {
     const input = 'Set(2 + 3)\n'
     const output = dedent(
       `>>> Set(2 + 3)
@@ -92,7 +89,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('Map(1 -> 2, 3 -> 4)', async() => {
+  it('Map(1 -> 2, 3 -> 4)', async () => {
     const input = 'Map(1 -> 2, 3 -> 4)\n'
     const output = dedent(
       `>>> Map(1 -> 2, 3 -> 4)
@@ -102,7 +99,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('basic expressions', async() => {
+  it('basic expressions', async () => {
     const input = dedent(
       `1 + 1
       |3 > 1
@@ -136,27 +133,28 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('ill-typed expressions', async() => {
+  it('ill-typed expressions', async () => {
     const input = dedent(
       `1 + false
       |`
     )
     const output = dedent(
       `>>> 1 + false
-      |static analysis error: <input>:1:1 - error: [QNT000] Couldn't unify int and bool
+      |static analysis error: error: [QNT000] Couldn't unify int and bool
       |Trying to unify int and bool
-      |Trying to unify (int, int) => int and (int, bool) => t8
+      |Trying to unify (int, int) => int and (int, bool) => _t0
       |
-      |1: 1 + false
-      |   ^^^^^^^^^
+      |1 + false
+      |^^^^^^^^^
       |
       |
       |1
-      |>>> `)
+      |>>> `
+    )
     await assertRepl(input, output)
   })
 
-  it('definitions in expressions', async() => {
+  it('definitions in expressions', async () => {
     const input = dedent(
       `val x = 3; 2 * x
       |def mult(x, y) = x * y; mult(2, mult(3, 4))
@@ -172,7 +170,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('top-level definitions', async() => {
+  it('top-level definitions', async () => {
     const input = dedent(
       `val n = 4
       |def mult(x, y) = x * y
@@ -197,7 +195,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('clear history', async() => {
+  it('clear history', async () => {
     const input = dedent(
       `val n = 4
       |n * n
@@ -213,13 +211,13 @@ describe('repl ok', () => {
       |>>> .clear
       |
       |>>> n * n
-      |syntax error: <input>:1:1 - error: Failed to resolve name n in definition for __input, in module __repl__
-      |1: n * n
-      |   ^
+      |syntax error: error: [QNT404] Name 'n' not found
+      |n * n
+      |^
       |
-      |syntax error: <input>:1:5 - error: Failed to resolve name n in definition for __input, in module __repl__
-      |1: n * n
-      |       ^
+      |syntax error: error: [QNT404] Name 'n' not found
+      |n * n
+      |    ^
       |
       |
       |>>> `
@@ -227,25 +225,177 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('handle exceptions', async() => {
+  it('change verbosity and track executions', async () => {
+    const input = dedent(
+      `pure def plus(x, y) = x + y
+      |.verbosity=4
+      |plus(2, 3)
+      |`
+    )
+    const output = dedent(
+      `>>> pure def plus(x, y) = x + y
+      |
+      |>>> .verbosity=4
+      |.verbosity=4
+      |>>> plus(2, 3)
+      |5
+      |
+      |[Frame 0]
+      |plus(2, 3) => 5
+      |
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('change verbosity and show execution on failure', async () => {
+    const input = dedent(
+      `pure def div(x, y) = x / y
+      |.verbosity=4
+      |div(2, 0)
+      |`
+    )
+    const output = dedent(
+      `>>> pure def div(x, y) = x / y
+      |
+      |>>> .verbosity=4
+      |.verbosity=4
+      |>>> div(2, 0)
+      |
+      |[Frame 0]
+      |div(2, 0) => none
+      |
+      |runtime error: error: [QNT503] Division by zero
+      |div(2, 0)
+      |                     ^^^^^
+      |
+      |<undefined value>
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('caching nullary definitions', async () => {
+    const input = dedent(
+      `var x: int
+      |.verbosity=4
+      |x' = 0
+      |action step = x' = x + 1
+      |action input1 = step
+      |action input2 = step
+      |input1
+      |input2
+      |`
+    )
+    const output = dedent(
+      // a regression test for the behavior uncovered in:
+      // https://github.com/informalsystems/quint/issues/982
+      `>>> var x: int
+      |
+      |>>> .verbosity=4
+      |.verbosity=4
+      |>>> x' = 0
+      |true
+      |
+      |[Frame 0]
+      |_ => true
+      |
+      |>>> action step = x' = x + 1
+      |
+      |>>> action input1 = step
+      |
+      |>>> action input2 = step
+      |
+      |>>> input1
+      |true
+      |
+      |[Frame 0]
+      |input1 => true
+      |└─ step => true
+      |
+      |>>> input2
+      |true
+      |
+      |[Frame 0]
+      |input2 => true
+      |└─ step => true
+      |
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('update the seed between evaluations', async () => {
+    // A regression test.
+    // Test that two consecutive steps produce two different integers.
+    // If this test fails, it is almost certainly because of the seed
+    // not being updated between two consecutive calls of `step`.
+    // There is a neglible probability of 1/2^1024 of this test failing,
+    // since we are using randomization.
+    const input = dedent(
+      `var S: Set[int]
+      |S' = Set()
+      |action step = { nondet y = 1.to(2^512).oneOf(); S' = Set(y).union(S) }
+      |step
+      |step
+      |size(S)
+      |`
+    )
+    const output = dedent(
+      `>>> var S: Set[int]
+      |
+      |>>> S' = Set()
+      |true
+      |>>> action step = { nondet y = 1.to(2^512).oneOf(); S' = Set(y).union(S) }
+      |
+      |>>> step
+      |true
+      |>>> step
+      |true
+      |>>> size(S)
+      |2
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('set and get the seed', async () => {
+    const input = dedent(
+      `.seed=4
+      |.seed
+      |.seed=0x1abc
+      |`
+    )
+    const output = dedent(
+      `>>> .seed=4
+      |.seed=4
+      |>>> .seed
+      |.seed=4
+      |>>> .seed=0x1abc
+      |.seed=6844
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('handle exceptions', async () => {
     const input = dedent(
       `Set(Int)
       |`
     )
     const output = dedent(
       `>>> Set(Int)
-      |runtime error: <input>:1:1 - error: Infinite set Int is non-enumerable
-      |1: Set(Int)
-      |   ^^^^^^^^
+      |runtime error: error: [QNT501] Infinite set Int is non-enumerable
+      |Set(Int)
+      |^^^^^^^^
       |
       |<undefined value>
-      |
       |>>> `
     )
     await assertRepl(input, output)
   })
 
-  it('assignments', async() => {
+  it('assignments', async () => {
     const input = dedent(
       `var x: int
       |action Init = x' = 0
@@ -282,7 +432,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('action-level disjunctions and conjunctions', async() => {
+  it('action-level disjunctions and conjunctions', async () => {
     const input = dedent(
       `
       |var x: int
@@ -347,7 +497,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('action-level disjunctions and non-determinism', async() => {
+  it('action-level disjunctions and non-determinism', async () => {
     const input = dedent(
       `
       |var x: int
@@ -400,7 +550,7 @@ describe('repl ok', () => {
     await assertRepl(input, output)
   })
 
-  it('nondet and oneOf', async() => {
+  it('nondet and oneOf', async () => {
     const input = dedent(
       `
       |var x: int
@@ -419,6 +569,8 @@ describe('repl ok', () => {
       |x >= 0
       |nondet i = oneOf(Int); x' = i
       |Int.contains(x)
+      |nondet m = 1.to(5).setOfMaps(Int).oneOf(); x' = m.get(3)
+      |x.in(Int)
       |`
     )
     const output = dedent(
@@ -452,24 +604,82 @@ describe('repl ok', () => {
       |true
       |>>> Int.contains(x)
       |true
+      |>>> nondet m = 1.to(5).setOfMaps(Int).oneOf(); x' = m.get(3)
+      |true
+      |>>> x.in(Int)
+      |true
       |>>> `
     )
     await assertRepl(input, output)
   })
 
-  it('run _test, _testOnce, and _lastTrace', async() => {
+  it('nondet and oneOf over sets of sets', async () => {
+    const input = dedent(
+      `var S: Set[int]
+      |nondet y = oneOf(powerset(1.to(3))); S' = y
+      |S.subseteq(1.to(3))
+      |`
+    )
+    const output = dedent(
+      `>>> var S: Set[int]
+      |
+      |>>> nondet y = oneOf(powerset(1.to(3))); S' = y
+      |true
+      |>>> S.subseteq(1.to(3))
+      |true
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('actions introduce their own frames', async () => {
+    const input = dedent(
+      `var n: int
+      |action init = n' = 0
+      |action step = n' = n + 1
+      |.verbosity=3
+      |init.then(step).then(step)
+      |`
+    )
+    const output = dedent(
+      `>>> var n: int
+      |
+      |>>> action init = n' = 0
+      |
+      |>>> action step = n' = n + 1
+      |
+      |>>> .verbosity=3
+      |.verbosity=3
+      |>>> init.then(step).then(step)
+      |true
+      |
+      |[Frame 0]
+      |init => true
+      |
+      |[Frame 1]
+      |step => true
+      |
+      |[Frame 2]
+      |step => true
+      |
+      |>>> `
+    )
+    await assertRepl(input, output)
+  })
+
+  it('run q::test, q::testOnce, and q::lastTrace', async () => {
     const input = dedent(
       `
       |var n: int
       |action Init = n' = 0
       |action Next = n' = n + 1
       |val Inv = n < 10
-      |_testOnce(5, "Init", "Next", "Inv")
-      |_testOnce(10, "Init", "Next", "Inv")
-      |_test(5, 5, "Init", "Next", "Inv")
-      |_test(5, 10, "Init", "Next", "Inv")
-      |_lastTrace.length()
-      |_lastTrace.nth(_lastTrace.length() - 1)
+      |q::testOnce(5, Init, Next, Inv)
+      |q::testOnce(10, Init, Next, Inv)
+      |q::test(5, 5, Init, Next, Inv)
+      |q::test(5, 10, Init, Next, Inv)
+      |q::lastTrace.length()
+      |q::lastTrace.nth(q::lastTrace.length() - 1)
       |`
     )
     const output = dedent(
@@ -482,24 +692,24 @@ describe('repl ok', () => {
       |
       |>>> val Inv = n < 10
       |
-      |>>> _testOnce(5, "Init", "Next", "Inv")
+      |>>> q::testOnce(5, Init, Next, Inv)
       |true
-      |>>> _testOnce(10, "Init", "Next", "Inv")
+      |>>> q::testOnce(10, Init, Next, Inv)
       |false
-      |>>> _test(5, 5, "Init", "Next", "Inv")
+      |>>> q::test(5, 5, Init, Next, Inv)
       |true
-      |>>> _test(5, 10, "Init", "Next", "Inv")
+      |>>> q::test(5, 10, Init, Next, Inv)
       |false
-      |>>> _lastTrace.length()
+      |>>> q::lastTrace.length()
       |11
-      |>>> _lastTrace.nth(_lastTrace.length() - 1)
-      |{ __repl__::n: 10 }
+      |>>> q::lastTrace.nth(q::lastTrace.length() - 1)
+      |{ n: 10 }
       |>>> `
     )
     await assertRepl(input, output)
   })
 
-  it('REPL consumes its output', async() => {
+  it('REPL consumes its output', async () => {
     const input = dedent(
       `>>> 1 + 1
       |
@@ -511,6 +721,11 @@ describe('repl ok', () => {
       |
       |>>> Set(2 + 3)
       |Set(5)
+      |   // a multiline comment
+      | /// a doc comment
+      | /* a multiline
+      |    comment
+      |  */
       |`
     )
     const output = dedent(
@@ -527,7 +742,12 @@ describe('repl ok', () => {
       |>>> >>> Set(2 + 3)
       |... Set(5)
       |Set(5)
-      |>>> `
+      |>>>    // a multiline comment
+      |>>>  /// a doc comment
+      |>>>  /* a multiline
+      |...     comment
+      |...   */
+      |... `
     )
     await assertRepl(input, output)
   })

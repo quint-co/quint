@@ -173,7 +173,7 @@ module coin {
     // if she has enough on her balance.
     // This test may fail sometimes. Do you see why?
     // If not, execute it multiple times in REPL, until it fails.
-    run mintTwiceThenSendTest = {
+    run mintTwiceThenSendError = {
         // non-deterministically pick some amounts to mint and send
         nondet mintEve = 0.to(MAX_UINT).oneOf()
         nondet mintBob = 0.to(MAX_UINT).oneOf()
@@ -193,8 +193,9 @@ module coin {
     }
 
     // to run the random simulator for 10000 executions, each up to 10 actions,
-    // execute the following in REPL:
-    // _test(10000, 10, "init", "step", "totalSupplyDoesNotOverflowInv")
+    // execute the following in the command line:
+    //
+    // $ quint run --invariant totalSupplyDoesNotOverflowInv coin.qnt
 
 
 

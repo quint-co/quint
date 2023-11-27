@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -13,7 +13,7 @@
  */
 
 import { Effect, EffectComponent, EffectScheme, Entity } from './base'
-import { Substitutions, applySubstitution, compose } from './substitutions'
+import { Substitutions, applySubstitution } from './substitutions'
 
 /**
  * Formats the string representation of  an effect
@@ -33,7 +33,8 @@ export function effectToString(e: Effect): string {
         return 'Pure'
       }
     }
-    case 'variable': return e.name
+    case 'variable':
+      return e.name
     case 'arrow': {
       const params = e.params.map(effectToString)
       const result = effectToString(e.result)
@@ -64,8 +65,8 @@ export function effectSchemeToString(e: EffectScheme): string {
     return { kind: 'entity', name: name, value: { kind: 'variable', name: `v${i}` } }
   })
 
-  const subs = compose(effectSubs, entitySubs)
-  const effect = subs.chain(s => applySubstitution(s, e.effect))
+  const subs = effectSubs.concat(entitySubs)
+  const effect = applySubstitution(subs, e.effect)
   if (effect.isLeft()) {
     throw new Error('Unexpected error while formatting effect scheme')
   } else {
@@ -76,9 +77,12 @@ export function effectSchemeToString(e: EffectScheme): string {
 
 export function effectComponentToString(c: EffectComponent): string {
   switch (c.kind) {
-    case 'read': return `Read[${entityToString(c.entity)}]`
-    case 'update': return `Update[${entityToString(c.entity)}]`
-    case 'temporal': return `Temporal[${entityToString(c.entity)}]`
+    case 'read':
+      return `Read[${entityToString(c.entity)}]`
+    case 'update':
+      return `Update[${entityToString(c.entity)}]`
+    case 'temporal':
+      return `Temporal[${entityToString(c.entity)}]`
   }
 }
 /**
@@ -90,9 +94,12 @@ export function effectComponentToString(c: EffectComponent): string {
  */
 export function entityToString(v: Entity): string {
   switch (v.kind) {
-    case 'concrete': return v.stateVariables.map(v => `'${v.name}'`).join(', ')
-    case 'variable': return v.name
-    case 'union': return v.entities.map(entityToString).join(', ')
+    case 'concrete':
+      return v.stateVariables.map(v => `'${v.name}'`).join(', ')
+    case 'variable':
+      return v.name
+    case 'union':
+      return v.entities.map(entityToString).join(', ')
   }
 }
 
@@ -106,8 +113,10 @@ export function entityToString(v: Entity): string {
 export function substitutionsToString(subs: Substitutions): string {
   const subsString = subs.map(s => {
     switch (s.kind) {
-      case 'effect': return `${s.name} |-> ${effectToString(s.value)}`
-      case 'entity': return `${s.name} |-> ${entityToString(s.value)}`
+      case 'effect':
+        return `${s.name} |-> ${effectToString(s.value)}`
+      case 'entity':
+        return `${s.name} |-> ${entityToString(s.value)}`
     }
   })
 

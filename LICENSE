@@ -175,18 +175,23 @@
 
    END OF TERMS AND CONDITIONS
 
-   APPENDIX: How to apply the Apache License to your work.
+   This software has been developed by the following core contributors:
 
-      To apply the Apache License to your work, attach the following
-      boilerplate notice, with the fields enclosed by brackets "[]"
-      replaced with your own identifying information. (Don't include
-      the brackets!)  The text should be enclosed in the appropriate
-      comment syntax for the file format. We also recommend that a
-      file or class name and description of purpose be included on the
-      same "printed page" as the copyright notice for easier
-      identification within third-party archives.
+     * Igor Konnov: Informal Systems (Austria) 2021-2023.
+     * Shon Feder: Informal Systems (Canada), 2021-2023.
+     * Gabriela Moreira: Informal Systems (Brazil), 2021-2023.
+     * Jure Kukovec: Informal Systems (Austria) 2021-2023.
+     * Thomas Pani: Informal Systems (Austria), 2022-2023.
 
-   Copyright 2021 Informal Systems
+   Further, we appreciate minor code and documentation contributions by:
+
+     * @achamayou Amaury Chamayou, 2023.
+     * @bu6n Billy: 2023.
+     * @cason Daniel: 2023.
+     * @hosamsayahi Hosam Sayahi, 2023.
+     * @ivan-gavran Ivan Gavran: Informal Systems (Austria), 2023.
+     * @josef-widder Josef Widder: Informal Systems (Austria), 2023.
+     * @lasarojc Lasaro: Informal Systems, 2022.
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.

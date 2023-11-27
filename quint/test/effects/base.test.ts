@@ -2,7 +2,6 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { Effect, unify } from '../../src/effects/base'
 import { parseEffectOrThrow } from '../../src/effects/parser'
-import { errorTreeToString } from '../../src/errorTree'
 import { substitutionsToString } from '../../src'
 
 describe('unify', () => {
@@ -14,9 +13,11 @@ describe('unify', () => {
       const result = unify(e1, e2)
 
       assert.isTrue(result.isRight())
-      result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'entity', name: 't1', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
-      ]))
+      result.map(r =>
+        assert.sameDeepMembers(r, [
+          { kind: 'entity', name: 't1', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
+        ])
+      )
     })
 
     it('returns error unifying temporal and update effects', () => {
@@ -26,14 +27,18 @@ describe('unify', () => {
       const result = unify(e1, e2)
 
       assert.isTrue(result.isLeft())
-      result.mapLeft(r => assert.deepEqual(r, {
-        location: "Trying to unify Update['x'] and Temporal['y']",
-        children: [{
-          location: "Trying to unify entities ['x'] and []",
-          message: 'Expected [x] and [] to be the same',
-          children: [],
-        }],
-      }))
+      result.mapLeft(r =>
+        assert.deepEqual(r, {
+          location: "Trying to unify Update['x'] and Temporal['y']",
+          children: [
+            {
+              location: "Trying to unify entities ['x'] and []",
+              message: 'Expected [x] and [] to be the same',
+              children: [],
+            },
+          ],
+        })
+      )
     })
 
     it('returns error unifying temporal and pure effects', () => {
@@ -43,14 +48,18 @@ describe('unify', () => {
       const result = unify(e1, e2)
 
       assert.isTrue(result.isLeft())
-      result.mapLeft(r => assert.deepEqual(r, {
-        location: "Trying to unify Pure and Temporal['y']",
-        children: [{
-          location: "Trying to unify entities ['y'] and []",
-          message: 'Expected [y] and [] to be the same',
-          children: [],
-        }],
-      }))
+      result.mapLeft(r =>
+        assert.deepEqual(r, {
+          location: "Trying to unify Pure and Temporal['y']",
+          children: [
+            {
+              location: "Trying to unify entities ['y'] and []",
+              message: 'Expected [y] and [] to be the same',
+              children: [],
+            },
+          ],
+        })
+      )
     })
 
     it('unifies entities with different orders', () => {
@@ -74,8 +83,20 @@ describe('unify', () => {
             entity: {
               kind: 'union',
               entities: [
-                { kind: 'union', entities: [{ kind: 'variable', name: 'r1' }, { kind: 'variable', name: 'r2' }] },
-                { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }, { name: 'y', reference: 2n }] },
+                {
+                  kind: 'union',
+                  entities: [
+                    { kind: 'variable', name: 'r1' },
+                    { kind: 'variable', name: 'r2' },
+                  ],
+                },
+                {
+                  kind: 'concrete',
+                  stateVariables: [
+                    { name: 'x', reference: 1n },
+                    { name: 'y', reference: 2n },
+                  ],
+                },
               ],
             },
           },
@@ -85,13 +106,15 @@ describe('unify', () => {
       const result = unify(e1, e2)
 
       assert.isTrue(result.isRight())
-      result.map(r => assert.sameDeepMembers(r, [
-        {
-          kind: 'effect',
-          name: 'E',
-          value: parseEffectOrThrow("Read[r1, r2, 'x', 'y']"),
-        },
-      ]))
+      result.map(r =>
+        assert.sameDeepMembers(r, [
+          {
+            kind: 'effect',
+            name: 'E',
+            value: parseEffectOrThrow("Read[r1, r2, 'x', 'y']"),
+          },
+        ])
+      )
     })
 
     it('unifies unions when they are the exact same for temporal', () => {
@@ -121,59 +144,12 @@ describe('unify', () => {
       const result = unify(e1, e2)
 
       assert.isTrue(result.isRight())
-      result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'entity', name: 'v', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
-        { kind: 'effect', name: 'E', value: parseEffectOrThrow("Update['x']") },
-      ]))
-    })
-
-    it('unpacks arguments as tuples', () => {
-      const e1 = parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1, r2]')
-      const e2 = parseEffectOrThrow("(Pure) => E")
-
-      const result = unify(e1, e2)
-
-      result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'entity', name: 'r1', value: { kind: 'concrete', stateVariables: [] } },
-        { kind: 'entity', name: 'r2', value: { kind: 'concrete', stateVariables: [] } },
-        { kind: 'effect', name: 'E', value: parseEffectOrThrow('Pure') },
-      ])).mapLeft(err => assert.fail(`Should find no errros, found ${errorTreeToString(err)}`))
-    })
-
-    it('unpacks arguments as tuples with read and temporal effect', () => {
-      const e1 = parseEffectOrThrow('(Read[r1] & Temporal[t1], Read[r2] & Temporal[t2]) => Read[r1, r2] & Temporal[t1, t2]')
-      const e2 = parseEffectOrThrow("(Read['x'] & Temporal['t']) => E")
-
-      const result = unify(e1, e2)
-
-      result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'entity', name: 'r1', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
-        { kind: 'entity', name: 'r2', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
-        { kind: 'entity', name: 't1', value: { kind: 'concrete', stateVariables: [{ name: 't', reference: 2n }] } },
-        { kind: 'entity', name: 't2', value: { kind: 'concrete', stateVariables: [{ name: 't', reference: 2n }] } },
-        {
-          kind: 'effect', name: 'E', value: {
-            kind: 'concrete', components: [
-              { kind: 'read', entity: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
-              { kind: 'temporal', entity: { kind: 'concrete', stateVariables: [{ name: 't', reference: 2n }] } },
-            ],
-          },
-        },
-      ])).mapLeft(err => assert.fail(`Should find no errros, found ${errorTreeToString(err)}`))
-    })
-
-    it('unpacks arguments as tuples with variable effects', () => {
-      const e1 = parseEffectOrThrow('(e0, e1) => e1')
-      const e2 = parseEffectOrThrow("(Pure) => E")
-
-      const result = unify(e1, e2)
-
-      result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'effect', name: 'e0', value: { kind: 'concrete', components: [] } },
-        { kind: 'effect', name: 'e1', value: { kind: 'concrete', components: [] } },
-        { kind: 'effect', name: 'e0#e1', value: { kind: 'concrete', components: [] } },
-        { kind: 'effect', name: 'E', value: parseEffectOrThrow('Pure') },
-      ])).mapLeft(err => assert.fail(`Should find no errros, found ${errorTreeToString(err)}`))
+      result.map(r =>
+        assert.sameDeepMembers(r, [
+          { kind: 'entity', name: 'v', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
+          { kind: 'effect', name: 'E', value: parseEffectOrThrow("Update['x']") },
+        ])
+      )
     })
 
     it('results in the same effect regardless of unpacked projection', () => {
@@ -189,48 +165,6 @@ describe('unify', () => {
       result1.map(r1 => result2.map(r2 => assert.deepEqual(substitutionsToString(r1), substitutionsToString(r2))))
     })
 
-    it('returns error when unpacked values cannot unify', () => {
-      const e1 = parseEffectOrThrow('(Read[r1], Read[r2]) => Read[r1, r2]')
-      const e2 = parseEffectOrThrow("(Temporal['x']) => E")
-
-      const result = unify(e1, e2)
-
-      assert.isTrue(result.isLeft())
-      result.mapLeft(r => assert.deepEqual(r, {
-        location: "Trying to unify (Read[r1], Read[r2]) => Read[r1, r2] and (Temporal['x']) => E",
-        children: [
-          {
-            location: "Trying to unify Temporal['x'] and Read[r1, r2]",
-            children: [{
-              location: "Trying to unify entities ['x'] and []",
-              message: 'Expected [x] and [] to be the same',
-              children: [],
-            }],
-          },
-        ],
-      }))
-    })
-
-    it('returns error when cannot unify entities', () => {
-      const e1 = parseEffectOrThrow('(Read[v]) => Update[v]')
-      const e2 = parseEffectOrThrow("(Read['x']) => Update['y']")
-
-      const result = unify(e1, e2)
-
-      assert.isTrue(result.isLeft())
-      result.mapLeft(r => assert.deepEqual(r, {
-        location: "Trying to unify (Read[v]) => Update[v] and (Read['x']) => Update['y']",
-        children: [{
-          location: "Trying to unify Update['x'] and Update['y']",
-          children: [{
-            location: "Trying to unify entities ['x'] and ['y']",
-            message: 'Expected [x] and [y] to be the same',
-            children: [],
-          }],
-        }],
-      }))
-    })
-
     it('returns error when there are not enough parameters', () => {
       const e1 = parseEffectOrThrow('(Read[v]) => Update[v]')
       const e2 = parseEffectOrThrow("() => Update['y']")
@@ -238,11 +172,13 @@ describe('unify', () => {
       const result = unify(e1, e2)
 
       assert.isTrue(result.isLeft())
-      result.mapLeft(r => assert.deepEqual(r, {
-        location: "Trying to unify (Read[v]) => Update[v] and () => Update['y']",
-        message: 'Expected 1 arguments, got 0',
-        children: [],
-      }))
+      result.mapLeft(r =>
+        assert.deepEqual(r, {
+          location: "Trying to unify (Read[v]) => Update[v] and () => Update['y']",
+          message: 'Expected 1 arguments, got 0',
+          children: [],
+        })
+      )
     })
 
     it('returns error when trying to unify with non-arrow effect', () => {
@@ -252,11 +188,13 @@ describe('unify', () => {
       const result = unify(e1, e2)
 
       assert.isTrue(result.isLeft())
-      result.mapLeft(r => assert.deepEqual(r, {
-        location: "Trying to unify (Read[v]) => Update[v] and Update['y']",
-        message: "Can't unify different types of effects",
-        children: [],
-      }))
+      result.mapLeft(r =>
+        assert.deepEqual(r, {
+          location: "Trying to unify (Read[v]) => Update[v] and Update['y']",
+          message: "Can't unify different types of effects",
+          children: [],
+        })
+      )
     })
   })
 
@@ -268,26 +206,40 @@ describe('unify', () => {
       const result = unify(e1, e2)
 
       assert.isTrue(result.isRight())
-      result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'effect', name: 'E', value: parseEffectOrThrow("Read['x']") },
-      ]))
+      result.map(r =>
+        assert.sameDeepMembers(r, [{ kind: 'effect', name: 'E', value: parseEffectOrThrow("Read['x']") }])
+      )
     })
   })
 
   describe('effects with multiple variable entities', () => {
     it('unfies with concrete and unifiable effect', () => {
       const e1 = parseEffectOrThrow('(Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1, r2] & Update[u]')
-      const e2 = parseEffectOrThrow("(Read['x'] & Update['x'], Read['y', 'z'] & Update['x']) => Read['x', 'y', 'z'] & Update['x']")
+      const e2 = parseEffectOrThrow(
+        "(Read['x'] & Update['x'], Read['y', 'z'] & Update['x']) => Read['x', 'y', 'z'] & Update['x']"
+      )
 
       const result = unify(e1, e2)
       const reversedResult = unify(e2, e1)
 
       assert.isTrue(result.isRight())
-      result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'entity', name: 'r1', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
-        { kind: 'entity', name: 'r2', value: { kind: 'concrete', stateVariables: [{ name: 'y', reference: 3n }, { name: 'z', reference: 4n }] } },
-        { kind: 'entity', name: 'u', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 2n }] } },
-      ]))
+      result.map(r =>
+        assert.sameDeepMembers(r, [
+          { kind: 'entity', name: 'r1', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
+          {
+            kind: 'entity',
+            name: 'r2',
+            value: {
+              kind: 'concrete',
+              stateVariables: [
+                { name: 'y', reference: 3n },
+                { name: 'z', reference: 4n },
+              ],
+            },
+          },
+          { kind: 'entity', name: 'u', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 2n }] } },
+        ])
+      )
       assert.deepEqual(result, reversedResult, 'Result should be the same regardless of the effect order in parameters')
     })
 
@@ -297,17 +249,24 @@ describe('unify', () => {
 
       const result = unify(e1, e2)
       assert.isTrue(result.isLeft())
-      result.mapLeft(r => assert.deepEqual(r, {
-        location: "Trying to unify (Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1, r2] & Update[u] and (Read['x'] & Update['x'], Read['y'] & Update['y']) => E",
-        children: [{
-          location: "Trying to unify Read[r2] & Update['x'] and Read['y'] & Update['y']",
-          children: [{
-            location: "Trying to unify entities ['x'] and ['y']",
-            message: 'Expected [x] and [y] to be the same',
-            children: [],
-          }],
-        }],
-      }))
+      result.mapLeft(r =>
+        assert.deepEqual(r, {
+          location:
+            "Trying to unify (Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1, r2] & Update[u] and (Read['x'] & Update['x'], Read['y'] & Update['y']) => E",
+          children: [
+            {
+              location: "Trying to unify Read[r2] & Update['x'] and Read['y'] & Update['y']",
+              children: [
+                {
+                  location: "Trying to unify entities ['x'] and ['y']",
+                  message: 'Expected [x] and [y] to be the same',
+                  children: [],
+                },
+              ],
+            },
+          ],
+        })
+      )
     })
 
     it('returns partial bindings when unifying with another variable effect', () => {
@@ -316,11 +275,24 @@ describe('unify', () => {
 
       const result = unify(e1, e2)
       assert.isTrue(result.isRight())
-      result.map(r => assert.sameDeepMembers(r, [
-        { kind: 'entity', name: 'r1', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
-        { kind: 'entity', name: 'r2', value: { kind: 'concrete', stateVariables: [{ name: 'y', reference: 2n }] } },
-        { kind: 'entity', name: 'u', value: { kind: 'variable', name: 'v' } },
-      ]))
+      result.map(r =>
+        assert.sameDeepMembers(r, [
+          { kind: 'entity', name: 'r1', value: { kind: 'concrete', stateVariables: [{ name: 'x', reference: 1n }] } },
+          { kind: 'entity', name: 'r2', value: { kind: 'concrete', stateVariables: [{ name: 'y', reference: 2n }] } },
+          { kind: 'entity', name: 'u', value: { kind: 'variable', name: 'v' } },
+        ])
+      )
+    })
+
+    it('simplifies unions of entities before giving up on unifying them', () => {
+      const e1 = parseEffectOrThrow("Read[r1, r2, 'x']")
+      const e2 = parseEffectOrThrow("Read[r1, 'x']")
+
+      const result = unify(e1, e2)
+      assert.isTrue(result.isRight())
+      result.map(r =>
+        assert.sameDeepMembers(r, [{ kind: 'entity', name: 'r2', value: { kind: 'concrete', stateVariables: [] } }])
+      )
     })
 
     it('returns error with effect with incompatible entity variables', () => {
@@ -329,17 +301,24 @@ describe('unify', () => {
 
       const result = unify(e1, e2)
       assert.isTrue(result.isLeft())
-      result.mapLeft(r => assert.deepEqual(r, {
-        location: "Trying to unify (Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1, r2] & Update[u] and (Read['y'] & Update['x'], Read['z'] & Update['x']) => Read['y'] & Update[u]",
-        children: [{
-          location: "Trying to unify Read['y', 'z'] & Update['x'] and Read['y'] & Update['x']",
-          children: [{
-            location: "Trying to unify entities ['y', 'z'] and ['y']",
-            message: 'Expected [y,z] and [y] to be the same',
-            children: [],
-          }],
-        }],
-      }))
+      result.mapLeft(r =>
+        assert.deepEqual(r, {
+          location:
+            "Trying to unify (Read[r1] & Update[u], Read[r2] & Update[u]) => Read[r1, r2] & Update[u] and (Read['y'] & Update['x'], Read['z'] & Update['x']) => Read['y'] & Update[u]",
+          children: [
+            {
+              location: "Trying to unify Read['y', 'z'] & Update['x'] and Read['y'] & Update['x']",
+              children: [
+                {
+                  location: "Trying to unify entities ['y', 'z'] and ['y']",
+                  message: 'Expected [y,z] and [y] to be the same',
+                  children: [],
+                },
+              ],
+            },
+          ],
+        })
+      )
     })
 
     it('returns error when unifying union with another union', () => {
@@ -348,14 +327,18 @@ describe('unify', () => {
 
       const result = unify(e1, e2)
       assert.isTrue(result.isLeft())
-      result.mapLeft(r => assert.deepEqual(r, {
-        location: "Trying to unify Read[r1, r2] and Read[r, 'x', 'y']",
-        children: [{
-          location: "Trying to unify entities [r1, r2] and [r, 'x', 'y']",
-          message: 'Unification for unions of entities is not implemented',
-          children: [],
-        }],
-      }))
+      result.mapLeft(r =>
+        assert.deepEqual(r, {
+          location: "Trying to unify Read[r1, r2] and Read[r, 'x', 'y']",
+          children: [
+            {
+              location: "Trying to unify entities [r1, r2] and [r, 'x', 'y']",
+              message: 'Unification for unions of entities is not implemented',
+              children: [],
+            },
+          ],
+        })
+      )
     })
 
     it('returs error when effect names are cyclical', () => {
@@ -364,12 +347,13 @@ describe('unify', () => {
 
       const result = unify(e1, e2)
 
-      result
-        .mapLeft(e => assert.deepEqual(e, {
+      result.mapLeft(e =>
+        assert.deepEqual(e, {
           location: 'Trying to unify e1 and () => e1',
           message: "Can't bind e1 to () => e1: cyclical binding",
           children: [],
-        }))
+        })
+      )
 
       assert.isTrue(result.isLeft())
     })
@@ -380,12 +364,13 @@ describe('unify', () => {
 
       const result = unify(e1, e2)
 
-      result
-        .mapLeft(e => assert.deepEqual(e, {
+      result.mapLeft(e =>
+        assert.deepEqual(e, {
           location: 'Trying to unify () => e1 and e1',
           message: "Can't bind e1 to () => e1: cyclical binding",
           children: [],
-        }))
+        })
+      )
 
       assert.isTrue(result.isLeft())
     })
@@ -396,8 +381,8 @@ describe('unify', () => {
 
       const result = unify(e1, e2)
 
-      result
-        .mapLeft(e => assert.deepEqual(e, {
+      result.mapLeft(e =>
+        assert.deepEqual(e, {
           location: 'Trying to unify Read[v1] and Read[v1, v2]',
           children: [
             {
@@ -406,7 +391,8 @@ describe('unify', () => {
               children: [],
             },
           ],
-        }))
+        })
+      )
 
       assert.isTrue(result.isLeft())
     })
@@ -417,8 +403,8 @@ describe('unify', () => {
 
       const result = unify(e1, e2)
 
-      result
-        .mapLeft(e => assert.deepEqual(e, {
+      result.mapLeft(e =>
+        assert.deepEqual(e, {
           location: 'Trying to unify Temporal[v1, v2] and Temporal[v1]',
           children: [
             {
@@ -427,7 +413,8 @@ describe('unify', () => {
               children: [],
             },
           ],
-        }))
+        })
+      )
 
       assert.isTrue(result.isLeft())
     })
