@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Produce proper error messages on invalid module name (#1260)
 - Fix JSON output when running multiple tests (#1264)
 - Topological sorting of modules (#1268)
+- The effect checker will now check for consistency of updates across different
+  cases inside `match` (#1272)
 
 ### Security
 
