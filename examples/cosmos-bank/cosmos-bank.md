@@ -1,6 +1,8 @@
 # Onboarding to the module `x/bank` of Cosmos SDK 
 
-Written for Cosmos SDK [v0.46.10](https://github.com/cosmos/cosmos-sdk/blob/v0.46.10/).
+**Author**: Igor Konnov, Informal Systems, 2023
+
+**Version**: Cosmos SDK [v0.46.10](https://github.com/cosmos/cosmos-sdk/blob/v0.46.10/).
 
 ## Abstract
 
@@ -14,7 +16,7 @@ as in the original document.
 
 Importantly, this description is tuned towards ease of exposition, not for
 implementation or verification. Remember that we do not want to make protocols
-as complex as their implementation! These are the most differences:
+as complex as their implementation! These are the most illuminating differences:
 
  - We use abstract data types whenever possible, e.g., big integers, sets, and maps.
 
@@ -31,22 +33,31 @@ as complex as their implementation! These are the most differences:
 > In addition, the bank module tracks and provides query support for the total
 > supply of all assets used in the application.
 
-From the protocol perspective, the bank module looks as follows:
+From the engineer's perspective, the bank module looks as follows:
 
 ```bluespec bank.qnt +=
 // -*- mode: Bluespec; -*-
 // An executable specification of the bank module
 module bank {
-  // TYPES
+  // type declarations
   <<<types>>>
 
-  // FUNCTIONAL LAYER, e.g., keepers
+  // the module logic, that is, the logic of keepers
   <<<functional>>>
+}
+```
 
-  // STATE
+From the protocol designer's point of view, the bank module alone could be
+tested by introducing the following non-deterministic state machine:
+
+```bluespec bankTest.qnt +=
+module bankTest {
+  import bank.* from "./bank"
+
+  // the state of the machine that tests the logic
   <<<state>>>
 
-  // INVARIANTS
+  // protocol invariants
   <<<invariants>>>
 }
 ```
@@ -59,11 +70,12 @@ feature!** By using more abstract types, we make the protocol description
 much easier to read and understand.
 
 ```bluespec "types" +=
-// Addresses are just strings.
+// Addresses are simply strings
 type Addr = str
-// Denominations are simply strings.
+// Denominations are simply strings too
 type Denom = str
-// The module operates over 64-bit and 256-bit integers.
+// 64-bit and 256-bit integers are a special case of big integers.
+// We have to take care of the bit width where it matters.
 type Int64 = int
 type Int256 = int
 
@@ -85,18 +97,24 @@ the implementation of the above types in Cosmos SDK:
    [address.go](https://github.com/cosmos/cosmos-sdk/blob/v0.46.10/types/address.go), which is `byte[]`.
    It must be a
    [bech32 address](https://docs.cosmos.network/main/spec/addresses/bech32).
+   We omit the validation logic in this specification, as it is not relevant
+   to the understanding of the banking module.
 
  - The type `Denom` is implemented in
    [denom.go](https://github.com/cosmos/cosmos-sdk/blob/v0.46.10/types/denom.go). It must match the regular expression `[a-zA-Z][a-zA-Z0-9/:._-]{2,127}`.
+   Again, we omit the validation logic in the Quint specification
 
  - The type `Coin` is implemented in
-   [coin.go](https://github.com/cosmos/cosmos-sdk/blob/v0.46.10/types/coin.go). It must be non-negative.
+   [coin.go](https://github.com/cosmos/cosmos-sdk/blob/v0.46.10/types/coin.go).
+   Coins must carry non-negative amounts.
 
  - The type `Coins` is implemented in
    [coin.go](https://github.com/cosmos/cosmos-sdk/blob/v0.46.10/types/coin.go).
    The implementation stores `Coins` as an array `[]Coin`.
-   Since an array is not a set, the implementation contains non-trivial
-   validation logic in [Coins.Validate](https://github.com/cosmos/cosmos-sdk/blob/06406f6a70f228bbb6d09b45a4e343477f1ef7e9/types/coin.go#L229) to make sure that:
+   Since an array is not a set, the implementation contains additional
+   non-trivial validation logic in
+   [Coins.Validate](https://github.com/cosmos/cosmos-sdk/blob/06406f6a70f228bbb6d09b45a4e343477f1ef7e9/types/coin.go#L229)
+   to make sure that:
 
     - The amount assigned to every denomination is positive (that is, `amount > 0`).
     - Coins are sorted in the order of their denominations.
@@ -124,10 +142,11 @@ This is a perfect opportunity to define a state invariant:
 def SumForDenom(denom: Denom): Int256 = {
   Balances.keys().fold(0, (sum, addr) => {
     val coins = Balances.get(addr)
-    if (denom.in(coins.keys()))
+    if (denom.in(coins.keys())) {
       sum + coins.get(denom)
-    else
+    } else {
       sum
+    }
   })
 }
 
@@ -140,7 +159,7 @@ val TotalSupplyInv = {
 ## Module Accounts
 
 SKIPPED, see [Module
-accounts](https://docs.cosmos.network/v0.45/modules/bank/#module-accounts).
+accounts](https://docs.cosmos.network/v0.46/modules/bank/#module-accounts).
 
 ## State
 
@@ -174,7 +193,7 @@ var Balances: Addr -> Coins
 ## Keepers
 
 > The bank module provides these exported keeper interfaces that can be passed
-> to other modules that read or update account > balances. Modules should use
+> to other modules that read or update account balances. Modules should use
 > the least-permissive interface that provides the functionality they require.
 >
 > Best practices dictate careful review of bank module code to ensure that
@@ -357,17 +376,25 @@ pure def ViewKeeper::GetAccountsBalances(ctx: BankCtx): Set[Balance] = {
    result will always be no coins. For vesting accounts, LockedCoins is
    delegated to the concrete vesting account type.
 
+   **TODO**
+
  - `SpendableCoins` returns the total balances of spendable coins for an
    account by address. If the account has no spendable coins, an empty
    Coins slice is returned.
+
+   **TODO**
 
  - `IterateAccountBalances` iterates over the balances of a single account
    and provides the token balance to a callback. If true is returned from
    the callback, iteration is halted.
 
+   **TODO**
+
  - `IterateAllBalances` iterates over all the balances of all accounts and
    denominations that are provided to a callback. If true is returned from
    the callback, iteration is halted.
+
+   **TODO**
 
 #### SendKeeper
 
@@ -387,7 +414,7 @@ Its code can be found in
 pure def SendKeeper::SendCoins(ctx: BankCtx,
     fromAddr: Addr, toAddr: Addr, amt: Coins): (bool, BankCtx) = {
   // Implementation: if Coins are constructed with NewCoins, they must be positive.
-  // However, if they are constructed some other way, there is no precondition.
+  // However, if they are constructed another way, there is no precondition.
   // TODO: checking LockedCoins that deal with vested coins.
   // Safely subtract the coins from fromAddr and add them to toAddr.
   val fromCoins = ViewKeeper::GetAllBalances(ctx, fromAddr)
@@ -516,7 +543,5 @@ type Params = {
 }
 ```
 
-
-
-[bank module]: https://docs.cosmos.network/v0.45/modules/bank/#
+[bank module]: https://docs.cosmos.network/v0.46/modules/bank/#
 [lmt]: https://github.com/driusan/lmt

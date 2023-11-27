@@ -1,12 +1,13 @@
 // -*- mode: Bluespec; -*-
 // An executable specification of the bank module
 module bank {
-  // TYPES
-  // Addresses are just strings.
+  // type declarations
+  // Addresses are simply strings
   type Addr = str
-  // Denominations are simply strings.
+  // Denominations are simply strings too
   type Denom = str
-  // The module operates over 64-bit and 256-bit integers.
+  // 64-bit and 256-bit integers are a special case of big integers.
+  // We have to take care of the bit width where it matters.
   type Int64 = int
   type Int256 = int
 
@@ -46,7 +47,7 @@ module bank {
     defaultSendEnabled: bool,
   }
 
-  // FUNCTIONAL LAYER, e.g., keepers
+  // the module logic, that is, the logic of keepers
   pure def ViewKeeper::GetAllBalances(ctx: BankCtx, addr: Addr): Coins = {
     if (ctx.balances.keys().contains(addr)) {
       ctx.balances.get(addr)
@@ -86,7 +87,7 @@ module bank {
   pure def SendKeeper::SendCoins(ctx: BankCtx,
       fromAddr: Addr, toAddr: Addr, amt: Coins): (bool, BankCtx) = {
     // Implementation: if Coins are constructed with NewCoins, they must be positive.
-    // However, if they are constructed some other way, there is no precondition.
+    // However, if they are constructed another way, there is no precondition.
     // TODO: checking LockedCoins that deal with vested coins.
     // Safely subtract the coins from fromAddr and add them to toAddr.
     val fromCoins = ViewKeeper::GetAllBalances(ctx, fromAddr)
@@ -141,28 +142,5 @@ module bank {
   pure def SendKeeper::IsSendEnabledCoins(ctx: BankCtx, coins: Set[Coin]): bool = {
     // Implementation: return the error ErrSendDisabled on false
     coins.forall(c => SendKeeper::IsSendEnabledCoin(ctx, c))
-  }
-
-  // STATE
-  // Total supply of coins per denomination
-  var Supply: Denom -> Int256
-  // Balances for each address
-  var Balances: Addr -> Coins
-
-  // INVARIANTS
-  // sum up amounts over all balances for a given denomination
-  def SumForDenom(denom: Denom): Int256 = {
-    Balances.keys().fold(0, (sum, addr) => {
-      val coins = Balances.get(addr)
-      if (denom.in(coins.keys()))
-        sum + coins.get(denom)
-      else
-        sum
-    })
-  }
-
-  // The total Supply of the network is equal to the sum of all coins from the account
-  val TotalSupplyInv = {
-    Supply.keys().forall(denom => (SumForDenom(denom) == Supply.get(denom)))
   }
 }
