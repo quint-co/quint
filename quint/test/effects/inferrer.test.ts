@@ -248,12 +248,22 @@ describe('inferEffects', () => {
 
     const [errors] = inferEffectsForDefs(defs)
 
-    errors.forEach(v =>
-      assert.deepEqual(v, {
-        children: [],
-        location: 'Inferring effect for f',
-        message: 'Result cannot be an opperator',
-      })
-    )
+    assert.deepEqual([...errors.values()][0], {
+      children: [],
+      location: 'Inferring effect for f',
+      message: 'Result cannot be an opperator',
+    })
+  })
+
+  it('returns error when `match` branches update different variables', () => {
+    const defs = ['type Result = | Some(int) | None', "val foo = match Some(1) { | Some(n) => x' = n | None => true }"]
+
+    const [errors] = inferEffectsForDefs(defs)
+
+    assert.deepEqual([...errors.values()][0].children[0].children[0].children[0].children[0], {
+      children: [],
+      location: "Trying to unify entities ['x'] and []",
+      message: 'Expected [x] and [] to be the same',
+    })
   })
 })
