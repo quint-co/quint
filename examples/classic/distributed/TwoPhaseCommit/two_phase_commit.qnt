@@ -1,3 +1,4 @@
+// -*- mode: Bluespec; -*-
 module two_phase_commit {
   type ResourceManagerState = Working | Prepared | Committed | Aborted
   var resourceManagerStates: str -> ResourceManagerState
