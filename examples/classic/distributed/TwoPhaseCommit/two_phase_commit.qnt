@@ -1,4 +1,10 @@
 // -*- mode: Bluespec; -*-
+
+/* This specification stems from the specification of the two phase protocol
+   by Leslie Lamport:
+
+   https://github.com/tlaplus/Examples/blob/master/specifications/transaction_commit/TwoPhase.tla */
+
 module two_phase_commit {
   type ResourceManagerState = Working | Prepared | Committed | Aborted
   var resourceManagerStates: str -> ResourceManagerState
@@ -6,6 +12,8 @@ module two_phase_commit {
   type TransactionManagerState = Init | Done
   var transactionManagerState: TransactionManagerState
 
+  /// The set of resource managers from which the transaction manager has
+  /// received RMPrepared messages
   var preparedResourceManagers: Set[str]
 
   type Message =
@@ -27,12 +35,16 @@ module two_phase_commit {
 
   /* Transaction Manager actions */
 
+  /// The transaction manager receives a RMPrepared(rm) message from the resource manager rm
   action addPreparedResourceManager(resourceManager: str): bool = all {
     transactionManagerState == Init,
     messages.contains(RMPrepared(resourceManager)),
     preparedResourceManagers' = preparedResourceManagers.union(Set(resourceManager))
   }
 
+  /// The transaction manager commits the transaction; enabled iff the
+  /// transaction manager is in its initial state and every resource manager has
+  /// sent an RMPrepared message.
   action decideOnCommit = all {
     transactionManagerState == Init,
     preparedResourceManagers == resourceManagers,
@@ -40,6 +52,7 @@ module two_phase_commit {
     messages' = messages.union(Set(Commit))
   }
 
+  /// The transaction manager spontaneously aborts the transaction
   action decideOnAbort = all {
     transactionManagerState == Init,
     transactionManagerState' = Done,
@@ -48,12 +61,14 @@ module two_phase_commit {
 
   /* Resource Manager actions */
 
+  /// A resource manager prepares
   action prepare(resourceManager: str): bool = all {
     resourceManagerStates.get(resourceManager) == Working,
     resourceManagerStates' = resourceManagerStates.set(resourceManager, Prepared),
     messages' = messages.union(Set(RMPrepared(resourceManager)))
   }
 
+  /// A resource manager aborts, either spontaneously or because of an Abort message
   action abort(resourceManager: str): bool = all {
     or {
       // Resource manager chooses to abort
@@ -66,6 +81,7 @@ module two_phase_commit {
     messages' = messages
   }
 
+  // A resource manager commits due to a Commit message
   action commit(resourceManager: str): bool = all {
     messages.contains(Commit),
     resourceManagerStates' = resourceManagerStates.set(resourceManager, Committed),
@@ -73,17 +89,20 @@ module two_phase_commit {
   }
 
   action step = any {
+    // Resource manager actions
     all {
       nondet rm = resourceManagers.oneOf()
       any { prepare(rm), abort(rm), commit(rm) },
       transactionManagerState' = transactionManagerState,
       preparedResourceManagers' = preparedResourceManagers,
     },
+    // Transaction manager decisions (commit or abort)
     all {
       any { decideOnCommit, decideOnAbort },
       preparedResourceManagers' = preparedResourceManagers,
       resourceManagerStates' = resourceManagerStates,
     },
+    // Transaction managers message consumption
     all {
       nondet rm = resourceManagers.oneOf()
       addPreparedResourceManager(rm),
@@ -93,6 +112,7 @@ module two_phase_commit {
     }
   }
 
+  /// Two resource managers have not arrived at conflicting decisions
   val consistencyInv = tuples(resourceManagers, resourceManagers).forall(((r1, r2)) =>
     not(resourceManagerStates.get(r1) == Committed and resourceManagerStates.get(r2) == Aborted)
   )
@@ -101,6 +121,8 @@ module two_phase_commit {
 module two_phase_commit_3 {
   import two_phase_commit(resourceManagers = Set("rm1", "rm2", "rm3")).*
 
+  /// Compose two actions: send an RMPrepare message and consume it in the
+  /// transaction manager
   run preparation(rm) = (all {
     prepare(rm),
     transactionManagerState' = transactionManagerState,
@@ -112,6 +134,8 @@ module two_phase_commit_3 {
     messages' = messages,
   })
 
+  /// Compose several actions: The transaction manager decides to commit and
+  /// each resource manager consumes its Commit message
   run commitment = (all {
     decideOnCommit,
     preparedResourceManagers' = preparedResourceManagers,
