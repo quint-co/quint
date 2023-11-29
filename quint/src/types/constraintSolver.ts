@@ -14,13 +14,14 @@
 
 import { Either, left, right } from '@sweet-monads/either'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
-import { rowToString, typeToString } from '../ir/IRprinting'
+import { declarationToString, rowToString, typeToString } from '../ir/IRprinting'
 import { QuintConstType, QuintType, Row, rowNames, typeNames } from '../ir/quintTypes'
-import { Constraint } from './base'
+import { compareConstraints, Constraint } from './base'
 import { Substitutions, applySubstitution, applySubstitutionToConstraint, compose } from './substitutions'
 import { unzip } from 'lodash'
 import { LookupTable } from '../names/base'
 import { simplifyRow } from './simplification'
+import { constraintToString, substitutionsToString } from './printing'
 
 /*
  * Try to solve a constraint by unifying all pairs of types in equality
@@ -38,6 +39,8 @@ export function solveConstraint(
 ): Either<Map<bigint, ErrorTree>, Substitutions> {
   const errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
   switch (constraint.kind) {
+    case 'empty':
+      return right([])
     case 'eq':
       return unify(table, constraint.types[0], constraint.types[1]).mapLeft(e => {
         errors.set(constraint.sourceId, e)
@@ -45,7 +48,9 @@ export function solveConstraint(
       })
     case 'conjunction': {
       // Chain solving of inner constraints, collecting all errors (even after the first failure)
-      return constraint.constraints.reduce((result: Either<Map<bigint, ErrorTree>, Substitutions>, con) => {
+      return constraint.constraints
+        .sort(compareConstraints)
+        .reduce((result: Either<Map<bigint, ErrorTree>, Substitutions>, con) => {
         // If previous result is a failure, try to solve the original constraint
         // to gather all errors instead of just propagating the first one
         let newCons = con
@@ -79,8 +84,6 @@ export function solveConstraint(
       )
       return left(errors)
     }
-    case 'empty':
-      return right([])
   }
 }
 
