@@ -1,4 +1,3 @@
-import { number } from 'yargs';
 import { QuintType } from '../ir/quintTypes'
 
 /*
@@ -41,7 +40,7 @@ export function toScheme(type: QuintType): TypeScheme {
  *          and 0 if the two constraints are the same kind.
  */
 export function compareConstraints(a: Constraint, b: Constraint): number {
-  const aIdx : number = constraintKinds.findIndex(s => s === a.kind)
-  const bIdx : number = constraintKinds.findIndex(s => s === b.kind)
+  const aIdx: number = constraintKinds.findIndex(s => s === a.kind)
+  const bIdx: number = constraintKinds.findIndex(s => s === b.kind)
   return aIdx - bIdx
 }

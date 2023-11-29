@@ -14,14 +14,13 @@
 
 import { Either, left, right } from '@sweet-monads/either'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
-import { declarationToString, rowToString, typeToString } from '../ir/IRprinting'
+import { rowToString, typeToString } from '../ir/IRprinting'
 import { QuintConstType, QuintType, Row, rowNames, typeNames } from '../ir/quintTypes'
-import { compareConstraints, Constraint } from './base'
+import { Constraint, compareConstraints } from './base'
 import { Substitutions, applySubstitution, applySubstitutionToConstraint, compose } from './substitutions'
 import { unzip } from 'lodash'
 import { LookupTable } from '../names/base'
 import { simplifyRow } from './simplification'
-import { constraintToString, substitutionsToString } from './printing'
 
 /*
  * Try to solve a constraint by unifying all pairs of types in equality
@@ -51,19 +50,19 @@ export function solveConstraint(
       return constraint.constraints
         .sort(compareConstraints)
         .reduce((result: Either<Map<bigint, ErrorTree>, Substitutions>, con) => {
-        // If previous result is a failure, try to solve the original constraint
-        // to gather all errors instead of just propagating the first one
-        let newCons = con
-        result.map(s => {
-          newCons = applySubstitutionToConstraint(table, s, con)
-        })
-        return solveConstraint(table, newCons)
-          .mapLeft(e => {
-            e.forEach((error, id) => errors.set(id, error))
-            return errors
+          // If previous result is a failure, try to solve the original constraint
+          // to gather all errors instead of just propagating the first one
+          let newCons = con
+          result.map(s => {
+            newCons = applySubstitutionToConstraint(table, s, con)
           })
-          .chain(newSubs => result.map(s => compose(table, newSubs, s)))
-      }, right([]))
+          return solveConstraint(table, newCons)
+            .mapLeft(e => {
+              e.forEach((error, id) => errors.set(id, error))
+              return errors
+            })
+            .chain(newSubs => result.map(s => compose(table, newSubs, s)))
+        }, right([]))
     }
     case 'isDefined': {
       for (const def of table.values()) {

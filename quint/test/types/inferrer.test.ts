@@ -2,7 +2,7 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { TypeInferenceResult, TypeInferrer } from '../../src/types/inferrer'
 import { typeSchemeToString } from '../../src/types/printing'
-import { ErrorTree, errorTreeToString } from '../../src/errorTree'
+import { errorTreeToString } from '../../src/errorTree'
 import { parseMockedModule } from '../util'
 
 describe('inferTypes', () => {
