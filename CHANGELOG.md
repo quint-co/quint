@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Topological sorting of modules (#1268)
 - The effect checker will now check for consistency of updates across different
   cases inside `match` (#1272)
-- Fix problems in the integration of sum types in `run` and `test` commands (#1276)
+- Fix problems in the integration of sum types in `run`, `test`, and `verify` commands (#1276)
 - Fix some corner cases with the usage of complex expressions inside `assume`
   and `import (...)` (#1276)
 
