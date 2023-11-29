@@ -37,7 +37,7 @@ export function simplify(typeScheme: TypeScheme): TypeScheme {
  * A row like `{ a: int | { b: bool | r } }` becomes
  * `{ a: int, b: bool | r }`.
  *
- * @param row - The tow to be simplified
+ * @param row - The row to be simplified
  *
  * @returns The simplified row
  */

@@ -238,21 +238,22 @@ export function transformType(transformer: IRTransformer, type: t.QuintType): t.
       break
 
     case 'sum':
-      if (transformer.enterSumType) {
-        newType = transformer.enterSumType(newType)
-      }
-      // Sum types, transform all types
-      const newFields = transformRow(transformer, newType.fields)
-      if (newFields.kind !== 'row') {
-        throw new Error('Impossible: sum type fields transformed into non-row')
-      }
-      newType.fields = newFields
+      {
+        if (transformer.enterSumType) {
+          newType = transformer.enterSumType(newType)
+        }
+        // Sum types, transform all types
+        const newFields = transformRow(transformer, newType.fields)
+        if (newFields.kind !== 'row') {
+          throw new Error('Impossible: sum type fields transformed into non-row')
+        }
+        newType.fields = newFields
 
-      if (transformer.exitSumType) {
-        newType = transformer.exitSumType(newType)
+        if (transformer.exitSumType) {
+          newType = transformer.exitSumType(newType)
+        }
       }
       break
-
     default:
       unreachable(newType)
   }

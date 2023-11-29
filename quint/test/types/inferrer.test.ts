@@ -144,18 +144,18 @@ describe('inferTypes', () => {
     assert.sameDeepMembers(stringTypes, [
       [14n, 'str'],
       [15n, 'int'],
-      [16n, '(A(int))'],
-      [17n, '(A(int))'],
+      [16n, '(A(int) | B({}))'],
+      [17n, '(A(int) | B({}))'],
       [10n, 'str'],
       [11n, '{}'],
-      [12n, '(B({}))'],
-      [13n, '(B({}))'],
+      [12n, '(B({}) | A(int))'],
+      [13n, '(B({}) | A(int))'],
       [5n, 'int'],
       [4n, 'str'],
       [6n, 'int'],
-      [7n, '(A(int))'],
-      [8n, '(int) => (A(int))'],
-      [9n, '(int) => (A(int))'],
+      [7n, '(A(int) | B({}))'],
+      [8n, '(int) => (A(int) | B({}))'],
+      [9n, '(int) => (A(int) | B({}))'],
     ])
   })
 
@@ -169,13 +169,13 @@ describe('inferTypes', () => {
     assert.sameDeepMembers(stringTypes, [
       [14n, 'str'],
       [15n, 'int'],
-      [16n, '(A(int))'],
-      [17n, '(A(int))'],
+      [16n, '(A(int) | B({}))'],
+      [17n, '(A(int) | B({}))'],
       [10n, 'str'],
       [11n, '{}'],
-      [12n, '(B({}))'],
-      [13n, '(B({}))'],
-      [18n, '(A(int))'],
+      [12n, '(B({}) | A(int))'],
+      [13n, '(B({}) | A(int))'],
+      [18n, '(A(int) | B({}))'],
       [24n, 'str'],
       [26n, 'int'],
       [19n, 'int'],
@@ -191,9 +191,9 @@ describe('inferTypes', () => {
       [5n, 'int'],
       [4n, 'str'],
       [6n, 'int'],
-      [7n, '(A(int))'],
-      [8n, '(int) => (A(int))'],
-      [9n, '(int) => (A(int))'],
+      [7n, '(A(int) | B({}))'],
+      [8n, '(int) => (A(int) | B({}))'],
+      [9n, '(int) => (A(int) | B({}))'],
     ])
   })
 
