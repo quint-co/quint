@@ -66,7 +66,6 @@ export function solveConstraint(
           const subst = unify(table, def.type, constraint.type)
           if (subst.isRight()) {
             // We found a defined type unifying with the given schema
-            // (unwrap the vaule since the left of `unify` doesn't match our needs and isn't relevent)
             return right(subst.unwrap())
           }
         }

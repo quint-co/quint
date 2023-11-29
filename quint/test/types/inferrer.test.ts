@@ -164,6 +164,7 @@ describe('inferTypes', () => {
   })
 
   it('infers types for different sum type declarations with the same label but different values', () => {
+    // See https://github.com/informalsystems/quint/issues/1275
     const text = `
 module A {
   type T1 = | A(int)
