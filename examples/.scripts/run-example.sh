@@ -15,6 +15,7 @@ result () {
 
     # Skip tests for parameterized modules
     if [[ "$cmd" == "test" && (
+            "$file" == "classic/distributed/Paxos/Voting.qnt" ||
             "$file" == "cosmos/tendermint/Tendermint.qnt" ||
             "$file" == "cosmos/tendermint/TendermintTest.qnt" ||
             "$file" == "cosmos/lightclient/Blockchain.qnt" ||
@@ -24,6 +25,7 @@ result () {
     fi
     # Skip verification for specs that do not define a state machine
     if [[ "$cmd" == "verify" && (
+            "$file" == "classic/distributed/Paxos/Voting.qnt" ||
             "$file" == "cosmos/lightclient/Blockchain.qnt" ||
             "$file" == "cosmos/lightclient/LCVerificationApi.qnt" ||
             "$file" == "cosmos/lightclient/typedefs.qnt" ||
@@ -46,12 +48,10 @@ result () {
     fi
 
     # Print additional explanations
-    if [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" && ( "$cmd" == "test" || "$cmd" == "verify" )]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/issues/244</sup>"
-    elif [[ "$file" == "classic/distributed/Paxos/Voting.qnt" && ( "$cmd" == "test" || "$cmd" == "verify" )]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/issues/244</sup>"
+    if [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" &&  "$cmd" == "verify" ]] ; then
+      printf "<sup>https://github.com/informalsystems/quint/issues/1034</sup>"
     elif [[ "$file" == "language-features/option.qnt" && "$cmd" == verify ]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/issues/244</sup>"
+      printf "<sup>https://github.com/informalsystems/quint/issues/1034</sup>"
     elif [[ "$file" == "solidity/icse23-fig7/lottery.qnt" && "$cmd" == "verify" ]] ; then
       printf "<sup>https://github.com/informalsystems/quint/issues/1019</sup>"
     fi
@@ -66,6 +66,8 @@ get_main () {
     main="--main=ReadersWriters_5"
   elif [[ "$file" == "classic/distributed/ewd840/ewd840.qnt" ]] ; then
     main="--main=ewd840_3"
+  elif [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" ]] ; then
+    main="--main=Paxos_val2_accept3_quorum2"
   elif [[ "$file" == "classic/sequential/BinSearch/BinSearch.qnt" ]] ; then
     main="--main=BinSearch10"
   elif [[ "$file" == "cosmos/ics20/bank.qnt" ]] ; then
