@@ -43,7 +43,7 @@ class NameResolver implements IRVisitor {
   collector: NameCollector
   errors: QuintError[] = []
   table: LookupTable = new Map()
-  private definitionDepth: number = 0
+  definitionDepth: number = -1
 
   constructor() {
     this.collector = new NameCollector()
@@ -73,12 +73,6 @@ class NameResolver implements IRVisitor {
     if (this.definitionDepth > 0) {
       this.collector.collectDefinition({ ...def, depth: this.definitionDepth })
     }
-
-    this.definitionDepth++
-  }
-
-  exitOpDef(_def: QuintOpDef): void {
-    this.definitionDepth--
   }
 
   exitLet(expr: QuintLet): void {

@@ -54,8 +54,9 @@ export class NameCollector implements IRVisitor {
   definitionsByModule: DefinitionsByModule = new Map()
   errors: QuintError[] = []
   table: LookupTable = new Map()
+  definitionDepth: number = -1
+
   private currentModuleName: string = ''
-  private definitionDepth: number = 0
 
   enterModule(module: QuintModule): void {
     this.currentModuleName = module.name
@@ -87,12 +88,6 @@ export class NameCollector implements IRVisitor {
       // collect only top-level definitions
       this.collectDefinition({ ...def, typeAnnotation: undefined, depth: this.definitionDepth })
     }
-
-    this.definitionDepth++
-  }
-
-  exitOpDef(_def: QuintOpDef): void {
-    this.definitionDepth--
   }
 
   enterTypeDef(def: QuintTypeDef): void {

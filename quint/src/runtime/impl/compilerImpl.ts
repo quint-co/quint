@@ -161,7 +161,7 @@ export class CompilerVisitor implements IRVisitor {
   // execution listener
   private execListener: ExecutionListener
   // the current depth of operator definitions: top-level defs are depth 0
-  private definitionDepth: number = 0
+  definitionDepth: number = -1
 
   constructor(
     lookupTable: LookupTable,
@@ -230,12 +230,7 @@ export class CompilerVisitor implements IRVisitor {
     return this.errorTracker.runtimeErrors
   }
 
-  enterOpDef(_: ir.QuintOpDef) {
-    this.definitionDepth++
-  }
-
   exitOpDef(opdef: ir.QuintOpDef) {
-    this.definitionDepth--
     // Either a runtime value, or a def, action, etc.
     // All of them are compiled to callables, which may have zero parameters.
     let boundValue = this.compStack.pop()
