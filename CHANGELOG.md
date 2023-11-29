@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix problems in the integration of sum types in `run`, `test`, and `verify` commands (#1276)
 - Fix some corner cases with the usage of complex expressions inside `assume`
   and `import (...)` (#1276)
+- Fix incorrect type checking failure from interference between sum types
+  sharing variant labels (#1275)
 
 ### Security
 
