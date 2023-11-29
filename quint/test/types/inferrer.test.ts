@@ -5,6 +5,15 @@ import { typeSchemeToString } from '../../src/types/printing'
 import { errorTreeToString } from '../../src/errorTree'
 import { parseMockedModule } from '../util'
 
+// Utility used to print update `stringType` values to make
+// updating the expected values in the following tests less
+// painful.
+function _printUpdatedStringTypes(stringTypes: (string | bigint)[][]) {
+  console.log('[')
+  stringTypes.forEach(([n, t]) => console.log(`[${n}n, '${t}'],`))
+  console.log(']')
+}
+
 describe('inferTypes', () => {
   function inferTypesForModules(text: string): TypeInferenceResult {
     const { modules, table } = parseMockedModule(text)
@@ -146,20 +155,19 @@ describe('inferTypes', () => {
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
     assert.sameDeepMembers(stringTypes, [
-      [14n, 'str'],
-      [15n, 'int'],
+      [13n, 'str'],
+      [14n, 'int'],
+      [15n, '(A(int) | B({}))'],
       [16n, '(A(int) | B({}))'],
-      [17n, '(A(int) | B({}))'],
+      [6n, 'int'],
+      [5n, 'str'],
+      [7n, 'int'],
+      [8n, '(A(int) | B({}))'],
+      [4n, '(int) => (A(int) | B({}))'],
       [10n, 'str'],
       [11n, '{}'],
       [12n, '(B({}) | A(int))'],
-      [13n, '(B({}) | A(int))'],
-      [5n, 'int'],
-      [4n, 'str'],
-      [6n, 'int'],
-      [7n, '(A(int) | B({}))'],
-      [8n, '(int) => (A(int) | B({}))'],
-      [9n, '(int) => (A(int) | B({}))'],
+      [9n, '(B({}) | A(int))'],
     ])
   })
 
@@ -186,34 +194,34 @@ module B {
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    // _printUpdatedStringTypes(stringTypes)
     assert.sameDeepMembers(stringTypes, [
-      [14n, 'str'],
-      [15n, 'int'],
+      [13n, 'str'],
+      [14n, 'int'],
+      [15n, '(A(int) | B({}))'],
       [16n, '(A(int) | B({}))'],
       [17n, '(A(int) | B({}))'],
+      [23n, 'str'],
+      [25n, 'int'],
+      [18n, 'int'],
+      [19n, 'int'],
+      [20n, 'int'],
+      [24n, '(int) => int'],
+      [26n, 'str'],
+      [28n, '{}'],
+      [21n, 'int'],
+      [27n, '({}) => int'],
+      [22n, 'int'],
+      [29n, 'int'],
+      [6n, 'int'],
+      [5n, 'str'],
+      [7n, 'int'],
+      [8n, '(A(int) | B({}))'],
+      [4n, '(int) => (A(int) | B({}))'],
       [10n, 'str'],
       [11n, '{}'],
       [12n, '(B({}) | A(int))'],
-      [13n, '(B({}) | A(int))'],
-      [18n, '(A(int) | B({}))'],
-      [24n, 'str'],
-      [26n, 'int'],
-      [19n, 'int'],
-      [20n, 'int'],
-      [21n, 'int'],
-      [25n, '(int) => int'],
-      [27n, 'str'],
-      [29n, '{}'],
-      [22n, 'int'],
-      [28n, '({}) => int'],
-      [23n, 'int'],
-      [30n, 'int'],
-      [5n, 'int'],
-      [4n, 'str'],
-      [6n, 'int'],
-      [7n, '(A(int) | B({}))'],
-      [8n, '(int) => (A(int) | B({}))'],
-      [9n, '(int) => (A(int) | B({}))'],
+      [9n, '(B({}) | A(int))'],
     ])
   })
 
