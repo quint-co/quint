@@ -2,16 +2,20 @@ import { describe, it } from 'mocha'
 import { assert } from 'chai'
 import { TypeInferenceResult, TypeInferrer } from '../../src/types/inferrer'
 import { typeSchemeToString } from '../../src/types/printing'
-import { errorTreeToString } from '../../src/errorTree'
+import { ErrorTree, errorTreeToString } from '../../src/errorTree'
 import { parseMockedModule } from '../util'
 
 describe('inferTypes', () => {
-  function inferTypesForDefs(defs: string[]): TypeInferenceResult {
-    const text = `module wrapper { ${defs.join('\n')} }`
+  function inferTypesForModules(text: string): TypeInferenceResult {
     const { modules, table } = parseMockedModule(text)
 
     const inferrer = new TypeInferrer(table)
-    return inferrer.inferTypes(modules[0].declarations)
+    return inferrer.inferTypes(modules.flatMap(m => m.declarations))
+  }
+
+  function inferTypesForDefs(defs: string[]): TypeInferenceResult {
+    const text = `module wrapper { ${defs.join('\n')} }`
+    return inferTypesForModules(text)
   }
 
   it('infers types for basic expressions', () => {
@@ -157,6 +161,21 @@ describe('inferTypes', () => {
       [8n, '(int) => (A(int) | B({}))'],
       [9n, '(int) => (A(int) | B({}))'],
     ])
+  })
+
+  it('infers types for different sum type declarations with the same label but different values', () => {
+    const text = `
+module A {
+  type T1 = | A(int)
+}
+
+module B {
+  type T2 = | A(bool)
+}
+`
+
+    const [errors, _] = inferTypesForModules(text)
+    assert.deepEqual([...errors.entries()], [])
   })
 
   it('infers types for match expression', () => {
