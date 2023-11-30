@@ -25,6 +25,7 @@ result () {
     fi
     # Skip verification for specs that do not define a state machine
     if [[ "$cmd" == "verify" && (
+            "$file" == "classic/distributed/Paxos/Voting.qnt" ||
             "$file" == "cosmos/lightclient/Blockchain.qnt" ||
             "$file" == "cosmos/lightclient/LCVerificationApi.qnt" ||
             "$file" == "cosmos/lightclient/typedefs.qnt" ||
@@ -47,9 +48,7 @@ result () {
     fi
 
     # Print additional explanations
-    if [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" && "$cmd" == verify ]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/issues/1034</sup>"
-    elif [[ "$file" == "classic/distributed/Paxos/Voting.qnt" && "$cmd" == verify ]] ; then
+    if [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" &&  "$cmd" == verify ]] ; then
       printf "<sup>https://github.com/informalsystems/quint/issues/1034</sup>"
     elif [[ "$file" == "classic/distributed/TwoPhaseCommit/two_phase_commit.qnt" && "$cmd" == verify ]] ; then
       printf "<sup>https://github.com/informalsystems/quint/issues/1034</sup>"
