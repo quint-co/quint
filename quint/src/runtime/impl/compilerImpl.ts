@@ -161,6 +161,8 @@ export class CompilerVisitor implements IRVisitor {
   // execution listener
   private execListener: ExecutionListener
   // the current depth of operator definitions: top-level defs are depth 0
+  // FIXME(#1279): The walk* functions update this value, but they need to be
+  // initialized to -1 here for that to work on all scenarios.
   definitionDepth: number = -1
 
   constructor(

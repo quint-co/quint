@@ -214,18 +214,20 @@ export function sumToString(s: QuintSumType): string {
 }
 
 function sumFieldsToString(r: ConcreteRow): string {
-  return r.fields
-    .map((f: RowField) => {
-      if (isUnitType(f.fieldType)) {
-        return `${f.fieldName}`
-      } else {
-        return `${f.fieldName}(${typeToString(f.fieldType)})`
-      }
-    })
-    // We are not exposing open rows in sum types currently
-    // So we do not show show row variables.
-    .concat(r.other.kind === 'row' ? [sumFieldsToString(r.other)] : [])
-    .join(' | ')
+  return (
+    r.fields
+      .map((f: RowField) => {
+        if (isUnitType(f.fieldType)) {
+          return `${f.fieldName}`
+        } else {
+          return `${f.fieldName}(${typeToString(f.fieldType)})`
+        }
+      })
+      // We are not exposing open rows in sum types currently
+      // So we do not show show row variables.
+      .concat(r.other.kind === 'row' ? [sumFieldsToString(r.other)] : [])
+      .join(' | ')
+  )
 }
 
 /**
