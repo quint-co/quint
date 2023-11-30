@@ -430,10 +430,6 @@ export class ToIrListener implements QuintListener {
         // This shouldn't be visible to users
         const paramName = `__${fieldName}Param`
 
-        // def declarations and the lambdas they are associated with should share
-        // the same ID
-        const declarationId = this.getId(variantCtx)
-
         let qualifier: OpQualifier
         let expr: QuintEx
         let typeAnnotation: QuintType
@@ -480,10 +476,10 @@ export class ToIrListener implements QuintListener {
           }
 
           typeAnnotation = { kind: 'oper', args: [fieldType], res: typeName }
-          expr = { id: declarationId, kind: 'lambda', params, qualifier, expr: variant }
+          expr = { id: this.getId(variantCtx), kind: 'lambda', params, qualifier, expr: variant }
         }
 
-        return { id: declarationId, kind: 'def', name: fieldName, qualifier, typeAnnotation, expr }
+        return { id: this.getId(variantCtx), kind: 'def', name: fieldName, qualifier, typeAnnotation, expr }
       }
     )
 
