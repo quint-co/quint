@@ -23,7 +23,10 @@ import { unreachable } from '../util'
  */
 export interface IRVisitor {
   /* Keeps track of the depth of the current definition, to be updated by the
-   * walk* functions and used by implementations of the interface */
+   * walk* functions and used by implementations of the interface. Should be
+   * initialized to -1, so if `walkDefinition` is called from a different place
+   * than `walkDeclaration` (which does set this to -1), the increments and
+   * decrements work as expected. */
   definitionDepth?: number
 
   enterModule?: (_module: ir.QuintModule) => void
