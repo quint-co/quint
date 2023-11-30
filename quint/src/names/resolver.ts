@@ -43,7 +43,11 @@ class NameResolver implements IRVisitor {
   collector: NameCollector
   errors: QuintError[] = []
   table: LookupTable = new Map()
-  private definitionDepth: number = 0
+
+  // the current depth of operator definitions: top-level defs are depth 0
+  // FIXME(#1279): The walk* functions update this value, but they need to be
+  // initialized to -1 here for that to work on all scenarios.
+  definitionDepth: number = -1
 
   constructor() {
     this.collector = new NameCollector()
@@ -73,12 +77,6 @@ class NameResolver implements IRVisitor {
     if (this.definitionDepth > 0) {
       this.collector.collectDefinition({ ...def, depth: this.definitionDepth })
     }
-
-    this.definitionDepth++
-  }
-
-  exitOpDef(_def: QuintOpDef): void {
-    this.definitionDepth--
   }
 
   exitLet(expr: QuintLet): void {
