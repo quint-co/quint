@@ -414,8 +414,8 @@ export class ToIrListener implements QuintListener {
     // We will generate
     //
     // ```
-    // def A(__AParam) = variant("A", __AParam)
-    // val B = {}
+    // def A(__AParam: int) : T = variant("A", __AParam)
+    // val B : T = {}
     // ```
     //
     // Allowing users to write:
