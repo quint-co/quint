@@ -17,4 +17,34 @@ module commonSpells {
     assert(setSum(2.to(4)) == 9),
     assert(setSum(Set(-4, 4, 5)) == 5),
   }
+
+   /// Get the set of values of a map.
+   ///
+   /// - @param __map a map from type a to type b
+   /// - @returns the set of all values in the map
+  pure def mapValuesSet(__map: a -> b): Set[b] = {
+    __map.keys().map(k => __map.get(k))
+  }
+
+  run mapValuesSetTest = all {
+    assert(mapValuesSet(Map()) == Set()),
+    assert(mapValuesSet(Map(1 -> 2, 2 -> 3)) == Set(2, 3)),
+    assert(mapValuesSet(Map(1 -> 2, 2 -> 3, 3 -> 2)) == Set(2, 3)),
+  }
+
+   /// Get the list of values from a map.
+   ///
+   /// - @param __map a map from type a to type b
+   /// - @returns the list of all values in the map
+  pure def mapValuesList(__map: a -> b): List[b] = {
+    __map.keys().fold([], (__list, __k) => __list.append(__map.get(__k)))
+  }
+
+  run mapValuesListTest = all {
+    assert(mapValuesList(Map()) == []),
+    assert(mapValuesList(Map(1 -> 2, 2 -> 3)) == [2, 3]),
+    assert(mapValuesList(Map(1 -> 2, 2 -> 3, 3 -> 2)) == [2,3,2]),
+  }
+  
+
 }
