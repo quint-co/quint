@@ -14,6 +14,7 @@ import { chunk } from 'lodash'
 import { QuintApp, QuintStr } from './ir/quintIr'
 
 import { QuintEx } from './ir/quintIr'
+import { unreachable } from './util'
 
 /** The type of IFT traces.
  * See https://github.com/informalsystems/apalache/blob/main/docs/src/adr/015adr-trace.md */
@@ -42,6 +43,7 @@ export type ItfValue =
   | ItfMap
   | ItfUnserializable
   | ItfRecord
+  | ItfVariant
 
 type ItfBigint = { '#bigint': string }
 type ItfTup = { '#tup': ItfValue[] }
@@ -49,6 +51,7 @@ type ItfSet = { '#set': ItfValue[] }
 type ItfMap = { '#map': [ItfValue, ItfValue][] }
 type ItfUnserializable = { '#unserializable': string }
 type ItfRecord = { [index: string]: ItfValue }
+type ItfVariant = { tag: ItfValue; value: ItfValue }
 
 // Type predicates to help with type narrowing
 function isBigint(v: ItfValue): v is ItfBigint {
@@ -65,6 +68,10 @@ function isSet(v: ItfValue): v is ItfSet {
 
 function isMap(v: ItfValue): v is ItfMap {
   return (v as ItfMap)['#map'] !== undefined
+}
+
+function isVariant(v: ItfValue): v is ItfVariant {
+  return (v as ItfVariant)['tag'] !== undefined
 }
 
 function isUnserializable(v: ItfValue): v is ItfUnserializable {
@@ -140,11 +147,16 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrac
               )
             )
 
+          case 'variant':
+            return merge(ex.args.map(exprToItf)).map(([label, value]) => ({ tag: label, value: value }))
+
           default:
+            // TODO unreachable(ex)
             return left(`Unexpected operator type: ${ex.opcode}`)
         }
 
       default:
+        // TODO unreachable(ex)
         return left(`Unexpected expression kind: ${ex.kind}`)
     }
   }
@@ -209,6 +221,10 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
         opcode: 'Map',
         args,
       }
+    } else if (isVariant(value)) {
+      const l = ofItfValue(value.tag)
+      const v = ofItfValue(value.value)
+      return { id, kind: 'app', opcode: 'variant', args: [l, v] }
     } else if (typeof value === 'object') {
       // Any other object must represent a record
       // For each key/value pair in the object, form the quint expressions representing
