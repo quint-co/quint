@@ -34,12 +34,12 @@ describe('checkModes', () => {
       [...errors.entries()],
       [
         [
-          12n,
+          13n,
           {
             message:
               "def operators may only read state variables, but operator `a` updates variables 'x'. Use action instead.",
             code: 'QNT200',
-            reference: 12n,
+            reference: 13n,
             data: { fix: { kind: 'replace', original: 'def', replacement: 'action' } },
           },
         ],
@@ -71,7 +71,7 @@ describe('checkModes', () => {
     const [errors, suggestions] = checkMockedDefs(defs)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
-    assert.sameDeepMembers([...suggestions.entries()], [[12n, 'def']])
+    assert.sameDeepMembers([...suggestions.entries()], [[13n, 'def']])
   })
 
   it('finds mode errors between pureval and val', () => {
@@ -114,12 +114,12 @@ describe('checkModes', () => {
       [...errors.entries()],
       [
         [
-          11n,
+          12n,
           {
             message:
               "pure def operators may not interact with state variables, but operator `f` reads variables 'y'. Use def instead.",
             code: 'QNT200',
-            reference: 11n,
+            reference: 12n,
             data: { fix: { kind: 'replace', original: 'pure def', replacement: 'def' } },
           },
         ],
@@ -133,7 +133,7 @@ describe('checkModes', () => {
     const [errors, suggestions] = checkMockedDefs(defs)
 
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(quintErrorToString)}`)
-    assert.sameDeepMembers([...suggestions.entries()], [[10n, 'puredef']])
+    assert.sameDeepMembers([...suggestions.entries()], [[11n, 'puredef']])
   })
 
   it('finds mode errors between val and temporal', () => {
@@ -245,12 +245,12 @@ describe('checkModes', () => {
       [...errors.entries()],
       [
         [
-          12n,
+          13n,
           {
             message:
               'pure val operators may not have parameters, but operator `foo` has 1 parameter. Use pure def instead.',
             code: 'QNT200',
-            reference: 12n,
+            reference: 13n,
             data: { fix: { kind: 'replace', original: 'pure val', replacement: 'pure def' } },
           },
         ],
@@ -267,11 +267,11 @@ describe('checkModes', () => {
       [...errors.entries()],
       [
         [
-          12n,
+          13n,
           {
             message: 'val operators may not have parameters, but operator `foo` has 1 parameter. Use def instead.',
             code: 'QNT200',
-            reference: 12n,
+            reference: 13n,
             data: { fix: { kind: 'replace', original: 'val', replacement: 'def' } },
           },
         ],
@@ -288,12 +288,12 @@ describe('checkModes', () => {
       [...errors.entries()],
       [
         [
-          12n,
+          13n,
           {
             message:
               "pure val operators may not interact with state variables, but operator `foo` reads variables 'x'. Use def instead.",
             code: 'QNT200',
-            reference: 12n,
+            reference: 13n,
             data: { fix: { kind: 'replace', original: 'pure val', replacement: 'def' } },
           },
         ],

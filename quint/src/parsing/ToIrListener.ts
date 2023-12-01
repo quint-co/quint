@@ -245,12 +245,11 @@ export class ToIrListener implements QuintListener {
     }
 
     let body = expr
-    const id = this.getId(ctx)
 
     if (params.length > 0) {
       // if the definition has parameters, introduce a lambda
       body = {
-        id,
+        id: this.getId(ctx),
         kind: 'lambda',
         params,
         qualifier,
@@ -258,7 +257,7 @@ export class ToIrListener implements QuintListener {
       }
     }
     const def: QuintOpDef = {
-      id,
+      id: this.getId(ctx),
       kind: 'def',
       name,
       qualifier,
