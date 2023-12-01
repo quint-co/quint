@@ -14,7 +14,6 @@ import { chunk } from 'lodash'
 import { QuintApp, QuintStr } from './ir/quintIr'
 
 import { QuintEx } from './ir/quintIr'
-import { unreachable } from './util'
 
 /** The type of IFT traces.
  * See https://github.com/informalsystems/apalache/blob/main/docs/src/adr/015adr-trace.md */
@@ -151,12 +150,10 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrac
             return merge(ex.args.map(exprToItf)).map(([label, value]) => ({ tag: label, value: value }))
 
           default:
-            // TODO unreachable(ex)
             return left(`Unexpected operator type: ${ex.opcode}`)
         }
 
       default:
-        // TODO unreachable(ex)
         return left(`Unexpected expression kind: ${ex.kind}`)
     }
   }
