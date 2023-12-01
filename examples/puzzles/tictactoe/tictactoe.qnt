@@ -53,8 +53,8 @@ module tictactoe {
   }
 
   def isEmpty(coordinate) = match square(coordinate) {
-    | Empty       => true
-    | Occupied(_) => false
+    | Empty  => true
+    | _      => false
   }
 
   val boardEmpty = boardCoordinates.forall(isEmpty)
