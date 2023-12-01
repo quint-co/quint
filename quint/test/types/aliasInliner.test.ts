@@ -71,9 +71,9 @@ describe('inlineAliases', () => {
 
     const expectedModule = dedent(`module A {
                                   |  type T1 = (B({}) | C({}))
+                                  |  val C: (B({}) | C({})) = variant("C", Rec())
                                   |  type T2 = (Some((B({}) | C({}))) | None({}))
                                   |  val B: (B({}) | C({})) = variant("B", Rec())
-                                  |  val C: (B({}) | C({})) = variant("C", Rec())
                                   |  def Some: ((B({}) | C({}))) => (Some((B({}) | C({}))) | None({})) = ((__SomeParam) => variant("Some", __SomeParam))
                                   |  val None: (Some((B({}) | C({}))) | None({})) = variant("None", Rec())
                                   |  var x: (Some((B({}) | C({}))) | None({}))
