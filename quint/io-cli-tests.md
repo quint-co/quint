@@ -1055,3 +1055,19 @@ rm firstTest.itf.json secondTest.itf.json
 [{"#meta":{"index":0},"x":{"#bigint":"0"}},{"#meta":{"index":1},"x":{"#bigint":"1"}}]
 [{"#meta":{"index":0},"x":{"#bigint":"0"}},{"#meta":{"index":1},"x":{"#bigint":"2"}}]
 ```
+
+### Variants are supported in ITF
+
+See [#1281](https://github.com/informalsystems/quint/issues/1281)
+
+<!-- !test in variants in itf -->
+```
+quint test --output {}.itf.json ./testFixture/_1054sumTypesInItf.qnt >/dev/null
+cat xTest.itf.json | jq -c .states
+rm xTest.itf.json
+```
+
+<!-- !test out variants in itf -->
+```
+[{"#meta":{"index":0},"x":{"tag":"None","value":{}}},{"#meta":{"index":1},"x":{"tag":"Some","value":{"#bigint":"1"}}},{"#meta":{"index":2},"x":{"tag":"Some","value":{"#bigint":"2"}}}]
+```

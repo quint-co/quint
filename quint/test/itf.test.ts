@@ -47,6 +47,7 @@ describe('toItf', () => {
   g: Map(1 -> "a", 2 -> "b", 3 -> "c"),
   h: Map(),
   i: Map(1 -> "a"),
+  j: variant("A", 2)
 }
 `
     const trace = [buildExpression(text)]
@@ -74,6 +75,7 @@ describe('toItf', () => {
           },
           h: { '#map': [] },
           i: { '#map': [[{ '#bigint': '1' }, 'a']] },
+          j: { tag: 'A', value: { '#bigint': '2' } },
         },
       ],
     }
