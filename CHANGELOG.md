@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix incorrect type checking failure from interference between sum types
   sharing variant labels (#1275)
 - Fix the IDs generated for operator definition bodies (#1280)
+- Fixed missing support for sum type variants in ITF traces (#1281)
 
 ### Security
 
