@@ -38,6 +38,7 @@ import { getSignatures, standardPropagation } from './builtinSignatures'
 import { FreshVarGenerator } from '../FreshVarGenerator'
 import { effectToString } from './printing'
 import { zip } from 'lodash'
+import { addNamespaces } from './namespaces'
 
 export type EffectInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, EffectScheme>]
 
@@ -366,7 +367,18 @@ export class EffectInferrer implements IRVisitor {
       }
 
       return this.fetchResult(id).map(e => {
-        return this.newInstance(e)
+        const effect = this.newInstance(e)
+        if (def.importedFrom?.kind === 'instance') {
+          // Names imported from instances might have effects that refer to
+          // names that are shared between multiple instances. To properly infer
+          // effects refering to those state variables, they need to be
+          // namespaced in a way that makes them different between different
+          // instances. For that, we use the namespaces attribute from lookup
+          // table definition, which contains the proper namespaces to identify
+          // unique names while flattening.
+          return addNamespaces(effect, def.namespaces ?? [])
+        }
+        return effect
       })
     }
   }
