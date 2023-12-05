@@ -369,3 +369,10 @@ See [#1195](https://github.com/informalsystems/quint/issues/1195).
 <!-- !test exit 0 -->
 <!-- !test check test the default module -->
     quint test ./testFixture/_1050diffName.qnt
+
+### OK on parse 1108
+
+Regression test for [#1108](https://github.com/informalsystems/quint/issues/1108).
+
+<!-- !test check 1108 -->
+    quint parse testFixture/_1052one.qnt

@@ -22,6 +22,13 @@ import { unreachable } from '../util'
  * Optionally defines functions for each IR component.
  */
 export interface IRVisitor {
+  /* Keeps track of the depth of the current definition, to be updated by the
+   * walk* functions and used by implementations of the interface. Should be
+   * initialized to -1, so if `walkDefinition` is called from a different place
+   * than `walkDeclaration` (which does set this to -1), the increments and
+   * decrements work as expected. */
+  definitionDepth?: number
+
   enterModule?: (_module: ir.QuintModule) => void
   exitModule?: (_module: ir.QuintModule) => void
 
@@ -261,12 +268,21 @@ export function walkDeclaration(visitor: IRVisitor, decl: ir.QuintDeclaration): 
     visitor.enterDecl(decl)
   }
 
+  // The standard depth starts at 0, so definitions inside delclarations (i.e.
+  // assume and instance overrides) are not considered top-level
+  visitor.definitionDepth = 0
+
   switch (decl.kind) {
     case 'const':
     case 'var':
-    case 'def':
     case 'typedef':
     case 'assume':
+      walkDefinition(visitor, decl)
+      break
+    case 'def':
+      // depth will be increased inside `walkDefinition`, so we set it to -1 in
+      // order for it to be 0 there
+      visitor.definitionDepth = -1
       walkDefinition(visitor, decl)
       break
     case 'instance':
@@ -312,9 +328,14 @@ export function walkDeclaration(visitor: IRVisitor, decl: ir.QuintDeclaration): 
  * @returns nothing, any collected information has to be a state inside the IRVisitor instance.
  */
 export function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
+  if (visitor.definitionDepth !== undefined) {
+    visitor.definitionDepth++
+  }
+
   if (visitor.enterDef) {
     visitor.enterDef(def)
   }
+
   if (ir.isAnnotatedDef(def)) {
     walkType(visitor, def.typeAnnotation)
   } else if (ir.isTypeAlias(def)) {
@@ -371,6 +392,10 @@ export function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
   }
   if (visitor.exitDef) {
     visitor.exitDef(def)
+  }
+
+  if (visitor.definitionDepth !== undefined) {
+    visitor.definitionDepth--
   }
 }
 

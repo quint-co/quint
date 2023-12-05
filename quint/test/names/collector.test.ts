@@ -224,6 +224,26 @@ describe('NameCollector', () => {
         { code: 'QNT404', message: "Name 'test_module::other' not found", reference: 0n, data: {} },
       ])
     })
+
+    it('does not collect nested defs inside assume', () => {
+      const quintModule = buildModuleWithDecls(['assume _ = val foo = 1 { foo }'], undefined, zerog)
+
+      const [errors, definitions] = collect(quintModule)
+
+      assert.isEmpty(errors)
+
+      assert.isFalse(definitions.has('foo'))
+    })
+
+    it('does not collect nested defs inside instances', () => {
+      const quintModule = buildModuleWithDecls(['import test_module(c1 = (val foo = 1 { foo })).*'], undefined, zerog)
+
+      const [errors, definitions] = collect(quintModule)
+
+      assert.isEmpty(errors)
+
+      assert.isFalse(definitions.has('foo'))
+    })
   })
 
   describe('conflicts', () => {
