@@ -15,6 +15,7 @@ result () {
 
     # Skip tests for parameterized modules
     if [[ "$cmd" == "test" && (
+            "$file" == "classic/distributed/Paxos/Voting.qnt" ||
             "$file" == "cosmos/tendermint/Tendermint.qnt" ||
             "$file" == "cosmos/tendermint/TendermintTest.qnt" ||
             "$file" == "cosmos/lightclient/Blockchain.qnt" ||
@@ -24,6 +25,7 @@ result () {
     fi
     # Skip verification for specs that do not define a state machine
     if [[ "$cmd" == "verify" && (
+            "$file" == "classic/distributed/Paxos/Voting.qnt" ||
             "$file" == "cosmos/lightclient/Blockchain.qnt" ||
             "$file" == "cosmos/lightclient/LCVerificationApi.qnt" ||
             "$file" == "cosmos/lightclient/typedefs.qnt" ||
@@ -38,22 +40,24 @@ result () {
 
     # Run the command and record success / failure
     local quint_cmd="quint $cmd $args $file"
+    local succeeded=false
     if ($quint_cmd &> /dev/null)
     then
         printf ":white_check_mark:"
+        succeeded=true
     else
         printf ":x:"
+        succeeded=false
     fi
 
-    # Print additional explanations
-    if [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" && ( "$cmd" == "test" || "$cmd" == "verify" )]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/issues/244</sup>"
-    elif [[ "$file" == "classic/distributed/Paxos/Voting.qnt" && ( "$cmd" == "test" || "$cmd" == "verify" )]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/issues/244</sup>"
-    elif [[ "$file" == "language-features/option.qnt" && "$cmd" == verify ]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/issues/244</sup>"
-    elif [[ "$file" == "solidity/icse23-fig7/lottery.qnt" && "$cmd" == "verify" ]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/issues/1019</sup>"
+    # We only want to print additional info to annotate failing results
+    if [[ $succeeded == false ]]; then
+      # Print additional explanations
+      if [[ "$file" == "solidity/icse23-fig7/lottery.qnt" && "$cmd" == "verify" ]] ; then
+        printf "<sup>https://github.com/informalsystems/quint/issues/1285</sup>"
+      elif [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" && "$cmd" == "verify" ]] ; then
+        printf "<sup>https://github.com/informalsystems/quint/issues/1284</sup>"
+      fi
     fi
 }
 
@@ -66,6 +70,8 @@ get_main () {
     main="--main=ReadersWriters_5"
   elif [[ "$file" == "classic/distributed/ewd840/ewd840.qnt" ]] ; then
     main="--main=ewd840_3"
+  elif [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" ]] ; then
+    main="--main=Paxos_val2_accept3_quorum2"
   elif [[ "$file" == "classic/sequential/BinSearch/BinSearch.qnt" ]] ; then
     main="--main=BinSearch10"
   elif [[ "$file" == "cosmos/ics20/bank.qnt" ]] ; then
@@ -116,6 +122,8 @@ get_verify_args () {
     args="--init=n4_f1::Init --step=n4_f1::Next --invariant=n4_f1::Agreement"
   elif [[ "$file" == "cosmos/ics23/ics23.qnt" ]] ; then
     args="--init=Init --step=Next"
+  elif [[ "$file" == "puzzles/tictactoe/tictactoe.qnt" ]] ; then
+    args="--max-steps=1" # pretty slow, and we just want to check that verification can run
   fi
   echo "${args}"
 }

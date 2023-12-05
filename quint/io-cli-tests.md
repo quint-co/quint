@@ -992,6 +992,22 @@ exit $exit_code
 >>> 
 ```
 
+### Invoking `q::debug` in REPL prints values to stdout
+
+<!-- !test in repl debug prints value to stdout and returns value -->
+
+```
+echo 'q::debug("value:", { foo: 42, bar: "Hello, World!" })' | quint | tail -n +3
+```
+
+<!-- !test out repl debug prints value to stdout and returns value -->
+```
+>>> > value: { bar: "Hello, World!", foo: 42 }
+{ bar: "Hello, World!", foo: 42 }
+>>> 
+```
+
+
 ### Errors are reported in the right file
 
 File `ImportFileWithError.qnt` has no error, but it imports a module from file `FileWithError.qnt`, which has a type error. The error should be reported only in `FileWithError.qnt`.
@@ -1054,4 +1070,20 @@ rm firstTest.itf.json secondTest.itf.json
 ```
 [{"#meta":{"index":0},"x":{"#bigint":"0"}},{"#meta":{"index":1},"x":{"#bigint":"1"}}]
 [{"#meta":{"index":0},"x":{"#bigint":"0"}},{"#meta":{"index":1},"x":{"#bigint":"2"}}]
+```
+
+### Variants are supported in ITF
+
+See [#1281](https://github.com/informalsystems/quint/issues/1281)
+
+<!-- !test in variants in itf -->
+```
+quint test --output {}.itf.json ./testFixture/_1054sumTypesInItf.qnt >/dev/null
+cat xTest.itf.json | jq -c .states
+rm xTest.itf.json
+```
+
+<!-- !test out variants in itf -->
+```
+[{"#meta":{"index":0},"x":{"tag":"None","value":{}}},{"#meta":{"index":1},"x":{"tag":"Some","value":{"#bigint":"1"}}},{"#meta":{"index":2},"x":{"tag":"Some","value":{"#bigint":"2"}}}]
 ```
