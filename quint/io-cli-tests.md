@@ -992,6 +992,22 @@ exit $exit_code
 >>> 
 ```
 
+### Invoking `q::debug` in REPL prints values to stdout
+
+<!-- !test in repl debug prints value to stdout and returns value -->
+
+```
+echo 'q::debug("value:", { foo: 42, bar: "Hello, World!" })' | quint | tail -n +3
+```
+
+<!-- !test out repl debug prints value to stdout and returns value -->
+```
+>>> > value: { bar: "Hello, World!", foo: 42 }
+{ bar: "Hello, World!", foo: 42 }
+>>> 
+```
+
+
 ### Errors are reported in the right file
 
 File `ImportFileWithError.qnt` has no error, but it imports a module from file `FileWithError.qnt`, which has a type error. The error should be reported only in `FileWithError.qnt`.

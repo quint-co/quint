@@ -978,6 +978,17 @@ describe('compiling specs to runtime values', () => {
       evalVarAfterCall('n', 'run1', input).mapRight(m => assert.fail(`Expected an error, found: ${m}`))
     })
 
+    it('q::debug', () => {
+      // `q::debug(s, a)` returns `a`
+      const input = dedent(
+        `var n: int
+        |run run1 = (n' = 1).then(n' = q::debug("n plus one", n + 1))
+        `
+      )
+
+      assertVarAfterCall('n', '2', 'run1', input)
+    })
+
     it('unsupported operators', () => {
       assertResultAsString('allLists(1.to(3))', undefined)
 
