@@ -266,4 +266,28 @@ describe('inferEffects', () => {
       message: 'Expected [x] and [] to be the same',
     })
   })
+
+  it('differentiates variables from different instances', () => {
+    const baseDefs = ['const N: int', 'const S: Set[int]', 'var x: int']
+
+    const text = `
+      module base { ${baseDefs.join('\n')} }
+      module wrapper {
+       import base(N=1) as B1
+       import base(N=2) as B2
+       val a = B1::x + B2::x
+    }`
+    const { modules, table } = parseMockedModule(text)
+
+    const inferrer = new EffectInferrer(table)
+    inferrer.inferEffects(modules[0].declarations)
+    const [errors, effects] = inferrer.inferEffects(modules[1].declarations)
+    assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
+
+    const def = modules[1].declarations.find(decl => isDef(decl) && decl.name === 'a')!
+
+    const expectedEffect = "Read['wrapper::B1::x', 'wrapper::B2::x']"
+
+    assert.deepEqual(effectSchemeToString(effects.get(def.id)!), expectedEffect)
+  })
 })

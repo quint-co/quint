@@ -99,6 +99,11 @@ This example was pointing to Paxos. Now it does not typecheck.
 <!-- !test check instances - Types & Effects -->
     quint typecheck ../examples/language-features/instances.qnt
 
+### OK on run instances
+
+<!-- !test check instances - Run -->
+    quint run ../examples/language-features/instances.qnt --invariant=inv
+
 ### OK on parse instancesFrom
 
 <!-- !test check instancesFrom -->
