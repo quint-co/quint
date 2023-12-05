@@ -125,7 +125,7 @@ const otherOperators = [
   { name: 'reps', type: '(int, int => bool) => bool' },
   { name: 'fail', type: '(bool) => bool' },
   { name: 'assert', type: '(bool) => bool' },
-  { name: 'debug', type: '(str, a) => a' },
+  { name: 'q::debug', type: '(str, a) => a' },
 ]
 
 function uniformArgsWithResult(argsType: string, resultType: string): Signature {
