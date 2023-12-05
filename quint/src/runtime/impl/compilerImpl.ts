@@ -914,15 +914,6 @@ export class CompilerVisitor implements IRVisitor {
           this.translateAllOrThen(app)
           break
 
-        case 'debug':
-          this.applyFun(app.id, 2, (msg, value) => {
-            let columns = terminalWidth()
-            let valuePretty = format(columns, 0, prettyQuintEx(value.toQuintEx(zerog)))
-            console.log('>', msg.toStr(), valuePretty.toString())
-            return just(value)
-          })
-          break
-
         case 'fail':
           this.applyFun(app.id, 1, result => {
             return just(rv.mkBool(!result.toBool()))
@@ -952,6 +943,16 @@ export class CompilerVisitor implements IRVisitor {
           // the special operator that runs random simulation
           this.testOnce(app.id)
           break
+
+        case 'q::debug':
+          this.applyFun(app.id, 2, (msg, value) => {
+            let columns = terminalWidth()
+            let valuePretty = format(columns, 0, prettyQuintEx(value.toQuintEx(zerog)))
+            console.log('>', msg.toStr(), valuePretty.toString())
+            return just(value)
+          })
+          break
+
 
         // standard unary operators that are not handled by REPL
         case 'allLists':

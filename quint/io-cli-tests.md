@@ -992,12 +992,12 @@ exit $exit_code
 >>> 
 ```
 
-### Invoking `debug` in REPL prints values to stdout
+### Invoking `q::debug` in REPL prints values to stdout
 
 <!-- !test in repl debug prints value to stdout and returns value -->
 
 ```
-echo 'debug("value:", { foo: 42, bar: "Hello, World!" })' | quint | tail -n +3
+echo 'q::debug("value:", { foo: 42, bar: "Hello, World!" })' | quint | tail -n +3
 ```
 
 <!-- !test out repl debug prints value to stdout and returns value -->

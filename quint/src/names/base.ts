@@ -196,7 +196,6 @@ export const builtinNames = [
   'reps',
   'fail',
   'assert',
-  'debug',
   'orKeep',
   'mustChange',
   'enabled',
@@ -236,4 +235,5 @@ export const builtinNames = [
   'difference',
   'matchVariant',
   'variant',
+  'q::debug',
 ]

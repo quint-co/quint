@@ -835,7 +835,7 @@ module builtin {
   /// ```
   action assert(p): (bool) => bool
 
-  /// `debug(msg, value)` prints the given message and value to the console,
+  /// `q::debug(msg, value)` prints the given message and value to the console,
   /// separated by a space.
   ///
   /// It also returns the given value unchanged,
@@ -845,13 +845,13 @@ module builtin {
   ///
   /// ```
   /// var x: int
-  /// >>> (x' = 0).then(3.reps(i => x' = debug("new x:", x + 1)))
+  /// >>> (x' = 0).then(3.reps(i => x' = q::debug("new x:", x + 1)))
   /// > new x: 1
   /// > new x: 2
   /// > new x: 3
   /// true
   /// ```
-  pure def debug(msg, value): (str, a) => a
+  pure def q::debug(msg, value): (str, a) => a
 
   // /// `List(e0, ..., en)` is a list of values `e0`, ..., `en`.
   // ///

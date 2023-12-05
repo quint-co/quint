@@ -908,9 +908,9 @@ action Next = x' = x + 1
 run test = Init.then(all { Next, assert(x > 0) })
 ```
 
-## `pure def debug: (str, a) => a`
+## `pure def q::debug: (str, a) => a`
 
-`debug(msg, value)` prints the given message and value to the console,
+`q::debug(msg, value)` prints the given message and value to the console,
 separated by a space.
 
 It also returns the given value unchanged,
@@ -920,7 +920,7 @@ so that it can be used directly within expressions.
 
 ```
 var x: int
->>> (x' = 0).then(3.reps(i => x' = debug("new x:", x + 1)))
+>>> (x' = 0).then(3.reps(i => x' = q::debug("new x:", x + 1)))
 > new x: 1
 > new x: 2
 > new x: 3

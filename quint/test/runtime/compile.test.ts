@@ -978,11 +978,11 @@ describe('compiling specs to runtime values', () => {
       evalVarAfterCall('n', 'run1', input).mapRight(m => assert.fail(`Expected an error, found: ${m}`))
     })
 
-    it('debug', () => {
-      // `debug(s, a)` returns `a`
+    it('q::debug', () => {
+      // `q::debug(s, a)` returns `a`
       const input = dedent(
         `var n: int
-        |run run1 = (n' = 1).then(n' = debug("n plus one", n + 1))
+        |run run1 = (n' = 1).then(n' = q::debug("n plus one", n + 1))
         `
       )
 
