@@ -51,7 +51,11 @@ function addNamespacesToEntity(entity: Entity, namespaces: string[]): Entity {
       return { ...entity, entities: entity.entities.map(p => addNamespacesToEntity(p, namespaces)) }
     }
     case 'concrete': {
-      const pathPrefix = [...namespaces].reduce((a, b) => `${a}::${b}`)
+      if (namespaces.length === 0) {
+        return entity
+      }
+
+      const pathPrefix = namespaces.reduce((a, b) => `${b}::${a}`)
       return {
         ...entity,
         stateVariables: entity.stateVariables.map(v => ({
