@@ -953,7 +953,6 @@ export class CompilerVisitor implements IRVisitor {
           })
           break
 
-
         // standard unary operators that are not handled by REPL
         case 'allLists':
         case 'chooseSome':
