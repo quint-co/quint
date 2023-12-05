@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 ### Fixed
 
-- The effect checker now distinguished variables from different instances (#1290)
+- The effect checker now distinguishes variables from different instances (#1290)
 
 ### Security
 
