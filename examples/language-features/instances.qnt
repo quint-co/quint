@@ -7,6 +7,13 @@ module A {
   pure def g(b) = not(b)
 }
 
+module withVar {
+  const N: int
+  var counter: int
+
+  action init = counter' = 0
+}
+
 module instances {
   pure val MyY = true
   pure val z = "world"
@@ -24,6 +31,16 @@ module instances {
   // the above is equivalent to TLA+'s instance:
   // A2 == INSTANCE A WITH x <- 15, y <- MyY
 
-  action init = true
-  action step = true
+  // module withVar has state variables
+  import withVar(N=1) as V1
+  import withVar(N=2) as V2
+
+  action init = all { V1::init, V2::init }
+  action step = all {
+    V1::counter' = V1::counter + 1,
+    V2::counter' = V2::counter + 2,
+  }
+
+  // The two variables should increment independently
+  val inv = V1::counter == 0 or V2::counter > V1::counter
 }
