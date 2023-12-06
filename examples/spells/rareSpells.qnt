@@ -11,6 +11,9 @@
 module rareSpells {
 
   /// The type of orderings between comparable things
+  // Follows https://hackage.haskell.org/package/base-4.19.0.0/docs/Data-Ord.html#t:Ordering
+  // and we think there are likely benefits to using 3 constant values rather than the more
+  // common integer range in Apalache.
   type Ordering =
     | EQ
     | LT
