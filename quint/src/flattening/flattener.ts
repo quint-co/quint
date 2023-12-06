@@ -207,9 +207,9 @@ class Flattener implements IRVisitor {
 }
 
 export function getNamespaceForDef(def: LookupDefinition): string | undefined {
-  if (!def.namespaces) {
+  if (!def.namespaces || def.namespaces.length === 0) {
     return
   }
 
-  return [...def.namespaces].reverse().join('::')
+  return def.namespaces.reduce((a, b) => `${b}::${a}`)
 }

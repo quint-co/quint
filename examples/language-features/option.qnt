@@ -2,41 +2,40 @@ module option {
   // A demonstration of sum types, specifying an option type.
 
   // An option type for int values.
-  // Polymorphic sum types are not yet supported: https://github.com/informalsystems/quint/issues/1073
-  type Vote_option =
+  type VoteOption =
     | None
     | Some(int)
 
-  var votes: List[Vote_option]
+  var votes: List[VoteOption]
   var outcome: int
 
-  action Init = all {
+  action init = all {
     votes' = [],
     outcome' = 0
   }
 
-  action Vote(v) = {
+  action vote(v) = {
     votes' = votes.append(Some(v))
   }
 
-  action Unvote(i) = all {
+  action unvote(i) = all {
     votes[i] != None,
     votes' = votes.replaceAt(i, None),
   }
 
-  val SumVotes =
-    votes.foldl(0, (sum, vote) => match vote {
-        | Some(v) => sum + v
+  val sumVotes =
+    votes.foldl(0, (sum, v) => match v {
+        | Some(n) => sum + n
         | None    => sum
       }
     )
 
-  action Next = all {
+  action step = all {
     any {
-      nondet v = oneOf(Int); Vote(v),
-      nondet i = oneOf(votes.indices()); Unvote(i),
+      nondet v = oneOf(Int); vote(v),
+      nondet i = oneOf(votes.indices()); unvote(i),
     },
-    outcome' = SumVotes
+    outcome' = sumVotes
   }
 
   run matchWithDefaultTest = {
