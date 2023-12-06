@@ -17,7 +17,7 @@ module Paxos {
 
   assume _ = and {
       Quorum.forall(Q => Q.subseteq(Acceptor)),
-      tuples(Quorum, Quorum).forall((Q1, Q2) => (Q1.intersect(Q2)) != Set())
+      tuples(Quorum, Quorum).forall( ((Q1, Q2)) => (Q1.intersect(Q2)) != Set())
   }
 
   val Ballot = Nat
@@ -34,14 +34,40 @@ module Paxos {
   var maxVal:   str -> int  // ballot number cast by a; it equals <<-1, None>> if
                             // a has not cast any vote.
 
-  // A union type for records representing messages.
+  // Particular message types we need to refer to later:
+  type Msg1bT = { acceptor: str, bal: int, mbal: int, mval: int }
+  type Msg2aT = { bal: int, value: int }
+
+  // A union type for records representing different types of messages.
   type MSG =
-      | { tag: "1a", bal: int }
-      | { tag: "1b", acceptor: str, bal: int, mbal: int, mval: int }
-      | { tag: "2a", bal: int, value: int }
-      | { tag: "2b", acc: str, bal: int, value: int }
+      | Msg1a({ bal: int })
+      | Msg1b(Msg1bT)
+      | Msg2a(Msg2aT)
+      | Msg2b({ acc: str, bal: int, value: int })
 
   var msgs: Set[MSG] // The set of all messages that have been sent.
+
+  // Access the balance of a message, irrespictive of the message variant
+  def balance(m: MSG): int = match m {
+    | Msg1a(mm) => mm.bal
+    | Msg1b(mm) => mm.bal
+    | Msg2a(mm) => mm.bal
+    | Msg2b(mm) => mm.bal
+  }
+
+  // Filter a set of messager into just 1b messages
+  def filterMsg1b(ms: Set[MSG]): Set[Msg1bT] =
+    ms.fold(Set(), (acc, m) => match m {
+      | Msg1b(m1b) => acc.union(Set(m1b))
+      | _          => acc
+    })
+
+  // Filter a set of messager into just 2a messages
+  def filterMsg2a(ms: Set[MSG]): Set[Msg2aT] =
+    ms.fold(Set(), (acc, m) => match m {
+      | Msg2a(m2a) => acc.union(Set(m2a))
+      | _          => acc
+    })
 
   /***************************************************************************)
   (* NOTE:                                                                   *)
@@ -87,7 +113,7 @@ module Paxos {
   (* The actions.  We begin with the subaction (an action that will be used  *)
   (* to define the actions that make up the next-state action.               *)
   (***************************************************************************/
-  action Send(m) = {
+  action Send(m: MSG): bool = {
       msgs' = msgs.union(Set(m))
   }
 
@@ -98,7 +124,7 @@ module Paxos {
   (* m with m.type = "1a") that begins ballot b.                             *)
   (***************************************************************************/
   action Phase1a(b) = all {
-      Send({ tag: "1a", bal: b }),
+      Send(Msg1a({ bal: b })),
       maxVBal' = maxVBal,
       maxVal'  = maxVal,
   }
@@ -110,12 +136,11 @@ module Paxos {
   (* maxVBal[a] and maxVal[a].                                               *)
   (***************************************************************************/
   action Phase1b(a) = {
-      nondet m = msgs.filter(m2 => m2.tag == "1a").oneOf()
+      nondet m = msgs.filter(m2 => match m2 { Msg1a(_) => true | _ => false }).oneOf()
       all {
-          m.bal > maxBal.get(a),
-          Send({ tag: "1b", acc: a, bal: m.bal,
-                   mbal: maxVBal.get(a), mval: maxVal.get(a) }),
-          maxBal' = maxBal.set(a, m.bal),
+          m.balance() > maxBal.get(a),
+          Send(Msg1b({ acceptor: a, bal: m.balance(), mbal: maxVBal.get(a), mval: maxVal.get(a) })),
+          maxBal' = maxBal.set(a, m.balance()),
           maxVBal' = maxVBal,
           maxVal'  = maxVal,
       }
@@ -142,14 +167,13 @@ module Paxos {
   (* greater than b (thereby promising not to vote in ballot b).             *)
   (***************************************************************************/
   action Phase2a(b, v) = all {
-    not(msgs.filter(m => m.tag == "2a")
-            .exists(m => m.bal == b)),
+    not(msgs.exists(m => match m { Msg2a(m2a) => m2a.bal == b | _ => false })),
     Quorum.exists(Q =>
-      val Q1b = msgs.filter(m => m.tag == "1b")
-                    .filter(m => (m.acc.in(Q)) and (m.bal == b))
+      val Q1b = msgs.filterMsg1b()
+                    .filter(m => (m.acceptor.in(Q)) and (m.bal == b))
       val Q1bv = Q1b.filter(m => m.mbal >= 0)
       and {
-          Q.forall(a => Q1b.exists(m => m.acc == a)),
+          Q.forall(a => Q1b.exists(m => m.acceptor == a)),
           or {
               Q1bv == Set(),
               Q1bv.exists(m => or {
@@ -159,7 +183,7 @@ module Paxos {
           }
       }
     ),
-    Send({ tag: "2a", bal: b, value: v }),
+    Send(Msg2a({ bal: b, value: v })),
     maxVBal' = maxVBal,
     maxVal'  = maxVal,
   }
@@ -174,10 +198,10 @@ module Paxos {
   (* message's.  ballot number                                               *)
   (***************************************************************************/
   action Phase2b(a) = {
-    nondet m = msgs.filter(m2 => m2.tag == "2a").oneOf()
+    nondet m = msgs.filterMsg2a().oneOf()
     all {
       m.bal >= maxBal.get(a),
-      Send({ tag: "2b", acc: a, bal: m.bal, value: m.value }),
+      Send(Msg2b({ acc: a, bal: m.bal, value: m.value })),
       maxBal'  = maxBal.set(a, m.bal),
       maxVBal' = maxVBal.set(a, m.bal),
       maxVal'  = maxVal.set(a, m.value),
@@ -221,11 +245,13 @@ module Paxos {
   (* the array `votes' describing the votes cast by the acceptors is defined *)
   (* as follows.                                                             *)
   (***************************************************************************/
-  val votes = Acceptor.mapBy( a =>
-             msgs.filter(mm => mm.tag == "2b")
-                 .filter(mm => mm.acc == a)
-                 .map(m => (m.bal, m.value))
-  )
+  val votes =
+    Acceptor.mapBy(a =>
+      msgs.fold(Set(), (acc, mm) =>
+        match mm {
+        | Msg2b(m) => if (m.acc == a) acc.union(Set((m.bal, m.value))) else acc
+        | _ => acc }))
+
   /***************************************************************************)
   (* We now instantiate module Voting, substituting the constants Value,     *)
   (* Acceptor, and Quorum declared in this module for the corresponding      *)
@@ -251,11 +277,11 @@ module Paxos {
          maxVal.get(a) == None
          else (maxVBal.get(a), maxVal.get(a)).in(votes.get(a))
      ),
-     msgs.filter(m => m.tag == "1b")
+     msgs.filterMsg1b()
          .forall(m =>
-            (maxBal.get(m.acc) >= m.bal
-                and ((m.mbal >= 0) implies (m.mbal, m.mval).in(votes.get(m.acc))))),
-     val M2as = msgs.filter( m => m.tag == "2a" )
+            (maxBal.get(m.acceptor) >= m.bal
+                and ((m.mbal >= 0) implies (m.mbal, m.mval).in(votes.get(m.acceptor))))),
+     val M2as = msgs.filterMsg2a()
      M2as.forall(m => and {
         Quorum.exists(Q => V::ShowsSafeAt(Q, m.bal, m.value)),
         M2as.forall(mm =>

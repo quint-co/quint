@@ -1,14 +1,14 @@
-# Quint
+# Quint Lang
 
 [![build
 badge](https://github.com/informalsystems/quint/actions/workflows/main.yml/badge.svg)](https://github.com/informalsystems/quint/actions)
 [![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/informal.quint-vscode?color=10b0f2&label=VSCode)](https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode)
 [![npm (scoped)](https://img.shields.io/npm/v/@informalsystems/quint)](https://www.npmjs.com/package/@informalsystems/quint)
 
-Quint is a modern specification language that is a particularly good fit for
-distributed systems and blockchain protocols. It combines the robust theoretical
-basis of the [Temporal Logic of Actions][TLA] (TLA) with state-of-the-art static
-analysis and development tooling.
+Quint Lang (or just Quint) is a modern specification language that is a
+particularly good fit for distributed systems and blockchain protocols. It
+combines the robust theoretical basis of the [Temporal Logic of Actions][TLA]
+(TLA) with state-of-the-art static analysis and development tooling.
 
 If you are impatient, here is a [15 minute intro to Quint][] at Gateway to
 Cosmos 2023.
@@ -75,6 +75,7 @@ Visit the [Tutorials][] page.
 - [Cheatsheet](./doc/quint-cheatsheet.pdf)
 - [Reference API documentation for built-in operators](./doc/builtin.md)
 - [Syntax documentation](./doc/lang.md)
+- [Frequently asked questions](./doc/faq.md)
 
 ### Examples :musical_score:
 
@@ -102,18 +103,28 @@ editor (currently, VSCode, Emacs and Vim are supported).
 
    - [REPL](./tutorials/repl/repl.md)
 
- - VSCode plugin:
+- Editor support:
 
-   We strongly encourage you to use the VSCode plugin for Quint. It provides
-   the quickest feedback loop for your specifications, reporting informative
-   errors as you type. Install the plugin from [Visual Studio Code
-   Marketplace][].
+  We strongly encourage you to configure your editor for Quint. Our language
+  server provides the quickest feedback loop for your specifications, reporting
+  informative errors as you type. These are instuctions for the currently
+  supported editors:
+
+  - VSCode: Install the plugin from [Visual Studio Code
+    Marketplace][].
+  - Emacs: Setup two custom packages from the [emacs folder](./editor-plugins/emacs).
+  - Vim/Neovim: Follow configuration instructions from the [vim folder](./editor-plugins/vim)
 
  - VSCode plugin for [ITF traces][] by @hvanz:
 
    This a plugin that visualizes traces that are produced by Quint and
    [Apalache][]. Install the [ITF Trace Viewer][] from Visual Studio Code
    Marketplace.
+
+ - Writing [literate executable specifications](./doc/literate.md)
+
+   This is a technique for embedding formal quint formal specifications inside
+   of markdown files.
 
 ## Development
 
@@ -154,8 +165,8 @@ completely implementing every pass.
 | [Maps][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
 | [Lists][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
 | [Records][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
-| [Discriminated unions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [244][]        | :x: [539][]        | :x:                | :x:                |
-| [Tuples][]                        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :green_circle:     | :white_check_mark: |
+| [Tuples][]                        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| [Sum types][]                     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
 | [Imports][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [Module definitions][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [Module instances][]              | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
@@ -170,12 +181,17 @@ completely implementing every pass.
 | Invariant checking                | -                  | -                  | -                  | -                  | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | [Higher-order definitions][]      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
 | [Runs][]                          | :white_check_mark: | :white_check_mark: | :green_circle:     | :white_check_mark: | :white_check_mark: | *non-goal*         | :white_check_mark: |
-| [Temporal operators][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | *non-goal*         | :x:                | :x:                |
-| [Fairness][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | *non-goal*         | :x:                | :x:                |
+| [Temporal operators][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | *non-goal*         | :white_check_mark: | :x:                |
+| [Fairness][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | *non-goal*         | :white_check_mark: | :x:                |
 | [Unbounded quantifiers][]         | :white_check_mark: | :white_check_mark: | :x:                | :x:                | *non-goal*         | :x:                | :x:                |
 | [String literals][], see #118     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | ~~uninterpreted types~~, see #118 | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:                | :x:                |
 
+---
+
+Quint is developed at [Informal Systems](https://informal.systems/).
+
+With additional funding from<br />[<img alt="the Vienna Business Agency" src="./Wirtschaftsagentur_Wien_logo.jpg" width="200">](https://viennabusinessagency.at/).
 
 [Design Principles]: ./doc/design-principles.md
 [Apalache]: https://github.com/informalsystems/apalache
@@ -198,8 +214,8 @@ completely implementing every pass.
 [nondet]: ./doc/lang.md#existential-quantifier-and-non-deterministic-choice
 [Maps]: ./doc/lang.md#maps-aka-functions
 [Records]: ./doc/lang.md#records
-[Discriminated unions]: ./doc/lang.md#discriminated-unions
 [Tuples]: ./doc/lang.md#tuples
+[Sum types]: ./doc/lang.md#sum-types
 [Delayed assignment]: ./doc/lang.md#delayed-assignment
 [Runs]: ./doc/lang.md#runs
 [Temporal operators]: ./doc/lang.md#temporal-operators
@@ -212,7 +228,7 @@ completely implementing every pass.
 [221]: https://github.com/informalsystems/quint/issues/221
 [235]: https://github.com/informalsystems/quint/issues/235
 [8]: https://github.com/informalsystems/quint/issues/8
-[244]: https://github.com/informalsystems/quint/issues/244
+[1034]: https://github.com/informalsystems/quint/issues/1034
 [Higher-order definitions]: https://github.com/informalsystems/quint/blob/main/doc/lang.md#operator-definitions
 [String literals]: https://github.com/informalsystems/quint/blob/main/doc/lang.md#identifiers-and-strings
 [TLA+]: https://lamport.azurewebsites.net/tla/tla.html

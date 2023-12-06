@@ -1,16 +1,20 @@
+#!/usr/bin/env node
+
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2021. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2021 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 import {
   CodeAction,
   CodeActionKind,
   CodeActionParams,
+  CompletionItem,
+  CompletionParams,
+  CompletionTriggerKind,
   Connection,
   DefinitionLink,
   DefinitionParams,
-  Diagnostic,
   DocumentSymbol,
   DocumentSymbolParams,
   HandlerResult,
@@ -20,38 +24,45 @@ import {
   InitializeResult,
   MarkupContent,
   ProposedFeatures,
+  RenameParams,
   SignatureHelp,
   SignatureHelpParams,
   TextDocumentSyncKind,
   TextDocuments,
+  TextEdit,
+  WorkspaceEdit,
   createConnection,
 } from 'vscode-languageserver/node'
-
 import { DocumentUri, TextDocument } from 'vscode-languageserver-textdocument'
+import { URI } from 'vscode-uri'
 
 import {
   AnalysisOutput,
   DocumentationEntry,
-  ParserPhase3,
+  ParserPhase4,
   QuintErrorData,
   analyzeModules,
   builtinDocs,
+  findDefinitionWithId,
   newIdGenerator,
   produceDocsById,
 } from '@informalsystems/quint'
-import { diagnosticsFromErrors, locToRange } from './reporting'
-import { URI } from 'vscode-uri'
-import { hover } from './hover'
+
+import { completeIdentifier } from './complete'
 import { findDefinition } from './definitions'
-import { parseDocument } from './parsing'
 import { getDocumentSymbols } from './documentSymbols'
+import { hover } from './hover'
+import { parseDocument } from './parsing'
+import { getDeclRegExp } from './rename'
+import { diagnosticsFromErrors, findBestMatchingResult, locToRange } from './reporting'
+import { findParameterWithId } from '@informalsystems/quint/dist/src/ir/IRFinder'
 
 export class QuintLanguageServer {
   // Create one generator of unique identifiers
   private idGenerator = newIdGenerator()
 
   // Store auxiliary information by document
-  private parsedDataByDocument: Map<DocumentUri, ParserPhase3> = new Map()
+  private parsedDataByDocument: Map<DocumentUri, ParserPhase4> = new Map()
   private analysisOutputByDocument: Map<DocumentUri, AnalysisOutput> = new Map()
 
   // Documentation entries by id, by document
@@ -61,19 +72,23 @@ export class QuintLanguageServer {
   private analysisTimeout: NodeJS.Timeout = setTimeout(() => {}, 0)
 
   constructor(private readonly connection: Connection, private readonly documents: TextDocuments<TextDocument>) {
-    const loadedBuiltInDocs = builtinDocs(this.idGenerator).unwrap()
+    const loadedBuiltInDocs = builtinDocs(this.idGenerator)
 
     connection.onInitialize((_params: InitializeParams) => {
       const result: InitializeResult = {
         capabilities: {
           textDocumentSync: TextDocumentSyncKind.Full,
+          definitionProvider: true,
+          documentSymbolProvider: true,
+          codeActionProvider: true,
+          completionProvider: {
+            triggerCharacters: ['.'],
+          },
           hoverProvider: true,
+          renameProvider: true,
           signatureHelpProvider: {
             triggerCharacters: ['('],
           },
-          definitionProvider: true,
-          codeActionProvider: true,
-          documentSymbolProvider: true,
         },
       }
       return result
@@ -88,11 +103,20 @@ export class QuintLanguageServer {
       parseDocument(this.idGenerator, change.document)
         .then(result => {
           this.parsedDataByDocument.set(change.document.uri, result)
-          this.scheduleAnalysis(change.document)
-        })
-        .catch(diagnostics => {
+
+          const diagnosticsByFile = diagnosticsFromErrors(result.errors, result.sourceMap)
+
+          const sourceFile = URI.parse(change.document.uri).path
+          const diagnostics = diagnosticsByFile.get(sourceFile) ?? []
           this.connection.sendDiagnostics({ uri: change.document.uri, diagnostics })
-          this.scheduleAnalysis(change.document, diagnostics)
+
+          if (diagnosticsByFile.size === 0) {
+            // For now, only run analysis if there are no parsing errors
+            this.scheduleAnalysis(change.document)
+          }
+        })
+        .catch(err => {
+          this.connection.console.error(`Error during parsing: ${err}`)
         })
     })
 
@@ -190,6 +214,10 @@ export class QuintLanguageServer {
     connection.onCodeAction((params: CodeActionParams): HandlerResult<CodeAction[], void> => {
       return params.context.diagnostics.reduce((actions, diagnostic) => {
         const data = diagnostic.data as QuintErrorData
+        if (!data) {
+          return actions
+        }
+
         const fix = data.fix
 
         switch (fix?.kind) {
@@ -241,6 +269,57 @@ export class QuintLanguageServer {
       }, [] as CodeAction[])
     })
 
+    connection.onCompletion((params: CompletionParams): CompletionItem[] => {
+      // Only complete on "."
+      // TODO: offer completion at arbitrary positions in the text
+      if (params.context?.triggerKind !== CompletionTriggerKind.TriggerCharacter) {
+        return []
+      }
+
+      const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
+      if (!parsedData) {
+        return []
+      }
+
+      const document = this.documents.get(params.textDocument.uri)
+      if (!document) {
+        return []
+      }
+
+      // Parse the identifier that triggered completion
+      // TODO: offer completion for chained calls
+      //       (e.g., `tup._2.`, `rec.field.` or `set.powerset().`)
+      const triggeringLine = document.getText({
+        start: { ...params.position, character: 0 },
+        end: params.position,
+      })
+
+      const match = triggeringLine?.trim().match(/([a-zA-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+)\.$/)
+      if (!match) {
+        return []
+      }
+      const triggeringIdentifier = match[1]
+
+      const sourceFile = URI.parse(params.textDocument.uri).path
+
+      // Run analysis synchronously to get the required information for completion
+      this.triggerAnalysis(document)
+
+      const analysisOutput = this.analysisOutputByDocument.get(params.textDocument.uri)
+      if (!analysisOutput) {
+        return []
+      }
+
+      return completeIdentifier(
+        triggeringIdentifier,
+        parsedData,
+        analysisOutput,
+        sourceFile,
+        params.position,
+        loadedBuiltInDocs
+      )
+    })
+
     connection.onDocumentSymbol((params: DocumentSymbolParams): HandlerResult<DocumentSymbol[], void> => {
       const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
       if (!parsedData) {
@@ -260,6 +339,88 @@ export class QuintLanguageServer {
       return getDocumentSymbols(localModules, parsedData.sourceMap)
     })
 
+    connection.onRenameRequest((params: RenameParams): WorkspaceEdit | null => {
+      const parsedData = this.parsedDataByDocument.get(params.textDocument.uri)
+      if (!parsedData) {
+        return null
+      }
+
+      // Find the name under the cursor.
+      const { modules, sourceMap, table } = parsedData
+      const results: [bigint, null][] = [...sourceMap.keys()].map(id => [id, null])
+      const sourceFile = URI.parse(params.textDocument.uri).path
+      const result = findBestMatchingResult(sourceMap, results, params.position, sourceFile)
+      if (!result) {
+        return null
+      }
+
+      // Look up where the name was declared.
+      const declToRename = table.get(result.id)?.id ?? result.id
+
+      // Find all references to `declToRename`.
+      const references = [...table.entries()].reduce((references, [key, value]) => {
+        if (value.id == declToRename) {
+          references.push(key)
+        }
+        return references
+      }, [] as bigint[])
+
+      // Construct a `TextEdit` for each reference.
+      const changes = references.reduce((changes, ref) => {
+        const loc = sourceMap.get(ref)
+        if (loc) {
+          changes.push({ range: locToRange(loc), newText: params.newName })
+        }
+        return changes
+      }, [] as TextEdit[])
+
+      // Construct a `TextEdit` for the decl itself.
+      const param = findParameterWithId(modules, declToRename)
+      if (param) {
+        // The simple case: the name is declared as a parameter.
+        // In this case, the source map gives us exactly the range of the symbol
+        // to replace.
+        const declLoc = sourceMap.get(param.id)
+        if (declLoc) {
+          changes.push({ range: locToRange(declLoc), newText: params.newName })
+        }
+      } else {
+        const decl = findDefinitionWithId(modules, declToRename)
+        if (!decl) {
+          return null
+        }
+        // The tricky case: the name is declared as a definition.
+        // In this case, the location pointed by the source map includes its
+        // entire body and quantifiers, while we're only looking to replace
+        // its name. Thus, we try to parse the declaration using a regular
+        // expression, and extract offsets to account for offsets caused by
+        // preceeding qualifiers.
+
+        const declLoc = sourceMap.get(decl.id)
+        if (!declLoc) {
+          return null
+        }
+        const triggeringLine = documents.get(params.textDocument.uri)?.getText(locToRange(declLoc))
+        if (!triggeringLine) {
+          return null
+        }
+
+        const re = getDeclRegExp(decl)
+        const match = re.exec(triggeringLine)
+        if (!match) {
+          return null
+        }
+        const modificationLoc = {
+          ...declLoc,
+          start: { ...declLoc.start, col: declLoc.start.col + match[0].length - match[2].length },
+          end: { ...declLoc.start, col: declLoc.start.col + match[0].length - 1 },
+        }
+        changes.push({ range: locToRange(modificationLoc), newText: params.newName })
+      }
+
+      return { changes: { [params.textDocument.uri]: changes } }
+    })
+
     // Make the text document manager listen on the connection
     // for open, change and close text document events
     documents.listen(connection)
@@ -274,33 +435,43 @@ export class QuintLanguageServer {
     this.analysisOutputByDocument.delete(uri)
   }
 
-  private scheduleAnalysis(document: TextDocument, previousDiagnostics: Diagnostic[] = []) {
+  private triggerAnalysis(document: TextDocument) {
+    clearTimeout(this.analysisTimeout)
+    this.connection.console.info(`Triggering analysis`)
+    this.analyze(document)
+  }
+
+  private scheduleAnalysis(document: TextDocument) {
     clearTimeout(this.analysisTimeout)
     const timeoutMillis = 1000
     this.connection.console.info(`Scheduling analysis in ${timeoutMillis} ms`)
     this.analysisTimeout = setTimeout(() => {
-      this.analyze(document, previousDiagnostics).catch(err =>
-        this.connection.console.error(`Failed to analyze: ${err.message}`)
-      )
+      this.analyze(document)
     }, timeoutMillis)
   }
 
-  private async analyze(document: TextDocument, previousDiagnostics: Diagnostic[] = []) {
-    const parsedData = this.parsedDataByDocument.get(document.uri)
-    if (!parsedData) {
-      return
+  private analyze(document: TextDocument) {
+    try {
+      const parsedData = this.parsedDataByDocument.get(document.uri)
+      if (!parsedData) {
+        return
+      }
+
+      const { modules, sourceMap, table } = parsedData
+
+      this.docsByDocument.set(document.uri, new Map(modules.flatMap(m => [...produceDocsById(m).entries()])))
+
+      const [errors, analysisOutput] = analyzeModules(table, modules)
+
+      this.analysisOutputByDocument.set(document.uri, analysisOutput)
+
+      const sourceFile = URI.parse(document.uri).path
+      const diagnosticsByFile = diagnosticsFromErrors(errors, sourceMap)
+      const diagnostics = diagnosticsByFile.get(sourceFile) ?? []
+      this.connection.sendDiagnostics({ uri: document.uri, diagnostics })
+    } catch (e) {
+      this.connection.console.error(`Error during analysis: ${e}`)
     }
-
-    const { modules, sourceMap, table } = parsedData
-
-    this.docsByDocument.set(document.uri, new Map(modules.flatMap(m => [...produceDocsById(m).entries()])))
-
-    const [errors, analysisOutput] = analyzeModules(table, modules)
-
-    this.analysisOutputByDocument.set(document.uri, analysisOutput)
-
-    const diagnostics = diagnosticsFromErrors(errors, sourceMap)
-    this.connection.sendDiagnostics({ uri: document.uri, diagnostics: previousDiagnostics.concat(diagnostics) })
   }
 }
 

@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -12,7 +12,7 @@
  * @module
  */
 
-import { Loc, QuintError, QuintModule, findExpressionWithId, findTypeWithId } from '@informalsystems/quint'
+import { Loc, QuintError, QuintModule, SourceMap, findExpressionWithId, findTypeWithId } from '@informalsystems/quint'
 import { Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-languageserver'
 import { compact } from 'lodash'
 
@@ -23,19 +23,23 @@ import { compact } from 'lodash'
  * @param errors the errors to be transformed
  * @param sourceMap the source map for the document in which the errors occured
  *
- * @returns a list of diagnostics with the proper error messages and locations
+ * @returns a map with a list of diagnostics grouped by file
  */
-export function diagnosticsFromErrors(errors: [bigint, QuintError][], sourceMap: Map<bigint, Loc>): Diagnostic[] {
-  const diagnostics = errors.map(([id, error]) => {
-    const loc = sourceMap.get(id)!
+export function diagnosticsFromErrors(errors: QuintError[], sourceMap: SourceMap): Map<string, Diagnostic[]> {
+  const diagnostics = new Map()
+
+  errors.forEach(error => {
+    const loc = sourceMap.get(error.reference!)!
     if (!loc) {
-      console.log(`loc for ${id} not found in source map`)
+      console.log(`loc for ${error} not found in source map`)
     } else {
-      return assembleDiagnostic(error, loc)
+      const diagnostic = assembleDiagnostic(error, loc)
+      const previous = diagnostics.get(loc.source) ?? []
+      diagnostics.set(loc.source, [...previous, diagnostic])
     }
   })
 
-  return compact(diagnostics)
+  return diagnostics
 }
 
 /**
@@ -92,15 +96,15 @@ export function findName(
 }
 
 /**
- * Finds the result that better matches a given position. That is, the result
- * for which the loc is the smallest loc that contains the position.
+ * Finds the result that best matches a given position. That is, the result
+ * whose loc is the smallest loc that contains the position.
  *
  * @param sourceMap the source map with the locs for the results
  * @param results the list of tuples of ids from the source map and a result
  * computed for it
  * @param position the position for which to find the result
  *
- * @returns a tuple with the location and the result from the list that better
+ * @returns an object with the location and the result from the list that best
  * matches the position, or undefined if none is found
  */
 export function findBestMatchingResult<T>(
@@ -109,18 +113,40 @@ export function findBestMatchingResult<T>(
   position: Position,
   sourceFile: string
 ): { id: bigint; loc: Loc; result: T } | undefined {
-  const resultsByLoc: [Loc, { id: bigint; result: T }][] = results.map(([id, result]) => [
-    sourceMap.get(id)!,
-    { id, result },
-  ])
-
-  const matchingResults = resultsOnPosition(resultsByLoc, position, sourceFile)
+  const matchingResults = findMatchingResults(sourceMap, results, position, sourceFile)
   if (matchingResults.length === 0) {
     return undefined
   }
 
   const { id, result } = matchingResults[0]
   return { id, loc: sourceMap.get(id)!, result }
+}
+
+/**
+ * Finds all results that match a given position. That is, the results
+ * whose loc contains the position.
+ *
+ * @param sourceMap the source map with the locs for the results
+ * @param results the list of tuples of ids from the source map and a result
+ * computed for it
+ * @param position the position for which to find the result
+ *
+ * @returns an array of objects whose locations match the position, from the tightest to the loosest
+ */
+export function findMatchingResults<T>(
+  sourceMap: Map<bigint, Loc>,
+  results: [bigint, T][],
+  position: Position,
+  sourceFile: string
+): { id: bigint; loc: Loc; result: T }[] {
+  const resultsByLoc: [Loc, { id: bigint; result: T }][] = results.map(([id, result]) => [
+    sourceMap.get(id)!,
+    { id, result },
+  ])
+
+  const matchingResults = resultsOnPosition(resultsByLoc, position, sourceFile)
+
+  return matchingResults.map(({ id, result }) => ({ id, loc: sourceMap.get(id)!, result }))
 }
 
 /**

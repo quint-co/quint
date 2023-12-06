@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -12,8 +12,8 @@
  * @module
  */
 
-import { OpQualifier, QuintDef, QuintEx, QuintModule, isAnnotatedDef } from './quintIr'
-import { EmptyRow, QuintSumType, QuintType, Row, RowField, VarRow, isTheUnit } from './quintTypes'
+import { OpQualifier, QuintDeclaration, QuintDef, QuintEx, QuintModule, isAnnotatedDef } from './quintIr'
+import { ConcreteRow, QuintSumType, QuintType, Row, RowField, isUnitType } from './quintTypes'
 import { TypeScheme } from '../types/base'
 import { typeSchemeToString } from '../types/printing'
 
@@ -25,8 +25,68 @@ import { typeSchemeToString } from '../types/printing'
  * @returns a string with the pretty printed definition
  */
 export function moduleToString(quintModule: QuintModule): string {
-  const defs = quintModule.defs.map(d => definitionToString(d)).join('\n  ')
+  const defs = quintModule.declarations.map(d => declarationToString(d)).join('\n  ')
   return `module ${quintModule.name} {\n  ${defs}\n}`
+}
+
+/**
+ * Pretty prints a declaration. Includes a type annotation if the definition is
+ * annotated, or if a type is provided. A type annotation, if present, takes
+ * precedence over a type provided as argument to this function.
+ *
+ * @param decl the Quint declaration to be formatted
+ * @param includeBody optional, whether to include the body of the declaration,
+ * defaults to true
+ * @param type optional, the type scheme of the declaration, defaults to
+ * undefined
+ *
+ * @returns a string with the pretty printed declaration.
+ */
+export function declarationToString(decl: QuintDeclaration, includeBody: boolean = true, type?: TypeScheme): string {
+  switch (decl.kind) {
+    case 'def':
+    case 'var':
+    case 'const':
+    case 'assume':
+    case 'typedef':
+      return definitionToString(decl, includeBody, type)
+    case 'import': {
+      let text = `import ${decl.protoName}`
+      if (decl.defName) {
+        text += `.${decl.defName}`
+      }
+      if (decl.qualifiedName) {
+        text += ` as ${decl.qualifiedName}`
+      }
+      if (decl.fromSource) {
+        text += ` from "${decl.fromSource}"`
+      }
+      return text
+    }
+    case 'export': {
+      let text = `export ${decl.protoName}`
+      if (decl.defName) {
+        text += `.${decl.defName}`
+      }
+      if (decl.qualifiedName) {
+        text += ` as ${decl.qualifiedName}`
+      }
+      return text
+    }
+    case 'instance': {
+      const overrides = decl.overrides.map(o => `${o[0].name} = ${expressionToString(o[1])}`).join(', ')
+      let text = `import ${decl.protoName}(${overrides})`
+      if (decl.qualifiedName) {
+        text += ` as ${decl.qualifiedName}`
+      } else {
+        text += `.*`
+      }
+      if (decl.fromSource) {
+        text += ` from "${decl.fromSource}"`
+      }
+      return text
+    }
+  }
 }
 
 /**
@@ -65,42 +125,6 @@ export function definitionToString(def: QuintDef, includeBody: boolean = true, t
       } else {
         return `type ${def.name}`
       }
-    case 'import': {
-      let text = `import ${def.protoName}`
-      if (def.defName) {
-        text += `.${def.defName}`
-      }
-      if (def.qualifiedName) {
-        text += ` as ${def.qualifiedName}`
-      }
-      if (def.fromSource) {
-        text += ` from "${def.fromSource}"`
-      }
-      return text
-    }
-    case 'export': {
-      let text = `export ${def.protoName}`
-      if (def.defName) {
-        text += `.${def.defName}`
-      }
-      if (def.qualifiedName) {
-        text += ` as ${def.qualifiedName}`
-      }
-      return text
-    }
-    case 'instance': {
-      const overrides = def.overrides.map(o => `${o[0].name} = ${expressionToString(o[1])}`).join(', ')
-      let text = `import ${def.protoName}(${overrides})`
-      if (def.qualifiedName) {
-        text += ` as ${def.qualifiedName}`
-      } else {
-        text += `.*`
-      }
-      if (def.fromSource) {
-        text += ` from "${def.fromSource}"`
-      }
-      return text
-    }
   }
 }
 
@@ -125,7 +149,7 @@ export function expressionToString(expr: QuintEx): string {
     case 'lambda':
       return `((${expr.params.map(p => p.name).join(', ')}) => ${expressionToString(expr.expr)})`
     case 'let':
-      return `${definitionToString(expr.opdef)} { ${expressionToString(expr.expr)} }`
+      return `${declarationToString(expr.opdef)} { ${expressionToString(expr.expr)} }`
   }
 }
 
@@ -163,12 +187,6 @@ export function typeToString(type: QuintType): string {
     case 'sum': {
       return sumToString(type)
     }
-    case 'union': {
-      const records = type.records.map(rec => {
-        return `| { ${type.tag}: "${rec.tagValue}", ${rowFieldsToString(rec.fields)} }`
-      })
-      return records.join('\n')
-    }
   }
 }
 
@@ -192,15 +210,24 @@ export function rowToString(r: Row): string {
  * @returns a string with the pretty printed sum
  */
 export function sumToString(s: QuintSumType): string {
-  return s.fields.fields
-    .map((f: RowField) => {
-      if (isTheUnit(f.fieldType)) {
-        return `| ${f.fieldName}`
-      } else {
-        return `| ${f.fieldName}(${typeToString(f.fieldType)})`
-      }
-    })
-    .join('\n')
+  return '(' + sumFieldsToString(s.fields) + ')'
+}
+
+function sumFieldsToString(r: ConcreteRow): string {
+  return (
+    r.fields
+      .map((f: RowField) => {
+        if (isUnitType(f.fieldType)) {
+          return `${f.fieldName}`
+        } else {
+          return `${f.fieldName}(${typeToString(f.fieldType)})`
+        }
+      })
+      // We are not exposing open rows in sum types currently
+      // So we do not show show row variables.
+      .concat(r.other.kind === 'row' ? [sumFieldsToString(r.other)] : [])
+      .join(' | ')
+  )
 }
 
 /**
@@ -242,19 +269,6 @@ function rowFieldsToString(r: Row, showFieldName = true): string {
         case 'empty':
           return `${fields.join(', ')}`
       }
-    }
-  }
-}
-
-export function flattenRow(r: Row): [{ fieldName: string; fieldType: QuintType }[], VarRow | EmptyRow] {
-  switch (r.kind) {
-    case 'empty':
-      return [[], r]
-    case 'var':
-      return [[], r]
-    case 'row': {
-      const [fields, other] = flattenRow(r.other)
-      return [[...r.fields, ...fields], other]
     }
   }
 }

@@ -8,7 +8,7 @@ This document describes a preliminary architecture of the Quint transpiler.  As 
 rule, we are using a data-flow approach to parsing, in contrast to the pipeline
 approach, which can be found in textbooks. Our main assumption is that external
 contributors should be able to plug-in their code/passes to our pipeline.
-Hence, we have to be very careful when definining our assumptions about the
+Hence, we have to be very careful when defining our assumptions about the
 input and output of every pass.
 
 The use cases of this architecture are as follows:

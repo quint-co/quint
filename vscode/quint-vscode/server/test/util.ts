@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -35,17 +35,17 @@ import {
  */
 export function parseOrThrow(moduleText: string): [QuintModule[], Map<bigint, Loc>, LookupTable] {
   const idgen = newIdGenerator()
-  const result1 = parsePhase1fromText(idgen, moduleText, 'mocked_path')
-  const result2 = result1.chain(phase1Data => {
-    const resolver = stringSourceResolver(new Map())
-    const mainPath = resolver.lookupPath('mocked_path', './main')
-    return parsePhase2sourceResolution(idgen, resolver, mainPath, phase1Data)
-  })
-  const result3 = result2.chain(parsePhase3importAndNameResolution)
+  const phase1Data = parsePhase1fromText(idgen, moduleText, 'mocked_path')
 
-  if (result1.isLeft() || result2.isLeft() || result3.isLeft()) {
+  const resolver = stringSourceResolver(new Map())
+  const mainPath = resolver.lookupPath('mocked_path', './main')
+  const phase2Data = parsePhase2sourceResolution(idgen, resolver, mainPath, phase1Data)
+
+  const phase3Data = parsePhase3importAndNameResolution(phase2Data)
+
+  if (phase3Data.errors.length > 0) {
     throw new Error('Failed to parse mocked module')
   }
 
-  return [result2.value.modules, result2.value.sourceMap, result3.value.table]
+  return [phase2Data.modules, phase2Data.sourceMap, phase3Data.table]
 }

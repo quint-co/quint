@@ -1,1 +1,0 @@
-{"stage":"parsing","warnings":[],"errors":[{"explanation":"mismatched input ''' expecting STRING","locs":[{"source":"mocked_path/testFixture/_1024importFromSyntaxError.qnt","start":{"line":1,"col":18,"index":36},"end":{"line":1,"col":18,"index":36}}]}]}

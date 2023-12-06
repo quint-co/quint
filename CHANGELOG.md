@@ -14,6 +14,180 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## v0.17.1 -- 2023-12-05
+
+### Added
+
+- Add a `q::debug` built-in function for printing values to stdout (#1266)
+
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- The effect checker now distinguishes variables from different instances (#1290)
+
+### Security
+
+## v0.17.0 -- 2023-12-04
+
+### Added
+
+- When an input file only one module, it will be inferred as the main module (#1260)
+- Sum types are now supported when running `verify` (#1034)
+
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- Produce proper error messages on invalid module name (#1260)
+- Fix JSON output when running multiple tests (#1264)
+- Topological sorting of modules (#1268)
+- The effect checker will now check for consistency of updates across different
+  cases inside `match` (#1272)
+- Fix problems in the integration of sum types in `run`, `test`, and `verify` commands (#1276)
+- Fix some corner cases with the usage of complex expressions inside `assume`
+  and `import (...)` (#1276)
+- Fix incorrect type checking failure from interference between sum types
+  sharing variant labels (#1275)
+- Fix the IDs generated for operator definition bodies (#1280)
+- Fixed missing support for sum type variants in ITF traces (#1281)
+
+### Security
+
+## v0.16.0 -- 2023-11-20
+
+### Added
+
+- Support for sum types in type checking and simulation (#244).
+
+### Changed
+### Deprecated
+### Removed
+
+- The long deprecated union types have been removed, in favor of the new sum
+  types (#1245).
+
+### Fixed
+### Security
+
+## v0.15.0 -- 2023-11-08
+
+### Added
+### Changed
+
+- Error messages for `val` vs `def` and `pure val` vs `pure def` errors are clearer (#1208)
+- `quint run` prints the random seed even if no bug was found (#1213)
+- Error reporting was changed to show more errors at a time, instead of having a lot of phases (#1220)
+
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed internal bugs in the effect checker that could cause an incorrect effect
+  to be inferred or error to be reported (#1203)
+- Fixed propagation of `checker.tuning` Apalache config file key for `quint
+  verify` (#1216)
+- Fixed a problem where errors in one file were being reported in another file
+  that imported it (#1224).
+- Fixed a problem where some errors were not being reported in the REPL (#1223)
+
+### Security
+
+## v0.14.4 -- 2023-10-02
+
+### Added
+
+- Added `--random-transitions` flag for `verify`, enabling symbolic simulation
+  through Apalache (#1188)
+
+### Changed
+
+- Changed syntax for unpacking tuples in lambda parameters (#1202)
+
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed a problem where state variables from instances didn't work properly in the REPL (#1190)
+- Fixed a problem where referencing constants from an instance could cause a crash (#1191)
+
+### Security
+
+## v0.14.3 -- 2023-09-19
+
+### Added
+
+- Added `--temporal` flag for `verify`, enabling temporal property verification
+  through Apalache (#1154)
+
+### Changed
+
+- Introduce frames on actions in the verbose output. The verbose output has changed! (#1158)
+- The ITF traces always serialize integers as `{ '#bigint': 'num }`  (#1165)
+
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed a problem where an error was thrown when a name from an importing module
+  shadowed a nested name from the imported module (#802)
+- Fixed a problem where tests were ignored if they are not defined directly in
+  the main module - that is, they were imported (#1161)
+- Fixed a type checker bug where the inferred type was too general for nested
+  definitions, which prevented running `verify` (#1166).
+
+### Security
+
+## v0.14.2 -- 2023-09-06
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed a problem where importing the same definition under multiple different
+  names would cause a crash (#1142)
+- Fixed a problem where importing a module in the REPL would prevent state
+  variables from having their values persisted between evaluations (#1146)
+
+### Security
+
+## v0.14.1 -- 2023-08-28
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- Fix problem with broken dependency by pinning versions (#1129)
+
+### Security
+
+## v0.14.0 -- 2023-08-25
+
+### Added
+
+- The `verify` command now automatically acquires the Apalache distribution and
+  starts the server, if the server is not already running (#1115)
+
+### Changed
+
+- Module management was rewritten, and instances should behave much better in
+  the simulator, REPL, and in integration with Apalache (#1119)
+
+### Deprecated
+### Removed
+### Fixed
+
+- Fixed a problem where definitions were not properly loaded in the REPL when
+  the main module was provided in the CLI argument (#1112)
+
+### Security
+
 ## v0.13.0 -- 2023-08-03
 
 ### Added

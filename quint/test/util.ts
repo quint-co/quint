@@ -2,17 +2,18 @@ import { assert } from 'chai'
 import { IRVisitor, walkModule } from '../src/ir/IRVisitor'
 import {
   QuintBool,
-  QuintDef,
+  QuintDeclaration,
   QuintEx,
   QuintInstance,
   QuintInt,
   QuintLambda,
+  QuintLet,
   QuintModule,
   QuintStr,
   QuintTypeDef,
 } from '../src/ir/quintIr'
 import { QuintType } from '../src/ir/quintTypes'
-import lodash from 'lodash'
+import { zip } from '../src/util'
 import { ParserPhase3, parse } from '../src/parsing/quintParserFrontend'
 import { SourceLookupPath } from '../src/parsing/sourceResolver'
 import { newIdGenerator } from '../src/idGenerator'
@@ -20,8 +21,8 @@ import { newIdGenerator } from '../src/idGenerator'
 export function collectIds(module: QuintModule): bigint[] {
   const ids = new Set<bigint>()
   const visitor: IRVisitor = {
-    exitDef: (def: QuintDef) => {
-      ids.add(def.id)
+    exitDecl: (decl: QuintDeclaration) => {
+      ids.add(decl.id)
     },
     exitExpr(e: QuintEx) {
       ids.add(e.id)
@@ -40,6 +41,9 @@ export function collectIds(module: QuintModule): bigint[] {
     exitLambda(l: QuintLambda) {
       l.params.forEach(p => ids.add(p.id))
     },
+    exitLet(l: QuintLet) {
+      ids.add(l.opdef.id)
+    },
     exitInstance(i: QuintInstance) {
       i.overrides.forEach(([n, _]) => ids.add(n.id))
     },
@@ -47,20 +51,6 @@ export function collectIds(module: QuintModule): bigint[] {
 
   walkModule(visitor, module)
   return [...ids]
-}
-
-/**  A wrapper around lodash zip that ensures all zipped elements are defined
- *
- * Raises `Error` if the arrays are not the same length
- */
-export function zip<A, B>(a: A[], b: B[]): [A, B][] {
-  return lodash.zip(a, b).map(([x, y]) => {
-    if (x === undefined || y === undefined) {
-      throw new Error('Illegal arguments to zepWell: array lengths unequal')
-    } else {
-      return [x, y]
-    }
-  })
 }
 
 // Type predicate that tells us when a QuintEx is a scalar with a `value`
@@ -103,8 +93,9 @@ export function parseMockedModule(text: string): ParserPhase3 {
   const idGen = newIdGenerator()
   const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
   const parseResult = parse(idGen, 'fake_location', fake_path, text)
-  if (parseResult.isLeft()) {
-    assert.fail('Failed to parse mocked up module')
-  }
-  return parseResult.unwrap()
+
+  // We use deepEqual instead of `isEmpty` so we'll get informative
+  // output on failure.
+  assert.deepEqual([], parseResult.errors)
+  return parseResult
 }

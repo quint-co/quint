@@ -14,6 +14,81 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## v0.12.1 -- 2023-12-05
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.12.0 -- 2023-12-04
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.11.0 -- 2023-11-20
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.10.0 -- 2023-11-08
+
+### Added
+### Changed
+
+- Error reporting was changed to show more errors at a time, instead of having a lot of phases (#1220)
+
+### Deprecated
+### Removed
+### Fixed
+
+- The language server should no longer crash when there is a crash on quint
+  functions (#1205)
+- Fixed a problem where errors in one file were being reported in other files
+  related to it (#1224).
+
+### Security
+
+## v0.9.1 -- 2023-10-02
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.9.0 -- 2023-09-19
+
+### Added
+
+- Added partial support for code completion and renaming (#1143)
+
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
+## v0.8.0 -- 2023-08-25
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
+
 ## v0.7.0 -- 2023-08-06
 
 ### Added

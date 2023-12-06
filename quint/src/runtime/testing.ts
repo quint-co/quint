@@ -3,15 +3,14 @@
  *
  * Igor Konnov, 2023
  *
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  */
 
-import { Either, left, merge, right } from '@sweet-monads/either'
+import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { just } from '@sweet-monads/maybe'
 
-import { ErrorMessage, fromIrErrorMessage } from '../parsing/quintParserFrontend'
 import { QuintEx, QuintOpDef } from '../ir/quintIr'
 
 import { CompilationContext, CompilationState, compile, lastTraceName } from './compile'
@@ -22,6 +21,7 @@ import { ExecutionFrame, newTraceRecorder } from './trace'
 import { Rng } from '../rng'
 import { RuntimeValue, rv } from './impl/runtimeValue'
 import { newEvaluationState } from './impl/compilerImpl'
+import { QuintError } from '../quintError'
 
 /**
  * Various settings to be passed to the testing framework.
@@ -52,9 +52,9 @@ export interface TestResult {
    */
   seed: bigint
   /**
-   * When status === 'failed', errors contain the explanatory error messages.
+   * When status === 'failed', errors contain the explanatory errors.
    */
-  errors: ErrorMessage[]
+  errors: QuintError[]
   /**
    * If the trace was recorded, frames contains the history.
    */
@@ -81,14 +81,14 @@ export function compileAndTest(
   mainName: string,
   lookupTable: LookupTable,
   options: TestOptions
-): Either<ErrorMessage[], TestResult[]> {
+): Either<QuintError[], TestResult[]> {
   const recorder = newTraceRecorder(options.verbosity, options.rng)
   const main = compilationState.modules.find(m => m.name === mainName)
   if (!main) {
-    return left([{ explanation: 'Cannot find main module', locs: [] }])
+    return left([{ code: 'QNT405', message: `Main module ${mainName} not found` }])
   }
 
-  const ctx = compile(compilationState, newEvaluationState(recorder), lookupTable, options.rng.next, main.defs)
+  const ctx = compile(compilationState, newEvaluationState(recorder), lookupTable, options.rng.next, main.declarations)
 
   const saveTrace = (index: number, name: string, status: string) => {
     // Save the best traces that are reported by the recorder:
@@ -111,11 +111,12 @@ export function compileAndTest(
     return left(ctxErrors)
   }
 
-  const testDefs = main.defs.filter(d => d.kind === 'def' && options.testMatch(d.name)) as QuintOpDef[]
+  const testDefs = main.declarations.filter(d => d.kind === 'def' && options.testMatch(d.name)) as QuintOpDef[]
 
-  return merge(
+  return mergeInMany(
     testDefs.map((def, index) => {
       return getComputableForDef(ctx, def).map(comp => {
+        recorder.clear()
         const name = def.name
         // save the initial seed
         let seed = options.rng.getState()
@@ -170,15 +171,16 @@ export function compileAndTest(
 
           if (!ex.value) {
             // if the test returned false, return immediately
-            const e = fromIrErrorMessage(compilationState.sourceMap)({
-              explanation: `${name} returns false`,
-              refs: [def.id],
-            })
+            const error: QuintError = {
+              code: 'QNT511',
+              message: `Test ${name} returned false`,
+              reference: def.id,
+            }
             saveTrace(index, name, 'failed')
             return {
               name,
               status: 'failed',
-              errors: [e],
+              errors: [error],
               seed: seed,
               frames: recorder.getBestTrace().subframes,
               nsamples: nsamples,
@@ -215,11 +217,11 @@ export function compileAndTest(
   )
 }
 
-function getComputableForDef(ctx: CompilationContext, def: QuintOpDef): Either<ErrorMessage[], Computable> {
+function getComputableForDef(ctx: CompilationContext, def: QuintOpDef): Either<QuintError, Computable> {
   const comp = ctx.evaluationState.context.get(kindName('callable', def.id))
   if (comp) {
     return right(comp)
   } else {
-    return left([{ explanation: `Cannot find computable for ${def.name}`, locs: [] }])
+    return left({ code: 'QNT501', message: `Cannot find computable for ${def.name}`, reference: def.id })
   }
 }

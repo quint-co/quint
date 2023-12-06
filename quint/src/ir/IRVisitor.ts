@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -22,12 +22,21 @@ import { unreachable } from '../util'
  * Optionally defines functions for each IR component.
  */
 export interface IRVisitor {
+  /* Keeps track of the depth of the current definition, to be updated by the
+   * walk* functions and used by implementations of the interface. Should be
+   * initialized to -1, so if `walkDefinition` is called from a different place
+   * than `walkDeclaration` (which does set this to -1), the increments and
+   * decrements work as expected. */
+  definitionDepth?: number
+
   enterModule?: (_module: ir.QuintModule) => void
   exitModule?: (_module: ir.QuintModule) => void
 
   /** General components */
   enterExpr?: (_expr: ir.QuintEx) => void
   exitExpr?: (_expr: ir.QuintEx) => void
+  enterDecl?: (_def: ir.QuintDeclaration) => void
+  exitDecl?: (_def: ir.QuintDeclaration) => void
   enterDef?: (_def: ir.QuintDef) => void
   exitDef?: (_def: ir.QuintDef) => void
   enterType?: (_type: t.QuintType) => void
@@ -84,8 +93,6 @@ export interface IRVisitor {
   exitRecordType?: (_type: t.QuintRecordType) => void
   enterSumType?: (_type: t.QuintSumType) => void
   exitSumType?: (_type: t.QuintSumType) => void
-  enterUnionType?: (_type: t.QuintUnionType) => void
-  exitUnionType?: (_type: t.QuintUnionType) => void
 
   /** Row types */
   enterRow?: (_row: t.Row) => void
@@ -112,7 +119,7 @@ export function walkModule(visitor: IRVisitor, quintModule: ir.QuintModule): voi
     visitor.enterModule(quintModule)
   }
 
-  quintModule.defs.forEach(def => walkDefinition(visitor, def))
+  quintModule.declarations.forEach(decl => walkDeclaration(visitor, decl))
 
   if (visitor.exitModule) {
     visitor.exitModule(quintModule)
@@ -232,22 +239,9 @@ export function walkType(visitor: IRVisitor, type: t.QuintType): void {
       }
       break
 
-    case 'union':
-      if (visitor.enterUnionType) {
-        visitor.enterUnionType(type)
-      }
-      // Variants, walk all fields for all records
-      type.records.forEach(record => {
-        walkRow(visitor, record.fields)
-      })
-
-      if (visitor.exitUnionType) {
-        visitor.exitUnionType(type)
-      }
-      break
-
     case 'sum':
       visitor.enterSumType?.(type)
+      walkRow(visitor, type.fields)
       visitor.exitSumType?.(type)
       break
 
@@ -260,10 +254,88 @@ export function walkType(visitor: IRVisitor, type: t.QuintType): void {
   }
 }
 
+/**
+ * Navigates a Quint declaration with a visitor, invoking the correspondent function for each
+ * inner component.
+ *
+ * @param visitor: the IRVisitor instance with the functions to be invoked
+ * @param decl: the Quint declaration to be navigated
+ *
+ * @returns nothing, any collected information has to be a state inside the IRVisitor instance.
+ */
+export function walkDeclaration(visitor: IRVisitor, decl: ir.QuintDeclaration): void {
+  if (visitor.enterDecl) {
+    visitor.enterDecl(decl)
+  }
+
+  // The standard depth starts at 0, so definitions inside delclarations (i.e.
+  // assume and instance overrides) are not considered top-level
+  visitor.definitionDepth = 0
+
+  switch (decl.kind) {
+    case 'const':
+    case 'var':
+    case 'typedef':
+    case 'assume':
+      walkDefinition(visitor, decl)
+      break
+    case 'def':
+      // depth will be increased inside `walkDefinition`, so we set it to -1 in
+      // order for it to be 0 there
+      visitor.definitionDepth = -1
+      walkDefinition(visitor, decl)
+      break
+    case 'instance':
+      if (visitor.enterInstance) {
+        visitor.enterInstance(decl)
+      }
+      decl.overrides.forEach(([_, e]) => walkExpression(visitor, e))
+      if (visitor.exitInstance) {
+        visitor.exitInstance(decl)
+      }
+      break
+    case 'import':
+      if (visitor.enterImport) {
+        visitor.enterImport(decl)
+      }
+      if (visitor.exitImport) {
+        visitor.exitImport(decl)
+      }
+      break
+    case 'export':
+      if (visitor.enterExport) {
+        visitor.enterExport(decl)
+      }
+      if (visitor.exitExport) {
+        visitor.exitExport(decl)
+      }
+      break
+    default:
+      unreachable(decl)
+  }
+  if (visitor.exitDecl) {
+    visitor.exitDecl(decl)
+  }
+}
+
+/**
+ * Navigates a Quint definition with a visitor, invoking the correspondent function for each
+ * inner component.
+ *
+ * @param visitor: the IRVisitor instance with the functions to be invoked
+ * @param def: the Quint definition to be navigated
+ *
+ * @returns nothing, any collected information has to be a state inside the IRVisitor instance.
+ */
 export function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
+  if (visitor.definitionDepth !== undefined) {
+    visitor.definitionDepth++
+  }
+
   if (visitor.enterDef) {
     visitor.enterDef(def)
   }
+
   if (ir.isAnnotatedDef(def)) {
     walkType(visitor, def.typeAnnotation)
   } else if (ir.isTypeAlias(def)) {
@@ -305,31 +377,6 @@ export function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
         visitor.exitTypeDef(def)
       }
       break
-    case 'instance':
-      if (visitor.enterInstance) {
-        visitor.enterInstance(def)
-      }
-      def.overrides.forEach(([_, e]) => walkExpression(visitor, e))
-      if (visitor.exitInstance) {
-        visitor.exitInstance(def)
-      }
-      break
-    case 'import':
-      if (visitor.enterImport) {
-        visitor.enterImport(def)
-      }
-      if (visitor.exitImport) {
-        visitor.exitImport(def)
-      }
-      break
-    case 'export':
-      if (visitor.enterExport) {
-        visitor.enterExport(def)
-      }
-      if (visitor.exitExport) {
-        visitor.exitExport(def)
-      }
-      break
     case 'assume':
       if (visitor.enterAssume) {
         visitor.enterAssume(def)
@@ -340,13 +387,19 @@ export function walkDefinition(visitor: IRVisitor, def: ir.QuintDef): void {
         visitor.exitAssume(def)
       }
       break
+    default:
+      unreachable(def)
   }
   if (visitor.exitDef) {
     visitor.exitDef(def)
   }
+
+  if (visitor.definitionDepth !== undefined) {
+    visitor.definitionDepth--
+  }
 }
 
-function walkExpression(visitor: IRVisitor, expr: ir.QuintEx): void {
+export function walkExpression(visitor: IRVisitor, expr: ir.QuintEx): void {
   if (visitor.enterExpr) {
     visitor.enterExpr(expr)
   }

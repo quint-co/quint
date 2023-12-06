@@ -1,1 +1,0 @@
-{"stage":"parsing","warnings":[],"errors":[{"explanation":"QNT011: Records in disjoint union have different tag fields: tag and kind","locs":[{"source":"mocked_path/testFixture/_1005constRecordsError.qnt","start":{"line":4,"col":4,"index":127},"end":{"line":5,"col":51,"index":211}}]}]}

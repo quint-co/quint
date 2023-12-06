@@ -15,7 +15,7 @@ const Quorum: Set[Set[str]] // The set of "quorums", where a quorum" is a
 (***************************************************************************/
 assume QuorumAssumption = and {
     Quorum.forall(Q => Q.subseteq(Acceptor)),
-    tuples(Quorum, Quorum).forall((Q1, Q2) => (Q1.intersect(Q2)) != Set())
+    tuples(Quorum, Quorum).forall( ((Q1, Q2)) => (Q1.intersect(Q2)) != Set())
 }
 
 // theorems are not supported by Quint, use TLA+ syntax
@@ -111,18 +111,18 @@ THEOREM ChoosableThm ==
  */
 //-----------------------------------------------------------------------------
 val VotesSafe =
-    tuples(Acceptor, Ballot, Value).forall((a, b, v) =>
+    tuples(Acceptor, Ballot, Value).forall( ((a, b, v)) =>
                  VotedFor(a, b, v) implies SafeAt(b, v)
     )
 
 val OneVote =
-    tuples(Acceptor, Ballot, Value, Value).forall((a, b, v, w) =>
+    tuples(Acceptor, Ballot, Value, Value).forall( ((a, b, v, w)) =>
               VotedFor(a, b, v) and VotedFor(a, b, w) implies (v == w)
     )
 
 val OneValuePerBallot =
     tuples(Acceptor, Acceptor, Ballot, Value, Value)
-       .forall((a1, a2, b, v1, v2) =>
+       .forall( ((a1, a2, b, v1, v2)) =>
          VotedFor(a1, b, v1) and VotedFor(a2, b, v2) implies (v1 == v2)
        )
 //-----------------------------------------------------------------------------
@@ -148,7 +148,7 @@ def ShowsSafeAt(Q, b, v) = and {
 
 val ShowsSafety =
     all { TypeOK, VotesSafe, OneValuePerBallot } implies
-    tuples(Quorum, Ballot, Value).forall((Q, b, v) =>
+    tuples(Quorum, Ballot, Value).forall( ((Q, b, v)) =>
         ShowsSafeAt(Q, b, v) implies SafeAt(b, v)
     )
 

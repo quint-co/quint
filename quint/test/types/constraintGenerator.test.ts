@@ -26,7 +26,7 @@ describe('ConstraintGeneratorVisitor', () => {
     const defs = ['def d(S) = S.map(x => x + 10)']
 
     const expectedConstraint =
-      '(int, int) => int ~ (t_x_9, int) => t0 /\\ (Set[t1], (t1) => t2) => Set[t2] ~ (t_S_7, (t_x_9) => t0) => t3'
+      '(int, int) => int ~ (t_x_9, int) => _t0 /\\ (Set[_t1], (_t1) => _t2) => Set[_t2] ~ (t_S_7, (t_x_9) => _t0) => _t3'
 
     const solvingFunction = (_: LookupTable, c: Constraint) => {
       assert.deepEqual(constraintToString(c), expectedConstraint)
@@ -39,7 +39,7 @@ describe('ConstraintGeneratorVisitor', () => {
   it('handles underscore', () => {
     const defs = ['def d(S) = S.map(_ => 10)']
 
-    const expectedConstraint = '(Set[t1], (t1) => t2) => Set[t2] ~ (t_S_7, (t0) => int) => t3'
+    const expectedConstraint = '(Set[_t1], (_t1) => _t2) => Set[_t2] ~ (t_S_7, (_t0) => int) => _t3'
 
     const solvingFunction = (_: LookupTable, c: Constraint) => {
       assert.deepEqual(constraintToString(c), expectedConstraint)
@@ -175,6 +175,22 @@ describe('ConstraintGeneratorVisitor', () => {
       'val x = (0, 1).item()',
       'Checking arity for application of item',
       'Operator expects 2 arguments but was given 1'
+    )
+  })
+
+  it('catches invalid arity on variant operator', () => {
+    testArityError(
+      'val x = variant("foo")',
+      'Checking arity for application of variant',
+      'Operator expects 2 arguments but was given 1'
+    )
+  })
+
+  it('catches invalid arity on matchVariant operator', () => {
+    testArityError(
+      'val x = matchVariant("foo", "A")',
+      'Checking arity for application of matchVariant',
+      'Operator expects odd number of arguments but was given 2'
     )
   })
 })

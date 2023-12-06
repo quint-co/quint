@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author                                                  |
 |:---------|:-----------|:--------------------------------------------------------|
-| 33       | 07.07.2023 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
+| 34       | 09.10.2023 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -51,8 +51,8 @@ Table of Contents
       * [Other set operators](#other-set-operators)
     * [Maps (aka Functions)](#maps-aka-functions)
     * [Records](#records)
-    * [Discriminated unions](#discriminated-unions)
     * [Tuples](#tuples)
+    * [Sum Types](#sum-types)
     * [Lists (aka Sequences)](#lists-aka-sequences)
     * [Integers](#integers)
     * [Nested operator definitions](#nested-operator-definitions)
@@ -142,8 +142,7 @@ expressions).
 
 ### Type System 1.2
 
-This is the same type system as in Apalache, except we have added discriminated
-unions:
+This is the same type system as in Apalache:
 
 A type is one of the following:
 
@@ -167,13 +166,8 @@ A type is one of the following:
  - Operator: `(T_1, ..., T_n) => R` for `n >= 0` argument types `T_1, ..., T_n`
    and result type `R`.
 
- - **Work in progress:** Discriminated union:
-    ```
-       | { tag: string_1, <ident>: T_1_1, ..., <ident>: T_1_n_1}
-       ...
-       | { tag: string_k, <ident>: T_k_1, ..., <ident>: T_k_n_k}
-    ```
-    for `n >= 1` types `T_1_1`, ..., `T_k_n_k`.
+ - Sum Types: `type T = L_1(T_1) | ... | L_n(T_n) ` for `n >= 1`, argument types
+   `T_1`, ..., `T_n`, and a type alais `T`.
 
  - Type in parentheses: `(T)` for a type `T`.
 
@@ -236,7 +230,7 @@ This is intentional: We do not want to mix actions with temporal formulas.
 
 A module definition is introduced like follows:
 
-```
+```bluespec
 // module definition
 module Foo {
   // declarations
@@ -790,6 +784,23 @@ _ => e
 Note that lambdas can be only passed as arguments to other operators. They
 cannot be freely assigned to values or returned as a result of an operator.
 
+**Note:** There is a difference between a lambda expression of the form
+`(x, y) => e1` and a lambda expression of the form `((x, y)) => e2`.
+The former is a two-argument lambda operator, whereas the latter is a
+single-argument lambda operator that accepts a pair as its first argument.
+The latter form `((x, y)) => e2` is equivalent to:
+
+```bluespec
+(t =>
+  val x = t._1
+  val y = t._2
+  e2
+)
+```
+
+As a result, the form `((x_1, ..., x_n)) => e_n` is syntax sugar for tuple
+unpacking, as shown in the above example.
+
 ### Two forms of operator application
 
 Quint is flexible with respect to operator applications. It supports two call
@@ -1273,135 +1284,9 @@ with(r, "f", e)
 Note that we are using the syntax `{ name_1: value_1, ..., name_n: value_n }`
 for records, similar to Python and JavaScript. We have removed the syntax for
 sets of records: (1) It often confuses beginners, (2) It can be expressed with
-`map` and a record constructor. Moreover, sets of records do not combine well
-with discriminated unions.
+`map` and a record constructor.
 
 *Mode:* Stateless, State. Other modes are not allowed.
-
-### Discriminated unions (work-in-progress)
-
-**WARNING:** *We are redesigning discriminated unions*, see
-[#539](https://github.com/informalsystems/quint/issues/539). *As they are not
-fully implemented, please avoid using discriminated unions for now*.
-
-Quint has provides the user with special syntax for constructing and destructing
-discriminated unions.  For the type syntax of discriminated unions, see
-[Types](#types).
-
-**Constructors.** Construct a tagged record by using the record syntax, e.g.:
-
-```scala
-  { tag: "Cat", name: "Ours", year: 2019 }
-```
-
-Note that the above record has the field `tag`. Hence, this record is assigned
-a union type of one element:
-
-```scala
-type CAT_TYPE =
-  | { tag: "Cat", name: str, year: int }
-```
-
-Records of different union types may be mixed in a single set. For example:
-
-```scala
-val Entries =
-  Set(
-    { tag: "Cat", name: "Ours", year: 2019  },
-    { tag: "Cat", name: "Murka", year: 1950 },
-    { tag: "Date", day: 16, month: 11, year: 2021 }
-  )
-```
-
-In the above example, the set elements have the following union type:
-
-```scala
-type ENTRY_TYPE =
-  | { tag: "Cat", name: str, year: int }
-  | { tag: "Date", day: int, month: int, year: int }
-```
-
-When we construct the individual records, they still have singleton union
-types.  For instance, the entry  `{ tag: "Date", day: 16, month: 11, year: 2021
-}` has the type:
-
-```scala
-type DATE_TYPE =
-  { tag: "Date", day: int, month: int, year: int }
-```
-
-**Set filters.** The most common pattern over discriminated union is to filter
-set elements by their tag. Using the above definition of `Entries`, we can
-filter it as follows:
-
-```scala
-Entries.filter(e => e.tag == "Cat")
-```
-
-As expected from the semantics of `filter`, the above set is equal to:
-
-```
-Set(
-  { tag: "Cat", name: "Ours", year: 2019  },
-  { tag: "Cat", name: "Murka", year: 1950 }
-)
-```
-
-Importantly, its elements have the type:
-
-```scala
-type CAT_TYPE =
-  | { tag: "Cat", name: str, year: int }
-```
-
-**Destructors.** Sometimes, we have a value of a union type that is not stored
-in a set. For this case, Quint has the union destructor syntax.  For example,
-given an entry from `Entries`, we can compute the predicate `isValid` by case
-distinction over tags:
-
-```scala
-pure def isValid(entry): ENTRY_TYPE => bool =
-  entry match
-     | "Cat": cat =>
-       name != "" and cat.year > 0
-     | "Date": date =>
-       date.day.in(1 to 31) and date.month.in(1.to(12)) and date.year > 0
-```
-
-In the above example, the names `cat` and `date` have the singleton union types
-of `CAT_TYPE` and `DATE_TYPE`, respectively. Note that the expressions after
-the tag name (e.g., `"Cat":` and `"Date":`) follow the syntax of
-single-argument lambda expressions. As a result, we can use `_` as a name,
-which means that the name is omitted.
-
-Match expressions require all possible values of `tag` to be enumerated. This is
-ensured by the type checker.
-
-We do not introduce parentheses in the syntax of `match`. If you feel uncomfortable
-about it, wrap the whole match-expression with `(...)`.
-
-*Grammar*:
-
-```bnf
-  expr "match" ("|" string ":" (identifier | "_") "=>" expr)+
-```
-
-*Normal form*: Consider the match operator:
-
-```scala
-  ex match
-    | tag_1: x_1 => ex_1
-    ...
-    | tag_n: x_n => ex_n
-```
-
-Its normal form is `unionMatch(ex, tag_1, (x_1 => ex_1), ..., (x_n => ex_n))`.
-
-*Mode:* Stateless, State. Other modes are not allowed.
-
-**Discussion.** In TLA+, there is no separation between discriminated unions
-and records. It is common to use tagged records to distinguish between different
-cases of records. Quint makes this pattern explicit.
 
 ### Tuples
 
@@ -1433,6 +1318,46 @@ the new field. It is not likely that you will have tuples that have a lot
 of items.
 
 *Mode:* Stateless, State. Other modes are not allowed.
+
+### Sum Types
+
+Exclusive disjunction of different possible data types is expressed via sum
+types, also known as tagged unions, discriminated unions, or variants. TLA+,
+being untyped, doesn't have a strict correlate, but it is common to use records
+with a discriminator field for this purpose.
+
+```scala
+// Declaration
+type T = L_1(T_1) | ... | L_n(T_n)
+// variant constructor
+// where
+//  - 1 =< k <= n for the declared sum type's variants L_1(T_1) | ... | L_n(T_n)
+//  - x : T_k
+L_k(x)
+variant("L_k", x)
+// variant eliminator: "match expression"
+// where 
+//  - x_1 : T_1, ..., x_n : T_n
+//  - e_1 : S, ..., e_n : S, and S will be the resulting type of the expression
+match L_k(x) {
+  | L_1(x_1) => e_1
+  | ...
+  | L_n(x_n) => e_n
+}
+matchVariant(L_k(x), "L_1", (x_1) => e_1, ..., (x_n) => e_n)
+```
+
+E.g., to form and operate on a heterogeneous set containing both integer and
+string values, you might find:
+
+```scala
+type Elem = S(str) | I(int)
+val mySet: Set[Elem] =  Set(S("Foo"), I(1), S("Bar"), I(2))
+val transformMySet: Set[Str] = mySet.map(e => match e { S(s) => s | I(_) => "An int"})
+```
+
+*Mode:* Stateless, State. Other modes are not allowed.
+
 
 ### Lists (aka Sequences)
 

@@ -1,58 +1,45 @@
 module option {
-  // a demonstration of discriminated unions, specifying an option type.
+  // A demonstration of sum types, specifying an option type.
 
-  // An option type for values.
-  // This type declaration is not required. It only defines an alias.
-  type Vote_option =
-    | { tag: "none" }
-    | { tag: "some", value: int }
+  // An option type for int values.
+  type VoteOption =
+    | None
+    | Some(int)
 
-  def Some(v) = { tag: "some", value: v }
-
-  val None = { tag: "none" }
-
-  var votes: List[Vote_option]
+  var votes: List[VoteOption]
   var outcome: int
 
-  action Init = all {
+  action init = all {
     votes' = [],
     outcome' = 0
   }
 
-  action Vote(v) = {
+  action vote(v) = {
     votes' = votes.append(Some(v))
   }
 
-  action Unvote(i) = all {
+  action unvote(i) = all {
     votes[i] != None,
     votes' = votes.replaceAt(i, None),
   }
 
-  val SumVotes =
-    def sum_one(sum, w): (int, Vote_option) => int =
-      // deconstruct a discriminate union.
-      w match
-        // this pattern binds some_w to the "some" version of w, if w.tag == "some"
-        | "some": some_w =>  sum + some_w.value
-        // this pattern
-        | "none": _ =>       sum
-
-      /* // this is how you would do that in typescript
-      if (w.tag == "some") {
-        // w has the type { tag: "some", value: int }
-        sum + w.value
-      } else {
-        sum
+  val sumVotes =
+    votes.foldl(0, (sum, v) => match v {
+        | Some(n) => sum + n
+        | None    => sum
       }
-      */
+    )
 
-    votes.foldl(0, sum_one)
-
-  action Next = all {
+  action step = all {
     any {
-      nondet v = oneOf(Int); Vote(v),
-      nondet i = oneOf(votes.indices()); Unvote(i),
+      nondet v = oneOf(Int); vote(v),
+      nondet i = oneOf(votes.indices()); unvote(i),
     },
-    outcome' = SumVotes
+    outcome' = sumVotes
+  }
+
+  run matchWithDefaultTest = {
+    val expected = match Some(42) { _ => "default" }
+    assert(expected == "default")
   }
 }

@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -14,7 +14,7 @@
  */
 
 import { IRTransformer, transformDefinition } from './IRTransformer'
-import { QuintApp, QuintDef, QuintLambda, QuintName, isFlat } from './quintIr'
+import { QuintApp, QuintDef, QuintLambda, QuintName } from './quintIr'
 import { QuintConstType } from './quintTypes'
 
 /**
@@ -44,12 +44,8 @@ class Namespacer implements IRTransformer {
     // In the new flattener, we will need to consider it here as well.
     // Also, considering it here makes the interface consistent.
     // Uncomment the following line when the new flattener is in place:
-    // if (isFlat(def) && !this.namesToPreserve.has(def.name)) {
-    if (isFlat(def)) {
-      return { ...def, name: namespacedName(this.namespace, def.name) }
-    }
-
-    return def
+    // if (!this.namesToPreserve.has(def.name)) {
+    return { ...def, name: namespacedName(this.namespace, def.name) }
   }
 
   exitLambda(expr: QuintLambda): QuintLambda {
@@ -85,5 +81,9 @@ class Namespacer implements IRTransformer {
 }
 
 function namespacedName(namespace: string | undefined, name: string): string {
-  return namespace ? `${namespace}::${name}` : name
+  if (name === '_') {
+    return name
+  }
+  // FIXME(#1111): We shouldn't need to verify `startsWith` if we find a good way to manage namespaces
+  return namespace && !name.startsWith(`${namespace}::`) ? `${namespace}::${name}` : name
 }

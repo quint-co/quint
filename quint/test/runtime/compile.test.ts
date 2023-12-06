@@ -9,18 +9,19 @@ import {
   CompilationContext,
   CompilationState,
   compile,
-  compileDef,
+  compileDecls,
   compileExpr,
   compileFromCode,
   contextNameLookup,
+  inputDefName,
 } from '../../src/runtime/compile'
 import { RuntimeValue } from '../../src/runtime/impl/runtimeValue'
 import { dedent } from '../textUtils'
 import { newIdGenerator } from '../../src/idGenerator'
 import { Rng, newRng } from '../../src/rng'
 import { SourceLookupPath, stringSourceResolver } from '../../src/parsing/sourceResolver'
-import { analyzeModules, parse, parseExpressionOrUnit } from '../../src'
-import { flattenModules } from '../../src/flattening'
+import { analyzeModules, parse, parseExpressionOrDeclaration, quintErrorToString } from '../../src'
+import { flattenModules } from '../../src/flattening/fullFlattener'
 import { newEvaluationState } from '../../src/runtime/impl/compilerImpl'
 
 // Use a global id generator, limited to this test suite.
@@ -28,19 +29,23 @@ const idGen = newIdGenerator()
 
 // Compile an expression, evaluate it, convert to QuintEx, then to a string,
 // compare the result. This is the easiest path to test the results.
-function assertResultAsString(input: string, expected: string | undefined) {
-  const moduleText = `module __runtime { val q::input = ${input} }`
+//
+// @param evalContext optional textual representation of context that may hold definitions which
+//        `input` depends on. This content will be wrapped in a module and imported unqualified
+//        before the input is evaluated. If not supplied, the context is empty.
+function assertResultAsString(input: string, expected: string | undefined, evalContext: string = '') {
+  const moduleText = `module contextM { ${evalContext} } module __runtime { import contextM.*\n val ${inputDefName} = ${input} }`
   const mockLookupPath = stringSourceResolver(new Map()).lookupPath('/', './mock')
   const context = compileFromCode(idGen, moduleText, '__runtime', mockLookupPath, noExecutionListener, newRng().next)
 
-  assert.isEmpty(context.syntaxErrors, `Syntax errors: ${context.syntaxErrors.map(e => e.explanation).join(', ')}`)
-  assert.isEmpty(context.compileErrors, `Compile errors: ${context.compileErrors.map(e => e.explanation).join(', ')}`)
+  assert.isEmpty(context.syntaxErrors, `Syntax errors: ${context.syntaxErrors.map(quintErrorToString).join(', ')}`)
+  assert.isEmpty(context.compileErrors, `Compile errors: ${context.compileErrors.map(quintErrorToString).join(', ')}`)
 
   assertInputFromContext(context, expected)
 }
 
 function assertInputFromContext(context: CompilationContext, expected: string | undefined) {
-  contextNameLookup(context.evaluationState.context, 'q::input', 'callable')
+  contextNameLookup(context.evaluationState.context, inputDefName, 'callable')
     .mapLeft(msg => assert(false, `Unexpected error: ${msg}`))
     .mapRight(value => assertComputableAsString(value, expected))
 }
@@ -85,7 +90,7 @@ function evalVarAfterCall(varName: string, callee: string, input: string): Eithe
   const callback = (ctx: CompilationContext): Either<string, string> => {
     let key = undefined
     const lastModule = ctx.compilationState.modules[ctx.compilationState.modules.length - 1]
-    const def = lastModule.defs.find(def => def.kind === 'def' && def.name === callee)
+    const def = lastModule.declarations.find(def => def.kind === 'def' && def.name === callee)
     if (!def) {
       return left(`${callee} definition not found`)
     }
@@ -309,13 +314,6 @@ describe('compiling specs to runtime values', () => {
       assertResultAsString(input, '24')
     })
 
-    it('unpacks tuples', () => {
-      const input = `def mult(x, y) = (x * y)
-         val t = (3, 4)
-         mult(t)`
-      assertResultAsString(input, '12')
-    })
-
     it('uses named def instead of lambda', () => {
       const input = `def positive(x) = x > 0
          (-3).to(3).filter(positive)`
@@ -513,7 +511,7 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('unpacks tuples in exists', () => {
-      assertResultAsString('tuples(1.to(3), 4.to(6)).exists((x, y) => x + y == 7)', 'true')
+      assertResultAsString('tuples(1.to(3), 4.to(6)).exists(((x, y)) => x + y == 7)', 'true')
     })
 
     it('computes exists over intervals', () => {
@@ -531,7 +529,7 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('unpacks tuples in forall', () => {
-      assertResultAsString('tuples(1.to(3), 4.to(6)).forall((x, y) => x + y <= 9)', 'true')
+      assertResultAsString('tuples(1.to(3), 4.to(6)).forall(((x, y)) => x + y <= 9)', 'true')
     })
 
     it('computes forall over nested sets', () => {
@@ -554,7 +552,7 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('unpacks tuples in map', () => {
-      assertResultAsString('tuples(1.to(3), 4.to(6)).map((x, y) => x + y)', 'Set(5, 6, 7, 8, 9)')
+      assertResultAsString('tuples(1.to(3), 4.to(6)).map(((x, y)) => x + y)', 'Set(5, 6, 7, 8, 9)')
     })
 
     it('computes map over intervals', () => {
@@ -571,7 +569,7 @@ describe('compiling specs to runtime values', () => {
     })
 
     it('unpacks tuples in filter', () => {
-      assertResultAsString('tuples(1.to(5), 2.to(3)).filter((x, y) => x < y)', 'Set(Tup(1, 2), Tup(1, 3), Tup(2, 3))')
+      assertResultAsString('tuples(1.to(5), 2.to(3)).filter(((x, y)) => x < y)', 'Set(Tup(1, 2), Tup(1, 3), Tup(2, 3))')
     })
 
     it('computes filter over intervals', () => {
@@ -843,6 +841,26 @@ describe('compiling specs to runtime values', () => {
     })
   })
 
+  describe('compile over sum types', () => {
+    it('can compile construction of sum type variants', () => {
+      const context = 'type T = Some(int) | None'
+      assertResultAsString('Some(40 + 2)', 'variant("Some", 42)', context)
+      assertResultAsString('None', 'variant("None", Rec())', context)
+    })
+
+    it('can compile elimination of sum type variants via match', () => {
+      const context = 'type T = Some(int) | None'
+      assertResultAsString('match Some(40 + 2) { Some(x) => x | None => 0 }', '42', context)
+      assertResultAsString('match None { Some(x) => x | None => 0 }', '0', context)
+    })
+
+    it('can compile elimination of sum type variants via match using default', () => {
+      const context = 'type T = Some(int) | None'
+      // We can hit the fallback case
+      assertResultAsString('match None { Some(x) => x | _ => 3 }', '3', context)
+    })
+  })
+
   describe('compile over maps', () => {
     it('mapBy constructor', () => {
       assertResultAsString('3.to(5).mapBy(i => 2 * i)', 'Map(Tup(3, 6), Tup(4, 8), Tup(5, 10))')
@@ -960,6 +978,17 @@ describe('compiling specs to runtime values', () => {
       evalVarAfterCall('n', 'run1', input).mapRight(m => assert.fail(`Expected an error, found: ${m}`))
     })
 
+    it('q::debug', () => {
+      // `q::debug(s, a)` returns `a`
+      const input = dedent(
+        `var n: int
+        |run run1 = (n' = 1).then(n' = q::debug("n plus one", n + 1))
+        `
+      )
+
+      assertVarAfterCall('n', '2', 'run1', input)
+    })
+
     it('unsupported operators', () => {
       assertResultAsString('allLists(1.to(3))', undefined)
 
@@ -989,14 +1018,12 @@ describe('incremental compilation', () => {
     next: () => 0n,
   }
   /* Adds some quint code to the compilation and evaluation state */
-  function compileModules(text: string): CompilationContext {
+  function compileModules(text: string, mainName: string): CompilationContext {
     const idGen = newIdGenerator()
+    const sourceCode: Map<string, string> = new Map()
     const fake_path: SourceLookupPath = { normalizedPath: 'fake_path', toSourceName: () => 'fake_path' }
-    const parseResult = parse(idGen, 'fake_location', fake_path, text)
-    if (parseResult.isLeft()) {
-      assert.fail('Failed to parse mocked up module')
-    }
-    const { modules, table, sourceMap } = parseResult.unwrap()
+    const { modules, table, sourceMap, errors } = parse(idGen, 'fake_path', fake_path, text, sourceCode)
+    assert.isEmpty(errors)
 
     const [analysisErrors, analysisOutput] = analyzeModules(table, modules)
     assert.isEmpty(analysisErrors)
@@ -1013,20 +1040,33 @@ describe('incremental compilation', () => {
       originalModules: modules,
       idGen,
       modules: flattenedModules,
+      mainName,
       sourceMap,
       analysisOutput: flattenedAnalysis,
+      sourceCode,
     }
 
     const moduleToCompile = flattenedModules[flattenedModules.length - 1]
 
-    return compile(state, newEvaluationState(noExecutionListener), flattenedTable, dummyRng.next, moduleToCompile.defs)
+    return compile(
+      state,
+      newEvaluationState(noExecutionListener),
+      flattenedTable,
+      dummyRng.next,
+      moduleToCompile.declarations
+    )
   }
 
   describe('compileExpr', () => {
     it('should compile a Quint expression', () => {
-      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }')
+      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }', 'm')
 
-      const parsed = parseExpressionOrUnit('x + 2', 'test.qnt', compilationState.idGen, compilationState.sourceMap)
+      const parsed = parseExpressionOrDeclaration(
+        'x + 2',
+        'test.qnt',
+        compilationState.idGen,
+        compilationState.sourceMap
+      )
       const expr = parsed.kind === 'expr' ? parsed.expr : undefined
       const context = compileExpr(compilationState, evaluationState, dummyRng, expr!)
 
@@ -1038,49 +1078,86 @@ describe('incremental compilation', () => {
 
   describe('compileDef', () => {
     it('should compile a Quint definition', () => {
-      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }')
+      const { compilationState, evaluationState } = compileModules('module m { pure val x = 1 }', 'm')
 
-      const parsed = parseExpressionOrUnit(
+      const parsed = parseExpressionOrDeclaration(
         'val y = x + 2',
         'test.qnt',
         compilationState.idGen,
         compilationState.sourceMap
       )
-      const def = parsed.kind === 'toplevel' ? parsed.def : undefined
-      const context = compileDef(compilationState, evaluationState, dummyRng, def!)
+      const defs = parsed.kind === 'declaration' ? parsed.decls : undefined
+      const context = compileDecls(compilationState, evaluationState, dummyRng, defs!)
 
-      assert.deepEqual(context.compilationState.analysisOutput.types.get(def!.id)?.type, { kind: 'int', id: 3n })
+      assert.deepEqual(context.compilationState.analysisOutput.types.get(defs![0].id)?.type, { kind: 'int', id: 3n })
 
-      const computable = context.evaluationState?.context.get(kindName('callable', def!.id))!
+      const computable = context.evaluationState?.context.get(kindName('callable', defs![0].id))!
       assertComputableAsString(computable, '3')
     })
 
     it('non-exported imports are not visible in subsequent importing modules', () => {
       const { compilationState, evaluationState } = compileModules(
-        'module m1 { pure val x1 = 1 }' + 'module m2 { import m1.* pure val x2 = x1 }' + 'module m3 { import m2.* }' // m1 shouldn't be acessible inside m3
+        'module m1 { pure val x1 = 1 }' + 'module m2 { import m1.* pure val x2 = x1 }' + 'module m3 { import m2.* }', // m1 shouldn't be acessible inside m3
+        'm3'
       )
 
-      const parsed = parseExpressionOrUnit(
+      const parsed = parseExpressionOrDeclaration(
         'def x3 = x1',
         'test.qnt',
         compilationState.idGen,
         compilationState.sourceMap
       )
-      const def = parsed.kind === 'toplevel' ? parsed.def : undefined
-      const context = compileDef(compilationState, evaluationState, dummyRng, def!)
+      const decls = parsed.kind === 'declaration' ? parsed.decls : []
+      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
 
       assert.sameDeepMembers(context.syntaxErrors, [
         {
-          explanation: "[QNT404] Name 'x1' not found",
-          locs: [
-            {
-              source: 'test.qnt',
-              start: { line: 0, col: 9, index: 9 },
-              end: { line: 0, col: 10, index: 10 },
-            },
-          ],
+          code: 'QNT404',
+          message: "Name 'x1' not found",
+          reference: 10n,
+          data: {},
         },
       ])
+    })
+
+    it('can complile type alias declarations', () => {
+      const { compilationState, evaluationState } = compileModules('module m {}', 'm')
+      const parsed = parseExpressionOrDeclaration(
+        'type T = int',
+        'test.qnt',
+        compilationState.idGen,
+        compilationState.sourceMap
+      )
+      const decls = parsed.kind === 'declaration' ? parsed.decls : []
+      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
+
+      const typeDecl = decls[0]
+      assert(typeDecl.kind === 'typedef')
+      assert(typeDecl.name === 'T')
+      assert(typeDecl.type!.kind === 'int')
+
+      assert.sameDeepMembers(context.syntaxErrors, [])
+    })
+
+    it('can compile sum type declarations', () => {
+      const { compilationState, evaluationState } = compileModules('module m {}', 'm')
+      const parsed = parseExpressionOrDeclaration(
+        'type T = A(int) | B(str) | C',
+        'test.qnt',
+        compilationState.idGen,
+        compilationState.sourceMap
+      )
+      const decls = parsed.kind === 'declaration' ? parsed.decls : []
+      const context = compileDecls(compilationState, evaluationState, dummyRng, decls)
+
+      assert(decls.find(t => t.kind === 'typedef' && t.name === 'T'))
+      // Sum type declarations are expanded to add an
+      // operator declaration for each constructor:
+      assert(decls.find(t => t.kind === 'def' && t.name === 'A'))
+      assert(decls.find(t => t.kind === 'def' && t.name === 'B'))
+      assert(decls.find(t => t.kind === 'def' && t.name === 'C'))
+
+      assert.sameDeepMembers(context.syntaxErrors, [])
     })
   })
 })

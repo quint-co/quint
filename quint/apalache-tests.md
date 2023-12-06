@@ -29,7 +29,8 @@ quint verify --init=invalidInit ../examples/language-features/booleans.qnt
 <!-- !test exit 1 -->
 <!-- !test err invalid init -->
 ```
-error: Configuration error (see the manual): Operator invalidInit not found (used as the initialization predicate)
+error: [QNT404] Name 'invalidInit' not found
+error: name resolution failed
 ```
 
 
@@ -77,7 +78,10 @@ quint verify --invariant inv,inv2 ../examples/verification/defaultOpNames.qnt
 
 <!-- !test in prints a trace on invariant violation -->
 ```
-quint verify --invariant inv ./testFixture/apalache/violateOnFive.qnt
+output=$(quint verify --invariant inv ./testFixture/apalache/violateOnFive.qnt)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/'
+exit $exit_code
 ```
 
 <!-- !test exit 1 -->
@@ -100,6 +104,7 @@ An example execution:
 
 [State 4] { n: 5 }
 
+[violation] Found an issue (duration).
 ```
 
 ### Variant violations write ITF to file when `--out-itf` is specified
@@ -123,10 +128,12 @@ error: found a counterexample
 
 ## Deadlocks
 
-
 <!-- !test in reports deadlock -->
 ```
-quint verify ./testFixture/apalache/deadlock.qnt
+output=$(quint verify ./testFixture/apalache/deadlock.qnt)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/'
+exit $exit_code
 ```
 
 <!-- !test exit 1 -->
@@ -149,4 +156,66 @@ An example execution:
 
 [State 4] { n: 5 }
 
+[violation] Found an issue (duration).
+```
+
+## Temporal properties
+
+### Can verify with single temporal property
+
+<!-- !test check can specify --temporal -->
+```
+quint verify --temporal eventuallyOne ./testFixture/apalache/temporalTest.qnt
+```
+
+### Can verify with two temporal properties
+
+<!-- !test check can specify multiple temporal props -->
+```
+quint verify --temporal eventuallyOne,eventuallyFive ./testFixture/apalache/temporalTest.qnt
+```
+
+### Temporal violations are reported with traces
+
+<!-- !test in prints a trace on temporal violation -->
+```
+output=$(quint verify --temporal eventuallyZero ./testFixture/apalache/temporalTest.qnt)
+exit_code=$?
+echo "$output" | egrep 'State|__InLoop:|n:'
+exit $exit_code
+```
+
+<!-- !test exit 1 -->
+<!-- !test err prints a trace on temporal violation -->
+```
+error: found a counterexample
+```
+
+<!-- !test out prints a trace on temporal violation -->
+```
+An example execution:
+[State 0]
+  __InLoop: false,
+  __saved_n: 1,
+  n: 1
+[State 1]
+  __InLoop: true,
+  __saved_n: 1,
+  n: 2
+[State 2]
+  __InLoop: true,
+  __saved_n: 1,
+  n: 3
+[State 3]
+  __InLoop: true,
+  __saved_n: 1,
+  n: 4
+[State 4]
+  __InLoop: true,
+  __saved_n: 1,
+  n: 5
+[State 5]
+  __InLoop: true,
+  __saved_n: 1,
+  n: 1
 ```

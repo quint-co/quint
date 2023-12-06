@@ -11,11 +11,14 @@ import {
   parsePhase4toposort,
 } from '../../src/parsing/quintParserFrontend'
 import { lf } from 'eol'
-import { right } from '@sweet-monads/either'
 import { newIdGenerator } from '../../src/idGenerator'
 import { collectIds } from '../util'
 import { fileSourceResolver } from '../../src/parsing/sourceResolver'
-import { isTheUnit } from '../../src'
+import { mkErrorMessage } from '../../src/cliCommands'
+import { QuintError } from '../../src'
+
+// the name that we are using by default
+const defaultSourceName = 'moduleName'
 
 // read a Quint file from the test data directory
 function readQuint(name: string): string {
@@ -30,6 +33,12 @@ function readJson(name: string): any {
   return JSONbig.parse(readFileSync(p).toString('utf8'))
 }
 
+// parse the text and return all parse errors (of phase 1)
+function parseErrorsFrom(sourceName: string, code: string): QuintError[] {
+  const gen = newIdGenerator()
+  return parsePhase1fromText(gen, code, sourceName).errors
+}
+
 // read the Quint file and the expected JSON, parse and compare the results
 function parseAndCompare(artifact: string): void {
   // read the expected result as JSON
@@ -41,56 +50,34 @@ function parseAndCompare(artifact: string): void {
   // read the input from the data directory and parse it
   const gen = newIdGenerator()
   const basepath = resolve(__dirname, '../../testFixture')
-  const resolver = fileSourceResolver((path: string) => {
+  const resolver = fileSourceResolver(new Map(), (path: string) => {
     // replace the absolute path with a generic mocked path,
     // so the same fixtures work accross different setups
     return path.replace(basepath, 'mocked_path/testFixture')
   })
   const mainPath = resolver.lookupPath(basepath, `${artifact}.qnt`)
-  const phase2Result = parsePhase1fromText(gen, readQuint(artifact), mainPath.toSourceName()).chain(res =>
-    parsePhase2sourceResolution(gen, resolver, mainPath, res)
-  )
+  const phase1Result = parsePhase1fromText(gen, readQuint(artifact), mainPath.toSourceName())
+  const phase2Result = parsePhase2sourceResolution(gen, resolver, mainPath, phase1Result)
 
-  if (phase2Result.isLeft()) {
-    // An error occurred at phase 2, check if it is the expected result
-    phase2Result.mapLeft(
-      err =>
-        (outputToCompare = {
-          stage: 'parsing',
-          errors: err,
-          warnings: [],
-        })
-    )
-  } else if (phase2Result.isRight()) {
-    const { modules: modules2, sourceMap } = phase2Result.value
-    const expectedIds = modules2.flatMap(m => collectIds(m)).sort()
-    // Phase 1-2 succededed, check that the source map is correct
-    assert.sameDeepMembers(expectedIds, [...sourceMap.keys()].sort(), 'expected source map to contain all ids')
+  const phase3Result = parsePhase3importAndNameResolution(phase2Result)
+  const { modules, sourceMap, errors } = parsePhase4toposort(phase3Result)
 
+  if (errors.length === 0) {
+    // Only check source map if there are no errors. Otherwise, ids generated for error nodes might be missing from the
+    // actual modules
+    const expectedIds = modules.flatMap(m => collectIds(m)).sort()
+    assert.sameDeepMembers([...sourceMap.keys()].sort(), expectedIds, 'expected source map to contain all ids')
     const expectedSourceMap = readJson(`${artifact}.map`)
     const sourceMapResult = JSONbig.parse(JSONbig.stringify(compactSourceMap(sourceMap)))
 
     assert.deepEqual(sourceMapResult, expectedSourceMap, 'expected source maps to be equal')
-
-    const phase4Result = parsePhase3importAndNameResolution(phase2Result.value).chain(phase3Data =>
-      parsePhase4toposort(phase3Data)
-    )
-
-    if (phase4Result.isLeft()) {
-      // An error occurred at phases 3-4, check if it is the expected result
-      phase4Result.mapLeft(
-        err =>
-          (outputToCompare = {
-            stage: 'parsing',
-            errors: err,
-            warnings: [],
-          })
-      )
-    } else {
-      // All phases succeeded, check that the module is correclty output
-      const modules4 = phase4Result.value.modules
-      outputToCompare = { stage: 'parsing', warnings: [], modules: modules4 }
-    }
+  }
+  // All phases succeeded, check that the module is correclty output
+  outputToCompare = {
+    stage: 'parsing',
+    warnings: [],
+    modules: modules,
+    errors: errors.map(mkErrorMessage(sourceMap)),
   }
 
   // run it through stringify-parse to obtain the same json (due to bigints)
@@ -106,11 +93,8 @@ describe('parsing', () => {
       readQuint('_0001emptyModule'),
       'mocked_path/testFixture/_0001emptyModule.qnt'
     )
-    const module = { id: 1n, name: 'empty', defs: [] }
-    assert.deepEqual(
-      result.map(r => r.modules[0]),
-      right(module)
-    )
+    const module = { id: 1n, name: 'empty', declarations: [] }
+    assert.deepEqual(result.modules[0], module)
   })
 
   it('parses SuperSpec', () => {
@@ -119,7 +103,7 @@ describe('parsing', () => {
       readQuint('SuperSpec'),
       'mocked_path/testFixture/SuperSpec.qnt'
     )
-    assert(result.isRight())
+    assert.isEmpty(result.errors)
   })
 
   it('parses SuperSpec correctly', () => {
@@ -131,52 +115,112 @@ describe('parsing', () => {
   })
 
   it('parses sum types', () => {
-    const mod = `
-    module SumTypes {
-      type T =
-        | A
-        | B(int)
-    }
-    `
-    const result = parsePhase1fromText(newIdGenerator(), mod, 'test')
-    assert(result.isRight())
-    const typeDef = result.value.modules[0].defs[0]
-    assert(typeDef.kind === 'typedef')
-    const sumType = typeDef.type!
-    assert(sumType.kind === 'sum')
-    const [variantA, variantB] = sumType.fields.fields
-    assert(variantA.fieldName === 'A')
-    assert(isTheUnit(variantA.fieldType))
-    assert(variantB.fieldName === 'B')
-    assert(variantB.fieldType.kind === 'int')
+    parseAndCompare('_1043sumTypeDecl')
+  })
+
+  it('parses match expressions', () => {
+    parseAndCompare('_1044matchExpression')
   })
 })
 
-describe('parse errors', () => {
-  it('error in module unit', () => {
-    parseAndCompare('_1002emptyWithError')
+// instead of testing how errors are produced in json,
+// we only test the error messages
+describe('syntax errors', () => {
+  it('unbalanced module definition', () => {
+    const code = 'module empty {'
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.equal(errors.length, 1)
+    assert.equal(
+      errors[0].message,
+      `mismatched input '<EOF>' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'import', 'export', DOCCOMMENT}`
+    )
+    assert.equal(errors[0].code, 'QNT000')
   })
 
-  it('error on malformed disjoint union', () => {
-    parseAndCompare('_1005constRecordsError')
+  it('something unexpected in a module definition', () => {
+    const code = 'module empty { something }'
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.equal(errors.length, 1)
+    assert.equal(
+      errors[0].message,
+      `extraneous input 'something' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'import', 'export', DOCCOMMENT}`
+    )
+    assert.equal(errors[0].code, 'QNT000')
+  })
+
+  it('error in a constant definition', () => {
+    const code = 'module err { const broken }'
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.equal(errors.length, 1)
+    assert.equal(errors[0].message, `mismatched input '}' expecting {':', '::'}`)
+    assert.equal(errors[0].code, 'QNT000')
   })
 
   it('error on unexpected symbol after expression', () => {
-    parseAndCompare('_1006unexpectedExpr')
+    // syntax error on: p !! name
+    const code = 'module unexpectedExpr { def access(p) = p !! name }'
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.isAtLeast(errors.length, 1)
+    assert.equal(errors[0].message, `token recognition error at: '!!'`)
+    assert.equal(errors[0].code, 'QNT000')
   })
 
-  it('error on unrecognized token', () => {
-    parseAndCompare('_1007unexpectedToken')
+  it('error on unexpected token', () => {
+    // # is an unexpected token
+    const code = 'module unexpectedToken { def access(p) = { p # name } }'
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.isAtLeast(errors.length, 1)
+    assert.equal(errors[0].message, `token recognition error at: '#'`)
+    assert.equal(errors[0].code, 'QNT000')
   })
 
-  it('error on unexpected "="', () => {
-    parseAndCompare('_1008unexpectedEq')
+  it('error on unexpected token "="', () => {
+    // "=" is unexpected
+    const code = 'module unexpectedEq { val errorHere = x = 1 }'
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.equal(errors.length, 1)
+    assert.equal(errors[0].message, `unexpected '=', did you mean '=='?`)
+    assert.equal(errors[0].code, 'QNT006')
   })
 
-  it('error on infix without arguments', () => {
-    parseAndCompare('_1009infixFewArgs')
+  it('error on hanging operator name', () => {
+    // the keyword cardinality is hanging
+    const code = 'module hangingCardinality { def one(S) = { S cardinality } }'
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.isAtLeast(errors.length, 1)
+    assert.equal(
+      errors[0].message,
+      `extraneous input '(' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'import', 'export', DOCCOMMENT}`
+    )
+    assert.equal(errors[0].code, 'QNT000')
   })
 
+  it('error on double spread', () => {
+    const code = `module spreadError {
+  val rec = { a: 1, b: true }
+  val errorRec = { ...rec, ...rec }
+  }`
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.equal(errors.length, 1)
+    assert.equal(errors[0].message, '... may be used once in { ...record, <fields> }')
+    assert.equal(errors[0].code, 'QNT012')
+  })
+
+  it('error on single quotes in import', () => {
+    // we should use double quotes
+    const code = `module singleQuotes {  import I.* from './_1025importeeWithError' }`
+    const errors = parseErrorsFrom(defaultSourceName, code)
+    assert.isAtLeast(errors.length, 1)
+    assert.equal(errors[0].message, `mismatched input ''' expecting STRING`)
+    assert.equal(errors[0].code, 'QNT000')
+  })
+})
+
+// Test the JSON error output. Most of the tests here should migrate to the
+// above test suite called 'syntax errors' or other test suites for the later
+// phases. It is sufficient to have a few tests that compare JSON. For the
+// rest, we are interested in checking the error messages, not the JSON files.
+describe('parse errors', () => {
   it('error on unresolved name', () => {
     parseAndCompare('_1010undefinedName')
   })
@@ -209,16 +253,8 @@ describe('parse errors', () => {
     parseAndCompare('_1023importFromUnresolved')
   })
 
-  it('errors on an import that contains syntax errors', () => {
-    parseAndCompare('_1024importFromSyntaxError')
-  })
-
   it('errors on cyclic imports', () => {
     parseAndCompare('_1026importCycleA')
-  })
-
-  it('double spread should produce an error', () => {
-    parseAndCompare('_1029spreadError')
   })
 
   it('a module with a constant', () => {

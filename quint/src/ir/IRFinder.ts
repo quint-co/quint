@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -13,7 +13,7 @@
  */
 
 import { IRVisitor, walkModule } from './IRVisitor'
-import { QuintDef, QuintEx, QuintModule } from './quintIr'
+import { QuintDef, QuintEx, QuintLambda, QuintLambdaParameter, QuintModule } from './quintIr'
 import { QuintType } from './quintTypes'
 
 /**
@@ -58,6 +58,20 @@ export function findDefinitionWithId(modules: QuintModule[], id: bigint): QuintD
   return visitor.def
 }
 
+/**
+ * Find a quint parameter with a given id in a list of modules
+ *
+ * @param modules the modules in which to search for the parameter
+ * @param id the id to be searched for
+ *
+ * @returns a quint lambda parameter with the given id, or undefined if no parameter is found
+ */
+export function findParameterWithId(modules: QuintModule[], id: bigint): QuintLambdaParameter | undefined {
+  const visitor = new IRParameterFinder(id)
+  modules.forEach(module => walkModule(visitor, module))
+  return visitor.param
+}
+
 class IRExpressionFinder implements IRVisitor {
   id: bigint
   expression?: QuintEx
@@ -100,5 +114,22 @@ class IRDefinitionFinder implements IRVisitor {
     if (def.id === this.id) {
       this.def = def
     }
+  }
+}
+
+class IRParameterFinder implements IRVisitor {
+  id: bigint
+  param?: QuintLambdaParameter
+
+  constructor(id: bigint) {
+    this.id = id
+  }
+
+  exitLambda(lambda: QuintLambda) {
+    lambda.params.forEach(param => {
+      if (param.id == this.id) {
+        this.param = param
+      }
+    })
   }
 }

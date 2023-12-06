@@ -12,7 +12,7 @@ import { Position } from 'vscode-languageserver'
 import { parseOrThrow } from './util'
 
 describe('diagnosticsFromErrorMap', () => {
-  const errors: [bigint, QuintError][] = [[1n, { code: 'QNT000', message: 'Message', reference: 0n, data: {} }]]
+  const errors: QuintError[] = [{ code: 'QNT000', message: 'Message', reference: 1n, data: {} }]
 
   const sourceMap = new Map<bigint, Loc>([
     [1n, { start: { col: 1, index: 1, line: 1 }, end: { col: 1, index: 1, line: 1 }, source: 'mocked_path' }],
@@ -21,7 +21,7 @@ describe('diagnosticsFromErrorMap', () => {
   it('assembles diagnosticts from error maps', () => {
     const diagnostics = diagnosticsFromErrors(errors, sourceMap)
 
-    assert.sameDeepMembers(diagnostics, [
+    assert.sameDeepMembers(diagnostics.get('mocked_path')!, [
       {
         message: 'Message',
         range: {

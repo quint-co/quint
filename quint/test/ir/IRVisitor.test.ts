@@ -1,13 +1,19 @@
 import { describe, it } from 'mocha'
 import { assert } from 'chai'
-import { buildModuleWithDefs } from '../builders/ir'
+import { buildModuleWithDecls } from '../builders/ir'
 import { IRVisitor, walkModule } from '../../src/ir/IRVisitor'
-import { QuintDef, QuintEx, QuintModule } from '../../src/ir/quintIr'
-import { definitionToString, expressionToString, moduleToString, typeToString } from '../../src/ir/IRprinting'
+import { QuintDeclaration, QuintDef, QuintEx, QuintModule } from '../../src/ir/quintIr'
+import {
+  declarationToString,
+  definitionToString,
+  expressionToString,
+  moduleToString,
+  typeToString,
+} from '../../src/ir/IRprinting'
 import { QuintType } from '../../src/ir/quintTypes'
 
 describe('walkModule', () => {
-  const quintModule = buildModuleWithDefs([
+  const quintModule = buildModuleWithDecls([
     'var a: int',
     'const B: int',
     'type MY_TYPE = int',
@@ -70,6 +76,54 @@ describe('walkModule', () => {
     assert.deepEqual(visitor.exited.map(expressionToString), exitedExpressions)
   })
 
+  it('finds declarations', () => {
+    class TestVisitor implements IRVisitor {
+      entered: QuintDeclaration[] = []
+      exited: QuintDeclaration[] = []
+
+      enterDecl(decl: QuintDeclaration): void {
+        this.entered.push(decl)
+      }
+
+      exitDecl(decl: QuintDeclaration): void {
+        this.exited.push(decl)
+      }
+    }
+
+    const enteredDeclarations = [
+      'var a: int',
+      'const B: int',
+      'type MY_TYPE = int',
+      'assume _ = igt(N, 1)',
+      'import M.*',
+      'import A(x = "rainbow") as A1',
+      'val f = filter(S, ((x) => iadd(x, 1)))',
+      'def l = val x = false { x }',
+    ]
+
+    const exitedDeclarations = [
+      'var a: int',
+      'const B: int',
+      'type MY_TYPE = int',
+      'assume _ = igt(N, 1)',
+      'import M.*',
+      'import A(x = "rainbow") as A1',
+      'val f = filter(S, ((x) => iadd(x, 1)))',
+      'def l = val x = false { x }',
+    ]
+
+    const visitor = new TestVisitor()
+    walkModule(visitor, quintModule)
+    assert.deepEqual(
+      visitor.entered.map(d => declarationToString(d)),
+      enteredDeclarations
+    )
+    assert.deepEqual(
+      visitor.exited.map(d => declarationToString(d)),
+      exitedDeclarations
+    )
+  })
+
   it('finds definitions', () => {
     class TestVisitor implements IRVisitor {
       entered: QuintDef[] = []
@@ -89,8 +143,6 @@ describe('walkModule', () => {
       'const B: int',
       'type MY_TYPE = int',
       'assume _ = igt(N, 1)',
-      'import M.*',
-      'import A(x = "rainbow") as A1',
       'val f = filter(S, ((x) => iadd(x, 1)))',
       'def l = val x = false { x }',
       'val x = false', // From the let definition
@@ -101,8 +153,6 @@ describe('walkModule', () => {
       'const B: int',
       'type MY_TYPE = int',
       'assume _ = igt(N, 1)',
-      'import M.*',
-      'import A(x = "rainbow") as A1',
       'val f = filter(S, ((x) => iadd(x, 1)))',
       'val x = false', // From the let definition
       'def l = val x = false { x }',
@@ -151,14 +201,14 @@ describe('walkModule', () => {
   describe('visiting specific definitions', () => {
     it('finds operator definitions', () => {
       class TestVisitor implements IRVisitor {
-        entered: QuintDef[] = []
-        exited: QuintDef[] = []
+        entered: QuintDeclaration[] = []
+        exited: QuintDeclaration[] = []
 
-        enterOpDef(def: QuintDef): void {
+        enterOpDef(def: QuintDeclaration): void {
           this.entered.push(def)
         }
 
-        exitOpDef(def: QuintDef): void {
+        exitOpDef(def: QuintDeclaration): void {
           this.exited.push(def)
         }
       }
@@ -178,25 +228,25 @@ describe('walkModule', () => {
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
       assert.deepEqual(
-        visitor.entered.map(d => definitionToString(d)),
+        visitor.entered.map(d => declarationToString(d)),
         enteredDefinitions
       )
       assert.deepEqual(
-        visitor.exited.map(d => definitionToString(d)),
+        visitor.exited.map(d => declarationToString(d)),
         exitedDefinitions
       )
     })
 
     it('finds constant definitions', () => {
       class TestVisitor implements IRVisitor {
-        entered: QuintDef[] = []
-        exited: QuintDef[] = []
+        entered: QuintDeclaration[] = []
+        exited: QuintDeclaration[] = []
 
-        enterConst(def: QuintDef): void {
+        enterConst(def: QuintDeclaration): void {
           this.entered.push(def)
         }
 
-        exitConst(def: QuintDef): void {
+        exitConst(def: QuintDeclaration): void {
           this.exited.push(def)
         }
       }
@@ -208,25 +258,25 @@ describe('walkModule', () => {
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
       assert.deepEqual(
-        visitor.entered.map(d => definitionToString(d)),
+        visitor.entered.map(d => declarationToString(d)),
         enteredDefinitions
       )
       assert.deepEqual(
-        visitor.exited.map(d => definitionToString(d)),
+        visitor.exited.map(d => declarationToString(d)),
         exitedDefinitions
       )
     })
 
     it('finds variable definitions', () => {
       class TestVisitor implements IRVisitor {
-        entered: QuintDef[] = []
-        exited: QuintDef[] = []
+        entered: QuintDeclaration[] = []
+        exited: QuintDeclaration[] = []
 
-        enterVar(def: QuintDef): void {
+        enterVar(def: QuintDeclaration): void {
           this.entered.push(def)
         }
 
-        exitVar(def: QuintDef): void {
+        exitVar(def: QuintDeclaration): void {
           this.exited.push(def)
         }
       }
@@ -238,25 +288,25 @@ describe('walkModule', () => {
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
       assert.deepEqual(
-        visitor.entered.map(d => definitionToString(d)),
+        visitor.entered.map(d => declarationToString(d)),
         enteredDefinitions
       )
       assert.deepEqual(
-        visitor.exited.map(d => definitionToString(d)),
+        visitor.exited.map(d => declarationToString(d)),
         exitedDefinitions
       )
     })
 
     it('finds assume definitions', () => {
       class TestVisitor implements IRVisitor {
-        entered: QuintDef[] = []
-        exited: QuintDef[] = []
+        entered: QuintDeclaration[] = []
+        exited: QuintDeclaration[] = []
 
-        enterAssume(def: QuintDef): void {
+        enterAssume(def: QuintDeclaration): void {
           this.entered.push(def)
         }
 
-        exitAssume(def: QuintDef): void {
+        exitAssume(def: QuintDeclaration): void {
           this.exited.push(def)
         }
       }
@@ -268,25 +318,25 @@ describe('walkModule', () => {
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
       assert.deepEqual(
-        visitor.entered.map(d => definitionToString(d)),
+        visitor.entered.map(d => declarationToString(d)),
         enteredDefinitions
       )
       assert.deepEqual(
-        visitor.exited.map(d => definitionToString(d)),
+        visitor.exited.map(d => declarationToString(d)),
         exitedDefinitions
       )
     })
 
     it('finds typedef definitions', () => {
       class TestVisitor implements IRVisitor {
-        entered: QuintDef[] = []
-        exited: QuintDef[] = []
+        entered: QuintDeclaration[] = []
+        exited: QuintDeclaration[] = []
 
-        enterTypeDef(def: QuintDef): void {
+        enterTypeDef(def: QuintDeclaration): void {
           this.entered.push(def)
         }
 
-        exitTypeDef(def: QuintDef): void {
+        exitTypeDef(def: QuintDeclaration): void {
           this.exited.push(def)
         }
       }
@@ -298,25 +348,25 @@ describe('walkModule', () => {
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
       assert.deepEqual(
-        visitor.entered.map(d => definitionToString(d)),
+        visitor.entered.map(d => declarationToString(d)),
         enteredDefinitions
       )
       assert.deepEqual(
-        visitor.exited.map(d => definitionToString(d)),
+        visitor.exited.map(d => declarationToString(d)),
         exitedDefinitions
       )
     })
 
     it('finds import definitions', () => {
       class TestVisitor implements IRVisitor {
-        entered: QuintDef[] = []
-        exited: QuintDef[] = []
+        entered: QuintDeclaration[] = []
+        exited: QuintDeclaration[] = []
 
-        enterImport(def: QuintDef): void {
+        enterImport(def: QuintDeclaration): void {
           this.entered.push(def)
         }
 
-        exitImport(def: QuintDef): void {
+        exitImport(def: QuintDeclaration): void {
           this.exited.push(def)
         }
       }
@@ -328,25 +378,25 @@ describe('walkModule', () => {
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
       assert.deepEqual(
-        visitor.entered.map(d => definitionToString(d)),
+        visitor.entered.map(d => declarationToString(d)),
         enteredDefinitions
       )
       assert.deepEqual(
-        visitor.exited.map(d => definitionToString(d)),
+        visitor.exited.map(d => declarationToString(d)),
         exitedDefinitions
       )
     })
 
     it('finds instance definitions', () => {
       class TestVisitor implements IRVisitor {
-        entered: QuintDef[] = []
-        exited: QuintDef[] = []
+        entered: QuintDeclaration[] = []
+        exited: QuintDeclaration[] = []
 
-        enterInstance(def: QuintDef): void {
+        enterInstance(def: QuintDeclaration): void {
           this.entered.push(def)
         }
 
-        exitInstance(def: QuintDef): void {
+        exitInstance(def: QuintDeclaration): void {
           this.exited.push(def)
         }
       }
@@ -358,11 +408,11 @@ describe('walkModule', () => {
       const visitor = new TestVisitor()
       walkModule(visitor, quintModule)
       assert.deepEqual(
-        visitor.entered.map(d => definitionToString(d)),
+        visitor.entered.map(d => declarationToString(d)),
         enteredDefinitions
       )
       assert.deepEqual(
-        visitor.exited.map(d => definitionToString(d)),
+        visitor.exited.map(d => declarationToString(d)),
         exitedDefinitions
       )
     })
@@ -532,7 +582,7 @@ describe('walkModule', () => {
   })
 
   describe('visiting specific types', () => {
-    const quintModule = buildModuleWithDefs([
+    const quintModule = buildModuleWithDecls([
       'var a: bool',
       'const b: int',
       'val c: str = "rainbow"',
@@ -544,7 +594,6 @@ describe('walkModule', () => {
       'def i: (int, a) => bool = false',
       'var j: (int, List[bool], MY_CONST_TYPE)',
       'var k: { name: str, age: int }',
-      'var l: | { tag: "a", a: int } | { tag: "b", b: bool }',
     ])
 
     it('finds literal types', () => {
@@ -576,8 +625,6 @@ describe('walkModule', () => {
         'bool', // var j: (int, List[bool], MY_CONST_TYPE)
         'str', // var k: { name: str, age: int }
         'int', // var k: { name: str, age: int }
-        'int', // var l: | { tag: "a", a: int } | { tag: "b", b: bool }
-        'bool', // var l: | { tag: "a", a: int } | { tag: "b", b: bool }
       ]
 
       const exitedTypes = enteredTypes
@@ -799,32 +846,6 @@ describe('walkModule', () => {
 
       const enteredTypes = [
         '{ name: str, age: int }', // var k: { name: str, age: int }
-      ]
-
-      const exitedTypes = enteredTypes
-
-      const visitor = new TestVisitor()
-      walkModule(visitor, quintModule)
-      assert.deepEqual(visitor.entered.map(typeToString), enteredTypes)
-      assert.deepEqual(visitor.exited.map(typeToString), exitedTypes)
-    })
-
-    it('finds union types', () => {
-      class TestVisitor implements IRVisitor {
-        entered: QuintType[] = []
-        exited: QuintType[] = []
-
-        enterUnionType(type: QuintType): void {
-          this.entered.push(type)
-        }
-
-        exitUnionType(type: QuintType): void {
-          this.exited.push(type)
-        }
-      }
-
-      const enteredTypes = [
-        '| { tag: "a", a: int }\n| { tag: "b", b: bool }', // var l: | { tag: "a", a: int } | { tag: "b", b: bool }
       ]
 
       const exitedTypes = enteredTypes

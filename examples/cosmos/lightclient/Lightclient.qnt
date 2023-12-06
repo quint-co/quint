@@ -358,7 +358,7 @@ module Lightclient {
     def StoredHeadersAreVerifiedInv: bool =
         state == "finishedSuccess" implies {
             val dom = fetchedLightBlocks.keys()
-            tuples(dom,dom).forall( (lh, rh) =>  or { // for every pair of different stored headers
+            tuples(dom,dom).forall( ((lh, rh)) =>  or { // for every pair of different stored headers
                 lh >= rh,
                 // either there is a header between them
                 dom.exists(mh => lh < mh and mh < rh),
@@ -381,7 +381,7 @@ module Lightclient {
     def StoredHeadersAreVerifiedOrNotTrustedInv: bool =
         state == "finishedSuccess" implies {
             val dom = fetchedLightBlocks.keys()
-            tuples(dom,dom).forall( (lh, rh) =>  or { // for every pair of different stored headers
+            tuples(dom,dom).forall( ((lh, rh)) =>  or { // for every pair of different stored headers
                 lh >= rh,
                 // either there is a header between them
                 dom.exists(mh => lh < mh and mh < rh),
@@ -404,7 +404,7 @@ module Lightclient {
     def ProofOfChainOfTrustInv: bool =
         state == "finishedSuccess" implies {
             val dom = fetchedLightBlocks.keys()
-            tuples(dom,dom).forall( (lh, rh) => or { // for every pair of stored headers that have been verified
+            tuples(dom,dom).forall( ((lh, rh)) => or { // for every pair of stored headers that have been verified
                 lh >= rh,
                 lightBlockStatus.get(lh) == "StateUnverified",
                 lightBlockStatus.get(rh) == "StateUnverified",

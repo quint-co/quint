@@ -1,1 +1,1 @@
-{"stage":"parsing","warnings":[],"modules":[{"id":4,"name":"Foo","defs":[{"id":3,"kind":"def","name":"x","qualifier":"val","expr":{"id":2,"kind":"str","value":"not an int"},"typeAnnotation":{"id":1,"kind":"int"}}]}],"table":{}}
+{"stage":"parsing","warnings":[],"modules":[{"id":4,"name":"Foo","declarations":[{"id":3,"kind":"def","name":"x","qualifier":"val","expr":{"id":2,"kind":"str","value":"not an int"},"typeAnnotation":{"id":1,"kind":"int"}}]}],"table":{},"errors":[]}

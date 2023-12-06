@@ -4,9 +4,9 @@
  *
  * Igor Konnov, Shon Feder, Informal Systems, 2023
  *
- * Copyright (c) Informal Systems 2021. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2021 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  */
 
 import { Either, left, merge, right } from '@sweet-monads/either'
@@ -42,6 +42,7 @@ export type ItfValue =
   | ItfMap
   | ItfUnserializable
   | ItfRecord
+  | ItfVariant
 
 type ItfBigint = { '#bigint': string }
 type ItfTup = { '#tup': ItfValue[] }
@@ -49,6 +50,7 @@ type ItfSet = { '#set': ItfValue[] }
 type ItfMap = { '#map': [ItfValue, ItfValue][] }
 type ItfUnserializable = { '#unserializable': string }
 type ItfRecord = { [index: string]: ItfValue }
+type ItfVariant = { tag: ItfValue; value: ItfValue }
 
 // Type predicates to help with type narrowing
 function isBigint(v: ItfValue): v is ItfBigint {
@@ -67,12 +69,13 @@ function isMap(v: ItfValue): v is ItfMap {
   return (v as ItfMap)['#map'] !== undefined
 }
 
+function isVariant(v: ItfValue): v is ItfVariant {
+  return (v as ItfVariant)['tag'] !== undefined
+}
+
 function isUnserializable(v: ItfValue): v is ItfUnserializable {
   return (v as ItfUnserializable)['#unserializable'] !== undefined
 }
-
-const minJsInt: bigint = BigInt(Number.MIN_SAFE_INTEGER)
-const maxJsInt: bigint = BigInt(Number.MAX_SAFE_INTEGER)
 
 /**
  * Convert a list of Quint expressions into an object that matches the JSON
@@ -87,13 +90,8 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrac
   const exprToItf = (ex: QuintEx): Either<string, ItfValue> => {
     switch (ex.kind) {
       case 'int':
-        if (ex.value >= minJsInt && ex.value <= maxJsInt) {
-          // We can represent safely as a JS number
-          return right(Number(ex.value))
-        } else {
-          // convert to a special structure, when saving to JSON
-          return right({ '#bigint': `${ex.value}` })
-        }
+        // convert to a special structure, when saving to JSON
+        return right({ '#bigint': `${ex.value}` })
 
       case 'str':
       case 'bool':
@@ -148,6 +146,9 @@ export function toItf(vars: string[], states: QuintEx[]): Either<string, ItfTrac
               )
             )
 
+          case 'variant':
+            return merge(ex.args.map(exprToItf)).map(([label, value]) => ({ tag: label, value: value }))
+
           default:
             return left(`Unexpected operator type: ${ex.opcode}`)
         }
@@ -189,12 +190,16 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
       return { id, kind: 'bool', value }
     } else if (typeof value === 'string') {
       return { id, kind: 'str', value }
+    } else if (isBigint(value)) {
+      // this is the standard way of encoding an integer in ITF.
+      return { id, kind: 'int', value: BigInt(value['#bigint']) }
     } else if (typeof value === 'number') {
+      // We never encode an integer as a JS number,
+      // but we consume it for backwards compatibility with older ITF traces.
+      // See: https://apalache.informal.systems/docs/adr/015adr-trace.html
       return { id, kind: 'int', value: BigInt(value) }
     } else if (Array.isArray(value)) {
       return { id, kind: 'app', opcode: 'List', args: value.map(ofItfValue) }
-    } else if (isBigint(value)) {
-      return { id, kind: 'int', value: BigInt(value['#bigint']) }
     } else if (isTup(value)) {
       return { id, kind: 'app', opcode: 'Tup', args: value['#tup'].map(ofItfValue) }
     } else if (isSet(value)) {
@@ -213,6 +218,10 @@ export function ofItf(itf: ItfTrace): QuintEx[] {
         opcode: 'Map',
         args,
       }
+    } else if (isVariant(value)) {
+      const l = ofItfValue(value.tag)
+      const v = ofItfValue(value.value)
+      return { id, kind: 'app', opcode: 'variant', args: [l, v] }
     } else if (typeof value === 'object') {
       // Any other object must represent a record
       // For each key/value pair in the object, form the quint expressions representing

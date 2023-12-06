@@ -14,23 +14,23 @@ import { cwd } from 'process'
 import chalk from 'chalk'
 
 import {
-  ErrorMessage,
-  Loc,
+  SourceMap,
   compactSourceMap,
+  parseDefOrThrow,
   parsePhase1fromText,
   parsePhase2sourceResolution,
   parsePhase3importAndNameResolution,
   parsePhase4toposort,
 } from './parsing/quintParserFrontend'
+import { ErrorMessage } from './ErrorMessage'
 
 import { Either, left, right } from '@sweet-monads/either'
 import { EffectScheme } from './effects/base'
-import { LookupTable } from './names/base'
+import { LookupTable, UnusedDefinitions } from './names/base'
 import { ReplOptions, quintRepl } from './repl'
-import { OpQualifier, QuintEx, QuintModule } from './ir/quintIr'
+import { OpQualifier, QuintEx, QuintModule, QuintOpDef, qualifier } from './ir/quintIr'
 import { TypeScheme } from './types/base'
-import lineColumn from 'line-column'
-import { formatError } from './errorReporter'
+import { createFinders, formatError } from './errorReporter'
 import { DocumentationEntry, produceDocs, toMarkdown } from './docs'
 import { QuintError, quintErrorToString } from './quintError'
 import { TestOptions, TestResult, compileAndTest } from './runtime/testing'
@@ -42,9 +42,11 @@ import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
 import { fileSourceResolver } from './parsing/sourceResolver'
 import { verify } from './quintVerifier'
-import { flattenModules } from './flattening'
-import { analyzeModules } from './quintAnalyzer'
+import { flattenModules } from './flattening/fullFlattener'
+import { analyzeInc, analyzeModules } from './quintAnalyzer'
 import { ExecutionFrame } from './runtime/trace'
+import { flow, isEqual, uniqWith } from 'lodash'
+import { Maybe, just, none } from '@sweet-monads/maybe'
 
 export type stage = 'loading' | 'parsing' | 'typechecking' | 'testing' | 'running' | 'documentation'
 
@@ -54,6 +56,7 @@ interface OutputStage {
   // the modules and the lookup table produced by 'parse'
   modules?: QuintModule[]
   table?: LookupTable
+  unusedDefinitions?: UnusedDefinitions
   // the tables produced by 'typecheck'
   types?: Map<bigint, TypeScheme>
   effects?: Map<bigint, EffectScheme>
@@ -65,11 +68,11 @@ interface OutputStage {
   // Test names output produced by 'run'
   status?: 'ok' | 'violation' | 'failure'
   trace?: QuintEx[]
-  /* Docstrings by defintion name by module name */
+  /* Docstrings by definition name by module name */
   documentation?: Map<string, Map<string, DocumentationEntry>>
   errors?: ErrorMessage[]
   warnings?: any[] // TODO it doesn't look like this is being used for anything. Should we remove it?
-  sourceCode?: string // Should not printed, only used in formatting errors
+  sourceCode?: Map<string, string> // Should not be printed, only used in formatting errors
 }
 
 // Extract just the parts of a ProcedureStage that we use for the output
@@ -79,6 +82,7 @@ const pickOutputStage = ({
   warnings,
   modules,
   table,
+  unusedDefinitions,
   types,
   effects,
   errors,
@@ -94,6 +98,7 @@ const pickOutputStage = ({
     warnings,
     modules,
     table,
+    unusedDefinitions,
     types,
     effects,
     errors,
@@ -113,13 +118,15 @@ interface ProcedureStage extends OutputStage {
 interface LoadedStage extends ProcedureStage {
   // Path to the source file
   path: string
-  sourceCode: string
+  sourceCode: Map<string, string>
 }
 
 interface ParsedStage extends LoadedStage {
   modules: QuintModule[]
-  sourceMap: Map<bigint, Loc>
+  defaultModuleName: Maybe<string>
+  sourceMap: SourceMap
   table: LookupTable
+  unusedDefinitions: UnusedDefinitions
   idGen: IdGenerator
 }
 
@@ -155,12 +162,12 @@ interface DocumentationStage extends LoadedStage {
 // A procedure stage which is guaranteed to have `errors` and `sourceCode`
 interface ErrorData extends ProcedureStage {
   errors: ErrorMessage[]
-  sourceCode: string
+  sourceCode: Map<string, string>
 }
 
-type ErrResult = { msg: String; stage: ErrorData }
+type ErrResult = { msg: string; stage: ErrorData }
 
-function cliErr<Stage>(msg: String, stage: ErrorData): Either<ErrResult, Stage> {
+function cliErr<Stage>(msg: string, stage: ErrorData): Either<ErrResult, Stage> {
   return left({ msg, stage })
 }
 
@@ -179,14 +186,18 @@ export async function load(args: any): Promise<CLIProcedure<LoadedStage>> {
         ...stage,
         args,
         path,
-        sourceCode,
+        sourceCode: new Map([[path, sourceCode]]),
         warnings: [],
       })
     } catch (err: unknown) {
-      return cliErr(`file ${args.input} could not be opened due to ${err}`, { ...stage, errors: [], sourceCode: '' })
+      return cliErr(`file ${args.input} could not be opened due to ${err}`, {
+        ...stage,
+        errors: [],
+        sourceCode: new Map(),
+      })
     }
   } else {
-    return cliErr(`file ${args.input} does not exist`, { ...stage, errors: [], sourceCode: '' })
+    return cliErr(`file ${args.input} does not exist`, { ...stage, errors: [], sourceCode: new Map() })
   }
 }
 
@@ -197,43 +208,48 @@ export async function load(args: any): Promise<CLIProcedure<LoadedStage>> {
  */
 export async function parse(loaded: LoadedStage): Promise<CLIProcedure<ParsedStage>> {
   const { args, sourceCode, path } = loaded
+  const text = sourceCode.get(path)!
   const parsing = { ...loaded, stage: 'parsing' as stage }
   const idGen = newIdGenerator()
-  return parsePhase1fromText(idGen, sourceCode, path)
-    .chain(phase1Data => {
-      const resolver = fileSourceResolver()
+  return flow([
+    () => {
+      const phase1Data = parsePhase1fromText(idGen, text, path)
+      // if there is exactly one module in the original text, make it the main one
+      const defaultModuleName = phase1Data.modules.length === 1 ? just(phase1Data.modules[0].name) : none()
+      return { ...phase1Data, defaultModuleName }
+    },
+    phase1Data => {
+      const resolver = fileSourceResolver(sourceCode)
       const mainPath = resolver.lookupPath(dirname(path), basename(path))
       return parsePhase2sourceResolution(idGen, resolver, mainPath, phase1Data)
-    })
-    .mapLeft(newErrs => {
-      const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
-      return { msg: 'parsing failed', stage: { ...parsing, errors } }
-    })
-    .chain(phase2Data => {
+    },
+    phase2Data => {
       if (args.sourceMap) {
         // Write source map to the specified file
         writeToJson(args.sourceMap, compactSourceMap(phase2Data.sourceMap))
       }
-      return parsePhase3importAndNameResolution(phase2Data).mapLeft(newErrs => {
-        const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
-        return { msg: 'parsing failed', stage: { ...parsing, errors } }
-      })
-    })
-    .chain(phase3Data => {
-      return parsePhase4toposort(phase3Data).mapLeft(newErrs => {
-        const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
-        return { msg: 'parsing failed', stage: { ...parsing, errors } }
-      })
-    })
-    .map(phase4Data => ({ ...parsing, ...phase4Data, idGen }))
+      return parsePhase3importAndNameResolution(phase2Data)
+    },
+    phase3Data => parsePhase4toposort(phase3Data),
+    phase4Data => ({ ...parsing, ...phase4Data, idGen }),
+    result => {
+      if (result.errors.length > 0) {
+        const newErrorMessages = result.errors.map(mkErrorMessage(result.sourceMap))
+        const errorMessages = parsing.errors ? parsing.errors.concat(newErrorMessages) : newErrorMessages
+        return left({ msg: 'parsing failed', stage: { ...result, errors: errorMessages } })
+      }
+
+      return right(result)
+    },
+  ])()
 }
 
-export function mkErrorMessage(sourceMap: Map<bigint, Loc>): (_: [bigint, QuintError]) => ErrorMessage {
-  return ([key, value]) => {
-    const loc = sourceMap.get(key)!
+export function mkErrorMessage(sourceMap: SourceMap): (_: QuintError) => ErrorMessage {
+  return error => {
+    const loc = error.reference ? sourceMap.get(error.reference) : undefined
     return {
-      explanation: quintErrorToString(value),
-      locs: [loc],
+      explanation: quintErrorToString(error),
+      locs: loc ? [loc] : [],
     }
   }
 }
@@ -251,8 +267,7 @@ export async function typecheck(parsed: ParsedStage): Promise<CLIProcedure<Typec
   if (errorMap.length === 0) {
     return right({ ...typechecking, ...result })
   } else {
-    const errorLocator = mkErrorMessage(sourceMap)
-    const errors = Array.from(errorMap, errorLocator)
+    const errors = errorMap.map(mkErrorMessage(sourceMap))
     return cliErr('typechecking failed', { ...typechecking, errors })
   }
 }
@@ -266,6 +281,7 @@ export async function runRepl(_argv: any) {
   let filename: string | undefined = undefined
   let moduleName: string | undefined = undefined
   if (_argv.require) {
+    // quint -r FILE.qnt or quint -r FILE.qnt::MODULE
     const m = /^(.*?)(?:|::([a-zA-Z_]\w*))$/.exec(_argv.require)
     if (m) {
       ;[filename, moduleName] = m.slice(1, 3)
@@ -290,8 +306,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
   const columns = !prev.args.out ? terminalWidth() : 80
 
   const testing = { ...prev, stage: 'testing' as stage }
-  const mainArg = prev.args.main
-  const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
+  const mainName = guessMainModule(prev)
 
   const outputTemplate = testing.args.output
 
@@ -330,6 +345,37 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
       }
     },
   }
+
+  // Find tests that are not used in the main module. We need to add references to them in the main module so flattening
+  // doesn't drop the definitions.
+  const unusedTests = [...testing.unusedDefinitions(mainName)].filter(
+    d => d.kind === 'def' && options.testMatch(d.name)
+  )
+
+  // Define name expressions referencing each test that is not referenced elsewhere, adding the references to the lookup
+  // table
+  const args: QuintEx[] = unusedTests.map(defToAdd => {
+    const id = testing.idGen.nextId()
+    testing.table.set(id, defToAdd)
+    const namespace = defToAdd.importedFrom ? qualifier(defToAdd.importedFrom) : undefined
+    const name = namespace ? [namespace, defToAdd.name].join('::') : defToAdd.name
+
+    return { kind: 'name', id, name }
+  })
+
+  // Wrap all expressions in a single declaration
+  const testDeclaration: QuintOpDef = {
+    id: testing.idGen.nextId(),
+    name: 'q::unitTests',
+    kind: 'def',
+    qualifier: 'run',
+    expr: { kind: 'app', opcode: 'actionAll', args, id: testing.idGen.nextId() },
+  }
+
+  // Add the declaration to the main module
+  const main = testing.modules.find(m => m.name === mainName)
+  main?.declarations.push(testDeclaration)
+
   const analysisOutput = { types: testing.types, effects: testing.effects, modes: testing.modes }
   const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
     testing.modules,
@@ -344,11 +390,12 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     sourceMap: testing.sourceMap,
     analysisOutput: flattenedAnalysis,
     idGen: testing.idGen,
+    sourceCode: testing.sourceCode,
   }
   const testOut = compileAndTest(compilationState, mainName, flattenedTable, options)
 
   if (testOut.isLeft()) {
-    return cliErr('Tests failed', { ...testing, errors: testOut.value })
+    return cliErr('Tests failed', { ...testing, errors: testOut.value.map(mkErrorMessage(testing.sourceMap)) })
   } else if (testOut.isRight()) {
     const elapsedMs = Date.now() - startMs
     const results = testOut.unwrap()
@@ -362,7 +409,7 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
           const errNo = chalk.red(namedErrors.length + 1)
           out(`    ${errNo}) ${res.name} failed after ${res.nsamples} test(s)`)
 
-          res.errors.forEach(e => namedErrors.push([res.name, e, res]))
+          res.errors.forEach(e => namedErrors.push([res.name, mkErrorMessage(testing.sourceMap)(e), res]))
         }
       })
     }
@@ -388,10 +435,10 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
     // output errors, if there are any
     if (verbosity.hasTestDetails(verbosityLevel) && namedErrors.length > 0) {
       const code = prev.sourceCode!
-      const finder = lineColumn(code)
+      const finders = createFinders(code)
       out('')
       namedErrors.forEach(([name, err, testResult], index) => {
-        const details = formatError(code, finder, err)
+        const details = formatError(code, finders, err)
         // output the header
         out(`  ${index + 1}) ${name}:`)
         const lines = details.split('\n')
@@ -454,8 +501,7 @@ function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], fra
  */
 export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure<SimulatorStage>> {
   const simulator = { ...prev, stage: 'running' as stage }
-  const mainArg = prev.args.main
-  const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
+  const mainName = guessMainModule(prev)
   const verbosityLevel = !prev.args.out && !prev.args.outItf ? prev.args.verbosity : 0
   const rngOrError = mkRng(prev.args.seed)
   if (rngOrError.isLeft()) {
@@ -473,14 +519,20 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   }
   const startMs = Date.now()
 
-  const mainPath = fileSourceResolver().lookupPath(dirname(prev.args.input), basename(prev.args.input))
-  const mainId = prev.modules.find(m => m.name === mainName)!.id
+  const mainText = prev.sourceCode.get(prev.path)!
+  const mainPath = fileSourceResolver(prev.sourceCode).lookupPath(dirname(prev.args.input), basename(prev.args.input))
+  const mainModule = prev.modules.find(m => m.name === mainName)
+  if (mainModule === undefined) {
+    return cliErr(`Main module ${mainName} not found`, { ...simulator, errors: [] })
+  }
+  const mainId = mainModule.id
   const mainStart = prev.sourceMap.get(mainId)!.start.index
   const mainEnd = prev.sourceMap.get(mainId)!.end!.index
-  const result = compileAndRun(newIdGenerator(), prev.sourceCode, mainStart, mainEnd, mainName, mainPath, options)
+  const result = compileAndRun(newIdGenerator(), mainText, mainStart, mainEnd, mainName, mainPath, options)
 
   if (result.status === 'error') {
-    const errors = prev.errors ? prev.errors.concat(result.errors) : result.errors
+    const newErrors = result.errors.map(mkErrorMessage(prev.sourceMap))
+    const errors = prev.errors ? prev.errors.concat(newErrors) : newErrors
     return cliErr('run failed', { ...simulator, errors })
   } else {
     if (verbosity.hasResults(verbosityLevel)) {
@@ -488,6 +540,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
       maybePrintCounterExample(verbosityLevel, result.states, result.frames)
       if (result.status === 'ok') {
         console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
+        console.log(chalk.gray(`Use --seed=0x${result.seed.toString(16)} to reproduce.`))
         if (verbosity.hasHints(options.verbosity)) {
           console.log(chalk.gray('You may increase --max-samples and --max-steps.'))
           console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
@@ -508,7 +561,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         const jsonObj = addItfHeader(prev.args.input, result.status, trace.value)
         writeToJson(prev.args.outItf, jsonObj)
       } else {
-        const newStage = { ...simulator, errors: result.errors }
+        const newStage = { ...simulator, errors: result.errors.map(mkErrorMessage(prev.sourceMap)) }
         return cliErr(`ITF conversion failed: ${trace.value}`, newStage)
       }
     }
@@ -525,7 +578,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         ...simulator,
         status: result.status,
         trace: result.states,
-        errors: result.errors,
+        errors: result.errors.map(mkErrorMessage(prev.sourceMap)),
       })
     }
   }
@@ -539,8 +592,47 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
 export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<VerifiedStage>> {
   const verifying = { ...prev, stage: 'verifying' as stage }
   const args = verifying.args
-  // TODO error handing for file reads and deserde
-  const loadedConfig = args.apalacheConfig ? JSON.parse(readFileSync(args.apalacheConfig, 'utf-8')) : {}
+  let loadedConfig: any = {}
+  try {
+    if (args.apalacheConfig) {
+      loadedConfig = JSON.parse(readFileSync(args.apalacheConfig, 'utf-8'))
+    }
+  } catch (err: any) {
+    return cliErr(`failed to read Apalache config: ${err.message}`, { ...verifying, errors: [], sourceCode: new Map() })
+  }
+
+  const mainArg = prev.args.main
+  const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
+  const main = verifying.modules.find(m => m.name === mainName)
+  if (!main) {
+    return cliErr(`module ${mainName} does not exist`, { ...verifying, errors: [], sourceCode: new Map() })
+  }
+
+  // Wrap init, step, invariant and temporal properties in other definitions,
+  // to make sure they are not considered unused in the main module and,
+  // therefore, ignored by the flattener
+  const extraDefsAsText = [`action q::init = ${args.init}`, `action q::step = ${args.step}`]
+  if (args.invariant) {
+    extraDefsAsText.push(`val q::inv = and(${args.invariant.join(',')})`)
+  }
+  if (args.temporal) {
+    extraDefsAsText.push(`temporal q::temporalProps = and(${args.temporal.join(',')})`)
+  }
+
+  const extraDefs = extraDefsAsText.map(d => parseDefOrThrow(d, verifying.idGen, new Map()))
+  main.declarations.push(...extraDefs)
+
+  // We have to update the lookup table and analysis result with the new definitions. This is not ideal, and the problem
+  // is that is hard to add this definitions in the proper stage, in our current setup. We should try to tackle this
+  // while solving #1052.
+  const resolutionResult = parsePhase3importAndNameResolution({ ...prev, errors: [] })
+  if (resolutionResult.errors.length > 0) {
+    const errors = resolutionResult.errors.map(mkErrorMessage(prev.sourceMap))
+    return cliErr('name resolution failed', { ...verifying, errors })
+  }
+
+  verifying.table = resolutionResult.table
+  analyzeInc(verifying, verifying.table, extraDefs)
 
   // Flatten modules, replacing instances, imports and exports with their definitions
   const { flattenedModules, flattenedTable, flattenedAnalysis } = flattenModules(
@@ -552,18 +644,12 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
   )
 
   // Pick main module, we only pass this on to Apalache
-  const mainArg = prev.args.main
-  const mainName = mainArg ? mainArg : basename(prev.args.input, '.qnt')
-  const main = flattenedModules.find(m => m.name === mainName)
+  const flatMain = flattenedModules.find(m => m.name === mainName)!
 
-  if (!main) {
-    return cliErr(`module ${mainName} does not exist`, { ...verifying, errors: [], sourceCode: '' })
-  }
-
-  const veryfiyingFlat = { ...verifying, ...flattenedAnalysis, modules: [main], table: flattenedTable }
+  const veryfiyingFlat = { ...verifying, ...flattenedAnalysis, modules: [flatMain], table: flattenedTable }
   const parsedSpec = jsonStringOfOutputStage(pickOutputStage(veryfiyingFlat))
 
-  // We need to insert the data form CLI args into thier appropriate locations
+  // We need to insert the data form CLI args into their appropriate locations
   // in the Apalache config
   const config = {
     ...loadedConfig,
@@ -578,20 +664,43 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
     checker: {
       ...(loadedConfig.checker ?? {}),
       length: args.maxSteps,
-      init: args.init,
-      next: args.step,
-      inv: args.invariant,
+      init: 'q::init',
+      next: 'q::step',
+      inv: args.invariant ? ['q::inv'] : undefined,
+      'temporal-props': args.temporal ? ['q::temporalProps'] : undefined,
+      tuning: {
+        ...(loadedConfig.checker?.tuning ?? {}),
+        'search.simulation': args.randomTransitions ? 'true' : 'false',
+      },
     },
   }
-  return verify(config).then(res =>
-    res
-      .map(_ => ({ ...verifying, status: 'ok', errors: [] } as VerifiedStage))
+
+  const startMs = Date.now()
+
+  const verbosityLevel = !prev.args.out && !prev.args.outItf ? prev.args.verbosity : 0
+  return verify(config, verbosityLevel).then(res => {
+    const elapsedMs = Date.now() - startMs
+    return res
+      .map(_ => {
+        if (verbosity.hasResults(verbosityLevel)) {
+          console.log(chalk.green('[ok]') + ' No violation found ' + chalk.gray(`(${elapsedMs}ms).`))
+          if (verbosity.hasHints(verbosityLevel)) {
+            console.log(chalk.gray('You may increase --max-steps.'))
+            console.log(chalk.gray('Use --verbosity to produce more (or less) output.'))
+          }
+        }
+        return { ...verifying, status: 'ok', errors: [] } as VerifiedStage
+      })
       .mapLeft(err => {
         const trace: QuintEx[] | undefined = err.traces ? ofItf(err.traces[0]) : undefined
+        const status = trace !== undefined ? 'violation' : 'failure'
         if (trace !== undefined) {
           // Always print the conterexample, unless the output is being directed to one of the outfiles
-          const verbosityLevel = prev.args.out || prev.args.outItf ? 0 : 2
           maybePrintCounterExample(verbosityLevel, trace)
+
+          if (verbosity.hasResults(verbosityLevel)) {
+            console.log(chalk.red(`[${status}]`) + ' Found an issue ' + chalk.gray(`(${elapsedMs}ms).`))
+          }
 
           if (prev.args.outItf) {
             writeToJson(prev.args.outItf, err.traces)
@@ -599,10 +708,10 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
         }
         return {
           msg: err.explanation,
-          stage: { ...verifying, status: 'failure', errors: err.errors, trace },
+          stage: { ...verifying, status, errors: err.errors, trace },
         }
       })
-  )
+  })
 }
 
 /**
@@ -612,23 +721,25 @@ export async function verifySpec(prev: TypecheckedStage): Promise<CLIProcedure<V
  */
 export async function docs(loaded: LoadedStage): Promise<CLIProcedure<DocumentationStage>> {
   const { sourceCode, path } = loaded
+  const text = sourceCode.get(path)!
   const parsing = { ...loaded, stage: 'documentation' as stage }
-  return parsePhase1fromText(newIdGenerator(), sourceCode, path)
-    .mapLeft(newErrs => {
-      const errors = parsing.errors ? parsing.errors.concat(newErrs) : newErrs
-      return { msg: 'parsing failed', stage: { ...parsing, errors } }
-    })
-    .map(phase1Data => {
-      const allEntries: [string, Map<string, DocumentationEntry>][] = phase1Data.modules.map(module => {
-        const documentationEntries = produceDocs(module)
-        const title = `# Documentation for ${module.name}\n\n`
-        const markdown = title + [...documentationEntries.values()].map(toMarkdown).join('\n\n')
-        console.log(markdown)
+  const phase1Data = parsePhase1fromText(newIdGenerator(), text, path)
+  const allEntries: [string, Map<string, DocumentationEntry>][] = phase1Data.modules.map(module => {
+    const documentationEntries = produceDocs(module)
+    const title = `# Documentation for ${module.name}\n\n`
+    const markdown = title + [...documentationEntries.values()].map(toMarkdown).join('\n\n')
+    console.log(markdown)
 
-        return [module.name, documentationEntries]
-      })
-      return { ...parsing, documentation: new Map(allEntries) }
-    })
+    return [module.name, documentationEntries]
+  })
+
+  if (phase1Data.errors.length > 0) {
+    const newErrorMessages = phase1Data.errors.map(mkErrorMessage(phase1Data.sourceMap))
+    const errorMessages = parsing.errors ? parsing.errors.concat(newErrorMessages) : newErrorMessages
+    return left({ msg: 'parsing failed', stage: { ...parsing, errors: errorMessages } })
+  }
+
+  return right({ ...parsing, documentation: new Map(allEntries) })
 }
 
 /** Write the OutputStage of the procedureStage as JSON, if --out is set
@@ -650,12 +761,25 @@ export function outputResult(result: CLIProcedure<ProcedureStage>) {
       if (args.out) {
         writeToJson(args.out, outputData)
       } else {
-        const finder = lineColumn(sourceCode!)
-        errors.forEach(err => console.error(formatError(sourceCode, finder, err)))
+        const finders = createFinders(sourceCode!)
+        uniqWith(errors, isEqual).forEach(err => console.error(formatError(sourceCode, finders, err)))
         console.error(`error: ${msg}`)
       }
       process.exit(1)
     })
+}
+
+function guessMainModule(stage: TypecheckedStage): string {
+  if (stage.args.main) {
+    // the main module is specified via --main
+    return stage.args.main
+  }
+  if (stage.defaultModuleName.isJust()) {
+    // there is only one module in the source file, make it main
+    return stage.defaultModuleName.unwrap()
+  }
+  // guess the name from the filename
+  return basename(stage.args.input, '.qnt')
 }
 
 /**

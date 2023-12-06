@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -26,6 +26,8 @@ export class IRTransformer {
   exitExpr?: (expr: ir.QuintEx) => ir.QuintEx
   enterDef?: (def: ir.QuintDef) => ir.QuintDef
   exitDef?: (def: ir.QuintDef) => ir.QuintDef
+  enterDecl?: (decl: ir.QuintDeclaration) => ir.QuintDeclaration
+  exitDecl?: (decl: ir.QuintDeclaration) => ir.QuintDeclaration
   enterType?: (type: t.QuintType) => t.QuintType
   exitType?: (type: t.QuintType) => t.QuintType
 
@@ -84,8 +86,6 @@ export class IRTransformer {
   exitRecordType?: (type: t.QuintRecordType) => t.QuintRecordType
   enterSumType?: (type: t.QuintSumType) => t.QuintSumType
   exitSumType?: (type: t.QuintSumType) => t.QuintSumType
-  enterUnionType?: (type: t.QuintUnionType) => t.QuintUnionType
-  exitUnionType?: (type: t.QuintUnionType) => t.QuintUnionType
 
   /** Row types */
   enterRow?: (row: t.Row) => t.Row
@@ -114,7 +114,7 @@ export function transformModule(transformer: IRTransformer, quintModule: ir.Quin
     newModule = transformer.enterModule(newModule)
   }
 
-  newModule.defs = newModule.defs.map(def => transformDefinition(transformer, def))
+  newModule.declarations = newModule.declarations.map(decl => transformDeclaration(transformer, decl))
 
   if (transformer.exitModule) {
     newModule = transformer.exitModule(newModule)
@@ -237,29 +237,23 @@ export function transformType(transformer: IRTransformer, type: t.QuintType): t.
       }
       break
 
-    case 'union':
-      if (transformer.enterUnionType) {
-        newType = transformer.enterUnionType(newType)
-      }
-      // Variants, transform all fields for all records
-      newType.records = newType.records.map(record => {
-        return { ...record, fields: transformRow(transformer, record.fields) }
-      })
-
-      if (transformer.exitUnionType) {
-        newType = transformer.exitUnionType(newType)
-      }
-      break
-
     case 'sum':
-      if (transformer.enterSumType) {
-        newType = transformer.enterSumType(newType)
-      }
-      if (transformer.exitSumType) {
-        newType = transformer.exitSumType(newType)
+      {
+        if (transformer.enterSumType) {
+          newType = transformer.enterSumType(newType)
+        }
+        // Sum types, transform all types
+        const newFields = transformRow(transformer, newType.fields)
+        if (newFields.kind !== 'row') {
+          throw new Error('Impossible: sum type fields transformed into non-row')
+        }
+        newType.fields = newFields
+
+        if (transformer.exitSumType) {
+          newType = transformer.exitSumType(newType)
+        }
       }
       break
-
     default:
       unreachable(newType)
   }
@@ -269,6 +263,64 @@ export function transformType(transformer: IRTransformer, type: t.QuintType): t.
   }
 
   return newType
+}
+
+/**
+ * Transforms a Quint declaration with a transformer, invoking the corresponding function for each
+ * inner component.
+ *
+ * @param transformer: the IRTransformer instance with the functions to be invoked
+ * @param decl: the Quint declaration to be transformed
+ *
+ * @returns the transformed Quint definition
+ */
+export function transformDeclaration(transformer: IRTransformer, decl: ir.QuintDeclaration): ir.QuintDeclaration {
+  let newDecl = { ...decl }
+  if (transformer.enterDecl) {
+    newDecl = transformer.enterDecl(newDecl)
+  }
+
+  switch (newDecl.kind) {
+    case 'instance':
+      if (transformer.enterInstance) {
+        newDecl = transformer.enterInstance(newDecl)
+      }
+      newDecl.overrides = newDecl.overrides.map(([i, e]) => [i, transformExpression(transformer, e)])
+      if (transformer.exitInstance) {
+        newDecl = transformer.exitInstance(newDecl)
+      }
+      break
+    case 'import':
+      if (transformer.enterImport) {
+        newDecl = transformer.enterImport(newDecl)
+      }
+      if (transformer.exitImport) {
+        newDecl = transformer.exitImport(newDecl)
+      }
+      break
+    case 'export':
+      if (transformer.enterExport) {
+        newDecl = transformer.enterExport(newDecl)
+      }
+      if (transformer.exitExport) {
+        newDecl = transformer.exitExport(newDecl)
+      }
+      break
+    case 'const':
+    case 'var':
+    case 'def':
+    case 'typedef':
+    case 'assume':
+      newDecl = transformDefinition(transformer, newDecl)
+      break
+    default:
+      unreachable(newDecl)
+  }
+  if (transformer.exitDecl) {
+    newDecl = transformer.exitDecl(newDecl)
+  }
+
+  return newDecl
 }
 
 /**
@@ -324,31 +376,6 @@ export function transformDefinition(transformer: IRTransformer, def: ir.QuintDef
       }
       if (transformer.exitTypeDef) {
         newDef = transformer.exitTypeDef(newDef)
-      }
-      break
-    case 'instance':
-      if (transformer.enterInstance) {
-        newDef = transformer.enterInstance(newDef)
-      }
-      newDef.overrides = newDef.overrides.map(([i, e]) => [i, transformExpression(transformer, e)])
-      if (transformer.exitInstance) {
-        newDef = transformer.exitInstance(newDef)
-      }
-      break
-    case 'import':
-      if (transformer.enterImport) {
-        newDef = transformer.enterImport(newDef)
-      }
-      if (transformer.exitImport) {
-        newDef = transformer.exitImport(newDef)
-      }
-      break
-    case 'export':
-      if (transformer.enterExport) {
-        newDef = transformer.enterExport(newDef)
-      }
-      if (transformer.exitExport) {
-        newDef = transformer.exitExport(newDef)
       }
       break
     case 'assume':
@@ -469,7 +496,7 @@ function transformExpression(transformer: IRTransformer, expr: ir.QuintEx): ir.Q
  *
  * @returns the transformed Quint row
  */
-function transformRow(transformer: IRTransformer, row: t.Row): t.Row {
+export function transformRow(transformer: IRTransformer, row: t.Row): t.Row {
   let newRow = row
   if (transformer.enterRow) {
     newRow = transformer.enterRow(newRow)

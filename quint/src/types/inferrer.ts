@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -14,12 +14,13 @@
  */
 
 import { ErrorTree } from '../errorTree'
-import { walkDefinition } from '../ir/IRVisitor'
+import { walkDeclaration } from '../ir/IRVisitor'
 import { LookupTable } from '../names/base'
-import { QuintDef } from '../ir/quintIr'
+import { QuintDeclaration } from '../ir/quintIr'
 import { TypeScheme } from './base'
 import { ConstraintGeneratorVisitor } from './constraintGenerator'
 import { solveConstraint } from './constraintSolver'
+import { simplify } from './simplification'
 
 export type TypeInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, TypeScheme>]
 
@@ -29,17 +30,18 @@ export class TypeInferrer extends ConstraintGeneratorVisitor {
   }
 
   /**
-   * Infers an type for each expression in a list of QuintDefs
+   * Infers an type for each expression in a list of QuintDeclarations
    *
-   * @param defs: the list of QuintDefs to infer types for
+   * @param declarations: the list of QuintDeclarations to infer types for
    *
    * @returns a map from expression ids to their types and a map from expression
    *          ids to the corresponding error for any problematic expressions.
    */
-  inferTypes(defs: QuintDef[]): TypeInferenceResult {
-    defs.forEach(quintDef => {
-      walkDefinition(this, quintDef)
+  inferTypes(declarations: QuintDeclaration[]): TypeInferenceResult {
+    declarations.forEach(decl => {
+      walkDeclaration(this, decl)
     })
-    return [this.errors, this.types]
+    const simplifiedTypes = new Map([...this.types.entries()].map(([id, t]) => [id, simplify(t)]))
+    return [this.errors, simplifiedTypes]
   }
 }

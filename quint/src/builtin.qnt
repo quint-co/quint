@@ -487,7 +487,7 @@ module builtin {
   /// ```
   pure def select(l, p): (List[a], (a) => bool) => List[a]
 
-  /// `l.foldl(z, f)` reduces the elements in `s` using `f`,
+  /// `l.foldl(z, f)` reduces the elements in `l` using `f`,
   /// starting with `z` from the left.
   ///
   /// I.e., `f(f(f(z, x0), x1)..., xn)`.
@@ -823,7 +823,7 @@ module builtin {
   ///
   /// ```
   /// var x: int
-  /// run test = (x' = 0).then(3.times(x' = x + 1)).then(assert(x == 3))
+  /// run test = (x' = 0).then(3.reps(x' = x + 1)).then(assert(x == 3))
   /// ```
   ///
   /// ```
@@ -834,6 +834,24 @@ module builtin {
   /// run test = Init.then(all { Next, assert(x > 0) })
   /// ```
   action assert(p): (bool) => bool
+
+  /// `q::debug(msg, value)` prints the given message and value to the console,
+  /// separated by a space.
+  ///
+  /// It also returns the given value unchanged,
+  /// so that it can be used directly within expressions.
+  ///
+  /// ### Examples
+  ///
+  /// ```
+  /// var x: int
+  /// >>> (x' = 0).then(3.reps(i => x' = q::debug("new x:", x + 1)))
+  /// > new x: 1
+  /// > new x: 2
+  /// > new x: 3
+  /// true
+  /// ```
+  pure def q::debug(msg, value): (str, a) => a
 
   // /// `List(e0, ..., en)` is a list of values `e0`, ..., `en`.
   // ///
@@ -964,8 +982,52 @@ module builtin {
   // /// pure val s = tuples(Set(1, 2), Set(3, 4))
   // /// assert(s == Set((1, 3), (1, 4), (2, 3), (2, 4)))
   // /// ```
-
   // pure def tuples(a*): (Set[a0], ..., Set[an]) => Set[(a0, ..., an)]
+
+  // /// `variant("Label", expr)` is a value of type `T` when
+  // ///
+  // /// - `T` is a predifined sum type
+  // /// - `T` has a data constructor `Label`, paired with type `E`
+  // /// - `expr` has type `E`
+  // ///
+  // /// ### Examples
+  // ///
+  // /// ```
+  // /// type T = A(int) | B | C(str)
+  // /// assert(variant("A", 42) == A(42))
+  // /// assert(variant("B", Rec()) == B)
+  // /// assert(variant("C", "foo") == C("foo"))
+  // /// ```
+  // ///
+  // /// Note that this is an internal built-in and users should prefer the generated
+  // /// data constructor matching the label of a variant. E.g., in our example above,
+  // /// users should prefer the equivalent form on the right hand side of the `==`.
+  // def variant(label, x): (str, E) => T
+
+  // /// `matchVariant(expr, l1, (x1) => e1, ..., ln, (xn) => en)` is `ei`, where
+  // ///
+  // /// - `expr` a variant labeled with `li` of a sum type with fields `l1`, ..., `ln`,
+  // ///    supporting types `t1`, ..., `tn`
+  // /// - `xi : ti`
+  // /// - `e1`, ... `en` are of the same type
+  // /// - `ei` is `f(v)`, where `v` is the expression carried by the `expr` and `f`
+  // ///    is the eliminator lambda labeled with `li`.
+  // ///
+  // /// for 1 <= i <= n.
+  // ///
+  // /// ### Examples
+  // ///
+  // /// ```
+  // /// type T = A(int) | B | C(str)
+  // /// val result = matchVariant(A(42), "A", (x) => x, "B", (_) => 0, "C", (_) => 1)
+  // /// assert(result == 42)
+  // /// assert(result == match A(42) { A(x) => x | B => 0 | C(_) => 1 })
+  // /// ```
+  // ///
+  // /// Note that this is an internal built-in and users should prefer the
+  // /// `match` syntax on the right hand side of the `==` above.
+  // def matchVariant(expr, l1, elim1, ..., ln, elimn): (ti, str, t1 => r, ..., tn, tn => r) => r
+
   // /// `and(a0, ..., an)` is true when all `ai` are true.
   // ///
   // /// This is the conjunction operator.
@@ -1024,26 +1086,4 @@ module builtin {
   // /// run test = (x' = 0).then(any { x' = 1, x' = 2 }).then(assert(or { x == 1, x == 2 }))
   // /// ```
   // pure def actionAny(a*): (bool*) => bool
-
-  // /// `unionMatch(m, (t0, e0), ..., (tn, en))` is the expression `ei` when `ti` is the tag of `m`.
-  // ///
-  // /// The behavior of this operator is undefined if the tag isn't one of the `ti`s.
-  // ///
-  // /// This is the pattern matching operator.
-  // ///
-  // /// Can also be written as `m match | t0: e0, ..., | tn: en }`.
-  // ///
-  // /// ### Examples
-  // ///
-  // /// ```
-  // /// pure val total(w) = w match
-  // ///   // this pattern binds some_w to the "some" version of w, if w.tag == "some"
-  // ///   | "some": some_w => some_w.value
-  // ///   // this pattern
-  // ///   | "none": _ => 0
-  // ///
-  // /// assert(total({ tag = "some", value = 1 }) == 1)
-  // /// assert(total({ tag = "none" }) == 0)
-  // /// ```
-  // pure def unionMatch(m, (t, e)*): (a, (b, ((b) => c))*) => c
 }

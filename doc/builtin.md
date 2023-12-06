@@ -535,7 +535,7 @@ assert(List(1, 2, 3).select(x -> x % 2 == 0) == List(2))
 
 ## `pure def foldl: (List[a], b, (b, a) => b) => b`
 
-`l.foldl(z, f)` reduces the elements in `s` using `f`,
+`l.foldl(z, f)` reduces the elements in `l` using `f`,
 starting with `z` from the left.
 
 I.e., `f(f(f(z, x0), x1)..., xn)`.
@@ -897,7 +897,7 @@ It does not change the state.
 
 ```
 var x: int
-run test = (x' = 0).then(3.times(x' = x + 1)).then(assert(x == 3))
+run test = (x' = 0).then(3.reps(x' = x + 1)).then(assert(x == 3))
 ```
 
 ```
@@ -906,4 +906,23 @@ action Init = x' = 0
 action Next = x' = x + 1
 
 run test = Init.then(all { Next, assert(x > 0) })
+```
+
+## `pure def q::debug: (str, a) => a`
+
+`q::debug(msg, value)` prints the given message and value to the console,
+separated by a space.
+
+It also returns the given value unchanged,
+so that it can be used directly within expressions.
+
+### Examples
+
+```
+var x: int
+>>> (x' = 0).then(3.reps(i => x' = q::debug("new x:", x + 1)))
+> new x: 1
+> new x: 2
+> new x: 3
+true
 ```

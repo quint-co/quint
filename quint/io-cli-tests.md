@@ -40,7 +40,7 @@ the end of file.
     quint parse ./testFixture/modulesAndJunk.qnt 2>&1 | sed 's#.*quint/\(testFixture\)#Q/\1#g'
 
 <!-- !test out junk -->
-    Q/testFixture/modulesAndJunk.qnt:9:1 - error: extraneous input 'the' expecting {<EOF>, 'module', DOCCOMMENT}
+    Q/testFixture/modulesAndJunk.qnt:9:1 - error: [QNT000] extraneous input 'the' expecting {<EOF>, 'module', DOCCOMMENT}
     9: the parser
        ^^^
 
@@ -76,7 +76,7 @@ error: parsing failed
 <!-- !test in module AST is output -->
 ```
 quint parse --out parse-out-example.json ../examples/language-features/tuples.qnt
-jq '.modules[0].name, .table."7".reference' < parse-out-example.json
+jq '.modules[0].name, .table."7".id' < parse-out-example.json
 rm parse-out-example.json
 ```
 
@@ -177,12 +177,14 @@ error: typechecking failed
 
 <!-- !test in repl loads a file -->
 ```
-echo "import counters.*" | quint -r ../examples/language-features/counters.qnt 2>&1 | tail -n +3
+echo -e "import counters.* \n init \n n" | quint -r ../examples/language-features/counters.qnt 2>&1 | tail -n +3
 ```
 
 <!-- !test out repl loads a file -->
 ```
 >>> 
+>>> true
+>>> 1
 >>> 
 ```
 
@@ -198,6 +200,20 @@ echo "init" | quint -r ../examples/language-features/counters.qnt::counters 2>&1
 >>> true
 >>> 
 ```
+
+### Repl loads a file and a module with -r when the module is not the last one
+
+<!-- !test in repl loads module that is not the last -->
+```
+echo "init" | quint -r ../examples/language-features/imports.qnt::E 2>&1 | tail -n +3
+```
+
+<!-- !test out repl loads module that is not the last -->
+```
+>>> true
+>>> 
+```
+
 
 ### Repl loads a file with .load
 
@@ -251,6 +267,25 @@ echo -e "init\nMyF::ExportedBasics::double(2)" | quint -r ../examples/language-f
 >>> 
 ```
 
+### Repl reports proper errors for malformed expressions 
+
+<!-- !test in repl malformed expressions -->
+```
+echo -e "1 +" | quint | tail -n +3
+```
+
+<!-- !test out repl malformed expressions -->
+```
+>>> [DEBUG] generating undefined expr to fill hole in: 1+
+syntax error: error: [QNT000] mismatched input '<EOF>' expecting {'{', 'nondet', 'val', 'def', 'pure', 'action', 'run', 'temporal', '[', 'all', 'any', 'if', '_', STRING, BOOL, INT, 'and', 'or', 'iff', 'implies', 'Set', 'List', 'Map', 'match', '-', '(', IDENTIFIER}
+
+
+
+
+>>> 
+```
+
+
 ### Tests works as expected
 
 The command `test` finds failing tests and prints error messages.
@@ -273,13 +308,41 @@ exit $exit_code
   1 failed
 
   1) failingTest:
-      HOME/failingTestCounters.qnt:45:10 - error: Assertion failed
+      HOME/failingTestCounters.qnt:45:10 - error: [QNT508] Assertion failed
       45:          assert(n == 0),
     Use --seed=0x1 --match=failingTest to repeat.
 
 
   Use --verbosity=3 to show executions.
       HOME/failingTestCounters.qnt
+```
+
+### Tests are found even if they are imported in the main module
+
+<!-- !test exit 0 -->
+<!-- !test in tests are found -->
+```
+output=$(quint test --max-samples=10 --main TendermintModels ../examples/cosmos/tendermint/TendermintModels.qnt)
+exit_code=$?
+echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g'
+exit $exit_code
+```
+
+<!-- !test out tests are found -->
+```
+
+  TendermintModels
+    ok TendermintModels::n4_f1::decisionTest passed 10 test(s)
+    ok TendermintModels::n4_f1::noProposeTwiceTest passed 10 test(s)
+    ok TendermintModels::n4_f1::timeoutProposeTest passed 10 test(s)
+    ok TendermintModels::n4_f2::decisionTest passed 10 test(s)
+    ok TendermintModels::n4_f2::noProposeTwiceTest passed 10 test(s)
+    ok TendermintModels::n4_f2::timeoutProposeTest passed 10 test(s)
+    ok TendermintModels::n5_f2::decisionTest passed 10 test(s)
+    ok TendermintModels::n5_f2::noProposeTwiceTest passed 10 test(s)
+    ok TendermintModels::n5_f2::timeoutProposeTest passed 10 test(s)
+
+  9 passing (duration)
 ```
 
 ### test counters produces no execution
@@ -305,11 +368,14 @@ exit $exit_code
   1 failed
 
   1) failingTest:
-      HOME/failingTestCounters.qnt:45:10 - error: Assertion failed
+      HOME/failingTestCounters.qnt:45:10 - error: [QNT508] Assertion failed
       45:          assert(n == 0),
 
 [Frame 0]
-init() => true
+init => true
+
+[Frame 1]
+_ => none
 
     Use --seed=0x1 --match=failingTest to repeat.
 ```
@@ -374,6 +440,7 @@ An example execution:
 [State 4] { n: 12 }
 
 [ok] No violation found (duration).
+Use --seed=0x11 to reproduce.
 You may increase --max-samples and --max-steps.
 Use --verbosity to produce more (or less) output.
 ```
@@ -480,9 +547,9 @@ exit $exit_code
 An example execution:
 
 [Frame 0]
-q::initAndInvariant() => true
-├─ q::init() => true
-│  └─ init() => true
+q::initAndInvariant => true
+├─ q::init => true
+│  └─ init => true
 └─ isUInt(0) => true
 
 [State 0]
@@ -493,9 +560,9 @@ q::initAndInvariant() => true
 }
 
 [Frame 1]
-q::stepAndInvariant() => true
-├─ q::step() => true
-│  └─ step() => true
+q::stepAndInvariant => true
+├─ q::step => true
+│  └─ step => true
 │     └─ mint(
 │          "bob",
 │          "null",
@@ -525,9 +592,9 @@ q::stepAndInvariant() => true
 }
 
 [Frame 2]
-q::stepAndInvariant() => true
-├─ q::step() => true
-│  └─ step() => true
+q::stepAndInvariant => true
+├─ q::step => true
+│  └─ step => true
 │     └─ send(
 │          "null",
 │          "charlie",
@@ -562,9 +629,9 @@ q::stepAndInvariant() => true
 }
 
 [Frame 3]
-q::stepAndInvariant() => true
-├─ q::step() => true
-│  └─ step() => true
+q::stepAndInvariant => true
+├─ q::step => true
+│  └─ step => true
 │     └─ mint(
 │          "bob",
 │          "bob",
@@ -616,7 +683,9 @@ rm out-itf-example.itf.json
 ```
 [
   "alice",
-  0
+  {
+    "#bigint": "0"
+  }
 ]
 ```
 
@@ -649,26 +718,65 @@ exit $exit_code
 [
   [
     "alice",
-    0
+    {
+      "#bigint": "0"
+    }
   ],
   [
     "bob",
-    0
+    {
+      "#bigint": "0"
+    }
   ],
   [
     "charlie",
-    0
+    {
+      "#bigint": "0"
+    }
   ],
   [
     "eve",
-    0
+    {
+      "#bigint": "0"
+    }
   ],
   [
     "null",
-    0
+    {
+      "#bigint": "0"
+    }
   ]
 ]
 ```
+
+### Test does not skip assignments (#1133)
+
+See: https://github.com/informalsystems/quint/issues/1133
+
+FIXME: fix the traces found by the simulator once #1133 is resolved.
+
+<!-- !test in test1133 -->
+```
+output=$(quint test --match='(t1|t2)' --output='out_{#}_{}.itf.json' \
+  ./testFixture/simulator/lastActionInRun.qnt)
+exit_code=$?
+echo "BEGIN"
+# This test should have 3 states (FIXME: it does not!)
+cat out_0_t1.itf.json | jq '.states' | grep "s" | wc -l | grep 3
+rm out_0_t1.itf.json
+# This test should have 4 states (FIXME: it does not!)
+cat out_1_t2.itf.json | jq '.states' | grep "s" | wc -l | grep 4
+rm out_1_t2.itf.json
+echo "END"
+exit $exit_code
+```
+
+<!-- !test out test1133 -->
+```
+BEGIN
+END
+```
+FIX THE TEST ABOVE: it should have 3 and 4
 
 ### OK REPL tutorial
 
@@ -702,11 +810,11 @@ exit $exit_code
   1 failed
 
   1) mintTwiceThenSendError:
-      HOME/coin.qnt:176:5 - error: mintTwiceThenSendError returns false
+      HOME/coin.qnt:176:5 - error: [QNT511] Test mintTwiceThenSendError returned false
       176:     run mintTwiceThenSendError = {
 
 [Frame 0]
-init() => true
+init => true
 
 [Frame 1]
 mint(
@@ -825,11 +933,11 @@ exit $exit_code
 ```
 
   _1040compileError
-      HOME/_1040compileError.qnt:2:3 - error: QNT500: Uninitialized const n. Use: import <moduleName>(n=<value>).*
+      HOME/_1040compileError.qnt:2:3 - error: [QNT500] Uninitialized const n. Use: import <moduleName>(n=<value>).*
 2:   const n: int
      ^^^^^^^^^^^^
 
-      HOME/_1040compileError.qnt:5:12 - error: Name n not found
+      HOME/_1040compileError.qnt:5:12 - error: [QNT502] Name n not found
 5:     assert(n > 0)
               ^
 
@@ -843,25 +951,139 @@ error: Tests failed
 output=$(quint run testFixture/_1041compileConst.qnt 2>&1)
 exit_code=$?
 echo "$output" | sed -e 's/([0-9]*ms)/(duration)/g' \
-  -e 's#^.*_1041compileConst.qnt#      HOME/_1041compileConst.qnt#g'
+  -e 's#^.*_1041compileConst.qnt#HOME/_1041compileConst.qnt#g'
 exit $exit_code
 ```
 
 <!-- !test exit 1 -->
 <!-- !test out run uninitialized -->
 ```
-An example execution:
-
-[failure] Found an issue (duration).
-Use --seed=0x0 to reproduce.
-Use --verbosity=3 to show executions.
-<module_input>:2:3 - error: QNT500: Uninitialized const N. Use: import <moduleName>(N=<value>).*
+HOME/_1041compileConst.qnt:2:3 - error: [QNT500] Uninitialized const N. Use: import <moduleName>(N=<value>).*
 2:   const N: int
      ^^^^^^^^^^^^
 
-<module_input>:5:24 - error: Name N not found
+HOME/_1041compileConst.qnt:5:24 - error: [QNT502] Name N not found
 5:   action init = { x' = N }
                           ^
 
-error: Runtime error
+error: run failed
+```
+
+### Repl keeps right track of variables from instances
+
+Incremental evaluation from the REPL interacting with instance flattening leads to state variables having different IDs on separate evaluations. This test ensures this case is well handled during evaluation.
+
+<!-- !test in repl with instance vars -->
+
+```
+cd ../examples/cosmos/tendermint/
+output=$(echo -e "n4_f1::Init\nn4_f1::round" | quint -r TendermintModels.qnt::TendermintModels 2>&1 | tail -n +3)
+exit_code=$?
+cd - > /dev/null
+echo "$output"
+exit $exit_code
+```
+
+<!-- !test out repl with instance vars -->
+
+```
+>>> true
+>>> Map("p1" -> 0, "p2" -> 0, "p3" -> 0)
+>>> 
+```
+
+### Invoking `q::debug` in REPL prints values to stdout
+
+<!-- !test in repl debug prints value to stdout and returns value -->
+
+```
+echo 'q::debug("value:", { foo: 42, bar: "Hello, World!" })' | quint | tail -n +3
+```
+
+<!-- !test out repl debug prints value to stdout and returns value -->
+```
+>>> > value: { bar: "Hello, World!", foo: 42 }
+{ bar: "Hello, World!", foo: 42 }
+>>> 
+```
+
+
+### Errors are reported in the right file
+
+File `ImportFileWithError.qnt` has no error, but it imports a module from file `FileWithError.qnt`, which has a type error. The error should be reported only in `FileWithError.qnt`.
+
+<!-- !test in error for file -->
+```
+quint typecheck ./testFixture/typechecking/ImportFileWithError.qnt 2>&1 | sed 's#.*quint/\(testFixture\)#HOME/\1#g'
+```
+
+<!-- !test out error for file -->
+```
+HOME/testFixture/typechecking/FileWithError.qnt:2:3 - error: [QNT000] Couldn't unify bool and int
+Trying to unify bool and int
+
+2:   val a: int = true
+     ^^^^^^^^^^^^^^^^^
+
+error: typechecking failed
+```
+
+### run fails on invalid module
+
+<!-- !test exit 1 -->
+<!-- !test in run invalid module -->
+```
+quint run --main=invalid ./testFixture/_1050diffName.qnt
+```
+
+<!-- !test err run invalid module -->
+```
+error: Main module invalid not found
+```
+
+### test fails on invalid module
+
+<!-- !test exit 1 -->
+<!-- !test in test invalid module -->
+```
+quint test --main=invalid ./testFixture/_1050diffName.qnt
+```
+
+<!-- !test err test invalid module -->
+```
+error: [QNT405] Main module invalid not found
+error: Tests failed
+```
+
+### Multiple tests output different json
+
+See [#1264](https://github.com/informalsystems/quint/pull/1264).
+
+<!-- !test in multiple jsons -->
+```
+quint test --output {}.itf.json ./testFixture/_1051manyTests.qnt >/dev/null
+cat firstTest.itf.json secondTest.itf.json | jq -c .states
+rm firstTest.itf.json secondTest.itf.json
+```
+
+<!-- !test out multiple jsons -->
+```
+[{"#meta":{"index":0},"x":{"#bigint":"0"}},{"#meta":{"index":1},"x":{"#bigint":"1"}}]
+[{"#meta":{"index":0},"x":{"#bigint":"0"}},{"#meta":{"index":1},"x":{"#bigint":"2"}}]
+```
+
+### Variants are supported in ITF
+
+See [#1281](https://github.com/informalsystems/quint/issues/1281)
+
+<!-- !test in variants in itf -->
+```
+quint test --output {}.itf.json ./testFixture/_1054sumTypesInItf.qnt >/dev/null
+cat xTest.itf.json | jq -c .states
+rm xTest.itf.json
+```
+
+<!-- !test out variants in itf -->
+```
+[{"#meta":{"index":0},"x":{"tag":"None","value":{}}},{"#meta":{"index":1},"x":{"tag":"Some","value":{"#bigint":"1"}}},{"#meta":{"index":2},"x":{"tag":"Some","value":{"#bigint":"2"}}}]
 ```

@@ -16,6 +16,8 @@ export function constraintToString(c: Constraint): string {
       return `${typeToString(c.types[0])} ~ ${typeToString(c.types[1])}`
     case 'conjunction':
       return c.constraints.map(constraintToString).join(' /\\ ')
+    case 'isDefined':
+      return `${typeToString(c.type)} is defined`
     case 'empty':
       return 'true'
   }

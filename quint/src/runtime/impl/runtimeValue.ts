@@ -55,9 +55,9 @@
  *
  * Igor Konnov, 2022
  *
- * Copyright (c) Informal Systems 2022. All rights reserved. Licensed under
- * the Apache 2.0. See License.txt in the project root for license
- * information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  */
 
 import { List, Map, OrderedMap, Set, ValueObject, hash, is as immutableIs } from 'immutable'
@@ -137,6 +137,16 @@ export const rv = {
     return new RuntimeValueRecord(OrderedMap(elems).sortBy((_v, k) => k))
   },
 
+  /**
+   * Make a runtime value that represents a variant value of a sum type.
+   *
+   * @param label a string reperenting the variant's label
+   * @param value the value held by the variant
+   * @return a new runtime value that represents the variant
+   */
+  mkVariant: (label: string, value: RuntimeValue): RuntimeValue => {
+    return new RuntimeValueVariant(label, value)
+  },
   /**
    * Make a runtime value that represents a map.
    *
@@ -582,6 +592,10 @@ abstract class RuntimeValueBase implements RuntimeValue {
     if (this instanceof RuntimeValueRecord && other instanceof RuntimeValueRecord) {
       return this.map.equals(other.map)
     }
+    if (this instanceof RuntimeValueVariant && other instanceof RuntimeValueVariant) {
+      return this.label === other.label && this.value.equals(other.value)
+    }
+
     if (this instanceof RuntimeValueSet && other instanceof RuntimeValueSet) {
       return immutableIs(this.set, other.set)
     }
@@ -811,6 +825,29 @@ class RuntimeValueRecord extends RuntimeValueBase implements RuntimeValue {
   }
 }
 
+export class RuntimeValueVariant extends RuntimeValueBase implements RuntimeValue {
+  label: string
+  value: RuntimeValue
+
+  constructor(label: string, value: RuntimeValue) {
+    super(false) // Not a "set-like" value
+    this.label = label
+    this.value = value
+  }
+
+  hashCode() {
+    return hash(this.value) + this.value.hashCode()
+  }
+
+  toQuintEx(gen: IdGenerator): QuintEx {
+    return {
+      id: gen.nextId(),
+      kind: 'app',
+      opcode: 'variant',
+      args: [{ id: gen.nextId(), kind: 'str', value: this.label }, this.value.toQuintEx(gen)],
+    }
+  }
+}
 /**
  * A set of runtime values represented via an immutable Map.
  * This is an internal class.
@@ -1490,7 +1527,7 @@ class RuntimeValueInfSet extends RuntimeValueBase implements RuntimeValue {
  *
  * RuntimeValueLambda cannot be compared with other values.
  */
-class RuntimeValueLambda extends RuntimeValueBase implements RuntimeValue, Callable {
+export class RuntimeValueLambda extends RuntimeValueBase implements RuntimeValue, Callable {
   nparams: number
   callable: Callable
 

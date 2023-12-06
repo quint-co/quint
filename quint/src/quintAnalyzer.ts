@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -13,7 +13,7 @@
  */
 
 import { LookupTable } from './names/base'
-import { OpQualifier, QuintDef, QuintModule } from './ir/quintIr'
+import { OpQualifier, QuintDeclaration, QuintModule } from './ir/quintIr'
 import { TypeScheme } from './types/base'
 import { TypeInferrer } from './types/inferrer'
 import { EffectScheme } from './effects/base'
@@ -31,7 +31,7 @@ export type AnalysisOutput = {
 }
 
 /* A tuple with a list of errors and the analysis output */
-export type AnalysisResult = [[bigint, QuintError][], AnalysisOutput]
+export type AnalysisResult = [QuintError[], AnalysisOutput]
 
 /**
  * Analyzes multiple Quint modules and returns the analysis result.
@@ -51,12 +51,16 @@ export function analyzeModules(lookupTable: LookupTable, quintModules: QuintModu
  *
  * @param analysisOutput - The previous analysis output to be used as a starting point.
  * @param lookupTable - The lookup tables for the modules.
- * @param def - The Quint definition to be analyzed.
+ * @param declaration - The Quint declaration to be analyzed.
  * @returns A tuple with a list of errors and the analysis output.
  */
-export function analyzeInc(analysisOutput: AnalysisOutput, lookupTable: LookupTable, def: QuintDef): AnalysisResult {
+export function analyzeInc(
+  analysisOutput: AnalysisOutput,
+  lookupTable: LookupTable,
+  declarations: QuintDeclaration[]
+): AnalysisResult {
   const analyzer = new QuintAnalyzer(lookupTable, analysisOutput)
-  analyzer.analyzeDef(def)
+  analyzer.analyzeDeclarations(declarations)
   return analyzer.getResult()
 }
 
@@ -76,7 +80,7 @@ class QuintAnalyzer {
   private modeChecker: ModeChecker
   private multipleUpdatesChecker: MultipleUpdatesChecker
 
-  private errors: [bigint, QuintError][] = []
+  private errors: QuintError[] = []
   private output: AnalysisOutput = { types: new Map(), effects: new Map(), modes: new Map() }
 
   constructor(lookupTable: LookupTable, previousOutput?: AnalysisOutput) {
@@ -87,29 +91,25 @@ class QuintAnalyzer {
   }
 
   analyze(module: QuintModule): void {
-    this.analyzeDefs(module.defs)
+    this.analyzeDeclarations(module.declarations)
   }
 
-  analyzeDef(def: QuintDef): void {
-    this.analyzeDefs([def])
-  }
-
-  private analyzeDefs(defs: QuintDef[]): void {
-    const [typeErrMap, types] = this.typeInferrer.inferTypes(defs)
-    const [effectErrMap, effects] = this.effectInferrer.inferEffects(defs)
+  analyzeDeclarations(decls: QuintDeclaration[]): void {
+    const [typeErrMap, types] = this.typeInferrer.inferTypes(decls)
+    const [effectErrMap, effects] = this.effectInferrer.inferEffects(decls)
     const updatesErrMap = this.multipleUpdatesChecker.checkEffects([...effects.values()])
-    const [modeErrMap, modes] = this.modeChecker.checkModes(defs, effects)
+    const [modeErrMap, modes] = this.modeChecker.checkModes(decls, effects)
 
     const errorTrees = [...typeErrMap, ...effectErrMap]
 
     // TODO: Type and effect checking should return QuintErrors instead of error trees
     this.errors.push(
-      ...errorTrees.map(([id, err]): [bigint, QuintError] => {
-        return [id, { code: 'QNT000', message: errorTreeToString(err), reference: id, data: { trace: err } }]
+      ...errorTrees.map(([id, err]): QuintError => {
+        return { code: 'QNT000', message: errorTreeToString(err), reference: id, data: { trace: err } }
       })
     )
 
-    this.errors.push(...modeErrMap.entries(), ...updatesErrMap.entries())
+    this.errors.push(...modeErrMap.values(), ...updatesErrMap.values())
 
     // We assume that ids are unique across modules, and map merging can be done
     // without collision checks

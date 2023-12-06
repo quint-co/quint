@@ -38,7 +38,7 @@ function symbolKind(def: QuintOpDef | QuintConst | QuintVar): SymbolKind {
  * Return the def symbols defined in a module
  */
 function getDefs(module: QuintModule, sourceMap: Map<bigint, Loc>): DocumentSymbol[] {
-  return module.defs.reduce((symbols, def) => {
+  return module.declarations.reduce((symbols, def) => {
     // skip certain kinds of defs
     if (
       def.kind === 'assume' ||

@@ -15,7 +15,6 @@ import { TypeSetContext } from "./QuintParser";
 import { TypeListContext } from "./QuintParser";
 import { TypeTupleContext } from "./QuintParser";
 import { TypeRecContext } from "./QuintParser";
-import { TypeUnionRecContext } from "./QuintParser";
 import { TypeIntContext } from "./QuintParser";
 import { TypeStrContext } from "./QuintParser";
 import { TypeBoolContext } from "./QuintParser";
@@ -64,8 +63,8 @@ import { ImportDefContext } from "./QuintParser";
 import { ExportDefContext } from "./QuintParser";
 import { ModulesContext } from "./QuintParser";
 import { ModuleContext } from "./QuintParser";
-import { DocumentedUnitContext } from "./QuintParser";
-import { UnitContext } from "./QuintParser";
+import { DocumentedDeclarationContext } from "./QuintParser";
+import { DeclarationContext } from "./QuintParser";
 import { OperDefContext } from "./QuintParser";
 import { TypeDefContext } from "./QuintParser";
 import { TypeSumVariantContext } from "./QuintParser";
@@ -79,12 +78,16 @@ import { NameContext } from "./QuintParser";
 import { QualifiedNameContext } from "./QuintParser";
 import { FromSourceContext } from "./QuintParser";
 import { TypeContext } from "./QuintParser";
-import { TypeUnionRecOneContext } from "./QuintParser";
 import { RowContext } from "./QuintParser";
 import { RowLabelContext } from "./QuintParser";
 import { ExprContext } from "./QuintParser";
-import { UnitOrExprContext } from "./QuintParser";
+import { MatchSumExprContext } from "./QuintParser";
+import { MatchSumCaseContext } from "./QuintParser";
+import { MatchSumVariantContext } from "./QuintParser";
+import { DeclarationOrExprContext } from "./QuintParser";
 import { LambdaContext } from "./QuintParser";
+import { LambdaUnsugaredContext } from "./QuintParser";
+import { LambdaTupleSugarContext } from "./QuintParser";
 import { IdentOrHoleContext } from "./QuintParser";
 import { ParameterContext } from "./QuintParser";
 import { IdentOrStarContext } from "./QuintParser";
@@ -180,19 +183,6 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitTypeRec?: (ctx: TypeRecContext) => void;
-
-	/**
-	 * Enter a parse tree produced by the `typeUnionRec`
-	 * labeled alternative in `QuintParser.type`.
-	 * @param ctx the parse tree
-	 */
-	enterTypeUnionRec?: (ctx: TypeUnionRecContext) => void;
-	/**
-	 * Exit a parse tree produced by the `typeUnionRec`
-	 * labeled alternative in `QuintParser.type`.
-	 * @param ctx the parse tree
-	 */
-	exitTypeUnionRec?: (ctx: TypeUnionRecContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `typeInt`
@@ -690,104 +680,104 @@ export interface QuintListener extends ParseTreeListener {
 
 	/**
 	 * Enter a parse tree produced by the `const`
-	 * labeled alternative in `QuintParser.unit`.
+	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
 	enterConst?: (ctx: ConstContext) => void;
 	/**
 	 * Exit a parse tree produced by the `const`
-	 * labeled alternative in `QuintParser.unit`.
+	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
 	exitConst?: (ctx: ConstContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `var`
-	 * labeled alternative in `QuintParser.unit`.
+	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
 	enterVar?: (ctx: VarContext) => void;
 	/**
 	 * Exit a parse tree produced by the `var`
-	 * labeled alternative in `QuintParser.unit`.
+	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
 	exitVar?: (ctx: VarContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `assume`
-	 * labeled alternative in `QuintParser.unit`.
+	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
 	enterAssume?: (ctx: AssumeContext) => void;
 	/**
 	 * Exit a parse tree produced by the `assume`
-	 * labeled alternative in `QuintParser.unit`.
+	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
 	exitAssume?: (ctx: AssumeContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `instance`
-	 * labeled alternative in `QuintParser.unit`.
+	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
 	enterInstance?: (ctx: InstanceContext) => void;
 	/**
 	 * Exit a parse tree produced by the `instance`
-	 * labeled alternative in `QuintParser.unit`.
+	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
 	exitInstance?: (ctx: InstanceContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `oper`
-	 * labeled alternative in `QuintParser.unit`.
+	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
 	enterOper?: (ctx: OperContext) => void;
 	/**
 	 * Exit a parse tree produced by the `oper`
-	 * labeled alternative in `QuintParser.unit`.
+	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
 	exitOper?: (ctx: OperContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `typeDefs`
-	 * labeled alternative in `QuintParser.unit`.
+	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
 	enterTypeDefs?: (ctx: TypeDefsContext) => void;
 	/**
 	 * Exit a parse tree produced by the `typeDefs`
-	 * labeled alternative in `QuintParser.unit`.
+	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
 	exitTypeDefs?: (ctx: TypeDefsContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `importDef`
-	 * labeled alternative in `QuintParser.unit`.
+	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
 	enterImportDef?: (ctx: ImportDefContext) => void;
 	/**
 	 * Exit a parse tree produced by the `importDef`
-	 * labeled alternative in `QuintParser.unit`.
+	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
 	exitImportDef?: (ctx: ImportDefContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `exportDef`
-	 * labeled alternative in `QuintParser.unit`.
+	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
 	enterExportDef?: (ctx: ExportDefContext) => void;
 	/**
 	 * Exit a parse tree produced by the `exportDef`
-	 * labeled alternative in `QuintParser.unit`.
+	 * labeled alternative in `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
 	exitExportDef?: (ctx: ExportDefContext) => void;
@@ -815,26 +805,26 @@ export interface QuintListener extends ParseTreeListener {
 	exitModule?: (ctx: ModuleContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `QuintParser.documentedUnit`.
+	 * Enter a parse tree produced by `QuintParser.documentedDeclaration`.
 	 * @param ctx the parse tree
 	 */
-	enterDocumentedUnit?: (ctx: DocumentedUnitContext) => void;
+	enterDocumentedDeclaration?: (ctx: DocumentedDeclarationContext) => void;
 	/**
-	 * Exit a parse tree produced by `QuintParser.documentedUnit`.
+	 * Exit a parse tree produced by `QuintParser.documentedDeclaration`.
 	 * @param ctx the parse tree
 	 */
-	exitDocumentedUnit?: (ctx: DocumentedUnitContext) => void;
+	exitDocumentedDeclaration?: (ctx: DocumentedDeclarationContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `QuintParser.unit`.
+	 * Enter a parse tree produced by `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
-	enterUnit?: (ctx: UnitContext) => void;
+	enterDeclaration?: (ctx: DeclarationContext) => void;
 	/**
-	 * Exit a parse tree produced by `QuintParser.unit`.
+	 * Exit a parse tree produced by `QuintParser.declaration`.
 	 * @param ctx the parse tree
 	 */
-	exitUnit?: (ctx: UnitContext) => void;
+	exitDeclaration?: (ctx: DeclarationContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `QuintParser.operDef`.
@@ -980,17 +970,6 @@ export interface QuintListener extends ParseTreeListener {
 	exitType?: (ctx: TypeContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `QuintParser.typeUnionRecOne`.
-	 * @param ctx the parse tree
-	 */
-	enterTypeUnionRecOne?: (ctx: TypeUnionRecOneContext) => void;
-	/**
-	 * Exit a parse tree produced by `QuintParser.typeUnionRecOne`.
-	 * @param ctx the parse tree
-	 */
-	exitTypeUnionRecOne?: (ctx: TypeUnionRecOneContext) => void;
-
-	/**
 	 * Enter a parse tree produced by `QuintParser.row`.
 	 * @param ctx the parse tree
 	 */
@@ -1024,15 +1003,48 @@ export interface QuintListener extends ParseTreeListener {
 	exitExpr?: (ctx: ExprContext) => void;
 
 	/**
-	 * Enter a parse tree produced by `QuintParser.unitOrExpr`.
+	 * Enter a parse tree produced by `QuintParser.matchSumExpr`.
 	 * @param ctx the parse tree
 	 */
-	enterUnitOrExpr?: (ctx: UnitOrExprContext) => void;
+	enterMatchSumExpr?: (ctx: MatchSumExprContext) => void;
 	/**
-	 * Exit a parse tree produced by `QuintParser.unitOrExpr`.
+	 * Exit a parse tree produced by `QuintParser.matchSumExpr`.
 	 * @param ctx the parse tree
 	 */
-	exitUnitOrExpr?: (ctx: UnitOrExprContext) => void;
+	exitMatchSumExpr?: (ctx: MatchSumExprContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.matchSumCase`.
+	 * @param ctx the parse tree
+	 */
+	enterMatchSumCase?: (ctx: MatchSumCaseContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.matchSumCase`.
+	 * @param ctx the parse tree
+	 */
+	exitMatchSumCase?: (ctx: MatchSumCaseContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.matchSumVariant`.
+	 * @param ctx the parse tree
+	 */
+	enterMatchSumVariant?: (ctx: MatchSumVariantContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.matchSumVariant`.
+	 * @param ctx the parse tree
+	 */
+	exitMatchSumVariant?: (ctx: MatchSumVariantContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.declarationOrExpr`.
+	 * @param ctx the parse tree
+	 */
+	enterDeclarationOrExpr?: (ctx: DeclarationOrExprContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.declarationOrExpr`.
+	 * @param ctx the parse tree
+	 */
+	exitDeclarationOrExpr?: (ctx: DeclarationOrExprContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `QuintParser.lambda`.
@@ -1044,6 +1056,28 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitLambda?: (ctx: LambdaContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.lambdaUnsugared`.
+	 * @param ctx the parse tree
+	 */
+	enterLambdaUnsugared?: (ctx: LambdaUnsugaredContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.lambdaUnsugared`.
+	 * @param ctx the parse tree
+	 */
+	exitLambdaUnsugared?: (ctx: LambdaUnsugaredContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.lambdaTupleSugar`.
+	 * @param ctx the parse tree
+	 */
+	enterLambdaTupleSugar?: (ctx: LambdaTupleSugarContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.lambdaTupleSugar`.
+	 * @param ctx the parse tree
+	 */
+	exitLambdaTupleSugar?: (ctx: LambdaTupleSugarContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `QuintParser.identOrHole`.

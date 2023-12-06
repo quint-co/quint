@@ -11,7 +11,7 @@ import {
   findDefinitionWithId,
   findExpressionWithId,
   format,
-  prettyQuintDef,
+  prettyQuintDeclaration,
   prettyTypeScheme,
   qualifierToString,
 } from '@informalsystems/quint'
@@ -92,7 +92,7 @@ function inferredDataHover(
   }
 
   const text = def
-    ? format(lineLength, 0, prettyQuintDef(def, false, result))
+    ? format(lineLength, 0, prettyQuintDeclaration(def, false, result))
     : expressionToShow(expr!, parsedData.modules, link, document, loc, result)
 
   if (!text) {

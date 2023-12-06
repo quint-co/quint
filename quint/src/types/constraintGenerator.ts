@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -30,7 +30,7 @@ import {
   QuintVar,
   isAnnotatedDef,
 } from '../ir/quintIr'
-import { QuintType, typeNames } from '../ir/quintTypes'
+import { QuintType, rowNames, typeNames } from '../ir/quintTypes'
 import { expressionToString, rowToString, typeToString } from '../ir/IRprinting'
 import { Either, left, mergeInMany, right } from '@sweet-monads/either'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree, errorTreeToString } from '../errorTree'
@@ -42,8 +42,10 @@ import {
   fieldConstraints,
   fieldNamesConstraints,
   itemConstraints,
+  matchConstraints,
   recordConstructorConstraints,
   tupleConstructorConstraints,
+  variantConstraints,
   withConstraints,
 } from './specialConstraints'
 import { FreshVarGenerator } from '../FreshVarGenerator'
@@ -154,6 +156,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         })
       })
     })
+
+    // Solve constraints here since this won't go through `exitDef`
+    if (this.constraints.length > 0) {
+      this.solveConstraints()
+    }
   }
 
   //     n: t ∈ Γ
@@ -189,7 +196,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     // numbering of ther fresh variables stays in order, with `a`, used for return types,
     // bearing the highest number.
     const definedSignature = this.typeForName(e.opcode, e.id, e.args.length)
-    const a: QuintType = { kind: 'var', name: this.freshVarGenerator.freshVar('t') }
+    const a: QuintType = { kind: 'var', name: this.freshVarGenerator.freshVar('_t') }
     const result = argsResult
       .chain(results => {
         switch (e.opcode) {
@@ -213,6 +220,13 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
             )
           case 'item':
             return validateArity(e.opcode, results, l => l === 2, '2').chain(() => itemConstraints(e.id, results, a))
+          // Sum type operators
+          case 'variant':
+            return validateArity(e.opcode, results, l => l === 2, '2').chain(() => variantConstraints(e.id, results, a))
+          case 'matchVariant':
+            return validateArity(e.opcode, results, l => l % 2 !== 0, 'odd number of').chain(() =>
+              matchConstraints(e.id, results, a)
+            )
           // Otherwise it's a standard operator with a definition in the context
           default:
             return definedSignature.map(t1 => {
@@ -237,7 +251,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       rowVariables: new Set(lastParamNames.rowVariables),
     }
     expr.params.forEach(p => {
-      const varName = p.name === '_' ? this.freshVarGenerator.freshVar('t') : `t_${p.name}_${p.id}`
+      const varName = p.name === '_' ? this.freshVarGenerator.freshVar('_t') : `t_${p.name}_${p.id}`
       paramNames.typeVariables.add(varName)
       this.addToResults(p.id, right(toScheme({ kind: 'var', name: varName })))
     })
@@ -333,6 +347,10 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     return this.solvingFunction(this.table, constraint)
       .mapLeft(errors => errors.forEach((err, id) => this.errors.set(id, err)))
       .map(subs => {
+        // For every free name we are binding in the substitutions, the names occuring in the value of the substitution
+        // have to become free as well.
+        this.addBindingsToFreeNames(subs)
+
         // Apply substitution to environment
         // FIXME: We have to figure out the scope of the constraints/substitutions
         // https://github.com/informalsystems/quint/issues/690
@@ -364,7 +382,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
         return right(def.typeAnnotation)
       }
 
-      const id = def?.reference
+      const id = def?.id
       if (!def || !id) {
         return left(buildErrorLeaf(this.location, `Signature not found for name: ${name}`))
       }
@@ -378,11 +396,11 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     const rowNames = Array.from(t.rowVariables)
 
     const typeSubs: Substitutions = typeNames.map(name => {
-      return { kind: 'type', name: name, value: { kind: 'var', name: this.freshVarGenerator.freshVar('t') } }
+      return { kind: 'type', name: name, value: { kind: 'var', name: this.freshVarGenerator.freshVar('_t') } }
     })
 
     const rowSubs: Substitutions = rowNames.map(name => {
-      return { kind: 'row', name: name, value: { kind: 'var', name: this.freshVarGenerator.freshVar('t') } }
+      return { kind: 'row', name: name, value: { kind: 'var', name: this.freshVarGenerator.freshVar('_t') } }
     })
 
     const subs = compose(this.table, typeSubs, rowSubs)
@@ -405,6 +423,28 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
       rowVariables: new Set([...typeNames(type).rowVariables].filter(name => !freeNames.rowVariables.has(name))),
     }
     return { ...nonFreeNames, type }
+  }
+
+  private addBindingsToFreeNames(substitutions: Substitutions) {
+    // Assumes substitutions are topologically sorted, i.e. [ t0 |-> (t1, t2), t1 |-> (t3, t4) ]
+    substitutions.forEach(s => {
+      switch (s.kind) {
+        case 'type':
+          this.freeNames
+            .filter(free => free.typeVariables.has(s.name))
+            .forEach(free => {
+              const names = typeNames(s.value)
+              names.typeVariables.forEach(v => free.typeVariables.add(v))
+              names.rowVariables.forEach(v => free.rowVariables.add(v))
+            })
+          return
+        case 'row':
+          this.freeNames
+            .filter(free => free.rowVariables.has(s.name))
+            .forEach(free => rowNames(s.value).forEach(v => free.rowVariables.add(v)))
+          return
+      }
+    })
   }
 }
 

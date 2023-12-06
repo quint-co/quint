@@ -3,35 +3,35 @@
  *
  * Igor Konnov, Gabriela Moreira, 2022-2023.
  *
- * Copyright (c) Informal Systems 2022-2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022-2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  */
 
 import * as readline from 'readline'
 import { Readable, Writable } from 'stream'
 import { readFileSync, writeFileSync } from 'fs'
-import lineColumn from 'line-column'
 import { Maybe, just, none } from '@sweet-monads/maybe'
 import { Either, left, right } from '@sweet-monads/either'
 import chalk from 'chalk'
 import { format } from './prettierimp'
 
-import { FlatDef, QuintEx, isFlat } from './ir/quintIr'
+import { FlatModule, QuintDef, QuintEx } from './ir/quintIr'
 import {
   CompilationContext,
   CompilationState,
-  compileDef,
+  compileDecls,
   compileExpr,
   compileFromCode,
   contextNameLookup,
+  inputDefName,
   lastTraceName,
   newCompilationState,
 } from './runtime/compile'
-import { formatError } from './errorReporter'
+import { createFinders, formatError } from './errorReporter'
 import { Register } from './runtime/runtime'
 import { TraceRecorder, newTraceRecorder } from './runtime/trace'
-import { ErrorMessage, parseExpressionOrUnit } from './parsing/quintParserFrontend'
+import { parseDefOrThrow, parseExpressionOrDeclaration } from './parsing/quintParserFrontend'
 import { prettyQuintEx, printExecutionFrameRec, terminalWidth } from './graphics'
 import { verbosity } from './verbosity'
 import { Rng, newRng } from './rng'
@@ -41,6 +41,9 @@ import { cwd } from 'process'
 import { newIdGenerator } from './idGenerator'
 import { moduleToString } from './ir/IRprinting'
 import { EvaluationState, newEvaluationState } from './runtime/impl/compilerImpl'
+import { mkErrorMessage } from './cliCommands'
+import { QuintError } from './quintError'
+import { ErrorMessage } from './ErrorMessage'
 
 // tunable settings
 export const settings = {
@@ -83,9 +86,10 @@ class ReplState {
   }
 
   addReplModule() {
-    const replModule = { name: '__repl__', defs: simulatorBuiltins(this.compilationState), id: 0n }
+    const replModule: FlatModule = { name: '__repl__', declarations: simulatorBuiltins(this.compilationState), id: 0n }
     this.compilationState.modules.push(replModule)
     this.compilationState.originalModules.push(replModule)
+    this.compilationState.mainName = '__repl__'
     this.moduleHist += moduleToString(replModule)
   }
 
@@ -476,26 +480,18 @@ function saveVars(vars: Register[], nextvars: Register[]): Maybe<string[]> {
 
 // Declarations that are overloaded by the simulator.
 // In the future, we will declare them in a separate module.
-function simulatorBuiltins(compilationState: CompilationState): FlatDef[] {
+function simulatorBuiltins(st: CompilationState): QuintDef[] {
   return [
-    parseDefOrThrow(compilationState, `val ${lastTraceName} = []`),
-    parseDefOrThrow(compilationState, `def q::test = (q::nruns, q::nsteps, q::init, q::next, q::inv) => false`),
-    parseDefOrThrow(compilationState, `def q::testOnce = (q::nsteps, q::init, q::next, q::inv) => false`),
+    parseDefOrThrow(`val ${lastTraceName} = []`, st.idGen, st.sourceMap),
+    parseDefOrThrow(`def q::test = (q::nruns, q::nsteps, q::init, q::next, q::inv) => false`, st.idGen, st.sourceMap),
+    parseDefOrThrow(`def q::testOnce = (q::nsteps, q::init, q::next, q::inv) => false`, st.idGen, st.sourceMap),
   ]
-}
-
-function parseDefOrThrow(compilationState: CompilationState, text: string): FlatDef {
-  const result = parseExpressionOrUnit(text, '<builtins>', compilationState.idGen, compilationState.sourceMap)
-  if (result.kind === 'toplevel' && isFlat(result.def)) {
-    return result.def
-  } else {
-    throw new Error(`Expected a flat definition, got ${result.kind}, parsing ${text}`)
-  }
 }
 
 function tryEvalModule(out: writer, state: ReplState, mainName: string): boolean {
   const modulesText = state.moduleHist
-  const mainPath = fileSourceResolver().lookupPath(cwd(), 'repl.ts')
+  const mainPath = fileSourceResolver(state.compilationState.sourceCode).lookupPath(cwd(), 'repl.ts')
+  state.compilationState.sourceCode.set(mainPath.toSourceName(), modulesText)
 
   const context = compileFromCode(
     newIdGenerator(),
@@ -510,7 +506,10 @@ function tryEvalModule(out: writer, state: ReplState, mainName: string): boolean
     context.compileErrors.length > 0 ||
     context.syntaxErrors.length > 0
   ) {
-    printErrors(out, state, context)
+    const tempState = state.clone()
+    // The compilation state has updated source code maps, to be used in error reporting
+    tempState.compilationState = context.compilationState
+    printErrors(out, tempState, context)
     return false
   }
 
@@ -541,14 +540,14 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
     tryEvalModule(out, state, '__repl__')
   }
 
-  const parseResult = parseExpressionOrUnit(
+  const parseResult = parseExpressionOrDeclaration(
     newInput,
     '<input>',
     state.compilationState.idGen,
     state.compilationState.sourceMap
   )
   if (parseResult.kind === 'error') {
-    printErrorMessages(out, state, 'syntax error', newInput, parseResult.messages)
+    printErrorMessages(out, state, 'syntax error', newInput, parseResult.errors)
     out('\n') // be nice to external programs
     return false
   }
@@ -581,9 +580,9 @@ function tryEval(out: writer, state: ReplState, newInput: string): boolean {
       })
       .isRight()
   }
-  if (parseResult.kind === 'toplevel') {
+  if (parseResult.kind === 'declaration') {
     // compile the module and add it to history if everything worked
-    const context = compileDef(state.compilationState, state.evaluationState, state.rng, parseResult.def)
+    const context = compileDecls(state.compilationState, state.evaluationState, state.rng, parseResult.decls)
 
     if (
       context.evaluationState.context.size === 0 ||
@@ -624,15 +623,27 @@ function printErrorMessages(
   state: ReplState,
   kind: string,
   inputText: string,
-  messages: ErrorMessage[],
+  errors: QuintError[],
   color: (_text: string) => string = chalk.red
 ) {
   const modulesText = state.moduleHist + inputText
+  const messages = errors.map(mkErrorMessage(state.compilationState.sourceMap))
   // display the error messages and highlight the error places
+  // FIXME(#1052): moudulesText can come from multiple files, but `compileFromCode` ignores that.
+  // We use a fallback here to '<modules>'
+  const sourceCode = new Map([
+    ['<input>', inputText],
+    ['<modules>', modulesText],
+    ...state.compilationState.sourceCode.entries(),
+  ])
+  const finders = createFinders(sourceCode)
+
   messages.forEach(e => {
-    const text = e.locs[0]?.source === '<input>' ? inputText : modulesText
-    const finder = lineColumn(text)
-    const msg = formatError(text, finder, e, none())
+    const error: ErrorMessage = {
+      ...e,
+      locs: e.locs.map(loc => ({ ...loc, source: finders.has(loc.source) ? loc.source : '<modules>' })),
+    }
+    const msg = formatError(sourceCode, finders, error, none())
     out(color(`${kind}: ${msg}\n`))
   })
 }
@@ -697,7 +708,7 @@ function countBraces(str: string): [number, number, number] {
 }
 
 function evalExpr(state: ReplState, out: writer): Either<string, QuintEx> {
-  const computable = contextNameLookup(state.evaluationState.context, 'q::input', 'callable')
+  const computable = contextNameLookup(state.evaluationState.context, inputDefName, 'callable')
   const columns = terminalWidth()
   const result = computable
     .mapRight(comp => {

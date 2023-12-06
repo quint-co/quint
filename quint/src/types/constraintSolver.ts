@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -16,10 +16,11 @@ import { Either, left, right } from '@sweet-monads/either'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
 import { rowToString, typeToString } from '../ir/IRprinting'
 import { QuintConstType, QuintType, Row, rowNames, typeNames } from '../ir/quintTypes'
-import { Constraint } from './base'
+import { Constraint, compareConstraints } from './base'
 import { Substitutions, applySubstitution, applySubstitutionToConstraint, compose } from './substitutions'
 import { unzip } from 'lodash'
 import { LookupTable } from '../names/base'
+import { simplifyRow } from './simplification'
 
 /*
  * Try to solve a constraint by unifying all pairs of types in equality
@@ -37,6 +38,8 @@ export function solveConstraint(
 ): Either<Map<bigint, ErrorTree>, Substitutions> {
   const errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
   switch (constraint.kind) {
+    case 'empty':
+      return right([])
     case 'eq':
       return unify(table, constraint.types[0], constraint.types[1]).mapLeft(e => {
         errors.set(constraint.sourceId, e)
@@ -44,23 +47,42 @@ export function solveConstraint(
       })
     case 'conjunction': {
       // Chain solving of inner constraints, collecting all errors (even after the first failure)
-      return constraint.constraints.reduce((result: Either<Map<bigint, ErrorTree>, Substitutions>, con) => {
-        // If previous result is a failure, try to solve the original constraint
-        // to gather all errors instead of just propagating the first one
-        let newCons = con
-        result.map(s => {
-          newCons = applySubstitutionToConstraint(table, s, con)
-        })
-        return solveConstraint(table, newCons)
-          .mapLeft(e => {
-            e.forEach((error, id) => errors.set(id, error))
-            return errors
+      return constraint.constraints
+        .sort(compareConstraints)
+        .reduce((result: Either<Map<bigint, ErrorTree>, Substitutions>, con) => {
+          // If previous result is a failure, try to solve the original constraint
+          // to gather all errors instead of just propagating the first one
+          let newCons = con
+          result.map(s => {
+            newCons = applySubstitutionToConstraint(table, s, con)
           })
-          .chain(newSubs => result.map(s => compose(table, newSubs, s)))
-      }, right([]))
+          return solveConstraint(table, newCons)
+            .mapLeft(e => {
+              e.forEach((error, id) => errors.set(id, error))
+              return errors
+            })
+            .chain(newSubs => result.map(s => compose(table, newSubs, s)))
+        }, right([]))
     }
-    case 'empty':
-      return right([])
+    case 'isDefined': {
+      for (const def of table.values()) {
+        if (def.kind === 'typedef' && def.type) {
+          const subst = unify(table, def.type, constraint.type)
+          if (subst.isRight()) {
+            // We found a defined type unifying with the given schema
+            return right(subst.unwrap())
+          }
+        }
+      }
+      errors.set(
+        constraint.sourceId,
+        buildErrorLeaf(
+          `Looking for defined type unifying with ${typeToString(constraint.type)}`,
+          'Expected type is not defined'
+        )
+      )
+      return left(errors)
+    }
   }
 }
 
@@ -102,11 +124,8 @@ export function unify(table: LookupTable, t1: QuintType, t2: QuintType): Either<
     return unifyWithAlias(table, t1, t2)
   } else if (t2.kind === 'const') {
     return unifyWithAlias(table, t2, t1)
-  } else if (t1.kind === 'rec' && t2.kind === 'rec') {
+  } else if ((t1.kind === 'rec' && t2.kind === 'rec') || (t1.kind === 'sum' && t2.kind === 'sum')) {
     return unifyRows(table, t1.fields, t2.fields).mapLeft(error => buildErrorTree(location, error))
-  } else if ((t1.kind === 'union' && t2.kind === 'rec') || (t1.kind === 'rec' && t2.kind === 'union')) {
-    // FIXME: Implement discriminated unions and remove this hack, see https://github.com/informalsystems/quint/issues/244
-    return right([])
   } else {
     return left(buildErrorLeaf(location, `Couldn't unify ${t1.kind} and ${t2.kind}`))
   }
@@ -189,13 +208,13 @@ export function unifyRows(table: LookupTable, r1: Row, r2: Row): Either<ErrorTre
 
 function unifyWithAlias(table: LookupTable, t1: QuintConstType, t2: QuintType) {
   const aliasValue = t1.id ? table.get(t1.id) : undefined
-  if (!aliasValue) {
+  if (aliasValue?.kind !== 'typedef') {
     return left(
       buildErrorLeaf(`Trying to unify ${t1.name} and ${typeToString(t2)}`, `Couldn't find type alias ${t1.name}`)
     )
   }
 
-  if (!aliasValue.typeAnnotation) {
+  if (!aliasValue.type) {
     return left(
       buildErrorLeaf(
         `Trying to unify ${t1.name} and ${typeToString(t2)}`,
@@ -204,7 +223,7 @@ function unifyWithAlias(table: LookupTable, t1: QuintConstType, t2: QuintType) {
     )
   }
 
-  return unify(table, aliasValue.typeAnnotation, t2)
+  return unify(table, aliasValue.type, t2)
 }
 
 function bindType(name: string, type: QuintType): Either<string, Substitutions> {
@@ -239,7 +258,7 @@ function checkSameLength(
   types2: QuintType[]
 ): Either<Error, [QuintType[], QuintType[]]> {
   if (types1.length !== types2.length) {
-    return tryToUnpack(location, types1, types2)
+    return left(buildErrorLeaf(location, `Expected ${types1.length} arguments, got ${types2.length}`))
   }
 
   return right([types1, types2])
@@ -249,43 +268,4 @@ function chainUnifications(table: LookupTable, types1: QuintType[], types2: Quin
   return types1.reduce((result: Either<Error, Substitutions>, t, i) => {
     return result.chain(subs => applySubstitutionsAndUnify(table, subs, t, types2[i]))
   }, right([]))
-}
-
-function simplifyRow(r: Row): Row {
-  if (r.kind !== 'row') {
-    return r
-  }
-
-  let result = r
-  const otherSimplified = simplifyRow(r.other)
-  if (otherSimplified.kind === 'row') {
-    result = { kind: 'row', fields: r.fields.concat(otherSimplified.fields), other: otherSimplified.other }
-  }
-
-  if (result.fields.length > 0) {
-    return result
-  } else {
-    return otherSimplified
-  }
-}
-
-function tryToUnpack(
-  location: string,
-  types1: QuintType[],
-  types2: QuintType[]
-): Either<ErrorTree, [QuintType[], QuintType[]]> {
-  // Ensure that types1 is always the smallest
-  if (types2.length < types1.length) {
-    return tryToUnpack(location, types2, types1)
-  }
-
-  // We only handle unpacking 1 tuple into N args
-  if (types1.length === 1 && types1[0].kind === 'tup') {
-    const row = types1[0].fields
-    if (row.kind === 'row' && row.fields.length === types2.length) {
-      return right([row.fields.map(f => f.fieldType), types2])
-    }
-  }
-
-  return left(buildErrorLeaf(location, `Expected ${types2.length} arguments, got ${types1.length}`))
 }

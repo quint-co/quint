@@ -1,1 +1,0 @@
-{"stage":"parsing","warnings":[],"errors":[{"explanation":"QNT012: ... may be used once in { ...record, <fields> }","locs":[{"source":"mocked_path/testFixture/_1029spreadError.qnt","start":{"line":3,"col":17,"index":121},"end":{"line":3,"col":34,"index":138}}]}]}
