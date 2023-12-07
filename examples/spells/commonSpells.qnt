@@ -53,6 +53,4 @@ module commonSpells {
     assert(mapToSet(Map(1 -> 2, 2 -> 3)) == Set((1, 2), (2, 3))),
     assert(Map("a" -> 1, "b" -> 1, "c" -> 1).mapToSet().fold(0, (__acc, __kv) => __acc + __kv._2) == 3),
   }
-  
-
 }
