@@ -5,13 +5,26 @@ import { typeSchemeToString } from '../../src/types/printing'
 import { errorTreeToString } from '../../src/errorTree'
 import { parseMockedModule } from '../util'
 
+// Utility used to print update `stringType` values to make
+// updating the expected values in the following tests less
+// painful.
+function _printUpdatedStringTypes(stringTypes: (string | bigint)[][]) {
+  console.log('[')
+  stringTypes.forEach(([n, t]) => console.log(`[${n}n, '${t}'],`))
+  console.log(']')
+}
+
 describe('inferTypes', () => {
-  function inferTypesForDefs(defs: string[]): TypeInferenceResult {
-    const text = `module wrapper { ${defs.join('\n')} }`
+  function inferTypesForModules(text: string): TypeInferenceResult {
     const { modules, table } = parseMockedModule(text)
 
     const inferrer = new TypeInferrer(table)
-    return inferrer.inferTypes(modules[0].declarations)
+    return inferrer.inferTypes(modules.flatMap(m => m.declarations))
+  }
+
+  function inferTypesForDefs(defs: string[]): TypeInferenceResult {
+    const text = `module wrapper { ${defs.join('\n')} }`
+    return inferTypesForModules(text)
   }
 
   it('infers types for basic expressions', () => {
@@ -21,6 +34,7 @@ describe('inferTypes', () => {
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    // _printUpdatedStringTypes(stringTypes)
     assert.sameDeepMembers(stringTypes, [
       [1n, 'int'],
       [2n, 'int'],
@@ -32,20 +46,22 @@ describe('inferTypes', () => {
       [8n, 'int'],
       [9n, 'int'],
       [10n, '(int, int) => int'],
-      [11n, 'int'],
+      [11n, '(int, int) => int'],
       [12n, 'int'],
       [13n, 'int'],
       [14n, 'int'],
       [15n, 'int'],
-      [16n, 'Set[int]'],
+      [16n, 'int'],
       [17n, 'Set[int]'],
-      [18n, 'int'],
+      [18n, 'Set[int]'],
       [19n, 'int'],
       [20n, 'int'],
       [21n, 'int'],
-      [22n, '(int) => int'],
-      [23n, 'Set[int]'],
-      [24n, '(Set[int]) => Set[int]'],
+      [22n, 'int'],
+      [23n, '(int) => int'],
+      [24n, 'Set[int]'],
+      [25n, '(Set[int]) => Set[int]'],
+      [26n, '(Set[int]) => Set[int]'],
     ])
   })
 
@@ -56,21 +72,24 @@ describe('inferTypes', () => {
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    // _printUpdatedStringTypes(stringTypes)
     assert.sameDeepMembers(stringTypes, [
+      [7n, '(bool) => int'],
+      [8n, 'bool'],
+      [9n, 'bool'],
+      [10n, 'int'],
+      [11n, 'bool'],
+      [12n, 'bool'],
+      [13n, 'int'],
+      [14n, 'int'],
+      [15n, '((bool) => int, bool) => int'],
+      [16n, '((bool) => int, bool) => int'],
       [1n, '∀ t0, t1 . (t0) => t1'],
       [2n, '∀ t0 . t0'],
       [3n, '∀ t0 . t0'],
       [4n, '∀ t0 . t0'],
       [5n, '∀ t0, t1 . ((t0) => t1, t0) => t1'],
-      [6n, '(bool) => int'],
-      [7n, 'bool'],
-      [8n, 'bool'],
-      [9n, 'int'],
-      [10n, 'bool'],
-      [11n, 'bool'],
-      [12n, 'int'],
-      [13n, 'int'],
-      [14n, '((bool) => int, bool) => int'],
+      [6n, '∀ t0, t1 . ((t0) => t1, t0) => t1'],
     ])
   })
 
@@ -86,13 +105,14 @@ describe('inferTypes', () => {
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    // _printUpdatedStringTypes(stringTypes)
     assert.sameDeepMembers(stringTypes, [
       [4n, '{ f1: int, f2: bool }'],
       [5n, '{ f1: int, f2: bool }'],
-      [6n, 'int'],
       [7n, 'str'],
-      [8n, 'bool'],
+      [6n, 'int'],
       [9n, 'str'],
+      [8n, 'bool'],
       [10n, '{ f1: int, f2: bool }'],
       [11n, 'Set[{ f1: int, f2: bool }]'],
       [12n, 'Set[{ f1: int, f2: bool }]'],
@@ -104,12 +124,13 @@ describe('inferTypes', () => {
       [18n, 'int'],
       [19n, '{ f1: int, f2: bool }'],
       [20n, '∀ r0 . ({ f1: int | r0 }) => { f1: int, f2: bool }'],
-      [21n, 'int'],
-      [22n, 'str'],
-      [23n, '{ f1: int }'],
-      [24n, '{ f1: int, f2: bool }'],
-      [25n, 'Set[str]'],
+      [21n, '∀ r0 . ({ f1: int | r0 }) => { f1: int, f2: bool }'],
+      [23n, 'str'],
+      [22n, 'int'],
+      [24n, '{ f1: int }'],
+      [25n, '{ f1: int, f2: bool }'],
       [26n, 'Set[str]'],
+      [27n, 'Set[str]'],
     ])
   })
 
@@ -120,6 +141,7 @@ describe('inferTypes', () => {
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    // _printUpdatedStringTypes(stringTypes)
     assert.sameDeepMembers(stringTypes, [
       [1n, '∀ t0, r0 . (t0 | r0)'],
       [2n, '∀ t0, t1, r0 . (t0, t1 | r0)'],
@@ -131,6 +153,7 @@ describe('inferTypes', () => {
       [8n, '∀ t0 . t0'],
       [9n, '∀ t0, t1 . (t0, t1)'],
       [10n, '∀ t0, t1, t2, r0, r1 . ((t0 | r0), (t1, t2 | r1)) => (t0, t2)'],
+      [11n, '∀ t0, t1, t2, r0, r1 . ((t0 | r0), (t1, t2 | r1)) => (t0, t2)'],
     ])
   })
 
@@ -157,6 +180,22 @@ describe('inferTypes', () => {
       [8n, '(int) => (A(int) | B({}))'],
       [9n, '(int) => (A(int) | B({}))'],
     ])
+  })
+
+  it('infers types for different sum type declarations with the same label but different values', () => {
+    // See https://github.com/informalsystems/quint/issues/1275
+    const text = `
+module A {
+  type T1 = | A(int)
+}
+
+module B {
+  type T2 = | A(bool)
+}
+`
+
+    const [errors, _] = inferTypesForModules(text)
+    assert.deepEqual([...errors.entries()], [])
   })
 
   it('infers types for match expression', () => {
@@ -293,7 +332,7 @@ describe('inferTypes', () => {
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
-    assert.includeDeepMembers(stringTypes, [[14n, '(str) => bool']])
+    assert.includeDeepMembers(stringTypes, [[15n, '(str) => bool']])
   })
 
   it('considers annotations', () => {
@@ -303,10 +342,12 @@ describe('inferTypes', () => {
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    // _printUpdatedStringTypes(stringTypes)
     assert.sameDeepMembers(stringTypes, [
       [1n, 'int'],
       [5n, 'int'],
       [6n, '(int) => int'],
+      [7n, '(int) => int'],
     ])
   })
 
@@ -317,6 +358,7 @@ describe('inferTypes', () => {
     assert.isEmpty(errors, `Should find no errors, found: ${[...errors.values()].map(errorTreeToString)}`)
 
     const stringTypes = Array.from(types.entries()).map(([id, type]) => [id, typeSchemeToString(type)])
+    // _printUpdatedStringTypes(stringTypes)
     assert.sameDeepMembers(stringTypes, [
       [1n, '(int -> str)'],
       [6n, '(int -> str)'],
@@ -325,6 +367,7 @@ describe('inferTypes', () => {
       [9n, 'int'],
       [10n, 'int'],
       [12n, '((int -> str)) => int'],
+      [13n, '((int -> str)) => int'],
     ])
   })
 

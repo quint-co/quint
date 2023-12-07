@@ -823,7 +823,7 @@ module builtin {
   ///
   /// ```
   /// var x: int
-  /// run test = (x' = 0).then(3.times(x' = x + 1)).then(assert(x == 3))
+  /// run test = (x' = 0).then(3.reps(x' = x + 1)).then(assert(x == 3))
   /// ```
   ///
   /// ```
@@ -834,6 +834,24 @@ module builtin {
   /// run test = Init.then(all { Next, assert(x > 0) })
   /// ```
   action assert(p): (bool) => bool
+
+  /// `q::debug(msg, value)` prints the given message and value to the console,
+  /// separated by a space.
+  ///
+  /// It also returns the given value unchanged,
+  /// so that it can be used directly within expressions.
+  ///
+  /// ### Examples
+  ///
+  /// ```
+  /// var x: int
+  /// >>> (x' = 0).then(3.reps(i => x' = q::debug("new x:", x + 1)))
+  /// > new x: 1
+  /// > new x: 2
+  /// > new x: 3
+  /// true
+  /// ```
+  pure def q::debug(msg, value): (str, a) => a
 
   // /// `List(e0, ..., en)` is a list of values `e0`, ..., `en`.
   // ///

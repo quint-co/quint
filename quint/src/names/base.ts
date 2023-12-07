@@ -235,4 +235,5 @@ export const builtinNames = [
   'difference',
   'matchVariant',
   'variant',
+  'q::debug',
 ]

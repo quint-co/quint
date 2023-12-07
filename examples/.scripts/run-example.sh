@@ -40,22 +40,26 @@ result () {
 
     # Run the command and record success / failure
     local quint_cmd="quint $cmd $args $file"
+    local succeeded=false
     if ($quint_cmd &> /dev/null)
     then
         printf ":white_check_mark:"
+        succeeded=true
     else
         printf ":x:"
+        succeeded=false
     fi
 
-    # Print additional explanations
-    if [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" &&  "$cmd" == verify ]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/issues/1034</sup>"
-    elif [[ "$file" == "classic/distributed/TwoPhaseCommit/two_phase_commit.qnt" && "$cmd" == verify ]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/issues/1034</sup>"
-    elif [[ "$file" == "language-features/option.qnt" && "$cmd" == verify ]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/issues/1034</sup>"
-    elif [[ "$file" == "solidity/icse23-fig7/lottery.qnt" && "$cmd" == "verify" ]] ; then
-      printf "<sup>https://github.com/informalsystems/quint/issues/1019</sup>"
+    # We only want to print additional info to annotate failing results
+    if [[ $succeeded == false ]]; then
+      # Print additional explanations
+      if [[ "$file" == "solidity/icse23-fig7/lottery.qnt" && "$cmd" == "verify" ]] ; then
+        printf "<sup>https://github.com/informalsystems/quint/issues/1285</sup>"
+      elif [[ "$file" == "classic/distributed/TwoPhaseCommit/two_phase_commit.qnt" && "$cmd" == verify ]] ; then
+        printf "<sup>https://github.com/informalsystems/quint/issues/1034</sup>"
+      elif [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" && "$cmd" == "verify" ]] ; then
+        printf "<sup>https://github.com/informalsystems/quint/issues/1284</sup>"
+      fi
     fi
 }
 
@@ -122,6 +126,8 @@ get_verify_args () {
     args="--init=n4_f1::Init --step=n4_f1::Next --invariant=n4_f1::Agreement"
   elif [[ "$file" == "cosmos/ics23/ics23.qnt" ]] ; then
     args="--init=Init --step=Next"
+  elif [[ "$file" == "puzzles/tictactoe/tictactoe.qnt" ]] ; then
+    args="--max-steps=1" # pretty slow, and we just want to check that verification can run
   fi
   echo "${args}"
 }

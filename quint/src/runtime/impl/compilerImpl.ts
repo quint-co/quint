@@ -36,7 +36,10 @@ import { RuntimeValue, RuntimeValueLambda, RuntimeValueVariant, rv } from './run
 import { ErrorCode, QuintError } from '../../quintError'
 
 import { inputDefName, lastTraceName } from '../compile'
+import { prettyQuintEx, terminalWidth } from '../../graphics'
+import { format } from '../../prettierimp'
 import { unreachable } from '../../util'
+import { zerog } from '../../idGenerator'
 import { chunk } from 'lodash'
 
 // Internal names in the compiler, which have special treatment.
@@ -939,6 +942,15 @@ export class CompilerVisitor implements IRVisitor {
         case 'q::testOnce':
           // the special operator that runs random simulation
           this.testOnce(app.id)
+          break
+
+        case 'q::debug':
+          this.applyFun(app.id, 2, (msg, value) => {
+            let columns = terminalWidth()
+            let valuePretty = format(columns, 0, prettyQuintEx(value.toQuintEx(zerog)))
+            console.log('>', msg.toStr(), valuePretty.toString())
+            return just(value)
+          })
           break
 
         // standard unary operators that are not handled by REPL

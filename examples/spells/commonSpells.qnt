@@ -17,4 +17,40 @@ module commonSpells {
     assert(setSum(2.to(4)) == 9),
     assert(setSum(Set(-4, 4, 5)) == 5),
   }
+
+   /// Get the set of values of a map.
+   ///
+   /// - @param __map a map from type a to type b
+   /// - @returns the set of all values in the map
+  pure def mapValuesSet(__map: a -> b): Set[b] = {
+    __map.keys().map(k => __map.get(k))
+  }
+
+  run mapValuesSetTest = all {
+    assert(mapValuesSet(Map()) == Set()),
+    assert(mapValuesSet(Map(1 -> 2, 2 -> 3)) == Set(2, 3)),
+    assert(mapValuesSet(Map(1 -> 2, 2 -> 3, 3 -> 2)) == Set(2, 3)),
+  }
+
+   /// Convert a map into a set of pairs coordinating its keys and values
+   ///
+   /// - @param __map a map
+   /// - @returns the set of pairs coordinating the map's keys with its values
+   ///
+   /// ### Examples
+   ///
+   /// ```
+   /// val accountValues: Map[str, int] = Map("a" -> 1, "b" -> 1, "c" -> "1")
+   /// val sumOfValues: int = accountValues.mapToSet().fold(0, (acc, kv) => acc + kv._2)
+   /// assert(sumOfValues == 3)
+   /// ```
+  pure def mapToSet(__map: a -> b): Set[(a, b)] = {
+    __map.keys().fold(Set(), (__acc, __k) => __acc.union(Set((__k, __map.get(__k)))))
+  }
+
+  run mapToSetTest = all {
+    assert(mapToSet(Map()) == Set()),
+    assert(mapToSet(Map(1 -> 2, 2 -> 3)) == Set((1, 2), (2, 3))),
+    assert(Map("a" -> 1, "b" -> 1, "c" -> 1).mapToSet().fold(0, (__acc, __kv) => __acc + __kv._2) == 3),
+  }
 }

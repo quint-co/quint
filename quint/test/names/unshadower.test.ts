@@ -34,7 +34,7 @@ describe('unshadowNames', () => {
 
     assert.sameDeepMembers(unshadowedModules.map(moduleToString), [
       dedent(`module A {
-             |  val b = val a_9 = 1 { a_9 }
+             |  val b = val a_10 = 1 { a_10 }
              |  def f = ((a_5) => igt(a_5, 0))
              |}`),
       dedent(`module B {
