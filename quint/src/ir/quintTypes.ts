@@ -98,6 +98,19 @@ export function sumType(labelTypePairs: [string, QuintType][], rowVar?: string, 
   return { kind: 'sum', fields: { kind: 'row', fields, other }, id }
 }
 
+/// Type abstraction: Λτ.Τ
+export interface QuintAbsType extends WithOptionalId {
+  kind: 'abs'
+  vars: QuintVarType
+}
+
+/// Type application: (Λτ.Τ)υ
+export interface QuintAppType extends WithOptionalId {
+  kind: 'app'
+  abs: QuintAbsType
+  arg: QuintType
+}
+
 /**
  * A type in Type System 1.2.
  */
@@ -114,6 +127,8 @@ export type QuintType =
   | QuintTupleType
   | QuintRecordType
   | QuintSumType
+  | QuintAbsType
+  | QuintAppType
 
 /**
  * Row types, used to express tuples and records.
