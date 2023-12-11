@@ -55,10 +55,10 @@ result () {
       # Print additional explanations
       if [[ "$file" == "solidity/icse23-fig7/lottery.qnt" && "$cmd" == "verify" ]] ; then
         printf "<sup>https://github.com/informalsystems/quint/issues/1285</sup>"
-      elif [[ "$file" == "classic/distributed/TwoPhaseCommit/two_phase_commit.qnt" && "$cmd" == verify ]] ; then
-        printf "<sup>https://github.com/informalsystems/quint/issues/1034</sup>"
       elif [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" && "$cmd" == "verify" ]] ; then
         printf "<sup>https://github.com/informalsystems/quint/issues/1284</sup>"
+      elif [[ "$file" == "classic/distributed/TwoPhaseCommit/two_phase_commit_modules.qnt" && "$cmd" =~ (test|verify) ]] ; then
+        printf "<sup>https://github.com/informalsystems/quint/issues/1299</sup>"
       fi
     fi
 }
