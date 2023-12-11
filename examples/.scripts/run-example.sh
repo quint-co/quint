@@ -57,6 +57,8 @@ result () {
         printf "<sup>https://github.com/informalsystems/quint/issues/1285</sup>"
       elif [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" && "$cmd" == "verify" ]] ; then
         printf "<sup>https://github.com/informalsystems/quint/issues/1284</sup>"
+      elif [[ "$file" == "classic/distributed/TwoPhaseCommit/two_phase_commit_modules.qnt" && "$cmd" =~ (test|verify) ]] ; then
+        printf "<sup>https://github.com/informalsystems/quint/issues/1299</sup>"
       fi
     fi
 }
@@ -70,6 +72,8 @@ get_main () {
     main="--main=ReadersWriters_5"
   elif [[ "$file" == "classic/distributed/ewd840/ewd840.qnt" ]] ; then
     main="--main=ewd840_3"
+  elif [[ "$file" == "classic/distributed/TwoPhaseCommit/two_phase_commit.qnt" ]] ; then
+    main="--main=two_phase_commit_3"
   elif [[ "$file" == "classic/distributed/Paxos/Paxos.qnt" ]] ; then
     main="--main=Paxos_val2_accept3_quorum2"
   elif [[ "$file" == "classic/sequential/BinSearch/BinSearch.qnt" ]] ; then
