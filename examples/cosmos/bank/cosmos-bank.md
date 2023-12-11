@@ -4,6 +4,9 @@
 
 **Version**: Cosmos SDK [v0.46.10](https://github.com/cosmos/cosmos-sdk/blob/v0.46.10/).
 
+**This page is still experimental. We believe that Cosmos documentation will
+become executable one day.**
+
 ## Abstract
 
 This document shows how we could turn an inanimate piece of documentation into
@@ -11,8 +14,8 @@ an executable specification. We are using the [bank module][] of Cosmos SDK as
 an example. In the following, all of the quoted text belongs to the original
 description on the [bank module][] page, unless specified otherwise. To obtain
 a Quint module, run [lmt][] against this document. Check the executable
-specification in [bank.qnt](./bank.qnt). We follow the same order of exposition,
-as in the original document.
+specification in [bank.qnt](./bank.qnt) and [bankTest.qnt](./bankTest.qnt).
+We follow the same order of exposition, as in the original document.
 
 Importantly, this description is tuned towards ease of exposition, not for
 implementation or verification. Remember that we do not want to make protocols
@@ -58,8 +61,14 @@ module bankTest {
   // the state of the machine that tests the logic
   <<<state>>>
 
+  // state transitions of the machine
+  <<<transitions>>>
+
   // protocol invariants
   <<<invariants>>>
+
+  // tests
+  <<<tests>>>
 }
 ```
 
@@ -159,9 +168,9 @@ This is a perfect opportunity to define a state invariant:
 
 ```bluespec "invariants" +=
 // sum up amounts over all balances for a given denomination
-def SumForDenom(denom: Denom): Int256 = {
-  Balances.keys().fold(0, (sum, addr) => {
-    val coins = Balances.get(addr)
+def sumForDenom(denom: Denom): Int256 = {
+  balances.keys().fold(0, (sum, addr) => {
+    val coins = balances.get(addr)
     if (denom.in(coins.keys())) {
       sum + coins.get(denom)
     } else {
@@ -171,8 +180,8 @@ def SumForDenom(denom: Denom): Int256 = {
 }
 
 // The total Supply of the network is equal to the sum of all coins from the account
-val TotalSupplyInv = {
-  Supply.keys().forall(denom => (SumForDenom(denom) == Supply.get(denom)))
+val totalSupplyInv = {
+  supply.keys().forall(denom => (sumForDenom(denom) == supply.get(denom)))
 }
 ```
 
@@ -196,7 +205,7 @@ We represent this field as a map in the protocol specification:
 
 ```bluespec "state" +=
 // Total supply of coins per denomination
-var Supply: Denom -> Int256
+var supply: Denom -> Int256
 ```
 
 > - Denom Metadata: `0x1 | byte(denom) -> ProtocolBuffer(Metadata)`
@@ -207,7 +216,20 @@ We represent this field as a map in the protocol specification:
 
 ```bluespec "state" +=
 // Balances for each address
-var Balances: Addr -> Coins
+var balances: Addr -> Coins
+```
+
+We could initialize the state via `init`, which would be similar to executing
+genesis transactions in Cosmos:
+
+```bluespec "transitions" +=
+// initialize the state machine
+action init = all {
+  // limit the total supply of burgers and bananas to 10_000
+  supply' = Set("banana", "burger").mapBy(d => 10_000),
+  // the king has it all
+  balances' = Set("king").mapBy(a => Set("banana", "burger").mapBy(d => 10_000))
+}
 ```
 
 ## Keepers
@@ -233,7 +255,7 @@ var Balances: Addr -> Coins
 > occurs for the operation if a user or client attempts to directly or
 > indirectly send funds to a blocklisted account, for example, by using IBC.
 
-**TODO: figure out how blocklisting should be described in the protocol**
+**TODO: we are skipping this feature in the spec for now**
 
 ### Common Types
 
@@ -268,8 +290,11 @@ An output of a multiparty transfer.
 The type in Quint:
 
 ```bluespec "types" +=
-// An input of a multiparty transfer
-type Output = Input
+// An output of a multiparty transfer
+type Output = {
+  address: str,
+  coins: Coins,
+}
 ```
 
 The type in protobuf:
@@ -301,7 +326,7 @@ classDiagram
     SendKeeper <|-- BaseKeeper
 ```
 
-We define the part of the SDK context that is touched by the bank module:
+We define the part of the SDK context that is accessed by the bank module:
 
 ```bluespec "types" +=
 // the portion of the context that is accessed by the bank module
@@ -336,10 +361,44 @@ pure def ViewKeeper::GetAllBalances(ctx: BankCtx, addr: Addr): Coins = {
     Map()
   }
 }
-
 ```
 
- - `validateBalance` validates all balances for a given account address
+For example, we expect the `GetAllBalances` to return balances in the genesis state as follows:
+
+```bluespec "tests" +=
+run getAllBalancesTest = {
+  init
+    .then(
+      val ctx = stateToCtx(0)
+      val kings = ViewKeeper::GetAllBalances(ctx, "king")
+      val donkeys = ViewKeeper::GetAllBalances(ctx, "donkeykong")
+      all {
+        assert(kings.keys() == Set("banana", "burger")),
+        assert(kings.get("banana") == 10_000),
+        assert(kings.get("burger") == 10_000),
+        assert(donkeys.keys() == Set()),
+        // do not change the state
+        balances' = balances,
+        supply' = supply,
+      }
+    )
+}
+
+// a helper operator that produces a context from a state
+def stateToCtx(time: int): BankCtx = {
+  {
+    blockTime: time,
+    accounts: balances.keys(),
+    balances: balances,
+    params: {
+      sendEnabled: Set(),
+      defaultSendEnabled: true
+    }
+  }
+}
+```
+
+ - `ValidateBalance` validates all balances for a given account address
    returning an error if any balance is invalid. It checks for vesting
    account types and validate the balances against the original vesting
    balances. CONTRACT: ValidateBalance should only be called upon genesis
@@ -413,13 +472,13 @@ pure def ViewKeeper::GetAccountsBalances(ctx: BankCtx): Set[Balance] = {
    result will always be no coins. For vesting accounts, LockedCoins is
    delegated to the concrete vesting account type.
 
-   **TODO**
+   **TODO:** This requires vesting accounts.
 
  - `SpendableCoins` returns the total balances of spendable coins for an
    account by address. If the account has no spendable coins, an empty
    Coins slice is returned.
 
-   **TODO**
+   **TODO:** This requires vesting accounts.
 
  - `IterateAccountBalances` iterates over the balances of a single account
    and provides the token balance to a callback. If true is returned from

@@ -44,8 +44,11 @@ module bank {
     address: str,
     coins: Coins,
   }
-  // An input of a multiparty transfer
-  type Output = Input
+  // An output of a multiparty transfer
+  type Output = {
+    address: str,
+    coins: Coins,
+  }
   // the portion of the context that is accessed by the bank module
   type BankCtx = {
     // block time (needed by vesting accounts)
@@ -77,7 +80,6 @@ module bank {
       Map()
     }
   }
-
   /// `ValidateBalance` should only be called upon genesis state.
   /// https://github.com/cosmos/cosmos-sdk/blob/06406f6a70f228bbb6d09b45a4e343477f1ef7e9/x/bank/keeper/view.go#L202
   pure def ViewKeeper::ValidateBalance(ctx: BankCtx, addr: Addr): bool = and {
