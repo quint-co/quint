@@ -1,9 +1,9 @@
 // -*- mode: Bluespec; -*-
 
-/* This specification stems from the specification of the two phase protocol
-   by Leslie Lamport:
-
-   https://github.com/tlaplus/Examples/blob/master/specifications/transaction_commit/TwoPhase.tla */
+/* This specification is a variation on ./two_phase_commit.qnt that experiments with
+   using modules to divides the state spaces to reflect possible state access in the
+   system.
+*/
 
 module message {
   type T =
