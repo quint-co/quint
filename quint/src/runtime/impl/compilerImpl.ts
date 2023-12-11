@@ -36,7 +36,10 @@ import { RuntimeValue, RuntimeValueLambda, RuntimeValueVariant, rv } from './run
 import { ErrorCode, QuintError } from '../../quintError'
 
 import { inputDefName, lastTraceName } from '../compile'
+import { prettyQuintEx, terminalWidth } from '../../graphics'
+import { format } from '../../prettierimp'
 import { unreachable } from '../../util'
+import { zerog } from '../../idGenerator'
 import { chunk } from 'lodash'
 
 // Internal names in the compiler, which have special treatment.
@@ -161,7 +164,9 @@ export class CompilerVisitor implements IRVisitor {
   // execution listener
   private execListener: ExecutionListener
   // the current depth of operator definitions: top-level defs are depth 0
-  private definitionDepth: number = 0
+  // FIXME(#1279): The walk* functions update this value, but they need to be
+  // initialized to -1 here for that to work on all scenarios.
+  definitionDepth: number = -1
 
   constructor(
     lookupTable: LookupTable,
@@ -230,12 +235,7 @@ export class CompilerVisitor implements IRVisitor {
     return this.errorTracker.runtimeErrors
   }
 
-  enterOpDef(_: ir.QuintOpDef) {
-    this.definitionDepth++
-  }
-
   exitOpDef(opdef: ir.QuintOpDef) {
-    this.definitionDepth--
     // Either a runtime value, or a def, action, etc.
     // All of them are compiled to callables, which may have zero parameters.
     let boundValue = this.compStack.pop()
@@ -942,6 +942,15 @@ export class CompilerVisitor implements IRVisitor {
         case 'q::testOnce':
           // the special operator that runs random simulation
           this.testOnce(app.id)
+          break
+
+        case 'q::debug':
+          this.applyFun(app.id, 2, (msg, value) => {
+            let columns = terminalWidth()
+            let valuePretty = format(columns, 0, prettyQuintEx(value.toQuintEx(zerog)))
+            console.log('>', msg.toStr(), valuePretty.toString())
+            return just(value)
+          })
           break
 
         // standard unary operators that are not handled by REPL

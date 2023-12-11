@@ -16,7 +16,7 @@ import { Either, left, right } from '@sweet-monads/either'
 import { Error, ErrorTree, buildErrorLeaf, buildErrorTree } from '../errorTree'
 import { rowToString, typeToString } from '../ir/IRprinting'
 import { QuintConstType, QuintType, Row, rowNames, typeNames } from '../ir/quintTypes'
-import { Constraint } from './base'
+import { Constraint, compareConstraints } from './base'
 import { Substitutions, applySubstitution, applySubstitutionToConstraint, compose } from './substitutions'
 import { unzip } from 'lodash'
 import { LookupTable } from '../names/base'
@@ -38,6 +38,8 @@ export function solveConstraint(
 ): Either<Map<bigint, ErrorTree>, Substitutions> {
   const errors: Map<bigint, ErrorTree> = new Map<bigint, ErrorTree>()
   switch (constraint.kind) {
+    case 'empty':
+      return right([])
     case 'eq':
       return unify(table, constraint.types[0], constraint.types[1]).mapLeft(e => {
         errors.set(constraint.sourceId, e)
@@ -45,20 +47,22 @@ export function solveConstraint(
       })
     case 'conjunction': {
       // Chain solving of inner constraints, collecting all errors (even after the first failure)
-      return constraint.constraints.reduce((result: Either<Map<bigint, ErrorTree>, Substitutions>, con) => {
-        // If previous result is a failure, try to solve the original constraint
-        // to gather all errors instead of just propagating the first one
-        let newCons = con
-        result.map(s => {
-          newCons = applySubstitutionToConstraint(table, s, con)
-        })
-        return solveConstraint(table, newCons)
-          .mapLeft(e => {
-            e.forEach((error, id) => errors.set(id, error))
-            return errors
+      return constraint.constraints
+        .sort(compareConstraints)
+        .reduce((result: Either<Map<bigint, ErrorTree>, Substitutions>, con) => {
+          // If previous result is a failure, try to solve the original constraint
+          // to gather all errors instead of just propagating the first one
+          let newCons = con
+          result.map(s => {
+            newCons = applySubstitutionToConstraint(table, s, con)
           })
-          .chain(newSubs => result.map(s => compose(table, newSubs, s)))
-      }, right([]))
+          return solveConstraint(table, newCons)
+            .mapLeft(e => {
+              e.forEach((error, id) => errors.set(id, error))
+              return errors
+            })
+            .chain(newSubs => result.map(s => compose(table, newSubs, s)))
+        }, right([]))
     }
     case 'isDefined': {
       for (const def of table.values()) {
@@ -66,7 +70,6 @@ export function solveConstraint(
           const subst = unify(table, def.type, constraint.type)
           if (subst.isRight()) {
             // We found a defined type unifying with the given schema
-            // (unwrap the vaule since the left of `unify` doesn't match our needs and isn't relevent)
             return right(subst.unwrap())
           }
         }
@@ -80,8 +83,6 @@ export function solveConstraint(
       )
       return left(errors)
     }
-    case 'empty':
-      return right([])
   }
 }
 

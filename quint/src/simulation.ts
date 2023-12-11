@@ -97,7 +97,7 @@ export function compileAndRun(
   ]
 
   // Construct the modules' code, adding the extra definitions to the main module
-  const newMainModuleCode = code.slice(mainStart, mainEnd - 1) + extraDefs.join('\n')
+  const newMainModuleCode = code.slice(mainStart, mainEnd - 1) + '\n' + extraDefs.join('\n')
   const codeWithExtraDefs = code.slice(0, mainStart) + newMainModuleCode + code.slice(mainEnd)
 
   const recorder = newTraceRecorder(options.verbosity, options.rng)

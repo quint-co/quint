@@ -22,7 +22,7 @@ function inlineModule(text: string): { modules: QuintModule[]; table: LookupTabl
 }
 
 describe('inlineAliases', () => {
-  it('should inline aliases in a simple module', () => {
+  it('inlines aliases in a simple module', () => {
     const quintModule = `module A {
       type MY_ALIAS = int
       var x: MY_ALIAS
@@ -42,7 +42,7 @@ describe('inlineAliases', () => {
     assert.deepEqual(analysisOutput.types.get(4n)?.type.kind, 'int')
   })
 
-  it('should handle nested aliases', () => {
+  it('handles nested aliases', () => {
     const quintModule = `module A {
       type MY_ALIAS = int
       type MY_OTHER_ALIAS = MY_ALIAS
@@ -55,6 +55,28 @@ describe('inlineAliases', () => {
                                   |  type MY_ALIAS = int
                                   |  type MY_OTHER_ALIAS = int
                                   |  var x: int
+                                  |}`)
+
+    assert.deepEqual(moduleToString(modules[0]), expectedModule)
+  })
+
+  it('handles nested sum types constructors', () => {
+    const quintModule = `module A {
+      type T1 = B | C
+      type T2 = Some(T1) | None
+      var x: T2
+    }`
+
+    const { modules } = inlineModule(quintModule)
+
+    const expectedModule = dedent(`module A {
+                                  |  type T1 = (B({}) | C({}))
+                                  |  val C: (B({}) | C({})) = variant("C", Rec())
+                                  |  type T2 = (Some((B({}) | C({}))) | None({}))
+                                  |  val B: (B({}) | C({})) = variant("B", Rec())
+                                  |  def Some: ((B({}) | C({}))) => (Some((B({}) | C({}))) | None({})) = ((__SomeParam) => variant("Some", __SomeParam))
+                                  |  val None: (Some((B({}) | C({}))) | None({})) = variant("None", Rec())
+                                  |  var x: (Some((B({}) | C({}))) | None({}))
                                   |}`)
 
     assert.deepEqual(moduleToString(modules[0]), expectedModule)

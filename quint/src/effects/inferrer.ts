@@ -38,6 +38,7 @@ import { getSignatures, standardPropagation } from './builtinSignatures'
 import { FreshVarGenerator } from '../FreshVarGenerator'
 import { effectToString } from './printing'
 import { zip } from 'lodash'
+import { addNamespaces } from './namespaces'
 
 export type EffectInferenceResult = [Map<bigint, ErrorTree>, Map<bigint, EffectScheme>]
 
@@ -87,7 +88,9 @@ export class EffectInferrer implements IRVisitor {
   private freeNames: { effectVariables: Set<string>; entityVariables: Set<string> }[] = []
 
   // the current depth of operator definitions: top-level defs are depth 0
-  private definitionDepth: number = 0
+  // FIXME(#1279): The walk* functions update this value, but they need to be
+  // initialized to -1 here for that to work on all scenarios.
+  definitionDepth: number = -1
 
   enterExpr(e: QuintEx) {
     this.location = `Inferring effect for ${expressionToString(e)}`
@@ -221,10 +224,6 @@ export class EffectInferrer implements IRVisitor {
     )
   }
 
-  enterOpDef(_def: QuintOpDef): void {
-    this.definitionDepth++
-  }
-
   //           Γ ⊢ expr: E
   // ---------------------------------- (OPDEF)
   //  Γ ⊢ (def op(params) = expr): E
@@ -238,7 +237,6 @@ export class EffectInferrer implements IRVisitor {
       this.addToResults(def.id, right(this.quantify(e.effect)))
     })
 
-    this.definitionDepth--
     // When exiting top-level definitions, clear the substitutions
     if (this.definitionDepth === 0) {
       this.substitutions = []
@@ -366,7 +364,18 @@ export class EffectInferrer implements IRVisitor {
       }
 
       return this.fetchResult(id).map(e => {
-        return this.newInstance(e)
+        const effect = this.newInstance(e)
+        if (def.importedFrom?.kind === 'instance') {
+          // Names imported from instances might have effects that refer to
+          // names that are shared between multiple instances. To properly infer
+          // effects refering to those state variables, they need to be
+          // namespaced in a way that makes them different between different
+          // instances. For that, we use the namespaces attribute from lookup
+          // table definition, which contains the proper namespaces to identify
+          // unique names while flattening.
+          return addNamespaces(effect, def.namespaces ?? [])
+        }
+        return effect
       })
     }
   }

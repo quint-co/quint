@@ -8,8 +8,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
 
-- When an input file only one module, it will be inferred as the main module  (#1260)
+## v0.17.1 -- 2023-12-05
+
+### Added
+
+- Add a `q::debug` built-in function for printing values to stdout (#1266)
+
+### Changed
+### Deprecated
+### Removed
+### Fixed
+
+- The effect checker now distinguishes variables from different instances (#1290)
+
+### Security
+
+## v0.17.0 -- 2023-12-04
+
+### Added
+
+- When an input file only one module, it will be inferred as the main module (#1260)
+- Sum types are now supported when running `verify` (#1034)
 
 ### Changed
 ### Deprecated
@@ -19,6 +44,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Produce proper error messages on invalid module name (#1260)
 - Fix JSON output when running multiple tests (#1264)
 - Topological sorting of modules (#1268)
+- The effect checker will now check for consistency of updates across different
+  cases inside `match` (#1272)
+- Fix problems in the integration of sum types in `run`, `test`, and `verify` commands (#1276)
+- Fix some corner cases with the usage of complex expressions inside `assume`
+  and `import (...)` (#1276)
+- Fix incorrect type checking failure from interference between sum types
+  sharing variant labels (#1275)
+- Fix the IDs generated for operator definition bodies (#1280)
+- Fixed missing support for sum type variants in ITF traces (#1281)
 
 ### Security
 
