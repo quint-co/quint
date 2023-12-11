@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Detect import paths that only differ in capitalization (#1295)
+
 ### Security
 
 ## v0.17.1 -- 2023-12-05

@@ -1087,3 +1087,32 @@ rm xTest.itf.json
 ```
 [{"#meta":{"index":0},"x":{"tag":"None","value":{}}},{"#meta":{"index":1},"x":{"tag":"Some","value":{"#bigint":"1"}}},{"#meta":{"index":2},"x":{"tag":"Some","value":{"#bigint":"2"}}}]
 ```
+
+### FAIL on parsing filenames with different casing
+
+<!-- !test exit 1 -->
+<!-- !test in parse case sensitive filenames -->
+```
+output=$(quint parse testFixture/_1060case.qnt 2>&1)
+exit_code=$?
+# assuming that our test setup does not introduce spaces in filenames
+echo "$output" | sed -e 's#[^ ]*/\([^/]*\).qnt#      HOME/\1.qnt#g'
+exit $exit_code
+```
+
+<!-- !test out parse case sensitive filenames -->
+```
+      HOME/_1060case.qnt:3:3 - error: [QNT408] Importing two files that only differ in case:       HOME/_1022importee2.qnt vs.       HOME/_1022IMPORTEE2.qnt. Choose one way.
+3:   import importee2 as I from "_1022IMPORTEE2"
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+      HOME/_1060case.qnt:2:3 - error: [QNT405] Module 'importee2' not found
+2:   import importee2 as i from "_1022importee2"
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+      HOME/_1060case.qnt:3:3 - error: [QNT405] Module 'importee2' not found
+3:   import importee2 as I from "_1022IMPORTEE2"
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: parsing failed
+```

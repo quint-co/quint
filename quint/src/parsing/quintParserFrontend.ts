@@ -159,19 +159,29 @@ export function parsePhase2sourceResolution(
   mainPath: SourceLookupPath,
   mainPhase1Result: ParserPhase1
 ): ParseResult<ParserPhase2> {
-  // we accumulate the source map over all files here
+  // We accumulate the source map over all files here.
   let sourceMap = new Map(mainPhase1Result.sourceMap)
-  // The list of modules that have not been been processed yet.
-  // Each element of the list carries the module to be processed and the trail
-  // of sources that led to this module.
-  // The construction is similar to the worklist algorithm:
+
+  // The list of modules that have not been been processed yet.  Each element of
+  // the list carries the module to be processed and the trail of sources that
+  // led to this module.  The construction is similar to the worklist algorithm:
   // https://en.wikipedia.org/wiki/Reaching_definition#Worklist_algorithm
   const worklist: [QuintModule, SourceLookupPath[]][] = mainPhase1Result.modules.map(m => [m, [mainPath]])
   // Collect modules produced by every source.
   const sourceToModules = new Map<string, QuintModule[]>()
+  // Collect visited paths, so we don't have to load the same file twice.
+  // Some filesystems are case-insensitive, whereas some are case sensitive.
+  // To prevent errors like #1194 from happening, we store both the
+  // original filename and its lower case version. If the user uses the same
+  // filename in different registers, we report an error. Otherwise, it would be
+  // quite hard to figure out tricky naming errors in the case-sensitive
+  // filesystems.  We could also collect hashes of the files instead of
+  // lowercase filenames, but this looks a bit like overkill at the moment.
+  const visitedPaths = new Map<string, string>()
   // Assign a rank to every module. The higher the rank,
   // the earlier the module should appear in the list of modules.
   sourceToModules.set(mainPath.normalizedPath, mainPhase1Result.modules)
+  visitedPaths.set(mainPath.normalizedPath.toLocaleLowerCase(), mainPath.normalizedPath)
   while (worklist.length > 0) {
     const [importer, pathTrail] = worklist.splice(0, 1)[0]
     for (const decl of importer.declarations) {
@@ -179,9 +189,28 @@ export function parsePhase2sourceResolution(
         const importerPath = pathTrail[pathTrail.length - 1]
         const stemPath = sourceResolver.stempath(importerPath)
         const importeePath = sourceResolver.lookupPath(stemPath, decl.fromSource + '.qnt')
-        if (sourceToModules.has(importeePath.normalizedPath)) {
-          // The source has been parsed already.
-          continue
+        const importeeNormalized = importeePath.normalizedPath
+        const importeeLowerCase = importeeNormalized.toLowerCase()
+        if (visitedPaths.has(importeeLowerCase)) {
+          if (visitedPaths.get(importeeLowerCase) === importeeNormalized) {
+            // simply skip this import without parsing the same file twice
+            continue
+          } else {
+            // The source has been parsed already, but:
+            //  - Either the same file is imported via paths in different cases, or
+            //  - Two different files are imported via case-sensitive paths.
+            // Ask the user to disambiguate.
+            const original =
+              [...visitedPaths.values()].find(
+                name => name.toLowerCase() === importeeLowerCase && name !== importeeLowerCase
+              ) ?? importeeLowerCase
+            const err: QuintError = {
+              code: 'QNT408',
+              message: `Importing two files that only differ in case: ${original} vs. ${importeeNormalized}. Choose one way.`,
+              reference: decl.id,
+            }
+            return { ...mainPhase1Result, errors: mainPhase1Result.errors.concat([err]), sourceMap }
+          }
         }
         // try to load the source code
         const errorOrText = sourceResolver.load(importeePath)
@@ -202,6 +231,7 @@ export function parsePhase2sourceResolution(
           worklist.push([m, pathTrail.concat([importeePath])])
         })
         sourceToModules.set(importeePath.normalizedPath, newModules)
+        visitedPaths.set(importeeLowerCase, importeeNormalized)
         sourceMap = new Map([...sourceMap, ...parseResult.sourceMap])
       }
     }
