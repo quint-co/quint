@@ -103,7 +103,7 @@ describe('parsing', () => {
       readQuint('SuperSpec'),
       'mocked_path/testFixture/SuperSpec.qnt'
     )
-    assert.isEmpty(result.errors)
+    assert.deepEqual(result.errors, [])
   })
 
   it('parses SuperSpec correctly', () => {
@@ -116,6 +116,10 @@ describe('parsing', () => {
 
   it('parses sum types', () => {
     parseAndCompare('_1043sumTypeDecl')
+  })
+
+  it('parses polymorphic type declarations', () => {
+    parseAndCompare('_1045polymorphicTypeDecl')
   })
 
   it('parses match expressions', () => {

@@ -98,7 +98,12 @@ export function applySubstitution(table: LookupTable, subs: Substitutions, t: Qu
           fields: applySubstitutionToRow(table, subs, t.fields) as ConcreteFixedRow,
         }
 
-      // The basic types have no variables, so cannot
+      case 'abs':
+        throw new Error(`Not yet implemented: https://github.com/informalsystems/quint/issues/1298`)
+      case 'app':
+        throw new Error(`Not yet implemented: https://github.com/informalsystems/quint/issues/1298`)
+
+      // The basic types have no variables, so don't require substitution
       case 'int':
       case 'bool':
       case 'str':

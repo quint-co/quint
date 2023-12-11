@@ -52,10 +52,14 @@ operDef : qualifier normalCallName
         ;
 
 typeDef
-    : 'type' qualId                                                         # typeAbstractDef
-    | 'type' qualId '=' type                                                # typeAliasDef
-    | 'type' typeName=qualId '=' '|'? typeSumVariant ('|' typeSumVariant)*  # typeSumDef
+    : 'type' qualId                             # typeAbstractDef
+    | 'type' typeDefHead '=' type               # typeAliasDef
+    | 'type' typeDefHead '=' sumTypeDefinition  # typeSumDef
     ;
+
+typeDefHead : typeName=qualId ('[' typeVars+=typeVar(',' typeVars+=typeVar)* ']')?;
+
+sumTypeDefinition : '|'? typeSumVariant ('|' typeSumVariant)* ;
 
 // A single variant case in a sum type definition or match statement.
 // E.g., `A(t)` or `A`.
@@ -96,27 +100,31 @@ qualifiedName : qualId;
 fromSource: STRING;
 
 // Types in Type System 1.2 of Apalache
-type :          <assoc=right> type '->' type                    # typeFun
-        |       <assoc=right> type '=>' type                    # typeOper
-        |       '(' (type (',' type)*)? ','? ')' '=>' type      # typeOper
-        |       SET '[' type ']'                                # typeSet
-        |       LIST '[' type ']'                               # typeList
-        |       '(' type ',' type (',' type)* ','? ')'          # typeTuple
-        |       '{' row '}'                                     # typeRec
-        |       'int'                                           # typeInt
-        |       'str'                                           # typeStr
-        |       'bool'                                          # typeBool
-        |       LOW_ID                                          # typeVar
-        |       qualId                                          # typeConst
-        |       '(' type ')'                                    # typeParen
-        ;
+type
+    : <assoc=right> type '->' type                               # typeFun
+    | <assoc=right> type '=>' type                               # typeOper
+    | '(' (type (',' type)*)? ','? ')' '=>' type                 # typeOper
+    // TODO: replace Set with general type application
+    | SET '[' type ']'                                           # typeSet
+    // TODO: replace List with general type application
+    | LIST '[' type ']'                                          # typeList
+    | '(' type ',' type (',' type)* ','? ')'                     # typeTuple
+    | '{' row? '}'                                               # typeRec
+    | 'int'                                                      # typeInt
+    | 'str'                                                      # typeStr
+    | 'bool'                                                     # typeBool
+    | typeVar                                                    # typeVarCase
+    | qualId                                                     # typeConst
+    | '(' type ')'                                               # typeParen
+    | typeCtor=type ('[' typeArg+=type (',' typeArg+=type)* ']') # typeApp
+    ;
 
-row : (rowLabel ':' type ',')* ((rowLabel ':' type) (',' | '|' (rowVar=identifier))?)?
+typeVar: LOW_ID;
+row : (rowLabel ':' type) (',' rowLabel ':' type)* (',' | '|' (rowVar=identifier))?
     | '|' (rowVar=identifier)
     ;
 
 rowLabel : simpleId["record"] ;
-
 
 // A Quint expression. The order matters, it defines the priority.
 // Wherever possible, we keep the same order of operators as in TLA+.
@@ -269,8 +277,6 @@ AND             :   'and' ;
 OR              :   'or'  ;
 IFF             :   'iff' ;
 IMPLIES         :   'implies' ;
-SET             :   'Set' ;
-LIST            :   'List' ;
 MAP             :   'Map' ;
 MATCH           :   'match' ;
 PLUS            :   '+' ;
@@ -287,6 +293,8 @@ EQ              :   '==' ;
 ASGN            :   '=' ;
 LPAREN          :   '(' ;
 RPAREN          :   ')' ;
+SET             :   'Set';
+LIST            :   'List';
 
 // An identifier starting with lowercase
 LOW_ID : ([a-z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;

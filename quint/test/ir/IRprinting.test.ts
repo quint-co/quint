@@ -249,4 +249,10 @@ describe('typeToString', () => {
     const expectedType = '(A(int) | B)'
     assert.deepEqual(typeToString(type), expectedType)
   })
+
+  it('pretty prints type applications', () => {
+    const input = 'Result[ok, err]'
+    const type = buildType(input)
+    assert.deepEqual(typeToString(type), input)
+  })
 })

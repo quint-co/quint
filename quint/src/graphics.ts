@@ -203,6 +203,9 @@ export function prettyQuintType(type: QuintType): Doc {
     case 'sum': {
       return prettySumRow(type.fields)
     }
+    case 'app':
+    case 'abs':
+      throw new Error('TODO This should be impossible?')
   }
 }
 

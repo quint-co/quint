@@ -98,17 +98,27 @@ export function sumType(labelTypePairs: [string, QuintType][], rowVar?: string, 
   return { kind: 'sum', fields: { kind: 'row', fields, other }, id }
 }
 
-/// Type abstraction: Λτ.Τ
+/** Type abstraction
+ *
+ * In System-F, this corresponds to Λτ1.(...(Λτ2.(Τ)).
+ */
 export interface QuintAbsType extends WithOptionalId {
   kind: 'abs'
-  vars: QuintVarType
+  vars: QuintVarType[] /** The bound variables */
+  body: QuintType /** The body of the abstraction */
 }
 
-/// Type application: (Λτ.Τ)υ
+/** Type application: (Λτ.Τ)υ
+ *
+ * In system-F, this corresponds to (Λτ.Τ)υ
+ *
+ * Type application is only well well-formed if `ctor` is (resolved to) an
+ * n-ary type abstraction, and `args.length === n`
+ */
 export interface QuintAppType extends WithOptionalId {
   kind: 'app'
-  abs: QuintAbsType
-  arg: QuintType
+  ctor: QuintType /** The type "constructor" applied */
+  args: QuintType[] /** The arguments to which the constructor is applied */
 }
 
 /**

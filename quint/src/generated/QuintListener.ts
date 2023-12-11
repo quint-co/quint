@@ -18,9 +18,10 @@ import { TypeRecContext } from "./QuintParser";
 import { TypeIntContext } from "./QuintParser";
 import { TypeStrContext } from "./QuintParser";
 import { TypeBoolContext } from "./QuintParser";
-import { TypeVarContext } from "./QuintParser";
+import { TypeVarCaseContext } from "./QuintParser";
 import { TypeConstContext } from "./QuintParser";
 import { TypeParenContext } from "./QuintParser";
+import { TypeAppContext } from "./QuintParser";
 import { TypeAbstractDefContext } from "./QuintParser";
 import { TypeAliasDefContext } from "./QuintParser";
 import { TypeSumDefContext } from "./QuintParser";
@@ -68,6 +69,8 @@ import { DocumentedDeclarationContext } from "./QuintParser";
 import { DeclarationContext } from "./QuintParser";
 import { OperDefContext } from "./QuintParser";
 import { TypeDefContext } from "./QuintParser";
+import { TypeDefHeadContext } from "./QuintParser";
+import { SumTypeDefinitionContext } from "./QuintParser";
 import { TypeSumVariantContext } from "./QuintParser";
 import { NondetOperDefContext } from "./QuintParser";
 import { QualifierContext } from "./QuintParser";
@@ -79,6 +82,7 @@ import { NameContext } from "./QuintParser";
 import { QualifiedNameContext } from "./QuintParser";
 import { FromSourceContext } from "./QuintParser";
 import { TypeContext } from "./QuintParser";
+import { TypeVarContext } from "./QuintParser";
 import { RowContext } from "./QuintParser";
 import { RowLabelContext } from "./QuintParser";
 import { ExprContext } from "./QuintParser";
@@ -226,17 +230,17 @@ export interface QuintListener extends ParseTreeListener {
 	exitTypeBool?: (ctx: TypeBoolContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `typeVar`
+	 * Enter a parse tree produced by the `typeVarCase`
 	 * labeled alternative in `QuintParser.type`.
 	 * @param ctx the parse tree
 	 */
-	enterTypeVar?: (ctx: TypeVarContext) => void;
+	enterTypeVarCase?: (ctx: TypeVarCaseContext) => void;
 	/**
-	 * Exit a parse tree produced by the `typeVar`
+	 * Exit a parse tree produced by the `typeVarCase`
 	 * labeled alternative in `QuintParser.type`.
 	 * @param ctx the parse tree
 	 */
-	exitTypeVar?: (ctx: TypeVarContext) => void;
+	exitTypeVarCase?: (ctx: TypeVarCaseContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `typeConst`
@@ -263,6 +267,19 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitTypeParen?: (ctx: TypeParenContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `typeApp`
+	 * labeled alternative in `QuintParser.type`.
+	 * @param ctx the parse tree
+	 */
+	enterTypeApp?: (ctx: TypeAppContext) => void;
+	/**
+	 * Exit a parse tree produced by the `typeApp`
+	 * labeled alternative in `QuintParser.type`.
+	 * @param ctx the parse tree
+	 */
+	exitTypeApp?: (ctx: TypeAppContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `typeAbstractDef`
@@ -864,6 +881,28 @@ export interface QuintListener extends ParseTreeListener {
 	exitTypeDef?: (ctx: TypeDefContext) => void;
 
 	/**
+	 * Enter a parse tree produced by `QuintParser.typeDefHead`.
+	 * @param ctx the parse tree
+	 */
+	enterTypeDefHead?: (ctx: TypeDefHeadContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.typeDefHead`.
+	 * @param ctx the parse tree
+	 */
+	exitTypeDefHead?: (ctx: TypeDefHeadContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.sumTypeDefinition`.
+	 * @param ctx the parse tree
+	 */
+	enterSumTypeDefinition?: (ctx: SumTypeDefinitionContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.sumTypeDefinition`.
+	 * @param ctx the parse tree
+	 */
+	exitSumTypeDefinition?: (ctx: SumTypeDefinitionContext) => void;
+
+	/**
 	 * Enter a parse tree produced by `QuintParser.typeSumVariant`.
 	 * @param ctx the parse tree
 	 */
@@ -983,6 +1022,17 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitType?: (ctx: TypeContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.typeVar`.
+	 * @param ctx the parse tree
+	 */
+	enterTypeVar?: (ctx: TypeVarContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.typeVar`.
+	 * @param ctx the parse tree
+	 */
+	exitTypeVar?: (ctx: TypeVarContext) => void;
 
 	/**
 	 * Enter a parse tree produced by `QuintParser.row`.

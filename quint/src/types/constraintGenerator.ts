@@ -391,6 +391,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     }
   }
 
+  // This is like application (via unification)?
   private newInstance(t: TypeScheme): QuintType {
     const typeNames = Array.from(t.typeVariables)
     const rowNames = Array.from(t.rowVariables)
@@ -416,6 +417,7 @@ export class ConstraintGeneratorVisitor implements IRVisitor {
     )
   }
 
+  // TODO: This is abstraction
   private quantify(type: QuintType): TypeScheme {
     const freeNames = this.currentFreeNames()
     const nonFreeNames = {

@@ -29,6 +29,7 @@ export interface TypeScheme {
 
 export type Signature = (_arity: number) => TypeScheme
 
+// TODO: Why aren't we noting type variables in the schema here?
 export function toScheme(type: QuintType): TypeScheme {
   return { typeVariables: new Set([]), rowVariables: new Set([]), type }
 }
