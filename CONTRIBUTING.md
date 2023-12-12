@@ -5,6 +5,23 @@
 This project is part of the [Apalache][] ecosystem.  Hence, we apply the
 same principles in Quint, see [Contributing to Apalache][].
 
+## Source code structure
+
+ - [quint](./quint) is the package for the `quint` transpiler
+ - [vscode](./vscode) vscode plugin
+
+## Developer docs
+
+<!-- TODO Update -->
+ - [roadmap](./doc/roadmap.md)
+ - [ADR001: Transpiler architecture](./doc/adr001-transpiler-architecture.md)
+ - [ADR002: Error codes](./doc/adr002-errors.md)
+ - [ADR003: Interface to visit Internal Representation
+   components](./doc/adr003-visiting-ir-components.md)
+ - [ADR004: An Effect System for Quint](./doc/adr004-effect-system.md)
+ - [ADR005: A Type System for Quint](./doc/adr005-type-system.md)
+ - [ADR006: Design of modules and lookup tables](./doc/adr006-modules.lit.md)
+
 ## Coordinating work
 
 Development on Quint is distributed. As with any distributed system, establishing
