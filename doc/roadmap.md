@@ -42,12 +42,7 @@ completely implementing every pass.
 | [String literals][], see #118     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | ~~uninterpreted types~~, see #118 | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:                | :x:                |
 
----
-
-Quint is developed at [Informal Systems](https://informal.systems/).
-
-With additional funding from<br />[<img alt="the Vienna Business Agency" src="./Wirtschaftsagentur_Wien_logo.jpg" width="200">](https://viennabusinessagency.at/).
-
+<!-- TODO rm unused links -->
 [Design Principles]: ./doc/design-principles.md
 [Apalache]: https://github.com/informalsystems/apalache
 [Lessons from Writing a Compiler]: https://borretti.me/article/lessons-writing-compiler
