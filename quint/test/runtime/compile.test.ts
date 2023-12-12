@@ -978,6 +978,46 @@ describe('compiling specs to runtime values', () => {
       evalVarAfterCall('n', 'run1', input).mapRight(m => assert.fail(`Expected an error, found: ${m}`))
     })
 
+    it('expect fails', () => {
+      const input = dedent(
+        `var n: int
+        |run run1 = (n' = 0).then(n' = 3).expect(n < 3)
+        `
+      )
+
+      evalVarAfterCall('n', 'run1', input).mapRight(m => assert.fail(`Expected the run to fail, found: ${m}`))
+    })
+
+    it('expect ok', () => {
+      const input = dedent(
+        `var n: int
+        |run run1 = (n' = 0).then(n' = 3).expect(n == 3)
+        `
+      )
+
+      assertVarAfterCall('n', '3', 'run1', input)
+    })
+
+    it('expect fails when left-hand side is false', () => {
+      const input = dedent(
+        `var n: int
+        |run run1 = (n' = 0).then(all { n == 1, n' = 3 }).expect(n < 3)
+        `
+      )
+
+      evalVarAfterCall('n', 'run1', input).mapRight(m => assert.fail(`Expected the run to fail, found: ${m}`))
+    })
+
+    it('expect and then expect fail', () => {
+      const input = dedent(
+        `var n: int
+        |run run1 = (n' = 0).then(n' = 3).expect(n == 3).then(n' = 4).expect(n == 3)
+        `
+      )
+
+      evalVarAfterCall('n', 'run1', input).mapRight(m => assert.fail(`Expected the run to fail, found: ${m}`))
+    })
+
     it('q::debug', () => {
       // `q::debug(s, a)` returns `a`
       const input = dedent(

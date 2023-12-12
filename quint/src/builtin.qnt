@@ -790,6 +790,25 @@ module builtin {
   /// ```
   action then(a, b): (bool, bool) => bool
 
+  /// `a.expect(b)` is true for a step from `s1` to `s2` if
+  ///
+  ///  - `a` is true for a step from `s1` to `s2`, and
+  ///  - `b` holds true in `s2`.
+  ///
+  /// If `a` evaluates to `false`, evaluation of `a.expect(b)`
+  /// fails with an error message. If `b` evaluates to `false`,
+  /// evaluation of `a.expect(b)` fails with an error message.
+  ///
+  /// ### Examples
+  ///
+  /// ```
+  /// var n: int
+  /// run expectConditionOkTest = (n' = 0).then(n' = 3).expect(n == 3)
+  /// run expectConditionFailsTest = (n' = 0).then(n' = 3).expect(n == 4)
+  /// run expectRunFailsTest = (n' = 0).then(all { n == 2, n' = 3 }).expect(n == 4)
+  /// ```
+  action expect(a, b): (bool, bool) => bool
+
   /// `n.reps(i => A(i))` or `n.reps(A)` the action `A`, `n` times.
   /// The iteration number, starting with 0, is passed as an argument of `A`.
   /// As actions are usually not parameterized by the iteration number,

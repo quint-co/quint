@@ -136,6 +136,7 @@ export const builtinOpCodes = [
   'and',
   'append',
   'assert',
+  'expect',
   'assign',
   'chooseSome',
   'concat',
