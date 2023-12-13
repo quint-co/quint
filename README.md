@@ -82,15 +82,13 @@ Prepare(rm) == /\ statuses[rm] = "working"
 
 ### Features
 
-<!-- TODO: short sentence with bolded subject -->
-
-- Simple, familiar syntax
-- Expressive Type systems
-- Effect system
-- Simulation
-- Symbolic model checking via Apalache
-- IDE support via LSP
-- REPL
+- A simple and familiar **syntax** to support engineers reading and writing specifications
+- An expressive **type systems** to ensure the domain model is coherent
+- A novel **effect system** to ensure state updates are coherent
+- **IDE support** via LSP, giving real time feedback when writing specifications
+- A **REPL** enabling interactive exploration of specifications
+- A **simulator** enabling tests, trace generation, and exploration of your system
+- **Symbolic model checking** to verify your specifications via [Apalache][apalache]
 
 ### Motivation
 
