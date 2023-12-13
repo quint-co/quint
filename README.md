@@ -77,47 +77,6 @@ module tictactoe {
 }
 ```
 
-<details>
-<summary>A comparisson between Quint and TLA<sup>+</sup> code</summary>
-
-Quint:
-```bluespec
-type Status = Working | Prepared | Committed | Aborted
-
-const ResourceManagers: Set[str]
-var statuses: str -> Status
-
-action init = {
-  statuses' = ResourceManagers.mapBy(_ => Working)
-}
-
-val canCommit: bool = ResourceManagers.forall(rm => statuses.get(rm).in(Set(Prepared, Committed)))
-val notCommitted: bool = ResourceManagers.forall(rm => statuses.get(rm) != Committed)
-
-action prepare(rm) = all {
-  statuses.get(rm) == Working,
-  statuses' = statuses.set(rm, Prepared)
-}
-```
-
-TLA<sup>+</sup>:
-```tla
-CONSTANT ResourceManagers
-VARIABLE statuses
-
-TCTypeOK == statuses \in [ResourceManagers -> {"working", "prepared", "committed", "aborted"}]
-
-TCInit == statuses = [rm \in ResourceManagers |-> "working"]
-
-canCommit == \A rm \in ResourceManagers : statuses[rm] \in {"prepared", "committed"}
-
-notCommitted == \A rm \in ResourceManagers : statuses[rm] # "committed" 
-
-Prepare(rm) == /\ statuses[rm] = "working"
-               /\ statuses' = [statuses EXCEPT ![rm] = "prepared"]
-```
-
-</details>
 
 ### Features
 <dl>
@@ -161,6 +120,48 @@ The syntax also aims to be familiar to engineers:
 
 Thanks to its foundation in TLA and its alignment with TLA+, Quint comes with
 formal semantics built-in.
+
+<details>
+<summary>A comparisson between Quint and TLA<sup>+</sup> code</summary>
+
+Quint:
+```bluespec
+type Status = Working | Prepared | Committed | Aborted
+
+const ResourceManagers: Set[str]
+var statuses: str -> Status
+
+action init = {
+  statuses' = ResourceManagers.mapBy(_ => Working)
+}
+
+val canCommit: bool = ResourceManagers.forall(rm => statuses.get(rm).in(Set(Prepared, Committed)))
+val notCommitted: bool = ResourceManagers.forall(rm => statuses.get(rm) != Committed)
+
+action prepare(rm) = all {
+  statuses.get(rm) == Working,
+  statuses' = statuses.set(rm, Prepared)
+}
+```
+
+TLA<sup>+</sup>:
+```tla
+CONSTANT ResourceManagers
+VARIABLE statuses
+
+TCTypeOK == statuses \in [ResourceManagers -> {"working", "prepared", "committed", "aborted"}]
+
+TCInit == statuses = [rm \in ResourceManagers |-> "working"]
+
+canCommit == \A rm \in ResourceManagers : statuses[rm] \in {"prepared", "committed"}
+
+notCommitted == \A rm \in ResourceManagers : statuses[rm] # "committed" 
+
+Prepare(rm) == /\ statuses[rm] = "working"
+               /\ statuses' = [statuses EXCEPT ![rm] = "prepared"]
+```
+
+</details>
 
 To learn more about Quint's motivation and design philosophy, watch this [15
 minute presentation](https://youtu.be/OZIX8rs-kOA), delivered at Gateway to
