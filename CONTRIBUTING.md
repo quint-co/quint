@@ -30,7 +30,7 @@ attention.
 
 ## Project structure
 
-Currently, the project consists of two npm packages (published locally):
+Currently, the project consists of two npm packages:
 
  - [quint](./quint) is the transpiler package, see the [quint manual][].
  - [vscode/quint](./vscode/quint) is the VSCode plugin for Quint, depends on `quint`.
@@ -265,7 +265,7 @@ Between installing the plugin from different sources, you may end up with multip
 4. Restart VSCode **twice**. The first time it will recreate the `extensions.json` file, the second time it will install the extensions. Reloading won't work, you need to actually close and reopen VSCode.
 
 [Apalache]: https://github.com/informalsystems/apalache
-[Contributing to Apalache]: https://github.com/informalsystems/apalache/blob/unstable/CONTRIBUTING.md
+[Contributing to Apalache]: https://github.com/informalsystems/apalache/blob/main/CONTRIBUTING.md
 [eslint]: https://eslint.org/
 [quint manual]: ./doc/quint.md
 [Installing quint]: https://github.com/informalsystems/quint/blob/main/quint/README.md#how-to-install
