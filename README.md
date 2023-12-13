@@ -202,8 +202,9 @@ Cosmos in 2023.
   - [CLI manual](./doc/quint.md)
   - [Literate executable specifications](./doc/literate.md)
 
-- [Design Principles][]
-
+- Development plans:
+  - [Design Principles](./doc/design-principles.md)
+  - [Roadmap](./doc/roadmap.md)
 
 ## Community
 
