@@ -148,7 +148,11 @@ describe('repl ok', () => {
       |^^^^^^^^^
       |
       |
-      |1
+      |runtime error: error: [QNT501] Expected an integer value
+      |1 + false
+      |^^^^^^^^^
+      |
+      |<undefined value>
       |>>> `
     )
     await assertRepl(input, output)

@@ -488,19 +488,23 @@ abstract class RuntimeValueBase implements RuntimeValue {
   }
 
   toSet(): Set<RuntimeValue> {
-    // the default transformation to a set is done via iteration
-    let set = Set.of<RuntimeValue>()
-    for (const e of this) {
-      set = set.add(e.normalForm())
+    if (this.isSetLike) {
+      // the default transformation to a set is done via iteration
+      let set = Set.of<RuntimeValue>()
+      for (const e of this) {
+        set = set.add(e.normalForm())
+      }
+      return set
+    } else {
+      throw new Error('Expected a set-like value')
     }
-    return set
   }
 
   toList(): List<RuntimeValue> {
     if (this instanceof RuntimeValueTupleOrList) {
       return this.list
     } else {
-      return List()
+      throw new Error('Expected a list value')
     }
   }
 
@@ -508,7 +512,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     if (this instanceof RuntimeValueRecord) {
       return this.map
     } else {
-      return OrderedMap()
+      throw new Error('Expected a record value')
     }
   }
 
@@ -516,7 +520,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     if (this instanceof RuntimeValueMap) {
       return this.map
     } else {
-      return Map()
+      throw new Error('Expected a map value')
     }
   }
 
@@ -524,7 +528,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     if (this instanceof RuntimeValueBool) {
       return (this as RuntimeValueBool).value
     } else {
-      return false
+      throw new Error('Expected a Boolean value')
     }
   }
 
@@ -532,7 +536,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     if (this instanceof RuntimeValueInt) {
       return (this as RuntimeValueInt).value
     } else {
-      return 0n
+      throw new Error('Expected an integer value')
     }
   }
 
@@ -540,7 +544,7 @@ abstract class RuntimeValueBase implements RuntimeValue {
     if (this instanceof RuntimeValueStr) {
       return (this as RuntimeValueStr).value
     } else {
-      return ''
+      throw new Error('Expected a string value')
     }
   }
 
