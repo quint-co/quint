@@ -1,19 +1,48 @@
-# Quint Lang
+<div align="center">
 
-[![build
-badge](https://github.com/informalsystems/quint/actions/workflows/main.yml/badge.svg)](https://github.com/informalsystems/quint/actions)
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/informal.quint-vscode?color=10b0f2&label=VSCode)](https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode)
-[![npm (scoped)](https://img.shields.io/npm/v/@informalsystems/quint)](https://www.npmjs.com/package/@informalsystems/quint)
+<!-- Title -->
+<img src="./logos/quint-logo.png" alt="Quint Lang Logo" width="120"/>
+<h1>Quint Lang</h1>
 
-Quint Lang (or just Quint) is a modern specification language that is a
-particularly good fit for distributed systems and blockchain protocols. It
-combines the robust theoretical basis of the [Temporal Logic of Actions][TLA]
-(TLA) with state-of-the-art static analysis and development tooling.
+<!-- Menu -->
+<p>
+    <a href="#installation">Installation</a> •
+    <a href="#documentation">Documentation</a> •
+    <a href="#communty">Community</a> •
+</p>
 
-If you are impatient, here is a [15 minute intro to Quint][] at Gateway to
-Cosmos 2023.
+<!-- Badges -->
+<p>
+    <a href="https://github.com/informalsystems/quint/actions">
+        <img 
+            src="https://github.com/informalsystems/quint/actions/workflows/main.yml/badge.svg"
+            alt="build badge">
+    </a>
+    <a href="https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode">
+        <img 
+            src="https://img.shields.io/visual-studio-marketplace/v/informal.quint-vscode?color=10b0f2&label=VSCode" 
+            alt="Visual Studio Marketplace Version">
+    </a>
+    <a href="https://www.npmjs.com/package/@informalsystems/quint">
+        <img 
+            src="https://img.shields.io/npm/v/@informalsystems/quint" 
+            alt="npm (scoped)">
+    </a>
+</p>
+</div>
+
+
+## Overview
+
+Quint is a modern specification language that is a particularly good fit for
+distributed systems, such as blockchain protocols, distributed databases, and
+p2p protocols. Quint combines the robust theoretical basis of the [Temporal
+Logic of Actions (TLA)][TLA] with state-of-the-art static analysis and
+development tooling.
 
 This is how typical Quint code looks:
+
+<!-- TODO Pick great example -->
 
 ```scala
   // `validateBalance` should only be called upon genesis state.
@@ -23,6 +52,8 @@ This is how typical Quint code looks:
     coins.keys().forall(denom => coins.get(denom) > 0),
   }
 ```
+
+<!-- TODO Collapsed comparison with TLA+ -->
 
 If you would like to see the same code in TLA<sup>+</sup>, here is how it looks:
 
@@ -35,8 +66,19 @@ validateBalance(ctx, addr) ==
        coins[denom] > 0
 ```
 
-Want a preview of the tools before reading any further? Check [Quick
-previews](./doc/previews.md).
+### Features
+
+<!-- TODO: short sentence with bolded subject -->
+
+- Simple, familiar syntax
+- Expressive Type systems
+- Effect system
+- Simulation
+- Symbolic model checking via Apalache
+- IDE support via LSP
+- REPL
+
+### Motivation
 
 Quint is inspired by [TLA+][] but provides an alternative surface syntax for
 specifying systems in TLA. The most important feature of our syntax is that it
@@ -54,17 +96,32 @@ The syntax also aims to be familiar to engineers:
   clearly.
 
 Notably, Quint comes with formal semantics built-in, thanks to its foundation in
-TLA and it is aligned with TLA+: it will soon be supported in the [Apalache][]
-model checker.
+TLA and it is aligned with TLA+
 
-## Name origin
-<!-- TODO: Move? -->
-Quint is short for Quintessence, from alchemy, which refers to the fifth
-element. A lot of alchemy is about transmutation and energy, and Quint makes it
-possible to transmute specifications into executable assets and empower ideas to
-become referenced artifacts.
+- it is supported in the [Apalache][] model checker.
+
+<!-- TODO Find gallery sub-Section? -->
+- [15 minute intro to Quint at Gateway to Cosmos 2023][] .
+- [preview of the tools](./doc/previews.md).
+
+
+## Installation
+
+Install the [latest published version from npm](https://www.npmjs.com/package/@informalsystems/quint):
+
+``` sh
+npm i @informalsystems/quint -g
+```
+
+Install IDE support for your editor:
+
+- [VSCode](https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode)
+- [Emacs](./editor-plugins/emacs/README.md)
+- [Vim](./editor-plugins/vim/README.md)
 
 ## Documentation
+
+<!-- TODO -->
 
 ### Tutorials :teacher:
 
@@ -83,13 +140,6 @@ We have written [examples](./examples) of several specifications in Quint.
 Some of them accompany a TLA+ version for comparison and learning purposes.
 To simplify reading, use [syntax highlighting](./editor-plugins) for your
 editor (currently, VSCode, Emacs and Vim are supported).
-
-## Community and help
-
-- Join the chat in the [Quint zulip stream][] :telephone:
-- Join the [Quint discussions][] :bulb:
-- [Contribute your spell][] to the collection of Quint spells :scroll:
-- [Contribute](./CONTRIBUTING.md) to the development of Quint :construction_worker:
 
 ### Tools :space_invader:
 
@@ -127,12 +177,29 @@ editor (currently, VSCode, Emacs and Vim are supported).
    of markdown files.
 
 
+## Communty
+
+
+- Join the chat in the [Quint zulip stream][] :telephone:
+- Join the [Quint discussions][] :bulb:
+- [Contribute your spell][] to the collection of Quint spells :scroll:
+- [Contribute](./CONTRIBUTING.md) to the development of Quint :construction_worker:
+
+## Name origin
+<!-- TODO: Move? -->
+Quint is short for Quintessence, from alchemy, which refers to the fifth
+element. A lot of alchemy is about transmutation and energy, and Quint makes it
+possible to transmute specifications into executable assets and empower ideas to
+become referenced artifacts.
+
 ---
 
 Quint is developed at [Informal Systems](https://informal.systems/).
 
+<!-- TODO: rephrase and use English logo -->
 With additional funding from<br />[<img alt="the Vienna Business Agency" src="./Wirtschaftsagentur_Wien_logo.jpg" width="200">](https://viennabusinessagency.at/).
 
+<!-- TODO rm unused links -->
 [Design Principles]: ./doc/design-principles.md
 [Apalache]: https://github.com/informalsystems/apalache
 [Lessons from Writing a Compiler]: https://borretti.me/article/lessons-writing-compiler
