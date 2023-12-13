@@ -124,22 +124,22 @@ Prepare(rm) == /\ statuses[rm] = "working"
   <dt>A simple and familiar <b>syntax</b></dt>
   <dd>to support engineers reading and writing specifications</dd>
 
-  <dt>An expressive **type systems** </dt>
+  <dt>An expressive <b>type systems</b></dt>
   <dd>to ensure the domain model is coherent</dd>
 
-  <dt>A novel **effect system** </dt>
+  <dt>A novel <b>effect system</b></dt>
   <dd>to ensure state updates are coherent</dd>
 
-  <dt>**IDE support** via LSP </dt>
+  <dt><b>IDE support</b> via LSP</dt>
   <dd>giving real time feedback when writing specifications</dd>
 
-  <dt>A **REPL** </dt>
+  <dt>A <b>REPL</b></dt>
   <dd>enabling interactive exploration of specifications</dd>
 
-  <dt>A **simulator** </dt>
+  <dt>A <b>simulator</b></dt>
   <dd>enabling tests, trace generation, and exploration of your system</dd>
 
-  <dt>**Symbolic model checking** </dt>
+  <dt><b>Symbolic model checking</b></dt>
   <dd>to verify your specifications via [Apalache][apalache]</dd>
 </dl>
 
