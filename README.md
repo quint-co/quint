@@ -95,7 +95,8 @@ Prepare(rm) == /\ statuses[rm] = "working"
 Quint is inspired by [TLA+][] but provides an alternative surface syntax for
 specifying systems in TLA. The most important feature of our syntax is that it
 is minimal and regular, making Quint an easy target for advanced developer
-tooling and static analysis (see our [Design Principles][]).
+tooling and static analysis (see our [design principles][] and [previews of the
+tooling](./doc/previews.md) of the tooling).
 
 The syntax also aims to be familiar to engineers:
 
@@ -108,89 +109,48 @@ The syntax also aims to be familiar to engineers:
 Thanks to its foundation in TLA and its alignment with TLA+, Quint comes with
 formal semantics built-in.
 
-<!-- TODO Good place for these -->
-- [15 minute intro to Quint at Gateway to Cosmos 2023][] .
-- [preview of the tools](./doc/previews.md).
+To learn more about Quint's motivation and design philosophy, watch this [15
+minute presentation](https://youtu.be/OZIX8rs-kOA), delivered at Gateway to
+Cosmos in 2023.
 
 ## Installation
 
-Install the [latest published version from npm](https://www.npmjs.com/package/@informalsystems/quint):
+1. Install the [latest published version from npm](https://www.npmjs.com/package/@informalsystems/quint):
 
-``` sh
-npm i @informalsystems/quint -g
-```
+    ``` sh
+    npm i @informalsystems/quint -g
+    ```
 
-Install IDE support for your editor:
+2. Install IDE support for your editor:
 
-- [VSCode](https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode)
-- [Emacs](./editor-plugins/emacs/README.md)
-- [Vim](./editor-plugins/vim/README.md)
+    - [VSCode](https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode)
+    - [Emacs](./editor-plugins/emacs/README.md)
+    - [Vim](./editor-plugins/vim/README.md)
+
+3. _Optionally_, you may also install the [VSCode plugin for visualizing
+   traces](https://marketplace.visualstudio.com/items?itemName=informal.itf-trace-viewer).
 
 ## Documentation
 
-<!-- TODO -->
-
-### Tutorials :teacher:
-
-Visit the [Tutorials][] page.
-
-### Syntax :abcd:
-
-- [Cheatsheet](./doc/quint-cheatsheet.pdf)
-- [Reference API documentation for built-in operators](./doc/builtin.md)
-- [Syntax documentation](./doc/lang.md)
 - [Frequently asked questions](./doc/faq.md)
-
-### Examples :musical_score:
-
-We have written [examples](./examples) of several specifications in Quint.
-Some of them accompany a TLA+ version for comparison and learning purposes.
-To simplify reading, use [syntax highlighting](./editor-plugins) for your
-editor (currently, VSCode, Emacs and Vim are supported).
-
-### Tools :space_invader:
-
-[Quick previews](./doc/previews.md) of the tools.
-
- - Quint's core tool `quint`:
-
-   - [Installation](./quint/README.md)
-
+- [Tutorials][]
+- [Examples](./examples)
+- [Cheatsheet](./doc/quint-cheatsheet.pdf)
+- [Syntax documentation](./doc/lang.md)
+- [Reference API documentation for built-in operators](./doc/builtin.md)
+- [Design Principles][]
+- The `quint` CLI tool
    - [Manual](./doc/quint.md)
-
    - [REPL](./tutorials/repl/repl.md)
-
-- Editor support:
-
-  We strongly encourage you to configure your editor for Quint. Our language
-  server provides the quickest feedback loop for your specifications, reporting
-  informative errors as you type. These are instuctions for the currently
-  supported editors:
-
-  - VSCode: Install the plugin from [Visual Studio Code
-    Marketplace][].
-  - Emacs: Setup two custom packages from the [emacs folder](./editor-plugins/emacs).
-  - Vim/Neovim: Follow configuration instructions from the [vim folder](./editor-plugins/vim)
-
- - VSCode plugin for [ITF traces][] by @hvanz:
-
-   This a plugin that visualizes traces that are produced by Quint and
-   [Apalache][]. Install the [ITF Trace Viewer][] from Visual Studio Code
-   Marketplace.
-
- - Writing [literate executable specifications](./doc/literate.md)
-
-   This is a technique for embedding formal quint formal specifications inside
-   of markdown files.
+- [Literate executable specifications](./doc/literate.md)
 
 
-## Communty
+## Community
 
-
-- Join the chat in the [Quint zulip stream][] :telephone:
-- Join the [Quint discussions][] :bulb:
-- [Contribute your spell][] to the collection of Quint spells :scroll:
-- [Contribute](./CONTRIBUTING.md) to the development of Quint :construction_worker:
+- Join the chat in the [Quint zulip stream][]
+- Join the [Quint discussions][]
+- [Contribute your spell][] to the collection of Quint spells
+- [Contribute](./CONTRIBUTING.md) to the development of Quint
 
 ## On "Quint"
 
@@ -252,5 +212,3 @@ Supported by the Vienna Business Agency<br />[<img alt="the Vienna Business Agen
 [Quint zulip stream]: https://informal-systems.zulipchat.com/#narrow/stream/378959-quint
 [Quint discussions]: https://github.com/informalsystems/quint/discussions
 [ITF traces]: https://apalache.informal.systems/docs/adr/015adr-trace.html
-[ITF Trace Viewer]: https://marketplace.visualstudio.com/items?itemName=informal.itf-trace-viewer
-[15 minute intro to Quint]: https://youtu.be/OZIX8rs-kOA
