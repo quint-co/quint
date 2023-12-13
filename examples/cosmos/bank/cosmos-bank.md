@@ -219,6 +219,16 @@ We represent this field as a map in the protocol specification:
 var balances: Addr -> Coins
 ```
 
+For protocol debugging purposes, we introduce a state variable that keeps
+the last error message. It makes it easier to write tests. To indicate that
+this variable is not, strictly speaking, part of the protocol, we start its
+name with underscore:
+
+```bluespec "state" +=
+// if non-empty, then it stores the last error message
+var _lastError: str
+```
+
 We could initialize the state via `init`, which would be similar to executing
 genesis transactions in Cosmos:
 
@@ -228,7 +238,8 @@ action init = all {
   // limit the total supply of burgers and bananas to 10_000
   supply' = Set("banana", "burger").mapBy(d => 10_000),
   // the king has it all
-  balances' = Set("king").mapBy(a => Set("banana", "burger").mapBy(d => 10_000))
+  balances' = Set("king").mapBy(a => Set("banana", "burger").mapBy(d => 10_000)),
+  _lastError' = "",
 }
 ```
 
@@ -553,6 +564,48 @@ pure def SendKeeper::SendCoins(ctx: BankCtx,
 ```
 </details>
 
+```bluespec "transitions" +=
+action send(fromAddr: Addr, toAddr: Addr, coins: Coins): bool = all {
+  val ctx = stateToCtx(0)
+  val result = SendKeeper::SendCoins(ctx, fromAddr, toAddr, coins)
+  match result {
+    | BankOk(newCtx) => all {
+      balances' = newCtx.balances,
+      supply' = supply,
+      _lastError' = "",
+    }
+    | BankErr(msg) => all {
+      // We could simply return 'false' here.
+      // But we prefer to store the error message instead.
+      _lastError' = msg,
+      balances' = balances,
+      supply' = supply,
+    }
+  }
+}
+```
+
+Here is a basic test of `send`:
+
+```bluespec "tests" +=
+run sendTest = {
+  init
+    // the King has bananas and he can send it
+    .then(send("king",
+               "donkeykong",
+               Set("banana").mapBy(d => 2_000)))
+    .expect(and {
+      balances.get("king").get("banana") == 8_000,
+      balances.get("donkeykong").get("banana") == 2_000,
+      balances.get("king").get("burger") == 10_000,
+      balances.get("donkeykong").keys() == Set("banana"),
+    })
+    // Donkeykong does not have any burgers, so this action must fail
+    .then(send("donkeykong", "peaches", Set("burger").mapBy(d => 1_000)))
+    .expect(_lastError == "invalid coins or insufficient funds")
+}
+```
+
  - `InputOutputCoins` performs multi-send functionality. It accepts a series of
    inputs that correspond to a series of outputs. It returns an error if the
    inputs and outputs don't lineup or if any single transfer of tokens fails.
@@ -654,6 +707,31 @@ type Params = {
   defaultSendEnabled: bool,
 }
 ```
+
+### Appendix
+
+This part contains technical parts of the specification that are not that
+interesting.
+
+```bluespec "state" +=
+// all addresses we would like to work with
+pure val ADDR = Set("king", "donkeykong", "peaches", "mario")
+// all denominations
+pure val DENOM = Set("banana", "burger")
+```
+
+```bluespec "transitions" +=
+
+
+action step = any {
+  nondet fromAddr = oneOf(ADDR)
+  nondet toAddr = oneOf(ADDR)
+  nondet denom = oneOf(DENOM)
+  nondet amt = (-10).to(supply.get(denom)).oneOf()
+  send(fromAddr, toAddr, Set(denom).mapBy(d => amt))
+}
+```
+
 
 [bank module]: https://docs.cosmos.network/v0.46/modules/bank/#
 [lmt]: https://github.com/driusan/lmt
