@@ -37,18 +37,15 @@ module bankTest {
   // tests
   run getAllBalancesTest = {
     init
-      .then(
+      .expect(
         val ctx = stateToCtx(0)
         val kings = ViewKeeper::GetAllBalances(ctx, "king")
         val donkeys = ViewKeeper::GetAllBalances(ctx, "donkeykong")
-        all {
+        and {
           assert(kings.keys() == Set("banana", "burger")),
           assert(kings.get("banana") == 10_000),
           assert(kings.get("burger") == 10_000),
           assert(donkeys.keys() == Set()),
-          // do not change the state
-          balances' = balances,
-          supply' = supply,
         }
       )
   }
