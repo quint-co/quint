@@ -8,7 +8,7 @@
 <p>
     <a href="#installation">Installation</a> •
     <a href="#documentation">Documentation</a> •
-    <a href="#communty">Community</a> •
+    <a href="#communty">Community</a>
 </p>
 
 <!-- Badges -->
