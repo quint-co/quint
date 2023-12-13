@@ -42,6 +42,45 @@ development tooling.
 
 Here's some example code in Quint:
 
+``` bluespec
+module tictactoe {
+  type Player = X | O
+  type Square = Occupied(Player) | Empty
+
+  /// A 3x3 tic-tac-toe board
+  var board: int -> (int -> Square)
+
+  /// Coordinates for board corners
+  pure val corners = Set((1,1), (3,1), (1,3), (3,3))
+
+  def square(coordinate: (int, int)): Square =
+    board.get(coordinate._1).get(coordinate._2)
+
+  def isEmpty(coordinate) = match square(coordinate) {
+    | Empty  => true
+    | _      => false
+  }
+
+  /// A player makes a move on a board coordinate, if it is empty
+  action Move(player, coordinate) = all {
+    isEmpty(coordinate),
+    board' = board.setBy(
+      coordinate._1,
+      row => row.set(coordinate._2, Occupied(player))
+    ),
+  }
+
+  /// Nondeterministically pick a corner, and player X makes a move on that corner
+  action StartInCorner =
+    nondet corner = oneOf(corners)
+    Move(X, corner)
+}
+```
+
+<details>
+<summary>A comparisson between Quint and TLA<sup>+</sup> code</summary>
+
+Quint:
 ```bluespec
 type Status = Working | Prepared | Committed | Aborted
 
@@ -61,9 +100,7 @@ action prepare(rm) = all {
 }
 ```
 
-<details>
-<summary>The equivalent TLA<sup>+</sup> code</summary>
-
+TLA<sup>+</sup>:
 ```tla
 CONSTANT ResourceManagers
 VARIABLE statuses
