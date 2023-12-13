@@ -1,34 +1,40 @@
 module secret_santa {
-  const names: Set[str]
+  import commonSpells.* from "../../spells/commonSpells"
 
-  /// giftees.get(A) == B if A is B's secret santa
-  var giftees: str -> str
+  const participants: Set[str]
 
-  /// the bowl of names, containg a paper piece for each participant with their name
+  /// person_to_gift.get(A) == B if A is B's secret santa
+  var person_to_gift: str -> str
+
+  /// the bowl of participants, containg a paper piece for each participant with their participant
   var bowl: Set[str]
 
   action init = all {
-    giftees' = Map(),
-    bowl' = names,
+    person_to_gift' = Map(),
+    bowl' = participants,
+  }
+
+  action draw_name(picker: str): bool = {
+    nondet drawed_name = bowl.oneOf()
+    all {
+      person_to_gift' = person_to_gift.put(picker, drawed_name),
+      bowl' = bowl.exclude(Set(drawed_name)),
+    }
   }
 
   action step = all {
     bowl.size() > 0,
-    nondet picker = names.filter(name => not(giftees.keys().contains(name))).oneOf()
-    nondet giftee = bowl.oneOf()
-    all {
-      giftees' = giftees.put(picker, giftee),
-      bowl' = bowl.exclude(Set(giftee)),
-    }
+    nondet picker = participants.filter(participant => not(participant.in(person_to_gift.keys()))).oneOf()
+    draw_name(picker)
   }
 
-  val everyone_gets_a_santa = bowl.size() == 0 implies (names == giftees.keys().map(k => giftees.get(k)))
+  val everyone_gets_a_santa = bowl.size() == 0 implies participants == person_to_gift.mapValuesSet()
 
-  val no_person_gets_themself = names.forall(name =>
-    giftees.keys().contains(name) implies giftees.get(name) != name
+  val no_person_gets_themself = participants.forall(participant =>
+    participant.in(person_to_gift.keys()) implies person_to_gift.get(participant) != participant
   )
 }
 
 module quint_team_secret_santa {
-  import secret_santa(names = Set("Gabriela", "Igor", "Jure", "Shon", "Thomas")).*
+  import secret_santa(participants = Set("Gabriela", "Igor", "Jure", "Shon", "Thomas")).*
 }
