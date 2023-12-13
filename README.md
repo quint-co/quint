@@ -100,19 +100,15 @@ tooling and static analysis (see our [Design Principles][]).
 The syntax also aims to be familiar to engineers:
 
 - At the lexical level, it borrows many principles from C-like languages.
-- At the syntax level, it follows a few (but not all) principles that are
-  usually found in functional languages.
+- At the syntax level, it follows many principles found in functional languages.
 - At the semantic level, Quint extends the standard programming paradigm with
-  non-determinism and temporal formulas, which allow designers to specify
-  protocol environments such as networks, faults, and time concisely and
-  clearly.
+  non-determinism and temporal formulas, which allow concise specification of
+  protocol environments such as networks, faults, and time.
 
-Notably, Quint comes with formal semantics built-in, thanks to its foundation in
-TLA and it is aligned with TLA+
+Thanks to its foundation in TLA and its alignment with TLA+, Quint comes with
+formal semantics built-in.
 
-- it is supported in the [Apalache][] model checker.
-
-<!-- TODO Find gallery sub-Section? -->
+<!-- TODO Good place for these -->
 - [15 minute intro to Quint at Gateway to Cosmos 2023][] .
 - [preview of the tools](./doc/previews.md).
 
