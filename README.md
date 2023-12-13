@@ -171,8 +171,7 @@ become referenced artifacts.
 
 Quint is developed at [Informal Systems](https://informal.systems/).
 
-<!-- TODO: Use English logo -->
-Supported by the Vienna Business Agency<br />[<img alt="the Vienna Business Agency" src="./Wirtschaftsagentur_Wien_logo.jpg" width="200">](https://viennabusinessagency.at/).
+Supported by the Vienna Business Agency<br />[<img alt="Vienna Business Agency" src="./logos/vienna-business-agency" width="200">](https://viennabusinessagency.at/).
 
 <!-- TODO rm unused links -->
 [Design Principles]: ./doc/design-principles.md
