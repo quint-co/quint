@@ -122,7 +122,7 @@ Thanks to its foundation in TLA and its alignment with TLA+, Quint comes with
 formal semantics built-in.
 
 <details>
-<summary>A comparisson between Quint and TLA<sup>+</sup> code</summary>
+<summary>A comparison between Quint and TLA<sup>+</sup> code</summary>
 
 Quint:
 ```bluespec
