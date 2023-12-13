@@ -133,16 +133,22 @@ Cosmos in 2023.
 ## Documentation
 
 - [Frequently asked questions](./doc/faq.md)
-- [Tutorials][]
-- [Examples](./examples)
-- [Cheatsheet](./doc/quint-cheatsheet.pdf)
-- [Syntax documentation](./doc/lang.md)
-- [Reference API documentation for built-in operators](./doc/builtin.md)
+
+- Quint by example:
+  - [Cheatsheet](./doc/quint-cheatsheet.pdf)
+  - [Language tutorials](./tutorials/README.md)
+  - [REPL tutorial](./tutorials/repl/repl.md)
+  - [Example specifications](./examples)
+
+- Language reference:
+  - [Syntax documentation](./doc/lang.md)
+  - [Reference API documentation for built-in operators](./doc/builtin.md)
+
+- Tooling manuals
+  - [CLI manual](./doc/quint.md)
+  - [Literate executable specifications](./doc/literate.md)
+
 - [Design Principles][]
-- The `quint` CLI tool
-   - [Manual](./doc/quint.md)
-   - [REPL](./tutorials/repl/repl.md)
-- [Literate executable specifications](./doc/literate.md)
 
 
 ## Community
