@@ -48,7 +48,9 @@ type Status = Working | Prepared | Committed | Aborted
 const ResourceManagers: Set[str]
 var statuses: str -> Status
 
-action init = ResourceManagers.mapBy(_ => Working)
+action init = {
+  statuses' = ResourceManagers.mapBy(_ => Working)
+}
 
 val canCommit: bool = ResourceManagers.forall(rm => statuses.get(rm).in(Set(Prepared, Committed)))
 val notCommitted: bool = ResourceManagers.forall(rm => statuses.get(rm) != Committed)
