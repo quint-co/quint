@@ -40,31 +40,45 @@ p2p protocols. Quint combines the robust theoretical basis of the [Temporal
 Logic of Actions (TLA)][TLA] with state-of-the-art static analysis and
 development tooling.
 
-This is how typical Quint code looks:
+Here's some example code in Quint:
 
-<!-- TODO Pick great example -->
+```bluespec
+type Status = Working | Prepared | Committed | Aborted
 
-```scala
-  // `validateBalance` should only be called upon genesis state.
-  pure def validateBalance(ctx: BankCtx, addr: Addr): bool = and {
-    ctx.accounts.contains(addr),
-    val coins = getAllBalances(ctx, addr)
-    coins.keys().forall(denom => coins.get(denom) > 0),
-  }
+const ResourceManagers: Set[str]
+var statuses: str -> Status
+
+action init = ResourceManagers.mapBy(_ => Working)
+
+val canCommit: bool = ResourceManagers.forall(rm => statuses.get(rm).in(Set(Prepared, Committed)))
+val notCommitted: bool = ResourceManagers.forall(rm => statuses.get(rm) != Committed)
+
+action prepare(rm) = all {
+  statuses.get(rm) == Working,
+  statuses' = statuses.set(rm, Prepared)
+}
 ```
 
-<!-- TODO Collapsed comparison with TLA+ -->
-
-If you would like to see the same code in TLA<sup>+</sup>, here is how it looks:
+<details>
+<summary>The equivalent TLA<sup>+</sup> code</summary>
 
 ```tla
-\* `validateBalance` should only be called upon genesis state.
-validateBalance(ctx, addr) ==
-  /\ addr \in ctx.accounts
-  /\ LET coins == getAllBalances(ctx, addr) IN
-     \A denom \in DOMAIN coins:
-       coins[denom] > 0
+CONSTANT ResourceManagers
+VARIABLE statuses
+
+TCTypeOK == statuses \in [ResourceManagers -> {"working", "prepared", "committed", "aborted"}]
+
+TCInit == statuses = [rm \in ResourceManagers |-> "working"]
+
+canCommit == \A rm \in ResourceManagers : statuses[rm] \in {"prepared", "committed"}
+
+notCommitted == \A rm \in ResourceManagers : statuses[rm] # "committed" 
+
+Prepare(rm) == /\ statuses[rm] = "working"
+               /\ statuses' = [statuses EXCEPT ![rm] = "prepared"]
 ```
+
+</details>
 
 ### Features
 
@@ -103,7 +117,6 @@ TLA and it is aligned with TLA+
 <!-- TODO Find gallery sub-Section? -->
 - [15 minute intro to Quint at Gateway to Cosmos 2023][] .
 - [preview of the tools](./doc/previews.md).
-
 
 ## Installation
 
@@ -185,9 +198,9 @@ editor (currently, VSCode, Emacs and Vim are supported).
 - [Contribute your spell][] to the collection of Quint spells :scroll:
 - [Contribute](./CONTRIBUTING.md) to the development of Quint :construction_worker:
 
-## Name origin
-<!-- TODO: Move? -->
-Quint is short for Quintessence, from alchemy, which refers to the fifth
+## On "Quint"
+
+Quint is short for 'quintessence', from alchemy, which refers to the fifth
 element. A lot of alchemy is about transmutation and energy, and Quint makes it
 possible to transmute specifications into executable assets and empower ideas to
 become referenced artifacts.
@@ -196,8 +209,8 @@ become referenced artifacts.
 
 Quint is developed at [Informal Systems](https://informal.systems/).
 
-<!-- TODO: rephrase and use English logo -->
-With additional funding from<br />[<img alt="the Vienna Business Agency" src="./Wirtschaftsagentur_Wien_logo.jpg" width="200">](https://viennabusinessagency.at/).
+<!-- TODO: Use English logo -->
+Supported by the Vienna Business Agency<br />[<img alt="the Vienna Business Agency" src="./Wirtschaftsagentur_Wien_logo.jpg" width="200">](https://viennabusinessagency.at/).
 
 <!-- TODO rm unused links -->
 [Design Principles]: ./doc/design-principles.md
