@@ -80,10 +80,10 @@ module counters {
   // this tests for a failing condition
   run failingTest = {
     init
-      .then(10.reps(_ => all {
+      .then(all {
          n == 0,
          step,
-       }))
+       })
       .fail()
   }
 

@@ -101,6 +101,8 @@ export type ErrorCode =
   | 'QNT511'
   /* QNT512: Simulation failure */
   | 'QNT512'
+  /* QNT513: Cannot continue in 'then' */
+  | 'QNT513'
 
 /* Additional data for a Quint error */
 export interface QuintErrorData {
