@@ -8,10 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## UNRELEASED
 
 ### Added
+
+- Add a run operator `A.expect(P)` to test the state predicate `P` in the state resulting from applying action `A` (#1303)
+
 ### Changed
+
+- Change in `A.then(B)`: If `A` returns `false`, `A.then(B)` fails (#1304)
+
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Detect import paths that only differ in capitalization (#1295)
+
 ### Security
 
 ## v0.17.1 -- 2023-12-05

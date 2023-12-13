@@ -3,7 +3,7 @@ import { assert } from 'chai'
 import { Either, left, right } from '@sweet-monads/either'
 import { just } from '@sweet-monads/maybe'
 import { expressionToString } from '../../src/ir/IRprinting'
-import { Computable, ComputableKind, fail, kindName } from '../../src/runtime/runtime'
+import { Callable, Computable, ComputableKind, fail, kindName } from '../../src/runtime/runtime'
 import { noExecutionListener } from '../../src/runtime/trace'
 import {
   CompilationContext,
@@ -80,56 +80,84 @@ function assertVarExists(kind: ComputableKind, name: string, input: string) {
   res.mapLeft(m => assert.fail(m))
 }
 
+// compile a computable for a run definition
+function callableFromContext(ctx: CompilationContext, callee: string): Either<string, Callable> {
+  let key = undefined
+  const lastModule = ctx.compilationState.modules[ctx.compilationState.modules.length - 1]
+  const def = lastModule.declarations.find(def => def.kind === 'def' && def.name === callee)
+  if (!def) {
+    return left(`${callee} definition not found`)
+  }
+  key = kindName('callable', def.id)
+  if (!key) {
+    return left(`${callee} not found`)
+  }
+  const run = ctx.evaluationState.context.get(key) as Callable
+  if (!run) {
+    return left(`${callee} not found via ${key}`)
+  }
+
+  return right(run)
+}
+
 // Scan the context for a callable. If found, evaluate it and return the value of the given var.
-// Assumes the input has a single callable
-// `callee` is used for error reporting.
-function evalVarAfterCall(varName: string, callee: string, input: string): Either<string, string> {
+// Assumes the input has a single definition whose name is stored in `callee`.
+function evalVarAfterRun(varName: string, callee: string, input: string): Either<string, string> {
   // use a combination of Maybe and Either.
   // Recall that left(...) is used for errors,
   // whereas right(...) is used for non-errors in sweet monads.
   const callback = (ctx: CompilationContext): Either<string, string> => {
-    let key = undefined
-    const lastModule = ctx.compilationState.modules[ctx.compilationState.modules.length - 1]
-    const def = lastModule.declarations.find(def => def.kind === 'def' && def.name === callee)
-    if (!def) {
-      return left(`${callee} definition not found`)
-    }
-    key = kindName('callable', def.id)
-    if (!key) {
-      return left(`${callee} not found`)
-    }
-    const run = ctx.evaluationState.context.get(key)
-    if (!run) {
-      return left(`${callee} not found via ${key}`)
-    }
-
-    return run
-      .eval()
-      .map(res => {
-        if ((res as RuntimeValue).toBool() === true) {
-          // extract the value of the state variable
-          const nextVal = (ctx.evaluationState.context.get(kindName('nextvar', varName)) ?? fail).eval()
-          // using if-else, as map-or-unwrap confuses the compiler a lot
-          if (nextVal.isNone()) {
-            return left(`Value of the variable ${varName} is undefined`)
-          } else {
-            return right(expressionToString(nextVal.value.toQuintEx(idGen)))
-          }
-        } else {
-          const s = expressionToString(res.toQuintEx(idGen))
-          const m = `Callable ${callee} was expected to evaluate to true, found: ${s}`
-          return left<string, string>(m)
-        }
+    return callableFromContext(ctx, callee)
+      .mapRight(run => {
+        return run
+          .eval()
+          .map(res => {
+            if ((res as RuntimeValue).toBool() === true) {
+              // extract the value of the state variable
+              const nextVal = (ctx.evaluationState.context.get(kindName('nextvar', varName)) ?? fail).eval()
+              if (nextVal.isNone()) {
+                return left(`Value of the variable ${varName} is undefined`)
+              } else {
+                return right(expressionToString(nextVal.value.toQuintEx(idGen)))
+              }
+            } else {
+              const s = expressionToString(res.toQuintEx(idGen))
+              const m = `Callable ${callee} was expected to evaluate to true, found: ${s}`
+              return left<string, string>(m)
+            }
+          })
+          .or(just(left(`Value of ${callee} is undefined`)))
+          .unwrap()
       })
-      .or(just(left(`Value of ${callee} is undefined`)))
-      .unwrap()
+      .join()
+  }
+
+  return evalInContext(input, callback)
+}
+
+// Evaluate a run and return the result.
+function evalRun(callee: string, input: string): Either<string, string> {
+  // Recall that left(...) is used for errors,
+  // whereas right(...) is used for non-errors in sweet monads.
+  const callback = (ctx: CompilationContext): Either<string, string> => {
+    return callableFromContext(ctx, callee)
+      .mapRight(run => {
+        return run
+          .eval()
+          .map(res => {
+            return right<string, string>(expressionToString(res.toQuintEx(idGen)))
+          })
+          .or(just(left(`Value of ${callee} is undefined`)))
+          .unwrap()
+      })
+      .join()
   }
 
   return evalInContext(input, callback)
 }
 
 function assertVarAfterCall(varName: string, expected: string, callee: string, input: string) {
-  evalVarAfterCall(varName, callee, input)
+  evalVarAfterRun(varName, callee, input)
     .mapLeft(m => assert.fail(m))
     .mapRight(output => assert(expected === output, `Expected ${varName} == ${expected}, found ${output}`))
 }
@@ -933,7 +961,7 @@ describe('compiling specs to runtime values', () => {
   })
 
   describe('compile runs', () => {
-    it('then', () => {
+    it('then ok', () => {
       const input = dedent(
         `var n: int
         |run run1 = (n' = 1).then(n' = n + 2).then(n' = n * 4)
@@ -941,6 +969,30 @@ describe('compiling specs to runtime values', () => {
       )
 
       assertVarAfterCall('n', '12', 'run1', input)
+    })
+
+    it('then fails when rhs is unreachable', () => {
+      const input = dedent(
+        `var n: int
+        |run run1 = (n' = 1).then(all { n == 0, n' = n + 2 }).then(n' = 3)
+        `
+      )
+
+      evalRun('run1', input)
+        .mapRight(result => assert.fail(`Expected the run to fail, found: ${result}`))
+        .mapLeft(m => assert.equal(m, 'Value of run1 is undefined'))
+    })
+
+    it('then returns false when rhs is false', () => {
+      const input = dedent(
+        `var n: int
+        |run run1 = (n' = 1).then(all { n == 0, n' = n + 2 })
+        `
+      )
+
+      evalRun('run1', input)
+        .mapRight(result => assert.equal(result, 'false'))
+        .mapLeft(m => assert.fail(`Expected the run to return false, found: ${m}`))
     })
 
     it('reps', () => {
@@ -958,6 +1010,18 @@ describe('compiling specs to runtime values', () => {
       assertVarAfterCall('hist', 'List(0, 1, 2)', 'run2', input)
     })
 
+    it('reps fails when action is false', () => {
+      const input = dedent(
+        `var n: int
+        |run run1 = (n' = 0).then(10.reps(i => all { n < 5, n' = n + 1 }))
+        `
+      )
+
+      evalRun('run1', input)
+        .mapRight(result => assert.fail(`Expected the run to fail, found: ${result}`))
+        .mapLeft(m => assert.equal(m, 'Value of run1 is undefined'))
+    })
+
     it('fail', () => {
       const input = dedent(
         `var n: int
@@ -965,7 +1029,7 @@ describe('compiling specs to runtime values', () => {
         `
       )
 
-      evalVarAfterCall('n', 'run1', input).mapRight(m => assert.fail(`Expected the run to fail, found: ${m}`))
+      evalVarAfterRun('n', 'run1', input).mapRight(m => assert.fail(`Expected the run to fail, found: ${m}`))
     })
 
     it('assert', () => {
@@ -975,7 +1039,47 @@ describe('compiling specs to runtime values', () => {
         `
       )
 
-      evalVarAfterCall('n', 'run1', input).mapRight(m => assert.fail(`Expected an error, found: ${m}`))
+      evalVarAfterRun('n', 'run1', input).mapRight(m => assert.fail(`Expected an error, found: ${m}`))
+    })
+
+    it('expect fails', () => {
+      const input = dedent(
+        `var n: int
+        |run run1 = (n' = 0).then(n' = 3).expect(n < 3)
+        `
+      )
+
+      evalVarAfterRun('n', 'run1', input).mapRight(m => assert.fail(`Expected the run to fail, found: ${m}`))
+    })
+
+    it('expect ok', () => {
+      const input = dedent(
+        `var n: int
+        |run run1 = (n' = 0).then(n' = 3).expect(n == 3)
+        `
+      )
+
+      assertVarAfterCall('n', '3', 'run1', input)
+    })
+
+    it('expect fails when left-hand side is false', () => {
+      const input = dedent(
+        `var n: int
+        |run run1 = (n' = 0).then(all { n == 1, n' = 3 }).expect(n < 3)
+        `
+      )
+
+      evalVarAfterRun('n', 'run1', input).mapRight(m => assert.fail(`Expected the run to fail, found: ${m}`))
+    })
+
+    it('expect and then expect fail', () => {
+      const input = dedent(
+        `var n: int
+        |run run1 = (n' = 0).then(n' = 3).expect(n == 3).then(n' = 4).expect(n == 3)
+        `
+      )
+
+      evalVarAfterRun('n', 'run1', input).mapRight(m => assert.fail(`Expected the run to fail, found: ${m}`))
     })
 
     it('q::debug', () => {

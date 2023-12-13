@@ -73,7 +73,9 @@ export type ErrorCode =
   | 'QNT406'
   /* QNT407: Cannot import self */
   | 'QNT407'
-  /* QNT500: Unitialized constant */
+  /* QNT408: Case-sensitive filenames */
+  | 'QNT408'
+  /* QNT500: Uninitialized constant */
   | 'QNT500'
   /* QNT501: Internal compiler error */
   | 'QNT501'
@@ -99,6 +101,8 @@ export type ErrorCode =
   | 'QNT511'
   /* QNT512: Simulation failure */
   | 'QNT512'
+  /* QNT513: Cannot continue in 'then' */
+  | 'QNT513'
 
 /* Additional data for a Quint error */
 export interface QuintErrorData {

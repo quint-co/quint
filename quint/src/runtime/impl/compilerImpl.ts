@@ -920,6 +920,10 @@ export class CompilerVisitor implements IRVisitor {
           })
           break
 
+        case 'expect':
+          this.translateExpect(app)
+          break
+
         case 'assert':
           this.applyFun(app.id, 1, cond => {
             if (!cond.toBool()) {
@@ -1253,8 +1257,18 @@ export class CompilerVisitor implements IRVisitor {
     }
   }
 
-  // compute all { ... } or A.then(B)...then(E) for a chain of actions
-  private chainAllOrThen(actions: Computable[], kind: 'all' | 'then'): Maybe<EvalResult> {
+  /**
+   *  Compute all { ... } or A.then(B)...then(E) for a chain of actions.
+   * @param actions actions as computable to execute
+   * @param kind is it 'all { ... }' or 'A.then(B)'?
+   * @param actionId given the action index, return the id that produced this action
+   * @returns evaluation result
+   */
+  private chainAllOrThen(
+    actions: Computable[],
+    kind: 'all' | 'then',
+    actionId: (idx: number) => bigint
+  ): Maybe<EvalResult> {
     // save the values of the next variables, as actions may update them
     const savedValues = this.snapshotNextVars()
     const savedTrace = this.trace()
@@ -1266,14 +1280,27 @@ export class CompilerVisitor implements IRVisitor {
     for (const action of actions) {
       nactionsLeft--
       result = action.eval()
-      if (result.isNone() || !(result.value as RuntimeValue).toBool()) {
+      const isFalse = result.isJust() && !(result.value as RuntimeValue).toBool()
+      if (result.isNone() || isFalse) {
         // As soon as one of the arguments does not evaluate to true,
         // break out of the loop.
         // Restore the values of the next variables,
         // as evaluation was not successful.
         this.recoverNextVars(savedValues)
         this.resetTrace(just(rv.mkList(savedTrace)))
-        break
+
+        if (kind === 'then' && nactionsLeft > 0 && isFalse) {
+          // Cannot extend a run. Emit an error message.
+          const actionNo = actions.length - (nactionsLeft + 1)
+          this.errorTracker.addRuntimeError(
+            actionId(actionNo),
+            'QNT513',
+            `Cannot continue in A.then(B), A evaluates to 'false'`
+          )
+          return none()
+        } else {
+          return result
+        }
       }
 
       // switch to the next frame, when implementing A.then(B)
@@ -1298,7 +1325,62 @@ export class CompilerVisitor implements IRVisitor {
     const args = this.compStack.splice(-app.args.length)
 
     const kind = app.opcode === 'then' ? 'then' : 'all'
-    const lazyCompute = () => this.chainAllOrThen(args, kind)
+    const lazyCompute = () => this.chainAllOrThen(args, kind, idx => app.args[idx].id)
+
+    this.compStack.push(mkFunComputable(lazyCompute))
+  }
+
+  // Translate A.expect(P):
+  //  - Evaluate A.
+  //  - When A's result is 'false', emit a runtime error.
+  //  - When A's result is 'true':
+  //    - Commit the variable updates: Shift the primed variables to unprimed.
+  //    - Evaluate `P`.
+  //    - If `P` evaluates to `false`, emit a runtime error (similar to `assert`).
+  //    - If `P` evaluates to `true`, rollback to the previous state and return `true`.
+  private translateExpect(app: ir.QuintApp): void {
+    // The code below is an adaption of chainAllOrThen.
+    // If someone finds how to nicely combine both, please refactor.
+    if (this.compStack.length !== 2) {
+      this.errorTracker.addCompileError(app.id, 'QNT501', `Not enough arguments on stack for "${app.opcode}"`)
+      return
+    }
+    const [action, pred] = this.compStack.splice(-2)
+    const lazyCompute = (): Maybe<EvalResult> => {
+      const savedNextVars = this.snapshotNextVars()
+      const savedTrace = this.trace()
+      const actionResult = action.eval()
+      if (actionResult.isNone() || !(actionResult.value as RuntimeValue).toBool()) {
+        // 'A' evaluates to 'false', or produces an error.
+        // Restore the values of the next variables.
+        this.recoverNextVars(savedNextVars)
+        this.resetTrace(just(rv.mkList(savedTrace)))
+        // expect emits an error when the run could not finish
+        this.errorTracker.addRuntimeError(app.args[0].id, 'QNT508', 'Cannot continue to "expect"')
+        return none()
+      } else {
+        const savedVarsAfterAction = this.snapshotVars()
+        const savedNextVarsAfterAction = this.snapshotNextVars()
+        const savedTraceAfterAction = this.trace()
+        // Temporarily, switch to the next frame, to make a look-ahead evaluation.
+        // For example, if `x == 1` and `x' == 2`, we would have `x == 2` and `x'` would be undefined.
+        this.shiftVars()
+        // evaluate P
+        const predResult = pred.eval()
+        // Recover the assignments to unprimed and primed variables.
+        // E.g., we recover variables to `x == 1` and `x' == 2` in the above example.
+        // This lets us combine the result of `expect` with other actions via `then`.
+        // For example: `A.expect(P).then(B)`.
+        this.recoverVars(savedVarsAfterAction)
+        this.recoverNextVars(savedNextVarsAfterAction)
+        this.resetTrace(just(rv.mkList(savedTraceAfterAction)))
+        if (predResult.isNone() || !(predResult.value as RuntimeValue).toBool()) {
+          this.errorTracker.addRuntimeError(app.args[1].id, 'QNT508', 'Expect condition does not hold true')
+          return none()
+        }
+        return predResult
+      }
+    }
 
     this.compStack.push(mkFunComputable(lazyCompute))
   }
@@ -1325,7 +1407,8 @@ export class CompilerVisitor implements IRVisitor {
               },
             }
           })
-          return this.chainAllOrThen(actions, 'then')
+          // In case the case of reps, we have multiple copies of the same action. This is why all occurrences have the same id.
+          return this.chainAllOrThen(actions, 'then', _ => app.args[1].id)
         })
         .join()
     }

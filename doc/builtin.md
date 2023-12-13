@@ -851,13 +851,35 @@ run test = (x' = 0).then(a).then(assert(x == 3))
 
 `a` is true for a step from `s1` to `t` and `b` is true for a step from `t` to `s2`.
 
-This is the action composition operator.
+This is the action composition operator. If `a` evaluates to `false`, then
+`a.then(b)` reports an error. If `b` evaluates to `false` after `a`, then
+`a.then(b)` returns `false`.
 
 ### Examples
 
 ```
 var x: int
 run test = (x' = 1).then(x' = 2).then(x' = 3).then(assert(x == 3))
+```
+
+## `action expect: (bool, bool) => bool`
+
+`a.expect(b)` is true for a step from `s1` to `s2` if
+
+ - `a` is true for a step from `s1` to `s2`, and
+ - `b` holds true in `s2`.
+
+If `a` evaluates to `false`, evaluation of `a.expect(b)`
+fails with an error message. If `b` evaluates to `false`,
+evaluation of `a.expect(b)` fails with an error message.
+
+### Examples
+
+```
+var n: int
+run expectConditionOkTest = (n' = 0).then(n' = 3).expect(n == 3)
+run expectConditionFailsTest = (n' = 0).then(n' = 3).expect(n == 4)
+run expectRunFailsTest = (n' = 0).then(all { n == 2, n' = 3 }).expect(n == 4)
 ```
 
 ## `action reps: (int, (int) => bool) => bool`

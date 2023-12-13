@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author                                                  |
 |:---------|:-----------|:--------------------------------------------------------|
-| 34       | 09.10.2023 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
+| 35       | 12.12.2023 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
@@ -64,6 +64,7 @@ Table of Contents
       * [Then](#then)
       * [Reps](#reps)
         * [Example](#example)
+      * [Expect](#expect)
       * [Fail](#fail)
     * [Temporal operators](#temporal-operators)
       * [Always](#always)
@@ -1657,13 +1658,19 @@ then(A, B)
 
 The semantics of this operator is as follows. When `A.then(B)` is applied to a
 state `s_1`, the operator computes a next state `s_2` of `s_1` by applying
-action `A`, if such a state exists. If `A` returns `true`, then the operator
-`A.then(B)` computes a next state `s_3` of `s_2` by applying action `B`, if
-such a state exists. If `B` returns true, then the operator `A.then(B)` returns
-`true`, the old state is equal to `s_1`, and the new state is equal to `s_3`.
-In all other cases, the operator returns `false`.
+action `A`, if such a state exists. Depending on the result of `A`, two scenarios
+are possible:
 
-This operator is equivalent to `A \cdot B` of TLA+.
+ - When `A` returns `true`, then the operator `A.then(B)` computes a next state
+ `s_3` of `s_2` by applying action `B`, if such a state exists.
+  If `B` returns true, then the operator `A.then(B)` returns
+  `true`, the old state is equal to `s_1`, and the new state is equal to `s_3`.
+  Otherwise, the operator `A.then(B)` returns `false`.
+ 
+ - If `A` returns `false`, then it is impossible to continue. A runtime error
+  should be reported.
+
+This operator is equivalent to `A \cdot B` of TLA+ (except for the runtime errors).
 
 **Example.** Consider the specification `counters`:
 
@@ -1751,6 +1758,40 @@ fail(A)
 This operator returns `true` if and only if action `A` returns `false`.
 The operator `fail` is useful for writing runs that expect an action
 to be disabled.
+
+*Mode:* Run.
+
+#### Expect
+
+The operator `expect` has the following syntax:
+
+```scala
+A.expect(P)
+expect(A, P)
+```
+
+The left-hand side `A` must be an action or a run. The right-hand side `P` must
+be a non-action Boolean expression.
+
+The semantics of this operator is as follows:
+
+- Evaluate action `A`:
+  - When `A`'s result is `false`, emit a runtime error.
+  - When `A`'s result is `true`:
+    - Commit the variable updates.
+    - Evaluate `P`:
+      - If `P` evaluates to `false`, emit a runtime error (similar to `assert`).
+      - If `P` evaluates to `true`, undo the updates back to the state where we
+        were after `A` was applied.
+
+##### Example
+
+```bluespec
+var n: int
+run expectConditionOkTest = (n' = 0).then(n' = 3).expect(n == 3)
+run expectConditionFailsTest = (n' = 0).then(n' = 3).expect(n == 4)
+run expectRunFailsTest = (n' = 0).then(all { n == 2, n' = 3 }).expect(n == 4)
+```
 
 *Mode:* Run.
 
