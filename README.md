@@ -40,7 +40,7 @@ p2p protocols. Quint combines the robust theoretical basis of the [Temporal
 Logic of Actions (TLA)][TLA] with state-of-the-art static analysis and
 development tooling.
 
-Here's some example code in Quint :mrs_claus: :gift: :santa: :
+### Example code in Quint :mrs_claus: :gift: :santa:
 
 ``` bluespec
 module secret_santa {
