@@ -43,40 +43,82 @@ development tooling.
 Here's some example code in Quint:
 
 ``` bluespec
-module tictactoe {
-  type Player = X | O
-  type Square = Occupied(Player) | Empty
+module secret_santa {
+  import basicSpells.* from "../../spells/basicSpells"
+  import commonSpells.* from "../../spells/commonSpells"
 
-  /// A 3x3 tic-tac-toe board
-  var board: int -> (int -> Square)
+  const participants: Set[str]
 
-  /// Coordinates for board corners
-  pure val corners = Set((1,1), (3,1), (1,3), (3,3))
+  /// santa_for.get(A) == B if A is B's secret santa
+  var santa_for: str -> str
 
-  def square(coordinate: (int, int)): Square =
-    board.get(coordinate._1).get(coordinate._2)
+  /// the bowl of participants, containig a paper piece for each participant name 
+  var bowl: Set[str]
 
-  def isEmpty(coordinate) = match square(coordinate) {
-    | Empty  => true
-    | _      => false
+  action init = all {
+    santa_for' = Map(),
+    bowl' = participants,
   }
 
-  /// A player makes a move on a board coordinate, if it is empty
-  action Move(player, coordinate) = all {
-    isEmpty(coordinate),
-    board' = board.setBy(
-      coordinate._1,
-      row => row.set(coordinate._2, Occupied(player))
-    ),
+  action draw_name(picker: str): bool = {
+    nondet drawed_name = bowl.oneOf()
+    all {
+      santa_for' = santa_for.put(picker, drawed_name),
+      bowl' = bowl.setRemove(drawed_name),
+    }
   }
 
-  /// Nondeterministically pick a corner, and player X makes a move on that corner
-  action StartInCorner =
-    nondet corner = oneOf(corners)
-    Move(X, corner)
+  action step = all {
+    bowl.size() > 0,
+    nondet picker = participants.filter(participant => not(participant.in(santa_for.keys()))).oneOf()
+    draw_name(picker)
+  }
+
+  val everyone_gets_a_santa = bowl.size() == 0 implies participants == santa_for.mapValuesSet()
+
+  val no_person_gets_themself = santa_for.keys().forall(participant =>
+    santa_for.get(participant) != participant
+  )
+}
+
+module quint_team_secret_santa {
+  import secret_santa(participants = Set("Gabriela", "Igor", "Jure", "Shon", "Thomas")).*
 }
 ```
 
+<details>
+<summary>Checking if everyone gets a santa</summary>
+Quint (with the help of [Apalache][apalache]) can check if, when the bowl gets empty, every participant has a santa! No kids crying at revelation :gift:.
+``` bluespec
+quint verify secret_santa.qnt --invariant=everyone_gets_a_santa --main=quint_team_secret_santa --apalache-config=config.json
+[ok] No violation found (2119ms).
+You may increase --max-steps.
+```
+</details>
+
+<details>
+<summary>Checking if no one gets themself</summary>
+This specification has no safe guards agains people being their own santa! Quint (with the help of [Apalache][apalache]) can easily find a minimal example where this happens.
+``` bluespec
+quint verify secret_santa.qnt --invariant=no_person_gets_themself --main=quint_team_secret_santa
+An example execution:
+
+[State 0]
+{
+  quint_team_secret_santa::secret_santa::bowl: Set("Gabriela", "Igor", "Jure", "Shon", "Thomas"),
+  quint_team_secret_santa::secret_santa::santa_for: Map()
+}
+
+[State 1]
+{
+  quint_team_secret_santa::secret_santa::bowl: Set("Igor", "Jure", "Shon", "Thomas"),
+  quint_team_secret_santa::secret_santa::santa_for: Map("Gabriela" -> "Gabriela")
+}
+
+[violation] Found an issue (2047ms).
+error: found a counterexample
+```
+</details>
 
 ### Features
 <dl>
