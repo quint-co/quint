@@ -267,8 +267,9 @@ Moreira](https://github.com/bugarela), [Igor Konnov](https://konnov.github.io/),
 [Jure Kukovec](https://github.com/Kukovec), [Shon Feder](http://shonfeder.net),
 and [Thomas Pani](https://thpani.net/). :heart:
 
-Thanks for notable contributions goes to @romac, @p-offtermatt, @ivan-gavran,
-and, @rnbguy.
+Thanks for notable contributions goes to [Romain Ruetschi](https://romac.me/),
+[Philip Offtermatt](https://p-offtermatt.github.io/), [Ivan Gavran](https://ivan-gavran.github.io/),
+and, [Ranadeep Biswas](https://ranadeep.in/).
 
 ---
 
