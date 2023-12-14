@@ -129,6 +129,9 @@ error: found a counterexample
 ```
 </details>
 
+[Apalache]: https://github.com/informalsystems/apalache
+[TLA]: https://en.wikipedia.org/wiki/Temporal_logic_of_actions
+
 ### Features
 <dl>
   <dt>A simple and familiar <strong>syntax</strong></dt>
@@ -218,6 +221,8 @@ To learn more about Quint's motivation and design philosophy, watch this [15
 minute presentation](https://youtu.be/OZIX8rs-kOA), delivered at Gateway to
 Cosmos in 2023.
 
+[TLA+]: https://lamport.azurewebsites.net/tla/tla.html
+
 ## Installation
 
 1. Install the [latest published version from npm](https://www.npmjs.com/package/@informalsystems/quint):
@@ -237,9 +242,9 @@ Cosmos in 2023.
 
 ## Community
 
-- Join the chat in the [Quint zulip stream][]
+- Join the chat in the [Quint zulip stream](https://informal-systems.zulipchat.com/#narrow/stream/378959-quint)
 - Join the [Quint discussions on GitHub](https://github.com/informalsystems/quint/discussions)
-- [Contribute your spell][] to the collection of Quint spells
+- [Contribute your spell](./examples/spells/contribute-your-spell.md) to the collection of Quint spells
 - [Contribute](./CONTRIBUTING.md) to the development of Quint
 
 ## On "Quint"
@@ -254,49 +259,3 @@ become referenced artifacts.
 Quint is developed at [Informal Systems](https://informal.systems/).
 
 Supported by the Vienna Business Agency.<br />[<img alt="Vienna Business Agency" src="./logos/vienna-business-agency.png" width="100">](https://viennabusinessagency.at/)
-
-<!-- TODO rm unused links -->
-[Design Principles]: ./doc/design-principles.md
-[Apalache]: https://github.com/informalsystems/apalache
-[Lessons from Writing a Compiler]: https://borretti.me/article/lessons-writing-compiler
-[Imports]: ./doc/lang.md#imports-1
-[Module definitions]: ./doc/lang.md#module-definition
-[Constant declarations]: ./doc/lang.md#constant-declarations
-[Assumptions]: ./doc/lang.md#assumptions
-[Variable definitions]: ./doc/lang.md#variable-definitions
-[Operator definitions]: ./doc/lang.md#variable-definitions
-[Module instances]: ./doc/lang.md#module-instances
-[Lambdas]: ./doc/lang.md#lambdas-aka-anonymous-operators
-[Booleans]: ./doc/lang.md#boolean-operators-and-equality
-[Integers]: ./doc/lang.md#integers
-[Sets]: ./doc/lang.md#sets
-[Lists]: ./doc/lang.md#lists-aka-sequences
-[Multiline disjunctions]: ./doc/lang.md#multiline-disjunctions
-[Multiline conjunctions]: ./doc/lang.md#multiline-conjunctions
-[if-then-else]: ./doc/lang.md#condition
-[nondet]: ./doc/lang.md#existential-quantifier-and-non-deterministic-choice
-[Maps]: ./doc/lang.md#maps-aka-functions
-[Records]: ./doc/lang.md#records
-[Tuples]: ./doc/lang.md#tuples
-[Sum types]: ./doc/lang.md#sum-types
-[Delayed assignment]: ./doc/lang.md#delayed-assignment
-[Runs]: ./doc/lang.md#runs
-[Temporal operators]: ./doc/lang.md#temporal-operators
-[Fairness]: ./doc/lang.md#fairness
-[Unbounded quantifiers]: ./doc/lang.md#unbounded-quantifiers
-[Modes]: ./doc/lang.md#modes
-[Spells]: ./examples/spells/README.md
-[Contribute your spell]: ./examples/spells/contribute-your-spell.md
-[539]: https://github.com/informalsystems/quint/issues/539
-[221]: https://github.com/informalsystems/quint/issues/221
-[235]: https://github.com/informalsystems/quint/issues/235
-[8]: https://github.com/informalsystems/quint/issues/8
-[1034]: https://github.com/informalsystems/quint/issues/1034
-[Higher-order definitions]: https://github.com/informalsystems/quint/blob/main/doc/lang.md#operator-definitions
-[String literals]: https://github.com/informalsystems/quint/blob/main/doc/lang.md#identifiers-and-strings
-[TLA+]: https://lamport.azurewebsites.net/tla/tla.html
-[TLA]: https://en.wikipedia.org/wiki/Temporal_logic_of_actions
-[Visual Studio Code Marketplace]: https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode
-[Tutorials]: ./tutorials/README.md
-[Quint zulip stream]: https://informal-systems.zulipchat.com/#narrow/stream/378959-quint
-[ITF traces]: https://apalache.informal.systems/docs/adr/015adr-trace.html
