@@ -7,7 +7,7 @@
 <!-- Menu -->
 <p>
     <a href="#installation">Installation</a> •
-    <a href="#documentation">Documentation</a> •
+    <a href="./doc/">Documentation</a> •
     <a href="#community">Community</a>
 </p>
 
@@ -234,29 +234,6 @@ Cosmos in 2023.
 
 3. _Optionally_, you may also install the [VSCode plugin for visualizing
    traces](https://marketplace.visualstudio.com/items?itemName=informal.itf-trace-viewer).
-
-## Documentation
-
-- Quint by example:
-  - [Cheatsheet](./doc/quint-cheatsheet.pdf)
-  - [Language tutorials](./tutorials/README.md)
-  - [REPL tutorial](./tutorials/repl/repl.md)
-  - [Example specifications](./examples)
-
-- Language reference:
-  - [Syntax documentation](./doc/lang.md)
-  - [Reference API documentation for built-in operators](./doc/builtin.md)
-
-- Tooling manuals
-  - [CLI manual](./doc/quint.md)
-  - [Literate executable specifications](./doc/literate.md)
-
-- Development plans:
-  - [Design Principles](./doc/design-principles.md)
-  - [Roadmap](./doc/roadmap.md)
-
-- Miscellaneous
-  - [Frequently asked questions](./doc/faq.md)
 
 ## Community
 
