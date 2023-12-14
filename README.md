@@ -254,6 +254,16 @@ element. A lot of alchemy is about transmutation and energy, and Quint makes it
 possible to transmute specifications into executable assets and empower ideas to
 become referenced artifacts.
 
+## Acknowledgments
+
+Quint has been designed and developed by the [Apalache][] team: [Gabriela
+Moreira](https://github.com/bugarela), [Igor Konnov](https://konnov.github.io/),
+[Jure Kukovec](https://github.com/Kukovec), [Shon Feder](http://shonfeder.net),
+and [Thomas Pani](https://thpani.net/). :heart:
+
+Thanks for notable contributions goes to @romac, @p-offtermatt, @ivan-gavran,
+and, @rnbguy.
+
 ---
 
 Quint is developed at [Informal Systems](https://informal.systems/).
