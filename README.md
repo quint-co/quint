@@ -7,7 +7,7 @@
 <!-- Menu -->
 <p>
     <a href="#installation">Installation</a> •
-    <a href="./doc/">Documentation</a> •
+    <a href="./doc#readme">Documentation</a> •
     <a href="#community">Community</a>
 </p>
 
