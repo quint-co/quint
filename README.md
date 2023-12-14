@@ -94,7 +94,8 @@ module quint_team_secret_santa {
 
 <details>
 <summary>Checking if everyone gets a santa</summary>
-Quint (with the help of [Apalache][apalache]) can check if, when the bowl gets empty, every participant has a santa! No kids crying at revelation :gift:.
+Quint (with the help of [Apalache][apalache]) can check to ensure that after the bowl is
+empty, every participant has a santa! No kids crying when the gifts are exchanged :gift:.
 ``` bluespec
 quint verify secret_santa.qnt --invariant=everyone_gets_a_santa --main=quint_team_secret_santa --apalache-config=config.json
 [ok] No violation found (2119ms).
@@ -104,21 +105,23 @@ You may increase --max-steps.
 
 <details>
 <summary>Checking if no one gets themself</summary>
-This specification has no safe guards agains people being their own santa! Quint (with the help of [Apalache][apalache]) can easily find a minimal example where this happens.
+This specification has no safeguards against people being their own santa! Quint
+(with the help of [Apalache][apalache]) can easily find a minimal example where
+this happens. Sorry kids, I hope you don't mind buying your own present :cry:!
 ``` bluespec
-quint verify secret_santa.qnt --invariant=no_person_gets_themself --main=quint_team_secret_santa
+quint verify secret_santa.qnt --invariant=no_person_is_self_santa --main=quint_team_secret_santa
 An example execution:
 
 [State 0]
 {
   quint_team_secret_santa::secret_santa::bowl: Set("Gabriela", "Igor", "Jure", "Shon", "Thomas"),
-  quint_team_secret_santa::secret_santa::santa_for: Map()
+  quint_team_secret_santa::secret_santa::recipient_for_santa: Map()
 }
 
 [State 1]
 {
   quint_team_secret_santa::secret_santa::bowl: Set("Igor", "Jure", "Shon", "Thomas"),
-  quint_team_secret_santa::secret_santa::santa_for: Map("Gabriela" -> "Gabriela")
+  quint_team_secret_santa::secret_santa::recipient_for_santa: Map("Gabriela" -> "Gabriela")
 }
 
 [violation] Found an issue (2047ms).
