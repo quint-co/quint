@@ -131,26 +131,26 @@ error: found a counterexample
 
 ### Features
 <dl>
-  <dt>A simple and familiar <b>syntax</b></dt>
+  <dt>A simple and familiar <strong>syntax</strong></dt>
   <dd>to support engineers reading and writing specifications</dd>
 
-  <dt>An expressive <b>type systems</b></dt>
+  <dt>An expressive <strong>type systems</strong></dt>
   <dd>to ensure the domain model is coherent</dd>
 
-  <dt>A novel <b>effect system</b></dt>
+  <dt>A novel <strong>effect system</strong></dt>
   <dd>to ensure state updates are coherent</dd>
 
-  <dt><b>IDE support</b> via LSP</dt>
+  <dt><strong>IDE support</strong> via LSP</dt>
   <dd>giving real time feedback when writing specifications</dd>
 
-  <dt>A <b>REPL</b></dt>
+  <dt>A <strong>REPL</strong></dt>
   <dd>enabling interactive exploration of specifications</dd>
 
-  <dt>A <b>simulator</b></dt>
+  <dt>A <strong>simulator</strong></dt>
   <dd>enabling tests, trace generation, and exploration of your system</dd>
 
-  <dt><b>Symbolic model checking</b></dt>
-  <dd>to verify your specifications via [Apalache][apalache]</dd>
+  <dt><strong>Symbolic model checking</strong></dt>
+  <dd>to verify your specifications via <a href="https://github.com/informalsystems/apalache">Apalache</a></dd>
 </dl>
 
 ### Motivation
