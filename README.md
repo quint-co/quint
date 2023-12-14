@@ -40,7 +40,7 @@ p2p protocols. Quint combines the robust theoretical basis of the [Temporal
 Logic of Actions (TLA)][TLA] with state-of-the-art static analysis and
 development tooling.
 
-Here's some example code in Quint:
+Here's some example code in Quint :mrs_claus: :gift: :santa: :
 
 ``` bluespec
 module secret_santa {
@@ -49,36 +49,42 @@ module secret_santa {
 
   const participants: Set[str]
 
-  /// santa_for.get(A) == B if A is B's secret santa
-  var santa_for: str -> str
+  /// get(recipient_for_santa, S) is the recipient for secret santa S
+  var recipient_for_santa: str -> str
 
-  /// the bowl of participants, containig a paper piece for each participant name 
+  /// the bowl of participants, containig a paper piece for each participant name
   var bowl: Set[str]
 
+  val santas = recipient_for_santa.keys()
+  val recipients = recipient_for_santa.mapValuesSet()
+
+  /// The initial state
   action init = all {
-    santa_for' = Map(),
-    bowl' = participants,
+    recipient_for_santa' = Map(), // No santas or recipients
+    bowl' = participants,         // Every participant's name in the bowl
   }
 
-  action draw_name(picker: str): bool = {
-    nondet drawed_name = bowl.oneOf()
+  action draw_recipient(santa: str): bool = {
+    nondet recipient = bowl.oneOf()
     all {
-      santa_for' = santa_for.put(picker, drawed_name),
-      bowl' = bowl.setRemove(drawed_name),
+      recipient_for_santa' = put(recipient_for_santa, santa, recipient),
+      bowl' = bowl.setRemove(recipient),
     }
   }
 
   action step = all {
     bowl.size() > 0,
-    nondet picker = participants.filter(participant => not(participant.in(santa_for.keys()))).oneOf()
-    draw_name(picker)
+    nondet next_santa = participants.filter(p => not(p.in(santas))).oneOf()
+    draw_recipient(next_santa)
   }
 
-  val everyone_gets_a_santa = bowl.size() == 0 implies participants == santa_for.mapValuesSet()
+  val everyone_gets_a_santa = bowl.size() == 0 implies participants == recipients
 
-  val no_person_gets_themself = santa_for.keys().forall(participant =>
-    santa_for.get(participant) != participant
+  val no_person_is_self_santa = santas.forall(person =>
+    get(recipient_for_santa, person) != person
   )
+
+  val invariant = everyone_gets_a_santa and no_person_is_self_santa
 }
 
 module quint_team_secret_santa {
