@@ -1658,13 +1658,19 @@ then(A, B)
 
 The semantics of this operator is as follows. When `A.then(B)` is applied to a
 state `s_1`, the operator computes a next state `s_2` of `s_1` by applying
-action `A`, if such a state exists. If `A` returns `true`, then the operator
-`A.then(B)` computes a next state `s_3` of `s_2` by applying action `B`, if
-such a state exists. If `B` returns true, then the operator `A.then(B)` returns
-`true`, the old state is equal to `s_1`, and the new state is equal to `s_3`.
-In all other cases, the operator returns `false`.
+action `A`, if such a state exists. Depending on the result of `A`, two scenarios
+are possible:
 
-This operator is equivalent to `A \cdot B` of TLA+.
+ - When `A` returns `true`, then the operator `A.then(B)` computes a next state
+ `s_3` of `s_2` by applying action `B`, if such a state exists.
+  If `B` returns true, then the operator `A.then(B)` returns
+  `true`, the old state is equal to `s_1`, and the new state is equal to `s_3`.
+  Otherwise, the operator `A.then(B)` returns `false`.
+ 
+ - If `A` returns `false`, then it is impossible to continue. A runtime error
+  should be reported.
+
+This operator is equivalent to `A \cdot B` of TLA+ (except for the runtime errors).
 
 **Example.** Consider the specification `counters`:
 

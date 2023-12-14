@@ -851,7 +851,9 @@ run test = (x' = 0).then(a).then(assert(x == 3))
 
 `a` is true for a step from `s1` to `t` and `b` is true for a step from `t` to `s2`.
 
-This is the action composition operator.
+This is the action composition operator. If `a` evaluates to `false`, then
+`a.then(b)` reports an error. If `b` evaluates to `false` after `a`, then
+`a.then(b)` returns `false`.
 
 ### Examples
 
