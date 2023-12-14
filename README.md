@@ -94,20 +94,25 @@ module quint_team_secret_santa {
 
 <details>
 <summary>Checking if everyone gets a santa</summary>
+
 Quint (with the help of [Apalache][apalache]) can check to ensure that after the bowl is
 empty, every participant has a santa! No kids crying when the gifts are exchanged :gift:.
+
 ``` bluespec
 quint verify secret_santa.qnt --invariant=everyone_gets_a_santa --main=quint_team_secret_santa --apalache-config=config.json
 [ok] No violation found (2119ms).
 You may increase --max-steps.
 ```
+
 </details>
 
 <details>
 <summary>Checking if no one gets themself</summary>
+
 This specification has no safeguards against people being their own santa! Quint
 (with the help of [Apalache][apalache]) can easily find a minimal example where
 this happens. Sorry kids, I hope you don't mind buying your own present :cry:!
+
 ``` bluespec
 quint verify secret_santa.qnt --invariant=no_person_is_self_santa --main=quint_team_secret_santa
 An example execution:
@@ -127,6 +132,7 @@ An example execution:
 [violation] Found an issue (2047ms).
 error: found a counterexample
 ```
+
 </details>
 
 [Apalache]: https://github.com/informalsystems/apalache
