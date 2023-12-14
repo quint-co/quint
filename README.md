@@ -78,7 +78,7 @@ module secret_santa {
     draw_recipient(next_santa)
   }
 
-  val everyone_gets_a_santa = bowl.size() == 0 implies participants == recipients
+  val everyone_gets_a_santa = (bowl.size() == 0).implies(participants == recipients)
 
   val no_person_is_self_santa = santas.forall(person =>
     get(recipient_for_santa, person) != person
