@@ -14,12 +14,14 @@ module secret_santa {
     bowl' = participants,
   }
 
+  action assign_santa(p1: str, p2:str): bool = all {
+    person_to_gift' = person_to_gift.put(p1, p2),
+    bowl' = bowl.exclude(Set(p2)),
+  }
+
   action draw_name(picker: str): bool = {
     nondet drawed_name = bowl.oneOf()
-    all {
-      person_to_gift' = person_to_gift.put(picker, drawed_name),
-      bowl' = bowl.exclude(Set(drawed_name)),
-    }
+    assign_santa(picker, drawed_name)
   }
 
   action step = all {
@@ -30,14 +32,14 @@ module secret_santa {
 
   val everyone_gets_a_santa = bowl.size() == 0 implies participants == person_to_gift.mapValuesSet()
 
-  val no_person_gets_themself =  person_to_gift.keys().forall(participant =>
+  val no_person_gets_themself = person_to_gift.keys().forall(participant =>
     person_to_gift.get(participant) != participant
   )
 }
 
-module quint_team_secret_santa {
-  import secret_santa(participants = Set("Gabriela", "Igor", "Jure", "Shon", "Thomas")).*
-}
+// module quint_team_secret_santa {
+//   import secret_santa(participants = Set("Gabriela", "Igor", "Jure", "Shon", "Thomas")).*
+// }
 
 // Below here, more complex things that might be interesting for a tutorial.
 // This is not in the state I want it to be yet, which should be:
@@ -53,19 +55,27 @@ module secret_santa_with_redraw {
   import secret_santa.*
   export secret_santa.*
 
+  action redraw(participant: str): bool = {
+    nondet new_name = bowl.oneOf()
+    all {
+      bowl' = bowl.exclude(Set(new_name)).union(Set(participant)),
+      person_to_gift' = person_to_gift.set(participant, new_name),
+    }
+  }
+
   action step_with_redraw =
     val participants_who_got_themselves = person_to_gift.keys().filter(participant => person_to_gift.get(participant) == participant)
     if (participants_who_got_themselves.size() > 0) {
       nondet participant = participants_who_got_themselves.oneOf()
-      all {
-        bowl' = bowl.union(Set(participant)),
-        person_to_gift' = person_to_gift.mapRemove(participant),
-      }
+      redraw(participant)
     } else {
       step
     }
 
   val inv = bowl.size() == 0 implies no_person_gets_themself
+
+  // We need fairness for this to work
+  temporal success = eventually(bowl.size() == 0 and everyone_gets_a_santa and no_person_gets_themself)
 }
 
 module secret_santa_with_reset {
@@ -81,11 +91,23 @@ module secret_santa_with_reset {
     }
 
   val inv = bowl.size() == 0 implies no_person_gets_themself
+
+  // We need fairness for this to work
+  temporal success = eventually(bowl.size() == 0 and everyone_gets_a_santa and no_person_gets_themself)
 }
 
-// module quint_team_secret_santa {
-//   import secret_santa_with_redraw(participants = Set("Gabriela", "Igor", "Jure", "Shon", "Thomas")).*
-// }
+module quint_team_secret_santa {
+  import secret_santa_with_redraw(participants = Set("Gabriela", "Igor", "Jure", "Shon", "Thomas")).*
+
+  run finding_out_my_santa_Test = init
+    .then(assign_santa("Igor", "Jure"))
+    .then(assign_santa("Thomas", "Shon"))
+    .then(assign_santa("Jure", "Igor"))
+    .then(assign_santa("Gabriela", "Gabriela"))
+    .then(redraw("Gabriela"))
+    .then(draw_name("Shon"))
+    .expect(person_to_gift.get("Shon") == "Gabriela")
+}
 
 // module quint_team_secret_santa {
 //   import secret_santa_with_reset(participants = Set("Gabriela", "Igor", "Jure", "Shon", "Thomas")).*
