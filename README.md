@@ -14,18 +14,18 @@
 <!-- Badges -->
 <p>
     <a href="https://github.com/informalsystems/quint/actions">
-        <img 
+        <img
             src="https://github.com/informalsystems/quint/actions/workflows/main.yml/badge.svg"
             alt="build badge">
     </a>
     <a href="https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode">
-        <img 
-            src="https://img.shields.io/visual-studio-marketplace/v/informal.quint-vscode?color=10b0f2&label=VSCode" 
+        <img
+            src="https://img.shields.io/visual-studio-marketplace/v/informal.quint-vscode?color=10b0f2&label=VSCode"
             alt="Visual Studio Marketplace Version">
     </a>
     <a href="https://www.npmjs.com/package/@informalsystems/quint">
-        <img 
-            src="https://img.shields.io/npm/v/@informalsystems/quint" 
+        <img
+            src="https://img.shields.io/npm/v/@informalsystems/quint"
             alt="npm (scoped)">
     </a>
 </p>
@@ -155,7 +155,7 @@ TCInit == statuses = [rm \in ResourceManagers |-> "working"]
 
 canCommit == \A rm \in ResourceManagers : statuses[rm] \in {"prepared", "committed"}
 
-notCommitted == \A rm \in ResourceManagers : statuses[rm] # "committed" 
+notCommitted == \A rm \in ResourceManagers : statuses[rm] # "committed"
 
 Prepare(rm) == /\ statuses[rm] = "working"
                /\ statuses' = [statuses EXCEPT ![rm] = "prepared"]
@@ -186,8 +186,6 @@ Cosmos in 2023.
 
 ## Documentation
 
-- [Frequently asked questions](./doc/faq.md)
-
 - Quint by example:
   - [Cheatsheet](./doc/quint-cheatsheet.pdf)
   - [Language tutorials](./tutorials/README.md)
@@ -206,10 +204,13 @@ Cosmos in 2023.
   - [Design Principles](./doc/design-principles.md)
   - [Roadmap](./doc/roadmap.md)
 
+- Miscellaneous
+  - [Frequently asked questions](./doc/faq.md)
+
 ## Community
 
 - Join the chat in the [Quint zulip stream][]
-- Join the [Quint discussions][]
+- Join the [Quint discussions on GitHub](https://github.com/informalsystems/quint/discussions)
 - [Contribute your spell][] to the collection of Quint spells
 - [Contribute](./CONTRIBUTING.md) to the development of Quint
 
@@ -270,5 +271,4 @@ Supported by the Vienna Business Agency.<br />[<img alt="Vienna Business Agency"
 [Visual Studio Code Marketplace]: https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode
 [Tutorials]: ./tutorials/README.md
 [Quint zulip stream]: https://informal-systems.zulipchat.com/#narrow/stream/378959-quint
-[Quint discussions]: https://github.com/informalsystems/quint/discussions
 [ITF traces]: https://apalache.informal.systems/docs/adr/015adr-trace.html
