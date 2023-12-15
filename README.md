@@ -143,7 +143,7 @@ error: found a counterexample
   <dt>A simple and familiar <strong>syntax</strong></dt>
   <dd>to support engineers reading and writing specifications</dd>
 
-  <dt>An expressive <strong>type systems</strong></dt>
+  <dt>An expressive <strong>type system</strong></dt>
   <dd>to ensure the domain model is coherent</dd>
 
   <dt>A novel <strong>effect system</strong></dt>
@@ -158,7 +158,7 @@ error: found a counterexample
   <dt>A <strong>simulator</strong></dt>
   <dd>enabling tests, trace generation, and exploration of your system</dd>
 
-  <dt><strong>Symbolic model checking</strong></dt>
+  <dt><strong>A symbolic model checker</strong></dt>
   <dd>to verify your specifications via <a href="https://github.com/informalsystems/apalache">Apalache</a></dd>
 </dl>
 
