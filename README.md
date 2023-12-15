@@ -74,7 +74,7 @@ module secret_santa {
 
   action step = all {
     bowl.size() > 0,
-    nondet next_santa = participants.filter(p => not(p.in(santas))).oneOf()
+    nondet next_santa = participants.exclude(santas).oneOf()
     draw_recipient(next_santa)
   }
 
