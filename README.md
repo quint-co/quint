@@ -7,7 +7,7 @@
 <!-- Menu -->
 <p>
     <a href="#installation">Installation</a> •
-    <a href="./doc#readme">Documentation</a> •
+    <a href="#documentation">Documentation</a> •
     <a href="#community">Community</a>
 </p>
 
@@ -253,6 +253,14 @@ Cosmos in 2023.
 - Join the [Quint discussions on GitHub](https://github.com/informalsystems/quint/discussions)
 - [Contribute your spell](./examples/spells/contribute-your-spell.md) to the collection of Quint spells
 - [Contribute](./CONTRIBUTING.md) to the development of Quint
+
+## Documentation
+
+View the [Quint documentation](./doc#readme).
+
+We aspire to having great, comprehensive documentation. At present, we have a
+good start, but still far to go. Please try what we have available and share
+with us any needs we have not yet been able to meet.
 
 ## On "Quint"
 
