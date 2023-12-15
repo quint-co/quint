@@ -98,7 +98,8 @@ Quint (with the help of [Apalache][apalache]) can check to ensure that after the
 empty, every participant has a santa! No kids crying when the gifts are exchanged :gift:.
 
 ``` bluespec
-quint verify secret_santa.qnt --invariant=everyone_gets_a_santa --main=quint_team_secret_santa --apalache-config=config.json
+echo '{ "checker": { "no-deadlocks": true } }' > config.json
+quint verify quint_team_secret_santa.qnt --invariant=everyone_gets_a_santa --apalache-config=config.json
 [ok] No violation found (2119ms).
 You may increase --max-steps.
 ```
@@ -113,7 +114,7 @@ This specification has no safeguards against people being their own santa! Quint
 this happens. Sorry kids, I hope you don't mind buying your own present :cry:!
 
 ``` bluespec
-quint verify secret_santa.qnt --invariant=no_person_is_self_santa --main=quint_team_secret_santa
+quint verify quint_team_secret_santa.qnt --invariant=no_person_is_self_santa
 An example execution:
 
 [State 0]
