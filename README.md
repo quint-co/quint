@@ -65,7 +65,7 @@ module secret_santa {
   }
 
   action draw_recipient(santa: str): bool = {
-    nondet recipient = bowl.oneOf()
+    nondet recipient = oneOf(bowl)
     all {
       recipient_for_santa' = put(recipient_for_santa, santa, recipient),
       bowl' = bowl.setRemove(recipient),
