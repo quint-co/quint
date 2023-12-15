@@ -167,8 +167,9 @@ error: found a counterexample
 Quint is inspired by [TLA+][] (the language) but provides an alternative surface
 syntax for specifying systems in TLA (the logic). The most important feature of
 our syntax is that it is minimal and regular, making Quint an easy target for
-advanced developer tooling and static analysis (see our [design principles][]
-and [previews](./doc/previews.md) of the tooling).
+advanced developer tooling and static analysis (see our [design
+principles](./doc/design-principles.md) and [previews](./doc/previews.md) of the
+tooling).
 
 The syntax also aims to be familiar to engineers:
 
