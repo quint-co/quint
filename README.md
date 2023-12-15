@@ -1,7 +1,7 @@
 <div align="center">
 
 <!-- Title -->
-<img src="./logos/quint-logo.png" alt="Quint Lang Logo" width="120"/>
+<img src="./logos/quint-logo.png" alt="Quint Lang Logo" width="90"/>
 <h1>Quint Lang</h1>
 
 <!-- Menu -->
@@ -45,7 +45,6 @@ development tooling.
 ``` bluespec
 module secret_santa {
   import basicSpells.* from "../../spells/basicSpells"
-  import commonSpells.* from "../../spells/commonSpells"
 
   const participants: Set[str]
 
@@ -56,7 +55,7 @@ module secret_santa {
   var bowl: Set[str]
 
   val santas = recipient_for_santa.keys()
-  val recipients = recipient_for_santa.mapValuesSet()
+  val recipients = participants.map(p => recipient_for_santa.get(p))
 
   /// The initial state
   action init = all {

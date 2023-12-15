@@ -12,7 +12,6 @@ same principles in Quint, see [Contributing to Apalache][].
 
 ## Developer docs
 
-<!-- TODO Update -->
  - [roadmap](./doc/roadmap.md)
  - [ADR001: Transpiler architecture](./doc/adr001-transpiler-architecture.md)
  - [ADR002: Error codes](./doc/adr002-errors.md)
@@ -21,6 +20,8 @@ same principles in Quint, see [Contributing to Apalache][].
  - [ADR004: An Effect System for Quint](./doc/adr004-effect-system.md)
  - [ADR005: A Type System for Quint](./doc/adr005-type-system.md)
  - [ADR006: Design of modules and lookup tables](./doc/adr006-modules.lit.md)
+ - [ADR007: Flattening](./doc/adr007-flattening.md)
+ - [ADR008: Obtaining and Launching Apalache from Quint](./doc/adr008-managing-apalache.md) 
 
 ## Coordinating work
 
