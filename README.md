@@ -52,7 +52,7 @@ module secret_santa {
   /// get(recipient_for_santa, S) is the recipient for secret santa S
   var recipient_for_santa: str -> str
 
-  /// the bowl of participants, containig a paper piece for each participant name
+  /// the bowl of participants, containing a paper piece for each participant name
   var bowl: Set[str]
 
   val santas = recipient_for_santa.keys()
