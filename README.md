@@ -1,7 +1,7 @@
 <div align="center">
 
 <!-- Title -->
-<img src="./logos/quint-logo.png" alt="Quint Lang Logo" width="120"/>
+<img src="./logos/quint-logo.png" alt="Quint Lang Logo" width="90"/>
 <h1>Quint Lang</h1>
 
 <!-- Menu -->
