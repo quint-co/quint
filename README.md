@@ -42,6 +42,9 @@ development tooling.
 
 ### Example code in Quint :mrs_claus: :gift: :santa:
 
+Here is a small, partial, holiday special specification of the [Secret
+Santa](https://en.wikipedia.org/wiki/Secret_Santa) game:
+
 ``` bluespec
 module secret_santa {
   const participants: Set[str]
@@ -88,6 +91,9 @@ module quint_team_secret_santa {
   import secret_santa(participants = Set("Gabriela", "Igor", "Jure", "Shon", "Thomas")).*
 }
 ```
+
+We can use this specification to check whether certain properties needed for a
+good game hold:
 
 <details>
 <summary>Checking if everyone gets a santa</summary>
