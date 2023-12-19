@@ -37,7 +37,7 @@
 Quint is a modern specification language that is a particularly good fit for
 distributed systems, such as blockchain protocols, distributed databases, and
 p2p protocols. Quint combines the robust theoretical basis of the [Temporal
-Logic of Actions (TLA)][TLA] with state-of-the-art static analysis and
+Logic of Actions (TLA)][TLA] with state-of-the-art type checking and
 development tooling.
 
 ### Example code in Quint :mrs_claus: :gift: :santa:
