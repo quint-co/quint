@@ -5,6 +5,24 @@
 This project is part of the [Apalache][] ecosystem.  Hence, we apply the
 same principles in Quint, see [Contributing to Apalache][].
 
+## Source code structure
+
+ - [quint](./quint) is the package for the `quint` transpiler
+ - [vscode](./vscode) vscode plugin
+
+## Developer docs
+
+ - [roadmap](./doc/roadmap.md)
+ - [ADR001: Transpiler architecture](./doc/adr001-transpiler-architecture.md)
+ - [ADR002: Error codes](./doc/adr002-errors.md)
+ - [ADR003: Interface to visit Internal Representation
+   components](./doc/adr003-visiting-ir-components.md)
+ - [ADR004: An Effect System for Quint](./doc/adr004-effect-system.md)
+ - [ADR005: A Type System for Quint](./doc/adr005-type-system.md)
+ - [ADR006: Design of modules and lookup tables](./doc/adr006-modules.lit.md)
+ - [ADR007: Flattening](./doc/adr007-flattening.md)
+ - [ADR008: Obtaining and Launching Apalache from Quint](./doc/adr008-managing-apalache.md) 
+
 ## Coordinating work
 
 Development on Quint is distributed. As with any distributed system, establishing
@@ -13,7 +31,7 @@ attention.
 
 ## Project structure
 
-Currently, the project consists of two npm packages (published locally):
+Currently, the project consists of two npm packages:
 
  - [quint](./quint) is the transpiler package, see the [quint manual][].
  - [vscode/quint](./vscode/quint) is the VSCode plugin for Quint, depends on `quint`.
@@ -248,7 +266,7 @@ Between installing the plugin from different sources, you may end up with multip
 4. Restart VSCode **twice**. The first time it will recreate the `extensions.json` file, the second time it will install the extensions. Reloading won't work, you need to actually close and reopen VSCode.
 
 [Apalache]: https://github.com/informalsystems/apalache
-[Contributing to Apalache]: https://github.com/informalsystems/apalache/blob/unstable/CONTRIBUTING.md
+[Contributing to Apalache]: https://github.com/informalsystems/apalache/blob/main/CONTRIBUTING.md
 [eslint]: https://eslint.org/
 [quint manual]: ./doc/quint.md
 [Installing quint]: https://github.com/informalsystems/quint/blob/main/quint/README.md#how-to-install
