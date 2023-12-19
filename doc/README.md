@@ -2,19 +2,19 @@
 
 ## Language
 
-- [Language tutorials](./tutorials/README.md)
-- [Syntax specification](./doc/lang.md)
-- [Cheatsheet](./doc/quint-cheatsheet.pdf)
-- [API documentation for built-in operators](./doc/builtin.md)
+- [Language tutorials](../tutorials/README.md)
+- [Syntax specification](./lang.md)
+- [Cheatsheet](./quint-cheatsheet.pdf)
+- [API documentation for built-in operators](./builtin.md)
 
 ## Tooling
 
-- [REPL tutorial](./tutorials/repl/repl.md)
-- [CLI manual](./doc/quint.md)
-- [Literate executable specifications](./doc/literate.md)
+- [REPL tutorial](../tutorials/repl/repl.md)
+- [CLI manual](./quint.md)
+- [Literate executable specifications](./literate.md)
 
 ## Design and Development
 
-- [Design Principles](./doc/design-principles.md)
-- [Roadmap](./doc/roadmap.md)
-- [Frequently asked questions](./doc/faq.md)
+- [Design Principles](./design-principles.md)
+- [Roadmap](./roadmap.md)
+- [Frequently asked questions](./faq.md)
