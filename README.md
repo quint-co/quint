@@ -44,8 +44,6 @@ development tooling.
 
 ``` bluespec
 module secret_santa {
-  import basicSpells.* from "../../spells/basicSpells"
-
   const participants: Set[str]
 
   /// get(recipient_for_santa, S) is the recipient for secret santa S
@@ -55,7 +53,7 @@ module secret_santa {
   var bowl: Set[str]
 
   val santas = recipient_for_santa.keys()
-  val recipients = participants.map(p => recipient_for_santa.get(p))
+  val recipients = participants.map(p => get(recipient_for_santa, p))
 
   /// The initial state
   action init = all {
@@ -67,13 +65,13 @@ module secret_santa {
     nondet recipient = oneOf(bowl)
     all {
       recipient_for_santa' = put(recipient_for_santa, santa, recipient),
-      bowl' = bowl.setRemove(recipient),
+      bowl' = bowl.exclude(Set(recipient)),
     }
   }
 
   action step = all {
     bowl.size() > 0,
-    nondet next_santa = participants.exclude(santas).oneOf()
+    nondet next_santa = oneOf(participants.exclude(santas))
     draw_recipient(next_santa)
   }
 
