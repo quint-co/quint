@@ -27,12 +27,12 @@ module secret_santa {
   }
 
   action step = all {
-    bowl.size() > 0,
+    not(empty(bowl)),
     nondet next_santa = participants.exclude(santas).oneOf()
     draw_recipient(next_santa)
   }
 
-  val everyone_gets_a_santa = (bowl.size() == 0).implies(participants == recipients)
+  val everyone_gets_a_santa = (empty(bowl)).implies(participants == recipients)
 
   val no_person_is_self_santa = santas.forall(person =>
     get(recipient_for_santa, person) != person
