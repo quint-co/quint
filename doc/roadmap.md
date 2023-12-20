@@ -43,35 +43,35 @@ completely implementing every pass.
 | ~~uninterpreted types~~, see #118 | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:                | :x:                |
 
 <!-- TODO rm unused links -->
-[Design Principles]: ./doc/design-principles.md
+[Design Principles]: ./design-principles.md
 [Apalache]: https://github.com/informalsystems/apalache
 [Lessons from Writing a Compiler]: https://borretti.me/article/lessons-writing-compiler
-[Imports]: ./doc/lang.md#imports-1
-[Module definitions]: ./doc/lang.md#module-definition
-[Constant declarations]: ./doc/lang.md#constant-declarations
-[Assumptions]: ./doc/lang.md#assumptions
-[Variable definitions]: ./doc/lang.md#variable-definitions
-[Operator definitions]: ./doc/lang.md#variable-definitions
-[Module instances]: ./doc/lang.md#module-instances
-[Lambdas]: ./doc/lang.md#lambdas-aka-anonymous-operators
-[Booleans]: ./doc/lang.md#boolean-operators-and-equality
-[Integers]: ./doc/lang.md#integers
-[Sets]: ./doc/lang.md#sets
-[Lists]: ./doc/lang.md#lists-aka-sequences
-[Multiline disjunctions]: ./doc/lang.md#multiline-disjunctions
-[Multiline conjunctions]: ./doc/lang.md#multiline-conjunctions
-[if-then-else]: ./doc/lang.md#condition
-[nondet]: ./doc/lang.md#existential-quantifier-and-non-deterministic-choice
-[Maps]: ./doc/lang.md#maps-aka-functions
-[Records]: ./doc/lang.md#records
-[Tuples]: ./doc/lang.md#tuples
-[Sum types]: ./doc/lang.md#sum-types
-[Delayed assignment]: ./doc/lang.md#delayed-assignment
-[Runs]: ./doc/lang.md#runs
-[Temporal operators]: ./doc/lang.md#temporal-operators
-[Fairness]: ./doc/lang.md#fairness
-[Unbounded quantifiers]: ./doc/lang.md#unbounded-quantifiers
-[Modes]: ./doc/lang.md#modes
+[Imports]: ./lang.md#imports-1
+[Module definitions]: ./lang.md#module-definition
+[Constant declarations]: ./lang.md#constant-declarations
+[Assumptions]: ./lang.md#assumptions
+[Variable definitions]: ./lang.md#variable-definitions
+[Operator definitions]: ./lang.md#variable-definitions
+[Module instances]: ./lang.md#module-instances
+[Lambdas]: ./lang.md#lambdas-aka-anonymous-operators
+[Booleans]: ./lang.md#boolean-operators-and-equality
+[Integers]: ./lang.md#integers
+[Sets]: ./lang.md#sets
+[Lists]: ./lang.md#lists-aka-sequences
+[Multiline disjunctions]: ./lang.md#multiline-disjunctions
+[Multiline conjunctions]: ./lang.md#multiline-conjunctions
+[if-then-else]: ./lang.md#condition
+[nondet]: ./lang.md#existential-quantifier-and-non-deterministic-choice
+[Maps]: ./lang.md#maps-aka-functions
+[Records]: ./lang.md#records
+[Tuples]: ./lang.md#tuples
+[Sum types]: ./lang.md#sum-types
+[Delayed assignment]: ./lang.md#delayed-assignment
+[Runs]: ./lang.md#runs
+[Temporal operators]: ./lang.md#temporal-operators
+[Fairness]: ./lang.md#fairness
+[Unbounded quantifiers]: ./lang.md#unbounded-quantifiers
+[Modes]: ./lang.md#modes
 [Spells]: ./examples/spells/README.md
 [Contribute your spell]: ./examples/spells/contribute-your-spell.md
 [539]: https://github.com/informalsystems/quint/issues/539
