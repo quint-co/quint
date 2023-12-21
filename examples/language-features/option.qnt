@@ -7,6 +7,21 @@ module option {
     | Some(int)
 
   var votes: List[VoteOption]
+  var outcome: int
+
+  action init = all {
+    votes' = [],
+    outcome' = 0
+  }
+
+  action vote(v) = {
+    votes' = votes.append(Some(v))
+  }
+
+  action unvote(i) = all {
+    votes[i] != None,
+    votes' = votes.replaceAt(i, None),
+  }
 
   val sumVotes =
     votes.foldl(0, (sum, v) => match v {
