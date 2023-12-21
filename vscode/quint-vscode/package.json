@@ -2,7 +2,8 @@
 	"name": "quint-vscode",
 	"displayName": "Quint",
 	"description": "Language support for Quint specifications",
-	"version": "0.12.1",
+	"icon": "quint-logo-vscode.png",
+	"version": "0.12.2",
 	"publisher": "informal",
 	"engines": {
 		"vscode": "^1.52.0"
