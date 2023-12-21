@@ -90,6 +90,8 @@ get_main () {
     main="--main=Lightclient_4_3_correct"
   elif [[ "$file" == "puzzles/prisoners/prisoners.qnt" ]] ; then
     main="--main=prisoners3"
+  elif [[ "$file" == "games/secret-santa/secret_santa.qnt" ]] ; then
+    main="--main=quint_team_secret_santa"
   elif [[ "$file" == "solidity/ERC20/erc20.qnt" ]] ; then
     main="--main=erc20Tests"
   elif [[ "$file" == "solidity/SimplePonzi/simplePonzi.qnt" ]] ; then
@@ -126,7 +128,7 @@ get_verify_args () {
     args="--init=n4_f1::Init --step=n4_f1::Next --invariant=n4_f1::Agreement"
   elif [[ "$file" == "cosmos/ics23/ics23.qnt" ]] ; then
     args="--init=Init --step=Next"
-  elif [[ "$file" == "puzzles/tictactoe/tictactoe.qnt" ]] ; then
+  elif [[ "$file" == "games/tictactoe/tictactoe.qnt" ]] ; then
     args="--max-steps=1" # pretty slow, and we just want to check that verification can run
   fi
   echo "${args}"
