@@ -132,12 +132,12 @@ This example was pointing to Paxos. Now it does not typecheck.
 ### OK on parse TicTacToe
 
 <!-- !test check TicTacToe -->
-    quint parse ../examples/puzzles/tictactoe/tictactoe.qnt
+    quint parse ../examples/games/tictactoe/tictactoe.qnt
 
 ### OK on typecheck TicTacToe
 
 <!-- !test check TicTacToe - Types & Effects -->
-    quint typecheck ../examples/puzzles/tictactoe/tictactoe.qnt
+    quint typecheck ../examples/games/tictactoe/tictactoe.qnt
 
 ### OK on parse ics20 bank
 

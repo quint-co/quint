@@ -18,19 +18,6 @@ module commonSpells {
     assert(setSum(Set(-4, 4, 5)) == 5),
   }
 
-   /// Get the set of values of a map.
-   ///
-   /// - @param __map a map from type a to type b
-   /// - @returns the set of all values in the map
-  pure def mapValuesSet(__map: a -> b): Set[b] = {
-    __map.keys().map(k => __map.get(k))
-  }
-
-  run mapValuesSetTest = all {
-    assert(mapValuesSet(Map()) == Set()),
-    assert(mapValuesSet(Map(1 -> 2, 2 -> 3)) == Set(2, 3)),
-    assert(mapValuesSet(Map(1 -> 2, 2 -> 3, 3 -> 2)) == Set(2, 3)),
-  }
 
    /// Convert a map into a set of pairs coordinating its keys and values
    ///

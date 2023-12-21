@@ -140,4 +140,30 @@ module basicSpells {
           assert(m.mapRemoveAll(Set(5, 7)) == Map(3 -> 4)),
           assert(m.mapRemoveAll(Set(5, 99999)) == Map(3 -> 4, 7 -> 8)),
       }
+
+  /// Get the set of values of a map.
+  ///
+  /// - @param __map a map from type a to type b
+  /// - @returns the set of all values in the map
+  pure def values(__map: a -> b): Set[b] = {
+    __map.keys().map(k => __map.get(k))
+  }
+
+  run valuesTest = all {
+    assert(values(Map()) == Set()),
+    assert(values(Map(1 -> 2, 2 -> 3)) == Set(2, 3)),
+    assert(values(Map(1 -> 2, 2 -> 3, 3 -> 2)) == Set(2, 3)),
+  }
+
+  /// Whether a set is empty
+  ///
+  /// - @param s a set of any type
+  /// - @returns true iff the set is the empty set
+  pure def empty(s: Set[a]): bool = s == Set()
+
+  run emptyTest = all {
+    assert(empty(Set()) == true),
+    assert(empty(Set(1, 2)) == false),
+    assert(empty(Set(Set())) == false),
+  }
 }
