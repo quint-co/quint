@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2023. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -12,11 +12,10 @@
  * @module
  */
 
-
-import { QuintError } from "../quintError";
-import { ConcreteEffect, EffectScheme, Entity, stateVariables } from "./base";
-import { EffectVisitor, walkEffect } from "./EffectVisitor";
-import { groupBy, pickBy, values } from "lodash";
+import { QuintError } from '../quintError'
+import { ConcreteEffect, EffectScheme, Entity, stateVariables } from './base'
+import { EffectVisitor, walkEffect } from './EffectVisitor'
+import { groupBy, pickBy, values } from 'lodash'
 
 /**
  * Checks effects for multiple updates of the same state variable.
@@ -38,21 +37,27 @@ export class MultipleUpdatesChecker implements EffectVisitor {
 
   exitConcrete(e: ConcreteEffect) {
     const updateEntities = e.components.reduce((updates: Entity[], c) => {
-      if (c.kind === "update") {
-        updates.push(c.entity);
+      if (c.kind === 'update') {
+        updates.push(c.entity)
       }
-      return updates;
+      return updates
     }, [])
 
     const vars = stateVariables({ kind: 'union', entities: updateEntities })
 
-    const repeated = values(pickBy(groupBy(vars, v => v.name), x => x.length > 1)).flat()
+    const repeated = values(
+      pickBy(
+        groupBy(vars, v => v.name),
+        x => x.length > 1
+      )
+    ).flat()
 
     if (repeated.length > 0) {
       repeated.forEach(v => {
         this.errors.set(v.reference, {
           code: 'QNT202',
           message: `Multiple updates of variable ${v.name}`,
+          reference: v.reference,
           data: {},
         })
       })

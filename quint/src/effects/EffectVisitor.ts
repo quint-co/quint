@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -13,6 +13,7 @@
  * @module
  */
 
+import { unreachable } from '../util'
 import { ArrowEffect, ConcreteEffect, Effect, EffectVariable } from './base'
 
 /**
@@ -58,17 +59,21 @@ export function walkEffect(visitor: EffectVisitor, effect: Effect): void {
       }
       break
     }
-    case 'arrow': {
-      if (visitor.enterArrow) {
-        visitor.enterArrow(effect)
-      }
+    case 'arrow':
+      {
+        if (visitor.enterArrow) {
+          visitor.enterArrow(effect)
+        }
 
-      effect.params.forEach(e => walkEffect(visitor, e))
-      walkEffect(visitor, effect.result)
+        effect.params.forEach(e => walkEffect(visitor, e))
+        walkEffect(visitor, effect.result)
 
-      if (visitor.exitArrow) {
-        visitor.exitArrow(effect)
+        if (visitor.exitArrow) {
+          visitor.exitArrow(effect)
+        }
       }
-    }
+      break
+    default:
+      unreachable(effect)
   }
 }

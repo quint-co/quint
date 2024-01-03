@@ -10,28 +10,33 @@
  */
 grammar Quint;
 
+@header {
+
+// Used for forming errors
+import { quintErrorToString } from '../quintError'
+
+}
 // entry point for the parser
 modules : module+ EOF;
 
-module : 'module' IDENTIFIER '{' (docLines unit)* '}';
-docLines : DOCCOMMENT*;
+module : DOCCOMMENT* 'module' qualId '{' documentedDeclaration* '}';
+documentedDeclaration : DOCCOMMENT* declaration;
 
-// a module unit
-unit :    'const' IDENTIFIER ':' type                     # const
-        | 'var'   IDENTIFIER ':' type                     # var
-        | 'assume' identOrHole '=' expr                   # assume
-        | instanceMod                                     # instance
-        | operDef                                         # oper
-        | 'type' IDENTIFIER                               # typedef
-        | 'type' IDENTIFIER '=' type                      # typedef
-        | importMod                                       # importDef
-        | exportMod                                       # exportDef
-        // https://github.com/informalsystems/quint/issues/378
-        //| 'nondet' IDENTIFIER (':' type)? '=' expr ';'? expr {
-        //  const m = "QNT007: 'nondet' is only allowed inside actions"
-        //  this.notifyErrorListeners(m)
-        //}                                                 # nondetError
-        ;
+// a module declaration
+declaration : 'const' qualId ':' type                     # const
+            | 'var'   qualId ':' type                     # var
+            | 'assume' identOrHole '=' expr               # assume
+            | instanceMod                                 # instance
+            | operDef                                     # oper
+            | typeDef                                     # typeDefs
+            | importMod                                   # importDef
+            | exportMod                                   # exportDef
+            // https://github.com/informalsystems/quint/issues/378
+            //| 'nondet' qualId (':' type)? '=' expr ';'? expr {
+            //  const m = "QNT007: 'nondet' is only allowed inside actions"
+            //  this.notifyErrorListeners(m)
+            //}                                                 # nondetError
+            ;
 
 // An operator definition.
 // We embed two kinds of parameters right in this rule.
@@ -46,6 +51,18 @@ operDef : qualifier normalCallName
             ('=' expr)? ';'?
         ;
 
+typeDef
+    : 'type' qualId                                                         # typeAbstractDef
+    | 'type' qualId '=' type                                                # typeAliasDef
+    | 'type' typeName=qualId '=' '|'? typeSumVariant ('|' typeSumVariant)*  # typeSumDef
+    ;
+
+// A single variant case in a sum type definition or match statement.
+// E.g., `A(t)` or `A`.
+typeSumVariant : sumLabel=simpleId["variant label"] ('(' type ')')? ;
+
+nondetOperDef : 'nondet' qualId (':' type)? '=' expr ';'?;
+
 qualifier : 'val'
           | 'def'
           | 'pure' 'val'
@@ -55,8 +72,8 @@ qualifier : 'val'
           | 'temporal'
           ;
 
-importMod : 'import' name '.' identOrStar
-          | 'import' name ('as' name)?
+importMod : 'import' name '.' identOrStar ('from' fromSource)?
+          | 'import' name ('as' name)? ('from' fromSource)?
           ;
 
 exportMod : 'export' name '.' identOrStar
@@ -67,15 +84,18 @@ exportMod : 'export' name '.' identOrStar
 // which means that the missing parameters are identity, e.g., x = x, y = y
 instanceMod :   // creating an instance and importing all names introduced in the instance
                 'import' moduleName '(' (name '=' expr (',' name '=' expr)*) ')' '.' '*'
+                  ('from' fromSource)?
                 // creating an instance and importing all names with a prefix
             |   'import' moduleName '(' (name '=' expr (',' name '=' expr)*) ')' 'as' qualifiedName
+                  ('from' fromSource)?
         ;
 
-moduleName : IDENTIFIER;
-name: IDENTIFIER;
-qualifiedName : IDENTIFIER;
+moduleName : qualId;
+name: qualId;
+qualifiedName : qualId;
+fromSource: STRING;
 
-// Types in Type System 1.2 of Apalache, which supports discriminated unions
+// Types in Type System 1.2 of Apalache
 type :          <assoc=right> type '->' type                    # typeFun
         |       <assoc=right> type '=>' type                    # typeOper
         |       '(' (type (',' type)*)? ','? ')' '=>' type      # typeOper
@@ -83,20 +103,19 @@ type :          <assoc=right> type '->' type                    # typeFun
         |       LIST '[' type ']'                               # typeList
         |       '(' type ',' type (',' type)* ','? ')'          # typeTuple
         |       '{' row '}'                                     # typeRec
-        |       typeUnionRecOne+                                # typeUnionRec
         |       'int'                                           # typeInt
         |       'str'                                           # typeStr
         |       'bool'                                          # typeBool
-        |       IDENTIFIER                                      # typeConstOrVar
+        |       qualId                                          # typeConstOrVar
         |       '(' type ')'                                    # typeParen
         ;
 
-typeUnionRecOne : '|' '{' IDENTIFIER ':' STRING (',' row)? ','? '}'
-                ;
-
-row : | (IDENTIFIER ':' type ',')* ((IDENTIFIER ':' type) (',' | '|' (IDENTIFIER))?)?
-      | '|' (IDENTIFIER)
+row : (rowLabel ':' type ',')* ((rowLabel ':' type) (',' | '|' (rowVar=IDENTIFIER))?)?
+    | '|' (rowVar=IDENTIFIER)
     ;
+
+rowLabel : simpleId["record"] ;
+
 
 // A Quint expression. The order matters, it defines the priority.
 // Wherever possible, we keep the same order of operators as in TLA+.
@@ -120,9 +139,9 @@ expr:           // apply a built-in operator via the dot notation
         |       expr op=(PLUS | MINUS) expr                         # plusMinus
                 // standard relations
         |       expr op=(GT | LT | GE | LE | NE | EQ) expr          # relations
-        |       IDENTIFIER '\'' ASGN expr                           # asgn
+        |       qualId '\'' ASGN expr                               # asgn
         |       expr '=' expr {
-                  const m = "QNT006: unexpected '=', did you mean '=='?"
+                  const m = "[QNT006] unexpected '=', did you mean '=='?"
                   this.notifyErrorListeners(m)
                 }                                                   # errorEq
                 // Boolean operators. Note that not(e) is just a normal call
@@ -133,62 +152,75 @@ expr:           // apply a built-in operator via the dot notation
         |       expr OR expr                                        # or
         |       expr IFF expr                                       # iff
         |       expr IMPLIES expr                                   # implies
-        |       expr MATCH
-                    ('|' STRING ':' parameter '=>' expr)+         # match
+        |       matchSumExpr                                        # match
         |       'all' '{' expr (',' expr)* ','? '}'                 # actionAll
         |       'any' '{' expr (',' expr)* ','? '}'                 # actionAny
-        |       ( IDENTIFIER | INT | BOOL | STRING)                 # literalOrId
+        |       ( qualId | INT | BOOL | STRING)                     # literalOrId
         //      a tuple constructor, the form tup(...) is just an operator call
         |       '(' expr ',' expr (',' expr)* ','? ')'              # tuple
         //      short-hand syntax for pairs, mainly designed for maps
         |       expr '->' expr                                      # pair
-        |       '{' IDENTIFIER ':' expr
-                        (',' IDENTIFIER ':' expr)* ','? '}'         # record
+        |       '{' recElem (',' recElem)* ','? '}'                 # record
         //      a list constructor, the form list(...) is just an operator call
         |       '[' (expr (',' expr)*)? ','? ']'                    # list
         |       'if' '(' expr ')' expr 'else' expr                  # ifElse
         |       operDef expr                                        # letIn
-        |       'nondet' IDENTIFIER (':' type)? '=' expr ';'? expr  # nondet
+        |       nondetOperDef expr                                  # nondet
         |       '(' expr ')'                                        # paren
         |       '{' expr '}'                                        # braces
         ;
 
+// match e { A(a) => e1 | B => e2 | C(_) => e3 | ... | _ => en }
+matchSumExpr: MATCH expr '{' '|'? matchCase+=matchSumCase ('|' matchCase+=matchSumCase)* '}' ;
+matchSumCase: (variantMatch=matchSumVariant | wildCardMatch='_') '=>' expr ;
+matchSumVariant
+    : (variantLabel=simpleId["variant label"]) ('(' (variantParam=simpleId["match case parameter"] | '_') ')')? ;
+
 // A probing rule for REPL.
 // Note that a top-level declaration has priority over an expression.
 // For example, see: https://github.com/informalsystems/quint/issues/394
-unitOrExpr :    unit | expr;
+declarationOrExpr :    declaration EOF | expr EOF | DOCCOMMENT EOF | EOF;
 
 // This rule parses anonymous functions, e.g.:
 // 1. x => e
 // 2. (x) => e
-// 3. (x, y, z) => e
-lambda:         parameter '=>' expr
-        |       '(' parameter (',' parameter)* ')' '=>' expr
-        ;
-
+// 3. (x, y, z) => e            (arity 3)
+// 4. ((x, y, z)) => e          (syntax sugar: arity 1, unboxed into a 3-field tuple)
+lambda          : lambdaUnsugared
+                | lambdaTupleSugar ;
+lambdaUnsugared : parameter '=>' expr
+                | '(' parameter (',' parameter)* ')' '=>' expr
+                ;
+// A lambda operator over a single tuple parameter,
+// unpacked into named fields
+lambdaTupleSugar : '(' '(' parameter (',' parameter)+ ')' ')' '=>' expr;
 
 // an identifier or a hole '_'
-identOrHole :   '_' | IDENTIFIER
+identOrHole :   '_' | qualId
         ;
 
 parameter: identOrHole;
 
 // an identifier or a star '*'
-identOrStar :   '*' | IDENTIFIER
+identOrStar :   '*' | qualId
         ;
 
 argList :      expr (',' expr)*
         ;
 
+recElem : simpleId["record"] ':' expr
+        | '...' expr
+        ;
+
 // operators in the normal call may use a few reserved names,
 // which are not recognized as identifiers.
-normalCallName :   IDENTIFIER
+normalCallName :   qualId
         |       op=(AND | OR | IFF | IMPLIES | SET | LIST | MAP)
         ;
 
 // A few infix operators may be called via lhs.oper(rhs),
 // without causing any ambiguity.
-nameAfterDot :  IDENTIFIER
+nameAfterDot :  qualId
         |       op=(AND | OR | IFF | IMPLIES)
         ;
 
@@ -201,6 +233,21 @@ operator: (AND | OR | IFF | IMPLIES |
 // literals
 literal: (STRING | BOOL | INT)
         ;
+
+// A (possibly) qualified identifier, like `Foo` or `Foo::bar`
+qualId : IDENTIFIER ('::' IDENTIFIER)* ;
+// An unqualified identifier that raises an error if a qualId is supplied
+simpleId[context: string]
+    : IDENTIFIER
+    | qualId {
+        const err = quintErrorToString(
+          { code: 'QNT008',
+            message: "Identifiers in a " + $context + " cannot be qualified with '::'. Found " + $qualId.text + "."
+          },
+        )
+        this.notifyErrorListeners(err)
+      }
+    ;
 
 // TOKENS
 
@@ -238,8 +285,7 @@ LPAREN          :   '(' ;
 RPAREN          :   ')' ;
 
 // other TLA+ identifiers
-IDENTIFIER             : SIMPLE_IDENTIFIER | SIMPLE_IDENTIFIER '::' IDENTIFIER ;
-SIMPLE_IDENTIFIER      : ([a-zA-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;
+IDENTIFIER      : ([a-zA-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;
 
 DOCCOMMENT : '///' .*? '\n';
 

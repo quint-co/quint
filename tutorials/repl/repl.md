@@ -40,7 +40,7 @@ state machine that describes how it works from the user's point of view:
 
 ## 1. Installation
 
-You have to install `quint` first. See [README](../quint/README.md).
+You have to install `quint` first. See the [README](../../README.md#installation).
 
 ## 2. Running REPL
 
@@ -241,7 +241,6 @@ runtime error: error: Variable temperature is not set
     ^^^^^^^^^^^^^^^^^^^^
 
 <undefined value>
-
 ```
 
 ### 5.2. Initializing state variables
@@ -300,7 +299,7 @@ output:
 
 ```bluespec ./repl/replTest.txt +=
 >>> kettleState
-{ heatingOn: false, beeping: false, temperature: 20 }
+{ beeping: false, heatingOn: false, temperature: 20 }
 ```
 
 ### 5.3. Updating state variables with actions
@@ -331,7 +330,7 @@ We can check our state variables to make sure that the action indeed took place:
 
 ```bluespec ./repl/replTest.txt +=
 >>> kettleState
-{ heatingOn: true, beeping: false, temperature: 20 }
+{ beeping: false, heatingOn: true, temperature: 20 }
 ```
 
 The heat is on now!
@@ -418,7 +417,7 @@ true
 >>> pressButton
 true
 >>> kettleState
-{ heatingOn: true, beeping: false, temperature: 20 }
+{ beeping: false, heatingOn: true, temperature: 20 }
 ```
 
 Now it is time to specify the action `heat`:
@@ -488,7 +487,7 @@ true
 >>> depressButton
 true
 >>> kettleState
-{ heatingOn: false, beeping: false, temperature: 21 }
+{ beeping: false, heatingOn: false, temperature: 21 }
 ```
 
 Notice that our specification allows for a new interesting behavior. Evaluate
@@ -500,13 +499,13 @@ true
 >>> depressButton
 true
 >>> kettleState
-{ heatingOn: false, beeping: false, temperature: 100 }
+{ beeping: false, heatingOn: false, temperature: 100 }
 >>> all { heatingOn' = true, temperature' = 100, beeping' = false }
 true
 >>> failover
 true
 >>> kettleState
-{ heatingOn: false, beeping: true, temperature: 100 }
+{ beeping: true, heatingOn: false, temperature: 100 }
 ```
 
 As we can see, both `depressButton` and `failover` can apply when the

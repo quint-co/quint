@@ -3,22 +3,27 @@ module sets {
   var n: int
   var s: Set[int]
 
-  action Init = all {
+  action init = all {
     n' = 0,
     s' = Set(0)
   }
 
-  action Next = all {
+  // Test using a predicate by name
+  def gte0(x) = x >= 0
+  def eqn(x) = x == n
+
+  action step = all {
     n' = n + 1,
     s' = s.union(Set(n + 1)),
     s.exists(x => x == n),
     s.forall(x => x >= 0),
+    s.exists(eqn),
+    s.forall(gte0),
     n.in(s),
     s.contains(n),
-    (n + 1).notin(s),
     (n + 1).in(union(s, Set(n + 1))),
     Set(n) == s.intersect(Set(n)),
-    n.notin(s.exclude(Set(n))),
+    not(n.in(s.exclude(Set(n)))),
     Set(n).subseteq(s),
     Set() == s.filter(x => x > n),
     s == s.map(x => x),

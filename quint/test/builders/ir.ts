@@ -1,29 +1,48 @@
-import { parsePhase1 } from '../../src/quintParserFrontend'
+import { parsePhase1fromText } from '../../src/parsing/quintParserFrontend'
 import { IdGenerator, newIdGenerator } from '../../src/idGenerator'
-import { QuintDef, QuintEx, QuintModule } from '../../src/quintIr'
+import { QuintDeclaration, QuintDef, QuintEx, QuintModule, isDef } from '../../src/ir/quintIr'
 import JSONbig from 'json-bigint'
-import { QuintType } from '../../src/quintTypes'
+import { QuintType } from '../../src/ir/quintTypes'
+import { quintErrorToString } from '../../src'
 
 export function buildModuleWithExpressions(expressions: string[]): QuintModule {
-  const defs = expressions.map((expr, index) => `def d${index} = ${expr}`)
-  return buildModuleWithDefs(defs)
+  return buildModule([], expressions)
 }
 
-export function buildModuleWithDefs(defs: string[], name?: string, idGenerator?: IdGenerator): QuintModule {
-  const quintModule: string = `module ${name ?? 'wrapper'} { ${defs.join('\n')} }`
+export function buildModuleWithDecls(decls: string[], name?: string, idGenerator?: IdGenerator): QuintModule {
+  const quintModule: string = `module ${name ?? 'wrapper'} { ${decls.join('\n')} }`
 
-  const result = parsePhase1(idGenerator ?? newIdGenerator(), quintModule, 'mocked_path')
+  const result = parsePhase1fromText(idGenerator ?? newIdGenerator(), quintModule, 'mocked_path')
 
-  if (result.isRight()) {
-    return result.value.modules[0]
+  if (result.errors.length > 0) {
+    throw new Error(`Couldn't parse mocked expression. ${result.errors.map(quintErrorToString)}`)
   }
 
-  throw new Error(`Couldn't parse mocked expression. Result - ${JSONbig.stringify(result)}`)
+  return result.modules[0]
+}
+
+export function buildModule(
+  defs: string[],
+  expressions: string[],
+  name?: string,
+  idGenerator?: IdGenerator
+): QuintModule {
+  const defsFromExprs = expressions.map((expr, index) => `def d${index} = ${expr}`)
+  return buildModuleWithDecls(defs.concat(defsFromExprs), name, idGenerator)
+}
+
+export function buildDecl(decl: string): QuintDeclaration {
+  const quintModule = buildModuleWithDecls([decl])
+  return quintModule.declarations[0]
 }
 
 export function buildDef(def: string): QuintDef {
-  const quintModule = buildModuleWithDefs([def])
-  return quintModule.defs[0]
+  const quintModule = buildModuleWithDecls([def])
+  const decl = quintModule.declarations[0]
+  if (!isDef(decl)) {
+    throw new Error(`Error trying to build def from declaration that is not a def: ${JSONbig.stringify(decl)}`)
+  }
+  return decl
 }
 
 export function buildExpression(expression: string): QuintEx {

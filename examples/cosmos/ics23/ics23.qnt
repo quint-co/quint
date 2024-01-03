@@ -1,3 +1,4 @@
+// -*- mode: Bluespec; -*-
 // This is a protocol specification of ICS23, tuned towards the IAVL case.
 //
 // For details of ICS23, see:
@@ -208,8 +209,8 @@ module ics23 {
     // actualPrefix = len(inner.prefix) - 33
     length(inner.prefix) >= ChildSize,
     // getPosition(0) returns 0
-    val from = length(inner.prefix) - ChildSize
-    inner.prefix.slice(from, from + ChildSize) == EmptyChild
+    val fromIndex = length(inner.prefix) - ChildSize
+    inner.prefix.slice(fromIndex, fromIndex + ChildSize) == EmptyChild
   }
 
   /// IsLeftMost returns true if this is the left-most path in the tree,
@@ -486,7 +487,7 @@ module ics23pbt {
   // including '32' for hash headers.
   val Byte = 0.to(3).union(Set(32))
 
-  val toWord(m) =
+  def toWord(m) =
     m.keys().fold([], (l, i) => l.append(m.get(i)))
 
   action genKey =

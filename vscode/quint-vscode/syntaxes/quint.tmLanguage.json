@@ -18,9 +18,6 @@
 			"include": "#constants"
 		},
 		{
-			"include": "#numbers"
-		},
-		{
 			"include": "#operators"
 		},
 		{
@@ -28,6 +25,9 @@
 		},
 		{
 			"include": "#strings"
+		},
+		{
+			"include": "#numbers"
 		}
 	],
 	"repository": {
@@ -41,7 +41,7 @@
 			"patterns": [
 				{
 					"name": "keyword.control.quint",
-					"match": "\\b(module|import|export|as|if|else|not|or|and|implies|iff|all|any)\\b"
+					"match": "\\b(module|import|from|export|as|if|else|not|or|and|implies|iff|all|any)\\b"
 				}
 			]
 		},

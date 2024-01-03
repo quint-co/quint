@@ -20,12 +20,12 @@
  *
  * Igor Konnov, Informal Systems, 2023.
  *
- * Copyright (c) Informal Systems 2022-2023. All rights reserved.  Licensed
- * under the Apache 2.0.  See License.txt in the project root for license
- * information.
+ * Copyright 2022-2023 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  */
 
-import { strict as assert } from "assert"
+import { strict as assert } from 'assert'
 
 /**
  * An interface to a random number generator that has the following property:
@@ -67,15 +67,14 @@ export const newRng = (initialState?: bigint): Rng => {
   // Produce a random integer with the system RNG.
   // Since the system generator is using `number`,
   // the number is in the range of [0, 2^53).
-  let state: bigint =
-    initialState ?? BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER))
+  let state: bigint = initialState ?? BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER))
   return {
     getState: (): bigint => {
       return state
     },
 
     setState: (s: bigint): void => {
-      state = BigInt(s) % U64
+      state = BigInt(s >= 0 ? s : -s) % U64
     },
 
     next: (bound: bigint): bigint => {
@@ -86,7 +85,7 @@ export const newRng = (initialState?: bigint): Rng => {
       while (input >= U32) {
         // produce pseudo-random least significant 32 bits,
         // while shifting the previous output to the left
-        output = (output * U32) + squares64(state)
+        output = output * U32 + squares64(state)
         // advance the RNG state, while staying within 64 bits
         state = (state + 1n) % U64
         // forget the least significant 32 bits of the input
@@ -149,13 +148,13 @@ const squares64 = (counter: bigint): bigint => {
   let z = (y + key) % U64
   // round 1
   x = (((x * x) % U64) + y) % U64
-  x = ((x / U32) + ((x * U32) % U64)) % U64
+  x = (x / U32 + ((x * U32) % U64)) % U64
   // round 2
   x = (((x * x) % U64) + z) % U64
-  x = ((x / U32) + ((x * U32) % U64)) % U64
+  x = (x / U32 + ((x * U32) % U64)) % U64
   // round 3
   x = (((x * x) % U64) + y) % U64
-  x = ((x / U32) + ((x * U32) % U64)) % U64
+  x = (x / U32 + ((x * U32) % U64)) % U64
   // round 4
   return ((((x * x) % U64) + z) % U64) / U32
 }

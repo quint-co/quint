@@ -2,7 +2,7 @@
 
 | Revision | Date       | Author                  |
 |---------:|:----------:|:------------------------|
-|        7 | 2023-02-23 | Igor Konnov, Shon Feder |
+|        8 | 2023-04-07 | Igor Konnov, Shon Feder |
 
 **WARNING**: *This is a preliminary manual in the style of [Working
 Backwards]. Some commands are not implemented yet.*
@@ -19,7 +19,7 @@ The main commands of `quint` are as follows:
  - [x] `run` executes a Quint specification via random simulation
         similar to stateful property-based testing
  - [x] `test` runs unit tests against a Quint specification
- - [ ] `to-apalache` translates a Quint specification to Apalache IR
+ - [x] `verify` verifies a Quint specification with Apalache
  - [ ] `docs` produces documentation
  - [ ] `lint` checks a Quint specification for known deficiencies
  - [ ] `indent` indents a Quint specification
@@ -81,7 +81,6 @@ Options:
   --version      Show version number                                   [boolean]
   --out          output file                                            [string]
   --source-map   name of the source map                                 [string]
-  --with-lookup  add the lookup table to the output file (see --out)   [boolean]
 ```
 
 This command reads a Quint specification from the file `<spec>.qnt`, parses the
@@ -175,7 +174,7 @@ Options:
                                                                         [string]
   --out          output file (suppresses all console output)            [string]
   --out-itf      output the trace in the Informal Trace Format to file
-                 (supresses all console output)                         [string]
+                 (suppresses all console output)                         [string]
   --max-samples  the maximum on the number of traces to try
                                                        [number] [default: 10000]
   --max-steps    the maximum on the number of steps in every trace
@@ -223,6 +222,8 @@ Options:
   --main       name of the main module (by default, computed from filename)
                                                                         [string]
   --out        output file (suppresses all console output)              [string]
+  --max-samples  the maximum number of successful runs to try for every
+                 randomized test                       [number] [default: 10000]
   --seed       random seed to use for non-deterministic choice          [string]
   --verbosity  control how much output is produced (0 to 5)[number] [default: 2]
   --match      a string or regex that selects names to use as tests     [string]
@@ -249,6 +250,72 @@ Options:
    {
      "stage": "testing",
      "errors": [ <errors and warnings> ]
+   }
+   ```
+
+   The errors and warnings are written in the format of [ADR002][].
+
+## Command verify
+
+```sh
+$ quint verify <input>
+
+Verify a Quint specification via Apalache
+
+Options:
+  --help             Show help                                         [boolean]
+  --version          Show version number                               [boolean]
+  --main             name of the main module (by default, computed from
+                     filename)                                          [string]
+  --out              output file (suppresses all console output)        [string]
+  --out-itf          output the trace in the Informal Trace Format to file
+                     (suppresses all console output)                     [string]
+  --max-steps        the maximum number of steps in every trace
+                                                          [number] [default: 10]
+  --init             name of the initializer action   [string] [default: "init"]
+  --step             name of the step action          [string] [default: "step"]
+  --invariant        the invariants to check, separated by a comma      [string]
+  --temporal         the temporal properties to check, separated by a comma
+                                                                        [string]
+  --random-transitions  choose transitions at random (= use symbolic simulation)
+                                                      [boolean] [default: false]
+  --apalache-config     path to an additional Apalache configuration file (in
+                        JSON)                                           [string]
+  --verbosity        control how much output is produced (0 to 5)
+                                                           [number] [default: 2]
+```
+
+<!-- TODO: Update after https://github.com/informalsystems/quint/issues/701 -->
+By default, this command will automatically obtain and run Apalache. The only
+prerequisite is a [compatible installation of OpenJDK](../quint/README.md).
+
+You may also manually obtain and run a distribution of Apalache, following these
+steps:
+
+1. Install a distribution of [Apalache](https://apalache.informal.systems/docs/apalache/installation/jvm.html).
+2. Start the Apalache server `apalache-mc server` and ensure that it is running.
+
+Apalache uses bounded model checking. This technique checks *all runs* up to
+`--max-steps` steps via [z3][]. Apalache is highly configurable. See [Apalache
+configuration](https://apalache.informal.systems/docs/apalache/config.html?highlight=configuration#apalache-configuration)
+for guidance. 
+
+- If there are no critical errors (e.g., in parsing, typechecking, etc.), this
+command sends the Quint specification to the [Apalache][] model checker, which
+will try to find an invariant violation. If it finds one, it prints the trace on
+the standard output. When the parameter `--out` is supplied, the trace is
+written as a JSON representation of Quint IR in the output file. When the
+parameter `--out-itf` is supplied, the trace is written in the [Informal Trace
+Format][]. This output can be conveniently displayed with the [ITF Trace
+Viewer][], or just with [jq][].
+
+- If the specification cannot be run (e.g., due to a parsing error), the file
+contains an error message in JSON:
+
+   ```json
+   {
+     "stage": "verifying",
+     "errors": [ <errors> ]
    }
    ```
 
@@ -321,3 +388,5 @@ exact format is to be specified in the future.
 [Informal Trace Format]: https://apalache.informal.systems/docs/adr/015adr-trace.html
 [ITF Trace Viewer]: https://marketplace.visualstudio.com/items?itemName=informal.itf-trace-viewer
 [jq]: https://stedolan.github.io/jq/
+[z3]: https://github.com/z3prover/z3
+[Apalache]: https://apalache.informal.systems/

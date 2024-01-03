@@ -25,7 +25,10 @@ generate_source_maps () {
         # if this breaks expectation in the tests, it will show up in the unit tests.
         if [ -f "$j" ]
         then
+           # starting with "
            perl -pi -e 's#"/.*?/testFixture#"mocked_path/testFixture#g' "$j"
+           # starting with '
+           perl -pi -e "s#'/.*?/testFixture#'mocked_path/testFixture#g" "$j"
         fi
     done
 }

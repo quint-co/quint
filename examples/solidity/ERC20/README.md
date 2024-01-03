@@ -1,17 +1,24 @@
 # Specifying the ERC20 interface in Quint
 
-## The new specification
-
-This directory contains a Quint specification [erc20.qnt][]
-of an [ERC20 token][]. It contains two modules:
+This directory contains a Quint specification [erc20.qnt][] of an [ERC20
+token][]. It contains three modules:
 
  - `erc20` is an exemplary specification of IERC20. It is designed to be
    reusable in other specifications. This module is pure: It does not define
    a state machine.
 
- - `mempool` is a Quint specification of a single ERC20 token executed in the
-   mempool. This specification defines a state machine. It demonstrates how
-   to specify and detect mempool-related out-of-order issues such as [this one][].
+ - `erc20Tests` defines a state machine that we use to show that:
+
+   - ERC20 preserves its initial total supply, see `totalSupplyInv`,
+   - ERC20 does not transfer to the address `0x0`, see `zeroAddressInv`,
+   - ERC20 does not overflow the account balances, see `noOverflowInv`.
+   - Method `transfer` satisfies the intuitive post-condition,
+     see `transferTest`.
+
+ - `mempool` defines a state machine that runs a single ERC20 token via
+   mempool, that is, when the methods are called by external
+   users. We use this state machine to demonstrate how to detect the well-known
+   issue with the order of `transferFrom` and `approve`, see the [issue #20][].
 
    To reproduce the out-of-order scenario, run the test:
 
@@ -27,12 +34,12 @@ of an [ERC20 token][]. It contains two modules:
      --invariant=noTransferFromWhileApproveInFlight --verbosity=3 erc20.qnt
    ```
 
-## The older specification
+## Comparison to TLA+
 
-The older version of an ERC20 spec can be found in [./erc20-from-apalache.qnt][].
-We keep it for a comparison with the TLA+ files, which can be found in [./tla](./tla/).
+If you would like to see how this Quint specification could be written in the
+syntax of TLA+, check [ERC20 in TLA+][].
 
 [erc20.qnt]: ./erc20.qnt
 [ERC20 token]: https://docs.openzeppelin.com/contracts/4.x/api/token/erc20#IERC20
-[this one]: https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-[./erc20-from-apalache.qnt]: ./tla/erc20-from-apalache.qnt
+[issue #20]: https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+[ERC20 in TLA+]: https://github.com/informalsystems/tla-apalache-workshop/tree/main/examples/erc20

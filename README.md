@@ -1,220 +1,291 @@
-# Quint
+<div align="center">
 
-[![build
-badge](https://github.com/informalsystems/quint/actions/workflows/main.yml/badge.svg)](https://github.com/informalsystems/quint/actions)
-[![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/informal.quint-vscode?color=10b0f2&label=VSCode)](https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode)
-[![npm (scoped)](https://img.shields.io/npm/v/@informalsystems/quint)](https://www.npmjs.com/package/@informalsystems/quint)
+<!-- Title -->
+<img src="./logos/quint-logo.png" alt="Quint Lang Logo" width="90"/>
+<h1>Quint Lang</h1>
+
+<!-- Menu -->
+<p>
+    <a href="#installation">Installation</a> •
+    <a href="#documentation">Documentation</a> •
+    <a href="#community">Community</a>
+</p>
+
+<!-- Badges -->
+<p>
+    <a href="https://github.com/informalsystems/quint/actions">
+        <img
+            src="https://github.com/informalsystems/quint/actions/workflows/main.yml/badge.svg"
+            alt="build badge">
+    </a>
+    <a href="https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode">
+        <img
+            src="https://img.shields.io/visual-studio-marketplace/v/informal.quint-vscode?color=10b0f2&label=VSCode"
+            alt="Visual Studio Marketplace Version">
+    </a>
+    <a href="https://www.npmjs.com/package/@informalsystems/quint">
+        <img
+            src="https://img.shields.io/npm/v/@informalsystems/quint"
+            alt="npm (scoped)">
+    </a>
+</p>
+</div>
+
+
+## Overview
 
 Quint is a modern specification language that is a particularly good fit for
-distributed systems and blockchain protocols. It combines the robust theoretical
-basis of the [Temporal Logic of Actions][TLA] (TLA) with state-of-the-art static
-analysis and development tooling.
+distributed systems, such as blockchain protocols, distributed databases, and
+p2p protocols. Quint combines the robust theoretical basis of the [Temporal
+Logic of Actions (TLA)][TLA] with state-of-the-art type checking and
+development tooling.
 
-This is how typical Quint code looks:
+### Example code in Quint :mrs_claus: :gift: :santa:
 
-```scala
-  // `validateBalance` should only be called upon genesis state.
-  pure def validateBalance(ctx: BankCtx, addr: Addr): bool = and {
-    ctx.accounts.contains(addr),
-    val coins = getAllBalances(ctx, addr)
-    coins.keys().forall(denom => coins.get(denom) > 0),
+Here is a small, partial, holiday special specification of the [Secret
+Santa](https://en.wikipedia.org/wiki/Secret_Santa) game:
+
+``` bluespec
+module secret_santa {
+  const participants: Set[str]
+
+  /// get(recipient_for_santa, S) is the recipient for secret santa S
+  var recipient_for_santa: str -> str
+
+  /// the bowl of participants, containing a paper piece for each participant name
+  var bowl: Set[str]
+
+  val santas = recipient_for_santa.keys()
+  val recipients = participants.map(p => get(recipient_for_santa, p))
+
+  /// The initial state
+  action init = all {
+    recipient_for_santa' = Map(), // No santas or recipients
+    bowl' = participants,         // Every participant's name in the bowl
   }
+
+  action draw_recipient(santa: str): bool = {
+    nondet recipient = oneOf(bowl)
+    all {
+      recipient_for_santa' = put(recipient_for_santa, santa, recipient),
+      bowl' = bowl.exclude(Set(recipient)),
+    }
+  }
+
+  action step = all {
+    bowl.size() > 0,
+    nondet next_santa = oneOf(participants.exclude(santas))
+    draw_recipient(next_santa)
+  }
+
+  val everyone_gets_a_santa = (bowl.size() == 0).implies(participants == recipients)
+
+  val no_person_is_self_santa = santas.forall(person =>
+    get(recipient_for_santa, person) != person
+  )
+
+  val invariant = everyone_gets_a_santa and no_person_is_self_santa
+}
+
+module quint_team_secret_santa {
+  import secret_santa(participants = Set("Gabriela", "Igor", "Jure", "Shon", "Thomas")).*
+}
 ```
 
-If you would like to see the same code in TLA<sup>+</sup>, here is how it looks:
+We can use this specification to check whether certain properties needed for a
+good game hold:
 
-```tla
-\* `validateBalance` should only be called upon genesis state.
-validateBalance(ctx, addr) ==
-  /\ addr \in ctx.accounts
-  /\ LET coins == getAllBalances(ctx, addr) IN
-     \A denom \in DOMAIN coins:
-       coins[denom] > 0
+<details>
+<summary>Checking if everyone gets a santa</summary>
+
+Quint (with the help of [Apalache][apalache]) can check to ensure that after the bowl is
+empty, every participant has a santa! No kids crying when the gifts are exchanged :gift:.
+
+``` bluespec
+echo '{ "checker": { "no-deadlocks": true } }' > config.json
+quint verify quint_team_secret_santa.qnt --invariant=everyone_gets_a_santa --apalache-config=config.json
+[ok] No violation found (2119ms).
+You may increase --max-steps.
 ```
 
-Want a preview of the tools before reading any further? Check [Quick
-previews](./doc/previews.md).
+</details>
 
-Quint is inspired by [TLA+][] but provides an alternative surface syntax for
-specifying systems in TLA. The most important feature of our syntax is that it
-is minimal and regular, making Quint an easy target for advanced developer
-tooling and static analysis (see our [Design Principles][]).
+<details>
+<summary>Checking if no one gets themself</summary>
+
+This specification has no safeguards against people being their own santa! Quint
+(with the help of [Apalache][apalache]) can easily find a minimal example where
+this happens. Sorry kids, I hope you don't mind buying your own present :cry:!
+
+``` bluespec
+quint verify quint_team_secret_santa.qnt --invariant=no_person_is_self_santa
+An example execution:
+
+[State 0]
+{
+  quint_team_secret_santa::secret_santa::bowl: Set("Gabriela", "Igor", "Jure", "Shon", "Thomas"),
+  quint_team_secret_santa::secret_santa::recipient_for_santa: Map()
+}
+
+[State 1]
+{
+  quint_team_secret_santa::secret_santa::bowl: Set("Igor", "Jure", "Shon", "Thomas"),
+  quint_team_secret_santa::secret_santa::recipient_for_santa: Map("Gabriela" -> "Gabriela")
+}
+
+[violation] Found an issue (2047ms).
+error: found a counterexample
+```
+
+</details>
+
+[Apalache]: https://github.com/informalsystems/apalache
+[TLA]: https://en.wikipedia.org/wiki/Temporal_logic_of_actions
+
+### Features
+<dl>
+  <dt>A simple and familiar <strong>syntax</strong></dt>
+  <dd>to support engineers reading and writing specifications</dd>
+
+  <dt>An expressive <strong>type system</strong></dt>
+  <dd>to ensure the domain model is coherent</dd>
+
+  <dt>A novel <strong>effect system</strong></dt>
+  <dd>to ensure state updates are coherent</dd>
+
+  <dt><strong>IDE support</strong> via LSP</dt>
+  <dd>giving real time feedback when writing specifications</dd>
+
+  <dt>A <strong>REPL</strong></dt>
+  <dd>enabling interactive exploration of specifications</dd>
+
+  <dt>A <strong>simulator</strong></dt>
+  <dd>enabling tests, trace generation, and exploration of your system</dd>
+
+  <dt><strong>A symbolic model checker</strong></dt>
+  <dd>to verify your specifications via <a href="https://github.com/informalsystems/apalache">Apalache</a></dd>
+</dl>
+
+### Motivation
+
+Quint is inspired by [TLA+][] (the language) but provides an alternative surface
+syntax for specifying systems in TLA (the logic). The most important feature of
+our syntax is that it is minimal and regular, making Quint an easy target for
+advanced developer tooling and static analysis (see our [design
+principles](./doc/design-principles.md) and [previews](./doc/previews.md) of the
+tooling).
 
 The syntax also aims to be familiar to engineers:
 
 - At the lexical level, it borrows many principles from C-like languages.
-- At the syntax level, it follows a few (but not all) principles that are
-  usually found in functional languages.
+- At the syntax level, it follows many principles found in functional languages.
 - At the semantic level, Quint extends the standard programming paradigm with
-  non-determinism and temporal formulas, which allow designers to specify
-  protocol environments such as networks, faults, and time concisely and
-  clearly.
+  non-determinism and temporal formulas, which allow concise specification of
+  protocol environments such as networks, faults, and time.
 
-Notably, Quint comes with formal semantics built-in, thanks to its foundation in
-TLA and it is aligned with TLA+: it will soon be supported in the [Apalache][]
-model checker.
+Thanks to its foundation in TLA and its alignment with TLA+, Quint comes with
+formal semantics built-in.
 
-## Name origin
+<details>
+<summary>An example that highlights differences between Quint and TLA<sup>+</sup></summary>
 
-Quint is short for Quintessence, from alchemy, which refers to the fifth
+Quint:
+```bluespec
+type Status = Working | Prepared | Committed | Aborted
+
+const ResourceManagers: Set[str]
+var statuses: str -> Status
+
+action init = {
+  statuses' = ResourceManagers.mapBy(_ => Working)
+}
+
+val canCommit: bool = ResourceManagers.forall(rm => statuses.get(rm).in(Set(Prepared, Committed)))
+val notCommitted: bool = ResourceManagers.forall(rm => statuses.get(rm) != Committed)
+
+action prepare(rm) = all {
+  statuses.get(rm) == Working,
+  statuses' = statuses.set(rm, Prepared)
+}
+```
+
+TLA<sup>+</sup>:
+```tla
+CONSTANT ResourceManagers
+VARIABLE statuses
+
+TCTypeOK == statuses \in [ResourceManagers -> {"working", "prepared", "committed", "aborted"}]
+
+TCInit == statuses = [rm \in ResourceManagers |-> "working"]
+
+canCommit == \A rm \in ResourceManagers : statuses[rm] \in {"prepared", "committed"}
+
+notCommitted == \A rm \in ResourceManagers : statuses[rm] # "committed"
+
+Prepare(rm) == /\ statuses[rm] = "working"
+               /\ statuses' = [statuses EXCEPT ![rm] = "prepared"]
+```
+
+</details>
+
+To learn more about Quint's motivation and design philosophy, watch this [15
+minute presentation](https://youtu.be/OZIX8rs-kOA), delivered at Gateway to
+Cosmos in 2023.
+
+[TLA+]: https://lamport.azurewebsites.net/tla/tla.html
+
+## Installation
+
+1. Install the [latest published version from npm](https://www.npmjs.com/package/@informalsystems/quint):
+
+    ``` sh
+    npm i @informalsystems/quint -g
+    ```
+
+2. Install IDE support for your editor:
+
+    - [VSCode](https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode)
+    - [Emacs](./editor-plugins/emacs/README.md)
+    - [Vim](./editor-plugins/vim/README.md)
+
+3. _Optionally_, you may also install the [VSCode plugin for visualizing
+   traces](https://marketplace.visualstudio.com/items?itemName=informal.itf-trace-viewer).
+
+## Community
+
+- Join the chat in the [Quint zulip stream](https://informal-systems.zulipchat.com/#narrow/stream/378959-quint)
+- Join the [Quint discussions on GitHub](https://github.com/informalsystems/quint/discussions)
+- [Contribute your spell](./examples/spells/contribute-your-spell.md) to the collection of Quint spells
+- [Contribute](./CONTRIBUTING.md) to the development of Quint
+
+## Documentation
+
+View the [Quint documentation](./doc#readme).
+
+We aspire to having great, comprehensive documentation. At present, we have a
+good start, but still far to go. Please try what we have available and share
+with us any needs we have not yet been able to meet.
+
+## On "Quint"
+
+Quint is short for 'quintessence', from alchemy, which refers to the fifth
 element. A lot of alchemy is about transmutation and energy, and Quint makes it
 possible to transmute specifications into executable assets and empower ideas to
 become referenced artifacts.
 
-## Documentation
+## Acknowledgments
 
-### Tutorials :teacher:
+Quint has been designed and developed by the [Apalache][] team: [Gabriela
+Moreira](https://github.com/bugarela), [Igor Konnov](https://konnov.github.io/),
+[Jure Kukovec](https://github.com/Kukovec), [Shon Feder](http://shonfeder.net),
+and [Thomas Pani](https://thpani.net/). :heart:
 
-Visit the [Tutorials][] page.
+Thanks for notable contributions goes to [Romain Ruetschi](https://romac.me/),
+[Philip Offtermatt](https://p-offtermatt.github.io/), [Ivan Gavran](https://ivan-gavran.github.io/),
+and, [Ranadeep Biswas](https://ranadeep.in/).
 
-### Syntax :abcd:
+---
 
-- [Cheatsheet](./doc/quint-cheatsheet.pdf)
-- [Reference API documentation for built-in operators](./doc/builtin.md)
-- [Syntax documentation](./doc/lang.md)
+Quint is developed at [Informal Systems](https://informal.systems/).
 
-### Examples :musical_score:
-
-We have written [examples](./examples) of several specifications in Quint.
-Some of them accompany a TLA+ version for comparison and learning purposes.
-To simplify reading, use [syntax highlighting](./editor-plugins) for your
-editor (currently, VSCode, Emacs and Vim are supported).
-
-## Community and help
-
-- Join the chat in the [Quint zulip stream][] :telephone:
-- Join the [Quint discussions][] :bulb:
-- [Contribute](./CONTRIBUTING.md) to the development of Quint :construction_worker:
-
-### Tools :space_invader:
-
-[Quick previews](./doc/previews.md) of the tools.
-
- - Quint's core tool `quint`:
-
-   - [Installation](./quint/README.md)
-
-   - [Manual](./doc/quint.md)
-
-   - [REPL](./tutorials/repl/repl.md)
-
- - VSCode plugin:
-
-   We strongly encourage you to use the VSCode plugin for Quint. It provides
-   the quickest feedback loop for your specifications, reporting informative
-   errors as you type. Install the plugin from [Visual Studio Code
-   Marketplace][].
-
- - VSCode plugin for [ITF traces][] by @hvanz:
-
-   This a plugin that visualizes traces that are produced by Quint and
-   [Apalache][]. Install the [ITF Trace Viewer][] from Visual Studio Code
-   Marketplace.
-
-## Development
-
-### Developer docs :guitar:
-
- - [ADR001: Transpiler architecture](./doc/adr001-transpiler-architecture.md)
- - [ADR002: Error codes](./doc/adr002-errors.md)
- - [ADR003: Interface to visit Internal Representation
-   components](./doc/adr003-visiting-ir-components.md)
- - [ADR004: An Effect System for Quint](./doc/adr004-effect-system.md)
- - [ADR005: A Type System for Quint](./doc/adr005-type-system.md)
- - [ADR006: Design of modules and lookup tables](./doc/adr006-modules.lit.md)
-
-### Source code :hash:
-
- - [quint](./quint) is the package for the `quint` transpiler
- - [vscode](./vscode) vscode plugin
-
-### Roadmap :white_check_mark:
-
-In the spirit of [Lessons from Writing a Compiler][], we have a roadmap, where
-we are implementing various transpiler passes feature-by-feature, instead of
-completely implementing every pass.
-
-- :white_check_mark: Completed
-- :green_circle: Won't get in your way, but there's still work to be done
-- :x: Not implemented yet
-
-| Language feature                  | Parser             | Name resolution    | Effects            | Type checker       | Simulator          | To-Apalache        | Tutorials          |
-|:----------------------------------|:------------------:|:------------------:|:------------------:|:------------------:|:------------------:|:------------------:|:------------------:|
-| [Booleans][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| [Integers][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| [if-then-else][]                  | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| [Operator definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| [Modes][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| [Sets][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| [nondet][]                        | :white_check_mark: | :white_check_mark: | :green_circle:     | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| [Maps][]                          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:                |
-| [Lists][]                         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                |
-| [Records][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:                |
-| [Discriminated unions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [244][]        | :x: [233][]        | :x:                | :x:                |
-| [Tuples][]                        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| [Imports][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| [Module definitions][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| [Module instances][]              | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:                |
-| [Multiple files][]                | :x: [8][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                |
-| [Constant declarations][]         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [236][]        | :x:                | :x:                |
-| [Variable definitions][]          | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| [Assumptions][]                   | :white_check_mark: | :white_check_mark: | :white_check_mark: | :green_circle:     | :x: [235][]        | :x:                | :x:                |
-| [Lambdas][]                       | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| [Multiline disjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| [Multiline conjunctions][]        | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| [Delayed assignment][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| Invariant checking                | -                  | -                  | -                  | -                  | :white_check_mark: | :x:                | :white_check_mark: |
-| [Higher-order definitions][]      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: [221][]        | :x:                | :x:                |
-| [Runs][]                          | :white_check_mark: | :white_check_mark: | :green_circle:     | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| [Temporal operators][]            | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | *non-goal*         | :x:                | :x:                |
-| [Fairness][]                      | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | *non-goal*         | :x:                | :x:                |
-| [Unbounded quantifiers][]         | :white_check_mark: | :white_check_mark: | :x:                | :x:                | *non-goal*         | :x:                | :x:                |
-| [String literals][], see #118     | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:                | :white_check_mark: |
-| ~~uninterpreted types~~, see #118 | :white_check_mark: | :white_check_mark: | :x:                | :x:                | :x:                | :x:                | :x:                |
-
-
-[Design Principles]: ./doc/design-principles.md
-[Apalache]: https://github.com/informalsystems/apalache
-[Lessons from Writing a Compiler]: https://borretti.me/article/lessons-writing-compiler
-[Imports]: ./doc/lang.md#imports-1
-[Module definitions]: ./doc/lang.md#module-definition
-[Constant declarations]: ./doc/lang.md#constant-declarations
-[Assumptions]: ./doc/lang.md#assumptions
-[Variable definitions]: ./doc/lang.md#variable-definitions
-[Operator definitions]: ./doc/lang.md#variable-definitions
-[Module instances]: ./doc/lang.md#module-instances
-[Lambdas]: ./doc/lang.md#lambdas-aka-anonymous-operators
-[Booleans]: ./doc/lang.md#boolean-operators-and-equality
-[Integers]: ./doc/lang.md#integers
-[Sets]: ./doc/lang.md#sets
-[Lists]: ./doc/lang.md#lists-aka-sequences
-[Multiline disjunctions]: ./doc/lang.md#multiline-disjunctions
-[Multiline conjunctions]: ./doc/lang.md#multiline-conjunctions
-[if-then-else]: ./doc/lang.md#condition
-[nondet]: ./doc/lang.md#existential-quantifier-and-non-deterministic-choice
-[Maps]: ./doc/lang.md#maps-aka-functions
-[Records]: ./doc/lang.md#records
-[Discriminated unions]: ./doc/lang.md#discriminated-unions
-[Tuples]: ./doc/lang.md#tuples
-[Delayed assignment]: ./doc/lang.md#delayed-assignment
-[Runs]: ./doc/lang.md#runs
-[Temporal operators]: ./doc/lang.md#temporal-operators
-[Fairness]: ./doc/lang.md#fairness
-[Unbounded quantifiers]: ./doc/lang.md#unbounded-quantifiers
-[Modes]: ./doc/lang.md#modes
-[233]: https://github.com/informalsystems/quint/issues/233
-[221]: https://github.com/informalsystems/quint/issues/221
-[235]: https://github.com/informalsystems/quint/issues/235
-[8]: https://github.com/informalsystems/quint/issues/8
-[236]: https://github.com/informalsystems/quint/issues/236
-[244]: https://github.com/informalsystems/quint/issues/244
-[Higher-order definitions]: https://github.com/informalsystems/quint/blob/main/doc/lang.md#operator-definitions
-[String literals]: https://github.com/informalsystems/quint/blob/main/doc/lang.md#identifiers-and-strings
-[TLA+]: https://lamport.azurewebsites.net/tla/tla.html
-[TLA]: https://en.wikipedia.org/wiki/Temporal_logic_of_actions
-[Visual Studio Code Marketplace]: https://marketplace.visualstudio.com/items?itemName=informal.quint-vscode
-[Tutorials]: ./tutorials/README.md
-[Quint zulip stream]: https://informal-systems.zulipchat.com/#narrow/stream/378959-quint
-[Quint discussions]: https://github.com/informalsystems/quint/discussions
-[ITF traces]: https://apalache.informal.systems/docs/adr/015adr-trace.html
-[ITF Trace Viewer]: https://marketplace.visualstudio.com/items?itemName=informal.itf-trace-viewer
+Supported by the Vienna Business Agency.<br />[<img alt="Vienna Business Agency" src="./logos/vienna-business-agency.png" width="100">](https://viennabusinessagency.at/)

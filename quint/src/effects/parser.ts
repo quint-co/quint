@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -34,14 +34,8 @@ export function parseEffect(effectString: string): Either<any[], Effect> {
   const errorMessages: any[] = []
   // error listener to report lexical and syntax errors
   const errorListener: any = {
-    syntaxError: (_: any,
-      offendingSymbol: any,
-      line: number,
-      charPositionInLine: number,
-      msg: string) => {
-      const len = offendingSymbol
-        ? offendingSymbol.stopIndex - offendingSymbol.startIndex
-        : 0
+    syntaxError: (_: any, offendingSymbol: any, line: number, charPositionInLine: number, msg: string) => {
+      const len = offendingSymbol ? offendingSymbol.stopIndex - offendingSymbol.startIndex : 0
       const index = offendingSymbol ? offendingSymbol.startIndex : 0
       const start = { line: line - 1, col: charPositionInLine, index }
       const end = { line: line - 1, col: charPositionInLine + len, index: index + len }

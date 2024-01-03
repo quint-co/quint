@@ -5,6 +5,24 @@
 This project is part of the [Apalache][] ecosystem.  Hence, we apply the
 same principles in Quint, see [Contributing to Apalache][].
 
+## Source code structure
+
+ - [quint](./quint) is the package for the `quint` transpiler
+ - [vscode](./vscode) vscode plugin
+
+## Developer docs
+
+ - [roadmap](./doc/roadmap.md)
+ - [ADR001: Transpiler architecture](./doc/adr001-transpiler-architecture.md)
+ - [ADR002: Error codes](./doc/adr002-errors.md)
+ - [ADR003: Interface to visit Internal Representation
+   components](./doc/adr003-visiting-ir-components.md)
+ - [ADR004: An Effect System for Quint](./doc/adr004-effect-system.md)
+ - [ADR005: A Type System for Quint](./doc/adr005-type-system.md)
+ - [ADR006: Design of modules and lookup tables](./doc/adr006-modules.lit.md)
+ - [ADR007: Flattening](./doc/adr007-flattening.md)
+ - [ADR008: Obtaining and Launching Apalache from Quint](./doc/adr008-managing-apalache.md) 
+
 ## Coordinating work
 
 Development on Quint is distributed. As with any distributed system, establishing
@@ -13,7 +31,7 @@ attention.
 
 ## Project structure
 
-Currently, the project consists of two npm packages (published locally):
+Currently, the project consists of two npm packages:
 
  - [quint](./quint) is the transpiler package, see the [quint manual][].
  - [vscode/quint](./vscode/quint) is the VSCode plugin for Quint, depends on `quint`.
@@ -81,6 +99,97 @@ In general, we are trying to leverage good practices of functional programming
 FP code in this language, so we keep the balance between readability and
 FPness.  When the idiomatic JavaScript code is shorter and clearer than
 equivalent FP code, we write the idiomatic JavaScript code.
+
+### Ensure exhaustive matches
+
+The type system should help us keep the code base maintainable. But when
+`switch` statements and conditionals are used purely for side effects, we can
+lose the advantage of exhaustivness checking. Here's an example:
+
+Assume we have a type `T`
+
+```typescript
+type T = 'a' | 'b' | 'c'
+```
+
+We should structure our program such that
+
+- we can be sure every alternative is considered (as needed), and
+- whenever a new alternative is added to this type, the type system will warn us
+  about all the places we need to account for the new kind of data.
+
+If we use `T` with a `switch` or `if`/`then` statement that *returns values*,
+this indispensable help is ensured. E.g., if we try to write the following:
+
+```typescript
+function f(x:T): Number {
+  switch x {
+    case 'a':
+      return 0
+    case 'b':
+      return 1
+  }
+}
+```
+
+we will end up with a type error, because the annotation on `f` promises it will
+return a `Number`, but it might in fact return `undefined` since we are not
+handling `c`.
+
+However, if we are only using side effects in the switch, we lose this check!
+
+```typescript
+function f(x:T): Number {
+  let n = -1
+  switch x {
+    case 'a':
+      n = 0
+      break
+    case 'b':
+      n = 1
+      break
+  }
+  return ret
+}
+```
+
+Now the typechecker sees that we will be returning a number no matter what
+happens, even if none of our cases are hit, and we will not get a warning on the
+omitted check for `c`, or for any other data added to this type in the future.
+
+Now, sometimes this kind of catch-all default is what we want, but we should be
+very careful in relying on it, because it creates blind spots. As a rule, we
+should only allow cath-all defaults when the computation we are performing
+**must** be invariant under any expansion of the domain we are computing from.
+
+For all other cases, we can avoid these typechecking blind spots by following two guidelines:
+
+1. Prefer passing data by returning values whenever, and avoid needless mutable
+   assignments.
+2. When switches need to be used for side effects, provide a default that
+   calls `unreachable` on the expression to ensure all cases are handled:
+
+   ```typescript
+   import { unreachable } from './util'
+
+   function f(x:T): Number {
+     let n = -1
+     switch x {
+       case 'a':
+         n = 0
+         break
+       case 'b':
+         n = 1
+         break
+       default:
+         unreachable(x)
+     }
+     return ret
+   }
+   ```
+
+   Now the type checker will warn us that we aren't accounting for `c` (or any
+   additional alternatives added down the line).
 
 ### Using Either
 
@@ -157,7 +266,7 @@ Between installing the plugin from different sources, you may end up with multip
 4. Restart VSCode **twice**. The first time it will recreate the `extensions.json` file, the second time it will install the extensions. Reloading won't work, you need to actually close and reopen VSCode.
 
 [Apalache]: https://github.com/informalsystems/apalache
-[Contributing to Apalache]: https://github.com/informalsystems/apalache/blob/unstable/CONTRIBUTING.md
+[Contributing to Apalache]: https://github.com/informalsystems/apalache/blob/main/CONTRIBUTING.md
 [eslint]: https://eslint.org/
 [quint manual]: ./doc/quint.md
 [Installing quint]: https://github.com/informalsystems/quint/blob/main/quint/README.md#how-to-install
@@ -186,7 +295,7 @@ executable and the VSCode plugin.
 
   This will trigger the release and publication of the package to npm and
   GitHub.
-  
+
 ### VSCode Plugin
 
 #### Prerequisites
@@ -207,10 +316,12 @@ executable and the VSCode plugin.
   - Run `vsce publish`
     - requires access to https://dev.azure.com/informalsystems/
     - which allows creating the required PAT (see
-      https://code.visualstudio.com/api/working-with-extensions/publishing-extension) 
+      https://code.visualstudio.com/api/working-with-extensions/publishing-extension)
   - Use the web interface
     - Run `vsce package` to produce a the `.visx` archive
     - Navigate to
       https://marketplace.visualstudio.com/manage/publishers/informal, and click
       the `...` visible when hovering over `Quint` to upload the archive.
-    
+- `cd` into the `server` folder and run `npm publish` for publication of the
+  [@informalsystems/quint-language-server](https://www.npmjs.com/package/@informalsystems/quint-language-server)
+  package (used in Emacs and Vim integrations).

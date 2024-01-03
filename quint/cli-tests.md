@@ -60,27 +60,24 @@ bash -
 ### OK on typecheck EWD840
 
 This example was pointing to Paxos. Now it does not typecheck.
-See [#581](https://github.com/informalsystems/quint/issues/581).
 
-Temporarily disabled.
-
-<!-- test check EWD840 - Types & Effects -->
+<!-- !test check EWD840 - Types & Effects -->
     quint typecheck ../examples/classic/distributed/ewd840/ewd840.qnt
 
 ### OK on parse Tendermint
 
 <!-- !test check Tendermint -->
-    quint parse ../examples/cosmos/tendermint/TendermintAcc005.qnt
+    quint parse ../examples/cosmos/tendermint/Tendermint.qnt
 
 ### OK on typecheck Tendermint
 
 <!-- !test check Tendermint - Types & Effects -->
-    quint typecheck ../examples/cosmos/tendermint/TendermintAcc005.qnt
+    quint typecheck ../examples/cosmos/tendermint/Tendermint.qnt
 
 ### OK on test Tendermint
 
 <!-- !test check Tendermint - Test -->
-    quint test --main InstanceTests ../examples/cosmos/tendermint/TendermintAcc005.qnt
+    quint test --max-samples=100 --main TendermintModels ../examples/cosmos/tendermint/TendermintModels.qnt
 
 ### OK on parse imports
 
@@ -102,15 +99,25 @@ Temporarily disabled.
 <!-- !test check instances - Types & Effects -->
     quint typecheck ../examples/language-features/instances.qnt
 
+### OK on run instances
+
+<!-- !test check instances - Run -->
+    quint run ../examples/language-features/instances.qnt --invariant=inv
+
+### OK on parse instancesFrom
+
+<!-- !test check instancesFrom -->
+    quint parse ../examples/language-features/instancesFrom.qnt
+
+### OK on typecheck instancesFrom
+
+<!-- !test check instancesFrom - Types & Effects -->
+    quint typecheck ../examples/language-features/instancesFrom.qnt
+
 ### OK on parse option
 
 <!-- !test check option -->
     quint parse ../examples/language-features/option.qnt
-
-### OK on typecheck option
-
-<!-- !test check option - Types & Effects -->
-    quint typecheck ../examples/language-features/option.qnt
 
 ### OK on parse BinSearch
 
@@ -125,12 +132,22 @@ Temporarily disabled.
 ### OK on parse TicTacToe
 
 <!-- !test check TicTacToe -->
-    quint parse ../examples/puzzles/tictactoe/tictactoe.qnt
+    quint parse ../examples/games/tictactoe/tictactoe.qnt
 
 ### OK on typecheck TicTacToe
 
 <!-- !test check TicTacToe - Types & Effects -->
-    quint typecheck ../examples/puzzles/tictactoe/tictactoe.qnt
+    quint typecheck ../examples/games/tictactoe/tictactoe.qnt
+
+### OK on parse ics20 bank
+
+<!-- !test check ics20 bank -->
+    quint parse ../examples/cosmos/ics20/bank.qnt
+
+### OK on typecheck ics20 bank
+
+<!-- !test check ics20 bank - Types & Effects -->
+    quint typecheck ../examples/cosmos/ics20/bank.qnt
 
 ### OK on parse ics23
 
@@ -162,60 +179,15 @@ Temporarily disabled.
 <!-- !test check LamportMutex - Types & Effects -->
     quint typecheck ../examples/classic/distributed/LamportMutex/LamportMutex.qnt
 
-### OK on parse counters
-
-<!-- !test check counters -->
-    quint parse ../examples/language-features/counters.qnt
-
-### OK on parse records
-
-<!-- !test check records -->
-    quint parse ../examples/language-features/records.qnt
-
-### OK on typecheck records
-
-<!-- !test check records - Types & Effects-->
-    quint typecheck ../examples/language-features/records.qnt
-
-### OK on parse tuples
-
-<!-- !test check tuples -->
-    quint parse ../examples/language-features/tuples.qnt
-
-### OK on typecheck tuples
-
-<!-- !test check tuples - Types & Effects-->
-    quint typecheck ../examples/language-features/tuples.qnt
-
-### OK on typecheck clockSync3
-
-<!-- !test check typecheck clockSync3.qnt -->
-    quint typecheck ../examples/classic/distributed/ClockSync/clockSync3.qnt
-
-### OK on typecheck counters
-
-<!-- !test check counters - Types & Effects-->
-    quint typecheck ../examples/language-features/counters.qnt
-
-### OK on typecheck booleans
-
-<!-- !test check booleans - Types & Effects-->
-    quint typecheck ../examples/language-features/booleans.qnt
-
 ### OK on typecheck coin
 
 <!-- !test check coin - Types & Effects-->
     quint typecheck ../examples/solidity/Coin/coin.qnt
 
-### OK on test SimpleAuctionNonComposable.qnt
+### OK on test SimpleAuction.qnt
 
-<!-- !test check SimpleAuctionNonComposable - Syntax/Types & Effects/Unit tests -->
-    quint test --main=SimpleAuction ../examples/solidity/SimpleAuction/SimpleAuctionNonComposable.qnt
-
-### OK on test nondet.qnt
-
-<!-- !test check nondet - Syntax/Types & Effects/Unit tests -->
-    quint test --main=nondetEx ../examples/language-features/nondet.qnt
+<!-- !test check SimpleAuction - Syntax/Types & Effects/Unit tests -->
+    quint test ../examples/solidity/SimpleAuction/SimpleAuction.qnt
 
 ### OK on test lottery.qnt
 
@@ -223,10 +195,39 @@ Temporarily disabled.
 <!-- check lottery - Syntax/Types & Effects/Unit tests -->
 <!--     quint test --main=lotteryTests ../examples/solidity/icse23-fig7/lottery.qnt -->
 
-### OK on test erc20.qnt
+### OK on test erc20.qnt::mempool
 
-<!-- !test check erc20 - Syntax/Types & Effects/Unit tests -->
+<!-- !test check erc20::mempool - Syntax/Types & Effects/Unit tests -->
     quint test --main=mempool ../examples/solidity/ERC20/erc20.qnt
+
+### OK on test erc20.qnt::erc20Tests
+
+<!-- !test check erc20::erc20Tests - Syntax/Types & Effects/Unit tests -->
+    quint test --main=erc20Tests ../examples/solidity/ERC20/erc20.qnt
+
+### OK on test ics20 bank
+
+<!-- !test check ics20 bank - Syntax/Types & Effects/Unit tests -->
+    quint test --main bankTests ../examples/cosmos/ics20/bank.qnt
+
+### OK on test ics20 denomTrace
+<!-- !test check ics20 denomTrace - Syntax/Types & Effects/Unit tests -->
+    quint test --main=properChannelsTests ../examples/cosmos/ics20/denomTrace.qnt
+
+### OK on test ics20
+<!-- !test check ics20 - Syntax/Types & Effects/Unit tests -->
+    quint test --main ics20Test ../examples/cosmos/ics20/ics20.qnt
+
+### OK on test importFrom
+
+<!-- !test check importFrom - Syntax/Types & Effects/Unit tests -->
+    quint test ../examples/language-features/importFrom.qnt
+
+### OK on run prisoners
+
+<!-- !test check prisoners - Syntax/Types & Effects/Invariants -->
+    quint run --main=prisoners3 --invariant='countInv and safetyInv' \
+    ../examples/puzzles/prisoners/prisoners.qnt
 
 ### OK on typecheck SuperSpec.qnt
 
@@ -245,3 +246,138 @@ if [ "$UNAME" == "Linux" -o "$UNAME" == "Darwin" ]; then
 fi
 # else diff does not work as expected on windows
 ```
+
+### OK on test basicSpells
+
+<!-- !test check basicSpells - Syntax/Types & Effects/Unit tests -->
+    quint test ../examples/spells/basicSpells.qnt
+
+### OK on test commonSpells
+
+<!-- !test check commonSpells - Syntax/Types & Effects/Unit tests -->
+    quint test ../examples/spells/commonSpells.qnt
+
+### OK on test rareSpells
+
+<!-- !test check rareSpells - Syntax/Types & Effects/Unit tests -->
+    quint test ../examples/spells/rareSpells.qnt
+
+### OK on test BoundedUint8
+
+<!-- !test check BoundedUint8 - Syntax/Types & Effects/Unit tests -->
+    quint test --main=BoundedUInt8Test ../examples/spells/BoundedUInt.qnt
+
+### OK on test bug843pureValCache
+
+<!-- !test check bug843pureValCache - Syntax/Types & Effects/Unit tests -->
+    quint test ./testFixture/bug843pureValCache.qnt
+
+### FAIL on run lottery
+
+<!-- !test exit 1 -->
+<!-- !test check lottery - Run -->
+    quint run --max-samples=10000 --max-steps=10 --seed=0x29f8e808de5ed \
+      --invariant=noBuyInDrawingInv --main=lotteryMempool \
+      ../examples/solidity/icse23-fig7/lottery.qnt
+
+### OK on run BinSearch
+
+<!-- !test exit 0 -->
+<!-- !test check BinSearch - Run -->
+    quint run --max-samples=10000 --max-steps=10 \
+      --invariant=Postcondition --main=BinSearch10 \
+      ../examples/classic/sequential/BinSearch/BinSearch.qnt
+
+### OK on test simplePonzi
+
+<!-- !test exit 0 -->
+<!-- !test check simplePonzi - Test -->
+    quint test \
+      --main=simplePonziTest \
+      ../examples/solidity/SimplePonzi/simplePonzi.qnt
+
+### OK on run simplePonzi::noNegativeInv
+
+<!-- !test exit 0 -->
+<!-- !test check simplePonzi - Run noNegativeInv -->
+    quint run --max-samples=10000 \
+      --invariant=noNegativeInv --main=simplePonziTest \
+      ../examples/solidity/SimplePonzi/simplePonzi.qnt
+
+### FAIL on run simplePonzi::progressInv
+
+<!-- !test exit 1 -->
+<!-- !test check simplePonzi - Run progressInv -->
+    quint run \
+      --invariant=progressInv --main=simplePonziTest \
+      --seed=0x1f035d45bcece7 \
+      ../examples/solidity/SimplePonzi/simplePonzi.qnt
+
+### OK on run gradualPonzi::noNegativeInv
+
+<!-- !test exit 0 -->
+<!-- !test check gradualPonzi - Run noNegativeInv -->
+    quint run --max-samples=1000 \
+      --invariant=noNegativeInv --main=gradualPonziTest \
+      ../examples/solidity/GradualPonzi/gradualPonzi.qnt
+
+### FAIL on run gradualPonzi::progressInv
+
+<!-- !test exit 1 -->
+<!-- !test check gradualPonzi - Run progressInv -->
+    quint run --invariant=progressInv --main=gradualPonziTest \
+      --max-samples=1000 --max-steps=50 \
+      --seed=0x8272b36d6a57f \
+      ../examples/solidity/GradualPonzi/gradualPonzi.qnt
+
+### FAIL on run gradualPonzi::noLeftoversInv
+
+<!-- !test exit 1 -->
+<!-- !test check gradualPonzi - Run noLeftoversInv -->
+    quint run --invariant=noLeftoversInv --main=gradualPonziTest \
+      --seed=0x405df8f62fcd7 \
+      ../examples/solidity/GradualPonzi/gradualPonzi.qnt
+
+### OK on test gradualPonzi
+
+<!-- !test exit 0 -->
+<!-- !test check gradualPonzi - Test -->
+    quint test \
+      --main=gradualPonziTest \
+      ../examples/solidity/GradualPonzi/gradualPonzi.qnt
+
+### FAIL on run river::noSolution
+
+<!-- !test exit 1 -->
+<!-- !test check river - Run noSolution -->
+    quint run --invariant=noSolution --seed=0x2fa6b93d1eef3 \
+      ../examples/puzzles/river/river.qnt
+
+### OK on run river::safety
+
+<!-- !test exit 0 -->
+<!-- !test check river - Run safety -->
+    quint run --invariant=safety ../examples/puzzles/river/river.qnt
+
+### OK on run with the default module
+
+See [#1195](https://github.com/informalsystems/quint/issues/1195).
+
+<!-- !test exit 0 -->
+<!-- !test check run the default module -->
+    quint run ./testFixture/_1050diffName.qnt
+
+### OK on test with the default module
+
+See [#1195](https://github.com/informalsystems/quint/issues/1195).
+
+<!-- !test exit 0 -->
+<!-- !test check test the default module -->
+    quint test ./testFixture/_1050diffName.qnt
+
+### OK on parse 1108
+
+Regression test for [#1108](https://github.com/informalsystems/quint/issues/1108).
+
+<!-- !test check 1108 -->
+    quint parse testFixture/_1052one.qnt

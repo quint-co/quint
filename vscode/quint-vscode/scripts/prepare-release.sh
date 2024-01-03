@@ -29,7 +29,7 @@ git pull origin main;
 QUINT_VERSION=$(cd "$QUINT_DIR" && npm pkg get version | sed 's/"//g')
 
 # See https://stackoverflow.com/a/1885534/1187277
-read -p "Prepare [${bump_increment}] release for vscode plugin targeting quint version [$QUINT_VERSION]? [yY]" -n 1 -r
+read -p "Prepare [${bump_increment}] release for vscode plugin targeting quint version [$QUINT_VERSION]? [yN]" -n 1 -r
 echo
 if ! [[ $REPLY =~ ^[Yy]$ ]]
 then

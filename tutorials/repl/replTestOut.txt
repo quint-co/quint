@@ -1,5 +1,3 @@
-true
-
 4
 Set(2, 4, 6)
 32
@@ -8,18 +6,17 @@ false
 true
 -40
 104
-runtime error: error: Variable temperature is not set
+runtime error: error: [QNT502] Variable temperature is not set
     var temperature: int
     ^^^^^^^^^^^^^^^^^^^^
 
 <undefined value>
-
 true
 20
 false
-{ heatingOn: false, beeping: false, temperature: 20 }
+{ beeping: false, heatingOn: false, temperature: 20 }
 true
-{ heatingOn: true, beeping: false, temperature: 20 }
+{ beeping: false, heatingOn: true, temperature: 20 }
 false
 false
 20
@@ -30,7 +27,7 @@ false
 true
 true
 true
-{ heatingOn: true, beeping: false, temperature: 20 }
+{ beeping: false, heatingOn: true, temperature: 20 }
 true
 21
 true
@@ -41,13 +38,13 @@ true
 true
 true
 true
-{ heatingOn: false, beeping: false, temperature: 21 }
+{ beeping: false, heatingOn: false, temperature: 21 }
 true
 true
-{ heatingOn: false, beeping: false, temperature: 100 }
+{ beeping: false, heatingOn: false, temperature: 100 }
 true
 true
-{ heatingOn: false, beeping: true, temperature: 100 }
+{ beeping: true, heatingOn: false, temperature: 100 }
 true
 true
 true

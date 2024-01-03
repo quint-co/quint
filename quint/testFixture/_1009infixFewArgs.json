@@ -1,1 +1,0 @@
-{"stage":"parsing","warnings":[],"errors":[{"explanation":"extraneous input 'cardinality' expecting {'}', 'const', 'var', 'assume', 'type', 'val', 'def', 'pure', 'action', 'run', 'temporal', 'import', 'export', DOCCOMMENT}","locs":[{"source":"mocked_path/testFixture/_1009infixFewArgs.qnt","start":{"line":2,"col":17,"index":88},"end":{"line":2,"col":27,"index":98}}]}]}

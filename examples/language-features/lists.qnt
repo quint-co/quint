@@ -2,14 +2,14 @@ module lists {
   var n: int
   var l: List[int]
 
-  action Init = all {
+  action init = all {
     n' = 0,
     l' = List(0),
   }
 
   def test(x) = x < 1
 
-  action Next = all {
+  action step = all {
     n' = n + 1,
     l' = l.append(n + 1),
     List(1, 2, 3).length() + l.length() == List(1, 2, 3).concat(l).length(),
@@ -20,8 +20,7 @@ module lists {
     { val idxs = l.indices()
       val elems = l.foldl(Set(), (acc, j) => acc.union(Set(j)))
       idxs == elems },
-    // TODO: Blocked on https://github.com/informalsystems/apalache/issues/2511
-    // l.replaceAt(0, n).head() == n,
+    l.replaceAt(0, n).head() == n,
     l.slice(1, l.length()) == l.tail(),
     // Not currently supported by Apalache
     // <unknown>: Input error (see the manual): Expected a constant integer expression. Found: n E@10:54:45.506

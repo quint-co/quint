@@ -21,17 +21,9 @@ describe('walkEffect', () => {
       }
     }
 
-    const enteredEffects = [
-      "Read[v] & Update['x']",
-      "Temporal['y']",
-      "Update[v, 'x', 'y']",
-    ]
+    const enteredEffects = ["Read[v] & Update['x']", "Temporal['y']", "Update[v, 'x', 'y']"]
 
-    const exitedEffects = [
-      "Read[v] & Update['x']",
-      "Temporal['y']",
-      "Update[v, 'x', 'y']",
-    ]
+    const exitedEffects = ["Read[v] & Update['x']", "Temporal['y']", "Update[v, 'x', 'y']"]
 
     const visitor = new TestVisitor()
     walkEffect(visitor, effect)
@@ -83,13 +75,9 @@ describe('walkEffect', () => {
       }
     }
 
-    const enteredEffects = [
-      'E1',
-    ]
+    const enteredEffects = ['E1']
 
-    const exitedEffects = [
-      'E1',
-    ]
+    const exitedEffects = ['E1']
 
     const visitor = new TestVisitor()
     walkEffect(visitor, effect)

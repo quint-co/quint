@@ -123,7 +123,7 @@ substitution to the context and generate constraints for the result expression.
               Γ ⊢ val n = e1 { e2 }: (t2, s(c1 ∧ c2))
 ```
 
-Whenever we fetch a type scheme from the constant, any quantified variables are
+Whenever we fetch a type scheme from the context, any quantified variables are
 replaced with fresh type variables. The class state is used to track free type
 variables in the context, and operator signatures always assume quantification
 of all names that are not free in the context.

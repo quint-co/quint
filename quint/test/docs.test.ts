@@ -1,22 +1,29 @@
 import { assert } from 'chai'
 import { describe, it } from 'mocha'
 import { produceDocs, toMarkdown } from '../src/docs'
-import { buildModuleWithDefs } from './builders/ir'
+import { buildModuleWithDecls } from './builders/ir'
 import { dedent } from './textUtils'
 
 describe('produceDocs', () => {
-  const module = buildModuleWithDefs([dedent(
-    `/// This is a docstring for foo
+  const module = buildModuleWithDecls([
+    dedent(
+      `/// This is a docstring for foo
     |val foo = 1`
-  )])
+    ),
+  ])
 
   it('produces documentation for all definitions', () => {
     const docs = produceDocs(module)
 
-    assert.sameDeepMembers([...docs.values()], [{
-      label: 'val foo',
-      documentation: 'This is a docstring for foo',
-    }])
+    assert.sameDeepMembers(
+      [...docs.values()],
+      [
+        {
+          label: 'val foo',
+          documentation: 'This is a docstring for foo',
+        },
+      ]
+    )
   })
 })
 

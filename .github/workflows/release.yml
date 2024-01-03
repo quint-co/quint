@@ -13,9 +13,9 @@ jobs:
         working-directory: ./quint
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: "17"
           registry-url: "https://registry.npmjs.org"
@@ -34,7 +34,7 @@ jobs:
         # See https://github.com/softprops/action-gh-release#-external-release-notes
         uses: softprops/action-gh-release@v1
         with:
-          files: ${{ github.workspace }}/release-notes.txt
+          body_path: ${{ github.workspace }}/release-notes.txt
       - name: Publish
         # See https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages#publishing-packages-to-the-npm-registry
         run: npm publish

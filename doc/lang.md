@@ -2,83 +2,87 @@
 
 | Revision | Date       | Author                                                  |
 |:---------|:-----------|:--------------------------------------------------------|
-| 32       | 19.01.2023 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
+| 35       | 12.12.2023 | Igor Konnov, Shon Feder, Jure Kukovec, Gabriela Moreira, Thomas Pani |
 
 This document presents language constructs in the same order as the [summary of
 TLA+](https://lamport.azurewebsites.net/tla/summary.pdf).
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
-**Table of Contents**
+<!-- Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc.go) -->
+Table of Contents
+=================
 
-- [Summary of Quint](#summary-of-quint)
-  - [Identifiers and strings](#identifiers-and-strings)
-  - [Comments](#comments)
-  - [Types](#types)
-    - [Type System 1.2](#type-system-12)
-  - [Modes](#modes)
-  - [Module-level constructs](#module-level-constructs)
-    - [Module definition](#module-definition)
-    - [Constant declarations](#constant-declarations)
-    - [Assumptions](#assumptions)
-    - [Variable definitions](#variable-definitions)
-    - [Operator definitions](#operator-definitions)
-    - [No recursive functions and operators](#no-recursive-functions-and-operators)
-    - [Module instances](#module-instances)
-    - [Type aliases](#type-aliases)
-    - [Theorems](#theorems)
-    - [Imports](#imports)
-  - [Namespaces and imports](#namespaces-and-imports)
-    - [Stateless and stateful modules](#stateless-and-stateful-modules)
-    - [Namespaces](#namespaces)
-    - [Imports](#imports-1)
-  - [Quint expression syntax](#quint-expression-syntax)
-    - [Literals](#literals)
-    - [Names](#names)
-    - [Braces and parentheses](#braces-and-parentheses)
-    - [Lambdas (aka Anonymous Operators)](#lambdas-aka-anonymous-operators)
-    - [Two forms of operator application](#two-forms-of-operator-application)
-    - [Boolean operators and equality](#boolean-operators-and-equality)
-    - [Block disjunctions](#block-disjunctions)
-    - [Block conjunctions](#block-conjunctions)
-    - [Flow operators](#flow-operators)
-      - [Condition](#condition)
-      - [Cases (removed)](#cases-removed)
-    - [Sets](#sets)
-      - [Set constructor](#set-constructor)
-      - [Non-deterministic choice](#non-deterministic-choice)
-      - [Other set operators](#other-set-operators)
-    - [Maps (aka Functions)](#maps-aka-functions)
-    - [Records](#records)
-    - [Discriminated unions](#discriminated-unions)
-    - [Tuples](#tuples)
-    - [Lists (aka Sequences)](#lists-aka-sequences)
-    - [Integers](#integers)
-    - [Nested operator definitions](#nested-operator-definitions)
-    - [Operators on actions](#operators-on-actions)
-      - [Delayed assignment](#delayed-assignment)
-      - [Non-deterministic choice](#non-deterministic-choice-1)
-      - [Assert](#assert)
-    - [Runs](#runs)
-      - [Then](#then)
-      - [Repeated](#repeated)
-      - [Fail](#fail)
-    - [Temporal operators](#temporal-operators)
-      - [Always](#always)
-      - [Eventually](#eventually)
-      - [Next](#next)
-      - [Unchanged (removed)](#unchanged-removed)
-      - [OrKeep](#orkeep)
-      - [MustChange](#mustchange)
-      - [Enabled](#enabled)
-      - [Fairness](#fairness)
-      - [Other temporal operators](#other-temporal-operators)
-    - [Unbounded quantifiers](#unbounded-quantifiers)
-  - [Instances](#instances)
-    - [Common case 1](#common-case-1)
-    - [Common case 2](#common-case-2)
-    - [The general case](#the-general-case)
-    - [No anonymous instances](#no-anonymous-instances)
-    - [Discussion](#discussion)
+* [Summary of Quint](#summary-of-quint)
+  * [Identifiers and strings](#identifiers-and-strings)
+  * [Comments](#comments)
+  * [Types](#types)
+    * [Type System 1\.2](#type-system-12)
+  * [Modes](#modes)
+  * [Module\-level constructs](#module-level-constructs)
+    * [Module definition](#module-definition)
+    * [Constant declarations](#constant-declarations)
+    * [Assumptions](#assumptions)
+    * [Variable definitions](#variable-definitions)
+    * [Operator definitions](#operator-definitions)
+    * [No recursive functions and operators](#no-recursive-functions-and-operators)
+    * [Module instances](#module-instances)
+    * [Type aliases](#type-aliases)
+    * [Theorems](#theorems)
+    * [Imports](#imports)
+  * [Namespaces and imports](#namespaces-and-imports)
+    * [Stateless and stateful modules](#stateless-and-stateful-modules)
+    * [Namespaces](#namespaces)
+    * [Imports](#imports-1)
+  * [Quint expression syntax](#quint-expression-syntax)
+    * [Literals](#literals)
+    * [Names](#names)
+    * [Braces and parentheses](#braces-and-parentheses)
+    * [Lambdas (aka Anonymous Operators)](#lambdas-aka-anonymous-operators)
+    * [Two forms of operator application](#two-forms-of-operator-application)
+    * [Boolean operators and equality](#boolean-operators-and-equality)
+    * [Block disjunctions](#block-disjunctions)
+    * [Block conjunctions](#block-conjunctions)
+    * [Flow operators](#flow-operators)
+      * [Condition](#condition)
+      * [Cases (removed)](#cases-removed)
+    * [Sets](#sets)
+      * [Set constructor](#set-constructor)
+      * [Non\-deterministic choice](#non-deterministic-choice)
+      * [Other set operators](#other-set-operators)
+    * [Maps (aka Functions)](#maps-aka-functions)
+    * [Records](#records)
+    * [Tuples](#tuples)
+    * [Sum Types](#sum-types)
+    * [Lists (aka Sequences)](#lists-aka-sequences)
+    * [Integers](#integers)
+    * [Nested operator definitions](#nested-operator-definitions)
+    * [Operators on actions](#operators-on-actions)
+      * [Delayed assignment](#delayed-assignment)
+      * [Non\-deterministic choice](#non-deterministic-choice-1)
+      * [Assert](#assert)
+    * [Runs](#runs)
+      * [Then](#then)
+      * [Reps](#reps)
+        * [Example](#example)
+      * [Expect](#expect)
+      * [Fail](#fail)
+    * [Temporal operators](#temporal-operators)
+      * [Always](#always)
+      * [Eventually](#eventually)
+      * [Next](#next)
+      * [Unchanged (removed)](#unchanged-removed)
+      * [OrKeep](#orkeep)
+      * [MustChange](#mustchange)
+      * [Enabled](#enabled)
+      * [Fairness](#fairness)
+      * [Other temporal operators](#other-temporal-operators)
+    * [Unbounded quantifiers](#unbounded-quantifiers)
+  * [Instances](#instances)
+    * [Common case 1](#common-case-1)
+    * [Common case 2](#common-case-2)
+    * [The general case](#the-general-case)
+    * [No anonymous instances](#no-anonymous-instances)
+    * [Discussion](#discussion)
 
 <!-- markdown-toc end -->
 
@@ -123,7 +127,7 @@ Multi-line comments:
  */
 ```
 
-<a name="types"/>
+<a name="types"></a>
 
 ## Types
 
@@ -139,8 +143,7 @@ expressions).
 
 ### Type System 1.2
 
-This is the same type system as in Apalache, except we have added discriminated
-unions:
+This is the same type system as in Apalache:
 
 A type is one of the following:
 
@@ -164,13 +167,8 @@ A type is one of the following:
  - Operator: `(T_1, ..., T_n) => R` for `n >= 0` argument types `T_1, ..., T_n`
    and result type `R`.
 
- - Discriminated union:
-    ```
-       | { tag: string_1, <ident>: T_1_1, ..., <ident>: T_1_n_1}
-       ...
-       | { tag: string_k, <ident>: T_k_1, ..., <ident>: T_k_n_k}
-    ```
-    for `n >= 1` types `T_1_1`, ..., `T_k_n_k`.
+ - Sum Types: `type T = L_1(T_1) | ... | L_n(T_n) ` for `n >= 1`, argument types
+   `T_1`, ..., `T_n`, and a type alais `T`.
 
  - Type in parentheses: `(T)` for a type `T`.
 
@@ -178,15 +176,13 @@ A type is one of the following:
 It is often convenient to declare a type alias. You can use `type` to define
 an alias inside a module definition. For instance:
 
-```
-type STR_OPTION =
-    | { tag: "none" }
-    | { tag: "some", value: str }
+```bluespec
+type Temperature = int
 ```
 
 A type identifier can also introduce an uninterpreted type by defining a type without any constructors for values of that type:
 
-```
+```bluespec
 type MY_TYPE
 ```
 
@@ -235,18 +231,10 @@ This is intentional: We do not want to mix actions with temporal formulas.
 
 A module definition is introduced like follows:
 
-```
+```bluespec
+// module definition
 module Foo {
-  // module definitions
-
-  module Bar {
-    // definitions of the nested module
-
-    module Baz {
-      // Yet another level of nesting.
-      // More definitions.
-    }
-  }
+  // declarations
 }
 ```
 
@@ -258,18 +246,15 @@ module Foo {
 "}"
 ```
 
-A single file *should* contain one top-level module, though there is no limit
-on the number of nested modules and their depth of nesting. To ease module
-lookup, the name of the top-level module *should* match the file name. For
-example, a file `Orange.tla` should contain `module Orange { ... }`. This is
-not a strict requirement. You have to follow it only, if you are using multiple
-files.
+A single file *should* contain one top-level module, though there is no limit on
+the number of top-level modules that can be included in a file. Modules cannot
+be nested.  To ease module lookup, the name of the top-level module *should*
+match the file name. For example, a file `Orange.qnt` should contain `module
+Orange { ... }`.  This is not a strict requirement. You have to follow it only,
+if you are using multiple modules in a file.
 
-There is another way to define a module, see [Instances](#instances).
-
-**WARNING:** We are redesigning nested modules,
-see [#496](https://github.com/informalsystems/quint/discussions/496). If you are
-starting with the language, wait a bit before using nested modules.
+There is a way to instantiate modules with different parameters, see
+[Instances](#instances).
 
 ### Constant declarations
 
@@ -345,25 +330,25 @@ The operator names should not clash with the names of other definitions in the
 module scope. Importantly, there are **no recursive operators** (though you can
 fold over a list or a set, see below).
 
-```
+```bluespec
 // a static constant value, which is not changing over time
 pure val Nodes: Set[int] = 1 to 10
 
 // a two-argument operator that returns its first argument, independent of state
-pure def fst(x, y): ((a, b) => a) =
+pure def fst(x: a, y: b): a =
     x
 
 // the maximum operator
-pure def max(x, y): (int, int) => int =
+pure def max(x: int, y: int): int =
     if (x > y) x else y
 
 // A definition over `x` that returns a Boolean result.
 // In logic, such definition is usually called a predicate.
-pure def isPositive(x): int => bool =
+pure def isPositive(x: int): bool =
     x > 0
 
 // a higher-order operator that accepts another operator as its first argument
-pure def F(G, x): ((a => b, a) => b) = G(x)
+pure def F(G: a => b, x: a): b = G(x)
 
 // introduce a variable to define stateful definitions
 var timer: int
@@ -395,7 +380,7 @@ temporal neverNegative =
 
 ```bnf
 ("val" | "def" | "pure" "val" | "pure" "def" | "action" | "temporal")
-    <identifier>["(" <identifier> ("," ..."," <identifier>)* ")"] [":" <type>]
+    <identifier>["(" <identifier> [":" <type>] ("," ..."," <identifier> [":" <type>])* ")"] [":" <type>]
       "=" <expr> [";"]
 ```
 
@@ -412,7 +397,7 @@ The following table defines this precisely.
 ### No recursive functions and operators
 
 We've decided against having recursive operators and functions in the language.
-The practical use cases can be expressed with `map`, `filter`, and `fold`.
+The practical use cases can be expressed with `map`, `filter`, `fold`, and `foldl`.
 
 ### Module instances
 
@@ -421,18 +406,20 @@ Similar to `INSTANCE` in TLA+, we can define module instances.
 *Example:*
 
 ```scala
-// an instance of Voting that has the name "V"
-module V = Voting(Value = Set(0, 1))
+// An instance of Voting:
+//  - It copies all definitions of Voting into a new namespace V
+//  - It replaces Value with Set(0, 1)
+import Voting(Value = Set(0, 1)) as V
 
-// the names of V are accessed via "."
-val MyValues = V.Value
+// the names of V are accessed via "::"
+val MyValues = V::Value
 ```
 
 *Grammar*:
 ```bnf
-"module" <identifier> "="
+"import"
   <identifier> "("
-    [<identifier> "=" <identifier> ("," <identifier> "=" <identifier>)*] ["," "*"]
+    [<identifier> "=" <identifier> ("," <identifier> "=" <identifier>)*] ["," "*"] ["as" <identifier>] ["from" <string>]
   ")"
 ```
 
@@ -463,25 +450,17 @@ There are no theorems. You can write them in TLA+ and prove them with TLAPS.
 
 See [Namespaces and imports](#namespaces).
 
-<a name="namespaces"/>
+<a name="namespaces"></a>
 
 ## Namespaces and imports
 
 The topic of modules, namespaces, and instances is extremely obfuscated in
-TLA+, for no obvious reason. In Quint, we follow a simple approach that would not
+TLA+, for no obvious reason. In Quint, we follow a simple approach that should not
 surprise anyone, who knows modern programming languages.
 
 We are using Quint expressions in the examples in this section. It is probably a
 good idea to skip this section on the first read and read about [Quint expression
 syntax](#expressions) first.
-
-### Stateless and stateful modules
-
-We distinguish between stateless and stateful modules. A stateful module has at
-least one constant or variable declaration.  All other modules are stateless.
-This is an important distinction.  Definitions of stateless modules may be
-accessed via the dot-notation and imported, whereas stateful modules must be
-instantiated before they can be accessed.
 
 ### Namespaces
 
@@ -503,59 +482,49 @@ module Foo {
 In our example, module `Foo` has four names in its namespace: `N`, `x`,
 `Init`, and `Next`.
 
-A nested module defines its own namespace, which extends the namespace of the
-outer module:
+Quint does not allow for nested modules. However, you can mimick nested
+namespaces by using `::`. For example:
 
-```scala
-module Outer {
+```bluespec
+module Top {
   var x: int
 
   def xPlus(z) = x + z
 
-  module Inner {
-    val x2 = x + x
-  }
+  val Inner::x2 = x + x
 
-  val inv =
-    (Inner.x2 - x == x)
+  val inv = (Inner::x2 - x == x)
 }
 ```
 
-In the above example, the module `Outer` has the following names in its name
-space: `x`, `xPlus`, `inv`, and `Inner`, whereas the module `Inner` contains
-the names `x2` and the names defined in its parent modules: `x`, `xPlus`, and
-`inv`. The module `Inner` is *stateless*, so the module `Outer` may access the
-definitions of `Inner` via the dot-notation, e.g., `Inner.x2`.
+Note that in the above example, `Inner::x2` is treated as a qualified identifier, that is, it consists of the prefix `Inner` and the name `x2`.
 
-**WARNING:** We are redesigning nested modules,
-see [#496](https://github.com/informalsystems/quint/discussions/496). If you are
-starting with the language, wait a bit before using nested modules.
+*No collisions.* There must be no name collisions between names.  Shadowing of a name is not allowed. For example:
 
-*No collisions.* There must be no name collisions between child modules and parent
-modules.  Shadowing of a name is not allowed. For example:
-
-```scala
+```bluespec
 module OS {
   var clock: int
 
-  module Process {
-    var clock: int
-    //  ^^^^^ error: 'clock' is already defined in 'OS'
-  }
+  def increase(clock: int) = clock + 1
 }
 ```
 
-One solution to the above problem is to define both modules `OS` and `Process`
-at the same level, either in separate files, or inside another module.
+The Quint parser produces the following error message:
+
+```
+error: [QNT101] Conflicting definitions found for name 'clock' in module 'OS'
+4:   def increase(clock) = clock + 1
+                  ^^^^^
+```
 
 *No order.* In contrast to TLA+, namespaces are not ordered. It is perfectly
 fine to write out-of-order definitions, like in many programming languages:
 
-```scala
+```bluespec
 module outOfOrder {
   def positive(x) = max(x, 0)
 
-  def max(x, y) = x > y ? x : y
+  def max(x, y) = if (x > y) x else y
 }
 ```
 
@@ -565,16 +534,15 @@ Quint is not Fashion Police.
 
 ### Imports
 
-As it may be tedious to access definitions via the dot-notation, Quint supports
-name imports:
+Similar to mainstream programming languages, Quint supports name imports:
 
-```scala
+```bluespec
+module Math {
+  def sqr(x) = x * x
+  def pow(x, y) = x^y
+}
+
 module Imports {
-  module Math {
-    def sqr(x) = x * x
-    def pow(x, y) = x^y
-  }
-
   // import 'pow' from Math
   import Math.pow
 
@@ -583,19 +551,18 @@ module Imports {
 ```
 
 In the above example, the name `pow` is imported in the scope of the module
-`Imports`. As a result, definitions in `Imports` may refer to `pow`, which is
-just a short-hand for `Math.pow`. As you would expect, imports are not allowed
-to introduce name collisions.
+`Imports`. As a result, definitions in `Imports` may refer to `pow`. As you
+would expect, imports are not allowed to introduce name collisions.
 
 To avoid writing too many import statements, you can use `*`. For example:
 
-```scala
-module ImportAll {
-  module Math {
-    def sqr(x) = x * x
-    def pow(x, y) = x^y
-  }
+```bluespec
+module Math {
+  def sqr(x) = x * x
+  def pow(x, y) = x^y
+}
 
+module ImportAll {
   // import all names from Math
   import Math.*
 
@@ -604,27 +571,55 @@ module ImportAll {
 }
 ```
 
-*No export.* It is important to know that `import` does not introduce any
-definitions in the module that uses `import`. Hence, the following example
-produces a lookup error:
+*No re-export by default.* It is important to know that `import` does not automatically introduce any definitions in the module that uses `import`. Hence, the following example produces a lookup error:
 
-```scala
-module NoExport {
-  module MiddleMan {
-    module English {
-      val greeting = "hello"
-    }
+```bluespec
+module A {
+  pure val greeting = "hello"
+}
 
-    import English.*
-  }
+module B {
+  import A.*
+}
 
-  def greet(name) = [ MiddleMan.greeting, name ]
-  //                  ^^^^^^^^^^^^^^^^^^ error: 'MiddleMan.greeting' not found in 'NoExport'
+module C {
+  import B.*
+
+  def greet(name) = [ greeting, name ]
 }
 ```
 
-Hence, `import English.*` is working similar to `LOCAL INSTANCE English` of
-TLA+.
+Quint reports an error on the above specification:
+
+```
+error: [QNT404] Name 'greeting' not found
+12:   def greet(name) = [ greeting, name ]
+                          ^^^^^^^^
+```
+
+Hence, `import A.*` in the module `B` is working similar to `LOCAL INSTANCE
+English` of TLA+.
+
+*Re-export.* Similar to TypeScript, we can re-export imported definitions via `export`. Here is the way to fix the above example:
+
+```bluespec
+module A {
+  pure val greeting = "hello"
+}
+
+module B {
+  import A.*
+  export A.*
+  // in the future, we will simply write:
+  // export *
+}
+
+module C {
+  import B.*
+
+  def greet(name) = [ greeting, name ]
+}
+```
 
 *No hiding.* TLA allows the user to add `LOCAL` in front of an operator
 definition or an instance. Here is a TLA+ example:
@@ -637,28 +632,36 @@ G(x) == { F(x) }
 ==========================
 ```
 
-In the above example, the definition `F` is auxiliary to `G`. In Quint, we do not
-hide definitions. If you want to indicate to the users of your module, if there
-are any, that they should not access some private definitions, you may hide those
-definitions in a nested module that start with the underscore:
+In the above example, the definition `F` is auxiliary to `G`. In Quint, we do
+not hide definitions. However, if you really want to do that, `import ` allows
+you to model this behavior via a proxy module:
 
-```scala
-module Local {
-  var y: int
-  def G(x) = Set(_local.F(x))
+```bluespec
+module A::Impl {
+  pure val secretNum = 123
+}
 
-  module _local {
-    def F(x) = Set(x, y)
-  }
+module A {
+  import A::Impl.*
+
+  pure val publicNum = secretNum * secretNum + 1
+}
+
+module C {
+  import A.*
+
+  def compute(n) = publicNum * 2
+
+  // the definition below would not work
+  // def error(n) = secretNum * 2
 }
 ```
 
-By convention, a module should not access a submodule of another module, if the
-name of the submodule starts with an underscore. This is only a convention. If
-you do that, a Quint parser may issue a warning, but it will not crash.
+As a specification writer, you can always import `secretNum` from `A::Impl`. The
+only purpose of this pattern is to avoid copying unnecessary definitions, not to
+keep secrets.
 
-
-<a name="expressions"/>
+<a name="expressions"></a>
 
 ## Quint expression syntax
 
@@ -735,7 +738,7 @@ Here is the list of names that are normally used in expressions:
  - Names of state variables, e.g., `clock` in the definitions of `distance`,
    `init`, and `next`.
 
-<a name="braceAndParen"/>
+<a name="braceAndParen"></a>
 
 ### Braces and parentheses
 
@@ -781,6 +784,23 @@ _ => e
 
 Note that lambdas can be only passed as arguments to other operators. They
 cannot be freely assigned to values or returned as a result of an operator.
+
+**Note:** There is a difference between a lambda expression of the form
+`(x, y) => e1` and a lambda expression of the form `((x, y)) => e2`.
+The former is a two-argument lambda operator, whereas the latter is a
+single-argument lambda operator that accepts a pair as its first argument.
+The latter form `((x, y)) => e2` is equivalent to:
+
+```bluespec
+(t =>
+  val x = t._1
+  val y = t._2
+  e2
+)
+```
+
+As a result, the form `((x_1, ..., x_n)) => e_n` is syntax sugar for tuple
+unpacking, as shown in the above example.
 
 ### Two forms of operator application
 
@@ -1064,7 +1084,7 @@ notation would not distract you too much.
 **Discussion.** The earlier versions contained an alternative syntax `'{ e_1,
 ..., e_n }`. After receiving the feedback, we have left just one constructor.
 
-<a name="nondeterministic"/>
+<a name="nondeterministic"></a>
 
 #### Non-deterministic choice
 
@@ -1135,9 +1155,6 @@ e.in(S)
 in(e, S)
 S.contains(e)
 contains(S, e)
-// set non-membership: e \notin S
-e.notin(S)
-notin(e, S)
 // union: S \union T
 S.union(T)
 union(S, T)
@@ -1251,7 +1268,7 @@ put(f, k, v)
 Rec(f_1, e_1, ..., f_n, e_n)
 // Set of records: [ f_1: S_1, ..., f_n: S_n ].
 // No operator for it. Use a set comprehension:
-tuples(S_1, ..., S_n).map(a_1, ..., a_n => { f_1: a_1, ..., f_n: a_n })
+tuples(S_1, ..., S_n).map((a_1, ..., a_n) => { f_1: a_1, ..., f_n: a_n })
 // access a record field: r.fld
 r.fld           // both r and fld are identifiers
 field(r, "fld") // r is an identifier, "fld" is a string literal
@@ -1259,142 +1276,18 @@ field(r, "fld") // r is an identifier, "fld" is a string literal
 r.fieldNames()
 fieldNames(r)
 // record update: [r EXCEPT !.f = e]
-r.with(f, e)
-with(r, f, e)
+r.with("f", e)
+with(r, "f", e)
+// special syntax for [r EXCEPT !.f1 = e1, !fN = eN], also works for n fields
+{ f1: e1, fN: eN, ...r }
 ```
 
 Note that we are using the syntax `{ name_1: value_1, ..., name_n: value_n }`
 for records, similar to Python and JavaScript. We have removed the syntax for
 sets of records: (1) It often confuses beginners, (2) It can be expressed with
-`map` and a record constructor. Moreover, sets of records do not combine well
-with discriminated unions.
+`map` and a record constructor.
 
 *Mode:* Stateless, State. Other modes are not allowed.
-
-### Discriminated unions
-
-**WARNING:** We are redesigning discriminated unions, see
-[#539](https://github.com/informalsystems/quint/issues/539). As they are not
-fully implemented, please avoid using discriminated unions for now.
-
-Quint has provides the user with special syntax for constructing and destructing
-discriminated unions.  For the type syntax of discriminated unions, see
-[Types](#types).
-
-**Constructors.** Construct a tagged record by using the record syntax, e.g.:
-
-```scala
-  { tag: "Cat", name: "Ours", year: 2019 }
-```
-
-Note that the above record has the field `tag`. Hence, this record is assigned
-a union type of one element:
-
-```scala
-type CAT_TYPE =
-  | { tag: "Cat", name: str, year: int }
-```
-
-Records of different union types may be mixed in a single set. For example:
-
-```scala
-val Entries =
-  Set(
-    { tag: "Cat", name: "Ours", year: 2019  },
-    { tag: "Cat", name: "Murka", year: 1950 },
-    { tag: "Date", day: 16, month: 11, year: 2021 }
-  )
-```
-
-In the above example, the set elements have the following union type:
-
-```scala
-type ENTRY_TYPE =
-  | { tag: "Cat", name: str, year: int }
-  | { tag: "Date", day: int, month: int, year: int }
-```
-
-When we construct the individual records, they still have singleton union
-types.  For instance, the entry  `{ tag: "Date", day: 16, month: 11, year: 2021
-}` has the type:
-
-```scala
-type DATE_TYPE =
-  { tag: "Date", day: int, month: int, year: int }
-```
-
-**Set filters.** The most common pattern over discriminated union is to filter
-set elements by their tag. Using the above definition of `Entries`, we can
-filter it as follows:
-
-```scala
-Entries.filter(e => e.tag == "Cat")
-```
-
-As expected from the semantics of `filter`, the above set is equal to:
-
-```
-Set(
-  { tag: "Cat", name: "Ours", year: 2019  },
-  { tag: "Cat", name: "Murka", year: 1950 }
-)
-```
-
-Importantly, its elements have the type:
-
-```scala
-type CAT_TYPE =
-  | { tag: "Cat", name: str, year: int }
-```
-
-**Destructors.** Sometimes, we have a value of a union type that is not stored
-in a set. For this case, Quint has the union destructor syntax.  For example,
-given an entry from `Entries`, we can compute the predicate `isValid` by case
-distinction over tags:
-
-```scala
-pure def isValid(entry): ENTRY_TYPE => bool =
-  entry match
-     | "Cat": cat =>
-       name != "" and cat.year > 0
-     | "Date": date =>
-       date.day.in(1 to 31) and date.month.in(1.to(12)) and date.year > 0
-```
-
-In the above example, the names `cat` and `date` have the singleton union types
-of `CAT_TYPE` and `DATE_TYPE`, respectively. Note that the expressions after
-the tag name (e.g., `"Cat":` and `"Date":`) follow the syntax of
-single-argument lambda expressions. As a result, we can use `_` as a name,
-which means that the name is omitted.
-
-Match expressions require all possible values of `tag` to be enumerated. This is
-ensured by the type checker.
-
-We do not introduce parentheses in the syntax of `match`. If you feel uncomfortable
-about it, wrap the whole match-expression with `(...)`.
-
-*Grammar*:
-
-```bnf
-  expr "match" ("|" string ":" (identifier | "_") "=>" expr)+
-```
-
-*Normal form*: Consider the match operator:
-
-```scala
-  ex match
-    | tag_1: x_1 => ex_1
-    ...
-    | tag_n: x_n => ex_n
-```
-
-Its normal form is `unionMatch(ex, tag_1, (x_1 => ex_1), ..., (x_n => ex_n))`.
-
-*Mode:* Stateless, State. Other modes are not allowed.
-
-**Discussion.** In TLA+, there is no separation between discriminated unions
-and records. It is common to use tagged records to distinguish between different
-cases of records. Quint makes this pattern explicit.
 
 ### Tuples
 
@@ -1426,6 +1319,46 @@ the new field. It is not likely that you will have tuples that have a lot
 of items.
 
 *Mode:* Stateless, State. Other modes are not allowed.
+
+### Sum Types
+
+Exclusive disjunction of different possible data types is expressed via sum
+types, also known as tagged unions, discriminated unions, or variants. TLA+,
+being untyped, doesn't have a strict correlate, but it is common to use records
+with a discriminator field for this purpose.
+
+```scala
+// Declaration
+type T = L_1(T_1) | ... | L_n(T_n)
+// variant constructor
+// where
+//  - 1 =< k <= n for the declared sum type's variants L_1(T_1) | ... | L_n(T_n)
+//  - x : T_k
+L_k(x)
+variant("L_k", x)
+// variant eliminator: "match expression"
+// where 
+//  - x_1 : T_1, ..., x_n : T_n
+//  - e_1 : S, ..., e_n : S, and S will be the resulting type of the expression
+match L_k(x) {
+  | L_1(x_1) => e_1
+  | ...
+  | L_n(x_n) => e_n
+}
+matchVariant(L_k(x), "L_1", (x_1) => e_1, ..., (x_n) => e_n)
+```
+
+E.g., to form and operate on a heterogeneous set containing both integer and
+string values, you might find:
+
+```scala
+type Elem = S(str) | I(int)
+val mySet: Set[Elem] =  Set(S("Foo"), I(1), S("Bar"), I(2))
+val transformMySet: Set[Str] = mySet.map(e => match e { S(s) => s | I(_) => "An int"})
+```
+
+*Mode:* Stateless, State. Other modes are not allowed.
+
 
 ### Lists (aka Sequences)
 
@@ -1725,13 +1658,19 @@ then(A, B)
 
 The semantics of this operator is as follows. When `A.then(B)` is applied to a
 state `s_1`, the operator computes a next state `s_2` of `s_1` by applying
-action `A`, if such a state exists. If `A` returns `true`, then the operator
-`A.then(B)` computes a next state `s_3` of `s_2` by applying action `B`, if
-such a state exists. If `B` returns true, then the operator `A.then(B)` returns
-`true`, the old state is equal to `s_1`, and the new state is equal to `s_3`.
-In all other cases, the operator returns `false`.
+action `A`, if such a state exists. Depending on the result of `A`, two scenarios
+are possible:
 
-This operator is equivalent to `A \cdot B` of TLA+.
+ - When `A` returns `true`, then the operator `A.then(B)` computes a next state
+ `s_3` of `s_2` by applying action `B`, if such a state exists.
+  If `B` returns true, then the operator `A.then(B)` returns
+  `true`, the old state is equal to `s_1`, and the new state is equal to `s_3`.
+  Otherwise, the operator `A.then(B)` returns `false`.
+ 
+ - If `A` returns `false`, then it is impossible to continue. A runtime error
+  should be reported.
+
+This operator is equivalent to `A \cdot B` of TLA+ (except for the runtime errors).
 
 **Example.** Consider the specification `counters`:
 
@@ -1784,30 +1723,26 @@ that start with `Init` and evaluate `Next` four times in a row.
 
 *Mode:* Run.
 
-#### Repeated
+#### Reps
 
-The operator `repeated` has the following syntax:
-
-```scala
-A.repeated(n)
-repeated(A, n)
-```
+The expressions `n.reps(i => A(i))` or `n.reps(A)` repeats an action `A`, `n` times.
+The iteration number, `i`, starts with 0 and is passed as an argument of `A`.
+As actions are usually not parameterized by the iteration number,
+the most common form looks like: `n.reps(_ => A)`.
 
 The semantics of this operator is as follows:
 
- - When `n <= 0`, this operator is equivalent to `unchanged`.
- - When `n = 1`, `a.repeated(n)` is equivalent to `a`.
- - When `n > 1`, `a.repeated(a)`, is equivalent to `a.then(a.repeated(n - 1))`.
+ - When `n <= 0`, this operator does not change the state.
+ - When `n = 1`, `n.reps(A)` is equivalent to `A(0)`.
+ - When `n > 1`, `n.reps(A)`, is equivalent to
+   `A(0).then((n - 1).reps(i => A(1 + i)))`.
 
-Note that the operator `A.repeated(n)` applies `A` exactly `n` times (when `n` is
-non-negative). If you want to repeat `A` from `i` to `j` times, you can combine
-it with `orKeep` as follows:
-
-```scala
-a.repeated(i).then((a.orKeep(vars)).repeated(j - i))
+##### Example
+  
+```bluespec
+var x: int
+run test = (x' = 0).then(3.reps(_ => x' = x + 1)).then(assert(x == 3))
 ```
-
-See the description of [orKeep](#OrKeep) below.
 
 *Mode:* Run.
 
@@ -1823,6 +1758,40 @@ fail(A)
 This operator returns `true` if and only if action `A` returns `false`.
 The operator `fail` is useful for writing runs that expect an action
 to be disabled.
+
+*Mode:* Run.
+
+#### Expect
+
+The operator `expect` has the following syntax:
+
+```scala
+A.expect(P)
+expect(A, P)
+```
+
+The left-hand side `A` must be an action or a run. The right-hand side `P` must
+be a non-action Boolean expression.
+
+The semantics of this operator is as follows:
+
+- Evaluate action `A`:
+  - When `A`'s result is `false`, emit a runtime error.
+  - When `A`'s result is `true`:
+    - Commit the variable updates.
+    - Evaluate `P`:
+      - If `P` evaluates to `false`, emit a runtime error (similar to `assert`).
+      - If `P` evaluates to `true`, undo the updates back to the state where we
+        were after `A` was applied.
+
+##### Example
+
+```bluespec
+var n: int
+run expectConditionOkTest = (n' = 0).then(n' = 3).expect(n == 3)
+run expectConditionFailsTest = (n' = 0).then(n' = 3).expect(n == 4)
+run expectRunFailsTest = (n' = 0).then(all { n == 2, n' = 3 }).expect(n == 4)
+```
 
 *Mode:* Run.
 
@@ -2007,154 +1976,44 @@ operators quantify over the constants of the first-order universe.
 
 *Mode:* Stateless, State, Temporal. No Action mode.
 
-<a name="instances"/>
+<a name="instances"></a>
 
 ## Instances
 
-**WARNING:** Instances are not supported yet. See
-[#528](https://github.com/informalsystems/quint/issues/528) and
-[#237](https://github.com/informalsystems/quint/issues/237).
+Given a stateful module `M`, we can turn `M` into another module `I` by
+rewriting constants `M` and generating new, namespaced variables. In this case,
+module `I` is called an instance of `M`.
 
-Given a stateful module `M`, we can turn `M` into another module `I`
-by rewriting constants and variables of `M`. In this case, module `I` is called
-an instance of `M`.
-
-### Common case 1
+### Common case
 
 The most common example is shown below:
 
-```scala
-// in Voting.qnt
-  module Voting {
-    const Value: Set[int]
-    const Acceptor: Set[str]
-    const Quorum: Set[Set[str]]
-    // no const, no var below
-    // ...
-    val chosen = Value.filter(v => Ballot exists (b => ChosenAt(b, v)))
-    // ...
-  }
+```bluespec
+module Voting {
+  const Value: Set[int]
+  const Acceptor: Set[str]
+  const Quorum: Set[Set[str]]
+  // no const, no var below
+  // ...
+  val chosen = Value.filter(v => Ballot.exists(b => ChosenAt(b, v)))
+  // ...
+}
 
-// in MC.qnt
-  module MC {
-    val Acceptor = Set("p1", "p2", "p3")
-    val Quorum = MC_Acceptor.powerset.filter(Q => Q.size > 1)
+module MC {
+  val Acceptor = Set("p1", "p2", "p3")
+  val Quorum = Acceptor.powerset.filter(Q => Q.size > 1)
 
-    // an instance of Voting that has the name "V"
-    module V = Voting(Value = Set(0, 1), Acceptor = Acceptor, Quorum = Quorum)
-    // ...
-  }
+  // an new instance of Voting that has the name "V"
+  import Voting(Value = Set(0, 1), Acceptor = Acceptor, Quorum = Quorum) as V
+  // ...
+}
 ```
 
 In the above example, module `V` is produced from the module `Voting` by replacing
 every occurrence of `Value`, `Acceptor`, and `Quorum` with `Set(0, 1)`, `Acceptor`,
 and `Quorum`, respectively.
 
-We can shorten identity substitutions `Acceptor = Acceptor` and `Quorum =
-Quorum` by writing:
-
-```scala
-    module V = Voting(Value = Set(0, 1), *)
-```
-
-### Common case 2
-
-Another common example is to rename variables:
-
-```scala
-module root {
-  module XY {
-    var x: int
-    var y: int
-
-    action Init = all {
-      x' = 0,
-      y' = 0
-    }
-
-    action Next = all {
-      x' = x + 1,
-      y' = y + 2
-    }
-  }
-
-  var a: int
-  var b: int
-
-  module AB = XY(x = a, y = b)
-}
-```
-
-In this case, our substitution is a bijection: No two variables are mapped on
-the same variable. Hence, the module `AB` will look like follows:
-
-```scala
-  module AB = {
-    action Init = all {
-      a' = 0,
-      b' = 0
-    }
-
-    action Next = all {
-      a' = a + 1,
-      b' = b + 2
-    }
-  }
-```
-
-### The general case
-
-We may instantiate a module by substituting *state variables* with expressions
-over other variables. Consider the following example:
-
-```scala
-module root {
-  module Counters {
-    var x: int
-    var y: int
-
-    action Init = all {
-      x' = 1,
-      y' = 0
-    }
-
-    action Next = all {
-      x' = x + 1,
-      y' = x
-    }
-  }
-
-  module MyCounters {
-    var x: int
-
-    module C = Counters(x = x, y = x - 1)
-  }
-}
-```
-
-In the above example, we produce the stateless module `C` from the stateful
-module `Counters` by replacing `x` with `x` and `y` with `x - 1`. How is that
-even possible in the presence of updates? Here is how `module C` would look
-like after instantiation:
-
-```scala
-module C = {
-  temporal Init =
-    (x == 1) and (x - 1 == 0)
-
-  temporal Next =
-    (next(x) == x + 1) and (next(x - 1) == x)
-}
-```
-
-The trick here is that since an expression like `x - 1 = x` does not have
-meaningful semantics, we upgrade all actions to temporal formulas and use
-`next(e1) = e2` instead of `e1 = e2`. At this point, we are in the realm of
-expressions that look very much like TLA+ formulas, just using a slightly
-different syntax. Most likely, we just want to get `C` transpiled into TLA+ and
-write some proofs in TLAPS.
-
-### No anonymous instances
+### Anonymous instances
 
 TLA+ allows one to instantiate a module and inject its definitions directly in
 the namespace of another module, e.g.:
@@ -2171,29 +2030,23 @@ INSTANCE Bar WITH x = z
 =========================
 ```
 
-Quint does not provide syntax sugar for doing that. If you want to achieve
-something similar in Quint, then you can use `import` as follows:
+Quint has similar syntax sugar for doing that:
 
-```scala
-// Bar.qnt
+```bluespec
 module Bar {
-  var x: int
-  def A(y) = x + y
+  const c: int
+  def A(y) = c + y
 }
 
-// Foo.qnt
 module Foo {
-  var z: int
-
-  module _FooBar = Bar(x = z)
-  import _FooBar.*
+  import Bar(c = 0).*
+  
+  // In the future, we would be able to
+  // re-export all definitions from `FooBar` as if they belonged to `Foo`
+  //
+  // export *
 }
 ```
-
-Our solution is not exactly equivalent to the TLA+ specification: We had to
-explicitly introduce the name `_FooBar` for the module. By convention, other
-modules should not access names that start with underscore (`_`). Should this
-happen, a Quint parser may issue a warning.
 
 ### Discussion
 

@@ -1,19 +1,16 @@
-module Tuples {
+module tuples {
   var myTup: (int, str)
 
   def combineTuples(t1, t2) = (t1._1, t2._2)
   val combined = combineTuples((true, 1, 2), (false, 2, 2))
 
-  action Init = myTup' = (0, "hello")
+  action init = myTup' = (0, "hello")
 
-  action Next = myTup' = combineTuples(myTup, (1, "world"))
+  action step = myTup' = combineTuples(myTup, (1, "world"))
 
   // Unpacking
-  var x: int
-
-  def a(tup) = Set(tup, (x, 4)).map((p, g) => p + g)
-  def b(tup, f) = Set(tup, (x, 4)).map(f)
-  pure def c(tup, f) = Set(tup).map(f)
-  pure def func(p, g) = p
-  pure val test = c((1, 2), func)
+  pure val a = Set((1, 4), (2, 3)).map( ((p, g)) => p + g)
+  pure val s = Set(1, 2, 3)
+  pure val m = tuples(s, s).mapBy( ((j, k)) => j+k )
+  pure val n = tuples(s, s, s).mapBy( ((j, k, i)) => j+k+i )
 }

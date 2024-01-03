@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -14,20 +14,19 @@
 
 import { Either } from '@sweet-monads/either'
 import { ErrorTree, errorTreeToString } from '../errorTree'
-import { LookupTable } from '../lookupTable'
-import { QuintType, Row } from '../quintTypes'
+import { LookupTable } from '../names/base'
+import { ConcreteFixedRow, QuintType, Row } from '../ir/quintTypes'
 import { Constraint } from './base'
 import { unify, unifyRows } from './constraintSolver'
 import { substitutionsToString } from './printing'
+import { isEqual } from 'lodash'
 
 /*
  * Substitutions can be applied to Quint types, type variables with another type
  */
 export type Substitutions = Substitution[]
 
-type Substitution =
-  | { kind: 'type', name: string, value: QuintType }
-  | { kind: 'row', name: string, value: Row }
+type Substitution = { kind: 'type'; name: string; value: QuintType } | { kind: 'row'; name: string; value: Row }
 
 /*
  * Compose two substitutions by applying the first one to the second one's values
@@ -53,61 +52,67 @@ export function compose(table: LookupTable, s1: Substitutions, s2: Substitutions
  *          given type
  */
 export function applySubstitution(table: LookupTable, subs: Substitutions, t: QuintType): QuintType {
-  let result = t
-  switch (t.kind) {
-    case 'var': {
-      const sub = subs.find(s => s.name === t.name)
-      if (sub && sub.kind === 'type') {
-        result = sub.value
+  // We cannot assign the result of a switch to a value, so we use an arrow function instead
+  const singleApplication = () => {
+    switch (t.kind) {
+      case 'var': {
+        const sub = subs.find(s => s.name === t.name)
+        if (sub && sub.kind === 'type') {
+          return sub.value
+        } else {
+          return t
+        }
       }
-      break
-    }
-    case 'oper': {
-      const arrowParams = t.args.map(ef => applySubstitution(table, subs, ef))
-      const arrowResult = applySubstitution(table, subs, t.res)
-      result = { kind: t.kind, args: arrowParams, res: arrowResult, id: t.id }
-      break
-    }
-    case 'list':
-    case 'set': {
-      result = { kind: t.kind, elem: applySubstitution(table, subs, t.elem), id: t.id }
-      break
-    }
-    case 'fun': {
-      result = {
-        kind: t.kind, arg: applySubstitution(table, subs, t.arg), res: applySubstitution(table, subs, t.res), id: t.id,
+      case 'oper': {
+        const arrowParams = t.args.map(ef => applySubstitution(table, subs, ef))
+        const arrowResult = applySubstitution(table, subs, t.res)
+        return { kind: t.kind, args: arrowParams, res: arrowResult, id: t.id }
       }
-      break
-    }
-    case 'tup': {
-      result = { kind: t.kind, fields: applySubstitutionToRow(table, subs, t.fields), id: t.id }
-      break
-    }
-    case 'rec': {
-      result = {
-        kind: t.kind,
-        fields: applySubstitutionToRow(table, subs, t.fields),
-        id: t.id,
+      case 'list':
+      case 'set': {
+        return { kind: t.kind, elem: applySubstitution(table, subs, t.elem), id: t.id }
       }
-      break
-    }
-    case 'union': {
-      result = {
-        kind: t.kind,
-        tag: t.tag,
-        records: t.records.map(r => {
-          return {
-            tagValue: r.tagValue,
-            fields: applySubstitutionToRow(table, subs, r.fields),
-          }
-        }),
-        id: t.id,
+      case 'fun': {
+        return {
+          kind: t.kind,
+          arg: applySubstitution(table, subs, t.arg),
+          res: applySubstitution(table, subs, t.res),
+          id: t.id,
+        }
       }
-      break
+      case 'tup': {
+        return { kind: t.kind, fields: applySubstitutionToRow(table, subs, t.fields), id: t.id }
+      }
+      case 'rec': {
+        return {
+          kind: t.kind,
+          fields: applySubstitutionToRow(table, subs, t.fields),
+          id: t.id,
+        }
+      }
+      case 'sum':
+        return {
+          ...t,
+          // We know this has to end up as a concrete fixed row, since it must
+          // start as one, and applying substitions cannot result in a wider type
+          fields: applySubstitutionToRow(table, subs, t.fields) as ConcreteFixedRow,
+        }
+
+      // The basic types have no variables, so cannot
+      case 'int':
+      case 'bool':
+      case 'str':
+      case 'const':
+        return t
     }
   }
 
-  return result
+  const result = singleApplication()
+  if (isEqual(result, t)) {
+    return t
+  } else {
+    return applySubstitution(table, subs, result)
+  }
 }
 
 /**
@@ -122,6 +127,10 @@ export function applySubstitution(table: LookupTable, subs: Substitutions, t: Qu
  */
 export function applySubstitutionToConstraint(table: LookupTable, subs: Substitutions, c: Constraint): Constraint {
   switch (c.kind) {
+    case 'empty':
+      return c
+    case 'isDefined':
+      return { ...c, type: applySubstitution(table, subs, c.type) }
     case 'eq': {
       const ts: [QuintType, QuintType] = [
         applySubstitution(table, subs, c.types[0]),
@@ -129,7 +138,6 @@ export function applySubstitutionToConstraint(table: LookupTable, subs: Substitu
       ]
       return { kind: c.kind, types: ts, sourceId: c.sourceId }
     }
-    case 'empty': return c
     case 'conjunction': {
       const cs = c.constraints.map(con => applySubstitutionToConstraint(table, subs, con))
       return { kind: 'conjunction', constraints: cs, sourceId: c.sourceId }
@@ -147,7 +155,9 @@ function applySubstitutionsToSubstitutions(table: LookupTable, s1: Substitutions
       } else if (sub.kind === 'row' && s.kind === 'row') {
         result = unifyRows(table, s.value, sub.value)
       } else {
-        throw new Error(`Substitutions with same name (${s.name}) but incompatible kinds: ${substitutionsToString([sub, s])}`)
+        throw new Error(
+          `Substitutions with same name (${s.name}) but incompatible kinds: ${substitutionsToString([sub, s])}`
+        )
       }
 
       if (result.isLeft()) {
@@ -158,8 +168,10 @@ function applySubstitutionsToSubstitutions(table: LookupTable, s1: Substitutions
     }
 
     switch (s.kind) {
-      case 'type': return [{ kind: s.kind, name: s.name, value: applySubstitution(table, s1, s.value) }]
-      case 'row': return [{ kind: s.kind, name: s.name, value: applySubstitutionToRow(table, s1, s.value) }]
+      case 'type':
+        return [{ kind: s.kind, name: s.name, value: applySubstitution(table, s1, s.value) }]
+      case 'row':
+        return [{ kind: s.kind, name: s.name, value: applySubstitutionToRow(table, s1, s.value) }]
     }
   })
 }

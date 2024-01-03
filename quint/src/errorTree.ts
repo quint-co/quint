@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------------------
- * Copyright (c) Informal Systems 2022. All rights reserved.
- * Licensed under the Apache 2.0.
- * See License.txt in the project root for license information.
+ * Copyright 2022 Informal Systems
+ * Licensed under the Apache License, Version 2.0.
+ * See LICENSE in the project root for license information.
  * --------------------------------------------------------------------------------- */
 
 /**
@@ -19,9 +19,9 @@
  */
 export interface ErrorTree {
   /* The error message, used for the terminal node where the error occurred */
-  message?: string,
+  message?: string
   /* A description of the context within which the current node is encountered */
-  location: string,
+  location: string
   /* The node's children */
   children: ErrorTree[]
 }
