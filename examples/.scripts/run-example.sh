@@ -35,7 +35,7 @@ result () {
             "$file" =~ ^spells/ ||
             "$file" == "solidity/SimpleAuction/SimpleAuction.qnt" ||
             "$file" == "cosmos/ics20/base.qnt" ||
-            "$file" == "cosmos/cosmos/bank/bank.qnt" ) ]] ; then
+            "$file" == "cosmos/bank/bank.qnt" ) ]] ; then
       printf "N/A[^nostatemachine]"; return
     fi
 
