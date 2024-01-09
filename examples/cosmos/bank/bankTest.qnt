@@ -1,5 +1,4 @@
 // -*- mode: Bluespec; -*-
-
 module bankTest {
   import bank.* from "./bank"
 

@@ -55,6 +55,7 @@ From the protocol designer's point of view, the bank module alone could be
 tested by introducing the following non-deterministic state machine:
 
 ```bluespec bankTest.qnt +=
+// -*- mode: Bluespec; -*-
 module bankTest {
   import bank.* from "./bank"
 
@@ -238,9 +239,10 @@ action init = all {
   // limit the total supply of burgers and bananas to 10_000
   supply' = Set("banana", "burger").mapBy(d => 10_000),
   // the king has it all
-  balances' = Set("king").mapBy(a => Set("banana", "burger").mapBy(d => 10_000)),
+  balances' = Map("king" -> Set("banana", "burger").mapBy(d => 10_000)),
   _lastError' = "",
 }
+
 ```
 
 ## Keepers
@@ -372,6 +374,7 @@ pure def ViewKeeper::GetAllBalances(ctx: BankCtx, addr: Addr): Coins = {
     Map()
   }
 }
+
 ```
 
 For example, we expect the `GetAllBalances` to return balances in the genesis state as follows:
@@ -404,6 +407,7 @@ def stateToCtx(time: int): BankCtx = {
     }
   }
 }
+
 ```
 
  - `ValidateBalance` validates all balances for a given account address
@@ -593,7 +597,7 @@ run sendTest = {
     // the King has bananas and he can send it
     .then(send("king",
                "donkeykong",
-               Set("banana").mapBy(d => 2_000)))
+               Map("banana" -> 2_000)))
     .expect(and {
       balances.get("king").get("banana") == 8_000,
       balances.get("donkeykong").get("banana") == 2_000,
@@ -662,7 +666,6 @@ pure def SendKeeper::IsSendEnabledCoins(ctx: BankCtx, coins: Set[Coin]): bool = 
   // Implementation: return the error ErrSendDisabled on false
   coins.forall(c => SendKeeper::IsSendEnabledCoin(ctx, c))
 }
-
 ```
 
  - `BlockedAddr` checks if a given address is restricted from receiving funds.
@@ -721,7 +724,6 @@ pure val DENOM = Set("banana", "burger")
 ```
 
 ```bluespec "transitions" +=
-
 
 action step = any {
   nondet fromAddr = oneOf(ADDR)
