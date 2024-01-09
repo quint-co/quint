@@ -80,6 +80,7 @@ module bank {
       Map()
     }
   }
+
   /// `ValidateBalance` should only be called upon genesis state.
   /// https://github.com/cosmos/cosmos-sdk/blob/06406f6a70f228bbb6d09b45a4e343477f1ef7e9/x/bank/keeper/view.go#L202
   pure def ViewKeeper::ValidateBalance(ctx: BankCtx, addr: Addr): bool = and {
@@ -198,5 +199,4 @@ module bank {
     // Implementation: return the error ErrSendDisabled on false
     coins.forall(c => SendKeeper::IsSendEnabledCoin(ctx, c))
   }
-
 }

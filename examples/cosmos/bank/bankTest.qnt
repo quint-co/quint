@@ -1,3 +1,5 @@
+// -*- mode: Bluespec; -*-
+
 module bankTest {
   import bank.* from "./bank"
 
@@ -19,9 +21,10 @@ module bankTest {
     // limit the total supply of burgers and bananas to 10_000
     supply' = Set("banana", "burger").mapBy(d => 10_000),
     // the king has it all
-    balances' = Set("king").mapBy(a => Set("banana", "burger").mapBy(d => 10_000)),
+    balances' = Map("king" -> Set("banana", "burger").mapBy(d => 10_000)),
     _lastError' = "",
   }
+
   action send(fromAddr: Addr, toAddr: Addr, coins: Coins): bool = all {
     val ctx = stateToCtx(0)
     val result = SendKeeper::SendCoins(ctx, fromAddr, toAddr, coins)
@@ -40,7 +43,6 @@ module bankTest {
       }
     }
   }
-
 
   action step = any {
     nondet fromAddr = oneOf(ADDR)
@@ -96,12 +98,13 @@ module bankTest {
       }
     }
   }
+
   run sendTest = {
     init
       // the King has bananas and he can send it
       .then(send("king",
                  "donkeykong",
-                 Set("banana").mapBy(d => 2_000)))
+                 Map("banana" -> 2_000)))
       .expect(and {
         balances.get("king").get("banana") == 8_000,
         balances.get("donkeykong").get("banana") == 2_000,
