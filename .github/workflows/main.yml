@@ -3,6 +3,9 @@
 on:
   # Every pull request
   pull_request:
+  # When part of a merge queue
+  # See https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue#triggering-merge-group-checks-with-github-actions
+  merge_group:
   #  Pushes into the trunk
   #  This is important to ensure the trunk is not broken and
   #  to populate the cache for future PRs.
