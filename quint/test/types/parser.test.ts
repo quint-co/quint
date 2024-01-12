@@ -46,6 +46,17 @@ describe('parseType', () => {
     )
   })
 
+  // Regression test for https://github.com/informalsystems/quint/issues/1336
+  it('parses qualified type constants', () => {
+    const type = parseType('modname::TypeConstructor')
+
+    assert.isTrue(type.isRight())
+    type.map(value => {
+      assert(value.kind === 'const')
+      assert.deepEqual(value.name, 'modname::TypeConstructor')
+    })
+  })
+
   it('parses function of const types', () => {
     const type = parseType('T1 -> (T2 -> T1)')
 
