@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed parsing of qualified type constructors, which were being misinterpreted
+  as type variables when the name of the qualifying module started with a
+  lowercase letter (#1337).
+
 ### Security
 
 ## v0.18.0 -- 2024-01-03

@@ -1034,17 +1034,17 @@ export class ToIrListener implements QuintListener {
     this.typeStack.push({ id, kind: 'str' })
   }
 
+  exitTypeVar(ctx: p.TypeVarContext) {
+    const name = ctx.LOW_ID().text
+    const id = this.getId(ctx)
+    this.typeStack.push({ id, kind: 'var', name })
+  }
+
   // a type variable, a type constant, or a reference to a type alias
-  exitTypeConstOrVar(ctx: p.TypeConstOrVarContext) {
+  exitTypeConst(ctx: p.TypeConstContext) {
     const name = ctx.qualId().text
     const id = this.getId(ctx)
-    if (name[0].match('[a-z]')) {
-      // a type variable from: a, b, ... z
-      this.typeStack.push({ id, kind: 'var', name })
-    } else {
-      // a type constant, e.g., declared via typedef
-      this.typeStack.push({ id, kind: 'const', name })
-    }
+    this.typeStack.push({ id, kind: 'const', name })
   }
 
   // a set type, e.g., set(int)

@@ -106,12 +106,13 @@ type :          <assoc=right> type '->' type                    # typeFun
         |       'int'                                           # typeInt
         |       'str'                                           # typeStr
         |       'bool'                                          # typeBool
-        |       qualId                                          # typeConstOrVar
+        |       LOW_ID                                          # typeVar
+        |       qualId                                          # typeConst
         |       '(' type ')'                                    # typeParen
         ;
 
-row : (rowLabel ':' type ',')* ((rowLabel ':' type) (',' | '|' (rowVar=IDENTIFIER))?)?
-    | '|' (rowVar=IDENTIFIER)
+row : (rowLabel ':' type ',')* ((rowLabel ':' type) (',' | '|' (rowVar=identifier))?)?
+    | '|' (rowVar=identifier)
     ;
 
 rowLabel : simpleId["record"] ;
@@ -235,10 +236,11 @@ literal: (STRING | BOOL | INT)
         ;
 
 // A (possibly) qualified identifier, like `Foo` or `Foo::bar`
-qualId : IDENTIFIER ('::' IDENTIFIER)* ;
+qualId : identifier ('::' identifier)* ;
+
 // An unqualified identifier that raises an error if a qualId is supplied
 simpleId[context: string]
-    : IDENTIFIER
+    : identifier
     | qualId {
         const err = quintErrorToString(
           { code: 'QNT008',
@@ -248,6 +250,8 @@ simpleId[context: string]
         this.notifyErrorListeners(err)
       }
     ;
+
+identifier : LOW_ID | CAP_ID;
 
 // TOKENS
 
@@ -284,8 +288,10 @@ ASGN            :   '=' ;
 LPAREN          :   '(' ;
 RPAREN          :   ')' ;
 
-// other TLA+ identifiers
-IDENTIFIER      : ([a-zA-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;
+// An identifier starting with lowercase
+LOW_ID : ([a-z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;
+// An identifier starting with uppercase
+CAP_ID : ([A-Z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;
 
 DOCCOMMENT : '///' .*? '\n';
 
