@@ -8,258 +8,167 @@ module BoundedUInt {
   /// The largest value that can be represented by this integer type.
   pure val MAX = (2^BITS) - 1
   
-  /// Record-representation of an unsigned bounded integer.
-  /// If the `error` field is nonempty, the record represents an exception of some
-  /// sort happening during computation, such as an overflow.
-  /// Otherwise, the record represents the integer `v`, such that `MIN <= v <= MAX`. 
-  /// TODO: Replace with an option type, once those are implemented.
-  type UIntT = { v: int, error: str }
+  /// Representation of an unsigned, bounded integer.
+  ///
+  /// - `Ok(v)` represents the integer `v`, such that `MIN <= v <= MAX`.
+  /// - `Err(msg)` holds a message explaining the out of bounds error.
+  ///
+  /// NOTE: values of this type must only be constructed using `UInt`,
+  /// and never via `Ok` or `Err` directly.
+  // TODO: Replacce with polymorphic result type, once that is avainable
+  //       See https://github.com/informalsystems/quint/issues/1073
+  type UIntT = Ok(int) | Err(str)
 
-  /// Constructs a bounded unsigned integer of type `UIntT` from a value `x` of type `int`. 
-  /// If `x` lies outside the `[MIN, MAX]` interval, 
-  /// the error field will be nonempty.
-  pure def UInt(x: int): UIntT = {
-    v: x, 
-    error: 
-      if (MIN <= x and x <= MAX) ""
-      else "out of range"
+  /// Given an integer `x`, returns true iff `x` lies in the `[MIN, MAX]` interval.
+  pure def isInRange(x: int): bool = MIN <= x and x <= MAX
+
+  /// `UInt(x)` is a bounded unsigned integer if `x` is inside the `[MIN, MAX]` interval,
+  /// otherwise it is an `"out of range"` error.
+  pure def UInt(x: int): UIntT = if (isInRange(x)) Ok(x) else Err("out of range")
+
+  /// `u.bind(x => f(x))` is `f(x)` iff `u` is `Ok(x)`, i.e., if `u` is a valid bounded int wrapping `x`,
+  /// otherwise, when `u` is `Err(msg)`, it is `u`.
+  ///
+  /// ## Example
+  ///
+  /// ```
+  /// def checkedIncr(u: UintT): UintT = checkedAdd(u, UIntT(1))
+  /// run incr_UintT_twice_test = assert(UInt(0).bind(checkedIncr).bind(checkedIncr) = UInt(2))
+  /// ```
+  def bind(u: UIntT, f: (int => UIntT)): UIntT = match u {
+    | Ok(i) => f(i)
+    | Err(_) => u
     }
 
-  /// Given a bounded unsigned integer `x`, returns
-  /// true iff `x.v` lies in the `[MIN, MAX]` interval.
-  pure def isInRange(x: UIntT): bool = and {
-    x.v >= MIN,
-    x.v <= MAX
-  }
-
-  /// Given a bounded unsigned integer `x`, returns
-  /// true iff `x.v` lies in the `[MIN, MAX]` interval, and `x.error` is empty.
-  pure def isValid(x: UIntT): bool = and {
-    x.error == "",
-    isInRange(x)
-  }
-
-  /// Given a (T,T) => T operation `op`, which assumes its inputs are valid (w.r.t. `isValid`),
-  /// and two T-typed values, l and r, returns op(l,r) iff l and r are both valid. Otheriwse,
-  /// it returns some arbitrary invalid value.
-  pure def wrapErrorBin(lhs: UIntT, rhs: UIntT, op: (UIntT, UIntT) => UIntT): UIntT =
-    if (not(isValid(lhs))) lhs
-    else if (not(isValid(rhs))) rhs
-    else op(lhs, rhs)
+  /// `f.app(u, v, msg)` is `UInt(f(x,y))` if `u` is `Ok(x)` and `v` is `Ok(y)`.
+  /// If `UInt(f(x,y))` is out of range, it is `Err(msg)`.
+  pure def app(op: (int, int) => int, lhs: UIntT, rhs:UIntT, errMsg: str): UIntT =
+    lhs.bind(x => rhs.bind(y =>
+      val res = op(x, y)
+      if (isInRange(res)) Ok(res) else Err(errMsg)))
 
   /// Computes the absolute difference between lhs and rhs.
-  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
-  pure def absDiffUnsafe(lhs: UIntT, rhs: UIntT): UIntT = {
-    val res = lhs.v - rhs.v
-    { 
-      v: if (res < 0) -res else res, 
-      error: "" 
-    }
+  pure def absDiff(lhs: UIntT, rhs: UIntT): UIntT = {
+    ((x, y) => {
+      val res = x - y
+      if (res < 0) -res else res
+    }).app(lhs, rhs,
+      "impossible")
   }
 
-  /// Computes the absolute difference between lhs and rhs.
-  pure def absDiff(lhs: UIntT, rhs: UIntT): UIntT = wrapErrorBin(lhs, rhs, absDiffUnsafe)
-  
     ////////////////////////
    // CHECKED OPERATIONS //
   ////////////////////////
 
-  /// Unsafe checked integer addition. 
-  /// Computes `lhs + rhs`, setting the error field to "overflow" if overflow occurred.
-  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
-  pure def checkedAddUnsafe(lhs: UIntT, rhs: UIntT): UIntT = {
-    val res = lhs.v + rhs.v
-    { 
-      v: res,
-      error: if (res > MAX) "overflow" else ""
-    }
-  }
+  /// Checked integer addition.
+  /// Errors with "overflow"
+  pure def checkedAdd(lhs: UIntT, rhs: UIntT): UIntT = ((x,y) => iadd(x,y)).app(lhs, rhs, "overflow")
 
-  /// Checked integer addition. 
-  /// Computes `lhs + rhs`, setting the error field to "overflow" if overflow occurred.
-  pure def checkedAdd(lhs: UIntT, rhs: UIntT): UIntT = wrapErrorBin(lhs, rhs, checkedAddUnsafe)
+  /// Checked integer subtraction.
+  /// Errors with "underflow".
+  pure def checkedSub(lhs: UIntT, rhs: UIntT): UIntT = ((x,y) => isub(x,y)).app(lhs, rhs, "underflow")
 
-  /// Unsafe checked integer subtraction. 
-  /// Computes `lhs - rhs`, setting the error field to "underflow" if underflow occurred.
-  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
-  pure def checkedSubUnsafe(lhs: UIntT, rhs: UIntT): UIntT = {
-    val res = lhs.v - rhs.v
-    {
-      v: res,
-      error: if (res < MIN) "underflow" else ""
-    }
-  }
+  /// Checked integer multiplication.
+  /// Errors with "overflow".
+  pure def checkedMul(lhs: UIntT, rhs: UIntT): UIntT = ((x,y) => imul(x,y)).app(lhs, rhs, "overflow")
 
-  /// Checked integer subtraction. 
-  /// Computes `lhs - rhs`, setting the error field to "underflow" if underflow occurred.
-  pure def checkedSub(lhs: UIntT, rhs: UIntT): UIntT = wrapErrorBin(lhs, rhs, checkedSubUnsafe)
+  /// Checked integer division.
+  /// Errors with "division by zero".
+  pure def checkedDiv(lhs: UIntT, rhs: UIntT): UIntT =
+    lhs.bind(
+      l => rhs.bind(
+      r =>
+        if (r == 0)
+          Err("division by zero")
+        else
+          Ok(l / r)))
 
-  /// Unsafe checked integer multiplication. 
-  /// Computes `lhs * rhs`, setting the error field to "overflow" if overflow occurred.
-  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
-  pure def checkedMulUnsafe(lhs: UIntT, rhs: UIntT): UIntT = {
-    val res = lhs.v * rhs.v
-    {
-      v: res,
-      error: if (res > MAX) "overflow" else ""
-    }
-  }
+  /// Checked integer modulo.
+  /// Errors with "division by zero".
+  pure def checkedRem(lhs: UIntT, rhs: UIntT): UIntT =
+    lhs.bind(
+      l => rhs.bind(
+      r =>
+        if (r == 0)
+          Err("division by zero")
+        else
+          Ok(l % r)))
 
-  /// Checked integer multiplication. 
-  /// Computes `lhs * rhs`, setting the error field to "overflow" if overflow occurred.
-  pure def checkedMul(lhs: UIntT, rhs: UIntT): UIntT = wrapErrorBin(lhs, rhs, checkedMulUnsafe)
+  /// Checked exponentiation.
+  /// Errors with "overflow".
+  pure def checkedPow(lhs: UIntT, rhs: UIntT): UIntT =
+    lhs.bind(
+      l => rhs.bind(
+      r =>
+        if (l == r and l == 0)
+          Err("undefined")
+        else
+          ((x,y) => ipow(x,y)).app(lhs, rhs, "overflow")))
 
-  /// Unsafe checked integer division. 
-  /// Computes `lhs / rhs`. If `rhs.v == 0` the error field is set to "division by zero" and the value is arbitrary.
-  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
-  pure def checkedDivUnsafe(lhs: UIntT, rhs: UIntT): UIntT = 
-    if (rhs.v == 0) { v: 0,             error: "division by zero" }
-    else            { v: lhs.v / rhs.v, error: ""                 }
-  
-  /// Checked integer division. 
-  /// Computes `lhs / rhs`, setting the error field to "division by zero" if `rhs.v == 0`.
-  pure def checkedDiv(lhs: UIntT, rhs: UIntT): UIntT = wrapErrorBin(lhs, rhs, checkedDivUnsafe)
-
-  /// Unsafe checked integer remainder. 
-  /// Computes `lhs % rhs`. If `rhs.v == 0` the error field is set to "division by zero" and the value is arbitrary.
-  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
-  pure def checkedRemUnsafe(lhs: UIntT, rhs: UIntT): UIntT = 
-    if (rhs.v == 0) { v: 0,             error: "division by zero" }
-    else            { v: lhs.v % rhs.v, error: ""                 }
-
-  /// Checked integer remainder. 
-  /// Computes `lhs % rhs`. If `rhs.v == 0` the error field is set to "division by zero" and the value is arbitrary.
-  pure def checkedRem(lhs: UIntT, rhs: UIntT): UIntT = wrapErrorBin(lhs, rhs, checkedRemUnsafe)
-
-  /// Unsafe checked exponentiation. 
-  /// Computes `lhs ^ rhs`, setting the error field to "overflow" if overflow occurred.
-  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
-  pure def checkedPowUnsafe(lhs: UIntT, rhs: UIntT): UIntT = 
-    if (lhs.v == rhs.v and lhs.v == 0) { v: 1, error: "undefined"}
-    else {
-      val res = lhs.v ^ rhs.v
-      {
-        v: res,
-        error: if (res > MAX) "overflow" else ""
-      }
-    }
-
-  /// Checked exponentiation. 
-  /// Computes `lhs ^ rhs`, setting the error field to "overflow" if overflow occurred.
-  pure def checkedPow(lhs: UIntT, rhs: UIntT): UIntT = wrapErrorBin(lhs, rhs, checkedPowUnsafe)
 
     ///////////////////////////
    // SATURATING OPERATIONS //
   ///////////////////////////
 
-  /// Unsafe saturating integer addition. 
+  /// Saturating integer addition.
   /// Computes `lhs + rhs`, saturating at the numeric bounds instead of overflowing.
-  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
-  pure def saturatingAddUnsafe(lhs: UIntT, rhs: UIntT): UIntT = {
-    val res = lhs.v + rhs.v
-    { 
-      v: if (res < MAX) res else MAX, 
-      error: "" 
-    }
-  }
+  pure def saturatingAdd(lhs: UIntT, rhs: UIntT): UIntT =
+    ((x, y) =>
+      val res = x + y
+      if (res < MAX) res else MAX)
+    .app(lhs, rhs, "impossible")
 
-  /// Saturating integer addition. 
-  /// Computes `lhs + rhs`, saturating at the numeric bounds instead of overflowing.
-  pure def saturatingAdd(lhs: UIntT, rhs: UIntT): UIntT = wrapErrorBin(lhs, rhs, saturatingAddUnsafe)
-
-  /// Unsafe saturating integer subtraction. 
+  /// Saturating integer subtraction.
   /// Computes `lhs - rhs`, saturating at the numeric bounds instead of overflowing.
-  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
-  pure def saturatingSubUnsafe(lhs: UIntT, rhs: UIntT): UIntT = {
-    val res = lhs.v - rhs.v
-    { 
-      v: if (res > MIN) res else MIN, 
-      error: "" 
-    }
-  }
+  pure def saturatingSub(lhs: UIntT, rhs: UIntT): UIntT =
+    ((x, y) =>
+      val res = x - y
+      if (res > MIN) res else MIN)
+    .app(lhs, rhs, "impossible")
 
-  /// Saturating integer subtraction. 
-  /// Computes `lhs - rhs`, saturating at the numeric bounds instead of overflowing.
-  pure def saturatingSub(lhs: UIntT, rhs: UIntT): UIntT = wrapErrorBin(lhs, rhs, saturatingSubUnsafe)
-
-  /// Unsafe saturating integer multiplication. 
+  /// Saturating integer subtraction.
   /// Computes `lhs * rhs`, saturating at the numeric bounds instead of overflowing.
-  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
-  pure def saturatingMulUnsafe(lhs: UIntT, rhs: UIntT): UIntT = {
-    val res = lhs.v * rhs.v
-    { 
-      v: if (res < MAX) res else MAX, 
-      error: "" 
-    }
-  }
+  pure def saturatingMul(lhs: UIntT, rhs: UIntT): UIntT =
+    ((x, y) =>
+      val res = x * y
+      if (res < MAX) res else MAX)
+    .app(lhs, rhs, "impossible")
 
-  /// Saturating integer subtraction. 
-  /// Computes `lhs * rhs`, saturating at the numeric bounds instead of overflowing.
-  pure def saturatingMul(lhs: UIntT, rhs: UIntT): UIntT = wrapErrorBin(lhs, rhs, saturatingMulUnsafe)
-
-  /// Unsafe saturating exponentiation. 
+  /// Saturating exponentiation.
   /// Computes `lhs ^ rhs`, saturating at the numeric bounds instead of overflowing.
-  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
-  pure def saturatingPowUnsafe(lhs: UIntT, rhs: UIntT): UIntT = 
-    if (lhs.v == rhs.v and lhs.v == 0) { v: 1, error: "undefined"}
-    else {
-      val res = lhs.v ^ rhs.v
-      { 
-        v: if (res < MAX) res else MAX, 
-        error: "" 
-      }
-    }
-  
-
-  /// Saturating exponentiation. 
-  /// Computes `lhs ^ rhs`, saturating at the numeric bounds instead of overflowing.
-  pure def saturatingPow(lhs: UIntT, rhs: UIntT): UIntT = wrapErrorBin(lhs, rhs, saturatingPowUnsafe)
+  pure def saturatingPow(lhs: UIntT, rhs: UIntT): UIntT =
+    lhs.bind(
+      l => rhs.bind(
+      r =>
+      if (l == r and l == 0)
+        Err("undefined")
+      else
+        val res = l ^ r
+        Ok(if (res < MAX) res else MAX)))
 
     /////////////////////////
    // WRAPPING OPERATIONS //
   /////////////////////////
 
-  /// Unsafe wrapping integer addition.
-  /// Computes `lhs + rhs`, wrapping around at the boundary of the type.
-  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
-  pure def wrappingAddUnsafe(lhs: UIntT, rhs: UIntT): UIntT = 
-    { 
-      v: (lhs.v + rhs.v) % (MAX + 1), 
-      error: "" 
-    }
-
   /// Wrapping integer addition.
   /// Computes `lhs + rhs`, wrapping around at the boundary of the type.
-  pure def wrappingAdd(lhs: UIntT, rhs: UIntT): UIntT = wrapErrorBin(lhs, rhs, wrappingAddUnsafe)
+  pure def wrappingAdd(lhs: UIntT, rhs: UIntT): UIntT =
+    ((x, y) => (x + y) % (MAX + 1)).app(lhs, rhs, "impossible")
 
-  /// Unsafe wrapping integer subtraction.
-  /// Computes `lhs - rhs`, wrapping around at the boundary of the type.
-  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
-  pure def wrappingSubUnsafe(lhs: UIntT, rhs: UIntT): UIntT = {
-    val res = lhs.v - rhs.v
-    val adjusted = if (res < MIN) res + (MAX + 1) else res
-    { 
-      v: adjusted % (MAX + 1), 
-      error: "" 
-    }
+  pure def wrappingSubInt(x: int, y: int): int = {
+    val res = x - y
+    val adjusted = if (res < MIN) (res + (MAX + 1)) else res
+    adjusted % (MAX + 1)
   }
 
   /// Wrapping integer subtraction.
   /// Computes `lhs - rhs`, wrapping around at the boundary of the type.
-  pure def wrappingSub(lhs: UIntT, rhs: UIntT): UIntT = wrapErrorBin(lhs, rhs, wrappingSubUnsafe)
+  pure def wrappingSub(lhs: UIntT, rhs: UIntT): UIntT = wrappingSubInt.app(lhs, rhs, "impossible")
 
-  /// Unsafe wrapping integer multiplication.
-  /// Computes `lhs * rhs`, wrapping around at the boundary of the type.
-  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
-  pure def wrappingMulUnsafe(lhs: UIntT, rhs: UIntT): UIntT = 
-    { 
-      v: (lhs.v * rhs.v) % (MAX + 1), 
-      error: "" 
-    }
-  
   /// Wrapping integer multiplication.
   /// Computes `lhs * rhs`, wrapping around at the boundary of the type.
-  pure def wrappingMul(lhs: UIntT, rhs: UIntT): UIntT = wrapErrorBin(lhs, rhs, wrappingMulUnsafe)
+  pure def wrappingMul(lhs: UIntT, rhs: UIntT): UIntT =
+    ((x, y) => (x * y) % (MAX + 1)).app(lhs, rhs, "impossible")
 
   /// Wrapping integer division.
   /// Computes `lhs / rhs`. Wrapped division on unsigned types is just normal division. 
@@ -273,19 +182,16 @@ module BoundedUInt {
   /// This operator exists, so that all operations are accounted for in the wrapping operations.
   pure def wrappingRem(lhs: UIntT, rhs: UIntT): UIntT = checkedRem(lhs, rhs)
 
-  /// Unsafe wrapping exponentiation.
-  /// Computes `lhs ^ rhs`, wrapping around at the boundary of the type.
-  /// Assumes lhs and rhs are valid (w.r.t. `isValid`).
-  pure def wrappingPowUnsafe(lhs: UIntT, rhs: UIntT): UIntT = 
-    if (lhs.v == rhs.v and lhs.v == 0) { v: 1, error: "undefined"}
-    else { 
-      v: (lhs.v ^ rhs.v) % (MAX + 1), 
-      error: "" 
-    }
-  
   /// Wrapping exponentiation.
   /// Computes `lhs ^ rhs`, wrapping around at the boundary of the type.
-  pure def wrappingPow(lhs: UIntT, rhs: UIntT): UIntT = wrapErrorBin(lhs, rhs, wrappingPowUnsafe)
+  pure def wrappingPow(lhs: UIntT, rhs: UIntT): UIntT =
+    lhs.bind(
+      l => rhs.bind(
+      r =>
+      if (l == r and l == 0)
+        Err("undefined")
+      else
+        Ok((l ^ r) % (MAX + 1))))
 }
 
 module BoundedUInt_Test {
@@ -300,99 +206,99 @@ module BoundedUInt_Test {
 
   // Checked add
   pure val CAddInvsTest = and {
-    assert(checkedAdd(UInt(0), UInt(0)) == {v: 0, error: ""}),
-    assert(checkedAdd(UInt(1), UInt(0)) == {v: 1, error: ""}),
-    assert(checkedAdd(UInt(MAX - 1), UInt(0)) == {v: MAX - 1, error: ""}),
-    assert(checkedAdd(UInt(MAX), UInt(0)) == {v: MAX, error: ""}),
-    assert(checkedAdd(UInt(MAX + 1), UInt(0)).error == "out of range"),
-    assert(checkedAdd(UInt(0), UInt(MAX)) == {v: MAX, error: ""}),
-    assert(checkedAdd(UInt(1), UInt(MAX)) == {v: MAX + 1, error: "overflow"}),
-    assert(checkedAdd(UInt(MAX - 1), UInt(MAX)) == {v: 2 * MAX - 1, error: "overflow"}),
-    assert(checkedAdd(UInt(MAX), UInt(MAX)) == {v: 2 * MAX, error: "overflow"}),
-    assert(checkedAdd(UInt(MAX), UInt(MAX + 1)).error == "out of range"),
+    assert(checkedAdd(UInt(0), UInt(0)) == Ok(0)),
+    assert(checkedAdd(UInt(1), UInt(0)) == Ok(1)),
+    assert(checkedAdd(UInt(MAX - 1), UInt(0)) == Ok(MAX - 1)),
+    assert(checkedAdd(UInt(MAX), UInt(0)) == Ok(MAX)),
+    assert(checkedAdd(UInt(MAX + 1), UInt(0)) == Err("out of range")),
+    assert(checkedAdd(UInt(0), UInt(MAX)) == Ok(MAX)),
+    assert(checkedAdd(UInt(1), UInt(MAX)) == Err("overflow")),
+    assert(checkedAdd(UInt(MAX - 1), UInt(MAX)) == Err("overflow")),
+    assert(checkedAdd(UInt(MAX), UInt(MAX)) == Err("overflow")),
+    assert(checkedAdd(UInt(MAX), UInt(MAX + 1)) == Err("out of range")),
   }
 
   // Checked sub
   pure val CSubInvsTest = and {
-    assert(checkedSub(UInt(0), UInt(0)) == {v: 0 , error: ""}),
-    assert(checkedSub(UInt(1), UInt(0)) == {v: 1, error: ""}),
-    assert(checkedSub(UInt(MAX - 1), UInt(0)) == {v: MAX - 1, error: ""}),
-    assert(checkedSub(UInt(MAX), UInt(0)) == {v: MAX, error: ""}),
-    assert(checkedSub(UInt(MAX + 1), UInt(0)).error == "out of range"),
-    assert(checkedSub(UInt(0), UInt(MAX)) == {v: -MAX, error: "underflow"}),
-    assert(checkedSub(UInt(1), UInt(MAX)) == {v: -(MAX - 1), error: "underflow"}),
-    assert(checkedSub(UInt(MAX - 1), UInt(MAX)) == {v: -1, error: "underflow"}),
-    assert(checkedSub(UInt(MAX), UInt(MAX)) == {v: 0, error: ""}),
-    assert(checkedSub(UInt(MAX + 1), UInt(MAX)).error == "out of range"),
+    assert(checkedSub(UInt(0), UInt(0)) == Ok(0)),
+    assert(checkedSub(UInt(1), UInt(0)) == Ok(1)),
+    assert(checkedSub(UInt(MAX - 1), UInt(0)) == Ok(MAX - 1)),
+    assert(checkedSub(UInt(MAX), UInt(0)) == Ok(MAX)),
+    assert(checkedSub(UInt(MAX + 1), UInt(0)) == Err("out of range")),
+    assert(checkedSub(UInt(0), UInt(MAX)) == Err("underflow")),
+    assert(checkedSub(UInt(1), UInt(MAX)) ==  Err("underflow")),
+    assert(checkedSub(UInt(MAX - 1), UInt(MAX)) ==  Err("underflow")),
+    assert(checkedSub(UInt(MAX), UInt(MAX)) == Ok(0)),
+    assert(checkedSub(UInt(MAX + 1), UInt(MAX)) == Err("out of range")),
   }
 
   // Checked mul
   pure val CMulInvsTest = and {
-    assert(checkedMul(UInt(0), UInt(1)) == {v: 0 , error: ""}),
-    assert(checkedMul(UInt(1), UInt(1)) == {v: 1, error: ""}),
-    assert(checkedMul(UInt(MAX - 1), UInt(1)) == {v: MAX - 1, error: ""}),
-    assert(checkedMul(UInt(MAX), UInt(1)) == {v: MAX, error: ""}),
-    assert(checkedMul(UInt(MAX + 1), UInt(1)).error == "out of range"),
-    assert(checkedMul(UInt(0), UInt(MAX)) == {v: 0, error: ""}),
-    assert(checkedMul(UInt(1), UInt(MAX)) == {v: MAX, error: ""}),
-    assert(checkedMul(UInt(MAX - 1), UInt(MAX)) == {v: MAX^2 - MAX, error: "overflow"}),
-    assert(checkedMul(UInt(MAX), UInt(MAX)) == {v: MAX^2, error: "overflow"}),
-    assert(checkedMul(UInt(MAX + 1), UInt(MAX)).error == "out of range"),
+    assert(checkedMul(UInt(0), UInt(1)) == Ok(0)),
+    assert(checkedMul(UInt(1), UInt(1)) == Ok(1)),
+    assert(checkedMul(UInt(MAX - 1), UInt(1)) == Ok(MAX - 1)),
+    assert(checkedMul(UInt(MAX), UInt(1)) == Ok(MAX)),
+    assert(checkedMul(UInt(MAX + 1), UInt(1)) == Err("out of range")),
+    assert(checkedMul(UInt(0), UInt(MAX)) == Ok(0)),
+    assert(checkedMul(UInt(1), UInt(MAX)) == Ok(MAX)),
+    assert(checkedMul(UInt(MAX - 1), UInt(MAX)) == Err("overflow")),
+    assert(checkedMul(UInt(MAX), UInt(MAX)) == Err("overflow")),
+    assert(checkedMul(UInt(MAX + 1), UInt(MAX)) == Err("out of range")),
   }
 
   // Checked div
   pure val CDivInvsTest = and {
-    assert(checkedDiv(UInt(0), UInt(0)).error == "division by zero"),
-    assert(checkedDiv(UInt(1), UInt(0)).error == "division by zero"),
-    assert(checkedDiv(UInt(MAX - 1), UInt(0)).error == "division by zero"),
-    assert(checkedDiv(UInt(MAX), UInt(0)).error == "division by zero"),
-    assert(checkedDiv(UInt(MAX + 1), UInt(0)).error == "out of range"),
-    assert(checkedDiv(UInt(0), UInt(1)) == {v: 0, error: ""}),
-    assert(checkedDiv(UInt(1), UInt(1)) == {v: 1, error: ""}),
-    assert(checkedDiv(UInt(MAX - 1), UInt(1)) == {v: MAX - 1, error: ""}),
-    assert(checkedDiv(UInt(MAX), UInt(1)) == {v: MAX, error: ""}),
-    assert(checkedDiv(UInt(MAX + 1), UInt(1)).error == "out of range"),
-    assert(checkedDiv(UInt(0), UInt(MAX)) == {v: 0, error: ""}),
-    assert(checkedDiv(UInt(1), UInt(MAX)) == {v: 0, error: ""}),
-    assert(checkedDiv(UInt(MAX - 1), UInt(MAX)) == {v: 0, error: ""}),
-    assert(checkedDiv(UInt(MAX), UInt(MAX)) == {v: 1, error: ""}),
-    assert(checkedDiv(UInt(MAX + 1), UInt(MAX)).error == "out of range")
+    assert(checkedDiv(UInt(0), UInt(0)) == Err("division by zero")),
+    assert(checkedDiv(UInt(1), UInt(0)) == Err("division by zero")),
+    assert(checkedDiv(UInt(MAX - 1), UInt(0)) == Err("division by zero")),
+    assert(checkedDiv(UInt(MAX), UInt(0)) == Err("division by zero")),
+    assert(checkedDiv(UInt(MAX + 1), UInt(0)) == Err("out of range")),
+    assert(checkedDiv(UInt(0), UInt(1)) == Ok(0)),
+    assert(checkedDiv(UInt(1), UInt(1)) == Ok(1)),
+    assert(checkedDiv(UInt(MAX - 1), UInt(1)) == Ok(MAX - 1)),
+    assert(checkedDiv(UInt(MAX), UInt(1)) == Ok(MAX)),
+    assert(checkedDiv(UInt(MAX + 1), UInt(1)) == Err("out of range")),
+    assert(checkedDiv(UInt(0), UInt(MAX)) == Ok(0)),
+    assert(checkedDiv(UInt(1), UInt(MAX)) == Ok(0)),
+    assert(checkedDiv(UInt(MAX - 1), UInt(MAX)) == Ok(0)),
+    assert(checkedDiv(UInt(MAX), UInt(MAX)) == Ok(1)),
+    assert(checkedDiv(UInt(MAX + 1), UInt(MAX)) == Err("out of range"))
   }
 
   // Checked rem
   pure val CRemInvsTest = and {
-    assert(checkedRem(UInt(0), UInt(0)).error == "division by zero"),
-    assert(checkedRem(UInt(1), UInt(0)).error == "division by zero"),
-    assert(checkedRem(UInt(MAX - 1), UInt(0)).error == "division by zero"),
-    assert(checkedRem(UInt(MAX), UInt(0)).error == "division by zero"),
-    assert(checkedRem(UInt(MAX + 1), UInt(0)).error == "out of range"),
-    assert(checkedRem(UInt(0), UInt(1)) == {v: 0, error: ""}),
-    assert(checkedRem(UInt(1), UInt(1)) == {v: 0, error: ""}),
-    assert(checkedRem(UInt(MAX - 1), UInt(1)) == {v: 0, error: ""}),
-    assert(checkedRem(UInt(MAX), UInt(1)) == {v: 0, error: ""}),
-    assert(checkedRem(UInt(MAX + 1), UInt(1)).error == "out of range"),
-    assert(checkedRem(UInt(0), UInt(MAX)) == {v: 0, error: ""}),
-    assert(checkedRem(UInt(1), UInt(MAX)) == {v: 1, error: ""}),
-    assert(checkedRem(UInt(MAX - 1), UInt(MAX)) == {v: MAX - 1, error: ""}),
-    assert(checkedRem(UInt(MAX), UInt(MAX)) == {v: 0, error: ""}),
-    assert(checkedRem(UInt(MAX + 1), UInt(MAX)).error == "out of range")
+    assert(checkedRem(UInt(0), UInt(0)) == Err("division by zero")),
+    assert(checkedRem(UInt(1), UInt(0)) == Err("division by zero")),
+    assert(checkedRem(UInt(MAX - 1), UInt(0)) == Err("division by zero")),
+    assert(checkedRem(UInt(MAX), UInt(0)) == Err("division by zero")),
+    assert(checkedRem(UInt(MAX + 1), UInt(0)) == Err("out of range")),
+    assert(checkedRem(UInt(0), UInt(1)) == Ok(0)),
+    assert(checkedRem(UInt(1), UInt(1)) == Ok(0)),
+    assert(checkedRem(UInt(MAX - 1), UInt(1)) == Ok(0)),
+    assert(checkedRem(UInt(MAX), UInt(1)) == Ok(0)),
+    assert(checkedRem(UInt(MAX + 1), UInt(1)) == Err("out of range")),
+    assert(checkedRem(UInt(0), UInt(MAX)) == Ok(0)),
+    assert(checkedRem(UInt(1), UInt(MAX)) == Ok(1)),
+    assert(checkedRem(UInt(MAX - 1), UInt(MAX)) == Ok(MAX - 1)),
+    assert(checkedRem(UInt(MAX), UInt(MAX)) == Ok(0)),
+    assert(checkedRem(UInt(MAX + 1), UInt(MAX)) == Err("out of range"))
   }
 
   // Checked Pow
   pure val CPowInvsTest = and {
-    assert(checkedPow(UInt(0), UInt(0)).error == "undefined"),
-    assert(checkedPow(UInt(0), UInt(1)) == {v: 0, error: ""}),
-    assert(checkedPow(UInt(1), UInt(0)) == {v: 1, error: ""}),
-    assert(checkedPow(UInt(1), UInt(1)) == {v: 1, error: ""}),
-    assert(checkedPow(UInt(MAX - 1), UInt(1)) == {v: MAX - 1, error: ""}),
-    assert(checkedPow(UInt(MAX), UInt(1)) == {v: MAX, error: ""}),
-    assert(checkedPow(UInt(MAX), UInt(0)) == {v: 1, error: ""}),
-    assert(checkedPow(UInt(MAX + 1), UInt(1)).error == "out of range"),
-    assert(checkedPow(UInt(0), UInt(MAX)) == {v: 0, error: ""}),
-    assert(checkedPow(UInt(1), UInt(MAX)) == {v: 1, error: ""}),
-    assert(checkedPow(UInt(2), UInt(BITS - 1)) == {v: 2^(BITS - 1), error: ""}),
-    assert(checkedPow(UInt(2), UInt(BITS)) == {v: MAX + 1, error: "overflow"}),
-    assert(checkedPow(UInt(2), UInt(BITS + 1)) == {v: 2 * MAX + 2, error: "overflow"}),
+    assert(checkedPow(UInt(0), UInt(0)) == Err("undefined")),
+    assert(checkedPow(UInt(0), UInt(1)) == Ok(0)),
+    assert(checkedPow(UInt(1), UInt(0)) == Ok(1)),
+    assert(checkedPow(UInt(1), UInt(1)) == Ok(1)),
+    assert(checkedPow(UInt(MAX - 1), UInt(1)) == Ok(MAX - 1)),
+    assert(checkedPow(UInt(MAX), UInt(1)) == Ok(MAX)),
+    assert(checkedPow(UInt(MAX), UInt(0)) == Ok(1)),
+    assert(checkedPow(UInt(MAX + 1), UInt(1)) == Err("out of range")),
+    assert(checkedPow(UInt(0), UInt(MAX)) == Ok(0)),
+    assert(checkedPow(UInt(1), UInt(MAX)) == Ok(1)),
+    assert(checkedPow(UInt(2), UInt(BITS - 1)) == Ok(2^(BITS - 1))),
+    assert(checkedPow(UInt(2), UInt(BITS)) == Err("overflow")),
+    assert(checkedPow(UInt(2), UInt(BITS + 1)) == Err("overflow")),
   }
 
   ////////////////
@@ -401,61 +307,61 @@ module BoundedUInt_Test {
 
   // Saturating add
   pure val SAddInvsTest = and {
-    assert(saturatingAdd(UInt(0), UInt(0)) == {v: 0, error: ""}),
-    assert(saturatingAdd(UInt(1), UInt(0)) == {v: 1, error: ""}),
-    assert(saturatingAdd(UInt(MAX - 1), UInt(0)) == {v: MAX - 1, error: ""}),
-    assert(saturatingAdd(UInt(MAX), UInt(0)) == {v: MAX, error: ""}),
-    assert(saturatingAdd(UInt(MAX + 1), UInt(0)).error == "out of range"),
-    assert(saturatingAdd(UInt(0), UInt(MAX)) == {v: MAX, error: ""}),
-    assert(saturatingAdd(UInt(1), UInt(MAX)) == {v: MAX, error: ""}),
-    assert(saturatingAdd(UInt(MAX - 1), UInt(MAX)) == {v: MAX, error: ""}),
-    assert(saturatingAdd(UInt(MAX), UInt(MAX)) == {v: MAX, error: ""}),
-    assert(saturatingAdd(UInt(MAX + 1), UInt(MAX)).error == "out of range")
+    assert(saturatingAdd(UInt(0), UInt(0)) == Ok(0)),
+    assert(saturatingAdd(UInt(1), UInt(0)) == Ok(1)),
+    assert(saturatingAdd(UInt(MAX - 1), UInt(0)) == Ok(MAX - 1)),
+    assert(saturatingAdd(UInt(MAX), UInt(0)) == Ok(MAX)),
+    assert(saturatingAdd(UInt(MAX + 1), UInt(0)) == Err("out of range")),
+    assert(saturatingAdd(UInt(0), UInt(MAX)) == Ok(MAX)),
+    assert(saturatingAdd(UInt(1), UInt(MAX)) == Ok(MAX)),
+    assert(saturatingAdd(UInt(MAX - 1), UInt(MAX)) == Ok(MAX)),
+    assert(saturatingAdd(UInt(MAX), UInt(MAX)) == Ok(MAX)),
+    assert(saturatingAdd(UInt(MAX + 1), UInt(MAX)) == Err("out of range"))
   }
 
   // Saturating sub
   pure val SSubInvsTest = and {
-    assert(saturatingSub(UInt(0), UInt(0)) == {v: 0, error: ""}),
-    assert(saturatingSub(UInt(1), UInt(0)) == {v: 1, error: ""}),
-    assert(saturatingSub(UInt(0), UInt(1)) == {v: 0, error: ""}),
-    assert(saturatingSub(UInt(MAX - 1), UInt(0)) == {v: MAX - 1, error: ""}),
-    assert(saturatingSub(UInt(MAX), UInt(0)) == {v: MAX, error: ""}),
-    assert(saturatingSub(UInt(MAX + 1), UInt(0)).error == "out of range"),
-    assert(saturatingSub(UInt(0), UInt(MAX)) == {v: 0, error: ""}),
-    assert(saturatingSub(UInt(1), UInt(MAX)) == {v: 0, error: ""}),
-    assert(saturatingSub(UInt(MAX - 1), UInt(MAX)) == {v: 0, error: ""}),
-    assert(saturatingSub(UInt(MAX), UInt(MAX)) == {v: 0, error: ""}),
-    assert(saturatingSub(UInt(MAX + 1), UInt(MAX)).error == "out of range")
+    assert(saturatingSub(UInt(0), UInt(0)) == Ok(0)),
+    assert(saturatingSub(UInt(1), UInt(0)) == Ok(1)),
+    assert(saturatingSub(UInt(0), UInt(1)) == Ok(0)),
+    assert(saturatingSub(UInt(MAX - 1), UInt(0)) == Ok(MAX - 1)),
+    assert(saturatingSub(UInt(MAX), UInt(0)) == Ok(MAX)),
+    assert(saturatingSub(UInt(MAX + 1), UInt(0)) == Err("out of range")),
+    assert(saturatingSub(UInt(0), UInt(MAX)) == Ok(0)),
+    assert(saturatingSub(UInt(1), UInt(MAX)) == Ok(0)),
+    assert(saturatingSub(UInt(MAX - 1), UInt(MAX)) == Ok(0)),
+    assert(saturatingSub(UInt(MAX), UInt(MAX)) == Ok(0)),
+    assert(saturatingSub(UInt(MAX + 1), UInt(MAX)) == Err("out of range"))
   }
 
   // Saturating mul
   pure val SMulInvsTest = and {
-    assert(saturatingMul(UInt(0), UInt(1)) == {v: 0, error: ""}),
-    assert(saturatingMul(UInt(1), UInt(1)) == {v: 1, error: ""}),
-    assert(saturatingMul(UInt(MAX - 1), UInt(1)) == {v: MAX - 1, error: ""}),
-    assert(saturatingMul(UInt(MAX), UInt(1)) == {v: MAX, error: ""}),
-    assert(saturatingMul(UInt(MAX + 1), UInt(1)).error == "out of range"),
-    assert(saturatingMul(UInt(0), UInt(MAX)) == {v: 0, error: ""}),
-    assert(saturatingMul(UInt(1), UInt(MAX)) == {v: MAX, error: ""}),
-    assert(saturatingMul(UInt(MAX - 1), UInt(MAX)) == {v: MAX, error: ""}),
-    assert(saturatingMul(UInt(MAX), UInt(MAX)) == {v: MAX, error: ""}),
-    assert(saturatingMul(UInt(MAX + 1), UInt(MAX)).error == "out of range")
+    assert(saturatingMul(UInt(0), UInt(1)) == Ok(0)),
+    assert(saturatingMul(UInt(1), UInt(1)) == Ok(1)),
+    assert(saturatingMul(UInt(MAX - 1), UInt(1)) == Ok(MAX - 1)),
+    assert(saturatingMul(UInt(MAX), UInt(1)) == Ok(MAX)),
+    assert(saturatingMul(UInt(MAX + 1), UInt(1)) == Err("out of range")),
+    assert(saturatingMul(UInt(0), UInt(MAX)) == Ok(0)),
+    assert(saturatingMul(UInt(1), UInt(MAX)) == Ok(MAX)),
+    assert(saturatingMul(UInt(MAX - 1), UInt(MAX)) == Ok(MAX)),
+    assert(saturatingMul(UInt(MAX), UInt(MAX)) == Ok(MAX)),
+    assert(saturatingMul(UInt(MAX + 1), UInt(MAX)) == Err("out of range"))
   }
 
   // Saturating pow
   pure val SPowInvsTest = and {
-    assert(saturatingPow(UInt(0), UInt(0)).error == "undefined"),
-    assert(saturatingPow(UInt(0), UInt(1)) == {v: 0, error: ""}),
-    assert(saturatingPow(UInt(1), UInt(0)) == {v: 1, error: ""}),
-    assert(saturatingPow(UInt(1), UInt(1)) == {v: 1, error: ""}),
-    assert(saturatingPow(UInt(MAX - 1), UInt(1)) == {v: MAX - 1, error: ""}),
-    assert(saturatingPow(UInt(MAX), UInt(1)) == {v: MAX, error: ""}),
-    assert(saturatingPow(UInt(MAX + 1), UInt(1)).error == "out of range"),
-    assert(saturatingPow(UInt(0), UInt(MAX)) == {v: 0, error: ""}),
-    assert(saturatingPow(UInt(1), UInt(MAX)) == {v: 1, error: ""}),
-    assert(saturatingPow(UInt(2), UInt(BITS - 1)) == {v: 2^(BITS - 1), error: ""}),
-    assert(saturatingPow(UInt(2), UInt(BITS)) == {v: MAX, error: ""}),
-    assert(saturatingPow(UInt(2), UInt(BITS + 1)) == {v: MAX, error: ""}),
+    assert(saturatingPow(UInt(0), UInt(0)) == Err("undefined")),
+    assert(saturatingPow(UInt(0), UInt(1)) == Ok(0)),
+    assert(saturatingPow(UInt(1), UInt(0)) == Ok(1)),
+    assert(saturatingPow(UInt(1), UInt(1)) == Ok(1)),
+    assert(saturatingPow(UInt(MAX - 1), UInt(1)) == Ok(MAX - 1)),
+    assert(saturatingPow(UInt(MAX), UInt(1)) == Ok(MAX)),
+    assert(saturatingPow(UInt(MAX + 1), UInt(1)) == Err("out of range")),
+    assert(saturatingPow(UInt(0), UInt(MAX)) == Ok(0)),
+    assert(saturatingPow(UInt(1), UInt(MAX)) == Ok(1)),
+    assert(saturatingPow(UInt(2), UInt(BITS - 1)) == Ok(2^(BITS - 1))),
+    assert(saturatingPow(UInt(2), UInt(BITS)) == Ok(MAX)),
+    assert(saturatingPow(UInt(2), UInt(BITS + 1)) == Ok(MAX)),
   }
 
   //////////////
@@ -464,47 +370,47 @@ module BoundedUInt_Test {
 
   // Wrapping add
   pure val WAddInvsTest = and {
-    assert(wrappingAdd(UInt(0), UInt(0)) == {v: 0, error: ""}),
-    assert(wrappingAdd(UInt(1), UInt(0)) == {v: 1, error: ""}),
-    assert(wrappingAdd(UInt(MAX - 1), UInt(0)) == {v: MAX - 1, error: ""}),
-    assert(wrappingAdd(UInt(MAX), UInt(0)) == {v: MAX, error: ""}),
-    assert(wrappingAdd(UInt(MAX), UInt(1)) == {v: 0, error: ""}),
-    assert(wrappingAdd(UInt(MAX + 1), UInt(0)).error == "out of range"),
-    assert(wrappingAdd(UInt(0), UInt(MAX)) == {v: MAX, error: ""}),
-    assert(wrappingAdd(UInt(1), UInt(MAX)) == {v: 0, error: ""}),
-    assert(wrappingAdd(UInt(MAX - 1), UInt(MAX)) == {v: MAX - 2, error: ""}),
-    assert(wrappingAdd(UInt(MAX), UInt(MAX)) == {v: MAX - 1, error: ""}),
-    assert(wrappingAdd(UInt(MAX + 1), UInt(MAX)).error == "out of range")
+    assert(wrappingAdd(UInt(0), UInt(0)) == Ok(0)),
+    assert(wrappingAdd(UInt(1), UInt(0)) == Ok(1)),
+    assert(wrappingAdd(UInt(MAX - 1), UInt(0)) == Ok(MAX - 1)),
+    assert(wrappingAdd(UInt(MAX), UInt(0)) == Ok(MAX)),
+    assert(wrappingAdd(UInt(MAX), UInt(1)) == Ok(0)),
+    assert(wrappingAdd(UInt(MAX + 1), UInt(0)) == Err("out of range")),
+    assert(wrappingAdd(UInt(0), UInt(MAX)) == Ok(MAX)),
+    assert(wrappingAdd(UInt(1), UInt(MAX)) == Ok(0)),
+    assert(wrappingAdd(UInt(MAX - 1), UInt(MAX)) == Ok(MAX - 2)),
+    assert(wrappingAdd(UInt(MAX), UInt(MAX)) == Ok(MAX - 1)),
+    assert(wrappingAdd(UInt(MAX + 1), UInt(MAX)) == Err("out of range"))
   }
 
   // Wrapping sub
   pure val WSubInvsTest = and {
-    assert(wrappingSub(UInt(0), UInt(0)) == {v: 0, error: ""}),
-    assert(wrappingSub(UInt(1), UInt(0)) == {v: 1, error: ""}),
-    assert(wrappingSub(UInt(0), UInt(1)) == {v: MAX, error: ""}),
-    assert(wrappingSub(UInt(1), UInt(1)) == {v: 0, error: ""}),
-    assert(wrappingSub(UInt(MAX - 1), UInt(0)) == {v: MAX - 1, error: ""}),
-    assert(wrappingSub(UInt(MAX), UInt(0)) == {v: MAX, error: ""}),
-    assert(wrappingSub(UInt(MAX + 1), UInt(0)).error == "out of range"),
-    assert(wrappingSub(UInt(0), UInt(MAX)) == {v: 1, error: ""}),
-    assert(wrappingSub(UInt(1), UInt(MAX)) == {v: 2, error: ""}),
-    assert(wrappingSub(UInt(MAX - 1), UInt(MAX)) == {v: MAX, error: ""}),
-    assert(wrappingSub(UInt(MAX), UInt(MAX)) == {v: 0, error: ""}),
-    assert(wrappingSub(UInt(MAX + 1), UInt(MAX)).error == "out of range")
+    assert(wrappingSub(UInt(0), UInt(0)) == Ok(0)),
+    assert(wrappingSub(UInt(1), UInt(0)) == Ok(1)),
+    assert(wrappingSub(UInt(0), UInt(1)) == Ok(MAX)),
+    assert(wrappingSub(UInt(1), UInt(1)) == Ok(0)),
+    assert(wrappingSub(UInt(MAX - 1), UInt(0)) == Ok(MAX - 1)),
+    assert(wrappingSub(UInt(MAX), UInt(0)) == Ok(MAX)),
+    assert(wrappingSub(UInt(MAX + 1), UInt(0)) == Err("out of range")),
+    assert(wrappingSub(UInt(0), UInt(MAX)) == Ok(1)),
+    assert(wrappingSub(UInt(1), UInt(MAX)) == Ok(2)),
+    assert(wrappingSub(UInt(MAX - 1), UInt(MAX)) == Ok(MAX)),
+    assert(wrappingSub(UInt(MAX), UInt(MAX)) == Ok(0)),
+    assert(wrappingSub(UInt(MAX + 1), UInt(MAX)) == Err("out of range"))
   }
 
   // Wrapping mul
   pure val WMulInvsTest = and {
-    assert(wrappingMul(UInt(0), UInt(1)) == {v: 0, error: ""}),
-    assert(wrappingMul(UInt(1), UInt(1)) == {v: 1, error: ""}),
-    assert(wrappingMul(UInt(MAX - 1), UInt(1)) == {v: MAX - 1, error: ""}),
-    assert(wrappingMul(UInt(MAX), UInt(1)) == {v: MAX, error: ""}),
-    assert(wrappingMul(UInt(MAX + 1), UInt(1)).error == "out of range"),
-    assert(wrappingMul(UInt(0), UInt(MAX)) == {v: 0, error: ""}),
-    assert(wrappingMul(UInt(1), UInt(MAX)) == {v: MAX, error: ""}),
-    assert(wrappingMul(UInt(MAX - 1), UInt(MAX)) == {v: 2, error: ""}),
-    assert(wrappingMul(UInt(MAX), UInt(MAX)) == {v: 1, error: ""}),
-    assert(wrappingMul(UInt(MAX + 1), UInt(MAX)).error == "out of range")
+    assert(wrappingMul(UInt(0), UInt(1)) == Ok(0)),
+    assert(wrappingMul(UInt(1), UInt(1)) == Ok(1)),
+    assert(wrappingMul(UInt(MAX - 1), UInt(1)) == Ok(MAX - 1)),
+    assert(wrappingMul(UInt(MAX), UInt(1)) == Ok(MAX)),
+    assert(wrappingMul(UInt(MAX + 1), UInt(1)) == Err("out of range")),
+    assert(wrappingMul(UInt(0), UInt(MAX)) == Ok(0)),
+    assert(wrappingMul(UInt(1), UInt(MAX)) == Ok(MAX)),
+    assert(wrappingMul(UInt(MAX - 1), UInt(MAX)) == Ok(2)),
+    assert(wrappingMul(UInt(MAX), UInt(MAX)) == Ok(1)),
+    assert(wrappingMul(UInt(MAX + 1), UInt(MAX)) == Err("out of range"))
   }
 
   // Wrapping div == checked div
@@ -512,18 +418,18 @@ module BoundedUInt_Test {
   
   // Wrapping Pow
   pure val WPowInvsTest = and {
-    assert(wrappingPow(UInt(0), UInt(0)).error == "undefined"),
-    assert(wrappingPow(UInt(0), UInt(1)) == {v: 0, error: ""}),
-    assert(wrappingPow(UInt(1), UInt(0)) == {v: 1, error: ""}),
-    assert(wrappingPow(UInt(1), UInt(1)) == {v: 1, error: ""}),
-    assert(wrappingPow(UInt(MAX - 1), UInt(1)) == {v: MAX - 1, error: ""}),
-    assert(wrappingPow(UInt(MAX), UInt(1)) == {v: MAX, error: ""}),
-    assert(wrappingPow(UInt(MAX + 1), UInt(1)).error == "out of range"),
-    assert(wrappingPow(UInt(0), UInt(MAX)) == {v: 0, error: ""}),
-    assert(wrappingPow(UInt(1), UInt(MAX)) == {v: 1, error: ""}),
-    assert(wrappingPow(UInt(2), UInt(BITS - 1)) == {v: 2^(BITS - 1), error: ""}),
-    assert(wrappingPow(UInt(2), UInt(BITS)) == {v: 0, error: ""}),
-    assert(wrappingPow(UInt(2), UInt(BITS + 1)) == {v: 0, error: ""}),
+    assert(wrappingPow(UInt(0), UInt(0)) == Err("undefined")),
+    assert(wrappingPow(UInt(0), UInt(1)) == Ok(0)),
+    assert(wrappingPow(UInt(1), UInt(0)) == Ok(1)),
+    assert(wrappingPow(UInt(1), UInt(1)) == Ok(1)),
+    assert(wrappingPow(UInt(MAX - 1), UInt(1)) == Ok(MAX - 1)),
+    assert(wrappingPow(UInt(MAX), UInt(1)) == Ok(MAX)),
+    assert(wrappingPow(UInt(MAX + 1), UInt(1)) == Err("out of range")),
+    assert(wrappingPow(UInt(0), UInt(MAX)) == Ok(0)),
+    assert(wrappingPow(UInt(1), UInt(MAX)) == Ok(1)),
+    assert(wrappingPow(UInt(2), UInt(BITS - 1)) == Ok(2^(BITS - 1))),
+    assert(wrappingPow(UInt(2), UInt(BITS)) == Ok(0)),
+    assert(wrappingPow(UInt(2), UInt(BITS + 1)) == Ok(0)),
   }
 
   //////////////
@@ -531,16 +437,16 @@ module BoundedUInt_Test {
   //////////////
 
   pure val AbsDiffTest = and {
-    assert(absDiff(UInt(0), UInt(1)) == {v: 1, error: ""}),
-    assert(absDiff(UInt(1), UInt(1)) == {v: 0, error: ""}),
-    assert(absDiff(UInt(MAX - 1), UInt(1)) == {v: MAX - 2, error: ""}),
-    assert(absDiff(UInt(MAX), UInt(1)) == {v: MAX - 1, error: ""}),
-    assert(absDiff(UInt(MAX + 1), UInt(1)).error == "out of range"),
-    assert(absDiff(UInt(0), UInt(MAX)) == {v: MAX, error: ""}),
-    assert(absDiff(UInt(1), UInt(MAX)) == {v: MAX - 1, error: ""}),
-    assert(absDiff(UInt(MAX - 1), UInt(MAX)) == {v: 1, error: ""}),
-    assert(absDiff(UInt(MAX), UInt(MAX)) == {v: 0, error: ""}),
-    assert(absDiff(UInt(MAX + 1), UInt(MAX)).error == "out of range")
+    assert(absDiff(UInt(0), UInt(1)) == Ok(1)),
+    assert(absDiff(UInt(1), UInt(1)) == Ok(0)),
+    assert(absDiff(UInt(MAX - 1), UInt(1)) == Ok(MAX - 2)),
+    assert(absDiff(UInt(MAX), UInt(1)) == Ok(MAX - 1)),
+    assert(absDiff(UInt(MAX + 1), UInt(1)) == Err("out of range")),
+    assert(absDiff(UInt(0), UInt(MAX)) == Ok(MAX)),
+    assert(absDiff(UInt(1), UInt(MAX)) == Ok(MAX - 1)),
+    assert(absDiff(UInt(MAX - 1), UInt(MAX)) == Ok(1)),
+    assert(absDiff(UInt(MAX), UInt(MAX)) == Ok(0)),
+    assert(absDiff(UInt(MAX + 1), UInt(MAX)) == Err("out of range"))
   }
 
 }
