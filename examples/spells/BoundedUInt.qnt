@@ -60,6 +60,10 @@ module BoundedUInt {
    // CHECKED OPERATIONS //
   ////////////////////////
 
+  // TODO: In the following we have to eta-expand calls to `ifoo` builtins
+  // due to https://github.com/informalsystems/quint/issues/1332
+  // We should simplify those once this issue with the simulator is fixed.
+
   /// Checked integer addition.
   /// Errors with "overflow"
   pure def checkedAdd(lhs: UIntT, rhs: UIntT): UIntT = ((x,y) => iadd(x,y)).app(lhs, rhs, "overflow")
