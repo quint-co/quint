@@ -38,7 +38,7 @@ module BoundedUInt {
   def bind(u: UIntT, f: (int => UIntT)): UIntT = match u {
     | Ok(i) => f(i)
     | Err(_) => u
-    }
+  }
 
   /// `f.app(u, v, msg)` is `UInt(f(x,y))` if `u` is `Ok(x)` and `v` is `Ok(y)`.
   /// If `UInt(f(x,y))` is out of range, it is `Err(msg)`.
