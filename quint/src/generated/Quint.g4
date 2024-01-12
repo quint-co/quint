@@ -288,7 +288,6 @@ ASGN            :   '=' ;
 LPAREN          :   '(' ;
 RPAREN          :   ')' ;
 
-// other TLA+ identifiers
 // An identifier starting with lowercase
 LOW_ID : ([a-z][a-zA-Z0-9_]*|[_][a-zA-Z0-9_]+) ;
 // An identifier starting with uppercase
