@@ -15,7 +15,7 @@ module BoundedUInt {
   ///
   /// NOTE: values of this type must only be constructed using `UInt`,
   /// and never via `Ok` or `Err` directly.
-  // TODO: Replacce with polymorphic result type, once that is avainable
+  // TODO: Replace with polymorphic result type, once that is available
   //       See https://github.com/informalsystems/quint/issues/1073
   type UIntT = Ok(int) | Err(str)
 
