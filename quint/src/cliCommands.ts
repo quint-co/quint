@@ -65,7 +65,7 @@ interface OutputStage {
   passed?: string[]
   failed?: string[]
   ignored?: string[]
-  // Test names output produced by 'run'
+  // Possible results from 'run'
   status?: 'ok' | 'violation' | 'failure' | 'error'
   trace?: QuintEx[]
   /* Docstrings by definition name by module name */
