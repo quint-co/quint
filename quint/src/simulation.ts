@@ -129,12 +129,17 @@ export function compileAndRun(
       console.error('No trace recorded')
     }
 
+    const errors = ctx.getRuntimeErrors()
+    if (errors.length > 0) {
+      status = 'error'
+    }
+
     return {
       status: status,
       vars: evaluationState.vars.map(v => v.name),
       states: topFrame.args.map(e => e.toQuintEx(idGen)),
       frames: topFrame.subframes,
-      errors: ctx.getRuntimeErrors(),
+      errors: errors,
       seed: recorder.getBestTraceSeed(),
     }
   }

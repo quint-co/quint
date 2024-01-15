@@ -66,7 +66,7 @@ interface OutputStage {
   failed?: string[]
   ignored?: string[]
   // Test names output produced by 'run'
-  status?: 'ok' | 'violation' | 'failure'
+  status?: 'ok' | 'violation' | 'failure' | 'error'
   trace?: QuintEx[]
   /* Docstrings by definition name by module name */
   documentation?: Map<string, Map<string, DocumentationEntry>>
@@ -530,11 +530,7 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
   const mainEnd = prev.sourceMap.get(mainId)!.end!.index
   const result = compileAndRun(newIdGenerator(), mainText, mainStart, mainEnd, mainName, mainPath, options)
 
-  if (result.status === 'error') {
-    const newErrors = result.errors.map(mkErrorMessage(prev.sourceMap))
-    const errors = prev.errors ? prev.errors.concat(newErrors) : newErrors
-    return cliErr('run failed', { ...simulator, errors })
-  } else {
+  if (result.status !== 'error') {
     if (verbosity.hasResults(verbosityLevel)) {
       const elapsedMs = Date.now() - startMs
       maybePrintCounterExample(verbosityLevel, result.states, result.frames)
@@ -565,22 +561,22 @@ export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure
         return cliErr(`ITF conversion failed: ${trace.value}`, newStage)
       }
     }
+  }
 
-    if (result.status === 'ok') {
-      return right({
-        ...simulator,
-        status: result.status,
-        trace: result.states,
-      })
-    } else {
-      const msg = result.status === 'violation' ? 'Invariant violated' : 'Runtime error'
-      return cliErr(msg, {
-        ...simulator,
-        status: result.status,
-        trace: result.states,
-        errors: result.errors.map(mkErrorMessage(prev.sourceMap)),
-      })
-    }
+  if (result.status === 'ok') {
+    return right({
+      ...simulator,
+      status: result.status,
+      trace: result.states,
+    })
+  } else {
+    const msg = result.status === 'violation' ? 'Invariant violated' : 'Runtime error'
+    return cliErr(msg, {
+      ...simulator,
+      status: result.status,
+      trace: result.states,
+      errors: result.errors.map(mkErrorMessage(prev.sourceMap)),
+    })
   }
 }
 

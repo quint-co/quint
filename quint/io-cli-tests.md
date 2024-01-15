@@ -966,7 +966,7 @@ HOME/_1041compileConst.qnt:5:24 - error: [QNT502] Name N not found
 5:   action init = { x' = N }
                           ^
 
-error: run failed
+error: Runtime error
 ```
 
 ### Repl keeps right track of variables from instances
