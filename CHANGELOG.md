@@ -305,6 +305,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+
+- Fixed an issue where, sometimes, runtime errors were not reported in
+  simulation (#1339)
+
 ### Security
 
 ## v0.11.1 -- 2023-06-01
