@@ -271,18 +271,12 @@ echo -e "init\nMyF::ExportedBasics::double(2)" | quint -r ../examples/language-f
 
 <!-- !test in repl malformed expressions -->
 ```
-echo -e "1 +" | quint | tail -n +3
+echo -e "1 +" | quint | grep -o 'syntax error: error: \[QNT000\]'
 ```
 
 <!-- !test out repl malformed expressions -->
 ```
->>> [DEBUG] generating undefined expr to fill hole in: 1+
-syntax error: error: [QNT000] mismatched input '<EOF>' expecting {'{', 'nondet', 'val', 'def', 'pure', 'action', 'run', 'temporal', '[', 'all', 'any', 'if', '_', STRING, BOOL, INT, 'and', 'or', 'iff', 'implies', 'Set', 'List', 'Map', 'match', '-', '(', IDENTIFIER}
-
-
-
-
->>> 
+syntax error: error: [QNT000]
 ```
 
 

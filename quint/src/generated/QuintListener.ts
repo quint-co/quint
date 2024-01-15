@@ -18,7 +18,8 @@ import { TypeRecContext } from "./QuintParser";
 import { TypeIntContext } from "./QuintParser";
 import { TypeStrContext } from "./QuintParser";
 import { TypeBoolContext } from "./QuintParser";
-import { TypeConstOrVarContext } from "./QuintParser";
+import { TypeVarContext } from "./QuintParser";
+import { TypeConstContext } from "./QuintParser";
 import { TypeParenContext } from "./QuintParser";
 import { TypeAbstractDefContext } from "./QuintParser";
 import { TypeAliasDefContext } from "./QuintParser";
@@ -99,6 +100,7 @@ import { OperatorContext } from "./QuintParser";
 import { LiteralContext } from "./QuintParser";
 import { QualIdContext } from "./QuintParser";
 import { SimpleIdContext } from "./QuintParser";
+import { IdentifierContext } from "./QuintParser";
 
 
 /**
@@ -224,17 +226,30 @@ export interface QuintListener extends ParseTreeListener {
 	exitTypeBool?: (ctx: TypeBoolContext) => void;
 
 	/**
-	 * Enter a parse tree produced by the `typeConstOrVar`
+	 * Enter a parse tree produced by the `typeVar`
 	 * labeled alternative in `QuintParser.type`.
 	 * @param ctx the parse tree
 	 */
-	enterTypeConstOrVar?: (ctx: TypeConstOrVarContext) => void;
+	enterTypeVar?: (ctx: TypeVarContext) => void;
 	/**
-	 * Exit a parse tree produced by the `typeConstOrVar`
+	 * Exit a parse tree produced by the `typeVar`
 	 * labeled alternative in `QuintParser.type`.
 	 * @param ctx the parse tree
 	 */
-	exitTypeConstOrVar?: (ctx: TypeConstOrVarContext) => void;
+	exitTypeVar?: (ctx: TypeVarContext) => void;
+
+	/**
+	 * Enter a parse tree produced by the `typeConst`
+	 * labeled alternative in `QuintParser.type`.
+	 * @param ctx the parse tree
+	 */
+	enterTypeConst?: (ctx: TypeConstContext) => void;
+	/**
+	 * Exit a parse tree produced by the `typeConst`
+	 * labeled alternative in `QuintParser.type`.
+	 * @param ctx the parse tree
+	 */
+	exitTypeConst?: (ctx: TypeConstContext) => void;
 
 	/**
 	 * Enter a parse tree produced by the `typeParen`
@@ -1199,5 +1214,16 @@ export interface QuintListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	exitSimpleId?: (ctx: SimpleIdContext) => void;
+
+	/**
+	 * Enter a parse tree produced by `QuintParser.identifier`.
+	 * @param ctx the parse tree
+	 */
+	enterIdentifier?: (ctx: IdentifierContext) => void;
+	/**
+	 * Exit a parse tree produced by `QuintParser.identifier`.
+	 * @param ctx the parse tree
+	 */
+	exitIdentifier?: (ctx: IdentifierContext) => void;
 }
 

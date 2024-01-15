@@ -215,15 +215,16 @@ module builtin {
   /// ```
   pure def flatten(s): (Set[Set[a]]) => Set[a]
 
-  /// `s.allLists()` is the set of all lists containing all the elements in `s`.
+  /// `s.allLists()` is the set of all lists containing elements in `s`.
+  /// This is an infinite set unless `s` is the empty set.
+  ///
+  /// Like other inifite sets, this is not supported in the simulator.
   ///
   /// ### Examples
   ///
   /// ```
-  /// assert(Set(1, 2).allLists() == Set(
-  ///   List(1, 2),
-  ///   List(2, 1),
-  /// ))
+  /// assert(Set(1, 2).allLists().contains([]))
+  /// assert(Set(1, 2).allLists().contains([1, 1, 1, 1, 2, 1]))
   /// ```
   pure def allLists(s): (Set[a]) => Set[List[a]]
 
