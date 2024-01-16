@@ -12,10 +12,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
+### Security
+
+## v0.18.1 -- 2024-01-16
+
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
 
 - Fixed parsing of qualified type constructors, which were being misinterpreted
   as type variables when the name of the qualifying module started with a
   lowercase letter (#1337).
+- Fixed an issue where, sometimes, runtime errors were not reported in
+  simulation (#1339)
 
 ### Security
 
@@ -310,9 +321,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 ### Removed
 ### Fixed
-
-- Fixed an issue where, sometimes, runtime errors were not reported in
-  simulation (#1339)
 
 ### Security
 
