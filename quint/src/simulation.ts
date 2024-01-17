@@ -20,7 +20,6 @@ import { SourceLookupPath } from './parsing/sourceResolver'
 import { QuintError } from './quintError'
 import { mkErrorMessage } from './cliCommands'
 import { createFinders, formatError } from './errorReporter'
-import { uniqBy } from 'lodash'
 
 /**
  * Various settings that have to be passed to the simulator to run.
