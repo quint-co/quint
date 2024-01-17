@@ -301,14 +301,10 @@ export async function runRepl(_argv: any) {
  * @param typedStage the procedure stage produced by `typecheck`
  */
 export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<TestedStage>> {
+  // TODO: Logic should be consistent with runSimulator?
   const verbosityLevel = !prev.args.out ? prev.args.verbosity : 0
-  const out = console.log
-  const columns = !prev.args.out ? terminalWidth() : 80
-
-  const testing = { ...prev, stage: 'testing' as stage }
   const mainName = guessMainModule(prev)
-
-  const outputTemplate = testing.args.output
+  const testing = { ...prev, stage: 'testing' as stage }
 
   const rngOrError = mkRng(prev.args.seed)
   if (rngOrError.isLeft()) {
@@ -344,6 +340,22 @@ export async function runTests(prev: TypecheckedStage): Promise<CLIProcedure<Tes
         }
       }
     },
+  }
+
+  const out = console.log
+  const columns = !prev.args.out ? terminalWidth() : 80
+
+  const outputTemplate = testing.args.output
+
+  // let passed: string[] = []
+  // let failed: string[] = []
+  // let ignored: string[] = []
+  // let namedErrors: [string, ErrorMessage, TestResult][] = []
+
+  const startMs = Date.now()
+
+  if (verbosity.hasResults(verbosityLevel)) {
+    out(`\n  ${mainName}`)
   }
 
   // Find tests that are not used in the main module. We need to add references to them in the main module so flattening
@@ -500,14 +512,16 @@ function maybePrintCounterExample(verbosityLevel: number, states: QuintEx[], fra
  * @param prev the procedure stage produced by `typecheck`
  */
 export async function runSimulator(prev: TypecheckedStage): Promise<CLIProcedure<SimulatorStage>> {
-  const simulator = { ...prev, stage: 'running' as stage }
-  const mainName = guessMainModule(prev)
   const verbosityLevel = !prev.args.out && !prev.args.outItf ? prev.args.verbosity : 0
+  const mainName = guessMainModule(prev)
+  const simulator = { ...prev, stage: 'running' as stage }
+
   const rngOrError = mkRng(prev.args.seed)
   if (rngOrError.isLeft()) {
     return cliErr(rngOrError.value, { ...simulator, errors: [] })
   }
   const rng = rngOrError.unwrap()
+
   const options: SimulatorOptions = {
     init: prev.args.init,
     step: prev.args.step,
