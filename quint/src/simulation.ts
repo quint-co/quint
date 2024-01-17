@@ -18,6 +18,9 @@ import { IdGenerator } from './idGenerator'
 import { Rng } from './rng'
 import { SourceLookupPath } from './parsing/sourceResolver'
 import { QuintError } from './quintError'
+import { mkErrorMessage } from './cliCommands'
+import { createFinders, formatError } from './errorReporter'
+import { uniqBy } from 'lodash'
 
 /**
  * Various settings that have to be passed to the simulator to run.
@@ -129,8 +132,17 @@ export function compileAndRun(
       console.error('No trace recorded')
     }
 
-    const errors = ctx.getRuntimeErrors()
+    let errors = ctx.getRuntimeErrors()
     if (errors.length > 0) {
+      const code = new Map([...ctx.compilationState.sourceCode.entries(), [mainPath.normalizedPath, codeWithExtraDefs]])
+      const finders = createFinders(code)
+      errors = errors.map(error => ({
+        code: error.code,
+        message: formatError(code, finders, {
+          ...mkErrorMessage(ctx.compilationState.sourceMap)(error),
+          explanation: error.message,
+        }),
+      }))
       status = 'error'
     }
 
