@@ -134,6 +134,7 @@ export function compileAndRun(
 
     let errors = ctx.getRuntimeErrors()
     if (errors.length > 0) {
+      // FIXME(#1052) we shouldn't need to do this if the error id was not some non-sense generated in `compileFromCode`
       const code = new Map([...ctx.compilationState.sourceCode.entries(), [mainPath.normalizedPath, codeWithExtraDefs]])
       const finders = createFinders(code)
       errors = errors.map(error => ({
@@ -143,6 +144,7 @@ export function compileAndRun(
           explanation: error.message,
         }),
       }))
+
       status = 'error'
     }
 
