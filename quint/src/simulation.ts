@@ -18,6 +18,8 @@ import { IdGenerator } from './idGenerator'
 import { Rng } from './rng'
 import { SourceLookupPath } from './parsing/sourceResolver'
 import { QuintError } from './quintError'
+import { mkErrorMessage } from './cliCommands'
+import { createFinders, formatError } from './errorReporter'
 
 /**
  * Various settings that have to be passed to the simulator to run.
@@ -129,8 +131,29 @@ export function compileAndRun(
       console.error('No trace recorded')
     }
 
-    const errors = ctx.getRuntimeErrors()
+    let errors = ctx.getRuntimeErrors()
     if (errors.length > 0) {
+      // FIXME(#1052) we shouldn't need to do this if the error id was not some non-sense generated in `compileFromCode`
+      // The evaluated code source is not included in the context, so we crete a version with it for the error reporter
+      const code = new Map([...ctx.compilationState.sourceCode.entries(), [mainPath.normalizedPath, codeWithExtraDefs]])
+      const finders = createFinders(code)
+
+      errors = errors.map(error => ({
+        code: error.code,
+        // Include the location information (locs) in the error message - this
+        // is the hacky part, as it should only be included at the CLI level
+        message: formatError(code, finders, {
+          // This will create the `locs` attribute and an explanation
+          ...mkErrorMessage(ctx.compilationState.sourceMap)(error),
+          // We override the explanation to keep the original one to avoid
+          // duplication, since `mkErrorMessage` will be called again at the CLI
+          // level. `locs` won't be touched then because this error doesn't
+          // include a `reference` field
+          explanation: error.message,
+        }),
+      }))
+
+      // This should be kept after the hack is removed
       status = 'error'
     }
 
